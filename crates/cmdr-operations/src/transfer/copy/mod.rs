@@ -39,13 +39,15 @@ mod dest_chain;
 mod folder_metadata;
 mod rollback;
 mod scanned_dirs;
+mod settle;
 mod single_item;
 
 use cmdr_fs::log_private::LogPrivate;
 pub(super) use folder_metadata::{apply_created_dirs_metadata, dir_dest_path};
 use rollback::rollback_with_progress;
 pub(super) use scanned_dirs::create_scanned_dirs_at_destination;
-pub(super) use single_item::{JournalDestUnder, copy_single_item};
+pub(super) use settle::JournalDestUnder;
+pub(super) use single_item::copy_single_item;
 
 /// Rewrites `dest` by replacing the longest ancestor that appears as a key in
 /// `dir_remap` with its mapped value. Used to follow a folder→file Rename
