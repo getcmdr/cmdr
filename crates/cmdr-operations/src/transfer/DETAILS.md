@@ -143,10 +143,11 @@ creates a fresh link with no mtime preservation, so every copied link would be l
 
 **Where each snapshot comes from.**
 
-- **Local copy** (`copy/single_item.rs`): one `symlink_metadata` of the destination after the write lands. It describes
-  the file that actually arrived, which is what a recheck compares against, and `symlink_metadata` is why a copied
-  symlink describes ITSELF (a `metadata` snapshot of a link whose target is missing reads as absent, and the link gets
-  left behind). **A recheck must stat the same way.**
+- **Local copy** (`copy/settle.rs::settle_landed_leaf`, the one door both of `copy_single_item`'s landing branches,
+  symlink and regular file, settle through): one `symlink_metadata` of the destination after the write lands. It
+  describes the file that actually arrived, which is what a recheck compares against, and `symlink_metadata` is why a
+  copied symlink describes ITSELF (a `metadata` snapshot of a link whose target is missing reads as absent, and the link
+  gets left behind). **A recheck must stat the same way.**
 - **Same-FS move** (`move_op/same_fs.rs`): the source's own metadata, taken before the rename for the journal row. A
   rename carries the node id across untouched, so the pre-rename snapshot IS the landed item's identity.
 - **The directory-merge move branch** (`move_op/mod.rs::merge_move_directory`): one `symlink_metadata` per child, added
