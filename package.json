@@ -32,7 +32,7 @@
     "svgo": "4.1.0",
     "typescript": "~6.0.3"
   },
-  "packageManager": "pnpm@12.11.2",
+  "packageManager": "pnpm@12.20.0",
   "engines": {
     "pnpm": ">=12"
   }
