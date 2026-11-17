@@ -38,11 +38,11 @@ use super::super::super::types::{
     CancelRollback, VolumeCopyConfig, WriteCancelledEvent, WriteOperationError, WriteOperationPhase,
     WriteOperationType, WriteProgressEvent,
 };
-use super::super::volume_outage::{OutageAnnounce, OutageEnd, wait_while_out};
+use super::super::volume_outage::{OutageAnnounce, OutageEnd, through_outages, wait_while_out};
 use super::folder_metadata::SourceFolderDates;
 use super::link_carry::LinkCarry;
 use super::scan_wait::ScanWait;
-use super::transfer_error::{PathRole, WriteFailure, map_failure_after_wait, map_volume_error};
+use super::transfer_error::{PathRole, PathedVolumeError, WriteFailure, map_failure_after_wait, map_volume_error};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::{
     EntryKind, ListingProgress, ScanBoundary, ScanRecorder, ScanStop, ScanStopSignal, Volume, VolumeError,
@@ -516,6 +516,7 @@ impl TopLevelMoveHints {
 /// SMB, one parent listing on MTP). Cost is O(distinct parents), never
 /// O(subtree).
 pub(super) async fn top_level_move_hints(
+    state: &Arc<WriteOperationState>,
     previews: &ScanPreviews,
     volume: &Arc<dyn Volume>,
     source_paths: &[PathBuf],
@@ -553,13 +554,17 @@ pub(super) async fn top_level_move_hints(
     }
 
     for (parent, paths) in by_parent {
-        let entries = volume
-            .list_directory(&parent, None)
-            .await
-            .map_err(|e| WriteOperationError::IoError {
-                path: parent.display().to_string(),
-                message: format!("listing move-source parent failed: {e}").into(),
-            })?;
+        // A listing is safe to run twice, so a dropped share is waited for like
+        // every other transfer step (cmdr-reports#112), and a give-up reads as
+        // the lost connection, the parent as context.
+        let entries = through_outages(state, &[volume], || async {
+            volume
+                .list_directory(&parent, None)
+                .await
+                .map_err(|e| PathedVolumeError::new(PathRole::Source, &parent, e))
+        })
+        .await
+        .map_err(|failure| WriteFailure::from(failure).error)?;
         let by_name: HashMap<&str, &cmdr_fs::entry::FileEntry> = entries.iter().map(|e| (e.name.as_str(), e)).collect();
         for path in paths {
             let name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default();

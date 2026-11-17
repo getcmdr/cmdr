@@ -35,13 +35,14 @@ use super::super::transfer_driver::{
     ConflictDecision, ConflictDecisionInput, DriverConfig, PostLoopIntent, ResolveFut, TransferContext, TransferFut,
     TransferOutcome, build_pre_skip_set, drive_transfer_serial_async, emit_source_outcome,
 };
+use super::super::volume_outage::through_outages;
 use super::conflict::resolve_volume_conflict;
 use super::displaced_destination::{DisplacedDestination, displace_destination};
 use super::item_identity::is_the_same_volume_path;
 use super::preflight::{SourceHint, source_merges_as_a_directory, sources_in_tree_order, top_level_move_hints};
 use super::rename_merge::{RenameMergeCtx, rename_merge_directory};
 use super::strategy::Replaces;
-use super::transfer_error::{PathRole, map_volume_error};
+use super::transfer_error::{PathRole, PathedVolumeError, WriteFailure, map_volume_error};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{EntryKind, RenameWork, Volume, VolumeError};
@@ -242,13 +243,24 @@ impl crate::Operations {
 /// Whether any of `sources` can't be renamed in one call on `volume`, which
 /// sends the whole move through the copy-then-delete engine. Asks each entry
 /// (`Volume::rename_work`); a volume that renames everything in one call
-/// answers with no I/O.
-async fn moves_by_copy(volume: &Arc<dyn Volume>, sources: &[PathBuf]) -> Result<bool, WriteOperationError> {
+/// answers with no I/O. A read, so a dropped share is waited for
+/// (`through_outages`), like the hint listings after it.
+async fn moves_by_copy(
+    state: &Arc<WriteOperationState>,
+    volume: &Arc<dyn Volume>,
+    sources: &[PathBuf],
+) -> Result<bool, WriteOperationError> {
     for source in sources {
-        match volume.rename_work(source).await {
-            Ok(RenameWork::OneCall) => {}
-            Ok(RenameWork::CopyThenDelete) => return Ok(true),
-            Err(e) => return Err(map_volume_error(&source.display().to_string(), PathRole::Source, e)),
+        let work = through_outages(state, &[volume], || async {
+            volume
+                .rename_work(source)
+                .await
+                .map_err(|e| PathedVolumeError::new(PathRole::Source, source, e))
+        })
+        .await
+        .map_err(|failure| WriteFailure::from(failure).error)?;
+        if work == RenameWork::CopyThenDelete {
+            return Ok(true);
         }
     }
     Ok(false)
@@ -393,7 +405,7 @@ pub async fn move_within_same_volume_with_progress(
     // move runs through the copy-then-delete engine on this one volume, which
     // copies server-side where the backend can and deletes the sources only
     // after their copies landed. The worst a crash leaves is duplicates.
-    if moves_by_copy(&volume, source_paths).await? {
+    if moves_by_copy(state, &volume, source_paths).await? {
         log::info!(
             "move_within_same_volume: volumeName={:?} renames by copy, so op={operation_id} copies then deletes", // allowed-pluralize-noun: `{:?}` is the volume's name, and "renames" is a verb
             LogPrivate::volume(volume.name())
@@ -423,7 +435,8 @@ pub async fn move_within_same_volume_with_progress(
     // (SMB pipelines the stats; MTP groups by parent). `files_total` is the
     // count of selected top-level items (each counts 1 when its rename / merge
     // completes); `bytes_total` is 0.
-    let top_level = top_level_move_hints(state.scope().stores().previews(), &volume, source_paths, config).await?;
+    let top_level =
+        top_level_move_hints(state, state.scope().stores().previews(), &volume, source_paths, config).await?;
     // Dropped items wrote nothing, but the person asked for them, so they belong
     // in what the dialog counts down.
     let total_files = source_paths.len() + already_in_place;

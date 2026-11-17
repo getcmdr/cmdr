@@ -2354,6 +2354,11 @@ again:
   count, no skip (`crates/cmdr-fs/DETAILS.md` § "`ScanBoundary`"). No probe is registered yet, so the wait is announced
   on the operation's own channel as it starts and as it ends (`volume_outage::wait_after_failure_announced`); a give-up
   reads as "Lost the connection", the folder it was listing as context. Pinned by `volume/preflight_outage_tests.rs`.
+- A same-volume move's preflight reads, through `through_outages`: each entry's `Volume::rename_work`
+  (`volume/move_same.rs::moves_by_copy`, I/O on an object store) and each source parent's hint listing
+  (`volume/preflight.rs::top_level_move_hints`). Both run before any rename, so a run after a wait is safe; a give-up
+  reads as "Lost the connection", the parent as context. A busy NAS dropping its session under one 3,500-entry listing
+  used to stop the move as `move/io_error` (cmdr-reports#112). Pinned by `volume/move_same_outage_tests.rs`.
 - Every rename aside (`volume/displaced_destination.rs::displace_destination`, a cross-type Overwrite's and a fresh
   compress's displaced publish): the rename the transport cut off is settled by one stat of the aside after the wait
   (`volume/DETAILS.md`, the aside bullets).
@@ -2366,10 +2371,9 @@ again:
   a refused class rather than an error). Both: `volume/DETAILS.md`.
 
 **Not covered, deliberately.** Trash, the local engines, the instant ops (rename, new folder, new file), and a
-same-volume move past the start gate: its top-level hint listings (`volume/preflight.rs::top_level_move_hints`) and its
-renames (`volume/move_same.rs`, `volume/rename_merge.rs`: a rename the drop cut off can't be told from one the server
-refused without a settle of its own, so waiting at the listing before it would buy nothing). Each fails on an outage as
-it always did. A volume delete has its own wait, which re-checks each entry against its walk before deleting again
+same-volume move's per-item steps: its type probes and renames (`volume/move_same.rs`, `volume/rename_merge.rs`: a
+rename the drop cut off can't be told from one the server refused without a settle of its own). Each fails on an outage
+as it always did. A volume delete has its own wait, which re-checks each entry against its walk before deleting again
 (`../delete/DETAILS.md` § "Waiting out a dropped share"), and a compress's planning walk waits per read
 (`../archive_edit/DETAILS.md` § "The driver, op by op", its compress bullet).
 

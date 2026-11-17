@@ -830,6 +830,11 @@ mod probe_row_tests;
 #[cfg(test)]
 #[path = "move_progress_tests.rs"]
 mod progress_tests;
+/// A same-volume move whose share drops during its preflight listing waits for
+/// it (cmdr-reports#112).
+#[cfg(test)]
+#[path = "move_same_outage_tests.rs"]
+mod same_outage_tests;
 /// What a same-volume Overwrite leaves behind when its replacing rename refuses.
 #[cfg(test)]
 #[path = "move_same_overwrite_tests.rs"]
