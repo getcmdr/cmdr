@@ -1,6 +1,6 @@
 use super::image_ranges::RangeTable;
+use super::platform::verdict::{Region, page_to_recover};
 use super::proc_maps::{LINE_CAPACITY, Lines, MapsLine, parse};
-use super::verdict::{Region, page_to_recover};
 
 const PAGE: u64 = 0x4000;
 
@@ -183,7 +183,8 @@ mod macos_process {
     use std::io::Write as _;
     use std::os::fd::AsRawFd as _;
 
-    use super::super::{macos, prepare};
+    use super::super::platform as macos;
+    use super::super::prepare;
 
     #[test]
     #[cfg_attr(miri, ignore = "registers with dyld, which Miri can't cross")]

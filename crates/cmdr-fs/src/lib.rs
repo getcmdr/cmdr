@@ -65,7 +65,7 @@ pub mod log_rollup;
 pub mod mac_only_files;
 // The browser build (`wasm32`, `crates/cmdr-listing-wasm`) maps no files, so
 // this one is host-only. `DETAILS.md` § "The browser build".
-#[cfg(unix)]
+#[cfg(cmdr_host)]
 pub mod mapped_file_faults;
 pub mod metadata;
 // Host-only: the browser has no mounts.

@@ -31,6 +31,12 @@ pub(crate) fn sync_to_drive(file: &File) -> io::Result<()> {
     plain_fsync(file)
 }
 
+/// A read-only open: `fsync` and `F_FULLFSYNC` take any fd, and a staged `0444` file refuses a
+/// write open.
+pub(crate) fn open_to_sync(path: &std::path::Path) -> io::Result<File> {
+    File::open(path)
+}
+
 pub(crate) fn sync_dir_to_drive(dir: &File) -> io::Result<()> {
     plain_fsync(dir)
 }

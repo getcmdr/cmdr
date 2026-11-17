@@ -420,19 +420,16 @@
       "outsideSeam": 4
     },
     "crates/cmdr-fs/src/lib.rs": {
-      "outsideSeam": 3
+      "outsideSeam": 2
     },
     "crates/cmdr-fs/src/mapped_file_faults/image_ranges.rs": {
       "outsideSeam": 1
     },
     "crates/cmdr-fs/src/mapped_file_faults/mod.rs": {
-      "outsideSeam": 4
+      "outsideSeam": 1
     },
     "crates/cmdr-fs/src/mapped_file_faults/proc_maps.rs": {
       "outsideSeam": 1
-    },
-    "crates/cmdr-fs/src/name_fold.rs": {
-      "outsideSeam": 2
     },
     "crates/cmdr-fs/src/process_cpu/mod.rs": {
       "outsideSeam": 3
@@ -655,9 +652,6 @@
     },
     "crates/cmdr-operations/src/validation.rs": {
       "outsideSeam": 3
-    },
-    "crates/cmdr-search/src/name_rules.rs": {
-      "outsideSeam": 1
     },
     "crates/cmdr-update-trust/src/lib.rs": {
       "outsideSeam": 4

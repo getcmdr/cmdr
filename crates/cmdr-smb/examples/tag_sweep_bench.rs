@@ -92,6 +92,8 @@ async fn main() {
                     assert_eq!(tagged, paths.len() / 20, "the seed's 5% read back");
                     report(&format!("run {run}: {label}"), paths.len(), started.elapsed(), slowest);
                 }
+                // The mount half reads xattrs through the OS, which only the Unixes offer this way.
+                #[cfg(unix)]
                 if let Some(mount) = rest.first() {
                     let started = Instant::now();
                     let mut slowest = Duration::ZERO;

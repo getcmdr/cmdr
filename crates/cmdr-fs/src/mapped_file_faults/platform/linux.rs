@@ -8,13 +8,16 @@
 use std::sync::Once;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
-use super::proc_maps::{Lines, MapsLine, parse};
+use super::super::proc_maps::{Lines, MapsLine, parse};
 use super::verdict::{Region, page_to_recover};
+
+#[cfg(any(test, feature = "testing"))]
+pub(crate) use super::unix::install_test_handler;
 
 static PAGE_SIZE: AtomicU64 = AtomicU64::new(0);
 static READY: AtomicBool = AtomicBool::new(false);
 
-pub(super) fn prepare() {
+pub(crate) fn prepare() {
     static ONCE: Once = Once::new();
     ONCE.call_once(|| {
         // SAFETY: `_SC_PAGESIZE` is a valid `sysconf` name with no side effects.
@@ -82,7 +85,7 @@ fn is_image(mapping: &MapsLine) -> bool {
 }
 
 /// Async-signal-safe: two passes over `/proc/self/maps` on the stack, one `mmap`.
-pub(super) fn recover(info: &libc::siginfo_t) -> bool {
+pub(crate) fn recover_page(info: &libc::siginfo_t) -> bool {
     if !READY.load(Ordering::SeqCst) || info.si_code != libc::BUS_ADRERR {
         return false;
     }
@@ -106,5 +109,5 @@ pub(super) fn recover(info: &libc::siginfo_t) -> bool {
     let Some(page) = page_to_recover(address, page_size, Some(region), in_image) else {
         return false;
     };
-    super::map_zeros_over(page, page_size)
+    super::unix::map_zeros_over(page, page_size)
 }

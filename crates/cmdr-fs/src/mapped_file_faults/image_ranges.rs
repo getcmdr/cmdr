@@ -1,7 +1,7 @@
 //! A fixed table of address ranges a signal handler can read without a lock.
 //!
 //! macOS fills one with every loaded image's extent, from dyld's add-image callback in normal
-//! context, and [`recover`](super::recover) asks it whether a fault address is an image's.
+//! context, and `recover` asks it whether a fault address is an image's.
 //! Append-only, so a reader never sees a slot reused under it: an unloaded image's slot is zeroed
 //! and stays dead. A table that ran out of slots says so through [`RangeTable::is_complete`],
 //! and the handler then recovers nothing, since an image it couldn't record would read as fair

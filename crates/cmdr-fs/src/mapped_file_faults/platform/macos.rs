@@ -7,9 +7,12 @@
 use std::sync::Once;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
-use super::image_ranges::RangeTable;
+use super::super::image_ranges::RangeTable;
 use super::verdict::{Region, page_to_recover};
 use crate::process_memory::{VmRegionSubmapInfo64, mach_vm_region_recurse};
+
+#[cfg(any(test, feature = "testing"))]
+pub(crate) use super::unix::install_test_handler;
 
 /// Room for every image a Cmdr process loads (several hundred, most of them in the shared
 /// cache) with plenty to spare. Past it, recovery switches off rather than guess.
@@ -70,7 +73,7 @@ unsafe extern "C" {
     static mach_task_self_: libc::mach_port_t;
 }
 
-pub(super) fn prepare() {
+pub(crate) fn prepare() {
     static ONCE: Once = Once::new();
     ONCE.call_once(|| {
         // SAFETY: `_SC_PAGESIZE` is a valid `sysconf` name with no side effects.
@@ -184,7 +187,7 @@ fn region_at(address: u64) -> Option<Region> {
 }
 
 /// Async-signal-safe: atomic loads, one Mach trap, one `mmap`.
-pub(super) fn recover(info: &libc::siginfo_t) -> bool {
+pub(crate) fn recover_page(info: &libc::siginfo_t) -> bool {
     if !READY.load(Ordering::SeqCst) || !IMAGES.is_complete() {
         return false;
     }
@@ -193,18 +196,18 @@ pub(super) fn recover(info: &libc::siginfo_t) -> bool {
     let Some(page) = page_to_recover(address, page_size, region_at(address), IMAGES.contains(address)) else {
         return false;
     };
-    super::map_zeros_over(page, page_size)
+    super::unix::map_zeros_over(page, page_size)
 }
 
 /// Whether `address` lies in a loaded image, for the tests that prove the table is filled.
 #[cfg(test)]
-pub(super) fn is_in_image(address: u64) -> bool {
+pub(crate) fn is_in_image(address: u64) -> bool {
     IMAGES.contains(address)
 }
 
-/// What [`recover`] would decide for `address`, without a fault, for the tests.
+/// What [`recover_page`] would decide for `address`, without a fault, for the tests.
 #[cfg(test)]
-pub(super) fn would_recover(address: u64) -> bool {
+pub(crate) fn would_recover(address: u64) -> bool {
     page_to_recover(
         address,
         PAGE_SIZE.load(Ordering::SeqCst),

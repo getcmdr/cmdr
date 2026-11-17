@@ -349,6 +349,9 @@ fn raw_entry_bytes(path: &Path, name: &str) -> Vec<u8> {
 
 // ---- Data-safety: metadata preservation --------------------------------------
 
+// Unix: a mode and xattrs to keep. Windows' read-only attribute and alternate data streams
+// are the windows-port plan's task 36.
+#[cfg(unix)]
 #[test]
 fn an_edit_keeps_the_archive_mode_and_xattrs_and_dates_it_now() {
     use std::os::unix::fs::PermissionsExt;

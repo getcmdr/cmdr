@@ -314,8 +314,8 @@
       "reason": "One cohesive job: the server-side copy (one `CopyObject`, or an `UploadPartCopy` multipart with its retry window and abort). It reached the limit when its log lines started marking every key by kind (one value per line); splitting the retry window from the part sender would cut the one loop that owns both."
     },
     "crates/cmdr-sftp/src/transport.rs": {
-      "lines": 945,
-      "reason": "The crate's headline invariant is that `russh` is named in exactly one module so a breaking minor stays one file's problem (eight breaking minors in eight months), stated in the module doc and again in `crates/cmdr-sftp/CLAUDE.md`; everything russh-free has already been pushed out to `auth.rs`, `trust.rs`, `known_hosts.rs`, `extensions.rs`, and `errors.rs`, so what remains is one dial conversation (`open_session` to `authenticate` to `hello`) plus the `PendingEngine` teardown guard and the two `Handler` impls, under a 57-line module doc for the three abort hazards the shape defends against."
+      "lines": 1040,
+      "reason": "The crate's headline invariant is that `russh` is named in exactly one module so a breaking minor stays one file's problem (eight breaking minors in eight months), stated in the module doc and again in `crates/cmdr-sftp/CLAUDE.md`; everything russh-free has already been pushed out to `auth.rs`, `trust.rs`, `known_hosts.rs`, `extensions.rs`, and `errors.rs`, so what remains is one dial conversation (`open_session` to `authenticate` to `hello`) plus the `PendingEngine` teardown guard and the two `Handler` impls, under a 57-line module doc for the three abort hazards the shape defends against. The per-OS agent connect sits in its `transport/platform/` seam, still inside this module."
     },
     "crates/cmdr-smb/src/volume/volume_impl.rs": {
       "lines": 832,

@@ -2824,7 +2824,7 @@ stops at undefined behavior, and its first run found some (`crates/cmdr-fs/DETAI
 - **Scope is the modules whose `unsafe` is pure Rust.** Miri can't cross FFI, and most of Cmdr's `unsafe` is FFI
   (AppKit, CoreFoundation, libc, Mach). The site-by-site classification is on GitHub issue #887. To add a module, add a
   `miriTargets` entry; for pure-Rust `unsafe` whose only callers are FFI callbacks, write a test that hands it
-  Rust-built memory, as `mapped_file_faults/macos_test.rs` does with Mach-O headers.
+  Rust-built memory, as `mapped_file_faults/platform/macos_test.rs` does with Mach-O headers.
 - **A test in a listed module that reaches FFI or the file system carries `#[cfg_attr(miri, ignore = "<why>")]`**, so
   the rest of its module still runs. Miri's default isolation refuses file-system calls, and the lane keeps it on.
 - **`-Zmiri-strict-provenance`**: an integer-to-pointer cast is an error, since Miri can miss a pointer bug behind one.
