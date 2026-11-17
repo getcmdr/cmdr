@@ -4687,13 +4687,13 @@
     },
     {
       "name": "@formatjs/icu-messageformat-parser",
-      "version": "3.5.22",
+      "version": "3.5.23",
       "license": "MIT",
       "url": "https://github.com/formatjs/formatjs#readme"
     },
     {
       "name": "@formatjs/icu-skeleton-parser",
-      "version": "2.1.12",
+      "version": "2.1.13",
       "license": "MIT",
       "url": "https://github.com/formatjs/formatjs#readme"
     },
@@ -4783,13 +4783,13 @@
     },
     {
       "name": "@tauri-apps/plugin-opener",
-      "version": "2.7.2",
+      "version": "2.7.3",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/tauri-apps/plugins-workspace#readme"
     },
     {
       "name": "@tauri-apps/plugin-store",
-      "version": "2.5.0",
+      "version": "2.5.1",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/tauri-apps/plugins-workspace#readme"
     },
@@ -5311,7 +5311,7 @@
     },
     {
       "name": "intl-messageformat",
-      "version": "12.1.4",
+      "version": "12.1.5",
       "license": "BSD-3-Clause",
       "url": "https://github.com/formatjs/formatjs"
     },
