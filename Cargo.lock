@@ -1413,7 +1413,6 @@ dependencies = [
  "blake3",
  "block2 0.6.2",
  "bytes",
- "chrono",
  "cmdr-about",
  "cmdr-adb",
  "cmdr-archive",

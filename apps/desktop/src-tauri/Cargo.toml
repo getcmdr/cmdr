@@ -223,7 +223,6 @@ tauri-plugin-clipboard-manager = "2"
 notify-debouncer-full = "0.7.0"
 bincode2 = "2"
 tauri-plugin-fs = "2.4.4"
-chrono = "0.4"
 # Time: instants, zones, and the exact RFC 3339 bytes we write (`src/timestamps.rs`).
 jiff = "0.2.43"
 ed25519-dalek = { version = "3.0", features = ["rand_core"] }

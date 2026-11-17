@@ -69,12 +69,6 @@ ignore = [
   # already build `rsa 0.10.0-rc.18`, so being on the 0.10 line is NOT the fix.
   # Watch those two issues, and drop this entry the day a patched version exists.
   "RUSTSEC-2023-0071",
-  # `chrono` is unmaintained (a notice, no known vulnerability). It's flagged only
-  # because our own crates still depend on it directly while they move to `jiff`.
-  # Drop this entry once that migration removes the last direct `chrono` dep; the
-  # transitive copies (rmcp/schemars, russh-util, trash, vendored rc-zip) fall
-  # outside `unmaintained = "workspace"` (verified 2026-11-17).
-  "RUSTSEC-2026-0543",
 ]
 
 [licenses]
@@ -103,6 +97,15 @@ multiple-versions = "allow"
 wildcards = "deny"
 highlight = "all"
 allow-wildcard-paths = true # cmdr is private (BSL)
+deny = [
+  # `chrono` is unmaintained (RUSTSEC-2026-0543); Cmdr's own crates use `jiff`
+  # (`apps/desktop/src-tauri/src/timestamps.rs` owns the exact bytes we write).
+  # Only these third-party parents may pull it in, so no Cmdr crate can depend on
+  # it directly again. The list is `cargo tree -i chrono -e normal,build,dev
+  # --depth 1` for the macOS targets above (2026-11-17); drop a wrapper once its
+  # crate moves off chrono.
+  { crate = "chrono", wrappers = ["rc-zip", "rmcp", "schemars"] },
+]
 
 [sources]
 unknown-registry = "deny"

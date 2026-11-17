@@ -1,6 +1,7 @@
-//! Every expected string here was produced by chrono 0.4.45 (`to_rfc3339`,
-//! `to_rfc3339_opts(SecondsFormat::Millis, true)`, and `format("%Y-%m-%dT%H:%M:%S%.3f%:z")`) for
-//! the same instant, 2026-11-17. The literals are the proof that the bytes didn't move.
+//! Every expected string here is a literal golden: the exact bytes Cmdr has always written, which
+//! files from older builds still carry. They were generated with chrono 0.4.45 (`to_rfc3339`,
+//! `to_rfc3339_opts(SecondsFormat::Millis, true)`, and `format("%Y-%m-%dT%H:%M:%S%.3f%:z")`), the
+//! crate Cmdr used before jiff.
 
 use jiff::Timestamp;
 use jiff::tz::Offset;
@@ -10,7 +11,7 @@ use super::*;
 /// 2026-11-17T12:34:56Z.
 const BASE: i64 = 1_794_918_896;
 
-/// An instant as chrono built it: whole Unix seconds plus non-negative nanos into that second.
+/// An instant from whole Unix seconds plus non-negative nanos into that second.
 fn at(secs: i64, nanos: u32) -> Timestamp {
     Timestamp::from_nanosecond(i128::from(secs) * 1_000_000_000 + i128::from(nanos))
         .expect("test instants are in range")
@@ -121,21 +122,21 @@ fn golden() -> Vec<(Timestamp, &'static str, &'static str, [&'static str; 3])> {
 const LOG_OFFSETS: [i32; 3] = [0, 7_200, -19_800];
 
 #[test]
-fn rfc3339_writes_chronos_bytes() {
+fn rfc3339_writes_the_pinned_bytes() {
     for (ts, expected, _, _) in golden() {
         assert_eq!(rfc3339(ts), expected, "instant {ts:?}");
     }
 }
 
 #[test]
-fn rfc3339_millis_z_writes_chronos_bytes() {
+fn rfc3339_millis_z_writes_the_pinned_bytes() {
     for (ts, _, expected, _) in golden() {
         assert_eq!(rfc3339_millis_z(ts), expected, "instant {ts:?}");
     }
 }
 
 #[test]
-fn log_file_stamp_writes_chronos_bytes_at_every_offset() {
+fn log_file_stamp_writes_the_pinned_bytes_at_every_offset() {
     for (ts, _, _, stamps) in golden() {
         for (seconds, expected) in LOG_OFFSETS.into_iter().zip(stamps) {
             let stamp = log_file_stamp(ts, offset(seconds));
@@ -164,9 +165,9 @@ fn local_offset_now_is_a_real_zone_offset() {
     assert!((-12 * 3_600..=14 * 3_600).contains(&seconds), "{seconds}");
 }
 
-/// `(input, instant)` cells chrono's `parse_from_rfc3339` produced.
+/// `(input, instant)` cells for every shape we've ever written or read.
 #[test]
-fn parse_rfc3339_accepts_what_chrono_accepted() {
+fn parse_rfc3339_accepts_every_shape_we_read() {
     let cells = [
         ("2026-11-17T12:34:56Z", at(BASE, 0)),
         ("2026-11-17T12:34:56z", at(BASE, 0)),
@@ -187,7 +188,7 @@ fn parse_rfc3339_accepts_what_chrono_accepted() {
 }
 
 #[test]
-fn parse_rfc3339_rejects_what_chrono_rejected() {
+fn parse_rfc3339_rejects_garbage_and_offsetless_input() {
     for input in [
         "",
         "not a date",
@@ -201,7 +202,7 @@ fn parse_rfc3339_rejects_what_chrono_rejected() {
 
 #[test]
 fn parse_rfc3339_rejects_more_than_nine_fraction_digits() {
-    // chrono truncated these; jiff refuses. Nothing we read writes more than nine.
+    // Nothing we read writes more than nine.
     assert_eq!(parse_rfc3339("2026-11-17T12:34:56.1234567891Z"), None);
 }
 
@@ -228,11 +229,11 @@ fn every_writer_round_trips() {
 }
 
 /// Saved servers rank `last_connected_at` by comparing the raw STRINGS, so a fresh row must sort
-/// after every older one, chrono-written rows included, even within one second and whatever
+/// after every older one, rows from older builds included, even within one second and whatever
 /// fraction digits each carries. A `Z` suffix would break this (`Z` sorts after `.` and `+`).
 #[test]
 fn rfc3339_rows_sort_by_time_as_strings() {
-    let old_chrono_rows = [
+    let older_rows = [
         "2026-11-17T12:34:55.999999999+00:00",
         "2026-11-17T12:34:56+00:00",
         "2026-11-17T12:34:56.000000001+00:00",
@@ -247,7 +248,7 @@ fn rfc3339_rows_sort_by_time_as_strings() {
         at(BASE + 1, 5_000),
     ]
     .map(rfc3339);
-    let rows: Vec<&str> = old_chrono_rows
+    let rows: Vec<&str> = older_rows
         .iter()
         .copied()
         .chain(fresh.iter().map(String::as_str))
