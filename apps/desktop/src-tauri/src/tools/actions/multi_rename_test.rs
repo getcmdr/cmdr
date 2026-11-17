@@ -246,10 +246,10 @@ mod media {
     use std::sync::{Arc, Mutex};
     use std::time::Duration;
 
-    use chrono::NaiveDate;
     use cmdr_listing::testing::{TestListing, TestListingGuard};
     use cmdr_local::reading::list_directory_core;
     use cmdr_media_meta::{MediaFacts, MediaField, ReadError};
+    use jiff::civil::date;
 
     use super::*;
     use crate::ignore_poison::IgnorePoison;
@@ -306,7 +306,7 @@ mod media {
     fn facts(job: &FileJob) -> Result<MediaFacts, ReadError> {
         match job.name.as_str() {
             "photo.jpg" => Ok(MediaFacts {
-                taken: NaiveDate::from_ymd_opt(2024, 5, 6).and_then(|d| d.and_hms_opt(7, 8, 9)),
+                taken: Some(date(2024, 5, 6).at(7, 8, 9, 0)),
                 ..MediaFacts::default()
             }),
             "song.mp3" => Ok(MediaFacts {

@@ -2,8 +2,8 @@
 //! (`MediaField`), formatted by the field's kind. A child of `mask`, so it shares
 //! the mask's own date letters, ranges, and padding.
 
-use chrono::NaiveDateTime;
 use cmdr_media_meta::{FieldKind, MediaFacts, MediaField, MediaValue};
+use jiff::civil::DateTime;
 
 use super::{
     DatePart, FieldGap, MAX_COUNTER_DIGITS, Range, RowFacts, RowMedia, Token, date, date_parts, pad, placeholder,
@@ -114,7 +114,7 @@ impl MediaToken {
     }
 
     /// `when` in the token's date format, or as `[d] [t]` with none.
-    fn date_text(&self, when: &NaiveDateTime) -> String {
+    fn date_text(&self, when: &DateTime) -> String {
         match &self.format {
             MediaFormat::Date(parts) => date(when, parts),
             _ => date(

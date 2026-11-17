@@ -75,9 +75,10 @@ sevenz-rust2 = { version = "0.25.0", default-features = false, features = [
 ] }
 # Wipes the per-archive password from memory on drop (`Zeroizing<String>`).
 zeroize = "1.9.0"
-# The MS-DOS date/time a preserved zip entry carries: `SystemTime` has to become
-# broken-down local-free UTC fields before `zip::DateTime` can take them.
-chrono = "0.4"
+# Zip entry times: the MS-DOS field is the writer's local wall clock, so a written
+# `SystemTime` and a read DOS-only time both go through the machine's zone
+# (`TimeZone::system()`), DST gaps and folds included.
+jiff = "0.2.43"
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 # A `ReadAt` cursor over a local `File`, for the local byte source. The browser

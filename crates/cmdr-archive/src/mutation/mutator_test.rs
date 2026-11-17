@@ -833,15 +833,17 @@ struct StampedTimes {
     local_header_has_extended: bool,
 }
 
-fn stamp_and_read_back(utc: (i32, u32, u32, u32, u32, u32), offset_hours: i32) -> StampedTimes {
-    use chrono::TimeZone;
+fn stamp_and_read_back(utc: (i16, i8, i8, i8, i8, i8), offset_hours: i8) -> StampedTimes {
     let (year, month, day, hour, minute, second) = utc;
-    let modified: std::time::SystemTime = chrono::Utc
-        .with_ymd_and_hms(year, month, day, hour, minute, second)
-        .single()
-        .expect("a real instant")
-        .into();
-    let zone = chrono::FixedOffset::east_opt(offset_hours * 3600).expect("a real offset");
+    let wall = DateTime::new(year, month, day, hour, minute, second, 0).expect("a real time");
+    let instant = jiff::tz::Offset::UTC.to_timestamp(wall).expect("a real instant");
+    #[expect(clippy::unnecessary_fallible_conversions, reason = "fallible from jiff 1.0")]
+    let modified = std::time::SystemTime::try_from(instant).expect("a SystemTime holds it");
+    stamp_instant_and_read_back(modified, offset_hours)
+}
+
+fn stamp_instant_and_read_back(modified: std::time::SystemTime, offset_hours: i8) -> StampedTimes {
+    let zone = TimeZone::fixed(jiff::tz::offset(offset_hours));
     let mut writer = ZipWriter::new(io::Cursor::new(Vec::new()));
     writer
         .start_file(
@@ -910,6 +912,23 @@ fn an_entry_time_outside_a_fields_range_leaves_that_field_out() {
     assert_eq!(late.dos, (2040, 6, 1, 12, 0, 0));
     assert_eq!(late.extended, None);
     assert!(!late.local_header_has_extended);
+
+    // Before 1970 neither field can.
+    let before_unix = stamp_and_read_back((1969, 12, 31, 23, 0, 0), 0);
+    assert_eq!(before_unix.dos, (1980, 1, 1, 0, 0, 0));
+    assert_eq!(before_unix.extended, None);
+}
+
+#[test]
+fn an_entry_time_past_year_9999_leaves_both_fields_out() {
+    // An SMB FILETIME reaches year 30,828; NTFS and Samba hand such times out.
+    let year_30828 = std::time::UNIX_EPOCH + std::time::Duration::from_secs(910_692_730_085);
+    for offset_hours in [0, 2, -8] {
+        let far = stamp_instant_and_read_back(year_30828, offset_hours);
+        assert_eq!(far.dos, (1980, 1, 1, 0, 0, 0), "UTC{offset_hours:+}");
+        assert_eq!(far.extended, None, "UTC{offset_hours:+}");
+        assert!(!far.local_header_has_extended, "UTC{offset_hours:+}");
+    }
 }
 
 // ---- Compression level on added entries ---------------------------------------

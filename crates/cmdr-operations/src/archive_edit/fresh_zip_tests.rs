@@ -87,7 +87,6 @@ fn extended_mtime(archive: &mut zip::ZipArchive<std::io::Cursor<Vec<u8>>>, index
 
 #[tokio::test]
 async fn producer_dates_entries_in_local_time_with_the_exact_utc_second_beside_it() {
-    use chrono::{Datelike, Timelike};
     // An odd second: the DOS field alone can't carry it.
     let mtime_secs: u32 = 1_600_000_001;
     let modified = std::time::UNIX_EPOCH + std::time::Duration::from_secs(u64::from(mtime_secs));
@@ -116,16 +115,17 @@ async fn producer_dates_entries_in_local_time_with_the_exact_utc_second_beside_i
 
     // Pre-fix there was no extended field at all, and the DOS field was UTC.
     assert_eq!(extended_mtime(&mut archive, 0), Some(mtime_secs));
-    let local = chrono::DateTime::<chrono::Local>::from(modified).naive_local();
+    let instant = jiff::Timestamp::from_second(i64::from(mtime_secs)).expect("in range");
+    let local = jiff::tz::TimeZone::system().to_datetime(instant);
     let dos = archive.by_index(0).expect("file").last_modified().expect("a DOS time");
     assert_eq!(
         (dos.year(), dos.month(), dos.day(), dos.hour(), dos.minute()),
         (
-            local.year() as u16,
-            local.month() as u8,
-            local.day() as u8,
-            local.hour() as u8,
-            local.minute() as u8
+            u16::try_from(local.year()).expect("a DOS year"),
+            u8::try_from(local.month()).expect("a month"),
+            u8::try_from(local.day()).expect("a day"),
+            u8::try_from(local.hour()).expect("an hour"),
+            u8::try_from(local.minute()).expect("a minute"),
         ),
         "the DOS field is this machine's wall-clock time"
     );

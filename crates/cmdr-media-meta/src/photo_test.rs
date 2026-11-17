@@ -298,6 +298,23 @@ fn olympus_and_panasonic_raw_signatures_read_as_tiff() {
 }
 
 #[test]
+fn exif_dates_read_as_the_cameras_wall_clock() {
+    let cells = [
+        ("2026:07:14 09:05:30", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2024:02:29 23:59:59", Some(at(2024, 2, 29, 23, 59, 59))),
+        ("2026:07:14 09:05:60", Some(at(2026, 7, 14, 9, 5, 59))),
+        ("1900:01:01 00:00:00", Some(at(1900, 1, 1, 0, 0, 0))),
+        ("2025:02:29 09:05:30", None),
+        ("2026:07:14 24:00:00", None),
+    ];
+    for (written, expected) in cells {
+        let fields = [ascii(Tag::DateTimeOriginal, written)];
+        let facts = read(jpeg(&[app1_exif(&fields)], 0)).unwrap();
+        assert_eq!(facts.taken, expected, "{written:?}");
+    }
+}
+
+#[test]
 fn unknown_content_is_not_supported() {
     assert_eq!(read(b"GIF89a....".to_vec()), Err(ReadError::NotSupported));
     assert_eq!(read(Vec::new()), Err(ReadError::NotSupported));

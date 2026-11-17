@@ -10,6 +10,7 @@
 use std::io::Read;
 use std::sync::Arc;
 
+use jiff::tz::TimeZone;
 use rc_zip::fsm::{ArchiveFsm, EntryFsm, FsmResult};
 use rc_zip::parse::Method;
 use rc_zip::{Entry, EntryKind};
@@ -78,15 +79,12 @@ fn recorded_permission_bits(entry: &Entry) -> Option<u32> {
 /// builder consumes, each paired with its [`ZipHandle`] (the read handle a later
 /// [`open_read`] uses). This is the only I/O in the zip parse path.
 pub(super) fn parse(source: &dyn ArchiveByteSource) -> Result<Vec<(RawEntry, ZipHandle)>, ArchiveError> {
-    parse_in(source, &chrono::Local)
+    parse_in(source, &TimeZone::system())
 }
 
 /// [`parse`] with the zone that stands for "local" spelled out, so a test
 /// doesn't depend on the machine's.
-fn parse_in<Tz: chrono::TimeZone>(
-    source: &dyn ArchiveByteSource,
-    local_zone: &Tz,
-) -> Result<Vec<(RawEntry, ZipHandle)>, ArchiveError> {
+fn parse_in(source: &dyn ArchiveByteSource, local_zone: &TimeZone) -> Result<Vec<(RawEntry, ZipHandle)>, ArchiveError> {
     let entries = parse_central_directory(source)?;
     // rc-zip reads a DOS-only entry's time as UTC; it's the writer's wall clock.
     let dos_only = zip_times::dos_only_wall_clocks(source, &entries);
@@ -100,10 +98,11 @@ fn parse_in<Tz: chrono::TimeZone>(
         .into_iter()
         .enumerate()
         .map(|(ordinal, entry)| {
-            let modified = match dos_only.as_ref().and_then(|walls| walls[ordinal]) {
-                Some(wall) => zip_times::wall_clock_to_unix(wall, local_zone),
-                None => entry.modified.timestamp(),
-            };
+            let modified = dos_only
+                .as_ref()
+                .and_then(|walls| walls[ordinal])
+                .and_then(|wall| zip_times::wall_clock_to_unix(wall, local_zone))
+                .unwrap_or_else(|| entry.modified.timestamp());
             let encrypted = is_encrypted(&entry);
             let raw = RawEntry {
                 name: entry.name.clone(),

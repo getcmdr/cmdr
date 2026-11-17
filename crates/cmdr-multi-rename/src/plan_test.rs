@@ -6,7 +6,7 @@ use std::path::Path;
 use super::mask::RowMedia;
 use super::plan::{
     Compiled, FOLDS, InvalidNameReason, MediaLookup, MultiRenameSpec, NameEdits, NoMedia, RenameExample, RowStatus,
-    SpecError, preview, preview_names, render_examples,
+    SpecError, local_time_in, preview, preview_names, render_examples,
 };
 use super::transform::{CaseChange, SEARCH_BUILDS};
 use cmdr_fs::entry::FileEntry;
@@ -604,6 +604,54 @@ fn a_typed_name_is_checked_like_any_other() {
     assert_eq!(out[0].1, RowStatus::Duplicate);
     assert_eq!(out[1].1, RowStatus::Duplicate);
     assert!(matches!(out[2].1, RowStatus::InvalidName { .. }));
+}
+
+#[test]
+fn a_modified_time_reads_as_the_zones_wall_clock_through_year_9999() {
+    use jiff::civil::date;
+    use jiff::tz::{Offset, TimeZone};
+
+    let cet = TimeZone::posix("CET-1CEST,M3.5.0,M10.5.0/3").expect("a valid POSIX zone");
+    let utc_minus_five = TimeZone::fixed(Offset::from_seconds(-5 * 3600).expect("a valid offset"));
+    let cells = [
+        (
+            "CET summer",
+            1_781_557_809,
+            &cet,
+            Some(date(2026, 6, 15).at(23, 10, 9, 0)),
+        ),
+        (
+            "CET winter",
+            1_768_478_400,
+            &cet,
+            Some(date(2026, 1, 15).at(13, 0, 0, 0)),
+        ),
+        (
+            "UTC-5",
+            1_768_478_400,
+            &utc_minus_five,
+            Some(date(2026, 1, 15).at(7, 0, 0, 0)),
+        ),
+        (
+            "the epoch",
+            0,
+            &utc_minus_five,
+            Some(date(1969, 12, 31).at(19, 0, 0, 0)),
+        ),
+        (
+            "the last instant",
+            253_402_207_200,
+            &TimeZone::UTC,
+            Some(date(9999, 12, 30).at(22, 0, 0, 0)),
+        ),
+        // Past year 9999 there's no date to read: the row is undated.
+        ("year 10000", 253_402_300_800, &TimeZone::UTC, None),
+        ("the last SMB FILETIME", 910_692_730_085, &cet, None),
+        ("past i64", u64::MAX, &cet, None),
+    ];
+    for (name, unix_seconds, zone, expected) in cells {
+        assert_eq!(local_time_in(unix_seconds, zone), expected, "{name}");
+    }
 }
 
 #[test]

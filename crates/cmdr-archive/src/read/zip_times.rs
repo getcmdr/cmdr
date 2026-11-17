@@ -15,7 +15,8 @@
 
 use std::io::{BufReader, Read};
 
-use chrono::{LocalResult, NaiveDate, NaiveDateTime, Offset, TimeZone};
+use jiff::civil::DateTime;
+use jiff::tz::{AmbiguousOffset, Offset, TimeZone};
 use rc_zip::Entry;
 
 use super::source::ArchiveByteSource;
@@ -48,10 +49,7 @@ const PKWARE_UNIX_TAG: u16 = 0x000d;
 ///
 /// `None` overall when the walk can't line up with `entries`, rc-zip's parse of
 /// the same directory: then the caller keeps rc-zip's times for every entry.
-pub(super) fn dos_only_wall_clocks(
-    source: &dyn ArchiveByteSource,
-    entries: &[Entry],
-) -> Option<Vec<Option<NaiveDateTime>>> {
+pub(super) fn dos_only_wall_clocks(source: &dyn ArchiveByteSource, entries: &[Entry]) -> Option<Vec<Option<DateTime>>> {
     let (offset, size) = locate_central_directory(source)?;
     let mut reader = BufReader::with_capacity(64 * 1024, SourceAt { source, offset });
     let mut consumed = 0u64;
@@ -84,17 +82,18 @@ pub(super) fn dos_only_wall_clocks(
 
 /// A wall-clock time in `zone` as Unix seconds.
 ///
-/// An ambiguous clock (the hour a fall-back repeats) takes the earlier instant;
-/// a skipped one (the hour a spring-forward jumps over, which no clock in that
-/// zone showed) takes the offset in force just before the jump.
-pub(super) fn wall_clock_to_unix<Tz: TimeZone>(wall: NaiveDateTime, zone: &Tz) -> i64 {
-    match zone.from_local_datetime(&wall) {
-        LocalResult::Single(at) | LocalResult::Ambiguous(at, _) => at.timestamp(),
-        LocalResult::None => {
-            let offset = zone.offset_from_utc_datetime(&wall).fix();
-            wall.and_utc().timestamp() - i64::from(offset.local_minus_utc())
-        }
-    }
+/// An ambiguous clock (the hour a fall-back repeats) takes the earlier instant.
+/// A skipped one (the hour a spring-forward jumps over, which no clock in that
+/// zone showed) takes the offset in force at the instant whose UTC reading equals
+/// the wall clock: the post-jump offset east of UTC, the pre-jump one west of it.
+/// `None` only for a wall clock past jiff's range, which no DOS field reaches.
+pub(super) fn wall_clock_to_unix(wall: DateTime, zone: &TimeZone) -> Option<i64> {
+    let wall_as_utc = Offset::UTC.to_timestamp(wall).ok()?;
+    let offset = match zone.to_ambiguous_timestamp(wall).offset() {
+        AmbiguousOffset::Unambiguous { offset } | AmbiguousOffset::Fold { before: offset, .. } => offset,
+        AmbiguousOffset::Gap { .. } => zone.to_offset(wall_as_utc),
+    };
+    Some(wall_as_utc.as_second() - i64::from(offset.seconds()))
 }
 
 /// Where the central directory starts and how long it is, found the way rc-zip
@@ -171,14 +170,14 @@ fn ntfs_has_times(payload: &[u8]) -> bool {
 }
 
 /// An MS-DOS date and time as a wall clock, or `None` when it isn't a real one.
-fn dos_wall_clock(date: u16, time: u16) -> Option<NaiveDateTime> {
-    let day = u32::from(date & 0x1f);
-    let month = u32::from((date >> 5) & 0x0f);
-    let year = i32::from(date >> 9) + 1980;
-    let second = u32::from(time & 0x1f) * 2;
-    let minute = u32::from((time >> 5) & 0x3f);
-    let hour = u32::from(time >> 11);
-    NaiveDate::from_ymd_opt(year, month, day)?.and_hms_opt(hour, minute, second)
+fn dos_wall_clock(date: u16, time: u16) -> Option<DateTime> {
+    let day = (date & 0x1f) as i8;
+    let month = ((date >> 5) & 0x0f) as i8;
+    let year = (date >> 9) as i16 + 1980;
+    let second = (time & 0x1f) as i8 * 2;
+    let minute = ((time >> 5) & 0x3f) as i8;
+    let hour = (time >> 11) as i8;
+    DateTime::new(year, month, day, hour, minute, second, 0).ok()
 }
 
 /// `len` bytes at `offset`, or `None` on a short or failed read.

@@ -3,10 +3,11 @@
 
 use std::io::{self, Read, Seek};
 
-use chrono::{NaiveDateTime, TimeDelta};
+use jiff::SignedDuration;
+use jiff::civil::DateTime;
 
 use crate::bytes::{be_u32, be_u64, file_len, read_exact_at, read_up_to_at, read_vec_at};
-use crate::clock::{ToLocal, container_time, epoch};
+use crate::clock::{ToLocal, container_time, epoch, leading_wall_clock};
 use crate::types::MediaFacts;
 
 /// The most children one box's walk visits: a real `moov` has a few dozen, so a
@@ -131,7 +132,7 @@ pub(crate) fn read_video<R: Read + Seek>(reader: &mut R, to_local: ToLocal<'_>) 
 
 /// `mvhd`'s creation time, UTC: seconds since 1904-01-01, 32-bit in version 0
 /// and 64-bit in version 1. Zero and implausible times are absent.
-fn read_mvhd<R: Read + Seek>(reader: &mut R, mvhd: Atom) -> io::Result<Option<NaiveDateTime>> {
+fn read_mvhd<R: Read + Seek>(reader: &mut R, mvhd: Atom) -> io::Result<Option<DateTime>> {
     let mut head = [0u8; 12];
     let len = read_up_to_at(reader, mvhd.body, &mut head)?;
     let head = &head[..len];
@@ -142,8 +143,7 @@ fn read_mvhd<R: Read + Seek>(reader: &mut R, mvhd: Atom) -> io::Result<Option<Na
     };
     Ok(seconds
         .and_then(|s| i64::try_from(s).ok())
-        .and_then(TimeDelta::try_seconds)
-        .and_then(|delta| container_time(epoch(1904), delta)))
+        .and_then(|s| container_time(epoch(1904), SignedDuration::from_secs(s))))
 }
 
 /// Apple's `moov/meta`: `keys` names each `ilst` item by 1-based index. Fills
@@ -220,8 +220,6 @@ fn read_utf8_data<R: Read + Seek>(reader: &mut R, item: Atom) -> io::Result<Opti
 
 /// `2026-07-14T09:05:30+0200` → 09:05:30 on that day: the wall time the phone
 /// showed, like EXIF's. The offset is ignored.
-fn parse_apple_date(text: &str) -> Option<NaiveDateTime> {
-    NaiveDateTime::parse_and_remainder(text.trim(), "%Y-%m-%dT%H:%M:%S")
-        .ok()
-        .map(|(time, _offset)| time)
+fn parse_apple_date(text: &str) -> Option<DateTime> {
+    leading_wall_clock(text.trim(), "%Y-%m-%dT%H:%M:%S")
 }

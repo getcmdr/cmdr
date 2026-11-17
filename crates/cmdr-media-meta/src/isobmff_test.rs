@@ -129,6 +129,50 @@ fn hostile_sizes_end_the_walk() {
     }
 }
 
+#[test]
+fn apple_dates_read_as_the_wall_time_in_every_shape_a_phone_writes() {
+    let cells = [
+        ("2026-07-14T09:05:30+0200", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2026-07-14T09:05:30-0700", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2026-07-14T09:05:30Z", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2026-07-14T09:05:30", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2026-07-14T09:05:30.123+0200", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("  2026-07-14T09:05:30+0200\n", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2026-7-4T9:5:3+0200", Some(at(2026, 7, 4, 9, 5, 3))),
+        ("2024-02-29T23:59:59+0100", Some(at(2024, 2, 29, 23, 59, 59))),
+        ("2026-07-14 09:05:30+0200", None),
+        ("2026-07-14T09:05+0200", None),
+        ("2025-02-29T09:05:30+0200", None),
+        ("2026-07-14T24:00:00+0200", None),
+        ("12026-07-14T09:05:30+0200", None),
+        ("sometime in July", None),
+        ("", None),
+    ];
+    for (written, expected) in cells {
+        let moov = atom(
+            b"moov",
+            &concat(&[
+                &mvhd_v0(0),
+                &apple_meta(&[("com.apple.quicktime.creationdate", written)]),
+            ]),
+        );
+        assert_eq!(read(concat(&[&ftyp(b"qt  "), &moov])).taken, expected, "{written:?}");
+    }
+}
+
+#[test]
+fn an_mvhd_time_counts_up_to_2199_and_no_further() {
+    let last = mac_seconds(at(2199, 12, 31, 21, 59, 59));
+    let facts = read(concat(&[&ftyp(b"isom"), &atom(b"moov", &mvhd_v1(last))]));
+    assert_eq!(facts.taken, Some(at(2199, 12, 31, 23, 59, 59)));
+
+    let past = mac_seconds(at(2200, 1, 1, 0, 0, 0));
+    for seconds in [past, i64::MAX.unsigned_abs() / 1000, i64::MAX.unsigned_abs(), u64::MAX] {
+        let facts = read(concat(&[&ftyp(b"isom"), &atom(b"moov", &mvhd_v1(seconds))]));
+        assert_eq!(facts.taken, None, "{seconds}");
+    }
+}
+
 /// A `keys` body claiming `count` keys and holding none.
 fn full_keys_claiming(count: u32) -> Vec<u8> {
     concat(&[&[0; 4], &count.to_be_bytes()])

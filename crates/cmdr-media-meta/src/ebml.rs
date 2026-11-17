@@ -3,10 +3,11 @@
 
 use std::io::{self, Read, Seek};
 
-use chrono::{NaiveDateTime, TimeDelta};
+use jiff::SignedDuration;
+use jiff::civil::DateTime;
 
 use crate::bytes::{file_len, read_up_to_at, read_vec_at};
-use crate::clock::{ToLocal, container_time, epoch};
+use crate::clock::{ToLocal, container_time, epoch, leading_wall_clock};
 use crate::types::MediaFacts;
 
 const EBML_HEADER: u32 = 0x1A45_DFA3;
@@ -57,7 +58,7 @@ struct SimpleTag {
 /// What the walk collects before it's turned into facts.
 #[derive(Default)]
 struct Found {
-    date_utc: Option<NaiveDateTime>,
+    date_utc: Option<DateTime>,
     tags: Vec<SimpleTag>,
 }
 
@@ -149,7 +150,7 @@ fn visit<R: Read + Seek>(
                 if child.id == DATE_UTC
                     && let Some(nanos) = read_int(reader, child)?
                 {
-                    found.date_utc = container_time(epoch(2001), TimeDelta::nanoseconds(nanos));
+                    found.date_utc = container_time(epoch(2001), SignedDuration::from_nanos(nanos));
                 }
             }
             Ok(())
@@ -280,12 +281,11 @@ fn facts_from(found: Found, to_local: ToLocal<'_>) -> MediaFacts {
 }
 
 /// `YYYY-MM-DD hh:mm:ss[.mss]` (or with a `T`), as Matroska writes dates.
-fn parse_date(text: &str) -> Option<NaiveDateTime> {
+fn parse_date(text: &str) -> Option<DateTime> {
     let text = text.trim_matches(|c: char| c.is_whitespace() || c == '\0');
     ["%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"]
         .iter()
-        .find_map(|format| NaiveDateTime::parse_and_remainder(text, format).ok())
-        .map(|(time, _fraction)| time)
+        .find_map(|format| leading_wall_clock(text, format))
 }
 
 /// The whole number `text` starts with (`3`, `3/12`).

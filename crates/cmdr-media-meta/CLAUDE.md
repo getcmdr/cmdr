@@ -12,7 +12,8 @@ links but never calls.
   `MediaValue`, `ReadError` (with its `io::Error` round trip), `is_media_name`.
 - `read.rs`: `read_media` (any `Read + Seek`) and `read_media_from` (a `ByteSource`, cover art holed), dispatching by
   extension to `photo.rs` (EXIF), `lofty` (tags), `isobmff.rs` (MP4/MOV dates), and `ebml.rs` (MKV/WebM). `holes.rs`
-  maps cover art a tag parser would read only to skip; `clock.rs` turns container UTC into local time; `bytes.rs` reads.
+  maps cover art a tag parser would read only to skip; `clock.rs` turns container UTC into local time and reads text
+  wall clocks; `bytes.rs` reads.
 - `source.rs`: `ByteSource`, `VolumeByteSource` (the async bridge), `BlockReader` (64 KiB blocks, byte budget, holes).
 
 ## Must-knows

@@ -17,8 +17,16 @@ use config::BenchConfig;
 /// Test file counts and sizes. Turn these down during development, up for real benchmarks.
 /// Each suite is run independently against both native and direct methods.
 const SUITES: &[Suite] = &[
-    Suite { name: "small", file_count: 500, file_size_bytes: 100 * 1024 },       // 500 × 100 KB
-    Suite { name: "medium", file_count: 10, file_size_bytes: 10 * 1024 * 1024 }, // 10 × 10 MB
+    Suite {
+        name: "small",
+        file_count: 500,
+        file_size_bytes: 100 * 1024,
+    }, // 500 × 100 KB
+    Suite {
+        name: "medium",
+        file_count: 10,
+        file_size_bytes: 10 * 1024 * 1024,
+    }, // 10 × 10 MB
 ];
 
 /// How many times to repeat each operation (after one warmup run).

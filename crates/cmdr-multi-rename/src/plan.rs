@@ -8,8 +8,10 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
-use chrono::{Local, NaiveDateTime, TimeZone};
 use cmdr_fs::name_fold::fold_name;
+use jiff::Timestamp;
+use jiff::civil::{self, DateTime};
+use jiff::tz::TimeZone;
 use serde::{Deserialize, Serialize};
 use unicode_normalization::UnicodeNormalization;
 
@@ -301,12 +303,12 @@ pub struct RenameExample {
 const EXAMPLE_PARENT: &str = "Lisbon 2026";
 const EXAMPLE_GRANDPARENT: &str = "Trips";
 /// When every example file last changed: 2026-07-14 09:05:30.
-const EXAMPLE_MODIFIED: (i32, u32, u32, u32, u32, u32) = (2026, 7, 14, 9, 5, 30);
+const EXAMPLE_MODIFIED: DateTime = civil::date(2026, 7, 14).at(9, 5, 30, 0);
 
 /// What every example file says about itself: a phone photo, taken when it was
 /// last changed, that's also tagged like a song, so one file shows every field.
 /// It has no comment.
-fn example_media(taken: Option<NaiveDateTime>) -> MediaFacts {
+fn example_media(taken: Option<DateTime>) -> MediaFacts {
     MediaFacts {
         taken,
         make: Some("Apple".to_string()),
@@ -335,8 +337,7 @@ fn example_media(taken: Option<NaiveDateTime>) -> MediaFacts {
 /// run, or a media field the file has no value for. Made-up files rather than
 /// the batch's own, so a tooltip never depends on what's selected.
 pub fn render_examples(examples: &[RenameExample]) -> Vec<Option<String>> {
-    let (y, mo, d, h, mi, s) = EXAMPLE_MODIFIED;
-    let modified = chrono::NaiveDate::from_ymd_opt(y, mo, d).and_then(|date| date.and_hms_opt(h, mi, s));
+    let modified = Some(EXAMPLE_MODIFIED);
     let media = example_media(modified);
     examples
         .iter()
@@ -369,9 +370,18 @@ pub fn folder_names(dir: &Path) -> (Cow<'_, str>, Cow<'_, str>) {
     (parent, grandparent)
 }
 
-fn local_time(unix_seconds: u64) -> Option<NaiveDateTime> {
-    let seconds = i64::try_from(unix_seconds).ok()?;
-    Local.timestamp_opt(seconds, 0).single().map(|t| t.naive_local())
+/// A Unix-seconds date as this machine's wall-clock time, as the preview reads
+/// `modified`. In the browser, `TimeZone::system()` asks the page's `Intl` (jiff's
+/// `js` feature, which the browser host turns on).
+pub(crate) fn local_time(unix_seconds: u64) -> Option<DateTime> {
+    local_time_in(unix_seconds, &TimeZone::system())
+}
+
+/// [`local_time`] in `zone`. `None` past year 9999 (an SMB FILETIME reaches 30,828):
+/// the row reads as undated, like a file with no modified time.
+pub(crate) fn local_time_in(unix_seconds: u64, zone: &TimeZone) -> Option<DateTime> {
+    let instant = Timestamp::from_second(i64::try_from(unix_seconds).ok()?).ok()?;
+    Some(zone.to_datetime(instant))
 }
 
 /// The preview for `rows` (in rename order) of the folder at `dir`, whose every

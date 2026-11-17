@@ -17,7 +17,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
-use chrono::{Local, NaiveDateTime, TimeZone};
 use serde::{Deserialize, Serialize};
 use unicode_normalization::UnicodeNormalization;
 
@@ -29,7 +28,7 @@ use cmdr_fs::rt::{self, Instant, Runtime};
 use cmdr_media_meta::{MediaFacts, MediaField, ReadError, is_media_name};
 
 use crate::mask::{FieldGap, FieldText, MediaToken, RowFacts, RowMedia};
-use crate::plan::{MediaLookup, folder_names};
+use crate::plan::{MediaLookup, folder_names, local_time};
 
 const LOG_TARGET: &str = "multi_rename::media";
 
@@ -695,12 +694,6 @@ impl SessionMedia {
         });
         FieldSamples { samples, usage }
     }
-}
-
-/// A Unix-seconds date as local wall-clock time, as the preview reads `modified`.
-fn local_time(unix_seconds: u64) -> Option<NaiveDateTime> {
-    let seconds = i64::try_from(unix_seconds).ok()?;
-    Local.timestamp_opt(seconds, 0).single().map(|t| t.naive_local())
 }
 
 /// The cache, copied for one preview. A file whose listing entry no longer

@@ -151,6 +151,42 @@ fn every_truncation_reads_without_failing() {
 }
 
 #[test]
+fn date_recorded_reads_in_every_shape_matroska_writers_use() {
+    let cells = [
+        ("2026-07-14 09:05:30", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2026-07-14 09:05:30.123", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2026-07-14T09:05:30", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2026-07-14T09:05:30Z", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2026-07-14 09:05:30+02:00", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2026-07-14 09:05:30\0", Some(at(2026, 7, 14, 9, 5, 30))),
+        (" 2026-07-14 09:05:30\0\0 ", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2026-7-4 9:5:3", Some(at(2026, 7, 4, 9, 5, 3))),
+        ("2026-07-14  09:05:30", Some(at(2026, 7, 14, 9, 5, 30))),
+        ("2026-07-14", None),
+        ("2026-07-14 09:05", None),
+        ("2025-02-29 09:05:30", None),
+        ("2026-07-14 24:00:00", None),
+        ("12026-07-14 09:05:30", None),
+        ("July 14th", None),
+    ];
+    for (written, expected) in cells {
+        let tags = el(TAGS, &tag_at(50, &[("DATE_RECORDED", written)]));
+        assert_eq!(read(segment(&[&tags])).taken, expected, "{written:?}");
+    }
+}
+
+#[test]
+fn a_date_utc_counts_up_to_2199_and_no_further() {
+    let last = matroska_nanos(at(2199, 12, 31, 21, 59, 59));
+    assert_eq!(
+        read(segment(&[&info_with_date(last)])).taken,
+        Some(at(2199, 12, 31, 23, 59, 59))
+    );
+    let past = matroska_nanos(at(2200, 1, 1, 0, 0, 0));
+    assert_eq!(read(segment(&[&info_with_date(past)])).taken, None);
+}
+
+#[test]
 fn hostile_elements_end_the_walk() {
     for bytes in [
         // Not EBML at all.

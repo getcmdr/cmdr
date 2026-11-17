@@ -364,7 +364,7 @@ pub(crate) struct DebugStats {
 
 impl DebugStats {
     fn new() -> Self {
-        let now = chrono::Local::now().format("%H:%M:%S%.3f").to_string();
+        let now = wall_clock_stamp();
         Self {
             must_scan_sub_dirs_count: AtomicU64::new(0),
             must_scan_rescans_completed: AtomicU64::new(0),
@@ -403,7 +403,7 @@ impl DebugStats {
     pub(crate) fn record_must_scan(&self, path: &str) {
         self.must_scan_sub_dirs_count.fetch_add(1, Ordering::Relaxed);
         if let Ok(mut paths) = self.recent_must_scan_paths.lock() {
-            let now = chrono::Local::now().format("%H:%M:%S%.3f").to_string();
+            let now = wall_clock_stamp();
             paths.push((now, path.to_string()));
             if paths.len() > 50 {
                 let excess = paths.len() - 50;
@@ -424,7 +424,7 @@ impl DebugStats {
         if let Ok(mut paths) = self.recent_must_scan_paths.lock() {
             paths.clear();
         }
-        let now = chrono::Local::now().format("%H:%M:%S%.3f").to_string();
+        let now = wall_clock_stamp();
         if let Ok(mut history) = self.phase_history.lock() {
             history.clear();
             history.push(PhaseRecord {
@@ -446,7 +446,7 @@ impl DebugStats {
     }
 
     pub(crate) fn set_phase(&self, phase: ActivityPhase, trigger: &str) {
-        let now_formatted = chrono::Local::now().format("%H:%M:%S%.3f").to_string();
+        let now_formatted = wall_clock_stamp();
         let now_instant = std::time::Instant::now();
 
         if let Ok(mut history) = self.phase_history.lock() {
@@ -490,6 +490,14 @@ impl DebugStats {
 }
 
 pub(crate) static DEBUG_STATS: LazyLock<DebugStats> = LazyLock::new(DebugStats::new);
+
+/// Now on this machine's clock as `HH:MM:SS.mmm`, the debug timeline's stamp.
+fn wall_clock_stamp() -> String {
+    jiff::tz::TimeZone::system()
+        .to_datetime(jiff::Timestamp::now())
+        .strftime("%H:%M:%S%.3f")
+        .to_string()
+}
 
 /// Record a top-level phase transition in BOTH the global debug timeline and the
 /// per-volume [`IndexEvent::PhaseChanged`] event.

@@ -61,6 +61,10 @@ wasm-bindgen = "0.2.130"
 wasm-bindgen-futures = "0.4.80"
 # `JSON.parse` / `JSON.stringify` at the boundary, and the event callback's `Function`.
 js-sys = "0.3.107"
+# The `js` feature makes jiff's `TimeZone::system()` ask the page's `Intl` for its
+# zone, so Multi-Rename's `[Y]…[s]` render the visitor's wall clock; without it,
+# UTC. The host turns it on, as uuid's `js` comes from `cmdr-fs`.
+jiff = { version = "0.2.43", features = ["js"] }
 
 [dev-dependencies]
 # The golden-trace scenarios the native engine blesses, replayed on the demo's

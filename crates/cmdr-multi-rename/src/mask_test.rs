@@ -1,7 +1,7 @@
 //! The rename mask against Total Commander's own examples (help file and wiki).
 
-use chrono::{NaiveDate, NaiveDateTime};
 use cmdr_media_meta::{FieldKind, MediaFacts, MediaField};
+use jiff::civil::DateTime;
 
 use super::mask::{
     FieldGap, FieldText, MAX_COUNTER_DIGITS, Mask, MaskError, MediaToken, RangeToken, RowFacts, RowMedia,
@@ -25,7 +25,7 @@ fn facts(name: &str) -> RowFacts<'_> {
         is_directory: false,
         parent: "Holiday 2026",
         grandparent: "Photos",
-        modified: NaiveDate::from_ymd_opt(2026, 6, 15).and_then(|d| d.and_hms_opt(23, 10, 9)),
+        modified: at(2026, 6, 15, 23, 10, 9),
         position: 0,
         media: RowMedia::NotMedia,
     }
@@ -130,6 +130,52 @@ fn a_date_placeholder_keeps_dashes_dots_underscores_and_spaces_between_its_parts
     assert_eq!(name("[y_M_D]", file), "26_06_15");
     assert_eq!(name("[hm-]", file), "2310-", "a separator may end it");
     assert_eq!(name("[M-m]", file), "06-10", "case still tells month from minute");
+}
+
+#[test]
+fn every_date_part_pads_to_its_width_whatever_the_date() {
+    // (when, the mask's every part, the same date as a media field)
+    let cells = [
+        (
+            at(2005, 1, 2, 3, 4, 5),
+            "2005|05|01|02|03|04|05|20050102|030405|2005-01-02|03.04.05",
+            "05-01-02_03.04.05 2005-01-02 03.04.05",
+        ),
+        (
+            at(987, 11, 30, 0, 0, 0),
+            "0987|87|11|30|00|00|00|09871130|000000|0987-11-30|00.00.00",
+            "87-11-30_00.00.00 0987-11-30 00.00.00",
+        ),
+        (
+            at(2000, 12, 31, 23, 59, 59),
+            "2000|00|12|31|23|59|59|20001231|235959|2000-12-31|23.59.59",
+            "00-12-31_23.59.59 2000-12-31 23.59.59",
+        ),
+        (
+            at(9999, 12, 31, 23, 59, 59),
+            "9999|99|12|31|23|59|59|99991231|235959|9999-12-31|23.59.59",
+            "99-12-31_23.59.59 9999-12-31 23.59.59",
+        ),
+    ];
+    let mask = Mask::parse("[Y]|[y]|[M]|[D]|[h]|[m]|[s]|[YMD]|[hms]|[d]|[t]").expect("valid");
+    let media_mask = Mask::parse("[=exif.taken:y-M-D_h.m.s] [=exif.taken]").expect("valid");
+    for (when, expected, expected_media) in cells {
+        let row = RowFacts {
+            modified: when,
+            ..facts("a.txt")
+        };
+        assert_eq!(mask.text(&row), expected, "{when:?}");
+        let media = MediaFacts {
+            taken: when,
+            ..MediaFacts::default()
+        };
+        let row = RowFacts {
+            modified: None,
+            media: RowMedia::Read(&media),
+            ..facts("a.txt")
+        };
+        assert_eq!(media_mask.render(&row).as_deref(), Ok(expected_media), "{when:?}");
+    }
 }
 
 #[test]
@@ -343,8 +389,8 @@ fn a_range_token_reads_its_field_and_says_which_characters_it_takes() {
     assert_eq!(RangeToken::parse("n"), None);
 }
 
-fn at(y: i32, mo: u32, d: u32, h: u32, mi: u32, s: u32) -> Option<NaiveDateTime> {
-    NaiveDate::from_ymd_opt(y, mo, d).and_then(|date| date.and_hms_opt(h, mi, s))
+fn at(y: i16, mo: i8, d: i8, h: i8, mi: i8, s: i8) -> Option<DateTime> {
+    DateTime::new(y, mo, d, h, mi, s, 0).ok()
 }
 
 /// A phone photo that's also, improbably, tagged like a song: every kind of field.

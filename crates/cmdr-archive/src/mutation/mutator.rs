@@ -29,6 +29,9 @@ use std::fs::File;
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 
+use jiff::Timestamp;
+use jiff::civil::DateTime;
+use jiff::tz::TimeZone;
 use uuid::Uuid;
 use zip::write::{FullFileOptions, SimpleFileOptions};
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
@@ -443,35 +446,25 @@ pub fn with_entry_mtime(
     options: SimpleFileOptions,
     modified: std::time::SystemTime,
 ) -> FullFileOptions<'static, 'static> {
-    with_entry_mtime_in(options, modified, &chrono::Local)
+    with_entry_mtime_in(options, modified, &TimeZone::system())
 }
 
 /// [`with_entry_mtime`] with the zone that stands for "local" spelled out, so a
 /// test doesn't depend on the machine's.
-fn with_entry_mtime_in<Tz: chrono::TimeZone>(
+fn with_entry_mtime_in(
     options: SimpleFileOptions,
     modified: std::time::SystemTime,
-    local_zone: &Tz,
+    local_zone: &TimeZone,
 ) -> FullFileOptions<'static, 'static> {
-    use chrono::{Datelike, Timelike};
-    let utc: chrono::DateTime<chrono::Utc> = modified.into();
-    let local = utc.with_timezone(local_zone).naive_local();
     let mut options = options.into_full_options();
-    let dos_time = u16::try_from(local.year()).ok().and_then(|year| {
-        zip::DateTime::from_date_and_time(
-            year,
-            local.month() as u8,
-            local.day() as u8,
-            local.hour() as u8,
-            local.minute() as u8,
-            local.second() as u8,
-        )
-        .ok()
-    });
-    if let Some(dos_time) = dos_time {
+    // Past year 9999 (an SMB FILETIME reaches 30,828) is outside both fields' ranges.
+    let Ok(instant) = Timestamp::try_from(modified) else {
+        return options;
+    };
+    if let Some(dos_time) = dos_date_time(local_zone.to_datetime(instant)) {
         options = options.last_modified_time(dos_time);
     }
-    if let Ok(seconds) = i32::try_from(utc.timestamp())
+    if let Ok(seconds) = i32::try_from(instant.as_second())
         && seconds >= 0
     {
         const MODIFIED_PRESENT: u8 = 1;
@@ -483,6 +476,19 @@ fn with_entry_mtime_in<Tz: chrono::TimeZone>(
         }
     }
     options
+}
+
+/// `local` as an MS-DOS date and time, or `None` outside its 1980–2107 range.
+fn dos_date_time(local: DateTime) -> Option<zip::DateTime> {
+    zip::DateTime::from_date_and_time(
+        u16::try_from(local.year()).ok()?,
+        u8::try_from(local.month()).ok()?,
+        u8::try_from(local.day()).ok()?,
+        u8::try_from(local.hour()).ok()?,
+        u8::try_from(local.minute()).ok()?,
+        u8::try_from(local.second()).ok()?,
+    )
+    .ok()
 }
 
 /// The uncompressed byte length of an add source, for the progress total. A

@@ -36,6 +36,8 @@ The engine's second host, beside `apps/desktop/src-tauri/src/listing_host/`. Not
 - **The runtime traps are browser-only**: `std::time::Instant::now` and `SystemTime::now` panic, `Path::is_absolute` is
   always `false`, and nothing can spawn a thread. Native tests can't see them; `desktop-rust-listing-wasm` runs
   `smoke.mjs` against the real `.wasm` so they fail a check.
+- **jiff's `js` feature is on here** (wasm-only), or Multi-Rename's dates come out in UTC: `TimeZone::system()` reads
+  the page's zone through `Intl`. The smoke runs in a UTC+05:45 zone to catch that. DETAILS § The build.
 - **`JsSink` is `unsafe impl Send + Sync`**, sound only while the build has no `atomics` target feature (one thread).
   The `cfg` makes a threaded build fail to compile; ❌ never drop it.
 - **The `wasm-bindgen` CLI must equal the locked crate exactly.** The build script reads `Cargo.lock` and installs the

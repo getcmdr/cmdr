@@ -12,6 +12,10 @@ import { multiRenameTree, smokeMultiRename } from './smoke-multi-rename.mjs'
 import { smokeViewer } from './smoke-viewer.mjs'
 import { smokeWrites, writesTree } from './smoke-writes.mjs'
 
+// A zone far from UTC and without DST, set before the module loads: Multi-Rename's dates must
+// come out in the page's zone (jiff's `js` feature asks `Intl`), never UTC.
+process.env.TZ = 'Asia/Kathmandu'
+
 const pkg = resolve(process.argv[2] ?? 'pkg')
 const glue = await import(pathToFileURL(join(pkg, 'cmdr_listing_wasm.js')).href)
 await glue.default({ module_or_path: await readFile(join(pkg, 'cmdr_listing_wasm_bg.wasm')) })

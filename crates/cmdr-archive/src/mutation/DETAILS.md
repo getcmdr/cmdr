@@ -51,6 +51,8 @@ sink, pause gate, cancel intent via the `MutationHooks` seam, and the remote pul
     central directory. Tools prefer it over the DOS field, and so does `rc-zip`, our reader, which is what keeps an
     mtime stable across write-then-reparse in any zone. Written when the time fits the field's signed 32 bits
     (1970–2038).
+  - A time past year 9999 (an SMB FILETIME reaches 30,828) writes neither field: jiff can't place it, and both fields
+    stop far earlier anyway.
   - ❗ `SimpleFileOptions::default()` dates an entry 1980-01-01: `zip`'s "now" default needs its `time` feature, which
     this workspace doesn't enable (verified on `zip` 8.6.0, `DateTime::default_for_write`, 2026-09-30). ❌ Never hand
     `start_file` / `add_directory` bare default options.

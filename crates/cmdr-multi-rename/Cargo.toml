@@ -33,8 +33,10 @@ cmdr-operation-log = { path = "../cmdr-operation-log" }
 cmdr-operations = { path = "../cmdr-operations" }
 # The list rules presets' last settings and the field history follow (`RecentItem`).
 cmdr-recents = { path = "../cmdr-recents" }
-# The mask's dates; `Local` reads the offset from JS `Date` in the browser (default `wasmbind`).
-chrono = "0.4"
+# The mask's dates (`civil::DateTime`, a wall clock) and the zone that makes a
+# modified time one. In the browser the zone comes from `Intl` only with jiff's `js`
+# feature, which the host (`cmdr-listing-wasm`) turns on; without it, UTC.
+jiff = "0.2.43"
 # Apply's remote fingerprints, several at once, and the host's `rename_place` future.
 futures-util = "0.3"
 log = "0.4"

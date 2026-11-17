@@ -13,6 +13,10 @@
 #![warn(unused_crate_dependencies)]
 #![deny(missing_docs)]
 
+// Only here for its `js` feature: Multi-Rename's dates read the page's zone.
+#[cfg(target_family = "wasm")]
+use jiff as _;
+
 pub mod backend_listings;
 #[cfg(target_family = "wasm")]
 mod bindings;

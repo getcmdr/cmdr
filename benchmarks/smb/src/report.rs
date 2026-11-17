@@ -9,8 +9,7 @@ pub fn print_table(results: &AllResults) {
     println!("╚══════════════════════════════════════════════════════════════════╝\n");
 
     for suite in &results.suites {
-        let total_mb =
-            (suite.file_count as f64 * suite.file_size_bytes as f64) / (1024.0 * 1024.0);
+        let total_mb = (suite.file_count as f64 * suite.file_size_bytes as f64) / (1024.0 * 1024.0);
         println!(
             "Target: {} | Suite: {}: {} files × {} KB ({:.1} MB total)",
             suite.target_name,
@@ -45,7 +44,9 @@ pub fn print_table(results: &AllResults) {
 }
 
 pub fn save_json(results: &AllResults) {
-    let timestamp = chrono::Local::now().format("%Y-%m-%d-%H%M%S");
+    let timestamp = jiff::tz::TimeZone::system()
+        .to_datetime(jiff::Timestamp::now())
+        .strftime("%Y-%m-%d-%H%M%S");
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("results");
     std::fs::create_dir_all(&dir).expect("create results dir");
     let path = dir.join(format!("results-{timestamp}.json"));

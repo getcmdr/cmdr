@@ -387,8 +387,10 @@ item is argued here first.
 - The engine's own session-level cells over an in-memory volume are the demo's (`multi_rename_test.rs` there), and the
   Node smoke (`smoke-multi-rename.mjs`) is what proves the browser half: open, a media read to `done`, preview, apply,
   and undo on the real `.wasm`.
-- `chrono::Local` reads the offset from JS `Date` there (chrono's default `wasmbind`), and uuid's `js` feature comes
-  from `cmdr-fs`.
+- A modified time becomes a wall clock through `jiff::tz::TimeZone::system()` (`plan.rs::local_time`), which in the
+  browser asks the page's `Intl` for its zone only with jiff's `js` feature; the host turns that on
+  (`crates/cmdr-listing-wasm/DETAILS.md` § The build), as uuid's `js` comes from `cmdr-fs`. Without it the demo's dates
+  are UTC. Past year 9999 (an SMB FILETIME reaches 30,828) a modified time is no date: the row reads as undated.
 
 ## Tests
 
