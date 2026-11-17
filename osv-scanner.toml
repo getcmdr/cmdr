@@ -21,6 +21,10 @@ reason = "block-buffer (a panic inside the caller's block callback, caught with 
 id = "RUSTSEC-2026-0192"
 reason = "ttf-parser is unmaintained (notice only, no known vulnerability): pulled in by lopdf 0.42 under pdf-extract (the AI agent's PDF text reader), whose latest release still pins lopdf ^0.42. lopdf 0.45 swapped it for skrifa, so this goes away when pdf-extract moves up."
 
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0543"
+reason = "chrono is unmaintained (notice only, no known vulnerability). Cmdr's own crates are moving to jiff; chrono stays in the graph transitively through rmcp and schemars (its chrono04 feature), russh-util, trash (Linux), and our vendored rc-zip. Drop this entry once those parents move off it (`cargo tree -i chrono -e normal --target all --depth 1`, 2026-11-17)."
+
 # --- Rust: can't reach the shipped app ---
 
 [[IgnoredVulns]]

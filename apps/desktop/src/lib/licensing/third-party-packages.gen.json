@@ -101,7 +101,7 @@
     },
     {
       "name": "ammonia",
-      "version": "4.2.4",
+      "version": "4.2.5",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/rust-ammonia/ammonia"
     },

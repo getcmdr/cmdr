@@ -69,6 +69,12 @@ ignore = [
   # already build `rsa 0.10.0-rc.18`, so being on the 0.10 line is NOT the fix.
   # Watch those two issues, and drop this entry the day a patched version exists.
   "RUSTSEC-2023-0071",
+  # `chrono` is unmaintained (a notice, no known vulnerability). It's flagged only
+  # because our own crates still depend on it directly while they move to `jiff`.
+  # Drop this entry once that migration removes the last direct `chrono` dep; the
+  # transitive copies (rmcp/schemars, russh-util, trash, vendored rc-zip) fall
+  # outside `unmaintained = "workspace"` (verified 2026-11-17).
+  "RUSTSEC-2026-0543",
 ]
 
 [licenses]
