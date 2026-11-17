@@ -33,7 +33,7 @@ encoding_rs = "0.8.44"
 regex = "1"
 # Markdown: the parser, and ammonia's allowlist as the XSS boundary.
 pulldown-cmark = { version = "0.13.6", default-features = false, features = ["html"] }
-ammonia = "4.2.4"
+ammonia = "4.2.5"
 url = "2"
 urlencoding = "2"
 # Media tokens (128-bit, CSPRNG) and session ids.
