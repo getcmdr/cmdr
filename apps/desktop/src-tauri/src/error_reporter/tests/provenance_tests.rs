@@ -5,19 +5,14 @@
 use super::{read_zip_entries, sample_manifest, test_redaction};
 use crate::error_reporter::BundleScope;
 use crate::error_reporter::bundle_builder::{build_bundle_streaming, load_and_filter_log_file};
+use crate::logging::dispatch::file_timestamp_at as timestamp;
 use crate::test_support::TestDir;
-use chrono::{DateTime, Utc};
+use jiff::{SignedDuration, Timestamp};
 use std::time::SystemTime;
 
-fn timestamp(at: DateTime<Utc>) -> String {
-    at.with_timezone(&chrono::Local)
-        .format("%Y-%m-%dT%H:%M:%S%.3f%:z")
-        .to_string()
-}
-
 /// One log file with every provenance shape, written a minute ago.
-fn mixed_log(now: DateTime<Utc>) -> String {
-    let t = timestamp(now - chrono::Duration::minutes(1));
+fn mixed_log(now: Timestamp) -> String {
+    let t = timestamp(now - SignedDuration::from_mins(1));
     [
         "orphan continuation before any header".to_string(),
         format!("{t} DEBUG ·copy  ours-short-target"),
@@ -71,14 +66,14 @@ fn assert_only_shippable_lines(body: &str) {
 fn the_streaming_pipeline_ships_only_our_debug() {
     let dir = TestDir::new("provenance-streaming");
     let log = dir.join("cmdr.log");
-    let now = Utc::now();
+    let now = Timestamp::now();
     std::fs::write(&log, mixed_log(now)).expect("write log");
 
     let bundle = build_bundle_streaming(
         "ERR-PROV1".to_string(),
         sample_manifest(),
         vec![log],
-        now - chrono::Duration::hours(1),
+        now - SignedDuration::from_hours(1),
         SystemTime::now(),
         &test_redaction(),
     )
@@ -96,8 +91,8 @@ fn the_streaming_pipeline_ships_only_our_debug() {
 fn tagged_smb2_lines_ship_with_their_paths_redacted() {
     let dir = TestDir::new("provenance-smb2");
     let log = dir.join("cmdr.log");
-    let now = Utc::now();
-    let t = timestamp(now - chrono::Duration::minutes(1));
+    let now = Timestamp::now();
+    let t = timestamp(now - SignedDuration::from_mins(1));
     let lines = [
         format!(
             "{t} DEBUG ·smb2::client::tree  tree: exclusive delete refused (Some(SHARING_VIOLATION)), deleting shared path=\"Photos/2026/Summer (Lake House)/x.jpg.cmdr-tmp-0f6c2a4e-1b7d-4c55-9a43-6d0e8f1b2c3d\""
@@ -115,7 +110,7 @@ fn tagged_smb2_lines_ship_with_their_paths_redacted() {
         "ERR-PROV2".to_string(),
         sample_manifest(),
         vec![log],
-        now - chrono::Duration::hours(1),
+        now - SignedDuration::from_hours(1),
         SystemTime::now(),
         &test_redaction(),
     )
@@ -146,7 +141,7 @@ fn tagged_smb2_lines_ship_with_their_paths_redacted() {
 fn the_window_pipeline_ships_only_our_debug() {
     let dir = TestDir::new("provenance-window");
     let log = dir.join("cmdr.log");
-    let now = Utc::now();
+    let now = Timestamp::now();
     std::fs::write(&log, mixed_log(now)).expect("write log");
 
     let (lines, _) = load_and_filter_log_file(

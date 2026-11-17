@@ -399,7 +399,7 @@ fn leading_seq(name: &str) -> Option<u32> {
 }
 
 fn now_iso8601() -> String {
-    chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+    crate::timestamps::now_rfc3339_millis_z()
 }
 
 // endregion: --- Pure helpers

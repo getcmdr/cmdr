@@ -342,12 +342,10 @@ fn crash_log_note(crash_short_id: &str) -> String {
 /// doesn't parse. The fallback is deliberately still a send: a bundle scoped slightly wrong is
 /// worth more than a button that quietly does nothing.
 fn crash_log_scope(crash_timestamp: &str) -> BundleScope {
-    match chrono::DateTime::parse_from_rfc3339(crash_timestamp) {
-        Ok(at) => BundleScope::Window {
-            first_error_at: at.with_timezone(&chrono::Utc),
-        },
-        Err(e) => {
-            log::warn!("Crash log report: couldn't read the crash timestamp ({e}), falling back to the recent window");
+    match crate::timestamps::parse_rfc3339(crash_timestamp) {
+        Some(first_error_at) => BundleScope::Window { first_error_at },
+        None => {
+            log::warn!("Crash log report: couldn't read the crash timestamp, falling back to the recent window");
             BundleScope::flow_a_default()
         }
     }
@@ -378,7 +376,7 @@ mod tests {
         ] {
             match crash_log_scope(stamp) {
                 BundleScope::Window { first_error_at } => {
-                    assert_eq!(first_error_at.timestamp_millis(), 1_777_072_708_120, "{stamp}");
+                    assert_eq!(first_error_at.as_millisecond(), 1_777_072_708_120, "{stamp}");
                 }
                 BundleScope::Recent { .. } => panic!("{stamp} should anchor a window"),
             }

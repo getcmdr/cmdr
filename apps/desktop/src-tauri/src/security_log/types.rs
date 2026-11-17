@@ -304,7 +304,7 @@ impl LogLine {
     pub fn now(event: SecurityEvent) -> Self {
         Self {
             v: FORMAT_VERSION,
-            at: chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+            at: crate::timestamps::now_rfc3339_millis_z(),
             event,
         }
     }
@@ -509,7 +509,6 @@ mod tests {
             "{json}"
         );
         assert!(line.at.ends_with('Z'), "UTC, not local time: {}", line.at);
-        chrono::DateTime::parse_from_rfc3339(&line.at).expect("ISO 8601");
         let parsed = crate::timestamps::parse_rfc3339(&line.at).expect("parses");
         assert_eq!(
             crate::timestamps::rfc3339_millis_z(parsed),

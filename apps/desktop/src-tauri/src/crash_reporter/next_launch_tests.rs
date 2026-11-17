@@ -8,13 +8,13 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 #[test]
 fn crash_loop_detection_recent_timestamp() {
     // A timestamp from "just now" should be detected as a crash loop
-    let recent = chrono::Utc::now().to_rfc3339();
+    let recent = to_iso8601(SystemTime::now());
     assert!(is_crash_loop(&recent));
 }
 
 #[test]
 fn crash_loop_detection_old_timestamp() {
-    let old = (chrono::Utc::now() - chrono::Duration::minutes(5)).to_rfc3339();
+    let old = to_iso8601(SystemTime::now() - Duration::from_secs(5 * 60));
     assert!(!is_crash_loop(&old));
 }
 
@@ -60,6 +60,17 @@ fn crash_file_stamps_keep_their_bytes_and_read_back() {
     }
     assert_eq!(parse_timestamp("not-a-timestamp"), None);
     assert_eq!(parse_timestamp("2026-03-22T10:00:00"), None, "no offset, no instant");
+}
+
+/// A time past year 9999 has no stamp, so it's written as now, the same fallback as an mtime
+/// the filesystem won't give.
+#[test]
+fn a_crash_time_past_year_9999_is_stamped_now() {
+    let before = SystemTime::now();
+    let stamp = to_iso8601(UNIX_EPOCH + Duration::from_secs(300_000_000_000));
+    let read_back = parse_timestamp(&stamp).expect("a now stamp reads back");
+    assert!(read_back >= before - Duration::from_secs(1), "{stamp}");
+    assert!(stamp.ends_with("+00:00"), "{stamp}");
 }
 
 /// A fresh crash stamp has the same shape as every other crash-file stamp.

@@ -744,8 +744,7 @@ fn active_settings_from(
 // --- Helpers ---
 
 fn now_iso8601() -> String {
-    // Use chrono (already a dependency) for ISO 8601 timestamp
-    chrono::Utc::now().to_rfc3339()
+    crate::timestamps::now_rfc3339()
 }
 
 /// Seconds since the process started, or 0.0 before [`init`] runs. Shared with the diagnostics

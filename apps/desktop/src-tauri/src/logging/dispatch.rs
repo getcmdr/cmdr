@@ -34,6 +34,8 @@
 //!   `set_keep_count` + `eager_prune` in the parent module already covered this. Same
 //!   restart-required envelope as the plugin had.
 
+use jiff::Timestamp;
+use jiff::tz::TimeZone;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU8, Ordering};
@@ -65,15 +67,13 @@ pub fn stdout_threshold() -> log::LevelFilter {
 /// down exactly when a line was written. Cheap parsing target for the Flow B
 /// window-anchored bundle, too.
 pub(crate) fn file_timestamp() -> String {
-    file_timestamp_at(chrono::Utc::now())
+    file_timestamp_at(Timestamp::now())
 }
 
 /// [`file_timestamp`] for any instant, at this machine's offset then. Tests write log lines with
 /// it, so they produce exactly the stamp the parser reads (`error_reporter::tail_walker`).
-pub(crate) fn file_timestamp_at(at: chrono::DateTime<chrono::Utc>) -> String {
-    at.with_timezone(&chrono::Local)
-        .format("%Y-%m-%dT%H:%M:%S%.3f%:z")
-        .to_string()
+pub(crate) fn file_timestamp_at(at: Timestamp) -> String {
+    crate::timestamps::log_file_stamp(at, TimeZone::system().to_offset(at))
 }
 
 fn level_filter_from_u8(v: u8) -> log::LevelFilter {
@@ -291,7 +291,9 @@ fn write_terminal_line(
     record: &log::Record<'_>,
     color: bool,
 ) {
-    let ts = chrono::Local::now().format("%H:%M:%S%.3f");
+    let ts = TimeZone::system()
+        .to_datetime(Timestamp::now())
+        .strftime("%H:%M:%S%.3f");
     let target = record.target().strip_prefix("cmdr_lib::").unwrap_or(record.target());
     let (head, tail) = super::target_style::split(target);
     let level = record.level();

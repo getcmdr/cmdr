@@ -11,9 +11,9 @@ use crate::tools::resources::volumes::VolumeSummary;
 use crate::ui_state::PaneStateStore;
 use crate::ui_state::listing_errors::RecentListingError;
 use crate::ui_state::pane_state::PaneState;
-use chrono::{DateTime, Utc};
 use cmdr_operation_log::types::OperationId;
 use cmdr_operations::{LifecycleStatus, WriteOperationPhase, WriteOperationType};
+use jiff::Timestamp;
 use std::collections::VecDeque;
 use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
@@ -109,7 +109,7 @@ pub(super) fn capture_if_due(app: tauri::AppHandle<tauri::Wry>) {
         // The same volume pipeline `cmdr://state` reads, timeout-guarded inside, so a hung
         // mount can't wedge this task.
         let volumes = crate::tools::resources::volumes::snapshot_volumes().await;
-        let Some(snapshot) = capture(&app, sequence, Utc::now(), &volumes) else {
+        let Some(snapshot) = capture(&app, sequence, Timestamp::now(), &volumes) else {
             return;
         };
         HISTORY.lock_ignore_poison().store(snapshot);
@@ -124,7 +124,7 @@ pub(super) async fn capture_for_report<R: tauri::Runtime>(app: &tauri::AppHandle
         return;
     };
     let volumes = crate::tools::resources::volumes::snapshot_volumes().await;
-    if let Some(snapshot) = capture(app, sequence, Utc::now(), &volumes) {
+    if let Some(snapshot) = capture(app, sequence, Timestamp::now(), &volumes) {
         HISTORY.lock_ignore_poison().store(snapshot);
     }
 }
@@ -138,7 +138,7 @@ pub(super) fn for_report(redaction: &RedactionContext) -> Vec<DiagnosticStateSna
 fn capture<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     sequence: u64,
-    captured_at: DateTime<Utc>,
+    captured_at: Timestamp,
     volumes: &[VolumeSummary],
 ) -> Option<RawStateSnapshot> {
     let store = app.try_state::<PaneStateStore>()?;
@@ -185,7 +185,9 @@ fn capture_listing_failure(failure: &RecentListingError) -> RawListingFailure {
         .get(&failure.volume_id)
         .map(|volume| volume.backend_kind().into());
     RawListingFailure {
-        at: DateTime::from_timestamp_millis(i64::try_from(failure.at_unix_ms).unwrap_or(i64::MAX)),
+        at: i64::try_from(failure.at_unix_ms)
+            .ok()
+            .and_then(|ms| Timestamp::from_millisecond(ms).ok()),
         volume_id: failure.volume_id.clone(),
         backend,
         reason: failure.reason.as_ref().and_then(reason_token),
@@ -292,7 +294,7 @@ fn redact_snapshots(snapshots: &[RawStateSnapshot], redaction: &RedactionContext
     snapshots
         .iter()
         .map(|snapshot| DiagnosticStateSnapshot {
-            captured_at: snapshot.captured_at.to_rfc3339(),
+            captured_at: crate::timestamps::rfc3339(snapshot.captured_at),
             generation: snapshot.generation,
             focused: snapshot.focused,
             show_hidden: snapshot.show_hidden,
@@ -362,7 +364,7 @@ fn redact_snapshots(snapshots: &[RawStateSnapshot], redaction: &RedactionContext
                 .recent_listing_failures
                 .iter()
                 .map(|failure| DiagnosticListingFailure {
-                    at: failure.at.map(|at| at.to_rfc3339()),
+                    at: failure.at.map(crate::timestamps::rfc3339),
                     volume_id: redaction.redact_volume_id(&failure.volume_id),
                     backend: failure.backend,
                     reason: failure.reason.clone(),
@@ -377,7 +379,7 @@ fn redact_snapshots(snapshots: &[RawStateSnapshot], redaction: &RedactionContext
 #[derive(Debug, Clone)]
 struct RawStateSnapshot {
     sequence: u64,
-    captured_at: DateTime<Utc>,
+    captured_at: Timestamp,
     generation: u64,
     focused: Option<PaneSide>,
     show_hidden: bool,
@@ -399,7 +401,7 @@ struct RawVolumeSnapshot {
 
 #[derive(Debug, Clone)]
 struct RawListingFailure {
-    at: Option<DateTime<Utc>>,
+    at: Option<Timestamp>,
     volume_id: String,
     backend: Option<ReportBackend>,
     reason: Option<String>,
@@ -514,9 +516,7 @@ pub(super) fn privacy_fixture_for_test(redaction: &RedactionContext) -> Vec<Diag
 
     let raw = RawStateSnapshot {
         sequence: 0,
-        captured_at: DateTime::parse_from_rfc3339("2027-01-15T08:00:00+00:00")
-            .expect("test timestamp is valid")
-            .with_timezone(&Utc),
+        captured_at: crate::timestamps::parse_rfc3339("2027-01-15T08:00:00+00:00").expect("test timestamp is valid"),
         generation: 73,
         focused: Some(PaneSide::Right),
         show_hidden: true,

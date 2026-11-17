@@ -29,7 +29,7 @@
 //! The fern file chain writes LF only, but we strip a trailing `\r` defensively in case
 //! a future change introduces CRLF anywhere (or someone hand-edits a log on Windows).
 
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
@@ -64,7 +64,7 @@ pub struct TailWalkResult {
 /// Errors are mapped to "no lines, did not hit cutoff" so the caller can keep going. We
 /// log a warning at the same call site the legacy file-by-file reader did. An empty file
 /// returns `(empty lines, hit_cutoff = false)`.
-pub fn walk_tail(path: &Path, cutoff: DateTime<Utc>) -> std::io::Result<TailWalkResult> {
+pub fn walk_tail(path: &Path, cutoff: Timestamp) -> std::io::Result<TailWalkResult> {
     let mut file = File::open(path)?;
     let total_len = file.seek(SeekFrom::End(0))?;
     if total_len == 0 {
@@ -164,7 +164,7 @@ pub fn walk_tail(path: &Path, cutoff: DateTime<Utc>) -> std::io::Result<TailWalk
 /// cutoff fires.
 fn try_emit_line(
     raw: &[u8],
-    cutoff: DateTime<Utc>,
+    cutoff: Timestamp,
     kept: &mut Vec<String>,
     complete_records_end: &mut usize,
     hit_cutoff: &mut bool,
@@ -208,22 +208,20 @@ fn try_emit_line(
 /// Returns `None` for lines that don't start with one (legacy `HH:MM:SS.mmm`-stamped lines,
 /// blank lines, panic-backtrace continuation lines, redacted-payload lines, etc.). Callers
 /// fall back to keeping the line in that case rather than risk a false drop.
-pub fn parse_leading_iso8601(line: &str) -> Option<DateTime<Utc>> {
+pub fn parse_leading_iso8601(line: &str) -> Option<Timestamp> {
     // The timestamp is always 29 bytes: 23 for date+time+ms + 6 for `±HH:MM`, all ASCII.
     // `get(..29)` returns `None` (rather than panicking) when byte 29 splits a multibyte
     // char, which happens on non-timestamp lines (backtrace frames, captured output, paths
     // with accented names); those have no leading stamp, so falling through to `None` is right.
     let candidate = line.get(..29)?;
-    DateTime::parse_from_str(candidate, "%Y-%m-%dT%H:%M:%S%.3f%:z")
-        .ok()
-        .map(|dt| dt.with_timezone(&Utc))
+    Timestamp::strptime("%Y-%m-%dT%H:%M:%S%.3f%:z", candidate).ok()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::test_support::TestDir;
-    use chrono::Duration as ChronoDuration;
+    use jiff::SignedDuration;
     use std::io::Write;
 
     /// Returns the scratch dir alongside the file path: the caller has to keep
@@ -236,21 +234,21 @@ mod tests {
         (dir, p)
     }
 
-    fn iso_line(ts: DateTime<Utc>, body: &str) -> String {
+    fn iso_line(ts: Timestamp, body: &str) -> String {
         format!("{} {body}", crate::logging::dispatch::file_timestamp_at(ts))
     }
 
     #[test]
     fn reads_short_file_in_reverse_when_no_cutoff() {
-        let now = Utc::now();
+        let now = Timestamp::now();
         let body = format!(
             "{}\n{}\n{}\n",
-            iso_line(now - ChronoDuration::seconds(3), "A"),
-            iso_line(now - ChronoDuration::seconds(2), "B"),
-            iso_line(now - ChronoDuration::seconds(1), "C"),
+            iso_line(now - SignedDuration::from_secs(3), "A"),
+            iso_line(now - SignedDuration::from_secs(2), "B"),
+            iso_line(now - SignedDuration::from_secs(1), "C"),
         );
         let (_dir, p) = write_tmp("basic", body.as_bytes());
-        let result = walk_tail(&p, now - ChronoDuration::days(1)).unwrap();
+        let result = walk_tail(&p, now - SignedDuration::from_hours(24)).unwrap();
         assert_eq!(result.lines.len(), 3);
         assert!(result.lines[0].ends_with(" A"));
         assert!(result.lines[1].ends_with(" B"));
@@ -262,17 +260,17 @@ mod tests {
 
     #[test]
     fn long_line_spanning_multiple_chunks() {
-        let now = Utc::now();
+        let now = Timestamp::now();
         // 200 KB single line: three+ chunks worth of bytes for one line.
         let big_body: String = "x".repeat(200 * 1024);
-        let big_line = iso_line(now - ChronoDuration::seconds(1), &big_body);
+        let big_line = iso_line(now - SignedDuration::from_secs(1), &big_body);
         let body = format!(
             "{}\n{}\n",
-            iso_line(now - ChronoDuration::seconds(2), "short"),
+            iso_line(now - SignedDuration::from_secs(2), "short"),
             big_line,
         );
         let (_dir, p) = write_tmp("longline", body.as_bytes());
-        let result = walk_tail(&p, now - ChronoDuration::days(1)).unwrap();
+        let result = walk_tail(&p, now - SignedDuration::from_hours(24)).unwrap();
         assert_eq!(result.lines.len(), 2);
         assert!(result.lines[0].ends_with(" short"));
         assert_eq!(result.lines[1], big_line);
@@ -281,14 +279,14 @@ mod tests {
 
     #[test]
     fn no_trailing_newline() {
-        let now = Utc::now();
+        let now = Timestamp::now();
         let body = format!(
             "{}\n{}",
-            iso_line(now - ChronoDuration::seconds(2), "first"),
-            iso_line(now - ChronoDuration::seconds(1), "last-without-newline"),
+            iso_line(now - SignedDuration::from_secs(2), "first"),
+            iso_line(now - SignedDuration::from_secs(1), "last-without-newline"),
         );
         let (_dir, p) = write_tmp("no-trailing-nl", body.as_bytes());
-        let result = walk_tail(&p, now - ChronoDuration::days(1)).unwrap();
+        let result = walk_tail(&p, now - SignedDuration::from_hours(24)).unwrap();
         assert_eq!(result.lines.len(), 2);
         assert!(result.lines[1].ends_with(" last-without-newline"));
         std::fs::remove_dir_all(p.parent().unwrap()).ok();
@@ -297,7 +295,7 @@ mod tests {
     #[test]
     fn empty_file_returns_no_lines() {
         let (_dir, p) = write_tmp("empty", b"");
-        let result = walk_tail(&p, Utc::now()).unwrap();
+        let result = walk_tail(&p, Timestamp::now()).unwrap();
         assert!(result.lines.is_empty());
         assert!(!result.hit_cutoff);
         std::fs::remove_dir_all(p.parent().unwrap()).ok();
@@ -307,18 +305,18 @@ mod tests {
     fn untimestamped_continuation_lines_pass_through() {
         // A panic-style block in the middle: header has a timestamp, frames don't.
         // The cutoff sits between "very old timestamped" and the rest.
-        let now = Utc::now();
-        let inside = now - ChronoDuration::minutes(10);
-        let outside = now - ChronoDuration::hours(2);
+        let now = Timestamp::now();
+        let inside = now - SignedDuration::from_mins(10);
+        let outside = now - SignedDuration::from_hours(2);
 
         let body = format!(
             "{old} OLD line\n{header} ERROR something panicked\n   stack: frame 0\n   stack: frame 1\n{newer} INFO recovered\n",
             old = iso_line(outside, "").trim_end(),
             header = iso_line(inside, "").trim_end(),
-            newer = iso_line(now - ChronoDuration::minutes(1), "").trim_end(),
+            newer = iso_line(now - SignedDuration::from_mins(1), "").trim_end(),
         );
         let (_dir, p) = write_tmp("multiline", body.as_bytes());
-        let result = walk_tail(&p, now - ChronoDuration::hours(1)).unwrap();
+        let result = walk_tail(&p, now - SignedDuration::from_hours(1)).unwrap();
         // Should keep: the recovered line, the panic header + 2 frames. Drop the OLD
         // line. Order: oldest-first (header, frame 0, frame 1, recovered).
         assert!(result.hit_cutoff, "should have stopped at the cutoff");
@@ -333,14 +331,14 @@ mod tests {
 
     #[test]
     fn cutoff_removes_an_old_records_continuations_but_keeps_a_new_backtrace() {
-        let now = Utc::now();
+        let now = Timestamp::now();
         let body = format!(
             "{old}\nprivate YAML continuation\nprivate nested continuation\n{new}\n   safe frame 0\n   safe frame 1\n",
-            old = iso_line(now - ChronoDuration::hours(2), "DEBUG old record"),
-            new = iso_line(now - ChronoDuration::minutes(1), "DEBUG backtrace"),
+            old = iso_line(now - SignedDuration::from_hours(2), "DEBUG old record"),
+            new = iso_line(now - SignedDuration::from_mins(1), "DEBUG backtrace"),
         );
         let (_dir, p) = write_tmp("record-cutoff", body.as_bytes());
-        let result = walk_tail(&p, now - ChronoDuration::hours(1)).unwrap();
+        let result = walk_tail(&p, now - SignedDuration::from_hours(1)).unwrap();
         let joined = result.lines.join("\n");
         assert!(result.hit_cutoff);
         assert!(!joined.contains("private YAML"));
@@ -352,14 +350,14 @@ mod tests {
 
     #[test]
     fn window_boundary_drops_older_timestamped_lines() {
-        let now = Utc::now();
-        let cutoff = now - ChronoDuration::minutes(30);
+        let now = Timestamp::now();
+        let cutoff = now - SignedDuration::from_mins(30);
         let body = format!(
             "{}\n{}\n{}\n{}\n",
-            iso_line(now - ChronoDuration::hours(2), "way-old"),
-            iso_line(now - ChronoDuration::hours(1), "old"),
-            iso_line(now - ChronoDuration::minutes(20), "kept-1"),
-            iso_line(now - ChronoDuration::minutes(5), "kept-2"),
+            iso_line(now - SignedDuration::from_hours(2), "way-old"),
+            iso_line(now - SignedDuration::from_hours(1), "old"),
+            iso_line(now - SignedDuration::from_mins(20), "kept-1"),
+            iso_line(now - SignedDuration::from_mins(5), "kept-2"),
         );
         let (_dir, p) = write_tmp("window", body.as_bytes());
         let result = walk_tail(&p, cutoff).unwrap();
@@ -374,10 +372,10 @@ mod tests {
 
     #[test]
     fn crlf_trailing_carriage_return_is_trimmed() {
-        let now = Utc::now();
-        let body = format!("{}\r\n", iso_line(now - ChronoDuration::seconds(1), "winline"));
+        let now = Timestamp::now();
+        let body = format!("{}\r\n", iso_line(now - SignedDuration::from_secs(1), "winline"));
         let (_dir, p) = write_tmp("crlf", body.as_bytes());
-        let result = walk_tail(&p, now - ChronoDuration::days(1)).unwrap();
+        let result = walk_tail(&p, now - SignedDuration::from_hours(24)).unwrap();
         assert_eq!(result.lines.len(), 1);
         assert!(!result.lines[0].ends_with('\r'));
         std::fs::remove_dir_all(p.parent().unwrap()).ok();
@@ -399,24 +397,25 @@ mod tests {
         assert_eq!(parse_leading_iso8601(&line), None);
     }
 
-    /// The log-stamp pair: the writer's bytes for a fixed instant and offset are the ones chrono
-    /// wrote (`%Y-%m-%dT%H:%M:%S%.3f%:z`), and the parser reads such a line back to the same
+    /// The log-stamp pair: the writer's bytes for a fixed instant and offset are the ones Cmdr
+    /// has always written (`YYYY-MM-DDTHH:MM:SS.mmm±HH:MM`), and the parser reads such a line back to the same
     /// instant, so old log files and new ones look alike to every reader.
     #[test]
     fn the_log_stamp_keeps_its_bytes_and_reads_back_to_the_same_instant() {
         // 2026-04-24T23:18:28.218999999Z: the writer truncates to the millisecond.
-        let at = DateTime::from_timestamp(1_777_072_708, 218_999_999).expect("in range");
+        let at = Timestamp::new(1_777_072_708, 218_999_999).expect("in range");
         for (offset_secs, expected) in [
             (0, "2026-04-24T23:18:28.218+00:00"),
             (2 * 3600, "2026-04-25T01:18:28.218+02:00"),
             (-(5 * 3600 + 30 * 60), "2026-04-24T17:48:28.218-05:30"),
         ] {
-            let offset = chrono::FixedOffset::east_opt(offset_secs).expect("valid offset");
-            let stamp = at.with_timezone(&offset).format("%Y-%m-%dT%H:%M:%S%.3f%:z").to_string();
+            let offset = jiff::tz::Offset::from_seconds(offset_secs).expect("valid offset");
+            // The writer `logging::dispatch::file_timestamp_at` hands its offset to.
+            let stamp = crate::timestamps::log_file_stamp(at, offset);
             assert_eq!(stamp, expected);
             let line = format!("{stamp} INFO  · cmdr_lib::x: hello");
             let parsed = parse_leading_iso8601(&line).expect("our own stamp parses");
-            assert_eq!(parsed.timestamp_millis(), 1_777_072_708_218, "{line}");
+            assert_eq!(parsed.as_millisecond(), 1_777_072_708_218, "{line}");
         }
     }
 
@@ -428,21 +427,21 @@ mod tests {
             (1_777_072_708, 218_999_999, 1_777_072_708_218),
             (1_794_916_800, 1, 1_794_916_800_000),
         ] {
-            let at = DateTime::from_timestamp(secs, nanos).expect("in range");
+            let at = Timestamp::new(secs, nanos).expect("in range");
             let line = iso_line(at, "INFO x");
             assert_eq!(line.find(' '), Some(29), "{line}");
             let parsed = parse_leading_iso8601(&line).expect("parses");
-            assert_eq!(parsed.timestamp_millis(), millis, "{line}");
+            assert_eq!(parsed.as_millisecond(), millis, "{line}");
         }
     }
 
     /// A line stamped exactly at the cutoff stays; one a millisecond older stops the walk.
     #[test]
     fn the_cutoff_holds_to_the_millisecond() {
-        let cutoff = DateTime::from_timestamp(1_777_072_708, 218_000_000).expect("in range");
+        let cutoff = Timestamp::new(1_777_072_708, 218_000_000).expect("in range");
         let body = format!(
             "{}\n{}\n",
-            iso_line(cutoff - ChronoDuration::milliseconds(1), "OUTSIDE"),
+            iso_line(cutoff - SignedDuration::from_millis(1), "OUTSIDE"),
             iso_line(cutoff, "EDGE"),
         );
         let (_dir, p) = write_tmp("cutoff-edge", body.as_bytes());
@@ -464,7 +463,7 @@ mod tests {
             ("2026-11-17T13:00:00.000+01:00", 1_794_916_800_000),
         ] {
             let parsed = parse_leading_iso8601(line).expect("an old line parses");
-            assert_eq!(parsed.timestamp_millis(), millis, "{line}");
+            assert_eq!(parsed.as_millisecond(), millis, "{line}");
         }
     }
 

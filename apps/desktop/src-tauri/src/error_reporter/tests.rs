@@ -1,11 +1,11 @@
 use super::bundle_builder::{
-    PreparedFile, build_bundle_streaming, build_zip, email_for_kind, load_and_filter_log_file, prepare_user_note,
-    recent_cutoff, resolve_bundle_id, zip_dt,
+    PreparedFile, build_bundle_streaming, build_zip, email_for_kind, load_and_filter_log_file, modified_before,
+    prepare_user_note, recent_cutoff, resolve_bundle_id, zip_dt,
 };
 use super::*;
 use crate::redact;
 use crate::test_support::TestDir;
-use chrono::{DateTime, Utc};
+use jiff::{SignedDuration, Timestamp};
 use std::collections::{BTreeMap, HashSet};
 use std::io::Read;
 use std::path::Path;
@@ -537,16 +537,16 @@ fn zip_entries_carry_real_mtimes() {
 fn window_scope_bound_holds_to_the_millisecond() {
     let dir = TestDir::new("error-reporter-window-edge");
     // A whole millisecond, so the stamps carry the exact instants.
-    let now_utc = DateTime::from_timestamp_millis(Utc::now().timestamp_millis()).expect("now is in range");
-    let first_error_at = now_utc - chrono::Duration::minutes(5);
-    let bound = first_error_at - chrono::Duration::minutes(30);
+    let now_utc = Timestamp::from_millisecond(Timestamp::now().as_millisecond()).expect("now is in range");
+    let first_error_at = now_utc - SignedDuration::from_mins(5);
+    let bound = first_error_at - SignedDuration::from_mins(30);
     let stamp = logging::dispatch::file_timestamp_at;
     let log_path = dir.join("cmdr.log");
     std::fs::write(
         &log_path,
         format!(
             "{outside} INFO  OUTSIDE\n{edge} INFO  EDGE\n",
-            outside = stamp(bound - chrono::Duration::milliseconds(1)),
+            outside = stamp(bound - SignedDuration::from_millis(1)),
             edge = stamp(bound),
         ),
     )
@@ -567,8 +567,8 @@ fn window_scope_bound_holds_to_the_millisecond() {
 /// to the past five hours.
 #[test]
 fn the_recent_cutoff_counts_back_from_now() {
-    let now = DateTime::from_timestamp(1_800_000_000, 123_000_000).expect("in range");
-    let cutoff = |window| recent_cutoff(now, window).timestamp_millis();
+    let now = Timestamp::new(1_800_000_000, 123_000_000).expect("in range");
+    let cutoff = |window| recent_cutoff(now, window).as_millisecond();
     assert_eq!(cutoff(Duration::from_secs(3600)), 1_799_996_400_123);
     assert_eq!(cutoff(Duration::from_millis(1)), 1_800_000_000_122);
     assert_eq!(cutoff(Duration::MAX), 1_799_982_000_123);
@@ -587,6 +587,12 @@ fn zip_entry_times_fall_back_outside_the_dos_range() {
         ZipDateTime::default(),
         "2200 is past DOS time"
     );
+    // Year 11,476: an SMB FILETIME reaches past year 9999, where no calendar reading exists.
+    assert_eq!(
+        zip_dt(UNIX_EPOCH + Duration::from_secs(300_000_000_000)),
+        ZipDateTime::default(),
+        "a time past year 9999 is past DOS time too"
+    );
     // 2026-04-24T23:18:28Z: the date is the local one, whatever zone runs the test.
     let in_range = zip_dt(UNIX_EPOCH + Duration::from_secs(1_777_072_708));
     assert_ne!(in_range, ZipDateTime::default());
@@ -598,8 +604,26 @@ fn zip_entry_times_fall_back_outside_the_dos_range() {
 /// The saved bundle's file name is the UTC time to the second.
 #[test]
 fn a_saved_bundle_is_named_after_the_utc_second() {
-    let at = DateTime::from_timestamp(1_800_000_000, 999_000_000).expect("in range");
+    let at = Timestamp::new(1_800_000_000, 999_000_000).expect("in range");
     assert_eq!(report_file_name(at), "error-report-20270115T080000Z.zip");
+}
+
+/// A log file's mtime only skips it when it's a real instant older than the cutoff. One past
+/// what a timestamp can hold (an SMB FILETIME beyond year 9999) keeps the file, and the line
+/// filter decides.
+#[test]
+fn only_a_readable_mtime_older_than_the_cutoff_skips_a_file() {
+    use std::time::UNIX_EPOCH;
+    let cutoff = Timestamp::new(1_800_000_000, 0).expect("in range");
+    assert!(modified_before(UNIX_EPOCH + Duration::from_secs(1_799_999_999), cutoff));
+    assert!(!modified_before(
+        UNIX_EPOCH + Duration::from_secs(1_800_000_000),
+        cutoff
+    ));
+    assert!(!modified_before(
+        UNIX_EPOCH + Duration::from_secs(300_000_000_000),
+        cutoff
+    ));
 }
 
 /// Fix #4: log files older than 24h are filtered out of Flow A bundles.
@@ -610,21 +634,17 @@ fn build_bundle_24h_filter_drops_old_files() {
     let dir = TestDir::new("error-reporter-24h");
 
     // Two files: one that looks fresh, one whose mtime we set to 48h ago via filetime.
-    let stamp = |at: DateTime<Utc>| {
-        at.with_timezone(&chrono::Local)
-            .format("%Y-%m-%dT%H:%M:%S%.3f%:z")
-            .to_string()
-    };
+    let stamp = logging::dispatch::file_timestamp_at;
     let fresh = dir.join("cmdr.log");
-    fs::write(&fresh, format!("{} INFO  fresh line\n", stamp(Utc::now()))).expect("write fresh");
+    fs::write(&fresh, format!("{} INFO  fresh line\n", stamp(Timestamp::now()))).expect("write fresh");
     let stale = dir.join("cmdr.log.1");
-    let two_days_ago = Utc::now() - chrono::Duration::hours(48);
+    let two_days_ago = Timestamp::now() - SignedDuration::from_hours(48);
     fs::write(&stale, format!("{} INFO  stale line\n", stamp(two_days_ago))).expect("write stale");
     set_mtime_to_age(&stale, Duration::from_secs(48 * 3600));
 
     // Drive the file selection logic directly. `build_bundle` requires a Tauri app
     // handle; the per-file scope filter is exercised via `load_and_filter_log_file`.
-    let now_utc = Utc::now();
+    let now_utc = Timestamp::now();
     let now_system = SystemTime::now();
     let redaction = test_redaction();
     // The legacy file-by-mtime filter was the Flow A path, but Flow A now uses the
@@ -654,20 +674,20 @@ fn build_bundle_window_scope_trims_old_lines() {
 
     let dir = TestDir::new("error-reporter-window");
 
-    let now_utc = Utc::now();
-    let first_error_at = now_utc - chrono::Duration::minutes(5);
-    let lower_bound = first_error_at - chrono::Duration::minutes(30);
-    let too_old = lower_bound - chrono::Duration::hours(1);
-    let inside = first_error_at - chrono::Duration::minutes(10);
+    let now_utc = Timestamp::now();
+    let first_error_at = now_utc - SignedDuration::from_mins(5);
+    let lower_bound = first_error_at - SignedDuration::from_mins(30);
+    let too_old = lower_bound - SignedDuration::from_hours(1);
+    let inside = first_error_at - SignedDuration::from_mins(10);
 
-    let fmt = "%Y-%m-%dT%H:%M:%S%.3f%:z";
+    let stamp = logging::dispatch::file_timestamp_at;
     let log_path = dir.join("cmdr.log");
     fs::write(
         &log_path,
         format!(
             "{old} INFO  OLD line that should be dropped\n{ok} INFO  NEW line that should be kept\n",
-            old = too_old.with_timezone(&chrono::Local).format(fmt),
-            ok = inside.with_timezone(&chrono::Local).format(fmt),
+            old = stamp(too_old),
+            ok = stamp(inside),
         ),
     )
     .expect("write log");
@@ -695,18 +715,18 @@ fn build_bundle_window_scope_trims_old_lines() {
 #[test]
 fn build_bundle_window_scope_drops_an_old_records_continuations() {
     let dir = TestDir::new("error-reporter-window-records");
-    let now_utc = Utc::now();
-    let first_error_at = now_utc - chrono::Duration::minutes(5);
-    let too_old = first_error_at - chrono::Duration::hours(2);
-    let inside = first_error_at - chrono::Duration::minutes(1);
-    let fmt = "%Y-%m-%dT%H:%M:%S%.3f%:z";
+    let now_utc = Timestamp::now();
+    let first_error_at = now_utc - SignedDuration::from_mins(5);
+    let too_old = first_error_at - SignedDuration::from_hours(2);
+    let inside = first_error_at - SignedDuration::from_mins(1);
+    let stamp = logging::dispatch::file_timestamp_at;
     let log_path = dir.join("cmdr.log");
     std::fs::write(
         &log_path,
         format!(
             "{old} ERROR OLD header\n   0: old_frame\n{ok} ERROR NEW header\n   0: new_frame\n",
-            old = too_old.with_timezone(&chrono::Local).format(fmt),
-            ok = inside.with_timezone(&chrono::Local).format(fmt),
+            old = stamp(too_old),
+            ok = stamp(inside),
         ),
     )
     .expect("write log");
@@ -881,11 +901,7 @@ mod streaming_tests {
         TestDir::new(&format!("streaming-{name}"))
     }
 
-    fn iso(ts: DateTime<Utc>) -> String {
-        ts.with_timezone(&chrono::Local)
-            .format("%Y-%m-%dT%H:%M:%S%.3f%:z")
-            .to_string()
-    }
+    use crate::logging::dispatch::file_timestamp_at as iso;
 
     /// Streaming pipeline: full file fits in cap, tail-walker stops at the cutoff,
     /// only in-window lines survive. Manifest is preserved.
@@ -893,25 +909,25 @@ mod streaming_tests {
     fn streaming_keeps_in_window_lines() {
         let dir = make_log_dir("basic");
         let log = dir.join("cmdr.log");
-        let now = Utc::now();
+        let now = Timestamp::now();
 
         let mut f = fs::File::create(&log).unwrap();
-        writeln!(f, "{} INFO 2-hour-old line", iso(now - chrono::Duration::hours(2))).unwrap();
+        writeln!(f, "{} INFO 2-hour-old line", iso(now - SignedDuration::from_hours(2))).unwrap();
         writeln!(
             f,
             "{} INFO 30-min-old line (kept)",
-            iso(now - chrono::Duration::minutes(30))
+            iso(now - SignedDuration::from_mins(30))
         )
         .unwrap();
         writeln!(
             f,
             "{} INFO 1-min-old line (kept)",
-            iso(now - chrono::Duration::minutes(1))
+            iso(now - SignedDuration::from_mins(1))
         )
         .unwrap();
         drop(f);
 
-        let cutoff = now - chrono::Duration::hours(1);
+        let cutoff = now - SignedDuration::from_hours(1);
         let bundle = build_bundle_streaming(
             "ERR-TEST1".to_string(),
             manifest_with_diagnostic_history(),
@@ -945,18 +961,23 @@ mod streaming_tests {
         };
         let dir = make_log_dir("flow-a-default");
         let log = dir.join("cmdr.log");
-        let now = Utc::now();
+        let now = Timestamp::now();
         let mut f = fs::File::create(&log).unwrap();
-        writeln!(f, "{} INFO six-hours-old line", iso(now - chrono::Duration::hours(6))).unwrap();
+        writeln!(
+            f,
+            "{} INFO six-hours-old line",
+            iso(now - SignedDuration::from_hours(6))
+        )
+        .unwrap();
         writeln!(
             f,
             "{} INFO four-and-a-half-hours-old line",
-            iso(now - chrono::Duration::minutes(270))
+            iso(now - SignedDuration::from_mins(270))
         )
         .unwrap();
         drop(f);
 
-        let cutoff = now - chrono::Duration::from_std(window).unwrap();
+        let cutoff = now - SignedDuration::try_from(window).unwrap();
         let bundle = build_bundle_streaming(
             "ERR-FIVEH".to_string(),
             sample_manifest(),
@@ -982,27 +1003,27 @@ mod streaming_tests {
     fn streaming_keeps_panic_continuation_lines_intact() {
         let dir = make_log_dir("panic");
         let log = dir.join("cmdr.log");
-        let now = Utc::now();
+        let now = Timestamp::now();
         let mut f = fs::File::create(&log).unwrap();
-        writeln!(f, "{} INFO old1", iso(now - chrono::Duration::hours(2))).unwrap();
+        writeln!(f, "{} INFO old1", iso(now - SignedDuration::from_hours(2))).unwrap();
         writeln!(
             f,
             "{} INFO old2",
-            iso(now - chrono::Duration::hours(1) - chrono::Duration::minutes(1))
+            iso(now - SignedDuration::from_hours(1) - SignedDuration::from_mins(1))
         )
         .unwrap();
         writeln!(
             f,
             "{} ERROR something panicked",
-            iso(now - chrono::Duration::minutes(30))
+            iso(now - SignedDuration::from_mins(30))
         )
         .unwrap();
         writeln!(f, "   stack: frame 0").unwrap();
         writeln!(f, "   stack: frame 1").unwrap();
-        writeln!(f, "{} INFO recovered", iso(now - chrono::Duration::minutes(1))).unwrap();
+        writeln!(f, "{} INFO recovered", iso(now - SignedDuration::from_mins(1))).unwrap();
         drop(f);
 
-        let cutoff = now - chrono::Duration::hours(1);
+        let cutoff = now - SignedDuration::from_hours(1);
         let bundle = build_bundle_streaming(
             "ERR-TEST2".to_string(),
             sample_manifest(),
@@ -1035,7 +1056,7 @@ mod streaming_tests {
             "ERR-EMPTY".to_string(),
             sample_manifest(),
             vec![missing, empty],
-            Utc::now() - chrono::Duration::hours(1),
+            Timestamp::now() - SignedDuration::from_hours(1),
             SystemTime::now(),
             &test_redaction(),
         )
@@ -1059,7 +1080,7 @@ mod streaming_tests {
     fn streaming_perf_under_one_second_on_big_file() {
         let dir = make_log_dir("perf");
         let log = dir.join("cmdr.log");
-        let now = Utc::now();
+        let now = Timestamp::now();
 
         // Build an ~80 MB file: 99 % of lines are 2 hours old (well outside the 1 hour
         // window), 1 % are recent. The streaming walker should bail almost immediately
@@ -1071,7 +1092,7 @@ mod streaming_tests {
             } else {
                 ((400_000 - i) as i64).max(1) // recent
             };
-            let ts = iso(now - chrono::Duration::seconds(ts_off_secs));
+            let ts = iso(now - SignedDuration::from_secs(ts_off_secs));
             // Pad each line out to ~200 bytes to hit ~80 MB total.
             writeln!(
                 f,
@@ -1081,7 +1102,7 @@ mod streaming_tests {
         }
         drop(f);
 
-        let cutoff = now - chrono::Duration::hours(1);
+        let cutoff = now - SignedDuration::from_hours(1);
         let start = std::time::Instant::now();
         let bundle = build_bundle_streaming(
             "ERR-PERF".to_string(),

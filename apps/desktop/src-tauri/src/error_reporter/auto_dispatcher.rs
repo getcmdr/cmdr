@@ -36,7 +36,7 @@
 //! has already elapsed, [`sleep_until`] is a no-op and `flush` runs immediately.
 
 use crate::error_reporter::{self, BundleKind, BundleScope, FLOW_B_BUNDLE_CAP_MB, auto_sent};
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use rand::RngExt;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
@@ -91,7 +91,7 @@ struct DebounceState {
     /// UTC wall-clock of the first error in the window. Anchors the Flow B bundle
     /// scope (`first_error_at - 30 min` lower bound). Captured at first-error time so
     /// the window is stable if the system clock drifts between record and flush.
-    first_error_at: DateTime<Utc>,
+    first_error_at: Timestamp,
     /// True once a flush task has been spawned for this window. If `set_app_handle`
     /// runs after a window opened without the handle, this lets us spawn exactly once
     /// without racing with [`on_error_logged`].
@@ -233,7 +233,7 @@ fn record_error(category: &str, message: &str) -> Option<Instant> {
         first_message: message.to_string(),
         error_count: 1,
         scheduled_send_at,
-        first_error_at: Utc::now(),
+        first_error_at: Timestamp::now(),
         flush_spawned: false,
     });
     Some(scheduled_send_at)

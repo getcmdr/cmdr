@@ -1,8 +1,8 @@
 //! Ring, throttle, and report-transform tests for the state history.
 use super::*;
 use crate::redact::RedactionContext;
-use chrono::{TimeZone, Utc};
 use cmdr_operations::{LifecycleStatus, WriteOperationPhase, WriteOperationType};
+use jiff::Timestamp;
 use std::time::{Duration, Instant};
 
 const RAW_NAME: &str = "PRIVATE-NAME-ASYMMETRIC";
@@ -13,7 +13,7 @@ const VOLUME_ID: &str = "smb-PRIVATE-NAME-ASYMMETRIC-0123456789abcdef";
 fn raw(sequence: u64) -> RawStateSnapshot {
     RawStateSnapshot {
         sequence,
-        captured_at: Utc.timestamp_opt(1_800_000_000 + sequence as i64, 0).unwrap(),
+        captured_at: Timestamp::from_second(1_800_000_000 + sequence as i64).unwrap(),
         generation: 40 + sequence,
         focused: Some(PaneSide::Right),
         show_hidden: true,
@@ -71,7 +71,7 @@ fn raw(sequence: u64) -> RawStateSnapshot {
         ],
         recent_listing_error_count: 5,
         recent_listing_failures: vec![RawListingFailure {
-            at: Utc.timestamp_opt(1_800_000_000, 0).single(),
+            at: Timestamp::from_second(1_800_000_000).ok(),
             volume_id: VOLUME_ID.to_string(),
             backend: Some(ReportBackend::Smb),
             reason: Some("permissionDenied".to_string()),
