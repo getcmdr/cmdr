@@ -84,7 +84,7 @@ dirs = "7"
 # The unique suffix every staged scratch name ends in (`staging`). A caller can
 # also supply one, so the type is part of the mint API rather than an internal
 # detail: a safe-overwrite gives its temp and its aside the same UUID.
-uuid = { version = "1.29.1", features = ["v4"] }
+uuid = { version = "1.29.2", features = ["v4"] }
 # `staging::names`: a scratch name too long for the destination keeps only the
 # whole grapheme clusters of the original name that fit, so a cut never strands a
 # combining accent or splits an emoji. Already in the graph through the app.
@@ -153,7 +153,7 @@ exacl = "0.13"
 [target.'cfg(target_family = "wasm")'.dependencies]
 # A browser's randomness source (`crypto.getRandomValues`) for the scratch-name
 # UUIDs; without it `uuid` refuses to compile for `wasm32-unknown-unknown`.
-uuid = { version = "1.29.1", features = ["js"] }
+uuid = { version = "1.29.2", features = ["js"] }
 # The browser build's executor and clock (`src/rt/wasm.rs`): `performance.now()`
 # behind `std`-shaped `Instant` / `SystemTime` (`std`'s panic on
 # `wasm32-unknown-unknown`), `spawn_local` for tasks, and `setTimeout` for sleeps.

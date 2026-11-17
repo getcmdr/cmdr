@@ -38,7 +38,7 @@ url = "2"
 # its registrable domain only (`dl.dropboxusercontent.com` → `dropboxusercontent.com`),
 # since a subdomain can carry a token or a private name. Released daily from the
 # list; Renovate's weekly group takes the updates. `helpers` gives `domain_str`.
-psl = { version = "2.1.250", default-features = false, features = ["helpers"] }
+psl = { version = "2.1.254", default-features = false, features = ["helpers"] }
 
 [dev-dependencies]
 cmdr-about = { path = ".", features = ["fuzzing"] }
