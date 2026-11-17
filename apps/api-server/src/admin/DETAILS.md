@@ -36,9 +36,9 @@ Consumer: the private SvelteKit dashboard in `apps/analytics-dashboard/`.
 
 ## Heartbeat DAU and app hours
 
-`/admin/heartbeat-dau?range=7d|30d|90d|all` returns one row per UTC day: `{ date, dau, appHours }`. The dashboard no
-longer calls it (`/admin/active-installs` carries the same `dau` and `appHours`); it stays as the reference
-`active-installs.test.ts` checks those against.
+`/admin/heartbeat-dau?range=7d|30d|90d|all` returns one row per UTC day: `{ date, dau, appHours }`. The dashboard reads
+`dau` and `appHours` from `/admin/active-installs`; this endpoint is the reference `active-installs.test.ts` checks
+those against.
 
 - `dau`: `COUNT(DISTINCT anal_id)` that beat that day.
 - `appHours`: `SUM(COALESCE(uptime_seconds, 3600)) / 3600.0` (`beatSecondsSql`, shared with § Active installs), how long
@@ -242,11 +242,11 @@ event count over the window, plus an optional breakdown, against the window's ac
 feature-status review reads it through the dashboard's `/api/report` (§ "Feature usage" there).
 
 - **The window.** Without `end`, it rolls back `range` days from now (today partial included), and the response is
-  `{ range, since, activeInstalls, features }`, unchanged from before `end` existed. With `?end=YYYY-MM-DD` (inclusive,
-  no later than today UTC; malformed or future is a 400, parsed by `parseEndDate` as on `/admin/funnel/countries`), it
-  is the `range` complete UTC days ending `end`: `[end − days + 1 00:00, end + 1 00:00)`. The response then also carries
-  `until` (the exclusive end, RFC 3339) and a per-feature `firstSeenAt`. An older Worker ignores `end`, and the missing
-  `until` is how the dashboard tells.
+  `{ range, since, activeInstalls, features }`, byte-identical for callers that never pass `end`. With `?end=YYYY-MM-DD`
+  (inclusive, no later than today UTC; malformed or future is a 400, parsed by `parseEndDate` as on
+  `/admin/funnel/countries`), it is the `range` complete UTC days ending `end`: `[end − days + 1 00:00, end + 1 00:00)`.
+  The response then also carries `until` (the exclusive end, RFC 3339) and a per-feature `firstSeenAt`. An older Worker
+  ignores `end`, and the missing `until` is how the dashboard tells.
 - **`firstSeenAt`** is the earliest stored `occurred_at` among the feature's events, or `null` if none was ever stored.
   It's what keeps a previous-period change honest: a previous window that starts before the feature's events existed
   reads `0`, which isn't a real zero, so the dashboard prints `–` for that change. It's a lower bound for a

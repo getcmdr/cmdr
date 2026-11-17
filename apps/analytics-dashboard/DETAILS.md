@@ -3,6 +3,12 @@
 Read this before any non-trivial work here: editing, planning, reorganizing, or advising. `CLAUDE.md` is the
 always-loaded summary; this is the depth.
 
+## Stack
+
+SvelteKit with `@sveltejs/adapter-cloudflare`, Tailwind v4 (CSS-first in `src/app.css`, dark mode only), uPlot for the
+`/` timeline charts (`Chart.svelte`, `MiniTimeline.svelte`), and plain SVG for `DailyChart.svelte`. All API keys stay
+server-side, behind `+server.ts` / `+page.server.ts`. `pnpm check dashboard` runs all nine checks (§ Tooling).
+
 ## Multi-page structure
 
 The dashboard is four routes under one shared layout. Each section is its own component; the route files just compose
@@ -28,10 +34,11 @@ sections and pass their loaded data down.
     `#lib/product-stats.ts`), `UsageTrendsSection` (daily actives stacked new/returning with the update-check reach as
     `DailyChart`'s dotted `overlay`, and hours per active install), `ReleaseRolloutSection` (yesterday's share on the
     latest release, over a daily stack by version; `#lib/rollout.ts`, § Color coding), `RetentionCohortsSection` (the
-    D7/D28 cohort rows, moved here from `/`), `MoneySection` (`#lib/money.ts`), `OnboardingFunnelSection` (the state
-    flags' reach over the installs whose build has each flag; `#lib/onboarding-funnel.ts`), `FeatureUsageSection`,
-    `SettingsAdoptionSection` (preferences only, 15 most-moved, the rest behind "Show all"), and `FeedbackErrorsSection`
-    (`id="inbox"`, errors per 100 installs by version). What the numbers mean: § "Product page".
+    D7/D28 cohort rows; `/` keeps only its per-country D7/D28), `MoneySection` (`#lib/money.ts`),
+    `OnboardingFunnelSection` (the state flags' reach over the installs whose build has each flag;
+    `#lib/onboarding-funnel.ts`), `FeatureUsageSection`, `SettingsAdoptionSection` (preferences only, 15 most-moved, the
+    rest behind "Show all"), and `FeedbackErrorsSection` (`id="inbox"`, errors per 100 installs by version). What the
+    numbers mean: § "Product page".
   - No `SectionDescription`/`Methodology` blurbs on `/product`: the caveats live in (i) popovers.
   - `TrendRow` glue both pages share (stats per window, daily and rolling rates, `viewRange`, `cell`):
     `#lib/trend-row.ts`.
@@ -63,10 +70,10 @@ layout can import them without crossing the boundary gotcha below.
 1. **Per-source loaders** (`fetchFunnelSource`, `fetchUmamiSource`, `fetchCloudflareSource`, …): each wraps one source
    with its env-var guard (`guardedFetch`) and the 20s `withTimeout` cap. One place per source.
 2. **Per-page composers**: `fetchAcquisitionData` runs funnel + Umami + Cloudflare + GitHub + GitHub-stars + PostHog in
-   parallel; `fetchProductData` runs active installs + Cloudflare (the reach line) + funnel (all countries, for D7/D28)
-   - GitHub (the latest release) + Paddle + license + feedback-and-errors + settings-adoption + feature-usage (both
-     windows). Each page's `+page.server.ts` re-resolves the selection from the URL and calls its composer, so a page
-     fetches only what it renders.
+   parallel; `fetchProductData` runs active installs, Cloudflare (the reach line), the funnel (all countries, for
+   D7/D28), GitHub (the latest release), Paddle, license, feedback-and-errors, settings-adoption, and feature-usage
+   (both windows). Each page's `+page.server.ts` re-resolves the selection from the URL and calls its composer, so a
+   page fetches only what it renders.
 3. **`fetchDashboardData`**: all twelve sources, used by the report endpoint (`api/report/+server.ts`) which dumps every
    section at once. It loads the Product sources exactly as `fetchProductData` does (same funnel length, both feature
    windows), so the report and `/product` read the same numbers. `fetch-all.subset.test.ts` pins all three key sets.
