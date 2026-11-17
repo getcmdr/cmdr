@@ -221,7 +221,7 @@ fn hand_over_syncs_a_written_file_now() {
 fn a_sync_failure_in_an_interval_pass_fails_the_next_flush() {
     let dir = TestDir::new("durable-late-failure");
     let barriers = DeviceBarriers::with_interval(Duration::ZERO);
-    barriers.script_syncs(|_| Some(io::Error::from_raw_os_error(libc::EIO)));
+    barriers.script_syncs(|_| OsErrorClass::Io.host_code().map(io::Error::from_raw_os_error));
     let written = write_and_note_written(&barriers, &dir, 1);
     assert_eq!(barriers.synced_paths(), written, "the interval pass ran at the note");
 
@@ -257,7 +257,7 @@ fn hand_over_written_syncs_now_and_the_flush_answers_its_failure() {
 fn an_inline_sync_failure_answers_the_note() {
     let dir = TestDir::new("durable-inline-failure");
     let barriers = DeviceBarriers::with_interval(Duration::MAX);
-    barriers.script_syncs(|_| Some(io::Error::from_raw_os_error(libc::EIO)));
+    barriers.script_syncs(|_| OsErrorClass::Io.host_code().map(io::Error::from_raw_os_error));
     let path = dir.join("f");
     std::fs::write(&path, b"x").unwrap();
     let file = File::open(&path).unwrap();
@@ -265,6 +265,7 @@ fn an_inline_sync_failure_answers_the_note() {
 }
 
 /// The unsupported class is "no barrier to offer"; real I/O failures aren't.
+#[cfg(unix)]
 #[test]
 fn only_the_unsupported_class_counts_as_no_barrier() {
     // By raw errno, since a class can have no code of its own on a host:

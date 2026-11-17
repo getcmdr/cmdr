@@ -84,21 +84,12 @@ pub fn domain_id_for_dir(path: &str) -> Option<String> {
     read_domain_id_xattr(path, DOMAIN_ID_XATTR)
 }
 
-/// The read itself, with the attribute name injected so tests can exercise it
-/// against a name they're allowed to write. macOS refuses `com.apple.*` xattrs to
-/// an unentitled process, so a test that builds its fixture with the real constant
-/// can never pass; see the tests below.
-#[cfg(unix)]
-fn read_domain_id_xattr(path: &str, name: &str) -> Option<String> {
-    let raw = xattr::get(path, name).ok()??;
-    String::from_utf8(raw).ok()
-}
-
-/// The browser build has no xattrs, so no File Provider domains.
-#[cfg(target_family = "wasm")]
-fn read_domain_id_xattr(_path: &str, _name: &str) -> Option<String> {
-    None
-}
+// The read itself, with the attribute name injected so tests can exercise it
+// against a name they're allowed to write. macOS refuses `com.apple.*` xattrs to
+// an unentitled process, so a test that builds its fixture with the real constant
+// can never pass; see the tests below.
+mod platform;
+use platform::read_domain_id_xattr;
 
 /// Whether a path sits inside somebody's File Provider domain.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -420,6 +411,7 @@ mod tests {
     /// the reader, is what fails (same reason `cmdr-archive`'s `mutator_test` picks
     /// its tag name per platform).
     #[test]
+    #[cfg(unix)]
     fn a_directory_carrying_the_xattr_reports_its_value_verbatim() {
         let dir = tempfile::tempdir().expect("temp dir");
         let path = dir.path().to_string_lossy().into_owned();
@@ -730,8 +722,7 @@ mod tests {
     }
 
     /// The candidate list names both locations and every folder in them (files
-    /// aren't domains), reads a home that has none of them as no candidates, and
-    /// says "can't tell" for a location it can't list.
+    /// aren't domains), and reads a home that has none of them as no candidates.
     #[test]
     fn the_candidate_list_names_each_location_and_the_folders_in_it() {
         let home = tempfile::tempdir().expect("temp home");
@@ -750,6 +741,16 @@ mod tests {
         let mut found = candidate_domain_locations_in(home.path()).expect("both locations list");
         found.sort();
         assert_eq!(found, vec![cloud.clone(), cloud.join("Dropbox"), icloud]);
+    }
+
+    /// A location it can't list makes it say "can't tell". Unix only: Windows has no mode
+    /// that refuses a listing (a deny ACE would, which is task 36's to write).
+    #[test]
+    #[cfg(unix)]
+    fn an_unlistable_location_cant_vouch_for_the_marker() {
+        let home = tempfile::tempdir().expect("temp home");
+        let cloud = home.path().join("Library").join("CloudStorage");
+        std::fs::create_dir_all(cloud.join("Dropbox")).expect("a provider folder");
 
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(&cloud, std::fs::Permissions::from_mode(0o000)).expect("chmod");

@@ -5,7 +5,6 @@
     "cmdr-adb": "blocked by `cmdr-fs`",
     "cmdr-archive": "blocked by `cmdr-fs`",
     "cmdr-brief-columns": "blocked by `cmdr-fs`",
-    "cmdr-fs": "fails in its own code (66 errors, mostly `std::os::unix` imports)",
     "cmdr-git": "blocked by `cmdr-fs`",
     "cmdr-index": "blocked by `cmdr-fs` and `usearch`'s build script",
     "cmdr-listing": "blocked by `cmdr-fs`",
