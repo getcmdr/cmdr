@@ -3,7 +3,7 @@
 
 use std::borrow::Cow;
 
-use chrono::NaiveDateTime;
+use jiff::civil::DateTime;
 use serde::{Deserialize, Serialize};
 
 /// Where a field comes from, the part of its name before the dot.
@@ -75,7 +75,7 @@ pub enum FieldKind {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MediaValue<'a> {
     /// Local wall-clock time.
-    Date(NaiveDateTime),
+    Date(DateTime),
     /// A whole number.
     Number(i64),
     /// Trimmed, never empty. Borrowed from the facts except for a composed
@@ -88,7 +88,7 @@ pub enum MediaValue<'a> {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct MediaFacts {
     /// When it was taken, local wall-clock time.
-    pub taken: Option<NaiveDateTime>,
+    pub taken: Option<DateTime>,
     /// The camera's maker.
     pub make: Option<String>,
     /// The camera's model.

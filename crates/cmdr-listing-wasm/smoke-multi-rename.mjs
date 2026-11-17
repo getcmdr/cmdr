@@ -127,6 +127,12 @@ export async function smokeMultiRename(demo, bus) {
     [media.counts.problems, media.rows[0].status],
     [PHOTOS, { type: 'unreadable', field: 'exifTaken' }],
   )
+  // `smoke.mjs` runs in Kathmandu (UTC+05:45): a date in UTC would be off by 5:45.
+  const dated = await demo.invoke('preview_multi_rename', {
+    sessionId: photos.sessionId,
+    spec: spec('[=exif.taken|modified:Y-M-D h.m.s]'),
+  })
+  expect("a photo's modified date, in the page's zone", dated.rows[0].newName, '2023-11-15 03.58.20.jpg')
   await demo.invoke('close_multi_rename', { sessionId: photos.sessionId })
 
   const hold = `longest hold ${Math.round(longestCpuMs)} ms CPU, ${Math.round(longestWallMs)} ms wall`

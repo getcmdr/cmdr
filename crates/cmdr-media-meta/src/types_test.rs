@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 
-use chrono::NaiveDate;
-
+use crate::test_fixtures::at;
 use crate::types::{FieldKind, MediaFacts, MediaField, MediaSource, MediaValue, ReadError, is_media_name};
 
 #[test]
@@ -104,10 +103,7 @@ fn text(facts: &MediaFacts, field: MediaField) -> Option<String> {
 
 #[test]
 fn get_answers_each_field_with_its_kind_of_value() {
-    let taken = NaiveDate::from_ymd_opt(2026, 7, 14)
-        .unwrap()
-        .and_hms_opt(9, 5, 30)
-        .unwrap();
+    let taken = at(2026, 7, 14, 9, 5, 30);
     let facts = MediaFacts {
         taken: Some(taken),
         make: Some("Apple".into()),

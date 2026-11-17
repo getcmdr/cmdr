@@ -126,6 +126,15 @@ tree lists as a folder (as on disk).
     raw, nothing gzipped (61 bytes the other way), and 9 KB Brotli'd. Why: the demo's reader never calls
     `read_media_from`, so fat LTO drops the parsers. The bar was 50 KB gzipped; a feature would be a second build shape
     of the crate to keep compiling for that.
+- **jiff's `js` feature** (a wasm-only dependency here, `use jiff as _` in `lib.rs`): Multi-Rename turns a modified time
+  into the visitor's wall clock through `TimeZone::system()`, which in the browser knows the page's zone only by asking
+  `Intl`; without `js` it answers UTC. `smoke.mjs` runs in `Asia/Kathmandu` (UTC+05:45, no DST) and
+  `smoke-multi-rename.mjs` pins a rendered date there, so a build without the feature fails the smoke. Cost, with the
+  same three measures (rustc 1.99.1, binaryen 133, 2026-11-17): 10,149,691 / 3,800,436 / 2,737,663 on chrono (whose
+  default `wasmbind` read JS `Date`), 10,174,215 / 3,817,957 / 2,752,616 on jiff without `js`, 10,426,305 / 3,908,170 /
+  2,806,025 with it. The 252 KB raw (90 KB gzipped) `js` adds is the bundled tzdb (`jiff-tzdb-platform`, a default
+  feature on wasm) and the `Intl` glue: without a zone name nothing reaches the tzdb, so fat LTO drops it (inferred from
+  the two builds' sizes, not measured symbol by symbol).
 - **`wasm-opt -O1 --duplicate-function-elimination`** runs on the bindgen output in place (binaryen pinned in
   `.mise.toml`; `wasmOptArgs` in `main.go`, with rustc's default wasm32 feature set so it validates what rustc emits).
   ❌ Don't switch it to `-Oz` or `-Os`: they shrink the raw file most but compress worse, and the page downloads the

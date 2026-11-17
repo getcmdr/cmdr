@@ -1605,11 +1605,11 @@ name = "cmdr-archive"
 version = "0.0.0"
 dependencies = [
  "bzip2",
- "chrono",
  "cmdr-archive",
  "cmdr-fs",
  "filetime",
  "flate2",
+ "jiff",
  "log",
  "lzma-rust2",
  "notify-debouncer-full",
@@ -1725,7 +1725,6 @@ dependencies = [
 name = "cmdr-index"
 version = "0.0.0"
 dependencies = [
- "chrono",
  "cmdr-fs",
  "cmdr-fsevent-stream",
  "cmdr-index",
@@ -1736,6 +1735,7 @@ dependencies = [
  "futures-util",
  "half",
  "instant-clip-tokenizer",
+ "jiff",
  "libc",
  "log",
  "notify",
@@ -1797,6 +1797,7 @@ dependencies = [
  "cmdr-search",
  "cmdr-viewer",
  "futures-util",
+ "jiff",
  "js-sys",
  "log",
  "rusqlite",
@@ -1828,8 +1829,8 @@ dependencies = [
 name = "cmdr-media-meta"
 version = "0.0.0"
 dependencies = [
- "chrono",
  "cmdr-fs",
+ "jiff",
  "kamadak-exif",
  "lofty",
  "log",
@@ -1872,7 +1873,6 @@ dependencies = [
 name = "cmdr-multi-rename"
 version = "0.0.0"
 dependencies = [
- "chrono",
  "cmdr-fs",
  "cmdr-listing",
  "cmdr-media-meta",
@@ -1880,6 +1880,7 @@ dependencies = [
  "cmdr-operations",
  "cmdr-recents",
  "futures-util",
+ "jiff",
  "libc",
  "log",
  "regex",
@@ -1923,7 +1924,6 @@ dependencies = [
 name = "cmdr-operations"
 version = "0.0.0"
 dependencies = [
- "chrono",
  "cmdr-adb",
  "cmdr-archive",
  "cmdr-collation",
@@ -1941,6 +1941,7 @@ dependencies = [
  "filetime",
  "flate2",
  "futures-util",
+ "jiff",
  "libc",
  "log",
  "objc2 0.6.5",
@@ -5942,10 +5943,12 @@ dependencies = [
  "jiff-core",
  "jiff-static",
  "jiff-tzdb-platform",
+ "js-sys",
  "log",
  "portable-atomic",
  "portable-atomic-util",
  "serde_core",
+ "wasm-bindgen",
  "windows-link 0.2.1",
 ]
 

@@ -833,19 +833,17 @@ struct StampedTimes {
     local_header_has_extended: bool,
 }
 
-fn stamp_and_read_back(utc: (i32, u32, u32, u32, u32, u32), offset_hours: i32) -> StampedTimes {
-    use chrono::TimeZone;
+fn stamp_and_read_back(utc: (i16, i8, i8, i8, i8, i8), offset_hours: i8) -> StampedTimes {
     let (year, month, day, hour, minute, second) = utc;
-    let modified: std::time::SystemTime = chrono::Utc
-        .with_ymd_and_hms(year, month, day, hour, minute, second)
-        .single()
-        .expect("a real instant")
-        .into();
+    let wall = DateTime::new(year, month, day, hour, minute, second, 0).expect("a real time");
+    let instant = jiff::tz::Offset::UTC.to_timestamp(wall).expect("a real instant");
+    #[expect(clippy::unnecessary_fallible_conversions, reason = "fallible from jiff 1.0")]
+    let modified = std::time::SystemTime::try_from(instant).expect("a SystemTime holds it");
     stamp_instant_and_read_back(modified, offset_hours)
 }
 
-fn stamp_instant_and_read_back(modified: std::time::SystemTime, offset_hours: i32) -> StampedTimes {
-    let zone = chrono::FixedOffset::east_opt(offset_hours * 3600).expect("a real offset");
+fn stamp_instant_and_read_back(modified: std::time::SystemTime, offset_hours: i8) -> StampedTimes {
+    let zone = TimeZone::fixed(jiff::tz::offset(offset_hours));
     let mut writer = ZipWriter::new(io::Cursor::new(Vec::new()));
     writer
         .start_file(

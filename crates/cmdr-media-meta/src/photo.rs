@@ -6,8 +6,8 @@
 
 use std::io::{self, BufReader, Read, Seek, SeekFrom};
 
-use chrono::{NaiveDate, NaiveDateTime};
 use exif::{Context, Exif, In, Tag, Value};
+use jiff::civil::DateTime;
 
 use crate::bytes::{be_u16, be_u32, file_len, le_u32, read_exact_at, read_up_to_at, read_vec_at};
 use crate::types::{MediaFacts, ReadError};
@@ -307,11 +307,16 @@ fn facts_from_exif(exif: &Exif) -> MediaFacts {
 
 /// EXIF's `2026:07:14 09:05:30`, the camera's wall-clock time. A blank or
 /// impossible date (`0000:00:00`) is absent.
-fn parse_date(ascii: &[u8]) -> Option<NaiveDateTime> {
+fn parse_date(ascii: &[u8]) -> Option<DateTime> {
     let parsed = exif::DateTime::from_ascii(ascii).ok()?;
-    NaiveDate::from_ymd_opt(i32::from(parsed.year), u32::from(parsed.month), u32::from(parsed.day))?.and_hms_opt(
-        u32::from(parsed.hour),
-        u32::from(parsed.minute),
-        u32::from(parsed.second.min(59)),
+    DateTime::new(
+        i16::try_from(parsed.year).ok()?,
+        i8::try_from(parsed.month).ok()?,
+        i8::try_from(parsed.day).ok()?,
+        i8::try_from(parsed.hour).ok()?,
+        i8::try_from(parsed.minute).ok()?,
+        i8::try_from(parsed.second.min(59)).ok()?,
+        0,
     )
+    .ok()
 }

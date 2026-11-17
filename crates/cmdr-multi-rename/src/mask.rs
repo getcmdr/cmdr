@@ -35,8 +35,8 @@
 
 use std::fmt::Write as _;
 
-use chrono::{Datelike, NaiveDateTime, Timelike};
 use cmdr_media_meta::{MediaFacts, MediaField};
+use jiff::civil::DateTime;
 
 mod media_token;
 
@@ -58,7 +58,7 @@ pub struct RowFacts<'a> {
     pub parent: &'a str,
     pub grandparent: &'a str,
     /// Last modification, local time.
-    pub modified: Option<NaiveDateTime>,
+    pub modified: Option<DateTime>,
     /// The row's place in the rename order, from 0: what the counter counts.
     pub position: usize,
     /// What the file says about itself, for the `[=source.field]` placeholders.
@@ -608,7 +608,7 @@ fn pad(value: i64, digits: u32) -> String {
     }
 }
 
-fn date(when: &NaiveDateTime, parts: &[DatePart]) -> String {
+fn date(when: &DateTime, parts: &[DatePart]) -> String {
     let mut out = String::new();
     for part in parts {
         let _ = match part {

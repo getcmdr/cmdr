@@ -21,7 +21,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
 serde = { version = "1", features = ["derive"] }
 toml = "1"
 rand = "0.9"
-chrono = "0.4"
+jiff = "0.2.23"
 futures-util = "0.3"
 binrw = "0.15"
 env_logger = "0.11"

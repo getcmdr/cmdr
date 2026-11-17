@@ -3,8 +3,8 @@
 use crate::config::Target;
 use futures_util::StreamExt;
 use smb::{
-    Client, ClientConfig, CreateDisposition, FileAccessMask, FileBothDirectoryInformation,
-    FileDispositionInformation, GetLen, Resource, UncPath,
+    Client, ClientConfig, CreateDisposition, FileAccessMask, FileBothDirectoryInformation, FileDispositionInformation,
+    GetLen, Resource, UncPath,
 };
 use std::io::Write;
 use std::str::FromStr;
@@ -67,15 +67,10 @@ pub async fn connect(target: &Target) -> Result<(Client, UncPath, ChunkSizes), S
         .get_connection(&target.host)
         .await
         .map_err(|e| format!("get_connection: {e}"))?;
-    let conn_info = conn
-        .conn_info()
-        .ok_or("Connection not yet negotiated")?;
+    let conn_info = conn.conn_info().ok_or("Connection not yet negotiated")?;
     let neg = &conn_info.negotiation;
 
-    let cap = target
-        .max_chunk_kb
-        .map(|kb| kb * 1024)
-        .unwrap_or(DEFAULT_MAX_CHUNK);
+    let cap = target.max_chunk_kb.map(|kb| kb * 1024).unwrap_or(DEFAULT_MAX_CHUNK);
     let chunk_sizes = ChunkSizes {
         read: std::cmp::min(neg.max_read_size, cap) as usize,
         write: std::cmp::min(neg.max_write_size, cap) as usize,
@@ -98,19 +93,12 @@ pub async fn setup(client: &Client, unc_path: &UncPath, cycle_id: &str) -> Resul
     // Try to delete existing test dir first (best-effort)
     let _ = delete_dir_recursive(client, unc_path, &test_dir).await;
 
-    let tree = client
-        .get_tree(unc_path)
-        .await
-        .map_err(|e| format!("get_tree: {e}"))?;
+    let tree = client.get_tree(unc_path).await.map_err(|e| format!("get_tree: {e}"))?;
 
-    let access = FileAccessMask::new()
-        .with_generic_read(true)
-        .with_generic_write(true);
+    let access = FileAccessMask::new().with_generic_read(true).with_generic_write(true);
 
     // Create base dir if needed
-    let _ = tree
-        .create_directory(base, CreateDisposition::OpenIf, access)
-        .await;
+    let _ = tree.create_directory(base, CreateDisposition::OpenIf, access).await;
 
     // Create cycle-specific subdir
     let resource = tree
@@ -148,9 +136,7 @@ pub async fn upload(
         while (offset as usize) < size {
             let end = std::cmp::min(offset as usize + write_chunk, size);
             let chunk = &data[offset as usize..end];
-            file.write_block(chunk, offset, None)
-                .await
-                .expect("write_block");
+            file.write_block(chunk, offset, None).await.expect("write_block");
             offset = end as u64;
         }
         drop(file);
@@ -163,10 +149,7 @@ pub async fn list(client: &Client, unc_path: &UncPath, test_dir: &str) -> (usize
     let tree = client.get_tree(unc_path).await.expect("get_tree");
 
     let access = FileAccessMask::new().with_generic_read(true);
-    let resource = tree
-        .open_existing(test_dir, access)
-        .await
-        .expect("open test dir");
+    let resource = tree.open_existing(test_dir, access).await.expect("open test dir");
     let dir = Arc::new(resource.unwrap_dir());
 
     let start = Instant::now();
@@ -215,10 +198,7 @@ pub async fn download(
     for name in &file_names {
         let file_path = format!(r"{test_dir}\{name}");
         let access = FileAccessMask::new().with_generic_read(true);
-        let resource = tree
-            .open_existing(&file_path, access)
-            .await
-            .expect("open file");
+        let resource = tree.open_existing(&file_path, access).await.expect("open file");
         let file = resource.unwrap_file();
 
         let file_size = file.get_len().await.expect("get file length");
@@ -252,15 +232,8 @@ pub async fn delete(client: &Client, unc_path: &UncPath, test_dir: &str) -> Dura
 }
 
 /// Recursively delete a directory and its contents via SMB.
-async fn delete_dir_recursive(
-    client: &Client,
-    unc_path: &UncPath,
-    dir_name: &str,
-) -> Result<(), String> {
-    let tree = client
-        .get_tree(unc_path)
-        .await
-        .map_err(|e| format!("get_tree: {e}"))?;
+async fn delete_dir_recursive(client: &Client, unc_path: &UncPath, dir_name: &str) -> Result<(), String> {
+    let tree = client.get_tree(unc_path).await.map_err(|e| format!("get_tree: {e}"))?;
 
     // List directory contents
     let access = FileAccessMask::new().with_generic_read(true);
@@ -315,18 +288,12 @@ async fn set_delete_disposition(resource: &Resource) -> Result<(), String> {
 }
 
 /// Collect all directory entries from the async stream into a Vec.
-async fn collect_dir_entries(
-    dir: &Arc<smb::Directory>,
-    pattern: &str,
-) -> Vec<FileBothDirectoryInformation> {
+async fn collect_dir_entries(dir: &Arc<smb::Directory>, pattern: &str) -> Vec<FileBothDirectoryInformation> {
     let stream = smb::Directory::query::<FileBothDirectoryInformation>(dir, pattern)
         .await
         .expect("query directory");
     let results: Vec<Result<FileBothDirectoryInformation, _>> = stream.collect().await;
-    results
-        .into_iter()
-        .map(|r| r.expect("dir entry"))
-        .collect()
+    results.into_iter().map(|r| r.expect("dir entry")).collect()
 }
 
 /// Remove test base directory if it exists (for --cleanup-only).

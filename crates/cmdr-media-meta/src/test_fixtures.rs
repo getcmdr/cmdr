@@ -6,18 +6,18 @@ use std::io::{self, Cursor, Read, Seek, SeekFrom};
 use std::ops::Range;
 use std::rc::Rc;
 
-use chrono::{NaiveDate, NaiveDateTime, TimeDelta};
+use jiff::SignedDuration;
+use jiff::civil::DateTime;
 
 /// A wall-clock time, for expectations.
-pub fn at(year: i32, month: u32, day: u32, hour: u32, minute: u32, second: u32) -> NaiveDateTime {
-    NaiveDate::from_ymd_opt(year, month, day)
-        .and_then(|d| d.and_hms_opt(hour, minute, second))
-        .expect("a valid test date")
+pub fn at(year: i16, month: i8, day: i8, hour: i8, minute: i8, second: i8) -> DateTime {
+    DateTime::new(year, month, day, hour, minute, second, 0).expect("a valid test date")
 }
 
 /// The test machine's zone: two hours ahead of UTC, whatever the real one is.
-pub fn two_hours_ahead(utc: NaiveDateTime) -> NaiveDateTime {
-    utc + TimeDelta::hours(2)
+pub fn two_hours_ahead(utc: DateTime) -> DateTime {
+    utc.checked_add(SignedDuration::from_hours(2))
+        .expect("a test date two hours on")
 }
 
 /// `parts` back to back.
@@ -50,8 +50,8 @@ pub fn full(version: u8, body: &[u8]) -> Vec<u8> {
 }
 
 /// Seconds from 1904-01-01 UTC to `utc`, as `mvhd` counts.
-pub fn mac_seconds(utc: NaiveDateTime) -> u64 {
-    u64::try_from((utc - at(1904, 1, 1, 0, 0, 0)).num_seconds()).expect("after 1904")
+pub fn mac_seconds(utc: DateTime) -> u64 {
+    u64::try_from(at(1904, 1, 1, 0, 0, 0).duration_until(utc).as_secs()).expect("after 1904")
 }
 
 /// `mvhd` version 0: 32-bit creation and modification times.
@@ -166,8 +166,8 @@ pub fn info_with_date(nanos: i64) -> Vec<u8> {
 }
 
 /// Nanoseconds from 2001-01-01 UTC to `utc`, as `DateUTC` counts.
-pub fn matroska_nanos(utc: NaiveDateTime) -> i64 {
-    (utc - at(2001, 1, 1, 0, 0, 0)).num_nanoseconds().expect("in range")
+pub fn matroska_nanos(utc: DateTime) -> i64 {
+    i64::try_from(at(2001, 1, 1, 0, 0, 0).duration_until(utc).as_nanos()).expect("in range")
 }
 
 /// A `Cluster` of `len` bytes of frames nobody should read.

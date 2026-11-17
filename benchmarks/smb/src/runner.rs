@@ -1,7 +1,7 @@
 //! Orchestrates benchmark runs: warmup, iterations, median calculation.
 
 use crate::config::{BenchConfig, Target};
-use crate::{direct, native, Suite};
+use crate::{Suite, direct, native};
 use rand::Rng;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -118,8 +118,7 @@ async fn run_suite(target: &Target, suite: &Suite, iterations: usize) -> Result<
         let d_id = format!("d-{iter}");
 
         if native_first {
-            let (un, ln, dn, deln) =
-                run_native_cycle(target, suite, &data, &tmp_base, &n_id).await;
+            let (un, ln, dn, deln) = run_native_cycle(target, suite, &data, &tmp_base, &n_id).await;
             let (ud, ld, dd, deld) =
                 run_direct_cycle(&client, &unc_path, &chunk_sizes, suite, &data, &tmp_base, &d_id).await;
             upload_native.push(un);
@@ -133,8 +132,7 @@ async fn run_suite(target: &Target, suite: &Suite, iterations: usize) -> Result<
         } else {
             let (ud, ld, dd, deld) =
                 run_direct_cycle(&client, &unc_path, &chunk_sizes, suite, &data, &tmp_base, &d_id).await;
-            let (un, ln, dn, deln) =
-                run_native_cycle(target, suite, &data, &tmp_base, &n_id).await;
+            let (un, ln, dn, deln) = run_native_cycle(target, suite, &data, &tmp_base, &n_id).await;
             upload_direct.push(ud);
             list_direct.push(ld);
             download_direct.push(dd);
@@ -152,10 +150,26 @@ async fn run_suite(target: &Target, suite: &Suite, iterations: usize) -> Result<
         file_count: suite.file_count,
         file_size_bytes: suite.file_size_bytes,
         operations: vec![
-            OpResult { name: "upload".into(), native_times: upload_native, direct_times: upload_direct },
-            OpResult { name: "list".into(), native_times: list_native, direct_times: list_direct },
-            OpResult { name: "download".into(), native_times: download_native, direct_times: download_direct },
-            OpResult { name: "delete".into(), native_times: delete_native, direct_times: delete_direct },
+            OpResult {
+                name: "upload".into(),
+                native_times: upload_native,
+                direct_times: upload_direct,
+            },
+            OpResult {
+                name: "list".into(),
+                native_times: list_native,
+                direct_times: list_direct,
+            },
+            OpResult {
+                name: "download".into(),
+                native_times: download_native,
+                direct_times: download_direct,
+            },
+            OpResult {
+                name: "delete".into(),
+                native_times: delete_native,
+                direct_times: delete_direct,
+            },
         ],
     })
 }
@@ -197,11 +211,17 @@ async fn run_direct_cycle(
     tmp_base: &PathBuf,
     cycle_id: &str,
 ) -> (Duration, Duration, Duration, Duration) {
-    let test_dir = direct::setup(client, unc_path, cycle_id)
-        .await
-        .expect("direct setup");
-    let upload_time =
-        direct::upload(client, unc_path, &test_dir, suite.file_count, suite.file_size_bytes, data, chunks.write).await;
+    let test_dir = direct::setup(client, unc_path, cycle_id).await.expect("direct setup");
+    let upload_time = direct::upload(
+        client,
+        unc_path,
+        &test_dir,
+        suite.file_count,
+        suite.file_size_bytes,
+        data,
+        chunks.write,
+    )
+    .await;
     let (count, list_time) = direct::list(client, unc_path, &test_dir).await;
     if count != suite.file_count {
         log::warn!(

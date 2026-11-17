@@ -25,9 +25,9 @@ testing = []
 # The `Volume` the byte source reads through (`read_range`), its errors, and the
 # `Deadline` a file's read runs under. The only crate below this one.
 cmdr-fs = { path = "../cmdr-fs" }
-# `MediaFacts::taken` is a local wall-clock `NaiveDateTime`, as the mask's other
-# dates are.
-chrono = "0.4"
+# `MediaFacts::taken` is a local wall-clock `civil::DateTime` (no zone attached),
+# as the mask's other dates are.
+jiff = "0.2.43"
 # EXIF from JPEG, TIFF, HEIF, PNG, WebP, and TIFF-based RAW. Declared under its lib
 # name `exif` (the package is `kamadak-exif`), the same version the app pins.
 exif = { package = "kamadak-exif", version = "0.6.1" }

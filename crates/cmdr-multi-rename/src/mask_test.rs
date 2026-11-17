@@ -1,7 +1,7 @@
 //! The rename mask against Total Commander's own examples (help file and wiki).
 
-use chrono::{NaiveDate, NaiveDateTime};
 use cmdr_media_meta::{FieldKind, MediaFacts, MediaField};
+use jiff::civil::DateTime;
 
 use super::mask::{
     FieldGap, FieldText, MAX_COUNTER_DIGITS, Mask, MaskError, MediaToken, RangeToken, RowFacts, RowMedia,
@@ -25,7 +25,7 @@ fn facts(name: &str) -> RowFacts<'_> {
         is_directory: false,
         parent: "Holiday 2026",
         grandparent: "Photos",
-        modified: NaiveDate::from_ymd_opt(2026, 6, 15).and_then(|d| d.and_hms_opt(23, 10, 9)),
+        modified: at(2026, 6, 15, 23, 10, 9),
         position: 0,
         media: RowMedia::NotMedia,
     }
@@ -389,8 +389,8 @@ fn a_range_token_reads_its_field_and_says_which_characters_it_takes() {
     assert_eq!(RangeToken::parse("n"), None);
 }
 
-fn at(y: i32, mo: u32, d: u32, h: u32, mi: u32, s: u32) -> Option<NaiveDateTime> {
-    NaiveDate::from_ymd_opt(y, mo, d).and_then(|date| date.and_hms_opt(h, mi, s))
+fn at(y: i16, mo: i8, d: i8, h: i8, mi: i8, s: i8) -> Option<DateTime> {
+    DateTime::new(y, mo, d, h, mi, s, 0).ok()
 }
 
 /// A phone photo that's also, improbably, tagged like a song: every kind of field.

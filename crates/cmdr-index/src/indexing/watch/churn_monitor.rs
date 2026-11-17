@@ -365,7 +365,7 @@ impl ChurnReport {
     /// line so a parser can take the rest of the line verbatim (paths contain
     /// spaces and `=`).
     pub(in crate::indexing) fn log(&self, volume_id: &str) {
-        let t_ms = chrono::Local::now().timestamp_millis();
+        let t_ms = jiff::Timestamp::now().as_millisecond();
         log::debug!(
             target: LOG_TARGET,
             "churn_period seq={} t_ms={t_ms} vol={volume_id} period_ms={} raw_events={} batch_paths={} nodes={} nodes_dropped={} deep_truncated={} emitted={}",

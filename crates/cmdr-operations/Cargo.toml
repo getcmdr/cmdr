@@ -150,7 +150,7 @@ cmdr-sftp = { path = "../cmdr-sftp" }
 cmdr-smb = { path = "../cmdr-smb" }
 cmdr-webdav = { path = "../cmdr-webdav" }
 # A fresh zip's entry dates, read back in local time.
-chrono = "0.4"
+jiff = "0.2.43"
 # The hot-path bench (`benches/transfer_benchmarks.rs`).
 criterion = { version = "0.8.1", features = ["html_reports"] }
 # Ageing fixture files.

@@ -288,8 +288,11 @@ unchanged. Cmdr's own writer writes both (`../mutation/DETAILS.md`), so its arch
   whole directory, so it's no extra round trip; a directory bigger than the window is read twice.
 - **Accepted shift**: an archive an older Cmdr wrote (UTC DOS field, no `UT`) now lists hours off by the reader's
   offset. David's call (#340): correct for every other tool's archives beats compatible with a short-lived writer bug.
-- **DST edges**: an ambiguous wall clock takes the earlier instant; a skipped one takes the offset just before the jump.
-- Tests: `zip_times_test.rs` reads with a fixed UTC+2 zone (`zip::parse_in`), so they don't depend on the machine's.
+- **DST edges**: an ambiguous wall clock takes the earlier instant. A skipped one takes the offset in force at the
+  instant whose UTC reading equals the wall clock, which is the post-jump offset east of UTC and the pre-jump one west
+  of it, so neither jiff's `compatible` nor its `earlier` is the rule; `wall_clock_to_unix` computes it literally.
+- Tests: `zip_times_test.rs` reads with a fixed UTC+2 zone and POSIX CET and US Eastern rules (`zip::parse_in`,
+  `wall_clock_to_unix`), so they don't depend on the machine's.
 
 ## Index cache (`ArchiveIndexCache`)
 
