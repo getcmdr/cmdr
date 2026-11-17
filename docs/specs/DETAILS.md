@@ -14,10 +14,6 @@ Read this before adding, wiping, or reorganizing a spec.
 
 ## The specs
 
-- `product-dashboard-plan.md`: **The analytics dashboard's Product tab mixes today's partial day into its numbers,
-  prints active installs as a vague range, and buries the few numbers that matter in text.** Headline tiles (WAU, MAU,
-  stickiness, D7, paying share) from a new `/admin/active-installs`, a per-version rollout chart, an onboarding funnel
-  from typed `kind: 'state'` settings, and a Paddle money card with the filter and pagination fixed. Issue: #1217.
 - `oplog-tree-plan.md`: **The Operation log shows a flat, capped list and can only undo a whole operation.** A
   master–detail dialog over a backend-owned, windowed item tree with checkboxes, partial rollback through the real
   engine, full keyboard, and a writer-maintained summary so two 2M-item operations stay fast. Issue:
