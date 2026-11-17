@@ -16,6 +16,38 @@ fn test_encryption_roundtrip() {
     assert_eq!(decrypted, data);
 }
 
+/// ❗ **A `credentials.enc` written by cocoon 0.5 must keep opening** after any `cocoon` bump: a
+/// format change would make every Linux user's saved passwords unreadable, and the next save
+/// would set the file aside as if the machine had changed (#537).
+///
+/// `testdata/credentials-cocoon-0.5.enc` is a real store file, written once by
+/// `EncryptedFileStore::set` on cocoon 0.5.0 (2026-11-17) under the test-only key
+/// `test-machine-id-1`. Its header is cocoon's container format version 1 (magic `7f c0 0a`,
+/// version `01`, ChaCha20-Poly1305, PBKDF2 at "strong" iterations). ❌ Never regenerate it with a
+/// newer cocoon: that would test the new version against itself. If a future cocoon writes a new
+/// format version, add a fixture for it beside this one and keep this one.
+#[test]
+fn a_store_file_from_cocoon_0_5_format_v1_still_opens() {
+    let fixture = PathBuf::from(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/secrets/testdata/credentials-cocoon-0.5.enc"
+    ));
+    let raw = std::fs::read(&fixture).expect("the fixture is committed");
+    assert_eq!(
+        &raw[..7],
+        &[0x7f, 0xc0, 0x0a, 0x01, 0x01, 0x01, 0x01],
+        "the fixture is cocoon container format v1, ChaCha20-Poly1305, PBKDF2 strong"
+    );
+
+    let contents = read_store(&fixture, b"test-machine-id-1").expect("cocoon 0.5's file decrypts and parses");
+
+    assert_eq!(contents.0.len(), 1);
+    assert_eq!(
+        contents.0.get("smb://testnas/photos").map(Vec::as_slice),
+        Some(&b"test_user_1\0test_secret_1"[..])
+    );
+}
+
 #[test]
 fn test_store_contents_serde_roundtrip() {
     let mut contents = StoreContents::default();

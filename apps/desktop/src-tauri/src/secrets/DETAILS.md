@@ -35,6 +35,9 @@ notes.
   which would fail to open this machine's own file and set it aside on the next save. The fallback keys only a machine
   with no id at all (absent or blank `/etc/machine-id`), where it is that machine's real key for good, so a foreign file
   there is still set aside.
+- ❗ **A `cocoon` bump must keep old files opening.** `testdata/credentials-cocoon-0.5.enc` is a store file cocoon 0.5
+  wrote (container format v1, test-only key); `a_store_file_from_cocoon_0_5_format_v1_still_opens` decrypts it on
+  whatever cocoon is linked. ❌ Never regenerate it: add a fixture per new format version instead.
 - ⚠️ **Known limitation: two OSes sharing one home folder** (a dual boot, each with its own machine id) can't share
   `credentials.enc`: each one's first save sets the other's file aside. A keyring (Secret Service) avoids it; per-id file
   names would trade it for a restored home starting empty without a notice.
