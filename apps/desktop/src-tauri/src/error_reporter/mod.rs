@@ -1,6 +1,6 @@
 //! Error reporter: builds a privacy-redacted zip bundle of recent logs + manifest and
-//! (optionally) uploads it to the ingestion server. Used by the user-initiated flow in
-//! Phase 4 and, later, by the auto-send flow in Phase 5.
+//! (optionally) uploads it to the ingestion server. Used by the user-initiated flow
+//! (Flow A) and the auto-send flow (Flow B).
 //!
 //! The bundle layout is:
 //!
@@ -135,7 +135,7 @@ pub fn report_error(target: &str, message: &str, backtrace: &dyn std::fmt::Displ
 /// live in [`crate::short_id`] so the crash reporter can reuse them.
 const SHORT_ID_PREFIX: &str = "ERR";
 
-/// Flavor of the bundle, kept separate so Phase 5's auto-sender can share the same builder.
+/// Flavor of the bundle, kept separate so Flow B's auto-sender shares the same builder.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum BundleKind {
