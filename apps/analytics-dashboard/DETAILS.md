@@ -423,9 +423,10 @@ association from one section to the next:
 - Countries: eight fixed colors in `#lib/country-colors.ts` (`countryColor(code)`), assigned once to the 90-day top
   eight and never reshuffled by rank; every other country, and "Other", is the grey. The file's header carries the
   validator run and the near-pair caveat. Add a color deliberately when an uncolored country climbs into the top 20.
-- Versions: an eight-slot validated cycle in `#lib/version-colors.ts` (`versionColor(version)`), a pure function of the
-  version string, so a version keeps its color load after load and versions leaving the view never recolor the rest.
-  Gold and Homebrew blue are never a version. The rollout chart (`ReleaseRolloutSection`) draws every version in view as
+- Versions: a 32-slot validated table in `#lib/version-colors.ts` (`versionColor(version)`): 16 slots for releases
+  (keyed on the minor, so any 16 consecutive minors differ) and 16 for patches, a pure function of the version string,
+  so a version keeps its color load after load and versions leaving the view never recolor the rest. Gold, Homebrew
+  blue, the unknown grey, and gold-reading ochres and olives are never a version. The rollout chart (`ReleaseRolloutSection`) draws every version in view as
   its own layer (no "Older" bucket, no folding), legend and tooltip newest first. The file's header carries the
   validator run and the slot rule that keeps stack neighbors apart.
 - Breakdown and referrer pies: four hues of their own plus two greys, in `#lib/pie-slices.ts` (§ "Acquisition trends").

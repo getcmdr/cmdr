@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { versionColor, versionPalette, versionSlot } from './version-colors.js'
-import { COLOR_GOLD, COLOR_HOMEBREW } from './colors.js'
+import { COLOR_GOLD, COLOR_HOMEBREW, COLOR_UNKNOWN } from './colors.js'
 
 // The dataviz validator's math (OKLab ΔE ×100, Machado 2009 CVD at severity 1.0, WCAG contrast), so the
 // floors it enforces stay pinned here without the skill's script.
@@ -58,7 +58,29 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05)
 }
 
+function oklch(hex: string): { lightness: number; chroma: number; hue: number } {
+  const [lightness, a, b] = oklab(linear(hex))
+  return { lightness, chroma: Math.hypot(a, b), hue: ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360 }
+}
+
 const surface = '#1a1917'
+const minorSlots = 16
+const minorColor = (slot: number): string => versionPalette[slot % minorSlots]
+const patchColor = (slot: number): string => versionPalette[minorSlots + (slot % minorSlots)]
+
+/** Every pair that can meet in a stack, by the slot rule in the header, as [a, b, why]. */
+function stackNeighborPairs(): [string, string, string][] {
+  const pairs: [string, string, string][] = []
+  for (let i = 0; i < minorSlots; i++) {
+    const slot = String(i)
+    pairs.push([minorColor(i), minorColor(i + 1), `minor ${slot} → next minor`])
+    pairs.push([minorColor(i), patchColor(i), `minor ${slot} → its first patch`])
+    pairs.push([patchColor(i), minorColor(i + 1), `patch ${slot} → next minor`])
+    pairs.push([patchColor(i), patchColor(i + 8), `patch ${slot} → its second patch`])
+    pairs.push([patchColor(i + 8), minorColor(i + 1), `second patch of minor ${slot} → next minor`])
+  }
+  return pairs
+}
 
 describe('versionColor', () => {
   it('depends only on the version, whatever else is in view', () => {
@@ -68,40 +90,68 @@ describe('versionColor', () => {
     expect(versionColor('v0.61.0')).toBe(alone)
   })
 
-  it('gives consecutive minors neighboring slots', () => {
-    expect((versionSlot('0.61.0') - versionSlot('0.60.0') + 8) % 8).toBe(1)
+  it('gives consecutive minors neighboring minor slots and patches the patch half', () => {
+    expect((versionSlot('0.61.0') - versionSlot('0.60.0') + minorSlots) % minorSlots).toBe(1)
+    expect(versionSlot('0.61.0')).toBeLessThan(minorSlots)
+    expect(versionSlot('0.61.1')).toBe(minorSlots + versionSlot('0.61.0'))
+    expect(versionSlot('0.61.2')).toBe(minorSlots + ((versionSlot('0.61.0') + 8) % minorSlots))
   })
 
   it('reads a pre-release as its release', () => {
     expect(versionColor('0.62.0-beta.1')).toBe(versionColor('0.62.0'))
   })
 
-  it('is never gold or Homebrew blue', () => {
-    for (const color of versionPalette) {
-      expect(normalDeltaE(color, COLOR_GOLD)).toBeGreaterThanOrEqual(15)
-      expect(normalDeltaE(color, COLOR_HOMEBREW)).toBeGreaterThanOrEqual(15)
-    }
+  it('never repeats a color across the last 16 minors and their patches', () => {
+    const minors = Array.from({ length: 16 }, (_, i) => `0.${String(46 + i)}.0`)
+    const window = [...minors, '0.46.1', '0.52.1', '0.52.2', '0.55.1', '0.58.1', '0.61.1', '0.61.2']
+    const colors = window.map(versionColor)
+    expect(new Set(colors).size, colors.join(' ')).toBe(window.length)
   })
 
-  it('keeps every slot at 3:1 or more on the dark surface', () => {
-    for (const color of versionPalette) expect(contrast(color, surface)).toBeGreaterThanOrEqual(3)
-  })
-
-  // Stack neighbors are 1 (consecutive minors or patches), 3, or 4 slots apart (a patch next to a minor).
-  it.each([1, 3, 4])('keeps slots %i apart above the validator floors', (distance) => {
+  it('has 32 distinct slots, no two near-identical', () => {
+    expect(versionPalette).toHaveLength(2 * minorSlots)
     for (let i = 0; i < versionPalette.length; i++) {
-      const a = versionPalette[i]
-      const b = versionPalette[(i + distance) % versionPalette.length]
-      expect(cvdDeltaE(a, b), `${a} ↔ ${b}`).toBeGreaterThanOrEqual(6)
-      expect(normalDeltaE(a, b), `${a} ↔ ${b}`).toBeGreaterThanOrEqual(15)
+      for (let j = i + 1; j < versionPalette.length; j++) {
+        const [a, b] = [versionPalette[i], versionPalette[j]]
+        expect(normalDeltaE(a, b), `${a} ↔ ${b}`).toBeGreaterThanOrEqual(4.5)
+      }
     }
   })
 
-  it('keeps stack neighbors 1, 3, or 4 slots apart across patches', () => {
-    const stack = ['0.44.0', '0.45.0', '0.45.1', '0.45.2', '0.45.3', '0.46.0', '0.46.1', '0.47.0']
-    for (let i = 1; i < stack.length; i++) {
-      const forward = (versionSlot(stack[i]) - versionSlot(stack[i - 1]) + 8) % 8
-      expect([1, 3, 4]).toContain(Math.min(forward, 8 - forward))
+  it('is never gold, Homebrew blue, or the unknown grey', () => {
+    for (const color of versionPalette) {
+      expect(normalDeltaE(color, COLOR_GOLD), color).toBeGreaterThanOrEqual(15)
+      expect(normalDeltaE(color, COLOR_HOMEBREW), color).toBeGreaterThanOrEqual(15)
+      expect(normalDeltaE(color, COLOR_UNKNOWN), color).toBeGreaterThanOrEqual(15)
+      // No ochre, gold, yellow, or olive: those read as the product.
+      const { hue } = oklch(color)
+      expect(hue < 48 || hue > 128, `${color} hue ${hue.toFixed(0)}`).toBe(true)
+    }
+  })
+
+  it('keeps every slot in the validator dark band, above the chroma floor, and at 3:1 on the surface', () => {
+    for (const color of versionPalette) {
+      const { lightness, chroma } = oklch(color)
+      expect(lightness, color).toBeGreaterThanOrEqual(0.48)
+      expect(lightness, color).toBeLessThanOrEqual(0.67)
+      expect(chroma, color).toBeGreaterThanOrEqual(0.1)
+      expect(contrast(color, surface), color).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it('keeps every possible stack neighbor at the validator targets', () => {
+    for (const [a, b, why] of stackNeighborPairs()) {
+      expect(cvdDeltaE(a, b), `${why}: ${a} ↔ ${b}`).toBeGreaterThanOrEqual(8)
+      expect(normalDeltaE(a, b), `${why}: ${a} ↔ ${b}`).toBeGreaterThanOrEqual(15)
+    }
+  })
+
+  // A minor nobody runs drops out of the stack; its neighbors then touch, at a lower bar.
+  it('keeps minors two apart above the CVD floor', () => {
+    for (let i = 0; i < minorSlots; i++) {
+      const [a, b] = [minorColor(i), minorColor(i + 2)]
+      expect(cvdDeltaE(a, b), `${a} ↔ ${b}`).toBeGreaterThanOrEqual(6)
+      expect(normalDeltaE(a, b), `${a} ↔ ${b}`).toBeGreaterThanOrEqual(11.5)
     }
   })
 })
