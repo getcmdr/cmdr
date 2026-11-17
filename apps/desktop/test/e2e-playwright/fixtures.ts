@@ -53,7 +53,10 @@ const { test: baseTest, expect } = createTauriTest({
   // dev server. devUrl is only used in browser mode (not applicable here).
   devUrl: '',
 
-  // Tauri mode config
+  // Pinning the mode here (not just in the project's `use`) keeps Playwright from launching a headless
+  // Chromium per worker that Tauri mode never touches, so no Playwright browser needs to be installed. It rides
+  // our patch of tauri-playwright (`patches/`), offered upstream.
+  mode: 'tauri',
   mcpSocket: socketPath,
 })
 

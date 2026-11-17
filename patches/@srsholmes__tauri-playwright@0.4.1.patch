@@ -1,0 +1,50 @@
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index a50f0fe4933400d3f3d0d72cd5c60533bd1e5df6..7cd2c13b502e7bdf919a51fe77b2618e2f0d55be 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -703,6 +703,11 @@ interface TauriTestConfig {
+      * @example 'http://localhost:9222'
+      */
+     cdpEndpoint?: string;
++    /**
++     * Mode for projects that don't set `use: { mode }`. Default: 'browser'.
++     * With 'tauri' or 'cdp', Playwright skips launching Chromium, and browser mode throws.
++     */
++    mode?: TestMode;
+ }
+ /**
+  * Test mode selector.
+diff --git a/dist/index.js b/dist/index.js
+index dfce42c7d727c70acaa4d0172f43ffc45b551f39..8af7664e3fa6e789fd40df6cd1ba131b3ac62ff9 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1653,10 +1653,13 @@ var TauriProcessManager = class {
+ 
+ // src/fixture.ts
+ function createTauriTest(config) {
+-  const tauriTest = base.extend({
+-    mode: ["browser", { option: true }],
+-    tauriPage: async ({ page, mode }, use, testInfo) => {
++  const setupTauriPage = async (page, mode, use, testInfo) => {
+       if (mode === "browser") {
++        if (!page) {
++          throw new Error(
++            `Browser mode is unavailable because createTauriTest() has mode: '${config.mode}'. Remove it to run browser-mode projects.`
++          );
++        }
+         if (config.ipcMocks) {
+           await page.addInitScript(generateIpcMockScript(config.ipcMocks, config.ipcContext));
+         } else {
+@@ -1765,7 +1768,11 @@ function createTauriTest(config) {
+           processManager?.stop();
+         }
+       }
+-    }
++  };
++  const skipBrowser = config.mode === "tauri" || config.mode === "cdp";
++  const tauriTest = base.extend({
++    mode: [config.mode ?? "browser", { option: true }],
++    tauriPage: skipBrowser ? async ({ mode }, use, testInfo) => setupTauriPage(void 0, mode, use, testInfo) : async ({ page, mode }, use, testInfo) => setupTauriPage(page, mode, use, testInfo)
+   });
+   return {
+     test: tauriTest,
