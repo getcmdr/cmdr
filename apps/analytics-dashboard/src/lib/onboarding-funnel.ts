@@ -16,6 +16,8 @@ import type { SettingAdoption } from './server/settings-defaults.js'
 /** One flag in the funnel. */
 export interface FunnelFlag {
   key: string
+  /** What reaching it means, for the dashboard row ("Saw the quick filter intro"). */
+  label: string
   /**
    * The hint only shows where the OS has the feature behind it (the registry's `needsCapability`), so its
    * denominator also holds installs that could never see it: the popover says so.
@@ -23,37 +25,43 @@ export interface FunnelFlag {
   capabilityGated: boolean
 }
 
-const flag = (key: string, capabilityGated = false): FunnelFlag => ({ key, capabilityGated })
+const flag = (key: string, label: string, capabilityGated = false): FunnelFlag => ({ key, label, capabilityGated })
 
 /** The one step: finished onboarding. */
-export const onboardingStep = flag('onboarding.completed')
+export const onboardingStep = flag('onboarding.completed', 'Finished onboarding')
 
 /** Hints and intros an install has discovered. Rendered sorted by share. */
 export const discoveredFlags: readonly FunnelFlag[] = [
-  flag('fileExplorer.quickFilterIntroSeen'),
-  flag('fileExplorer.git.portalIntroSeen'),
-  flag('behavior.doubleClickOnPaneNotificationSeen'),
-  flag('network.firstTriggerDone'),
-  flag('behavior.serversPinHintSeen'),
-  flag('advanced.exitFullScreenOnEscapeHintShown', true),
-  flag('behavior.textEditorHintSeen', true),
-  flag('behavior.openTerminalHereToastSeen', true),
-  flag('behavior.revealActivationNoticeSeen', true),
-  flag('behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged', true),
-  flag('indexing.firstStaleDialogShown'),
+  flag('fileExplorer.quickFilterIntroSeen', 'Saw the quick filter intro'),
+  flag('fileExplorer.git.portalIntroSeen', 'Opened a git repo’s top folder'),
+  flag('behavior.doubleClickOnPaneNotificationSeen', 'Saw the double-click-to-go-up hint'),
+  flag('network.firstTriggerDone', 'Started network discovery'),
+  flag('behavior.serversPinHintSeen', 'Saw the long Network group hint'),
+  flag('advanced.exitFullScreenOnEscapeHintShown', 'Saw the Escape full-screen hint', true),
+  flag('behavior.textEditorHintSeen', 'Saw the text editor hint', true),
+  flag('behavior.openTerminalHereToastSeen', 'Saw the Open terminal here hint', true),
+  flag('behavior.revealActivationNoticeSeen', 'Saw the “Show in Finder” notice', true),
+  flag(
+    'behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged',
+    'Answered the latest-download shortcut question',
+    true,
+  ),
+  flag('indexing.firstStaleDialogShown', 'Saw the out-of-date index explainer'),
 ]
 
 /** Hints that mean someone hit a snag. */
-export const frictionFlags: readonly FunnelFlag[] = [flag('fileExplorer.quickFilterTypingHintSeen')]
+export const frictionFlags: readonly FunnelFlag[] = [
+  flag('fileExplorer.quickFilterTypingHintSeen', 'Had a key run its command mid-filter'),
+]
 
 /** Hints someone dismissed by hand. */
 export const dismissedFlags: readonly FunnelFlag[] = [
-  flag('behavior.adbHintDismissed'),
-  flag('aboutThis.aiHintDismissed'),
+  flag('behavior.adbHintDismissed', 'Closed the USB debugging hint'),
+  flag('aboutThis.aiHintDismissed', 'Closed the AI hint on “Tell me about this”'),
 ]
 
 /** Saw the upgrade nudge: shown on the Money card, not in the funnel. */
-export const upgradeNudgeFlag = flag('onboarding.upgradeNudgeShown')
+export const upgradeNudgeFlag = flag('onboarding.upgradeNudgeShown', 'Saw the upgrade nudge')
 
 /** Below this many eligible installs a share is noise: print "n of m" and no bar. */
 export const minEligible = 5

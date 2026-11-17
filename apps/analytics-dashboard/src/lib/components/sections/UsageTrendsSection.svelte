@@ -11,7 +11,7 @@
     import type { TooltipRow } from '#lib/daily-chart.js'
     import { reachByDay, splitActives } from '#lib/active-installs.js'
     import { cell, countStatsByWindow, dailyRatios, ratioStatsByWindow, rollingComplete, viewRange } from '#lib/trend-row.js'
-    import { formatAverage, formatNumber, formatRelativeChange } from '#lib/format.js'
+    import { formatAverage, formatHoursChange, formatNumber, formatRelativeChange } from '#lib/format.js'
     import { COLOR_GOLD } from '#lib/colors.js'
     import { tint } from '#lib/country-colors.js'
     import DailyChart from '../DailyChart.svelte'
@@ -52,11 +52,6 @@
 
     function formatHours(value: number): string {
         return `${formatAverage(value)} h`
-    }
-    /** Hours pool as a ratio, so the grid's change is their difference, in hours. */
-    function formatHoursChange(change: number): string {
-        const rounded = Math.round(change * 10) / 10
-        return rounded === 0 ? '±0 h' : `${rounded > 0 ? '+' : '−'}${String(Math.abs(rounded))} h`
     }
 </script>
 

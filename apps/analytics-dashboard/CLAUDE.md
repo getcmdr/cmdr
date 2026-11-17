@@ -9,7 +9,8 @@ Four routes share `routes/+layout.svelte` (header: nav, dates, range picker). Th
 90d), hidden on `/licenses` and `/links`; on `/`, ‹ › step back via `?end=` (`DETAILS.md` § Selection state).
 
 - `/` (Acquisition, `routes/+page.svelte`): funnel trend charts (`?country=` scoped), country table, more sections.
-- `/product` (`routes/product/`): headline tiles, usage, D7/D28 retention, money, feature usage, settings, inbox.
+- `/product` (`routes/product/`): headline tiles, usage, rollout, D7/D28 retention, money, onboarding, features,
+  settings, inbox.
 - `/licenses` (`routes/licenses/`): every license we've issued, from `/admin/licenses`, with an editable note each.
 - `/links` (`routes/links/`): CRUD for the `?r=` short codes, proxied to the api-server admin endpoints.
 

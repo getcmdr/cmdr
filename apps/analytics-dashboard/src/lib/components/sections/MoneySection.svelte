@@ -12,7 +12,7 @@
     import { allTimeRevenue, paidLicensesThrough, recentPurchases, revenueInPeriod } from '#lib/money.js'
     import { payingShareTile } from '#lib/product-stats.js'
     import { flagReach, upgradeNudgeFlag } from '#lib/onboarding-funnel.js'
-    import { formatCurrency, formatNumber, formatPercent, formatRelativeChange, formatUtcDateTime } from '#lib/format.js'
+    import { changeTone, changeToneClass, formatCurrency, formatNumber, formatPercent, formatRelativeChange, formatUtcDateTime } from '#lib/format.js'
     import InfoPopover from '../InfoPopover.svelte'
     import ErrorState from '../ErrorState.svelte'
     import ExternalLinks from '../ExternalLinks.svelte'
@@ -36,8 +36,7 @@
     const nudge = $derived(settingsAdoption.ok ? flagReach(settingsAdoption.data.settings, upgradeNudgeFlag) : null)
 
     function changeClass(change: number | null): string {
-        if (change === null || Math.abs(change) < 1e-9) return 'text-text-secondary'
-        return change > 0 ? 'text-success' : 'text-danger'
+        return changeToneClass[changeTone(change, formatRelativeChange)]
     }
 </script>
 

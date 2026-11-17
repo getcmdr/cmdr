@@ -5,13 +5,16 @@
 -->
 <script lang="ts">
     import type { WindowStats } from '#lib/acquisition-stats.js'
+    import type { ChangeFormat } from '#lib/format.js'
     import { statWindows } from '#lib/acquisition-stats.js'
+    import { changeTone, changeToneClass } from '#lib/format.js'
 
     interface Props {
         /** One `WindowStats` per window, keyed by its length in days. */
         stats: Record<(typeof statWindows)[number], WindowStats>
         formatValue: (value: number) => string
-        formatChange: (change: number) => string
+        /** Also decides the color: a change that prints as zero stays neutral. */
+        formatChange: ChangeFormat
         /** Whether a rise is good news (visitors) or bad (the bot meter). Colors the change row. */
         upIsGood?: boolean
         /** Extra metric-specific rows under the grid, one value per window (already formatted). */
@@ -29,10 +32,6 @@
         { label: 'Weekend avg', pick: (s) => s.weekendAverage },
     ]
 
-    function changeClass(change: number | null): string {
-        if (change === null || Math.abs(change) < 1e-9) return 'text-text-secondary'
-        return change > 0 === upIsGood ? 'text-success' : 'text-danger'
-    }
 </script>
 
 <table class="w-full text-sm">
@@ -58,7 +57,7 @@
             <th scope="row" class="py-1 text-left text-xs font-normal text-text-tertiary">vs. previous</th>
             {#each statWindows as w (w)}
                 {@const change = stats[w].change}
-                <td class="py-1 text-right tabular-nums {changeClass(change)}">{change === null ? '–' : formatChange(change)}</td>
+                <td class="py-1 text-right tabular-nums {changeToneClass[changeTone(change, formatChange, upIsGood)]}">{change === null ? '–' : formatChange(change)}</td>
             {/each}
         </tr>
         {#each extraRows as row (row.label)}

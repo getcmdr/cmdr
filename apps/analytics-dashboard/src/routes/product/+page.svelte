@@ -1,6 +1,7 @@
 <!--
   Product page (`/product`): one column of full-width sections, top to bottom: what needs a reply, the
-  headline tiles, usage, retention, money, feature usage, settings adoption, and the feedback inbox. Every
+  headline tiles, usage, release rollout, retention, money, onboarding, feature usage, settings adoption,
+  and the feedback inbox. Every
   stat reads complete days only (today is partial: faded on the charts, in no number). The shared range
   picker and nav live in the layout; this page renders the sections from its own loaded subset.
 -->
@@ -11,8 +12,10 @@
     import NeedsYouStrip from '#lib/components/sections/NeedsYouStrip.svelte'
     import ProductHeadline from '#lib/components/sections/ProductHeadline.svelte'
     import UsageTrendsSection from '#lib/components/sections/UsageTrendsSection.svelte'
+    import ReleaseRolloutSection from '#lib/components/sections/ReleaseRolloutSection.svelte'
     import RetentionCohortsSection from '#lib/components/sections/RetentionCohortsSection.svelte'
     import MoneySection from '#lib/components/sections/MoneySection.svelte'
+    import OnboardingFunnelSection from '#lib/components/sections/OnboardingFunnelSection.svelte'
     import FeatureUsageSection from '#lib/components/sections/FeatureUsageSection.svelte'
     import SettingsAdoptionSection from '#lib/components/sections/SettingsAdoptionSection.svelte'
     import FeedbackErrorsSection from '#lib/components/sections/FeedbackErrorsSection.svelte'
@@ -42,6 +45,7 @@
         selection={data.selection}
         {todayIso}
     />
+    <ReleaseRolloutSection activeInstalls={data.activeInstalls} {release} window={shown} selection={data.selection} {todayIso} />
     <RetentionCohortsSection funnel={data.funnel} window={shown} selection={data.selection} {todayIso} />
     <MoneySection
         paddle={data.paddle}
@@ -52,6 +56,7 @@
         selection={data.selection}
         {todayIso}
     />
+    <OnboardingFunnelSection settingsAdoption={data.settingsAdoption} selection={data.selection} />
     <FeatureUsageSection featureUsage={data.featureUsage} selection={data.selection} />
     <SettingsAdoptionSection settingsAdoption={data.settingsAdoption} selection={data.selection} />
     <FeedbackErrorsSection

@@ -5,6 +5,8 @@
 -->
 <script lang="ts">
     import type { Snippet } from 'svelte'
+    import type { ChangeTone } from '#lib/format.js'
+    import { changeToneClass } from '#lib/format.js'
     import InfoPopover from './InfoPopover.svelte'
 
     interface Props {
@@ -14,19 +16,16 @@
         value: string | null
         /** The formatted change, or null for a dash. */
         change: string | null
-        /** The raw change's sign, for the color: positive is good unless `upIsGood` is false. */
-        direction: number | null
+        /** The change's color, from `changeTone` (neutral when it prints as zero). */
+        tone: ChangeTone
         /** What the change compares against, like "vs. 30 days earlier". */
         comparison: string
         unavailable?: string | null
-        upIsGood?: boolean
     }
 
-    const { label, info, value, change, direction, comparison, unavailable = null, upIsGood = true }: Props = $props()
+    const { label, info, value, change, tone, comparison, unavailable = null }: Props = $props()
 
-    const changeClass = $derived(
-        direction === null || Math.abs(direction) < 1e-9 ? 'text-text-secondary' : direction > 0 === upIsGood ? 'text-success' : 'text-danger',
-    )
+    const changeClass = $derived(changeToneClass[tone])
 </script>
 
 <div class="min-w-0 rounded-lg border border-border-subtle bg-surface-elevated px-4 py-3">

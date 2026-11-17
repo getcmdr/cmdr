@@ -9,7 +9,7 @@
     import type { SourceResult, DashboardSelection } from '#lib/server/types.js'
     import type { FeatureUsagePeriods } from '#lib/feature-usage.js'
     import { featureShare, foldNoData, formatParts, shareBarWidth, shareChange, sortFeatureUsage } from '#lib/feature-usage.js'
-    import { formatNumber, formatPercent, formatPointChange } from '#lib/format.js'
+    import { changeTone, changeToneClass, formatNumber, formatPercent, formatPointChange } from '#lib/format.js'
     import { shiftDay } from '#lib/time-range.js'
     import { COLOR_GOLD } from '#lib/colors.js'
     import InfoPopover from '../InfoPopover.svelte'
@@ -24,8 +24,7 @@
     } = $props()
 
     function changeClass(change: number | null): string {
-        if (change === null || Math.abs(change) < 0.0005) return 'text-text-secondary'
-        return change > 0 ? 'text-success' : 'text-danger'
+        return changeToneClass[changeTone(change, formatPointChange)]
     }
 </script>
 

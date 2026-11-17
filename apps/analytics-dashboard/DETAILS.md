@@ -26,10 +26,13 @@ sections and pass their loaded data down.
     the latest release, each linking to `#inbox`; renders nothing when both are zero), `ProductHeadline` (six
     `StatTile`s on yesterday: WAU, MAU, stickiness, hours per active day, D7, paying share; math in
     `#lib/product-stats.ts`), `UsageTrendsSection` (daily actives stacked new/returning with the update-check reach as
-    `DailyChart`'s dotted `overlay`, and hours per active install), `RetentionCohortsSection` (the D7/D28 cohort rows,
-    moved here from `/`), `MoneySection` (`#lib/money.ts`), `FeatureUsageSection`, `SettingsAdoptionSection`, and
-    `FeedbackErrorsSection` (`id="inbox"`, errors per 100 installs by version).
-  - No `SectionDescription`/`Methodology` blurbs on the new sections: the caveats live in (i) popovers.
+    `DailyChart`'s dotted `overlay`, and hours per active install), `ReleaseRolloutSection` (yesterday's share on the
+    latest release, over a daily stack by version; `#lib/rollout.ts`, § Color coding), `RetentionCohortsSection` (the
+    D7/D28 cohort rows, moved here from `/`), `MoneySection` (`#lib/money.ts`), `OnboardingFunnelSection` (the state
+    flags' reach over the installs whose build has each flag; `#lib/onboarding-funnel.ts`), `FeatureUsageSection`,
+    `SettingsAdoptionSection` (preferences only, 15 most-moved, the rest behind "Show all"), and `FeedbackErrorsSection`
+    (`id="inbox"`, errors per 100 installs by version).
+  - No `SectionDescription`/`Methodology` blurbs on `/product`: the caveats live in (i) popovers.
   - `TrendRow` glue both pages share (stats per window, daily and rolling rates, `viewRange`, `cell`):
     `#lib/trend-row.ts`.
 - `/links` — Link codes (`routes/links/+page.{svelte,server.ts}`): CRUD for the `?r=` short codes. See § "Link codes
@@ -420,6 +423,11 @@ association from one section to the next:
 - Countries: eight fixed colors in `#lib/country-colors.ts` (`countryColor(code)`), assigned once to the 90-day top
   eight and never reshuffled by rank; every other country, and "Other", is the grey. The file's header carries the
   validator run and the near-pair caveat. Add a color deliberately when an uncolored country climbs into the top 20.
+- Versions: an eight-slot validated cycle in `#lib/version-colors.ts` (`versionColor(version)`), a pure function of the
+  version string, so a version keeps its color load after load and versions leaving the view never recolor the rest.
+  Gold and Homebrew blue are never a version. The rollout chart (`ReleaseRolloutSection`) draws every version in view as
+  its own layer (no "Older" bucket, no folding), legend and tooltip newest first. The file's header carries the
+  validator run and the slot rule that keeps stack neighbors apart.
 - Breakdown and referrer pies: four hues of their own plus two greys, in `#lib/pie-slices.ts` (§ "Acquisition trends").
   Each referrer card's dot beside the site name wears that site's color.
 - Status bands (`COLOR_BAND`): the app's success / warning / danger tokens, only as faint backgrounds behind rate
@@ -444,6 +452,10 @@ today.
 - **The stats grid is one shape everywhere** (`StatsGrid`): 90/30/7 complete days × average, median, weekday and weekend
   averages, and change vs. the previous same-length window. A window the data doesn't fully cover is a dash: that's why
   we fetch 181 days, and why the 90d change is a dash against a worker capped at 90.
+- **A change's color follows what it prints.** Every change formatter in `#lib/format.ts` is a `ChangeFormat` that
+  exposes its rounded value, and `changeTone` colors from that, so a "±0%" stays neutral whatever its raw sign
+  (regression: a +0.3% change printed "±0%" in green). `StatsGrid`, `StatTile`, and the money and feature-usage changes
+  all go through it.
 - **Retention windows count final cohorts.** A cohort is final for D7 at eight days old and for D28 at 29 (the
   api-server's definition, `apps/api-server/src/admin/DETAILS.md` § "Per-day funnel"), so the D7 stats anchor at
   `today - 7` (`d7End`) and the D28 ones at `today - 28` (`d28End`), and "7d" means the seven newest final cohorts.

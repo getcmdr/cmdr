@@ -18,7 +18,8 @@
         type Tile,
     } from '#lib/product-stats.js'
     import { shiftDay } from '#lib/time-range.js'
-    import { formatAverage, formatNumber, formatPercent, formatPointChange, formatRelativeChange } from '#lib/format.js'
+    import type { ChangeFormat } from '#lib/format.js'
+    import { changeTone, formatAverage, formatNumber, formatPercent, formatPointChange, formatRelativeChange } from '#lib/format.js'
     import StatTile from '../StatTile.svelte'
 
     interface Props {
@@ -49,11 +50,11 @@
         paying: days && paddle.ok ? payingShareTile(paddle.data.allTransactions, days, n, todayIso) : null,
     })
 
-    function show(tile: Tile | null, format: (v: number) => string, formatChange: (c: number) => string) {
+    function show(tile: Tile | null, format: (v: number) => string, formatChange: ChangeFormat) {
         return {
             value: tile?.value == null ? null : format(tile.value),
             change: tile?.change == null ? null : formatChange(tile.change),
-            direction: tile?.change ?? null,
+            tone: changeTone(tile?.change ?? null, formatChange),
         }
     }
 

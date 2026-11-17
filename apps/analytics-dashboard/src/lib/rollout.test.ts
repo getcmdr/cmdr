@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { ActiveInstallsDay } from './server/sources/active-installs.js'
 import type { GitHubRelease } from './server/sources/github.js'
-import { compareVersions, latestRelease, rolloutHeadline, versionStack } from './rollout.js'
+import { compareVersions, latestRelease, rolloutHeadline, rolloutSentence, versionStack } from './rollout.js'
 
 function day(date: string, byVersion: Record<string, number>): ActiveInstallsDay {
   const dau = Object.values(byVersion).reduce((a, b) => a + b, 0)
@@ -84,6 +84,35 @@ describe('rolloutHeadline', () => {
     const quiet = [day('2026-08-09', {})]
     expect(rolloutHeadline({ version: '0.61.0', publishedAt: null }, quiet, today)).toMatchObject({ share: null })
     expect(rolloutHeadline({ version: '0.61.0', publishedAt: null }, [], today)).toMatchObject({ share: null })
+  })
+})
+
+describe('rolloutSentence', () => {
+  it('names the share, the version, and the days since release', () => {
+    expect(rolloutSentence({ kind: 'daysAfter', version: '0.61.0', daysAfter: 8, share: 0.75 })).toBe(
+      '75% of active installs ran v0.61.0 yesterday, 8 days after its release',
+    )
+    expect(rolloutSentence({ kind: 'daysAfter', version: '0.61.0', daysAfter: 1, share: 0.4 })).toBe(
+      '40% of active installs ran v0.61.0 yesterday, 1 day after its release',
+    )
+  })
+
+  it('never prints a share or "−1 days" for a release published today', () => {
+    expect(rolloutSentence({ kind: 'releasedToday', version: '0.62.0' })).toBe(
+      'v0.62.0 came out today; its first full day is tomorrow',
+    )
+  })
+
+  it('reads "on release day" for a release published yesterday', () => {
+    expect(rolloutSentence({ kind: 'onReleaseDay', version: '0.62.0', share: 0.12 })).toBe(
+      '12% of active installs ran v0.62.0 yesterday, its release day',
+    )
+  })
+
+  it('drops the day count for a fallback version, and dashes an unknown share', () => {
+    expect(rolloutSentence({ kind: 'noReleaseDate', version: '0.61.0', share: null })).toBe(
+      '– of active installs ran v0.61.0 yesterday',
+    )
   })
 })
 

@@ -7,6 +7,7 @@
 import type { ActiveInstallsDay } from './server/sources/active-installs.js'
 import type { GitHubRelease } from './server/sources/github.js'
 import { shiftDay } from './time-range.js'
+import { formatPercent } from './format.js'
 
 /** The release the headline tracks. `publishedAt` is null for the fallback (a version seen, no release). */
 export interface LatestRelease {
@@ -78,6 +79,16 @@ export function rolloutHeadline(release: LatestRelease, days: ActiveInstallsDay[
   if (daysAfter < 0) return { kind: 'releasedToday', version: release.version }
   if (daysAfter === 0) return { kind: 'onReleaseDay', version: release.version, share }
   return { kind: 'daysAfter', version: release.version, daysAfter, share }
+}
+
+/** The headline as one sentence. A release published today gets no share (no complete day on it yet). */
+export function rolloutSentence(headline: RolloutHeadline): string {
+  const v = `v${headline.version}`
+  if (headline.kind === 'releasedToday') return `${v} came out today; its first full day is tomorrow`
+  const lead = `${headline.share === null ? '–' : formatPercent(headline.share)} of active installs ran ${v} yesterday`
+  if (headline.kind === 'onReleaseDay') return `${lead}, its release day`
+  if (headline.kind === 'noReleaseDate') return lead
+  return `${lead}, ${String(headline.daysAfter)} ${headline.daysAfter === 1 ? 'day' : 'days'} after its release`
 }
 
 /** Per-version daily counts for a stacked chart, oldest version first (the bottom layer). */

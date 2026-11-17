@@ -33,6 +33,14 @@ describe('the funnel id list', () => {
     for (const id of ids) expect(stateKeys.has(id), id).toBe(true)
     expect(new Set(ids).size).toBe(ids.length)
   })
+
+  it('gives every flag its own readable label', () => {
+    const labels = [onboardingStep, ...discoveredFlags, ...frictionFlags, ...dismissedFlags, upgradeNudgeFlag].map(
+      (f) => f.label,
+    )
+    for (const label of labels) expect(label).toMatch(/^[A-Z]/)
+    expect(new Set(labels).size).toBe(labels.length)
+  })
 })
 
 describe('flagReach', () => {
