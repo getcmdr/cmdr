@@ -302,6 +302,24 @@ fn retry_after_reads_seconds_and_http_dates() {
     assert_eq!(parse_retry_after("later", now), None);
 }
 
+/// The HTTP-date shapes a provider may send: a numeric offset, `GMT` in any case, no weekday,
+/// and padding the header carried. A weekday that doesn't match the date is no date.
+#[test]
+fn retry_after_reads_every_rfc_2822_shape() {
+    use std::time::UNIX_EPOCH;
+    let now = UNIX_EPOCH + Duration::from_secs(784_111_777); // Sun, 06 Nov 1994 08:49:37 GMT
+    let thirty = Some(Duration::from_secs(30));
+
+    assert_eq!(parse_retry_after("Sun, 06 Nov 1994 09:50:07 +0100", now), thirty);
+    assert_eq!(parse_retry_after("Sun, 06 Nov 1994 08:50:07 +0000", now), thirty);
+    assert_eq!(parse_retry_after("Sun, 06 Nov 1994 08:50:07 gmt", now), thirty);
+    assert_eq!(parse_retry_after("06 Nov 1994 08:50:07 GMT", now), thirty);
+    assert_eq!(parse_retry_after("  Sun, 06 Nov 1994 08:50:07 GMT  ", now), thirty);
+    assert_eq!(parse_retry_after("Mon, 06 Nov 1994 08:50:07 GMT", now), None);
+    assert_eq!(parse_retry_after("Sunday, 06-Nov-94 08:50:07 GMT", now), None);
+    assert_eq!(parse_retry_after("Sun Nov  6 08:50:07 1994", now), None);
+}
+
 /// A 429 whose request limit is ZERO isn't the provider being busy: the account's plan doesn't
 /// include the model at all, so every call gets it and waiting changes nothing. Mistral's free
 /// workspaces answer `mistral-small-latest` this way (`x-ratelimit-limit-req-minute: 0`).

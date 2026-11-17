@@ -153,6 +153,20 @@ mod tests {
     /// 2026-10-05T00:00:00Z
     const NOW: u64 = 1_791_158_400;
 
+    /// Every shape the license server writes: `toISOString()` (`signedAt`, manual
+    /// `expiresAt`), Paddle's `ends_at` passed through raw (a microsecond fraction), and a
+    /// `+00:00` offset. Before 1970 is no timestamp at all.
+    #[test]
+    fn parse_timestamp_reads_the_servers_shapes() {
+        assert_eq!(parse_timestamp("2026-10-05T12:34:56.789Z"), Some(NOW + 45_296));
+        assert_eq!(parse_timestamp("2026-10-05T12:34:56.123456Z"), Some(NOW + 45_296));
+        assert_eq!(parse_timestamp("2026-10-05T00:00:00+00:00"), Some(NOW));
+        assert_eq!(parse_timestamp("2026-10-05T02:00:00+02:00"), Some(NOW));
+        assert_eq!(parse_timestamp("1969-12-31T23:59:59Z"), None);
+        assert_eq!(parse_timestamp(""), None);
+        assert_eq!(parse_timestamp("2026-10-05"), None);
+    }
+
     fn perpetual_key() -> KeyTerms {
         KeyTerms {
             license_type: Some(LicenseType::CommercialPerpetual),

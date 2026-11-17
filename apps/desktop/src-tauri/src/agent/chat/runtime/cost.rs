@@ -62,3 +62,30 @@ pub(crate) fn day_for(now_secs: i64, offset: FixedOffset) -> String {
         .unwrap_or(chrono::DateTime::<Utc>::UNIX_EPOCH);
     utc.with_timezone(&offset).format("%Y-%m-%d").to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn offset_of(seconds: i32) -> FixedOffset {
+        FixedOffset::east_opt(seconds).expect("valid offset")
+    }
+
+    /// The day key the cost meter and the wake ceiling share, pinned as literals: the local day
+    /// flips at the offset's midnight, and an out-of-range clock falls back to the epoch's day.
+    #[test]
+    fn the_day_is_the_offsets_calendar_day() {
+        let cells = [
+            // 2026-07-12T22:30:00Z
+            (1_783_895_400, 0, "2026-07-12"),
+            (1_783_895_400, 2 * 3600, "2026-07-13"),
+            (1_783_895_400, -(5 * 3600 + 1800), "2026-07-12"),
+            (0, -3600, "1969-12-31"),
+            (i64::MAX, 2 * 3600, "1970-01-01"),
+            (i64::MAX, -3600, "1969-12-31"),
+        ];
+        for (at, seconds, expected) in cells {
+            assert_eq!(day_for(at, offset_of(seconds)), expected, "{at} at {seconds}");
+        }
+    }
+}

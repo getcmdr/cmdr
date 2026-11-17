@@ -5,7 +5,6 @@
 //! Siblings: `stub_tests` (what an elided result says), `cost_tests` (what the shapes
 //! cost). Fixtures they all share live in `test_support`.
 
-use chrono::TimeZone;
 use serde_json::json;
 
 use super::test_support::*;
@@ -86,21 +85,36 @@ fn cmdr_md_appears_in_system_only_when_present() {
 
 #[test]
 fn envelope_renders_the_exact_field_set() {
-    // The §9 field set, order, and separators, verbatim. The timestamp is derived
-    // through the same offset so the assertion pins structure, not a wall clock.
+    // The §9 field set, order, and separators, verbatim, at a fixed instant and offset:
+    // 2026-07-12T19:30:00Z at +02:00.
     let off = offset();
-    let dt = off
-        .with_ymd_and_hms(2026, 7, 12, 21, 30, 0)
-        .single()
-        .expect("valid datetime");
-    let env = envelope_at(dt.timestamp());
+    let env = envelope_at(1_783_884_600);
 
-    let expected_ts = dt.format("%a %Y-%m-%d %H:%M").to_string();
+    let expected_ts = "Sun 2026-07-12 21:30";
     let expected = format!(
         "[{expected_ts} · focused: ~/Documents/taxes · cursor: 2024/ · 2 selected · volumes: Macintosh HD (fresh), \
          NAS-home (stale, direct) · rename batch: up to 101 files]"
     );
     assert_eq!(render_envelope(&env, off), expected);
+}
+
+/// The stamp's exact bytes are the provider prompt-cache prefix: the weekday, date, and
+/// time at the captured offset, pinned as literals across a midnight and west of UTC.
+#[test]
+fn timestamps_render_at_the_captured_offset() {
+    let cells = [
+        (1_783_884_600, 2 * 3600, "Sun 2026-07-12 21:30"),
+        (1_783_884_600, 0, "Sun 2026-07-12 19:30"),
+        (1_783_884_600, -(5 * 3600 + 1800), "Sun 2026-07-12 14:00"),
+        // 22:30Z is already Monday at +02:00.
+        (1_783_895_400, 2 * 3600, "Mon 2026-07-13 00:30"),
+        (0, -3600, "Wed 1969-12-31 23:00"),
+        // Out of range falls back to the Unix epoch.
+        (i64::MAX, 2 * 3600, "Thu 1970-01-01 02:00"),
+    ];
+    for (at, seconds, expected) in cells {
+        assert_eq!(format_timestamp(at, offset_of(seconds)), expected, "{at} at {seconds}");
+    }
 }
 
 /// The system prompt tells the model to propose "the batch size this turn's envelope names",
@@ -213,16 +227,9 @@ fn envelope_opens_only_the_latest_user_turn() {
 #[test]
 fn historical_turns_carry_their_own_timestamps() {
     let off = offset();
-    let morning = off
-        .with_ymd_and_hms(2026, 7, 12, 9, 15, 0)
-        .single()
-        .expect("valid")
-        .timestamp();
-    let evening = off
-        .with_ymd_and_hms(2026, 7, 12, 21, 30, 0)
-        .single()
-        .expect("valid")
-        .timestamp();
+    // 09:15 and 21:30 on 2026-07-12 at +02:00.
+    let morning = 1_783_840_500;
+    let evening = 1_783_884_600;
     let transcript = [
         user("this morning question", morning),
         user("evening question", evening),

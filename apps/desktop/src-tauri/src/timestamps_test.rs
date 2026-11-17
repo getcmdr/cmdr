@@ -226,3 +226,33 @@ fn every_writer_round_trips() {
         );
     }
 }
+
+/// Saved servers rank `last_connected_at` by comparing the raw STRINGS, so a fresh row must sort
+/// after every older one, chrono-written rows included, even within one second and whatever
+/// fraction digits each carries. A `Z` suffix would break this (`Z` sorts after `.` and `+`).
+#[test]
+fn rfc3339_rows_sort_by_time_as_strings() {
+    let old_chrono_rows = [
+        "2026-11-17T12:34:55.999999999+00:00",
+        "2026-11-17T12:34:56+00:00",
+        "2026-11-17T12:34:56.000000001+00:00",
+        "2026-11-17T12:34:56.000100+00:00",
+        "2026-11-17T12:34:56.120+00:00",
+        "2026-11-17T12:34:56.123456+00:00",
+    ];
+    let fresh = [
+        at(BASE, 123_456_789),
+        at(BASE, 200_000_000),
+        at(BASE + 1, 0),
+        at(BASE + 1, 5_000),
+    ]
+    .map(rfc3339);
+    let rows: Vec<&str> = old_chrono_rows
+        .iter()
+        .copied()
+        .chain(fresh.iter().map(String::as_str))
+        .collect();
+    let mut sorted = rows.clone();
+    sorted.sort_unstable();
+    assert_eq!(sorted, rows);
+}

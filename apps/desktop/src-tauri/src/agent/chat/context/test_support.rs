@@ -26,7 +26,12 @@ pub(crate) const BUDGET: usize = DEFAULT_PROMPT_TOKEN_BUDGET;
 pub(crate) const TIGHT_BUDGET: usize = 8_000;
 
 pub(crate) fn offset() -> FixedOffset {
-    FixedOffset::east_opt(2 * 3600).expect("valid offset")
+    offset_of(2 * 3600)
+}
+
+/// A fixed UTC offset `seconds` east of UTC.
+pub(crate) fn offset_of(seconds: i32) -> FixedOffset {
+    FixedOffset::east_opt(seconds).expect("valid offset")
 }
 
 pub(crate) fn user(text: &str, at: i64) -> AgentMessage {
