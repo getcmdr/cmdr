@@ -13,7 +13,7 @@
 ## Upload latest.json to the release: ok
 gh release upload latest.json
 
-## Publish SHA-256 checksums for the DMGs and the pkg: ok
+## Publish SHA-256 checksums for the downloads: ok
 gh release upload checksums.txt
 
 ## Update release body with changelog: ok
@@ -32,7 +32,7 @@ bcd899796479d2edca05d947801bf9bc059aa96bc90057b2370a4156a735ee7c  Cmdr_0.61.0_aa
 729582e883d080a470a6159e5523d33d1922b468ac49f76d723080c16b7efb1d  Cmdr_0.61.0_universal.dmg
 5993ceea6f1f22132aea573b7d7eeb7d5ebc6a80f0abc726b5e4d43be6d1e893  Cmdr_0.61.0_x64.dmg
 
-## latest.json e1cdcf022cc3514834e64327e0b488e6701afd381abe09db72d491cd58f11396
+## latest.json 86020bf13bdd3d8a8599db883543eb1cc5ecf70461e707a95052de1f5b85f946
 {
   "version": "0.61.0",
   "dmgSizes": {
@@ -55,5 +55,28 @@ bcd899796479d2edca05d947801bf9bc059aa96bc90057b2370a4156a735ee7c  Cmdr_0.61.0_aa
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRS2pCYTdOaDlnb2gzTEwwbzdBWVk4VkNRMUM2VGVnVWp3M1hlTzJTUFdBb0xuN3k1Q1EwUE80T3A4cHFtU25RcE1aMk83SGNadStrT0FuakxBYmx6bDVvUmYyS0VxVlFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTg1MTMwCWZpbGU6Q21kcl8wLjYxLjBfeDY0LmFwcC50YXIuZ3oKaE9GTHBTNXhvSExpMU52eEk1bFhRUFoxc2FTVDlQU3pnOFp2eEdMalA5N05qcUV6VDZKYjFjU0dwazZuaFBvTkJRLytYeWdkUW9OazRnOFltVkRoQnc9PQo=",
       "url": "https://download.getcmdr.com/v0.61.0/Cmdr_0.61.0_x64.app.tar.gz"
     }
-  }
+  },
+  "downloads": [
+    {
+      "os": "macos",
+      "arch": "aarch64",
+      "kind": "dmg",
+      "file": "Cmdr_0.61.0_aarch64.dmg",
+      "size": 63540866
+    },
+    {
+      "os": "macos",
+      "arch": "x86_64",
+      "kind": "dmg",
+      "file": "Cmdr_0.61.0_x64.dmg",
+      "size": 68516564
+    },
+    {
+      "os": "macos",
+      "arch": "universal",
+      "kind": "dmg",
+      "file": "Cmdr_0.61.0_universal.dmg",
+      "size": 119705354
+    }
+  ]
 }

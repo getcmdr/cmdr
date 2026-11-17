@@ -1,4 +1,4 @@
 # job publish
 
 ## Download signatures from release: FAILED
-error: Missing sig for x64
+error: Missing sig for Cmdr_0.61.0_x64.app.tar.gz

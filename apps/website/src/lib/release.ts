@@ -1,6 +1,11 @@
 import latestRelease from '../../public/latest.json'
+import { macDmgFile, macDmgSizes, type UpdateManifest } from './release-downloads'
 
-export const version = latestRelease.version
+// The release pipeline writes this file (`docs/guides/releasing.md` § The release asset manifest),
+// so its shape is trusted, not validated.
+const manifest: UpdateManifest = latestRelease
+
+export const version = manifest.version
 
 /** Display version: drops a trailing `.0` patch (`0.16.0` → `0.16`), keeps non-zero patches (`0.16.1`). */
 export const versionDisplay = version.endsWith('.0') ? version.slice(0, -2) : version
@@ -16,8 +21,7 @@ function dmgUrl(arch: string): string {
   // Homebrew (detected by User-Agent) and direct links shared elsewhere. The direct mirror link (used
   // when no download base is configured) carries no telemetry, so the param is irrelevant there.
   if (downloadBase) return `${downloadBase}/download/${version}/${arch}?src=website`
-  // Release files spell the Intel arch `x64`, never `x86_64`.
-  return `${mirrorBase}/Cmdr_${version}_${arch === 'x86_64' ? 'x64' : arch}.dmg`
+  return `${mirrorBase}/${macDmgFile(manifest, arch)}`
 }
 
 export const dmgUrls = {
@@ -26,18 +30,5 @@ export const dmgUrls = {
   universal: dmgUrl('universal'),
 }
 
-function formatBytes(bytes: number): string {
-  return `${Math.round(bytes / (1024 * 1024))} MB`
-}
-
-const rawSizes = latestRelease.dmgSizes
-
 /** Formatted download sizes (for example, "15 MB"), null if not yet populated by CI */
-export const dmgSizes =
-  rawSizes.universal > 0
-    ? {
-        aarch64: formatBytes(rawSizes.aarch64),
-        x86_64: formatBytes(rawSizes.x86_64),
-        universal: formatBytes(rawSizes.universal),
-      }
-    : null
+export const dmgSizes = macDmgSizes(manifest)

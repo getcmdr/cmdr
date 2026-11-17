@@ -45,6 +45,19 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       update-signing: ${{ steps.signing.outputs.mode }}
+      # The release asset manifest's plan (`scripts/release-assets/plan.go` names each), so every
+      # job below works from one list of what this release publishes.
+      update-archives: ${{ steps.assets.outputs.update-archives }}
+      update-archives-macos: ${{ steps.assets.outputs.update-archives-macos }}
+      binaries: ${{ steps.assets.outputs.binaries }}
+      rust-sboms: ${{ steps.assets.outputs.rust-sboms }}
+      frontend-sbom: ${{ steps.assets.outputs.frontend-sbom }}
+      sbom-macos-aarch64: ${{ steps.assets.outputs.sbom-macos-aarch64 }}
+      sbom-macos-aarch64-subjects: ${{ steps.assets.outputs.sbom-macos-aarch64-subjects }}
+      sbom-macos-x86_64: ${{ steps.assets.outputs.sbom-macos-x86_64 }}
+      sbom-macos-x86_64-subjects: ${{ steps.assets.outputs.sbom-macos-x86_64-subjects }}
+      sbom-frontend: ${{ steps.assets.outputs.sbom-frontend }}
+      sbom-frontend-subjects: ${{ steps.assets.outputs.sbom-frontend-subjects }}
 
     steps:
       - name: Checkout code
@@ -117,10 +130,23 @@ jobs:
       # goes Latest, and `latest.json` names that host. A token that can't write the bucket would
       # fail `publish` after the hour-long build, so prove it here, in seconds (one small fixed
       # object, overwritten each time). `docs/guides/releasing.md` § Where downloads are served from.
-      - name: Install Go for the download mirror check
+      - name: Install Go for the asset plan and the download mirror check
         uses: ./.github/actions/install-mise
         with:
           install_args: go
+
+      # Every file this release publishes, from the release asset manifest
+      # (`scripts/release-assets/manifest/manifest.go`), as the outputs above. It fails when the
+      # manifest has an update payload for an OS `vet-update-archives` can't vet, or an SBOM the
+      # `attest` job has no step for: change `-vetted` and `-attested` with those jobs.
+      # `docs/guides/releasing.md` § The release asset manifest.
+      - name: Plan the release assets
+        id: assets
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          ./scripts/release-assets.sh plan -version "${TAG#v}" -vetted macos \
+            -attested "macos-aarch64 macos-x86_64 frontend" -subject-dir release-assets
 
       - name: Require write access to the EU download bucket
         env:
@@ -930,6 +956,11 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts --filter @cmdr/desktop
 
       - name: Generate the SBOMs
+        env:
+          # The release asset manifest's SBOMs (`guard`'s plan): one `<target> <file>` line per
+          # Rust SBOM, and the frontend's file.
+          RUST_SBOMS: ${{ needs.guard.outputs.rust-sboms }}
+          FRONTEND_SBOM: ${{ needs.guard.outputs.frontend-sbom }}
         run: |
           set -euo pipefail
           TAG="${{ github.ref_name }}"
@@ -942,15 +973,14 @@ jobs:
           # Default features only: those are what the release build compiles. `cargo
           # cyclonedx` writes one file per workspace member beside its `Cargo.toml` (even
           # with `--manifest-path`), so the app's own file is picked out by name.
-          # File names say `x64`, matching the DMGs (docs/guides/releasing.md).
-          for pair in aarch64-apple-darwin:aarch64 x86_64-apple-darwin:x64; do
-              triple="${pair%%:*}"
-              arch="${pair##*:}"
+          while read -r triple file; do
+              stem="${file#Cmdr_"${VERSION}"_}"
+              stem="${stem%.rust.cdx.json}"
               cargo cyclonedx --manifest-path apps/desktop/src-tauri/Cargo.toml \
                   --format json --spec-version 1.5 --target "$triple" \
-                  --override-filename "sbom-$arch" -q
-              mv "apps/desktop/src-tauri/sbom-$arch.json" "sbom/Cmdr_${VERSION}_${arch}.rust.cdx.json"
-          done
+                  --override-filename "sbom-$stem" -q
+              mv "apps/desktop/src-tauri/sbom-$stem.json" "sbom/$file"
+          done <<< "$RUST_SBOMS"
 
           # The npm packages whose code is in the built frontend, read from the bundle itself by
           # a frontend build with `CMDR_FRONTEND_SBOM=1` (`apps/desktop/scripts/vite-frontend-sbom.ts`).
@@ -959,7 +989,7 @@ jobs:
           # same modules; this build's own output is thrown away.
           pnpm --filter @cmdr/desktop exec svelte-kit sync
           CMDR_FRONTEND_SBOM=1 pnpm --filter @cmdr/desktop build
-          mv apps/desktop/build/sbom/frontend.cdx.json "sbom/Cmdr_${VERSION}_frontend.cdx.json"
+          mv apps/desktop/build/sbom/frontend.cdx.json "sbom/$FRONTEND_SBOM"
 
           # Resolving must not have changed a lockfile, or the SBOM describes something
           # other than what the compile job compiled.
@@ -1029,16 +1059,19 @@ jobs:
 
       # First, and the only step that sees the token: the cargo build below runs third-party build
       # scripts, which then find no token in their environment or in `.git/config`.
+      # The macOS update payloads from the release asset manifest (`guard`'s plan). The plan fails
+      # on any other OS's payload until this job learns to vet it.
       - name: Download the update archives
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
+          ARCHIVES: ${{ needs.guard.outputs.update-archives-macos }}
         run: |
           set -euo pipefail
-          VERSION="${TAG#v}"
-          for arch in aarch64 x64 universal; do
-              gh release download "$TAG" -R "$GITHUB_REPOSITORY" \
-                  -p "Cmdr_${VERSION}_${arch}.app.tar.gz" -D "$RUNNER_TEMP/archives"
+          # A gate that vets nothing must not pass.
+          [ -n "$ARCHIVES" ] || { echo "::error::guard's plan names no macOS update archives."; exit 1; }
+          for name in $ARCHIVES; do
+              gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "$name" -D "$RUNNER_TEMP/archives"
           done
           ls -l "$RUNNER_TEMP/archives"
 
@@ -1046,14 +1079,14 @@ jobs:
       - name: Run the updater's own check on each archive
         env:
           TAG: ${{ github.ref_name }}
+          ARCHIVES: ${{ needs.guard.outputs.update-archives-macos }}
         run: |
           set -euo pipefail
           VERSION="${TAG#v}"
+          paths=()
+          for name in $ARCHIVES; do paths+=("$RUNNER_TEMP/archives/$name"); done
           cargo run --quiet --release --locked -p cmdr-update-trust --bin cmdr-vet-update -- \
-              --version "$VERSION" \
-              "$RUNNER_TEMP/archives/Cmdr_${VERSION}_aarch64.app.tar.gz" \
-              "$RUNNER_TEMP/archives/Cmdr_${VERSION}_x64.app.tar.gz" \
-              "$RUNNER_TEMP/archives/Cmdr_${VERSION}_universal.app.tar.gz"
+              --version "$VERSION" "${paths[@]}"
 
   # The browser demo getcmdr.com serves at /demo/, built from the tagged sources: `pnpm build:demo`,
   # the website built around it with the full demo suite run against it (`website-demo-e2e`), and
@@ -1210,18 +1243,17 @@ jobs:
       - name: Download signatures from release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ARCHIVES: ${{ needs.guard.outputs.update-archives }}
         run: |
           TAG="${{ github.ref_name }}"
-          VERSION="${TAG#v}"
           mkdir -p /tmp/signatures
-          gh release download "$TAG" -p "Cmdr_*.app.tar.gz.sig" -D /tmp/signatures
+          gh release download "$TAG" -p "Cmdr_*.sig" -D /tmp/signatures
 
-          # Verify all 3 arch sigs were downloaded. The `sign` job names the `.app.tar.gz` and
-          # `.app.tar.gz.sig` assets with the app version, the way the DMG names always have:
-          # `Cmdr_<version>_<arch>.app.tar.gz.sig`. `gh` writes each file under the release
-          # asset's own name, so these are the names on disk too.
-          for arch in aarch64 x64 universal; do
-              [ -f "/tmp/signatures/Cmdr_${VERSION}_${arch}.app.tar.gz.sig" ] || { echo "Missing sig for $arch"; exit 1; }
+          # Every update payload in the release asset manifest (`guard`'s plan) needs its `.sig`.
+          # `gh` writes each file under the release asset's own name, so these are the names on
+          # disk too.
+          for name in $ARCHIVES; do
+              [ -f "/tmp/signatures/$name.sig" ] || { echo "Missing sig for $name"; exit 1; }
           done
 
       - name: Extract changelog for this version
@@ -1249,14 +1281,15 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ARCHIVES: ${{ needs.guard.outputs.update-archives }}
         run: |
           set -euo pipefail
           TAG="${{ github.ref_name }}"
           VERSION="${TAG#v}"
           mkdir -p /tmp/verify
-          cp /tmp/signatures/*.app.tar.gz.sig /tmp/verify/
-          for arch in aarch64 x64 universal; do
-              gh release download "$TAG" -p "Cmdr_${VERSION}_${arch}.app.tar.gz" -D /tmp/verify
+          for name in $ARCHIVES; do
+              cp "/tmp/signatures/$name.sig" /tmp/verify/
+              gh release download "$TAG" -p "$name" -D /tmp/verify
           done
           ./scripts/release-finish.sh -verify-dir /tmp/verify "$VERSION"
 
@@ -1274,50 +1307,27 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
           TAG="${{ github.ref_name }}"
 
-          # Read signatures downloaded from the release
-          SIG_AARCH64=$(cat "/tmp/signatures/Cmdr_${VERSION}_aarch64.app.tar.gz.sig")
-          SIG_X86_64=$(cat "/tmp/signatures/Cmdr_${VERSION}_x64.app.tar.gz.sig")
-          SIG_UNIVERSAL=$(cat "/tmp/signatures/Cmdr_${VERSION}_universal.app.tar.gz.sig")
-
-          # Query DMG sizes from the release assets (Tauri's bundler says "x64" in DMG names)
+          # The release as GitHub has it now: the sizes for `downloads` and `dmgSizes`.
           RELEASE_JSON=$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")
-          SIZE_AARCH64=$(echo "$RELEASE_JSON" | jq '[.assets[] | select(.name | endswith("_aarch64.dmg"))][0].size // 0')
-          SIZE_X86_64=$(echo "$RELEASE_JSON" | jq '[.assets[] | select(.name | endswith("_x64.dmg"))][0].size // 0')
-          SIZE_UNIVERSAL=$(echo "$RELEASE_JSON" | jq '[.assets[] | select(.name | endswith("_universal.dmg"))][0].size // 0')
-
-          # Read notes from file, escape for JSON
-          NOTES=$(jq -Rs . < /tmp/notes.txt)
+          printf '%s\n' "$RELEASE_JSON" > /tmp/release.json
 
           # The EU mirror (`scripts/release-mirror.sh`, run below before the release goes Latest).
           # Older installs follow any HTTPS URL here: no shipped updater checks the host.
           BASE_URL="https://download.getcmdr.com/$TAG"
 
-          jq -n --indent 2 \
-            --arg version "$VERSION" \
-            --argjson size_aarch64 "$SIZE_AARCH64" \
-            --argjson size_x86_64 "$SIZE_X86_64" \
-            --argjson size_universal "$SIZE_UNIVERSAL" \
-            --argjson notes "$NOTES" \
-            --arg pub_date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --arg sig_universal "$SIG_UNIVERSAL" \
-            --arg sig_aarch64 "$SIG_AARCH64" \
-            --arg sig_x86_64 "$SIG_X86_64" \
-            --arg base_url "$BASE_URL" \
-            '{
-              version: $version,
-              dmgSizes: { aarch64: $size_aarch64, x86_64: $size_x86_64, universal: $size_universal },
-              notes: $notes,
-              pub_date: $pub_date,
-              platforms: {
-                "darwin-universal": { signature: $sig_universal, url: "\($base_url)/Cmdr_\($version)_universal.app.tar.gz" },
-                "darwin-aarch64": { signature: $sig_aarch64, url: "\($base_url)/Cmdr_\($version)_aarch64.app.tar.gz" },
-                "darwin-x86_64": { signature: $sig_x86_64, url: "\($base_url)/Cmdr_\($version)_x64.app.tar.gz" }
-              }
-            }' > /tmp/latest.json
+          # From the release asset manifest: a `platforms` entry per update payload (with its
+          # signature), a `downloads` entry per download the release has (os, arch, kind, file,
+          # size) for the website, and `dmgSizes`, which website builds from before `downloads`
+          # still read. ❌ Don't drop `dmgSizes` before the release after the one that adds
+          # `downloads`. `docs/guides/releasing.md` § The release asset manifest.
+          ./scripts/release-assets.sh latest-json -version "$VERSION" -assets /tmp/release.json \
+            -sigs /tmp/signatures -notes /tmp/notes.txt -base-url "$BASE_URL" \
+            -pub-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" -out /tmp/latest.json
 
           # Every installed copy of Cmdr fetches these URLs verbatim and has no fallback, so a name
           # that drifts from what the `sign` job uploaded would strand the whole install base. Fail
@@ -1341,28 +1351,27 @@ jobs:
       # that have historically served hijacked downloads (MacUpdate, 2018).
       # ❗ Hash the assets AS PUBLISHED, by downloading them back from the release, ❌ never a
       # local copy: the point is to describe what a user will actually receive.
-      - name: Publish SHA-256 checksums for the DMGs and the pkg
+      - name: Publish SHA-256 checksums for the downloads
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           TAG="${{ github.ref_name }}"
           VERSION="${TAG#v}"
           rm -rf /tmp/checksums && mkdir -p /tmp/checksums
-          for arch in aarch64 x64 universal; do
-              gh release download "$TAG" -R "$GITHUB_REPOSITORY" \
-                  -p "Cmdr_${VERSION}_${arch}.dmg" -D /tmp/checksums
+          # Every download in the release asset manifest: the required ones (a missing one fails
+          # here) and the optional ones the release has (the pkg, which `sign` skips without its
+          # certificate).
+          gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json assets > /tmp/assets.json
+          FILES=$(./scripts/release-assets.sh checksum-files -version "$VERSION" -assets /tmp/assets.json)
+          EXPECTED=0
+          for name in $FILES; do
+              gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "$name" -D /tmp/checksums
+              EXPECTED=$((EXPECTED + 1))
           done
-          # The pkg only when the release has one (`sign` skips it without its certificate).
-          EXPECTED=3
-          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json assets \
-              --jq '.assets[].name' | grep -qx "Cmdr_${VERSION}_universal.pkg"; then
-              gh release download "$TAG" -R "$GITHUB_REPOSITORY" \
-                  -p "Cmdr_${VERSION}_universal.pkg" -D /tmp/checksums
-              EXPECTED=4
-          fi
           ( cd /tmp/checksums && shasum -a 256 ./* | sed 's| \./| |' > /tmp/checksums.txt )
           mv /tmp/checksums.txt /tmp/checksums/checksums.txt
-          # One line per DMG plus the pkg: a missing file would silently ship a short list.
+          # One line per download: a missing file would silently ship a short list.
           LINES=$(wc -l < /tmp/checksums/checksums.txt)
           [ "$LINES" -eq "$EXPECTED" ] || { echo "expected $EXPECTED checksum lines, got $LINES"; cat /tmp/checksums/checksums.txt; exit 1; }
           cat /tmp/checksums/checksums.txt
@@ -1462,6 +1471,7 @@ jobs:
       - name: Download the release assets as published
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BINARIES: ${{ needs.guard.outputs.binaries }}
         run: |
           set -euo pipefail
           TAG="${{ github.ref_name }}"
@@ -1479,13 +1489,11 @@ jobs:
           # An earlier run's provenance bundle is a statement about the other assets, not one of
           # them; this run uploads its own below.
           rm -f release-assets/*.intoto.jsonl
-          # The six files people and the updater actually fetch must be here, or this job
-          # would attest a partial release and look green.
-          for arch in aarch64 x64 universal; do
-              for ext in dmg app.tar.gz; do
-                  [ -f "release-assets/Cmdr_${VERSION}_${arch}.${ext}" ] \
-                      || { echo "::error::Cmdr_${VERSION}_${arch}.${ext} is not on release $TAG"; exit 1; }
-              done
+          # Every required build people and the updater fetch (the release asset manifest, from
+          # `guard`'s plan) must be here, or this job would attest a partial release and look green.
+          [ -n "$BINARIES" ] || { echo "::error::guard's plan names no builds."; exit 1; }
+          for name in $BINARIES; do
+              [ -f "release-assets/$name" ] || { echo "::error::$name is not on release $TAG"; exit 1; }
           done
           ls -l release-assets
 
@@ -1528,43 +1536,33 @@ jobs:
           [ -s "$OUT" ] || { echo "::error::The provenance bundle at $BUNDLE is empty."; exit 1; }
           gh release upload "${{ github.ref_name }}" -R "$GITHUB_REPOSITORY" "$OUT" --clobber
 
-      # One SBOM attestation per SBOM, bound to the builds it describes. The universal build
-      # is both arch slices joined, so both Rust SBOMs describe it, and the pkg (universal, the
-      # only one) wraps that same app. A release without a pkg is fine: the action fails only
-      # when no pattern matches anything.
+      # One SBOM attestation per SBOM, bound to the builds it describes, both from the release
+      # asset manifest (`guard`'s plan): a Rust SBOM to every build of its target (the universal
+      # build is both arch slices joined, so both Rust SBOMs describe it, and the pkg wraps that
+      # same app), the frontend SBOM to every build. A required build is a literal path, which
+      # the action fails on when missing; the optional pkg is a pattern that may match nothing.
+      # One step per SBOM: the plan fails if the manifest gains an SBOM without one here (its
+      # `-attested` list).
       - name: Attest the Apple Silicon Rust SBOM
         if: ${{ needs.sbom.result == 'success' }}
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          sbom-path: sbom/Cmdr_${{ env.VERSION }}_aarch64.rust.cdx.json
-          subject-path: |
-            release-assets/Cmdr_${{ env.VERSION }}_aarch64.dmg
-            release-assets/Cmdr_${{ env.VERSION }}_aarch64.app.tar.gz
-            release-assets/Cmdr_${{ env.VERSION }}_universal.dmg
-            release-assets/Cmdr_${{ env.VERSION }}_universal.app.tar.gz
-            release-assets/Cmdr_${{ env.VERSION }}_*.pkg
+          sbom-path: sbom/${{ needs.guard.outputs.sbom-macos-aarch64 }}
+          subject-path: ${{ needs.guard.outputs.sbom-macos-aarch64-subjects }}
 
       - name: Attest the Intel Rust SBOM
         if: ${{ needs.sbom.result == 'success' }}
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          sbom-path: sbom/Cmdr_${{ env.VERSION }}_x64.rust.cdx.json
-          subject-path: |
-            release-assets/Cmdr_${{ env.VERSION }}_x64.dmg
-            release-assets/Cmdr_${{ env.VERSION }}_x64.app.tar.gz
-            release-assets/Cmdr_${{ env.VERSION }}_universal.dmg
-            release-assets/Cmdr_${{ env.VERSION }}_universal.app.tar.gz
-            release-assets/Cmdr_${{ env.VERSION }}_*.pkg
+          sbom-path: sbom/${{ needs.guard.outputs.sbom-macos-x86_64 }}
+          subject-path: ${{ needs.guard.outputs.sbom-macos-x86_64-subjects }}
 
       - name: Attest the frontend SBOM
         if: ${{ needs.sbom.result == 'success' }}
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          sbom-path: sbom/Cmdr_${{ env.VERSION }}_frontend.cdx.json
-          subject-path: |
-            release-assets/Cmdr_${{ env.VERSION }}_*.dmg
-            release-assets/Cmdr_${{ env.VERSION }}_*.app.tar.gz
-            release-assets/Cmdr_${{ env.VERSION }}_*.pkg
+          sbom-path: sbom/${{ needs.guard.outputs.sbom-frontend }}
+          subject-path: ${{ needs.guard.outputs.sbom-frontend-subjects }}
 
   bump-tap:
     name: Bump Homebrew tap

@@ -139,8 +139,10 @@ was deleted.)
   ✓) is a separate inline script in `Layout.astro`. Because all three are global and attribute-driven, the dropdown also
   works when the `rehypeDownloadDropdown` plugin (`src/plugins/download-dropdown.ts`) emits an inline copy into a blog
   post from the `[download](cmdr:download)` marker. That plugin must run after `rehype-external-links` (so its mirror
-  links don't get `target="_blank"`) and reads `public/latest.json` directly, mirroring `src/lib/release.ts`'s
-  no-download-base URL/size logic (direct links to `download.getcmdr.com`).
+  links don't get `target="_blank"`) and reads `public/latest.json` directly, building `src/lib/release.ts`'s
+  no-download-base links (direct to `download.getcmdr.com`). Both take file names and sizes from
+  `src/lib/release-downloads.ts`, which reads the manifest's `downloads` list (written from the release asset manifest,
+  `docs/guides/releasing.md` § The release asset manifest) and falls back to `dmgSizes` for a manifest from before it.
 - **`public/latest.json` is live only in production.** The committed copy is frozen (dev and the check lanes build with
   it, so they never touch the network for it). The Docker build overwrites it with the live update manifest, the
   `latest.json` of the GitHub release marked "Latest" (`scripts/fetch-live-manifest.ts`), and a failed fetch fails the

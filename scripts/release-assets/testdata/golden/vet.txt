@@ -3,4 +3,4 @@
 ## Download the update archives: ok
 
 ## Run the updater's own check on each archive: ok
-cargo run --quiet --release --locked -p cmdr-update-trust --bin cmdr-vet-update -- --version 0.61.0 $RUNNER_TEMP/archives/Cmdr_0.61.0_aarch64.app.tar.gz $RUNNER_TEMP/archives/Cmdr_0.61.0_x64.app.tar.gz $RUNNER_TEMP/archives/Cmdr_0.61.0_universal.app.tar.gz
+cargo run --quiet --release --locked -p cmdr-update-trust --bin cmdr-vet-update -- --version 0.61.0 $RUNNER_TEMP/archives/Cmdr_0.61.0_universal.app.tar.gz $RUNNER_TEMP/archives/Cmdr_0.61.0_aarch64.app.tar.gz $RUNNER_TEMP/archives/Cmdr_0.61.0_x64.app.tar.gz

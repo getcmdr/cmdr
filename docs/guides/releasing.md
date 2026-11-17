@@ -102,14 +102,24 @@ be the release's.
 
 - **On the laptop**, `release-finish.sh` runs it after the provenance check and before signing, dry runs included, and
   refuses to sign if any archive fails.
-- **On GitHub**, the `vet-update-archives` job (macOS) runs it on the release's three archives in whichever run
-  publishes (a `ci` mode tag push, or the `local` finishing dispatch), and `publish` needs it. A `local` tag push skips
-  it: the laptop runs the same check on the same archives before signing, so the job would only cost a macOS runner. ❌
-  Don't fold it into `sign`: it compiles `cmdr-vet-update`, whose crates' build scripts would then run in the job
-  holding the signing secrets (§ How a release build is split).
+- **On GitHub**, the `vet-update-archives` job (macOS) runs it on the release's macOS update archives (the release asset
+  manifest's, § The release asset manifest) in whichever run publishes (a `ci` mode tag push, or the `local` finishing
+  dispatch), and `publish` needs it. A `local` tag push skips it: the laptop runs the same check on the same archives
+  before signing, so the job would only cost a macOS runner. ❌ Don't fold it into `sign`: it compiles
+  `cmdr-vet-update`, whose crates' build scripts would then run in the job holding the signing secrets (§ How a release
+  build is split).
 - **By hand**: `cargo run --release -p cmdr-update-trust --bin cmdr-vet-update -- --version X.Y.Z <archives>`.
 
 ## Testing the pipeline without releasing
+
+Two levels, cheapest first:
+
+- **The dry run** (`scripts/release-assets/pipeline_test.go`, part of `scripts-go-tests`): the real `run:` scripts of
+  `guard`, `sbom`, `vet-update-archives`, `publish`, and `attest` against v0.61.0 as published, with `gh`, `cargo`, and
+  friends faked, compared with golden files. It covers what the jobs upload (`latest.json` and `checksums.txt` byte for
+  byte), what they hand to `cargo`, the mirror, and `release-finish.sh`, and each SBOM's attestation subjects. Run it
+  after any change to those jobs; `scripts/release-assets/DETAILS.md` § The dry run says what it can't see.
+- **A pipeline test tag**, below: the whole flow for real, signing and notarization included.
 
 In `local` mode a tag push builds only into a private draft (`publish` and `bump-tap` skip, `latest.json` stays), so a
 pre-release tag tests the whole flow for real: the release commit, its CI run beside the build, signing, notarization,
@@ -954,12 +964,32 @@ release made false (language count, alpha list, a claim that broke), measure the
 cap after every edit, and record what changed and why in the file's status notes. Hand David
 https://alternativeto.net/software/cmdr/about/ with the "Note about your changes" text.
 
+## The release asset manifest
+
+Every file a release publishes is a row in `scripts/release-assets/manifest/manifest.go`: os, arch, kind, file name,
+`latest.json` updater key (update payloads only), optional (the pkg), and the Rust targets it's built from. Everything
+that handles release files derives from it, so adding a platform is rows plus the jobs that build, vet, and attest them:
+
+- **`guard`** runs `./scripts/release-assets.sh plan` and hands its outputs to the jobs below: the update archives, the
+  macOS ones to vet, the required builds, the Rust SBOMs to generate, and each SBOM's attestation subjects. The plan
+  fails when the manifest has an update payload for an OS `vet-update-archives` doesn't vet, or an SBOM `attest` has no
+  step for (its `-vetted` and `-attested` flags name what those jobs do).
+- **`publish`** writes `latest.json` (`release-assets.sh latest-json`) and picks the files `checksums.txt` covers
+  (`checksum-files`).
+- **`release-finish`, `release-mirror`, and `release-evidence`** import the package for what they sign, mirror, and
+  expect.
+- **The website** reads `latest.json`'s `downloads` (below).
+
+Not from it: the `compile` and `sign` matrices and `sign`'s upload names (the bundler's output paths), and `bump-tap`.
+Design and the dry run: `scripts/release-assets/DETAILS.md`.
+
 ## What a release publishes
 
 The release pipeline's `demo` job also builds and publishes the browser demo (`apps/website/DETAILS.md` § Browser demo),
 and a release can't publish without it.
 
-One GitHub release per tag, carrying these assets for each of the three arches (`aarch64`, `x64`, `universal`):
+One GitHub release per tag, carrying these assets (the release asset manifest's rows, above) for each of the three
+arches (`aarch64`, `x64`, `universal`):
 
 - `Cmdr_<version>_<arch>.dmg`: what people download. `getcmdr.com/download/latest/<arch>`, the website's download
   buttons, and the Homebrew cask each rebuild this name from the version, so it's the one asset name the rest of the
@@ -970,12 +1000,16 @@ One GitHub release per tag, carrying these assets for each of the three arches (
   each website deploy fetches it into the Docker build (`apps/website/scripts/fetch-live-manifest.ts`), and `publish`
   sets that mark only after uploading the manifest, so the mark is the one pointer to the live release and nothing
   commits to `main`. The copy committed at `apps/website/public/latest.json` is a frozen one that dev and the check
-  lanes build with; ❌ never read the current version from it.
+  lanes build with; ❌ never read the current version from it. Besides the updater's `platforms`, it carries `downloads`
+  (one entry per download: os, arch, kind, file, size), which the website reads for its file names and sizes, and
+  `dmgSizes` (the three DMG sizes by arch), which website builds from before `downloads` read. ❌ Keep `dmgSizes`
+  through the release after the first one with `downloads`, then drop it with the website's fallback
+  (`scripts/release-assets/DETAILS.md` § `latest.json`).
 - `checksums.txt`: one `shasum -a 256` line per DMG (plus the pkg when there is one), the only way a person who
   downloaded from the website (or from an aggregator listing) can check what they got. The Homebrew cask carries its own
   `sha256` and the updater verifies a minisign signature, so this covers the one install route that had nothing. The
   publish job builds it by downloading the DMGs back FROM the release, ❌ never from the runner's `target/`, so it
-  describes what users actually receive, and it fails the job unless all three lines are there. First published with
+  describes what users actually receive, and it fails the job unless every download has its line. First published with
   v0.46.0 (uploaded by hand after the fact; every release from v0.47.0 on gets it from the workflow). The website links
   it as `SHA-256 checksums` in the download card through `getcmdr.com/download/latest/checksums`, an api-server redirect
   beside the per-arch DMG ones that resolves `latest` the same way; ❌ it writes no `downloads` row, since a checksum
@@ -1052,20 +1086,22 @@ Decided by David on 2026-11-04 in #805: switch directly, no waiting period.
 Two jobs in `release-pipeline.yml`, beside the build-and-publish chain:
 
 - **`sbom`** (the tag push only: right away in `local` mode, after `ci-gate` in `ci` mode; read-only token, no OIDC)
-  runs beside the macOS builds. It generates the three SBOMs: `cargo cyclonedx` (version pinned in the workflow,
-  CycloneDX 1.5) on `apps/desktop/src-tauri/Cargo.toml` with default features, once per target triple, and a frontend
-  build with `CMDR_FRONTEND_SBOM=1` for the npm side, which lists the packages the bundler actually put in the app
-  (`apps/desktop/scripts/vite-frontend-sbom.ts`; `package.json` can't say, since Svelte ships from devDependencies). It
-  fails if a lockfile moved while resolving, or if an SBOM isn't CycloneDX, doesn't name this version as its root, or
-  lists too few components (100 for Rust, 30 for the frontend). It hands them on as the `sboms` workflow artifact.
+  runs beside the macOS builds. It generates the release asset manifest's SBOMs (three today): `cargo cyclonedx`
+  (version pinned in the workflow, CycloneDX 1.5) on `apps/desktop/src-tauri/Cargo.toml` with default features, once per
+  Rust SBOM row's target triple, and a frontend build with `CMDR_FRONTEND_SBOM=1` for the npm side, which lists the
+  packages the bundler actually put in the app (`apps/desktop/scripts/vite-frontend-sbom.ts`; `package.json` can't say,
+  since Svelte ships from devDependencies). It fails if a lockfile moved while resolving, or if an SBOM isn't CycloneDX,
+  doesn't name this version as its root, or lists too few components (100 for Rust, 30 for the frontend). It hands them
+  on as the `sboms` workflow artifact.
 - **`attest`** (`needs: [publish, sbom]`, holds `id-token: write` and `attestations: write`) downloads every asset back
   from the published release, uploads the SBOMs to it, and runs `actions/attest`: one SLSA provenance attestation
-  covering every asset (SBOMs included), then one SBOM attestation per SBOM, bound to the builds it describes (each Rust
-  SBOM to its arch's DMG and tarball plus the universal ones and the pkg; the frontend SBOM to all of them). It also
-  uploads the provenance's Sigstore bundle as `Cmdr_<version>.intoto.jsonl`: one file whose subjects are all the assets,
-  for offline verification and for OpenSSF Scorecard's Signed-Releases check, which scores 10/10 only with an
-  `*.intoto.jsonl` asset. A later run of the job replaces it (in `local` mode the dispatch's bundle, which adds
-  `latest.json` and `checksums.txt`, wins). The repo-stored attestation stays what `gh attestation verify` reads.
+  covering every asset (SBOMs included), then one SBOM attestation per SBOM, bound to the builds it describes, as
+  `guard`'s plan lists them from the manifest (each Rust SBOM to every build of its target: its arch's DMG and tarball
+  plus the universal ones and the pkg; the frontend SBOM to all of them). It also uploads the provenance's Sigstore
+  bundle as `Cmdr_<version>.intoto.jsonl`: one file whose subjects are all the assets, for offline verification and for
+  OpenSSF Scorecard's Signed-Releases check, which scores 10/10 only with an `*.intoto.jsonl` asset. A later run of the
+  job replaces it (in `local` mode the dispatch's bundle, which adds `latest.json` and `checksums.txt`, wins). The
+  repo-stored attestation stays what `gh attestation verify` reads.
 
 Why it's shaped this way:
 

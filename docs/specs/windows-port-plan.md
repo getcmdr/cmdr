@@ -332,9 +332,16 @@ its prerequisites; tasks without any can start any time. Order within a phase is
 
 ### Phase 5: release and services for N platforms
 
-30. [M] Win (Linux release falls out). Release asset manifest: one manifest of (os, arch, kind, file, updater key)
-    drives `publish`, `latest.json`, `release-finish`, `vet-update-archives`, checksums, SBOM, and website sizes;
-    `dmgSizes` stays one more release for old website builds.
+30. [M] Win (Linux release falls out). **Done**. `scripts/release-assets/manifest/manifest.go` holds one row per
+    published file (os, arch, kind, file, updater key, optional, Rust targets); `guard` turns it into step outputs
+    (`release-assets.sh plan`) that `sbom`, `vet-update-archives`, `publish`, and `attest` iterate, `publish` writes
+    `latest.json` and picks the checksummed files from it, and `release-finish`, `release-mirror`, and
+    `release-evidence` import it. `latest.json` gains a `downloads` list (os, arch, kind, file, size) that the website
+    reads (`apps/website/src/lib/release-downloads.ts`); `dmgSizes` stays through the release after the first with
+    `downloads`. A Windows release is rows (`nsis` with `windows-x86_64`, `msix`, a Rust SBOM) plus `-vetted windows`
+    and an attest step, which the plan enforces. A dry run of those jobs against v0.61.0 as published
+    (`scripts/release-assets/pipeline_test.go`) holds every output to golden files, `latest.json` to v0.61.0's bytes
+    with `downloads` appended (`scripts/release-assets/DETAILS.md`).
 31. [M] Win. Downloads and analytics for N platforms: `/download/:version/:os/:arch` (old route stays as the macOS
     alias), artifact-aware UA classification in the api-server and dashboard funnel, an explicit `os` field through
     heartbeat, feedback, and reports (a Cloudflare D1 migration), the dashboard split by OS. Needs 30.

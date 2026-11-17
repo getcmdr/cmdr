@@ -6,20 +6,13 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+
+	"cmdr/scripts/release-assets/manifest"
 )
 
-// The three build arches as release file names spell them (`x64`, never `x86_64`), keyed by
-// their `latest.json` platform key.
-var archByPlatform = map[string]string{
-	"darwin-aarch64":   "aarch64",
-	"darwin-x86_64":    "x64",
-	"darwin-universal": "universal",
-}
-
-var arches = []string{"aarch64", "x64", "universal"}
-
-// mirroredAssets picks, from a release's asset names, the files the EU mirror serves: every
-// update archive and its signature, every DMG, the pkg when the release has one, and
+// mirroredAssets picks, from a release's asset names, the files the EU mirror serves, from the
+// release asset manifest (`scripts/release-assets/manifest`): every update payload and its
+// signature, every download (an optional one, like the pkg, when the release has it), and
 // `checksums.txt` last, so it never names a file the mirror doesn't hold yet. The SBOMs, the
 // provenance bundle, and `latest.json` stay on GitHub only (the website serves the manifest).
 // A release missing any required file is refused, naming each one.
@@ -28,20 +21,24 @@ func mirroredAssets(names []string, version string) ([]string, error) {
 	for _, n := range names {
 		have[n] = true
 	}
+	r := manifest.For(version)
 	var want, missing []string
-	for _, arch := range arches {
-		base := "Cmdr_" + version + "_" + arch
-		for _, name := range []string{base + ".app.tar.gz", base + ".app.tar.gz.sig", base + ".dmg"} {
+	need := func(name string, optional bool) {
+		switch {
+		case have[name]:
 			want = append(want, name)
-			if !have[name] {
-				missing = append(missing, name)
-			}
+		case !optional:
+			missing = append(missing, name)
 		}
 	}
-	if pkg := "Cmdr_" + version + "_universal.pkg"; have[pkg] {
-		want = append(want, pkg)
+	for _, f := range r.Updates() {
+		need(f.Signature(), false)
+	}
+	for _, f := range r.Binaries() {
+		need(f.Name, f.Optional)
 	}
 	slices.Sort(want)
+	slices.Sort(missing)
 	want = append(want, "checksums.txt")
 	if !have["checksums.txt"] {
 		missing = append(missing, "checksums.txt")
@@ -99,10 +96,10 @@ func parseChecksums(body string) (map[string]string, error) {
 	return sums, nil
 }
 
-// checkManifest requires `latest.json` to name this version and, for each of the three
-// platforms, exactly this release's archive for its arch on the mirror. Every installed copy
-// fetches these URLs verbatim with no fallback, so a URL off the mirror (or a drifted name)
-// must fail the release while nothing has shipped.
+// checkManifest requires `latest.json` to name this version and, for each update payload in the
+// release asset manifest, exactly that file on the mirror under its platform key. Every
+// installed copy fetches these URLs verbatim with no fallback, so a URL off the mirror (or a
+// drifted name) must fail the release while nothing has shipped.
 func checkManifest(body []byte, version, host string) error {
 	var m struct {
 		Version   string `json:"version"`
@@ -116,14 +113,13 @@ func checkManifest(body []byte, version, host string) error {
 	if m.Version != version {
 		return fmt.Errorf("latest.json says version %q, not %q", m.Version, version)
 	}
-	for platform, arch := range archByPlatform {
-		p, ok := m.Platforms[platform]
+	for _, f := range manifest.For(version).Updates() {
+		p, ok := m.Platforms[f.UpdaterKey]
 		if !ok {
-			return fmt.Errorf("latest.json has no %s platform", platform)
+			return fmt.Errorf("latest.json has no %s platform", f.UpdaterKey)
 		}
-		want := publicURL(host, version, "Cmdr_"+version+"_"+arch+".app.tar.gz")
-		if p.URL != want {
-			return fmt.Errorf("latest.json's %s URL is %s, not %s", platform, p.URL, want)
+		if want := publicURL(host, version, f.Name); p.URL != want {
+			return fmt.Errorf("latest.json's %s URL is %s, not %s", f.UpdaterKey, p.URL, want)
 		}
 	}
 	return nil

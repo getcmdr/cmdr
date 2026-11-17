@@ -8,7 +8,7 @@
 //  1. waits for that build run AND the full CI run on the tagged commit, printing each job as it
 //     moves, and stops on the first red job of either (`ci.go`); once CI is green, it requires the
 //     CodeQL gate too (`scripts/release-codeql-gate.sh`);
-//  2. downloads the three `.app.tar.gz` update archives from the draft;
+//  2. downloads the update archives (the release asset manifest's update payloads) from the draft;
 //  3. verifies each one's build provenance with `gh attestation verify`, pinned to
 //     `release-pipeline.yml` at the tag's commit on a GitHub-hosted runner, and refuses to
 //     sign anything that doesn't verify;
@@ -99,7 +99,7 @@ func main() {
 	dryRun := flag.Bool("dry-run", false, "verify and sign into -out, then stop: upload, dispatch, and publish nothing")
 	out := flag.String("out", "", "where to put the downloaded archives and signatures (default: a fresh temp dir)")
 	signer := flag.String("signer-workflow", "", "dry runs only: the workflow whose provenance must cover the archives (default: this repo's "+pipelineWorkflowPath+")")
-	verifyDir := flag.String("verify-dir", "", "only verify the three archives in DIR against their .sig files and the app's trusted keys (the publish job's gate)")
+	verifyDir := flag.String("verify-dir", "", "only verify the update archives in DIR against their .sig files and the app's trusted keys (the publish job's gate)")
 	backupKey := flag.Bool("backup-key", false, "sign with the offline backup key from $"+backupKeyEnv+" and $"+backupPasswordEnv+" instead of sops: the key-rotation release only")
 	ciGateOnly := flag.Bool("ci-gate", false, "only check the release's full CI run and CodeQL gate on the tagged commit (the pipeline's ci-gate job)")
 	wait := flag.Bool("wait", false, "with -ci-gate: wait for the run, failing on the first red job")
@@ -291,7 +291,7 @@ func waitUntilSignable(cfg config, commit string) (published bool, err error) {
 }
 
 // requireArchives checks the release is in a state to sign: a draft (or, in a dry run, any
-// release) carrying all three update archives.
+// release) carrying every update archive.
 func requireArchives(cfg config, names []string) error {
 	rel, found, err := findRelease(cfg.tag)
 	if err != nil {
@@ -462,7 +462,7 @@ func checkUploadedSignatures(cfg config, dir string, names []string) error {
 			return fmt.Errorf("%s.sig on the release differs from the one just signed. Run this again", name)
 		}
 	}
-	fmt.Println("    the release carries the three signatures just verified")
+	fmt.Println("    the release carries the signatures just verified")
 	return nil
 }
 

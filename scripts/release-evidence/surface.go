@@ -3,20 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"maps"
 	"slices"
 	"strings"
+
+	"cmdr/scripts/release-assets/manifest"
 )
-
-// The three build arches as release file names spell them (`x64`, never `x86_64`), keyed by
-// their `latest.json` platform key.
-var archByPlatform = map[string]string{
-	"darwin-aarch64":   "aarch64",
-	"darwin-x86_64":    "x64",
-	"darwin-universal": "universal",
-}
-
-var arches = []string{"aarch64", "x64", "universal"}
 
 type releaseAsset struct {
 	Name string `json:"name"`
@@ -30,25 +21,27 @@ const (
 )
 
 // expectedAssets is every file a release carries (`docs/guides/releasing.md` § What a release
-// publishes), each with the size below which it can't be real.
+// publishes), each with the size below which it can't be real: the release asset manifest's files
+// (`scripts/release-assets/manifest`), the update payloads' signatures, and the three files every
+// release adds around them. withPkg asks for the optional files too (the pkg is the only one).
 func expectedAssets(version string, withPkg bool) map[string]int64 {
 	want := map[string]int64{
-		"latest.json":                            1,
-		"checksums.txt":                          1,
-		"Cmdr_" + version + ".intoto.jsonl":      1,
-		"Cmdr_" + version + "_frontend.cdx.json": minSBOMBytes,
+		"latest.json":                       1,
+		"checksums.txt":                     1,
+		"Cmdr_" + version + ".intoto.jsonl": 1,
 	}
-	for _, arch := range arches {
-		base := "Cmdr_" + version + "_" + arch
-		want[base+".dmg"] = minBundleBytes
-		want[base+".app.tar.gz"] = minBundleBytes
-		want[base+".app.tar.gz.sig"] = 1
-	}
-	for _, arch := range []string{"aarch64", "x64"} {
-		want["Cmdr_"+version+"_"+arch+".rust.cdx.json"] = minSBOMBytes
-	}
-	if withPkg {
-		want["Cmdr_"+version+"_universal.pkg"] = minBundleBytes
+	for _, f := range manifest.For(version).Files {
+		switch {
+		case f.Optional && !withPkg:
+			continue
+		case f.SBOM():
+			want[f.Name] = minSBOMBytes
+		default:
+			want[f.Name] = minBundleBytes
+		}
+		if f.Update() {
+			want[f.Signature()] = 1
+		}
 	}
 	return want
 }
@@ -77,7 +70,7 @@ func checkAssets(assets []releaseAsset, version string, withPkg bool) error {
 }
 
 // checkManifest reads `latest.json` and returns its update archive URLs, requiring the version,
-// all three platforms, and each URL naming this release's archive for its arch, on the EU mirror
+// each update payload's platform, and each URL naming that release file, on the EU mirror
 // or (releases from before it) on GitHub. The release pipeline itself refuses a new manifest
 // off the mirror (`scripts/release-mirror`); this only checks what's live answers.
 func checkManifest(body []byte, version, repo string) ([]string, error) {
@@ -94,16 +87,17 @@ func checkManifest(body []byte, version, repo string) ([]string, error) {
 		return nil, fmt.Errorf("latest.json says version %q, not %q", m.Version, version)
 	}
 	var urls []string
-	for _, platform := range slices.Sorted(maps.Keys(archByPlatform)) {
-		p, ok := m.Platforms[platform]
+	updates := manifest.For(version).Updates()
+	slices.SortFunc(updates, func(a, b manifest.File) int { return strings.Compare(a.UpdaterKey, b.UpdaterKey) })
+	for _, f := range updates {
+		p, ok := m.Platforms[f.UpdaterKey]
 		if !ok {
-			return nil, fmt.Errorf("latest.json has no %s platform", platform)
+			return nil, fmt.Errorf("latest.json has no %s platform", f.UpdaterKey)
 		}
-		file := fmt.Sprintf("Cmdr_%s_%s.app.tar.gz", version, archByPlatform[platform])
-		mirrored := fmt.Sprintf("%sv%s/%s", mirrorHost, version, file)
-		github := fmt.Sprintf("https://github.com/%s/releases/download/v%s/%s", repo, version, file)
+		mirrored := fmt.Sprintf("%sv%s/%s", mirrorHost, version, f.Name)
+		github := fmt.Sprintf("https://github.com/%s/releases/download/v%s/%s", repo, version, f.Name)
 		if p.URL != mirrored && p.URL != github {
-			return nil, fmt.Errorf("latest.json's %s URL is %s, not %s", platform, p.URL, mirrored)
+			return nil, fmt.Errorf("latest.json's %s URL is %s, not %s", f.UpdaterKey, p.URL, mirrored)
 		}
 		urls = append(urls, p.URL)
 	}

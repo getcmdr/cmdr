@@ -676,6 +676,8 @@ numbers their audits landed on. The vendored fork is an ordinary member.
 - `scripts/check/`: Go unified check runner (~140 checks, parallel with dependency graph)
 - `.github/workflows/`: CI, plus the release: `release.yml` takes the `v*` tag and calls the reusable
   `release-pipeline.yml`, which builds, signs, and publishes. See `tooling/ci.md` and `guides/releasing.md`
+- `scripts/release-assets/`: the release asset manifest (one row per published file) that the release jobs, the release
+  tools, and `latest.json` derive from, plus a dry run of the release jobs. See `scripts/release-assets/CLAUDE.md`
 
 ## Search
 

@@ -10,8 +10,9 @@
  * Astro's config loader, whose `import.meta.env` carries only the built-in `BASE_URL`/`MODE`/`DEV`/
  * `PROD`/`SSR` (no `PUBLIC_*` vars). release.ts derives its URLs from `PUBLIC_DOWNLOAD_BASE_URL`,
  * which is therefore always undefined here, so it can't be the source of truth in this context. The
- * URL/size logic below mirrors release.ts's no-download-base branch: direct links to the EU mirror
- * (`download.getcmdr.com`), so these carry no download telemetry. Keep the two in sync.
+ * links below are release.ts's no-download-base branch: direct links to the EU mirror
+ * (`download.getcmdr.com`), so these carry no download telemetry. File names and sizes come from
+ * `src/lib/release-downloads.ts`, which both share.
  *
  * Register this AFTER rehype-external-links in astro.config.ts: that way external-links never sees
  * the mirror option links we create, so it won't add `target="_blank"` (and the prose `↗` arrow) to
@@ -20,42 +21,21 @@
 
 import { readFileSync } from 'node:fs'
 import type { Root, Element, Text, ElementContent, Properties } from 'hast'
-
-interface LatestRelease {
-  version: string
-  dmgSizes?: {
-    aarch64: number
-    x86_64: number
-    universal: number
-  }
-}
+import { macDmgFile, macDmgSizes, type UpdateManifest } from '../lib/release-downloads'
 
 const MARKER = 'cmdr:download'
 
 // `latest.json` is written by our own release pipeline, so the shape is trusted rather than
 // validated; the assertion marks that as a choice instead of an unchecked `any` assignment.
-const latest = JSON.parse(readFileSync(new URL('../../public/latest.json', import.meta.url), 'utf-8')) as LatestRelease
+const latest = JSON.parse(readFileSync(new URL('../../public/latest.json', import.meta.url), 'utf-8')) as UpdateManifest
 const version = latest.version
 
-/** The EU mirror's DMG. Release files spell the Intel arch `x64`, never `x86_64`. */
+/** The EU mirror's DMG. */
 function dmgUrl(arch: string): string {
-  const fileArch = arch === 'x86_64' ? 'x64' : arch
-  return `https://download.getcmdr.com/v${version}/Cmdr_${version}_${fileArch}.dmg`
+  return `https://download.getcmdr.com/v${version}/${macDmgFile(latest, arch)}`
 }
 
-function formatBytes(bytes: number): string {
-  return `${Math.round(bytes / (1024 * 1024))} MB`
-}
-
-const rawSizes = latest.dmgSizes
-const sizes =
-  rawSizes && rawSizes.universal > 0
-    ? {
-        aarch64: formatBytes(rawSizes.aarch64),
-        x86_64: formatBytes(rawSizes.x86_64),
-        universal: formatBytes(rawSizes.universal),
-      }
-    : null
+const sizes = macDmgSizes(latest)
 
 /** Build a hast element node. */
 function el(tagName: string, properties: Properties, children: ElementContent[] = []): Element {

@@ -17,14 +17,37 @@ const manifestUrl = 'https://github.com/getcmdr/cmdr/releases/latest/download/la
 const target = new URL('../public/latest.json', import.meta.url)
 const platformKeys = ['darwin-aarch64', 'darwin-x86_64', 'darwin-universal']
 
+function isDownload(d: unknown): boolean {
+  const e = d as Record<string, unknown> | null
+  return (
+    typeof e?.os === 'string' &&
+    typeof e.arch === 'string' &&
+    typeof e.kind === 'string' &&
+    typeof e.file === 'string' &&
+    typeof e.size === 'number'
+  )
+}
+
+/**
+ * The download sizes and names: `downloads` (from the release asset manifest) or, in manifests from before it,
+ * `dmgSizes`. `src/lib/release-downloads.ts` reads either.
+ */
+function problemWithDownloads(m: Record<string, unknown>): string | null {
+  if (m.downloads !== undefined) {
+    return Array.isArray(m.downloads) && m.downloads.every(isDownload) ? null : 'a malformed `downloads` list'
+  }
+  const sizes = m.dmgSizes as Record<string, unknown> | undefined
+  return typeof sizes?.universal === 'number' ? null : 'no `downloads` or `dmgSizes`'
+}
+
 /** The fields the site and the updater read; the reason when one is missing or malformed. */
 function problemWith(manifest: unknown): string | null {
   if (typeof manifest !== 'object' || manifest === null) return 'not a JSON object'
   const m = manifest as Record<string, unknown>
   if (typeof m.version !== 'string' || !/^\d+\.\d+\.\d+$/.test(m.version)) return 'no X.Y.Z `version`'
   if (typeof m.notes !== 'string' || typeof m.pub_date !== 'string') return 'no `notes` or `pub_date`'
-  const sizes = m.dmgSizes as Record<string, unknown> | undefined
-  if (typeof sizes?.universal !== 'number') return 'no `dmgSizes`'
+  const downloadsProblem = problemWithDownloads(m)
+  if (downloadsProblem) return downloadsProblem
   const platforms = m.platforms as Record<string, Record<string, unknown> | undefined> | undefined
   for (const key of platformKeys) {
     const platform = platforms?.[key]

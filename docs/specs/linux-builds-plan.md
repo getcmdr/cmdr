@@ -78,6 +78,11 @@ The Linux matrix entry needs different setup than macOS (no signing/notarization
 
 ### Publish job changes
 
+Superseded by the release asset manifest (Windows port plan task 30, `docs/guides/releasing.md` § The release asset
+manifest): the Linux release is rows in `scripts/release-assets/manifest/manifest.go` (`appimage` with an `UpdaterKey`,
+`deb`, a Rust SBOM per target), and `publish`, the checksums, the mirror, and `latest.json` follow with no job edits.
+`vet-update-archives` needs a Linux answer first (the plan's `-vetted`). The original sketch, for context:
+
 The `publish` job downloads signatures from all matrix jobs (now 5: three macOS + two Linux). Generate `latest.json`
 with the additional platform keys:
 
@@ -144,6 +149,10 @@ export const debUrls = {
   aarch64: `${base}/cmdr_${version}_arm64.deb`,
 }
 ```
+
+Superseded: `latest.json` carries a `downloads` list (os, arch, kind, file, size) from the release asset manifest, and
+`src/lib/release-downloads.ts` reads it, so the AppImage and `.deb` names and sizes come from there with no schema
+change. The original sketch:
 
 Add `appImageSizes` alongside `dmgSizes`, reading from `latest.json`:
 
@@ -275,6 +284,9 @@ when it isn't. Check Tauri's updater source or logs to confirm the target string
 
 ## Part 5: `latest.json` schema update
 
+Done differently (Windows port plan task 30): no `appImageSizes`; Linux rows in the release asset manifest land in
+`platforms` and `downloads` by themselves. The original sketch:
+
 Current:
 
 ```json
@@ -363,8 +375,8 @@ Evidence and the per-item detail: `docs/notes/linux-gaps-2026-08-10.md`.
 - [ ] Add Linux system deps install step with `if: matrix.platform == 'linux'`
 - [ ] Upload Linux artifacts (AppImage, .deb, updater) for both archs to GitHub release
 - [ ] Pass Linux updater signatures to publish job
-- [ ] Extend publish job to include `linux-x86_64` and `linux-aarch64` in `latest.json`
-- [ ] Add `appImageSizes` to `latest.json` schema and populate from AppImage file sizes
+- [ ] Add the Linux rows to the release asset manifest (they reach `latest.json`'s `platforms` and `downloads`), and a
+      Linux answer in `vet-update-archives`
 
 ### Milestone 2: Website
 

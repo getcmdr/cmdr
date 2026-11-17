@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"slices"
 	"time"
+
+	"cmdr/scripts/release-assets/manifest"
 )
 
 // The decisions that make the finish step resumable: each run reads where the release stands
@@ -58,16 +60,10 @@ func nextFinishAction(runs []workflowRun) (finishAction, workflowRun) {
 	}
 }
 
-// arches are the release's three builds, as the asset names spell them (`x64`, not `x86_64`).
-var arches = []string{"aarch64", "x64", "universal"}
-
-// updateArchiveNames are the assets the updater downloads, the only ones this key signs.
+// updateArchiveNames are the assets the updater downloads, the only ones this key signs: every
+// update payload in the release asset manifest (`scripts/release-assets/manifest`).
 func updateArchiveNames(version string) []string {
-	names := make([]string, 0, len(arches))
-	for _, arch := range arches {
-		names = append(names, fmt.Sprintf("Cmdr_%s_%s.app.tar.gz", version, arch))
-	}
-	return names
+	return manifest.Names(manifest.For(version).Updates())
 }
 
 type releaseAsset struct {
