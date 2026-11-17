@@ -5,6 +5,7 @@ import { admin } from './admin/admin'
 import { funnel } from './admin/funnel'
 import { funnelCountries } from './admin/funnel-countries'
 import { featureUsage } from './admin/feature-usage'
+import { activeInstalls } from './admin/active-installs'
 import { telemetry } from './telemetry/telemetry'
 import { heartbeat } from './telemetry/heartbeat'
 import { errorReport } from './telemetry/error-report'
@@ -50,6 +51,7 @@ app.route('/', admin)
 app.route('/', funnel)
 app.route('/', funnelCountries)
 app.route('/', featureUsage)
+app.route('/', activeInstalls)
 app.route('/', telemetry)
 app.route('/', heartbeat)
 app.route('/', likes)

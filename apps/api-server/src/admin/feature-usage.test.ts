@@ -81,7 +81,7 @@ function byId(features: FeatureUsage[], id: string): FeatureUsage {
 describe('the feature-usage queries against real SQLite', () => {
   it('counts distinct installs and events per feature, inside the window only', async () => {
     const { d1 } = seeded()
-    const { activeInstalls, features } = await queryFeatureUsage(d1, since)
+    const { activeInstalls, features } = await queryFeatureUsage(d1, { since })
 
     expect(activeInstalls).toBe(3)
     expect(byId(features, 'archives')).toMatchObject({
@@ -102,7 +102,7 @@ describe('the feature-usage queries against real SQLite', () => {
 
   it('splits Ask Cmdr by outcome', async () => {
     const { d1 } = seeded()
-    const { features } = await queryFeatureUsage(d1, since)
+    const { features } = await queryFeatureUsage(d1, { since })
     expect(byId(features, 'ask-cmdr')).toMatchObject({
       installs: 2,
       events: 3,
@@ -115,7 +115,7 @@ describe('the feature-usage queries against real SQLite', () => {
 
   it('tells AI rename from AI file organization by verb, and counts a server group as neither', async () => {
     const { d1 } = seeded()
-    const { features } = await queryFeatureUsage(d1, since)
+    const { features } = await queryFeatureUsage(d1, { since })
     expect(byId(features, 'ai-rename')).toMatchObject({ installs: 1, events: 2 })
     expect(byId(features, 'ai-batch')).toMatchObject({
       installs: 1,
@@ -126,14 +126,41 @@ describe('the feature-usage queries against real SQLite', () => {
 
   it('separates "never stored" from "a real zero in this window"', async () => {
     const { d1 } = seeded()
-    const { features } = await queryFeatureUsage(d1, since)
+    const { features } = await queryFeatureUsage(d1, { since })
     expect(byId(features, 'tabs')).toMatchObject({ installs: 0, events: 0, everSeen: true })
     expect(byId(features, 'multi-rename')).toMatchObject({ installs: 0, events: 0, everSeen: false, parts: [] })
   })
 
+  it('leaves out firstSeenAt on an open-ended window', async () => {
+    const { d1 } = seeded()
+    const { features } = await queryFeatureUsage(d1, { since })
+    expect(features.every((f) => !('firstSeenAt' in f))).toBe(true)
+  })
+
+  it('reads a bounded window as [since, until): its first instant in, its end instant out', async () => {
+    const { d1, sqlite } = seeded()
+    const until = new Date('2026-11-03T00:00:00.000Z')
+    event(sqlite, 'anal_a', 'image_search_used', '2026-11-01T00:00:00.000Z')
+    event(sqlite, 'anal_b', 'image_search_used', '2026-11-03T00:00:00.000Z')
+    beat(sqlite, 'anal_late', '2026-11-03 00:00:00')
+    const { activeInstalls, features } = await queryFeatureUsage(d1, { since, until })
+    expect(activeInstalls).toBe(1) // anal_a only: anal_b, anal_c, and anal_late beat on or after `until`
+    expect(byId(features, 'image-search')).toMatchObject({ installs: 1, events: 1 })
+    expect(byId(features, 'search')).toMatchObject({ installs: 0, events: 0 })
+  })
+
+  it('stamps each feature with its earliest stored event on a bounded window, null when never stored', async () => {
+    const { d1 } = seeded()
+    const until = new Date('2026-11-05T00:00:00.000Z')
+    const { features } = await queryFeatureUsage(d1, { since, until })
+    expect(byId(features, 'search').firstSeenAt).toBe('2026-10-20T11:00:00.000Z')
+    expect(byId(features, 'archives').firstSeenAt).toBe('2026-11-02T09:01:00.000Z')
+    expect(byId(features, 'multi-rename').firstSeenAt).toBeNull()
+  })
+
   it('returns every definition, in mapping order, with its sources spelled out', async () => {
     const { d1 } = seeded()
-    const { features } = await queryFeatureUsage(d1, since)
+    const { features } = await queryFeatureUsage(d1, { since })
     expect(features.map((f) => f.id)).toEqual(featureUsageDefinitions.map((d) => d.id))
     expect(byId(features, 'archives').sources).toEqual([
       'pane_navigated[volume_kind=archive]',
@@ -210,5 +237,45 @@ describe('GET /admin/feature-usage', () => {
     expect(Date.now() - Date.parse(body.since)).toBeGreaterThan(7 * 86_400_000 - 60_000)
     expect(body.activeInstalls).toBe(0)
     expect(body.features).toHaveLength(featureUsageDefinitions.length)
+    expect('until' in body).toBe(false)
+    expect(body.features.every((f) => !('firstSeenAt' in f))).toBe(true)
+  })
+
+  it('rejects an end that is malformed, not a real day, or after today', async () => {
+    const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
+    for (const end of ['2026-11', '2026-02-30', 'yesterday', tomorrow]) {
+      const res = await app.request(
+        `/admin/feature-usage?range=7d&end=${end}`,
+        { headers: authHeaders },
+        bindings(createSqliteD1().d1),
+      )
+      expect(res.status).toBe(400)
+    }
+  })
+
+  it('answers the complete days ending `end`, with `until` and each feature’s firstSeenAt', async () => {
+    const { d1 } = seeded()
+    const res = await app.request(
+      '/admin/feature-usage?range=7d&end=2026-11-03',
+      { headers: authHeaders },
+      bindings(d1),
+    )
+    expect(res.status).toBe(200)
+    const body: FeatureUsageResponse = await res.json()
+    expect(body.since).toBe('2026-10-28T00:00:00.000Z')
+    expect(body.until).toBe('2026-11-04T00:00:00.000Z')
+    expect(body.activeInstalls).toBe(2)
+    expect(byId(body.features, 'archives')).toMatchObject({ installs: 2, firstSeenAt: '2026-11-02T09:01:00.000Z' })
+    expect(byId(body.features, 'multi-rename').firstSeenAt).toBeNull()
+  })
+
+  it('accepts today as the end', async () => {
+    const todayUtc = new Date().toISOString().slice(0, 10)
+    const res = await app.request(
+      `/admin/feature-usage?range=7d&end=${todayUtc}`,
+      { headers: authHeaders },
+      bindings(createSqliteD1().d1),
+    )
+    expect(res.status).toBe(200)
   })
 })

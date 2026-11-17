@@ -23,6 +23,9 @@ Read this before any non-trivial work here: editing, planning, reorganizing, or 
   those helpers.
 - **`feature-usage.ts`**: `/admin/feature-usage` and `featureUsageDefinitions`, the feature → event mapping (§ Feature
   usage). Tested by `feature-usage.test.ts` (real SQLite, the mapping's invariants, the route).
+- **`active-installs.ts`**: `/admin/active-installs`, its two queries, `compareVersions`, and the pure
+  `assembleActiveInstalls` (§ Active installs). Tested by `active-installs.test.ts` (the pure rules, the SQL on real
+  SQLite against `/admin/heartbeat-dau` and `/admin/funnel`, the route).
 - Tests: `admin-stats.test.ts`, `admin-endpoints.test.ts`, `funnel.test.ts` (route auth/validation plus the pure date
   math, zero-fill, channel, D7/D28-knowability, retention-so-far, and `byCountry` rules), `funnel-sql.test.ts` (both
   funnels' SQL on real SQLite, seeded through the `/heartbeat` INSERTs, including the country slices summing to the
@@ -36,11 +39,11 @@ Consumer: the private SvelteKit dashboard in `apps/analytics-dashboard/`.
 `/admin/heartbeat-dau?range=7d|30d|90d|all` returns one row per UTC day: `{ date, dau, appHours }`.
 
 - `dau`: `COUNT(DISTINCT anal_id)` that beat that day.
-- `appHours`: `SUM(COALESCE(uptime_seconds, 3600)) / 3600.0`, how long the app ran that day summed over installs. A beat
-  reports the runtime it accounts for; a beat from a client older than `uptime_seconds` stores NULL and counts as one
-  hour, because those clients beat hourly. That's what lets rows from before and after the three-hour cadence join in
-  one series. ❌ Don't go back to counting rows: a row count measures the beat cadence, so it drops by two thirds the
-  day a release changes it, with no change in use.
+- `appHours`: `SUM(COALESCE(uptime_seconds, 3600)) / 3600.0` (`beatSecondsSql`, shared with § Active installs), how long
+  the app ran that day summed over installs. A beat reports the runtime it accounts for; a beat from a client older than
+  `uptime_seconds` stores NULL and counts as one hour, because those clients beat hourly. That's what lets rows from
+  before and after the three-hour cadence join in one series. ❌ Don't go back to counting rows: a row count measures
+  the beat cadence, so it drops by two thirds the day a release changes it, with no change in use.
 
 The whole beat counts on the day it ARRIVED, so runtime that spans midnight lands on the later day. At a three-hour
 cadence that shifts a little runtime across a day boundary and changes no weekly or monthly total.
@@ -236,6 +239,20 @@ versions here would make every adoption number silently wrong for older installs
 event count over the window, plus an optional breakdown, against the window's active installs. The per-release
 feature-status review reads it through the dashboard's `/api/report` (§ "Feature usage" there).
 
+- **The window.** Without `end`, it rolls back `range` days from now (today partial included), and the response is
+  `{ range, since, activeInstalls, features }`, unchanged from before `end` existed. With `?end=YYYY-MM-DD` (inclusive,
+  no later than today UTC; malformed or future is a 400, parsed by `parseEndDate` as on `/admin/funnel/countries`), it
+  is the `range` complete UTC days ending `end`: `[end − days + 1 00:00, end + 1 00:00)`. The response then also carries
+  `until` (the exclusive end, RFC 3339) and a per-feature `firstSeenAt`. An older Worker ignores `end`, and the missing
+  `until` is how the dashboard tells.
+- **`firstSeenAt`** is the earliest stored `occurred_at` among the feature's events, or `null` if none was ever stored.
+  It's what keeps a previous-period change honest: a previous window that starts before the feature's events existed
+  reads `0`, which isn't a real zero, so the dashboard prints `–` for that change. It's a lower bound for a
+  prop-filtered match (`pane_navigated` predates `volume_kind=archive`), which is fine for that purpose. `seenEventsSql`
+  answers both it and `everSeen`: a `MIN(occurred_at)` per event name with the event pinned, which reads the first entry
+  of `idx_analytics_event_event_occurred` for it (about three rows per event on production, 2026-11-17, against two for
+  the `EXISTS` probe it replaced).
+
 - **The mapping is `featureUsageDefinitions` in `feature-usage.ts`, the one place it lives.** Each entry is a feature
   id, its name, the events that count (`{ event }`, or `{ event, prop, values }` for "only these property values", like
   `pane_navigated` with `volume_kind=archive`), and an optional `split` (`'event'`, or a property such as `outcome`). A
@@ -244,14 +261,16 @@ feature-status review reads it through the dashboard's `/api/report` (§ "Featur
 - **AI rename vs AI file organization** split the `suggestion_group_*` events on `verb`: `rename` is `ai-rename`, the
   other file verbs `ai-batch`; the server verbs belong to neither.
 - **"Never stored" is not zero.** `everSeen` says whether any of the feature's events exists in the table at all
-  (`seenEventsSql`, an `EXISTS` probe per event name). The dashboard prints "no data yet" for `false`, so a mapping can
+  (`seenEventsSql`, one indexed lookup per event name). The dashboard prints "no data yet" for `false`, so a mapping can
   land before the release that ships its event without reading as 0% adoption.
 - **Denominator**: `COUNT(DISTINCT anal_id)` over `heartbeat` in the window, the `/admin/heartbeat-dau` population.
   Suppressed and tooling installs never send (`apps/desktop/src-tauri/src/analytics/DETAILS.md` § The suppression gate)
   and the synthetic sweep deletes the leftovers from both tables, so no query-side exclusion is needed, same as every
   other admin endpoint.
 - **The window is on `occurred_at`** (the client's clock, RFC 3339), compared as a string against `Date.toISOString()`;
-  the heartbeat side compares `created_at` in SQLite's `YYYY-MM-DD HH:MM:SS`.
+  the heartbeat side compares `created_at` in SQLite's `YYYY-MM-DD HH:MM:SS`. Both bounds go in each side's own format:
+  `occurred_at >= '<start>T00:00:00.000Z' AND occurred_at < '<end+1>T00:00:00.000Z'`, and
+  `created_at >= '<start> 00:00:00' AND created_at < '<end+1> 00:00:00'`.
 - **Install ids never leave the Worker.** The query returns one row per (feature, part, install), and
   `assembleFeatureUsage` folds those into counts before responding.
 
@@ -263,6 +282,41 @@ shape reads 118,898, each event in the window once. The mapping is interpolated,
 at 100 bound parameters; every token passes `assertSafeToken` first. `seenEventsSql` takes its names as a `json_each`
 list because D1 rejects a `UNION ALL` of 30 probes ("too many terms in compound SELECT", production, 2026-11-11), which
 plain SQLite accepts.
+
+## Active installs (`GET /admin/active-installs`)
+
+`?days=N` (an integer 1..400, default 181, else 400; `parseDays`). Returns `{ days, windows }`, both built from the
+heartbeat population of `/admin/heartbeat-dau`. Install ids are folded into counts in `assembleActiveInstalls` and never
+leave the Worker.
+
+- `days`: `ActiveInstallsDay[]`, the last N UTC days oldest first, **today (partial) included**, a day with no beats
+  zero-filled. Per day: `dau` (distinct installs that beat), `newInstalls` (first-ever beat that day, from
+  `install_summary.first_beat_at`, so it equals `/admin/funnel`'s), `appHours` (`beatSecondsSql`, so it equals
+  `/admin/heartbeat-dau`'s), `wau` / `mau` (distinct installs with a beat in [day − 6, day] / [day − 27, day]), and
+  `byVersion` (installs by the version they ran that day; an install on two versions counts under the higher, so the
+  values sum to `dau`).
+- `windows`: `VersionWindow[]` for 7, 30, and 90 days, each `{ days, since, until, installs, byVersion }` over complete
+  days ending yesterday (`since` = today − days, `until` = yesterday, both inclusive). Here `byVersion[v]` counts the
+  installs with ANY beat on `v` in the window, the "installs exposed to v" denominator an errors-per-100 rate needs, so
+  an install that upgraded counts under both and the values can sum past `installs`.
+- **WAU and MAU** come from per-install interval coverage: each beat day `a` covers `[a, a + 6]` (or `+ 27`),
+  overlapping intervals merge per install, each is clipped to the output range (a beat yesterday covers today, never a
+  day past it), and a +1/−1 difference array sums them. The beat query reads back to `min(first day − 27, today − 90)`
+  (`readSinceFor`), so the first day's MAU and the 90-day window are whole even when N is short.
+- **Version order is `compareVersions`**: numeric per dot-separated part; a part that isn't all digits (`0-beta` in
+  `0.62.0-beta.1`) sorts below any number, so a pre-release sits below its release; then a string compare, so it's a
+  total order. ❌ Never SQL `MAX(app_version)` (string order puts `0.9.0` above `0.10.0`), and not the dashboard's
+  `compareSemverDesc`, which returns `NaN` for a non-numeric part and breaks a sort.
+- **Synthetic installs**: the synthetic sweep deletes an install's beats only after seven quiet days (`../../DETAILS.md`
+  § Synthetic heartbeats), so the last week's `dau` and `wau` can still hold installs that later vanish, the same as
+  `/admin/heartbeat-dau`. Not corrected here; the dashboard notes it.
+
+**Decision: one row per beat, folded in TypeScript, ❌ no SQL `GROUP BY`.** D1 bills the grouping's sorter as rows read.
+Measured with `wrangler d1 execute --remote` on production, 2026-11-17, window from 2026-04-24 (a 181-day response):
+`GROUP BY date, anal_id, app_version` returned 12,574 rows but read 132,126 for 66,063 beats in 537 ms; the raw per-beat
+select reads 66,063 (each beat once) in 199 ms and returns 66,063 rows. The same split showed locally under
+`wrangler dev` (wrangler 4.151.0) on a 160,009-beat seed: 320,018 grouped vs 160,009 raw. The new-installs query reads
+`install_summary` (2,110 rows read on production for 1,055 installs in the window), not `heartbeat`.
 
 ## Rollup-versus-live union
 

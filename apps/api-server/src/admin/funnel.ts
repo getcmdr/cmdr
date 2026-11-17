@@ -69,11 +69,12 @@ export interface FunnelWindow {
 }
 
 /**
- * `?days=` as an integer in range, or null when malformed. Shared with `/admin/funnel/countries`.
- * `parseInt` alone would read `7abc` as 7, hence the digits-only check.
+ * `?days=` as an integer in range, `fallback` when absent, or null when malformed. Shared with
+ * `/admin/funnel/countries` and `/admin/active-installs`. `parseInt` alone would read `7abc` as 7, hence
+ * the digits-only check.
  */
-export function parseDays(raw: string | undefined): number | null {
-  if (raw === undefined) return defaultDays
+export function parseDays(raw: string | undefined, fallback = defaultDays): number | null {
+  if (raw === undefined) return fallback
   if (!/^\d+$/.test(raw)) return null
   const days = parseInt(raw, 10)
   return days >= minDays && days <= maxDays ? days : null
