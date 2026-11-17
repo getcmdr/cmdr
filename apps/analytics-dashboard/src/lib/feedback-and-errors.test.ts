@@ -1,6 +1,40 @@
 import { describe, it, expect } from 'vitest'
 import type { VersionWindow } from './server/sources/active-installs.js'
-import { errorsPer100, errorsSinceRelease, type ErrorReportRow } from './feedback-and-errors.js'
+import {
+  errorsPer100,
+  errorsSinceRelease,
+  inboxFeedback,
+  type ErrorReportRow,
+  type FeedbackRow,
+} from './feedback-and-errors.js'
+
+function message(id: number, createdAt: string, awaiting: boolean): FeedbackRow {
+  return {
+    id,
+    createdAt,
+    feedback: 'Placeholder feedback',
+    email: awaiting ? 'test_user_1@example.com' : null,
+    appVersion: '0.61.0',
+    osVersion: '15.5',
+    buildMode: null,
+    answeredAt: null,
+    errorReportId: null,
+  }
+}
+
+describe('inboxFeedback', () => {
+  it('keeps every message awaiting a reply, however old, and fills the rest with the newest', () => {
+    const old = message(1, '2026-06-01 10:00:00', true)
+    const recent = [3, 4, 5].map((id) => message(id, `2026-08-0${String(id)} 10:00:00`, false))
+    const shown = inboxFeedback(recent, [old], 2)
+    expect(shown.map((m) => m.id)).toEqual([5, 4, 1])
+  })
+
+  it('lists a message once when it is both recent and awaiting', () => {
+    const both = message(7, '2026-08-07 10:00:00', true)
+    expect(inboxFeedback([both], [both], 15).map((m) => m.id)).toEqual([7])
+  })
+})
 
 function report(id: string, appVersion: string, date: string, generatedAt = `${date}T12:00:00.000Z`): ErrorReportRow {
   return { id, kind: 'auto', appVersion, osVersion: '15.5', arch: 'aarch64', date, generatedAt }

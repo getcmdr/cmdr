@@ -22,9 +22,16 @@ sections and pass their loaded data down.
   - Interest (`components/sections/InterestSection.svelte`) and Download (`components/sections/DownloadSection.svelte`,
     with `CountryTable.svelte` and the per-day pie tooltip), side by side from `md`.
 - `/product` — Product (`routes/product/+page.svelte`):
-  - Active use (`ActiveUseSection.svelte`), Settings adoption (`SettingsAdoptionSection.svelte`), Payment
-    (`PaymentSection.svelte`), Retention (`RetentionSection.svelte`), Feature usage (`FeatureUsageSection.svelte`, full
-    width), Feedback & errors (`FeedbackErrorsSection.svelte`).
+  - One column of full-width sections, top to bottom: `NeedsYouStrip` (messages awaiting a reply, error reports since
+    the latest release, each linking to `#inbox`; renders nothing when both are zero), `ProductHeadline` (six
+    `StatTile`s on yesterday: WAU, MAU, stickiness, hours per active day, D7, paying share; math in
+    `#lib/product-stats.ts`), `UsageTrendsSection` (daily actives stacked new/returning with the update-check reach as
+    `DailyChart`'s dotted `overlay`, and hours per active install), `RetentionCohortsSection` (the D7/D28 cohort rows,
+    moved here from `/`), `MoneySection` (`#lib/money.ts`), `FeatureUsageSection`, `SettingsAdoptionSection`, and
+    `FeedbackErrorsSection` (`id="inbox"`, errors per 100 installs by version).
+  - No `SectionDescription`/`Methodology` blurbs on the new sections: the caveats live in (i) popovers.
+  - `TrendRow` glue both pages share (stats per window, daily and rolling rates, `viewRange`, `cell`):
+    `#lib/trend-row.ts`.
 - `/links` — Link codes (`routes/links/+page.{svelte,server.ts}`): CRUD for the `?r=` short codes. See § "Link codes
   CRUD" below. The layout hides the range picker here.
 - `/licenses` — Licenses (`routes/licenses/+page.{svelte,server.ts}`): one row per license we've issued. See § "The
@@ -421,10 +428,12 @@ association from one section to the next:
 ## Acquisition trends
 
 The top of `/` answers "is each funnel step getting better?" with one row per metric: visitors, visitor → click,
-download clicks, click → install, new installs, D7 retention, D28 retention, and the bot meter (server downloads ÷ new
-installs; a spike means a scraper changed). The charts show the window in view (the picker's 7/30/90 days plus today, or
-a stepped-back one, § "Selection state"), sliced by date out of the funnel's rows; the stats grids stay on fixed 90/30/7
-columns ending today.
+download clicks, click → install, new installs, and the bot meter (server downloads ÷ new installs; a spike means a
+scraper changed). The D7 and D28 cohort rows use the same rows and rules but live on `/product`
+(`RetentionCohortsSection`), David's call 2026-11-17: retention is a product question; the `/` country table keeps its
+pooled D7/D28 columns. The charts show the window in view (the picker's 7/30/90 days plus today, or a stepped-back one,
+§ "Selection state"), sliced by date out of the funnel's rows; the stats grids stay on fixed 90/30/7 columns ending
+today.
 
 - **Today is a partial UTC day**: drawn faded, given no rolling point, and excluded from every stat, which all take an
   exclusive `end` day.

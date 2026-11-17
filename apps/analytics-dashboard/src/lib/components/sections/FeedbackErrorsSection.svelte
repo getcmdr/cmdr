@@ -1,61 +1,71 @@
 <!--
-  Product § Feedback & errors: in-app feedback messages and error-report bundle metadata. Shows error
-  reports per day, by kind, and by version, plus recent feedback and a recent-error-reports table. Each
-  feedback message with a reply-to email has a mark-answered toggle (the `setAnswered` action on `/product`).
-  A message sent with logs names their `ERR-XXXXX`: a link to that row of the recent-error-reports table when it's
-  listed there, else the id as selectable text (older, or outside the table's 15 rows).
+  Product § Feedback & errors (the page's `#inbox`): in-app feedback messages and error-report bundle
+  metadata. Shows error reports per day, by kind, and per 100 installs by version, plus the feedback inbox
+  and a recent-error-reports table. Each feedback message with a reply-to email has a mark-answered toggle
+  (the `setAnswered` action on `/product`). A message sent with logs names their `ERR-XXXXX`: a link to that
+  row of the recent-error-reports table when it's listed there, else the id as selectable text.
 -->
 <script lang="ts">
     import type { SourceResult, DashboardSelection } from '#lib/server/types.js'
     import type { FeedbackAndErrorsData } from '#lib/server/sources/feedback-and-errors.js'
+    import type { VersionWindow } from '#lib/server/sources/active-installs.js'
     import { enhance } from '$app/forms'
-    import { countFeedbackAwaitingReply, tallyErrorReportsByField, errorReportsByDay } from '#lib/feedback-and-errors.js'
-    import { formatNumber } from '#lib/format.js'
+    import { errorReportsByDay, errorsPer100, inboxFeedback, tallyErrorReportsByField } from '#lib/feedback-and-errors.js'
+    import { formatAverage, formatNumber } from '#lib/format.js'
     import { COLOR_GOLD } from '#lib/colors.js'
     import Chart from '#lib/components/Chart.svelte'
     import ErrorState from '#lib/components/ErrorState.svelte'
+    import InfoPopover from '#lib/components/InfoPopover.svelte'
     import MetricRow from '#lib/components/MetricRow.svelte'
     import MetricTable from '#lib/components/MetricTable.svelte'
     import EmptyState from '#lib/components/EmptyState.svelte'
-    import SectionDescription from '#lib/components/SectionDescription.svelte'
     import ExternalLinks from '#lib/components/ExternalLinks.svelte'
 
     const {
         feedbackAndErrors,
+        versionWindow,
         selection,
         answerError = null,
     }: {
         feedbackAndErrors: SourceResult<FeedbackAndErrorsData>
+        /**
+         * The heartbeat's installs per version over the picker's complete days, for errors per 100; null when
+         * the Worker doesn't send it yet (then the table counts reports only).
+         */
+        versionWindow: VersionWindow | null
         selection: DashboardSelection
         /** The mark-answered action's failure message, if the last toggle didn't save. */
         answerError?: string | null
     } = $props()
 </script>
 
-<section class="rounded-xl border border-border bg-surface p-6">
-    <div class="mb-1">
-        <h2 class="text-lg font-semibold text-text-primary">Feedback &amp; errors</h2>
-        <p class="text-sm text-text-tertiary">What are users telling us?</p>
-    </div>
-    <SectionDescription
-        insight={'Use this to read what people sent through in-app feedback and to see error-report bundles roll in, so you ' +
-            'catch pain points fast.'}
-        caveat={"Feedback carries no install id (it's unjoinable to analytics), and error reports use a separate diagnostics " +
-            'id. Both are low-volume, so a short window can look empty even when things are fine.'}
-    />
+<section id="inbox" class="scroll-mt-32 rounded-xl border border-border bg-surface p-4 sm:p-6">
+    <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold text-text-primary">
+        Feedback &amp; errors
+        <InfoPopover topic="feedback and errors">
+            <p>What people sent through in-app feedback, and the error-report bundles rolling in.</p>
+            <ul>
+                <li>"Awaiting reply" counts every message with a reply-to address not yet marked answered, however old.</li>
+                <li>Feedback carries no install id, so it can't be joined to analytics. Error reports use a separate diagnostics id.</li>
+                <li>Both are low-volume, so a short window can look empty even when things are fine.</li>
+            </ul>
+            <p><span class="info-label">Source:</span> the api-server (feedback in D1, error bundles in R2, kept 90 days).</p>
+        </InfoPopover>
+    </h2>
 
     {#if feedbackAndErrors.ok}
         {@const fe = feedbackAndErrors.data}
-        {@const awaitingReply = countFeedbackAwaitingReply(fe.feedback)}
         {@const errorsPerDay = errorReportsByDay(fe.errorReports)}
         {@const errorsByKind = tallyErrorReportsByField(fe.errorReports, 'kind')}
         {@const errorsByVersion = tallyErrorReportsByField(fe.errorReports, 'appVersion')}
+        {@const rates = versionWindow ? errorsPer100(fe.allErrorReports, versionWindow).filter((r) => r.reports > 0) : null}
         {@const recentReports = fe.errorReports.slice(0, 15)}
+        {@const inbox = inboxFeedback(fe.feedback, fe.awaitingReply, 15)}
 
         <MetricRow
             metrics={[
                 { label: 'Feedback messages', value: formatNumber(fe.feedback.length), color: COLOR_GOLD },
-                { label: 'Awaiting reply', value: formatNumber(awaitingReply) },
+                { label: 'Awaiting reply', value: formatNumber(fe.awaitingReply.length) },
                 { label: 'Error reports', value: formatNumber(fe.errorReports.length) },
             ]}
         />
@@ -83,24 +93,65 @@
                     />
                 </div>
                 <div>
-                    <h3 class="mb-2 text-sm font-medium text-text-secondary">By version</h3>
-                    <MetricTable
-                        items={errorsByVersion.map((e) => ({ x: e.key, y: e.count }))}
-                        colLabel="Version"
-                        colValue="Reports"
-                    />
+                    {#if rates && versionWindow}
+                        <h3 class="mb-2 flex items-center gap-2 text-sm font-medium text-text-secondary">
+                            By version, per 100 installs
+                            <InfoPopover topic="errors per 100 installs" align="end">
+                                <p>Error reports ÷ the installs that ran each version, over {versionWindow.since} – {versionWindow.until}.</p>
+                                <ul>
+                                    <li>Complete days only, so it can differ from the counts beside it, which include today.</li>
+                                    <li>An install that upgraded counts under both versions.</li>
+                                    <li>Below five installs on a version, the rate is noise: it shows a dash.</li>
+                                </ul>
+                                <p><span class="info-label">Source:</span> error bundles and the app's heartbeat.</p>
+                            </InfoPopover>
+                        </h3>
+                        {#if rates.length > 0}
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr class="border-b border-border-subtle text-xs text-text-tertiary">
+                                        <th class="pr-4 pb-2 font-medium">Version</th>
+                                        <th class="pr-4 pb-2 text-right font-medium">Reports</th>
+                                        <th class="pr-4 pb-2 text-right font-medium">Installs</th>
+                                        <th class="pb-2 text-right font-medium">Per 100</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {#each rates as rate (rate.version)}
+                                        <tr class="border-b border-border-subtle/50">
+                                            <td class="py-1.5 pr-4 text-text-primary tabular-nums">{rate.version}</td>
+                                            <td class="py-1.5 pr-4 text-right text-text-secondary tabular-nums">{formatNumber(rate.reports)}</td>
+                                            <td class="py-1.5 pr-4 text-right text-text-secondary tabular-nums">{formatNumber(rate.installs)}</td>
+                                            <td class="py-1.5 text-right text-text-primary tabular-nums">
+                                                {rate.per100 === null ? '–' : formatAverage(rate.per100)}
+                                            </td>
+                                        </tr>
+                                    {/each}
+                                </tbody>
+                            </table>
+                        {:else}
+                            <p class="text-sm text-text-tertiary">No error reports on complete days in this range.</p>
+                        {/if}
+                    {:else}
+                        <h3 class="mb-2 text-sm font-medium text-text-secondary">By version</h3>
+                        <MetricTable
+                            items={errorsByVersion.map((e) => ({ x: e.key, y: e.count }))}
+                            colLabel="Version"
+                            colValue="Reports"
+                        />
+                    {/if}
                 </div>
             </div>
         {/if}
 
-        {#if fe.feedback.length > 0}
+        {#if inbox.length > 0}
             <div class="mt-4">
-                <h3 class="mb-2 text-sm font-medium text-text-secondary">Recent feedback</h3>
+                <h3 class="mb-2 text-sm font-medium text-text-secondary">Recent feedback, and every message awaiting a reply</h3>
                 {#if answerError}
                     <p class="mb-2 text-sm text-danger">{answerError}</p>
                 {/if}
                 <div class="space-y-2">
-                    {#each fe.feedback.slice(0, 15) as msg (msg.id)}
+                    {#each inbox as msg (msg.id)}
                         <div class="rounded-lg border border-border-subtle bg-surface-elevated px-3 py-2">
                             <p class="text-sm whitespace-pre-wrap text-text-primary">{msg.feedback}</p>
                             <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-tertiary">

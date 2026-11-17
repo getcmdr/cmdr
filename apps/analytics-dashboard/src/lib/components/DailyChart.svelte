@@ -10,6 +10,7 @@
     import { niceTicks } from '#lib/acquisition-stats.js'
     import {
         bandSegments,
+        columnAxisMax,
         columnPath,
         foldedColumn,
         foldBelowPx,
@@ -17,6 +18,7 @@
         lineRuns,
         shortDay,
         stackGap,
+        type ColumnOverlay,
         type ColumnSeries,
         type LegendItem,
         type RateBands,
@@ -43,6 +45,11 @@
         splitSeries?: ColumnSeries[]
         /** Replaces the per-layer legend, for charts with too many layers to list. */
         legend?: LegendItem[]
+        /**
+         * Column mode: a dotted context line over the columns (like update-check reach over active installs).
+         * The axis reaches it, the legend names it, and the tooltip gains its row.
+         */
+        overlay?: ColumnOverlay
         /** Rate mode: the daily values (dots), the rolling rate (line), and young-cohort points (grey). */
         rate?: {
             color: string
@@ -66,6 +73,7 @@
         series = [],
         splitSeries,
         legend,
+        overlay,
         rate,
         height = 180,
     }: Props = $props()
@@ -102,8 +110,7 @@
             const all = [...rate.daily, ...rate.rolling, ...(rate.tentative ?? []).map((t) => t?.value ?? null)]
             return niceTicks(Math.max(0, ...all.filter((v): v is number => v !== null)))
         }
-        const all = [...totals, ...splitTotals].filter((v): v is number => v !== null)
-        return niceTicks(Math.max(0, ...all), { integer: true })
+        return niceTicks(columnAxisMax([totals, splitTotals], overlay?.values), { integer: true })
     })
 
     const hatchColors = $derived([...new Set([...series, ...(splitSeries ?? [])].filter((s) => s.hatch).map((s) => s.color))])
@@ -163,7 +170,14 @@
             .join('')
     }
 
-    const activeRows = $derived(active === null ? [] : tooltip(active))
+    /** The day's readout: the caller's rows, then the overlay's own (so every overlay chart reads it the same way). */
+    const activeRows = $derived.by((): TooltipRow[] => {
+        if (active === null) return []
+        const rows = tooltip(active)
+        if (!overlay || rate) return rows
+        const value = overlay.values[active] ?? null
+        return [...rows, { label: overlay.label, value: value === null ? '–' : formatValue(value), color: overlay.color, mark: 'dotted' }]
+    })
     const announcement = $derived(
         active === null
             ? ''
@@ -302,6 +316,17 @@
                         </text>
                     {/if}
                 {/each}
+                {#if overlay}
+                    <path
+                        d={linePath(overlay.values)}
+                        fill="none"
+                        stroke={overlay.color}
+                        stroke-width="1.5"
+                        stroke-dasharray="1 4"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                {/if}
             {/if}
 
             <!-- Hit targets: the whole day slot, bigger than any mark -->
@@ -341,6 +366,8 @@
                             {#if row.color}
                                 {#if row.mark === 'line'}
                                     <span class="inline-block h-0.5 w-3 shrink-0 rounded-sm" style="background-color: {row.color};"></span>
+                                {:else if row.mark === 'dotted'}
+                                    <span class="inline-block w-3 shrink-0 border-t-2 border-dotted" style="border-color: {row.color};"></span>
                                 {:else if row.mark === 'dot'}
                                     <span class="inline-block size-2 shrink-0 rounded-full" style="background-color: {row.color};"></span>
                                 {:else}
@@ -370,7 +397,7 @@
     {/if}
 
     <!-- Legend: always for 2+ series, and for the rate's dot/line/grey encodings -->
-    {#if series.length > 1 || rate || legend}
+    {#if series.length > 1 || rate || legend || overlay}
         <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 pl-11 text-xs text-text-secondary">
             {#if legend}
                 {#each legend as item (item.label)}
@@ -405,6 +432,11 @@
                         <span class="inline-block size-2.5 rounded-sm" style={swatchStyle(s)}></span>{s.label}
                     </span>
                 {/each}
+            {/if}
+            {#if overlay && !rate}
+                <span class="flex items-center gap-1.5">
+                    <span class="inline-block w-3 border-t-2 border-dotted" style="border-color: {overlay.color};"></span>{overlay.label}
+                </span>
             {/if}
         </div>
     {/if}

@@ -1,10 +1,11 @@
 /**
- * Daily active installs as a RANGE rather than a point estimate.
+ * Daily active installs and the update-check reach beside them.
  *
  * The opt-out rate is deliberately unmeasurable: an install that opts out of analytics sends
  * nothing at all, not even an "I opted out" bit, and that stays true. So a heartbeat-derived DAU
- * undercounts by an unknown amount, and printing it as one number quietly claims a precision we
- * don't have. Two independent signals bracket it instead:
+ * undercounts by an unknown amount. The Product page prints the real heartbeat numbers and draws
+ * the reach as a dotted context line (`reachByDay`); the report still prints the pair as a range
+ * (`formatBound`). Two independent signals:
  *
  * - **Floor**: distinct install ids that beat that day. Every one of these definitely ran the app.
  * - **Reach**: distinct IPs that checked for updates that day. Update checks ride a separate
@@ -31,13 +32,41 @@ export interface ActiveInstallBound {
  * the update data doesn't reach gets a null reach rather than a zero, which would read as "nobody".
  */
 export function boundsByDay(dau: HeartbeatDauRow[], updateActivity: UpdateActivityRow[]): ActiveInstallBound[] {
-  const reachByDay = new Map<string, number>()
-  for (const row of updateActivity) {
-    reachByDay.set(row.day, (reachByDay.get(row.day) ?? 0) + row.updaters)
-  }
+  const reach = reachMap(updateActivity)
   return [...dau]
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((row) => ({ day: row.date, floor: row.dau, reach: reachByDay.get(row.date) ?? null }))
+    .map((row) => ({ day: row.date, floor: row.dau, reach: reach.get(row.date) ?? null }))
+}
+
+/** Distinct update-checking IPs per day, summed over the versions they checked from. */
+function reachMap(updateActivity: UpdateActivityRow[]): Map<string, number> {
+  const reach = new Map<string, number>()
+  for (const row of updateActivity) reach.set(row.day, (reach.get(row.day) ?? 0) + row.updaters)
+  return reach
+}
+
+/**
+ * The reach on each of `dates`, for the dotted context line over the daily actives. A day the update data
+ * doesn't cover is null (the line breaks there), never a zero.
+ */
+export function reachByDay(updateActivity: UpdateActivityRow[], dates: string[]): (number | null)[] {
+  const reach = reachMap(updateActivity)
+  return dates.map((date) => reach.get(date) ?? null)
+}
+
+/**
+ * Each day's active installs as the two stacked layers of the daily chart: new (first beat that day) and
+ * returning (the rest). Returning never goes below zero: the synthetic sweep can leave a just-counted new
+ * install out of a later DAU.
+ */
+export function splitActives(days: { dau: number; newInstalls: number }[]): {
+  newInstalls: number[]
+  returning: number[]
+} {
+  return {
+    newInstalls: days.map((d) => d.newInstalls),
+    returning: days.map((d) => Math.max(0, d.dau - d.newInstalls)),
+  }
 }
 
 /** The most recent day, or null when there's nothing yet. */

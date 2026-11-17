@@ -1,10 +1,10 @@
 /**
- * Pure data-shaping helpers for the Download and Active use charts: stacking download/update rows by
- * day, aggregating by a field, and building per-day timelines. Kept out of the Svelte components so
- * the section components stay focused on markup. `DownloadRow`/`UpdateActivityRow` are server types
- * but the shapes are plain data, safe to import into client code.
+ * Pure data-shaping helpers for the Download charts: stacking download rows by day, aggregating by a
+ * field, and building per-day timelines. Kept out of the Svelte components so the section components
+ * stay focused on markup. `DownloadRow` is a server type but the shape is plain data, safe to import
+ * into client code.
  */
-import type { DownloadRow, UpdateActivityRow } from '#lib/server/sources/cloudflare.js'
+import type { DownloadRow } from '#lib/server/sources/cloudflare.js'
 
 export interface StackSeries {
   key: string
@@ -19,14 +19,6 @@ export const SOURCE_STACK = [
   { key: 'homebrew', label: 'Homebrew', color: '#f0883e' },
   { key: 'other', label: 'Direct / other', color: '#71717a' },
 ]
-// Newest release gets the brightest color; the rest cycle, with anything older bucketed as grey.
-export const VERSION_PALETTE = ['#ffc206', '#a78bfa', '#22d3ee', '#8faa3b', '#f0883e', '#f472b6']
-export const COLOR_OLDER = '#71717a'
-
-/** Sorted unique day strings (YYYY-MM-DD, ascending) from a list of rows carrying a `day` field. */
-export function uniqueDays(rows: Array<{ day: string }>): string[] {
-  return [...new Set(rows.map((r) => r.day))].sort()
-}
 
 /** Aligns rows into a per-key map of per-day value arrays (one slot per entry in `days`). */
 function stackByDay<T>(
@@ -65,35 +57,6 @@ export function downloadSourceSeries(rows: DownloadRow[], days: string[]): Stack
     ...s,
     values: byKey.get(s.key) ?? new Array<number>(days.length).fill(0),
   })).filter((s) => s.values.some((v) => v > 0))
-}
-
-/** Update activity stacked by the version each install was running when it checked. */
-export function updateVersionSeries(rows: UpdateActivityRow[], days: string[]): StackSeries[] {
-  const byKey = stackByDay(
-    rows,
-    days,
-    (r) => r.day,
-    (r) => r.version,
-    (r) => r.updaters,
-  )
-  const versions = [...byKey.keys()].sort(compareSemverDesc)
-  const top = versions.slice(0, VERSION_PALETTE.length)
-  const rest = versions.slice(VERSION_PALETTE.length)
-  const series: StackSeries[] = top.map((v, i) => ({
-    key: v,
-    label: `v${v}`,
-    color: VERSION_PALETTE[i],
-    values: byKey.get(v) ?? new Array<number>(days.length).fill(0),
-  }))
-  if (rest.length > 0) {
-    const olderValues = new Array<number>(days.length).fill(0)
-    for (const v of rest) {
-      const arr = byKey.get(v) ?? []
-      for (let i = 0; i < days.length; i++) olderValues[i] += arr[i] ?? 0
-    }
-    series.push({ key: 'older', label: 'Older', color: COLOR_OLDER, values: olderValues })
-  }
-  return series
 }
 
 /** Aggregates rows by a string field, summing a numeric field. */

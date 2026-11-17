@@ -45,6 +45,18 @@ export function countFeedbackAwaitingReply(rows: FeedbackRow[]): number {
   return rows.filter(isAwaitingReply).length
 }
 
+/**
+ * The inbox list: the range's newest `limit` messages, plus every message still awaiting a reply that isn't
+ * among them (however old), newest first. So a message the top strip counts is always in the list it links to.
+ */
+export function inboxFeedback(inRange: FeedbackRow[], awaitingReply: FeedbackRow[], limit: number): FeedbackRow[] {
+  const newest = [...inRange].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit)
+  const listed = new Set(newest.map((row) => row.id))
+  return [...newest, ...awaitingReply.filter((row) => !listed.has(row.id))].sort((a, b) =>
+    b.createdAt.localeCompare(a.createdAt),
+  )
+}
+
 /** Tallies error reports by a field (kind/version/arch), highest count first. */
 export function tallyErrorReportsByField(
   rows: ErrorReportRow[],
