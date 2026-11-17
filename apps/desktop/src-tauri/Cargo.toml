@@ -256,7 +256,7 @@ memchr = "2"
 walkdir = "2"
 # Drive indexing: SQLite store and macOS FSEvents watcher (the parallel directory
 # walker is now the in-tree `indexing::scanner::walker`, not a dependency)
-rusqlite = { version = "0.41", features = ["bundled", "collation", "fallible_uint"] }
+rusqlite = { version = "0.42", features = ["bundled", "collation", "fallible_uint"] }
 sysinfo = { version = "0.40.3", default-features = false, features = ["system"] }
 time = { version = "0.3", features = ["parsing", "macros", "formatting"] }
 # Playwright E2E testing plugin: socket bridge for direct webview injection (optional, feature-gated, dev-only).

@@ -56,7 +56,7 @@ mimalloc = ["dep:mimalloc", "dep:libmimalloc-sys"]
 # every consumer's or Cargo unification silently drops one. In the browser build
 # rusqlite swaps in `sqlite-wasm-rs` by itself, which compiles `sqlite3.c` with the
 # pinned LLVM clang (`scripts/build-listing-wasm/toolchain.go`).
-rusqlite = { version = "0.41", features = ["bundled", "collation", "fallible_uint"] }
+rusqlite = { version = "0.42", features = ["bundled", "collation", "fallible_uint"] }
 # The digest half of every volume ID (`volume::ids`). Cryptographic on purpose:
 # an ID is identity, and a volume name is user-controlled, so a *chosen*
 # collision (name a USB stick so it steals another volume's index and saved
@@ -160,6 +160,11 @@ uuid = { version = "1.29.2", features = ["js"] }
 web-time = "1.1.0"
 wasm-bindgen = "0.2.130"
 wasm-bindgen-futures = "0.4.80"
+# The SQLite rusqlite links in the browser. From 0.6 it ships no host by default:
+# `wasm-bindgen` supplies the clock, sleep, and entropy imports `sqlite3.c` calls
+# (`rust_sqlite_wasm_host_*`); without it the `.wasm` fails to link. Same version
+# rusqlite resolves, so this adds no package.
+sqlite-wasm-rs = { version = "0.6.3", default-features = false, features = ["wasm-bindgen"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # Linux keeps mimalloc without the feature: glibc malloc's per-thread arenas are

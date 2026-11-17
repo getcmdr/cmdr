@@ -2147,7 +2147,7 @@
     },
     {
       "name": "libsqlite3-sys",
-      "version": "0.39.0",
+      "version": "0.40.0",
       "license": "MIT",
       "url": "https://github.com/rusqlite/rusqlite"
     },
@@ -3281,7 +3281,7 @@
     },
     {
       "name": "rusqlite",
-      "version": "0.41.1",
+      "version": "0.42.0",
       "license": "MIT",
       "url": "https://github.com/rusqlite/rusqlite"
     },
@@ -4055,7 +4055,7 @@
     },
     {
       "name": "thiserror",
-      "version": "2.0.18",
+      "version": "2.0.21",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/dtolnay/thiserror"
     },
@@ -4067,7 +4067,7 @@
     },
     {
       "name": "thiserror-impl",
-      "version": "2.0.18",
+      "version": "2.0.21",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/dtolnay/thiserror"
     },
