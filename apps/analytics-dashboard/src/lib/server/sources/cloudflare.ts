@@ -16,18 +16,6 @@ export interface DownloadRow {
   uniqueDownloads: number
 }
 
-/** One day of true daily-active data from the heartbeat: distinct installs and how long the app ran. */
-export interface HeartbeatDauRow {
-  date: string
-  dau: number
-  /**
-   * App hours that day, summed over installs: each beat's reported uptime, and one hour for a beat
-   * from a build too old to report it (those beat hourly). The engagement signal, independent of
-   * how often the app beats. Fractional.
-   */
-  appHours: number
-}
-
 /** One day of update-check activity: distinct update-enabled installs that ran while on `version`. */
 export interface UpdateActivityRow {
   day: string
@@ -37,7 +25,6 @@ export interface UpdateActivityRow {
 
 export interface CloudflareData {
   downloads: DownloadRow[]
-  heartbeatDau: HeartbeatDauRow[]
   updateActivity: UpdateActivityRow[]
 }
 
@@ -91,13 +78,6 @@ export function parseDownloadRows(raw: WorkerDownloadRow[]): DownloadRow[] {
   }))
 }
 
-/** Passes through the worker's per-day DAU rows (already `{ date, dau, appHours }`), sorted oldest-first. */
-export function parseHeartbeatDauRows(raw: HeartbeatDauRow[]): HeartbeatDauRow[] {
-  return [...raw]
-    .map((row) => ({ date: row.date, dau: row.dau, appHours: row.appHours }))
-    .sort((a, b) => a.date.localeCompare(b.date))
-}
-
 export function parseUpdateActivityRows(raw: WorkerUpdateActivityRow[]): UpdateActivityRow[] {
   return raw.map((row) => ({ day: row.date, version: row.version, updaters: row.count }))
 }
@@ -113,15 +93,10 @@ export async function fetchCloudflareData(
   // Only the `all` answer needs trimming; the worker windows the others itself.
   const since = downloadRangeMap[range] === 'all' ? sinceDay(range, new Date()) : ''
   try {
-    const [downloadsRaw, heartbeatDauRaw, updateActivityRaw] = await Promise.all([
+    const [downloadsRaw, updateActivityRaw] = await Promise.all([
       fetchWorkerEndpoint<WorkerDownloadRow[]>(
         env.LICENSE_SERVER_ADMIN_TOKEN,
         `/admin/downloads?range=${downloadRangeMap[range]}`,
-        env.WORKER_BASE_URL,
-      ),
-      fetchWorkerEndpoint<HeartbeatDauRow[]>(
-        env.LICENSE_SERVER_ADMIN_TOKEN,
-        `/admin/heartbeat-dau?range=${range}`,
         env.WORKER_BASE_URL,
       ),
       fetchWorkerEndpoint<WorkerUpdateActivityRow[]>(
@@ -133,7 +108,6 @@ export async function fetchCloudflareData(
 
     const data: CloudflareData = {
       downloads: parseDownloadRows(downloadsRaw).filter((r) => r.day >= since),
-      heartbeatDau: parseHeartbeatDauRows(heartbeatDauRaw),
       updateActivity: parseUpdateActivityRows(updateActivityRaw).filter((r) => r.day >= since),
     }
     await cacheSet('cloudflare', selectionCacheKey(selection), data)

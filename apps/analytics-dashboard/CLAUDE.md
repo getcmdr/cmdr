@@ -10,13 +10,12 @@ Four routes share `routes/+layout.svelte` (header: nav, dates, range picker). Th
 
 - `/` (Acquisition, `routes/+page.svelte`): funnel trend charts (`?country=` scoped), country table, more sections.
 - `/product` (`routes/product/`): headline tiles, usage, rollout, D7/D28 retention, money, onboarding, features,
-  settings, inbox.
+  settings, inbox. `/api/report` mirrors it through the same helpers (`DETAILS.md` § Product page).
 - `/licenses` (`routes/licenses/`): every license we've issued, from `/admin/licenses`, with an editable note each.
 - `/links` (`routes/links/`): CRUD for the `?r=` short codes, proxied to the api-server admin endpoints.
 
-Each section is a component under `src/lib/components/sections/`; shared bits in `src/lib/components/`. Data sources
-live in `src/lib/server/sources/` (one module per external API); `src/lib/server/fetch-all.ts` has the per-source
-loaders and the per-page composers.
+Sections live in `src/lib/components/sections/`, sources in `src/lib/server/sources/` (one per external API), loaders
+and per-page composers in `src/lib/server/fetch-all.ts`.
 
 ## Stack
 
@@ -41,18 +40,18 @@ All API keys stay server-side, behind `+server.ts` / `+page.server.ts`.
 - **Every data source must go behind the 20s `withTimeout` cap in `fetch-all.ts`.** Workers `fetch` has no timeout, so
   one hung upstream stalls the whole `Promise.all` until Cloudflare's 524 at 100s. Sources run in parallel, return
   `SourceResult<T>`, and cache via `cache.ts`. Details: `DETAILS.md`.
-- **The admin token (`LICENSE_SERVER_ADMIN_TOKEN`) stays server-side.** `/licenses`, `/links`, and the worker-backed
-  sources resolve it in `+page.server.ts` only; the browser gets rows and a load-error string. `pnpm build` confirms
-  nothing token-bearing leaks past the boundary.
+- **The admin token (`LICENSE_SERVER_ADMIN_TOKEN`) stays server-side**, resolved in `+page.server.ts` only; the browser
+  gets rows and a load-error string.
 - **❌ Nothing on `/licenses` may say a Paddle subscription is live.** `active` on a `paddle` row means we fulfilled
   that purchase; only `/validate` knows whether it still runs. Labels live in `#lib/licenses.ts`; the vocabulary is
   owned by `apps/api-server/src/licensing/DETAILS.md` § The licenses listing.
 - **A `null` cell renders as a dash (`–`), never a 0**: "couldn't get this" and "this was zero" differ.
-- **Trend stats skip today and pool rates as ratios of sums** (`#lib/acquisition-stats.ts`); a missing worker field
-  reads "Not available yet". Country chips update the URL shallowly, so ❌ never rebuild a URL from `page.url` on `/`;
-  read `window.location`. `DETAILS.md` § Acquisition trends.
+- **Every stat on both pages skips today and pools rates as ratios of sums** (`#lib/acquisition-stats.ts`,
+  `#lib/product-stats.ts`); a missing worker field reads "Not available yet". Country chips update the URL shallowly, so
+  ❌ never rebuild a URL from `page.url` on `/`; read `window.location`.
 - **(i) popovers: a gist line, bullets, then `Source:`** (`InfoPopover.svelte`).
-- **One color means one property across the whole dashboard** (dots, strokes, fills). Palette: `DETAILS.md`.
+- **One color means one property across the whole dashboard**, and a version's color depends only on its string
+  (`versionColor`), never its rank. Palette: `DETAILS.md` § Color coding.
 - **❌ Never auto-scale `#lib/count-color-scale.ts`**: purple always means `COUNT_SCALE_PURPLE_AT`, raised only by hand.
   `DETAILS.md` § "The country map and table".
 

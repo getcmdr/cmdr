@@ -1,11 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import {
-  fetchCloudflareData,
-  sinceDay,
-  parseDownloadRows,
-  parseHeartbeatDauRows,
-  parseUpdateActivityRows,
-} from './cloudflare.js'
+import { fetchCloudflareData, sinceDay, parseDownloadRows, parseUpdateActivityRows } from './cloudflare.js'
 import { clearMemoryCache } from '../cache.js'
 
 const mockEnv = {
@@ -32,11 +26,6 @@ const sampleDownloadsResponse = [
     uniqueCount: 75,
   },
   { date: '2025-03-21', version: '1.1.0', arch: 'aarch64', country: 'GB', source: 'other', count: 45, uniqueCount: 40 },
-]
-
-const sampleHeartbeatDauResponse = [
-  { date: '2025-03-20', dau: 8, appHours: 42 },
-  { date: '2025-03-21', dau: 10, appHours: 57.5 },
 ]
 
 const sampleUpdateActivityResponse = [
@@ -86,35 +75,6 @@ describe('parseUpdateActivityRows', () => {
   })
 })
 
-describe('parseHeartbeatDauRows', () => {
-  it('passes through per-day dau and app hours unchanged', () => {
-    const rows = parseHeartbeatDauRows(sampleHeartbeatDauResponse)
-    expect(rows).toEqual([
-      { date: '2025-03-20', dau: 8, appHours: 42 },
-      { date: '2025-03-21', dau: 10, appHours: 57.5 },
-    ])
-  })
-
-  it('sorts by date oldest-first', () => {
-    const rows = parseHeartbeatDauRows([
-      { date: '2025-03-21', dau: 10, appHours: 57.5 },
-      { date: '2025-03-19', dau: 4, appHours: 20 },
-      { date: '2025-03-20', dau: 8, appHours: 42 },
-    ])
-    expect(rows.map((r) => r.date)).toEqual(['2025-03-19', '2025-03-20', '2025-03-21'])
-  })
-
-  it('keeps dau distinct from app hours (the engagement signal)', () => {
-    const rows = parseHeartbeatDauRows([{ date: '2025-03-20', dau: 8, appHours: 42.25 }])
-    expect(rows[0].dau).toBe(8)
-    expect(rows[0].appHours).toBe(42.25)
-  })
-
-  it('handles empty data', () => {
-    expect(parseHeartbeatDauRows([])).toEqual([])
-  })
-})
-
 describe('fetchCloudflareData', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -130,9 +90,6 @@ describe('fetchCloudflareData', () => {
       if (url.includes('/admin/downloads')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve(sampleDownloadsResponse) })
       }
-      if (url.includes('/admin/heartbeat-dau')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(sampleHeartbeatDauResponse) })
-      }
       return Promise.resolve({ ok: false, status: 404, text: () => Promise.resolve('Not found') })
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -142,7 +99,6 @@ describe('fetchCloudflareData', () => {
     if (!result.ok) return
 
     expect(result.data.downloads).toHaveLength(3)
-    expect(result.data.heartbeatDau).toEqual(sampleHeartbeatDauResponse)
     expect(result.data.updateActivity).toHaveLength(3)
 
     // Verify auth header is sent
@@ -157,16 +113,16 @@ describe('fetchCloudflareData', () => {
 
     await fetchCloudflareData(mockEnv, { range: '7d', end: null })
     const downloadUrl = fetchMock.mock.calls[0][0] as string
-    const heartbeatUrl = fetchMock.mock.calls[1][0] as string
+    const updateUrl = fetchMock.mock.calls[1][0] as string
     expect(downloadUrl).toContain('range=7d')
-    expect(heartbeatUrl).toContain('range=7d')
+    expect(updateUrl).toContain('range=7d')
 
     fetchMock.mockClear()
     await fetchCloudflareData(mockEnv, { range: '30d', end: null })
     const downloadUrl30 = fetchMock.mock.calls[0][0] as string
-    const heartbeatUrl30 = fetchMock.mock.calls[1][0] as string
+    const updateUrl30 = fetchMock.mock.calls[1][0] as string
     expect(downloadUrl30).toContain('range=30d')
-    expect(heartbeatUrl30).toContain('range=30d')
+    expect(updateUrl30).toContain('range=30d')
   })
 
   it('asks the downloads endpoints for `all` on 90d (they take no 90d) and trims to the window', async () => {
@@ -200,7 +156,9 @@ describe('fetchCloudflareData', () => {
     vi.useRealTimers()
     const urls = fetchMock.mock.calls.map((c) => c[0])
     expect(urls.find((u) => u.includes('/admin/downloads'))).toContain('range=all')
-    expect(urls.find((u) => u.includes('/admin/heartbeat-dau'))).toContain('range=90d')
+    expect(urls.find((u) => u.includes('/admin/update-activity'))).toContain('range=all')
+    // The heartbeat's actives come from `/admin/active-installs`; this source never asks the old DAU endpoint.
+    expect(urls.some((u) => u.includes('/admin/heartbeat-dau'))).toBe(false)
     expect(result.ok && result.data.downloads.map((d) => d.day)).toEqual(['2026-03-15'])
     expect(result.ok && result.data.updateActivity).toEqual([])
   })

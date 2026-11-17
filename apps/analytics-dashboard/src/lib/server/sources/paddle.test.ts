@@ -1,11 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import {
-  fetchPaddleData,
-  fetchPaddlePurchasesByDay,
-  parseTransaction,
-  parseSubscription,
-  countSubscriptionsByStatus,
-} from './paddle.js'
+import { fetchPaddleData, fetchPaddlePurchasesByDay, parseTransaction } from './paddle.js'
 import { clearMemoryCache } from '../cache.js'
 
 const mockEnv = { PADDLE_API_KEY_LIVE: 'test-paddle-key' }
@@ -18,16 +12,6 @@ const sampleRawTransaction = {
   details: {
     totals: { total: '5900', currency_code: 'USD' },
     payout_totals: { total: '5900', earnings: '5100', currency_code: 'USD' },
-  },
-}
-
-const sampleRawSubscription = {
-  id: 'sub_01xyz789',
-  status: 'active',
-  customer_id: 'ctm_01def456',
-  current_billing_period: {
-    starts_at: '2026-03-01T00:00:00Z',
-    ends_at: '2026-04-01T00:00:00Z',
   },
 }
 
@@ -61,39 +45,6 @@ describe('parseTransaction', () => {
   })
 })
 
-describe('parseSubscription', () => {
-  it('parses a subscription with billing period', () => {
-    expect(parseSubscription(sampleRawSubscription)).toEqual({
-      id: 'sub_01xyz789',
-      status: 'active',
-      customerId: 'ctm_01def456',
-      currentBillingPeriod: { startsAt: '2026-03-01T00:00:00Z', endsAt: '2026-04-01T00:00:00Z' },
-    })
-  })
-
-  it('handles null and missing billing periods', () => {
-    expect(
-      parseSubscription({ id: 'sub_02', status: 'canceled', customer_id: 'ctm_02', current_billing_period: null })
-        .currentBillingPeriod,
-    ).toBeNull()
-    expect(
-      parseSubscription({ id: 'sub_03', status: 'past_due', customer_id: 'ctm_03' }).currentBillingPeriod,
-    ).toBeNull()
-  })
-})
-
-describe('countSubscriptionsByStatus', () => {
-  it('counts subscriptions by status', () => {
-    const subs = [
-      { id: '1', status: 'active', customerId: 'c1', currentBillingPeriod: null },
-      { id: '2', status: 'active', customerId: 'c2', currentBillingPeriod: null },
-      { id: '3', status: 'canceled', customerId: 'c3', currentBillingPeriod: null },
-    ]
-    expect(countSubscriptionsByStatus(subs)).toEqual({ active: 2, canceled: 1 })
-    expect(countSubscriptionsByStatus([])).toEqual({})
-  })
-})
-
 describe('fetchPaddleData', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -101,48 +52,29 @@ describe('fetchPaddleData', () => {
   })
 
   it('fetches every completed transaction once, with no date filter', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockImplementation((url: string) =>
-        Promise.resolve(url.includes('/transactions') ? page([sampleRawTransaction]) : page([sampleRawSubscription])),
-      )
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(page([sampleRawTransaction])))
     vi.stubGlobal('fetch', fetchMock)
 
-    const result = await fetchPaddleData(mockEnv, { range: '7d', end: null })
+    const result = await fetchPaddleData(mockEnv)
     expect(result.ok).toBe(true)
     if (!result.ok) return
 
-    const transactionUrls = fetchMock.mock.calls
-      .map((call: unknown[]) => String(call[0]))
-      .filter((u) => u.includes('/transactions'))
-    expect(transactionUrls).toEqual(['https://api.paddle.com/transactions?status=completed&per_page=200'])
+    // One call, transactions only: the money math windows the list, and nothing reads subscriptions.
+    expect(fetchMock.mock.calls.map((call: unknown[]) => String(call[0]))).toEqual([
+      'https://api.paddle.com/transactions?status=completed&per_page=200',
+    ])
     expect(result.data.allTransactions).toHaveLength(1)
-    expect(result.data.activeSubscriptions).toHaveLength(1)
-    expect(result.data.subscriptionsByStatus).toEqual({ active: 1 })
   })
 
-  it('windows the legacy `transactions` list to the range in TypeScript', async () => {
-    const recent = {
-      ...sampleRawTransaction,
-      id: 'recent',
-      created_at: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    }
-    const old = { ...sampleRawTransaction, id: 'old', created_at: new Date(Date.now() - 20 * 86_400_000).toISOString() }
-    vi.stubGlobal(
-      'fetch',
-      vi
-        .fn()
-        .mockImplementation((url: string) =>
-          Promise.resolve(url.includes('/transactions') ? page([recent, old]) : page([])),
-        ),
-    )
+  it('serves every later load from the one cached list', async () => {
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(page([sampleRawTransaction])))
+    vi.stubGlobal('fetch', fetchMock)
 
-    const week = await fetchPaddleData(mockEnv, { range: '7d', end: null })
-    const month = await fetchPaddleData(mockEnv, { range: '30d', end: null })
-    if (!week.ok || !month.ok) throw new Error('expected data')
-    expect(week.data.transactions.map((t) => t.id)).toEqual(['recent'])
-    expect(month.data.transactions.map((t) => t.id)).toEqual(['recent', 'old'])
-    expect(week.data.allTransactions).toHaveLength(2)
+    await fetchPaddleData(mockEnv)
+    const again = await fetchPaddleData(mockEnv)
+    if (!again.ok) throw new Error(again.error)
+    expect(again.data.allTransactions).toHaveLength(1)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('follows `next` as the full URL Paddle gives', async () => {
@@ -154,7 +86,7 @@ describe('fetchPaddleData', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const result = await fetchPaddleData(mockEnv, { range: '30d', end: null })
+    const result = await fetchPaddleData(mockEnv)
     if (!result.ok) throw new Error(result.error)
     expect(result.data.allTransactions.map((t) => t.id)).toEqual(['txn_01abc123', 'txn_02'])
   })
@@ -169,14 +101,14 @@ describe('fetchPaddleData', () => {
       )
     vi.stubGlobal('fetch', fetchMock)
 
-    const result = await fetchPaddleData(mockEnv, { range: '30d', end: null })
+    const result = await fetchPaddleData(mockEnv)
     expect(result.ok).toBe(false)
     expect(fetchMock.mock.calls.some((call: unknown[]) => String(call[0]).includes('evil'))).toBe(false)
   })
 
   it('returns an error when the API fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 401 }))
-    const result = await fetchPaddleData(mockEnv, { range: '7d', end: null })
+    const result = await fetchPaddleData(mockEnv)
     expect(result.ok).toBe(false)
     if (result.ok) return
     expect(result.error).toContain('Paddle')

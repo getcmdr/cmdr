@@ -35,15 +35,32 @@ The report includes:
 - **Download**: "new installs" (deduped same-day-distinct, bots dropped, auto-updates excluded) and raw request totals;
   by source (website/Homebrew/other) and per day; totals by version, architecture, and country; daily breakdown;
   cross-breakdowns (country × architecture, country × version, daily × version)
-- **Active use**: daily active installs (heartbeat); got-the-latest-release per day by version (distinct update-enabled
-  installs that checked); license activations, active devices
-- **Settings adoption**: what installs run with, resolved against each version's defaults
+- **Daily funnel**: the last 30 UTC days, one row each (visitors, clicks, server downloads, installs, D7, signups,
+  purchases), plus channels, referrers, and User-Agent families
+- The rest follows the `/product` page, from the same helpers, so the two never disagree. Every Product number reads
+  complete days: today (UTC) is partial, in no stat, and shows only as a line marked "today, partial".
+- **Active use**: yesterday's weekly and monthly active, stickiness, hours per active day, and D7, each with its change
+  against the range's N days; then one line per day with active and new installs, app hours, and how many addresses
+  checked for updates (context for what the heartbeat misses, never a ceiling)
+- **Release rollout**: the share of yesterday's active installs on the newest release and how many days after its
+  release; installs by version per day
+- **Money**: revenue over the range's complete days per currency (never added across currencies) with its change,
+  all-time revenue, paid licenses (first purchases), paying share of monthly active, license activations, who saw the
+  upgrade nudge, and the range's purchases
+- **Onboarding**: finished onboarding, then the hints discovered, the one that means a snag, and the ones closed by
+  hand, each as a share of the installs whose build has that flag
 - **Feature usage**: per `feature-status.json` feature, distinct installs (and their share of the window's active
-  installs) and event count, with a breakdown (by event, or an Ask Cmdr `outcome`, a search `mode`); a feature whose
-  events no release has sent yet reads "no data yet", not 0%. The section ends with what each row counts. This is the
-  per-release feature-status review's input. The mapping: `apps/api-server/src/admin/DETAILS.md` § Feature usage.
-- **Payment**: revenue, transactions, active subscriptions
-- **Retention**: churn rate, subscriptions by status
+  installs, with its change in points against the window before) and event count, with a breakdown (by event, or an Ask
+  Cmdr `outcome`, a search `mode`); a feature whose events no release has sent yet reads "no data yet", not 0%. The
+  section ends with what each row counts. This is the per-release feature-status review's input. The mapping:
+  `apps/api-server/src/admin/DETAILS.md` § Feature usage.
+- **Settings adoption**: what installs run with, resolved against each version's defaults; preferences only, the 15
+  most-moved
+- **Feedback & errors**: messages awaiting a reply (however old), error reports since the newest release, error reports
+  per 100 installs by version, and the recent feedback plus every message still owed a reply
+
+A section whose api-server endpoint isn't deployed yet reads "Not available yet", and one whose source failed reads
+"Couldn't load", each on its own, never as zeros.
 
 ### Fetching the report
 

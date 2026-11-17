@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { fetchFeedbackAndErrorsData, setFeedbackAnswered } from './feedback-and-errors.js'
 import {
-  countFeedbackAwaitingReply,
+  isAwaitingReply,
   tallyErrorReportsByField,
   errorReportsByDay,
   type FeedbackRow,
@@ -66,17 +66,16 @@ const sampleErrors: ErrorReportRow[] = [
   },
 ]
 
-describe('countFeedbackAwaitingReply', () => {
+describe('isAwaitingReply', () => {
   it('counts only rows with a non-empty email', () => {
-    expect(countFeedbackAwaitingReply(sampleFeedback)).toBe(1)
-    expect(countFeedbackAwaitingReply([{ ...sampleFeedback[0], email: '' }])).toBe(0)
-    expect(countFeedbackAwaitingReply([])).toBe(0)
+    expect(sampleFeedback.filter(isAwaitingReply)).toHaveLength(1)
+    expect(isAwaitingReply({ ...sampleFeedback[0], email: '' })).toBe(false)
   })
 
   it('leaves out messages marked answered', () => {
     const answered = { ...sampleFeedback[0], id: 3, answeredAt: '2026-10-14 21:12:00' }
-    expect(countFeedbackAwaitingReply([...sampleFeedback, answered])).toBe(1)
-    expect(countFeedbackAwaitingReply([answered])).toBe(0)
+    expect([...sampleFeedback, answered].filter(isAwaitingReply)).toHaveLength(1)
+    expect(isAwaitingReply(answered)).toBe(false)
   })
 })
 

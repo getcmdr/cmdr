@@ -36,7 +36,9 @@ Consumer: the private SvelteKit dashboard in `apps/analytics-dashboard/`.
 
 ## Heartbeat DAU and app hours
 
-`/admin/heartbeat-dau?range=7d|30d|90d|all` returns one row per UTC day: `{ date, dau, appHours }`.
+`/admin/heartbeat-dau?range=7d|30d|90d|all` returns one row per UTC day: `{ date, dau, appHours }`. The dashboard no
+longer calls it (`/admin/active-installs` carries the same `dau` and `appHours`); it stays as the reference
+`active-installs.test.ts` checks those against.
 
 - `dau`: `COUNT(DISTINCT anal_id)` that beat that day.
 - `appHours`: `SUM(COALESCE(uptime_seconds, 3600)) / 3600.0` (`beatSecondsSql`, shared with § Active installs), how long

@@ -1,59 +1,24 @@
 /**
  * Renders the whole dashboard as one plain-text report: the agent- and David-readable dump behind
  * `GET /api/report`. Pure formatting, no fetching, so `format-report.test.ts` can pin the exact
- * output byte for byte.
+ * output byte for byte. This file writes the funnel and the acquisition stages; `product-report.ts`
+ * writes the Product page's half.
  *
  * The imports are relative rather than `#lib/...` on purpose: the vitest config doesn't load the
  * SvelteKit plugin, so the alias isn't resolvable from a plain unit test.
  */
 import type { DashboardData } from '../../../lib/server/fetch-all.js'
 import type { SourceResult } from '../../../lib/server/types.js'
-import type {
-  CloudflareData,
-  DownloadRow,
-  HeartbeatDauRow,
-  UpdateActivityRow,
-} from '../../../lib/server/sources/cloudflare.js'
+import type { CloudflareData, DownloadRow } from '../../../lib/server/sources/cloudflare.js'
 import type { UmamiData, UmamiMetricItem } from '../../../lib/server/sources/umami.js'
 import type { GitHubData, GitHubRelease, GitHubStarsData } from '../../../lib/server/sources/github.js'
 import type { PostHogData } from '../../../lib/server/sources/posthog.js'
-import type { PaddleData } from '../../../lib/server/sources/paddle.js'
-import type { LicenseData } from '../../../lib/server/sources/license.js'
 import type { FunnelData, FunnelRow } from '../../../lib/server/sources/funnel.js'
-import type { SettingAdoption, SettingsAdoption } from '../../../lib/server/settings-defaults.js'
-import type { FeedbackAndErrorsData } from '../../../lib/server/sources/feedback-and-errors.js'
-import type { FeedbackRow, ErrorReportRow } from '../../../lib/feedback-and-errors.js'
-import {
-  countFeedbackAwaitingReply,
-  tallyErrorReportsByField,
-  errorReportsByDay,
-} from '../../../lib/feedback-and-errors.js'
 import { aggregateChannels, aggregateReferers, aggregateUaFamilies } from '../../../lib/funnel.js'
-import type { FeatureUsage, FeatureUsageData } from '../../../lib/feature-usage.js'
-import { formatFeatureShare, formatParts, noDataYet, sortFeatureUsage } from '../../../lib/feature-usage.js'
-import { boundsByDay, formatBound, largestUnseenShare, latestBound } from '../../../lib/active-installs.js'
-import {
-  formatShare,
-  formatShareUnlike,
-  formatValueShare,
-  mostChanged,
-  settingByKey,
-  shareOnDefault,
-  topOverride,
-  unchangedNote,
-} from '../../../lib/settings-adoption.js'
-
-const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
-
-function formatCountry(code: string): string {
-  try {
-    const upper = code.toUpperCase()
-    const name = regionNames.of(upper)
-    return name && name !== upper ? `${name} (${upper})` : code
-  } catch {
-    return code
-  }
-}
+import { compareVersions } from '../../../lib/rollout.js'
+import { formatCountry, formatNumber as num } from '../../../lib/format.js'
+import { ReportWriter, writeList } from './report-writer.js'
+import { writeProductSections } from './product-report.js'
 
 function pct(value: number, total: number): string {
   if (total === 0) return '0%'
@@ -67,15 +32,6 @@ function delta(current: number, previous: number): string {
   return ` (${sign}${change.toFixed(1)}% vs prior period)`
 }
 
-function num(n: number): string {
-  return n.toLocaleString('en-US')
-}
-
-function currency(cents: string | number, currencyCode = 'USD'): string {
-  const value = Number(cents) / 100
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: currencyCode }).format(value)
-}
-
 /** One ranked breakdown: a key and its total, biggest first (unless re-sorted by the caller). */
 type Breakdown = Array<{ key: string; total: number }>
 
@@ -87,53 +43,6 @@ function aggregateBy(rows: DownloadRow[], field: keyof DownloadRow): Breakdown {
     map.set(key, (map.get(key) ?? 0) + row.downloads)
   }
   return [...map.entries()].map(([key, total]) => ({ key, total })).sort((a, b) => b.total - a.total)
-}
-
-/** Compares two semver strings, descending (higher version first). */
-function compareSemverDesc(a: string, b: string): number {
-  const pa = a.split('.').map(Number)
-  const pb = b.split('.').map(Number)
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const diff = (pb[i] ?? 0) - (pa[i] ?? 0)
-    if (diff !== 0) return diff
-  }
-  return 0
-}
-
-/**
- * Collects the report's lines. `section()` emits the blank line that separates it from whatever came
- * before, so no section has to remember a trailing blank and the sections stay reorderable.
- */
-class ReportWriter {
-  private readonly lines: string[] = []
-
-  title(text: string): void {
-    this.lines.push(`# ${text}`, '')
-  }
-
-  section(text: string): void {
-    this.lines.push('', `## ${text}`, '')
-  }
-
-  line(text: string): void {
-    this.lines.push(text)
-  }
-
-  blank(): void {
-    this.lines.push('')
-  }
-
-  text(): string {
-    return this.lines.join('\n')
-  }
-}
-
-/** A blank line, a heading, then one `  key: value` line per entry. Nothing at all when empty. */
-function writeList<T>(w: ReportWriter, heading: string, items: T[], limit: number, render: (item: T) => string): void {
-  if (items.length === 0) return
-  w.blank()
-  w.line(heading)
-  for (const item of items.slice(0, limit)) w.line(render(item))
 }
 
 /** A blank line, a heading, then one `  label: count (share%)` line per entry. Always written. */
@@ -404,7 +313,7 @@ function writeDailyDownloadsByVersion(w: ReportWriter, rows: DownloadRow[], byVe
 }
 
 function writeDownloadBreakdowns(w: ReportWriter, rows: DownloadRow[], totalDl: number, totalNew: number): void {
-  const byVersion = aggregateBy(rows, 'version').sort((a, b) => compareSemverDesc(a.key, b.key))
+  const byVersion = aggregateBy(rows, 'version').sort((a, b) => compareVersions(b.key, a.key))
   const byArch = aggregateBy(rows, 'arch')
   const byCountry = aggregateBy(rows, 'country')
 
@@ -419,7 +328,7 @@ function writeDownloadBreakdowns(w: ReportWriter, rows: DownloadRow[], totalDl: 
   )
   writeCountryCross(w, 'Top countries by version:', rows, byCountry, (countryRows) =>
     aggregateBy(countryRows, 'version')
-      .sort((a, b) => compareSemverDesc(a.key, b.key))
+      .sort((a, b) => compareVersions(b.key, a.key))
       .slice(0, 5),
   )
   writeDailyDownloadsByVersion(w, rows, byVersion)
@@ -467,281 +376,12 @@ function writeDownloadSection(
   if (github.ok) writeGitHubReleases(w, github.data.releases)
 }
 
-// ── 4. Active use ────────────────────────────────────────────────────────────────────────────────
-
-/**
- * Active installs as a range. The low end is what the heartbeat proves ran; the high end is how far
- * the update checks reach, which catches opted-out installs. Neither alone is the answer, and the
- * gap between them is the size of the blind spot.
- */
-function writeHeartbeatDau(w: ReportWriter, dau: HeartbeatDauRow[], updateActivity: UpdateActivityRow[]): void {
-  const bounds = boundsByDay(dau, updateActivity)
-  const peakDau = dau.reduce((max, r) => Math.max(max, r.dau), 0)
-  const totalAppHours = dau.reduce((s, r) => s + r.appHours, 0)
-  const totalDau = dau.reduce((s, r) => s + r.dau, 0)
-  const hoursPerActive = totalDau > 0 ? (totalAppHours / totalDau).toFixed(1) : '0'
-  const unseen = largestUnseenShare(bounds)
-
-  w.line(`- Active installs (latest day): ${formatBound(latestBound(bounds))}`)
-  w.line(`- Peak confirmed running: ${num(peakDau)}`)
-  w.line(`- App hours per active install per day: ${hoursPerActive}`)
-  if (unseen !== null) {
-    w.line(`- Widest blind spot: ${String(Math.round(unseen * 100))}% of the high end never sent a heartbeat`)
-  }
-
-  w.blank()
-  w.line('The low end counts install ids we heard from on the heartbeat, so those installs definitely ran Cmdr.')
-  w.line('The high end counts distinct addresses that checked for updates, a separate consent that installs')
-  w.line('with analytics off still ride. The high end is a rough reach, not a ceiling: addresses are not installs,')
-  w.line('a shared connection counts an office or household once, a changing home address counts one install more')
-  w.line('than once across days, and anyone with automatic update checks off never appears at all.')
-  w.line('App hours add up how long the app ran that day. A beat from a build too old to report it counts as an hour.')
-
-  w.blank()
-  w.line('Active installs (by day, heard from / checked for updates):')
-  for (const row of [...dau].sort((a, b) => b.date.localeCompare(a.date))) {
-    const bound = bounds.find((b) => b.day === row.date)
-    const reach = bound?.reach ?? null
-    w.line(
-      `  ${row.date}: ${num(row.dau)} heard from, ${reach === null ? 'no update data' : `${num(reach)} checked`}, ${num(Math.round(row.appHours))} app hours`,
-    )
-  }
-}
-
-/** Distinct update-enabled installs that checked per day, stacked by version. */
-function writeUpdateActivity(w: ReportWriter, ua: UpdateActivityRow[]): void {
-  if (ua.length === 0) return
-  w.blank()
-  w.line('Got the latest release per day (update-enabled installs that checked, deduped, by version):')
-  const updateDays = [...new Set(ua.map((r) => r.day))].sort((a, b) => b.localeCompare(a))
-  for (const day of updateDays) {
-    const dayRows = ua.filter((r) => r.day === day).sort((a, b) => compareSemverDesc(a.version, b.version))
-    const total = dayRows.reduce((s, r) => s + r.updaters, 0)
-    const parts = dayRows.map((r) => `v${r.version}: ${num(r.updaters)}`).join(', ')
-    w.line(`  ${day}: ${num(total)} total (${parts})`)
-  }
-}
-
-function writeLicenseTotals(w: ReportWriter, license: SourceResult<LicenseData>): void {
-  if (!license.ok) return
-  const lic = license.data
-  w.blank()
-  w.line(`- Total activations: ${num(lic.totalActivations)}`)
-  if (lic.activeDevices !== null) {
-    w.line(`- Active devices: ${num(lic.activeDevices)}`)
-  }
-}
-
-function writeActiveUseSection(
-  w: ReportWriter,
-  cloudflare: SourceResult<CloudflareData>,
-  license: SourceResult<LicenseData>,
-): void {
-  w.section('Active use: how many run the app?')
-  if (!cloudflare.ok) {
-    w.line(`Couldn't load: ${cloudflare.error}`)
-    return
-  }
-  const cf = cloudflare.data
-  if (cf.heartbeatDau.length > 0) {
-    writeHeartbeatDau(w, cf.heartbeatDau, cf.updateActivity)
-    writeUpdateActivity(w, cf.updateActivity)
-  } else {
-    w.line('- Active installs: none yet (the heartbeat fills as beta testers update and run the new build)')
-  }
-  writeLicenseTotals(w, license)
-}
-
-// ── 5. Settings adoption ─────────────────────────────────────────────────────────────────────────
-
-/** One line per setting somebody has moved, most-moved first. */
-function writeChangedSettings(w: ReportWriter, settings: SettingAdoption[]): void {
-  const changed = mostChanged(settings)
-  w.blank()
-  if (changed.length === 0) {
-    w.line('Nobody has moved a setting off its default yet.')
-    return
-  }
-  w.line(`Settings people change (most-moved first; the other ${unchangedNote(settings.length - changed.length)}):`)
-  for (const setting of changed) {
-    const share = shareOnDefault(setting)
-    const override = topOverride(setting)
-    const parts = [
-      `default ${setting.defaultLabel ?? '(moved between versions)'}`,
-      `${num(setting.eligible)} installs`,
-      `${share === null ? 'n/a' : formatShare(share)} on default`,
-    ]
-    if (override) parts.push(`most common change: ${override.label} (${num(override.installs)})`)
-    w.line(`  ${setting.key}: ${parts.join(', ')}`)
-  }
-}
-
-/**
- * Adoption, which the raw config shape can't give: the app saves only settings someone changed, so
- * an absent key is resolved against the defaults that shipped in that install's version.
- */
-function writeSettingsAdoptionSection(w: ReportWriter, settingsAdoption: SourceResult<SettingsAdoption>): void {
-  w.section('Settings adoption: what do people actually turn on?')
-  if (!settingsAdoption.ok) {
-    w.line(`Couldn't load: ${settingsAdoption.error}`)
-    return
-  }
-  const data = settingsAdoption.data
-  const readable = data.totalInstalls - data.unresolvedInstalls
-  if (readable === 0) {
-    w.line('- No installs to read yet (settings adoption fills as beta testers run a build that reports a config).')
-    return
-  }
-
-  w.line(`- Installs we can read: ${num(readable)}`)
-  if (data.unresolvedInstalls > 0) {
-    w.line(`- Not counted: ${num(data.unresolvedInstalls)} on a version older than the settings history goes back`)
-  }
-  w.line(`- Drive indexing on: ${formatValueShare(settingByKey(data.settings, 'indexing.enabled'), 'on')}`)
-  w.line(`- Image search on: ${formatValueShare(settingByKey(data.settings, 'mediaIndex.enabled'), 'on')}`)
-  w.line(`- AI switched on: ${formatShareUnlike(settingByKey(data.settings, 'ai.provider'), 'off')}`)
-  w.blank()
-  w.line(
-    'Each install counts once, at its latest heartbeat. A setting is scored only against installs whose build ' +
-      'actually had it, so a young setting shows a smaller total than an old one.',
-  )
-  writeChangedSettings(w, data.settings)
-}
-
-// ── 5b. Feature usage ────────────────────────────────────────────────────────────────────────────
-
-function writeFeatureUsageRow(w: ReportWriter, feature: FeatureUsage, activeInstalls: number): void {
-  const label = `  ${feature.id} (${feature.name})`
-  if (!feature.everSeen) {
-    w.line(`${label}: ${noDataYet}`)
-    return
-  }
-  const installs = `${num(feature.installs)} ${feature.installs === 1 ? 'install' : 'installs'}`
-  const events = `${num(feature.events)} ${feature.events === 1 ? 'event' : 'events'}`
-  const head = `${label}: ${installs} (${formatFeatureShare(feature, activeInstalls)}), ${events}`
-  w.line(feature.parts.length > 0 ? `${head}; ${formatParts(feature.parts)}` : head)
-}
-
-/**
- * Per-feature usage for the feature-status review: which features people reach for, against the
- * window's active installs. The mapping is the api-server's (`featureUsageDefinitions`), listed at the
- * end so a reader can check what each row counts.
- */
-function writeFeatureUsageSection(w: ReportWriter, featureUsage: SourceResult<FeatureUsageData>): void {
-  w.section('Feature usage: which features do people use?')
-  if (!featureUsage.ok) {
-    w.line(`Couldn't load: ${featureUsage.error}`)
-    return
-  }
-  const data = featureUsage.data
-  w.line(`- Active installs (beat at least once since ${data.since.slice(0, 10)}): ${num(data.activeInstalls)}`)
-  w.blank()
-  w.line(
-    "An install counts toward a feature once it fired any of that feature's events in the window; the share " +
-      'is of active installs. "No data yet" means no release has sent the event yet, so it isn\'t a zero.',
-  )
-  w.blank()
-  w.line('Per feature (id from feature-status.json, most-used first):')
-  for (const feature of sortFeatureUsage(data.features)) writeFeatureUsageRow(w, feature, data.activeInstalls)
-  writeList(w, 'Counted from:', data.features, data.features.length, (f) => `  ${f.id}: ${f.sources.join(', ')}`)
-}
-
-// ── 6. Payment ───────────────────────────────────────────────────────────────────────────────────
-
-function writePaymentSection(w: ReportWriter, paddle: SourceResult<PaddleData>): void {
-  w.section('Payment: how many pay?')
-  if (!paddle.ok) {
-    w.line(`Couldn't load: ${paddle.error}`)
-    return
-  }
-  const p = paddle.data
-  const totalRevenue = p.transactions.reduce((s, t) => s + Number(t.total), 0)
-  const curr = p.transactions[0]?.currencyCode ?? 'USD'
-
-  w.line(`- Revenue: ${currency(totalRevenue, curr)}`)
-  w.line(`- Transactions: ${num(p.transactions.length)}`)
-  w.line(`- Active subscriptions: ${num(p.activeSubscriptions.length)}`)
-
-  writeList(
-    w,
-    'Recent transactions:',
-    p.transactions,
-    15,
-    (txn) => `  ${txn.createdAt.split('T')[0]}: ${currency(txn.total, txn.currencyCode)} (${txn.status})`,
-  )
-}
-
-// ── 7. Retention ─────────────────────────────────────────────────────────────────────────────────
-
-function writeRetentionSection(w: ReportWriter, paddle: SourceResult<PaddleData>): void {
-  w.section('Retention: do they stay?')
-  if (!paddle.ok) {
-    w.line(`Couldn't load: ${paddle.error}`)
-    return
-  }
-  const p = paddle.data
-  const statusEntries = Object.entries(p.subscriptionsByStatus)
-  const totalSubs = statusEntries.reduce((s, e) => s + e[1], 0)
-  const activeSubs = p.subscriptionsByStatus['active'] ?? 0
-  const canceledSubs = p.subscriptionsByStatus['canceled'] ?? 0
-  const churn = totalSubs > 0 ? `${((canceledSubs / totalSubs) * 100).toFixed(1)}%` : 'N/A'
-
-  w.line(`- Active subscriptions: ${num(activeSubs)}`)
-  w.line(`- Churn rate: ${churn}`)
-
-  writeList(
-    w,
-    'Subscriptions by status:',
-    statusEntries,
-    statusEntries.length,
-    ([status, count]) => `  ${status}: ${num(count)} (${pct(count, totalSubs)})`,
-  )
-}
-
-// ── 8. Feedback & errors ─────────────────────────────────────────────────────────────────────────
-
-function writeErrorReportBreakdowns(w: ReportWriter, errorReports: ErrorReportRow[]): void {
-  if (errorReports.length === 0) return
-  const byKind = tallyErrorReportsByField(errorReports, 'kind')
-  writeList(w, 'Error reports by kind:', byKind, byKind.length, (k) => `  ${k.key}: ${num(k.count)}`)
-  const byVersion = tallyErrorReportsByField(errorReports, 'appVersion')
-  writeList(w, 'Error reports by version:', byVersion, byVersion.length, (v) => `  ${v.key}: ${num(v.count)}`)
-  const byDay = errorReportsByDay(errorReports)
-  writeList(w, 'Error reports by day:', byDay, byDay.length, (d) => `  ${d.date}: ${num(d.count)}`)
-}
-
-function writeRecentFeedback(w: ReportWriter, feedback: FeedbackRow[]): void {
-  writeList(w, 'Recent feedback:', feedback, 30, (msg) => {
-    const answered = msg.answeredAt ? `, answered ${msg.answeredAt.split(' ')[0]}` : ''
-    const replyTo = msg.email ? ` [reply-to: ${msg.email}${answered}]` : ''
-    const logs = msg.errorReportId ? ` [logs: ${msg.errorReportId}]` : ''
-    const text = msg.feedback.replace(/\s+/g, ' ').slice(0, 280)
-    return `  ${msg.createdAt.split(' ')[0]} (v${msg.appVersion})${replyTo}${logs}: ${text}`
-  })
-}
-
-function writeFeedbackSection(w: ReportWriter, feedbackAndErrors: SourceResult<FeedbackAndErrorsData>): void {
-  w.section('Feedback & errors: what are users telling us?')
-  if (!feedbackAndErrors.ok) {
-    w.line(`Couldn't load: ${feedbackAndErrors.error}`)
-    return
-  }
-  const fe = feedbackAndErrors.data
-  w.line(`- Feedback messages: ${num(fe.feedback.length)}`)
-  w.line(
-    `- Awaiting reply (have a reply-to email, not marked answered): ${num(countFeedbackAwaitingReply(fe.feedback))}`,
-  )
-  w.line(`- Error reports: ${num(fe.errorReports.length)}`)
-  writeErrorReportBreakdowns(w, fe.errorReports)
-  writeRecentFeedback(w, fe.feedback)
-}
-
 // ── The report ───────────────────────────────────────────────────────────────────────────────────
 
 /**
- * The whole report, section by section, in the order the dashboard tells its story: funnel first,
- * then the acquisition stages, then what users say back. Every section degrades to a "Couldn't load"
- * line on its own, so one dead source never blanks the rest.
+ * The whole report, section by section: the funnel and the acquisition stages first, then the Product
+ * page's story in its order, ending with what users say back. Every section degrades to a "Couldn't
+ * load" line on its own, so one dead source never blanks the rest.
  */
 export function formatReport(data: DashboardData): string {
   const w = new ReportWriter()
@@ -753,12 +393,7 @@ export function formatReport(data: DashboardData): string {
   writeAwarenessSection(w, data.umami, data.githubStars)
   writeInterestSection(w, data.umami, data.posthog)
   writeDownloadSection(w, data.cloudflare, data.github)
-  writeActiveUseSection(w, data.cloudflare, data.license)
-  writeSettingsAdoptionSection(w, data.settingsAdoption)
-  writeFeatureUsageSection(w, data.featureUsage)
-  writePaymentSection(w, data.paddle)
-  writeRetentionSection(w, data.paddle)
-  writeFeedbackSection(w, data.feedbackAndErrors)
+  writeProductSections(w, data)
 
   return w.text()
 }

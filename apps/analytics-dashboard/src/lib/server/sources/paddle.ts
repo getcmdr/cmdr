@@ -1,16 +1,8 @@
-import type { DashboardSelection, SourceResult } from '../types.js'
-import { toTimeWindow } from '../types.js'
+import type { SourceResult } from '../types.js'
 import { cacheGet, cacheSet } from '../cache.js'
 import { isFirstPurchase, type PaddleTransaction } from '../../money.js'
 
 export type { PaddleTransaction }
-
-export interface PaddleSubscription {
-  id: string
-  status: string
-  customerId: string
-  currentBillingPeriod: { startsAt: string; endsAt: string } | null
-}
 
 export interface PaddleData {
   /**
@@ -18,11 +10,6 @@ export interface PaddleData {
    * itself (`#lib/money.ts`), so revenue, purchases, and paid licenses all read one fetch.
    */
   allTransactions: PaddleTransaction[]
-  /** `allTransactions` created within the selection's rolling window (ending now), for the report. */
-  transactions: PaddleTransaction[]
-  activeSubscriptions: PaddleSubscription[]
-  /** Count of subscriptions by status (for retention analysis) */
-  subscriptionsByStatus: Record<string, number>
 }
 
 interface PaddleEnv {
@@ -52,13 +39,6 @@ interface PaddleRawTransaction {
   created_at: string
   origin?: string | null
   details?: { totals?: PaddleRawTotals; payout_totals?: PaddleRawTotals | null }
-}
-
-interface PaddleRawSubscription {
-  id: string
-  status: string
-  customer_id: string
-  current_billing_period?: { starts_at: string; ends_at: string } | null
 }
 
 async function paddleFetch<T>(apiKey: string, url: string): Promise<PaddleListResponse<T>> {
@@ -106,25 +86,6 @@ export function parseTransaction(raw: PaddleRawTransaction): PaddleTransaction {
   }
 }
 
-export function parseSubscription(raw: PaddleRawSubscription): PaddleSubscription {
-  return {
-    id: raw.id,
-    status: raw.status,
-    customerId: raw.customer_id,
-    currentBillingPeriod: raw.current_billing_period
-      ? { startsAt: raw.current_billing_period.starts_at, endsAt: raw.current_billing_period.ends_at }
-      : null,
-  }
-}
-
-export function countSubscriptionsByStatus(subscriptions: PaddleSubscription[]): Record<string, number> {
-  const counts: Record<string, number> = {}
-  for (const sub of subscriptions) {
-    counts[sub.status] = (counts[sub.status] ?? 0) + 1
-  }
-  return counts
-}
-
 /**
  * Buckets first purchases (`isFirstPurchase`) created on/after `sinceDate` (a `YYYY-MM-DD`) into per-UTC-day
  * counts, for the daily funnel's "purchases" column, so renewals and card updates never count as a sale.
@@ -147,47 +108,22 @@ export async function fetchPaddlePurchasesByDay(env: PaddleEnv, sinceDate: strin
   return byDay
 }
 
-/** The all-time fetch, cached once for every range (the range only windows it). */
-interface PaddleAllTime {
-  allTransactions: PaddleTransaction[]
-  subscriptions: PaddleSubscription[]
-}
-
-/** Bumped whenever `PaddleAllTime`'s shape changes, so an entry cached by an older build is never read. */
-const cacheSource = 'paddle-v2'
+/**
+ * Bumped whenever the cached shape changes, so an entry cached by an older build is never read. The entry
+ * is the all-time list itself: every range windows it, so one key serves them all.
+ */
+const cacheSource = 'paddle-v3'
 const cacheKey = 'all'
 
-async function fetchAllTime(env: PaddleEnv): Promise<PaddleAllTime> {
-  const cached = await cacheGet<PaddleAllTime>(cacheSource, cacheKey)
-  if (cached) return cached
-  const [rawTransactions, rawSubscriptions] = await Promise.all([
-    paddleFetchAll<PaddleRawTransaction>(env.PADDLE_API_KEY_LIVE, transactionsPath),
-    paddleFetchAll<PaddleRawSubscription>(env.PADDLE_API_KEY_LIVE, '/subscriptions'),
-  ])
-  const data: PaddleAllTime = {
-    allTransactions: rawTransactions.map(parseTransaction),
-    subscriptions: rawSubscriptions.map(parseSubscription),
-  }
-  await cacheSet(cacheSource, cacheKey, data)
-  return data
-}
-
-export async function fetchPaddleData(
-  env: PaddleEnv,
-  selection: DashboardSelection,
-): Promise<SourceResult<PaddleData>> {
+/** Every completed transaction, all time. The range never reaches Paddle: `#lib/money.ts` windows the list. */
+export async function fetchPaddleData(env: PaddleEnv): Promise<SourceResult<PaddleData>> {
   try {
-    const { allTransactions, subscriptions } = await fetchAllTime(env)
-    const { startAt } = toTimeWindow(selection)
-    return {
-      ok: true,
-      data: {
-        allTransactions,
-        transactions: allTransactions.filter((txn) => Date.parse(txn.createdAt) >= startAt),
-        activeSubscriptions: subscriptions.filter((s) => s.status === 'active'),
-        subscriptionsByStatus: countSubscriptionsByStatus(subscriptions),
-      },
-    }
+    const cached = await cacheGet<PaddleData>(cacheSource, cacheKey)
+    if (cached) return { ok: true, data: cached }
+    const raw = await paddleFetchAll<PaddleRawTransaction>(env.PADDLE_API_KEY_LIVE, transactionsPath)
+    const data: PaddleData = { allTransactions: raw.map(parseTransaction) }
+    await cacheSet(cacheSource, cacheKey, data)
+    return { ok: true, data }
   } catch (e) {
     return { ok: false, error: `Paddle: ${e instanceof Error ? e.message : String(e)}` }
   }

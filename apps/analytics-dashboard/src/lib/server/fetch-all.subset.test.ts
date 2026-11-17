@@ -129,6 +129,7 @@ describe('per-page data-loading split', () => {
   it('the report still loads every source (the union of both pages)', async () => {
     const data = await fetchDashboardData(emptyEnv, '7d')
     expect(sourceKeys(data)).toEqual([
+      'activeInstalls',
       'cloudflare',
       'featureUsage',
       'feedbackAndErrors',
@@ -141,6 +142,16 @@ describe('per-page data-loading split', () => {
       'settingsAdoption',
       'umami',
     ])
+  })
+
+  it('the report reads the Product sources as `/product` does: the funnel length and both feature windows', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('offline'))
+    vi.stubGlobal('fetch', fetchMock)
+    await fetchDashboardData({ ...emptyEnv, LICENSE_SERVER_ADMIN_TOKEN: 'token' }, '90d')
+    const urls = fetchMock.mock.calls.map((call: unknown[]) => String(call[0]))
+    expect(urls.find((u) => u.includes('/admin/funnel'))).toBe('https://api.getcmdr.com/admin/funnel?days=400')
+    expect(urls.filter((u) => u.includes('/admin/feature-usage')).every((u) => u.includes('&end='))).toBe(true)
+    expect(urls.some((u) => u.includes('/admin/active-installs'))).toBe(true)
   })
 
   it('every source on a page degrades to a result object (never throws) when unconfigured', async () => {
