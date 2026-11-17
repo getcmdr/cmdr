@@ -1,0 +1,103 @@
+#!/bin/bash
+# A stand-in for `gh` that serves one fixture release from disk, for the release pipeline dry run
+# (`pipeline_test.go`). It knows only the calls the release jobs make, and fails loudly on
+# anything else, so a new call shows up as a test failure rather than a silent pass.
+#
+# FIXTURE_RELEASE_DIR holds the release's assets, FIXTURE_RELEASE_JSON the `gh api` view of it,
+# FIXTURE_UPLOADS receives uploads, and FIXTURE_LOG records every call that changes something.
+set -euo pipefail
+
+log() { printf '%s\n' "$*" >> "$FIXTURE_LOG"; }
+die() { echo "fake gh: $*" >&2; exit 1; }
+
+# Drop `-R <repo>` / `--repo <repo>` wherever it is; every call is about the one fixture repo.
+args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -R | --repo) shift 2 ;;
+    *) args+=("$1"); shift ;;
+  esac
+done
+set -- "${args[@]}"
+
+case "$1 ${2:-}" in
+  "release download")
+    shift 2
+    tag="$1"; shift
+    patterns=() dir=. clobber=false
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        -p | --pattern) patterns+=("$2"); shift 2 ;;
+        -D | --dir) dir="$2"; shift 2 ;;
+        --clobber) clobber=true; shift ;;
+        *) die "release download: unknown argument $1" ;;
+      esac
+    done
+    [ "$tag" = "$FIXTURE_TAG" ] || die "release download: no release $tag"
+    mkdir -p "$dir"
+    matched=0
+    for file in "$FIXTURE_RELEASE_DIR"/*; do
+      name="$(basename "$file")"
+      want=false
+      if [ ${#patterns[@]} -eq 0 ]; then
+        want=true
+      else
+        for p in "${patterns[@]}"; do
+          # shellcheck disable=SC2053 # a glob match on purpose, the way gh matches `-p`
+          if [[ "$name" == $p ]]; then want=true; fi
+        done
+      fi
+      $want || continue
+      if [ -e "$dir/$name" ] && ! $clobber; then
+        die "release download: $dir/$name already exists (gh refuses without --clobber)"
+      fi
+      cp "$file" "$dir/$name"
+      matched=$((matched + 1))
+    done
+    # Real gh errors this way when a pattern matches no asset.
+    [ "$matched" -gt 0 ] || die "no assets match the file pattern"
+    ;;
+  "release upload")
+    shift 2
+    tag="$1"; shift
+    [ "$tag" = "$FIXTURE_TAG" ] || die "release upload: no release $tag"
+    for f in "$@"; do
+      case "$f" in
+        --clobber) continue ;;
+        -*) die "release upload: unknown flag $f" ;;
+      esac
+      [ -f "$f" ] || die "release upload: no file $f"
+      cp "$f" "$FIXTURE_UPLOADS/$(basename "$f")"
+      log "gh release upload $(basename "$f")"
+    done
+    ;;
+  "release edit")
+    shift 2
+    log "gh release edit $*"
+    ;;
+  "release view")
+    shift 2
+    tag="$1"; shift
+    [ "$tag" = "$FIXTURE_TAG" ] || die "release view: no release $tag"
+    json="" jqexpr=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --json) json="$2"; shift 2 ;;
+        -q | --jq) jqexpr="$2"; shift 2 ;;
+        *) die "release view: unknown argument $1" ;;
+      esac
+    done
+    [ "$json" = assets ] || die "release view: only --json assets is faked"
+    if [ -n "$jqexpr" ]; then jq -r "$jqexpr" "$FIXTURE_RELEASE_JSON"; else cat "$FIXTURE_RELEASE_JSON"; fi
+    ;;
+  "api repos/"*)
+    path="$2"
+    case "$path" in
+      */releases/tags/"$FIXTURE_TAG") cat "$FIXTURE_RELEASE_JSON" ;;
+      *) die "api: unknown path $path" ;;
+    esac
+    ;;
+  *)
+    die "unknown call: gh $*"
+    ;;
+esac

@@ -1,0 +1,12 @@
+#!/bin/bash
+# A stand-in for `pnpm` in the release pipeline dry run (`pipeline_test.go`): logs each call, and
+# for the frontend SBOM build writes a small SBOM where the real build leaves it.
+set -euo pipefail
+
+printf 'pnpm %s\n' "$*" >> "$FIXTURE_LOG"
+
+if [ "${CMDR_FRONTEND_SBOM:-}" = 1 ] && [ "${*: -1}" = build ]; then
+  mkdir -p apps/desktop/build/sbom
+  jq -n '{bomFormat: "CycloneDX", metadata: {component: {version: env.FIXTURE_VERSION}}, components: [range(31) | {name: "npm-\(.)"}]}' \
+    > apps/desktop/build/sbom/frontend.cdx.json
+fi

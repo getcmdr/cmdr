@@ -1,0 +1,13 @@
+#!/bin/bash
+# A stand-in for `git` in the release pipeline dry run (`pipeline_test.go`): the SBOM step's
+# commit time and lockfile check, nothing else.
+set -euo pipefail
+
+case "${1:-}" in
+  log) echo 1763049596 ;;
+  diff) ;;
+  *)
+    echo "fake git: unknown call: git $*" >&2
+    exit 1
+    ;;
+esac

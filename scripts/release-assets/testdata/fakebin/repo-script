@@ -1,0 +1,12 @@
+#!/bin/bash
+# Stands in for the repo's own release scripts (`release-finish.sh`, `release-mirror.sh`) in the
+# release pipeline dry run (`pipeline_test.go`): those have their own Go tests, so here only the
+# call and what it was handed count. A directory argument gets its listing logged.
+set -euo pipefail
+
+printf '%s %s\n' "$(basename "$0")" "$*" >> "$FIXTURE_LOG"
+for a in "$@"; do
+  if [ -d "$a" ]; then
+    printf '  %s: %s\n' "$a" "$(cd "$a" && ls | tr '\n' ' ')" >> "$FIXTURE_LOG"
+  fi
+done

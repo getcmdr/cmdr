@@ -1,0 +1,39 @@
+#!/bin/bash
+# A stand-in for `cargo` in the release pipeline dry run (`pipeline_test.go`): logs each call, and
+# for `cargo cyclonedx` writes a small SBOM shaped like the real one, where the real one lands.
+set -euo pipefail
+
+printf 'cargo %s\n' "$*" >> "$FIXTURE_LOG"
+
+case "${1:-}" in
+  install) ;;
+  run)
+    # The vet call: every archive it names must exist, or the job would fail on the runner.
+    seen_dashdash=false
+    for a in "$@"; do
+      if $seen_dashdash && [ "${a#-}" = "$a" ] && [ "$a" != "$FIXTURE_VERSION" ]; then
+        [ -f "$a" ] || { echo "fake cargo: $a doesn't exist" >&2; exit 1; }
+      fi
+      if [ "$a" = -- ]; then seen_dashdash=true; fi
+    done
+    ;;
+  cyclonedx)
+    manifest="" target="" name=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --manifest-path) manifest="$2"; shift 2 ;;
+        --target) target="$2"; shift 2 ;;
+        --override-filename) name="$2"; shift 2 ;;
+        *) shift ;;
+      esac
+    done
+    out="$(dirname "$manifest")/$name.json"
+    jq -n --arg v "$FIXTURE_VERSION" --arg t "$target" \
+      '{bomFormat: "CycloneDX", metadata: {component: {version: $v}}, components: [range(101) | {name: "crate-\(.)-\($t)"}]}' \
+      > "$out"
+    ;;
+  *)
+    echo "fake cargo: unknown call: cargo $*" >&2
+    exit 1
+    ;;
+esac

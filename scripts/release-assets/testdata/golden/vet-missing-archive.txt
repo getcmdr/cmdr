@@ -1,0 +1,4 @@
+# job vet-update-archives
+
+## Download the update archives: FAILED
+error: fake gh: no assets match the file pattern

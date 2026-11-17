@@ -1,0 +1,4 @@
+# job publish
+
+## Download signatures from release: FAILED
+error: Missing sig for x64

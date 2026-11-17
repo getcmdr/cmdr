@@ -570,6 +570,8 @@ jobs:
               - '.github/workflows/ci.yml'
               - '.github/workflows/light-lane.yml'
               - '.github/actions/light-cache/**'
+              # The release pipeline dry run (`scripts/release-assets/pipeline_test.go`) runs its jobs.
+              - '.github/workflows/release-pipeline.yml'
               - '!**/CLAUDE.md'
               - '!**/DETAILS.md'
             # The light lane's gated hygiene checks. Each lists its check's fingerprint inputs

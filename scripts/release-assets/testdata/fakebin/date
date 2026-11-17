@@ -1,0 +1,8 @@
+#!/bin/bash
+# A stand-in for `date` in the release pipeline dry run (`pipeline_test.go`): `latest.json`'s
+# `pub_date` is the fixture release's real one, so the generated manifest can match it byte for byte.
+if [ "$*" = "-u +%Y-%m-%dT%H:%M:%SZ" ]; then
+  echo "$FIXTURE_PUB_DATE"
+else
+  exec /bin/date "$@"
+fi

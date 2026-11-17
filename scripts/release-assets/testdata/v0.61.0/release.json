@@ -1,0 +1,21 @@
+{
+  "assets": [
+    { "name": "checksums.txt", "size": 360 },
+    { "name": "Cmdr_0.61.0.intoto.jsonl", "size": 12582 },
+    { "name": "Cmdr_0.61.0_aarch64.app.tar.gz", "size": 65374085 },
+    { "name": "Cmdr_0.61.0_aarch64.app.tar.gz.sig", "size": 420 },
+    { "name": "Cmdr_0.61.0_aarch64.dmg", "size": 63540866 },
+    { "name": "Cmdr_0.61.0_aarch64.rust.cdx.json", "size": 1137084 },
+    { "name": "Cmdr_0.61.0_frontend.cdx.json", "size": 76722 },
+    { "name": "Cmdr_0.61.0_universal.app.tar.gz", "size": 122892676 },
+    { "name": "Cmdr_0.61.0_universal.app.tar.gz.sig", "size": 424 },
+    { "name": "Cmdr_0.61.0_universal.dmg", "size": 119705354 },
+    { "name": "Cmdr_0.61.0_universal.pkg", "size": 119649644 },
+    { "name": "Cmdr_0.61.0_x64.app.tar.gz", "size": 69817531 },
+    { "name": "Cmdr_0.61.0_x64.app.tar.gz.sig", "size": 416 },
+    { "name": "Cmdr_0.61.0_x64.dmg", "size": 68516564 },
+    { "name": "Cmdr_0.61.0_x64.rust.cdx.json", "size": 1139955 },
+    { "name": "latest.json", "size": 10844 }
+  ],
+  "tag_name": "v0.61.0"
+}
