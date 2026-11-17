@@ -138,8 +138,8 @@ func judgePatch(name, path string, lock *cargoLock) (problem, vendoredVersions s
 
 // onAnOlderLine reports whether a crates.io `version` sits on an older semver line
 // than every vendored copy, which a `[patch]` can't reach: it only replaces
-// compatible versions, so a transitive dependency still on an old major (`zip` 4
-// under `tauri-plugin-updater`, beside the vendored `zip` 9) resolves from crates.io
+// compatible versions, so a transitive dependency still on an old major (say `zip` 4
+// under one dependent, beside a vendored `zip` 9) resolves from crates.io
 // by design. The fix lives on the line the fork vendors. A version on the vendored
 // line or a newer one means a dependent slipped past the patch.
 func onAnOlderLine(version string, vendored []string) bool {

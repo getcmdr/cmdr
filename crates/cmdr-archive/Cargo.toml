@@ -44,8 +44,9 @@ uuid = { version = "1.29.2", features = ["v4"] }
 # bytes go through this crate's `by_index_decrypt`. `aes-crypto` adds WinZip AES
 # (AE-1/AE-2) on top of the built-in legacy PKWARE ZipCrypto. `unreserved` lets a
 # rewrite carry a retained entry's extra fields verbatim, `ditto`'s `0x5855` included
-# (`src/mutation/DETAILS.md`).
-zip = { version = "9.4.1", default-features = false, features = ["deflate", "aes-crypto", "unreserved"] }
+# (`src/mutation/DETAILS.md`). 9.5.1 is the floor: its raw copy keeps an encrypted
+# entry's flags, so a ZipCrypto entry kept through an edit still decrypts (#592).
+zip = { version = "9.5.1", default-features = false, features = ["deflate", "aes-crypto", "unreserved"] }
 # The zip READ side: a sans-IO reader whose state machines (`ArchiveFsm` for the
 # central directory, `EntryFsm` per entry) request byte ranges and let the caller
 # supply them under any I/O model. We drive those fsms over our own
@@ -113,7 +114,7 @@ uuid = { version = "1.29.2", features = ["v4"] }
 zstd = "0.14"
 # The zip writer's `zstd` feature, so a fixture can carry a method-93 (zstd) entry
 # for rc-zip's zstd decoder. Test builds only; shipped builds keep the line above.
-zip = { version = "9.4.1", default-features = false, features = ["zstd"] }
+zip = { version = "9.5.1", default-features = false, features = ["zstd"] }
 # `CancellationToken`, for the cancelable-listing test. Same version and feature
 # shape as `cmdr-fs`'s, so no second copy enters the graph.
 tokio-util = { version = "0.7.18", default-features = false }
