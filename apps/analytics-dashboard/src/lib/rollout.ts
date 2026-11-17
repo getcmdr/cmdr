@@ -9,12 +9,16 @@ import type { GitHubRelease } from './server/sources/github.js'
 import { shiftDay } from './time-range.js'
 import { formatPercent } from './format.js'
 
-/** The release the headline tracks. `publishedAt` is null for the fallback (a version seen, no release). */
-export interface LatestRelease {
-  /** Without the tag's `v`, as heartbeats report `app_version`. */
-  version: string
-  publishedAt: string | null
-}
+/** Why the headline has no release date: GitHub couldn't be read, or it lists no stable release. */
+export type NoReleaseDateWhy = 'githubUnavailable' | 'noStableRelease'
+
+/**
+ * The release the headline tracks: a GitHub release, or the fallback (a version seen, no release date, and
+ * why). `version` is without the tag's `v`, as heartbeats report `app_version`.
+ */
+export type LatestRelease =
+  | { version: string; publishedAt: string }
+  | { version: string; publishedAt: null; why: NoReleaseDateWhy }
 
 export type RolloutHeadline =
   /** Published today: no complete day exists on it yet, so no share ("first full day tomorrow"). */
@@ -22,8 +26,8 @@ export type RolloutHeadline =
   /** Published yesterday: the share is of a day that was partly before the release. */
   | { kind: 'onReleaseDay'; version: string; share: number | null }
   | { kind: 'daysAfter'; version: string; daysAfter: number; share: number | null }
-  /** The fallback version, which has no publish date to count from. */
-  | { kind: 'noReleaseDate'; version: string; share: number | null }
+  /** The fallback version, which has no publish date to count from. `why` tells a GitHub outage from no release. */
+  | { kind: 'noReleaseDate'; version: string; share: number | null; why: NoReleaseDateWhy }
 
 /**
  * A total order on version strings, by numeric dot-separated parts, matching the Worker's
@@ -53,7 +57,7 @@ function comparePart(a: string | undefined, b: string | undefined): number {
 
 /**
  * The newest stable GitHub release (drafts and prereleases skipped), or, without one, the newest version
- * any install ran. `releases` is null when GitHub couldn't be read.
+ * any install ran. `releases` is null when GitHub couldn't be read, which the fallback carries as its `why`.
  */
 export function latestRelease(releases: GitHubRelease[] | null, days: ActiveInstallsDay[]): LatestRelease | null {
   const stable = (releases ?? [])
@@ -62,7 +66,9 @@ export function latestRelease(releases: GitHubRelease[] | null, days: ActiveInst
   if (stable.length > 0) return { version: stable[0].tagName.replace(/^v/, ''), publishedAt: stable[0].publishedAt }
 
   const seen = days.flatMap((d) => Object.keys(d.byVersion)).sort(compareVersions)
-  return seen.length > 0 ? { version: seen[seen.length - 1], publishedAt: null } : null
+  if (seen.length === 0) return null
+  const why = releases === null ? 'githubUnavailable' : 'noStableRelease'
+  return { version: seen[seen.length - 1], publishedAt: null, why }
 }
 
 /** The headline: `release`'s share of yesterday's active installs, and how long after its release. */
@@ -70,7 +76,7 @@ export function rolloutHeadline(release: LatestRelease, days: ActiveInstallsDay[
   const yesterday = shiftDay(today, -1)
   const row = days.find((d) => d.date === yesterday)
   const share = row && row.dau > 0 ? (row.byVersion[release.version] ?? 0) / row.dau : null
-  if (release.publishedAt === null) return { kind: 'noReleaseDate', version: release.version, share }
+  if (release.publishedAt === null) return { kind: 'noReleaseDate', version: release.version, share, why: release.why }
 
   const publishDay = new Date(release.publishedAt).toISOString().slice(0, 10)
   const daysAfter = Math.round(
@@ -87,7 +93,9 @@ export function rolloutSentence(headline: RolloutHeadline): string {
   if (headline.kind === 'releasedToday') return `${v} came out today; its first full day is tomorrow`
   const lead = `${headline.share === null ? '–' : formatPercent(headline.share)} of active installs ran ${v} yesterday`
   if (headline.kind === 'onReleaseDay') return `${lead}, its release day`
-  if (headline.kind === 'noReleaseDate') return lead
+  if (headline.kind === 'noReleaseDate') {
+    return headline.why === 'githubUnavailable' ? `${lead}; GitHub couldn't load, so its release date is unknown` : lead
+  }
   return `${lead}, ${String(headline.daysAfter)} ${headline.daysAfter === 1 ? 'day' : 'days'} after its release`
 }
 

@@ -99,6 +99,14 @@ over one slow third party. Results cache via `cache.ts`: 5 minutes for 7d (and t
 exception: in "Feedback & errors", only the error-report listing caches. Feedback is read live so a message marked
 answered leaves "Awaiting reply" on the very next load (see the "Awaiting reply" bullet under Key decisions).
 
+Two cache rules, both because the dashboard and the Worker deploy in parallel and an entry outlives a deploy by its TTL:
+
+- **Bump a source's cache key (`github-v2`, `paddle-v3`, …) whenever its cached shape changes.** An entry from an older
+  build that lacks a new field reads as its default: a Paddle entry without `origin` would read as zero paid licenses,
+  one without settings `kind` would leak state flags into preferences.
+- **❌ Never cache a degraded answer from an older Worker** (a 404 read as null, a feature-usage response without
+  `until`), or "Not available yet" outlives the Worker deploy.
+
 ### The Cloudflare source is shared by both pages
 
 `fetchCloudflareData` returns `downloads` (Download section, on `/`) AND `updateActivity` (the update-check reach, the
@@ -419,9 +427,11 @@ calls the same helpers, so the two can't disagree.
   reads "Not available yet", never zeros.
 - **Release rollout** (`#lib/rollout.ts`): "X% of active installs ran vLatest yesterday, N days after its release", from
   heartbeat `byVersion` ÷ DAU. Latest = the newest GitHub release that's neither a draft nor a prerelease, its tag's `v`
-  stripped; without one, the newest version any install ran. Published today: "came out today; its first full day is
-  tomorrow" (no share, never "−1 days"); published yesterday: "its release day". The chart stacks every version in view
-  (oldest at the bottom), § Color coding.
+  stripped; without one, the newest version any install ran, with no day count. When that fallback is because the GitHub
+  source didn't load (an expired `GITHUB_TOKEN` 401s), the headline says "GitHub couldn't load, so its release date is
+  unknown" (`why: 'githubUnavailable'`), so an outage never reads as "no release". Published today: "came out today; its
+  first full day is tomorrow" (no share, never "−1 days"); published yesterday: "its release day". The chart stacks
+  every version in view (oldest at the bottom), § Color coding.
 - **Money** (`#lib/money.ts`): revenue over the N complete days per currency, ❌ never summed across currencies (payout
   currency when Paddle reports one), gross of refunds, its change a dash when the previous window took nothing in that
   currency. First purchase = Paddle `origin` `web` or `api`, an allowlist: renewals, card updates (often zero-value),

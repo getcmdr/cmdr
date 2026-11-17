@@ -35,9 +35,15 @@ describe('latestRelease', () => {
     expect(latestRelease(releases, [])).toEqual({ version: '0.61.0', publishedAt: '2026-08-01T10:00:00Z' })
   })
 
-  it('falls back to the newest version seen, with no release date', () => {
+  it('falls back to the newest version seen, saying GitHub could not load', () => {
     const days = [day('2026-08-08', { '0.9.0': 1 }), day('2026-08-09', { '0.10.0': 2, '0.9.0': 1 })]
-    expect(latestRelease(null, days)).toEqual({ version: '0.10.0', publishedAt: null })
+    expect(latestRelease(null, days)).toEqual({ version: '0.10.0', publishedAt: null, why: 'githubUnavailable' })
+  })
+
+  it('falls back to the newest version seen when GitHub loaded but has no stable release', () => {
+    const days = [day('2026-08-09', { '0.10.0': 2 })]
+    const drafts = [release('v0.11.0', '2026-08-09T10:00:00Z', { draft: true })]
+    expect(latestRelease(drafts, days)).toEqual({ version: '0.10.0', publishedAt: null, why: 'noStableRelease' })
   })
 
   it('is null with nothing to go on', () => {
@@ -72,18 +78,21 @@ describe('rolloutHeadline', () => {
     })
   })
 
-  it('reads a share without a day count for a fallback version', () => {
-    expect(rolloutHeadline({ version: '0.61.0', publishedAt: null }, days, today)).toEqual({
+  it('reads a share without a day count for a fallback version, carrying why', () => {
+    const fallback = { version: '0.61.0', publishedAt: null, why: 'githubUnavailable' } as const
+    expect(rolloutHeadline(fallback, days, today)).toEqual({
       kind: 'noReleaseDate',
       version: '0.61.0',
       share: 0.75,
+      why: 'githubUnavailable',
     })
   })
 
   it('reads an unknown share when yesterday is missing or had nobody', () => {
     const quiet = [day('2026-08-09', {})]
-    expect(rolloutHeadline({ version: '0.61.0', publishedAt: null }, quiet, today)).toMatchObject({ share: null })
-    expect(rolloutHeadline({ version: '0.61.0', publishedAt: null }, [], today)).toMatchObject({ share: null })
+    const fallback = { version: '0.61.0', publishedAt: null, why: 'noStableRelease' } as const
+    expect(rolloutHeadline(fallback, quiet, today)).toMatchObject({ share: null })
+    expect(rolloutHeadline(fallback, [], today)).toMatchObject({ share: null })
   })
 })
 
@@ -109,9 +118,16 @@ describe('rolloutSentence', () => {
     )
   })
 
-  it('drops the day count for a fallback version, and dashes an unknown share', () => {
-    expect(rolloutSentence({ kind: 'noReleaseDate', version: '0.61.0', share: null })).toBe(
+  it('drops the day count for a version with no stable release, and dashes an unknown share', () => {
+    expect(rolloutSentence({ kind: 'noReleaseDate', version: '0.61.0', share: null, why: 'noStableRelease' })).toBe(
       '– of active installs ran v0.61.0 yesterday',
+    )
+  })
+
+  // Regression: a 401 from GitHub on prod (2026-11-17) read as a plain "no release date" headline.
+  it('says GitHub could not load when that is why the release date is missing', () => {
+    expect(rolloutSentence({ kind: 'noReleaseDate', version: '0.61.0', share: 0.64, why: 'githubUnavailable' })).toBe(
+      "64% of active installs ran v0.61.0 yesterday; GitHub couldn't load, so its release date is unknown",
     )
   })
 })
