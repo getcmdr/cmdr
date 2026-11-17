@@ -2,7 +2,8 @@
 
 Why a user's Local Network permission stopped applying after each Cmdr update until they switched Cmdr off and on, what
 we measured, and why the fix lives on the first launch after an update. The code that does it:
-`apps/desktop/src-tauri/src/updater/local_network_refresh.rs` and `apps/desktop/src-tauri/src/after_update.rs`.
+`apps/desktop/src-tauri/src/updater/platform/macos/local_network_refresh.rs` and
+`apps/desktop/src-tauri/src/after_update.rs`.
 
 ## Setup
 

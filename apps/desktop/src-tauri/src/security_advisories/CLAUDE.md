@@ -2,7 +2,8 @@
 
 The committed list of fixed vulnerabilities users should know about (`resources/security-advisories.json`), and the
 questions asked of it: parse, "fixed between these two versions", and "may a notice link here". Cross-platform, since
-the What's new popup reads it everywhere; the macOS updater reads a STAGED bundle's copy through `updater/advisories.rs`.
+the What's new popup reads it everywhere; the updater reads a STAGED bundle's copy (macOS) or the release's signed
+copy (Windows, Linux) through `updater/advisories.rs`.
 
 ## Module map
 

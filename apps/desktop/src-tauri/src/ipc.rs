@@ -885,8 +885,8 @@ macro_rules! ipc_command_manifest {
                 ]
                 dispatch_only: []
             }
-            // The custom updater.
-            cfg(target_os = "macos") {
+            // The updater (`updater/`), on every OS.
+            cfg(all()) {
                 typed: [
                     crate::updater::check_for_update,
                     crate::updater::update_write_blocker,

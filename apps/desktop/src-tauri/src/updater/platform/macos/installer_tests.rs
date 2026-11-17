@@ -1,6 +1,13 @@
 //! Tests for `installer.rs`: the bundle vetting order, the version gate, and the advisory list.
 
 use super::*;
+use crate::updater::SecurityNotice;
+
+#[test]
+fn a_bundle_with_no_list_reads_as_none() {
+    let dir = tempfile::tempdir().unwrap();
+    assert_eq!(read_bundle_list(&dir.path().join("Cmdr.app")), None);
+}
 
 #[test]
 fn staging_dir_uses_instance_id_when_set() {
@@ -314,7 +321,7 @@ fn a_trusted_bundle_answers_the_notice_its_own_list_names() {
             "0.51.0",
             &|_| true,
             &trusted,
-            &advisories::read_bundle_list
+            &read_bundle_list
         ),
         Ok(vetted_0_53(Some(SecurityNotice {
             severity: crate::security_advisories::Severity::High,
@@ -331,12 +338,12 @@ fn a_missing_or_malformed_list_still_installs() {
     let dir = staged_app_with_version(Some("0.53.0"));
     let app = dir.path().join("Cmdr.app");
     assert_eq!(
-        vet_staged_bundle(&app, "0.51.0", &|_| true, &trusted, &advisories::read_bundle_list),
+        vet_staged_bundle(&app, "0.51.0", &|_| true, &trusted, &read_bundle_list),
         Ok(vetted_0_53(None))
     );
     with_advisory_list(&dir, "{ not json");
     assert_eq!(
-        vet_staged_bundle(&app, "0.51.0", &|_| true, &trusted, &advisories::read_bundle_list),
+        vet_staged_bundle(&app, "0.51.0", &|_| true, &trusted, &read_bundle_list),
         Ok(vetted_0_53(None))
     );
 }

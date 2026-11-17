@@ -15,7 +15,8 @@ The current decision, and the failure-mode plan a revisit was asked to bring, li
 ## 1. The original path is recoverable under translocation
 
 `SecTranslocateCreateOriginalPathForURL` works and is not deprecated. Cmdr already links its sibling
-`SecTranslocateIsTranslocatedURL` (`src-tauri/src/updater/bundle_location.rs`), so this adds no new category of risk.
+`SecTranslocateIsTranslocatedURL` (`src-tauri/src/updater/platform/macos/bundle_location.rs`), so this adds no new
+category of risk.
 
 Measured: all seven `SecTranslocate*` symbols resolve through `dlsym` on the live Security.framework, and all seven are
 exported by the SDK's `Security.tbd`. There is **no public header in the SDK** for any of them, so the whole family is

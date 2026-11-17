@@ -186,6 +186,9 @@ pub fn on_run_event(app: &AppHandle<Wry>, event: tauri::RunEvent) {
 
             stop_background_services();
 
+            // An update hand-off `on_exit` runs below notes itself while the log still writes.
+            quit::relaunch::before_flush(app);
+
             // Ends the open rejection episodes so their counts land, then waits briefly for the
             // file. After a wipe the writer writes nothing.
             security_log::on_exit();
@@ -195,7 +198,8 @@ pub fn on_run_event(app: &AppHandle<Wry>, event: tauri::RunEvent) {
             data_wipe::on_exit();
 
             // After every flush: a Restart's waiter opens the app again once this process is
-            // gone. A no-op unless `quit::relaunch::relaunch` armed it.
+            // gone, or (off macOS, with an update staged) the installer runs and reopens it. A
+            // no-op unless `quit::relaunch::relaunch` armed it.
             quit::relaunch::on_exit(app);
         }
         _ => {}

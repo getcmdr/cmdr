@@ -1,19 +1,14 @@
-//! The security notice an install carries, read from the STAGED bundle's own advisory list once
-//! `installer::vet_staged_bundle` trusts that bundle.
+//! The security notice an update carries, from a SIGNED advisory list: the staged bundle's own on
+//! macOS (read by `platform/macos/installer.rs` once `vet_staged_bundle` trusts the bundle), the
+//! release's minisign-signed asset on Windows and Linux ([`fetch_signed_list`]).
 //!
-//! ❗ Never from `latest.json`: the manifest isn't signed, so a field there would let whoever can
-//! serve it show a fake "critical" notice with a phishing link, or hide a real one. The staged
-//! bundle's `Contents/Resources/` is covered by both the minisign signature and the Developer ID
-//! code signature. `DETAILS.md` § Security notices.
-
-use std::path::Path;
+//! ❗ Never from `latest.json` itself: the manifest isn't signed, so a field there would let
+//! whoever can serve it show a fake "critical" notice with a phishing link, or hide a real one.
+//! `DETAILS.md` § Security notices.
 
 use semver::Version;
 
 use crate::security_advisories::{self, Severity};
-
-/// Where the list sits inside a bundle (`tauri.macos.conf.json` → `bundle.macOS.files`).
-const BUNDLE_ADVISORIES_PATH: &str = "Contents/Resources/security-advisories.json";
 
 /// What the restart toast says about security: the update fixes `count` advisories, the most
 /// severe of them `severity`, whose public note is `url`.
@@ -40,20 +35,50 @@ pub(super) fn notice_from(json: &str, running: &Version, staged: &Version) -> Op
     })
 }
 
-/// Reads the staged bundle's list, or `None` (logged at warn) when it can't: an install never
+/// How long fetching the signed list may take, end to end. The list is a few hundred bytes, and
+/// the update is ready either way.
+const SIGNED_LIST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
+
+/// Fetches the release's signed advisory list (`latest.json`'s `securityAdvisories`) for an
+/// install that can't open its update before running it (Windows, Linux), or `None` (logged at
+/// warn) when there's none, it doesn't arrive, or its signature doesn't hold: an update never
 /// waits on, or fails over, its advisory list.
-pub(super) fn read_bundle_list(staged_app: &Path) -> Option<String> {
-    let path = staged_app.join(BUNDLE_ADVISORIES_PATH);
-    match std::fs::read_to_string(&path) {
-        Ok(json) => Some(json),
-        Err(e) => {
-            log::warn!(
-                "Couldn't read the update's security advisory list at {}, so it names no advisory: {e}",
-                cmdr_fs::log_private::LogPrivate::file_path(&path)
-            );
-            None
-        }
+///
+/// The minisign signature over the list is what makes it trustworthy, exactly as the bundle's
+/// code signature does on macOS; the manifest naming it isn't signed. A manifest can still leave
+/// the entry out and hide a notice, as it could withhold the update itself, but it can't invent
+/// one. `notice_from` keeps `fixedIn <= staged`, so a list from a later release can't speak for
+/// fixes this update doesn't carry.
+pub(super) async fn fetch_signed_list(entry: &super::manifest::PlatformEntry) -> Option<String> {
+    let client = cmdr_http::client_builder()
+        .connect_timeout(SIGNED_LIST_TIMEOUT)
+        .timeout(SIGNED_LIST_TIMEOUT)
+        .build()
+        .inspect_err(|e| log::warn!("Couldn't build the client for the security advisory list: {e}"))
+        .ok()?;
+    let response = crate::server_request::send(crate::managed_policy::Egress::UpdateDownload, client.get(&entry.url))
+        .await
+        .inspect_err(|e| {
+            log::warn!("Couldn't fetch the update's security advisory list, so it names no advisory: {e:?}")
+        })
+        .ok()?;
+    let bytes = response
+        .bytes()
+        .await
+        .inspect_err(|e| log::warn!("Couldn't read the update's security advisory list: {e}"))
+        .ok()?;
+    verified_list(super::signature::verify(&bytes, &entry.signature), &bytes)
+}
+
+/// The list's text once its signature held, or `None` (warn) when it didn't.
+fn verified_list(verified: Result<super::signature::VerifiedSignature, String>, bytes: &[u8]) -> Option<String> {
+    if let Err(refusal) = verified {
+        log::warn!("The update's security advisory list isn't signed by Cmdr, so it names no advisory: {refusal}");
+        return None;
     }
+    String::from_utf8(bytes.to_vec())
+        .inspect_err(|e| log::warn!("The update's security advisory list isn't UTF-8: {e}"))
+        .ok()
 }
 
 #[cfg(test)]
@@ -119,9 +144,37 @@ mod tests {
         assert_eq!(notice.url, None);
     }
 
+    const SIGNED_LIST: &[u8] = include_bytes!("testdata/security-advisories.json");
+    const SIGNED_LIST_SIG: &str = include_str!("testdata/security-advisories.json.sig");
+    const VERSIONED_PUB: &str = include_str!("testdata/versioned-fixture.pub");
+
+    /// The Windows and Linux path: a list whose minisign signature holds yields its notice.
     #[test]
-    fn a_bundle_with_no_list_reads_as_none() {
-        let dir = tempfile::tempdir().unwrap();
-        assert_eq!(read_bundle_list(&dir.path().join("Cmdr.app")), None);
+    fn a_signed_list_names_its_notice() {
+        let verified = super::super::signature::verify_with(&[VERSIONED_PUB], SIGNED_LIST, SIGNED_LIST_SIG);
+        let json = verified_list(verified, SIGNED_LIST).expect("a signed list reads");
+        assert_eq!(
+            notice_from(&json, &version("0.52.0"), &version("0.53.0")).map(|n| (n.severity, n.count)),
+            Some((Severity::High, 1))
+        );
+    }
+
+    /// Hostile: a list the updater key didn't sign (a tampered or invented one) shows nothing,
+    /// whatever severity it claims.
+    #[test]
+    fn a_list_whose_signature_fails_names_no_advisory() {
+        let forged = String::from_utf8(SIGNED_LIST.to_vec())
+            .unwrap()
+            .replace("\"high\"", "\"critical\"");
+        let verified = super::super::signature::verify_with(&[VERSIONED_PUB], forged.as_bytes(), SIGNED_LIST_SIG);
+        assert_eq!(verified_list(verified, forged.as_bytes()), None);
+        // And a genuine list checked against keys that didn't sign it.
+        assert_eq!(
+            verified_list(
+                super::super::signature::verify(SIGNED_LIST, SIGNED_LIST_SIG),
+                SIGNED_LIST
+            ),
+            None
+        );
     }
 }

@@ -182,7 +182,6 @@ mod ui_state;
 /// Why a volume id has no registered volume: not connected yet, or gone.
 mod unregistered_volumes;
 mod update_schedule;
-#[cfg(target_os = "macos")]
 mod updater;
 mod usage;
 mod usb_speed;
@@ -663,7 +662,7 @@ pub fn run() {
             let launch = after_update::init(app.handle());
             #[cfg(target_os = "macos")]
             if launch == after_update::LaunchKind::FirstAfterUpdate {
-                updater::local_network_refresh::spawn_after_update();
+                updater::platform::local_network_refresh::spawn_after_update();
             }
             #[cfg(not(target_os = "macos"))]
             let _ = launch;
@@ -677,6 +676,10 @@ pub fn run() {
             // In-session position cache for Settings + Debug windows. See
             // `child_window_state.rs` for the why.
             app.manage(child_window_state::ChildWindowRectStore::new());
+
+            // The updater's offer, download, and staged update, shared by its commands and the
+            // Restart hand-off (`updater/`).
+            app.manage(updater::UpdateState::new());
 
             // The UI state mirror that tools and `cmdr://` resources read.
             app.manage(ui_state::PaneStateStore::new());

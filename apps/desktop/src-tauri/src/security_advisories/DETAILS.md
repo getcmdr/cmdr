@@ -88,5 +88,5 @@ The check in Go mirrors this; Go's `net/url` keeps `..` segments that the `url` 
 - `tests.rs`: parse shapes (malformed, unknown severity, not semver, unknown field), the window edges and a skipped
   release, the allowlist's refusals, and `the_committed_list_parses_and_every_link_is_allowed`, the canary that keeps
   the embedded copy from ever reaching `embedded()`'s empty fallback.
-- `../updater/advisories.rs` and `../updater/installer.rs` test the notice reduction and the install order.
+- `../updater/advisories.rs` and `../updater/platform/macos/installer.rs` test the notice reduction and the install order.
 - `scripts/check/checks/desktop-security-advisories_test.go` tests the validator.

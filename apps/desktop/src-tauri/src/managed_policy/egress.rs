@@ -11,17 +11,7 @@ pub enum Egress {
     CrashReport,
     ErrorReport,
     ErrorReportAmend,
-    // Only the macOS updater sends these, but they stay on every platform: `allows` matches
-    // exhaustively, and the variant list is the code form of `/trust`'s egress table.
-    #[cfg_attr(
-        not(any(target_os = "macos", test)),
-        expect(dead_code, reason = "only the macOS updater sends an update check")
-    )]
     UpdateCheck,
-    #[cfg_attr(
-        not(any(target_os = "macos", test)),
-        expect(dead_code, reason = "only the macOS updater downloads an update")
-    )]
     UpdateDownload,
     S3PriceList,
 }

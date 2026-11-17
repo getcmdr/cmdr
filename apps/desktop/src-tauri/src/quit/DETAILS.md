@@ -164,8 +164,12 @@ Decisions:
 - **Decision: through the gate, unlike Tauri's restart.** Why: a Restart with a copy running used to kill it with no
   prompt, which ⌘Q never does. Arming before the exit and spawning in `RunEvent::Exit` means the waiter exists only once
   the exit is certain.
-- **Outside a bundle (a dev binary) and off macOS** it's Tauri's `request_restart`: nothing to double there, and it
-  skips the gate as before.
+- **Off macOS with an update staged**, Restart is "quit, install, reopen": `relaunch` sets `UPDATE_ARMED` and exits
+  through the gate like ⌘Q, `disarm` ("Keep working") clears it with the macOS waiter, `before_flush` notes the
+  install in the security log before it flushes, and `on_exit` hands the installer off last
+  (`../updater/DETAILS.md` § Windows and Linux). macOS never stages one, so the flag stays down there.
+- **Outside a bundle (a dev binary) and off macOS with nothing staged** it's Tauri's `request_restart`: nothing to
+  double there, and it skips the gate as before.
 
 Verified on macOS 27.0.1 (M1, 2026-11-07): a release build with this code, pinned in the Dock, took a real 0.60.0
 update into its bundle, then onboarding's "Restart Cmdr" (pressed over AX; the update toast stayed behind the wizard)

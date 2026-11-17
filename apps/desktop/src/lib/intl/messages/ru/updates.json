@@ -23,7 +23,7 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "Можно перезапустить сейчас, а можно ничего не делать: обновление включится при следующем запуске Cmdr.",
+  "updates.toast.readyDetail": "{platform, select, macos {Можно перезапустить сейчас, а можно ничего не делать: обновление включится при следующем запуске Cmdr.} other {Cmdr closes to install it, then opens again.}}",
   "@updates.toast.readyDetail": {
     "sourceHash": "42ce099"
   },

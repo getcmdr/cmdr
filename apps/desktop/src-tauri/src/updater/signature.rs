@@ -21,15 +21,31 @@ const BACKUP_PUBKEY_BASE64: &str = include_str!("../../updater-backup.pub");
 /// Every key an update may be signed with.
 const TRUSTED_PUBKEYS: [&str; 2] = [MAIN_PUBKEY_BASE64, BACKUP_PUBKEY_BASE64];
 
+/// What a signature that held proves beyond "these bytes are a release": which key signed them,
+/// and the version the signer bound them to, if any.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VerifiedSignature {
+    /// The trusted key that verified it, base64-encoded as `TRUSTED_PUBKEYS` holds it (trimmed).
+    /// The installer hand-off off macOS has the plugin re-verify with this one key.
+    pub pubkey: &'static str,
+    /// The `version:` field of the trusted comment, which minisign's global signature covers.
+    /// `tauri signer sign --app-version` writes it; `None` for a signature made without one.
+    pub signed_version: Option<String>,
+}
+
 /// Verifies that `data` was signed with one of the trusted keys.
 ///
 /// `signature_base64` is the base64-encoded minisign signature string from `latest.json`.
-pub fn verify(data: &[u8], signature_base64: &str) -> Result<(), String> {
+pub fn verify(data: &[u8], signature_base64: &str) -> Result<VerifiedSignature, String> {
     verify_with(&TRUSTED_PUBKEYS, data, signature_base64)
 }
 
 /// The check against an explicit key list, so tests can sign with a throwaway key.
-fn verify_with(pubkeys: &[&str], data: &[u8], signature_base64: &str) -> Result<(), String> {
+pub(super) fn verify_with(
+    pubkeys: &[&'static str],
+    data: &[u8],
+    signature_base64: &str,
+) -> Result<VerifiedSignature, String> {
     let sig_text = decode_base64_text(signature_base64).map_err(|e| format!("Couldn't decode signature: {e}"))?;
     let signature = Signature::decode(&sig_text).map_err(|e| format!("Couldn't parse signature: {e}"))?;
 
@@ -40,7 +56,14 @@ fn verify_with(pubkeys: &[&str], data: &[u8], signature_base64: &str) -> Result<
         // allow_legacy=true matches Tauri's behavior. A key whose ID isn't the signature's refuses
         // it up front, so trying each key costs one real check, not two.
         match public_key.verify(data, &signature, true) {
-            Ok(()) => return Ok(()),
+            // Only now is the trusted comment worth reading: `verify` checked the global
+            // signature that covers it.
+            Ok(()) => {
+                return Ok(VerifiedSignature {
+                    pubkey: pubkey.trim(),
+                    signed_version: signed_version(signature.trusted_comment()).map(str::to_string),
+                });
+            }
             Err(e) => refusals.push(e.to_string()),
         }
     }
@@ -48,6 +71,15 @@ fn verify_with(pubkeys: &[&str], data: &[u8], signature_base64: &str) -> Result<
         "Signature verification didn't pass against any trusted key: {}",
         refusals.join("; ")
     ))
+}
+
+/// The `version:` field of a trusted comment, which the Tauri signer writes as tab-separated
+/// `key:value` pairs (`timestamp:1794957084\tfile:Cmdr_0.53.0_x64-setup.exe\tversion:0.53.0`).
+fn signed_version(trusted_comment: &str) -> Option<&str> {
+    trusted_comment
+        .split('\t')
+        .find_map(|field| field.strip_prefix("version:"))
+        .filter(|version| !version.is_empty())
 }
 
 /// Decodes a base64 string into a UTF-8 string (the inner minisign text format).
@@ -65,6 +97,11 @@ mod tests {
     const FIXTURE_PUB: &str = include_str!("testdata/fixture.pub");
     const PAYLOAD: &[u8] = include_bytes!("testdata/payload.txt");
     const PAYLOAD_SIG: &str = include_str!("testdata/payload.txt.sig");
+    /// A second throwaway key, whose signatures carry `version:0.53.0` (`tauri signer sign
+    /// --app-version 0.53.0`).
+    const VERSIONED_PUB: &str = include_str!("testdata/versioned-fixture.pub");
+    const INSTALLER: &[u8] = include_bytes!("testdata/installer.bin");
+    const INSTALLER_SIG: &str = include_str!("testdata/installer.bin.sig");
 
     /// A key's ID the way minisign prints it (little-endian hex), read from the key itself rather
     /// than from its untrusted comment.
@@ -91,13 +128,33 @@ mod tests {
     }
 
     #[test]
-    fn a_signature_from_any_trusted_key_verifies() {
-        assert_eq!(verify_with(&[FIXTURE_PUB], PAYLOAD, PAYLOAD_SIG), Ok(()));
+    fn a_signature_from_any_trusted_key_verifies_and_names_that_key() {
+        let verified = verify_with(&[FIXTURE_PUB], PAYLOAD, PAYLOAD_SIG).expect("verifies");
+        assert_eq!(verified.pubkey, FIXTURE_PUB.trim());
         // The signing key in second place, as the backup sits.
-        assert_eq!(
-            verify_with(&[MAIN_PUBKEY_BASE64, FIXTURE_PUB], PAYLOAD, PAYLOAD_SIG),
-            Ok(())
-        );
+        let verified = verify_with(&[MAIN_PUBKEY_BASE64, FIXTURE_PUB], PAYLOAD, PAYLOAD_SIG).expect("verifies");
+        assert_eq!(verified.pubkey, FIXTURE_PUB.trim());
+    }
+
+    /// The macOS archives are signed without `--app-version`, and macOS binds the version through
+    /// the bundle's `Info.plist` instead, so a signature with no version still verifies.
+    #[test]
+    fn a_signature_without_a_version_verifies_and_says_so() {
+        let verified = verify_with(&[FIXTURE_PUB], PAYLOAD, PAYLOAD_SIG).expect("verifies");
+        assert_eq!(verified.signed_version, None);
+    }
+
+    #[test]
+    fn a_signature_made_with_app_version_names_it() {
+        let verified = verify_with(&[VERSIONED_PUB], INSTALLER, INSTALLER_SIG).expect("verifies");
+        assert_eq!(verified.signed_version.as_deref(), Some("0.53.0"));
+    }
+
+    #[test]
+    fn the_signed_version_is_read_from_its_own_field_only() {
+        assert_eq!(signed_version("timestamp:1\tfile:a\tversion:0.53.0"), Some("0.53.0"));
+        assert_eq!(signed_version("timestamp:1\tfile:Cmdr_0.53.0_x64-setup.exe"), None);
+        assert_eq!(signed_version("timestamp:1\tversion:"), None);
     }
 
     #[test]

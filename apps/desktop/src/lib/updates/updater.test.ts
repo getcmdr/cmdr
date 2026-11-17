@@ -16,9 +16,9 @@ const {
   getSettingMock,
   setSettingMock,
   forceSaveMock,
-  invokeMock,
   getVersionMock,
-  pluginCheckMock,
+  checkForUpdateMock,
+  downloadUpdateMock,
 } = vi.hoisted(() => ({
   addToastMock: vi.fn(),
   dismissToastMock: vi.fn(),
@@ -26,10 +26,29 @@ const {
   getSettingMock: vi.fn((id: string) => (id === 'onboarding.completed' ? false : 60 * 60 * 1000)),
   setSettingMock: vi.fn(),
   forceSaveMock: vi.fn(() => Promise.resolve(true)),
-  invokeMock: vi.fn(),
   getVersionMock: vi.fn(() => Promise.resolve('0.0.0-test')),
-  pluginCheckMock: vi.fn(),
+  checkForUpdateMock: vi.fn(),
+  downloadUpdateMock: vi.fn(() => Promise.resolve()),
 }))
+
+// Vitest runs as Linux, so this file proves the flow every OS shares: the same three backend
+// commands as macOS (`updater.mac-flow.test.ts` pins the macOS-only bundle gate).
+vi.mock('#lib/tauri-commands/index.js', () => ({
+  checkForUpdate: checkForUpdateMock,
+  downloadUpdate: downloadUpdateMock,
+  installUpdate: vi.fn(() => Promise.resolve({ securityNotice: null })),
+  updateWriteBlocker: vi.fn(() => Promise.resolve(null)),
+  updateCheckDueIn: vi.fn(() => Promise.resolve(0)),
+  recordUpdateCheck: vi.fn(() => Promise.resolve()),
+  trackEvent: vi.fn(),
+}))
+
+const upToDate = { kind: 'upToDate' } as const
+
+/** One offer from the update server. */
+function offer(version: string) {
+  return { kind: 'available', version } as const
+}
 
 vi.mock('#lib/ui/toast/index.js', () => ({
   addToast: addToastMock,
@@ -43,19 +62,8 @@ vi.mock('#lib/settings/settings-store.js', () => ({
   onSpecificSettingChange: vi.fn(() => () => {}),
 }))
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: invokeMock,
-}))
-
 vi.mock('@tauri-apps/api/app', () => ({
   getVersion: getVersionMock,
-}))
-
-// Vitest runs off macOS, so the updater takes the non-macOS branch and
-// dynamically imports `@tauri-apps/plugin-updater`. Mock that here so the test environment doesn't
-// try to load the real Tauri plugin.
-vi.mock('@tauri-apps/plugin-updater', () => ({
-  check: pluginCheckMock,
 }))
 
 vi.mock('#lib/logging/logger.js', () => ({
@@ -279,8 +287,7 @@ describe('formatUpdateStatus', () => {
 describe('applyAutoCheckEnabled', () => {
   beforeEach(() => {
     _resetUpdaterStateForTest()
-    invokeMock.mockReset()
-    pluginCheckMock.mockReset()
+    checkForUpdateMock.mockReset()
   })
 
   afterEach(() => {
@@ -288,17 +295,17 @@ describe('applyAutoCheckEnabled', () => {
   })
 
   it('fires one immediate check when flipped on', async () => {
-    pluginCheckMock.mockResolvedValueOnce(null)
+    checkForUpdateMock.mockResolvedValueOnce(upToDate)
     applyAutoCheckEnabled(true)
     // Settle the async `checkForUpdates()` triggered inline.
     await new Promise((r) => setTimeout(r, 0))
-    expect(pluginCheckMock).toHaveBeenCalledTimes(1)
+    expect(checkForUpdateMock).toHaveBeenCalledTimes(1)
   })
 
   it('does NOT fire a check when flipped off', async () => {
     applyAutoCheckEnabled(false)
     await new Promise((r) => setTimeout(r, 0))
-    expect(pluginCheckMock).not.toHaveBeenCalled()
+    expect(checkForUpdateMock).not.toHaveBeenCalled()
   })
 })
 
@@ -307,9 +314,8 @@ describe('runMenuTriggeredCheck', () => {
     _resetUpdaterStateForTest()
     addToastMock.mockClear()
     dismissToastMock.mockClear()
-    invokeMock.mockReset()
     getVersionMock.mockClear()
-    pluginCheckMock.mockReset()
+    checkForUpdateMock.mockReset()
   })
 
   afterEach(() => {
@@ -317,18 +323,15 @@ describe('runMenuTriggeredCheck', () => {
   })
 
   it('adds a status toast with id "update-check" and a 10s timeout, then runs checkForUpdates', async () => {
-    pluginCheckMock.mockResolvedValueOnce(null) // no update
+    checkForUpdateMock.mockResolvedValueOnce(upToDate)
     await runMenuTriggeredCheck()
     expect(addToastMock).toHaveBeenCalledTimes(1)
     expect(addToastMock.mock.calls[0][1]).toMatchObject({ id: 'update-check', timeoutMs: 10000 })
-    expect(pluginCheckMock).toHaveBeenCalledTimes(1)
+    expect(checkForUpdateMock).toHaveBeenCalledTimes(1)
   })
 
   it('dismisses the status toast when status flips to ready', async () => {
-    pluginCheckMock.mockResolvedValueOnce({
-      version: '1.3.0',
-      downloadAndInstall: vi.fn(async () => {}),
-    })
+    checkForUpdateMock.mockResolvedValueOnce(offer('1.3.0'))
     await notifyOnboardingComplete() // ensures the persistent toast is eligible too
     addToastMock.mockClear()
     await runMenuTriggeredCheck()
@@ -337,14 +340,14 @@ describe('runMenuTriggeredCheck', () => {
   })
 
   it('does not dismiss when status stays idle (no update found)', async () => {
-    pluginCheckMock.mockResolvedValueOnce(null)
+    checkForUpdateMock.mockResolvedValueOnce(upToDate)
     await runMenuTriggeredCheck()
     expect(updateState.status).toBe('idle')
     expect(dismissToastMock).not.toHaveBeenCalled()
   })
 
   it('keeps an untyped check failure on the state as a check with no request, never its text', async () => {
-    pluginCheckMock.mockRejectedValueOnce(new Error('network down'))
+    checkForUpdateMock.mockRejectedValueOnce(new Error('network down'))
     await runMenuTriggeredCheck()
     expect(updateState.failure).toEqual({ phase: 'check', request: null })
     expect(updateState.status).toBe('idle')
@@ -371,17 +374,13 @@ describe('supersedesStagedUpdate', () => {
 })
 
 describe('checking again while an update is staged', () => {
-  /** One offer from the update server, with a download that succeeds. */
-  function offer(version: string) {
-    return { version, downloadAndInstall: vi.fn(async () => {}) }
-  }
-
-  /** Gets the module to `ready` with `version` synced into the bundle, onboarding done. */
+  /** Gets the module to `ready` with `version` staged for the restart, onboarding done. */
   async function stage(version: string): Promise<void> {
     await notifyOnboardingComplete()
-    pluginCheckMock.mockResolvedValueOnce(offer(version))
+    checkForUpdateMock.mockResolvedValueOnce(offer(version))
     await checkForUpdates('poll')
     expect(updateState.status).toBe('ready')
+    downloadUpdateMock.mockClear()
   }
 
   beforeEach(() => {
@@ -389,7 +388,8 @@ describe('checking again while an update is staged', () => {
     addToastMock.mockClear()
     dismissToastMock.mockClear()
     getVersionMock.mockClear()
-    pluginCheckMock.mockReset()
+    checkForUpdateMock.mockReset()
+    downloadUpdateMock.mockClear()
   })
 
   afterEach(() => {
@@ -399,23 +399,22 @@ describe('checking again while an update is staged', () => {
 
   it('still asks the update server once a build is staged', async () => {
     await stage('0.29.0')
-    pluginCheckMock.mockResolvedValueOnce(offer('0.29.0'))
+    checkForUpdateMock.mockResolvedValueOnce(offer('0.29.0'))
 
     await checkForUpdates('poll')
 
     // Pre-fix the `ready` guard returned here, so the hourly poll went silent for the rest of the
     // session and the install sat on whatever was staged however long that session ran.
-    expect(pluginCheckMock).toHaveBeenCalledTimes(2)
+    expect(checkForUpdateMock).toHaveBeenCalledTimes(2)
   })
 
   it('leaves the staged bytes alone when the server offers the same build', async () => {
     await stage('0.29.0')
-    const repeat = offer('0.29.0')
-    pluginCheckMock.mockResolvedValueOnce(repeat)
+    checkForUpdateMock.mockResolvedValueOnce(offer('0.29.0'))
 
     await checkForUpdates('poll')
 
-    expect(repeat.downloadAndInstall).not.toHaveBeenCalled()
+    expect(downloadUpdateMock).not.toHaveBeenCalled()
     expect(updateState.status).toBe('ready')
     expect(updateState.update?.version).toBe('0.29.0')
   })
@@ -423,12 +422,11 @@ describe('checking again while an update is staged', () => {
   it('re-stages when a newer release ships, and prompts for it again', async () => {
     await stage('0.29.0')
     addToastMock.mockClear()
-    const newer = offer('0.33.0')
-    pluginCheckMock.mockResolvedValueOnce(newer)
+    checkForUpdateMock.mockResolvedValueOnce(offer('0.33.0'))
 
     await checkForUpdates('poll')
 
-    expect(newer.downloadAndInstall).toHaveBeenCalledTimes(1)
+    expect(downloadUpdateMock).toHaveBeenCalledTimes(1)
     expect(updateState.status).toBe('ready')
     expect(updateState.update?.version).toBe('0.33.0')
     expect(updateState.nextVersion).toBe('0.33.0')
@@ -439,7 +437,7 @@ describe('checking again while an update is staged', () => {
 
   it('keeps the staged update ready when the re-check fails', async () => {
     await stage('0.29.0')
-    pluginCheckMock.mockRejectedValueOnce(new Error('network down'))
+    checkForUpdateMock.mockRejectedValueOnce(new Error('network down'))
 
     await checkForUpdates('poll')
 
@@ -452,10 +450,8 @@ describe('checking again while an update is staged', () => {
 
   it('keeps the staged update ready when downloading the newer build fails', async () => {
     await stage('0.29.0')
-    pluginCheckMock.mockResolvedValueOnce({
-      version: '0.33.0',
-      downloadAndInstall: vi.fn(() => Promise.reject(new Error('signature mismatch'))),
-    })
+    checkForUpdateMock.mockResolvedValueOnce(offer('0.33.0'))
+    downloadUpdateMock.mockRejectedValueOnce({ type: 'signatureMismatch', detail: 'x' })
 
     await checkForUpdates('poll')
 
@@ -469,7 +465,7 @@ describe('checking again while an update is staged', () => {
 
     await checkForUpdates('poll')
 
-    expect(pluginCheckMock).not.toHaveBeenCalled()
+    expect(checkForUpdateMock).not.toHaveBeenCalled()
   })
 
   it('brings the restart prompt back after a day, not on every tick', async () => {
@@ -480,13 +476,13 @@ describe('checking again while an update is staged', () => {
 
     // An hour later: the poll runs, the answer is unchanged, and the user is left alone.
     vi.setSystemTime(Date.now() + 60 * 60 * 1000)
-    pluginCheckMock.mockResolvedValueOnce(offer('0.29.0'))
+    checkForUpdateMock.mockResolvedValueOnce(offer('0.29.0'))
     await checkForUpdates('poll')
     expect(addToastMock).not.toHaveBeenCalled()
 
     // A full nudge interval on: the prompt comes back, so "Later" can't silence it for good.
     vi.setSystemTime(Date.now() + RESTART_NUDGE_INTERVAL_MS)
-    pluginCheckMock.mockResolvedValueOnce(offer('0.29.0'))
+    checkForUpdateMock.mockResolvedValueOnce(offer('0.29.0'))
     await checkForUpdates('poll')
     expect(addToastMock).toHaveBeenCalledTimes(1)
     expect(addToastMock.mock.calls[0][1]).toMatchObject({ id: 'update', dismissal: 'persistent' })

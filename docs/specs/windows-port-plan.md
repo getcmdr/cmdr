@@ -131,8 +131,9 @@ Settled:
   allowlist on all three OSes.
 - **api-server titled Linux reports "macOS Ubuntu …"** (`apps/api-server/src/report-cards.ts`). Fixed (task 2):
   `osLabel` shows the OS name as the app sent it and prefixes `macOS` only onto a bare version number.
-- **Off macOS the updater skips the advisory list and trust checks** (`lib/updates/updater.svelte.ts:390-430`). Fine for
-  an unadvertised Linux alpha, a blocker for any Windows release. Task 33.
+- **Off macOS the updater skipped the advisory list and trust checks** (the frontend called the Tauri plugin's fused
+  `check()` + `downloadAndInstall()`). Fixed in task 33: every OS runs Cmdr's own check, policy, and verification, and
+  the plugin only runs the staged installer.
 - **Linux licenses carried no device id.** Fixed in [#980](https://github.com/getcmdr/cmdr/issues/980): Linux now hashes
   `/etc/machine-id`, the precedent task 38's `MachineGuid` arm follows.
 
@@ -228,13 +229,13 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     arms call its `observe_changes`), `clipboard/platform/`, `commands/file_system/drag/platform/`,
     `quick_look/platform/`, and `commands/file_actions/platform/` (reveal, Get Info, open in editor). Renamed
     `show_in_finder` → `reveal_in_file_manager` and `get_macos_major_version` → `get_os_major_version` (it answers a
-    major number); the frontend wrappers keep their names. Still macOS-only by design: Dock, updater, reveal handler,
-    CLI install, memory diagnostics, terminal and editor lists, Services. Left: `system_has_saved_smb_password`'s pair.
+    major number); the frontend wrappers keep their names. Still macOS-only by design: Dock, reveal handler, CLI
+    install, memory diagnostics, terminal and editor lists, Services. Left: `system_has_saved_smb_password`'s pair.
 19. [S] Win. **Done**. Startup seam: `platform/startup/` with one pinned `install(app)` per OS, called once in the setup
     hook after the volume broadcast and before the MTP watcher, the first volume list, and the menu bar. It holds the
     order-free installers (macOS observers, mouse navigation, Services, volume watcher, unmount approver, `ptpcamerad`,
-    File Provider warm-up, drag-out handle, updater state; Linux watcher, accent, title-bar revert); order-bound steps
-    (the E2E activation policy, the FDA probe, `after_update`) stay on the spine.
+    File Provider warm-up, drag-out handle; Linux watcher, accent, title-bar revert); order-bound steps (the E2E
+    activation policy, the FDA probe, `after_update`) stay on the spine.
 20. [M] Win. **Done**. One `volumes/` defines the model (`LocationInfo`, `SmbMountInfo`) once, and `volumes/platform/`
     pins 17 fns and a const (locations, path resolution, SMB mounts, the mount table's rows and identities, live space,
     the watcher's start and stop, `NETWORK_FS_TYPE`) across a macOS arm (the old `volumes/`), a Linux arm (the old
@@ -341,7 +342,20 @@ its prerequisites; tasks without any can start any time. Order within a phase is
 32. [S] Win. Website download page for three OSes (the Linux plan's Part 3, built once). David reviews copy and design.
     Needs 30.
 33. [S] Win (Linux too). Updater trust parity off macOS: the Rust-side check, advisory list, and managed-install logic
-    run everywhere; the plugin only hands off the installer; the UI handles "the app quits to install".
+    run everywhere; the plugin only hands off the installer; the UI handles "the app quits to install". **Done**.
+    `mod updater` builds on every OS and the frontend runs one flow (no OS branch, no `@tauri-apps/plugin-updater`, no
+    `updater:` capability). `install_kind.rs` decides what may update (a macOS bundle, an NSIS install, a running
+    AppImage; a `.deb`/`.rpm` or an MSI never checks), and the `updater/platform/` seam holds the per-OS last step.
+    Windows and Linux verify minisign against both keys and refuse a signature whose `version:` isn't the offered one
+    (`bind_signed_version`, the rollback guard macOS gets from `Info.plist`); `install_update` stages the installer
+    after a fresh policy read and reads the release's signed advisory list (`latest.json`'s optional top-level
+    `securityAdvisories: { url, signature }`); the restart toast's Restart quits through the quit gate and hands the
+    staged installer to the plugin (`restore_update` + `install`, re-verified under the same key), and its second line
+    says "Cmdr closes to install it, then opens again." off macOS. Needs from the release side (task 30): sign the
+    Windows and Linux artifacts with `tauri signer sign --app-version <v>`, key them `windows-x86_64[-nsis]` /
+    `linux-x86_64[-appimage]`, and publish the signed advisory list. Not yet verified on a real Windows or Linux
+    machine: the plugin's install arms are read from `tauri-plugin-updater` 2.14.1's source, and Rust tests cover
+    everything up to them (`updater/DETAILS.md` § Windows and Linux).
 
 ### Phase 6: Windows implementation
 

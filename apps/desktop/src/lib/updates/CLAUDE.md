@@ -21,8 +21,9 @@ Frontend auto-update checker, restart toast, and the manual "Check for updates" 
 
 - **Copy lives in the `updates.*` catalog**, resolved through `t()`/`tString()`; `cmdr/no-raw-user-facing-string` is
   enforced here.
-- **Branch on `isMacOS()`, ❌ never `navigator.platform`.** macOS runs three custom commands; everywhere else the Tauri
-  plugin's fused `downloadAndInstall()`.
+- **One flow on every OS**: three backend commands (check, download, install). ❌ No OS branch here and ❌ no
+  `@tauri-apps/plugin-updater`: what "install" means (bundle sync, or a staged installer that Restart hands off) is the
+  backend's. Only the toast's second line differs, through the catalog's platform select.
 - **Nothing may show during onboarding.** Only `showUpdateToast()` (gated by the pure `shouldShowUpdateToast()`) and
   `raiseBlockerNotice()` (handed the same gate as `screenFree()`) raise anything; ❌ never `addToast` directly.
 - **`checkForUpdates()` ❌ never returns early on `ready`.** That guard let installs sit 25-38 days on a build newer

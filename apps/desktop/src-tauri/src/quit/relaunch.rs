@@ -14,8 +14,10 @@
 //! first, and "Keep working" calls the relaunch off ([`disarm`]). The waiter starts only in
 //! `RunEvent::Exit` ([`on_exit`]), once the exit is certain and every flush before it has run.
 //!
-//! Outside a `.app` bundle (a dev binary) and off macOS this falls back to Tauri's
-//! `request_restart`, which has nothing to double there.
+//! Off macOS, a staged update changes what Restart does: the exit (through the gate, like ⌘Q)
+//! hands the verified installer to the Tauri updater plugin, which installs and brings Cmdr back
+//! (`updater/handoff.rs`). With nothing staged, and outside a `.app` bundle (a dev binary), this
+//! falls back to Tauri's `request_restart`, which has nothing to double there.
 
 #[cfg(target_os = "macos")]
 use std::ffi::OsString;
@@ -42,7 +44,14 @@ pub(crate) fn disarm() {
     if ARMED.lock_ignore_poison().take().is_some() {
         log::info!(target: "quit", "the relaunch was called off with the quit");
     }
+    if UPDATE_ARMED.swap(false, std::sync::atomic::Ordering::SeqCst) {
+        log::info!(target: "quit", "the update hand-off was called off with the quit");
+    }
 }
+
+/// Restart found an update staged (Windows and Linux; macOS never stages one), so the exit hands
+/// it to the installer. Set by [`relaunch`], cleared by [`disarm`], taken by [`on_exit`].
+static UPDATE_ARMED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// How long the waiter waits for this process to exit before it opens the bundle anyway. The
 /// exit itself takes well under a second (window state, search, and the security log flush in
@@ -203,18 +212,24 @@ pub(crate) fn relaunch<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
             None => log::info!(target: "quit", "not running from an .app bundle; relaunching through Tauri's restart"),
         }
     }
+    if crate::updater::handoff::is_staged(app) {
+        log::info!(target: "quit", "relaunch requested with an update staged: quitting, then handing it to the installer");
+        UPDATE_ARMED.store(true, std::sync::atomic::Ordering::SeqCst);
+        // Comes back as `RunEvent::ExitRequested`, where the gate may hold it; `on_exit` runs the
+        // hand-off only once the exit really happens.
+        app.exit(0);
+        return;
+    }
     app.request_restart();
 }
 
 /// The last step of `RunEvent::Exit`: starts the waiter if a relaunch is armed. If it can't
 /// start, Tauri's restart still brings Cmdr back (with the doubled Dock tile) rather than
-/// leaving the person with no Cmdr.
+/// leaving the person with no Cmdr. A staged update armed by Restart goes to its installer, which
+/// brings Cmdr back on the new version (on Windows this never returns).
 pub(crate) fn on_exit<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     #[cfg(target_os = "macos")]
-    {
-        let Some(plan) = ARMED.lock_ignore_poison().take() else {
-            return;
-        };
+    if let Some(plan) = ARMED.lock_ignore_poison().take() {
         match spawn_waiter(&plan) {
             Ok(()) => log::info!(target: "quit", "relaunch waiter started; it opens Cmdr once this process is gone"),
             Err(e) => {
@@ -223,8 +238,17 @@ pub(crate) fn on_exit<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
             }
         }
     }
-    #[cfg(not(target_os = "macos"))]
-    let _ = app;
+    if UPDATE_ARMED.swap(false, std::sync::atomic::Ordering::SeqCst) {
+        crate::updater::handoff::run_at_exit(app);
+    }
+}
+
+/// The part of the exit that must land before the security log flushes: an armed update
+/// hand-off is recorded here, since [`on_exit`] runs it after every flush.
+pub(crate) fn before_flush<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    if UPDATE_ARMED.load(std::sync::atomic::Ordering::SeqCst) {
+        crate::updater::handoff::note_handoff(app);
+    }
 }
 
 #[cfg(all(test, target_os = "macos"))]

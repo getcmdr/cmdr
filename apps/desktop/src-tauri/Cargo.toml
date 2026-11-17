@@ -251,7 +251,11 @@ futures-util = "0.3"
 # stable (published 2026-01-04). MIT license; tracks tokio's release cadence.
 tokio-util = { version = "0.7.18", features = ["rt"] }
 tower-http = { version = "0.7", features = ["cors"] }
+# Off macOS, runs the installer the updater verified and staged (`updater/handoff.rs`); macOS
+# installs by syncing into the bundle and doesn't register it.
 tauri-plugin-updater = "2"
+# The updater's minisign verification against both updater keys, on every OS (`updater/signature.rs`).
+minisign-verify = "0.3"
 tauri-plugin-process = "2"
 memchr = "2"
 walkdir = "2"
@@ -356,7 +360,8 @@ webkit2gtk = "2.0"
 [target.'cfg(target_os = "macos")'.dependencies]
 # The custom updater's trust check: unpacking the release tarball and requiring Cmdr's Developer
 # ID code signature on the bundle inside, shared with the release gate (`cmdr-vet-update`) so the
-# two can't disagree. `mod updater` is macOS-only, so on Linux the lib never touches it, and a
+# two can't disagree. Only macOS installs a bundle (`updater/installer.rs`), so on Linux the lib
+# never touches it, and a
 # plain `[dependencies]` entry trips `unused_crate_dependencies` there (as `tar` once did: CI red
 # on the `Desktop (Rust)` lane).
 cmdr-update-trust = { path = "../../../crates/cmdr-update-trust" }
@@ -366,8 +371,8 @@ cmdr-update-trust = { path = "../../../crates/cmdr-update-trust" }
 # touches it. `urlencoding` can't do the job: it escapes `/` too, and
 # the scheme wants a literal path. Already in the lockfile via `cmdr-webdav`.
 percent-encoding = "2"
-# The updater touches the installed bundle's mtime with it (`updater/installer.rs`), and
-# `mod updater` is macOS-only, so it sits here for the reason `cmdr-update-trust` gives. Tests on
+# The updater touches the installed bundle's mtime with it (`updater/installer.rs`, macOS-only),
+# so it sits here for the reason `cmdr-update-trust` gives. Tests on
 # every platform age fixture files with it through `[dev-dependencies]`.
 filetime = "0.2"
 core-foundation = "0.10.1"
@@ -461,9 +466,6 @@ security-framework = "3.2"
 # Finder/macOS saved (internet-password items the high-level crate can't filter by
 # server/protocol). Already in the lockfile as a transitive dep of `security-framework`.
 security-framework-sys = "2.17"
-# Custom updater: minisign signature verification (extraction and the code-signature check
-# live in `cmdr-update-trust`).
-minisign-verify = "0.3"
 # `CFUserNotification` (+ its `CFDate` / `CFURL` prerequisites) powers the instance-lock refusal
 # alert: it's the one alert API that doesn't pump our run loop (see `instance_lock.rs`).
 # `CFPreferences` (+ `CFPropertyList` and its `CFError` prerequisite) is how `dock/` reads and

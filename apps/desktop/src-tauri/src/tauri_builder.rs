@@ -147,17 +147,14 @@ fn register_playwright(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
     builder
 }
 
-/// Tauri's updater plugin, skipped on macOS (the custom updater preserves TCC
-/// permissions), in CI (avoids a network dependency and latency during E2E), and in E2E builds
-/// (`playwright-e2e`), where a local Linux Docker run would otherwise fetch the production
-/// `latest.json`. Without the plugin the frontend's check fails soft, the path CI already takes.
+/// Tauri's updater plugin, off macOS only: there it runs the installer Cmdr's own updater
+/// verified and staged (`updater/handoff.rs`), and nothing else. It makes no request of its own
+/// (the webview holds no `updater:` permission), so it registers in every build, CI and E2E too;
+/// `updater::skip_reason` is what keeps those off the update endpoint. macOS installs by syncing
+/// into the bundle, so the plugin isn't registered there.
 #[cfg(not(target_os = "macos"))]
 fn register_updater(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wry> {
-    if cfg!(feature = "playwright-e2e") || std::env::var("CI").is_ok() {
-        builder
-    } else {
-        builder.plugin(tauri_plugin_updater::Builder::new().build())
-    }
+    builder.plugin(tauri_plugin_updater::Builder::new().build())
 }
 
 #[cfg(target_os = "macos")]

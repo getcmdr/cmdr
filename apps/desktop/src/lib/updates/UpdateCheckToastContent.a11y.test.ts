@@ -23,7 +23,6 @@ vi.mock('#lib/settings/settings-store.js', () => ({
 }))
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }))
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: vi.fn(() => Promise.resolve('1.2.3')) }))
-vi.mock('@tauri-apps/plugin-updater', () => ({ check: vi.fn() }))
 vi.mock('#lib/logging/logger.js', () => ({
   getAppLogger: () => ({ debug: () => {}, info: () => {}, warn: () => {}, error: () => {} }),
 }))

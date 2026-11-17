@@ -10,7 +10,7 @@
 //! Both dangers are the same danger — a copy that's about to move or be thrown away — so the rule
 //! lives here once.
 //!
-//! ❌ Not the same question as `updater::bundle_location::classify`, which asks whether an update
+//! ❌ Not the same question as `updater::platform::macos::bundle_location::classify`, which asks whether an update
 //! can be WRITTEN into the bundle. A copy in `~/Applications` is writable and installed; a copy on
 //! a mounted disk image is neither.
 
@@ -41,7 +41,7 @@ pub fn in_an_applications_folder(bundle_path: &Path, home: Option<&Path>) -> boo
 /// A copy that isn't a `.app` at all (a dev build out of `target/`) answers `false` for the same
 /// reason a copy in `~/Downloads` does: nothing should point at it.
 pub fn running_copy_is_installed() -> bool {
-    crate::updater::installer::running_bundle()
+    crate::updater::platform::installer::running_bundle()
         .is_ok_and(|bundle| in_an_applications_folder(&bundle, dirs::home_dir().as_deref()))
 }
 

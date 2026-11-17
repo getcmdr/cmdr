@@ -120,7 +120,7 @@ the app being open, never the person at the keyboard (same caveat as the session
 
 `install_channel.rs` probes once per process, on the first beat, in `spawn_blocking` under a 2 s timeout (the app may
 run from a hung network mount), and caches the answer, timeout included. Dev builds and non-macOS report `null` without
-probing. No `.app` bundle around `current_exe()` (`updater::installer::running_bundle`) → `null`. Otherwise
+probing. No `.app` bundle around `current_exe()` (`updater::platform::installer::running_bundle`) → `null`. Otherwise
 `"homebrew"` when `/opt/homebrew/Caskroom/cmdr` or `/usr/local/Caskroom/cmdr` is a dir, else `"direct"`. `cmdr` is the
 token in `vdavid/tap` (`apps/desktop/packaging/homebrew/cmdr.rb`); a tap cask's Caskroom dir carries no tap prefix. The
 dir stays while the cask is installed, self-updates included (the cask has `auto_updates true`), and `brew uninstall`
@@ -282,9 +282,9 @@ Backend events fire at success chokepoints; frontend events ride `track_event`.
   are one number. Without this the update path is invisible between "the install asked" (the `update_checks` row the manifest
   proxy writes) and "the install reports a version", so "everyone is current", "everyone has a build staged they never
   restart into", and "the install fails on every one of them" all read the same. `already_staged` is the one that
-  answers the middle case directly: a rising count of it against a flat `staged` IS the stuck population.
-  `failure: install` never separates from `download` on the fused non-macOS plugin path, which is fine (macOS is what
-  ships). `#lib/updates/DETAILS.md` § What a check reports.
+  answers the middle case directly: a rising count of it against a flat `staged` IS the stuck population. Off macOS
+  `staged` means the verified installer waits for Restart (the install itself runs as Cmdr quits).
+  `#lib/updates/DETAILS.md` § What a check reports.
 - `session_reached` (backend, `analytics/session.rs`): `milestone` (`1m` / `5m` / `15m` / `1h` / `4h` / `12h` / `24h`).
   The session-length signal, and the reason there is no `app_quit`. See below.
 - `ask_cmdr_turn` (backend, `agent/chat/runtime/analytics.rs`, at `run_turn`'s single exit AND on the pre-turn

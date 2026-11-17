@@ -45,7 +45,7 @@ pub(crate) fn spawn_after_update() {
 /// The bundle to re-announce, or `None` for a copy no update could have written into: a dev
 /// build, a tooling instance, or a copy outside an Applications folder.
 fn eligible_bundle() -> Option<PathBuf> {
-    if let Some(reason) = super::skip_reason() {
+    if let Some(reason) = crate::updater::skip_reason(super::current_install()) {
         log::debug!("Not refreshing the Local Network registration: {reason}");
         return None;
     }

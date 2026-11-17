@@ -25,7 +25,7 @@ fn installer() -> CliInstall<SystemHost> {
     // Only a production build in a real bundle may point a link at itself: anything else lives
     // in a `target/` dir that comes and goes. Same gate as the reveal handler's.
     let own_script = crate::reveal::registration::own_bundle_id()
-        .and_then(|_| crate::updater::installer::running_bundle().ok())
+        .and_then(|_| crate::updater::platform::installer::running_bundle().ok())
         .map(|bundle| bundle.join(BUNDLE_SCRIPT));
     let install_blocker =
         (!crate::install_location::running_copy_is_installed()).then_some(CliCommandBlocker::NotInApplications);

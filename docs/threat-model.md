@@ -297,8 +297,10 @@ risk.
     (for example both reachable from one compromised laptop or CI run), the code-signature check passes. Apple can
     revoke the Developer ID certificate, but the updater doesn't force a revocation check (enforcing one would fail
     every install whose network blocks Apple's OCSP responder), so it relies on macOS's default revocation handling.
-  - **Outside macOS the updater trusts minisign alone**: those builds use the Tauri updater plugin, which has no
-    code-signature step.
+  - **Outside macOS the updater trusts minisign alone** (both keys, plus the version the signature names, so an older
+    release can't be replayed as a newer one): Windows has no Authenticode check yet, and Linux has no platform code
+    signature. The managed policy and the signed advisory list run there too; the Tauri plugin only runs the verified
+    installer (`apps/desktop/src-tauri/src/updater/DETAILS.md` § Windows and Linux).
   - Gaps found in the release chain are tracked privately and reviewed before every release.
 
 ### 7. Licensing

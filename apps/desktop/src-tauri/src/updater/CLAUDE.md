@@ -1,21 +1,23 @@
 # Updater module
 
-Custom macOS updater that syncs files *into* the existing `.app` bundle, keeping its `com.apple.macl` xattr and giving
-each per-file write the fresh inode the code-signing cache needs. macOS-only; other platforms use the Tauri updater
-plugin from the frontend.
+Cmdr's own updater, on every OS: the check, the managed policy, minisign against both updater keys, and the advisory
+list are ours everywhere. Only the last step differs: macOS syncs files *into* the running `.app` bundle; Windows (NSIS)
+and Linux (AppImage) stage the verified installer and hand it to the Tauri updater plugin as Restart quits Cmdr.
 
 ## File map
 
-- `mod.rs`: the four Tauri commands, shared `UpdateState`, and the typed outcomes and errors. Tests in `tests.rs`.
-- `bundle_location.rs`: whether the running bundle can be written into at all (`BundleWriteBlocker`).
-- `manifest.rs`: parses `latest.json`, compares versions, resolves the platform key.
-- `signature.rs`: minisign verification against the main and backup updater keys.
+- `mod.rs`: the five Tauri commands, shared `UpdateState`, and the typed outcomes and errors. Tests in `tests.rs`.
+- `install_kind.rs`: which install this is (`InstallKind`), its manifest keys, and why some never update.
+- `handoff.rs`: staging the verified installer (Windows, Linux) and handing it off at exit.
+- `platform/`: the seam (`docs/guides/platform-seams.md`): the install kind, the write check, the bundle install, the
+  hand-off. `macos/` holds `installer.rs` (extraction, the sync, `running_bundle()` for `dock/`, `cli/`,
+  `install_location`), `bundle_location.rs` (`BundleWriteBlocker`, typed in `write_blocker.rs`), and
+  `local_network_refresh.rs` (#1019); `plugin.rs` is the Windows and Linux plugin hand-off. The code-signature check
+  is `crates/cmdr-update-trust/CLAUDE.md`.
+- `manifest.rs`: parses `latest.json`, compares versions, picks the platform entry.
+- `signature.rs`: minisign verification against the main and backup updater keys, and the signed version.
+- `advisories.rs`: the `SecurityNotice`, from the staged bundle (macOS) or the release's signed list (elsewhere).
 - `security_events.rs`: the security event log's updater events (`../security_log/CLAUDE.md`).
-- Code-signature check and tarball extraction: `crates/cmdr-update-trust/CLAUDE.md` (shared with the release gate).
-- `installer.rs`: extraction, the sync into the running bundle, and what a refused sync answers. `running_bundle()` is
-  crate-visible (`crate::install_location`).
-- `advisories.rs`: the `SecurityNotice` an install answers, from the staged bundle's list.
-- `local_network_refresh.rs`: the first launch after an update re-announces the bundle (#1019).
 
 ## Must-knows
 
@@ -23,31 +25,28 @@ plugin from the frontend.
   to sync into. ❌ NOT because replacing loses the FDA grant: it doesn't (measured; `DETAILS.md`).
 - **Per-file writes use temp + `rename()`, never in-place `fs::copy`.** The code-signing cache keys on inode, so a
   same-inode copy dies with `SIGKILL (Code Signature Invalid)`.
-- **Staging dir is per-instance** (`CMDR_INSTANCE_ID`): a shared one makes a main and a worktree `Cmdr` trip
-  `ENOTEMPTY`.
-- **Only a real user's production install may check** (`skip_reason`). ❌ Never keep a second copy of
-  `crate::prod_instance::NON_PROD_ENV_VARS` here. `DETAILS.md` § Who may check.
-- **❌ Never escalate to admin**: App Management (macOS 13+) refuses an admin-run helper anyway. An unwritable bundle
-  answers `bundle_location::classify` BEFORE the download, a refused sync `UpdateInstallError::Unwritable`. The probe
-  leans "writable": a false block stops working updates. `DETAILS.md` § A bundle that can't be written.
-- **Minisign (main or offline backup key) on the archive, AND Cmdr's Developer ID on the bundle.**
-  `vet_staged_bundle` refuses a bundle not code-signed by team `83H6YAQMNP` (`UntrustedCodeSignature`) before reading
-  it; ❌ nothing may skip that, tests inject it. The backup pubkey lives only in `updater-backup.pub`, also read by
-  `scripts/release-finish`; ❌ never copy it. `DETAILS.md` § Code signature, § Two updater keys.
-- **The signature doesn't name a version, so the archive's own `Info.plist` does.** Neither the trusted comment nor
-  `latest.json` names one, so `installer::refuse_unless_newer` refuses a staged bundle that isn't newer than the
-  running build. ❌ Never install around it: it's what stops an older signed release rolling an install back.
-- **The organization's policy gates every step, and the backend decides.** `check_for_update(trigger)` answers a typed
-  `UpdateCheckOutcome` (`DisableUpdates` and a refused background check return before any request); `download_update`
-  takes no URL and fetches only what the last check offered; `install_update` re-asks
-  `ManagedPolicy::update_to` on a fresh read, then again for the version the extracted `Info.plist` names. ❌ Never let
-  the frontend name a URL or version. `DETAILS.md` § Managed policy.
-- **Security notices come only from the vetted staged bundle, ❌ never `latest.json`** (unsigned). Read after every
-  vet check passes; a broken list ❌ never blocks the install. `DETAILS.md` § Security notices.
-- **An update leaves Local Network on the old binary's UUID**; the next launch re-announces it (❌ not in `install`, ❌
-  not without the touch). `DETAILS.md` § Local Network after an update.
-- **Manifest fetch is bounded** (10 s connect, 30 s overall); download and install are untimed. The check and the
-  download ride `server_request::send` (`Egress::UpdateCheck`, `UpdateDownload`).
+- **Only a real user's production install may check** (`skip_reason`: an `InstallKind`, no
+  `crate::prod_instance::NON_PROD_ENV_VARS`). ❌ Never keep a second copy of that list here. `DETAILS.md` § Who may check.
+- **❌ Never escalate to admin** (macOS App Management refuses it anyway; a `.deb`/`.rpm` never checks rather than
+  `pkexec`). `DETAILS.md` § A bundle that can't be written.
+- **Minisign (main or backup key) on every artifact.** macOS adds Cmdr's Developer ID on the bundle
+  (`vet_staged_bundle`, `UntrustedCodeSignature`; ❌ nothing may skip it); Windows has no Authenticode check yet. The
+  backup pubkey lives only in `updater-backup.pub`; ❌ never copy it. `DETAILS.md` § Code signature, § Two updater keys.
+- **Something signed names the version, never the manifest alone.** macOS: the extracted `Info.plist`
+  (`installer::refuse_unless_newer`). Windows and Linux: the signature's `version:` (`bind_signed_version`, signed with
+  `--app-version`). ❌ Never install around either: they stop an older signed release rolling an install back.
+- **The organization's policy gates every step, and the backend decides.** `download_update` takes no URL and fetches
+  only what the last check offered; `install_update` re-asks `update_to` on a fresh read. ❌ Never let the frontend
+  name a URL or version. `DETAILS.md` § Managed policy.
+- **Security notices come only from a signed list, ❌ never `latest.json` itself.** A broken or missing list ❌ never
+  blocks the update. `DETAILS.md` § Security notices.
+- **Off macOS the plugin only runs the installer**: no `updater:` capability, no check of its own. The hand-off runs
+  last in `RunEvent::Exit` (Windows never returns from it), armed by `quit::relaunch` so "Keep working" disarms it.
+  `DETAILS.md` § Windows and Linux.
+- **An update leaves Local Network on the old binary's UUID** (macOS); the next launch re-announces it.
+  `DETAILS.md` § Local Network after an update.
+- **Manifest fetch is bounded** (10 s connect, 30 s overall); download and install are untimed. All ride
+  `server_request::send` (`Egress::UpdateCheck`, `UpdateDownload`).
 
-Sync order, signatures, why no escalation, who may check, the policy, and Local Network: `DETAILS.md`. Read it before
-any non-trivial work here.
+Sync order, signatures, the hand-off, who may check, the policy, and Local Network: `DETAILS.md`. Read it before any
+non-trivial work here.
