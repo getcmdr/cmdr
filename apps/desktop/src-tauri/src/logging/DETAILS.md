@@ -23,7 +23,7 @@ Per-output filtering matters because error-report bundles need debug context reg
 single shared level you either bake terminal noise into the file (annoying for dev) or skimp on file context (bad for
 error reports). Two independent chains avoid the tradeoff.
 
-The root also drops every crate in `NEVER_LOGGED`, today only `rmcp`, so no chain and no `RUST_LOG` can bring it back. Why: `../mcp/DETAILS.md` § Authentication.
+The root also drops every crate in `NEVER_LOGGED`, so no chain and no `RUST_LOG` can bring it back: `rmcp` (it logs passwords; `../mcp/DETAILS.md` § Authentication) and `jiff`. jiff logs from inside its time zone database's `OnceLock` initializer, and both formatters stamp lines through `TimeZone::system()`, which waits on that lock, so one jiff line reaching a formatter deadlocks the thread. It hung the app on its first log line on Linux (2026-11-17, `gdb`: `jiff::tz::db::db` → `fern` → `file_timestamp` → `jiff::tz::db::db`). The root filter runs before any formatter, which is why the drop lives there. jiff's `logging` feature comes from `rustic_core`, so it can't be turned off at the source.
 
 `mdns_sd` stays at Info in the file: its debug output was ~60% of a bundle's lines and of the log's disk use, and a
 report never ships a third-party crate's debug output anyway (next section).

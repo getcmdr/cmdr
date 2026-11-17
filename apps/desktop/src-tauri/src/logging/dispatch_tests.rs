@@ -199,6 +199,32 @@ fn no_rmcp_line_reaches_either_chain_even_when_rust_log_asks() {
     }
 }
 
+/// ❗ Regression anchor: jiff logs from inside its time zone database's `OnceLock` initializer
+/// (its `logging` feature, which `rustic_core` turns on), and both chains stamp each line through
+/// `TimeZone::system()`, which waits on that same lock. Letting a jiff record reach a formatter
+/// deadlocked the app on its first log line, before any window drew (seen on the Linux E2E
+/// container, 2026-11-17, `gdb` stack: `jiff::tz::db::db` → `fern` → `file_timestamp` →
+/// `jiff::tz::db::db`). So no jiff record reaches either chain, at any level.
+#[test]
+fn no_jiff_line_reaches_either_chain_so_stamping_a_line_cant_reenter_its_lock() {
+    let _g = test_lock();
+    for rust_log in [None, Some("trace"), Some("jiff=trace")] {
+        let d = build_dispatch_for_test(rust_log, true, false);
+        for target in ["jiff", "jiff::tz::db", "jiff::tz::system"] {
+            dispatch(&*d.logger, log::Level::Debug, target, "found-a-zoneinfo-database");
+            dispatch(&*d.logger, log::Level::Warn, target, "found-a-zoneinfo-database");
+        }
+        dispatch(&*d.logger, log::Level::Error, "jiffy", "somebody-else");
+        for (chain, text) in [("terminal", buf_to_string(&d.stdout)), ("file", buf_to_string(&d.file))] {
+            assert!(
+                !text.contains("found-a-zoneinfo-database"),
+                "{chain} under {rust_log:?}: {text:?}"
+            );
+            assert!(text.contains("somebody-else"), "{chain} under {rust_log:?}: {text:?}");
+        }
+    }
+}
+
 fn buf_to_string(buf: &Mutex<Vec<u8>>) -> String {
     let guard = buf.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     String::from_utf8_lossy(&guard).into_owned()

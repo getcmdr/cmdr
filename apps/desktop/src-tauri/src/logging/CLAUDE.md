@@ -31,7 +31,8 @@ Dispatch-tree shape, why fern, timestamp formats, and decisions: `DETAILS.md`.
 - **Two independent chains; don't collapse them into a shared level.** The terminal chain (`stderr`, so piped stdout
   stays clean) defaults to Info under `RUST_LOG` and noise overrides. The file chain is Debug whatever the dev set,
   because error-report bundles need debug context; only `mdns_sd` is held at Info there (its dumps dominated).
-- **`NEVER_LOGGED` (`dispatch.rs`) drops `rmcp` above both chains**, whatever `RUST_LOG` says: it logs passwords.
+- **`NEVER_LOGGED` drops `rmcp` (passwords) and `jiff` (deadlocks the stamping) above both chains.** DETAILS §
+  "Dispatch tree".
 - **The file tags OUR lines (`·` before the target), from `record.module_path()`, ❌ never the target.** Error reports
   ship DEBUG/TRACE only from tagged lines, so an untagged line fails closed. DETAILS § "Line provenance".
 - **The terminal hides log markers; the file keeps them.** `write_terminal_line` shows each marked value as itself
@@ -43,7 +44,7 @@ Dispatch-tree shape, why fern, timestamp formats, and decisions: `DETAILS.md`.
   `file_timestamp()` back: the dedup key must stay timestamp-free or identical lines a millisecond apart never coalesce.
 - **ANSI is terminal-only, resolved once at startup.** ❌ `is_terminal()` can't decide it alone: under `pnpm dev` the
   Tauri CLI hands us a piped stderr, so `tauri-wrapper.ts` sets `CLICOLOR_FORCE`; `NO_COLOR` outranks both.
-- **Cap = 0 disables the file chain entirely.** The terminal still works; the bundle's `logs/` is empty.
+- **Cap = 0 disables the file chain**; the bundle's `logs/` is then empty.
 - **`RotatingFile` never panics or caches the directory's state**: logging runs on every thread, and other processes
   change the files (CRASH-EC4QS killed the index writer). It renames only the file its fd still holds
   (#812). ❌ `keep_count()` never means "this session writes a file": `debug_log_path()` does.

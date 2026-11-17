@@ -213,7 +213,12 @@ pub fn init(opts: InitOptions) -> Result<(), fern::InitError> {
 /// `rmcp` logs every request it receives at Debug, arguments included, through `tracing`'s `log`
 /// fallback. That would put an `unlock` password in `cmdr.log` and in error reports, and the file
 /// chain keeps Debug always. `crate::mcp` logs what we want to keep of a request itself.
-const NEVER_LOGGED: &[&str] = &["rmcp"];
+///
+/// ❗ `jiff` logs from inside its time zone database's `OnceLock` initializer, and both chains stamp
+/// a line through `TimeZone::system()`, which waits on that lock: one of its lines reaching a
+/// formatter deadlocks the thread (the app hung on its first log line). Dropped here, above the
+/// formatters, it can't. Its `logging` feature comes from `rustic_core`, so it can't be switched off.
+const NEVER_LOGGED: &[&str] = &["rmcp", "jiff"];
 
 /// Whether a record's target belongs to a crate in [`NEVER_LOGGED`].
 pub(crate) fn never_logged(target: &str) -> bool {
