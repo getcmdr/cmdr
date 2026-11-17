@@ -337,7 +337,7 @@ xattr = "1"
 keyring-core = "1"
 zbus-secret-service-keyring-store = { version = "1", features = ["rt-tokio-crypto-rust"] }
 # Encrypted file-based credential storage fallback when no secret service is available
-cocoon = "0.5"
+cocoon = "0.6"
 # D-Bus client for XDG Desktop Portal (accent color, appearance settings)
 zbus = "5"
 # Native file icons: XDG icon theme lookup (pure Rust, no GTK dependency)
@@ -492,7 +492,7 @@ objc2-io-kit = { version = "0.3.2", default-features = false, features = ["std",
 filetime = "0.2"
 # The Linux-only `cocoon` above, again for every platform's tests, so the encrypted credential
 # store's recovery cells (`secrets/encrypted_file.rs`) run on a Mac too. Same package, no new one.
-cocoon = "0.5"
+cocoon = "0.6"
 # Tauri's no-window mock runtime for real HTTP-boundary tests of the MCP router.
 # This is the same package as the production dependency; the feature only publishes
 # `tauri::test` helpers to dev targets and adds no package to the graph.
