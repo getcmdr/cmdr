@@ -40,6 +40,7 @@ export const behaviorSettings: SettingDefinitionSource[] = [
     // last left open. Driven entirely by the section's own row; ONE value for
     // both panes, so the two switchers never disagree about it.
     id: 'behavior.switcherFavoritesExpanded',
+    kind: 'state',
     section: ['Behavior', 'Navigation & file ops'],
     labelKey: 'settings.behavior.switcherFavoritesExpanded.label',
     descriptionKey: 'settings.behavior.switcherFavoritesExpanded.description',
@@ -55,6 +56,7 @@ export const behaviorSettings: SettingDefinitionSource[] = [
     // it also feeds the shared nudge cooldown (`#lib/nudges/CLAUDE.md`). No UI
     // row: a cooldown stamp, unlike the once-ever hint flags in Advanced.
     id: 'behavior.dockPinNudgeOfferedAt',
+    kind: 'state',
     section: ['Behavior', 'Navigation & file ops'],
     labelKey: 'settings.behavior.dockPinNudgeOfferedAt.label',
     descriptionKey: 'settings.behavior.dockPinNudgeOfferedAt.description',
@@ -71,6 +73,7 @@ export const behaviorSettings: SettingDefinitionSource[] = [
     // was made, as an ISO 8601 instant. Same shape and the same cooldown as the
     // Dock stamp above.
     id: 'behavior.revealNudgeOfferedAt',
+    kind: 'state',
     section: ['Behavior', 'Navigation & file ops'],
     labelKey: 'settings.behavior.revealNudgeOfferedAt.label',
     descriptionKey: 'settings.behavior.revealNudgeOfferedAt.description',
@@ -84,6 +87,7 @@ export const behaviorSettings: SettingDefinitionSource[] = [
     // Internal (FE-owned): when the once-ever offer of the Finder extension was made.
     // Same shape and the same cooldown as the two stamps above.
     id: 'behavior.finderExtensionNudgeOfferedAt',
+    kind: 'state',
     section: ['Behavior', 'Navigation & file ops'],
     labelKey: 'settings.behavior.finderExtensionNudgeOfferedAt.label',
     descriptionKey: 'settings.behavior.finderExtensionNudgeOfferedAt.description',
@@ -516,6 +520,7 @@ export const behaviorSettings: SettingDefinitionSource[] = [
     // collapsed the "new download" toast, so a new toast opens in the same
     // state. Driven entirely by the toast's collapse/expand button.
     id: 'behavior.fileSystemWatching.downloadsToastCollapsed',
+    kind: 'state',
     section: ['Behavior', 'Notifications'],
     labelKey: 'settings.behavior.fileSystemWatching.downloadsToastCollapsed.label',
     descriptionKey: 'settings.behavior.fileSystemWatching.downloadsToastCollapsed.description',

@@ -24,6 +24,7 @@ import {
   buildSnapshot,
   compareVersionsAsc,
   gitTree,
+  mergeStateKeys,
   promote,
   serializeManifest,
   snapshotsEqual,
@@ -45,11 +46,13 @@ const MANIFEST_NOTE = [
   'resolved entry means the setting did not exist in that build, so that install has no opinion to count.',
   '`promotedThrough` is the newest release `--promote` recorded, stamped even when it changed no default.',
   '`next` is the unreleased working-tree state; it is never resolved against.',
+  "`stateKeys` are the settings the registry tags `kind: 'state'` (remembered UI or onboarding state, not a",
+  'preference), plus retired ones recorded earlier, since older installs still send them.',
 ]
 
 /** An empty manifest, for the first run and for `--backfill` starting from scratch. */
 function emptyManifest(): DefaultsManifest {
-  return { note: MANIFEST_NOTE, promotedThrough: '', versions: {}, next: {} }
+  return { note: MANIFEST_NOTE, promotedThrough: '', stateKeys: [], versions: {}, next: {} }
 }
 
 function readManifest(): DefaultsManifest {
@@ -60,6 +63,7 @@ function readManifest(): DefaultsManifest {
   return {
     note: MANIFEST_NOTE,
     promotedThrough: parsed.promotedThrough ?? '',
+    stateKeys: parsed.stateKeys ?? [],
     versions: parsed.versions ?? {},
     next: parsed.next ?? {},
   }
@@ -69,9 +73,16 @@ function writeManifest(manifest: DefaultsManifest): void {
   writeFileSync(join(ROOT_DIR, MANIFEST_PATH), serializeManifest({ ...manifest, note: MANIFEST_NOTE }))
 }
 
-/** Builds the working tree's snapshot, refusing to write a manifest with a known blind spot. */
-function currentSnapshot(): DefaultsSnapshot {
-  return requireResolved(buildSnapshot(workingTree(ROOT_DIR)), 'the working tree')
+/** Reads the working tree's registry, refusing to write a manifest with a known blind spot. */
+function currentRegistry(): SnapshotResult {
+  const result = buildSnapshot(workingTree(ROOT_DIR))
+  requireResolved(result, 'the working tree')
+  return result
+}
+
+/** Refreshes everything the working tree owns: `next` and `stateKeys`. Every write goes through it. */
+function withWorkingTree(manifest: DefaultsManifest, current: SnapshotResult): DefaultsManifest {
+  return { ...manifest, stateKeys: mergeStateKeys(manifest.stateKeys, current), next: current.snapshot }
 }
 
 function requireResolved(result: SnapshotResult, label: string): DefaultsSnapshot {
@@ -141,6 +152,7 @@ function backfill(manifest: DefaultsManifest): DefaultsManifest {
 function main(): void {
   const args = process.argv.slice(2)
   const manifest = readManifest()
+  const current = currentRegistry()
 
   if (args[0] === '--promote') {
     const version = args[1] ?? ''
@@ -148,20 +160,23 @@ function main(): void {
       console.error('Usage: node scripts/gen-analytics-defaults.ts --promote <major.minor.patch>')
       process.exit(1)
     }
-    writeManifest(promote(manifest, version, currentSnapshot()))
+    writeManifest(withWorkingTree(promote(manifest, version, current.snapshot), current))
     console.log(`Recorded the settings defaults for v${version}.`)
     return
   }
 
   if (args[0] === '--backfill') {
     const backfilled = backfill(manifest)
-    writeManifest({ ...backfilled, next: currentSnapshot() })
+    writeManifest(withWorkingTree(backfilled, current))
     return
   }
 
-  const snapshot = currentSnapshot()
-  writeManifest({ ...manifest, next: snapshot })
-  console.log(`Wrote ${String(Object.keys(snapshot).length)} setting defaults to ${MANIFEST_PATH}.`)
+  const updated = withWorkingTree(manifest, current)
+  writeManifest(updated)
+  console.log(
+    `Wrote ${String(Object.keys(updated.next).length)} setting defaults and ` +
+      `${String(updated.stateKeys.length)} state keys to ${MANIFEST_PATH}.`,
+  )
 }
 
 main()

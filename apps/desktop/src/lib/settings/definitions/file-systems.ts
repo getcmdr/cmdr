@@ -23,6 +23,7 @@ export const fileSystemsSettings: SettingDefinitionSource[] = [
   },
   {
     id: 'network.firstTriggerDone',
+    kind: 'state',
     section: ['File systems', 'SMB/Network shares'],
     labelKey: 'settings.network.firstTriggerDone.label',
     descriptionKey: 'settings.network.firstTriggerDone.description',
@@ -36,6 +37,7 @@ export const fileSystemsSettings: SettingDefinitionSource[] = [
     // opened or collapsed the servers hub's "found nearby" group; `auto` until
     // they toggle it, which is when the hub picks by whether they saved a server.
     id: 'network.nearbyServersGroup',
+    kind: 'state',
     section: ['File systems', 'SMB/Network shares'],
     labelKey: 'settings.network.nearbyServersGroup.label',
     // A `string`, not an `enum`: an enum's options each need a rendered label, and

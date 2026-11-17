@@ -46,6 +46,13 @@ export interface DefaultsManifest {
    * recorded this release": `versions` alone looks the same for both.
    */
   promotedThrough: string
+  /**
+   * Setting ids that hold remembered UI or onboarding state rather than a preference (a hint seen,
+   * a nudge stamp, the onboarding answers), sorted. The registry's typed `kind: 'state'` decides it,
+   * so the dashboard never guesses from an id's spelling. A key retired from the registry stays
+   * listed: installs still on an older build keep sending it (`mergeStateKeys`).
+   */
+  stateKeys: string[]
   /** Released versions whose defaults differ from the entry before them, oldest key first. */
   versions: Record<string, DefaultsSnapshot>
   /** The working tree's snapshot. Never resolved against (it hasn't shipped); promoted at release. */
@@ -69,6 +76,10 @@ export interface SnapshotResult {
    * resolve, so the backfill skips them rather than writing an entry that implies we know something.
    */
   configShapeShipped: boolean
+  /** Every registry setting tagged `kind: 'state'`, sorted. Independent of the config shape. */
+  stateKeys: string[]
+  /** Every registry setting id, sorted, so a recorded state key can tell "retired" from "reclassified". */
+  settingIds: string[]
 }
 
 const DEFINITIONS_DIR = 'apps/desktop/src/lib/settings/definitions'
@@ -151,6 +162,8 @@ interface RegistryEntry {
   /** Set when `value` is null because the initializer wasn't a literal we evaluate. */
   expression: string | null
   file: string
+  /** True only for a `kind: 'state'` string literal; anything else is a preference. */
+  isState: boolean
 }
 
 /**
@@ -214,6 +227,7 @@ function parseFile(source: string, file: string): RegistryEntry[] {
       const defaultNode = property(node, 'default')
       if (idNode !== null && defaultNode !== null && ts.isStringLiteral(idNode)) {
         const typeNode = property(node, 'type')
+        const kindNode = property(node, 'kind')
         const evaluated = evaluateDefault(defaultNode)
         entries.push({
           id: idNode.text,
@@ -221,6 +235,8 @@ function parseFile(source: string, file: string): RegistryEntry[] {
           value: evaluated.value,
           expression: evaluated.unresolved ? defaultNode.getText(parsed) : null,
           file,
+          // A literal only: the tag is data about the setting, read the same way from any revision.
+          isState: kindNode !== null && ts.isStringLiteralLike(kindNode) && kindNode.text === 'state',
         })
       }
     }
@@ -249,7 +265,8 @@ export function parseCategoricalKeys(tree: SourceTree): Set<string> | null {
  */
 export function buildSnapshot(tree: SourceTree): SnapshotResult {
   const categorical = parseCategoricalKeys(tree)
-  if (categorical === null) return { snapshot: {}, unresolved: [], configShapeShipped: false }
+  const stateKeys: string[] = []
+  const settingIds: string[] = []
   const snapshot: DefaultsSnapshot = {}
   const unresolved: UnresolvedDefault[] = []
 
@@ -257,6 +274,9 @@ export function buildSnapshot(tree: SourceTree): SnapshotResult {
     const source = tree.read(file)
     if (source === null) continue
     for (const entry of parseFile(source, file)) {
+      settingIds.push(entry.id)
+      if (entry.isState) stateKeys.push(entry.id)
+      if (categorical === null) continue
       if (entry.value === null) {
         // A default we couldn't evaluate only matters when the setting's type says it would reach
         // the config shape. Anything else (a `string-array`, a non-categorical string) is invisible
@@ -272,7 +292,28 @@ export function buildSnapshot(tree: SourceTree): SnapshotResult {
     }
   }
 
-  return { snapshot: sortKeys(snapshot), unresolved, configShapeShipped: true }
+  return {
+    snapshot: sortKeys(snapshot),
+    unresolved,
+    configShapeShipped: categorical !== null,
+    stateKeys: stateKeys.sort(),
+    settingIds: settingIds.sort(),
+  }
+}
+
+/**
+ * The manifest's `stateKeys`: the registry's state keys, plus every previously recorded state key
+ * the registry no longer has. A retired flag still arrives from installs on older builds, so dropping
+ * it would leak it into the preferences. A key the registry still has always follows the registry,
+ * so untagging a setting reclassifies it.
+ */
+export function mergeStateKeys(
+  recorded: string[],
+  registry: Pick<SnapshotResult, 'stateKeys' | 'settingIds'>,
+): string[] {
+  const inRegistry = new Set(registry.settingIds)
+  const retired = recorded.filter((id) => !inRegistry.has(id))
+  return [...new Set([...registry.stateKeys, ...retired])].sort()
 }
 
 /** Stable key order, so a regeneration only ever diffs where a default actually moved. */

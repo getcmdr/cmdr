@@ -162,6 +162,13 @@ key against the defaults that shipped in that install's app version, from a mani
 (`apps/desktop/scripts/gen-analytics-defaults-lib.ts`, enforced by the `settings-defaults` check). Nothing here has to
 change for it, but a default flip now also moves an analytics artifact.
 
+**State vs preference is a typed tag.** `SettingDefinition.kind: 'state'` marks remembered UI or onboarding state (hint
+flags, nudge stamps, `onboarding.*`, a group left open); absent means a preference. It drives analytics only: the
+manifest lists tagged ids as `stateKeys` (`apps/desktop/scripts/DETAILS.md` § The defaults manifest), and the dashboard
+reads them there, never from an id pattern like `*Seen`. A switch the person flips to silence something
+(`fileExplorer.suppressQuickLookHint`, `fileViewer.suppressBinaryWarning`) is their chosen behavior, so it stays a
+preference.
+
 Mechanics (`settings-store.ts`):
 
 - **"Explicit" is structural, never a value compare.** An `explicitlySet` ledger (`Set<SettingId>`) records which ids a
