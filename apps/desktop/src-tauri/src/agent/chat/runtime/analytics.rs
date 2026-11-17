@@ -134,7 +134,6 @@ mod tests {
     use crate::agent::chat::runtime::UserTurn;
     use crate::agent::chat::runtime::events::AgentErrorKind;
     use crate::agent::llm::types::ProviderTag;
-    use chrono::FixedOffset;
 
     /// A minimal envelope: nothing in the props reads it, it just has to exist.
     fn envelope() -> ContextEnvelope {
@@ -159,7 +158,7 @@ mod tests {
             cmdr_md: None,
             memory: &[],
             envelope,
-            offset: FixedOffset::east_opt(0).expect("UTC is a valid offset"),
+            offset: jiff::tz::Offset::UTC,
             now_secs: 0,
             provider,
             model: "test-model".to_string(),

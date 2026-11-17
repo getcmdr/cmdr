@@ -10,7 +10,6 @@
 //! ❌ These may not live in `commands/agent/`, which sits ABOVE `agent/`: a wake would have to
 //! import upward to reach them.
 
-use chrono::{FixedOffset, Local};
 use tauri::{AppHandle, Manager};
 
 use super::context::{ContextEnvelope, EnvelopeAttachment, EnvelopeConnectivity, EnvelopeFreshness, EnvelopeVolume};
@@ -530,8 +529,8 @@ fn to_envelope_volume(summary: &VolumeSummary) -> EnvelopeVolume {
 }
 
 /// The local UTC offset now, for rendering timestamps in the user's timezone.
-pub fn local_offset() -> FixedOffset {
-    *Local::now().offset()
+pub fn local_offset() -> jiff::tz::Offset {
+    crate::timestamps::local_offset_now()
 }
 
 #[cfg(test)]

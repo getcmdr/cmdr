@@ -397,9 +397,7 @@ impl<R: Runtime> ConnectPorts for AppPorts<'_, R> {
 
     fn last_connected(&self, volume_id: &str) -> Option<i64> {
         let row = crate::network::known_shares::share_by_volume_id(volume_id)?;
-        chrono::DateTime::parse_from_rfc3339(&row.last_connected_at)
-            .ok()
-            .map(|at| at.timestamp())
+        crate::timestamps::parse_rfc3339(&row.last_connected_at).map(jiff::Timestamp::as_second)
     }
 
     fn standing(&self, volume_id: &str) -> Standing {

@@ -40,7 +40,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use chrono::FixedOffset;
+use jiff::tz::Offset;
 use tauri::{AppHandle, Manager, Runtime};
 use tokio_util::sync::CancellationToken;
 
@@ -157,7 +157,7 @@ impl ChatRuntime {
         conversation_id: Option<i64>,
         text: String,
         envelope: ContextEnvelope,
-        offset: FixedOffset,
+        offset: Offset,
         sink: ChatEventSink,
         cancel: CancellationToken,
         // The turn's cancel registration, which the in-flight mark names for a reloaded rail.

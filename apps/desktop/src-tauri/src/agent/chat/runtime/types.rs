@@ -7,7 +7,7 @@
 //! anything. ❌ Don't move a function that DRIVES a turn in here — this module stays free of
 //! `super` imports, and that is what keeps the arrows pointing one way.
 
-use chrono::FixedOffset;
+use jiff::tz::Offset;
 
 use super::events::AgentErrorKind;
 use crate::agent::chat::context::ContextEnvelope;
@@ -70,7 +70,7 @@ pub struct TurnParams<'a> {
     /// (`context::memory_notes_for_turn`), never the cached prefix.
     pub memory: &'a [MemoryNote],
     pub envelope: &'a ContextEnvelope,
-    pub offset: FixedOffset,
+    pub offset: Offset,
     /// Wall-clock secs stamped on rows written this turn; also the envelope's clock.
     pub now_secs: i64,
     /// The resolved interactive-slot provider + model, for cost metering. Real slot

@@ -315,6 +315,8 @@ fn retry_after_reads_every_rfc_2822_shape() {
     assert_eq!(parse_retry_after("Sun, 06 Nov 1994 08:50:07 gmt", now), thirty);
     assert_eq!(parse_retry_after("06 Nov 1994 08:50:07 GMT", now), thirty);
     assert_eq!(parse_retry_after("  Sun, 06 Nov 1994 08:50:07 GMT  ", now), thirty);
+    // Not RFC 2822, but unambiguous; read as GMT.
+    assert_eq!(parse_retry_after("Sun, 06 Nov 1994 08:50:07 UTC", now), thirty);
     assert_eq!(parse_retry_after("Mon, 06 Nov 1994 08:50:07 GMT", now), None);
     assert_eq!(parse_retry_after("Sunday, 06-Nov-94 08:50:07 GMT", now), None);
     assert_eq!(parse_retry_after("Sun Nov  6 08:50:07 1994", now), None);

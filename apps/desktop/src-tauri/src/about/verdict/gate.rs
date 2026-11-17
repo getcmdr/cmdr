@@ -195,7 +195,7 @@ fn meter_onto(
     let priced = crate::agent::pricing::price_call(provider, model, usage);
     let record = crate::agent::store::CostRecord {
         day: crate::agent::chat::runtime::day_for(
-            chrono::Utc::now().timestamp(),
+            jiff::Timestamp::now().as_second(),
             crate::agent::chat::session::local_offset(),
         ),
         conversation_id: ledger,

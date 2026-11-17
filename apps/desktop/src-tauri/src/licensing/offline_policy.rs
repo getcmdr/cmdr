@@ -141,8 +141,7 @@ fn resolve_time_limited(key: &KeyTerms, cached: Option<&CachedLicenseStatus>, no
 
 /// Unix seconds from an RFC 3339 timestamp, or `None` if it doesn't parse (or predates 1970).
 pub(super) fn parse_timestamp(raw: &str) -> Option<u64> {
-    let parsed = chrono::DateTime::parse_from_rfc3339(raw).ok()?;
-    u64::try_from(parsed.timestamp()).ok()
+    u64::try_from(crate::timestamps::parse_rfc3339(raw)?.as_second()).ok()
 }
 
 #[cfg(test)]

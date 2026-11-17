@@ -27,7 +27,8 @@
 //! alongside the messages, so the runtime (which owns the clock, the log, and the event
 //! sink) can say a drop happened out loud while this module stays pure.
 
-use chrono::{DateTime, FixedOffset, Utc};
+use jiff::Timestamp;
+use jiff::tz::Offset;
 use serde_json::{Value, json};
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -356,7 +357,7 @@ pub fn assemble_prompt(
     prefix: &PrefixInputs<'_>,
     transcript: &[AgentMessage],
     envelope: &ContextEnvelope,
-    offset: FixedOffset,
+    offset: Offset,
     budget: usize,
 ) -> AssembledPrompt {
     let system = build_system(prefix.system_prompt, prefix.cmdr_md);
@@ -435,7 +436,7 @@ fn render_denied_names(names: &[String]) -> String {
     format!(" · turned down: {}{more}", shown.join(", "))
 }
 
-pub fn render_envelope(envelope: &ContextEnvelope, offset: FixedOffset) -> String {
+pub fn render_envelope(envelope: &ContextEnvelope, offset: Offset) -> String {
     let timestamp = format_timestamp(envelope.captured_at, offset);
     let focused = envelope.focused_pane_path.as_deref().unwrap_or(EM_DASH);
     let cursor = envelope.cursor_item.as_deref().unwrap_or(EM_DASH);
@@ -485,15 +486,15 @@ fn render_volume(volume: &EnvelopeVolume) -> String {
 
 /// Render a historical user turn's lighter timestamp marker (no full envelope; the
 /// envelope opens the latest turn only).
-fn render_history_timestamp(at: i64, offset: FixedOffset) -> String {
+fn render_history_timestamp(at: i64, offset: Offset) -> String {
     format!("[{}]", format_timestamp(at, offset))
 }
 
-/// `Sat 2026-07-12 21:30`: local weekday, ISO date, and time. Pure given `offset`
+/// `Sun 2026-07-12 21:30`: local weekday, ISO date, and time. Pure given `offset`
 /// (no ambient clock or timezone read), so tests are deterministic.
-fn format_timestamp(unix_secs: i64, offset: FixedOffset) -> String {
-    let utc = DateTime::<Utc>::from_timestamp(unix_secs, 0).unwrap_or(DateTime::<Utc>::UNIX_EPOCH);
-    utc.with_timezone(&offset).format("%a %Y-%m-%d %H:%M").to_string()
+fn format_timestamp(unix_secs: i64, offset: Offset) -> String {
+    let at = Timestamp::from_second(unix_secs).unwrap_or(Timestamp::UNIX_EPOCH);
+    offset.to_datetime(at).strftime("%a %Y-%m-%d %H:%M").to_string()
 }
 
 /// How many user turns back the oldest tool-result message sits (`0` when there is none, or
@@ -517,7 +518,7 @@ fn oldest_tool_turns_back(transcript: &[AgentMessage]) -> usize {
 fn build_messages(
     transcript: &[AgentMessage],
     envelope: &ContextEnvelope,
-    offset: FixedOffset,
+    offset: Offset,
     threshold: usize,
 ) -> Vec<AgentMessage> {
     let user_positions: Vec<usize> = transcript

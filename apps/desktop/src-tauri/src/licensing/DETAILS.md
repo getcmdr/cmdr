@@ -326,6 +326,6 @@ the title reads the license just committed.
 
 ## Dependencies
 
-- External: `ed25519-dalek`, `base64`, `reqwest`, `tauri_plugin_store`, `sha2`, `chrono` (date parsing), `rand`
+- External: `ed25519-dalek`, `base64`, `reqwest`, `tauri_plugin_store`, `sha2`, `jiff` (date parsing), `rand`
   (nonces), `core-foundation` (macOS).
 - Internal: `crate::secrets` (the key's storage).

@@ -18,6 +18,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
+use jiff::Timestamp;
+use jiff::civil::DateTime;
+use jiff::tz::TimeZone;
 use serde::Serialize;
 use tauri::AppHandle;
 use tauri_specta::Event;
@@ -68,7 +71,7 @@ pub fn init(app: &AppHandle) {
 /// `None` when the rename didn't happen, which leaves the file where it was for the caller to
 /// deal with.
 pub fn set_aside(path: &Path, file: StateFile) -> Option<PathBuf> {
-    let kept = match move_aside(path, chrono::Local::now().naive_local()) {
+    let kept = match move_aside(path, local_now()) {
         Ok(kept) => {
             log::warn!(
                 target: LOG_TARGET,
@@ -110,7 +113,7 @@ pub fn keep_copy(path: &Path, file: StateFile) -> Option<PathBuf> {
         );
         return Some(existing);
     }
-    let kept = match copy_aside(path, chrono::Local::now().naive_local()) {
+    let kept = match copy_aside(path, local_now()) {
         Ok(kept) => {
             log::warn!(
                 target: LOG_TARGET,
@@ -159,8 +162,13 @@ pub fn take_queued() -> Vec<StateRecovery> {
     std::mem::take(&mut *QUEUE.lock_ignore_poison())
 }
 
+/// This machine's wall clock now, the stamp a set-aside copy is named by.
+fn local_now() -> DateTime {
+    TimeZone::system().to_datetime(Timestamp::now())
+}
+
 /// The rename and the pruning behind [`set_aside`], over an injected clock.
-fn move_aside(path: &Path, now: chrono::NaiveDateTime) -> std::io::Result<PathBuf> {
+fn move_aside(path: &Path, now: DateTime) -> std::io::Result<PathBuf> {
     let (kept, prefix) = kept_name(path, now)?;
     fs::rename(path, &kept)?;
     prune(path, &prefix);
@@ -168,7 +176,7 @@ fn move_aside(path: &Path, now: chrono::NaiveDateTime) -> std::io::Result<PathBu
 }
 
 /// The copy and the pruning behind [`keep_copy`], over an injected clock.
-fn copy_aside(path: &Path, now: chrono::NaiveDateTime) -> std::io::Result<PathBuf> {
+fn copy_aside(path: &Path, now: DateTime) -> std::io::Result<PathBuf> {
     let (kept, prefix) = kept_name(path, now)?;
     fs::copy(path, &kept)?;
     prune(path, &prefix);
@@ -192,14 +200,14 @@ fn identical_copy(path: &Path) -> Option<PathBuf> {
 
 /// The first free `<name>.broken-<stamp>[-n]` beside `path`, plus the prefix every copy of it
 /// shares.
-fn kept_name(path: &Path, now: chrono::NaiveDateTime) -> std::io::Result<(PathBuf, String)> {
+fn kept_name(path: &Path, now: DateTime) -> std::io::Result<(PathBuf, String)> {
     let name = path
         .file_name()
         .ok_or_else(|| std::io::Error::other("a state file path has a file name"))?
         .to_string_lossy()
         .into_owned();
     let prefix = format!("{name}.broken-");
-    let stamp = now.format("%Y-%m-%dT%H%M%S").to_string();
+    let stamp = now.strftime("%Y-%m-%dT%H%M%S").to_string();
     let mut kept = path.with_file_name(format!("{prefix}{stamp}"));
     let mut n = 2;
     while kept.exists() {
@@ -314,8 +322,8 @@ mod tests {
     use super::*;
     use crate::test_support::TestDir;
 
-    fn at(stamp: &str) -> chrono::NaiveDateTime {
-        chrono::NaiveDateTime::parse_from_str(stamp, "%Y-%m-%d %H:%M:%S").expect("a test timestamp")
+    fn at(stamp: &str) -> DateTime {
+        DateTime::strptime("%Y-%m-%d %H:%M:%S", stamp).expect("a test timestamp")
     }
 
     fn names_in(dir: &Path) -> Vec<String> {

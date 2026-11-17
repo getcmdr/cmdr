@@ -4,7 +4,7 @@
 //! Everything here is a plain value. The core is pure, so no fixture needs a tokio
 //! runtime, a DB, or app state — and none may introduce one.
 
-use chrono::FixedOffset;
+use jiff::tz::Offset;
 use serde_json::{Value, json};
 
 use crate::agent::chat::budget::DEFAULT_PROMPT_TOKEN_BUDGET;
@@ -25,13 +25,13 @@ pub(crate) const BUDGET: usize = DEFAULT_PROMPT_TOKEN_BUDGET;
 /// slot ran under when a 12-file batch overflowed it.
 pub(crate) const TIGHT_BUDGET: usize = 8_000;
 
-pub(crate) fn offset() -> FixedOffset {
+pub(crate) fn offset() -> Offset {
     offset_of(2 * 3600)
 }
 
 /// A fixed UTC offset `seconds` east of UTC.
-pub(crate) fn offset_of(seconds: i32) -> FixedOffset {
-    FixedOffset::east_opt(seconds).expect("valid offset")
+pub(crate) fn offset_of(seconds: i32) -> Offset {
+    Offset::from_seconds(seconds).expect("valid offset")
 }
 
 pub(crate) fn user(text: &str, at: i64) -> AgentMessage {

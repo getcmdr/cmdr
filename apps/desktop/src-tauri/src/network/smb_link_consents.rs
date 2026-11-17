@@ -85,7 +85,7 @@ pub fn allow(server: &str, target: &str) -> bool {
             store.consents.push(SmbLinkConsent {
                 server: server.to_string(),
                 target: target.to_string(),
-                approved_at: chrono::Utc::now().to_rfc3339(),
+                approved_at: crate::timestamps::now_rfc3339(),
             });
         }
     }

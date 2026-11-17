@@ -27,8 +27,10 @@ Depth for the search backend. `CLAUDE.md` holds the must-knows; this file holds 
   domain logic with no I/O, so they live in the crate (`crates/cmdr-search/src/translate/CLAUDE.md`), and the
   translation DTOs (`TranslatedQuery`, `TranslateDisplay`) with them, `pub use`d from `commands/search.rs` so the IPC
   path is unchanged (specta names a type by its struct identity, so `bindings.ts` doesn't move either). `ai.rs` is
-  the host's half: `SystemZone` (this machine's calendar, through `chrono::Local`) and the home folder, passed in as
-  values. Nothing under `search/` reaches `commands/`.
+  the host's half: `SystemZone` (this machine's calendar, through jiff's `TimeZone::system()`) and the home folder, passed in as
+  values. jiff caches the system zone and re-reads it after five minutes, so a zone change reaches dates within that
+  (verified in jiff 0.2.43's system-zone source, 2026-11-17). `midnight_in`/`offset_in` take the zone, so tests pin DST with POSIX
+  zones. Nothing under `search/` reaches `commands/`.
 - **Add history only on "Open in pane"**: David's explicit call. The 1000-entry budget stays signal-rich when it tracks
   results worth acting on, not every keystroke-debounced filename search. The gate is a frontend convention, not
   Rust-enforced.

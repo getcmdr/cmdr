@@ -573,7 +573,7 @@ fn save_parsed_at(
             display_name: details.name.trim().to_string(),
             address: parsed.host.clone(),
             port: parsed.port,
-            added_at: chrono::Utc::now().to_rfc3339(),
+            added_at: crate::timestamps::now_rfc3339(),
             username: username.clone(),
             awaiting_first_connect: contact == Contact::AwaitingFirstConnect,
         };
@@ -641,7 +641,7 @@ fn name_server_entry_at_path(
             display_name: edit.name.trim().to_string(),
             address: address.to_string(),
             port,
-            added_at: chrono::Utc::now().to_rfc3339(),
+            added_at: crate::timestamps::now_rfc3339(),
             username: typed_account(edit.username.as_deref()),
             awaiting_first_connect: false,
         };

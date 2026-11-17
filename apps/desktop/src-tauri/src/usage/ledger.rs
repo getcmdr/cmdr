@@ -2,8 +2,8 @@
 //! launched on, and the pure append the launch hook drives, read and written through
 //! `crate::state_recovery`, which sets aside a file we can't read and never lets one be saved over.
 
-use chrono::NaiveDate;
 use cmdr_fs::log_private::LogPrivate;
+use jiff::civil::Date;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
@@ -29,8 +29,8 @@ struct Envelope {
 }
 
 /// The `YYYY-MM-DD` key a calendar day is stored under.
-fn day_key(day: NaiveDate) -> String {
-    day.format("%Y-%m-%d").to_string()
+fn day_key(day: Date) -> String {
+    day.strftime("%Y-%m-%d").to_string()
 }
 
 /// Returns the ledger with `today` appended, or `None` when the day is already in it.
@@ -39,7 +39,7 @@ fn day_key(day: NaiveDate) -> String {
 /// can leave the days out of order, and a second entry for a day the ledger already holds would
 /// then slip in behind the odd tail. Existing entries are kept verbatim (no sort, no dedupe) so a
 /// hand-edited or clock-skewed file stays recognizable instead of being quietly rewritten.
-fn appended(days: &[String], today: NaiveDate) -> Option<Vec<String>> {
+fn appended(days: &[String], today: Date) -> Option<Vec<String>> {
     let key = day_key(today);
     if days.contains(&key) {
         return None;
@@ -70,7 +70,7 @@ pub(super) fn read(path: &Path) -> Vec<String> {
 }
 
 /// Notes `today` in the ledger at `path`, writing only when the day is new.
-pub(super) fn record(path: &Path, today: NaiveDate) {
+pub(super) fn record(path: &Path, today: Date) {
     let Some(next) = appended(&read(path), today) else {
         return;
     };
@@ -106,8 +106,8 @@ fn cleanup_tmp_file(path: &Path) {
 mod tests {
     use super::*;
 
-    fn day(year: i32, month: u32, date: u32) -> NaiveDate {
-        NaiveDate::from_ymd_opt(year, month, date).expect("a real calendar day")
+    fn day(year: i16, month: i8, date: i8) -> Date {
+        Date::new(year, month, date).expect("a real calendar day")
     }
 
     fn days(keys: &[&str]) -> Vec<String> {

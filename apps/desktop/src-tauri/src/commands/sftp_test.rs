@@ -72,7 +72,7 @@ async fn the_known_servers_trio_round_trips() {
         use_agent: true,
         auto_reconnect: false,
         pinned: true,
-        last_connected_at: chrono::Utc::now().to_rfc3339(),
+        last_connected_at: crate::timestamps::now_rfc3339(),
     })
     .await;
     assert_eq!(saved, SavedServerOutcome::Saved);

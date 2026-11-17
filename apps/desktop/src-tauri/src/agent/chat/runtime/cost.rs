@@ -3,7 +3,8 @@
 //! Crash case (d): metered per completed `End`, so completed turns count once and are never
 //! lost.
 
-use chrono::{FixedOffset, TimeZone, Utc};
+use jiff::Timestamp;
+use jiff::tz::Offset;
 
 use super::LOG_TARGET;
 use super::types::TurnParams;
@@ -55,20 +56,17 @@ pub(super) fn meter_cost(conn: &rusqlite::Connection, params: &TurnParams<'_>, u
 /// ⚠️ **The one place a day is computed.** The wake loop's daily ceiling reads the meter back by
 /// this key, and a second implementation of "which day is it" would let the two disagree across
 /// a midnight or a timezone move.
-pub(crate) fn day_for(now_secs: i64, offset: FixedOffset) -> String {
-    let utc = Utc
-        .timestamp_opt(now_secs, 0)
-        .single()
-        .unwrap_or(chrono::DateTime::<Utc>::UNIX_EPOCH);
-    utc.with_timezone(&offset).format("%Y-%m-%d").to_string()
+pub(crate) fn day_for(now_secs: i64, offset: Offset) -> String {
+    let at = Timestamp::from_second(now_secs).unwrap_or(Timestamp::UNIX_EPOCH);
+    offset.to_datetime(at).strftime("%Y-%m-%d").to_string()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn offset_of(seconds: i32) -> FixedOffset {
-        FixedOffset::east_opt(seconds).expect("valid offset")
+    fn offset_of(seconds: i32) -> Offset {
+        Offset::from_seconds(seconds).expect("valid offset")
     }
 
     /// The day key the cost meter and the wake ceiling share, pinned as literals: the local day

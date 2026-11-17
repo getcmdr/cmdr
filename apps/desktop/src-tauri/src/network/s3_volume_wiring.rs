@@ -127,7 +127,7 @@ pub async fn connect_and_register_since(
         // A first connect pins the new place; `remember` keeps the stored pin
         // for a place already saved.
         pinned: true,
-        last_connected_at: chrono::Utc::now().to_rfc3339(),
+        last_connected_at: crate::timestamps::now_rfc3339(),
         ..place
     };
     let Ok(params) = place.params() else {

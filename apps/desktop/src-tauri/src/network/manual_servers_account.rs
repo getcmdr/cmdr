@@ -42,7 +42,7 @@ pub(super) fn set_account_at_path(
             display_name: String::new(),
             address: server.host().to_string(),
             port: server.port(),
-            added_at: chrono::Utc::now().to_rfc3339(),
+            added_at: crate::timestamps::now_rfc3339(),
             username: typed_account(username),
             awaiting_first_connect: false,
         };

@@ -239,7 +239,7 @@ pub fn update_known_share(
         server_name,
         share_name,
         protocol: "smb".to_string(),
-        last_connected_at: chrono::Utc::now().to_rfc3339(),
+        last_connected_at: crate::timestamps::now_rfc3339(),
         last_connection_mode,
         last_known_auth_options,
         username,
