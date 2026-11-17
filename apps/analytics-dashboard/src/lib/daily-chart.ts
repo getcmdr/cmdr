@@ -44,6 +44,25 @@ export function foldedColumn(
     .filter((seg) => seg.value > 0)
 }
 
+/**
+ * A column chart's context line: one value per day, drawn dotted over the columns and named in the legend
+ * and the tooltip. A `null` day breaks the line; it never drops to zero.
+ */
+export interface ColumnOverlay {
+  label: string
+  color: string
+  values: (number | null)[]
+}
+
+/**
+ * The top of a column chart's axis: the tallest known stack total, or the overlay where it runs higher, so a
+ * context line above the columns never draws off the top. Pure.
+ */
+export function columnAxisMax(stackTotals: (number | null)[][], overlay: (number | null)[] = []): number {
+  const known = [...stackTotals.flat(), ...overlay].filter((v): v is number => v !== null)
+  return Math.max(0, ...known)
+}
+
 /** A legend entry, for charts whose layers are too many to list one by one. */
 export interface LegendItem {
   label: string
@@ -77,7 +96,7 @@ export interface TooltipRow {
   label: string
   value: string
   color?: string
-  mark?: 'box' | 'line' | 'dot'
+  mark?: 'box' | 'line' | 'dotted' | 'dot'
   /** A striped box, matching a hatched segment. */
   hatch?: boolean
   /** A group heading inside the tooltip: drawn smaller and muted, value optional. */

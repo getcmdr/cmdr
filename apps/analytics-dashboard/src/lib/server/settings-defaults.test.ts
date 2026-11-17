@@ -163,6 +163,53 @@ describe('resolveAdoption', () => {
   })
 })
 
+describe('resolveAdoption kind', () => {
+  it('stamps a state key as state and everything else as a preference', () => {
+    const result = resolveAdoption(installs({ '0.40.0': 3 }), [], versions, ['askCmdr.proactive'])
+    expect(adoptionFor('askCmdr.proactive', result).kind).toBe('state')
+    expect(adoptionFor('theme.mode', result).kind).toBe('preference')
+  })
+
+  it('keeps a retired state key as state for the old installs that still carry it', () => {
+    const withRetired: Record<string, Record<string, SettingValue>> = {
+      '0.39.0': { 'theme.mode': 'system', 'intro.seen': false },
+      '0.40.0': { 'theme.mode': 'system' },
+    }
+    const result = resolveAdoption(installs({ '0.39.0': 2, '0.40.0': 3 }), [], withRetired, ['intro.seen'])
+    expect(adoptionFor('intro.seen', result)).toMatchObject({ kind: 'state', eligible: 2 })
+  })
+
+  it("reads the real manifest's stateKeys by default", () => {
+    const result = resolveAdoption(installs({ '0.61.0': 1 }), [])
+    expect(adoptionFor('onboarding.completed', result).kind).toBe('state')
+    expect(adoptionFor('fileExplorer.suppressQuickLookHint', result).kind).toBe('preference')
+  })
+})
+
+describe('resolveAdoption latest default', () => {
+  it('names the newest default in the window and the version it moved in', () => {
+    const setting = adoptionFor(
+      'indexing.enabled',
+      resolveAdoption(installs({ '0.39.0': 6, '0.40.0': 4 }), [], versions),
+    )
+    expect(setting.defaultLabel).toBeNull()
+    expect(setting.latestDefaultLabel).toBe('off')
+    expect(setting.defaultMovedIn).toBe('0.40.0')
+  })
+
+  it('reads the default of the newest version in the window', () => {
+    const setting = adoptionFor('indexing.enabled', resolveAdoption(installs({ '0.39.0': 6 }), [], versions))
+    expect(setting.latestDefaultLabel).toBe('on')
+    expect(setting.defaultMovedIn).toBeNull()
+  })
+
+  it('has no move for a default that never changed since the setting arrived', () => {
+    const setting = adoptionFor('askCmdr.proactive', resolveAdoption(installs({ '0.40.0': 6 }), [], versions))
+    expect(setting.latestDefaultLabel).toBe('on')
+    expect(setting.defaultMovedIn).toBeNull()
+  })
+})
+
 describe('labelValue', () => {
   it('reads booleans as on and off', () => {
     expect(labelValue(true)).toBe('on')

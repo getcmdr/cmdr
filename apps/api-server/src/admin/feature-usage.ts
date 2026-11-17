@@ -1,12 +1,15 @@
 import { Hono } from 'hono'
 import { verifyAdminAuth } from '../admin-auth'
 import type { Bindings } from '../types'
+import { shiftDate } from './funnel'
+import { parseEndDate } from './funnel-countries'
 
 /**
- * `/admin/feature-usage?range=7d|30d|90d`: per feature (the ids in the repo-root `feature-status.json`),
- * how many installs used it in the window and how many events it produced, against the window's
- * active installs. The per-release feature-status review reads it through the dashboard's report.
- * `DETAILS.md` § Feature usage.
+ * `/admin/feature-usage?range=7d|30d|90d[&end=YYYY-MM-DD]`: per feature (the ids in the repo-root
+ * `feature-status.json`), how many installs used it in the window and how many events it produced,
+ * against the window's active installs. Without `end` the window rolls back from now; with it, it's
+ * the complete UTC days ending `end`. The per-release feature-status review reads it through the
+ * dashboard's report. `DETAILS.md` § Feature usage.
  */
 
 const featureUsage = new Hono<{ Bindings: Bindings }>()
@@ -162,6 +165,7 @@ function splitSql(split: string | undefined): string {
  * One row per (feature, part, install) in the window, with that install's event count; the totals and
  * breakdowns fold in `assembleFeatureUsage`. `?1` is the window start as an RFC 3339 UTC string, the
  * shape `occurred_at` is stored in, so the window is a range on `idx_analytics_event_event_occurred`.
+ * `bounded` adds the exclusive end, `?2`, in the same shape.
  *
  * The mapping is compiled into `CASE` arms, interpolated (every token passes `assertSafeToken`) rather
  * than bound: D1 caps a statement at 100 bound parameters. A row takes the FIRST arm it matches, so
@@ -174,45 +178,54 @@ function splitSql(split: string | undefined): string {
  * the biggest event, once per volume kind, or scanned the whole map once per event. This shape reads
  * each event in the window once. `DETAILS.md` § Feature usage.
  */
-export function featureUsageSql(definitions: readonly FeatureUsageDefinition[]): string {
+export function featureUsageSql(definitions: readonly FeatureUsageDefinition[], bounded = false): string {
   const arms = definitions.flatMap((def) => def.matches.map((match) => ({ def, match })))
   const featureCase = arms.map(({ def, match }) => `WHEN ${matchSql(match)} THEN ${quoted(def.id)}`)
   const partCase = arms.map(({ def, match }) => `WHEN ${matchSql(match)} THEN ${splitSql(def.split)}`)
   const events = mappedEvents(definitions).map(quoted).join(', ')
+  const end = bounded ? ' AND e.occurred_at < ?2' : ''
   return `SELECT feature, part, anal_id AS installId, COUNT(*) AS events
   FROM (
     SELECT e.anal_id AS anal_id,
            CASE ${featureCase.join('\n                ')} END AS feature,
            CASE ${partCase.join('\n                ')} END AS part
       FROM analytics_event e
-     WHERE e.event IN (${events}) AND e.occurred_at >= ?1
+     WHERE e.event IN (${events}) AND e.occurred_at >= ?1${end}
   )
  WHERE feature IS NOT NULL
  GROUP BY feature, part, anal_id`
 }
 
 /**
- * Which of the mapped events have EVER been stored, one indexed probe each (`EXISTS` stops at the
- * first row, so this reads about one row per event however big the table is). It's what lets the
- * dashboard print "no data yet" for an event no release has shipped instead of a 0% that reads as
- * "nobody uses it".
+ * Which of the mapped events have EVER been stored, and the earliest `occurred_at` of each: one indexed
+ * lookup per event (`MIN` over `idx_analytics_event_event_occurred` with the event pinned reads the
+ * index's first entry for it, so this reads about one row per event however big the table is). It's
+ * what lets the dashboard print "no data yet" for an event no release has shipped instead of a 0% that
+ * reads as "nobody uses it", and `–` for a change against a previous window from before the event existed.
  *
  * The names come in as a `json_each` list because D1 refuses a `UNION ALL` of one probe per event ("too
  * many terms in compound SELECT", production, 2026-11-11), which plain SQLite runs fine.
  */
 export function seenEventsSql(definitions: readonly FeatureUsageDefinition[]): string {
   const names = mappedEvents(definitions).map((event) => `"${assertSafeToken(event)}"`)
-  return `SELECT ev.value AS event
-  FROM json_each('[${names.join(',')}]') ev
- WHERE EXISTS (SELECT 1 FROM analytics_event WHERE event = ev.value)`
+  return `SELECT event, firstSeenAt
+  FROM (
+    SELECT ev.value AS event, (SELECT MIN(occurred_at) FROM analytics_event WHERE event = ev.value) AS firstSeenAt
+      FROM json_each('[${names.join(',')}]') ev
+  )
+ WHERE firstSeenAt IS NOT NULL`
 }
 
 /**
- * The denominator: installs that beat at least once in the window. Same population as
- * `/admin/heartbeat-dau` (a suppressed or tooling install never beats, and the synthetic sweep removes
- * the rest), so a feature's share reads against the Active use numbers.
+ * The denominator: installs that beat at least once in the window (`?1` on, before `?2` when
+ * `bounded`, both SQLite's `YYYY-MM-DD HH:MM:SS`). Same population as `/admin/heartbeat-dau` (a
+ * suppressed or tooling install never beats, and the synthetic sweep removes the rest), so a feature's
+ * share reads against the Active use numbers.
  */
-export const activeInstallsSql = `SELECT COUNT(DISTINCT anal_id) AS installs FROM heartbeat WHERE created_at >= ?1`
+export function activeInstallsSql(bounded = false): string {
+  const end = bounded ? ' AND created_at < ?2' : ''
+  return `SELECT COUNT(DISTINCT anal_id) AS installs FROM heartbeat WHERE created_at >= ?1${end}`
+}
 
 export interface FeatureUsagePart {
   /** The event name for an `'event'` split, else the property's value (`(none)` when absent). */
@@ -231,6 +244,13 @@ export interface FeatureUsage {
   events: number
   /** Whether any of the feature's events has ever been stored. `false` means "no data yet", not zero. */
   everSeen: boolean
+  /**
+   * On a bounded (`?end=`) window only: the earliest stored `occurred_at` among the feature's events,
+   * RFC 3339, or null when none was ever stored. A lower bound for a prop-filtered match
+   * (`pane_navigated` predates `volume_kind=archive`). A previous window starting before it reads a
+   * zero that only means "not stored yet".
+   */
+  firstSeenAt?: string | null
   /** The `split` breakdown, biggest first; empty when the feature has no split. */
   parts: FeatureUsagePart[]
 }
@@ -239,6 +259,8 @@ export interface FeatureUsageResponse {
   range: string
   /** The window start, RFC 3339 UTC. */
   since: string
+  /** On a bounded (`?end=`) window only: the exclusive window end, RFC 3339 UTC (midnight after `end`). */
+  until?: string
   /** Installs that beat in the window: every share's denominator. */
   activeInstalls: number
   /** In mapping order. */
@@ -263,11 +285,20 @@ function tally(rows: UsageRow[]): { installs: number; events: number } {
   return { installs: new Set(rows.map((row) => row.installId)).size, events: rows.reduce((s, r) => s + r.events, 0) }
 }
 
-/** Folds the per-install rows into one entry per definition, zero-filled, in mapping order. */
+/** The earliest of some RFC 3339 UTC strings (they sort as text), or null for none. */
+function earliest(times: Array<string | undefined>): string | null {
+  return times.filter((t) => t !== undefined).sort()[0] ?? null
+}
+
+/**
+ * Folds the per-install rows into one entry per definition, zero-filled, in mapping order. `firstSeen`
+ * maps each stored event to its earliest `occurred_at`; `withFirstSeen` puts that on each feature.
+ */
 export function assembleFeatureUsage(
   definitions: readonly FeatureUsageDefinition[],
   rows: UsageRow[],
-  seenEvents: ReadonlySet<string>,
+  firstSeen: ReadonlyMap<string, string>,
+  withFirstSeen = false,
 ): FeatureUsage[] {
   return definitions.map((def) => {
     const own = rows.filter((row) => row.feature === def.id)
@@ -284,7 +315,8 @@ export function assembleFeatureUsage(
       name: def.name,
       sources: def.matches.map(describeMatch),
       ...tally(own),
-      everSeen: def.matches.some((m) => seenEvents.has(m.event)),
+      everSeen: def.matches.some((m) => firstSeen.has(m.event)),
+      ...(withFirstSeen ? { firstSeenAt: earliest(def.matches.map((m) => firstSeen.get(m.event))) } : {}),
       parts,
     }
   })
@@ -292,24 +324,45 @@ export function assembleFeatureUsage(
 
 const rangeDays: Partial<Record<string, number>> = { '7d': 7, '30d': 30, '90d': 90 }
 
-/** Runs the three queries for a window starting at `since` (a `Date`). */
+/** A feature-usage window: from `since` on, and before `until` when bounded. */
+export interface FeatureUsageWindow {
+  since: Date
+  until?: Date
+}
+
+/** `heartbeat.created_at` is SQLite's `YYYY-MM-DD HH:MM:SS`, not RFC 3339. */
+function sqliteTime(time: Date): string {
+  return time.toISOString().slice(0, 19).replace('T', ' ')
+}
+
+/**
+ * Runs the three queries for a window. A bounded one (`until` set) also stamps each feature's
+ * `firstSeenAt`; an open-ended one answers exactly as before `?end=` existed.
+ */
 export async function queryFeatureUsage(
   db: D1Database,
-  since: Date,
+  window: FeatureUsageWindow,
   definitions: readonly FeatureUsageDefinition[] = featureUsageDefinitions,
 ): Promise<{ activeInstalls: number; features: FeatureUsage[] }> {
-  const sinceIso = since.toISOString()
-  // `heartbeat.created_at` is SQLite's `YYYY-MM-DD HH:MM:SS`, not RFC 3339.
-  const sinceSqlite = sinceIso.slice(0, 19).replace('T', ' ')
+  const { since, until } = window
+  const bounded = until !== undefined
+  const isoBounds = bounded ? [since.toISOString(), until.toISOString()] : [since.toISOString()]
+  const sqliteBounds = bounded ? [sqliteTime(since), sqliteTime(until)] : [sqliteTime(since)]
   const [usage, seen, active] = await Promise.all([
-    db.prepare(featureUsageSql(definitions)).bind(sinceIso).all<UsageRow>(),
-    db.prepare(seenEventsSql(definitions)).all<{ event: string }>(),
-    db.prepare(activeInstallsSql).bind(sinceSqlite).first<{ installs: number }>(),
+    db
+      .prepare(featureUsageSql(definitions, bounded))
+      .bind(...isoBounds)
+      .all<UsageRow>(),
+    db.prepare(seenEventsSql(definitions)).all<{ event: string; firstSeenAt: string }>(),
+    db
+      .prepare(activeInstallsSql(bounded))
+      .bind(...sqliteBounds)
+      .first<{ installs: number }>(),
   ])
-  const seenEvents = new Set(seen.results.map((row) => row.event))
+  const firstSeen = new Map(seen.results.map((row) => [row.event, row.firstSeenAt]))
   return {
     activeInstalls: active?.installs ?? 0,
-    features: assembleFeatureUsage(definitions, usage.results, seenEvents),
+    features: assembleFeatureUsage(definitions, usage.results, firstSeen, bounded),
   }
 }
 
@@ -321,9 +374,22 @@ featureUsage.get('/admin/feature-usage', async (c) => {
   const days = rangeDays[range]
   if (days === undefined) return c.json({ error: 'Invalid range. Use 7d, 30d, or 90d' }, 400)
 
-  const since = new Date(Date.now() - days * 86_400_000)
-  const result = await queryFeatureUsage(c.env.TELEMETRY_DB, since)
-  const body: FeatureUsageResponse = { range, since: since.toISOString(), ...result }
+  const now = new Date()
+  const end = parseEndDate(c.req.query('end'), now.toISOString().slice(0, 10))
+  if (end === null) return c.json({ error: 'Invalid end. Use a YYYY-MM-DD day no later than today (UTC)' }, 400)
+
+  if (end === undefined) {
+    const since = new Date(now.getTime() - days * 86_400_000)
+    const result = await queryFeatureUsage(c.env.TELEMETRY_DB, { since })
+    const body: FeatureUsageResponse = { range, since: since.toISOString(), ...result }
+    return c.json(body)
+  }
+
+  // The `days` complete UTC days ending `end` (inclusive): [end − days + 1, end + 1).
+  const since = new Date(`${shiftDate(end, -(days - 1))}T00:00:00.000Z`)
+  const until = new Date(`${shiftDate(end, 1)}T00:00:00.000Z`)
+  const result = await queryFeatureUsage(c.env.TELEMETRY_DB, { since, until })
+  const body: FeatureUsageResponse = { range, since: since.toISOString(), until: until.toISOString(), ...result }
   return c.json(body)
 })
 

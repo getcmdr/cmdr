@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   bandSegments,
   breakdownRows,
+  columnAxisMax,
   columnPath,
   foldedColumn,
   lineRuns,
@@ -165,5 +166,25 @@ describe('breakdownRows', () => {
       { fraction: 0.25, color: '#222222' },
     ])
     expect(row.value).toBe('4 · 50% (3 direct, 1 Homebrew)')
+  })
+})
+
+describe('columnAxisMax', () => {
+  it('reaches the overlay when it runs above every stack', () => {
+    expect(columnAxisMax([[3, 5, null]], [4, 9, 2])).toBe(9)
+  })
+
+  it('reads the tallest stack when the overlay sits below it, and ignores unknown days', () => {
+    expect(columnAxisMax([[3, 12, null], [10]], [null, 4, null])).toBe(12)
+  })
+
+  it('is zero with nothing known', () => {
+    expect(columnAxisMax([[null]], [null])).toBe(0)
+  })
+})
+
+describe('an overlay line', () => {
+  it('breaks across an unknown day rather than dropping to zero', () => {
+    expect(lineRuns([5, null, 7, 8]).map((run) => run.map((p) => p.value))).toEqual([[5], [7, 8]])
   })
 })

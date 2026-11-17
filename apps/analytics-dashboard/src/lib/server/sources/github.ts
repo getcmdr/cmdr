@@ -125,7 +125,10 @@ export interface GitHubAsset {
 
 export interface GitHubRelease {
   tagName: string
+  /** When it was published, or created for a draft (which GitHub hasn't published). */
   publishedAt: string
+  draft: boolean
+  prerelease: boolean
   assets: GitHubAsset[]
   totalDownloads: number
 }
@@ -146,7 +149,11 @@ interface GitHubRawAsset {
 
 interface GitHubRawRelease {
   tag_name: string
-  published_at: string
+  /** Null on a draft. */
+  published_at: string | null
+  created_at?: string
+  draft?: boolean
+  prerelease?: boolean
   assets: GitHubRawAsset[]
 }
 
@@ -155,7 +162,9 @@ export function parseRelease(raw: GitHubRawRelease): GitHubRelease {
   const totalDownloads = assets.reduce((sum, a) => sum + a.downloadCount, 0)
   return {
     tagName: raw.tag_name,
-    publishedAt: raw.published_at,
+    publishedAt: raw.published_at ?? raw.created_at ?? '',
+    draft: raw.draft ?? false,
+    prerelease: raw.prerelease ?? false,
     assets,
     totalDownloads,
   }
@@ -167,13 +176,16 @@ export function parseGitHubReleases(raw: GitHubRawRelease[]): GitHubData {
   return { releases, totalDownloads }
 }
 
+/** Bumped whenever `GitHubData`'s shape changes, so an entry cached by an older build is never read. */
+const releasesCacheSource = 'github-v2'
+
 /**
  * Fetches GitHub release download counts. Not time-range-dependent
  * (GitHub doesn't provide per-period download stats; counts are cumulative).
  * Cached under '30d' range since data changes slowly.
  */
 export async function fetchGitHubData(env: GitHubEnv): Promise<SourceResult<GitHubData>> {
-  const cached = await cacheGet<GitHubData>('github', '30d')
+  const cached = await cacheGet<GitHubData>(releasesCacheSource, '30d')
   if (cached) return { ok: true, data: cached }
 
   try {
@@ -192,7 +204,7 @@ export async function fetchGitHubData(env: GitHubEnv): Promise<SourceResult<GitH
 
     const raw = (await response.json()) as GitHubRawRelease[]
     const data = parseGitHubReleases(raw)
-    await cacheSet('github', '30d', data)
+    await cacheSet(releasesCacheSource, '30d', data)
     return { ok: true, data }
   } catch (e) {
     return { ok: false, error: `GitHub: ${e instanceof Error ? e.message : String(e)}` }

@@ -40,6 +40,7 @@ export const updatesPrivacySettings: SettingDefinitionSource[] = [
   },
   {
     id: 'whatsNew.lastSeenVersion',
+    kind: 'state',
     section: ['Advanced'],
     labelKey: 'settings.whatsNew.lastSeenVersion.label',
     descriptionKey: 'settings.whatsNew.lastSeenVersion.description',
@@ -50,6 +51,7 @@ export const updatesPrivacySettings: SettingDefinitionSource[] = [
   },
   {
     id: 'updates.unwritableNoticeVersion',
+    kind: 'state',
     section: ['Advanced'],
     labelKey: 'settings.updates.unwritableNoticeVersion.label',
     descriptionKey: 'settings.updates.unwritableNoticeVersion.description',

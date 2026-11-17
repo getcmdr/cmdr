@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { fetchFeedbackAndErrorsData, setFeedbackAnswered } from './feedback-and-errors.js'
 import {
-  countFeedbackAwaitingReply,
+  isAwaitingReply,
   tallyErrorReportsByField,
   errorReportsByDay,
   type FeedbackRow,
@@ -66,17 +66,16 @@ const sampleErrors: ErrorReportRow[] = [
   },
 ]
 
-describe('countFeedbackAwaitingReply', () => {
+describe('isAwaitingReply', () => {
   it('counts only rows with a non-empty email', () => {
-    expect(countFeedbackAwaitingReply(sampleFeedback)).toBe(1)
-    expect(countFeedbackAwaitingReply([{ ...sampleFeedback[0], email: '' }])).toBe(0)
-    expect(countFeedbackAwaitingReply([])).toBe(0)
+    expect(sampleFeedback.filter(isAwaitingReply)).toHaveLength(1)
+    expect(isAwaitingReply({ ...sampleFeedback[0], email: '' })).toBe(false)
   })
 
   it('leaves out messages marked answered', () => {
     const answered = { ...sampleFeedback[0], id: 3, answeredAt: '2026-10-14 21:12:00' }
-    expect(countFeedbackAwaitingReply([...sampleFeedback, answered])).toBe(1)
-    expect(countFeedbackAwaitingReply([answered])).toBe(0)
+    expect([...sampleFeedback, answered].filter(isAwaitingReply)).toHaveLength(1)
+    expect(isAwaitingReply(answered)).toBe(false)
   })
 })
 
@@ -115,60 +114,72 @@ describe('errorReportsByDay', () => {
 })
 
 describe('fetchFeedbackAndErrorsData', () => {
+  /** A clock just after the samples, so a 7-day window holds them all. */
+  const now = new Date('2026-06-11T12:00:00Z')
+
+  function stubWorker(feedback: FeedbackRow[], errors: ErrorReportRow[]) {
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/admin/feedback')) return Promise.resolve({ ok: true, json: () => Promise.resolve(feedback) })
+      if (url.includes('/admin/error-reports'))
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(errors) })
+      return Promise.resolve({ ok: false, status: 404, text: () => Promise.resolve('Not found') })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    return fetchMock
+  }
+
   beforeEach(() => {
     vi.restoreAllMocks()
     clearMemoryCache()
   })
 
   it('returns both streams on success', async () => {
-    const fetchMock = vi.fn()
-    fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/admin/feedback')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(sampleFeedback) })
-      }
-      if (url.includes('/admin/error-reports')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(sampleErrors) })
-      }
-      return Promise.resolve({ ok: false, status: 404, text: () => Promise.resolve('Not found') })
-    })
-    vi.stubGlobal('fetch', fetchMock)
+    const fetchMock = stubWorker(sampleFeedback, sampleErrors)
 
-    const result = await fetchFeedbackAndErrorsData(mockEnv, { range: '7d', end: null })
+    const result = await fetchFeedbackAndErrorsData(mockEnv, { range: '7d', end: null }, now)
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.data.feedback).toEqual(sampleFeedback)
     expect(result.data.errorReports).toEqual(sampleErrors)
+    expect(result.data.allErrorReports).toEqual(sampleErrors)
     expect(fetchMock.mock.calls[0][1]?.headers).toEqual({ Authorization: 'Bearer test-admin-token' })
+  })
+
+  it('fetches everything once and windows the lists to the range, as the Worker did', async () => {
+    const fetchMock = stubWorker(sampleFeedback, sampleErrors)
+    const later = new Date('2026-06-17T08:30:00Z') // 7 days back is 2026-06-10 08:30
+
+    const result = await fetchFeedbackAndErrorsData(mockEnv, { range: '7d', end: null }, later)
+    if (!result.ok) throw new Error(result.error)
+    expect(result.data.feedback.map((f) => f.id)).toEqual([2])
+    expect(result.data.errorReports.map((e) => e.id)).toEqual(['ERR-AAAAA', 'ERR-BBBBB'])
+    expect(result.data.allErrorReports).toHaveLength(3)
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]))
+    expect(urls.sort()).toEqual([
+      'https://api.getcmdr.com/admin/error-reports?range=all',
+      'https://api.getcmdr.com/admin/feedback?range=all',
+    ])
+  })
+
+  it('counts every message awaiting a reply, however old, so the picker never hides one', async () => {
+    stubWorker(sampleFeedback, [])
+    const muchLater = new Date('2026-09-01T00:00:00Z')
+
+    const result = await fetchFeedbackAndErrorsData(mockEnv, { range: '7d', end: null }, muchLater)
+    if (!result.ok) throw new Error(result.error)
+    expect(result.data.feedback).toEqual([])
+    expect(result.data.awaitingReply.map((f) => f.id)).toEqual([2])
   })
 
   it('re-reads feedback on every load but serves error reports from the cache', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) })
     vi.stubGlobal('fetch', fetchMock)
 
-    await fetchFeedbackAndErrorsData(mockEnv, { range: '7d', end: null })
-    await fetchFeedbackAndErrorsData(mockEnv, { range: '7d', end: null })
+    await fetchFeedbackAndErrorsData(mockEnv, { range: '7d', end: null }, now)
+    await fetchFeedbackAndErrorsData(mockEnv, { range: '30d', end: null }, now)
     const urls = fetchMock.mock.calls.map((c) => String(c[0]))
     expect(urls.filter((u) => u.includes('/admin/feedback')).length).toBe(2)
     expect(urls.filter((u) => u.includes('/admin/error-reports')).length).toBe(1)
-  })
-
-  it('passes 90d through unchanged', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) })
-    vi.stubGlobal('fetch', fetchMock)
-
-    await fetchFeedbackAndErrorsData(mockEnv, { range: '90d', end: null })
-    const urls = fetchMock.mock.calls.map((c) => String(c[0]))
-    expect(urls.some((u) => u.includes('/admin/feedback?range=90d'))).toBe(true)
-    expect(urls.some((u) => u.includes('/admin/error-reports?range=90d'))).toBe(true)
-  })
-
-  it('passes 30d through unchanged', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) })
-    vi.stubGlobal('fetch', fetchMock)
-
-    await fetchFeedbackAndErrorsData(mockEnv, { range: '30d', end: null })
-    const urls = fetchMock.mock.calls.map((c) => String(c[0]))
-    expect(urls.every((u) => u.includes('range=30d'))).toBe(true)
   })
 
   it('returns an error when a worker endpoint fails', async () => {

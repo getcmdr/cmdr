@@ -132,7 +132,7 @@ without that, the check fails on every `@key.screenshot` still naming the delete
 install runs with, per released app version, for exactly the keys the heartbeat's config shape can carry. The dashboard
 joins it on `app_version` to tell "the user is on the default" apart from "the setting didn't exist in that build".
 
-Three things about it are load-bearing:
+Four things about it are load-bearing:
 
 - **The registry is PARSED, not imported.** `definitions/appearance.ts` pulls in `#lib/intl`, whose `messages.svelte.ts`
   is rune-compiled, so a bare `node` import can't evaluate the registry. Reading the definition objects off the
@@ -145,6 +145,13 @@ Three things about it are load-bearing:
   release that changed nothing leaves `versions` exactly as a skipped promotion would; the stamp is how
   `settings-defaults` tells them apart. Promote on a tree whose settings match the release: a later working tree records
   defaults that release never shipped. `--backfill` stamps the newest tag it could read.
+- **`stateKeys` comes from the registry's typed tag, never an id's spelling.** Settings marked `kind: 'state'`
+  (remembered UI or onboarding state: hint flags, nudge stamps, the onboarding answers) are listed, sorted, so the
+  dashboard can count them as a funnel and keep them out of settings adoption. Only the string literal `'state'` counts;
+  the parser ignores a computed value. Every write (plain run, `--promote`, `--backfill`) refreshes the list from the
+  working tree through `mergeStateKeys`: a key the registry still has follows the registry (untagging reclassifies it),
+  and a recorded key the registry no longer has stays, because installs on older builds keep sending a retired flag. The
+  list is version-independent: `kind` is a property of the key, not of a release.
 
 The two locale generators emit `#[rustfmt::skip]`, so they own their layout and need no Rust toolchain.
 

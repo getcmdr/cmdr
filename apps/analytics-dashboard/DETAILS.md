@@ -3,6 +3,12 @@
 Read this before any non-trivial work here: editing, planning, reorganizing, or advising. `CLAUDE.md` is the
 always-loaded summary; this is the depth.
 
+## Stack
+
+SvelteKit with `@sveltejs/adapter-cloudflare`, Tailwind v4 (CSS-first in `src/app.css`, dark mode only), uPlot for the
+`/` timeline charts (`Chart.svelte`, `MiniTimeline.svelte`), and plain SVG for `DailyChart.svelte`. All API keys stay
+server-side, behind `+server.ts` / `+page.server.ts`. `pnpm check dashboard` runs all nine checks (§ Tooling).
+
 ## Multi-page structure
 
 The dashboard is four routes under one shared layout. Each section is its own component; the route files just compose
@@ -22,9 +28,20 @@ sections and pass their loaded data down.
   - Interest (`components/sections/InterestSection.svelte`) and Download (`components/sections/DownloadSection.svelte`,
     with `CountryTable.svelte` and the per-day pie tooltip), side by side from `md`.
 - `/product` — Product (`routes/product/+page.svelte`):
-  - Active use (`ActiveUseSection.svelte`), Settings adoption (`SettingsAdoptionSection.svelte`), Payment
-    (`PaymentSection.svelte`), Retention (`RetentionSection.svelte`), Feature usage (`FeatureUsageSection.svelte`, full
-    width), Feedback & errors (`FeedbackErrorsSection.svelte`).
+  - One column of full-width sections, top to bottom: `NeedsYouStrip` (messages awaiting a reply, error reports since
+    the latest release, each linking to `#inbox`; renders nothing when both are zero), `ProductHeadline` (six
+    `StatTile`s on yesterday: WAU, MAU, stickiness, hours per active day, D7, paying share; math in
+    `#lib/product-stats.ts`), `UsageTrendsSection` (daily actives stacked new/returning with the update-check reach as
+    `DailyChart`'s dotted `overlay`, and hours per active install), `ReleaseRolloutSection` (yesterday's share on the
+    latest release, over a daily stack by version; `#lib/rollout.ts`, § Color coding), `RetentionCohortsSection` (the
+    D7/D28 cohort rows; `/` keeps only its per-country D7/D28), `MoneySection` (`#lib/money.ts`),
+    `OnboardingFunnelSection` (the state flags' reach over the installs whose build has each flag;
+    `#lib/onboarding-funnel.ts`), `FeatureUsageSection`, `SettingsAdoptionSection` (preferences only, 15 most-moved, the
+    rest behind "Show all"), and `FeedbackErrorsSection` (`id="inbox"`, errors per 100 installs by version). What the
+    numbers mean: § "Product page".
+  - No `SectionDescription`/`Methodology` blurbs on `/product`: the caveats live in (i) popovers.
+  - `TrendRow` glue both pages share (stats per window, daily and rolling rates, `viewRange`, `cell`):
+    `#lib/trend-row.ts`.
 - `/links` — Link codes (`routes/links/+page.{svelte,server.ts}`): CRUD for the `?r=` short codes. See § "Link codes
   CRUD" below. The layout hides the range picker here.
 - `/licenses` — Licenses (`routes/licenses/+page.{svelte,server.ts}`): one row per license we've issued. See § "The
@@ -53,18 +70,22 @@ layout can import them without crossing the boundary gotcha below.
 1. **Per-source loaders** (`fetchFunnelSource`, `fetchUmamiSource`, `fetchCloudflareSource`, …): each wraps one source
    with its env-var guard (`guardedFetch`) and the 20s `withTimeout` cap. One place per source.
 2. **Per-page composers**: `fetchAcquisitionData` runs funnel + Umami + Cloudflare + GitHub + GitHub-stars + PostHog in
-   parallel; `fetchProductData` runs Cloudflare + Paddle + license + feedback-and-errors + settings-adoption +
-   feature-usage. Each page's `+page.server.ts` re-resolves the selection from the URL and calls its composer, so a page
-   fetches only what it renders.
-3. **`fetchDashboardData`**: all eleven sources, used by the report endpoint (`api/report/+server.ts`) which dumps every
-   section at once. Unchanged contract.
+   parallel; `fetchProductData` runs active installs, Cloudflare (the reach line), the funnel (all countries, for
+   D7/D28), GitHub (the latest release), Paddle, license, feedback-and-errors, settings-adoption, and feature-usage
+   (both windows). Each page's `+page.server.ts` re-resolves the selection from the URL and calls its composer, so a
+   page fetches only what it renders.
+3. **`fetchDashboardData`**: all twelve sources, used by the report endpoint (`api/report/+server.ts`) which dumps every
+   section at once. It loads the Product sources exactly as `fetchProductData` does (same funnel length, both feature
+   windows), so the report and `/product` read the same numbers. `fetch-all.subset.test.ts` pins all three key sets.
 
 The funnel is the last 181 UTC days (180 complete plus today), or 400 when a stepped-back window and its rolling line
-reach further (`funnelDaysFor`), each length cached on its own (a non-top `?country=` adds that country's slices); it's
-still gated on the worker admin token, with Umami and Paddle degrading to dashes inside. It needs no env vars of its
-own, reusing the worker admin token, the Umami credentials, and the Paddle key already present (Listmonk signups arrive
-via the api-server, so no Listmonk secret reaches the dashboard). Each source returns `SourceResult<T>` (ok+data, or an
-error string the UI shows as "Couldn't load this data").
+reach further (`funnelDaysFor`), each length cached on its own (a non-top `?country=` adds that country's slices).
+`/product` and the report ask for 181 on 7d/30d and 400 on 90d (`productFunnelDays`: 90 + 90 final D28 cohorts need
+209), the two lengths `/` already caches, so they add no entry of their own. The funnel is still gated on the worker
+admin token, with Umami and Paddle degrading to dashes inside. It needs no env vars of its own, reusing the worker admin
+token, the Umami credentials, and the Paddle key already present (Listmonk signups arrive via the api-server, so no
+Listmonk secret reaches the dashboard). Each source returns `SourceResult<T>` (ok+data, or an error string the UI shows
+as "Couldn't load this data").
 
 `AcquisitionData` also carries `umamiSiteUrls`, which is **config, not a source**: the per-site Umami dashboard deep
 links, built from the `UMAMI_*_WEBSITE_ID` env vars so the IDs live in exactly one place instead of being hardcoded in a
@@ -80,10 +101,11 @@ answered leaves "Awaiting reply" on the very next load (see the "Awaiting reply"
 
 ### The Cloudflare source is shared by both pages
 
-`fetchCloudflareData` returns `downloads` (Download section, on `/`) AND `heartbeatDau` + `updateActivity` (Active use,
-on `/product`) in one fetch. Both pages call `fetchCloudflareSource`. That's intentional, not duplication: the source is
-cached per selection in `cache.ts`, so the two page loads share one cache entry rather than re-fetching. Don't split the
-worker endpoints apart to "load less" — it would fragment the cache key and the 401/timeout degradation, for no gain.
+`fetchCloudflareData` returns `downloads` (Download section, on `/`) AND `updateActivity` (the update-check reach, the
+dotted line over `/product`'s daily actives) in one fetch. Both pages call `fetchCloudflareSource`. That's intentional,
+not duplication: the source is cached per selection in `cache.ts`, so the two page loads share one cache entry rather
+than re-fetching. Don't split the worker endpoints apart to "load less" — it would fragment the cache key and the
+401/timeout degradation, for no gain.
 
 ## Link codes CRUD
 
@@ -180,8 +202,10 @@ it.
 - Section components take their `SourceResult<…>` props plus `selection` (so `ErrorState` can build the "Try again"
   link). They own their own local interaction state — e.g. `DownloadSection` owns the timeline zoom window and the
   per-day pie tooltip; `CountryTable` owns its hover tooltip and shares the parent's zoom window via props.
-- Shared presentational pieces: `MetricRow`, `MetricTable`, `SectionDescription` (the "what + how reliable" blurb),
-  `Methodology` (the "how this is measured" note), `ErrorState` / `EmptyState` / `BetaEmptyState`, `ExternalLinks`.
+- Shared presentational pieces: `MetricRow`, `MetricTable`, `StatTile` (a `/product` headline tile with its (i)),
+  `SectionDescription` (the "what + how reliable" blurb) and `Methodology` (the "how this is measured" note), both only
+  on `/`'s Awareness, Interest, and Download sections and the ledger pages, `ErrorState` / `EmptyState` /
+  `BetaEmptyState`, `ExternalLinks`.
 - Pure data shaping lives in `#lib/chart-helpers.ts` (stacking, `aggregateBy`, `buildTimeline`, semver compare, etc.),
   formatting in `#lib/format.ts`, and color tokens in `#lib/colors.ts`. These are client-safe modules.
 
@@ -191,8 +215,8 @@ SvelteKit forbids importing `#lib/server/*` as a runtime value into browser-bund
 files). Type-only imports (`import type { DashboardSelection, SourceResult } from '#lib/server/types.js'`) are fine. A
 runtime value import (e.g. a `const`) trips `vite-plugin-sveltekit-guard` at BUILD time — and `svelte-check` does NOT
 catch it. So always run `pnpm build`, not just `pnpm check`, after touching imports across that boundary. Client-shared
-runtime values live outside `#lib/server`: `#lib/funnel.ts`, `#lib/feedback-and-errors.ts`, `#lib/format.ts`,
-`#lib/colors.ts`, `#lib/chart-helpers.ts`.
+runtime values live in the `#lib/*.ts` modules outside `server/` (`#lib/funnel.ts`, `#lib/feedback-and-errors.ts`,
+`#lib/money.ts`, `#lib/format.ts`, and the rest under § Key files).
 
 ## Key files
 
@@ -200,13 +224,17 @@ runtime values live outside `#lib/server`: `#lib/funnel.ts`, `#lib/feedback-and-
 - `src/routes/+layout.svelte`: shared shell (header, page nav, range picker). `src/routes/+layout.server.ts`: resolves
   the shared `DashboardSelection` from `?range=` once for the layout.
 - `src/routes/+page.{svelte,server.ts}`: Acquisition page (funnel/Umami/Cloudflare/GitHub/PostHog subset).
-  `src/routes/product/+page.{svelte,server.ts}`: Product page (Cloudflare/Paddle/license/feedback subset).
-  `src/routes/links/+page.{svelte,server.ts}`: Link codes CRUD (`load` lists, `save`/`delete` form actions proxy).
-  `src/routes/licenses/+page.{svelte,server.ts}`: the license ledger (`load` lists, `saveNote` edits a note).
+  `src/routes/product/+page.{svelte,server.ts}`: Product page (active installs, Cloudflare reach, funnel, GitHub,
+  Paddle, license, feedback, settings adoption, feature usage). `src/routes/links/+page.{svelte,server.ts}`: Link codes
+  CRUD (`load` lists, `save`/`delete` form actions proxy). `src/routes/licenses/+page.{svelte,server.ts}`: the license
+  ledger (`load` lists, `saveNote` edits a note).
 - `src/routes/api/report/+server.ts`: the agent-readable plain-text report endpoint. It only fetches (via
-  `fetchDashboardData`) and responds; all the formatting is in `src/routes/api/report/format-report.ts`, which imports
-  no SvelteKit-only modules so a plain unit test can reach it. `format-report.test.ts` pins the whole output as golden
-  strings across four fixtures, so any wording, ordering, or spacing change to the report is a deliberate act.
+  `fetchDashboardData`) and responds. The formatting imports no SvelteKit-only modules, so a plain unit test reaches it:
+  `format-report.ts` (the funnel and acquisition stages, and `formatReport`), `product-report.ts` (the Product page's
+  story in its order, from the same pure helpers the page renders with, never its own math), and `report-writer.ts` (the
+  line collector both share). `format-report.test.ts` pins the whole output as golden strings across four fixtures
+  (`report-fixtures.ts`: everything loaded, everything down, everything empty, and a mixed one on an api-server without
+  `/admin/active-installs`), so any wording, ordering, or spacing change is a deliberate act.
 - `src/lib/server/fetch-all.ts`: per-source loaders, per-page composers (`fetchAcquisitionData`, `fetchProductData`),
   and the all-sources `fetchDashboardData`.
 - `src/lib/server/types.ts`: `TimeRange`, `DashboardSelection`, `SourceResult`, time window + selection helpers.
@@ -225,6 +253,10 @@ runtime values live outside `#lib/server`: `#lib/funnel.ts`, `#lib/feedback-and-
   pie slices): client-safe, each with its Vitest file. Same for the country section's `count-color-scale.ts`,
   `country-table.ts`, `country-geo.ts`, and `world-map-shapes.ts` (§ "The country map and table"), drawn by
   `WorldMap.svelte`.
+- The Product page's client-safe math, each with its Vitest file, all shared with the report (§ "Product page"):
+  `product-stats.ts` (the six tiles), `active-installs.ts` (the reach line, new vs returning), `rollout.ts` (latest
+  release, rollout headline, version stack, `compareVersions`), `version-colors.ts`, `money.ts`, `onboarding-funnel.ts`,
+  `settings-adoption.ts` (preferences only, top moved), `feature-usage.ts` (share and its change), `trend-row.ts`.
 - `DailyChart.svelte` (SVG day columns or rate dots + rolling line), `StatsGrid.svelte`, `TrendRow.svelte`, and
   `InfoPopover.svelte` (the (i): hover, focus, or tap; Escape closes).
 - `src/lib/link-codes.ts`: client-safe `?r=` helpers (validation mirroring the api-server, row flattening, example
@@ -232,7 +264,7 @@ runtime values live outside `#lib/server`: `#lib/funnel.ts`, `#lib/feedback-and-
 - `src/lib/licenses.ts`: client-safe license-ledger helpers (response types, badge labels, source filter, the
   `summarizeLicenses` roll-up, and `validateNote`), shared by the `/licenses` page and tests.
 - `StackedBarChart.svelte`: discrete per-day stacked bars (plain elements, not uPlot) with an exact-numbers hover/focus
-  tooltip; used for by-source new-installs and by-version update charts.
+  tooltip; used for the Download section's by-source new-installs chart. The rollout chart is a `DailyChart` stack.
 - `vite.config.ts` (the SvelteKit plugin and its adapter-cloudflare config), `vitest.config.ts`.
 - `src/env.ts`: every env var the dashboard reads, declared with `defineEnvVars` (§ Deployment and env vars).
 
@@ -246,19 +278,32 @@ Each source under `src/lib/server/sources/` exports a typed fetch returning `Sou
   about seven months Umami ignores `unit=day` and answers monthly buckets in the same shape, which read as a few huge
   days (210 days came back daily, 230 monthly; Umami v3, curl, 2026-11-10).
 - `cloudflare.ts` (Bearer via `LICENSE_SERVER_ADMIN_TOKEN`): downloads (by version/arch/country/source, raw +
-  same-day-deduped), true per-day DAU + app hours from the heartbeat, per-day update-check activity by version, from
-  worker endpoints (`/admin/downloads`, `/admin/heartbeat-dau`, `/admin/update-activity`).
-- `paddle.ts` (Bearer, cursor pagination): completed transactions, subscriptions by status.
-- `github.ts` (optional Bearer): release download counts per asset; star history (daily + cumulative) for cmdr and
-  mtp-rs.
+  same-day-deduped) and per-day update-check activity by version, from `/admin/downloads` and `/admin/update-activity`.
+- `active-installs.ts` (Bearer via `LICENSE_SERVER_ADMIN_TOKEN`): `/admin/active-installs?days=181`, the heartbeat
+  population per UTC day (`dau`, `newInstalls`, `appHours`, `wau`, `mau`, `byVersion`) plus per-version windows of 7,
+  30, and 90 complete days (the errors-per-100 denominator). The Worker owns the definitions
+  (`apps/api-server/src/admin/DETAILS.md` § "Active installs"). Cached an hour as `active-installs-v1`, since each fetch
+  reads about 208 days of heartbeat rows. A 404 (an api-server without the endpoint) is `data: null`, "Not available
+  yet", and is never cached, so it can't outlive the Worker deploy.
+- `paddle.ts` (Bearer): every completed transaction, all time, in one fetch cached once for every range (`paddle-v3`);
+  `#lib/money.ts` windows it, so revenue, purchases, and paid licenses read one list. It parses `origin` (first purchase
+  or not) and `details.payout_totals` (the payout currency). Pagination follows Paddle's `next`, a full URL, and refuses
+  one that points off `https://api.paddle.com/`, since the request carries the API key. Paddle's filter operators are
+  uppercase (`created_at[GTE]`); a lowercase one is silently ignored and returns everything (Paddle docs, 2026-11-17).
+  The funnel's purchases column (`fetchPaddlePurchasesByDay`) counts first purchases only, through the same
+  `isFirstPurchase`.
+- `github.ts` (optional Bearer): release download counts per asset, with `draft` and `prerelease` so the rollout skips
+  both; star history (daily + cumulative) for cmdr and mtp-rs.
 - `posthog.ts` (Bearer personal API key): pageview trends via the HogQL query API (EU endpoint).
 - `license.ts` (Bearer admin token): activation count + active devices from `/admin/stats`.
 - `licenses.ts` (Bearer admin token): the whole license ledger plus the orphan and missing codes, from
   `/admin/licenses`, for the `/licenses` page, and `updateLicenseNote` over `PUT /admin/licenses/:transactionId/note`.
   Uncached and not part of any page composer: the page's `load` calls it directly. See § "The licenses list".
 - `feedback-and-errors.ts` (Bearer via `LICENSE_SERVER_ADMIN_TOKEN`): in-app feedback + error-report bundle metadata
-  from `/admin/feedback` and `/admin/error-reports`. Pure helpers + row types in client-safe
-  `#lib/feedback-and-errors.ts`.
+  from `/admin/feedback?range=all` and `/admin/error-reports?range=all`, each fetched once and windowed to the range in
+  TypeScript. So "Awaiting reply" (`awaitingReply`, however old) and the list come from one response, and "error reports
+  since vX" counts from the release's publish time whatever the picker says (`allErrorReports`). Pure helpers + row
+  types in client-safe `#lib/feedback-and-errors.ts`.
 - `funnel.ts` (Bearer + Umami + Paddle): the per-UTC-day funnel behind the trend charts, the breakdown pies, and the
   report's daily funnel (181 days, or 400 for a deep stepped-back window), joining `/admin/funnel` with Umami per-day
   visitors, pageviews, and clicks, and Paddle purchases, plus per-country slices for the top 20 (§ "Acquisition
@@ -275,29 +320,27 @@ Each source under `src/lib/server/sources/` exports a typed fetch returning `Sou
 - `settings-adoption.ts` (Bearer via `LICENSE_SERVER_ADMIN_TOKEN`): per-setting adoption from `/admin/config-shape`,
   resolved against the per-version defaults manifest before it leaves the server (§ Settings adoption).
 - `feature-usage.ts` (Bearer via `LICENSE_SERVER_ADMIN_TOKEN`): per-feature installs and events from
-  `/admin/feature-usage`, passed through as-is (§ Feature usage). Types and views in client-safe
+  `/admin/feature-usage`, two bounded windows per load (§ Feature usage). Types and views in client-safe
   `#lib/feature-usage.ts`.
 - `worker-endpoint.ts` (shared helper): `fetchWorkerEndpoint(token, path)`, used by the worker-backed sources.
 
-## Active installs as a range
+## Active installs: real numbers, reach as context
 
 The opt-out rate is deliberately unmeasurable: an install that opts out of analytics sends nothing at all, not even an
-"I opted out" bit, and that rule stays. So heartbeat DAU undercounts by an unknown amount, and printing it as one number
-claims a precision we don't have. Two independent signals bracket it instead (`#lib/active-installs.ts`, from data
-`cloudflare.ts` already fetches, so no new endpoint):
+"I opted out" bit, and that rule stays. So the heartbeat's daily actives undercount by an unknown amount.
 
-- **Low end**: distinct install ids on that day's heartbeats (`/admin/heartbeat-dau`). Every one definitely ran the app.
-- **High end**: distinct update-checking addresses that day (`/admin/update-activity`, summed across versions). Update
-  checks ride a SEPARATE consent, so installs with analytics off appear here.
-
-**The high end is a reach, not a mathematical upper bound, and the UI says so.** Addresses aren't installs: a shared
-connection counts a household or office once, a changing home address counts one install more than once across days, and
-an install with `updates.autoCheck` off never appears at all.
-
-- **The high end can land BELOW the low end** (NAT, or an update check that didn't fire). `formatBound` then reports
-  `N+` rather than an inverted range. ❌ It never means the fleet shrank below what the heartbeat already proved.
-- **A day the update endpoint doesn't cover gets a null reach, never a zero.** The two endpoints answer different ranges
-  (the downloads one trims an `all` answer for 90d), and a zero would read as "nobody checked".
+- **Decision/Why (David's call 2026-11-17): print the heartbeat's real numbers, and show the update-check reach only as
+  context**: a faint dotted line over the daily-actives chart (`reachByDay`, `#lib/active-installs.ts`) and a "checked
+  for updates" figure beside each day in the report. The page used to print a `floor–reach` range as THE number; a range
+  whose high end is addresses, not installs, read as more precise than it is, and every tile and rate needs one
+  population to divide by.
+- **The reach**: distinct update-checking addresses that day (`/admin/update-activity`, summed across versions). Update
+  checks ride a SEPARATE consent, so installs with analytics off appear there. It's not an upper bound, and the (i) says
+  so: a shared connection counts a household or office once, a changing home address counts one install more than once
+  across days, and an install with `updates.autoCheck` off never appears. It can land below the daily actives (NAT, or a
+  check that didn't fire); ❌ that never means the fleet shrank.
+- **A day the update endpoint doesn't cover gets a null reach, never a zero**: the line breaks there. The two endpoints
+  answer different ranges (the update one trims an `all` answer for 90d), and a zero would read as "nobody checked".
 
 ## Settings adoption
 
@@ -323,6 +366,16 @@ resolved here instead, joined on the `app_version` every heartbeat already carri
 - **A value someone set back to the default counts as being on the default.** Persistence is structural, not a value
   compare, so a deliberate choice equal to the default is persisted explicitly; what adoption asks about is what the app
   runs with.
+- **Preference or state comes from the registry's typed tag, ❌ never from the id.** A desktop setting tagged
+  `kind: 'state'` is remembered UI or onboarding state (a hint seen, a toast collapsed), not something a person chose.
+  The generator writes the manifest's top-level, sorted `stateKeys` from those tags, keeping a retired state key that
+  left the registry (old installs still send it); a key in the registry always follows the registry
+  (`apps/desktop/src/lib/settings/DETAILS.md`). `resolveAdoption` stamps `kind: 'preference' | 'state'` on each
+  `SettingAdoption` server-side, so `stateKeys` never reaches the browser. The settings table shows preferences only
+  (`preferencesOnly`), the 15 most-moved first (`topMoved`), the rest behind "Show all"; the state flags feed the
+  Onboarding section and the Money card's upgrade nudge.
+- **A default that moved inside the window** (`defaultLabel: null`) shows the newest build's default
+  (`latestDefaultLabel`) and "moved in vX" (`defaultMovedIn`, the manifest version where it last moved).
 
 ## Feature usage
 
@@ -337,6 +390,50 @@ event count, and a breakdown.
   anything about adoption. A shipped event nobody fired is a real 0%.
 - Rows sort most-used first, never-seen last (`sortFeatureUsage`); the report then lists what each row counts
   (`sources`), and the table shows the same on hover.
+- **Two windows of complete days** (`fetchFeatureUsagePeriods`): the range ending yesterday (`?end=yesterday`) and the
+  same length before it, for the share's change in percentage points (`shareChange`). Both cache as `feature-usage-v2`
+  only when the answer carries `until`, the proof the Worker honored `end`.
+- **The change is a dash when the comparison isn't honest**: no previous window, or the feature's `firstSeenAt` falls
+  after the previous window began (its zero there means "not stored yet", not "nobody used it"). `firstSeenAt` is a
+  lower bound for a prop-filtered match, which is acceptable.
+- **An older Worker ignores `end`**: no `until`, so `previous` is null and `current` is its rolling window, today
+  included. The window line then says exactly that, ❌ never "ending yesterday".
+
+## Product page
+
+`/product` answers "do people use Cmdr, and does it get better?" in one column (render order: § "Routes and sections").
+The same rules as § "Acquisition trends" hold everywhere on it, and the report's Product half (`product-report.ts`)
+calls the same helpers, so the two can't disagree.
+
+- **Complete days only.** Today (UTC) is partial: faded on every chart, in no tile, stat, or headline. Every stat takes
+  an exclusive `end` day; every rate is a ratio of sums.
+- **The tiles read yesterday** (`#lib/product-stats.ts`), each against the picker's N (7/30/90):
+  - WAU / MAU: distinct installs with a beat in the 7 / 28 days ending that day (28 is four whole weeks, so the weekday
+    mix never shifts it), against the value N days earlier.
+  - Stickiness (Σ DAU ÷ Σ MAU), hours per active day (Σ app hours ÷ Σ DAU), and D7: the last N complete days (or final
+    cohorts) against the N before. A window the data doesn't fully cover is a dash.
+  - Paying share: paid licenses (first purchases through yesterday) ÷ MAU, against N days earlier, in points. A trend
+    signal, not a conversion rate: refunded purchases still count, one license can cover several Macs, and a licensed
+    install with analytics off is paid but not in MAU.
+- **Null is unknown.** An api-server without `/admin/active-installs` (the dashboard and the Worker deploy in parallel)
+  reads "Not available yet", never zeros.
+- **Release rollout** (`#lib/rollout.ts`): "X% of active installs ran vLatest yesterday, N days after its release", from
+  heartbeat `byVersion` ÷ DAU. Latest = the newest GitHub release that's neither a draft nor a prerelease, its tag's `v`
+  stripped; without one, the newest version any install ran. Published today: "came out today; its first full day is
+  tomorrow" (no share, never "−1 days"); published yesterday: "its release day". The chart stacks every version in view
+  (oldest at the bottom), § Color coding.
+- **Money** (`#lib/money.ts`): revenue over the N complete days per currency, ❌ never summed across currencies (payout
+  currency when Paddle reports one), gross of refunds, its change a dash when the previous window took nothing in that
+  currency. First purchase = Paddle `origin` `web` or `api`, an allowlist: renewals, card updates (often zero-value),
+  plan changes, and one-off charges aren't new paying users. The purchases list still shows today's, marked "today".
+- **Onboarding** (`#lib/onboarding-funnel.ts`): an explicit ordered list of state flags (a test pins each to a
+  `stateKeys` entry): the one step (finished onboarding), then discovered hints, the one that means a snag, and the ones
+  closed by hand. A flag's share is over the installs whose build has it, ❌ never counting an older build as a no;
+  under five eligible a row prints "n of m" and no share. A capability-gated hint's share also counts installs that
+  could never see it (the * and the (i) say so). The row labels are drafts awaiting David's review.
+- **Inbox**: errors per 100 installs by version over the range's complete days (reports ÷ `windows[N].byVersion[v]`, an
+  install that upgraded counts under both versions; under five installs, no rate). "N new error reports since vX" counts
+  from the release's publish time, whatever the range.
 
 ## Local QA against a local worker
 
@@ -413,6 +510,12 @@ association from one section to the next:
 - Countries: eight fixed colors in `#lib/country-colors.ts` (`countryColor(code)`), assigned once to the 90-day top
   eight and never reshuffled by rank; every other country, and "Other", is the grey. The file's header carries the
   validator run and the near-pair caveat. Add a color deliberately when an uncolored country climbs into the top 20.
+- Versions: a 32-slot validated table in `#lib/version-colors.ts` (`versionColor(version)`): 16 slots for releases
+  (keyed on the minor, so any 16 consecutive minors differ) and 16 for patches, a pure function of the version string,
+  so a version keeps its color load after load and versions leaving the view never recolor the rest. Gold, Homebrew
+  blue, the unknown grey, and gold-reading ochres and olives are never a version. The rollout chart
+  (`ReleaseRolloutSection`) draws every version in view as its own layer (no "Older" bucket, no folding), legend and
+  tooltip newest first. The file's header carries the validator run and the slot rule that keeps stack neighbors apart.
 - Breakdown and referrer pies: four hues of their own plus two greys, in `#lib/pie-slices.ts` (§ "Acquisition trends").
   Each referrer card's dot beside the site name wears that site's color.
 - Status bands (`COLOR_BAND`): the app's success / warning / danger tokens, only as faint backgrounds behind rate
@@ -421,10 +524,12 @@ association from one section to the next:
 ## Acquisition trends
 
 The top of `/` answers "is each funnel step getting better?" with one row per metric: visitors, visitor → click,
-download clicks, click → install, new installs, D7 retention, D28 retention, and the bot meter (server downloads ÷ new
-installs; a spike means a scraper changed). The charts show the window in view (the picker's 7/30/90 days plus today, or
-a stepped-back one, § "Selection state"), sliced by date out of the funnel's rows; the stats grids stay on fixed 90/30/7
-columns ending today.
+download clicks, click → install, new installs, and the bot meter (server downloads ÷ new installs; a spike means a
+scraper changed). The D7 and D28 cohort rows use the same rows and rules but live on `/product`
+(`RetentionCohortsSection`), David's call 2026-11-17: retention is a product question; the `/` country table keeps its
+pooled D7/D28 columns. The charts show the window in view (the picker's 7/30/90 days plus today, or a stepped-back one,
+§ "Selection state"), sliced by date out of the funnel's rows; the stats grids stay on fixed 90/30/7 columns ending
+today.
 
 - **Today is a partial UTC day**: drawn faded, given no rolling point, and excluded from every stat, which all take an
   exclusive `end` day.
@@ -435,6 +540,10 @@ columns ending today.
 - **The stats grid is one shape everywhere** (`StatsGrid`): 90/30/7 complete days × average, median, weekday and weekend
   averages, and change vs. the previous same-length window. A window the data doesn't fully cover is a dash: that's why
   we fetch 181 days, and why the 90d change is a dash against a worker capped at 90.
+- **A change's color follows what it prints.** Every change formatter in `#lib/format.ts` is a `ChangeFormat` that
+  exposes its rounded value, and `changeTone` colors from that, so a "±0%" stays neutral whatever its raw sign
+  (regression: a +0.3% change printed "±0%" in green). `StatsGrid`, `StatTile`, and the money and feature-usage changes
+  all go through it.
 - **Retention windows count final cohorts.** A cohort is final for D7 at eight days old and for D28 at 29 (the
   api-server's definition, `apps/api-server/src/admin/DETAILS.md` § "Per-day funnel"), so the D7 stats anchor at
   `today - 7` (`d7End`) and the D28 ones at `today - 28` (`d28End`), and "7d" means the seven newest final cohorts.
@@ -691,23 +800,28 @@ have a happy-path test carrying the real `type: 'app'` stamp, so the discriminat
   charts answer "how was a given day", so a single-day or today-only selection (and its custom-date input) went away;
   the windows every source answers natively are what's left. Stepping back covers only the funnel sections, whose
   sources take a window (§ "Selection state").
-- **Every section carries a "what insight + how reliable" blurb** (`sectionDescription`) plus per-chart `methodology`
-  notes, because an opaque analytics number is worse than none. They state real caveats (Umami under/double-counts;
-  clicks vs server downloads differ; new installs miss opt-outs and debug builds; heartbeat DAU is the trustworthy one;
-  D7 needs old cohorts; Paddle has minor webhook lag; all days UTC).
-- **"Active use" daily-active count comes from the heartbeat** (`/admin/heartbeat-dau`, `COUNT(DISTINCT anal_id)` per
-  day), not from summed update checks (which multiplied a ~10/day figure into a wildly inflated total). Charted gold
-  over the range. Starts empty at release and fills as beta testers update.
-- **Engagement is app hours, never a beat count.** `/admin/heartbeat-dau` returns `appHours` per day,
+- **Every number states its caveats, because an opaque analytics number is worse than none.** On `/`'s Awareness,
+  Interest, and Download sections they're a "what insight + how reliable" blurb (`SectionDescription`) plus per-chart
+  `Methodology` notes; on `/product` and in the trend rows they're (i) popovers (a gist, bullets, then `Source:`), so
+  the page reads as numbers first. They state real caveats (Umami under/double-counts; clicks vs server downloads
+  differ; the heartbeat misses opt-outs; D7 needs old cohorts; Paddle has minor webhook lag; all days UTC).
+- **The Product page's actives come from the heartbeat, read on complete days** (`/admin/active-installs`,
+  `COUNT(DISTINCT anal_id)` per day plus rolling WAU/MAU), never from summed update checks, which multiplied a ~10/day
+  figure into a wildly inflated total. The reach is context, never the number (David's call 2026-11-17, § "Active
+  installs: real numbers, reach as context"). Same call: D7/D28 moved to `/product`, the rollout chart reads the
+  heartbeat with no "Older" bucket, the onboarding funnel ships now, and Paddle's subscriptions fetch and churn went
+  (nothing renewal-based is on the page).
+- **Engagement is app hours, never a beat count.** The heartbeat reports `appHours` per day,
   `SUM(COALESCE(uptime_seconds, 3600)) / 3600`: each beat reports the runtime it covers, and a beat from a build too old
-  to report it counts as an hour (those beat hourly), so old and new rows form one series. The Active use tile and the
-  report show app hours per active install per day (`sum(appHours) / sum(dau)` over the range). ❌ Don't go back to
-  counting beats: the app beats every three hours now, and a row count measures that cadence rather than use.
-- **"New installs" (Download) and "Got the latest release" (Active use) are two distinct charts off two distinct tables,
-  never merged.** A DMG download (`downloads` table) is a fresh acquisition; an update check (`update_checks` table) is
-  an existing install updating in place; in-app auto-updates fetch from GitHub and never hit the download endpoint, so
-  the populations don't overlap. New-installs bars stack by source using the deduped same-day-distinct count
-  (`uniqueDownloads`); update bars stack by the version each install was on when it checked.
+  to report it counts as an hour (those beat hourly), so old and new rows form one series. The "Hours per active day"
+  tile, the usage chart, and the report show `Σ appHours ÷ Σ dau` over complete days. ❌ Don't go back to counting
+  beats: the app beats every three hours now, and a row count measures that cadence rather than use.
+- **"New installs" (Download, on `/`) and the release rollout (on `/product`) count two distinct populations, never
+  merged.** A DMG download (`downloads` table) is a fresh acquisition; the rollout stacks the heartbeat's installs by
+  the highest version each ran that day, so it's the same population as the actives above it (an earlier update-check
+  version chart answered for a different, update-consent population). In-app auto-updates fetch from GitHub and never
+  hit the download endpoint. New-installs bars stack by source using the deduped same-day-distinct count
+  (`uniqueDownloads`).
 - ❌ **Gotcha: "new installs" names two different numbers, and the Download one is ~10x the truth.** The Download
   section's "New installs (deduped)" is `uniqueDownloads`: DMG requests deduplicated to distinct daily-hashed IPs. The
   Daily funnel's `newInstalls` is install ids whose first-ever heartbeat landed that day, so it counts people who
@@ -722,12 +836,13 @@ have a happy-path test carrying the real `type: 'app'` stamp, so the discriminat
   `#lib/feedback-and-errors.ts` (client-safe) so the page, the report endpoint, and tests share one copy. The
   agent-facing local digest (`/feedback-and-error-digest-from-app`) reads the same stores; see
   `docs/tooling/feedback-and-error-digest.md`.
-- **"Awaiting reply" means a reply-to email AND not marked answered** (`countFeedbackAwaitingReply`). David replies from
-  his own mailbox, which nothing here can see, so the only signal is the manual toggle: each feedback card with a
-  reply-to has a "Mark answered" / "Mark as awaiting reply" button, the `setAnswered` form action in
-  `routes/product/+page.server.ts`, which proxies to the api-server's `PUT /admin/feedback/:id/answered` (stores
-  `feedback.answered_at`). The `/api/report` text shows the same count and tags answered rows `answered YYYY-MM-DD`.
-  Feedback skips the cache for this reason; the error-report half still caches.
+- **"Awaiting reply" means a reply-to email AND not marked answered, however old** (`isAwaitingReply`, over the
+  `range=all` feedback, so the picker never hides an unanswered message). David replies from his own mailbox, which
+  nothing here can see, so the only signal is the manual toggle: each feedback card with a reply-to has a "Mark
+  answered" / "Mark as awaiting reply" button, the `setAnswered` form action in `routes/product/+page.server.ts`, which
+  proxies to the api-server's `PUT /admin/feedback/:id/answered` (stores `feedback.answered_at`). The `/api/report` text
+  shows the same count and tags answered rows `answered YYYY-MM-DD`. Feedback skips the cache for this reason; the
+  error-report half still caches.
 - **A feedback message sent with logs shows their `ERR-XXXXX`** (`errorReportId`, from `feedback.error_report_id`). On
   the page it links to that row of "Recent error reports" (`#ERR-XXXXX`, highlighted via `:target`) when the row is
   among the 15 shown; otherwise it's selectable text, since the dashboard has no per-report view (the bundle's contents

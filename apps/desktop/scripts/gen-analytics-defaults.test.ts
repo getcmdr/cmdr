@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildSnapshot,
   compareVersionsAsc,
+  mergeStateKeys,
   parseCategoricalKeys,
   promote,
   resolveEntry,
@@ -155,6 +156,74 @@ describe('buildSnapshot', () => {
   })
 })
 
+describe('buildSnapshot state keys', () => {
+  it("collects the settings tagged `kind: 'state'`, sorted", () => {
+    const result = buildSnapshot(
+      treeWith(`
+        export const s = [
+          { id: 'onboarding.completed', type: 'boolean', default: false, kind: 'state' },
+          { id: 'listing.showHiddenFiles', type: 'boolean', default: false },
+          { id: 'behavior.dockPinNudgeOfferedAt', type: 'string', default: '', kind: 'state' },
+        ]
+      `),
+    )
+    expect(result.stateKeys).toEqual(['behavior.dockPinNudgeOfferedAt', 'onboarding.completed'])
+    expect(result.settingIds).toEqual([
+      'behavior.dockPinNudgeOfferedAt',
+      'listing.showHiddenFiles',
+      'onboarding.completed',
+    ])
+  })
+
+  it('reads only a string literal, so a computed or unknown kind stays a preference', () => {
+    const { stateKeys } = buildSnapshot(
+      treeWith(`
+        export const s = [
+          { id: 'a.computed', type: 'boolean', default: false, kind: STATE },
+          { id: 'a.other', type: 'boolean', default: false, kind: 'preference' },
+        ]
+      `),
+    )
+    expect(stateKeys).toEqual([])
+  })
+
+  it('keeps the tag out of the defaults snapshot', () => {
+    const { snapshot } = buildSnapshot(
+      treeWith(`export const s = [{ id: 'onboarding.completed', type: 'boolean', default: false, kind: 'state' }]`),
+    )
+    expect(snapshot).toEqual({ 'onboarding.completed': false })
+  })
+})
+
+describe('mergeStateKeys', () => {
+  it('keeps a recorded state key the registry no longer has, since old installs still send it', () => {
+    const merged = mergeStateKeys(['behavior.retiredHintSeen', 'onboarding.completed'], {
+      settingIds: ['onboarding.completed'],
+      stateKeys: ['onboarding.completed'],
+    })
+    expect(merged).toEqual(['behavior.retiredHintSeen', 'onboarding.completed'])
+  })
+
+  it('lets the registry reclassify a key it still has', () => {
+    const merged = mergeStateKeys(['behavior.nowAPreference'], {
+      settingIds: ['behavior.nowAPreference'],
+      stateKeys: [],
+    })
+    expect(merged).toEqual([])
+  })
+
+  it('adds a newly tagged key', () => {
+    expect(mergeStateKeys([], { settingIds: ['a.seen'], stateKeys: ['a.seen'] })).toEqual(['a.seen'])
+  })
+
+  it('is sorted and stable across reruns', () => {
+    const registry = { settingIds: ['b.seen', 'a.seen'], stateKeys: ['b.seen', 'a.seen'] }
+    const once = mergeStateKeys(['z.retired'], registry)
+    expect(once).toEqual(['a.seen', 'b.seen', 'z.retired'])
+    expect(mergeStateKeys(once, registry)).toEqual(once)
+  })
+})
+
 describe('parseCategoricalKeys', () => {
   it('returns null when no allowlist is in the revision, so the caller can tell it apart from empty', () => {
     expect(parseCategoricalKeys({ list: () => [], read: () => null })).toBeNull()
@@ -193,9 +262,14 @@ describe('promote', () => {
   const base: DefaultsManifest = {
     note: [],
     promotedThrough: '0.39.0',
+    stateKeys: ['onboarding.completed'],
     versions: { '0.39.0': { 'indexing.enabled': true } },
     next: {},
   }
+
+  it('leaves the state keys alone, since a kind belongs to the key and not to a release', () => {
+    expect(promote(base, '0.40.0', { 'indexing.enabled': false }).stateKeys).toEqual(['onboarding.completed'])
+  })
 
   it('writes no entry when the release changed no default, keeping the manifest sparse', () => {
     const promoted = promote(base, '0.40.0', { 'indexing.enabled': true })

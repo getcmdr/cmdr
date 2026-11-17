@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
+  changeTone,
   formatAverage,
+  formatHoursChange,
   formatMultiple,
   formatMultipleChange,
   formatPercent,
@@ -33,6 +35,30 @@ describe('rate and change formatters', () => {
     expect(formatPointChange(0.0123)).toBe('+1.2 pp')
     expect(formatPointChange(-0.05)).toBe('−5 pp')
     expect(formatMultipleChange(0.44)).toBe('+0.4×')
+    expect(formatHoursChange(-0.26)).toBe('−0.3 h')
+    expect(formatHoursChange(0.04)).toBe('±0 h')
+  })
+})
+
+describe('changeTone', () => {
+  it('colors a change by its sign, flipped when a rise is bad news', () => {
+    expect(changeTone(0.2, formatRelativeChange)).toBe('good')
+    expect(changeTone(-0.2, formatRelativeChange)).toBe('bad')
+    expect(changeTone(0.2, formatRelativeChange, false)).toBe('bad')
+  })
+
+  // Regression anchor: a +0.3% change printed "±0%" in green, from the raw sign.
+  it('keeps a change that displays as zero neutral, whatever its raw sign', () => {
+    expect(formatRelativeChange(0.003)).toBe('±0%')
+    expect(changeTone(0.003, formatRelativeChange)).toBe('neutral')
+    expect(changeTone(-0.004, formatRelativeChange)).toBe('neutral')
+    expect(changeTone(0.0004, formatPointChange)).toBe('neutral')
+    expect(changeTone(-0.04, formatMultipleChange)).toBe('neutral')
+    expect(changeTone(0.04, formatHoursChange)).toBe('neutral')
+  })
+
+  it('is neutral for an unknown change', () => {
+    expect(changeTone(null, formatRelativeChange)).toBe('neutral')
   })
 })
 

@@ -24,6 +24,11 @@ Add an entry to `settings-registry.ts`. Name the id after the UI vocabulary (`wh
   same store and sync across windows but never render, so **skip step 2 for them**. A once-ever hint's "already shown"
   flag is NOT hidden: it's a row in Advanced's "Hints and warnings" card (`lib/settings/DETAILS.md` § Why once-ever hint
   flags are visible rows).
+- `kind: 'state'` when the value is remembered UI or onboarding state rather than a choice the person made: a hint's
+  "already shown" flag, a nudge stamp, a group left open, an onboarding answer. Hidden or not, it's the analytics
+  dashboard's only way to tell state from a preference (it counts state as a funnel and leaves it out of settings
+  adoption), so tag it. A suppress-this-warning switch the person flips is a preference: no tag. Write the literal
+  `'state'`; the manifest generator ignores anything else (`apps/desktop/scripts/DETAILS.md` § The defaults manifest).
 - `needsCapability: '<capability>'` when the row renders only where the OS offers a feature (the section gates its
   markup on the same `hasCapability`, from `#lib/platform`). The setting then joins the search index only there, so a
   search elsewhere can't land on a card that isn't there. A `hidden` setting still enters search, so a capability-gated

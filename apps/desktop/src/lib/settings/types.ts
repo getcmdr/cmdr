@@ -241,6 +241,15 @@ export interface SettingDefinition {
    */
   searchAllLocales?: true
 
+  /**
+   * `'state'`: remembered UI or onboarding state (a hint seen, a nudge stamp, a group left open, the
+   * onboarding answers), not a preference anyone chose. Absent means a preference. It drives
+   * analytics only: the defaults manifest lists these as `stateKeys`, so the dashboard counts them
+   * as a funnel and keeps them out of settings adoption (`scripts/gen-analytics-defaults-lib.ts`).
+   * ❌ Write it as the literal `'state'`: the generator parses the source and ignores anything else.
+   */
+  kind?: 'state'
+
   // Type and constraints
   type: SettingType
   default: unknown

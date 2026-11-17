@@ -24,6 +24,11 @@ import manifestJson from './settings-defaults.gen.json'
 export type SettingValue = boolean | number | string
 
 interface DefaultsManifest {
+  /**
+   * Keys the desktop registry tags `kind: 'state'` (remembered UI or onboarding state, not a preference),
+   * plus retired ones old installs still carry. Server-side only, like the rest of the manifest.
+   */
+  stateKeys: string[]
   versions: Record<string, Record<string, SettingValue>>
 }
 
@@ -55,6 +60,8 @@ export interface AdoptionValue {
 
 export interface SettingAdoption {
   key: string
+  /** `state` for remembered UI or onboarding state (the registry's `kind: 'state'`), else `preference`. */
+  kind: 'preference' | 'state'
   /** Installs whose build actually HAS this setting. The only honest denominator. */
   eligible: number
   /**
@@ -65,6 +72,13 @@ export interface SettingAdoption {
   onDefault: number
   /** The default, or null when it isn't the same across the versions in the window. */
   defaultLabel: string | null
+  /** The default the newest version in the window ships. */
+  latestDefaultLabel: string
+  /**
+   * The manifest version where the default last moved to `latestDefaultLabel`, or null when it has been
+   * that since the setting arrived.
+   */
+  defaultMovedIn: string | null
   /** Effective values, most common first. */
   values: AdoptionValue[]
 }
@@ -140,6 +154,8 @@ type ValueTally = Map<string, { value: SettingValue; installs: number }>
 interface AdoptionTally {
   values: Map<string, ValueTally>
   defaultsSeen: Map<string, Set<string>>
+  /** The newest app version in the window whose build has the key. */
+  newestVersion: Map<string, string>
   /**
    * Installs running the default THEIR version shipped. Counted per version rather than derived
    * from the value buckets, because a default that moved mid-window has no single bucket to point
@@ -188,6 +204,7 @@ function indexOverrides(valueRows: ConfigShapeValueRow[]): Map<string, Map<strin
  */
 function accumulateVersion(
   tally: AdoptionTally,
+  appVersion: string,
   defaults: Record<string, SettingValue>,
   overrides: Map<string, ValueTally>,
   installs: number,
@@ -204,6 +221,8 @@ function accumulateVersion(
       tally.defaultsSeen.set(key, seen)
     }
     seen.add(JSON.stringify(defaultValue))
+    const newest = tally.newestVersion.get(key)
+    if (newest === undefined || compareVersionsAsc(appVersion, newest) > 0) tally.newestVersion.set(key, appVersion)
 
     const defaultKey = JSON.stringify(defaultValue)
     let explicit = 0
@@ -221,12 +240,37 @@ function accumulateVersion(
   }
 }
 
+/**
+ * The default `version` ships for `key`, and the manifest version it last moved to that value in (null
+ * when the key has had it since it arrived).
+ */
+function latestDefault(
+  key: string,
+  version: string,
+  versions: Record<string, Record<string, SettingValue>>,
+): { value: SettingValue; movedIn: string | null } | null {
+  const entries = Object.keys(versions)
+    .filter((candidate) => compareVersionsAsc(candidate, version) <= 0)
+    .sort(compareVersionsAsc)
+  const current = entries.length > 0 ? versions[entries[entries.length - 1]][key] : undefined
+  if (current === undefined) return null
+  const currentKey = JSON.stringify(current)
+  for (let i = entries.length - 1; i > 0; i--) {
+    const previous = versions[entries[i - 1]]
+    if (!(key in previous)) return { value: current, movedIn: null }
+    if (JSON.stringify(previous[key]) !== currentKey) return { value: current, movedIn: entries[i] }
+  }
+  return { value: current, movedIn: null }
+}
+
 /** Turns one key's tally into its rendered breakdown. */
 function summarizeSetting(
   key: string,
+  kind: SettingAdoption['kind'],
   values: ValueTally,
   defaultsSeen: Set<string>,
   onDefault: number,
+  latest: { value: SettingValue; movedIn: string | null },
 ): SettingAdoption {
   // A default that moved mid-window has no single value to compare against, so the breakdown says
   // so rather than picking one release's answer and calling everyone else a deviation.
@@ -242,9 +286,12 @@ function summarizeSetting(
 
   return {
     key,
+    kind,
     eligible: breakdown.reduce((sum, entry) => sum + entry.installs, 0),
     onDefault,
     defaultLabel: defaultKey === null ? null : labelValue(JSON.parse(defaultKey) as SettingValue),
+    latestDefaultLabel: labelValue(latest.value),
+    defaultMovedIn: latest.movedIn,
     values: breakdown,
   }
 }
@@ -255,14 +302,24 @@ function summarizeSetting(
  * Rows for a key the resolved entry doesn't list are ignored on purpose: the setting didn't exist in
  * that build, so a value left in that install's `settings.json` by an older version is inert and
  * counting it would be inventing a user.
+ *
+ * Each setting is stamped `state` or `preference` from the manifest's `stateKeys`, which the desktop
+ * registry's typed `kind` decides: never from the key's name.
  */
 export function resolveAdoption(
   installRows: ConfigShapeInstallRow[],
   valueRows: ConfigShapeValueRow[],
   versions: Record<string, Record<string, SettingValue>> = manifest.versions,
+  stateKeys: readonly string[] = manifest.stateKeys,
 ): SettingsAdoption {
   const overridesByVersion = indexOverrides(valueRows)
-  const tally: AdoptionTally = { values: new Map(), defaultsSeen: new Map(), onDefault: new Map() }
+  const state = new Set(stateKeys)
+  const tally: AdoptionTally = {
+    values: new Map(),
+    defaultsSeen: new Map(),
+    newestVersion: new Map(),
+    onDefault: new Map(),
+  }
   let totalInstalls = 0
   let unresolvedInstalls = 0
 
@@ -273,13 +330,32 @@ export function resolveAdoption(
       unresolvedInstalls += installs
       continue
     }
-    accumulateVersion(tally, defaults, overridesByVersion.get(appVersion) ?? new Map<string, ValueTally>(), installs)
+    accumulateVersion(
+      tally,
+      appVersion,
+      defaults,
+      overridesByVersion.get(appVersion) ?? new Map<string, ValueTally>(),
+      installs,
+    )
   }
 
   const settings = [...tally.values.entries()]
-    .map(([key, values]) =>
-      summarizeSetting(key, values, tally.defaultsSeen.get(key) ?? new Set<string>(), tally.onDefault.get(key) ?? 0),
-    )
+    .flatMap(([key, values]) => {
+      // Every tallied key has a newest version with that key in its defaults, so `latest` always resolves.
+      const newest = tally.newestVersion.get(key)
+      const latest = newest === undefined ? null : latestDefault(key, newest, versions)
+      if (latest === null) return []
+      return [
+        summarizeSetting(
+          key,
+          state.has(key) ? 'state' : 'preference',
+          values,
+          tally.defaultsSeen.get(key) ?? new Set<string>(),
+          tally.onDefault.get(key) ?? 0,
+          latest,
+        ),
+      ]
+    })
     .sort((a, b) => a.key.localeCompare(b.key))
 
   return { settings, totalInstalls, unresolvedInstalls }

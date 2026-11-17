@@ -6,20 +6,21 @@
 -->
 <script lang="ts">
     import type { SourceResult, DashboardSelection } from '#lib/server/types.js'
-    import { rollingDays, type ViewWindow } from '#lib/time-range.js'
+    import type { ViewWindow } from '#lib/time-range.js'
     import type { FunnelData, FunnelRow } from '#lib/server/sources/funnel.js'
     import { breakdownRows, type ColumnSeries, type TooltipRow } from '#lib/daily-chart.js'
-    import {
-        countStats,
-        ratioStats,
-        rollingRatio,
-        statWindows,
-        type CountPoint,
-        type RatioPoint,
-        type WindowStats,
-    } from '#lib/acquisition-stats.js'
-    import { buildTrendInputs, d7End, d28End, rateBands } from '#lib/acquisition-series.js'
+    import { statWindows, type CountPoint, type RatioPoint } from '#lib/acquisition-stats.js'
+    import { buildTrendInputs, rateBands } from '#lib/acquisition-series.js'
     import { safeRatio } from '#lib/acquisition-countries.js'
+    import {
+        cell,
+        countStatsByWindow,
+        dailyRatios,
+        ratioStatsByWindow,
+        rollingComplete as rollingCompleteFrom,
+        viewRange,
+        type StatsByWindow,
+    } from '#lib/trend-row.js'
     import {
         bandsLabel,
         countryChips,
@@ -70,7 +71,6 @@
     }
 
     const { funnel, country, onselectcountry, window: shown, selection, todayIso }: Props = $props()
-    const tentativeColor = '#8a8a93'
 
     const data = $derived(funnel.ok ? funnel.data : null)
     const countries = $derived(data?.countries ?? { top: [], extra: null, umami: false, worker: false, breakdowns: false })
@@ -84,51 +84,32 @@
     /** The color a single-series chart wears: gold for all countries, the country's own when filtered. */
     const seriesColor = $derived(country ? countryColor(country) : COLOR_GOLD)
 
-    type StatsByWindow = Record<(typeof statWindows)[number], WindowStats>
-
     function countStatsAll(points: CountPoint[]): StatsByWindow {
-        return { 90: countStats(points, 90, todayIso), 30: countStats(points, 30, todayIso), 7: countStats(points, 7, todayIso) }
+        return countStatsByWindow(points, todayIso)
     }
-    function ratioStatsAll(points: RatioPoint[], end = todayIso): StatsByWindow {
-        return { 90: ratioStats(points, 90, end), 30: ratioStats(points, 30, end), 7: ratioStats(points, 7, end) }
+    function ratioStatsAll(points: RatioPoint[]): StatsByWindow {
+        return ratioStatsByWindow(points, todayIso)
     }
-
-    /** The rolling rate over complete days only; today's partial day gets no rolling point. */
     function rollingComplete(points: RatioPoint[]): (number | null)[] {
-        return rollingRatio(points.map((p) => (p.date >= todayIso ? { ...p, num: null } : p)), rollingDays)
+        return rollingCompleteFrom(points, todayIso)
     }
-
-    function daily(points: RatioPoint[]): (number | null)[] {
-        return points.map((p) => safeRatio(p.num, p.den))
-    }
+    const daily = dailyRatios
 
     const inputs = $derived(buildTrendInputs(rows, todayIso))
-    /**
-     * The rows in `shown`, as indexes into the full history (oldest first, one row per day): `start` is the
-     * first drawn, `stop` one past the last. Series index with `start + i` from there.
-     */
-    const start = $derived.by(() => {
-        const i = rows.findIndex((r) => r.date >= shown.start)
-        return i === -1 ? rows.length : i
-    })
-    const stop = $derived(rows.findLastIndex((r) => r.date <= shown.end) + 1)
+    /** The rows in `shown`, as indexes into the full history (`viewRange`). Series index with `start + i`. */
+    const range = $derived(viewRange(inputs.days, shown))
+    const start = $derived(range.start)
+    const stop = $derived(range.stop)
     const days = $derived(inputs.days.slice(start, stop))
     const rolling = $derived({
         visitorToClick: rollingComplete(inputs.visitorToClick),
         clickToInstall: rollingComplete(inputs.clickToInstall),
         botMeter: rollingComplete(inputs.botMeter),
-        // Non-final cohorts carry no numerator, so the retention lines only pool final cohorts.
-        d7: rollingRatio(inputs.d7, rollingDays),
-        d28: rollingRatio(inputs.d28, rollingDays),
     })
 
     /** The visible slice of a full-history series. */
     function view<T>(values: T[]): T[] {
         return values.slice(start, stop)
-    }
-
-    function cell(value: number | null, format: (n: number) => string = formatNumber): string {
-        return value === null ? '–' : format(value)
     }
 
     /**
@@ -148,35 +129,6 @@
     /** The tooltip for a country stack: the total, then the day's countries, biggest first (`breakdownRows`). */
     function stackTooltip(stack: ColumnSeries[], total: number | null, i: number, totalLabel: string): TooltipRow[] {
         return [{ label: totalLabel, value: cell(total) }, ...breakdownRows(countryStackEntries(stack, i), total)]
-    }
-
-    /** A retention chart's readout: a final cohort's rate and counts, or a young one's "so far" point. */
-    function retentionTooltip(
-        name: string,
-        points: RatioPoint[],
-        tentative: ({ value: number; label: string } | null)[],
-        line: (number | null)[],
-        soFar: (r: FunnelRow) => { retained: number } | null,
-        i: number,
-    ): TooltipRow[] {
-        const r = rows[start + i]
-        const p = points[start + i]
-        const t = tentative[start + i]
-        if (p.num === null) {
-            return [
-                {
-                    label: t ? t.label : name,
-                    value: t ? `${formatPercent(t.value)} (${cell(soFar(r)?.retained ?? null)} of ${cell(r.newInstalls)})` : 'too young',
-                    color: tentativeColor,
-                    mark: 'dot',
-                },
-            ]
-        }
-        return [
-            { label: name, value: cell(safeRatio(p.num, p.den), formatPercent), color: seriesColor, mark: 'dot' },
-            { label: 'Retained / cohort', value: `${cell(p.num)} / ${cell(p.den)}` },
-            { label: '7-cohort rate', value: cell(line[start + i], formatPercent), color: seriesColor, mark: 'line' },
-        ]
     }
 
     const visitorStack = $derived(stackFor((r) => r.visitors, countries.umami))
@@ -663,88 +615,7 @@
             {/snippet}
         </TrendRow>
 
-        <!-- 6. D7 retention -->
-        <TrendRow title="D7 retention" unavailable={workerReason}>
-            {#snippet info()}
-                <p>The share of a day's new installs that sent any heartbeat on their 7th day after install.</p>
-                <ul>
-                    <li>
-                        A cohort needs to be at least eight days old to have a D7, so the newest week shows grey "so far"
-                        points instead: retained as of day N, which can only grow.
-                    </li>
-                    <li>The line pools the last seven final cohorts.</li>
-                    <li>
-                        Stats pool cohorts too (all retained ÷ all installs) and count back from the newest final cohort,
-                        so "7d" is the seven newest cohorts that have a D7.
-                    </li>
-                    <li>Targets: under 15% is weak, 25% and up is strong.</li>
-                </ul>
-                <p><span class="info-label">Source:</span> the api-server, which owns the definition.</p>
-            {/snippet}
-            {#snippet chart()}
-                <DailyChart
-                    {days}
-                    today={todayIso}
-                    label="D7 retention by install day"
-                    formatValue={formatPercent}
-                    rate={{
-                        color: seriesColor,
-                        daily: view(daily(inputs.d7)),
-                        rolling: view(rolling.d7),
-                        rollingLabel: '7-cohort rate',
-                        tentative: inputs.has.retentionSoFar ? view(inputs.d7Tentative) : undefined,
-                        bands: rateBands.d7,
-                        bandsLabel: bandsLabel(rateBands.d7, formatPercent),
-                    }}
-                    tooltip={(i: number): TooltipRow[] => retentionTooltip('D7', inputs.d7, inputs.d7Tentative, rolling.d7, (r) => r.retentionSoFar, i)}
-                />
-                {#if !inputs.has.retentionSoFar}
-                    <p class="mt-1 pl-11 text-xs text-text-tertiary">"So far" points for young cohorts aren't available yet.</p>
-                {/if}
-            {/snippet}
-            {#snippet stats()}
-                <StatsGrid stats={ratioStatsAll(inputs.d7, d7End(todayIso))} formatValue={formatPercent} formatChange={formatPointChange} />
-            {/snippet}
-        </TrendRow>
-
-        <!-- 7. D28 retention -->
-        <TrendRow title="D28 retention" unavailable={workerReason ?? (inputs.has.d28 ? null : 'Not available yet: the live api-server sends D28 once its update lands.')}>
-            {#snippet info()}
-                <p>The share of a day's new installs that sent any heartbeat on their 28th day after install.</p>
-                <ul>
-                    <li>
-                        A cohort needs to be at least 29 days old to have a D28, so cohorts 8–28 days old show grey "so
-                        far" points: retained as of day N, which can only grow.
-                    </li>
-                    <li>The line pools the last seven final cohorts, and the stats count back from the newest final cohort, as for D7.</li>
-                    <li>Targets: under 10% is weak, 20% and up is strong.</li>
-                </ul>
-                <p><span class="info-label">Source:</span> the api-server, which owns the definition.</p>
-            {/snippet}
-            {#snippet chart()}
-                <DailyChart
-                    {days}
-                    today={todayIso}
-                    label="D28 retention by install day"
-                    formatValue={formatPercent}
-                    rate={{
-                        color: seriesColor,
-                        daily: view(daily(inputs.d28)),
-                        rolling: view(rolling.d28),
-                        rollingLabel: '7-cohort rate',
-                        tentative: inputs.has.d28SoFar ? view(inputs.d28Tentative) : undefined,
-                        bands: rateBands.d28,
-                        bandsLabel: bandsLabel(rateBands.d28, formatPercent),
-                    }}
-                    tooltip={(i: number): TooltipRow[] => retentionTooltip('D28', inputs.d28, inputs.d28Tentative, rolling.d28, (r) => r.d28SoFar, i)}
-                />
-            {/snippet}
-            {#snippet stats()}
-                <StatsGrid stats={ratioStatsAll(inputs.d28, d28End(todayIso))} formatValue={formatPercent} formatChange={formatPointChange} />
-            {/snippet}
-        </TrendRow>
-
-        <!-- 8. Bot meter -->
+        <!-- 6. Bot meter -->
         <TrendRow title="Bot meter" unavailable={workerReason}>
             {#snippet info()}
                 <p>Server downloads ÷ new installs.</p>

@@ -20,6 +20,9 @@ interface SettingsAdoptionEnv {
   WORKER_BASE_URL?: string
 }
 
+/** Bumped whenever `SettingsAdoption`'s shape changes, so an entry cached by an older build is never read. */
+const cacheSource = 'settings-adoption-v2'
+
 /**
  * Settings adoption, resolved server-side.
  *
@@ -31,7 +34,7 @@ export async function fetchSettingsAdoptionData(
   env: SettingsAdoptionEnv,
   selection: DashboardSelection,
 ): Promise<SourceResult<SettingsAdoption>> {
-  const cached = await cacheGet<SettingsAdoption>('settings-adoption', selectionCacheKey(selection))
+  const cached = await cacheGet<SettingsAdoption>(cacheSource, selectionCacheKey(selection))
   if (cached) return { ok: true, data: cached }
 
   // The config-shape endpoint takes 7d/30d/90d/all, so every dashboard range passes straight through.
@@ -43,7 +46,7 @@ export async function fetchSettingsAdoptionData(
       env.WORKER_BASE_URL,
     )
     const data = resolveAdoption(raw.installs, raw.values)
-    await cacheSet('settings-adoption', selectionCacheKey(selection), data)
+    await cacheSet(cacheSource, selectionCacheKey(selection), data)
     return { ok: true, data }
   } catch (e) {
     return { ok: false, error: `Settings adoption: ${e instanceof Error ? e.message : String(e)}` }

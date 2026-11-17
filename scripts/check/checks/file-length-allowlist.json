@@ -9,6 +9,10 @@
     "scripts/check/checks/registry.go": "append-only check registry (one CheckDefinition entry per check); line count tracks the number of checks, not splittable logic"
   },
   "files": {
+    "apps/desktop/src/lib/settings/definitions/advanced.ts": {
+      "lines": 820,
+      "reason": "flat registry data, one object literal per Advanced setting in page order (no logic); length tracks how many settings the Advanced page holds, and splitting it would only scatter one page's rows across files"
+    },
     "apps/desktop/scripts/e2e-linux.sh": {
       "lines": 830,
       "reason": "TODO: move the in-container test run (the ~170-line `bash -c` string from the node_modules install to `exit \"$playwright_status\"`) into `e2e-linux-in-container.sh`, run inside the container by path, like the sourced `e2e-linux-fixtures.sh` on the host side. That also lifts the apostrophe-free-comment rule the single-quoted string imposes."

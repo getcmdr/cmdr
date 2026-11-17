@@ -236,19 +236,25 @@ admin.get('/admin/crashes', async (c) => {
 })
 
 /**
+ * The app runtime one heartbeat row accounts for, in seconds: the one app-hours expression, shared by
+ * `/admin/heartbeat-dau` and `/admin/active-installs`. A beat carries its runtime (`uptime_seconds`); a
+ * beat from a client older than that field carries NULL and stands for one hour, because those clients
+ * beat hourly. So old and new rows add up in one unit, and the number doesn't move when the beat
+ * cadence does, which a row count would.
+ */
+const beatSecondsSql = 'COALESCE(uptime_seconds, 3600)'
+
+/**
  * Per-day DAU and engagement from the raw heartbeat table, for `/admin/heartbeat-dau`. `whereClause`
  * is the range filter (or empty for all time). Exported so `heartbeat-dau-sql.test.ts` can run it
  * against a real SQLite.
  *
  * - `dau`: distinct install ids that beat that day.
- * - `appHours`: how long the app ran that day, summed over installs. A beat carries the runtime it
- *   accounts for (`uptime_seconds`); a beat from a client older than that field carries NULL and
- *   stands for one hour, because those clients beat hourly. So old and new rows add up in one unit,
- *   and the number doesn't move when the beat cadence does, which a row count would.
+ * - `appHours`: how long the app ran that day, summed over installs (`beatSecondsSql`).
  */
 function heartbeatDauSql(whereClause: string): string {
   return `SELECT date(created_at) AS date, COUNT(DISTINCT anal_id) AS dau,
-                SUM(COALESCE(uptime_seconds, 3600)) / 3600.0 AS appHours
+                SUM(${beatSecondsSql}) / 3600.0 AS appHours
          FROM heartbeat ${whereClause}
          GROUP BY date
          ORDER BY date ASC`
@@ -416,4 +422,4 @@ admin.get('/admin/error-reports', async (c) => {
   return c.json(rows)
 })
 
-export { admin, heartbeatDauSql }
+export { admin, beatSecondsSql, heartbeatDauSql }

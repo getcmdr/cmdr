@@ -35,6 +35,16 @@ export function mostChanged(settings: SettingAdoption[]): SettingAdoption[] {
     })
 }
 
+/** Only the settings people choose: remembered UI and onboarding state (`kind: 'state'`) left out. */
+export function preferencesOnly(settings: SettingAdoption[]): SettingAdoption[] {
+  return settings.filter((setting) => setting.kind === 'preference')
+}
+
+/** The `n` most-changed settings (`mostChanged` order), for a table that leads with what people touch. */
+export function topMoved(settings: SettingAdoption[], n = 15): SettingAdoption[] {
+  return mostChanged(settings).slice(0, n)
+}
+
 /** The trailing note about settings nobody has moved, so the count reads as a sentence. */
 export function unchangedNote(count: number): string {
   return count === 1

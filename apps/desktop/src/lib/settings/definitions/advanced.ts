@@ -198,6 +198,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // filter (`file-explorer/pane/quick-filter-typing-hint.ts`). On once it's been shown;
     // turning it off brings the toast back once.
     id: 'fileExplorer.quickFilterTypingHintSeen',
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.fileExplorer.quickFilterTypingHintSeen.label',
@@ -246,6 +247,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // (`file-explorer/pane/quick-filter-intro.ts`). ❌ Not a nudge: it explains
     // what the user just did, so it takes no part in the nudge cooldown.
     id: 'fileExplorer.quickFilterIntroSeen',
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.fileExplorer.quickFilterIntroSeen.label',
@@ -259,6 +261,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // The toast after a background double-click first navigates up
     // (`file-explorer/pane/pane-pointer.ts`).
     id: 'behavior.doubleClickOnPaneNotificationSeen',
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.behavior.doubleClickOnPaneNotificationSeen.label',
@@ -271,6 +274,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
   {
     // The toast the first time Escape leaves full screen (`routes/(main)/escape-key.ts`).
     id: 'advanced.exitFullScreenOnEscapeHintShown',
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.advanced.exitFullScreenOnEscapeHintShown.label',
@@ -286,6 +290,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // The "your Network group is getting long" toast, raised once five server
     // places are pinned (`stores/volume-store.svelte.ts`).
     id: 'behavior.serversPinHintSeen',
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.behavior.serversPinHintSeen.label',
@@ -299,6 +304,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // The line offering USB debugging at the top of an MTP phone pane, spent by
     // its own × (`adb/AdbHint.svelte`).
     id: 'behavior.adbHintDismissed',
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.behavior.adbHintDismissed.label',
@@ -311,6 +317,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
   },
   {
     id: 'aboutThis.aiHintDismissed', // `about-this/AboutAiHint.svelte`'s line, spent by its own ×.
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.aboutThis.aiHintDismissed.label',
@@ -325,6 +332,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // The intro toast the first time a pane lands on a repo root
     // (`file-explorer/git/git-portal-intro.ts`).
     id: 'fileExplorer.git.portalIntroSeen',
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.fileExplorer.git.portalIntroSeen.label',
@@ -339,6 +347,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // The explainer dialog the first time an external drive's index goes stale
     // (`indexing/StaleDriveDialog.svelte`), still gated on `indexing.staleNotify`.
     id: 'indexing.firstStaleDialogShown',
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.indexing.firstStaleDialogShown.label',
@@ -354,6 +363,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // also turns it off (`setGlobalGoToLatestBinding`), so a new combo gets its
     // own warning.
     id: 'behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged',
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged.label',
@@ -368,6 +378,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // The toast after F4 pointing at the text editor setting
     // (`text-editor/editor-hint.ts`). Linux never raises it.
     id: 'behavior.textEditorHintSeen',
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.behavior.textEditorHintSeen.label',
@@ -387,6 +398,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // The toast after the first "Open terminal here", naming the app that
     // opened (`open-terminal/first-use-pick.ts`). The feature is macOS-only.
     id: 'behavior.openTerminalHereToastSeen',
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.behavior.openTerminalHereToastSeen.label',
@@ -402,6 +414,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // Cmdr (`reveal/reveal-activation-notice.ts`). ❌ Not a nudge: it answers
     // something the user set up, so it takes no part in the cooldown.
     id: 'behavior.revealActivationNoticeSeen',
+    kind: 'state',
     section: ['Advanced'],
     cardKey: 'settings.advanced.card.hintsAndWarnings',
     labelKey: 'settings.behavior.revealActivationNoticeSeen.label',
@@ -662,6 +675,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // the "Hints and warnings" card: on a supported Mac (nearly everyone) it never
     // fires, so a row there would be a switch that does nothing.
     id: 'advanced.oldMacosNoticeShown',
+    kind: 'state',
     section: ['Advanced'],
     labelKey: 'settings.advanced.oldMacosNoticeShown.label',
     descriptionKey: 'settings.advanced.oldMacosNoticeShown.description',
@@ -672,6 +686,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
   },
   {
     id: 'onboarding.upgradeNudgeShown',
+    kind: 'state',
     section: ['Advanced'],
     labelKey: 'settings.onboarding.upgradeNudgeShown.label',
     descriptionKey: 'settings.onboarding.upgradeNudgeShown.description',
@@ -687,6 +702,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // about consent. ⚠️ Every Rust cloud gate reads it fresh from `settings.json`
     // (`ai::cloud_consent::RevokePending`), so the "no" holds before the store catches up.
     id: 'ai.cloudConsentRevokePending',
+    kind: 'state',
     section: ['Advanced'],
     labelKey: 'settings.ai.cloudConsentRevokePending.label',
     type: 'boolean',
@@ -701,6 +717,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // reader is the one-time `askCmdr.enabled` mapping (`ask_cmdr_legacy_opt_in`), where a
     // held "no" maps to off. Kept registered so an install that still carries it validates.
     id: 'askCmdr.consentRevokePending',
+    kind: 'state',
     section: ['Advanced'],
     labelKey: 'settings.askCmdr.consentRevokePending.label',
     type: 'boolean',
@@ -717,6 +734,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
     // startup gates; `onboarding.fullDiskAccessChoice` is also read by Rust at
     // startup (`settings/loader.rs`).
     id: 'onboarding.completed',
+    kind: 'state',
     section: ['Advanced'],
     labelKey: 'settings.onboarding.completed.label',
     type: 'boolean',
@@ -726,6 +744,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
   },
   {
     id: 'onboarding.fullDiskAccessChoice',
+    kind: 'state',
     section: ['Advanced'],
     labelKey: 'settings.onboarding.fullDiskAccessChoice.label',
     // A `string`, not an `enum`: an enum's options each need a rendered label, and
@@ -739,6 +758,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
   },
   {
     id: 'onboarding.termsAcceptedVersion',
+    kind: 'state',
     section: ['Advanced'],
     labelKey: 'settings.onboarding.termsAcceptedVersion.label',
     type: 'string',
@@ -750,6 +770,7 @@ export const advancedSettings: SettingDefinitionSource[] = [
   },
   {
     id: 'onboarding.termsAcceptedAt',
+    kind: 'state',
     section: ['Advanced'],
     labelKey: 'settings.onboarding.termsAcceptedAt.label',
     type: 'string',

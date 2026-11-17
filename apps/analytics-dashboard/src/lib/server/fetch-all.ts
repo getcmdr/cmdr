@@ -1,6 +1,7 @@
 import type { DashboardEnv, DashboardSelection, SourceResult } from './types.js'
 import { resolveSelection } from './types.js'
-import { funnelDaysFor, funnelFetchDays, viewWindow, windowDays } from '../time-range.js'
+import type { TimeRange } from '../time-range.js'
+import { funnelDaysFor, funnelFetchDays, funnelMaxFetchDays, viewWindow, windowDays } from '../time-range.js'
 import type { UmamiData } from './sources/umami.js'
 import type { CloudflareData } from './sources/cloudflare.js'
 import type { PaddleData } from './sources/paddle.js'
@@ -11,7 +12,8 @@ import type { FeedbackAndErrorsData } from './sources/feedback-and-errors.js'
 import type { FunnelData } from './sources/funnel.js'
 import type { FunnelCountriesData } from './sources/funnel-countries.js'
 import type { SettingsAdoption } from './settings-defaults.js'
-import type { FeatureUsageData } from '../feature-usage.js'
+import type { FeatureUsagePeriods } from '../feature-usage.js'
+import type { ActiveInstallsData } from './sources/active-installs.js'
 import { fetchUmamiData } from './sources/umami.js'
 import { fetchCloudflareData } from './sources/cloudflare.js'
 import { fetchPaddleData } from './sources/paddle.js'
@@ -22,7 +24,8 @@ import { fetchFeedbackAndErrorsData } from './sources/feedback-and-errors.js'
 import { fetchFunnelData } from './sources/funnel.js'
 import { fetchFunnelCountriesData } from './sources/funnel-countries.js'
 import { fetchSettingsAdoptionData } from './sources/settings-adoption.js'
-import { fetchFeatureUsageData } from './sources/feature-usage.js'
+import { fetchFeatureUsagePeriods } from './sources/feature-usage.js'
+import { fetchActiveInstallsData } from './sources/active-installs.js'
 
 /** The shared time selection + freshness stamp every page load carries (resolved in `+layout.server.ts`). */
 export interface SelectionEnvelope {
@@ -64,22 +67,39 @@ export interface AcquisitionData extends SelectionEnvelope {
   posthog: SourceResult<PostHogData>
 }
 
-/** The Product page's sources: active use, settings adoption, feature usage, payment, retention, and feedback & errors. */
+/**
+ * The Product page's sources: active use and rollout, retention cohorts, money, onboarding and settings,
+ * feature usage, and feedback & errors.
+ */
 export interface ProductData extends SelectionEnvelope {
+  /** The heartbeat population per day and per version window; `data: null` on a Worker without the endpoint. */
+  activeInstalls: SourceResult<ActiveInstallsData | null>
+  /** Update-check reach, the DAU chart's dotted context line. */
   cloudflare: SourceResult<CloudflareData>
+  /**
+   * All countries, long enough for D7/D28 "vs previous" on the range: 181 days on 7d/30d (the entry `/`
+   * shares), 400 on 90d (90 + 90 final D28 cohorts need 209).
+   */
+  funnel: SourceResult<FunnelData>
+  /** Releases, for the latest one's version and publish time. */
+  github: SourceResult<GitHubData>
   paddle: SourceResult<PaddleData>
   license: SourceResult<LicenseData>
   feedbackAndErrors: SourceResult<FeedbackAndErrorsData>
   settingsAdoption: SourceResult<SettingsAdoption>
-  featureUsage: SourceResult<FeatureUsageData>
+  featureUsage: SourceResult<FeatureUsagePeriods>
 }
 
-/** Every source, used by the agent-readable report endpoint (which dumps all sections at once). */
+/**
+ * Every source, used by the agent-readable report endpoint (which dumps all sections at once). The Product
+ * page's sources load exactly as `/product` loads them, so the report and the page read the same numbers.
+ */
 export interface DashboardData extends SelectionEnvelope {
-  /** The last 180 UTC days, independent of `selection`, all countries (the report prints the last 30). */
+  /** All countries, as long as `/product` asks for (`productFunnelDays`); the report's table prints the last 30. */
   funnel: SourceResult<FunnelData>
   umami: SourceResult<UmamiData>
   cloudflare: SourceResult<CloudflareData>
+  activeInstalls: SourceResult<ActiveInstallsData | null>
   paddle: SourceResult<PaddleData>
   github: SourceResult<GitHubData>
   githubStars: SourceResult<GitHubStarsData>
@@ -87,7 +107,7 @@ export interface DashboardData extends SelectionEnvelope {
   license: SourceResult<LicenseData>
   feedbackAndErrors: SourceResult<FeedbackAndErrorsData>
   settingsAdoption: SourceResult<SettingsAdoption>
-  featureUsage: SourceResult<FeatureUsageData>
+  featureUsage: SourceResult<FeatureUsagePeriods>
 }
 
 const sourceTimeoutMs = 20_000
@@ -227,9 +247,9 @@ export function fetchCloudflareSource(
   )
 }
 
-export function fetchPaddleSource(env: DashboardEnv, selection: DashboardSelection): Promise<SourceResult<PaddleData>> {
+export function fetchPaddleSource(env: DashboardEnv): Promise<SourceResult<PaddleData>> {
   return guardedFetch(env.PADDLE_API_KEY_LIVE, 'Paddle', () =>
-    fetchPaddleData({ PADDLE_API_KEY_LIVE: env.PADDLE_API_KEY_LIVE }, selection),
+    fetchPaddleData({ PADDLE_API_KEY_LIVE: env.PADDLE_API_KEY_LIVE }),
   )
 }
 
@@ -275,15 +295,25 @@ export function fetchSettingsAdoptionSource(
   )
 }
 
-export function fetchFeatureUsageSource(
+/** The Product page's feature usage: complete days ending yesterday, plus the window before for the change. */
+export function fetchFeatureUsagePeriodsSource(
   env: DashboardEnv,
   selection: DashboardSelection,
-): Promise<SourceResult<FeatureUsageData>> {
+): Promise<SourceResult<FeatureUsagePeriods>> {
   return guardedFetch(env.LICENSE_SERVER_ADMIN_TOKEN, 'Feature usage', () =>
-    fetchFeatureUsageData(
+    fetchFeatureUsagePeriods(
       { LICENSE_SERVER_ADMIN_TOKEN: env.LICENSE_SERVER_ADMIN_TOKEN, WORKER_BASE_URL: env.WORKER_BASE_URL },
       selection,
     ),
+  )
+}
+
+export function fetchActiveInstallsSource(env: DashboardEnv): Promise<SourceResult<ActiveInstallsData | null>> {
+  return guardedFetch(env.LICENSE_SERVER_ADMIN_TOKEN, 'Active installs', () =>
+    fetchActiveInstallsData({
+      LICENSE_SERVER_ADMIN_TOKEN: env.LICENSE_SERVER_ADMIN_TOKEN,
+      WORKER_BASE_URL: env.WORKER_BASE_URL,
+    }),
   )
 }
 
@@ -300,6 +330,15 @@ export function fetchFeedbackAndErrorsSource(
 }
 
 // --- Per-page composers -----------------------------------------------------------------------
+
+/**
+ * The funnel length the Product page's D7/D28 "vs previous" needs: 181 days on 7d/30d (the entry `/`
+ * shares), 400 on 90d (90 + 90 final D28 cohorts need 209). Both are lengths `funnelDaysFor` already
+ * gives `/`, so this adds no funnel cache entry of its own.
+ */
+function productFunnelDays(range: TimeRange): number {
+  return range === '90d' ? funnelMaxFetchDays : funnelFetchDays
+}
 
 /** Fetches only the sources the Acquisition page (`/`) renders, in parallel. */
 export async function fetchAcquisitionData(
@@ -335,18 +374,34 @@ export async function fetchAcquisitionData(
 
 /** Fetches only the sources the Product page (`/product`) renders, in parallel. */
 export async function fetchProductData(env: DashboardEnv, selection: DashboardSelection): Promise<ProductData> {
-  const [cloudflare, paddle, license, feedbackAndErrors, settingsAdoption, featureUsage] = await Promise.all([
+  const [
+    activeInstalls,
+    cloudflare,
+    funnel,
+    github,
+    paddle,
+    license,
+    feedbackAndErrors,
+    settingsAdoption,
+    featureUsage,
+  ] = await Promise.all([
+    fetchActiveInstallsSource(env),
     fetchCloudflareSource(env, selection),
-    fetchPaddleSource(env, selection),
+    fetchFunnelSource(env, null, productFunnelDays(selection.range)),
+    fetchGitHubSource(env),
+    fetchPaddleSource(env),
     fetchLicenseSource(env),
     fetchFeedbackAndErrorsSource(env, selection),
     fetchSettingsAdoptionSource(env, selection),
-    fetchFeatureUsageSource(env, selection),
+    fetchFeatureUsagePeriodsSource(env, selection),
   ])
   return {
     selection,
     updatedAt: new Date().toISOString(),
+    activeInstalls,
     cloudflare,
+    funnel,
+    github,
     paddle,
     license,
     feedbackAndErrors,
@@ -363,6 +418,7 @@ export async function fetchDashboardData(env: DashboardEnv, rangeParam: string |
     funnel,
     umami,
     cloudflare,
+    activeInstalls,
     paddle,
     github,
     githubStars,
@@ -372,17 +428,18 @@ export async function fetchDashboardData(env: DashboardEnv, rangeParam: string |
     settingsAdoption,
     featureUsage,
   ] = await Promise.all([
-    fetchFunnelSource(env),
+    fetchFunnelSource(env, null, productFunnelDays(selection.range)),
     fetchUmamiSource(env, selection),
     fetchCloudflareSource(env, selection),
-    fetchPaddleSource(env, selection),
+    fetchActiveInstallsSource(env),
+    fetchPaddleSource(env),
     fetchGitHubSource(env),
     fetchGitHubStarsSource(env),
     fetchPostHogSource(env, selection),
     fetchLicenseSource(env),
     fetchFeedbackAndErrorsSource(env, selection),
     fetchSettingsAdoptionSource(env, selection),
-    fetchFeatureUsageSource(env, selection),
+    fetchFeatureUsagePeriodsSource(env, selection),
   ])
 
   return {
@@ -391,6 +448,7 @@ export async function fetchDashboardData(env: DashboardEnv, rangeParam: string |
     funnel,
     umami,
     cloudflare,
+    activeInstalls,
     paddle,
     github,
     githubStars,

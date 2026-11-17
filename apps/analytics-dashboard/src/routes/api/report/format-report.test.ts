@@ -1,503 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
-import type { DashboardData } from '../../../lib/server/fetch-all.js'
 import { formatReport } from './format-report.js'
-import type { FeatureUsageData } from '../../../lib/feature-usage.js'
+import { allFailedData, emptyData, mixedData, richData } from './report-fixtures.js'
 
 // A characterization test: the report is consumed by agents and by David, so the exact text is the
-// contract. Each case pins the whole output string, not a sample of it, and the fixtures are built to
-// hit the branches that matter: a section with data, a section whose source is down, a source that
-// loaded but is empty, and the sections that read two sources and lose only one. The funnel fixture
-// mixes `null` (unknown, renders as `-`) with a real `0` on the same day, because those mean different
-// things everywhere in the dashboard.
-
-const site = (pv: number, prevPv: number, visitors: number, prevVisitors: number) => ({
-  pageviews: { value: pv, prev: prevPv },
-  visitors: { value: visitors, prev: prevVisitors },
-  visits: { value: visitors, prev: prevVisitors },
-  bounces: { value: Math.floor(visitors / 2), prev: 0 },
-  totaltime: { value: 0, prev: 0 },
-})
-
-/** Every source loaded, with enough shape to reach each breakdown. */
-const richFeatureUsage: FeatureUsageData = {
-  range: '90d',
-  since: '2026-05-04T03:04:05.000Z',
-  activeInstalls: 40,
-  features: [
-    {
-      id: 'tabs',
-      name: 'Tabs',
-      sources: ['tab_opened'],
-      installs: 0,
-      events: 0,
-      everSeen: true,
-      parts: [],
-    },
-    {
-      id: 'ask-cmdr',
-      name: 'Ask Cmdr',
-      sources: ['ask_cmdr_turn'],
-      installs: 3,
-      events: 12,
-      everSeen: true,
-      parts: [
-        { key: 'answered', installs: 3, events: 10 },
-        { key: 'failed', installs: 1, events: 2 },
-      ],
-    },
-    {
-      id: 'multi-rename',
-      name: 'Multi-rename tool',
-      sources: ['multi_rename_applied'],
-      installs: 0,
-      events: 0,
-      everSeen: false,
-      parts: [],
-    },
-    {
-      id: 'archives',
-      name: 'Archives',
-      sources: ['pane_navigated[volume_kind=archive]', 'archive_edit_completed'],
-      installs: 30,
-      events: 4_321,
-      everSeen: true,
-      parts: [{ key: 'pane_navigated', installs: 30, events: 4_321 }],
-    },
-    {
-      id: 'git-browser',
-      name: 'Git browser',
-      sources: ['pane_navigated[volume_kind=git-portal]'],
-      installs: 1,
-      events: 1,
-      everSeen: true,
-      parts: [],
-    },
-  ],
-}
-
-const richData: DashboardData = {
-  selection: { range: '90d', end: null },
-  updatedAt: '2026-08-02T03:04:05.000Z',
-  funnel: {
-    ok: true,
-    data: {
-      rows: [
-        {
-          date: '2026-07-30',
-          visitors: 100,
-          downloadClicks: 10,
-          serverDownloads: 8,
-          downloadsByRef: { twitter: 5, '(none)': 3 },
-          downloadsByReferer: { 'news.ycombinator.com': 4, '(none)': 4 },
-          downloadsByUaFamily: { human: 6, bot: 1, unknown: 1 },
-          humanInstalls: 7,
-          newInstalls: 4,
-          d7Retention: 0.5,
-          d7Retained: 2,
-          newsletterSignups: 3,
-          purchases: 1,
-          pageviews: null,
-          downloadsBySource: null,
-          newInstallsByChannel: null,
-          retentionSoFar: null,
-          d28Retention: null,
-          d28Retained: null,
-          d28SoFar: null,
-          byCountry: {},
-        },
-        {
-          // A day where the web side is unknown (null) but the server side is a real zero.
-          date: '2026-07-31',
-          visitors: null,
-          downloadClicks: 0,
-          serverDownloads: 0,
-          downloadsByRef: {},
-          downloadsByReferer: null,
-          downloadsByUaFamily: null,
-          humanInstalls: null,
-          newInstalls: 0,
-          d7Retention: null,
-          d7Retained: null,
-          newsletterSignups: null,
-          purchases: 0,
-          pageviews: null,
-          downloadsBySource: null,
-          newInstallsByChannel: null,
-          retentionSoFar: null,
-          d28Retention: null,
-          d28Retained: null,
-          d28SoFar: null,
-          byCountry: {},
-        },
-        {
-          date: '2026-08-01',
-          visitors: 250,
-          downloadClicks: 25,
-          serverDownloads: 20,
-          downloadsByRef: { twitter: 10, reddit: 5 },
-          downloadsByReferer: { 'news.ycombinator.com': 6 },
-          downloadsByUaFamily: { human: 15, bot: 3, unknown: 2 },
-          humanInstalls: 17,
-          newInstalls: 9,
-          d7Retention: 0.333,
-          d7Retained: 3,
-          newsletterSignups: 2,
-          purchases: 2,
-          pageviews: null,
-          downloadsBySource: null,
-          newInstallsByChannel: null,
-          retentionSoFar: null,
-          d28Retention: null,
-          d28Retained: null,
-          d28SoFar: null,
-          byCountry: {},
-        },
-      ],
-      countries: { top: [], extra: null, umami: false, worker: false, breakdowns: false },
-      workerStatus: 'ok',
-    },
-  },
-  umami: {
-    ok: true,
-    data: {
-      personalSite: site(1200, 1000, 800, 900),
-      // A zero `prev` is the "no prior period" case: the delta suffix drops out entirely.
-      website: site(5400, 5400, 3200, 0),
-      prvw: site(120, 0, 90, 45),
-      websiteReferrers: [
-        { x: 'news.ycombinator.com', y: 900 },
-        { x: '', y: 400 },
-      ],
-      websitePages: [
-        { x: '/', y: 3000 },
-        { x: '/pricing', y: 700 },
-      ],
-      websiteCountries: [
-        { x: 'US', y: 1800 },
-        { x: 'SE', y: 600 },
-        // Not a region code: `formatCountry` has to fall back to the raw key.
-        { x: '(unknown)', y: 100 },
-      ],
-      downloadEvents: [{ x: 'download-mac', y: 240 }],
-      prvwReferrers: [{ x: 'google.com', y: 60 }],
-      prvwPages: [{ x: '/', y: 120 }],
-      personalSiteReferrers: [{ x: 'linkedin.com', y: 30 }],
-    },
-  },
-  cloudflare: {
-    ok: true,
-    data: {
-      downloads: [
-        {
-          version: '1.2.0',
-          arch: 'aarch64',
-          country: 'US',
-          source: 'website',
-          day: '2026-07-31',
-          downloads: 40,
-          uniqueDownloads: 30,
-        },
-        {
-          version: '1.2.0',
-          arch: 'x86_64',
-          country: 'US',
-          source: 'homebrew',
-          day: '2026-07-31',
-          downloads: 12,
-          uniqueDownloads: 9,
-        },
-        {
-          // 1.10.0 sorts above 1.2.0 only under semver comparison, never lexically.
-          version: '1.10.0',
-          arch: 'aarch64',
-          country: 'SE',
-          source: 'website',
-          day: '2026-08-01',
-          downloads: 25,
-          uniqueDownloads: 20,
-        },
-        {
-          version: '1.10.0',
-          arch: 'aarch64',
-          country: '(unknown)',
-          source: 'other',
-          day: '2026-08-01',
-          downloads: 3,
-          uniqueDownloads: 3,
-        },
-      ],
-      heartbeatDau: [
-        { date: '2026-07-31', dau: 40, appHours: 320.4 },
-        { date: '2026-08-01', dau: 55, appHours: 500 },
-      ],
-      updateActivity: [
-        // 2026-08-01 reaches past that day's 55 heartbeats, so the bound reads as a range; 2026-07-31
-        // lands under its 40, so that day falls back to a lower bound. Both shapes are real.
-        { day: '2026-07-31', version: '1.2.0', updaters: 30 },
-        { day: '2026-08-01', version: '1.10.0', updaters: 50 },
-        { day: '2026-08-01', version: '1.2.0', updaters: 12 },
-      ],
-    },
-  },
-  paddle: {
-    ok: true,
-    data: {
-      transactions: [
-        { id: 'txn_1', status: 'completed', createdAt: '2026-08-01T10:00:00Z', total: '3900', currencyCode: 'USD' },
-        { id: 'txn_2', status: 'refunded', createdAt: '2026-07-31T09:00:00Z', total: '8900', currencyCode: 'EUR' },
-      ],
-      activeSubscriptions: [{ id: 'sub_1', status: 'active', customerId: 'ctm_1', currentBillingPeriod: null }],
-      subscriptionsByStatus: { active: 3, canceled: 1, paused: 0 },
-    },
-  },
-  github: {
-    ok: true,
-    data: {
-      totalDownloads: 1234,
-      releases: [
-        { tagName: 'v1.10.0', publishedAt: '2026-08-01T08:00:00Z', assets: [], totalDownloads: 800 },
-        { tagName: 'v1.2.0', publishedAt: '2026-07-01T08:00:00Z', assets: [], totalDownloads: 434 },
-      ],
-    },
-  },
-  githubStars: {
-    ok: true,
-    data: {
-      totalStars: 310,
-      repos: [
-        {
-          repo: 'getcmdr/cmdr',
-          // One star day inside 7d, one inside 30d only, one outside both.
-          totalStars: 300,
-          daily: [
-            { day: '2026-01-01', newStars: 250, cumulative: 250 },
-            { day: '2026-07-20', newStars: 40, cumulative: 290 },
-            { day: '2026-08-01', newStars: 10, cumulative: 300 },
-          ],
-        },
-        { repo: 'vdavid/mtp-rs', totalStars: 10, daily: [{ day: '2026-01-01', newStars: 10, cumulative: 10 }] },
-      ],
-      combinedDaily: [],
-    },
-  },
-  posthog: {
-    ok: true,
-    data: {
-      totalPageviews: 900,
-      dailyPageviews: [
-        { day: '2026-07-31', views: 400 },
-        { day: '2026-08-01', views: 500 },
-      ],
-    },
-  },
-  license: { ok: true, data: { totalActivations: 42, activeDevices: 7 } },
-  settingsAdoption: {
-    ok: true,
-    data: {
-      totalInstalls: 30,
-      unresolvedInstalls: 4,
-      settings: [
-        {
-          key: 'ai.provider',
-          eligible: 26,
-          onDefault: 20,
-          defaultLabel: 'off',
-          values: [
-            { label: 'off', installs: 20, isDefault: true },
-            { label: 'cloud', installs: 6, isDefault: false },
-          ],
-        },
-        {
-          key: 'indexing.enabled',
-          eligible: 26,
-          onDefault: 24,
-          defaultLabel: 'on',
-          values: [
-            { label: 'on', installs: 24, isDefault: true },
-            { label: 'off', installs: 2, isDefault: false },
-          ],
-        },
-        {
-          // Younger than the fleet, so its total is smaller on purpose.
-          key: 'mediaIndex.enabled',
-          eligible: 10,
-          onDefault: 8,
-          defaultLabel: 'off',
-          values: [
-            { label: 'off', installs: 8, isDefault: true },
-            { label: 'on', installs: 2, isDefault: false },
-          ],
-        },
-        {
-          key: 'theme.mode',
-          eligible: 26,
-          onDefault: 26,
-          defaultLabel: 'system',
-          values: [{ label: 'system', installs: 26, isDefault: true }],
-        },
-      ],
-    },
-  },
-  feedbackAndErrors: {
-    ok: true,
-    data: {
-      feedback: [
-        {
-          id: 1,
-          createdAt: '2026-08-01 12:33:44',
-          feedback: 'Love   it,\n  especially the\tpreview pane.',
-          email: 'someone@example.com',
-          appVersion: '1.10.0',
-          osVersion: '15.5',
-          buildMode: 'release',
-          answeredAt: null,
-          errorReportId: null,
-        },
-        {
-          id: 2,
-          createdAt: '2026-07-31 08:00:00',
-          // Longer than the 280-character cut-off.
-          feedback: 'x'.repeat(300),
-          email: null,
-          appVersion: '1.2.0',
-          osVersion: '14.7',
-          buildMode: null,
-          answeredAt: null,
-          errorReportId: 'ERR-AB7PV',
-        },
-        {
-          id: 3,
-          createdAt: '2026-07-30 10:00:00',
-          feedback: 'Already got a reply.',
-          email: 'answered@example.com',
-          appVersion: '1.2.0',
-          osVersion: '14.7',
-          buildMode: 'release',
-          answeredAt: '2026-07-30 18:45:00',
-          errorReportId: null,
-        },
-      ],
-      errorReports: [
-        {
-          id: 'er_1',
-          kind: 'auto',
-          appVersion: '1.10.0',
-          osVersion: '15.5',
-          arch: 'aarch64',
-          date: '2026-08-01',
-          generatedAt: '2026-08-01T12:00:00Z',
-        },
-        {
-          id: 'er_2',
-          kind: 'auto',
-          appVersion: '1.2.0',
-          osVersion: '14.7',
-          arch: 'x86_64',
-          date: '2026-07-31',
-          generatedAt: '2026-07-31T12:00:00Z',
-        },
-        {
-          id: 'er_3',
-          kind: 'user',
-          appVersion: '1.10.0',
-          osVersion: '15.5',
-          arch: 'aarch64',
-          date: '2026-08-01',
-          generatedAt: '2026-08-01T13:00:00Z',
-        },
-      ],
-    },
-  },
-  featureUsage: { ok: true, data: richFeatureUsage },
-}
-
-/** Every source down. */
-const allFailedData: DashboardData = {
-  selection: { range: '7d', end: null },
-  updatedAt: '2026-08-02T03:04:05.000Z',
-  funnel: { ok: false, error: 'Funnel: timed out after 20s' },
-  umami: { ok: false, error: 'Umami: not configured (missing env vars)' },
-  cloudflare: { ok: false, error: 'Cloudflare: timed out after 20s' },
-  paddle: { ok: false, error: 'Paddle: not configured (missing env vars)' },
-  github: { ok: false, error: 'GitHub: offline' },
-  githubStars: { ok: false, error: 'GitHub stars: offline' },
-  posthog: { ok: false, error: 'PostHog: not configured (missing env vars)' },
-  license: { ok: false, error: 'License server: not configured (missing env vars)' },
-  feedbackAndErrors: { ok: false, error: 'Feedback & errors: timed out after 20s' },
-  settingsAdoption: { ok: false, error: 'Settings adoption: timed out after 20s' },
-  featureUsage: { ok: false, error: 'Feature usage: timed out after 20s' },
-}
-
-/** Every source loaded, every collection empty: the "present but nothing in it" shape. */
-const emptyData: DashboardData = {
-  selection: { range: '30d', end: null },
-  updatedAt: '2026-08-02T03:04:05.000Z',
-  funnel: {
-    ok: true,
-    data: {
-      rows: [],
-      countries: { top: [], extra: null, umami: false, worker: false, breakdowns: false },
-      workerStatus: 'ok',
-    },
-  },
-  umami: {
-    ok: true,
-    data: {
-      personalSite: site(0, 0, 0, 0),
-      website: site(0, 0, 0, 0),
-      prvw: site(0, 0, 0, 0),
-      websiteReferrers: [],
-      websitePages: [],
-      websiteCountries: [],
-      downloadEvents: [],
-      prvwReferrers: [],
-      prvwPages: [],
-      personalSiteReferrers: [],
-    },
-  },
-  cloudflare: { ok: true, data: { downloads: [], heartbeatDau: [], updateActivity: [] } },
-  paddle: { ok: true, data: { transactions: [], activeSubscriptions: [], subscriptionsByStatus: {} } },
-  github: { ok: true, data: { totalDownloads: 0, releases: [] } },
-  githubStars: { ok: true, data: { totalStars: 0, repos: [], combinedDaily: [] } },
-  posthog: { ok: true, data: { totalPageviews: 0, dailyPageviews: [] } },
-  license: { ok: true, data: { totalActivations: 0, activeDevices: null } },
-  feedbackAndErrors: { ok: true, data: { feedback: [], errorReports: [] } },
-  settingsAdoption: { ok: true, data: { settings: [], totalInstalls: 0, unresolvedInstalls: 0 } },
-  featureUsage: {
-    ok: true,
-    data: {
-      range: '30d',
-      since: '2026-07-03T03:04:05.000Z',
-      activeInstalls: 0,
-      features: [
-        { id: 'search', name: 'Search', sources: ['search_used'], installs: 0, events: 0, everSeen: true, parts: [] },
-      ],
-    },
-  },
-}
-
-/** Half the sources down: the sections that read two sources have to degrade one at a time. */
-const mixedData: DashboardData = {
-  selection: { range: '7d', end: null },
-  updatedAt: '2026-08-02T03:04:05.000Z',
-  funnel: { ok: false, error: 'Funnel: offline' },
-  umami: { ok: false, error: 'Umami: offline' },
-  cloudflare: { ok: false, error: 'Cloudflare: offline' },
-  paddle: richData.paddle,
-  github: richData.github,
-  githubStars: { ok: false, error: 'GitHub stars: offline' },
-  posthog: richData.posthog,
-  license: { ok: false, error: 'License server: offline' },
-  feedbackAndErrors: {
-    ok: true,
-    data: {
-      feedback: [],
-      errorReports: richData.feedbackAndErrors.ok ? richData.feedbackAndErrors.data.errorReports : [],
-    },
-  },
-  settingsAdoption: { ok: false, error: 'Settings adoption: offline' },
-  featureUsage: { ok: false, error: 'Feature usage: offline' },
-}
+// contract. Each case pins the whole output string, not a sample of it; the inputs and the branches
+// they reach are in `report-fixtures.ts`.
 
 const richReport = `# Cmdr analytics report (90d)
 
@@ -624,55 +131,85 @@ GitHub releases (all-time):
 
 ## Active use: how many run the app?
 
-- Active installs (latest day): 55–62
-- Peak confirmed running: 55
-- App hours per active install per day: 8.6
-- Widest blind spot: 11% of the high end never sent a heartbeat
+Yesterday, 2026-08-01 (UTC), the last complete day. Today is partial and in no number here.
+- Weekly active: 70 (+75% vs. 90 days earlier)
+- Monthly active: 90 (+80% vs. 90 days earlier)
+- Stickiness: – (– vs. previous 90 days)
+- Hours per active day: – (– vs. previous 90 days)
+- D7 retention: – (– vs. previous 90 cohorts)
 
-The low end counts install ids we heard from on the heartbeat, so those installs definitely ran Cmdr.
-The high end counts distinct addresses that checked for updates, a separate consent that installs
-with analytics off still ride. The high end is a rough reach, not a ceiling: addresses are not installs,
-a shared connection counts an office or household once, a changing home address counts one install more
-than once across days, and anyone with automatic update checks off never appears at all.
-App hours add up how long the app ran that day. A beat from a build too old to report it counts as an hour.
+Counts installs with usage stats on; an install that opted out sends nothing. Weekly and monthly
+active count installs with a beat in the 7 and 28 days ending yesterday, against the same count 90 days
+earlier. Stickiness is daily active over monthly active, and hours per active day is all app hours over
+all daily actives, each pooled over the last 90 complete days against the 90 before. A beat from a build
+too old to report its runtime counts as an hour. D7 pools the newest 90 cohorts old enough to have one.
+The last week can still hold a few synthetic installs the weekly sweep removes later.
+"Checked for updates" is context, not a ceiling: distinct addresses that checked for updates, a separate
+consent installs with analytics off still ride. A shared connection counts once, a changing address
+counts more than once, and anyone with automatic update checks off never appears.
 
-Active installs (by day, heard from / checked for updates):
-  2026-08-01: 55 heard from, 62 checked, 500 app hours
-  2026-07-31: 40 heard from, 30 checked, 320 app hours
+Daily active installs (newest first):
+  2026-08-02 (today, partial): 12 active, 1 new, 30 app hours, no update-check data
+  2026-08-01: 55 active, 9 new, 500 app hours, 62 checked for updates
+  2026-07-31: 40 active, 5 new, 320 app hours, 30 checked for updates
 
-Got the latest release per day (update-enabled installs that checked, deduped, by version):
-  2026-08-01: 62 total (v1.10.0: 50, v1.2.0: 12)
-  2026-07-31: 30 total (v1.2.0: 30)
+## Release rollout: how far does the newest release spread?
 
-- Total activations: 42
-- Active devices: 7
+- 82% of active installs ran v1.10.0 yesterday, its release day
 
-## Settings adoption: what do people actually turn on?
+Installs by version per day (each install at the highest version it ran that day; newest first):
+  2026-08-02 (today, partial): 12 total (v1.10.0: 12)
+  2026-08-01: 55 total (v1.10.0: 45, v1.2.0: 10)
+  2026-07-31: 40 total (v1.2.0: 40)
 
-- Installs we can read: 26
-- Not counted: 4 on a version older than the settings history goes back
-- Drive indexing on: 92%
-- Image search on: 20%
-- AI switched on: 23%
+## Money: who pays?
 
-Each install counts once, at its latest heartbeat. A setting is scored only against installs whose build actually had it, so a young setting shows a smaller total than an old one.
+- Revenue, last 90 complete days: €89.00 (– vs. previous 90 days), $39.00 (±0% vs. previous 90 days)
+- All-time revenue: €89.00, $78.00
+- Paid licenses (first purchases through yesterday): 2
+- Paying share of monthly active: 2.2% (+0.2 pp vs. 90 days earlier)
+- License activations: 42 (7 active devices)
+- Saw the upgrade nudge: 2 of 3 (too few to say)
 
-Settings people change (most-moved first; the other 1 setting sits at its default everywhere):
-  ai.provider: default off, 26 installs, 77% on default, most common change: cloud (6)
-  mediaIndex.enabled: default off, 10 installs, 80% on default, most common change: on (2)
-  indexing.enabled: default on, 26 installs, 92% on default, most common change: off (2)
+Revenue counts complete days and stays per currency: amounts in two currencies are never added. A
+transaction counts in its payout currency when Paddle reports one, else its checkout currency. It's gross
+of refunds: a refunded purchase stays completed in Paddle. Purchases are first purchases (checkout or API);
+renewals, card updates, and plan changes aren't. Paying share is a trend signal, not a conversion rate:
+refunded purchases still count, one license can cover several Macs, and a licensed install with analytics
+off is paid but not in monthly active.
+
+Purchases, last 90 days (first purchases, newest first):
+  2026-08-02 01:30 UTC (today): $39.00
+  2026-08-01 10:00 UTC: $39.00
+
+## Onboarding: how far do installs get?
+
+- Finished onboarding: 77% (20 of 26)
+
+Discovered (highest share first):
+  Saw the quick filter intro (fileExplorer.quickFilterIntroSeen): 38% (10 of 26)
+  Saw the text editor hint* (behavior.textEditorHintSeen): 1 of 4 (too few to say)
+
+Closed by hand:
+  Closed the USB debugging hint (behavior.adbHintDismissed): 10% (1 of 10)
+
+Each install counts once, at its latest heartbeat; a flag off its default means the install saw, did, or
+closed that thing. Each share is over the installs whose build has the flag. Under 5 such installs a row
+shows the count only. A * marks a hint that only shows where macOS has the feature behind it, so its share
+also counts installs that could never see it.
 
 ## Feature usage: which features do people use?
 
-- Active installs (beat at least once since 2026-05-04): 40
+- Window: 2026-05-04 – 2026-08-01, complete days
+- Active installs (beat at least once in the window): 40
 
-An install counts toward a feature once it fired any of that feature's events in the window; the share is of active installs. "No data yet" means no release has sent the event yet, so it isn't a zero.
+An install counts toward a feature once it fired any of that feature's events in the window; the share is of active installs. "No data yet" means no release has sent the event yet, so it isn't a zero. The change is in percentage points against the window before, and a dash when there is no honest comparison (the feature's events weren't stored yet then).
 
 Per feature (id from feature-status.json, most-used first):
-  archives (Archives): 30 installs (75%), 4,321 events; pane_navigated 4,321 (30 installs)
-  ask-cmdr (Ask Cmdr): 3 installs (7.5%), 12 events; answered 10 (3 installs), failed 2 (1 install)
-  git-browser (Git browser): 1 install (2.5%), 1 event
-  tabs (Tabs): 0 installs (0%), 0 events
+  archives (Archives): 30 installs (75%, +25 pp vs. previous 90 days), 4,321 events; pane_navigated 4,321 (30 installs)
+  ask-cmdr (Ask Cmdr): 3 installs (7.5%, – vs. previous 90 days), 12 events; answered 10 (3 installs), failed 2 (1 install)
+  git-browser (Git browser): 1 install (2.5%, −2.5 pp vs. previous 90 days), 1 event
+  tabs (Tabs): 0 installs (0%, ±0 pp vs. previous 90 days), 0 events
   multi-rename (Multi-rename tool): no data yet
 
 Counted from:
@@ -682,48 +219,47 @@ Counted from:
   archives: pane_navigated[volume_kind=archive], archive_edit_completed
   git-browser: pane_navigated[volume_kind=git-portal]
 
-## Payment: how many pay?
+## Settings adoption: what do people actually turn on?
 
-- Revenue: $128.00
-- Transactions: 2
-- Active subscriptions: 1
+- Installs we can read: 26
+- Not counted: 4 on a version older than the settings history goes back
+- Drive indexing on: 92%
+- Image search on: 20%
+- AI switched on: 23%
 
-Recent transactions:
-  2026-08-01: $39.00 (completed)
-  2026-07-31: €89.00 (refunded)
+Each install counts once, at its latest heartbeat. A setting is scored only against installs whose build actually had it, so a young setting shows a smaller total than an old one. Only preferences show here; remembered UI and onboarding state are in the Onboarding section.
 
-## Retention: do they stay?
-
-- Active subscriptions: 3
-- Churn rate: 25.0%
-
-Subscriptions by status:
-  active: 3 (75.0%)
-  canceled: 1 (25.0%)
-  paused: 0 (0.0%)
+Settings people change (most-moved first; the other 1 setting sits at its default everywhere):
+  ai.provider: default off, 26 installs, 77% on default, most common change: cloud (6)
+  mediaIndex.enabled: default off, 10 installs, 80% on default, most common change: on (2)
+  ui.density: default compact (moved in v1.10.0), 26 installs, 81% on default, most common change: roomy (5)
+  indexing.enabled: default on, 26 installs, 92% on default, most common change: off (2)
 
 ## Feedback & errors: what are users telling us?
 
 - Feedback messages: 3
-- Awaiting reply (have a reply-to email, not marked answered): 1
+- Awaiting reply (a reply-to email, not marked answered, however old): 2
 - Error reports: 3
+- Error reports since v1.10.0 came out: 2
 
 Error reports by kind:
   auto: 2
   user: 1
 
-Error reports by version:
-  1.10.0: 2
-  1.2.0: 1
+Error reports per 100 installs, by version (2026-05-04 – 2026-08-01, complete days; an install that upgraded counts under both; under 5 installs, no rate):
+  1.10.0: 2 reports, 45 installs, 4.4 per 100
+  1.2.0: 1 report, 50 installs, 2 per 100
+  1.1.0: 1 report, 3 installs, too few installs for a rate
 
 Error reports by day:
   2026-07-31: 1
   2026-08-01: 2
 
-Recent feedback:
+Recent feedback, and every message awaiting a reply:
   2026-08-01 (v1.10.0) [reply-to: someone@example.com]: Love it, especially the preview pane.
   2026-07-31 (v1.2.0) [logs: ERR-AB7PV]: ${'x'.repeat(280)}
-  2026-07-30 (v1.2.0) [reply-to: answered@example.com, answered 2026-07-30]: Already got a reply.`
+  2026-07-30 (v1.2.0) [reply-to: answered@example.com, answered 2026-07-30]: Already got a reply.
+  2026-04-01 (v1.1.0) [reply-to: waiting@example.com]: Still waiting on this one.`
 
 const allFailedReport = `# Cmdr analytics report (7d)
 
@@ -747,9 +283,19 @@ Couldn't load: Cloudflare: timed out after 20s; GitHub: offline
 
 ## Active use: how many run the app?
 
-Couldn't load: Cloudflare: timed out after 20s
+Yesterday, 2026-08-01 (UTC), the last complete day. Today is partial and in no number here.
+- Couldn't load the heartbeat: Active installs: timed out after 20s
+- D7 retention: couldn't load (Funnel: timed out after 20s)
 
-## Settings adoption: what do people actually turn on?
+## Release rollout: how far does the newest release spread?
+
+Couldn't load: Active installs: timed out after 20s
+
+## Money: who pays?
+
+Couldn't load: Paddle: not configured (missing env vars)
+
+## Onboarding: how far do installs get?
 
 Couldn't load: Settings adoption: timed out after 20s
 
@@ -757,13 +303,9 @@ Couldn't load: Settings adoption: timed out after 20s
 
 Couldn't load: Feature usage: timed out after 20s
 
-## Payment: how many pay?
+## Settings adoption: what do people actually turn on?
 
-Couldn't load: Paddle: not configured (missing env vars)
-
-## Retention: do they stay?
-
-Couldn't load: Paddle: not configured (missing env vars)
+Couldn't load: Settings adoption: timed out after 20s
 
 ## Feedback & errors: what are users telling us?
 
@@ -804,41 +346,73 @@ GitHub stars: 0 total
 
 ## Active use: how many run the app?
 
-- Active installs: none yet (the heartbeat fills as beta testers update and run the new build)
+Yesterday, 2026-08-01 (UTC), the last complete day. Today is partial and in no number here.
+- Weekly active: – (– vs. 30 days earlier)
+- Monthly active: – (– vs. 30 days earlier)
+- Stickiness: – (– vs. previous 30 days)
+- Hours per active day: – (– vs. previous 30 days)
+- D7 retention: – (– vs. previous 30 cohorts)
 
-- Total activations: 0
+Counts installs with usage stats on; an install that opted out sends nothing. Weekly and monthly
+active count installs with a beat in the 7 and 28 days ending yesterday, against the same count 30 days
+earlier. Stickiness is daily active over monthly active, and hours per active day is all app hours over
+all daily actives, each pooled over the last 30 complete days against the 30 before. A beat from a build
+too old to report its runtime counts as an hour. D7 pools the newest 30 cohorts old enough to have one.
+The last week can still hold a few synthetic installs the weekly sweep removes later.
+"Checked for updates" is context, not a ceiling: distinct addresses that checked for updates, a separate
+consent installs with analytics off still ride. A shared connection counts once, a changing address
+counts more than once, and anyone with automatic update checks off never appears.
+
+## Release rollout: how far does the newest release spread?
+
+- No release to track yet.
+
+## Money: who pays?
+
+- Revenue, last 30 complete days: 0
+- All-time revenue: 0
+- Paid licenses (first purchases through yesterday): 0
+- Paying share of monthly active: – (– vs. 30 days earlier)
+- License activations: 0 (– active devices)
+- Saw the upgrade nudge: not available yet
+
+Revenue counts complete days and stays per currency: amounts in two currencies are never added. A
+transaction counts in its payout currency when Paddle reports one, else its checkout currency. It's gross
+of refunds: a refunded purchase stays completed in Paddle. Purchases are first purchases (checkout or API);
+renewals, card updates, and plan changes aren't. Paying share is a trend signal, not a conversion rate:
+refunded purchases still count, one license can cover several Macs, and a licensed install with analytics
+off is paid but not in monthly active.
+
+## Onboarding: how far do installs get?
+
+- Finished onboarding: not available yet
+
+Each install counts once, at its latest heartbeat; a flag off its default means the install saw, did, or
+closed that thing. Each share is over the installs whose build has the flag. Under 5 such installs a row
+shows the count only. A * marks a hint that only shows where macOS has the feature behind it, so its share
+also counts installs that could never see it.
+
+## Feature usage: which features do people use?
+
+- Window: since 2026-07-03, today included (the api-server predates complete-day windows)
+- Active installs (beat at least once in the window): 0
+
+An install counts toward a feature once it fired any of that feature's events in the window; the share is of active installs. "No data yet" means no release has sent the event yet, so it isn't a zero. The change is in percentage points against the window before, and a dash when there is no honest comparison (the feature's events weren't stored yet then).
+
+Per feature (id from feature-status.json, most-used first):
+  search (Search): 0 installs (–, – vs. previous 30 days), 0 events
+
+Counted from:
+  search: search_used
 
 ## Settings adoption: what do people actually turn on?
 
 - No installs to read yet (settings adoption fills as beta testers run a build that reports a config).
 
-## Feature usage: which features do people use?
-
-- Active installs (beat at least once since 2026-07-03): 0
-
-An install counts toward a feature once it fired any of that feature's events in the window; the share is of active installs. "No data yet" means no release has sent the event yet, so it isn't a zero.
-
-Per feature (id from feature-status.json, most-used first):
-  search (Search): 0 installs (–), 0 events
-
-Counted from:
-  search: search_used
-
-## Payment: how many pay?
-
-- Revenue: $0.00
-- Transactions: 0
-- Active subscriptions: 0
-
-## Retention: do they stay?
-
-- Active subscriptions: 0
-- Churn rate: N/A
-
 ## Feedback & errors: what are users telling us?
 
 - Feedback messages: 0
-- Awaiting reply (have a reply-to email, not marked answered): 0
+- Awaiting reply (a reply-to email, not marked answered, however old): 0
 - Error reports: 0`
 
 // The doubled blank line under Interest and Download is the current shape: the section heading already
@@ -871,9 +445,35 @@ GitHub releases (all-time):
 
 ## Active use: how many run the app?
 
-Couldn't load: Cloudflare: offline
+Yesterday, 2026-08-01 (UTC), the last complete day. Today is partial and in no number here.
+- Not available yet: the api-server doesn't answer /admin/active-installs yet.
+- D7 retention: couldn't load (Funnel: offline)
 
-## Settings adoption: what do people actually turn on?
+## Release rollout: how far does the newest release spread?
+
+- Not available yet: the api-server doesn't answer /admin/active-installs yet.
+
+## Money: who pays?
+
+- Revenue, last 7 complete days: €89.00 (– vs. previous 7 days), $39.00 (– vs. previous 7 days)
+- All-time revenue: €89.00, $78.00
+- Paid licenses (first purchases through yesterday): 2
+- Paying share of monthly active: – (– vs. 7 days earlier)
+- License activations: couldn't load (License server: offline)
+- Saw the upgrade nudge: couldn't load (Settings adoption: offline)
+
+Revenue counts complete days and stays per currency: amounts in two currencies are never added. A
+transaction counts in its payout currency when Paddle reports one, else its checkout currency. It's gross
+of refunds: a refunded purchase stays completed in Paddle. Purchases are first purchases (checkout or API);
+renewals, card updates, and plan changes aren't. Paying share is a trend signal, not a conversion rate:
+refunded purchases still count, one license can cover several Macs, and a licensed install with analytics
+off is paid but not in monthly active.
+
+Purchases, last 7 days (first purchases, newest first):
+  2026-08-02 01:30 UTC (today): $39.00
+  2026-08-01 10:00 UTC: $39.00
+
+## Onboarding: how far do installs get?
 
 Couldn't load: Settings adoption: offline
 
@@ -881,31 +481,16 @@ Couldn't load: Settings adoption: offline
 
 Couldn't load: Feature usage: offline
 
-## Payment: how many pay?
+## Settings adoption: what do people actually turn on?
 
-- Revenue: $128.00
-- Transactions: 2
-- Active subscriptions: 1
-
-Recent transactions:
-  2026-08-01: $39.00 (completed)
-  2026-07-31: €89.00 (refunded)
-
-## Retention: do they stay?
-
-- Active subscriptions: 3
-- Churn rate: 25.0%
-
-Subscriptions by status:
-  active: 3 (75.0%)
-  canceled: 1 (25.0%)
-  paused: 0 (0.0%)
+Couldn't load: Settings adoption: offline
 
 ## Feedback & errors: what are users telling us?
 
 - Feedback messages: 0
-- Awaiting reply (have a reply-to email, not marked answered): 0
+- Awaiting reply (a reply-to email, not marked answered, however old): 0
 - Error reports: 3
+- Error reports since v1.10.0 came out: 2
 
 Error reports by kind:
   auto: 2
@@ -943,5 +528,14 @@ describe('formatReport', () => {
 
   it('keeps the surviving half of a section when one of its two sources is down', () => {
     expect(formatReport(mixedData)).toBe(mixedReport)
+  })
+
+  it("reads D7 as couldn't load, not as not-yet-available, when the funnel's worker side failed", () => {
+    if (!richData.funnel.ok) throw new Error('richData.funnel must load')
+    const data = {
+      ...richData,
+      funnel: { ok: true as const, data: { ...richData.funnel.data, workerStatus: 'unavailable' as const } },
+    }
+    expect(formatReport(data)).toContain("- D7 retention: couldn't load (the api-server's funnel didn't answer)")
   })
 })

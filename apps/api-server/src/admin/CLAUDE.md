@@ -6,7 +6,8 @@ endpoints (`/admin/stats`, `/admin/downloads`, `/admin/active-users`, `/admin/up
 `PUT /admin/feedback/:id/answered`; `funnel.ts` holds `/admin/funnel`, the one-call per-UTC-day acquisition funnel (its
 contract and pure assembly in `funnel-assemble.ts`), and `funnel-countries.ts` its per-country totals,
 `/admin/funnel/countries`. `feature-usage.ts` holds `/admin/feature-usage` and `featureUsageDefinitions`, the one
-feature → event mapping (a new event is one line there).
+feature → event mapping (a new event is one line there). `active-installs.ts` holds `/admin/active-installs`: per-day
+DAU, WAU, MAU, app hours, and versions, plus installs per version over the last 7, 30, and 90 complete days.
 
 ## Must-knows
 
@@ -33,6 +34,9 @@ feature → event mapping (a new event is one line there).
   latter fills in on a later beat, so only surviving installs gain one and a country's retention reads too high.
 - **`FunnelDay.byCountry` must sum to the day**: `assembleFunnel` builds the day from its slices, and every query groups
   by country rather than running once per country. DETAILS § Per-day funnel.
+- **An install's version on a day is its highest by `compareVersions`, ❌ never SQL `MAX(app_version)`**: string order
+  puts `0.9.0` above `0.10.0`. `/admin/active-installs` reads raw beats and folds in TypeScript, since a `GROUP BY` over
+  the beat window doubled its D1 reads. DETAILS § Active installs.
 - **A query over `analytics_event` must read each event row once.** D1 bills rows read, temp tables included: a
   `VALUES`-map join behind `/admin/feature-usage` read 970,000 rows for 120,000 events. DETAILS § Feature usage.
 - **UA-family aggregation reads `resolveUaFamily` (`../user-agent.ts`)**, ❌ never a fresh classification of the raw UA:

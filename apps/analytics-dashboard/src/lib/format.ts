@@ -48,22 +48,54 @@ export function formatMultiple(ratio: number): string {
   return `${ratio.toLocaleString('en-US', { maximumFractionDigits: ratio < 10 ? 1 : 0 })}×`
 }
 
-/** A relative change (0.5 = +50%), signed. Under 1% rounds to "±0%". */
-export function formatRelativeChange(change: number): string {
-  const pct = Math.round(change * 100)
-  return pct === 0 ? '±0%' : `${pct > 0 ? '+' : '−'}${String(Math.abs(pct))}%`
+/**
+ * A signed change formatter that also exposes the rounded number it prints, so a color can follow what's
+ * on screen: a change that prints "±0%" must not read green or red from its raw sign (`changeTone`).
+ */
+export interface ChangeFormat {
+  (change: number): string
+  /** The change as printed, in display units (0.004 → 0 for "±0%"). */
+  shown: (change: number) => number
 }
+
+function changeFormat(shown: (change: number) => number, unit: string): ChangeFormat {
+  const format = (change: number): string => {
+    const value = shown(change)
+    return value === 0 ? `±0${unit}` : `${value > 0 ? '+' : '−'}${String(Math.abs(value))}${unit}`
+  }
+  return Object.assign(format, { shown })
+}
+
+/** A relative change (0.5 = +50%), signed. Under 1% rounds to "±0%". */
+export const formatRelativeChange = changeFormat((change) => Math.round(change * 100), '%')
 
 /** An absolute change of two rates (0.012 = +1.2 percentage points), signed, in "pp". */
-export function formatPointChange(change: number): string {
-  const pp = Math.round(change * 1000) / 10
-  return pp === 0 ? '±0 pp' : `${pp > 0 ? '+' : '−'}${String(Math.abs(pp))} pp`
-}
+export const formatPointChange = changeFormat((change) => Math.round(change * 1000) / 10, ' pp')
 
 /** An absolute change of two multiples (+0.4×), signed. */
-export function formatMultipleChange(change: number): string {
-  const rounded = Math.round(change * 10) / 10
-  return rounded === 0 ? '±0×' : `${rounded > 0 ? '+' : '−'}${String(Math.abs(rounded))}×`
+export const formatMultipleChange = changeFormat((change) => Math.round(change * 10) / 10, '×')
+
+/** An absolute change of two hour values (+0.4 h), signed. */
+export const formatHoursChange = changeFormat((change) => Math.round(change * 10) / 10, ' h')
+
+export type ChangeTone = 'neutral' | 'good' | 'bad'
+
+/**
+ * How a change reads: neutral when unknown or when it prints as zero, else good or bad by its sign
+ * (`upIsGood` false for a metric where a rise is bad news, like the bot meter).
+ */
+export function changeTone(change: number | null, format: ChangeFormat, upIsGood = true): ChangeTone {
+  if (change === null) return 'neutral'
+  const shown = format.shown(change)
+  if (shown === 0) return 'neutral'
+  return shown > 0 === upIsGood ? 'good' : 'bad'
+}
+
+/** The text class for each tone. */
+export const changeToneClass: Record<ChangeTone, string> = {
+  neutral: 'text-text-secondary',
+  good: 'text-success',
+  bad: 'text-danger',
 }
 
 /** A short local time-of-day (e.g. "09:41 AM") from an ISO timestamp. */
