@@ -3,9 +3,10 @@
 use super::{read_zip_entries, sample_manifest};
 use crate::error_reporter::bundle_builder::{build_bundle_legacy_window, build_bundle_streaming};
 use crate::error_reporter::{BuiltBundle, BundleManifest, BundleScope, breadcrumbs, state_history};
+use crate::logging::dispatch::file_timestamp_at as timestamp;
 use crate::redact;
 use crate::test_support::TestDir;
-use chrono::{DateTime, Utc};
+use jiff::{SignedDuration, Timestamp};
 use std::time::SystemTime;
 
 const PRIVACY_REPORT_ID: &str = "ERR-AB23X";
@@ -33,14 +34,8 @@ fn privacy_manifest(redaction: &redact::RedactionContext) -> BundleManifest {
     manifest
 }
 
-fn timestamp(now: DateTime<Utc>) -> String {
-    now.with_timezone(&chrono::Local)
-        .format("%Y-%m-%dT%H:%M:%S%.3f%:z")
-        .to_string()
-}
-
-fn current_privacy_log(now: DateTime<Utc>) -> String {
-    let stamp = now.with_timezone(&chrono::Local).format("%Y-%m-%dT%H:%M:%S%.3f%:z");
+fn current_privacy_log(now: Timestamp) -> String {
+    let stamp = timestamp(now);
     format!(
         "{stamp} INFO path={path:?}\n\
          {stamp} INFO smb://PRIVATE-REMOTE-USER:PRIVATE-REMOTE-PASSWORD@PRIVATE-REMOTE-HOST.local/PRIVATE-REMOTE-SHARE/{name}?PRIVATE-QUERY-KEY=PRIVATE-QUERY-SECRET#PRIVATE-FRAGMENT-SECRET\n\
@@ -52,9 +47,9 @@ fn current_privacy_log(now: DateTime<Utc>) -> String {
 
 /// Ordinary current records around a multi-line backtrace, in both the active and the
 /// rotated file, so each pipeline has to carry typed diagnostics and continuations through.
-fn typed_log(now: DateTime<Utc>, suffix: &str) -> String {
-    let before = timestamp(now - chrono::Duration::seconds(5));
-    let backtrace = timestamp(now - chrono::Duration::seconds(1));
+fn typed_log(now: Timestamp, suffix: &str) -> String {
+    let before = timestamp(now - SignedDuration::from_secs(5));
+    let backtrace = timestamp(now - SignedDuration::from_secs(1));
     let after = timestamp(now);
     format!(
         "{before} INFO  privacy_test  SAFE-BEFORE-{suffix}\n\
@@ -208,7 +203,7 @@ fn both_zip_pipelines_apply_one_report_context_to_every_diagnostic_surface() {
     let dir = TestDir::new("error-reporter-privacy-archives");
     let log = dir.join("cmdr.log");
     let rotated_log = dir.join("cmdr.log.1");
-    let now = Utc::now();
+    let now = Timestamp::now();
     std::fs::write(
         &log,
         format!("{}{}", current_privacy_log(now), typed_log(now, "ACTIVE")),
@@ -223,7 +218,7 @@ fn both_zip_pipelines_apply_one_report_context_to_every_diagnostic_surface() {
         PRIVACY_REPORT_ID.to_string(),
         privacy_manifest(&streaming_context),
         vec![log.clone(), rotated_log.clone()],
-        now - chrono::Duration::hours(1),
+        now - SignedDuration::from_hours(1),
         SystemTime::now(),
         &streaming_context,
     )

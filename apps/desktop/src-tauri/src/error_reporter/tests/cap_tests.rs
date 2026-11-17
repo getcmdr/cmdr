@@ -6,8 +6,9 @@ use crate::error_reporter::BundleManifest;
 use crate::error_reporter::bundle_builder::{PreparedFile, build_bundle_streaming_to_cap, build_zip};
 use crate::error_reporter::bundle_capper::cap_bundle_to_bytes;
 use crate::error_reporter::cap_bundle_to_mb;
+use crate::logging::dispatch::file_timestamp_at as iso;
 use crate::test_support::TestDir;
-use chrono::{DateTime, Utc};
+use jiff::{SignedDuration, Timestamp};
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::Write;
@@ -15,12 +16,6 @@ use std::time::{Duration, SystemTime};
 
 fn make_log_dir(name: &str) -> TestDir {
     TestDir::new(&format!("cap-{name}"))
-}
-
-fn iso(ts: DateTime<Utc>) -> String {
-    ts.with_timezone(&chrono::Local)
-        .format("%Y-%m-%dT%H:%M:%S%.3f%:z")
-        .to_string()
 }
 
 #[test]
@@ -222,7 +217,7 @@ fn cap_bundle_fills_the_cap_with_compressed_bytes_not_raw_ones() {
 fn streaming_stops_at_cap() {
     let dir = make_log_dir("cap");
     let log = dir.join("cmdr.log");
-    let now = Utc::now();
+    let now = Timestamp::now();
     let mut f = fs::File::create(&log).unwrap();
     // 192 KiB of deterministic high-entropy text in realistically sized log lines.
     // Poor compression crosses the test's 64 KiB compressed cap without making
@@ -232,7 +227,7 @@ fn streaming_stops_at_cap() {
     let alphabet = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut token = vec![0u8; 192];
     for i in 0..line_count {
-        let ts = iso(now - chrono::Duration::seconds((line_count - i) as i64));
+        let ts = iso(now - SignedDuration::from_secs((line_count - i) as i64));
         for byte in &mut token {
             state ^= state >> 12;
             state ^= state << 25;
@@ -246,7 +241,7 @@ fn streaming_stops_at_cap() {
     }
     drop(f);
 
-    let cutoff = now - chrono::Duration::hours(2);
+    let cutoff = now - SignedDuration::from_hours(2);
     let cap_bytes = 64 * 1024;
     let bundle = build_bundle_streaming_to_cap(
         "ERR-CAP".to_string(),
@@ -288,12 +283,12 @@ fn streaming_cap_keeps_the_newest_lines_of_every_file_it_reaches() {
     let dir = make_log_dir("cap-newest");
     let live = dir.join("cmdr.log");
     let rotated = dir.join("cmdr.log.1");
-    let now = Utc::now();
+    let now = Timestamp::now();
     // Realistic, compressible log text: what a verbose SMB session writes.
     let write_lines = |path: &std::path::Path, from_secs_ago: i64, count: i64, marker: &str| {
         let mut f = fs::File::create(path).unwrap();
         for i in 0..count {
-            let ts = iso(now - chrono::Duration::seconds(from_secs_ago - i));
+            let ts = iso(now - SignedDuration::from_secs(from_secs_ago - i));
             writeln!(
                 f,
                 "{ts} INFO SmbVolume::get_metadata: share=\"<volume:a829a3cd8863>\" input=\"<dir:fe2800a71878>/<dir:{i:012}>\" {marker} idx={i}"
@@ -317,7 +312,7 @@ fn streaming_cap_keeps_the_newest_lines_of_every_file_it_reaches() {
         "ERR-NEWST".to_string(),
         sample_manifest(),
         vec![live.clone(), rotated.clone()],
-        now - chrono::Duration::hours(5),
+        now - SignedDuration::from_hours(5),
         SystemTime::now(),
         &test_redaction(),
         cap_bytes,

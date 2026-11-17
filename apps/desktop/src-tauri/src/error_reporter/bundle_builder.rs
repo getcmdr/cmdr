@@ -19,12 +19,13 @@ use super::{
 };
 use crate::logging;
 use crate::redact;
-use chrono::{DateTime, Datelike, Timelike, Utc};
 use cmdr_fs::log_private::LogPrivate;
+use jiff::tz::TimeZone;
+use jiff::{SignedDuration, Timestamp};
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 use zip::DateTime as ZipDateTime;
 use zip::write::{SimpleFileOptions, ZipWriter};
 
@@ -37,7 +38,7 @@ const SAMPLE_FIRST_LINES: usize = 5;
 const SAMPLE_LAST_LINES: usize = 20;
 
 /// 30 minutes of pre-error context for Flow B.
-const FLOW_B_PRE_ERROR_WINDOW: chrono::Duration = chrono::Duration::minutes(30);
+const FLOW_B_PRE_ERROR_WINDOW: SignedDuration = SignedDuration::from_mins(30);
 
 /// One log file selected for inclusion: redacted lines plus the source file's mtime
 /// (used to date the zip entry; without an explicit mtime, `zip` writes 1980-01-01).
@@ -105,7 +106,7 @@ pub async fn build_bundle<R: tauri::Runtime>(
         email,
     } = request;
     let id = resolve_bundle_id(id);
-    let now_utc = Utc::now();
+    let now_utc = Timestamp::now();
     let now_system = SystemTime::now();
 
     let redaction = redact::RedactionContext::for_report(&id);
@@ -141,12 +142,12 @@ pub async fn build_bundle<R: tauri::Runtime>(
             Ok(dir) => crate::diagnostics_snapshot::SystemSnapshot::collect_full(&dir),
             Err(_) => crate::diagnostics_snapshot::SystemSnapshot::collect_full(Path::new("")),
         },
-        generated_at: now_utc.to_rfc3339(),
+        generated_at: crate::timestamps::rfc3339(now_utc),
     };
 
     match scope {
         BundleScope::Recent { window } => {
-            let cutoff = now_utc - chrono::Duration::from_std(window).unwrap_or(chrono::Duration::hours(5));
+            let cutoff = recent_cutoff(now_utc, window);
             build_bundle_streaming(id, manifest, files, cutoff, now_system, &redaction)
         }
         BundleScope::Window { .. } => {
@@ -230,7 +231,7 @@ pub(super) fn build_bundle_streaming(
     id: String,
     manifest: BundleManifest,
     files: Vec<PathBuf>,
-    cutoff: DateTime<Utc>,
+    cutoff: Timestamp,
     now_system: SystemTime,
     redaction: &redact::RedactionContext,
 ) -> Result<BuiltBundle, String> {
@@ -251,7 +252,7 @@ pub(super) fn build_bundle_streaming_to_cap(
     id: String,
     manifest: BundleManifest,
     files: Vec<PathBuf>,
-    cutoff: DateTime<Utc>,
+    cutoff: Timestamp,
     now_system: SystemTime,
     redaction: &redact::RedactionContext,
     cap_bytes: usize,
@@ -308,8 +309,7 @@ pub(super) fn build_bundle_streaming_to_cap(
                 continue;
             }
         };
-        let mtime_utc: DateTime<Utc> = mtime.into();
-        if mtime_utc < cutoff {
+        if modified_before(mtime, cutoff) {
             continue;
         }
 
@@ -439,7 +439,7 @@ pub(super) fn build_bundle_legacy_window(
     manifest: BundleManifest,
     files: Vec<PathBuf>,
     scope: BundleScope,
-    now_utc: DateTime<Utc>,
+    now_utc: Timestamp,
     now_system: SystemTime,
     redaction: &redact::RedactionContext,
 ) -> Result<BuiltBundle, String> {
@@ -500,7 +500,7 @@ pub(super) fn build_bundle_legacy_window(
 pub(super) fn load_and_filter_log_file(
     path: &Path,
     scope: BundleScope,
-    now_utc: DateTime<Utc>,
+    now_utc: Timestamp,
     now_system: SystemTime,
     redaction: &redact::RedactionContext,
 ) -> Option<(Vec<String>, SystemTime)> {
@@ -520,13 +520,12 @@ pub(super) fn load_and_filter_log_file(
     // File-level filter. If a file's mtime is older than the lower bound of the scope's
     // window, skip it entirely: its newest line is older than what we want.
     let lower_bound = match scope {
-        BundleScope::Recent { window } => {
-            now_utc - chrono::Duration::from_std(window).unwrap_or(chrono::Duration::hours(5))
-        }
-        BundleScope::Window { first_error_at } => first_error_at - FLOW_B_PRE_ERROR_WINDOW,
+        BundleScope::Recent { window } => recent_cutoff(now_utc, window),
+        BundleScope::Window { first_error_at } => first_error_at
+            .checked_sub(FLOW_B_PRE_ERROR_WINDOW)
+            .unwrap_or(Timestamp::MIN),
     };
-    let mtime_utc: DateTime<Utc> = mtime.into();
-    if mtime_utc < lower_bound {
+    if modified_before(mtime, lower_bound) {
         return Some((Vec::new(), mtime));
     }
 
@@ -586,19 +585,41 @@ impl ProvenanceFilter {
     }
 }
 
+/// The oldest instant a [`BundleScope::Recent`] bundle keeps: `window` before `now_utc`. A
+/// window too long for a signed duration falls back to five hours; one that reaches back past
+/// the earliest instant keeps everything.
+pub(super) fn recent_cutoff(now_utc: Timestamp, window: Duration) -> Timestamp {
+    let window = SignedDuration::try_from(window).unwrap_or(SignedDuration::from_hours(5));
+    now_utc.checked_sub(window).unwrap_or(Timestamp::MIN)
+}
+
+/// Whether a file last modified at `mtime` holds nothing newer than `cutoff`. An mtime no
+/// timestamp can hold (an SMB FILETIME past year 9999) says nothing, so the file stays and its
+/// lines decide.
+pub(super) fn modified_before(mtime: SystemTime, cutoff: Timestamp) -> bool {
+    Timestamp::try_from(mtime).is_ok_and(|mtime| mtime < cutoff)
+}
+
 /// Convert a [`SystemTime`] into a [`zip::DateTime`] (the format the zip crate stores
-/// per entry). On parse failure (system clock before 1980, post-2107) returns the zip
-/// crate's default (not a hard error). The bundle still ships, just with a placeholder
-/// mtime on that one entry.
+/// per entry), in this machine's local wall clock. Outside what the DOS field holds (before
+/// 1980, after 2107, or no calendar reading at all) returns the zip crate's default (not a hard
+/// error). The bundle still ships, just with a placeholder mtime on that one entry.
 pub(super) fn zip_dt(time: SystemTime) -> ZipDateTime {
-    let local: DateTime<chrono::Local> = time.into();
+    let Ok(at) = Timestamp::try_from(time) else {
+        return ZipDateTime::default();
+    };
+    let local = TimeZone::system().to_datetime(at);
+    let Ok(year) = u16::try_from(local.year()) else {
+        return ZipDateTime::default();
+    };
+    // Month, day, and the time fields are always small and non-negative.
     ZipDateTime::from_date_and_time(
-        local.year() as u16,
-        local.month() as u8,
-        local.day() as u8,
-        local.hour() as u8,
-        local.minute() as u8,
-        local.second() as u8,
+        year,
+        local.month().unsigned_abs(),
+        local.day().unsigned_abs(),
+        local.hour().unsigned_abs(),
+        local.minute().unsigned_abs(),
+        local.second().unsigned_abs(),
     )
     .unwrap_or_default()
 }

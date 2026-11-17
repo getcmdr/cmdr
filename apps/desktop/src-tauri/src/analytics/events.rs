@@ -57,7 +57,7 @@ impl EventStamp {
     /// `2026-09-24T10:00:00.123Z`), a fresh v4 id, and this build's version.
     fn now() -> Self {
         Self {
-            timestamp: chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+            timestamp: crate::timestamps::now_rfc3339_millis_z(),
             id: uuid::Uuid::new_v4().to_string(),
             app_version: env!("CARGO_PKG_VERSION"),
         }
@@ -213,8 +213,13 @@ mod tests {
     fn timestamps_are_rfc3339_utc_with_milliseconds() {
         let now = EventStamp::now().timestamp;
         assert!(now.ends_with('Z'), "{now}");
-        assert!(chrono::DateTime::parse_from_rfc3339(&now).is_ok(), "{now}");
         assert_eq!(now.len(), AT.len(), "{now}");
+        let parsed = crate::timestamps::parse_rfc3339(&now).expect("parses");
+        assert_eq!(
+            crate::timestamps::rfc3339_millis_z(parsed),
+            now,
+            "always three digits and `Z`"
+        );
     }
 
     // The PII backstop only runs in debug builds (where these tests run under `cargo nextest`).

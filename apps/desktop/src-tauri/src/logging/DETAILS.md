@@ -212,7 +212,10 @@ nothing, and starts a fresh one (pinned by `a_live_file_deleted_underneath_rotat
   is § "Terminal target column".
 - **File chain**: `YYYY-MM-DDTHH:MM:SS.mmm±HH:MM` (ISO 8601 with millisecond precision and timezone offset). The file
   ships to triage, where bare `HH:MM:SS.mmm` is impossible to correlate; the error reporter's Flow B bundle parses this
-  stamp to line-trim by timestamp.
+  stamp to line-trim by timestamp. The bytes come from `timestamps::log_file_stamp` (one owner for every stamp Cmdr
+  writes), and `error_reporter::tail_walker::parse_leading_iso8601` reads them back; its tests pin the pair byte for
+  byte, so change both or neither. Tests write log lines through `dispatch::file_timestamp_at`, never a hand-rolled
+  format.
 
 ## Terminal target column
 

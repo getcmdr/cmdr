@@ -10,6 +10,8 @@
 //! a field, the question is which side of that line it belongs on, and anything that reads the
 //! filesystem or allocates belongs on this one.
 
+use crate::timestamps;
+use jiff::Timestamp;
 use std::path::Path;
 
 use super::{
@@ -238,17 +240,18 @@ fn current_process_name() -> Option<String> {
 }
 
 /// A [`SystemTime`](std::time::SystemTime) as the same ISO 8601 string the capture paths write, so
-/// every crash-file timestamp has one shape whatever produced it.
-fn to_iso8601(time: std::time::SystemTime) -> String {
-    chrono::DateTime::<chrono::Utc>::from(time).to_rfc3339()
+/// every crash-file timestamp has one shape whatever produced it. A time no timestamp can hold
+/// (past year 9999, which a local file's mtime never reaches) reads as now, like an mtime the
+/// filesystem won't give.
+pub(super) fn to_iso8601(time: std::time::SystemTime) -> String {
+    Timestamp::try_from(time).map_or_else(|_| timestamps::now_rfc3339(), timestamps::rfc3339)
 }
 
 /// The inverse, for a timestamp already on disk. `None` for a value that isn't ISO 8601, which
 /// callers treat as "can't place this crash in time" rather than as an error.
-fn parse_timestamp(timestamp: &str) -> Option<std::time::SystemTime> {
-    chrono::DateTime::parse_from_rfc3339(timestamp)
-        .ok()
-        .map(|dt| dt.with_timezone(&chrono::Utc).into())
+#[expect(clippy::unnecessary_fallible_conversions, reason = "fallible from jiff 1.0")]
+pub(super) fn parse_timestamp(timestamp: &str) -> Option<std::time::SystemTime> {
+    std::time::SystemTime::try_from(timestamps::parse_rfc3339(timestamp)?).ok()
 }
 
 #[cfg(unix)]
@@ -265,9 +268,10 @@ fn signal_name(sig: i32) -> String {
 /// makes the frontend ask instead of auto-sending. A malformed timestamp answers `false`: claiming
 /// a crash loop we can't prove would suppress a legitimate auto-send.
 pub(super) fn is_crash_loop(crash_timestamp: &str) -> bool {
-    let Ok(crash_time) = chrono::DateTime::parse_from_rfc3339(crash_timestamp) else {
+    let Some(crash_time) = timestamps::parse_rfc3339(crash_timestamp) else {
         return false;
     };
-    let elapsed = chrono::Utc::now().signed_duration_since(crash_time);
-    elapsed.num_seconds() >= 0 && (elapsed.num_seconds() as u64) < CRASH_LOOP_THRESHOLD_SECS
+    // Whole seconds, truncated toward zero; a crash stamped in the future is negative.
+    let elapsed_secs = Timestamp::now().duration_since(crash_time).as_secs();
+    u64::try_from(elapsed_secs).is_ok_and(|secs| secs < CRASH_LOOP_THRESHOLD_SECS)
 }

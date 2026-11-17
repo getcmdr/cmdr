@@ -11,7 +11,6 @@
 //! `handleCommandExecute` pushes one on every dispatch, and the most recent such
 //! entry is what triagers read first.
 
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::sync::Mutex;
@@ -149,7 +148,7 @@ pub fn record(event: BreadcrumbEvent) {
         _ => {}
     }
     let crumb = Breadcrumb {
-        at: Utc::now().to_rfc3339(),
+        at: crate::timestamps::now_rfc3339(),
         event,
     };
     let Ok(mut guard) = BUFFER.lock() else {
