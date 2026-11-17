@@ -98,7 +98,9 @@ disagrees.
   `versionStack(days, perDayByVersion)` helper. "Latest" = newest stable GitHub release (`GitHubRelease`,
   `sources/github.ts:126-131`; add `fetchGitHubSource` to the product composer), fallback newest version seen.
   `parseRelease` drops `draft`/`prerelease` today, so parse both and skip either; strip the tag's leading `v` before
-  matching heartbeat `app_version`. N = yesterday − publish day.
+  matching heartbeat `app_version`. N = yesterday − publish day. Release-day edge: published today (N < 0) means no
+  complete day exists on it yet, so the headline reads "vX released today; first full day tomorrow" (no %, never "−1
+  days"), and published yesterday (N = 0) reads "on release day" (a partial day by construction). Test both.
 - **D5. Version colors.** Color follows the version, never its rank (`country-colors.ts` precedent). New client-safe
   `#lib/version-colors.ts`: `versionColor(version)` OKLCH from a golden-angle hue walk keyed on a stable version
   ordinal, so consecutive versions sit far apart in hue; lightness alternates across three bands (~0.62/0.72/0.82),
@@ -111,7 +113,10 @@ disagrees.
   `web` or `api` (the checkout or API-created first purchase). An allowlist, because "not `subscription_recurring`"
   would also count `subscription_payment_method_change` (a card update, often a zero-value completed transaction),
   `subscription_update`, and `subscription_charge` (Paddle docs, transaction origin, checked 2026-11-17). Parse `origin`
-  in `parseTransaction`; an unknown origin isn't a first purchase.
+  in `parseTransaction`; an unknown origin isn't a first purchase. "Paid licenses" is cumulative: all first purchases
+  through yesterday. The (i) says what that ratio mixes: refunded purchases still count (D7), one license can cover
+  several Macs, and a licensed install with analytics off is in the numerator but not in MAU, so it's a trend signal,
+  not a conversion rate.
 - **D7. Paddle fetch shape.** Fetch ALL completed transactions once (no `created_at` filter), cache under one key,
   window in TypeScript (revenue in period, all-time, purchases list, paid-license series). Fix `[GTE]` in
   `fetchPaddlePurchasesByDay`; fix pagination to follow `next` as a full URL (assert it starts with
@@ -120,7 +125,9 @@ disagrees.
   checkouts add up wrong. Sum one currency: parse `details.payout_totals` (`total`/`earnings` + `currency_code`, the
   payout currency) and sum those, or group by `currencyCode` and print one line per currency; never add amounts across
   currencies. A refunded purchase stays `completed` (refunds are adjustments), so revenue is gross of refunds; say so in
-  the (i).
+  the (i). Revenue in period covers complete days only, and its change is `null` (`–`) when the previous window's
+  revenue is 0, as `countStats` does (a quiet month must not read "+∞%"); the purchases list still shows today's
+  purchases, marked "today", since a list isn't a stat.
 - **D8. Settings tag** `kind?: 'state'` on `SettingDefinition` (absent = preference). Manifest gets top-level sorted
   `stateKeys: string[]`, built from the registry plus any previously recorded state key no longer in the registry
   (retired flags still show up in old installs); a key in the registry always follows the registry. `resolveAdoption`
@@ -239,16 +246,25 @@ extend `#lib/settings-adoption.ts` (`preferencesOnly`, `topMoved(n=15)`), `#lib/
 share-bar width, `foldNoData`), `#lib/feedback-and-errors.ts` (`errorsPer100`, `errorsSinceRelease`).
 
 **Intentions:** `fetchActiveInstallsData` → `SourceResult<ActiveInstallsData | null>`, null on 404 (older Worker) → "Not
-available yet". `days=181`, cache `active-installs-v1`, 1 h. Feature usage: two calls (current `end=yesterday`, previous
-`end=yesterday−N`), `previous: null` when `until` missing. An old Worker ignores `end`, so without `until` the CURRENT
-numbers are also the legacy rolling window that includes today: show them with the legacy window line, never labeled as
-ending yesterday. Paddle per D7, ADDITIVELY: keep `transactions`, `activeSubscriptions`, `subscriptionsByStatus`, and
-the `/subscriptions` fetch until Milestone 6, because `PaymentSection`/`RetentionSection` (deleted in Milestone 4) and
-`format-report.ts` plus its fixtures (rewritten in Milestone 6) still read them; new transaction fields that are
-required get added to the report fixtures mechanically, with no golden change. "Awaiting reply": fetch
-`/admin/feedback?range=all` once and window the feedback list to the picker's range in TypeScript, so the count and the
-list come from one response. Error normalization: error rows filtered to the same complete-day window, ÷
-`windows[N].byVersion[v]`; fewer than 5 installs prints the raw count, no rate.
+available yet". `days=181`, cache `active-installs-v1`, 1 h (`getTtl` gives a fixed non-range key 5 min, so pass an
+explicit TTL rather than re-scanning ~208 days of heartbeat rows every 5 minutes). Caching across the deploy: ❌ never
+cache a degraded old-Worker answer (the 404 null, a feature-usage response without `until`), or "Not available yet"
+outlives the Worker deploy by a TTL; and bump the cache key of every source whose cached shape changes (`paddle`,
+`feature-usage`, `github` for draft/prerelease, `settings-adoption` for `kind`), or a pre-land entry missing `origin`
+reads as zero paid licenses and one missing `kind` leaks state flags into preferences until it expires. Feature usage:
+two calls (current `end=yesterday`, previous `end=yesterday−N`), `previous: null` when `until` missing. An old Worker
+ignores `end`, so without `until` the CURRENT numbers are also the legacy rolling window that includes today: show them
+with the legacy window line, never labeled as ending yesterday. Paddle per D7, ADDITIVELY: keep `transactions`,
+`activeSubscriptions`, `subscriptionsByStatus`, and the `/subscriptions` fetch until Milestone 6, because
+`PaymentSection`/`RetentionSection` (deleted in Milestone 4) and `format-report.ts` plus its fixtures (rewritten in
+Milestone 6) still read them; new transaction fields that are required get added to the report fixtures mechanically,
+with no golden change. "Awaiting reply": fetch `/admin/feedback?range=all` once and window the feedback list to the
+picker's range in TypeScript, so the count and the list come from one response. Error reports likewise: fetch
+`/admin/error-reports?range=all` once (R2 keeps 90 days; still cached) and window in TypeScript, because
+`errorsSinceRelease` must count from the release's publish time even when that's older than the picker's range (on 7d a
+10-day-old release would otherwise undercount, and the strip's number would change with the picker). Error
+normalization: error rows filtered to the same complete-day window, ÷ `windows[N].byVersion[v]`; fewer than 5 installs
+prints the raw count, no rate.
 
 **Landmines:** everything behind `guardedFetch`/`withTimeout`; no `#lib/server` runtime values in components
 (`pnpm build`); `stateKeys` server-side only; `fetchDashboardData`, `format-report.ts`, and the report goldens must stay
@@ -314,10 +330,11 @@ builds that have the flag); `SettingsAdoptionSection` (preferences only, top 15,
 "changed by version" → latest default + "moved in vX"); DETAILS § Color coding (Versions).
 
 **Landmines:** real validator run recorded; tiny version layers don't fold (leave `foldInto` unset); a flag absent from
-a build is out of the denominator, never 0. The version ordinal is a pure function of the version string (for example
-from major/minor/patch), never its index among the versions in view: that index shifts as old versions leave the window
-and would recolor every layer between loads. A test pins that `versionColor('0.61.0')` is the same whatever other
-versions exist.
+a build is out of the denominator, never 0. A flag that just shipped has a handful of eligible installs (a release with
+one day of data): below 5 eligible, print "n of m" with no share bar or percentage, the same floor as errors per 100.
+The version ordinal is a pure function of the version string (for example from major/minor/patch), never its index among
+the versions in view: that index shifts as old versions leave the window and would recolor every layer between loads. A
+test pins that `versionColor('0.61.0')` is the same whatever other versions exist.
 
 **Test plan:** Vitest for `versionColor`, `onboarding-funnel`, `topMoved`/`preferencesOnly`; screenshots.
 
@@ -329,17 +346,27 @@ versions exist.
 Report: Active use as yesterday's WAU/MAU/stickiness/hours with vs-previous, daily lines with today marked partial,
 reach as context; Payment → "Money" (window + all-time, purchases, paying share), Retention (subscriptions) removed;
 Settings preferences top 15; new lines for onboarding funnel, rollout headline, errors per 100 by version; Daily funnel
-keeps D7. Once the report stops reading them, remove `activeSubscriptions`/`subscriptionsByStatus` and the
-`/subscriptions` fetch from `paddle.ts` (D7) and `formatBound`/`latestBound`/`largestUnseenShare` from
-`#lib/active-installs.ts` (D3), with their tests.
+keeps D7. `fetchDashboardData` gains `activeInstalls` (WAU/MAU, paying share's MAU, the rollout headline, and errors per
+100 all need it; `github` is already there), and the report calls the page's pure helpers (`product-stats`, `rollout`,
+`money`, `onboarding-funnel`), never its own math, so the report and `/product` can't disagree. A null `activeInstalls`
+(old Worker) prints "Not available yet" lines, pinned by a fixture. "Got the latest release per day" (update checks)
+becomes per-day heartbeat `byVersion`, matching the page's rollout chart. If nothing reads `cloudflare.heartbeatDau`
+after that, drop it from `cloudflare.ts` and file `/admin/heartbeat-dau`'s retirement as a follow-up (the `dau` equality
+test in Milestone 1 still references it). Once the report stops reading them, remove
+`activeSubscriptions`/`subscriptionsByStatus` and the `/subscriptions` fetch from `paddle.ts` (D7) and
+`formatBound`/`latestBound`/`largestUnseenShare` from `#lib/active-installs.ts` (D3), with their tests.
 
 Docs: dashboard CLAUDE.md (Pages line, "Product stats skip today like Acquisition", version colors rule), DETAILS.md
 (structure, data sources, § Active installs rewrite, § Settings adoption with `stateKeys`/`kind`, § Feature usage
 previous period, new § Product page, Key decisions "David's call 2026-11-17"; rewrite the Key decisions that now
 contradict the page: "Every section carries a … blurb" (no longer on `/product`: (i) popovers there), "Active use
 daily-active count", and "New installs and Got the latest release" (the update-check chart is replaced by the heartbeat
-rollout); `paddle.ts` line under § Data sources), `docs/tooling/analytics-dashboard.md` if relevant, admin docs
-verified.
+rollout); `paddle.ts` line under § Data sources; also § Routes and sections, § Data-loading split (the product
+composer's sources), § "The Cloudflare source is shared by both pages" (`/product` no longer reads `heartbeatDau` for
+Active use), § Key files (the product page's source subset, `StackedBarChart`'s "by-version update charts", the new
+`#lib` modules), and the "Engagement is app hours" decision's "Active use tile" wording),
+`docs/tooling/analytics-dashboard.md` § report contents (its Active use, Payment, and Retention bullets describe the old
+report), admin docs verified.
 
 **Landmines:** goldens pin spacing; read the diff. Milestone-tag sweep:
 `rg -n '\b(M[0-9][a-z]?|Milestone\s*[0-9]|Phase\s*[0-9])\b' apps/analytics-dashboard apps/api-server/src/admin apps/desktop/scripts apps/desktop/src/lib/settings docs/guides`.
