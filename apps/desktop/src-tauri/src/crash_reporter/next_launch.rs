@@ -239,13 +239,13 @@ fn current_process_name() -> Option<String> {
 
 /// A [`SystemTime`](std::time::SystemTime) as the same ISO 8601 string the capture paths write, so
 /// every crash-file timestamp has one shape whatever produced it.
-fn to_iso8601(time: std::time::SystemTime) -> String {
+pub(super) fn to_iso8601(time: std::time::SystemTime) -> String {
     chrono::DateTime::<chrono::Utc>::from(time).to_rfc3339()
 }
 
 /// The inverse, for a timestamp already on disk. `None` for a value that isn't ISO 8601, which
 /// callers treat as "can't place this crash in time" rather than as an error.
-fn parse_timestamp(timestamp: &str) -> Option<std::time::SystemTime> {
+pub(super) fn parse_timestamp(timestamp: &str) -> Option<std::time::SystemTime> {
     chrono::DateTime::parse_from_rfc3339(timestamp)
         .ok()
         .map(|dt| dt.with_timezone(&chrono::Utc).into())

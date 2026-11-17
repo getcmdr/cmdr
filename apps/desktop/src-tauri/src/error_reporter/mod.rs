@@ -627,10 +627,14 @@ pub fn save_bundle_to_disk<R: tauri::Runtime>(
     bundle: &BuiltBundle,
 ) -> Result<std::path::PathBuf, String> {
     let dir = config::resolved_app_data_dir(app)?;
-    let timestamp = Utc::now().format("%Y%m%dT%H%M%SZ");
-    let path = dir.join(format!("error-report-{timestamp}.zip"));
+    let path = dir.join(report_file_name(Utc::now()));
     std::fs::write(&path, &bundle.zip_bytes).map_err(|e| format!("write report bundle: {e}"))?;
     Ok(path)
+}
+
+/// `error-report-<UTC, to the second>.zip`, for example `error-report-20270115T080000Z.zip`.
+fn report_file_name(at: chrono::DateTime<Utc>) -> String {
+    format!("error-report-{}.zip", at.format("%Y%m%dT%H%M%SZ"))
 }
 
 // --- Helpers shared between bundle_builder and the manifest assembly ---

@@ -259,6 +259,15 @@ fn disabled_logging_records_nothing() {
     set_enabled(true); // restore for any same-process follow-up
 }
 
+/// `cmdr.timestamp` is RFC 3339 UTC with exactly three fraction digits and `Z`.
+#[test]
+fn the_log_timestamp_is_millis_utc_with_z() {
+    let stamp = now_iso8601();
+    assert!(stamp.ends_with('Z'), "{stamp}");
+    let parsed = crate::timestamps::parse_rfc3339(&stamp).expect("parses");
+    assert_eq!(crate::timestamps::rfc3339_millis_z(parsed), stamp);
+}
+
 #[test]
 fn enabled_flag_round_trips() {
     set_enabled(true);

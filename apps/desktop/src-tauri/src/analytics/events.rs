@@ -215,6 +215,12 @@ mod tests {
         assert!(now.ends_with('Z'), "{now}");
         assert!(chrono::DateTime::parse_from_rfc3339(&now).is_ok(), "{now}");
         assert_eq!(now.len(), AT.len(), "{now}");
+        let parsed = crate::timestamps::parse_rfc3339(&now).expect("parses");
+        assert_eq!(
+            crate::timestamps::rfc3339_millis_z(parsed),
+            now,
+            "always three digits and `Z`"
+        );
     }
 
     // The PII backstop only runs in debug builds (where these tests run under `cargo nextest`).

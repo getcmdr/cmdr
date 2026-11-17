@@ -21,6 +21,8 @@ mod symbolicate;
 #[cfg(test)]
 mod contain_tests;
 #[cfg(test)]
+mod next_launch_tests;
+#[cfg(test)]
 mod panic_courier_tests;
 #[cfg(test)]
 mod survival_tests;

@@ -237,8 +237,7 @@ mod tests {
     }
 
     fn iso_line(ts: DateTime<Utc>, body: &str) -> String {
-        let local = ts.with_timezone(&chrono::Local);
-        format!("{} {body}", local.format("%Y-%m-%dT%H:%M:%S%.3f%:z"),)
+        format!("{} {body}", crate::logging::dispatch::file_timestamp_at(ts))
     }
 
     #[test]
@@ -398,5 +397,95 @@ mod tests {
             "test precondition: line is ≥29 bytes and byte 29 splits a char",
         );
         assert_eq!(parse_leading_iso8601(&line), None);
+    }
+
+    /// The log-stamp pair: the writer's bytes for a fixed instant and offset are the ones chrono
+    /// wrote (`%Y-%m-%dT%H:%M:%S%.3f%:z`), and the parser reads such a line back to the same
+    /// instant, so old log files and new ones look alike to every reader.
+    #[test]
+    fn the_log_stamp_keeps_its_bytes_and_reads_back_to_the_same_instant() {
+        // 2026-04-24T23:18:28.218999999Z: the writer truncates to the millisecond.
+        let at = DateTime::from_timestamp(1_777_072_708, 218_999_999).expect("in range");
+        for (offset_secs, expected) in [
+            (0, "2026-04-24T23:18:28.218+00:00"),
+            (2 * 3600, "2026-04-25T01:18:28.218+02:00"),
+            (-(5 * 3600 + 30 * 60), "2026-04-24T17:48:28.218-05:30"),
+        ] {
+            let offset = chrono::FixedOffset::east_opt(offset_secs).expect("valid offset");
+            let stamp = at.with_timezone(&offset).format("%Y-%m-%dT%H:%M:%S%.3f%:z").to_string();
+            assert_eq!(stamp, expected);
+            let line = format!("{stamp} INFO  · cmdr_lib::x: hello");
+            let parsed = parse_leading_iso8601(&line).expect("our own stamp parses");
+            assert_eq!(parsed.timestamp_millis(), 1_777_072_708_218, "{line}");
+        }
+    }
+
+    /// The writer at this machine's offset round-trips through the parser to the millisecond.
+    #[test]
+    fn file_timestamp_at_round_trips_through_the_parser() {
+        for (secs, nanos, millis) in [
+            (1_777_072_708, 0, 1_777_072_708_000),
+            (1_777_072_708, 218_999_999, 1_777_072_708_218),
+            (1_794_916_800, 1, 1_794_916_800_000),
+        ] {
+            let at = DateTime::from_timestamp(secs, nanos).expect("in range");
+            let line = iso_line(at, "INFO x");
+            assert_eq!(line.find(' '), Some(29), "{line}");
+            let parsed = parse_leading_iso8601(&line).expect("parses");
+            assert_eq!(parsed.timestamp_millis(), millis, "{line}");
+        }
+    }
+
+    /// A line stamped exactly at the cutoff stays; one a millisecond older stops the walk.
+    #[test]
+    fn the_cutoff_holds_to_the_millisecond() {
+        let cutoff = DateTime::from_timestamp(1_777_072_708, 218_000_000).expect("in range");
+        let body = format!(
+            "{}\n{}\n",
+            iso_line(cutoff - ChronoDuration::milliseconds(1), "OUTSIDE"),
+            iso_line(cutoff, "EDGE"),
+        );
+        let (_dir, p) = write_tmp("cutoff-edge", body.as_bytes());
+        let result = walk_tail(&p, cutoff).unwrap();
+        assert_eq!(result.lines, [iso_line(cutoff, "EDGE")]);
+        assert!(result.hit_cutoff);
+    }
+
+    /// Lines written before the current writer parse to the same instant.
+    #[test]
+    fn old_log_lines_parse_to_the_same_instant() {
+        for (line, millis) in [
+            ("2026-04-25T01:18:28.218+02:00 INFO  hello", 1_777_072_708_218),
+            (
+                "2026-04-24T23:18:28.218+00:00 DEBUG · cmdr_lib::x: y",
+                1_777_072_708_218,
+            ),
+            ("2026-04-24T17:48:28.218-05:30 WARN  z", 1_777_072_708_218),
+            ("2026-11-17T13:00:00.000+01:00", 1_794_916_800_000),
+        ] {
+            let parsed = parse_leading_iso8601(line).expect("an old line parses");
+            assert_eq!(parsed.timestamp_millis(), millis, "{line}");
+        }
+    }
+
+    /// Anything that isn't the writer's exact 29-byte shape is "no stamp", so the line rides
+    /// along with its record instead of deciding the cutoff.
+    #[test]
+    fn lines_without_the_exact_stamp_shape_have_no_timestamp() {
+        for line in [
+            "2026-04-25T01:18:28.21+02:00 INFO two fraction digits",
+            "2026-04-25T01:18:28.2180+02:00 INFO four fraction digits",
+            "2026-04-25T01:18:28+02:00 INFO no fraction at all here",
+            "2026-04-24T23:18:28.218Z INFO a Z instead of an offset",
+            "2026-04-25T01:18:28.218+0200 INFO no colon in the offset",
+            "2026-04-25 01:18:28.218+02:00 INFO space separator",
+            "2026-4-25T01:18:28.218+02:00 INFO one-digit month",
+            "2026-04-25T01:18:28.218+02",
+            "01:18:28.218 INFO legacy terminal-style stamp",
+            "   0: cmdr_lib::some::backtrace_frame",
+            "",
+        ] {
+            assert_eq!(parse_leading_iso8601(line), None, "{line:?}");
+        }
     }
 }

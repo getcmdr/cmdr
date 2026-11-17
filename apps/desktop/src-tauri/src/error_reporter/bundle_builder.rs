@@ -24,7 +24,7 @@ use cmdr_fs::log_private::LogPrivate;
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 use zip::DateTime as ZipDateTime;
 use zip::write::{SimpleFileOptions, ZipWriter};
 
@@ -146,7 +146,7 @@ pub async fn build_bundle<R: tauri::Runtime>(
 
     match scope {
         BundleScope::Recent { window } => {
-            let cutoff = now_utc - chrono::Duration::from_std(window).unwrap_or(chrono::Duration::hours(5));
+            let cutoff = recent_cutoff(now_utc, window);
             build_bundle_streaming(id, manifest, files, cutoff, now_system, &redaction)
         }
         BundleScope::Window { .. } => {
@@ -520,9 +520,7 @@ pub(super) fn load_and_filter_log_file(
     // File-level filter. If a file's mtime is older than the lower bound of the scope's
     // window, skip it entirely: its newest line is older than what we want.
     let lower_bound = match scope {
-        BundleScope::Recent { window } => {
-            now_utc - chrono::Duration::from_std(window).unwrap_or(chrono::Duration::hours(5))
-        }
+        BundleScope::Recent { window } => recent_cutoff(now_utc, window),
         BundleScope::Window { first_error_at } => first_error_at - FLOW_B_PRE_ERROR_WINDOW,
     };
     let mtime_utc: DateTime<Utc> = mtime.into();
@@ -584,6 +582,12 @@ impl ProvenanceFilter {
         }
         self.ships
     }
+}
+
+/// The oldest instant a [`BundleScope::Recent`] bundle keeps: `window` before `now_utc`, or five
+/// hours before it when `window` is too long to count back.
+pub(super) fn recent_cutoff(now_utc: DateTime<Utc>, window: Duration) -> DateTime<Utc> {
+    now_utc - chrono::Duration::from_std(window).unwrap_or(chrono::Duration::hours(5))
 }
 
 /// Convert a [`SystemTime`] into a [`zip::DateTime`] (the format the zip crate stores

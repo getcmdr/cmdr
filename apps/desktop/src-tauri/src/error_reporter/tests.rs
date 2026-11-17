@@ -1,6 +1,6 @@
 use super::bundle_builder::{
     PreparedFile, build_bundle_streaming, build_zip, email_for_kind, load_and_filter_log_file, prepare_user_note,
-    resolve_bundle_id, zip_dt,
+    recent_cutoff, resolve_bundle_id, zip_dt,
 };
 use super::*;
 use crate::redact;
@@ -529,6 +529,77 @@ fn zip_entries_carry_real_mtimes() {
         std::cmp::Ordering::Equal,
         "log entry mtime should match the prepared file's mtime (got {log_entry_mtime:?}, expected {expected:?})"
     );
+}
+
+/// Flow B keeps everything from 30 minutes before the first error: a line stamped exactly on
+/// that bound stays, one a millisecond older goes.
+#[test]
+fn window_scope_bound_holds_to_the_millisecond() {
+    let dir = TestDir::new("error-reporter-window-edge");
+    // A whole millisecond, so the stamps carry the exact instants.
+    let now_utc = DateTime::from_timestamp_millis(Utc::now().timestamp_millis()).expect("now is in range");
+    let first_error_at = now_utc - chrono::Duration::minutes(5);
+    let bound = first_error_at - chrono::Duration::minutes(30);
+    let stamp = logging::dispatch::file_timestamp_at;
+    let log_path = dir.join("cmdr.log");
+    std::fs::write(
+        &log_path,
+        format!(
+            "{outside} INFO  OUTSIDE\n{edge} INFO  EDGE\n",
+            outside = stamp(bound - chrono::Duration::milliseconds(1)),
+            edge = stamp(bound),
+        ),
+    )
+    .expect("write log");
+    let (lines, _) = load_and_filter_log_file(
+        &log_path,
+        BundleScope::Window { first_error_at },
+        now_utc,
+        SystemTime::now(),
+        &test_redaction(),
+    )
+    .expect("file should be loaded");
+    assert_eq!(lines.len(), 1, "{lines:?}");
+    assert!(lines[0].contains("EDGE"), "{lines:?}");
+}
+
+/// Flow A's cutoff counts the window back from now; a window too long to count back falls back
+/// to the past five hours.
+#[test]
+fn the_recent_cutoff_counts_back_from_now() {
+    let now = DateTime::from_timestamp(1_800_000_000, 123_000_000).expect("in range");
+    let cutoff = |window| recent_cutoff(now, window).timestamp_millis();
+    assert_eq!(cutoff(Duration::from_secs(3600)), 1_799_996_400_123);
+    assert_eq!(cutoff(Duration::from_millis(1)), 1_800_000_000_122);
+    assert_eq!(cutoff(Duration::MAX), 1_799_982_000_123);
+}
+
+/// Zip entry times: the DOS field can't hold a time before 1980 or after 2107, so those get the
+/// zip crate's placeholder rather than a wrong date. Seconds don't depend on the zone (and DOS
+/// stores even ones).
+#[test]
+fn zip_entry_times_fall_back_outside_the_dos_range() {
+    use std::time::UNIX_EPOCH;
+    assert_eq!(zip_dt(UNIX_EPOCH), ZipDateTime::default(), "1970 is before DOS time");
+    // 2200-01-01T00:00:00Z
+    assert_eq!(
+        zip_dt(UNIX_EPOCH + Duration::from_secs(7_258_118_400)),
+        ZipDateTime::default(),
+        "2200 is past DOS time"
+    );
+    // 2026-04-24T23:18:28Z: the date is the local one, whatever zone runs the test.
+    let in_range = zip_dt(UNIX_EPOCH + Duration::from_secs(1_777_072_708));
+    assert_ne!(in_range, ZipDateTime::default());
+    assert_eq!(in_range.year(), 2026);
+    assert_eq!(in_range.month(), 4);
+    assert_eq!(in_range.second(), 28);
+}
+
+/// The saved bundle's file name is the UTC time to the second.
+#[test]
+fn a_saved_bundle_is_named_after_the_utc_second() {
+    let at = DateTime::from_timestamp(1_800_000_000, 999_000_000).expect("in range");
+    assert_eq!(report_file_name(at), "error-report-20270115T080000Z.zip");
 }
 
 /// Fix #4: log files older than 24h are filtered out of Flow A bundles.

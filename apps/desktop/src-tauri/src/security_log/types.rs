@@ -510,5 +510,11 @@ mod tests {
         );
         assert!(line.at.ends_with('Z'), "UTC, not local time: {}", line.at);
         chrono::DateTime::parse_from_rfc3339(&line.at).expect("ISO 8601");
+        let parsed = crate::timestamps::parse_rfc3339(&line.at).expect("parses");
+        assert_eq!(
+            crate::timestamps::rfc3339_millis_z(parsed),
+            line.at,
+            "always three digits and `Z`"
+        );
     }
 }

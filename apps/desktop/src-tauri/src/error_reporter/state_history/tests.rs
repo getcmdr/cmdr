@@ -248,6 +248,44 @@ fn a_captured_listing_failure_keeps_the_variant_and_drops_the_message_and_path_f
     assert!(!format!("{raw:?}").contains("PRIVATE-REASON-PATH"));
 }
 
+/// Report times keep their bytes: UTC written `+00:00`, with fraction digits only when the
+/// instant has them. A failure time past what fits is absent, not wrong.
+#[test]
+fn report_times_keep_their_bytes() {
+    let failure_at = |at_unix_ms: u64| {
+        capture_listing_failure(&RecentListingError {
+            at_unix_ms,
+            listing_id: "listing-1".to_string(),
+            volume_id: "not-a-registered-volume".to_string(),
+            path: RAW_PATH.to_string(),
+            message: String::new(),
+            reason: None,
+            category: None,
+        })
+    };
+    let mut snapshot = raw(1);
+    snapshot.recent_listing_failures = vec![
+        failure_at(1_800_000_000_000),
+        failure_at(1_800_000_000_123),
+        failure_at(u64::MAX),
+    ];
+    let report = redact_snapshots(&[snapshot], &RedactionContext::for_test([0x11; 32], "ERR-TIMES"));
+    assert_eq!(report[0].captured_at, "2027-01-15T08:00:01+00:00");
+    let times: Vec<_> = report[0]
+        .recent_listing_failures
+        .iter()
+        .map(|failure| failure.at.as_deref())
+        .collect();
+    assert_eq!(
+        times,
+        [
+            Some("2027-01-15T08:00:00+00:00"),
+            Some("2027-01-15T08:00:00.123+00:00"),
+            None
+        ]
+    );
+}
+
 #[test]
 fn volume_wire_words_read_back_to_report_enums_and_unknown_ones_are_absent() {
     use crate::file_system::volume::{ConnectionState as S, DeviceReadiness as R, DeviceUnavailableReason as Why};

@@ -1,6 +1,6 @@
 use super::*;
 // The next-launch assembly moved to its own module; these tests drive it directly.
-use super::next_launch::{is_crash_loop, process_pending_crash};
+use super::next_launch::process_pending_crash;
 
 #[test]
 fn crash_report_roundtrip() {
@@ -236,24 +236,6 @@ fn sanitize_multiple_paths() {
     assert!(!sanitized.contains("/Users/b"));
     // Two paths → two $HOME replacements.
     assert_eq!(sanitized.matches("$HOME").count(), 2);
-}
-
-#[test]
-fn crash_loop_detection_recent_timestamp() {
-    // A timestamp from "just now" should be detected as a crash loop
-    let recent = chrono::Utc::now().to_rfc3339();
-    assert!(is_crash_loop(&recent));
-}
-
-#[test]
-fn crash_loop_detection_old_timestamp() {
-    let old = (chrono::Utc::now() - chrono::Duration::minutes(5)).to_rfc3339();
-    assert!(!is_crash_loop(&old));
-}
-
-#[test]
-fn crash_loop_detection_invalid_timestamp() {
-    assert!(!is_crash_loop("not-a-timestamp"));
 }
 
 #[test]

@@ -367,6 +367,25 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    /// A crash file's stamp, in any shape the crash reporter has written, anchors the log
+    /// window on that instant; one that doesn't parse falls back to the recent window.
+    #[test]
+    fn a_crash_log_scope_anchors_on_the_crash_instant() {
+        for stamp in [
+            "2026-04-24T23:18:28.120+00:00",
+            "2026-04-24T23:18:28.120Z",
+            "2026-04-25T01:18:28.120+02:00",
+        ] {
+            match crash_log_scope(stamp) {
+                BundleScope::Window { first_error_at } => {
+                    assert_eq!(first_error_at.timestamp_millis(), 1_777_072_708_120, "{stamp}");
+                }
+                BundleScope::Recent { .. } => panic!("{stamp} should anchor a window"),
+            }
+        }
+        assert!(matches!(crash_log_scope("garbage"), BundleScope::Recent { .. }));
+    }
+
     #[test]
     fn a_note_over_the_cap_is_turned_down_with_the_cap_and_one_at_it_passes() {
         let at_cap = "a".repeat(MAX_USER_NOTE_CHARS);

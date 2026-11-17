@@ -65,7 +65,15 @@ pub fn stdout_threshold() -> log::LevelFilter {
 /// down exactly when a line was written. Cheap parsing target for the Flow B
 /// window-anchored bundle, too.
 pub(crate) fn file_timestamp() -> String {
-    chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%.3f%:z").to_string()
+    file_timestamp_at(chrono::Utc::now())
+}
+
+/// [`file_timestamp`] for any instant, at this machine's offset then. Tests write log lines with
+/// it, so they produce exactly the stamp the parser reads (`error_reporter::tail_walker`).
+pub(crate) fn file_timestamp_at(at: chrono::DateTime<chrono::Utc>) -> String {
+    at.with_timezone(&chrono::Local)
+        .format("%Y-%m-%dT%H:%M:%S%.3f%:z")
+        .to_string()
 }
 
 fn level_filter_from_u8(v: u8) -> log::LevelFilter {
