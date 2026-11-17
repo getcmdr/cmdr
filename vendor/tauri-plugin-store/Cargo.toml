@@ -13,7 +13,7 @@
 edition = "2024"
 rust-version = "1.90"
 name = "tauri-plugin-store"
-version = "2.5.0"
+version = "2.5.1"
 authors = ["Tauri Programme within The Commons Conservancy"]
 build = "build.rs"
 links = "tauri-plugin-store"
@@ -34,7 +34,6 @@ description = "Simple, persistent key-value store."
 readme = "README.md"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/tauri-apps/plugins-workspace"
-resolver = "2"
 
 [package.metadata.platforms.support.windows]
 level = "full"
@@ -59,6 +58,10 @@ notes = ""
 [lib]
 name = "tauri_plugin_store"
 path = "src/lib.rs"
+
+[[test]]
+name = "load_close_race"
+path = "tests/load_close_race.rs"
 
 [dependencies.dunce]
 version = "1"
@@ -90,11 +93,14 @@ version = "0.1"
 
 [dev-dependencies.tauri]
 version = "2.12"
-features = ["wry"]
+features = [
+    "wry",
+    "test",
+]
 default-features = false
 
 [build-dependencies.tauri-plugin]
-version = "2.7"
+version = "2.7.1"
 features = ["build"]
 
 [target.'cfg(target_os = "ios")'.dependencies.tauri]

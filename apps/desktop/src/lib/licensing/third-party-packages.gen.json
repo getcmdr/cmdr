@@ -101,7 +101,7 @@
     },
     {
       "name": "ammonia",
-      "version": "4.2.4",
+      "version": "4.2.5",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/rust-ammonia/ammonia"
     },
@@ -119,7 +119,7 @@
     },
     {
       "name": "arc-swap",
-      "version": "1.9.3",
+      "version": "1.9.5",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/vorner/arc-swap"
     },
@@ -1337,7 +1337,7 @@
     },
     {
       "name": "genai",
-      "version": "0.7.3",
+      "version": "0.7.4",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/jeremychone/rust-genai"
     },
@@ -2069,13 +2069,13 @@
     },
     {
       "name": "jiff",
-      "version": "0.2.39",
+      "version": "0.2.43",
       "license": "Unlicense OR MIT",
       "url": "https://github.com/BurntSushi/jiff"
     },
     {
       "name": "jiff-core",
-      "version": "0.1.2",
+      "version": "0.1.5",
       "license": "Unlicense OR MIT",
       "url": "https://github.com/BurntSushi/jiff"
     },
@@ -2099,7 +2099,7 @@
     },
     {
       "name": "kamadak-exif",
-      "version": "0.6.1",
+      "version": "0.6.2",
       "license": "BSD-2-Clause",
       "url": "https://github.com/kamadak/exif-rs"
     },
@@ -2147,7 +2147,7 @@
     },
     {
       "name": "libsqlite3-sys",
-      "version": "0.39.0",
+      "version": "0.40.0",
       "license": "MIT",
       "url": "https://github.com/rusqlite/rusqlite"
     },
@@ -2363,7 +2363,7 @@
     },
     {
       "name": "mtp-rs",
-      "version": "0.38.0",
+      "version": "0.38.1",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/vdavid/mtp-rs"
     },
@@ -2411,7 +2411,7 @@
     },
     {
       "name": "notify",
-      "version": "8.2.1",
+      "version": "8.2.2",
       "license": "CC0-1.0",
       "url": "https://github.com/notify-rs/notify.git"
     },
@@ -3083,7 +3083,7 @@
     },
     {
       "name": "psl",
-      "version": "2.1.250",
+      "version": "2.1.254",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/addr-rs/psl"
     },
@@ -3263,7 +3263,7 @@
     },
     {
       "name": "rmcp",
-      "version": "3.9.0",
+      "version": "3.10.0",
       "license": "Apache-2.0",
       "url": "https://github.com/modelcontextprotocol/rust-sdk/"
     },
@@ -3281,7 +3281,7 @@
     },
     {
       "name": "rusqlite",
-      "version": "0.41.1",
+      "version": "0.42.0",
       "license": "MIT",
       "url": "https://github.com/rusqlite/rusqlite"
     },
@@ -3869,7 +3869,7 @@
     },
     {
       "name": "sysinfo",
-      "version": "0.40.1",
+      "version": "0.40.3",
       "license": "MIT",
       "url": "https://github.com/GuillaumeGomez/sysinfo"
     },
@@ -3959,13 +3959,13 @@
     },
     {
       "name": "tauri-plugin-notification",
-      "version": "2.8.0",
+      "version": "2.8.1",
       "license": "Apache-2.0 OR MIT",
       "url": "https://github.com/tauri-apps/plugins-workspace"
     },
     {
       "name": "tauri-plugin-opener",
-      "version": "2.7.2",
+      "version": "2.7.3",
       "license": "Apache-2.0 OR MIT",
       "url": "https://github.com/tauri-apps/plugins-workspace"
     },
@@ -3977,7 +3977,7 @@
     },
     {
       "name": "tauri-plugin-store",
-      "version": "2.5.0",
+      "version": "2.5.1",
       "license": "Apache-2.0 OR MIT",
       "url": "https://github.com/tauri-apps/plugins-workspace"
     },
@@ -4055,7 +4055,7 @@
     },
     {
       "name": "thiserror",
-      "version": "2.0.18",
+      "version": "2.0.21",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/dtolnay/thiserror"
     },
@@ -4067,7 +4067,7 @@
     },
     {
       "name": "thiserror-impl",
-      "version": "2.0.18",
+      "version": "2.0.21",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/dtolnay/thiserror"
     },
@@ -4409,7 +4409,7 @@
     },
     {
       "name": "uuid",
-      "version": "1.29.1",
+      "version": "1.29.2",
       "license": "Apache-2.0 OR MIT",
       "url": "https://github.com/uuid-rs/uuid"
     },
@@ -4613,20 +4613,20 @@
     },
     {
       "name": "zstd",
-      "version": "0.14.3",
+      "version": "0.14.4",
       "license": "BSD-3-Clause",
       "url": "https://github.com/gyscos/zstd-rs"
     },
     {
       "name": "zstd-safe",
-      "version": "8.2.0",
+      "version": "8.3.0",
       "license": "BSD-3-Clause",
       "url": "https://github.com/gyscos/zstd-rs"
     },
     {
       "name": "zstd-sys",
-      "version": "2.1.2+zstd.1.5.7",
-      "license": "BSD-3-Clause",
+      "version": "2.1.3+zstd.1.5.7",
+      "license": "BSD-3-Clause AND BSD-2-Clause",
       "url": "https://github.com/gyscos/zstd-rs"
     },
     {
@@ -4687,13 +4687,13 @@
     },
     {
       "name": "@formatjs/icu-messageformat-parser",
-      "version": "3.5.22",
+      "version": "3.5.23",
       "license": "MIT",
       "url": "https://github.com/formatjs/formatjs#readme"
     },
     {
       "name": "@formatjs/icu-skeleton-parser",
-      "version": "2.1.12",
+      "version": "2.1.13",
       "license": "MIT",
       "url": "https://github.com/formatjs/formatjs#readme"
     },
@@ -4783,13 +4783,13 @@
     },
     {
       "name": "@tauri-apps/plugin-opener",
-      "version": "2.7.2",
+      "version": "2.7.3",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/tauri-apps/plugins-workspace#readme"
     },
     {
       "name": "@tauri-apps/plugin-store",
-      "version": "2.5.0",
+      "version": "2.5.1",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/tauri-apps/plugins-workspace#readme"
     },
@@ -5311,7 +5311,7 @@
     },
     {
       "name": "intl-messageformat",
-      "version": "12.1.4",
+      "version": "12.1.5",
       "license": "BSD-3-Clause",
       "url": "https://github.com/formatjs/formatjs"
     },

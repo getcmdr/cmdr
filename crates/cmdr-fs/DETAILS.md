@@ -147,6 +147,10 @@ allows:
   `journal_mode=WAL` quietly stays `delete` (no shared memory). The slab still has to be installed before the first
   connection, as natively: a connection opened first makes `ensure_shared_page_cache` answer `TooLate` (verified on
   `sqlite-wasm-rs` 0.5.5, SQLite 3.53.0, a Node run of the real op-log store, 2026-11-04).
+- **The browser SQLite needs a host**: from `sqlite-wasm-rs` 0.6, `sqlite3.c`'s clock, sleep, and entropy calls are
+  `rust_sqlite_wasm_host_*` imports that only its `wasm-bindgen` feature defines, and rusqlite doesn't turn it on. So
+  `cmdr-fs` names `sqlite-wasm-rs` for wasm with that feature (and `lib.rs` marks it used); drop it and the `.wasm`
+  fails to link on those symbols (`sqlite-wasm-rs` 0.6.3 via rusqlite 0.42, `desktop-rust-listing-wasm`, 2026-11-17).
 - **The rest answer as "the platform can't hold this"**, the way the Linux branches already do for macOS-only classes:
   ACL, mode, and xattr reads find nothing, writes report `ClassOutcome::NotApplicable`, the umask is the `022` fallback,
   owners resolve to their numeric id, `open_parent_folder` opens nothing, and `Acl` wraps `Infallible`, so no code path

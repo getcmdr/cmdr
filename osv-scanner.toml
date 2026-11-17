@@ -21,6 +21,10 @@ reason = "block-buffer (a panic inside the caller's block callback, caught with 
 id = "RUSTSEC-2026-0192"
 reason = "ttf-parser is unmaintained (notice only, no known vulnerability): pulled in by lopdf 0.42 under pdf-extract (the AI agent's PDF text reader), whose latest release still pins lopdf ^0.42. lopdf 0.45 swapped it for skrifa, so this goes away when pdf-extract moves up."
 
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0543"
+reason = "chrono is unmaintained (notice only, no known vulnerability). Cmdr's own crates are moving to jiff; chrono stays in the graph transitively through rmcp and schemars (its chrono04 feature), russh-util, trash (Linux), and our vendored rc-zip. Drop this entry once those parents move off it (`cargo tree -i chrono -e normal --target all --depth 1`, 2026-11-17)."
+
 # --- Rust: can't reach the shipped app ---
 
 [[IgnoredVulns]]
@@ -64,3 +68,7 @@ reason = "deepmerge 4.3.1 (prototype poisoning of mergeObject's result), via @sv
 [[IgnoredVulns]]
 id = "GHSA-g3hv-75wg-m249"
 reason = "minimatch 10.2.6 (glob-pattern amplification in preprocessing, a CPU and memory denial of service for an attacker-supplied pattern; 3.1.5, also in the tree, is below the affected range). A devDependency only: via eslint's config-array and typescript-eslint's typescript-estree in every app's lint run, which only ever see our own checked-in patterns (eslint file globs), never input from outside; nothing here ships in the app or the website. The fix is 11.0.1, a major that eslint 10.14, config-array 0.23.5, and typescript-estree 8.72.2 (all latest) don't accept, and 11 changes matching semantics (empty path portions, `**` partial matches), so a forced override could silently change which files get linted. Verified with `pnpm why minimatch -r`, 2026-11-11."
+
+[[IgnoredVulns]]
+id = "GHSA-fc5q-39xc-vjpf"
+reason = "picomatch 2.3.2 and 4.0.7 (ReDoS from a crafted single-branch repeated extglob such as `+(*)`; no fixed version exists). Build- and dev-time only: through vite, vitest, svelte-check (fdir), knip, stylelint, typescript-estree (tinyglobby), and astro (unstorage, @astrojs/internal-helpers). The website is `output: 'static'` and served by nginx, so astro never runs in production, and nothing here bundles picomatch into the app. The attack needs an attacker-supplied PATTERN, and every pattern these tools see is one we check in. Verified with `pnpm why -r picomatch`, 2026-11-17; drop this once picomatch ships a fix (micromatch/picomatch#194)."

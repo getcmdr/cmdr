@@ -166,7 +166,7 @@ tauri-plugin-opener = "2"
 tauri-plugin-mcp-bridge = "0.13"
 tauri-plugin-store = "2"
 tauri-plugin-dialog = "2.6"
-tauri-plugin-notification = "2.8.0"
+tauri-plugin-notification = "2.8.1"
 # Global system-wide keyboard shortcut (default ⌃⌥⌘J for "reveal latest download"). On
 # macOS, the plugin uses Carbon's `RegisterEventHotKey` so it needs no extra TCC grant
 # (Accessibility/Input Monitoring not required). Pinned at 2.4.1.
@@ -206,7 +206,7 @@ image = { version = "0.25.10", default-features = false, features = [
 # `kamadak-exif`) so the key matches the `exif::` paths in code and `cargo-machete` sees
 # it used. 0.6.1 verified on crates.io and GitHub 2026-09-02 (published 2024-11-06; the
 # EXIF spec doesn't move).
-exif = { package = "kamadak-exif", version = "0.6.1" }
+exif = { package = "kamadak-exif", version = "0.6.2" }
 # PDF text for `inspect_file`'s PDF rows (page text, page count, title and author): the
 # one mature pure-Rust extractor with CMap handling for CID fonts, MIT. It re-exports
 # `lopdf`, so page count, header version, and the Info dict come through it with no second
@@ -218,7 +218,7 @@ mime_guess = "2"
 base64 = "0.23.0"
 rayon = "1.11.0"
 regex = "1"
-uuid = { version = "1.29.1", features = ["v4", "v7"] }
+uuid = { version = "1.29.2", features = ["v4", "v7"] }
 tauri-plugin-clipboard-manager = "2"
 notify-debouncer-full = "0.7.0"
 bincode2 = "2"
@@ -242,7 +242,7 @@ reqwest = { version = "0.13", features = ["cookies", "json", "rustls", "stream",
 # The one door every HTTP client is built through: proxy routing the way macOS decides it.
 cmdr-http = { path = "../../../crates/cmdr-http" }
 # MCP server. `rmcp` is the official Rust SDK; ❌ never its `local` feature (its handlers would stop being `Send`).
-rmcp = { version = "=3.9.0", default-features = false, features = ["server", "transport-streamable-http-server"] }
+rmcp = { version = "=3.10.0", default-features = false, features = ["server", "transport-streamable-http-server"] }
 axum = "0.8"
 tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "sync", "macros", "process"] }
 futures-util = "0.3"
@@ -258,8 +258,8 @@ memchr = "2"
 walkdir = "2"
 # Drive indexing: SQLite store and macOS FSEvents watcher (the parallel directory
 # walker is now the in-tree `indexing::scanner::walker`, not a dependency)
-rusqlite = { version = "0.41", features = ["bundled", "collation", "fallible_uint"] }
-sysinfo = { version = "0.40.1", default-features = false, features = ["system"] }
+rusqlite = { version = "0.42", features = ["bundled", "collation", "fallible_uint"] }
+sysinfo = { version = "0.40.3", default-features = false, features = ["system"] }
 time = { version = "0.3", features = ["parsing", "macros", "formatting"] }
 # Playwright E2E testing plugin: socket bridge for direct webview injection (optional, feature-gated, dev-only).
 # Provides multi-window command targeting and label-aware macOS native screenshots (so E2E can capture
@@ -280,13 +280,13 @@ rand = "0.10"
 # that reject custom `temperature` (HTTP 400) and (2) Responses-only models that 404 on
 # `/v1/chat/completions`.
 #
-# Pinned at the EXACT 0.7.3 (published 2026-11-03). The line ships often and breaks APIs in
+# Pinned at the EXACT 0.7.4 (published 2026-11-11). The line ships often and breaks APIs in
 # minors, so pin exact to avoid surprise breakage on `cargo update`. 0.7 is what lets reasoning
 # survive a tool loop: Anthropic signed and redacted thinking blocks, OpenAI Responses encrypted
 # reasoning items, Gemini per-part thought signatures, Mistral `thinking` chunks, and OpenRouter's
 # streamed `reasoning_details` round-trip (`src/agent/llm/DETAILS.md` § Reasoning round-trip).
 # Solo maintainer; MIT/Apache-2.0; ~25k LOC if we ever need to fork.
-genai = "=0.7.3"
+genai = "=0.7.4"
 # Type-safe IPC: typed Rust↔TS bindings for tauri commands and events.
 # Generated `bindings.ts` lands in `apps/desktop/src/lib/ipc/`; the frontend
 # imports `commands.commandName(args)` instead of `invoke('command_name', ...)`.
@@ -339,7 +339,7 @@ xattr = "1"
 keyring-core = "1"
 zbus-secret-service-keyring-store = { version = "1", features = ["rt-tokio-crypto-rust"] }
 # Encrypted file-based credential storage fallback when no secret service is available
-cocoon = "0.5"
+cocoon = "0.6"
 # D-Bus client for XDG Desktop Portal (accent color, appearance settings)
 zbus = "5"
 # Native file icons: XDG icon theme lookup (pure Rust, no GTK dependency)
@@ -494,7 +494,7 @@ objc2-io-kit = { version = "0.3.2", default-features = false, features = ["std",
 filetime = "0.2"
 # The Linux-only `cocoon` above, again for every platform's tests, so the encrypted credential
 # store's recovery cells (`secrets/encrypted_file.rs`) run on a Mac too. Same package, no new one.
-cocoon = "0.5"
+cocoon = "0.6"
 # Tauri's no-window mock runtime for real HTTP-boundary tests of the MCP router.
 # This is the same package as the production dependency; the feature only publishes
 # `tauri::test` helpers to dev targets and adds no package to the graph.

@@ -48,9 +48,15 @@ Work in a worktree. Take npm and Cargo in **separate commits**, so a bisect can 
    `minimumReleaseAge: 4320` in `pnpm-workspace.yaml` means pnpm won't resolve anything younger. Without `dedupe`,
    nested transitive deps stay pinned to old versions and cause false-positive failures (stylelint/postcss misparsing
    Svelte inline styles, Playwright version skew between AxeBuilder and the e2e specs).
-3. **Cargo**: `cargo outdated -w` for the list. ❌ Never bare `cargo update`, which drags the whole graph forward with
-   no age gate. Per crate, edit `Cargo.toml` to the chosen version, then `cargo update -p <crate> --precise <version>`
-   to refresh just that entry.
+   - Run `ncu` in `apps/desktop/` (the root `package.json` holds only Renovate-owned tools), with `-x` for Renovate's
+     lanes and pins: `typescript`, `@cyclonedx/cyclonedx-library`, and the linters and formatters.
+   - pnpm refuses (it doesn't step back) when `ncu` writes a floor younger than three days: `pnpm install` lists each
+     one, and you set that package to its newest release older than the cutoff (`npm view <pkg> time`).
+3. **Cargo**: `cargo outdated -w` for the list. It can't load the `vendor/` path patches (it copies the workspace to a
+   temp dir without them; cargo-outdated on 2026-11-17), so instead compare each direct crates.io dependency from
+   `cargo metadata --no-deps` with the crates.io versions API. ❌ Never bare `cargo update`, which drags the whole graph
+   forward with no age gate. Per crate, edit `Cargo.toml` to the chosen version, then
+   `cargo update -p <crate> --precise <version>` to refresh just that entry.
    - **The 3-day window is yours to enforce here.** crates.io has no equivalent of pnpm's gate:
      `curl -s https://crates.io/api/v1/crates/<name>/versions | jq -r '.versions[] | "\(.num) \(.created_at)"'` and take
      the newest one older than three days.
@@ -89,27 +95,35 @@ David wants the fastest reliable type checker for every lane. The end state is t
 whether a blocker below has lifted and moves the next lane over, with a parity diff against TS 6 first (identical
 diagnostics on a clean tree and on seeded errors), as the svelte-check switch did.
 
-Where it stands (verified 2026-11-10, against the tools' releases and issue trackers):
+Where it stands (verified 2026-11-17, against the tools' releases and issue trackers):
 
 - **On TS 7**: only `desktop-svelte-check` and `dashboard-svelte-check`, through `svelte-check --tsgo` and
   `@typescript/native`, locally and in CI, with TS 6 backstop lanes gating CI. How, why, and when to drop the backstops
   and the `paths` mirror: `scripts/check/checks/DETAILS.md` § "svelte-check runs on TS 7 with a TS 6 backstop".
 - **`typescript` itself stays on 6** (the `renovate.json` typescript-major rule): TS 7.0 has no JS compiler API, and
-  typescript-eslint, svelte-check, svelte2tsx, and SvelteKit all cap their peer ranges below 7.
+  typescript-eslint (`<6.1.0` in 8.73.0), svelte-check 4.7.8 and svelte2tsx 0.7.63 (`^5 || ^6`), and SvelteKit 3.2.1
+  (`^6`) all cap their peer ranges below 7 (2026-11-17).
 - **Typed ESLint (the biggest win left)**: `eslint-typecheck-ts` (58–103 s) and `eslint-typecheck-svelte` (79–96 s) on
-  desktop, plus the website, api-server, and dashboard ESLint lanes. Blocked on typescript-eslint supporting TS 7.1's
-  API (typescript-eslint#10940); TS 7.1 was in beta on 2026-11-10. oxlint's type-aware mode (tsgolint) is the other
-  route, blocked on `.svelte` support.
+  desktop, plus the website, api-server, and dashboard ESLint lanes. The first route opened: typescript-eslint 8.73.0
+  (2026-11-16) ships `parserOptions.projectService.EXPERIMENTAL_backend`, which runs type information on TS 7.1's native
+  compiler over IPC (typescript-eslint#12803; tracking issue #10940 still open). It needs TS 7.1, still `7.1.0-beta` on
+  npm (2026-11-17), and 8.73.0 was too young for the 3-day window this pass. Next step: once 8.73.x clears the window,
+  trial the experimental backend on `eslint-typecheck-ts` against `typescript@7.1.0-beta` with a parity diff; adopt it
+  only on TS 7.1 stable. oxlint's type-aware mode (tsgolint, or tsrs's `oxlint --type-check`) is the other route,
+  blocked on `.svelte` support (tsgolint#322 open).
 - **`api-server-typecheck`** (`tsc --noEmit`, 1.7 s): can switch to TS 7's `tsc` today; small gain, so bundle it with a
   bigger step.
-- **`website-typecheck`** (`astro check`, 7–11 s): whether Astro has a TS 7 mode is unchecked.
+- **`website-typecheck`** (`astro check`, 7–11 s): no TS 7 mode. `@astrojs/check` 0.9.12 peers on `typescript ^5 || ^6`
+  and has no `tsgo` flag (2026-11-17).
 - **`pnpm typecheck` in each app** (what humans run): still TS 6; can follow the check lanes once they've settled.
-- **tsrs**: 0.x and about five weeks old on 2026-11-10; measured 1.15 s on the desktop's plain TS program vs 2.9 s for
-  TS 7.0 and 38.8 s for TS 6.0 (`tsc --noEmit`, 2026-11-10). No `.svelte` support and no language-service API yet, so
-  nothing can use it. Adopt it per lane once it type-checks `.svelte` (or svelte-check can drive it) and matches TS 6/7
-  diagnostics on our tree.
-- **Upstream to watch**: sveltejs/language-tools#3142 and its fix PR #3143 (the `paths` mirror), plus the `--tsgo` gaps
-  that drop errors (#3187, #3174, #3185).
+- **tsrs**: measured 1.15 s on the desktop's plain TS program vs 2.9 s for TS 7.0 and 38.8 s for TS 6.0 (`tsc --noEmit`,
+  2026-11-10). On 2026-11-17 it's at 0.25.0 (`latest`) and `7.1.0-beta.tsrs2` (`next`, versions now aligned with
+  TypeScript), targets TS 7.1 beta, and adds an `oxlint --type-check` integration. Still no `.svelte` support and no
+  language-service API, so nothing can use it. Adopt it per lane once it type-checks `.svelte` (or svelte-check can
+  drive it) and matches TS 6/7 diagnostics on our tree.
+- **Upstream to watch**: sveltejs/language-tools#3142 and its fix PR #3143 (the `paths` mirror, both still open), plus
+  the `--tsgo` gaps that drop errors: #3187 and #3185 are open, and #3174 was closed as not planned for lack of a
+  reproduction on 2026-11-16 (its `#lib` half is #3142), so treat that gap as unconfirmed rather than fixed.
 
 ## Version constraints
 

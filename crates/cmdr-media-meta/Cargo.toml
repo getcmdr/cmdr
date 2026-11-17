@@ -30,7 +30,7 @@ cmdr-fs = { path = "../cmdr-fs" }
 chrono = "0.4"
 # EXIF from JPEG, TIFF, HEIF, PNG, WebP, and TIFF-based RAW. Declared under its lib
 # name `exif` (the package is `kamadak-exif`), the same version the app pins.
-exif = { package = "kamadak-exif", version = "0.6.1" }
+exif = { package = "kamadak-exif", version = "0.6.2" }
 # Media tags (ID3, MP4 `ilst`, Vorbis comments, APE, RIFF/AIFF chunks), pure Rust,
 # MIT OR Apache-2.0. Default features; `flate2` (compressed ID3 frames) is already in
 # the graph.

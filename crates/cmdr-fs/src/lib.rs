@@ -32,6 +32,11 @@
 #[cfg(not(any(cmdr_host, target_family = "wasm")))]
 compile_error!("Cmdr builds for macOS, Linux, Windows, and the browser only; see docs/guides/platform-seams.md");
 
+// Linked only for its `wasm-bindgen` host exports, which the browser SQLite imports
+// (`Cargo.toml` says why); nothing here names it.
+#[cfg(target_family = "wasm")]
+use sqlite_wasm_rs as _;
+
 pub mod apple_double;
 pub mod archive_format;
 #[cfg(target_os = "macos")]
