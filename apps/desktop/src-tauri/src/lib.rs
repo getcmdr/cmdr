@@ -175,6 +175,8 @@ pub mod test_mode;
 /// The sanctioned way to wait for background work in a Rust test. See `docs/testing.md`.
 #[cfg(test)]
 pub(crate) mod test_support;
+// The exact timestamp bytes Cmdr writes (RFC 3339, the log stamp) and the one RFC 3339 parser.
+mod timestamps;
 pub mod tools;
 mod ui_state;
 /// Why a volume id has no registered volume: not connected yet, or gone.

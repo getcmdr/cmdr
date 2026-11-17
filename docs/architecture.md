@@ -247,6 +247,8 @@ All under `apps/desktop/src-tauri/src/`.
 - `analytics/`: Anonymous beta usage analytics: a `/heartbeat` at most every 3 h (true DAU, uptime, a PII-free
   config-shape snapshot built by allowlist, and the spooled feature events), tri-state consent gate, dev/CI suppression.
   See `apps/desktop/src-tauri/src/analytics/CLAUDE.md`
+- `timestamps.rs`: the exact timestamp strings Cmdr writes (RFC 3339 for stores and reports, Millis `Z`, the log-file
+  line stamp) and the one RFC 3339 parser, on jiff. Contract in the module doc
 - `send_schedule.rs`: the persisted throttle the heartbeat and the update check share (one success per interval, a retry
   floor after a failure)
 - `server_request.rs`: the one way a request reaches Cmdr's own api server (heartbeat, crash and error reports, the
