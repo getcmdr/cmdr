@@ -133,6 +133,52 @@ fn a_date_placeholder_keeps_dashes_dots_underscores_and_spaces_between_its_parts
 }
 
 #[test]
+fn every_date_part_pads_to_its_width_whatever_the_date() {
+    // (when, the mask's every part, the same date as a media field)
+    let cells = [
+        (
+            at(2005, 1, 2, 3, 4, 5),
+            "2005|05|01|02|03|04|05|20050102|030405|2005-01-02|03.04.05",
+            "05-01-02_03.04.05 2005-01-02 03.04.05",
+        ),
+        (
+            at(987, 11, 30, 0, 0, 0),
+            "0987|87|11|30|00|00|00|09871130|000000|0987-11-30|00.00.00",
+            "87-11-30_00.00.00 0987-11-30 00.00.00",
+        ),
+        (
+            at(2000, 12, 31, 23, 59, 59),
+            "2000|00|12|31|23|59|59|20001231|235959|2000-12-31|23.59.59",
+            "00-12-31_23.59.59 2000-12-31 23.59.59",
+        ),
+        (
+            at(9999, 12, 31, 23, 59, 59),
+            "9999|99|12|31|23|59|59|99991231|235959|9999-12-31|23.59.59",
+            "99-12-31_23.59.59 9999-12-31 23.59.59",
+        ),
+    ];
+    let mask = Mask::parse("[Y]|[y]|[M]|[D]|[h]|[m]|[s]|[YMD]|[hms]|[d]|[t]").expect("valid");
+    let media_mask = Mask::parse("[=exif.taken:y-M-D_h.m.s] [=exif.taken]").expect("valid");
+    for (when, expected, expected_media) in cells {
+        let row = RowFacts {
+            modified: when,
+            ..facts("a.txt")
+        };
+        assert_eq!(mask.text(&row), expected, "{when:?}");
+        let media = MediaFacts {
+            taken: when,
+            ..MediaFacts::default()
+        };
+        let row = RowFacts {
+            modified: None,
+            media: RowMedia::Read(&media),
+            ..facts("a.txt")
+        };
+        assert_eq!(media_mask.render(&row).as_deref(), Ok(expected_media), "{when:?}");
+    }
+}
+
+#[test]
 fn a_date_with_separators_leaves_the_rest_of_the_grammar_alone() {
     let file = "ABCDEFGHIJ.txt";
     assert_eq!(
