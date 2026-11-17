@@ -14,16 +14,16 @@ and error types both speak; `plan.rs` decides which original entries an edit kee
 - **Temp+rename is the ONLY strategy; never `ZipWriter::new_append`** (it corrupts the archive on cancel). The original
   is byte-for-byte intact until the final atomic rename.
 - **Deletes and renames match the READER's name for an entry (rc-zip, by header offset); an unrenamed entry goes through
-  `raw_copy_file`, which keeps its stored name bytes and UTF-8 flag** (vendored `zip` patch). ❌ Never write a kept
-  entry under `name()`: it re-encodes every Shift-JIS or GBK name as mojibake. DETAILS § "Entry names".
+  `raw_copy_file`, which keeps its stored name bytes and UTF-8 flag** (`zip` 9.1+). ❌ Never write a kept entry under
+  `name()`: it re-encodes every Shift-JIS or GBK name as mojibake. DETAILS § "Entry names".
 - **A rewrite keeps the comment, any bytes before the zip data (an SFX stub), and a symlink's target as the file it
   replaces** (`apply` resolves a linked archive first). An archive with a duplicate entry name is refused: the `zip`
   crate folds the twins into one. DETAILS § "The rewrite keeps the archive's own shape". So is an edit that would write
   an entry under a FILE entry, which every reader hides (`EntryUnderFile`).
-- **A kept ZipCrypto or WinZip AES entry raw-copies byte-identical and still decrypts**: the vendored `zip` patch keeps
-  its encrypted and data-descriptor flags (bit 3 picks ZipCrypto's check byte). A scheme it can't carry (Strong
-  Encryption, masked headers, bit 3 with an unparseable DOS time) refuses the edit (`carries_its_encryption`). DETAILS §
-  "Encrypted entries".
+- **A kept ZipCrypto or WinZip AES entry raw-copies byte-identical and still decrypts**: `zip` 9.5.1+ keeps its
+  encrypted and data-descriptor flags (bit 3 picks ZipCrypto's check byte). A scheme it can't carry (Strong Encryption,
+  masked headers, bit 3 with an unparseable DOS time) refuses the edit (`carries_its_encryption`). DETAILS § "Encrypted
+  entries".
 - **`Changeset::compression_level` applies to ADDED entries only, clamped 1..=9 in `add_entry_options`.** The `zip`
   crate HARD-ERRORS on an out-of-range Deflated level (it doesn't clamp), failing the whole edit at the first entry — so
   keep the clamp; don't set a raw level on `FileOptions` elsewhere. `None` = crate default (level 6). See `DETAILS.md` §

@@ -28,8 +28,12 @@ sink, pause gate, cancel intent via the `MutationHooks` seam, and the remote pul
   took its twin and deleting the other took nothing. An entry the edit doesn't rename goes through `raw_copy_file`,
   which writes its `name_raw()` under its own UTF-8 flag; a renamed one gets its new name (the user's text, or a renamed
   folder's prefix plus the shown rest) as flagged UTF-8 via `raw_copy_file_rename`. Upstream 9.0.1's `raw_copy_file`
-  re-encoded the CP437 reading as flagged UTF-8, garbling every non-ASCII name on any edit (#514); the fix is the
-  vendored patch in `vendor/zip/CMDR-PATCH.md`. Pinned by `mutator_raw_names_test.rs`.
+  re-encoded the CP437 reading as flagged UTF-8, garbling every non-ASCII name on any edit (#514); upstream fixed it in
+  9.1.0 (`zip-rs/zip2` #1124). Pinned by `mutator_raw_names_test.rs`.
+- **Known limit: a kept entry's COMMENT re-encodes as UTF-8.** The `zip` reader keeps no raw comment bytes, so a raw
+  copy writes the decoded text, and a non-ASCII CP437 comment under a clear UTF-8 flag reads back garbled. Entry
+  comments are rare. `zip` 9.6.0 exposes the stored bytes (`ZipFile::comment_raw`, `zip-rs/zip2` #1289), the way to
+  close this (verified on `zip` 9.5.1, `raw_copy_options` copies `file.comment()`, 2026-11-17).
 - **Retained entries copy verbatim** via `raw_copy_file` / `raw_copy_file_rename` (no decompress/recompress), extra
   fields included. ❗ That's why `zip` carries its `unreserved` feature: without it, the writer refuses any entry with
   an extra-field ID it reserves but doesn't model, and `ditto` (Finder's Compress) writes one, Info-ZIP's `0x5855`, so
@@ -101,15 +105,19 @@ sink, pause gate, cancel intent via the `MutationHooks` seam, and the remote pul
   stated here so a future multi-writer scenario revisits it deliberately rather than assuming a guard exists.
 - **Encrypted entries: a kept one raw-copies and still decrypts with its password (#592).** An edit never needs an
   encrypted entry's plaintext: a kept entry, renamed or not, is a raw copy, and an overwrite deletes it. So the copy
-  only has to keep what a reader decrypts with, and the vendored `zip` patch (`vendor/zip/CMDR-PATCH.md`) makes it:
+  only has to keep what a reader decrypts with, and `zip` 9.5.1 makes it (Cmdr's fix, upstreamed as `zip-rs/zip2`
+  #1288):
   - ZipCrypto: the 12-byte encryption header sits in the stored bytes. The copy keeps bit 0 (encrypted) and bit 3 (data
     descriptor), and writes a descriptor after the bytes when bit 3 is set. Bit 3 is load-bearing: it picks the
-    password's check byte, the DOS time's high byte under it (Info-ZIP's `zip -e` shape) and the CRC's without. Upstream
-    9.0.1 dropped both bits, so the entry read back as ciphertext-as-plaintext, and keeping bit 0 alone would fail every
-    Info-ZIP zip's password check. The CRC and DOS time ride the options as before.
+    password's check byte, the DOS time's high byte under it (Info-ZIP's `zip -e` shape) and the CRC's without. Before
+    9.5.1, upstream dropped both bits, so the entry read back as ciphertext-as-plaintext, and keeping bit 0 alone would
+    fail every Info-ZIP zip's password check. The CRC and DOS time ride the options as before.
   - WinZip AES (AE-1/AE-2): the salt, verifier, and MAC sit in the stored bytes, and `ZipFile::options()` already
-    carries the mode and vendor version, from which the writer writes the `0x9901` extra field and method 99. The patch
-    stops the copy also writing the stored field a second time.
+    carries the mode and vendor version, from which the writer writes the `0x9901` extra field and method 99. The
+    crate's `raw_copy_options` skips the stored field, so it isn't written twice (pinned by `aes_extra_field_count` in
+    `mutator_encrypted_test.rs`).
+  - A bit-3 ZipCrypto entry's check byte is its DOS time's, so a raw copy that changed the time (`raw_copy_file_touch`)
+    would break the password; Cmdr never touches.
   - Neither scheme binds the entry's name, so a rename is safe too.
   - Still refused (`EncryptedEntryRetained`, before any temp exists; `plan.rs` `carries_its_encryption`): PKWARE Strong
     Encryption (bit 6) and masked headers (bit 13), whose state the `zip` crate doesn't model, and a bit-3 ZipCrypto

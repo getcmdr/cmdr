@@ -23,8 +23,8 @@ import (
 // (`fuzz/DETAILS.md` § Findings). Ahead is wrong the same way.
 //
 // Versions compare per semver line, because a crate can legitimately resolve on
-// two lines at once (`zip` 4 under `tauri-plugin-updater` beside the vendored
-// `zip` 9). A line only one lock has passes: the fuzz crate's own dependencies
+// two lines at once (`zip` 4 under one dependent beside `zip` 9 under
+// another). A line only one lock has passes: the fuzz crate's own dependencies
 // (`libfuzzer-sys`, `arbitrary`) or app code no target links pull it, and there's
 // no root version to be in step with.
 func RunFuzzLockInStep(ctx *CheckContext) (CheckResult, error) {

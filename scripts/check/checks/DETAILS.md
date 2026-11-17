@@ -2488,8 +2488,8 @@ Checks by app and tech:
   mtp-dropping-timeout, mtp-no-transport-reset, bindings-fresh, ipc-enum-camelcase, vendor-patch-applied (every
   `[patch.crates-io]` path entry in the root `Cargo.toml` still resolves to that path in `Cargo.lock`: a bump past the
   vendored version makes cargo resolve crates.io again and park the patch under `[[patch.unused]]` with one warning; a
-  crates.io copy on an OLDER semver line, like `zip` 4 under `tauri-plugin-updater` beside the vendored `zip` 9, is out
-  of a patch's reach and passes; skipped while there's no patch), fuzz-lock-in-step (every crate both `Cargo.lock` and
+  crates.io copy on an OLDER semver line, like `zip` 4 under one dependent beside a vendored `zip` 9, is out of a
+  patch's reach and passes; skipped while there's no patch), fuzz-lock-in-step (every crate both `Cargo.lock` and
   `fuzz/Cargo.lock` resolve sits at the same version in each, compared per semver line so a crate on two lines (`zip` 4
   and 9) is judged line by line and a line only one lock has passes; nothing bumps the out-of-workspace fuzz lock, and
   its lagging `twox-hash` once crashed a fuzz run on a bug the app never shipped; the failure prints a

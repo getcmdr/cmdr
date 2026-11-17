@@ -140,7 +140,7 @@ const MASKED_HEADER_FLAG: u16 = 1 << 13;
 /// an unencrypted entry; for WinZip AES, whose framing (salt, verifier, MAC)
 /// sits in the stored bytes and whose extra field the copy rewrites as read;
 /// for ZipCrypto, whose 12-byte header is in the stored bytes and whose flags,
-/// CRC, and DOS time the copy keeps (the vendored `zip` patch), except under
+/// CRC, and DOS time the copy keeps (`zip` 9.5.1+), except under
 /// bit 3 with a DOS time the `zip` crate couldn't parse: the password's check
 /// byte is that time's, and the crate keeps no raw copy of it to write back.
 /// PKWARE Strong Encryption and masked headers carry state the `zip` crate

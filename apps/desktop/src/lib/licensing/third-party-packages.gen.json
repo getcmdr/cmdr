@@ -4570,6 +4570,12 @@
       "url": "https://github.com/RustCrypto/utils"
     },
     {
+      "name": "zeroize_derive",
+      "version": "1.5.0",
+      "license": "Apache-2.0 OR MIT",
+      "url": "https://github.com/RustCrypto/utils"
+    },
+    {
       "name": "zerotrie",
       "version": "0.2.5",
       "license": "Unicode-3.0",
@@ -4589,7 +4595,7 @@
     },
     {
       "name": "zip",
-      "version": "9.4.1",
+      "version": "9.5.1",
       "license": "MIT",
       "url": "https://github.com/zip-rs/zip2"
     },

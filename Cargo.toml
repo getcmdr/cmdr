@@ -35,7 +35,7 @@ members = [
   "crates/index-query",
   "crates/operation-log-dump",
 ]
-exclude = ["benchmarks/smb", "vendor/rc-zip", "vendor/rustic_core", "vendor/tauri-plugin-store", "vendor/zip"]
+exclude = ["benchmarks/smb", "vendor/rc-zip", "vendor/rustic_core", "vendor/tauri-plugin-store"]
 resolver = "2"
 
 # Third-party crates we patch, each identical to its crates.io release apart from the fix, which
@@ -50,9 +50,6 @@ rustic_core = { path = "vendor/rustic_core" }
 # can't leave `settings.json`, `shortcuts.json`, or `license.json` truncated (#461), and it
 # refuses to save over a store file that didn't load (#506).
 tauri-plugin-store = { path = "vendor/tauri-plugin-store" }
-# A raw copy keeps an encrypted entry's encrypted and data descriptor flags, so a
-# ZipCrypto entry kept through a zip edit still decrypts (#592).
-zip = { path = "vendor/zip" }
 
 # Optimized builds cross crate boundaries. Cargo's default (`lto = false`,
 # `codegen-units = 16`) inlines only `#[inline]` and generic functions between

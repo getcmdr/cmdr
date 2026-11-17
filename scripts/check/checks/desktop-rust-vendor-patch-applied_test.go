@@ -102,7 +102,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 // A `[patch]` only replaces semver-compatible versions, so a crates.io copy on an
 // OLDER line (a transitive dependency that never moved up, like `zip` 4 under
-// `tauri-plugin-updater` beside the vendored `zip` 9) is out of its reach and isn't
+// one dependent beside a vendored `zip` 9) is out of its reach and isn't
 // a leak. A newer line still fails: that's a dependent bumped past the fork.
 func TestVendorPatch_PassesBesideACratesIoCopyOfAnOlderLine(t *testing.T) {
 	lock := vendorPatchAppliedLock + `
