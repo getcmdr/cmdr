@@ -67,7 +67,7 @@ fn millis(duration: Duration) -> i64 {
 
 /// The wall clock as Unix milliseconds, the unit [`SendRecord`] stores.
 pub fn now_unix_ms() -> i64 {
-    chrono::Utc::now().timestamp_millis()
+    jiff::Timestamp::now().as_millisecond()
 }
 
 #[cfg(test)]

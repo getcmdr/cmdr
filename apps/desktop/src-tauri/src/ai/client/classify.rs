@@ -57,8 +57,8 @@ pub(super) fn parse_retry_after(value: &str, now: SystemTime) -> Option<Duration
     if let Ok(secs) = value.parse::<u64>() {
         return Some(Duration::from_secs(secs));
     }
-    let at = chrono::DateTime::parse_from_rfc2822(value).ok()?;
-    let at = UNIX_EPOCH + Duration::from_secs(u64::try_from(at.timestamp()).ok()?);
+    let at = jiff::fmt::rfc2822::DateTimeParser::new().parse_timestamp(value).ok()?;
+    let at = UNIX_EPOCH + Duration::from_secs(u64::try_from(at.as_second()).ok()?);
     Some(at.duration_since(now).unwrap_or(Duration::ZERO))
 }
 

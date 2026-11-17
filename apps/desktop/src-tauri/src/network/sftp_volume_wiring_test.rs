@@ -490,7 +490,7 @@ fn edited(params: &SftpConnectionParams, remote_root: &str) -> KnownSftpServer {
         use_agent: false,
         auto_reconnect: true,
         pinned: true,
-        last_connected_at: chrono::Utc::now().to_rfc3339(),
+        last_connected_at: crate::timestamps::now_rfc3339(),
     }
 }
 

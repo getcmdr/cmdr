@@ -184,7 +184,7 @@ pub async fn connect_and_register_since(
         // across for a server that is already saved, so a reconnect can't re-pin
         // one the user unpinned.
         pinned: true,
-        last_connected_at: chrono::Utc::now().to_rfc3339(),
+        last_connected_at: crate::timestamps::now_rfc3339(),
     });
     log::info!(target: "volume", "registered SFTP volume {volume_id}");
     SftpConnection::Connected { volume_id }

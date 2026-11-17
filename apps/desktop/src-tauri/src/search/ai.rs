@@ -36,23 +36,24 @@ pub fn iso_date_to_timestamp(date_str: &str) -> Result<u64, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::TimeZone;
     use cmdr_search::translate::LocalDays;
+    use jiff::Timestamp;
+    use jiff::tz::{AmbiguousOffset, TimeZone};
 
     /// "Today" is the user's day, so it starts at LOCAL midnight. Bites on any machine
     /// whose zone isn't UTC (CI runs in UTC, where it passes either way; the crate's
     /// fixed-zone tests pin the rule everywhere).
     #[test]
     fn today_starts_at_this_machines_local_midnight() {
-        let midnight = chrono::Local::now()
-            .date_naive()
-            .and_hms_opt(0, 0, 0)
-            .expect("valid time");
-        let expected = chrono::Local
-            .from_local_datetime(&midnight)
-            .earliest()
-            .expect("midnight exists locally")
-            .timestamp() as u64;
+        let zone = TimeZone::system();
+        let midnight = zone.to_datetime(Timestamp::now()).date().at(0, 0, 0, 0);
+        // The earlier of a repeated midnight; a zone that skips it isn't what this pins.
+        let offset = match zone.to_ambiguous_timestamp(midnight).offset() {
+            AmbiguousOffset::Unambiguous { offset } => offset,
+            AmbiguousOffset::Fold { before, .. } => before,
+            AmbiguousOffset::Gap { .. } => panic!("midnight exists locally"),
+        };
+        let expected = offset.to_timestamp(midnight).expect("in range").as_second() as u64;
         let parsed = ParsedLlmResponse {
             time: Some("today".to_string()),
             ..Default::default()

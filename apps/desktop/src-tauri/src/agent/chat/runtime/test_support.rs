@@ -22,7 +22,6 @@ use crate::agent::llm::AgentDeltaStream;
 pub(super) use std::sync::Mutex;
 pub(super) use std::time::Duration;
 
-pub(super) use chrono::FixedOffset;
 pub(super) use futures_util::future::{BoxFuture, FutureExt};
 pub(super) use futures_util::stream::StreamExt;
 pub(super) use rusqlite::Connection;
@@ -62,8 +61,8 @@ pub(super) fn migrated_conn() -> Connection {
     conn
 }
 
-pub(super) fn offset() -> FixedOffset {
-    FixedOffset::east_opt(2 * 3600).expect("valid offset")
+pub(super) fn offset() -> Offset {
+    Offset::from_seconds(2 * 3600).expect("valid offset")
 }
 
 pub(super) fn envelope() -> ContextEnvelope {

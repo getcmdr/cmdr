@@ -167,7 +167,7 @@ impl HostKeys for AppHostKeys {
                 port,
                 algorithm: algorithm.to_string(),
                 fingerprint: fingerprint.to_string(),
-                approved_at: chrono::Utc::now().to_rfc3339(),
+                approved_at: crate::timestamps::now_rfc3339(),
             };
             match store
                 .trusted_host_keys

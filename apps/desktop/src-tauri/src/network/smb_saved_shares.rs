@@ -71,7 +71,7 @@ pub async fn remember_mount(mounted: MountedShare<'_>) -> Option<String> {
         server_name: mounted.host_name.to_string(),
         share_name: mounted.share.to_string(),
         protocol: "smb".to_string(),
-        last_connected_at: chrono::Utc::now().to_rfc3339(),
+        last_connected_at: crate::timestamps::now_rfc3339(),
         last_connection_mode: if mounted.username.is_some() {
             ConnectionMode::Credentials
         } else {
@@ -209,7 +209,7 @@ fn favorited_share_row(
         server_name: crate::network::manual_servers::discovery_name(server, port),
         share_name: share.to_string(),
         protocol: "smb".to_string(),
-        last_connected_at: chrono::Utc::now().to_rfc3339(),
+        last_connected_at: crate::timestamps::now_rfc3339(),
         last_connection_mode: if username.is_some() {
             ConnectionMode::Credentials
         } else {

@@ -1291,7 +1291,7 @@ which uncertainty it has can look.
 
 **One formatter, `search::format_size` + `format_local_date` / `format_local_datetime`.** ❌ Never a second one: two
 would round differently and the same folder would read two sizes across two surfaces. Every date the model reads is in
-the user's zone (`apps/desktop/src-tauri/src/search/zone.rs`, the machine's `chrono::Local`, each instant with its own summer-time offset):
+the user's zone (`apps/desktop/src-tauri/src/search/zone.rs`, the machine's `TimeZone::system()`, each instant with its own summer-time offset):
 `format_local_date` writes `YYYY-MM-DD` for a field without a time of day (every `*Human` date, `asOf`, and the dates
 in `interpretedQuery`), so it carries no offset; `format_local_datetime` writes RFC 3339 to the second WITH the offset
 (`2026-03-29T14:00:00+02:00`, `+00:00` in UTC, never `Z`) for a field that shows a time of day (`inspect_file`'s

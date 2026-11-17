@@ -29,7 +29,10 @@ use std::path::Path;
 /// running it inline is also what keeps [`launch_day_count`] from racing a spawned write. Every
 /// failure is a logged warning: an unwritable ledger costs a hint, never a launch.
 pub fn record_launch(data_dir: &Path) {
-    ledger::record(&data_dir.join(ledger::FILE_NAME), chrono::Local::now().date_naive());
+    ledger::record(
+        &data_dir.join(ledger::FILE_NAME),
+        jiff::tz::TimeZone::system().to_datetime(jiff::Timestamp::now()).date(),
+    );
 }
 
 /// How many distinct local calendar days Cmdr has been launched on, per the ledger under

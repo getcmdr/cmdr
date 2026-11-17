@@ -69,7 +69,7 @@ fn edited(target: &FixtureTarget, remote_root: &str) -> KnownWebdavServer {
         start_folder: None,
         auto_reconnect: true,
         pinned: true,
-        last_connected_at: chrono::Utc::now().to_rfc3339(),
+        last_connected_at: crate::timestamps::now_rfc3339(),
     }
 }
 

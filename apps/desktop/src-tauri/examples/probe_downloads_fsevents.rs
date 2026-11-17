@@ -77,7 +77,8 @@ use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
-use chrono::Local;
+use jiff::Timestamp;
+use jiff::tz::TimeZone;
 use notify::{Event, RecursiveMode, Watcher, recommended_watcher};
 
 const PROBE_DURATION: Duration = Duration::from_secs(60);
@@ -123,12 +124,16 @@ fn main() {
         match rx.recv_timeout(remaining.min(Duration::from_millis(500))) {
             Ok(Ok(event)) => {
                 event_count += 1;
-                let ts = Local::now().format("%H:%M:%S%.3f");
+                let ts = TimeZone::system()
+                    .to_datetime(Timestamp::now())
+                    .strftime("%H:%M:%S%.3f");
                 let paths: Vec<PathBuf> = event.paths.clone();
                 println!("[{ts}] kind={:?} paths={:?}", event.kind, paths);
             }
             Ok(Err(err)) => {
-                let ts = Local::now().format("%H:%M:%S%.3f");
+                let ts = TimeZone::system()
+                    .to_datetime(Timestamp::now())
+                    .strftime("%H:%M:%S%.3f");
                 println!("[{ts}] watcher error: {err}");
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {

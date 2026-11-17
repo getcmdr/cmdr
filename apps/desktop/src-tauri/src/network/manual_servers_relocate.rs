@@ -39,10 +39,7 @@ pub(super) fn relocate_at_path(
         display_name: edit.name.trim().to_string(),
         address: to.host().to_string(),
         port: to.port(),
-        added_at: existing.map_or_else(
-            || chrono::Utc::now().to_rfc3339(),
-            |at| store.servers[at].added_at.clone(),
-        ),
+        added_at: existing.map_or_else(crate::timestamps::now_rfc3339, |at| store.servers[at].added_at.clone()),
         username: typed_account(edit.username.as_deref()),
         awaiting_first_connect: false,
     };

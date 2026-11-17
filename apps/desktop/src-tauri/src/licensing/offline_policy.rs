@@ -141,8 +141,7 @@ fn resolve_time_limited(key: &KeyTerms, cached: Option<&CachedLicenseStatus>, no
 
 /// Unix seconds from an RFC 3339 timestamp, or `None` if it doesn't parse (or predates 1970).
 pub(super) fn parse_timestamp(raw: &str) -> Option<u64> {
-    let parsed = chrono::DateTime::parse_from_rfc3339(raw).ok()?;
-    u64::try_from(parsed.timestamp()).ok()
+    u64::try_from(crate::timestamps::parse_rfc3339(raw)?.as_second()).ok()
 }
 
 #[cfg(test)]
@@ -152,6 +151,20 @@ mod tests {
     const DAY: u64 = 24 * 60 * 60;
     /// 2026-10-05T00:00:00Z
     const NOW: u64 = 1_791_158_400;
+
+    /// Every shape the license server writes: `toISOString()` (`signedAt`, manual
+    /// `expiresAt`), Paddle's `ends_at` passed through raw (a microsecond fraction), and a
+    /// `+00:00` offset. Before 1970 is no timestamp at all.
+    #[test]
+    fn parse_timestamp_reads_the_servers_shapes() {
+        assert_eq!(parse_timestamp("2026-10-05T12:34:56.789Z"), Some(NOW + 45_296));
+        assert_eq!(parse_timestamp("2026-10-05T12:34:56.123456Z"), Some(NOW + 45_296));
+        assert_eq!(parse_timestamp("2026-10-05T00:00:00+00:00"), Some(NOW));
+        assert_eq!(parse_timestamp("2026-10-05T02:00:00+02:00"), Some(NOW));
+        assert_eq!(parse_timestamp("1969-12-31T23:59:59Z"), None);
+        assert_eq!(parse_timestamp(""), None);
+        assert_eq!(parse_timestamp("2026-10-05"), None);
+    }
 
     fn perpetual_key() -> KeyTerms {
         KeyTerms {

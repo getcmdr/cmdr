@@ -81,7 +81,7 @@ pub struct RunWakeParams<'a> {
     pub envelope: &'a ContextEnvelope,
     /// The declarations the turn may reach for: the agent view, so a wake can propose.
     pub tools: &'a [ToolDeclaration],
-    pub offset: chrono::FixedOffset,
+    pub offset: jiff::tz::Offset,
     pub provider: crate::agent::llm::types::ProviderTag,
     pub model: String,
     pub prompt_budget: usize,
@@ -106,7 +106,7 @@ pub struct WakeParams<'a> {
     pub envelope: &'a ContextEnvelope,
     /// The declarations the turn may reach for: the agent view, so a wake can propose.
     pub tools: &'a [ToolDeclaration],
-    pub offset: chrono::FixedOffset,
+    pub offset: jiff::tz::Offset,
     pub provider: crate::agent::llm::types::ProviderTag,
     pub model: String,
     pub prompt_budget: usize,

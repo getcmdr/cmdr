@@ -103,7 +103,7 @@ pub fn pin(host: &str, port: u16, fingerprint: &str) {
             host: host.to_string(),
             port,
             fingerprint: fingerprint.to_string(),
-            approved_at: chrono::Utc::now().to_rfc3339(),
+            approved_at: crate::timestamps::now_rfc3339(),
         };
         match store
             .trusted_certificates

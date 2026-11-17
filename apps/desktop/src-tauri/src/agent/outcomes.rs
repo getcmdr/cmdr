@@ -277,11 +277,5 @@ fn announce(conversation_id: i64, line: ThreadLine, decision: ProposalDecision) 
 /// The local day a decision happened on, `YYYY-MM-DD`, for the memory line. The same shape the
 /// cost meter stamps, so two records of the same afternoon agree about which day it was.
 fn day_of(now: i64) -> String {
-    use chrono::{TimeZone, Utc};
-    Utc.timestamp_opt(now, 0)
-        .single()
-        .unwrap_or(chrono::DateTime::<Utc>::UNIX_EPOCH)
-        .with_timezone(&crate::agent::chat::session::local_offset())
-        .format("%Y-%m-%d")
-        .to_string()
+    crate::agent::chat::runtime::day_for(now, crate::agent::chat::session::local_offset())
 }

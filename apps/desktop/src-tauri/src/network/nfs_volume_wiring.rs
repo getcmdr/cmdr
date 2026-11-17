@@ -191,7 +191,7 @@ pub(crate) async fn connect_and_register_with(
         Ok(dialed) => dialed,
         Err(e) => return failed(e),
     };
-    let resolved = KnownNfsPlace::from_params(&dialed.params, place.pinned, chrono::Utc::now().to_rfc3339());
+    let resolved = KnownNfsPlace::from_params(&dialed.params, place.pinned, crate::timestamps::now_rfc3339());
     let volume_id = resolved.volume_id();
     // The split may have named a shorter export than the one typed, and the
     // volume reads as the export it IS.
