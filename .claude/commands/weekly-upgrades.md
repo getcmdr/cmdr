@@ -28,8 +28,9 @@ Run unattended, start to finish, without asking David anything. He's reading the
 6. **Land and tear down.** `pnpm land` (`scripts/land/CLAUDE.md`), then
    `~/.claude/scripts/remove-worktree.sh weekly-upgrades`.
 7. **Report** in about ten lines for Cmdr plus two or three per sibling repo: what moved (counts per ecosystem, and name
-   anything interesting), what broke and how you fixed it, what you held back and why, and whether the slow lane (Cmdr)
-   and GitHub CI (siblings) went green.
+   anything interesting), what broke and how you fixed it, what you held back and why, one line per vendored crate
+   (dropped, re-vendored, or what still blocks dropping it; guide step 3), and whether the slow lane (Cmdr) and GitHub
+   CI (siblings) went green.
 
 **When it's a quiet week**, say so in two lines and stop. An empty dashboard is a fine outcome; don't manufacture work.
 
