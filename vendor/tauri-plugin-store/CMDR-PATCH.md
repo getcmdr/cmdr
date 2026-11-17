@@ -1,6 +1,6 @@
-# tauri-plugin-store 2.5.0, patched
+# tauri-plugin-store 2.5.1, patched
 
-The crates.io release of `tauri-plugin-store` 2.5.0 (upstream `tauri-apps/plugins-workspace` at `a2364a5f`, path
+The crates.io release of `tauri-plugin-store` 2.5.1 (upstream `tauri-apps/plugins-workspace` at `8c588be4`, path
 `plugins/store`), swapped in through the root `Cargo.toml`'s `[patch.crates-io]`. Everything here is the published
 package byte for byte, apart from the two changes below and two files left out:
 
@@ -34,7 +34,12 @@ package byte for byte, apart from the two changes below and two files left out:
 
 Cmdr's own tests for both: `apps/desktop/src-tauri/src/settings/plugin_store_tests.rs`.
 
+2.5.1 (upstream's load/close deadlock fix, which reorders the resource-table and stores locks in `build_inner`,
+`get_store`, and the exit save) still saves with `fs::write` and still discards the load error (checked against the
+published crate, 2026-11-17). Re-vendoring was upstream's 2.5.0 → 2.5.1 diff applied on top of this copy; it applied
+cleanly, and `tests/load_close_race.rs` came along with it.
+
 ## Dropping it
 
 When upstream ships both, delete this folder and the `[patch.crates-io]` entry, and keep the tests.
-`desktop-rust-vendor-patch-applied` fails as soon as a bump past 2.5.0 makes cargo resolve crates.io again.
+`desktop-rust-vendor-patch-applied` fails as soon as a bump past 2.5.1 makes cargo resolve crates.io again.
