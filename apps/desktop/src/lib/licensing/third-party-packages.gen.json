@@ -725,7 +725,7 @@
     },
     {
       "name": "crypto-bigint",
-      "version": "0.7.6",
+      "version": "0.7.11",
       "license": "Apache-2.0 OR MIT",
       "url": "https://github.com/RustCrypto/crypto-bigint"
     },
@@ -785,7 +785,7 @@
     },
     {
       "name": "ctutils",
-      "version": "0.4.5",
+      "version": "0.4.8",
       "license": "Apache-2.0 OR MIT",
       "url": "https://github.com/RustCrypto/utils"
     },
@@ -1868,12 +1868,6 @@
       "version": "0.1.20",
       "license": "MIT",
       "url": "https://github.com/hyperium/hyper-util"
-    },
-    {
-      "name": "iana-time-zone",
-      "version": "0.1.65",
-      "license": "MIT OR Apache-2.0",
-      "url": "https://github.com/strawlab/iana-time-zone"
     },
     {
       "name": "icns",
