@@ -670,3 +670,79 @@ async fn a_case_only_rename_onto_a_real_sibling_is_still_a_conflict() {
     assert!(!check.is_case_only_rename, "`C.txt` is a different file: {check:?}");
     assert_eq!(check.conflict.map(|c| c.size), Some(6));
 }
+
+/// The rename itself refuses what the destination doesn't take, so a caller
+/// that skipped the validity check (an agent's rename) can't land `CON` on a
+/// share, where Samba would list it back mangled.
+#[tokio::test]
+async fn the_rename_itself_refuses_a_reserved_device_name_on_a_share() {
+    use cmdr_fs::validation::ValidationError;
+    use cmdr_fs::volume::{BackendKind, InMemoryVolume};
+
+    let engine = TestOperations::new();
+    let volume_id = unique("reserved-rename");
+    let volume = Arc::new(InMemoryVolume::new(&volume_id).with_backend_kind(BackendKind::Smb));
+    volume.create_directory(Path::new("/docs")).await.unwrap();
+    volume.create_file(Path::new("/docs/notes.txt"), b"hi").await.unwrap();
+    engine
+        .volumes()
+        .register(&volume_id, Arc::clone(&volume) as Arc<dyn Volume>);
+
+    let result = engine
+        .rename_managed(
+            PathBuf::from("/docs/notes.txt"),
+            PathBuf::from("/docs/CON"),
+            false,
+            volume_id,
+            Initiator::Agent,
+        )
+        .await;
+
+    assert!(
+        matches!(
+            result,
+            Err(MutationError::NameNotAllowed {
+                reason: ValidationError::ReservedName { .. }
+            })
+        ),
+        "{result:?}"
+    );
+    assert!(volume.exists(Path::new("/docs/notes.txt")).await, "the file stayed put");
+}
+
+/// F2 on an SMB share refuses a Windows device name up front: Samba would take
+/// `CON` and list it back as `CR23RR~9`, so the file the person named would
+/// never show under that name (`docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`).
+/// The same name on a POSIX backend is fine.
+#[tokio::test]
+async fn the_validity_check_refuses_a_reserved_device_name_on_a_share_only() {
+    use cmdr_fs::validation::ValidationError;
+    use cmdr_fs::volume::{BackendKind, InMemoryVolume};
+
+    let engine = TestOperations::new();
+    for (backend, refused) in [(BackendKind::Smb, true), (BackendKind::Sftp, false)] {
+        let volume_id = unique("reserved-name");
+        let volume = InMemoryVolume::new(&volume_id).with_backend_kind(backend);
+        volume.create_directory(Path::new("/docs")).await.unwrap();
+        volume.create_file(Path::new("/docs/notes.txt"), b"hi").await.unwrap();
+        engine
+            .volumes()
+            .register(&volume_id, Arc::new(volume) as Arc<dyn Volume>);
+
+        let check = engine
+            .check_rename_validity_impl("/docs".into(), "notes.txt".into(), "con.txt".into(), volume_id)
+            .await
+            .priced(|_| false);
+
+        if refused {
+            assert!(!check.valid, "{backend:?}: {check:?}");
+            assert_eq!(
+                check.error,
+                Some(ValidationError::ReservedName { name: "con".into() }),
+                "{backend:?}"
+            );
+        } else {
+            assert!(check.valid, "{backend:?}: {check:?}");
+        }
+    }
+}

@@ -102,6 +102,8 @@ export const appAnswers: AnswerTable = {
     automation: 'Automation',
   }),
   getPathLimits: () => ({ maxNameBytes: 255, maxPathBytes: 1024 }),
+  // The demo's one volume is in memory, which takes what POSIX takes.
+  getNameRules: () => 'posix',
   getIsolatedStorePath: none,
   whatsNewDevOverride: none,
   // The viewer window's native-menu plumbing: a panel has no native menu to sync.

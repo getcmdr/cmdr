@@ -14,10 +14,10 @@
  * markdown and no `{@html}`. Copy is pulled via `getMessage()` (a RAW catalog
  * lookup, never ICU `t()`) because the values interpolate uncontrolled
  * filenames, whose apostrophes and braces would collide with ICU grammar. The
- * three shared-with-live-validation cases (`nameEmpty`,
- * `nameHasDisallowedCharacter`, `alreadyExists`) deliberately reuse the
- * `fileOperations.validation.*` keys through ICU `tString()`, so a name the
- * backend turns down reads exactly the way the red border already read.
+ * three shared-with-live-validation cases (`nameEmpty`, `nameNotAllowed`,
+ * `alreadyExists`) deliberately reuse the `fileOperations.validation.*` keys
+ * through ICU `tString()` (`nameNotAllowed` through `validationMessage`), so a
+ * name the backend turns down reads exactly the way the red border already read.
  *
  * `Unexpected.detail` and the backend diagnostics inside a `VolumeError` are
  * NEVER the message: `technicalDetail()` returns them separately, for a details
@@ -27,6 +27,7 @@ import type { MutationError, VolumeError } from '#lib/ipc/bindings.js'
 import { getMessage, tString } from '#lib/intl/messages.svelte.js'
 import type { MessageKey } from '#lib/intl/keys.gen.js'
 import { getGitErrorMessage } from '#lib/error-messages/git-error-messages.js'
+import { validationMessage } from '#lib/utils/filename-validation.js'
 
 /** What is being named, so the reused validation copy agrees grammatically. */
 export type NamedKind = 'file' | 'folder'
@@ -100,7 +101,7 @@ const MUTATION_MESSAGE: {
   // The three the live validation already words. Reused so a name the backend
   // turns down reads the way the red border read a moment earlier.
   nameEmpty: (_e, kind) => tString('fileOperations.validation.empty', { kind }),
-  nameHasDisallowedCharacter: (_e, kind) => tString('fileOperations.validation.disallowedChars', { kind }),
+  nameNotAllowed: (e, kind) => validationMessage(e.reason, kind === 'folder'),
   alreadyExists: (e) => tString('fileOperations.validation.conflict', { name: e.name }),
 
   trashNotSupported: () => raw('errors.mutation.trashNotSupported'),

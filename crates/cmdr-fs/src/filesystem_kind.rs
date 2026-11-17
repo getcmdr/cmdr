@@ -20,6 +20,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::validation::NameRules;
+
 /// FAT32's hard per-file ceiling: 4 GiB minus one byte, the largest value a
 /// 32-bit byte-count field can hold. A file of exactly 4 GiB does not fit.
 pub const FAT32_MAX_FILE_SIZE: u64 = u32::MAX as u64; // 4_294_967_295
@@ -129,6 +131,22 @@ impl FilesystemKind {
     /// bound as a bare `u64`.
     pub fn has_stable_inodes(self) -> bool {
         !matches!(self, Self::Fat32 | Self::ExFat)
+    }
+
+    /// Which names this filesystem takes: the single source for every name check
+    /// (rename, create, Multi-Rename). The format decides, ❌ never the host OS.
+    ///
+    /// `Mtp` and `Other` answer [`NameRules::Posix`]: Cmdr can't see what's
+    /// behind them, so it refuses only what no filesystem takes and leaves the
+    /// rest to the device or server, which answers for itself.
+    pub fn name_rules(self) -> NameRules {
+        match self {
+            Self::Fat32 | Self::ExFat | Self::Ntfs => NameRules::Windows,
+            Self::Smb => NameRules::SmbShare,
+            Self::Apfs | Self::HfsPlus | Self::Ext4 | Self::Btrfs | Self::Xfs | Self::Zfs | Self::Mtp | Self::Other => {
+                NameRules::Posix
+            }
+        }
     }
 }
 
@@ -319,6 +337,28 @@ mod tests {
         assert!(FilesystemKind::Smb.has_stable_inodes());
         assert!(FilesystemKind::Mtp.has_stable_inodes());
         assert!(FilesystemKind::Other.has_stable_inodes());
+    }
+
+    /// The kind decides the name rules, so an exFAT stick or a share on a Mac
+    /// gets the same answer it would on Windows.
+    #[test]
+    fn name_rules_follow_the_format() {
+        for kind in [FilesystemKind::Fat32, FilesystemKind::ExFat, FilesystemKind::Ntfs] {
+            assert_eq!(kind.name_rules(), NameRules::Windows, "{kind:?}");
+        }
+        assert_eq!(FilesystemKind::Smb.name_rules(), NameRules::SmbShare);
+        for kind in [
+            FilesystemKind::Apfs,
+            FilesystemKind::HfsPlus,
+            FilesystemKind::Ext4,
+            FilesystemKind::Btrfs,
+            FilesystemKind::Xfs,
+            FilesystemKind::Zfs,
+            FilesystemKind::Mtp,
+            FilesystemKind::Other,
+        ] {
+            assert_eq!(kind.name_rules(), NameRules::Posix, "{kind:?}");
+        }
     }
 
     #[test]

@@ -8,10 +8,9 @@ Depth for the shared utilities. `CLAUDE.md` holds the must-knows.
 returning the first non-ok result or `{ severity: 'ok', message: '' }`:
 
 ```
-validateFilename()
-  ├── validateNotEmpty()          : error if blank after trim
-  ├── validateDisallowedChars()   : error if / or \0 present
-  ├── validateNameLength()        : error if >= 255 bytes (UTF-8)
+validateFilename(…, rules)
+  ├── validateName(rules)         : nameRefusal(): blank, a character `rules` refuse, > 255 bytes (UTF-8),
+  │                                 a reserved device name (share, Windows drive), a trailing space or period (Windows drive)
   ├── validatePathLength()        : error if >= 1024 bytes (UTF-8)
   ├── validateExtensionChange()   : error/ok depending on 'yes'|'no'|'ask' setting
   └── validateConflict()          : warning if a sibling already has that name (case-insensitive)
@@ -27,8 +26,16 @@ validateDirectoryPath(path)
   │                                 a bare `~foo` stays rejected (the backend expands `~`)
   ├── null byte check             : error if contains \0
   ├── total path length           : error if >= 1024 bytes (UTF-8)
-  └── per-component length         : error if any segment >= 255 bytes (splits on /, filters empty)
+  └── per-component length         : error if any segment > 255 bytes (splits on /, filters empty)
 ```
+
+**Name rules are the destination folder's, ❌ never the host OS's.** `nameRefusal(name, rules)` is the keystroke mirror
+of `cmdr_fs::validation::validate_filename` (`crates/cmdr-fs/DETAILS.md` § "Name rules"), and both suites run
+`crates/cmdr-fs/src/name_rules_cases.json`. A caller gets `rules` once per editor from `getNameRules(volumeId, dir)`
+(the rename editor through `apps/desktop/src/lib/file-explorer/rename/folder-name-rules.ts`, New folder and New file
+through `NewEntryNameCheck`), starting at `posix` until it lands; the create or rename checks the folder's own rules
+either way. `validationMessage(error, isDir)` words a `ValidationError` for the live check and the backend's refusals
+alike, so the two read the same. The transfer dialog's rename mode checks `posix` only, as its engine does.
 
 Key types:
 

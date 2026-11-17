@@ -10,8 +10,7 @@
     import { isStartInBackgroundKey, swallowHeldKeyRepeat } from '../start-in-background-key'
     import {
         validateDirectoryPath,
-        validateDisallowedChars,
-        validateNameLength,
+        validateName,
         validateNotEmpty,
         validateShareNamed,
     } from '#lib/utils/filename-validation.js'
@@ -451,11 +450,10 @@
         const structural = validateDirectoryPath(renameTarget.folder)
         if (structural.severity === 'error') return structural.message
         const isDir = folderCount > 0
-        for (const check of [validateNotEmpty, validateDisallowedChars, validateNameLength]) {
-            const result = check(renameTarget.leaf, isDir)
-            if (result.severity === 'error') return result.message
-        }
-        return null
+        // POSIX's rules, the same the transfer engine's single-leaf check applies; a
+        // name the destination refuses on top asks per item at landing (`refused_name.rs`).
+        const result = validateName(renameTarget.leaf.trim(), isDir, 'posix')
+        return result.severity === 'error' ? result.message : null
     }
 
     // Destination-existence check (debounced, async) behind the yellow "will be

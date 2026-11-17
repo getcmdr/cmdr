@@ -21,6 +21,7 @@ fn preview_of(params: Value, folder: &[FileEntry], batch: &[&str]) -> Vec<Previe
     preview_names(
         &compiled,
         Path::new(DIR),
+        NameRules::Posix,
         &names,
         folder,
         &NameEdits::default(),
@@ -372,7 +373,14 @@ mod media {
 
         for spec in specs() {
             let compiled = compile(&spec).expect("compiles");
-            let ours = preview(&compiled, &dir, &names(&entries), &entries, Some(&media));
+            let ours = preview(
+                &compiled,
+                &dir,
+                NameRules::Posix,
+                &names(&entries),
+                &entries,
+                Some(&media),
+            );
             let theirs = app_multi_rename()
                 .preview(&sheet, &spec)
                 .expect("the sheet previews")
@@ -380,7 +388,14 @@ mod media {
             assert_eq!(ours, theirs, "{}", spec.name_mask);
         }
         let compiled = compile(&specs()[0]).expect("compiles");
-        let rows = preview(&compiled, &dir, &names(&entries), &entries, Some(&media));
+        let rows = preview(
+            &compiled,
+            &dir,
+            NameRules::Posix,
+            &names(&entries),
+            &entries,
+            Some(&media),
+        );
         let mut statuses: Vec<_> = rows.iter().map(|r| (r.old_name.as_str(), r.status.clone())).collect();
         statuses.sort_by_key(|(name, _)| *name);
         let field = MediaField::ExifTaken;
@@ -421,7 +436,14 @@ mod media {
         let spec = &specs()[2];
         let compiled = compile(spec).expect("compiles");
         assert_eq!(
-            preview(&compiled, &dir, &names(&entries), &entries, Some(&media)),
+            preview(
+                &compiled,
+                &dir,
+                NameRules::Posix,
+                &names(&entries),
+                &entries,
+                Some(&media)
+            ),
             app_multi_rename()
                 .preview(&sheet, spec)
                 .expect("the sheet previews")
@@ -499,7 +521,14 @@ mod media {
         .expect("the tool reads");
 
         assert_eq!(refused.take(), vec![Protected::PrivateKey]);
-        let rows = preview(&title_mask(), &dir, &names(&entries), &entries, Some(&media));
+        let rows = preview(
+            &title_mask(),
+            &dir,
+            NameRules::Posix,
+            &names(&entries),
+            &entries,
+            Some(&media),
+        );
         assert_eq!(
             rows[0].status,
             RowStatus::Unreadable {
@@ -530,7 +559,14 @@ mod media {
         .expect("the tool reads");
 
         assert_eq!(refused.take(), vec![Protected::PrivateKey]);
-        let rows = preview(&title_mask(), &dir, &names(&entries), &entries, Some(&media));
+        let rows = preview(
+            &title_mask(),
+            &dir,
+            NameRules::Posix,
+            &names(&entries),
+            &entries,
+            Some(&media),
+        );
         assert!(!rows[0].new_name.contains("PRIVATE KEY"));
         app_multi_rename().close(&sheet);
     }
@@ -582,7 +618,14 @@ mod media {
 
         assert!(calls.is_empty(), "the gate comes before the file is opened");
         assert_eq!(refused.take(), vec![Protected::Credentials]);
-        let rows = preview(&title_mask(), &folder, &names(&entries), &entries, Some(&media));
+        let rows = preview(
+            &title_mask(),
+            &folder,
+            NameRules::Posix,
+            &names(&entries),
+            &entries,
+            Some(&media),
+        );
         assert_eq!(
             rows[0].status,
             RowStatus::Unreadable {
@@ -641,7 +684,14 @@ mod media {
         .expect("the tool reads");
 
         assert_eq!(refused.take(), vec![Protected::Credentials]);
-        let rows = preview(&title_mask(), &folder, &names(&entries), &entries, Some(&media));
+        let rows = preview(
+            &title_mask(),
+            &folder,
+            NameRules::Posix,
+            &names(&entries),
+            &entries,
+            Some(&media),
+        );
         assert_ne!(
             rows[0].new_name, "Harder.mp3",
             "the sheet's answer stayed with the sheet"

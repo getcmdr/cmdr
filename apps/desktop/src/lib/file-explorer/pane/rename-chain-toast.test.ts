@@ -30,6 +30,7 @@ const {
 vi.mock('#lib/tauri-commands/index.js', () => ({
   notifyDialogOpened: vi.fn(() => Promise.resolve()),
   notifyDialogClosed: vi.fn(() => Promise.resolve()),
+  getNameRules: vi.fn(() => Promise.resolve('posix')),
   getFileAt: vi.fn(),
   getFileRange: vi.fn().mockResolvedValue([]),
   refreshListing: vi.fn(),

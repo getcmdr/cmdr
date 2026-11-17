@@ -290,11 +290,15 @@
   },
   "multiRename.status.invalidName": "Not a valid name",
   "@multiRename.status.invalidName": {
-    "description": "Preview note: the new name can't be a file name (empty, too long, or \".\" / \"..\")."
+    "description": "Preview note: the new name can't be a file name (empty, too long, \".\" / \"..\", or ending with a space or a period on a Windows-formatted drive)."
   },
   "multiRename.status.disallowedCharacter": "Can’t contain {character}",
   "@multiRename.status.disallowedCharacter": {
     "description": "Preview note: the new name contains a character file names can't have, such as a slash. {character} is that character."
+  },
+  "multiRename.status.reservedDeviceName": "Reserved by Windows",
+  "@multiRename.status.reservedDeviceName": {
+    "description": "Preview note: the new name is one Windows keeps for devices (CON, NUL, AUX, COM1, and the like), which this folder's network share or Windows-formatted drive can't use. Keep \"Windows\" as is."
   },
   "multiRename.error.unclosed": "A placeholder is missing its closing “]”",
   "@multiRename.error.unclosed": {
@@ -738,6 +742,17 @@
   "multiRename.reason.disallowedCharacter": "File names can’t contain {character}.",
   "@multiRename.reason.disallowedCharacter": {
     "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name holds a character file names can't have, such as a slash. {character} is that character."
+  },
+  "multiRename.reason.reservedDeviceName": "“{name}” is reserved by Windows, so this drive can’t use it as a name.",
+  "@multiRename.reason.reservedDeviceName": {
+    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name is one Windows keeps for devices, on a network share or a Windows-formatted drive. {name} is the reserved part as typed, like \"CON\". Keep \"Windows\" as is.",
+    "placeholders": {
+      "name": "the reserved part of the new name, like \"CON\" or \"nul\""
+    }
+  },
+  "multiRename.reason.endsWithSpaceOrPeriod": "This drive can’t store a name that ends with a space or a period.",
+  "@multiRename.reason.endsWithSpaceOrPeriod": {
+    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name ends with a space or a period and the folder is on a Windows-formatted drive (FAT32, exFAT, NTFS)."
   },
   "multiRename.selectionChanged": "The folder changed while Multi-rename was opening. Check your selection, then try again.",
   "@multiRename.selectionChanged": {

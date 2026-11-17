@@ -549,6 +549,13 @@ var surfaceGuardedCrates = []struct {
 		// to exactly what the crate exposes, with no headroom (David approved the
 		// rule in the #415 plan).
 		//
+		// Raised to 60 handle methods on 2026-11-18 for `name_rules_at` (#942, task
+		// 14): which names a folder's filesystem takes. The engine's create and
+		// rename refuse by it, and the rename editor's and New folder's keystroke
+		// hints, Multi-Rename's preview, and the MCP `multi_rename` tool must ask
+		// the SAME resolver, or a share's `CON` reads fine in the field and is
+		// refused on Enter. No existing verb answers it without starting something.
+		//
 		// Raised to 90 root promises and 59 handle methods on 2026-11-05 for the
 		// home-folder guard: `home_folder_guard` and its `HomeFolderAction` let
 		// the frontend ask BEFORE a delete or move dialog or a folder's rename
@@ -584,7 +591,7 @@ var surfaceGuardedCrates = []struct {
 		HandleType: "Operations",
 		Ceilings: surfaceCeilings{
 			RootPromises:   90,
-			HandleMethods:  59,
+			HandleMethods:  60,
 			PublicModules:  1,
 			SubsystemItems: 25,
 		},

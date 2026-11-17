@@ -19,8 +19,8 @@ copy). Per-file export catalogs: `DETAILS.md`.
 
 - **Filename validation stays frontend-pure.** Keystroke feedback needs sub-millisecond latency; an IPC hop per
   keystroke stutters. Don't move it to Rust.
-- **Limits are `>= 255` bytes (name) and `>= 1024` bytes (path)**, strictly, measured with `TextEncoder`, ❌ never
-  `.length` (multi-byte characters).
+- **Too long is a name past 255 bytes or a path at 1024**, by `TextEncoder`, ❌ never `.length`.
+- **Name rules are the folder's (`getNameRules`), ❌ never the host OS's.**
 - **`validateConflict` is case-insensitive (APFS)**: pass `originalName` correctly, or a case-only rename false-flags.
 - **`validateFilename` returns the FIRST error or warning**, never a list: inline rename UI has room for one message.
 - **Split a name at its extension only through `file-extension.ts`** (`fileExtension(name, nameKindOf(entry))`), ❌

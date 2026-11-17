@@ -17,6 +17,7 @@ use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::name_fold::fold_name;
 
 use super::super::look_alike::{ListedFolders, NewEntry, place_new_entry};
+use super::super::name_rules::name_rules_at;
 use cmdr_fs::volume::{RenameWork, SubtreeTally, Volume};
 
 /// Result of a rename validity check.
@@ -132,7 +133,8 @@ pub struct ConflictFileInfo {
 }
 
 impl crate::Operations {
-    /// Validates a new filename and checks for conflicts in the same directory.
+    /// Validates a new filename against the rules of the folder's filesystem
+    /// (`name_rules::name_rules_at`) and checks for conflicts in the same directory.
     /// Uses inode comparison to detect case-only renames (valid on case-insensitive
     /// APFS). When `volume_id` is not `"root"`, uses the Volume trait for conflict
     /// detection, and the folder's listing for a case-only rename on a volume that
@@ -150,8 +152,8 @@ impl crate::Operations {
 
         let trimmed = new_name.trim();
 
-        // Validate filename
-        if let Err(error) = validate_filename(trimmed) {
+        // Validate the name against the folder's filesystem, ❌ never the host OS's
+        if let Err(error) = validate_filename(trimmed, name_rules_at(self.host(), &volume_id, Path::new(&dir)).await) {
             return RenameValidityCheck::unpriced(RenameValidityResult {
                 valid: false,
                 error: Some(error),

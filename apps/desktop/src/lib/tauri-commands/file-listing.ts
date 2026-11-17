@@ -9,6 +9,7 @@ import {
   type FolderSizeCountOutcome,
   type Initiator,
   type NameFilterResult,
+  type NameRules,
   type RowBeside,
 } from '#lib/ipc/bindings.js'
 import type {
@@ -473,6 +474,15 @@ export interface PathLimits {
 /** Returns platform-specific filesystem path limits from the backend. */
 export async function getPathLimits(): Promise<PathLimits> {
   return commands.getPathLimits()
+}
+
+/**
+ * Which names the filesystem holding `dir` on `volumeId` takes, for a name field's keystroke
+ * check. Asked once per editor; the backend answers `posix` when it can't tell in time, and the
+ * create or rename itself checks again.
+ */
+export async function getNameRules(volumeId: string | null, dir: string): Promise<NameRules> {
+  return commands.getNameRules(volumeId, dir)
 }
 
 /**

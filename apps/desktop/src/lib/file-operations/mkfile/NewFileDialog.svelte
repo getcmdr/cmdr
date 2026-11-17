@@ -48,7 +48,13 @@
     let fileName = $state(initialName)
 
     // Name validation + clash lookup; `NewEntryNameField` runs its lifecycle.
-    const check = new NewEntryNameCheck({ currentPath, listingId, showHiddenFiles, getName: () => fileName })
+    const check = new NewEntryNameCheck({
+        currentPath,
+        volumeId,
+        listingId,
+        showHiddenFiles,
+        getName: () => fileName,
+    })
 
     // OK to how the create really ended, slow volumes included.
     const submission = new CreateSubmission({

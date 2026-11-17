@@ -1320,10 +1320,6 @@
   "@fileOperations.resticPassword.unreachable": {
     "sourceHash": "cc4542d"
   },
-  "fileOperations.validation.disallowedChars": "{kind, select, folder {Der Ordnername darf kein „/“ und keine Nullzeichen enthalten} other {Der Dateiname darf kein „/“ und keine Nullzeichen enthalten}}",
-  "@fileOperations.validation.disallowedChars": {
-    "sourceHash": "1a3c594"
-  },
   "fileOperations.validation.empty": "{kind, select, folder {Der Ordnername darf nicht leer sein} other {Der Dateiname darf nicht leer sein}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"

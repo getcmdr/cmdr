@@ -115,6 +115,7 @@ mod metadata_losses;
 mod mount_boundary;
 mod mutation_error;
 mod mutation_reply;
+mod name_rules;
 mod operation_intent;
 mod outage_slot;
 #[cfg(not(target_family = "wasm"))]

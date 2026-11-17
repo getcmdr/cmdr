@@ -88,28 +88,29 @@ the next section.
   engine and the write guards ask it without linking `rustic_core`; `cmdr-restic` confirms), `benchmark.rs` (the
   env-gated `[TIMELINE]` stderr events, `docs/guides/benchmarking-file-loading.md`), `cloud_provider.rs` (macOS: which
   cloud provider owns a path, and what it can do; pure path rules, its module docs say why it's a type), `validation.rs`
-  (the platform's name and path-length limits, `ValidationError`, the typed refusal a rename's validity check carries
-  over IPC, and `validate_plain_leaf`, the stricter check for a name somebody else chose for the user: no edge
-  whitespace, control character, or invisible bidi, zero-width, or format character, so the name a review shows is the
-  name that lands; a transfer's per-source names go through it), `firmlinks.rs` (`normalize_path`; the index and the
-  app's watchers have to agree on it), `file_provider.rs` (the cloud-domain marker), `filesystem_kind.rs`,
-  `path_locations.rs` (how many PLACES a set of directories amounts to), `path_hash.rs` (the fixed 64-bit folder-path
-  hash two resident maps key on instead of the path: search's importance weights and the media coverage score cache),
-  `git_meta` (what a git portal row's Size cell states), `restic_meta` (a restic snapshot row's host, tags, and paths),
-  `name_fold.rs` (the ONE "same name, spelled another way" key: NFC + lowercase, shared by share IDs, transfer conflict
-  buckets, the SMB spelling resolve, and cursor placement; beside it `normalize_for_comparison`, the local filesystem's
-  own key, which the drive index stores and the write engine matches sources under), `log_rollup`, `log_private` +
-  `log_detail` (`LogPrivate`, the wrapper a log site marks a user-derived value with, over the ONE marker table and
-  lexer the app's span pass reads too; `LogDetail` for external OS/server/CLI text as one Debug-quoted, 1 KiB-capped
-  field, and `LoggedText` for our own; `log_error`, the `LogError` a path-carrying error logs through, `error_detail`,
-  the message field that keeps its cause typed for it, and `log_json`, a value's JSON with its fields marked; § "Marked
-  log values"), `tcc_paths`, `ignore_poison`, `pluralize`, `tilde` (`expand_tilde`, for a path a person typed on THIS
-  machine; on Windows it answers an app path through the path grammar and takes `~\` too, `expand_tilde_with` tests each
-  flavor everywhere), `twin_path` (a same-named twin's row path: `folder_of` past its pick, and `shown`, the one rule
-  that takes a pick out of anything a person reads; `crates/cmdr-mtp/src/connection/DETAILS.md` § "Same-named
-  siblings"), `byte_size` (`format_size`, the IEC byte count log lines and model-facing answers read), `thread_qos`,
-  `thread_cpu`, `process_cpu/`, `process_memory`, `utility_pool.rs` (`UtilityPool`, a keep-alive pool of `Utility`-QoS
-  threads, so background work that comes in streams, like index walks, reuses threads instead of creating one per job).
+  (`NameRules`, which names a destination's filesystem takes, § "Name rules"; the name and path-length limits;
+  `ValidationError`, the typed refusal a rename's validity check carries over IPC; and `validate_plain_leaf`, the
+  stricter check for a name somebody else chose for the user: no edge whitespace, control character, or invisible bidi,
+  zero-width, or format character, so the name a review shows is the name that lands; a transfer's per-source names go
+  through it), `firmlinks.rs` (`normalize_path`; the index and the app's watchers have to agree on it),
+  `file_provider.rs` (the cloud-domain marker), `filesystem_kind.rs`, `path_locations.rs` (how many PLACES a set of
+  directories amounts to), `path_hash.rs` (the fixed 64-bit folder-path hash two resident maps key on instead of the
+  path: search's importance weights and the media coverage score cache), `git_meta` (what a git portal row's Size cell
+  states), `restic_meta` (a restic snapshot row's host, tags, and paths), `name_fold.rs` (the ONE "same name, spelled
+  another way" key: NFC + lowercase, shared by share IDs, transfer conflict buckets, the SMB spelling resolve, and
+  cursor placement; beside it `normalize_for_comparison`, the local filesystem's own key, which the drive index stores
+  and the write engine matches sources under), `log_rollup`, `log_private` + `log_detail` (`LogPrivate`, the wrapper a
+  log site marks a user-derived value with, over the ONE marker table and lexer the app's span pass reads too;
+  `LogDetail` for external OS/server/CLI text as one Debug-quoted, 1 KiB-capped field, and `LoggedText` for our own;
+  `log_error`, the `LogError` a path-carrying error logs through, `error_detail`, the message field that keeps its cause
+  typed for it, and `log_json`, a value's JSON with its fields marked; § "Marked log values"), `tcc_paths`,
+  `ignore_poison`, `pluralize`, `tilde` (`expand_tilde`, for a path a person typed on THIS machine; on Windows it
+  answers an app path through the path grammar and takes `~\` too, `expand_tilde_with` tests each flavor everywhere),
+  `twin_path` (a same-named twin's row path: `folder_of` past its pick, and `shown`, the one rule that takes a pick out
+  of anything a person reads; `crates/cmdr-mtp/src/connection/DETAILS.md` § "Same-named siblings"), `byte_size`
+  (`format_size`, the IEC byte count log lines and model-facing answers read), `thread_qos`, `thread_cpu`,
+  `process_cpu/`, `process_memory`, `utility_pool.rs` (`UtilityPool`, a keep-alive pool of `Utility`-QoS threads, so
+  background work that comes in streams, like index walks, reuses threads instead of creating one per job).
 - `attr_buf.rs` (macOS): the packed record decoder every `getattrlist` / `getattrlistbulk` caller shares. § "`attr_buf`:
   the packed attribute layout".
 - `mapped_file_faults/`: the SIGBUS recovery that turns a read of a mapped file whose disk went away into zeros, and the
@@ -286,6 +287,34 @@ drift: a new case goes in the JSON and both sides answer it. The frontend reads 
 **Out of scope on purpose: OS type lookups.** Icon UTIs (`derive_icon_id`, `fileIconId`), "Open with" defaults, the
 archive Enter policy, and the viewer's content sniffing keep `Path::extension` semantics: there, what macOS calls the
 extension is the truth, and a bogus one only finds no match.
+
+## Name rules
+
+`validation::NameRules` says which names a destination filesystem takes, and `FilesystemKind::name_rules` is the one
+kind → rules map, keyed on the FORMAT, ❌ never the host OS: a Mac writing to an exFAT stick or a share meets that
+destination's rules, and Windows writing over MTP meets none of its own. `validate_filename(name, rules)` applies them;
+`cmdr-operations`' `name_rules.rs` resolves a folder to its rules (`crates/cmdr-operations/DETAILS.md` § "Names the
+destination takes").
+
+- **`Posix`** (APFS, HFS+, ext4, Btrfs, XFS, ZFS, MTP, `Other`): only `/` and NUL. A backend Cmdr can't see behind
+  answers for itself.
+- **`SmbShare`**: plus Windows' reserved device names (`CON`, `NUL`, `COM1`, `con.txt`, `CON .txt`, superscript digits
+  too), matched ignoring ASCII case on the part before the first period, trailing spaces trimmed. Samba stores one and
+  lists it back mangled (`CON` → `CR23RR~9`). The characters Windows forbids are fine: smb2 and smbfs carry them in the
+  private-use area both ways (`crates/cmdr-smb/DETAILS.md`).
+- **`Windows`** (FAT32, exFAT, NTFS): plus `" * : < > ? \ |`, control characters 0x01–0x1F, and a trailing space or
+  period. **Decision/Why**: macOS's drivers accept these and write private-use stand-ins (U+F020…U+F029), so nothing
+  fails on the Mac, but the stick then reads differently everywhere else, and Windows refuses each one outright. The
+  name that lands has to be the name the person typed.
+- **Length is 255 bytes, inclusive, for every rules set** (`MAX_NAME_BYTES`; a 255-byte name is fine). The UTF-16
+  formats take some longer non-ASCII names; 255 bytes is the floor the byte-counting ones (ext4, ZFS, Samba over them)
+  set.
+- **One case file pins both languages**: `src/name_rules_cases.json`, run by `validation_name_rules_test.rs` and the
+  frontend's keystroke mirror (`apps/desktop/src/lib/utils/filename-validation.test.ts`). A new rule goes in the JSON
+  first.
+
+Evidence, per format, with the on-disk bytes: `docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md` (verified on
+macOS 27.0, hdiutil exFAT and FAT32 images and a QNAP Samba share through smbfs and smb2, 2026-11-18).
 
 ## Why each thing is here rather than in the app
 

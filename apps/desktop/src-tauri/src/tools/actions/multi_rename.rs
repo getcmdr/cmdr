@@ -38,6 +38,7 @@ use crate::tools::policy::{Caller, ToolCtx, Verdict, admit, note_content_read};
 use crate::tools::registry::Access;
 use crate::tools::sensitive::{GateStop, Protected, classify, note_refusal, path_gate_within, refuse_private_key_text};
 use cmdr_fs::entry::FileEntry;
+use cmdr_fs::validation::NameRules;
 use cmdr_media_meta::{MediaFacts, ReadError};
 
 /// Rows a dry run returns when the caller doesn't say.
@@ -493,6 +494,7 @@ async fn read_media(
 fn preview(
     compiled: &Compiled,
     folder: &Path,
+    rules: NameRules,
     names: &[String],
     siblings: &[FileEntry],
     media: Option<&Arc<SessionMedia>>,
@@ -501,8 +503,8 @@ fn preview(
     match media {
         // No `Lookup::finish`: the media was read for exactly these `siblings`, so no row
         // found its file changed, and no loader waits for a re-queue.
-        Some(media) => preview_names(compiled, folder, names, siblings, &edits, &media.lookup()),
-        None => preview_names(compiled, folder, names, siblings, &edits, &NoMedia),
+        Some(media) => preview_names(compiled, folder, rules, names, siblings, &edits, &media.lookup()),
+        None => preview_names(compiled, folder, rules, names, siblings, &edits, &NoMedia),
     }
 }
 
@@ -546,11 +548,21 @@ pub async fn execute_multi_rename<R: Runtime>(app: &AppHandle<R>, ctx: &ToolCtx,
         note_refusal(ContentTool::MultiRename, *reason);
     }
 
+    // The folder's filesystem judges each new name, as in the sheet's session.
+    let rules = match crate::operations_host::operations() {
+        Ok(engine) => {
+            let (engine, volume_id, folder) = (engine.clone(), volume_id.clone(), folder.clone());
+            tokio::task::spawn_blocking(move || engine.name_rules_at(&volume_id, &folder))
+                .await
+                .unwrap_or(NameRules::Posix)
+        }
+        Err(_) => NameRules::Posix,
+    };
     // A mask and a regex per row: off the async worker for a big folder.
     let (rows, siblings) = tokio::task::spawn_blocking({
         let folder = folder.clone();
         move || {
-            let rows = preview(&compiled, &folder, &names, &siblings, media.as_ref());
+            let rows = preview(&compiled, &folder, rules, &names, &siblings, media.as_ref());
             (rows, siblings)
         }
     })

@@ -1317,10 +1317,6 @@
   "@fileOperations.resticPassword.unreachable": {
     "sourceHash": "cc4542d"
   },
-  "fileOperations.validation.disallowedChars": "{kind, select, folder {A mappa neve nem tartalmazhat „/” vagy null karaktert} other {A fájlnév nem tartalmazhat „/” vagy null karaktert}}",
-  "@fileOperations.validation.disallowedChars": {
-    "sourceHash": "1a3c594"
-  },
   "fileOperations.validation.empty": "{kind, select, folder {A mappa neve nem lehet üres} other {A fájlnév nem lehet üres}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"

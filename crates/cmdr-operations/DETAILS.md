@@ -239,31 +239,32 @@ The full top-level inventory is here:
   `error_classification.rs`, `transfer_sides.rs` (the two volumes a transfer runs between, the mount-table question, and
   the one boundary that words a stop; tests in `transfer_sides_tests.rs`), `target_names.rs` (the new NAME a renamed
   source takes in a move, § "Renames that run as moves"), `mutation_error.rs` (the typed refusal an instant mutation
-  returns), `mutation_reply.rs` (its reply within the deadline, and the late settle, § "A slow instant mutation says it
-  is still running"), `validation.rs`, `leaf_validation.rs` (the one check of a transfer's `TransferLeaves`,
-  `src/transfer/DETAILS.md` § "Named destinations"), `free_space.rs` (the copy's free-space pre-flight, § "The
-  free-space pre-flight"), `eta.rs` (+ `eta_cost_model.rs`). Journaling: `journal.rs`, `journal_search.rs`,
-  `journal_landed.rs` (which node each landed item is, and a volume transfer's landed dates, read for its rows;
-  `crates/cmdr-operation-log/DETAILS.md` § "A landed item must still be the node that landed"). The scratch dir archive
-  edits stage local bytes in: `scratch_dir.rs` (the remote edit itself is `archive_edit/remote.rs`). Entry points:
-  `create/` + `create.rs`, `rename/` + `rename.rs`, `create_numbered.rs` (paste-as-file's numbered create), `routing.rs`
-  (the one routing every cross-volume transfer takes: `start_volume_{copy,move,compress}`, plus `start_rename_by_move`;
-  `routing/retry.rs` is the Retry recipe a copy or move leaves with the manager), `routed_writes.rs` (the refusal every
-  drive-only entry point asks first for an in-zip or `.git/<category>/` path, `host/DETAILS.md`). `source_binding.rs` is
-  the optional set of sources an op may touch. `queued_sources.rs` is the check an op that waited in the queue runs on
-  its sources when admitted, parking on `sources_gone_slot.rs` (a leaf the state owns, like `outage_slot.rs`). Layering,
-  so the three stay out of a cycle: `source_binding` → `queued_sources` → `state` → `sources_gone_slot`, and the empty
-  batch's terminal shape is `WriteCompleteEvent::all_skipped` in `types`. `locked_sources.rs` is a move's question about
-  Locked items and the plan its answer makes, parking on `locked_sources_slot.rs` the same way (§ "Moving Locked
-  items"). `refused_name.rs` is a transfer's question about a name the destination refuses, asked through the conflict
-  slot (§ "A name the destination refuses"); its "Skip all" latch is `refused_names_latch.rs`, a leaf the state owns.
-  Fixtures: `testing/` (an engine a test owns, and what test cells outside the engine reach beyond its public list) and
-  `test_support.rs` (the placeholder conflict, the park-window wait, and the queued-operation fixture). Every backend's
-  cells through this pipeline live app-side, in `operations_host/backend_suites/`, because they need the app around the
-  engine (`apps/desktop/src-tauri/src/operations_host/DETAILS.md` § "Backend suites"). `testing/bench.rs` is the
-  Criterion bench's door in: thin wrappers over five entry points, each with a no-op sink and an unregistered state on
-  an engine the bench owns (`crates/cmdr-operations/benches/transfer_benchmarks.rs`; `docs/tooling/testing.md` §
-  `criterion`).
+  returns), `name_rules.rs` (which names a folder's filesystem takes, and the create and rename check by it, § "Names
+  the destination takes"), `mutation_reply.rs` (its reply within the deadline, and the late settle, § "A slow instant
+  mutation says it is still running"), `validation.rs`, `leaf_validation.rs` (the one check of a transfer's
+  `TransferLeaves`, `src/transfer/DETAILS.md` § "Named destinations"), `free_space.rs` (the copy's free-space
+  pre-flight, § "The free-space pre-flight"), `eta.rs` (+ `eta_cost_model.rs`). Journaling: `journal.rs`,
+  `journal_search.rs`, `journal_landed.rs` (which node each landed item is, and a volume transfer's landed dates, read
+  for its rows; `crates/cmdr-operation-log/DETAILS.md` § "A landed item must still be the node that landed"). The
+  scratch dir archive edits stage local bytes in: `scratch_dir.rs` (the remote edit itself is `archive_edit/remote.rs`).
+  Entry points: `create/` + `create.rs`, `rename/` + `rename.rs`, `create_numbered.rs` (paste-as-file's numbered
+  create), `routing.rs` (the one routing every cross-volume transfer takes: `start_volume_{copy,move,compress}`, plus
+  `start_rename_by_move`; `routing/retry.rs` is the Retry recipe a copy or move leaves with the manager),
+  `routed_writes.rs` (the refusal every drive-only entry point asks first for an in-zip or `.git/<category>/` path,
+  `host/DETAILS.md`). `source_binding.rs` is the optional set of sources an op may touch. `queued_sources.rs` is the
+  check an op that waited in the queue runs on its sources when admitted, parking on `sources_gone_slot.rs` (a leaf the
+  state owns, like `outage_slot.rs`). Layering, so the three stay out of a cycle: `source_binding` → `queued_sources` →
+  `state` → `sources_gone_slot`, and the empty batch's terminal shape is `WriteCompleteEvent::all_skipped` in `types`.
+  `locked_sources.rs` is a move's question about Locked items and the plan its answer makes, parking on
+  `locked_sources_slot.rs` the same way (§ "Moving Locked items"). `refused_name.rs` is a transfer's question about a
+  name the destination refuses, asked through the conflict slot (§ "A name the destination refuses"); its "Skip all"
+  latch is `refused_names_latch.rs`, a leaf the state owns. Fixtures: `testing/` (an engine a test owns, and what test
+  cells outside the engine reach beyond its public list) and `test_support.rs` (the placeholder conflict, the
+  park-window wait, and the queued-operation fixture). Every backend's cells through this pipeline live app-side, in
+  `operations_host/backend_suites/`, because they need the app around the engine
+  (`apps/desktop/src-tauri/src/operations_host/DETAILS.md` § "Backend suites"). `testing/bench.rs` is the Criterion
+  bench's door in: thin wrappers over five entry points, each with a no-op sink and an unregistered state on an engine
+  the bench owns (`crates/cmdr-operations/benches/transfer_benchmarks.rs`; `docs/tooling/testing.md` § `criterion`).
 
 What the mechanisms DO is in the sections below: the registry, lanes, and `run_instant` in § "Operation manager"; the
 zip-edit driver in § "Archive edits"; cancellation, pause, Stop-mode conflicts, safe overwrite, scan-preview caching,
@@ -1034,6 +1035,26 @@ request errors), and a kernel mount that blocks for minutes really is still work
 keeps saying so, and the person can close the dialog; the work was never cancelable mid-syscall anyway.
 `MutationError::TimedOut` stays for the reads and the trash path that still use it.
 
+## Names the destination takes
+
+`name_rules.rs` answers which names a folder's filesystem takes (`cmdr_fs::validation::NameRules`, keyed on its
+`FilesystemKind`, `crates/cmdr-fs/DETAILS.md` § "Name rules"). The local disk and any volume with a `local_path` are
+probed at the folder (one `statfs`, on the blocking pool), so an exFAT stick or a Finder-mounted share answers for its
+own format; an SMB backend is a share whatever the server's disk; every other backend answers `Posix` and leaves the
+rest to the device or server.
+
+- **The engine enforces it, not only the editor.** `check_new_name` runs in `create_directory_core_on`,
+  `create_file_core_on`, and `rename_managed`, before any I/O, refusing with `MutationError::NameNotAllowed { reason }`
+  (or `NameEmpty`). The editor's validity check (`check_rename_validity_impl`) asks the same resolver, but an agent's
+  rename never asked that check, and Samba would take a `CON` and list it back as `CR23RR~9`.
+- **One resolver for every hint.** `Operations::name_rules_at` (blocking) is the host's door: the `get_name_rules` IPC
+  command for the rename editor's and New folder's keystroke checks, Multi-Rename's session at open, and the MCP
+  `multi_rename` tool. A second copy app-side would let the field read a name fine that Enter refuses.
+- **Out of scope here: transfers.** A copy or move keeps its sources' names, and a name the destination refuses asks per
+  item at landing (§ "A name the destination refuses"); Ask Cmdr's bulk renames check `Posix` shape only.
+- **❌ Not `supports_local_fs_access`** for "probe this path": it defaults to `true`, so an in-memory or demo volume
+  would statfs a path that isn't there (and a paused-clock test times out on the blocking hop). `local_path` says it.
+
 ## The rename pre-flight, and who it applies to
 
 `check_rename_permission_for_volume` (`rename.rs`) is what the inline editor asks before it opens: parent writable
@@ -1277,7 +1298,7 @@ the optional seams), what each seam's contract is, and where Cmdr answers it: `s
 
 ## The public surface is capped
 
-`index-crate-isolation` holds this crate to 90 root promises, 59 `Operations` methods, one public module (`host`), and
+`index-crate-isolation` holds this crate to 90 root promises, 60 `Operations` methods, one public module (`host`), and
 25 public items inside it (`scripts/check/checks/index-crate-isolation-ceilings.go`). The numbers are exactly what the
 crate exposes, measured with no headroom, so an addition has to be argued for. Everything counted exists for a named
 caller.
@@ -1325,7 +1346,7 @@ Root promises (90), by who needs them:
   frontend losing a type.
 - **`host`** (1): the public module below.
 
-`Operations` methods (59), grouped by caller below. The two `testing`-gated ones (`render_live_transfer_dump` and
+`Operations` methods (60), grouped by caller below. The two `testing`-gated ones (`render_live_transfer_dump` and
 `route_archive_copy_into`) count apart. Each IPC command, MCP tool, and quit step is a one-line pass-through, so the
 verbs read one-to-one:
 
@@ -1342,7 +1363,11 @@ verbs read one-to-one:
   `cached_cost_facts`, `scan_volume_for_conflicts_within`, the agent bridge's `resolve_source_volume` and
   `unregistered_source_error`, and `home_folder_guard`: whether a delete, move, or rename would be refused for the
   person's own home folder, asked BEFORE its confirm dialog or the rename editor renders (`home_folder.rs`). No verb
-  answers that without starting something, and a frontend copy of the rule would drift from what MCP meets.
+  answers that without starting something, and a frontend copy of the rule would drift from what MCP meets. And
+  `name_rules_at`: which names a folder's filesystem takes (`name_rules.rs`), the one resolver behind the engine's own
+  create and rename refusals, which the rename editor's and New folder's keystroke hints (`get_name_rules`),
+  Multi-Rename's preview, and the MCP `multi_rename` tool ask too, so a share's `CON` can't read fine in the field and
+  then be refused on Enter.
 - **The queue and one operation's controls**: `list_operations`, `latest_operation_progress`, `get_operation_status`,
   `operations_need_volume`, `cancel_operation`, `cancel_operations`, `cancel_write_operation`, `pause_operation`,
   `resume_operation`, `pause_all`, `resume_all`, `move_queued_operation`, `place_queued_operation`,

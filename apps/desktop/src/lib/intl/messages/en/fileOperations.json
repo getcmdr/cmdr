@@ -2072,9 +2072,25 @@
     "description": "Short note inside the backup-password dialog when Cmdr couldn’t reach the backup to try the password (for example the network drive dropped, or it took too long). The password the user typed stays in the field, since it may be right. Avoid the words \"error\" and \"failed\". Keep \"Cmdr\" as is (the app’s name).",
     "screenshot": "archive-password-repo-unreachable.png"
   },
-  "fileOperations.validation.disallowedChars": "{kind, select, folder {Folder name can’t contain “/” or null characters} other {Filename can’t contain “/” or null characters}}",
-  "@fileOperations.validation.disallowedChars": {
-    "description": "Inline validation message shown live as the user types a name in the rename / new-file / new-folder field, when the name includes a slash or a null character (both forbidden on the file system). The \"/\" is a literal slash character and must stay as-is. Write each branch as a complete, natural sentence for a file versus a folder (the noun and its agreement differ across languages).",
+  "fileOperations.validation.disallowedCharacter": "{kind, select, folder {Folder names here can’t contain “{character}”} other {Filenames here can’t contain “{character}”}}",
+  "@fileOperations.validation.disallowedCharacter": {
+    "description": "Inline validation message shown live as the user types a name in the rename / new-file / new-folder field, when the name holds a character the drive or server it goes to can't store. Every drive refuses \"/\"; a USB stick formatted for Windows (FAT32, exFAT) or an NTFS drive also refuses characters like \":\", \"?\", or \"*\". \"here\" means in this folder's drive, since another drive may allow it. Write each branch as a complete, natural sentence for a file versus a folder.",
+    "placeholders": {
+      "kind": "what is being named: \"folder\" for a folder, anything else for a file",
+      "character": "the refused character as typed, like \":\" or \"/\"; an invisible one reads as its code, like \"U+0001\", and a null byte as \"NUL\""
+    }
+  },
+  "fileOperations.validation.reservedName": "{kind, select, folder {“{name}” is reserved by Windows, so it can’t be a folder name here} other {“{name}” is reserved by Windows, so it can’t be a filename here}}",
+  "@fileOperations.validation.reservedName": {
+    "description": "Inline validation message shown live as the user types a name in the rename / new-file / new-folder field, when the folder is on a network share or a Windows-formatted drive and the name is one Windows keeps for devices (CON, NUL, AUX, PRN, COM1, LPT1, and the like, with any extension). Keep \"Windows\" as is. \"here\" means on this drive or share. Write each branch as a complete, natural sentence for a file versus a folder.",
+    "placeholders": {
+      "kind": "what is being named: \"folder\" for a folder, anything else for a file",
+      "name": "the reserved part of the typed name, as typed, like \"CON\" or \"nul\""
+    }
+  },
+  "fileOperations.validation.endsWithSpaceOrPeriod": "{kind, select, folder {Folder names here can’t end with a space or a period} other {Filenames here can’t end with a space or a period}}",
+  "@fileOperations.validation.endsWithSpaceOrPeriod": {
+    "description": "Inline validation message shown live as the user types a name in the rename / new-file / new-folder field, when the folder is on a Windows-formatted drive (FAT32, exFAT, NTFS) and the name ends with a space or a period, which Windows drops. \"here\" means on this drive. Write each branch as a complete, natural sentence for a file versus a folder.",
     "placeholders": {
       "kind": "what is being named: \"folder\" for a folder, anything else for a file"
     }
