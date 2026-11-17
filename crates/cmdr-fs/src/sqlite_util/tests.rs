@@ -437,6 +437,7 @@ fn a_retirement_from_another_thread_reaches_the_owning_threads_cache() {
 /// never there, and retires the cached connections that would otherwise keep the
 /// unlinked file's blocks allocated.
 #[test]
+#[cfg_attr(target_os = "windows", ignore = "Windows refuses to delete an open database: #1226")]
 fn deleting_a_database_takes_its_sidecars_and_retires_its_connections() {
     let dir = tempfile::tempdir().expect("temp dir");
     let db = dir.path().join("importance-smb-nas.db");

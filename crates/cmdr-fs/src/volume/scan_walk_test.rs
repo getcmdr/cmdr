@@ -131,6 +131,7 @@ impl ScanSource for FakeTree {
 const DATED_FROM: u64 = 1_700_000_000;
 
 #[tokio::test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_backend_that_keeps_files_gets_every_files_size_and_date() {
     let mut tree = FakeTree::new()
         .with_dir("/top", &[("a.txt", false, 10), ("sub", true, 0)])
@@ -160,6 +161,7 @@ async fn a_backend_that_keeps_files_gets_every_files_size_and_date() {
 /// selected paths as given, each child joined below its parent. A symlinked
 /// directory is one entry, never a subtree, exactly as the counts treat it.
 #[tokio::test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn the_walk_records_every_entry_under_the_callers_paths() {
     use crate::testing::scan_recording::{Recorded, ScanRecording};
 
@@ -195,6 +197,7 @@ async fn the_walk_records_every_entry_under_the_callers_paths() {
 /// A transfer that skips Mac-only files counts and records none of them, at any
 /// depth, while a FOLDER of such a name and a selected one still count (#314).
 #[tokio::test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_walk_leaving_out_mac_only_files_neither_counts_nor_records_them() {
     use crate::mac_only_files::MacOnlyFiles;
     use crate::testing::scan_recording::{Recorded, ScanRecording};
@@ -256,6 +259,7 @@ fn item(name: &str, size: u64, is_directory: bool) -> SourceItemInfo {
 }
 
 #[tokio::test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_subtree_counts_every_level_and_keeps_dedup_in_lockstep() {
     let tree = FakeTree::new()
         .with_dir("/top", &[("a.txt", false, 10), ("deep", true, 0)])
@@ -288,6 +292,7 @@ async fn a_single_file_is_one_file_and_no_directory() {
 }
 
 #[tokio::test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn the_walk_lists_each_directory_once_and_stats_no_child() {
     // ❗ The cell behind the module's cost claim: a stat per child turns a
     // 1,000-file folder from one round trip into a thousand.
@@ -608,6 +613,7 @@ async fn a_walk_stops_at_the_boundary_the_cancel_landed_on() {
 /// A paused walk stands still and then carries on to a complete, correct total:
 /// Pause is not a slower Cancel.
 #[tokio::test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_paused_walk_resumes_and_still_reports_the_whole_tree() {
     let tree = stoppable_tree();
     let signal = crate::volume::scan_stop::TestScanStop::new();
@@ -641,6 +647,7 @@ async fn a_paused_walk_resumes_and_still_reports_the_whole_tree() {
 /// honest state: the trait method hands it no stop. Pinned so nobody reads the
 /// silence as a walk ignoring one it was given.
 #[tokio::test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn the_single_path_body_has_no_stop_to_honor() {
     let tree = stoppable_tree();
     let scan = scan_one(&tree, Path::new("/top")).await.expect("the walk");
@@ -697,6 +704,7 @@ impl ScanReadJudge for Judge<'_> {
 /// the directory it was listing. Every entry is counted and recorded exactly
 /// once, the same totals a walk with no drop gets.
 #[tokio::test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_read_the_owner_rides_out_runs_again_and_counts_each_entry_once() {
     use crate::testing::scan_recording::ScanRecording;
 
@@ -754,6 +762,7 @@ async fn a_read_the_owner_rides_out_runs_again_and_counts_each_entry_once() {
 /// leaves the read's own error to end the walk, and one that stopped while it
 /// waited ends it as a stopped scan.
 #[tokio::test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_read_the_owner_does_not_ride_out_ends_the_walk() {
     let dropping_tree = || {
         FakeTree::new()

@@ -44,6 +44,7 @@ fn a_volume_at_the_server_root_still_carries_the_prefix() {
 }
 
 #[test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn the_three_spellings_of_the_root_all_mean_the_root() {
     let root = rooted_at("/srv/data");
     assert_eq!(root.to_remote_path(Path::new("")).as_deref(), Some("/srv/data"));
@@ -54,6 +55,7 @@ fn the_three_spellings_of_the_root_all_mean_the_root() {
 /// The two spellings the app actually uses land on one server path, and the
 /// prefixed one is what comes back out.
 #[test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn a_prefixed_and_a_relative_path_land_on_the_same_server_path() {
     let root = rooted_at("/srv/data");
     let from_prefix = root
@@ -106,6 +108,7 @@ fn a_server_path_outside_the_root_has_no_app_path() {
 /// real server path, and never refuse. With the prefix in place the app never
 /// spells a remote path bare, so leniency here buys nothing but that hole.
 #[test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn a_bare_server_absolute_path_is_refused() {
     let root = rooted_at("/srv/data");
     assert_eq!(root.to_remote_path(Path::new("/srv/data/photos")), None);
@@ -188,6 +191,7 @@ fn a_relative_path_cannot_climb_out_of_the_root() {
 /// A volume at the server root reaches everything under it, still through the
 /// prefix.
 #[test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn a_volume_at_the_server_root_reaches_everything_through_the_prefix() {
     let root = rooted_at("/");
     assert_eq!(
@@ -212,6 +216,7 @@ fn a_volume_at_the_server_root_reaches_everything_through_the_prefix() {
 /// already holds passes through untouched, and a relative one lands under the
 /// root.
 #[test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn a_path_anchored_by_the_app_still_lands_where_the_pane_says() {
     let root = rooted_at("/srv/data");
     let anchored = crate::volume::root_anchored(root.app_root(), Path::new("photos/trip.jpg"));
@@ -289,6 +294,7 @@ fn an_s3_path_names_the_place_of_its_bucket() {
 }
 
 #[test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn an_nfs_app_root_carries_the_export_as_one_segment() {
     // ❗ No account in the authority (the uid is a setting, not identity), and the
     // export rides as ONE segment, so `server_of_path` can tell where it ends.
@@ -338,6 +344,7 @@ fn an_nfs_path_without_an_export_or_a_port_names_nothing() {
 }
 
 #[test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn an_nfs_app_root_and_its_volume_id_agree_through_server_of_path() {
     // Invariant 11: the path a volume mints and the id it registers under come
     // from one tuple, so routing a path finds the volume that minted it.

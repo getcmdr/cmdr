@@ -612,6 +612,7 @@ fn nfs_volume_id_folds_the_host_but_keeps_the_export_by_bytes() {
 }
 
 #[test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn an_nfs_export_spelled_with_a_trailing_slash_is_the_same_export() {
     // `/Public/` and `/Public` name one export on every server, and `showmount`
     // and a typed address disagree on which they print.

@@ -7,12 +7,19 @@ fn barriers_for_one_device() -> u64 {
     u64::from(NEEDS_DEVICE_BARRIER)
 }
 
+/// A written file's handle the way a writer holds it: Windows' `FlushFileBuffers`
+/// refuses a read-only one (verified on Windows 10 22H2, `cargo test -p cmdr-fs`
+/// on the builder, 2026-11-18: `Access is denied`).
+fn writer(path: &Path) -> File {
+    File::options().write(true).open(path).unwrap()
+}
+
 /// Writes and hands `count` small files in `dir` to the drive, noting each.
 fn write_and_note(barriers: &DeviceBarriers, dir: &Path, count: usize) {
     for i in 0..count {
         let path = dir.join(format!("f{i:04}"));
         std::fs::write(&path, b"small").unwrap();
-        let file = File::open(&path).unwrap();
+        let file = writer(&path);
         sync_to_drive(&file).unwrap();
         barriers.note_synced(&file, &path);
     }
@@ -126,7 +133,7 @@ fn write_and_note_written(barriers: &DeviceBarriers, dir: &Path, count: usize) -
         .map(|i| {
             let path = dir.join(format!("w{i:04}"));
             std::fs::write(&path, b"small").unwrap();
-            let file = File::open(&path).unwrap();
+            let file = writer(&path);
             barriers.note_written(&file, &path).unwrap();
             path
         })
@@ -260,7 +267,7 @@ fn an_inline_sync_failure_answers_the_note() {
     barriers.script_syncs(|_| OsErrorClass::Io.host_code().map(io::Error::from_raw_os_error));
     let path = dir.join("f");
     std::fs::write(&path, b"x").unwrap();
-    let file = File::open(&path).unwrap();
+    let file = writer(&path);
     assert!(barriers.note_written(&file, &path).is_err());
 }
 

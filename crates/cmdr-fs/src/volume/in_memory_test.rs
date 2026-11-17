@@ -949,6 +949,7 @@ async fn by_default_a_missing_folder_lists_empty() {
 /// anywhere along the path, a relative target, a link to a link, `..` after a link,
 /// and `None` for a missing path or a loop (the caller keeps the literal then).
 #[test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn canonicalize_resolves_links_like_realpath() {
     let dir = |path: &str| FileEntry::new(String::new(), path.to_string(), true, false);
     let link = |path: &str| FileEntry::new(String::new(), path.to_string(), true, true);
