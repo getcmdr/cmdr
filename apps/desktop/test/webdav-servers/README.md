@@ -140,11 +140,14 @@ code does when a server declines, never what a server in the wild chose.
   `openthedoor` keeps the stock unlimited one. Nextcloud answers `quota-available-bytes` with a real number for the
   first and with the negative sentinel `-3` for the second, which the backend reads as a bounded free-space figure and
   as an unbounded reading (a used figure with no ceiling) respectively. One account each is what makes both observable.
-- **`image-nextcloud/post-install.sh` provisions them**, from inside the official image's post-installation hook. ❗
-  That timing is the whole reason it is a hook and not a script anyone runs afterwards: a quota set through `occ`
-  against a LIVE server stays invisible to WebDAV until the process restarts, so provisioning after the fact would leave
-  the quota cell reading `-3` forever. The hook also disables `password_policy`, which otherwise refuses `openthedoor`
-  ("present in compromised password list") and the fixture password is public on purpose.
+- **`image-nextcloud/provision.sh` provisions them**, from inside the official image's `before-starting` hook: on every
+  container start, before apache binds a port. ❗ Before apache because a quota set through `occ` against a LIVE server
+  stays invisible to WebDAV until the process restarts, so provisioning after the fact would leave the quota cell
+  reading `-3` forever. ❗ Every start, idempotently, because `/var/www/html` is a named volume that outlives the
+  container: a once-per-install hook kept a pre-rename volume's old accounts, and both quota cells failed against a
+  healthy-looking stack. An edit to the script reaches a running fixture by itself, since the stack lease rebuilds and
+  recreates on any change to the image's build context. The hook also disables `password_policy`, which otherwise
+  refuses `openthedoor` ("present in compromised password list") and the fixture password is public on purpose.
 - **The base URL is the legacy `/remote.php/webdav/`**, not `/remote.php/dav/files/<user>/`, so one URL serves both
   accounts. The three properties under test answer identically on both endpoints (verified on `nextcloud:34.0.2-apache`,
   by hand with `curl`, 2026-09-02).

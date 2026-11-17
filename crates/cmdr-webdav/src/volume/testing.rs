@@ -87,7 +87,7 @@ pub const FIXTURE_UNLIMITED_USER: &str = "test_user_2";
 /// The quota the Nextcloud fixture gives `FIXTURE_USER`, exactly.
 ///
 /// ❗ The same number as `QUOTA` in
-/// `apps/desktop/test/webdav-servers/image-nextcloud/post-install.sh`, which
+/// `apps/desktop/test/webdav-servers/image-nextcloud/provision.sh`, which
 /// spells it `5GB` and means 5 GiB. `quota-available-bytes` plus
 /// `quota-used-bytes` adding up to THIS rather than to the container's disk is
 /// how a cell tells "the account's quota" from "the server's free space".

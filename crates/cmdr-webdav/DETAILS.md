@@ -394,7 +394,7 @@ here as one server's answer, evidence-anchored, rather than as the protocol's.
   decoy. ❗ The bar for the next vendor property: the standard has to be unable to answer the question at all, the
   fallback has to leave every other server exactly as it was, and a fixture cell has to hold the claim up.
 - ❗ The `occ` quota is applied at process start, so a quota changed on a live server stays invisible over WebDAV until
-  the server restarts; the fixture provisions in a post-installation hook for exactly that reason.
+  the server restarts; the fixture provisions in a `before-starting` hook (before apache binds) for exactly that reason.
 
 What the pane does with each shape: `cmdr-fs`'s `SpaceInfo`, and `apps/desktop/src/lib/file-explorer/DETAILS.md`.
 

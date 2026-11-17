@@ -11,13 +11,16 @@
 # behaviour, which the storage engine underneath doesn't reach.
 FROM nextcloud:35.0.1-apache@sha256:8f2f0e93aca5e9457019933936dea1f313052e72c696b4aecb31580a208b859f
 
-# Runs inside the image's own entrypoint, right after `occ maintenance:install`
-# and BEFORE apache binds a port. ❗ That ordering is the whole point: a quota
-# set through `occ` against a LIVE server is invisible to WebDAV until the
-# process restarts (the quota storage wrapper is built once per process), so
-# provisioning after the fact would make the quota cell read `-3` forever.
-COPY post-install.sh /docker-entrypoint-hooks.d/post-installation/10-cmdr-fixture.sh
-RUN chmod +x /docker-entrypoint-hooks.d/post-installation/10-cmdr-fixture.sh
+# Runs inside the image's own entrypoint on EVERY start, after any first-boot
+# `occ maintenance:install` and BEFORE apache binds a port. ❗ Both halves
+# matter. Before apache: a quota set through `occ` against a LIVE server is
+# invisible to WebDAV until the process restarts (the quota storage wrapper is
+# built once per process), so provisioning after the fact would make the quota
+# cell read `-3` forever. Every start: `/var/www/html` is a named volume that
+# outlives the container, and a once-per-install hook never saw an edit to the
+# accounts again (provision.sh says how that bit).
+COPY provision.sh /docker-entrypoint-hooks.d/before-starting/10-cmdr-fixture.sh
+RUN chmod +x /docker-entrypoint-hooks.d/before-starting/10-cmdr-fixture.sh
 
 EXPOSE 80
 
