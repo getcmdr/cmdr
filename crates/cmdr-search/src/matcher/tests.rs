@@ -188,7 +188,11 @@ fn a_regex_query_keeps_standard_dot_semantics() {
 #[test]
 fn the_platform_default_decides_case_folding() {
     let compiled = compile(&query(), SMALL_ARENA).unwrap();
-    assert_eq!(compiled.case_insensitive(), cfg!(target_os = "macos"));
+    // APFS and NTFS compare names case-insensitively; Linux's filesystems don't.
+    assert_eq!(
+        compiled.case_insensitive(),
+        cfg!(any(target_os = "macos", target_os = "windows"))
+    );
 }
 
 #[test]

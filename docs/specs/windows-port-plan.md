@@ -136,6 +136,37 @@ Settled:
 - **Linux licenses carried no device id.** Fixed in [#980](https://github.com/getcmdr/cmdr/issues/980): Linux now hashes
   `/etc/machine-id`, the precedent task 38's `MachineGuid` arm follows.
 
+## Windows build state
+
+Which members compile for Windows is `windowsPending` in `scripts/check/checks/member-coverage-allowlist.json` (the
+check shrinks it). Milestones and what the builder ran: `docs/notes/windows-port/build-progress.md`.
+
+Honest stubs: Windows arms that compile and answer "unsupported", "unknown", or nothing, each waiting for the task that
+owns its real body. Remove a line when its body lands.
+
+- `cmdr_fs::metadata` (`metadata/platform/windows.rs`), tasks 35 and 36: mode as the read-only attribute, xattrs as
+  alternate data streams, the DACL, Hidden and Locked as attributes, and read-only as a removal blocker all answer
+  `NotApplicable` or `Free`; only dates are real.
+- `cmdr_fs::entry` owner and group names (`entry/platform/windows.rs`), task 35: always `None`, since a Windows owner is
+  a SID, not a uid.
+- `cmdr_fs::file_provider` (`file_provider/platform/windows.rs`), task 37: no File Provider marker; Cloud Files
+  placeholders are read their own way.
+- `cmdr_fs::mapped_file_faults` (`mapped_file_faults/platform/windows.rs`), task 47: recovers nothing, so a read of a
+  mapping whose disk left still crashes; Windows' answer is a vectored handler for `EXCEPTION_IN_PAGE_ERROR` beside the
+  crash reporter.
+- `cmdr_fs::durable` directory syncs, task 36: `File::open` on a folder fails on Windows (it needs backup semantics), so
+  `DeviceBarriers`' pass logs and skips each noted folder, and `cmdr-operations`' `fsync_dir` returns the error, which
+  fails a copy's flush. Files sync through `open_to_sync`, which opens for write on Windows.
+- `cmdr_fs::name_fold::normalize_for_comparison` (`name_fold/platform/windows.rs`), task 35: the drive index's key
+  lowercases with Unicode rules, where NTFS folds through its own upcase table; they disagree on a handful of characters
+  (dotted and dotless I, final sigma).
+- `cmdr_fs::validation::MAX_PATH_BYTES`, task 14: Windows borrows Linux's 4,096 bytes until the limit follows the
+  destination.
+- `cmdr-sftp` agent (`transport/platform/windows.rs`), task 46: asks the OpenSSH agent's pipe (or `SSH_AUTH_SOCK`),
+  never Pageant.
+- Tests ignored on Windows by issue: 24 app-path tests in `cmdr-fs` (#1225, app paths through `std::path`) and one
+  `sqlite_util` deletion test (#1226).
+
 ## Task list
 
 Sizes per `docs/tooling/backlog-board.md` (XS: one agent under 200k tokens; S: one agent 200–400k; M: one agent with up

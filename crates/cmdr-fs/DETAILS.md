@@ -98,18 +98,19 @@ the next section.
   `git_meta` (what a git portal row's Size cell states), `restic_meta` (a restic snapshot row's host, tags, and paths),
   `name_fold.rs` (the ONE "same name, spelled another way" key: NFC + lowercase, shared by share IDs, transfer conflict
   buckets, the SMB spelling resolve, and cursor placement; beside it `normalize_for_comparison`, the local filesystem's
-  own key, which the drive index stores and the write engine matches sources under), `log_rollup`, `log_private` +
-  `log_detail` (`LogPrivate`, the wrapper a log site marks a user-derived value with, over the ONE marker table and
-  lexer the app's span pass reads too; `LogDetail` for external OS/server/CLI text as one Debug-quoted, 1 KiB-capped
-  field, and `LoggedText` for our own; `log_error`, the `LogError` a path-carrying error logs through, `error_detail`,
-  the message field that keeps its cause typed for it, and `log_json`, a value's JSON with its fields marked; § "Marked
-  log values"), `tcc_paths`, `ignore_poison`, `pluralize`, `tilde` (`expand_tilde`, for a path a person typed on THIS
-  machine; on Windows it answers an app path through the path grammar and takes `~\` too, `expand_tilde_with` tests each
-  flavor everywhere), `twin_path` (a same-named twin's row path: `folder_of` past its pick, and `shown`, the one rule
-  that takes a pick out of anything a person reads; `crates/cmdr-mtp/src/connection/DETAILS.md` § "Same-named
-  siblings"), `byte_size` (`format_size`, the IEC byte count log lines and model-facing answers read), `thread_qos`,
-  `thread_cpu`, `process_cpu/`, `process_memory`, `utility_pool.rs` (`UtilityPool`, a keep-alive pool of `Utility`-QoS
-  threads, so background work that comes in streams, like index walks, reuses threads instead of creating one per job).
+  own key, which the drive index stores and the write engine matches sources under, per OS: NFD + lowercase on macOS,
+  lowercase on Windows, the name itself on Linux), `log_rollup`, `log_private` + `log_detail` (`LogPrivate`, the wrapper
+  a log site marks a user-derived value with, over the ONE marker table and lexer the app's span pass reads too;
+  `LogDetail` for external OS/server/CLI text as one Debug-quoted, 1 KiB-capped field, and `LoggedText` for our own;
+  `log_error`, the `LogError` a path-carrying error logs through, `error_detail`, the message field that keeps its cause
+  typed for it, and `log_json`, a value's JSON with its fields marked; § "Marked log values"), `tcc_paths`,
+  `ignore_poison`, `pluralize`, `tilde` (`expand_tilde`, for a path a person typed on THIS machine; on Windows it
+  answers an app path through the path grammar and takes `~\` too, `expand_tilde_with` tests each flavor everywhere),
+  `twin_path` (a same-named twin's row path: `folder_of` past its pick, and `shown`, the one rule that takes a pick out
+  of anything a person reads; `crates/cmdr-mtp/src/connection/DETAILS.md` § "Same-named siblings"), `byte_size`
+  (`format_size`, the IEC byte count log lines and model-facing answers read), `thread_qos`, `thread_cpu`,
+  `process_cpu/`, `process_memory`, `utility_pool.rs` (`UtilityPool`, a keep-alive pool of `Utility`-QoS threads, so
+  background work that comes in streams, like index walks, reuses threads instead of creating one per job).
 - `attr_buf.rs` (macOS): the packed record decoder every `getattrlist` / `getattrlistbulk` caller shares. § "`attr_buf`:
   the packed attribute layout".
 - `mapped_file_faults/`: the SIGBUS recovery that turns a read of a mapped file whose disk went away into zeros, and the
@@ -139,7 +140,13 @@ allows:
   call (owner names, xattrs, ACLs, mode, the umask probe). ❌ Not `not(target_family = "wasm")`: it read as "a Unix
   host" and would hand Windows the POSIX bodies. The crate root refuses any target outside both
   (`docs/guides/platform-seams.md` § Unknown targets).
-- **One whole module is Unix-only** (`lib.rs`): `mapped_file_faults` (mmap, `SIGBUS`).
+- **One whole module is host-only** (`lib.rs`, `cmdr_host`): `mapped_file_faults`. Its generation counter is on every
+  desktop OS; the `SIGBUS` half (`recover`, `mmap`) is a Unix-only extra of its `platform/` seam, and Windows recovers
+  nothing yet (`platform/windows.rs`).
+- **Platform seams with a Windows arm** (`docs/guides/platform-seams.md`): `metadata/platform/`, `durable/platform/`,
+  `file_identity/platform/`, `os_error/platform/`, `entry/platform/` (owner names), `file_provider/platform/` (the
+  domain marker), `name_fold/platform/` (`normalize_for_comparison`), and `mapped_file_faults/platform/`. Which Windows
+  arms are still honest stubs, and the task that owns each: `docs/specs/windows-port-plan.md` § "Windows build state".
 - **SQLite builds for the browser too**: `rusqlite` is an ordinary dependency, and on `wasm32-unknown-unknown` it links
   `sqlite-wasm-rs`, which compiles `sqlite3.c` with the pinned conda LLVM clang the wasm build script installs
   (`scripts/build-listing-wasm/toolchain.go`); Apple's clang can't target wasm32. `sqlite_util` is the same code there.
@@ -1622,6 +1629,10 @@ report.
   `/proc/self/maps` into stack buffers, a line cut at 256 bytes (the fields read sit in the first 100).
 - **Linux gate**: `si_code == BUS_ADRERR`, what a read past a mapping's backing store raises. macOS reports this fault
   as SIGBUS with `si_code` 1, so it gates on the region alone.
+- **The shape**: `platform/` holds one region reader per OS (`macos.rs`, `linux.rs`) behind `recover_page`, the Unix
+  entry point and the `mmap` they share (`unix.rs`), and the pure verdict both ask (`verdict.rs`). `windows.rs` recovers
+  nothing, so the generation never moves there; Windows raises `EXCEPTION_IN_PAGE_ERROR` instead, which a vectored
+  exception handler beside the crash reporter could answer the same way (windows-port plan, task 47).
 
 **Evidence** (Darwin 27.0.0 arm64, a C probe and then `real_image.rs`, 2026-10-19): an 8 MiB file on a RAM disk, mapped,
 then `diskutil unmount force`: `mach_vm_region_recurse` still answers with `external_pager` set, 511 pages were
@@ -1630,7 +1641,7 @@ recovered and read as zeros, and the process lived. Without the handler the same
 (`apps/desktop/src-tauri/src/volumes/DETAILS.md` § "The unmount approver").
 
 **Tests.** The verdict, the range table, and the maps parser are pure cells in `tests.rs` (every host); the macOS cells
-prove the table holds our own code and libSystem and that a plain file mapping qualifies. `macos_test.rs` walks
+prove the table holds our own code and libSystem and that a plain file mapping qualifies. `platform/macos_test.rs` walks
 hand-built Mach-O headers through `image_extent`, so Miri checks its pointer work (`desktop-rust-miri`). That walk
 offsets from the raw header pointer dyld hands over, never from a `&MachHeader64`: a reference covers only the header's
 32 bytes, and reading the load commands through it was undefined behavior Miri caught (2026-11-03). `real_image.rs`
