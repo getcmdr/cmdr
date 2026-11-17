@@ -7,7 +7,7 @@ import { setFeedbackAnswered } from '#lib/server/sources/feedback-and-errors.js'
 
 export type { ProductData } from '#lib/server/fetch-all.js'
 
-/** Loads only the Product page's sources (Cloudflare, Paddle, license, feedback & errors). */
+/** Loads only the Product page's sources (`ProductData` in `fetch-all.ts` lists them). */
 export const load: PageServerLoad = async ({ url }) => {
   const selection = resolveSelection(url.searchParams.get('range'))
   return fetchProductData(dashboardEnv(), selection)

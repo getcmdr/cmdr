@@ -19,7 +19,10 @@
     <SettingsAdoptionSection settingsAdoption={data.settingsAdoption} selection={data.selection} />
     <PaymentSection paddle={data.paddle} selection={data.selection} />
     <RetentionSection paddle={data.paddle} selection={data.selection} />
-    <FeatureUsageSection featureUsage={data.featureUsage} selection={data.selection} />
+    <FeatureUsageSection
+        featureUsage={data.featureUsage.ok ? { ok: true, data: data.featureUsage.data.current } : data.featureUsage}
+        selection={data.selection}
+    />
     <FeedbackErrorsSection
         feedbackAndErrors={data.feedbackAndErrors}
         selection={data.selection}

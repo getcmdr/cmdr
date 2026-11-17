@@ -30,6 +30,22 @@ describe('parseRelease', () => {
     expect(result.totalDownloads).toBe(165)
   })
 
+  it('keeps the draft and prerelease flags, so the latest-release pick can skip either', () => {
+    expect(parseRelease(sampleRawRelease)).toMatchObject({ draft: false, prerelease: false })
+    const beta = parseRelease({ ...sampleRawRelease, tag_name: 'v1.3.0-beta.1', prerelease: true })
+    expect(beta).toMatchObject({ draft: false, prerelease: true })
+  })
+
+  it('dates an unpublished draft by its creation time', () => {
+    const draft = parseRelease({
+      ...sampleRawRelease,
+      draft: true,
+      published_at: null,
+      created_at: '2026-03-11T08:00:00Z',
+    })
+    expect(draft).toMatchObject({ draft: true, publishedAt: '2026-03-11T08:00:00Z' })
+  })
+
   it('handles release with no assets', () => {
     const result = parseRelease({ tag_name: 'v0.1.0', published_at: '2025-01-01T00:00:00Z', assets: [] })
     expect(result.assets).toEqual([])

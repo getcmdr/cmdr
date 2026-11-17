@@ -50,10 +50,19 @@ export function clearMemoryCache(): void {
   memoryCache.clear()
 }
 
-/** Writes to cache with TTL based on time range. */
-export async function cacheSet(source: string, range: CacheRange, data: unknown, extra?: string): Promise<void> {
+/**
+ * Writes to cache with a TTL based on the time range, or `ttlSeconds` for a source whose fixed key
+ * `getTtl` would hold for only 5 minutes though its answer is expensive and slow-moving.
+ */
+export async function cacheSet(
+  source: string,
+  range: CacheRange,
+  data: unknown,
+  extra?: string,
+  ttlSeconds?: number,
+): Promise<void> {
   const url = buildCacheUrl(source, range, extra)
-  const ttl = getTtl(range)
+  const ttl = ttlSeconds ?? getTtl(range)
   const body = JSON.stringify(data)
 
   if (typeof caches !== 'undefined') {

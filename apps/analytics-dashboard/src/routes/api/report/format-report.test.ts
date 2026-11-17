@@ -243,9 +243,26 @@ const richData: DashboardData = {
     ok: true,
     data: {
       transactions: [
-        { id: 'txn_1', status: 'completed', createdAt: '2026-08-01T10:00:00Z', total: '3900', currencyCode: 'USD' },
-        { id: 'txn_2', status: 'refunded', createdAt: '2026-07-31T09:00:00Z', total: '8900', currencyCode: 'EUR' },
+        {
+          id: 'txn_1',
+          status: 'completed',
+          createdAt: '2026-08-01T10:00:00Z',
+          total: '3900',
+          currencyCode: 'USD',
+          origin: 'web',
+          payout: null,
+        },
+        {
+          id: 'txn_2',
+          status: 'refunded',
+          createdAt: '2026-07-31T09:00:00Z',
+          total: '8900',
+          currencyCode: 'EUR',
+          origin: 'web',
+          payout: null,
+        },
       ],
+      allTransactions: [],
       activeSubscriptions: [{ id: 'sub_1', status: 'active', customerId: 'ctm_1', currentBillingPeriod: null }],
       subscriptionsByStatus: { active: 3, canceled: 1, paused: 0 },
     },
@@ -255,8 +272,22 @@ const richData: DashboardData = {
     data: {
       totalDownloads: 1234,
       releases: [
-        { tagName: 'v1.10.0', publishedAt: '2026-08-01T08:00:00Z', assets: [], totalDownloads: 800 },
-        { tagName: 'v1.2.0', publishedAt: '2026-07-01T08:00:00Z', assets: [], totalDownloads: 434 },
+        {
+          tagName: 'v1.10.0',
+          publishedAt: '2026-08-01T08:00:00Z',
+          draft: false,
+          prerelease: false,
+          assets: [],
+          totalDownloads: 800,
+        },
+        {
+          tagName: 'v1.2.0',
+          publishedAt: '2026-07-01T08:00:00Z',
+          draft: false,
+          prerelease: false,
+          assets: [],
+          totalDownloads: 434,
+        },
       ],
     },
   },
@@ -299,9 +330,12 @@ const richData: DashboardData = {
       settings: [
         {
           key: 'ai.provider',
+          kind: 'preference',
           eligible: 26,
           onDefault: 20,
           defaultLabel: 'off',
+          latestDefaultLabel: 'off',
+          defaultMovedIn: null,
           values: [
             { label: 'off', installs: 20, isDefault: true },
             { label: 'cloud', installs: 6, isDefault: false },
@@ -309,9 +343,12 @@ const richData: DashboardData = {
         },
         {
           key: 'indexing.enabled',
+          kind: 'preference',
           eligible: 26,
           onDefault: 24,
           defaultLabel: 'on',
+          latestDefaultLabel: 'on',
+          defaultMovedIn: null,
           values: [
             { label: 'on', installs: 24, isDefault: true },
             { label: 'off', installs: 2, isDefault: false },
@@ -320,9 +357,12 @@ const richData: DashboardData = {
         {
           // Younger than the fleet, so its total is smaller on purpose.
           key: 'mediaIndex.enabled',
+          kind: 'preference',
           eligible: 10,
           onDefault: 8,
           defaultLabel: 'off',
+          latestDefaultLabel: 'off',
+          defaultMovedIn: null,
           values: [
             { label: 'off', installs: 8, isDefault: true },
             { label: 'on', installs: 2, isDefault: false },
@@ -330,9 +370,12 @@ const richData: DashboardData = {
         },
         {
           key: 'theme.mode',
+          kind: 'preference',
           eligible: 26,
           onDefault: 26,
           defaultLabel: 'system',
+          latestDefaultLabel: 'system',
+          defaultMovedIn: null,
           values: [{ label: 'system', installs: 26, isDefault: true }],
         },
       ],
@@ -377,6 +420,8 @@ const richData: DashboardData = {
           errorReportId: null,
         },
       ],
+      awaitingReply: [],
+      allErrorReports: [],
       errorReports: [
         {
           id: 'er_1',
@@ -456,12 +501,15 @@ const emptyData: DashboardData = {
     },
   },
   cloudflare: { ok: true, data: { downloads: [], heartbeatDau: [], updateActivity: [] } },
-  paddle: { ok: true, data: { transactions: [], activeSubscriptions: [], subscriptionsByStatus: {} } },
+  paddle: {
+    ok: true,
+    data: { allTransactions: [], transactions: [], activeSubscriptions: [], subscriptionsByStatus: {} },
+  },
   github: { ok: true, data: { totalDownloads: 0, releases: [] } },
   githubStars: { ok: true, data: { totalStars: 0, repos: [], combinedDaily: [] } },
   posthog: { ok: true, data: { totalPageviews: 0, dailyPageviews: [] } },
   license: { ok: true, data: { totalActivations: 0, activeDevices: null } },
-  feedbackAndErrors: { ok: true, data: { feedback: [], errorReports: [] } },
+  feedbackAndErrors: { ok: true, data: { feedback: [], errorReports: [], awaitingReply: [], allErrorReports: [] } },
   settingsAdoption: { ok: true, data: { settings: [], totalInstalls: 0, unresolvedInstalls: 0 } },
   featureUsage: {
     ok: true,
@@ -493,6 +541,8 @@ const mixedData: DashboardData = {
     data: {
       feedback: [],
       errorReports: richData.feedbackAndErrors.ok ? richData.feedbackAndErrors.data.errorReports : [],
+      awaitingReply: [],
+      allErrorReports: [],
     },
   },
   settingsAdoption: { ok: false, error: 'Settings adoption: offline' },

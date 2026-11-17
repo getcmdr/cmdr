@@ -90,23 +90,40 @@ describe('per-page data-loading split', () => {
     })
   })
 
-  it('Product loads exactly the active-use, settings, payment, retention, and feedback sources', async () => {
+  it('Product loads exactly the active-use, rollout, retention, money, settings, and feedback sources', async () => {
     const data = await fetchProductData(emptyEnv, selection)
     expect(sourceKeys(data)).toEqual([
+      'activeInstalls',
       'cloudflare',
       'featureUsage',
       'feedbackAndErrors',
+      'funnel',
+      'github',
       'license',
       'paddle',
       'settingsAdoption',
     ])
     // It must NOT carry the Acquisition-only sources.
-    expect(data).not.toHaveProperty('funnel')
+    expect(data).not.toHaveProperty('funnelCountries')
     expect(data).not.toHaveProperty('umami')
-    expect(data).not.toHaveProperty('github')
     expect(data).not.toHaveProperty('githubStars')
     expect(data).not.toHaveProperty('posthog')
     expect(data.selection).toEqual(selection)
+  })
+
+  it.each([
+    ['7d', 181],
+    ['30d', 181],
+    ['90d', 400],
+  ] as const)('Product on %s asks the funnel for %i days, a length `/` already caches', async (range, days) => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('offline'))
+    vi.stubGlobal('fetch', fetchMock)
+    await fetchProductData({ ...emptyEnv, LICENSE_SERVER_ADMIN_TOKEN: 'token' }, { range, end: null })
+    const funnelUrls = fetchMock.mock.calls
+      .map((call: unknown[]) => String(call[0]))
+      .filter((u) => u.includes('/admin/funnel'))
+    // The first ask; the funnel retries a failure at an older Worker's 90-day cap.
+    expect(funnelUrls[0]).toBe(`https://api.getcmdr.com/admin/funnel?days=${String(days)}`)
   })
 
   it('the report still loads every source (the union of both pages)', async () => {

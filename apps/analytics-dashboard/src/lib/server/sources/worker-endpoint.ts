@@ -2,6 +2,20 @@
 const defaultWorkerBaseUrl = 'https://api.getcmdr.com'
 
 /**
+ * A non-2xx worker answer, with its status as a typed field, so a caller can tell "this Worker doesn't have
+ * the endpoint yet" (404 during a deploy) from a real failure without reading the message.
+ */
+export class WorkerHttpError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'WorkerHttpError'
+  }
+}
+
+/**
  * GETs a worker admin endpoint with the shared admin bearer token. Throws on a non-2xx response.
  * `baseUrl` defaults to production; pass the resolved `WORKER_BASE_URL` to point at a local worker.
  */
@@ -21,7 +35,7 @@ export async function fetchWorkerResponse<T>(
   })
   if (!response.ok) {
     const text = await response.text()
-    throw new Error(`Worker ${path} returned ${String(response.status)}: ${text}`)
+    throw new WorkerHttpError(response.status, `Worker ${path} returned ${String(response.status)}: ${text}`)
   }
   return { body: (await response.json()) as T, headers: response.headers }
 }
