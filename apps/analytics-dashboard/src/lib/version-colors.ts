@@ -80,10 +80,11 @@ function numericPart(part: string | undefined): number {
 
 /**
  * A version's slot in `versionPalette`. Parts that aren't plain numbers (a pre-release suffix like
- * `0-beta`) read as zero, so `0.62.0-beta.1` shares `0.62.0`'s color.
+ * `0-beta`) and missing parts read as zero, so `0.62.0-beta.1` and `0.62` share `0.62.0`'s color.
  */
 export function versionSlot(version: string): number {
-  const [major, minor, patch] = version.replace(/^v/, '').split('.').map(numericPart)
+  const parts = version.replace(/^v/, '').split('.')
+  const [major, minor, patch] = [0, 1, 2].map((i) => numericPart(parts.at(i)))
   const minorSlot = (major * 1000 + minor) % minorSlotCount
   if (patch === 0) return minorSlot
   return minorSlotCount + ((minorSlot + nextPatchStep * (patch - 1)) % minorSlotCount)

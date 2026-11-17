@@ -101,6 +101,12 @@ describe('versionColor', () => {
     expect(versionColor('0.62.0-beta.1')).toBe(versionColor('0.62.0'))
   })
 
+  it('gives a version with missing parts its zero-padded color, never undefined', () => {
+    expect(versionColor('0.62')).toBe(versionColor('0.62.0'))
+    expect(versionColor('dev')).toBe(versionColor('0.0.0'))
+    expect(versionColor('')).toBe(versionColor('0.0.0'))
+  })
+
   it('never repeats a color across the last 16 minors and their patches', () => {
     const minors = Array.from({ length: 16 }, (_, i) => `0.${String(46 + i)}.0`)
     const window = [...minors, '0.46.1', '0.52.1', '0.52.2', '0.55.1', '0.58.1', '0.61.1', '0.61.2']

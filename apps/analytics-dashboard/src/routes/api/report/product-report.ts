@@ -192,7 +192,9 @@ function writeDailyActives(
 /** D7 from the funnel, which loads on its own: a heartbeat outage doesn't take it down. */
 function d7Line(funnel: SourceResult<FunnelData>, ctx: ProductContext): string {
   if (!funnel.ok) return `- D7 retention: couldn't load (${funnel.error})`
-  if (funnel.data.workerStatus === 'unavailable') return '- D7 retention: not available yet'
+  // `unavailable` is the funnel's worker call failing (`FunnelData.workerStatus`), as the page's tile reads it.
+  if (funnel.data.workerStatus === 'unavailable')
+    return "- D7 retention: couldn't load (the api-server's funnel didn't answer)"
   const tile = d7Tile(funnel.data.rows, ctx.n, ctx.today)
   return tileLine('D7 retention', tile, formatPercent, formatPointChange, `vs. previous ${String(ctx.n)} cohorts`)
 }

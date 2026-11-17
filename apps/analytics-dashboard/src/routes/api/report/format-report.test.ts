@@ -529,4 +529,13 @@ describe('formatReport', () => {
   it('keeps the surviving half of a section when one of its two sources is down', () => {
     expect(formatReport(mixedData)).toBe(mixedReport)
   })
+
+  it("reads D7 as couldn't load, not as not-yet-available, when the funnel's worker side failed", () => {
+    if (!richData.funnel.ok) throw new Error('richData.funnel must load')
+    const data = {
+      ...richData,
+      funnel: { ok: true as const, data: { ...richData.funnel.data, workerStatus: 'unavailable' as const } },
+    }
+    expect(formatReport(data)).toContain("- D7 retention: couldn't load (the api-server's funnel didn't answer)")
+  })
 })
