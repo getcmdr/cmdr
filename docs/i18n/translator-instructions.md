@@ -78,6 +78,12 @@ style guide disagree, the style guide's general rule wins unless the ruling says
     with Windows' own word for an app's settings in {{LANGUAGE}} (Microsoft's, which can differ from Apple's: French
     `Paramètres` beside `Réglages`), the same word in the title (`settings.window.title`) and every pointer. Where both
     vendors use one word, the branch keeps it. Each key's `@key.identicalBranches` records why the English repeats.
+  - **The window title and its menu row follow each desktop's own catalog**, even where they then don't start with the
+    same word. English pins both to one first word ("Configure – Cmdr" / "Configure Cmdr…",
+    `settings-window-name.test.ts` checks English only), but KDE's catalogs translate the `@title:window` and the
+    `@action:inmenu` forms apart: Russian `Настройка – Cmdr` beside `Настроить Cmdr…`, Hungarian `Beállítások – Cmdr`
+    beside `Cmdr beállítása…`. Take each form from Dolphin's and `kconfigwidgets6.po`'s own entries; a shared root is
+    enough.
   - **Two registers on Windows**, which the English branch already picks: Trash is "Delete" as an action's name (a
     button, menu row, or command) and "the Recycle Bin" in a sentence; Quit is "Exit" as an action and "close" when Cmdr
     is the subject ("Cmdr closes"). Use {{LANGUAGE}} Windows' own word for each, in the same register.

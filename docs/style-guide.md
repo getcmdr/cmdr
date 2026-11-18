@@ -139,8 +139,9 @@ itself; `other` stays desktop-neutral for every other desktop. Today's desktop w
     own apps say so, and one word is easier in docs. Every key naming the window still carries a `windows` branch with
     the same English (`@key.identicalBranches` says why), so a translation can use Microsoft's word where it differs
     from Apple's (French `Paramètres` beside `Réglages`). Evidence: `copy-glossary-evidence.md` § The settings window's
-    title; `apps/desktop/src/lib/settings/settings-window-name.test.ts` pins the title against the menu row on all five
-    systems.
+    title; `apps/desktop/src/lib/settings/settings-window-name.test.ts` pins the English title against the menu row on
+    all five systems; translations follow each desktop's own catalog there (`docs/i18n/translator-instructions.md`,
+    Per-OS values).
   - **Keychain**, **Keychain Access** / **Credential Manager**, named only where the user has to go there (a checkbox
     says "Remember password") / **your keyring** ("Remember in keyring").
   - **Terminal** ("In Terminal, run…") / **PowerShell** ("In PowerShell, run…", with a command that works there) / **a
