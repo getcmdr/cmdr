@@ -263,6 +263,9 @@ Rows from the survey's § "Rows that need David's decision", plus `split-feature
     data, Cmdr’s own data, and any file holding a private key. Their names can still reach your provider."
   - A consent-copy change: check whether `CLOUD_AI_CONSENT_VERSION` must bump
     (`apps/desktop/src-tauri/src/tools/CLAUDE.md`).
+  - Settled since (#1106, #1107): the rules now cover Windows `AppData` and Linux mail clients, so both branches say
+    "email data" and the shipped text is in `copy-final.json`. What's covered and why:
+    `apps/desktop/src-tauri/src/tools/DETAILS.md` § The protected locations.
 - `ai.local.notInstalled` → macOS-only, gated (`local_ai`).
 - `ai.secretError.genericBody` → proposal (decided, macOS text changes too).
 - `downloads.shortcutRow.addModifier` → proposal (Windows lists Win; Linux lists Super). Glyph source may move to
@@ -355,7 +358,7 @@ Skip (no Windows/Linux path, or a macOS-only mechanism):
 - **Windows browser data isn't protected from the AI**, while the consent copy promises "browser data":
   `apps/desktop/src-tauri/src/tools/sensitive.rs:RULES` has no `AppData` entries (Firefox, Chrome, Edge, Brave profiles,
   Credential Manager files). Must land before the Windows build ships Ask Cmdr. Linux has no mail-client rule, so the
-  Linux text above drops "email data".
+  Linux text above drops "email data". Fixed in #1106 and #1107; "email data" is back on Linux.
 - **adb never found on Windows**: `crates/cmdr-adb/src/server.rs:locate_adb_binary` joins `adb` without `.exe`
   everywhere, so `$PATH` and the SDK env vars can't match on Windows (task 46). Linux misses
   `~/Android/Sdk/platform-tools/adb`, Android Studio's default.

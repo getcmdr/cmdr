@@ -42,7 +42,7 @@ pub enum Protected {
     /// A browser's profile: cookies, saved passwords, history.
     BrowserData,
     /// Mail, messages, and notes: Apple's Mail, Messages, and Notes, and the mail clients
-    /// each OS has (Thunderbird, Outlook, Evolution, Geary, KMail).
+    /// each OS has (Thunderbird, Outlook, Windows Mail, Evolution, Geary, KMail, Claws Mail).
     MessageStore,
     /// Cmdr's own data dir: tokens, databases, raw logs.
     CmdrData,

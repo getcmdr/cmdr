@@ -28,8 +28,16 @@ const MAC: &[Cell] = &[
         Credentials,
     ),
     ("Library/Group Containers/2BUA8C4S2C.com.agilebits/x", Credentials),
+    (
+        "Library/Containers/2BUA8C4S2C.com.agilebits.onepassword-osx-helper/Data/Library/Data/OnePassword.sqlite",
+        Credentials,
+    ),
     (".config/gh/hosts.yml", Credentials),
     (".config/gcloud/credentials.db", Credentials),
+    (".config/containers/auth.json", Credentials),
+    (".config/git/credentials", Credentials),
+    (".s3cfg", Credentials),
+    (".terraform.d/credentials.tfrc.json", Credentials),
     ("Library/Application Support/sops/age/keys.txt", Credentials),
     (".cargo/credentials", Credentials),
     ("Library/Mail/V10/x.emlx", MessageStore),
@@ -124,6 +132,14 @@ const MAC: &[Cell] = &[
         "Library/Application Support/com.operasoftware.OperaGX/Default/Cookies",
         BrowserData,
     ),
+    (
+        "Library/Application Support/zen/Profiles/a.Default (release)/logins.json",
+        BrowserData,
+    ),
+    (
+        "Library/Application Support/librewolf/Profiles/a.default-default/cookies.sqlite",
+        BrowserData,
+    ),
 ];
 
 /// Paths under a Linux home folder.
@@ -163,6 +179,25 @@ const LINUX: &[Cell] = &[
     (".local/share/local-mail/inbox/cur/1", MessageStore),
     (".local/share/.local-mail.directory/x", MessageStore),
     (".local/share/akonadi/file_db_data/1_r0", MessageStore),
+    (".claws-mail/passwordstorerc", MessageStore),
+    (
+        ".claws-mail/imapcache/imap.example.org/test_user_1/INBOX/1",
+        MessageStore,
+    ),
+    (".config/hcloud/cli.toml", Credentials),
+    (".config/git/credentials", Credentials),
+    (".zen/a.Default (release)/cookies.sqlite", BrowserData),
+    (".config/zen/a.Default (release)/cookies.sqlite", BrowserData),
+    (
+        ".var/app/app.zen_browser.zen/zen/a.Default (release)/cookies.sqlite",
+        BrowserData,
+    ),
+    (".librewolf/a.default-default/logins.json", BrowserData),
+    (".config/librewolf/librewolf/a.default-default/logins.json", BrowserData),
+    (
+        ".var/app/io.gitlab.librewolf-community/.librewolf/a.default/logins.json",
+        BrowserData,
+    ),
     (".mozilla/firefox/a.default-release/logins.json", BrowserData),
     (".config/mozilla/firefox/a.default-release/logins.json", BrowserData),
     (".cache/mozilla/firefox/a.default-release/cache2/x", BrowserData),
@@ -251,6 +286,20 @@ const WINDOWS: &[Cell] = &[
     ("AppData/Roaming/Microsoft/Outlook/Outlook.srs", MessageStore),
     ("AppData/Local/Microsoft/Olk/EBWebView/Default/x", MessageStore),
     ("Documents/Outlook Files/archive.pst", MessageStore),
+    (
+        "AppData/Local/Packages/microsoft.windowscommunicationsapps_8wekyb3d8bbwe/LocalState/Files/S0/4/Attachments/a.pdf",
+        MessageStore,
+    ),
+    ("AppData/Roaming/terraform.d/credentials.tfrc.json", Credentials),
+    (".config/containers/auth.json", Credentials),
+    (
+        "AppData/Roaming/zen/Profiles/a.Default (release)/logins.json",
+        BrowserData,
+    ),
+    (
+        "AppData/Roaming/librewolf/Profiles/a.default-default/logins.json",
+        BrowserData,
+    ),
     ("AppData/Local/Google/Chrome/User Data/Default/Login Data", BrowserData),
     (
         "AppData/Local/Google/Chrome Beta/User Data/Default/Cookies",
@@ -421,6 +470,54 @@ fn the_original_locations_hold_in_every_spelling() {
     }
 }
 
+/// The shapes a Windows path reaches a tool in, beyond a home folder on `C:`: a profile on
+/// another drive, the Win32 long-path and device prefixes, a share, WSL's view of a Linux home,
+/// and mixed case and separators in one path.
+#[test]
+fn windows_path_shapes_are_refused() {
+    for (path, reason) in [
+        (
+            "D:/Users/test_user_1/AppData/Local/Google/Chrome/User Data/Default/Cookies",
+            BrowserData,
+        ),
+        (
+            "E:\\Profiles\\test_user_1\\AppData\\Roaming\\Microsoft\\Protect\\S-1-5-21-1\\k",
+            Credentials,
+        ),
+        (
+            "\\\\?\\C:\\Users\\test_user_1\\AppData\\Roaming\\Thunderbird\\Profiles\\a\\x",
+            MessageStore,
+        ),
+        (
+            "\\\\.\\C:\\Users\\test_user_1\\AppData\\Local\\Microsoft\\Outlook\\a.ost",
+            MessageStore,
+        ),
+        (
+            "\\\\?\\UNC\\testnas.local\\home\\AppData\\Roaming\\Mozilla\\Firefox\\a",
+            BrowserData,
+        ),
+        (
+            "c:/USERS/Test_User_1/appdata\\LOCAL/microsoft\\Edge/User Data/x",
+            BrowserData,
+        ),
+        (
+            "C:\\Users\\test_user_1/AppData/Roaming\\Microsoft/Credentials\\ABCD",
+            Credentials,
+        ),
+        (
+            "\\\\wsl$\\Ubuntu\\home\\test_user_1\\.thunderbird\\a\\Mail\\Inbox",
+            MessageStore,
+        ),
+        (
+            "\\\\wsl.localhost\\Ubuntu\\home\\test_user_1\\.ssh\\id_ed25519",
+            Credentials,
+        ),
+        ("/run/user/1000/containers/auth.json", Credentials),
+    ] {
+        assert_eq!(classify_plain(path), Some(reason), "{path}");
+    }
+}
+
 /// A family rule takes a release channel's folder, never a neighbor that only shares a prefix,
 /// and an app's name outside its anchor is an ordinary folder.
 #[test]
@@ -470,6 +567,21 @@ fn neighbors_of_a_protected_location_stay_readable() {
         "/Users/someone/Documents/Bitwarden/a.txt",
         "/Users/someone/Documents/Outlook Files Backup/a.txt",
         "/Users/someone/pgpass.conf.txt",
+        "C:/Users/someone/AppData/Roaming/zenith/a.txt",
+        "C:/Users/someone/AppData/Local/Packages/microsoft.windowscommunicationsappsx_1/a",
+        "C:/Users/someone/Documents/zen/a.txt",
+        "C:/Users/someone/Documents/librewolf/a.txt",
+        "C:/Users/someone/Documents/terraform.d/main.tf",
+        "/home/someone/.config/zen-mode/a.conf",
+        "/home/someone/.config/git/config",
+        "/home/someone/.config/git/ignore",
+        "/home/someone/.config/containers/registries.conf",
+        "/home/someone/.config/containers/auth.json.example/a",
+        "/home/someone/Documents/containers/notes.txt",
+        "/home/someone/Documents/hcloud/a.txt",
+        "/home/someone/Documents/claws-mail/a.txt",
+        "/home/someone/.s3cfg.example",
+        "/Users/someone/Library/Containers/2BUA8C4S2C.com.agilebitsx/a",
     ] {
         assert_eq!(classify_plain(path), None, "{path}");
     }
