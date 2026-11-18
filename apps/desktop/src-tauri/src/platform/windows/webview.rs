@@ -38,7 +38,9 @@ pub(crate) fn prepare_webview(webview: &Webview<Wry>) {
                 .and_then(|settings| settings.SetAreBrowserAcceleratorKeysEnabled(false))
         };
         match applied {
+            // allowed-log-private: a Tauri window label of our own
             Ok(()) => log::debug!(target: "platform::webview", "browser keys off in `{label}`"),
+            // allowed-log-private: a Tauri window label of our own
             Err(e) => log::warn!(target: "platform::webview", "couldn't turn browser keys off in `{label}`: {e}"),
         }
     });

@@ -151,6 +151,7 @@
                 class:has-focus={isActive && highlighted && surface.highlightBy === 'keyboard'}
                 class:is-open={isOpenSubmenuRow(index)}
                 class:is-disabled={!live}
+                class:is-live={live}
                 role={roleOf(row)}
                 tabindex={highlighted ? 0 : -1}
                 aria-checked={row.kind === 'check' ? row.checked : undefined}
@@ -426,11 +427,13 @@
         color: var(--color-menu-row-fg-open);
     }
 
-    .command-menu-row:not(.is-disabled):active {
+    /* A live row's pressed state. Its own class, not `:not(.is-disabled)`: the contrast check reads a
+       class inside `:not()` as the row's, and paired the greyed text with the pressed fill. */
+    .command-menu-row.is-live:active {
         background: var(--color-menu-row-bg-pressed);
     }
 
-    .command-menu-row:not(.is-disabled):active .command-menu-chevron {
+    .command-menu-row.is-live:active .command-menu-chevron {
         color: var(--color-menu-chevron-fg-pressed);
     }
 

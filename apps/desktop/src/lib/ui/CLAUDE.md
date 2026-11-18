@@ -9,8 +9,8 @@ Reusable components (Ark UI backs the complex ones).
   `started-elsewhere-guard.ts` (what opened by itself arms first: DETAILS § The started-elsewhere guard),
   `boundary/DialogBoundary.svelte`.
 - Pickers: `Menu.svelte` + `createMenu`. ❗ No `.svelte.ts` may case-collide with a component. DETAILS § Menu.
-- `cmdr-menu`'s rows in the page (the bar, Windows' context menus, the demo's): `MenuBar.svelte`, `ContextMenu.svelte`
-  over `command-menu/`; `keyboard-cues.ts` says when underlines show. DETAILS § Command menus.
+- In-page `cmdr-menu` menus: `MenuBar.svelte`, `ContextMenu.svelte` over `command-menu/`; `keyboard-cues.ts` (when
+  underlines show). DETAILS § Command menus.
 - The primitives (`Icon`, `Spinner`, `Button`, `ColumnList`, form controls, `Select`, `Combobox`, text fields,
   `ShortcutChip`, `InfoTip`, `CloseButton`, `CopyButton`, `StatusGlyph` (❌ never focusable), `toast/`) are catalogued
   in DETAILS § Key files. `ToggleGroup` is segmented, ≠ `RadioGroup`; Tooltip is the sibling `../tooltip/tooltip.ts`.
@@ -45,14 +45,14 @@ Reusable components (Ark UI backs the complex ones).
     on `!el.isConnected`): recycled virtual-scroll rows. Keep the hover-suppress flag. ❌ Never a native `title`
     (`cmdr/no-title-attribute`): it skips keyboard focus. Keep any `aria-label`.
   - `ColumnList`: demands read row DATA, ❌ never DOM text (it'd oscillate).
-  - `ShortcutChip`: import `openShortcutCustomization` dynamically: a static import drags
-    `@tauri-apps/api/webviewWindow` into the capability-restricted viewer. Set exactly one of `commandId` / `key`.
+  - `ShortcutChip`: import `openShortcutCustomization` dynamically (a static import drags `webviewWindow` into the
+    restricted viewer). Set exactly one of `commandId` / `key`.
   - `Select`: `.select-*` classes and their accent tokens are a contract. `--z-dropdown` on `.select-content`, ❌ never
     the positioner. Trapping modals call `providePortalTarget`.
-  - `Combobox`: drive its text off `inputValue`, never `value` / `items` (blanks on an empty list).
+  - `Combobox`: text off `inputValue`, never `value` / `items` (blanks on an empty list).
   - Text fields: chrome is `app.css` § "Text fields" (one edit restyles all five); `.text-field` / `.text-field-control`
     are a selector contract; `TextInput` is one-way `value` + `oninput`.
-  - Toasts: level by feedback kind; a full persistent stack drops new ones; pane-local transients need
-    `addToastForPane(pane, …)`. ❌ Frames: no live region, no `tabindex`.
+  - Toasts: level by feedback kind; a full persistent stack drops new ones; pane-local ones need `addToastForPane`. ❌
+    Frames: no live region, no `tabindex`.
 
 Catalogs, prop tables, and remaining component traps: `DETAILS.md`. Read it before any non-trivial work here.
