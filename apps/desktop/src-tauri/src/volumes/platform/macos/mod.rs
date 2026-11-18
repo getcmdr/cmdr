@@ -27,6 +27,13 @@ mod lifecycle;
 #[cfg(test)]
 mod rename_real_image;
 
+pub(crate) use super::unix::{is_local_volume, local_volume_on_mount};
+
+/// The whole filesystem at `/`, named as this OS names its startup disk.
+pub(crate) fn root_volume() -> std::sync::Arc<dyn cmdr_fs::volume::Volume> {
+    super::unix::root_volume_named("Macintosh HD")
+}
+
 use cmdr_fs::volume::published_locations::dedupe_locations;
 use std::path::Path;
 

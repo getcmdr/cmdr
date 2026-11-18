@@ -135,6 +135,7 @@ fn make_index_db_without_volume_path(data_dir: &Path, volume_id: &str) {
 /// from the live `VolumeManager` while the volume is mounted (the live-QA bug: real
 /// SMB DBs have no `volume_path`, so the loader returned `None` and scope stripping
 /// failed → 0 results). Regression: mount root resolves via the registry fallback.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn mount_root_falls_back_to_the_volume_registry() {
     use crate::file_system::volume::manager::get_volume_manager;
@@ -176,6 +177,7 @@ fn mount_root_falls_back_to_the_volume_registry() {
 /// `/Volumes/testshare` in the meta. Its root is the one root function's answer, live
 /// first, so search strips and prefixes the same root `list_dir` checks against;
 /// the meta's would make every scope under the live mount match nothing.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_live_volumes_root_beats_the_root_its_last_scan_recorded() {
     use crate::file_system::volume::manager::get_volume_manager;

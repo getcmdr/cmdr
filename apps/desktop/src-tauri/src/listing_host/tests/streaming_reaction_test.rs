@@ -457,6 +457,7 @@ async fn a_cancel_at_the_cache_insert_leaves_nothing_cached() {
 // Refusals and errors
 // ============================================================================
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_permission_denied_listing_records_the_denial() {
     let path = Path::new("/denied");
@@ -556,6 +557,7 @@ async fn a_damaged_archive_reads_as_unreadable() {
     assert_eq!(ended.analytics, [Some("serious".to_string())]);
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_generic_error_names_the_cloud_provider_behind_the_path() {
     let path = cloud_path("folder");

@@ -5,6 +5,8 @@
 //! The git twin is `copy_snapshot_out_tests.rs`. The refusals that need no
 //! repo (a delete, a rename, a copy in) are `restic_guard_tests.rs`.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};

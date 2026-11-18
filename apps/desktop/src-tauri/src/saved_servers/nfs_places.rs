@@ -110,34 +110,14 @@ pub(super) fn nfs_place(target: ServerTarget) -> Option<(KnownNfsPlace, String)>
 }
 
 /// This process's own uid and groups: the identity the add form falls back to when it can't read
-/// who owns an export, and the one an NFS server saved without contact takes.
+/// who owns an export, and the one an NFS server saved without contact takes. On Windows, which
+/// has no uid, that's `nobody` (`cmdr-nfs`' `dial/platform/windows.rs`).
 pub(crate) fn this_mac_identity() -> cmdr_nfs::NfsIdentity {
-    // SAFETY: `getuid` and `getgid` take no arguments, can't fail, and touch no
-    // memory of ours.
-    let (uid, gid) = unsafe { (libc::getuid(), libc::getgid()) };
+    let process = cmdr_nfs::NfsIdentity::of_this_process();
     cmdr_nfs::NfsIdentity {
-        uid,
-        gid,
-        other_gids: other_groups(gid, &this_process_groups()),
+        other_gids: other_groups(process.gid, &process.other_gids),
+        ..process
     }
-}
-
-/// This process's supplementary groups, as the OS lists them; none when it won't say.
-fn this_process_groups() -> Vec<u32> {
-    // SAFETY: a zero count asks for the size and writes nothing through the null pointer.
-    let count = unsafe { libc::getgroups(0, std::ptr::null_mut()) };
-    let Ok(capacity) = usize::try_from(count) else {
-        return Vec::new();
-    };
-    let mut groups: Vec<libc::gid_t> = vec![0; capacity];
-    // SAFETY: `groups` is valid for `count` entries for the whole call, and `getgroups`
-    // writes at most that many.
-    let written = unsafe { libc::getgroups(count, groups.as_mut_ptr()) };
-    let Ok(written) = usize::try_from(written) else {
-        return Vec::new();
-    };
-    groups.truncate(written);
-    groups
 }
 
 /// The groups worth offering beside the primary `gid`: each once, in the OS's order, and

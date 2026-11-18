@@ -1122,6 +1122,7 @@ const SAVED: &str = r#"{
 }"#;
 
 /// The one set-aside copy of `path`, read back whatever its mode.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 fn the_copy(path: &Path) -> Vec<u8> {
     use std::os::unix::fs::PermissionsExt;
     let kept = crate::state_recovery::testing::kept_copies(path);
@@ -1132,6 +1133,7 @@ fn the_copy(path: &Path) -> Vec<u8> {
 
 /// A store that's there but can't be read (mode 000) is set aside before the next save writes
 /// the empty store over its pins, switches, and pending moves.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn an_unreadable_store_survives_the_next_save() {
     use std::os::unix::fs::PermissionsExt;
@@ -1154,6 +1156,7 @@ fn an_unreadable_store_survives_the_next_save() {
 
 /// A share row from a newer build (a connection mode this one doesn't know) costs that row only:
 /// the other row, the opt-outs, and the pending move read, and the whole file is kept.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn one_row_that_doesnt_read_keeps_the_rest_and_a_copy() {
     let _notices = crate::state_recovery::testing::capture_recoveries();

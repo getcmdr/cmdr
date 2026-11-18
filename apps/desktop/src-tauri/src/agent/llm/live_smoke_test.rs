@@ -757,6 +757,7 @@ async fn assert_reaches(label: &str, backend: AiBackend, request: &str, wanted: 
 
 /// "What is this folder?" over a real scratch folder: the model has to reach the deferred `about_item`,
 /// which runs for real, and answer from it. What it said lands in the log.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 #[ignore = "real API call: set ANTHROPIC_API_KEY to run"]
 async fn smoke_anthropic_what_is_this_folder() {

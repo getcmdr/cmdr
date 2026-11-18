@@ -99,6 +99,7 @@ async fn an_edit_read_back_after_the_preview_shown_never_sneaks_into_its_rename(
 /// Results with nowhere to write (here a folder squats on the file's name; a host
 /// with no cache folder answers the same) is a typed refusal the sheet words, and
 /// the sheet goes on: it previews, reads back nothing, and renames.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn results_with_nowhere_to_write_is_refused_and_the_sheet_goes_on() {
     let (dir, listing) = folder("multi-rename-results-nowhere", &["a.txt"]);

@@ -375,6 +375,7 @@ async fn persist(f: impl FnOnce() -> Result<(), DeadlineError> + Send + 'static)
 /// The add gate. ❗ Every refusing case stops before [`persist`], so none of these touches the
 /// real `favorites.json`; the accepting cases ask the gate, never the command.
 #[cfg(test)]
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, `libc`, or `std::os::unix` (windows-port plan).
 mod add_gate_tests {
     use super::*;
     use crate::file_system::volume::manager::get_volume_manager;

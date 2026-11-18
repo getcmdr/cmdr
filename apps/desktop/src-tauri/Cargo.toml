@@ -8,10 +8,6 @@ license = "LicenseRef-BSL-1.1"
 default-run = "Cmdr"
 publish = false  # Private application, not for crates.io
 
-[package.metadata.cmdr]
-# Not on Windows yet; see `docs/tooling/ci.md` § Windows lane.
-platforms = ["linux", "macos"]
-
 # The house lint set lives in the workspace root's `[workspace.lints]`, so every
 # crate we write shares one definition. Unlike the crate-root `#![deny(…)]` block
 # it replaced, this also covers the bins, tests, benches, and build script.
@@ -356,6 +352,11 @@ gtk = "0.18"
 # Tauri's wry already links webkit2gtk 2.0, so this adds no crate; the version must stay wry's, or
 # `PlatformWebview::inner()` returns a different type.
 webkit2gtk = "2.0"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+# Win32 calls behind the app's `platform/` seams: the registry for the licensing device id
+# (`licensing/device_id/platform/windows.rs`). Already in the lockfile through the workspace crates.
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Registry"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # The custom updater's trust check: unpacking the release tarball and requiring Cmdr's Developer

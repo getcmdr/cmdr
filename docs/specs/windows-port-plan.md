@@ -215,6 +215,22 @@ owns its real body. Remove a line when its body lands.
   for the fixtures only they use. Each file un-gates as `LocalWindowsVolume` grows.
 - Tests ignored on Windows by issue: 24 app-path tests in `cmdr-fs` (#1225, app paths through `std::path`) and one
   `sqlite_util` deletion test (#1226). `cmdr-index`'s suite isn't green there yet: 158 of 1,911 fail, filed as #1232.
+- The app's root volume on Windows (`volumes/platform/windows.rs` `root_volume`), task 34: `LocalWindowsVolume` at the
+  system drive alone (`%SystemDrive%`, else `C:/`), under today's `root` id and named "Root", which the switcher's
+  main-volume row points at too. Which drives and UNC shares register, and under which ids, is task 34's open decision.
+- The app's eject on Windows (`file_system/volume/eject/platform/windows.rs`), task 39: nothing reads as ejectable, so a
+  local drive's eject refuses as `NotEjectable`; a tool run (an SMB share's unmount, "Eject and save") answers that no
+  tool could start (`EjectError::Unexpected`); the holder scan is "couldn't tell"; an SMB Disconnect drops the direct
+  session, as on Linux. MTP, ADB, SFTP, and WebDAV ejects are every-OS code and work.
+- Code only the missing Windows arms will call is dead there, held by one crate-root
+  `cfg_attr(target_os = "windows", expect(dead_code, unused_imports))` in the app's `lib.rs`: the unmount watcher's
+  handling (`VolumeManager::remove_root`, `os_mount_notice::forget_unmounted_volume`; task 39), stored favorites in the
+  switcher (`favorites::target::{on_disk, FavoriteTarget::discovered}`: Windows lists three home folders and the root,
+  never the favorites store), and the native-crash conversion (`next_launch::to_iso8601`, `symbolicate`; task 47).
+  `expect`, so the build fails once nothing's dead and the line can go.
+- App tests on Windows: 31 test files are `#![cfg(unix)]` and 36 more gate their POSIX-only cells (and helpers) with
+  `#[cfg(unix)]`, each for `LocalPosixVolume`, POSIX modes, inodes, `libc` errnos, or `std::os::unix`. Each un-gates as
+  `LocalWindowsVolume` grows (task 35) or app paths go through the volume (#1225).
 
 ## Task list
 
@@ -491,7 +507,11 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     `commands/rename.rs` and `commands/file_system/path_checks.rs` now ask (every arm answers `"root"` today). Left: the
     drive and UNC volume id scheme (open), registering a volume per drive (with 35 and 39), and the remaining
     single-root sites, most of which only change once those volumes exist (the root `LocalPosixVolume` at `/`, the
-    index's `ROOT_VOLUME_ID`, the boot-volume priority roots, the MCP volumes resource's non-macOS row).
+    index's `ROOT_VOLUME_ID`, the boot-volume priority roots, the MCP volumes resource's non-macOS row). The app's root
+    volume now comes from `volumes::root_volume` (a `volumes/platform/` pin beside `local_volume_on_mount` and
+    `is_local_volume`, so `file_system/mod.rs` and `smb_mount_gate` name no concrete local volume); Windows' arm is the
+    stub in § "Windows build state". Open: whether "the system drive under `root`" survives the id scheme, and how
+    consumers name the host's local volume (~150 sites name `LocalPosixVolume`, mostly tests).
 35. [L] Windows. `LocalWindowsVolume` in `cmdr-local`, a sibling of `LocalPosixVolume`: `FindFirstFileExW` reader,
     space, no-replace and atomic-replace rename (❗ `std::fs::rename` replaces on Windows), streams, file vs dir
     symlinks, junctions, reparse tags, ADS-backed xattrs, write-access probe, metadata caps, the conformance suite
@@ -541,9 +561,14 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
 38. [S] Windows. Identity and system bundle: secrets via `windows-native-keyring-store` (❗ a blocker: off macOS and
     Linux secrets fall back to a plaintext file today), device id (`MachineGuid`, hashed like the Linux
     `/etc/machine-id` arm in `licensing/device_id.rs`), OS version, memory, the instance-lock `MessageBoxW`, managed
-    policy from the registry. Needs 18.
+    policy from the registry. Needs 18. **Device id done** (2026-11-18): `licensing/device_id/platform/windows.rs` reads
+    `MachineGuid` from the 64-bit registry view and hashes it like Linux's machine id; its two cells pass on the
+    builder. Left: the keyring, OS version, memory, the instance-lock `MessageBoxW`, managed policy.
 39. [M] Windows. Drives: drive letters and labels, the device-arrival watcher (`CM_Register_Notification`), mapped and
-    UNC drives, eject. Needs 20, 34.
+    UNC drives, eject. Needs 20, 34. **Eject seam in place** (2026-11-18): eject is every-OS code, and what differs sits
+    in `file_system/volume/eject/platform/` (the tool, ejectability, whether an SMB disconnect unmounts). The Windows
+    arm is the stub in § "Windows build state"; the real one is `CM_Request_Device_EjectW` for a removable drive, the
+    Restart Manager for holders, and `WNetCancelConnection2W` once 45 makes OS SMB mounts.
 40. [S] Windows. System look: accent color, text scale, high contrast and transparency, UI language and formats, all
     live-updating (`UISettings`, `WM_SETTINGCHANGE`). Light/dark already arrives through WebView2. Needs 19, 23.
 41. [S] Windows. File icons via `SHGetFileInfoW` / `IShellItemImageFactory`. Needs 23.
@@ -553,7 +578,10 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
 45. [S] Windows. SMB OS mounts via `WNetAddConnection2W` and Credential Manager SMB credentials. Needs 22.
 46. [S] Windows. Small backend arms: `cmdr-nfs` identity (`GetComputerNameExW`, configurable uid/gid), `cmdr-adb`
     `adb.exe` discovery, special folders (`SHGetKnownFolderPath`), thread QoS (EcoQoS, not background mode), WinHTTP
-    system proxy. Needs 8, 16.
+    system proxy. Needs 8, 16. **NFS identity done** (2026-11-18): `cmdr-nfs`' `dial/platform/windows.rs` asks as
+    `nobody` with no groups, the machine name from `GetComputerNameExW(ComputerNameDnsHostname)`, and the app's
+    `this_mac_identity` reads it through `NfsIdentity::of_this_process`; a place sets its own uid and gid in the add
+    form, as on every OS.
 47. [S] Windows. Crash minidumps (`crash-handler` + `minidumper`) and Windows-shaped crash cards in the api-server.
     Needs 23.
 48. [XS] Windows. **Done**. WebView2 specifics: every `cmdr-media` URL comes from `mediaUrl` via `convertFileSrc`

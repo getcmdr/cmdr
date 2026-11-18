@@ -1,6 +1,8 @@
 //! Tests for `smb_connect_directly.rs`: what "Connect directly" answers when
 //! there's no OS-mounted SMB share behind the volume anymore.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use super::*;
 use crate::test_support::TestDir;
 use cmdr_local::LocalPosixVolume;

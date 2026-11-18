@@ -5,6 +5,8 @@
 //! watch's OS stream is scripted in a test binary, so a cell fires it by hand
 //! (`snapshot_watch::fire`) instead of waiting on FSEvents.
 
+#![cfg(unix)]
+// POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 #![cfg(test)]
 
 use std::path::{Path, PathBuf};

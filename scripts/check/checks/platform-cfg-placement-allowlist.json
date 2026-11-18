@@ -47,7 +47,7 @@
       "outsideSeam": 7
     },
     "apps/desktop/src-tauri/src/commands/mod.rs": {
-      "outsideSeam": 4
+      "outsideSeam": 3
     },
     "apps/desktop/src-tauri/src/commands/settings.rs": {
       "outsideSeam": 2
@@ -114,8 +114,8 @@
       "outsideSeam": 3
     },
     "apps/desktop/src-tauri/src/file_system/mod.rs": {
-      "negated": 2,
-      "outsideSeam": 12
+      "negated": 1,
+      "outsideSeam": 10
     },
     "apps/desktop/src-tauri/src/file_system/open_with.rs": {
       "negated": 4,
@@ -129,8 +129,8 @@
       "outsideSeam": 2
     },
     "apps/desktop/src-tauri/src/file_system/volume/drive_release/mod.rs": {
-      "negated": 4,
-      "outsideSeam": 7
+      "negated": 2,
+      "outsideSeam": 3
     },
     "apps/desktop/src-tauri/src/file_system/volume/drive_release/release.rs": {
       "negated": 1,
@@ -143,19 +143,13 @@
     "apps/desktop/src-tauri/src/file_system/volume/eject/deadlines.rs": {
       "outsideSeam": 1
     },
-    "apps/desktop/src-tauri/src/file_system/volume/eject/escalate.rs": {
-      "outsideSeam": 2
-    },
     "apps/desktop/src-tauri/src/file_system/volume/eject/holders/facts.rs": {
-      "negated": 1,
       "outsideSeam": 2
     },
     "apps/desktop/src-tauri/src/file_system/volume/eject/holders/facts/nested_images.rs": {
-      "negated": 1,
       "outsideSeam": 3
     },
     "apps/desktop/src-tauri/src/file_system/volume/eject/holders/scan.rs": {
-      "negated": 1,
       "outsideSeam": 3
     },
     "apps/desktop/src-tauri/src/file_system/volume/eject/in_flight.rs": {
@@ -163,17 +157,14 @@
       "outsideSeam": 9
     },
     "apps/desktop/src-tauri/src/file_system/volume/eject/mod.rs": {
-      "negated": 4,
-      "outsideSeam": 18
+      "negated": 1,
+      "outsideSeam": 14
     },
     "apps/desktop/src-tauri/src/file_system/volume/eject/unmount_tool.rs": {
-      "outsideSeam": 9
+      "outsideSeam": 5
     },
     "apps/desktop/src-tauri/src/file_system/volume/manager.rs": {
       "outsideSeam": 3
-    },
-    "apps/desktop/src-tauri/src/file_system/volume/mod.rs": {
-      "outsideSeam": 1
     },
     "apps/desktop/src-tauri/src/file_system/watcher.rs": {
       "negated": 3,
@@ -208,21 +199,17 @@
       "outsideSeam": 10
     },
     "apps/desktop/src-tauri/src/ipc.rs": {
-      "outsideSeam": 9
+      "outsideSeam": 8
     },
     "apps/desktop/src-tauri/src/lib.rs": {
       "negated": 1,
       "outsideSeam": 16
     },
     "apps/desktop/src-tauri/src/licensing/device_id.rs": {
-      "outsideSeam": 4
+      "outsideSeam": 2
     },
     "apps/desktop/src-tauri/src/listing_host/mod.rs": {
       "outsideSeam": 2
-    },
-    "apps/desktop/src-tauri/src/listing_host/volumes.rs": {
-      "negated": 1,
-      "outsideSeam": 3
     },
     "apps/desktop/src-tauri/src/location/facts.rs": {
       "negated": 1,
@@ -358,10 +345,6 @@
     },
     "apps/desktop/src-tauri/src/tools/actions/app.rs": {
       "outsideSeam": 2
-    },
-    "apps/desktop/src-tauri/src/tools/actions/eject.rs": {
-      "negated": 1,
-      "outsideSeam": 5
     },
     "apps/desktop/src-tauri/src/tools/actions/memory.rs": {
       "negated": 1,

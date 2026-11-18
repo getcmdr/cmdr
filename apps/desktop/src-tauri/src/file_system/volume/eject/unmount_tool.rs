@@ -1,5 +1,6 @@
-//! The `diskutil` (macOS) / `umount` (Linux) subprocess an eject or an SMB
-//! disconnect runs, and what its run means.
+//! The unmount tool an eject or an SMB disconnect runs (`diskutil` on macOS,
+//! `umount` on Linux, none on Windows yet; which, and how, is `platform/`), and what
+//! its run means.
 //!
 //! [`run`] reports HOW the tool ended as a [`ToolOutcome`], keeping the exit
 //! status the wire type has no room for, so the log lines can name it. [`settle`]
@@ -42,20 +43,9 @@ pub(super) enum UnmountVerb {
 }
 
 impl std::fmt::Display for UnmountVerb {
-    /// The command as a log line reads it. Linux runs `umount` for both verbs.
+    /// The command as a log line reads it.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        #[cfg(target_os = "macos")]
-        let command = match self {
-            Self::Eject => "diskutil eject",
-            Self::Unmount => "diskutil unmount",
-            Self::ForceUnmount => "diskutil unmount force",
-        };
-        #[cfg(target_os = "linux")]
-        let command = match self {
-            Self::Eject | Self::Unmount => "umount",
-            Self::ForceUnmount => "umount -f",
-        };
-        f.write_str(command)
+        f.write_str(super::platform::tool_command(*self))
     }
 }
 
@@ -85,6 +75,20 @@ pub(super) enum ToolOutcome {
     },
 }
 
+impl ToolOutcome {
+    /// How a finished subprocess run of the tool ended.
+    pub(super) fn of(output: std::io::Result<std::process::Output>) -> Self {
+        match output {
+            Err(e) => Self::CouldNotStart { detail: e.to_string() },
+            Ok(output) if output.status.success() => Self::Succeeded,
+            Ok(output) => Self::Exited {
+                code: output.status.code(),
+                stderr: String::from_utf8_lossy(&output.stderr).trim().to_string(),
+            },
+        }
+    }
+}
+
 impl std::fmt::Display for ToolOutcome {
     /// For the log line only.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -106,7 +110,7 @@ impl std::fmt::Display for ToolOutcome {
 pub(super) async fn run(verb: UnmountVerb, mount_path: &str) -> ToolOutcome {
     let path = mount_path.to_string();
     within_tool_timeout(async move {
-        tokio::task::spawn_blocking(move || run_blocking(verb, &path))
+        tokio::task::spawn_blocking(move || super::platform::run_tool_blocking(verb, &path))
             .await
             .unwrap_or_else(|join_err| ToolOutcome::TaskFailed {
                 detail: join_err.to_string(),
@@ -179,40 +183,6 @@ async fn keeping_abandoned(
         *abandoned.0.lock_ignore_poison() = Some(run);
     }
     outcome
-}
-
-fn run_blocking(verb: UnmountVerb, mount_path: &str) -> ToolOutcome {
-    #[cfg(target_os = "macos")]
-    let output = {
-        let args: &[&str] = match verb {
-            UnmountVerb::Eject => &["eject"],
-            UnmountVerb::Unmount => &["unmount"],
-            UnmountVerb::ForceUnmount => &["unmount", "force"],
-        };
-        std::process::Command::new("diskutil")
-            .args(args)
-            .arg(mount_path)
-            .output()
-    };
-    // Linux: `umount` covers the SMB and removable cases; the physical-drive
-    // power-down `diskutil eject` does is rare on Linux dev machines. `-f` is the
-    // kernel's force for an unreachable network mount (CIFS).
-    #[cfg(target_os = "linux")]
-    let output = {
-        let mut command = std::process::Command::new("umount");
-        if verb == UnmountVerb::ForceUnmount {
-            command.arg("-f");
-        }
-        command.arg(mount_path).output()
-    };
-    match output {
-        Err(e) => ToolOutcome::CouldNotStart { detail: e.to_string() },
-        Ok(output) if output.status.success() => ToolOutcome::Succeeded,
-        Ok(output) => ToolOutcome::Exited {
-            code: output.status.code(),
-            stderr: String::from_utf8_lossy(&output.stderr).trim().to_string(),
-        },
-    }
 }
 
 /// What a finished run means for the caller.

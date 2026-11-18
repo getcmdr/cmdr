@@ -51,13 +51,22 @@ tokio = { version = "1", features = ["io-util", "macros", "net", "rt", "sync", "
 # `buffered`, which pipelines the per-entry LOOKUPs a listing needs.
 futures-util = "0.3"
 log = "0.4"
-# `gethostname`, for the machine name `AUTH_SYS` carries.
+
+[target.'cfg(unix)'.dependencies]
+# `gethostname`, `getuid`, and `getgroups`, for who `AUTH_SYS` says the caller is.
 libc = "0.2"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+# `GetComputerNameExW`, for the machine name `AUTH_SYS` carries (`dial/platform/windows.rs`).
+windows-sys = { version = "0.61", features = ["Win32_System_SystemInformation"] }
 
 [dev-dependencies]
 # Depending on ourselves turns `fuzzing` on for every DEV target and leaves it
 # off for the lib, so clippy lints the seam and a shipped build carries none.
 cmdr-nfs = { path = ".", features = ["fuzzing"] }
+# Errno constants the error-mapping cells compare against, on every OS (the lib needs it only on
+# a Unix).
+libc = "0.2"
 # `simulate_loss`, `set_silence_timings`, and the recording event sink.
 cmdr-fs = { path = "../cmdr-fs", features = ["testing"] }
 # `start_paused` clocks for the transport's timing cells (the stuck-call resend,

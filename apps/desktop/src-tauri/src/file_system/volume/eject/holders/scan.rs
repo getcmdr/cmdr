@@ -8,13 +8,13 @@
 //! file. Root-owned holders stay invisible, which is why a refusal can still name
 //! nobody (`volume/DETAILS.md` § "Eject").
 //!
-//! Anywhere else the answer is `Unreadable`, which reads as "couldn't tell", ❌ never as
-//! "nobody is holding it".
+//! Linux and Windows answer `Unreadable`, which reads as "couldn't tell", ❌ never as
+//! "nobody is holding it". (Windows' walk would be the Restart Manager, with the drives task.)
 
-/// Linux has no walk to run, so every refusal there is "couldn't tell". It still goes
+/// Linux and Windows have no walk to run, so every refusal there is "couldn't tell". It still goes
 /// through `scan_path_with`, so the answer has ONE shape whatever the platform, and the
 /// `Unreadable` comes from a walk that couldn't run rather than from a second code path.
-#[cfg(not(target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub(super) fn scan_path(path: &std::path::Path) -> super::PathScan {
     super::scan_path_with(|| super::root_device(path), || None, |_| None)
 }

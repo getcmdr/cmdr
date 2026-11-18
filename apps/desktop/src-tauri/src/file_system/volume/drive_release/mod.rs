@@ -530,13 +530,7 @@ impl IndexDoor for AppIndexDoor {
     }
 
     fn is_ejecting(&self, volume_id: &str) -> bool {
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        return super::eject::is_ejecting(volume_id);
-        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-        {
-            let _ = volume_id;
-            false
-        }
+        super::eject::is_ejecting(volume_id)
     }
 
     fn is_listed(&self, volume_id: &str) -> bool {
@@ -546,12 +540,6 @@ impl IndexDoor for AppIndexDoor {
         if !cmdr_fs::volume::VolumeScheme::of(volume_id).is_mount_backed() {
             return true;
         }
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        return super::eject::is_still_mounted(&volume.root().to_string_lossy());
-        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-        {
-            let _ = volume;
-            true
-        }
+        super::eject::is_still_mounted(&volume.root().to_string_lossy())
     }
 }

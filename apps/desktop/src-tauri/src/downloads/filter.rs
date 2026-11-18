@@ -54,6 +54,7 @@ fn has_partial_suffix(path: &Path) -> bool {
 }
 
 #[cfg(test)]
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, `libc`, or `std::os::unix` (windows-port plan).
 mod tests {
     use super::*;
 

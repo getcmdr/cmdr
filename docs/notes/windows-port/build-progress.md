@@ -109,3 +109,40 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
   - The rest (seven unused imports) cascade from the above. Every fix lands in a file the placement allowlist already
     counts, so each Windows arm goes behind a `platform/` seam or un-gates code; a new OS cfg outside a seam needs
     David's OK.
+- **2026-11-18, the app compiles for Windows** (leg 4, `970527c2e4` through `ed3991ae38`): `windowsPending` is empty, so
+  every workspace member is on the must-compile list. The four groups, each through a `platform/` seam:
+  - The root volume and the SMB gate ask `volumes::{root_volume, local_volume_on_mount, is_local_volume}`; Windows
+    registers `LocalWindowsVolume` at the system drive under `root` (a stub, task 34).
+  - Eject is every-OS code with `eject/platform/` holding the tool, ejectability, and the SMB-disconnect rule; Windows
+    refuses a local drive as `NotEjectable` (task 39).
+  - The licensing device id reads `MachineGuid` (task 38, real).
+  - NFS: `NfsIdentity::of_this_process` from `cmdr-nfs`' seam, `nobody` on Windows, the machine name from
+    `GetComputerNameExW` (task 46, real). With the type errors gone, the lint pass found code only the missing Windows
+    arms call (the unmount watcher, stored favorites, native-crash reports); one crate-root
+    `expect(dead_code, unused_imports)` for Windows holds it (plan § "Windows build state"). The test target needed 31
+    test files `#![cfg(unix)]` and cell gates in 36 more.
+- **On the builder** (`df87f01096`): `cargo clippy -p cmdr -p cmdr-nfs --all-targets -D warnings` clean, 12m 01s cold.
+  The first `cargo nextest run -p cmdr -p cmdr-nfs` built and couldn't list the app's harness:
+  `STATUS_ENTRYPOINT_NOT_FOUND` (0xc0000139), since tauri-build's manifest resource (Common Controls v6) reached the
+  app's bins only. `build.rs` now has MSVC embed `windows/app.manifest` in every binary. Then: 5,511 tests, 5,274
+  passed, 235 failed, 2 timed out, 146 skipped (151 s; failures `cmdr` 188, `cmdr-nfs` 49). Nearly all are #1225's
+  family: 65 panics name "not an absolute Windows app path" and a dozen more a `\photos`-style native path; the root
+  volume's path lookups (`resolve_location`, `a_home_relative_path_resolves_to_root`) wait on task 34; the two timeouts
+  are a dead-share card and an agent-cancelled walk. Full log: the builder's `D:\logs\w4-nextest2.log`.
+- **Starting the app** (`df87f01096`, plain `cargo build -p cmdr --bin Cmdr`, 13m 10s): `target\debug\Cmdr.exe` launched
+  from SSH (session 0, no desktop) gets through plugin setup (the MCP bridge listens on 127.0.0.1:9223, WebView2 makes
+  its profile under `%LOCALAPPDATA%\com.veszelovszki.cmdr\EBWebView`), then panics in Tauri's setup:
+  `failed to create webview: WebView2 error … HRESULT(0x80070578) "Invalid window handle."` The app's own log never gets
+  written (the logger starts later). That's SSH's missing window station, not a Cmdr fault: the next proof needs a
+  signed-in desktop session, task 55's QA.
+- **Frontend and the full build** (`ed3991ae38`): `pnpm install --frozen-lockfile` 2m 46s and the desktop `vite build`
+  17.8 s both pass on the builder. `pnpm tauri build --debug` first died at once with `spawn pnpm ENOENT` (the wrapper
+  spawned the `pnpm` `.cmd` shim without a shell; it now runs the Tauri CLI with its own Node). After that fix it ran
+  the `beforeBuildCommand` (llama-server placeholder, vite), compiled in 13m 02s, and bundled
+  `target\debug\bundle\nsis\Cmdr_0.61.0_x64-setup.exe` (36.89 MiB); the run exits 1 only at the updater-signature step,
+  for want of `TAURI_SIGNING_PRIVATE_KEY`, as any keyless local build does. Also seen: the root `prepare` script is
+  POSIX shell (`[ -n "$CI" ] || …`), so `pnpm install` on Windows prints "'[' is not recognized" and skips setting
+  `core.hooksPath`.
+- **Next blockers for a usable Windows build**: #1225 (app paths through the local engine: no local copy, move, or
+  listing of a native path lands yet), task 34's drive ids and multi-root volumes, task 35's streams and lister, and a
+  GUI session for the first real launch (task 55).

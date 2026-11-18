@@ -52,7 +52,7 @@
   defaulted them would quietly reset the user's own choices. An SMB share answers `AccountChanged`: its edit is the
   host's (`edit_host`).
 - An NFS place's identity is a uid, a gid, and its other groups (#677). `this_mac_identity` fills the groups from
-  `getgroups`, each once, without the primary and ❌ never group 0, which `cmdr_nfs::guess_identity` doesn't claim for an
+  `cmdr_nfs::NfsIdentity::of_this_process` (`getgroups`; none on Windows, which asks as `nobody`), each once, without the primary and ❌ never group 0, which `cmdr_nfs::guess_identity` doesn't claim for an
   export's files either.
 
 ## Saving without contact

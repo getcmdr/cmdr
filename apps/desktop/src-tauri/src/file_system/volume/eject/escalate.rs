@@ -82,15 +82,9 @@ pub async fn take_down_smb_volume(volume_id: &str) -> Result<TakenDown, EjectErr
 /// mount Finder or another app made, which the registry never took): a normal unmount,
 /// then a force one when that didn't answer.
 pub async fn take_down_smb_mount(mount_path: &str) -> Result<TakenDown, EjectError> {
-    let tool = |verb| Teardown::Tool {
-        verb,
-        mount_path,
-        #[cfg(target_os = "macos")]
-        disk: None,
-    };
     normal_then_force(
-        || run_teardown(mount_path, tool(UnmountVerb::Unmount)),
-        || run_teardown(mount_path, tool(UnmountVerb::ForceUnmount)),
+        || run_teardown(mount_path, Teardown::volume_tool(UnmountVerb::Unmount, mount_path)),
+        || run_teardown(mount_path, Teardown::volume_tool(UnmountVerb::ForceUnmount, mount_path)),
     )
     .await
 }
@@ -102,13 +96,11 @@ async fn force_volume(volume_id: String) -> Result<EjectOutcome, EjectError> {
         return Ok(EjectOutcome::AlreadyGone);
     };
     let mount_path = volume.root().to_string_lossy().to_string();
-    let teardown = Teardown::Tool {
-        verb: UnmountVerb::ForceUnmount,
-        mount_path: &mount_path,
-        #[cfg(target_os = "macos")]
-        disk: None,
-    };
-    run_teardown(&volume_id, teardown).await?;
+    run_teardown(
+        &volume_id,
+        Teardown::volume_tool(UnmountVerb::ForceUnmount, &mount_path),
+    )
+    .await?;
     Ok(EjectOutcome::Unmounted)
 }
 

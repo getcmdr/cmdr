@@ -136,6 +136,7 @@ fn ordinary_paths_with_alarming_names_stay_readable() {
     }
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_symlink_into_a_protected_folder_is_refused_by_the_gate() {
     let dir = TestDir::new("gate-symlink");
@@ -171,6 +172,7 @@ fn a_plain_file_passes_the_gate() {
 
 /// A custom `CMDR_DATA_DIR` has no telling component, so only the check against the real dir
 /// catches it, through a symlink too.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_custom_data_dir_is_caught_by_the_gate_alone() {
     let dir = TestDir::new("gate-data-dir");

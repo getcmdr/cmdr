@@ -1,6 +1,8 @@
 //! The restic route: what it routes, what it leaves on the parent, what a
 //! confirmation costs, and how it orders against the git and archive routes.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use super::*;
 use crate::file_system::volume::{InMemoryVolume, VolumeError};
 use cmdr_fs::entry::FileEntry;

@@ -2,6 +2,8 @@
 //! panes' collator, and the FSEvents watcher. The backend's own cells, which
 //! drive a detached or recording host, are in `crates/cmdr-local/src/local_posix_test.rs`.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use crate::test_support::TestDir;
 use cmdr_fs::volume::{MutationEvent, Volume, WatchCoverage};
 use cmdr_local::LocalPosixVolume;

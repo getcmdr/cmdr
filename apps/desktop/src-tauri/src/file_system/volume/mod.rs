@@ -18,10 +18,9 @@ pub mod backends;
 // The per-volume gate every app-side index stop of a removable drive and every
 // non-root index start goes through.
 pub(crate) mod drive_release;
-// Volume teardown (USB/SD/DMG/SMB/MTP), used only by the macOS+Linux eject
-// command. The macOS-vs-Linux difference (diskutil vs umount, NSURL vs
-// `/sys/block`) lives inside via per-fn `#[cfg]`.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
+// Volume teardown (USB/SD/DMG/SMB/MTP/ADB/SFTP/WebDAV) on every OS. What differs
+// per OS (the unmount tool, ejectability, an SMB mount's disconnect) asks
+// `eject/platform/`; the per-disk flight is macOS-only inside.
 pub mod eject;
 pub(crate) mod manager;
 // The one way a mount becomes a registered volume, shared by the startup sweep,
