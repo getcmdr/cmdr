@@ -66,6 +66,17 @@ table's pure rules (`covering_drive`, `display_name`) are `cmdr_fs::volume::wind
   them are the frontend's. An empty optical drive or card reader lists nothing until media is in.
 - **A path that moved roots** (a stick back on another letter) follows its disk through `location/last_roots.rs`: the
   tab restore and the undo planner rebase a recorded path onto the volume's live root.
+  - **Decision/Why: only an id that is provably one disk rebases.** An id the registry ever saw at two roots at once
+    (`VolumeManager::has_shared_identity`: a `dd` clone, a double mount, a btrfs subvolume or bind mount, a mapped
+    share beside its UNC alias) is marked shared in `volume-roots.json` for good and never rebases: an undo then acts
+    on the stored path or refuses, as before the rebase existed. Without it, a clone plugged in alone could take the
+    undo meant for its twin, since a block clone also carries the same size, mtime, and inode.
+  - **Decision/Why: a restored tab waits for the startup sweep.** `live_volume_path` answers at once for a registered
+    id, else waits up to 5 s for `volume-init` (`apps/desktop/src-tauri/src/file_system/discovery.rs`) and then answers `notReady`, and the tab
+    keeps its stored id and path, unreachable. Asking before the sweep, the old letter's new disk would answer the path
+    and re-key the tab for good.
+  - The arrival listener only notes a root in memory; the `volume-roots` thread writes the file, debounced 2 s, pruned
+    to 256 volumes seen within a year (a shared one kept longest).
 
 ## Location categories
 

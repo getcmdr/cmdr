@@ -98,7 +98,12 @@ pub struct InverseSummary {
 /// newest `rollback_unit` row, the cheapest honest sample: for a copy it's the
 /// created directory (the exact folder the undo cleans), and for anything else it's
 /// a leaf whose parent folder is the place the user is watching.
-fn summarize_inverse(conn: &Connection, op: &OperationRow, filter: Option<&RollbackFilter>) -> InverseSummary {
+fn summarize_inverse(
+    volumes: &dyn VolumeLookup,
+    conn: &Connection,
+    op: &OperationRow,
+    filter: Option<&RollbackFilter>,
+) -> InverseSummary {
     let sampled = match filter.map(|filter| filter.sample_seq(conn)) {
         Some(Ok(Some(seq))) => read_item_row(conn, &op.op_id, seq)
             .ok()
@@ -113,6 +118,8 @@ fn summarize_inverse(conn: &Connection, op: &OperationRow, filter: Option<&Rollb
             _ => return InverseSummary::default(),
         },
     };
+    // On the live roots, as the run will act (`live_roots.rs`), so the confirm names that place.
+    let unit = super::live_roots::LiveRoots::new(volumes).rebase(unit);
     let (_, acting_on) = removal_target(&unit);
     // A directory row IS the thing being removed; a file row names its folder.
     let from = if unit.entry_type == EntryType::Dir {
@@ -193,7 +200,7 @@ where
         }
     };
     let selection = filter.as_ref().map(|filter| filter.normalized().clone());
-    let summary = summarize_inverse(&conn, &op, filter.as_ref());
+    let summary = summarize_inverse(volumes, &conn, &op, filter.as_ref());
     drop(filter);
     drop(conn);
 

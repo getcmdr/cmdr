@@ -66,7 +66,7 @@ pub(crate) fn earlier_roots_of(id: &str, current: &str) -> Vec<String> {
 /// Start the earlier-roots record: seed it with each volume's last root from the last
 /// session (`super::last_roots`) and every saved share's last mount path, record each
 /// registered volume's root, and listen for every volume that arrives from here on, saving
-/// each one's root for the next session.
+/// each one's root (and each id seen at two roots at once) for the next session.
 ///
 /// Call once at startup, after the saved-share store loads (its last mount paths
 /// are the seed) and before a remount could move one. A root move that isn't an
@@ -82,11 +82,16 @@ pub(crate) fn start_root_history() {
         }
     }
     let manager = get_volume_manager();
+    // Both listeners run INSIDE a registration: memory only, the file write happens on
+    // `last_roots`' own thread. Subscribed before the sweep below, so an id that turns
+    // shared in between is still heard.
+    manager.on_identity_conflict(super::last_roots::note_shared);
     for (id, volume) in manager.list_volumes_with_handles() {
+        if manager.has_shared_identity(&id) {
+            super::last_roots::note_shared(&id);
+        }
         note_live_root(&id, volume.as_ref());
     }
-    // Runs INSIDE the registration: one lookup, one map insert, and a small file write only
-    // when this volume's root moved since it was last saved.
     manager.on_volume_arrival(|id| {
         if let Some(volume) = get_volume_manager().get(id) {
             note_live_root(id, volume.as_ref());
@@ -100,7 +105,7 @@ fn note_live_root(id: &str, volume: &dyn cmdr_fs::volume::Volume) {
     let root = volume.root().to_string_lossy();
     ROOT_HISTORY.record(id, &root);
     if !volume.routes_over_a_parent() {
-        super::last_roots::save(id, &root);
+        super::last_roots::note(id, &root);
     }
 }
 

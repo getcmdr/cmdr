@@ -17,6 +17,7 @@ mod lifecycle_tests;
 mod page_error_tests;
 mod redo_tests;
 mod resume_tests;
+mod root_move_tests;
 mod root_reach_tests;
 mod selection_tests;
 mod tag_tests;

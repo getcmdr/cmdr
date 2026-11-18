@@ -24,6 +24,7 @@ use cmdr_collation::NameCollator;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::SupportedDates;
+use cmdr_fs::volume::app_paths::RootMove;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::host::listings::ListingHost;
 use cmdr_fs::volume::{DirectoryChange, ResolvedVolume, RoutedKind, Volume};
@@ -107,6 +108,8 @@ pub struct FakeVolumes {
     /// Set by [`Self::without_local_disk`]: the browser demo's shape, where no id
     /// is the local disk. `false` (the desktop's `"root"`) by default.
     no_local_disk: AtomicBool,
+    /// Set by [`Self::move_root`]: where each volume's recorded paths move now.
+    root_moves: Mutex<HashMap<String, RootMove>>,
 }
 
 /// A path prefix [`FakeVolumes`] serves through a route rather than its drive.
@@ -117,6 +120,14 @@ struct FakeRoute {
 }
 
 impl FakeVolumes {
+    /// From now on, `volume_id`'s recorded paths move as `root_move` says, as the app's
+    /// saved-roots rebase answers for a drive back on another letter.
+    pub fn move_root(&self, volume_id: &str, root_move: RootMove) {
+        self.root_moves
+            .lock_ignore_poison()
+            .insert(volume_id.to_string(), root_move);
+    }
+
     /// From now on, no volume id is the local disk (the browser demo's host),
     /// so `"root"` is a volume like any other.
     pub fn without_local_disk(&self) {
@@ -169,6 +180,10 @@ impl FakeVolumes {
 impl VolumeLookup for FakeVolumes {
     fn get(&self, volume_id: &str) -> Option<Arc<dyn Volume>> {
         self.volumes.lock_ignore_poison().get(volume_id).cloned()
+    }
+
+    fn root_move(&self, volume_id: &str) -> Option<RootMove> {
+        self.root_moves.lock_ignore_poison().get(volume_id).cloned()
     }
 }
 

@@ -29,8 +29,6 @@ pub(super) async fn reverse_item(
     kind: OpKind,
     unit: &RollbackUnit,
 ) -> ItemResult {
-    let rebased = on_live_roots(volumes, unit);
-    let unit = rebased.as_ref().unwrap_or(unit);
     let Some(action) = item_action(kind, unit.entry_type, is_created_in_place(unit)) else {
         return ItemResult::Skipped(SkipReason::Failed);
     };
@@ -41,28 +39,6 @@ pub(super) async fn reverse_item(
         InverseAction::RestoreMove => restore_move(volumes, runner, unit).await,
         InverseAction::RestoreTags => restore_tags(volumes, runner, unit).await,
     }
-}
-
-/// `unit` with its paths rebased onto their volumes' live roots, when either volume's root
-/// moved since the operation ran ([`VolumeLookup::live_path`]); `None` when both paths stand
-/// as recorded, which is every unit whose volumes sit where they did.
-fn on_live_roots(volumes: &dyn VolumeLookup, unit: &RollbackUnit) -> Option<RollbackUnit> {
-    let source = volumes.live_path(&unit.source_volume_id, &unit.source_path);
-    let dest = match (&unit.dest_volume_id, &unit.dest_path) {
-        (Some(volume_id), Some(path)) => volumes.live_path(volume_id, path),
-        _ => None,
-    };
-    if source.is_none() && dest.is_none() {
-        return None;
-    }
-    let mut rebased = unit.clone();
-    if let Some(source) = source {
-        rebased.source_path = source;
-    }
-    if let Some(dest) = dest {
-        rebased.dest_path = Some(dest);
-    }
-    Some(rebased)
 }
 
 /// Remove the file a removal inverse targets, once it verifies against its snapshot.
@@ -308,76 +284,5 @@ async fn restore_move(volumes: &dyn VolumeLookup, runner: &dyn RollbackRunner, u
         }
         Err(ActRefusal::Volume(VolumeError::NotFound(_))) => missing_item(&sides),
         Err(_) => ItemResult::Skipped(SkipReason::Failed),
-    }
-}
-
-#[cfg(test)]
-mod live_root_tests {
-    use std::path::PathBuf;
-    use std::sync::Arc;
-
-    use super::*;
-    use crate::types::ItemOutcome;
-
-    /// A host whose volume `vol-moved` came back at `F:/` after the operation ran on `E:/`.
-    struct MovedDrive;
-
-    impl VolumeLookup for MovedDrive {
-        fn get(&self, _volume_id: &str) -> Option<Arc<dyn Volume>> {
-            None
-        }
-
-        fn live_path(&self, volume_id: &str, path: &Path) -> Option<PathBuf> {
-            let path = path.to_str()?;
-            (volume_id == "vol-moved")
-                .then(|| path.strip_prefix("E:/").map(|rest| PathBuf::from(format!("F:/{rest}"))))
-                .flatten()
-        }
-    }
-
-    /// The trait's default answer: every recorded path stands.
-    struct Unmoved;
-
-    impl VolumeLookup for Unmoved {
-        fn get(&self, _volume_id: &str) -> Option<Arc<dyn Volume>> {
-            None
-        }
-    }
-
-    fn moved_unit(source_volume: &str, source: &str, dest_volume: &str, dest: &str) -> RollbackUnit {
-        RollbackUnit {
-            seq: 1,
-            entry_type: EntryType::File,
-            source_volume_id: source_volume.to_string(),
-            source_path: PathBuf::from(source),
-            dest_volume_id: Some(dest_volume.to_string()),
-            dest_path: Some(PathBuf::from(dest)),
-            size: Some(3),
-            mtime: Some(7),
-            overwrote: false,
-            outcome: ItemOutcome::Done,
-            rollback_skip_reason: None,
-            dest_identity: None,
-            tags: None,
-        }
-    }
-
-    #[test]
-    fn an_undo_follows_a_drive_to_its_new_letter() {
-        let unit = moved_unit("vol-moved", "E:/photos/a.jpg", "root", "C:/Users/test_user_1/a.jpg");
-        let rebased = on_live_roots(&MovedDrive, &unit).expect("the source drive moved");
-        assert_eq!(rebased.source_path, PathBuf::from("F:/photos/a.jpg"));
-        assert_eq!(rebased.dest_path, unit.dest_path, "the other side stood still");
-
-        let both = moved_unit("vol-moved", "E:/a", "vol-moved", "E:/b");
-        let rebased = on_live_roots(&MovedDrive, &both).expect("both sides moved");
-        assert_eq!(rebased.dest_path, Some(PathBuf::from("F:/b")));
-    }
-
-    #[test]
-    fn a_unit_whose_volumes_stood_still_is_reversed_as_recorded() {
-        let unit = moved_unit("vol-x", "/Volumes/Backup/a", "root", "/Users/test_user_1/a");
-        assert_eq!(on_live_roots(&MovedDrive, &unit), None);
-        assert_eq!(on_live_roots(&Unmoved, &unit), None);
     }
 }

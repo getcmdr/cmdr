@@ -25,9 +25,9 @@ impl VolumeLookup for AppOperationVolumes {
     }
 
     /// The saved-roots rebase (`location::last_roots`): an undo follows the disk to its
-    /// root now, as a restored tab does.
-    fn live_path(&self, volume_id: &str, path: &Path) -> Option<std::path::PathBuf> {
-        crate::location::last_roots::live_path(volume_id, &path.to_string_lossy()).map(std::path::PathBuf::from)
+    /// root now, as a restored tab does, for an id that is provably one disk.
+    fn root_move(&self, volume_id: &str) -> Option<cmdr_fs::volume::app_paths::RootMove> {
+        crate::location::last_roots::root_move(volume_id)
     }
 }
 

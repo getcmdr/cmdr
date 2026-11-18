@@ -146,3 +146,15 @@ on the integration branch (code reading; Windows API behavior marked "to verify"
 
 Clear win or tradeoff? A tradeoff, mostly won by (d): it's the only option where user intent follows the disk, and its
 gap (tabs after a letter swap) is one that macOS already has and one small fix closes for both.
+
+## As built (D8, task 34)
+
+- The persisted last root shipped as `location/last_roots.rs` (`volume-roots.json`): a restored tab and an undo rebase a
+  recorded path onto the volume's live root. The rule, and why each guard exists:
+  `apps/desktop/src-tauri/src/volumes/DETAILS.md` § Windows (the "A path that moved roots" bullet).
+- **The one-disk guard** (found in the third review, 2026-11-18): an id seen at two roots at once (a `dd` clone, a
+  double mount, a btrfs subvolume or bind mount, a mapped share beside its UNC alias) never rebases, this run or later.
+  A mapped share therefore keeps its stored path; its UNC root stays valid anyway. Safety over convenience: a clone
+  plugged in alone must not take the undo meant for its twin.
+- **The restore-order guard**: a tab waits for the startup sweep before it's rebased or re-keyed, and keeps its stored
+  id when the sweep doesn't finish in time.

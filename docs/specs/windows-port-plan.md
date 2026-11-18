@@ -524,11 +524,11 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     drive indexing under its own id from its own root), app-spelled priority roots and index paths, the MCP volumes
     row's real mount path, the path bar reading like Explorer's address bar (`C:\`, `C:\Windows`), and each volume's
     last roots saved across sessions (`location/last_roots.rs`) so a restored tab and an undo follow a drive to its new
-    letter. Volumes/`DETAILS.md` § "Windows: a volume per drive" has the shape. Left for later tasks: arrival and
-    removal (39), a mapped share's direct-SMB upgrade (45), and the mount table's identity and space readers (35); the
-    stub line in § "Windows build state". Decided (2026-11-18): consumers name the host's local volume
-    `cmdr_local::LocalVolume`, and app paths become a typed `AppPath` the `Volume` trait takes (#1225); both are
-    milestones of `docs/specs/app-path-plan.md`.
+    letter, for an id never seen at two roots at once. Volumes/`DETAILS.md` § "Windows: a volume per drive" has the
+    shape. Left for later tasks: arrival and removal (39), a mapped share's direct-SMB upgrade (45), and the mount
+    table's identity and space readers (35); the stub line in § "Windows build state". Decided (2026-11-18): consumers
+    name the host's local volume `cmdr_local::LocalVolume`, and app paths become a typed `AppPath` the `Volume` trait
+    takes (#1225); both are milestones of `docs/specs/app-path-plan.md`.
 35. [L] Windows. `LocalWindowsVolume` in `cmdr-local`, a sibling of `LocalPosixVolume`: `FindFirstFileExW` reader,
     space, no-replace and atomic-replace rename (❗ `std::fs::rename` replaces on Windows), streams, file vs dir
     symlinks, junctions, reparse tags, ADS-backed xattrs, write-access probe, metadata caps, the conformance suite

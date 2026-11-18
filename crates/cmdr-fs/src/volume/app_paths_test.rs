@@ -59,3 +59,55 @@ fn rebase_moves_the_folder_onto_the_new_root() {
     assert_eq!(rebase("/Users/me", "/", "/").as_deref(), Some("/Users/me"));
     assert_eq!(rebase("/elsewhere", "/Volumes/testshare", "/Volumes/testshare-1"), None);
 }
+
+fn moved(live: &str, earlier: &[&str]) -> RootMove {
+    RootMove {
+        live: live.to_string(),
+        earlier: earlier.iter().map(|root| (*root).to_string()).collect(),
+    }
+}
+
+#[test]
+fn a_path_under_the_live_root_stays_as_it_is() {
+    assert_eq!(moved("/Volumes/Backup", &[]).rebase("/Volumes/Backup/x"), None);
+    assert_eq!(moved("/", &["/"]).rebase("/Users/test_user_1"), None);
+    assert_eq!(moved("F:/", &["E:/"]).rebase("F:/photos"), None);
+}
+
+#[test]
+fn a_drive_back_on_another_letter_takes_its_paths_along() {
+    assert_eq!(
+        moved("F:/", &["E:/"]).rebase("E:/photos/2026").as_deref(),
+        Some("F:/photos/2026")
+    );
+    assert_eq!(moved("F:/", &["E:/"]).rebase("E:/").as_deref(), Some("F:/"));
+}
+
+#[test]
+fn a_disk_back_at_another_mount_point_takes_its_paths_along() {
+    assert_eq!(
+        moved("/Volumes/Backup 1", &["/Volumes/Backup"])
+            .rebase("/Volumes/Backup/x")
+            .as_deref(),
+        Some("/Volumes/Backup 1/x")
+    );
+}
+
+#[test]
+fn a_path_no_earlier_root_holds_is_left_alone() {
+    assert_eq!(moved("F:/", &["E:/"]).rebase("G:/x"), None);
+    assert_eq!(
+        moved("/Volumes/Backup 1", &["/Volumes/Backup"]).rebase("/Volumes/Other/x"),
+        None
+    );
+    // `/` is the boot disk's root, never an address a moved disk had.
+    assert_eq!(moved("/Volumes/Backup", &["/"]).rebase("/Users/x"), None);
+}
+
+#[test]
+fn the_deepest_earlier_root_wins() {
+    assert_eq!(
+        moved("D:/", &["C:/", "C:/mnt/data"]).rebase("C:/mnt/data/x").as_deref(),
+        Some("D:/x")
+    );
+}

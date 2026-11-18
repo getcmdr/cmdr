@@ -48,8 +48,9 @@ Issue #461. Must-knows in `CLAUDE.md`.
   and `keys` keep answering the error and touch nothing: a read decides nothing.
 - **Left on their own fallback, on purpose**: `update-check.json` (when the next update check is due; losing it costs
   one early check), `analytics-heartbeat.json` and the event spool (unsent telemetry and uptime, never the person's),
-  `.window-state.json` (window geometry), `volume-roots.json` (each volume's last few roots,
-`location/last_roots.rs`; losing it costs one rebase after a drive moved letters), and `install-ids.json` (two random ids; a lost one is minted again, which only
+  `.window-state.json` (window geometry), `volume-roots.json` (each volume's last few roots and whether it was ever shared,
+  `location/last_roots.rs`; losing it costs one rebase after a drive moved letters, and since the roots and the shared
+  marks go together, a lost file can't let a clone rebase either), and `install-ids.json` (two random ids; a lost one is minted again, which only
   resets analytics continuity, and holding it would mint a new in-memory id every launch instead). The agent's
   `outcomes.md` isn't JSON: `MemoryStore::record_outcome` skips a decision when the log is there but unreadable.
 
