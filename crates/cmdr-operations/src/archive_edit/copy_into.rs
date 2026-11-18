@@ -117,7 +117,7 @@ impl crate::Operations {
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
         // A LOCAL source volume's root — `Some` skips the pull (the changeset walks
         // real paths); `None` (a remote source) triggers the in-op pull-to-scratch.
-        let src_local_root = source_volume.local_path();
+        let src_local_root = source_volume.local_path().map(|root| root.as_std_legacy().into_owned());
 
         // Confirmation already happened at the routing site (`dest_resolved.is_archive`
         // from the async, parent-aware `resolve`), so a pure string split is enough

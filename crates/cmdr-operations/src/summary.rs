@@ -93,7 +93,10 @@ pub(crate) fn local_location(path: &Path) -> String {
 /// ("Macintosh HD") says nothing a path doesn't. A volume standing in for that
 /// disk (the browser demo's) reads the same, against the home it names.
 pub(crate) fn volume_location(volume: &dyn cmdr_fs::volume::Volume, path: &Path) -> String {
-    if volume.local_path().is_some_and(|root| root == Path::new("/")) {
+    if volume
+        .local_path()
+        .is_some_and(|root| *root.as_std_legacy() == *Path::new("/"))
+    {
         return local_location(path);
     }
     if let Some(home) = volume.stands_in_for_own_disk() {

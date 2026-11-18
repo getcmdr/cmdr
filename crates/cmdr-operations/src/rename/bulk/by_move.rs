@@ -118,12 +118,8 @@ impl crate::Operations {
 /// about is left to the executor, which refuses it on its own terms.
 async fn any_rename_copies(volume: &dyn Volume, rows: &[BulkRenameRow]) -> bool {
     for chunk in rows.chunks(RENAME_WORK_CONCURRENCY) {
-        let answers = futures_util::future::join_all(
-            chunk
-                .iter()
-                .map(|row| volume.rename_work(&AppPath::legacy_unchecked(&row.source))),
-        )
-        .await;
+        let sources: Vec<_> = chunk.iter().map(|row| AppPath::legacy_unchecked(&row.source)).collect();
+        let answers = futures_util::future::join_all(sources.iter().map(|source| volume.rename_work(source))).await;
         if answers
             .iter()
             .any(|work| matches!(work, Ok(RenameWork::CopyThenDelete)))

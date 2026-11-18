@@ -153,7 +153,10 @@ impl crate::Operations {
         for path in paths {
             let serving = if !manager.routes_over_its_parent(path) {
                 None
-            } else if let Some(route) = routes_met.iter().find(|route| path.starts_with(route.root())) {
+            } else if let Some(route) = routes_met
+                .iter()
+                .find(|route| path.starts_with(route.root().as_std_legacy()))
+            {
                 Some(Arc::clone(route))
             } else {
                 let resolved = manager.resolve(volume_id, path).await;

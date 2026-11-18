@@ -214,7 +214,7 @@ impl OperationVolumes for FakeVolumes {
         self.volumes
             .lock_ignore_poison()
             .iter()
-            .find(|(_, volume)| volume.root() == root)
+            .find(|(_, volume)| *volume.root().as_std_legacy() == *root)
             .map(|(id, volume)| (id.clone(), Arc::clone(volume)))
     }
     fn forget_archive_index(&self, _archive_path: &Path) {}

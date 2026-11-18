@@ -186,7 +186,7 @@ fn archive_quarantine(state: &WriteOperationState, source_volume: &Arc<dyn Volum
             read_quarantine(&archive.as_std_legacy()),
         )
     });
-    if read_for == archive {
+    if *read_for == *archive.as_std_legacy() {
         value.clone()
     } else {
         read_quarantine(&archive.as_std_legacy())

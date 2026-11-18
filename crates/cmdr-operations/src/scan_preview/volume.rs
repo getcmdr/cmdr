@@ -242,7 +242,11 @@ pub(crate) async fn run_volume_scan_preview(
                         total_files,
                         total_bytes,
                         dedup_bytes,
-                        batch.per_path,
+                        batch
+                            .per_path
+                            .into_iter()
+                            .map(|(path, scan)| (path.as_std_legacy().into_owned(), scan))
+                            .collect(),
                     )
                     .keeping_files(batch.files)
                     .with_tree(tree)
@@ -559,9 +563,13 @@ pub(crate) async fn run_oracle_aware_batch_scan(
 
     // Rebuild per_path in caller's original source order. Missing entries
     // (shouldn't happen, but be defensive) are skipped silently.
-    let per_path: Vec<(PathBuf, CopyScanResult)> = sources
+    let per_path: Vec<_> = sources
         .iter()
-        .filter_map(|src| per_path_unordered.remove(src).map(|scan| (src.clone(), scan)))
+        .filter_map(|src| {
+            per_path_unordered
+                .remove(src)
+                .map(|scan| (AppPath::legacy_unchecked(src).into_owned(), scan))
+        })
         .collect();
 
     Ok(BatchScanResult {
@@ -619,7 +627,7 @@ pub(crate) async fn count_selected_links_as_links(
         if !scan.top_level_is_directory {
             continue;
         }
-        let kind = match kind_in_parent_listing(listings, volume, volume_id, source) {
+        let kind = match kind_in_parent_listing(listings, volume, volume_id, &source.as_std_legacy()) {
             Some(kind) => Some(kind),
             None => volume.entry_kind(source).await.ok(),
         };

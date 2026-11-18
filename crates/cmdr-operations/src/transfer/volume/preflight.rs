@@ -433,7 +433,7 @@ pub(super) async fn scan_volume_sources(
             scan.total_bytes
         };
         source_hints.insert(
-            source_path.clone(),
+            source_path.as_std_legacy().into_owned(),
             SourceHint {
                 is_directory: scan.top_level_is_directory,
                 size,
