@@ -90,7 +90,6 @@ func TestValidatorRefusesEveryBrokenManifest(t *testing.T) {
 		{"a numeric version", "version:", func(d doc) { d["version"] = 61 }},
 		{"another version", `but the release is 0.61.0`, func(d doc) { d["version"] = "0.62.0" }},
 		{"a v-prefixed version", "isn't semver", func(d doc) { d["version"] = "v0.61.0" }},
-		{"empty notes", "notes are empty", func(d doc) { d["notes"] = " \n" }},
 		{"numeric notes", "notes:", func(d doc) { d["notes"] = 1 }},
 		{"a date-only pub_date", "pub_date", func(d doc) { d["pub_date"] = "2026-11-13" }},
 		{"an offset pub_date", "pub_date", func(d doc) { d["pub_date"] = "2026-11-13T15:59:56+01:00" }},
@@ -142,6 +141,17 @@ func TestValidatorRefusesEveryBrokenManifest(t *testing.T) {
 				t.Fatalf("want a refusal naming %q, got %v", e.want, err)
 			}
 		})
+	}
+
+	// Empty notes (a hotfix tag with no CHANGELOG section) still publish: every reader takes an
+	// empty string, and nothing in `docs/guides/releasing.md` makes them a release blocker.
+	empty := doc{}
+	must(t, json.Unmarshal([]byte(built), &empty))
+	empty["notes"] = " \n"
+	rawEmpty, err := json.Marshal(empty)
+	must(t, err)
+	if err := validateLatest(rawEmpty, rules); err != nil {
+		t.Errorf("empty notes must not block a publish: %v", err)
 	}
 
 	// A well-formed advisory entry pointing at an asset of the release passes.

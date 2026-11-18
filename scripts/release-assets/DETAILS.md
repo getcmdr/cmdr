@@ -86,11 +86,12 @@ mark, so a failure leaves the live manifest untouched:
   `cmp` equal). It checks: at most 256 KiB of UTF-8, one JSON object with nothing after it, no member twice and no
   `null` anywhere (serde refuses a duplicate struct field, and Go reads a null into a string as `""`); exactly the
   members in `topLevelKeys` (`securityAdvisories` optional); `version` the tag's, Rust-semver, and newer than `guard`'s
-  `live-version` (empty for a deliberate republish); non-empty `notes`; `pub_date` as `YYYY-MM-DDTHH:MM:SSZ` (the 0.7
-  plugin refuses the whole manifest over a bad one); `platforms` keyed by exactly the release asset manifest's updater
-  keys, each `{ signature, url }` with the URL `<base>/<file>` on the release and non-empty, the signature the release's
-  own `.sig` byte for byte, minisign-shaped, by a key the app trusts (`tauri.conf.json`'s or `updater-backup.pub`'s ID),
-  and naming the version where `SignsVersion`; `downloads` exactly `manifest.Present`'s list in order with the release's
+  `live-version` (empty for a deliberate republish); `notes` a string (empty ones publish, with a warning from
+  `latest-json`: `docs/guides/releasing.md` § The release gate); `pub_date` as `YYYY-MM-DDTHH:MM:SSZ` (the 0.7 plugin
+  refuses the whole manifest over a bad one); `platforms` keyed by exactly the release asset manifest's updater keys,
+  each `{ signature, url }` with the URL `<base>/<file>` on the release and non-empty, the signature the release's own
+  `.sig` byte for byte, minisign-shaped, by a key the app trusts (`tauri.conf.json`'s or `updater-backup.pub`'s ID), and
+  naming the version where `SignsVersion`; `downloads` exactly `manifest.Present`'s list in order with the release's
   sizes; `dmgSizes` the three DMG sizes; a `securityAdvisories` entry's URL an asset of the release and its signature by
   a trusted key. It answers every problem at once.
 - **The shipped readers** (`crates/cmdr-update-manifest`, `history::gate`): the Tauri plugin of Cmdr 0.7, the reader of

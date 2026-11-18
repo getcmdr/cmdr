@@ -43,13 +43,15 @@ writer's fixtures cover v0.61.0 (mirror URLs) and today's build. Every reader re
 
 ## The gate
 
-`history::gate(body)` runs the three readers: each must parse it, the old two must find `darwin-aarch64` and
-`darwin-x86_64` (the only installs they shipped to), today's must read every entry, and a `securityAdvisories` entry
-must be one this build keeps. `cmdr-check-update-manifest <file>` prints one line per reader or every refusal, exits 1
-on any. The release pipeline builds it in its own read-only job (`manifest-readers`: the cargo build runs third-party
-build scripts, kept away from `publish`'s write token) and `publish` runs it on the candidate and again on the copy it
-reads back from the release. The release-side rules (every URL an asset, sizes, signatures, version order) are the Go
-validator's: `scripts/release-assets/DETAILS.md` § The `latest.json` gate.
+`history::gate(body)` runs the three readers: each must parse it, the old two must find each of `darwin-aarch64` and
+`darwin-x86_64` (the only installs they shipped to) that today's reader finds too, today's must read every entry, and a
+`securityAdvisories` entry must be one this build keeps. `cmdr-check-update-manifest <file>` prints one line per reader
+or every refusal, exits 1 on any. The release pipeline builds it in its own read-only job (`manifest-readers`: the cargo
+build runs third-party build scripts, kept away from `publish`'s write token) and `publish` runs it on the candidate and
+again on the copy it reads back from the release. The release-side rules (every URL an asset, sizes, signatures, version
+order) are the Go validator's: `scripts/release-assets/DETAILS.md` § The `latest.json` gate. A macOS key neither finds
+is a platform the release asset manifest dropped (a reviewed change, which the Go validator holds `platforms` to): the
+gate names who gets no update and lets it through (`docs/guides/releasing.md` § The release gate).
 
 ## The public surface
 

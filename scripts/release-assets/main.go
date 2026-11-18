@@ -123,6 +123,9 @@ func writeLatest(in latestInput, notesPath, out string) error {
 		return err
 	}
 	in.notes = string(body)
+	if strings.TrimSpace(in.notes) == "" {
+		fmt.Fprintf(os.Stderr, "release-assets: warning: no release notes for %s (CHANGELOG.md has no section for it); installs show the update with no notes\n", in.release.Version)
+	}
 	doc, err := buildLatest(in)
 	if err != nil {
 		return err
