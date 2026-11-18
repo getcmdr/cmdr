@@ -7,6 +7,8 @@ use std::path::Path;
 
 use cmdr_fs::volume::{SpaceInfo, VolumeError};
 
+mod platform;
+
 /// Gets space information for a path.
 ///
 /// On macOS, uses `NSURLVolumeAvailableCapacityForImportantUsageKey` which includes purgeable
@@ -38,47 +40,12 @@ pub(crate) fn live_space_info_for_path(path: &Path) -> Result<SpaceInfo, VolumeE
     get_space_info_statvfs(path)
 }
 
-/// Gets space information using `statvfs`. Used as the primary method on Linux and as a
-/// fallback on macOS, and as macOS's whole answer in a test build (`get_volume_space`).
+/// Gets space information from the filesystem itself: `statvfs` on macOS and Linux,
+/// `GetDiskFreeSpaceExW` on Windows (`space/platform/`). Used as the primary method on Linux
+/// and Windows, as a fallback on macOS, and as macOS's whole answer in a test build
+/// (`get_volume_space`).
 pub(crate) fn get_space_info_statvfs(path: &Path) -> Result<SpaceInfo, VolumeError> {
-    use std::ffi::CString;
-
-    let path_c = CString::new(path.to_string_lossy().as_bytes()).map_err(|e| VolumeError::IoError {
-        message: e.to_string().into(),
-        raw_os_error: None,
-    })?;
-
-    // SAFETY: `path_c` is a valid NUL-terminated C string from `path`; `stat` is a zeroed,
-    // correctly-typed `libc::statvfs` out-buffer the kernel fills, and its fields are only read on
-    // the `== 0` (success) branch where the kernel initialized them.
-    unsafe {
-        let mut stat: libc::statvfs = std::mem::zeroed();
-        if libc::statvfs(path_c.as_ptr(), &mut stat) == 0 {
-            #[allow(clippy::unnecessary_cast, reason = "statvfs field types vary across platforms")]
-            let block_size = stat.f_frsize as u64;
-            #[allow(clippy::unnecessary_cast, reason = "statvfs field types vary across platforms")]
-            let total_bytes = (stat.f_blocks as u64) * block_size;
-            #[allow(clippy::unnecessary_cast, reason = "statvfs field types vary across platforms")]
-            let available_bytes = (stat.f_bavail as u64) * block_size;
-            #[allow(clippy::unnecessary_cast, reason = "statvfs field types vary across platforms")]
-            let used_bytes = total_bytes.saturating_sub((stat.f_bfree as u64) * block_size);
-
-            // ❗ `used` is NOT the complement of `available` here: `statvfs`
-            // reserves blocks that are neither free to a normal user nor holding
-            // anything, so the two come from different fields and `bounded`
-            // (which derives one from the other) would be wrong.
-            Ok(SpaceInfo::Bounded {
-                total_bytes,
-                available_bytes,
-                used_bytes,
-            })
-        } else {
-            Err(VolumeError::IoError {
-                message: "Failed to get space info".into(),
-                raw_os_error: None,
-            })
-        }
-    }
+    platform::filesystem_space(path)
 }
 
 /// Get space information for a volume containing the given path, `None` when the
@@ -130,13 +97,14 @@ thread_local! {
     static NSURL_SPACE_QUERIES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
-#[cfg(all(test, target_os = "linux"))]
+#[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
 mod tests {
     use super::*;
 
     #[test]
     fn the_root_volume_reports_a_bounded_capacity_it_has_not_filled() {
-        let space = get_volume_space("/").expect("statvfs answers for the root");
+        let root = if cfg!(target_os = "windows") { "C:/" } else { "/" };
+        let space = get_volume_space(root).expect("the filesystem answers for the root");
 
         let SpaceInfo::Bounded {
             total_bytes,
@@ -153,7 +121,12 @@ mod tests {
 
     #[test]
     fn a_missing_path_has_no_space() {
-        assert!(get_volume_space("/nonexistent/path/does/not/exist").is_none());
+        let missing = if cfg!(target_os = "windows") {
+            "C:/nonexistent/path/does/not/exist"
+        } else {
+            "/nonexistent/path/does/not/exist"
+        };
+        assert!(get_volume_space(missing).is_none());
     }
 }
 
