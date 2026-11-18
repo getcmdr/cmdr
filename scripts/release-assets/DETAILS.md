@@ -5,7 +5,10 @@
 Each `manifest.Asset` is one published file. Its roles come from two places:
 
 - **Download** (people fetch it: `checksums.txt`, the EU mirror, `latest.json`'s `downloads`) comes from the kind:
-  `dmg`, `pkg`, and the Linux and Windows packages (`appimage`, `deb`, `nsis`, `msix`).
+  `dmg`, `pkg`, the Linux and Windows packages (`appimage`, `deb`, `nsis`, `msix`), and the Group Policy zip
+  (`group-policy`, arch-less, a download but no build, so no SBOM describes it).
+- **Signed** (a `.sig` by the updater key, `File.Signed`): every update payload, plus the advisory list
+  (`advisory-list`), which belongs to no OS (below, § Update payloads off macOS).
 - **Update payload** (signed, in `latest.json`'s `platforms`, vetted, mirrored with its `.sig`) comes from a non-empty
   `UpdaterKey`. One file can be both: the Windows NSIS `-setup.exe` and the Linux AppImage are their OS's update
   payload.
@@ -37,13 +40,39 @@ release without them:
   published as a release asset with its own minisign signature. Without it Windows and Linux show no security notice;
   the update still installs.
 
-Wired so far, ahead of any Windows or Linux row: `release-finish` passes `--app-version` for such a row (`signerArgs`),
-and the validator refuses a signature whose trusted comment lacks `version:<v>` for one (`signatureNamesVersion`), so a
-version-less signature from either signing mode fails `publish` instead of reaching `latest.json`. Left for Windows port
-plan task 52: the rows, the flag in the CI `sign` job (`ci` mode), and the advisory list. The reader's
-`every_field_the_reader_names_is_one_the_writer_writes` (`crates/cmdr-update-manifest/src/tests.rs`) holds that last gap
-open on purpose: it lists `securityAdvisories` as not written yet, against `testdata/v0.61.0/latest.built.json`, the
-fixture both sides share.
+Wired for the Windows rows: `release-finish` passes `--app-version` for such a row (`signerArgs`), the `windows-publish`
+job does the same in `ci` mode (from `plan`'s `signs-version`), and the validator refuses a signature whose trusted
+comment lacks `version:<v>` for one (`signatureNamesVersion`), so a version-less signature from either signing mode
+fails `publish` instead of reaching `latest.json`. `vet-nsis` (`nsis/nsis.go`) then holds the installer's PE version
+resource to the release, since the version the signature names is all the updater checks: an installer from another
+build signed as this one would install that build. It also refuses an Authenticode-signed installer until task 50 pins a
+signer.
+
+The advisory list is a row too (`AdvisoryList`, no OS, `Signed`): `shipped` adds it once some shipped update payload
+signs its version, `latest-json` writes `securityAdvisories` (after `downloads`, so everything before it prints as
+before), and the validator then requires that member, its URL the list's on the mirror and its signature the release's
+own `.sig`. While no such row ships, the reader's `every_field_the_reader_names_is_one_the_writer_writes`
+(`crates/cmdr-update-manifest/src/tests.rs`) keeps listing `securityAdvisories` as not written, against
+`testdata/v0.61.0/latest.built.json`, which a macOS-only release still matches; the release that turns Windows on drops
+it from `NOT_WRITTEN_YET` with a fixture that carries the member.
+
+## Shipped and wired rows
+
+`Assets` holds every platform's rows; `ShippedOSes` (`[macos]` today) picks which a release publishes, and `For`
+resolves only those, so `latest.json`, the checksums, the mirror, `release-finish`, and `release-evidence` agree. `All`
+resolves every row for `plan`'s wiring checks: the `-vetted` OSes and `-attested` SBOMs must cover the unshipped Windows
+rows too, so the jobs that build, vet, and attest them stay in place while they're skipped. `plan`'s `ships-<os>` gates
+those jobs (`windows-build`, `windows-publish`, and the Windows steps of `vet-update-archives` and `attest`), and the
+dry run reports each skipped step, so a renamed output or a broken condition shows in the goldens.
+
+Decision/Why: a code constant, not a repository variable. Every tool, the laptop's `release-finish` included, must agree
+on what a release holds, and a constant is reviewed, versioned, and the same everywhere; a variable would be read by the
+workflow alone and could flip a release's contents without a commit. Turning a platform on is then one reviewed line
+plus the test that pins it (`TestWindowsShipsOnlyOnceTurnedOn`).
+
+What the dry run doesn't cover yet: the Windows jobs themselves (they run Windows and the Tauri CLI) and a dry run with
+Windows shipped. `TestPlanForAWindowsRelease`, `TestLatestJSONTakesTheWindowsRows`, and the `windows-package` and `nsis`
+tests cover the Go halves; the first release with Windows on is the one to watch.
 
 ## Who reads it
 

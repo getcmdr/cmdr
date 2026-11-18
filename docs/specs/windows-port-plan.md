@@ -660,6 +660,13 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     - **Ship no `Policies` keys inside the MSIX**: a packaged app reads the real policy hive through a merged view with
       the package's own keys, so a shipped key would mix into what admins set (Microsoft Learn's MSIX registry
       virtualization page, read 2026-11-18). Task 57 holds the read-only half.
+    - **Wired, off by default** (2026-11-18): the manifest rows (NSIS as `windows-x86_64`, MSIX, the Windows Rust SBOM,
+      task 53's Group Policy zip, and the signed advisory list), `ShippedOSes = [macos]` as the one switch, the
+      `windows-build` and `windows-publish` jobs, `vet-nsis`, `securityAdvisories` in `latest.json`, and
+      `scripts/windows-package/` (MSIX via winapp, unsigned, from the unbundled exe so its updater stays off; no
+      registry keys). `docs/guides/releasing.md` § Windows releases has the flow and David's steps (Partner Center
+      account, the product identity into `apps/desktop/packaging/msix/identity.json`, copy review, the switch).
+      `NOT_WRITTEN_YET` keeps `securityAdvisories` until the release that turns Windows on.
 53. [S] Windows. Release vetting and distribution: `deny.toml` triple, third-party notices and SBOM, checksums for both
     packages, and a winget manifest for the NSIS installer. Needs 52.
     - **The Group Policy template**: attach `apps/desktop/packaging/group-policy/` to each release as one zip

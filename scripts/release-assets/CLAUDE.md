@@ -6,16 +6,19 @@ targets), and the CLI the release pipeline's shell steps call (`../release-asset
 
 ## Module map
 
-- `manifest/manifest.go`: the rows, `Validate`, and the derived lists (updates, downloads, binaries, SBOMs, subjects).
-  `release-finish`, `release-mirror`, and `release-evidence` import it (`replace` in their `go.mod`).
+- `manifest/manifest.go`: the rows, `ShippedOSes` (the platform switch), `Validate`, and the derived lists (updates,
+  signed files, downloads, binaries, SBOMs, subjects). `release-finish`, `release-mirror`, and `release-evidence` import
+  it (`replace` in their `go.mod`).
 - `plan.go` (the `guard` job's step outputs), `latest.go` + `jsonout.go` (`latest.json`), `validate.go` (the one
-  `latest.json` validator), `main.go` (the CLI).
+  `latest.json` validator), `nsis/` (`vet-nsis`, the Windows installer's version check), `main.go` (the CLI).
 - `pipeline_test.go` + `workflow_test.go`: the dry run of `release-pipeline.yml` against v0.61.0 (`testdata/`).
 
 ## Must-knows
 
-- **A new platform is rows, plus the jobs that build, vet, and attest it.** `plan` fails until `vet-update-archives`
-  vets the OS (`-vetted`) and `attest` has a step per SBOM (`-attested`); `Validate` fails a build with no Rust SBOM.
+- **A new platform is rows, plus the jobs that build, vet, and attest it, then its OS in `ShippedOSes`.** `plan` fails
+  until `vet-update-archives` vets the OS (`-vetted`) and `attest` has a step per SBOM (`-attested`), for every row
+  shipped or not; `Validate` fails a build with no Rust SBOM. Windows is wired and off: ❌ adding it to `ShippedOSes` is
+  David's call (`docs/guides/releasing.md` § Windows releases).
 - **`latest.json` stays byte-stable**: `jsonout.go` prints what `jq --indent 2` printed, and the update rows run
   universal first, the platform order of every manifest so far. Tests hold it to v0.61.0's published bytes, and
   `testdata/v0.61.0/latest.built.json` (the Rust readers' fixture) to today's output.
