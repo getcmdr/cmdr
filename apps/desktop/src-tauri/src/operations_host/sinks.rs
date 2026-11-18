@@ -37,9 +37,11 @@ impl TauriEventSink {
 
 impl OperationEventSink for TauriEventSink {
     fn emit_progress(&self, event: WriteProgressEvent) {
+        crate::shell_progress::note_progress(&self.app, &event);
         let _ = wire::WriteProgress(event).emit(&self.app);
     }
     fn emit_complete(&self, event: WriteCompleteEvent) {
+        crate::shell_progress::note_completed(&self.app, &event.operation_id);
         terminal_effects::complete(&self.effects(), event, |event| {
             let _ = wire::WriteComplete(event).emit(&self.app);
         });

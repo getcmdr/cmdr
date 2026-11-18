@@ -467,6 +467,18 @@ pub struct TransferActivity {
     pub reconnecting_volume: Option<String>,
 }
 
+impl TransferActivity {
+    /// The operation is held by a PERSON: paused, or parked on an unanswered
+    /// conflict. A stall on a slow volume, a reconnect, or an unexplained wait
+    /// is not: nobody can resume those by acting.
+    pub fn is_held_by_a_person(&self) -> bool {
+        matches!(
+            self.waiting_on,
+            TransferWaitReason::Paused | TransferWaitReason::Conflict
+        )
+    }
+}
+
 // ============================================================================
 // Retrying a failed operation
 // ============================================================================

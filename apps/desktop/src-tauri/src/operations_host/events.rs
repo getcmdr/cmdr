@@ -47,6 +47,7 @@ impl EngineEvents for TauriEngineEvents {
         let Some(app) = &self.app else {
             return;
         };
+        crate::shell_progress::note_operations(app, &snapshot.operations);
         if let Err(e) = wire::OperationsChanged(snapshot).emit(app) {
             log::warn!(target: "op_manager", "failed to emit operations-changed: {e}");
         }
@@ -105,6 +106,7 @@ impl EngineEvents for TauriEngineEvents {
         let Some(app) = &self.app else {
             return;
         };
+        crate::shell_progress::note_progress(app, &event);
         let tick = wire::WriteProgress(event);
         if let Err(e) = tick.emit(app) {
             log::warn!(target: "op_manager", "failed to forward scan progress for op={}: {e}", tick.0.operation_id);

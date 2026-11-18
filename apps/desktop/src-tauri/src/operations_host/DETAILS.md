@@ -97,7 +97,10 @@ backfill steps, emitted by `commands/operation_log.rs`), here because it needs t
 
 ## What each fact becomes
 
-- `operations_changed` → the `operations-changed` event (a failed emit `warn!`s under `op_manager`).
+- `operations_changed` → the `operations-changed` event (a failed emit `warn!`s under `op_manager`). The
+  snapshot also reaches `shell_progress::note_operations` first, the OS progress bar's row set
+  (`apps/desktop/src-tauri/src/shell_progress/CLAUDE.md`). So do `scan_wait_progress` and the sink's `emit_progress`
+  (`note_progress`) and `emit_complete` (`note_completed`), each before its emit.
 - `volumes_busy_changed` → `volumes-busy-changed`, wrapped in `VolumesBusyChanged`, an event struct this module owns
   outright since the engine only reports the ids (a failed emit is a `log_error!` under `eject`).
 - `transfer_started` / `transfer_finished` → `priority::transfers::note_transfer_started` / `_finished`.
