@@ -43,9 +43,9 @@
   "@shortcuts.section.resetAll": {
     "sourceHash": "6580e10"
   },
-  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Edit shortcuts in Preferences} linuxKde {Edit shortcuts in Configure Cmdr} other {Editar atajos en Configuración}}",
+  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Editar atajos en Preferencias} linuxKde {Editar atajos en Configurar Cmdr} other {Editar atajos en Configuración}}",
   "@shortcuts.window.editInSettings": {
-    "sourceHash": "faa5b37"
+    "sourceHash": "ec131e0"
   },
   "shortcuts.section.resetAllConfirm": "¿Restablecer todos los atajos de teclado a sus valores predeterminados?",
   "@shortcuts.section.resetAllConfirm": {

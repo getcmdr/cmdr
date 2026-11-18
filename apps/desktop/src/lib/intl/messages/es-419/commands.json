@@ -3,9 +3,9 @@
   "@commands.appLicenseKey.enterKey.label": {
     "sourceHash": "e5dac0a"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Abrir la configuración}}",
+  "commands.appSettings.label": "{platform, select, linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir la configuración}}",
   "@commands.appSettings.label": {
-    "sourceHash": "3e708b0"
+    "sourceHash": "7fc2223"
   },
   "commands.helpSendErrorReport.label": "Enviar reporte de error…",
   "@commands.helpSendErrorReport.label": {
@@ -143,13 +143,13 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "c46a8a3"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Preferences, under Navigation & file ops.} linuxKde {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Configure Cmdr, under Navigation & file ops.} other {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configuración, en “Navegación y operaciones de archivos”.}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Preferencias, en “Navegación y operaciones de archivos”.} linuxKde {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configurar Cmdr, en “Navegación y operaciones de archivos”.} other {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configuración, en “Navegación y operaciones de archivos”.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "1942df6"
+    "sourceHash": "bee23b7"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Abrir la configuración}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir la configuración}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "3e708b0"
+    "sourceHash": "7fc2223"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} ya no está instalada, así que esto se abrió en Terminal.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -167,9 +167,9 @@
   "@commands.suggestedOpsShow.description": {
     "sourceHash": "121ceeb"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Log storage is off. Set a disk space limit above 0 in Preferences > Advanced, then restart Cmdr to view the debug log.} linuxKde {Log storage is off. Set a disk space limit above 0 in Configure Cmdr > Advanced, then restart Cmdr to view the debug log.} other {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configuración > Avanzado y reinicia Cmdr para ver el registro de depuración.}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Preferencias > Avanzado y reinicia Cmdr para ver el registro de depuración.} linuxKde {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configurar Cmdr > Avanzado y reinicia Cmdr para ver el registro de depuración.} other {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configuración > Avanzado y reinicia Cmdr para ver el registro de depuración.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "2bf377a"
+    "sourceHash": "28b8a1d"
   },
   "commands.handler.getInfo.openAutomationSettings": "Abrir la configuración de {automation}",
   "@commands.handler.getInfo.openAutomationSettings": {
@@ -203,9 +203,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "b241432"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Quita del Llavero la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} windows {Quita del Administrador de credenciales la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} linuxKde {Quita de KWallet la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} other {Quita de tu llavero la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Quita del Llavero la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} windows {Quita del Administrador de credenciales la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} linuxKde {Quita de la cartera de KDE la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} other {Quita de tu llavero la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "0151234"
+    "sourceHash": "b57d5b7"
   },
   "commands.multiRenameInsertField.label": "Insertar un campo de foto, video o música",
   "@commands.multiRenameInsertField.label": {

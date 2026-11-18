@@ -35,9 +35,9 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Abrir los ajustes}}",
+  "commands.appSettings.label": "{platform, select, linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir los ajustes}}",
   "@commands.appSettings.label": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "commands.appCheckForUpdates.label": "Buscar actualizaciones…",
   "@commands.appCheckForUpdates.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Quita del Llavero la contraseña guardada de la copia de seguridad de restic en la que estás y vuelve a bloquearla} windows {Quita del Administrador de credenciales la contraseña guardada de la copia de seguridad de restic en la que estás y vuelve a bloquearla} linuxKde {Quita de KWallet la contraseña guardada de la copia de seguridad de restic en la que estás y vuelve a bloquearla} other {Quita de tu llavero la contraseña guardada de la copia de seguridad de restic en la que estás y vuelve a bloquearla}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Quita del Llavero la contraseña guardada de la copia de seguridad de restic en la que estás y vuelve a bloquearla} windows {Quita del Administrador de credenciales la contraseña guardada de la copia de seguridad de restic en la que estás y vuelve a bloquearla} linuxKde {Quita de la cartera de KDE la contraseña guardada de la copia de seguridad de restic en la que estás y vuelve a bloquearla} other {Quita de tu llavero la contraseña guardada de la copia de seguridad de restic en la que estás y vuelve a bloquearla}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "5b48a77"
+    "sourceHash": "e7106da"
   },
   "commands.fileCopyShareLink.label": "Copiar enlace para compartir (siete días)",
   "@commands.fileCopyShareLink.label": {
@@ -1264,17 +1264,17 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Preferences, under Navigation & file ops.} linuxKde {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Configure Cmdr, under Navigation & file ops.} other {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Ajustes, en “Navegación y operaciones de archivos”.}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Preferencias, en “Navegación y operaciones de archivos”.} linuxKde {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configurar Cmdr, en “Navegación y operaciones de archivos”.} other {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Ajustes, en “Navegación y operaciones de archivos”.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b29b744"
+    "sourceHash": "b73c1db"
   },
   "commands.handler.openTerminalHere.dismiss": "Descartar",
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Abrir los ajustes}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir los ajustes}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} ya no está instalada, así que esto se ha abierto en Terminal.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1344,9 +1344,9 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Log storage is off. Set a disk space limit above 0 in Preferences > Advanced, then restart Cmdr to view the debug log.} linuxKde {Log storage is off. Set a disk space limit above 0 in Configure Cmdr > Advanced, then restart Cmdr to view the debug log.} other {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Ajustes > Avanzado y reinicia Cmdr para ver el registro de depuración.}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Preferencias > Avanzado y reinicia Cmdr para ver el registro de depuración.} linuxKde {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configurar Cmdr > Avanzado y reinicia Cmdr para ver el registro de depuración.} other {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Ajustes > Avanzado y reinicia Cmdr para ver el registro de depuración.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "96f16fc"
+    "sourceHash": "bda730a"
   },
   "commands.handler.viewDebugLog.unavailable": "No se ha podido abrir el registro de depuración. Inténtalo de nuevo.",
   "@commands.handler.viewDebugLog.unavailable": {

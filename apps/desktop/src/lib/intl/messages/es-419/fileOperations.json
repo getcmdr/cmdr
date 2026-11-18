@@ -299,9 +299,9 @@
   "@fileOperations.transferTree.state.failed": {
     "sourceHash": "e51a766"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Cmdr starts on this choice next time, and you can change it in Preferences. If it overwrites files, you’ll see a warning first.} linuxKde {Cmdr starts on this choice next time, and you can change it in Configure Cmdr. If it overwrites files, you’ll see a warning first.} other {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Configuración. Si sobrescribe archivos, verás un aviso antes.}}",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Preferencias. Si sobrescribe archivos, verás un aviso antes.} linuxKde {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Configurar Cmdr. Si sobrescribe archivos, verás un aviso antes.} other {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Configuración. Si sobrescribe archivos, verás un aviso antes.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "f743019"
+    "sourceHash": "6d51cf7"
   },
   "fileOperations.alreadyGone.one": "“{name}” ya no estaba. Seguramente se movió o se eliminó desde otra app.",
   "@fileOperations.alreadyGone.one": {

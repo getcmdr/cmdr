@@ -67,9 +67,9 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Activa la indexación de imágenes para esta unidad de red en Ajustes para buscar el texto dentro de sus fotos.}}",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Activa la indexación de imágenes para esta unidad de red en Preferencias para buscar el texto dentro de sus fotos.} linuxKde {Activa la indexación de imágenes para esta unidad de red en Configurar Cmdr para buscar el texto dentro de sus fotos.} other {Activa la indexación de imágenes para esta unidad de red en Ajustes para buscar el texto dentro de sus fotos.}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "ccf901b"
+    "sourceHash": "30b2455"
   },
   "search.imageResults.paused": "Esta unidad está desconectada, así que estas son las fotos indexadas hasta ahora.",
   "@search.imageResults.paused": {
@@ -219,9 +219,9 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {La indexación de unidades está desactivada en Ajustes, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.}}",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {La indexación de unidades está desactivada en Preferencias, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.} linuxKde {La indexación de unidades está desactivada en Configurar Cmdr, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.} other {La indexación de unidades está desactivada en Ajustes, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "abfe24b"
+    "sourceHash": "7c4ff62"
   },
   "search.coverage.toast.deferredUntilSearchEnds": "Cmdr ya está buscando en {drive}. La indexación empezará en cuanto termine.",
   "@search.coverage.toast.deferredUntilSearchEnds": {

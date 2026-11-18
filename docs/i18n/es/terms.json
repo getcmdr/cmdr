@@ -1890,8 +1890,8 @@
     },
     "other": {
       "chosen": "llavero",
-      "accept": ["depósito de claves", "KWallet"],
-      "note": "Linux branches: the generic keyring is llavero; GNOME's own branch says depósito de claves, Seahorse's word (Contraseñas y claves: “El depósito de claves está bloqueado”, l10n.gnome.org seahorse.main es.po, 2026-11-18); KDE names its store KWallet and its manager KWalletManager, kept as names, with a wallet → cartera (kwalletmanager.po)"
+      "accept": ["depósito de claves", "cartera de KDE"],
+      "note": "Linux branches: the generic keyring is llavero; GNOME's own branch says depósito de claves, Seahorse's word (Contraseñas y claves: “El depósito de claves está bloqueado”, l10n.gnome.org seahorse.main es.po, 2026-11-18); KDE's store (English KDE Wallet) is la cartera de KDE, as KDE Spanish writes it (kwalletd6.po: The KDE Wallet System → El sistema de cartera de KDE, KDE Wallet Service → Servicio de cartera de KDE; kwalletmanager.po: Wallet → Cartera), and its manager KWalletManager stays a name, as kwalletmanager.po keeps it. Verified read-only on websvn.kde.org trunk/l10n-kf6 es, 2026-11-18."
     }
   },
   "kind": {
@@ -3002,7 +3002,7 @@
   "settings": {
     "chosen": "Ajustes",
     "accept": ["ajuste"],
-    "forms": "capitalized even when English says lowercase settings (en Ajustes, en Ajustes avanzados); the window Ajustes; Open Settings (the window) → Abrir Ajustes; Open settings (the concept) → Abrir los ajustes",
+    "forms": "capitalized even when English says lowercase settings (en Ajustes, en Ajustes avanzados); the window Ajustes; Open Settings (the window) → Abrir Ajustes; Open settings (the concept) → Abrir los ajustes. Windows reads the same Ajustes (Cmdr's own window, not the Windows Settings app). Linux desktop branches name the window as that desktop titles it: linuxGnome Preferencias (en Preferencias > IA, Abrir Preferencias / Abrir las preferencias; Nautilus _Preferences → Prefere_ncias); linuxKde Configurar Cmdr, window title Configurar – Cmdr (en Configurar Cmdr > IA, the button Configurar Cmdr; kconfigwidgets6.po &Configure %1… → &Configurar %1…, dolphin.po Configure Dolphin > View → Configurar Dolphin > Vista, websvn.kde.org trunk/l10n-kf6 es, 2026-11-18). The window title and menu.app.settings start with the same word on every desktop.",
     "avoid": [
       {
         "form": "Configuración",

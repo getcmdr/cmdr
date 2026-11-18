@@ -1632,7 +1632,7 @@
   },
   "settings.analytics.enabled.description": "{platform, select, windows {Actívalo para ayudarnos a ver qué funciones importan durante la beta abierta.\nLas estadísticas no se vinculan a tu nombre ni a tu correo, sino a un identificador aleatorio.\nCmdr nunca envía nombres de archivo, rutas, términos de búsqueda ni prompts.\nSi está desactivado, Cmdr no envía ninguna estadística.} other {Actívalo para ayudarnos a ver qué funciones importan durante la beta abierta.\nLas estadísticas no se vinculan a tu nombre ni a tu correo, sino a un identificador aleatorio.\nCmdr nunca envía nombres de archivo, rutas, términos de búsqueda ni prompts.\nSi está desactivado, Cmdr no envía ninguna estadística.}}",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
+    "sourceHash": "dbbd8c8"
   },
   "settings.analytics.enabled.keywords": "estadísticas, analíticas, uso, privacidad, telemetría, beta, seguimiento, rastreo, desactivar",
   "@settings.analytics.enabled.keywords": {
@@ -1656,7 +1656,7 @@
   },
   "settings.updates.crashReports.description": "{platform, select, macos {Envía automáticamente un informe cuando Cmdr se cierra inesperadamente o tiene un problema en segundo plano. Incluye la versión de la app, la versión de macOS y qué parte del código tuvo el problema. Nunca nombres de archivo ni datos personales.} windows {Envía automáticamente un informe cuando Cmdr se cierra inesperadamente o tiene un problema en segundo plano. Incluye la versión de la app, la versión de Windows y qué parte del código tuvo el problema. Nunca nombres de archivo ni datos personales.} other {Envía automáticamente un informe cuando Cmdr se cierra inesperadamente o tiene un problema en segundo plano. Incluye la versión de la app, la distribución de Linux y su versión, y qué parte del código tuvo el problema. Nunca nombres de archivo ni datos personales.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "3042746"
   },
   "settings.updates.crashReports.keywords": "fallo, fallos, cierre inesperado, informe, informe de fallos, privacidad, telemetría, bug, error",
   "@settings.updates.crashReports.keywords": {
@@ -1996,7 +1996,7 @@
   },
   "settings.advanced.logLlmCalls.description": "{platform, select, macos {Guarda cada solicitud y respuesta de la IA en una carpeta local (llm-logs) para depurar. Estos archivos se quedan en tu Mac e incluyen los nombres y rutas de archivo que Cmdr envía a tu proveedor.} windows {Guarda cada solicitud y respuesta de la IA en una carpeta local (llm-logs) para depurar. Estos archivos se quedan en tu PC e incluyen los nombres y rutas de archivo que Cmdr envía a tu proveedor.} other {Guarda cada solicitud y respuesta de la IA en una carpeta local (llm-logs) para depurar. Estos archivos se quedan en tu ordenador e incluyen los nombres y rutas de archivo que Cmdr envía a tu proveedor.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "427e138"
   },
   "settings.advanced.logLlmCalls.keywords": "IA, registro, log, depuración, depurar, petición, solicitud, respuesta, prompt, instrucción",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2509,13 +2509,13 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr usa el proveedor de IA y la clave que has configurado en Ajustes › IA ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr usa el proveedor de IA y la clave que has configurado en Preferencias › IA ({provider}).} linuxKde {Cmdr usa el proveedor de IA y la clave que has configurado en Configurar Cmdr › IA ({provider}).} other {Cmdr usa el proveedor de IA y la clave que has configurado en Ajustes › IA ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
+    "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Activa un proveedor de IA en Ajustes › IA para empezar a chatear.}}",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Activa un proveedor de IA en Preferencias › IA para empezar a chatear.} linuxKde {Activa un proveedor de IA en Configurar Cmdr › IA para empezar a chatear.} other {Activa un proveedor de IA en Ajustes › IA para empezar a chatear.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
+    "sourceHash": "0196a5c"
   },
   "settings.askCmdr.interactiveModel.label": "Modelo de Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2959,9 +2959,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {Secciones de ajustes}}",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {Secciones de preferencias} other {Secciones de ajustes}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "4fa3c2e"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Ningún ajuste coincide} one {{countText} sección coincide} many {{countText} secciones coinciden} other {{countText} secciones coinciden}}",
   "@settings.sidebar.matchCount": {
@@ -3215,7 +3215,7 @@
   },
   "settings.securityLog.enabled.description": "{platform, select, macos {Guarda en este Mac un pequeño archivo que anota los cambios y rechazos relacionados con la seguridad, como el consentimiento para la IA en la nube, una actualización instalada o una app rechazada por el servidor MCP. No contiene nombres de archivo, contenidos ni contraseñas, y nunca sale de tu Mac.} windows {Guarda en este PC un pequeño archivo que anota los cambios y rechazos relacionados con la seguridad, como el consentimiento para la IA en la nube, una actualización instalada o una app rechazada por el servidor MCP. No contiene nombres de archivo, contenidos ni contraseñas, y nunca sale de tu PC.} other {Guarda en este ordenador un pequeño archivo que anota los cambios y rechazos relacionados con la seguridad, como el consentimiento para la IA en la nube, una actualización instalada o una app rechazada por el servidor MCP. No contiene nombres de archivo, contenidos ni contraseñas, y nunca sale de tu ordenador.}}",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
+    "sourceHash": "7086b00"
   },
   "settings.securityLog.enabled.keywords": "seguridad, registro, auditoría, grabar, eventos, acceso, privacidad",
   "@settings.securityLog.enabled.keywords": {
@@ -3430,9 +3430,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Ajustes}}",
+  "settings.window.title": "{platform, select, linuxGnome {Preferencias} linuxKde {Configurar – Cmdr} other {Ajustes}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "80cee55"
   },
   "settings.window.loading": "Cargando ajustes…",
   "@settings.window.loading": {
@@ -3678,13 +3678,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Un elemento en Acceso a Llaveros con el nombre “{itemName}”} many {{countText} elementos en Acceso a Llaveros con el nombre “{itemName}”} other {{countText} elementos en Acceso a Llaveros con el nombre “{itemName}”}}} windows {{count, plural, one {Una credencial en el Administrador de credenciales con el nombre “{itemName}”} many {{countText} credenciales en el Administrador de credenciales con el nombre “{itemName}”} other {{countText} credenciales en el Administrador de credenciales con el nombre “{itemName}”}}} linuxKde {{count, plural, one {Un elemento en KWallet con el nombre “{itemName}”} many {{countText} elementos en KWallet con el nombre “{itemName}”} other {{countText} elementos en KWallet con el nombre “{itemName}”}}} other {{count, plural, one {Un elemento en tu llavero con el nombre “{itemName}”} many {{countText} elementos en tu llavero con el nombre “{itemName}”} other {{countText} elementos en tu llavero con el nombre “{itemName}”}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Un elemento en Acceso a Llaveros con el nombre “{itemName}”} many {{countText} elementos en Acceso a Llaveros con el nombre “{itemName}”} other {{countText} elementos en Acceso a Llaveros con el nombre “{itemName}”}}} windows {{count, plural, one {Una credencial en el Administrador de credenciales con el nombre “{itemName}”} many {{countText} credenciales en el Administrador de credenciales con el nombre “{itemName}”} other {{countText} credenciales en el Administrador de credenciales con el nombre “{itemName}”}}} linuxKde {{count, plural, one {Un elemento en la cartera de KDE con el nombre “{itemName}”} many {{countText} elementos en la cartera de KDE con el nombre “{itemName}”} other {{countText} elementos en la cartera de KDE con el nombre “{itemName}”}}} other {{count, plural, one {Un elemento en tu llavero con el nombre “{itemName}”} many {{countText} elementos en tu llavero con el nombre “{itemName}”} other {{countText} elementos en tu llavero con el nombre “{itemName}”}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Los elementos que haya en Acceso a Llaveros con el nombre “{itemName}”} windows {Las credenciales que haya en el Administrador de credenciales con el nombre “{itemName}”} linuxKde {Los elementos que haya en KWallet con el nombre “{itemName}”} other {Los elementos que haya en tu llavero con el nombre “{itemName}”}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Los elementos que haya en Acceso a Llaveros con el nombre “{itemName}”} windows {Las credenciales que haya en el Administrador de credenciales con el nombre “{itemName}”} linuxKde {Los elementos que haya en la cartera de KDE con el nombre “{itemName}”} other {Los elementos que haya en tu llavero con el nombre “{itemName}”}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Salir de Cmdr} other {Salir de Cmdr}}",
   "@settings.dataWipe.quit": {

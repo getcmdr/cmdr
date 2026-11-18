@@ -143,8 +143,8 @@
   "@aboutThis.verdict.unavailable.openAiSettings": {
     "sourceHash": "1994c72"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Hide this hint. You can bring it back in Preferences > Advanced.} linuxKde {Hide this hint. You can bring it back in Configure Cmdr > Advanced.} other {Oculta este aviso. Puedes recuperarlo en Configuración > Avanzado.}}",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Oculta este aviso. Puedes recuperarlo en Preferencias > Avanzado.} linuxKde {Oculta este aviso. Puedes recuperarlo en Configurar Cmdr > Avanzado.} other {Oculta este aviso. Puedes recuperarlo en Configuración > Avanzado.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "e0bb86a"
+    "sourceHash": "f621a69"
   }
 }

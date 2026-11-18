@@ -1,7 +1,7 @@
 {
-  "ai.translateError.off.body": "{platform, select, linuxGnome {Turn on a provider in Preferences > AI to use AI search.} linuxKde {Turn on a provider in Configure Cmdr > AI to use AI search.} other {Activa un proveedor en Configuración > IA para usar la búsqueda con IA.}}",
+  "ai.translateError.off.body": "{platform, select, linuxGnome {Activa un proveedor en Preferencias > IA para usar la búsqueda con IA.} linuxKde {Activa un proveedor en Configurar Cmdr > IA para usar la búsqueda con IA.} other {Activa un proveedor en Configuración > IA para usar la búsqueda con IA.}}",
   "@ai.translateError.off.body": {
-    "sourceHash": "f566ad2"
+    "sourceHash": "485bbf8"
   },
   "ai.cloudConsent.askCmdr.contentsRule": "Cmdr nunca envía archivos completos, fotos ni miniaturas. Cuando necesita saber más sobre un archivo, puede leer una parte limitada de su contenido: algunas líneas de texto, unas pocas páginas de un PDF junto con su título y su autor, la lista de archivos que contiene un archivo comprimido o los datos de la cámara de una foto, incluido el lugar donde se tomó. La búsqueda de fotos funciona igual: el texto que Cmdr reconoció dentro de las fotos coincidentes y sus etiquetas se envían a tu proveedor para que pueda encontrarlas.",
   "@ai.cloudConsent.askCmdr.contentsRule": {
@@ -27,21 +27,21 @@
   "@ai.cloudConsent.notSaved": {
     "sourceHash": "ba70ae3"
   },
-  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Finish your provider setup in Preferences > AI, then try again.} linuxKde {Finish your provider setup in Configure Cmdr > AI, then try again.} other {Termina de configurar tu proveedor en Configuración > IA y vuelve a intentarlo.}}",
+  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Termina de configurar tu proveedor en Preferencias > IA y vuelve a intentarlo.} linuxKde {Termina de configurar tu proveedor en Configurar Cmdr > IA y vuelve a intentarlo.} other {Termina de configurar tu proveedor en Configuración > IA y vuelve a intentarlo.}}",
   "@ai.translateError.notConfigured.body": {
-    "sourceHash": "4fdbfed"
+    "sourceHash": "1e6f64b"
   },
-  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Allow it in Preferences > AI, then try again.} linuxKde {Allow it in Configure Cmdr > AI, then try again.} other {Permítela en Configuración > IA y vuelve a intentarlo.}}",
+  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Permítela en Preferencias > IA y vuelve a intentarlo.} linuxKde {Permítela en Configurar Cmdr > IA y vuelve a intentarlo.} other {Permítela en Configuración > IA y vuelve a intentarlo.}}",
   "@ai.translateError.noCloudConsent.body": {
-    "sourceHash": "2dc432d"
+    "sourceHash": "31ff033"
   },
   "ai.translateError.authFailed.title": "Se rechazó esa clave de API",
   "@ai.translateError.authFailed.title": {
     "sourceHash": "a536b77"
   },
-  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Check your key in Preferences > AI - it might be wrong or revoked.} linuxKde {Check your key in Configure Cmdr > AI - it might be wrong or revoked.} other {Revisa tu clave en Configuración > IA: puede estar mal o revocada.}}",
+  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Revisa tu clave en Preferencias > IA: puede estar mal o revocada.} linuxKde {Revisa tu clave en Configurar Cmdr > IA: puede estar mal o revocada.} other {Revisa tu clave en Configuración > IA: puede estar mal o revocada.}}",
   "@ai.translateError.authFailed.body": {
-    "sourceHash": "745aa36"
+    "sourceHash": "a8d77d7"
   },
   "ai.translateError.rateLimited.body": "Está limitando las solicitudes o tu plan se quedó sin cuota. Revisa tu plan y tu facturación, y vuelve a intentarlo.",
   "@ai.translateError.rateLimited.body": {
@@ -59,9 +59,9 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "0a7dd7e"
   },
-  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Preferences > AI.} linuxKde {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Configure Cmdr > AI.} other {Puede que tu modelo haya agotado su presupuesto de tokens antes de responder. Prueba un modelo más rápido como gpt-4.1-mini en Configuración > IA.}}",
+  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Puede que tu modelo haya agotado su presupuesto de tokens antes de responder. Prueba un modelo más rápido como gpt-4.1-mini en Preferencias > IA.} linuxKde {Puede que tu modelo haya agotado su presupuesto de tokens antes de responder. Prueba un modelo más rápido como gpt-4.1-mini en Configurar Cmdr > IA.} other {Puede que tu modelo haya agotado su presupuesto de tokens antes de responder. Prueba un modelo más rápido como gpt-4.1-mini en Configuración > IA.}}",
   "@ai.translateError.emptyResponse.body": {
-    "sourceHash": "811dc44"
+    "sourceHash": "a9232e6"
   },
   "ai.translateError.serverError.title": "Tu proveedor de IA tuvo un contratiempo",
   "@ai.translateError.serverError.title": {
@@ -71,13 +71,13 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "a481e2c"
   },
-  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Try again, or pick a different model in Preferences > AI.} linuxKde {Try again, or pick a different model in Configure Cmdr > AI.} other {Inténtalo de nuevo o elige otro modelo en Configuración > IA.}}",
+  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Inténtalo de nuevo o elige otro modelo en Preferencias > IA.} linuxKde {Inténtalo de nuevo o elige otro modelo en Configurar Cmdr > IA.} other {Inténtalo de nuevo o elige otro modelo en Configuración > IA.}}",
   "@ai.translateError.parseError.body": {
-    "sourceHash": "ca8bb33"
+    "sourceHash": "84d175d"
   },
-  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Pick a provider in Preferences > AI.} linuxKde {Pick a provider in Configure Cmdr > AI.} other {Elige un proveedor en Configuración > IA.}}",
+  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Elige un proveedor en Preferencias > IA.} linuxKde {Elige un proveedor en Configurar Cmdr > IA.} other {Elige un proveedor en Configuración > IA.}}",
   "@ai.translateError.unknownProvider.body": {
-    "sourceHash": "288f27c"
+    "sourceHash": "b6e4b56"
   },
   "ai.cloud.genericError": "Algo salió mal",
   "@ai.cloud.genericError": {
@@ -91,9 +91,9 @@
   "@ai.cloud.providerRefused": {
     "sourceHash": "e59b6f3"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {No se pudo guardar tu clave de API: el Llavero de macOS denegó el acceso} other {No se pudo leer tu clave de API guardada: el Llavero de macOS denegó el acceso}}} windows {{op, select, save {No se pudo guardar tu clave de API: el Administrador de credenciales denegó el acceso} other {No se pudo leer tu clave de API guardada: el Administrador de credenciales denegó el acceso}}} linuxKde {{op, select, save {No se pudo guardar tu clave de API: KWallet denegó el acceso} other {No se pudo leer tu clave de API guardada: KWallet denegó el acceso}}} other {{op, select, save {No se pudo guardar tu clave de API: el llavero del sistema denegó el acceso} other {No se pudo leer tu clave de API guardada: el llavero del sistema denegó el acceso}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {No se pudo guardar tu clave de API: el Llavero de macOS denegó el acceso} other {No se pudo leer tu clave de API guardada: el Llavero de macOS denegó el acceso}}} windows {{op, select, save {No se pudo guardar tu clave de API: el Administrador de credenciales denegó el acceso} other {No se pudo leer tu clave de API guardada: el Administrador de credenciales denegó el acceso}}} linuxKde {{op, select, save {No se pudo guardar tu clave de API: la cartera de KDE denegó el acceso} other {No se pudo leer tu clave de API guardada: la cartera de KDE denegó el acceso}}} other {{op, select, save {No se pudo guardar tu clave de API: el llavero del sistema denegó el acceso} other {No se pudo leer tu clave de API guardada: el llavero del sistema denegó el acceso}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "92ecd14"
+    "sourceHash": "0a341cf"
   },
   "ai.secretError.body": "{platform, select, macos {{op, select, save {Abre Acceso a Llaveros y revisa la entrada “Cmdr”, o elimínala e intenta guardar de nuevo.} other {Abre Acceso a Llaveros, busca la entrada “Cmdr”, concede el acceso o elimínala y vuelve a ingresar tu clave.}}} windows {{op, select, save {Abre el Administrador de credenciales, revisa la entrada “Cmdr” en Credenciales de Windows, o quítala e intenta guardar de nuevo.} other {Abre el Administrador de credenciales, busca la entrada “Cmdr” en Credenciales de Windows, o quítala y vuelve a ingresar tu clave.}}} linuxGnome {Desbloquea tu depósito de claves en Contraseñas y claves e inténtalo de nuevo.} linuxKde {Desbloquea tu cartera en KWalletManager e inténtalo de nuevo.} other {Desbloquea tu llavero (la app de Contraseñas o Llaveros) e inténtalo de nuevo.}}",
   "@ai.secretError.body": {
