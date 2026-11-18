@@ -136,8 +136,8 @@ wording into `terms.json` (and `decisions.md` when the reason is worth keeping).
 ## Bascules
 
 - `commands.tagsToggle*.label` ship `Activer/désactiver le tag …`, the slash form style.md forbids (`toggle` ruling:
-  `Activer ou désactiver`). Fixing changes macOS-read text, so it needs `ACCEPTED_TRANSLATION_CHANGES` entries; until
-  then the keys sit in the ruling's `exceptions`.
+  `Activer ou désactiver`). Fixing changes macOS-read text, a plain translation edit with its reason in the commit;
+  until then the keys sit in the ruling's `exceptions`.
 
 ## Overflow (check against the `en-XA` pseudolocale)
 

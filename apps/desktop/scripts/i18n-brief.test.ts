@@ -275,16 +275,6 @@ describe('buildBrief (fixture tree)', () => {
     expect(header).toContain('`pnpm i18n:check-locale nl --keys-file /work/nl/20261113-020000/keys.txt`')
   })
 
-  it('notes every key whose macOS text is frozen, plain values included, with the way to fix a wrong one', () => {
-    const keys = buildBrief({ ...opts, frozenMacos: { nl: new Set(['queue.title']) } }).sections.find(
-      (section) => section.name === 'keys',
-    )?.text
-    const titleBlock = keys?.split('\n- `queue.row.label`')[0] ?? ''
-    expect(titleBlock).toContain('Frozen macOS text (nl)')
-    expect(titleBlock).toContain('macosChangeReason')
-    expect(keys?.match(/Frozen macOS text/g)?.length).toBe(1)
-  })
-
   it('lists a per-OS block’s placeholders and tokens branch by branch, never the injected platform or a branch body', () => {
     const text = renderBrief(buildBrief({ ...opts, keys: ['queue.reveal', 'errors.queue.revealHint'] }))
     const notes = text.split('\n').filter((line) => line.startsWith('  - {'))
@@ -292,12 +282,11 @@ describe('buildBrief (fixture tree)', () => {
     expect(text).not.toContain('{platform}')
   })
 
-  it('explains per-OS values and frozen macOS text in full on the first key, and in one line on every later one', () => {
+  it('explains per-OS values in full on the first key, and in one line on every later one', () => {
     const keys =
       buildBrief({
         ...opts,
         keys: ['queue.reveal', 'errors.queue.revealHint'],
-        frozenMacos: { nl: new Set(['queue.reveal', 'errors.queue.revealHint']) },
       }).sections.find((section) => section.name === 'keys')?.text ?? ''
     const [first, second] = keys.split('\n- `errors.queue.revealHint`')
     expect(first).toContain(
@@ -306,13 +295,8 @@ describe('buildBrief (fixture tree)', () => {
     expect(first).toContain(
       '`other` is Windows and Linux (pile: `microsoft-terminology/`, `microsoft-style-guides/`; `gnome-nautilus/`',
     )
-    expect(first).toContain('macosChangeReason')
     expect(second).toContain('  - Per-OS value: `macos` is macOS (macOS reads it: keep); `other` is Windows and Linux.')
-    expect(second).toContain(
-      "  - Frozen macOS text (nl): keep the branch macOS reads byte for byte, or change it the way the first frozen key's note says.",
-    )
     expect(second).not.toContain('pile:')
-    expect(second).not.toContain('macosChangeReason')
   })
 
   it('shows only the translated branches of a half-done per-OS value, and names the ones still in English', () => {

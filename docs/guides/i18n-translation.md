@@ -371,12 +371,12 @@ The routine maintenance loop, run for every change that adds or edits user-facin
 one branch's English leaves every branch translated but the key stale; the brief's word diff against the previous
 English shows which branch moved, and only that one is redone. Work it branch by branch under
 `docs/i18n/translator-instructions.md` (Per-OS values): translate only the English branches, each in its own OS's words,
-and leave the `macos` branch alone (`macos-copy-unchanged.test.ts` holds it; a WRONG macOS text has one reviewed way
-out, an accepted change `pnpm i18n:apply` records from a `macosChangeReason`, under that same Per-OS values rule). The
-stale hash is whole-value, so a key is stamped only once EVERY branch is in the language; a half-translated key stays on
-the worklist (`pnpm i18n:apply` writes it and leaves the stamp, naming the branches still English). A collapsed
-`.mac`/`.other` pair is the same: its survivor key's `macos` branch is the old `.mac` translation. The brief's per-key
-"Per-OS value" note names each branch's OS and pile folders.
+and leave the `macos` branch alone unless it's wrong (no test holds it; a fix there is an ordinary translation edit with
+the reason in the commit message, under that same Per-OS values rule). The stale hash is whole-value, so a key is
+stamped only once EVERY branch is in the language; a half-translated key stays on the worklist (`pnpm i18n:apply` writes
+it and leaves the stamp, naming the branches still English). A collapsed `.mac`/`.other` pair is the same: its survivor
+key's `macos` branch is the old `.mac` translation. The brief's per-key "Per-OS value" note names each branch's OS and
+pile folders.
 
 ### Write placeholder strings to be restructurable
 

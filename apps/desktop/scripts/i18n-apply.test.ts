@@ -7,7 +7,7 @@
  * a per-OS entry that leaves `macos` out keeps the catalog's macOS text exactly.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseValuesFile, planApply, uncoveredKeys, writePlan } from './i18n-apply-lib.ts'
@@ -108,67 +108,16 @@ describe('planApply on a full translation', () => {
     expect(read('de')['@files.trash']).toEqual({ sourceHash: sourceHash(PER_OS) })
   })
 
-  it('refuses a value that moves the macOS text the baseline froze', () => {
-    const baseline = { readme: '', locales: { de: { 'files.trash': 'In den Papierkorb legen' } } }
-    const moved = planApply({
-      tag: 'de',
-      messagesRoot: root,
-      baseline,
-      values: parseValuesFile({ 'files.trash': { macos: 'Wegwerfen', windows: 'Löschen' } }),
-    })
-    expect(moved.refused[0].reason).toContain('macosChangeReason')
-
-    const kept = planApply({
-      tag: 'de',
-      messagesRoot: root,
-      baseline,
-      values: parseValuesFile({ 'files.trash': { windows: 'Löschen', other: 'In den Papierkorb legen' } }),
-    })
-    expect(kept.refused).toEqual([])
-  })
-
-  it('records a reasoned change to frozen macOS text in the locale’s own accepted file, and drops it when reverted', () => {
-    const baseline = { readme: '', locales: { de: { 'files.trash': 'In den Papierkorb legen' } } }
-    const acceptedDir = join(root, 'accepted')
-    const run = (values: Record<string, unknown>) => {
-      const plan = planApply({ tag: 'de', messagesRoot: root, baseline, acceptedDir, values: parseValuesFile(values) })
-      if (plan.refused.length === 0) writePlan(plan, root)
-      return plan
-    }
-    const plan = run({
-      'files.trash': { macos: 'In den Papierkorb werfen', windows: 'Löschen', other: 'In den Papierkorb legen' },
-      '@files.trash': { macosChangeReason: 'legen read as placing, not discarding' },
-    })
+  it('writes a macos branch fix like any other branch, and refuses an unknown @key note', () => {
+    const plan = apply('de', { 'files.trash': { macos: 'In den Papierkorb werfen', windows: 'Löschen' } })
     expect(plan.refused).toEqual([])
-    const accepted = () => JSON.parse(readFileSync(join(acceptedDir, 'de.json'), 'utf8')) as Record<string, unknown>
-    expect(accepted()).toEqual({
-      'files.trash': { text: 'In den Papierkorb werfen', reason: 'legen read as placing, not discarding' },
-    })
-    // Applying the accepted value again needs no second reason.
-    expect(
-      planApply({
-        tag: 'de',
-        messagesRoot: root,
-        baseline,
-        acceptedDir,
-        values: parseValuesFile({ 'files.trash': { windows: 'Entfernen' } }),
-      }).refused,
-    ).toEqual([])
-    // Back to the frozen text: the entry would now be a false requirement, so it goes.
-    run({ 'files.trash': { macos: 'In den Papierkorb legen' } })
-    expect(existsSync(join(acceptedDir, 'de.json'))).toBe(false)
-  })
+    expect(read('de')['files.trash']).toBe(
+      '{platform, select, macos {In den Papierkorb werfen} windows {Löschen} other {Move to Trash}}',
+    )
 
-  it('refuses a macosChangeReason on a value whose macOS text doesn’t change', () => {
-    const baseline = { readme: '', locales: { de: { 'files.trash': 'In den Papierkorb legen' } } }
-    const plan = planApply({
-      tag: 'de',
-      messagesRoot: root,
-      baseline,
-      acceptedDir: join(root, 'accepted'),
-      values: parseValuesFile({ 'files.trash': { windows: 'Löschen' }, '@files.trash': { macosChangeReason: 'x' } }),
-    })
-    expect(plan.refused[0].reason).toContain('macOS text doesn')
+    expect(() =>
+      parseValuesFile({ 'files.trash': { windows: 'Löschen' }, '@files.trash': { macosChangeReason: 'x' } }),
+    ).toThrow('sameAsSourceJustification')
   })
 
   it('keeps a translation as is: stamps it against the new English without retyping it', () => {

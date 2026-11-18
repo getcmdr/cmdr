@@ -1627,7 +1627,7 @@
     "confidence": "high",
     "sources": "macOS SystemSettings (Klávesová zkratka, Zkratky); Nautilus, Thunar (Klávesové zkratky); MS (klávesová zkratka); TC (Klávesové zkratky)",
     "exceptions": {
-      "shortcuts.conflict.systemShortcut": "frozen macOS text names the key as Kombinace {combo} and its pronoun-free verb needs no second noun; it stays byte for byte"
+      "shortcuts.conflict.systemShortcut": "the macOS text names the key as Kombinace {combo} and its pronoun-free verb needs no second noun, so it stays as it is"
     }
   },
   "show": {

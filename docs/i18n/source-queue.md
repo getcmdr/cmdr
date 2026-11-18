@@ -173,11 +173,11 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
 
 - The brief for 88 per-OS keys was 445 KB (about 110k tokens): too big for one read, and the Keys section alone needed
   three. Each key repeats its English three times (the value, the word diff, and the English branches inside "now") and
-  two identical boilerplate bullets ("Per-OS value", "Frozen macOS text"). Print those two once per brief, drop the diff
-  when the only change is the per-OS wrap, and show only the branches to translate plus the frozen one. (cs batch 1: 88
-  keys, 133k tokens, read in five chunks even with `allow_large`; hu, de: read in nine chunks, no script; hu batch 3:
-  122 keys, 385 KB, about 161k tokens, read in four Keys chunks plus one `grep -A3` of the Terms section, no script; es
-  batch 2: 105 keys, 2,397 lines, about 145k tokens, read in seven chunks, no script)
+  an identical boilerplate bullet ("Per-OS value"). Print it once per brief, drop the diff when the only change is the
+  per-OS wrap, and show only the branches to translate plus the macOS one. (cs batch 1: 88 keys, 133k tokens, read in
+  five chunks even with `allow_large`; hu, de: read in nine chunks, no script; hu batch 3: 122 keys, 385 KB, about 161k
+  tokens, read in four Keys chunks plus one `grep -A3` of the Terms section, no script; es batch 2: 105 keys, 2,397
+  lines, about 145k tokens, read in seven chunks, no script)
 - Wrote a one-off `grep -v` / `gawk` filter to strip those lines from the brief so the keys fit in context. A
   `--compact` brief would replace it. (hu)
 - The worktree guard refuses any compound shell command it can't verify (a heredoc, a `grep | sort | uniq` chain over
@@ -194,8 +194,8 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   fails the check, so skipping its ruling goes unnoticed; the check could warn when a translated branch hits one. (de)
 - `decisions.md` sat exactly at its byte budget, so one new entry needed a hand-edit of
   `apps/desktop/scripts/i18n-termbase-baseline.json`; `i18n:apply-terms` could take a `--bump-decisions` flag. (hu)
-- The brief's "Translation memory" section (66 KB) went unread: for a per-OS batch the frozen `macos` branch is the
-  memory. Skip it when every key is a per-OS restale. (hu)
+- The brief's "Translation memory" section (66 KB) went unread: for a per-OS batch the `macos` branch is the memory.
+  Skip it when every key is a per-OS restale. (hu)
 - A 30-key per-OS brief (1,144 lines, about 69k tokens) is over the Read tool's 25k-token cap, so `limit: 1200` alone is
   refused and the read needs `allow_large: true`; say so in the lead's prompt, or trim the brief. (sv) A 105-key brief
   (2,383 lines, about 141k tokens) doesn't fit even with `allow_large`, so the terms section took an `awk | grep`

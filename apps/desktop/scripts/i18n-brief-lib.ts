@@ -57,7 +57,7 @@ import {
 import type { Catalog } from './i18n-catalog-lib.ts'
 import { changeLines, currentValueText } from './i18n-brief-changes.ts'
 import { perOsNote } from './i18n-brief-per-os.ts'
-import { frozenMacosNote, pilePaths, workDirLines } from './i18n-brief-run.ts'
+import { pilePaths, workDirLines } from './i18n-brief-run.ts'
 import { pileFolders } from './i18n-repo-lib.ts'
 import { staleKeys } from './i18n-brief-select.ts'
 import { buildMemoryIndex, contentWords, isGenericWord, nearestKeys } from './i18n-brief-memory.ts'
@@ -107,11 +107,6 @@ export interface BriefOptions {
    * (`concepts.json`, `source-queue.md`) to per-locale proposals instead.
    */
   parallel?: boolean
-  /**
-   * Target locale → the keys whose macOS text the frozen copy baseline holds (`frozenKeysFor`): `pnpm i18n:apply`
-   * refuses to move that text, so the brief says so on each, plain values included.
-   */
-  frozenMacos?: Readonly<Record<string, ReadonlySet<string>>>
   /**
    * Target locale → its run directory (`newWorkDir`), holding `keys.txt` (the batch) and, once the translator writes
    * it, `values.json`. The header names both and the batch-scoped check.
@@ -350,10 +345,9 @@ const KEYWORDS_NOTE =
 
 function keysSection(ctx: BriefContext): BriefSection {
   const lines = [`## Keys (${String(ctx.opts.keys.length)})`, '']
-  // The per-OS and frozen-text notes say everything once, on the first key that carries each, and
-  // stay on every later key in a one-line form.
+  // The per-OS note says everything once, on the first key that carries it, and stays on every
+  // later key in a one-line form.
   let perOsExplained = false
-  let frozenExplained = false
   for (const key of ctx.opts.keys) {
     const value = ctx.en.messages[key]
     const metadata = key in ctx.en.metadata ? ctx.en.metadata[key] : undefined
@@ -364,12 +358,6 @@ function keysSection(ctx: BriefContext): BriefSection {
     if (perOs !== undefined) {
       lines.push(`  - ${perOs}`)
       perOsExplained = true
-    }
-    const frozenTags = ctx.opts.langs.filter((tag) => ctx.opts.frozenMacos?.[tag]?.has(key))
-    const frozen = frozenMacosNote(frozenTags, perOs !== undefined, frozenExplained)
-    if (frozen !== undefined) {
-      lines.push(`  - ${frozen}`)
-      frozenExplained = true
     }
     const notes = placeholderNotes(key, value, metadata)
     if (notes.length > 0) lines.push(`  - ${notes.join(' · ')}`)

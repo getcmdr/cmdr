@@ -26,7 +26,7 @@
  * `docs/guides/i18n-translation.md`.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { BASE_LOCALE, listLocales, loadCatalog, resolveLocaleSource } from './i18n-catalog-lib.ts'
@@ -35,8 +35,6 @@ import { buildBrief, renderBrief, roughTokens } from './i18n-brief-lib.ts'
 import { changedKeys, selectKeys, staleKeys } from './i18n-brief-select.ts'
 import { previousEnglish } from './i18n-brief-history.ts'
 import { englishAt, keyPatternsFrom, newWorkDir, repoRoots } from './i18n-repo-lib.ts'
-import { BASELINE_RELATIVE_PATH, desktopPath, frozenKeysFor } from './i18n-macos-copy-baseline-lib.ts'
-import type { MacosCopyBaseline } from './i18n-macos-copy-baseline-lib.ts'
 
 /** The parsed flags. */
 export interface BriefArgs {
@@ -175,12 +173,6 @@ function runDirectories(langs: readonly string[], keys: readonly string[]): Reco
   return dirs
 }
 
-/** Each target's keys whose macOS text the frozen copy baseline holds. */
-function frozenMacosFor(langs: readonly string[]): Record<string, ReadonlySet<string>> {
-  const baseline = JSON.parse(readFileSync(desktopPath(BASELINE_RELATIVE_PATH), 'utf8')) as MacosCopyBaseline
-  return Object.fromEntries(langs.map((tag) => [tag, frozenKeysFor(baseline, tag)]))
-}
-
 /** One `--stats` line. */
 function statsLine(name: string, text: string): string {
   return `${name.padEnd(12)} ${String(text.length).padStart(7)} chars  ~${String(roughTokens(text)).padStart(6)} tokens`
@@ -209,7 +201,6 @@ function main(): void {
     excludeTargetValues: args.excludeTargetValues,
     parallel: args.parallel,
     previousEnglish: previousEnglish({ keys, langs, messagesRoot }),
-    frozenMacos: messagesRoot === undefined ? frozenMacosFor(langs) : undefined,
     workDirs,
   })
   const text = renderBrief(brief)

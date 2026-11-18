@@ -1158,7 +1158,7 @@
     "confidence": "confirmed",
     "sources": "shipped pt catalog (driveIndex.menuEnable Ativar indexação…)",
     "exceptions": {
-      "servers.hub.emptyMessage": "Turning on a computer or NAS is physical power, so ligar is right here, as the frozen macOS branch (ligue um Mac) already says."
+      "servers.hub.emptyMessage": "Turning on a computer or NAS is physical power, so ligar is right here, as the macOS branch (ligue um Mac) already says."
     }
   },
   "encoding": {
@@ -1958,7 +1958,7 @@
     "confidence": "confirmed",
     "sources": "macOS Finder pt-BR",
     "exceptions": {
-      "stateRecovery.credentials.body": "Moving to a new computer is changing machines (mudar para), not moving files; matches the frozen other branch."
+      "stateRecovery.credentials.body": "Moving to a new computer is changing machines (mudar para), not moving files; matches the other branch."
     }
   },
   "move-to-trash": {

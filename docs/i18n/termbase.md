@@ -227,7 +227,7 @@ A `###` section whose `##` parent also matches is left out, since the parent's b
 
 ## Tooling
 
-### `pnpm i18n:brief` (`apps/desktop/scripts/i18n-brief.ts`, assembly in `i18n-brief-lib.ts`, key selection in `i18n-brief-select.ts`, memory in `i18n-brief-memory.ts`, the per-OS key note in `i18n-brief-per-os.ts`, the word diff and current-value lines in `i18n-brief-changes.ts`, the run-directory and frozen-macOS notes in `i18n-brief-run.ts`)
+### `pnpm i18n:brief` (`apps/desktop/scripts/i18n-brief.ts`, assembly in `i18n-brief-lib.ts`, key selection in `i18n-brief-select.ts`, memory in `i18n-brief-memory.ts`, the per-OS key note in `i18n-brief-per-os.ts`, the word diff and current-value lines in `i18n-brief-changes.ts`, the run-directory notes in `i18n-brief-run.ts`)
 
 - `--lang nl` | `--lang nl,de` | `--lang all` (every full translation; overlays are refused).
 - Key selectors, which narrow each other when combined: `--keys a.b.c,servers.sheet.*` (exact keys or `*` globs; a
@@ -245,8 +245,7 @@ A `###` section whose `##` parent also matches is left out, since the parent's b
   goes into each language's run directory, `_ignored/i18n-work/<tag>/<timestamp>/` in the checkout (gitignored, so
   neither git nor the doc checks see it, and per run, so parallel translators never share a file name), beside
   `keys.txt`, the batch. The header names the directory, the `values.json` to write there, and the batch-scoped
-  `pnpm i18n:check-locale <tag> --keys-file <dir>/keys.txt`. A key whose macOS text the frozen copy baseline holds gets
-  a note saying so, plain values included, with the `ACCEPTED_TRANSLATION_CHANGES` path for a wrong one.
+  `pnpm i18n:check-locale <tag> --keys-file <dir>/keys.txt`.
 - `--exclude-target-values`: a blind run for A/B tests. Withholds the batch keys' current translations and the decision
   excerpts (a section citing a batch key discusses exactly those translations), drops a ruling's batch-key `exceptions`
   and its `decision` pointer, and redacts the batch's shipped values, whole or clause by clause (10+ chars), wherever
@@ -274,10 +273,10 @@ Sections, each selected by the batch:
    shows up as work instead of passing for settled. A search keyword list gets a one-line note instead (§ Search keyword
    lists below). A per-OS value gets a note naming which OS reads each of its branches, that OS's pile folders, and
    which branch macOS reads (its translation stays). A per-OS batch says each repeated thing once
-   (`i18n-brief-changes.ts` and the two note modules): the per-OS and frozen-macOS notes are full on the first key that
-   carries each and one line after, an English that only became a block says which branch is the old text where the diff
-   would repeat the value, and a half-done value shows only its translated branches. Why: every model turn re-reads the
-   brief, and an 88-key per-OS batch went from about 108k to 81k tokens (2026-11-13).
+   (`i18n-brief-changes.ts` and the per-OS note module): the per-OS note is full on the first key that carries it and
+   one line after, an English that only became a block says which branch is the old text where the diff would repeat the
+   value, and a half-done value shows only its translated branches. Why: every model turn re-reads the brief, and an
+   88-key per-OS batch went from about 108k to 81k tokens (2026-11-13).
    - Regional overlays, when a target language has one (`es-419` for `es`): the batch keys it already forks (values
      withheld in a blind run), that a value using a form it replaces needs a fork, and the
      `pnpm i18n:apply --lang <overlay>` call that writes a fork stamped with the hash of the base value it overrides.
@@ -315,11 +314,8 @@ The translator's one write path into a catalog. `--lang <tag> --values <file.jso
   fork). `"@<key>": { "sameAsSourceJustification": "…" }` records a justification, ARB-style as in the catalogs.
 - The whole batch is planned first, and one refused value writes nothing. Refused: a key English lacks; a key a full
   translation's catalog lacks (it names the `sync-locale-keys.ts` call); placeholder/tag parity, ICU validity and
-  raw-family apostrophes, the per-OS block shape, and plural coverage, each by the ERROR-class check's own function; a
-  `macos` text the frozen baseline holds (`frozenMacosIssue`), unless the values file gives the key
-  `"@<key>": { "macosChangeReason": "…" }`, which records an accepted change in the catalog's own
-  `src/lib/intl/__fixtures__/macos-copy-accepted/<tag>.json` (an overlay keeps its own; a value back at the frozen text
-  drops its entry); for an overlay, a fork identical to what it overrides, or one carrying a justification.
+  raw-family apostrophes, the per-OS block shape, and plural coverage, each by the ERROR-class check's own function; for
+  an overlay, a fork identical to what it overrides, or one carrying a justification.
 - Stamping: `@key.sourceHash` becomes the hash of the source (`en`, or an overlay's layered base); a value or hash that
   moves drops `reviewed` and `sameAsSourceJustification`, as `--restamp` does. A per-OS value with a branch still
   byte-identical to English is written but keeps its old stamp, so it stays on the stale list, unless the file justifies

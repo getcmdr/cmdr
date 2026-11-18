@@ -55,4 +55,4 @@ Awaiting a native read, from the keymap batch:
   `doklad o notarizaci`, a plain coinage (no pile hit for Apple's Czech term).
 - AI take is `komentář AI` (`aboutThis.verdict.*`), and `it-team` is `IT oddělení`; both tentative.
 - `fileExplorer.list.rowKind.package` still says `balík` while the new `macos-package` ruling is Finder's `balíček`;
-  align it (a `macosChangeReason` change) once confirmed.
+  align it (it's macOS text, so the fix is a plain translation edit with its reason in the commit) once confirmed.
