@@ -249,8 +249,9 @@ pub fn set_reopen_closed_tab_enabled<R: Runtime>(app: AppHandle<R>, enabled: boo
 ///   the main menu (if a different menu is installed), then enable all explorer items.
 /// - `"viewer"`: a viewer window gained focus. On macOS, swap to the shared viewer menu. No-op on
 ///   Linux (viewer windows carry their own per-window menu).
-/// - `"other"`: Settings or Debug gained focus. On macOS, swap to the main menu, then disable
-///   explorer items (Settings / Debug reuse the main menu with items greyed out).
+/// - `"other"`: Settings or Debug gained focus, or the main window lost it. On macOS, swap to the
+///   main menu, then disable explorer items (Settings / Debug reuse the main menu with items greyed
+///   out). Where the page draws the bar it's the main window's own, so nothing greys.
 ///
 /// On macOS the menu bar is app-level (one bar, tauri-apps/tauri#5768), so we swap it via
 /// `app.set_menu()` on focus-gain. `active_menu_kind` tracks the installed menu so we skip redundant
@@ -280,6 +281,12 @@ pub fn activate_window_menu<R: Runtime>(app: AppHandle<R>, kind: String) -> Resu
         "other" => {
             #[cfg(target_os = "macos")]
             swap_to_main_menu(&app);
+            // Only a native bar is the window in front's: a page bar is the main window's own, so
+            // its file-scoped rows stay live while another window has focus (a click on it focuses
+            // the main window first), as a Win32 or GTK window's own bar does.
+            if !crate::menu::builds_native_bar() {
+                return Ok(());
+            }
             set_menu_context(app, "other".to_string())
         }
         other => Err(format!("Unknown window menu kind: {other}")),

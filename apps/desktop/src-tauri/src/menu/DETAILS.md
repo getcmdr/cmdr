@@ -730,8 +730,10 @@ menu is swapped wholesale via `app.set_menu()`:
   `app.set_menu()`). Both run on the main thread via `run_on_main_thread`, queued FIFO after Tauri's
   own main-thread menu install, so ordering is install → cleanup → icons.
 
-Off macOS `activate_window_menu` has no bar to swap (the viewer page draws its own) and only does the enable/disable
-step.
+Off macOS `activate_window_menu` has no bar to swap (the viewer page draws its own), and `"other"` greys nothing: the
+page bar is the main window's own, not a bar shared with the window in front, so its file-scoped rows stay live while
+Settings or the queue has focus (a click on the bar focuses the main window first, which `emit_command`'s guard asks).
+Only `"main"` does the enable/disable step there.
 
 The enable/disable step is the private `set_menu_context("explorer" | "other")` helper: it stores whether the explorer
 owns the menu and recomputes every item (`"main"` → file-scoped items enabled, `"other"` → greyed). This is a visual

@@ -27,6 +27,7 @@ import {
 import { ensureMcpClient } from '../e2e-shared/mcp-client.js'
 import {
   clickRealAt,
+  F10_KEYCODE,
   focusMainWindow,
   focusWindow,
   focusWindowAtCorner,
@@ -167,9 +168,9 @@ test.describe('The in-page menu bar (Linux)', () => {
     await focusPane(tauriPage, 0)
 
     focusMainWindow()
-    pressRealKey('F10')
+    pressRealKey(F10_KEYCODE)
     await expectBar(tauriPage, { focusedTitle: 0, menus: 0 })
-    pressRealKey('F10')
+    pressRealKey(F10_KEYCODE)
     await expectBar(tauriPage, { focusedTitle: -1, focusInPane: true })
 
     // The second title's letter, as the bar announces it (`Alt+V`), so no label is read.
@@ -194,6 +195,12 @@ test.describe('The in-page menu bar (Linux)', () => {
       await titleHolding(tauriPage, 'show_hidden_files')
       const row = await rowCenter(tauriPage, 'show_hidden_files')
       expect(row).not.toBeNull()
+      // A greyed row ignores a click: the page bar's rows stay live whatever window had focus last.
+      expect(
+        await tauriPage.evaluate<string | null>(
+          `document.querySelector('${BAR_MENU} [data-menu-id="show_hidden_files"]')?.getAttribute('aria-disabled') ?? null`,
+        ),
+      ).toBeNull()
       if (row) clickRealAt(mainWindowId(), row.x, row.y)
       await expectBar(tauriPage, { menus: 0, focusedTitle: -1 })
     }

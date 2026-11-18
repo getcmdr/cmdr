@@ -89,6 +89,13 @@ export function focusWindowAtCorner(windowId: string): void {
   xdotool('click', '1')
 }
 
+/**
+ * F10's X keycode, to press it bare: by its keysym, the image's xdotool (3.20160805) adds Alt to
+ * every F-key, since the keymap types them `CTRL+ALT` (`xev` in the lane's image, 2026-11-19), so
+ * `pressRealKey('F10')` arrives as Alt+F10. A keycode goes through as is. Evdev's numbering.
+ */
+export const F10_KEYCODE = '76'
+
 /** Presses one chord as a real keyboard would, in xdotool's spelling (`alt+f`, `Escape`). */
 export function pressRealKey(chord: string): void {
   xdotool('key', '--clearmodifiers', chord)
