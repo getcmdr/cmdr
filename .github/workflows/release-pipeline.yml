@@ -1048,7 +1048,7 @@ jobs:
           ./scripts/windows-package.sh msix -version "$VERSION" -exe "$RUNNER_TEMP/unbundled/Cmdr.exe" \
             -out "$OUT/Cmdr_${VERSION}_x64.msix"
           ./scripts/windows-package.sh group-policy -version "$VERSION" -out "$OUT/cmdr-group-policy-${VERSION}.zip"
-          ./scripts/release-assets.sh vet-nsis -version "$VERSION" "$OUT/Cmdr_${VERSION}_x64-setup.exe"
+          ./scripts/release-nsis.sh -version "$VERSION" "$OUT/Cmdr_${VERSION}_x64-setup.exe"
           # Exactly the planned files, so a renamed bundler output fails here, early. This is only a
           # convenience: `windows-publish` holds the artifact to the manifest itself (`stage`).
           # shellcheck disable=SC2086 # the plan's space-separated names
@@ -1124,7 +1124,7 @@ jobs:
           ./scripts/release-assets.sh stage -version "${TAG#v}" -os windows -from "$RUNNER_TEMP/windows-artifact" \
             -advisories apps/desktop/src-tauri/resources/security-advisories.json -out "$RUNNER_TEMP/windows-x86_64"
 
-      # The installer the updater would run must be this release's (`scripts/release-assets/nsis/nsis.go`):
+      # The installer the updater would run must be this release's (`scripts/release-nsis/nsis/nsis.go`):
       # its own version resource, the app it packs (version and publisher), and its uninstall entry,
       # read without running it. Checked here, on the bytes this job signs and uploads, before any
       # key is in reach.
@@ -1136,7 +1136,7 @@ jobs:
           set -euo pipefail
           paths=()
           for name in $INSTALLERS; do paths+=("$RUNNER_TEMP/windows-x86_64/$name"); done
-          ./scripts/release-assets.sh vet-nsis -version "${TAG#v}" "${paths[@]}"
+          ./scripts/release-nsis.sh -version "${TAG#v}" "${paths[@]}"
 
       # In `ci` mode, each signed file `stage` named, with the updater key; the installer with
       # `--app-version`, since off macOS the updater binds the version to the signature.
@@ -1439,7 +1439,7 @@ jobs:
 
       # The Windows installer the updater would run must be this release's: its version resource,
       # the app it packs, and its uninstall entry name the version its signature does
-      # (`scripts/release-assets/nsis/nsis.go`).
+      # (`scripts/release-nsis/nsis/nsis.go`).
       - name: Install Go for the Windows check
         if: needs.guard.outputs.ships-windows == 'true'
         uses: ./.github/actions/install-mise
@@ -1456,7 +1456,7 @@ jobs:
           [ -d "$RUNNER_TEMP/windows" ] || { echo "No Windows installer on the release to vet."; exit 0; }
           paths=()
           for name in $ARCHIVES; do paths+=("$RUNNER_TEMP/windows/$name"); done
-          ./scripts/release-assets.sh vet-nsis -version "${TAG#v}" "${paths[@]}"
+          ./scripts/release-nsis.sh -version "${TAG#v}" "${paths[@]}"
 
   # The browser demo getcmdr.com serves at /demo/, built from the tagged sources: `pnpm build:demo`,
   # the website built around it with the full demo suite run against it (`website-demo-e2e`), and

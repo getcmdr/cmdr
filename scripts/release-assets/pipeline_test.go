@@ -196,7 +196,7 @@ func newHarness(t *testing.T, sc scenario) *harness {
 	}
 	// The manifest's own CLI is the code under test, so the workspace gets the real one, and the
 	// upload helper the Windows publish job runs over the fake `gh`.
-	for _, s := range []string{"release-assets.sh", "release-assets", "release-upload.sh"} {
+	for _, s := range []string{"release-assets.sh", "release-assets", "release-upload.sh", "release-nsis.sh", "release-nsis"} {
 		if _, err := os.Stat(filepath.Join(root, "scripts", s)); err == nil {
 			must(t, os.Symlink(filepath.Join(root, "scripts", s), filepath.Join(h.ws, "scripts", s)))
 		}
@@ -216,6 +216,13 @@ func newHarness(t *testing.T, sc scenario) *harness {
 	must(t, os.MkdirAll(filepath.Join(h.ws, "apps/desktop/src-tauri/resources"), 0o755))
 	must(t, os.WriteFile(filepath.Join(h.ws, "apps/desktop/src-tauri/resources/security-advisories.json"), []byte(`{"advisories":[]}`+"\n"), 0o644))
 
+	h.writeRelease(fixture, filepath.Dir(h.releaseDir))
+	return h
+}
+
+// writeRelease builds the fixture release in base: its files and its `gh api` view.
+func (h *harness) writeRelease(fixture, base string) {
+	t, sc := h.t, h.sc
 	// The release: every asset v0.61.0 carries, minus the scenario's drops. The signatures,
 	// `latest.json`, and `checksums.txt` are the real ones; every other file is a short stand-in,
 	// while the `gh api` view keeps the real sizes. Each asset is `uploaded` (GitHub's `state`),
@@ -267,7 +274,6 @@ func newHarness(t *testing.T, sc scenario) *harness {
 	out, err := json.Marshal(rel)
 	must(t, err)
 	must(t, os.WriteFile(filepath.Join(base, "release.json"), out, 0o644))
-	return h
 }
 
 // fixtureAsset is one asset in the fixture release's `gh api` view.

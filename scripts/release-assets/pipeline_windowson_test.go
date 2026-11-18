@@ -101,7 +101,7 @@ func (h *harness) windowsAsset(path string) {
 	name := filepath.Base(path)
 	switch {
 	case strings.HasSuffix(name, "-setup.exe"):
-		copyFile(t, filepath.Join(repoRoot(t), "scripts/release-assets/nsis/testdata/dryrun-0.61.0-setup.exe"), path, 0o644)
+		copyFile(t, filepath.Join(repoRoot(t), "scripts/release-nsis/nsis/testdata/dryrun-0.61.0-setup.exe"), path, 0o644)
 	case strings.HasSuffix(name, ".sig"):
 		signed := strings.TrimSuffix(name, ".sig")
 		comment := "timestamp:1763049596\tfile:" + signed

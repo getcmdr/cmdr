@@ -1339,8 +1339,8 @@ are `continue-on-error`, so a red or slow Windows build never turns the run red 
 1. **`windows-build`** (`windows-2025`, no secrets): compiles once (`tauri build --no-bundle`), keeps that unbundled
    `Cmdr.exe` for the MSIX, bundles the NSIS installer (`tauri.windows.conf.json` makes no updater artifact: the
    bundler's signature can't name the version), packs the MSIX (`./scripts/windows-package.sh msix`, Microsoft's winapp
-   CLI, pinned with its SHA-256), zips the policy template, vets the installer (`release-assets.sh vet-nsis`), and hands
-   exactly the planned files on as an artifact.
+   CLI, pinned with its SHA-256), zips the policy template, vets the installer (`release-nsis.sh`), and hands exactly
+   the planned files on as an artifact.
 2. **`windows-publish`** (`release` environment, after macOS's `sign` so the release exists): takes from the artifact
    exactly the Windows files the manifest names for this version and refuses anything else by name
    (`release-assets.sh stage`, the trusted side's intake, as `sign` takes exactly one `Cmdr` per artifact), writes the
@@ -1356,7 +1356,7 @@ are `continue-on-error`, so a red or slow Windows build never turns the run red 
 
 `vet-nsis` reads the installer without running it: its own version resource, the app it packs (version and publisher),
 and its uninstall entry. It names the build; provenance and the updater signature prove where it came from
-(`scripts/release-assets/nsis/nsis.go`).
+(`scripts/release-nsis/nsis/nsis.go`).
 
 ### What turning it on waits on (David)
 
@@ -1374,7 +1374,7 @@ environment already holds.
 4. **Review the copy**: the MSIX's display name and description (`apps/desktop/packaging/msix/Package.appxmanifest`),
    and the NSIS installer's publisher, copyright, and short description
    (`apps/desktop/src-tauri/tauri.windows.conf.json`). A changed publisher means re-running
-   `scripts/release-assets/nsis/testdata/gen.sh` for the dry run's installer.
+   `scripts/release-nsis/nsis/testdata/gen.sh` for the dry run's installer.
 5. **Try a local build first** (§ Building the Windows packages locally) and install both on a Windows machine.
 6. **Turn it on**, in one commit:
    1. Add `{OS: Windows, Since: "<the next version>"}` to `ShippedOSes` (never an empty `Since`: older releases must
@@ -1404,7 +1404,7 @@ cd apps/desktop && pnpm tauri build --no-bundle            # once
 cp ../../target/release/Cmdr.exe /tmp/Cmdr.exe              # the unbundled exe, for the MSIX
 pnpm exec tauri bundle --bundles nsis                       # target/release/bundle/nsis/Cmdr_<v>_x64-setup.exe
 cd ../.. && ./scripts/windows-package.sh msix -version <v> -exe /tmp/Cmdr.exe -out Cmdr_<v>_x64.msix -identity dev
-./scripts/release-assets.sh vet-nsis -version <v> target/release/bundle/nsis/Cmdr_<v>_x64-setup.exe
+./scripts/release-nsis.sh -version <v> target/release/bundle/nsis/Cmdr_<v>_x64-setup.exe
 ```
 
 Run the dev MSIX unpacked in Developer Mode (no certificate; the steps are in `apps/desktop/packaging/msix/DETAILS.md` §

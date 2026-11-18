@@ -7,11 +7,8 @@
 //	./scripts/release-assets.sh latest-json -version X.Y.Z -assets release.json -sigs DIR -notes notes.txt -base-url URL -pub-date DATE [-newer-than X.Y.Z] -out latest.json
 //	./scripts/release-assets.sh validate-latest -version X.Y.Z -assets release.json -sigs DIR -base-url URL [-newer-than X.Y.Z] -file latest.json
 //	./scripts/release-assets.sh checksum-files -version X.Y.Z -assets release.json
-//	./scripts/release-assets.sh vet-nsis -version X.Y.Z Cmdr_X.Y.Z_x64-setup.exe
 //	./scripts/release-assets.sh stage -version X.Y.Z -os windows -from ARTIFACT -advisories LIST.json -out DIR
 //
-// `vet-nsis` refuses a Windows installer whose version resource isn't the release's, or that
-// carries an Authenticode signature nothing checks yet (`nsis/nsis.go`).
 // `stage` is the trusted side's intake of a build artifact: exactly the files the manifest names
 // for that OS and version, plus the advisory list from the checkout (`stage.go`).
 // `plan` appends the pipeline's step outputs to `$GITHUB_OUTPUT` (or prints them when it's unset);
@@ -28,12 +25,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
 	"cmdr/scripts/release-assets/manifest"
-	"cmdr/scripts/release-assets/nsis"
 )
 
 var versionPattern = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]*[0-9A-Za-z])?$`)
@@ -49,12 +44,11 @@ func main() {
 type options struct {
 	version, vetted, attested, subjectDir, assets, sigs, notes, baseURL, pubDate, out, file string
 	osName, from, advisories, carriedBy, previous, newerThan                                string
-	args                                                                                    []string
 }
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("name a command: plan, latest-json, validate-latest, vet-nsis, stage, or checksum-files")
+		return errors.New("name a command: plan, latest-json, validate-latest, stage, or checksum-files")
 	}
 	var o options
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
@@ -81,7 +75,6 @@ func run(args []string) error {
 	if !versionPattern.MatchString(o.version) {
 		return fmt.Errorf("-version must look like 0.62.0, got %q", o.version)
 	}
-	o.args = fs.Args()
 	release := manifest.For(o.version)
 
 	switch args[0] {
@@ -91,12 +84,10 @@ func run(args []string) error {
 		return runLatest(o, release, args[0] == "validate-latest")
 	case "stage":
 		return runStage(o, release)
-	case "vet-nsis":
-		return vetNSISFiles(o.version, o.args)
 	case "checksum-files":
 		return runChecksumFiles(o, release)
 	}
-	return fmt.Errorf("unknown command %q: plan, latest-json, validate-latest, vet-nsis, stage, or checksum-files", args[0])
+	return fmt.Errorf("unknown command %q: plan, latest-json, validate-latest, stage, or checksum-files", args[0])
 }
 
 func runPlan(o options, release manifest.Release) error {
@@ -226,31 +217,6 @@ func previousLegs(in latestInput, path string) (manifest.Release, bool) {
 // oneLine folds an error onto one line, for a workflow annotation.
 func oneLine(err error) string {
 	return strings.Join(strings.Fields(err.Error()), " ")
-}
-
-// vetNSISFiles runs `nsis.Vet` on each installer, printing a verdict per file, and fails if any
-// is refused (or none was named: a gate that vets nothing must not pass).
-func vetNSISFiles(version string, paths []string) error {
-	if len(paths) == 0 {
-		return errors.New("vet-nsis: name the installers to vet")
-	}
-	want, err := nsis.ExpectFromRepo(os.Getenv("RELEASE_ASSETS_ROOT"), version)
-	if err != nil {
-		return fmt.Errorf("vet-nsis: reading the app's name and publisher (run this through scripts/release-assets.sh): %w", err)
-	}
-	refused := 0
-	for _, p := range paths {
-		if err := nsis.Vet(p, want); err != nil {
-			fmt.Printf("    %s: REFUSED, it %v\n", filepath.Base(p), err)
-			refused++
-			continue
-		}
-		fmt.Printf("    %s: the NSIS installer of %s %s by %s, packing that build, unsigned, as the updater expects today\n", filepath.Base(p), want.ProductName, version, want.Publisher)
-	}
-	if refused > 0 {
-		return fmt.Errorf("%d of %d Windows installers would install something other than %s", refused, len(paths), version)
-	}
-	return nil
 }
 
 // validateFile runs the validator on a manifest as published.

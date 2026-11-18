@@ -2,7 +2,7 @@
 # Rebuilds the NSIS fixtures `nsis_test.go` vets, with `makensis` (NSIS 3; `brew install makensis`
 # on a Mac): a good installer of 0.70.0, one packing an app of another version, and one whose
 # uninstall entry names another publisher. Plus the Windows-on dry run's installer
-# (`../../pipeline_windowson_test.go`): v0.61.0 by the publisher `tauri.windows.conf.json` names, so
+# (`scripts/release-assets/pipeline_windowson_test.go`): v0.61.0 by the publisher `tauri.windows.conf.json` names, so
 # re-run this when that changes. Run it from anywhere; it writes beside itself.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"

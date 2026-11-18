@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"cmdr/scripts/release-assets/manifest"
-	"cmdr/scripts/release-assets/nsis"
+	"cmdr/scripts/release-nsis/nsis"
 )
 
 // runner runs a command in a directory and answers its combined output, so tests can stand in

@@ -44,14 +44,15 @@ Wired for the Windows rows: `release-finish` passes `--app-version` for such a r
 job does the same in `ci` mode (from `stage`'s `signs-version`) and verifies what it signed against the app's keys
 (`release-finish -verify-dir … -leg windows`, which also requires the `version:` field), and the validator refuses a
 signature whose trusted comment lacks `version:<v>` for one (`signatureNamesVersion`), so a version-less signature from
-either signing mode fails `publish` instead of reaching `latest.json`. `vet-nsis` (`nsis/nsis.go`) then reads the
-installer without running it, since the version the signature names is all the updater checks: the stub's version
-resource and ProductName, every packed copy of the app (its version and CompanyName, found by decompressing the solid
-LZMA payload in `nsis/payload.go`), and the uninstall entry's strings (key, `DisplayVersion`, `Publisher`). It names the
-build (a stale or mixed-up bundle fails), not its integrity: a hostile build stamps what it likes, and provenance plus
-the updater signature prove origin. It also refuses an Authenticode-signed installer until task 50 pins a signer.
-Fixtures: `nsis/testdata/gen.sh` (makensis, Tauri's layout); `CMDR_REAL_NSIS=<real installer>` runs it on a real
-tauri-cli build (passed on the builder's `Cmdr_0.61.0_x64-setup.exe`, 2026-11-18).
+either signing mode fails `publish` instead of reaching `latest.json`. `vet-nsis` (`scripts/release-nsis/nsis/nsis.go`,
+its own module so the macOS path stays stdlib-only) then reads the installer without running it, since the version the
+signature names is all the updater checks: the stub's version resource and ProductName, every packed copy of the app
+(its version and CompanyName, found by decompressing the solid LZMA payload in `scripts/release-nsis/nsis/payload.go`),
+and the uninstall entry's strings (key, `DisplayVersion`, `Publisher`). It names the build (a stale or mixed-up bundle
+fails), not its integrity: a hostile build stamps what it likes, and provenance plus the updater signature prove origin.
+It also refuses an Authenticode-signed installer until task 50 pins a signer. Fixtures:
+`scripts/release-nsis/nsis/testdata/gen.sh` (makensis, Tauri's layout); `CMDR_REAL_NSIS=<real installer>` runs it on a
+real tauri-cli build (passed on the builder's `Cmdr_0.61.0_x64-setup.exe`, 2026-11-18).
 
 The advisory list is a row too (`AdvisoryList`, no OS, `Signed`): `shipped` adds it once some shipped update payload
 signs its version, `latest-json` writes `securityAdvisories` (after `downloads`, so everything before it prints as
@@ -177,9 +178,9 @@ in CI with nothing shipped: the plan's outputs, `publish` with the leg whole, la
 `local` dispatch, `vet-update-archives` with and without it, `windows-publish` (`ci`, `local`, a hostile artifact, too
 late), `windows-attest`, `sbom`, and `attest`. These scenarios also record `::warning::`/`::notice::`/`::error::` lines.
 The Windows assets are a makensis-built v0.61.0 installer by the repo's publisher
-(`nsis/testdata/dryrun-0.61.0-setup.exe`) and signatures shaped like the Tauri signer's with the main key ID (the fake
-`pnpm` writes them for `tauri signer sign`). `windows-build` isn't covered: it runs Windows and the bundler.
-`TestNoReleaseToolBuildsWithWindowsOn` keeps the tag out of every workflow and script.
+(`scripts/release-nsis/nsis/testdata/dryrun-0.61.0-setup.exe`) and signatures shaped like the Tauri signer's with the
+main key ID (the fake `pnpm` writes them for `tauri signer sign`). `windows-build` isn't covered: it runs Windows and
+the bundler. `TestNoReleaseToolBuildsWithWindowsOn` keeps the tag out of every workflow and script.
 
 The fixture is v0.61.0 as published: its asset list and sizes, its three signatures, `latest.json`, `checksums.txt`, and
 its CHANGELOG section. Other assets are short stand-ins (the sizes in `gh api` stay real), so `checksums.txt` in the

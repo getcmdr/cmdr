@@ -11,8 +11,9 @@ targets), and the CLI the release pipeline's shell steps call (`../release-asset
   per-OS legs a release carries whole or not at all. `release-finish`, `release-mirror`, and `release-evidence` import
   it (`replace` in their `go.mod`).
 - `plan.go` (the `guard` job's step outputs), `latest.go` + `jsonout.go` (`latest.json`), `validate.go` (the one
-  `latest.json` validator), `stage.go` (`windows-publish`'s intake of the build artifact), `nsis/` (`vet-nsis`: stub,
-  packed app, uninstall entry), `main.go` (the CLI).
+  `latest.json` validator), `stage.go` (`windows-publish`'s intake of the build artifact), `main.go` (the CLI).
+- **Stays stdlib-only** (`module_test.go`): `guard` and `publish` build it on every macOS release. The NSIS vet, which
+  needs `xz`, is its own module: `scripts/release-nsis/` (`../release-nsis.sh`).
 - `pipeline_test.go` + `workflow_test.go`: the dry run of `release-pipeline.yml` against v0.61.0 (`testdata/`);
   `pipeline_windowson_test.go`: the same with Windows on (`testdata/golden/windows-on/`).
 
