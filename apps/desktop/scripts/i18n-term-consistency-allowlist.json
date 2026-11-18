@@ -204,6 +204,10 @@
     ],
     "nl": [
       {
+        "source": "Preferences",
+        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the real on-disk name of the macOS `~/Library/Preferences` folder, kept verbatim, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's settings menu row, which GNOME Dutch calls `Voorkeuren` (nl/gnome-nautilus/nautilus.po `_Preferences`)."
+      },
+      {
         "source": "File",
         "reason": "Two senses: the menu-bar File menu (`menu.bar.file`) is Apple's name `Archief` (Finder's own Dutch menu bar), while the Tell me about this card's item kind (`aboutThis.what.file`) is the noun `Bestand` (ruling `file`). A file kind can't read `Archief`, which means an archive."
       },

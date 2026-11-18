@@ -282,7 +282,7 @@ the key. `favoritesCantAddHere`: reason after a colon, `netwerkshares` (`gedeeld
 
 ## NFS-exports en ID-velden (`servers.sheet.nfs*`, `servers.refusal.export*`, `servers.refusal.reservedPortRequired`, `servers.refusal.noNfsV3`, `stateRecovery.nfsPlaces.title`)
 
-`export` (tentative loanword) over `gedeelde map`, which would blur it with the SMB share in the same form.
+`export` (tentative loanword) over `gedeelde map`, which blurs it with the SMB share in the same form.
 `bevoorrechte poort` and the quoted switch follow Synology nl; `insecure` stays English. `gebruikers-ID` / `groeps-ID`;
 `Afgeleid van` over `Geraden` (sounds random).
 

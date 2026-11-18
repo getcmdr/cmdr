@@ -173,9 +173,9 @@
   "@errorReporter.bundleSavedToast.dismiss": {
     "sourceHash": "48845bf"
   },
-  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Toon in Finder} windows {Toon in Verkenner} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Toon in bestandsbeheer}}",
+  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Toon in Finder} windows {Toon in Verkenner} linuxGnome {Toon in Bestanden} linuxKde {Toon in Dolphin} other {Toon in bestandsbeheer}}",
   "@errorReporter.bundleSavedToast.reveal": {
-    "sourceHash": "4d7fe91"
+    "sourceHash": "c3b4773"
   },
   "errorReporter.autoSentToast.title": "Foutrapport verstuurd",
   "@errorReporter.autoSentToast.title": {

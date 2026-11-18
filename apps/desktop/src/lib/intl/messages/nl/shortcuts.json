@@ -119,9 +119,9 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {Op {desktops} wordt {combo} meestal door de werkomgeving zelf gebruikt, dus bereikt de sneltoets Cmdr mogelijk nooit. Je kunt hem vrijmaken in de toetsenbordinstellingen van je werkomgeving.}}",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {Op {desktops} wordt {combo} meestal door de werkomgeving zelf gebruikt, dus bereikt de sneltoets Cmdr mogelijk nooit. Je kunt hem vrijmaken in Instellingen > Toetsenbord > Sneltoetsen bekijken en aanpassen.} linuxKde {Op {desktops} wordt {combo} meestal door de werkomgeving zelf gebruikt, dus bereikt de sneltoets Cmdr mogelijk nooit. Je kunt hem vrijmaken in Systeeminstellingen > Toetsenbord > Sneltoetsen.} other {Op {desktops} wordt {combo} meestal door de werkomgeving zelf gebruikt, dus bereikt de sneltoets Cmdr mogelijk nooit. Je kunt hem vrijmaken in de toetsenbordinstellingen van je werkomgeving.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
-    "sourceHash": "610146a"
+    "sourceHash": "8aefc0b"
   },
   "shortcuts.conflict.opensMenuBarMenu": "{combo} opent het menu ‘{menu}’ in de menubalk van Cmdr, dus bereikt de sneltoets deze opdracht niet, tenzij er een dialoogvenster open is.",
   "@shortcuts.conflict.opensMenuBarMenu": {
