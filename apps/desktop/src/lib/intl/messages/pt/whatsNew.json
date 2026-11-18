@@ -39,8 +39,8 @@
   "@whatsNew.dialog.close": {
     "sourceHash": "7d9eb7a"
   },
-  "whatsNew.optOutToast": "{platform, select, windows {Entendido, sem mais notas de atualização. Você pode reativá-las quando quiser em Ajustes > Atualizações e privacidade.} linuxGnome {Got it, no more update notes. Re-enable them anytime in Preferences > Updates & privacy.} linuxKde {Got it, no more update notes. Re-enable them anytime in Configure Cmdr > Updates & privacy.} other {Entendido, sem mais notas de atualização. Você pode reativá-las quando quiser em Ajustes > Atualizações e privacidade.}}",
+  "whatsNew.optOutToast": "{platform, select, windows {Entendido, sem mais notas de atualização. Você pode reativá-las quando quiser em Ajustes > Atualizações e privacidade.} linuxGnome {Entendido, sem mais notas de atualização. Você pode reativá-las quando quiser em Preferências > Atualizações e privacidade.} linuxKde {Entendido, sem mais notas de atualização. Você pode reativá-las quando quiser em Configurar Cmdr > Atualizações e privacidade.} other {Entendido, sem mais notas de atualização. Você pode reativá-las quando quiser em Ajustes > Atualizações e privacidade.}}",
   "@whatsNew.optOutToast": {
-    "sourceHash": "e27e52a"
+    "sourceHash": "edde996"
   }
 }

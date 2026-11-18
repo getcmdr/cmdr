@@ -1767,8 +1767,8 @@
     "sources": "Keychain Access.app InfoPlist.loctable pt_BR",
     "other": {
       "chosen": "chaveiro",
-      "accept": ["KWallet"],
-      "note": "Linux branches: the keyring is chaveiro, which GNOME's Senhas e chaves also says (seahorse pt_BR.po: O chaveiro está bloqueado); KDE keeps KWallet and KWalletManager as names, with a wallet → carteira (kwalletmanager pt_BR.po)"
+      "accept": ["Carteira do KDE"],
+      "note": "Linux branches: the keyring is chaveiro, which GNOME's Senhas e chaves also says (seahorse pt_BR.po: O chaveiro está bloqueado). The linuxKde branch names KDE Wallet as KDE's pt_BR catalogs do: Carteira do KDE (kwallet._desktop_.po Name=KDE Wallet → Carteira do KDE; kwalletd6.po: carteira do KDE, Serviço de Carteiras do KDE; l10n-kf6 trunk on websvn.kde.org, read 2026-11-18). Feminine: a, na, da Carteira do KDE. KWalletManager stays as the app's name; KWallet no longer names the store."
     }
   },
   "kind": {
@@ -2912,6 +2912,11 @@
       "chosen": "Configurações",
       "accept": ["configurações", "Ajustes", "ajuste"],
       "note": "Windows' own Settings app and its panes (Configurações > Personalização > Cores, Configurações > Aplicativos; MS pt-BR) and a firewall's configurações. Cmdr's own Settings window stays Ajustes in every branch."
+    },
+    "other": {
+      "chosen": "Ajustes",
+      "accept": ["ajustes", "Preferências", "preferências", "Configurar Cmdr", "Configurar – Cmdr"],
+      "note": "Cmdr's own settings window per Linux desktop: plain Linux (other) keeps Ajustes; linuxGnome says Preferências (Nautilus pt-BR _Preferences → _Preferências): in Preferences → nas Preferências, in preferences → nas preferências, Preferences > AI → Preferências > IA, Open preferences → Abrir preferências; linuxKde says Configurar Cmdr (Dolphin pt-BR Configure Dolphin → Configurar Dolphin; @title:window Configure → Configurar): window title Configurar – Cmdr, pointers em Configurar Cmdr with no article, as Dolphin's own em Configurar Dolphin > Exibir > Geral. Title (`settings.window.title`), command (`commands.appSettings.label`), and menu row (`menu.app.settings`) share each desktop's word."
     }
   },
   "share-menu": {
@@ -4108,6 +4113,6 @@
     "chosen": "Preferências",
     "confidence": "high",
     "sources": "GNOME Nautilus pt-BR _Preferences → _Preferências; Thunar Pr_eferências; MS TBX Preferences → Preferências",
-    "note": "GNOME's own settings row (the linuxGnome branch of `menu.app.settings`), no ellipsis; KDE's row is Configurar Cmdr… (Dolphin pt-BR: Configurar Dolphin)"
+    "note": "GNOME's own settings row (the linuxGnome branch of `menu.app.settings`), no ellipsis, and every linuxGnome pointer at Cmdr's settings window (see the settings ruling's other form); KDE's row is Configurar Cmdr… (Dolphin pt-BR: Configurar Dolphin)"
   }
 }

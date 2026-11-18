@@ -67,9 +67,9 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Ative a indexação de imagens para este disco de rede nos Ajustes para buscar o texto dentro das fotos dele.}}",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Ative a indexação de imagens para este disco de rede nas Preferências para buscar o texto dentro das fotos dele.} linuxKde {Ative a indexação de imagens para este disco de rede em Configurar Cmdr para buscar o texto dentro das fotos dele.} other {Ative a indexação de imagens para este disco de rede nos Ajustes para buscar o texto dentro das fotos dele.}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "ccf901b"
+    "sourceHash": "30b2455"
   },
   "search.imageResults.paused": "Este disco está desconectado, então estas são as fotos indexadas até agora.",
   "@search.imageResults.paused": {
@@ -219,9 +219,9 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {A indexação de disco está desativada nos Ajustes, então nada é indexado. Ative-a em Indexação > Indexação de disco.}}",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {A indexação de disco está desativada nas Preferências, então nada é indexado. Ative-a em Indexação > Indexação de disco.} linuxKde {A indexação de disco está desativada em Configurar Cmdr, então nada é indexado. Ative-a em Indexação > Indexação de disco.} other {A indexação de disco está desativada nos Ajustes, então nada é indexado. Ative-a em Indexação > Indexação de disco.}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "abfe24b"
+    "sourceHash": "7c4ff62"
   },
   "search.coverage.toast.deferredUntilSearchEnds": "O Cmdr já está buscando em {drive}. A indexação começa assim que isso terminar.",
   "@search.coverage.toast.deferredUntilSearchEnds": {

@@ -3,13 +3,13 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "{platform, select, linuxGnome {Usage stats and crash reports stay off until you turn them back on in Preferences › Updates & privacy.} linuxKde {Usage stats and crash reports stay off until you turn them back on in Configure Cmdr › Updates & privacy.} other {As estatísticas de uso e os relatórios de falha ficam desativados até você ativá-los de novo em Ajustes › Atualizações e privacidade.}}",
+  "stateRecovery.settings.body": "{platform, select, linuxGnome {As estatísticas de uso e os relatórios de falha ficam desativados até você ativá-los de novo em Preferências › Atualizações e privacidade.} linuxKde {As estatísticas de uso e os relatórios de falha ficam desativados até você ativá-los de novo em Configurar Cmdr › Atualizações e privacidade.} other {As estatísticas de uso e os relatórios de falha ficam desativados até você ativá-los de novo em Ajustes › Atualizações e privacidade.}}",
   "@stateRecovery.settings.body": {
-    "sourceHash": "20439e1"
+    "sourceHash": "8e4debd"
   },
-  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Abrir Ajustes}}",
+  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Abrir Preferências} linuxKde {Configurar Cmdr} other {Abrir Ajustes}}",
   "@stateRecovery.settings.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "f970930"
   },
   "stateRecovery.shortcuts.title": "O Cmdr não conseguiu ler seus atalhos de teclado, então os atalhos voltaram ao padrão",
   "@stateRecovery.shortcuts.title": {
@@ -19,13 +19,13 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "{platform, select, linuxGnome {If Cmdr shows as unlicensed now, enter your license key again in Preferences › License.} linuxKde {If Cmdr shows as unlicensed now, enter your license key again in Configure Cmdr › License.} other {Se o Cmdr aparecer como sem licença agora, insira sua chave de licença de novo em Ajustes › Licença.}}",
+  "stateRecovery.license.body": "{platform, select, linuxGnome {Se o Cmdr aparecer como sem licença agora, insira sua chave de licença de novo em Preferências › Licença.} linuxKde {Se o Cmdr aparecer como sem licença agora, insira sua chave de licença de novo em Configurar Cmdr › Licença.} other {Se o Cmdr aparecer como sem licença agora, insira sua chave de licença de novo em Ajustes › Licença.}}",
   "@stateRecovery.license.body": {
-    "sourceHash": "ea51589"
+    "sourceHash": "158e224"
   },
-  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Abrir Ajustes}}",
+  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Abrir Preferências} linuxKde {Configurar Cmdr} other {Abrir Ajustes}}",
   "@stateRecovery.license.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "f970930"
   },
   "stateRecovery.appStatus.title": "{platform, select, windows {O Cmdr não conseguiu ler quais pastas estavam abertas nos seus painéis, então os painéis abrem na sua pasta de usuário} other {O Cmdr não conseguiu ler quais pastas estavam abertas nos seus painéis, então os painéis abrem na sua pasta pessoal}}",
   "@stateRecovery.appStatus.title": {
