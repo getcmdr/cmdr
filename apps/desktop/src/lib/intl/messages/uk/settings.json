@@ -61,7 +61,7 @@
   },
   "settings.appearance.sizeColors.description": "Розфарбовує розміри файлів у списку файлів за діапазонами розміру. «Веселка» використовує зелений, жовтий, оранжевий, червоний і бузковий. «Програма» використовує відтінки кольору програми.",
   "@settings.appearance.sizeColors.description": {
-    "sourceHash": "ecb064a"
+    "sourceHash": "e790d53"
   },
   "settings.appearance.sizeColors.opt.none": "Немає",
   "@settings.appearance.sizeColors.opt.none": {
@@ -119,7 +119,7 @@
   "settings.appearance.dateTimeFormat.optDesc.iso": "2025-01-25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.iso": {
     "sourceHash": "dc76ffd",
-    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
+    "sameAsSourceJustification": "A literal ISO 8601 date sample; the @key description requires it identical to the source."
   },
   "settings.appearance.dateTimeFormat.opt.short": "Короткий",
   "@settings.appearance.dateTimeFormat.opt.short": {
@@ -128,7 +128,7 @@
   "settings.appearance.dateTimeFormat.optDesc.short": "01/25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.short": {
     "sourceHash": "72b6f9f",
-    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
+    "sameAsSourceJustification": "A literal month/day 24-hour time sample; the @key description requires it identical to the source."
   },
   "settings.appearance.dateTimeFormat.opt.custom": "Власний…",
   "@settings.appearance.dateTimeFormat.opt.custom": {
@@ -506,9 +506,13 @@
   "@settings.fileOperations.skipConfirmation.label": {
     "sourceHash": "f1b1b39"
   },
-  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {«Скопіювати» і «Перемістити» одразу переносять файли на іншу панель, а «Видалити» переміщує їх у Кошик без запитань. Трохи ризиковано, бо одне натискання клавіші діє відразу. Перед остаточним видаленням Cmdr завжди спершу запитує.} other {«Скопіювати» і «Перемістити» одразу переносять файли на іншу панель, а «Видалити» переміщує їх у Смітник без запитань. Трохи ризиковано, бо одне натискання клавіші діє відразу. Перед остаточним видаленням Cmdr завжди спершу запитує.}}",
+  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {«Скопіювати» і «Перемістити» одразу переносять файли на іншу панель, а «Видалити» переміщує їх у Кошик без запитань.} other {«Скопіювати» і «Перемістити» одразу переносять файли на іншу панель, а «Видалити» переміщує їх у Смітник без запитань.}}",
   "@settings.fileOperations.skipConfirmation.explanation": {
-    "sourceHash": "564f000"
+    "sourceHash": "9c53630"
+  },
+  "settings.fileOperations.skipConfirmation.summary": "Трохи ризиковано: одне натискання клавіші діє відразу. Остаточне видалення й далі потребує підтвердження.",
+  "@settings.fileOperations.skipConfirmation.summary": {
+    "sourceHash": "ca6d8db"
   },
   "settings.fileOperations.skipConfirmation.keywords": "{platform, select, windows {підтвердження, діалог, запитання, без запитань, копіювання, переміщення, кошик, видалення, швидко} other {підтвердження, діалог, запитання, без запитань, копіювання, переміщення, кошик, видалення, швидко}}",
   "@settings.fileOperations.skipConfirmation.keywords": {
@@ -730,9 +734,13 @@
   "@settings.mediaIndex.enabled.label": {
     "sourceHash": "a2e6604"
   },
-  "settings.mediaIndex.enabled.description": "Читати текст на ваших зображеннях, щоб його можна було шукати. Усе працює на вашому Mac, і дані ніколи його не залишають. Поки що лише для локальних дисків.",
+  "settings.mediaIndex.enabled.description": "Поки що лише для локальних дисків.",
   "@settings.mediaIndex.enabled.description": {
-    "sourceHash": "118fc8d"
+    "sourceHash": "517a7c9"
+  },
+  "settings.mediaIndex.enabled.summary": "Дає змогу шукати текст на ваших зображеннях. Цей текст ніколи не залишає ваш Mac.",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "31aa708"
   },
   "settings.mediaIndex.enabled.keywords": "розпізнавання тексту, напис, картинка, знімок екрана, скріншот, світлина, вміст",
   "@settings.mediaIndex.enabled.keywords": {
@@ -1111,9 +1119,9 @@
   "@settings.behavior.notifications.keepUntilClosed.label": {
     "sourceHash": "bc58ecc"
   },
-  "settings.behavior.notifications.keepUntilClosed.description": "Сповіщення залишаються на екрані, доки ви їх не закриєте, а не зникають за кілька секунд.",
+  "settings.behavior.notifications.keepUntilClosed.description": "Щоб вони не зникали самі за кілька секунд.",
   "@settings.behavior.notifications.keepUntilClosed.description": {
-    "sourceHash": "53890bf"
+    "sourceHash": "2df854c"
   },
   "settings.behavior.notifications.keepUntilClosed.keywords": "сповіщення, повідомлення, спливне, тайм-аут, час, зникати, ховати, закрити, залишати, доступність",
   "@settings.behavior.notifications.keepUntilClosed.keywords": {
@@ -1156,9 +1164,13 @@
   "@settings.search.autoApply.label": {
     "sourceHash": "06b0f9f"
   },
-  "settings.search.autoApply.description": "{platform, select, windows {Запускати пошук за назвою файлу й регулярним виразом автоматично, поки ви друкуєте (через 1 секунду після паузи). Пошук із ШІ завжди чекає на Enter, бо він коштує грошей. Якщо вимкнено, натисніть Enter або виберіть кнопку запуску, щоб шукати.} other {Запускати пошук за назвою файлу й регулярним виразом автоматично, поки ви друкуєте (через 1 секунду після паузи). Пошук із ШІ завжди чекає на Enter, бо він коштує грошей. Якщо вимкнено, натисніть Enter або кнопку запуску, щоб шукати.}}",
+  "settings.search.autoApply.description": "{platform, select, windows {Пошук починається через 1 секунду після того, як ви перестанете друкувати. Пошук із ШІ чекає, бо він коштує грошей. Якщо це вимкнено, натисніть Enter або виберіть кнопку запуску.} other {Пошук починається через 1 секунду після того, як ви перестанете друкувати. Пошук із ШІ чекає, бо він коштує грошей. Якщо це вимкнено, натисніть Enter або клацніть кнопку запуску.}}",
   "@settings.search.autoApply.description": {
-    "sourceHash": "b0f85fd"
+    "sourceHash": "3aa9f59"
+  },
+  "settings.search.autoApply.summary": "Запускає пошук за назвою й регулярним виразом, поки ви друкуєте. Пошук із ШІ чекає на Enter.",
+  "@settings.search.autoApply.summary": {
+    "sourceHash": "ebc6780"
   },
   "settings.search.autoApply.keywords": "автоматично, одразу, наживо, миттєво, введення, назва файлу, затримка",
   "@settings.search.autoApply.keywords": {
@@ -1228,9 +1240,13 @@
   "@settings.ai.reasoningEfforts.label.thinkingLevel": {
     "sourceHash": "96f115b"
   },
-  "settings.ai.reasoningEfforts.description": "Як довго модель думає, перш ніж відповісти. Коли модель думає довше, вона краще дає раду складним завданням, але відповіді надходять повільніше, а за обдумування стягують плату як за вихідні дані.",
+  "settings.ai.reasoningEfforts.description": "Коли модель думає, за це стягують плату як за вихідні дані, так само як і за саму відповідь.",
   "@settings.ai.reasoningEfforts.description": {
-    "sourceHash": "0ad6737"
+    "sourceHash": "0a6d851"
+  },
+  "settings.ai.reasoningEfforts.summary": "Що довше модель думає, то краще дає раду складним завданням, але відповідає повільніше, і це більше коштує.",
+  "@settings.ai.reasoningEfforts.summary": {
+    "sourceHash": "5c3f87f"
   },
   "settings.ai.reasoningEfforts.keywords": "міркування, роздуми, мислення, думати, швидкість, вартість, якість, зусилля",
   "@settings.ai.reasoningEfforts.keywords": {
@@ -1248,9 +1264,13 @@
   "@settings.aboutThis.aiVerdict.label": {
     "sourceHash": "4c84599"
   },
-  "settings.aboutThis.aiVerdict.description": "Коли ви відкриваєте картку, ШІ пише два-три речення на основі фактів, які вона показує. Із хмарним ШІ факти картки й короткий погляд усередину файлу щоразу надходять вашому постачальнику.",
+  "settings.aboutThis.aiVerdict.description": "Коли ви відкриваєте картку, ШІ пише два-три речення на основі фактів, які вона показує. Так відбувається щоразу, коли ви її відкриваєте.",
   "@settings.aboutThis.aiVerdict.description": {
-    "sourceHash": "5dfb5f5"
+    "sourceHash": "4c0ef49"
+  },
+  "settings.aboutThis.aiVerdict.summary": "Із хмарним ШІ факти картки й уривок файлу надходять вашому постачальнику.",
+  "@settings.aboutThis.aiVerdict.summary": {
+    "sourceHash": "4e34358"
   },
   "settings.aboutThis.aiVerdict.keywords": "пояснити, пояснення, опис, підсумок, висновок, відомості про файл, що це таке, описати, штучний інтелект",
   "@settings.aboutThis.aiVerdict.keywords": {
@@ -1263,6 +1283,15 @@
   "settings.network.enabled.label": "{platform, select, windows {Увімкнути роботу з мережею} other {Увімкнути роботу з мережею}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
+  },
+  "settings.network.enabled.description": "{platform, select, macos {Коли це вимкнено, Cmdr не проситиме в macOS доступу до локальної мережі.} windows {Коли це вимкнено, Windows не запитуватиме, чи пропустити Cmdr через брандмауер.} other {}}",
+  "@settings.network.enabled.description": {
+    "sourceHash": "3e2a4b0",
+    "sameAsSourceJustification": "The Linux branch is empty on purpose in the English source (no prompt to mention on Linux), so it stays empty."
+  },
+  "settings.network.enabled.summary": "Знаходить сервери SMB у вашій мережі. Змонтовані спільні папки працюють у будь-якому разі.",
+  "@settings.network.enabled.summary": {
+    "sourceHash": "1da1cd9"
   },
   "settings.network.enabled.keywords": "мережа, мережеві диски, виявлення, пошук серверів, локальна, дозвіл, вимкнути",
   "@settings.network.enabled.keywords": {
@@ -1286,7 +1315,7 @@
   },
   "settings.network.directSmbConnection.description": "{platform, select, macos {Коли ввімкнено, Cmdr підʼєднується до спільних папок SMB напряму, щоб операції з файлами йшли швидше. Системне монтування залишається для Finder та інших програм.} windows {Коли це ввімкнено, Cmdr підʼєднується до спільних папок SMB напряму, щоб операції з файлами йшли швидше. Системне підʼєднання залишається для Провідника та інших програм.} other {Коли ввімкнено, Cmdr підʼєднується до спільних папок SMB напряму, щоб операції з файлами йшли швидше. Системне монтування залишається для вашого файлового менеджера та інших програм.}}",
   "@settings.network.directSmbConnection.description": {
-    "sourceHash": "429c68c"
+    "sourceHash": "06e2844"
   },
   "settings.network.directSmbConnection.keywords": "напряму, швидко, швидкість, підключення, продуктивність, мережа",
   "@settings.network.directSmbConnection.keywords": {
@@ -1296,9 +1325,13 @@
   "@settings.network.requireSmbEncryption.label": {
     "sourceHash": "4519b09"
   },
-  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr шифрує свої підʼєднання до спільних папок SMB, навіть без запиту від сервера, і не відкриває спільну папку, підʼєднання до якої не можна зашифрувати, зокрема ту, яку ваш Mac підʼєднав без шифрування. Гостьові підʼєднання зашифрувати не можна, тож доведеться ввійти. Підʼєднання, які Cmdr уже відкрив, залишаються як є, доки не підʼєднаються знову.} windows {Cmdr шифрує свої підʼєднання до спільних папок SMB, навіть без запиту від сервера, і не відкриває спільну папку, підʼєднання до якої не можна зашифрувати, зокрема ту, яку ваш ПК підʼєднав без шифрування. Гостьові підʼєднання зашифрувати не можна, тож доведеться ввійти. Підʼєднання, які Cmdr уже відкрив, залишаються як є, доки не підʼєднаються знову.} other {Cmdr шифрує свої підʼєднання до спільних папок SMB, навіть без запиту від сервера, і не відкриває спільну папку, підʼєднання до якої не можна зашифрувати, зокрема ту, яку ваш компʼютер підʼєднав без шифрування. Гостьові підʼєднання зашифрувати не можна, тож доведеться ввійти. Підʼєднання, які Cmdr уже відкрив, залишаються як є, доки не підʼєднаються знову.}}",
+  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr шифрує свої підʼєднання SMB, навіть коли сервер цього не вимагає, зокрема до спільних папок, які ваш Mac підʼєднав без шифрування. Підʼєднання, які Cmdr уже відкрив, залишаються як є, доки не підʼєднаються знову.} windows {Cmdr шифрує свої підʼєднання SMB, навіть коли сервер цього не вимагає, зокрема до спільних папок, які ваш ПК підʼєднав без шифрування. Підʼєднання, які Cmdr уже відкрив, залишаються як є, доки не підʼєднаються знову.} other {Cmdr шифрує свої підʼєднання SMB, навіть коли сервер цього не вимагає, зокрема до спільних папок, які ваш компʼютер підʼєднав без шифрування. Підʼєднання, які Cmdr уже відкрив, залишаються як є, доки не підʼєднаються знову.}}",
   "@settings.network.requireSmbEncryption.description": {
-    "sourceHash": "26291fe"
+    "sourceHash": "6025cf4"
+  },
+  "settings.network.requireSmbEncryption.summary": "Спільні папки, підʼєднання до яких не можна зашифрувати, не відкриються, а гостям доведеться ввійти.",
+  "@settings.network.requireSmbEncryption.summary": {
+    "sourceHash": "bc73348"
   },
   "settings.network.requireSmbEncryption.keywords": "шифр, шифрувати, зашифровано, захист, безпека, приватність, конфіденційність, підключення, мережа",
   "@settings.network.requireSmbEncryption.keywords": {
@@ -1336,6 +1369,18 @@
   "@settings.network.shareCacheDuration.keywords": {
     "sourceHash": "df14578"
   },
+  "settings.network.timeout.label": "Час очікування мережі",
+  "@settings.network.timeout.label": {
+    "sourceHash": "fdd0d76"
+  },
+  "settings.network.timeout.description": "Скільки Cmdr чекає на відповідь спільної папки в мережі, перш ніж припинити спроби. 15 секунд підходить для звичайних локальних мереж; для VPN чи зʼєднань із високою затримкою спробуйте 45.",
+  "@settings.network.timeout.description": {
+    "sourceHash": "8cc6def"
+  },
+  "settings.network.timeout.keywords": "тайм-аут, чекати, очікування, повільно, повільна мережа, секунди, затримка, пінг, зависає",
+  "@settings.network.timeout.keywords": {
+    "sourceHash": "bb8a9ac"
+  },
   "settings.network.smbConcurrency.label": "Одночасні операції на одне підʼєднання SMB",
   "@settings.network.smbConcurrency.label": {
     "sourceHash": "339933f"
@@ -1352,9 +1397,13 @@
   "@settings.fileOperations.mtpEnabled.label": {
     "sourceHash": "6a315a8"
   },
-  "settings.fileOperations.mtpEnabled.description": "Виявляти Android та інші пристрої, підʼєднані USB-кабелем, і підʼєднуватися до них, щоб переглядати й передавати файли. Щоб користуватися цим на телефоні Android, підʼєднайте його USB-кабелем, а потім на телефоні відкрийте щось на кшталт «Налаштування» > «Налаштування USB» і виберіть тип зʼєднання «Передавання файлів», «Android Auto» або подібний. (Залежить від пристрою.)",
+  "settings.fileOperations.mtpEnabled.description": "Cmdr виявляє телефони Android, пристрої Kindle і камери, підʼєднані USB-кабелем, щоб ви могли переглядати й передавати файли. На Android пошукайте щось на кшталт «Налаштування» > «Налаштування USB»; «Android Auto» теж підходить. Залежить від пристрою.",
   "@settings.fileOperations.mtpEnabled.description": {
-    "sourceHash": "c66df04"
+    "sourceHash": "a5b7ef3"
+  },
+  "settings.fileOperations.mtpEnabled.summary": "На телефоні виберіть для USB-зʼєднання «Передавання файлів» або подібний режим.",
+  "@settings.fileOperations.mtpEnabled.summary": {
+    "sourceHash": "355c987"
   },
   "settings.fileOperations.mtpEnabled.keywords": "пристрій, телефон, смартфон, мобільний, фотоапарат, читалка, USB",
   "@settings.fileOperations.mtpEnabled.keywords": {
@@ -1364,6 +1413,14 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
+  "settings.fileOperations.adbEnabled.description": "ADB дає доступ до всієї файлової системи телефону Android, якої MTP вам не покаже. Залишати це ввімкненим нічого не коштує, якщо у вас не інстальовано інструментів Android.",
+  "@settings.fileOperations.adbEnabled.description": {
+    "sourceHash": "a16197e"
+  },
+  "settings.fileOperations.adbEnabled.summary": "{platform, select, macos {Потрібно ввімкнути «Налагодження USB» на телефоні й мати інструмент adb на цьому Mac.} windows {Потрібно ввімкнути «Налагодження USB» на телефоні й мати інструмент adb на цьому ПК.} other {Потрібно ввімкнути «Налагодження USB» на телефоні й мати інструмент adb на цьому компʼютері.}}",
+  "@settings.fileOperations.adbEnabled.summary": {
+    "sourceHash": "b20dbc7"
+  },
   "settings.fileOperations.adbEnabled.keywords": "налагодження usb, для розробників, параметри розробника, телефон, пристрій, смартфон",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1372,9 +1429,13 @@
   "@settings.fileOperations.adbBinaryPath.label": {
     "sourceHash": "a67fbbd"
   },
-  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Залиште поле порожнім, і Cmdr шукатиме adb у звичних місцях, зокрема в Android SDK і Homebrew. Вкажіть інше місце, якщо тримаєте platform tools окремо.} other {Залиште поле порожнім, і Cmdr шукатиме adb у звичних місцях, зокрема в Android SDK і у вашому PATH. Вкажіть інше місце, якщо тримаєте platform tools окремо.}}",
+  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Cmdr шукає у звичних місцях, зокрема в Android SDK і Homebrew. Вкажіть інше місце, якщо тримаєте platform tools окремо.} other {Cmdr шукає у звичних місцях, зокрема в Android SDK і у вашому PATH. Вкажіть інше місце, якщо тримаєте platform tools окремо.}}",
   "@settings.fileOperations.adbBinaryPath.description": {
-    "sourceHash": "e8cde17"
+    "sourceHash": "e1c5acb"
+  },
+  "settings.fileOperations.adbBinaryPath.summary": "Залиште поле порожнім, щоб Cmdr сам знайшов adb.",
+  "@settings.fileOperations.adbBinaryPath.summary": {
+    "sourceHash": "e62a0d3"
   },
   "settings.fileOperations.adbBinaryPath.keywords": "шлях, файл, виконуваний, бінарний, розташування, папка",
   "@settings.fileOperations.adbBinaryPath.keywords": {
@@ -1408,9 +1469,9 @@
   "@settings.fileExplorer.git.showStatusColumn.label": {
     "sourceHash": "0f6a836"
   },
-  "settings.fileExplorer.git.showStatusColumn.description": "Додати стовпець, що показує стан git кожного файлу (змінений, невідстежуваний тощо), у режимі «Докладний вигляд».",
+  "settings.fileExplorer.git.showStatusColumn.description": "Додати стовпець, що показує стан git кожного файлу (наприклад, змінений чи невідстежуваний), у режимі «Докладний вигляд».",
   "@settings.fileExplorer.git.showStatusColumn.description": {
-    "sourceHash": "fc74b38"
+    "sourceHash": "214eb5d"
   },
   "settings.fileExplorer.git.showStatusColumn.keywords": "стан, стовпець, змінені, нові, ігноровані, додані, видалені",
   "@settings.fileExplorer.git.showStatusColumn.keywords": {
@@ -1420,9 +1481,9 @@
   "@settings.fileExplorer.git.showVirtualGitPortal.label": {
     "sourceHash": "40d9fa1"
   },
-  "settings.fileExplorer.git.showVirtualGitPortal.description": "Коли ви відкриваєте .git, показувати гілки, теги, коміти й worktree як віртуальні папки, які можна переглядати. Вимкніть, щоб бачити справжній вміст .git.",
+  "settings.fileExplorer.git.showVirtualGitPortal.description": "Коли ви відкриваєте .git, показувати гілки, теги, коміти й worktree як папки, які можна переглядати. Вимкніть, щоб бачити сирий вміст .git.",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
-    "sourceHash": "331e0a5"
+    "sourceHash": "d58b2c3"
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "портал, віртуальні папки, гілки, теги, коміти, історія, репозиторій",
   "@settings.fileExplorer.git.showVirtualGitPortal.keywords": {
@@ -1464,9 +1525,13 @@
   "@settings.developer.mcpPort.label": {
     "sourceHash": "72e9a59"
   },
-  "settings.developer.mcpPort.description": "Бажаний порт сервера MCP. Залиште 0, щоб ОС сама вибрала тимчасовий порт (рекомендовано; фактичний порт показано нижче, коли сервер працює). Вкажіть конкретний порт, якщо його потребують зовнішні інструменти.",
+  "settings.developer.mcpPort.description": "Поки сервер працює, порт, що використовується, показано нижче. Задайте конкретний порт, якщо іншому інструменту треба знати його заздалегідь.",
   "@settings.developer.mcpPort.description": {
-    "sourceHash": "174e807"
+    "sourceHash": "f2ca537"
+  },
+  "settings.developer.mcpPort.summary": "{platform, select, macos {Залиште 0, щоб ваш Mac сам вибрав вільний порт.} windows {Залиште 0, щоб ваш ПК сам вибрав вільний порт.} other {Залиште 0, щоб ваш компʼютер сам вибрав вільний порт.}}",
+  "@settings.developer.mcpPort.summary": {
+    "sourceHash": "cee7df5"
   },
   "settings.developer.mcpPort.keywords": "мережа, тимчасовий, динамічний, номер порту",
   "@settings.developer.mcpPort.keywords": {
@@ -1524,6 +1589,10 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
+  "settings.analytics.enabled.description": "Будь ласка, увімкніть це, щоб допомогти нам побачити, які функції важливі під час відкритого бета-тестування.\nСтатистика привʼязана до випадкового ідентифікатора, а не до вашого імені чи е‑адреси.\nCmdr ніколи не надсилає назви файлів, шляхи, пошукові запити чи запити до ШІ.\nЯкщо це вимкнено, Cmdr не надсилає жодної статистики.",
+  "@settings.analytics.enabled.description": {
+    "sourceHash": "a8d8db1"
+  },
   "settings.analytics.enabled.keywords": "аналітика, статистика, приватність, конфіденційність, телеметрія, бета, відстеження",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1540,9 +1609,13 @@
   "@settings.updates.crashReports.label": {
     "sourceHash": "2b8f06d"
   },
-  "settings.updates.crashReports.description": "{platform, select, macos {Автоматично надсилати звіт, коли Cmdr аварійно завершує роботу або стикається з проблемою у фоновому режимі. Звіт містить версію програми, версію macOS і місце в коді, де виникла проблема. Жодних назв файлів чи особистих даних.} windows {Автоматично надсилати звіт, коли Cmdr аварійно завершує роботу або стикається з проблемою у фоновому режимі. Звіт містить версію програми, версію Windows і місце в коді, де виникла проблема. Жодних назв файлів чи особистих даних.} other {Автоматично надсилати звіт, коли Cmdr аварійно завершує роботу або стикається з проблемою у фоновому режимі. Звіт містить версію програми, дистрибутив Linux і його версію та місце в коді, де виникла проблема. Жодних назв файлів чи особистих даних.}}",
+  "settings.updates.crashReports.description": "{platform, select, macos {Cmdr надсилає звіт, коли аварійно завершує роботу або стикається з проблемою у фоновому режимі. Звіт містить версію програми, версію macOS і місце в коді, де виникла проблема.} windows {Cmdr надсилає звіт, коли аварійно завершує роботу або стикається з проблемою у фоновому режимі. Звіт містить версію програми, версію Windows і місце в коді, де виникла проблема.} other {Cmdr надсилає звіт, коли аварійно завершує роботу або стикається з проблемою у фоновому режимі. Звіт містить версію програми, дистрибутив Linux і його версію, а також місце в коді, де виникла проблема.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "26508c4"
+  },
+  "settings.updates.crashReports.summary": "Звіт ніколи не містить назв файлів чи особистих даних.",
+  "@settings.updates.crashReports.summary": {
+    "sourceHash": "7814a28"
   },
   "settings.updates.crashReports.keywords": "аварія, збій, вилітає, звіт, приватність, телеметрія, вада, помилка",
   "@settings.updates.crashReports.keywords": {
@@ -1552,9 +1625,13 @@
   "@settings.updates.errorReports.label": {
     "sourceHash": "471575d"
   },
-  "settings.updates.errorReports.description": "Надсилати розробникові короткий уривок журналу, коли щось піде не так. Це допомагає швидше виправляти помилки. Типово вимкнено. Звіт завжди можна надіслати вручну з меню «Довідка».",
+  "settings.updates.errorReports.description": "Типово вимкнено. Звіт завжди можна надіслати вручну з меню «Довідка».",
   "@settings.updates.errorReports.description": {
-    "sourceHash": "f3e41eb"
+    "sourceHash": "a33a61c"
+  },
+  "settings.updates.errorReports.summary": "Надсилає нам короткий уривок журналу, коли щось піде не так, щоб ми швидше виправляли помилки.",
+  "@settings.updates.errorReports.summary": {
+    "sourceHash": "0fdd0ae"
   },
   "settings.updates.errorReports.keywords": "помилка, звіт, автоматично, приватність, телеметрія, вада, журнал, діагностика, уривок",
   "@settings.updates.errorReports.keywords": {
@@ -1602,7 +1679,7 @@
   },
   "settings.advanced.virtualizationBufferColumns.description": "Скільки додаткових стовпців відмальовувати в режимі «Короткий вигляд».",
   "@settings.advanced.virtualizationBufferColumns.description": {
-    "sourceHash": "a1cbd98"
+    "sourceHash": "a66189f"
   },
   "settings.advanced.virtualizationBufferColumns.keywords": "стовпці, колонки, короткий, відмальовування, прокручування, швидкодія",
   "@settings.advanced.virtualizationBufferColumns.keywords": {
@@ -1636,6 +1713,14 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Індексування продовжиться з того ж моменту, щойно вільного місця стане на один відсотковий пункт більше за поріг. Це працює незалежно від того, ввімкнено «Застереження про брак місця на диску» чи ні.",
+  "@settings.advanced.indexPauseFreeSpacePercent.description": {
+    "sourceHash": "4d80336"
+  },
+  "settings.advanced.indexPauseFreeSpacePercent.summary": "Не дає індексу зайняти місце, потрібне вашим власним файлам.",
+  "@settings.advanced.indexPauseFreeSpacePercent.summary": {
+    "sourceHash": "965796f"
+  },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "диск, місце, заповнений, повний, вільне, індекс, індексування, пауза, сховище, поріг, межа, відсоток, мало",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
     "sourceHash": "1af2a91"
@@ -1644,9 +1729,9 @@
   "@settings.fileViewer.suppressBinaryWarning.label": {
     "sourceHash": "8cdaada"
   },
-  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Переглядач файлів Cmdr показує сирі байти (нетекстовий вміст декодується як UTF-8 із втратами). Коли ви відкриваєте зображення, PDF, архів чи інший двійковий файл, переглядач показує червоний банер із поясненням, що вам, імовірно, потрібен Швидкий перегляд або відкриття у повʼязаній програмі. Увімкніть цей параметр (або клацніть «Більше не показувати це застереження» на банері), щоб назавжди прибрати це застереження.} windows {Переглядач файлів Cmdr показує сирі байти (нетекстовий вміст декодується як UTF-8 із втратами). Коли ви відкриваєте зображення, PDF, архів чи інший двійковий файл, переглядач показує червоний банер із поясненням, що вам, імовірно, потрібне відкриття у повʼязаній програмі. Увімкніть цей параметр (або виберіть «Більше не показувати це застереження» на банері), щоб назавжди прибрати це застереження.} other {Переглядач файлів Cmdr показує сирі байти (нетекстовий вміст декодується як UTF-8 із втратами). Коли ви відкриваєте зображення, PDF, архів чи інший двійковий файл, переглядач показує червоний банер із поясненням, що вам, імовірно, потрібне відкриття у повʼязаній програмі. Увімкніть цей параметр (або клацніть «Більше не показувати це застереження» на банері), щоб назавжди прибрати це застереження.}}",
+  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Переглядач файлів Cmdr показує сирий вміст файлу. Коли ви відкриваєте зображення, PDF, архів чи інший двійковий файл, переглядач показує червоний банер із поясненням, що вам, імовірно, потрібен Швидкий перегляд або відкриття у повʼязаній програмі. Увімкніть цей параметр (або клацніть «Більше не показувати це застереження» на банері), щоб назавжди прибрати це застереження.} windows {Переглядач файлів Cmdr показує сирий вміст файлу. Коли ви відкриваєте зображення, PDF, архів чи інший двійковий файл, переглядач показує червоний банер із поясненням, що вам, імовірно, потрібне відкриття у повʼязаній програмі. Увімкніть цей параметр (або виберіть «Більше не показувати це застереження» на банері), щоб назавжди прибрати це застереження.} other {Переглядач файлів Cmdr показує сирий вміст файлу. Коли ви відкриваєте зображення, PDF, архів чи інший двійковий файл, переглядач показує червоний банер із поясненням, що вам, імовірно, потрібне відкриття у повʼязаній програмі. Увімкніть цей параметр (або клацніть «Більше не показувати це застереження» на банері), щоб назавжди прибрати це застереження.}}",
   "@settings.fileViewer.suppressBinaryWarning.explanation": {
-    "sourceHash": "9f90a50"
+    "sourceHash": "c255df8"
   },
   "settings.fileViewer.suppressBinaryWarning.keywords": "двійковий, бінарний, зображення, байти, банер, попередження, сирий вигляд",
   "@settings.fileViewer.suppressBinaryWarning.keywords": {
@@ -1828,9 +1913,13 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Максимальний обсяг місця на диску для файлів журналу. Задайте 0, щоб вимкнути зберігання журналу; без журналів звіти про помилки надіслати не можна. Зміна на ненульове значення діє після наступного запуску програми.",
+  "settings.advanced.maxLogStorageMb.description": "Новий ненульовий ліміт почне діяти після наступного запуску Cmdr.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "725bb26"
+    "sourceHash": "16616b2"
+  },
+  "settings.advanced.maxLogStorageMb.summary": "Задайте 0, щоб не зберігати журнали, але тоді звіти про помилки надіслати не вийде.",
+  "@settings.advanced.maxLogStorageMb.summary": {
+    "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "журнали, логи, обсяг, місце, ротація, звіт, приватність, налагодження",
   "@settings.advanced.maxLogStorageMb.keywords": {
@@ -1872,9 +1961,13 @@
   "@settings.advanced.logLlmCalls.label": {
     "sourceHash": "f865b3e"
   },
-  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Зберігає кожен запит до ШІ та відповідь на нього в локальну папку (llm-logs) для налагодження. Ці файли залишаються на вашому Mac і містять назви файлів і шляхи, які Cmdr надсилає вашому постачальнику.} windows {Зберігає кожен запит до ШІ та відповідь на нього в локальну папку (llm-logs) для налагодження. Ці файли залишаються на вашому ПК і містять назви файлів і шляхи, які Cmdr надсилає вашому постачальнику.} other {Зберігає кожен запит до ШІ та відповідь на нього в локальну папку (llm-logs) для налагодження. Ці файли залишаються на вашому компʼютері і містять назви файлів і шляхи, які Cmdr надсилає вашому постачальнику.}}",
+  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Cmdr записує їх у папку llm-logs для налагодження. Ці файли залишаються на вашому Mac.} windows {Cmdr записує їх у папку llm-logs для налагодження. Ці файли залишаються на вашому ПК.} other {Cmdr записує їх у папку llm-logs для налагодження. Ці файли залишаються на вашому компʼютері.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "c7e917a"
+  },
+  "settings.advanced.logLlmCalls.summary": "Зберігає кожен запит до ШІ та відповідь на нього локально, разом зі шляхами до файлів.",
+  "@settings.advanced.logLlmCalls.summary": {
+    "sourceHash": "8b9e485"
   },
   "settings.advanced.logLlmCalls.keywords": "ШІ, журнал, налагодження, запит, відповідь, промпт, модель",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2382,17 +2475,33 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
+  "settings.askCmdr.provider.usesProvider": "Ask Cmdr використовує того самого постачальника ШІ, що й решта Cmdr: {provider}. <providerLink>Змінити в розділі ШІ › Постачальник</providerLink>",
+  "@settings.askCmdr.provider.usesProvider": {
+    "sourceHash": "978e715"
+  },
+  "settings.askCmdr.provider.none": "Увімкніть постачальника ШІ в розділі <providerLink>ШІ › Постачальник</providerLink>, щоб почати чат.",
+  "@settings.askCmdr.provider.none": {
+    "sourceHash": "0e73e8e"
+  },
   "settings.askCmdr.interactiveModel.label": "Модель для Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"
   },
-  "settings.askCmdr.interactiveModel.description": "Модель, яку використовує чат. Залиште поле порожнім, щоб використовувати ту саму модель, що й інші функції ШІ в Cmdr. Приклад: claude-sonnet-5-5",
+  "settings.askCmdr.interactiveModel.description": "Модель, яку використовує чат. «Та сама, що для ШІ в Cmdr» означає модель, яку ви вибрали в розділі ШІ › Постачальник.",
   "@settings.askCmdr.interactiveModel.description": {
-    "sourceHash": "e301e99"
+    "sourceHash": "a285a77"
   },
   "settings.askCmdr.interactiveModel.placeholder": "Та сама, що для ШІ в Cmdr",
   "@settings.askCmdr.interactiveModel.placeholder": {
     "sourceHash": "2631f3d"
+  },
+  "settings.askCmdr.interactiveModel.sameAs": "Та сама, що для ШІ в Cmdr ({model})",
+  "@settings.askCmdr.interactiveModel.sameAs": {
+    "sourceHash": "e290ccc"
+  },
+  "settings.askCmdr.interactiveModel.localNote": "Локальний ШІ запускає одну модель, тож чат використовує саме її.",
+  "@settings.askCmdr.interactiveModel.localNote": {
+    "sourceHash": "b2447b5"
   },
   "settings.askCmdr.interactiveModel.keywords": "ШІ, чат, асистент, інша модель, окрема модель, замінити",
   "@settings.askCmdr.interactiveModel.keywords": {
@@ -2442,9 +2551,13 @@
   "@settings.askCmdr.proactive.label": {
     "sourceHash": "a85ef48"
   },
-  "settings.askCmdr.proactive.description": "Cmdr стежить за папками, у яких ви працюєте, і починає чат, коли має що запропонувати. Нічого не виконується, доки ви це не схвалите.",
+  "settings.askCmdr.proactive.description": "Cmdr стежить за папками, у яких ви працюєте, щоб знайти, що можна запропонувати.",
   "@settings.askCmdr.proactive.description": {
-    "sourceHash": "556f155"
+    "sourceHash": "e4261b4"
+  },
+  "settings.askCmdr.proactive.summary": "Cmdr починає чат із пропозицією. Нічого не виконується, доки ви це не схвалите.",
+  "@settings.askCmdr.proactive.summary": {
+    "sourceHash": "675ea47"
   },
   "settings.askCmdr.proactive.keywords": "проактивно, пропозиції, автоматично, стеження, ініціатива, сам",
   "@settings.askCmdr.proactive.keywords": {
@@ -2556,9 +2669,13 @@
   "@settings.operationLog.enabled.label": {
     "sourceHash": "edfee55"
   },
-  "settings.operationLog.enabled.description": "Поки цей перемикач вимкнено, Cmdr не записує нові копіювання, переміщення, перейменування й видалення, тож відмінити їх не вийде. Наявна історія залишається, і те, що в ній є, можна відмінити й далі.",
+  "settings.operationLog.enabled.description": "Це стосується нових копіювань, переміщень, перейменувань і видалень. Наявна історія залишається, і те, що в ній є, можна відмінити й далі.",
   "@settings.operationLog.enabled.description": {
-    "sourceHash": "41f90d4"
+    "sourceHash": "87f3b5d"
+  },
+  "settings.operationLog.enabled.summary": "Поки це вимкнено, Cmdr не записує нові зміни, тож відмінити їх не вийде.",
+  "@settings.operationLog.enabled.summary": {
+    "sourceHash": "94d4870"
   },
   "settings.operationLog.enabled.keywords": "операції, журнал, історія, запис, записування, відміна, скасувати дію, приватність, вимкнути, лог",
   "@settings.operationLog.enabled.keywords": {
@@ -2696,7 +2813,7 @@
   "@settings.summary.noSubsections": {
     "sourceHash": "ba4b5b5"
   },
-  "settings.control.moreAbout": "More about “{setting}”",
+  "settings.control.moreAbout": "Докладніше про «{setting}»",
   "@settings.control.moreAbout": {
     "sourceHash": "57968f3"
   },
@@ -2989,6 +3106,10 @@
   "@settings.appearance.card.namesAndIcons": {
     "sourceHash": "8386169"
   },
+  "settings.appearance.card.sorting": "Сортування",
+  "@settings.appearance.card.sorting": {
+    "sourceHash": "cb24f7d"
+  },
   "settings.appearance.card.briefMode": "Короткий вигляд",
   "@settings.appearance.card.briefMode": {
     "sourceHash": "b75e4b3"
@@ -3077,6 +3198,14 @@
   "settings.securityLog.enabled.label": "Записувати події безпеки",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
+  },
+  "settings.securityLog.enabled.description": "Записує зміни й відмови, повʼязані з безпекою, як-от згоду на хмарний ШІ, інстальоване оновлення чи програму, якій сервер MCP відмовив у доступі. Жодних назв файлів, вмісту чи паролів.",
+  "@settings.securityLog.enabled.description": {
+    "sourceHash": "97e24a4"
+  },
+  "settings.securityLog.enabled.summary": "{platform, select, macos {Невеликий локальний журнал подій безпеки. Він ніколи не залишає ваш Mac.} windows {Невеликий локальний журнал подій безпеки. Він ніколи не залишає ваш ПК.} other {Невеликий локальний журнал подій безпеки. Він ніколи не залишає ваш компʼютер.}}",
+  "@settings.securityLog.enabled.summary": {
+    "sourceHash": "84a9146"
   },
   "settings.securityLog.enabled.keywords": "безпека, аудит, журнал, лог, події, доступ, приватність, конфіденційність",
   "@settings.securityLog.enabled.keywords": {
@@ -3387,9 +3516,9 @@
   "@settings.adb.install.intro": {
     "sourceHash": "9f7a0f4"
   },
-  "settings.adb.pathPlaceholder": "Cmdr шукає adb у звичних місцях",
+  "settings.adb.pathPlaceholder": "Визначається автоматично",
   "@settings.adb.pathPlaceholder": {
-    "sourceHash": "538b307"
+    "sourceHash": "14fac78"
   },
   "settings.adb.browse": "Огляд…",
   "@settings.adb.browse": {

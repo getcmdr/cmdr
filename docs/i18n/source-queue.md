@@ -192,6 +192,37 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   now that GNOME has its own branch; the `other` branch could name the keyring desktop-neutrally. (all)
 - GNOME vi's own catalog misspells Keyboard as `Bàm phím` (gnome-control-center vi.po); vi's
   `shortcuts.conflict.takenByLinuxDesktops` writes `Bàn phím`. Worth an upstream GNOME fix. (vi)
+- `ai-tool` matches "the adb tool" / "another tool" (`settings.fileOperations.adbEnabled.summary`), and `note` matches
+  the verb "notes" (`settings.securityLog.enabled.description`); each locale added an exception. Add `notMatch`. (all)
+- `licensing.section.includedAi`: "your own key" reads as the license key on the License page; every locale wrote "API
+  key". Say "your own API key" in English. (de, hu, nl, vi)
+- `settings.network.requireSmbEncryption.summary`: "guests need to sign in" contradicts itself once translated ("a guest
+  who signs in isn't a guest"). Try "guest connections won't work; sign in instead". (es, fr, hu, nl, zh-Hant)
+- `settings.adb.pathPlaceholder`: "Found automatically" reads as a past result on an empty field; "Finds it
+  automatically" says what an empty field does. (de, nl, zh)
+- Bare "It" with no on-screen antecedent: `settings.securityLog.enabled.description`,
+  `settings.analytics.enabled.description`, `settings.askCmdr.proactive.description`,
+  `settings.advanced.logLlmCalls.description` ("Cmdr writes them"). Name the subject in English. (de, fr, nl, sv)
+- `settings.askCmdr.provider.usesProvider`: `{provider}` as a verb object breaks case agreement when it's "Local LLM";
+  locales used a colon slot. Rephrase English or hint it in the description. (de, ru, uk)
+- `settings.ai.reasoningEfforts.summary`: the `@key` says to echo no label word, yet "More thinking" repeats "Thinking
+  level". Fix one or the other. (cs, ru, vi)
+- `settings.askCmdr.interactiveModel.placeholder` drifts from "Same as Cmdr's AI" in hu (and cs lacks a no-break space),
+  so the quoted `sameAs` label differs from it; retranslate the placeholder with `sameAs`. (cs, hu)
+- `settings.control.moreAbout`'s `@key` asks for quote marks, which hu's `learn-more` ruling forbids. (hu)
+- `settings.mtpEnabled.*`, `settings.fileOperations.adbEnabled.summary`: the Android on-phone labels ("USB Preferences",
+  "File transfer") have no source in the pile; add AOSP Settings catalogs. "“Android Auto” works too" is unclear. (all)
+- `settings.appearance.dateTimeFormat.optDesc.short`: the month-first sample `01/25` reads backwards in day-first
+  locales; say whether it should follow the locale's format. (fr, pt)
+- `settings.search.autoApply.description`: "AI searches wait" lost its object ("for Enter"). (zh)
+- `settings.askCmdr.proactive.summary`'s `@key` names the Suggested ops dialog's wording without a key; locales matched
+  `settings.suggestedOps.suppressApprovalNotice.description`. Name the key. (ru, sv)
+- `settings.network.timeoutUnit`: a unit after a free number can't pluralize; use an abbreviation or an ICU plural. (sv)
+- `settings.behavior.notifications.keepUntilClosed.description` is a fragment ("Instead of …") that needs a pronoun in
+  several languages; a full sentence would carry better. (ru, uk)
+- vi `settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label` uses `Thiếu`, which its `free-space` ruling
+  avoids; retranslate. Czech `quoted-labels` warns on Windows' own „Jen pro čtení“ in two `errors.write.*` keys; the
+  check needs a carve-out for quoted OS labels. (vi, cs)
 
 ## Process feedback
 
@@ -301,3 +332,10 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   metadata on invent.kde.org, not in a `.po`. KDE's `Configure %1…` lives in `kconfigwidgets6.po`, not `kxmlgui6.po`
   (obsolete there). A `--lang` list on `i18n:brief` (one brief per language in one call) would have avoided 13 separate
   commands, since the guard refuses a loop. (de, nl, sv, fr)
+- `i18n:apply-terms` has no dry run: a first ruling for a "no ruling" term flags drift in keys outside the batch,
+  costing one to three patch rounds. Preview catalog-wide drift before writing. `sources` must be a string; say so in
+  the brief. (fr, hu, nl, pt, sv, vi, zh)
+- `i18n:apply` prints "add sameAsSourceJustification" for keys whose catalog `@key` already has one, and `--dry-run`
+  after a real apply reports dropped forks as failures. (es, nl, sv, zh-Hant)
+- The brief needed `node scripts/sync-locale-keys.ts <tag>` first (38 keys missing from the catalog); the brief could
+  run it. (de, fr, nl, vi)

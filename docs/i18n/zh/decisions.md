@@ -183,7 +183,7 @@ Header `检查更改` without `正在`, like `首次完整扫描` / `快速更�
 
 ## Usage stats (`settings.analytics.enabled.label`/`.description`, `settings.updates.emailPrivacyNote`, `onboarding.stepBeta.analyticsLede`/`.analyticsTitle`)
 
-`使用统计`, no `匿名` (a stable random id was never anonymous); `一个随机标识符` over an `ID` loan; `关联到`. ❌ Never
+`使用统计`, no `匿名` (a stable random id isn't anonymous); `一个随机标识符` over an `ID` loan; `关联到`. ❌ Never
 `假名化` / `匿名化`.
 
 ## Awaiting-answer row + rollback confirm (`queue.row.statusAwaitingAnswer`/`.awaitingAnswerTooltip`, `fileOperations.rollbackConfirm.*`, `fileOperations.transferProgress.foregroundBusyToast`/`.rollbackTooltip`)

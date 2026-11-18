@@ -61,7 +61,7 @@
   },
   "settings.appearance.sizeColors.description": "Окрашивать размеры в списке файлов по величине. «Радуга» использует зеленый, желтый, оранжевый, красный и фиолетовый. «Приложение» использует оттенки цвета приложения.",
   "@settings.appearance.sizeColors.description": {
-    "sourceHash": "ecb064a"
+    "sourceHash": "e790d53"
   },
   "settings.appearance.sizeColors.opt.none": "Нет",
   "@settings.appearance.sizeColors.opt.none": {
@@ -119,7 +119,7 @@
   "settings.appearance.dateTimeFormat.optDesc.iso": "2025-01-25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.iso": {
     "sourceHash": "dc76ffd",
-    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
+    "sameAsSourceJustification": "A literal ISO 8601 sample whose digit layout must stay exactly as in the source (per the @key description); no words to translate."
   },
   "settings.appearance.dateTimeFormat.opt.short": "Краткий",
   "@settings.appearance.dateTimeFormat.opt.short": {
@@ -128,7 +128,7 @@
   "settings.appearance.dateTimeFormat.optDesc.short": "01/25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.short": {
     "sourceHash": "72b6f9f",
-    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
+    "sameAsSourceJustification": "A literal month/day 24-hour sample whose digit layout must stay exactly as in the source (per the @key description); no words to translate."
   },
   "settings.appearance.dateTimeFormat.opt.custom": "Настроить…",
   "@settings.appearance.dateTimeFormat.opt.custom": {
@@ -506,9 +506,13 @@
   "@settings.fileOperations.skipConfirmation.label": {
     "sourceHash": "f1b1b39"
   },
-  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {«Скопировать» и «Переместить» сразу отправляют файлы в другую панель, а «Удалить» без вопросов перемещает их в Корзину. Это немного рискованно: одно нажатие клавиши срабатывает сразу. Перед безвозвратным удалением Cmdr всегда спрашивает.} other {«Скопировать» и «Переместить» сразу отправляют файлы в другую панель, а «Удалить» без вопросов перемещает их в Корзину. Это немного рискованно: одно нажатие клавиши срабатывает сразу. Перед безвозвратным удалением Cmdr всегда спрашивает.}}",
+  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {«Скопировать» и «Переместить» сразу отправляют файлы в другую панель, а «Удалить» без вопросов перемещает их в Корзину.} other {«Скопировать» и «Переместить» сразу отправляют файлы в другую панель, а «Удалить» без вопросов перемещает их в Корзину.}}",
   "@settings.fileOperations.skipConfirmation.explanation": {
-    "sourceHash": "564f000"
+    "sourceHash": "9c53630"
+  },
+  "settings.fileOperations.skipConfirmation.summary": "Немного рискованно: одно нажатие клавиши срабатывает сразу. Перед безвозвратным удалением Cmdr по-прежнему спрашивает.",
+  "@settings.fileOperations.skipConfirmation.summary": {
+    "sourceHash": "ca6d8db"
   },
   "settings.fileOperations.skipConfirmation.keywords": "{platform, select, windows {подтверждение, подтверждать, диалог, спрашивать, копирование, перемещение, Корзина, удаление, пропустить, без вопросов, нажатия} other {подтверждение, подтверждать, диалог, спрашивать, копирование, перемещение, Корзина, удаление, пропустить, без вопросов, нажатия}}",
   "@settings.fileOperations.skipConfirmation.keywords": {
@@ -730,9 +734,13 @@
   "@settings.mediaIndex.enabled.label": {
     "sourceHash": "a2e6604"
   },
-  "settings.mediaIndex.enabled.description": "Читать текст на изображениях, чтобы по нему можно было искать. Работает на Mac, данные его не покидают. Пока только для локальных дисков.",
+  "settings.mediaIndex.enabled.description": "Пока только для локальных дисков.",
   "@settings.mediaIndex.enabled.description": {
-    "sourceHash": "118fc8d"
+    "sourceHash": "517a7c9"
+  },
+  "settings.mediaIndex.enabled.summary": "Позволяет искать по тексту на изображениях. Этот текст никогда не покидает ваш Mac.",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "31aa708"
   },
   "settings.mediaIndex.enabled.keywords": "изображение, фото, фотография, картинка, текст, распознавание, поиск, индекс, индексация, снимок экрана, скриншот, содержимое",
   "@settings.mediaIndex.enabled.keywords": {
@@ -1111,9 +1119,9 @@
   "@settings.behavior.notifications.keepUntilClosed.label": {
     "sourceHash": "bc58ecc"
   },
-  "settings.behavior.notifications.keepUntilClosed.description": "Уведомления остаются на экране, пока вы их не закроете, и не исчезают через несколько секунд.",
+  "settings.behavior.notifications.keepUntilClosed.description": "Вместо того чтобы скрывать их через несколько секунд.",
   "@settings.behavior.notifications.keepUntilClosed.description": {
-    "sourceHash": "53890bf"
+    "sourceHash": "2df854c"
   },
   "settings.behavior.notifications.keepUntilClosed.keywords": "уведомление, всплывающее сообщение, тайм-аут, время, исчезать, скрывать, закрыть, не скрывать, оставлять, универсальный доступ",
   "@settings.behavior.notifications.keepUntilClosed.keywords": {
@@ -1156,9 +1164,13 @@
   "@settings.search.autoApply.label": {
     "sourceHash": "06b0f9f"
   },
-  "settings.search.autoApply.description": "{platform, select, windows {Искать по имени файла и регулярному выражению автоматически, пока вы печатаете (через секунду после того, как вы остановитесь). Поиск с ИИ всегда ждет Enter, потому что он платный. Если выключено, нажмите Enter или кнопку запуска, чтобы начать поиск.} other {Искать по имени файла и регулярному выражению автоматически, пока вы печатаете (через секунду после того, как вы остановитесь). Поиск с ИИ всегда ждет Enter, потому что он платный. Если выключено, нажмите Enter или кнопку запуска, чтобы начать поиск.}}",
+  "settings.search.autoApply.description": "{platform, select, windows {Поиск начинается через 1 секунду после того, как вы перестанете печатать. Поиск с ИИ ждет, потому что он платный. Если параметр выключен, нажмите Enter или кнопку запуска.} other {Поиск начинается через 1 секунду после того, как вы перестанете печатать. Поиск с ИИ ждет, потому что он платный. Если параметр выключен, нажмите Enter или кнопку запуска.}}",
   "@settings.search.autoApply.description": {
-    "sourceHash": "b0f85fd"
+    "sourceHash": "3aa9f59"
+  },
+  "settings.search.autoApply.summary": "Запускает поиск по имени и регулярному выражению, пока вы печатаете. Поиск с ИИ ждет Enter.",
+  "@settings.search.autoApply.summary": {
+    "sourceHash": "ebc6780"
   },
   "settings.search.autoApply.keywords": "поиск, автоматически, авто, применять, на лету, сразу, мгновенно, задержка, имя файла",
   "@settings.search.autoApply.keywords": {
@@ -1228,9 +1240,13 @@
   "@settings.ai.reasoningEfforts.label.thinkingLevel": {
     "sourceHash": "96f115b"
   },
-  "settings.ai.reasoningEfforts.description": "Как долго модель думает перед ответом. Чем дольше она думает, тем лучше справляется со сложными задачами, но ответы приходят медленнее, а обдумывание оплачивается как вывод модели.",
+  "settings.ai.reasoningEfforts.description": "Размышления модели оплачиваются как вывод, так же как и сам ответ.",
   "@settings.ai.reasoningEfforts.description": {
-    "sourceHash": "0ad6737"
+    "sourceHash": "0a6d851"
+  },
+  "settings.ai.reasoningEfforts.summary": "Чем дольше модель думает, тем лучше она справляется со сложными задачами, но ответ приходит медленнее, а стоимость выше.",
+  "@settings.ai.reasoningEfforts.summary": {
+    "sourceHash": "5c3f87f"
   },
   "settings.ai.reasoningEfforts.keywords": "глубина рассуждений, усилие, усилия, рассуждение, размышление, думать, скорость, стоимость, качество",
   "@settings.ai.reasoningEfforts.keywords": {
@@ -1248,9 +1264,13 @@
   "@settings.aboutThis.aiVerdict.label": {
     "sourceHash": "4c84599"
   },
-  "settings.aboutThis.aiVerdict.description": "Когда вы открываете карточку, ИИ пишет два-три предложения по фактам, которые она показывает. С облачным ИИ ваш поставщик каждый раз получает факты с карточки и то, что Cmdr увидел, заглянув в файл.",
+  "settings.aboutThis.aiVerdict.description": "Когда вы открываете карточку, ИИ пишет два-три предложения по фактам, которые она показывает. Это происходит каждый раз, когда вы ее открываете.",
   "@settings.aboutThis.aiVerdict.description": {
-    "sourceHash": "5dfb5f5"
+    "sourceHash": "4c0ef49"
+  },
+  "settings.aboutThis.aiVerdict.summary": "С облачным ИИ факты с карточки и фрагмент файла отправляются вашему поставщику.",
+  "@settings.aboutThis.aiVerdict.summary": {
+    "sourceHash": "4e34358"
   },
   "settings.aboutThis.aiVerdict.keywords": "объяснить, описание, сводка, сведения о файле, что это, мнение, вердикт",
   "@settings.aboutThis.aiVerdict.keywords": {
@@ -1263,6 +1283,15 @@
   "settings.network.enabled.label": "{platform, select, windows {Включить сетевые функции} other {Включить сетевые функции}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
+  },
+  "settings.network.enabled.description": "{platform, select, macos {Если параметр выключен, Cmdr не будет запрашивать у macOS доступ к локальной сети.} windows {Если параметр выключен, Windows не будет спрашивать, пропускать ли Cmdr через брандмауэр.} other {}}",
+  "@settings.network.enabled.description": {
+    "sourceHash": "3e2a4b0",
+    "sameAsSourceJustification": "The Linux (other) branch is empty on purpose, as in the source: Linux shows no network prompt to mention."
+  },
+  "settings.network.enabled.summary": "Находит серверы SMB в вашей сети. Подключенные общие папки работают в любом случае.",
+  "@settings.network.enabled.summary": {
+    "sourceHash": "1da1cd9"
   },
   "settings.network.enabled.keywords": "сеть, сетевой, включить, включено, обнаружение, поиск в сети, локальная сеть, разрешение",
   "@settings.network.enabled.keywords": {
@@ -1286,7 +1315,7 @@
   },
   "settings.network.directSmbConnection.description": "{platform, select, macos {Если включено, Cmdr подключается к общим папкам SMB напрямую, чтобы файловые операции выполнялись быстрее. Системное подключение остается для Finder и других приложений.} windows {Если включено, Cmdr подключается к общим папкам SMB напрямую, чтобы файловые операции выполнялись быстрее. Системное подключение остается для Проводника и других приложений.} other {Если включено, Cmdr подключается к общим папкам SMB напрямую, чтобы файловые операции выполнялись быстрее. Системное подключение остается для файлового менеджера и других приложений.}}",
   "@settings.network.directSmbConnection.description": {
-    "sourceHash": "429c68c"
+    "sourceHash": "06e2844"
   },
   "settings.network.directSmbConnection.keywords": "напрямую, прямое подключение, быстро, быстрее, подключение, соединение, сеть, производительность, общая папка",
   "@settings.network.directSmbConnection.keywords": {
@@ -1296,9 +1325,13 @@
   "@settings.network.requireSmbEncryption.label": {
     "sourceHash": "4519b09"
   },
-  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr шифрует свои подключения к общим папкам SMB, даже если сервер этого не просит, и не открывает общую папку, подключение к которой нельзя зашифровать, в том числе ту, которую ваш Mac подключил без шифрования. Гостевые подключения зашифровать нельзя, поэтому нужно войти. Уже открытые подключения Cmdr остаются как есть, пока не подключатся снова.} windows {Cmdr шифрует свои подключения к общим папкам SMB, даже если сервер этого не просит, и не открывает общую папку, подключение к которой нельзя зашифровать, в том числе ту, которую ваш компьютер подключил без шифрования. Гостевые подключения зашифровать нельзя, поэтому нужно войти. Уже открытые подключения Cmdr остаются как есть, пока не подключатся снова.} other {Cmdr шифрует свои подключения к общим папкам SMB, даже если сервер этого не просит, и не открывает общую папку, подключение к которой нельзя зашифровать, в том числе ту, которую ваш компьютер подключил без шифрования. Гостевые подключения зашифровать нельзя, поэтому нужно войти. Уже открытые подключения Cmdr остаются как есть, пока не подключатся снова.}}",
+  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr шифрует свои подключения SMB, даже если сервер этого не просит, в том числе к общим папкам, которые ваш Mac подключил без шифрования. Уже открытые подключения Cmdr остаются как есть, пока не подключатся снова.} windows {Cmdr шифрует свои подключения SMB, даже если сервер этого не просит, в том числе к общим папкам, которые ваш компьютер подключил без шифрования. Уже открытые подключения Cmdr остаются как есть, пока не подключатся снова.} other {Cmdr шифрует свои подключения SMB, даже если сервер этого не просит, в том числе к общим папкам, которые ваш компьютер подключил без шифрования. Уже открытые подключения Cmdr остаются как есть, пока не подключатся снова.}}",
   "@settings.network.requireSmbEncryption.description": {
-    "sourceHash": "26291fe"
+    "sourceHash": "6025cf4"
+  },
+  "settings.network.requireSmbEncryption.summary": "Общие папки, подключение к которым нельзя зашифровать, не откроются, а гостям нужно будет войти.",
+  "@settings.network.requireSmbEncryption.summary": {
+    "sourceHash": "bc73348"
   },
   "settings.network.requireSmbEncryption.keywords": "шифровать, зашифровано, шифр, безопасность, защита, конфиденциальность, приватность, безопасное соединение",
   "@settings.network.requireSmbEncryption.keywords": {
@@ -1336,6 +1369,18 @@
   "@settings.network.shareCacheDuration.keywords": {
     "sourceHash": "df14578"
   },
+  "settings.network.timeout.label": "Тайм-аут сети",
+  "@settings.network.timeout.label": {
+    "sourceHash": "fdd0d76"
+  },
+  "settings.network.timeout.description": "Сколько Cmdr ждет ответа от общей папки, прежде чем прекратить попытки. Для обычных локальных сетей хватает 15 секунд; для VPN или соединений с большой задержкой попробуйте 45.",
+  "@settings.network.timeout.description": {
+    "sourceHash": "8cc6def"
+  },
+  "settings.network.timeout.keywords": "тайм-аут, таймаут, ожидание, ждать, долго, медленно, медленная сеть, секунды, подключение, соединение, задержка, пинг, впн",
+  "@settings.network.timeout.keywords": {
+    "sourceHash": "bb8a9ac"
+  },
   "settings.network.smbConcurrency.label": "Параллельные операции на подключение SMB",
   "@settings.network.smbConcurrency.label": {
     "sourceHash": "339933f"
@@ -1352,9 +1397,13 @@
   "@settings.fileOperations.mtpEnabled.label": {
     "sourceHash": "6a315a8"
   },
-  "settings.fileOperations.mtpEnabled.description": "Обнаруживать устройства Android и другие устройства по USB для просмотра и передачи файлов. На телефоне Android подключите USB-кабель, откройте раздел вроде «Настройки > Параметры USB» и выберите «Передача файлов», «Android Auto» или похожий режим. (Зависит от устройства.)",
+  "settings.fileOperations.mtpEnabled.description": "Cmdr обнаруживает телефоны Android, Kindle и камеры, подключенные USB-кабелем, чтобы вы могли просматривать и передавать файлы. На Android поищите что-то вроде «Настройки > Настройки USB»; подойдет и «Android Auto». Зависит от устройства.",
   "@settings.fileOperations.mtpEnabled.description": {
-    "sourceHash": "c66df04"
+    "sourceHash": "a5b7ef3"
+  },
+  "settings.fileOperations.mtpEnabled.summary": "На телефоне выберите для USB-подключения режим «Передача файлов» или похожий.",
+  "@settings.fileOperations.mtpEnabled.summary": {
+    "sourceHash": "355c987"
   },
   "settings.fileOperations.mtpEnabled.keywords": "устройство, телефон, смартфон, мобильный, камера, фотоаппарат, электронная книга",
   "@settings.fileOperations.mtpEnabled.keywords": {
@@ -1364,6 +1413,14 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
+  "settings.fileOperations.adbEnabled.description": "ADB дает доступ ко всей файловой системе телефона Android, недоступной через MTP. Если инструменты Android не установлены, параметр можно оставить включенным без всяких затрат.",
+  "@settings.fileOperations.adbEnabled.description": {
+    "sourceHash": "a16197e"
+  },
+  "settings.fileOperations.adbEnabled.summary": "{platform, select, macos {Нужны отладка по USB на телефоне и инструмент adb на этом Mac.} windows {Нужны отладка по USB на телефоне и инструмент adb на этом компьютере.} other {Нужны отладка по USB на телефоне и инструмент adb на этом компьютере.}}",
+  "@settings.fileOperations.adbEnabled.summary": {
+    "sourceHash": "b20dbc7"
+  },
   "settings.fileOperations.adbEnabled.keywords": "отладка по USB, параметры разработчика, для разработчиков, телефон, смартфон, устройство",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1372,9 +1429,13 @@
   "@settings.fileOperations.adbBinaryPath.label": {
     "sourceHash": "a67fbbd"
   },
-  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Оставьте поле пустым, и Cmdr найдет adb обычным способом, в том числе в Android SDK и Homebrew. Укажите другой путь, если пакет Android platform tools лежит в отдельной папке.} other {Оставьте поле пустым, и Cmdr найдет adb обычным способом, в том числе в Android SDK и в переменной PATH. Укажите другой путь, если пакет Android platform tools лежит в отдельной папке.}}",
+  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Cmdr ищет adb в обычных местах, в том числе в Android SDK и Homebrew. Укажите другой путь, если пакет Android platform tools лежит в отдельной папке.} other {Cmdr ищет adb в обычных местах, в том числе в Android SDK и в переменной PATH. Укажите другой путь, если пакет Android platform tools лежит в отдельной папке.}}",
   "@settings.fileOperations.adbBinaryPath.description": {
-    "sourceHash": "e8cde17"
+    "sourceHash": "e1c5acb"
+  },
+  "settings.fileOperations.adbBinaryPath.summary": "Оставьте поле пустым, и Cmdr сам найдет adb.",
+  "@settings.fileOperations.adbBinaryPath.summary": {
+    "sourceHash": "e62a0d3"
   },
   "settings.fileOperations.adbBinaryPath.keywords": "путь, исполняемый файл, программа, расположение, где находится",
   "@settings.fileOperations.adbBinaryPath.keywords": {
@@ -1408,9 +1469,9 @@
   "@settings.fileExplorer.git.showStatusColumn.label": {
     "sourceHash": "0f6a836"
   },
-  "settings.fileExplorer.git.showStatusColumn.description": "Добавлять колонку состояния git каждого файла (изменено, не отслеживается и другие) в подробном режиме.",
+  "settings.fileExplorer.git.showStatusColumn.description": "Добавлять в подробном режиме колонку состояния git для каждого файла (например, изменен или не отслеживается).",
   "@settings.fileExplorer.git.showStatusColumn.description": {
-    "sourceHash": "fc74b38"
+    "sourceHash": "214eb5d"
   },
   "settings.fileExplorer.git.showStatusColumn.keywords": "состояние, статус, столбец, колонка, изменен, не отслеживается, неотслеживаемый, игнорируется, игнорируемый, добавлен, удален",
   "@settings.fileExplorer.git.showStatusColumn.keywords": {
@@ -1420,9 +1481,9 @@
   "@settings.fileExplorer.git.showVirtualGitPortal.label": {
     "sourceHash": "40d9fa1"
   },
-  "settings.fileExplorer.git.showVirtualGitPortal.description": "При входе в .git показывать ветки, теги, коммиты и worktree как виртуальные папки, которые можно просматривать. Выключите, чтобы видеть обычное содержимое .git.",
+  "settings.fileExplorer.git.showVirtualGitPortal.description": "Когда вы открываете .git, показывать ветки, теги, коммиты и worktree как папки, которые можно просматривать. Выключите, чтобы видеть исходное содержимое .git.",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
-    "sourceHash": "331e0a5"
+    "sourceHash": "d58b2c3"
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "портал, виртуальный, ветки, теги, коммиты, worktree, рабочие копии, история",
   "@settings.fileExplorer.git.showVirtualGitPortal.keywords": {
@@ -1464,9 +1525,13 @@
   "@settings.developer.mcpPort.label": {
     "sourceHash": "72e9a59"
   },
-  "settings.developer.mcpPort.description": "Предпочитаемый порт сервера MCP. Оставьте 0, чтобы ОС выбрала динамический порт (рекомендуется; фактический порт показан ниже при работе сервера). Укажите конкретный порт, если этого требуют внешние инструменты.",
+  "settings.developer.mcpPort.description": "Пока сервер работает, используемый порт показан ниже. Укажите конкретный порт, если другому инструменту нужно знать его заранее.",
   "@settings.developer.mcpPort.description": {
-    "sourceHash": "174e807"
+    "sourceHash": "f2ca537"
+  },
+  "settings.developer.mcpPort.summary": "{platform, select, macos {Оставьте 0, чтобы ваш Mac сам выбрал свободный порт.} windows {Оставьте 0, чтобы ваш компьютер сам выбрал свободный порт.} other {Оставьте 0, чтобы ваш компьютер сам выбрал свободный порт.}}",
+  "@settings.developer.mcpPort.summary": {
+    "sourceHash": "cee7df5"
   },
   "settings.developer.mcpPort.keywords": "порт, сеть, временный, случайный",
   "@settings.developer.mcpPort.keywords": {
@@ -1524,6 +1589,10 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
+  "settings.analytics.enabled.description": "Пожалуйста, включите этот параметр, чтобы помочь нам понять, какие возможности важны во время открытого бета-тестирования.\nСтатистика связана со случайным идентификатором, а не с вашим именем или почтой.\nCmdr никогда не отправляет имена файлов, пути, поисковые запросы и запросы к ИИ.\nЕсли параметр выключен, Cmdr не отправляет никакой статистики.",
+  "@settings.analytics.enabled.description": {
+    "sourceHash": "a8d8db1"
+  },
   "settings.analytics.enabled.keywords": "аналитика, использование, статистика, конфиденциальность, приватность, телеметрия, бета, отслеживание, отказаться",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1540,9 +1609,13 @@
   "@settings.updates.crashReports.label": {
     "sourceHash": "2b8f06d"
   },
-  "settings.updates.crashReports.description": "{platform, select, macos {Автоматически отправлять отчет при сбое Cmdr или проблеме в фоне. Включает версию приложения, версию macOS и место проблемы в коде. Не содержит имен файлов и личных данных.} windows {Автоматически отправлять отчет при сбое Cmdr или проблеме в фоне. Включает версию приложения, версию Windows и место проблемы в коде. Не содержит имен файлов и личных данных.} other {Автоматически отправлять отчет при сбое Cmdr или проблеме в фоне. Включает версию приложения, название и версию дистрибутива Linux и место проблемы в коде. Не содержит имен файлов и личных данных.}}",
+  "settings.updates.crashReports.description": "{platform, select, macos {Cmdr отправляет отчет при сбое или если в фоне возникает проблема. В отчет входят версия приложения, версия macOS и место в коде, где возникла проблема.} windows {Cmdr отправляет отчет при сбое или если в фоне возникает проблема. В отчет входят версия приложения, версия Windows и место в коде, где возникла проблема.} other {Cmdr отправляет отчет при сбое или если в фоне возникает проблема. В отчет входят версия приложения, название и версия дистрибутива Linux и место в коде, где возникла проблема.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "26508c4"
+  },
+  "settings.updates.crashReports.summary": "Отчет никогда не содержит имен файлов и личных данных.",
+  "@settings.updates.crashReports.summary": {
+    "sourceHash": "7814a28"
   },
   "settings.updates.crashReports.keywords": "сбой, вылет, падение, отчет, конфиденциальность, приватность, телеметрия, баг, ошибка",
   "@settings.updates.crashReports.keywords": {
@@ -1552,9 +1625,13 @@
   "@settings.updates.errorReports.label": {
     "sourceHash": "471575d"
   },
-  "settings.updates.errorReports.description": "Отправлять разработчику небольшой фрагмент журнала при ошибке, чтобы быстрее исправлять проблемы. По умолчанию выключено. Отчет всегда можно отправить вручную из меню «Справка».",
+  "settings.updates.errorReports.description": "По умолчанию выключено. Отчет всегда можно отправить вручную из меню «Справка».",
   "@settings.updates.errorReports.description": {
-    "sourceHash": "f3e41eb"
+    "sourceHash": "a33a61c"
+  },
+  "settings.updates.errorReports.summary": "Отправляет нам небольшой фрагмент журнала, когда что-то идет не так, чтобы мы быстрее исправляли ошибки.",
+  "@settings.updates.errorReports.summary": {
+    "sourceHash": "0fdd0ae"
   },
   "settings.updates.errorReports.keywords": "ошибка, отчет, автоматически, отправка, отправлять, конфиденциальность, приватность, телеметрия, баг, журнал, лог, фрагмент, диагностика",
   "@settings.updates.errorReports.keywords": {
@@ -1602,7 +1679,7 @@
   },
   "settings.advanced.virtualizationBufferColumns.description": "Дополнительные колонки для отрисовки в кратком режиме.",
   "@settings.advanced.virtualizationBufferColumns.description": {
-    "sourceHash": "a1cbd98"
+    "sourceHash": "a66189f"
   },
   "settings.advanced.virtualizationBufferColumns.keywords": "виртуализация, буфер, столбец, столбцы, колонка, краткий режим, отрисовка",
   "@settings.advanced.virtualizationBufferColumns.keywords": {
@@ -1636,6 +1713,14 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Индексация продолжится с того места, где остановилась, как только свободного места станет на один процентный пункт больше порога. Это работает независимо от того, включен ли параметр «Предупреждать о нехватке места».",
+  "@settings.advanced.indexPauseFreeSpacePercent.description": {
+    "sourceHash": "4d80336"
+  },
+  "settings.advanced.indexPauseFreeSpacePercent.summary": "Не дает индексу занимать место, нужное вашим собственным файлам.",
+  "@settings.advanced.indexPauseFreeSpacePercent.summary": {
+    "sourceHash": "965796f"
+  },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "диск, место, заполнен, свободное место, индекс, индексация, пауза, хранилище, порог, процент, мало места",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
     "sourceHash": "1af2a91"
@@ -1644,9 +1729,9 @@
   "@settings.fileViewer.suppressBinaryWarning.label": {
     "sourceHash": "8cdaada"
   },
-  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Окно просмотра Cmdr показывает файл как есть, байт за байтом (нетекстовое содержимое выводится как UTF-8 с потерями). Когда вы открываете изображение, PDF, архив или другой двоичный файл, в окне просмотра появляется красный баннер: скорее всего, вам нужен Быстрый просмотр или открытие файла в приложении по умолчанию. Включите этот параметр (или нажмите «Больше не показывать это предупреждение» в баннере), чтобы скрыть предупреждение навсегда.} windows {Окно просмотра Cmdr показывает файл как есть, байт за байтом (нетекстовое содержимое выводится как UTF-8 с потерями). Когда вы открываете изображение, PDF, архив или другой двоичный файл, в окне просмотра появляется красный баннер: скорее всего, вам нужно открыть файл в приложении по умолчанию. Включите этот параметр (или нажмите «Больше не показывать это предупреждение» в баннере), чтобы скрыть предупреждение навсегда.} other {Окно просмотра Cmdr показывает файл как есть, байт за байтом (нетекстовое содержимое выводится как UTF-8 с потерями). Когда вы открываете изображение, PDF, архив или другой двоичный файл, в окне просмотра появляется красный баннер: скорее всего, вам нужно открыть файл в приложении по умолчанию. Включите этот параметр (или нажмите «Больше не показывать это предупреждение» в баннере), чтобы скрыть предупреждение навсегда.}}",
+  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Окно просмотра Cmdr показывает необработанное содержимое файла. Когда вы открываете изображение, PDF, архив или другой двоичный файл, в окне просмотра появляется красный баннер: скорее всего, вам нужен Быстрый просмотр или открытие файла в приложении по умолчанию. Включите этот параметр (или нажмите «Больше не показывать это предупреждение» в баннере), чтобы скрыть предупреждение навсегда.} windows {Окно просмотра Cmdr показывает необработанное содержимое файла. Когда вы открываете изображение, PDF, архив или другой двоичный файл, в окне просмотра появляется красный баннер: скорее всего, вам нужно открыть файл в приложении по умолчанию. Включите этот параметр (или нажмите «Больше не показывать это предупреждение» в баннере), чтобы скрыть предупреждение навсегда.} other {Окно просмотра Cmdr показывает необработанное содержимое файла. Когда вы открываете изображение, PDF, архив или другой двоичный файл, в окне просмотра появляется красный баннер: скорее всего, вам нужно открыть файл в приложении по умолчанию. Включите этот параметр (или нажмите «Больше не показывать это предупреждение» в баннере), чтобы скрыть предупреждение навсегда.}}",
   "@settings.fileViewer.suppressBinaryWarning.explanation": {
-    "sourceHash": "9f90a50"
+    "sourceHash": "c255df8"
   },
   "settings.fileViewer.suppressBinaryWarning.keywords": "окно просмотра, просмотр, двоичный, бинарный, изображение, необработанный, сырой, предупреждение, баннер, Быстрый просмотр",
   "@settings.fileViewer.suppressBinaryWarning.keywords": {
@@ -1828,9 +1913,13 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Максимальное место на диске для файлов журнала. Укажите 0, чтобы выключить хранение журналов; без журналов отчеты об ошибках отправить нельзя. Новое ненулевое значение вступит в силу при следующем запуске приложения.",
+  "settings.advanced.maxLogStorageMb.description": "Новое ненулевое ограничение вступит в силу при следующем запуске Cmdr.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "725bb26"
+    "sourceHash": "16616b2"
+  },
+  "settings.advanced.maxLogStorageMb.summary": "Укажите 0, чтобы не хранить журналы, но тогда отчеты об ошибках отправить не получится.",
+  "@settings.advanced.maxLogStorageMb.summary": {
+    "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "журнал, лог, логи, хранилище, диск, место, ограничение, ротация, ошибка, отчет, конфиденциальность",
   "@settings.advanced.maxLogStorageMb.keywords": {
@@ -1872,9 +1961,13 @@
   "@settings.advanced.logLlmCalls.label": {
     "sourceHash": "f865b3e"
   },
-  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Сохранять все запросы к ИИ и ответы в локальную папку (llm-logs) для отладки. Эти файлы остаются на вашем Mac и содержат имена файлов и пути, которые Cmdr отправляет поставщику ИИ.} windows {Сохранять все запросы к ИИ и ответы в локальную папку (llm-logs) для отладки. Эти файлы остаются на вашем компьютере и содержат имена файлов и пути, которые Cmdr отправляет поставщику ИИ.} other {Сохранять все запросы к ИИ и ответы в локальную папку (llm-logs) для отладки. Эти файлы остаются на вашем компьютере и содержат имена файлов и пути, которые Cmdr отправляет поставщику ИИ.}}",
+  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Cmdr записывает запросы и ответы в папку llm-logs для отладки. Эти файлы остаются на вашем Mac.} windows {Cmdr записывает запросы и ответы в папку llm-logs для отладки. Эти файлы остаются на вашем компьютере.} other {Cmdr записывает запросы и ответы в папку llm-logs для отладки. Эти файлы остаются на вашем компьютере.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "c7e917a"
+  },
+  "settings.advanced.logLlmCalls.summary": "Сохраняет все запросы к ИИ и ответы локально, вместе с путями к файлам.",
+  "@settings.advanced.logLlmCalls.summary": {
+    "sourceHash": "8b9e485"
   },
   "settings.advanced.logLlmCalls.keywords": "ИИ, нейросеть, журнал, лог, отладка, запрос, ответ, промпт",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2382,17 +2475,33 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
+  "settings.askCmdr.provider.usesProvider": "Поставщик ИИ для Ask Cmdr: {provider}, как и для всего остального в Cmdr. <providerLink>Изменить в разделе «ИИ › Поставщик»</providerLink>",
+  "@settings.askCmdr.provider.usesProvider": {
+    "sourceHash": "978e715"
+  },
+  "settings.askCmdr.provider.none": "Чтобы начать общение, включите поставщика ИИ в разделе <providerLink>«ИИ › Поставщик»</providerLink>.",
+  "@settings.askCmdr.provider.none": {
+    "sourceHash": "0e73e8e"
+  },
   "settings.askCmdr.interactiveModel.label": "Модель для Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"
   },
-  "settings.askCmdr.interactiveModel.description": "Модель для чата. Оставьте пустым, чтобы использовать ту же модель, что и другие функции ИИ в Cmdr. Пример: claude-sonnet-5-5",
+  "settings.askCmdr.interactiveModel.description": "Модель, которую использует чат. Вариант «Как у ИИ Cmdr» берет модель, выбранную в разделе «ИИ › Поставщик».",
   "@settings.askCmdr.interactiveModel.description": {
-    "sourceHash": "e301e99"
+    "sourceHash": "a285a77"
   },
   "settings.askCmdr.interactiveModel.placeholder": "Как у ИИ Cmdr",
   "@settings.askCmdr.interactiveModel.placeholder": {
     "sourceHash": "2631f3d"
+  },
+  "settings.askCmdr.interactiveModel.sameAs": "Как у ИИ Cmdr ({model})",
+  "@settings.askCmdr.interactiveModel.sameAs": {
+    "sourceHash": "e290ccc"
+  },
+  "settings.askCmdr.interactiveModel.localNote": "Локальный ИИ работает с одной моделью, поэтому чат использует ее.",
+  "@settings.askCmdr.interactiveModel.localNote": {
+    "sourceHash": "b2447b5"
   },
   "settings.askCmdr.interactiveModel.keywords": "ИИ, чат, ассистент, помощник, модель, переопределить, другая модель, отдельная модель",
   "@settings.askCmdr.interactiveModel.keywords": {
@@ -2442,9 +2551,13 @@
   "@settings.askCmdr.proactive.label": {
     "sourceHash": "a85ef48"
   },
-  "settings.askCmdr.proactive.description": "Cmdr следит за папками, в которых вы работаете, и начинает чат, когда есть что предложить. Ничего не выполняется без вашего согласия.",
+  "settings.askCmdr.proactive.description": "Cmdr следит за папками, в которых вы работаете, чтобы найти то, что стоит предложить.",
   "@settings.askCmdr.proactive.description": {
-    "sourceHash": "556f155"
+    "sourceHash": "e4261b4"
+  },
+  "settings.askCmdr.proactive.summary": "Cmdr начинает чат с предложением. Ничего не выполнится без вашего одобрения.",
+  "@settings.askCmdr.proactive.summary": {
+    "sourceHash": "675ea47"
   },
   "settings.askCmdr.proactive.keywords": "проактивный, инициатива, предложения, подсказки, автоматически, замечать, наблюдать, пробуждение, просыпаться, ИИ",
   "@settings.askCmdr.proactive.keywords": {
@@ -2556,9 +2669,13 @@
   "@settings.operationLog.enabled.label": {
     "sourceHash": "edfee55"
   },
-  "settings.operationLog.enabled.description": "Пока этот параметр выключен, Cmdr не записывает новые операции копирования, перемещения, переименования и удаления, поэтому их нельзя отменить. Уже записанная история сохраняется, и то, что в ней есть, по-прежнему можно отменить.",
+  "settings.operationLog.enabled.description": "Это касается новых операций копирования, перемещения, переименования и удаления. Уже записанная история сохраняется, и то, что в ней есть, по-прежнему можно отменить.",
   "@settings.operationLog.enabled.description": {
-    "sourceHash": "41f90d4"
+    "sourceHash": "87f3b5d"
+  },
+  "settings.operationLog.enabled.summary": "Пока этот параметр выключен, Cmdr не записывает новые изменения, поэтому их нельзя отменить.",
+  "@settings.operationLog.enabled.summary": {
+    "sourceHash": "94d4870"
   },
   "settings.operationLog.enabled.keywords": "операция, операции, журнал, история, запись, записывать, отменить, отмена, конфиденциальность, выключить",
   "@settings.operationLog.enabled.keywords": {
@@ -2696,7 +2813,7 @@
   "@settings.summary.noSubsections": {
     "sourceHash": "ba4b5b5"
   },
-  "settings.control.moreAbout": "More about “{setting}”",
+  "settings.control.moreAbout": "Подробнее о параметре «{setting}»",
   "@settings.control.moreAbout": {
     "sourceHash": "57968f3"
   },
@@ -2989,6 +3106,10 @@
   "@settings.appearance.card.namesAndIcons": {
     "sourceHash": "8386169"
   },
+  "settings.appearance.card.sorting": "Сортировка",
+  "@settings.appearance.card.sorting": {
+    "sourceHash": "cb24f7d"
+  },
   "settings.appearance.card.briefMode": "Краткий режим",
   "@settings.appearance.card.briefMode": {
     "sourceHash": "b75e4b3"
@@ -3077,6 +3198,14 @@
   "settings.securityLog.enabled.label": "Записывать события безопасности",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
+  },
+  "settings.securityLog.enabled.description": "В журнал попадают изменения и отказы, важные для безопасности: например, согласие на облачный ИИ, установленное обновление или приложение, которому сервер MCP отказал в доступе. Имен файлов, содержимого и паролей в нем нет.",
+  "@settings.securityLog.enabled.description": {
+    "sourceHash": "97e24a4"
+  },
+  "settings.securityLog.enabled.summary": "{platform, select, macos {Небольшой локальный журнал событий безопасности. Он никогда не покидает ваш Mac.} windows {Небольшой локальный журнал событий безопасности. Он никогда не покидает ваш компьютер.} other {Небольшой локальный журнал событий безопасности. Он никогда не покидает ваш компьютер.}}",
+  "@settings.securityLog.enabled.summary": {
+    "sourceHash": "84a9146"
   },
   "settings.securityLog.enabled.keywords": "безопасность, журнал, аудит, запись, записывать, события, доступ, конфиденциальность",
   "@settings.securityLog.enabled.keywords": {
@@ -3387,9 +3516,9 @@
   "@settings.adb.install.intro": {
     "sourceHash": "9f7a0f4"
   },
-  "settings.adb.pathPlaceholder": "Cmdr ищет adb стандартным способом",
+  "settings.adb.pathPlaceholder": "Определяется автоматически",
   "@settings.adb.pathPlaceholder": {
-    "sourceHash": "538b307"
+    "sourceHash": "14fac78"
   },
   "settings.adb.browse": "Обзор…",
   "@settings.adb.browse": {

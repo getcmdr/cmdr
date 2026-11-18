@@ -263,8 +263,8 @@ inflection.
   shows `开发者选项 > USB 调试`, so `USB debugging` is `USB 调试` and `platform tools` is `平台工具`, while the tool and
   command names (`ADB`, `adb`, `Android SDK`, `Homebrew`) stay Latin, matching Google's own zh-CN docs. Same rule as
   Apple feature names: what the user's own device shows wins. Sources: `terms.json` `usb-debugging` and `phone`.
-- **A settings text field that may be left blank opens with `留空则…`.** Settled in
-  `settings.askCmdr.interactiveModel.description`, reused for `settings.fileOperations.adbBinaryPath.description`.
+- **A settings text field that may be left blank opens with `留空则…`.** Settled in `servers.sheet.namePlaceholder`,
+  reused for `settings.fileOperations.adbBinaryPath.summary`.
 - **A grayed-out menu item's “busy” form is the base label plus `（占用中）`.** Settled in `menu.volume.ejectBusy`
   (`推出（{name}）（占用中）`) and reused verbatim by `menu.volume.disconnectBusy`,
   `menu.volume.forgetSavedPasswordBusy`, and `menu.volume.forgetServerBusy`. Keep the base wording byte-identical to the

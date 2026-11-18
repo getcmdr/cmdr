@@ -416,6 +416,30 @@
   "@licensing.section.getLicense": {
     "sourceHash": "fab19d3"
   },
+  "licensing.section.includedTitle": "Ami benne van",
+  "@licensing.section.includedTitle": {
+    "sourceHash": "a441e05"
+  },
+  "licensing.section.includedFeatures": "A fájlkezelő összes funkciója",
+  "@licensing.section.includedFeatures": {
+    "sourceHash": "0a54a41"
+  },
+  "licensing.section.includedMacs": "Bármennyi saját Mac, személyes használatra",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "d0968e4"
+  },
+  "licensing.section.includedUpdates": "Automatikus frissítések",
+  "@licensing.section.includedUpdates": {
+    "sourceHash": "147b1b6"
+  },
+  "licensing.section.includedAi": "Cmdr AI, a béta alatt ingyenes, a saját API-kulcsoddal vagy az eszközön",
+  "@licensing.section.includedAi": {
+    "sourceHash": "1fec548"
+  },
+  "licensing.section.commercialNeeded": "Ha munkára használod a Cmdrt, akár alkalmazottként, akár megbízásos munkában vagy a saját vállalkozásodban, kereskedelmi licenc kell hozzá. Előtte legfeljebb 14 napig munka közben is kipróbálhatod.",
+  "@licensing.section.commercialNeeded": {
+    "sourceHash": "a3d7314"
+  },
   "licensing.section.typePersonal": "Személyes (ingyenes)",
   "@licensing.section.typePersonal": {
     "sourceHash": "4af5ca9"

@@ -2849,7 +2849,10 @@
     "chosen": "нотатка",
     "accept": ["нотат", "примітк"],
     "confidence": "high",
-    "sources": "macOS live Preview (Note → Нотатка), Resources Schema (note → нотатка); MS (note → нотатка)"
+    "sources": "macOS live Preview (Note → Нотатка), Resources Schema (note → нотатка); MS (note → нотатка)",
+    "exceptions": {
+      "settings.securityLog.enabled.description": "English «It notes» is the verb (records), not a user-written note: «Записує зміни й відмови…»."
+    }
   },
   "notification": {
     "chosen": "сповіщення",

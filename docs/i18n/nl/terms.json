@@ -153,7 +153,8 @@
       "errors.listing.diskReadProblem.suggestion": "Not the AI-tool sense: the English names a desktop disk tool (schijfprogramma) and Windows' Tools tab (Extra).",
       "errors.listing.unexpectedSystemResponse.suggestion": "Not the AI-tool sense: a desktop disk tool (schijfprogramma) and Windows' Tools tab (Extra).",
       "errors.listing.couldntReadUnknown.suggestion": "Not the AI-tool sense: a desktop disk tool (schijfprogramma) and Windows' Tools tab (Extra).",
-      "errors.listing.ioSerious.suggestion": "Not the AI-tool sense: a desktop disk tool (schijfprogramma) and Windows' Tools tab (Extra)."
+      "errors.listing.ioSerious.suggestion": "Not the AI-tool sense: a desktop disk tool (schijfprogramma) and Windows' Tools tab (Extra).",
+      "settings.fileOperations.adbEnabled.summary": "Not the AI-tool sense: the adb command-line tool, named like settings.adb.pickerTitle (de opdracht adb)."
     }
   },
   "allow": {
@@ -2387,7 +2388,10 @@
     "chosen": "notitie",
     "confidence": "high",
     "forms": "error-report notes and the free-text field → notitie; the feedback dialog's Your note → je bericht (that surface only; never mix the two in one dialog)",
-    "sources": "MS (note → notitie)"
+    "sources": "MS (note → notitie)",
+    "exceptions": {
+      "settings.securityLog.enabled.description": "Not a user note: English ‘It notes’ is the verb record (Hierin staan …)."
+    }
   },
   "notification": {
     "accept": ["meldingen"],
@@ -4414,5 +4418,59 @@
       "chosen": "Voorkeuren",
       "note": "GNOME's app-menu row is Voorkeuren with no ellipsis (nl/gnome-nautilus/nautilus.po _Preferences; nl/xfce-thunar/thunar.po Voork_euren...): the linuxGnome branch of menu.app.settings."
     }
+  },
+  "detect": {
+    "chosen": "herkennen",
+    "accept": [
+      "herkent",
+      "herkend",
+      "detecteren",
+      "detecteert",
+      "gevonden",
+      "detecteer",
+      "gedetecteerd",
+      "Gedetecteerd"
+    ],
+    "confidence": "high",
+    "forms": "Cmdr herkent Android-telefoons …; the catalog already leans herkend (5) over detecteren (1)",
+    "sources": "MS terminology detect → detecteren (NLD, BEL); catalog count herken* 7 vs detecte* 4 (2026-11-18)"
+  },
+  "help-menu": {
+    "chosen": "Help-menu",
+    "confidence": "high",
+    "forms": "via het Help-menu (hyphen before the menu name, like errorReporter.amend.unavailable); the menu-bar title itself is Help",
+    "sources": "catalog errorReporter.amend.unavailable; macOS menu bar title Help stays Help in nl; style guide hyphen rule",
+    "accept": ["Help"]
+  },
+  "open-beta": {
+    "chosen": "open bèta",
+    "accept": ["bèta"],
+    "confidence": "high",
+    "forms": "tijdens de open bèta; Dutch spells bèta with the grave accent",
+    "sources": "catalog onboarding.stepBeta.openBeta, onboarding.stepBeta.analyticsLede; no pile hit",
+    "exceptions": {
+      "licensing.about.version": "Predates the ruling and still reads open beta without the accent; align to open bèta the next time this key is translated."
+    }
+  },
+  "personal-data": {
+    "chosen": "persoonlijke gegevens",
+    "accept": ["persoonsgegevens", "privégegevens"],
+    "confidence": "high",
+    "forms": "Geen bestandsnamen of persoonlijke gegevens",
+    "sources": "catalog crashReporter.dialog.privacyNote; MS terminology personal data → persoonsgegevens (accepted, more formal)"
+  },
+  "prompt": {
+    "chosen": "prompt",
+    "accept": ["prompts", "vragen", "melding", "meldingen", "vraag", "vraagt", "systeemvenster"],
+    "confidence": "high",
+    "forms": "AI input → prompt, pl. prompts; a system or Cmdr prompt asking the user → melding, vraag, or systeemvenster per context",
+    "sources": "MS terminology prompt (generative AI input) → prompt; prompt (cue the user) → vragen"
+  },
+  "bug": {
+    "chosen": "bug",
+    "accept": ["bugs"],
+    "confidence": "high",
+    "forms": "bugs oplossen",
+    "sources": "MS terminology bug → bug (NLD, BEL); catalog onboarding.stepBeta.openBeta (bugs op te lossen)"
   }
 }

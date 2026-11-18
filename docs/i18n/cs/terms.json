@@ -3821,7 +3821,10 @@
     "accept": ["poznám", "poznámk"],
     "forms": "f.: Cmdr’s notes → poznámky Cmdru; Your note → Tvoje poznámka",
     "confidence": "high",
-    "sources": "MS terminology (note → poznámka)"
+    "sources": "MS terminology (note → poznámka)",
+    "exceptions": {
+      "settings.securityLog.enabled.description": "English “notes” is the verb (the record notes changes), not the user-written note; rendered zaznamenává"
+    }
   },
   "open-beta": {
     "chosen": "otevřená beta",
@@ -4795,5 +4798,26 @@
     "forms": "n., indeclinable head oddělení: your IT team's policy → zásady vašeho IT oddělení",
     "confidence": "tentative",
     "sources": "No pile hit (IT team: none in macOS, MS, Linux, orthodox); IT oddělení is the everyday Czech name for the people who run an employer's or school's computers"
+  },
+  "git-untracked": {
+    "chosen": "nesledovaný",
+    "accept": ["nesledov", "Nesledov"],
+    "forms": "adj.: untracked file → nesledovaný soubor; status keyword → nesledováno",
+    "confidence": "tentative",
+    "sources": "Cmdr catalog already uses nesledovaný/nesledováno (settings.fileExplorer.git.showStatusColumn.*), matching git’s Czech wording; pile has no hit"
+  },
+  "record-operations": {
+    "chosen": "zaznamenávat",
+    "accept": ["zaznamen", "záznam"],
+    "forms": "switch label → Zaznamenávat operace se soubory; prose → Cmdr nové změny nezaznamenává",
+    "confidence": "tentative",
+    "sources": "Cmdr catalog (settings.operationLog.enabled.label; zaznamenává 5×); pile has no hit for the phrase"
+  },
+  "security-event": {
+    "chosen": "bezpečnostní události",
+    "accept": ["bezpečnostní událost", "bezpečnostních událost"],
+    "forms": "f. pl.: card and summary row → Bezpečnostní události; switch → Zaznamenávat bezpečnostní události; gen. → záznam bezpečnostních událostí",
+    "confidence": "tentative",
+    "sources": "Cmdr catalog (settings.updates.card.securityEvents, settings.securityLog.enabled.label); pile has no hit"
   }
 }

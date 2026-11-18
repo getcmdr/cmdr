@@ -59,9 +59,9 @@
   "@settings.appearance.sizeColors.label": {
     "sourceHash": "7598e9a"
   },
-  "settings.appearance.sizeColors.description": "按等级为文件列表中的文件大小着色。彩虹使用绿/黄/橙/红/紫。App 使用 App 颜色的不同深浅。",
+  "settings.appearance.sizeColors.description": "按等级为文件列表中的文件大小着色。彩虹使用绿色、黄色、橙色、红色和紫色。App 使用 App 颜色的不同深浅。",
   "@settings.appearance.sizeColors.description": {
-    "sourceHash": "ecb064a"
+    "sourceHash": "e790d53"
   },
   "settings.appearance.sizeColors.opt.none": "无",
   "@settings.appearance.sizeColors.opt.none": {
@@ -121,7 +121,7 @@
   "settings.appearance.dateTimeFormat.optDesc.iso": "2025-01-25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.iso": {
     "sourceHash": "dc76ffd",
-    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
+    "sameAsSourceJustification": "A literal ISO 8601 sample (digits and separators only); the @key asks to keep it identical to the source."
   },
   "settings.appearance.dateTimeFormat.opt.short": "简短",
   "@settings.appearance.dateTimeFormat.opt.short": {
@@ -130,7 +130,7 @@
   "settings.appearance.dateTimeFormat.optDesc.short": "01/25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.short": {
     "sourceHash": "72b6f9f",
-    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
+    "sameAsSourceJustification": "A literal month/day 24-hour sample (digits and separators only); the @key asks to keep it identical to the source."
   },
   "settings.appearance.dateTimeFormat.opt.custom": "自定义…",
   "@settings.appearance.dateTimeFormat.opt.custom": {
@@ -508,9 +508,13 @@
   "@settings.fileOperations.skipConfirmation.label": {
     "sourceHash": "f1b1b39"
   },
-  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {“拷贝”和“移动”会立即把文件放进另一个窗格，“删除”会直接移到回收站，不先问你。这样有点冒险，因为按一下键就会立刻执行。彻底删除总会先问你。} other {“拷贝”和“移动”会立即把文件放进另一个窗格，“删除”会直接移到废纸篓，不先问你。这样有点冒险，因为按一下键就会立刻执行。彻底删除总会先问你。}}",
+  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {“拷贝”和“移动”会立即把文件放进另一个窗格，“删除”会直接移到回收站，不先问你。} other {“拷贝”和“移动”会立即把文件放进另一个窗格，“删除”会直接移到废纸篓，不先问你。}}",
   "@settings.fileOperations.skipConfirmation.explanation": {
-    "sourceHash": "564f000"
+    "sourceHash": "9c53630"
+  },
+  "settings.fileOperations.skipConfirmation.summary": "有点冒险：按一下键就会立即执行。彻底删除仍会先问你。",
+  "@settings.fileOperations.skipConfirmation.summary": {
+    "sourceHash": "ca6d8db"
   },
   "settings.fileOperations.skipConfirmation.keywords": "{platform, select, windows {确认、对话框、弹窗、询问、拷贝、复制、移动、回收站、删除、跳过} other {确认、对话框、弹窗、询问、拷贝、复制、移动、废纸篓、回收站、删除、跳过}}",
   "@settings.fileOperations.skipConfirmation.keywords": {
@@ -732,9 +736,13 @@
   "@settings.mediaIndex.enabled.label": {
     "sourceHash": "a2e6604"
   },
-  "settings.mediaIndex.enabled.description": "读取图像中的文字，方便你进行搜索。在你的 Mac 上运行，绝不外传。目前支持本地驱动器。",
+  "settings.mediaIndex.enabled.description": "目前只支持本地驱动器。",
   "@settings.mediaIndex.enabled.description": {
-    "sourceHash": "118fc8d"
+    "sourceHash": "517a7c9"
+  },
+  "settings.mediaIndex.enabled.summary": "让图像中的文字可以搜索。这些文字绝不会离开你的 Mac。",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "31aa708"
   },
   "settings.mediaIndex.enabled.keywords": "图像、图片、照片、文字、文本、文字识别、搜索、索引、截图、内容",
   "@settings.mediaIndex.enabled.keywords": {
@@ -1113,9 +1121,9 @@
   "@settings.behavior.notifications.keepUntilClosed.label": {
     "sourceHash": "bc58ecc"
   },
-  "settings.behavior.notifications.keepUntilClosed.description": "通知会一直留在屏幕上，直到你关闭它们，而不是几秒后自动消失。",
+  "settings.behavior.notifications.keepUntilClosed.description": "而不是几秒后自动消失。",
   "@settings.behavior.notifications.keepUntilClosed.description": {
-    "sourceHash": "53890bf"
+    "sourceHash": "2df854c"
   },
   "settings.behavior.notifications.keepUntilClosed.keywords": "提示、通知、超时、时间、消失、关闭、保留、一直显示、辅助功能",
   "@settings.behavior.notifications.keepUntilClosed.keywords": {
@@ -1158,9 +1166,13 @@
   "@settings.search.autoApply.label": {
     "sourceHash": "06b0f9f"
   },
-  "settings.search.autoApply.description": "{platform, select, windows {在你输入时自动运行文件名和正则表达式搜索（停止输入 1 秒后）。AI 搜索因为会产生费用，所以始终等待按 Enter 键。关闭时，按 Enter 键或选择运行按钮来搜索。} other {在你输入时自动运行文件名和正则表达式搜索（停止输入 1 秒后）。AI 搜索因为会产生费用，所以始终等待按 Enter 键。关闭时，按 Enter 键或点按运行按钮来搜索。}}",
+  "settings.search.autoApply.description": "{platform, select, windows {停止输入 1 秒后，搜索就会开始。AI 搜索会产生费用，所以会等你按 Enter 键。关闭这一项时，按 Enter 键或选择运行按钮。} other {停止输入 1 秒后，搜索就会开始。AI 搜索会产生费用，所以会等你按 Enter 键。关闭这一项时，按 Enter 键或点按运行按钮。}}",
   "@settings.search.autoApply.description": {
-    "sourceHash": "b0f85fd"
+    "sourceHash": "3aa9f59"
+  },
+  "settings.search.autoApply.summary": "边输入边运行名称和正则搜索。AI 搜索会等你按 Enter 键。",
+  "@settings.search.autoApply.summary": {
+    "sourceHash": "ebc6780"
   },
   "settings.search.autoApply.keywords": "搜索、自动、应用、实时、即时、立即、防抖、文件名",
   "@settings.search.autoApply.keywords": {
@@ -1230,9 +1242,13 @@
   "@settings.ai.reasoningEfforts.label.thinkingLevel": {
     "sourceHash": "96f115b"
   },
-  "settings.ai.reasoningEfforts.description": "模型在回答前思考多久。思考越多，越能处理棘手的任务，但回复会更慢，思考过程也按输出计费。",
+  "settings.ai.reasoningEfforts.description": "模型的思考过程和回答本身一样，按输出计费。",
   "@settings.ai.reasoningEfforts.description": {
-    "sourceHash": "0ad6737"
+    "sourceHash": "0a6d851"
+  },
+  "settings.ai.reasoningEfforts.summary": "思考越多，越能处理棘手的任务，但会更慢，费用也更高。",
+  "@settings.ai.reasoningEfforts.summary": {
+    "sourceHash": "5c3f87f"
   },
   "settings.ai.reasoningEfforts.keywords": "推理强度、努力程度、推理、思考、强度、深度、速度、费用、成本、质量",
   "@settings.ai.reasoningEfforts.keywords": {
@@ -1250,9 +1266,13 @@
   "@settings.aboutThis.aiVerdict.label": {
     "sourceHash": "4c84599"
   },
-  "settings.aboutThis.aiVerdict.description": "打开卡片时，AI 会根据卡片显示的信息写两三句话。使用云端 AI 时，卡片上的信息和对文件的简短查看内容每次都会发送给你的提供方。",
+  "settings.aboutThis.aiVerdict.description": "打开卡片时，AI 会根据卡片显示的信息写两三句话。每次打开卡片都会这样。",
   "@settings.aboutThis.aiVerdict.description": {
-    "sourceHash": "5dfb5f5"
+    "sourceHash": "4c0ef49"
+  },
+  "settings.aboutThis.aiVerdict.summary": "使用云端 AI 时，卡片上的信息和文件摘录会发送给你的提供方。",
+  "@settings.aboutThis.aiVerdict.summary": {
+    "sourceHash": "4e34358"
   },
   "settings.aboutThis.aiVerdict.keywords": "解释、解读、总结、摘要、文件信息、这是什么、描述、点评",
   "@settings.aboutThis.aiVerdict.keywords": {
@@ -1265,6 +1285,15 @@
   "settings.network.enabled.label": "{platform, select, windows {开启网络} other {启用网络}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
+  },
+  "settings.network.enabled.description": "{platform, select, macos {关闭这一项后，Cmdr 不会向 macOS 请求“本地网络”访问权限。} windows {关闭这一项后，Windows 不会询问是否允许 Cmdr 通过防火墙。} other {}}",
+  "@settings.network.enabled.description": {
+    "sourceHash": "3e2a4b0",
+    "sameAsSourceJustification": "The Linux branch is empty on purpose, like the English: Linux shows no network permission prompt to mention."
+  },
+  "settings.network.enabled.summary": "在你的网络上查找 SMB 服务器。无论开关与否，已装载的共享都能正常使用。",
+  "@settings.network.enabled.summary": {
+    "sourceHash": "1da1cd9"
   },
   "settings.network.enabled.keywords": "网络、启用、开启、发现、本地、本地网络、权限",
   "@settings.network.enabled.keywords": {
@@ -1288,7 +1317,7 @@
   },
   "settings.network.directSmbConnection.description": "{platform, select, macos {启用后，Cmdr 会与 SMB 共享建立直接连接，以加快文件操作。系统装载仍会保留，供 Finder 和其他 App 使用。} windows {开启后，Cmdr 会与 SMB 共享建立直接连接，以加快文件操作。系统连接仍会保留，供文件资源管理器和其他 App 使用。} other {启用后，Cmdr 会与 SMB 共享建立直接连接，以加快文件操作。系统装载仍会保留，供你的文件管理器和其他 App 使用。}}",
   "@settings.network.directSmbConnection.description": {
-    "sourceHash": "429c68c"
+    "sourceHash": "06e2844"
   },
   "settings.network.directSmbConnection.keywords": "直接、直连、快速、连接、网络、性能、速度",
   "@settings.network.directSmbConnection.keywords": {
@@ -1298,9 +1327,13 @@
   "@settings.network.requireSmbEncryption.label": {
     "sourceHash": "4519b09"
   },
-  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr 会加密自己建立的 SMB 共享连接，即使服务器没有要求也一样，并且不会打开连接无法加密的共享，包括你的 Mac 在未加密的情况下连接的共享。以客人身份连接时无法加密，所以你需要登录。Cmdr 已经打开的连接会保持原样，直到重新连接。} windows {Cmdr 会加密自己建立的 SMB 共享连接，即使服务器没有要求也一样，并且不会打开连接无法加密的共享，包括你的电脑在未加密的情况下连接的共享。以客人身份连接时无法加密，所以你需要登录。Cmdr 已经打开的连接会保持原样，直到重新连接。} other {Cmdr 会加密自己建立的 SMB 共享连接，即使服务器没有要求也一样，并且不会打开连接无法加密的共享，包括你的电脑在未加密的情况下连接的共享。以客人身份连接时无法加密，所以你需要登录。Cmdr 已经打开的连接会保持原样，直到重新连接。}}",
+  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr 会加密自己的 SMB 连接，即使服务器没有要求也一样，你的 Mac 以未加密方式连接的共享也不例外。Cmdr 已经打开的连接会保持原样，直到重新连接。} windows {Cmdr 会加密自己的 SMB 连接，即使服务器没有要求也一样，你的电脑以未加密方式连接的共享也不例外。Cmdr 已经打开的连接会保持原样，直到重新连接。} other {Cmdr 会加密自己的 SMB 连接，即使服务器没有要求也一样，你的电脑以未加密方式连接的共享也不例外。Cmdr 已经打开的连接会保持原样，直到重新连接。}}",
   "@settings.network.requireSmbEncryption.description": {
-    "sourceHash": "26291fe"
+    "sourceHash": "6025cf4"
+  },
+  "settings.network.requireSmbEncryption.summary": "无法加密的共享不会打开，客人也需要登录。",
+  "@settings.network.requireSmbEncryption.summary": {
+    "sourceHash": "bc73348"
   },
   "settings.network.requireSmbEncryption.keywords": "安全、隐私、保护、保密、加密连接、强制加密",
   "@settings.network.requireSmbEncryption.keywords": {
@@ -1338,6 +1371,18 @@
   "@settings.network.shareCacheDuration.keywords": {
     "sourceHash": "df14578"
   },
+  "settings.network.timeout.label": "网络超时",
+  "@settings.network.timeout.label": {
+    "sourceHash": "fdd0d76"
+  },
+  "settings.network.timeout.description": "Cmdr 等待网络共享响应多久后放弃。一般的本地网络用 15 秒就够了；VPN 或高延迟连接可以试试 45 秒。",
+  "@settings.network.timeout.description": {
+    "sourceHash": "8cc6def"
+  },
+  "settings.network.timeout.keywords": "等待、等多久、慢、很慢、卡住、秒、连接、延迟、响应",
+  "@settings.network.timeout.keywords": {
+    "sourceHash": "bb8a9ac"
+  },
   "settings.network.smbConcurrency.label": "每个 SMB 连接的并发操作数",
   "@settings.network.smbConcurrency.label": {
     "sourceHash": "339933f"
@@ -1354,9 +1399,13 @@
   "@settings.fileOperations.mtpEnabled.label": {
     "sourceHash": "6a315a8"
   },
-  "settings.fileOperations.mtpEnabled.description": "通过 USB 数据线检测并连接 Android 及其他设备，以浏览和传输文件。要在 Android 手机上用这个功能，你需要用一根 USB 数据线，然后在手机上前往类似“设置 > USB 偏好设置”的位置，并把连接设为“文件传输”、“Android Auto”或类似选项。（因设备而异。）",
+  "settings.fileOperations.mtpEnabled.description": "Cmdr 能检测通过 USB 数据线连接的 Android 手机、Kindle 和相机，让你浏览和传输文件。在 Android 上，可以在类似“设置 > USB 偏好设置”的地方找找；选“Android Auto”也行。具体因设备而异。",
   "@settings.fileOperations.mtpEnabled.description": {
-    "sourceHash": "c66df04"
+    "sourceHash": "a5b7ef3"
+  },
+  "settings.fileOperations.mtpEnabled.summary": "在手机上把 USB 连接设为“文件传输”或类似选项。",
+  "@settings.fileOperations.mtpEnabled.summary": {
+    "sourceHash": "355c987"
   },
   "settings.fileOperations.mtpEnabled.keywords": "设备、手机、移动设备、相机、电子书阅读器",
   "@settings.fileOperations.mtpEnabled.keywords": {
@@ -1366,6 +1415,14 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
+  "settings.fileOperations.adbEnabled.description": "ADB 能访问 Android 手机的整个文件系统，包括 MTP 无法显示给你的部分。如果你没有安装任何 Android 工具，开着这一项也没有任何开销。",
+  "@settings.fileOperations.adbEnabled.description": {
+    "sourceHash": "a16197e"
+  },
+  "settings.fileOperations.adbEnabled.summary": "{platform, select, macos {需要在手机上开启 USB 调试，并在这台 Mac 上安装 adb 工具。} windows {需要在手机上开启 USB 调试，并在这台电脑上安装 adb 工具。} other {需要在手机上开启 USB 调试，并在这台电脑上安装 adb 工具。}}",
+  "@settings.fileOperations.adbEnabled.summary": {
+    "sourceHash": "b20dbc7"
+  },
   "settings.fileOperations.adbEnabled.keywords": "USB 调试、开发者选项、手机、设备",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1374,9 +1431,13 @@
   "@settings.fileOperations.adbBinaryPath.label": {
     "sourceHash": "a67fbbd"
   },
-  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {留空则 Cmdr 会按常规方式查找 adb，包括 Android SDK 和 Homebrew 的安装位置。如果你把平台工具放在别处，就在这里指向它。} other {留空则 Cmdr 会按常规方式查找 adb，包括 Android SDK 和你的 PATH。如果你把平台工具放在别处，就在这里指向它。}}",
+  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Cmdr 会在常用位置查找，包括 Android SDK 和 Homebrew。如果你把平台工具放在别处，就在这里指向它。} other {Cmdr 会在常用位置查找，包括 Android SDK 和你的 PATH。如果你把平台工具放在别处，就在这里指向它。}}",
   "@settings.fileOperations.adbBinaryPath.description": {
-    "sourceHash": "e8cde17"
+    "sourceHash": "e1c5acb"
+  },
+  "settings.fileOperations.adbBinaryPath.summary": "留空则 Cmdr 会自己找到 adb。",
+  "@settings.fileOperations.adbBinaryPath.summary": {
+    "sourceHash": "e62a0d3"
   },
   "settings.fileOperations.adbBinaryPath.keywords": "路径、二进制、位置、可执行文件、程序",
   "@settings.fileOperations.adbBinaryPath.keywords": {
@@ -1410,9 +1471,9 @@
   "@settings.fileExplorer.git.showStatusColumn.label": {
     "sourceHash": "0f6a836"
   },
-  "settings.fileExplorer.git.showStatusColumn.description": "在完整视图中添加一列，显示每个文件的 git 状态（已修改、未跟踪等）。",
+  "settings.fileExplorer.git.showStatusColumn.description": "在完整视图中添加一列，显示每个文件的 git 状态（比如已修改或未跟踪）。",
   "@settings.fileExplorer.git.showStatusColumn.description": {
-    "sourceHash": "fc74b38"
+    "sourceHash": "214eb5d"
   },
   "settings.fileExplorer.git.showStatusColumn.keywords": "状态、列、已修改、未跟踪、已忽略、已添加、已删除",
   "@settings.fileExplorer.git.showStatusColumn.keywords": {
@@ -1422,9 +1483,9 @@
   "@settings.fileExplorer.git.showVirtualGitPortal.label": {
     "sourceHash": "40d9fa1"
   },
-  "settings.fileExplorer.git.showVirtualGitPortal.description": "进入 .git 时，将分支、标签、提交和 worktree 显示为可浏览的虚拟文件夹。禁用后则改为查看原始的 .git 内容。",
+  "settings.fileExplorer.git.showVirtualGitPortal.description": "打开 .git 时，把分支、标签、提交和 worktree 显示为可以浏览的文件夹。关闭这一项可查看原始的 .git 内容。",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
-    "sourceHash": "331e0a5"
+    "sourceHash": "d58b2c3"
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "门户、虚拟、分支、标签、提交、工作树、历史、历史记录",
   "@settings.fileExplorer.git.showVirtualGitPortal.keywords": {
@@ -1466,9 +1527,13 @@
   "@settings.developer.mcpPort.label": {
     "sourceHash": "72e9a59"
   },
-  "settings.developer.mcpPort.description": "MCP 服务器的首选端口。保持为 0 可让操作系统挑选一个临时端口（推荐；运行时实际端口会显示在下方）。如果外部工具需要，可固定一个特定端口。",
+  "settings.developer.mcpPort.description": "服务器运行时，正在使用的端口会显示在下方。如果其他工具需要事先知道端口，可以固定一个特定端口。",
   "@settings.developer.mcpPort.description": {
-    "sourceHash": "174e807"
+    "sourceHash": "f2ca537"
+  },
+  "settings.developer.mcpPort.summary": "{platform, select, macos {保持为 0，让你的 Mac 挑选一个空闲端口。} windows {保持为 0，让你的电脑挑选一个空闲端口。} other {保持为 0，让你的电脑挑选一个空闲端口。}}",
+  "@settings.developer.mcpPort.summary": {
+    "sourceHash": "cee7df5"
   },
   "settings.developer.mcpPort.keywords": "端口、网络、临时、随机",
   "@settings.developer.mcpPort.keywords": {
@@ -1526,6 +1591,10 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
+  "settings.analytics.enabled.description": "请开启这一项，帮我们了解在公开测试期间哪些功能最重要。\n统计关联到一个随机标识符，而不是你的姓名或邮箱。\nCmdr 绝不会发送文件名、路径、搜索词或提示词。\n关闭时，Cmdr 不会发送任何统计。",
+  "@settings.analytics.enabled.description": {
+    "sourceHash": "a8d8db1"
+  },
   "settings.analytics.enabled.keywords": "分析、使用情况、统计、使用统计、隐私、遥测、测试版、公测、跟踪、追踪、退出",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1542,9 +1611,13 @@
   "@settings.updates.crashReports.label": {
     "sourceHash": "2b8f06d"
   },
-  "settings.updates.crashReports.description": "{platform, select, macos {当 Cmdr 意外退出或在后台出现问题时，自动发送一份报告。包含应用版本、macOS 版本，以及代码中出现问题的部分。绝不包含文件名或个人数据。} windows {当 Cmdr 意外退出或在后台出现问题时，自动发送一份报告。包含应用版本、Windows 版本，以及代码中出现问题的部分。绝不包含文件名或个人数据。} other {当 Cmdr 意外退出或在后台出现问题时，自动发送一份报告。包含应用版本、Linux 发行版及其版本，以及代码中出现问题的部分。绝不包含文件名或个人数据。}}",
+  "settings.updates.crashReports.description": "{platform, select, macos {Cmdr 意外退出或在后台出现问题时，会发送一份报告。报告包含应用版本、macOS 版本，以及代码中出现问题的部分。} windows {Cmdr 意外退出或在后台出现问题时，会发送一份报告。报告包含应用版本、Windows 版本，以及代码中出现问题的部分。} other {Cmdr 意外退出或在后台出现问题时，会发送一份报告。报告包含应用版本、Linux 发行版及其版本，以及代码中出现问题的部分。}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "26508c4"
+  },
+  "settings.updates.crashReports.summary": "绝不包含文件名或个人数据。",
+  "@settings.updates.crashReports.summary": {
+    "sourceHash": "7814a28"
   },
   "settings.updates.crashReports.keywords": "崩溃、闪退、报告、崩溃报告、隐私、遥测、问题、错误报告",
   "@settings.updates.crashReports.keywords": {
@@ -1554,9 +1627,13 @@
   "@settings.updates.errorReports.label": {
     "sourceHash": "471575d"
   },
-  "settings.updates.errorReports.description": "出问题时向开发者发送一小段日志摘录。有助于更快修复 bug。默认关闭。你随时可以从“帮助”菜单手动发送报告。",
+  "settings.updates.errorReports.description": "默认关闭。你随时可以从“帮助”菜单手动发送报告。",
   "@settings.updates.errorReports.description": {
-    "sourceHash": "f3e41eb"
+    "sourceHash": "a33a61c"
+  },
+  "settings.updates.errorReports.summary": "出问题时向我们发送一小段日志摘录，好让我们更快修复 bug。",
+  "@settings.updates.errorReports.summary": {
+    "sourceHash": "0fdd0ae"
   },
   "settings.updates.errorReports.keywords": "错误报告、报告、自动、发送、隐私、遥测、问题、日志、片段、诊断",
   "@settings.updates.errorReports.keywords": {
@@ -1604,7 +1681,7 @@
   },
   "settings.advanced.virtualizationBufferColumns.description": "在简洁视图中额外渲染的列数。",
   "@settings.advanced.virtualizationBufferColumns.description": {
-    "sourceHash": "a1cbd98"
+    "sourceHash": "a66189f"
   },
   "settings.advanced.virtualizationBufferColumns.keywords": "虚拟化、缓冲区、缓冲、列、简洁",
   "@settings.advanced.virtualizationBufferColumns.keywords": {
@@ -1638,6 +1715,14 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
+  "settings.advanced.indexPauseFreeSpacePercent.description": "可用空间回升到比它高出 1 个百分点后，索引会从上次停下的地方继续。无论“磁盘空间不足警告”开启与否，都是如此。",
+  "@settings.advanced.indexPauseFreeSpacePercent.description": {
+    "sourceHash": "4d80336"
+  },
+  "settings.advanced.indexPauseFreeSpacePercent.summary": "防止索引占用你自己的文件需要的空间。",
+  "@settings.advanced.indexPauseFreeSpacePercent.summary": {
+    "sourceHash": "965796f"
+  },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "磁盘、空间、已满、剩余、可用、索引、暂停、存储空间、阈值、百分比、不足",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
     "sourceHash": "1af2a91"
@@ -1646,9 +1731,9 @@
   "@settings.fileViewer.suppressBinaryWarning.label": {
     "sourceHash": "8cdaada"
   },
-  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Cmdr 的文件查看器显示原始字节（非文本内容按有损的 UTF-8 显示）。当你打开图像、PDF、压缩文件或其他二进制文件时，查看器会显示一条红色横幅，告诉你快速查看或者用关联的 App 打开它很可能才是你想要的。打开这一项（或点按横幅里的“不再显示此警告”），就能永久关掉这条警告。} windows {Cmdr 的文件查看器显示原始字节（非文本内容按有损的 UTF-8 显示）。当你打开图像、PDF、压缩文件或其他二进制文件时，查看器会显示一条红色横幅，告诉你用关联的应用打开它很可能才是你想要的。打开这一项（或选择横幅里的“不再显示此警告”），就能永久关掉这条警告。} other {Cmdr 的文件查看器显示原始字节（非文本内容按有损的 UTF-8 显示）。当你打开图像、PDF、压缩文件或其他二进制文件时，查看器会显示一条红色横幅，告诉你用关联的应用打开它很可能才是你想要的。打开这一项（或点按横幅里的“不再显示此警告”），就能永久关掉这条警告。}}",
+  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Cmdr 的文件查看器显示文件的原始内容。当你打开图像、PDF、压缩文件或其他二进制文件时，查看器会显示一条红色横幅，告诉你快速查看或者用关联的 App 打开它很可能才是你想要的。打开这一项（或点按横幅里的“不再显示此警告”），就能永久关掉这条警告。} windows {Cmdr 的文件查看器显示文件的原始内容。当你打开图像、PDF、压缩文件或其他二进制文件时，查看器会显示一条红色横幅，告诉你用关联的应用打开它很可能才是你想要的。打开这一项（或选择横幅里的“不再显示此警告”），就能永久关掉这条警告。} other {Cmdr 的文件查看器显示文件的原始内容。当你打开图像、PDF、压缩文件或其他二进制文件时，查看器会显示一条红色横幅，告诉你用关联的应用打开它很可能才是你想要的。打开这一项（或点按横幅里的“不再显示此警告”），就能永久关掉这条警告。}}",
   "@settings.fileViewer.suppressBinaryWarning.explanation": {
-    "sourceHash": "9f90a50"
+    "sourceHash": "c255df8"
   },
   "settings.fileViewer.suppressBinaryWarning.keywords": "查看器、二进制、图像、图片、原始、警告、横幅、快速查看",
   "@settings.fileViewer.suppressBinaryWarning.keywords": {
@@ -1830,9 +1915,13 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "日志文件的最大磁盘空间。设为 0 可禁用日志存储；没有日志就无法发送错误报告。改为非零值后，将在下次启动 App 时生效。",
+  "settings.advanced.maxLogStorageMb.description": "新设的非零上限会在 Cmdr 下次启动时生效。",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "725bb26"
+    "sourceHash": "16616b2"
+  },
+  "settings.advanced.maxLogStorageMb.summary": "设为 0 则不保留日志，但这样就无法发送错误报告。",
+  "@settings.advanced.maxLogStorageMb.summary": {
+    "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "日志、存储空间、磁盘、空间、上限、轮转、错误报告、报告、隐私",
   "@settings.advanced.maxLogStorageMb.keywords": {
@@ -1874,9 +1963,13 @@
   "@settings.advanced.logLlmCalls.label": {
     "sourceHash": "f865b3e"
   },
-  "settings.advanced.logLlmCalls.description": "{platform, select, macos {为方便调试，把每次 AI 请求和响应保存到本地文件夹（llm-logs）中。这些文件保留在你的 Mac 上，其中包含 Cmdr 发送给你的提供方的文件名和路径。} windows {为方便调试，把每次 AI 请求和响应保存到本地文件夹（llm-logs）中。这些文件保留在你的电脑上，其中包含 Cmdr 发送给你的提供方的文件名和路径。} other {为方便调试，把每次 AI 请求和响应保存到本地文件夹（llm-logs）中。这些文件保留在你的电脑上，其中包含 Cmdr 发送给你的提供方的文件名和路径。}}",
+  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Cmdr 会把这些请求和响应写入 llm-logs 文件夹，方便调试。这些文件留在你的 Mac 上。} windows {Cmdr 会把这些请求和响应写入 llm-logs 文件夹，方便调试。这些文件留在你的电脑上。} other {Cmdr 会把这些请求和响应写入 llm-logs 文件夹，方便调试。这些文件留在你的电脑上。}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "c7e917a"
+  },
+  "settings.advanced.logLlmCalls.summary": "在本地保存每次 AI 请求和响应，包括文件路径。",
+  "@settings.advanced.logLlmCalls.summary": {
+    "sourceHash": "8b9e485"
   },
   "settings.advanced.logLlmCalls.keywords": "人工智能、日志、调试、请求、响应、回复、提示词、模型",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2385,17 +2478,33 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
+  "settings.askCmdr.provider.usesProvider": "Ask Cmdr 使用 {provider}，和 Cmdr 其他部分用的是同一个 AI。<providerLink>前往“AI › 提供方”更改</providerLink>",
+  "@settings.askCmdr.provider.usesProvider": {
+    "sourceHash": "978e715"
+  },
+  "settings.askCmdr.provider.none": "在<providerLink>“AI › 提供方”</providerLink>中开启一个 AI 提供方，即可开始聊天。",
+  "@settings.askCmdr.provider.none": {
+    "sourceHash": "0e73e8e"
+  },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr 模型",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"
   },
-  "settings.askCmdr.interactiveModel.description": "聊天使用的模型。留空则使用与 Cmdr 其他 AI 功能相同的模型。例如：claude-sonnet-5-5",
+  "settings.askCmdr.interactiveModel.description": "聊天使用的模型。“与 Cmdr 的 AI 相同”会跟随你在“AI › 提供方”中选的模型。",
   "@settings.askCmdr.interactiveModel.description": {
-    "sourceHash": "e301e99"
+    "sourceHash": "a285a77"
   },
   "settings.askCmdr.interactiveModel.placeholder": "与 Cmdr 的 AI 相同",
   "@settings.askCmdr.interactiveModel.placeholder": {
     "sourceHash": "2631f3d"
+  },
+  "settings.askCmdr.interactiveModel.sameAs": "与 Cmdr 的 AI 相同（{model}）",
+  "@settings.askCmdr.interactiveModel.sameAs": {
+    "sourceHash": "e290ccc"
+  },
+  "settings.askCmdr.interactiveModel.localNote": "本地 AI 只运行一个模型，所以聊天就用这一个。",
+  "@settings.askCmdr.interactiveModel.localNote": {
+    "sourceHash": "b2447b5"
   },
   "settings.askCmdr.interactiveModel.keywords": "人工智能、聊天、对话、助手、模型、覆盖、替换、其他模型、另一个模型",
   "@settings.askCmdr.interactiveModel.keywords": {
@@ -2445,9 +2554,13 @@
   "@settings.askCmdr.proactive.label": {
     "sourceHash": "a85ef48"
   },
-  "settings.askCmdr.proactive.description": "Cmdr 会关注你正在使用的文件夹，有建议时主动开启对话。在你批准之前，什么都不会执行。",
+  "settings.askCmdr.proactive.description": "Cmdr 会留意你正在使用的文件夹，从中找出值得建议的事。",
   "@settings.askCmdr.proactive.description": {
-    "sourceHash": "556f155"
+    "sourceHash": "e4261b4"
+  },
+  "settings.askCmdr.proactive.summary": "Cmdr 会带着建议开启聊天。在你批准之前，什么都不会执行。",
+  "@settings.askCmdr.proactive.summary": {
+    "sourceHash": "675ea47"
   },
   "settings.askCmdr.proactive.keywords": "主动、建议、自动、通知、监视、留意、唤醒、对话、人工智能",
   "@settings.askCmdr.proactive.keywords": {
@@ -2558,9 +2671,13 @@
   "@settings.operationLog.enabled.label": {
     "sourceHash": "edfee55"
   },
-  "settings.operationLog.enabled.description": "关闭期间，Cmdr 不会记录新的拷贝、移动、重命名或删除，因此你无法撤销它们。已有的历史记录会保留，其中的操作仍然可以撤销。",
+  "settings.operationLog.enabled.description": "这包括新的拷贝、移动、重命名和删除。已有的历史记录会保留，其中的操作仍然可以撤销。",
   "@settings.operationLog.enabled.description": {
-    "sourceHash": "41f90d4"
+    "sourceHash": "87f3b5d"
+  },
+  "settings.operationLog.enabled.summary": "关闭期间，Cmdr 不会记录新的改动，这些改动也就无法撤销。",
+  "@settings.operationLog.enabled.summary": {
+    "sourceHash": "94d4870"
   },
   "settings.operationLog.enabled.keywords": "操作、日志、历史、历史记录、记录、撤销、隐私、关闭",
   "@settings.operationLog.enabled.keywords": {
@@ -2698,7 +2815,7 @@
   "@settings.summary.noSubsections": {
     "sourceHash": "ba4b5b5"
   },
-  "settings.control.moreAbout": "More about “{setting}”",
+  "settings.control.moreAbout": "进一步了解“{setting}”",
   "@settings.control.moreAbout": {
     "sourceHash": "57968f3"
   },
@@ -2992,6 +3109,10 @@
   "@settings.appearance.card.namesAndIcons": {
     "sourceHash": "8386169"
   },
+  "settings.appearance.card.sorting": "排序",
+  "@settings.appearance.card.sorting": {
+    "sourceHash": "cb24f7d"
+  },
   "settings.appearance.card.briefMode": "简洁模式",
   "@settings.appearance.card.briefMode": {
     "sourceHash": "b75e4b3"
@@ -3080,6 +3201,14 @@
   "settings.securityLog.enabled.label": "记录安全事件",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
+  },
+  "settings.securityLog.enabled.description": "这份记录会记下与安全相关的改动和拒绝，比如是否允许使用云端 AI、安装了更新，或 MCP 服务器拒绝了某个 App。其中不含文件名、文件内容或密码。",
+  "@settings.securityLog.enabled.description": {
+    "sourceHash": "97e24a4"
+  },
+  "settings.securityLog.enabled.summary": "{platform, select, macos {一份小小的本地安全事件记录，绝不会离开你的 Mac。} windows {一份小小的本地安全事件记录，绝不会离开你的电脑。} other {一份小小的本地安全事件记录，绝不会离开你的电脑。}}",
+  "@settings.securityLog.enabled.summary": {
+    "sourceHash": "84a9146"
   },
   "settings.securityLog.enabled.keywords": "安全、日志、审计、记录、事件、访问、隐私",
   "@settings.securityLog.enabled.keywords": {
@@ -3391,9 +3520,9 @@
   "@settings.adb.install.intro": {
     "sourceHash": "9f7a0f4"
   },
-  "settings.adb.pathPlaceholder": "Cmdr 会按常规方式查找 adb",
+  "settings.adb.pathPlaceholder": "自动找到",
   "@settings.adb.pathPlaceholder": {
-    "sourceHash": "538b307"
+    "sourceHash": "14fac78"
   },
   "settings.adb.browse": "浏览…",
   "@settings.adb.browse": {

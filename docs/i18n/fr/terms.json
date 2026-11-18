@@ -1275,7 +1275,7 @@
     "sources": "MS terminology FRA; macOS"
   },
   "encrypted": {
-    "accept": ["chiffrement"],
+    "accept": ["chiffrement", "chiffrer", "chiffre"],
     "chosen": "chiffré",
     "confidence": "high",
     "forms": "agrees with its subject (archive chiffrée, fichier chiffré)",
@@ -3174,7 +3174,8 @@
     "decision": "Réglages : sections et présentation",
     "exceptions": {
       "servers.sheet.s3GcsKeyHelp": "Third-party UI: Google Cloud’s French console names Cloud Storage’s settings page Paramètres, so the hint quotes the vendor’s word (tentative).",
-      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome and linuxKde branches quote the desktop's own settings app, never Cmdr's Réglages: GNOME Paramètres > Clavier > Voir et personnaliser les raccourcis (gnome-control-center.po fr) and KDE Configuration du système > Clavier > Raccourcis (systemsettings.po fr, kcm_keyboard and kcm_keys metadata). Verified read-only, 2026-11-18."
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome and linuxKde branches quote the desktop's own settings app, never Cmdr's Réglages: GNOME Paramètres > Clavier > Voir et personnaliser les raccourcis (gnome-control-center.po fr) and KDE Configuration du système > Clavier > Raccourcis (systemsettings.po fr, kcm_keyboard and kcm_keys metadata). Verified read-only, 2026-11-18.",
+      "settings.fileOperations.mtpEnabled.description": "quotes the phone's own menu path: Android French names its Settings app Paramètres (Paramètres > Préférences USB)"
     },
     "forms": "Cmdr’s own window → les Réglages (Ouvrir les réglages, Activez-la dans les Réglages); breadcrumbs Réglages > IA, Réglages › Mises à jour et confidentialité (mirror EN’s separator); Apple’s app is Réglages Système",
     "sources": "macOS (Réglages Système CFBundleName)",
@@ -3341,10 +3342,10 @@
     "sources": "macOS Finder (Le Finder souhaite supprimer l’instantané de sauvegarde créé le ^0); catalog (fileExplorer.readOnly.gitPortalMessage, search.coverage.declined)"
   },
   "sort": {
-    "accept": ["trié", "tri ", "croissant", "ordre de tri"],
+    "accept": ["trié", "tri ", "croissant", "ordre de tri", "Tri"],
     "chosen": "Trier",
     "confidence": "high",
-    "forms": "Sort by → Trier par; ascending / descending → ordre croissant / décroissant (menu Croissant / Décroissant)",
+    "forms": "Sort by → Trier par; the Sorting card heading → Tri; ascending / descending → ordre croissant / décroissant (menu Croissant / Décroissant)",
     "sources": "macOS Finder MenuBar (Trier par); Nautilus, Thunar, Dolphin, Double Commander"
   },
   "source": {
@@ -3693,7 +3694,8 @@
     "chosen": "transfert",
     "confidence": "high",
     "forms": "a copy or move in flight (the progress dialog keeps Garder ce transfert en cours en arrière-plan)",
-    "sources": "MS terminology FRA; macOS Touch Bar"
+    "sources": "MS terminology FRA; macOS Touch Bar",
+    "accept": ["transférer"]
   },
   "trash": {
     "chosen": "corbeille",
@@ -4402,5 +4404,47 @@
     "confidence": "high",
     "sources": "macOS AppKit MenuCommands (Preferences → Préférences); fr/gnome-nautilus/nautilus.po _Preferences → _Préférences; fr/xfce-thunar/thunar.po Préfé_rences…",
     "note": "GNOME's app-menu row (the linuxGnome branch of menu.app.settings) is Préférences with no ellipsis; KDE's Configure Cmdr… → Configurer Cmdr… (fr/kde-dolphin/dolphin.po Configure… → Configurer...)."
+  },
+  "bug": {
+    "chosen": "bug",
+    "confidence": "high",
+    "accept": ["bugs", "bogue"],
+    "note": "The catalog says bug in prose (corriger les bugs, 3 keys); bogue (MS TBX, git.po) is kept as a search keyword only.",
+    "sources": "catalog count (bugs ×3 vs bogue ×0 in prose); MS TBX bug → bogue; fr/git/git.po bogue"
+  },
+  "detect": {
+    "chosen": "détecter",
+    "confidence": "high",
+    "accept": ["détecte", "détecté", "détection"],
+    "sources": "fr/gnome-nautilus/nautilus.po _Detect Media → _Détecter le média; fr/double-commander/doublecmd.po Detect archive type → Détecter le type d’archives; catalog Cmdr détecte un téléphone"
+  },
+  "help-menu": {
+    "chosen": "menu Aide",
+    "confidence": "high",
+    "forms": "from the Help menu → depuis le menu Aide",
+    "sources": "menu.bar.help → Aide (French macOS menu bar); catalog depuis le menu Aide ×2",
+    "accept": ["Aide"]
+  },
+  "open-beta": {
+    "chosen": "bêta ouverte",
+    "confidence": "high",
+    "accept": ["bêta"],
+    "forms": "during the open beta → pendant la bêta ouverte; the beta → la bêta",
+    "sources": "catalog onboarding.stepBeta.analyticsLede, Version {version} (bêta ouverte), Cmdr est en bêta ouverte; no pile hits"
+  },
+  "prompt": {
+    "chosen": "prompt",
+    "confidence": "tentative",
+    "accept": ["prompts", "invite", "demande", "question"],
+    "forms": "text sent to an AI model → prompt (ni de prompts); a question Cmdr itself asks (the indexing prompt) → demande; a system dialog asking something → invite système; accept any prompt the phone shows → acceptez toute demande qu’il affiche",
+    "note": "MS TBX offers requête for the AI sense, but requête is this catalog's ruling for an API request, so the loanword keeps the two apart.",
+    "sources": "MS TBX prompt → prompt (bot) / requête (generative AI) / invite; catalog invite système, keywords invite, prompt"
+  },
+  "speed": {
+    "chosen": "vitesse",
+    "confidence": "high",
+    "accept": ["rapide", "rapides", "plus vite", "accélérer", "accélèr"],
+    "forms": "faster file operations → des opérations sur les fichiers plus rapides; fix bugs faster → corriger les bugs plus vite",
+    "sources": "MS TBX playback speed → vitesse de lecture; fr/double-commander/doublecmd.po Speed → Vitesse"
   }
 }

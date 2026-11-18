@@ -59,9 +59,9 @@
   "@settings.appearance.sizeColors.label": {
     "sourceHash": "7598e9a"
   },
-  "settings.appearance.sizeColors.description": "Colore les tailles de fichiers dans la liste des fichiers par palier. Arc-en-ciel utilise vert/jaune/orange/rouge/violet. App utilise des nuances de la couleur de l’app.",
+  "settings.appearance.sizeColors.description": "Colore les tailles de fichiers dans la liste des fichiers par palier. Arc-en-ciel utilise le vert, le jaune, l’orange, le rouge et le violet. App utilise des nuances de la couleur de l’app.",
   "@settings.appearance.sizeColors.description": {
-    "sourceHash": "ecb064a"
+    "sourceHash": "e790d53"
   },
   "settings.appearance.sizeColors.opt.none": "Aucune",
   "@settings.appearance.sizeColors.opt.none": {
@@ -121,7 +121,7 @@
   "settings.appearance.dateTimeFormat.optDesc.iso": "2025-01-25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.iso": {
     "sourceHash": "dc76ffd",
-    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
+    "sameAsSourceJustification": "A literal ISO 8601 sample; the @key description requires the exact digit layout, with no lead-in."
   },
   "settings.appearance.dateTimeFormat.opt.short": "Court",
   "@settings.appearance.dateTimeFormat.opt.short": {
@@ -130,7 +130,7 @@
   "settings.appearance.dateTimeFormat.optDesc.short": "01/25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.short": {
     "sourceHash": "72b6f9f",
-    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
+    "sameAsSourceJustification": "A literal sample of the Short format's digit layout; the @key description requires it unchanged, with no lead-in."
   },
   "settings.appearance.dateTimeFormat.opt.custom": "Personnalisé…",
   "@settings.appearance.dateTimeFormat.opt.custom": {
@@ -509,9 +509,13 @@
   "@settings.fileOperations.skipConfirmation.label": {
     "sourceHash": "f1b1b39"
   },
-  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {« Copier » et « Déplacer » agissent aussitôt vers l’autre panneau, et « Supprimer » déplace les éléments vers la Corbeille sans rien demander. Un peu risqué, puisqu’une seule touche suffit à agir. Supprimer définitivement demande toujours une confirmation.} other {« Copier » et « Déplacer » agissent aussitôt vers l’autre panneau, et « Supprimer » place les éléments dans la corbeille sans rien demander. Un peu risqué, puisqu’une seule touche suffit à agir. Supprimer définitivement demande toujours une confirmation.}}",
+  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {« Copier » et « Déplacer » agissent aussitôt vers l’autre panneau, et « Supprimer » déplace les éléments vers la Corbeille sans rien demander.} other {« Copier » et « Déplacer » agissent aussitôt vers l’autre panneau, et « Supprimer » place les éléments dans la corbeille sans rien demander.}}",
   "@settings.fileOperations.skipConfirmation.explanation": {
-    "sourceHash": "564f000"
+    "sourceHash": "9c53630"
+  },
+  "settings.fileOperations.skipConfirmation.summary": "Un peu risqué : une seule touche suffit à agir. Supprimer définitivement demande quand même une confirmation.",
+  "@settings.fileOperations.skipConfirmation.summary": {
+    "sourceHash": "ca6d8db"
   },
   "settings.fileOperations.skipConfirmation.keywords": "{platform, select, windows {confirmer, confirmation, boîte de dialogue, dialogue, demander, copier, déplacer, corbeille, supprimer, ignorer, sauter, clics} other {confirmer, confirmation, boîte de dialogue, dialogue, demander, copier, déplacer, corbeille, supprimer, ignorer, sauter, clics}}",
   "@settings.fileOperations.skipConfirmation.keywords": {
@@ -734,9 +738,13 @@
   "@settings.mediaIndex.enabled.label": {
     "sourceHash": "a2e6604"
   },
-  "settings.mediaIndex.enabled.description": "Lit le texte à l’intérieur de vos images pour que vous puissiez le rechercher. Fonctionne sur votre Mac et ne le quitte jamais. Couvre les disques locaux pour l’instant.",
+  "settings.mediaIndex.enabled.description": "Fonctionne pour l’instant sur les disques locaux.",
   "@settings.mediaIndex.enabled.description": {
-    "sourceHash": "118fc8d"
+    "sourceHash": "517a7c9"
+  },
+  "settings.mediaIndex.enabled.summary": "Permet de rechercher le texte de vos images. Ce texte ne quitte jamais votre Mac.",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "31aa708"
   },
   "settings.mediaIndex.enabled.keywords": "image, photo, texte, rechercher, recherche, index, indexer, capture d’écran, contenu, reconnaissance de texte",
   "@settings.mediaIndex.enabled.keywords": {
@@ -1115,9 +1123,9 @@
   "@settings.behavior.notifications.keepUntilClosed.label": {
     "sourceHash": "bc58ecc"
   },
-  "settings.behavior.notifications.keepUntilClosed.description": "Les notifications restent à l’écran jusqu’à ce que vous les fermiez, au lieu de disparaître après quelques secondes.",
+  "settings.behavior.notifications.keepUntilClosed.description": "Au lieu de les laisser disparaître après quelques secondes.",
   "@settings.behavior.notifications.keepUntilClosed.description": {
-    "sourceHash": "53890bf"
+    "sourceHash": "2df854c"
   },
   "settings.behavior.notifications.keepUntilClosed.keywords": "notification, avis, durée, délai, temps, disparaître, ignorer, fermer, conserver, garder, accessibilité",
   "@settings.behavior.notifications.keepUntilClosed.keywords": {
@@ -1160,9 +1168,13 @@
   "@settings.search.autoApply.label": {
     "sourceHash": "06b0f9f"
   },
-  "settings.search.autoApply.description": "{platform, select, windows {Lance les recherches par nom de fichier et par regex automatiquement pendant la frappe (1 seconde après l’arrêt). Les recherches par IA attendent toujours la touche Entrée, car elles ont un coût. Quand cette option est désactivée, appuyez sur Entrée ou sélectionnez le bouton de lancement pour rechercher.} other {Lance les recherches par nom de fichier et par regex automatiquement pendant la frappe (1 seconde après l’arrêt). Les recherches par IA attendent toujours la touche Entrée, car elles ont un coût. Quand cette option est désactivée, appuyez sur Entrée ou cliquez sur le bouton de lancement pour rechercher.}}",
+  "settings.search.autoApply.description": "{platform, select, windows {Les recherches démarrent 1 seconde après la fin de votre saisie. Les recherches par IA attendent, car elles coûtent de l’argent. Quand cette option est désactivée, appuyez sur Entrée ou sélectionnez le bouton de lancement.} other {Les recherches démarrent 1 seconde après la fin de votre saisie. Les recherches par IA attendent, car elles coûtent de l’argent. Quand cette option est désactivée, appuyez sur Entrée ou cliquez sur le bouton de lancement.}}",
   "@settings.search.autoApply.description": {
-    "sourceHash": "b0f85fd"
+    "sourceHash": "3aa9f59"
+  },
+  "settings.search.autoApply.summary": "Lance les recherches par nom et par regex pendant la frappe. Les recherches par IA attendent la touche Entrée.",
+  "@settings.search.autoApply.summary": {
+    "sourceHash": "ebc6780"
   },
   "settings.search.autoApply.keywords": "rechercher, recherche, automatique, auto, appliquer, en direct, instantané, nom de fichier, anti-rebond",
   "@settings.search.autoApply.keywords": {
@@ -1234,9 +1246,13 @@
   "@settings.ai.reasoningEfforts.label.thinkingLevel": {
     "sourceHash": "96f115b"
   },
-  "settings.ai.reasoningEfforts.description": "Durée pendant laquelle le modèle réfléchit avant de répondre. Réfléchir davantage aide pour les tâches délicates, mais les réponses arrivent plus lentement et la réflexion est facturée comme sortie.",
+  "settings.ai.reasoningEfforts.description": "La réflexion du modèle est facturée en sortie, comme la réponse elle-même.",
   "@settings.ai.reasoningEfforts.description": {
-    "sourceHash": "0ad6737"
+    "sourceHash": "0a6d851"
+  },
+  "settings.ai.reasoningEfforts.summary": "Réfléchir plus longtemps aide pour les tâches délicates, mais c’est plus lent et ça coûte plus cher.",
+  "@settings.ai.reasoningEfforts.summary": {
+    "sourceHash": "5c3f87f"
   },
   "settings.ai.reasoningEfforts.keywords": "effort de raisonnement, effort, raisonnement, réfléchir, réflexion, profondeur, vitesse, coût, qualité",
   "@settings.ai.reasoningEfforts.keywords": {
@@ -1254,9 +1270,13 @@
   "@settings.aboutThis.aiVerdict.label": {
     "sourceHash": "4c84599"
   },
-  "settings.aboutThis.aiVerdict.description": "Quand vous ouvrez la fiche, l’IA écrit deux ou trois phrases à partir des faits qu’affiche la fiche. Avec l’IA dans le cloud, Cmdr envoie à chaque fois les faits de la fiche et un bref regard à l’intérieur du fichier à votre fournisseur.",
+  "settings.aboutThis.aiVerdict.description": "Quand vous ouvrez la fiche, l’IA écrit deux ou trois phrases à partir des faits qu’affiche la fiche. Cela se produit chaque fois que vous l’ouvrez.",
   "@settings.aboutThis.aiVerdict.description": {
-    "sourceHash": "5dfb5f5"
+    "sourceHash": "4c0ef49"
+  },
+  "settings.aboutThis.aiVerdict.summary": "Avec l’IA dans le cloud, Cmdr envoie les faits de la fiche et un extrait du fichier à votre fournisseur.",
+  "@settings.aboutThis.aiVerdict.summary": {
+    "sourceHash": "4e34358"
   },
   "settings.aboutThis.aiVerdict.keywords": "expliquer, avis, résumé, infos fichier, qu’est-ce que c’est, décrire, verdict, commentaire",
   "@settings.aboutThis.aiVerdict.keywords": {
@@ -1269,6 +1289,15 @@
   "settings.network.enabled.label": "{platform, select, windows {Activer le réseau} other {Activer le réseau}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
+  },
+  "settings.network.enabled.description": "{platform, select, macos {Quand cette option est désactivée, Cmdr ne demande pas à macOS d’accéder au « Réseau local ».} windows {Quand cette option est désactivée, Windows ne demande pas de laisser passer Cmdr par le pare-feu.} other {}}",
+  "@settings.network.enabled.description": {
+    "sourceHash": "3e2a4b0",
+    "sameAsSourceJustification": "The Linux branch is empty on purpose, as in the English: Linux shows no prompt to mention."
+  },
+  "settings.network.enabled.summary": "Découvre les serveurs SMB sur votre réseau. Les partages montés fonctionnent dans tous les cas.",
+  "@settings.network.enabled.summary": {
+    "sourceHash": "1da1cd9"
   },
   "settings.network.enabled.keywords": "réseau, activer, activé, découverte, local, autorisation, permission",
   "@settings.network.enabled.keywords": {
@@ -1290,9 +1319,9 @@
   "@settings.network.directSmbConnection.label": {
     "sourceHash": "407c4f1"
   },
-  "settings.network.directSmbConnection.description": "{platform, select, macos {Quand cette option est activée, Cmdr établit une connexion directe aux partages SMB pour des opérations de fichiers plus rapides. Le montage système reste pour le Finder et les autres apps.} windows {Quand cette option est activée, Cmdr établit une connexion directe aux partages SMB pour des opérations de fichiers plus rapides. La connexion système reste pour l’Explorateur de fichiers et les autres apps.} other {Quand cette option est activée, Cmdr établit une connexion directe aux partages SMB pour des opérations de fichiers plus rapides. Le montage système reste pour votre gestionnaire de fichiers et les autres apps.}}",
+  "settings.network.directSmbConnection.description": "{platform, select, macos {Quand cette option est activée, Cmdr se connecte directement aux partages SMB pour des opérations sur les fichiers plus rapides. Le montage système reste disponible pour le Finder et les autres apps.} windows {Quand cette option est activée, Cmdr se connecte directement aux partages SMB pour des opérations sur les fichiers plus rapides. La connexion système reste disponible pour l’Explorateur de fichiers et les autres apps.} other {Quand cette option est activée, Cmdr se connecte directement aux partages SMB pour des opérations sur les fichiers plus rapides. Le montage système reste disponible pour votre gestionnaire de fichiers et les autres apps.}}",
   "@settings.network.directSmbConnection.description": {
-    "sourceHash": "429c68c"
+    "sourceHash": "06e2844"
   },
   "settings.network.directSmbConnection.keywords": "direct, directement, rapide, connexion, réseau, partage, performances, vitesse",
   "@settings.network.directSmbConnection.keywords": {
@@ -1302,9 +1331,13 @@
   "@settings.network.requireSmbEncryption.label": {
     "sourceHash": "4519b09"
   },
-  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr chiffre ses connexions aux partages SMB, même quand le serveur ne l’exige pas, et n’ouvre pas un partage dont la connexion ne peut pas être chiffrée, y compris un partage auquel votre Mac s’est connecté sans chiffrement. Les connexions en tant qu’invité ne peuvent pas être chiffrées, vous devrez donc vous identifier. Les connexions que Cmdr a déjà ouvertes restent telles quelles jusqu’à leur prochaine reconnexion.} windows {Cmdr chiffre ses connexions aux partages SMB, même quand le serveur ne l’exige pas, et n’ouvre pas un partage dont la connexion ne peut pas être chiffrée, y compris un partage auquel votre PC s’est connecté sans chiffrement. Les connexions en tant qu’invité ne peuvent pas être chiffrées, vous devrez donc vous identifier. Les connexions que Cmdr a déjà ouvertes restent telles quelles jusqu’à leur prochaine reconnexion.} other {Cmdr chiffre ses connexions aux partages SMB, même quand le serveur ne l’exige pas, et n’ouvre pas un partage dont la connexion ne peut pas être chiffrée, y compris un partage auquel votre ordinateur s’est connecté sans chiffrement. Les connexions en tant qu’invité ne peuvent pas être chiffrées, vous devrez donc vous identifier. Les connexions que Cmdr a déjà ouvertes restent telles quelles jusqu’à leur prochaine reconnexion.}}",
+  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr chiffre ses connexions SMB même quand le serveur ne l’exige pas, y compris pour les partages auxquels votre Mac s’est connecté sans chiffrement. Les connexions que Cmdr a déjà ouvertes restent telles quelles jusqu’à leur prochaine reconnexion.} windows {Cmdr chiffre ses connexions SMB même quand le serveur ne l’exige pas, y compris pour les partages auxquels votre PC s’est connecté sans chiffrement. Les connexions que Cmdr a déjà ouvertes restent telles quelles jusqu’à leur prochaine reconnexion.} other {Cmdr chiffre ses connexions SMB même quand le serveur ne l’exige pas, y compris pour les partages auxquels votre ordinateur s’est connecté sans chiffrement. Les connexions que Cmdr a déjà ouvertes restent telles quelles jusqu’à leur prochaine reconnexion.}}",
   "@settings.network.requireSmbEncryption.description": {
-    "sourceHash": "26291fe"
+    "sourceHash": "6025cf4"
+  },
+  "settings.network.requireSmbEncryption.summary": "Les partages impossibles à chiffrer ne s’ouvrent pas, et il faut s’identifier au lieu de se connecter en tant qu’invité.",
+  "@settings.network.requireSmbEncryption.summary": {
+    "sourceHash": "bc73348"
   },
   "settings.network.requireSmbEncryption.keywords": "chiffrer, chiffré, crypter, cryptage, sécurité, sécurisé, confidentialité, protection",
   "@settings.network.requireSmbEncryption.keywords": {
@@ -1343,6 +1376,18 @@
   "@settings.network.shareCacheDuration.keywords": {
     "sourceHash": "df14578"
   },
+  "settings.network.timeout.label": "Délai d’attente réseau",
+  "@settings.network.timeout.label": {
+    "sourceHash": "fdd0d76"
+  },
+  "settings.network.timeout.description": "Durée pendant laquelle Cmdr attend un partage réseau avant d’abandonner. Une valeur de 15 secondes convient aux réseaux locaux courants ; essayez 45 pour les VPN ou les connexions à forte latence.",
+  "@settings.network.timeout.description": {
+    "sourceHash": "8cc6def"
+  },
+  "settings.network.timeout.keywords": "délai, attente, attendre, lent, lenteur, secondes, connexion, latence, expiration, temps de réponse, vpn",
+  "@settings.network.timeout.keywords": {
+    "sourceHash": "bb8a9ac"
+  },
   "settings.network.smbConcurrency.label": "Opérations simultanées par connexion SMB",
   "@settings.network.smbConcurrency.label": {
     "sourceHash": "339933f"
@@ -1359,9 +1404,13 @@
   "@settings.fileOperations.mtpEnabled.label": {
     "sourceHash": "6a315a8"
   },
-  "settings.fileOperations.mtpEnabled.description": "Détecte et se connecte aux appareils Android et autres via un câble USB pour parcourir et transférer des fichiers. Pour utiliser cette fonctionnalité sur un téléphone Android, branchez un câble USB, puis sur votre téléphone, allez dans quelque chose comme Réglages > Préférences USB, et réglez la connexion sur « Transfert de fichiers », « Android Auto », ou similaire. (Varie selon l’appareil.)",
+  "settings.fileOperations.mtpEnabled.description": "Cmdr détecte les téléphones Android, les Kindles et les appareils photo branchés avec un câble USB pour que vous puissiez parcourir et transférer des fichiers. Sur Android, cherchez du côté de Paramètres > Préférences USB ; « Android Auto » fonctionne aussi. Cela varie selon l’appareil.",
   "@settings.fileOperations.mtpEnabled.description": {
-    "sourceHash": "c66df04"
+    "sourceHash": "a5b7ef3"
+  },
+  "settings.fileOperations.mtpEnabled.summary": "Sur votre téléphone, réglez la connexion USB sur « Transfert de fichiers » ou une option similaire.",
+  "@settings.fileOperations.mtpEnabled.summary": {
+    "sourceHash": "355c987"
   },
   "settings.fileOperations.mtpEnabled.keywords": "appareil, téléphone, mobile, smartphone, liseuse, appareil photo, tablette",
   "@settings.fileOperations.mtpEnabled.keywords": {
@@ -1371,6 +1420,14 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
+  "settings.fileOperations.adbEnabled.description": "ADB donne accès à tout le système de fichiers d’un téléphone Android, ce que MTP ne peut pas vous montrer. Laisser cette option activée ne coûte rien si vous n’avez installé aucun outil Android.",
+  "@settings.fileOperations.adbEnabled.description": {
+    "sourceHash": "a16197e"
+  },
+  "settings.fileOperations.adbEnabled.summary": "{platform, select, macos {Nécessite le débogage USB sur le téléphone et l’outil adb sur ce Mac.} windows {Nécessite le débogage USB sur le téléphone et l’outil adb sur ce PC.} other {Nécessite le débogage USB sur le téléphone et l’outil adb sur cet ordinateur.}}",
+  "@settings.fileOperations.adbEnabled.summary": {
+    "sourceHash": "b20dbc7"
+  },
   "settings.fileOperations.adbEnabled.keywords": "débogage USB, options pour les développeurs, options développeur, téléphone, appareil, smartphone",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1379,9 +1436,13 @@
   "@settings.fileOperations.adbBinaryPath.label": {
     "sourceHash": "a67fbbd"
   },
-  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Laissez ce champ vide et Cmdr cherche adb de la manière habituelle, notamment dans l’Android SDK et Homebrew. Indiquez un chemin si vous gardez les Platform Tools dans un dossier à part.} other {Laissez ce champ vide et Cmdr cherche adb de la manière habituelle, notamment dans l’Android SDK et votre PATH. Indiquez un chemin si vous gardez les Platform Tools dans un dossier à part.}}",
+  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Cmdr cherche aux endroits habituels, notamment dans l’Android SDK et Homebrew. Indiquez un autre chemin si vous rangez les Android Platform Tools ailleurs.} other {Cmdr cherche aux endroits habituels, notamment dans l’Android SDK et votre PATH. Indiquez un autre chemin si vous rangez les Android Platform Tools ailleurs.}}",
   "@settings.fileOperations.adbBinaryPath.description": {
-    "sourceHash": "e8cde17"
+    "sourceHash": "e1c5acb"
+  },
+  "settings.fileOperations.adbBinaryPath.summary": "Laissez ce champ vide pour que Cmdr trouve adb tout seul.",
+  "@settings.fileOperations.adbBinaryPath.summary": {
+    "sourceHash": "e62a0d3"
   },
   "settings.fileOperations.adbBinaryPath.keywords": "chemin, binaire, exécutable, emplacement",
   "@settings.fileOperations.adbBinaryPath.keywords": {
@@ -1415,9 +1476,9 @@
   "@settings.fileExplorer.git.showStatusColumn.label": {
     "sourceHash": "0f6a836"
   },
-  "settings.fileExplorer.git.showStatusColumn.description": "Ajoute une colonne montrant l’état git de chaque fichier (modifié, non suivi, etc.) en présentation complète.",
+  "settings.fileExplorer.git.showStatusColumn.description": "Ajoute une colonne montrant l’état git de chaque fichier (par exemple modifié ou non suivi) en présentation complète.",
   "@settings.fileExplorer.git.showStatusColumn.description": {
-    "sourceHash": "fc74b38"
+    "sourceHash": "214eb5d"
   },
   "settings.fileExplorer.git.showStatusColumn.keywords": "état, statut, colonne, modifié, non suivi, ignoré, ajouté, supprimé",
   "@settings.fileExplorer.git.showStatusColumn.keywords": {
@@ -1427,9 +1488,9 @@
   "@settings.fileExplorer.git.showVirtualGitPortal.label": {
     "sourceHash": "40d9fa1"
   },
-  "settings.fileExplorer.git.showVirtualGitPortal.description": "À l’entrée dans .git, affiche les branches, étiquettes, commits et worktrees comme des dossiers virtuels navigables. Désactivez pour voir plutôt le contenu brut de .git.",
+  "settings.fileExplorer.git.showVirtualGitPortal.description": "Quand vous ouvrez .git, affiche les branches, étiquettes, commits et worktrees comme des dossiers que vous pouvez parcourir. Désactivez cette option pour voir le contenu brut de .git.",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
-    "sourceHash": "331e0a5"
+    "sourceHash": "d58b2c3"
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "portail, virtuel, branches, tags, étiquettes, commits, worktrees, historique",
   "@settings.fileExplorer.git.showVirtualGitPortal.keywords": {
@@ -1472,9 +1533,13 @@
     "sourceHash": "72e9a59",
     "sameAsSourceJustification": "'Port' is the same word in French (network port); standard technical term, kept identical."
   },
-  "settings.developer.mcpPort.description": "Port préféré pour le serveur MCP. Laissez à 0 pour laisser le système choisir un port éphémère (recommandé ; le port réel est affiché ci-dessous une fois en cours d’exécution). Fixez un port précis si un outil externe le nécessite.",
+  "settings.developer.mcpPort.description": "Le port utilisé s’affiche ci-dessous pendant que le serveur fonctionne. Fixez un port précis si un autre outil doit le connaître à l’avance.",
   "@settings.developer.mcpPort.description": {
-    "sourceHash": "174e807"
+    "sourceHash": "f2ca537"
+  },
+  "settings.developer.mcpPort.summary": "{platform, select, macos {Laissez 0 pour que votre Mac choisisse un port libre.} windows {Laissez 0 pour que votre PC choisisse un port libre.} other {Laissez 0 pour que votre ordinateur choisisse un port libre.}}",
+  "@settings.developer.mcpPort.summary": {
+    "sourceHash": "cee7df5"
   },
   "settings.developer.mcpPort.keywords": "port, réseau, éphémère",
   "@settings.developer.mcpPort.keywords": {
@@ -1532,6 +1597,10 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
+  "settings.analytics.enabled.description": "Merci d’activer cette option pour nous aider à voir quelles fonctionnalités comptent pendant la bêta ouverte.\nLes statistiques sont reliées à un identifiant aléatoire, pas à votre nom ni à votre e-mail.\nCmdr n’envoie jamais de noms de fichiers, de chemins, de termes de recherche ni de prompts.\nQuand cette option est désactivée, Cmdr n’envoie aucune statistique.",
+  "@settings.analytics.enabled.description": {
+    "sourceHash": "a8d8db1"
+  },
   "settings.analytics.enabled.keywords": "statistiques, stats, usage, utilisation, confidentialité, vie privée, télémétrie, bêta, suivi, pistage, désactiver",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1548,9 +1617,13 @@
   "@settings.updates.crashReports.label": {
     "sourceHash": "2b8f06d"
   },
-  "settings.updates.crashReports.description": "{platform, select, macos {Envoie automatiquement un rapport quand Cmdr quitte inopinément ou rencontre un problème en arrière-plan. Inclut la version de l’app, la version de macOS et la partie du code concernée. Jamais les noms de fichiers ni les données personnelles.} windows {Envoie automatiquement un rapport quand Cmdr quitte inopinément ou rencontre un problème en arrière-plan. Inclut la version de l’app, la version de Windows et la partie du code concernée. Jamais les noms de fichiers ni les données personnelles.} other {Envoie automatiquement un rapport quand Cmdr quitte inopinément ou rencontre un problème en arrière-plan. Inclut la version de l’app, la distribution Linux et sa version, et la partie du code concernée. Jamais les noms de fichiers ni les données personnelles.}}",
+  "settings.updates.crashReports.description": "{platform, select, macos {Cmdr envoie un rapport quand il quitte inopinément ou rencontre un problème en arrière-plan. Le rapport contient la version de l’app, la version de macOS et la partie du code où le problème s’est produit.} windows {Cmdr envoie un rapport quand il quitte inopinément ou rencontre un problème en arrière-plan. Le rapport contient la version de l’app, la version de Windows et la partie du code où le problème s’est produit.} other {Cmdr envoie un rapport quand il quitte inopinément ou rencontre un problème en arrière-plan. Le rapport contient la version de l’app, la distribution Linux et sa version, et la partie du code où le problème s’est produit.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "26508c4"
+  },
+  "settings.updates.crashReports.summary": "Ne contient jamais de noms de fichiers ni de données personnelles.",
+  "@settings.updates.crashReports.summary": {
+    "sourceHash": "7814a28"
   },
   "settings.updates.crashReports.keywords": "plantage, incident, rapport, rapport d’incident, confidentialité, télémétrie, bug, bogue, erreur",
   "@settings.updates.crashReports.keywords": {
@@ -1560,9 +1633,13 @@
   "@settings.updates.errorReports.label": {
     "sourceHash": "471575d"
   },
-  "settings.updates.errorReports.description": "Envoie un court extrait de journal au développeur lorsqu’un problème survient. Aide à corriger les bugs plus vite. Désactivé par défaut. Vous pouvez toujours envoyer un rapport manuel depuis le menu Aide.",
+  "settings.updates.errorReports.description": "Désactivé par défaut. Vous pouvez toujours envoyer un rapport vous-même depuis le menu Aide.",
   "@settings.updates.errorReports.description": {
-    "sourceHash": "f3e41eb"
+    "sourceHash": "a33a61c"
+  },
+  "settings.updates.errorReports.summary": "Nous envoie un court extrait du journal quand un problème survient, pour que nous puissions corriger les bugs plus vite.",
+  "@settings.updates.errorReports.summary": {
+    "sourceHash": "0fdd0ae"
   },
   "settings.updates.errorReports.keywords": "erreur, rapport, rapport d’incident, automatique, envoyer, confidentialité, télémétrie, bug, bogue, journal, extrait, diagnostic",
   "@settings.updates.errorReports.keywords": {
@@ -1608,9 +1685,9 @@
   "@settings.advanced.virtualizationBufferColumns.label": {
     "sourceHash": "a9e8dba"
   },
-  "settings.advanced.virtualizationBufferColumns.description": "Colonnes supplémentaires à afficher en mode Bref.",
+  "settings.advanced.virtualizationBufferColumns.description": "Colonnes supplémentaires à afficher en présentation brève.",
   "@settings.advanced.virtualizationBufferColumns.description": {
-    "sourceHash": "a1cbd98"
+    "sourceHash": "a66189f"
   },
   "settings.advanced.virtualizationBufferColumns.keywords": "virtualisation, tampon, colonne, colonnes, bref, mode bref",
   "@settings.advanced.virtualizationBufferColumns.keywords": {
@@ -1644,6 +1721,14 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
+  "settings.advanced.indexPauseFreeSpacePercent.description": "L’indexation reprend là où elle s’était arrêtée dès que l’espace libre dépasse ce seuil d’un point. Cela fonctionne que l’option « Avertissement d’espace disque faible » soit activée ou non.",
+  "@settings.advanced.indexPauseFreeSpacePercent.description": {
+    "sourceHash": "4d80336"
+  },
+  "settings.advanced.indexPauseFreeSpacePercent.summary": "Évite que l’index prenne la place dont vos propres fichiers ont besoin.",
+  "@settings.advanced.indexPauseFreeSpacePercent.summary": {
+    "sourceHash": "965796f"
+  },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "disque, espace, plein, saturé, libre, index, indexation, pause, stockage, seuil, pourcentage, pour cent, faible",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
     "sourceHash": "1af2a91"
@@ -1652,9 +1737,9 @@
   "@settings.fileViewer.suppressBinaryWarning.label": {
     "sourceHash": "8cdaada"
   },
-  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {La visionneuse de fichiers de Cmdr affiche les octets bruts (avec un UTF-8 avec perte pour le contenu non textuel). Quand vous ouvrez une image, un PDF, une archive ou un autre fichier binaire, la visionneuse affiche une bannière rouge expliquant que Coup d’œil ou l’ouverture dans l’application associée est probablement ce que vous vouliez. Activez ceci (ou cliquez sur « Ne plus afficher cet avertissement » dans la bannière) pour masquer l’avertissement définitivement.} windows {La visionneuse de fichiers de Cmdr affiche les octets bruts (avec un UTF-8 avec perte pour le contenu non textuel). Quand vous ouvrez une image, un PDF, une archive ou un autre fichier binaire, la visionneuse affiche une bannière rouge expliquant que l’ouverture dans l’application associée est probablement ce que vous vouliez. Activez ceci (ou sélectionnez « Ne plus afficher cet avertissement » dans la bannière) pour masquer l’avertissement définitivement.} other {La visionneuse de fichiers de Cmdr affiche les octets bruts (avec un UTF-8 avec perte pour le contenu non textuel). Quand vous ouvrez une image, un PDF, une archive ou un autre fichier binaire, la visionneuse affiche une bannière rouge expliquant que l’ouverture dans l’application associée est probablement ce que vous vouliez. Activez ceci (ou cliquez sur « Ne plus afficher cet avertissement » dans la bannière) pour masquer l’avertissement définitivement.}}",
+  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {La visionneuse de fichiers de Cmdr affiche le contenu brut d’un fichier. Quand vous ouvrez une image, un PDF, une archive ou un autre fichier binaire, la visionneuse affiche une bannière rouge expliquant que Coup d’œil ou l’ouverture dans l’application associée est probablement ce que vous vouliez. Activez ceci (ou cliquez sur « Ne plus afficher cet avertissement » dans la bannière) pour masquer l’avertissement définitivement.} windows {La visionneuse de fichiers de Cmdr affiche le contenu brut d’un fichier. Quand vous ouvrez une image, un PDF, une archive ou un autre fichier binaire, la visionneuse affiche une bannière rouge expliquant que l’ouverture dans l’application associée est probablement ce que vous vouliez. Activez ceci (ou sélectionnez « Ne plus afficher cet avertissement » dans la bannière) pour masquer l’avertissement définitivement.} other {La visionneuse de fichiers de Cmdr affiche le contenu brut d’un fichier. Quand vous ouvrez une image, un PDF, une archive ou un autre fichier binaire, la visionneuse affiche une bannière rouge expliquant que l’ouverture dans l’application associée est probablement ce que vous vouliez. Activez ceci (ou cliquez sur « Ne plus afficher cet avertissement » dans la bannière) pour masquer l’avertissement définitivement.}}",
   "@settings.fileViewer.suppressBinaryWarning.explanation": {
-    "sourceHash": "9f90a50"
+    "sourceHash": "c255df8"
   },
   "settings.fileViewer.suppressBinaryWarning.keywords": "visionneuse, binaire, image, brut, avertissement, bannière, coup d’œil, masquer",
   "@settings.fileViewer.suppressBinaryWarning.keywords": {
@@ -1836,9 +1921,13 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Espace disque maximal pour les fichiers journaux. Réglez à 0 pour désactiver le stockage des journaux ; les rapports d’incident ne peuvent pas être envoyés sans journaux. Les changements vers une valeur non nulle prennent effet au prochain lancement de l’app.",
+  "settings.advanced.maxLogStorageMb.description": "Une nouvelle limite non nulle prend effet au prochain démarrage de Cmdr.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "725bb26"
+    "sourceHash": "16616b2"
+  },
+  "settings.advanced.maxLogStorageMb.summary": "Réglez sur 0 pour ne garder aucun journal, mais Cmdr ne pourra alors plus envoyer de rapports d’incident.",
+  "@settings.advanced.maxLogStorageMb.summary": {
+    "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "journal, journaux, logs, stockage, disque, espace, plafond, limite, rotation, erreur, rapport, confidentialité",
   "@settings.advanced.maxLogStorageMb.keywords": {
@@ -1880,9 +1969,13 @@
   "@settings.advanced.logLlmCalls.label": {
     "sourceHash": "f865b3e"
   },
-  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Enregistre chaque requête et réponse de l’IA dans un dossier local (llm-logs) à des fins de débogage. Ces fichiers restent sur votre Mac et incluent les noms et chemins de fichiers que Cmdr envoie à votre fournisseur.} windows {Enregistre chaque requête et réponse de l’IA dans un dossier local (llm-logs) à des fins de débogage. Ces fichiers restent sur votre PC et incluent les noms et chemins de fichiers que Cmdr envoie à votre fournisseur.} other {Enregistre chaque requête et réponse de l’IA dans un dossier local (llm-logs) à des fins de débogage. Ces fichiers restent sur votre ordinateur et incluent les noms et chemins de fichiers que Cmdr envoie à votre fournisseur.}}",
+  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Cmdr les écrit dans le dossier llm-logs à des fins de débogage. Ces fichiers restent sur votre Mac.} windows {Cmdr les écrit dans le dossier llm-logs à des fins de débogage. Ces fichiers restent sur votre PC.} other {Cmdr les écrit dans le dossier llm-logs à des fins de débogage. Ces fichiers restent sur votre ordinateur.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "c7e917a"
+  },
+  "settings.advanced.logLlmCalls.summary": "Enregistre localement chaque requête envoyée à l’IA et sa réponse, chemins de fichiers compris.",
+  "@settings.advanced.logLlmCalls.summary": {
+    "sourceHash": "8b9e485"
   },
   "settings.advanced.logLlmCalls.keywords": "IA, journal, journaliser, logs, débogage, requête, réponse, invite, prompt",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2397,17 +2490,33 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
+  "settings.askCmdr.provider.usesProvider": "Ask Cmdr utilise {provider}, la même IA que le reste de Cmdr. <providerLink>Modifiez ce choix dans IA › Fournisseur</providerLink>",
+  "@settings.askCmdr.provider.usesProvider": {
+    "sourceHash": "978e715"
+  },
+  "settings.askCmdr.provider.none": "Activez un fournisseur d’IA dans <providerLink>IA › Fournisseur</providerLink> pour commencer à discuter.",
+  "@settings.askCmdr.provider.none": {
+    "sourceHash": "0e73e8e"
+  },
   "settings.askCmdr.interactiveModel.label": "Modèle d’Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"
   },
-  "settings.askCmdr.interactiveModel.description": "Le modèle utilisé par la conversation. Laissez vide pour utiliser le même modèle que les autres fonctionnalités d’IA de Cmdr. Exemple : claude-sonnet-5-5",
+  "settings.askCmdr.interactiveModel.description": "Le modèle utilisé par la conversation. « Identique à l’IA de Cmdr » suit le modèle que vous avez choisi dans IA › Fournisseur.",
   "@settings.askCmdr.interactiveModel.description": {
-    "sourceHash": "e301e99"
+    "sourceHash": "a285a77"
   },
   "settings.askCmdr.interactiveModel.placeholder": "Identique à l’IA de Cmdr",
   "@settings.askCmdr.interactiveModel.placeholder": {
     "sourceHash": "2631f3d"
+  },
+  "settings.askCmdr.interactiveModel.sameAs": "Identique à l’IA de Cmdr ({model})",
+  "@settings.askCmdr.interactiveModel.sameAs": {
+    "sourceHash": "e290ccc"
+  },
+  "settings.askCmdr.interactiveModel.localNote": "L’IA locale n’a qu’un seul modèle, donc la conversation utilise celui-ci.",
+  "@settings.askCmdr.interactiveModel.localNote": {
+    "sourceHash": "b2447b5"
   },
   "settings.askCmdr.interactiveModel.keywords": "IA, conversation, assistant, modèle, remplacer, autre modèle, modèle différent",
   "@settings.askCmdr.interactiveModel.keywords": {
@@ -2457,9 +2566,13 @@
   "@settings.askCmdr.proactive.label": {
     "sourceHash": "a85ef48"
   },
-  "settings.askCmdr.proactive.description": "Cmdr surveille les dossiers dans lesquels vous travaillez et lance une conversation quand il a quelque chose à suggérer. Rien ne s’exécute tant que vous ne l’avez pas approuvé.",
+  "settings.askCmdr.proactive.description": "Cmdr surveille les dossiers où vous travaillez pour repérer ce qui mérite d’être suggéré.",
   "@settings.askCmdr.proactive.description": {
-    "sourceHash": "556f155"
+    "sourceHash": "e4261b4"
+  },
+  "settings.askCmdr.proactive.summary": "Cmdr lance une conversation avec une suggestion. Rien ne s’exécute sans votre approbation.",
+  "@settings.askCmdr.proactive.summary": {
+    "sourceHash": "675ea47"
   },
   "settings.askCmdr.proactive.keywords": "proactif, suggestions, automatique, avis, surveiller, observer, réveil, IA, conversation",
   "@settings.askCmdr.proactive.keywords": {
@@ -2571,9 +2684,13 @@
   "@settings.operationLog.enabled.label": {
     "sourceHash": "edfee55"
   },
-  "settings.operationLog.enabled.description": "Tant que cette option est désactivée, Cmdr n’enregistre pas les nouvelles copies, déplacements, renommages et suppressions, et vous ne pouvez donc pas les annuler. Votre historique actuel est conservé et vous pouvez toujours annuler ce qu’il contient.",
+  "settings.operationLog.enabled.description": "Cela concerne les copies, déplacements, renommages et suppressions à venir. Votre historique actuel est conservé, et vous pouvez toujours annuler ce qu’il contient.",
   "@settings.operationLog.enabled.description": {
-    "sourceHash": "41f90d4"
+    "sourceHash": "87f3b5d"
+  },
+  "settings.operationLog.enabled.summary": "Tant que cette option est désactivée, Cmdr n’enregistre pas les nouvelles modifications, et vous ne pouvez donc pas les annuler.",
+  "@settings.operationLog.enabled.summary": {
+    "sourceHash": "94d4870"
   },
   "settings.operationLog.enabled.keywords": "opération, opérations, historique, enregistrer, enregistrement, annuler, retour en arrière, journal, confidentialité, désactiver",
   "@settings.operationLog.enabled.keywords": {
@@ -2711,7 +2828,7 @@
   "@settings.summary.noSubsections": {
     "sourceHash": "ba4b5b5"
   },
-  "settings.control.moreAbout": "More about “{setting}”",
+  "settings.control.moreAbout": "En savoir plus sur « {setting} »",
   "@settings.control.moreAbout": {
     "sourceHash": "57968f3"
   },
@@ -3004,6 +3121,10 @@
   "@settings.appearance.card.namesAndIcons": {
     "sourceHash": "8386169"
   },
+  "settings.appearance.card.sorting": "Tri",
+  "@settings.appearance.card.sorting": {
+    "sourceHash": "cb24f7d"
+  },
   "settings.appearance.card.briefMode": "Mode Bref",
   "@settings.appearance.card.briefMode": {
     "sourceHash": "b75e4b3"
@@ -3093,6 +3214,14 @@
   "settings.securityLog.enabled.label": "Enregistrer les évènements de sécurité",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
+  },
+  "settings.securityLog.enabled.description": "Ce registre note les changements et les refus liés à la sécurité, comme le consentement à l’IA dans le cloud, une mise à jour installée ou une app refusée par le serveur MCP. Le registre ne contient ni noms de fichiers, ni contenus, ni mots de passe.",
+  "@settings.securityLog.enabled.description": {
+    "sourceHash": "97e24a4"
+  },
+  "settings.securityLog.enabled.summary": "{platform, select, macos {Un petit registre local des évènements de sécurité. Ce registre ne quitte jamais votre Mac.} windows {Un petit registre local des évènements de sécurité. Ce registre ne quitte jamais votre PC.} other {Un petit registre local des évènements de sécurité. Ce registre ne quitte jamais votre ordinateur.}}",
+  "@settings.securityLog.enabled.summary": {
+    "sourceHash": "84a9146"
   },
   "settings.securityLog.enabled.keywords": "sécurité, journal, audit, enregistrer, enregistrement, évènements, événements, accès, confidentialité",
   "@settings.securityLog.enabled.keywords": {
@@ -3403,9 +3532,9 @@
   "@settings.adb.install.intro": {
     "sourceHash": "9f7a0f4"
   },
-  "settings.adb.pathPlaceholder": "Cmdr cherche adb de la manière habituelle",
+  "settings.adb.pathPlaceholder": "Détection automatique",
   "@settings.adb.pathPlaceholder": {
-    "sourceHash": "538b307"
+    "sourceHash": "14fac78"
   },
   "settings.adb.browse": "Parcourir…",
   "@settings.adb.browse": {

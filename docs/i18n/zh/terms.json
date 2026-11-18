@@ -4338,5 +4338,50 @@
       "chosen": "首选项",
       "note": "GNOME's own app-menu row: Nautilus zh-CN _Preferences → 首选项(_P), Thunar 首选项 (the linuxGnome branch of `menu.app.settings`, no ellipsis); KDE's row is 配置 Cmdr… (Dolphin zh-CN: 配置 Dolphin)"
     }
+  },
+  "bug": {
+    "chosen": "bug",
+    "confidence": "high",
+    "forms": "fix bugs faster → 更快修复 bug (Latin, spaced from Han text); \"not a Cmdr bug\" in calm error prose → 不是 Cmdr 的问题",
+    "avoid": [
+      {
+        "form": "缺陷",
+        "why": "Microsoft's and GNOME's engineering register; the catalog says bug in all 18 uses"
+      }
+    ],
+    "sources": "Microsoft TBX zh-CN: bug (CHN) for the code-error sense; catalog: 18 uses of bug, none of 缺陷",
+    "accept": ["问题"]
+  },
+  "help-menu": {
+    "chosen": "帮助",
+    "confidence": "high",
+    "forms": "the menu title 帮助 (menu.bar.help); in prose → “帮助”菜单 (从“帮助”菜单发送)",
+    "sources": "catalog: menu.bar.help = 帮助; style.md § quote a menu name in running text; errorReporter.amend.unavailable"
+  },
+  "personal-data": {
+    "chosen": "个人数据",
+    "confidence": "high",
+    "avoid": [
+      {
+        "form": "个人身份信息",
+        "why": "Microsoft's PII term reads legal; the catalog says 个人数据 in all six uses (crashReporter.dialog.privacyNote)"
+      }
+    ],
+    "sources": "Microsoft TBX zh-CN: 个人身份信息 / PII; catalog: 6 uses of 个人数据",
+    "accept": ["隐私信息"]
+  },
+  "prompt": {
+    "chosen": "提示",
+    "confidence": "tentative",
+    "forms": "the text sent to an AI model → 提示词 (settings.analytics.enabled.description); a dialog asking the user → 提示; a question the user answers in the queue → 那个问题 (decision: Awaiting-answer row)",
+    "sources": "Microsoft TBX zh-CN: 提示 for every sense; 提示词 is the everyday zh-CN word for an AI prompt (Tier 3, not in the pile)",
+    "accept": ["提示词", "问题"]
+  },
+  "speed": {
+    "chosen": "速度",
+    "confidence": "high",
+    "forms": "the noun 速度; faster / speeds up → 更快 / 加快 (加快文件操作, 更快修复 bug)",
+    "sources": "Microsoft TBX zh-CN: 速度 compounds; Double Commander zh-CN 速度（MB/秒）; Thunar 快门速度",
+    "accept": ["快", "加速"]
   }
 }

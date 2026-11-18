@@ -2906,7 +2906,8 @@
       "errors.listing.diskFullErrno.suggestion": "The windows branch names Windows' own Settings app: Configurações > Sistema > Armazenamento (MS pt-BR).",
       "errors.listing.storageFull.suggestion": "The windows branch names Windows' own Settings app: Configurações > Sistema > Armazenamento (MS pt-BR).",
       "errors.listing.serverRefused.explanation": "The windows branch means a setting on the PC, which Windows pt-BR calls configuração; the other branch macOS reads keeps ajuste.",
-      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome branch quotes GNOME Settings' own path (Configurações > Teclado > Veja e personalize atalhos, gnome-control-center pt_BR.po) and the linuxKde branch KDE's (Configurações do sistema > Teclado > Atalhos, systemsettings and kcm_keyboard pt_BR.po): a desktop's settings app, not Cmdr's Ajustes."
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome branch quotes GNOME Settings' own path (Configurações > Teclado > Veja e personalize atalhos, gnome-control-center pt_BR.po) and the linuxKde branch KDE's (Configurações do sistema > Teclado > Atalhos, systemsettings and kcm_keyboard pt_BR.po): a desktop's settings app, not Cmdr's Ajustes.",
+      "settings.fileOperations.mtpEnabled.description": "Quotes Android's own pt-BR Settings app label (AOSP: Configurações) as an on-phone path the user must find; a quoted third-party label wins over the Ajustes ruling."
     },
     "windows": {
       "chosen": "Configurações",
@@ -3353,7 +3354,7 @@
   },
   "transfer": {
     "chosen": "transferência",
-    "accept": ["transferindo"],
+    "accept": ["transferindo", "transferir"],
     "confidence": "high",
     "forms": "progress → Transferindo",
     "sources": "shipped pt catalog",
@@ -4109,5 +4110,18 @@
     "confidence": "high",
     "sources": "GNOME Nautilus pt-BR _Preferences → _Preferências; Thunar Pr_eferências; MS TBX Preferences → Preferências",
     "note": "GNOME's own settings row (the linuxGnome branch of `menu.app.settings`), no ellipsis; KDE's row is Configurar Cmdr… (Dolphin pt-BR: Configurar Dolphin)"
+  },
+  "bug": {
+    "chosen": "bug",
+    "confidence": "high",
+    "accept": ["bugs", "defeito"],
+    "sources": "MS terminology pt-BR (bug → bug); git pt-BR (o bug foi corrigido); catalog commands.helpSendErrorReport, settings.updates.errorReports.summary (i18n:pile, 2026-11-18)"
+  },
+  "help-menu": {
+    "chosen": "menu Ajuda",
+    "confidence": "high",
+    "sources": "catalog menu.bar.help → Ajuda (macOS pt-BR Help menu title); settings.updates.errorReports.description publishes pelo menu Ajuda (2026-11-18)",
+    "accept": ["Ajuda"],
+    "note": "The menu title alone is Ajuda; prose names it menu Ajuda."
   }
 }

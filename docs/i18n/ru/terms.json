@@ -232,6 +232,9 @@
     "other": {
       "chosen": "инструмент",
       "note": "A desktop's disk tool → инструмент для работы с дисками в вашей среде рабочего стола."
+    },
+    "exceptions": {
+      "settings.fileOperations.adbEnabled.summary": "“the adb tool” is Android developer tooling, not a tool the AI calls; the Windows Tools-tab form «Сервис» doesn't apply, so every branch says «инструмент adb»."
     }
   },
   "alias": {
@@ -3322,7 +3325,10 @@
     "forms": "Ask Cmdr's saved notes → заметки; a note the user adds to an error report → примечание (Add a note → Добавить примечание); the feedback message → отзыв",
     "confidence": "high",
     "sources": "MS note → «заметка»; macOS live annotation Note → «Заметка», Contacts note → «заметка»",
-    "note": "«примечание» is the accepted form for a note attached to a report, where «заметка» would read as a standalone memo."
+    "note": "«примечание» is the accepted form for a note attached to a report, where «заметка» would read as a standalone memo.",
+    "exceptions": {
+      "settings.securityLog.enabled.description": "Here “notes” is the verb (the security record notes changes), not a note someone writes: «В журнал попадают …»."
+    }
   },
   "notification": {
     "chosen": "уведомление",

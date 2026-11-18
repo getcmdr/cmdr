@@ -60,9 +60,9 @@
   "@settings.appearance.sizeColors.label": {
     "sourceHash": "7598e9a"
   },
-  "settings.appearance.sizeColors.description": "Färglägg filstorlekar i fillistan efter nivå. Regnbåge använder grönt/gult/orange/rött/lila. App använder nyanser av appfärgen.",
+  "settings.appearance.sizeColors.description": "Färglägg filstorlekar i fillistan efter nivå. Regnbåge använder grönt, gult, orange, rött och lila. App använder nyanser av appfärgen.",
   "@settings.appearance.sizeColors.description": {
-    "sourceHash": "ecb064a"
+    "sourceHash": "e790d53"
   },
   "settings.appearance.sizeColors.opt.none": "Ingen",
   "@settings.appearance.sizeColors.opt.none": {
@@ -510,9 +510,13 @@
   "@settings.fileOperations.skipConfirmation.label": {
     "sourceHash": "f1b1b39"
   },
-  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {Kopiera och Flytta skickar filerna direkt till den andra panelen, och Radera flyttar dem till Papperskorgen utan att fråga. Lite riskabelt, eftersom ett enda tangenttryck räcker. Permanent radering frågar alltid först.} other {Kopiera och Flytta skickar filerna direkt till den andra panelen, och Radera flyttar dem till papperskorgen utan att fråga. Lite riskabelt, eftersom ett enda tangenttryck räcker. Permanent radering frågar alltid först.}}",
+  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {Kopiera och Flytta skickar filerna direkt till den andra panelen, och Radera flyttar dem till Papperskorgen utan att fråga.} other {Kopiera och Flytta skickar filerna direkt till den andra panelen, och Radera flyttar dem till papperskorgen utan att fråga.}}",
   "@settings.fileOperations.skipConfirmation.explanation": {
-    "sourceHash": "564f000"
+    "sourceHash": "9c53630"
+  },
+  "settings.fileOperations.skipConfirmation.summary": "Lite riskabelt: ett enda tangenttryck räcker. Permanent radering frågar fortfarande först.",
+  "@settings.fileOperations.skipConfirmation.summary": {
+    "sourceHash": "ca6d8db"
   },
   "settings.fileOperations.skipConfirmation.keywords": "{platform, select, windows {bekräfta, bekräftelse, dialog, fråga, kopiera, flytta, papperskorgen, radera, ta bort, hoppa över, klick} other {bekräfta, bekräftelse, dialog, fråga, kopiera, flytta, papperskorg, radera, hoppa över, klick}}",
   "@settings.fileOperations.skipConfirmation.keywords": {
@@ -734,9 +738,13 @@
   "@settings.mediaIndex.enabled.label": {
     "sourceHash": "a2e6604"
   },
-  "settings.mediaIndex.enabled.description": "Läs texten i dina bilder så att du kan söka i den. Körs på din Mac och lämnar den aldrig. Täcker lokala enheter tills vidare.",
+  "settings.mediaIndex.enabled.description": "Täcker lokala enheter tills vidare.",
   "@settings.mediaIndex.enabled.description": {
-    "sourceHash": "118fc8d"
+    "sourceHash": "517a7c9"
+  },
+  "settings.mediaIndex.enabled.summary": "Gör texten i dina bilder sökbar. Den lämnar aldrig din Mac.",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "31aa708"
   },
   "settings.mediaIndex.enabled.keywords": "bild, bilder, foto, text, sök, sökning, index, indexering, skärmbild, innehåll",
   "@settings.mediaIndex.enabled.keywords": {
@@ -1115,9 +1123,9 @@
   "@settings.behavior.notifications.keepUntilClosed.label": {
     "sourceHash": "bc58ecc"
   },
-  "settings.behavior.notifications.keepUntilClosed.description": "Aviseringarna ligger kvar på skärmen tills du stänger dem, i stället för att försvinna efter några sekunder.",
+  "settings.behavior.notifications.keepUntilClosed.description": "I stället för att försvinna efter några sekunder.",
   "@settings.behavior.notifications.keepUntilClosed.description": {
-    "sourceHash": "53890bf"
+    "sourceHash": "2df854c"
   },
   "settings.behavior.notifications.keepUntilClosed.keywords": "avisering, notis, tidsgräns, tid, försvinna, avfärda, stäng, behåll, hjälpmedel",
   "@settings.behavior.notifications.keepUntilClosed.keywords": {
@@ -1160,9 +1168,13 @@
   "@settings.search.autoApply.label": {
     "sourceHash": "06b0f9f"
   },
-  "settings.search.autoApply.description": "{platform, select, windows {Kör filnamns- och regex-sökningar automatiskt medan du skriver (1 sekund efter att du slutat). AI-sökningar väntar alltid på Retur, eftersom de kostar pengar. När det är av trycker du på Retur eller väljer körknappen för att söka.} other {Kör filnamns- och regex-sökningar automatiskt medan du skriver (1 sekund efter att du slutat). AI-sökningar väntar alltid på Retur, eftersom de kostar pengar. När det är av trycker du på Retur eller klickar på körknappen för att söka.}}",
+  "settings.search.autoApply.description": "{platform, select, windows {Sökningar startar en sekund efter att du slutat skriva. AI-sökningar väntar, eftersom de kostar pengar. När det här är av trycker du på Retur eller väljer körknappen.} other {Sökningar startar en sekund efter att du slutat skriva. AI-sökningar väntar, eftersom de kostar pengar. När det här är av trycker du på Retur eller klickar på körknappen.}}",
   "@settings.search.autoApply.description": {
-    "sourceHash": "b0f85fd"
+    "sourceHash": "3aa9f59"
+  },
+  "settings.search.autoApply.summary": "Kör namn- och regex-sökningar medan du skriver. AI-sökningar väntar på Retur.",
+  "@settings.search.autoApply.summary": {
+    "sourceHash": "ebc6780"
   },
   "settings.search.autoApply.keywords": "sök, sökning, automatiskt, tillämpa, direkt, live, fördröjning, filnamn, omedelbart",
   "@settings.search.autoApply.keywords": {
@@ -1232,9 +1244,13 @@
   "@settings.ai.reasoningEfforts.label.thinkingLevel": {
     "sourceHash": "96f115b"
   },
-  "settings.ai.reasoningEfforts.description": "Hur länge modellen tänker innan den svarar. Mer tänkande hjälper med kluriga uppgifter, men svaren kommer långsammare och tänkandet debiteras som utdata.",
+  "settings.ai.reasoningEfforts.description": "Modellens tänkande debiteras som utdata, precis som själva svaret.",
   "@settings.ai.reasoningEfforts.description": {
-    "sourceHash": "0ad6737"
+    "sourceHash": "0a6d851"
+  },
+  "settings.ai.reasoningEfforts.summary": "Mer tänkande hjälper med kluriga uppgifter, men det går långsammare och kostar mer.",
+  "@settings.ai.reasoningEfforts.summary": {
+    "sourceHash": "5c3f87f"
   },
   "settings.ai.reasoningEfforts.keywords": "ansträngning för resonemang, ansträngning, resonemang, tänka, tänkande, betänketid, djup, hastighet, kostnad, kvalitet",
   "@settings.ai.reasoningEfforts.keywords": {
@@ -1252,9 +1268,13 @@
   "@settings.aboutThis.aiVerdict.label": {
     "sourceHash": "4c84599"
   },
-  "settings.aboutThis.aiVerdict.description": "När du öppnar kortet skriver AI:n två eller tre meningar utifrån fakta som kortet visar. Med moln-AI går kortets fakta och en kort titt in i filen till din leverantör varje gång.",
+  "settings.aboutThis.aiVerdict.description": "När du öppnar kortet skriver AI:n två eller tre meningar utifrån fakta som kortet visar. Det händer varje gång du öppnar kortet.",
   "@settings.aboutThis.aiVerdict.description": {
-    "sourceHash": "5dfb5f5"
+    "sourceHash": "4c0ef49"
+  },
+  "settings.aboutThis.aiVerdict.summary": "Med moln-AI går kortets fakta och ett utdrag ur filen till din leverantör.",
+  "@settings.aboutThis.aiVerdict.summary": {
+    "sourceHash": "4e34358"
   },
   "settings.aboutThis.aiVerdict.keywords": "förklara, förklaring, sammanfattning, omdöme, bedömning, filinfo, vad är det här, beskriv, beskrivning, kommentar",
   "@settings.aboutThis.aiVerdict.keywords": {
@@ -1267,6 +1287,15 @@
   "settings.network.enabled.label": "{platform, select, windows {Aktivera nätverk} other {Aktivera nätverk}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
+  },
+  "settings.network.enabled.description": "{platform, select, macos {När det här är avstängt ber Cmdr inte macOS om åtkomst till ”Lokalt nätverk”.} windows {När det här är avstängt frågar Windows inte om Cmdr ska släppas igenom brandväggen.} other {}}",
+  "@settings.network.enabled.description": {
+    "sourceHash": "3e2a4b0",
+    "sameAsSourceJustification": "The Linux branch is empty on purpose, as in the English: Linux shows no network permission or firewall prompt to mention."
+  },
+  "settings.network.enabled.summary": "Hittar SMB-servrar i ditt nätverk. Monterade delade mappar fungerar oavsett.",
+  "@settings.network.enabled.summary": {
+    "sourceHash": "1da1cd9"
   },
   "settings.network.enabled.keywords": "nätverk, aktivera, aktiverad, nätverkssökning, upptäckt, lokal, lokalt nätverk, behörighet",
   "@settings.network.enabled.keywords": {
@@ -1288,9 +1317,9 @@
   "@settings.network.directSmbConnection.label": {
     "sourceHash": "407c4f1"
   },
-  "settings.network.directSmbConnection.description": "{platform, select, macos {När det är aktiverat ansluter Cmdr direkt till SMB-resurser för snabbare filåtgärder. Systemmonteringen finns kvar för Finder och andra appar.} windows {När det här är på ansluter Cmdr direkt till SMB-resurser för snabbare filåtgärder. Systemanslutningen finns kvar för Utforskaren och andra appar.} other {När det är aktiverat ansluter Cmdr direkt till SMB-resurser för snabbare filåtgärder. Systemmonteringen finns kvar för din filhanterare och andra appar.}}",
+  "settings.network.directSmbConnection.description": "{platform, select, macos {När det är aktiverat ansluter Cmdr direkt till SMB-resurser för snabbare filåtgärder. Systemmonteringen finns kvar för Finder och andra appar.} windows {När det här är på ansluter Cmdr direkt till SMB-resurser för snabbare filåtgärder. Systemanslutningen finns kvar för Utforskaren och andra appar.} other {När det här är på ansluter Cmdr direkt till SMB-resurser för snabbare filåtgärder. Systemmonteringen finns kvar för din filhanterare och andra appar.}}",
   "@settings.network.directSmbConnection.description": {
-    "sourceHash": "429c68c"
+    "sourceHash": "06e2844"
   },
   "settings.network.directSmbConnection.keywords": "direkt, snabb, anslutning, nätverk, prestanda",
   "@settings.network.directSmbConnection.keywords": {
@@ -1300,9 +1329,13 @@
   "@settings.network.requireSmbEncryption.label": {
     "sourceHash": "4519b09"
   },
-  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr krypterar sina anslutningar till SMB-resurser, även när servern inte ber om det, och öppnar inte en delad mapp vars anslutning inte kan krypteras, inte heller en som din Mac har anslutit till utan kryptering. Gästanslutningar kan inte krypteras, så du behöver logga in. Anslutningar som Cmdr redan har öppna förblir som de är tills de återansluts.} windows {Cmdr krypterar sina anslutningar till SMB-resurser, även när servern inte ber om det, och öppnar inte en delad mapp vars anslutning inte kan krypteras, inte heller en som din dator har anslutit till utan kryptering. Gästanslutningar kan inte krypteras, så du behöver logga in. Anslutningar som Cmdr redan har öppna förblir som de är tills de återansluts.} other {Cmdr krypterar sina anslutningar till SMB-resurser, även när servern inte ber om det, och öppnar inte en delad mapp vars anslutning inte kan krypteras, inte heller en som din dator har anslutit till utan kryptering. Gästanslutningar kan inte krypteras, så du behöver logga in. Anslutningar som Cmdr redan har öppna förblir som de är tills de återansluts.}}",
+  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr krypterar sina SMB-anslutningar även när servern inte ber om det, inklusive delade mappar som din Mac har anslutit till utan kryptering. Anslutningar som Cmdr redan har öppna förblir som de är tills de återansluts.} windows {Cmdr krypterar sina SMB-anslutningar även när servern inte ber om det, inklusive delade mappar som din dator har anslutit till utan kryptering. Anslutningar som Cmdr redan har öppna förblir som de är tills de återansluts.} other {Cmdr krypterar sina SMB-anslutningar även när servern inte ber om det, inklusive delade mappar som din dator har anslutit till utan kryptering. Anslutningar som Cmdr redan har öppna förblir som de är tills de återansluts.}}",
   "@settings.network.requireSmbEncryption.description": {
-    "sourceHash": "26291fe"
+    "sourceHash": "6025cf4"
+  },
+  "settings.network.requireSmbEncryption.summary": "Delade mappar som inte kan krypteras öppnas inte, och gäster behöver logga in.",
+  "@settings.network.requireSmbEncryption.summary": {
+    "sourceHash": "bc73348"
   },
   "settings.network.requireSmbEncryption.keywords": "kryptera, krypterad, chiffrera, säkerhet, säker, integritet, skydd, skyddad anslutning",
   "@settings.network.requireSmbEncryption.keywords": {
@@ -1340,6 +1373,18 @@
   "@settings.network.shareCacheDuration.keywords": {
     "sourceHash": "df14578"
   },
+  "settings.network.timeout.label": "Tidsgräns för nätverk",
+  "@settings.network.timeout.label": {
+    "sourceHash": "fdd0d76"
+  },
+  "settings.network.timeout.description": "Hur länge Cmdr väntar på en delad mapp i nätverket innan Cmdr ger upp. 15 sekunder passar vanliga lokala nätverk; prova 45 för VPN eller anslutningar med hög latens.",
+  "@settings.network.timeout.description": {
+    "sourceHash": "8cc6def"
+  },
+  "settings.network.timeout.keywords": "timeout, vänta, väntetid, långsam, seg, sekunder, anslutning, fördröjning, latens, vpn, ge upp",
+  "@settings.network.timeout.keywords": {
+    "sourceHash": "bb8a9ac"
+  },
   "settings.network.smbConcurrency.label": "Samtidiga åtgärder per SMB-anslutning",
   "@settings.network.smbConcurrency.label": {
     "sourceHash": "339933f"
@@ -1356,9 +1401,13 @@
   "@settings.fileOperations.mtpEnabled.label": {
     "sourceHash": "6a315a8"
   },
-  "settings.fileOperations.mtpEnabled.description": "Upptäck och anslut till Android och andra enheter via en USB-kabel för att bläddra och överföra filer. På en Android-telefon ansluter du USB-kabeln och går sedan på telefonen till något i stil med Inställningar > USB-inställningar och ställer in anslutningen på ”Filöverföring”, ”Android Auto” eller liknande. (Varierar mellan enheter.)",
+  "settings.fileOperations.mtpEnabled.description": "Cmdr upptäcker Android-telefoner, Kindles och kameror som är anslutna med en USB-kabel, så att du kan bläddra bland filerna och överföra dem. På Android letar du någonstans i stil med Inställningar > USB-inställningar; ”Android Auto” fungerar också. Det varierar mellan enheter.",
   "@settings.fileOperations.mtpEnabled.description": {
-    "sourceHash": "c66df04"
+    "sourceHash": "a5b7ef3"
+  },
+  "settings.fileOperations.mtpEnabled.summary": "På telefonen ställer du in USB-anslutningen på ”Filöverföring” eller liknande.",
+  "@settings.fileOperations.mtpEnabled.summary": {
+    "sourceHash": "355c987"
   },
   "settings.fileOperations.mtpEnabled.keywords": "enhet, telefon, mobil, mobiltelefon, kamera",
   "@settings.fileOperations.mtpEnabled.keywords": {
@@ -1368,6 +1417,14 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
+  "settings.fileOperations.adbEnabled.description": "ADB når hela filsystemet på en Android-telefon, något som MTP inte kan visa. Det kostar ingenting att låta det här vara på om du inte har några Android-verktyg installerade.",
+  "@settings.fileOperations.adbEnabled.description": {
+    "sourceHash": "a16197e"
+  },
+  "settings.fileOperations.adbEnabled.summary": "{platform, select, macos {Kräver USB-felsökning på telefonen och verktyget adb på den här Macen.} windows {Kräver USB-felsökning på telefonen och verktyget adb på den här datorn.} other {Kräver USB-felsökning på telefonen och verktyget adb på den här datorn.}}",
+  "@settings.fileOperations.adbEnabled.summary": {
+    "sourceHash": "b20dbc7"
+  },
   "settings.fileOperations.adbEnabled.keywords": "usb-felsökning, utvecklaralternativ, telefon, mobil, enhet",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1376,9 +1433,13 @@
   "@settings.fileOperations.adbBinaryPath.label": {
     "sourceHash": "a67fbbd"
   },
-  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Lämna det tomt, så letar Cmdr efter adb på vanligt sätt, bland annat i Android SDK och Homebrew. Ange en annan sökväg om du har platform tools på en egen plats.} other {Lämna det tomt, så letar Cmdr efter adb på vanligt sätt, bland annat i Android SDK och i din PATH. Ange en annan sökväg om du har platform tools på en egen plats.}}",
+  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Cmdr letar på de vanliga ställena, bland annat i Android SDK och Homebrew. Ange en annan sökväg om du har platform tools på en egen plats.} other {Cmdr letar på de vanliga ställena, bland annat i Android SDK och i din PATH. Ange en annan sökväg om du har platform tools på en egen plats.}}",
   "@settings.fileOperations.adbBinaryPath.description": {
-    "sourceHash": "e8cde17"
+    "sourceHash": "e1c5acb"
+  },
+  "settings.fileOperations.adbBinaryPath.summary": "Lämna fältet tomt, så hittar Cmdr adb själv.",
+  "@settings.fileOperations.adbBinaryPath.summary": {
+    "sourceHash": "e62a0d3"
   },
   "settings.fileOperations.adbBinaryPath.keywords": "sökväg, binärfil, program, plats",
   "@settings.fileOperations.adbBinaryPath.keywords": {
@@ -1414,7 +1475,7 @@
   },
   "settings.fileExplorer.git.showStatusColumn.description": "Lägg till en kolumn som visar git-status per fil (ändrad, ospårad och så vidare) i Fullständig vy.",
   "@settings.fileExplorer.git.showStatusColumn.description": {
-    "sourceHash": "fc74b38"
+    "sourceHash": "214eb5d"
   },
   "settings.fileExplorer.git.showStatusColumn.keywords": "status, kolumn, ändrad, ospårad, ignorerad, tillagd, raderad, borttagen",
   "@settings.fileExplorer.git.showStatusColumn.keywords": {
@@ -1424,9 +1485,9 @@
   "@settings.fileExplorer.git.showVirtualGitPortal.label": {
     "sourceHash": "40d9fa1"
   },
-  "settings.fileExplorer.git.showVirtualGitPortal.description": "När du går in i .git, visa grenar, taggar, incheckningar och worktrees som bläddringsbara virtuella mappar. Stäng av för att i stället se det råa innehållet i .git.",
+  "settings.fileExplorer.git.showVirtualGitPortal.description": "När du öppnar .git, visa grenar, taggar, incheckningar och worktrees som mappar du kan bläddra i. Stäng av det här för att se det råa innehållet i .git.",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
-    "sourceHash": "331e0a5"
+    "sourceHash": "d58b2c3"
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "portal, virtuell, gren, grenar, taggar, incheckningar, commits, worktrees, historik",
   "@settings.fileExplorer.git.showVirtualGitPortal.keywords": {
@@ -1469,9 +1530,13 @@
     "sourceHash": "72e9a59",
     "sameAsSourceJustification": "port is 'port' in Swedish (glossary port entry, MS terminology, high). The networking term is identical to English."
   },
-  "settings.developer.mcpPort.description": "Önskad port för MCP-servern. Lämna på 0 för att låta operativsystemet välja en tillfällig port (rekommenderas; den faktiska porten visas nedan när servern körs). Lås en specifik port om externa verktyg behöver det.",
+  "settings.developer.mcpPort.description": "Porten som används visas nedan medan servern körs. Lås en specifik port om ett annat verktyg behöver känna till den i förväg.",
   "@settings.developer.mcpPort.description": {
-    "sourceHash": "174e807"
+    "sourceHash": "f2ca537"
+  },
+  "settings.developer.mcpPort.summary": "{platform, select, macos {Lämna på 0, så väljer din Mac en ledig port.} windows {Lämna på 0, så väljer din dator en ledig port.} other {Lämna på 0, så väljer din dator en ledig port.}}",
+  "@settings.developer.mcpPort.summary": {
+    "sourceHash": "cee7df5"
   },
   "settings.developer.mcpPort.keywords": "port, nätverk, tillfällig, dynamisk",
   "@settings.developer.mcpPort.keywords": {
@@ -1529,6 +1594,10 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
+  "settings.analytics.enabled.description": "Slå gärna på det här så att vi ser vilka funktioner som spelar roll under den öppna betan.\nStatistiken är kopplad till ett slumpmässigt id, inte till ditt namn eller din e-post.\nCmdr skickar aldrig filnamn, sökvägar, sökord eller prompter.\nNär det är avstängt skickar Cmdr ingen statistik alls.",
+  "@settings.analytics.enabled.description": {
+    "sourceHash": "a8d8db1"
+  },
   "settings.analytics.enabled.keywords": "analys, användning, statistik, användningsstatistik, integritet, telemetri, beta, spårning, avstå",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1545,9 +1614,13 @@
   "@settings.updates.crashReports.label": {
     "sourceHash": "2b8f06d"
   },
-  "settings.updates.crashReports.description": "{platform, select, macos {Skicka automatiskt en rapport när Cmdr avslutas oväntat eller stöter på ett problem i bakgrunden. Innehåller appversion, macOS-version och vilken del av koden som stötte på problemet. Aldrig filnamn eller personuppgifter.} windows {Skicka automatiskt en rapport när Cmdr avslutas oväntat eller stöter på ett problem i bakgrunden. Innehåller appversion, Windows-version och vilken del av koden som stötte på problemet. Aldrig filnamn eller personuppgifter.} other {Skicka automatiskt en rapport när Cmdr avslutas oväntat eller stöter på ett problem i bakgrunden. Innehåller appversion, Linux-distribution och dess version samt vilken del av koden som stötte på problemet. Aldrig filnamn eller personuppgifter.}}",
+  "settings.updates.crashReports.description": "{platform, select, macos {Cmdr skickar en rapport när appen avslutas oväntat eller stöter på ett problem i bakgrunden. Den innehåller appversionen, macOS-versionen och vilken del av koden som stötte på problemet.} windows {Cmdr skickar en rapport när appen avslutas oväntat eller stöter på ett problem i bakgrunden. Den innehåller appversionen, Windows-versionen och vilken del av koden som stötte på problemet.} other {Cmdr skickar en rapport när appen avslutas oväntat eller stöter på ett problem i bakgrunden. Den innehåller appversionen, Linux-distributionen och dess version samt vilken del av koden som stötte på problemet.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "26508c4"
+  },
+  "settings.updates.crashReports.summary": "Innehåller aldrig filnamn eller personuppgifter.",
+  "@settings.updates.crashReports.summary": {
+    "sourceHash": "7814a28"
   },
   "settings.updates.crashReports.keywords": "krasch, kraschrapport, rapport, integritet, telemetri, bugg, fel",
   "@settings.updates.crashReports.keywords": {
@@ -1557,9 +1630,13 @@
   "@settings.updates.errorReports.label": {
     "sourceHash": "471575d"
   },
-  "settings.updates.errorReports.description": "Skicka en liten loggsnutt till utvecklaren när ett fel uppstår. Hjälper till att åtgärda buggar snabbare. Av som standard. Du kan alltid skicka en manuell rapport från Hjälp-menyn.",
+  "settings.updates.errorReports.description": "Av som standard. Du kan alltid skicka en rapport själv från Hjälp-menyn.",
   "@settings.updates.errorReports.description": {
-    "sourceHash": "f3e41eb"
+    "sourceHash": "a33a61c"
+  },
+  "settings.updates.errorReports.summary": "Skickar oss en liten loggsnutt när något går fel, så att vi kan fixa buggar snabbare.",
+  "@settings.updates.errorReports.summary": {
+    "sourceHash": "0fdd0ae"
   },
   "settings.updates.errorReports.keywords": "fel, felrapport, rapport, automatiskt, skicka, integritet, telemetri, bugg, logg, utdrag, diagnostik",
   "@settings.updates.errorReports.keywords": {
@@ -1607,7 +1684,7 @@
   },
   "settings.advanced.virtualizationBufferColumns.description": "Extra kolumner att rendera i Kortfattad vy.",
   "@settings.advanced.virtualizationBufferColumns.description": {
-    "sourceHash": "a1cbd98"
+    "sourceHash": "a66189f"
   },
   "settings.advanced.virtualizationBufferColumns.keywords": "virtualisering, buffert, kolumn, kolumner, kortfattad",
   "@settings.advanced.virtualizationBufferColumns.keywords": {
@@ -1641,6 +1718,14 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Indexeringen fortsätter där den slutade när det lediga utrymmet är en procentenhet över gränsen. Det gäller oavsett om ”Varning vid lågt diskutrymme” är på eller av.",
+  "@settings.advanced.indexPauseFreeSpacePercent.description": {
+    "sourceHash": "4d80336"
+  },
+  "settings.advanced.indexPauseFreeSpacePercent.summary": "Hindrar indexet från att ta det utrymme som dina egna filer behöver.",
+  "@settings.advanced.indexPauseFreeSpacePercent.summary": {
+    "sourceHash": "965796f"
+  },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "disk, utrymme, diskutrymme, full, ledigt, index, indexering, paus, lagring, tröskel, gräns, procent, lite",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
     "sourceHash": "1af2a91"
@@ -1649,9 +1734,9 @@
   "@settings.fileViewer.suppressBinaryWarning.label": {
     "sourceHash": "8cdaada"
   },
-  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Cmdrs förhandsvisning visar råa byte (med förlustbringande UTF-8 för icke-textinnehåll). När du öppnar en bild, en PDF, ett arkiv eller en annan binärfil visar förhandsvisningen en röd banner som förklarar att du förmodligen ville använda Överblick eller öppna filen i tillhörande app. Aktivera det här (eller klicka på ”Visa aldrig den här varningen igen” i bannern) för att dölja varningen för gott.} windows {Cmdrs förhandsvisning visar råa byte (med förlustbringande UTF-8 för icke-textinnehåll). När du öppnar en bild, en PDF, ett arkiv eller en annan binärfil visar förhandsvisningen en röd banner som förklarar att du förmodligen ville öppna filen i tillhörande app. Aktivera det här (eller välj ”Visa aldrig den här varningen igen” i bannern) för att dölja varningen för gott.} other {Cmdrs förhandsvisning visar råa byte (med förlustbringande UTF-8 för icke-textinnehåll). När du öppnar en bild, en PDF, ett arkiv eller en annan binärfil visar förhandsvisningen en röd banner som förklarar att du förmodligen ville öppna filen i tillhörande app. Aktivera det här (eller klicka på ”Visa aldrig den här varningen igen” i bannern) för att dölja varningen för gott.}}",
+  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Cmdrs förhandsvisning visar en fils råa innehåll. När du öppnar en bild, en PDF, ett arkiv eller en annan binärfil visar förhandsvisningen en röd banner som förklarar att du förmodligen ville använda Överblick eller öppna filen i tillhörande app. Aktivera det här (eller klicka på ”Visa aldrig den här varningen igen” i bannern) för att dölja varningen för gott.} windows {Cmdrs förhandsvisning visar en fils råa innehåll. När du öppnar en bild, en PDF, ett arkiv eller en annan binärfil visar förhandsvisningen en röd banner som förklarar att du förmodligen ville öppna filen i tillhörande app. Aktivera det här (eller välj ”Visa aldrig den här varningen igen” i bannern) för att dölja varningen för gott.} other {Cmdrs förhandsvisning visar en fils råa innehåll. När du öppnar en bild, en PDF, ett arkiv eller en annan binärfil visar förhandsvisningen en röd banner som förklarar att du förmodligen ville öppna filen i tillhörande app. Aktivera det här (eller klicka på ”Visa aldrig den här varningen igen” i bannern) för att dölja varningen för gott.}}",
   "@settings.fileViewer.suppressBinaryWarning.explanation": {
-    "sourceHash": "9f90a50"
+    "sourceHash": "c255df8"
   },
   "settings.fileViewer.suppressBinaryWarning.keywords": "förhandsvisning, binär, binärfil, bild, rå, varning, banderoll, överblick",
   "@settings.fileViewer.suppressBinaryWarning.keywords": {
@@ -1833,9 +1918,13 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Högsta diskutrymme för loggfiler. Ställ in på 0 för att stänga av lagring av loggar; felrapporter kan inte skickas utan loggar. Ändringar till ett värde över noll träder i kraft vid nästa appstart.",
+  "settings.advanced.maxLogStorageMb.description": "En ny gräns över noll börjar gälla nästa gång Cmdr startar.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "725bb26"
+    "sourceHash": "16616b2"
+  },
+  "settings.advanced.maxLogStorageMb.summary": "Ställ in på 0 för att inte spara några loggar, men då kan Cmdr inte skicka felrapporter.",
+  "@settings.advanced.maxLogStorageMb.summary": {
+    "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "logg, loggfil, lagring, disk, tak, gräns, rotation, fel, rapport, integritet",
   "@settings.advanced.maxLogStorageMb.keywords": {
@@ -1877,9 +1966,13 @@
   "@settings.advanced.logLlmCalls.label": {
     "sourceHash": "f865b3e"
   },
-  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Spara varje AI-förfrågan och -svar i en lokal mapp (llm-logs) för felsökning. De här filerna stannar på din Mac och innehåller filnamnen och sökvägarna som Cmdr skickar till din leverantör.} windows {Spara varje AI-förfrågan och -svar i en lokal mapp (llm-logs) för felsökning. De här filerna stannar på din dator och innehåller filnamnen och sökvägarna som Cmdr skickar till din leverantör.} other {Spara varje AI-förfrågan och -svar i en lokal mapp (llm-logs) för felsökning. De här filerna stannar på din dator och innehåller filnamnen och sökvägarna som Cmdr skickar till din leverantör.}}",
+  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Cmdr skriver förfrågningarna och svaren till mappen llm-logs för felsökning. De här filerna stannar på din Mac.} windows {Cmdr skriver förfrågningarna och svaren till mappen llm-logs för felsökning. De här filerna stannar på din dator.} other {Cmdr skriver förfrågningarna och svaren till mappen llm-logs för felsökning. De här filerna stannar på din dator.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "c7e917a"
+  },
+  "settings.advanced.logLlmCalls.summary": "Sparar varje AI-förfrågan och -svar lokalt, inklusive sökvägar till filer.",
+  "@settings.advanced.logLlmCalls.summary": {
+    "sourceHash": "8b9e485"
   },
   "settings.advanced.logLlmCalls.keywords": "ai, logg, felsökning, förfrågan, svar, prompt",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2393,17 +2486,33 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
+  "settings.askCmdr.provider.usesProvider": "Ask Cmdr använder {provider}, samma AI som resten av Cmdr. <providerLink>Ändra i AI › Leverantör</providerLink>",
+  "@settings.askCmdr.provider.usesProvider": {
+    "sourceHash": "978e715"
+  },
+  "settings.askCmdr.provider.none": "Slå på en AI-leverantör i <providerLink>AI › Leverantör</providerLink> för att börja chatta.",
+  "@settings.askCmdr.provider.none": {
+    "sourceHash": "0e73e8e"
+  },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr-modell",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"
   },
-  "settings.askCmdr.interactiveModel.description": "Modellen chatten använder. Lämna tomt för att använda samma modell som Cmdrs andra AI-funktioner. Exempel: claude-sonnet-5-5",
+  "settings.askCmdr.interactiveModel.description": "Modellen som chatten använder. ”Samma som Cmdrs AI” följer modellen du valde i AI › Leverantör.",
   "@settings.askCmdr.interactiveModel.description": {
-    "sourceHash": "e301e99"
+    "sourceHash": "a285a77"
   },
   "settings.askCmdr.interactiveModel.placeholder": "Samma som Cmdrs AI",
   "@settings.askCmdr.interactiveModel.placeholder": {
     "sourceHash": "2631f3d"
+  },
+  "settings.askCmdr.interactiveModel.sameAs": "Samma som Cmdrs AI ({model})",
+  "@settings.askCmdr.interactiveModel.sameAs": {
+    "sourceHash": "e290ccc"
+  },
+  "settings.askCmdr.interactiveModel.localNote": "Lokal AI kör en enda modell, så chatten använder den.",
+  "@settings.askCmdr.interactiveModel.localNote": {
+    "sourceHash": "b2447b5"
   },
   "settings.askCmdr.interactiveModel.keywords": "ai, chatt, assistent, modell, åsidosätt, annan modell, egen modell",
   "@settings.askCmdr.interactiveModel.keywords": {
@@ -2453,9 +2562,13 @@
   "@settings.askCmdr.proactive.label": {
     "sourceHash": "a85ef48"
   },
-  "settings.askCmdr.proactive.description": "Cmdr håller koll på mapparna du arbetar i och startar en chatt när den har något att föreslå. Inget körs förrän du godkänner det.",
+  "settings.askCmdr.proactive.description": "Cmdr håller koll på mapparna du arbetar i för att hitta något som är värt att föreslå.",
   "@settings.askCmdr.proactive.description": {
-    "sourceHash": "556f155"
+    "sourceHash": "e4261b4"
+  },
+  "settings.askCmdr.proactive.summary": "Cmdr startar en chatt med ett förslag. Inget körs förrän du godkänner det.",
+  "@settings.askCmdr.proactive.summary": {
+    "sourceHash": "675ea47"
   },
   "settings.askCmdr.proactive.keywords": "proaktiv, förslag, automatiskt, lägga märke till, bevaka, vakna, ai",
   "@settings.askCmdr.proactive.keywords": {
@@ -2567,9 +2680,13 @@
   "@settings.operationLog.enabled.label": {
     "sourceHash": "edfee55"
   },
-  "settings.operationLog.enabled.description": "När det här är avstängt loggar Cmdr inte nya kopieringar, flyttar, namnbyten eller raderingar, så du kan inte ångra dem. Din befintliga historik finns kvar, och det som finns i den kan du fortfarande ångra.",
+  "settings.operationLog.enabled.description": "Det här gäller nya kopieringar, flyttar, namnbyten och raderingar. Din befintliga historik finns kvar, och det som finns i den kan du fortfarande ångra.",
   "@settings.operationLog.enabled.description": {
-    "sourceHash": "41f90d4"
+    "sourceHash": "87f3b5d"
+  },
+  "settings.operationLog.enabled.summary": "När det här är avstängt loggar Cmdr inga nya ändringar, så du kan inte ångra dem.",
+  "@settings.operationLog.enabled.summary": {
+    "sourceHash": "94d4870"
   },
   "settings.operationLog.enabled.keywords": "åtgärd, åtgärder, logg, åtgärdslogg, historik, registrera, spela in, inspelning, ångra, journal, integritet, stäng av",
   "@settings.operationLog.enabled.keywords": {
@@ -2707,7 +2824,7 @@
   "@settings.summary.noSubsections": {
     "sourceHash": "ba4b5b5"
   },
-  "settings.control.moreAbout": "More about “{setting}”",
+  "settings.control.moreAbout": "Mer om ”{setting}”",
   "@settings.control.moreAbout": {
     "sourceHash": "57968f3"
   },
@@ -3001,6 +3118,10 @@
   "@settings.appearance.card.namesAndIcons": {
     "sourceHash": "8386169"
   },
+  "settings.appearance.card.sorting": "Sortering",
+  "@settings.appearance.card.sorting": {
+    "sourceHash": "cb24f7d"
+  },
   "settings.appearance.card.briefMode": "Kortfattat läge",
   "@settings.appearance.card.briefMode": {
     "sourceHash": "b75e4b3"
@@ -3090,6 +3211,14 @@
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
   },
+  "settings.securityLog.enabled.description": "Loggen registrerar säkerhetsrelevanta ändringar och avvisningar, till exempel samtycke till moln-AI, en installerad uppdatering eller en app som MCP-servern nekade. Den innehåller varken filnamn, filinnehåll eller lösenord.",
+  "@settings.securityLog.enabled.description": {
+    "sourceHash": "97e24a4"
+  },
+  "settings.securityLog.enabled.summary": "{platform, select, macos {En liten lokal logg över säkerhetshändelser. Den lämnar aldrig din Mac.} windows {En liten lokal logg över säkerhetshändelser. Den lämnar aldrig din dator.} other {En liten lokal logg över säkerhetshändelser. Den lämnar aldrig din dator.}}",
+  "@settings.securityLog.enabled.summary": {
+    "sourceHash": "84a9146"
+  },
   "settings.securityLog.enabled.keywords": "säkerhet, logg, granskning, registrera, händelser, åtkomst, integritet",
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
@@ -3135,7 +3264,7 @@
   "@settings.network.permissionWithout": {
     "sourceHash": "a563afd"
   },
-  "settings.network.timeoutUnit": "sekunder",
+  "settings.network.timeoutUnit": "sek",
   "@settings.network.timeoutUnit": {
     "sourceHash": "59f006d"
   },
@@ -3400,9 +3529,9 @@
   "@settings.adb.install.intro": {
     "sourceHash": "9f7a0f4"
   },
-  "settings.adb.pathPlaceholder": "Cmdr letar efter adb på vanligt sätt",
+  "settings.adb.pathPlaceholder": "Hittas automatiskt",
   "@settings.adb.pathPlaceholder": {
-    "sourceHash": "538b307"
+    "sourceHash": "14fac78"
   },
   "settings.adb.browse": "Bläddra…",
   "@settings.adb.browse": {

@@ -61,7 +61,7 @@
   },
   "settings.appearance.sizeColors.description": "Obarví velikosti souborů v seznamu souborů podle velikostní kategorie. „Duha“ používá zelenou, žlutou, oranžovou, červenou a fialovou. „Aplikace“ používá odstíny barvy aplikace.",
   "@settings.appearance.sizeColors.description": {
-    "sourceHash": "ecb064a"
+    "sourceHash": "e790d53"
   },
   "settings.appearance.sizeColors.opt.none": "Žádné",
   "@settings.appearance.sizeColors.opt.none": {
@@ -506,9 +506,13 @@
   "@settings.fileOperations.skipConfirmation.label": {
     "sourceHash": "f1b1b39"
   },
-  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {Příkazy „Kopírovat“ a „Přesunout“ kopírují a přesouvají do druhého panelu hned a „Smazat“ přesouvá do koše bez ptaní. Trochu riskantní, protože jedno stisknutí klávesy hned něco provede. Trvalé smazání se vždy nejdřív zeptá.} other {Příkazy „Kopírovat“ a „Přesunout“ kopírují a přesouvají do druhého panelu hned a „Smazat“ přesouvá do koše bez ptaní. Trochu riskantní, protože jedno stisknutí klávesy hned něco provede. Trvalé smazání se vždy nejdřív zeptá.}}",
+  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {Příkazy „Kopírovat“ a „Přesunout“ kopírují a přesouvají do druhého panelu hned a „Smazat“ přesouvá do koše bez ptaní.} other {Příkazy „Kopírovat“ a „Přesunout“ kopírují a přesouvají do druhého panelu hned a „Smazat“ přesouvá do koše bez ptaní.}}",
   "@settings.fileOperations.skipConfirmation.explanation": {
-    "sourceHash": "564f000"
+    "sourceHash": "9c53630"
+  },
+  "settings.fileOperations.skipConfirmation.summary": "Trochu riskantní: jedno stisknutí klávesy hned něco provede. Trvalé smazání se i tak zeptá.",
+  "@settings.fileOperations.skipConfirmation.summary": {
+    "sourceHash": "ca6d8db"
   },
   "settings.fileOperations.skipConfirmation.keywords": "{platform, select, windows {potvrdit, potvrzení, dialog, zeptat se, kopírovat, přesunout, koš, odpadkový koš, smazat, mazání, přeskočit, kliknutí} other {potvrdit, potvrzení, dialog, zeptat se, kopírovat, přesunout, koš, smazat, přeskočit, kliknutí}}",
   "@settings.fileOperations.skipConfirmation.keywords": {
@@ -730,9 +734,13 @@
   "@settings.mediaIndex.enabled.label": {
     "sourceHash": "a2e6604"
   },
-  "settings.mediaIndex.enabled.description": "Přečte text ve vašich obrázcích, takže v něm půjde hledat. Běží na vašem Macu a nic z něj neodchází. Zatím jen na místních discích.",
+  "settings.mediaIndex.enabled.description": "Zatím pokrývá jen místní disky.",
   "@settings.mediaIndex.enabled.description": {
-    "sourceHash": "118fc8d"
+    "sourceHash": "517a7c9"
+  },
+  "settings.mediaIndex.enabled.summary": "Umožní prohledávat text ve vašich obrázcích. Text nikdy neopustí váš Mac.",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "31aa708"
   },
   "settings.mediaIndex.enabled.keywords": "obrázek, fotka, fotografie, text, hledání, index, snímek obrazovky, obsah, OCR",
   "@settings.mediaIndex.enabled.keywords": {
@@ -1111,9 +1119,9 @@
   "@settings.behavior.notifications.keepUntilClosed.label": {
     "sourceHash": "bc58ecc"
   },
-  "settings.behavior.notifications.keepUntilClosed.description": "Oznámení zůstanou na obrazovce, dokud je nezavřete, místo aby po pár sekundách zmizela.",
+  "settings.behavior.notifications.keepUntilClosed.description": "Místo toho, aby po pár sekundách zmizela.",
   "@settings.behavior.notifications.keepUntilClosed.description": {
-    "sourceHash": "53890bf"
+    "sourceHash": "2df854c"
   },
   "settings.behavior.notifications.keepUntilClosed.keywords": "oznámení, notifikace, časový limit, čas, zmizet, zavřít, ponechat, zpřístupnění, čtečka obrazovky",
   "@settings.behavior.notifications.keepUntilClosed.keywords": {
@@ -1156,9 +1164,13 @@
   "@settings.search.autoApply.label": {
     "sourceHash": "06b0f9f"
   },
-  "settings.search.autoApply.description": "{platform, select, windows {Hledání podle názvu souboru a podle regulárního výrazu se spustí automaticky během psaní (1 sekundu poté, co přestanete psát). Hledání pomocí AI vždy čeká na klávesu Enter, protože stojí peníze. Když je volba vypnutá, spusťte hledání klávesou Enter nebo výběrem tlačítka spuštění.} other {Hledání podle názvu souboru a podle regulárního výrazu se spustí automaticky během psaní (1 sekundu poté, co přestanete psát). Hledání pomocí AI vždy čeká na klávesu Enter, protože stojí peníze. Když je volba vypnutá, spusťte hledání klávesou Enter nebo kliknutím na tlačítko spuštění.}}",
+  "settings.search.autoApply.description": "{platform, select, windows {Hledání se spustí 1 sekundu poté, co přestanete psát. Hledání pomocí AI čeká, protože stojí peníze. Když je volba vypnutá, stiskněte Enter nebo vyberte tlačítko spuštění.} other {Hledání se spustí 1 sekundu poté, co přestanete psát. Hledání pomocí AI čeká, protože stojí peníze. Když je volba vypnutá, stiskněte Enter nebo klikněte na tlačítko spuštění.}}",
   "@settings.search.autoApply.description": {
-    "sourceHash": "b0f85fd"
+    "sourceHash": "3aa9f59"
+  },
+  "settings.search.autoApply.summary": "Spouští hledání podle názvu a podle regulárního výrazu už během psaní. Hledání pomocí AI čeká na klávesu Enter.",
+  "@settings.search.autoApply.summary": {
+    "sourceHash": "ebc6780"
   },
   "settings.search.autoApply.keywords": "hledání, automaticky, použít, živě, průběžně, název souboru, okamžitě",
   "@settings.search.autoApply.keywords": {
@@ -1228,9 +1240,13 @@
   "@settings.ai.reasoningEfforts.label.thinkingLevel": {
     "sourceHash": "96f115b"
   },
-  "settings.ai.reasoningEfforts.description": "Jak dlouho model přemýšlí, než odpoví. Delší přemýšlení pomáhá u složitých úloh, ale odpovědi přicházejí pomaleji a přemýšlení se účtuje jako výstup.",
+  "settings.ai.reasoningEfforts.description": "Přemýšlení modelu se účtuje jako výstup, stejně jako samotná odpověď.",
   "@settings.ai.reasoningEfforts.description": {
-    "sourceHash": "0ad6737"
+    "sourceHash": "0a6d851"
+  },
+  "settings.ai.reasoningEfforts.summary": "Delší přemýšlení pomáhá u složitých úloh, ale odpovědi pak přicházejí pomaleji a stojí víc.",
+  "@settings.ai.reasoningEfforts.summary": {
+    "sourceHash": "5c3f87f"
   },
   "settings.ai.reasoningEfforts.keywords": "úsilí, uvažování, přemýšlení, myšlení, rychlost, cena, kvalita, náročnost",
   "@settings.ai.reasoningEfforts.keywords": {
@@ -1248,9 +1264,13 @@
   "@settings.aboutThis.aiVerdict.label": {
     "sourceHash": "4c84599"
   },
-  "settings.aboutThis.aiVerdict.description": "Když otevřete kartu, AI napíše dvě nebo tři věty z údajů, které karta zobrazuje. U cloudové AI se údaje z karty a krátké nahlédnutí do souboru pokaždé odesílají vašemu poskytovateli.",
+  "settings.aboutThis.aiVerdict.description": "Když otevřete kartu, AI napíše dvě nebo tři věty z údajů, které karta zobrazuje. Děje se to při každém otevření.",
   "@settings.aboutThis.aiVerdict.description": {
-    "sourceHash": "5dfb5f5"
+    "sourceHash": "4c0ef49"
+  },
+  "settings.aboutThis.aiVerdict.summary": "U cloudové AI se údaje z karty a výňatek ze souboru odesílají vašemu poskytovateli.",
+  "@settings.aboutThis.aiVerdict.summary": {
+    "sourceHash": "4e34358"
   },
   "settings.aboutThis.aiVerdict.keywords": "vysvětlit, vysvětlení, shrnutí, popis, co to je, informace o souboru, hodnocení, názor",
   "@settings.aboutThis.aiVerdict.keywords": {
@@ -1263,6 +1283,15 @@
   "settings.network.enabled.label": "{platform, select, windows {Zapnout síťové funkce} other {Zapnout síťové funkce}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
+  },
+  "settings.network.enabled.description": "{platform, select, macos {Když je volba vypnutá, Cmdr nebude macOS žádat o přístup k místní síti.} windows {Když je volba vypnutá, Windows se nebude ptát, jestli Cmdr pustit přes bránu firewall.} other {}}",
+  "@settings.network.enabled.description": {
+    "sourceHash": "3e2a4b0",
+    "sameAsSourceJustification": "The Linux branch is empty on purpose, as in English: Linux shows no network permission prompt to mention."
+  },
+  "settings.network.enabled.summary": "Najde servery SMB ve vaší síti. Připojené sdílené složky fungují tak jako tak.",
+  "@settings.network.enabled.summary": {
+    "sourceHash": "1da1cd9"
   },
   "settings.network.enabled.keywords": "síť, zapnout, povolit, vyhledávání, místní síť, oprávnění",
   "@settings.network.enabled.keywords": {
@@ -1284,9 +1313,9 @@
   "@settings.network.directSmbConnection.label": {
     "sourceHash": "407c4f1"
   },
-  "settings.network.directSmbConnection.description": "{platform, select, macos {Když je volba zapnutá, Cmdr naváže se sdílenými složkami SMB přímé připojení pro rychlejší operace se soubory. Systémové připojení zůstává pro Finder a další aplikace.} windows {Když je volba zapnutá, Cmdr naváže se sdílenými složkami SMB přímé připojení pro rychlejší operace se soubory. Systémové připojení zůstává pro Průzkumník souborů a další aplikace.} other {Když je volba zapnutá, Cmdr naváže se sdílenými složkami SMB přímé připojení pro rychlejší operace se soubory. Systémové připojení zůstává pro váš správce souborů a další aplikace.}}",
+  "settings.network.directSmbConnection.description": "{platform, select, macos {Když je volba zapnutá, Cmdr se ke sdíleným složkám SMB připojuje přímo, takže operace se soubory jsou rychlejší. Systémové připojení zůstává k dispozici Finderu a dalším aplikacím.} windows {Když je volba zapnutá, Cmdr se ke sdíleným složkám SMB připojuje přímo, takže operace se soubory jsou rychlejší. Systémové připojení zůstává k dispozici Průzkumníku souborů a dalším aplikacím.} other {Když je volba zapnutá, Cmdr se ke sdíleným složkám SMB připojuje přímo, takže operace se soubory jsou rychlejší. Systémové připojení zůstává k dispozici vašemu správci souborů a dalším aplikacím.}}",
   "@settings.network.directSmbConnection.description": {
-    "sourceHash": "429c68c"
+    "sourceHash": "06e2844"
   },
   "settings.network.directSmbConnection.keywords": "přímé, rychlé, připojení, síť, výkon",
   "@settings.network.directSmbConnection.keywords": {
@@ -1296,9 +1325,13 @@
   "@settings.network.requireSmbEncryption.label": {
     "sourceHash": "4519b09"
   },
-  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr šifruje svá připojení ke sdíleným složkám SMB, i když to server nevyžaduje, a neotevře sdílenou složku, jejíž připojení zašifrovat nejde, a to ani takovou, kterou váš Mac připojil bez šifrování. Připojení jako host zašifrovat nejde, takže se budete muset přihlásit. Připojení, která už Cmdr má otevřená, zůstanou beze změny, dokud se znovu nepřipojí.} windows {Cmdr šifruje svá připojení ke sdíleným složkám SMB, i když to server nevyžaduje, a neotevře sdílenou složku, jejíž připojení zašifrovat nejde, a to ani takovou, kterou váš počítač připojil bez šifrování. Připojení jako host zašifrovat nejde, takže se budete muset přihlásit. Připojení, která už Cmdr má otevřená, zůstanou beze změny, dokud se znovu nepřipojí.} other {Cmdr šifruje svá připojení ke sdíleným složkám SMB, i když to server nevyžaduje, a neotevře sdílenou složku, jejíž připojení zašifrovat nejde, a to ani takovou, kterou váš počítač připojil bez šifrování. Připojení jako host zašifrovat nejde, takže se budete muset přihlásit. Připojení, která už Cmdr má otevřená, zůstanou beze změny, dokud se znovu nepřipojí.}}",
+  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr šifruje svá připojení SMB, i když to server nevyžaduje, a to i u sdílených složek, které váš Mac připojil bez šifrování. Připojení, která už Cmdr má otevřená, zůstanou beze změny, dokud se znovu nepřipojí.} windows {Cmdr šifruje svá připojení SMB, i když to server nevyžaduje, a to i u sdílených složek, které váš počítač připojil bez šifrování. Připojení, která už Cmdr má otevřená, zůstanou beze změny, dokud se znovu nepřipojí.} other {Cmdr šifruje svá připojení SMB, i když to server nevyžaduje, a to i u sdílených složek, které váš počítač připojil bez šifrování. Připojení, která už Cmdr má otevřená, zůstanou beze změny, dokud se znovu nepřipojí.}}",
   "@settings.network.requireSmbEncryption.description": {
-    "sourceHash": "26291fe"
+    "sourceHash": "6025cf4"
+  },
+  "settings.network.requireSmbEncryption.summary": "Sdílené složky, jejichž připojení nejde zašifrovat, se neotevřou a hosté se musí přihlásit.",
+  "@settings.network.requireSmbEncryption.summary": {
+    "sourceHash": "bc73348"
   },
   "settings.network.requireSmbEncryption.keywords": "šifrovat, šifrované, zašifrovat, zabezpečení, bezpečnost, soukromí, ochrana, bezpečné připojení",
   "@settings.network.requireSmbEncryption.keywords": {
@@ -1336,6 +1369,18 @@
   "@settings.network.shareCacheDuration.keywords": {
     "sourceHash": "df14578"
   },
+  "settings.network.timeout.label": "Časový limit sítě",
+  "@settings.network.timeout.label": {
+    "sourceHash": "fdd0d76"
+  },
+  "settings.network.timeout.description": "Jak dlouho Cmdr čeká na sdílenou složku v síti, než to vzdá. Pro běžné místní sítě se hodí 15 sekund; pro VPN nebo připojení s vysokou latencí zkuste 45.",
+  "@settings.network.timeout.description": {
+    "sourceHash": "8cc6def"
+  },
+  "settings.network.timeout.keywords": "čekání, pomalé, pomalá síť, sekundy, odezva, latence, prodleva, vypršení, timeout, vpn",
+  "@settings.network.timeout.keywords": {
+    "sourceHash": "bb8a9ac"
+  },
   "settings.network.smbConcurrency.label": "Souběžné operace na jedno připojení SMB",
   "@settings.network.smbConcurrency.label": {
     "sourceHash": "339933f"
@@ -1352,9 +1397,13 @@
   "@settings.fileOperations.mtpEnabled.label": {
     "sourceHash": "6a315a8"
   },
-  "settings.fileOperations.mtpEnabled.description": "Rozpozná zařízení s Androidem a další zařízení připojená kabelem USB, připojí se k nim a umožní procházet a přenášet soubory. Pokud chcete tuto funkci použít s telefonem s Androidem, připojte ho kabelem USB, pak na telefonu otevřete něco jako Nastavení > Předvolby USB a nastavte připojení na „Přenos souborů“, „Android Auto“ nebo podobně. (Liší se podle zařízení.)",
+  "settings.fileOperations.mtpEnabled.description": "Cmdr rozpozná telefony s Androidem, čtečky Kindle a fotoaparáty připojené kabelem USB, takže můžete procházet a přenášet soubory. Na Androidu hledejte něco jako Nastavení > Předvolby USB; funguje i „Android Auto“. Liší se to podle zařízení.",
   "@settings.fileOperations.mtpEnabled.description": {
-    "sourceHash": "c66df04"
+    "sourceHash": "a5b7ef3"
+  },
+  "settings.fileOperations.mtpEnabled.summary": "Na telefonu nastavte připojení USB na „Přenos souborů“ nebo podobnou možnost.",
+  "@settings.fileOperations.mtpEnabled.summary": {
+    "sourceHash": "355c987"
   },
   "settings.fileOperations.mtpEnabled.keywords": "zařízení, telefon, mobil, čtečka, fotoaparát",
   "@settings.fileOperations.mtpEnabled.keywords": {
@@ -1364,6 +1413,14 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
+  "settings.fileOperations.adbEnabled.description": "ADB se dostane k celému souborovému systému telefonu s Androidem, nejen k tomu, co ukáže MTP. Nechat volbu zapnutou nic nestojí, pokud nemáte nainstalované žádné nástroje pro Android.",
+  "@settings.fileOperations.adbEnabled.description": {
+    "sourceHash": "a16197e"
+  },
+  "settings.fileOperations.adbEnabled.summary": "{platform, select, macos {Vyžaduje zapnuté ladění přes USB na telefonu a nástroj adb na tomto Macu.} windows {Vyžaduje zapnuté ladění přes USB na telefonu a nástroj adb na tomto počítači.} other {Vyžaduje zapnuté ladění přes USB na telefonu a nástroj adb na tomto počítači.}}",
+  "@settings.fileOperations.adbEnabled.summary": {
+    "sourceHash": "b20dbc7"
+  },
   "settings.fileOperations.adbEnabled.keywords": "ladění USB, možnosti pro vývojáře, telefon, zařízení, mobil",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1372,9 +1429,13 @@
   "@settings.fileOperations.adbBinaryPath.label": {
     "sourceHash": "a67fbbd"
   },
-  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Když pole necháte prázdné, Cmdr hledá adb obvyklým způsobem, včetně Android SDK a Homebrew. Pokud máte nástroje platformy na vlastním místě, zadejte sem jejich umístění.} other {Když pole necháte prázdné, Cmdr hledá adb obvyklým způsobem, včetně Android SDK a proměnné PATH. Pokud máte nástroje platformy na vlastním místě, zadejte sem jejich umístění.}}",
+  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Cmdr hledá na obvyklých místech, včetně Android SDK a Homebrew. Pokud máte nástroje platformy na vlastním místě, zadejte sem jejich umístění.} other {Cmdr hledá na obvyklých místech, včetně Android SDK a proměnné PATH. Pokud máte nástroje platformy na vlastním místě, zadejte sem jejich umístění.}}",
   "@settings.fileOperations.adbBinaryPath.description": {
-    "sourceHash": "e8cde17"
+    "sourceHash": "e1c5acb"
+  },
+  "settings.fileOperations.adbBinaryPath.summary": "Když pole necháte prázdné, Cmdr najde adb sám.",
+  "@settings.fileOperations.adbBinaryPath.summary": {
+    "sourceHash": "e62a0d3"
   },
   "settings.fileOperations.adbBinaryPath.keywords": "cesta, program, umístění",
   "@settings.fileOperations.adbBinaryPath.keywords": {
@@ -1408,9 +1469,9 @@
   "@settings.fileExplorer.git.showStatusColumn.label": {
     "sourceHash": "0f6a836"
   },
-  "settings.fileExplorer.git.showStatusColumn.description": "V zobrazení Podrobnosti přidá sloupec se stavem gitu u každého souboru (změněný, nesledovaný atd.).",
+  "settings.fileExplorer.git.showStatusColumn.description": "V zobrazení Podrobnosti přidá sloupec se stavem gitu u každého souboru (třeba změněný nebo nesledovaný).",
   "@settings.fileExplorer.git.showStatusColumn.description": {
-    "sourceHash": "fc74b38"
+    "sourceHash": "214eb5d"
   },
   "settings.fileExplorer.git.showStatusColumn.keywords": "stav, sloupec, změněno, nesledováno, ignorováno, přidáno, smazáno",
   "@settings.fileExplorer.git.showStatusColumn.keywords": {
@@ -1420,9 +1481,9 @@
   "@settings.fileExplorer.git.showVirtualGitPortal.label": {
     "sourceHash": "40d9fa1"
   },
-  "settings.fileExplorer.git.showVirtualGitPortal.description": "Při otevření složky .git zobrazí větve, značky, commity a worktree jako virtuální složky, které můžete procházet. Když volbu vypnete, uvidíte místo toho surový obsah .git.",
+  "settings.fileExplorer.git.showVirtualGitPortal.description": "Když otevřete .git, zobrazí větve, značky, commity a worktree jako složky, které můžete procházet. Po vypnutí uvidíte surový obsah .git.",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
-    "sourceHash": "331e0a5"
+    "sourceHash": "d58b2c3"
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "portál, virtuální, větve, značky, commity, worktree, historie",
   "@settings.fileExplorer.git.showVirtualGitPortal.keywords": {
@@ -1465,9 +1526,13 @@
     "sourceHash": "72e9a59",
     "sameAsSourceJustification": "Networking term used as-is in Czech (cs terms.json port ruling: port, high); macOS cs also writes Port."
   },
-  "settings.developer.mcpPort.description": "Preferovaný port serveru MCP. Když necháte 0, operační systém vybere dočasný port (doporučeno; port, na kterém server skutečně běží, se při běhu zobrazí níže). Konkrétní port nastavte, pokud ho potřebují externí nástroje.",
+  "settings.developer.mcpPort.description": "Port, který se právě používá, se zobrazuje níže, dokud server běží. Pokud jiný nástroj potřebuje číslo portu znát předem, zadejte pevný port.",
   "@settings.developer.mcpPort.description": {
-    "sourceHash": "174e807"
+    "sourceHash": "f2ca537"
+  },
+  "settings.developer.mcpPort.summary": "{platform, select, macos {Když necháte 0, váš Mac vybere volný port.} windows {Když necháte 0, váš počítač vybere volný port.} other {Když necháte 0, váš počítač vybere volný port.}}",
+  "@settings.developer.mcpPort.summary": {
+    "sourceHash": "cee7df5"
   },
   "settings.developer.mcpPort.keywords": "port, síť, dočasný, náhodný",
   "@settings.developer.mcpPort.keywords": {
@@ -1525,6 +1590,10 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
+  "settings.analytics.enabled.description": "Zapněte prosím tuto volbu a pomozte nám během otevřené bety zjistit, na kterých funkcích záleží.\nStatistiky jsou spojené s náhodným ID, ne s vaším jménem ani e‑mailem.\nCmdr nikdy neodesílá názvy souborů, cesty, hledané výrazy ani zadání pro AI.\nKdyž je volba vypnutá, Cmdr neodesílá žádné statistiky.",
+  "@settings.analytics.enabled.description": {
+    "sourceHash": "a8d8db1"
+  },
   "settings.analytics.enabled.keywords": "analytika, používání, statistiky, soukromí, telemetrie, beta, sledování, odhlásit",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1541,9 +1610,13 @@
   "@settings.updates.crashReports.label": {
     "sourceHash": "2b8f06d"
   },
-  "settings.updates.crashReports.description": "{platform, select, macos {Automaticky odešle zprávu, když Cmdr neočekávaně skončí nebo na pozadí narazí na problém. Obsahuje verzi aplikace, verzi macOS a místo v kódu, kde k problému došlo. Nikdy neobsahuje názvy souborů ani osobní údaje.} windows {Automaticky odešle zprávu, když Cmdr neočekávaně skončí nebo na pozadí narazí na problém. Obsahuje verzi aplikace, verzi Windows a místo v kódu, kde k problému došlo. Nikdy neobsahuje názvy souborů ani osobní údaje.} other {Automaticky odešle zprávu, když Cmdr neočekávaně skončí nebo na pozadí narazí na problém. Obsahuje verzi aplikace, název a verzi distribuce Linuxu a místo v kódu, kde k problému došlo. Nikdy neobsahuje názvy souborů ani osobní údaje.}}",
+  "settings.updates.crashReports.description": "{platform, select, macos {Cmdr odešle zprávu, když neočekávaně skončí nebo na pozadí narazí na problém. Obsahuje verzi aplikace, verzi macOS a místo v kódu, kde k problému došlo.} windows {Cmdr odešle zprávu, když neočekávaně skončí nebo na pozadí narazí na problém. Obsahuje verzi aplikace, verzi Windows a místo v kódu, kde k problému došlo.} other {Cmdr odešle zprávu, když neočekávaně skončí nebo na pozadí narazí na problém. Obsahuje verzi aplikace, název a verzi distribuce Linuxu a místo v kódu, kde k problému došlo.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "26508c4"
+  },
+  "settings.updates.crashReports.summary": "Nikdy neobsahuje názvy souborů ani osobní údaje.",
+  "@settings.updates.crashReports.summary": {
+    "sourceHash": "7814a28"
   },
   "settings.updates.crashReports.keywords": "havárie, pád, zpráva, soukromí, telemetrie, chyba",
   "@settings.updates.crashReports.keywords": {
@@ -1553,9 +1626,13 @@
   "@settings.updates.errorReports.label": {
     "sourceHash": "471575d"
   },
-  "settings.updates.errorReports.description": "Když dojde k chybě, odešle vývojáři krátký výňatek z protokolu. Pomáhá rychleji opravovat chyby. Ve výchozím stavu vypnuto. Ruční zprávu můžete kdykoli odeslat z nabídky Nápověda.",
+  "settings.updates.errorReports.description": "Ve výchozím stavu vypnuto. Zprávu můžete kdykoli odeslat ručně z nabídky Nápověda.",
   "@settings.updates.errorReports.description": {
-    "sourceHash": "f3e41eb"
+    "sourceHash": "a33a61c"
+  },
+  "settings.updates.errorReports.summary": "Když se něco pokazí, pošle nám krátký výňatek z protokolu, abychom mohli chyby opravovat rychleji.",
+  "@settings.updates.errorReports.summary": {
+    "sourceHash": "0fdd0ae"
   },
   "settings.updates.errorReports.keywords": "chyba, zpráva, automaticky, odeslat, soukromí, telemetrie, protokol, log, výňatek, diagnostika",
   "@settings.updates.errorReports.keywords": {
@@ -1603,7 +1680,7 @@
   },
   "settings.advanced.virtualizationBufferColumns.description": "Kolik sloupců navíc vykreslit v zobrazení Seznam.",
   "@settings.advanced.virtualizationBufferColumns.description": {
-    "sourceHash": "a1cbd98"
+    "sourceHash": "a66189f"
   },
   "settings.advanced.virtualizationBufferColumns.keywords": "virtualizace, vyrovnávací paměť, buffer, sloupec, sloupce, seznam",
   "@settings.advanced.virtualizationBufferColumns.keywords": {
@@ -1637,6 +1714,14 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Indexování pokračuje tam, kde skončilo, jakmile volné místo vystoupá o jeden procentní bod nad nastavenou hranici. Funguje to bez ohledu na to, jestli je „Varování při nedostatku volného místa na disku“ zapnuté, nebo vypnuté.",
+  "@settings.advanced.indexPauseFreeSpacePercent.description": {
+    "sourceHash": "4d80336"
+  },
+  "settings.advanced.indexPauseFreeSpacePercent.summary": "Index tak nezabere místo, které potřebují vaše vlastní soubory.",
+  "@settings.advanced.indexPauseFreeSpacePercent.summary": {
+    "sourceHash": "965796f"
+  },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "disk, místo, plný, zaplněný, volné, úložiště, práh, hranice, procenta, málo, zastavit, pauza",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
     "sourceHash": "1af2a91"
@@ -1645,9 +1730,9 @@
   "@settings.fileViewer.suppressBinaryWarning.label": {
     "sourceHash": "8cdaada"
   },
-  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Prohlížeč souborů v Cmdru zobrazuje surové bajty (obsah, který není text, ztrátově jako UTF-8). Když otevřete obrázek, PDF, archiv nebo jiný binární soubor, prohlížeč zobrazí červený pruh s vysvětlením, že se spíš hodí Rychlý náhled nebo otevření v přiřazené aplikaci. Zapněte tuto volbu (nebo v pruhu klikněte na „Toto varování už nikdy nezobrazovat“) a varování se už nikdy nezobrazí.} windows {Prohlížeč souborů v Cmdru zobrazuje surové bajty (obsah, který není text, ztrátově jako UTF-8). Když otevřete obrázek, PDF, archiv nebo jiný binární soubor, prohlížeč zobrazí červený pruh s vysvětlením, že se spíš hodí otevření v přiřazené aplikaci. Zapněte tuto volbu (nebo v pruhu vyberte „Toto varování už nikdy nezobrazovat“) a varování se už nikdy nezobrazí.} other {Prohlížeč souborů v Cmdru zobrazuje surové bajty (obsah, který není text, ztrátově jako UTF-8). Když otevřete obrázek, PDF, archiv nebo jiný binární soubor, prohlížeč zobrazí červený pruh s vysvětlením, že se spíš hodí otevření v přiřazené aplikaci. Zapněte tuto volbu (nebo v pruhu klikněte na „Toto varování už nikdy nezobrazovat“) a varování se už nikdy nezobrazí.}}",
+  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Prohlížeč souborů v Cmdru zobrazuje surový obsah souboru. Když otevřete obrázek, PDF, archiv nebo jiný binární soubor, prohlížeč zobrazí červený pruh s vysvětlením, že se spíš hodí Rychlý náhled nebo otevření v přiřazené aplikaci. Zapněte tuto volbu (nebo v pruhu klikněte na „Toto varování už nikdy nezobrazovat“) a varování se už nikdy nezobrazí.} windows {Prohlížeč souborů v Cmdru zobrazuje surový obsah souboru. Když otevřete obrázek, PDF, archiv nebo jiný binární soubor, prohlížeč zobrazí červený pruh s vysvětlením, že se spíš hodí otevření v přiřazené aplikaci. Zapněte tuto volbu (nebo v pruhu vyberte „Toto varování už nikdy nezobrazovat“) a varování se už nikdy nezobrazí.} other {Prohlížeč souborů v Cmdru zobrazuje surový obsah souboru. Když otevřete obrázek, PDF, archiv nebo jiný binární soubor, prohlížeč zobrazí červený pruh s vysvětlením, že se spíš hodí otevření v přiřazené aplikaci. Zapněte tuto volbu (nebo v pruhu klikněte na „Toto varování už nikdy nezobrazovat“) a varování se už nikdy nezobrazí.}}",
   "@settings.fileViewer.suppressBinaryWarning.explanation": {
-    "sourceHash": "9f90a50"
+    "sourceHash": "c255df8"
   },
   "settings.fileViewer.suppressBinaryWarning.keywords": "prohlížeč, binární, obrázek, surový, upozornění, varování, pruh, rychlý náhled",
   "@settings.fileViewer.suppressBinaryWarning.keywords": {
@@ -1829,9 +1914,13 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Maximální místo na disku pro soubory protokolu. Hodnota 0 ukládání protokolů vypne; bez protokolů nelze odesílat zprávy o chybách. Změna na nenulovou hodnotu se projeví při příštím spuštění aplikace.",
+  "settings.advanced.maxLogStorageMb.description": "Nový nenulový limit začne platit při příštím spuštění Cmdru.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "725bb26"
+    "sourceHash": "16616b2"
+  },
+  "settings.advanced.maxLogStorageMb.summary": "Když nastavíte 0, žádné protokoly se neukládají, ale pak nejde odesílat zprávy o chybách.",
+  "@settings.advanced.maxLogStorageMb.summary": {
+    "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "protokol, log, úložiště, disk, limit, rotace, chyba, zpráva, soukromí",
   "@settings.advanced.maxLogStorageMb.keywords": {
@@ -1873,9 +1962,13 @@
   "@settings.advanced.logLlmCalls.label": {
     "sourceHash": "f865b3e"
   },
-  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Uloží každý požadavek na AI a každou odpověď do místní složky (llm-logs) pro účely ladění. Tyto soubory zůstávají na vašem Macu a obsahují názvy souborů a cesty, které Cmdr odesílá vašemu poskytovateli.} windows {Uloží každý požadavek na AI a každou odpověď do místní složky (llm-logs) pro účely ladění. Tyto soubory zůstávají na vašem počítači a obsahují názvy souborů a cesty, které Cmdr odesílá vašemu poskytovateli.} other {Uloží každý požadavek na AI a každou odpověď do místní složky (llm-logs) pro účely ladění. Tyto soubory zůstávají na vašem počítači a obsahují názvy souborů a cesty, které Cmdr odesílá vašemu poskytovateli.}}",
+  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Cmdr požadavky a odpovědi zapisuje do složky llm-logs pro účely ladění. Tyto soubory zůstávají na vašem Macu.} windows {Cmdr požadavky a odpovědi zapisuje do složky llm-logs pro účely ladění. Tyto soubory zůstávají na vašem počítači.} other {Cmdr požadavky a odpovědi zapisuje do složky llm-logs pro účely ladění. Tyto soubory zůstávají na vašem počítači.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "c7e917a"
+  },
+  "settings.advanced.logLlmCalls.summary": "Ukládá místně každý požadavek na AI a každou odpověď, včetně cest k souborům.",
+  "@settings.advanced.logLlmCalls.summary": {
+    "sourceHash": "8b9e485"
   },
   "settings.advanced.logLlmCalls.keywords": "AI, protokol, log, ladění, požadavek, odpověď, zadání, prompt",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2384,17 +2477,33 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
+  "settings.askCmdr.provider.usesProvider": "Ask Cmdr používá stejnou AI jako zbytek Cmdru: {provider}. <providerLink>Změnit v části AI > Poskytovatel</providerLink>",
+  "@settings.askCmdr.provider.usesProvider": {
+    "sourceHash": "978e715"
+  },
+  "settings.askCmdr.provider.none": "Pokud chcete začít chatovat, zapněte poskytovatele AI v části <providerLink>AI > Poskytovatel</providerLink>.",
+  "@settings.askCmdr.provider.none": {
+    "sourceHash": "0e73e8e"
+  },
   "settings.askCmdr.interactiveModel.label": "Model pro Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"
   },
-  "settings.askCmdr.interactiveModel.description": "Model, který chat používá. Když pole necháte prázdné, použije se stejný model jako u ostatních funkcí AI v Cmdru. Příklad: claude-sonnet-5-5",
+  "settings.askCmdr.interactiveModel.description": "Model, který chat používá. „Stejný jako AI v Cmdru“ se řídí modelem, který jste vybrali v části AI > Poskytovatel.",
   "@settings.askCmdr.interactiveModel.description": {
-    "sourceHash": "e301e99"
+    "sourceHash": "a285a77"
   },
   "settings.askCmdr.interactiveModel.placeholder": "Stejný jako AI v Cmdru",
   "@settings.askCmdr.interactiveModel.placeholder": {
     "sourceHash": "2631f3d"
+  },
+  "settings.askCmdr.interactiveModel.sameAs": "Stejný jako AI v Cmdru ({model})",
+  "@settings.askCmdr.interactiveModel.sameAs": {
+    "sourceHash": "e290ccc"
+  },
+  "settings.askCmdr.interactiveModel.localNote": "Místní AI má jen jeden model, a ten používá i chat.",
+  "@settings.askCmdr.interactiveModel.localNote": {
+    "sourceHash": "b2447b5"
   },
   "settings.askCmdr.interactiveModel.keywords": "AI, chat, asistent, model, přepsat, jiný model",
   "@settings.askCmdr.interactiveModel.keywords": {
@@ -2444,9 +2553,13 @@
   "@settings.askCmdr.proactive.label": {
     "sourceHash": "a85ef48"
   },
-  "settings.askCmdr.proactive.description": "Cmdr sleduje složky, ve kterých pracujete, a když má co navrhnout, zahájí chat. Nic se nespustí, dokud to neschválíte.",
+  "settings.askCmdr.proactive.description": "Cmdr sleduje složky, ve kterých pracujete, a hledá v nich něco, co by stálo za to navrhnout.",
   "@settings.askCmdr.proactive.description": {
-    "sourceHash": "556f155"
+    "sourceHash": "e4261b4"
+  },
+  "settings.askCmdr.proactive.summary": "Cmdr zahájí chat s návrhem. Nic se nespustí, dokud to neschválíte.",
+  "@settings.askCmdr.proactive.summary": {
+    "sourceHash": "675ea47"
   },
   "settings.askCmdr.proactive.keywords": "proaktivní, návrhy, automaticky, upozornění, sledování, probuzení, AI",
   "@settings.askCmdr.proactive.keywords": {
@@ -2558,9 +2671,13 @@
   "@settings.operationLog.enabled.label": {
     "sourceHash": "edfee55"
   },
-  "settings.operationLog.enabled.description": "Když je tato volba vypnutá, Cmdr nové kopírování, přesuny, přejmenování ani mazání nezaznamenává, takže je nemůžete odvolat. Stávající historie zůstává a to, co v ní je, odvolat můžete.",
+  "settings.operationLog.enabled.description": "Týká se nového kopírování, přesunů, přejmenování a mazání. Vaše stávající historie zůstává a to, co v ní je, můžete dál odvolat.",
   "@settings.operationLog.enabled.description": {
-    "sourceHash": "41f90d4"
+    "sourceHash": "87f3b5d"
+  },
+  "settings.operationLog.enabled.summary": "Když je volba vypnutá, Cmdr nové změny nezaznamenává, takže je nemůžete odvolat.",
+  "@settings.operationLog.enabled.summary": {
+    "sourceHash": "94d4870"
   },
   "settings.operationLog.enabled.keywords": "operace, protokol, historie, záznam, zaznamenávání, odvolat, zpět, deník, soukromí, vypnout",
   "@settings.operationLog.enabled.keywords": {
@@ -2698,7 +2815,7 @@
   "@settings.summary.noSubsections": {
     "sourceHash": "ba4b5b5"
   },
-  "settings.control.moreAbout": "More about “{setting}”",
+  "settings.control.moreAbout": "Další informace o volbě „{setting}“",
   "@settings.control.moreAbout": {
     "sourceHash": "57968f3"
   },
@@ -2992,6 +3109,10 @@
   "@settings.appearance.card.namesAndIcons": {
     "sourceHash": "8386169"
   },
+  "settings.appearance.card.sorting": "Řazení",
+  "@settings.appearance.card.sorting": {
+    "sourceHash": "cb24f7d"
+  },
   "settings.appearance.card.briefMode": "Režim Seznam",
   "@settings.appearance.card.briefMode": {
     "sourceHash": "b75e4b3"
@@ -3080,6 +3201,14 @@
   "settings.securityLog.enabled.label": "Zaznamenávat bezpečnostní události",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
+  },
+  "settings.securityLog.enabled.description": "Zaznamenává změny a odmítnutí důležitá pro bezpečnost, třeba souhlas s cloudovou AI, nainstalovanou aktualizaci nebo aplikaci, kterou server MCP odmítl. Neobsahuje žádné názvy souborů, jejich obsah ani hesla.",
+  "@settings.securityLog.enabled.description": {
+    "sourceHash": "97e24a4"
+  },
+  "settings.securityLog.enabled.summary": "{platform, select, macos {Malý místní záznam bezpečnostních událostí. Nikdy neopustí váš Mac.} windows {Malý místní záznam bezpečnostních událostí. Nikdy neopustí váš počítač.} other {Malý místní záznam bezpečnostních událostí. Nikdy neopustí váš počítač.}}",
+  "@settings.securityLog.enabled.summary": {
+    "sourceHash": "84a9146"
   },
   "settings.securityLog.enabled.keywords": "bezpečnost, zabezpečení, protokol, log, audit, záznam, události, přístup, soukromí",
   "@settings.securityLog.enabled.keywords": {
@@ -3390,9 +3519,9 @@
   "@settings.adb.install.intro": {
     "sourceHash": "9f7a0f4"
   },
-  "settings.adb.pathPlaceholder": "Cmdr hledá adb obvyklým způsobem",
+  "settings.adb.pathPlaceholder": "Najde se automaticky",
   "@settings.adb.pathPlaceholder": {
-    "sourceHash": "538b307"
+    "sourceHash": "14fac78"
   },
   "settings.adb.browse": "Procházet…",
   "@settings.adb.browse": {

@@ -3415,7 +3415,7 @@
     "chosen": "Pensando",
     "confidence": "high",
     "sources": "catalog",
-    "proseAccept": ["piens"]
+    "proseAccept": ["piens", "pens"]
   },
   "this-computer": {
     "chosen": "ordenador",

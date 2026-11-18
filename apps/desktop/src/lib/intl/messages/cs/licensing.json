@@ -416,6 +416,30 @@
   "@licensing.section.getLicense": {
     "sourceHash": "fab19d3"
   },
+  "licensing.section.includedTitle": "Co je zahrnuto",
+  "@licensing.section.includedTitle": {
+    "sourceHash": "a441e05"
+  },
+  "licensing.section.includedFeatures": "Všechny funkce správce souborů",
+  "@licensing.section.includedFeatures": {
+    "sourceHash": "0a54a41"
+  },
+  "licensing.section.includedMacs": "Všechny vaše vlastní Macy pro osobní použití",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "d0968e4"
+  },
+  "licensing.section.includedUpdates": "Automatické aktualizace",
+  "@licensing.section.includedUpdates": {
+    "sourceHash": "147b1b6"
+  },
+  "licensing.section.includedAi": "Cmdr AI, zdarma během bety, s vlastním klíčem nebo přímo na Macu",
+  "@licensing.section.includedAi": {
+    "sourceHash": "1fec548"
+  },
+  "licensing.section.commercialNeeded": "Pokud Cmdr používáte k práci, ať už v zaměstnání, na zakázku, nebo ve vlastním podnikání, potřebujete komerční licenci. Nejdřív ho můžete v práci až 14 dní zkoušet.",
+  "@licensing.section.commercialNeeded": {
+    "sourceHash": "a3d7314"
+  },
   "licensing.section.typePersonal": "Osobní (zdarma)",
   "@licensing.section.typePersonal": {
     "sourceHash": "4af5ca9"

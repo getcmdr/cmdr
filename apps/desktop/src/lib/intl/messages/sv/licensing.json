@@ -417,6 +417,30 @@
   "@licensing.section.getLicense": {
     "sourceHash": "fab19d3"
   },
+  "licensing.section.includedTitle": "Det här ingår",
+  "@licensing.section.includedTitle": {
+    "sourceHash": "a441e05"
+  },
+  "licensing.section.includedFeatures": "Alla funktioner i filhanteraren",
+  "@licensing.section.includedFeatures": {
+    "sourceHash": "0a54a41"
+  },
+  "licensing.section.includedMacs": "Alla dina egna Mac-datorer, för ditt personliga bruk",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "d0968e4"
+  },
+  "licensing.section.includedUpdates": "Automatiska uppdateringar",
+  "@licensing.section.includedUpdates": {
+    "sourceHash": "147b1b6"
+  },
+  "licensing.section.includedAi": "Cmdr AI, gratis under betan, med din egen nyckel eller på enheten",
+  "@licensing.section.includedAi": {
+    "sourceHash": "1fec548"
+  },
+  "licensing.section.commercialNeeded": "Om du använder Cmdr i arbetet, inklusive på ett jobb, i uppdragsarbete eller i ditt eget företag, behöver du en kommersiell licens. Du kan först prova Cmdr i arbetet i upp till 14 dagar.",
+  "@licensing.section.commercialNeeded": {
+    "sourceHash": "a3d7314"
+  },
   "licensing.section.typePersonal": "Personlig (gratis)",
   "@licensing.section.typePersonal": {
     "sourceHash": "4af5ca9"
