@@ -3,11 +3,13 @@ package main
 import (
 	"strings"
 	"testing"
+
+	"cmdr/scripts/release-assets/manifest"
 )
 
 func fullAssets(version string) []releaseAsset {
 	var assets []releaseAsset
-	for name, min := range expectedAssets(version, true) {
+	for name, min := range expectedAssets(manifest.For(version), true) {
 		assets = append(assets, releaseAsset{Name: name, Size: min})
 	}
 	return assets
@@ -18,7 +20,7 @@ func TestCheckAssets(t *testing.T) {
 	if len(assets) != 16 {
 		t.Fatalf("v0.55.0 shipped 16 assets, expectedAssets lists %d", len(assets))
 	}
-	if err := checkAssets(assets, "0.55.0", true); err != nil {
+	if _, err := checkAssets(assets, manifest.For("0.55.0"), true); err != nil {
 		t.Error(err)
 	}
 
@@ -28,10 +30,10 @@ func TestCheckAssets(t *testing.T) {
 			noPkg = append(noPkg, a)
 		}
 	}
-	if err := checkAssets(noPkg, "0.55.0", true); err == nil || !strings.Contains(err.Error(), "Cmdr_0.55.0_universal.pkg is missing") {
+	if _, err := checkAssets(noPkg, manifest.For("0.55.0"), true); err == nil || !strings.Contains(err.Error(), "Cmdr_0.55.0_universal.pkg is missing") {
 		t.Errorf("a missing pkg should fail by default: %v", err)
 	}
-	if err := checkAssets(noPkg, "0.55.0", false); err != nil {
+	if _, err := checkAssets(noPkg, manifest.For("0.55.0"), false); err != nil {
 		t.Errorf("-no-pkg should accept it: %v", err)
 	}
 
@@ -40,7 +42,7 @@ func TestCheckAssets(t *testing.T) {
 			assets[i].Size = 1024
 		}
 	}
-	if err := checkAssets(assets, "0.55.0", true); err == nil || !strings.Contains(err.Error(), "Cmdr_0.55.0_x64.dmg is only 1024 bytes") {
+	if _, err := checkAssets(assets, manifest.For("0.55.0"), true); err == nil || !strings.Contains(err.Error(), "Cmdr_0.55.0_x64.dmg is only 1024 bytes") {
 		t.Errorf("a truncated DMG should fail: %v", err)
 	}
 }

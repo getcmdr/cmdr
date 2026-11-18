@@ -79,6 +79,10 @@ administrative templates" (updated 2026-11-16).
 
 ## Where it ships
 
-- Lives here, in the repo, generated and committed. Nothing publishes it yet, and `/trust` doesn't link it.
-- With the first Windows release (task 53 of `docs/specs/windows-port-plan.md`): the release attaches it as one zip
-  (`cmdr-group-policy-<version>.zip`, holding this folder's layout) and `/trust#windows-policy` links the latest one.
+- Lives here, in the repo, generated and committed.
+- A Windows release attaches it as one zip, `cmdr-group-policy-<version>.zip`: the two ADMX files at the top and
+  `en-US/` with their ADMLs, this folder's docs left out, entries sorted with a fixed time so the same files always zip
+  to the same bytes (`scripts/windows-package/grouppolicy.go`, run by the release's `windows-build` job). It's a row in
+  the release asset manifest (`group-policy`), so it gets a `checksums.txt` line, a mirror copy, and a `downloads`
+  entry. Windows releases are off until David turns them on (`docs/guides/releasing.md` § Windows releases).
+- `/trust#windows-policy` links the latest zip once that section is public (task 53).

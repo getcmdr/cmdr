@@ -105,45 +105,84 @@ func TestLatestJSONRefusesAMissingFile(t *testing.T) {
 	}
 }
 
-// A Windows row reaches `platforms` and `downloads` with no code change.
-func TestLatestJSONTakesAWindowsRow(t *testing.T) {
+// windowsRelease is v0.61.0's inputs with Windows shipped: its files on the release, and every
+// signed file's `.sig` (the version-binding ones with `version:` when withVersion).
+func windowsRelease(t *testing.T, withVersion bool) latestInput {
+	t.Helper()
 	in, _ := published(t)
-	in.release = manifest.Resolve("0.61.0", append(slices.Clone(manifest.Assets), windowsRows...))
-	in.assets = append(slices.Clone(in.assets), releaseAsset{"Cmdr_0.61.0_x64-setup.exe", 5000000}, releaseAsset{"Cmdr_0.61.0_x64.msix", 6000000})
+	in.release = manifest.ForOSes("0.61.0", manifest.MacOS, manifest.Windows)
+	in.assets = append(slices.Clone(in.assets),
+		releaseAsset{Name: "Cmdr_0.61.0_x64-setup.exe", Size: 5000000, State: "uploaded"}, releaseAsset{Name: "Cmdr_0.61.0_x64.msix", Size: 6000000, State: "uploaded"},
+		releaseAsset{Name: "cmdr-group-policy-0.61.0.zip", Size: 7000, State: "uploaded"}, releaseAsset{Name: "Cmdr_0.61.0_security-advisories.json", Size: 400, State: "uploaded"})
 	in.sigDir = t.TempDir()
-	writeSigs := func(trusted string) {
-		for _, f := range in.release.Updates() {
-			sig := fakeSignature(in.trustedKeyIDs[0], "timestamp:1\tfile:"+f.Name+trusted)
-			must(t, os.WriteFile(in.sigDir+"/"+f.Signature(), []byte(sig), 0o644))
+	for _, f := range in.release.Signed() {
+		src, err := os.ReadFile(fixtureDir + "/" + f.Signature())
+		if err != nil || f.SignsVersion() {
+			trusted := "timestamp:1\tfile:" + f.Name
+			if withVersion && f.SignsVersion() {
+				trusted += "\tversion:0.61.0"
+			}
+			src = []byte(fakeSignature(in.trustedKeyIDs[0], trusted))
 		}
+		must(t, os.WriteFile(in.sigDir+"/"+f.Signature(), src, 0o644))
 	}
+	return in
+}
+
+// Windows' rows reach `platforms`, `downloads`, and `securityAdvisories` with no code change.
+func TestLatestJSONTakesTheWindowsRows(t *testing.T) {
 	// Signed without `--app-version`, the Windows installer would be refused by every install.
-	writeSigs("")
-	if _, err := buildLatest(in); err == nil || !strings.Contains(err.Error(), "Cmdr_0.61.0_x64-setup.exe's signature doesn't name version 0.61.0") {
+	if _, err := buildLatest(windowsRelease(t, false)); err == nil || !strings.Contains(err.Error(), "Cmdr_0.61.0_x64-setup.exe's signature doesn't name version 0.61.0") {
 		t.Fatalf("a Windows payload signed without its version gave a latest.json (%v)", err)
 	}
-	writeSigs("\tversion:0.61.0")
+	in := windowsRelease(t, true)
 	got, err := buildLatest(in)
 	must(t, err)
 	var m struct {
-		Platforms map[string]struct{ URL string }   `json:"platforms"`
-		Downloads []struct{ OS, Kind, File string } `json:"downloads"`
+		Platforms          map[string]struct{ URL string }   `json:"platforms"`
+		Downloads          []struct{ OS, Kind, File string } `json:"downloads"`
+		SecurityAdvisories struct{ URL, Signature string }   `json:"securityAdvisories"`
 	}
 	must(t, json.Unmarshal([]byte(got), &m))
 	if m.Platforms["windows-x86_64"].URL != "https://download.getcmdr.com/v0.61.0/Cmdr_0.61.0_x64-setup.exe" {
 		t.Errorf("platforms = %+v", m.Platforms)
 	}
-	if !slices.ContainsFunc(m.Downloads, func(d struct{ OS, Kind, File string }) bool {
-		return d.OS == "windows" && d.Kind == "msix" && d.File == "Cmdr_0.61.0_x64.msix"
-	}) {
-		t.Errorf("downloads = %+v", m.Downloads)
+	for _, want := range []struct{ kind, file string }{{"msix", "Cmdr_0.61.0_x64.msix"}, {"group-policy", "cmdr-group-policy-0.61.0.zip"}} {
+		if !slices.ContainsFunc(m.Downloads, func(d struct{ OS, Kind, File string }) bool {
+			return d.OS == "windows" && d.Kind == want.kind && d.File == want.file
+		}) {
+			t.Errorf("downloads = %+v, want %s", m.Downloads, want.file)
+		}
+	}
+	sig, err := os.ReadFile(in.sigDir + "/Cmdr_0.61.0_security-advisories.json.sig")
+	must(t, err)
+	if m.SecurityAdvisories.URL != "https://download.getcmdr.com/v0.61.0/Cmdr_0.61.0_security-advisories.json" || m.SecurityAdvisories.Signature != strings.TrimSpace(string(sig)) {
+		t.Errorf("securityAdvisories = %+v", m.SecurityAdvisories)
+	}
+	// The member comes last, so everything before it is what a macOS-only release prints.
+	if !strings.HasSuffix(got, "\"\n  }\n}\n") || strings.Index(got, `"securityAdvisories"`) < strings.Index(got, `"downloads"`) {
+		t.Errorf("securityAdvisories isn't the last member:\n%s", got)
 	}
 }
 
-var windowsRows = []manifest.Asset{
-	{OS: manifest.Windows, Arch: manifest.X86_64, Kind: manifest.NSIS, File: "Cmdr_{version}_x64-setup.exe", UpdaterKey: "windows-x86_64", Targets: []string{"x86_64-pc-windows-msvc"}},
-	{OS: manifest.Windows, Arch: manifest.X86_64, Kind: manifest.MSIX, File: "Cmdr_{version}_x64.msix", Targets: []string{"x86_64-pc-windows-msvc"}},
-	{OS: manifest.Windows, Arch: manifest.X86_64, Kind: manifest.RustSBOM, File: "Cmdr_{version}_windows_x64.rust.cdx.json", Targets: []string{"x86_64-pc-windows-msvc"}},
+// A release that ships the advisory list can't leave it out of `latest.json`, or point it at
+// another file: Windows and Linux installs would hear of no advisory.
+func TestValidateLatestHoldsTheAdvisoryEntryToTheList(t *testing.T) {
+	in := windowsRelease(t, true)
+	got, err := buildLatest(in)
+	must(t, err)
+	var doc map[string]json.RawMessage
+	must(t, json.Unmarshal([]byte(got), &doc))
+	delete(doc, "securityAdvisories")
+	without, err := json.Marshal(doc)
+	must(t, err)
+	if err := validateLatest(without, in.rules()); err == nil || !strings.Contains(err.Error(), `no "securityAdvisories"`) {
+		t.Errorf("a manifest without the release's advisory list passed: %v", err)
+	}
+	moved := strings.Replace(got, "Cmdr_0.61.0_security-advisories.json\"", "Cmdr_0.61.0_x64.msix\"", 1)
+	if err := validateLatest([]byte(moved), in.rules()); err == nil || !strings.Contains(err.Error(), "the release's advisory list is Cmdr_0.61.0_security-advisories.json") {
+		t.Errorf("an advisory entry naming another file passed: %v", err)
+	}
 }
 
 // writeString prints what `jq -Rs .` prints for every ASCII character, the line separators Go's

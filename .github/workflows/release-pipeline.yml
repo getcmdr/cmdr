@@ -49,6 +49,12 @@ jobs:
       # job below works from one list of what this release publishes.
       update-archives: ${{ steps.assets.outputs.update-archives }}
       update-archives-macos: ${{ steps.assets.outputs.update-archives-macos }}
+      update-archives-windows: ${{ steps.assets.outputs.update-archives-windows }}
+      signed-files: ${{ steps.assets.outputs.signed-files }}
+      # `true` once `scripts/release-assets/manifest/manifest.go`'s `ShippedOSes` names Windows,
+      # the one switch that turns the Windows jobs on (`docs/guides/releasing.md` § Windows releases).
+      ships-windows: ${{ steps.assets.outputs.ships-windows }}
+      uploads-windows: ${{ steps.assets.outputs.uploads-windows }}
       binaries: ${{ steps.assets.outputs.binaries }}
       rust-sboms: ${{ steps.assets.outputs.rust-sboms }}
       frontend-sbom: ${{ steps.assets.outputs.frontend-sbom }}
@@ -56,6 +62,8 @@ jobs:
       sbom-macos-aarch64-subjects: ${{ steps.assets.outputs.sbom-macos-aarch64-subjects }}
       sbom-macos-x86_64: ${{ steps.assets.outputs.sbom-macos-x86_64 }}
       sbom-macos-x86_64-subjects: ${{ steps.assets.outputs.sbom-macos-x86_64-subjects }}
+      sbom-windows-x86_64: ${{ steps.assets.outputs.sbom-windows-x86_64 }}
+      sbom-windows-x86_64-subjects: ${{ steps.assets.outputs.sbom-windows-x86_64-subjects }}
       sbom-frontend: ${{ steps.assets.outputs.sbom-frontend }}
       sbom-frontend-subjects: ${{ steps.assets.outputs.sbom-frontend-subjects }}
       # The live manifest's version, which `publish`'s validator holds the new one above; empty
@@ -143,15 +151,16 @@ jobs:
       # Every file this release publishes, from the release asset manifest
       # (`scripts/release-assets/manifest/manifest.go`), as the outputs above. It fails when the
       # manifest has an update payload for an OS `vet-update-archives` can't vet, or an SBOM the
-      # `attest` job has no step for: change `-vetted` and `-attested` with those jobs.
+      # `attest` job has no step for: change `-vetted` and `-attested` with those jobs. Both are
+      # held to every row, shipped or not, so Windows' steps stay wired while it's off.
       # `docs/guides/releasing.md` § The release asset manifest.
       - name: Plan the release assets
         id: assets
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          ./scripts/release-assets.sh plan -version "${TAG#v}" -vetted macos \
-            -attested "macos-aarch64 macos-x86_64 frontend" -subject-dir release-assets
+          ./scripts/release-assets.sh plan -version "${TAG#v}" -vetted "macos windows" \
+            -attested "macos-aarch64 macos-x86_64 frontend windows-x86_64" -subject-dir release-assets
 
       - name: Require write access to the EU download bucket
         env:
@@ -920,6 +929,333 @@ jobs:
           echo "::error::The installer package didn't reach the draft (see the failed pkg step above), so this run stays red and release-finish.sh won't sign. Fix it, then re-run the failed jobs: docs/guides/releasing.md § The installer package."
           exit 1
 
+  # The Windows release, built once and packaged three ways from that one `Cmdr.exe`: the NSIS
+  # installer (the website's "Run anyway" download and the Windows updater's payload), the
+  # Microsoft Store MSIX (unsigned; the Store signs it), and the Group Policy template zip. Off
+  # until `ShippedOSes` in `scripts/release-assets/manifest/manifest.go` names Windows, which is
+  # David's call: `docs/guides/releasing.md` § Windows releases has what that waits on.
+  #
+  # Split like macOS's `compile` and `sign` (§ How a release build is split): this job runs every
+  # build hook and holds no secret. Nothing in its packaging signs, so the NSIS bundle and the
+  # MSIX are made here too, and `windows-publish` only signs the updater payload and uploads.
+  # ❌ Don't give this job a secret or the `release` environment.
+  #
+  # The Windows leg (this job, `windows-publish`, `windows-attest`) never holds or fails the macOS
+  # release: no macOS job needs it, each is `continue-on-error`, and the release carries the leg only
+  # if it's whole when its contents are fixed (`publish`'s snapshot in `ci` mode, the laptop's
+  # signing in `local` mode), else ships macOS alone with a warning naming what was missing
+  # (`scripts/release-assets/manifest/legs.go`, `docs/guides/releasing.md` § Windows releases).
+  windows-build:
+    name: Build the Windows packages
+    needs: [guard, ci-gate, draft]
+    continue-on-error: true
+    # Gated like `compile`, plus the manifest's switch.
+    if: >-
+      !cancelled() && needs.guard.result == 'success' && needs.guard.outputs.ships-windows == 'true' && (
+        (needs.guard.outputs.update-signing == 'ci' && needs.ci-gate.result == 'success' && needs.draft.result == 'skipped') ||
+        (needs.guard.outputs.update-signing == 'local' && needs.draft.result == 'success'))
+    # Pinned to the image like macOS's `runs-on`: the image carries the MSVC toolset and the
+    # Windows SDK the binary links against, which `windows-latest` would move unannounced.
+    runs-on: windows-2025
+    # A cold release compile: the 2-core Windows 10 builder took about two hours for the first one
+    # (`docs/notes/windows-port/build-progress.md`); a hosted runner has twice the cores, and the
+    # first real run sets this properly.
+    timeout-minutes: 150
+    permissions:
+      contents: read
+    # `continue-on-error` makes a red run of this job report `success` to the jobs that need it, so
+    # `windows-publish` gates on this, which only the last step sets, never on the result.
+    outputs:
+      built: ${{ steps.built.outputs.built }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Same as the Windows lane: the tree's bytes match every other OS's, and a nested
+      # `target/` path passes Windows' old 260-character limit.
+      - name: Keep the tree's line endings, allow long paths
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.longpaths true
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # Not binaryen (`.mise.toml`'s wasm tool, which only the browser demo uses).
+      - name: Install Go, Node, and pnpm with mise
+        uses: ./.github/actions/install-mise
+        with:
+          install_args: go node pnpm
+
+      # The pinned channel, minimal: `rust-toolchain.toml` would also pull its Apple and wasm
+      # targets, none of which this build uses (the Windows lane does the same).
+      - name: Install the pinned Rust toolchain
+        run: |
+          channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' rust-toolchain.toml)
+          [ -n "$channel" ] || { echo "::error::Couldn't read the pinned channel from rust-toolchain.toml."; exit 1; }
+          rustup toolchain install "$channel" --profile minimal
+          echo "RUSTUP_TOOLCHAIN=$channel" >> "$GITHUB_ENV"
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./apps/desktop
+
+      - name: Generate SvelteKit types
+        run: pnpm exec svelte-kit sync
+        working-directory: ./apps/desktop
+
+      - name: Compile the frontend and the app
+        run: pnpm tauri build --no-bundle --target x86_64-pc-windows-msvc
+        working-directory: ./apps/desktop
+
+      # `tauri bundle` stamps its bundle type into the exe it installs, and an NSIS-stamped exe would
+      # run the NSIS updater inside the Store's package. So the MSIX gets this copy, from before the
+      # bundler ran: unstamped, its updater stays off and the Store updates it (D3). tauri-cli 2.12
+      # stamps a copy and leaves this file alone, but nothing promises that; `windows-package msix`
+      # refuses a stamped exe either way.
+      - name: Keep the unbundled exe for the Store package
+        run: |
+          mkdir -p "$RUNNER_TEMP/unbundled"
+          cp target/x86_64-pc-windows-msvc/release/Cmdr.exe "$RUNNER_TEMP/unbundled/Cmdr.exe"
+
+      # `tauri.windows.conf.json` makes no updater artifact: the updater's signature must name the
+      # version (`--app-version`), which `windows-publish` writes. No signing material is here.
+      - name: Bundle the NSIS installer
+        run: pnpm exec tauri bundle --bundles nsis --target x86_64-pc-windows-msvc
+        working-directory: ./apps/desktop
+
+      # Microsoft's winapp CLI, the plan's MSIX packager, pinned to a release and its SHA-256
+      # (`winappcli-x64.zip` of v0.8.0, from the release's asset digest, 2026-11-18).
+      - name: Install the winapp CLI
+        uses: microsoft/setup-WinAppCli@9288bd0729bd3f71e2ed1b9eb247dc91470b824e # v0.3.0
+        with:
+          version: v0.8.0
+          sha256: 67a8e1d39421a5ef5309c7017327c6a70ea6215a0e56e47ec22a7e9ec3b914e6
+
+      # Every file this job hands on, under its published name (`guard`'s `uploads-windows`). The
+      # advisory list isn't one: `windows-publish` takes it from its own checkout, so the updater key
+      # never signs bytes this job chose. The MSIX takes Partner Center's identity from
+      # `apps/desktop/packaging/msix/identity.json`, and fails here while that's a placeholder.
+      - name: Make the Store package and the policy template
+        env:
+          TAG: ${{ github.ref_name }}
+          UPLOADS: ${{ needs.guard.outputs.uploads-windows }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          OUT="$RUNNER_TEMP/windows-x86_64"
+          mkdir -p "$OUT"
+          cp "target/x86_64-pc-windows-msvc/release/bundle/nsis/Cmdr_${VERSION}_x64-setup.exe" "$OUT/"
+          ./scripts/windows-package.sh msix -version "$VERSION" -exe "$RUNNER_TEMP/unbundled/Cmdr.exe" \
+            -out "$OUT/Cmdr_${VERSION}_x64.msix"
+          ./scripts/windows-package.sh group-policy -version "$VERSION" -out "$OUT/cmdr-group-policy-${VERSION}.zip"
+          ./scripts/release-nsis.sh -version "$VERSION" "$OUT/Cmdr_${VERSION}_x64-setup.exe"
+          # Exactly the planned files, so a renamed bundler output fails here, early. This is only a
+          # convenience: `windows-publish` holds the artifact to the manifest itself (`stage`).
+          # shellcheck disable=SC2086 # the plan's space-separated names
+          WANT=$(printf '%s\n' $UPLOADS | sort)
+          GOT=$(find "$OUT" -mindepth 1 -maxdepth 1 -exec basename {} \; | sort)
+          # shellcheck disable=SC2086 # one line per name, joined for the message
+          [ "$WANT" = "$GOT" ] || { echo "::error::Made $(printf '%s ' $GOT), planned $(printf '%s ' $WANT)."; exit 1; }
+          ls -l "$OUT"
+
+      - name: Hand the Windows packages to the publish job
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: windows-x86_64
+          path: ${{ runner.temp }}/windows-x86_64
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Mark the build whole
+        id: built
+        run: echo "built=true" >> "$GITHUB_OUTPUT"
+
+  # Puts the Windows files on the release, and in `ci` mode signs the updater payload and the
+  # advisory list first, in the `release` environment for the updater key. The build job's artifact
+  # is its word only: this job takes from it exactly the files the release asset manifest names for
+  # Windows at this version (`release-assets.sh stage`, refusing anything else by name), writes the
+  # advisory list from its own checkout, vets the installer, and signs and uploads those names alone,
+  # the way `sign` takes exactly one `Cmdr` from each `compiled-*` artifact. It runs the Tauri signer,
+  # `gh`, and our Go (memory-safe, no cgo; Go builds run no build hooks), nothing from the build. The
+  # Go's modules from outside the repo: `golang.org/x/crypto` (the signature check) and
+  # `github.com/ulikunitz/xz` (reading the installer's LZMA payload, before the key step). After macOS's `sign`, which creates the
+  # release in `ci` mode (`local` mode's `draft` made it already). In `local` mode it uploads no
+  # `.sig`: `release-finish.sh` signs the Windows files on the laptop.
+  windows-publish:
+    name: Sign and upload the Windows packages
+    needs: [guard, windows-build, sign]
+    continue-on-error: true # the Windows leg never fails the release (`windows-build`)
+    # `windows-build`'s `built`, never its result: `continue-on-error` reports a red run as `success`.
+    if: >-
+      !cancelled() && needs.guard.result == 'success' && needs.windows-build.outputs.built == 'true' &&
+      needs.sign.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: write # upload the Windows files to the release
+    outputs:
+      # The files this job put on the release, set only once every upload passed its digest check,
+      # which `windows-attest` gates on and attests (this job's result can't gate: `continue-on-error`).
+      published: ${{ steps.upload.outputs.published }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Install mise
+        uses: ./.github/actions/install-mise
+        with:
+          install_args: go node pnpm
+
+      - name: Install the Tauri CLI
+        # As in `sign`: the desktop app's packages with no install scripts; only the Tauri CLI runs.
+        run: pnpm install --frozen-lockfile --ignore-scripts --filter @cmdr/desktop
+
+      - name: Fetch the Windows packages
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: windows-x86_64
+          path: ${{ runner.temp }}/windows-artifact
+
+      # Everything below reads the staged copy and the names this step outputs, never the artifact.
+      - name: Take exactly the planned Windows files
+        id: stage
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          ./scripts/release-assets.sh stage -version "${TAG#v}" -os windows -from "$RUNNER_TEMP/windows-artifact" \
+            -advisories apps/desktop/src-tauri/resources/security-advisories.json -out "$RUNNER_TEMP/windows-x86_64"
+
+      # The installer the updater would run must be this release's (`scripts/release-nsis/nsis/nsis.go`):
+      # its own version resource, the app it packs (version and publisher), and its uninstall entry,
+      # read without running it. Checked here, on the bytes this job signs and uploads, before any
+      # key is in reach.
+      - name: Vet the Windows installer
+        env:
+          TAG: ${{ github.ref_name }}
+          INSTALLERS: ${{ needs.guard.outputs.update-archives-windows }}
+        run: |
+          set -euo pipefail
+          paths=()
+          for name in $INSTALLERS; do paths+=("$RUNNER_TEMP/windows-x86_64/$name"); done
+          ./scripts/release-nsis.sh -version "${TAG#v}" "${paths[@]}"
+
+      # In `ci` mode, each signed file `stage` named, with the updater key; the installer with
+      # `--app-version`, since off macOS the updater binds the version to the signature.
+      - name: Sign the updater payload and the advisory list
+        if: needs.guard.outputs.update-signing == 'ci'
+        working-directory: ./apps/desktop
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAG: ${{ github.ref_name }}
+          SIGNED: ${{ steps.stage.outputs.signed }}
+          SIGNS_VERSION: ${{ steps.stage.outputs.signs-version }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          DIR="$RUNNER_TEMP/windows-x86_64"
+          [ -n "$SIGNED" ] || { echo "::error::stage named no file to sign."; exit 1; }
+          for name in $SIGNED; do
+            args=()
+            case " $SIGNS_VERSION " in *" $name "*) args=(--app-version "$VERSION") ;; esac
+            pnpm exec tauri signer sign "${args[@]}" "$DIR/$name"
+            [ -s "$DIR/$name.sig" ] || { echo "::error::No signature for $name."; exit 1; }
+          done
+
+      # Each new signature must verify against a key the app ships (the main or the offline backup
+      # one) with the app's own minisign check, `version:` field included, before it goes up: the
+      # check `release-finish.sh` runs on the laptop's signatures and `publish` runs on a dispatch's.
+      # After the signing step, so the key is already out of every environment; `release-finish`'s
+      # one module outside the repo is `golang.org/x/crypto`.
+      - name: Verify the new signatures against the app's trusted keys
+        if: needs.guard.outputs.update-signing == 'ci'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: ./scripts/release-finish.sh -verify-dir "$RUNNER_TEMP/windows-x86_64" -leg windows "${TAG#v}"
+
+      # The staged names and, in `ci` mode, their signatures: nothing else, so `--clobber` (which
+      # replaces a half-saved asset on a retry) only ever touches this job's own files. The
+      # signatures go up last, each after every file's digest check passed, and `publish` takes the
+      # leg only with them, so a leg it counts is one whose bytes are the ones signed.
+      - name: Upload the Windows packages to the release
+        id: upload
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          MODE: ${{ needs.guard.outputs.update-signing }}
+          FILES: ${{ steps.stage.outputs.files }}
+          SIGNED: ${{ steps.stage.outputs.signed }}
+        run: |
+          set -euo pipefail
+          FOUND=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq '.[] | select(.tag_name == env.TAG) | "\(.id) \(.draft)"')
+          [ "$(printf '%s' "$FOUND" | grep -c .)" = 1 ] || { echo "::error::Expected one release for $TAG, found: $FOUND"; exit 1; }
+          read -r RELEASE_ID IS_DRAFT <<< "$FOUND"
+          if [ "$MODE" = local ] && [ "$IS_DRAFT" != true ]; then
+            echo "::error::$TAG's release is published, but local signing builds into a draft."
+            exit 1
+          fi
+          # Once `publish` has written `latest.json`, the release's legs are fixed (a re-run keeps
+          # them), so a leg arriving after that would sit on the release unreferenced.
+          HAVE=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq '.assets[].name')
+          if grep -qxF latest.json <<< "$HAVE"; then
+            echo "::error::$TAG went out without its Windows files: publish wrote latest.json before this job finished. Windows installs get the next release; docs/guides/releasing.md § Windows releases."
+            exit 1
+          fi
+          DIR="$RUNNER_TEMP/windows-x86_64"
+          paths=()
+          for name in $FILES; do paths+=("$DIR/$name"); done
+          if [ "$MODE" = ci ]; then
+            for name in $SIGNED; do paths+=("$DIR/$name.sig"); done
+          fi
+          ./scripts/release-upload.sh "$TAG" "$RELEASE_ID" "${paths[@]}"
+          echo "published=$FILES" >> "$GITHUB_OUTPUT"
+
+  # Build provenance for the Windows files as published, as soon as they're up, so `local` mode's
+  # laptop can verify them without `attest` (which no Windows job holds) waiting for the leg. In `ci`
+  # mode `attest` attests every asset again after `publish`; the two agree. Its own job, like
+  # `attest`: the one that mints a signing identity runs nothing from the build and holds no key.
+  windows-attest:
+    name: Attest the Windows packages
+    needs: [guard, windows-publish]
+    continue-on-error: true # the Windows leg never fails the release (`windows-build`)
+    # `windows-publish`'s `published`, set only once every upload checked out, never its result.
+    if: ${{ !cancelled() && needs.guard.result == 'success' && needs.windows-publish.outputs.published != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # read the draft release in `local` mode: a read-only token can't see drafts
+      id-token: write # request the short-lived Sigstore signing certificate
+      attestations: write # store the attestations on the repository
+
+    steps:
+      - name: Download the Windows files as published
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          FILES: ${{ needs.windows-publish.outputs.published }}
+        run: |
+          set -euo pipefail
+          [ -n "$FILES" ] || { echo "::error::windows-publish named no files."; exit 1; }
+          for name in $FILES; do
+            gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "$name" -D windows-assets
+          done
+          ls -l windows-assets
+
+      - name: Attest build provenance for the Windows files
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: windows-assets/*
+
   # CycloneDX SBOMs for what ships inside the app: the Rust crate graph (one per arch, since
   # the two target triples resolve slightly different crates) and the frontend's npm packages.
   # The `attest` job attaches them to the release and signs them.
@@ -1080,6 +1416,29 @@ jobs:
           done
           ls -l "$RUNNER_TEMP/archives"
 
+      # Also before the cargo build, for the same reason: the token stays out of its reach. A second
+      # look at the installer `windows-publish` vetted before signing, as published, when it's on the
+      # release by now: the Windows leg never holds this job (it may still be building, or the release
+      # may ship without it), so its absence is a line here, not a failure.
+      - name: Download the Windows update payloads
+        if: needs.guard.outputs.ships-windows == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          ARCHIVES: ${{ needs.guard.outputs.update-archives-windows }}
+        run: |
+          set -euo pipefail
+          [ -n "$ARCHIVES" ] || { echo "::error::guard's plan names no Windows update payloads."; exit 1; }
+          HAVE=$(gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')
+          for name in $ARCHIVES; do
+              if ! grep -qxF "$name" <<< "$HAVE"; then
+                  echo "::notice::$name isn't on the release (yet), so this run doesn't vet the Windows leg; windows-publish vetted it before signing."
+                  rm -rf "$RUNNER_TEMP/windows"
+                  exit 0
+              fi
+              gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "$name" -D "$RUNNER_TEMP/windows"
+          done
+
       # The runner image's rustup syncs the toolchain `rust-toolchain.toml` pins on the first call.
       - name: Run the updater's own check on each archive
         env:
@@ -1092,6 +1451,27 @@ jobs:
           for name in $ARCHIVES; do paths+=("$RUNNER_TEMP/archives/$name"); done
           cargo run --quiet --release --locked -p cmdr-update-trust --bin cmdr-vet-update -- \
               --version "$VERSION" "${paths[@]}"
+
+      # The Windows installer the updater would run must be this release's: its version resource,
+      # the app it packs, and its uninstall entry name the version its signature does
+      # (`scripts/release-nsis/nsis/nsis.go`).
+      - name: Install Go for the Windows check
+        if: needs.guard.outputs.ships-windows == 'true'
+        uses: ./.github/actions/install-mise
+        with:
+          install_args: go
+
+      - name: Check each Windows installer's version
+        if: needs.guard.outputs.ships-windows == 'true'
+        env:
+          TAG: ${{ github.ref_name }}
+          ARCHIVES: ${{ needs.guard.outputs.update-archives-windows }}
+        run: |
+          set -euo pipefail
+          [ -d "$RUNNER_TEMP/windows" ] || { echo "No Windows installer on the release to vet."; exit 0; }
+          paths=()
+          for name in $ARCHIVES; do paths+=("$RUNNER_TEMP/windows/$name"); done
+          ./scripts/release-nsis.sh -version "${TAG#v}" "${paths[@]}"
 
   # The browser demo getcmdr.com serves at /demo/, built from the tagged sources: `pnpm build:demo`,
   # the website built around it with the full demo suite run against it (`website-demo-e2e`), and
@@ -1269,6 +1649,8 @@ jobs:
     # `ci-gate` (a green full CI run and CodeQL on the tagged commit), `vet-update-archives`, and
     # `demo` (the attested browser demo image the website deploy below ships) are hard
     # requirements. `sign` puts the pkg (if any) on the release before the checksums are taken.
+    # No Windows job: the release takes the Windows leg only if it's whole when "Generate
+    # latest.json" looks (`windows-build`'s comment), so Windows never holds or fails it.
     needs: [guard, ci-gate, sign, vet-update-archives, demo, manifest-readers]
     if: >-
       !cancelled() && needs.guard.result == 'success' && needs.ci-gate.result == 'success' &&
@@ -1287,13 +1669,14 @@ jobs:
       - name: Download signatures from release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ARCHIVES: ${{ needs.guard.outputs.update-archives }}
+          ARCHIVES: ${{ needs.guard.outputs.signed-files }}
         run: |
           TAG="${{ github.ref_name }}"
           mkdir -p /tmp/signatures
           gh release download "$TAG" -p "Cmdr_*.sig" -D /tmp/signatures
 
-          # Every update payload in the release asset manifest (`guard`'s plan) needs its `.sig`.
+          # Every signed file in the release asset manifest (`guard`'s plan: the update payloads,
+          # and the advisory list once Windows ships) needs its `.sig`.
           # `gh` writes each file under the release asset's own name, so these are the names on
           # disk too.
           for name in $ARCHIVES; do
@@ -1325,15 +1708,21 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ARCHIVES: ${{ needs.guard.outputs.update-archives }}
+          ARCHIVES: ${{ needs.guard.outputs.signed-files }}
         run: |
           set -euo pipefail
           TAG="${{ github.ref_name }}"
           VERSION="${TAG#v}"
           mkdir -p /tmp/verify
-          for name in $ARCHIVES; do
-              cp "/tmp/signatures/$name.sig" /tmp/verify/
+          # Every signature on the release with its file: the core's (`-verify-dir` requires each of
+          # `$ARCHIVES`) and a Windows leg's the laptop signed, which it verifies when they're there.
+          for sig in /tmp/signatures/*.sig; do
+              name=$(basename "$sig" .sig)
+              cp "$sig" /tmp/verify/
               gh release download "$TAG" -p "$name" -D /tmp/verify
+          done
+          for name in $ARCHIVES; do
+              [ -f "/tmp/verify/$name" ] || { echo "::error::No $name to verify."; exit 1; }
           done
           ./scripts/release-finish.sh -verify-dir /tmp/verify "$VERSION"
 
@@ -1351,15 +1740,35 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LIVE_VERSION: ${{ needs.guard.outputs.live-version }}
+          SHIPS_WINDOWS: ${{ needs.guard.outputs.ships-windows }}
         run: |
           set -euo pipefail
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
           TAG="${{ github.ref_name }}"
 
-          # The release as GitHub has it now: the sizes for `downloads` and `dmgSizes`.
+          # The release as GitHub has it now: the sizes for `downloads` and `dmgSizes`, and the one
+          # look that fixes which legs it carries (`scripts/release-assets/manifest/legs.go`): a leg
+          # whole in this snapshot, signatures included, ships; one that isn't (the Windows jobs
+          # still going, or red) is left out with a warning. The signatures are fetched again after
+          # it, so every one the snapshot lists is on disk.
           RELEASE_JSON=$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")
           printf '%s\n' "$RELEASE_JSON" > /tmp/release.json
+          gh release download "$TAG" -p "Cmdr_*.sig" -D /tmp/signatures --clobber
+
+          # A re-run of a release with legs keeps the legs of the latest.json an earlier attempt put
+          # up, when that file is whole and passes the validator (`-previous`; a damaged one gets a
+          # warning and the snapshot decides): the mirror's files are immutable, so legs once
+          # mirrored don't change. A macOS-only release reads none, and overwrites a damaged one.
+          CARRIED=()
+          if [ "$SHIPS_WINDOWS" = true ] && jq -e '.assets[] | select(.name == "latest.json" and .state == "uploaded")' /tmp/release.json > /dev/null; then
+            rm -rf /tmp/carried && mkdir -p /tmp/carried
+            if gh release download "$TAG" -p latest.json -D /tmp/carried; then
+              CARRIED=(-previous /tmp/carried/latest.json)
+            else
+              echo "::warning::The latest.json an earlier attempt uploaded didn't download, so the release as it stands decides its legs."
+            fi
+          fi
 
           # The EU mirror (`scripts/release-mirror.sh`, run below before the release goes Latest).
           # Older installs follow any HTTPS URL here: no shipped updater checks the host.
@@ -1378,7 +1787,7 @@ jobs:
           # where a drifted name fails, while nothing has shipped.
           ./scripts/release-assets.sh latest-json -version "$VERSION" -assets /tmp/release.json \
             -sigs /tmp/signatures -notes /tmp/notes.txt -base-url "$BASE_URL" \
-            -pub-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" -newer-than "$LIVE_VERSION" -out /tmp/latest.json
+            -pub-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" -newer-than "$LIVE_VERSION" ${CARRIED[@]+"${CARRIED[@]}"} -out /tmp/latest.json
 
       - name: Download the update manifest's readers
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -1418,7 +1827,7 @@ jobs:
               || { echo "::error::The release serves a latest.json that differs from the one that passed the gate."; exit 1; }
           ./scripts/release-assets.sh validate-latest -version "${TAG#v}" -assets /tmp/release.json \
             -sigs /tmp/signatures -base-url "https://download.getcmdr.com/$TAG" \
-            -newer-than "$LIVE_VERSION" -file /tmp/readback/latest.json
+            -newer-than "$LIVE_VERSION" -carried-by /tmp/latest.json -file /tmp/readback/latest.json
           manifest-gate/cmdr-check-update-manifest /tmp/readback/latest.json
 
       # The only way someone who clicks Download on the website can check what they got. The
@@ -1437,9 +1846,10 @@ jobs:
           rm -rf /tmp/checksums && mkdir -p /tmp/checksums
           # Every download in the release asset manifest: the required ones (a missing one fails
           # here) and the optional ones the release has (the pkg, which `sign` skips without its
-          # certificate).
+          # certificate), of the legs `latest.json` carries.
           gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json assets > /tmp/assets.json
-          FILES=$(./scripts/release-assets.sh checksum-files -version "$VERSION" -assets /tmp/assets.json)
+          FILES=$(./scripts/release-assets.sh checksum-files -version "$VERSION" -assets /tmp/assets.json \
+            -carried-by /tmp/latest.json)
           EXPECTED=0
           for name in $FILES; do
               gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "$name" -D /tmp/checksums
@@ -1529,6 +1939,8 @@ jobs:
     name: Attest provenance and publish SBOMs
     # In `local` mode the tag push's run attests the pkg along with the rest of the draft: `sign`
     # uploads it.
+    # No Windows job: `windows-attest` attests the Windows files as soon as they're up, so the laptop
+    # never waits on the leg here.
     needs: [guard, sign, publish, sbom]
     if: >-
       !cancelled() && (needs.publish.result == 'success' || (
@@ -1632,6 +2044,13 @@ jobs:
         with:
           sbom-path: sbom/${{ needs.guard.outputs.sbom-macos-x86_64 }}
           subject-path: ${{ needs.guard.outputs.sbom-macos-x86_64-subjects }}
+
+      - name: Attest the Windows Rust SBOM
+        if: ${{ needs.sbom.result == 'success' && needs.guard.outputs.ships-windows == 'true' }}
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          sbom-path: sbom/${{ needs.guard.outputs.sbom-windows-x86_64 }}
+          subject-path: ${{ needs.guard.outputs.sbom-windows-x86_64-subjects }}
 
       - name: Attest the frontend SBOM
         if: ${{ needs.sbom.result == 'success' }}

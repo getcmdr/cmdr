@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"cmdr/scripts/release-assets/manifest"
 )
 
 func mirror(cfg config, b bucket) error {
@@ -17,7 +19,19 @@ func mirror(cfg config, b bucket) error {
 	if err != nil {
 		return err
 	}
-	files, err := mirroredAssets(names, cfg.version)
+	// The legs the `latest.json` being mirrored carries, or without one, the ones whole on the
+	// release (`manifest.Release.CarriedWhole`).
+	var body []byte
+	if cfg.manifest != "" {
+		if body, err = os.ReadFile(cfg.manifest); err != nil {
+			return err
+		}
+	}
+	r, err := carried(manifest.For(cfg.version), names, body)
+	if err != nil {
+		return err
+	}
+	files, err := mirroredAssets(names, r)
 	if err != nil {
 		return err
 	}
@@ -49,12 +63,8 @@ func mirror(cfg config, b bucket) error {
 		fmt.Printf("Verified %s\n", url)
 	}
 
-	if cfg.manifest != "" {
-		body, err := os.ReadFile(cfg.manifest)
-		if err != nil {
-			return err
-		}
-		if err := checkManifest(body, cfg.version, cfg.host); err != nil {
+	if body != nil {
+		if err := checkManifest(body, r, cfg.host); err != nil {
 			return err
 		}
 		fmt.Printf("%s names only mirrored archives.\n", cfg.manifest)

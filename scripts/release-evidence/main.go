@@ -41,6 +41,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"cmdr/scripts/release-assets/manifest"
 )
 
 // repo is GitHub's current name for this repo (`gh repo view`), set in `main`. A release built
@@ -216,7 +218,8 @@ func verifyRelease(cfg config) error {
 	if rel.IsDraft {
 		return fmt.Errorf("%s is still a draft. In `local` mode, `release-finish.sh` publishes it", cfg.tag)
 	}
-	if err := checkAssets(rel.Assets, cfg.version, cfg.withPkg); err != nil {
+	expected, err := checkAssets(rel.Assets, manifest.For(cfg.version), cfg.withPkg)
+	if err != nil {
 		return err
 	}
 	for _, a := range rel.Assets {
@@ -224,7 +227,7 @@ func verifyRelease(cfg config) error {
 			ok("%s (%s bytes)", a.Name, groupThousands(a.Size))
 		}
 	}
-	ok("all %d expected assets are there", len(expectedAssets(cfg.version, cfg.withPkg)))
+	ok("all %d expected assets are there", expected)
 	return nil
 }
 

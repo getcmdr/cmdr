@@ -14,7 +14,11 @@ type output struct {
 }
 
 type planInput struct {
+	// release is what this release publishes (`manifest.For`); every output comes from it.
 	release manifest.Release
+	// wiring is every row, shipped or not (`manifest.All`), which `vetted` and `attested` are
+	// held to: a platform's vetting and attest steps are in place before it ships.
+	wiring manifest.Release
 	// vetted are the OSes `vet-update-archives` can vet. An update payload for any other OS
 	// fails the plan: an archive nobody vetted must not reach `latest.json`.
 	vetted []manifest.OS
@@ -28,31 +32,30 @@ type planInput struct {
 // plan turns the manifest into the release pipeline's step outputs, made once in `guard` so the
 // jobs after it need no Go and agree on one list:
 //
-//   - `update-archives`: every update payload, space-separated (`publish` checks their
-//     signatures; `release-finish` signs the same list).
+//   - `update-archives`: the core's update payloads (`manifest.Release.Core`: macOS's),
+//     space-separated.
+//   - `signed-files`: the core's files with a `.sig`, which `publish` requires the signatures of.
+//     A leg's (`manifest/legs.go`) are its own job's, and the release carries the leg only whole.
 //   - `update-archives-<os>`: one OS's update payloads, for that OS's vetting.
-//   - `binaries`: every required build of the app, which `attest` refuses to go without.
+//   - `ships-<os>`: `true` or `false` for each OS beyond macOS, which gates that OS's jobs, and
+//     `uploads-<os>` (a shipped OS only): the files its build job puts on the release.
+//   - `binaries`: every required core build of the app, which `attest` refuses to go without.
 //   - `rust-sboms`: one `<target> <file>` line per Rust SBOM, for `sbom` to generate.
 //   - `frontend-sbom`: the frontend SBOM's filename.
 //   - `sbom-<slug>` and `sbom-<slug>-subjects`: each SBOM's file and the builds it's attested
 //     against, one path per line.
 func plan(in planInput) ([]output, error) {
 	r := in.release
-	if err := r.Validate(); err != nil {
+	for _, rel := range []manifest.Release{in.wiring, r} {
+		if err := rel.Validate(); err != nil {
+			return nil, err
+		}
+	}
+	if err := checkWiring(in); err != nil {
 		return nil, err
 	}
-	out := []output{{"update-archives", strings.Join(manifest.Names(r.Updates()), " ")}}
-
-	var oses []manifest.OS
-	for _, f := range r.Updates() {
-		if !slices.Contains(oses, f.OS) {
-			oses = append(oses, f.OS)
-		}
-	}
-	for _, osName := range oses {
-		if !slices.Contains(in.vetted, osName) {
-			return nil, fmt.Errorf("the manifest has %s update payloads, but `vet-update-archives` vets only %v: add a vetting step for %s first", osName, in.vetted, osName)
-		}
+	out := append(signingOutputs(r), platformOutputs(r)...)
+	for _, osName := range updateOSes(r) {
 		var names []string
 		for _, f := range r.Updates() {
 			if f.OS == osName {
@@ -62,12 +65,10 @@ func plan(in planInput) ([]output, error) {
 		out = append(out, output{"update-archives-" + string(osName), strings.Join(names, " ")})
 	}
 
-	out = append(out, output{"binaries", strings.Join(manifest.Names(manifest.Required(r.Binaries())), " ")})
+	out = append(out, output{"binaries", strings.Join(manifest.Names(manifest.Required(r.Core().Binaries())), " ")})
 
 	var rust []string
-	var slugs []string
 	for _, s := range r.SBOMs() {
-		slugs = append(slugs, s.Slug())
 		switch s.Kind {
 		case manifest.RustSBOM:
 			if len(s.Targets) != 1 {
@@ -86,22 +87,76 @@ func plan(in planInput) ([]output, error) {
 			output{"sbom-" + s.Slug() + "-subjects", strings.Join(subjects, "\n")})
 	}
 	out = append(out, output{"rust-sboms", strings.Join(rust, "\n")})
+	return out, nil
+}
 
+// signingOutputs are `update-archives` and `signed-files`: the core's (`manifest.Release.Core`),
+// which `publish` requires whatever the other OSes do. A leg's signed files are its own job's
+// (`windows-publish`'s `stage`), and `publish` takes a leg only when it's whole.
+func signingOutputs(r manifest.Release) []output {
+	core := r.Core()
+	return []output{
+		{"update-archives", strings.Join(manifest.Names(core.Updates()), " ")},
+		{"signed-files", strings.Join(manifest.Names(core.Signed()), " ")},
+	}
+}
+
+// platformOutputs are `ships-<os>` for each OS beyond macOS, and `uploads-<os>` for a shipped one.
+func platformOutputs(r manifest.Release) []output {
+	var out []output
+	for _, osName := range []manifest.OS{manifest.Windows, manifest.Linux} {
+		out = append(out, output{"ships-" + string(osName), fmt.Sprint(r.Ships(osName))})
+		var uploads []string
+		for _, f := range r.Files {
+			if f.OS == osName && !f.SBOM() {
+				uploads = append(uploads, f.Name)
+			}
+		}
+		if len(uploads) > 0 {
+			out = append(out, output{"uploads-" + string(osName), strings.Join(uploads, " ")})
+		}
+	}
+	return out
+}
+
+// updateOSes are the OSes with update payloads in r, in manifest order.
+func updateOSes(r manifest.Release) []manifest.OS {
+	var oses []manifest.OS
+	for _, f := range r.Updates() {
+		if !slices.Contains(oses, f.OS) {
+			oses = append(oses, f.OS)
+		}
+	}
+	return oses
+}
+
+// checkWiring holds the pipeline's vetting and attest steps to every row, shipped or not.
+func checkWiring(in planInput) error {
+	for _, osName := range updateOSes(in.wiring) {
+		if !slices.Contains(in.vetted, osName) {
+			return fmt.Errorf("the manifest has %s update payloads, but `vet-update-archives` vets only %v: add a vetting step for %s first", osName, in.vetted, osName)
+		}
+	}
+	var slugs []string
+	for _, s := range in.wiring.SBOMs() {
+		slugs = append(slugs, s.Slug())
+	}
 	missing, extra := diff(slugs, in.attested)
 	if len(missing) > 0 || len(extra) > 0 {
-		return nil, fmt.Errorf("the `attest` job attests the SBOMs %v, but the manifest has %v: give each SBOM its attest step (missing: %v, no longer in the manifest: %v)",
+		return fmt.Errorf("the `attest` job attests the SBOMs %v, but the manifest has %v: give each SBOM its attest step (missing: %v, no longer in the manifest: %v)",
 			in.attested, slugs, missing, extra)
 	}
-	return out, nil
+	return nil
 }
 
 // subjectPattern is a file's line in an `actions/attest` `subject-path`. The action fails on a
 // literal path that matches no file but lets a glob match nothing (verified in `actions/attest`'s
-// `src/subject.ts`, `isLiteralPath`, 2026-11-18), so a required file is a literal (its absence
-// fails the attestation) and an optional one is a pattern: `[.]` before its extension matches the
-// one name and turns the line into a glob.
+// `src/subject.ts`, `isLiteralPath`, 2026-11-18), so a required core file is a literal (its
+// absence fails the attestation) and an optional one, or a leg's (which the release may ship
+// without), is a pattern: `[.]` before its extension matches the one name and turns the line into
+// a glob.
 func subjectPattern(dir string, f manifest.File) string {
-	if !f.Optional {
+	if !f.Optional && f.Leg() == "" {
 		return dir + "/" + f.Name
 	}
 	i := strings.LastIndex(f.Name, ".")

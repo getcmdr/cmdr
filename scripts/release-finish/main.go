@@ -8,13 +8,14 @@
 //  1. waits for that build run AND the full CI run on the tagged commit, printing each job as it
 //     moves, and stops on the first red job of either (`ci.go`); once CI is green, it requires the
 //     CodeQL gate too (`scripts/release-codeql-gate.sh`);
-//  2. downloads the update archives (the release asset manifest's update payloads) from the draft;
+//  2. downloads the files the updater key signs (the release asset manifest's update payloads,
+//     plus the advisory list once a Windows or Linux release ships one) from the draft;
 //  3. verifies each one's build provenance with `gh attestation verify`, pinned to
 //     `release-pipeline.yml` at the tag's commit on a GitHub-hosted runner, and refuses to
 //     sign anything that doesn't verify;
-//  4. refuses to sign any archive the macOS updater would refuse to install: it runs the app's
-//     own check (`cmdr-vet-update`) for Cmdr's Developer ID code signature and the version
-//     (`vet.go`);
+//  4. refuses to sign any update payload its updater would refuse to install: for a macOS
+//     archive it runs the app's own check (`cmdr-vet-update`) for Cmdr's Developer ID code
+//     signature and the version, for a Windows installer the version resource (`vet.go`);
 //  5. signs each with the Tauri signer, the key and password read from the sops store
 //     (`secret`), never printed and passed only to the signer's environment;
 //  6. verifies each signature natively against the app's trusted keys, the main updater key
@@ -32,8 +33,10 @@
 //	./scripts/release-finish.sh 0.51.0
 //	./scripts/release-finish.sh -dry-run -out /tmp/sigs 0.51.0
 //
-// `-verify-dir DIR` only verifies the archives and `.sig` files in DIR against the app's trusted keys,
-// with no gh or sops; the `publish` job gates a dispatch on it.
+// `-verify-dir DIR` only verifies the archives and `.sig` files in DIR against the app's trusted keys
+// (and that a Windows installer's signature names the version), with no gh or sops; the `publish`
+// job gates a dispatch on it. `-leg windows` with it verifies the Windows leg alone, the check
+// `windows-publish` runs on the signatures it just made.
 //
 // `-ci-gate` only checks the release's CI and CodeQL gate, once: the `ci-gate` job in
 // `release-pipeline.yml` runs it before anything ships. With `-wait` it waits instead, failing on
@@ -94,6 +97,8 @@ type config struct {
 	signerWorkflow string
 	dryRun         bool
 	backupKey      bool
+	// leg is `-leg`: with `-verify-dir`, verify that OS's leg alone (`windows-publish`'s check).
+	leg string
 }
 
 func main() {
@@ -105,6 +110,7 @@ func main() {
 	backupKey := flag.Bool("backup-key", false, "sign with the offline backup key from $"+backupKeyEnv+" and $"+backupPasswordEnv+" instead of sops: the key-rotation release only")
 	ciGateOnly := flag.Bool("ci-gate", false, "only check the release's full CI run and CodeQL gate on the tagged commit (the pipeline's ci-gate job)")
 	wait := flag.Bool("wait", false, "with -ci-gate: wait for the run, failing on the first red job")
+	leg := flag.String("leg", "", "with -verify-dir: verify that OS's leg alone (its installer and the advisory list), every one of its signed files required")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: ./scripts/release-finish.sh [-dry-run] [-backup-key] [-out DIR] [-signer-workflow WORKFLOW] <version>")
 		fmt.Fprintln(os.Stderr, "       ./scripts/release-finish.sh -ci-gate [-wait] <version>")
@@ -123,6 +129,7 @@ func main() {
 		signerWorkflow: *signer,
 		dryRun:         *dryRun,
 		backupKey:      *backupKey,
+		leg:            *leg,
 	}
 	if err := dispatch(cfg, *verifyDir, *ciGateOnly, *wait); err != nil {
 		fail(err)
@@ -229,8 +236,9 @@ func run(cfg config) error {
 			return finish(cfg)
 		}
 	}
-	names := updateArchiveNames(cfg.version)
-	if err := requireArchives(cfg, names); err != nil {
+	names := signedNames(cfg.version)
+	rel, err := requireArchives(cfg, names)
+	if err != nil {
 		return err
 	}
 
@@ -243,6 +251,7 @@ func run(cfg config) error {
 	if err := checkAndSign(cfg, pubkeys, dir, names, commit); err != nil {
 		return err
 	}
+	names = append(names, signWholeLegs(cfg, pubkeys, dir, rel, commit)...)
 
 	if cfg.dryRun {
 		step("Dry run: the archives and their signatures are in %s. Nothing was uploaded.", dir)
@@ -260,23 +269,38 @@ func checkAndSign(cfg config, pubkeys []string, dir string, names []string, comm
 	if err := downloadAndVerifyProvenance(cfg, dir, names, commit); err != nil {
 		return err
 	}
-	if err := vetArchives(runCombined, cfg.root, cfg.version, dir, names); err != nil {
+	if err := vetArchives(runCombined, cfg.root, manifest.For(cfg.version), dir, names); err != nil {
 		return err
 	}
 	if err := sign(cfg, dir, names); err != nil {
 		return err
 	}
-	return verifySignatures(pubkeys, dir, names)
+	if err := verifySignatures(pubkeys, dir, names); err != nil {
+		return err
+	}
+	return requireVersionFields(manifest.For(cfg.version), dir, names)
 }
 
 // verifyOnly is `-verify-dir`: the `publish` job runs it before publishing a draft, so a
-// dispatch can't ship a manifest built from missing, empty, or foreign signatures.
+// dispatch can't ship a manifest built from missing, empty, or foreign signatures, and
+// `windows-publish` runs it on the signatures it just made. Every core signed file must be in dir;
+// each other signed file of the release with its `.sig` there (a leg's) is verified too.
 func verifyOnly(cfg config, dir string) error {
 	pubkeys, err := readTrustedPubkeys(cfg.root)
 	if err != nil {
 		return err
 	}
-	return verifySignatures(pubkeys, dir, updateArchiveNames(cfg.version))
+	release := manifest.For(cfg.version)
+	names := verifyNames(release, dir)
+	if cfg.leg != "" {
+		if names = legSigned(release, manifest.OS(cfg.leg)); len(names) == 0 {
+			return fmt.Errorf("release %s has no %s leg to verify", cfg.version, cfg.leg)
+		}
+	}
+	if err := verifySignatures(pubkeys, dir, names); err != nil {
+		return err
+	}
+	return requireVersionFields(release, dir, names)
 }
 
 // waitUntilSignable reports a release that's already published (signing is behind it), and
@@ -294,21 +318,21 @@ func waitUntilSignable(cfg config, commit string) (published bool, err error) {
 
 // requireArchives checks the release is in a state to sign: a draft (or, in a dry run, any
 // release) carrying every update archive.
-func requireArchives(cfg config, names []string) error {
+func requireArchives(cfg config, names []string) (releaseInfo, error) {
 	rel, found, err := findRelease(cfg.tag)
 	if err != nil {
-		return err
+		return rel, err
 	}
 	if !found {
-		return fmt.Errorf("%s has no release on GitHub (a draft included), so there's nothing to sign", cfg.tag)
+		return rel, fmt.Errorf("%s has no release on GitHub (a draft included), so there's nothing to sign", cfg.tag)
 	}
 	if !cfg.dryRun && !rel.IsDraft {
-		return fmt.Errorf("%s was published while this waited. Run this again to finish it", cfg.tag)
+		return rel, fmt.Errorf("%s was published while this waited. Run this again to finish it", cfg.tag)
 	}
 	if missing := rel.missing(names); len(missing) > 0 {
-		return fmt.Errorf("the %s release lacks %s, so the build didn't upload everything", cfg.tag, strings.Join(missing, ", "))
+		return rel, fmt.Errorf("the %s release lacks %s, so the build didn't upload everything", cfg.tag, strings.Join(missing, ", "))
 	}
-	return nil
+	return rel, nil
 }
 
 // workDir is -out, or a temp dir that a real run removes afterwards and a dry run keeps.
@@ -355,131 +379,6 @@ func downloadAndVerifyProvenance(cfg config, dir string, names []string, commit 
 		}
 		fmt.Printf("    %s: built by the release pipeline from %s\n", name, cfg.tag)
 	}
-	return nil
-}
-
-// sign runs the Tauri signer over each archive, writing `<archive>.sig` beside it. The key and
-// its password go to the signer's environment only, read fresh from where `signingEnv` says.
-func sign(cfg config, dir string, names []string) error {
-	env, err := signingEnv(cfg.backupKey, os.Getenv, func(name string) (string, error) {
-		return output(cfg.root, nil, "secret", name)
-	})
-	if err != nil {
-		return err
-	}
-	release := manifest.For(cfg.version)
-	for _, name := range names {
-		path := filepath.Join(dir, name)
-		if err := os.Remove(path + ".sig"); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return err
-		}
-		if _, err := output(filepath.Join(cfg.root, "apps", "desktop"), env, "pnpm", signerArgs(release, name, path)...); err != nil {
-			return fmt.Errorf("signing %s: %w", name, err)
-		}
-		fmt.Printf("    signed %s\n", name)
-	}
-	return nil
-}
-
-// signerArgs is the `pnpm` command line that signs one update payload. A payload whose row signs
-// its version (Windows and Linux, `manifest.File.SignsVersion`) gets `--app-version`, which writes
-// `version:<v>` into minisign's signed trusted comment: off macOS the updater binds the version
-// there and refuses a signature without it. macOS archives are signed as they always were.
-func signerArgs(release manifest.Release, name, path string) []string {
-	args := []string{"exec", "tauri", "signer", "sign"}
-	for _, f := range release.Updates() {
-		if f.Name == name && f.SignsVersion() {
-			args = append(args, "--app-version", release.Version)
-		}
-	}
-	return append(args, path)
-}
-
-// signingEnv answers the signer's environment: the main key from sops, or with `-backup-key` the
-// offline backup key from this process's environment, where David put it from Bitwarden for the
-// one rotation release. The backup key never goes into sops.
-func signingEnv(backupKey bool, getenv func(string) string, readSecret func(string) (string, error)) ([]string, error) {
-	var key, password string
-	if backupKey {
-		step("Signing with the BACKUP updater key from %s", backupKeyEnv)
-		key, password = getenv(backupKeyEnv), getenv(backupPasswordEnv)
-		if key == "" || password == "" {
-			return nil, fmt.Errorf("-backup-key needs %s and %s set (from Bitwarden, see docs/guides/releasing.md § Rotating to the backup updater key)", backupKeyEnv, backupPasswordEnv)
-		}
-	} else {
-		step("Signing with the updater key from sops")
-		var err error
-		if key, err = readSecret(keySecret); err != nil {
-			return nil, fmt.Errorf("reading %s from sops: %w", keySecret, err)
-		}
-		if password, err = readSecret(passwordSecret); err != nil {
-			return nil, fmt.Errorf("reading %s from sops: %w", passwordSecret, err)
-		}
-	}
-	return []string{"TAURI_SIGNING_PRIVATE_KEY=" + key, "TAURI_SIGNING_PRIVATE_KEY_PASSWORD=" + password}, nil
-}
-
-func verifySignatures(pubkeys []string, dir string, names []string) error {
-	step("Verifying the signatures against the app's trusted keys")
-	for _, name := range names {
-		keyID, err := verifyFile(pubkeys, filepath.Join(dir, name), filepath.Join(dir, name+".sig"))
-		if err != nil {
-			return fmt.Errorf("the signature for %s doesn't verify against the app's trusted keys (made with the wrong key?): %w", name, err)
-		}
-		fmt.Printf("    %s.sig verifies (key %s)\n", name, keyID)
-	}
-	return nil
-}
-
-func uploadSignatures(cfg config, dir string, names []string) error {
-	step("Uploading the signatures to the %s draft", cfg.tag)
-	args := []string{"release", "upload", cfg.tag, "-R", repo, "--clobber"}
-	for _, name := range names {
-		args = append(args, filepath.Join(dir, name+".sig"))
-	}
-	if _, err := output(cfg.root, nil, "gh", args...); err != nil {
-		return err
-	}
-	return checkUploadedSignatures(cfg, dir, names)
-}
-
-func verifyFile(pubkeys []string, archivePath, sigPath string) (string, error) {
-	sig, err := os.ReadFile(sigPath)
-	if err != nil {
-		return "", err
-	}
-	f, err := os.Open(archivePath)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-	return verifyTauriSignature(pubkeys, string(sig), f)
-}
-
-// checkUploadedSignatures downloads the `.sig` assets back and compares them with what was
-// signed, so the manifest is built from exactly the signatures verified above.
-func checkUploadedSignatures(cfg config, dir string, names []string) error {
-	back := filepath.Join(dir, "uploaded")
-	if err := os.MkdirAll(back, 0o755); err != nil {
-		return err
-	}
-	for _, name := range names {
-		if _, err := output(cfg.root, nil, "gh", "release", "download", cfg.tag, "-R", repo, "-p", name+".sig", "-D", back, "--clobber"); err != nil {
-			return err
-		}
-		local, err := os.ReadFile(filepath.Join(dir, name+".sig"))
-		if err != nil {
-			return err
-		}
-		uploaded, err := os.ReadFile(filepath.Join(back, name+".sig"))
-		if err != nil {
-			return err
-		}
-		if !bytes.Equal(local, uploaded) {
-			return fmt.Errorf("%s.sig on the release differs from the one just signed. Run this again", name)
-		}
-	}
-	fmt.Println("    the release carries the signatures just verified")
 	return nil
 }
 
@@ -562,12 +461,8 @@ func waitForBuildAndCI(cfg config, commit string) error {
 			for _, line := range jobChanges(seen, v.ciJobs()) {
 				fmt.Println("    Build: " + line)
 			}
-			if v.Status == "completed" {
-				if v.Conclusion != "success" {
-					return fmt.Errorf("the %s build run ended %s: %s. Re-run its failed jobs (`gh run rerun %d --failed`), then run this again", cfg.tag, v.Conclusion, runURL(build.ID), build.ID)
-				}
-				step("The build run is green (%s)", runURL(build.ID))
-				buildDone = true
+			if buildDone, err = buildSignable(cfg, build.ID, v); err != nil {
+				return err
 			}
 		}
 		if buildDone && ci.done {
@@ -678,7 +573,7 @@ func waitUntilRestarted(id int64) error {
 // tag (the tags API skips drafts). More than one release on a tag is an error, not a pick.
 func findRelease(tag string) (releaseInfo, bool, error) {
 	out, err := output("", []string{"TAG=" + tag}, "gh", "api", "--paginate", "repos/"+repo+"/releases?per_page=100",
-		"--jq", `.[] | select(.tag_name == env.TAG) | {isDraft: .draft, assets: [.assets[] | {name}]}`)
+		"--jq", `.[] | select(.tag_name == env.TAG) | {isDraft: .draft, assets: [.assets[] | {name, state}]}`)
 	if err != nil {
 		return releaseInfo{}, false, err
 	}

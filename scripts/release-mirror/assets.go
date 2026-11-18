@@ -11,17 +11,19 @@ import (
 )
 
 // mirroredAssets picks, from a release's asset names, the files the EU mirror serves, from the
-// release asset manifest (`scripts/release-assets/manifest`): every update payload and its
+// release asset manifest (`scripts/release-assets/manifest`): every signed file (the update
+// payloads, and the advisory list `latest.json` points Windows and Linux installs at) and its
 // signature, every download (an optional one, like the pkg, when the release has it), and
 // `checksums.txt` last, so it never names a file the mirror doesn't hold yet. The SBOMs, the
 // provenance bundle, and `latest.json` stay on GitHub only (the website serves the manifest).
-// A release missing any required file is refused, naming each one.
-func mirroredAssets(names []string, version string) ([]string, error) {
+// A release missing any required file is refused, naming each one. r is the release as it carries
+// its legs (`carried`), so a Windows leg the release ships without is neither mirrored nor missed.
+func mirroredAssets(names []string, r manifest.Release) ([]string, error) {
+	version := r.Version
 	have := map[string]bool{}
 	for _, n := range names {
 		have[n] = true
 	}
-	r := manifest.For(version)
 	var want, missing []string
 	need := func(name string, optional bool) {
 		switch {
@@ -31,11 +33,13 @@ func mirroredAssets(names []string, version string) ([]string, error) {
 			missing = append(missing, name)
 		}
 	}
-	for _, f := range r.Updates() {
+	for _, f := range r.Signed() {
 		need(f.Signature(), false)
 	}
-	for _, f := range r.Binaries() {
-		need(f.Name, f.Optional)
+	for _, f := range r.Files {
+		if f.Binary() || f.Download() || f.Signed() {
+			need(f.Name, f.Optional)
+		}
 	}
 	slices.Sort(want)
 	slices.Sort(missing)
@@ -47,6 +51,19 @@ func mirroredAssets(names []string, version string) ([]string, error) {
 		return nil, fmt.Errorf("release %s is missing files the mirror needs: %s", version, strings.Join(missing, ", "))
 	}
 	return want, nil
+}
+
+// carried is r as the release carries its legs: the ones latestJSON names when it's given (the
+// manifest `publish` wrote, which every later step follows), else the ones whole among names.
+func carried(r manifest.Release, names []string, latestJSON []byte) (manifest.Release, error) {
+	if latestJSON != nil {
+		return r.CarriedBy(latestJSON)
+	}
+	whole, lacking := r.CarriedWhole(names)
+	for os, missing := range lacking {
+		fmt.Println(manifest.LackingLine(r.Version, os, missing))
+	}
+	return whole, nil
 }
 
 // objectKey is where a release file lives in the bucket: one folder per version, so a key is
@@ -72,6 +89,12 @@ func contentType(name string) string {
 		return "application/gzip"
 	case strings.HasSuffix(name, ".sig"), strings.HasSuffix(name, ".txt"):
 		return "text/plain; charset=utf-8"
+	case strings.HasSuffix(name, ".json"):
+		return "application/json"
+	case strings.HasSuffix(name, ".zip"):
+		return "application/zip"
+	case strings.HasSuffix(name, ".msix"):
+		return "application/msix"
 	default:
 		return "application/octet-stream"
 	}
@@ -100,12 +123,16 @@ func parseChecksums(body string) (map[string]string, error) {
 // release asset manifest, exactly that file on the mirror under its platform key. Every
 // installed copy fetches these URLs verbatim with no fallback, so a URL off the mirror (or a
 // drifted name) must fail the release while nothing has shipped.
-func checkManifest(body []byte, version, host string) error {
+func checkManifest(body []byte, r manifest.Release, host string) error {
+	version := r.Version
 	var m struct {
 		Version   string `json:"version"`
 		Platforms map[string]struct {
 			URL string `json:"url"`
 		} `json:"platforms"`
+		SecurityAdvisories *struct {
+			URL string `json:"url"`
+		} `json:"securityAdvisories"`
 	}
 	if err := json.Unmarshal(body, &m); err != nil {
 		return fmt.Errorf("latest.json isn't JSON: %w", err)
@@ -113,7 +140,12 @@ func checkManifest(body []byte, version, host string) error {
 	if m.Version != version {
 		return fmt.Errorf("latest.json says version %q, not %q", m.Version, version)
 	}
-	for _, f := range manifest.For(version).Updates() {
+	if list, ok := r.AdvisoryList(); ok {
+		if want := publicURL(host, version, list.Name); m.SecurityAdvisories == nil || m.SecurityAdvisories.URL != want {
+			return fmt.Errorf("latest.json's securityAdvisories doesn't point at %s", want)
+		}
+	}
+	for _, f := range r.Updates() {
 		p, ok := m.Platforms[f.UpdaterKey]
 		if !ok {
 			return fmt.Errorf("latest.json has no %s platform", f.UpdaterKey)

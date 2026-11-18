@@ -1,6 +1,10 @@
 #!/bin/bash
 # A stand-in for `pnpm` in the release pipeline dry run (`pipeline_test.go`): logs each call, and
-# for the frontend SBOM build writes a small SBOM where the real build leaves it.
+# for the frontend SBOM build writes a small SBOM where the real build leaves it. For
+# `pnpm exec tauri signer sign [--app-version V] FILE` it writes `FILE.sig` shaped like the Tauri
+# signer's, naming the app's main updater key and, with `--app-version`, the version: what the
+# `latest.json` validator reads (it checks the key ID and the field; the real signature check is
+# `release-finish -verify-dir`'s, faked here).
 set -euo pipefail
 
 printf 'pnpm %s\n' "$*" >> "$FIXTURE_LOG"
@@ -9,4 +13,21 @@ if [ "${CMDR_FRONTEND_SBOM:-}" = 1 ] && [ "${*: -1}" = build ]; then
   mkdir -p apps/desktop/build/sbom
   jq -n '{bomFormat: "CycloneDX", metadata: {component: {version: env.FIXTURE_VERSION}}, components: [range(31) | {name: "npm-\(.)"}]}' \
     > apps/desktop/build/sbom/frontend.cdx.json
+fi
+
+if [ "${1:-} ${2:-} ${3:-} ${4:-}" = "exec tauri signer sign" ]; then
+  shift 4
+  version=""
+  if [ "${1:-}" = --app-version ]; then version="$2"; shift 2; fi
+  file="$1"
+  pubkey=$(jq -r .plugins.updater.pubkey "$GITHUB_WORKSPACE/apps/desktop/src-tauri/tauri.conf.json")
+  python3 -I - "$pubkey" "$file" "$version" <<'PY'
+import base64, os, sys
+pubkey, path, version = sys.argv[1:4]
+key_id = base64.b64decode(base64.b64decode(pubkey).decode().splitlines()[1])[2:10]
+comment = "timestamp:1763049596\tfile:" + os.path.basename(path) + ("\tversion:" + version if version else "")
+text = "untrusted comment: signature from tauri secret key\n" + base64.b64encode(b"ED" + key_id + bytes(64)).decode() + \
+    "\ntrusted comment: " + comment + "\n" + base64.b64encode(bytes(64)).decode() + "\n"
+open(path + ".sig", "w").write(base64.b64encode(text.encode()).decode())
+PY
 fi

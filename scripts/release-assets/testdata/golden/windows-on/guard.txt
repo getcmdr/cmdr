@@ -1,0 +1,50 @@
+# job guard
+
+## Pick who signs the update archives: ok
+
+## Plan the release assets: ok
+
+# outputs
+binaries=Cmdr_0.61.0_universal.app.tar.gz Cmdr_0.61.0_aarch64.app.tar.gz Cmdr_0.61.0_x64.app.tar.gz Cmdr_0.61.0_aarch64.dmg Cmdr_0.61.0_x64.dmg Cmdr_0.61.0_universal.dmg
+frontend-sbom=Cmdr_0.61.0_frontend.cdx.json
+mode=ci
+rust-sboms:
+  aarch64-apple-darwin Cmdr_0.61.0_aarch64.rust.cdx.json
+  x86_64-apple-darwin Cmdr_0.61.0_x64.rust.cdx.json
+  x86_64-pc-windows-msvc Cmdr_0.61.0_windows_x64.rust.cdx.json
+sbom-frontend=Cmdr_0.61.0_frontend.cdx.json
+sbom-frontend-subjects:
+  release-assets/Cmdr_0.61.0_universal.app.tar.gz
+  release-assets/Cmdr_0.61.0_aarch64.app.tar.gz
+  release-assets/Cmdr_0.61.0_x64.app.tar.gz
+  release-assets/Cmdr_0.61.0_aarch64.dmg
+  release-assets/Cmdr_0.61.0_x64.dmg
+  release-assets/Cmdr_0.61.0_universal.dmg
+  release-assets/Cmdr_0.61.0_universal[.]pkg
+  release-assets/Cmdr_0.61.0_x64-setup[.]exe
+  release-assets/Cmdr_0.61.0_x64[.]msix
+sbom-macos-aarch64=Cmdr_0.61.0_aarch64.rust.cdx.json
+sbom-macos-aarch64-subjects:
+  release-assets/Cmdr_0.61.0_universal.app.tar.gz
+  release-assets/Cmdr_0.61.0_aarch64.app.tar.gz
+  release-assets/Cmdr_0.61.0_aarch64.dmg
+  release-assets/Cmdr_0.61.0_universal.dmg
+  release-assets/Cmdr_0.61.0_universal[.]pkg
+sbom-macos-x86_64=Cmdr_0.61.0_x64.rust.cdx.json
+sbom-macos-x86_64-subjects:
+  release-assets/Cmdr_0.61.0_universal.app.tar.gz
+  release-assets/Cmdr_0.61.0_x64.app.tar.gz
+  release-assets/Cmdr_0.61.0_x64.dmg
+  release-assets/Cmdr_0.61.0_universal.dmg
+  release-assets/Cmdr_0.61.0_universal[.]pkg
+sbom-windows-x86_64=Cmdr_0.61.0_windows_x64.rust.cdx.json
+sbom-windows-x86_64-subjects:
+  release-assets/Cmdr_0.61.0_x64-setup[.]exe
+  release-assets/Cmdr_0.61.0_x64[.]msix
+ships-linux=false
+ships-windows=true
+signed-files=Cmdr_0.61.0_universal.app.tar.gz Cmdr_0.61.0_aarch64.app.tar.gz Cmdr_0.61.0_x64.app.tar.gz
+update-archives=Cmdr_0.61.0_universal.app.tar.gz Cmdr_0.61.0_aarch64.app.tar.gz Cmdr_0.61.0_x64.app.tar.gz
+update-archives-macos=Cmdr_0.61.0_universal.app.tar.gz Cmdr_0.61.0_aarch64.app.tar.gz Cmdr_0.61.0_x64.app.tar.gz
+update-archives-windows=Cmdr_0.61.0_x64-setup.exe
+uploads-windows=Cmdr_0.61.0_x64-setup.exe Cmdr_0.61.0_x64.msix cmdr-group-policy-0.61.0.zip

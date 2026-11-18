@@ -60,14 +60,18 @@ func nextFinishAction(runs []workflowRun) (finishAction, workflowRun) {
 	}
 }
 
-// updateArchiveNames are the assets the updater downloads, the only ones this key signs: every
-// update payload in the release asset manifest (`scripts/release-assets/manifest`).
-func updateArchiveNames(version string) []string {
-	return manifest.Names(manifest.For(version).Updates())
+// signedNames are the core's assets the updater downloads, the ones this key must sign for the
+// release to ship: every core update payload in the release asset manifest
+// (`scripts/release-assets/manifest`). A leg's (Windows: its installer and the advisory list) are
+// `legSigned`'s, signed only when the leg is whole (`legs.go`).
+func signedNames(version string) []string {
+	return manifest.Names(manifest.For(version).Core().Signed())
 }
 
 type releaseAsset struct {
 	Name string `json:"name"`
+	// State is GitHub's: `uploaded` once fully saved. A leg counts only those (`legsOnDraft`).
+	State string `json:"state"`
 }
 
 // releaseInfo is `gh release view --json isDraft,assets`; gh finds a draft by its tag too.

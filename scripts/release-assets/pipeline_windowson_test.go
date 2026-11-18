@@ -1,0 +1,219 @@
+package main
+
+import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"slices"
+	"strings"
+	"testing"
+)
+
+// The release pipeline dry run with Windows switched on: the same harness and v0.61.0 fixture as
+// `TestReleasePipelineDryRun`, with the release tools built `-tags cmdr_windows_on`
+// (`manifest/shipping_windows_on.go`), so the day-one path (the plan, `windows-publish`,
+// `windows-attest`, and the jobs a Windows leg reaches) runs in CI while nothing ships it. The
+// goldens are `testdata/golden/windows-on/`; review a moved one, then
+// `go test -run TestReleasePipelineDryRunWithWindowsOn -update`. `windows-build` isn't here: it
+// runs Windows and the Tauri bundler.
+
+// windowsLeg is the Windows files on a release that carries the leg whole, signatures included.
+var windowsLeg = []string{
+	"Cmdr_0.61.0_x64-setup.exe", "Cmdr_0.61.0_x64-setup.exe.sig", "Cmdr_0.61.0_x64.msix",
+	"cmdr-group-policy-0.61.0.zip", "Cmdr_0.61.0_security-advisories.json", "Cmdr_0.61.0_security-advisories.json.sig",
+}
+
+// windowsBuild is what `windows-build` hands `windows-publish`.
+var windowsBuild = []string{"Cmdr_0.61.0_x64-setup.exe", "Cmdr_0.61.0_x64.msix", "cmdr-group-policy-0.61.0.zip"}
+
+var noLatest = []string{"latest.json"}
+
+var windowsScenarios = []scenario{
+	// The plan: every output, the Windows ones included.
+	{name: "guard", job: "guard", event: "push", mode: "ci"},
+	// `publish` with the leg whole on the release: Windows in `latest.json`, the checksums, and the mirror.
+	{name: "publish-ci", job: "publish", event: "push", mode: "ci", drop: noLatest, add: windowsLeg, artifacts: gateArtifact},
+	// The leg isn't up when `publish` looks: macOS ships alone, with a warning.
+	{name: "publish-late", job: "publish", event: "push", mode: "ci", drop: noLatest, artifacts: gateArtifact},
+	// The leg's last upload still being saved when `publish` looks (GitHub's `state: starter`):
+	// no leg, and the macOS release ships green.
+	{name: "publish-mid-upload", job: "publish", event: "push", mode: "ci", drop: noLatest, add: windowsLeg, starter: windowsLeg[5:], artifacts: gateArtifact},
+	// Half a leg (the installer's signature missing) is no leg.
+	{name: "publish-half", job: "publish", event: "push", mode: "ci", drop: noLatest, add: windowsLeg[2:], artifacts: gateArtifact},
+	// A re-run keeps the legs of the `latest.json` an earlier attempt put up (macOS-only, and it
+	// passes the validator), though the leg is whole now.
+	{name: "publish-rerun", job: "publish", event: "push", mode: "ci", add: windowsLeg, earlierLatest: "latest.built.json", artifacts: gateArtifact},
+	// The fixture's own `latest.json` predates `downloads`, so the validator refuses it: not kept.
+	{name: "publish-rerun-stale", job: "publish", event: "push", mode: "ci", add: windowsLeg, artifacts: gateArtifact},
+	// A re-run after a damaged `latest.json` upload: that file is never carried; the snapshot decides.
+	{name: "publish-rerun-damaged", job: "publish", event: "push", mode: "ci", add: windowsLeg, damage: noLatest, artifacts: gateArtifact},
+	// `local` mode's dispatch: the laptop signed the leg, so it's verified and carried.
+	{name: "publish-dispatch", job: "publish", event: "workflow_dispatch", mode: "local", drop: noLatest, add: windowsLeg, artifacts: gateArtifact},
+	{name: "vet", job: "vet-update-archives", event: "push", mode: "ci", add: windowsLeg},
+	{name: "vet-late", job: "vet-update-archives", event: "push", mode: "ci"},
+	// The trusted intake: exactly the planned files, vetted, signed, verified, uploaded.
+	{name: "windows-publish-ci", job: "windows-publish", event: "push", mode: "ci", made: map[string][]string{"windows-x86_64": windowsBuild}},
+	{name: "windows-publish-local", job: "windows-publish", event: "push", mode: "local", made: map[string][]string{"windows-x86_64": windowsBuild}},
+	// A build hook dropped a macOS-named file into the artifact: refused by name, nothing signed.
+	{name: "windows-publish-hostile", job: "windows-publish", event: "push", mode: "ci", made: map[string][]string{"windows-x86_64": append(slices.Clone(windowsBuild), "Cmdr_0.61.0_universal.dmg")}},
+	// GitHub saved the installer damaged: its digest doesn't match, so it comes off the release and
+	// no signature goes up.
+	{name: "windows-publish-corrupt", job: "windows-publish", event: "push", mode: "ci", corruptUpload: "Cmdr_0.61.0_x64-setup.exe", made: map[string][]string{"windows-x86_64": windowsBuild}},
+	// The whole path: `windows-publish` uploads and signs, then `publish` carries the leg.
+	{name: "publish-after-windows-publish", job: "publish", event: "push", mode: "ci", before: "windows-publish-ci", drop: noLatest, made: map[string][]string{"windows-x86_64": windowsBuild}, artifacts: gateArtifact},
+	// After the damaged upload above, `publish` ships macOS alone: a bad-digest file is never carried.
+	{name: "publish-after-corrupt-upload", job: "publish", event: "push", mode: "ci", before: "windows-publish-corrupt", drop: noLatest, corruptUpload: "Cmdr_0.61.0_x64-setup.exe", made: map[string][]string{"windows-x86_64": windowsBuild}, artifacts: gateArtifact},
+	// `publish` wrote `latest.json` first: the late leg isn't uploaded.
+	{name: "windows-publish-too-late", job: "windows-publish", event: "push", mode: "ci", made: map[string][]string{"windows-x86_64": windowsBuild}},
+	{name: "windows-attest", job: "windows-attest", event: "push", mode: "ci", before: "windows-publish-ci", drop: noLatest, made: map[string][]string{"windows-x86_64": windowsBuild}},
+	{name: "sbom", job: "sbom", event: "push", mode: "ci"},
+	{name: "attest-ci", job: "attest", event: "push", mode: "ci", before: "sbom", add: windowsLeg, artifacts: map[string]string{"sboms": "sbom"}},
+}
+
+func TestReleasePipelineDryRunWithWindowsOn(t *testing.T) {
+	list := slices.Clone(windowsScenarios)
+	for i := range list {
+		list[i].windowsOn = true
+		// `windows-publish` refuses once `latest.json` is up, which the fixture release carries.
+		if list[i].job == "windows-publish" && list[i].name != "windows-publish-too-late" {
+			list[i].drop = noLatest
+		}
+	}
+	runScenarios(t, readPipeline(t), list, filepath.Join("testdata", "golden", "windows-on"))
+}
+
+// The Windows-on build tag is the dry run's alone: no workflow or script may build a release tool
+// with it, which would ship Windows without the `ShippedOSes` line.
+func TestNoReleaseToolBuildsWithWindowsOn(t *testing.T) {
+	root := repoRoot(t)
+	for _, dir := range []string{".github", "scripts"} {
+		err := filepath.WalkDir(filepath.Join(root, dir), func(path string, d os.DirEntry, err error) error {
+			if err != nil || d.IsDir() || strings.HasSuffix(path, "_test.go") || strings.HasSuffix(path, ".md") || strings.HasSuffix(path, "shipping_windows_on.go") {
+				return err
+			}
+			raw, err := os.ReadFile(path)
+			if err == nil && strings.Contains(string(raw), "cmdr_windows_on") {
+				t.Errorf("%s names the dry run's cmdr_windows_on build tag", path)
+			}
+			return err
+		})
+		must(t, err)
+	}
+}
+
+var nextJob = regexp.MustCompile(`(?m)^  \S`)
+
+// A job with job-level `continue-on-error` reports `success` to the jobs that need it even when it
+// went red, so the Windows leg's gates read an output only its last step sets, never a result.
+func TestTheWindowsGatesReadOutputsNotResults(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join(repoRoot(t), ".github/workflows/release-pipeline.yml"))
+	must(t, err)
+	src := string(raw)
+	block := func(id string) string {
+		start := strings.Index(src, "\n  "+id+":\n")
+		if start < 0 {
+			t.Fatalf("no job %s", id)
+		}
+		rest := src[start+1:]
+		// Up to the next line at the jobs' own indent (the next job or its comment).
+		if loc := nextJob.FindStringIndex(rest[1:]); loc != nil {
+			return rest[:loc[0]+1]
+		}
+		return rest
+	}
+	for job, want := range map[string]string{
+		"windows-publish": "needs.windows-build.outputs.built == 'true'",
+		"windows-attest":  "needs.windows-publish.outputs.published != ''",
+	} {
+		b := block(job)
+		if !strings.Contains(b, want) {
+			t.Errorf("%s doesn't gate on %q", job, want)
+		}
+		for _, upstream := range []string{"windows-build", "windows-publish"} {
+			if strings.Contains(b, "needs."+upstream+".result") {
+				t.Errorf("%s gates on needs.%s.result, which continue-on-error makes always success", job, upstream)
+			}
+		}
+	}
+	if !strings.Contains(block("windows-build"), `echo "built=true" >> "$GITHUB_OUTPUT"`) {
+		t.Error("windows-build's last step doesn't set built")
+	}
+}
+
+// windowsAsset makes a Windows file at path: the dry run's NSIS installer (v0.61.0, the repo's
+// publisher: `nsis/testdata/gen.sh`), a signature shaped like the Tauri signer's by the app's main
+// key (naming the version for the installer, as `--app-version` does), or a stand-in.
+func (h *harness) windowsAsset(path string) {
+	t := h.t
+	name := filepath.Base(path)
+	switch {
+	case strings.HasSuffix(name, "-setup.exe"):
+		copyFile(t, filepath.Join(repoRoot(t), "scripts/release-nsis/nsis/testdata/dryrun-0.61.0-setup.exe"), path, 0o644)
+	case strings.HasSuffix(name, ".sig"):
+		signed := strings.TrimSuffix(name, ".sig")
+		comment := "timestamp:1763049596\tfile:" + signed
+		if strings.HasSuffix(signed, "-setup.exe") {
+			comment += "\tversion:" + fixtureVersion
+		}
+		must(t, os.WriteFile(path, []byte(dryRunSignature(t, comment)), 0o644))
+	default:
+		must(t, os.WriteFile(path, []byte("fixture "+name+"\n"), 0o644))
+	}
+}
+
+// dryRunSignature is a Tauri signature's shape with the app's main key ID and the given trusted
+// comment: what the `latest.json` validator reads (the cryptography is `release-finish`'s to check).
+func dryRunSignature(t *testing.T, comment string) string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(repoRoot(t), "apps/desktop/src-tauri/tauri.conf.json"))
+	must(t, err)
+	var conf struct {
+		Plugins struct {
+			Updater struct {
+				Pubkey string `json:"pubkey"`
+			} `json:"updater"`
+		} `json:"plugins"`
+	}
+	must(t, json.Unmarshal(raw, &conf))
+	text, err := base64.StdEncoding.DecodeString(conf.Plugins.Updater.Pubkey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(string(text)), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("the app's updater pubkey has %d lines, want 2", len(lines))
+	}
+	key, err := base64.StdEncoding.DecodeString(lines[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(key) < 10 {
+		t.Fatalf("the app's updater pubkey is %d bytes, too short to hold a key ID", len(key))
+	}
+	body := base64.StdEncoding.EncodeToString(append(append([]byte("ED"), key[2:10]...), make([]byte, 64)...))
+	sig := "untrusted comment: signature from tauri secret key\n" + body + "\ntrusted comment: " + comment + "\n" +
+		base64.StdEncoding.EncodeToString(make([]byte, 64)) + "\n"
+	return base64.StdEncoding.EncodeToString([]byte(sig))
+}
+
+// reportOutputs records `guard`'s outputs, sorted, a multi-line one indented.
+func (h *harness) reportOutputs(report *strings.Builder) {
+	outs := h.jobOutputs["guard"]
+	keys := make([]string, 0, len(outs))
+	for k := range outs {
+		keys = append(keys, k)
+	}
+	slices.Sort(keys)
+	fmt.Fprintf(report, "\n# outputs\n")
+	for _, k := range keys {
+		v := outs[k]
+		if strings.Contains(v, "\n") {
+			fmt.Fprintf(report, "%s:\n  %s\n", k, strings.ReplaceAll(v, "\n", "\n  "))
+			continue
+		}
+		fmt.Fprintf(report, "%s=%s\n", k, v)
+	}
+}

@@ -1,0 +1,7 @@
+# job windows-publish
+
+## Install the Tauri CLI: ok
+pnpm install --frozen-lockfile --ignore-scripts --filter @cmdr/desktop
+
+## Take exactly the planned Windows files: FAILED
+error:   - Cmdr_0.61.0_universal.dmg isn't a windows file of 0.61.0

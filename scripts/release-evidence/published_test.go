@@ -5,6 +5,8 @@ import (
 	"os"
 	"slices"
 	"testing"
+
+	"cmdr/scripts/release-assets/manifest"
 )
 
 // v0.61.0 as published (`../release-assets/testdata/v0.61.0/`): the evidence checks against a
@@ -20,10 +22,10 @@ func TestEvidenceChecksPassAPublishedRelease(t *testing.T) {
 	if err := json.Unmarshal(raw, &rel); err != nil {
 		t.Fatal(err)
 	}
-	if err := checkAssets(rel.Assets, "0.61.0", true); err != nil {
+	if _, err := checkAssets(rel.Assets, manifest.For("0.61.0"), true); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(expectedAssets("0.61.0", true)); got != len(rel.Assets) {
+	if got := len(expectedAssets(manifest.For("0.61.0"), true)); got != len(rel.Assets) {
 		t.Fatalf("expectedAssets lists %d files, v0.61.0 shipped %d", got, len(rel.Assets))
 	}
 

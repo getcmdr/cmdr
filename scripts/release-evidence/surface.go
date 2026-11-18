@@ -21,39 +21,55 @@ const (
 )
 
 // expectedAssets is every file a release carries (`docs/guides/releasing.md` § What a release
-// publishes), each with the size below which it can't be real: the release asset manifest's files
-// (`scripts/release-assets/manifest`), the update payloads' signatures, and the three files every
-// release adds around them. withPkg asks for the optional files too (the pkg is the only one).
-func expectedAssets(version string, withPkg bool) map[string]int64 {
+// publishes), each with the size below which it can't be real: the files of r (the release asset
+// manifest, `scripts/release-assets/manifest`, as the release carries its legs), the signed files'
+// signatures, and the three files every release adds around them. withPkg asks for the optional
+// files too (the pkg is the only one).
+func expectedAssets(r manifest.Release, withPkg bool) map[string]int64 {
 	want := map[string]int64{
-		"latest.json":                       1,
-		"checksums.txt":                     1,
-		"Cmdr_" + version + ".intoto.jsonl": 1,
+		"latest.json":                         1,
+		"checksums.txt":                       1,
+		"Cmdr_" + r.Version + ".intoto.jsonl": 1,
 	}
-	for _, f := range manifest.For(version).Files {
+	for _, f := range r.Files {
 		switch {
 		case f.Optional && !withPkg:
 			continue
 		case f.SBOM():
 			want[f.Name] = minSBOMBytes
+		case !f.Binary():
+			// The Group Policy zip and the advisory list are small files, not builds.
+			want[f.Name] = 1
 		default:
 			want[f.Name] = minBundleBytes
 		}
-		if f.Update() {
+		if f.Signed() {
 			want[f.Signature()] = 1
 		}
 	}
 	return want
 }
 
-// checkAssets lists every expected asset that's missing or too small to be real.
-func checkAssets(assets []releaseAsset, version string, withPkg bool) error {
+// checkAssets lists every expected asset of r that's missing or too small to be real, answering how
+// many it expected. A leg
+// (`manifest/legs.go`) the release carries whole is expected in full; one it shipped without
+// isn't, but part of one is a problem: a release carries a leg whole or not at all.
+func checkAssets(assets []releaseAsset, r manifest.Release, withPkg bool) (int, error) {
 	have := map[string]int64{}
+	names := make([]string, 0, len(assets))
 	for _, a := range assets {
 		have[a.Name] = a.Size
+		names = append(names, a.Name)
 	}
 	var problems []string
-	for name, min := range expectedAssets(version, withPkg) {
+	complete, lacking := r.CompleteLegs(names, true)
+	for os, missing := range lacking {
+		if len(missing) < len(r.LegNeeds(os, true)) {
+			problems = append(problems, fmt.Sprintf("the %s files are there only in part (missing %s)", os, strings.Join(missing, ", ")))
+		}
+	}
+	want := expectedAssets(r.Carrying(complete...), withPkg)
+	for name, min := range want {
 		size, ok := have[name]
 		switch {
 		case !ok:
@@ -63,10 +79,10 @@ func checkAssets(assets []releaseAsset, version string, withPkg bool) error {
 		}
 	}
 	if len(problems) == 0 {
-		return nil
+		return len(want), nil
 	}
 	slices.Sort(problems)
-	return fmt.Errorf("the release's assets aren't complete:\n  - %s", strings.Join(problems, "\n  - "))
+	return 0, fmt.Errorf("the release's assets aren't complete:\n  - %s", strings.Join(problems, "\n  - "))
 }
 
 // checkManifest reads `latest.json` and returns its update archive URLs, requiring the version,
@@ -86,8 +102,14 @@ func checkManifest(body []byte, version, repo string) ([]string, error) {
 	if m.Version != version {
 		return nil, fmt.Errorf("latest.json says version %q, not %q", m.Version, version)
 	}
+	// The legs this manifest carries (`manifest/legs.go`): a Windows leg the release shipped
+	// without has no platform to check.
+	carried, err := manifest.For(version).CarriedBy(body)
+	if err != nil {
+		return nil, err
+	}
 	var urls []string
-	updates := manifest.For(version).Updates()
+	updates := carried.Updates()
 	slices.SortFunc(updates, func(a, b manifest.File) int { return strings.Compare(a.UpdaterKey, b.UpdaterKey) })
 	for _, f := range updates {
 		p, ok := m.Platforms[f.UpdaterKey]

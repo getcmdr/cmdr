@@ -5,7 +5,10 @@
 Each `manifest.Asset` is one published file. Its roles come from two places:
 
 - **Download** (people fetch it: `checksums.txt`, the EU mirror, `latest.json`'s `downloads`) comes from the kind:
-  `dmg`, `pkg`, and the Linux and Windows packages (`appimage`, `deb`, `nsis`, `msix`).
+  `dmg`, `pkg`, the Linux and Windows packages (`appimage`, `deb`, `nsis`, `msix`), and the Group Policy zip
+  (`group-policy`, arch-less, a download but no build, so no SBOM describes it).
+- **Signed** (a `.sig` by the updater key, `File.Signed`): every update payload, plus the advisory list
+  (`advisory-list`), which belongs to no OS (below, § Update payloads off macOS).
 - **Update payload** (signed, in `latest.json`'s `platforms`, vetted, mirrored with its `.sig`) comes from a non-empty
   `UpdaterKey`. One file can be both: the Windows NSIS `-setup.exe` and the Linux AppImage are their OS's update
   payload.
@@ -37,13 +40,78 @@ release without them:
   published as a release asset with its own minisign signature. Without it Windows and Linux show no security notice;
   the update still installs.
 
-Wired so far, ahead of any Windows or Linux row: `release-finish` passes `--app-version` for such a row (`signerArgs`),
-and the validator refuses a signature whose trusted comment lacks `version:<v>` for one (`signatureNamesVersion`), so a
-version-less signature from either signing mode fails `publish` instead of reaching `latest.json`. Left for Windows port
-plan task 52: the rows, the flag in the CI `sign` job (`ci` mode), and the advisory list. The reader's
-`every_field_the_reader_names_is_one_the_writer_writes` (`crates/cmdr-update-manifest/src/tests.rs`) holds that last gap
-open on purpose: it lists `securityAdvisories` as not written yet, against `testdata/v0.61.0/latest.built.json`, the
-fixture both sides share.
+Wired for the Windows rows: `release-finish` passes `--app-version` for such a row (`signerArgs`), the `windows-publish`
+job does the same in `ci` mode (from `stage`'s `signs-version`) and verifies what it signed against the app's keys
+(`release-finish -verify-dir … -leg windows`, which also requires the `version:` field), and the validator refuses a
+signature whose trusted comment lacks `version:<v>` for one (`signatureNamesVersion`), so a version-less signature from
+either signing mode fails `publish` instead of reaching `latest.json`. `vet-nsis` (`scripts/release-nsis/nsis/nsis.go`,
+its own module so the macOS path stays stdlib-only) then reads the installer without running it, since the version the
+signature names is all the updater checks: the stub's version resource and ProductName, every packed copy of the app
+(its version and CompanyName, found by decompressing the solid LZMA payload in `scripts/release-nsis/nsis/payload.go`),
+and the uninstall entry's strings (key, `DisplayVersion`, `Publisher`). It names the build (a stale or mixed-up bundle
+fails), not its integrity: a hostile build stamps what it likes, and provenance plus the updater signature prove origin.
+It also refuses an Authenticode-signed installer until task 50 pins a signer. It reads one block at a time, grown as
+bytes arrive, and refuses past 2 GiB decompressed or 10 minutes (`limits`): LZMA makes gigabytes from a few bytes.
+Fixtures: `scripts/release-nsis/nsis/testdata/gen.sh` (makensis, Tauri's layout); `CMDR_REAL_NSIS=<real installer>` runs
+it on a real tauri-cli build (passed on the builder's `Cmdr_0.61.0_x64-setup.exe`, 2026-11-18).
+
+The advisory list is a row too (`AdvisoryList`, no OS, `Signed`): `shipped` adds it once some shipped update payload
+signs its version, `latest-json` writes `securityAdvisories` (after `downloads`, so everything before it prints as
+before), and the validator then requires that member, its URL the list's on the mirror and its signature the release's
+own `.sig`. `windows-publish` writes it from its own checkout (`stage -advisories`), never from the build's artifact.
+While no such row ships, the reader's `every_field_the_reader_names_is_one_the_writer_writes`
+(`crates/cmdr-update-manifest/src/tests.rs`) keeps listing `securityAdvisories` as not written, against
+`testdata/v0.61.0/latest.built.json`, which a macOS-only release still matches; the release that turns Windows on drops
+it from `NOT_WRITTEN_YET` with a fixture that carries the member.
+
+## Shipped and wired rows
+
+`Assets` holds every platform's rows; `ShippedOSes` (`shipping.go`, macOS only today) picks which a release publishes,
+each OS from its `Since` version and, for Windows, final versions only (a prerelease gets a `::notice::` and no Windows
+leg: an MSIX version is `X.Y.Z.0`). `For(version)` resolves only those, so `latest.json`, the checksums, the mirror,
+`release-finish`, and `release-evidence` agree, and a version before an OS's `Since` resolves as it was published. `All`
+resolves every row for `plan`'s wiring checks: the `-vetted` OSes and `-attested` SBOMs must cover the unshipped Windows
+rows too, so the jobs that build, vet, and attest them stay in place while they're skipped. `plan`'s `ships-<os>` gates
+those jobs (`windows-build`, `windows-publish`, `windows-attest`, and the Windows steps of `vet-update-archives` and
+`attest`), and the dry run reports each skipped step, so a renamed output or a broken condition shows in the goldens.
+
+Decision/Why: a code constant, not a repository variable. Every tool, the laptop's `release-finish` included, must agree
+on what a release holds, and a constant is reviewed, versioned, and the same everywhere; a variable would be read by the
+workflow alone and could flip a release's contents without a commit. Turning a platform on is then one reviewed line
+plus the test that pins it (`TestWindowsShipsOnlyOnceTurnedOn`). Decision/Why `Since`: without it, flipping the constant
+would change what every past release "should" hold, and the mirror, `release-evidence`, and a `local` draft tagged
+before the flip would demand Windows files those releases never had.
+
+## Legs
+
+`legs.go` splits a release into its core (macOS's rows, the frontend SBOM) and a leg per other OS (its rows plus the
+advisory list it brings). A leg is carried whole or not at all: `CompleteLegs` needs every required row (not the SBOM,
+which `attest` uploads later) and, once signed, every `.sig`. Decision/Why: a macOS release must never be blocked or
+failed by Windows (a security hotfix behind a cold two-hour Windows build), so no macOS job needs a Windows job, and the
+release takes the leg only if it's whole when the contents are fixed:
+
+- **`ci` mode**: `publish`'s "Generate latest.json" snapshot (`CarriedWhole`, a `::warning::` per leg left out). An
+  asset counts only fully saved (GitHub's `state: uploaded`), non-empty, and, for a signature, downloaded
+  (`finishedAssets`), so a Windows upload still going costs the leg, never the run. Every step after it follows that
+  `latest.json` (`-carried-by` for the read-back and `checksum-files`, the mirror's `-manifest`). A re-run of a release
+  with legs keeps the legs of the `latest.json` an earlier attempt uploaded (`-previous`, since the mirror's
+  `checksums.txt` is immutable), but only a whole file that passes `validateLatest`; a damaged one gets a warning and
+  the snapshot decides. A macOS-only release reads no earlier file, so a re-run overwrites a damaged one as it always
+  did. `windows-publish` refuses to upload once `latest.json` is up.
+- **What makes a counted leg's bytes right**: `release-upload.sh` deletes an asset whose GitHub digest isn't the local
+  file's, and `windows-publish` uploads the `.sig` files last, each after every file's check passed.
+- **The leg's gates** read outputs only a job's last step sets (`windows-build`'s `built`, `windows-publish`'s
+  `published`): job-level `continue-on-error` reports a red job as `success` to its dependents.
+- **`local` mode**: the laptop's signing (`release-finish`'s `legsOnDraft`, `signWholeLegs`, fully saved files only): it
+  stops waiting once every non-Windows job is green (`coreDone`, the job names pinned to the workflow by a test), and a
+  leg that fails provenance or vetting is left out with a line. `windows-attest` attests the leg as soon as it's up, so
+  `attest` needn't wait for it.
+- `release-evidence` takes a leg whole or not at all too: part of one is a problem.
+
+The plan's `signed-files`, `update-archives`, and `binaries` are the core's; a leg's builds are attest subject patterns
+(`subjectPattern`), which may match nothing. `stage` (`stage.go`) is `windows-publish`'s intake: exactly the manifest's
+Windows rows for the version (minus SBOMs and the advisory list), each a regular file, or it fails naming every extra,
+missing, or linked entry, the way `sign` takes exactly one `Cmdr` per `compiled-*` artifact.
 
 ## Who reads it
 
@@ -115,6 +183,16 @@ and fails on any expression or condition it doesn't know. `actions/attest` steps
 records the SBOM and the files the subject patterns match, and a literal path that matches nothing is recorded as the
 error the action would raise. `RELEASE_PIPELINE_WORKFLOW=<file>` runs it against another copy of the workflow (an older
 commit's). `RELEASE_PIPELINE_VERBOSE=1` logs a failing step's output.
+
+**With Windows on** (`pipeline_windowson_test.go`, goldens in `testdata/golden/windows-on/`): the release tools build
+with `-tags cmdr_windows_on` (`manifest/shipping_windows_on.go` adds Windows to `ShippedOSes`), so the day-one path runs
+in CI with nothing shipped: the plan's outputs, `publish` with the leg whole, late, half there, on a re-run, and on a
+`local` dispatch, `vet-update-archives` with and without it, `windows-publish` (`ci`, `local`, a hostile artifact, too
+late), `windows-attest`, `sbom`, and `attest`. These scenarios also record `::warning::`/`::notice::`/`::error::` lines.
+The Windows assets are a makensis-built v0.61.0 installer by the repo's publisher
+(`scripts/release-nsis/nsis/testdata/dryrun-0.61.0-setup.exe`) and signatures shaped like the Tauri signer's with the
+main key ID (the fake `pnpm` writes them for `tauri signer sign`). `windows-build` isn't covered: it runs Windows and
+the bundler. `TestNoReleaseToolBuildsWithWindowsOn` keeps the tag out of every workflow and script.
 
 The fixture is v0.61.0 as published: its asset list and sizes, its three signatures, `latest.json`, `checksums.txt`, and
 its CHANGELOG section. Other assets are short stand-ins (the sizes in `gh api` stay real), so `checksums.txt` in the
