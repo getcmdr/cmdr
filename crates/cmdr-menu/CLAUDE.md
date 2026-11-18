@@ -12,6 +12,7 @@ menus through `cmdr-listing-wasm` (`crates/cmdr-listing-wasm/CLAUDE.md`).
   Tauri accelerator ↔ macOS glyphs).
 - `context/`: the right-click menus. `file.rs` (the file menu), `popups.rs` (the small ones), `click.rs` (what a pick
   asks for), `image_index.rs` (the image-search group). Pinned by `context_test.rs`.
+- `page/`: all of it as the rows a page draws (demo, desktop in-page menus).
 
 ## Must-knows
 
@@ -34,15 +35,15 @@ menus through `cmdr-listing-wasm` (`crates/cmdr-listing-wasm/CLAUDE.md`).
   only the OS fills (Open with, Share, tags, the provider, Services): the desktop builds it, the demo leaves it out.
 - **No `cfg` in the data**: every bar exists on every host, so a Mac test pins the Windows and Linux bars.
   `Platform::current()` is the desktop's call; a wasm build answers Linux, so the demo passes `Platform::MacOs`.
-- **Every accelerator here is a string muda must parse**, and Tauri drops one it can't, silently. This crate has no
-  muda; the desktop's `menu/accelerators.rs` tests parse every one. ❌ Never `Opt`, ❌ never `Cmd+…` on Windows or Linux
-  (`same_on_all` / `split` refuse it at compile time; use `cmd_or_ctrl!`).
+- **Every accelerator here is a string muda must parse** (Tauri drops a bad one silently); the desktop's
+  `menu/accelerators.rs` tests parse them all. ❌ Never `Opt`, ❌ never `Cmd+…` on Windows or Linux (`same_on_all` /
+  `split` refuse it at compile time; use `cmd_or_ctrl!`).
 - **The enabled fold is the ONE rule** both hosts apply: a new input goes into `MenuItemInputs`, ❌ never a host-side
   special case.
-- **Wire words are the frontend's** (`ViewMode::wire`, `Pane::wire`, `SortCheck::wire`, `VolumeAction::wire`, the label
-  targets' serde shapes): `bindings.ts` and `menu-sort-command.ts` read them. Change both sides or neither.
+- **Wire words are the frontend's** (every `wire` fn, the label targets' serde shapes): `bindings.ts` and
+  `menu-sort-command.ts` read them. Change both sides or neither.
 - **`ids.rs` is parsed by `rust-command-id-drift.test.ts`** by path and by the `pub const NAME: &str = "…";` shape. Keep
-  that shape; move the file and the test moves with it.
+  that shape (and path).
 - No `tauri` here, enforced by `index-crate-isolation`.
 
 Decisions, the hosts' split, and what each host still owns: `DETAILS.md`.

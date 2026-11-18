@@ -13,6 +13,8 @@
 use tauri::Runtime;
 use tauri::{AppHandle, Manager};
 
+use std::sync::atomic::Ordering;
+
 use crate::ignore_poison::IgnorePoison;
 use crate::volume_broadcast::VolumeContextActionKind;
 use crate::window_events::{ViewerEditActionKind, ViewerHistoryDirection};
@@ -24,7 +26,7 @@ use cmdr_menu::spec::{Pane, Platform};
 use super::{
     CLOSE_TAB_ID, CommandScope, EDIT_COPY_ID, EDIT_CUT_ID, EDIT_PASTE_ID, MediaIndexFolderChoice,
     MediaIndexFolderExclusion, MenuSort, MenuState, SELECT_ALL_ID, SHOW_HIDDEN_FILES_ID, SettingsChanged,
-    VIEW_SET_MODE_COMMAND_ID, VIEW_SHOW_HIDDEN_COMMAND_ID, VIEWER_EDIT_COPY_ID, VIEWER_EDIT_CUT_ID,
+    VIEW_SET_MODE_COMMAND_ID, VIEW_SHOW_HIDDEN_COMMAND_ID, VIEWER_CLOSE_ID, VIEWER_EDIT_COPY_ID, VIEWER_EDIT_CUT_ID,
     VIEWER_EDIT_PASTE_ID, VIEWER_GO_BACK_ID, VIEWER_GO_FORWARD_ID, VIEWER_SELECT_ALL_ID, VIEWER_WORD_WRAP_ID,
     ViewModeChanged, menu_id_to_command,
 };
@@ -225,8 +227,14 @@ fn viewer_history_direction_for(menu_id: &str) -> Option<ViewerHistoryDirection>
 /// the main window; the blocks above it are the exceptions that need direct emits, per-pane
 /// state syncing, focus-routed clipboard handling, or native macOS panels.
 pub fn handle_menu_event(app: &AppHandle<tauri::Wry>, event: tauri::menu::MenuEvent) {
-    let id = event.id().as_ref();
+    handle_menu_pick(app, event.id().as_ref());
+}
 
+/// What a pick of menu item `id` does, from a native menu (`handle_menu_event`) or from a page
+/// that draws its menus itself (`page_bar::pick`, `page_context::pick`): one handler, so the two
+/// roads can't drift. A page's pick has already done what a native click does by itself (a check
+/// item's own flip).
+pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str) {
     // === A context-menu row's own lane: what it asks for comes off its id (`cmdr_menu::context::click`),
     // the same answer the browser demo's context menu gets. A plain command falls through to the
     // unified dispatch at the bottom, with the bar's.
@@ -253,12 +261,22 @@ pub fn handle_menu_event(app: &AppHandle<tauri::Wry>, event: tauri::menu::MenuEv
     // A disabled item's accelerator still fires, so the greying alone doesn't cover it.
     if id == SHOW_HIDDEN_FILES_ID {
         let menu_state = app.state::<MenuState<tauri::Wry>>();
-        if let Some(check_item) = super::cloned_handle(&menu_state.show_hidden_files) {
-            let new_state = check_item.is_checked().unwrap_or(true);
-            if menu_state.refuses_over_dialog(VIEW_SHOW_HIDDEN_COMMAND_ID) {
-                let _ = check_item.set_checked(!new_state);
-                return;
-            }
+        let check_item = super::cloned_handle(&menu_state.show_hidden_files);
+        // The click's new state: the native item's own (it toggled itself), or the stored check a
+        // page's pick flipped where no item is built.
+        let new_state = match &check_item {
+            Some(item) => item.is_checked().unwrap_or(true),
+            None => menu_state.show_hidden_checked.load(Ordering::Relaxed),
+        };
+        let refused = menu_state.refuses_over_dialog(VIEW_SHOW_HIDDEN_COMMAND_ID);
+        // A refused click puts the check back.
+        let settled = if refused { !new_state } else { new_state };
+        if refused && let Some(item) = &check_item {
+            let _ = item.set_checked(settled);
+        }
+        menu_state.show_hidden_checked.store(settled, Ordering::Relaxed);
+        super::page_bar::notify_bar_changed(app);
+        if !refused {
             use tauri_specta::Event as _;
             let _ = SettingsChanged {
                 show_hidden_files: new_state,
@@ -286,6 +304,7 @@ pub fn handle_menu_event(app: &AppHandle<tauri::Wry>, event: tauri::menu::MenuEv
             Pane::Right => *menu_state.view_mode_right.lock_ignore_poison() = mode,
         }
         let _ = super::view_mode_items::sync_view_mode_check_states(&menu_state);
+        super::page_bar::notify_bar_changed(app);
         use tauri_specta::Event as _;
         let _ = ViewModeChanged {
             mode: mode.wire().to_string(),
@@ -309,6 +328,18 @@ pub fn handle_menu_event(app: &AppHandle<tauri::Wry>, event: tauri::menu::MenuEv
                     break;
                 }
             }
+        }
+        return;
+    }
+
+    // === Viewer File > Close as a page draws it: close the viewer it came from ===
+    // The native bar's Close is the OS's own item and never reaches here.
+    if id == VIEWER_CLOSE_ID {
+        let window = focused_viewer_label(app).and_then(|label| app.get_webview_window(&label));
+        match window.map(|window| window.close()) {
+            Some(Ok(())) => {}
+            Some(Err(e)) => log::warn!(target: "menu", "couldn't close the viewer from its bar: {e}"),
+            None => log::warn!(target: "menu", "Viewer Close picked with no viewer focused, ignoring"),
         }
         return;
     }

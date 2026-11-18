@@ -40,8 +40,8 @@ pub const fn pin_tab_label(is_pinned: bool) -> LabelText {
 /// `None` rather than a fourth variant covers the row that implies no kind at all: the `..` row,
 /// an empty listing, a cursor entry still resolving. The item then falls back to its neutral
 /// label, which is also what the bar is built with.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize, specta::Type)]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum SameKindTarget {
     /// The cursor is on a folder: every folder, whatever its name.
     AllFolders,

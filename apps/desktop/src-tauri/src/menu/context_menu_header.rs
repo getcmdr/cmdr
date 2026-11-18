@@ -32,7 +32,7 @@
 /// would mean a second, worse implementation drifting from the pane's own status bar and
 /// size column, with both on screen at once. Rust decides the SHAPE of the label; the
 /// frontend supplies the words and digits inside it.
-#[derive(Debug, Default, serde::Deserialize)]
+#[derive(Debug, Default, serde::Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ContextMenuTarget {
     /// How many rows the menu acts on, as the frontend words it (`3 items`,
