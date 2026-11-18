@@ -1231,7 +1231,7 @@
   },
   "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Ẩn gợi ý này. Bạn có thể bật lại trong Cài đặt > Nâng cao.} linuxGnome {Ẩn gợi ý này. Bạn có thể bật lại trong Tùy thích > Nâng cao.} linuxKde {Ẩn gợi ý này. Bạn có thể bật lại trong Cấu hình Cmdr > Nâng cao.} other {Ẩn gợi ý này. Bạn có thể bật lại trong Cài đặt > Nâng cao.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "22d9d84"
+    "sourceHash": "aa27809"
   },
   "aboutThis.action.continueInAskCmdr": "Tiếp tục trong Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {

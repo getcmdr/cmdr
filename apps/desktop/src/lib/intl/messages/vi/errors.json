@@ -2647,7 +2647,7 @@
   },
   "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, windows {Bạn có thể thử:\n- Đăng nhập bằng một tài khoản: kết nối với tư cách khách không mã hóa được\n- Bật mã hóa SMB trên máy chủ\n- Tắt “Luôn yêu cầu mã hóa SMB” trong Cài đặt, nếu bạn không cần} linuxGnome {Bạn có thể thử:\n- Đăng nhập bằng một tài khoản: kết nối với tư cách khách không mã hóa được\n- Bật mã hóa SMB trên máy chủ\n- Tắt “Luôn yêu cầu mã hóa SMB” trong Tùy thích, nếu bạn không cần} linuxKde {Bạn có thể thử:\n- Đăng nhập bằng một tài khoản: kết nối với tư cách khách không mã hóa được\n- Bật mã hóa SMB trên máy chủ\n- Tắt “Luôn yêu cầu mã hóa SMB” trong Cấu hình Cmdr, nếu bạn không cần} other {Bạn có thể thử:\n- Đăng nhập bằng một tài khoản: kết nối với tư cách khách không mã hóa được\n- Bật mã hóa SMB trên máy chủ\n- Tắt “Luôn yêu cầu mã hóa SMB” trong Cài đặt, nếu bạn không cần}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
-    "sourceHash": "5d8e637"
+    "sourceHash": "c91f084"
   },
   "errors.volume.encryptionRequired": "Kết nối tới mục chia sẻ này không mã hóa được, còn Cmdr đang bật “Luôn yêu cầu mã hóa SMB”.",
   "@errors.volume.encryptionRequired": {
@@ -2671,7 +2671,7 @@
   },
   "errors.write.smbEncryptionRequired.suggestion": "{platform, select, windows {Hãy đăng nhập bằng một tài khoản thay vì với tư cách khách, hoặc bật mã hóa SMB trên máy chủ. Bạn cũng có thể tắt “Luôn yêu cầu mã hóa SMB” trong Cài đặt.} linuxGnome {Hãy đăng nhập bằng một tài khoản thay vì với tư cách khách, hoặc bật mã hóa SMB trên máy chủ. Bạn cũng có thể tắt “Luôn yêu cầu mã hóa SMB” trong Tùy thích.} linuxKde {Hãy đăng nhập bằng một tài khoản thay vì với tư cách khách, hoặc bật mã hóa SMB trên máy chủ. Bạn cũng có thể tắt “Luôn yêu cầu mã hóa SMB” trong Cấu hình Cmdr.} other {Hãy đăng nhập bằng một tài khoản thay vì với tư cách khách, hoặc bật mã hóa SMB trên máy chủ. Bạn cũng có thể tắt “Luôn yêu cầu mã hóa SMB” trong Cài đặt.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
-    "sourceHash": "bab81dc"
+    "sourceHash": "a7fe1d2"
   },
   "errors.listing.smbNegotiationInvalid.title": "Máy chủ không xác nhận kết nối này",
   "@errors.listing.smbNegotiationInvalid.title": {

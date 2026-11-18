@@ -69,7 +69,7 @@
   },
   "search.imageResults.networkOff": "{platform, select, windows {Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Cài đặt để tìm kiếm văn bản bên trong ảnh của nó.} linuxGnome {Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Tùy thích để tìm kiếm văn bản bên trong ảnh của nó.} linuxKde {Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Cấu hình Cmdr để tìm kiếm văn bản bên trong ảnh của nó.} other {Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Cài đặt để tìm kiếm văn bản bên trong ảnh của nó.}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "30b2455"
+    "sourceHash": "5f0699a"
   },
   "search.imageResults.paused": "Ổ đĩa này đang ngắt kết nối, nên đây là những ảnh đã lập chỉ mục cho đến nay.",
   "@search.imageResults.paused": {
@@ -221,7 +221,7 @@
   },
   "search.coverage.toast.indexingOff": "{platform, select, windows {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.} linuxGnome {Lập chỉ mục ổ đĩa đang tắt trong Tùy thích, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.} linuxKde {Lập chỉ mục ổ đĩa đang tắt trong Cấu hình Cmdr, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "7c4ff62"
+    "sourceHash": "15b2ffc"
   },
   "search.coverage.toast.deferredUntilSearchEnds": "Cmdr đã đang tìm kiếm trong {drive}. Việc lập chỉ mục sẽ bắt đầu ngay khi xong.",
   "@search.coverage.toast.deferredUntilSearchEnds": {

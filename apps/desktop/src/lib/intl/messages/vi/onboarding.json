@@ -309,7 +309,7 @@
   },
   "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cài đặt > AI.} linuxGnome {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Tùy thích > AI.} linuxKde {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cấu hình Cmdr > AI.} other {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cài đặt > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
-    "sourceHash": "6e0eb09"
+    "sourceHash": "6075ac0"
   },
   "onboarding.stepAi.off.label": "Cảm ơn nhưng thôi, tôi không cần AI",
   "@onboarding.stepAi.off.label": {
@@ -317,7 +317,7 @@
   },
   "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cài đặt.} linuxGnome {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Tùy thích.} linuxKde {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cấu hình Cmdr.} other {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cài đặt.}}",
   "@onboarding.stepAi.off.help": {
-    "sourceHash": "b20cf1d"
+    "sourceHash": "f4c9871"
   },
   "onboarding.localDownloadFailed.title": "Mô hình AI cục bộ chưa tải về xong",
   "@onboarding.localDownloadFailed.title": {
@@ -393,7 +393,7 @@
   },
   "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.} linuxGnome {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Tùy thích.} linuxKde {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cấu hình Cmdr.} other {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.}}",
   "@onboarding.stepBeta.analyticsCaption": {
-    "sourceHash": "47a7511"
+    "sourceHash": "9dc83f9"
   },
   "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản macOS của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.} windows {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản Windows của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.} linuxGnome {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Tùy thích bất cứ lúc nào.} linuxKde {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cấu hình Cmdr bất cứ lúc nào.} other {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.}}",
   "@onboarding.stepBeta.crashReportsNote": {
@@ -469,7 +469,7 @@
   },
   "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.} linuxGnome {Bạn có thể thay đổi điều này bất cứ lúc nào trong Tùy thích.} linuxKde {Bạn có thể thay đổi điều này bất cứ lúc nào trong Cấu hình Cmdr.} other {Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.}}",
   "@onboarding.stepOptional.changeAnytime": {
-    "sourceHash": "320f582"
+    "sourceHash": "ff84784"
   },
   "onboarding.stepOptional.networking.title": "Kết nối mạng",
   "@onboarding.stepOptional.networking.title": {
