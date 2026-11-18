@@ -117,6 +117,9 @@ Settled:
     3. Does the native bar and its menus follow dark and light mode, and high contrast, well enough?
     4. Do AltGr combos on a second layout type their character, not open a menu?
     5. Does Narrator read each mode's bar as a menu bar?
+  - **First measurement** (the agent's selftest on mami, Windows 10, 2026-11-18): on today's muda bar a lone Alt and F10
+    work, Alt+letter and the bar's accelerators don't; a ~40-line WebView2 key bridge fixes Alt+letter; native popups
+    stayed light with only the window forced dark. Details: the spike note.
   - **Decision rule**: the native bar if 1–3 are acceptable (with a small key bridge if that's what it takes); the
     hybrid (an in-page title strip opening native popups) if only the bar strip fails; the in-page bar only if both
     fail.

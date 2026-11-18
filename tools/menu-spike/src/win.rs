@@ -3,7 +3,7 @@
 //! - a subclass on the main window that logs `SC_KEYMENU` and the menu loop, and (the "guard")
 //!   swallows a `SC_KEYMENU` that would start Windows' menu loop with no bar to open;
 //! - WebView2's `AcceleratorKeyPressed`, logged, plus the optional "key bridge" that forwards a
-//!   lone Alt, F10, and Alt+letter to the native bar;
+//!   F10 and Alt+letter to the native bar (a lone Alt gets there by itself);
 //! - mode B's popups, with a message-filter hook so Left and Right walk between menus;
 //! - `--selftest`, which types a fixed key script with `SendInput` and saves screenshots.
 

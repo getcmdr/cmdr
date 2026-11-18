@@ -8,8 +8,8 @@ It shows Cmdr's real Windows menu bar (from `crates/cmdr-menu`, English labels f
 page with a focused list and a text field, in three modes:
 
 - **A. Native bar**: muda's Win32 menu bar through Tauri, with mnemonics (`&File`) and the bar's registered
-  accelerators, as the app builds it today. The "Key bridge" switch forwards a lone Alt, F10, and Alt+letter from
-  WebView2 to the bar.
+  accelerators, as the app builds it today. The "Key bridge" switch forwards F10 and Alt+letter from WebView2 to the
+  bar.
 - **B. Hybrid**: an in-page strip of menu titles (Alt or F10 focuses it, Alt+letter opens a menu, Left and Right walk
   it), each title opening a native popup menu under it.
 - **C. In-page bar**: a page-drawn bar and dropdowns, unpolished.
@@ -21,7 +21,7 @@ each key: `page keydown`, `webview2 accel` (what WebView2 tells the host), `host
 ## Run it
 
 On Windows, double-click `menu-spike.exe`. It needs the WebView2 runtime, which Windows 11 and an updated Windows 10
-have; nothing else is installed or written. Flags:
+have. It installs nothing; WebView2 keeps its cache in `%LOCALAPPDATA%\com.getcmdr.menuspike`. Flags:
 
 - `--mode native|hybrid|inpage` (or `a|b|c`): the starting mode. The page switches modes too.
 - `--theme light|dark`: force the window's theme; without it, it follows Windows.

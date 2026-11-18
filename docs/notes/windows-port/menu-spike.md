@@ -8,7 +8,7 @@ laptop and fills the results table below. The research recommendation it tests i
 
 - **A. Native bar**: muda's Win32 menu bar, attached by Tauri as Cmdr's bar is today on Windows, with mnemonics
   (`&File`) and the registered accelerators. The **Key bridge** switch adds the fix a native bar would ship with:
-  WebView2's `AcceleratorKeyPressed` event forwards a lone Alt, F10, and Alt+(title letter) to the bar as `SC_KEYMENU`.
+  WebView2's `AcceleratorKeyPressed` event forwards F10 and Alt+(title letter) to the bar as `SC_KEYMENU`.
 - **B. Hybrid**: a thin in-page strip of menu titles; Alt or F10 focuses it, Alt+letter opens a menu, Left and Right
   walk it. Each title opens a native popup menu under it, the same kind as the right-click menu.
 - **C. In-page bar**: a page-drawn bar and dropdowns, deliberately unpolished. It shows the key routing, not the final
@@ -66,17 +66,57 @@ Versions in our `Cargo.lock`: tauri 2.12.5, tauri-runtime-wry 2.12.3, wry 0.57.0
   Styles Menu in windows 11", 2024-03-17), has no replies and no plan; it notes `windows-rs` dropped WinUI 3 XAML
   support. Nothing on Tauri's side mentions one.
 
-### Unknown until the spike runs
+### Still unknown after the agent's run (David's laptops answer these)
 
-- Whether a lone Alt, F10, and Alt+letter reach the native bar with focus in the page, without the bridge (they'd come
-  through WebView2's own `DefWindowProc` call, if it makes one; the openbot `key_menu.rs` finding in the research note
-  says a lone Alt and F10 do produce `SC_KEYMENU`).
-- Whether the bridge's `SC_KEYMENU` actually moves keyboard focus into the bar, and back to the page on Escape.
-- Whether a native popup opened from the page (mode B) and the right-click menu follow dark mode and high contrast on
-  each Windows version, and how the Win32 bar looks next to Windows 11's own apps.
-- What AltGr combos do on a layout that has AltGr (Hungarian on both laptops): they arrive as Ctrl+Alt+key, so a bar
-  that reads them as Alt+letter would steal characters.
-- Whether Narrator reads mode C's ARIA `menubar` as a menu bar.
+- Whether native popups (the bar's menus, mode B, the right-click menu) go dark when WINDOWS is in dark mode. With only
+  the window forced dark, they stay light (below).
+- High contrast, and how the Win32 bar looks next to Windows 11's own apps.
+- AltGr on a layout that has it (mami's console runs an English layout, so the selftest's right Alt was a plain Alt).
+  AltGr arrives as Ctrl+Alt+key; the bridge skips a key while Ctrl or right Alt is down, but that's untested.
+- Narrator, in every mode.
+- Whether the bridge's Shift check holds with real typing: under `SendInput`, Shift was already up by the time
+  WebView2's event arrived, so the bridge read Shift+F10 as F10 and opened the bar as well as the context menu.
+
+## What the agent observed on mami (Windows 10 22H2, no screen)
+
+The `--selftest` ran three times in mami's console session (a one-off scheduled task as the signed-in `admin`, removed
+afterwards): light, light after the fixes below, and with the window forced dark. Screenshots work with the lid closed
+(1600 × 900). Logs and shots aren't kept in the repo.
+
+- **Mode A, stock (what Cmdr ships today)**:
+  - A lone Alt opens muda's bar: WebView2 passes the unhandled Alt release to `DefWindowProc`, which sends `SC_KEYMENU`,
+    and "File" highlights. Escape ends the menu loop and the page has the keyboard again.
+  - F10 does the same, but only when the page doesn't `preventDefault` it. The first run's page did (as a Cmdr F-key
+    would), and F10 then did nothing.
+  - **Alt+letter doesn't work**: Alt+F and Alt+E never reach Windows (no `SC_KEYMENU`), so no menu opens.
+  - **Accelerators don't fire**: Ctrl+Shift+C (Copy path, registered on the bar) logged only the page's keydown, no menu
+    event. So the bar's keys never double-fire, and never work on their own either: the page has to own them.
+- **Mode A with the key bridge**: Alt+F and Alt+E open the right menu, Right walks to the next menu, Escape returns to
+  the page, and the page no longer sees the letter. F10 through the bridge works too. Forwarding a lone Alt as well
+  opened the menu loop twice, so the bridge leaves it to Windows now. The bridge is about 40 lines on WebView2's
+  `AcceleratorKeyPressed`.
+- **Mode B**: Alt and F10 focus the strip (the page's `preventDefault` on the Alt release means Windows sends no
+  `SC_KEYMENU` at all), Alt+F opens File's native popup under its title, and Right closes it and opens Edit's, via a
+  `WH_MSGFILTER` hook. It looks like a real bar's menu.
+- **Mode C**: Alt+F, F10, and the arrows work as written; it looks like a web page, as expected unpolished.
+- **Browser keys**: with WebView2's browser keys on, the page's `preventDefault` still wins: F5, Ctrl+R, and Alt+Left
+  didn't reload or go back. Ctrl+Shift+P (not prevented by the page) briefly took focus from the window twice, likely
+  WebView2's own print or similar UI; #1115's browser-keys-off covers it.
+- **Shift+F10** opens the native file context menu in every mode (the page's own handler; WebView2 opened a second one
+  until the page called `preventDefault`, fixed).
+- **Dark, window forced dark, Windows light**: the title bar and muda's bar strip go dark, but every native popup (the
+  bar's menus, the right-click menu) stays light. tao asks Windows for `AllowDark`, which follows the system's app mode,
+  so with Windows itself dark they should go dark too: step 9 checks it.
+
+## Get it
+
+- **The build**: `~/Downloads/cmdr-menu-spike/menu-spike.exe` on David's Mac, one 9.7 MB file built on mami (release,
+  `opt-level` 1). Copy it to each laptop (USB stick, a share, or a cloud folder) and double-click it. SmartScreen warns
+  that it's unsigned: "More info", then "Run anyway".
+- **WebView2**: it needs the Evergreen WebView2 runtime, which Windows 11 ships and Windows 10 gets through Windows
+  Update and with Edge (mami has 157.0.4341.60). Nothing else: the WebView2 loader is linked in, and it installs
+  nothing. WebView2 keeps its cache in `%LOCALAPPDATA%\com.getcmdr.menuspike`; delete that folder afterwards.
+- **Rebuild**: `tools/menu-spike/README.md`.
 
 ## Test script (about 15 minutes per laptop)
 
@@ -119,12 +159,23 @@ One row per mode and laptop. Use ok, no, or a few words.
 
 ## Decision rule
 
-1. **Native bar (A)** if Alt, F10, Alt+letter, and Escape work (with the bridge if needed: it's about 60 lines), no key
+1. **Native bar (A)** if Alt, F10, Alt+letter, and Escape work (with the bridge if needed: it.s about 40 lines), no key
    fires twice once the bar's accelerators are display-only, and the dark and contrast looks are acceptable. D5 then
    flips to muda's bar on Windows; Linux and GNOME are decided separately.
 2. **Hybrid (B)** if the native bar strip is the only problem (the keys or its look) but native popups are fine.
 3. **In-page (C)** only if both fail: D5 stands as researched.
 
-## What the agent observed without a screen
+## Seeing mami's screen
 
-Pending: the `--selftest` run on mami (Windows 10 22H2, Hungarian locale).
+mami runs lid closed, but its console session is live (`admin` is signed in at the console, and screen captures from it
+work), so a remote view shows the real desktop:
+
+- **Remote Desktop**: enabled (`fDenyTSConnections` 0, `TermService` running, NLA on), listening on 3389, and the
+  built-in "Remote Desktop - User Mode" firewall rules allow any address on every profile, so
+  `mami-laptop.tail1b22.ts.net:3389` answers over the tailnet (checked 2026-11-18). Windows App on the Mac connects as
+  `Admin`, but it needs that account's password, which isn't in the secrets store; and signing in over RDP takes the
+  console session over (the lid-closed console locks), which is fine for this.
+- **Chrome Remote Desktop**: its host service (`chromoting`) runs, but the infra repo's mami-laptop notes found its
+  registration dead on 2026-11-08; re-registering through `remotedesktop.google.com/headless` brings it back.
+- **No view at all**: `menu-spike.exe --selftest <dir> --log <dir>\log.txt`, started in the console session (the agent
+  used a one-off scheduled task), saves a screenshot per step and the full log.
