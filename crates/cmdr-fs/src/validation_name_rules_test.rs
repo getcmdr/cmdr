@@ -133,6 +133,11 @@ fn the_case_files_rules_are_the_ones_kinds_build() {
         FilesystemKind::Apfs.name_rules(),
         "APFS counts UTF-16 units"
     );
+    assert_eq!(
+        spec.rules["hfsPlus"].with_path_limit(None),
+        FilesystemKind::HfsPlus.name_rules(),
+        "HFS+ counts the decomposed name's UTF-16 units"
+    );
     let stick = FilesystemKind::ExFat.name_rules();
     assert_eq!(stick.format, NameFormat::Windows);
     assert_eq!(stick.name_limit, LengthLimit::UTF16_255);

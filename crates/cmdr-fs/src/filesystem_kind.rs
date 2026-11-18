@@ -150,7 +150,9 @@ impl FilesystemKind {
         match self {
             Self::Fat32 | Self::ExFat | Self::Ntfs => NameRules::windows_format(),
             Self::Smb => NameRules::smb_share(),
-            Self::Apfs | Self::HfsPlus => NameRules::posix(LengthLimit::UTF16_255),
+            Self::Apfs => NameRules::posix(LengthLimit::UTF16_255),
+            // HFS+ stores names decomposed, so it counts them that way.
+            Self::HfsPlus => NameRules::posix(LengthLimit::HFS_PLUS_255),
             Self::Ext4 | Self::Btrfs | Self::Xfs | Self::Zfs => NameRules::posix(LengthLimit::BYTES_255),
             Self::Mtp | Self::Other => NameRules::POSIX,
         }
@@ -384,9 +386,14 @@ mod tests {
             assert_eq!(kind.name_rules().name_limit, LengthLimit::UTF16_255, "{kind:?}");
         }
         assert_eq!(FilesystemKind::Smb.name_rules().format, NameFormat::SmbShare);
-        for kind in [FilesystemKind::Apfs, FilesystemKind::HfsPlus] {
-            assert_eq!(kind.name_rules(), NameRules::posix(LengthLimit::UTF16_255), "{kind:?}");
-        }
+        assert_eq!(
+            FilesystemKind::Apfs.name_rules(),
+            NameRules::posix(LengthLimit::UTF16_255)
+        );
+        assert_eq!(
+            FilesystemKind::HfsPlus.name_rules(),
+            NameRules::posix(LengthLimit::HFS_PLUS_255)
+        );
         for kind in [
             FilesystemKind::Ext4,
             FilesystemKind::Btrfs,

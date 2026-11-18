@@ -7,6 +7,7 @@
 //! filesystem's own unit.
 
 use serde::{Deserialize, Serialize};
+use unicode_normalization::UnicodeNormalization;
 
 mod platform;
 
@@ -24,9 +25,12 @@ pub const MAX_NAME_BYTES: usize = 255;
 pub enum LengthUnit {
     /// UTF-8 bytes: ext4, Btrfs, XFS, ZFS, and Samba over them.
     Bytes,
-    /// UTF-16 code units: APFS, HFS+, exFAT, FAT32, NTFS, and Windows' own paths.
+    /// UTF-16 code units: APFS, exFAT, FAT32, NTFS, and Windows' own paths.
     /// An emoji outside the Basic Multilingual Plane is two.
     Utf16Units,
+    /// UTF-16 code units of the name DECOMPOSED (NFD): HFS+, which stores names
+    /// that way, so a precomposed `é` (one unit) takes two there.
+    Utf16UnitsDecomposed,
 }
 
 /// A length limit, inclusive, in its filesystem's own unit.
@@ -45,12 +49,18 @@ impl LengthLimit {
         max: MAX_NAME_BYTES,
         unit: LengthUnit::Bytes,
     };
-    /// 255 UTF-16 units: APFS's, HFS+'s, and the Windows formats' name limit
+    /// 255 UTF-16 units: APFS's and the Windows formats' name limit
     /// (verified on macOS 27.0: `é` × 200 lands on APFS, exFAT, and FAT32, and
     /// `😀` × 128 doesn't, 2026-11-18).
     pub const UTF16_255: Self = Self {
         max: 255,
         unit: LengthUnit::Utf16Units,
+    };
+    /// HFS+'s name limit: 255 UTF-16 units of the name as HFS+ stores it,
+    /// decomposed (Apple's TN1150, "HFS Plus Names").
+    pub const HFS_PLUS_255: Self = Self {
+        max: 255,
+        unit: LengthUnit::Utf16UnitsDecomposed,
     };
     /// An SMB2 path's ceiling: CREATE's `NameLength` is a 16-bit byte count
     /// of UTF-16 (MS-SMB2 § 2.2.13, read 2026-11-18), so 32,767 units.
@@ -64,14 +74,16 @@ impl LengthLimit {
         match self.unit {
             LengthUnit::Bytes => text.len(),
             LengthUnit::Utf16Units => text.encode_utf16().count(),
+            LengthUnit::Utf16UnitsDecomposed => text.nfd().map(char::len_utf16).sum(),
         }
     }
 
     /// `text`'s length when it's past this limit, or `None` when it fits.
     fn exceeded_by(&self, text: &str) -> Option<usize> {
         // A UTF-8 string is never shorter in bytes than in UTF-16 units, so a
-        // short one skips the count.
-        if text.len() <= self.max {
+        // short one skips the count. Not decomposed: `Ǖ` is two bytes and three
+        // decomposed units.
+        if self.unit != LengthUnit::Utf16UnitsDecomposed && text.len() <= self.max {
             return None;
         }
         let length = self.length_of(text);

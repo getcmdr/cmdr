@@ -12973,10 +12973,15 @@ export type LengthUnit =
   // UTF-8 bytes: ext4, Btrfs, XFS, ZFS, and Samba over them.
   | 'bytes'
   /**
-   *  UTF-16 code units: APFS, HFS+, exFAT, FAT32, NTFS, and Windows' own paths.
+   *  UTF-16 code units: APFS, exFAT, FAT32, NTFS, and Windows' own paths.
    *  An emoji outside the Basic Multilingual Plane is two.
    */
   | 'utf16Units'
+  /**
+   *  UTF-16 code units of the name DECOMPOSED (NFD): HFS+, which stores names
+   *  that way, so a precomposed `é` (one unit) takes two there.
+   */
+  | 'utf16UnitsDecomposed'
 
 // One of an app's folders in the Library.
 export type LibraryFolder = {

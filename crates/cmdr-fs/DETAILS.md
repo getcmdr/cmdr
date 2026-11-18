@@ -333,12 +333,14 @@ about), or `Ok(None)`; `cmdr-operations`' `name_rules.rs` resolves a folder to i
 - **An SMB share warns about both, on every host**: smb2 and smbfs carry the characters as stand-ins both ways
   (`crates/cmdr-smb/DETAILS.md`), and Samba stores a device name and lists it back mangled (`CON` → `CR23RR~9`). The SMB
   specs forbid no device name (MS-FSCC § 2.1.5.2, v20251121), so a bare `CON` warns too.
-- **Lengths in each filesystem's unit** (`LengthLimit`, inclusive): APFS, HFS+, and the Windows formats count 255 UTF-16
-  units; ext4, Btrfs, XFS, ZFS, a share (a NAS's disk under Samba), MTP, and `Other` count 255 bytes. The path limit is
-  the PATH API's, not the format's: a local probe gets `HOST_PATH_LIMIT` (macOS 1,023 bytes, Linux 4,095, Windows 32,767
-  UTF-16 units through `\\?\`), an SMB backend SMB2's 32,767 units, every other backend none (it answers for itself).
-  `MAX_NAME_BYTES` stays as the floor for a name with no destination yet (`validate_plain_leaf`), and
-  `over_every_name_limit` (past both units) is the only name a transfer refuses up front.
+- **Lengths in each filesystem's unit** (`LengthLimit`, inclusive): APFS and the Windows formats count 255 UTF-16 units;
+  HFS+ counts 255 UTF-16 units of the name DECOMPOSED (`Utf16UnitsDecomposed`, Apple's TN1150), since it stores NFD, so
+  200 precomposed `é` (200 units) is 400 there; ext4, Btrfs, XFS, ZFS, a share (a NAS's disk under Samba), MTP, and
+  `Other` count 255 bytes. The path limit is the PATH API's, not the format's: a local probe gets `HOST_PATH_LIMIT`
+  (macOS 1,023 bytes, Linux 4,095, Windows 32,767 UTF-16 units through `\\?\`), an SMB backend SMB2's 32,767 units,
+  every other backend none (it answers for itself). `MAX_NAME_BYTES` stays as the floor for a name with no destination
+  yet (`validate_plain_leaf`), and `over_every_name_limit` (past both units) is the only name a transfer refuses up
+  front.
 - **`windows_portability(name)`** is the destination-blind class of a name, for a transfer scan's tally; the
   destination's rules decide what it means there. `PortabilityWarning::reaches_linux` says whether Linux misreads it
   too.

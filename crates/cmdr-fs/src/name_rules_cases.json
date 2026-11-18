@@ -1,5 +1,5 @@
 {
-  "about": "Which names each destination takes. Run by crates/cmdr-fs/src/validation_name_rules_test.rs and apps/desktop/src/lib/utils/filename-validation.test.ts, so the Rust rule and its keystroke mirror can't drift. `rules` are NameRules values as they cross IPC: a plain POSIX disk, APFS, an SMB share, a Windows-format stick written from a Mac (whose driver stores stand-ins, so it warns), from Linux (whose vfat and exfat drivers refuse the characters and strip a trailing period), and a Windows disk written from Windows. Each case is `name` (or `repeat` copies of it), and per rules set either \"ok\", the ValidationError kind it refuses with, or \"warn:\" plus the PortabilityWarning kind it's taken with. `all` answers for every rules set the case doesn't name.",
+  "about": "Which names each destination takes. Run by crates/cmdr-fs/src/validation_name_rules_test.rs and apps/desktop/src/lib/utils/filename-validation.test.ts, so the Rust rule and its keystroke mirror can't drift. `rules` are NameRules values as they cross IPC: a plain POSIX disk, APFS, HFS+ (which stores names decomposed, so it counts them that way), an SMB share, a Windows-format stick written from a Mac (whose driver stores stand-ins, so it warns), from Linux (whose vfat and exfat drivers refuse the characters and strip a trailing period), and a Windows disk written from Windows. Each case is `name` (or `repeat` copies of it), and per rules set either \"ok\", the ValidationError kind it refuses with, or \"warn:\" plus the PortabilityWarning kind it's taken with. `all` answers for every rules set the case doesn't name.",
   "rules": {
     "posix": {
       "format": "posix",
@@ -21,6 +21,13 @@
       "reservedNames": "warn",
       "nameLimit": { "max": 255, "unit": "bytes" },
       "pathLimit": { "max": 32767, "unit": "utf16Units" }
+    },
+    "hfsPlus": {
+      "format": "posix",
+      "windowsCharacters": "allow",
+      "reservedNames": "allow",
+      "nameLimit": { "max": 255, "unit": "utf16UnitsDecomposed" },
+      "pathLimit": { "max": 1023, "unit": "bytes" }
     },
     "stickOnMac": {
       "format": "windows",
@@ -93,9 +100,25 @@
       "all": "ok",
       "posix": "nameTooLong",
       "share": "nameTooLong",
-      "why": "256 bytes, but 128 UTF-16 units: a byte-counting destination refuses it, a UTF-16 one takes it"
+      "hfsPlus": "nameTooLong",
+      "why": "256 bytes, but 128 UTF-16 units: a byte-counting destination refuses it, a UTF-16 one takes it, and HFS+ stores it decomposed as 256 units"
     },
-    { "name": "é", "repeat": 255, "all": "ok", "posix": "nameTooLong", "share": "nameTooLong" },
+    {
+      "name": "é",
+      "repeat": 255,
+      "all": "ok",
+      "posix": "nameTooLong",
+      "share": "nameTooLong",
+      "hfsPlus": "nameTooLong"
+    },
+    {
+      "name": "é",
+      "repeat": 127,
+      "all": "ok",
+      "posix": "ok",
+      "share": "ok",
+      "why": "254 decomposed units: HFS+ takes it too"
+    },
     {
       "name": "😀",
       "repeat": 128,

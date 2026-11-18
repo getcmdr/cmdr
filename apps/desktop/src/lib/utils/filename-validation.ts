@@ -27,9 +27,17 @@ export async function initPathLimits(): Promise<void> {
   hostLimits = await getPathLimits()
 }
 
-/** How long `text` is in `unit`: UTF-8 bytes, or UTF-16 code units (JS's own `length`). */
+/** How long `text` is in `unit`: UTF-8 bytes, UTF-16 code units (JS's own `length`), or those of its NFD form. */
 export function lengthIn(text: string, unit: LengthUnit): number {
-  return unit === 'bytes' ? new TextEncoder().encode(text).length : text.length
+  switch (unit) {
+    case 'bytes':
+      return new TextEncoder().encode(text).length
+    case 'utf16Units':
+      return text.length
+    // HFS+ stores a name decomposed, so it counts it that way.
+    case 'utf16UnitsDecomposed':
+      return text.normalize('NFD').length
+  }
 }
 
 /** `text`'s length when it's past `limit`, or `null` when it fits. */
