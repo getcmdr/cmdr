@@ -625,8 +625,9 @@ on any build script that needs MSVC's `cl.exe`.
   entry, which `workspace-member-coverage` enforces (`scripts/check/checks/DETAILS.md` § "The Windows ratchet").
   `cmdr-fs` and 16 members above it joined on 2026-11-18 after `cargo clippy --all-targets -D warnings` passed for them
   on the Windows 10 22H2 builder (MSVC), and `cmdr-index`, `index-query`, `cmdr-local`, `cmdr-operations`,
-  `cmdr-multi-rename`, `cmdr-restic`, and `cmdr-listing-wasm` the same day, leaving only the app; the members still
-  pending, their blockers, and the builder's test runs: `docs/notes/windows-port/build-progress.md`.
+  `cmdr-multi-rename`, `cmdr-restic`, and `cmdr-listing-wasm` the same day, and the app (`cmdr`) last, after
+  `cargo clippy -p cmdr --all-targets -D warnings` passed on the builder: `windowsPending` is empty, so every member
+  must compile. Milestones and the builder's test runs: `docs/notes/windows-port/build-progress.md`.
 - **The break report (never red)**: `desktop-rust-windows-breaks` runs one `cargo check --keep-going --all-targets` over
   every other member that builds on Linux, and classifies each: compiles (ready to join), fails (its error count and
   first errors), or blocked (the failing crates in its dependency closure, ours or third-party, a failed build script
@@ -659,11 +660,18 @@ on any build script that needs MSVC's `cl.exe`.
   - `core.autocrlf false` and `core.longpaths true` before the checkout, so the tree's bytes match every other OS's.
   - No Rust cache, on purpose: the repo sits near its 10 GB budget (§ Build caching), a Windows `target/` would be one
     more multi-GB entry, and a non-blocking lane can afford a cold build. Revisit at promotion.
-- **Promotion to blocking**, once the whole workspace is on the must-compile list (`windowsPending` is empty) and a few
-  runs are green: replace the `push`/`workflow_dispatch` triggers with `workflow_call` (plus a `marker-key` input and a
-  `marker` job, like `macos-lane.yml`), add a `desktop-rust-windows` caller in `ci.yml` gated on a filter of its own and
-  in `CI OK`'s `needs`, and retire the break report. Then `desktop-rust-tests` on Windows is the next question
-  (`docs/notes/windows-port/frontend-build-audit.md` § 3).
+- **Promotion to blocking**: the first condition holds (2026-11-18: `windowsPending` is empty, the whole workspace is on
+  the must-compile list). What's left, in order:
+  1. A few green runs of this lane on `main` with the app in it. The app is the heaviest member: its clippy alone took
+     12 min cold on the 2-core builder, so measure the lane's new wall time against the 75-min cap and the critical path
+     (§ Critical path) before it gates anything.
+  2. Decide the Rust cache (above): a cold whole-workspace build on every land run is likely too slow to gate on.
+  3. The wiring: replace the `push`/`workflow_dispatch` triggers with `workflow_call` (plus a `marker-key` input and a
+     `marker` job, like `macos-lane.yml`), add a `desktop-rust-windows` caller in `ci.yml` gated on a filter of its own
+     and in `CI OK`'s `needs`, and retire the break report, which now has nothing left to report.
+  4. Then `desktop-rust-tests` on Windows, which isn't green yet: the app's suite there and the crates' failure clusters
+     (#1225 app paths, #1226, #1232) are in the build log, and `docs/notes/windows-port/frontend-build-audit.md` § 3
+     covers the frontend half.
 - **Only a real run can prove**: that `jdx/mise-action` installs Go on `windows-latest` through the action's retry
   wrapper; that `aws-lc-sys` (under `cmdr-http`) builds with the image's MSVC and NASM setup; that the runner's process
   groups and `taskkill` behave; that `D:` has room for a cold whole-tree `cargo check`; and how long that takes (the

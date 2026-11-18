@@ -485,9 +485,10 @@ destination goes through, plus `path_exists`.
 
 ## Eject
 
-`eject/` (macOS+Linux) owns volume teardown across every kind, so it lives next to the `VolumeManager` and `Volume`
-trait it dispatches over: `mod.rs` holds the pipeline and `EjectError`, `unmount_tool.rs` the `diskutil` / `umount`
-subprocess, `disk_reach.rs` + `disk_target.rs` + `disk_flight.rs` + `pre_check.rs` (macOS) the per-physical-disk eject below, `holders/` the scan that
+`eject/` owns volume teardown across every kind, on every OS, so it lives next to the `VolumeManager` and `Volume`
+trait it dispatches over: `mod.rs` holds the pipeline and `EjectError`, `unmount_tool.rs` the tool run and its retries,
+`platform/` what each OS answers (the tool, `diskutil` on macOS and `umount` on Linux; ejectability; whether an SMB
+disconnect unmounts; Windows has no tool and nothing ejectable yet, so a local drive refuses as `NotEjectable`, task 39), `disk_reach.rs` + `disk_target.rs` + `disk_flight.rs` + `pre_check.rs` (macOS) the per-physical-disk eject below, `holders/` the scan that
 names a refusal's holders, and `escalate.rs` the normal-then-force takedown of an SMB mount that may be dead ("Eject and
 save" below).
 ❗ **`disk_target.rs` asks IOKit for the default port with the literal 0, ❌ never `kIOMainPortDefault`.** That global
