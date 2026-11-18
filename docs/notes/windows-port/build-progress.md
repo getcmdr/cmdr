@@ -199,3 +199,25 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
   `link-cplusplus`), a fresh `CARGO_TARGET_DIR` (a cloned `target/` carried stale Windows artifacts, E0461), and zig's
   binary named by path, since mise's `zig` shim has no version outside a pinned project; `cargo clippy` there still
   fails on host and target artifacts mixing (E0461), so Windows clippy runs on the builder.
+- **2026-11-18, the app-path baseline** (app-path plan milestone 1, the run at `e03f087946`): the first full-workspace
+  test run on the builder, `cargo nextest run --workspace --exclude cmdr-fsevent-stream --no-fail-fast` in a fresh clone
+  (`D:\src\cmdr-m1`, `CARGO_TARGET_DIR=D:\targets\t34`), 23m 02s to build the tests warm-ish, then 613 s: 13,831 tests,
+  12,897 passed, 869 failed, 65 timed out, 669 skipped. `cmdr-fsevent-stream` is macOS-only and fails to compile there
+  (`core-foundation`), so a workspace run has to leave it out. Every failure, by name, crate, and cause cluster, is
+  `docs/notes/windows-port/app-path-baseline.md`, rendered from the run's JUnit report by
+  `scripts/windows-test-baseline` (`render`; a later run diffs with `diff`, and `explain` shows what each cause was read
+  from). Per crate: `cmdr-operations` 297, `cmdr` 182, `cmdr-index` 157, `cmdr-restic` 67, `cmdr-adb` 52, `cmdr-nfs` 49,
+  `cmdr-s3` 48, `cmdr-webdav` 23, `cmdr-viewer` and `cmdr-smb` 13 each, `cmdr-archive` 11, `cmdr-sftp` 7,
+  `cmdr-listing-wasm` 7, `cmdr-listing` and `cmdr-operation-log` 3 each, `cmdr-mtp` 2; `cmdr-fs`, `cmdr-local`, and the
+  rest none. By cause: `std::path` on an app path (S) 406, a native tempdir where an app path belongs (N) 333, timed out
+  71, #1226's open files 53, task 35's identity 32, Windows-only expectations 13, unread 13, task 34's root volume 6, a
+  Linux errno through host codes 4, product gaps 3; 407 of them name no cause in their output and take their nearest
+  sibling's cluster, marked "cause unread". Against the plan's round-four reading: `cmdr-operations`' finalize cluster
+  (F) never names `rename_local_exclusive` in a panic, so its cells sit under N by their tempdir paths; `cmdr-index`
+  timed out on 85, not 47; and `cmdr-adb`'s 51 path cells read as `NotFound("\\sdcard")`, a POSIX path re-rooted by
+  `std::path`. Gotchas: a job launched over SSH dies with the session, so it runs through the infra repo's
+  `run-on-desktop.sh` (detached, in Admin's desktop session); nextest wrote the JUnit report to
+  `target\nextest\default\target\nextest\default\junit.xml` under the checkout, not under `CARGO_TARGET_DIR` (kept as
+  `D:\logs\m1\baseline-junit.xml`); the timed-out cold-drive tests left 47 `crates/cmdr-index/cmdr-cold-cover-*` trees,
+  removed after the run along with 46 older ones in `D:\src\cmdr`; and a `cmdr-index` proptest left a
+  `proptest-regressions/indexing/` seed in the checkout.
