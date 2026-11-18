@@ -2652,7 +2652,10 @@ doubles as production code.
   generates Astro's gitignored `types.d.ts` and `website-eslint` depends on it: the type-aware rules read
   `astro:content` through it, and on an unsynced tree every blog-post field is `any`, so the `no-unsafe-*` rules bury
   the run in ~90 false positives. `website-eslint` refuses to run when the file is missing rather than report those.
-- **Website / Docker**: docker-build
+- **Website / Docker**: docker-build (Slow checks only), docker-install-context (`--fast`, in the website lane: every
+  file the image's `pnpm install` reads, the root manifests plus each `patchedDependencies` file, passes `.dockerignore`
+  and is copied before `RUN pnpm install`, since pnpm refuses an install with a named patch missing even under a
+  `--filter`)
 - **API server / TS**: oxfmt, worker-types, eslint, typecheck, tests. `api-server-worker-types` runs `wrangler types`,
   which writes the gitignored `worker-configuration.d.ts` (Worker runtime globals at the Worker's `compatibility_date`,
   plus the `Env` its bindings imply); `api-server-eslint` and `api-server-typecheck` depend on it, and both would

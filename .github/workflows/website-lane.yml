@@ -133,6 +133,11 @@ jobs:
       - name: Check CSP connect-src covers every fetch
         run: ./scripts/check/check --check website-csp-connect-src --ci
 
+      # The full image build is a Slow checks job; this catches the commonest way it breaks (a
+      # file the install reads that the image never copies) on every land, in milliseconds.
+      - name: Check the Docker image's install sees every file it needs
+        run: ./scripts/check/check --check website-docker-install-context --ci
+
       - name: Run typecheck
         run: ./scripts/check/check --check website-typecheck --ci
 

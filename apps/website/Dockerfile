@@ -19,6 +19,8 @@ ENV PATH="/opt/pnpm-bootstrap/node_modules/.bin:${PATH}"
 
 # Copy workspace config, lockfile, and root package.json (needed for overrides)
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+# pnpm checks every `patchedDependencies` file exists at install, even under a `--filter` that never installs it.
+COPY patches/ ./patches/
 
 # Copy the website package.json
 COPY apps/website/package.json ./apps/website/

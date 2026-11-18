@@ -1543,8 +1543,19 @@ var AllChecks = []CheckDefinition{
 		App:         AppWebsite,
 		Tech:        "🐳 Docker",
 		DependsOn:   nil,
-		Inputs:      inputs(websiteInputs, websiteDemoInputs),
-		Run:         RunWebsiteDockerBuild,
+		// The install also reads the workspace config and the patch files it names.
+		Inputs: inputs(websiteInputs, websiteDemoInputs, []string{"package.json", "pnpm-workspace.yaml", "patches/**"}),
+		Run:    RunWebsiteDockerBuild,
+	},
+	{
+		ID:          "website-docker-install-context",
+		Nickname:    "docker-install-context",
+		DisplayName: "Docker install context",
+		App:         AppWebsite,
+		Tech:        "🐳 Docker",
+		IsFast:      true, // reads three files
+		Inputs:      websiteDockerInstallContextInputs,
+		Run:         RunWebsiteDockerInstallContext,
 	},
 	{
 		ID:          "website-build",

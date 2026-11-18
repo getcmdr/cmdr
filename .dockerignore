@@ -8,6 +8,8 @@
 !package.json
 !pnpm-workspace.yaml
 !pnpm-lock.yaml
+# `patchedDependencies` in pnpm-workspace.yaml: pnpm requires every patch file at install, even under a `--filter`
+!patches/
 !CHANGELOG.md
 !feature-status.json
 # The language count's source (`apps/website/src/lib/shipped-languages.ts`)
