@@ -16,6 +16,7 @@
 //! rather than delayed; and FSEvents coalesces or drops a lone event when the
 //! host is saturated (a full-suite run pins every core).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -139,14 +140,18 @@ impl WatchedArchive {
 async fn a_rewrite_asks_the_host_to_refresh_the_archive_listings() {
     let fixture = WatchedArchive::new(&[stored("a.txt", b"a".to_vec())]);
     assert_eq!(
-        fixture.volume.listing_watch_coverage(&fixture.zip_path),
+        fixture
+            .volume
+            .listing_watch_coverage(&AppPath::legacy_unchecked(&fixture.zip_path)),
         WatchCoverage::None,
         "a volume with no watch must not claim its listings are watched"
     );
 
     fixture.start_watch_for_real().await;
     assert_eq!(
-        fixture.volume.listing_watch_coverage(&fixture.zip_path),
+        fixture
+            .volume
+            .listing_watch_coverage(&AppPath::legacy_unchecked(&fixture.zip_path)),
         WatchCoverage::EveryWriter,
         "an archive with an established watch must report coverage"
     );
@@ -200,7 +205,9 @@ async fn an_archive_on_a_network_mount_reports_only_this_machine() {
         .start_content_watch(PARENT_DRIVE, WatchCoverage::ThisMachineOnly);
 
     assert_eq!(
-        fixture.volume.listing_watch_coverage(&fixture.zip_path),
+        fixture
+            .volume
+            .listing_watch_coverage(&AppPath::legacy_unchecked(&fixture.zip_path)),
         WatchCoverage::ThisMachineOnly,
         "a live watch must not report more coverage than its backing storage allows"
     );
@@ -224,7 +231,7 @@ async fn a_remote_parent_establishes_no_watch() {
     volume.start_content_watch(PARENT_DRIVE, WatchCoverage::EveryWriter);
 
     assert_eq!(
-        volume.listing_watch_coverage(&path),
+        volume.listing_watch_coverage(&AppPath::legacy_unchecked(&path)),
         WatchCoverage::None,
         "a watch that couldn't establish must never claim freshness"
     );

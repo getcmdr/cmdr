@@ -7,6 +7,7 @@
 //! server did name (a `206`'s `content-range`) fails instead of ending
 //! cleanly, so nothing short is ever handed on as the whole file.
 
+use cmdr_fs::app_path::AppPath;
 use std::time::Duration;
 
 use cmdr_fs::volume::{StreamLength, Volume, VolumeError, VolumeReadStream};
@@ -35,10 +36,10 @@ async fn drain(stream: &mut Box<dyn VolumeReadStream>) -> Result<usize, VolumeEr
 async fn a_read_without_a_length_declares_the_callers_hint() {
     let s3 = serving(None).await;
     let volume = s3.volume();
-    let path = volume.root().join("ten.bin");
+    let path = volume.root().as_std_legacy().join("ten.bin");
 
     let mut stream = volume
-        .open_read_stream_with_hint(&path, Some(LEN as u64))
+        .open_read_stream_with_hint(&AppPath::legacy_unchecked(&path), Some(LEN as u64))
         .await
         .unwrap();
 
@@ -51,7 +52,12 @@ async fn a_read_without_a_length_or_a_hint_says_it_doesnt_know() {
     let s3 = serving(None).await;
     let volume = s3.volume();
 
-    let stream = volume.open_read_stream(&volume.root().join("ten.bin")).await.unwrap();
+    let stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(
+            &volume.root().as_std_legacy().join("ten.bin"),
+        ))
+        .await
+        .unwrap();
 
     assert_eq!(
         stream.total_size(),
@@ -66,7 +72,10 @@ async fn a_ranged_read_that_ends_before_its_named_length_fails() {
     let volume = s3.volume();
 
     let mut stream = volume
-        .open_read_stream_at_offset(&volume.root().join("ten.bin"), 2)
+        .open_read_stream_at_offset(
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("ten.bin")),
+            2,
+        )
         .await
         .unwrap();
     let drained = drain(&mut stream).await;
@@ -83,7 +92,10 @@ async fn a_ranged_read_that_arrives_whole_ends_cleanly() {
     let volume = s3.volume();
 
     let mut stream = volume
-        .open_read_stream_at_offset(&volume.root().join("ten.bin"), 2)
+        .open_read_stream_at_offset(
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("ten.bin")),
+            2,
+        )
         .await
         .unwrap();
 

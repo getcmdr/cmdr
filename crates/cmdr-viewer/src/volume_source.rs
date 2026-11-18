@@ -8,6 +8,7 @@
 //! volume through `bridge.rs`.
 //! `DETAILS.md` § "Byte sources".
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::VecDeque;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -96,7 +97,7 @@ impl RangeReader {
     /// `NotSupported` when the stat doesn't say how big the file is: a reader that can't
     /// answer `size` can't serve a `Range` either, and the caller falls back to a pull.
     async fn open(volume: Arc<dyn Volume>, path: PathBuf) -> Result<Self, VolumeError> {
-        let entry = volume.get_metadata(&path).await?;
+        let entry = volume.get_metadata(&AppPath::legacy_unchecked(&path)).await?;
         if entry.is_directory {
             return Err(VolumeError::IsADirectory(path.display().to_string()));
         }
@@ -116,7 +117,10 @@ impl VolumeRandomReader for RangeReader {
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + '_>> {
         Box::pin(async move {
-            let mut bytes = self.volume.read_range(&self.path, offset, len).await?;
+            let mut bytes = self
+                .volume
+                .read_range(&AppPath::legacy_unchecked(&self.path), offset, len)
+                .await?;
             bytes.truncate(self.size.saturating_sub(offset).min(len as u64) as usize);
             Ok(bytes)
         })
@@ -135,7 +139,7 @@ fn open_reader(
 ) -> Result<Box<dyn VolumeRandomReader>, VolumeError> {
     super::bridge::block_on(runtime, async {
         match way {
-            PositionedRead::Held => volume.open_random_reader(path).await,
+            PositionedRead::Held => volume.open_random_reader(&AppPath::legacy_unchecked(path)).await,
             PositionedRead::Ranged => {
                 let reader = RangeReader::open(Arc::clone(volume), path.to_path_buf()).await?;
                 Ok(Box::new(reader) as Box<dyn VolumeRandomReader>)
@@ -348,6 +352,7 @@ pub(super) fn open_on_volume(
 
 /// The file's size now, from the volume's stat.
 pub(super) fn size_on_volume(volume: &Arc<dyn Volume>, path: &Path, runtime: &Runtime) -> Result<u64, ViewerError> {
-    let entry = super::bridge::block_on(runtime, volume.get_metadata(path)).map_err(|e| map_volume_error(e, None))?;
+    let entry = super::bridge::block_on(runtime, volume.get_metadata(&AppPath::legacy_unchecked(path)))
+        .map_err(|e| map_volume_error(e, None))?;
     Ok(entry.size.unwrap_or(0))
 }

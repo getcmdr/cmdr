@@ -143,7 +143,10 @@ async fn a_new_folder_under_an_existing_parent_costs_exactly_one_request() {
         .expect("the walk");
 
     assert!(matches!(made.leaf, DirectoryCreation::Created));
-    assert_eq!(made.shallowest_created, Some(PathBuf::from("/parent/new")));
+    assert_eq!(
+        made.shallowest_created,
+        Some(PathBuf::from("/parent/new")).map(|p| AppPath::legacy_unchecked(&p).into_owned())
+    );
     assert_eq!(server.requests(), vec!["/parent/new"]);
     assert!(server.questions().is_empty(), "a folder it made needs no second look");
 }
@@ -256,7 +259,10 @@ async fn a_walk_that_works_never_asks_what_the_ancestors_it_found_are() {
         .expect("the walk");
 
     assert!(matches!(made.leaf, DirectoryCreation::Created));
-    assert_eq!(made.shallowest_created, Some(PathBuf::from("/a/b/c")));
+    assert_eq!(
+        made.shallowest_created,
+        Some(PathBuf::from("/a/b/c")).map(|p| AppPath::legacy_unchecked(&p).into_owned())
+    );
     assert!(server.questions().is_empty(), "asked about {:?}", server.questions());
 }
 
@@ -290,7 +296,7 @@ async fn a_missing_ancestor_earns_the_walk_and_the_leaf_still_reports_created() 
     assert!(matches!(made.leaf, DirectoryCreation::Created));
     assert_eq!(
         made.shallowest_created,
-        Some(PathBuf::from("/a")),
+        Some(PathBuf::from("/a")).map(|p| AppPath::legacy_unchecked(&p).into_owned()),
         "one patch, for the shallowest level: its parent is the only listing a pane could hold"
     );
     assert_eq!(
@@ -321,7 +327,10 @@ async fn a_level_someone_else_created_mid_walk_does_not_stop_it() {
         .expect("the walk");
 
     assert!(matches!(made.leaf, DirectoryCreation::Created));
-    assert_eq!(made.shallowest_created, Some(PathBuf::from("/a/b")));
+    assert_eq!(
+        made.shallowest_created,
+        Some(PathBuf::from("/a/b")).map(|p| AppPath::legacy_unchecked(&p).into_owned())
+    );
 }
 
 #[tokio::test]

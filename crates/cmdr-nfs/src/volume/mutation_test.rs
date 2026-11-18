@@ -2,6 +2,7 @@
 //! delete that never recurses, folders made one and many at a time, metadata
 //! put on a folder, and the parent chain proven before every mutation.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::time::{Duration, UNIX_EPOCH};
 
@@ -30,7 +31,7 @@ async fn over_pipe(fake: &FakeNfs) -> NfsVolume {
 }
 
 fn at(volume: &NfsVolume, remote: &str) -> PathBuf {
-    PathBuf::from(format!("{}{remote}", volume.root().display()))
+    PathBuf::from(format!("{}{remote}", volume.root().as_std_legacy().display()))
 }
 
 #[tokio::test]
@@ -41,7 +42,11 @@ async fn a_forceless_rename_refuses_a_taken_name_and_touches_neither() {
     let volume = over_pipe(&fake).await;
 
     let renamed = volume
-        .rename(&at(&volume, "/source.txt"), &at(&volume, "/target.txt"), false)
+        .rename(
+            &AppPath::legacy_unchecked(&at(&volume, "/source.txt")),
+            &AppPath::legacy_unchecked(&at(&volume, "/target.txt")),
+            false,
+        )
         .await;
 
     assert!(matches!(renamed, Err(VolumeError::AlreadyExists(_))), "{renamed:?}");
@@ -63,7 +68,11 @@ async fn a_forceless_rename_claims_the_name_then_lands_onto_the_claim() {
     let volume = over_pipe(&fake).await;
 
     volume
-        .rename(&at(&volume, "/a/photo.jpg"), &at(&volume, "/b/photo.jpg"), false)
+        .rename(
+            &AppPath::legacy_unchecked(&at(&volume, "/a/photo.jpg")),
+            &AppPath::legacy_unchecked(&at(&volume, "/b/photo.jpg")),
+            false,
+        )
         .await
         .unwrap();
 
@@ -84,7 +93,11 @@ async fn a_forceless_folder_rename_claims_with_mkdir() {
     let volume = over_pipe(&fake).await;
 
     volume
-        .rename(&at(&volume, "/album"), &at(&volume, "/renamed"), false)
+        .rename(
+            &AppPath::legacy_unchecked(&at(&volume, "/album")),
+            &AppPath::legacy_unchecked(&at(&volume, "/renamed")),
+            false,
+        )
         .await
         .unwrap();
 
@@ -93,7 +106,9 @@ async fn a_forceless_folder_rename_claims_with_mkdir() {
     assert_eq!(fake.calls(proc::MKDIR), 1);
     // The cached `/album` handle now names `/renamed`, so it must be gone.
     assert!(matches!(
-        volume.list_directory(&at(&volume, "/album"), None).await,
+        volume
+            .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/album")), None)
+            .await,
         Err(VolumeError::NotFound(_))
     ));
 }
@@ -106,7 +121,11 @@ async fn a_rename_that_fails_after_the_claim_takes_the_claim_away() {
     fake.refuse_next(proc::RENAME, NFS3ERR_IO);
 
     let renamed = volume
-        .rename(&at(&volume, "/source.txt"), &at(&volume, "/target.txt"), false)
+        .rename(
+            &AppPath::legacy_unchecked(&at(&volume, "/source.txt")),
+            &AppPath::legacy_unchecked(&at(&volume, "/target.txt")),
+            false,
+        )
         .await;
 
     assert!(renamed.is_err());
@@ -124,7 +143,11 @@ async fn a_rename_onto_itself_does_nothing_and_claims_nothing() {
     let volume = over_pipe(&fake).await;
 
     volume
-        .rename(&at(&volume, "/same.txt"), &at(&volume, "/same.txt"), false)
+        .rename(
+            &AppPath::legacy_unchecked(&at(&volume, "/same.txt")),
+            &AppPath::legacy_unchecked(&at(&volume, "/same.txt")),
+            false,
+        )
         .await
         .unwrap();
 
@@ -140,7 +163,11 @@ async fn a_forced_rename_replaces_in_one_call() {
     let volume = over_pipe(&fake).await;
 
     volume
-        .rename(&at(&volume, "/source.txt"), &at(&volume, "/target.txt"), true)
+        .rename(
+            &AppPath::legacy_unchecked(&at(&volume, "/source.txt")),
+            &AppPath::legacy_unchecked(&at(&volume, "/target.txt")),
+            true,
+        )
         .await
         .unwrap();
 
@@ -157,7 +184,11 @@ async fn a_forced_rename_onto_a_folder_with_something_in_it_is_refused() {
     let volume = over_pipe(&fake).await;
 
     let renamed = volume
-        .rename(&at(&volume, "/source-dir"), &at(&volume, "/album"), true)
+        .rename(
+            &AppPath::legacy_unchecked(&at(&volume, "/source-dir")),
+            &AppPath::legacy_unchecked(&at(&volume, "/album")),
+            true,
+        )
         .await;
 
     assert!(renamed.is_err());
@@ -174,10 +205,19 @@ async fn delete_removes_a_file_an_empty_folder_and_a_link_but_never_recurses() {
     fake.add_link("/link", "full");
     let volume = over_pipe(&fake).await;
 
-    volume.delete(&at(&volume, "/file.txt")).await.unwrap();
-    volume.delete(&at(&volume, "/empty")).await.unwrap();
-    volume.delete(&at(&volume, "/link")).await.unwrap();
-    let refused = volume.delete(&at(&volume, "/full")).await;
+    volume
+        .delete(&AppPath::legacy_unchecked(&at(&volume, "/file.txt")))
+        .await
+        .unwrap();
+    volume
+        .delete(&AppPath::legacy_unchecked(&at(&volume, "/empty")))
+        .await
+        .unwrap();
+    volume
+        .delete(&AppPath::legacy_unchecked(&at(&volume, "/link")))
+        .await
+        .unwrap();
+    let refused = volume.delete(&AppPath::legacy_unchecked(&at(&volume, "/full"))).await;
 
     assert!(!fake.exists("/file.txt") && !fake.exists("/empty") && !fake.exists("/link"));
     assert!(
@@ -208,12 +248,18 @@ async fn a_mutation_acts_on_the_folder_the_path_names_now() {
     fake.add_file("/a/b/f.txt", b"old");
     fake.add_dir("/z");
     let volume = over_pipe(&fake).await;
-    volume.list_directory(&at(&volume, "/a/b"), None).await.unwrap();
+    volume
+        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/a/b")), None)
+        .await
+        .unwrap();
     fake.rename("/a/b", "/z/b");
     fake.add_dir("/a/b");
     fake.add_file("/a/b/f.txt", b"new");
 
-    volume.delete(&at(&volume, "/a/b/f.txt")).await.unwrap();
+    volume
+        .delete(&AppPath::legacy_unchecked(&at(&volume, "/a/b/f.txt")))
+        .await
+        .unwrap();
 
     assert!(!fake.exists("/a/b/f.txt"));
     assert_eq!(
@@ -230,13 +276,20 @@ async fn create_directory_refuses_a_taken_name_and_mkdir_all_is_honest() {
     fake.add_file("/notes", b"in the way");
     let volume = over_pipe(&fake).await;
 
-    let again = volume.create_directory(&at(&volume, "/album")).await;
+    let again = volume
+        .create_directory(&AppPath::legacy_unchecked(&at(&volume, "/album")))
+        .await;
     let made = volume
-        .create_directory_all(&at(&volume, "/deep/er/still"))
+        .create_directory_all(&AppPath::legacy_unchecked(&at(&volume, "/deep/er/still")))
         .await
         .unwrap();
-    let found = volume.create_directory_all(&at(&volume, "/album")).await.unwrap();
-    let blocked = volume.create_directory_all(&at(&volume, "/notes/inside/deeper")).await;
+    let found = volume
+        .create_directory_all(&AppPath::legacy_unchecked(&at(&volume, "/album")))
+        .await
+        .unwrap();
+    let blocked = volume
+        .create_directory_all(&AppPath::legacy_unchecked(&at(&volume, "/notes/inside/deeper")))
+        .await;
 
     assert!(matches!(again, Err(VolumeError::AlreadyExists(_))), "{again:?}");
     assert_eq!(made, DirectoryCreation::Created);
@@ -262,7 +315,7 @@ async fn apply_metadata_dates_and_modes_a_folder() {
 
     let report = volume
         .apply_metadata(
-            &at(&volume, "/born"),
+            &AppPath::legacy_unchecked(&at(&volume, "/born")),
             &carried,
             Some(UNIX_EPOCH + Duration::from_secs(1_611_909_015)),
         )

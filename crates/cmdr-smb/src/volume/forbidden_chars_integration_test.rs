@@ -17,6 +17,7 @@
 
 use super::test_support::*;
 use super::*;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{StreamLength, StreamWriteProgress};
 
@@ -61,7 +62,7 @@ async fn make_unicode_volume() -> SmbVolume {
 /// Reads a whole file through `open_read_stream`.
 async fn read_all(vol: &SmbVolume, path: &Path) -> Vec<u8> {
     let stream = vol
-        .open_read_stream(path)
+        .open_read_stream(&AppPath::legacy_unchecked(path))
         .await
         .unwrap_or_else(|e| panic!("opening {} for reading: {e:?}", path.display()));
     drain(stream).await
@@ -119,7 +120,7 @@ async fn forbidden_character_names_open_and_read() {
     for (name, content) in FIXTURE_FILES {
         let path = PathBuf::from(listed(&vol, &root, name).await.path);
         let metadata = vol
-            .get_metadata(&path)
+            .get_metadata(&AppPath::legacy_unchecked(&path))
             .await
             .unwrap_or_else(|e| panic!("metadata of {name:?}: {e:?}"));
         assert_eq!(metadata.size, Some(content.len() as u64), "metadata size of {name:?}");
@@ -142,13 +143,15 @@ async fn a_forbidden_character_name_cmdr_writes_round_trips() {
     let vol = make_unicode_volume().await;
     let top = test_dir_name();
     ensure_clean(&vol, &top).await;
-    vol.create_directory(Path::new(&top)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&top)))
+        .await
+        .unwrap();
 
     let dest = PathBuf::from(share_path(&top)).join(NAME);
     let no_progress = &|_: StreamWriteProgress| std::ops::ControlFlow::Continue(());
     let written = vol
         .write_from_stream(
-            &dest,
+            &AppPath::legacy_unchecked(&dest),
             cmdr_fs::volume::WriteMode::CreateOrReplace,
             StreamLength::Known(PAYLOAD.len() as u64),
             inline_read_stream(PAYLOAD.to_vec()),

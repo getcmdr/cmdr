@@ -2,8 +2,11 @@
 //! the volume's held random reader, jumps cost a bounded number of reads over ONE open,
 //! and a slow share answers a scrollbar drag inside the fetch deadline.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::BridgedPath;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
@@ -53,7 +56,7 @@ struct ShareState {
 
 /// A share holding one synthetic file, generated on read, so a 5 GiB file costs nothing.
 struct SyntheticShare {
-    root: PathBuf,
+    root: BridgedPath,
     file: PathBuf,
     os_visible: bool,
     state: Arc<ShareState>,
@@ -106,8 +109,8 @@ impl Volume for SyntheticShare {
         "Share"
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -116,7 +119,7 @@ impl Volume for SyntheticShare {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
@@ -124,9 +127,11 @@ impl Volume for SyntheticShare {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if path != self.file {
                 return Err(VolumeError::NotFound(path.display().to_string()));
             }
@@ -142,9 +147,11 @@ impl Volume for SyntheticShare {
 
     fn open_random_reader<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeRandomReader>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if path != self.file {
                 return Err(VolumeError::NotFound(path.display().to_string()));
             }
@@ -168,7 +175,7 @@ fn a_share(id: &str, size: u64, os_visible: bool) -> (String, Arc<SyntheticShare
     let state = Arc::new(ShareState::default());
     state.size.store(size, Ordering::SeqCst);
     let share = Arc::new(SyntheticShare {
-        root,
+        root: BridgedPath::new(root),
         file: file.clone(),
         os_visible,
         state: Arc::clone(&state),

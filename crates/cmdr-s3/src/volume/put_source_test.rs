@@ -2,6 +2,7 @@
 //! ends short, runs long, or fails is caught while the body fills, so not a
 //! byte goes out and nothing can be published under the user's name.
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::pin::Pin;
 use std::time::Duration;
@@ -66,7 +67,7 @@ async fn put(promised: usize, actual: usize, fail: bool) -> (FakeS3, Result<u64,
     };
     let written = volume
         .write_from_stream(
-            &volume.root().join("one.bin"),
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("one.bin")),
             WriteMode::CreateNew,
             StreamLength::Known(promised as u64),
             Box::new(source),

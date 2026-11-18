@@ -39,6 +39,7 @@
     reason = "a benchmark's whole product is the numbers it prints, and `cargo test --nocapture` is where they have to land: the fern logger isn't wired up in a unit-test binary, so `log::info!` would swallow them. Scoped to this hardware-only, `#[ignore]`d module."
 )]
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -128,7 +129,7 @@ async fn mtp_read_range_hardware_bench() {
         let offset = step * i as u64;
         let start = Instant::now();
         let bytes = volume
-            .read_range(path, offset, READ_LEN)
+            .read_range(&AppPath::legacy_unchecked(path), offset, READ_LEN)
             .await
             .expect("read_range should succeed");
         let elapsed = start.elapsed();

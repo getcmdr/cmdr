@@ -8,6 +8,7 @@
 //! `volume/liveness_test.rs` (paused clock) and `connection_drop_test.rs` (a
 //! real server behind a black-holed proxy).
 
+use cmdr_fs::app_path::AppPath;
 use std::time::{Duration, Instant};
 
 use cmdr_fs::volume::host::events::VolumeConnection;
@@ -82,7 +83,13 @@ async fn a_body_that_keeps_moving_is_never_cut() {
     });
     let started = Instant::now();
 
-    let read = volume.read_range(&volume.root().join("slow.txt"), 0, 10).await;
+    let read = volume
+        .read_range(
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("slow.txt")),
+            0,
+            10,
+        )
+        .await;
 
     assert_eq!(read.expect("a trickling body arrives whole"), b"slow bytes");
     assert!(

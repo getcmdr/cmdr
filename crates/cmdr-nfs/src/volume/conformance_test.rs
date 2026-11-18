@@ -15,6 +15,7 @@
 //!   out of the export. The link-delete rule is pinned against `fake_nfs.rs`
 //!   (`mutation_test.rs`).
 
+use cmdr_fs::app_path::AppPath;
 use std::time::Duration;
 
 use cmdr_fs::volume::{ChannelReadStream, StreamLength, Volume, WriteMode, conformance};
@@ -38,10 +39,13 @@ async fn insecure_with_scratch(what: &str) -> (NfsVolume, std::path::PathBuf) {
 async fn listing_dates_honor_the_shared_claim_contract() {
     let (volume, dir) = insecure_with_scratch("listed-dates").await;
     volume
-        .create_file(&dir.join("dated.txt"), b"bytes")
+        .create_file(&AppPath::legacy_unchecked(&dir.join("dated.txt")), b"bytes")
         .await
         .expect(FIXTURE);
-    volume.create_directory(&dir.join("folder")).await.expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&dir.join("folder")))
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_listing_dates_are_claimed(&volume, &dir).await;
 
@@ -55,9 +59,12 @@ async fn a_forceless_rename_refuses_an_existing_destination() {
     let (volume, dir) = insecure_with_scratch("rename-no-clobber").await;
     let source = dir.join("source.txt");
     let target = dir.join("target.txt");
-    volume.create_file(&source, b"source").await.expect(FIXTURE);
     volume
-        .create_file(&target, b"the user's target file")
+        .create_file(&AppPath::legacy_unchecked(&source), b"source")
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&target), b"the user's target file")
         .await
         .expect(FIXTURE);
 
@@ -73,11 +80,23 @@ async fn a_forced_rename_keeps_a_non_empty_folder() {
     let source = dir.join("source.txt");
     let source_dir = dir.join("source-dir");
     let album = dir.join("album");
-    volume.create_file(&source, b"source").await.expect(FIXTURE);
-    volume.create_directory(&source_dir).await.expect(FIXTURE);
-    volume.create_directory(&album).await.expect(FIXTURE);
     volume
-        .create_file(&album.join("source.txt"), b"the user's photo")
+        .create_file(&AppPath::legacy_unchecked(&source), b"source")
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&source_dir))
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&album))
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_file(
+            &AppPath::legacy_unchecked(&album.join("source.txt")),
+            b"the user's photo",
+        )
         .await
         .expect(FIXTURE);
 
@@ -94,7 +113,10 @@ async fn create_file_refuses_to_clobber() {
     // The refusal is `CREATE GUARDED`'s; `UNCHECKED` would truncate.
     let (volume, dir) = insecure_with_scratch("create-file-no-clobber").await;
     let notes = dir.join("notes.txt");
-    volume.create_file(&notes, b"the user's notes").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&notes), b"the user's notes")
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_create_file_refuses_to_clobber(&volume, &notes, b"new").await;
 
@@ -106,7 +128,10 @@ async fn create_file_refuses_to_clobber() {
 async fn write_from_stream_create_new_refuses_to_clobber() {
     let (volume, dir) = insecure_with_scratch("write-create-new-no-clobber").await;
     let notes = dir.join("notes.txt");
-    volume.create_file(&notes, b"the user's notes").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&notes), b"the user's notes")
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_write_from_stream_create_new_refuses_to_clobber(
         &volume,
@@ -125,7 +150,10 @@ async fn unknown_write_is_refused_before_io() {
     let (volume, dir) = insecure_with_scratch("unknown-length").await;
     let notes = dir.join("notes.txt");
     let original = b"the user's notes";
-    volume.create_file(&notes, original).await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&notes), original)
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_unknown_write_is_refused_before_io(&volume, &notes, original).await;
 
@@ -139,7 +167,10 @@ async fn create_directory_all_reports_an_existing_directory_honestly() {
     // per-file conflict probe for everything it writes inside.
     let (volume, dir) = insecure_with_scratch("mkdir-p-honesty").await;
     let album = dir.join("album");
-    volume.create_directory(&album).await.expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&album))
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_create_directory_all_reports_an_existing_dir_honestly(&volume, &album).await;
 
@@ -153,7 +184,10 @@ async fn create_directory_all_refuses_a_file_in_the_way() {
     // under a file names the FILE, ❌ not the folder asked for.
     let (volume, dir) = insecure_with_scratch("mkdir-p-file-in-the-way").await;
     let notes = dir.join("notes");
-    volume.create_file(&notes, b"the user's notes").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&notes), b"the user's notes")
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_create_directory_all_refuses_a_file_in_the_way(&volume, &notes).await;
 
@@ -165,9 +199,12 @@ async fn create_directory_all_refuses_a_file_in_the_way() {
 async fn delete_leaves_a_non_empty_directory_intact() {
     let (volume, dir) = insecure_with_scratch("delete-non-recursive").await;
     let album = dir.join("album");
-    volume.create_directory(&album).await.expect(FIXTURE);
     volume
-        .create_file(&album.join("keep.txt"), b"content")
+        .create_directory(&AppPath::legacy_unchecked(&album))
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&album.join("keep.txt")), b"content")
         .await
         .expect(FIXTURE);
 
@@ -182,7 +219,10 @@ async fn delete_removes_exactly_what_it_names() {
     let (volume, dir) = insecure_with_scratch("delete-exact").await;
     let (one, two, kept) = (dir.join("one.txt"), dir.join("two.txt"), dir.join("kept.txt"));
     for file in [&one, &two, &kept] {
-        volume.create_file(file, b"x").await.expect(FIXTURE);
+        volume
+            .create_file(&AppPath::legacy_unchecked(file), b"x")
+            .await
+            .expect(FIXTURE);
     }
 
     conformance::assert_delete_files_removes_exactly_what_it_names(&volume, [&one, &two], &kept).await;
@@ -206,7 +246,10 @@ async fn export_matches_the_bytes_offered() {
     let (volume, dir) = insecure_with_scratch("export-handshake").await;
     let file = dir.join("exported.txt");
     let content = b"the bytes a copy would move";
-    volume.create_file(&file, content).await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&file), content)
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_export_matches_the_bytes_offered(&volume, &file, content).await;
 
@@ -219,7 +262,10 @@ async fn copy_within_matches_what_is_offered() {
     // v3 has no server-side copy, so this holds the backend to saying so.
     let (volume, dir) = insecure_with_scratch("copy-within-handshake").await;
     let from = dir.join("original.txt");
-    volume.create_file(&from, b"copied on the server").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&from), b"copied on the server")
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_copy_within_matches_what_is_offered(&volume, &from, &dir.join("duplicate.txt")).await;
 
@@ -288,7 +334,10 @@ async fn conflict_scan_reads_a_missing_destination_as_empty() {
 #[ignore = "needs the NFS fixture stack: nfs-servers/start.sh (nfs-fixture)"]
 async fn a_batch_scan_stops_when_it_is_told_to() {
     let (volume, dir) = insecure_with_scratch("scan-stop-told").await;
-    volume.create_file(&dir.join("a.txt"), b"a").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&dir.join("a.txt")), b"a")
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_batch_scan_stops_when_told(&volume, &dir).await;
 
@@ -299,8 +348,14 @@ async fn a_batch_scan_stops_when_it_is_told_to() {
 #[ignore = "needs the NFS fixture stack: nfs-servers/start.sh (nfs-fixture)"]
 async fn a_batch_scan_asks_its_boundary_inside_the_walk() {
     let (volume, dir) = insecure_with_scratch("scan-stop-per-entry").await;
-    volume.create_file(&dir.join("a.txt"), b"a").await.expect(FIXTURE);
-    volume.create_file(&dir.join("b.txt"), b"bb").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&dir.join("a.txt")), b"a")
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&dir.join("b.txt")), b"bb")
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_batch_scan_asks_inside_the_walk(&volume, &dir, 3).await;
 
@@ -331,12 +386,19 @@ async fn a_file_past_one_commit_span_round_trips_byte_exact() {
     let stream = ChannelReadStream::new(chunk_rx, cancel_tx, length);
 
     let written = volume
-        .write_from_stream(&file, WriteMode::CreateNew, length, Box::new(stream), &|_| {
-            std::ops::ControlFlow::Continue(())
-        })
+        .write_from_stream(
+            &AppPath::legacy_unchecked(&file),
+            WriteMode::CreateNew,
+            length,
+            Box::new(stream),
+            &|_| std::ops::ControlFlow::Continue(()),
+        )
         .await
         .expect(FIXTURE);
-    let read = volume.read_range(&file, 0, bytes.len()).await.expect(FIXTURE);
+    let read = volume
+        .read_range(&AppPath::legacy_unchecked(&file), 0, bytes.len())
+        .await
+        .expect(FIXTURE);
 
     assert_eq!(written.bytes, bytes.len() as u64);
     assert!(read == bytes, "the file must read back as it was written");

@@ -2,8 +2,9 @@
 //! survive a wedged mount. Shared because the app's tests and the write
 //! engine's both drive one.
 
+use crate::app_path::AppPath;
+use crate::app_path::AppPathBuf;
 use std::future::Future;
-use std::path::{Path, PathBuf};
 use std::pin::Pin;
 
 use crate::entry::FileEntry;
@@ -48,7 +49,7 @@ impl Volume for WedgedVolume {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
@@ -58,7 +59,7 @@ impl Volume for WedgedVolume {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         never_answers!()
@@ -66,25 +67,25 @@ impl Volume for WedgedVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         never_answers!()
     }
 
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         never_answers!()
     }
 
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         never_answers!()
     }
 
     fn read_range<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _offset: u64,
         _len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
@@ -93,14 +94,14 @@ impl Volume for WedgedVolume {
 
     fn scan_for_copy<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         never_answers!()
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        _paths: &'a [PathBuf],
+        _paths: &'a [AppPathBuf],
         _boundary: &'a crate::volume::ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         never_answers!()
@@ -109,7 +110,7 @@ impl Volume for WedgedVolume {
     fn scan_for_conflicts<'a>(
         &'a self,
         _items: &'a [SourceItemInfo],
-        _dest: &'a Path,
+        _dest: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
         never_answers!()
     }

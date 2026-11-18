@@ -7,7 +7,8 @@
 //! name it without reaching into the app.
 
 use super::Volume;
-use std::path::{Path, PathBuf};
+use crate::app_path::{AppPath, AppPathBuf};
+use std::path::Path;
 use std::sync::Arc;
 
 /// Which route swapped the volume in, when one did.
@@ -80,7 +81,7 @@ pub struct ResolvedVolume {
     /// unmount race). Sites keep their existing `.ok_or_else(...)?` handling.
     pub volume: Option<Arc<dyn Volume>>,
     /// The path to pass to `volume`'s methods — the input path, verbatim.
-    pub path: PathBuf,
+    pub path: AppPathBuf,
     /// Which route swapped `volume` in, or `None` for a passthrough. Sites use
     /// it to skip drive-index enrich/verify and the read-only write guards.
     pub routed: Option<RoutedKind>,
@@ -97,7 +98,7 @@ impl ResolvedVolume {
     pub fn passthrough(volume: Option<Arc<dyn Volume>>, path: &Path) -> Self {
         Self {
             volume,
-            path: path.to_path_buf(),
+            path: AppPath::legacy_unchecked(path).into_owned(),
             routed: None,
             unconfirmed: None,
         }

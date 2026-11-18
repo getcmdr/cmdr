@@ -10,6 +10,7 @@
 //! Guest login (the Docker fixtures). It makes the scratch folder, fills it, and
 //! removes it; it touches nothing else.
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::metadata::{CarriedMetadata, MetadataAsk, MetadataClasses, Xattr};
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{StreamLength, Volume, VolumeError, VolumeReadStream, WriteMode};
@@ -83,7 +84,7 @@ fn median(mut runs: Vec<Duration>) -> Duration {
 async fn write(volume: &dyn Volume, path: &Path, size: usize, tagged: bool) {
     volume
         .write_from_stream(
-            path,
+            &AppPath::legacy_unchecked(path),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size as u64),
             Source::new(size, tagged),
@@ -95,8 +96,16 @@ async fn write(volume: &dyn Volume, path: &Path, size: usize, tagged: bool) {
 
 async fn read(volume: &dyn Volume, path: &Path, size: usize, ask: Option<MetadataAsk>) -> usize {
     let mut stream = match ask {
-        Some(ask) => volume.open_read_stream_for_copy(path, Some(size as u64), ask).await,
-        None => volume.open_read_stream_with_hint(path, Some(size as u64)).await,
+        Some(ask) => {
+            volume
+                .open_read_stream_for_copy(&AppPath::legacy_unchecked(path), Some(size as u64), ask)
+                .await
+        }
+        None => {
+            volume
+                .open_read_stream_with_hint(&AppPath::legacy_unchecked(path), Some(size as u64))
+                .await
+        }
     }
     .expect("open");
     let xattrs = stream.metadata(MetadataClasses::XATTRS).xattrs.len();
@@ -125,7 +134,10 @@ async fn main() {
     .await
     .expect("connect");
     let scratch = PathBuf::from(scratch);
-    volume.create_directory(&scratch).await.expect("a new scratch folder");
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&scratch))
+        .await
+        .expect("a new scratch folder");
     let keeps = MetadataAsk {
         values: MetadataClasses::XATTRS,
         outline: MetadataClasses::NONE,
@@ -214,7 +226,7 @@ async fn main() {
     ));
 
     for path in plain.iter().chain(&tagged).chain([&large]) {
-        let _ = volume.delete(path).await;
+        let _ = volume.delete(&AppPath::legacy_unchecked(path)).await;
     }
-    let _ = volume.delete(&scratch).await;
+    let _ = volume.delete(&AppPath::legacy_unchecked(&scratch)).await;
 }

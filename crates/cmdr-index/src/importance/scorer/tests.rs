@@ -7,6 +7,7 @@
 
 use super::*;
 use crate::importance::fixtures::SyntheticHome;
+use cmdr_fs::app_path;
 
 /// A fixed "now" (2026-07-08T00:00:00Z-ish) so recency is deterministic.
 const NOW: u64 = 1_783_900_800;
@@ -317,7 +318,7 @@ fn fixture_generator_builds_expected_tree() {
     // The volume is a usable InMemoryVolume with the entries in it.
     let rt = tokio::runtime::Builder::new_current_thread().build().unwrap();
     let downloads = rt.block_on(async {
-        cmdr_fs::volume::Volume::list_directory(&volume, std::path::Path::new("/Users/test/Downloads"), None)
+        cmdr_fs::volume::Volume::list_directory(&volume, app_path!("/Users/test/Downloads"), None)
             .await
             .unwrap()
     });

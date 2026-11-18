@@ -23,7 +23,7 @@ fn a_server_side_path_splits_into_bucket_and_key() {
 #[test]
 fn a_bucket_place_is_rooted_at_its_bucket() {
     let volume = make_test_volume(Some("photos"));
-    assert_eq!(volume.root(), Path::new(&format!("{PREFIX}/photos")));
+    assert_eq!(volume.root().as_std_legacy(), Path::new(&format!("{PREFIX}/photos")));
     for spelling in ["/", "", "."] {
         assert_eq!(volume.to_remote_path(Path::new(spelling)).expect("the root"), "/photos");
     }
@@ -47,7 +47,7 @@ fn a_bucket_place_refuses_another_buckets_path() {
 #[test]
 fn the_account_root_reaches_every_bucket() {
     let volume = make_test_volume(None);
-    assert_eq!(volume.root(), Path::new(&format!("{PREFIX}/")));
+    assert_eq!(volume.root().as_std_legacy(), Path::new(&format!("{PREFIX}/")));
     assert_eq!(
         volume
             .to_remote_path(Path::new(&format!("{PREFIX}/backups/a.tar")))

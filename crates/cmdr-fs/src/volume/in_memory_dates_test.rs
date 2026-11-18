@@ -3,6 +3,7 @@
 //! backend that fills a date it never claimed.
 
 use super::*;
+use crate::app_path;
 use crate::entry::FileEntry;
 use std::path::Path;
 
@@ -26,8 +27,8 @@ fn dated_volume() -> InMemoryVolume {
 async fn the_double_claims_every_date_by_default_and_lists_them() {
     let volume = dated_volume();
 
-    assert_eq!(volume.supported_dates(Path::new("/dated")).await, SupportedDates::ALL);
-    let listed = volume.list_directory(Path::new("/dated"), None).await.unwrap();
+    assert_eq!(volume.supported_dates(app_path!("/dated")).await, SupportedDates::ALL);
+    let listed = volume.list_directory(app_path!("/dated"), None).await.unwrap();
     assert_eq!(
         (listed[0].created_at, listed[0].added_at),
         (Some(1_700_000_100), Some(1_700_000_200))
@@ -42,12 +43,12 @@ async fn supported_dates_drop_the_unclaimed_date_from_listings_and_stats() {
     let volume = dated_volume().with_supported_dates(SupportedDates::CREATED);
 
     assert_eq!(
-        volume.supported_dates(Path::new("/dated")).await,
+        volume.supported_dates(app_path!("/dated")).await,
         SupportedDates::CREATED
     );
-    let listed = volume.list_directory(Path::new("/dated"), None).await.unwrap();
+    let listed = volume.list_directory(app_path!("/dated"), None).await.unwrap();
     assert_eq!((listed[0].created_at, listed[0].added_at), (Some(1_700_000_100), None));
-    let stat = volume.get_metadata(Path::new("/dated/file.txt")).await.unwrap();
+    let stat = volume.get_metadata(app_path!("/dated/file.txt")).await.unwrap();
     assert_eq!((stat.created_at, stat.added_at), (Some(1_700_000_100), None));
     conformance::assert_listing_dates_are_claimed(&volume, Path::new("/dated")).await;
 }

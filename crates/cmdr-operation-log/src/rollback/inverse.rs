@@ -7,6 +7,7 @@
 //! **Data-safety-critical**: every act here fails safe. Drift, an unverifiable
 //! precondition, an occupied target, or a gone original is a SKIP, never an act.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use cmdr_fs::volume::{Volume, VolumeError};
@@ -55,7 +56,7 @@ async fn remove_file_if_unchanged(
     let Some(volume) = volumes.get(&vol_id) else {
         return ItemResult::Skipped(SkipReason::Failed);
     };
-    let live = match volume.get_metadata(&path).await {
+    let live = match volume.get_metadata(&AppPath::legacy_unchecked(&path)).await {
         Ok(entry) => entry,
         // Already gone ⇒ the desired end state already holds (idempotent), as long
         // as the volume still reaches the path.
@@ -106,9 +107,11 @@ async fn original_stays(volumes: &dyn VolumeLookup, unit: &RollbackUnit) -> Resu
         return Err(SkipReason::UnverifiablePrecondition);
     };
     let path = unit.source_path.as_path();
-    let original = match volume.get_metadata(path).await {
+    let original = match volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
         Ok(entry) => entry,
-        Err(VolumeError::NotFound(_)) if path.starts_with(volume.root()) => return Err(SkipReason::OriginalGone),
+        Err(VolumeError::NotFound(_)) if path.starts_with(volume.root().as_std_legacy()) => {
+            return Err(SkipReason::OriginalGone);
+        }
         Err(_) => return Err(SkipReason::UnverifiablePrecondition),
     };
     if original.is_directory {
@@ -142,7 +145,7 @@ async fn remove_dir_if_empty(
     let Some(volume) = volumes.get(&vol_id) else {
         return ItemResult::Skipped(SkipReason::Failed);
     };
-    if !volume.exists(&path).await {
+    if !volume.exists(&AppPath::legacy_unchecked(&path)).await {
         // Already removed ⇒ idempotent no-op, as long as the volume still reaches
         // the path.
         return missing_item(&[(&*volume, path.as_path())]);
@@ -153,7 +156,7 @@ async fn remove_dir_if_empty(
     // Only remove a directory the undo created if it's still empty — a file added
     // since must not be swept away. A `seq DESC` stream removes the dir's own
     // (unchanged) contents first, so a genuinely-restored tree is empty here.
-    match volume.list_directory(&path, None).await {
+    match volume.list_directory(&AppPath::legacy_unchecked(&path), None).await {
         Ok(entries) if entries.is_empty() => {
             let removed = runner
                 .perform(InverseAct::RemoveDir {
@@ -181,7 +184,7 @@ async fn landed_node_holds(volume: &dyn Volume, path: &Path, unit: &RollbackUnit
     let Some(recorded) = unit.dest_identity else {
         return Ok(());
     };
-    match volume.node_identity(path).await {
+    match volume.node_identity(&AppPath::legacy_unchecked(path)).await {
         Ok(Some(live)) if live == recorded => Ok(()),
         Ok(Some(_)) => Err(SkipReason::Drift),
         Ok(None) => Err(SkipReason::UnverifiablePrecondition),
@@ -213,14 +216,14 @@ async fn restore_move(volumes: &dyn VolumeLookup, runner: &dyn RollbackRunner, u
     let sides = [(&*from_volume, from_path.as_path()), (&*to_volume, to_path.as_path())];
 
     // The thing to move back must still be where the op left it.
-    let from_entry = match from_volume.get_metadata(from_path).await {
+    let from_entry = match from_volume.get_metadata(&AppPath::legacy_unchecked(from_path)).await {
         Ok(e) => e,
         // Gone from there. Whether that's an undo already done depends on the other side:
         // back home (an earlier undo, Finder's Put Back) is the end state we wanted; absent
         // from home too (trash emptied, deleted since) means nothing came back, and the
         // undo must say so rather than credit a restore that never happened.
         Err(VolumeError::NotFound(_)) => {
-            return match to_volume.get_metadata(to_path).await {
+            return match to_volume.get_metadata(&AppPath::legacy_unchecked(to_path)).await {
                 Ok(_) => missing_item(&sides),
                 Err(VolumeError::NotFound(_)) => vanished_item(&sides),
                 Err(_) => ItemResult::Skipped(SkipReason::Failed),
@@ -252,7 +255,7 @@ async fn restore_move(volumes: &dyn VolumeLookup, runner: &dyn RollbackRunner, u
     // lets the same-entry rename land where the volume reports the target "exists".
     let same_volume = from_vol_id == to_vol_id;
     let mut force = false;
-    if let Ok(occupant) = to_volume.get_metadata(to_path).await {
+    if let Ok(occupant) = to_volume.get_metadata(&AppPath::legacy_unchecked(to_path)).await {
         if is_self_collision(&*to_volume, same_volume, from_path, to_path, &from_entry, &occupant).await {
             force = true;
         } else {

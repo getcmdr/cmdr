@@ -5,6 +5,7 @@
 //! entry: the host walks every cached listing on the volume. The rules and the
 //! created / deleted / renamed shapes: `cmdr_fs::volume::patching`.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::entry::FileEntry;
@@ -23,8 +24,12 @@ impl PatchSource for AdbVolume {
         self.inner.host.listings()
     }
 
-    fn patch_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
-        Box::pin(self.get_metadata_impl(path))
+    fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.get_metadata_impl(path).await
+        })
     }
 
     fn patch_display_path(&self, path: &Path) -> Option<PathBuf> {

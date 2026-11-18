@@ -4,6 +4,7 @@
 //! surface is `in_memory_scan_test.rs`.
 
 use super::*;
+use crate::app_path;
 use crate::volume::WriteMode;
 use std::path::Path;
 
@@ -14,21 +15,21 @@ use std::path::Path;
 #[tokio::test]
 async fn test_delete_multiple_files() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/dir")).await.unwrap();
-    volume.create_file(Path::new("/dir/a.txt"), b"a").await.unwrap();
-    volume.create_file(Path::new("/dir/b.txt"), b"b").await.unwrap();
-    volume.create_file(Path::new("/dir/c.txt"), b"c").await.unwrap();
+    volume.create_directory(app_path!("/dir")).await.unwrap();
+    volume.create_file(app_path!("/dir/a.txt"), b"a").await.unwrap();
+    volume.create_file(app_path!("/dir/b.txt"), b"b").await.unwrap();
+    volume.create_file(app_path!("/dir/c.txt"), b"c").await.unwrap();
 
-    volume.delete(Path::new("/dir/b.txt")).await.unwrap();
-    assert!(volume.exists(Path::new("/dir/a.txt")).await);
-    assert!(!volume.exists(Path::new("/dir/b.txt")).await);
-    assert!(volume.exists(Path::new("/dir/c.txt")).await);
+    volume.delete(app_path!("/dir/b.txt")).await.unwrap();
+    assert!(volume.exists(app_path!("/dir/a.txt")).await);
+    assert!(!volume.exists(app_path!("/dir/b.txt")).await);
+    assert!(volume.exists(app_path!("/dir/c.txt")).await);
 }
 
 #[tokio::test]
 async fn test_open_read_stream_missing_file() {
     let volume = InMemoryVolume::new("Test");
-    let result = volume.open_read_stream(Path::new("/nope.txt")).await;
+    let result = volume.open_read_stream(app_path!("/nope.txt")).await;
     assert!(matches!(result, Err(VolumeError::NotFound(_))));
 }
 
@@ -40,13 +41,13 @@ async fn test_round_trip_stream_copy() {
     let dest = InMemoryVolume::new("Dest");
 
     let data: Vec<u8> = (0..=255).cycle().take(50_000).collect();
-    source.create_file(Path::new("/payload.bin"), &data).await.unwrap();
+    source.create_file(app_path!("/payload.bin"), &data).await.unwrap();
 
-    let stream = source.open_read_stream(Path::new("/payload.bin")).await.unwrap();
+    let stream = source.open_read_stream(app_path!("/payload.bin")).await.unwrap();
     let size = stream.total_size();
     let bytes = dest
         .write_from_stream(
-            Path::new("/payload.bin"),
+            app_path!("/payload.bin"),
             WriteMode::CreateOrReplace,
             size,
             stream,
@@ -57,7 +58,7 @@ async fn test_round_trip_stream_copy() {
     assert_eq!(bytes.bytes, data.len() as u64);
 
     // Verify content integrity via streaming
-    let mut stream = dest.open_read_stream(Path::new("/payload.bin")).await.unwrap();
+    let mut stream = dest.open_read_stream(app_path!("/payload.bin")).await.unwrap();
     let mut reassembled = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         reassembled.extend_from_slice(&chunk);
@@ -79,11 +80,11 @@ fn test_supports_streaming() {
 async fn test_open_read_stream_small_file() {
     let volume = InMemoryVolume::new("Test");
     volume
-        .create_file(Path::new("/hello.txt"), b"Hello, world!")
+        .create_file(app_path!("/hello.txt"), b"Hello, world!")
         .await
         .unwrap();
 
-    let mut stream = volume.open_read_stream(Path::new("/hello.txt")).await.unwrap();
+    let mut stream = volume.open_read_stream(app_path!("/hello.txt")).await.unwrap();
     assert_eq!(stream.total_size(), StreamLength::Known(13));
     assert_eq!(stream.bytes_read(), 0);
 
@@ -96,9 +97,9 @@ async fn test_open_read_stream_small_file() {
 #[tokio::test]
 async fn test_open_read_stream_empty_file() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_file(Path::new("/empty.txt"), b"").await.unwrap();
+    volume.create_file(app_path!("/empty.txt"), b"").await.unwrap();
 
-    let mut stream = volume.open_read_stream(Path::new("/empty.txt")).await.unwrap();
+    let mut stream = volume.open_read_stream(app_path!("/empty.txt")).await.unwrap();
     assert_eq!(stream.total_size(), StreamLength::Known(0));
     assert!(stream.next_chunk().await.is_none());
 }
@@ -108,9 +109,9 @@ async fn test_open_read_stream_multi_chunk() {
     let volume = InMemoryVolume::new("Test");
     // Create a file larger than IN_MEMORY_STREAM_CHUNK_SIZE (64 KB)
     let data: Vec<u8> = (0..=255).cycle().take(100_000).collect();
-    volume.create_file(Path::new("/big.bin"), &data).await.unwrap();
+    volume.create_file(app_path!("/big.bin"), &data).await.unwrap();
 
-    let mut stream = volume.open_read_stream(Path::new("/big.bin")).await.unwrap();
+    let mut stream = volume.open_read_stream(app_path!("/big.bin")).await.unwrap();
     assert_eq!(stream.total_size(), StreamLength::Known(100_000));
 
     let mut reassembled = Vec::new();
@@ -127,15 +128,15 @@ async fn test_open_read_stream_multi_chunk() {
 #[tokio::test]
 async fn test_open_read_stream_not_found() {
     let volume = InMemoryVolume::new("Test");
-    let result = volume.open_read_stream(Path::new("/nope.txt")).await;
+    let result = volume.open_read_stream(app_path!("/nope.txt")).await;
     assert!(matches!(result, Err(VolumeError::NotFound(_))));
 }
 
 #[tokio::test]
 async fn test_open_read_stream_directory_fails() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/dir")).await.unwrap();
-    let result = volume.open_read_stream(Path::new("/dir")).await;
+    volume.create_directory(app_path!("/dir")).await.unwrap();
+    let result = volume.open_read_stream(app_path!("/dir")).await;
     assert!(matches!(result, Err(VolumeError::IoError { .. })));
 }
 
@@ -144,15 +145,15 @@ async fn test_write_from_stream_creates_file() {
     let source = InMemoryVolume::new("Source");
     let dest = InMemoryVolume::new("Dest");
     source
-        .create_file(Path::new("/data.bin"), b"source content")
+        .create_file(app_path!("/data.bin"), b"source content")
         .await
         .unwrap();
 
-    let stream = source.open_read_stream(Path::new("/data.bin")).await.unwrap();
+    let stream = source.open_read_stream(app_path!("/data.bin")).await.unwrap();
     let no_progress = &|_: StreamWriteProgress| std::ops::ControlFlow::Continue(());
     let bytes = dest
         .write_from_stream(
-            Path::new("/data.bin"),
+            app_path!("/data.bin"),
             WriteMode::CreateOrReplace,
             StreamLength::Known(14),
             stream,
@@ -163,7 +164,7 @@ async fn test_write_from_stream_creates_file() {
 
     assert_eq!(bytes.bytes, 14);
     // Verify content arrived correctly
-    let mut verify = dest.open_read_stream(Path::new("/data.bin")).await.unwrap();
+    let mut verify = dest.open_read_stream(app_path!("/data.bin")).await.unwrap();
     let chunk = verify.next_chunk().await.unwrap().unwrap();
     assert_eq!(chunk, b"source content");
 }
@@ -174,15 +175,15 @@ async fn test_write_from_stream_progress_callback() {
     let dest = InMemoryVolume::new("Dest");
     // 100 KB = 2 chunks at 64 KB chunk size
     let data = vec![0xAB; 100_000];
-    source.create_file(Path::new("/big.bin"), &data).await.unwrap();
+    source.create_file(app_path!("/big.bin"), &data).await.unwrap();
 
     let progress_calls = std::sync::atomic::AtomicUsize::new(0);
     let last_bytes = std::sync::atomic::AtomicU64::new(0);
 
-    let stream = source.open_read_stream(Path::new("/big.bin")).await.unwrap();
+    let stream = source.open_read_stream(app_path!("/big.bin")).await.unwrap();
     let bytes = dest
         .write_from_stream(
-            Path::new("/big.bin"),
+            app_path!("/big.bin"),
             WriteMode::CreateOrReplace,
             StreamLength::Known(100_000),
             stream,
@@ -210,13 +211,13 @@ async fn test_write_from_stream_cancel_via_progress() {
     let dest = InMemoryVolume::new("Dest");
     // 200 KB = 4 chunks, cancel after first
     let data = vec![0xCD; 200_000];
-    source.create_file(Path::new("/big.bin"), &data).await.unwrap();
+    source.create_file(app_path!("/big.bin"), &data).await.unwrap();
 
     let call_count = std::sync::atomic::AtomicUsize::new(0);
-    let stream = source.open_read_stream(Path::new("/big.bin")).await.unwrap();
+    let stream = source.open_read_stream(app_path!("/big.bin")).await.unwrap();
     let result = dest
         .write_from_stream(
-            Path::new("/big.bin"),
+            app_path!("/big.bin"),
             WriteMode::CreateOrReplace,
             StreamLength::Known(200_000),
             stream,
@@ -241,7 +242,7 @@ async fn test_write_from_stream_cancel_via_progress() {
         err
     );
     // File should NOT exist at destination (write was cancelled before create_file)
-    assert!(!dest.exists(Path::new("/big.bin")).await);
+    assert!(!dest.exists(app_path!("/big.bin")).await);
 }
 
 #[test]
@@ -249,7 +250,10 @@ fn lane_key_defaults_to_root_when_unset() {
     // No `with_lane_key` ⇒ fall back to the root lane (the trait default), so
     // the ~169 existing `new(...)` sites keep their behavior.
     let volume = InMemoryVolume::new("Test");
-    assert_eq!(volume.lane_key().as_str(), volume.root().to_string_lossy());
+    assert_eq!(
+        volume.lane_key().as_str(),
+        volume.root().as_std_legacy().to_string_lossy()
+    );
 }
 
 #[test]
@@ -276,30 +280,30 @@ fn same_lane_key_means_same_lane_distinct_means_different() {
 #[tokio::test]
 async fn set_stat_failing_fails_the_stat_without_making_the_path_disappear() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/album")).await.unwrap();
+    volume.create_directory(app_path!("/album")).await.unwrap();
     volume.set_stat_failing(Path::new("/album"));
 
     assert!(
         matches!(
-            volume.is_directory(Path::new("/album")).await,
+            volume.is_directory(app_path!("/album")).await,
             Err(VolumeError::IoError { .. })
         ),
         "an unanswerable stat is an IoError, never a NotFound"
     );
     assert!(matches!(
-        volume.get_metadata(Path::new("/album")).await,
+        volume.get_metadata(app_path!("/album")).await,
         Err(VolumeError::IoError { .. })
     ));
     assert!(
-        volume.exists(Path::new("/album")).await,
+        volume.exists(app_path!("/album")).await,
         "the path is still there; only the stat refuses to answer"
     );
     assert!(
-        volume.is_directory(Path::new("/other")).await.is_err(),
+        volume.is_directory(app_path!("/other")).await.is_err(),
         "a genuinely missing path still reports NotFound"
     );
     assert!(matches!(
-        volume.is_directory(Path::new("/other")).await,
+        volume.is_directory(app_path!("/other")).await,
         Err(VolumeError::NotFound(_))
     ));
 }
@@ -309,10 +313,10 @@ async fn set_stat_failing_fails_the_stat_without_making_the_path_disappear() {
 #[tokio::test]
 async fn test_open_read_stream_reports_the_entry_mtime() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_file(Path::new("/dated.txt"), b"dated").await.unwrap();
+    volume.create_file(app_path!("/dated.txt"), b"dated").await.unwrap();
     volume.set_modified_at(Path::new("/dated.txt"), Some(1_354_040_105));
 
-    let stream = volume.open_read_stream(Path::new("/dated.txt")).await.unwrap();
+    let stream = volume.open_read_stream(app_path!("/dated.txt")).await.unwrap();
     assert_eq!(
         stream.modified_at(),
         Some(std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_354_040_105))

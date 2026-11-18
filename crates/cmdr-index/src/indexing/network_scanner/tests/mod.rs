@@ -57,7 +57,7 @@ impl Volume for FailingListVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -65,9 +65,12 @@ impl Volume for FailingListVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> ListFut<'a, Vec<FileEntry>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         if path == self.fail_path {
             return Box::pin(async {
                 Err(VolumeError::PermissionDenied {
@@ -76,15 +79,15 @@ impl Volume for FailingListVolume {
                 })
             });
         }
-        self.inner.list_directory(path, on_progress)
+        self.inner.list_directory(path_app, on_progress)
     }
-    fn get_metadata<'a>(&'a self, path: &'a Path) -> ListFut<'a, FileEntry> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> ListFut<'a, FileEntry> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
-    fn is_directory<'a>(&'a self, path: &'a Path) -> ListFut<'a, bool> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> ListFut<'a, bool> {
         self.inner.is_directory(path)
     }
 }
@@ -109,7 +112,7 @@ impl Volume for CountingDisconnectVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -117,7 +120,7 @@ impl Volume for CountingDisconnectVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> ListFut<'a, Vec<FileEntry>> {
         let n = (self.calls.fetch_add(1, Ordering::Relaxed) + 1) as usize;
@@ -136,13 +139,13 @@ impl Volume for CountingDisconnectVolume {
         }
         self.inner.list_directory(path, on_progress)
     }
-    fn get_metadata<'a>(&'a self, path: &'a Path) -> ListFut<'a, FileEntry> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> ListFut<'a, FileEntry> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
-    fn is_directory<'a>(&'a self, path: &'a Path) -> ListFut<'a, bool> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> ListFut<'a, bool> {
         self.inner.is_directory(path)
     }
 }
@@ -171,7 +174,7 @@ impl Volume for ConcurrencyTrackingVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -179,7 +182,7 @@ impl Volume for ConcurrencyTrackingVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> ListFut<'a, Vec<FileEntry>> {
         Box::pin(async move {
@@ -191,13 +194,13 @@ impl Volume for ConcurrencyTrackingVolume {
             r
         })
     }
-    fn get_metadata<'a>(&'a self, path: &'a Path) -> ListFut<'a, FileEntry> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> ListFut<'a, FileEntry> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
-    fn is_directory<'a>(&'a self, path: &'a Path) -> ListFut<'a, bool> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> ListFut<'a, bool> {
         self.inner.is_directory(path)
     }
 }
@@ -214,7 +217,7 @@ impl Volume for RootFailsVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -222,9 +225,12 @@ impl Volume for RootFailsVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> ListFut<'a, Vec<FileEntry>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         if path == Path::new("/") {
             return Box::pin(async {
                 Err(VolumeError::PermissionDenied {
@@ -233,15 +239,15 @@ impl Volume for RootFailsVolume {
                 })
             });
         }
-        self.inner.list_directory(path, on_progress)
+        self.inner.list_directory(path_app, on_progress)
     }
-    fn get_metadata<'a>(&'a self, path: &'a Path) -> ListFut<'a, FileEntry> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> ListFut<'a, FileEntry> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
-    fn is_directory<'a>(&'a self, path: &'a Path) -> ListFut<'a, bool> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> ListFut<'a, bool> {
         self.inner.is_directory(path)
     }
 }

@@ -4,6 +4,7 @@
 //! whole delete it belongs to (a 1,005-object delete stopped halfway on a
 //! single blip, live on Wasabi, 2026-10-02).
 
+use cmdr_fs::app_path::AppPath;
 use std::time::Duration;
 
 use cmdr_fs::volume::Volume;
@@ -19,9 +20,16 @@ async fn a_throttled_batch_delete_goes_again_and_lands() {
     }
     s3.throttle_batch_deletes(2);
     let volume = s3.volume();
-    let paths: Vec<_> = keys.iter().map(|key| volume.root().join(key)).collect();
+    let paths: Vec<_> = keys.iter().map(|key| volume.root().as_std_legacy().join(key)).collect();
 
-    let results = volume.delete_files(&paths).await;
+    let results = volume
+        .delete_files(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+        )
+        .await;
 
     assert!(results.iter().all(Result::is_ok), "{results:?}");
     assert_eq!(
@@ -41,7 +49,9 @@ async fn a_batch_still_throttled_after_its_retries_fails_each_key() {
     s3.throttle_batch_deletes(usize::MAX);
     let volume = s3.volume();
 
-    let results = volume.delete_files(&[volume.root().join("doomed/a.txt")]).await;
+    let results = volume
+        .delete_files(&[AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("doomed/a.txt")).into_owned()])
+        .await;
 
     assert!(matches!(results.as_slice(), [Err(_)]), "{results:?}");
     assert!(s3.object("doomed/a.txt").is_some(), "nothing was deleted");
