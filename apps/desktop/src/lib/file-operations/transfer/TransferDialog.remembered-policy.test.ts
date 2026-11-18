@@ -282,7 +282,7 @@ describe('TransferDialog’s “Remember this choice” box', () => {
     await tick()
     rememberBox(target)?.click()
     await tick()
-    target.querySelector<HTMLButtonElement>('button[aria-keyshortcuts="F2"]')?.click()
+    target.querySelector<HTMLButtonElement>('button[aria-keyshortcuts~="F2"]')?.click()
     await flushMicrotasks()
     expect(setSettingMock).toHaveBeenCalledWith(POLICY_SETTING, 'skip')
   })

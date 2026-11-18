@@ -1,8 +1,10 @@
 /**
  * Access keys (mnemonics) for a dialog, on the platforms that have them (`convention('accessKeys')`
- * is `'alt'`: Windows and every Linux desktop). Holding Alt shows a keytip on each labeled control,
- * Alt plus that letter presses it (a button, a checkbox) or focuses it (a text field). macOS has
- * none, and `ModalDialog` builds no controller there.
+ * isn't `'none'`: Windows and every Linux desktop). Alt plus a control's letter presses it (a
+ * button, a checkbox) or focuses it (a text field). Holding Alt shows the letters the platform's
+ * way: a keytip badge by each control (`'keytips'`, Windows 11), or the letter underlined in its
+ * label (`'underlines'`, GTK and Qt), with a label that lacks its letter carrying it in parentheses
+ * ("保存 (A)"). macOS has none, and `ModalDialog` builds no controller there.
  *
  * The letters are allocated from the labels as rendered, in the user's language, by the same rule
  * the Linux menu bar uses (`src-tauri/src/menu/mnemonics.rs`): word initials first, then any other
@@ -103,19 +105,69 @@ const CONTROL_SELECTOR = [
   '[role="combobox"]',
 ].join(', ')
 
-/** Text that no sighted person reads as the label: hidden, key caps, screen-reader-only, icons. */
-const UNSEEN_SELECTOR = '[aria-hidden="true"], [hidden], kbd, .sr-only, svg'
+/** The class of the "(A)" an underline desktop appends to a label that lacks its letter. */
+const ACCESS_KEY_SUFFIX_CLASS = 'access-key-suffix'
 
-/** The text a person sees in `el`, collapsed. */
-function visibleText(el: Element): string {
-  const parts: string[] = []
+/** The `::highlight()` name the underlines paint under; global per document, so it carries the app's prefix. */
+const ACCESS_KEY_HIGHLIGHT = 'cmdr-access-key'
+
+/**
+ * Text that no sighted person reads as the label: hidden, key caps, screen-reader-only, icons. And
+ * the "(A)" this module appends, which is the key, not the label (reading it back would hand the
+ * label a letter it doesn't have).
+ */
+const UNSEEN_SELECTOR = `[aria-hidden="true"], [hidden], kbd, .sr-only, svg, .${ACCESS_KEY_SUFFIX_CLASS}`
+
+/** The text nodes in `el` a person reads as its label, in order. */
+function visibleTextNodes(el: Element): Text[] {
+  const nodes: Text[] = []
   const walker = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT)
   for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
     const unseen = node.parentElement?.closest(UNSEEN_SELECTOR)
     if (unseen && unseen !== el && el.contains(unseen)) continue
-    parts.push(node.textContent ?? '')
+    nodes.push(node as Text)
   }
-  return parts.join('').replace(/\s+/g, ' ').trim()
+  return nodes
+}
+
+/** The text a person sees in `el`, collapsed. */
+function visibleText(el: Element): string {
+  return visibleTextNodes(el)
+    .map((node) => node.data)
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * Where `letter` (lowercase) sits in `anchor`'s visible label, as the allocator picked it: its
+ * first word-initial occurrence, else its first occurrence. `null` when the label lacks it (a
+ * Chinese label's fallback letter), or spells it in a way one code point can't match.
+ */
+function accessKeyRangeIn(anchor: Element, letter: string): Range | null {
+  let first: { node: Text; offset: number; length: number } | null = null
+  let previous = ''
+  for (const node of visibleTextNodes(anchor)) {
+    let offset = 0
+    for (const char of node.data) {
+      if (char.normalize('NFC').toLowerCase() === letter) {
+        const hit = { node, offset, length: char.length }
+        const initial = previous === '' || !ALPHANUMERIC.test(previous)
+        if (initial) return rangeOver(hit)
+        first ??= hit
+      }
+      previous = char
+      offset += char.length
+    }
+  }
+  return first ? rangeOver(first) : null
+}
+
+function rangeOver({ node, offset, length }: { node: Text; offset: number; length: number }): Range {
+  const range = node.ownerDocument.createRange()
+  range.setStart(node, offset)
+  range.setEnd(node, offset + length)
+  return range
 }
 
 /** The element whose text names `control` on screen, and that text. */
@@ -186,7 +238,43 @@ export function pressAccessKey(control: HTMLElement): void {
   if (!takesText(control)) control.click()
 }
 
+/** How holding Alt shows the letters: `convention('accessKeys')`, minus `'none'`. */
+export type AccessKeyStyle = 'keytips' | 'underlines'
+
+interface HighlightRegistry {
+  set: (name: string, highlight: unknown) => void
+  delete: (name: string) => void
+}
+
+type HighlightConstructor = new (...ranges: Range[]) => unknown
+
+/** The CSS Custom Highlight API, which paints an underline without touching the label's text nodes. */
+function highlightApi(): { registry: HighlightRegistry; Highlight: HighlightConstructor } | null {
+  const registry = (globalThis.CSS as { highlights?: HighlightRegistry } | undefined)?.highlights
+  const Highlight = (globalThis as { Highlight?: HighlightConstructor }).Highlight
+  if (!registry || !Highlight) return null
+  return { registry, Highlight }
+}
+
+/** The "(A)" an underline desktop puts after `anchor`'s label, if there is one. */
+function suffixOf(anchor: Element): HTMLElement | null {
+  const last = anchor.lastElementChild
+  return last instanceof HTMLElement && last.classList.contains(ACCESS_KEY_SUFFIX_CLASS) ? last : null
+}
+
+/** The underline under `letter` in `anchor`: in its label, else in the "(A)" after it. */
+function underlineRangeOf(anchor: Element, letter: string): Range | null {
+  const inLabel = accessKeyRangeIn(anchor, letter)
+  if (inLabel) return inLabel
+  const text = suffixOf(anchor)?.firstChild
+  if (!(text instanceof Text)) return null
+  const at = text.data.toLowerCase().indexOf(letter)
+  return at < 0 ? null : rangeOver({ node: text, offset: at, length: letter.length })
+}
+
 export interface AccessKeysOptions {
+  /** How holding Alt shows the letters. */
+  style: AccessKeyStyle
   /** The panel whose controls get access keys. */
   scope: () => HTMLElement | undefined
   /** The element the keytips are positioned against. */
@@ -212,10 +300,23 @@ function shortcutOf(letter: string): string {
   return `Alt+${letter.toUpperCase()}`
 }
 
+/** What this controller wrote on a control: the dialog's own value under it, and the merged one. */
+interface Announced {
+  base: string | null
+  written: string
+}
+
 export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
   let shown = false
-  /** The `aria-keyshortcuts` this controller wrote, so it never overwrites or leaves behind a dialog's own. */
-  const announced = new Map<HTMLElement, string>()
+  /**
+   * The `aria-keyshortcuts` this controller wrote, so it never overwrites or leaves behind a
+   * dialog's own: a default button's `Enter` stays and gains `Alt+S` beside it.
+   */
+  const announced = new Map<HTMLElement, Announced>()
+  /** The "(A)"s this controller appended, removed with it. */
+  const suffixes = new Set<HTMLElement>()
+  /** Underlines need the Highlight API; without it, the keytips draw instead. */
+  const highlights = options.style === 'underlines' ? highlightApi() : null
 
   function assignments(): AccessKeyAssignment[] {
     const scope = options.scope()
@@ -225,10 +326,17 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
   function hide(): void {
     if (!shown) return
     shown = false
-    options.onTips([])
+    if (highlights) highlights.registry.delete(ACCESS_KEY_HIGHLIGHT)
+    else options.onTips([])
   }
 
   function show(): void {
+    if (highlights) {
+      shown = true
+      const ranges = assignments().flatMap(({ anchor, letter }) => underlineRangeOf(anchor, letter) ?? [])
+      highlights.registry.set(ACCESS_KEY_HIGHLIGHT, new highlights.Highlight(...ranges))
+      return
+    }
     const layer = options.layer()
     if (!layer) return
     const origin = layer.getBoundingClientRect()
@@ -245,23 +353,58 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
     )
   }
 
-  /** Tells screen readers each control's key, where the dialog didn't name one itself. */
+  /**
+   * On an underline desktop, a label that lacks its letter carries it after the label, "保存 (A)",
+   * all the time, as GTK and Qt apps write a CJK label's mnemonic. `aria-hidden`: the key is
+   * announced through `aria-keyshortcuts`, and read into the name it would garble it.
+   */
+  function placeSuffixes(all: readonly AccessKeyAssignment[]): void {
+    const wanted = new Map<HTMLElement, string>()
+    if (highlights) {
+      for (const { anchor, letter } of all) {
+        if (accessKeyRangeIn(anchor, letter) === null) wanted.set(anchor, ` (${letter.toUpperCase()})`)
+      }
+    }
+    for (const suffix of suffixes) {
+      const anchor = suffix.parentElement
+      if (anchor && wanted.get(anchor) === suffix.textContent && suffixOf(anchor) === suffix) continue
+      suffix.remove()
+      suffixes.delete(suffix)
+    }
+    for (const [anchor, text] of wanted) {
+      if (suffixOf(anchor)?.textContent === text) continue
+      const suffix = anchor.ownerDocument.createElement('span')
+      suffix.className = ACCESS_KEY_SUFFIX_CLASS
+      suffix.setAttribute('aria-hidden', 'true')
+      suffix.textContent = text
+      anchor.append(suffix)
+      suffixes.add(suffix)
+    }
+  }
+
+  /** Tells screen readers each control's key, beside any key the dialog named itself. */
   function announce(): void {
-    const next = new Map(assignments().map(({ control, letter }) => [control, shortcutOf(letter)]))
-    for (const [control, value] of announced) {
-      // Rewritten since (the dialog named its own key): it's theirs now.
-      if (control.getAttribute('aria-keyshortcuts') !== value) {
+    const all = assignments()
+    placeSuffixes(all)
+    const next = new Map(all.map(({ control, letter }) => [control, shortcutOf(letter)]))
+    for (const [control, entry] of announced) {
+      // Rewritten since (the dialog changed its own key): it's theirs now, merged afresh below.
+      if (control.getAttribute('aria-keyshortcuts') !== entry.written) {
         announced.delete(control)
         continue
       }
-      if (next.get(control) === value) continue
-      control.removeAttribute('aria-keyshortcuts')
+      if (next.has(control) && entry.written === merged(entry.base, next.get(control) ?? '')) continue
+      restore(control, entry)
       announced.delete(control)
     }
     for (const [control, value] of next) {
-      if (announced.get(control) === value || control.hasAttribute('aria-keyshortcuts')) continue
-      control.setAttribute('aria-keyshortcuts', value)
-      announced.set(control, value)
+      if (announced.has(control)) continue
+      const base = control.getAttribute('aria-keyshortcuts')
+      // A dialog that named its own Alt key for this control keeps it alone.
+      if (base !== null && /(^|\s)Alt\+/u.test(base)) continue
+      const written = merged(base, value)
+      control.setAttribute('aria-keyshortcuts', written)
+      announced.set(control, { base, written })
     }
   }
 
@@ -300,7 +443,16 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
     }
     const scope = options.scope()
     const observer = new MutationObserver(scheduleAnnounce)
-    if (scope) observer.observe(scope, { childList: true, subtree: true, characterData: true })
+    // `aria-keyshortcuts` too: a dialog that rewrites a control's own key gets its Alt key merged back in.
+    if (scope) {
+      observer.observe(scope, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ['aria-keyshortcuts'],
+      })
+    }
     announce()
     return () => {
       window.removeEventListener('keyup', onKeyup, true)
@@ -308,13 +460,26 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
       window.removeEventListener('pointerdown', hide, true)
       observer.disconnect()
       if (frame !== null) cancelAnimationFrame(frame)
-      for (const [control, value] of announced) {
-        if (control.getAttribute('aria-keyshortcuts') === value) control.removeAttribute('aria-keyshortcuts')
+      for (const [control, entry] of announced) {
+        if (control.getAttribute('aria-keyshortcuts') === entry.written) restore(control, entry)
       }
       announced.clear()
+      for (const suffix of suffixes) suffix.remove()
+      suffixes.clear()
       hide()
     }
   }
 
   return { handleKeydown, attach }
+}
+
+/** A dialog's own `aria-keyshortcuts` with the access key added after it. */
+function merged(base: string | null, value: string): string {
+  return base === null || base.trim() === '' ? value : `${base} ${value}`
+}
+
+/** Puts back what the dialog had on `control` before this controller wrote there. */
+function restore(control: HTMLElement, entry: Announced): void {
+  if (entry.base === null) control.removeAttribute('aria-keyshortcuts')
+  else control.setAttribute('aria-keyshortcuts', entry.base)
 }

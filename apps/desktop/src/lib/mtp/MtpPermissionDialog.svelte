@@ -14,17 +14,10 @@
     const { onClose, onRetry }: Props = $props()
 
     const installCommand = `echo 'SUBSYSTEM=="usb", ATTR{bInterfaceClass}=="06", MODE="0664", TAG+="uaccess"\nSUBSYSTEM=="usb", ATTR{bInterfaceClass}=="ff", ATTR{bInterfaceSubClass}=="ff", ATTR{bInterfaceProtocol}=="00", MODE="0664", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/99-cmdr-mtp.rules > /dev/null && sudo udevadm control --reload-rules && sudo udevadm trigger`
-
-    function handleKeydown(event: KeyboardEvent) {
-        if (event.key === 'Enter') {
-            onRetry()
-        }
-    }
 </script>
 
 <ModalDialog
     titleId="dialog-title"
-    onkeydown={handleKeydown}
     blur
     dialogId="mtp-permission"
     onclose={onClose}
@@ -48,7 +41,7 @@
 
     {#snippet footer()}
         <Button variant="secondary" onclick={onClose}>{tString('mtp.permissionDialog.close')}</Button>
-        <Button variant="primary" onclick={onRetry}>{tString('mtp.permissionDialog.retry')}</Button>
+        <Button variant="primary" isDefault onclick={onRetry}>{tString('mtp.permissionDialog.retry')}</Button>
     {/snippet}
 </ModalDialog>
 

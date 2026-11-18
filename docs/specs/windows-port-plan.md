@@ -124,7 +124,6 @@ Open, waiting on David (each task entry has the detail):
 - **How a consumer names the host's local volume** (task 35/36): about 150 sites, mostly `cmdr-operations` tests, name
   `LocalPosixVolume`, which doesn't exist on Windows (`docs/notes/windows-port/build-progress.md`, last entry).
 - **The drive and UNC volume id scheme** (task 34).
-- **Dialog keys** (task 61): (a) Enter and ⌘. per the macOS row, (b) keytips versus underlined letters.
 - **The menu model** on Windows and per Linux desktop (task 63).
 - **The frozen-macOS copy guard's removal**, after reviewing `docs/notes/windows-port/macos-copy-accepted-review.md`
   (task 28).
@@ -713,21 +712,26 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
     switches, text fields, scrollbars, focus visuals, tooltips, and context menus, as tokens keyed on the platform so
     components stay one implementation. David reviews the design. Linux: its own neutral theme, same token set.
     Needs 59.
-61. [S] Windows. **Partly done**. Dialog conventions, read from task 59's conventions inside `ModalDialog`, ❌ never the
-    OS (`apps/desktop/src/lib/ui/DETAILS.md` § Platform conventions). Button order: the footer is written in macOS order
-    and Windows and KDE show it reversed, with Tab following through the focus trap's reading order; alignment stays
-    trailing everywhere. Access keys on Windows and every Linux desktop: holding Alt shows keytips, Alt plus the letter
-    presses or focuses the control, letters allocated from the rendered labels by the Linux menu bar's rule (no catalog
-    marker, so no translator work and no new strings). Of task 59's 14 `Alt+<letter>` keys, the 12 inside dialogs
+61. [S] Windows. **Done**. Dialog conventions, read from task 59's conventions inside `ModalDialog`, ❌ never the OS
+    (`apps/desktop/src/lib/ui/DETAILS.md` § Platform conventions, with the per-dialog Return table). Button order: the
+    footer is written in macOS order and Windows and KDE show it reversed, with Tab following through the focus trap's
+    reading order; alignment stays trailing everywhere. Return (David's decision, 2026-11-18): a dialog marks its
+    default button (`Button`'s `isDefault`), and Return presses it unless the dialog claims the key; Windows and Linux
+    keep a focused button's own press, while on the Mac a footer button hands Return to the default one and ⌘. cancels
+    like Escape. The dialogs that gave their safe answer focus so a reflex Enter was safe (quit, tool question,
+    rollback, data wipe) follow Apple's HIG: no default button, the destructive one styled as such, the safe answer
+    focused only off the Mac. Data safety over convention: while the default is destructive, Return on another footer
+    button does nothing on the Mac. Access keys on Windows and every Linux desktop: Alt plus the letter presses or
+    focuses the control, letters allocated from the rendered labels by the Linux menu bar's rule (no catalog marker, so
+    no translator work and no new strings). How holding Alt shows them (David's decision, 2026-11-18): Windows 11's
+    keytips on Windows, underlined letters on every Linux desktop as GTK and Qt draw them, and a label without its
+    letter (Chinese, Japanese) carries it as "保存 (B)". Of task 59's 14 `Alt+<letter>` keys, the 12 inside dialogs
     (multi-rename's 11 options, About this's Stop) stay the commands they are and count as their dialog's access keys
     (`keyScope` keeps their letters off every other control); they can't become label-derived letters because the keymap
     is per OS, not per language. The viewer's two (Alt+R, Alt+C) aren't in a dialog and stay as they are: the viewer has
-    no other access keys to clash with. macOS is unchanged, pinned by `ModalDialog.conventions.svelte.test.ts`;
-    `CMDR_MOCK_CONVENTIONS=windows pnpm dev` shows another desktop's row. Left, David's decisions: (a) Enter and ⌘.: the
-    macOS row says Return always presses the default button and ⌘. cancels, but today Enter presses a focused button
-    (dialogs that autofocus their safe answer rely on it) and ⌘. does nothing, so `enterActivates` and `cancelKeys`
-    aren't read yet; (b) keytips (WinUI) versus underlined letters (Win32, GNOME, KDE), when David QAs the look. Linux:
-    per desktop. Needs 59.
+    no other access keys to clash with. All five desktop rows are pinned by `ModalDialog.conventions.svelte.test.ts`,
+    a11y included; `CMDR_MOCK_CONVENTIONS=windows pnpm dev` (or `kde`, `gnome`, `otherLinux`) shows another desktop's
+    row. Linux: per desktop. Needs 59.
 62. [S] Windows. Typography and motion: Segoe UI Variable through the system font stack, the Windows type ramp, Windows
     animation curves and durations, and the system's animation setting. Linux: follows the desktop's font and
     reduced-motion settings. Needs 40.

@@ -58,14 +58,20 @@ pub enum CancelKeys {
     EscapeOrCommandPeriod,
 }
 
-/// Whether labeled controls carry access keys (an underlined letter pressed with Alt).
+/// Whether labeled controls carry access keys (a letter pressed with Alt), and how holding Alt
+/// shows them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum AccessKeys {
     /// The platform has no access keys.
     None,
-    /// Alt plus the marked letter presses the control, and holding Alt reveals the marks.
-    Alt,
+    /// Alt plus the letter presses the control; holding Alt shows a keytip badge by each one, as
+    /// Windows 11's own apps (WinUI) do.
+    Keytips,
+    /// Alt plus the letter presses the control; holding Alt underlines the letter in its label, as
+    /// GTK and Qt do. A label without the letter (Chinese, Japanese) carries it in parentheses,
+    /// "保存 (S)", the way GTK and Qt apps write a CJK label's mnemonic.
+    Underlines,
 }
 
 /// Where the app's menus live.
@@ -149,7 +155,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             dialog_button_order: DialogButtonOrder::AffirmativeFirst,
             enter_activates: EnterActivates::FocusedButton,
             cancel_keys: CancelKeys::Escape,
-            access_keys: AccessKeys::Alt,
+            access_keys: AccessKeys::Keytips,
             // Today's in-window bar (muda's Win32 menu); the model is still open.
             menu_model: MenuModel::WindowMenuBar,
             screen_readers: &[ScreenReader::Jaws, ScreenReader::Nvda, ScreenReader::Narrator],
@@ -164,7 +170,8 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             },
             enter_activates: EnterActivates::FocusedButton,
             cancel_keys: CancelKeys::Escape,
-            access_keys: AccessKeys::Alt,
+            // GTK and Qt both underline, so every Linux desktop does.
+            access_keys: AccessKeys::Underlines,
             // Today's in-window bar on every desktop. GNOME's HIG has no menu bar (a primary
             // menu in the header bar instead); whether to follow it is still open.
             menu_model: MenuModel::WindowMenuBar,
@@ -254,6 +261,26 @@ mod tests {
     fn every_desktop_expects_a_screen_reader() {
         for desktop in Desktop::ALL {
             assert!(!conventions_on(desktop).screen_readers.is_empty(), "{desktop:?}");
+        }
+    }
+
+    #[test]
+    fn access_keys_look_like_each_desktops_own() {
+        let keys = |desktop| conventions_on(desktop).access_keys;
+        assert_eq!(keys(Desktop::Macos), AccessKeys::None);
+        assert_eq!(keys(Desktop::Windows), AccessKeys::Keytips);
+        for linux in [LinuxDesktop::Gnome, LinuxDesktop::Kde, LinuxDesktop::Other] {
+            assert_eq!(keys(Desktop::Linux(linux)), AccessKeys::Underlines);
+        }
+    }
+
+    #[test]
+    fn only_macos_presses_the_default_button_from_anywhere_and_cancels_on_command_period() {
+        for desktop in Desktop::ALL {
+            let row = conventions_on(desktop);
+            let mac = desktop == Desktop::Macos;
+            assert_eq!(row.enter_activates == EnterActivates::DefaultButton, mac, "{desktop:?}");
+            assert_eq!(row.cancel_keys == CancelKeys::EscapeOrCommandPeriod, mac, "{desktop:?}");
         }
     }
 

@@ -11,7 +11,14 @@ secondary sources, not confirmed on a primary page.
 - **Apple HIG, Alerts** (`developer.apple.com/design/human-interface-guidelines/alerts`, change log to 2024-02-02):
   "Always place the default button on the trailing side of a row or at the top of a stack. Cancel buttons are typically
   on the leading side of a row." Cancel by "Pressing Escape (Esc) or Command-Period (.) on an attached keyboard" (macOS
-  listed). Don't make Cancel the default; with a destructive action nobody chose, consider no default at all.
+  listed). Don't make Cancel the default; with a destructive action nobody chose, consider no default at all. Read again
+  for task 61 (2026-11-18, Firecrawl scrape, page change log to 2024-02-02 "Enhanced guidance for using default and
+  Cancel buttons"), quoted: "Note that you don't want to make a Cancel button the default button. If you want to
+  encourage people to read an alert and not just automatically press Return to dismiss it, avoid making any button the
+  default button." And on the destructive style: "when people deliberately choose a destructive action — such as Empty
+  Trash — the resulting alert doesn't apply the destructive style to the Empty Trash button because the button performs
+  the person's original intent. In this scenario, the convenience of pressing Return to confirm the deliberately chosen
+  Empty Trash action outweighs the benefit of reaffirming that the button is destructive."
 - **Apple HIG, The menu bar** (`…/the-menu-bar`, change log to 2025-06-09): "On a Mac or an iPad, the menu bar at the
   top of the screen displays the top-level menus in your app."
 - **Microsoft, Windows 7 dialog boxes (Win32 UX guide)**
@@ -94,16 +101,26 @@ secondary sources, not confirmed on a primary page.
 - `dialogButtonOrder`: macOS and GNOME `cancelFirst`, Windows and KDE `affirmativeFirst` (verified, sources above).
   Other Linux: `cancelFirst` (decision).
 - `enterActivates`: macOS `defaultButton`: AppKit sends Return to the default button wherever focus is, and Space
-  presses the focused one (unverified on an Apple page; the HIG only says where the default button sits). Windows
-  `focusedButton`: WinUI's DefaultButton yields Enter to a focused control that handles it (verified), and in Win32 a
-  focused push button takes over as the default (unverified on a primary page). GNOME, KDE, and other Linux
-  `focusedButton`: GTK and Qt buttons activate on Enter when focused, and Qt's `autoDefault` makes a focused dialog
-  button the default (unverified on a primary page).
+  presses the focused one (unverified on an Apple page; the HIG says which button should be the default, and that Return
+  presses it, but not what a focused button does). Windows `focusedButton`: WinUI's DefaultButton yields Enter to a
+  focused control that handles it (verified), and in Win32 a focused push button takes over as the default (unverified
+  on a primary page). GNOME, KDE, and other Linux `focusedButton`: GTK and Qt buttons activate on Enter when focused,
+  and Qt's `autoDefault` makes a focused dialog button the default (unverified on a primary page).
 - `cancelKeys`: macOS `escapeOrCommandPeriod` (verified, Apple HIG Alerts); Windows and Linux `escape` (verified: Win32
   UX guide, WinUI `ContentDialog`, GNOME HIG; KDE via Qt's `QDialog`, unverified on a primary page).
-- `accessKeys`: macOS `none` (no mnemonics on the Mac, unverified on an Apple page); Windows, GNOME, KDE, and other
-  Linux `alt` (verified for Windows, GNOME, and KDE). How the marks show differs (Windows' Win32 underlines versus WinUI
-  keytips, KDE's setting to always show them), which is task 61's.
+- `accessKeys`: macOS `none` (no mnemonics on the Mac, unverified on an Apple page). Windows `keytips` (verified,
+  Microsoft's access keys guide: keytips when Alt is pressed; Win32 underlines are the older look, a decision for
+  Windows 11's). GNOME, KDE, and other Linux `underlines` (verified for GNOME: underlined letter "displayed when Alt is
+  held down"; KDE's underline-on-Alt is Breeze's default with a setting to always show them, unverified on a primary
+  page). A CJK label's mnemonic as "保存(_S)", the letter in parentheses after the label, is GTK and Qt translators'
+  practice (unverified on a primary page); Cmdr appends " (S)" itself, since its letters are picked from rendered
+  labels.
+- How task 61 applied `enterActivates` on the Mac: the HIG's "no default button" for a confirmation people should read
+  (the quit prompt, the tool question, the rollback question, the data wipe), and Return keeps confirming a deliberately
+  chosen destructive action (permanent delete, Delete AI model, Forget memory), as the Empty Trash passage allows. One
+  deliberate departure from AppKit for data safety: while the default button is destructive, Return on another footer
+  button does nothing, where AppKit would press the default. The table: `apps/desktop/src/lib/ui/DETAILS.md` § Platform
+  conventions.
 - `menuModel`: macOS `systemMenuBar` (verified). Windows and every Linux desktop `windowMenuBar`, carrying today's bar:
   David decides the Windows model in task 63, which also revisits GNOME.
 - `screenReaders`: macOS `voiceOver`; Windows `jaws`, `nvda`, `narrator` (verified, WebAIM #11); Linux `orca` on every

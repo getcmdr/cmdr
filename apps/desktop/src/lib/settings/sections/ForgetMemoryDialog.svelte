@@ -33,9 +33,6 @@
         if (!isForgetting) onCancel()
     }}
     containerStyle="width: 420px"
-    onkeydown={(e: KeyboardEvent) => {
-        if (e.key === 'Enter' && !isForgetting) onConfirm()
-    }}
 >
     {#snippet title()}{tString('askCmdr.forget.title')}{/snippet}
     <p class="confirm-message" id={messageId}>{tString('askCmdr.forget.message')}</p>
@@ -43,7 +40,9 @@
         <Button variant="secondary" disabled={isForgetting} onclick={onCancel}>
             {tString('askCmdr.forget.cancel')}
         </Button>
-        <Button variant="danger" disabled={isForgetting} onclick={onConfirm}>
+        <!-- The default button (Return presses it), as before: the person chose to forget. A
+             danger default means Return on Cancel never forgets instead (`ModalDialog`). -->
+        <Button variant="danger" isDefault disabled={isForgetting} onclick={onConfirm}>
             {tString('askCmdr.forget.confirm')}
         </Button>
     {/snippet}

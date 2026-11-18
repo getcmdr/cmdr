@@ -25,12 +25,6 @@
     onMount(async () => {
         workaroundCommand = await getPtpcameradWorkaroundCommand()
     })
-
-    function handleKeydown(event: KeyboardEvent) {
-        if (event.key === 'Enter') {
-            onRetry()
-        }
-    }
 </script>
 
 {#snippet processName(children: Snippet)}<strong>{@render children()}</strong>{/snippet}
@@ -39,7 +33,6 @@
 
 <ModalDialog
     titleId="dialog-title"
-    onkeydown={handleKeydown}
     blur
     dialogId="ptpcamerad"
     onclose={onClose}
@@ -78,7 +71,7 @@
 
     {#snippet footer()}
         <Button variant="secondary" onclick={onClose}>{tString('mtp.ptpcameradDialog.close')}</Button>
-        <Button variant="primary" onclick={onRetry}>{tString('mtp.ptpcameradDialog.retry')}</Button>
+        <Button variant="primary" isDefault onclick={onRetry}>{tString('mtp.ptpcameradDialog.retry')}</Button>
     {/snippet}
 </ModalDialog>
 

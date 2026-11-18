@@ -96,9 +96,9 @@
             >{tString('fileOperations.lockedSources.skip')}</Button
         >
         <!-- Moving what the person asked to move is the answer meant nearly every
-             time, and each item ends up Locked again where it lands, so it's the
-             one Enter presses. -->
-        <!-- Never autofocused: this clears a Locked flag, so Enter mustn't press it. -->
+             time (each item ends up Locked again where it lands), but it clears a
+             Locked flag, so it's neither the default button nor focused: Return
+             mustn't press it. -->
         <Button variant="primary" disabled={answering} onclick={onMoveAnyway}
             >{tString('fileOperations.lockedSources.moveAnyway')}</Button
         >

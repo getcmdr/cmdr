@@ -23,7 +23,9 @@ Pull-tier docs for `lib/ui/`: architecture, component APIs, and decision rationa
   rendered markdown is inert; it resolves the anchor from the click target and routes the URL to `openExternalUrl`, or
   to `openSystemSettingsUrl` for the `x-apple.systempreferences:` scheme Tauri's opener swallows. It does NOT allowlist
   URLs, so it belongs on trusted markdown only
-- **`Button.svelte`**: Styled button with variant and size props
+- **`Button.svelte`**: Styled button with variant and size props; `isDefault` marks a dialog's default button
+- **`dialog-keys.ts`**: Return and ⌘. per the platform's convention (`enterPressesFocusedButton`, `returnPressesTarget`,
+  `ownsReturn`, the default-button lookup). See § Platform conventions
 - **`CloseButton.svelte`**: The round × (toasts, inline notices). Required `ariaLabel`; an optional `children` snippet
   draws under the × (the toast's countdown ring). It never positions itself: the caller pins it via `class` plus a
   `:global(...)` rule, and the class doubles as a selector contract (`.toast-close` for `toast-focus.ts` and E2E).
@@ -311,14 +313,15 @@ dark mode where a light-mode-strength shadow would be invisible against the canv
 
 On mount, once a tick has passed and nothing inside claimed focus, the dialog focuses the first field a person can type
 into (`focus-trap.ts::focusFirstField`: an enabled, writable text `<input>` or `<textarea>`), else the overlay, which
-carries `tabindex="-1"` so Escape/keydown events are captured either way. ❗ Never a button, checkbox, or radio: Enter
-on a focused button activates that button instead of the dialog's default action (a modified Enter, like a dialog's own
-⌘↩, still reaches `onkeydown`). So a dialog opened from a context menu or a shortcut takes keys at once, and one with
-fields never opens on a field it has locked ("Edit server…" opened on the scrim because its sheet focused the disabled
-Address). A dialog that wants a specific field focuses it itself, or calls `focusFirstField` on the part it means. The
-overlay also carries `use:trapFocus` with Escape's action (`onescape ?? onclose`) (see § "Focus trapping" below), so
-every `ModalDialog` consumer gets Tab containment and the Escape fallback for free. `trapFocus` deliberately doesn't
-move focus on mount.
+carries `tabindex="-1"` so Escape/keydown events are captured either way. ❗ Never a button, checkbox, or radio: on
+Windows and Linux Enter on a focused button activates that button instead of the dialog's default action (a dialog that
+wants that, its safe answer focused, says so with `autoFocus={enterPressesFocusedButton()}`; a modified Enter, like a
+dialog's own ⌘↩, still reaches `onkeydown`). So a dialog opened from a context menu or a shortcut takes keys at once,
+and one with fields never opens on a field it has locked ("Edit server…" opened on the scrim because its sheet focused
+the disabled Address). A dialog that wants a specific field focuses it itself, or calls `focusFirstField` on the part it
+means. The overlay also carries `use:trapFocus` with Escape's action (`onescape ?? onclose`) (see § "Focus trapping"
+below), so every `ModalDialog` consumer gets Tab containment and the Escape fallback for free. `trapFocus` deliberately
+doesn't move focus on mount.
 
 ### Platform conventions
 
@@ -335,27 +338,74 @@ the Mac markup and keys, so a convention change can't move them unnoticed.
   browse mode still reads DOM order; Chromium's `reading-flow` could align it later (WebView2 only, unverified).
 - **Alignment**: trailing (right) on every desktop: the Win32 guide, Qt's `KdeLayout`, and GNOME all right-align
   (sources and read dates for this and the button order: `docs/notes/windows-port/platform-conventions.md`).
-- **Escape** cancels on every row; **Enter** on a focused button presses that button. macOS's row says `defaultButton`
-  and `escapeOrCommandPeriod`, but today's Mac behavior (focused-button Enter, which the "safe answer takes focus"
-  dialogs rely on, and no ⌘.) stays until David decides (`docs/specs/windows-port-plan.md` task 61), so neither field is
-  read yet.
-- **Access keys** (`accessKeys: 'alt'`, Windows and every Linux desktop; `access-keys.ts`): holding Alt shows a keytip
-  under each labeled control, and Alt plus its letter presses it (a button, a checkbox) or focuses it (a text field, via
-  its `<label>`). Letters come from the labels as rendered, by the Linux menu bar's rule (`mnemonics.rs`: word initials
+- **Cancel keys** (`cancelKeys`): Escape on every row; on the Mac (`escapeOrCommandPeriod`) ⌘. too. `ModalDialog`
+  prevents ⌘. (unprevented, AppKit reads it as `cancelOperation:`, a full-screen exit like Escape's) and presses it
+  again as a synthetic Escape from where it landed, so whatever answers Escape (a popover in the body, an `ownsKeyboard`
+  dialog, `escapeAction`) answers ⌘. too.
+- **Return and the default button** (`enterActivates`; `dialog-keys.ts`). A dialog marks its default button with
+  `Button`'s `isDefault` (`data-dialog-default`, `'destructive'` on a `danger` button), at most one, and none where
+  people should read first. Plain Return goes to the dialog's `onkeydown` first; a dialog that acts on it calls
+  `preventDefault()` (❌ forgetting it presses the default button too, a double confirm). Unclaimed, `ModalDialog`
+  presses the enabled default button. Per row:
+  - `focusedButton` (Windows, Linux): a focused button takes Return as its own press, as today.
+  - `defaultButton` (macOS): Return on a FOOTER button (the dialog's answers) presses the default one, never the focused
+    one; Space presses the focused one. A button in the body (a recent path's row, a suggestion chip, Copy) keeps its
+    own press, since it stands for the list row or token that Return commits on a Mac.
+  - Everywhere: a control that owns Return keeps it (`ownsReturn`: a textarea, contenteditable, a combobox or `Select`
+    trigger, a list, grid, tree, or menu, a link, a disclosure), so Return in a note is a new line.
+  - Data safety, Mac only: while the default button is destructive, Return on any other footer button does nothing at
+    all (no `onkeydown`, no press). Why: someone who Tabbed to Cancel and pressed Return meant to cancel; Apple would
+    press Delete there, and "no dialog gets easier to destroy with by reflex" beats the convention.
+  - A11y: `isDefault` adds `Enter` to the button's `aria-keyshortcuts` (VoiceOver has no other "default button" cue on
+    the web); the access key joins it (`Enter Alt+S`).
+  - Decision/Why: the dialog owns WHICH button is default, the convention owns what Return does with it, so one marker
+    serves all five rows. Decision prompts (`../file-operations/decision-keys.ts`) keep their own Enter (the safe
+    answer), asked through the same `returnPressesTarget`.
+- **The per-dialog Return table** (each decided on purpose; "focus" is `autoFocus={enterPressesFocusedButton()}`, so the
+  safe answer takes focus only where Return presses the focused button):
+  - No default, safe answer takes focus off the Mac (Apple's HIG: no default button where people should read first, ❌
+    not even Cancel): the quit prompt (Keep working), the tool question (Decline), the rollback question (Cancel), the
+    data wipe's question (Cancel). On the Mac Return does nothing there; Escape and ⌘. take the safe way out.
+  - Default, and the destructive guard applies (`danger`): permanent delete, Delete AI model, Forget memory, the rename
+    clash's "Overwrite" when the volume has no trash. Their Return confirmed before and still does; only Return on
+    another footer button changed, to nothing.
+  - Default, focus off the Mac only: the data wipe's done Quit, Sources gone's Continue, the stale drive's Close, the
+    viewer's Copy and "Save as file", the finished transfer's Close. Same Return as before.
+  - Default, marking the button their Return already pressed: the alert's OK, trash, copy and move, new file, new
+    folder, unlock, go to folder, license activate and try again, sign in, crash report Send, the MTP and ptpcamerad
+    Retry, the rename clash's Continue or Move-to-trash overwrite, the extension change's Use.
+  - No default, unchanged: locked sources (Move anyway clears a Locked flag, so Return mustn't press it), the What's
+    new, reminder, expiration, Move to Applications, SMB link consent, acknowledgements, About, About this, and
+    suggested-ops dialogs (Return pressed nothing there before either), multi-rename and the bulk-rename review (Return
+    in a field starts; their own rules), the query dialogs (`ownsKeyboard`), the error report and feedback (⌘↩ sends).
+  - Decision prompts (`letterKeysAnswer`: the transfer conflict, the operation conflict, the transfer error): Enter is
+    their safe answer (Skip, Close), now from a Mac footer button too. The onboarding wizard is no `ModalDialog` and
+    keeps its own keys.
+- **Access keys** (`accessKeys` is `keytips` on Windows, `underlines` on every Linux desktop, `none` on the Mac;
+  `access-keys.ts`): Alt plus a control's letter presses it (a button, a checkbox) or focuses it (a text field, via its
+  `<label>`). Letters come from the labels as rendered, by the Linux menu bar's rule (`mnemonics.rs`: word initials
   first, unique per dialog, case-insensitive), so every language gets its own and no translator places a marker; a label
   with no Latin, Greek, or Cyrillic letter (Chinese, Japanese) takes a free `a`–`z`, as Windows does. Each control also
-  gets `aria-keyshortcuts="Alt+X"` unless the dialog named its own. The key goes to the dialog's `onkeydown` FIRST: one
-  it claims (`defaultPrevented`) never presses a control. `keyScope` reserves the dialog's own Alt+letter commands'
-  letters (the multi-rename sheet's options, About this's Stop), which are its access keys already, so nothing else is
-  given them. A `letterKeysAnswer` dialog (bare letters answer it, shown on its buttons) gets none: one key scheme per
-  dialog, and its report offer stays keyless on purpose.
+  gets `Alt+X` in its `aria-keyshortcuts`, after any key the dialog named itself (`F2 Alt+B`), unless that's already an
+  Alt key. The key goes to the dialog's `onkeydown` FIRST: one it claims (`defaultPrevented`) never presses a control.
+  `keyScope` reserves the dialog's own Alt+letter commands' letters (the multi-rename sheet's options, About this's
+  Stop), which are its access keys already, so nothing else is given them. A `letterKeysAnswer` dialog (bare letters
+  answer it, shown on its buttons) gets none: one key scheme per dialog, and its report offer stays keyless on purpose.
+- **How holding Alt shows them**: `keytips` draws WinUI's badge under each control (`.access-key-tip`). `underlines`
+  underlines the letter in the label, as GTK and Qt do, painting the picked occurrence (`accessKeyRangeIn`: its first
+  word-initial occurrence, else its first, the allocator's own order) under the `cmdr-access-key` highlight. A label
+  without its letter (Chinese, Japanese) carries it after the label all the time, "保存 (B)", as GTK and Qt apps write a
+  CJK mnemonic: an `aria-hidden` `.access-key-suffix` span appended to the label's element, kept out of the label text
+  the allocator reads, and removed with the dialog.
+- Decision/Why: underlines through the CSS Custom Highlight API, ❌ never by wrapping the letter in markup. The label is
+  a consumer snippet whose text nodes Svelte owns; a `Range` paints over them without touching them. The suffix is the
+  one DOM write, appended last so Svelte's anchors stay before it. Without the API (an old WebKitGTK) the underline
+  desktops fall back to keytips; WebKitGTK's `::highlight()` with `text-decoration` is unverified on a Linux machine
+  (Chromium and WKWebView support it).
 - Gotcha: Alt plus a numpad key never names an access key (`accessKeyLettersOf`): Windows types a character by its code
   that way (Alt, 0, 2, 3, 3 for é), one Alt keydown per digit, and a label like "Delete 3 items" can hold the digit `3`
   as its key once its letters are taken. Without the guard, typing é in a dialog field could press it.
-- Decision/Why: keytips (WinUI's look, drawn over the panel in `.access-key-tip`) rather than an underlined letter. The
-  label is a consumer snippet, so underlining would mean rewriting Svelte-owned text nodes, and a keytip also carries a
-  letter the label lacks (a reserved command's, a Chinese label's). Underlines (GNOME, KDE, Win32) remain an option
-  David may pick when he QAs the look.
+- Decision/Why: Windows keeps keytips (Windows 11's own apps, WinUI), not Win32's underlines.
 - Gotcha: Windows' native menu bar takes a lone Alt press (Alt, release, focuses the bar), which may hide keytips there;
   task 63 settles the menu model (unverified on Windows).
 
@@ -849,7 +899,9 @@ one-character minimum width: a squeezed Swedish row broke "Inställninga / r…"
 as a flex row: the content in `.btn-label`, the chip in `.btn-key-hint`, both centered on the cross axis, and the chip
 never wraps under the label (see above). The slot is `aria-hidden` (read into the name, the key garbles it: "Skip S"),
 so put the key on `aria-keyshortcuts` in ARIA's spelling (`"Alt+C"`, `"S Enter"` for a button Enter also presses); the
-prop doesn't derive it, since a display glyph (`⌥C`, `⏎`) isn't ARIA's form.
+prop doesn't derive it, since a display glyph (`⌥C`, `⏎`) isn't ARIA's form. A dialog's default button sets `isDefault`
+instead of spelling `Enter`: it adds `Enter` itself and tells `ModalDialog` what Return presses (§ Platform
+conventions).
 
 - **Why a prop, ❌ not a chip in `children`**: an inline chip flows with the text, so `vertical-align` puts it on the
   text's baseline (it read low, the F2 on Background), and a narrow button wrapped it under the label (the clash

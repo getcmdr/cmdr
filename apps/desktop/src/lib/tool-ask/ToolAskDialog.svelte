@@ -6,6 +6,7 @@
      */
     import ModalDialog from '#lib/ui/ModalDialog.svelte'
     import Button from '#lib/ui/Button.svelte'
+    import { enterPressesFocusedButton } from '#lib/ui/dialog-keys.js'
     import type { AskFacts, Initiator } from '#lib/ipc/bindings.js'
     import { tString } from '#lib/intl/messages.svelte.js'
     import { startedByWhenGuarded } from '#lib/ui/started-elsewhere-guard.js'
@@ -53,7 +54,11 @@
     </div>
 
     {#snippet footer()}
-        <Button variant="secondary" autoFocus onclick={onDecline}>{tString('ui.toolAsk.decline')}</Button>
+        <!-- No default button: an agent asked, so a reflex Return allows nothing. Decline takes
+             focus only where Return presses the focused button (Windows, Linux). -->
+        <Button variant="secondary" autoFocus={enterPressesFocusedButton()} onclick={onDecline}
+            >{tString('ui.toolAsk.decline')}</Button
+        >
         <Button variant="primary" onclick={onAllow}>{tString('ui.toolAsk.allow')}</Button>
     {/snippet}
 </ModalDialog>

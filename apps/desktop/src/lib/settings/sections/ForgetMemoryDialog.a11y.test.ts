@@ -4,7 +4,8 @@
  * second one at a folder the first is still walking.
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
+import { withConventions } from '#lib/platform/test-platform.js'
 import { mount, tick } from 'svelte'
 import { computeAccessibleDescription } from 'dom-accessibility-api'
 import ForgetMemoryDialog from './ForgetMemoryDialog.svelte'
@@ -84,6 +85,23 @@ describe('ForgetMemoryDialog behaviour', () => {
     expect(onConfirm).not.toHaveBeenCalled()
     target.remove()
   })
+
+  // Forget is the danger default: Return confirms from anywhere but another footer button.
+  it.each(['macos', 'windows', 'gnome'] as const)(
+    'on %s, Return on Cancel never forgets instead, and the default reads as Enter',
+    async (desktop) => {
+      onTestFinished(withConventions(desktop))
+      const { target, onConfirm } = await mountDialog(false)
+      const [cancel, forget] = [...target.querySelectorAll<HTMLButtonElement>('.modal-footer button')]
+      expect(forget.getAttribute('data-dialog-default')).toBe('destructive')
+      expect(forget.getAttribute('aria-keyshortcuts')?.split(' ')).toContain('Enter')
+      cancel.focus()
+      cancel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+      await tick()
+      expect(onConfirm).not.toHaveBeenCalled()
+      target.remove()
+    },
+  )
 
   it('disables both buttons while forgetting', async () => {
     const { target } = await mountDialog(true)

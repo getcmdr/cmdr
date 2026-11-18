@@ -35,11 +35,6 @@
         if (!isDeleting) onCancel()
     }}
     containerStyle="width: 400px"
-    onkeydown={(e: KeyboardEvent) => {
-        if (e.key === 'Enter' && !isDeleting) {
-            onConfirm()
-        }
-    }}
 >
     {#snippet title()}{isDeleting
             ? tString('ai.local.deleteDialogTitleDeleting')
@@ -56,7 +51,9 @@
     {/if}
     {#snippet footer()}
         <Button variant="secondary" disabled={isDeleting} onclick={onCancel}>{tString('ai.local.cancel')}</Button>
-        <Button variant="danger" disabled={isDeleting} onclick={onConfirm}>
+        <!-- The default button (Return presses it), as before: the person chose to delete. A
+             danger default means Return on Cancel never deletes instead (`ModalDialog`). -->
+        <Button variant="danger" isDefault disabled={isDeleting} onclick={onConfirm}>
             {isDeleting ? tString('ai.local.deleteButtonDeleting') : tString('ai.local.deleteButton')}
         </Button>
     {/snippet}

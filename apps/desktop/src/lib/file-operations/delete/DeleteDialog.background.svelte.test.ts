@@ -130,7 +130,7 @@ function typeKey(target: HTMLElement, init: KeyboardEventInit & { type?: 'keydow
 
 /** Found by the key it carries, so the lookup holds for both of its words. */
 function backgroundButton(target: HTMLElement): HTMLButtonElement | null {
-  return target.querySelector<HTMLButtonElement>('button[aria-keyshortcuts="F2"]')
+  return target.querySelector<HTMLButtonElement>('button[aria-keyshortcuts~="F2"]')
 }
 
 /** The visible word, without the F2 chip that rides inside the button. */

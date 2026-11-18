@@ -293,6 +293,8 @@
 
     function handleKeydown(event: KeyboardEvent) {
         if (event.key === 'Enter' && !isActivating && !hasExistingLicense) {
+            // Claimed, so `ModalDialog` doesn't press the default button too.
+            event.preventDefault()
             void handleActivate()
         }
     }
@@ -336,13 +338,13 @@
         <Button variant="secondary" onclick={handleCancelAfterInvalid}
             >{tString('licensing.dialog.cancelButton')}</Button
         >
-        <Button variant="primary" onclick={handleActivate} disabled={isActivating}>
+        <Button variant="primary" isDefault onclick={handleActivate} disabled={isActivating}>
             {#if isActivating}<Spinner size="sm" />{/if}
             {isActivating ? tString('licensing.dialog.checking') : tString('licensing.dialog.tryAgain')}
         </Button>
     {:else}
         <Button variant="secondary" onclick={handleClose}>{tString('licensing.dialog.cancelButton')}</Button>
-        <Button variant="primary" onclick={handleActivate} disabled={isActivating || !cleanedKey}>
+        <Button variant="primary" isDefault onclick={handleActivate} disabled={isActivating || !cleanedKey}>
             {#if isActivating}<Spinner size="sm" />{/if}
             {isActivating
                 ? tString('licensing.dialog.activating')

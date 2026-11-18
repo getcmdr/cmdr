@@ -90,17 +90,10 @@
         }
         onClose()
     }
-
-    function handleKeydown(event: KeyboardEvent) {
-        if (event.key === 'Enter' && canSend) {
-            void handleSend()
-        }
-    }
 </script>
 
 <ModalDialog
     titleId="crash-report-dialog-title"
-    onkeydown={handleKeydown}
     dialogId="crash-report"
     role="dialog"
     onclose={handleDismiss}
@@ -159,7 +152,7 @@
         <Button variant="secondary" onclick={handleDismiss} disabled={sending}
             >{tString('crashReporter.dialog.dismiss')}</Button
         >
-        <Button variant="primary" onclick={() => void handleSend()} disabled={!canSend}>
+        <Button variant="primary" isDefault onclick={() => void handleSend()} disabled={!canSend}>
             {sending ? tString('crashReporter.dialog.sending') : tString('crashReporter.dialog.send')}
         </Button>
     {/snippet}

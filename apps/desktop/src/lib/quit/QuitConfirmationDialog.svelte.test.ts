@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import { mount, tick } from 'svelte'
-import { withPlatform } from '#lib/platform/test-platform.js'
+import { withConventions, withPlatform } from '#lib/platform/test-platform.js'
 import QuitConfirmationDialog from './QuitConfirmationDialog.svelte'
 import type { OperationSnapshot } from '#lib/ipc/bindings.js'
 
@@ -129,6 +129,50 @@ describe('QuitConfirmationDialog', () => {
     const buttons = [...target.querySelectorAll<HTMLButtonElement>('.modal-footer button')]
     expect(buttons.map((b) => b.textContent.trim())).toEqual(['Keep working', quitButton])
   })
+})
+
+/** A keydown on `el`, as a person pressing the key there; returns it to read `defaultPrevented`. */
+function press(el: Element, init: KeyboardEventInit): KeyboardEvent {
+  const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init })
+  el.dispatchEvent(event)
+  return event
+}
+
+/** Two frames: `Button`'s `autoFocus` lands on the frame after mount. */
+async function settle(): Promise<void> {
+  await tick()
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+}
+
+describe('QuitConfirmationDialog keys: a reflex Return never quits', () => {
+  it('on the Mac, nothing takes focus and Return presses nothing; Escape and ⌘. keep working', async () => {
+    onTestFinished(withConventions('macos'))
+    const onQuit = vi.fn()
+    const onKeepWorking = vi.fn()
+    const target = await renderDialog([operation('op-1', 'copy')], 15, { onQuit, onKeepWorking })
+    await settle()
+    const overlay = target.querySelector<HTMLElement>('.modal-overlay')
+    expect(document.activeElement).toBe(overlay)
+    expect(target.querySelector('[data-dialog-default]')).toBeNull()
+    const quitNow = [...target.querySelectorAll<HTMLButtonElement>('.modal-footer button')][1]
+    // Even with Quit now focused: Return isn't Space.
+    quitNow.focus()
+    press(quitNow, { key: 'Enter' })
+    expect(onQuit).not.toHaveBeenCalled()
+    press(quitNow, { key: '.', code: 'Period', metaKey: true })
+    expect(onKeepWorking).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['windows', 'gnome', 'kde'] as const)(
+    'on %s, Keep working takes focus, so Return keeps working',
+    async (desktop) => {
+      onTestFinished(withConventions(desktop))
+      await renderDialog([operation('op-1', 'copy')], 15)
+      await settle()
+      expect(document.activeElement?.textContent.trim()).toBe('Keep working')
+    },
+  )
 })
 
 // The layering claim, checked at the source rather than through happy-dom: the

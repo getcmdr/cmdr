@@ -9,6 +9,7 @@
      */
     import ModalDialog from '#lib/ui/ModalDialog.svelte'
     import Button from '#lib/ui/Button.svelte'
+    import { enterPressesFocusedButton } from '#lib/ui/dialog-keys.js'
     import { tString } from '#lib/intl/messages.svelte.js'
     import { goesItems, introText, leftoverText, refusalText, type DataWipeView } from './delete-all-data'
 
@@ -79,9 +80,13 @@
 
     {#snippet footer()}
         {#if view.kind === 'done'}
-            <Button variant="primary" autoFocus onclick={onQuit}>{tString('settings.dataWipe.quit')}</Button>
+            <Button variant="primary" isDefault autoFocus={enterPressesFocusedButton()} onclick={onQuit}
+                >{tString('settings.dataWipe.quit')}</Button
+            >
         {:else}
-            <Button variant="secondary" autoFocus disabled={deleting} onclick={onCancel}>
+            <!-- No default button: a reflex Return wipes nothing. Cancel takes focus only where
+                 Return presses the focused button (Windows, Linux); on the Mac Return does nothing. -->
+            <Button variant="secondary" autoFocus={enterPressesFocusedButton()} disabled={deleting} onclick={onCancel}>
                 {tString('settings.dataWipe.cancel')}
             </Button>
             <Button variant="danger" disabled={deleting} onclick={onConfirm}>

@@ -12,7 +12,7 @@
     "dialogButtonOrder": "affirmativeFirst",
     "enterActivates": "focusedButton",
     "cancelKeys": "escape",
-    "accessKeys": "alt",
+    "accessKeys": "keytips",
     "menuModel": "windowMenuBar",
     "screenReaders": ["jaws", "nvda", "narrator"],
     "linuxDesktop": null
@@ -21,7 +21,7 @@
     "dialogButtonOrder": "cancelFirst",
     "enterActivates": "focusedButton",
     "cancelKeys": "escape",
-    "accessKeys": "alt",
+    "accessKeys": "underlines",
     "menuModel": "windowMenuBar",
     "screenReaders": ["orca"],
     "linuxDesktop": "gnome"
@@ -30,7 +30,7 @@
     "dialogButtonOrder": "affirmativeFirst",
     "enterActivates": "focusedButton",
     "cancelKeys": "escape",
-    "accessKeys": "alt",
+    "accessKeys": "underlines",
     "menuModel": "windowMenuBar",
     "screenReaders": ["orca"],
     "linuxDesktop": "kde"
@@ -39,7 +39,7 @@
     "dialogButtonOrder": "cancelFirst",
     "enterActivates": "focusedButton",
     "cancelKeys": "escape",
-    "accessKeys": "alt",
+    "accessKeys": "underlines",
     "menuModel": "windowMenuBar",
     "screenReaders": ["orca"],
     "linuxDesktop": "other"

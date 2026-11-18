@@ -1084,7 +1084,7 @@
             </Button>
         {/if}
         {#if step === 'form'}
-            <Button variant="primary" onclick={() => void submit()} disabled={!canSubmit}>
+            <Button variant="primary" isDefault onclick={() => void submit()} disabled={!canSubmit}>
                 <!-- "Eject and save" shows its own progress on its own button. -->
                 {#if busy && !ejectAttempt}
                     <span class="submit-content">

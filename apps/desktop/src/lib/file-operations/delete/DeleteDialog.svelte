@@ -314,6 +314,8 @@
 
     function handleKeydown(event: KeyboardEvent) {
         if (event.key === 'Enter') {
+            // Claimed, so `ModalDialog` doesn't press the default button too.
+            event.preventDefault()
             void handleConfirm()
             return
         }
@@ -566,7 +568,9 @@
                 disabled={confirming}
             />
         {/if}
-        <Button variant={confirmVariant} onclick={() => void handleConfirm()}>
+        <!-- The default button: Return confirms, as before. Permanent, it's a danger default, so
+             Return on Cancel (or any other button) never deletes instead (`ModalDialog`). -->
+        <Button variant={confirmVariant} isDefault onclick={() => void handleConfirm()}>
             {#if confirming}<span class="confirm-spinner"><Spinner size="sm" /></span>{/if}{confirmLabel}
         </Button>
         {/if}

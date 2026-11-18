@@ -13,6 +13,7 @@
      */
     import ModalDialog from '#lib/ui/ModalDialog.svelte'
     import Button from '#lib/ui/Button.svelte'
+    import { enterPressesFocusedButton } from '#lib/ui/dialog-keys.js'
     import { onDestroy, onMount } from 'svelte'
     import type { UnlistenFn } from '@tauri-apps/api/event'
     import { getVolumeIndexStatusById, onIndexFreshnessChanged } from '#lib/tauri-commands/indexing.js'
@@ -103,7 +104,7 @@
             <Button variant="secondary" onclick={neverShowAgain}>
                 {tString('indexing.staleDialog.neverShowAgain')}
             </Button>
-            <Button variant="primary" autoFocus onclick={close}>
+            <Button variant="primary" isDefault autoFocus={enterPressesFocusedButton()} onclick={close}>
                 {tString('indexing.staleDialog.close')}
             </Button>
         {/snippet}

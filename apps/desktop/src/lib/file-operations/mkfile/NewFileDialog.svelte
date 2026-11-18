@@ -88,6 +88,8 @@
 
     function handleKeydown(event: KeyboardEvent) {
         if (event.key === 'Enter') {
+            // Claimed, so `ModalDialog` doesn't press the default button too.
+            event.preventDefault()
             void handleConfirm()
         }
     }
@@ -118,6 +120,7 @@
         >
         <Button
             variant="primary"
+            isDefault
             onclick={() => void handleConfirm()}
             disabled={!isValid || check.isChecking || submission.busy}>{tString('fileOperations.button.ok')}</Button
         >
