@@ -358,11 +358,21 @@ row is decided here or in the frontend.
   `update_menu_accelerator`, `set_menu_context`, a click's own check flip), `notify_bar_changed` redraws, diffs against
   the last answer sent, and emits only when a row moved: `rows` holds the moved rows' states by id, or `menus` the whole
   bar when its shape moved. Nothing is drawn or emitted until the first `get_menu_bar` (macOS never asks).
-- **Ordering contract** (the event-versus-answer race this codebase has been bitten by): the redraw, the revision bump,
-  and the emit happen under the one `page_bar` lock, and an answer takes the same lock, so revisions are dense and in
-  order across the command and the event. A page subscribes to `menu-bar-changed` first, then calls `get_menu_bar`,
+- **Ordering contract** (the event-versus-answer race this codebase has been bitten by): only an event moves the
+  revision on. `take_change` (the redraw, the bump, and `last`) and the emit happen under the one `page_bar` lock, and
+  `get_menu_bar` answers `last` at its revision under the same lock, never a fresher bar of its own. So an answer taken
+  between a push storing its fact and that push's `notify_bar_changed` is the bar as last announced, and the push's
+  event reaches every follower as its next revision, however many follow (pinned by
+  `an_answer_between_a_push_and_its_event_leaves_no_follower_stale`). Only the first answer computes the bar, since
+  nothing was announced before it. ❗ So every write to a `bar_inputs` field must be followed by a
+  `notify_bar_changed`, or no page sees it. A page subscribes to `menu-bar-changed` first, then calls `get_menu_bar`,
   keeps the answer's revision, drops any event at or below it, applies one at exactly the next revision, and on a gap
-  (an event further ahead) asks `get_menu_bar` again. An event that lands before the answer is buffered by that rule.
+  (an event further ahead) asks `get_menu_bar` again. An event that lands while the ask is in flight is buffered by
+  that rule; `followMenuBar` retries a failed ask with backoff.
+- **The subscription is sticky**: once any page asks, every push for the rest of the session redraws the whole bar,
+  diffs it, and emits to every window (`update_select_same_kind_menu` runs per cursor move). Today only the dev Debug >
+  Components page asks; from task 63 step 6 the bar's own window does, where that cost is the design point. No
+  unsubscribe: a window's bar follows for the window's life.
 - **Live labels** come from the same pushes the native items get (`update_select_same_kind_menu`,
   `update_undo_trash_menu`, `update_pin_tab_menu`). ❗ The right-click Selection submenu's "same kind" label stays the
   caller's live value (`show_file_context_menu`'s `same_kind`), never this one, which the frontend debounces.

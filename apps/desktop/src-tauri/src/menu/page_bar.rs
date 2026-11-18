@@ -6,8 +6,8 @@
 //! disagree and no row is decided here. `DETAILS.md` § "The bar a page draws" has the flow and
 //! the ordering contract.
 //!
-//! - [`answer`] is `get_menu_bar`'s: the whole bar plus its revision. The first one subscribes the
-//!   app to changes; before it, a push costs nothing extra (macOS never asks).
+//! - [`answer`] is `get_menu_bar`'s: the whole bar as last announced, plus its revision. The first
+//!   one subscribes the app to changes; before it, a push costs nothing extra (macOS never asks).
 //! - [`notify_bar_changed`] runs after every push: it redraws, diffs against the last answer sent,
 //!   and emits `menu-bar-changed` with the next revision and only the rows that moved.
 //! - [`pick`] is a page's click: the same handler a native click reaches.
@@ -30,9 +30,9 @@ use super::{MenuState, cloned_handle};
 pub struct BarFeed {
     /// Whether any page asked for the bar yet. Until one does, a push redraws nothing.
     subscribed: bool,
-    /// Bumped by every answer that differs from the last one sent, event or command alike.
+    /// Bumped by the first answer and by every event after it, never by a later answer.
     revision: u64,
-    /// The bar as of `revision`.
+    /// The bar as of `revision`: the last one announced.
     last: Vec<BarMenuView>,
 }
 
@@ -102,18 +102,24 @@ fn current<R: Runtime>(menu_state: &MenuState<R>) -> Vec<BarMenuView> {
     bar_view(&bar_inputs(menu_state), Platform::current())
 }
 
-/// `get_menu_bar`: the whole bar at its revision, and from now on a `menu-bar-changed` per move.
+/// `get_menu_bar`: the bar as last announced, at its revision, and from now on a
+/// `menu-bar-changed` per move.
+///
+/// ❗ Never a fresher bar than the last event's: a push that stored its fact but hasn't reached
+/// `notify_bar_changed` yet would otherwise be in this answer under a new revision, and its
+/// notify, finding nothing new, would emit nothing, leaving every other follower a revision
+/// behind until some later push. Only the first answer computes the bar: nothing was announced
+/// before it.
 pub fn answer<R: Runtime>(menu_state: &MenuState<R>) -> MenuBarAnswer {
     let mut feed = menu_state.page_bar.lock_ignore_poison();
-    let menus = current(menu_state);
-    if !feed.subscribed || feed.last != menus {
+    if !feed.subscribed {
+        feed.subscribed = true;
         feed.revision += 1;
-        feed.last = menus.clone();
+        feed.last = current(menu_state);
     }
-    feed.subscribed = true;
     MenuBarAnswer {
         revision: wire_revision(feed.revision),
-        menus,
+        menus: feed.last.clone(),
     }
 }
 
@@ -121,36 +127,48 @@ pub fn answer<R: Runtime>(menu_state: &MenuState<R>) -> MenuBarAnswer {
 ///
 /// The redraw, the revision bump, and the emit happen under one lock, so two pushes racing from
 /// different threads emit in revision order, and an answer can't slip between a bump and its
-/// event: a page reading revision N from `get_menu_bar` has every change up to N in it.
+/// event: a page reading revision N from `get_menu_bar` has every change up to N in it, and gets
+/// every later one as an event.
 pub fn notify_bar_changed<R: Runtime>(app: &AppHandle<R>) {
     let Some(menu_state) = app.try_state::<MenuState<R>>() else {
         return;
     };
     let mut feed = menu_state.page_bar.lock_ignore_poison();
+    let Some(event) = take_change(&mut feed, &menu_state) else {
+        return;
+    };
+    if let Err(e) = event.emit(app) {
+        log::warn!(target: "menu", "couldn't emit menu-bar-changed: {e}");
+    }
+}
+
+/// The event a push owes the followers, if the bar moved since the last revision: the next
+/// revision, with `feed.last` moved on to it. The caller holds `feed`'s lock across this and the
+/// emit, so events go out in revision order.
+fn take_change<R: Runtime>(feed: &mut BarFeed, menu_state: &MenuState<R>) -> Option<MenuBarChanged> {
     if !feed.subscribed {
-        return;
+        return None;
     }
-    let menus = current(&menu_state);
+    let menus = current(menu_state);
     if menus == feed.last {
-        return;
+        return None;
     }
+    let revision = wire_revision(feed.revision + 1);
     let event = match changed_rows(&feed.last, &menus) {
         Some(rows) => MenuBarChanged {
-            revision: wire_revision(feed.revision + 1),
+            revision,
             rows,
             menus: None,
         },
         None => MenuBarChanged {
-            revision: wire_revision(feed.revision + 1),
+            revision,
             rows: Vec::new(),
             menus: Some(menus.clone()),
         },
     };
     feed.revision += 1;
     feed.last = menus;
-    if let Err(e) = event.emit(app) {
-        log::warn!(target: "menu", "couldn't emit menu-bar-changed: {e}");
-    }
+    Some(event)
 }
 
 /// A revision as the wire carries it. A bar moves a few times a second at most, so `u32` lasts
@@ -266,16 +284,56 @@ mod tests {
         assert_eq!(bar_inputs(&menu_state), expected);
     }
 
-    /// The first answer subscribes and starts the count; an unchanged bar keeps its revision, and
-    /// a moved one gets the next.
+    /// What `notify_bar_changed` emits for `menu_state` now, taken under the lock as it does.
+    fn notify(menu_state: &MenuState<MockRuntime>) -> Option<MenuBarChanged> {
+        take_change(&mut menu_state.page_bar.lock_ignore_poison(), menu_state)
+    }
+
+    /// The first answer subscribes and starts the count; only a push's event moves it on, so an
+    /// answer never holds a revision no event announced.
     #[test]
-    fn an_answer_counts_revisions_only_when_the_bar_moves() {
+    fn only_an_event_moves_the_revision_on() {
         let menu_state = MenuState::<MockRuntime>::default();
-        let first = answer(&menu_state);
-        assert_eq!(first.revision, 1);
         assert_eq!(answer(&menu_state).revision, 1);
+        assert_eq!(answer(&menu_state).revision, 1);
+        assert!(notify(&menu_state).is_none(), "an unchanged bar emits nothing");
         menu_state.file_operations_blocked.store(true, Ordering::Relaxed);
+        assert_eq!(notify(&menu_state).map(|event| event.revision), Some(2));
         assert_eq!(answer(&menu_state).revision, 2);
+    }
+
+    /// The race `get_menu_bar` once lost: a push stores its fact on one thread, a second follower
+    /// asks on another before that push's `notify_bar_changed` runs, then the notify runs. Every
+    /// follower, the one that asked in between included, must get the change as the next
+    /// revision's event, so none stays stale.
+    #[test]
+    fn an_answer_between_a_push_and_its_event_leaves_no_follower_stale() {
+        let menu_state = MenuState::<MockRuntime>::default();
+        let first_follower = answer(&menu_state);
+        // The push stores its fact (`set_file_operations_blocked`) but hasn't notified yet.
+        menu_state.file_operations_blocked.store(true, Ordering::Relaxed);
+        // A second and a third follower ask in between.
+        let late_followers = [answer(&menu_state), answer(&menu_state)];
+        // The push's notify.
+        let event = notify(&menu_state).expect("the push must reach every follower as an event");
+
+        for follower in std::iter::once(&first_follower).chain(&late_followers) {
+            assert_eq!(
+                event.revision,
+                follower.revision + 1,
+                "each follower applies it as its next revision"
+            );
+        }
+        // Applied on top of any of those answers, the event lands on the bar as it now stands.
+        let now = answer(&menu_state);
+        assert_eq!(now.revision, event.revision);
+        assert_eq!(now.menus, current(&menu_state));
+        let blocked_copy = event
+            .rows
+            .iter()
+            .find(|row| row.id == cmdr_menu::ids::FILE_COPY_ID)
+            .expect("Copy greys with file operations blocked");
+        assert!(!blocked_copy.enabled);
     }
 
     /// A greyed row, or one the bar doesn't build, isn't a page's to pick.
