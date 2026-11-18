@@ -138,16 +138,19 @@ describe('classifySystemShortcut', () => {
     expect(classifySystemShortcut('Ctrl+Shift+K')).toBeNull()
   })
 
-  it('flags what a Linux desktop takes, naming every one that does', () => {
-    onTestFinished(withPlatform('linux'))
+  it('flags what the running Linux desktop takes, naming only it', () => {
+    onTestFinished(withPlatform('linux', 'gnome'))
     expect(classifySystemShortcut('Ctrl+Alt+→')?.reservation).toEqual({
       os: 'linux',
-      desktops: ['GNOME', 'Xfce', 'Cinnamon', 'Ubuntu'],
+      desktops: ['GNOME', 'Ubuntu'],
     })
-    expect(classifySystemShortcut('Alt+F4')?.reservation).toEqual({
-      os: 'linux',
-      desktops: ['GNOME', 'KDE Plasma', 'Xfce', 'Cinnamon', 'Ubuntu'],
-    })
+    // KDE and Xfce reserve Ctrl+F3; GNOME doesn't, so a GNOME user hears nothing.
+    expect(classifySystemShortcut('Ctrl+F3')).toBeNull()
+  })
+
+  it('names KDE Plasma alone on KDE', () => {
+    onTestFinished(withPlatform('linux', 'kde'))
+    expect(classifySystemShortcut('Alt+F4')?.reservation).toEqual({ os: 'linux', desktops: ['KDE Plasma'] })
   })
 })
 
