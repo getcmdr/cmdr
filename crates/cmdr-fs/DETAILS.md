@@ -760,35 +760,43 @@ Miri's test of it covers every caller.
 
 ## Retiring cached read connections, and deleting a database (`sqlite_util`)
 
-Both read paths keep their connections in a thread-local `ThreadConnCache` so enrichment never takes a lock. The price
-is that nobody can close another thread's connection, and that mattered twice once databases could go away:
+Both read paths keep their connections in a thread-local `ThreadConnCache`, so readers never wait on each other. A
+database that goes away still has to reach those connections, for three reasons:
 
-- **An unlinked file keeps its blocks until the last handle closes.** A forgotten share's database was deleted while
-  blocking threads still cached connections to it, so the disk didn't come back until those threads died.
+- **Windows refuses to delete a file any handle holds** (`ERROR_SHARING_VIOLATION`, os error 32), and to move a folder
+  with an open file in it (#1226; seen on the Windows 10 22H2 builder, `cargo test -p cmdr-fs`, 2026-11-18).
+- **An unlinked file keeps its blocks until the last handle closes** (POSIX). A forgotten share's database was deleted
+  while blocking threads still cached connections to it, so the disk didn't come back until those threads died.
 - **A stale connection still answers.** It reads the unlinked file, so a database recreated under the same path reads as
   the old one for as long as the slot survives. The index's `ReadPool` defends with a fresh generation per pool;
   importance reads carry no generation at all.
 
-`retire_read_connections(db_path)` is the mechanism for both. It bumps a process-wide epoch and records the epoch the
-path was retired at; every `ThreadConnCache::with` call compares the epoch to the one it last swept at (one atomic load
-when nothing changed) and closes each entry opened before its path's retirement. So the owning thread closes its own
-connections, on its next use of that cache for ANY database.
+`retire_read_connections(db_path)` (and `retire_read_connections_under(dir)`, for a whole folder) closes them before it
+returns. Each cached connection sits in its own `Slot`, an `Arc<Mutex<Option<Connection>>>` registered by path in a
+process-wide weak list. The owning thread locks its slot for each read (uncontended); a retirement upgrades the matching
+slots and takes each connection out under the same lock, so it waits for a read in flight and never closes one under it.
+Whoever takes a connection out counts the close, so `live_read_connections` stays exact. The emptied entry stays in its
+cache until that thread's next use, which a retirement epoch (one atomic load when nothing changed) tells to sweep.
 
-⚠️ **It is a request, not a close.** A thread that never reads again keeps its connections until it exits, which tokio
-does to an idle blocking thread after ten seconds. The honest bound is "the owning thread's next read, or its death",
-and there is one cache per read path (`THREAD_CONNS`, `READ_CONNS`), each swept on its own next use. ❌ Don't document
-or rely on "closed when this returns". Closing sooner would need a lock on the hot read path, which is what the
-thread-local exists to avoid.
+- **Decision/Why: a lock per connection, not a request the owner honours later.** The lazy version (an epoch the owner
+  compared on its next read) left a connection open for as long as its thread didn't read again, which on Windows made
+  every delete fail. The per-slot lock is uncontended except during a retirement, so the hot path pays a few
+  nanoseconds, and nothing serializes readers on different threads. ❌ Don't lock the whole cache instead.
+- ❌ **Never retire or delete a database from inside a cache's `f`**: the retirement would wait on the slot its own
+  thread holds.
 
-A connection opened AFTER the retirement is kept, which is what lets a recreated database be cached normally. The
-comparison is per entry (`opened_at` against the path's retirement epoch), not a path denylist.
+A connection opened AFTER the retirement is kept, which is what lets a recreated database be cached normally: the
+retirement only reaches the slots registered when it ran.
 
 `delete_database(db_path)` is the one way a database file is removed: retire, unlink the main file and its `-wal` and
 `-shm`, retire again. The second retirement covers a reader that opened between the first one and the unlink, which
 would otherwise be left holding the unlinked file. A missing file is fine, every file is attempted, and the first
 refusal is returned. ⚠️ It only reaches cached READ connections: the caller stops whatever writes the database first.
-`cmdr-index` builds its per-volume removal on it (`crates/cmdr-index/DETAILS.md` § "A volume's files, and the one door
-they leave by"), and the three stores' schema-mismatch wipes call it too.
+Every place that deletes or replaces a database goes through it (the index reset, the importance, media, and visits
+stores, the operation log's and `main.db`'s set-aside), and "Delete all Cmdr data" closes the caches under each target
+with `retire_read_connections_under` before it moves the folder. `cmdr-index` builds its per-volume removal on it
+(`crates/cmdr-index/DETAILS.md` § "A volume's files, and the one door they leave by"), and the three stores'
+schema-mismatch wipes call it too.
 
 ## What the app kept, and why
 

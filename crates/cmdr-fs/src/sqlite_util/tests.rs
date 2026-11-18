@@ -344,15 +344,15 @@ fn a_failed_open_leaves_the_cache_unchanged() {
 
 // ── Retiring cached read connections ─────────────────────────────────
 
-/// A database that is going away can't wait for the threads that read it to die.
-/// The cache is thread-local, so nobody can reach in and close its connections;
-/// retiring the path is the request, and the owning thread honours it the next
-/// time it uses its cache for ANYTHING. Pre-fix a thread that had moved on to
-/// another volume kept the connection for as long as it lived, which is how a
-/// forgotten share's databases stayed open (and their disk allocated) for the
-/// rest of the session.
+/// A database that is going away can't wait for the threads that read it. Retiring
+/// the path closes every cached connection to it before the call returns, so a
+/// delete that follows finds no handle on the file: Windows refuses to delete an
+/// open file (#1226), and POSIX keeps an unlinked one's blocks allocated for as
+/// long as a handle lives. Pre-fix the close waited for the owning thread's next
+/// use, which a thread that had moved on never made.
 #[test]
-fn a_retired_db_is_closed_the_next_time_its_thread_uses_the_cache() {
+fn retiring_a_db_closes_its_cached_connections_at_once() {
+    let before = live_read_connections();
     let mut cache = ThreadConnCache::new(THREAD_CONN_SLOTS);
     let opener = CountingOpener::new();
     let gone = Path::new("/retire/importance-smb-gone.db");
@@ -365,15 +365,40 @@ fn a_retired_db_is_closed_the_next_time_its_thread_uses_the_cache() {
     assert_eq!(cache.len(), 2);
 
     retire_read_connections(gone);
-    assert_eq!(cache.len(), 2, "nothing reaches into another thread's cache");
+    assert_eq!(cache.generation_for(gone), None, "the retired connection is closed");
+    assert_eq!(cache.len(), 1, "and only it");
+    assert_eq!(live_read_connections() - before, 1, "the process-wide count followed");
 
-    // The thread never asks for the retired db again. Any use is enough.
     cache
         .with(staying, 0, opener.open(), |_| ())
         .expect("the boot disk's db");
-    assert_eq!(cache.generation_for(gone), None, "the retired connection is closed");
-    assert!(cache.generation_for(staying).is_some(), "and no other one is");
+    assert!(cache.generation_for(staying).is_some(), "no other connection closed");
     assert_eq!(opener.count(), 2, "the db that stayed wasn't reopened");
+}
+
+/// Everything cached under a folder closes in one call: "Delete all Cmdr data"
+/// moves the whole data dir, which Windows refuses while a file in it is open.
+#[test]
+fn retiring_a_folder_closes_every_cached_connection_under_it() {
+    let mut cache = ThreadConnCache::new(THREAD_CONN_SLOTS);
+    let opener = CountingOpener::new();
+    let (index, importance, elsewhere) = (
+        Path::new("/retire-under/data/index-root.db"),
+        Path::new("/retire-under/data/importance-root.db"),
+        Path::new("/retire-under/data-other/index-root.db"),
+    );
+    for db in [index, importance, elsewhere] {
+        cache.with(db, 0, opener.open(), |_| ()).expect("open");
+    }
+
+    retire_read_connections_under(Path::new("/retire-under/data"));
+
+    assert_eq!(cache.generation_for(index), None);
+    assert_eq!(cache.generation_for(importance), None);
+    assert!(
+        cache.generation_for(elsewhere).is_some(),
+        "a sibling sharing the folder's name as a prefix stays"
+    );
 }
 
 /// Retiring closes what was open at the time, and nothing after it: a database
@@ -398,10 +423,10 @@ fn a_connection_opened_after_the_retirement_is_kept() {
 }
 
 /// The cross-thread shape the mechanism exists for: the retirement comes from
-/// one thread, the connection lives in another's cache, and the process-wide
-/// count follows when the owner lets go.
+/// one thread, the connection lives in another's cache, and it closes while the
+/// owner is parked, before the owner reads again.
 #[test]
-fn a_retirement_from_another_thread_reaches_the_owning_threads_cache() {
+fn a_retirement_from_another_thread_closes_the_owning_threads_connection() {
     let gone = PathBuf::from("/retire/importance-smb-other-thread.db");
     let staying = PathBuf::from("/retire/index-root.db");
     let before = live_read_connections();
@@ -426,6 +451,11 @@ fn a_retirement_from_another_thread_reaches_the_owning_threads_cache() {
     opened_rx.recv().expect("the reader opened both");
     assert_eq!(live_read_connections() - before, 2);
     retire_read_connections(&gone);
+    assert_eq!(
+        live_read_connections() - before,
+        1,
+        "closed while its thread was parked"
+    );
     retired_tx.send(()).expect("let the reader carry on");
 
     let (cached, live) = reader.join().expect("reader thread");
@@ -437,7 +467,6 @@ fn a_retirement_from_another_thread_reaches_the_owning_threads_cache() {
 /// never there, and retires the cached connections that would otherwise keep the
 /// unlinked file's blocks allocated.
 #[test]
-#[cfg_attr(target_os = "windows", ignore = "Windows refuses to delete an open database: #1226")]
 fn deleting_a_database_takes_its_sidecars_and_retires_its_connections() {
     let dir = tempfile::tempdir().expect("temp dir");
     let db = dir.path().join("importance-smb-nas.db");
@@ -462,8 +491,10 @@ fn deleting_a_database_takes_its_sidecars_and_retires_its_connections() {
     for file in database_files(&db) {
         assert!(!file.exists(), "{} must be gone", file.display());
     }
-    cache.with(&other, 0, open_read_only, |_| ()).expect("any later use");
-    assert_eq!(cache.generation_for(&db), None, "the cached reader was retired");
+    assert_eq!(cache.generation_for(&db), None, "the cached reader was closed");
+    cache
+        .with(&other, 0, open_read_only, |_| ())
+        .expect("the cache still works");
 
     delete_database(&db).expect("deleting what is already gone is fine");
 }

@@ -457,13 +457,12 @@ pub(crate) fn holds_visit_rows(db_path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-/// Ask every thread to close the read connections it caches to `volume_id`'s
-/// databases, for a volume that stopped and keeps its files.
+/// Close the read connections every thread caches to `volume_id`'s databases,
+/// for a volume that stopped and keeps its files.
 ///
 /// A stopped share's connections would otherwise sit in each blocking thread's
 /// cache until something else pushed them out. The files stay, so a later read
 /// (an offline importance lookup, a restart of the volume) reopens.
-/// `sqlite_util::retire_read_connections` says how far a request like this reaches.
 pub(crate) fn retire_read_connections(dirs: &StoreDirs, volume_id: &str) {
     for store in VolumeStore::ALL {
         sqlite_util::retire_read_connections(&dirs.db_path(store, volume_id));
