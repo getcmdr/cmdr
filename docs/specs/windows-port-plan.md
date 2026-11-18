@@ -790,10 +790,12 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       Task 52 keeps `Policies` keys out of the package.
 58. [XS] Windows. The website's "Run anyway" download (D3 step 2): the unsigned NSIS installer on the download page with
     a short explainer of SmartScreen's "More info → Run anyway" step, next to the Store link. David reviews the copy.
-    Needs 32, 52. Added after the list was numbered, so it carries the next free number (a separate list, so a Markdown
-    formatter keeps its start number):
+    Needs 32, 52.
 
-59. [XS] Windows. WebView2's browser keys off in every window (#1115, David's decision of 2026-11-12). Not in the tree
+Added after the list was numbered, so it carries the next free number (a separate list, so a Markdown formatter keeps
+its start number):
+
+67. [XS] Windows. WebView2's browser keys off in every window (#1115, David's decision of 2026-11-12). Not in the tree
     yet (checked 2026-11-18: nothing in `apps/desktop/src-tauri/` sets `AreBrowserAcceleratorKeysEnabled`, and Tauri
     2.12.5 doesn't expose it; tauri-apps/tauri#16397, which adds `browserAcceleratorKeys`, is still open). The menu
     spike showed the cost: `Ctrl+Shift+P`, which the spike's page didn't claim, opened WebView2's Print dialog. In the
