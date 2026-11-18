@@ -685,6 +685,7 @@ pub fn run() {
             // The updater's offer, download, and staged update, shared by its commands and the
             // Restart hand-off (`updater/`).
             app.manage(updater::UpdateState::new());
+            updater::handoff::sweep_at_launch();
 
             // The UI state mirror that tools and `cmdr://` resources read.
             app.manage(ui_state::PaneStateStore::new());

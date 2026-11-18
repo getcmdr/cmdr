@@ -322,6 +322,11 @@ policy are the macOS code, unchanged. What differs lives in `handoff.rs`, `insta
 - **A quit without Restart installs nothing.** The staged installer lives for the session; the next launch checks,
   downloads, and prompts again. Installing on every quit would put an installer window in front of a person who only
   closed the app, and Windows can end a session (logoff, shutdown) mid-install.
+- **No installer outlives its use** (about 100 MB each, in `<temp>/cmdr-update/`): the hand-off reads the file and
+  removes it before the plugin runs its own copy (`take_installer_bytes`), a newer stage removes the one it supersedes,
+  a policy withdrawal removes the withdrawn one, and `sweep_at_launch` (from `setup()`, before any check can download)
+  clears whatever an earlier session left. It removes only `Cmdr-*-setup.exe` and `Cmdr-*.AppImage`, since the folder
+  sits in the shared temp dir; macOS keeps its one fixed-name tarball, which each download overwrites.
 - No pre-flight write check: a per-user NSIS install writes `%LOCALAPPDATA%`, and an AppImage the plugin can't replace
   fails the hand-off (logged, Cmdr restarts as it was). `update_write_blocker` answers `None` off macOS.
 - **Not verified on a real Windows or Linux machine yet** (2026-11-18): the plugin's install arms are read from

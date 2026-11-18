@@ -174,8 +174,7 @@ pub(crate) fn run_at_exit<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
         .and_then(|state| state.slots().staged_installer.take());
     if let Some(staged) = staged {
         log::info!("Handing update {} to the installer", staged.offer.version);
-        let installed = std::fs::read(&staged.file)
-            .map_err(|e| format!("couldn't read the staged installer: {e}"))
+        let installed = take_installer_bytes(&staged.file)
             // Windows: starts the installer and exits this process, so nothing below runs.
             .and_then(|bytes| super::platform::hand_off(app, &plan_for(&staged), bytes));
         if let Err(detail) = installed {
@@ -183,6 +182,49 @@ pub(crate) fn run_at_exit<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
         }
     }
     tauri::process::restart(&app.env());
+}
+
+/// The staged installer's bytes for the plugin, removing the file: the plugin writes its own copy
+/// to run (`write_to_temp` in `tauri-plugin-updater` 2.14.1), and Windows never returns from the
+/// hand-off to clean up after it.
+fn take_installer_bytes(file: &std::path::Path) -> Result<Vec<u8>, String> {
+    let bytes = std::fs::read(file).map_err(|e| format!("couldn't read the staged installer: {e}"))?;
+    remove_installer(file, "handed-off");
+    Ok(bytes)
+}
+
+/// Clears the installers an earlier session left (a quit without Restart, a crash, a hand-off that
+/// failed). Nothing is staged across launches, and it runs in `setup()`, before any check can
+/// download, so it can't race this session's own file. Windows and Linux only: the macOS download
+/// has one fixed name that the next download overwrites.
+pub(crate) fn sweep_at_launch() {
+    if matches!(
+        super::install_kind::current(),
+        Ok(super::InstallKind::WindowsNsis | super::InstallKind::LinuxAppImage)
+    ) {
+        sweep_installers_in(&super::download_dir());
+    }
+}
+
+/// Removes every installer an earlier session left in `dir`: the names `download_file_name` gives
+/// Windows and Linux, nothing else.
+fn sweep_installers_in(dir: &std::path::Path) {
+    let entries = match std::fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return,
+        Err(e) => {
+            log::warn!("Couldn't list the update download folder to clear old installers: {e}");
+            return;
+        }
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        let is_installer = name.starts_with("Cmdr-") && (name.ends_with("-setup.exe") || name.ends_with(".AppImage"));
+        if is_installer {
+            remove_installer(&entry.path(), "leftover");
+        }
+    }
 }
 
 #[cfg(test)]
@@ -323,6 +365,56 @@ mod tests {
             "{:?}",
             capture.events()
         );
+    }
+
+    /// Installers are about 100 MB each, so none outlives its use: the hand-off reads it and
+    /// removes it (the plugin runs its own copy), even when the hand-off then fails.
+    #[test]
+    fn the_hand_off_takes_the_installer_and_leaves_no_file() {
+        let dir = crate::test_support::TestDir::new("handoff_bytes");
+        let file = dir.join("Cmdr-0.53.0-setup.exe");
+        std::fs::write(&file, b"installer").expect("write");
+        assert_eq!(take_installer_bytes(&file).expect("read"), b"installer");
+        assert!(!file.exists());
+    }
+
+    /// Nothing is staged across launches, so whatever an earlier session left (a quit without
+    /// Restart, a crash, a failed hand-off) goes at the next launch. Only Cmdr's own installer
+    /// names: the folder sits in the shared temp dir.
+    #[test]
+    fn the_next_launch_sweeps_installers_an_earlier_session_left() {
+        let dir = crate::test_support::TestDir::new("handoff_sweep");
+        let leftovers = ["Cmdr-0.53.0-setup.exe", "Cmdr-0.54.0.AppImage"];
+        for name in leftovers.iter().chain(&["notes.txt", "Cmdr.app.tar.gz"]) {
+            std::fs::write(dir.join(name), b"x").expect("write");
+        }
+        sweep_installers_in(&dir);
+        for name in leftovers {
+            assert!(!dir.join(name).exists(), "{name} should be gone");
+        }
+        assert!(dir.join("notes.txt").exists(), "not ours, so left alone");
+        assert!(
+            dir.join("Cmdr.app.tar.gz").exists(),
+            "the macOS download is macOS's business"
+        );
+    }
+
+    /// A newer stage removes the installer it supersedes.
+    #[tokio::test]
+    async fn a_superseded_installer_leaves_no_file() {
+        let dir = crate::test_support::TestDir::new("handoff_supersede");
+        let state = UpdateState::new();
+        let older = dir.join("Cmdr-0.53.0-setup.exe");
+        std::fs::write(&older, b"x").expect("write");
+        state.slots().downloaded = Some(DownloadedUpdate {
+            offer: offer("0.53.0", false),
+            file: older.clone(),
+            pubkey: "key",
+        });
+        stage(&state, "0.52.0", |_| async { None }).await.expect("staged");
+        downloaded(&state, offer("0.54.0", false));
+        stage(&state, "0.52.0", |_| async { None }).await.expect("staged");
+        assert!(!older.exists());
     }
 
     /// The plugin reads exactly the offer Cmdr verified, under the key it came from.

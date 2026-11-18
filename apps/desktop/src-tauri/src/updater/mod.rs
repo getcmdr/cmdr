@@ -468,7 +468,7 @@ pub async fn download_update(state: State<'_, UpdateState>) -> Result<(), Update
     let kind = install_kind::current().map_err(|_| UpdateDownloadError::NothingOffered)?;
     let (offer, bytes, verified) = download_verified(&state, kind).await?;
 
-    let temp_dir = std::env::temp_dir().join("cmdr-update");
+    let temp_dir = download_dir();
     std::fs::create_dir_all(&temp_dir).map_err(|e| UpdateDownloadError::Disk {
         detail: format!("couldn't create temp dir: {e}"),
     })?;
@@ -484,6 +484,12 @@ pub async fn download_update(state: State<'_, UpdateState>) -> Result<(), Update
         pubkey: verified.pubkey,
     });
     Ok(())
+}
+
+/// Where a verified download waits for `install_update`: one folder in the temp dir, each file
+/// named by `InstallKind::download_file_name`.
+fn download_dir() -> PathBuf {
+    std::env::temp_dir().join("cmdr-update")
 }
 
 /// Fetches the offered artifact and verifies it. A signature that doesn't hold reaches the security
