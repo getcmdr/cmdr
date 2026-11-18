@@ -502,14 +502,15 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     a `platform/` seam, `to_native`/`from_native` for `\\?\C:\…` and `\\?\UNC\…`, pure and tested on Linux) runs the
     frontend's case table, and `volumes::local_volume_id_for_path` is the seam the missing-volume defaults in
     `commands/rename.rs` and `commands/file_system/path_checks.rs` now ask (every arm answers `"root"` today). Left: the
-    drive and UNC volume id scheme (open), registering a volume per drive (with 35 and 39), and the remaining
-    single-root sites, most of which only change once those volumes exist (the root `LocalPosixVolume` at `/`, the
-    index's `ROOT_VOLUME_ID`, the boot-volume priority roots, the MCP volumes resource's non-macOS row). The app's root
-    volume now comes from `volumes::root_volume` (a `volumes/platform/` pin beside `local_volume_on_mount` and
-    `is_local_volume`, so `file_system/mod.rs` and `smb_mount_gate` name no concrete local volume); Windows' arm is the
-    stub in § "Windows build state". Open: whether "the system drive under `root`" survives the id scheme. Decided
-    (2026-11-18): consumers name the host's local volume `cmdr_local::LocalVolume`, and app paths become a typed
-    `AppPath` the `Volume` trait takes (#1225); both are milestones of `docs/specs/app-path-plan.md`.
+    drive and UNC volume id scheme (open; options and a recommendation: `docs/notes/windows-port/volume-id-options.md`),
+    registering a volume per drive (with 35 and 39), and the remaining single-root sites, most of which only change once
+    those volumes exist (the root `LocalPosixVolume` at `/`, the index's `ROOT_VOLUME_ID`, the boot-volume priority
+    roots, the MCP volumes resource's non-macOS row). The app's root volume now comes from `volumes::root_volume` (a
+    `volumes/platform/` pin beside `local_volume_on_mount` and `is_local_volume`, so `file_system/mod.rs` and
+    `smb_mount_gate` name no concrete local volume); Windows' arm is the stub in § "Windows build state". Open: whether
+    "the system drive under `root`" survives the id scheme. Decided (2026-11-18): consumers name the host's local volume
+    `cmdr_local::LocalVolume`, and app paths become a typed `AppPath` the `Volume` trait takes (#1225); both are
+    milestones of `docs/specs/app-path-plan.md`.
 35. [L] Windows. `LocalWindowsVolume` in `cmdr-local`, a sibling of `LocalPosixVolume`: `FindFirstFileExW` reader,
     space, no-replace and atomic-replace rename (❗ `std::fs::rename` replaces on Windows), streams, file vs dir
     symlinks, junctions, reparse tags, ADS-backed xattrs, write-access probe, metadata caps, the conformance suite
