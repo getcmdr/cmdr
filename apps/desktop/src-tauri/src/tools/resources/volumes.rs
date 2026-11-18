@@ -20,7 +20,7 @@ use super::indexing::status_token;
 use crate::file_system::volume::SpaceInfo;
 use crate::index_host::index;
 use crate::search::format_size;
-#[cfg(target_os = "macos")]
+#[cfg(not(target_os = "linux"))]
 use cmdr_fs::deadline::{BlockingBudget, Deadline, timeout_detached_within};
 use std::time::Duration;
 
@@ -29,55 +29,73 @@ use std::time::Duration;
 pub(crate) enum VolumeKind {
     /// A local disk or cloud-drive mount (a real filesystem path).
     Local,
-    /// An SMB share (direct smb2 or an OS mount). Constructed only in the macOS
-    /// `snapshot_volumes` path (the Linux snapshot surfaces only root + MTP), so
-    /// off macOS it's genuinely unconstructed — the `token` match still needs it.
+    /// An SMB share (direct smb2 or an OS mount). Constructed only in the shared
+    /// listing path (macOS and Windows; the Linux snapshot surfaces only root + MTP),
+    /// so on Linux it's genuinely unconstructed — the `token` match still needs it.
     #[cfg_attr(
-        not(target_os = "macos"),
+        target_os = "linux",
         allow(
             dead_code,
-            reason = "constructed only in the macOS snapshot_volumes path; the token match still needs the variant off macOS"
+            reason = "constructed only in the shared-listing snapshot path; the token match still needs the variant on Linux"
         )
     )]
     Smb,
     /// An SFTP server.
     #[cfg_attr(
-        not(target_os = "macos"),
-        allow(dead_code, reason = "macOS-path-only today; unconstructed off macOS, see `Smb`")
+        target_os = "linux",
+        allow(
+            dead_code,
+            reason = "shared-listing-path-only today; unconstructed on Linux, see `Smb`"
+        )
     )]
     Sftp,
     /// A WebDAV server.
     #[cfg_attr(
-        not(target_os = "macos"),
-        allow(dead_code, reason = "macOS-path-only today; unconstructed off macOS, see `Smb`")
+        target_os = "linux",
+        allow(
+            dead_code,
+            reason = "shared-listing-path-only today; unconstructed on Linux, see `Smb`"
+        )
     )]
     Webdav,
     /// One place on an S3 account (a bucket, or the account root).
     #[cfg_attr(
-        not(target_os = "macos"),
-        allow(dead_code, reason = "macOS-path-only today; unconstructed off macOS, see `Smb`")
+        target_os = "linux",
+        allow(
+            dead_code,
+            reason = "shared-listing-path-only today; unconstructed on Linux, see `Smb`"
+        )
     )]
     S3,
     /// An MTP device storage (Android / camera over USB).
     Mtp,
     /// An Android device over ADB.
     #[cfg_attr(
-        not(target_os = "macos"),
-        allow(dead_code, reason = "macOS-path-only today; unconstructed off macOS, see `Smb`")
+        target_os = "linux",
+        allow(
+            dead_code,
+            reason = "shared-listing-path-only today; unconstructed on Linux, see `Smb`"
+        )
     )]
     Adb,
     /// A network filesystem the OS mounted and Cmdr has no dedicated backend for
     /// (NFS, AFP, FTP): browsable like a disk, but it can hang like any share.
     #[cfg_attr(
-        not(target_os = "macos"),
-        allow(dead_code, reason = "macOS-path-only today; unconstructed off macOS, see `Smb`")
+        target_os = "linux",
+        allow(
+            dead_code,
+            reason = "shared-listing-path-only today; unconstructed on Linux, see `Smb`"
+        )
     )]
     Network,
     /// A synthetic entry with no backing device (the servers hub row). Also
-    /// macOS-path-only today, so off macOS it's unconstructed — see `Smb`.
+    /// shared-listing-path-only today, so on Linux it's unconstructed — see `Smb`.
     #[cfg_attr(
-        not(target_os = "macos"),
-        allow(dead_code, reason = "macOS-path-only today; unconstructed off macOS, see `Smb`")
+        target_os = "linux",
+        allow(
+            dead_code,
+            reason = "shared-listing-path-only today; unconstructed on Linux, see `Smb`"
+        )
     )]
     Virtual,
 }
@@ -153,10 +171,10 @@ pub(crate) fn space_summary(volume_id: &str) -> Option<SpaceInfo> {
 /// The agent-facing token for a session state. One mapping, so `cmdr://state`,
 /// the agent's `list_volumes`, and the chat envelope can't drift apart.
 #[cfg_attr(
-    not(target_os = "macos"),
+    target_os = "linux",
     allow(
         dead_code,
-        reason = "called only from the macOS `snapshot_volumes` path; the Linux snapshot surfaces no volume that carries a session yet"
+        reason = "called only from the shared-listing `snapshot_volumes` path; the Linux snapshot surfaces no volume that carries a session yet"
     )
 )]
 pub(crate) fn connection_state_token(state: cmdr_fs::volume::ConnectionState) -> &'static str {
@@ -174,10 +192,10 @@ pub(crate) fn connection_state_token(state: cmdr_fs::volume::ConnectionState) ->
 /// The agent-facing token for a device's readiness. One mapping, beside
 /// [`connection_state_token`], for the same reason: two surfaces, one wire word.
 #[cfg_attr(
-    not(target_os = "macos"),
+    target_os = "linux",
     allow(
         dead_code,
-        reason = "called only from the macOS `snapshot_volumes` path, like `connection_state_token`"
+        reason = "called only from the shared-listing `snapshot_volumes` path, like `connection_state_token`"
     )
 )]
 pub(crate) fn device_readiness_token(readiness: cmdr_fs::volume::DeviceReadiness) -> &'static str {
@@ -203,11 +221,11 @@ pub(crate) fn device_readiness_token(readiness: cmdr_fs::volume::DeviceReadiness
 /// ❗ It is checked LAST, so a server's own `fs_type` always wins; four backends
 /// carry a session now, and a session alone has never meant "SMB".
 ///
-/// ❗ macOS-only, because `is_smb_fs_type` is: `volumes/platform/macos/fs_type.rs` is gated to it,
-/// and the Linux snapshot surfaces only root plus MTP today. Moving the SMB
-/// fs-type test somewhere both platforms reach is what that gap needs
-/// (`DETAILS.md` § "`cmdr://state` lists no real volumes on Linux").
-#[cfg(target_os = "macos")]
+/// ❗ Off Linux only, because `crate::volumes::is_smb_fs_type` is (macOS and Windows
+/// answer it), and the Linux snapshot surfaces only root plus MTP today. Giving the
+/// Linux arm that test is what that gap needs (`DETAILS.md` § "`cmdr://state` lists
+/// no real volumes on Linux").
+#[cfg(not(target_os = "linux"))]
 fn kind_for_location(fs_type: Option<&str>, has_session: bool) -> VolumeKind {
     match fs_type {
         Some("sftp") => VolumeKind::Sftp,
@@ -299,7 +317,6 @@ pub(crate) fn build_volumes_yaml(volumes: &[VolumeSummary]) -> String {
 
 /// Map a volume's live index status to the section's `indexStatus` token, reusing
 /// the one `cmdr://indexing` mapping.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn index_status_token(status: &cmdr_index::VolumeIndexStatus) -> &'static str {
     status_token(status.enabled, status.freshness)
 }
@@ -309,9 +326,9 @@ fn index_status_token(status: &cmdr_index::VolumeIndexStatus) -> &'static str {
 /// device storages, plus the synthetic servers hub row. The impure half;
 /// [`build_volumes_yaml`] formats the result.
 pub(crate) async fn snapshot_volumes() -> Vec<VolumeSummary> {
-    #[cfg(target_os = "macos")]
+    #[cfg(not(target_os = "linux"))]
     let (locations, _incomplete) = current_listing().await;
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "linux")]
     let locations = Vec::new();
     snapshot_volumes_from(&locations).await
 }
@@ -330,14 +347,14 @@ pub(crate) async fn current_listing() -> (Vec<crate::volume_listing::LocationInf
 }
 
 /// How long one snapshot waits for all of its rows' index statuses together.
-#[cfg(target_os = "macos")]
+#[cfg(not(target_os = "linux"))]
 const INDEX_STATUS_WAIT: Duration = Duration::from_secs(2);
 
 /// Every index status read a snapshot runs, from every caller (`cmdr://state`,
 /// `list_volumes`, the chat envelope). A read stuck on a dead mount keeps its
 /// permit until its `statfs` really returns, so a client re-reading the state
 /// can't pile pool threads up behind one wedged share.
-#[cfg(target_os = "macos")]
+#[cfg(not(target_os = "linux"))]
 static INDEX_STATUS_READS: BlockingBudget = BlockingBudget::new(8);
 
 /// Each row's index status, in row order, or `None` for a row that didn't answer
@@ -356,11 +373,11 @@ static INDEX_STATUS_READS: BlockingBudget = BlockingBudget::new(8);
 /// blocks for minutes on a dead NFS, AFP, or SMB mount. So every read runs off
 /// the async runtime, all rows at once under ONE deadline: a dead mount costs
 /// its own row's status, ❌ never the whole resource or its healthy rows.
-#[cfg(target_os = "macos")]
+#[cfg(not(target_os = "linux"))]
 async fn index_statuses(rows: &[&crate::volume_listing::LocationInfo]) -> Vec<Option<cmdr_index::VolumeIndexStatus>> {
     let reads = rows.iter().map(|loc| {
         let (path, id) = (loc.path.clone(), loc.id.clone());
-        let by_path = path.starts_with('/') && loc.connection_state.is_none();
+        let by_path = on_a_real_path(&path) && loc.connection_state.is_none();
         move || {
             if by_path {
                 index().volume_status_for_path(&path)
@@ -376,7 +393,7 @@ async fn index_statuses(rows: &[&crate::volume_listing::LocationInfo]) -> Vec<Op
 /// `None` for each one `deadline` outran. A read that outlives the deadline runs
 /// on detached and keeps its permit until it ends; one that only gets its permit
 /// after the deadline doesn't start.
-#[cfg(target_os = "macos")]
+#[cfg(not(target_os = "linux"))]
 async fn read_all_within<T: Send + 'static, F: FnOnce() -> T + Send + 'static>(
     deadline: &Deadline,
     budget: &'static BlockingBudget,
@@ -397,14 +414,21 @@ async fn read_all_within<T: Send + 'static, F: FnOnce() -> T + Send + 'static>(
     futures_util::future::join_all(bounded).await
 }
 
-/// [`snapshot_volumes`] over a listing already in hand (macOS reads it; the Linux
-/// snapshot lists root and MTP storages on its own and ignores it).
+/// Whether a listed row sits on a real mount point (`/…`, `C:/…`, `//server/share/…`)
+/// rather than a scheme root (`mtp://…`, `sftp://…`, the `smb://` hub).
+#[cfg(not(target_os = "linux"))]
+fn on_a_real_path(path: &str) -> bool {
+    cmdr_fs::volume::path_grammar::is_local_path(path, cmdr_fs::volume::path_grammar::PathFlavor::HOST)
+}
+
+/// [`snapshot_volumes`] over a listing already in hand (macOS and Windows read it;
+/// the Linux snapshot lists root and MTP storages on its own and ignores it).
 pub(crate) async fn snapshot_volumes_from(locations: &[crate::volume_listing::LocationInfo]) -> Vec<VolumeSummary> {
     let mut out: Vec<VolumeSummary> = Vec::new();
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "linux")]
     let _ = locations;
 
-    #[cfg(target_os = "macos")]
+    #[cfg(not(target_os = "linux"))]
     {
         // ❗ The SAME pipeline the app's own volume list and its `volumes-changed`
         // push run (`volume_listing::complete`), ❌ never a second assembly here.
@@ -428,7 +452,7 @@ pub(crate) async fn snapshot_volumes_from(locations: &[crate::volume_listing::Lo
             let connection_state = loc.connection_state.map(connection_state_token);
             let device_readiness = loc.device_readiness.map(device_readiness_token);
             let kind = kind_for_location(loc.fs_type.as_deref(), loc.connection_state.is_some());
-            let on_a_real_path = loc.path.starts_with('/');
+            let is_mount_point = on_a_real_path(&loc.path);
             out.push(VolumeSummary {
                 name: loc.name.clone(),
                 id: loc.id.clone(),
@@ -442,7 +466,7 @@ pub(crate) async fn snapshot_volumes_from(locations: &[crate::volume_listing::Lo
                 // ❗ Only a real mount point. A scheme root is not a path a
                 // `search` scope can take, and handing one over as `mountPath`
                 // would read as one.
-                mount_path: on_a_real_path.then(|| loc.path.clone()),
+                mount_path: is_mount_point.then(|| loc.path.clone()),
                 space: space_summary(&loc.id),
             });
         }
@@ -462,7 +486,7 @@ pub(crate) async fn snapshot_volumes_from(locations: &[crate::volume_listing::Lo
             space: None,
         });
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "linux")]
     {
         let status = index().volume_status(cmdr_index::ROOT_VOLUME_ID);
         out.push(VolumeSummary {
@@ -475,14 +499,14 @@ pub(crate) async fn snapshot_volumes_from(locations: &[crate::volume_listing::Lo
             index_status: Some(status_token(status.enabled, status.freshness)),
             connection_state: None,
             device_readiness: None,
-            // `/` on Linux, the system drive (`C:/`) on Windows: wherever `root` starts.
             mount_path: Some(cmdr_fs::mount_layout::boot_volume_root()),
             space: space_summary(cmdr_index::ROOT_VOLUME_ID),
         });
     }
 
     // Linux only: its branch above lists just `root`, so this is still the one
-    // source of device rows there. macOS gets them from `volume_listing::complete`.
+    // source of device rows there. macOS and Windows get them from
+    // `volume_listing::complete`.
     #[cfg(target_os = "linux")]
     {
         let devices = crate::mtp::connection_manager().get_all_connected_devices().await;

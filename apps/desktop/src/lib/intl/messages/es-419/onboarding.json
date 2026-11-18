@@ -139,11 +139,11 @@
   "@onboarding.localDownloadFailed.title": {
     "sourceHash": "16cdd35"
   },
-  "onboarding.localDownloadFailed.body": "Vuelve a iniciar la descarga desde Configuración › IA.",
+  "onboarding.localDownloadFailed.body": "{platform, select, windows {Start it again from Settings › AI.} linuxGnome {Start it again from Preferences › AI.} linuxKde {Start it again from Configure Cmdr › AI.} other {Vuelve a iniciar la descarga desde Configuración › IA.}}",
   "@onboarding.localDownloadFailed.body": {
     "sourceHash": "a3731ed"
   },
-  "onboarding.localDownloadFailed.openSettings": "Abrir Configuración",
+  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Open Settings} linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Abrir Configuración}}",
   "@onboarding.localDownloadFailed.openSettings": {
     "sourceHash": "eabd4e6"
   }

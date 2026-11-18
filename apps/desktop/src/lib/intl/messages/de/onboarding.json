@@ -323,11 +323,11 @@
   "@onboarding.localDownloadFailed.title": {
     "sourceHash": "9612750"
   },
-  "onboarding.localDownloadFailed.body": "Starte den Download unter Einstellungen › KI neu.",
+  "onboarding.localDownloadFailed.body": "{platform, select, windows {Start it again from Settings › AI.} linuxGnome {Start it again from Preferences › AI.} linuxKde {Start it again from Configure Cmdr › AI.} other {Starte den Download unter Einstellungen › KI neu.}}",
   "@onboarding.localDownloadFailed.body": {
     "sourceHash": "6601872"
   },
-  "onboarding.localDownloadFailed.openSettings": "Einstellungen öffnen",
+  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Open Settings} linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Einstellungen öffnen}}",
   "@onboarding.localDownloadFailed.openSettings": {
     "sourceHash": "3f94010"
   },

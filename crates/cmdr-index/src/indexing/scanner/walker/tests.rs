@@ -857,9 +857,11 @@ fn a_run_of_walks_reuses_its_threads() {
     }
 
     let reading_threads = reads_on.lock().unwrap_or_else(|e| e.into_inner()).len();
-    // A walk's workers go back to the pool a moment after `walk` returns, so the
-    // next walk can occasionally find one still on its way and start another.
-    // That's the slack here; a thread per walk is what this pins against.
+    // `walk` waits for its workers to leave, but a worker's thread re-idles in the
+    // pool a few instructions after that, so a preempted one can still make the
+    // next walk start another. That's the slack here; a thread per walk is what
+    // this pins against. ❗ Regression anchor: without the wait, a loaded two-core
+    // Windows box made 21 threads for 20 walks.
     assert!(
         pool.threads_started() < WALKS,
         "pool threads created: {} (walk count {WALKS}); they should be reused",

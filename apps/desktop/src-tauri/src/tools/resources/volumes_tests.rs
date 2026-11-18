@@ -33,6 +33,48 @@ fn a_network_mount_without_a_backend_reads_as_network() {
     assert_eq!(kind_for_location(Some("s3"), true), VolumeKind::S3);
 }
 
+/// A Windows drive reads as a local disk and a mapped share as SMB, off the
+/// `fs_type` the drive table gives each row.
+#[cfg(target_os = "windows")]
+#[test]
+fn a_windows_drive_reads_as_local_and_a_mapped_share_as_smb() {
+    for fs in ["NTFS", "FAT32", "exFAT", "ReFS"] {
+        assert_eq!(kind_for_location(Some(fs), false), VolumeKind::Local, "{fs}");
+    }
+    assert_eq!(
+        kind_for_location(Some(crate::volumes::NETWORK_FS_TYPE), false),
+        VolumeKind::Smb
+    );
+}
+
+/// ❗ **The agent sees the drives the panes see.** The Windows snapshot once
+/// listed `root` alone (the Linux branch's hardcoded row), so an agent asked
+/// about `D:` was told it didn't exist while the switcher showed it.
+#[cfg(target_os = "windows")]
+#[tokio::test]
+async fn every_drive_the_switcher_lists_is_a_volume_the_agent_sees() {
+    let volumes = snapshot_volumes().await;
+    let drives: Vec<_> = crate::volumes::list_locations()
+        .into_iter()
+        .filter(|loc| loc.category != crate::volumes::LocationCategory::Favorite)
+        .collect();
+    assert!(!drives.is_empty(), "precondition: the switcher lists a drive");
+    for drive in &drives {
+        let row = volumes
+            .iter()
+            .find(|v| v.id == drive.id)
+            .unwrap_or_else(|| panic!("{} ({}) is missing from the snapshot", drive.name, drive.id));
+        assert_eq!(row.name, drive.name);
+        assert_eq!(row.mount_path.as_deref(), Some(drive.path.as_str()), "{}", drive.id);
+    }
+    let root = volumes
+        .iter()
+        .find(|v| v.id == cmdr_index::ROOT_VOLUME_ID)
+        .expect("the system drive is listed");
+    assert_eq!(root.kind, VolumeKind::Local);
+    assert_eq!(root.mount_path, Some(cmdr_fs::mount_layout::boot_volume_root()));
+}
+
 /// ❗ **A saved share's last mount path is not where its status lives.** With
 /// nothing mounted there, the path routes to `root`, and the row read `root`'s
 /// `fresh`: the model trusted it and went listing a share that wasn't there.

@@ -25,6 +25,18 @@ use cmdr_local::LocalVolume;
 /// carries: the SMB name the other arms report, so a consumer classifying by fs type sees a share.
 pub(crate) const NETWORK_FS_TYPE: &str = "smbfs";
 
+/// Whether a row's `fs_type` names an SMB share: on Windows, exactly the mapped shares, which
+/// carry [`NETWORK_FS_TYPE`] (a local drive reports `NTFS`, `FAT32`, `exFAT`, or `ReFS`).
+pub(crate) fn is_smb_fs_type(fs_type: Option<&str>) -> bool {
+    fs_type == Some(NETWORK_FS_TYPE)
+}
+
+/// Whether a row's `fs_type` names a network filesystem whose calls can hang: on Windows, the
+/// only network filesystem the drive table names is a mapped SMB share.
+pub(crate) fn is_network_fs_type(fs_type: Option<&str>) -> bool {
+    is_smb_fs_type(fs_type)
+}
+
 /// NTFS, ReFS, FAT, and exFAT fold case (a per-directory case-sensitive NTFS flag exists, off by
 /// default).
 pub(crate) const LOCAL_DISK_CASE_SENSITIVE: bool = false;

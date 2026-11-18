@@ -989,11 +989,11 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "feefb7f"
   },
-  "askCmdr.providerNotice.localNotSetUp": "Místní AI ještě není stažená, takže Ask Cmdr nemůže chatovat. Připravte ji v Nastavení.",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {Místní AI ještě není stažená, takže Ask Cmdr nemůže chatovat. Připravte ji v Nastavení.}}",
   "@askCmdr.providerNotice.localNotSetUp": {
     "sourceHash": "efaeacd"
   },
-  "askCmdr.providerNotice.localNotRunning": "Místní AI neběží, takže Ask Cmdr nemůže chatovat. Spusťte ji v Nastavení.",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {Místní AI neběží, takže Ask Cmdr nemůže chatovat. Spusťte ji v Nastavení.}}",
   "@askCmdr.providerNotice.localNotRunning": {
     "sourceHash": "786d469"
   },

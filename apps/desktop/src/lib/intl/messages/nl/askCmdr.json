@@ -994,11 +994,11 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "feefb7f"
   },
-  "askCmdr.providerNotice.localNotSetUp": "Lokale AI is nog niet gedownload, dus Ask Cmdr kan niet chatten. Stel die in bij Instellingen.",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {Lokale AI is nog niet gedownload, dus Ask Cmdr kan niet chatten. Stel die in bij Instellingen.}}",
   "@askCmdr.providerNotice.localNotSetUp": {
     "sourceHash": "efaeacd"
   },
-  "askCmdr.providerNotice.localNotRunning": "Lokale AI draait niet, dus Ask Cmdr kan niet chatten. Start die in Instellingen.",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {Lokale AI draait niet, dus Ask Cmdr kan niet chatten. Start die in Instellingen.}}",
   "@askCmdr.providerNotice.localNotRunning": {
     "sourceHash": "786d469"
   },

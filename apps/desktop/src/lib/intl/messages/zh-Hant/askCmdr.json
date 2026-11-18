@@ -988,11 +988,11 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "feefb7f"
   },
-  "askCmdr.providerNotice.localNotSetUp": "本機 AI 還沒下載，所以 Ask Cmdr 沒辦法聊天。請到「設定」完成設定。",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {本機 AI 還沒下載，所以 Ask Cmdr 沒辦法聊天。請到「設定」完成設定。}}",
   "@askCmdr.providerNotice.localNotSetUp": {
     "sourceHash": "efaeacd"
   },
-  "askCmdr.providerNotice.localNotRunning": "本機 AI 沒有在執行，所以 Ask Cmdr 沒辦法聊天。請到「設定」啟動。",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {本機 AI 沒有在執行，所以 Ask Cmdr 沒辦法聊天。請到「設定」啟動。}}",
   "@askCmdr.providerNotice.localNotRunning": {
     "sourceHash": "786d469"
   },

@@ -176,8 +176,12 @@ come for free):
   segment), the empty root marker, and search-results panes (whose "path" is a query label) are non-clickable. The path
   fits the bar by middle-truncating its widest segments (`navigation/DETAILS.md`, the `breadcrumb-fit.ts` bullet).
   Segments draw their focus ring INSIDE (`outline-offset: -2px`): `.path` clips at their hit area's edges. A clickable
-  segment is at least 26px wide (`SEGMENT_MIN_HIT_WIDTH_PX`, WCAG 2.5.8), so `~` and one-letter folders take a little
-  more room than their text; names past about three letters don't move.
+  segment is at least 26px wide (`SEGMENT_MIN_HIT_WIDTH_PX`, WCAG 2.5.8), so one-letter folders take a little more room
+  than their text; names past about three letters don't move. The FIRST segment is flush left, so it can't center its
+  text in that floor: a short one (`C:`, `~`) sat indented with a gap before its separator (seen on Windows). Its floor
+  is an overlay instead (`.path-segment:first-child::after`, zero layout room, `segmentLayoutFloor(0)` is 0) that
+  reaches rightward over the separator; every segment is `position: relative`, so the next one paints over the overlay
+  and keeps its own clicks.
 - **Double-click the empty pane background → parent folder** (Directory Opus-style), gated by
   `behavior.doubleClickPaneNavigatesToParent` (default on). The `ondblclick` lives on the `.file-pane` root (which
   already carries `role="region"`, so no new a11y exposure); `isFileListBackgroundClick` filters to genuine list

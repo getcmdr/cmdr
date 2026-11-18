@@ -297,13 +297,22 @@ pub(super) async fn plan_quit<R: Runtime>(_app: &AppHandle<R>, _ctx: &ToolCtx, _
 
 // ── eject, indexing ─────────────────────────────────────────────────────────
 
-/// What a person calls this volume, else its id: asking without a name beats not asking.
+/// What a person calls this volume: its switcher row's name, else the registered volume's
+/// (a row the snapshot doesn't carry: a Linux drive past `root`, a listing that timed out),
+/// else its id, since asking without a name beats not asking.
 async fn volume_name(volume_id: &str) -> String {
-    let name = snapshot_volumes()
+    let listed = snapshot_volumes()
         .await
         .into_iter()
         .find(|volume| volume.id == volume_id)
-        .map_or_else(|| volume_id.to_string(), |volume| volume.name);
+        .map(|volume| volume.name);
+    let name = listed
+        .or_else(|| {
+            crate::file_system::volume::manager::get_volume_manager()
+                .get(volume_id)
+                .map(|volume| volume.name().to_string())
+        })
+        .unwrap_or_else(|| volume_id.to_string());
     fact_text(&name)
 }
 

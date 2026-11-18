@@ -1618,15 +1618,21 @@
     "screenshot": "ask-cmdr-empty.png",
     "screenshotNote": "A yellow notice at the top of the Ask Cmdr panel pictured here, shown while no AI provider is ready, with a link to the settings. This screenshot doesn’t show it."
   },
-  "askCmdr.providerNotice.localNotSetUp": "Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.}}",
   "@askCmdr.providerNotice.localNotSetUp": {
-    "description": "Yellow notice at the top of the Ask Cmdr side panel when local (on-device) AI is picked but its model isn't downloaded yet (or is still downloading). A link that opens Settings > AI > Provider follows. Friendly; avoids the words error and failed. The apostrophes are U+2019.",
+    "description": "Yellow notice at the top of the Ask Cmdr side panel when local (on-device) AI is picked but its model isn't downloaded yet (or is still downloading). A link that opens Settings > AI > Provider follows. Friendly; avoids the words error and failed. The apostrophes are U+2019. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "ask-cmdr-empty.png",
     "screenshotNote": "A yellow notice at the top of the Ask Cmdr panel pictured here, shown while no AI provider is ready, with a link to the settings. This screenshot doesn’t show it."
   },
-  "askCmdr.providerNotice.localNotRunning": "Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.}}",
   "@askCmdr.providerNotice.localNotRunning": {
-    "description": "Yellow notice at the top of the Ask Cmdr side panel when local (on-device) AI is picked and downloaded, but its server isn't running. A link that opens Settings > AI > Provider follows. Friendly; avoids the words error and failed. The apostrophes are U+2019.",
+    "description": "Yellow notice at the top of the Ask Cmdr side panel when local (on-device) AI is picked and downloaded, but its server isn't running. A link that opens Settings > AI > Provider follows. Friendly; avoids the words error and failed. The apostrophes are U+2019. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "ask-cmdr-empty.png",
     "screenshotNote": "A yellow notice at the top of the Ask Cmdr panel pictured here, shown while no AI provider is ready, with a link to the settings. This screenshot doesn’t show it."
   },
