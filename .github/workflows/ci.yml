@@ -397,13 +397,15 @@ jobs:
               - '!**/DETAILS.md'
             rust:
               - *rust-inputs
-              # `desktop-third-party-notices` and `desktop-rust-fuzz-lock-in-step`, which only
-              # this lane runs.
+              # `desktop-third-party-notices`, `desktop-rust-fuzz-lock-in-step`, and
+              # `desktop-rust-fuzz-targets-compile`, which only this lane runs.
               - 'deny.toml'
               - 'pnpm-lock.yaml'
               - 'THIRD-PARTY-NOTICES.md'
               - 'apps/desktop/src/lib/licensing/third-party-packages.gen.json'
               - 'fuzz/Cargo.lock'
+              - 'fuzz/Cargo.toml'
+              - 'fuzz/fuzz_targets/**'
               - '.github/workflows/rust-lane.yml'
               - '.github/actions/free-disk-if-small/**'
               - '.github/actions/pinned-rust-toolchain/**'

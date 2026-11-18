@@ -2503,20 +2503,26 @@ Checks by app and tech:
   `fuzz/Cargo.lock` resolve sits at the same version in each, compared per semver line so a crate on two lines (`zip` 4
   and 9) is judged line by line and a line only one lock has passes; nothing bumps the out-of-workspace fuzz lock, and
   its lagging `twox-hash` once crashed a fuzz run on a bug the app never shipped; the failure prints a
-  `cargo update -p <crate> --precise <ver>` per drift, with `<crate>@<ver>` when the fuzz lock holds two copies), the
-  five `<provider>-smoke` lanes (CI-only: one `--lib` module each against a live provider, self-skipping without its
-  key; `gemini-smoke` additionally has a warn-level "inconclusive" outcome — see § "Decision: a smoke lane has a THIRD
-  outcome"), shipped-locales-fresh (regenerate-and-diff `intl/shipped_locales.gen.rs` from the message-catalog dirs, so
-  the locale resolver's CLDR script table can't go stale and leave a new locale both unreachable and unguarded),
-  module-cycles (slow, fails, and in CI on the macOS job; strongly-connected module components per crate with
-  parent-child hubs collapsed, on a per-home ratchet, behind a pinned `cargo-modules` that a mismatched box skips rather
-  than mis-measures — see § "Rust module cycles"), fixture-lane-coverage (a Docker-gated cell in the app crate whose
-  name the integration lane's filter won't select never runs anywhere, so it's a finding; one cell lived its whole life
-  that way, and it was the sole caller of the crate extraction's one sanctioned public-surface widening — see § "Fixture
-  lane coverage"), tests, integration-tests (Docker network fixtures), disk-images (slow, macOS only, not in CI; the
-  real-image tests on synthetic APFS and HFS+ disk images, see § "The disk-image lane"), clippy-linux (slow, not in CI;
-  CI's clippy and rustdoc commands against the Linux target, run from a Mac in Docker), tests-linux (slow; both in §
-  "The Linux Docker lanes share an image and a build cache")
+  `cargo update -p <crate> --precise <ver>` per drift, with `<crate>@<ver>` when the fuzz lock holds two copies),
+  fuzz-targets-compile (a quiet stable `cargo check --bins` of the out-of-workspace `fuzz/` crate, no nightly, no
+  cargo-fuzz, no instrumentation, so a signature change that breaks a target fails the Rust lane instead of the next
+  day's `desktop-rust-fuzz`; it builds into `target/fuzz-check/` because none of its ~320 units match a root lane's (own
+  lock, profile, and feature set: a run against the warm shared `target/debug` recompiled all of them), which also keeps
+  it off the shared build-dir lock and inside what rust-cache saves; ~15–20 s and 358 MB cold, ~0.5 s warm on an
+  M-series Mac, measured 2026-11-18), the five `<provider>-smoke` lanes (CI-only: one `--lib` module each against a live
+  provider, self-skipping without its key; `gemini-smoke` additionally has a warn-level "inconclusive" outcome — see §
+  "Decision: a smoke lane has a THIRD outcome"), shipped-locales-fresh (regenerate-and-diff
+  `intl/shipped_locales.gen.rs` from the message-catalog dirs, so the locale resolver's CLDR script table can't go stale
+  and leave a new locale both unreachable and unguarded), module-cycles (slow, fails, and in CI on the macOS job;
+  strongly-connected module components per crate with parent-child hubs collapsed, on a per-home ratchet, behind a
+  pinned `cargo-modules` that a mismatched box skips rather than mis-measures — see § "Rust module cycles"),
+  fixture-lane-coverage (a Docker-gated cell in the app crate whose name the integration lane's filter won't select
+  never runs anywhere, so it's a finding; one cell lived its whole life that way, and it was the sole caller of the
+  crate extraction's one sanctioned public-surface widening — see § "Fixture lane coverage"), tests, integration-tests
+  (Docker network fixtures), disk-images (slow, macOS only, not in CI; the real-image tests on synthetic APFS and HFS+
+  disk images, see § "The disk-image lane"), clippy-linux (slow, not in CI; CI's clippy and rustdoc commands against the
+  Linux target, run from a Mac in Docker), tests-linux (slow; both in § "The Linux Docker lanes share an image and a
+  build cache")
 
 Four of those scanners share one region tracker, `rustTestModState` / `advanceTestModRegion`
 (`desktop-rust-test-sleep.go`), in opposite polarities: test-sleep and fixed-temp-dir scan ONLY inside an inline test

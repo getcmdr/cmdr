@@ -275,6 +275,8 @@ var rustTestScopeRules = []rustScopeRule{
 	{Glob: "THIRD-PARTY-NOTICES.md", Effect: scopeNothing, Why: "checked by the notices check, embedded by no crate"},
 	{Glob: "apps/desktop/src/lib/licensing/third-party-packages.gen.json", Effect: scopeNothing, Why: "the frontend's generated notices list, checked by the notices check"},
 	{Glob: "fuzz/Cargo.lock", Effect: scopeNothing, Why: "the fuzz workspace's lockfile, which `desktop-rust-fuzz-lock-in-step` compares; no workspace test reads it"},
+	{Glob: "fuzz/Cargo.toml", Effect: scopeNothing, Why: "the fuzz crate's manifest, which `desktop-rust-fuzz-targets-compile` compiles; no workspace test reads it"},
+	{Glob: "fuzz/fuzz_targets/**", Effect: scopeNothing, Why: "the fuzz targets, which `desktop-rust-fuzz-targets-compile` compiles; outside the workspace, so no workspace test reads them"},
 	{Glob: "scripts/check/**", Effect: scopeAll, Why: "the check runner that builds and runs the tests, this scope logic included"},
 	{Glob: "scripts/check.sh", Effect: scopeAll, Why: "the check runner's entry point"},
 
