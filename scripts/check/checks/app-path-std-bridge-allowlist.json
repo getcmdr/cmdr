@@ -39,6 +39,8 @@
     "crates/cmdr-fs/src/volume/scan_walk.rs": 1,
     "crates/cmdr-fs/src/volume/server_side.rs": 2,
     "crates/cmdr-fs/src/volume/server_side_test.rs": 5,
+    "crates/cmdr-media-meta/src/source.rs": 1,
+    "crates/cmdr-media-meta/src/source_test.rs": 2,
     "crates/cmdr-viewer/src/markdown_session.rs": 1,
     "crates/cmdr-viewer/src/volume_source.rs": 4,
     "crates/cmdr-viewer/src/volume_source_test.rs": 3
