@@ -18,7 +18,7 @@ func TestTheLaptopSignsTheCoreAndEachWholeLeg(t *testing.T) {
 	}
 	var core releaseInfo
 	for _, name := range manifest.Names(windowsOn.Core().Files) {
-		core.Assets = append(core.Assets, releaseAsset{Name: name})
+		core.Assets = append(core.Assets, releaseAsset{Name: name, State: "uploaded"})
 	}
 	legs, lines := legsOnDraft(windowsOn, core)
 	if len(legs) != 0 || len(lines) != 1 || !strings.Contains(lines[0], "ships without its windows files") {
@@ -26,10 +26,15 @@ func TestTheLaptopSignsTheCoreAndEachWholeLeg(t *testing.T) {
 	}
 	whole := core
 	for _, name := range []string{"Cmdr_0.70.0_x64-setup.exe", "Cmdr_0.70.0_x64.msix", "cmdr-group-policy-0.70.0.zip", "Cmdr_0.70.0_security-advisories.json"} {
-		whole.Assets = append(whole.Assets, releaseAsset{Name: name})
+		whole.Assets = append(whole.Assets, releaseAsset{Name: name, State: "uploaded"})
 	}
 	if legs, lines := legsOnDraft(windowsOn, whole); !slices.Equal(legs, []manifest.OS{manifest.Windows}) || len(lines) != 0 {
 		t.Fatalf("a draft with the whole leg: legs %v, lines %q", legs, lines)
+	}
+	// The last Windows file still being saved: the leg isn't on the draft yet.
+	whole.Assets[len(whole.Assets)-1].State = "starter"
+	if legs, _ := legsOnDraft(windowsOn, whole); len(legs) != 0 {
+		t.Fatalf("a half-saved leg counted: %v", legs)
 	}
 }
 

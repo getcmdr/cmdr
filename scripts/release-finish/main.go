@@ -573,7 +573,7 @@ func waitUntilRestarted(id int64) error {
 // tag (the tags API skips drafts). More than one release on a tag is an error, not a pick.
 func findRelease(tag string) (releaseInfo, bool, error) {
 	out, err := output("", []string{"TAG=" + tag}, "gh", "api", "--paginate", "repos/"+repo+"/releases?per_page=100",
-		"--jq", `.[] | select(.tag_name == env.TAG) | {isDraft: .draft, assets: [.assets[] | {name}]}`)
+		"--jq", `.[] | select(.tag_name == env.TAG) | {isDraft: .draft, assets: [.assets[] | {name, state}]}`)
 	if err != nil {
 		return releaseInfo{}, false, err
 	}

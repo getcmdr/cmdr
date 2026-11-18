@@ -37,6 +37,9 @@ var windowsScenarios = []scenario{
 	{name: "publish-ci", job: "publish", event: "push", mode: "ci", drop: noLatest, add: windowsLeg, artifacts: gateArtifact},
 	// The leg isn't up when `publish` looks: macOS ships alone, with a warning.
 	{name: "publish-late", job: "publish", event: "push", mode: "ci", drop: noLatest, artifacts: gateArtifact},
+	// The leg's last upload still being saved when `publish` looks (GitHub's `state: starter`):
+	// no leg, and the macOS release ships green.
+	{name: "publish-mid-upload", job: "publish", event: "push", mode: "ci", drop: noLatest, add: windowsLeg, starter: windowsLeg[5:], artifacts: gateArtifact},
 	// Half a leg (the installer's signature missing) is no leg.
 	{name: "publish-half", job: "publish", event: "push", mode: "ci", drop: noLatest, add: windowsLeg[2:], artifacts: gateArtifact},
 	// A re-run keeps the legs of the `latest.json` an earlier attempt put up (macOS-only, and it

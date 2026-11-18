@@ -25,6 +25,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -124,7 +125,7 @@ func runLatest(o options, release manifest.Release, validate bool) error {
 	}
 	if prev, ok := previousLegs(in, o.previous); ok {
 		in.release = prev
-	} else if in.release, err = carriedRelease(in.release, have, o.carriedBy); err != nil {
+	} else if in.release, err = carriedRelease(in.release, have, o.carriedBy, o.sigs); err != nil {
 		return err
 	}
 	if validate {
@@ -150,7 +151,7 @@ func runChecksumFiles(o options, release manifest.Release) error {
 	if err != nil {
 		return err
 	}
-	if release, err = carriedRelease(release, have, o.carriedBy); err != nil {
+	if release, err = carriedRelease(release, have, o.carriedBy, ""); err != nil {
 		return err
 	}
 	files, err := manifest.Present(release.Downloads(), assetNames(have))
@@ -167,7 +168,7 @@ func runChecksumFiles(o options, release manifest.Release) error {
 // `latest.json` at carriedBy names, when given, or else the ones whole among the release's assets,
 // with a `::warning::` for each leg the release ships without. A macOS-only release has no legs, so
 // it comes back as it went in.
-func carriedRelease(release manifest.Release, assets []releaseAsset, carriedBy string) (manifest.Release, error) {
+func carriedRelease(release manifest.Release, assets []releaseAsset, carriedBy, sigDir string) (manifest.Release, error) {
 	if len(release.LegOSes()) == 0 {
 		// Nothing to carry, so nothing to read: a macOS-only release behaves as it always did, a
 		// damaged earlier `latest.json` included (a re-run overwrites it).
@@ -180,13 +181,33 @@ func carriedRelease(release manifest.Release, assets []releaseAsset, carriedBy s
 		}
 		return release.CarriedBy(raw)
 	}
-	whole, lacking := release.CarriedWhole(assetNames(assets))
+	whole, lacking := release.CarriedWhole(finishedAssets(assets, sigDir))
 	for _, osName := range release.LegOSes() {
 		if missing, ok := lacking[osName]; ok {
 			fmt.Fprintf(os.Stderr, "::warning::%s\n", manifest.LackingLine(release.Version, osName, missing))
 		}
 	}
 	return whole, nil
+}
+
+// finishedAssets are the names of the assets a leg can count: fully saved (GitHub's `state` is
+// `uploaded`, never a half-saved `starter`), not empty, and, for a signature, on disk in sigDir
+// (when given) since `latest-json` reads it from there. Anything else leaves its leg incomplete, so a
+// Windows upload still going when `publish` looks costs the leg, never the macOS release.
+func finishedAssets(assets []releaseAsset, sigDir string) []string {
+	var names []string
+	for _, a := range assets {
+		if a.State != "uploaded" || a.Size == 0 {
+			continue
+		}
+		if sigDir != "" && strings.HasSuffix(a.Name, ".sig") {
+			if info, err := os.Stat(filepath.Join(sigDir, a.Name)); err != nil || info.Size() == 0 {
+				continue
+			}
+		}
+		names = append(names, a.Name)
+	}
+	return names
 }
 
 // previousLegs is the release as an earlier `publish` attempt's `latest.json` (at path) carried

@@ -70,6 +70,8 @@ func signedNames(version string) []string {
 
 type releaseAsset struct {
 	Name string `json:"name"`
+	// State is GitHub's: `uploaded` once fully saved. A leg counts only those (`legsOnDraft`).
+	State string `json:"state"`
 }
 
 // releaseInfo is `gh release view --json isDraft,assets`; gh finds a draft by its tag too.

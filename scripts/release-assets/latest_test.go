@@ -112,8 +112,8 @@ func windowsRelease(t *testing.T, withVersion bool) latestInput {
 	in, _ := published(t)
 	in.release = manifest.ForOSes("0.61.0", manifest.MacOS, manifest.Windows)
 	in.assets = append(slices.Clone(in.assets),
-		releaseAsset{"Cmdr_0.61.0_x64-setup.exe", 5000000}, releaseAsset{"Cmdr_0.61.0_x64.msix", 6000000},
-		releaseAsset{"cmdr-group-policy-0.61.0.zip", 7000}, releaseAsset{"Cmdr_0.61.0_security-advisories.json", 400})
+		releaseAsset{Name: "Cmdr_0.61.0_x64-setup.exe", Size: 5000000, State: "uploaded"}, releaseAsset{Name: "Cmdr_0.61.0_x64.msix", Size: 6000000, State: "uploaded"},
+		releaseAsset{Name: "cmdr-group-policy-0.61.0.zip", Size: 7000, State: "uploaded"}, releaseAsset{Name: "Cmdr_0.61.0_security-advisories.json", Size: 400, State: "uploaded"})
 	in.sigDir = t.TempDir()
 	for _, f := range in.release.Signed() {
 		src, err := os.ReadFile(fixtureDir + "/" + f.Signature())

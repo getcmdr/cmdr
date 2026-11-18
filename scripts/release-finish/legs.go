@@ -33,7 +33,10 @@ func legSigned(release manifest.Release, os manifest.OS) []string {
 func legsOnDraft(release manifest.Release, rel releaseInfo) (legs []manifest.OS, lines []string) {
 	have := make([]string, 0, len(rel.Assets))
 	for _, a := range rel.Assets {
-		have = append(have, a.Name)
+		// A half-saved asset (`starter`) leaves its leg incomplete.
+		if a.State == "uploaded" {
+			have = append(have, a.Name)
+		}
 	}
 	complete, lacking := release.CompleteLegs(have, false)
 	for _, os := range release.LegOSes() {

@@ -16,6 +16,9 @@ import (
 type releaseAsset struct {
 	Name string `json:"name"`
 	Size int64  `json:"size"`
+	// State is GitHub's: `uploaded` once the asset is fully saved, `starter` while (or after a
+	// failed) upload. Only a leg's completeness reads it (`finishedAssets`).
+	State string `json:"state"`
 }
 
 func readReleaseAssets(path string) ([]releaseAsset, error) {

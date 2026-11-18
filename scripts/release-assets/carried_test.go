@@ -14,12 +14,30 @@ func TestAMacOSOnlyReleaseIgnoresADamagedEarlierManifest(t *testing.T) {
 	bad := filepath.Join(t.TempDir(), "latest.json")
 	must(t, os.WriteFile(bad, []byte(`{"version":"0.61`), 0o644))
 	r := manifest.For("0.61.0")
-	got, err := carriedRelease(r, nil, bad)
+	got, err := carriedRelease(r, nil, bad, "")
 	if err != nil || len(got.Files) != len(r.Files) {
 		t.Fatalf("a macOS-only release with a damaged carried-by: %v, %v", manifest.Names(got.Files), err)
 	}
 	if _, ok := previousLegs(latestInput{release: r}, bad); ok {
 		t.Fatal("a macOS-only release kept an earlier manifest")
+	}
+}
+
+// A leg counts only fully saved, non-empty assets, and a signature only once it's on disk: a
+// Windows upload still going when `publish` looks costs the leg, never the release.
+func TestALegCountsOnlyFinishedUploads(t *testing.T) {
+	dir := t.TempDir()
+	must(t, os.WriteFile(filepath.Join(dir, "a.exe.sig"), []byte("sig"), 0o644))
+	assets := []releaseAsset{
+		{Name: "a.exe", Size: 10, State: "uploaded"},
+		{Name: "a.exe.sig", Size: 3, State: "uploaded"},
+		{Name: "b.exe", Size: 10, State: "starter"},
+		{Name: "c.zip", Size: 0, State: "uploaded"},
+		{Name: "d.json.sig", Size: 3, State: "uploaded"}, // not downloaded
+	}
+	got := finishedAssets(assets, dir)
+	if len(got) != 2 || got[0] != "a.exe" || got[1] != "a.exe.sig" {
+		t.Fatalf("finished = %v, want a.exe and its signature", got)
 	}
 }
 
