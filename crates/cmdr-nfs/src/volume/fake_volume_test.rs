@@ -427,9 +427,11 @@ async fn a_silent_server_is_disconnected_inside_the_ladder_and_every_waiting_cal
     fake.go_silent(true);
     let started = tokio::time::Instant::now();
     let (photos, beach) = (at(&volume, "/photos"), at(&volume, "/photos/2024/beach.txt"));
+    let photos_app = AppPath::legacy_unchecked(&photos);
+    let beach_app = AppPath::legacy_unchecked(&beach);
     let (listing, stat) = tokio::join!(
-        volume.list_directory(&AppPath::legacy_unchecked(&photos), None),
-        volume.get_metadata(&AppPath::legacy_unchecked(&beach)),
+        volume.list_directory(&photos_app, None),
+        volume.get_metadata(&beach_app),
     );
 
     assert!(

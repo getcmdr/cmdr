@@ -89,7 +89,7 @@ pub fn app_path(volume: &NfsVolume, remote: &str) -> PathBuf {
     if remote.is_empty() {
         return volume.root().as_std_legacy().to_path_buf();
     }
-    Path::new(volume.root()).join(remote)
+    volume.root().as_std_legacy().join(remote)
 }
 
 /// What every scratch folder's name starts with, so a cell that reads the
