@@ -16,6 +16,11 @@ Writing, code, and design styles.
     takes a destination; `Delete` only asks whether to go ahead. Use the U+2026 character, never three periods. The
     verdict per item, and why this beats Apple's own "requires further input" phrasing, live in
     `apps/desktop/src-tauri/src/menu/DETAILS.md`.
+  - **The settings window's menu row is the one exception: it keeps its system's own ellipsis** ("Settings…" on macOS
+    and other Linux, KDE's standard `Configure %1…` from KStandardAction; none on Windows or GNOME), because it's a
+    standard item users look for by its exact OS spelling. The command and every button that opens the window follow the
+    rule above and take none ("Open settings", "Configure Cmdr"). A label quoting the menu row (the quick filter toast's
+    button) copies the row.
 - Ellipsis
   - **Cmdr writes every ellipsis as `…` (U+2026), never three periods**: progress text ("Loading…"), placeholders
     ("Example: sk-ant-abc123…"), and truncation (leading or trailing) all use the same character.
