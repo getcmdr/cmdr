@@ -4802,6 +4802,23 @@ export const commands = {
    */
   getMenuBarTitleMnemonics: () => __TAURI_INVOKE<BarTitleMnemonic[]>('get_menu_bar_title_mnemonics'),
   /**
+   *  The main menu bar for a page that draws it (off macOS, the in-window bar): every menu and row,
+   *  at its revision. From the first call on, every move of the bar emits `menu-bar-changed` with
+   *  the next revision and the rows that moved; `menu/DETAILS.md` § "The bar a page draws" has the
+   *  ordering contract (subscribe first, then ask, then apply events past the answer's revision).
+   */
+  getMenuBar: () => __TAURI_INVOKE<MenuBarAnswer>('get_menu_bar'),
+  /**
+   *  The viewer window's bar for a page that draws it, from the viewer's own state. No event: the
+   *  viewer is the only writer of its inputs, so it asks again when one moves.
+   */
+  getViewerMenuBar: (inputs: ViewerBarInputs) => __TAURI_INVOKE<BarMenuView[]>('get_viewer_menu_bar', { inputs }),
+  /**
+   *  A page's click on a bar row (the main bar's or the viewer's), by menu id: runs the handler a
+   *  native click reaches, or nothing for a row that's greyed out right now.
+   */
+  pickMenuBarItem: (menuId: string) => __TAURI_INVOKE<BarPickOutcome>('pick_menu_bar_item', { menuId }),
+  /**
    *  Enables or disables MTP support at runtime.
    *
    *  When disabled: disconnects all devices, stops auto-connecting, and restores
@@ -6392,6 +6409,7 @@ export const events = {
   mediaEnrichTerminal: makeEvent<MediaEnrichTerminalEvent>('media-enrich-terminal'),
   mediaIndexFolderChoice: makeEvent<MediaIndexFolderChoice>('media-index-folder-choice'),
   mediaIndexFolderExclusion: makeEvent<MediaIndexFolderExclusion>('media-index-folder-exclusion'),
+  menuBarChanged: makeEvent<MenuBarChanged>('menu-bar-changed'),
   menuBarRebuilt: makeEvent<MenuBarRebuilt>('menu-bar-rebuilt'),
   menuSort: makeEvent<MenuSort>('menu-sort'),
   mouseNav: makeEvent<MouseNav>('mouse-nav'),
@@ -7888,6 +7906,26 @@ export type BackfillProgress = {
   total: number
 }
 
+// One top-level menu of a drawn bar.
+export type BarMenuView = {
+  // Its menu id (`menu_file`, …), on every platform.
+  id: string
+  // What the bar says.
+  title: RowLabel
+  // Its rows.
+  rows: Row[]
+}
+
+// What a page's pick of a bar row did.
+export type BarPickOutcome =
+  // The row's handler ran.
+  | 'ran'
+  /**
+   *  The row is greyed out right now, or isn't on the bar: nothing ran, as a greyed native row
+   *  can't be clicked.
+   */
+  | 'notLive'
+
 // A bar title's mnemonic: GTK opens the `menu` menu on `Alt+<letter>`.
 export type BarTitleMnemonic = {
   // Lowercased, as GTK matches it.
@@ -8327,6 +8365,13 @@ export type CertificatePromptKind =
   | 'unknown'
   // A different certificate is pinned for this server.
   | 'changed'
+
+// Which of the two ARIA check roles a check row takes.
+export type CheckKind =
+  // `menuitemcheckbox`: on or off by itself (Show hidden files, Word wrap).
+  | 'checkbox'
+  // `menuitemradio`: one of a group, exactly one on (a pane's view mode, a Sort by column).
+  | 'radio'
 
 // What the person answered.
 export type CheckboxConfirm =
@@ -14589,6 +14634,28 @@ export type MenuAnchor = {
   y: number
 }
 
+// `get_menu_bar`'s answer: the whole bar, and the revision it stands at.
+export type MenuBarAnswer = {
+  /**
+   *  The revision this answer describes. A `menu-bar-changed` at `revision + 1` applies on top
+   *  of it; one at or below it is already in here.
+   */
+  revision: number
+  menus: BarMenuView[]
+}
+
+/**
+ *  `menu-bar-changed`: the page bar moved. Applies on top of the answer or event at
+ *  `revision - 1`; a gap means a page missed one and asks `get_menu_bar` again.
+ */
+export type MenuBarChanged = {
+  revision: number
+  // The rows whose state moved, by id. Empty when `menus` is set.
+  rows: RowState[]
+  // The whole bar, when its shape moved (no row diff describes that).
+  menus: BarMenuView[] | null
+}
+
 /**
  *  `menu-bar-rebuilt`: the native menu bar was thrown away and built again in a
  *  new language, so every item is a NEW object.
@@ -18842,12 +18909,99 @@ export type RootChangeKind =
    */
   | 'moved'
 
+/**
+ *  One row of a menu as the page draws it.
+ *
+ *  The wire is the browser demo's (`lib/demo/menu-bar.svelte.ts` reads `kind`, `id`, `label`,
+ *  `shortcut`, `enabled`, `checked`, `rows`), so new facts are new fields beside those.
+ */
+export type Row =
+  // A command item.
+  | {
+      kind: 'item'
+      // The menu id a pick names.
+      id: string
+      // What it says.
+      label: RowLabel
+      // The shortcut drawn beside it, in the platform's own spelling (`⇧⌘P`, `Ctrl+Shift+P`).
+      shortcut: string | null
+      // The same shortcut in `aria-keyshortcuts` spelling (`Meta+Shift+P`, `Control+Shift+P`).
+      ariaKeyshortcuts: string | null
+      // Whether a pick does something.
+      enabled: boolean
+    }
+  // A check item: a checkbox, or one choice of a radio group.
+  | {
+      kind: 'check'
+      // The menu id a pick names.
+      id: string
+      // What it says.
+      label: RowLabel
+      // The shortcut drawn beside it, in the platform's own spelling.
+      shortcut: string | null
+      // The same shortcut in `aria-keyshortcuts` spelling.
+      ariaKeyshortcuts: string | null
+      // Whether a pick does something.
+      enabled: boolean
+      // Whether it carries the checkmark.
+      checked: boolean
+      // `menuitemcheckbox` or `menuitemradio`.
+      checkKind: CheckKind
+    }
+  // A nested submenu.
+  | {
+      kind: 'submenu'
+      /**
+       *  Its id: the spec's where it has one, else its title's catalog key (unique per bar,
+       *  `bar_test.rs` pins it), so a change event can name it.
+       */
+      id: string
+      // What it says.
+      label: RowLabel
+      // Whether it opens.
+      enabled: boolean
+      // Its rows.
+      rows: Row[]
+    }
+  // A context menu's first line, naming what it acts on: a label, never picked.
+  | {
+      kind: 'header'
+      // What it says.
+      label: RowLabel
+    }
+  /**
+   *  An item the OS wires (Hide, Quit, Services, Undo, Minimize: macOS's bar only). A page has
+   *  no OS action behind it.
+   */
+  | {
+      kind: 'system'
+      // What it says.
+      label: RowLabel
+    }
+  // A separator.
+  | { kind: 'separator' }
+
 // Which side of a named row to read: the one before it or the one after it.
 export type RowBeside =
   // The row before it.
   | 'previous'
   // The row after it.
   | 'next'
+
+// A row's words: a catalog key and its tokens, or a literal that is never translated.
+export type RowLabel =
+  // A `menu.*` key in the frontend's catalog, with its `{token}` values.
+  | ({
+      // The catalog key.
+      key: string
+      // Token name → value.
+      args: { [key in string]: string }
+    } & { text?: never })
+  // Words that stay as they are (the app menu's `Cmdr`, a context menu's header line).
+  | ({
+      // The words.
+      text: string
+    } & { args?: never; key?: never })
 
 // Which way ⇧↑ / ⇧↓ moves a row in the rename order.
 export type RowMove = 'up' | 'down'
@@ -18858,6 +19012,21 @@ export type RowMove = 'up' | 'down'
  *  search hits inside a top-level move/trash unit, and are never reversed.
  */
 export type RowRole = 'rollbackUnit' | 'searchOnly'
+
+/**
+ *  One row's state, everything but its kind and children: what a change event carries for a row
+ *  whose answer moved.
+ */
+export type RowState = {
+  // The row's id ([`Row::id`]).
+  id: string
+  label: RowLabel
+  shortcut: string | null
+  ariaKeyshortcuts: string | null
+  enabled: boolean
+  // `None` for a row that isn't a check.
+  checked: boolean | null
+}
 
 // Whether a row can be renamed to its new name.
 export type RowStatus =
@@ -23946,6 +24115,18 @@ export type VerifyResult = {
 export type ViewModeChanged = {
   mode: string
   pane: string
+}
+
+// What the viewer page knows that its bar shows.
+export type ViewerBarInputs = {
+  // View > Word wrap's check.
+  wordWrap: boolean
+  // Go > Back is live.
+  canGoBack: boolean
+  // Go > Forward is live.
+  canGoForward: boolean
+  // The search box holds keyboard focus, which is what makes Cut and Paste live.
+  searchFocused: boolean
 }
 
 /**

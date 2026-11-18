@@ -328,7 +328,8 @@ pub async fn set_show_virtual_git_portal(enabled: bool) {
 pub fn update_menu_accelerator(app: AppHandle, command_id: &str, shortcut: &str) -> Result<(), String> {
     let menu_state = app.state::<MenuState<tauri::Wry>>();
 
-    match command_id {
+    // A closure so an arm's `?` still reaches the page-bar notify below.
+    let apply = || match command_id {
         // View mode CheckMenuItems are per-pane and the accelerator only attaches to the
         // active pane's pair. Cache the new accel in MenuState and rebuild: the rebuild
         // re-reads cached accels and active-pane state in one shot.
@@ -347,6 +348,11 @@ pub fn update_menu_accelerator(app: AppHandle, command_id: &str, shortcut: &str)
         // All other commands: use the generic HashMap-based update
         _ => {
             if let Some(menu_id) = command_id_to_menu_id(command_id) {
+                // What the page bar reads its rebinds from, kept as pushed (`menu/page_bar.rs`).
+                menu_state
+                    .pushed_shortcuts
+                    .lock_ignore_poison()
+                    .insert(menu_id.to_string(), shortcut.to_string());
                 // Registered or only DISPLAYED, never both, so the item can't show one shortcut
                 // while firing on another. The row's own key comes back as the bar builds it;
                 // any other combo with no ⌘ / ⌃ / ⌥ only displays, since registering it would
@@ -376,7 +382,10 @@ pub fn update_menu_accelerator(app: AppHandle, command_id: &str, shortcut: &str)
             // Silently succeed for commands that don't have menu items
             Ok(())
         }
-    }
+    };
+    let applied = apply();
+    crate::menu::page_bar::notify_bar_changed(&app);
+    applied
 }
 
 #[cfg(test)]

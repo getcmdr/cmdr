@@ -104,6 +104,8 @@ window focus context.
   draws them, and `loan.rs` `lend_tag_row`, which installs the row on the tracking notification. See "The tag row".
 - `tag_icons.rs` (macOS): the circle PNGs for the seven plain tag items, the look the row falls back to.
 - `rebuild.rs`: `rebuild_menu_bar`, which throws the bar away and builds a new one in the current UI language.
+- `page_bar.rs`: the main bar for a page that draws it (`get_menu_bar`, `menu-bar-changed`, `pick_menu_bar_item`):
+  `bar_inputs` reads `MenuState` into `cmdr_menu::page::BarInputs`. See "The bar a page draws".
 - `mnemonics.rs`: `Mnemonics`, the per-submenu allocator for the Linux underline letter.
 - `mnemonic_mask/`: `set_window_mnemonics_suspended` (the IPC command `set_menu_mnemonics_suspended` calls it), which
   turns a window's mnemonics off while a modal surface owns its keyboard; `mnemonic_modifier` is the pure decision and
@@ -331,11 +333,46 @@ Shared state managed via `tauri::State<MenuState<Wry>>`. Holds:
   `filename`, `paths` (full selection if the right-clicked file is part of it, else `[path]`),
   and (macOS) `open_with_apps` (`bundle_id → app_path` map populated when "Open with" submenu
   is built, consumed by `on_menu_event` on click)
+- The pushed facts a page bar draws that the native items keep only inside muda: `show_hidden_checked`,
+  `pin_tab_pinned`, `same_kind_target`, `undo_trash_target` (also the Undo item's enabled input), and
+  `pushed_shortcuts` (every rebind as pushed). `page_bar` holds the page bar's feed. See "The bar a page draws".
 
 The search-results-only “Show in folder” row is gated by `ContextMenuPaneFacts::can_show_in_folder`, independently of
 `restrict_destination_actions`. Its handler emits `ShowSearchResultInFolder { path }` from `MenuContext.path`; it must
 not use `MenuContext.paths`, because that is the selection when the popup opened and the action names the primary
 right-clicked row itself. Its accelerator label is the live `nav.parent` binding looked up through `GO_PARENT_ID`.
+
+### The bar a page draws
+
+Off macOS the bar moves into the page (D5, task 63 of `docs/specs/windows-port-plan.md`). The page asks the backend for
+it, so every row still comes from `cmdr-menu` (`crates/cmdr-menu/DETAILS.md` § "The menus as a page draws them") and no
+row is decided here or in the frontend.
+
+- **`get_menu_bar`** answers `MenuBarAnswer { revision, menus }`, every menu of this platform's bar with each row's
+  catalog-key label, shown key, `aria-keyshortcuts`, enabled and checked state, and check kind. It reads
+  `page_bar::bar_inputs(MenuState)`, the same fields `apply_menu_item_states` and the native builders read, so the
+  page and the native bar can't disagree.
+- **`menu-bar-changed`** `{ revision, rows, menus }`: after every push (`commands/menu_state.rs`'s commands,
+  `update_menu_accelerator`, `set_menu_context`, a click's own check flip), `notify_bar_changed` redraws, diffs against
+  the last answer sent, and emits only when a row moved: `rows` holds the moved rows' states by id, or `menus` the whole
+  bar when its shape moved. Nothing is drawn or emitted until the first `get_menu_bar` (macOS never asks).
+- **Ordering contract** (the event-versus-answer race this codebase has been bitten by): the redraw, the revision bump,
+  and the emit happen under the one `page_bar` lock, and an answer takes the same lock, so revisions are dense and in
+  order across the command and the event. A page subscribes to `menu-bar-changed` first, then calls `get_menu_bar`,
+  keeps the answer's revision, drops any event at or below it, applies one at exactly the next revision, and on a gap
+  (an event further ahead) asks `get_menu_bar` again. An event that lands before the answer is buffered by that rule.
+- **Live labels** come from the same pushes the native items get (`update_select_same_kind_menu`,
+  `update_undo_trash_menu`, `update_pin_tab_menu`). ❗ The right-click Selection submenu's "same kind" label stays the
+  caller's live value (`show_file_context_menu`'s `same_kind`), never this one, which the frontend debounces.
+- **`pick_menu_bar_item(menuId)`** answers `BarPickOutcome::{Ran, NotLive}`: a greyed row, or an id the bar doesn't
+  build, runs nothing. A live one runs `menu_handlers::handle_menu_pick`, the handler a native click reaches
+  (`handle_menu_event` is a thin wrapper over it), after doing what a native check item does by itself: Show hidden
+  files flips its stored check (and the native item, where one is built) first, since the handler reads the new state
+  off it. The view-mode and sort lanes need no flip: they write every check from the stored state.
+- **The viewer's bar** is `get_viewer_menu_bar(inputs)`, a pure answer from the viewer page's own state
+  (`cmdr_menu::page::viewer`): no store, no event. Its picks go through `pick_menu_bar_item` too, to the focused viewer's
+  lanes; File > Close is `VIEWER_CLOSE_ID`, a lane only a page reaches (the native Close is the OS's own item).
+- A sync command runs on the main thread, as `on_menu_event` does, so a page's pick runs where a native one would.
 
 ### Accelerator sync
 

@@ -52,6 +52,10 @@ pub fn at_startup(app: &tauri::App, settings: &Settings) -> tauri::Result<()> {
     menu_state
         .has_existing_license
         .store(has_existing_license, std::sync::atomic::Ordering::Relaxed);
+    // The check the item was just built with, for the page bar (`page_bar.rs`).
+    menu_state
+        .show_hidden_checked
+        .store(settings.show_hidden_files, std::sync::atomic::Ordering::Relaxed);
     let main_menu = menu_state.store_item_refs(menu_items);
 
     // On macOS, keep a clone of the main menu so `activate_window_menu` can swap the

@@ -273,7 +273,9 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
 - **`menu_state.rs`**: the pushes that keep the menu BAR in step with the frontend: the view-mode + hidden-files +
   pin-tab + reopen-tab + same-kind-label + UI-language sync commands, the greying setters, and `activate_window_menu`
   (per-window focus-gain: swaps the macOS app menu bar between main/viewer, then enables/disables file-scoped items via
-  `menu::set_menu_context`, in `menu/item_states.rs`; see `menu/DETAILS.md`).
+  `menu::set_menu_context`, in `menu/item_states.rs`; see `menu/DETAILS.md`). Each push ends in
+  `menu::page_bar::notify_bar_changed`. Also the bar for a page that draws it: `get_menu_bar`, `get_viewer_menu_bar`,
+  and `pick_menu_bar_item`, pass-throughs to `apps/desktop/src-tauri/src/menu/page_bar.rs` (`menu/DETAILS.md` § The bar a page draws).
   - ❗ **`show_file_context_menu` holds a `ServicesLoan` across `popup()`** (macOS): AppKit's one Services menu is
     borrowed for the life of the menu and pointed at the right-clicked rows. `popup()` runs the whole tracking loop, so
     the binding is `let _services_loan = …` and ❌ never `let _ = …`; see `menu/DETAILS.md` § Services in the

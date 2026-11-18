@@ -1,6 +1,10 @@
 {
   "$comment": "Files under `files` are exempt from the claude-md-length check up to their recorded word count (plus a 10% growth buffer). Each entry is {\"words\": N, \"reason\": \"…\"}: the reason is mandatory and says why this doc gets to be long, or starts with `TODO: ` when it should be trimmed and the reason says what moves to the sibling DETAILS.md. The push-tier CLAUDE.md is auto-injected into agent context, so it has a ~600-word budget; the pull-tier DETAILS.md is unlimited and not checked. The check shrink-wraps the numbers on local runs, so a reason is the only part written by hand. See `scripts/check/checks/DETAILS.md § Allowlist consent`.",
   "files": {
+    "apps/desktop/src-tauri/src/menu/CLAUDE.md": {
+      "words": 640,
+      "reason": "TODO: back under 600 once task 63 step 10 (docs/specs/windows-port-plan.md) deletes `mnemonic_mask/`: its Linux GTK bullet (about 25 words) goes with it. The page-bar guardrail that tipped it over names a silent break (a push that skips `notify_bar_changed` leaves the in-window bar stale), so it stays."
+    },
     "apps/desktop/src-tauri/src/network/CLAUDE.md": {
       "words": 615,
       "reason": "TODO: trim to roughly 400 words; `DETAILS.md` has a section per bullet. Fold the keychain, NetFS, and subprocess rules into one line each pointing at their sections, and move the saved-share and re-register bullets' detail there."

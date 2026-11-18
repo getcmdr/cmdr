@@ -6,7 +6,7 @@ Native menu bars for macOS, Windows, and Linux, built from scratch in the user's
 
 The bar and every context menu as data are `crates/cmdr-menu/CLAUDE.md`; `menu_bar_builder.rs` builds the bar,
 `context_rows.rs` any popup, and `file_context_menu.rs` the file one with its macOS slots. `menu_structure.rs`: the
-viewer bar. `macos_appkit.rs`: the objc2 boundary. One line per file: DETAILS § File layout.
+viewer bar. `page_bar.rs`: the bar for a page. `macos_appkit.rs`: the objc2 boundary. One line per file: DETAILS § File layout.
 
 ## Must-knows
 
@@ -43,8 +43,10 @@ viewer bar. `macos_appkit.rs`: the objc2 boundary. One line per file: DETAILS §
 - **Linux GTK takes a bar title's `Alt+<letter>` before the page**: a modal surface turns mnemonics off
   (`mnemonic_mask/`); ❌ a dialog outside the gate loses those keys. DETAILS § A modal surface.
 - **Every label comes from `menu_t("menu.…")`, ❌ never a literal** (muda's Predefined text is English), **and
-  everything is keyed by ID, never title**. A language change rebuilds the whole bar and emits `menu-bar-rebuilt`, so
-  whatever the frontend pushed must be pushed again.
+  everything is keyed by ID, never title**. A language change rebuilds the bar (`menu-bar-rebuilt`); the frontend
+  re-pushes everything.
+- **A page draws the bar off macOS** (`page_bar.rs`): every push stores its fact in `MenuState` and ends in
+  `notify_bar_changed`, ❌ or the page bar goes stale. DETAILS § The bar a page draws.
 
 Architecture, flows, and decisions: `DETAILS.md`. Read it before any non-trivial work here: editing, planning,
 reorganizing, or advising.

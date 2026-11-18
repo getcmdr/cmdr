@@ -551,6 +551,9 @@ macro_rules! ipc_command_manifest {
                     crate::commands::menu_state::update_sort_menu,
                     crate::commands::menu_state::set_menu_mnemonics_suspended,
                     crate::commands::menu_state::get_menu_bar_title_mnemonics,
+                    crate::commands::menu_state::get_menu_bar,
+                    crate::commands::menu_state::get_viewer_menu_bar,
+                    crate::commands::menu_state::pick_menu_bar_item,
                 ]
                 dispatch_only: [
                     // Generic over `R: tauri::Runtime`, which `collect_functions!` can't take.
@@ -1224,8 +1227,9 @@ pub fn builder() -> Builder<tauri::Wry> {
             MenuBarRebuilt,
             OsLocalesChanged,
             SettingsChanged,
-            ViewModeChanged,           // emit_to("main")
-            MenuSort,                  // emit_to("main")
+            ViewModeChanged, // emit_to("main")
+            MenuSort,        // emit_to("main")
+            crate::menu::page_bar::MenuBarChanged,
             MediaIndexFolderExclusion, // emit_to("main") = "media-index-folder-exclusion"
             MediaIndexFolderChoice,    // emit_to("main") = "media-index-folder-choice"
             GlobalShortcutFired,

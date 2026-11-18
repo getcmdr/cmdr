@@ -83,6 +83,7 @@ mod mnemonic_mask;
 mod mnemonics;
 #[cfg(target_os = "macos")]
 pub mod open_with;
+pub(crate) mod page_bar;
 #[cfg(target_os = "macos")]
 mod provider_logos;
 mod rebuild;
@@ -450,10 +451,27 @@ pub struct MenuState<R: Runtime> {
     /// item's enabled state is recomputed from all its inputs at once. Starts `false`, matching the item as
     /// it's built.
     pub reopen_closed_tab_enabled: AtomicBool,
-    /// Whether a trash this session waits to be undone, deciding Edit > "Undo move to trash". Pushed by
-    /// `update_undo_trash_menu` (which also relabels the item), and stored for the same reason as
-    /// `reopen_closed_tab_enabled`. Starts `false`, matching the item as it's built.
-    pub undo_trash_available: AtomicBool,
+    /// The newest trash this session waits to undo, deciding Edit > "Undo move to trash" (enabled
+    /// while there is one) and naming it in the label. Pushed by `update_undo_trash_menu`, and
+    /// stored for the same reason as `reopen_closed_tab_enabled`. Starts `None`, matching the item
+    /// as it's built.
+    pub undo_trash_target: Mutex<Option<TrashUndoTarget>>,
+    /// What "Select all of the same kind" would select, as `update_select_same_kind_menu` last
+    /// pushed it: the item's label, kept so the page bar (`page_bar.rs`) draws the same words.
+    pub same_kind_target: Mutex<Option<SameKindTarget>>,
+    /// Whether the active tab is pinned, as `update_pin_tab_menu` last pushed it (Pin tab or Unpin
+    /// tab), kept for the page bar like `same_kind_target`.
+    pub pin_tab_pinned: AtomicBool,
+    /// "Show hidden files"' check, kept beside the `CheckMenuItem` so the page bar can draw it
+    /// without asking muda (which waits on the main thread). Every writer of the item's check
+    /// writes this too: `toggle_hidden_files`, `sync_menu_show_hidden`, and a click.
+    pub show_hidden_checked: AtomicBool,
+    /// Every shortcut `update_menu_accelerator` pushed onto a bar row, by menu id, as pushed (the
+    /// frontend's spelling, `""` for unbound): what the page bar reads its rebinds from, through
+    /// the same `rebound_row_key` door the native rebind takes.
+    pub pushed_shortcuts: Mutex<HashMap<String, String>>,
+    /// The page bar's feed: the last answer sent and its revision (`page_bar.rs`).
+    pub page_bar: Mutex<page_bar::BarFeed>,
     /// The frontend commands the main window's dialog gate refuses right now: every `BLOCKED_BY_DIALOGS`
     /// command while a dialog, an explorer overlay, or the command palette is up, and nothing once it's gone.
     /// Pushed by `set_commands_refused_over_dialog`, whose only writer is
@@ -571,7 +589,12 @@ impl<R: Runtime> Default for MenuState<R> {
             ),
             pin_tab: Mutex::new(None),
             reopen_closed_tab_enabled: AtomicBool::new(false),
-            undo_trash_available: AtomicBool::new(false),
+            undo_trash_target: Mutex::new(None),
+            same_kind_target: Mutex::new(None),
+            pin_tab_pinned: AtomicBool::new(false),
+            show_hidden_checked: AtomicBool::new(false),
+            pushed_shortcuts: Mutex::new(HashMap::new()),
+            page_bar: Mutex::new(page_bar::BarFeed::default()),
             commands_refused_over_dialog: Mutex::new(HashSet::new()),
             items: Mutex::new(HashMap::new()),
             untracked_items: Mutex::new(Vec::new()),
