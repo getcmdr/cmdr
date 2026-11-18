@@ -989,11 +989,11 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "feefb7f"
   },
-  "askCmdr.providerNotice.localNotSetUp": "A helyi AI még nincs letöltve, ezért az Ask Cmdr nem tud csevegni. Állítsd be a Beállításokban.",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {A helyi AI még nincs letöltve, ezért az Ask Cmdr nem tud csevegni. Állítsd be a Beállításokban.}}",
   "@askCmdr.providerNotice.localNotSetUp": {
     "sourceHash": "efaeacd"
   },
-  "askCmdr.providerNotice.localNotRunning": "A helyi AI nem fut, ezért az Ask Cmdr nem tud csevegni. Indítsd el a Beállításokban.",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {A helyi AI nem fut, ezért az Ask Cmdr nem tud csevegni. Indítsd el a Beállításokban.}}",
   "@askCmdr.providerNotice.localNotRunning": {
     "sourceHash": "786d469"
   },

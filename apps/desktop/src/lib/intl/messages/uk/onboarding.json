@@ -323,11 +323,11 @@
   "@onboarding.localDownloadFailed.title": {
     "sourceHash": "9612750"
   },
-  "onboarding.localDownloadFailed.body": "Запустіть викачування знову в Параметрах › ШІ.",
+  "onboarding.localDownloadFailed.body": "{platform, select, windows {Start it again from Settings › AI.} linuxGnome {Start it again from Preferences › AI.} linuxKde {Start it again from Configure Cmdr › AI.} other {Запустіть викачування знову в Параметрах › ШІ.}}",
   "@onboarding.localDownloadFailed.body": {
     "sourceHash": "6601872"
   },
-  "onboarding.localDownloadFailed.openSettings": "Відкрити параметри",
+  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Open Settings} linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Відкрити параметри}}",
   "@onboarding.localDownloadFailed.openSettings": {
     "sourceHash": "3f94010"
   },

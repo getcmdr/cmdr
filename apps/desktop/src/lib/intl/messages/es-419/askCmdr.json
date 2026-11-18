@@ -475,11 +475,11 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "9dcaed9"
   },
-  "askCmdr.providerNotice.localNotSetUp": "La IA local todavía no se descargó, así que Ask Cmdr no puede chatear. Prepárala en Configuración.",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {La IA local todavía no se descargó, así que Ask Cmdr no puede chatear. Prepárala en Configuración.}}",
   "@askCmdr.providerNotice.localNotSetUp": {
     "sourceHash": "aade8d0"
   },
-  "askCmdr.providerNotice.localNotRunning": "La IA local no está en marcha, así que Ask Cmdr no puede chatear. Iníciala en Configuración.",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {La IA local no está en marcha, así que Ask Cmdr no puede chatear. Iníciala en Configuración.}}",
   "@askCmdr.providerNotice.localNotRunning": {
     "sourceHash": "fbd98ad"
   },
