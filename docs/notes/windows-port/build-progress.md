@@ -38,3 +38,12 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
   `index-query`) fails in its own code with 11 errors, mostly its SMB and MTP index transports, gated to macOS and Linux
   while `indexing/handle/mod.rs` calls them unconditionally, plus the `platform_case` collation's missing Windows arm
   and `scanner/refusal.rs` comparing `libc::EPERM`.
+- **2026-11-18, `cmdr-index` and `index-query` compile** (leg 2): off the pending list (6 left). The SMB, MTP, ADB, and
+  local-external index transports were gated to macOS and Linux with Windows stubs beside them; both backends ship on
+  Windows (D2, task 21), so the gates and stubs went and the transports are every-host code. The `platform_case`
+  collation asks `cmdr_fs::name_fold::compare_for_comparison` (a new arm per OS beside `normalize_for_comparison`, so
+  collation and key can't disagree), and the scanner's refusal rule reads `OsErrorClass` where it compared
+  `libc::EPERM`. The Mac cross-check needs numkong's x86 SIMD targets off (`NK_TARGET_<ISA>=0` for each of the 11 x86
+  probes), since zig's clang refuses its AVX-512 kernels. On the builder: clippy `--all-targets -D warnings` clean in 53
+  s warm; nextest 1,753 of 1,911 passed, 111 failed, 47 timed out, nearly all app paths (#1225) and the cold-drive
+  fixture's walks never settling, filed with the clusters as #1232.
