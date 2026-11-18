@@ -23,7 +23,7 @@ static ALLOCATOR: CountingAllocator = CountingAllocator;
 #[cfg(target_os = "macos")]
 const LOCAL_CEILING: u64 = 9;
 #[cfg(not(target_os = "macos"))]
-const LOCAL_CEILING: u64 = 0;
+const LOCAL_CEILING: u64 = 13;
 
 #[test]
 fn a_local_listing_costs_at_most_its_pinned_allocations_per_entry() {

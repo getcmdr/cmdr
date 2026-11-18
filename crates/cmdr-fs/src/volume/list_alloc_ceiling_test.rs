@@ -13,8 +13,8 @@ use crate::volume::{InMemoryVolume, Volume};
 static ALLOCATOR: CountingAllocator = CountingAllocator;
 
 /// Allocations for one listed file over an empty folder in `InMemoryVolume`, measured
-/// 2026-11-18 (macOS and Linux, `cargo nextest`, debug build): the entry's parent, its
-/// cloned strings, and the result `Vec`'s first allocation.
+/// 2026-11-18 on macOS (`cargo nextest`, debug build; Linux stays within it): the entry's
+/// parent, its cloned strings, and the result `Vec`'s first allocation.
 const IN_MEMORY_CEILING: u64 = 5;
 
 #[test]
