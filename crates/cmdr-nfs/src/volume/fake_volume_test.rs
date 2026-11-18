@@ -390,7 +390,7 @@ async fn a_typed_path_under_the_export_resolves_to_the_export_and_a_start_folder
     assert_eq!(params.export(), FAKE_EXPORT);
     assert_eq!(params.start_folder.as_deref(), Some("/photos/2024"));
     assert_eq!(volume.volume_id(), params.volume_id());
-    assert_eq!(*volume.root().as_std_legacy(), Path::new(&params.app_root()));
+    assert_eq!(&*volume.root().as_std_legacy(), Path::new(&params.app_root()));
     assert_eq!(volume.sign_in_prompt(), SignInShape::Nothing);
 }
 
