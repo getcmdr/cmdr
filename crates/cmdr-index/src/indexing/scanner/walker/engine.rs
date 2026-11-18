@@ -31,6 +31,11 @@ const WORKER_STACK_SIZE: usize = 8 * 1024 * 1024;
 /// How long a pooled walker thread waits for the next walk before it exits.
 const WORKER_KEEP_ALIVE: Duration = Duration::from_secs(60);
 
+/// The most a COMPLETED walk waits for its workers to leave before it returns. They
+/// leave the moment they see `done` (no read is in flight once every task is
+/// accounted), so this only bounds a bug, never a normal walk.
+const WORKER_EXIT_WAIT: Duration = Duration::from_secs(1);
+
 /// The threads every production walk's workers run on. See [`UtilityPool`] for
 /// why they're pooled.
 pub(crate) static WALK_THREADS: UtilityPool = UtilityPool::new("index-walk", WORKER_STACK_SIZE, WORKER_KEEP_ALIVE);
@@ -79,6 +84,8 @@ pub fn walk<V: DirVisitor + 'static>(
         per_dir_delay: cfg.per_dir_delay,
         threads: cfg.threads,
         slots: Mutex::new(Vec::with_capacity(num_threads)),
+        live_workers: Mutex::new(0),
+        workers_out: Condvar::new(),
         #[cfg(test)]
         park: super::park::armed_for(&root.path),
         dirs_read: AtomicU64::new(0),
@@ -108,10 +115,13 @@ pub fn walk<V: DirVisitor + 'static>(
     }
 
     // The watchdog runs on the calling thread, which would otherwise only wait: it
-    // returns once the walk is done or cancelled, and that's when `walk` returns.
-    // Workers are intentionally not waited for: an abandoned one is parked in a
-    // syscall and would block forever.
+    // returns once the walk is done or cancelled. A COMPLETED walk then waits for its
+    // live workers to leave (microseconds: none is reading), so the next walk finds
+    // their threads idle in the pool instead of spawning more. An abandoned worker
+    // is never waited for (it's parked in a syscall and would block forever), and
+    // nor is a cancelled walk's (one may be mid-read).
     Arc::clone(&engine).run_watchdog(cfg.watchdog_interval);
+    engine.await_workers_out();
 
     WalkStats {
         dirs_read: engine.dirs_read.load(Ordering::Relaxed),
@@ -212,6 +222,22 @@ enum AbandonReason {
     OverAllowance,
 }
 
+/// A running worker's place in [`Engine::live_workers`], given up on drop.
+struct WorkerPresence<'a, V: DirVisitor + 'static> {
+    engine: &'a Engine<V>,
+    /// Set when the watchdog abandoned this worker's read: it already counted the
+    /// worker gone, so the drop mustn't count it twice.
+    abandoned: bool,
+}
+
+impl<V: DirVisitor + 'static> Drop for WorkerPresence<'_, V> {
+    fn drop(&mut self) {
+        if !self.abandoned {
+            self.engine.worker_left();
+        }
+    }
+}
+
 /// A worker's current-read slot. `None` between reads. Each worker owns one; the
 /// watchdog scans all of them.
 type Slot = Arc<Mutex<Option<InFlight>>>;
@@ -258,6 +284,16 @@ struct Engine<V: DirVisitor> {
     threads: &'static UtilityPool,
     /// One slot per live worker (initial + replacements). Grows on abandonment.
     slots: Mutex<Vec<Slot>>,
+    /// Workers started and not yet gone: a worker leaves when its job ends, or the
+    /// moment the watchdog abandons its read (its thread is then the syscall's, not
+    /// the walk's). A completed walk waits for this to reach zero, so the next walk
+    /// on the same pool finds those threads idle. Without the wait, `walk` returned
+    /// while its workers were still waking from `cv`, and on a loaded two-core box
+    /// nearly every walk spawned fresh threads (the Windows builder's flaky
+    /// `a_run_of_walks_reuses_its_threads`, 21 threads for 20 walks).
+    live_workers: Mutex<usize>,
+    /// Signalled when `live_workers` drops. Paired with `live_workers`.
+    workers_out: Condvar,
     /// The park point a test armed for this walk's root, if any (`park.rs`).
     #[cfg(test)]
     park: Option<Arc<super::park::Park>>,
@@ -317,10 +353,43 @@ impl<V: DirVisitor + 'static> Engine<V> {
     fn spawn_worker(self: Arc<Self>, slot: Slot) {
         let visitor = Arc::clone(&self.visitor);
         let threads = self.threads;
+        // Counted before the job can start, so it can't leave before it arrives.
+        *self.live_workers.lock_ignore_poison() += 1;
+        let engine = Arc::clone(&self);
         if let Err(e) = threads.execute(move || self.run_worker(slot)) {
             // A failed spawn only reduces capacity; the remaining workers still
             // drain the queue. Never panic a replacement (it'd abort mid-scan).
+            engine.worker_left();
             visitor.note_worker_spawn_failure(&e);
+        }
+    }
+
+    /// One worker is gone from the walk (its job ended, or its read was abandoned).
+    fn worker_left(&self) {
+        let mut live = self.live_workers.lock_ignore_poison();
+        *live = live.saturating_sub(1);
+        drop(live);
+        self.workers_out.notify_all();
+    }
+
+    /// After the watchdog returns: on a COMPLETED walk, wait for the live workers to
+    /// leave, bounded by [`WORKER_EXIT_WAIT`]. A cancelled walk returns at once, since
+    /// one of its workers may still be inside a read.
+    fn await_workers_out(&self) {
+        if self.outstanding.load(Ordering::SeqCst) != 0 {
+            return;
+        }
+        let live = self.live_workers.lock_ignore_poison();
+        let (live, waited) = self
+            .workers_out
+            .wait_timeout_while(live, WORKER_EXIT_WAIT, |live| *live > 0)
+            .unwrap_or_else(|e| e.into_inner());
+        if waited.timed_out() {
+            log::debug!(
+                target: LOG_TARGET,
+                "{} walk workers still out {WORKER_EXIT_WAIT:?} after the walk completed",
+                *live,
+            );
         }
     }
 
@@ -328,6 +397,12 @@ impl<V: DirVisitor + 'static> Engine<V> {
     /// or until the watchdog abandons its read. Runs as one job on the walk's pool,
     /// whose threads are already `Utility` QoS, so the walk yields CPU to the UI.
     fn run_worker(self: Arc<Self>, slot: Slot) {
+        // Leaves the walk however this job ends, a panic included, unless the
+        // watchdog already counted it gone by abandoning its read.
+        let mut presence = WorkerPresence {
+            engine: &*self,
+            abandoned: false,
+        };
         loop {
             // Pop the next task, or exit when the walk is done/cancelled.
             let scheduled = {
@@ -399,6 +474,7 @@ impl<V: DirVisitor + 'static> Engine<V> {
                 .compare_exchange(READING, COMPLETED, Ordering::SeqCst, Ordering::SeqCst)
                 .is_err()
             {
+                presence.abandoned = true;
                 return;
             }
             *slot.lock_ignore_poison() = None;
@@ -518,6 +594,8 @@ impl<V: DirVisitor + 'static> Engine<V> {
                     continue;
                 }
                 *slot.lock_ignore_poison() = None;
+                // Its thread belongs to the hung syscall now, not to the walk.
+                self.worker_left();
                 self.timed_out.fetch_add(1, Ordering::Relaxed);
                 let delivered = cmdr_fs::pluralize::pluralize_with(entries, "entry", "entries");
                 match reason {

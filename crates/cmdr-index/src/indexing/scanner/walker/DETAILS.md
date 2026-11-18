@@ -20,10 +20,15 @@ is offline, which froze the whole scan.
   read the watchdog condemns is **abandoned**: reported as a read error (subtree pruned, dir left unmarked), a
   replacement worker is started to restore capacity, and the stuck worker is left parked in the syscall (its job ends
   when the File Provider layer finally errors). Only genuinely-hung _frontier_ dirs reach this, each pruning its
-  subtree, so the parked-worker cost is bounded and self-clearing. Workers are NOT waited for (an abandoned one would
-  block forever); the walk returns when the outstanding-task count hits zero. The reader is an injected `ReadDirFn`
-  (production `bulk_read_dir` on macOS, `std_read_dir` elsewhere, tests a mock that blocks or trickles), so hang /
-  big-but-healthy / honest-skip / parallel-correctness are unit-tested with no real hung mount.
+  subtree, so the parked-worker cost is bounded and self-clearing. The walk returns when the outstanding-task count hits
+  zero, after its LIVE workers leave (`live_workers`, at most `WORKER_EXIT_WAIT`): none is reading by then, so that's
+  microseconds, and it's what lets the next walk find their threads idle in the pool. An abandoned worker leaves the
+  count the moment the watchdog claims its read and is never waited for (it would block forever), nor is a cancelled
+  walk's. Why the wait: without it a loaded two-core Windows box spawned fresh threads on nearly every walk
+  (`a_run_of_walks_reuses_its_threads`, 21 for 20 walks; verified on the Windows 10 builder, nextest stress under CPU
+  load, 2026-11-18). The reader is an injected `ReadDirFn` (production `bulk_read_dir` on macOS, `std_read_dir`
+  elsewhere, tests a mock that blocks or trickles), so hang / big-but-healthy / honest-skip / parallel-correctness are
+  unit-tested with no real hung mount.
 - **Where the threads come from.** A worker is one job on `WalkConfig::threads`, production's process-wide
   `WALK_THREADS` (`cmdr_fs::utility_pool::UtilityPool`: `Utility` QoS, 8 MB stacks, a 60 s keep-alive). The pool hands
   each job an idle thread or spawns one, and never queues a job behind a busy thread, so every walk still gets its full
