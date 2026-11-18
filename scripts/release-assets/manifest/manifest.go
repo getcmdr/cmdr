@@ -218,10 +218,11 @@ type Release struct {
 
 // For resolves what a release of this version publishes: the rows of `ShippedOSes`.
 func For(version string) Release {
-	return Resolve(version, shipped(Assets, ShippedOSes))
+	return ForOSes(version, ShippedOSes...)
 }
 
-// ForOSes resolves what a release would publish with oses shipped: tests, and nothing else.
+// ForOSes resolves what a release would publish with oses shipped (`For` with `ShippedOSes`;
+// tests pass others).
 func ForOSes(version string, oses ...OS) Release {
 	return Resolve(version, shipped(Assets, oses))
 }

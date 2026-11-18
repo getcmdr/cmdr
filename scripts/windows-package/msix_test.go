@@ -105,7 +105,9 @@ func TestAnMSIXHoldsTheUnstampedExeTheResourcesAndTheVersion(t *testing.T) {
 	must(t, buildMSIX(msixInput{root: root, exe: fakeExe(t, string(unstampedMarker)), out: out, identity: id, version: "0.70.0.0", pack: zipPack}))
 
 	zr, err := zip.OpenReader(out)
-	must(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer func() { _ = zr.Close() }()
 	var names []string
 	for _, f := range zr.File {
@@ -175,7 +177,9 @@ func TestTheGroupPolicyZipHoldsTheTemplateOnly(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "cmdr-group-policy-0.70.0.zip")
 	must(t, zipGroupPolicy(filepath.Join(repoRoot(t), groupPolicyDir), out))
 	zr, err := zip.OpenReader(out)
-	must(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer func() { _ = zr.Close() }()
 	var names []string
 	for _, f := range zr.File {
