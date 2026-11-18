@@ -16,10 +16,11 @@ const appPathStdBridgeAllowlistRelPath = "scripts/check/checks/app-path-std-brid
 // appPathModuleDir is where the bridge is defined and tested; its calls there aren't uses.
 const appPathModuleDir = "crates/cmdr-fs/src/app_path/"
 
-// appPathStdBridgePattern matches a call of either bridge function: the one door from
-// `std::path` into an app path that skips validation (`AppPath::legacy_unchecked`), and the
-// one way back out for `std::path` arithmetic (`.as_std_legacy()`).
-var appPathStdBridgePattern = gateRegexp(regexp.MustCompile(`\b(legacy_unchecked|as_std_legacy)\s*\(`))
+// appPathStdBridgePattern matches a call of a bridge function: the one door from `std::path`
+// into an app path that skips validation (`AppPath::legacy_unchecked`), the one way back out
+// for `std::path` arithmetic (`.as_std_legacy()`), and the field form for a borrowed return
+// (`BridgedPath::new`, milestone 4's `root()` rule).
+var appPathStdBridgePattern = gateRegexp(regexp.MustCompile(`\b(legacy_unchecked|as_std_legacy|BridgedPath::new)\s*\(`))
 
 // appTextToPathPatterns match app TEXT becoming a `std::path` value: a `FileEntry.path` or
 // `.name` (or any app path's `.as_str()`) handed to `Path::new`, `PathBuf::from`,

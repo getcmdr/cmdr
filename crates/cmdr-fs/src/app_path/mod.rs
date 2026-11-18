@@ -40,6 +40,7 @@ mod traits;
 
 use std::borrow::Cow;
 
+pub use bridge::BridgedPath;
 pub use escape::{
     EscapeRefusal, Namer, canonical_name, escape_bytes, escape_units, is_escape, native_name_length, shown_name,
     unescape_bytes, unescape_units,
@@ -620,5 +621,7 @@ macro_rules! app_path {
 
 #[cfg(test)]
 mod bridge_test;
+#[cfg(test)]
+mod flip_shapes_test;
 #[cfg(test)]
 mod tests;

@@ -237,7 +237,12 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
 - **The transition bridge** (`legacy_unchecked`, `as_std_legacy`) lets the `Volume` trait take app paths while bodies
   still do `std::path` arithmetic. It never validates or normalizes, and it's lossless: a property test holds
   `legacy_unchecked(p).as_std_legacy()` to `p`'s exact `OsStr` bytes or units, ❌ never `Path ==`, which ignores a
-  trailing `/`. `app-path-std-bridge` counts every call per file on a shrinking ratchet.
+  trailing `/`. `app-path-std-bridge` counts every call per file on a shrinking ratchet. A path a `Volume` returns BY
+  REFERENCE (`root`) lives in a `BridgedPath` field (native plus app spelling, made once; it reads as the `Path` it
+  holds, and `.app()` is the return), since a `legacy_unchecked` `Cow` can't be returned borrowed. ❗ A same-named
+  method on a value the flip typed (`starts_with`, `strip_prefix`, `join`, …) drops to `as_std_legacy()`, ❌ never lifts
+  its argument through the bridge: the typed method answers differently on bridge values. Both rules are milestone 4's,
+  pinned in `app_path/flip_shapes_test.rs`.
 - **Cost**: `join` is one `String` sized exactly; `parent`, `file_name`, `names`, `starts_with`, `strip_prefix`, the
   comparisons, and the bridge over UTF-8 text allocate nothing (`tests/app_path_allocations.rs`, a counting allocator).
   The listing's row path today, `PathBuf::join` then `to_string_lossy().into_owned()`, is three allocations.

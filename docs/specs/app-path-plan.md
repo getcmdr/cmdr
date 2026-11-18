@@ -1127,8 +1127,36 @@ included; the hidden couplings it found are why waves B and C differ from round 
        (else `unused_variables` reddens clippy); `E0308` at a call whose expected type is `&AppPath`: a canonical string
        literal inside `Path::new(…)`/`PathBuf::from(…)` becomes `app_path!(…)`, anything else
        `&AppPath::legacy_unchecked(&…)`; a returned `AppPathBuf` used as a `Path` gets `.as_std_legacy()`. Re-run until
-       the crate checks or no rule applies. Type-driven, so a native `Path::new` fixture that never meets a `Volume`
-       method is never touched (a textual sed would have rewritten all 4,800 literals, native ones included).
+       the crate checks or no rule applies. Two rules settled in the type's third review (2026-11-18), both pinned in
+       `crates/cmdr-fs/src/app_path/flip_shapes_test.rs`:
+       - **A borrowed return** (`root() -> &AppPath`, `stands_in_for_own_disk()` and
+         `local_backing_file() -> Option<&AppPath>`): `&AppPath::legacy_unchecked(&self.root)` is a temporary (`E0515`),
+         so on an `E0515` or `E0308` in such a method the codemod retypes the FIELD the method returns from `PathBuf` to
+         `cmdr_fs::app_path::BridgedPath` (native path plus its app spelling, made once, lossless) and returns
+         `self.root.app()` (`.then_some(self.archive_path.app())`, `.as_ref().map(BridgedPath::app)` for an `Option`
+         field). Every body use of the field compiles unchanged through `Deref<Target = Path>`; each constructor's
+         `root: path` becomes `root: BridgedPath::new(path)` (an `E0308` there); a `.clone()` or move of the field into
+         a `PathBuf` slot is residue (`.to_path_buf()`). A root that delegates to a helper (`self.root.app_root()`,
+         `RemoteRoot`) retypes the helper's field the same way and the helper returns `&BridgedPath`. A literal root
+         (`Path::new("/")`, the test volumes) becomes `AppPath::from_normalized("/").expect("a canonical literal")`, a
+         `&'static AppPath` in production too. A root with no field to hold it (`self.root.path()` on a `TempDir`) gains
+         a `BridgedPath` field beside it in its constructor: residue. ❌ No borrowed `legacy_unchecked_ref`: it has no
+         answer for a non-UTF-8 mount point. `BridgedPath::new` is counted by `app-path-std-bridge` like the bridge's
+         two functions, and each crate's own milestone turns the field into a plain `AppPathBuf`.
+       - **A `std::path` method on a receiver the flip typed** (`let r = volume.root(); r.starts_with(&pathbuf)`, the
+         in-process types, a `listing_path` result): the `E0308` "expected `&AppPath`" rule applies ONLY when the callee
+         is a `Volume` method or a helper listed beside the trait. When the callee is an `AppPath` / `AppPathBuf` method
+         that `Path` also has (`starts_with`, `strip_prefix`, `relative_to`, `join`, `parent`, `file_name`, `extension`,
+         `file_stem`, `with_file_name`, `ends_with`, `components`, `rebase`), the codemod rewrites the RECEIVER to
+         `.as_std_legacy()` and leaves the argument native, so `Path` answers exactly as today; ❌ never the argument to
+         `legacy_unchecked`. The two answer differently on bridge values (`/a/../b/c` under `/a`, a relative `photos/x`
+         under `photos`, `//Users/d/Docs` under `/Users`: `Path` says yes, the typed method no), so the lift would be a
+         silent behavior change. Same for residue: an app-path value meeting `Path` arithmetic always drops to
+         `as_std_legacy()`. The residue audit greps `legacy_unchecked(` used as an argument to
+         `starts_with|strip_prefix|relative_to|rebase|is_on_volume|same_root|join|ends_with`, and every hit is a
+         finding. The typed twins are for each crate's own later milestone, which flips its pins on purpose.
+         Type-driven, so a native `Path::new` fixture that never meets a `Volume` method is never touched (a textual sed
+         would have rewritten all 4,800 literals, native ones included).
     3. `residue.patch`: what the codemod can't do (generic `P: AsRef<Path>` helpers that forward to a volume, closures
        whose parameter types are inferred, macros, non-canonical literals). Written by the tier agents, kept as its own
        commit per crate.

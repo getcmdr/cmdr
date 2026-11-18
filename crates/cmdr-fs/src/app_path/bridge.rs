@@ -15,11 +15,67 @@
 //!
 //! Every call is counted per file by the `app-path-std-bridge` check, and both functions go
 //! once that count reaches zero.
+//!
+//! [`BridgedPath`] is the bridge for a path a `Volume` RETURNS by reference (`root`,
+//! `stands_in_for_own_disk`, `local_backing_file`): `legacy_unchecked` answers a `Cow`, which
+//! can't be returned as `&AppPath` (E0515), so the field holds both spellings, made once.
 
 use std::borrow::Cow;
-use std::path::Path;
+use std::ops::Deref;
+use std::path::{Path, PathBuf};
 
 use super::{AppPath, AppPathBuf, platform};
+
+/// A native path held beside its app spelling, both made once at construction, so a `Volume`
+/// can hand out `&AppPath` for a field (`fn root(&self) -> &AppPath { self.root.app() }`) while
+/// every body use of the field keeps reading `std::path` through `Deref<Target = Path>`
+/// unchanged. The milestone 4 codemod retypes such a field from `PathBuf`; each crate's own
+/// milestone turns it into a plain `AppPathBuf`, and the type goes with the bridge
+/// (milestone 11). Lossless: the app side is [`AppPath::legacy_unchecked`]'s, so a non-UTF-8
+/// mount point survives. Counted by `app-path-std-bridge` like the bridge's two functions.
+#[derive(Debug, Clone)]
+pub struct BridgedPath {
+    native: PathBuf,
+    app: AppPathBuf,
+}
+
+impl BridgedPath {
+    /// `native`, with its app spelling made now.
+    pub fn new(native: PathBuf) -> BridgedPath {
+        let app = AppPath::legacy_unchecked(&native).into_owned();
+        BridgedPath { native, app }
+    }
+
+    /// The app spelling: what a `Volume` method returns.
+    pub fn app(&self) -> &AppPath {
+        &self.app
+    }
+
+    /// The native path, exactly as given.
+    pub fn as_path(&self) -> &Path {
+        &self.native
+    }
+
+    /// The native path, owned.
+    pub fn into_path_buf(self) -> PathBuf {
+        self.native
+    }
+}
+
+/// A native-side value: it reads as the `Path` it holds, so a body's `self.root.join(x)`
+/// compiles unchanged. ❗ Never the other way: the app side is only [`BridgedPath::app`].
+impl Deref for BridgedPath {
+    type Target = Path;
+    fn deref(&self) -> &Path {
+        &self.native
+    }
+}
+
+impl AsRef<Path> for BridgedPath {
+    fn as_ref(&self) -> &Path {
+        &self.native
+    }
+}
 
 impl AppPath {
     /// `path` as an app path, unchecked and unnormalized; borrowed when its text is valid
