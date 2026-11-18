@@ -5,7 +5,7 @@
   },
   "servers.hub.discoveryOffLink": "{platform, select, windows {Actívala en Configuración} linuxGnome {Actívala en Preferencias} linuxKde {Actívala en Configurar Cmdr} other {Actívala en Configuración}}",
   "@servers.hub.discoveryOffLink": {
-    "sourceHash": "6e3075e"
+    "sourceHash": "f629ffa"
   },
   "servers.hub.emptyMessage": "{platform, select, macos {Agrega uno aquí abajo, o enciende un Mac o un NAS de tu red y Cmdr lo encontrará.} windows {Agrega uno aquí abajo, o enciende un PC o un NAS de tu red y Cmdr lo encontrará.} other {Agrega uno aquí abajo, o enciende una computadora o un NAS de tu red y Cmdr lo encontrará.}}",
   "@servers.hub.emptyMessage": {

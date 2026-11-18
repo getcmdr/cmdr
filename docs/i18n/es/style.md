@@ -58,8 +58,9 @@ The must-know rules; the rest of this file elaborates them.
   - delete → `Eliminar`; clear (and Cmdr's own leftovers) → `borrar`; remove from a list → `Quitar`; forget → `olvidar`;
     dismiss a notice → `Descartar`.
   - move → `Mover` (❌ Finder's `trasladar`); rename → `renombrar`, also in prose; its noun → `el cambio de nombre`.
-  - default → `por omisión` (❌ `predeterminado`); settings → `Ajustes` (❌ `Configuración`); add → `añadir` (❌
-    `agregar`); click → `hacer clic`, press a KEY → `pulsar`; Enter → `Intro`.
+  - default → `por omisión` (❌ `predeterminado`); settings → `Ajustes` (❌ `Configuración`, which is Microsoft's word
+    and right only in a `windows` branch); add → `añadir` (❌ `agregar`); click → `hacer clic`, press a KEY → `pulsar`;
+    Enter → `Intro`.
   - file → `archivo`; archive → `archivo comprimido`; item → `elemento`; drive → `unidad`, but the drive being ejected →
     `disco`; parent folder → `carpeta superior`; root folder → `carpeta raíz`; home folder → `carpeta de inicio`.
   - operation queue → `Cola de operaciones`; queued → `Esperando` (no other status starts with it); rollback →

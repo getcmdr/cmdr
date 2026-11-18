@@ -5,7 +5,7 @@
   },
   "queryUi.ai.cloudOff.body": "{platform, select, windows {La IA en la nube está desactivada. Permítela en Configuración > IA para usar esto.} linuxGnome {La IA en la nube está desactivada. Permítela en Preferencias > IA para usar esto.} linuxKde {La IA en la nube está desactivada. Permítela en Configurar Cmdr > IA para usar esto.} other {La IA en la nube está desactivada. Permítela en Configuración > IA para usar esto.}}",
   "@queryUi.ai.cloudOff.body": {
-    "sourceHash": "c6e93a8"
+    "sourceHash": "74e7ba6"
   },
   "queryUi.ai.openSettings": "Abrir la configuración de IA",
   "@queryUi.ai.openSettings": {

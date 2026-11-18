@@ -5,7 +5,7 @@
   },
   "commands.appSettings.label": "{platform, select, windows {Abrir la configuración} linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir la configuración}}",
   "@commands.appSettings.label": {
-    "sourceHash": "7fc2223"
+    "sourceHash": "0ee74e6"
   },
   "commands.helpSendErrorReport.label": "Enviar reporte de error…",
   "@commands.helpSendErrorReport.label": {
@@ -145,11 +145,11 @@
   },
   "commands.handler.openTerminalHere.hint": "{platform, select, windows {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configuración, en “Navegación y operaciones de archivos”.} linuxGnome {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Preferencias, en “Navegación y operaciones de archivos”.} linuxKde {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configurar Cmdr, en “Navegación y operaciones de archivos”.} other {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configuración, en “Navegación y operaciones de archivos”.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "bee23b7"
+    "sourceHash": "4187a58"
   },
   "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Abrir la configuración} linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir la configuración}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "7fc2223"
+    "sourceHash": "0ee74e6"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} ya no está instalada, así que esto se abrió en Terminal.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -169,7 +169,7 @@
   },
   "commands.handler.viewDebugLog.disabled": "{platform, select, windows {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configuración > Avanzado y reinicia Cmdr para ver el registro de depuración.} linuxGnome {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Preferencias > Avanzado y reinicia Cmdr para ver el registro de depuración.} linuxKde {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configurar Cmdr > Avanzado y reinicia Cmdr para ver el registro de depuración.} other {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configuración > Avanzado y reinicia Cmdr para ver el registro de depuración.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "28b8a1d"
+    "sourceHash": "3185a96"
   },
   "commands.handler.getInfo.openAutomationSettings": "Abrir la configuración de {automation}",
   "@commands.handler.getInfo.openAutomationSettings": {
