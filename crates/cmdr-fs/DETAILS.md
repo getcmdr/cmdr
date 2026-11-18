@@ -815,17 +815,20 @@ cache until that thread's next use, which a retirement epoch (one atomic load wh
   thread holds.
 
 A connection opened AFTER the retirement is kept, which is what lets a recreated database be cached normally: the
-retirement only reaches the slots registered when it ran.
+retirement only reaches the slots registered when it ran. A slot is registered empty and locked BEFORE its `open`, so a
+retirement that runs mid-open sees it, waits, and closes what the open made. A hit runs `f` on the entry in place, so a
+panic in `f` leaves the connection cached and counted.
 
 `delete_database(db_path)` is the one way a database file is removed: retire, unlink the main file and its `-wal` and
 `-shm`, retire again. The second retirement covers a reader that opened between the first one and the unlink, which
-would otherwise be left holding the unlinked file. A missing file is fine, every file is attempted, and the first
-refusal is returned. ⚠️ It only reaches cached READ connections: the caller stops whatever writes the database first.
-Every place that deletes or replaces a database goes through it (the index reset, the importance, media, and visits
-stores, the operation log's and `main.db`'s set-aside), and "Delete all Cmdr data" closes the caches under each target
-with `retire_read_connections_under` before it moves the folder. `cmdr-index` builds its per-volume removal on it
-(`crates/cmdr-index/DETAILS.md` § "A volume's files, and the one door they leave by"), and the three stores'
-schema-mismatch wipes call it too.
+would otherwise be left holding the unlinked file. A refused unlink retires once more and tries again (Windows refuses
+while a handle is open, and a reader may have opened in between). A missing file is fine, every file is attempted, and
+the second attempt's first refusal is returned. ⚠️ It only reaches cached READ connections: the caller stops whatever
+writes the database first. Every place that deletes or replaces a database goes through it (the index reset, the
+importance, media, and visits stores, the operation log's and `main.db`'s set-aside), and "Delete all Cmdr data" closes
+the caches under each target with `retire_read_connections_under` before it moves the folder. `cmdr-index` builds its
+per-volume removal on it (`crates/cmdr-index/DETAILS.md` § "A volume's files, and the one door they leave by"), and the
+three stores' schema-mismatch wipes call it too.
 
 ## What the app kept, and why
 

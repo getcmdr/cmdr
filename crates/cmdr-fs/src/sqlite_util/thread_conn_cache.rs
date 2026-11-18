@@ -161,12 +161,14 @@ impl ThreadConnCache {
             .iter()
             .position(|entry| entry.db_path == db_path && entry.generation == generation)
         {
-            let entry = self.entries.remove(hit);
-            let guard = entry.slot.lock_ignore_poison();
+            // In place, ❌ never taken out of `entries` first: a panic in `f` would drop
+            // the entry, and its connection with it, uncounted.
+            let slot = Arc::clone(&self.entries[hit].slot);
+            let guard = slot.lock_ignore_poison();
             if let Some(conn) = guard.as_ref() {
                 let answer = f(conn);
                 drop(guard);
-                self.entries.insert(0, entry);
+                self.entries[..=hit].rotate_right(1);
                 return Ok(answer);
             }
             // A retirement emptied it after the sweep above: open afresh below.
@@ -181,29 +183,31 @@ impl ThreadConnCache {
             }
             !stale
         });
-        let slot: Slot = Arc::new(Mutex::new(Some(open(db_path)?)));
+        // The slot is registered, locked and empty, BEFORE the open: a retirement that
+        // runs while this thread is still opening finds it and waits, then closes what
+        // the open made. Registered after, the open could slip in between a delete's
+        // retirement and its unlink, which Windows refuses while a handle is open.
+        let slot: Slot = Arc::new(Mutex::new(None));
+        let mut guard = slot.lock_ignore_poison();
+        register(db_path, &slot);
+        let conn = guard.insert(open(db_path)?);
         count_read_connection_opened();
         if self.entries.len() >= self.capacity
             && let Some(evicted) = self.entries.pop()
         {
             close(&evicted.slot);
         }
-        // Locked BEFORE it's registered, so a retirement that finds it waits for
-        // `f` rather than closing it under this first use.
-        let guard = slot.lock_ignore_poison();
-        register(db_path, &slot);
+        let answer = f(conn);
+        drop(guard);
         self.entries.insert(
             0,
             CachedConn {
                 db_path: db_path.to_path_buf(),
                 generation,
-                slot: Arc::clone(&slot),
+                slot,
             },
         );
-        let conn = guard
-            .as_ref()
-            .expect("a slot holds its connection until someone takes it, and this thread holds its lock");
-        Ok(f(conn))
+        Ok(answer)
     }
 
     /// Test-only: the generation this thread holds an open connection at for
