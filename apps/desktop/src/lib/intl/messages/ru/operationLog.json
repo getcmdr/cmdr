@@ -15,9 +15,9 @@
   "@operationLog.dialog.empty": {
     "sourceHash": "2dea414"
   },
-  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Preferences to record them again.} linuxKde {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Configure Cmdr to record them again.} other {Журнал операций сейчас не ведет запись, поэтому новые операции копирования, перемещения, переименования и удаления здесь не появляются и их нельзя отменить. Включите ее снова в настройках, чтобы операции снова записывались.}}",
+  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {Журнал операций сейчас не ведет запись, поэтому новые операции копирования, перемещения, переименования и удаления здесь не появляются и их нельзя отменить. Включите ее снова в параметрах, чтобы операции снова записывались.} linuxKde {Журнал операций сейчас не ведет запись, поэтому новые операции копирования, перемещения, переименования и удаления здесь не появляются и их нельзя отменить. Включите ее снова в окне «Настроить Cmdr», чтобы операции снова записывались.} other {Журнал операций сейчас не ведет запись, поэтому новые операции копирования, перемещения, переименования и удаления здесь не появляются и их нельзя отменить. Включите ее снова в настройках, чтобы операции снова записывались.}}",
   "@operationLog.dialog.recordingOff": {
-    "sourceHash": "0519736"
+    "sourceHash": "3204ad8"
   },
   "operationLog.dialog.noItems": "У этой операции нет записанных объектов.",
   "@operationLog.dialog.noItems": {

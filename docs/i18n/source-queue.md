@@ -223,6 +223,17 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   Windows users see Apple's word for Cmdr's window (`menu.app.settings`'s `windows` branch says `Réglages` to match the
   title). If Cmdr's window should follow each OS's word, the title and every pointer need a `windows` branch; German,
   Dutch, and Swedish don't split there, French does (and likely others). (fr)
+- The `preferences` concept (an OS or device label, like Android's USB Preferences) now matches every `linuxGnome`
+  branch that names Cmdr's own window "Preferences" (`settings.window.title`, `onboarding.stepOptional.changeAnytime`,
+  and about 60 more), so `i18n-termbase` judges GNOME's name for Cmdr's window against the Android ruling. ru and hu
+  needed `other` forms to pass. Proposal: a `notMatch` for the GNOME window sense, or fold it into the `settings`
+  concept's Linux forms. (cs, ru, uk, hu)
+- `settings-window-name.test.ts` pins the KDE title and menu item to the same first word, which holds in English
+  ("Configure – Cmdr" / "Configure Cmdr…") and cs, but KDE's own catalogs split them in other languages: ru title
+  `Настройка – Cmdr` vs menu `Настроить Cmdr…`, uk `Налаштовування – Cmdr` vs `Налаштувати Cmdr…` (dolphin.po
+  `Configure` `@title:window` vs `Configure…` `@action:inmenu`), and hu `Beállítások – Cmdr` vs `Cmdr beállítása…` (word
+  order). We followed KDE; they share a root. If the test ever runs per locale, it needs a root match, not a first-word
+  match. (ru, uk, hu)
 
 ## Process feedback
 
@@ -356,3 +367,8 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   refused process substitution and a `for` loop over `jq`. Each locale's `configure` ruling needed the KDE word
   (`configureren`, `anpassa`) as an `accept` to clear 46–56 termbase warnings at once; an `other`/`linuxKde` form on a
   ruling scoped to the KDE branch would be more precise. (de, nl, sv, fr)
+- Third translator to fetch `kwalletd6.po` by hand for the KDE Wallet name: KDE calls it `úschovna KDE`, `бумажник KDE`,
+  `торбинка KDE`, and `KDE jelszókezelő`. `?view=co` works; the `*checkout*` URL 404s. The guard also refused
+  `cd … && git commit`, so the run needed a read-only `node` dump of each key's English and current value per locale
+  (the brief's keys section is 38k tokens for 89 one-word per-OS edits) and a one-off rewrite of my own `values.json`. A
+  compact "current values only" brief mode would have saved most of the reading. (cs, ru, uk, hu)

@@ -21,7 +21,7 @@
   },
   "crashReporter.dialog.privacyNote": "{platform, select, macos {Obsahuje verzi aplikace, verzi macOS a místo v kódu, kde k problému došlo. Žádné názvy souborů ani osobní údaje.} windows {Obsahuje verzi aplikace, verzi Windows a místo v kódu, kde k problému došlo. Žádné názvy souborů ani osobní údaje.} other {Obsahuje verzi aplikace, distribuci a verzi Linuxu a místo v kódu, kde k problému došlo. Žádné názvy souborů ani osobní údaje.}}",
   "@crashReporter.dialog.privacyNote": {
-    "sourceHash": "ebe2d23"
+    "sourceHash": "6f58653"
   },
   "crashReporter.dialog.reportIdLabel": "Referenční ID zprávy:",
   "@crashReporter.dialog.reportIdLabel": {
@@ -71,9 +71,9 @@
   "@crashReporter.sentToast.message.report": {
     "sourceHash": "a676ed5"
   },
-  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {Change in Preferences} linuxKde {Change in Configure Cmdr} other {Změnit v Nastavení}}",
+  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {Změnit v Předvolbách} linuxKde {Změnit v okně Nastavit Cmdr} other {Změnit v Nastavení}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "144d0bd"
+    "sourceHash": "c3fff1a"
   },
   "crashReporter.sentToast.sendLog": "Přiložit protokoly",
   "@crashReporter.sentToast.sendLog": {

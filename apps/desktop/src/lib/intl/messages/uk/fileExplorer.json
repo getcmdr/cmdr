@@ -341,9 +341,9 @@
   "@fileExplorer.functionKeyBar.terminalLabel": {
     "sourceHash": "e0926fd"
   },
-  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {Панель функціональних клавіш приховано. Її можна будь-коли знову ввімкнути в <settingsLink>Параметрах</settingsLink>.} linuxGnome {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Preferences</settingsLink>.} linuxKde {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Configure Cmdr</settingsLink>.} other {Панель функціональних клавіш приховано. Її можна будь-коли знову ввімкнути в <settingsLink>Параметрах</settingsLink>.}}",
+  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {Панель функціональних клавіш приховано. Її можна будь-коли знову ввімкнути в <settingsLink>Параметрах</settingsLink>.} linuxGnome {Панель функціональних клавіш приховано. Її можна будь-коли знову ввімкнути в <settingsLink>Налаштуваннях</settingsLink>.} linuxKde {Панель функціональних клавіш приховано. Її можна будь-коли знову ввімкнути у вікні <settingsLink>«Налаштувати Cmdr»</settingsLink>.} other {Панель функціональних клавіш приховано. Її можна будь-коли знову ввімкнути в <settingsLink>Параметрах</settingsLink>.}}",
   "@fileExplorer.functionKeyBar.hiddenToast": {
-    "sourceHash": "cb00b6d"
+    "sourceHash": "a829741"
   },
   "fileExplorer.typeToJump.prefix": "Перехід: ",
   "@fileExplorer.typeToJump.prefix": {
@@ -521,9 +521,9 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Облікові дані збережено локально (Диспетчер облікових даних недоступний)} linuxKde {Облікові дані збережено локально (KWallet недоступний)} other {Облікові дані збережено локально (системну вʼязку ключів не виявлено)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Облікові дані збережено локально (Диспетчер облікових даних недоступний)} linuxKde {Облікові дані збережено локально (торбинка KDE недоступна)} other {Облікові дані збережено локально (системну вʼязку ключів не виявлено)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
-    "sourceHash": "d279dc9"
+    "sourceHash": "438153a"
   },
   "fileExplorer.network.share.notFound": "Спільну папку «{shareName}» не знайдено на сервері «{hostName}»",
   "@fileExplorer.network.share.notFound": {
@@ -557,9 +557,9 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Вилучити збережений пароль із вʼязки ключів} windows {Вилучити збережений пароль із Диспетчера облікових даних} linuxKde {Вилучити збережений пароль із KWallet} other {Вилучити збережений пароль із вашої вʼязки ключів}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Вилучити збережений пароль із вʼязки ключів} windows {Вилучити збережений пароль із Диспетчера облікових даних} linuxKde {Вилучити збережений пароль із торбинки KDE} other {Вилучити збережений пароль із вашої вʼязки ключів}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "3d21c85"
+    "sourceHash": "ed20dcd"
   },
   "fileExplorer.network.share.useGuest": "Переглядати як гість",
   "@fileExplorer.network.share.useGuest": {
@@ -769,21 +769,21 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Opened in {app}. Want a different editor next time? Pick one in Preferences.} linuxKde {Opened in {app}. Want a different editor next time? Pick one in Configure Cmdr.} other {Відкрито в програмі {app}. Хочете наступного разу інший редактор? Виберіть його в Параметрах.}}",
+  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Відкрито в програмі {app}. Хочете наступного разу інший редактор? Виберіть його в Налаштуваннях.} linuxKde {Відкрито в програмі {app}. Хочете наступного разу інший редактор? Виберіть його у вікні «Налаштувати Cmdr».} other {Відкрито в програмі {app}. Хочете наступного разу інший редактор? Виберіть його в Параметрах.}}",
   "@fileExplorer.edit.hint": {
-    "sourceHash": "3632f06"
+    "sourceHash": "1ec59c2"
   },
-  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Opened in your default text editor. Want a different one next time? Pick one in Preferences.} linuxKde {Opened in your default text editor. Want a different one next time? Pick one in Configure Cmdr.} other {Відкрито у вашому типовому текстовому редакторі. Хочете наступного разу інший? Виберіть його в Параметрах.}}",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Відкрито у вашому типовому текстовому редакторі. Хочете наступного разу інший? Виберіть його в Налаштуваннях.} linuxKde {Відкрито у вашому типовому текстовому редакторі. Хочете наступного разу інший? Виберіть його у вікні «Налаштувати Cmdr».} other {Відкрито у вашому типовому текстовому редакторі. Хочете наступного разу інший? Виберіть його в Параметрах.}}",
   "@fileExplorer.edit.hintUnnamed": {
-    "sourceHash": "6216471"
+    "sourceHash": "00354cc"
   },
   "fileExplorer.edit.dismiss": "Закрити",
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Відкрити параметри}}",
+  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Відкрити налаштування} linuxKde {Налаштувати Cmdr} other {Відкрити параметри}}",
   "@fileExplorer.edit.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "fileExplorer.edit.appMissing": "Cmdr не вдається знайти вибраний вами редактор, тому цей файл відкрито в програмі {app}.",
   "@fileExplorer.edit.appMissing": {
@@ -837,9 +837,9 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Preferences} linuxKde {Configure Cmdr} other {Параметри}}",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Налаштування} linuxKde {Налаштувати Cmdr} other {Параметри}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
-    "sourceHash": "74a883a"
+    "sourceHash": "02ce4ce"
   },
   "fileExplorer.clipboard.copiedPath": "Шлях скопійовано, він тепер у буфері обміну:",
   "@fileExplorer.clipboard.copiedPath": {
@@ -949,9 +949,9 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився у вʼязці ключів. Щоб вилучити його назавжди, видаліть його в програмі «Ключар».} windows {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився в Диспетчері облікових даних. Щоб вилучити його назавжди, видаліть його в Диспетчері облікових даних.} linuxGnome {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився у вашій вʼязці ключів. Щоб вилучити його назавжди, видаліть його в програмі «Паролі та ключі».} linuxKde {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився в KWallet. Щоб вилучити його назавжди, видаліть його в програмі KWalletManager.} other {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився у вашій вʼязці ключів. Щоб вилучити його назавжди, видаліть його в програмі для керування вʼязкою ключів.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився у вʼязці ключів. Щоб вилучити його назавжди, видаліть його в програмі «Ключар».} windows {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився в Диспетчері облікових даних. Щоб вилучити його назавжди, видаліть його в Диспетчері облікових даних.} linuxGnome {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився у вашій вʼязці ключів. Щоб вилучити його назавжди, видаліть його в програмі «Паролі та ключі».} linuxKde {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився в торбинці KDE. Щоб вилучити його назавжди, видаліть його в програмі KWalletManager.} other {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився у вашій вʼязці ключів. Щоб вилучити його назавжди, видаліть його в програмі для керування вʼязкою ключів.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
-    "sourceHash": "366f06a"
+    "sourceHash": "52da364"
   },
   "fileExplorer.restic.forgetPassword.unreachable": "Cmdr щойно не вдалося звʼязатися з резервною копією «{name}», тож її пароль і далі збережено. Спробуйте ще раз за мить.",
   "@fileExplorer.restic.forgetPassword.unreachable": {
@@ -1836,13 +1836,13 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Phone and camera access over MTP is turned off in Preferences.} linuxKde {Phone and camera access over MTP is turned off in Configure Cmdr.} other {Доступ до телефонів і камер через MTP вимкнено в Параметрах.}}",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Доступ до телефонів і камер через MTP вимкнено в Налаштуваннях.} linuxKde {Доступ до телефонів і камер через MTP вимкнено у вікні «Налаштувати Cmdr».} other {Доступ до телефонів і камер через MTP вимкнено в Параметрах.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
-    "sourceHash": "53be5f6"
+    "sourceHash": "064a270"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Android phone access is turned off in Preferences.} linuxKde {Android phone access is turned off in Configure Cmdr.} other {Доступ до телефонів Android вимкнено в Параметрах.}}",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Доступ до телефонів Android вимкнено в Налаштуваннях.} linuxKde {Доступ до телефонів Android вимкнено у вікні «Налаштувати Cmdr».} other {Доступ до телефонів Android вимкнено в Параметрах.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
-    "sourceHash": "4fba610"
+    "sourceHash": "bc261dc"
   },
   "fileExplorer.navigation.favoriteUnreachable.forgotten": "Cmdr більше не знає, як звʼязатися з {kind, select, share {спільною папкою «{place}»} server {сервером «{place}»} phone {телефоном «{place}»} other {«{place}»}}. Підʼєднайтеся знову зі списку «Сервери», і ця улюблена папка знову запрацює.",
   "@fileExplorer.navigation.favoriteUnreachable.forgotten": {
@@ -1852,9 +1852,9 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Відкрити параметри}}",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Відкрити налаштування} linuxKde {Налаштувати Cmdr} other {Відкрити параметри}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "fileExplorer.navigation.favoriteUnreachable.openServers": "Показати сервери",
   "@fileExplorer.navigation.favoriteUnreachable.openServers": {
@@ -2212,21 +2212,21 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} linuxKde {Drive indexing is off in Configure Cmdr, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} other {Індексування дисків вимкнено в Параметрах, тому «{name}» не індексується. Увімкніть його в розділі «Індексування > Індексування дисків».}}",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Індексування дисків вимкнено в Налаштуваннях, тому «{name}» не індексується. Увімкніть його в розділі «Індексування > Індексування дисків».} linuxKde {Індексування дисків вимкнено у вікні «Налаштувати Cmdr», тому «{name}» не індексується. Увімкніть його в розділі «Індексування > Індексування дисків».} other {Індексування дисків вимкнено в Параметрах, тому «{name}» не індексується. Увімкніть його в розділі «Індексування > Індексування дисків».}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
-    "sourceHash": "0253edd"
+    "sourceHash": "f7b3cad"
   },
   "fileExplorer.navigation.driveIndex.driveLeaving": "«{name}» відʼєднується, тож Cmdr не змінював індекс. Якщо диск залишиться підʼєднаним, спробуйте ще раз за мить.",
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so no drive is indexed right now.} linuxKde {Drive indexing is off in Configure Cmdr, so no drive is indexed right now.} other {Індексування дисків вимкнено в Параметрах, тому зараз жоден диск не індексується.}}",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Індексування дисків вимкнено в Налаштуваннях, тому зараз жоден диск не індексується.} linuxKde {Індексування дисків вимкнено у вікні «Налаштувати Cmdr», тому зараз жоден диск не індексується.} other {Індексування дисків вимкнено в Параметрах, тому зараз жоден диск не індексується.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
-    "sourceHash": "6ebf6f4"
+    "sourceHash": "4c4d376"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Drive indexing is off in Preferences. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} linuxKde {Drive indexing is off in Configure Cmdr. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} other {Індексування дисків вимкнено в Параметрах. Увімкніть його в розділі «Індексування > Індексування дисків», і цей диск продовжить із того місця, де зупинився.}}",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Індексування дисків вимкнено в Налаштуваннях. Увімкніть його в розділі «Індексування > Індексування дисків», і цей диск продовжить із того місця, де зупинився.} linuxKde {Індексування дисків вимкнено у вікні «Налаштувати Cmdr». Увімкніть його в розділі «Індексування > Індексування дисків», і цей диск продовжить із того місця, де зупинився.} other {Індексування дисків вимкнено в Параметрах. Увімкніть його в розділі «Індексування > Індексування дисків», і цей диск продовжить із того місця, де зупинився.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
-    "sourceHash": "26e250c"
+    "sourceHash": "453d08d"
   },
   "fileExplorer.dragOut.failed": "{count, plural, =1 {Не вдалося скопіювати «{name}».} one {Не вдалося скопіювати {countText} елемент.} few {Не вдалося скопіювати {countText} елементи.} many {Не вдалося скопіювати {countText} елементів.} other {Не вдалося скопіювати {countText} елемента.}}",
   "@fileExplorer.dragOut.failed": {
@@ -2332,9 +2332,9 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Preferences.} linuxKde {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Configure Cmdr.} other {Хочете переводити курсор на відповідну назву, нічого не приховуючи? Увімкніть «Перехід» тут або в Параметрах.}}",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Хочете переводити курсор на відповідну назву, нічого не приховуючи? Увімкніть «Перехід» тут або в Налаштуваннях.} linuxKde {Хочете переводити курсор на відповідну назву, нічого не приховуючи? Увімкніть «Перехід» тут або у вікні «Налаштувати Cmdr».} other {Хочете переводити курсор на відповідну назву, нічого не приховуючи? Увімкніть «Перехід» тут або в Параметрах.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
-    "sourceHash": "ac6d3c8"
+    "sourceHash": "ed0bb5f"
   },
   "fileExplorer.quickFilter.intro.switchToJump": "Увімкнути «Перехід»",
   "@fileExplorer.quickFilter.intro.switchToJump": {
@@ -2400,9 +2400,9 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr remembers your answer for these two servers. You can forget it in Preferences, under Servers.} linuxKde {Cmdr remembers your answer for these two servers. You can forget it in Configure Cmdr, under Servers.} other {Cmdr запамʼятовує вашу відповідь для цих двох серверів. Забути її можна в Параметрах, у розділі «Сервери».}}",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr запамʼятовує вашу відповідь для цих двох серверів. Забути її можна в Налаштуваннях, у розділі «Сервери».} linuxKde {Cmdr запамʼятовує вашу відповідь для цих двох серверів. Забути її можна у вікні «Налаштувати Cmdr», у розділі «Сервери».} other {Cmdr запамʼятовує вашу відповідь для цих двох серверів. Забути її можна в Параметрах, у розділі «Сервери».}}",
   "@fileExplorer.smbLinkConsent.note": {
-    "sourceHash": "3f9615a"
+    "sourceHash": "d32b664"
   },
   "fileExplorer.smbLinkConsent.allow": "Дозволити й увійти",
   "@fileExplorer.smbLinkConsent.allow": {

@@ -1229,9 +1229,9 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Hide this hint. You can bring it back in Preferences > Advanced.} linuxKde {Hide this hint. You can bring it back in Configure Cmdr > Advanced.} other {Skrýt tento tip. Vrátit ho můžete v Nastavení > Pokročilé.}}",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Skrýt tento tip. Vrátit ho můžete v Předvolbách > Pokročilé.} linuxKde {Skrýt tento tip. Vrátit ho můžete v okně Nastavit Cmdr > Pokročilé.} other {Skrýt tento tip. Vrátit ho můžete v Nastavení > Pokročilé.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "6a3a4b3"
+    "sourceHash": "22d9d84"
   },
   "aboutThis.action.continueInAskCmdr": "Pokračovat v Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {

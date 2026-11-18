@@ -2670,7 +2670,7 @@
     "chosen": "Связка ключей",
     "accept": ["Связк", "хранилищ"],
     "forms": "Remember in Keychain → Запомнить в Связке ключей; the app → приложение «Связка ключей»; a generic system keyring → системное хранилище ключей",
-    "note": "An Apple-localized name, so never kept as the English Keychain. KDE's KWallet stays a Latin name, undeclined (в KWallet, из KWallet; masculine: KWallet отказал, открыт); tentative, no pile hit.",
+    "note": "An Apple-localized name, so never kept as the English Keychain. KDE Wallet → бумажник KDE, as KDE's own Russian catalog names it (kwalletd6.po: The KDE Wallet System → Бумажник KDE; Use the KDE wallet to store sensitive information → Использовать бумажник KDE для хранения важных данных; read-only from websvn.kde.org trunk/l10n-kf6 ru, 2026-11-18); masculine, declines: бумажник KDE отказал в доступе, в бумажнике KDE, из бумажника KDE. KWalletManager stays a Latin name (в приложении KWalletManager).",
     "confidence": "high",
     "sources": "macOS Keychain Access.app (Localizable Keychain → Связка ключей; Keychain Access → Связка ключей), verified on macOS 27.0 (26A428), 2026-10-02"
   },
@@ -3730,6 +3730,11 @@
     "exceptions": {
       "fileExplorer.quickFilter.intro.openSettings": "The linuxGnome branch is GNOME's own app-menu word, «Параметры» (ru nautilus.po `_Preferences` → `_Параметры`), not the Android USB Preferences label this concept quotes.",
       "menu.app.settings": "The linuxGnome branch is GNOME's own app-menu word, «Параметры» (ru nautilus.po `_Preferences` → `_Параметры`)."
+    },
+    "other": {
+      "chosen": "Параметры",
+      "accept": ["параметр", "настройк"],
+      "note": "Linux branches: GNOME titles an app's settings window «Параметры» (nautilus.po _Preferences → _Параметры), so the linuxGnome branch names Cmdr's window that way: title Параметры, prose «в параметрах», paths «Параметры > ИИ», button «Открыть параметры». An Android label stays as the device shows it."
     }
   },
   "preset": {
@@ -4693,6 +4698,11 @@
       "chosen": "Параметры",
       "accept": ["Параметр", "настро"],
       "note": "The Windows Settings app is «Параметры» in Russian Windows (MS TBX Network & Internet → Сеть и Интернет, the Settings section); quote its paths as **Параметры > Сеть и Интернет**, **Параметры > Система > Память**. A server's or Cmdr's own settings stay настройки."
+    },
+    "other": {
+      "chosen": "Настройки",
+      "accept": ["настро", "Параметр", "параметр", "Настроить Cmdr", "Настройка – Cmdr"],
+      "note": "Linux desktop branches name the window the way that desktop does: GNOME → Параметры (nautilus.po); KDE → window title «Настройка – Cmdr» (dolphin.po Configure @title:window → Настройка), menu «Настроить Cmdr…» (Configure… → Настроить…), pointers in prose «в окне «Настроить Cmdr»», paths «Настроить Cmdr > ИИ», button «Настроить Cmdr». Title and menu share the root as KDE's own Dolphin does. Other Linux desktops keep Настройки."
     }
   },
   "share-link": {

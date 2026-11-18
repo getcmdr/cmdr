@@ -3,13 +3,13 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "{platform, select, linuxGnome {Usage stats and crash reports stay off until you turn them back on in Preferences › Updates & privacy.} linuxKde {Usage stats and crash reports stay off until you turn them back on in Configure Cmdr › Updates & privacy.} other {Статистика використання та звіти про аварії залишаться вимкненими, доки ви знову не ввімкнете їх у розділі Параметри › Оновлення та приватність.}}",
+  "stateRecovery.settings.body": "{platform, select, linuxGnome {Статистика використання та звіти про аварії залишаться вимкненими, доки ви знову не ввімкнете їх у розділі Налаштування › Оновлення та приватність.} linuxKde {Статистика використання та звіти про аварії залишаться вимкненими, доки ви знову не ввімкнете їх у розділі «Налаштувати Cmdr › Оновлення та приватність».} other {Статистика використання та звіти про аварії залишаться вимкненими, доки ви знову не ввімкнете їх у розділі Параметри › Оновлення та приватність.}}",
   "@stateRecovery.settings.body": {
-    "sourceHash": "20439e1"
+    "sourceHash": "8e4debd"
   },
-  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Відкрити параметри}}",
+  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Відкрити налаштування} linuxKde {Налаштувати Cmdr} other {Відкрити параметри}}",
   "@stateRecovery.settings.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "f970930"
   },
   "stateRecovery.shortcuts.title": "Cmdr не вдалося прочитати ваші клавіатурні скорочення, тож відновлено типові",
   "@stateRecovery.shortcuts.title": {
@@ -19,13 +19,13 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "{platform, select, linuxGnome {If Cmdr shows as unlicensed now, enter your license key again in Preferences › License.} linuxKde {If Cmdr shows as unlicensed now, enter your license key again in Configure Cmdr › License.} other {Якщо Cmdr тепер показується без ліцензії, введіть ліцензійний ключ знову в розділі Параметри › Ліцензія.}}",
+  "stateRecovery.license.body": "{platform, select, linuxGnome {Якщо Cmdr тепер показується без ліцензії, введіть ліцензійний ключ знову в розділі Налаштування › Ліцензія.} linuxKde {Якщо Cmdr тепер показується без ліцензії, введіть ліцензійний ключ знову в розділі «Налаштувати Cmdr › Ліцензія».} other {Якщо Cmdr тепер показується без ліцензії, введіть ліцензійний ключ знову в розділі Параметри › Ліцензія.}}",
   "@stateRecovery.license.body": {
-    "sourceHash": "ea51589"
+    "sourceHash": "158e224"
   },
-  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Відкрити параметри}}",
+  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Відкрити налаштування} linuxKde {Налаштувати Cmdr} other {Відкрити параметри}}",
   "@stateRecovery.license.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "f970930"
   },
   "stateRecovery.appStatus.title": "{platform, select, windows {Cmdr не вдалося прочитати, які папки були відкриті на ваших панелях, тож панелі відкриються в папці користувача} other {Cmdr не вдалося прочитати, які папки були відкриті на ваших панелях, тож панелі відкриються в домашній папці}}",
   "@stateRecovery.appStatus.title": {

@@ -1631,7 +1631,7 @@
   },
   "settings.analytics.enabled.description": "{platform, select, windows {Kérlek, kapcsold be, hogy lássuk, mely funkciók számítanak a nyílt béta alatt.\nA statisztika nem a nevedhez vagy az e-mail-címedhez kötődik, hanem egy véletlenszerű azonosítóhoz.\nA Cmdr sosem küld fájlneveket, útvonalakat, keresési kifejezéseket vagy promptokat.\nKikapcsolva a Cmdr semmilyen statisztikát nem küld.} other {Kérlek, kapcsold be, hogy lássuk, mely funkciók számítanak a nyílt béta alatt.\nA statisztika nem a nevedhez vagy az e-mail-címedhez kötődik, hanem egy véletlenszerű azonosítóhoz.\nA Cmdr sosem küld fájlneveket, útvonalakat, keresési kifejezéseket vagy promptokat.\nKikapcsolva a Cmdr semmilyen statisztikát nem küld.}}",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
+    "sourceHash": "dbbd8c8"
   },
   "settings.analytics.enabled.keywords": "analitika, használat, használati statisztika, statisztika, adatvédelem, telemetria, béta, követés, kikapcsolás, leiratkozás",
   "@settings.analytics.enabled.keywords": {
@@ -1655,7 +1655,7 @@
   },
   "settings.updates.crashReports.description": "{platform, select, macos {Automatikusan elküld egy jelentést, ha a Cmdr váratlanul bezárul, vagy a háttérben problémába ütközik. Tartalmazza az app verzióját, a macOS verzióját, és hogy a kód melyik része ütközött a problémába. Fájlneveket vagy személyes adatokat soha.} windows {Automatikusan elküld egy jelentést, ha a Cmdr váratlanul bezárul, vagy a háttérben problémába ütközik. Tartalmazza az app verzióját, a Windows verzióját, és hogy a kód melyik része ütközött a problémába. Fájlneveket vagy személyes adatokat soha.} other {Automatikusan elküld egy jelentést, ha a Cmdr váratlanul bezárul, vagy a háttérben problémába ütközik. Tartalmazza az app verzióját, a Linux-disztribúciót és annak verzióját, és hogy a kód melyik része ütközött a problémába. Fájlneveket vagy személyes adatokat soha.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "3042746"
   },
   "settings.updates.crashReports.keywords": "összeomlás, összeomlási jelentés, jelentés, adatvédelem, telemetria, hiba, programhiba",
   "@settings.updates.crashReports.keywords": {
@@ -1995,7 +1995,7 @@
   },
   "settings.advanced.logLlmCalls.description": "{platform, select, macos {Elmenti minden AI-kérést és -választ egy helyi mappába (llm-logs) hibakereséshez. Ezek a fájlok a Mac-eden maradnak, és tartalmazzák azokat a fájlneveket és útvonalakat, amiket a Cmdr elküld a szolgáltatódnak.} windows {Elmenti minden AI-kérést és -választ egy helyi mappába (llm-logs) hibakereséshez. Ezek a fájlok a gépeden maradnak, és tartalmazzák azokat a fájlneveket és útvonalakat, amiket a Cmdr elküld a szolgáltatódnak.} other {Elmenti minden AI-kérést és -választ egy helyi mappába (llm-logs) hibakereséshez. Ezek a fájlok a számítógépeden maradnak, és tartalmazzák azokat a fájlneveket és útvonalakat, amiket a Cmdr elküld a szolgáltatódnak.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "427e138"
   },
   "settings.advanced.logLlmCalls.keywords": "ai, napló, naplózás, hibakeresés, kérés, válasz, prompt, utasítás",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2508,13 +2508,13 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {A Cmdr azt az AI-szolgáltatót és kulcsot használja, amit itt állítottál be: Beállítások › AI ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {A Cmdr azt az AI-szolgáltatót és kulcsot használja, amit itt állítottál be: Beállítások › AI ({provider}).} linuxKde {A Cmdr azt az AI-szolgáltatót és kulcsot használja, amit itt állítottál be: Beállítások › AI ({provider}).} other {A Cmdr azt az AI-szolgáltatót és kulcsot használja, amit itt állítottál be: Beállítások › AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
+    "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Kapcsolj be egy AI-szolgáltatót itt: Beállítások › AI, hogy elkezdhess csevegni.}}",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Kapcsolj be egy AI-szolgáltatót itt: Beállítások › AI, hogy elkezdhess csevegni.} linuxKde {Kapcsolj be egy AI-szolgáltatót itt: Cmdr beállítása › AI, hogy elkezdhess csevegni.} other {Kapcsolj be egy AI-szolgáltatót itt: Beállítások › AI, hogy elkezdhess csevegni.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
+    "sourceHash": "0196a5c"
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr modellje",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2959,9 +2959,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {Beállítási szakaszok}}",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {Beállítási szakaszok} other {Beállítási szakaszok}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "4fa3c2e"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Nincs egyező beállítás} one {{countText} szakaszban van találat} other {{countText} szakaszban van találat}}",
   "@settings.sidebar.matchCount": {
@@ -3215,7 +3215,7 @@
   },
   "settings.securityLog.enabled.description": "{platform, select, macos {Egy kis fájlban rögzíti ezen a Macen a biztonsági szempontból fontos változásokat és elutasításokat, például a felhő-AI-hoz adott hozzájárulást, egy telepített frissítést vagy egy appot, amelyet az MCP-szerver visszautasított. A fájl nem tartalmaz se fájlnevet, se tartalmat, se jelszót, és sosem kerül ki erről a Macről.} windows {Egy kis fájlban rögzíti ezen a gépen a biztonsági szempontból fontos változásokat és elutasításokat, például a felhő-AI-hoz adott hozzájárulást, egy telepített frissítést vagy egy appot, amelyet az MCP-szerver visszautasított. A fájl nem tartalmaz se fájlnevet, se tartalmat, se jelszót, és sosem kerül ki erről a gépről.} other {Egy kis fájlban rögzíti ezen a számítógépen a biztonsági szempontból fontos változásokat és elutasításokat, például a felhő-AI-hoz adott hozzájárulást, egy telepített frissítést vagy egy appot, amelyet az MCP-szerver visszautasított. A fájl nem tartalmaz se fájlnevet, se tartalmat, se jelszót, és sosem kerül ki erről a számítógépről.}}",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
+    "sourceHash": "7086b00"
   },
   "settings.securityLog.enabled.keywords": "biztonság, biztonsági, napló, ellenőrzés, audit, rögzítés, események, hozzáférés, adatvédelem",
   "@settings.securityLog.enabled.keywords": {
@@ -3430,9 +3430,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Beállítások}}",
+  "settings.window.title": "{platform, select, linuxGnome {Beállítások} linuxKde {Beállítások – Cmdr} other {Beállítások}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "80cee55"
   },
   "settings.window.loading": "Beállítások betöltése…",
   "@settings.window.loading": {
@@ -3678,13 +3678,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Egy „{itemName}” nevű elem a Kulcskarika-elérés appban} other {{countText} „{itemName}” nevű elem a Kulcskarika-elérés appban}}} windows {{count, plural, one {Egy „{itemName}” nevű elem a Hitelesítőadat-kezelőben} other {{countText} „{itemName}” nevű elem a Hitelesítőadat-kezelőben}}} linuxKde {{count, plural, one {Egy „{itemName}” nevű elem a KWalletben} other {{countText} „{itemName}” nevű elem a KWalletben}}} other {{count, plural, one {Egy „{itemName}” nevű elem a kulcstartódban} other {{countText} „{itemName}” nevű elem a kulcstartódban}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Egy „{itemName}” nevű elem a Kulcskarika-elérés appban} other {{countText} „{itemName}” nevű elem a Kulcskarika-elérés appban}}} windows {{count, plural, one {Egy „{itemName}” nevű elem a Hitelesítőadat-kezelőben} other {{countText} „{itemName}” nevű elem a Hitelesítőadat-kezelőben}}} linuxKde {{count, plural, one {Egy „{itemName}” nevű elem a KDE jelszókezelőben} other {{countText} „{itemName}” nevű elem a KDE jelszókezelőben}}} other {{count, plural, one {Egy „{itemName}” nevű elem a kulcstartódban} other {{countText} „{itemName}” nevű elem a kulcstartódban}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Az esetleges „{itemName}” nevű elemek a Kulcskarika-elérés appban} windows {Az esetleges „{itemName}” nevű elemek a Hitelesítőadat-kezelőben} linuxKde {Az esetleges „{itemName}” nevű elemek a KWalletben} other {Az esetleges „{itemName}” nevű elemek a kulcstartódban}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Az esetleges „{itemName}” nevű elemek a Kulcskarika-elérés appban} windows {Az esetleges „{itemName}” nevű elemek a Hitelesítőadat-kezelőben} linuxKde {Az esetleges „{itemName}” nevű elemek a KDE jelszókezelőben} other {Az esetleges „{itemName}” nevű elemek a kulcstartódban}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Kilépés a Cmdrből} other {Kilépés a Cmdrből}}",
   "@settings.dataWipe.quit": {

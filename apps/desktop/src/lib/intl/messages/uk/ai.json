@@ -55,9 +55,9 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "{platform, select, linuxGnome {Turn on a provider in Preferences > AI to use AI search.} linuxKde {Turn on a provider in Configure Cmdr > AI to use AI search.} other {Увімкніть постачальника в Параметрах > ШІ, щоб користуватися пошуком із ШІ.}}",
+  "ai.translateError.off.body": "{platform, select, linuxGnome {Увімкніть постачальника в Налаштуваннях > ШІ, щоб користуватися пошуком із ШІ.} linuxKde {Увімкніть постачальника в розділі «Налаштувати Cmdr > ШІ», щоб користуватися пошуком із ШІ.} other {Увімкніть постачальника в Параметрах > ШІ, щоб користуватися пошуком із ШІ.}}",
   "@ai.translateError.off.body": {
-    "sourceHash": "d8d6368"
+    "sourceHash": "5e5f8d2"
   },
   "ai.cloudConsent.label": "Дозволити хмарний ШІ",
   "@ai.cloudConsent.label": {
@@ -247,25 +247,25 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Finish your provider setup in Preferences > AI, then try again.} linuxKde {Finish your provider setup in Configure Cmdr > AI, then try again.} other {Завершіть налаштування постачальника в Параметрах > ШІ, а потім спробуйте ще раз.}}",
+  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Завершіть налаштування постачальника в Налаштуваннях > ШІ, а потім спробуйте ще раз.} linuxKde {Завершіть налаштування постачальника в розділі «Налаштувати Cmdr > ШІ», а потім спробуйте ще раз.} other {Завершіть налаштування постачальника в Параметрах > ШІ, а потім спробуйте ще раз.}}",
   "@ai.translateError.notConfigured.body": {
-    "sourceHash": "65133a8"
+    "sourceHash": "bf48aec"
   },
   "ai.translateError.noCloudConsent.title": "Хмарний ШІ вимкнено",
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Allow it in Preferences > AI, then try again.} linuxKde {Allow it in Configure Cmdr > AI, then try again.} other {Дозвольте його в Параметрах > ШІ, а потім спробуйте ще раз.}}",
+  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Дозвольте його в Налаштуваннях > ШІ, а потім спробуйте ще раз.} linuxKde {Дозвольте його в розділі «Налаштувати Cmdr > ШІ», а потім спробуйте ще раз.} other {Дозвольте його в Параметрах > ШІ, а потім спробуйте ще раз.}}",
   "@ai.translateError.noCloudConsent.body": {
-    "sourceHash": "fde3eb5"
+    "sourceHash": "4485cc1"
   },
   "ai.translateError.authFailed.title": "Цей ключ API не прийняли",
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Check your key in Preferences > AI - it might be wrong or revoked.} linuxKde {Check your key in Configure Cmdr > AI - it might be wrong or revoked.} other {Перевірте ключ у Параметрах > ШІ: можливо, він неправильний або його відкликали.}}",
+  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Перевірте ключ у Налаштуваннях > ШІ: можливо, він неправильний або його відкликали.} linuxKde {Перевірте ключ у розділі «Налаштувати Cmdr > ШІ»: можливо, він неправильний або його відкликали.} other {Перевірте ключ у Параметрах > ШІ: можливо, він неправильний або його відкликали.}}",
   "@ai.translateError.authFailed.body": {
-    "sourceHash": "2159d5e"
+    "sourceHash": "4fd6281"
   },
   "ai.translateError.rateLimited.title": "Ваш постачальник ШІ досяг ліміту",
   "@ai.translateError.rateLimited.title": {
@@ -295,9 +295,9 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Preferences > AI.} linuxKde {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Configure Cmdr > AI.} other {Можливо, ваша модель вичерпала свій ліміт токенів, перш ніж відповісти. Спробуйте швидшу модель, як-от gpt-4.1-mini, у Параметрах > ШІ.}}",
+  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Можливо, ваша модель вичерпала свій ліміт токенів, перш ніж відповісти. Спробуйте швидшу модель, як-от gpt-4.1-mini, у Налаштуваннях > ШІ.} linuxKde {Можливо, ваша модель вичерпала свій ліміт токенів, перш ніж відповісти. Спробуйте швидшу модель, як-от gpt-4.1-mini, у розділі «Налаштувати Cmdr > ШІ».} other {Можливо, ваша модель вичерпала свій ліміт токенів, перш ніж відповісти. Спробуйте швидшу модель, як-от gpt-4.1-mini, у Параметрах > ШІ.}}",
   "@ai.translateError.emptyResponse.body": {
-    "sourceHash": "d74db0d"
+    "sourceHash": "b16ff79"
   },
   "ai.translateError.serverError.title": "Ваш постачальник ШІ натрапив на проблему",
   "@ai.translateError.serverError.title": {
@@ -311,17 +311,17 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Try again, or pick a different model in Preferences > AI.} linuxKde {Try again, or pick a different model in Configure Cmdr > AI.} other {Спробуйте ще раз або виберіть іншу модель у Параметрах > ШІ.}}",
+  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Спробуйте ще раз або виберіть іншу модель у Налаштуваннях > ШІ.} linuxKde {Спробуйте ще раз або виберіть іншу модель у розділі «Налаштувати Cmdr > ШІ».} other {Спробуйте ще раз або виберіть іншу модель у Параметрах > ШІ.}}",
   "@ai.translateError.parseError.body": {
-    "sourceHash": "c299ec6"
+    "sourceHash": "6082b7e"
   },
   "ai.translateError.unknownProvider.title": "Цього постачальника ШІ не розпізнано",
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Pick a provider in Preferences > AI.} linuxKde {Pick a provider in Configure Cmdr > AI.} other {Виберіть постачальника в Параметрах > ШІ.}}",
+  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Виберіть постачальника в Налаштуваннях > ШІ.} linuxKde {Виберіть постачальника в розділі «Налаштувати Cmdr > ШІ».} other {Виберіть постачальника в Параметрах > ШІ.}}",
   "@ai.translateError.unknownProvider.body": {
-    "sourceHash": "7042a75"
+    "sourceHash": "c45eba0"
   },
   "ai.translateError.managed.title": "ШІ в Cmdr керує ваша установа",
   "@ai.translateError.managed.title": {
@@ -596,9 +596,9 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Не вдалося зберегти ключ API: Вʼязка ключів macOS не надала доступу} other {Не вдалося прочитати збережений ключ API: Вʼязка ключів macOS не надала доступу}}} windows {{op, select, save {Не вдалося зберегти ключ API: Диспетчер облікових даних не надав доступу} other {Не вдалося прочитати збережений ключ API: Диспетчер облікових даних не надав доступу}}} linuxKde {{op, select, save {Не вдалося зберегти ключ API: KWallet не надав доступу} other {Не вдалося прочитати збережений ключ API: KWallet не надав доступу}}} other {{op, select, save {Не вдалося зберегти ключ API: системна вʼязка ключів не надала доступу} other {Не вдалося прочитати збережений ключ API: системна вʼязка ключів не надала доступу}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Не вдалося зберегти ключ API: Вʼязка ключів macOS не надала доступу} other {Не вдалося прочитати збережений ключ API: Вʼязка ключів macOS не надала доступу}}} windows {{op, select, save {Не вдалося зберегти ключ API: Диспетчер облікових даних не надав доступу} other {Не вдалося прочитати збережений ключ API: Диспетчер облікових даних не надав доступу}}} linuxKde {{op, select, save {Не вдалося зберегти ключ API: торбинка KDE не надала доступу} other {Не вдалося прочитати збережений ключ API: торбинка KDE не надала доступу}}} other {{op, select, save {Не вдалося зберегти ключ API: системна вʼязка ключів не надала доступу} other {Не вдалося прочитати збережений ключ API: системна вʼязка ключів не надала доступу}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "6daa595"
+    "sourceHash": "4612cfb"
   },
   "ai.secretError.body": "{platform, select, macos {{op, select, save {Відкрийте програму «Ключар» і перевірте запис «Cmdr» або видаліть цей запис і спробуйте зберегти ще раз.} other {Відкрийте програму «Ключар», знайдіть запис «Cmdr» і надайте доступ або видаліть цей запис і введіть ключ знову.}}} windows {{op, select, save {Відкрийте Диспетчер облікових даних і перевірте запис «Cmdr» у розділі «Облікові дані Windows» або вилучіть цей запис і спробуйте зберегти ще раз.} other {Відкрийте Диспетчер облікових даних, знайдіть запис «Cmdr» у розділі «Облікові дані Windows» або вилучіть цей запис і введіть ключ знову.}}} linuxGnome {Відімкніть вʼязку ключів у програмі «Паролі та ключі» і спробуйте ще раз.} linuxKde {Відімкніть KWallet у програмі KWalletManager і спробуйте ще раз.} other {Відімкніть вʼязку ключів (у програмі «Паролі та ключі» чи подібній) і спробуйте ще раз.}}",
   "@ai.secretError.body": {
@@ -608,9 +608,9 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Перевірте, чи доступна Вʼязка ключів, і спробуйте ще раз. Якщо проблема не зникне, перезапустіть програму.} windows {Перевірте, чи доступний Диспетчер облікових даних, і спробуйте ще раз. Якщо це повторюється, перезапустіть Cmdr.} linuxKde {Перевірте, чи доступний KWallet, і спробуйте ще раз. Якщо проблема не зникне, перезапустіть програму.} other {Перевірте, чи доступна системна вʼязка ключів, і спробуйте ще раз. Якщо проблема не зникне, перезапустіть програму.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Перевірте, чи доступна Вʼязка ключів, і спробуйте ще раз. Якщо проблема не зникне, перезапустіть програму.} windows {Перевірте, чи доступний Диспетчер облікових даних, і спробуйте ще раз. Якщо це повторюється, перезапустіть Cmdr.} linuxKde {Перевірте, чи доступна торбинка KDE, і спробуйте ще раз. Якщо проблема не зникне, перезапустіть програму.} other {Перевірте, чи доступна системна вʼязка ключів, і спробуйте ще раз. Якщо проблема не зникне, перезапустіть програму.}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "cb879fa"
+    "sourceHash": "1c198ff"
   },
   "ai.secretError.removeTitle": "Не вдалося вилучити збережений ключ API.",
   "@ai.secretError.removeTitle": {

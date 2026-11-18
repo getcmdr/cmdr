@@ -428,9 +428,9 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Cmdr starts on this choice next time, and you can change it in Preferences. If it overwrites files, you’ll see a warning first.} linuxKde {Cmdr starts on this choice next time, and you can change it in Configure Cmdr. If it overwrites files, you’ll see a warning first.} other {В следующий раз Cmdr начнет с этого варианта, а изменить его можно в настройках. Если этот вариант перезаписывает файлы, сначала появится предупреждение.}}",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {В следующий раз Cmdr начнет с этого варианта, а изменить его можно в параметрах. Если этот вариант перезаписывает файлы, сначала появится предупреждение.} linuxKde {В следующий раз Cmdr начнет с этого варианта, а изменить его можно в окне «Настроить Cmdr». Если этот вариант перезаписывает файлы, сначала появится предупреждение.} other {В следующий раз Cmdr начнет с этого варианта, а изменить его можно в настройках. Если этот вариант перезаписывает файлы, сначала появится предупреждение.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "c26d762"
+    "sourceHash": "d75e9f6"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "В некоторых конфликтах файл и папка имеют одинаковое имя. Замена затронет объекты другого типа, включая все содержимое папки.",
   "@fileOperations.transferDialog.typeMismatchWarning": {
@@ -1304,9 +1304,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Запомнить в Связке ключей} windows {Запомнить пароль} linuxKde {Запомнить в KWallet} other {Запомнить в хранилище ключей}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Запомнить в Связке ключей} windows {Запомнить пароль} linuxKde {Запомнить в бумажнике KDE} other {Запомнить в хранилище ключей}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "fileOperations.resticPassword.checking": "Проверка пароля…",
   "@fileOperations.resticPassword.checking": {

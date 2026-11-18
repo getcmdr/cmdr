@@ -67,9 +67,9 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Pokud chcete hledat text ve fotkách na tomto síťovém disku, zapněte pro něj v Nastavení indexování obrázků.}}",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Pokud chcete hledat text ve fotkách na tomto síťovém disku, zapněte pro něj v Předvolbách indexování obrázků.} linuxKde {Pokud chcete hledat text ve fotkách na tomto síťovém disku, zapněte pro něj v okně Nastavit Cmdr indexování obrázků.} other {Pokud chcete hledat text ve fotkách na tomto síťovém disku, zapněte pro něj v Nastavení indexování obrázků.}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "ccf901b"
+    "sourceHash": "30b2455"
   },
   "search.imageResults.paused": "Tento disk je odpojený, takže tu jsou jen fotky, které se zatím stihly zaindexovat.",
   "@search.imageResults.paused": {
@@ -219,9 +219,9 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {Indexování disků je v Nastavení vypnuté, takže se nic neindexuje. Zapněte ho v části Indexování > Indexování disků.}}",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Indexování disků je v Předvolbách vypnuté, takže se nic neindexuje. Zapněte ho v části Indexování > Indexování disků.} linuxKde {Indexování disků je v okně Nastavit Cmdr vypnuté, takže se nic neindexuje. Zapněte ho v části Indexování > Indexování disků.} other {Indexování disků je v Nastavení vypnuté, takže se nic neindexuje. Zapněte ho v části Indexování > Indexování disků.}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "abfe24b"
+    "sourceHash": "7c4ff62"
   },
   "search.coverage.toast.deferredUntilSearchEnds": "Cmdr už prohledává {drive}. Indexování začne, jakmile hledání skončí.",
   "@search.coverage.toast.deferredUntilSearchEnds": {
