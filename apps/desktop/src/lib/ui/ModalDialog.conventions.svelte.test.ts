@@ -105,6 +105,11 @@ function markupOf(el: Element): string {
     .replace(/<!---->/g, '')
 }
 
+/** A click came last, so the dialog opening next opens from the pointer (`keyboard-cues.ts`). */
+function openedByClick(): void {
+  window.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+}
+
 function press(el: Element, init: KeyboardEventInit): KeyboardEvent {
   const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init })
   el.dispatchEvent(event)
@@ -245,16 +250,24 @@ describe.each(['windows', 'gnome', 'kde', 'otherLinux'] as const)('ModalDialog a
   })
 
   // jsdom has no Highlight API, so this is the fallback WebKitGTK takes: keytips in place of underlines.
-  it('falls back to keytips without the Highlight API, shown while Alt is held and hidden on release', async () => {
-    withConventions(desktop)
-    const { overlay } = await open()
-    press(byId(overlay, 'name-field'), { key: 'Alt', code: 'AltLeft', altKey: true })
-    await tick()
-    expect([...overlay.querySelectorAll('.access-key-tip')].map((tip) => tip.textContent)).toEqual(['N', 'O', 'C', 'S'])
-    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', code: 'AltLeft' }))
-    await tick()
-    expect(overlay.querySelector('.access-key-tip')).toBeNull()
-  })
+  it(
+    desktop === 'windows'
+      ? 'falls back to keytips without the Highlight API, shown once Alt is pressed and kept after release'
+      : 'falls back to keytips without the Highlight API, shown while Alt is held and hidden on release',
+    async () => {
+      withConventions(desktop)
+      openedByClick()
+      const { overlay } = await open()
+      expect(overlay.querySelector('.access-key-tip')).toBeNull()
+      press(byId(overlay, 'name-field'), { key: 'Alt', code: 'AltLeft', altKey: true })
+      await tick()
+      const tips = () => [...overlay.querySelectorAll('.access-key-tip')].map((tip) => tip.textContent)
+      expect(tips()).toEqual(['N', 'O', 'C', 'S'])
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', code: 'AltLeft' }))
+      await tick()
+      expect(tips()).toEqual(desktop === 'windows' ? ['N', 'O', 'C', 'S'] : [])
+    },
+  )
 
   it('presses a button and focuses a field from its access key', async () => {
     withConventions(desktop)
@@ -450,17 +463,60 @@ describe.each(['windows', 'gnome', 'kde', 'otherLinux'] as const)(
       vi.unstubAllGlobals()
     })
 
-    it('underlines each letter in its label while Alt is held, and draws no keytips', async () => {
+    it('underlines each letter in its label once Alt is pressed, and draws no keytips', async () => {
       const registry = stubHighlights()
       withConventions(desktop)
+      openedByClick()
       const { overlay } = await open()
+      expect(registry.has('cmdr-access-key')).toBe(false)
       press(byId(overlay, 'name-field'), { key: 'Alt', code: 'AltLeft', altKey: true })
       await tick()
       const underlined = registry.get('cmdr-access-key')?.ranges.map((range) => range.toString())
       expect(underlined).toEqual(['N', 'O', 'C', 'S'])
       expect(overlay.querySelector('.access-key-tip')).toBeNull()
       window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', code: 'AltLeft' }))
-      expect(registry.has('cmdr-access-key')).toBe(false)
+      // Win32 keeps them for the dialog's life once the keyboard is in use; GTK and Qt drop them with Alt.
+      expect(registry.has('cmdr-access-key')).toBe(desktop === 'windows')
+    })
+
+    it(
+      desktop === 'windows'
+        ? 'underlines from the start in a dialog the keyboard opened'
+        : 'waits for Alt even in a dialog the keyboard opened',
+      async () => {
+        const registry = stubHighlights()
+        withConventions(desktop)
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F2', bubbles: true }))
+        await open()
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+        expect(registry.has('cmdr-access-key')).toBe(desktop === 'windows')
+      },
+    )
+
+    it(
+      desktop === 'windows'
+        ? 'starts underlining in a clicked-open dialog on Tab, as Win32 does'
+        : 'keeps Tab from underlining, which only Alt does',
+      async () => {
+        const registry = stubHighlights()
+        withConventions(desktop)
+        openedByClick()
+        const { overlay } = await open()
+        press(byId(overlay, 'name-field'), { key: 'Tab', code: 'Tab' })
+        await tick()
+        expect(registry.has('cmdr-access-key')).toBe(desktop === 'windows')
+      },
+    )
+
+    it("underlines all the time while Windows' Underline access keys setting is on", async () => {
+      const registry = stubHighlights()
+      withConventions(desktop)
+      document.documentElement.classList.add('underline-access-keys')
+      teardowns.push(() => document.documentElement.classList.remove('underline-access-keys'))
+      openedByClick()
+      await open()
+      await new Promise((resolve) => requestAnimationFrame(resolve))
+      expect(registry.get('cmdr-access-key')?.ranges.map((range) => range.toString())).toEqual(['N', 'O', 'C', 'S'])
     })
 
     it('underlines the occurrence the letter came from: a word initial before an earlier letter', async () => {

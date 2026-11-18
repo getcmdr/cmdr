@@ -47,7 +47,7 @@ function every<T extends string>() {
 const DIALOG_BUTTON_ORDERS = every<DialogButtonOrder>()('cancelFirst', 'affirmativeFirst')
 const ENTER_ACTIVATES = every<EnterActivates>()('defaultButton', 'focusedButton')
 const CANCEL_KEYS = every<CancelKeys>()('escape', 'escapeOrCommandPeriod')
-const ACCESS_KEYS = every<AccessKeys>()('none', 'underlines')
+const ACCESS_KEYS = every<AccessKeys>()('none', 'underlinesAfterKeyboardUse', 'underlinesWhileAltHeld')
 const MENU_MODELS = every<MenuModel>()('systemMenuBar', 'windowMenuBar', 'primaryMenu')
 const CONTEXT_MENUS = every<ContextMenus>()('native', 'inPage')
 const SCREEN_READERS = every<ScreenReader>()('voiceOver', 'jaws', 'nvda', 'narrator', 'orca')

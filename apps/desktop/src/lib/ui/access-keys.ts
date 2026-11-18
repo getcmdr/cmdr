@@ -20,6 +20,7 @@ import type { CommandScope } from '#lib/commands/types.js'
 // eslint-disable-next-line cmdr/no-raw-shortcut-text -- read as data to reserve letters, never shown as text
 import { getEffectiveShortcuts } from '#lib/shortcuts/shortcuts-store.js'
 import { isAltGraphHeld } from '#lib/shortcuts/key-capture.js'
+import { createKeyboardCues, type KeyboardCues } from './keyboard-cues'
 
 /** A letter a person can press: Latin, Greek, or Cyrillic (with any diacritics), or a digit. */
 const PRESSABLE = /^[\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}\p{Nd}]$/u
@@ -312,6 +313,8 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
   const suffixes = new Set<HTMLElement>()
   /** Underlines need the Highlight API; without it (WebKitGTK), the keytips draw instead. */
   const highlights = highlightApi()
+  /** When the letters show, by the platform's rule; live between `attach` and its teardown. */
+  let cues: KeyboardCues | null = null
 
   function assignments(): AccessKeyAssignment[] {
     const scope = options.scope()
@@ -403,13 +406,16 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
     }
   }
 
+  /** Paints or clears the letters to match the cue rule (`keyboard-cues.ts`). */
+  function followCues(): void {
+    if (cues?.shown) show()
+    else hide()
+  }
+
   function handleKeydown(event: KeyboardEvent): boolean {
-    if (event.key === 'Alt') {
-      if (!event.repeat && !event.ctrlKey && !event.metaKey && !event.shiftKey) show()
-      return false
-    }
+    cues?.keydown(event)
+    if (event.key === 'Alt') return false
     const letters = accessKeyLettersOf(event)
-    hide()
     if (letters.length === 0 || event.defaultPrevented) return false
     const reserved = reservedAccessKeys(options.commandScope())
     if (letters.some((letter) => reserved.has(letter))) return false
@@ -422,18 +428,30 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
   }
 
   function attach(): () => void {
+    // Read as the dialog mounts: whether the key or the click that opened it came last.
+    const surfaceCues = createKeyboardCues()
+    cues = surfaceCues
+    const stopFollowing = surfaceCues.onChange(followCues)
     const onKeyup = (event: KeyboardEvent) => {
-      if (event.key === 'Alt') hide()
+      surfaceCues.keyup(event)
+    }
+    const onBlur = () => {
+      surfaceCues.blur()
+    }
+    const onPointerDown = () => {
+      surfaceCues.pointerdown()
     }
     window.addEventListener('keyup', onKeyup, true)
-    window.addEventListener('blur', hide)
-    window.addEventListener('pointerdown', hide, true)
+    window.addEventListener('blur', onBlur)
+    window.addEventListener('pointerdown', onPointerDown, true)
     let frame: number | null = null
     const scheduleAnnounce = () => {
       if (frame !== null) return
       frame = requestAnimationFrame(() => {
         frame = null
         announce()
+        // Shown letters follow a label that changed under them (Win32 keeps them up for a while).
+        if (shown) show()
       })
     }
     const scope = options.scope()
@@ -449,10 +467,14 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
       })
     }
     announce()
+    followCues()
     return () => {
+      stopFollowing()
+      surfaceCues.destroy()
+      cues = null
       window.removeEventListener('keyup', onKeyup, true)
-      window.removeEventListener('blur', hide)
-      window.removeEventListener('pointerdown', hide, true)
+      window.removeEventListener('blur', onBlur)
+      window.removeEventListener('pointerdown', onPointerDown, true)
       observer.disconnect()
       if (frame !== null) cancelAnimationFrame(frame)
       for (const [control, entry] of announced) {

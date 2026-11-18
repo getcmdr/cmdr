@@ -67,9 +67,13 @@ pub enum AccessKeys {
     /// The platform has no access keys.
     None,
     /// Alt plus the letter presses the control, and the letter shows underlined in its label, as
-    /// Win32, GTK, and Qt draw it. A label without the letter (Chinese, Japanese) carries it in
-    /// parentheses, "保存 (S)", the way those toolkits write a CJK label's mnemonic.
-    Underlines,
+    /// Win32 draws it: once the keyboard has been used in that surface (Win32's keyboard-cue rule:
+    /// a menu or dialog opened by Alt, F10, or another key shows them, one opened by a click hides
+    /// them until a key is pressed), and always while Windows' "Underline access keys" is on. A
+    /// label without the letter (Chinese, Japanese) carries it in parentheses, "保存 (S)".
+    UnderlinesAfterKeyboardUse,
+    /// The same keys and underlines, shown while Alt is held, as GTK and Qt draw them.
+    UnderlinesWhileAltHeld,
 }
 
 /// Where the app's menus live.
@@ -166,7 +170,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             dialog_button_order: DialogButtonOrder::AffirmativeFirst,
             enter_activates: EnterActivates::FocusedButton,
             cancel_keys: CancelKeys::Escape,
-            access_keys: AccessKeys::Underlines,
+            access_keys: AccessKeys::UnderlinesAfterKeyboardUse,
             menu_model: MenuModel::WindowMenuBar,
             // In the page, so the bar's flyouts and the right-click menus share one look (D5).
             context_menus: ContextMenus::InPage,
@@ -182,8 +186,8 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             },
             enter_activates: EnterActivates::FocusedButton,
             cancel_keys: CancelKeys::Escape,
-            // GTK and Qt both underline, so every Linux desktop does.
-            access_keys: AccessKeys::Underlines,
+            // GTK and Qt both underline while Alt is held, so every Linux desktop does.
+            access_keys: AccessKeys::UnderlinesWhileAltHeld,
             // GNOME's HIG has no menu bar, only a primary menu in the header bar; KDE and the
             // other desktops keep an in-window bar, as their own apps do.
             menu_model: match desktop {
@@ -300,8 +304,13 @@ mod tests {
     fn access_keys_look_like_each_desktops_own() {
         let keys = |desktop| conventions_on(desktop).access_keys;
         assert_eq!(keys(Desktop::Macos), AccessKeys::None);
-        for desktop in Desktop::ALL.into_iter().filter(|d| *d != Desktop::Macos) {
-            assert_eq!(keys(desktop), AccessKeys::Underlines, "{desktop:?}");
+        assert_eq!(keys(Desktop::Windows), AccessKeys::UnderlinesAfterKeyboardUse);
+        for linux in [LinuxDesktop::Gnome, LinuxDesktop::Kde, LinuxDesktop::Other] {
+            assert_eq!(
+                keys(Desktop::Linux(linux)),
+                AccessKeys::UnderlinesWhileAltHeld,
+                "{linux:?}"
+            );
         }
     }
 
