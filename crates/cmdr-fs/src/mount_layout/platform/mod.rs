@@ -6,6 +6,10 @@
 mod imp;
 
 const _: fn() -> &'static [&'static str] = user_mount_prefixes;
+const _: fn() -> String = boot_volume_root;
 
 /// This OS's user-mount prefixes.
 pub(super) use imp::user_mount_prefixes;
+
+/// This OS's boot volume root, as an app path.
+pub(super) use imp::boot_volume_root;

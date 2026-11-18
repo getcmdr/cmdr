@@ -50,6 +50,12 @@ struct MountIdentity {
 fn name_for_root(root: &Path) -> String {
     root.file_name()
         .and_then(|name| name.to_str())
+        // A Windows drive root (`D:/`) has no last name; the letter reads fine in a log.
+        .or_else(|| {
+            root.to_str()
+                .map(|root| root.trim_end_matches('/'))
+                .filter(|root| !root.is_empty())
+        })
         .unwrap_or("Unknown")
         .to_string()
 }

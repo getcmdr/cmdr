@@ -297,7 +297,7 @@ fn rescan_anchors(watched_roots: &[PathBuf], counter: &AtomicU64) -> Vec<FsChang
     watched_roots
         .iter()
         .map(|root| FsChangeEvent {
-            path: root.to_string_lossy().to_string(),
+            path: event_path(root),
             event_id: counter.fetch_add(1, Ordering::Relaxed),
             flags: FsEventFlags {
                 must_scan_sub_dirs: true,
@@ -370,12 +370,27 @@ fn translate_notify_event(
         .map(|path| {
             let id = counter.fetch_add(1, Ordering::Relaxed);
             FsChangeEvent {
-                path: path.to_string_lossy().to_string(),
+                path: event_path(&path),
                 event_id: id,
                 flags: flags.clone(),
             }
         })
         .collect()
+}
+
+/// An event's path as the index's path space spells it. On Windows `notify` reports the
+/// native form (`C:\Windows\x`, or the watched `C:/` joined with `\` names), and the index
+/// holds app paths (`C:/Windows/x`, plan D1), so it goes through the one grammar; on Linux
+/// the path passes through byte for byte.
+fn event_path(path: &Path) -> String {
+    use cmdr_fs::volume::path_grammar::{PathFlavor, app_spelling};
+
+    let native = path.to_string_lossy();
+    if PathFlavor::HOST == PathFlavor::Windows {
+        app_spelling(&native, PathFlavor::Windows)
+    } else {
+        native.into_owned()
+    }
 }
 
 /// Classify the first path in the list as file, dir, or symlink.

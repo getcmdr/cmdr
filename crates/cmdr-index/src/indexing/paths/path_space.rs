@@ -117,7 +117,10 @@ impl IndexPathSpace {
     /// filesystem (see `local_external_index::classify`); only a FAT/exFAT local
     /// external drive is `false`.
     pub(crate) fn for_volume(kind: IndexVolumeKind, volume_root: &Path, inodes_trustworthy: bool) -> Self {
-        let base = if kind.mount_rooted() {
+        // `root` on Windows is the system drive (`C:/`), mount-rooted like any other drive
+        // (`routing::root_mount_root`); on macOS and Linux it's the pass-through boot disk.
+        let rooted_at_a_drive = super::routing::root_mount_root().is_some();
+        let base = if kind.mount_rooted() || rooted_at_a_drive {
             Self::mount_rooted(volume_root.to_string_lossy().into_owned())
         } else {
             Self::root()

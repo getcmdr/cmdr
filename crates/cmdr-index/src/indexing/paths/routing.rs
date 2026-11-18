@@ -117,10 +117,25 @@ fn boot_tree_mount_volume_id_for_path(path: &str) -> Option<VolumeId> {
 /// is the longest ancestor of `path`. An external path with no registered mount
 /// (drive not in the manager) yields `None` → falls back to `root`.
 fn external_mount_volume_id_for_path(path: &str) -> Option<VolumeId> {
-    if !crate::indexing::scanner::is_on_mounted_external_volume(path) {
+    if !crate::indexing::scanner::is_on_mounted_external_volume(path) && !is_off_the_boot_volume(path) {
         return None;
     }
     host::volumes::current().mount_id_for_path(path)
+}
+
+/// Where `root`'s index is rooted when that isn't `/`: the system drive on Windows (`C:/`),
+/// where each drive is its own volume (plan D1). `None` on macOS and Linux, whose `root` is
+/// the `/`-rooted boot disk, so every branch on this reads exactly as before there.
+pub(crate) fn root_mount_root() -> Option<String> {
+    Some(cmdr_fs::mount_layout::boot_volume_root()).filter(|root| root != "/")
+}
+
+/// Whether `path` lies outside the boot volume, on a drive or share of its own (Windows'
+/// `D:/…`, `//server/share/…`). Never true on macOS and Linux, where every absolute path is
+/// under `/`; there an external volume shows by its mount prefix instead.
+fn is_off_the_boot_volume(path: &str) -> bool {
+    root_mount_root()
+        .is_some_and(|root| crate::indexing::transports::smb::watch::index_relative_path(&root, path).is_none())
 }
 
 /// Map an `mtp://{device_id}/{storage_id}[/…]` path to its MTP volume id
@@ -174,7 +189,10 @@ fn adb_index_relative_path(volume_id: &str, abs_path: &str) -> Option<String> {
 /// registry lookup in [`index_read_path`] runs a moment later and drops the path.
 pub(crate) fn exclusion_scope_for_volume(volume_id: &str) -> ExclusionScope {
     if volume_id == ROOT_VOLUME_ID {
-        return ExclusionScope::boot_disk();
+        return match root_mount_root() {
+            Some(root) => ExclusionScope::mount_rooted(root),
+            None => ExclusionScope::boot_disk(),
+        };
     }
     let mount_root = host::volumes::current()
         .get(volume_id)
@@ -207,7 +225,7 @@ pub(crate) fn exclusion_scope_for_volume(volume_id: &str) -> ExclusionScope {
 ///   mis-root it at `ROOT_ID`).
 pub(crate) fn index_read_path_pure(volume_id: &str, normalized_abs: &str, mount_root: Option<&str>) -> Option<String> {
     if volume_id == ROOT_VOLUME_ID {
-        return Some(normalized_abs.to_string());
+        return root_read_path(normalized_abs);
     }
     // MTP: the index `ROOT_ID` is the storage root and the volume namespace is
     // `mtp://{device}/{storage}[/inner…]`, so strip the scheme + device/storage
@@ -224,6 +242,15 @@ pub(crate) fn index_read_path_pure(volume_id: &str, normalized_abs: &str, mount_
     }
     let mount_root = mount_root?;
     crate::indexing::transports::smb::watch::index_relative_path(mount_root, normalized_abs)
+}
+
+/// `root`'s read path: the path itself on the `/`-rooted boot disk, the system drive's root
+/// stripped on Windows (`C:/Windows` reads `/Windows`), `None` for a path on another drive.
+fn root_read_path(abs_path: &str) -> Option<String> {
+    match root_mount_root() {
+        None => Some(abs_path.to_string()),
+        Some(root) => crate::indexing::transports::smb::watch::index_relative_path(&root, abs_path),
+    }
 }
 
 /// Strip an `mtp://{device}/{storage}[/inner…]` path to the inner index-relative
@@ -267,7 +294,7 @@ fn mtp_index_relative_path(volume_id: &str, abs_path: &str) -> Option<String> {
 /// like an unindexed volume.
 pub(crate) fn index_read_path(volume_id: &str, abs_path: &str) -> Option<String> {
     if volume_id == ROOT_VOLUME_ID {
-        return Some(abs_path.to_string());
+        return root_read_path(abs_path);
     }
     let mount_root = host::volumes::current()
         .get(volume_id)

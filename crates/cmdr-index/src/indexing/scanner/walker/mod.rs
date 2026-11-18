@@ -336,12 +336,26 @@ pub fn std_read_dir(path: &Path, progress: &ReadProgress) -> std::io::Result<Vec
             Err(_) => RawFileType::Other,
         };
         out.push(RawDirEntry {
-            path: entry.path(),
+            path: app_spelled(entry.path()),
             file_type,
             stat: None, // the visitor stats each entry itself
         });
     }
     Ok(out)
+}
+
+/// A child's path as the index spells it. On Windows `read_dir` joins the child's name with
+/// `\` onto the app path it was given (`C:/Windows\System32`), and the index holds app paths
+/// (`C:/Windows/System32`, plan D1), so it goes through the one grammar; elsewhere the path
+/// passes through untouched.
+fn app_spelled(path: PathBuf) -> PathBuf {
+    use cmdr_fs::volume::path_grammar::{PathFlavor, app_spelling};
+
+    if PathFlavor::HOST == PathFlavor::Windows {
+        PathBuf::from(app_spelling(&path.to_string_lossy(), PathFlavor::Windows))
+    } else {
+        path
+    }
 }
 
 /// The production directory reader for this platform. On macOS this is the
