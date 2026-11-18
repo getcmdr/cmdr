@@ -81,6 +81,13 @@ Authoritative file: `apps/desktop/src-tauri/src/instance_lock.rs`.
 `CMDR_DATA_DIR` env wins; otherwise Tauri's `app_data_dir()` resolves from the identifier in the generated config.
 Wrapper sets both so they agree.
 
+The OS defaults (`dirs::data_dir()` and `dirs::cache_dir()` plus the identifier): macOS `~/Library/Application Support`
+and `~/Library/Caches`; Linux the absolute `XDG_DATA_HOME` / `XDG_CACHE_HOME`, else `~/.local/share` and `~/.cache`;
+Windows Roaming (`%APPDATA%`) for data and Local (`%LOCALAPPDATA%`) for the cache, so the gigabytes of drive index never
+roam. One case table, `apps/desktop/src-tauri/src/os_app_dirs_cases.json`, holds the wrapper (`instance-id.test.ts`) and
+the backend (`config_os_dirs_test.rs`, which also pins its model of `dirs` to the real `dirs` on the test host) to the
+same answers.
+
 Authoritative files: `apps/desktop/src-tauri/src/config.rs`, `apps/desktop/scripts/instance-id.ts`.
 
 ### `tauri-plugin-store`

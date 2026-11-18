@@ -217,6 +217,11 @@ fn os_log_dir_for(base: &Path, identifier: &str) -> PathBuf {
     }
 }
 
+/// The OS dirs above, held to the case table `scripts/instance-id.ts` shares.
+#[cfg(test)]
+#[path = "config_os_dirs_test.rs"]
+mod os_dirs_test;
+
 /// Logs the resolved data directory once at startup.
 pub fn log_app_data_dir<R: Runtime>(app: &AppHandle<R>) {
     if let Ok(dir) = resolved_app_data_dir(app) {

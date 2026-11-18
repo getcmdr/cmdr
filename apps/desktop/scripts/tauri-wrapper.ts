@@ -201,8 +201,7 @@ try {
       instanceId,
       platform: process.platform,
       home: homedir(),
-      xdgDataHome: env.XDG_DATA_HOME,
-      xdgCacheHome: env.XDG_CACHE_HOME,
+      env,
       vitePort,
     })
 

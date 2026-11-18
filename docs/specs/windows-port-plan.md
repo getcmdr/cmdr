@@ -399,8 +399,11 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     system proxy. Needs 8, 16.
 47. [S] Windows. Crash minidumps (`crash-handler` + `minidumper`) and Windows-shaped crash cards in the api-server.
     Needs 23.
-48. [XS] Windows. WebView2 specifics: `cmdr-media` URLs via `convertFileSrc` plus the `.localhost` CSP origin, and
-    `instance-id.ts` Windows data (Roaming) and cache (Local) dirs in lockstep with the Rust mirror.
+48. [XS] Windows. **Done**. WebView2 specifics: every `cmdr-media` URL comes from `mediaUrl` via `convertFileSrc`
+    (`http://cmdr-media.localhost/<token>` there, pinned by `media-view.test.ts`; the handler reads only the path), and
+    `tauri.windows.conf.json` restates the CSP with that origin, held to the shared one by `tauri_config.rs`.
+    `instance-id.ts` knows Roaming (`%APPDATA%`) for data and Local (`%LOCALAPPDATA%`) for the cache, in lockstep with
+    the backend through the case table `os_app_dirs_cases.json` (`docs/tooling/instance-isolation.md` § "Data dir").
 49. [S] Windows (taskbar progress is a win: Dock progress too). Shell integration: an "Open in Cmdr" Explorer verb,
     taskbar progress for long operations (`Window::set_progress_bar`), jump lists of recent folders.
 50. [S] Windows, later (D3 step 3). `cmdr-update-trust` Authenticode check (`WinVerifyTrust` plus a pinned signer) for
@@ -445,6 +448,14 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       - The browser demo for a Windows or Linux visitor: the search dialog's new query keeps `Ctrl+N`, which Chromium
         keeps from the page, because a fixed-key command can't be seeded (`lib/demo/browser-shortcuts.ts`). It needs a
         demo-only key once task 63 decides the demo's bar.
+    - **WebView2 and data dirs (from task 48; unit tests cover the URL and dir rules, these need the real OS)**:
+      - An image, a PDF, a Markdown document's local pictures, image search's thumbnails, and the bulk-rename review's
+        previews all load over `http://cmdr-media.localhost/<token>`, with no CSP violation in the devtools console, and
+        a PDF range request (scrolling a big PDF) answers `206`.
+      - The data dir lands in `%APPDATA%\com.veszelovszki.cmdr` and the drive index in
+        `%LOCALAPPDATA%\com.veszelovszki.cmdr\drive-index`; a `pnpm dev` build's in its `-dev` twins. Run
+        `config_os_dirs_test` there too: it pins the dir model to the known folders `dirs` reads.
+      - (Task 57 owns where MSIX redirects them.)
 
 56. [S] Windows. MTP via `mtp-rs`'s WPD backend (D2): Windows device arrival and removal for phones, the 5–6-minute
     driver stall shown as a "the phone is busy" state with a timeout (a dropped future is safe, later calls queue behind

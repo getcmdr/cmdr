@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mkdtempSync, readFileSync, existsSync, writeFileSync, readdirSync, statSync } from 'fs'
 import { tmpdir } from 'os'
-import { join } from 'path'
+import { join, resolve } from 'path'
 import {
   sanitizeWorktreeSlug,
   resolveInstanceId,
@@ -17,6 +17,7 @@ import {
   writePortFile,
   removePortFile,
 } from './instance-id.ts'
+import type { OsDirEnv } from './instance-id.ts'
 
 describe('sanitizeWorktreeSlug', () => {
   it('lowercases ASCII as-is', () => {
@@ -192,81 +193,33 @@ describe('extractWorktreeFlag', () => {
   })
 })
 
-describe('computeAppDataDir', () => {
-  it('returns the macOS Application Support path on darwin', () => {
-    expect(
-      computeAppDataDir({
-        identifier: 'com.veszelovszki.cmdr-dev',
-        platform: 'darwin',
-        home: '/Users/me',
-        xdgDataHome: undefined,
-      }),
-    ).toBe('/Users/me/Library/Application Support/com.veszelovszki.cmdr-dev')
+/** A row of the OS-dir case table this file shares with `src-tauri/src/config_os_dirs_test.rs`. */
+interface OsDirCase {
+  name: string
+  os: 'macos' | 'linux' | 'windows'
+  home: string
+  env: OsDirEnv
+  identifier: string
+  dataDir: string
+  cacheDir: string
+}
+
+describe('computeAppDataDir + computeAppCacheDir', () => {
+  // One case table with the Rust side, so the wrapper's dirs and the backend's can't drift
+  // apart on any OS.
+  const table = JSON.parse(readFileSync(resolve(process.cwd(), 'src-tauri/src/os_app_dirs_cases.json'), 'utf8')) as {
+    cases: OsDirCase[]
+  }
+  const platformOf: Record<OsDirCase['os'], NodeJS.Platform> = { macos: 'darwin', linux: 'linux', windows: 'win32' }
+
+  it('covers every OS', () => {
+    expect(new Set(table.cases.map((c) => c.os))).toEqual(new Set(['macos', 'linux', 'windows']))
   })
 
-  it('uses XDG_DATA_HOME on Linux when set', () => {
-    expect(
-      computeAppDataDir({
-        identifier: 'com.veszelovszki.cmdr-dev-foo',
-        platform: 'linux',
-        home: '/home/me',
-        xdgDataHome: '/custom/data',
-      }),
-    ).toBe('/custom/data/com.veszelovszki.cmdr-dev-foo')
-  })
-
-  it('falls back to ~/.local/share on Linux when XDG_DATA_HOME is unset', () => {
-    expect(
-      computeAppDataDir({
-        identifier: 'com.veszelovszki.cmdr-dev',
-        platform: 'linux',
-        home: '/home/me',
-        xdgDataHome: undefined,
-      }),
-    ).toBe('/home/me/.local/share/com.veszelovszki.cmdr-dev')
-  })
-
-  it('treats an empty XDG_DATA_HOME as unset', () => {
-    expect(
-      computeAppDataDir({
-        identifier: 'com.veszelovszki.cmdr-dev',
-        platform: 'linux',
-        home: '/home/me',
-        xdgDataHome: '',
-      }),
-    ).toBe('/home/me/.local/share/com.veszelovszki.cmdr-dev')
-  })
-})
-
-describe('computeAppCacheDir', () => {
-  it('returns the macOS Caches path on darwin, which Time Machine skips', () => {
-    expect(
-      computeAppCacheDir({
-        identifier: 'com.veszelovszki.cmdr-dev-foo',
-        platform: 'darwin',
-        home: '/Users/me',
-        xdgCacheHome: '/ignored',
-      }),
-    ).toBe('/Users/me/Library/Caches/com.veszelovszki.cmdr-dev-foo')
-  })
-
-  it('uses XDG_CACHE_HOME on Linux when set, else ~/.cache', () => {
-    expect(
-      computeAppCacheDir({
-        identifier: 'com.veszelovszki.cmdr-dev',
-        platform: 'linux',
-        home: '/home/me',
-        xdgCacheHome: '/custom/cache',
-      }),
-    ).toBe('/custom/cache/com.veszelovszki.cmdr-dev')
-    expect(
-      computeAppCacheDir({
-        identifier: 'com.veszelovszki.cmdr-dev',
-        platform: 'linux',
-        home: '/home/me',
-        xdgCacheHome: '',
-      }),
-    ).toBe('/home/me/.cache/com.veszelovszki.cmdr-dev')
+  it.each(table.cases.map((c) => [c.name, c] as const))('%s', (_name, c) => {
+    const input = { identifier: c.identifier, platform: platformOf[c.os], home: c.home, env: c.env }
+    expect(computeAppDataDir(input)).toBe(c.dataDir)
+    expect(computeAppCacheDir(input)).toBe(c.cacheDir)
   })
 })
 
@@ -430,7 +383,7 @@ describe('deriveInstance', () => {
       instanceId: 'dev',
       platform: 'darwin',
       home: '/Users/me',
-      xdgDataHome: undefined,
+      env: {},
     })
     expect(out.identifier).toBe('com.veszelovszki.cmdr-dev')
     expect(out.dataDir).toBe('/Users/me/Library/Application Support/com.veszelovszki.cmdr-dev')
@@ -443,7 +396,7 @@ describe('deriveInstance', () => {
       instanceId: null,
       platform: 'darwin',
       home: '/Users/me',
-      xdgDataHome: undefined,
+      env: {},
     })
     expect(out.identifier).toBe('com.veszelovszki.cmdr')
     expect(out.dataDir).toBe('/Users/me/Library/Application Support/com.veszelovszki.cmdr')
@@ -455,7 +408,7 @@ describe('deriveInstance', () => {
       instanceId: 'dev-foo',
       platform: 'darwin',
       home: '/Users/me',
-      xdgDataHome: undefined,
+      env: {},
       vitePort: 49152,
     })
     expect(out.config?.build?.devUrl).toBe('http://localhost:49152')
