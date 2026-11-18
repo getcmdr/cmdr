@@ -33,8 +33,11 @@ pub(crate) const LOCAL_DISK_CASE_SENSITIVE: bool = false;
 /// Navigation asks per listing; two seconds keeps a burst of asks to one sweep.
 const TABLE_TTL: Duration = Duration::from_secs(2);
 
-/// The last drive table read, and when.
-static TABLE: LazyLock<Mutex<Option<(Instant, Arc<Vec<WindowsDrive>>)>>> = LazyLock::new(|| Mutex::new(None));
+/// One drive table read, and when it was taken.
+type TableRead = (Instant, Arc<Vec<WindowsDrive>>);
+
+/// The last drive table read.
+static TABLE: LazyLock<Mutex<Option<TableRead>>> = LazyLock::new(|| Mutex::new(None));
 
 /// The drive table, re-read when older than [`TABLE_TTL`].
 fn drive_table() -> Arc<Vec<WindowsDrive>> {

@@ -70,6 +70,14 @@ re-homes a deleted entry's `dir_stats`. The boot disk (APFS) and every trait-sca
 the local pre-pass) are `true`. `for_volume` / `mount_rooted` default to trustworthy; `with_inodes_trustworthy` carries
 the FAT/exFAT fact.
 
+**`root` on Windows is mount-rooted at the system drive.** Each drive is its own volume there (plan D1), so `root`'s
+index starts at `cmdr_fs::mount_layout::boot_volume_root()` (`C:/`) and every `root` branch here (the space,
+`index_read_path`, `exclusion_scope_for_volume`) strips that root like any mount; `routing::root_mount_root` is `None`
+on macOS and Linux, where those branches stay the `/`-rooted pass-through. A path on another drive (`D:/…`, a share)
+routes to that drive's own id (`is_off_the_boot_volume`), so `root` never claims it. ❌ Never start `root` at a bare `/`
+on Windows: it reads as the process's CURRENT drive. The scanner's `std_read_dir` and the `notify` watcher hand back
+app-spelled paths there (`C:/Windows/x`), since Windows joins children with `\`.
+
 ## `index_read_path` — the read side (`routing.rs`)
 
 The READ side needs the same transform as the SMB/MTP write side. Enrichment and the dir-stats IPC receive
