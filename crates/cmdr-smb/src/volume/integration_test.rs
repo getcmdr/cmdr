@@ -815,7 +815,10 @@ async fn smb_integration_scan_for_copy_batch_single_path() {
     .unwrap();
 
     let path = PathBuf::from(format!("{}/only.txt", dir));
-    let batch = vol.scan_for_copy_batch(std::slice::from_ref(&path)).await.unwrap();
+    let batch = vol
+        .scan_for_copy_batch(std::slice::from_ref(&AppPath::legacy_unchecked(&path).into_owned()))
+        .await
+        .unwrap();
     let single = vol.scan_for_copy(&AppPath::legacy_unchecked(&path)).await.unwrap();
 
     assert_eq!(batch.aggregate.file_count, single.file_count);

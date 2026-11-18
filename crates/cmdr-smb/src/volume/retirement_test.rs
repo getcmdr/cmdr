@@ -15,7 +15,6 @@ use cmdr_fs::app_path;
 use std::sync::Arc;
 
 use super::test_support::*;
-use super::*;
 
 /// A volume nobody has retired is the live one, so its watcher keeps working.
 #[test]
