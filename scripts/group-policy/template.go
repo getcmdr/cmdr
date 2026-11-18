@@ -18,8 +18,12 @@ type definition struct {
 
 type groupPolicy struct {
 	// Revision is the template's `revision` (major.minor). Raise it when a policy is added or changed.
-	Revision        string `json:"revision"`
-	VendorCategory  string `json:"vendorCategory"`
+	Revision       string `json:"revision"`
+	VendorCategory string `json:"vendorCategory"`
+	// NamespaceVendor heads both target namespaces (`<NamespaceVendor>.Policies` and
+	// `<NamespaceVendor>.Policies.<ProductCategory>`). Group Policy ignores a second ADMX whose target
+	// namespace another file already declares, so it is the vendor's full name, never a short or generic one.
+	NamespaceVendor string `json:"namespaceVendor"`
 	ProductCategory string `json:"productCategory"`
 	ProductExplain  string `json:"productExplain"`
 	SupportedOn     string `json:"supportedOn"`
@@ -64,7 +68,7 @@ func (def definition) validate() error {
 	if !revision.MatchString(gp.Revision) {
 		problems = append(problems, fmt.Sprintf("groupPolicy.revision %q isn't major.minor", gp.Revision))
 	}
-	for _, field := range [][2]string{{"vendorCategory", gp.VendorCategory}, {"productCategory", gp.ProductCategory}} {
+	for _, field := range [][2]string{{"vendorCategory", gp.VendorCategory}, {"namespaceVendor", gp.NamespaceVendor}, {"productCategory", gp.ProductCategory}} {
 		if !itemName.MatchString(field[1]) {
 			problems = append(problems, fmt.Sprintf("groupPolicy.%s %q isn't a plain name", field[0], field[1]))
 		}

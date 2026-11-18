@@ -2,21 +2,26 @@
 
 ## Files and generation
 
-- `rymd.admx` + `en-US/rymd.adml`: the vendor file. Namespace `Rymd.Policies`, prefix `rymd`, one category `Rymd` at the
-  root of Administrative Templates, no policies.
-- `cmdr.admx` + `en-US/cmdr.adml`: namespace `Rymd.Policies.Cmdr`, prefix `cmdr`,
-  `<using prefix="rymd" namespace="Rymd.Policies">`, a `Cmdr` category with `parentCategory ref="rymd:Rymd"`, and every
-  policy.
+- `rymd.admx` + `en-US/rymd.adml`: the vendor file. Namespace `Rymdskottkarra.Policies`, prefix `rymd`, one category
+  `Rymd` at the root of Administrative Templates, no policies.
+- `cmdr.admx` + `en-US/cmdr.adml`: namespace `Rymdskottkarra.Policies.Cmdr`, prefix `cmdr`,
+  `<using prefix="rymd" namespace="Rymdskottkarra.Policies">`, a `Cmdr` category with `parentCategory ref="rymd:Rymd"`,
+  and every policy.
 - **Decision/Why: a separate vendor file.** Each ADMX defines categories in its own namespace, so two products that each
   defined `Rymd` would show two `Rymd` folders. A shared vendor file that each product's template references is how
   multi-product vendors ship (Mozilla's `mozilla.admx` beside `firefox.admx`; Intune's import docs name that pair), so
   Rymdskottkärra AB's second product adds its own `<product>.admx` under the same `Rymd` folder.
+- **Decision/Why: the namespaces carry the vendor's full name.** Group Policy ignores a second ADMX whose target
+  namespace another file already declares, so a short or generic one (`Rymd.Policies`) risks colliding with someone
+  else's template in a central store. `groupPolicy.namespaceVendor` (`Rymdskottkarra`, ASCII for the schema's name
+  rules) heads both; the category, prefixes, and registry key keep the short `Rymd`, and no version goes in a namespace
+  or the key path (`revision` carries it).
 - `scripts/group-policy/` (Go, run through `./scripts/group-policy.sh`) reads
   `apps/desktop/src-tauri/src/managed_policy/policies.json` (the definition's rules:
   `apps/desktop/src-tauri/src/managed_policy/DETAILS.md` § The policy definition) and writes the four files. Names,
-  prefixes, and the `supportedOn` id derive from `groupPolicy.vendorCategory` and `productCategory`. Before writing, it
-  holds each ADMX and ADML together: every `$(string.X)` and `$(presentation.X)` resolves, no string goes unused, and
-  each presentation control names an ADMX element.
+  prefixes, and the `supportedOn` id derive from `groupPolicy.vendorCategory`, `namespaceVendor`, and `productCategory`.
+  Before writing, it holds each ADMX and ADML together: every `$(string.X)` and `$(presentation.X)` resolves, no string
+  goes unused, and each presentation control names an ADMX element.
 - `desktop-group-policy-fresh` builds the generator and runs it with `-check` (exit 3 means drift). Locally it
   regenerates the files; with `--ci` a difference fails. It runs in CI's light lane on every change.
 - Each explain text ends with a generated "Registry:" line naming the key, value, and type, for admins who set values by

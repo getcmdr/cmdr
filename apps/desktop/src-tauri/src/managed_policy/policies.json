@@ -5,6 +5,7 @@
   "groupPolicy": {
     "revision": "1.0",
     "vendorCategory": "Rymd",
+    "namespaceVendor": "Rymdskottkarra",
     "productCategory": "Cmdr",
     "productExplain": "Policies for Cmdr, the file manager. Set one under Computer Configuration for everyone on the PC, or under User Configuration for one user. When both set the same policy, the computer's wins. Cmdr applies a change while it runs.",
     "supportedOn": "Cmdr for Windows, on Windows 10 version 22H2 or later"

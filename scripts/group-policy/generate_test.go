@@ -14,6 +14,7 @@ const fixture = `{
   "groupPolicy": {
     "revision": "1.0",
     "vendorCategory": "TestVendor",
+    "namespaceVendor": "TestVendorLongName",
     "productCategory": "TestApp",
     "productExplain": "Policies for the test app.",
     "supportedOn": "The test app"
@@ -67,8 +68,8 @@ func TestEachKindWritesWhatTheAppReads(t *testing.T) {
 	admx := fixtureFiles(t)["testapp.admx"]
 	wants := []string{
 		// The product hangs under the vendor's shared category, in its own namespace.
-		`<target prefix="testapp" namespace="TestVendor.Policies.TestApp" />`,
-		`<using prefix="testvendor" namespace="TestVendor.Policies" />`,
+		`<target prefix="testapp" namespace="TestVendorLongName.Policies.TestApp" />`,
+		`<using prefix="testvendor" namespace="TestVendorLongName.Policies" />`,
 		`<parentCategory ref="testvendor:TestVendor" />`,
 		`<supportedOn ref="SUPPORTED_TestApp_Windows" />`,
 		// A bool: a REG_DWORD named after the policy, 1 or 0.
@@ -111,6 +112,8 @@ func TestValidateRefusesADefinitionTheTemplateCantCarry(t *testing.T) {
 		"a name twice, ignoring case":     `"name": "MaxThing"` + "|" + `"name": "disablething"`,
 		"a key outside Policies":          `SOFTWARE\\Policies\\TestVendor` + "|" + `SOFTWARE\\TestVendor`,
 		"a name the schema doesn't allow": `"name": "MaxThing"` + "|" + `"name": "Max Thing"`,
+		"no namespace vendor":             `"namespaceVendor": "TestVendorLongName",` + "|" + ``,
+		"a namespace vendor with a dot":   `"TestVendorLongName"` + "|" + `"Test.Vendor"`,
 	}
 	for what, edit := range cases {
 		from, to, _ := strings.Cut(edit, "|")

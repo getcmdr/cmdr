@@ -22,10 +22,10 @@ type file struct {
 	content []byte
 }
 
-// The names one template derives from its two categories. The vendor's namespace is what a second
+// The names one template derives from its definition. The vendor's namespace is what a second
 // product's template reuses through `<using>`, and the product's sits under it (the
-// `Mozilla.Policies` / `Mozilla.Policies.Firefox` shape). The prefixes and file names are the
-// lowercased category names.
+// `Mozilla.Policies` / `Mozilla.Policies.Firefox` shape); both start with `namespaceVendor`, the
+// vendor's full name. The prefixes and filenames are the lowercased category names.
 type names struct {
 	vendorNS, productNS         string
 	vendorPrefix, productPrefix string
@@ -33,7 +33,7 @@ type names struct {
 }
 
 func namesOf(gp groupPolicy) names {
-	vendorNS := gp.VendorCategory + ".Policies"
+	vendorNS := gp.NamespaceVendor + ".Policies"
 	return names{
 		vendorNS:      vendorNS,
 		productNS:     vendorNS + "." + gp.ProductCategory,
