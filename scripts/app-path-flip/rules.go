@@ -20,6 +20,11 @@ type rewriter struct {
 	load      func(file string) (*source, error)
 	crate     string
 	crateRust []string // every .rs file of the crate, for finding a struct a field rule retypes
+	// every .rs file under `crates/`, for finding a helper another crate defines
+	// (`scan_walk::scan_one`), and a cheap byte read of one before it's parsed
+	workspaceRust []string
+	readRaw       func(file string) ([]byte, error)
+	lazyMemo      map[string]bool // `lazyFn`'s answers this round
 }
 
 // editsFor returns the edits for one diagnostic, or none when no rule applies (residue).
@@ -50,7 +55,7 @@ func (r *rewriter) editsFor(d *diagnostic) ([]edit, error) {
 	if d.code() == "E0053" {
 		return signatureEdits(src, p), nil
 	}
-	if e := r.asyncHelperEdits(d, src, p); len(e) > 0 {
+	if e := r.borrowedFutureEdits(d, src, p); len(e) > 0 {
 		return e, nil
 	}
 	from, to := region(d, src, p)
@@ -298,15 +303,56 @@ func importEdits(d *diagnostic, src *source, crate string) []edit {
 			if s.SuggestedReplacement == nil || s.FileName != file || !strings.HasPrefix(strings.TrimSpace(*s.SuggestedReplacement), "use ") {
 				continue
 			}
-			return []edit{{file: file, start: s.ByteStart, end: s.ByteEnd, text: want, rule: ruleImport}}
+			start, end := s.ByteStart, s.ByteEnd
+			if start == end {
+				start = aboveOuterAttributes(src, start)
+				end = start
+			}
+			return []edit{{file: file, start: start, end: end, text: want, rule: ruleImport}}
 		}
 	}
 	// rustc suggests nothing for a name from another crate here; the import goes at the head
 	// of the innermost module holding the use that doesn't already import it.
 	if at, ok := importPoint(src, d.primary().ByteStart, strings.TrimSpace(want)); ok {
+		at = aboveOuterAttributes(src, at)
 		return []edit{{file: file, start: at, end: at, text: want, rule: ruleImport}}
 	}
 	return nil
+}
+
+// aboveOuterAttributes moves a line-start insertion point above the outer attributes and
+// doc comments of the item it precedes (`#[cfg(test)]` over a `pub use`, a multi-line
+// `#[cfg(any(…))]`, `///` lines): inserted below them, the import takes the item's
+// attribute and the item loses it, a silent change of what compiles.
+func aboveOuterAttributes(src *source, at int) int {
+	for at > 0 && src.masked[at-1] == '\n' {
+		lineStart := at - 1
+		for lineStart > 0 && src.masked[lineStart-1] != '\n' {
+			lineStart--
+		}
+		line := strings.TrimSpace(string(src.text[lineStart : at-1]))
+		maskedLine := strings.TrimRight(string(src.masked[lineStart:at-1]), " \t\r")
+		switch {
+		case strings.HasPrefix(line, "///") || strings.HasPrefix(line, "/**"):
+			at = lineStart
+		case strings.HasSuffix(maskedLine, "]"):
+			open := matchBackward(src.masked, lineStart+len(maskedLine)-1)
+			if open < 1 || src.masked[open-1] != '#' {
+				return at
+			}
+			attrLine := open - 1
+			for attrLine > 0 && src.masked[attrLine-1] != '\n' {
+				attrLine--
+			}
+			if strings.TrimSpace(string(src.masked[attrLine:open-1])) != "" {
+				return at // `#` mid-line: not an attribute on its own lines
+			}
+			at = attrLine
+		default:
+			return at
+		}
+	}
+	return at
 }
 
 var inlineModPattern = regexp.MustCompile(`\bmod\s+\w+\s*\{`)

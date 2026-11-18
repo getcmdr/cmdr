@@ -36,7 +36,12 @@ func main() {
 	reportPath := flag.String("report", "", "write the rule counts and the residue as JSON here")
 	root := flag.String("root", "", "the repo root (default: found from the working directory)")
 	skipFmt := flag.Bool("no-fmt", false, "leave the rewritten files unformatted")
+	var auditDirs multiFlag
+	flag.Var(&auditDirs, "audit-imports", "list each import the codemod adds that sits right under an attribute, in this dir (repeatable), and exit")
 	flag.Parse()
+	if len(auditDirs) > 0 {
+		os.Exit(auditImports(*root, auditDirs))
+	}
 	if len(crates) == 0 {
 		fmt.Fprintln(os.Stderr, "usage: app-path-flip -p <crate> [-p <crate>…] [-cargo-args ARGS] [-report FILE]")
 		os.Exit(2)
@@ -99,8 +104,14 @@ func flipCrate(repo, crate string, cargoArgs []string, maxRounds int, format boo
 	if err != nil {
 		return report, err
 	}
+	workspaceFiles, err := listRust(repo, "crates")
+	if err != nil {
+		return report, err
+	}
 	keep := func(file string) bool { return strings.HasPrefix(file, dir+"/") }
-	rules := func(diags []diagnostic) ([]edit, error) { return roundEdits(repo, crate, rustFiles, diags) }
+	rules := func(diags []diagnostic) ([]edit, error) {
+		return roundEdits(repo, crate, rustFiles, workspaceFiles, diags)
+	}
 	last, checked, err := fixpoint(repo, crate, "check", cargoArgs, keep, maxRounds, &report, rules)
 	if err != nil {
 		return report, err

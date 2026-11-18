@@ -43,8 +43,22 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   prelude.
 - **Typed param handed back**: a prelude'd body handing its param to a typed slot gets the original back, kept as
   `let path_app = path;` before the prelude (a bridge round trip there would return a future borrowing a temporary).
-- **Async helper**: E0515 on `Box::pin(self.helper(path, …))` with `helper` an `async fn` of the crate and plain
-  arguments: the call moves into `Box::pin(async move { prelude; self.helper(path, …).await })`, the same future.
+- **Lazy helper** (`rules_lazy.go`): E0515 on a prelude'd body whose tail is a call tree returning the future moves the
+  tree into `Box::pin(async move { prelude; <tree>.await })`, the same future. Tails: `Box::pin(self.helper(path, …))`,
+  a bare `self.helper(path, …)` (the helper returns the box), nested (`Box::pin(self.noting(self.x_impl(path)))`,
+  `Box::pin(self.noting(scan_walk::scan_one(self, path)))`), and `let w = <tree>; Box::pin(async move { … w … })` (the
+  lets move to the block's head). Every call in the tree must be lazy: an `async fn`, or a `fn` whose body is ONLY
+  `Box::pin(async move { … })`, looked up in the crate, else in every crate under `crates/`, every definition of the
+  name agreeing; a tuple-struct or variant constructor (`Some(x)`, `Opening::Fresh(mode)`) counts too. Every leaf
+  argument must be plain: a local, `&`/`&mut` of one, a field read through `self`, a path (`None`,
+  `MacOnlyFiles::Include`), or a number, so evaluating it at the first poll gives today's value. ❌ No method call, `?`,
+  `.await`, index, closure, macro, or literal string: those stay residue, as does any call in the tree with a statement
+  before its `Box::pin` (moving it would delay that work).
+- **Round trip**: E0515 on `&AppPath::legacy_unchecked(&path.as_std_legacy())` (or the batch
+  `&paths.iter().map(|p| AppPath::legacy_unchecked(&p.as_std_legacy()).into_owned()).collect::<Vec<_>>()`) collapses it
+  to `path` (`paths`) when that's a param of the enclosing fn typed `&AppPath` (`&[AppPathBuf]`): the identity. The
+  codemod no longer makes these (a stale body error is now skipped in ANY fn whose signature is being retyped,
+  `macro_rules!` bodies included); the rule mends trees flipped before that.
 - **E0308 by type pair** (`valueRules`): a std path into a `&AppPath` slot becomes `app_path!("…")` for a canonical
   literal (`isCanonicalLiteral`: a POSIX path of plain names, or `scheme://authority/names`), else
   `&AppPath::legacy_unchecked(…)`; a batch maps each through the bridge; an owned `PathBuf` into an `AppPathBuf` slot is
@@ -64,7 +78,10 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   one drops the typed operand to `.as_std_legacy()` (a `BridgedPath` to `.as_path()`); the expected value is untouched.
 - **Imports**: a name a rule introduced (`AppPath`, `AppPathBuf`, `BridgedPath`, `app_path!`, `Path`, `PathBuf`) is
   imported at rustc's suggested point, or at the head of the innermost module when rustc suggests none (it doesn't for
-  another crate's items). Never twice in one module. A `Path`/`PathBuf` import a rewrite left unused is dropped.
+  another crate's items). Never twice in one module, and ❌ never between an item and its outer attributes or doc
+  comments (it would take the item's `#[cfg]` and ungate the item): the point lifts above them. A `Path`/`PathBuf`
+  import a rewrite left unused is dropped. `-audit-imports <dir>` (repeatable) lists every codemod-style import sitting
+  right under an attribute line, to check a tree flipped before that fix (clean on `cmdr-fs` and `cmdr-archive`).
 - **Clippy phase**: once the crate checks, the machine-applicable fix of `useless_vec`, `unnecessary_to_owned`,
   `needless_borrow`, `redundant_clone`, and a few more (`clippyFixable`) is applied: the base is clippy-clean, so those
   lints are the rewrites'.
@@ -82,9 +99,13 @@ the work comes in passes. Each pass is its own commit, so the audit can replay t
 
 What it leaves as residue, by shape (each seen on `cmdr-fs` or `cmdr-archive`):
 
-- **A future borrowing the prelude from a sync helper** (E0515 `path_std` on `self.open_stream(path, 0)`, a private
-  `fn … -> Pin<Box<…>>` that does work before its future starts): retype the helper's param to `&'a AppPath` and give
-  the helper the prelude, then pass the typed param straight through (drop the caller's prelude).
+- **A future borrowing the prelude from an eager helper** (E0515 `path_std` on `self.open_stream(path, 0)` or
+  `self.open_read_stream_impl(path)`, a `fn … -> Pin<Box<…>>` that does work before its future starts, like
+  `cmdr-local`'s `let abs_path = self.resolve(path);`): retype the helper's param to `&'a AppPath` and give the helper
+  the prelude, then pass the typed param straight through (drop the caller's prelude). A helper with a second, std
+  caller (`cmdr-local`'s `scan_subtree`, also called from `scan.rs` with a `&PathBuf`) gets that caller bridged.
+- **An import whose only uses are `cfg`-gated** (`#[cfg(test)]` methods): the lib build warns it unused and the run
+  stops. Give the `use` the same `#[cfg(…)]`.
 - **A comparison with no labeled operands** (`**path != self.root` against a `BridgedPath` field): `*self.root`.
 - **A borrowed return through an accessor** (`self.own_disk_home()`): retype the field it reads and return `.app()`.
 - **An in-process type built in a helper** (`Vec<(AppPathBuf, …)>` handed to a `Vec<(PathBuf, …)>` parameter): bridge

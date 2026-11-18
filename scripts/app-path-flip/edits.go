@@ -10,9 +10,9 @@ import (
 // roundEdits turns one round's diagnostics into a non-overlapping, deduplicated, ordered set
 // of edits. Two edits over overlapping bytes keep the first (by start, then the longer); the
 // other comes back next round against the new text, so overlap only delays, never loses.
-func roundEdits(repo, crate string, crateRust []string, diags []diagnostic) ([]edit, error) {
+func roundEdits(repo, crate string, crateRust, workspaceRust []string, diags []diagnostic) ([]edit, error) {
 	cache := map[string]*source{}
-	r := &rewriter{crate: crate, crateRust: crateRust, load: func(file string) (*source, error) {
+	r := &rewriter{crate: crate, crateRust: crateRust, workspaceRust: workspaceRust, load: func(file string) (*source, error) {
 		if s, ok := cache[file]; ok {
 			return s, nil
 		}
@@ -23,7 +23,7 @@ func roundEdits(repo, crate string, crateRust []string, diags []diagnostic) ([]e
 		s := newSource(file, text)
 		cache[file] = s
 		return s, nil
-	}}
+	}, readRaw: func(file string) ([]byte, error) { return os.ReadFile(filepath.Join(repo, file)) }}
 	retyping, err := methodsBeingRetyped(r, diags)
 	if err != nil {
 		return nil, err
@@ -32,10 +32,13 @@ func roundEdits(repo, crate string, crateRust []string, diags []diagnostic) ([]e
 	for i := range diags {
 		// A method whose signature an E0053 retypes this round still type-checks its body
 		// against the OLD signature, so its body's errors are stale: they come back right
-		// (or not at all, for a pure delegation) next round.
+		// (or not at all, for a pure delegation) next round. Any fn, not only one a
+		// `Volume` impl block holds: a `macro_rules!` body's methods (`forward_to_inner!`)
+		// are none, and bridging their stale errors the same round as the retype left a
+		// round trip (`&AppPath::legacy_unchecked(&path.as_std_legacy())`).
 		p := diags[i].primary()
 		if src, err := r.load(p.FileName); err == nil && diags[i].code() != "E0053" {
-			if m := src.methodAt(p.ByteStart); m != nil && retyping[methodKey(p.FileName, m)] {
+			if m := src.fnAt(p.ByteStart); m != nil && retyping[methodKey(p.FileName, m)] {
 				continue
 			}
 		}
@@ -52,7 +55,7 @@ func methodKey(file string, m *implMethod) string {
 	return fmt.Sprintf("%s#%d", file, m.sigStart)
 }
 
-// methodsBeingRetyped are the Volume impl methods an E0053 points into this round.
+// methodsBeingRetyped are the fns an E0053 points into the signature of this round.
 func methodsBeingRetyped(r *rewriter, diags []diagnostic) (map[string]bool, error) {
 	retyping := map[string]bool{}
 	for i := range diags {
@@ -64,11 +67,8 @@ func methodsBeingRetyped(r *rewriter, diags []diagnostic) (map[string]bool, erro
 		if err != nil {
 			return nil, err
 		}
-		for j := range src.methods {
-			m := &src.methods[j]
-			if p.ByteStart >= m.sigStart && p.ByteStart < m.bodyStart {
-				retyping[methodKey(p.FileName, m)] = true
-			}
+		if m := src.fnWithSignatureAt(p.ByteStart); m != nil {
+			retyping[methodKey(p.FileName, m)] = true
 		}
 	}
 	return retyping, nil
