@@ -3,11 +3,11 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "Användningsstatistik och kraschrapporter förblir avstängda tills du slår på dem igen i Inställningar › Uppdateringar och integritet.",
+  "stateRecovery.settings.body": "{platform, select, linuxGnome {Usage stats and crash reports stay off until you turn them back on in Preferences › Updates & privacy.} linuxKde {Usage stats and crash reports stay off until you turn them back on in Configure Cmdr › Updates & privacy.} other {Användningsstatistik och kraschrapporter förblir avstängda tills du slår på dem igen i Inställningar › Uppdateringar och integritet.}}",
   "@stateRecovery.settings.body": {
     "sourceHash": "20439e1"
   },
-  "stateRecovery.settings.openSettings": "Öppna inställningar",
+  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Öppna inställningar}}",
   "@stateRecovery.settings.openSettings": {
     "sourceHash": "3f94010"
   },
@@ -19,11 +19,11 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "Om Cmdr nu säger att du inte har någon licens, ange din licensnyckel igen i Inställningar › Licens.",
+  "stateRecovery.license.body": "{platform, select, linuxGnome {If Cmdr shows as unlicensed now, enter your license key again in Preferences › License.} linuxKde {If Cmdr shows as unlicensed now, enter your license key again in Configure Cmdr › License.} other {Om Cmdr nu säger att du inte har någon licens, ange din licensnyckel igen i Inställningar › Licens.}}",
   "@stateRecovery.license.body": {
     "sourceHash": "ea51589"
   },
-  "stateRecovery.license.openSettings": "Öppna inställningar",
+  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Öppna inställningar}}",
   "@stateRecovery.license.openSettings": {
     "sourceHash": "3f94010"
   },

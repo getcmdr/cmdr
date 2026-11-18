@@ -2515,11 +2515,11 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "Cmdr verwendet den KI-Anbieter und den Schlüssel, die du unter Einstellungen › KI eingerichtet hast ({provider}).",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr verwendet den KI-Anbieter und den Schlüssel, die du unter Einstellungen › KI eingerichtet hast ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
     "sourceHash": "9442b09"
   },
-  "settings.askCmdr.provider.off": "Aktiviere unter Einstellungen › KI einen KI-Anbieter, um loszuchatten.",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Aktiviere unter Einstellungen › KI einen KI-Anbieter, um loszuchatten.}}",
   "@settings.askCmdr.provider.off": {
     "sourceHash": "5cc1481"
   },
@@ -2966,7 +2966,7 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Einstellungsabschnitte",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {Einstellungsabschnitte}}",
   "@settings.sidebar.sections": {
     "sourceHash": "e26d51d"
   },
@@ -3440,7 +3440,7 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Einstellungen",
+  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Einstellungen}}",
   "@settings.window.title": {
     "sourceHash": "74a883a"
   },

@@ -2645,7 +2645,7 @@
   "@errors.listing.smbEncryptionRequired.explanation": {
     "sourceHash": "5eeef51"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "Co můžete zkusit:\n- Přihlaste se pomocí účtu: připojení jako host zašifrovat nejde\n- Zapněte šifrování SMB na serveru\n- Pokud volbu „Vždy vyžadovat šifrování SMB“ nepotřebujete, vypněte ji v Nastavení",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Preferences, if you don’t need it} linuxKde {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Configure Cmdr, if you don’t need it} other {Co můžete zkusit:\n- Přihlaste se pomocí účtu: připojení jako host zašifrovat nejde\n- Zapněte šifrování SMB na serveru\n- Pokud volbu „Vždy vyžadovat šifrování SMB“ nepotřebujete, vypněte ji v Nastavení}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
     "sourceHash": "f16274b"
   },
@@ -2669,7 +2669,7 @@
   "@errors.write.smbEncryptionRequired.message": {
     "sourceHash": "ec53744"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "Přihlaste se pomocí účtu místo připojení jako host, nebo zapněte šifrování SMB na serveru. Volbu „Vždy vyžadovat šifrování SMB“ můžete také vypnout v Nastavení.",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Preferences.} linuxKde {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Configure Cmdr.} other {Přihlaste se pomocí účtu místo připojení jako host, nebo zapněte šifrování SMB na serveru. Volbu „Vždy vyžadovat šifrování SMB“ můžete také vypnout v Nastavení.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
     "sourceHash": "20a90d4"
   },

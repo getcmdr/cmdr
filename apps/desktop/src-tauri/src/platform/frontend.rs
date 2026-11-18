@@ -13,27 +13,41 @@ const FRONTEND_PLATFORM: &str = std::env::consts::OS;
 /// `window.__CMDR_CONVENTIONS__`, all read-only (the two objects frozen), so nothing in the page can
 /// change its mind later.
 pub(crate) fn init_script() -> String {
-    script_for(FRONTEND_PLATFORM, &capabilities(), &frontend_conventions())
+    let (copy_platform, conventions) = frontend_conventions();
+    script_for(FRONTEND_PLATFORM, &capabilities(), &conventions, copy_platform)
 }
 
-/// This desktop's conventions, or in a debug build the row `CMDR_MOCK_CONVENTIONS` names.
-fn frontend_conventions() -> PlatformConventions {
+/// This desktop's conventions, or in a debug build the row `CMDR_MOCK_CONVENTIONS` names, plus
+/// the platform a mocked row's copy reads (`None` when nothing is mocked).
+fn frontend_conventions() -> (Option<&'static str>, PlatformConventions) {
     #[cfg(debug_assertions)]
-    if let Some(mocked) = conventions::mock_conventions() {
-        log::info!(target: "platform", "CMDR_MOCK_CONVENTIONS: the frontend follows another desktop's conventions");
-        return mocked;
+    if let Some((desktop, mocked)) = conventions::mock_conventions() {
+        log::info!(target: "platform", "CMDR_MOCK_CONVENTIONS: the frontend follows another desktop's conventions and copy");
+        return (Some(desktop.copy_platform()), mocked);
     }
-    conventions()
+    (None, conventions())
 }
 
-fn script_for(platform: &str, capabilities: &PlatformCapabilities, conventions: &PlatformConventions) -> String {
+/// The init script. A mocked desktop also defines `window.__CMDR_COPY_PLATFORM__`, which only the
+/// copy reader follows (`#lib/intl`), so the window speaks the mocked desktop's words while
+/// keymaps and capabilities stay this OS's.
+fn script_for(
+    platform: &str,
+    capabilities: &PlatformCapabilities,
+    conventions: &PlatformConventions,
+    copy_platform: Option<&str>,
+) -> String {
     // Structs of bools and unit enums always serialize, and their JSON is a valid JS object
     // literal as is.
     let capabilities = serde_json::to_string(capabilities).expect("a struct of bools serializes");
     let conventions = serde_json::to_string(conventions).expect("a struct of unit enums serializes");
+    let copy = copy_platform
+        .map(|copy| format!("Object.defineProperty(window, '__CMDR_COPY_PLATFORM__', {{ value: '{copy}' }});"))
+        .unwrap_or_default();
     format!(
         "Object.defineProperty(window, '__CMDR_PLATFORM__', {{ value: '{platform}' }});\
          Object.defineProperty(window, '__CMDR_CAPABILITIES__', {{ value: Object.freeze({capabilities}) }});\
+         {copy}\
          Object.defineProperty(window, '__CMDR_CONVENTIONS__', {{ value: Object.freeze({conventions}) }});"
     )
 }
@@ -76,5 +90,21 @@ mod tests {
         assert!(json.contains("\"dialogButtonOrder\":"));
         assert!(json.contains("\"screenReaders\":["));
         assert!(!json.contains('_'));
+    }
+
+    #[test]
+    fn a_mocked_desktop_hands_its_copy_platform_only_when_mocked() {
+        use super::super::LinuxDesktop;
+        use super::super::conventions::{Desktop, conventions_on};
+        let gnome = Desktop::Linux(LinuxDesktop::Gnome);
+        let mocked = script_for(
+            "macos",
+            &capabilities(),
+            &conventions_on(gnome),
+            Some(gnome.copy_platform()),
+        );
+        assert!(mocked.contains("Object.defineProperty(window, '__CMDR_COPY_PLATFORM__', { value: 'linux' });"));
+        assert!(mocked.starts_with("Object.defineProperty(window, '__CMDR_PLATFORM__', { value: 'macos' });"));
+        assert!(!init_script().contains("__CMDR_COPY_PLATFORM__") || std::env::var("CMDR_MOCK_CONVENTIONS").is_ok());
     }
 }

@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "在“设置”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {在“设置”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "ccf901b"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "驱动器索引已在设置中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {驱动器索引已在设置中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "abfe24b"
   },

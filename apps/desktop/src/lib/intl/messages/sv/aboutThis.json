@@ -1231,7 +1231,7 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "Göm det här tipset. Du kan visa det igen under Inställningar > Avancerat.",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Hide this hint. You can bring it back in Preferences > Advanced.} linuxKde {Hide this hint. You can bring it back in Configure Cmdr > Advanced.} other {Göm det här tipset. Du kan visa det igen under Inställningar > Avancerat.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
     "sourceHash": "6a3a4b3"
   },

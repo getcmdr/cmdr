@@ -2506,11 +2506,11 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "Cmdr dùng nhà cung cấp AI và khóa mà bạn đã thiết lập trong Cài đặt › AI ({provider}).",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr dùng nhà cung cấp AI và khóa mà bạn đã thiết lập trong Cài đặt › AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
     "sourceHash": "9442b09"
   },
-  "settings.askCmdr.provider.off": "Bật một nhà cung cấp AI trong Cài đặt › AI để bắt đầu trò chuyện.",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Bật một nhà cung cấp AI trong Cài đặt › AI để bắt đầu trò chuyện.}}",
   "@settings.askCmdr.provider.off": {
     "sourceHash": "5cc1481"
   },
@@ -2957,7 +2957,7 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Các mục cài đặt",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {Các mục cài đặt}}",
   "@settings.sidebar.sections": {
     "sourceHash": "e26d51d"
   },
@@ -3428,7 +3428,7 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Cài đặt",
+  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Cài đặt}}",
   "@settings.window.title": {
     "sourceHash": "74a883a"
   },

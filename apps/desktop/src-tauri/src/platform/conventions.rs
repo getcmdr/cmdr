@@ -186,8 +186,23 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
 /// one's, so a Mac shows the Windows dialog order and access keys. Debug builds only, like the
 /// other `CMDR_MOCK_*` flags; `None` when unset or unknown.
 #[cfg(debug_assertions)]
-pub(crate) fn mock_conventions() -> Option<PlatformConventions> {
-    mock_desktop(std::env::var("CMDR_MOCK_CONVENTIONS").ok().as_deref()).map(conventions_on)
+pub(crate) fn mock_conventions() -> Option<(Desktop, PlatformConventions)> {
+    mock_desktop(std::env::var("CMDR_MOCK_CONVENTIONS").ok().as_deref())
+        .map(|desktop| (desktop, conventions_on(desktop)))
+}
+
+impl Desktop {
+    /// The OS this desktop runs on, in the frontend's `Platform` spelling. The mock hands it to
+    /// the webview as the platform its COPY reads, so a mocked desktop's words show beside its
+    /// conventions (`apps/desktop/src/lib/platform/DETAILS.md` § Conventions).
+    #[cfg(any(debug_assertions, test))]
+    pub(crate) const fn copy_platform(self) -> &'static str {
+        match self {
+            Desktop::Macos => "macos",
+            Desktop::Windows => "windows",
+            Desktop::Linux(_) => "linux",
+        }
+    }
 }
 
 #[cfg(any(debug_assertions, test))]

@@ -3,7 +3,7 @@
   "@commands.appLicenseKey.enterKey.label": {
     "sourceHash": "e5dac0a"
   },
-  "commands.appSettings.label": "Abrir la configuración",
+  "commands.appSettings.label": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Abrir la configuración}}",
   "@commands.appSettings.label": {
     "sourceHash": "3e708b0"
   },
@@ -143,11 +143,11 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "c46a8a3"
   },
-  "commands.handler.openTerminalHere.hint": "Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configuración, en “Navegación y operaciones de archivos”.",
+  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Preferences, under Navigation & file ops.} linuxKde {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Configure Cmdr, under Navigation & file ops.} other {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configuración, en “Navegación y operaciones de archivos”.}}",
   "@commands.handler.openTerminalHere.hint": {
     "sourceHash": "1942df6"
   },
-  "commands.handler.openTerminalHere.openSettings": "Abrir la configuración",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Abrir la configuración}}",
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "3e708b0"
   },
@@ -167,7 +167,7 @@
   "@commands.suggestedOpsShow.description": {
     "sourceHash": "121ceeb"
   },
-  "commands.handler.viewDebugLog.disabled": "El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configuración > Avanzado y reinicia Cmdr para ver el registro de depuración.",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Log storage is off. Set a disk space limit above 0 in Preferences > Advanced, then restart Cmdr to view the debug log.} linuxKde {Log storage is off. Set a disk space limit above 0 in Configure Cmdr > Advanced, then restart Cmdr to view the debug log.} other {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configuración > Avanzado y reinicia Cmdr para ver el registro de depuración.}}",
   "@commands.handler.viewDebugLog.disabled": {
     "sourceHash": "2bf377a"
   },

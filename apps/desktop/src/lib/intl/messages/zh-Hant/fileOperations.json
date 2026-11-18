@@ -427,7 +427,7 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "下次 Cmdr 會預先選好這個選項，你可以在「設定」裡更改。如果這個選項會覆寫檔案，你會先看到警告。",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Cmdr starts on this choice next time, and you can change it in Preferences. If it overwrites files, you’ll see a warning first.} linuxKde {Cmdr starts on this choice next time, and you can change it in Configure Cmdr. If it overwrites files, you’ll see a warning first.} other {下次 Cmdr 會預先選好這個選項，你可以在「設定」裡更改。如果這個選項會覆寫檔案，你會先看到警告。}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
     "sourceHash": "c26d762"
   },

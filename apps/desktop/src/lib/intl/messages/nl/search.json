@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Instellingen om de tekst in de foto''s te doorzoeken.",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Instellingen om de tekst in de foto''s te doorzoeken.}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "ccf901b"
   },
@@ -220,7 +220,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "Het indexeren van schijven staat uit in Instellingen, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {Het indexeren van schijven staat uit in Instellingen, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "abfe24b"
   },

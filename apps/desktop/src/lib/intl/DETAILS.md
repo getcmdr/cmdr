@@ -228,13 +228,14 @@ space after each comma). Never a block inside a sentence, never `{platform}` int
 
 - **Linux desktops are flat branches, not a nested select** (#1231). A running system is a READER
   (`PlatformSelectReader`: `macos`, `windows`, `linuxGnome`, `linuxKde`, or `linux`),
-  `selectReaderFor(platform, linuxDesktop)` names it (the desktop is `convention('linuxDesktop')`, asked only on Linux,
-  so macOS and Windows resolve exactly by platform), and a reader reads its own branch where the block has one, else
-  `other`. A block without desktop branches reads exactly as before on every desktop. Write a desktop branch only where
-  that desktop's own UI says it differently (style guide § "Platform vocabulary"); a source branch equal to `other`
-  fails the shape check. **Decision/Why flat**: one level keeps every reader a lookup with one fallback (the raw
-  splitter, the ES5 boot guard, Rust's table), a nested `{desktop, select}` inside `other` would need a second injected
-  arg and a second split in each, and translators see every system's text side by side.
+  `selectReaderFor(platform, linuxDesktop)` names it (the platform is `getCopyPlatform()`, which a
+  `CMDR_MOCK_CONVENTIONS` dev run moves to the mocked desktop's OS; the desktop is `convention('linuxDesktop')`, asked
+  only on Linux, so macOS and Windows resolve exactly by platform), and a reader reads its own branch where the block
+  has one, else `other`. A block without desktop branches reads exactly as before on every desktop. Write a desktop
+  branch only where that desktop's own UI says it differently (style guide § "Platform vocabulary"); a source branch
+  equal to `other` fails the shape check. **Decision/Why flat**: one level keeps every reader a lookup with one fallback
+  (the raw splitter, the ES5 boot guard, Rust's table), a nested `{desktop, select}` inside `other` would need a second
+  injected arg and a second split in each, and translators see every system's text side by side.
 - **One shared table keeps the resolvers in agreement**: `platform-select-cases.json` (which reader each platform plus
   desktop is, and what each reader reads from sample blocks) is passed by `platform-select-cases.test.ts` (`t()`,
   `getMessage()`, the splitter), `app-boot-guard.test.ts` (the ES5 `pickText`), `gen-native-strings.test.ts` (the

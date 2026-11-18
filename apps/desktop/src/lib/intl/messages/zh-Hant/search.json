@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "到「設定」裡為這個網路磁碟機開啟影像索引，就能搜尋照片裡的文字。",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {到「設定」裡為這個網路磁碟機開啟影像索引，就能搜尋照片裡的文字。}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "ccf901b"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "「設定」裡的磁碟機索引是關閉的，所以不會建立任何索引。請到「索引 > 磁碟機索引」底下開啟。",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {「設定」裡的磁碟機索引是關閉的，所以不會建立任何索引。請到「索引 > 磁碟機索引」底下開啟。}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "abfe24b"
   },

@@ -281,8 +281,8 @@ The words the `linuxGnome` / `linuxKde` branches use (#1231), each checked on 20
   `file-manager`); "Show in …" is Cmdr's phrasing (neither app labels another app's reveal), tentative.
 - **Settings row**: GNOME "Preferences", no ellipsis (verified in pile above, § `settings-ellipsis`, Nautilus
   `_Preferences`). KDE "Configure Cmdr…": KStandardAction's preferences action is `&Configure %1…` (verified on web,
-  https://codebrowser.dev/kde/kconfig/src/gui/kstandardactions_p.h.html, search summary). The Settings window keeps its
-  "Settings" title on both, which reads a little apart from the row; open for David.
+  https://codebrowser.dev/kde/kconfig/src/gui/kstandardactions_p.h.html, search summary). The window's title follows the
+  row on each desktop: § The settings window's title.
 - **Shortcut path**: GNOME "Settings > Keyboard > View and Customize Shortcuts" (verified on web,
   https://help.gnome.org/gnome-help/keyboard-shortcuts-set.html, search summary: "In the Keyboard Shortcuts section,
   select View and Customize Shortcuts"; its en_GB catalog says "View and Customise Shortcuts", verified on web,
@@ -296,6 +296,34 @@ The words the `linuxGnome` / `linuxKde` branches use (#1231), each checked on 20
   which KWallet serves on Plasma (memory, unverified on a KDE page). GNOME keeps "keyring" (GNOME Keyring's own word)
   and names its app "Passwords and Keys" (verified on web, https://flathub.org/en/apps/org.gnome.seahorse.Application,
   search summary: "Passwords and Keys is a GNOME application…").
+
+## The settings window's title
+
+What each system's own apps title an app's settings window, checked 2026-11-18 for David's call that the title follows
+the menu row. The resolved words: `docs/style-guide.md` § "Platform vocabulary".
+
+- **macOS: "Settings"**. Apple HIG Settings: "When people choose the Settings item in your app's or game's App menu,
+  your custom settings window opens" (verified on web,
+  https://developer.apple.com/design/human-interface-guidelines/settings, its JSON data, 2026-11-18).
+- **Windows: "Settings"**. Microsoft's "Guidelines for app settings" calls it the app's "settings page" throughout, with
+  a "settings entry point" in the nav pane or the command bar's overflow (verified on web,
+  https://learn.microsoft.com/en-us/windows/apps/design/app-settings/guidelines-for-app-settings, markdown, page dated
+  2026-04-08). Windows 11's inbox apps (Notepad, Terminal, Photos) title the page "Settings": memory, unverified.
+  Nothing points Windows users at "Preferences", so the close-call rule keeps "Settings".
+- **GNOME: "Preferences"**. Libadwaita's `AdwPreferencesDialog` defaults its title to "Preferences" ("Translators:
+  default title in the preferences dialog", verified on web,
+  https://gitlab.gnome.org/GNOME/libadwaita/-/raw/main/src/adw-preferences-dialog.ui, 2026-11-18), and Files'
+  preferences dialog is that widget with no title of its own (verified on web,
+  https://gitlab.gnome.org/GNOME/nautilus/-/raw/main/src/resources/ui/nautilus-preferences-dialog.blp, 2026-11-18). The
+  menu row is `_Preferences` (§ `settings-ellipsis` above).
+- **KDE Plasma: "Configure", plus the app's name**. Dolphin's settings dialog has `@title:window` "Configure" (verified
+  in pile, `en-GB/kde-dolphin/dolphin.po`, `settings/dolphinsettingsdialog.cpp:42`, PO-Revision-Date 2024-11-01); the
+  desktop shows it as "Configure — Dolphin" (memory: KDE appends the app's display name). Prose names the window by its
+  menu row: Dolphin's help says "Configure Dolphin > View > General" (§ `settings-ellipsis`). The KDE HIG asks only for
+  a short, distinctive window title (verified on web, https://develop.kde.org/hig/text_and_labels/ § Window titles,
+  2026-11-18). So Cmdr titles it "Configure – Cmdr" (Cmdr's en-dash separator, as in
+  `licensing.windowTitle.personalUse`) and points to it as "Configure Cmdr".
+- **Other Linux desktops: "Settings"**, the desktop-neutral word, beside the "Settings…" row.
 
 ## Contradicts a decision
 

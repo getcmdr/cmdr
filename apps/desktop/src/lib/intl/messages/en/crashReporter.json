@@ -98,9 +98,9 @@
     "screenshot": "error-report.png",
     "screenshotNote": "The crash-report dialog (shown on the next launch after Cmdr hit a problem) uses the same report-form layout as the error-report dialog pictured here: an intro, a privacy note, a copyable report ID, and Send/Cancel buttons."
   },
-  "crashReporter.sentToast.changeSettings": "Change in Settings",
+  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {Change in Preferences} linuxKde {Change in Configure Cmdr} other {Change in Settings}}",
   "@crashReporter.sentToast.changeSettings": {
-    "description": "Button on the sent-confirmation toast that opens the app's Settings at the Updates & privacy section, where crash reports are turned on or off. \"Settings\" is the name of the app's settings window; use the same word as elsewhere in the app.",
+    "description": "Button on the sent-confirmation toast that opens the app's Settings at the Updates & privacy section, where crash reports are turned on or off. \"Settings\" is the name of the app's settings window; use the same word as elsewhere in the app. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "error-report.png",
     "screenshotNote": "The crash-report dialog (shown on the next launch after Cmdr hit a problem) uses the same report-form layout as the error-report dialog pictured here: an intro, a privacy note, a copyable report ID, and Send/Cancel buttons."
   },

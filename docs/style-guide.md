@@ -72,11 +72,13 @@ Linux on GNOME or KDE Plasma gets its own branch (`linuxGnome`, `linuxKde`) only
 itself; `other` stays desktop-neutral for every other desktop. Today's desktop words:
 
 - **GNOME**: the file manager is **Files** ("Show in Files"); the password store is **your keyring**, managed in
-  **Passwords and Keys**; an app's settings row is **Preferences**; shortcuts live in **Settings > Keyboard > View and
-  Customize Shortcuts**.
+  **Passwords and Keys**; an app's settings row is **Preferences** and so is its window ("in Preferences",
+  "Preferences > AI"); shortcuts live in **Settings > Keyboard > View and Customize Shortcuts**.
 - **KDE Plasma**: the file manager is **Dolphin** ("Show in Dolphin"); the password store is **KDE Wallet** ("Remember
   in KDE Wallet"; KDE's own user-facing name, so never "KWallet"), managed in **KWalletManager**; an app's settings row
-  is **Configure Cmdr…**; shortcuts live in **System Settings > Keyboard > Shortcuts**.
+  is **Configure Cmdr…**, its window is titled "Configure – Cmdr", and copy points there as **Configure Cmdr** ("in
+  Configure Cmdr", "Configure Cmdr > AI", and a button that only opens it reads "Configure Cmdr"); a lowercase generic
+  "settings" stays, since KDE's own menu is "Settings"; shortcuts live in **System Settings > Keyboard > Shortcuts**.
 
 - The machine
   - **This Mac, your Mac** / **this PC, your PC** / **this computer, your computer**. On Windows, never "PC" and
@@ -124,7 +126,13 @@ itself; `other` stays desktop-neutral for every other desktop. Today's desktop w
 - System apps and places
   - **System Settings** (pane names come localized from the OS) / **Settings**, with the path written out ("Settings >
     Personalization > Colors") / "your system settings" (or the setting in words: "your system’s network settings").
-  - Cmdr's own settings window in a menu: "Settings…" / "Settings" / "Settings…".
+  - Cmdr's own settings window in a menu: "Settings…" / "Settings" / "Settings…" (GNOME "Preferences", KDE "Configure
+    Cmdr…"). **The window's title, and every string that sends the user there, starts with the menu row's word**:
+    "Settings" on macOS, Windows, and other Linux; "Preferences" on GNOME; "Configure" on KDE. A path inside it follows
+    too ("Preferences > File operations"). Windows keeps "Settings" because Microsoft's app-settings guidance and its
+    own apps say so, and one word is easier in docs. Evidence: `copy-glossary-evidence.md` § The settings window's
+    title; `apps/desktop/src/lib/settings/settings-window-name.test.ts` pins the title against the menu row on all five
+    systems.
   - **Keychain**, **Keychain Access** / **Credential Manager**, named only where the user has to go there (a checkbox
     says "Remember password") / **your keyring** ("Remember in keyring").
   - **Terminal** ("In Terminal, run…") / **PowerShell** ("In PowerShell, run…", with a command that works there) / **a

@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Beállítások > AI.",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {Cloud AI stays off until you allow it. You can do that later in Preferences > AI.} linuxKde {Cloud AI stays off until you allow it. You can do that later in Configure Cmdr > AI.} other {A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Beállítások > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "82d27b6"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Beállításokban.",
+  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr works fully without AI. You can turn it on later in Preferences.} linuxKde {Cmdr works fully without AI. You can turn it on later in Configure Cmdr.} other {A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Beállításokban.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "3f261be"
   },
@@ -391,11 +391,11 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Beállításokban.",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Preferences.} linuxKde {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Configure Cmdr.} other {Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Beállításokban.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "06ce4eb"
   },
-  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Az összeomlás-jelentések is be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a macOS-verziódat és azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nMindkettőt kikapcsolhatod a Beállításokban, amikor csak akarod.} windows {Az összeomlás-jelentések is be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a Windows-verziódat és azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nMindkettőt kikapcsolhatod a Beállításokban, amikor csak akarod.} other {Az összeomlás-jelentések is be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a Linux-disztribúciódat és annak verzióját, valamint azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nMindkettőt kikapcsolhatod a Beállításokban, amikor csak akarod.}}",
+  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Az összeomlás-jelentések is be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a macOS-verziódat és azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nMindkettőt kikapcsolhatod a Beállításokban, amikor csak akarod.} windows {Az összeomlás-jelentések is be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a Windows-verziódat és azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nMindkettőt kikapcsolhatod a Beállításokban, amikor csak akarod.} linuxGnome {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Preferences whenever you like.} linuxKde {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Configure Cmdr whenever you like.} other {Az összeomlás-jelentések is be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a Linux-disztribúciódat és annak verzióját, valamint azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nMindkettőt kikapcsolhatod a Beállításokban, amikor csak akarod.}}",
   "@onboarding.stepBeta.crashReportsNote": {
     "sourceHash": "55b9634"
   },
@@ -403,7 +403,7 @@
   "@onboarding.stepBeta.analyticsManaged": {
     "sourceHash": "49484ee"
   },
-  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Az összeomlás-jelentések be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a macOS-verziódat és azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nKikapcsolhatod őket a Beállításokban, amikor csak akarod.} windows {Az összeomlás-jelentések be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a Windows-verziódat és azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nKikapcsolhatod őket a Beállításokban, amikor csak akarod.} other {Az összeomlás-jelentések be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a Linux-disztribúciódat és annak verzióját, valamint azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nKikapcsolhatod őket a Beállításokban, amikor csak akarod.}}",
+  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Az összeomlás-jelentések be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a macOS-verziódat és azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nKikapcsolhatod őket a Beállításokban, amikor csak akarod.} windows {Az összeomlás-jelentések be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a Windows-verziódat és azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nKikapcsolhatod őket a Beállításokban, amikor csak akarod.} linuxGnome {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Preferences whenever you like.} linuxKde {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Configure Cmdr whenever you like.} other {Az összeomlás-jelentések be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a Linux-disztribúciódat és annak verzióját, valamint azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nKikapcsolhatod őket a Beállításokban, amikor csak akarod.}}",
   "@onboarding.stepBeta.crashReportsNoteAlone": {
     "sourceHash": "27d4b1b"
   },
@@ -427,7 +427,7 @@
   "@onboarding.stepBeta.signup.rejected": {
     "sourceHash": "5a1bca7"
   },
-  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Most nem sikerült elérni a feliratkozási szervert, így még nem vagy rajta a listán. A címed el van mentve ezen a Macen: egy perc múlva nyomd meg újra a Mentés gombot, vagy bármikor később itt: Beállítások › Frissítések és adatvédelem.} windows {Most nem sikerült elérni a feliratkozási szervert, így még nem vagy rajta a listán. A címed el van mentve ezen a gépen: egy perc múlva nyomd meg újra a Mentés gombot, vagy bármikor később itt: Beállítások › Frissítések és adatvédelem.} other {Most nem sikerült elérni a feliratkozási szervert, így még nem vagy rajta a listán. A címed el van mentve ezen a számítógépen: egy perc múlva nyomd meg újra a Mentés gombot, vagy bármikor később itt: Beállítások › Frissítések és adatvédelem.}}",
+  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Most nem sikerült elérni a feliratkozási szervert, így még nem vagy rajta a listán. A címed el van mentve ezen a Macen: egy perc múlva nyomd meg újra a Mentés gombot, vagy bármikor később itt: Beállítások › Frissítések és adatvédelem.} windows {Most nem sikerült elérni a feliratkozási szervert, így még nem vagy rajta a listán. A címed el van mentve ezen a gépen: egy perc múlva nyomd meg újra a Mentés gombot, vagy bármikor később itt: Beállítások › Frissítések és adatvédelem.} linuxGnome {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Preferences › Updates & privacy.} linuxKde {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Configure Cmdr › Updates & privacy.} other {Most nem sikerült elérni a feliratkozási szervert, így még nem vagy rajta a listán. A címed el van mentve ezen a számítógépen: egy perc múlva nyomd meg újra a Mentés gombot, vagy bármikor később itt: Beállítások › Frissítések és adatvédelem.}}",
   "@onboarding.stepBeta.signup.unreachable": {
     "sourceHash": "6032194"
   },
@@ -467,7 +467,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "Ezt bármikor módosíthatod a Beállításokban.",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {You can change this any time in Preferences.} linuxKde {You can change this any time in Configure Cmdr.} other {Ezt bármikor módosíthatod a Beállításokban.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "895d675"
   },

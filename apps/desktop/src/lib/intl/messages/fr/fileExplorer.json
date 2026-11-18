@@ -342,7 +342,7 @@
     "sourceHash": "e0926fd",
     "sameAsSourceJustification": "Same word as `settings.navigationAndFileOps.card.terminal` (terms.json `terminal`): the generic name for this class of app is \"Terminal\" in French too, and Apple keeps the app name in its localized Finder (\"Ouvrir dans Terminal\")."
   },
-  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {La barre des touches de fonction est maintenant masquée. Vous pouvez la réactiver à tout moment dans <settingsLink>Réglages</settingsLink>.} other {La barre des touches de fonction est maintenant masquée. Vous pouvez la réactiver à tout moment dans <settingsLink>Réglages</settingsLink>.}}",
+  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {La barre des touches de fonction est maintenant masquée. Vous pouvez la réactiver à tout moment dans <settingsLink>Réglages</settingsLink>.} linuxGnome {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Preferences</settingsLink>.} linuxKde {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Configure Cmdr</settingsLink>.} other {La barre des touches de fonction est maintenant masquée. Vous pouvez la réactiver à tout moment dans <settingsLink>Réglages</settingsLink>.}}",
   "@fileExplorer.functionKeyBar.hiddenToast": {
     "sourceHash": "cb00b6d"
   },
@@ -770,11 +770,11 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "Fichier ouvert dans {app}. Vous voulez un autre éditeur la prochaine fois ? Choisissez-le dans les réglages.",
+  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Opened in {app}. Want a different editor next time? Pick one in Preferences.} linuxKde {Opened in {app}. Want a different editor next time? Pick one in Configure Cmdr.} other {Fichier ouvert dans {app}. Vous voulez un autre éditeur la prochaine fois ? Choisissez-le dans les réglages.}}",
   "@fileExplorer.edit.hint": {
     "sourceHash": "3632f06"
   },
-  "fileExplorer.edit.hintUnnamed": "Fichier ouvert dans votre éditeur de texte par défaut. Vous en voulez un autre la prochaine fois ? Choisissez-le dans les réglages.",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Opened in your default text editor. Want a different one next time? Pick one in Preferences.} linuxKde {Opened in your default text editor. Want a different one next time? Pick one in Configure Cmdr.} other {Fichier ouvert dans votre éditeur de texte par défaut. Vous en voulez un autre la prochaine fois ? Choisissez-le dans les réglages.}}",
   "@fileExplorer.edit.hintUnnamed": {
     "sourceHash": "6216471"
   },
@@ -782,7 +782,7 @@
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "Ouvrir les réglages",
+  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Ouvrir les réglages}}",
   "@fileExplorer.edit.openSettings": {
     "sourceHash": "ca381c1"
   },
@@ -838,7 +838,7 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "Réglages",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Preferences} linuxKde {Configure Cmdr} other {Réglages}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
     "sourceHash": "74a883a"
   },
@@ -1845,11 +1845,11 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "L’accès aux téléphones et appareils photo via MTP est désactivé dans les Réglages.",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Phone and camera access over MTP is turned off in Preferences.} linuxKde {Phone and camera access over MTP is turned off in Configure Cmdr.} other {L’accès aux téléphones et appareils photo via MTP est désactivé dans les Réglages.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
     "sourceHash": "53be5f6"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "L’accès aux téléphones Android est désactivé dans les Réglages.",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Android phone access is turned off in Preferences.} linuxKde {Android phone access is turned off in Configure Cmdr.} other {L’accès aux téléphones Android est désactivé dans les Réglages.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
     "sourceHash": "4fba610"
   },
@@ -1861,7 +1861,7 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "Ouvrir les réglages",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Ouvrir les réglages}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
     "sourceHash": "ca381c1"
   },
@@ -2223,7 +2223,7 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "L’indexation est désactivée dans les Réglages, donc Cmdr n’indexe pas {name}. Activez-la dans « Indexation > Indexation du disque ».",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} linuxKde {Drive indexing is off in Configure Cmdr, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} other {L’indexation est désactivée dans les Réglages, donc Cmdr n’indexe pas {name}. Activez-la dans « Indexation > Indexation du disque ».}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
     "sourceHash": "0253edd"
   },
@@ -2231,11 +2231,11 @@
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "L’indexation est désactivée dans les Réglages, donc aucun disque n’est indexé pour le moment.",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so no drive is indexed right now.} linuxKde {Drive indexing is off in Configure Cmdr, so no drive is indexed right now.} other {L’indexation est désactivée dans les Réglages, donc aucun disque n’est indexé pour le moment.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
     "sourceHash": "6ebf6f4"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "L’indexation est désactivée dans les Réglages. Activez-la dans « Indexation > Indexation du disque », et ce disque reprendra là où il s’était arrêté.",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Drive indexing is off in Preferences. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} linuxKde {Drive indexing is off in Configure Cmdr. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} other {L’indexation est désactivée dans les Réglages. Activez-la dans « Indexation > Indexation du disque », et ce disque reprendra là où il s’était arrêté.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
     "sourceHash": "26e250c"
   },
@@ -2343,7 +2343,7 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "Vous préférez placer le curseur sur un nom correspondant sans rien masquer ? Passez à « Aller à », ici ou dans les Réglages.",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Preferences.} linuxKde {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Configure Cmdr.} other {Vous préférez placer le curseur sur un nom correspondant sans rien masquer ? Passez à « Aller à », ici ou dans les Réglages.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "ac6d3c8"
   },
@@ -2411,7 +2411,7 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "Cmdr mémorise votre réponse pour ces deux serveurs. Vous pouvez l’oublier dans les Réglages, sous Serveurs.",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr remembers your answer for these two servers. You can forget it in Preferences, under Servers.} linuxKde {Cmdr remembers your answer for these two servers. You can forget it in Configure Cmdr, under Servers.} other {Cmdr mémorise votre réponse pour ces deux serveurs. Vous pouvez l’oublier dans les Réglages, sous Serveurs.}}",
   "@fileExplorer.smbLinkConsent.note": {
     "sourceHash": "3f9615a"
   },

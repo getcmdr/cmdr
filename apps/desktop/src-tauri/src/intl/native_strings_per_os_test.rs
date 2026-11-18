@@ -5,7 +5,7 @@
 use super::*;
 
 /// Every system a native string can be read on.
-pub(super) const EVERY_OS: [NativeOs; 5] = [
+pub(in crate::intl) const EVERY_OS: [NativeOs; 5] = [
     NativeOs::MacOs,
     NativeOs::Windows,
     NativeOs::Linux(LinuxDesktop::Gnome),

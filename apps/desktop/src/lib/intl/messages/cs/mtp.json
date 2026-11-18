@@ -3,7 +3,7 @@
   "@mtp.connectedToast.title": {
     "sourceHash": "562319d"
   },
-  "mtp.connectedToast.body": "{platform, select, macos {Cmdr kvůli přístupu k tomuto zařízení pozastavil systémový proces macOS pro fotoaparáty (ptpcamerad). Pokud chcete zařízení používat v jiné aplikaci, vypněte v Nastavení podporu MTP.} windows {} other {Pokud chcete toto zařízení používat v jiné aplikaci, vypněte v Nastavení podporu MTP.}}",
+  "mtp.connectedToast.body": "{platform, select, macos {Cmdr kvůli přístupu k tomuto zařízení pozastavil systémový proces macOS pro fotoaparáty (ptpcamerad). Pokud chcete zařízení používat v jiné aplikaci, vypněte v Nastavení podporu MTP.} windows {} linuxGnome {To use this device in another app, disable MTP support in preferences.} other {Pokud chcete toto zařízení používat v jiné aplikaci, vypněte v Nastavení podporu MTP.}}",
   "@mtp.connectedToast.body": {
     "sourceHash": "74349d8",
     "sameAsSourceJustification": "The windows branch is empty on purpose (no body line on Windows, per the @key description); there is no text to translate."

@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v Nastavení > AI.",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {Cloud AI stays off until you allow it. You can do that later in Preferences > AI.} linuxKde {Cloud AI stays off until you allow it. You can do that later in Configure Cmdr > AI.} other {Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v Nastavení > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "82d27b6"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "Cmdr bez AI plně funguje. Zapnout ji můžete později v Nastavení.",
+  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr works fully without AI. You can turn it on later in Preferences.} linuxKde {Cmdr works fully without AI. You can turn it on later in Configure Cmdr.} other {Cmdr bez AI plně funguje. Zapnout ji můžete později v Nastavení.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "3f261be"
   },
@@ -391,11 +391,11 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v Nastavení.",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Preferences.} linuxKde {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Configure Cmdr.} other {Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v Nastavení.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "06ce4eb"
   },
-  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Zprávy o haváriích jsou taky zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši verzi macOS a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nObojí můžete v Nastavení vypnout, kdykoli budete chtít.} windows {Zprávy o haváriích jsou taky zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši verzi Windows a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nObojí můžete v Nastavení vypnout, kdykoli budete chtít.} other {Zprávy o haváriích jsou taky zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši distribuci a verzi Linuxu a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nObojí můžete v Nastavení vypnout, kdykoli budete chtít.}}",
+  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Zprávy o haváriích jsou taky zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši verzi macOS a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nObojí můžete v Nastavení vypnout, kdykoli budete chtít.} windows {Zprávy o haváriích jsou taky zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši verzi Windows a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nObojí můžete v Nastavení vypnout, kdykoli budete chtít.} linuxGnome {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Preferences whenever you like.} linuxKde {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Configure Cmdr whenever you like.} other {Zprávy o haváriích jsou taky zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši distribuci a verzi Linuxu a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nObojí můžete v Nastavení vypnout, kdykoli budete chtít.}}",
   "@onboarding.stepBeta.crashReportsNote": {
     "sourceHash": "55b9634"
   },
@@ -403,7 +403,7 @@
   "@onboarding.stepBeta.analyticsManaged": {
     "sourceHash": "49484ee"
   },
-  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Zprávy o haváriích jsou zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši verzi macOS a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nMůžete je v Nastavení vypnout, kdykoli budete chtít.} windows {Zprávy o haváriích jsou zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši verzi Windows a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nMůžete je v Nastavení vypnout, kdykoli budete chtít.} other {Zprávy o haváriích jsou zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši distribuci a verzi Linuxu a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nMůžete je v Nastavení vypnout, kdykoli budete chtít.}}",
+  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Zprávy o haváriích jsou zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši verzi macOS a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nMůžete je v Nastavení vypnout, kdykoli budete chtít.} windows {Zprávy o haváriích jsou zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši verzi Windows a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nMůžete je v Nastavení vypnout, kdykoli budete chtít.} linuxGnome {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Preferences whenever you like.} linuxKde {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Configure Cmdr whenever you like.} other {Zprávy o haváriích jsou zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši distribuci a verzi Linuxu a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nMůžete je v Nastavení vypnout, kdykoli budete chtít.}}",
   "@onboarding.stepBeta.crashReportsNoteAlone": {
     "sourceHash": "27d4b1b"
   },
@@ -427,7 +427,7 @@
   "@onboarding.stepBeta.signup.rejected": {
     "sourceHash": "5a1bca7"
   },
-  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Server pro přihlášení k odběru byl teď nedostupný, takže na seznamu zatím nejste. Adresa je uložená na tomto Macu: za chvíli znovu klikněte na Uložit, nebo to kdykoli zkuste v Nastavení > Aktualizace a soukromí.} windows {Server pro přihlášení k odběru byl teď nedostupný, takže na seznamu zatím nejste. Adresa je uložená na tomto počítači: za chvíli znovu klikněte na Uložit, nebo to kdykoli zkuste v Nastavení > Aktualizace a soukromí.} other {Server pro přihlášení k odběru byl teď nedostupný, takže na seznamu zatím nejste. Adresa je uložená na tomto počítači: za chvíli znovu klikněte na Uložit, nebo to kdykoli zkuste v Nastavení > Aktualizace a soukromí.}}",
+  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Server pro přihlášení k odběru byl teď nedostupný, takže na seznamu zatím nejste. Adresa je uložená na tomto Macu: za chvíli znovu klikněte na Uložit, nebo to kdykoli zkuste v Nastavení > Aktualizace a soukromí.} windows {Server pro přihlášení k odběru byl teď nedostupný, takže na seznamu zatím nejste. Adresa je uložená na tomto počítači: za chvíli znovu klikněte na Uložit, nebo to kdykoli zkuste v Nastavení > Aktualizace a soukromí.} linuxGnome {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Preferences › Updates & privacy.} linuxKde {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Configure Cmdr › Updates & privacy.} other {Server pro přihlášení k odběru byl teď nedostupný, takže na seznamu zatím nejste. Adresa je uložená na tomto počítači: za chvíli znovu klikněte na Uložit, nebo to kdykoli zkuste v Nastavení > Aktualizace a soukromí.}}",
   "@onboarding.stepBeta.signup.unreachable": {
     "sourceHash": "6032194"
   },
@@ -467,7 +467,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "Kdykoli to můžete změnit v Nastavení.",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {You can change this any time in Preferences.} linuxKde {You can change this any time in Configure Cmdr.} other {Kdykoli to můžete změnit v Nastavení.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "895d675"
   },

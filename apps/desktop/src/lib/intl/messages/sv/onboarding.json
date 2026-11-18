@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i Inställningar > AI.",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {Cloud AI stays off until you allow it. You can do that later in Preferences > AI.} linuxKde {Cloud AI stays off until you allow it. You can do that later in Configure Cmdr > AI.} other {Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i Inställningar > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "82d27b6"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i Inställningar.",
+  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr works fully without AI. You can turn it on later in Preferences.} linuxKde {Cmdr works fully without AI. You can turn it on later in Configure Cmdr.} other {Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i Inställningar.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "3f261be"
   },
@@ -391,11 +391,11 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i Inställningar.",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Preferences.} linuxKde {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Configure Cmdr.} other {Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i Inställningar.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "06ce4eb"
   },
-  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Kraschrapporter är också på: om Cmdr går ner skickar appen appversionen, din macOS-version och stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av båda i inställningarna när du vill.} windows {Kraschrapporter är också på: om Cmdr går ner skickar appen appversionen, din Windows-version och stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av båda i inställningarna när du vill.} other {Kraschrapporter är också på: om Cmdr går ner skickar appen appversionen, din Linux-distribution och dess version samt stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av båda i inställningarna när du vill.}}",
+  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Kraschrapporter är också på: om Cmdr går ner skickar appen appversionen, din macOS-version och stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av båda i inställningarna när du vill.} windows {Kraschrapporter är också på: om Cmdr går ner skickar appen appversionen, din Windows-version och stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av båda i inställningarna när du vill.} linuxGnome {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Preferences whenever you like.} linuxKde {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Configure Cmdr whenever you like.} other {Kraschrapporter är också på: om Cmdr går ner skickar appen appversionen, din Linux-distribution och dess version samt stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av båda i inställningarna när du vill.}}",
   "@onboarding.stepBeta.crashReportsNote": {
     "sourceHash": "55b9634"
   },
@@ -403,7 +403,7 @@
   "@onboarding.stepBeta.analyticsManaged": {
     "sourceHash": "49484ee"
   },
-  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Kraschrapporter är på: om Cmdr går ner skickar appen appversionen, din macOS-version och stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av dem i inställningarna när du vill.} windows {Kraschrapporter är på: om Cmdr går ner skickar appen appversionen, din Windows-version och stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av dem i inställningarna när du vill.} other {Kraschrapporter är på: om Cmdr går ner skickar appen appversionen, din Linux-distribution och dess version samt stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av dem i inställningarna när du vill.}}",
+  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Kraschrapporter är på: om Cmdr går ner skickar appen appversionen, din macOS-version och stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av dem i inställningarna när du vill.} windows {Kraschrapporter är på: om Cmdr går ner skickar appen appversionen, din Windows-version och stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av dem i inställningarna när du vill.} linuxGnome {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Preferences whenever you like.} linuxKde {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Configure Cmdr whenever you like.} other {Kraschrapporter är på: om Cmdr går ner skickar appen appversionen, din Linux-distribution och dess version samt stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av dem i inställningarna när du vill.}}",
   "@onboarding.stepBeta.crashReportsNoteAlone": {
     "sourceHash": "27d4b1b"
   },
@@ -427,7 +427,7 @@
   "@onboarding.stepBeta.signup.rejected": {
     "sourceHash": "5a1bca7"
   },
-  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Det gick inte att nå registreringsservern just nu, så du står inte på listan än. Din adress är sparad på den här Macen: tryck på Spara igen om en stund, eller när som helst från Inställningar › Uppdateringar och integritet.} windows {Det gick inte att nå registreringsservern just nu, så du står inte på listan än. Din adress är sparad på den här datorn: tryck på Spara igen om en stund, eller när som helst från Inställningar › Uppdateringar och integritet.} other {Det gick inte att nå registreringsservern just nu, så du står inte på listan än. Din adress är sparad på den här datorn: tryck på Spara igen om en stund, eller när som helst från Inställningar › Uppdateringar och integritet.}}",
+  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Det gick inte att nå registreringsservern just nu, så du står inte på listan än. Din adress är sparad på den här Macen: tryck på Spara igen om en stund, eller när som helst från Inställningar › Uppdateringar och integritet.} windows {Det gick inte att nå registreringsservern just nu, så du står inte på listan än. Din adress är sparad på den här datorn: tryck på Spara igen om en stund, eller när som helst från Inställningar › Uppdateringar och integritet.} linuxGnome {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Preferences › Updates & privacy.} linuxKde {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Configure Cmdr › Updates & privacy.} other {Det gick inte att nå registreringsservern just nu, så du står inte på listan än. Din adress är sparad på den här datorn: tryck på Spara igen om en stund, eller när som helst från Inställningar › Uppdateringar och integritet.}}",
   "@onboarding.stepBeta.signup.unreachable": {
     "sourceHash": "6032194"
   },
@@ -467,7 +467,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "Du kan ändra det här när som helst i Inställningar.",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {You can change this any time in Preferences.} linuxKde {You can change this any time in Configure Cmdr.} other {Du kan ändra det här när som helst i Inställningar.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "895d675"
   },

@@ -428,7 +428,7 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Cài đặt. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Cmdr starts on this choice next time, and you can change it in Preferences. If it overwrites files, you’ll see a warning first.} linuxKde {Cmdr starts on this choice next time, and you can change it in Configure Cmdr. If it overwrites files, you’ll see a warning first.} other {Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Cài đặt. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
     "sourceHash": "c26d762"
   },

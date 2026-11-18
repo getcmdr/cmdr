@@ -90,9 +90,9 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.off.body": "Turn on a provider in Settings > AI to use AI search.",
+  "ai.translateError.off.body": "{platform, select, linuxGnome {Turn on a provider in Preferences > AI to use AI search.} linuxKde {Turn on a provider in Configure Cmdr > AI to use AI search.} other {Turn on a provider in Settings > AI to use AI search.}}",
   "@ai.translateError.off.body": {
-    "description": "Next-step line under the AI is turned off toast. Settings > AI is a navigation path to the AI settings section; keep the menu/section names as shown.",
+    "description": "Next-step line under the AI is turned off toast. Settings > AI is a navigation path to the AI settings section; keep the menu/section names as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -378,9 +378,9 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.notConfigured.body": "Finish your provider setup in Settings > AI, then try again.",
+  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Finish your provider setup in Preferences > AI, then try again.} linuxKde {Finish your provider setup in Configure Cmdr > AI, then try again.} other {Finish your provider setup in Settings > AI, then try again.}}",
   "@ai.translateError.notConfigured.body": {
-    "description": "Next-step line under the AI needs more setup toast. Settings > AI is a navigation path; keep it as shown.",
+    "description": "Next-step line under the AI needs more setup toast. Settings > AI is a navigation path; keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -390,9 +390,9 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.noCloudConsent.body": "Allow it in Settings > AI, then try again.",
+  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Allow it in Preferences > AI, then try again.} linuxKde {Allow it in Configure Cmdr > AI, then try again.} other {Allow it in Settings > AI, then try again.}}",
   "@ai.translateError.noCloudConsent.body": {
-    "description": "Next-step line under the Cloud AI is off toast. \"it\" is cloud AI; Settings > AI is a navigation path, keep it as shown.",
+    "description": "Next-step line under the Cloud AI is off toast. \"it\" is cloud AI; Settings > AI is a navigation path, keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -402,9 +402,9 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.authFailed.body": "Check your key in Settings > AI - it might be wrong or revoked.",
+  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Check your key in Preferences > AI - it might be wrong or revoked.} linuxKde {Check your key in Configure Cmdr > AI - it might be wrong or revoked.} other {Check your key in Settings > AI - it might be wrong or revoked.}}",
   "@ai.translateError.authFailed.body": {
-    "description": "Next-step line under the API key rejected toast. Settings > AI is a navigation path; keep it as shown.",
+    "description": "Next-step line under the API key rejected toast. Settings > AI is a navigation path; keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -450,9 +450,9 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.emptyResponse.body": "Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Settings > AI.",
+  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Preferences > AI.} linuxKde {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Configure Cmdr > AI.} other {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Settings > AI.}}",
   "@ai.translateError.emptyResponse.body": {
-    "description": "Next-step line under the AI-came-back-empty toast. A “token budget” is how much text the model may write (its thinking included) for one answer; a slow, thinking model can spend it all before answering. gpt-4.1-mini is a model name; keep it as shown. Settings > AI is a navigation path; keep it as shown.",
+    "description": "Next-step line under the AI-came-back-empty toast. A “token budget” is how much text the model may write (its thinking included) for one answer; a slow, thinking model can spend it all before answering. gpt-4.1-mini is a model name; keep it as shown. Settings > AI is a navigation path; keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -474,9 +474,9 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.parseError.body": "Try again, or pick a different model in Settings > AI.",
+  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Try again, or pick a different model in Preferences > AI.} linuxKde {Try again, or pick a different model in Configure Cmdr > AI.} other {Try again, or pick a different model in Settings > AI.}}",
   "@ai.translateError.parseError.body": {
-    "description": "Next-step line under the couldn't-read-the-answer toast. Settings > AI is a navigation path; keep it as shown.",
+    "description": "Next-step line under the couldn't-read-the-answer toast. Settings > AI is a navigation path; keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -486,9 +486,9 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.unknownProvider.body": "Pick a provider in Settings > AI.",
+  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Pick a provider in Preferences > AI.} linuxKde {Pick a provider in Configure Cmdr > AI.} other {Pick a provider in Settings > AI.}}",
   "@ai.translateError.unknownProvider.body": {
-    "description": "Next-step line under the unrecognized-provider toast. Settings > AI is a navigation path; keep it as shown.",
+    "description": "Next-step line under the unrecognized-provider toast. Settings > AI is a navigation path; keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },

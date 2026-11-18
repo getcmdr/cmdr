@@ -3,11 +3,11 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans Réglages › Mises à jour et confidentialité.",
+  "stateRecovery.settings.body": "{platform, select, linuxGnome {Usage stats and crash reports stay off until you turn them back on in Preferences › Updates & privacy.} linuxKde {Usage stats and crash reports stay off until you turn them back on in Configure Cmdr › Updates & privacy.} other {Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans Réglages › Mises à jour et confidentialité.}}",
   "@stateRecovery.settings.body": {
     "sourceHash": "20439e1"
   },
-  "stateRecovery.settings.openSettings": "Ouvrir les réglages",
+  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Ouvrir les réglages}}",
   "@stateRecovery.settings.openSettings": {
     "sourceHash": "3f94010"
   },
@@ -19,11 +19,11 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans Réglages › Licence.",
+  "stateRecovery.license.body": "{platform, select, linuxGnome {If Cmdr shows as unlicensed now, enter your license key again in Preferences › License.} linuxKde {If Cmdr shows as unlicensed now, enter your license key again in Configure Cmdr › License.} other {Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans Réglages › Licence.}}",
   "@stateRecovery.license.body": {
     "sourceHash": "ea51589"
   },
-  "stateRecovery.license.openSettings": "Ouvrir les réglages",
+  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Ouvrir les réglages}}",
   "@stateRecovery.license.openSettings": {
     "sourceHash": "3f94010"
   },

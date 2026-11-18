@@ -35,7 +35,7 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "Open instellingen",
+  "commands.appSettings.label": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Open instellingen}}",
   "@commands.appSettings.label": {
     "sourceHash": "ca381c1"
   },
@@ -1267,7 +1267,7 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Instellingen, onder ‘Navigatie en bewerkingen’.",
+  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Preferences, under Navigation & file ops.} linuxKde {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Configure Cmdr, under Navigation & file ops.} other {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Instellingen, onder ‘Navigatie en bewerkingen’.}}",
   "@commands.handler.openTerminalHere.hint": {
     "sourceHash": "b29b744"
   },
@@ -1275,7 +1275,7 @@
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "Open instellingen",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Open instellingen}}",
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "ca381c1"
   },
@@ -1347,7 +1347,7 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "Logopslag staat uit. Zet de schijfruimtelimiet in Instellingen > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Log storage is off. Set a disk space limit above 0 in Preferences > Advanced, then restart Cmdr to view the debug log.} linuxKde {Log storage is off. Set a disk space limit above 0 in Configure Cmdr > Advanced, then restart Cmdr to view the debug log.} other {Logopslag staat uit. Zet de schijfruimtelimiet in Instellingen > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.}}",
   "@commands.handler.viewDebugLog.disabled": {
     "sourceHash": "96f16fc"
   },

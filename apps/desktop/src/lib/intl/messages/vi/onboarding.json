@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cài đặt > AI.",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {Cloud AI stays off until you allow it. You can do that later in Preferences > AI.} linuxKde {Cloud AI stays off until you allow it. You can do that later in Configure Cmdr > AI.} other {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cài đặt > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "82d27b6"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cài đặt.",
+  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr works fully without AI. You can turn it on later in Preferences.} linuxKde {Cmdr works fully without AI. You can turn it on later in Configure Cmdr.} other {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cài đặt.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "3f261be"
   },
@@ -391,11 +391,11 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Preferences.} linuxKde {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Configure Cmdr.} other {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "06ce4eb"
   },
-  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản macOS của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.} windows {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản Windows của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.} other {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.}}",
+  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản macOS của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.} windows {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản Windows của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.} linuxGnome {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Preferences whenever you like.} linuxKde {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Configure Cmdr whenever you like.} other {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.}}",
   "@onboarding.stepBeta.crashReportsNote": {
     "sourceHash": "55b9634"
   },
@@ -403,7 +403,7 @@
   "@onboarding.stepBeta.analyticsManaged": {
     "sourceHash": "49484ee"
   },
-  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản macOS của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cài đặt bất cứ lúc nào.} windows {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản Windows của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cài đặt bất cứ lúc nào.} other {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cài đặt bất cứ lúc nào.}}",
+  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản macOS của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cài đặt bất cứ lúc nào.} windows {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản Windows của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cài đặt bất cứ lúc nào.} linuxGnome {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Preferences whenever you like.} linuxKde {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Configure Cmdr whenever you like.} other {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cài đặt bất cứ lúc nào.}}",
   "@onboarding.stepBeta.crashReportsNoteAlone": {
     "sourceHash": "27d4b1b"
   },
@@ -427,7 +427,7 @@
   "@onboarding.stepBeta.signup.rejected": {
     "sourceHash": "5a1bca7"
   },
-  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên máy Mac này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cài đặt › Cập nhật & quyền riêng tư.} windows {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên PC này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cài đặt › Cập nhật & quyền riêng tư.} other {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên máy tính này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cài đặt › Cập nhật & quyền riêng tư.}}",
+  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên máy Mac này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cài đặt › Cập nhật & quyền riêng tư.} windows {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên PC này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cài đặt › Cập nhật & quyền riêng tư.} linuxGnome {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Preferences › Updates & privacy.} linuxKde {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Configure Cmdr › Updates & privacy.} other {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên máy tính này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cài đặt › Cập nhật & quyền riêng tư.}}",
   "@onboarding.stepBeta.signup.unreachable": {
     "sourceHash": "6032194"
   },
@@ -467,7 +467,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {You can change this any time in Preferences.} linuxKde {You can change this any time in Configure Cmdr.} other {Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "895d675"
   },

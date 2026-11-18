@@ -2645,7 +2645,7 @@
   "@errors.listing.smbEncryptionRequired.explanation": {
     "sourceHash": "5eeef51"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "Ezeket próbálhatod:\n- Jelentkezz be egy fiókkal: a vendégkapcsolatok nem titkosíthatók\n- Kapcsold be az SMB-titkosítást a szerveren\n- Ha nincs rá szükséged, kapcsold ki a „Mindig kötelező SMB-titkosítás” beállítást a Beállításokban",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Preferences, if you don’t need it} linuxKde {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Configure Cmdr, if you don’t need it} other {Ezeket próbálhatod:\n- Jelentkezz be egy fiókkal: a vendégkapcsolatok nem titkosíthatók\n- Kapcsold be az SMB-titkosítást a szerveren\n- Ha nincs rá szükséged, kapcsold ki a „Mindig kötelező SMB-titkosítás” beállítást a Beállításokban}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
     "sourceHash": "f16274b"
   },
@@ -2669,7 +2669,7 @@
   "@errors.write.smbEncryptionRequired.message": {
     "sourceHash": "ec53744"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "Jelentkezz be egy fiókkal vendég helyett, vagy kapcsold be az SMB-titkosítást a szerveren. A „Mindig kötelező SMB-titkosítás” beállítást is kikapcsolhatod a Beállításokban.",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Preferences.} linuxKde {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Configure Cmdr.} other {Jelentkezz be egy fiókkal vendég helyett, vagy kapcsold be az SMB-titkosítást a szerveren. A „Mindig kötelező SMB-titkosítás” beállítást is kikapcsolhatod a Beállításokban.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
     "sourceHash": "20a90d4"
   },

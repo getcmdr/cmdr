@@ -3,11 +3,11 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "A használati statisztika és az összeomlási jelentések kikapcsolva maradnak, amíg vissza nem kapcsolod őket itt: Beállítások › Frissítések és adatvédelem.",
+  "stateRecovery.settings.body": "{platform, select, linuxGnome {Usage stats and crash reports stay off until you turn them back on in Preferences › Updates & privacy.} linuxKde {Usage stats and crash reports stay off until you turn them back on in Configure Cmdr › Updates & privacy.} other {A használati statisztika és az összeomlási jelentések kikapcsolva maradnak, amíg vissza nem kapcsolod őket itt: Beállítások › Frissítések és adatvédelem.}}",
   "@stateRecovery.settings.body": {
     "sourceHash": "20439e1"
   },
-  "stateRecovery.settings.openSettings": "Beállítások megnyitása",
+  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Beállítások megnyitása}}",
   "@stateRecovery.settings.openSettings": {
     "sourceHash": "3f94010"
   },
@@ -19,11 +19,11 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "Ha a Cmdr most licenc nélkülinek látszik, add meg újra a licenckulcsodat itt: Beállítások › Licenc.",
+  "stateRecovery.license.body": "{platform, select, linuxGnome {If Cmdr shows as unlicensed now, enter your license key again in Preferences › License.} linuxKde {If Cmdr shows as unlicensed now, enter your license key again in Configure Cmdr › License.} other {Ha a Cmdr most licenc nélkülinek látszik, add meg újra a licenckulcsodat itt: Beállítások › Licenc.}}",
   "@stateRecovery.license.body": {
     "sourceHash": "ea51589"
   },
-  "stateRecovery.license.openSettings": "Beállítások megnyitása",
+  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Beállítások megnyitása}}",
   "@stateRecovery.license.openSettings": {
     "sourceHash": "3f94010"
   },

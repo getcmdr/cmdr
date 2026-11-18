@@ -1496,9 +1496,9 @@
   "@aboutThis.verdict.hint.dismiss": {
     "description": "Screen-reader label of the small × button at the end of the AI hint line on the \"Tell me about this\" card (aboutThis.verdict.aiOffHint and its siblings). Pressing it hides the line for good on every card."
   },
-  "aboutThis.verdict.hint.dismissTooltip": "Hide this hint. You can bring it back in Settings > Advanced.",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Hide this hint. You can bring it back in Preferences > Advanced.} linuxKde {Hide this hint. You can bring it back in Configure Cmdr > Advanced.} other {Hide this hint. You can bring it back in Settings > Advanced.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "description": "Tooltip of the small × button at the end of the AI hint line on the \"Tell me about this\" card. \"Settings > Advanced\" names the Settings page whose \"Hints and warnings\" group has the switch that brings the line back; use the page names the app uses in this language."
+    "description": "Tooltip of the small × button at the end of the AI hint line on the \"Tell me about this\" card. \"Settings > Advanced\" names the Settings page whose \"Hints and warnings\" group has the switch that brings the line back; use the page names the app uses in this language. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   },
   "aboutThis.action.continueInAskCmdr": "Continue in Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {

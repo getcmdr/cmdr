@@ -3,9 +3,9 @@
   "@adb.connect.adbNotInstalled": {
     "description": "Shown in the pane when Cmdr has no `adb` program to talk to, so it cannot open the phone at all. \"Android platform tools\" is the name of the free Google download that includes it; render it the way the vendor's own localized Android documentation names it in your language, and keep the English name if that is what your language uses. \"Cmdr\" is the product name."
   },
-  "adb.connect.openSettings": "Open Settings",
+  "adb.connect.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Open Settings}}",
   "@adb.connect.openSettings": {
-    "description": "Button beside that line; it opens the app's Settings window at the Android section, where the user can point Cmdr at the tools or re-check for them. VERB phrase, imperative. \"Settings\" is the app's own Settings window; use the word the rest of the app uses for it (settings.window.title)."
+    "description": "Button beside that line; it opens the app's Settings window at the Android section, where the user can point Cmdr at the tools or re-check for them. VERB phrase, imperative. \"Settings\" is the app's own Settings window; use the word the rest of the app uses for it (settings.window.title). The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   },
   "adb.connect.serverUnreachable": "{platform, select, macos {The Android tools on this Mac didn’t answer.} windows {The Android tools on this PC didn’t answer.} other {The Android tools on this computer didn’t answer.}}",
   "@adb.connect.serverUnreachable": {

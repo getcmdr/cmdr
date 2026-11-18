@@ -3,13 +3,13 @@
   "@stateRecovery.settings.title": {
     "description": "Headline of a notice shown once at launch: Cmdr's settings file was damaged (for example by a crash or a full disk while it was being saved), so Cmdr set it aside and started with default settings. \"Cmdr\" is the product name. Sentence case, no full stop. Avoid the words \"error\" and \"failed\". Pop-up notice (toast) in the corner of Cmdr's main window."
   },
-  "stateRecovery.settings.body": "Usage stats and crash reports stay off until you turn them back on in Settings › Updates & privacy.",
+  "stateRecovery.settings.body": "{platform, select, linuxGnome {Usage stats and crash reports stay off until you turn them back on in Preferences › Updates & privacy.} linuxKde {Usage stats and crash reports stay off until you turn them back on in Configure Cmdr › Updates & privacy.} other {Usage stats and crash reports stay off until you turn them back on in Settings › Updates & privacy.}}",
   "@stateRecovery.settings.body": {
-    "description": "Body of the notice above. Cmdr turned two privacy settings off on purpose (the person may have turned them off before, and Cmdr can't tell any more), and this says how to turn them back on. \"Settings › Updates & privacy\" names the settings window and its section: keep the › separator and use the section's translated name. Plain text. Pop-up notice (toast) in the corner of Cmdr's main window."
+    "description": "Body of the notice above. Cmdr turned two privacy settings off on purpose (the person may have turned them off before, and Cmdr can't tell any more), and this says how to turn them back on. \"Settings › Updates & privacy\" names the settings window and its section: keep the › separator and use the section's translated name. Plain text. Pop-up notice (toast) in the corner of Cmdr's main window. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   },
-  "stateRecovery.settings.openSettings": "Open Settings",
+  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Open Settings}}",
   "@stateRecovery.settings.openSettings": {
-    "description": "Button on the notice above that opens Cmdr's Settings on the Updates & privacy section. VERB phrase, short control label. Pop-up notice (toast) in the corner of Cmdr's main window."
+    "description": "Button on the notice above that opens Cmdr's Settings on the Updates & privacy section. VERB phrase, short control label. Pop-up notice (toast) in the corner of Cmdr's main window. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   },
   "stateRecovery.shortcuts.title": "Cmdr couldn’t read your keyboard shortcuts, so they’re back to the defaults",
   "@stateRecovery.shortcuts.title": {
@@ -19,13 +19,13 @@
   "@stateRecovery.license.title": {
     "description": "Headline of a notice shown once: the file where Cmdr keeps license details was damaged, so Cmdr set it aside. \"Cmdr\" is the product name. Sentence case, no full stop. Avoid the words \"error\" and \"failed\". Pop-up notice (toast) in the corner of Cmdr's main window."
   },
-  "stateRecovery.license.body": "If Cmdr shows as unlicensed now, enter your license key again in Settings › License.",
+  "stateRecovery.license.body": "{platform, select, linuxGnome {If Cmdr shows as unlicensed now, enter your license key again in Preferences › License.} linuxKde {If Cmdr shows as unlicensed now, enter your license key again in Configure Cmdr › License.} other {If Cmdr shows as unlicensed now, enter your license key again in Settings › License.}}",
   "@stateRecovery.license.body": {
-    "description": "Body of the notice above: what to do if the license no longer shows. \"Settings › License\" names the settings window and its section: keep the › separator and use the section's translated name. Plain text. Pop-up notice (toast) in the corner of Cmdr's main window."
+    "description": "Body of the notice above: what to do if the license no longer shows. \"Settings › License\" names the settings window and its section: keep the › separator and use the section's translated name. Plain text. Pop-up notice (toast) in the corner of Cmdr's main window. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   },
-  "stateRecovery.license.openSettings": "Open Settings",
+  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Open Settings}}",
   "@stateRecovery.license.openSettings": {
-    "description": "Button on the notice above that opens Cmdr's Settings on the License section. VERB phrase, short control label. Pop-up notice (toast) in the corner of Cmdr's main window."
+    "description": "Button on the notice above that opens Cmdr's Settings on the License section. VERB phrase, short control label. Pop-up notice (toast) in the corner of Cmdr's main window. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   },
   "stateRecovery.appStatus.title": "{platform, select, windows {Cmdr couldn’t read which folders your panes had open, so they start at your user folder} other {Cmdr couldn’t read which folders your panes had open, so they start at your home folder}}",
   "@stateRecovery.appStatus.title": {

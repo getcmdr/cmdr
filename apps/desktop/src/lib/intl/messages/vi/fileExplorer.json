@@ -342,7 +342,7 @@
     "sourceHash": "e0926fd",
     "sameAsSourceJustification": "Loanword: the generic name for this class of app is \"Terminal\" here too, and Apple keeps the app name English in its localized Finder (\"Mở trong Terminal\", key N67, verified against the macOS reference pile 2026-09-05); matches settings.navigationAndFileOps.card.terminal."
   },
-  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {Thanh phím chức năng hiện đã ẩn, có thể bật lại bất cứ lúc nào trong <settingsLink>Cài đặt</settingsLink>.} other {Thanh phím chức năng hiện đã ẩn, có thể bật lại bất cứ lúc nào trong <settingsLink>Cài đặt</settingsLink>.}}",
+  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {Thanh phím chức năng hiện đã ẩn, có thể bật lại bất cứ lúc nào trong <settingsLink>Cài đặt</settingsLink>.} linuxGnome {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Preferences</settingsLink>.} linuxKde {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Configure Cmdr</settingsLink>.} other {Thanh phím chức năng hiện đã ẩn, có thể bật lại bất cứ lúc nào trong <settingsLink>Cài đặt</settingsLink>.}}",
   "@fileExplorer.functionKeyBar.hiddenToast": {
     "sourceHash": "cb00b6d"
   },
@@ -770,11 +770,11 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.",
+  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Opened in {app}. Want a different editor next time? Pick one in Preferences.} linuxKde {Opened in {app}. Want a different editor next time? Pick one in Configure Cmdr.} other {Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.}}",
   "@fileExplorer.edit.hint": {
     "sourceHash": "3632f06"
   },
-  "fileExplorer.edit.hintUnnamed": "Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Opened in your default text editor. Want a different one next time? Pick one in Preferences.} linuxKde {Opened in your default text editor. Want a different one next time? Pick one in Configure Cmdr.} other {Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.}}",
   "@fileExplorer.edit.hintUnnamed": {
     "sourceHash": "6216471"
   },
@@ -782,7 +782,7 @@
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "Mở cài đặt",
+  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Mở cài đặt}}",
   "@fileExplorer.edit.openSettings": {
     "sourceHash": "ca381c1"
   },
@@ -838,7 +838,7 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "Cài đặt",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Preferences} linuxKde {Configure Cmdr} other {Cài đặt}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
     "sourceHash": "74a883a"
   },
@@ -1840,11 +1840,11 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Cài đặt.",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Phone and camera access over MTP is turned off in Preferences.} linuxKde {Phone and camera access over MTP is turned off in Configure Cmdr.} other {Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Cài đặt.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
     "sourceHash": "53be5f6"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "Tính năng truy cập điện thoại Android đang tắt trong Cài đặt.",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Android phone access is turned off in Preferences.} linuxKde {Android phone access is turned off in Configure Cmdr.} other {Tính năng truy cập điện thoại Android đang tắt trong Cài đặt.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
     "sourceHash": "4fba610"
   },
@@ -1856,7 +1856,7 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "Mở cài đặt",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Mở cài đặt}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
     "sourceHash": "ca381c1"
   },
@@ -2216,7 +2216,7 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} linuxKde {Drive indexing is off in Configure Cmdr, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
     "sourceHash": "0253edd"
   },
@@ -2224,11 +2224,11 @@
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên hiện không có ổ đĩa nào được lập chỉ mục.",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so no drive is indexed right now.} linuxKde {Drive indexing is off in Configure Cmdr, so no drive is indexed right now.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên hiện không có ổ đĩa nào được lập chỉ mục.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
     "sourceHash": "6ebf6f4"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "Lập chỉ mục ổ đĩa đang tắt trong Cài đặt. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Drive indexing is off in Preferences. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} linuxKde {Drive indexing is off in Configure Cmdr. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
     "sourceHash": "26e250c"
   },
@@ -2336,7 +2336,7 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Cài đặt.",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Preferences.} linuxKde {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Configure Cmdr.} other {Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Cài đặt.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "ac6d3c8"
   },
@@ -2404,7 +2404,7 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Cài đặt, mục Máy chủ.",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr remembers your answer for these two servers. You can forget it in Preferences, under Servers.} linuxKde {Cmdr remembers your answer for these two servers. You can forget it in Configure Cmdr, under Servers.} other {Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Cài đặt, mục Máy chủ.}}",
   "@fileExplorer.smbLinkConsent.note": {
     "sourceHash": "3f9615a"
   },

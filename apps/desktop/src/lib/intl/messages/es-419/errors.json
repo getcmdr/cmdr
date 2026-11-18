@@ -995,11 +995,11 @@
   "@errors.shareList.encryptionRequired": {
     "sourceHash": "38a5e02"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Configuración, si no lo necesitas",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Preferences, if you don’t need it} linuxKde {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Configure Cmdr, if you don’t need it} other {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Configuración, si no lo necesitas}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
     "sourceHash": "dd02c16"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Configuración.",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Preferences.} linuxKde {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Configure Cmdr.} other {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Configuración.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
     "sourceHash": "c9c5630"
   },

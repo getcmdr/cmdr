@@ -329,7 +329,7 @@
   "@shortcuts.window.hideEmpty": {
     "sourceHash": "d3cb18e"
   },
-  "shortcuts.window.editInSettings": "在设置中编辑快捷键",
+  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Edit shortcuts in Preferences} linuxKde {Edit shortcuts in Configure Cmdr} other {在设置中编辑快捷键}}",
   "@shortcuts.window.editInSettings": {
     "sourceHash": "847b526"
   }

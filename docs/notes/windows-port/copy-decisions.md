@@ -68,7 +68,8 @@ Windows, Linux, and macOS are each first-class, and a few extra lines of per-OS 
 - **Linux desktop terms**: a block's `linuxGnome` / `linuxKde` branches (#1231) carry GNOME's and KDE's own words in the
   rows where they name an app or a path: reveal (Files, Dolphin), the password store (KDE's KDE Wallet and
   KWalletManager, GNOME's Passwords and Keys where the app is named), the settings row (GNOME "Preferences", KDE
-  "Configure Cmdr…"), and the shortcut path. `other` stays desktop-neutral. Terms and sources:
+  "Configure Cmdr…") with the window's title and every pointer to it (David, 2026-11-18: GNOME "Preferences", KDE
+  "Configure Cmdr"; Windows keeps "Settings"), and the shortcut path. `other` stays desktop-neutral. Terms and sources:
   `copy-glossary-evidence.md` § Linux desktop branches. The `errors.listing.*` suggestions keep their desktop-neutral
   Linux text ("a terminal", "your file manager"): the proposal's GNOME/KDE variants there change a word, not the advice,
   and don't earn two more branches per locale.

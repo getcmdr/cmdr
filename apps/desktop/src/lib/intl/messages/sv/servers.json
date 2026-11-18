@@ -124,7 +124,7 @@
   "@servers.hub.discoveryOff": {
     "sourceHash": "cadcceb"
   },
-  "servers.hub.discoveryOffLink": "Slå på den i Inställningar",
+  "servers.hub.discoveryOffLink": "{platform, select, linuxGnome {Turn it on in Preferences} linuxKde {Turn it on in Configure Cmdr} other {Slå på den i Inställningar}}",
   "@servers.hub.discoveryOffLink": {
     "sourceHash": "818571b"
   },

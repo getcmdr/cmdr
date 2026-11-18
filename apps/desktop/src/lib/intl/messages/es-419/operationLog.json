@@ -1,5 +1,5 @@
 {
-  "operationLog.dialog.recordingOff": "El registro de operaciones está desactivado, así que las nuevas copias, movimientos, cambios de nombre y eliminaciones no aparecen aquí y no se pueden deshacer. Vuelve a activarlo en Configuración para que se registren de nuevo.",
+  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Preferences to record them again.} linuxKde {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Configure Cmdr to record them again.} other {El registro de operaciones está desactivado, así que las nuevas copias, movimientos, cambios de nombre y eliminaciones no aparecen aquí y no se pueden deshacer. Vuelve a activarlo en Configuración para que se registren de nuevo.}}",
   "@operationLog.dialog.recordingOff": {
     "sourceHash": "5e268ed"
   },
