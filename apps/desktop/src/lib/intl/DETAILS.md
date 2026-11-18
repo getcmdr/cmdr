@@ -319,8 +319,11 @@ Keychain, ⌘, a `{system_settings}` token) or the other OS's word (Trash, Quit,
 "disconnect" on Linux); a branch that keeps a macOS word on purpose goes in its `EXCEPTIONS`, with the reason. It also
 fails ANY plain `en` value that types a macOS key glyph (⌘, ⌥, ⌃, ⇧): a key in a sentence is a key cap tag or a
 `{combo}` param (`../shortcuts/DETAILS.md` § Shortcuts as text), and a sentence naming the glyphs themselves keeps them
-in its `macos` branch. And it fails a word Cmdr spells one way on every OS ("file name" for "filename", "KWallet" for
-"KDE Wallet") in any `en` branch or `@key` description.
+in its `macos` branch. It fails a plain `en` value that names a macOS thing (Finder, Mac, Full Disk Access, iCloud,
+Trash, Terminal, a `{system_settings}` token, …), since a plain value shows on every OS: write it as a block, or, when
+only a Mac ever shows it (its surface needs a macOS-only capability), list the key or its prefix in
+`MAC_ONLY_PLAIN_VALUES` with that reason. And it fails a word Cmdr spells one way on every OS ("file name" for
+"filename", "KWallet" for "KDE Wallet") in any `en` branch or `@key` description.
 
 - **A desktop branch is a branch-set edit like any other.** Add `linuxGnome` / `linuxKde` only with words that desktop's
   own UI or docs use (cite them in `docs/notes/windows-port/copy-glossary-evidence.md`), and keep `other`
