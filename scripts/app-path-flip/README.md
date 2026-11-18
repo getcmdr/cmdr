@@ -45,6 +45,12 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   prelude.
 - **Typed param handed back**: a prelude'd body handing its param to a typed slot gets the original back, kept as
   `let path_app = path;` before the prelude (a bridge round trip there would return a future borrowing a temporary).
+- **Nested prelude** (`rules_nested.go`): E0515 `path_std` on a body whose prelude sits at its top while a returned
+  `async move { … }` reads the std `path` (an early `return Box::pin(async move { … path.display() … })`, each arm of an
+  `if`): each such block gets its own prelude from `path_app`, so the future owns what it reads.
+- **Unused prelude**: `unused variable: path` on a prelude's `let path: &Path = &path_std;` (every use was handed back
+  typed, or moved into nested preludes) drops the prelude and the kept `let path_app = path;`, and `path_app` reads
+  `path` again.
 - **Lazy helper** (`rules_lazy.go`): E0515 on a prelude'd body whose tail is a call tree returning the future moves the
   tree into `Box::pin(async move { prelude; <tree>.await })`, the same future. Tails: `Box::pin(self.helper(path, …))`,
   a bare `self.helper(path, …)` (the helper returns the box), nested (`Box::pin(self.noting(self.x_impl(path)))`,

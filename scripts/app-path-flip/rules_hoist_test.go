@@ -114,6 +114,39 @@ func TestABridgeTemporaryAClosureReturnsIsHoistedBeforeItsStatement(t *testing.T
 	}
 }
 
+func TestAnUnusedPreludeIsDroppedAndItsKeptParamRestored(t *testing.T) {
+	text := implHead + "    fn rename<'a>(&'a self, from: &'a AppPath, to: &'a AppPath) -> Fut<'a> {\n" +
+		"        let to_app = to;\n        let to_std = to.as_std_legacy();\n        let to: &Path = &to_std;\n" +
+		"        let from_app = from;\n        let from_std = from.as_std_legacy();\n        let from: &Path = &from_std;\n" +
+		"        if to != self.fails_onto {\n            return self.inner.rename(from_app, to_app);\n        }\n        todo!()\n    }\n}\n"
+	d := diag("unused_variables", "unused variable: `from`", spanOf(t, text, "from", "let from_std = from.as_std_legacy();\n        let ", "", true))
+	got := run(t, text, d)
+	want := "let to_app = to; let to_std = to.as_std_legacy(); let to: &Path = &to_std; if to != self.fails_onto { return self.inner.rename(from, to_app); }"
+	if !strings.Contains(squash(got), want) {
+		t.Fatalf("unused prelude not dropped:\n%s", got)
+	}
+}
+
+func TestAReturnedAsyncBlockGetsItsOwnPrelude(t *testing.T) {
+	text := implHead + "    fn delete<'a>(&'a self, path: &'a AppPath) -> Fut<'a> {\n" + prelude1 +
+		"        if self.gone == Some(path) {\n            return Box::pin(async move { Err(gone(path.display())) });\n        }\n        todo!()\n    }\n}\n"
+	d := diag("E0515", "cannot return value referencing local variable `path_std`", spanOf(t, text, "Box::pin(async move { Err(gone(path.display())) })", "", "", true))
+	got := run(t, text, d)
+	want := "{ let path_app = path; let path_std = path.as_std_legacy(); let path: &Path = &path_std; if self.gone == Some(path) { return Box::pin(async move { let path_std = path_app.as_std_legacy(); let path: &Path = &path_std; Err(gone(path.display())) }); }"
+	if !strings.Contains(squash(got), want) {
+		t.Fatalf("no nested prelude:\n%s", got)
+	}
+	// Once nothing outside reads the top prelude, it goes, and the nested ones read the param.
+	unused := implHead + "    fn is_directory<'a>(&'a self, path: &'a AppPath) -> Fut<'a> {\n        let path_app = path;\n" + prelude1 +
+		"        if self.follows {\n            Box::pin(async move {\n                let path_std = path_app.as_std_legacy();\n                let path: &Path = &path_std;\n                stat(path)\n            })\n        } else {\n            self.inner.is_directory(path_app)\n        }\n    }\n}\n"
+	d = diag("unused_variables", "unused variable: `path`", spanOf(t, unused, "path", "let path_std = path.as_std_legacy();\n        let ", "", true))
+	got = run(t, unused, d)
+	want = "{ if self.follows { Box::pin(async move { let path_std = path.as_std_legacy(); let path: &Path = &path_std; stat(path) }) } else { self.inner.is_directory(path) } }"
+	if !strings.Contains(squash(got), want) {
+		t.Fatalf("top prelude not dropped under a nested one:\n%s", got)
+	}
+}
+
 func TestAHoistThatWouldReorderOrShadowStaysResidue(t *testing.T) {
 	for _, text := range []string{
 		"async fn t() {\n    let fut = volume.list_directory(&AppPath::legacy_unchecked(&next_dir()), None);\n    fut.await;\n}\n",

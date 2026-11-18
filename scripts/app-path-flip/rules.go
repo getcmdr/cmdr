@@ -43,6 +43,9 @@ func (r *rewriter) editsFor(d *diagnostic) ([]edit, error) {
 	if d.Level != "error" {
 		return nil, nil
 	}
+	if d.code() == "unused_variables" {
+		return unusedPreludeEdits(src, p), nil
+	}
 	if p.Macro != "" {
 		return compareEdits(d, src, p), nil
 	}
@@ -256,6 +259,41 @@ func outermostAsyncBlocks(masked []byte, from, to int) [][2]int {
 		blocks = append(blocks, [2]int{open, close})
 	}
 	return blocks
+}
+
+// unusedPreludeEdits answers `unused variable: path` on a prelude's `let path: &Path =
+// &path_std;`: a body whose every use of the param is handed back typed (`let path_app =
+// path;` … `self.inner.rename(path_app, …)`) needs no std view of it. The prelude goes, and
+// the kept `path_app` is the param again. A prelude whose `path_std` anything else reads stays.
+func unusedPreludeEdits(src *source, p *diagSpan) []edit {
+	name := strings.TrimSpace(string(src.text[p.ByteStart:p.ByteEnd]))
+	fn := src.fnAt(p.ByteStart)
+	if fn == nil || !regexp.MustCompile(`^\w+$`).MatchString(name) {
+		return nil
+	}
+	span := preludeSpan(src, fn, name)
+	if span == nil || p.ByteStart < span[0] || p.ByteEnd > span[1] {
+		return nil
+	}
+	// The prelude's own two reads, plus two per nested prelude (`rules_nested.go`) of the same name.
+	q := regexp.QuoteMeta(name)
+	nested := regexp.MustCompile(`let `+q+`_std(?:: Vec<PathBuf>)? = `+q+`_app\.`).FindAllIndex(src.masked[fn.bodyStart:fn.bodyEnd], -1)
+	if len(identUses(src.masked, fn.bodyStart, fn.bodyEnd, name+"_std")) != 2+2*len(nested) {
+		return nil
+	}
+	edits := []edit{{file: src.path, start: span[0], end: span[1], text: "", rule: ruleUnusedPrelude}}
+	kept := regexp.MustCompile(`\s*let ` + regexp.QuoteMeta(name) + `_app = ` + regexp.QuoteMeta(name) + `;`)
+	if loc := kept.FindIndex(src.masked[fn.bodyStart:fn.bodyEnd]); loc != nil {
+		from, to := fn.bodyStart+loc[0], fn.bodyStart+loc[1]
+		edits = append(edits, edit{file: src.path, start: from, end: to, text: "", rule: ruleUnusedPrelude})
+		for _, at := range identUses(src.masked, fn.bodyStart, fn.bodyEnd, name+"_app") {
+			if at >= from && at < to {
+				continue
+			}
+			edits = append(edits, edit{file: src.path, start: at, end: at + len(name) + 4, text: name, rule: ruleUnusedPrelude})
+		}
+	}
+	return edits
 }
 
 // identUses lists the offsets in [from, to) where name is used as a value: a whole word, not
