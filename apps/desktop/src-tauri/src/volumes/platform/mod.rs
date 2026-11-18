@@ -15,7 +15,7 @@ mod unix;
 
 #[cfg_attr(target_os = "macos", path = "macos/mod.rs")]
 #[cfg_attr(target_os = "linux", path = "linux/mod.rs")]
-#[cfg_attr(target_os = "windows", path = "windows.rs")]
+#[cfg_attr(target_os = "windows", path = "windows/mod.rs")]
 mod imp;
 
 /// `(mount point, fs type, mount source)`.
@@ -50,9 +50,8 @@ const _: &str = NETWORK_FS_TYPE;
 const _: bool = LOCAL_DISK_CASE_SENSITIVE;
 
 /// The host's local volume the registry serves as `DEFAULT_VOLUME_ID` ("root"), the default
-/// pane's volume: the whole filesystem at `/` on macOS and Linux. On Windows, where each drive is
-/// its own volume (plan D1), it's the system drive alone for now (a stub: which drives register,
-/// and under which ids, is the multi-root task's open decision).
+/// pane's volume: the whole filesystem at `/` on macOS and Linux, the system drive on Windows,
+/// where every other drive and share is a volume of its own (plans D1 and D8).
 pub(crate) use imp::root_volume;
 
 /// A volume over a folder on this host's own filesystem at `root`, with the mount class its

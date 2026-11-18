@@ -475,7 +475,8 @@ pub(crate) async fn snapshot_volumes_from(locations: &[crate::volume_listing::Lo
             index_status: Some(status_token(status.enabled, status.freshness)),
             connection_state: None,
             device_readiness: None,
-            mount_path: Some("/".to_string()),
+            // `/` on Linux, the system drive (`C:/`) on Windows: wherever `root` starts.
+            mount_path: Some(cmdr_fs::mount_layout::boot_volume_root()),
             space: space_summary(cmdr_index::ROOT_VOLUME_ID),
         });
     }

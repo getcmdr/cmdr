@@ -28,6 +28,16 @@ use cmdr_fs::volume::{Volume, VolumeError};
 pub trait VolumeLookup: Send + Sync {
     /// The volume registered under `volume_id`, or `None` when it isn't connected.
     fn get(&self, volume_id: &str) -> Option<Arc<dyn Volume>>;
+
+    /// `path`, recorded on `volume_id`, under that volume's live root when its root moved
+    /// since the operation ran (a Windows drive back on another letter, a disk back at
+    /// another mount point); `None` to keep the recorded path. A volume's id is its
+    /// identity and its root only an address, so an undo follows the DISK, ❌ never
+    /// whatever now sits at the old root. Defaults to `None`: a host that can't tell keeps
+    /// every recorded path, and the planner's snapshot checks still guard each act.
+    fn live_path(&self, _volume_id: &str, _path: &Path) -> Option<std::path::PathBuf> {
+        None
+    }
 }
 
 /// One decided inverse act. The planner has already resolved both volumes,

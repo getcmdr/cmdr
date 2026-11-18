@@ -41,16 +41,22 @@ describe('breadcrumbDisplayPath', () => {
     vi.clearAllMocks()
   })
 
-  it('reads a drive or share volume from its root down, on Windows', () => {
+  it('reads a drive or share volume like Explorer, from its root down, on Windows', () => {
     onTestFinished(withPlatform('windows'))
     const input = { userHomePath: 'C:/Users/test_user_1', isSearchResultsView: false, searchLabel: undefined }
     expect(
       breadcrumbDisplayPath({ ...input, currentPath: 'C:/Users/test_user_1', volumeId: 'c', volumePath: 'C:/' }),
-    ).toBe('/Users/test_user_1')
-    expect(breadcrumbDisplayPath({ ...input, currentPath: 'C:/', volumeId: 'c', volumePath: 'C:/' })).toBe('/')
+    ).toBe('C:/Users/test_user_1')
+    expect(breadcrumbDisplayPath({ ...input, currentPath: 'C:/', volumeId: 'c', volumePath: 'C:/' })).toBe('C:\\')
+    expect(breadcrumbDisplayPath({ ...input, currentPath: 'C:/Windows', volumeId: 'c', volumePath: 'C:/' })).toBe(
+      'C:/Windows',
+    )
     expect(
       breadcrumbDisplayPath({ ...input, currentPath: '//nas/media/x', volumeId: 'u', volumePath: '//nas/media/' }),
-    ).toBe('/x')
+    ).toBe('\\\\nas\\media/x')
+    expect(
+      breadcrumbDisplayPath({ ...input, currentPath: '//nas/media/', volumeId: 'u', volumePath: '//nas/media/' }),
+    ).toBe('\\\\nas\\media')
   })
 
   it('replaces the home prefix with `~` on the root volume', () => {

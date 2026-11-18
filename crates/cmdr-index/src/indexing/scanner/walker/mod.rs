@@ -336,7 +336,9 @@ pub fn std_read_dir(path: &Path, progress: &ReadProgress) -> std::io::Result<Vec
             Err(_) => RawFileType::Other,
         };
         out.push(RawDirEntry {
-            path: entry.path(),
+            // On Windows `read_dir` joins the name with `\` onto the app path it was given
+            // (`C:/Windows\System32`); the index holds app paths (plan D1).
+            path: cmdr_fs::volume::path_grammar::host_app_path(entry.path()),
             file_type,
             stat: None, // the visitor stats each entry itself
         });

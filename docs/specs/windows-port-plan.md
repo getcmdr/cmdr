@@ -150,9 +150,25 @@ Settled:
     for its company (valid 2025-09-26 to 2028-09-25, read from `tcmd115801x64.exe`), costs more for the same trust as
     Azure. Since 2024, EV no longer buys instant SmartScreen reputation either.
 
+- **D8. Volume ids on Windows** (David, 2026-11-18, option (d) of `docs/notes/windows-port/volume-id-options.md`):
+  Windows runs the rule macOS and Linux already run. A volume's id is the disk's identity; its root is only its address.
+  Task 34.
+  - A local drive or folder mount keys on its volume GUID (`\\?\Volume{…}\`, through `local_volume_id`, `vol-`); the
+    system drive keeps `"root"`. A mapped drive (`Z:`), the same share by its UNC path, and Cmdr's own SMB connection to
+    it are ONE `smb-` volume keyed on `(server, port, share)`, with `Z:/` as its canonical root and the UNC spelling as
+    an alias root. A `subst` drive, which has no GUID, keys on its path (`path-`). macOS and Linux don't change.
+  - Plus a saved last root per volume, so a restored tab or an undo after a drive-letter swap finds the disk it meant
+    instead of whatever now sits on that letter.
+  - Why: identity-keyed state (the drive index, favorites, `lastUsedPaths`, the operation log's volume) follows the
+    disk, a share gets the answer macOS already gives an OS mount plus the direct backend, and tasks 35 (the mount table
+    falls out of the GUID sweep), 39 (an arrival names the GUID), and 45 (a mapped share is the `smb-` id) get simpler.
+  - ❌ Rejected: (a) the root path as the id: a letter swap hands one disk's index, favorites, and rollbacks to the
+    other, and one share gets three volumes. (b) the GUID with the letter as display only: fights D1 (the letter is in
+    every app path) and has no answer for UNC shares. (c) path ids with a GUID keying only the index: fixes the cheapest
+    store and leaves every store holding user intent on the letter, with a Windows-only second identity in shared code.
+
 Open, waiting on David (each task entry has the detail):
 
-- **The drive and UNC volume id scheme** (task 34).
 - **The menu model** on Windows and per Linux desktop (task 63): D5 stays provisional until David tries the menu spike.
 - **macOS hand checks** from the keymap work (task 26).
 
@@ -241,15 +257,10 @@ owns its real body. Remove a line when its body lands.
   for the fixtures only they use. Each file un-gates as `LocalWindowsVolume` grows.
 - Tests ignored on Windows by issue: 24 app-path tests in `cmdr-fs` (#1225, app paths through `std::path`) and one
   `sqlite_util` deletion test (#1226). `cmdr-index`'s suite isn't green there yet: 158 of 1,911 fail, filed as #1232.
-- The app's root volume on Windows (`volumes/platform/windows.rs` `root_volume`), task 34: `LocalWindowsVolume` at the
-  system drive alone (`%SystemDrive%`, else `C:/`), under today's `root` id and named "Root", which the switcher's
-  main-volume row points at too. `resolve_path_volume_fast` answers that volume for a path on the system drive and no
-  volume for any other drive or share, so Go to path and favorites reach `C:` alone. Which drives and UNC shares
-  register, and under which ids, is task 34's open decision.
-- The root drive index on Windows (`cmdr-index` `start_indexing`), task 34: it starts at `/`, which Windows reads as the
-  process's CURRENT drive, so a `Cmdr.exe` started from `D:\…` walks `D:\`, and the watcher's branches come out as
-  `/C:/Windows` (rejected: "neither a file nor a directory"). Sizes on `C:` are unreliable until the index's path space
-  roots at a drive.
+- The drive table on Windows (`volumes/platform/windows/`), task 39: read at startup and on each switcher refresh, with
+  no arrival or removal watcher, so a drive plugged in later shows on the next refresh and one pulled stays registered
+  until then. A mapped share carries no `SmbMountInfo`, so nothing upgrades it to a direct session (task 45).
+  `live_volume_space`, `mount_identity_at`, and `network_mount_under` answer nothing (task 35's mount table).
 - The app's eject on Windows (`file_system/volume/eject/platform/windows.rs`), task 39: nothing reads as ejectable, so a
   local drive's eject refuses as `NotEjectable`; a tool run (an SMB share's unmount, "Eject and save") answers that no
   tool could start (`EjectError::Unexpected`); the holder scan is "couldn't tell"; an SMB Disconnect drops the direct
@@ -505,15 +516,19 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     **Platform-independent part done**: `cmdr_fs::volume::path_grammar` (`AppPath`/`AppRoot`, `PathFlavor::HOST` behind
     a `platform/` seam, `to_native`/`from_native` for `\\?\C:\…` and `\\?\UNC\…`, pure and tested on Linux) runs the
     frontend's case table, and `volumes::local_volume_id_for_path` is the seam the missing-volume defaults in
-    `commands/rename.rs` and `commands/file_system/path_checks.rs` now ask (every arm answers `"root"` today). Left: the
-    drive and UNC volume id scheme (open), registering a volume per drive (with 35 and 39), and the remaining
-    single-root sites, most of which only change once those volumes exist (the root `LocalPosixVolume` at `/`, the
-    index's `ROOT_VOLUME_ID`, the boot-volume priority roots, the MCP volumes resource's non-macOS row). The app's root
-    volume now comes from `volumes::root_volume` (a `volumes/platform/` pin beside `local_volume_on_mount` and
-    `is_local_volume`, so `file_system/mod.rs` and `smb_mount_gate` name no concrete local volume); Windows' arm is the
-    stub in § "Windows build state". Open: whether "the system drive under `root`" survives the id scheme. Decided
-    (2026-11-18): consumers name the host's local volume `cmdr_local::LocalVolume`, and app paths become a typed
-    `AppPath` the `Volume` trait takes (#1225); both are milestones of `docs/specs/app-path-plan.md`.
+    `commands/rename.rs` and `commands/file_system/path_checks.rs` ask. **Done (2026-11-18, D8)**: the id scheme
+    (`cmdr_fs::volume::windows_volume_ids`, the system drive staying `root`), a volume per drive, folder mount, and
+    mapped share from the Windows arm's drive table (`volumes/platform/windows/`, with each Win32 answer verified on the
+    builder), a mapped share's UNC spelling as an alias root of its one `smb-` volume, path resolution for any drive and
+    UNC path, the root index mount-rooted at the system drive (`cmdr_fs::mount_layout::boot_volume_root`, a non-system
+    drive indexing under its own id from its own root), app-spelled priority roots and index paths, the MCP volumes
+    row's real mount path, the path bar reading like Explorer's address bar (`C:\`, `C:\Windows`), and each volume's
+    last roots saved across sessions (`location/last_roots.rs`) so a restored tab and an undo follow a drive to its new
+    letter. Volumes/`DETAILS.md` § "Windows: a volume per drive" has the shape. Left for later tasks: arrival and
+    removal (39), a mapped share's direct-SMB upgrade (45), and the mount table's identity and space readers (35); the
+    stub line in § "Windows build state". Decided (2026-11-18): consumers name the host's local volume
+    `cmdr_local::LocalVolume`, and app paths become a typed `AppPath` the `Volume` trait takes (#1225); both are
+    milestones of `docs/specs/app-path-plan.md`.
 35. [L] Windows. `LocalWindowsVolume` in `cmdr-local`, a sibling of `LocalPosixVolume`: `FindFirstFileExW` reader,
     space, no-replace and atomic-replace rename (❗ `std::fs::rename` replaces on Windows), streams, file vs dir
     symlinks, junctions, reparse tags, ADS-backed xattrs, write-access probe, metadata caps, the conformance suite

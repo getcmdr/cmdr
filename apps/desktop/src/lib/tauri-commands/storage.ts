@@ -94,6 +94,20 @@ export async function resolvePathVolume(path: string): Promise<PathVolumeResolut
   }
 }
 
+/**
+ * Where `path`, recorded on volume `volumeId` (a restored tab), sits under that volume's live
+ * root: the rebased path when the volume's root moved since (a drive back on another letter),
+ * else `null` (keep the path). In-memory on the backend (`location/last_roots.rs`), so it
+ * can't block on a mount.
+ */
+export async function liveVolumePath(volumeId: string, path: string): Promise<string | null> {
+  try {
+    return await commands.liveVolumePath(volumeId, path)
+  } catch {
+    return null
+  }
+}
+
 /** Frontend timeout for `resolveLocation`, the outer layer of the two-layer
  * timeout defense (the backend already caps the statfs at 2s). Slightly above
  * the backend cap so its honest `timedOut` flag wins when the filesystem hangs;

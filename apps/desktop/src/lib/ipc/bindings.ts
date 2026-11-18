@@ -4882,6 +4882,15 @@ export const commands = {
    */
   resolvePathVolume: (path: string) => __TAURI_INVOKE<PathVolumeResolution>('resolve_path_volume', { path }),
   /**
+   *  Where `path`, recorded on volume `volume_id` (a restored tab), sits under that volume's
+   *  live root: the rebased path when the volume's root moved since (a drive back on another
+   *  letter, a disk back at another mount point), else `None` (keep the path). In-memory only
+   *  (the registry and the saved roots), so no mount can block it.
+   *  `crate::location::last_roots` has the rule.
+   */
+  liveVolumePath: (volumeId: string, path: string) =>
+    __TAURI_INVOKE<string | null>('live_volume_path', { volumeId, path }),
+  /**
    *  Resolves a path to a `Location` (`volume_id` + the path itself), the
    *  canonical path→volume resolver for navigation edges. Shares the full
    *  protocol dispatch with `resolve_path_volume`, so `mtp://` / `smb://` virtual

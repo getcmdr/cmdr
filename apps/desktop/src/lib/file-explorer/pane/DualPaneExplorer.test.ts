@@ -84,6 +84,7 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   }),
   getBusyVolumeIds: vi.fn().mockResolvedValue([]),
   getEjectingVolumeIds: vi.fn().mockResolvedValue([]),
+  liveVolumePath: vi.fn().mockResolvedValue(null),
   resolvePathVolume: vi.fn().mockResolvedValue({
     volume: {
       id: 'root',

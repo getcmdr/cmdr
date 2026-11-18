@@ -62,6 +62,17 @@ pub async fn get_volume_space(path: String) -> TimedOut<Option<SpaceInfo>> {
     blocking_with_timeout_flag(VOLUME_TIMEOUT, None, move || crate::volumes::get_volume_space(&path)).await
 }
 
+/// Where `path`, recorded on volume `volume_id` (a restored tab), sits under that volume's
+/// live root: the rebased path when the volume's root moved since (a drive back on another
+/// letter, a disk back at another mount point), else `None` (keep the path). In-memory only
+/// (the registry and the saved roots), so no mount can block it.
+/// `crate::location::last_roots` has the rule.
+#[tauri::command]
+#[specta::specta]
+pub fn live_volume_path(volume_id: String, path: String) -> Option<String> {
+    crate::location::last_roots::live_path(&volume_id, &path)
+}
+
 /// Resolves a path to its containing volume without enumerating all volumes.
 /// Reads the mount table for filesystem paths (`statfs` on macOS,
 /// `/proc/self/mountinfo` on Linux; <1ms for local disks) and dispatches on

@@ -1,9 +1,9 @@
 # Windows build progress
 
 A running log of the Windows build track (#942, `docs/specs/windows-port-plan.md` § "Windows build state"), one entry
-per milestone, newest last. The machine is the Windows 10 22H2 builder (`ssh mami`, MSVC; how agents reach it and run
-the GUI there: `docs/tooling/ci.md` § Windows lane); the fast loop is `cargo check --target x86_64-pc-windows-gnu` on a
-Mac with zig as the C compiler and `AWS_LC_SYS_PREBUILT_NASM=1`: `CC_x86_64_pc_windows_gnu` names a script that drops
+per milestone, newest last. The machine is the Windows 10 22H2 builder (`ssh mami`, MSVC; how to reach it, build there,
+and run the GUI: `docs/tooling/ci.md` § Windows lane); the fast loop is `cargo check --target x86_64-pc-windows-gnu` on
+a Mac with zig as the C compiler and `AWS_LC_SYS_PREBUILT_NASM=1`: `CC_x86_64_pc_windows_gnu` names a script that drops
 cc-rs's `--target` flag and runs `zig cc -target x86_64-windows-gnu`, and `AR_x86_64_pc_windows_gnu` runs `zig ar`. Two
 things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig's clang refuses.
 
@@ -185,3 +185,28 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
   scheduled task (`schtasks /ru SYSTEM`). The cargo here puts test binaries under
   `target\debug\build\<crate>\<hash>\out\`, not `deps\`. Plain PowerShell `*>` redirection wraps a native tool's stderr
   at console width; `cmd /c "… > log 2>&1"` keeps lines whole.
+- **2026-11-18, task 34: a volume per drive** (D8, `44b67fd1c2` through `76c34e657c`): drives, folder mounts, and mapped
+  shares register as their own volumes, keyed by the disk (volumes/`DETAILS.md` § "Windows: a volume per drive"). On the
+  builder: `cargo clippy -p cmdr -p cmdr-fs -p cmdr-index -p cmdr-operation-log --all-targets -D warnings` clean (2m 57s
+  warm); nextest over the touched modules 107 of 113 before two index cells learned the system-drive root (fixed in
+  `693033a8eb`); the other four, in `priority::roots`, fail on their POSIX fixtures (`/Users/…` isn't absolute on
+  Windows), as they did before. A second run after `76c34e657c` (clippy clean again, 12m 25s): the `cmdr-index` paths,
+  walker, `notify`, and phases cells 127 of 147; the 19 `lifecycle::phases` failures are #1232's native-tempdir cluster,
+  and `a_run_of_walks_reuses_its_threads` is a thread count that passed in the first run.
+  - **Win32 facts, verified** (PowerShell P/Invoke over SSH, Windows 10 22H2, 2026-11-18; recorded in
+    `volumes/platform/windows/drives.rs`): a fixed drive gives its `\\?\Volume{…}\` GUID, and the USB build SSD reports
+    `DRIVE_FIXED`; a `subst` drive has no GUID (`ERROR_INVALID_PARAMETER`), `QueryDosDeviceW` names its folder
+    (`\??\C:\Windows`), and its serial is the target drive's; a mapped drive (`net use` to `\\localhost\C$`, removed
+    after) is `DRIVE_REMOTE` with no GUID, `WNetGetConnectionW` names the share, and its serial is the server's; an
+    empty optical drive has a GUID but `GetVolumeInformationW` answers `ERROR_NOT_READY`. Not verified: GUID stability
+    across a USB stick's re-plug (none plugged in; the build SSD stays put).
+  - **The launch** (`run-on-desktop.sh`, started from `D:\` on purpose; screenshots in David's
+    `~/Downloads/cmdr-windows-volumes/`): the root index walked `C:/` (its `WholeVolume` phase), with watcher branches
+    as `C:/Program Files`, where the first launch walked `D:\` and watched `/C:/Windows`; `D:` registered as
+    `vol-caa3226d-…`; the switcher (`Alt+F1`) lists `C:` and `build (D:)` with NTFS and free space, and the empty `E:`
+    not at all; switching to `D:` lists it and offers to index it; the path bar reads `C:\`, `C:\Windows`, and `D:\`;
+    `volume-roots.json` saved both roots; the MCP `root` row's `mountPath` is `C:/`.
+  - **Seen, not fixed**: the phases' `Home` walk logged `C:\Users\Admin` native-spelled (fixed in `76c34e657c`, not
+    relaunched); MCP `list_volumes` and `cmdr://state` list `root` alone on Windows (the non-macOS snapshot); the "Turn
+    indexing on?" dialog names the volume by its raw id; a short first segment (`C:`) keeps the 26 px hit-width floor,
+    so the path bar shows a gap before the first `\`; SendKeys `Enter` didn't press that dialog's focused Allow.

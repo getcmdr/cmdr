@@ -110,6 +110,25 @@ export async function resolvePersistedPath(
  * `file-explorer/pane/initialization.ts::restoreShareTab` decides, with the saved
  * list in hand, and walks it with [`resolvePersistedPath`] when it isn't one.
  */
+/**
+ * Where a stored tab's path sits under its volume's root now: `null` to keep it. Production
+ * passes `liveVolumePath` (`#lib/tauri-commands`); the rule is the backend's
+ * `location/last_roots.rs`.
+ */
+export type LivePathFn = (volumeId: string, path: string) => Promise<string | null>
+
+const noLivePath: LivePathFn = () => Promise.resolve(null)
+
+/**
+ * A stored tab, its path rebased when its volume's root moved since the tab was saved (a drive
+ * back on another letter), BEFORE the existence walk: walking first would probe the old root,
+ * which may now be another disk. ❌ Never let the path follow the letter instead of the disk.
+ */
+async function followMovedRoot(location: Location, livePathFn: LivePathFn): Promise<Location> {
+  const live = await livePathFn(location.volumeId, location.path)
+  return live === null ? location : { ...location, path: live }
+}
+
 async function resolveTabPath(location: Location, pathExistsFn: (p: string) => Promise<boolean>): Promise<string> {
   if (location.volumeId === 'network' || volumeScheme(location.volumeId) === 'smb') return location.path
   return await resolvePersistedPath(location.path, pathExistsFn)
@@ -546,6 +565,7 @@ function isValidPersistedPaneTabs(raw: unknown): raw is PersistedPaneTabs {
 export async function loadPaneTabs(
   side: 'left' | 'right',
   pathExistsFn: (p: string) => Promise<boolean>,
+  livePathFn: LivePathFn = noLivePath,
 ): Promise<PersistedPaneTabs> {
   try {
     const store = await getStore()
@@ -557,7 +577,7 @@ export async function loadPaneTabs(
       const validatedTabs = await Promise.all(
         raw.tabs.map(async (tab) => {
           // A stored snapshot path can't come back; it's swapped for a real folder first.
-          const restored = await restoreSnapshotLocation(tab.path, tab.volumeId)
+          const restored = await followMovedRoot(await restoreSnapshotLocation(tab.path, tab.volumeId), livePathFn)
           const resolvedPath = await resolveTabPath(restored, pathExistsFn)
           return { ...tab, ...restored, path: resolvedPath }
         }),
@@ -571,7 +591,7 @@ export async function loadPaneTabs(
     const volumeId = ((await store.get(`${side}VolumeId`)) as string) || DEFAULT_VOLUME_ID
     const sortBy = parseSortColumn(await store.get(`${side}SortBy`))
     const viewMode = parseViewMode(await store.get(`${side}ViewMode`))
-    const restored = await restoreSnapshotLocation(path, volumeId)
+    const restored = await followMovedRoot(await restoreSnapshotLocation(path, volumeId), livePathFn)
     const resolvedPath = await resolveTabPath(restored, pathExistsFn)
 
     const tab: PersistedTab = {
