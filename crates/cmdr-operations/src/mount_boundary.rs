@@ -161,7 +161,7 @@ pub(crate) async fn refuse_moving_a_volume_mount(
 
 /// Runs `find_mount` on the blocking pool over `paths`' spots on disk, for a
 /// volume backed by a local folder (`Volume::local_path`): a drive or share
-/// mounted inside a `LocalPosixVolume` pane's tree is reachable through it.
+/// mounted inside a `LocalVolume` pane's tree is reachable through it.
 /// Other backends have no local path to ask about; what's mounted on a server
 /// is the server's.
 async fn on_local_disk(

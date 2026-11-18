@@ -180,7 +180,7 @@ async fn listing_a_saved_server_nobody_connected_says_it_is_not_connected() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_copy_onto_a_saved_server_nobody_connected_is_refused_as_not_connected() {
     use crate::file_system::volume::manager::get_volume_manager;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     use cmdr_operation_log::types::Initiator;
     use cmdr_operations::testing::CollectorEventSink;
     use cmdr_operations::{VolumeCopyConfig, WriteOperationError};
@@ -192,11 +192,7 @@ async fn a_copy_onto_a_saved_server_nobody_connected_is_refused_as_not_connected
     let source_id = format!("saved-server-copy-source-{}", uuid::Uuid::new_v4());
     get_volume_manager().register(
         &source_id,
-        std::sync::Arc::new(LocalPosixVolume::local_folder(
-            "Local",
-            &*dir,
-            crate::volume_host::host(),
-        )),
+        std::sync::Arc::new(LocalVolume::local_folder("Local", &*dir, crate::volume_host::host())),
     );
 
     let refused = app_engine()

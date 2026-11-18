@@ -426,14 +426,14 @@ mod tests {
     #[test]
     fn handle_volume_unmounted_unregisters_from_volume_manager() {
         use crate::file_system::volume::manager::get_volume_manager;
-        use cmdr_local::LocalPosixVolume;
+        use cmdr_local::LocalVolume;
         use std::sync::Arc;
 
         let volume_path = "/Volumes/cmdr-test-mount-unregister";
         let volume_id = super::super::volume_id_for_mount(volume_path);
 
         // Pre-register so the unmount handler has something to remove.
-        let volume = Arc::new(LocalPosixVolume::local_folder(
+        let volume = Arc::new(LocalVolume::local_folder(
             "cmdr-test",
             volume_path,
             crate::volume_host::host(),
@@ -455,7 +455,7 @@ mod tests {
     #[test]
     fn unmounting_the_active_root_promotes_a_surviving_sibling() {
         use crate::file_system::volume::manager::get_volume_manager;
-        use cmdr_local::LocalPosixVolume;
+        use cmdr_local::LocalVolume;
         use std::sync::Arc;
 
         // One share, two mount points: macOS suffixes the later mount. Both
@@ -470,21 +470,13 @@ mod tests {
 
         manager.register(
             volume_id,
-            Arc::new(LocalPosixVolume::local_folder(
-                "share",
-                first,
-                crate::volume_host::host(),
-            )),
+            Arc::new(LocalVolume::local_folder("share", first, crate::volume_host::host())),
         );
         // The second mount event: the incumbent keeps the ID, the new root is
         // recorded as a fallback.
         manager.register_if_absent(
             volume_id,
-            Arc::new(LocalPosixVolume::local_folder(
-                "share",
-                second,
-                crate::volume_host::host(),
-            )),
+            Arc::new(LocalVolume::local_folder("share", second, crate::volume_host::host())),
         );
 
         handle_volume_unmounted(first);

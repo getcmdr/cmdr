@@ -192,14 +192,10 @@ fn a_document_on_a_phone_renders_and_pulls_its_pictures_off_the_phone() {
 /// Registers the local disk as `root` so a path inside a zip routes.
 fn ensure_root_volume() {
     use crate::file_system::volume::manager::get_volume_manager;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     get_volume_manager().register_if_absent(
         "root",
-        Arc::new(LocalPosixVolume::local_folder(
-            "Test root",
-            "/",
-            crate::volume_host::host(),
-        )),
+        Arc::new(LocalVolume::local_folder("Test root", "/", crate::volume_host::host())),
     );
 }
 

@@ -22,7 +22,7 @@ use cmdr_fs::testing::unique_test_id;
 use cmdr_fs::volume::{ListingProgress, Volume, VolumeError};
 use cmdr_listing::ListingId;
 use cmdr_listing::testing::{TestEngine, TestListingGuard, request};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 /// Budget for a read to reach the backend.
 const STARTS_WITHIN: std::time::Duration = std::time::Duration::from_secs(2);
@@ -43,7 +43,7 @@ async fn a_local_directory_read_emits_progress_events() {
     let listing = TestListingGuard::adopt(&engine, unique_test_id("streaming-local-progress"));
     engine.volumes.register(
         volume_id,
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Test Volume",
             &*dir,
             crate::volume_host::host(),

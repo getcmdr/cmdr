@@ -13,16 +13,16 @@ use std::sync::Arc;
 
 #[test]
 fn mount_id_for_path_returns_longest_non_root_ancestor() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let manager = VolumeManager::new();
     manager.register(
         "root",
-        Arc::new(LocalPosixVolume::local_folder("Root", "/", crate::volume_host::host())),
+        Arc::new(LocalVolume::local_folder("Root", "/", crate::volume_host::host())),
     );
     manager.register(
         "ext",
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Ext",
             "/Volumes/X",
             crate::volume_host::host(),
@@ -30,7 +30,7 @@ fn mount_id_for_path_returns_longest_non_root_ancestor() {
     );
     manager.register(
         "nested",
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Nested",
             "/Volumes/X/Y",
             crate::volume_host::host(),
@@ -62,12 +62,12 @@ fn mount_id_for_path_returns_longest_non_root_ancestor() {
 #[test]
 fn mount_id_for_path_skips_any_volume_that_routes_over_a_parent() {
     use crate::file_system::volume::InMemoryVolume;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let manager = VolumeManager::new();
     manager.register(
         "ext",
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Ext",
             "/Volumes/X",
             crate::volume_host::host(),

@@ -121,7 +121,7 @@ struct UndoLoop {
 impl UndoLoop {
     fn new(name: &str) -> Self {
         use cmdr_fs::volume::Volume;
-        use cmdr_local::LocalPosixVolume;
+        use cmdr_local::LocalVolume;
 
         // Held in the struct below, not just here: the writer keeps using this
         // database for the fixture's whole life, so dropping the log at the end
@@ -134,7 +134,7 @@ impl UndoLoop {
         // real `root` volume is registered.
         vm.register(
             "root",
-            Arc::new(LocalPosixVolume::local_folder(
+            Arc::new(LocalVolume::local_folder(
                 "Test root",
                 "/",
                 crate::host::testing::pane_order_host(),

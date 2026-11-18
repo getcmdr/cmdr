@@ -19,7 +19,7 @@ use crate::file_system::git;
 use crate::file_system::volume::manager::get_volume_manager;
 use cmdr_fs::volume::VolumeError;
 use cmdr_git::test_fixtures::{Fixture, cleanup, temp_dir};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_operation_log::types::Initiator;
 use cmdr_operations::testing::CollectorEventSink;
 use cmdr_operations::{BulkRenameRow, MutationError, RenameStartError, SourceFingerprint, WriteOperationError};
@@ -35,7 +35,7 @@ fn repo_with_a_linked_worktree(name: &str) -> PathBuf {
     // (nextest isolates the process-global manager per test.)
     get_volume_manager().register(
         "root",
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Root",
             dir.to_str().unwrap(),
             crate::volume_host::host(),

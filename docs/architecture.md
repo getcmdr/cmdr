@@ -507,10 +507,10 @@ is an ordinary member.
   fold, and what a click asks for. The desktop's `menu/` builds native menus from it; the browser demo draws the macOS
   bar from it through `cmdr-listing-wasm`. See `crates/cmdr-menu/CLAUDE.md`
 - `crates/cmdr-local/`: the local disk: `LocalPosixVolume` (the `Volume` over a `std::fs` root on macOS and Linux) and
-  its Windows sibling `LocalWindowsVolume`, both under `src/platform/`, the `std::fs` reader the watcher reads through
-  too, `rename_local_exclusive` (the one no-replace rename), local volume space with the live-space memo, and the mount
-  probes (`filesystem_kind`, the macOS mount table and `statfs`, Linux's `/proc/mounts`). It reaches the app through its
-  `VolumeHost` alone. See `crates/cmdr-local/CLAUDE.md`
+  its Windows sibling `LocalWindowsVolume`, both under `src/platform/` with the alias `LocalVolume` for this OS's one,
+  the `std::fs` reader the watcher reads through too, `rename_local_exclusive` (the one no-replace rename), local volume
+  space with the live-space memo, and the mount probes (`filesystem_kind`, the macOS mount table and `statfs`, Linux's
+  `/proc/mounts`). It reaches the app through its `VolumeHost` alone. See `crates/cmdr-local/CLAUDE.md`
 - `crates/cmdr-operation-log/`: the durable, cross-volume journal of file mutations, the app's first durable DB
   (`operation-log.db`) and the foundation for rollback, indexed name search, and a future undo. Single writer thread, a
   forward-migration ladder (not delete-and-recreate) and retention discipline, interned dir prefixes + per-item rows,

@@ -6,7 +6,7 @@
 //!   cargo run --release -p cmdr-restic --example open_cost -- mount ids /Volumes/testshare/backups/repo
 //! ```
 //!
-//! - Via: `mount` (a `LocalPosixVolume` over the OS mount) or `smb` (a direct
+//! - Via: `mount` (a `LocalVolume` over the OS mount) or `smb` (a direct
 //!   `cmdr-smb` session; needs `SMB_SERVER`, `SMB_SHARE`, `SMB_USER`, and
 //!   `SMB_PASSWORD` or `SMB_PASSWORD_COMMAND`; the repo path is then relative
 //!   to the share root).
@@ -303,10 +303,7 @@ fn build_parent(via: &str, rt: &Runtime, host: VolumeHost, repo: &str) -> (Arc<d
     match via {
         "mount" => {
             // The host's own local volume over the OS mount.
-            #[cfg(unix)]
-            let volume = cmdr_local::LocalPosixVolume::on_mount("probe", "/", MountClass::SmbShare, host);
-            #[cfg(target_os = "windows")]
-            let volume = cmdr_local::LocalWindowsVolume::on_mount("probe", "/", MountClass::SmbShare, host);
+            let volume = cmdr_local::LocalVolume::on_mount("probe", "/", MountClass::SmbShare, host);
             (Arc::new(volume), PathBuf::from(repo))
         }
         "smb" => {

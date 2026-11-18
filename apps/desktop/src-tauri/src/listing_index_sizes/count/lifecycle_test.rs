@@ -198,7 +198,7 @@ async fn unreadable_and_quickly_cancelled_retries_preserve_a_manual_partial() {
         &|_| {},
     );
     let requested = plan(listing.id(), false, None, |_| true).expect("cached");
-    let missing: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let missing: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "missing",
         "/",
         crate::volume_host::host(),

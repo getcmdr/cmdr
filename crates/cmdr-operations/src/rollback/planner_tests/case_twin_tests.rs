@@ -130,7 +130,7 @@ async fn undoing_a_case_only_rename_on_a_case_insensitive_volume_restores_it() {
     let rig = Rig::new();
     rig.vm.register(
         "root",
-        Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+        Arc::new(cmdr_local::LocalVolume::local_folder(
             "Test root",
             "/",
             crate::host::testing::pane_order_host(),

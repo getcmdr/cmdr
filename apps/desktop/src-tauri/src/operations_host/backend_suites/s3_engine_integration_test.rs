@@ -35,7 +35,7 @@ use crate::s3_costs::{CostedOperation, planned_workloads};
 use crate::test_support::TestDir;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::ScannedFile;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_operation_log::rollback::{execute_rollback, rollback_operation};
 use cmdr_operation_log::types::Initiator;
 
@@ -261,11 +261,7 @@ fn local_tree(label: &str) -> LocalTree {
             .and_then(|file| file.set_modified(saved))
             .expect("dating the local tree");
     }
-    let volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
-        "Local",
-        &*dir,
-        crate::volume_host::host(),
-    ));
+    let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder("Local", &*dir, crate::volume_host::host()));
     LocalTree {
         _dir: dir,
         volume,
@@ -552,7 +548,7 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
     for (name, len) in [("t0.bin", top_files[0]), ("t1.bin", top_files[1])] {
         std::fs::write(local_dir.join(name), self_describing_bytes(len, name)).expect("seeding a local file");
     }
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),
@@ -594,7 +590,7 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
     });
 
     let back_dir = TestDir::new("s3_cost_download");
-    let back: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let back: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*back_dir,
         crate::volume_host::host(),
@@ -669,7 +665,7 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
     });
 
     let off_dir = TestDir::new("s3_cost_move_off");
-    let off: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let off: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*off_dir,
         crate::volume_host::host(),

@@ -17,7 +17,7 @@ use std::time::Duration;
 use crate::testing::TestOperations;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_copy_single_path_local_to_local() {
@@ -30,12 +30,12 @@ async fn test_copy_single_path_local_to_local() {
 
     fs::write(src_dir.join("source.txt"), "Source content").unwrap();
 
-    let source: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Source",
         src_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),
     ));
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),
@@ -74,12 +74,12 @@ async fn test_copy_single_path_cancelled() {
 
     fs::write(src_dir.join("source.txt"), "Content").unwrap();
 
-    let source: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Source",
         src_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),
     ));
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),

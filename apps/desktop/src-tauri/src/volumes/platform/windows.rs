@@ -8,7 +8,7 @@ use std::sync::Arc;
 use crate::volumes::{DEFAULT_VOLUME_ID, LocationCategory, LocationInfo, NetworkMount, SmbMountInfo, VolumeInfo};
 use cmdr_fs::volume::path_grammar::{AppPath, PathFlavor, app_spelling};
 use cmdr_fs::volume::{MountClass, SpaceInfo, Volume};
-use cmdr_local::LocalWindowsVolume;
+use cmdr_local::LocalVolume;
 
 /// What the synthetic `network` volume reports as its `fs_type`: the SMB name the other arms
 /// report, since this one mounts no shares.
@@ -45,7 +45,7 @@ pub(crate) fn list_locations() -> Vec<LocationInfo> {
 /// real disk. Every other drive and UNC share waits on the multi-root task's open decision
 /// (which drives register, and their volume ids; `docs/specs/windows-port-plan.md`).
 pub(crate) fn root_volume() -> Arc<dyn Volume> {
-    Arc::new(LocalWindowsVolume::local_folder(
+    Arc::new(LocalVolume::local_folder(
         "Root",
         system_drive_root(),
         crate::volume_host::host(),
@@ -53,16 +53,11 @@ pub(crate) fn root_volume() -> Arc<dyn Volume> {
 }
 
 pub(crate) fn local_volume_on_mount(name: &str, root: &Path, mount: MountClass) -> Arc<dyn Volume> {
-    Arc::new(LocalWindowsVolume::on_mount(
-        name,
-        root,
-        mount,
-        crate::volume_host::host(),
-    ))
+    Arc::new(LocalVolume::on_mount(name, root, mount, crate::volume_host::host()))
 }
 
 pub(crate) fn is_local_volume(volume: &dyn Volume) -> bool {
-    volume.as_any().is::<LocalWindowsVolume>()
+    volume.as_any().is::<LocalVolume>()
 }
 
 /// The system drive's root as an app path (`C:/`, plan D1): `%SystemDrive%`, which Windows sets

@@ -249,15 +249,11 @@ mod tests {
     #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     fn ensure_root_volume() {
         use crate::file_system::volume::manager::get_volume_manager;
-        use cmdr_local::LocalPosixVolume;
+        use cmdr_local::LocalVolume;
         use std::sync::Arc;
         get_volume_manager().register_if_absent(
             "root",
-            Arc::new(LocalPosixVolume::local_folder(
-                "Test root",
-                "/",
-                crate::volume_host::host(),
-            )),
+            Arc::new(LocalVolume::local_folder("Test root", "/", crate::volume_host::host())),
         );
     }
 

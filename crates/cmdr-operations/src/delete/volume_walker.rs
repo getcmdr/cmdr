@@ -1,4 +1,4 @@
-//! The volume-aware delete (MTP, SMB, a `LocalPosixVolume` folder, anything
+//! The volume-aware delete (MTP, SMB, a `LocalVolume` folder, anything
 //! behind a `Volume`): an oracle-aware recursive listing, then `Volume::delete`
 //! per file or `delete_files` per batch. The local-FS twin is `walker.rs`.
 

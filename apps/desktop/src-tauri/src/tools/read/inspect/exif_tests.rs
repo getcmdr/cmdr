@@ -20,7 +20,7 @@ use crate::file_system::volume::manager::get_volume_manager;
 use crate::file_viewer::materialize::{PREVIEW_CAP_BYTES, extract_if_routed_with};
 use crate::test_support::TestDir;
 use cmdr_archive::test_fixtures::{build_zip, stored};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -278,11 +278,7 @@ fn a_broken_or_truncated_exif_block_is_an_image_row_with_no_exif_key() {
 fn an_image_inside_a_zip_carries_its_exif() {
     get_volume_manager().register_if_absent(
         "root",
-        Arc::new(LocalPosixVolume::local_folder(
-            "Test root",
-            "/",
-            crate::volume_host::host(),
-        )),
+        Arc::new(LocalVolume::local_folder("Test root", "/", crate::volume_host::host())),
     );
     let dir = TestDir::new("inspect_exif_zip");
     let zip = write_bytes(

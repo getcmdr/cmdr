@@ -28,7 +28,7 @@ use super::network_transfer_test_support::{
 use crate::operations_host::app_engine;
 use crate::test_support::TestDir;
 use cmdr_fs::ignore_poison::IgnorePoison;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_operations::testing::new_operation_state;
 use cmdr_operations::testing::{CollectorEventSink, WriteOperationState};
 use cmdr_operations::testing::{
@@ -90,11 +90,7 @@ pub(super) async fn names_in(volume: &dyn Volume, dir: &Path) -> Vec<String> {
 /// A local volume rooted at a fresh temp dir. The `TestDir` has to outlive it.
 pub(super) fn local_volume(what: &str) -> (TestDir, Arc<dyn Volume>) {
     let dir = TestDir::new(what);
-    let volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
-        "Local",
-        &*dir,
-        crate::volume_host::host(),
-    ));
+    let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder("Local", &*dir, crate::volume_host::host()));
     (dir, volume)
 }
 

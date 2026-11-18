@@ -12,7 +12,7 @@
 //! a link is a LEAF, and a link facing a real directory is a cross-type clash
 //! for the file policy. `transfer/DETAILS.md` § "Symlinks are opaque to a move".
 //!
-//! Runs on the real `LocalPosixVolume` rig (`rename_merge_test_support.rs`), the
+//! Runs on the real `LocalVolume` rig (`rename_merge_test_support.rs`), the
 //! only one where a symlink is a symlink.
 
 #![cfg(unix)]

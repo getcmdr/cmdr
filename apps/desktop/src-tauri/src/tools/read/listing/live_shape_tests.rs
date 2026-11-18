@@ -175,7 +175,7 @@ async fn a_live_read_lists_a_real_folder_through_its_volume() {
         },
     )
     .expect("resolves");
-    let volume: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let volume: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "testshare",
         &*dir,
         crate::volume_host::host(),
@@ -222,7 +222,7 @@ async fn a_missing_folder_read_live_is_a_typed_miss_not_an_empty_listing() {
         },
     )
     .expect("resolves");
-    let volume: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let volume: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "testshare",
         &*dir,
         crate::volume_host::host(),

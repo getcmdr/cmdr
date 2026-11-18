@@ -2,7 +2,8 @@
 
 The local disk: `LocalPosixVolume` (the `Volume` over a `std::fs` root) and its Windows sibling `LocalWindowsVolume`,
 the local reader, the one no-replace rename, local volume space, and the mount probes. Tauri-free; the app builds every
-local volume with its `VolumeHost`.
+local volume with its `VolumeHost`. Callers that mean "the local disk" name the alias `LocalVolume` (this OS's sibling);
+only POSIX-dependent code names `LocalPosixVolume` (`platform/mod.rs`, DETAILS § "The Windows sibling").
 
 ## Module map
 

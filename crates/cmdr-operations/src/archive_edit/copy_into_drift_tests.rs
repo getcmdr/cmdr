@@ -176,7 +176,7 @@ async fn a_remote_source_keeps_what_changed_or_appeared_during_a_move_into_a_zip
 /// `remove_dir_all`.
 #[tokio::test]
 async fn a_local_source_keeps_what_changed_or_appeared_during_a_move_into_a_zip() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -194,7 +194,7 @@ async fn a_local_source_keeps_what_changed_or_appeared_during_a_move_into_a_zip(
         std::fs::write(&draft_in_sink, b"final draft, longer").expect("save over");
         std::fs::write(&newcomer_in_sink, b"arrived mid-move").expect("newcomer");
     });
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root.clone(),
         crate::host::testing::pane_order_host(),

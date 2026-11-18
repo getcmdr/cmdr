@@ -27,9 +27,9 @@ async fn start_interactive_copy_into(
     src_root: &Path,
     src_rel: &str,
 ) -> (Arc<CollectorEventSink>, OperationId) {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root.to_path_buf(),
         crate::host::testing::pane_order_host(),
@@ -254,7 +254,7 @@ async fn interactive_conflict_event_carries_both_sides_metadata() {
 
 #[tokio::test]
 async fn interactive_move_into_with_a_skipped_collision_keeps_the_source() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -265,7 +265,7 @@ async fn interactive_move_into_with_a_skipped_collision_keeps_the_source() {
     std::fs::write(src_root.join("d/a.txt"), b"NEW").expect("w1"); // collides
     std::fs::write(src_root.join("d/b.txt"), b"bbb").expect("w2"); // lands
 
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root.to_path_buf(),
         crate::host::testing::pane_order_host(),

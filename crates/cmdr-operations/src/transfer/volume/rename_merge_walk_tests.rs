@@ -16,7 +16,7 @@ use crate::testing::TestOperations;
 use crate::types::VolumeCopyConfig;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{Volume, VolumeError};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -24,11 +24,11 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tempfile::TempDir;
 
-/// Wraps a `LocalPosixVolume` and counts `list_directory` + `get_metadata` +
+/// Wraps a `LocalVolume` and counts `list_directory` + `get_metadata` +
 /// `scan_for_copy` calls, with the paths listed, so a test can assert a
 /// non-conflicting same-volume move never walks the moved folder's interior.
 struct CountingVolume {
-    inner: Arc<LocalPosixVolume>,
+    inner: Arc<LocalVolume>,
     listed: Arc<std::sync::Mutex<Vec<PathBuf>>>,
     stat_calls: Arc<AtomicUsize>,
 }
@@ -36,7 +36,7 @@ struct CountingVolume {
 impl CountingVolume {
     fn new(root: &Path) -> Arc<Self> {
         Arc::new(Self {
-            inner: Arc::new(LocalPosixVolume::local_folder(
+            inner: Arc::new(LocalVolume::local_folder(
                 "V",
                 root.to_path_buf(),
                 crate::host::testing::pane_order_host(),

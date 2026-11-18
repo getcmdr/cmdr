@@ -21,12 +21,12 @@ use cmdr_fs::volume::InMemoryVolume;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn local_fs_rename_reserves_the_chosen_name_on_disk() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     let temp = tempfile::TempDir::new().unwrap();
     let target = temp.path().join("notes.txt");
     std::fs::write(&target, b"original").unwrap();
 
-    let vol: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let vol: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "dst",
         temp.path().to_path_buf(),
         crate::host::testing::pane_order_host(),
@@ -56,12 +56,12 @@ async fn local_fs_rename_reserves_the_chosen_name_on_disk() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn local_fs_rename_keeps_extension_in_the_right_place() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     let temp = tempfile::TempDir::new().unwrap();
     let target = temp.path().join("report.pdf");
     std::fs::write(&target, b"x").unwrap();
 
-    let vol: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let vol: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "dst",
         temp.path().to_path_buf(),
         crate::host::testing::pane_order_host(),
@@ -101,12 +101,12 @@ async fn local_fs_rename_continues_a_trailing_sequence() {
     // The volume namer shares `unique_name::{split_sequence, numbered_name}` with
     // the local-FS namer, so a name that already ends in ` (N)` continues the
     // series here too instead of nesting into `notes (1) (1).txt`.
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     let temp = tempfile::TempDir::new().unwrap();
     let target = temp.path().join("notes (1).txt");
     std::fs::write(&target, b"original").unwrap();
 
-    let vol: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let vol: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "dst",
         temp.path().to_path_buf(),
         crate::host::testing::pane_order_host(),
@@ -138,12 +138,12 @@ async fn non_local_dest_continues_a_trailing_sequence_too() {
 /// report `AlreadyExists` and try to merge into it.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_directory_name_is_never_reserved_with_a_file_placeholder() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     let temp = tempfile::TempDir::new().unwrap();
     let target = temp.path().join("docs");
     std::fs::create_dir(&target).unwrap();
 
-    let vol: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let vol: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "dst",
         temp.path().to_path_buf(),
         crate::host::testing::pane_order_host(),

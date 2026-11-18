@@ -683,14 +683,14 @@ async fn a_trash_frees_its_preview_instead_of_waiting_on_it() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_compress_confirmed_mid_scan_awaits_its_preview() {
     use cmdr_fs::volume::Volume;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = TestOperations::new();
     let dir = TestDir::new("scanwait-compress");
     let src_root = dir.join("src");
     std::fs::create_dir_all(&src_root).expect("mkdir src");
     std::fs::write(src_root.join("one.txt"), b"first").expect("w1");
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root.clone(),
         crate::host::testing::pane_order_host(),

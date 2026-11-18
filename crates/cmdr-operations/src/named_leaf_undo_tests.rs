@@ -22,7 +22,7 @@ use crate::host::testing::FakeVolumes;
 use crate::rollback::Reversal;
 use crate::testing::{TestOperationLog, TestOperations};
 use cmdr_fs::volume::{InMemoryVolume, Volume};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_operation_log::rollback::{RollbackReport, execute_rollback, rollback_operation};
 use cmdr_operation_log::types::{ExecutionStatus, Initiator, OpKind};
 
@@ -82,7 +82,7 @@ async fn undoing_a_named_local_copy_deletes_exactly_the_named_copy() {
         let rig = UndoRig::new();
         rig.vm.register(
             "root",
-            Arc::new(LocalPosixVolume::local_folder(
+            Arc::new(LocalVolume::local_folder(
                 "Test root",
                 "/",
                 crate::host::testing::pane_order_host(),
@@ -145,7 +145,7 @@ async fn undoing_a_copy_naming_each_item_deletes_exactly_its_copies() {
     let rig = UndoRig::new();
     rig.vm.register(
         "root",
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Test root",
             "/",
             crate::host::testing::pane_order_host(),

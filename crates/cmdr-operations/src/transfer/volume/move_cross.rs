@@ -83,7 +83,7 @@ pub async fn move_volumes_with_progress(
         &[&source_volume, &dest_volume],
     )
     .await?;
-    // A source that is or holds a mount point (on a `LocalPosixVolume`) would
+    // A source that is or holds a mount point (on a `LocalVolume`) would
     // have the drive's files copied off it and then deleted there: refused
     // before the destination is touched.
     super::super::super::mount_boundary::refuse_moving_a_volume_mount(&*source_volume, source_paths, state)
