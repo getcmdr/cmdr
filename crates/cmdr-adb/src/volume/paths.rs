@@ -47,7 +47,7 @@ impl AdbVolume {
     /// drops that entry.
     pub(super) fn to_app_path(&self, device: &str) -> Option<PathBuf> {
         if device == "/" {
-            return Some(self.root.clone());
+            return Some(self.root.clone().into_path_buf());
         }
         self.paths.to_app_path(device)
     }
