@@ -17,7 +17,7 @@
   },
   "operationLog.dialog.recordingOff": "{platform, select, windows {「操作記錄」目前沒有在記錄，所以新的複製、移動、重新命名和刪除不會出現在這裡，也無法還原。到「設定」重新開啟，就能再次記錄。} linuxGnome {「操作記錄」目前沒有在記錄，所以新的複製、移動、重新命名和刪除不會出現在這裡，也無法還原。到「偏好設定」重新開啟，就能再次記錄。} linuxKde {「操作記錄」目前沒有在記錄，所以新的複製、移動、重新命名和刪除不會出現在這裡，也無法還原。到「設定 Cmdr」重新開啟，就能再次記錄。} other {「操作記錄」目前沒有在記錄，所以新的複製、移動、重新命名和刪除不會出現在這裡，也無法還原。到「設定」重新開啟，就能再次記錄。}}",
   "@operationLog.dialog.recordingOff": {
-    "sourceHash": "3204ad8"
+    "sourceHash": "8b5c5f2"
   },
   "operationLog.dialog.noItems": "這項操作沒有記錄任何項目。",
   "@operationLog.dialog.noItems": {

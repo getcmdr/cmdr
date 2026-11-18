@@ -3,10 +3,10 @@
   "@mtp.connectedToast.title": {
     "sourceHash": "562319d"
   },
-  "mtp.connectedToast.body": "{platform, select, macos {Cmdr 已暫停 macOS 的相機常駐程式（ptpcamerad），好存取這個裝置。如果想在其他 App 中使用它，請在設定中關閉 MTP 支援。} windows {} linuxGnome {如果想在其他 App 中使用這個裝置，請在偏好設定中關閉 MTP 支援。} linuxKde {To use this device in another app, disable MTP support in Configure Cmdr.} other {如果想在其他 App 中使用這個裝置，請在設定中關閉 MTP 支援。}}",
+  "mtp.connectedToast.body": "{platform, select, macos {Cmdr 已暫停 macOS 的相機常駐程式（ptpcamerad），好存取這個裝置。如果想在其他 App 中使用它，請在設定中關閉 MTP 支援。} windows {} linuxGnome {如果想在其他 App 中使用這個裝置，請在偏好設定中關閉 MTP 支援。} linuxKde {如果想在其他 App 中使用這個裝置，請在「設定 Cmdr」中關閉 MTP 支援。} other {如果想在其他 App 中使用這個裝置，請在設定中關閉 MTP 支援。}}",
   "@mtp.connectedToast.body": {
-    "sourceHash": "d1c6175",
-    "sameAsSourceJustification": "The windows branch is empty on purpose, as in English: Windows shares the device with File Explorer, so the toast has no body line there."
+    "sourceHash": "b7aa493",
+    "sameAsSourceJustification": "The windows branch is empty on purpose, as in English: on Windows the toast has no body line."
   },
   "mtp.connectedToast.dontShowAgain": "不要再顯示",
   "@mtp.connectedToast.dontShowAgain": {

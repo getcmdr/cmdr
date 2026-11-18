@@ -3659,6 +3659,10 @@
       "chosen": "設定",
       "accept": ["偏好設定", "設定 Cmdr", "設定 – Cmdr"],
       "note": "Cmdr's settings window per Linux desktop: GNOME (linuxGnome) → 偏好設定 (nautilus.po _Preferences → 偏好設定(_P), Show Preferences → 顯示偏好設定), so “Open preferences” → 開啟偏好設定 and a path → 「偏好設定 > AI」; KDE (linuxKde) → 設定 Cmdr, as KDE titles an app's settings: dolphin.po @title:window Configure → 設定 and Configure Dolphin → 「設定 Dolphin」, so the window title “Configure – Cmdr” → 設定 – Cmdr, the button “Configure Cmdr” → 設定 Cmdr, a prose pointer → 「設定 Cmdr」, a path → 「設定 Cmdr > AI」. Other Linux desktops keep 設定. settings.window.title, commands.appSettings.label, and menu.app.settings (設定 Cmdr⋯) start with the same word on every branch, as settings-window-name.test.ts pins in English. macOS (Settings… → 設定⋯) and Windows (MS settings → 設定) both say 設定."
+    },
+    "windows": {
+      "chosen": "設定",
+      "note": "Windows names an app's settings 設定 too (MS zh-Hant TBX settings → 設定 (HKG, TWN)), so the windows branch matches macOS: the window 設定, its pointers 「設定」 and 「設定 › AI」."
     }
   },
   "share-link": {
@@ -4913,5 +4917,11 @@
     "confidence": "high",
     "forms": "item kind → 套件; Show Package Contents → 顯示套件內容",
     "sources": "macOS zh-TW Finder N158 (Show Package Contents → 顯示套件內容); catalog fileExplorer.list.rowKind.package 套件"
+  },
+  "usb-preferences": {
+    "chosen": "USB 偏好設定",
+    "confidence": "high",
+    "sources": "AOSP packages/apps/Settings res/values-zh-rTW/strings.xml usb_preference → USB 偏好設定, settings_label → 設定, usb_use_file_transfers → 檔案傳輸 (aosp-mirror main, 2026-11-18)",
+    "note": "Android phone label quoted in settings.fileOperations.mtpEnabled.description: 「設定 > USB 偏好設定」."
   }
 }
