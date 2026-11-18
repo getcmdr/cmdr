@@ -36,7 +36,10 @@ fn a_home_makes_the_volume_stand_in_for_the_own_disk() {
     let mut with_home = tree(vec![entry("/Users", DemoKind::Dir)]);
     with_home.home = Some("/Users/you".into());
     let volume = with_home.into_in_memory().expect("builds");
-    assert_eq!(volume.stands_in_for_own_disk(), Some(Path::new("/Users/you")));
+    assert_eq!(
+        volume.stands_in_for_own_disk().map(AppPath::as_std_legacy).as_deref(),
+        Some(Path::new("/Users/you"))
+    );
     let plain = tree(vec![]).into_in_memory().expect("builds");
     assert_eq!(plain.stands_in_for_own_disk(), None);
 }
