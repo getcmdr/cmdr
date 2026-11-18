@@ -82,7 +82,7 @@ pub(crate) async fn list_as_stored(
     log::debug!(
         "list_as_stored: {} is stored as {}",
         LogPrivate::dir_path(path),
-        LogPrivate::dir_path(&stored)
+        LogPrivate::dir_path(&*stored.as_std_legacy())
     );
     let entries = volume.list_directory_with_cancel(&stored, on_progress, cancel).await?;
     Ok(Listed {
@@ -137,7 +137,7 @@ pub async fn stored_spellings(volume: &dyn Volume, paths: Vec<PathBuf>) -> Vec<P
                 log::debug!(
                     "stored_spellings: {} is stored as {}",
                     LogPrivate::path(&path),
-                    LogPrivate::path(&spelling)
+                    LogPrivate::path(&*spelling.as_std_legacy())
                 );
                 stored.push(spelling.as_std_legacy().into_owned());
             }

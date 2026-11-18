@@ -30,7 +30,7 @@ macro_rules! forward_to_inner {
     };
     (@ root) => {
         fn root(&self) -> &AppPath {
-            &AppPath::legacy_unchecked(&self.inner.root().as_std_legacy())
+            self.inner.root()
         }
     };
     (@ as_any) => {
@@ -43,12 +43,12 @@ macro_rules! forward_to_inner {
             &'a self,
             path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-            self.inner.get_metadata(&AppPath::legacy_unchecked(&path.as_std_legacy()))
+            self.inner.get_metadata(path)
         }
     };
     (@ exists) => {
         fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
-            self.inner.exists(&AppPath::legacy_unchecked(&path.as_std_legacy()))
+            self.inner.exists(path)
         }
     };
     (@ is_directory) => {
@@ -56,7 +56,7 @@ macro_rules! forward_to_inner {
             &'a self,
             path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
-            self.inner.is_directory(&AppPath::legacy_unchecked(&path.as_std_legacy()))
+            self.inner.is_directory(path)
         }
     };
     (@ create_directory) => {
@@ -64,7 +64,7 @@ macro_rules! forward_to_inner {
             &'a self,
             path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-            self.inner.create_directory(&AppPath::legacy_unchecked(&path.as_std_legacy()))
+            self.inner.create_directory(path)
         }
     };
     (@ get_space_info) => {
@@ -77,7 +77,7 @@ macro_rules! forward_to_inner {
             &'a self,
             path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-            self.inner.scan_for_copy(&AppPath::legacy_unchecked(&path.as_std_legacy()))
+            self.inner.scan_for_copy(path)
         }
     };
     (@ scan_for_copy_batch) => {
@@ -85,7 +85,7 @@ macro_rules! forward_to_inner {
             &'a self,
             paths: &'a [AppPathBuf],
         ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-            self.inner.scan_for_copy_batch(&paths.iter().map(|p| AppPath::legacy_unchecked(&p.as_std_legacy()).into_owned()).collect::<Vec<_>>())
+            self.inner.scan_for_copy_batch(paths)
         }
     };
     (@ scan_for_conflicts) => {
@@ -94,7 +94,7 @@ macro_rules! forward_to_inner {
             source_items: &'a [SourceItemInfo],
             dest_path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
-            self.inner.scan_for_conflicts(source_items, &AppPath::legacy_unchecked(&dest_path.as_std_legacy()))
+            self.inner.scan_for_conflicts(source_items, dest_path)
         }
     };
     (@ open_read_stream) => {
@@ -102,7 +102,7 @@ macro_rules! forward_to_inner {
             &'a self,
             path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-            self.inner.open_read_stream(&AppPath::legacy_unchecked(&path.as_std_legacy()))
+            self.inner.open_read_stream(path)
         }
     };
 }
@@ -269,7 +269,7 @@ impl Volume for SpelledVolume {
                 let path_app = path;
                 let path_std = path.as_std_legacy();
                 let path: &Path = &path_std;
-                if path != self.inner.root() && !self.inner.exists(path_app).await {
+                if path != self.inner.root().as_std_legacy() && !self.inner.exists(path_app).await {
                     return Err(VolumeError::NotFound(path.display().to_string()));
                 }
                 self.inner.list_directory(path_app, on_progress).await
@@ -286,6 +286,7 @@ impl Volume for SpelledVolume {
         let path: &Path = &path_std;
         self.resolves.fetch_add(1, Ordering::Relaxed);
         let answer = self.answers.get(path).cloned().unwrap_or(Ok(None));
+        let answer = answer.map(|stored| stored.map(|p| AppPath::legacy_unchecked(&p).into_owned()));
         Box::pin(async move { answer })
     }
 }
