@@ -1229,9 +1229,9 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Hide this hint. You can bring it back in Preferences > Advanced.} linuxKde {Hide this hint. You can bring it back in Configure Cmdr > Advanced.} other {Ẩn gợi ý này. Bạn có thể bật lại trong Cài đặt > Nâng cao.}}",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Ẩn gợi ý này. Bạn có thể bật lại trong Tùy thích > Nâng cao.} linuxKde {Ẩn gợi ý này. Bạn có thể bật lại trong Cấu hình Cmdr > Nâng cao.} other {Ẩn gợi ý này. Bạn có thể bật lại trong Cài đặt > Nâng cao.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "6a3a4b3"
+    "sourceHash": "22d9d84"
   },
   "aboutThis.action.continueInAskCmdr": "Tiếp tục trong Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {

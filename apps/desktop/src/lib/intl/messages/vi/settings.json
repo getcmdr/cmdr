@@ -1628,7 +1628,7 @@
   },
   "settings.analytics.enabled.description": "{platform, select, windows {Hãy bật mục này để giúp chúng tôi thấy tính năng nào quan trọng trong giai đoạn beta công khai.\nThống kê không gắn với tên hay email của bạn, mà gắn với một mã định danh ngẫu nhiên.\nCmdr không bao giờ gửi tên tệp, đường dẫn, từ khóa tìm kiếm hay câu lệnh.\nKhi tắt, Cmdr không gửi bất kỳ thống kê nào.} other {Hãy bật mục này để giúp chúng tôi thấy tính năng nào quan trọng trong giai đoạn beta công khai.\nThống kê không gắn với tên hay email của bạn, mà gắn với một mã định danh ngẫu nhiên.\nCmdr không bao giờ gửi tên tệp, đường dẫn, từ khóa tìm kiếm hay câu lệnh.\nKhi tắt, Cmdr không gửi bất kỳ thống kê nào.}}",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
+    "sourceHash": "dbbd8c8"
   },
   "settings.analytics.enabled.keywords": "phân tích, sử dụng, thống kê, quyền riêng tư, đo từ xa, thử nghiệm, theo dõi, từ chối",
   "@settings.analytics.enabled.keywords": {
@@ -1652,7 +1652,7 @@
   },
   "settings.updates.crashReports.description": "{platform, select, macos {Tự động gửi báo cáo khi Cmdr thoát bất ngờ hoặc gặp sự cố ở chế độ nền. Gồm phiên bản ứng dụng, phiên bản macOS, và phần mã nào đã gặp sự cố. Không bao giờ gồm tên tệp hay dữ liệu cá nhân.} windows {Tự động gửi báo cáo khi Cmdr thoát bất ngờ hoặc gặp sự cố ở chế độ nền. Gồm phiên bản ứng dụng, phiên bản Windows, và phần mã nào đã gặp sự cố. Không bao giờ gồm tên tệp hay dữ liệu cá nhân.} other {Tự động gửi báo cáo khi Cmdr thoát bất ngờ hoặc gặp sự cố ở chế độ nền. Gồm phiên bản ứng dụng, bản phân phối và phiên bản Linux, và phần mã nào đã gặp sự cố. Không bao giờ gồm tên tệp hay dữ liệu cá nhân.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "3042746"
   },
   "settings.updates.crashReports.keywords": "sự cố, báo cáo sự cố, báo cáo, thoát bất ngờ, quyền riêng tư, đo từ xa, lỗi",
   "@settings.updates.crashReports.keywords": {
@@ -1992,7 +1992,7 @@
   },
   "settings.advanced.logLlmCalls.description": "{platform, select, macos {Lưu mỗi yêu cầu và phản hồi AI vào một thư mục cục bộ (llm-logs) để gỡ lỗi. Các tệp này ở lại trên máy Mac của bạn và bao gồm tên tệp và đường dẫn mà Cmdr gửi đến nhà cung cấp của bạn.} windows {Lưu mỗi yêu cầu và phản hồi AI vào một thư mục cục bộ (llm-logs) để gỡ lỗi. Các tệp này ở lại trên PC của bạn và bao gồm tên tệp và đường dẫn mà Cmdr gửi đến nhà cung cấp của bạn.} other {Lưu mỗi yêu cầu và phản hồi AI vào một thư mục cục bộ (llm-logs) để gỡ lỗi. Các tệp này ở lại trên máy tính của bạn và bao gồm tên tệp và đường dẫn mà Cmdr gửi đến nhà cung cấp của bạn.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "427e138"
   },
   "settings.advanced.logLlmCalls.keywords": "trí tuệ nhân tạo, nhật ký, gỡ lỗi, yêu cầu, phản hồi, câu lệnh, lời nhắc, mô hình",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2506,13 +2506,13 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr dùng nhà cung cấp AI và khóa mà bạn đã thiết lập trong Cài đặt › AI ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr dùng nhà cung cấp AI và khóa mà bạn đã thiết lập trong Tùy thích › AI ({provider}).} linuxKde {Cmdr dùng nhà cung cấp AI và khóa mà bạn đã thiết lập trong Cấu hình Cmdr › AI ({provider}).} other {Cmdr dùng nhà cung cấp AI và khóa mà bạn đã thiết lập trong Cài đặt › AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
+    "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Bật một nhà cung cấp AI trong Cài đặt › AI để bắt đầu trò chuyện.}}",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Bật một nhà cung cấp AI trong Tùy thích › AI để bắt đầu trò chuyện.} linuxKde {Bật một nhà cung cấp AI trong Cấu hình Cmdr › AI để bắt đầu trò chuyện.} other {Bật một nhà cung cấp AI trong Cài đặt › AI để bắt đầu trò chuyện.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
+    "sourceHash": "0196a5c"
   },
   "settings.askCmdr.interactiveModel.label": "Mô hình Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2957,9 +2957,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {Các mục cài đặt}}",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {Các mục trong Tùy thích} other {Các mục cài đặt}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "4fa3c2e"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Không có cài đặt nào khớp} other {{countText} mục khớp}}",
   "@settings.sidebar.matchCount": {
@@ -3213,7 +3213,7 @@
   },
   "settings.securityLog.enabled.description": "{platform, select, macos {Giữ một tệp nhỏ trên máy Mac này để ghi lại các thay đổi và lần từ chối liên quan đến bảo mật, như việc đồng ý dùng AI đám mây, một bản cập nhật đã cài đặt hoặc một ứng dụng bị máy chủ MCP từ chối. Tệp này không chứa tên tệp, nội dung hay mật khẩu, và không bao giờ rời khỏi máy Mac của bạn.} windows {Giữ một tệp nhỏ trên PC này để ghi lại các thay đổi và lần từ chối liên quan đến bảo mật, như việc đồng ý dùng AI đám mây, một bản cập nhật đã cài đặt hoặc một ứng dụng bị máy chủ MCP từ chối. Tệp này không chứa tên tệp, nội dung hay mật khẩu, và không bao giờ rời khỏi PC của bạn.} other {Giữ một tệp nhỏ trên máy tính này để ghi lại các thay đổi và lần từ chối liên quan đến bảo mật, như việc đồng ý dùng AI đám mây, một bản cập nhật đã cài đặt hoặc một ứng dụng bị máy chủ MCP từ chối. Tệp này không chứa tên tệp, nội dung hay mật khẩu, và không bao giờ rời khỏi máy tính của bạn.}}",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
+    "sourceHash": "7086b00"
   },
   "settings.securityLog.enabled.keywords": "bảo mật, an ninh, nhật ký, kiểm toán, ghi lại, sự kiện, truy cập, quyền riêng tư",
   "@settings.securityLog.enabled.keywords": {
@@ -3428,9 +3428,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Cài đặt}}",
+  "settings.window.title": "{platform, select, linuxGnome {Tùy thích} linuxKde {Cấu hình – Cmdr} other {Cài đặt}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "80cee55"
   },
   "settings.window.loading": "Đang tải cài đặt…",
   "@settings.window.loading": {
@@ -3676,13 +3676,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {{countText} mục có tên “{itemName}” trong Truy cập chuỗi khóa}}} windows {{count, plural, other {{countText} mục có tên “{itemName}” trong Trình quản lý thông tin xác thực}}} linuxKde {{count, plural, other {{countText} mục có tên “{itemName}” trong KWallet}}} other {{count, plural, other {{countText} mục có tên “{itemName}” trong kho khóa của bạn}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {{countText} mục có tên “{itemName}” trong Truy cập chuỗi khóa}}} windows {{count, plural, other {{countText} mục có tên “{itemName}” trong Trình quản lý thông tin xác thực}}} linuxKde {{count, plural, other {{countText} mục có tên “{itemName}” trong Ví KDE}}} other {{count, plural, other {{countText} mục có tên “{itemName}” trong kho khóa của bạn}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Mọi mục có tên “{itemName}” trong Truy cập chuỗi khóa, nếu có} windows {Mọi mục có tên “{itemName}” trong Trình quản lý thông tin xác thực, nếu có} linuxKde {Mọi mục có tên “{itemName}” trong KWallet, nếu có} other {Mọi mục có tên “{itemName}” trong kho khóa của bạn, nếu có}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Mọi mục có tên “{itemName}” trong Truy cập chuỗi khóa, nếu có} windows {Mọi mục có tên “{itemName}” trong Trình quản lý thông tin xác thực, nếu có} linuxKde {Mọi mục có tên “{itemName}” trong Ví KDE, nếu có} other {Mọi mục có tên “{itemName}” trong kho khóa của bạn, nếu có}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Thoát Cmdr} other {Thoát Cmdr}}",
   "@settings.dataWipe.quit": {

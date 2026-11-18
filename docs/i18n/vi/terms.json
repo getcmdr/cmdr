@@ -629,8 +629,8 @@
     "accept": ["thiết lập"],
     "chosen": "cấu hình",
     "confidence": "high",
-    "forms": "menu item Cấu hình… (opens Settings); configuration profile → hồ sơ cấu hình; set up → thiết lập",
-    "sources": "MS terminology (configure → cấu hình), macOS SystemSettings (Hồ sơ Cấu hình)"
+    "forms": "menu item Cấu hình… (opens Settings); configuration profile → hồ sơ cấu hình; set up → thiết lập; KDE settings window (linuxKde): title Cấu hình – Cmdr, menu row Cấu hình Cmdr…, command, buttons, and pointers Cấu hình Cmdr (trong Cấu hình Cmdr > AI)",
+    "sources": "MS terminology (configure → cấu hình), macOS SystemSettings (Hồ sơ Cấu hình); KDE kconfigwidgets6 vi.po (@title:window Configure → Cấu hình; &Configure %1… → &Cấu hình %1...), Dolphin vi (Configuring Dolphin → Cấu hình Dolphin)"
   },
   "confirm": {
     "chosen": "xác nhận",
@@ -1760,8 +1760,14 @@
     "sources": "Keychain Access.app InfoPlist.loctable; Apple vi support guide",
     "other": {
       "chosen": "kho khóa",
-      "accept": ["chùm chìa khóa", "KWallet"],
-      "note": "Linux branches: the generic keyring is kho khóa; the linuxGnome branch uses GNOME's own word chùm chìa khóa and its app Mật khẩu và Chìa khóa (seahorse vi.po); KDE keeps KWallet and KWalletManager as names, with a wallet → ví (kwalletmanager vi.po)"
+      "accept": ["chùm chìa khóa", "Ví KDE"],
+      "avoid": [
+        {
+          "form": "KWallet",
+          "why": "English now says KDE Wallet, which KDE's vi catalogs translate as Ví KDE (kwalletd6.po: KDE Wallet Service → Dịch vụ Ví KDE, The KDE Wallet System → Hệ thống Ví KDE; kwalletmanager.po: KDE Wallet Management Tool → Công cụ quản lí Ví KDE)"
+        }
+      ],
+      "note": "Linux branches: the generic keyring is kho khóa; the linuxGnome branch uses GNOME's own word chùm chìa khóa and its app Mật khẩu và Chìa khóa (seahorse vi.po); the linuxKde branch names KDE's store Ví KDE (capital V, as a name: Ghi nhớ trong Ví KDE) and keeps the app name KWalletManager as is"
     }
   },
   "kind": {
@@ -2911,7 +2917,17 @@
       "settings.fileOperations.mtpEnabled.description": "`Settings > USB Preferences` names the PHONE's own English menu, quoted as the phone shows it."
     },
     "forms": "the Settings window → Cài đặt; a single setting in prose may be thiết lập; System Settings → Cài đặt hệ thống",
-    "sources": "macOS (Cài đặt)"
+    "sources": "macOS (Cài đặt)",
+    "windows": {
+      "chosen": "cài đặt",
+      "accept": ["thiết lập"],
+      "note": "Windows names an app's settings Cài đặt too (MS TBX: Settings, the Windows app → Cài đặt), so the windows branch matches macOS: window Cài đặt, command Mở cài đặt; a single setting in prose may be thiết lập"
+    },
+    "other": {
+      "chosen": "cài đặt",
+      "accept": ["thiết lập", "Tùy thích", "Cấu hình"],
+      "note": "Cmdr's settings window per Linux desktop: linuxGnome Tùy thích (see preferences), linuxKde Cấu hình (see configure); other Linux desktops keep Cài đặt; a single setting in prose may be thiết lập, and KDE's own System Settings is Thiết lập hệ thống"
+    }
   },
   "share-menu": {
     "chosen": "Chia sẻ",
@@ -3999,7 +4015,7 @@
     "sources": "macOS AppKit MenuCommands (Preferences… → Tùy chọn…); MS TBX Preferences → Tùy chọn",
     "other": {
       "chosen": "Tùy thích",
-      "note": "GNOME's own app-menu row: Nautilus vi _Preferences → Tù_y thích, Thunar Tùy thích (the linuxGnome branch of `menu.app.settings`, no ellipsis); KDE's row is Cấu hình Cmdr… (Dolphin vi: Cấu hình Dolphin)"
+      "note": "GNOME's name for an app's preferences window: Nautilus vi _Preferences → Tù_y thích, Show Preferences → Hiển thị Tùy thích; Thunar Tùy thích. linuxGnome branches: window title (`settings.window.title`) and menu row (`menu.app.settings`) Tùy thích, the command and buttons Mở Tùy thích, pointers trong Tùy thích > AI. Always capitalized as the window's name, since lowercase tùy thích reads as the adverb (as you like). KDE's row is Cấu hình Cmdr… (see configure)"
     },
     "exceptions": {
       "settings.fileOperations.mtpEnabled.description": "Quotes the Android path Settings > USB Preferences in English, as this description already does for the phone labels it names; a vi Android may show either, and the sentence hedges with đại loại như."

@@ -123,9 +123,9 @@
   "@servers.hub.discoveryOff": {
     "sourceHash": "cadcceb"
   },
-  "servers.hub.discoveryOffLink": "{platform, select, linuxGnome {Turn it on in Preferences} linuxKde {Turn it on in Configure Cmdr} other {Bật trong Cài đặt}}",
+  "servers.hub.discoveryOffLink": "{platform, select, linuxGnome {Bật trong Tùy thích} linuxKde {Bật trong Cấu hình Cmdr} other {Bật trong Cài đặt}}",
   "@servers.hub.discoveryOffLink": {
-    "sourceHash": "818571b"
+    "sourceHash": "65a3d5a"
   },
   "servers.hub.nfsHint": "Máy chủ NFS không tự thông báo trên mạng, nên không xuất hiện ở đây.",
   "@servers.hub.nfsHint": {
@@ -251,13 +251,13 @@
   "@servers.refusal.saveUnconfirmed": {
     "sourceHash": "3fb55a6"
   },
-  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr không thể lưu mật khẩu này vào chuỗi khóa. Hãy thử lại, hoặc tắt “Ghi nhớ trong chuỗi khóa” để đăng nhập mà không lưu mật khẩu.} windows {Cmdr không thể lưu mật khẩu này. Hãy thử lại, hoặc tắt “Ghi nhớ mật khẩu” để đăng nhập mà không lưu mật khẩu.} linuxKde {Cmdr không thể lưu mật khẩu này vào KWallet. Hãy thử lại, hoặc tắt “Ghi nhớ trong KWallet” để đăng nhập mà không lưu mật khẩu.} other {Cmdr không thể lưu mật khẩu này vào kho khóa. Hãy thử lại, hoặc tắt “Ghi nhớ trong kho khóa” để đăng nhập mà không lưu mật khẩu.}}",
+  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr không thể lưu mật khẩu này vào chuỗi khóa. Hãy thử lại, hoặc tắt “Ghi nhớ trong chuỗi khóa” để đăng nhập mà không lưu mật khẩu.} windows {Cmdr không thể lưu mật khẩu này. Hãy thử lại, hoặc tắt “Ghi nhớ mật khẩu” để đăng nhập mà không lưu mật khẩu.} linuxKde {Cmdr không thể lưu mật khẩu này vào Ví KDE. Hãy thử lại, hoặc tắt “Ghi nhớ trong Ví KDE” để đăng nhập mà không lưu mật khẩu.} other {Cmdr không thể lưu mật khẩu này vào kho khóa. Hãy thử lại, hoặc tắt “Ghi nhớ trong kho khóa” để đăng nhập mà không lưu mật khẩu.}}",
   "@servers.refusal.secretNotStored": {
-    "sourceHash": "19deece"
+    "sourceHash": "2645206"
   },
-  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật mật khẩu trong chuỗi khóa. Hãy nhấn Lưu lần nữa để thử lại.} windows {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật mật khẩu đã lưu. Hãy nhấn Lưu lần nữa để thử lại.} linuxKde {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật mật khẩu trong KWallet. Hãy nhấn Lưu lần nữa để thử lại.} other {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật mật khẩu trong kho khóa. Hãy nhấn Lưu lần nữa để thử lại.}}",
+  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật mật khẩu trong chuỗi khóa. Hãy nhấn Lưu lần nữa để thử lại.} windows {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật mật khẩu đã lưu. Hãy nhấn Lưu lần nữa để thử lại.} linuxKde {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật mật khẩu trong Ví KDE. Hãy nhấn Lưu lần nữa để thử lại.} other {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật mật khẩu trong kho khóa. Hãy nhấn Lưu lần nữa để thử lại.}}",
   "@servers.refusal.savedSecretNotUpdated": {
-    "sourceHash": "d9b6621"
+    "sourceHash": "cdc32d0"
   },
   "servers.refusal.s3AuthenticationRejected": "Khóa truy cập bí mật đó không dùng được.",
   "@servers.refusal.s3AuthenticationRejected": {
@@ -271,13 +271,13 @@
   "@servers.refusal.s3SecretMissing": {
     "sourceHash": "f1f32f2"
   },
-  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr không thể lưu khóa truy cập bí mật này vào chuỗi khóa. Hãy thử lại, hoặc tắt “Ghi nhớ trong chuỗi khóa” để đăng nhập mà không lưu khóa.} windows {Cmdr không thể lưu khóa truy cập bí mật này. Hãy thử lại, hoặc tắt “Ghi nhớ mật khẩu” để đăng nhập mà không lưu khóa.} linuxKde {Cmdr không thể lưu khóa truy cập bí mật này vào KWallet. Hãy thử lại, hoặc tắt “Ghi nhớ trong KWallet” để đăng nhập mà không lưu khóa.} other {Cmdr không thể lưu khóa truy cập bí mật này vào kho khóa. Hãy thử lại, hoặc tắt “Ghi nhớ trong kho khóa” để đăng nhập mà không lưu khóa.}}",
+  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr không thể lưu khóa truy cập bí mật này vào chuỗi khóa. Hãy thử lại, hoặc tắt “Ghi nhớ trong chuỗi khóa” để đăng nhập mà không lưu khóa.} windows {Cmdr không thể lưu khóa truy cập bí mật này. Hãy thử lại, hoặc tắt “Ghi nhớ mật khẩu” để đăng nhập mà không lưu khóa.} linuxKde {Cmdr không thể lưu khóa truy cập bí mật này vào Ví KDE. Hãy thử lại, hoặc tắt “Ghi nhớ trong Ví KDE” để đăng nhập mà không lưu khóa.} other {Cmdr không thể lưu khóa truy cập bí mật này vào kho khóa. Hãy thử lại, hoặc tắt “Ghi nhớ trong kho khóa” để đăng nhập mà không lưu khóa.}}",
   "@servers.refusal.s3SecretNotStored": {
-    "sourceHash": "9aa6628"
+    "sourceHash": "313e2ae"
   },
-  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật khóa truy cập bí mật trong chuỗi khóa. Hãy nhấn Lưu lần nữa để thử lại.} windows {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật khóa truy cập bí mật đã lưu. Hãy nhấn Lưu lần nữa để thử lại.} linuxKde {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật khóa truy cập bí mật trong KWallet. Hãy nhấn Lưu lần nữa để thử lại.} other {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật khóa truy cập bí mật trong kho khóa. Hãy nhấn Lưu lần nữa để thử lại.}}",
+  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật khóa truy cập bí mật trong chuỗi khóa. Hãy nhấn Lưu lần nữa để thử lại.} windows {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật khóa truy cập bí mật đã lưu. Hãy nhấn Lưu lần nữa để thử lại.} linuxKde {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật khóa truy cập bí mật trong Ví KDE. Hãy nhấn Lưu lần nữa để thử lại.} other {Cmdr đã lưu các thay đổi của bạn nhưng không thể cập nhật khóa truy cập bí mật trong kho khóa. Hãy nhấn Lưu lần nữa để thử lại.}}",
   "@servers.refusal.s3SavedSecretNotUpdated": {
-    "sourceHash": "8c62f24"
+    "sourceHash": "bf474d0"
   },
   "servers.refusal.accessDenied": "Khóa này không thể truy cập bộ chứa này. Hãy kiểm tra tên bộ chứa và khóa truy cập bí mật, cũng như xem khóa có quyền đọc bộ chứa không.",
   "@servers.refusal.accessDenied": {
@@ -335,13 +335,13 @@
   "@servers.refusal.addressTaken": {
     "sourceHash": "5a14a92"
   },
-  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr không thể mang mật khẩu đã lưu sang địa chỉ mới, nên không có gì thay đổi. Hãy kiểm tra xem chuỗi khóa đã được mở khóa chưa, rồi nhấn Lưu lần nữa.} windows {Cmdr không thể mang mật khẩu đã lưu sang địa chỉ mới, nên không có gì thay đổi. Hãy nhấn Lưu lần nữa để thử lại.} linuxKde {Cmdr không thể mang mật khẩu đã lưu sang địa chỉ mới, nên không có gì thay đổi. Hãy kiểm tra xem KWallet đã được mở chưa, rồi nhấn Lưu lần nữa.} other {Cmdr không thể mang mật khẩu đã lưu sang địa chỉ mới, nên không có gì thay đổi. Hãy kiểm tra xem kho khóa đã được mở khóa chưa, rồi nhấn Lưu lần nữa.}}",
+  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr không thể mang mật khẩu đã lưu sang địa chỉ mới, nên không có gì thay đổi. Hãy kiểm tra xem chuỗi khóa đã được mở khóa chưa, rồi nhấn Lưu lần nữa.} windows {Cmdr không thể mang mật khẩu đã lưu sang địa chỉ mới, nên không có gì thay đổi. Hãy nhấn Lưu lần nữa để thử lại.} linuxKde {Cmdr không thể mang mật khẩu đã lưu sang địa chỉ mới, nên không có gì thay đổi. Hãy kiểm tra xem Ví KDE đã được mở chưa, rồi nhấn Lưu lần nữa.} other {Cmdr không thể mang mật khẩu đã lưu sang địa chỉ mới, nên không có gì thay đổi. Hãy kiểm tra xem kho khóa đã được mở khóa chưa, rồi nhấn Lưu lần nữa.}}",
   "@servers.refusal.secretNotMoved": {
-    "sourceHash": "a59f35e"
+    "sourceHash": "f962555"
   },
-  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr không thể mang khóa truy cập bí mật đã lưu sang điểm cuối mới, nên không có gì thay đổi. Hãy kiểm tra xem chuỗi khóa đã được mở khóa chưa, rồi nhấn Lưu lần nữa.} windows {Cmdr không thể mang khóa truy cập bí mật đã lưu sang điểm cuối mới, nên không có gì thay đổi. Hãy nhấn Lưu lần nữa để thử lại.} linuxKde {Cmdr không thể mang khóa truy cập bí mật đã lưu sang điểm cuối mới, nên không có gì thay đổi. Hãy kiểm tra xem KWallet đã được mở chưa, rồi nhấn Lưu lần nữa.} other {Cmdr không thể mang khóa truy cập bí mật đã lưu sang điểm cuối mới, nên không có gì thay đổi. Hãy kiểm tra xem kho khóa đã được mở khóa chưa, rồi nhấn Lưu lần nữa.}}",
+  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr không thể mang khóa truy cập bí mật đã lưu sang điểm cuối mới, nên không có gì thay đổi. Hãy kiểm tra xem chuỗi khóa đã được mở khóa chưa, rồi nhấn Lưu lần nữa.} windows {Cmdr không thể mang khóa truy cập bí mật đã lưu sang điểm cuối mới, nên không có gì thay đổi. Hãy nhấn Lưu lần nữa để thử lại.} linuxKde {Cmdr không thể mang khóa truy cập bí mật đã lưu sang điểm cuối mới, nên không có gì thay đổi. Hãy kiểm tra xem Ví KDE đã được mở chưa, rồi nhấn Lưu lần nữa.} other {Cmdr không thể mang khóa truy cập bí mật đã lưu sang điểm cuối mới, nên không có gì thay đổi. Hãy kiểm tra xem kho khóa đã được mở khóa chưa, rồi nhấn Lưu lần nữa.}}",
   "@servers.refusal.s3SecretNotMoved": {
-    "sourceHash": "a990f83"
+    "sourceHash": "e222c5e"
   },
   "servers.refusal.accountChanged": "Một tài khoản khác là một máy chủ khác, nên Cmdr chưa lưu gì. Thay vào đó, hãy thêm tài khoản này thành một máy chủ mới.",
   "@servers.refusal.accountChanged": {
@@ -579,9 +579,9 @@
   "@servers.sheet.password": {
     "sourceHash": "e7cf3ef"
   },
-  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {Đã lưu trong chuỗi khóa. Để trống để giữ nguyên.} windows {Đã lưu. Để trống để giữ nguyên.} linuxKde {Đã lưu trong KWallet. Để trống để giữ nguyên.} other {Đã lưu trong kho khóa của bạn. Để trống để giữ nguyên.}}",
+  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {Đã lưu trong chuỗi khóa. Để trống để giữ nguyên.} windows {Đã lưu. Để trống để giữ nguyên.} linuxKde {Đã lưu trong Ví KDE. Để trống để giữ nguyên.} other {Đã lưu trong kho khóa của bạn. Để trống để giữ nguyên.}}",
   "@servers.sheet.secretKeptPlaceholder": {
-    "sourceHash": "eedbd26"
+    "sourceHash": "d9f173a"
   },
   "servers.sheet.smbUsernamePlaceholder": "Không bắt buộc",
   "@servers.sheet.smbUsernamePlaceholder": {
@@ -595,9 +595,9 @@
   "@servers.sheet.passphrase": {
     "sourceHash": "2510031"
   },
-  "servers.sheet.remember": "{platform, select, macos {Ghi nhớ trong chuỗi khóa} windows {Ghi nhớ mật khẩu} linuxKde {Ghi nhớ trong KWallet} other {Ghi nhớ trong kho khóa}}",
+  "servers.sheet.remember": "{platform, select, macos {Ghi nhớ trong chuỗi khóa} windows {Ghi nhớ mật khẩu} linuxKde {Ghi nhớ trong Ví KDE} other {Ghi nhớ trong kho khóa}}",
   "@servers.sheet.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "servers.sheet.connectionModeLegend": "Cách kết nối",
   "@servers.sheet.connectionModeLegend": {
@@ -784,9 +784,9 @@
   "@servers.sheet.autoReconnectInfoLabel": {
     "sourceHash": "edb9b82"
   },
-  "servers.sheet.needsStoredSecret": "{platform, select, macos {Việc tự kết nối lại cần một mật khẩu đã ghi nhớ. Hãy bật “Ghi nhớ trong chuỗi khóa” rồi đăng nhập một lần.} windows {Việc tự kết nối lại cần một mật khẩu đã lưu. Hãy bật “Ghi nhớ mật khẩu” rồi đăng nhập một lần.} linuxKde {Việc tự kết nối lại cần một mật khẩu đã ghi nhớ. Hãy bật “Ghi nhớ trong KWallet” rồi đăng nhập một lần.} other {Việc tự kết nối lại cần một mật khẩu đã ghi nhớ. Hãy bật “Ghi nhớ trong kho khóa” rồi đăng nhập một lần.}}",
+  "servers.sheet.needsStoredSecret": "{platform, select, macos {Việc tự kết nối lại cần một mật khẩu đã ghi nhớ. Hãy bật “Ghi nhớ trong chuỗi khóa” rồi đăng nhập một lần.} windows {Việc tự kết nối lại cần một mật khẩu đã lưu. Hãy bật “Ghi nhớ mật khẩu” rồi đăng nhập một lần.} linuxKde {Việc tự kết nối lại cần một mật khẩu đã ghi nhớ. Hãy bật “Ghi nhớ trong Ví KDE” rồi đăng nhập một lần.} other {Việc tự kết nối lại cần một mật khẩu đã ghi nhớ. Hãy bật “Ghi nhớ trong kho khóa” rồi đăng nhập một lần.}}",
   "@servers.sheet.needsStoredSecret": {
-    "sourceHash": "29e22ae"
+    "sourceHash": "422f1c5"
   },
   "servers.sheet.tryNextcloudAddress": "Thử địa chỉ Nextcloud",
   "@servers.sheet.tryNextcloudAddress": {
