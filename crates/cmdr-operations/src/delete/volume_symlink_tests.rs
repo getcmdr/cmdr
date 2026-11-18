@@ -369,7 +369,7 @@ async fn a_delete_preview_counts_a_selected_link_a_pane_lists_as_a_folder_as_one
     let volume = tree.rig(false, true, true);
     panes.show_volume(&vid, volume.clone() as Arc<dyn Volume>);
     let _listing = pane_shows_hidden_link(&panes, &volume, &vid, "dir").await;
-    let sources = vec![tree.root().join("dir/link")];
+    let sources = [tree.root().join("dir/link")];
     let mut batch = volume
         .scan_for_copy_batch(
             &sources
@@ -466,7 +466,7 @@ async fn a_delete_preview_counts_a_selected_folder_link_as_one_leaf() {
     let panes = PaneListings::new();
     let vid = unique("preview_count");
     let volume = tree.volume(false, false);
-    let sources = vec![PathBuf::from("dir/link"), PathBuf::from("dir/plain.txt")];
+    let sources = [PathBuf::from("dir/link"), PathBuf::from("dir/plain.txt")];
     let mut batch = volume
         .scan_for_copy_batch(
             &sources

@@ -182,7 +182,7 @@ async fn test_scan_for_copy_batch_with_progress_fires_callback() {
         calls_for_cb.lock().unwrap().push(p.files);
     };
 
-    let paths = vec![
+    let paths = [
         PathBuf::from("/a.txt"),
         PathBuf::from("/b.txt"),
         PathBuf::from("/c.txt"),
