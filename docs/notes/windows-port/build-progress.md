@@ -266,3 +266,13 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
   `cargo nextest run -p cmdr-fs --features testing` 868 of 868 (26 skipped, the `#1225` ignores), and
   `cargo clippy -p cmdr-fs -p cmdr-local --all-targets -D warnings` clean (it caught a `manual_strip` the Mac's clippy
   lane didn't).
+- **2026-11-18, the typed app path integrated and its second review fixed** (`0f464fc516`, the pins and the type merged
+  onto `main`; `docs/notes/windows-port/app-path-type-review-fixes.md`): in `D:\src\cmdr-m3` with
+  `CARGO_TARGET_DIR=D:\target-m3`, launched at low priority through `run-on-desktop.sh` while another agent's `cmdr`
+  build held the box: `cargo nextest run -p cmdr-fs --features testing` 899 of 899 (26 skipped, the `#1225` ignores),
+  the Windows `PathBuf` comparison property over the text Win32 opens included, and
+  `cargo clippy -p cmdr-fs -p cmdr-local -p cmdr-operation-log --all-targets --features cmdr-fs/testing -D warnings`
+  clean. Its first runs found two test-build breaks (an import only the Unix column reads, a method only a Unix cell
+  called; the Mac's zig cross-check, `--all-targets` over `cmdr-fs`, `cmdr-operation-log`, `cmdr-operations`, and
+  `cmdr-local`, then agreed) and a property whose `prop_filter` rejected most cases, which timed out at 8 s on the
+  2-core box and now builds its input.
