@@ -13,6 +13,7 @@ fn row(old: &str, new: &str) -> PreviewRow {
         icon_id: None,
         is_directory: false,
         edited: false,
+        warning: None,
     }
 }
 

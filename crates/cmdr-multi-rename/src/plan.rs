@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use unicode_normalization::UnicodeNormalization;
 
 use cmdr_fs::entry::FileEntry;
-use cmdr_fs::validation::{NameRules, ValidationError, validate_filename};
+use cmdr_fs::validation::{NameRules, PortabilityWarning, ValidationError, validate_filename};
 
 use cmdr_media_meta::{MediaFacts, MediaField};
 
@@ -74,6 +74,10 @@ pub struct PreviewRow {
     pub is_directory: bool,
     /// The new name is one the user typed in Results, not the settings' (`names_file.rs`).
     pub edited: bool,
+    /// A ready row's new name the folder takes but won't keep portable (a `:` on an
+    /// exFAT stick, `CON` on a share). The row still renames; the sheet says why
+    /// Windows won't read it as typed. `None` on every row that isn't ready.
+    pub warning: Option<PortabilityWarning>,
 }
 
 /// Whether a row can be renamed to its new name.
@@ -415,15 +419,15 @@ pub(crate) fn preview(
                 None => compiled.new_name(entry, dir, position, media.media(entry)),
             };
             // A row a media field has no text for keeps its name until it does.
-            let (new_name, status) = match new_name {
-                Err(gap) => (entry.name.clone(), gap_status(gap)),
+            let (new_name, status, warning) = match new_name {
+                Err(gap) => (entry.name.clone(), gap_status(gap), None),
                 Ok(new_name) => {
-                    let status = match invalid(&new_name, rules) {
-                        Some(reason) => RowStatus::InvalidName { reason },
-                        None if compiled.same_name(&new_name, &entry.name) => RowStatus::Unchanged,
-                        None => RowStatus::Ready,
+                    let (status, warning) = match check(&new_name, rules) {
+                        Err(reason) => (RowStatus::InvalidName { reason }, None),
+                        Ok(_) if compiled.same_name(&new_name, &entry.name) => (RowStatus::Unchanged, None),
+                        Ok(warning) => (RowStatus::Ready, warning),
                     };
-                    (new_name, status)
+                    (new_name, status, warning)
                 }
             };
             PreviewRow {
@@ -434,11 +438,16 @@ pub(crate) fn preview(
                 icon_id: Some(entry.icon_id.clone()),
                 is_directory: entry.is_directory,
                 edited: typed.is_some(),
+                warning,
             }
         })
         .collect();
 
     settle(&mut preview, siblings);
+    // A row `settle` blocked won't rename, so it has nothing to warn about.
+    for row in preview.iter_mut().filter(|row| !row.status.is_ready()) {
+        row.warning = None;
+    }
     preview
 }
 
@@ -474,6 +483,7 @@ pub fn preview_names(
         icon_id: None,
         is_directory: false,
         edited: false,
+        warning: None,
     }));
     previewed.sort_by_key(|r| r.row);
     previewed
@@ -585,20 +595,15 @@ fn gap_status(gap: FieldGap) -> RowStatus {
     }
 }
 
-fn invalid(name: &str, rules: NameRules) -> Option<InvalidNameReason> {
-    if name == "." || name == ".." {
-        return Some(InvalidNameReason::Reserved);
-    }
-    match validate_filename(name, rules) {
-        Ok(()) => None,
-        Err(ValidationError::Empty) => Some(InvalidNameReason::Empty),
-        Err(ValidationError::DisallowedCharacter { character }) => {
-            Some(InvalidNameReason::DisallowedCharacter { character })
-        }
-        Err(ValidationError::NameTooLong { .. } | ValidationError::PathTooLong { .. }) => {
-            Some(InvalidNameReason::TooLong)
-        }
-        Err(ValidationError::ReservedName { name }) => Some(InvalidNameReason::ReservedDeviceName { name }),
-        Err(ValidationError::EndsWithSpaceOrPeriod) => Some(InvalidNameReason::EndsWithSpaceOrPeriod),
-    }
+/// Whether the folder refuses `name` (and why), or takes it, with what it warns
+/// about.
+fn check(name: &str, rules: NameRules) -> Result<Option<PortabilityWarning>, InvalidNameReason> {
+    validate_filename(name, rules).map_err(|refusal| match refusal {
+        ValidationError::Empty => InvalidNameReason::Empty,
+        ValidationError::DotName => InvalidNameReason::Reserved,
+        ValidationError::DisallowedCharacter { character } => InvalidNameReason::DisallowedCharacter { character },
+        ValidationError::NameTooLong { .. } | ValidationError::PathTooLong { .. } => InvalidNameReason::TooLong,
+        ValidationError::ReservedName { name } => InvalidNameReason::ReservedDeviceName { name },
+        ValidationError::EndsWithSpaceOrPeriod => InvalidNameReason::EndsWithSpaceOrPeriod,
+    })
 }

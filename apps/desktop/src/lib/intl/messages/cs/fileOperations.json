@@ -1333,14 +1333,6 @@
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
   },
-  "fileOperations.validation.nameTooLong": "{kind, select, folder {Název složky je příliš dlouhý ({byteCount}/{maxBytes} {max, plural, one {bajt} few {bajty} many {bajtu} other {bajtů}})} other {Název souboru je příliš dlouhý ({byteCount}/{maxBytes} {max, plural, one {bajt} few {bajty} many {bajtu} other {bajtů}})}}",
-  "@fileOperations.validation.nameTooLong": {
-    "sourceHash": "4978a6f"
-  },
-  "fileOperations.validation.pathTooLong": "Celá cesta je příliš dlouhá ({byteCount}/{maxBytes} {max, plural, one {bajt} few {bajty} many {bajtu} other {bajtů}})",
-  "@fileOperations.validation.pathTooLong": {
-    "sourceHash": "9aa3b43"
-  },
   "fileOperations.validation.extensionChangeBlocked": "Změna přípony souboru není povolená (původně „{oldExt}“)",
   "@fileOperations.validation.extensionChangeBlocked": {
     "sourceHash": "e81362d"
@@ -1368,14 +1360,6 @@
   "fileOperations.validation.pathNullChar": "Cesta obsahuje znak null",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
-  },
-  "fileOperations.validation.pathTotalTooLong": "Cesta je příliš dlouhá ({byteCount}/{maxBytes} {max, plural, one {bajt} few {bajty} many {bajtu} other {bajtů}})",
-  "@fileOperations.validation.pathTotalTooLong": {
-    "sourceHash": "dd75780"
-  },
-  "fileOperations.validation.pathSegmentTooLong": "Název složky v cestě je příliš dlouhý ({byteCount}/{maxBytes} {max, plural, one {bajt} few {bajty} many {bajtu} other {bajtů}})",
-  "@fileOperations.validation.pathSegmentTooLong": {
-    "sourceHash": "c0773d3"
   },
   "fileOperations.transferTree.treeLabel": "Soubory a složky v tomto přenosu",
   "@fileOperations.transferTree.treeLabel": {

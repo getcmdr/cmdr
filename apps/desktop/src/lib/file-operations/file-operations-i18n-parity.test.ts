@@ -54,7 +54,7 @@ describe('shared buttons + conflict labels (en)', () => {
 describe('new-file and new-folder dialog chrome (en)', () => {
   it('resolves the titles, placeholders, and aria labels', () => {
     expect(tString('fileOperations.mkfile.title')).toBe('New file')
-    expect(tString('fileOperations.mkfile.nameAria')).toBe('File name')
+    expect(tString('fileOperations.mkfile.nameAria')).toBe('Filename')
     expect(tString('fileOperations.mkfile.placeholder')).toBe('Example: notes.txt')
     expect(tString('fileOperations.mkdir.title')).toBe('New folder')
     expect(tString('fileOperations.mkdir.nameAria')).toBe('Folder name')

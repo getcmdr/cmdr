@@ -19,6 +19,7 @@ const ROWS: PreviewRow[] = [
     iconId: null,
     isDirectory: false,
     edited: false,
+    warning: null,
   },
   {
     row: 1,
@@ -28,15 +29,18 @@ const ROWS: PreviewRow[] = [
     iconId: null,
     isDirectory: false,
     edited: false,
+    warning: null,
   },
   {
     row: 2,
     oldName: 'd.pdf',
-    newName: 'dee.pdf',
+    newName: 'd:e.pdf',
     status: { type: 'ready' },
     iconId: null,
     isDirectory: false,
     edited: true,
+    // A ready row that won't work on Windows carries a warning glyph of its own.
+    warning: { kind: 'windowsCharacter', character: ':' },
   },
   {
     row: 3,
@@ -46,6 +50,7 @@ const ROWS: PreviewRow[] = [
     iconId: null,
     isDirectory: false,
     edited: true,
+    warning: null,
   },
 ]
 

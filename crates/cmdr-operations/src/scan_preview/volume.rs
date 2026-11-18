@@ -20,6 +20,7 @@ use super::super::types::{
     ScanPreviewCancelledEvent, ScanPreviewCompleteEvent, ScanPreviewProgressEvent, ScanPreviewPurpose,
     WriteOperationError,
 };
+use super::name_tally::NameTally;
 use super::settle_failed_preview;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -141,9 +142,18 @@ pub(crate) async fn run_volume_scan_preview(
     let pause_for_cancel = Arc::clone(&pause);
     let is_cancelled = move || pause_for_cancel.told_to_stop();
 
-    // A transfer's walk also records every entry for the operation's live tree.
+    // A transfer's walk also records every entry for the operation's live tree,
+    // and counts the names Windows can't use (`name_tally.rs`), forwarding each
+    // entry on to the tree.
     let recorder = (purpose == ScanPreviewPurpose::Transfer)
         .then(|| Arc::new(TreeRecorder::new(&sources, TreeOrder::active(host))));
+    let names = (purpose == ScanPreviewPurpose::Transfer).then(|| {
+        Arc::new(NameTally::forwarding_to(
+            recorder
+                .as_ref()
+                .map(|recorder| Arc::clone(recorder) as Arc<dyn ScanRecorder>),
+        ))
+    });
 
     let result: Result<BatchScanResult, WriteOperationError> = async {
         if pause.told_to_stop() {
@@ -160,9 +170,7 @@ pub(crate) async fn run_volume_scan_preview(
             &is_cancelled,
             Some(&pause),
             &on_progress,
-            recorder
-                .as_ref()
-                .map(|recorder| Arc::clone(recorder) as Arc<dyn ScanRecorder>),
+            names.as_ref().map(|names| Arc::clone(names) as Arc<dyn ScanRecorder>),
             state.mac_only,
         )
         .await
@@ -222,6 +230,7 @@ pub(crate) async fn run_volume_scan_preview(
             // the cache stores aggregate stats AND per-path scan results so
             // copy_between_volumes can reuse both without re-statting.
             let tree = recorder.and_then(|recorder| recorder.finish());
+            let name_portability = names.map(|names| names.finish());
             engine.stores().previews().settle_preview(
                 &preview_id,
                 ScanOutcome::Complete,
@@ -236,6 +245,7 @@ pub(crate) async fn run_volume_scan_preview(
                     )
                     .keeping_files(batch.files)
                     .with_tree(tree)
+                    .with_name_portability(name_portability.clone())
                     .leaving_out(state.mac_only),
                 ),
             );
@@ -251,6 +261,7 @@ pub(crate) async fn run_volume_scan_preview(
                 // `~/Library/CloudStorage` is local; a volume scan is MTP, SMB,
                 // or an archive, where nothing is evicted to a File Provider.
                 online_only_found: false,
+                name_portability,
             });
         }
         Err(error) => settle_failed_preview(engine.stores().previews(), &*events, &watchdog, preview_id, error),

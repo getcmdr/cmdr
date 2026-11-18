@@ -726,3 +726,45 @@ fn a_skipped_row_is_logged_but_never_offered_to_undo_as_a_rollback_unit() {
         "only the row that actually moved is reversible: {units:?}"
     );
 }
+
+/// #1229: an Ask Cmdr batch meets the folder's name rules like every other rename. On a
+/// share (255 bytes), a 256-byte name is refused; `CON` lands, with the warning the review
+/// already showed.
+#[tokio::test]
+async fn the_batch_refuses_the_rows_whose_names_the_folder_refuses() {
+    use cmdr_fs::volume::{BackendKind, InMemoryVolume, Volume};
+
+    let engine = TestOperations::new();
+    let share = InMemoryVolume::new("share").with_backend_kind(BackendKind::Smb);
+    engine.volumes().register("share", Arc::new(share) as Arc<dyn Volume>);
+    let long = format!("/docs/{}", "é".repeat(128));
+    let rows = [
+        planning_row("/docs/a.txt", "/docs/CON"),
+        planning_row("/docs/b.txt", &long),
+        planning_row("/docs/c.txt", "/docs/.."),
+        planning_row("/docs/d.txt", "/docs/."),
+    ];
+
+    assert_eq!(
+        refused_rows(engine.host(), "share", &rows).await,
+        vec![false, true, true, true]
+    );
+}
+
+#[test]
+fn a_refused_row_fails_in_place_and_the_rest_keep_their_order() {
+    let run = BulkRenameRun {
+        outcomes: vec![BulkRenameOutcome::Done, BulkRenameOutcome::Skipped],
+        cancelled: false,
+    }
+    .with_refused(&[false, true, false, true]);
+    assert_eq!(
+        run.outcomes,
+        vec![
+            BulkRenameOutcome::Done,
+            BulkRenameOutcome::Failed,
+            BulkRenameOutcome::Skipped,
+            BulkRenameOutcome::Failed
+        ]
+    );
+}

@@ -170,6 +170,16 @@ async fn rename_managed_inner(
 
     // A name the destination doesn't take is refused here too, not only by the
     // editor's validity check: an agent's rename never asked that check.
+    // ❗ `Path::file_name` reads `/docs/..` as no name and `/docs/.` as `docs`,
+    // so a dot name is caught on the raw path first (#1229).
+    if crate::name_rules::ends_in_dot_name(&to) {
+        return (
+            Err(MutationError::NameNotAllowed {
+                reason: cmdr_fs::validation::ValidationError::DotName,
+            }),
+            InstantTarget::Volume,
+        );
+    }
     if let (Some(dir), Some(name)) = (to.parent(), to.file_name()) {
         let name = name.to_string_lossy();
         if let Err(refusal) = crate::name_rules::check_new_name(host, &volume_id, dir, &name).await {

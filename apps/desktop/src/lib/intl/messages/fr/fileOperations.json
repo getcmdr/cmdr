@@ -1335,14 +1335,6 @@
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
   },
-  "fileOperations.validation.nameTooLong": "{kind, select, folder {Le nom du dossier est trop long ({byteCount}/{maxBytes} {max, plural, one {octet} many {octets} other {octets}})} other {Le nom du fichier est trop long ({byteCount}/{maxBytes} {max, plural, one {octet} many {octets} other {octets}})}}",
-  "@fileOperations.validation.nameTooLong": {
-    "sourceHash": "4978a6f"
-  },
-  "fileOperations.validation.pathTooLong": "Le chemin complet est trop long ({byteCount}/{maxBytes} {max, plural, one {octet} many {octets} other {octets}})",
-  "@fileOperations.validation.pathTooLong": {
-    "sourceHash": "9aa3b43"
-  },
   "fileOperations.validation.extensionChangeBlocked": "La modification de l’extension du fichier n’est pas autorisée (elle était « {oldExt} »)",
   "@fileOperations.validation.extensionChangeBlocked": {
     "sourceHash": "e81362d"
@@ -1370,14 +1362,6 @@
   "fileOperations.validation.pathNullChar": "Le chemin d’accès contient un caractère null",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
-  },
-  "fileOperations.validation.pathTotalTooLong": "Le chemin d’accès est trop long ({byteCount}/{maxBytes} {max, plural, one {octet} many {octets} other {octets}})",
-  "@fileOperations.validation.pathTotalTooLong": {
-    "sourceHash": "dd75780"
-  },
-  "fileOperations.validation.pathSegmentTooLong": "Un nom de dossier du chemin est trop long ({byteCount}/{maxBytes} {max, plural, one {octet} many {octets} other {octets}})",
-  "@fileOperations.validation.pathSegmentTooLong": {
-    "sourceHash": "c0773d3"
   },
   "fileOperations.transferTree.treeLabel": "Fichiers de ce transfert",
   "@fileOperations.transferTree.treeLabel": {

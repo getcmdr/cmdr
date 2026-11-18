@@ -1334,14 +1334,6 @@
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
   },
-  "fileOperations.validation.nameTooLong": "{kind, select, folder {O nome da pasta é longo demais ({byteCount}/{maxBytes} {max, plural, one {byte} many {bytes} other {bytes}})} other {O nome do arquivo é longo demais ({byteCount}/{maxBytes} {max, plural, one {byte} many {bytes} other {bytes}})}}",
-  "@fileOperations.validation.nameTooLong": {
-    "sourceHash": "4978a6f"
-  },
-  "fileOperations.validation.pathTooLong": "O caminho completo é longo demais ({byteCount}/{maxBytes} {max, plural, one {byte} many {bytes} other {bytes}})",
-  "@fileOperations.validation.pathTooLong": {
-    "sourceHash": "9aa3b43"
-  },
   "fileOperations.validation.extensionChangeBlocked": "Não é permitido alterar a extensão do arquivo (era “{oldExt}”)",
   "@fileOperations.validation.extensionChangeBlocked": {
     "sourceHash": "e81362d"
@@ -1369,14 +1361,6 @@
   "fileOperations.validation.pathNullChar": "O caminho contém um caractere nulo",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
-  },
-  "fileOperations.validation.pathTotalTooLong": "O caminho é longo demais ({byteCount}/{maxBytes} {max, plural, one {byte} many {bytes} other {bytes}})",
-  "@fileOperations.validation.pathTotalTooLong": {
-    "sourceHash": "dd75780"
-  },
-  "fileOperations.validation.pathSegmentTooLong": "Um nome de pasta no caminho é longo demais ({byteCount}/{maxBytes} {max, plural, one {byte} many {bytes} other {bytes}})",
-  "@fileOperations.validation.pathSegmentTooLong": {
-    "sourceHash": "c0773d3"
   },
   "fileOperations.transferTree.treeLabel": "Arquivos desta transferência",
   "@fileOperations.transferTree.treeLabel": {

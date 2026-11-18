@@ -1,5 +1,6 @@
 import type {
   CompressedSizeEstimate,
+  NamePortabilityTally,
   DeviceReadiness,
   FavoriteTarget,
   GitEntryMeta,
@@ -520,4 +521,7 @@ export interface ScanPreviewTotals {
   /** Estimated compressed size (Compress mode, local sources only); `null`
    *  otherwise. Mirrors `ScanPreviewCompleteEvent.estimatedCompressedBytes`. */
   estimatedCompressedBytes?: CompressedSizeEstimate | null
+  /** A transfer's names Windows can't use as they are; `null` otherwise. Mirrors
+   *  `ScanPreviewCompleteEvent.namePortability`. */
+  namePortability?: NamePortabilityTally | null
 }

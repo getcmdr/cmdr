@@ -62,11 +62,9 @@ beforeEach(() => {
 
 describe('a name the backend turns down', () => {
   it('reads exactly like the message the editor shows while typing', async () => {
-    const message = await messageFor({ kind: 'nameTooLong', bytes: 300, max: 255 })
+    const message = await messageFor({ kind: 'nameTooLong', length: 300, max: 255, unit: 'bytes' })
 
-    expect(message).toBe(
-      tString('fileOperations.validation.nameTooLong', { kind: 'file', byteCount: '300', maxBytes: '255', max: 255 }),
-    )
+    expect(message).toBe('Filename is too long (300/255 bytes)')
   })
 
   it('calls a folder a folder', async () => {

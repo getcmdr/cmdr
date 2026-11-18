@@ -328,16 +328,19 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     clock is `GetThreadTimes` (`thread_cpu/platform/windows.rs`). Left: the Windows arms that answer "unknown" today:
     `K32GetProcessMemoryInfo` for the footprint, and the `process_cpu` census (a Toolhelp thread walk with
     `GetThreadTimes` and `GetThreadDescription` per thread, `GetProcessTimes` for the total), through `windows-sys`.
-14. [S] Win. **Done**. Name validity is keyed on the destination's `FilesystemKind` (`FilesystemKind::name_rules` →
-    `NameRules`: `Posix`, `SmbShare` refusing Windows' reserved device names, `Windows` for FAT32, exFAT, and NTFS
-    adding the forbidden characters, control characters, and a trailing space or period). `cmdr-operations`'
-    `name_rules.rs` resolves a folder (a local probe, or the backend), and create, rename (the engine itself, not only
-    the editor's validity check), Multi-Rename, and the MCP `multi_rename` tool all apply it; the frontend's keystroke
-    mirror asks `get_name_rules` once per editor, pinned to the Rust rule by `crates/cmdr-fs/src/name_rules_cases.json`.
-    A 255-byte name is accepted now (it was refused at `>= 255`). On a Mac, exFAT, FAT32, and a Samba share all ACCEPT
-    these names but store private-use stand-ins, and Samba lists `CON` back as `CR23RR~9`
-    (`docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`). Path length stays the host's `PATH_MAX` on every
-    volume, and a transfer's names keep the per-item refused-name prompt.
+14. [S] Win. **Done**. Name validity is keyed on the destination's `FilesystemKind` plus how this host's driver writes a
+    Windows-format disk (`FilesystemKind::name_rules` → `NameRules`, `crates/cmdr-fs/DETAILS.md` § "Name rules"), in two
+    typed tiers: a refusal only where the destination refuses or would lose data, a `PortabilityWarning` where it takes
+    the name but Windows (and, for a stick's stand-ins, Linux) won't read it as typed. From a Mac, exFAT, FAT32, and a
+    share warn; Linux refuses a stick's characters and trailing period (its drivers refuse or strip them), Windows
+    refuses all. The SMB specs forbid no device name (MS-FSCC § 2.1.5.2, v20251121), so a share warns about `CON` too.
+    Every destination refuses an empty or invisible-only name, `.` and `..` (#1229), and a name past its own limit in
+    its own unit (bytes or UTF-16 units); the path limit is the path API's (the host's for a local probe, SMB2's for a
+    share, none for a backend that answers for itself, #1228). Create, rename, Multi-Rename (per row and a summary), the
+    MCP `multi_rename` tool, and Ask Cmdr's bulk renames (preflight and the engine, #1229) all apply it; a transfer
+    warns upfront from its scan's tally (`scan_preview/name_tally.rs`) read against the destination's rules. The
+    frontend's keystroke mirror is pinned to the Rust rule by `crates/cmdr-fs/src/name_rules_cases.json`. Evidence, on a
+    Mac and on Linux: `docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`.
 15. [XS] Win. **Done**. `cmdr_fs::testing::{symlink, is_root, can_create_symlinks, make_fifo}` behind a `platform/`
     seam; the crates' 83 test `symlink` calls, seven `geteuid` root checks, and four `mkfifo` fixtures use them. The
     tests' own `cfg(unix)` gates stay until a Windows lane can say which ones compile there.

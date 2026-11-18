@@ -152,8 +152,11 @@ impl crate::Operations {
 
         let trimmed = new_name.trim();
 
-        // Validate the name against the folder's filesystem, ❌ never the host OS's
-        if let Err(error) = validate_filename(trimmed, name_rules_at(self.host(), &volume_id, Path::new(&dir)).await) {
+        // Validate the name against the folder's filesystem, ❌ never the host OS's.
+        // A name it takes but won't keep portable is valid: the editor's
+        // keystroke mirror shows that warning, and the rename goes ahead.
+        let rules = name_rules_at(self.host(), &volume_id, Path::new(&dir)).await;
+        if let Err(error) = validate_filename(trimmed, rules) {
             return RenameValidityCheck::unpriced(RenameValidityResult {
                 valid: false,
                 error: Some(error),
@@ -166,7 +169,7 @@ impl crate::Operations {
 
         // Validate resulting path length
         let new_path = PathBuf::from(&dir).join(trimmed);
-        if let Err(error) = validate_path_length(&new_path) {
+        if let Err(error) = validate_path_length(&new_path, rules) {
             return RenameValidityCheck::unpriced(RenameValidityResult {
                 valid: false,
                 error: Some(error),

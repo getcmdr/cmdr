@@ -24,6 +24,7 @@ import type {
   RenameEvidenceCoverage,
   RenameStartError,
 } from '#lib/tauri-commands/index.js'
+import type { BulkRenameWarning } from '#lib/ipc/bindings.js'
 
 /** How many messages a thread page holds. Most threads are small, so the first page is
  * usually the whole thread; paging is the insurance for a long one. Loading is
@@ -45,7 +46,7 @@ export interface BulkRenameReviewRow {
   coverage: RenameEvidenceCoverage | null
   allowed: boolean
   blockedReason: string | null
-  warnings: Array<'extensionChanged' | 'cycle'>
+  warnings: BulkRenameWarning[]
   /** True when the last name the user typed here wasn't a usable filename, so the row kept the
    * name it had. Display only; the backend is the authority on what a name may be. */
   nameRejected: boolean

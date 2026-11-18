@@ -1332,14 +1332,6 @@
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
   },
-  "fileOperations.validation.nameTooLong": "{kind, select, folder {Назва папки задовга ({byteCount}/{maxBytes} {max, plural, one {байт} few {байти} many {байтів} other {байта}})} other {Назва файлу задовга ({byteCount}/{maxBytes} {max, plural, one {байт} few {байти} many {байтів} other {байта}})}}",
-  "@fileOperations.validation.nameTooLong": {
-    "sourceHash": "4978a6f"
-  },
-  "fileOperations.validation.pathTooLong": "Повний шлях задовгий ({byteCount}/{maxBytes} {max, plural, one {байт} few {байти} many {байтів} other {байта}})",
-  "@fileOperations.validation.pathTooLong": {
-    "sourceHash": "9aa3b43"
-  },
   "fileOperations.validation.extensionChangeBlocked": "Змінювати розширення файлу не дозволено (було «{oldExt}»)",
   "@fileOperations.validation.extensionChangeBlocked": {
     "sourceHash": "e81362d"
@@ -1367,14 +1359,6 @@
   "fileOperations.validation.pathNullChar": "Шлях містить нульовий символ",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
-  },
-  "fileOperations.validation.pathTotalTooLong": "Шлях задовгий ({byteCount}/{maxBytes} {max, plural, one {байт} few {байти} many {байтів} other {байта}})",
-  "@fileOperations.validation.pathTotalTooLong": {
-    "sourceHash": "dd75780"
-  },
-  "fileOperations.validation.pathSegmentTooLong": "Назва однієї з папок у шляху задовга ({byteCount}/{maxBytes} {max, plural, one {байт} few {байти} many {байтів} other {байта}})",
-  "@fileOperations.validation.pathSegmentTooLong": {
-    "sourceHash": "c0773d3"
   },
   "fileOperations.transferTree.treeLabel": "Файли в цій операції",
   "@fileOperations.transferTree.treeLabel": {

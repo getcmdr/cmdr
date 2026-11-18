@@ -15,6 +15,9 @@
         validateShareNamed,
     } from '#lib/utils/filename-validation.js'
     import { createTransferDestExistsCheck } from './transfer-dest-exists.svelte'
+    import { createTransferDestNameRules } from './transfer-dest-name-rules.svelte'
+    import { formatInteger } from '#lib/intl/number-format.js'
+    import { namePortabilitySummary } from './transfer-name-portability'
     import { conflictPolicyFromMcpName } from './conflict-policy'
     import {
         dispatchedConflictPolicy,
@@ -238,6 +241,14 @@
     const targetVolumeId = $derived(namedTarget?.volumeId ?? selectedVolumeId)
     const selectedVolume = $derived(actualVolumes.find((v) => v.id === targetVolumeId))
     const targetPath = $derived(isRenameMode ? renameTarget.folder : (namedTarget?.path ?? editedPath))
+    // Which names the destination takes and warns about, for the leaf checks and the
+    // upfront "won't work on Windows" line. A compress's target is the zip, so its folder
+    // answers (a folder still to be created answers for the disk it'll be created on).
+    const destNameRules = createTransferDestNameRules({
+        getVolumeId: () => targetVolumeId,
+        getPath: () => (activeOperationType === 'compress' ? renameTarget.folder : targetPath),
+        getDestroyed: () => destroyed,
+    })
 
     /** A same-volume move: the source and destination are the SAME NON-DEFAULT
      *  volume (one smb2 share / one MTP device) and the active operation is Move.
@@ -429,7 +440,10 @@
         if (isRenameMode) return renamePathError()
         // No target: a server with no share (`\\nas` on Windows) says so; anything else lacks a name.
         if (singleTransfer && !namedTarget) return validateShareNamed(editedPath).message || validateNotEmpty('').message
-        const structural = validateDirectoryPath(namedTarget ? joinPath(namedTarget.parent, namedTarget.name) : editedPath)
+        const structural = validateDirectoryPath(
+            namedTarget ? joinPath(namedTarget.parent, namedTarget.name) : editedPath,
+            destNameRules.limits,
+        )
         if (structural.severity === 'error') return structural.message
         // `fullPath` is already rooted; `anchorOnVolume` passes a path on the volume through.
         return getPathValidationError(
@@ -447,14 +461,31 @@
     /** Rename mode validates the folder's shape and the NEW NAME as a name.
      *  `getPathValidationError` would call the source's own folder "already there". */
     function renamePathError(): string | null {
-        const structural = validateDirectoryPath(renameTarget.folder)
+        const structural = validateDirectoryPath(renameTarget.folder, destNameRules.limits)
         if (structural.severity === 'error') return structural.message
         const isDir = folderCount > 0
-        // POSIX's rules, the same the transfer engine's single-leaf check applies; a
-        // name the destination refuses on top asks per item at landing (`refused_name.rs`).
-        const result = validateName(renameTarget.leaf.trim(), isDir, 'posix')
+        // The destination's rules (`getNameRules`); until they answer, POSIX's. A name the
+        // destination refuses anyway asks per item at landing (`refused_name.rs`).
+        const result = validateName(renameTarget.leaf.trim(), isDir, destNameRules.current)
         return result.severity === 'error' ? result.message : null
     }
+
+    /** The one name this dialog names (rename mode's new name, a single item's leaf), when
+     *  the destination takes it but won't keep it portable. Never blocks Confirm. */
+    const leafPortabilityWarning = $derived.by<string | null>(() => {
+        // Rename mode's new name, a compress's zip, or a single item's leaf.
+        const leaf =
+            isRenameMode || activeOperationType === 'compress' ? renameTarget.leaf.trim() : namedTarget?.name
+        if (!leaf) return null
+        const result = validateName(leaf, activeOperationType !== 'compress' && folderCount > 0, destNameRules.current)
+        return result.severity === 'warning' ? result.message : null
+    })
+
+    /** The scan's names Windows won't read as typed at this destination, said before anything
+     *  is copied (`transfer-name-portability.ts`). Never blocks Confirm. */
+    const namePortability = $derived(
+        isRenameMode ? null : namePortabilitySummary(scan.namePortability, destNameRules.current),
+    )
 
     // Destination-existence check (debounced, async) behind the yellow "will be
     // created" warning. Created synchronously here (component init) so its internal
@@ -872,6 +903,21 @@
                         </div>
                     {:else if targetWarning}
                         <p id="transfer-path-warning" class="path-warning">{targetWarning}</p>
+                    {/if}
+                    <!-- Names the destination takes but Windows won't read as typed: said before
+                         any byte moves, and never blocking Confirm. -->
+                    {#if !pathError && !targetRefusal && leafPortabilityWarning}
+                        <p class="path-warning" role="status" data-name-portability="leaf">{leafPortabilityWarning}</p>
+                    {/if}
+                    {#if !pathError && !targetRefusal && namePortability}
+                        <p class="path-warning" role="status" data-name-portability="scan">
+                            {tString('fileOperations.transferDialog.namePortability', {
+                                count: namePortability.count,
+                                countText: formatInteger(namePortability.count),
+                                alsoLinux: namePortability.alsoLinux ? 'yes' : 'no',
+                                example: namePortability.example,
+                            })}
+                        </p>
                     {/if}
                 </div>
 

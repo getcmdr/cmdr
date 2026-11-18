@@ -331,7 +331,7 @@ const cases: Case[] = [
     error: { type: 'name_too_long', path: '/p' },
     expected: {
       title: 'Name too long',
-      message: 'The file name is too long for the destination.',
+      message: 'The filename is too long for the destination.',
       suggestion: 'Try renaming the file to use a shorter name.',
     },
   },
@@ -339,7 +339,7 @@ const cases: Case[] = [
     name: 'invalid_name',
     error: { type: 'invalid_name', path: '/p', message: 'm' },
     expected: {
-      title: 'Invalid file name',
+      title: 'Invalid filename',
       message: '/p has a name the destination can’t store.',
       suggestion:
         'Rename it to something shorter and plainer, then try again. Some destinations refuse tabs or line breaks in a name, and some refuse reserved names like CON, NUL, or LPT1.',
@@ -353,7 +353,7 @@ const cases: Case[] = [
     name: 'invalid_name (escapes HTML in the path)',
     error: { type: 'invalid_name', path: '/share/<b>"a&b"</b>.json', message: 'm' },
     expected: {
-      title: 'Invalid file name',
+      title: 'Invalid filename',
       message: '/share/&lt;b&gt;"a&amp;b"&lt;/b&gt;.json has a name the destination can’t store.',
       suggestion:
         'Rename it to something shorter and plainer, then try again. Some destinations refuse tabs or line breaks in a name, and some refuse reserved names like CON, NUL, or LPT1.',

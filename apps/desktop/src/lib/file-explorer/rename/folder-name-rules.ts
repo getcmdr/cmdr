@@ -8,10 +8,11 @@
 
 import { getNameRules } from '#lib/tauri-commands/index.js'
 import type { NameRules } from '#lib/ipc/bindings.js'
+import { POSIX_RULES, sameRules } from '#lib/utils/name-rules.js'
 import type { createRenameState, RenameSessionId } from './rename-state.svelte'
 
 export function createFolderNameRules(getVolumeId: () => string, rename: ReturnType<typeof createRenameState>) {
-  let rules: NameRules = 'posix'
+  let rules: NameRules = POSIX_RULES
   return {
     get current(): NameRules {
       return rules
@@ -22,10 +23,10 @@ export function createFolderNameRules(getVolumeId: () => string, rename: ReturnT
      * runs once the name was edited: an untouched name is one the folder already holds.
      */
     ask(dir: string, sessionId: RenameSessionId, revalidate: () => void): void {
-      rules = 'posix'
+      rules = POSIX_RULES
       getNameRules(getVolumeId(), dir).then(
         (answer) => {
-          if (!rename.active || rename.isSuperseded(sessionId) || answer === rules) return
+          if (!rename.active || rename.isSuperseded(sessionId) || sameRules(answer, rules)) return
           rules = answer
           if (rename.hasChanged()) revalidate()
         },

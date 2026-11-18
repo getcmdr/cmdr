@@ -2232,7 +2232,7 @@
     "screenshot": "transfer-error-write_error.png"
   },
   "errors.write.nameTooLong.title": "Name too long",
-  "errors.write.nameTooLong.message": "The file name is too long for the destination.",
+  "errors.write.nameTooLong.message": "The filename is too long for the destination.",
   "errors.write.nameTooLong.suggestion": "Try renaming the file to use a shorter name.",
   "@errors.write.nameTooLong.title": {
     "description": "Title of the copy/move error dialog when the file name exceeds the destination's length limit. Plain text.",
@@ -2397,7 +2397,7 @@
     "description": "Recovery suggestion for that dialog: the user can rename the clashing file inside the zip, or choose another destination for the item. Plain text. This is a raw errors.* string (no ICU).",
     "screenshot": "transfer-error-archive_entry_under_file.png"
   },
-  "errors.write.invalidName.title": "Invalid file name",
+  "errors.write.invalidName.title": "Invalid filename",
   "errors.write.invalidName.message": "{path} has a name the destination can’t store.",
   "errors.write.invalidName.suggestion": "Rename it to something shorter and plainer, then try again. Some destinations refuse tabs or line breaks in a name, and some refuse reserved names like CON, NUL, or LPT1.",
   "@errors.write.invalidName.title": {

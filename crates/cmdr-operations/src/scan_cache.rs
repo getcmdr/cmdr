@@ -90,9 +90,25 @@ pub(super) struct CachedScanResult {
     /// leaves out something else isn't a hit: its totals and file list would
     /// name files it won't write, or miss ones it will.
     mac_only: cmdr_fs::mac_only_files::MacOnlyFiles,
+    /// A transfer's names Windows can't use as they are, for the recovery path
+    /// (`get_scan_preview_totals`). `None` for a delete's or a compress's walk.
+    name_portability: Option<super::types::NamePortabilityTally>,
 }
 
 impl CachedScanResult {
+    /// Carries what the walk's name tally counted.
+    pub(super) fn with_name_portability(self, name_portability: Option<super::types::NamePortabilityTally>) -> Self {
+        Self {
+            name_portability,
+            ..self
+        }
+    }
+
+    /// What the walk's name tally counted.
+    pub(super) fn name_portability(&self) -> Option<&super::types::NamePortabilityTally> {
+        self.name_portability.as_ref()
+    }
+
     /// Records what the walk left out.
     pub(super) fn leaving_out(self, mac_only: cmdr_fs::mac_only_files::MacOnlyFiles) -> Self {
         Self { mac_only, ..self }
@@ -149,6 +165,7 @@ impl CachedScanResult {
             scanned_files: None,
             tree: None,
             mac_only: cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+            name_portability: None,
         }
     }
 
@@ -177,6 +194,7 @@ impl CachedScanResult {
             scanned_files: None,
             tree: None,
             mac_only: cmdr_fs::mac_only_files::MacOnlyFiles::Include,
+            name_portability: None,
         }
     }
 }

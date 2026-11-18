@@ -1,4 +1,4 @@
-# Which names exFAT, FAT32, and an SMB share take, read on a Mac (2026-11-18)
+# Which names exFAT, FAT32, and an SMB share take, read on a Mac and on Linux (2026-11-18)
 
 The evidence behind `NameRules` (`crates/cmdr-fs/src/validation.rs`, `crates/cmdr-fs/DETAILS.md` § "Name rules"),
 gathered for task 14 of the Windows port (`docs/specs/windows-port-plan.md`, issue #942).
@@ -34,13 +34,50 @@ gathered for task 14 of the Windows port (`docs/specs/windows-port-plan.md`, iss
   clients read the share too).
 - **Name length**: APFS, exFAT, and FAT32 refuse past 255 UTF-16 units (`é` × 200, 400 bytes, is fine; `😀` × 128
   isn't). The share refuses past 255 BYTES (`é` × 128, 256 bytes, refused), its ZFS disk's rule. Every one takes a
-  255-byte ASCII name, which Cmdr refused until this change (`>= 255`). 255 bytes stays the floor for every destination.
+  255-byte ASCII name. So each filesystem's limit is counted in its own unit (`NameRules::name_limit`), and a share
+  counts bytes, since a NAS's disk under Samba does.
 - **Case**: all four refuse `case.txt` beside `Case.txt` (`EEXIST`).
+
+## The same stick, read and written by Linux
+
+Kernel 7.2.12 (OrbStack's Linux VM), an Alpine 3.20 container run `--privileged`, the two images loop-mounted with
+`-t exfat` / `-t vfat`, `iocharset=utf8` (2026-11-18). Scripts: `mount`, list each name as bytes with `od`, then `touch`
+new names.
+
+- **Reading the Mac's names**: Linux has no stand-in mapping on these drivers (only the CIFS client has one), so it
+  shows the private-use characters as themselves: `a:b` lists as `61 ef 80 a2 62` (renders as `ab` with an invisible
+  glyph), `trail.` as `trail` + U+F029. `CON` and `con.txt` list as themselves. So a stand-in is wrong on Linux too; a
+  reserved name is only Windows' problem.
+- **Writing**: both drivers refuse `:`, `?`, `*`, and a control character with `EINVAL`. vfat refuses a trailing space;
+  exfat takes one. Both STRIP a trailing period: `touch dup.` beside an existing `dup` "succeeded" and the folder still
+  held only `dup`, so a write to `dup.` lands on `dup`. `LPT1` and `nul.txt` are created as themselves.
+
+## Whether the SMB specs forbid a reserved device name
+
+No. MS-FSCC (v20251121, the 2025-11-21 release, read 2026-11-18) § 2.1.5.2 "Filename" forbids only `" \ / : | < > * ?`
+and 0x00–0x1F, caps a name at 255 characters, and names no device names; § 2.1.5.1 reserves `.` and `..` as path
+components that MUST NOT be sent over the wire. MS-SMB2 carries names as MS-FSCC defines them. The device names are a
+Win32 namespace rule: "Naming Files, Paths, and Namespaces" (learn.microsoft.com, updated 2025-04-11) says not to use
+`CON` … `LPT³`, "Also avoid these names followed immediately by an extension; for example, NUL.txt and NUL.tar.gz are
+both equivalent to NUL". Windows 11 relaxed the extension forms: from its first release (21H2, build 22000) `con.txt`
+opens as an ordinary file, while a bare `CON` still opens the console (Super User question 1929654, answered
+2025-11-03). Windows 10 still treats `con.txt` as the device. So on a share Cmdr warns about every reserved name, bare
+ones included, and refuses none; the wire-forbidden characters never cross raw, since smb2 and smbfs send their
+private-use stand-ins.
 
 ## What Cmdr does with it
 
-- exFAT, FAT32, NTFS → `NameRules::Windows`: refuse the stand-in characters, control characters, a trailing space or
-  period, and the reserved names, because what would land isn't the name typed. A product call, flagged for David: macOS
-  itself allows these on a stick.
-- SMB → `NameRules::SmbShare`: refuse only the reserved device names, the one class that visibly breaks.
-- Everything else → `NameRules::Posix`.
+Two tiers, typed (`cmdr_fs::validation::NameTier`): a refusal only where the destination itself refuses the name or
+would lose data taking it, and a portability warning where it takes the name but won't keep it portable.
+
+- **Every destination refuses**: an empty name or one that renders as nothing (only whitespace and invisible
+  characters), `/`, NUL, `.` and `..`, and a name past the filesystem's own length limit in its own unit.
+- **exFAT, FAT32, NTFS written from a Mac**: warn about the stand-in characters, control characters, a trailing space or
+  period ("won't work on Windows or Linux"), and the reserved names ("won't work on Windows").
+- **The same from Linux**: refuse the characters, control characters, and a trailing space or period (the driver refuses
+  them, or strips the period onto a sibling); warn about the reserved names.
+- **The same from Windows**: refuse all three (Win32 refuses the characters, strips the trailing ones, and opens a
+  device for a reserved name on Windows 10).
+- **An SMB share, from any host**: warn about all three ("won't work on Windows"; a reserved name may also list under
+  another name, as Samba does).
+- **Everything else**: POSIX names, with no warnings.

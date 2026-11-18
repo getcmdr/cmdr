@@ -59,6 +59,7 @@ use cmdr_fs::volume::Volume;
 
 #[cfg(not(target_family = "wasm"))]
 mod local;
+mod name_tally;
 mod volume;
 
 #[cfg(not(target_family = "wasm"))]

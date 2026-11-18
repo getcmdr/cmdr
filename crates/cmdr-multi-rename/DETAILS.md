@@ -102,12 +102,17 @@ it today), "next step" chaining, and editing names in an editor.
 ## Session, preview, and apply (`session.rs`, `plan.rs`, `run.rs`)
 
 - Row statuses: `Ready`, `Unchanged` (same name), `InvalidName` (via `validate_filename` against the folder's
-  `NameRules`, read once at open through `Operations::name_rules_at`, so `12:30` is fine on APFS and refused on an exFAT
-  stick, and `CON` is refused on a share; plus `.` / `..`), `Duplicate` (two rows get one folded name), `TargetExists`
-  (a sibling that STAYS holds the folded name; siblings include hidden entries), and `Missing` (the session's file left
-  the folder; set by `session.rs`, never by `plan`). A batch row renaming away frees its name, so chains and swaps
-  preview as ready. Names fold as the Mac does, so a case-sensitive volume gets over-cautious statuses; a block cascades
-  (a blocked row stays, which can block the row renaming into it) through a worklist, so a long chain stays linear.
+  `NameRules`, read once at open through `Operations::name_rules_at`: a name the folder REFUSES, like `.` / `..`, one
+  past its length limit in its unit, or `12:30` on a stick a Linux driver writes), `Duplicate` (two rows get one folded
+  name), `TargetExists` (a sibling that STAYS holds the folded name; siblings include hidden entries), and `Missing`
+  (the session's file left the folder; set by `session.rs`, never by `plan`). A batch row renaming away frees its name,
+  so chains and swaps preview as ready. Names fold as the Mac does, so a case-sensitive volume gets over-cautious
+  statuses; a block cascades (a blocked row stays, which can block the row renaming into it) through a worklist, so a
+  long chain stays linear.
+- **A ready row may carry a `warning`** (`PreviewRow::warning`, a `PortabilityWarning`): the folder takes the name but
+  Windows won't read it as typed (`12:30` on a Mac's exFAT stick, `CON` on a share). It stays `Ready` and renames;
+  `settle` clears the warning off any row it blocks. `PreviewCounts::not_portable` / `not_portable_on_linux` count them
+  over every row, and the preview carries the folder's `name_format` for the words.
 - **Decision: a backend session holds the files, by name.**
   `open_multi_rename(listing, includeHidden, rows | null, sequence)` reads the pane's rows (`null`: every row the pane
   shows, which is what "all selected" and "nothing selected" both mean) through `Listings::selection_names`, refuses

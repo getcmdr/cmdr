@@ -671,11 +671,12 @@ async fn a_case_only_rename_onto_a_real_sibling_is_still_a_conflict() {
     assert_eq!(check.conflict.map(|c| c.size), Some(6));
 }
 
-/// The rename itself refuses what the destination doesn't take, so a caller
-/// that skipped the validity check (an agent's rename) can't land `CON` on a
-/// share, where Samba would list it back mangled.
+/// The rename itself checks the destination's rules, so a caller that skipped
+/// the validity check (an agent's rename) meets them too: `..` is refused before
+/// any I/O, and `CON` on a share lands (Samba lists it back mangled, which the
+/// editors warn about; nothing is lost).
 #[tokio::test]
-async fn the_rename_itself_refuses_a_reserved_device_name_on_a_share() {
+async fn the_rename_itself_applies_the_shares_rules() {
     use cmdr_fs::validation::ValidationError;
     use cmdr_fs::volume::{BackendKind, InMemoryVolume};
 
@@ -688,7 +689,27 @@ async fn the_rename_itself_refuses_a_reserved_device_name_on_a_share() {
         .volumes()
         .register(&volume_id, Arc::clone(&volume) as Arc<dyn Volume>);
 
-    let result = engine
+    let refused = engine
+        .rename_managed(
+            PathBuf::from("/docs/notes.txt"),
+            PathBuf::from("/docs/.."),
+            false,
+            volume_id.clone(),
+            Initiator::Agent,
+        )
+        .await;
+    assert!(
+        matches!(
+            refused,
+            Err(MutationError::NameNotAllowed {
+                reason: ValidationError::DotName
+            })
+        ),
+        "{refused:?}"
+    );
+    assert!(volume.exists(Path::new("/docs/notes.txt")).await, "the file stayed put");
+
+    let taken = engine
         .rename_managed(
             PathBuf::from("/docs/notes.txt"),
             PathBuf::from("/docs/CON"),
@@ -697,30 +718,19 @@ async fn the_rename_itself_refuses_a_reserved_device_name_on_a_share() {
             Initiator::Agent,
         )
         .await;
-
-    assert!(
-        matches!(
-            result,
-            Err(MutationError::NameNotAllowed {
-                reason: ValidationError::ReservedName { .. }
-            })
-        ),
-        "{result:?}"
-    );
-    assert!(volume.exists(Path::new("/docs/notes.txt")).await, "the file stayed put");
+    assert!(taken.is_ok(), "{taken:?}");
+    assert!(volume.exists(Path::new("/docs/CON")).await, "the rename landed");
 }
 
-/// F2 on an SMB share refuses a Windows device name up front: Samba would take
-/// `CON` and list it back as `CR23RR~9`, so the file the person named would
-/// never show under that name (`docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`).
-/// The same name on a POSIX backend is fine.
+/// F2 on an SMB share takes a Windows device name (the editor warns), and
+/// refuses `.` and `..` everywhere, up front (#1229).
 #[tokio::test]
-async fn the_validity_check_refuses_a_reserved_device_name_on_a_share_only() {
+async fn the_validity_check_takes_a_reserved_name_and_refuses_dot_names() {
     use cmdr_fs::validation::ValidationError;
     use cmdr_fs::volume::{BackendKind, InMemoryVolume};
 
     let engine = TestOperations::new();
-    for (backend, refused) in [(BackendKind::Smb, true), (BackendKind::Sftp, false)] {
+    for backend in [BackendKind::Smb, BackendKind::Sftp] {
         let volume_id = unique("reserved-name");
         let volume = InMemoryVolume::new(&volume_id).with_backend_kind(backend);
         volume.create_directory(Path::new("/docs")).await.unwrap();
@@ -729,20 +739,15 @@ async fn the_validity_check_refuses_a_reserved_device_name_on_a_share_only() {
             .volumes()
             .register(&volume_id, Arc::new(volume) as Arc<dyn Volume>);
 
-        let check = engine
-            .check_rename_validity_impl("/docs".into(), "notes.txt".into(), "con.txt".into(), volume_id)
-            .await
-            .priced(|_| false);
-
-        if refused {
-            assert!(!check.valid, "{backend:?}: {check:?}");
-            assert_eq!(
-                check.error,
-                Some(ValidationError::ReservedName { name: "con".into() }),
-                "{backend:?}"
-            );
-        } else {
-            assert!(check.valid, "{backend:?}: {check:?}");
+        let check = |name: &str| {
+            engine.check_rename_validity_impl("/docs".into(), "notes.txt".into(), name.into(), volume_id.clone())
+        };
+        let reserved = check("con.txt").await.priced(|_| false);
+        assert!(reserved.valid, "{backend:?}: {reserved:?}");
+        for dots in [".", ".."] {
+            let refused = check(dots).await.priced(|_| false);
+            assert!(!refused.valid, "{backend:?} {dots:?}: {refused:?}");
+            assert_eq!(refused.error, Some(ValidationError::DotName), "{backend:?}");
         }
     }
 }

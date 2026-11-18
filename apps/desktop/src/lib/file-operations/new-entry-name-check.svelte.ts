@@ -11,6 +11,7 @@
 
 import { findFileIndex, getFileAt, getNameRules, onDirectoryDiff, type UnlistenFn } from '#lib/tauri-commands/index.js'
 import { validateName, validatePathLength } from '#lib/utils/filename-validation.js'
+import { POSIX_RULES, sameRules } from '#lib/utils/name-rules.js'
 import type { NameRules } from '#lib/ipc/bindings.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import type { ReportIncident } from '#lib/error-reporter/report-incident.js'
@@ -33,6 +34,11 @@ const DEBOUNCE_MS = 100
 export class NewEntryNameCheck {
   /** Empty while the name is acceptable (or still empty). */
   errorMessage = $state('')
+  /**
+   * A name the folder takes but won't keep portable (a `:` on a Mac's exFAT stick, `CON` on a
+   * share): shown under the field, ❌ never blocking OK. Empty otherwise.
+   */
+  warningMessage = $state('')
   /** True while the clash lookup is in flight; the dialog holds OK until it lands. */
   isChecking = $state(false)
   /**
@@ -47,7 +53,7 @@ export class NewEntryNameCheck {
    * Which names the folder takes (`getNameRules`). `posix` until `listen` hears back; the
    * create itself checks the folder's own rules either way.
    */
-  #rules: NameRules = 'posix'
+  #rules: NameRules = POSIX_RULES
   #timer: ReturnType<typeof setTimeout> | undefined
   /** Bumped per validate, so only the latest lookup's answer is shown. */
   #asked = 0
@@ -71,6 +77,7 @@ export class NewEntryNameCheck {
     // A sync answer below supersedes any lookup still in flight, so it ends the wait too.
     this.isChecking = false
     const trimmed = name.trim()
+    this.warningMessage = ''
     if (trimmed === '') {
       this.errorMessage = ''
       return
@@ -82,7 +89,8 @@ export class NewEntryNameCheck {
       this.errorMessage = nameCheck.message
       return
     }
-    const pathLenCheck = validatePathLength(this.#options.currentPath, trimmed)
+    if (nameCheck.severity === 'warning') this.warningMessage = nameCheck.message
+    const pathLenCheck = validatePathLength(this.#options.currentPath, trimmed, this.#rules)
     if (pathLenCheck.severity === 'error') {
       this.errorMessage = pathLenCheck.message
       return
@@ -130,7 +138,7 @@ export class NewEntryNameCheck {
   async #askNameRules(): Promise<void> {
     try {
       const rules = await getNameRules(this.#options.volumeId ?? null, this.#options.currentPath)
-      if (rules === this.#rules) return
+      if (sameRules(rules, this.#rules)) return
       this.#rules = rules
       if (this.#options.getName().trim() !== '') this.schedule()
     } catch {

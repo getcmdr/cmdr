@@ -10,6 +10,7 @@ import {
   type Initiator,
   type NameFilterResult,
   type NameRules,
+  type PathLimits,
   type RowBeside,
 } from '#lib/ipc/bindings.js'
 import type {
@@ -466,12 +467,7 @@ export async function setSelfDragResolvedOperation(operation: 'move' | 'copy'): 
   await commands.setSelfDragResolvedOp(operation)
 }
 
-export interface PathLimits {
-  maxNameBytes: number
-  maxPathBytes: number
-}
-
-/** Returns platform-specific filesystem path limits from the backend. */
+/** The host's own name and path limits, each in its unit, for a path typed before any destination answers. */
 export async function getPathLimits(): Promise<PathLimits> {
   return commands.getPathLimits()
 }

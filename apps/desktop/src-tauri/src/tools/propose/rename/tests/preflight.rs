@@ -9,6 +9,7 @@ use super::super::{
     BulkRenameBlockReason, BulkRenamePreflightStatus, BulkRenameWarning, RenameProposal, RenameProposalRow,
 };
 use crate::tools::propose::evidence::{EvidenceSource, RenameEvidence};
+use cmdr_fs::validation::NameRules;
 
 #[test]
 fn cycle_warnings_mark_only_closed_dependency_components() {
@@ -100,7 +101,8 @@ fn local_preflight_blocks_a_source_that_no_longer_exists() {
         )],
     };
 
-    let outcome = preflight_local(&proposal, &["row".into()], &CheckTally::default()).expect("nothing stopped it");
+    let outcome = preflight_local(&proposal, &["row".into()], &CheckTally::default(), NameRules::POSIX)
+        .expect("nothing stopped it");
 
     assert_eq!(outcome.status, BulkRenamePreflightStatus::Blocked);
     assert_eq!(
@@ -108,6 +110,44 @@ fn local_preflight_blocks_a_source_that_no_longer_exists() {
         Some(BulkRenameBlockReason::SourceMissing)
     );
     assert!(outcome.fingerprints.is_empty());
+}
+
+/// #1229: an Ask Cmdr rename meets the folder's name rules like every other rename. A name
+/// the folder refuses blocks its row before anything is stat'd; one it takes but won't keep
+/// portable warns, and the row stays ready.
+#[test]
+fn the_folders_name_rules_block_or_warn_per_row() {
+    let temp = tempfile::tempdir().expect("temp directory");
+    let file = |name: &str| {
+        let path = temp.path().join(name);
+        std::fs::write(&path, b"x").expect("a source file");
+        path.to_str().expect("UTF-8 temp path").to_string()
+    };
+    let proposal = RenameProposal {
+        proposal_id: "proposal".into(),
+        revision: 0,
+        volume_id: "root".into(),
+        rows: vec![
+            proposal_row("reserved", &file("a.png"), "con.png"),
+            proposal_row("too-long", &file("b.png"), &format!("{}.png", "é".repeat(126))),
+        ],
+    };
+    let ids: Vec<String> = proposal.rows.iter().map(|row| row.row_id.clone()).collect();
+
+    let outcome =
+        preflight_local(&proposal, &ids, &CheckTally::default(), NameRules::smb_share()).expect("nothing stopped it");
+
+    let row = |id: &str| {
+        outcome
+            .response
+            .rows
+            .iter()
+            .find(|row| row.row_id == id)
+            .expect("a row")
+    };
+    assert_eq!(row("reserved").reason, None);
+    assert!(row("reserved").warnings.contains(&BulkRenameWarning::NotPortable));
+    assert_eq!(row("too-long").reason, Some(BulkRenameBlockReason::NameNotAllowed));
 }
 
 /// A stopped check answers nothing about its rows, ❌ never a partial list that reads as "these
@@ -124,7 +164,7 @@ fn a_check_stopped_before_its_first_row_answers_nothing() {
     let running = checks.begin("proposal");
     assert!(checks.cancel("proposal"));
 
-    assert!(preflight_local(&proposal, &["row".into()], &running.tally).is_none());
+    assert!(preflight_local(&proposal, &["row".into()], &running.tally, NameRules::POSIX).is_none());
 }
 
 #[test]

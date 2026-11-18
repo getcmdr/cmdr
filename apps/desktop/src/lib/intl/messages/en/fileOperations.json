@@ -241,7 +241,7 @@
     },
     "screenshot": "new-file-dialog.png"
   },
-  "fileOperations.mkfile.nameAria": "File name",
+  "fileOperations.mkfile.nameAria": "Filename",
   "@fileOperations.mkfile.nameAria": {
     "description": "Accessibility label for the new file's name text field (screen-reader only).",
     "screenshot": "new-file-dialog.png"
@@ -2102,24 +2102,56 @@
       "kind": "what is being named: \"folder\" for a folder, anything else for a file"
     }
   },
-  "fileOperations.validation.nameTooLong": "{kind, select, folder {Folder name is too long ({byteCount}/{maxBytes} {max, plural, one {byte} other {bytes}})} other {Filename is too long ({byteCount}/{maxBytes} {max, plural, one {byte} other {bytes}})}}",
-  "@fileOperations.validation.nameTooLong": {
-    "description": "Inline validation message shown live as the user types a name in the rename / new-file / new-folder field, when the name exceeds the file system’s per-name byte limit. \"bytes\" is the unit (a name can use more than one byte per character). Write each branch as a complete, natural sentence for a file versus a folder.",
+  "fileOperations.validation.dotName": "{kind, select, folder {Folder names can’t be “.” or “..”} other {Filenames can’t be “.” or “..”}}",
+  "@fileOperations.validation.dotName": {
+    "description": "Inline validation message shown live as the user types a name in the rename / new-file / new-folder field, when the name is exactly \".\" or \"..\", which every file system keeps for the folder itself and its parent. Keep “.” and “..” exactly as written, in your language’s quotation marks. Write each branch as a complete, natural sentence for a file versus a folder.",
+    "placeholders": {
+      "kind": "what is being named: \"folder\" for a folder, anything else for a file"
+    }
+  },
+  "fileOperations.validation.nameLength": "{kind, select, folder {Folder name is too long ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {bytes}}} other {{max, plural, one {character} other {characters}}}})} other {Filename is too long ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {bytes}}} other {{max, plural, one {character} other {characters}}}})}}",
+  "@fileOperations.validation.nameLength": {
+    "description": "Inline validation message shown live as the user types a name in the rename / new-file / new-folder field, when the name is longer than the drive allows for one name. Drives count names in one of two units: bytes (a letter like é takes two) or characters (as Windows-formatted drives and Macs count them). Write each branch as a complete, natural sentence for a file versus a folder.",
     "placeholders": {
       "kind": "what is being named: \"folder\" for a folder, anything else for a file",
-      "byteCount": "how many bytes the typed name currently uses (e.g. 260)",
-      "maxBytes": "the maximum bytes allowed for one name, formatted (e.g. 255)",
-      "max": "the same maximum as a number; drives the plural of “bytes”"
+      "length": "how long the typed name is in that unit, formatted (e.g. 260)",
+      "maxLength": "the longest a name may be in that unit, formatted (e.g. 255)",
+      "max": "the same maximum as a number; drives the plural of the unit",
+      "unit": "\"bytes\" when the drive counts bytes, anything else when it counts characters"
     },
     "screenshot": "mkdir-confirmation-too-long.png"
   },
-  "fileOperations.validation.pathTooLong": "Full path is too long ({byteCount}/{maxBytes} {max, plural, one {byte} other {bytes}})",
-  "@fileOperations.validation.pathTooLong": {
-    "description": "Inline validation message shown live as the user types a name in the rename / new-file / new-folder field, when the resulting full path (parent folder plus the name) exceeds the file system’s total path byte limit. \"bytes\" is the unit. \"Full path\" means the entire path, parent folders included.",
+  "fileOperations.validation.pathLength": "Full path is too long ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {bytes}}} other {{max, plural, one {character} other {characters}}}})",
+  "@fileOperations.validation.pathLength": {
+    "description": "Inline validation message shown live as the user types a name in the rename / new-file / new-folder field, when the resulting full path (parent folder plus the name) is longer than the drive allows. \"Full path\" means the entire path, parent folders included. The unit is bytes or characters, whichever the drive counts.",
     "placeholders": {
-      "byteCount": "how many bytes the path currently uses (e.g. 1100)",
-      "maxBytes": "the maximum bytes allowed for a full path, formatted (e.g. 1024)",
-      "max": "the same maximum as a number; drives the plural of “bytes”"
+      "length": "how long the path is in that unit, formatted (e.g. 1100)",
+      "maxLength": "the longest a full path may be in that unit, formatted (e.g. 1023)",
+      "max": "the same maximum as a number; drives the plural of the unit",
+      "unit": "\"bytes\" when the drive counts bytes, anything else when it counts characters"
+    }
+  },
+  "fileOperations.validation.notPortable.windowsCharacter": "{format, select, smbShare {Names with “{character}” won’t work on Windows} other {Names with “{character}” won’t work on Windows or Linux}}",
+  "@fileOperations.validation.notPortable.windowsCharacter": {
+    "description": "Inline WARNING (not an error: the rename or create still goes ahead) shown live as the user types a name, when the folder is on a network share or a Windows-formatted drive and the name has a character Windows can’t use in names, like \":\" or \"?\". The Mac stores the name fine, but on Windows (and, for a USB drive, on Linux) the name shows a different character. Keep \"Windows\" and \"Linux\" as is.",
+    "placeholders": {
+      "format": "\"smbShare\" for a network share (only Windows is affected), anything else for a Windows-formatted drive (Windows and Linux)",
+      "character": "the character as typed, like \":\"; an invisible one reads as its code, like \"U+0001\""
+    }
+  },
+  "fileOperations.validation.notPortable.reservedName": "{format, select, smbShare {“{name}” is reserved by Windows, so this name won’t work there, and the share may list it under another name} other {“{name}” is reserved by Windows, so this name won’t work there}}",
+  "@fileOperations.validation.notPortable.reservedName": {
+    "description": "Inline WARNING (not an error: the rename or create still goes ahead) shown live as the user types a name, when the folder is on a network share or a Windows-formatted drive and the name is one Windows keeps for devices (CON, NUL, AUX, PRN, COM1, LPT1, and the like, with any extension). Windows can’t open such an item, and some network shares list it under a made-up short name. \"there\" means on Windows. Keep \"Windows\" as is.",
+    "placeholders": {
+      "format": "\"smbShare\" for a network share, anything else for a Windows-formatted drive",
+      "name": "the reserved part of the typed name, as typed, like \"CON\" or \"nul\""
+    }
+  },
+  "fileOperations.validation.notPortable.endsWithSpaceOrPeriod": "{format, select, smbShare {Names ending in a space or a period won’t work on Windows} other {Names ending in a space or a period won’t work on Windows or Linux}}",
+  "@fileOperations.validation.notPortable.endsWithSpaceOrPeriod": {
+    "description": "Inline WARNING (not an error: the rename or create still goes ahead) shown live as the user types a name, when the folder is on a network share or a Windows-formatted drive and the name ends with a space or a period. The Mac stores it fine, but Windows (and, for a USB drive, Linux) shows a different last character. Keep \"Windows\" and \"Linux\" as is.",
+    "placeholders": {
+      "format": "\"smbShare\" for a network share (only Windows is affected), anything else for a Windows-formatted drive (Windows and Linux)"
     }
   },
   "fileOperations.validation.extensionChangeBlocked": "Changing the file extension isn’t allowed (was “{oldExt}”)",
@@ -2159,22 +2191,34 @@
   "@fileOperations.validation.pathNullChar": {
     "description": "Inline validation message for a directory-path field, shown when the path contains a null character (forbidden in file-system paths). \"null character\" is the technical name for the zero byte."
   },
-  "fileOperations.validation.pathTotalTooLong": "Path is too long ({byteCount}/{maxBytes} {max, plural, one {byte} other {bytes}})",
-  "@fileOperations.validation.pathTotalTooLong": {
-    "description": "Inline validation message for a directory-path field, shown when the whole path exceeds the file system’s total byte limit. \"bytes\" is the unit.",
+  "fileOperations.validation.typedPathLength": "Path is too long ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {bytes}}} other {{max, plural, one {character} other {characters}}}})",
+  "@fileOperations.validation.typedPathLength": {
+    "description": "Inline validation message for a directory-path field (the copy/move destination), shown when the whole path is longer than the destination allows. The unit is bytes or characters, whichever the destination counts.",
     "placeholders": {
-      "byteCount": "how many bytes the path currently uses (e.g. 1100)",
-      "maxBytes": "the maximum bytes allowed for a full path, formatted (e.g. 1024)",
-      "max": "the same maximum as a number; drives the plural of “bytes”"
+      "length": "how long the path is in that unit, formatted (e.g. 1100)",
+      "maxLength": "the longest a path may be in that unit, formatted (e.g. 1023)",
+      "max": "the same maximum as a number; drives the plural of the unit",
+      "unit": "\"bytes\" when the destination counts bytes, anything else when it counts characters"
     }
   },
-  "fileOperations.validation.pathSegmentTooLong": "A folder name in the path is too long ({byteCount}/{maxBytes} {max, plural, one {byte} other {bytes}})",
-  "@fileOperations.validation.pathSegmentTooLong": {
-    "description": "Inline validation message for a directory-path field, shown when one folder name inside the path exceeds the per-name byte limit (even though the whole path fits). \"bytes\" is the unit.",
+  "fileOperations.validation.typedSegmentLength": "A folder name in the path is too long ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {bytes}}} other {{max, plural, one {character} other {characters}}}})",
+  "@fileOperations.validation.typedSegmentLength": {
+    "description": "Inline validation message for a directory-path field, shown when one folder name inside the path is longer than the destination allows for one name (even though the whole path fits). The unit is bytes or characters, whichever the destination counts.",
     "placeholders": {
-      "byteCount": "how many bytes the name currently uses (e.g. 260)",
-      "maxBytes": "the maximum bytes allowed for one name, formatted (e.g. 255)",
-      "max": "the same maximum as a number; drives the plural of “bytes”"
+      "length": "how long that folder name is in that unit, formatted (e.g. 260)",
+      "maxLength": "the longest one name may be in that unit, formatted (e.g. 255)",
+      "max": "the same maximum as a number; drives the plural of the unit",
+      "unit": "\"bytes\" when the destination counts bytes, anything else when it counts characters"
+    }
+  },
+  "fileOperations.transferDialog.namePortability": "{count, plural, one {{alsoLinux, select, yes {{countText} name here won’t work on Windows or Linux: “{example}”} other {{countText} name here won’t work on Windows: “{example}”}}} other {{alsoLinux, select, yes {{countText} names here won’t work on Windows or Linux, like “{example}”} other {{countText} names here won’t work on Windows, like “{example}”}}}}",
+  "@fileOperations.transferDialog.namePortability": {
+    "description": "WARNING line in the copy/move dialog, shown before anything is copied, when the destination is a network share or a Windows-formatted USB drive and some of the items being copied have names Windows can’t use (a \":\" or \"?\" in the name, a name ending in a period, or a name Windows keeps for devices, like CON). The copy still goes ahead; the names just won’t read right on Windows (and, for a USB drive, on Linux). \"here\" means at the destination. Keep \"Windows\" and \"Linux\" as is.",
+    "placeholders": {
+      "count": "how many item names are affected, as a number; drives the plural",
+      "countText": "the same count, formatted (e.g. 1,204)",
+      "alsoLinux": "\"yes\" when Linux is affected too (a USB drive), anything else when only Windows is",
+      "example": "one of the affected names, as it is, like \"12:30 notes.txt\""
     }
   },
   "fileOperations.transferTree.treeLabel": "Files in this transfer",

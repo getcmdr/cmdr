@@ -42,6 +42,7 @@ import {
   type ScanPreviewRefusal,
   type MacOnlyFiles,
 } from '#lib/tauri-commands/index.js'
+import type { NamePortabilityTally } from '#lib/ipc/bindings.js'
 import { getSetting } from '#lib/settings/index.js'
 
 export interface TransferScanStateDeps {
@@ -90,6 +91,10 @@ export function createTransferScanState(deps: TransferScanStateDeps) {
   // level-6 subtotals so the dialog re-scales to the chosen level with no
   // re-scan. Set from the complete event (and the recovery path).
   let estimatedBytes = $state<CompressedSizeEstimate | null>(null)
+  // The names Windows can't use as they are, counted by a transfer's walk (`name_tally.rs`),
+  // destination-blind: the dialog asks the destination which classes it warns about. `null`
+  // while scanning and for a compress's or delete's walk.
+  let namePortability = $state<NamePortabilityTally | null>(null)
   let isScanning = $state(false)
   let scanComplete = $state(false)
   // Why the scan stopped without an answer, or `null` while all is well. A scan
@@ -173,6 +178,7 @@ export function createTransferScanState(deps: TransferScanStateDeps) {
         bytesFound = event.bytesTotal
         dedupBytesFound = event.dedupBytesTotal
         estimatedBytes = event.estimatedCompressedBytes ?? null
+        namePortability = event.namePortability ?? null
         isScanning = false
         scanComplete = true
       }),
@@ -232,6 +238,7 @@ export function createTransferScanState(deps: TransferScanStateDeps) {
         bytesFound = totals.bytesTotal
         dedupBytesFound = totals.dedupBytesTotal
         estimatedBytes = totals.estimatedCompressedBytes ?? null
+        namePortability = totals.namePortability ?? null
         isScanning = false
         scanComplete = true
       }
@@ -256,6 +263,7 @@ export function createTransferScanState(deps: TransferScanStateDeps) {
     bytesFound = 0
     dedupBytesFound = 0
     estimatedBytes = null
+    namePortability = null
     scanFailure = null
     sourceRefusal = null
     scanStarted = Promise.resolve()
@@ -367,6 +375,10 @@ export function createTransferScanState(deps: TransferScanStateDeps) {
     /** Compressed-size estimate (Compress + local only), or `null`. */
     get estimatedBytes() {
       return estimatedBytes
+    },
+    /** The walk's names Windows can't use as they are, or `null`. */
+    get namePortability() {
+      return namePortability
     },
     get isScanning() {
       return isScanning

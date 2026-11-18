@@ -1331,14 +1331,6 @@
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
   },
-  "fileOperations.validation.nameTooLong": "{kind, select, folder {文件夹名太长（{byteCount} / {maxBytes} {max, plural, other {字节}}）} other {文件名太长（{byteCount} / {maxBytes} {max, plural, other {字节}}）}}",
-  "@fileOperations.validation.nameTooLong": {
-    "sourceHash": "4978a6f"
-  },
-  "fileOperations.validation.pathTooLong": "完整路径太长（{byteCount} / {maxBytes} {max, plural, other {字节}}）",
-  "@fileOperations.validation.pathTooLong": {
-    "sourceHash": "9aa3b43"
-  },
   "fileOperations.validation.extensionChangeBlocked": "不允许更改文件扩展名（原为“{oldExt}”）",
   "@fileOperations.validation.extensionChangeBlocked": {
     "sourceHash": "e81362d"
@@ -1366,14 +1358,6 @@
   "fileOperations.validation.pathNullChar": "路径中包含空字符",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
-  },
-  "fileOperations.validation.pathTotalTooLong": "路径太长（{byteCount} / {maxBytes} {max, plural, other {字节}}）",
-  "@fileOperations.validation.pathTotalTooLong": {
-    "sourceHash": "dd75780"
-  },
-  "fileOperations.validation.pathSegmentTooLong": "路径中有一个文件夹名太长（{byteCount} / {maxBytes} {max, plural, other {字节}}）",
-  "@fileOperations.validation.pathSegmentTooLong": {
-    "sourceHash": "c0773d3"
   },
   "fileOperations.transferTree.treeLabel": "这次传输中的文件",
   "@fileOperations.transferTree.treeLabel": {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { RowStatus } from '#lib/ipc/bindings.js'
-import { rowStatusView, statusWords } from './row-status'
+import { rowStatusView, statusWords, warnedRowView } from './row-status'
 
 const PROBLEMS: RowStatus[] = [
   { type: 'invalidName', reason: { type: 'empty' } },
@@ -65,5 +65,22 @@ describe('statusWords', () => {
       ),
     ).toBe('multiRename.status.noValue({"field":"multiRename.mediaField.tagArtist({})"})')
     expect(statusWords({ key: 'multiRename.status.ready' }, words)).toBe('multiRename.status.ready({})')
+  })
+})
+
+describe('warnedRowView', () => {
+  it('is no problem, but shows a glyph saying where the name won’t work', () => {
+    const colon = { kind: 'windowsCharacter', character: ':' } as const
+    const onStick = warnedRowView(colon, 'windows')
+    expect(onStick.isProblem).toBe(false)
+    expect(onStick.glyph).toBe('triangle-alert')
+    expect(onStick.label).toEqual({ key: 'multiRename.status.notPortable', params: { alsoLinux: 'yes' } })
+    expect(onStick.reason).toEqual({
+      key: 'fileOperations.validation.notPortable.windowsCharacter',
+      params: { format: 'drive', character: ':' },
+    })
+    // A share's stand-ins map back for Linux, and a reserved name is only Windows' trouble.
+    expect(warnedRowView(colon, 'smbShare').label.params).toEqual({ alsoLinux: 'no' })
+    expect(warnedRowView({ kind: 'reservedName', name: 'CON' }, 'windows').label.params).toEqual({ alsoLinux: 'no' })
   })
 })

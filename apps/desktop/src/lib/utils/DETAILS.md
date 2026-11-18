@@ -9,33 +9,40 @@ returning the first non-ok result or `{ severity: 'ok', message: '' }`:
 
 ```
 validateFilename(…, rules)
-  ├── validateName(rules)         : nameRefusal(): blank, a character `rules` refuse, > 255 bytes (UTF-8),
-  │                                 a reserved device name (share, Windows drive), a trailing space or period (Windows drive)
-  ├── validatePathLength()        : error if >= 1024 bytes (UTF-8)
+  ├── validateName(rules)         : nameVerdict(): blank or invisible-only, `/` or NUL, `.` / `..`, past the
+  │                                 folder's name limit in its unit; then the Windows classes per `rules`' tiers:
+  │                                 an error where it refuses, a warning where it takes the name but won't keep it portable
+  ├── validatePathLength(rules)   : error past the folder's path limit, in its unit (none: the backend answers)
   ├── validateExtensionChange()   : error/ok depending on 'yes'|'no'|'ask' setting
-  └── validateConflict()          : warning if a sibling already has that name (case-insensitive)
+  ├── validateConflict()          : warning if a sibling already has that name (case-insensitive)
+  └── (validateName's warning)    : the portability warning, last: a clash in this folder matters more
 ```
 
-`validateDirectoryPath(path)` validates full directory paths (used by TransferDialog, composable with individual
-validators in NewFolderDialog):
+`validateDirectoryPath(path, limits?)` validates full directory paths (used by TransferDialog, composable with
+individual validators in NewFolderDialog):
 
 ```
-validateDirectoryPath(path)
+validateDirectoryPath(path, limits = this OS's)
   ├── empty check                 : error if blank after trim
   ├── absolute check              : error unless it starts with / or is the home shortcut (`~` or `~/…`);
   │                                 a bare `~foo` stays rejected (the backend expands `~`)
   ├── null byte check             : error if contains \0
-  ├── total path length           : error if >= 1024 bytes (UTF-8)
-  └── per-component length         : error if any segment > 255 bytes (splits on /, filters empty)
+  ├── total path length           : error past `limits.path` in its unit (none: no check)
+  └── per-component length         : error if any segment is past `limits.name` in its unit
 ```
 
-**Name rules are the destination folder's, ❌ never the host OS's.** `nameRefusal(name, rules)` is the keystroke mirror
+**Name rules are the destination folder's, ❌ never the host OS's.** `nameVerdict(name, rules)` is the keystroke mirror
 of `cmdr_fs::validation::validate_filename` (`crates/cmdr-fs/DETAILS.md` § "Name rules"), and both suites run
-`crates/cmdr-fs/src/name_rules_cases.json`. A caller gets `rules` once per editor from `getNameRules(volumeId, dir)`
-(the rename editor through `apps/desktop/src/lib/file-explorer/rename/folder-name-rules.ts`, New folder and New file
-through `NewEntryNameCheck`), starting at `posix` until it lands; the create or rename checks the folder's own rules
-either way. `validationMessage(error, isDir)` words a `ValidationError` for the live check and the backend's refusals
-alike, so the two read the same. The transfer dialog's rename mode checks `posix` only, as its engine does.
+`crates/cmdr-fs/src/name_rules_cases.json`. A caller gets `rules` from `getNameRules(volumeId, dir)` (the rename editor
+once per session through `apps/desktop/src/lib/file-explorer/rename/folder-name-rules.ts`, New folder and New file
+through `NewEntryNameCheck`, the transfer dialog as its destination settles through
+`apps/desktop/src/lib/file-operations/transfer/transfer-dest-name-rules.svelte.ts`), starting at `POSIX_RULES`
+(`name-rules.ts`, apart so a test mocking this module still has it) until it lands; the create, rename, or transfer
+meets the destination's own refusals either way. `validationMessage(error, isDir)` words a `ValidationError` for the
+live check and the backend's refusals alike, so the two read the same; `portabilityMessage(warning, rules)` words a
+`PortabilityWarning` ("won't work on Windows", plus "or Linux" for a stick's stand-ins, `warningReachesLinux`, the
+mirror of `PortabilityWarning::reaches_linux`). Lengths go through `lengthIn(text, unit)`: UTF-8 bytes by `TextEncoder`,
+or UTF-16 units by `.length`, whichever the filesystem counts.
 
 Key types:
 

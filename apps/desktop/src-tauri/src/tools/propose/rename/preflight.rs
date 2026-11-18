@@ -18,6 +18,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use cmdr_fs::deadline::BlockingBudget;
+use cmdr_fs::validation::{NameRules, validate_filename};
 use serde::Serialize;
 use tauri::{AppHandle, Manager, Runtime};
 use tauri_specta::Event;
@@ -76,6 +77,9 @@ pub enum BulkRenameBlockReason {
     SourceChanged,
     TargetExists,
     VolumeUnavailable,
+    /// The folder's filesystem refuses the new name (`cmdr_fs::validation::NameRules`): too
+    /// long for it, or a name its driver refuses or would strip.
+    NameNotAllowed,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
@@ -83,6 +87,9 @@ pub enum BulkRenameBlockReason {
 pub enum BulkRenameWarning {
     ExtensionChanged,
     Cycle,
+    /// The folder takes the new name but won't keep it portable: Windows shows or opens it as
+    /// something else (`cmdr_fs::validation::PortabilityWarning`).
+    NotPortable,
 }
 
 /// Why a check ended without an answer about the rows.
@@ -188,14 +195,56 @@ fn spawn_scan(
     tally: CheckTally,
 ) -> tokio::task::JoinHandle<Result<Option<PreflightOutcome>, tokio::task::JoinError>> {
     tokio::spawn(async move {
+        let rules = folder_name_rules(&proposal).await;
         if volume_uses_local_paths(&proposal.volume_id) {
             LOCAL_SCANS
-                .run(move || preflight_local(&proposal, &allowed_row_ids, &tally))
+                .run(move || preflight_local(&proposal, &allowed_row_ids, &tally, rules))
                 .await
         } else {
-            Ok(preflight_remote(&proposal, &allowed_row_ids, &tally).await)
+            Ok(preflight_remote(&proposal, &allowed_row_ids, &tally, rules).await)
         }
     })
+}
+
+/// How long the folder's name rules may take: one `statfs` on a mounted drive. A hung mount
+/// answers `POSIX` past it, and the rename itself checks again (`cmdr_operations`' bulk run).
+const NAME_RULES_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(2);
+
+/// The name rules of the folder every row renames in, the same answer every other rename
+/// meets (`Operations::name_rules_at`).
+async fn folder_name_rules(proposal: &RenameProposal) -> NameRules {
+    let (Ok(engine), Some(row)) = (crate::operations_host::operations(), proposal.rows.first()) else {
+        return NameRules::POSIX;
+    };
+    let engine = engine.clone();
+    let volume_id = proposal.volume_id.clone();
+    let folder = Path::new(&row.source_path)
+        .parent()
+        .unwrap_or(Path::new(""))
+        .to_path_buf();
+    cmdr_fs::deadline::blocking_with_timeout(NAME_RULES_TIMEOUT, NameRules::POSIX, move || {
+        engine.name_rules_at(&volume_id, &folder)
+    })
+    .await
+}
+
+/// Blocks each allowed row whose new name the folder refuses, and warns on one it takes but
+/// won't keep portable.
+fn mark_name_rules(
+    rows: &[&RenameProposalRow],
+    rules: NameRules,
+    statuses: &mut HashMap<String, BulkRenamePreflightRow>,
+) {
+    for row in rows {
+        let Some(status) = statuses.get_mut(&row.row_id) else {
+            continue;
+        };
+        match validate_filename(&row.destination_name, rules) {
+            Err(_) => block(status, BulkRenameBlockReason::NameNotAllowed),
+            Ok(Some(_)) => status.warnings.push(BulkRenameWarning::NotPortable),
+            Ok(None) => {}
+        }
+    }
 }
 
 /// Record what the user allowed, as the spine's server-owned acceptance record: every op the
@@ -272,9 +321,14 @@ struct CheckedRows<'a> {
     allowed_sources: HashSet<&'a str>,
 }
 
-fn name_level_checks<'a>(proposal: &'a RenameProposal, allowed_row_ids: &[String]) -> CheckedRows<'a> {
+fn name_level_checks<'a>(
+    proposal: &'a RenameProposal,
+    allowed_row_ids: &[String],
+    rules: NameRules,
+) -> CheckedRows<'a> {
     let mut rows = initial_rows(proposal, allowed_row_ids);
     let allowed = allowed_rows(proposal, allowed_row_ids, &mut rows);
+    mark_name_rules(&allowed, rules, &mut rows);
     mark_duplicate_destinations(&allowed, &mut rows);
     let allowed_sources = allowed.iter().map(|row| row.source_path.as_str()).collect();
     CheckedRows {
@@ -289,12 +343,13 @@ pub(super) fn preflight_local(
     proposal: &RenameProposal,
     allowed_row_ids: &[String],
     tally: &CheckTally,
+    rules: NameRules,
 ) -> Option<PreflightOutcome> {
     let CheckedRows {
         mut rows,
         allowed,
         allowed_sources,
-    } = name_level_checks(proposal, allowed_row_ids);
+    } = name_level_checks(proposal, allowed_row_ids, rules);
     let mut fingerprints = Vec::new();
 
     for (rows_before, row) in allowed.iter().enumerate() {
@@ -337,12 +392,13 @@ async fn preflight_remote(
     proposal: &RenameProposal,
     allowed_row_ids: &[String],
     tally: &CheckTally,
+    rules: NameRules,
 ) -> Option<PreflightOutcome> {
     let CheckedRows {
         mut rows,
         allowed,
         allowed_sources,
-    } = name_level_checks(proposal, allowed_row_ids);
+    } = name_level_checks(proposal, allowed_row_ids, rules);
     let mut fingerprints = Vec::new();
     let Some(volume) = crate::file_system::volume::manager::get_volume_manager().get(&proposal.volume_id) else {
         for status in rows.values_mut() {

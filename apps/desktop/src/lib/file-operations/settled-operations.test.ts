@@ -17,13 +17,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { WriteSettledEvent } from '#lib/tauri-commands/index.js'
 
-const { onWriteSettled, findFileIndex, getFileAt, onDirectoryDiff } = vi.hoisted(() => ({
+const { onWriteSettled, findFileIndex, getFileAt, onDirectoryDiff, getNameRules } = vi.hoisted(() => ({
   onWriteSettled: vi.fn(),
   findFileIndex: vi.fn(),
   getFileAt: vi.fn(),
   onDirectoryDiff: vi.fn(),
+  getNameRules: vi.fn(),
 }))
-vi.mock('#lib/tauri-commands/index.js', () => ({ onWriteSettled, findFileIndex, getFileAt, onDirectoryDiff }))
+vi.mock('#lib/tauri-commands/index.js', () => ({
+  onWriteSettled,
+  findFileIndex,
+  getFileAt,
+  onDirectoryDiff,
+  getNameRules,
+}))
 
 import { initSettledOperationsWatch, destroySettledOperationsWatch, whenOperationSettled } from './settled-operations'
 import { NewEntryNameCheck, type NewEntryNameCheckOptions } from './new-entry-name-check.svelte'
@@ -192,12 +199,49 @@ describe('NewEntryNameCheck', () => {
   })
 
   it('names a too-long full path even when the name itself fits', async () => {
+    // The folder's own limit, once its rules land: APFS through macOS's path API.
+    getNameRules.mockResolvedValue({
+      format: 'posix',
+      windowsCharacters: 'allow',
+      reservedNames: 'allow',
+      nameLimit: { max: 255, unit: 'utf16Units' },
+      pathLimit: { max: 1023, unit: 'bytes' },
+    })
+    onDirectoryDiff.mockResolvedValue(() => {})
     const check = makeCheck({ currentPath: '/' + 'deep/'.repeat(220) })
+    await check.listen()
+    await vi.waitFor(() => {
+      expect(getNameRules).toHaveBeenCalled()
+    })
+    await Promise.resolve()
 
     await check.validate('notes.txt')
 
     expect(check.errorMessage).toMatch(/Full path is too long/)
     expect(findFileIndex).not.toHaveBeenCalled()
+  })
+
+  it('warns, without blocking OK, about a name the share takes but Windows won’t read', async () => {
+    getNameRules.mockResolvedValue({
+      format: 'smbShare',
+      windowsCharacters: 'warn',
+      reservedNames: 'warn',
+      nameLimit: { max: 255, unit: 'bytes' },
+      pathLimit: null,
+    })
+    onDirectoryDiff.mockResolvedValue(() => {})
+    findFileIndex.mockResolvedValue(null)
+    const check = makeCheck()
+    await check.listen()
+    await vi.waitFor(() => {
+      expect(getNameRules).toHaveBeenCalled()
+    })
+    await Promise.resolve()
+
+    await check.validate('12:30 notes')
+
+    expect(check.errorMessage).toBe('')
+    expect(check.warningMessage).toBe('Names with “:” won’t work on Windows')
   })
 
   it('calls the clash out as a folder when the listing holds a folder by that name', async () => {

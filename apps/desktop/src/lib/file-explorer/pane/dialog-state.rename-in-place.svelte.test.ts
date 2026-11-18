@@ -12,6 +12,8 @@ import type { TransferDialogPropsData } from './transfer-operations'
 import type { FilePaneAPI } from './types'
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
+  // The destination's name rules never answer here: the dialog keeps POSIX's.
+  getNameRules: vi.fn(() => new Promise(() => {})),
   refreshListing: vi.fn(() => Promise.resolve()),
   onDirectoryDiff: vi.fn(() => Promise.resolve(() => {})),
   findFileIndex: vi.fn(() => Promise.resolve(null)),

@@ -215,13 +215,14 @@ The full top-level inventory is here:
   The rule, the kernel sources it mirrors, and why APFS and Linux never skip: `crates/cmdr-fs/src/apple_double.rs`.
 
 - Scan and preview: `scan.rs`, `scan_preview.rs` (the lifecycle API, with its two workers in `scan_preview/local.rs` and
-  `scan_preview/volume.rs`), `scan_cache.rs` (the carriers a walk produces; the engine's preview store is its child
-  `scan_cache_previews.rs`), `scan_bridge.rs` (the scan-progress seam the drivers feed, and `ScanPause`, the park that
-  lets a walk honor its owner's Pause), `scan_watchdog.rs` (the inactivity bound on a preview), `compress_estimate.rs`.
-  A preview walks for a `ScanPreviewPurpose`: a `Transfer` walk also builds the operation's live tree and
-  `CachedScanResult` carries it to the operation the way it carries `per_path`, a `Compress` walk samples the size
-  estimate, and a `Delete` walk keeps totals only. `transfer_tree/` is that tree (its own `CLAUDE.md`), installed on
-  `WriteOperationState::transfer_tree` once a copy's, move's, or compress's scan is done; `tree_view.rs` answers
+  `scan_preview/volume.rs`, and `src/scan_preview/name_tally.rs`, a transfer walk's count of the names Windows can't
+  use, § "Names the destination takes"), `scan_cache.rs` (the carriers a walk produces; the engine's preview store is
+  its child `scan_cache_previews.rs`), `scan_bridge.rs` (the scan-progress seam the drivers feed, and `ScanPause`, the
+  park that lets a walk honor its owner's Pause), `scan_watchdog.rs` (the inactivity bound on a preview),
+  `compress_estimate.rs`. A preview walks for a `ScanPreviewPurpose`: a `Transfer` walk also builds the operation's live
+  tree and `CachedScanResult` carries it to the operation the way it carries `per_path`, a `Compress` walk samples the
+  size estimate, and a `Delete` walk keeps totals only. `transfer_tree/` is that tree (its own `CLAUDE.md`), installed
+  on `WriteOperationState::transfer_tree` once a copy's, move's, or compress's scan is done; `tree_view.rs` answers
   `get_transfer_tree_view` from it, and from `finished_trees.rs` once the operation settled (kept until its dialog
   releases it, or a TTL). Conflicts and overwrite: `conflict.rs` (policy), `conflict_preflight.rs` (the transfer
   dialog's BEFORE-the-write check, § "The pre-flight conflict check"), `unique_name.rs` (the ` (N)` namer),
@@ -1041,21 +1042,32 @@ keeps saying so, and the person can close the dialog; the work was never cancela
 
 ## Names the destination takes
 
-`name_rules.rs` answers which names a folder's filesystem takes (`cmdr_fs::validation::NameRules`, keyed on its
-`FilesystemKind`, `crates/cmdr-fs/DETAILS.md` § "Name rules"). The local disk and any volume with a `local_path` are
-probed at the folder (one `statfs`, on the blocking pool), so an exFAT stick or a Finder-mounted share answers for its
-own format; an SMB backend is a share whatever the server's disk; every other backend answers `Posix` and leaves the
-rest to the device or server.
+`name_rules.rs` answers which names a folder's filesystem takes and which it warns about
+(`cmdr_fs::validation::NameRules`, keyed on its `FilesystemKind`, `crates/cmdr-fs/DETAILS.md` § "Name rules"). The local
+disk and any volume with a `local_path` are probed at the folder (one `statfs`, on the blocking pool; a folder still to
+be created answers for its nearest existing ancestor), so an exFAT stick or a Finder-mounted share answers for its own
+format, with the host's path API limit; an SMB backend is a share whatever the server's disk, with SMB2's path limit;
+every other backend answers `POSIX` with no path limit and leaves the rest to the device or server (#1228).
 
 - **The engine enforces it, not only the editor.** `check_new_name` runs in `create_directory_core_on`,
-  `create_file_core_on`, and `rename_managed`, before any I/O, refusing with `MutationError::NameNotAllowed { reason }`
-  (or `NameEmpty`). The editor's validity check (`check_rename_validity_impl`) asks the same resolver, but an agent's
-  rename never asked that check, and Samba would take a `CON` and list it back as `CR23RR~9`.
+  `create_file_core_on`, `rename_managed`, and Ask Cmdr's bulk rename (`rename/bulk.rs::refused_rows`, one lookup per
+  batch, a refused row `Failed` in place), before any I/O, refusing with `MutationError::NameNotAllowed { reason }` (or
+  `NameEmpty`). A name it TAKES with a `PortabilityWarning` goes ahead: the editors showed the warning before the
+  commit. ❗ `rename_managed` and the bulk run catch a `.` / `..` target on the raw path (`ends_in_dot_name`):
+  `Path::file_name` reads `/docs/..` as no name and `/docs/.` as `docs`, so the check would otherwise run on the
+  parent's name (#1229).
 - **One resolver for every hint.** `Operations::name_rules_at` (blocking) is the host's door: the `get_name_rules` IPC
-  command for the rename editor's and New folder's keystroke checks, Multi-Rename's session at open, and the MCP
-  `multi_rename` tool. A second copy app-side would let the field read a name fine that Enter refuses.
-- **Out of scope here: transfers.** A copy or move keeps its sources' names, and a name the destination refuses asks per
-  item at landing (§ "A name the destination refuses"); Ask Cmdr's bulk renames check `Posix` shape only.
+  command for the rename editor's, New folder's, and the transfer dialog's checks, Multi-Rename's session at open, Ask
+  Cmdr's rename review (its preflight blocks `nameNotAllowed` and warns `notPortable`), and the MCP `multi_rename` tool.
+  A second copy app-side would let the field read a name fine that Enter refuses.
+- **A transfer keeps its sources' names, and warns about them upfront.** The scan preview's walk counts the names
+  Windows can't use (`src/scan_preview/name_tally.rs`: three counters and a few examples per class, ❌ never a list, so
+  a million names cost three counters; the local walk counts over the file list it already holds after the walk, the
+  volume walk through its `ScanRecorder`, which forwards to the tree's). The tally rides `ScanPreviewCompleteEvent` and
+  `ScanPreviewTotals`, destination-blind; the dialog reads it against the destination's rules. A subtree the volume walk
+  counts without listing (the fresh-listing oracle) contributes only its own name: an undercount, never an invention. A
+  name the destination REFUSES still asks per item at landing (§ "A name the destination refuses"); the transfer's own
+  pre-check refuses only a name past every filesystem's limit (`over_every_name_limit`) or a local path past the host's.
 - **❌ Not `supports_local_fs_access`** for "probe this path": it defaults to `true`, so an in-memory or demo volume
   would statfs a path that isn't there (and a paused-clock test times out on the blocking hop). `local_path` says it.
 

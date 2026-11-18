@@ -66,6 +66,11 @@
   readers), never the error color: it isn't a problem and clears by itself. A missing or unreadable media field names
   the field in its label and reason (`statusWords` words the nested field key), and a missing date's reason points at
   the token editor's `|modified` fallback (`multiRename.reason.noDate`).
+- **A ready row that won't work on Windows** (`PreviewRow.warning`, set only on ready rows: a `:` on a Mac's exFAT
+  stick, `CON` on a share) is NOT a problem: it renames. It shows a warning glyph in the warning color (`warnedRowView`,
+  worded per the preview's `nameFormat`), and a line under the list counts every such row across the batch
+  (`counts.notPortable`, `multiRename.notPortableSummary`; "or Linux" when `counts.notPortableOnLinux`), since the list
+  only holds the rows in view.
 - **Problems only**: the "N problems" in the footer's summary (`multiRename.summary`, a `Trans` `<problemsToggle>` tag)
   is a `LinkButton` with `aria-pressed`: pressed, the state lists the problem rows alone, paged by the backend
   (`get_multi_rename_preview_rows` with `PreviewFilter::Problems`, offsets counted among the problems), so a 200k-row

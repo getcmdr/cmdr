@@ -24,6 +24,8 @@ vi.mock('@tauri-apps/api/path', () => ({
 }))
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
+  // The destination's name rules never answer here: the dialog keeps POSIX's.
+  getNameRules: vi.fn(() => new Promise(() => {})),
   estimateOperationCost: vi.fn(() => Promise.resolve([])),
   notifyDialogOpened: vi.fn(() => Promise.resolve()),
   notifyDialogClosed: vi.fn(() => Promise.resolve()),
