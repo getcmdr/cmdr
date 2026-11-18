@@ -30,6 +30,7 @@ use super::source_binding::ExpectedSources;
 use super::target_names::{NotAName, TargetNames};
 use super::transfer::volume::{PathRole, native_roots, on_local_root, unregistered_volume_error};
 use super::types::{HomeFolderAction, ReadOnlySide, VolumeCopyConfig, WriteOperationError, WriteOperationStartResult};
+use super::wire_paths::{named_as_given, owned_without_trailing_separators, text_without_trailing_separators};
 use cmdr_fs::volume::RoutedKind;
 use cmdr_fs::volume::Volume;
 use cmdr_operation_log::types::Initiator;
@@ -546,6 +547,9 @@ impl crate::Operations {
         initiator: Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
+        let source_paths = named_as_given(source_paths);
+        let dest_path = text_without_trailing_separators(dest_path);
         let recipe = retry::RetryRecipe {
             start: retry::RetryStart::Copy,
             events: Arc::clone(&events),
@@ -588,6 +592,9 @@ impl crate::Operations {
         initiator: Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
+        let source_paths = named_as_given(source_paths);
+        let dest_path = text_without_trailing_separators(dest_path);
         let recipe = retry::RetryRecipe {
             start: retry::RetryStart::Move,
             events: Arc::clone(&events),
@@ -635,6 +642,13 @@ impl crate::Operations {
         initiator: Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`). Before the
+        // target names, which key on the source path.
+        let renames: Vec<(PathBuf, String)> = renames
+            .into_iter()
+            .map(|(source, name)| (owned_without_trailing_separators(source), name))
+            .collect();
+        let dest_path = text_without_trailing_separators(dest_path);
         let target_names =
             TargetNames::new(renames.iter().cloned()).map_err(|NotAName(name)| WriteOperationError::InvalidName {
                 path: name,
@@ -698,6 +712,8 @@ impl crate::Operations {
         config: VolumeCopyConfig,
         initiator: Initiator,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
+        let source_paths = named_as_given(source_paths);
         // Route a routed source batch to its read-only volume, so compressing reads
         // through it: from inside a `.zip`, or from a repo's snapshots.
         if let Some(path) = self.source_on_another_volume(&source_volume_id, &source_paths).await {

@@ -184,6 +184,7 @@ mod types;
 mod unblocked_removal;
 mod unique_name;
 mod validation;
+mod wire_paths;
 mod write_start;
 
 use std::sync::Arc;
@@ -427,6 +428,8 @@ mod named_leaf_undo_tests;
 mod named_leaves_tests;
 #[cfg(test)]
 mod named_leaves_volume_tests;
+#[cfg(test)]
+mod trailing_separator_tests;
 // Every write path announces each own write before the syscall that makes it.
 #[cfg(test)]
 mod own_write_announce_tests;

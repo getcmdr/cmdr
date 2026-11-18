@@ -57,6 +57,15 @@ impl crate::Operations {
         rows: Vec<BulkRenameRow>,
         initiator: Initiator,
     ) -> Result<RenamesStarted, RenameStartError> {
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
+        let rows: Vec<BulkRenameRow> = rows
+            .into_iter()
+            .map(|row| BulkRenameRow {
+                source: crate::wire_paths::owned_without_trailing_separators(row.source),
+                destination: crate::wire_paths::owned_without_trailing_separators(row.destination),
+                ..row
+            })
+            .collect();
         // A rename inside a `.zip` or a repo's `.git/<category>/` trees would act on the
         // drive underneath, which the route serves read-only. Source and destination
         // share one folder, so the refusal names the source side.
