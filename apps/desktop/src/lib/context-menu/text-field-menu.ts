@@ -4,10 +4,9 @@
  * other menu, so the app's menus all look alike (David, 2026-11-18). Where menus are native, the
  * engine's own edit menu stays (`#lib/context-menu-ownership.ts`).
  *
- * Decision/Why: these rows live here, ❌ not in `cmdr-menu`. They aren't Cmdr commands: they stand
- * in for the engine's own edit menu, and each acts on the field in the page, which only the page
- * can do. A backend round trip would also cost Chromium's user activation, without which
- * `execCommand('copy')` and `'cut'` do nothing. `DETAILS.md` § "The text-field menu".
+ * Decision/Why: these rows live here, not in `cmdr-menu`. They aren't Cmdr commands: they stand in
+ * for the engine's own edit menu, and each acts on the field in the page, which only the page can
+ * do, so a pick never reaches the backend. `DETAILS.md` § "The text-field menu".
  */
 
 import type { Row } from '#lib/ipc/bindings.js'
@@ -265,8 +264,34 @@ export interface TextFieldEditDeps {
   readClipboardText: () => Promise<string | null>
 }
 
-/** Runs `edit` in `field`, which has focus back. Synchronous but for Paste, so Cut and Copy keep the pick's user activation. */
+/** Whether `field` holds focus: an edit acts on the field the menu opened on, ❌ never on whatever has focus by then. */
+function holdsFocus(field: TextField): boolean {
+  const active = document.activeElement
+  return field.kind === 'control' ? active === field.element : field.element.contains(active)
+}
+
+/**
+ * Offers `text` to the field's own paste handling, as a real paste does first: a `paste` event
+ * carrying the text. False when the field took it (`preventDefault`): it refused, or inserted it
+ * itself, so the menu inserts nothing.
+ */
+function fieldLetsPaste(element: HTMLElement, text: string): boolean {
+  const data: Pick<DataTransfer, 'getData' | 'types'> = {
+    getData: (format: string) => (format === 'text/plain' || format === 'text' ? text : ''),
+    types: ['text/plain'],
+  }
+  const event = new Event('paste', { bubbles: true, cancelable: true })
+  Object.defineProperty(event, 'clipboardData', { value: data })
+  element.dispatchEvent(event)
+  return !event.defaultPrevented
+}
+
+/**
+ * Runs `edit` in `field`, which holds focus (the menu never takes it). Paste reads the clipboard
+ * first, then acts only if the field still holds focus and its own paste handling lets it.
+ */
 export async function runTextFieldEdit(field: TextField, edit: TextFieldEdit, deps: TextFieldEditDeps): Promise<void> {
+  if (!holdsFocus(field)) return
   switch (edit) {
     case 'undo':
     case 'redo':
@@ -277,7 +302,8 @@ export async function runTextFieldEdit(field: TextField, edit: TextFieldEdit, de
       return
     case 'paste': {
       const text = await deps.readClipboardText()
-      if (!text || !field.element.isConnected) return
+      if (!text || !field.element.isConnected || !holdsFocus(field)) return
+      if (!fieldLetsPaste(field.element, text)) return
       // eslint-disable-next-line @typescript-eslint/no-deprecated -- insertText is the only way to insert at the caret and keep the field's undo step
       document.execCommand('insertText', false, text)
       return

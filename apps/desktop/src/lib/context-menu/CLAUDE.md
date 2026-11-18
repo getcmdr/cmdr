@@ -18,9 +18,11 @@ and Linux keep native popups.
   call site: callers stay platform-blind, and a pick runs the native pick's handler.
 - **A wrapper resolves once the menu is gone and its pick ran**, as a native `popup()` returns: the tab menu's dismissal
   timeout relies on it.
-- **The text-field rows are the page's, ❌ not `cmdr-menu`'s**, and act without a backend round trip, or Chromium drops
-  the user activation `execCommand('copy')` needs. DETAILS § The text-field menu.
-- **A field keeps its selection and caret**: saved as the menu opens, put back before an edit and after Escape.
+- **The text-field menu never takes focus** (`focusHolder`): the field keeps it, so its blur handlers never run (an
+  inline rename would cancel). ❌ Never let it move focus. DETAILS § The text-field menu.
+- **An edit acts on the field the menu opened on**, only while it holds focus; Paste goes through the field's own
+  `paste` handling first, so a field that refuses a paste still does.
+- **The text-field rows are the page's, not `cmdr-menu`'s**: their edit acts on a field only the page can reach.
 - **Disabled fields, checkboxes, sliders, and `<select>` get no menu** where menus are in-page, as on Windows.
 
 Mechanics, decisions, and what's unverified on Windows: `DETAILS.md`.

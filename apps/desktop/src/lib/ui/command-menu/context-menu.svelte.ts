@@ -28,6 +28,12 @@ export interface ContextMenuOpen {
   anchorElement?: HTMLElement
   /** The menu's name, when it has no header line to take it from. */
   label?: string
+  /**
+   * The element that keeps focus while the menu is up (a text field's edit menu): the menu never
+   * takes focus, so the field's blur handlers never run (an inline rename would cancel), and the
+   * cursor reaches a screen reader as the field's `aria-activedescendant`.
+   */
+  focusHolder?: HTMLElement
 }
 
 export interface ContextMenuDeps {
@@ -52,6 +58,14 @@ export interface ContextMenuController {
   destroy(): void
 }
 
+/** `node` and everything above it, the document included: what a scroll of would carry it. */
+function holdersOf(node: Node | undefined): Set<Node> | null {
+  if (!node) return null
+  const holders = new Set<Node>()
+  for (let at: Node | null = node; at; at = at.parentNode) holders.add(at)
+  return holders
+}
+
 export function createContextMenu(deps: ContextMenuDeps): ContextMenuController {
   const flavor = (): MenuFlavor => deps.flavor?.() ?? 'desktop'
   const hasLetters = (): boolean => flavor() === 'desktop' && (deps.accessKeys?.() ?? cueRule() !== 'none')
@@ -59,7 +73,12 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
   let cues: KeyboardCues | null = null
   let stopCues: (() => void) | null = null
   let origin: FocusOrigin | null = null
-  let anchorElement: HTMLElement | undefined
+  /**
+   * What holds what the menu was opened on, read at open: a scroll of any of them closes it. Read
+   * then, ❗ not at the scroll: a virtual list may re-render the row while the menu is up, and a
+   * detached row has no ancestors left.
+   */
+  let anchorHolders: Set<Node> | null = null
 
   const stack = createMenuStack({
     flavor,
@@ -77,6 +96,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     window.removeEventListener('keyup', onKeyup, true)
     document.removeEventListener('pointerdown', onPointerDown, true)
     document.removeEventListener('scroll', onScroll, true)
+    document.removeEventListener('compositionstart', onBlur, true)
     window.removeEventListener('blur', onBlur)
     window.removeEventListener('resize', onBlur)
     stopCues?.()
@@ -84,7 +104,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     cues = null
     stopCues = null
     cuesShown = false
-    anchorElement = undefined
+    anchorHolders = null
     const target = origin
     origin = null
     if (restore) restoreFocus(target)
@@ -135,13 +155,21 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     return stack.typeAhead(event.key.toLowerCase())
   }
 
-  /** Every key while the menu is up is the menu's, as an open native menu swallows them. */
+  const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'AltGraph'])
+
+  /**
+   * Every key while the menu is up is the menu's, as an open native menu swallows them. Where a
+   * field keeps focus, even a key the menu doesn't use is kept from it, or it would type behind the
+   * menu.
+   */
   function onKey(event: KeyboardEvent): void {
     cues?.keydown(event)
     const handled = !event.metaKey && !(flavor() === 'mac' && event.altKey) && handleKey(event)
     if (handled) {
       event.preventDefault()
       cues?.reveal()
+    } else if (stack.focusHolder && !MODIFIERS.has(event.key)) {
+      event.preventDefault()
     }
     event.stopPropagation()
   }
@@ -160,7 +188,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
 
   function onScroll(event: Event): void {
     const scrolled = event.target
-    if (anchorElement && scrolled instanceof Node && scrolled.contains(anchorElement)) close(false)
+    if (scrolled instanceof Node && anchorHolders?.has(scrolled)) close(false)
   }
 
   function onBlur(): void {
@@ -181,11 +209,15 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     open(request) {
       close(false)
       origin = captureFocusOrigin()
-      anchorElement = request.anchorElement
+      anchorHolders = holdersOf(request.anchorElement)
       stack.open(
         request.rows,
         { kind: 'point', x: request.at.x, y: request.at.y },
-        { fromKeyboard: request.fromKeyboard, label: request.label ?? headerText(request.rows) },
+        {
+          fromKeyboard: request.fromKeyboard,
+          label: request.label ?? headerText(request.rows),
+          focusHolder: request.focusHolder,
+        },
       )
       cues = createKeyboardCues({
         rule: hasLetters() ? cueRule() : 'none',
@@ -199,6 +231,8 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
       window.addEventListener('keyup', onKeyup, true)
       document.addEventListener('pointerdown', onPointerDown, true)
       document.addEventListener('scroll', onScroll, true)
+      // An input method starting a composition in the field owns the keys from there on.
+      document.addEventListener('compositionstart', onBlur, true)
       window.addEventListener('blur', onBlur)
       window.addEventListener('resize', onBlur)
     },

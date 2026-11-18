@@ -32,6 +32,8 @@ export interface MenuSession {
   /** What it was opened on, when the caller knows better than the last right-click's target. */
   anchorElement?: HTMLElement
   label?: string
+  /** The element that keeps focus while it's up (`ContextMenuOpen.focusHolder`): a text field. */
+  focusHolder?: HTMLElement
   /** A row was picked (the menu is closed and focus is back): resolves once its action ran. */
   onPick: (menuId: string) => Promise<void>
   /** The menu is gone and its pick, if any, has run. */
@@ -42,8 +44,13 @@ export interface ContextMenuHost {
   readonly menu: ContextMenuController
   /** Opens `session`'s rows, closing (and settling) whatever menu was up. */
   open(session: MenuSession): void
-  /** Draws a backend-answered menu (`popContextMenu`'s drawer); resolves once it's closed and its pick ran. */
-  draw(answer: InPageContextMenu): Promise<void>
+  /**
+   * Draws a backend-answered menu (`popContextMenu`'s drawer); resolves once it's closed and its
+   * pick ran. An answer asked before a menu of the window's own opened (a text field's) is dropped.
+   */
+  draw(answer: InPageContextMenu, askedAt: number): Promise<void>
+  /** An input method is composing: a right-click then is the input method's, so no menu opens. */
+  readonly isComposing: boolean
   /** Starts following the window's input (where the last right-click landed, keyboard or pointer). */
   install(): () => void
 }
@@ -67,6 +74,9 @@ export function createContextMenuHost(): ContextMenuHost {
   let lastInput: InputKind = 'pointer'
   let lastPoint: MenuPoint | null = null
   let lastTarget: HTMLElement | null = null
+  /** When `open` last ran for a menu this window drew on its own (`performance.now()`). */
+  let lastOwnOpenAt = -Infinity
+  let composing = false
 
   function settle(done: MenuSession | null): void {
     done?.onSettled?.()
@@ -104,7 +114,7 @@ export function createContextMenuHost(): ContextMenuHost {
     return { x: 0, y: 0 }
   }
 
-  function open(next: MenuSession): void {
+  function openSession(next: MenuSession): void {
     // Opening closes the menu that was up, which settles it through `onClose`.
     menu.close()
     const fromKeyboard = lastInput === 'keyboard'
@@ -114,12 +124,13 @@ export function createContextMenuHost(): ContextMenuHost {
       next.anchorElement ??
       (fromKeyboard ? (active instanceof HTMLElement ? active : undefined) : (lastTarget ?? undefined))
     session = next
-    menu.open({ rows: next.rows, at, fromKeyboard, anchorElement, label: next.label })
+    menu.open({ rows: next.rows, at, fromKeyboard, anchorElement, label: next.label, focusHolder: next.focusHolder })
   }
 
-  function draw(answer: InPageContextMenu): Promise<void> {
+  function draw(answer: InPageContextMenu, askedAt: number): Promise<void> {
+    if (lastOwnOpenAt > askedAt) return Promise.resolve()
     return new Promise((resolve) => {
-      open({
+      openSession({
         rows: answer.rows,
         at: answer.anchor,
         onPick: async (menuId) => {
@@ -141,6 +152,14 @@ export function createContextMenuHost(): ContextMenuHost {
     lastTarget = event.target instanceof HTMLElement ? event.target : null
   }
 
+  function onCompositionStart(): void {
+    composing = true
+  }
+
+  function onCompositionEnd(): void {
+    composing = false
+  }
+
   function onPointerDown(): void {
     lastInput = 'pointer'
   }
@@ -153,16 +172,26 @@ export function createContextMenuHost(): ContextMenuHost {
 
   return {
     menu,
-    open,
+    open(next) {
+      lastOwnOpenAt = performance.now()
+      openSession(next)
+    },
     draw,
+    get isComposing() {
+      return composing
+    },
     install() {
       document.addEventListener('contextmenu', onContextMenu, true)
       document.addEventListener('pointerdown', onPointerDown, true)
       document.addEventListener('keydown', onKeyDown, true)
+      document.addEventListener('compositionstart', onCompositionStart, true)
+      document.addEventListener('compositionend', onCompositionEnd, true)
       return () => {
         document.removeEventListener('contextmenu', onContextMenu, true)
         document.removeEventListener('pointerdown', onPointerDown, true)
         document.removeEventListener('keydown', onKeyDown, true)
+        document.removeEventListener('compositionstart', onCompositionStart, true)
+        document.removeEventListener('compositionend', onCompositionEnd, true)
       }
     },
   }

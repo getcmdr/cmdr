@@ -266,6 +266,9 @@
         // can't see it, and it never left this menu. It names its host, which is how a
         // badge's menu in a switcher row stops closing the switcher.
         if (hostsPopupAt(target)) return
+        // A right-click menu over a field in this one (a favorite's rename) is transient and above
+        // everything: pressing its row must not close this menu and unmount the field it edits.
+        if ((target instanceof Element ? target : target.parentElement)?.closest('[data-command-menu="context"]')) return
         menu.close()
     }
 

@@ -14,7 +14,7 @@
     $effect(() => {
         const stopFollowing = host.install()
         const unregisterHost = setWindowContextMenuHost(host)
-        const unregisterDrawer = registerContextMenuDrawer((answer) => host.draw(answer))
+        const unregisterDrawer = registerContextMenuDrawer((answer, askedAt) => host.draw(answer, askedAt))
         return () => {
             unregisterDrawer()
             unregisterHost()

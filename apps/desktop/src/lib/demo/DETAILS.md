@@ -167,6 +167,10 @@ every window. The demo keeps that shape, so secondary windows share its state, a
 - Conventions follow the platform too (`visitorConventions`): the desktop's own row for the visitor's OS, the
   desktop-neutral Linux row for a Linux visitor (a page can't tell GNOME from KDE), and `menuModel: 'systemMenuBar'` for
   everyone, for the same reason as `appMenu`. That one follows the visitor once the demo's chrome does (task 63).
+  `contextMenus: 'native'` is pinned for everyone too: the demo answers each `show_*` popup itself (`context-menu.ts`)
+  and has no `open_context_menu_in_page`, so Windows' `inPage` row opened no right-click menu at all for a Windows
+  visitor (caught in review of #1264; `platform.test.ts` and the website suite's right-click spec pin it). Task 63 step
+  11 unpins it with the demo's answer.
 - The look is pinned to macOS for everyone too (`LOOK_GLOBAL`, read by `getLook()` into `data-look`), which keys the
   menu tokens (`app-menu.css`) and the control tokens (`app-controls*.css`). Why: `data-look` otherwise follows the copy
   platform, and a Windows visitor's menus wore Windows 11's tokens under the macOS bar: a 40 px bar (the window offset

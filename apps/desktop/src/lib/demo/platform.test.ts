@@ -72,10 +72,17 @@ describe('installPlatform', () => {
 })
 
 describe('visitorConventions', () => {
-  it('gives each visitor their desktop app’s row, with the macOS bar the demo always draws', () => {
+  it('gives each visitor their desktop app’s row, with the macOS bar and right-click menus the demo always draws', () => {
+    const mac = { menuModel: 'systemMenuBar', contextMenus: 'native' } as const
     expect(visitorConventions('macos')).toEqual(CONVENTIONS_ON.macos)
-    expect(visitorConventions('windows')).toEqual({ ...CONVENTIONS_ON.windows, menuModel: 'systemMenuBar' })
-    expect(visitorConventions('linux')).toEqual({ ...CONVENTIONS_ON.otherLinux, menuModel: 'systemMenuBar' })
+    expect(visitorConventions('windows')).toEqual({ ...CONVENTIONS_ON.windows, ...mac })
+    expect(visitorConventions('linux')).toEqual({ ...CONVENTIONS_ON.otherLinux, ...mac })
+  })
+
+  // Regression anchor (review of #1264): Windows' `inPage` row sent the demo's right-click menus to
+  // `open_context_menu_in_page`, which the demo doesn't answer, so a Windows visitor got no menu.
+  it("keeps a Windows visitor's right-click menus on the demo's own popups", () => {
+    expect(visitorConventions('windows').contextMenus).toBe('native')
   })
 })
 

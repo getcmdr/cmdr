@@ -42,16 +42,20 @@ function textMenuPoint(field: TextField, event: MouseEvent): MenuPoint {
 /**
  * Opens `field`'s edit menu for the right-click (or Shift+F10, or the Menu key) `event`. Its
  * selection and caret stay as they were: a pick puts them back before it edits, and so does a
- * dismissal that hands focus back. False when this window has no in-page menu.
+ * dismissal. The field keeps focus throughout. False when this window has no in-page menu.
  */
 export function openTextFieldMenu(field: TextField, event: MouseEvent): boolean {
   if (!host) return false
+  // Mid-composition the right-click is the input method's; a menu would cut across its keys.
+  if (host.isComposing) return true
   const saved = saveSelection(field)
   let picked = false
   host.open({
     rows: textFieldMenuRows(readTextFieldFacts(field), getPlatform()),
     at: textMenuPoint(field, event),
     anchorElement: field.element,
+    // The field keeps focus, so its blur handlers never run (an inline rename would cancel).
+    focusHolder: field.element,
     onPick: async (menuId) => {
       picked = true
       const edit = textFieldEditOf(menuId)

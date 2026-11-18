@@ -48,12 +48,16 @@ export async function pickContextMenuItem(token: number, menuId: string): Promis
 
 /**
  * Draws an answered right-click menu in the window and resolves once it's closed and its pick (if
- * any) has run, as a native `show_*` command returns once its popup is gone. The window's
- * `#lib/context-menu` host registers it.
+ * any) has run, as a native `show_*` command returns once its popup is gone. `askedAt`
+ * (`performance.now()`) is when it was asked, so the host can drop it when a menu of its own (a
+ * text field's) opened since. The window's `#lib/context-menu` host registers it.
  */
-export type ContextMenuDrawer = (menu: InPageContextMenu) => Promise<void>
+export type ContextMenuDrawer = (menu: InPageContextMenu, askedAt: number) => Promise<void>
 
 let drawer: ContextMenuDrawer | null = null
+
+/** Moved by every in-page ask, so an answer that lands after a later one's is dropped. */
+let lastAsked = 0
 
 /** Registers the window's in-page right-click menu; returns the unregister. One per window. */
 export function registerContextMenuDrawer(next: ContextMenuDrawer): () => void {
@@ -74,14 +78,18 @@ export async function popContextMenu(request: InPageContextMenuRequest, native: 
     await native()
     return
   }
+  const asked = ++lastAsked
+  const askedAt = performance.now()
   const menu = await openContextMenuInPage(request)
+  // A later right-click's answer is coming (or came): this one would draw at its point and pick nothing.
+  if (asked !== lastAsked) return
   if (!drawer) {
     log.warn('No in-page context menu in this window, so the {menu} menu has nowhere to show', {
       menu: request.menu,
     })
     return
   }
-  await drawer(menu)
+  await drawer(menu, askedAt)
 }
 
 /** The first retry of a failed `get_menu_bar`, doubling per failure up to {@link MAX_RETRY_MS}. */

@@ -26,8 +26,12 @@ menus a page draws". This module is the window's glue between them.
   settles; a dismissal settles at once; a menu opening over another settles the old one first. The wrapper's promise
   resolves on settle, so `tab-operations.ts`'s "closed with no pick" timeout and the date menu's resolve-on-close keep
   their native meaning.
-- **What a scroll closes**: the element the last right-click landed on (or the focused element for a key), so a pane
-  scrolling under its menu closes it, as a native one does.
+- **A late answer draws nothing**: `popContextMenu` drops an answer once a later ask has gone out, and the host drops
+  one asked before a menu of its own (a text field's) opened. Either would draw at the newer click's point a menu whose
+  pick the backend calls `stale`.
+- **What a scroll closes**: a scroll of anything holding the element the last right-click landed on (or the focused
+  element for a key), so a pane scrolling under its menu closes it, as a native one does. The holders are read as the
+  menu opens (`context-menu.svelte.ts`), so a virtual list re-rendering the row meanwhile still closes it.
 
 ## The text-field menu
 
@@ -45,19 +49,36 @@ engine's own edit menu.
   a password greys Cut and Copy always, as the engine's own menu does; an empty field greys Select all. Undo and Redo
   ask `queryCommandEnabled`, true when the engine can't say. `number` and `email` inputs keep no selection range, so
   they read as "maybe selected" and keep Copy live.
-- **Edits** (`runTextFieldEdit`): `execCommand` for Undo, Redo, Cut, and Copy; Paste reads the clipboard through the
-  backend (`readClipboardText`, no engine permission prompt) and inserts with `insertText`, which keeps the field's undo
-  step; Select all is `select()` or `selectAllChildren`.
-- **Selection and caret**: the menu takes focus, so the field's selection is saved as it opens and put back before an
-  edit runs, and after a dismissal that returns focus (Escape, Tab). A click elsewhere leaves focus where it went.
-  Right-click's own caret rule (inside the selection keeps it, outside moves the caret) is the engine's, before the menu
-  opens.
+- **Focus stays in the field** (`ContextMenuOpen.focusHolder`): the menu never takes it, and the keyboard's cursor
+  reaches a screen reader as the field's `aria-activedescendant`. Every key while it's up goes to the menu, a key it
+  doesn't use included, so nothing types behind it. A press on the menu (a row, a separator, its padding) is
+  `preventDefault`ed on `pointerdown`, so the page gets no `mousedown` and focus never moves.
+  - Gotcha/Why: when the menu took focus, every field's blur handler ran as it opened. The inline rename editor
+    cancelled (`InlineRenameEditor`'s `onblur`), Ask Cmdr's session rename committed a half-typed title, and
+    multi-rename's token editors closed, so Paste found a detached field. A rule for every field to ignore a menu's blur
+    would be a rule forever; keeping focus is what the engine's own menu does. Pinned by
+    `InPageContextMenus.svelte.test.ts` with the real rename editor.
+  - A field inside the house `Menu` (the volume switcher's favorite rename): `Menu.svelte`'s outside-press check counts
+    `[data-command-menu="context"]` as its own, so pressing a row doesn't close it and unmount the field.
+- **Edits** (`runTextFieldEdit`) act on the field the menu opened on, and only while it still holds focus, ❌ never on
+  whatever has focus by then. `execCommand` for Undo, Redo, Cut, and Copy; Select all is `select()` or
+  `selectAllChildren`. Paste reads the clipboard through the backend (`readClipboardText`, no engine permission prompt),
+  then offers it to the field's own paste handling as a real paste does, a `paste` event carrying the text: a field that
+  refuses it (`RangeTokenEditor`) or inserts it itself `preventDefault`s, and the menu inserts nothing. Otherwise it
+  inserts with `insertText`, which keeps the field's undo step; the field's `input` event then reads
+  `inputType: 'insertText'`, ❌ not `'insertFromPaste'` (no field in the app reads that).
+- **Selection and caret** stay the field's: saved as the menu opens and put back before an edit, after Escape, and after
+  Tab. Right-click's own caret rule (inside the selection keeps it, outside moves the caret) is the engine's, before the
+  menu opens.
+- **An input method**: no menu opens while a composition is running (the right-click is the input method's), and a
+  composition starting closes one.
 - **Shift+F10 and the Menu key in a field**: `native-text-keys.ts` leaves both to the field, so the engine raises a
   `contextmenu` on it, which opens this menu at the point the engine named inside the field, else under it.
-- Decision/Why: the rows live here, ❌ not in `cmdr-menu`. They aren't Cmdr commands: they stand in for the engine's
-  edit menu, and each acts on a field only the page can reach. Through the backend's pick, the edit would run on an
-  event after the round trip, and Chromium's `execCommand('copy')` and `'cut'` need the user activation the pick's own
-  click or key carries.
+- Decision/Why: the rows live here, not in `cmdr-menu`. They aren't Cmdr commands: they stand in for the engine's own
+  edit menu, and each acts on a field only the page can reach, so a pick never goes to the backend. (Not user
+  activation: Chromium's lasts about five seconds after the gesture, which a backend round trip wouldn't spend.) The
+  cost is that the labels and keys live in TS beside `cmdr-menu`'s Edit menu data; moving the rows into `cmdr-menu` with
+  the edit kept page-side is open, and small.
 
 ## Keys
 
@@ -72,6 +93,7 @@ engine's own edit menu.
 - Whether WebView2 still raises a `contextmenu` after the Menu key's keydown is `preventDefault`ed. If it does, it lands
   on the focused list (or the open menu) and the ownership handler suppresses it.
 - `execCommand('cut')` / `'copy'` under WebView2 from a pick: Chromium allows both with user activation.
+- Whether `queryCommandEnabled('undo')` reads a field's undo stack in WebView2; a throw reads as enabled.
 
 E2E: no lane draws in-page menus today (macOS and Linux are `native`, and the conventions global can't be flipped in a
 running app), so the coverage is `InPageContextMenus.svelte.test.ts` until a Windows lane runs (task 55).
