@@ -47,10 +47,11 @@ export const SEGMENT_MIN_HIT_WIDTH_PX = 26
 
 /**
  * The layout width that floor leaves a segment: the box minus its 3px negative margin each side.
- * The first segment has no left overhang, so only its right 3px comes off.
+ * The first segment takes none: its floor is an overlay (`.path-segment:first-child::after`), so a
+ * short one (`C:`, `~`) leaves no gap before its separator.
  */
 export function segmentLayoutFloor(index: number): number {
-  return SEGMENT_MIN_HIT_WIDTH_PX - (index === 0 ? 3 : 6)
+  return index === 0 ? 0 : SEGMENT_MIN_HIT_WIDTH_PX - 6
 }
 
 export interface FitBreadcrumbInput {

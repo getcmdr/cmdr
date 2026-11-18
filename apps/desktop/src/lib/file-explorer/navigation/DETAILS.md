@@ -41,7 +41,9 @@ used, in `../pane/DETAILS.md`. Only the layout facts that none of those carry li
   `text-overflow: ellipsis`, which can't cut into an inline-block `<button>`, so a long segment vanished whole behind a
   trailing `…` until the window fit all of it. A truncated segment renders its short form `aria-hidden` plus its full
   name `sr-only`, and the current folder's span gets a tooltip with the full name. Past a lone `…` per segment the
-  container clips, so the observer scrolls a keyboard-focused segment into view and resets the scroll on focus out.
+  container clips, so the observer scrolls a keyboard-focused segment into view and resets the scroll on focus out. Each
+  segment's layout floor is `segmentLayoutFloor`: the hit floor minus both overhangs, and zero for the first segment,
+  whose floor is an overlay (`pane/DETAILS.md`, the location-bar bullet, says why).
 - **`eject-predicate.ts::isVolumeEjectable` is true when the OS says ejectable OR the row has a session to end**
   (`isLiveSession` or `showsDisconnect`), which is what puts SMB shares and dialed places behind the same `⏏` affordance
   as physical media. ❌ Never widen it back to "carries a connection state": `saved` and the two sign-in states would

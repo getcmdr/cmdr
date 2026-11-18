@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest'
-import { fitBreadcrumbSegments, middleTruncate } from './breadcrumb-fit'
+import { SEGMENT_MIN_HIT_WIDTH_PX, fitBreadcrumbSegments, middleTruncate, segmentLayoutFloor } from './breadcrumb-fit'
+
+describe('segmentLayoutFloor', () => {
+  it('reserves no room for the first segment, whose floor is an overlay', () => {
+    expect(segmentLayoutFloor(0)).toBe(0)
+  })
+
+  it('reserves the floor minus both overhangs for every later segment', () => {
+    expect(segmentLayoutFloor(1)).toBe(SEGMENT_MIN_HIT_WIDTH_PX - 6)
+    expect(segmentLayoutFloor(4)).toBe(SEGMENT_MIN_HIT_WIDTH_PX - 6)
+  })
+})
 
 /** Monospace stand-in: every character, `…` included, is 10px wide. */
 const measure = (text: string): number => Array.from(text).length * 10

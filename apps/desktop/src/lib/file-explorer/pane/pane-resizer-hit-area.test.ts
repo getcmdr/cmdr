@@ -168,6 +168,19 @@ describe('path segment hit area', () => {
     expect(rule).toContain(`min-width: ${String(SEGMENT_MIN_HIT_WIDTH_PX)}px;`)
     expect(SEGMENT_MIN_HIT_WIDTH_PX).toBeGreaterThanOrEqual(24)
   })
+
+  // A flush-left first segment can't center its text in the floor: a short one (`C:`, `~`) sat
+  // indented with a gap before its separator. Its floor is an overlay, so it takes no layout room.
+  it('gives the first segment its floor as an overlay, so a short one leaves no gap', () => {
+    const first = /\.path :global\(\.path-segment:first-child\)\s*\{([^}]*)\}/.exec(filePaneSource)?.[1] ?? ''
+    expect(first).toContain('min-width: 0;')
+    // Every segment is positioned, so a later one paints over the overlay and keeps its own clicks.
+    const every = /\.path :global\(\.path-segment\)\s*\{([^}]*)\}/.exec(filePaneSource)?.[1] ?? ''
+    expect(every).toContain('position: relative;')
+    const overlay = /\.path :global\(\.path-segment:first-child::after\)\s*\{([^}]*)\}/.exec(filePaneSource)?.[1] ?? ''
+    expect(overlay).toContain('position: absolute;')
+    expect(overlay).toContain(`width: max(100%, ${String(SEGMENT_MIN_HIT_WIDTH_PX)}px);`)
+  })
 })
 
 describe('dragging the divider', () => {

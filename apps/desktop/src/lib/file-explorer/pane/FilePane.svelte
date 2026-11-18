@@ -2609,6 +2609,9 @@
         margin: calc(-1 * var(--spacing-sm)) -3px calc(-1 * var(--spacing-xs));
         min-width: 26px;
         cursor: default;
+        /* Every segment positioned, so a later one paints (and takes clicks) over the first
+           segment's floor overlay below, which only claims the separator's dead space. */
+        position: relative;
     }
 
     /* The focus ring sits inside the segment: `.path` clips at the edges the segment's hit area
@@ -2622,9 +2625,21 @@
         box-shadow: inset 0 0 0 4px var(--color-focus-ink);
     }
 
+    /* A flush-left first segment can't center its text in the floor: a short one (`C:`, `~`)
+       would sit indented with a gap before its separator. So its floor is an overlay that grows
+       the hit area rightward, over the separator, and takes no layout room. */
     .path :global(.path-segment:first-child) {
         padding-inline-start: 0;
         margin-inline-start: 0;
+        min-width: 0;
+    }
+
+    .path :global(.path-segment:first-child::after) {
+        content: '';
+        position: absolute;
+        inset-block: 0;
+        inset-inline-start: 0;
+        width: max(100%, 26px);
     }
 
     .path :global(.path-segment:hover) {
