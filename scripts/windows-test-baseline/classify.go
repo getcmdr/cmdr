@@ -129,6 +129,10 @@ func classifyText(text string) cluster {
 }
 
 func classifyOne(f failure) cluster {
+	// nextest's own verdict: a test that ran out of time says nothing about the cause its name is known for.
+	if strings.Contains(f.Text, "test timeout") {
+		return clusterTimeout
+	}
 	for _, named := range namedCauses {
 		if f.ID.Crate == named.crate && strings.Contains(f.ID.Test, named.contains) {
 			return named.cluster

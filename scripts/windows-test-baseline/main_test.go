@@ -33,6 +33,13 @@ func TestClassifyTextReadsEachCauseFromItsOutput(t *testing.T) {
 	}
 }
 
+func TestATimeoutBeatsANamedCause(t *testing.T) {
+	f := failure{ID: testID{"cmdr", "crash_reporter::tests::a"}, Text: "test timeout\n\nrunning 1 test"}
+	if got := classifyOne(f); got != clusterTimeout {
+		t.Fatalf("got %s", got.Key)
+	}
+}
+
 func TestAZipModeCellIsNamedByItsTest(t *testing.T) {
 	f := failure{ID: testID{"cmdr-archive", "volume::volume_test::a_unix_mode_in_the_external_attributes_reaches_the_entry"}, Text: "left: 438"}
 	if got := classifyOne(f); got != clusterZipCreator {
