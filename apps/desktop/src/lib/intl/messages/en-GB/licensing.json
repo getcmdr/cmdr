@@ -143,6 +143,10 @@
   "@licensing.error.server": {
     "sourceHash": "89870f9"
   },
+  "licensing.error.serverBusy": "The licence server is busy right now, so it couldn’t look up your code.",
+  "@licensing.error.serverBusy": {
+    "sourceHash": "947a6e2"
+  },
   "licensing.section.title": "Licence",
   "@licensing.section.title": {
     "sourceHash": "c011d60"

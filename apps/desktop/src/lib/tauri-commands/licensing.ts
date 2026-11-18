@@ -1,6 +1,6 @@
 // License commands
 
-import { commands } from '#lib/ipc/bindings.js'
+import { commands, type LicenseActivationError as BindingsLicenseActivationError } from '#lib/ipc/bindings.js'
 import { throwIpcError } from './ipc-types'
 
 /** License types */
@@ -31,16 +31,11 @@ export interface VerifyResult {
   shortCode: string | null
 }
 
-/** Error codes from the license activation flow (matches Rust `LicenseActivationError` enum). */
-export type LicenseActivationErrorCode =
-  | 'invalidFormat'
-  | 'badEncoding'
-  | 'badSignature'
-  | 'badPayload'
-  | 'shortCodeNotFound'
-  | 'networkError'
-  | 'serverError'
-  | 'storageError'
+/**
+ * Error codes from the license activation flow, read off the Rust `LicenseActivationError` enum's
+ * bindings, so a new variant can't be missing here.
+ */
+export type LicenseActivationErrorCode = BindingsLicenseActivationError['code']
 
 /** Typed activation error returned by the backend. */
 export interface LicenseActivationError {
@@ -48,16 +43,20 @@ export interface LicenseActivationError {
   detail?: string
 }
 
-const validActivationErrorCodes = new Set<string>([
-  'invalidFormat',
-  'badEncoding',
-  'badSignature',
-  'badPayload',
-  'shortCodeNotFound',
-  'networkError',
-  'serverError',
-  'storageError',
-])
+/** Every code, exhaustive by type: a variant the enum gains fails to compile until it's listed. */
+const ACTIVATION_ERROR_CODES: Record<LicenseActivationErrorCode, true> = {
+  invalidFormat: true,
+  badEncoding: true,
+  badSignature: true,
+  badPayload: true,
+  shortCodeNotFound: true,
+  networkError: true,
+  serverError: true,
+  serverBusy: true,
+  storageError: true,
+}
+
+const validActivationErrorCodes = new Set<string>(Object.keys(ACTIVATION_ERROR_CODES))
 
 /**
  * Parses a Tauri invoke error into a typed activation error.

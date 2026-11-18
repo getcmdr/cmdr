@@ -9,9 +9,9 @@ import { flushSync } from 'svelte'
 import type { NameRules } from '#lib/ipc/bindings.js'
 import { POSIX_RULES } from '#lib/utils/name-rules.js'
 
-const getNameRules = vi.fn<(volumeId: string, path: string) => Promise<NameRules>>()
+const getNameRules = vi.fn<(asked: { volumeId: string; path: string }) => Promise<NameRules>>()
 vi.mock('#lib/tauri-commands/index.js', () => ({
-  getNameRules: (volumeId: string, path: string) => getNameRules(volumeId, path),
+  getNameRules: (volumeId: string, path: string) => getNameRules({ volumeId, path }),
 }))
 
 const { createTransferDestNameRules } = await import('./transfer-dest-name-rules.svelte')
