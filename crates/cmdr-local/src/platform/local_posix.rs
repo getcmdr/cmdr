@@ -347,7 +347,7 @@ impl Volume for LocalPosixVolume {
         // The one place Cmdr knows a directory IS a volume root, not merely
         // somewhere under one: `/.hidden` (`read_dot_hidden_names`) means nothing
         // anywhere else, so this is threaded through rather than re-derived below.
-        let is_volume_root = abs_path == self.root;
+        let is_volume_root = abs_path == *self.root;
         #[cfg(any(test, feature = "testing"))]
         let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
         #[cfg(not(any(test, feature = "testing")))]
@@ -365,8 +365,6 @@ impl Volume for LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         self.list_directory_as_source_impl(path)
     }
 
@@ -796,8 +794,6 @@ impl Volume for LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         self.scan_subtree(
             path,
             cmdr_fs::volume::ScanStop::none(),
@@ -867,8 +863,6 @@ impl Volume for LocalPosixVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         self.open_read_stream_impl(path)
     }
 
@@ -878,8 +872,6 @@ impl Volume for LocalPosixVolume {
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         self.read_range_impl(path, offset, len)
     }
 
@@ -891,8 +883,6 @@ impl Volume for LocalPosixVolume {
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
-        let dest_std = dest.as_std_legacy();
-        let dest: &Path = &dest_std;
         self.write_from_stream_impl(dest, mode, length, stream, on_progress)
     }
 
@@ -906,8 +896,6 @@ impl Volume for LocalPosixVolume {
         version: &'a cmdr_fs::volume::SourceVersion,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         self.resume_read_stream_impl(path, version, offset)
     }
 
@@ -925,8 +913,6 @@ impl Volume for LocalPosixVolume {
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
-        let target_std = target.as_std_legacy();
-        let target: &Path = &target_std;
         self.continue_write_from_stream_impl(target, at, length, stream, on_progress)
     }
 
@@ -935,8 +921,6 @@ impl Volume for LocalPosixVolume {
         source_items: &'a [SourceItemInfo],
         dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
-        let dest_path_std = dest_path.as_std_legacy();
-        let dest_path: &Path = &dest_path_std;
         self.scan_for_conflicts_impl(source_items, dest_path)
     }
 

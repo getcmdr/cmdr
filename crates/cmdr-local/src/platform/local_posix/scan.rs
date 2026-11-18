@@ -47,11 +47,13 @@ impl LocalPosixVolume {
     /// below the selection only, like the sidecars.
     pub(super) fn scan_subtree<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         stop: cmdr_fs::volume::ScanStop,
         recorder: Option<Arc<dyn ScanRecorder>>,
         mac_only: MacOnlyFiles,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_path = self.resolve(path);
         let sidecars = SidecarRule::with_probe(self.sidecar_probe);
         let as_called = path.to_path_buf();
@@ -164,12 +166,15 @@ impl LocalPosixVolume {
     /// async task, so an ordinary folder pays nothing.
     pub(super) fn list_directory_as_source_impl<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_dir = self.resolve(path);
         let sidecars = SidecarRule::with_probe(self.sidecar_probe);
         Box::pin(async move {
-            let entries = self.list_directory(&AppPath::legacy_unchecked(path), None).await?;
+            let entries = self.list_directory(path_app, None).await?;
             if !entries.iter().any(|entry| entry.name.starts_with("._")) {
                 return Ok(entries);
             }
@@ -216,8 +221,10 @@ impl LocalPosixVolume {
     pub(super) fn scan_for_conflicts_impl<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
-        dest_path: &'a Path,
+        dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
+        let dest_path_std = dest_path.as_std_legacy();
+        let dest_path: &Path = &dest_path_std;
         let dest_abs = self.resolve(dest_path);
         let source_items: Vec<SourceItemInfo> = source_items.to_vec();
         Box::pin(async move {
