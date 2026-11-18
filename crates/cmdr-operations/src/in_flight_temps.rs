@@ -777,6 +777,10 @@ mod tests;
 #[path = "in_flight_temps_claim_tests.rs"]
 mod claim_tests;
 
+#[cfg(test)]
+#[path = "in_flight_records_format_tests.rs"]
+mod records_format_tests;
+
 #[cfg(all(test, feature = "shuttle"))]
 #[path = "in_flight_shuttle_tests.rs"]
 mod shuttle_tests;

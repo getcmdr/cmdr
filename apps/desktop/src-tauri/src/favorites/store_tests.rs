@@ -676,3 +676,73 @@ fn a_claim_is_not_an_analytics_event() {
         Some(FavoriteAction::Added)
     );
 }
+
+// -- the stored path forms --
+
+/// A favorite's `path` is kept as the person or the app wrote it, trailing `/`
+/// included: a read gives back every spelling byte for byte, and writing that read
+/// back reproduces the file. No migration touches them; the app-path type
+/// normalizes at use time. #1225.
+#[test]
+fn stored_paths_keep_their_bytes_through_a_read_and_a_write() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join(FAVORITES_FILE_NAME);
+    let spellings = [
+        "/Users/test_user_1/a/",
+        "/Users/test_user_1/a b/c-d",
+        "/srv/a\\b/c:d",
+        "/Users/test_user_1/cafe\u{0301}",
+        "sftp://test_user_1@testnas.local:22/",
+        "smb://testnas.local/share/x",
+        "~/Documents",
+    ];
+    let store = store_with(&spellings.map(|p| (p, "label")));
+    write_store_to_path(&path, &store).expect("write");
+    let first = fs::read(&path).expect("bytes");
+
+    let loaded = read_store_from_path(&path).expect("present");
+    let paths: Vec<&str> = loaded.favorites.iter().map(|f| f.path.as_str()).collect();
+    assert_eq!(paths, spellings);
+    write_store_to_path(&path, &loaded).expect("write again");
+    assert_eq!(
+        fs::read(&path).expect("bytes"),
+        first,
+        "a read then a write is the identity"
+    );
+}
+
+/// A stored `/a/` opens what `/a` opens: the pane hands the favorite's path to its
+/// volume as is, and the local listing of the slashed spelling is the same rows,
+/// with the same paths, as the plain one. Today's answer, which the app-path type's
+/// `from_wire` keeps by dropping the slash. #1225.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume` reads a native temp dir as its app path.
+#[tokio::test]
+async fn a_stored_favorite_with_a_trailing_slash_lists_like_the_plain_path() {
+    use cmdr_fs::volume::Volume;
+
+    let dir = crate::test_support::TestDir::new("favorite_trailing_slash");
+    fs::create_dir_all(dir.join("a/sub")).expect("dirs");
+    fs::write(dir.join("a/file.txt"), b"x").expect("file");
+    let volume = cmdr_local::LocalVolume::local_folder("Test", dir.to_path_buf(), crate::volume_host::host());
+    let plain = dir.join("a").to_string_lossy().into_owned();
+
+    let mut stored = store_with(&[(&format!("{plain}/"), "a")]);
+    let favorite = stored.favorites.remove(0);
+    let list = |path: String| {
+        let volume = &volume;
+        async move {
+            let mut rows: Vec<String> = volume
+                .list_directory(Path::new(&path), None)
+                .await
+                .expect("lists")
+                .into_iter()
+                .map(|e| e.path)
+                .collect();
+            rows.sort();
+            rows
+        }
+    };
+    let opened = list(favorite.path.clone()).await;
+    assert_eq!(opened, list(plain.clone()).await);
+    assert_eq!(opened, [format!("{plain}/file.txt"), format!("{plain}/sub")]);
+}

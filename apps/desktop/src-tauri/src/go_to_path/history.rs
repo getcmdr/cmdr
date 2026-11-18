@@ -205,4 +205,31 @@ mod tests {
         let back: RecentPathEntry = serde_json::from_str(&json).unwrap();
         assert_eq!(back, e);
     }
+
+    /// Every path shape a jump records comes back from disk byte for byte, and the
+    /// dedupe is exact, so `/a` and `/a/` are two rows (a jump records `resolve`'s
+    /// output, which never ends in `/`; the app-path type keeps that). #1225.
+    #[test]
+    fn stored_paths_reload_byte_for_byte_and_dedupe_exactly() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let file = dir.path().join(RecentPathEntry::FILENAME);
+        let spellings = [
+            "/Users/test_user_1/a b/c-d",
+            "/srv/a\\b/c:d",
+            "/Users/test_user_1/cafe\u{0301}",
+            "sftp://test_user_1@testnas.local:22/srv/data",
+            "/Users/test_user_1/docs",
+            "/Users/test_user_1/docs/",
+        ];
+        let list = RecentsFile::<RecentPathEntry>::new();
+        for path in spellings {
+            list.add_at(Some(&file), entry(path), MAX_RECENTS);
+        }
+
+        let reloaded = RecentsFile::<RecentPathEntry>::new();
+        reloaded.load_at(&file);
+        let mut paths: Vec<String> = reloaded.entries(None).into_iter().map(|e| e.path).collect();
+        paths.reverse();
+        assert_eq!(paths, spellings, "oldest first, every spelling its own row");
+    }
 }
