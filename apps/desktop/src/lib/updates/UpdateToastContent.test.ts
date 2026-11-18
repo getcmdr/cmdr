@@ -5,8 +5,9 @@
  * its version row, so the tests drive that module directly rather than the whole updater.
  */
 
-import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
+import { afterEach, beforeEach, describe, it, expect, onTestFinished, vi } from 'vitest'
 import { mount, tick } from 'svelte'
+import { withPlatform } from '#lib/platform/test-platform.js'
 
 const { relaunchAppMock, dismissToastMock, openExternalUrlMock } = vi.hoisted(() => ({
   relaunchAppMock: vi.fn(() => Promise.resolve()),
@@ -37,6 +38,9 @@ function resetState() {
 }
 
 describe('UpdateToastContent', () => {
+  // The second line is per-OS copy; these tests pin macOS's, and the Windows and Linux line has its own test.
+  beforeEach(() => withPlatform('macos'))
+
   beforeEach(() => {
     resetState()
     relaunchAppMock.mockClear()
@@ -52,6 +56,13 @@ describe('UpdateToastContent', () => {
     expect(target.textContent).toContain('A new version of Cmdr is ready.')
     // The whole point of the second line: "Later" must not read as "skip this update".
     expect(target.textContent).toContain('Restart now, or you’ll get it the next time you open Cmdr.')
+  })
+
+  it.each(['windows', 'linux'] as const)('says on %s that Cmdr closes to install the update', async (platform) => {
+    onTestFinished(withPlatform(platform))
+    const target = render()
+    await tick()
+    expect(target.textContent).toContain('Cmdr closes to install it, then opens again.')
   })
 
   it('shows both versions once the state knows them', async () => {
