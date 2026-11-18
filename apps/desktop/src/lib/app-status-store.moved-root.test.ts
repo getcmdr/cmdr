@@ -55,7 +55,7 @@ describe('a stored tab whose volume moved', () => {
       probed.push(p)
       return Promise.resolve(p.startsWith('/Volumes/Backup 1'))
     }
-    const livePath = vi.fn((volumeId: string, path: string) =>
+    const livePath = vi.fn(({ volumeId, path }: { volumeId: string; path: string }) =>
       Promise.resolve(
         volumeId === 'vol-backup-1234567890abcdef' ? path.replace('/Volumes/Backup', '/Volumes/Backup 1') : null,
       ),
@@ -63,7 +63,10 @@ describe('a stored tab whose volume moved', () => {
 
     const paneTabs = await loadPaneTabs('left', exists, livePath)
 
-    expect(livePath).toHaveBeenCalledWith('vol-backup-1234567890abcdef', '/Volumes/Backup/photos/2026')
+    expect(livePath).toHaveBeenCalledWith({
+      volumeId: 'vol-backup-1234567890abcdef',
+      path: '/Volumes/Backup/photos/2026',
+    })
     expect(paneTabs.tabs[0].path).toBe('/Volumes/Backup 1/photos/2026')
     expect(probed.some((p) => p.startsWith('/Volumes/Backup/'))).toBe(false)
   })

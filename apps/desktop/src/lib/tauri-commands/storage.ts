@@ -100,7 +100,7 @@ export async function resolvePathVolume(path: string): Promise<PathVolumeResolut
  * else `null` (keep the path). In-memory on the backend (`location/last_roots.rs`), so it
  * can't block on a mount.
  */
-export async function liveVolumePath(volumeId: string, path: string): Promise<string | null> {
+export async function liveVolumePath({ volumeId, path }: { volumeId: string; path: string }): Promise<string | null> {
   try {
     return await commands.liveVolumePath(volumeId, path)
   } catch {

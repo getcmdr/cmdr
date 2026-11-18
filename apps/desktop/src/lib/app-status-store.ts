@@ -115,7 +115,7 @@ export async function resolvePersistedPath(
  * passes `liveVolumePath` (`#lib/tauri-commands`); the rule is the backend's
  * `location/last_roots.rs`.
  */
-export type LivePathFn = (volumeId: string, path: string) => Promise<string | null>
+export type LivePathFn = (args: { volumeId: string; path: string }) => Promise<string | null>
 
 const noLivePath: LivePathFn = () => Promise.resolve(null)
 
@@ -125,7 +125,7 @@ const noLivePath: LivePathFn = () => Promise.resolve(null)
  * which may now be another disk. ❌ Never let the path follow the letter instead of the disk.
  */
 async function followMovedRoot(location: Location, livePathFn: LivePathFn): Promise<Location> {
-  const live = await livePathFn(location.volumeId, location.path)
+  const live = await livePathFn({ volumeId: location.volumeId, path: location.path })
   return live === null ? location : { ...location, path: live }
 }
 

@@ -1531,7 +1531,7 @@ that store; this is only about what reaches disk and what comes off it.
 Both layers earn their place: the save side keeps the user on the folder they searched from, and the load side is what
 rescues an `app-status.json` that already holds a snapshot path, plus the tab whose history had no real folder to write.
 
-**A tab follows its disk when the disk moved roots.** `loadPaneTabs` asks `liveVolumePath(volumeId, path)` (the
+**A tab follows its disk when the disk moved roots.** `loadPaneTabs` asks `liveVolumePath({ volumeId, path })` (the
 backend's `location/last_roots.rs`) for each stored tab BEFORE the existence walk: a Windows drive back on another
 letter, or a Mac disk back at `/Volumes/Backup 1`, rebases the tab's path onto the volume's live root, so the walk never
 probes the old root, which may hold another disk now. A volume sitting where it did answers `null` and the tab loads as
