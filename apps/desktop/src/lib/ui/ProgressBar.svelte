@@ -39,8 +39,15 @@
         flex: 1;
         min-width: 0;
         background: var(--color-progress-track);
-        forced-color-adjust: var(--color-forced-adjust);
         overflow: hidden;
+    }
+
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        .track {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
     }
 
     .track.sm {

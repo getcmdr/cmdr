@@ -114,9 +114,6 @@
   --spacing-menu-bar-item-border: 0;
   --color-menu-bar-item-border: transparent;
   --color-menu-bar-item-border-hover: transparent;
-  /* `forced-color-adjust` on the bar and the surfaces: the browser forces the house look's colors in
-     a contrast theme as it does any element's (only the Windows look speaks system colors itself) */
-  --color-menu-forced-adjust: auto;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -273,8 +270,6 @@
   --spacing-menu-bar-item-border: 0;
   --color-menu-bar-item-border: transparent;
   --color-menu-bar-item-border-hover: transparent;
-  /* Outside contrast themes the menus are styled as any element is */
-  --color-menu-forced-adjust: auto;
 }
 
 /* === Windows 11, dark (WinUI's `Default` dictionaries, which are the dark theme) === */
@@ -342,9 +337,9 @@
    WinUI's `HighContrast` dictionaries, each `SystemColor…Color` as its CSS system color:
    Window → Canvas, WindowText → CanvasText, ButtonFace → ButtonFace, ButtonText →
    ButtonText, Highlight → Highlight, HighlightText → HighlightText, GrayText → GrayText.
-   No backdrop, tint, or shadow. `--color-menu-forced-adjust: none` tells the components to set
-   `forced-color-adjust: none`, so the browser keeps these exact pairs (a highlighted row's
-   Highlight fill).
+   No backdrop, tint, or shadow. The bar and the surfaces set `forced-color-adjust` from the
+   controls' `--color-forced-adjust` (`app-controls.css`; `none` on this look under contrast
+   themes), so the browser keeps these exact pairs (a highlighted row's Highlight fill).
    The `@supports` guard is what the Safari 15.4 floor accepts (`scripts/vite-webkit-css-floor.ts`):
    every engine with contrast themes (Chromium, so WebView2, and Firefox) reads
    `forced-color-adjust`, and WebKit has no contrast themes to follow. */
@@ -352,7 +347,6 @@
   @media (forced-colors: active) {
     :root[data-look='windows'],
     :root[data-look='windows'].reduce-transparency {
-      --color-menu-forced-adjust: none;
       /* AcrylicBackgroundFillColorDefaultBrush and MenuFlyoutPresenterBackground (HighContrast) → SystemColorWindowColor */
       --color-menu-surface-bg: Canvas;
       --color-menu-surface-tint: transparent;

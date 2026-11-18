@@ -79,19 +79,20 @@ component stays one implementation and reads only these.
 - **`:root`** holds the house look (`lib/ui/Menu.svelte`'s row and surface, the demo bar's strip), the Linux in-page
   bar's until task 60 gives Linux its own neutral theme.
 - **`:root[data-look='windows']`** is Windows 11's look, light and dark, on Windows 10 and 11 alike (D5). `data-look` is
-  `getMenuLook()` (a host's pin, the demo's `macos`, else `getCopyPlatform()`), written by `applyPlatformAttributes()`
+  `getLook()` (a host's pin, the demo's `macos`, else `getCopyPlatform()`), written by `applyPlatformAttributes()`
   beside `data-platform`, so `CMDR_MOCK_CONVENTIONS=windows pnpm dev` shows it on a Mac (without Segoe UI, which a Mac
   lacks).
 - **Reduced transparency** (the `reduce-transparency` class, which task 40 fills from Windows' transparency effects):
   acrylic's own opaque fallback color and no blur.
 - **`forced-colors: active`** (Windows contrast themes): WinUI's `HighContrast` mapping as CSS system colors, no
   backdrop or shadow. Its selector list names the reduced-transparency selector too and comes later, so it wins over
-  that block at equal weight. It sets `--color-menu-forced-adjust: none`, which the bar and the surfaces read into
-  `forced-color-adjust`, or Chromium forces the highlighted row's `Highlight` back to `Canvas`; every other look keeps
-  `auto`, so the browser forces the house look as it does any element.
+  that block at equal weight. The bar and the surfaces read the controls' `--color-forced-adjust` (§ Control look
+  tokens) into `forced-color-adjust`, or Chromium forces the highlighted row's `Highlight` back to `Canvas`; every other
+  look keeps `auto`, so the browser forces the house look as it does any element.
 - **Gotcha: the Safari 15.4 floor fails the build on `(forced-colors)` and `forced-color-adjust`**
-  (`scripts/vite-webkit-css-floor.ts`), so both sit inside `@supports (forced-color-adjust: none)`. Every engine with
-  contrast themes (Chromium, so WebView2, and Firefox) passes that guard; WebKit has no contrast themes to follow.
+  (`scripts/vite-webkit-css-floor.ts`), so both sit inside `@supports (forced-color-adjust: none)`, in the menu and the
+  control tokens and in every component that sets the property. Every engine with contrast themes (Chromium, so
+  WebView2, and Firefox) passes that guard; WebKit has no contrast themes to follow.
 - **Gotcha: no `color-mix()` in the house defaults.** They're spelled out as `rgba()` of `--color-text-primary`, with a
   dark twin, because old WebKit drops a `color-mix()` value (`lib/utils/CLAUDE.md`).
 - **Decision/Why: a file of its own, with hex allowed.** `app.css` is past its length budget, and the Windows values are
@@ -119,9 +120,11 @@ tooltips, `ModalDialog`'s chrome, focus rings, and scrollbars. Same shape as the
 - **`app-controls-windows.css`**: `:root[data-look='windows']`, WinUI's values in light and dark, and the Windows
   scrollbar rule (`:where()`-wrapped so a scroller that styles its own bar still wins). It also redefines the `app.css`
   tokens `ModalDialog` already reads (`--color-bg-dialog`, `--radius-dialog`, `--spacing-dialog`, `--shadow-dialog`, the
-  dialog borders) and the field's `--radius-input` / `--color-field-border`.
+  dialog borders) and the field's `--radius-input` / `--color-field-border`. `data-look` is the menus' (`getLook()`), so
+  the browser demo's `macos` pin keeps these out of every visitor's demo too.
 - **`app-controls-windows-contrast.css`**: `forced-colors: active`, WinUI's `HighContrast` pairs as system colors. A
-  primitive that paints them sets `forced-color-adjust: var(--color-forced-adjust)` (`none` only there).
+  primitive that paints them sets `forced-color-adjust: var(--color-forced-adjust)` (`none` only there), inside
+  `@supports (forced-color-adjust: none)`, as the block itself is: the Safari 15.4 floor's guard (§ Menu look tokens).
 - The select, the combobox list, and the tooltip read `app-menu.css`'s flyout surface on Windows (WinUI uses the same
   in-app acrylic for all three).
 - **Decision/Why: disabled states re-point tokens.** A disabled control redeclares its state tokens as their `-disabled`

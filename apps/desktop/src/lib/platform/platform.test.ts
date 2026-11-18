@@ -3,7 +3,7 @@ import {
   applyPlatformAttributes,
   CAPABILITIES_GLOBAL,
   COPY_PLATFORM_GLOBAL,
-  MENU_LOOK_GLOBAL,
+  LOOK_GLOBAL,
   FALLBACK_PLATFORM,
   getCopyPlatform,
   getPlatform,
@@ -167,11 +167,11 @@ describe('applyPlatformAttributes', () => {
     expect(root.getAttribute('data-look')).toBe('windows')
   })
 
-  it('wears a pinned menu look over the copy platform (the browser demo pins macOS)', () => {
+  it('wears a pinned look over the copy platform (the browser demo pins macOS)', () => {
     onTestFinished(withPlatform('windows'))
-    host[MENU_LOOK_GLOBAL] = 'macos'
+    host[LOOK_GLOBAL] = 'macos'
     onTestFinished(() => {
-      Reflect.deleteProperty(host, MENU_LOOK_GLOBAL)
+      Reflect.deleteProperty(host, LOOK_GLOBAL)
     })
     const root = document.createElement('html')
     applyPlatformAttributes(root)

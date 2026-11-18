@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { contrastRatio, parseHex, toHex } from '#lib/utils/srgb-mix.js'
+import { findCssBeyondSafari15 } from '../scripts/vite-webkit-css-floor.ts'
 
 // Read from disk: Vitest hands a `.css?raw` import back empty (it skips CSS by default).
 const read = (file: string): string =>
@@ -52,13 +53,14 @@ function tokens(css: string, selector: string, media: string[] = []): Map<string
 
 const WINDOWS = ":root[data-look='windows']"
 const DARK = '@media (prefers-color-scheme: dark)'
-const FORCED = '@media (forced-colors: active)'
+/** Contrast themes, behind the guard the Safari 15.4 floor accepts (`scripts/vite-webkit-css-floor.ts`). */
+const FORCED = ['@supports (forced-color-adjust: none)', '@media (forced-colors: active)']
 
 const windowsCss = read('app-controls-windows.css')
 const house = tokens(read('app-controls.css'), ':root')
 const light = tokens(windowsCss, WINDOWS)
 const dark = tokens(windowsCss, WINDOWS, [DARK])
-const forced = tokens(read('app-controls-windows-contrast.css'), WINDOWS, [FORCED])
+const forced = tokens(read('app-controls-windows-contrast.css'), WINDOWS, FORCED)
 
 /** Windows redefines these `app.css` tokens (the dialog surface, the field corner and edge). */
 const APP_CSS_TOKENS = [
@@ -94,6 +96,13 @@ describe('control look tokens', () => {
   it('keeps the house values (macOS and Linux paint exactly these)', () => {
     expect(Object.fromEntries(house)).toMatchSnapshot()
   })
+
+  it.each(['app-controls.css', 'app-controls-windows.css', 'app-controls-windows-contrast.css', 'app-tooltip.css'])(
+    '%s uses only CSS that Safari 15.4 reads, or guards it (the build fails otherwise)',
+    (file) => {
+      expect(findCssBeyondSafari15(read(file))).toEqual([])
+    },
+  )
 
   it('gives every house token a Windows value, and nothing else', () => {
     expect([...house.keys()].filter((name) => !light.has(name) && name !== '--color-forced-adjust')).toEqual([])

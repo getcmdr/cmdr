@@ -134,11 +134,6 @@ describe('menu look tokens', () => {
     expect(indexOf(`${WINDOWS}, ${REDUCED}`, [FORCED_GUARD, FORCED])).toBeGreaterThan(indexOf(REDUCED, [DARK]))
   })
 
-  it('keeps the browser forcing colors on every look but Windows', () => {
-    expect(house.get('--color-menu-forced-adjust')).toBe('auto')
-    expect(forced.get('--color-menu-forced-adjust')).toBe('none')
-  })
-
   it("starts the house bar's first title 10 px in and spaces the titles 2 px apart, as the demo's macOS bar measured", () => {
     const px = (name: string) => Number.parseFloat(house.get(name) ?? 'NaN')
     expect(px('--spacing-menu-bar-padding-inline') + px('--spacing-menu-bar-item-margin-inline')).toBe(10)

@@ -1560,7 +1560,7 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
     fresh page it re-homed focus to the list right after the first ⌃F2's title took it, so the bar closed itself and the
     first ⌃F2 did nothing; a click on a title with focus adrift opened and closed in one frame. Pinned by
     `MenuBar.svelte.test.ts` § "MenuBar and the app moving focus on its own".
-- **Look**: `forced-color-adjust: var(--color-menu-forced-adjust)` on the surfaces and the bar, inside the floor's
+- **Look**: `forced-color-adjust: var(--color-forced-adjust)` on the surfaces and the bar, inside the floor's
   `@supports` guard: `none` on the Windows look under `forced-colors: active`, whose tokens already speak system colors
   (`../../DETAILS.md` § Menu look tokens). A pointer row shows the hover fill; a keyboard row
   `--color-menu-row-bg-focus` plus WinUI's system focus visual (2 px outer ring, 1 px inner, only on the focused row):

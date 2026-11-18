@@ -172,7 +172,7 @@
        15.4 floor's (`scripts/vite-webkit-css-floor.ts`). */
     @supports (forced-color-adjust: none) {
         .menu-bar {
-            forced-color-adjust: var(--color-menu-forced-adjust);
+            forced-color-adjust: var(--color-forced-adjust);
         }
     }
 

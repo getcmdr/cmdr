@@ -192,9 +192,9 @@ Added with the component (task 63 step 4), from the same sources:
   transitions). The flyout's open animation (`MenuPopupThemeTransition`) lives in WinUI's C++ animation code and is task
   62's (motion), which also owns `prefers-reduced-motion`.
 - **The contrast theme's colors.** WinUI maps each brush to a `SystemColor…Color`; CSS has the same set as system colors
-  under `forced-colors: active`. Chromium forces colors on its own in that mode, so the tokens set
-  `--color-menu-forced-adjust: none`, which the bar and the menu surface read into `forced-color-adjust`, and paint
-  these exact pairs (else a highlighted row's `Highlight` fill would be forced back to `Canvas`).
+  under `forced-colors: active`. Chromium forces colors on its own in that mode, so the bar and the menu surface set
+  `forced-color-adjust` from the controls' `--color-forced-adjust` (`none` on the Windows look there) and paint these
+  exact pairs (else a highlighted row's `Highlight` fill would be forced back to `Canvas`).
 
 ## Open questions for the design review
 

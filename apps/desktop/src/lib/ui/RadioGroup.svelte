@@ -248,8 +248,15 @@
         border-radius: var(--radius-full);
         background: var(--color-radio-bg);
         flex-shrink: 0;
-        forced-color-adjust: var(--color-forced-adjust);
         transition: all var(--transition-base);
+    }
+
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.radio-control) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
     }
 
     :global(.radio-item:hover .radio-control[data-state='unchecked']) {

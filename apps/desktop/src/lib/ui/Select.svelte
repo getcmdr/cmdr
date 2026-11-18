@@ -353,7 +353,14 @@
         font-size: var(--font-select-trigger-size);
         box-shadow: var(--shadow-select-trigger);
         cursor: default;
-        forced-color-adjust: var(--color-forced-adjust);
+    }
+
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.select-trigger) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
     }
 
     /* On hover (and while open) the house trigger fills with the chevron stepper's color, so the
@@ -421,7 +428,6 @@
         border-radius: var(--radius-menu-surface);
         box-shadow: var(--shadow-menu-surface);
         padding: var(--spacing-select-content-padding);
-        forced-color-adjust: var(--color-forced-adjust);
         max-height: 300px;
         overflow-y: auto;
         /* Consistent width regardless of content. */
@@ -430,6 +436,14 @@
         outline: none;
         /* The macOS overlap shift (transform) and the until-measured hide (opacity) are applied
            inline per instance; see `contentStyle`. */
+    }
+
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.select-content) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
     }
 
     :global(.select-content:focus),

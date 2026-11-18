@@ -4,7 +4,7 @@ import {
   CONVENTIONS_GLOBAL,
   CONVENTIONS_ON,
   getPlatform,
-  MENU_LOOK_GLOBAL,
+  LOOK_GLOBAL,
   NO_CAPABILITIES,
   PLATFORM_GLOBAL,
   platformCapabilities,
@@ -45,12 +45,12 @@ describe('installPlatform', () => {
   })
 
   it.each(['Macintosh; Intel Mac OS X 10_15_7', 'Windows NT 10.0; Win64; x64', 'X11; Linux x86_64'])(
-    'pins the macOS menu look for a %s visitor, under the macOS bar every visitor gets',
+    'pins the macOS look (menus and controls) for a %s visitor, under the macOS bar every visitor gets',
     (os) => {
       const frame = { navigator: { userAgent: `Mozilla/5.0 (${os})` } } as unknown as Window
       installPlatform(frame)
-      expect((frame as unknown as Record<string, unknown>)[MENU_LOOK_GLOBAL]).toBe('macos')
-      expect(Object.getOwnPropertyDescriptor(frame, MENU_LOOK_GLOBAL)?.writable).toBe(false)
+      expect((frame as unknown as Record<string, unknown>)[LOOK_GLOBAL]).toBe('macos')
+      expect(Object.getOwnPropertyDescriptor(frame, LOOK_GLOBAL)?.writable).toBe(false)
     },
   )
 

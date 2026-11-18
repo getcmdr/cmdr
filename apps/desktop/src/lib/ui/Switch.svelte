@@ -106,8 +106,15 @@
         border-radius: var(--radius-full);
         padding: var(--spacing-switch-padding);
         cursor: default;
-        forced-color-adjust: var(--color-forced-adjust);
         transition: background-color var(--transition-base);
+    }
+
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.switch-control) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
     }
 
     :global(.switch-control:hover) {

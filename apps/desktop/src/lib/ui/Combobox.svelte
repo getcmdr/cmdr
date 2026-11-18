@@ -235,13 +235,20 @@
         border: var(--spacing-combobox-content-border) solid var(--color-combobox-content-border);
         border-radius: var(--radius-combobox-content);
         box-shadow: var(--shadow-combobox-content);
-        forced-color-adjust: var(--color-forced-adjust);
         padding: var(--spacing-xs) 0;
         max-height: 300px;
         overflow-y: auto;
         min-width: 180px;
         width: max-content;
         outline: none;
+    }
+
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.combobox-content) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
     }
 
     :global(.combobox-content:focus),

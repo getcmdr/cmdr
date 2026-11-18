@@ -123,10 +123,17 @@
         border: 1px solid var(--color-checkbox-border);
         border-radius: var(--radius-checkbox);
         cursor: default;
-        forced-color-adjust: var(--color-forced-adjust);
         transition:
             background-color var(--transition-base),
             border-color var(--transition-base);
+    }
+
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.checkbox-control) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
     }
 
     :global(.checkbox-control[data-state='checked']),

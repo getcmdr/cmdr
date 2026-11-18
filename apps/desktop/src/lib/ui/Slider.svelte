@@ -162,7 +162,14 @@
         background: var(--color-slider-track);
         border-radius: var(--radius-xs);
         position: relative;
-        forced-color-adjust: var(--color-forced-adjust);
+    }
+
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.sl-track) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
     }
 
     :global(.sl-range) {
@@ -184,10 +191,17 @@
         border-radius: var(--radius-full);
         cursor: default;
         box-shadow: var(--shadow-slider-thumb);
-        forced-color-adjust: var(--color-forced-adjust);
         /* Above the tick marks. */
         z-index: 2;
         position: relative;
+    }
+
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.sl-thumb) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
     }
 
     :global(.sl-thumb:hover) {

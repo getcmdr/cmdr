@@ -154,7 +154,14 @@
         line-height: var(--font-line-height-normal);
         border-radius: var(--radius-button);
         transition: all var(--transition-base);
-        forced-color-adjust: var(--color-forced-adjust);
+    }
+
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        .btn {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
     }
 
     .btn:disabled {

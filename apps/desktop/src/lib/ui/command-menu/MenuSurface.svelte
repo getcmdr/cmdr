@@ -262,7 +262,7 @@
        The guard is the Safari 15.4 floor's (`scripts/vite-webkit-css-floor.ts`). */
     @supports (forced-color-adjust: none) {
         .command-menu-surface {
-            forced-color-adjust: var(--color-menu-forced-adjust);
+            forced-color-adjust: var(--color-forced-adjust);
         }
     }
 

@@ -48,8 +48,8 @@ export function getPlatform(): Platform {
 export const COPY_PLATFORM_GLOBAL = '__CMDR_COPY_PLATFORM__'
 
 /**
- * The OS whose catalog branch this window's copy reads, and whose look its menus wear
- * (`data-look`): {@link getPlatform}, unless a dev run mocks another desktop's conventions. For
+ * The OS whose catalog branch this window's copy reads, and whose look the window wears unless a
+ * host pins one ({@link getLook}): {@link getPlatform}, unless a dev run mocks another desktop's conventions. For
  * the message runtime and `data-look` alone; ❌ never for a capability, a key, or a habit.
  */
 export function getCopyPlatform(): Platform {
@@ -58,15 +58,15 @@ export function getCopyPlatform(): Platform {
 }
 
 /**
- * The global a host adds to pin the menus' look (`data-look`) apart from {@link getCopyPlatform}:
- * the browser demo pins `macos`, since it draws the macOS bar for every visitor
- * (`#lib/demo/platform.ts`).
+ * The global a host adds to pin the window's look (`data-look`: the menus' and the controls'
+ * tokens) apart from {@link getCopyPlatform}: the browser demo pins `macos`, since it draws the
+ * macOS bar and chrome for every visitor (`#lib/demo/platform.ts`).
  */
-export const MENU_LOOK_GLOBAL = '__CMDR_MENU_LOOK__'
+export const LOOK_GLOBAL = '__CMDR_LOOK__'
 
-/** Whose OS look the menus wear (`app-menu.css`): a host's pin, else {@link getCopyPlatform}. */
-export function getMenuLook(): Platform {
-  const pinned = (globalThis as Record<string, unknown>)[MENU_LOOK_GLOBAL]
+/** Whose OS look the menus and controls wear (`app-menu.css`, `app-controls*.css`): a host's pin, else {@link getCopyPlatform}. */
+export function getLook(): Platform {
+  const pinned = (globalThis as Record<string, unknown>)[LOOK_GLOBAL]
   return isPlatform(pinned) ? pinned : getCopyPlatform()
 }
 
@@ -132,14 +132,14 @@ export function hasCapability(capability: Capability): boolean {
 }
 
 /**
- * Writes `data-platform` on `<html>`, `data-look` ({@link getMenuLook}),
+ * Writes `data-platform` on `<html>`, `data-look` ({@link getLook}),
  * and `data-overlay-title-bar` where the page draws the title bar, so CSS can follow them
  * (`app.css` § Window chrome). Called once per window, before the first route renders
  * (`hooks.client.ts`).
  */
 export function applyPlatformAttributes(root: HTMLElement = document.documentElement): void {
   root.dataset.platform = getPlatform()
-  root.dataset.look = getMenuLook()
+  root.dataset.look = getLook()
   if (hasCapability('overlayTitleBar')) root.dataset.overlayTitleBar = ''
   else delete root.dataset.overlayTitleBar
 }
