@@ -26,6 +26,8 @@ const (
 	ruleAsyncHelper   = "async helper call moved into its future"
 	ruleRoundTrip     = "bridge round trip collapsed"
 	ruleHoist         = "bridge temporary hoisted to a let"
+	ruleEagerHelper   = "eager helper takes the typed path and the prelude"
+	ruleFromRef       = "E0308 from_ref element to legacy_unchecked"
 )
 
 var (

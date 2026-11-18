@@ -56,6 +56,22 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   `MacOnlyFiles::Include`), or a number, so evaluating it at the first poll gives today's value. ❌ No method call, `?`,
   `.await`, index, closure, macro, or literal string: those stay residue, as does any call in the tree with a statement
   before its `Box::pin` (moving it would delay that work).
+- **Eager helper** (`rules_eager.go`): E0515 on a prelude'd body that is exactly the prelude plus `self.h(…, x, …)`,
+  where h does work before its future (`let abs = self.resolve(path); Box::pin(async move { … })`), so the lazy rule
+  can't move the call: h's param is retyped (`&'a Path` → `&'a AppPath`, `&'a [PathBuf]` → `&'a [AppPathBuf]`), the
+  prelude moves to the top of h's body, and the caller hands its typed param straight on. A pure conversion moves from
+  just before the call to the start of h, so nothing moves relative to the first poll. A forwarder (h's whole body is
+  `self.h2(…, y, …)`) only gets the retype and the prelude goes down the chain (`write_from_stream_impl` →
+  `stream_into`). h's future may name the param only as `&AppPath::legacy_unchecked(y)`, which becomes the typed value
+  kept as `let y_app = y;`. Everything else is residue: h not the crate's only `fn h` (a trait's declaration counts),
+  not a `&self` method returning `Pin<Box<dyn Future …>>`, async (the lazy rule's), a param type the prelude doesn't
+  make, the name in another argument or rebound in h (`let`, `for`, a closure param, a `Some(y) =` pattern), a final
+  expression other than `Box::pin(async move { … })`, or a forwarding cycle. h's other std callers get bridged by the
+  value rules on the next round. It reproduces the eight hand fixes of `cmdr-local`'s ee6965cf20 (replayed, 2026-11-18).
+- **`from_ref`** (`rules_from_ref.go`): `std::slice::from_ref(&path)` (a `PathBuf`) into a `&[AppPathBuf]` slot. rustc
+  infers the element from the slot and points at the argument (`expected &AppPathBuf, found &PathBuf`), so the element
+  crosses as an owned value: `from_ref(&AppPath::legacy_unchecked(&path).into_owned())`. Only `core`'s `from_ref`
+  (rustc's "function defined here"), with that one argument.
 - **Round trip**: E0515 on `&AppPath::legacy_unchecked(&path.as_std_legacy())` (or the batch
   `&paths.iter().map(|p| AppPath::legacy_unchecked(&p.as_std_legacy()).into_owned()).collect::<Vec<_>>()`) collapses it
   to `path` (`paths`) when that's a param of the enclosing fn typed `&AppPath` (`&[AppPathBuf]`): the identity. The
@@ -113,11 +129,10 @@ the work comes in passes. Each pass is its own commit, so the audit can replay t
 
 What it leaves as residue, by shape (each seen on `cmdr-fs` or `cmdr-archive`):
 
-- **A future borrowing the prelude from an eager helper** (E0515 `path_std` on `self.open_stream(path, 0)` or
-  `self.open_read_stream_impl(path)`, a `fn … -> Pin<Box<…>>` that does work before its future starts, like
-  `cmdr-local`'s `let abs_path = self.resolve(path);`): retype the helper's param to `&'a AppPath` and give the helper
-  the prelude, then pass the typed param straight through (drop the caller's prelude). A helper with a second, std
-  caller (`cmdr-local`'s `scan_subtree`, also called from `scan.rs` with a `&PathBuf`) gets that caller bridged.
+- **A future borrowing the prelude from an eager helper the rule refuses** (E0515 `path_std` where one of the eager
+  helper rule's conditions fails, say the helper's future borrows the param): fix it the rule's way by hand, or move the
+  param's use out of the future. A helper with a second, std caller (`cmdr-local`'s `scan_subtree`, also called from
+  `scan.rs` with a `&PathBuf`) gets that caller bridged.
 - **An import whose only uses are `cfg`-gated** (`#[cfg(test)]` methods): the lib build warns it unused and the run
   stops. Give the `use` the same `#[cfg(…)]`.
 - **A comparison with no labeled operands** (`**path != self.root` against a `BridgedPath` field): `*self.root`.

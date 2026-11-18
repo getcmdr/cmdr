@@ -65,14 +65,22 @@ func (r *rewriter) editsFor(d *diagnostic) ([]edit, error) {
 	if e := receiverEdits(d, src, p); len(e) > 0 {
 		return e, nil
 	}
+	return r.mismatchEditsFor(d, src, p), nil
+}
+
+// mismatchEditsFor answers an E0308: the `from_ref` row, else each labeled value's rewrite.
+func (r *rewriter) mismatchEditsFor(d *diagnostic, src *source, p *diagSpan) []edit {
 	if d.code() != "E0308" {
-		return nil, nil
+		return nil
+	}
+	if e := fromRefEdits(d, src, p); len(e) > 0 {
+		return e
 	}
 	var edits []edit
 	for _, s := range mismatchSpans(d, p.FileName) {
 		edits = append(edits, r.valueEdits(src, s)...)
 	}
-	return edits, nil
+	return edits
 }
 
 // valueEdits rewrites one mismatched value: a typed param handed back, a borrowed return,
