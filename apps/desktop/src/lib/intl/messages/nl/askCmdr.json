@@ -706,13 +706,13 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, windows {Voeg je API-sleutel toe in instellingen om te beginnen met chatten.} linuxGnome {Voeg je API-sleutel toe in voorkeuren om te beginnen met chatten.} linuxKde {Add your API key in Configure Cmdr to start chatting.} other {Voeg je API-sleutel toe in instellingen om te beginnen met chatten.}}",
+  "askCmdr.error.noKey": "{platform, select, windows {Voeg je API-sleutel toe in instellingen om te beginnen met chatten.} linuxGnome {Voeg je API-sleutel toe in voorkeuren om te beginnen met chatten.} linuxKde {Voeg je API-sleutel toe in ‘Cmdr configureren’ om te beginnen met chatten.} other {Voeg je API-sleutel toe in instellingen om te beginnen met chatten.}}",
   "@askCmdr.error.noKey": {
-    "sourceHash": "124df6a"
+    "sourceHash": "fcbb328"
   },
-  "askCmdr.error.notConfigured": "{platform, select, windows {Om te chatten heb je een AI-aanbieder nodig. Zet er een aan in instellingen.} linuxGnome {Om te chatten heb je een AI-aanbieder nodig. Zet er een aan in voorkeuren.} linuxKde {Chatting needs an AI provider. Turn one on in Configure Cmdr.} other {Om te chatten heb je een AI-aanbieder nodig. Zet er een aan in instellingen.}}",
+  "askCmdr.error.notConfigured": "{platform, select, windows {Om te chatten heb je een AI-aanbieder nodig. Zet er een aan in instellingen.} linuxGnome {Om te chatten heb je een AI-aanbieder nodig. Zet er een aan in voorkeuren.} linuxKde {Om te chatten heb je een AI-aanbieder nodig. Zet er een aan in ‘Cmdr configureren’.} other {Om te chatten heb je een AI-aanbieder nodig. Zet er een aan in instellingen.}}",
   "@askCmdr.error.notConfigured": {
-    "sourceHash": "54fb846"
+    "sourceHash": "b0d3e93"
   },
   "askCmdr.error.askCmdrOff": "Ask Cmdr staat uit.",
   "@askCmdr.error.askCmdrOff": {
@@ -720,7 +720,7 @@
   },
   "askCmdr.error.noCloudConsent": "{platform, select, windows {Cloud-AI staat uit. Sta cloud-AI toe bij Instellingen > AI.} linuxGnome {Cloud-AI staat uit. Sta cloud-AI toe bij Voorkeuren > AI.} linuxKde {Cloud-AI staat uit. Sta cloud-AI toe bij ‘Cmdr configureren’ > AI.} other {Cloud-AI staat uit. Sta cloud-AI toe bij Instellingen > AI.}}",
   "@askCmdr.error.noCloudConsent": {
-    "sourceHash": "6490317"
+    "sourceHash": "85cf9ae"
   },
   "askCmdr.error.managedByOrganization": "Je organisatie staat deze AI-service niet toe. Je IT-team kan je vertellen welke je mag gebruiken.",
   "@askCmdr.error.managedByOrganization": {
@@ -738,29 +738,29 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, windows {De aanbieder heeft je API-sleutel niet geaccepteerd. Controleer die in instellingen.} linuxGnome {De aanbieder heeft je API-sleutel niet geaccepteerd. Controleer die in voorkeuren.} linuxKde {The provider didn’t accept your API key. Check it in Configure Cmdr.} other {De aanbieder heeft je API-sleutel niet geaccepteerd. Controleer die in instellingen.}}",
+  "askCmdr.error.authFailed": "{platform, select, windows {De aanbieder heeft je API-sleutel niet geaccepteerd. Controleer die in instellingen.} linuxGnome {De aanbieder heeft je API-sleutel niet geaccepteerd. Controleer die in voorkeuren.} linuxKde {De aanbieder heeft je API-sleutel niet geaccepteerd. Controleer die in ‘Cmdr configureren’.} other {De aanbieder heeft je API-sleutel niet geaccepteerd. Controleer die in instellingen.}}",
   "@askCmdr.error.authFailed": {
-    "sourceHash": "9e02aad"
+    "sourceHash": "98e4d60"
   },
   "askCmdr.error.rateLimited": "De aanbieder heeft het druk, of je quotum is op. Probeer het straks nog eens.",
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Je abonnement bij {provider} bevat dit model niet. Kies een ander model bij Instellingen, of upgrade je abonnement.} linuxGnome {Je abonnement bij {provider} bevat dit model niet. Kies een ander model bij Voorkeuren, of upgrade je abonnement.} linuxKde {Your {provider} plan doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {Je abonnement bij {provider} bevat dit model niet. Kies een ander model bij Instellingen, of upgrade je abonnement.}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Je abonnement bij {provider} bevat dit model niet. Kies een ander model bij Instellingen, of upgrade je abonnement.} linuxGnome {Je abonnement bij {provider} bevat dit model niet. Kies een ander model bij Voorkeuren, of upgrade je abonnement.} linuxKde {Je abonnement bij {provider} bevat dit model niet. Kies een ander model bij ‘Cmdr configureren’, of upgrade je abonnement.} other {Je abonnement bij {provider} bevat dit model niet. Kies een ander model bij Instellingen, of upgrade je abonnement.}}",
   "@askCmdr.error.modelNotInPlan.named": {
-    "sourceHash": "efbf38b"
+    "sourceHash": "72f16d4"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Je abonnement bij deze AI-aanbieder bevat dit model niet. Kies een ander model bij Instellingen, of upgrade je abonnement.} linuxGnome {Je abonnement bij deze AI-aanbieder bevat dit model niet. Kies een ander model bij Voorkeuren, of upgrade je abonnement.} linuxKde {Your plan with this AI provider doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {Je abonnement bij deze AI-aanbieder bevat dit model niet. Kies een ander model bij Instellingen, of upgrade je abonnement.}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Je abonnement bij deze AI-aanbieder bevat dit model niet. Kies een ander model bij Instellingen, of upgrade je abonnement.} linuxGnome {Je abonnement bij deze AI-aanbieder bevat dit model niet. Kies een ander model bij Voorkeuren, of upgrade je abonnement.} linuxKde {Je abonnement bij deze AI-aanbieder bevat dit model niet. Kies een ander model bij ‘Cmdr configureren’, of upgrade je abonnement.} other {Je abonnement bij deze AI-aanbieder bevat dit model niet. Kies een ander model bij Instellingen, of upgrade je abonnement.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
-    "sourceHash": "6808950"
+    "sourceHash": "4b84567"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement bij {provider} of kies een andere aanbieder bij Instellingen.} linuxGnome {{provider} heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement bij {provider} of kies een andere aanbieder bij Voorkeuren.} linuxKde {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in Configure Cmdr.} other {{provider} heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement bij {provider} of kies een andere aanbieder bij Instellingen.}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement bij {provider} of kies een andere aanbieder bij Instellingen.} linuxGnome {{provider} heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement bij {provider} of kies een andere aanbieder bij Voorkeuren.} linuxKde {{provider} heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement bij {provider} of kies een andere aanbieder bij ‘Cmdr configureren’.} other {{provider} heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement bij {provider} of kies een andere aanbieder bij Instellingen.}}",
   "@askCmdr.error.requestTooLarge.named": {
-    "sourceHash": "b1850b3"
+    "sourceHash": "956dae8"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Je AI-aanbieder heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement of kies een andere aanbieder bij Instellingen.} linuxGnome {Je AI-aanbieder heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement of kies een andere aanbieder bij Voorkeuren.} linuxKde {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in Configure Cmdr.} other {Je AI-aanbieder heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement of kies een andere aanbieder bij Instellingen.}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Je AI-aanbieder heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement of kies een andere aanbieder bij Instellingen.} linuxGnome {Je AI-aanbieder heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement of kies een andere aanbieder bij Voorkeuren.} linuxKde {Je AI-aanbieder heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement of kies een andere aanbieder bij ‘Cmdr configureren’.} other {Je AI-aanbieder heeft dit geweigerd: de limiet van je abonnement is kleiner dan één verzoek van Cmdr, want daar zitten altijd de instructies van Cmdr in. Een korter bericht helpt niet. Neem een groter abonnement of kies een andere aanbieder bij Instellingen.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
-    "sourceHash": "455449e"
+    "sourceHash": "aace2fc"
   },
   "askCmdr.error.providerBusy.named": "{provider} heeft het nu te druk om te antwoorden, ook na een paar pogingen. Wacht een paar minuten en verstuur je bericht daarna opnieuw.",
   "@askCmdr.error.providerBusy.named": {
@@ -984,15 +984,15 @@
   },
   "askCmdr.providerNotice.off": "{platform, select, windows {Ask Cmdr heeft een AI-aanbieder nodig om te chatten. Kies er een in Instellingen.} linuxGnome {Ask Cmdr heeft een AI-aanbieder nodig om te chatten. Kies er een in Voorkeuren.} linuxKde {Ask Cmdr heeft een AI-aanbieder nodig om te chatten. Kies er een in ‘Cmdr configureren’.} other {Ask Cmdr heeft een AI-aanbieder nodig om te chatten. Kies er een in Instellingen.}}",
   "@askCmdr.providerNotice.off": {
-    "sourceHash": "6e9f73c"
+    "sourceHash": "5531c7f"
   },
   "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, windows {Je cloud-AI-aanbieder heeft een API-sleutel nodig voordat Ask Cmdr kan chatten. Voeg die in Instellingen toe.} linuxGnome {Je cloud-AI-aanbieder heeft een API-sleutel nodig voordat Ask Cmdr kan chatten. Voeg die in Voorkeuren toe.} linuxKde {Je cloud-AI-aanbieder heeft een API-sleutel nodig voordat Ask Cmdr kan chatten. Voeg die in ‘Cmdr configureren’ toe.} other {Je cloud-AI-aanbieder heeft een API-sleutel nodig voordat Ask Cmdr kan chatten. Voeg die in Instellingen toe.}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
-    "sourceHash": "16dc8a0"
+    "sourceHash": "6e39e10"
   },
   "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, windows {Je cloud-AI-aanbieder heeft een adres nodig voordat Ask Cmdr kan chatten. Voeg dat in Instellingen toe.} linuxGnome {Je cloud-AI-aanbieder heeft een adres nodig voordat Ask Cmdr kan chatten. Voeg dat in Voorkeuren toe.} linuxKde {Je cloud-AI-aanbieder heeft een adres nodig voordat Ask Cmdr kan chatten. Voeg dat in ‘Cmdr configureren’ toe.} other {Je cloud-AI-aanbieder heeft een adres nodig voordat Ask Cmdr kan chatten. Voeg dat in Instellingen toe.}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
-    "sourceHash": "1ae5e35"
+    "sourceHash": "feefb7f"
   },
   "askCmdr.providerNotice.localNotSetUp": "Lokale AI is nog niet gedownload, dus Ask Cmdr kan niet chatten. Stel die in bij Instellingen.",
   "@askCmdr.providerNotice.localNotSetUp": {
@@ -1028,7 +1028,7 @@
   },
   "askCmdr.gate.cloudOff.body": "{platform, select, windows {Ask Cmdr praat met de cloud-AI-service die je hebt ingesteld. Sta eerst cloud-AI toe in Instellingen en je kunt meteen chatten.} linuxGnome {Ask Cmdr praat met de cloud-AI-service die je hebt ingesteld. Sta eerst cloud-AI toe in Voorkeuren en je kunt meteen chatten.} linuxKde {Ask Cmdr praat met de cloud-AI-service die je hebt ingesteld. Sta eerst cloud-AI toe in ‘Cmdr configureren’ en je kunt meteen chatten.} other {Ask Cmdr praat met de cloud-AI-service die je hebt ingesteld. Sta eerst cloud-AI toe in Instellingen en je kunt meteen chatten.}}",
   "@askCmdr.gate.cloudOff.body": {
-    "sourceHash": "076c788"
+    "sourceHash": "c695a94"
   },
   "askCmdr.gate.cloudOff.openSettings": "Ga naar AI-instellingen",
   "@askCmdr.gate.cloudOff.openSettings": {
@@ -1416,9 +1416,9 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, windows {AI-functies staan aan, maar ze hebben een aanbieder nodig om te werken. Klik om er een te kiezen in instellingen.} linuxGnome {AI-functies staan aan, maar ze hebben een aanbieder nodig om te werken. Klik om er een te kiezen in voorkeuren.} linuxKde {AI features are on, but they need a provider to work. Click to set one up in Configure Cmdr.} other {AI-functies staan aan, maar ze hebben een aanbieder nodig om te werken. Klik om er een te kiezen in instellingen.}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {AI-functies staan aan, maar ze hebben een aanbieder nodig om te werken. Klik om er een te kiezen in instellingen.} linuxGnome {AI-functies staan aan, maar ze hebben een aanbieder nodig om te werken. Klik om er een te kiezen in voorkeuren.} linuxKde {AI-functies staan aan, maar ze hebben een aanbieder nodig om te werken. Klik om er een te kiezen in ‘Cmdr configureren’.} other {AI-functies staan aan, maar ze hebben een aanbieder nodig om te werken. Klik om er een te kiezen in instellingen.}}",
   "@askCmdr.wake.needsApiKey": {
-    "sourceHash": "2f1b3e9"
+    "sourceHash": "c8908e4"
   },
   "askCmdr.wakeDigest.summary": "Wat er is veranderd in {foldersText} {folders, plural, one {map} other {mappen}}",
   "@askCmdr.wakeDigest.summary": {

@@ -3224,7 +3224,12 @@
     "chosen": "Instellingen",
     "confidence": "high",
     "forms": "Cmdr's own window, capitalized: Instellingen; navigation paths Instellingen > AI (separator mirrors English per key); leave a field empty → laat dit leeg (macOS, verbatim with dit)",
-    "sources": "macOS, MS (settings → instellingen)"
+    "sources": "macOS, MS (settings → instellingen)",
+    "windows": {
+      "chosen": "Instellingen",
+      "accept": ["instellingen", "instelling", "instel"],
+      "note": "Microsoft names an app's settings Instellingen too (nl/microsoft-terminology/DUTCH.tbx: Settings → Instellingen, 'the feature in an app that allows users to change its properties'), so every windows branch naming Cmdr's window (settings.window.title, commands.appSettings.label, each Instellingen > AI pointer) reads like macOS. A sign-in in the same windows branch takes Windows' aanmelden (see sign-in)."
+    }
   },
   "share-menu": {
     "accept": ["deel"],
@@ -4411,5 +4416,11 @@
       "chosen": "Voorkeuren",
       "note": "GNOME titles Cmdr's settings window Voorkeuren (nl/gnome-nautilus/nautilus.po _Preferences → _Voorkeuren; nl/xfce-thunar/thunar.po Voork_euren...), with no ellipsis on the app-menu row (menu.app.settings), so every linuxGnome pointer says Voorkeuren (bij Voorkeuren > AI). KDE's window is Configureren – Cmdr (see configure)."
     }
+  },
+  "usb-preferences": {
+    "chosen": "USB-voorkeuren",
+    "confidence": "tentative",
+    "sources": "catalog (settings.fileOperations.mtpEnabled.description: Instellingen > USB-voorkeuren); no pile source carries Android's strings",
+    "note": "Quote the label Dutch Android shows on the phone; the path's first step is Android's Instellingen app."
   }
 }

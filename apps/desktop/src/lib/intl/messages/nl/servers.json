@@ -127,7 +127,7 @@
   },
   "servers.hub.discoveryOffLink": "{platform, select, windows {Zet het aan in Instellingen} linuxGnome {Zet het aan in Voorkeuren} linuxKde {Zet het aan in ‘Cmdr configureren’} other {Zet het aan in Instellingen}}",
   "@servers.hub.discoveryOffLink": {
-    "sourceHash": "65a3d5a"
+    "sourceHash": "cd006e8"
   },
   "servers.hub.nfsHint": "NFS-servers maken zichzelf niet bekend, dus ze verschijnen hier niet.",
   "@servers.hub.nfsHint": {

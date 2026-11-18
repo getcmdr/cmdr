@@ -73,7 +73,7 @@
   },
   "crashReporter.sentToast.changeSettings": "{platform, select, windows {Wijzig in Instellingen} linuxGnome {Wijzig in Voorkeuren} linuxKde {Wijzig in ‘Cmdr configureren’} other {Wijzig in Instellingen}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "c3fff1a"
+    "sourceHash": "9972084"
   },
   "crashReporter.sentToast.sendLog": "Logboek bijvoegen",
   "@crashReporter.sentToast.sendLog": {
