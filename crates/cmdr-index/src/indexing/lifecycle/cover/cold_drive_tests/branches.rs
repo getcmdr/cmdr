@@ -46,7 +46,6 @@ fn a_walk_leaves_the_ground_it_covered_watched_and_written_down() {
 /// real `DriveWatcher` on a real drive and touches real files, which is the only
 /// way to prove `ensure_branch_watch` starts something that works — the failure it
 /// catches is a walked branch that reads live and is quietly frozen.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 #[tokio::test(flavor = "multi_thread")]
 #[allow(
     clippy::await_holding_lock,

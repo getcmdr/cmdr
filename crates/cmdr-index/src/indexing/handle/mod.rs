@@ -287,15 +287,12 @@ impl Index {
             | VolumeScheme::S3
             | VolumeScheme::Nfs
             | VolumeScheme::Unknown => {
-                #[cfg(any(target_os = "macos", target_os = "linux"))]
-                {
-                    use crate::indexing::transports::local_external::index::{
-                        LocalExternalEnable, start_indexing_for_local_external,
-                    };
-                    match start_indexing_for_local_external(volume_id.to_string()).await? {
-                        LocalExternalEnable::Started => return Ok(StartOutcome::Started),
-                        LocalExternalEnable::NotLocalExternal => {}
-                    }
+                use crate::indexing::transports::local_external::index::{
+                    LocalExternalEnable, start_indexing_for_local_external,
+                };
+                match start_indexing_for_local_external(volume_id.to_string()).await? {
+                    LocalExternalEnable::Started => return Ok(StartOutcome::Started),
+                    LocalExternalEnable::NotLocalExternal => {}
                 }
                 Ok(Self::start_share(volume_id).await)
             }
@@ -310,20 +307,13 @@ impl Index {
             log::info!(target: "indexing", "start_volume: refusing '{volume_id}', the phone isn't connected");
             return Ok(StartOutcome::Refused(DriveIndexRefusal::NotConnected));
         }
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        {
-            use cmdr_fs::volume::VolumeScheme;
-            if VolumeScheme::of(volume_id) == VolumeScheme::Mtp {
-                crate::indexing::transports::mtp::index::start_indexing_for_mtp(volume_id.to_string())?;
-            } else {
-                crate::indexing::transports::adb::start_indexing_for_adb(volume_id)?;
-            }
-            Ok(StartOutcome::Started)
+        use cmdr_fs::volume::VolumeScheme;
+        if VolumeScheme::of(volume_id) == VolumeScheme::Mtp {
+            crate::indexing::transports::mtp::index::start_indexing_for_mtp(volume_id.to_string())?;
+        } else {
+            crate::indexing::transports::adb::start_indexing_for_adb(volume_id)?;
         }
-        #[cfg(target_os = "windows")]
-        {
-            Ok(StartOutcome::Refused(DriveIndexRefusal::NotIndexable))
-        }
+        Ok(StartOutcome::Started)
     }
 
     /// Start a share's index behind the SMB gate, which upgrades an OS mount to a
@@ -778,23 +768,13 @@ impl Index {
     /// what it is and folds it in, or buffers the bare handle when the device is
     /// busy with a walk.
     pub fn on_device_object_changed(&self, device_id: &str, handle: u32) {
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
         crate::indexing::transports::mtp::watch::on_device_object_changed(device_id, handle);
-        #[cfg(target_os = "windows")]
-        {
-            let _ = (device_id, handle);
-        }
     }
 
     /// A device reported that one object is gone. Costs no device round trip:
     /// each indexed storage resolves the removal by the handle it stored.
     pub fn on_device_object_removed(&self, device_id: &str, handle: u32) {
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
         crate::indexing::transports::mtp::watch::on_device_object_removed(device_id, handle);
-        #[cfg(target_os = "windows")]
-        {
-            let _ = (device_id, handle);
-        }
     }
 
     /// Live watching lost continuity, so the index can no longer claim it has
@@ -808,12 +788,7 @@ impl Index {
                 }
             },
             WatchScope::Device(device_id) => {
-                #[cfg(any(target_os = "macos", target_os = "linux"))]
                 crate::indexing::transports::mtp::index::on_mtp_watch_continuity_lost(device_id);
-                #[cfg(target_os = "windows")]
-                {
-                    let _ = device_id;
-                }
             }
         }
     }

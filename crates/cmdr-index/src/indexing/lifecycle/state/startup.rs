@@ -637,7 +637,6 @@ fn resume_branch_watch(volume_id: &str) {
 /// AFTER the direct-smb2 gate has passed. Funnels into the shared
 /// `start_indexing_for` with the `Smb` kind so the lock-first reservation,
 /// load-as-Stale freshness seeding, and `Volume`-trait scan path all apply.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) fn start_indexing_for_smb_inner(volume_id: &str, mount_root: PathBuf) -> Result<(), String> {
     // SMB stores trait-provided inodes and doesn't run the local inode-keyed
     // rename pre-pass, so its inode identity is treated as trustworthy.
@@ -655,7 +654,6 @@ pub(crate) fn start_indexing_for_smb_inner(volume_id: &str, mount_root: PathBuf)
 /// `start_indexing_for` with the `Mtp` kind so the lock-first reservation,
 /// load-as-Stale freshness seeding, and `Volume`-trait scan path all apply.
 /// `volume_root` is the MTP volume's `mtp://{device}/{storage}` root.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) fn start_indexing_for_mtp_inner(volume_id: &str, volume_root: PathBuf) -> Result<(), String> {
     // MTP reuses the `inode` column for PTP object handles and doesn't run the
     // local rename pre-pass, so its inode identity is treated as trustworthy.
@@ -673,7 +671,6 @@ pub(crate) fn start_indexing_for_mtp_inner(volume_id: &str, volume_root: PathBuf
 /// `start_indexing_for` with the `Adb` kind so the lock-first reservation,
 /// load-as-Stale freshness seeding, and `Volume`-trait scan path all apply.
 /// `volume_root` is the phone's `adb://<serial>` root.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) fn start_indexing_for_adb_inner(volume_id: &str, volume_root: PathBuf) -> Result<(), String> {
     // A trait-scanned volume never runs the local inode-keyed rename pre-pass, so
     // its inode identity counts as trustworthy, as SMB's and MTP's do.
@@ -699,7 +696,6 @@ pub(crate) fn start_indexing_for_adb_inner(volume_id: &str, volume_root: PathBuf
 /// for FAT/exFAT so the scan/reconcile/live pipeline stores `inode: None` and the
 /// rename pre-pass stays inert (an inode-reused delete+create must never become a
 /// false move), `true` for every other local format.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) fn start_indexing_for_local_external_inner(
     volume_id: &str,
     mount_root: PathBuf,

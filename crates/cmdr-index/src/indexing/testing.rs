@@ -51,7 +51,6 @@ pub mod scan {
         enrich_via_parent_id_on, test_install_root_read_pool, test_read_pool_lock, test_uninstall_root_read_pool,
     };
     pub use crate::indexing::scanner::ScanProgress;
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
     pub use crate::indexing::transports::smb::watch::{index_relative_path, resolve_and_send_for_test};
     pub use crate::indexing::writer::IndexWriter;
 }

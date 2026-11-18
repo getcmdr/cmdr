@@ -670,11 +670,11 @@ mod tests {
         );
     }
 
-    /// A mounted-but-unindexed external drive reports its OWN index status (`off` —
-    /// no index registered under its id), not `root`'s. `cmdr://state`'s
-    /// `indexStatus` reads through this resolution, so before the routing fix the
-    /// drive inherited `root`'s id (and `root`'s freshness). The `volume_id` field
-    /// is the proof the status now resolves to the drive, not `root`.
+    /// A mounted-but-unindexed external drive reports its OWN index status (`off`:
+    /// no index under its id), not `root`'s freshness, which `cmdr://state`'s
+    /// `indexStatus` reads through. The `volume_id` field is the proof. Windows has
+    /// no mount prefix; its drives become volumes with task 34 (windows-port plan).
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[test]
     fn volume_index_status_for_external_drive_resolves_to_the_drive_not_root() {
         #[cfg(target_os = "macos")]

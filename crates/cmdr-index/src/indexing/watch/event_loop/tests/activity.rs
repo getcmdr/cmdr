@@ -10,14 +10,18 @@ use super::*;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
-use super::rename::{insert_path_chain, rename_test_setup, rename_test_tempdir};
+#[cfg(unix)]
+use super::rename::rename_test_tempdir;
+use super::rename::{insert_path_chain, rename_test_setup};
 use crate::indexing::events::{IndexEvent, RecordingSink};
 use crate::indexing::reconcile::reconciler::EventReconciler;
+#[cfg(unix)]
 use crate::indexing::store::ROOT_ID;
 use crate::indexing::watch::activity_monitor::BatchObservers;
 use crate::indexing::writer::IndexWriter;
 
 /// Flags for a renamed entry that is a directory.
+#[cfg(unix)]
 fn renamed_dir() -> watcher::FsEventFlags {
     watcher::FsEventFlags {
         item_renamed: true,
@@ -126,6 +130,7 @@ fn a_live_batch_reports_its_folders_and_counts() {
 /// `retain`s its matches OUT of the batch, so a tap reading only what Pass 2 still holds would
 /// see nothing here at all — and a consumer scoring intent would read a rename-only batch as
 /// no activity whatsoever.
+#[cfg(unix)] // inode-keyed: Windows file identity is unknown until task 35
 #[test]
 fn a_rename_only_batch_still_reports_a_rename() {
     let fs_root = rename_test_tempdir();

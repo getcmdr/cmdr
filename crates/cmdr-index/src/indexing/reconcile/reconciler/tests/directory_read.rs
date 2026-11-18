@@ -74,6 +74,7 @@ fn the_reconcile_read_matches_a_per_entry_stat() {
     std::fs::create_dir(root.join(".Spotlight-V100")).unwrap();
     // A named pipe: a type the bulk reader carries no inline size for, so it must
     // take the per-entry stat fallback and land on the same values.
+    #[cfg(unix)]
     cmdr_fs::testing::make_fifo(&root.join("pipe"))
         .expect("the fifo is what covers the no-inline-stat fallback; without it this test silently stops testing it");
 
