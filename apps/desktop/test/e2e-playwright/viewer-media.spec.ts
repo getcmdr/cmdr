@@ -61,10 +61,8 @@ async function openMediaViewer(mainPage: TauriPage, filePath: string): Promise<T
 /**
  * CSP violations that mention our media scheme or the directives that govern it.
  *
- * The webview fires unrelated CSP violations from the test harness itself
- * (`plugin:playwright|pw_result` and `plugin:notification` on `connect-src`, an
- * `inline / style-src-attr`); those are pre-existing and not this feature's
- * concern. We only care that the `cmdr-media://` request was NOT blocked, which
+ * The webview can fire unrelated CSP violations (an `inline / style-src-attr`
+ * from the test harness); those aren't this feature's concern. We only care that the `cmdr-media://` request was NOT blocked, which
  * would show up as a violation whose blocked URI is `cmdr-media:` or whose
  * directive is `img-src` / `object-src`.
  */
