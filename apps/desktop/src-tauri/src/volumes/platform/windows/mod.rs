@@ -16,7 +16,7 @@ use std::time::{Duration, Instant};
 
 use crate::ignore_poison::IgnorePoison;
 use crate::volumes::{DEFAULT_VOLUME_ID, LocationCategory, LocationInfo, NetworkMount, SmbMountInfo, VolumeInfo};
-use cmdr_fs::volume::path_grammar::{AppPath, PathFlavor, PathKind, app_spelling};
+use cmdr_fs::volume::path_grammar::{self, PathFlavor, PathKind, app_spelling};
 use cmdr_fs::volume::windows_volume_ids::{WindowsDrive, WindowsDriveKind, covering_drive};
 use cmdr_fs::volume::{MountClass, SpaceInfo, Volume, path_volume_id};
 use cmdr_local::LocalVolume;
@@ -75,14 +75,14 @@ fn fresh_drive_table() -> Arc<Vec<WindowsDrive>> {
 /// one holds no root for it (a drive that arrived since). A bare UNC root nobody mapped answers
 /// as a share of its own.
 fn drive_for(path: &str) -> Option<WindowsDrive> {
-    let app = AppPath::from_native(path, PathFlavor::Windows)?.to_string();
+    let app = path_grammar::native_to_app(path, PathFlavor::Windows)?;
     if let Some(drive) = covering_drive(&drive_table(), &app) {
         return Some(drive.clone());
     }
     if let Some(drive) = covering_drive(&fresh_drive_table(), &app) {
         return Some(drive.clone());
     }
-    if AppPath::parse(&app, PathFlavor::Windows)?.root().kind() == PathKind::Unc {
+    if path_grammar::path_kind(&app, PathFlavor::Windows)? == PathKind::Unc {
         return drives::unc_drive(&app, &system_drive_root());
     }
     None
@@ -265,10 +265,9 @@ fn source_of(drive: &WindowsDrive) -> String {
 pub(crate) fn volume_id_for_mount(mount_path: &str) -> String {
     match drive_for(mount_path) {
         Some(drive) => drive.id,
-        None => AppPath::from_native(mount_path, PathFlavor::Windows).map_or_else(
-            || DEFAULT_VOLUME_ID.to_string(),
-            |app| path_volume_id(&app.root().to_string()),
-        ),
+        None => path_grammar::native_to_app(mount_path, PathFlavor::Windows)
+            .and_then(|app| path_grammar::root_of(&app, PathFlavor::Windows))
+            .map_or_else(|| DEFAULT_VOLUME_ID.to_string(), |root| path_volume_id(&root)),
     }
 }
 

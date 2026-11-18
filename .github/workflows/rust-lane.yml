@@ -171,6 +171,8 @@ jobs:
 
       - name: Check lock-poison
         run: ./scripts/check/check --check desktop-rust-lock-poison --ci
+      - name: Check app-path-std-bridge
+        run: ./scripts/check/check --check desktop-rust-app-path-std-bridge --ci
 
       - name: Check platform-cfg-placement
         run: ./scripts/check/check --check desktop-rust-platform-cfg-placement --ci

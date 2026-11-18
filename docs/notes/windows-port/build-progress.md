@@ -233,3 +233,55 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
   `link-cplusplus`), a fresh `CARGO_TARGET_DIR` (a cloned `target/` carried stale Windows artifacts, E0461), and zig's
   binary named by path, since mise's `zig` shim has no version outside a pinned project; `cargo clippy` there still
   fails on host and target artifacts mixing (E0461), so Windows clippy runs on the builder.
+- **2026-11-18, the app-path baseline** (app-path plan milestone 1, the run at `e03f087946`): the first full-workspace
+  test run on the builder, `cargo nextest run --workspace --exclude cmdr-fsevent-stream --no-fail-fast` in a fresh clone
+  (`D:\src\cmdr-m1`, `CARGO_TARGET_DIR=D:\targets\t34`), 23m 02s to build the tests warm-ish, then 613 s: 13,831 tests,
+  12,897 passed, 869 failed, 65 timed out, 669 skipped. `cmdr-fsevent-stream` is macOS-only and fails to compile there
+  (`core-foundation`), so a workspace run has to leave it out. Every failure, by name, crate, and cause cluster, is
+  `docs/notes/windows-port/app-path-baseline.md`, rendered from the run's JUnit report by
+  `scripts/windows-test-baseline` (`render`; a later run diffs with `diff`, and `explain` shows what each cause was read
+  from). Per crate: `cmdr-operations` 297, `cmdr` 182, `cmdr-index` 157, `cmdr-restic` 67, `cmdr-adb` 52, `cmdr-nfs` 49,
+  `cmdr-s3` 48, `cmdr-webdav` 23, `cmdr-viewer` and `cmdr-smb` 13 each, `cmdr-archive` 11, `cmdr-sftp` 7,
+  `cmdr-listing-wasm` 7, `cmdr-listing` and `cmdr-operation-log` 3 each, `cmdr-mtp` 2; `cmdr-fs`, `cmdr-local`, and the
+  rest none. By cause: `std::path` on an app path (S) 406, a native tempdir where an app path belongs (N) 333, timed out
+  71, #1226's open files 53, task 35's identity 32, Windows-only expectations 13, unread 13, task 34's root volume 6, a
+  Linux errno through host codes 4, product gaps 3; 407 of them name no cause in their output and take their nearest
+  sibling's cluster, marked "cause unread". Against the plan's round-four reading: `cmdr-operations`' finalize cluster
+  (F) never names `rename_local_exclusive` in a panic, so its cells sit under N by their tempdir paths; `cmdr-index`
+  timed out on 85, not 47; and `cmdr-adb`'s 51 path cells read as `NotFound("\\sdcard")`, a POSIX path re-rooted by
+  `std::path`. Gotchas: a job launched over SSH dies with the session, so it runs through the infra repo's
+  `run-on-desktop.sh` (detached, in Admin's desktop session); nextest wrote the JUnit report to
+  `target\nextest\default\target\nextest\default\junit.xml` under the checkout, not under `CARGO_TARGET_DIR` (kept as
+  `D:\logs\m1\baseline-junit.xml`); the timed-out cold-drive tests left 47 `crates/cmdr-index/cmdr-cold-cover-*` trees,
+  removed after the run along with 46 older ones in `D:\src\cmdr`; and a `cmdr-index` proptest left a
+  `proptest-regressions/indexing/` seed in the checkout.
+- **2026-11-18, the typed app path** (app-path plan milestone 3): `cmdr_fs::app_path` exists and nothing adopts it, so
+  no Windows outcome moves outside `cmdr-fs`'s own new cells. Its native conversions are pure (bytes and UTF-16 units as
+  data), so the Windows arm's refusals (`:`, `NoPortOnUnc`, `NotPlainSafe`, the verbatim `.`/`..`/empty names, `C:` and
+  `C:foo`) run on every OS; only the `OsStr` crossing sits behind `app_path/platform/`. The Mac's zig cross-check
+  `cargo check --all-targets --target x86_64-pc-windows-gnu` is clean for `cmdr-fs` (with `testing`) and `cmdr-local`,
+  and the wasm build of `cmdr-fs` too. On the builder, `cargo nextest run -p cmdr-fs --features testing` in a fresh
+  checkout (`D:\src\cmdr-m3`, `CARGO_TARGET_DIR=D:\target-m3`, `7eba6045c3`): 858 of 858 passed, 26 skipped (the `#1225`
+  ignores), and `cargo clippy -p cmdr-fs -p cmdr-local --all-targets -D warnings` clean. The first run's two reds were
+  the cells, not the type: deserializing a POSIX path is refused on a Windows host (the `from_wire` fence), and the
+  allocation cell's comparison caught today's `PathBuf::join` writing a `\` into an app path (#1225's bug, by
+  construction). Cmd-shell recipe that works there:
+  `cmd /c "cd /d <dir> && set "CARGO_TARGET_DIR=<dir>" && cargo nextest run ... > <log> 2>&1"` (an unquoted
+  `set X=Y && …` keeps the trailing space in the value).
+- **2026-11-18, the typed app path's review fixes** (`3951274cdf`): comparison now reads text with the host's
+  `Path::components`, so the builder ran the Windows property against `PathBuf` (4,000 cases over drive, UNC, verbatim,
+  and mixed-separator text): its first runs found where the type's prefix reading departed from std's (a UNC prefix
+  needs a server AND a share, `\\.\` takes either separator, a UNC or device prefix implies a root), now mirrored.
+  `cargo nextest run -p cmdr-fs --features testing` 868 of 868 (26 skipped, the `#1225` ignores), and
+  `cargo clippy -p cmdr-fs -p cmdr-local --all-targets -D warnings` clean (it caught a `manual_strip` the Mac's clippy
+  lane didn't).
+- **2026-11-18, the typed app path integrated and its second review fixed** (`0f464fc516`, the pins and the type merged
+  onto `main`; `docs/notes/windows-port/app-path-type-review-fixes.md`): in `D:\src\cmdr-m3` with
+  `CARGO_TARGET_DIR=D:\target-m3`, launched at low priority through `run-on-desktop.sh` while another agent's `cmdr`
+  build held the box: `cargo nextest run -p cmdr-fs --features testing` 899 of 899 (26 skipped, the `#1225` ignores),
+  the Windows `PathBuf` comparison property over the text Win32 opens included, and
+  `cargo clippy -p cmdr-fs -p cmdr-local -p cmdr-operation-log --all-targets --features cmdr-fs/testing -D warnings`
+  clean. Its first runs found two test-build breaks (an import only the Unix column reads, a method only a Unix cell
+  called; the Mac's zig cross-check, `--all-targets` over `cmdr-fs`, `cmdr-operation-log`, `cmdr-operations`, and
+  `cmdr-local`, then agreed) and a property whose `prop_filter` rejected most cases, which timed out at 8 s on the
+  2-core box and now builds its input.

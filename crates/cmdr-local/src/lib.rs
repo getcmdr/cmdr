@@ -80,6 +80,8 @@ pub use platform::*;
 pub use rename::rename_volume_error;
 
 #[cfg(test)]
+mod list_alloc_ceiling_test;
+#[cfg(test)]
 mod local_posix_conformance_test;
 #[cfg(test)]
 mod local_posix_durability_test;
@@ -97,3 +99,5 @@ mod local_windows_test;
 mod reading_parity_test;
 #[cfg(test)]
 mod reading_test;
+#[cfg(test)]
+mod wire_path_shape_test;

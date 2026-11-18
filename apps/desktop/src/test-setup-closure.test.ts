@@ -61,8 +61,10 @@ describe('test-setup.ts import closure', () => {
   })
 
   it('stays small, so an edit to almost any module selects only its own tests', () => {
-    // Today's closure: the setup file, the message runtime and its locale helpers, and the
-    // layout shim. Raise this only for a leaf module that rarely changes.
-    expect(closure.length, closure.join('\n')).toBeLessThanOrEqual(12)
+    // Today's closure: the setup file, the message runtime and its locale helpers, the path
+    // display helpers `t()` runs its result through (`display-path`, `grammar`, and the
+    // escape's leaf `escape.ts`), and the layout shim. Raise this only for a leaf module that
+    // rarely changes.
+    expect(closure.length, closure.join('\n')).toBeLessThanOrEqual(13)
   })
 })

@@ -198,6 +198,9 @@ pub fn resolve(input: &str, base_dir: &str) -> GoToPathResolution {
 }
 
 #[cfg(test)]
+mod wire_shape_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use std::fs;

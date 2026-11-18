@@ -127,6 +127,8 @@ mod mount_boundary;
 mod mutation_error;
 mod mutation_reply;
 mod name_rules;
+#[cfg(test)]
+mod non_utf8_name_tests;
 mod operation_intent;
 mod outage_slot;
 #[cfg(not(target_family = "wasm"))]
