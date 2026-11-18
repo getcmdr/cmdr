@@ -7,6 +7,7 @@
  * Future: Can be modified at runtime for user theme customization. */
 
 @import './app-palette.css';
+@import './app-menu.css';
 @import './app-reset.css';
 
 :root {

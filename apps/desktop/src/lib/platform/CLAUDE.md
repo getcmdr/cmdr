@@ -34,7 +34,8 @@ behave, as the backend says, read synchronously.
   `withCapabilities('fullDiskAccess')` what the OS offers, `withConventions('kde')` how it behaves, and
   `withPlatform('linux', 'kde')` both, so a catalog block reads its `linuxKde` branch; ❌ never mock `isMacOS` /
   `hasCapability` or stub the user agent. Module-load reads need `vi.hoisted`; the forms are in `test-platform.ts`.
-- **CSS follows `data-overlay-title-bar`** (and `data-platform`), set by `hooks.client.ts` before the first route
-  renders. `--titlebar-height` is 0 without an overlay title bar (`app.css` § Window chrome).
+- **CSS follows `data-overlay-title-bar`** (and `data-platform`, and `data-look` for the menu tokens, which a mocked
+  desktop moves), set by `hooks.client.ts` before the first route renders. `--titlebar-height` is 0 without an overlay
+  title bar (`app.css` § Window chrome).
 
 Mechanics, the fallback, and decisions: `DETAILS.md`.
