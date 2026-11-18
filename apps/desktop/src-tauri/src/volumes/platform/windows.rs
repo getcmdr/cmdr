@@ -6,7 +6,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use crate::volumes::{DEFAULT_VOLUME_ID, LocationCategory, LocationInfo, NetworkMount, SmbMountInfo, VolumeInfo};
-use cmdr_fs::volume::path_grammar::{AppPath, PathFlavor, app_spelling};
+use cmdr_fs::volume::path_grammar::{self, PathFlavor, app_spelling};
 use cmdr_fs::volume::{MountClass, SpaceInfo, Volume};
 use cmdr_local::LocalVolume;
 
@@ -109,9 +109,9 @@ pub(crate) fn resolve_path_volume_fast(path: &str) -> Option<VolumeInfo> {
 }
 
 fn resolve_on_system_drive(path: &str, system_drive: &str) -> Option<VolumeInfo> {
-    let parsed = AppPath::from_native(path, PathFlavor::Windows)?;
-    let drive = AppPath::parse(system_drive, PathFlavor::Windows)?;
-    if parsed.root() != drive.root() {
+    let parsed = path_grammar::native_to_app(path, PathFlavor::Windows)?;
+    let drive = path_grammar::root_of(system_drive, PathFlavor::Windows)?;
+    if path_grammar::root_of(&parsed, PathFlavor::Windows)? != drive {
         return None;
     }
     Some(row(
@@ -158,7 +158,7 @@ pub(crate) fn volume_id_for_mount(_mount_path: &str) -> String {
 }
 
 /// ❗ A marked seam, not an answer: each drive and UNC share is its own volume
-/// (`AppPath::parse(path, PathFlavor::Windows)` names its root), but their volume ids aren't
+/// (`path_grammar::root_of(path, PathFlavor::Windows)` names it), but their volume ids aren't
 /// decided yet (`docs/specs/windows-port-plan.md`, the drives task), so every path still answers
 /// the root volume, as the stub did.
 pub(crate) fn local_volume_id_for_path(_path: &str) -> String {

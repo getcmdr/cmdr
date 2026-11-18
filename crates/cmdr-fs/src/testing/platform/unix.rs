@@ -19,6 +19,11 @@ pub fn can_create_symlinks() -> bool {
     true
 }
 
+/// See the re-export in `mod.rs`: no short names here.
+pub fn long_path(path: &Path) -> io::Result<std::path::PathBuf> {
+    Ok(path.to_path_buf())
+}
+
 /// See the re-export in `mod.rs`.
 pub fn make_fifo(path: &Path) -> io::Result<()> {
     use std::os::unix::ffi::OsStrExt as _;

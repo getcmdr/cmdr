@@ -191,6 +191,10 @@ plist = { version = "1.10.3", optional = true }
 plist = "1.10.3"
 
 [dev-dependencies]
+# The app path's property tests (`src/app_path/properties_test.rs`): the escape's round
+# trips, the canonical form, and the comparison against `PathBuf`. Same version the other
+# crates pin.
+proptest = "1.12.0"
 # `sqlite_util`'s tests open real on-disk databases: the page-cache budget and the
 # freelist reclamation only mean anything against a file-backed connection.
 tempfile = "3"

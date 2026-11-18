@@ -15,6 +15,7 @@ mod imp;
 const _: fn(&'static Path, &'static Path) -> io::Result<()> = symlink::<&'static Path, &'static Path>;
 const _: fn() -> bool = is_root;
 const _: fn() -> bool = can_create_symlinks;
+const _: fn(&Path) -> io::Result<std::path::PathBuf> = long_path;
 
 /// Creates a symlink at `link` pointing at `target`, which may be relative (to `link`'s
 /// folder) and may not exist. Windows keeps file and folder links apart, so there the
@@ -28,6 +29,10 @@ pub use imp::is_root;
 /// Whether this process may create symlinks: always on Unix; on Windows only with
 /// Developer Mode or an elevated process, so a link test skips itself without them.
 pub use imp::can_create_symlinks;
+
+/// `path` with every 8.3 short name spelled long, the spelling a listing shows. Windows
+/// only has short names (`GetLongPathNameW`); elsewhere it's `path` as is.
+pub use imp::long_path;
 
 /// A named pipe (FIFO) at `path`, the special file a walk must neither read nor copy.
 /// Unix-only: Windows has no FIFO on disk.

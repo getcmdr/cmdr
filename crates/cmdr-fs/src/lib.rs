@@ -37,6 +37,7 @@ compile_error!("Cmdr builds for macOS, Linux, Windows, and the browser only; see
 #[cfg(target_family = "wasm")]
 use sqlite_wasm_rs as _;
 
+pub mod app_path;
 pub mod apple_double;
 pub mod archive_format;
 #[cfg(target_os = "macos")]
