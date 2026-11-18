@@ -1,7 +1,8 @@
 /**
  * `ModalDialog` follows the platform's dialog conventions (`#lib/platform`'s `convention()`) on
- * every desktop row: button order, Tab order, Enter and Escape, and access keys. The macOS block
- * pins today's markup and behavior, so a convention can only ever change the other rows.
+ * every desktop row: button order, Tab order, Return and Escape (and ⌘. on the Mac), the default
+ * button, and access keys (keytips on Windows, underlines on Linux). The macOS block pins the Mac
+ * markup and keys, so a convention change can't move them unnoticed.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -27,15 +28,27 @@ const body = createRawSnippet(() => ({
  * then Save), the shape every dialog's footer has. A raw snippet renders one root element, so
  * the second button joins it as its sibling.
  */
-const footer = createRawSnippet(() => ({
-  render: () => `<button id="cancel">Cancel</button>`,
-  setup: (node: Element) => {
-    const save = document.createElement('button')
-    save.id = 'save'
-    save.textContent = 'Save'
-    node.after(save)
-  },
-}))
+const footer = footerWith()
+
+/**
+ * The same footer, with Save marked as the dialog's default button the way `Button`'s `isDefault`
+ * marks it (`data-dialog-default`, `'destructive'` on a danger one, and `Enter` announced).
+ */
+function footerWith(defaultSave?: 'default' | 'destructive') {
+  return createRawSnippet(() => ({
+    render: () => `<button id="cancel">Cancel</button>`,
+    setup: (node: Element) => {
+      const save = document.createElement('button')
+      save.id = 'save'
+      save.textContent = 'Save'
+      if (defaultSave) {
+        save.setAttribute('data-dialog-default', defaultSave === 'destructive' ? 'destructive' : '')
+        save.setAttribute('aria-keyshortcuts', 'Enter')
+      }
+      node.after(save)
+    },
+  }))
+}
 
 const ALL_DESKTOPS: ConventionsDesktop[] = ['macos', 'windows', 'gnome', 'kde', 'otherLinux']
 
@@ -54,7 +67,13 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function open(extra: { letterKeysAnswer?: boolean } = {}): Promise<Opened> {
+async function open(
+  extra: {
+    letterKeysAnswer?: boolean
+    footer?: ReturnType<typeof footerWith>
+    children?: ReturnType<typeof createRawSnippet>
+  } = {},
+): Promise<Opened> {
   const target = document.createElement('div')
   document.body.appendChild(target)
   const onkeydown = vi.fn()
@@ -129,15 +148,30 @@ describe('ModalDialog on macOS (characterization: what every Mac user has today)
     expect(tabWalk(overlay, 4)).toEqual(['name-field', 'options', 'cancel', 'save', 'name-field'])
   })
 
-  it('Escape closes, Enter on a focused button presses that button, Enter elsewhere reaches the dialog', async () => {
+  it('Escape and ⌘. close; Return never presses the focused button, it reaches the dialog from anywhere', async () => {
     withConventions('macos')
     const { overlay, onclose, onkeydown } = await open()
     press(byId(overlay, 'name-field'), { key: 'Escape' })
     expect(onclose).toHaveBeenCalledTimes(1)
-    press(byId(overlay, 'cancel'), { key: 'Enter' })
-    expect(onkeydown).not.toHaveBeenCalled()
-    press(byId(overlay, 'name-field'), { key: 'Enter' })
+    const period = press(byId(overlay, 'name-field'), { key: '.', code: 'Period', metaKey: true })
+    expect(onclose).toHaveBeenCalledTimes(2)
+    expect(period.defaultPrevented).toBe(true)
+    const onCancel = press(byId(overlay, 'cancel'), { key: 'Enter' })
     expect(onkeydown).toHaveBeenCalledTimes(1)
+    expect(onCancel.defaultPrevented).toBe(true)
+    press(byId(overlay, 'name-field'), { key: 'Enter' })
+    expect(onkeydown).toHaveBeenCalledTimes(2)
+  })
+
+  it('lets a body button (a list row, a chip) take Return as its own press', async () => {
+    withConventions('macos')
+    const { overlay, onkeydown } = await open({ footer: footerWith('default') })
+    const saved = vi.fn()
+    byId(overlay, 'save').addEventListener('click', saved)
+    const enter = press(byId(overlay, 'options'), { key: 'Enter' })
+    expect(enter.defaultPrevented).toBe(false)
+    expect(onkeydown).not.toHaveBeenCalled()
+    expect(saved).not.toHaveBeenCalled()
   })
 
   it('hands Option keys to the dialog untouched', async () => {
@@ -261,5 +295,214 @@ describe.each(['windows', 'gnome', 'kde', 'otherLinux'] as const)('ModalDialog a
     byId(overlay, 'save').addEventListener('click', clicked)
     press(byId(overlay, 'name-field'), { key: 's', code: 'KeyS', altKey: true, ctrlKey: true })
     expect(clicked).not.toHaveBeenCalled()
+  })
+})
+
+const ENTER_PRESSES_FOCUSED: Record<ConventionsDesktop, boolean> = {
+  macos: false,
+  windows: true,
+  gnome: true,
+  kde: true,
+  otherLinux: true,
+}
+
+const textareaBody = createRawSnippet(() => ({
+  render: () => `<div><label for="note">Note</label><textarea id="note"></textarea></div>`,
+}))
+
+describe.each(ALL_DESKTOPS)('ModalDialog Return and the default button on %s', (desktop) => {
+  const pressesFocused = ENTER_PRESSES_FOCUSED[desktop]
+
+  it('presses the default button from a field, once', async () => {
+    withConventions(desktop)
+    const { overlay, onkeydown } = await open({ footer: footerWith('default') })
+    const saved = vi.fn()
+    byId(overlay, 'save').addEventListener('click', saved)
+    const enter = press(byId(overlay, 'name-field'), { key: 'Enter' })
+    expect(onkeydown).toHaveBeenCalledTimes(1)
+    expect(saved).toHaveBeenCalledTimes(1)
+    expect(enter.defaultPrevented).toBe(true)
+  })
+
+  it('leaves Return the dialog claimed to the dialog', async () => {
+    withConventions(desktop)
+    const { overlay, onkeydown } = await open({ footer: footerWith('default') })
+    onkeydown.mockImplementation((event: KeyboardEvent) => {
+      if (event.key === 'Enter') event.preventDefault()
+    })
+    const saved = vi.fn()
+    byId(overlay, 'save').addEventListener('click', saved)
+    press(byId(overlay, 'name-field'), { key: 'Enter' })
+    expect(saved).not.toHaveBeenCalled()
+  })
+
+  it(
+    pressesFocused
+      ? 'lets a focused button take Return as its own press'
+      : 'presses the default button, never the focused one, on Return',
+    async () => {
+      withConventions(desktop)
+      const { overlay } = await open({ footer: footerWith('default') })
+      const saved = vi.fn()
+      byId(overlay, 'save').addEventListener('click', saved)
+      const enter = press(byId(overlay, 'cancel'), { key: 'Enter' })
+      // A browser presses the focused button unless the keydown was prevented.
+      expect(enter.defaultPrevented).toBe(!pressesFocused)
+      expect(saved).toHaveBeenCalledTimes(pressesFocused ? 0 : 1)
+    },
+  )
+
+  it('never moves a destructive default onto Return pressed on another button', async () => {
+    withConventions(desktop)
+    const { overlay, onkeydown } = await open({ footer: footerWith('destructive') })
+    const saved = vi.fn()
+    byId(overlay, 'save').addEventListener('click', saved)
+    const enter = press(byId(overlay, 'cancel'), { key: 'Enter' })
+    expect(saved).not.toHaveBeenCalled()
+    expect(onkeydown).not.toHaveBeenCalled()
+    // Windows and Linux: Cancel takes its own press. The Mac: nothing happens at all.
+    expect(enter.defaultPrevented).toBe(!pressesFocused)
+  })
+
+  it('keeps Return in a multi-line field a new line', async () => {
+    withConventions(desktop)
+    const { overlay } = await open({ footer: footerWith('default'), children: textareaBody })
+    const saved = vi.fn()
+    byId(overlay, 'save').addEventListener('click', saved)
+    const enter = press(byId(overlay, 'note'), { key: 'Enter' })
+    expect(saved).not.toHaveBeenCalled()
+    expect(enter.defaultPrevented).toBe(false)
+  })
+
+  it('without a default button, Return presses nothing but what the platform gives the focus', async () => {
+    withConventions(desktop)
+    const { overlay } = await open()
+    const enter = press(byId(overlay, 'cancel'), { key: 'Enter' })
+    expect(enter.defaultPrevented).toBe(!pressesFocused)
+  })
+
+  it(desktop === 'macos' ? 'cancels on ⌘.' : 'leaves ⌘. alone', async () => {
+    withConventions(desktop)
+    const { overlay, onclose } = await open()
+    press(byId(overlay, 'name-field'), { key: '.', code: 'Period', metaKey: true })
+    expect(onclose).toHaveBeenCalledTimes(desktop === 'macos' ? 1 : 0)
+  })
+
+  it('announces the default button as pressed by Return, and passes axe', async () => {
+    withConventions(desktop)
+    const { overlay } = await open({ footer: footerWith('default') })
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    const keys = byId(overlay, 'save').getAttribute('aria-keyshortcuts') ?? ''
+    // Where there are access keys, the default button's own sits beside Enter.
+    expect(keys).toBe(desktop === 'macos' ? 'Enter' : 'Enter Alt+S')
+    await expectNoA11yViolations(overlay)
+  })
+})
+
+/** A stand-in for the CSS Custom Highlight API, which happy-dom lacks: records what's painted. */
+function stubHighlights(): Map<string, { ranges: Range[] }> {
+  const registry = new Map<string, { ranges: Range[] }>()
+  vi.stubGlobal('CSS', { highlights: { set: registry.set.bind(registry), delete: registry.delete.bind(registry) } })
+  vi.stubGlobal(
+    'Highlight',
+    class {
+      ranges: Range[]
+      constructor(...ranges: Range[]) {
+        this.ranges = ranges
+      }
+    },
+  )
+  return registry
+}
+
+/** A footer whose labels have no letter a keyboard types (Chinese), so each takes one from a to z. */
+const cjkFooter = createRawSnippet(() => ({
+  render: () => `<button id="cancel">取消</button>`,
+  setup: (node: Element) => {
+    const save = document.createElement('button')
+    save.id = 'save'
+    save.textContent = '保存'
+    node.after(save)
+  },
+}))
+
+describe.each(['gnome', 'kde', 'otherLinux'] as const)(
+  'ModalDialog access keys on %s look like GTK and Qt',
+  (desktop) => {
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    it('underlines each letter in its label while Alt is held, and draws no keytips', async () => {
+      const registry = stubHighlights()
+      withConventions(desktop)
+      const { overlay } = await open()
+      press(byId(overlay, 'name-field'), { key: 'Alt', code: 'AltLeft', altKey: true })
+      await tick()
+      const underlined = registry.get('cmdr-access-key')?.ranges.map((range) => range.toString())
+      expect(underlined).toEqual(['N', 'O', 'C', 'S'])
+      expect(overlay.querySelector('.access-key-tip')).toBeNull()
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', code: 'AltLeft' }))
+      expect(registry.has('cmdr-access-key')).toBe(false)
+    })
+
+    it('underlines the occurrence the letter came from: a word initial before an earlier letter', async () => {
+      const registry = stubHighlights()
+      withConventions(desktop)
+      const words = createRawSnippet(() => ({
+        render: () => `<div><button id="first">Copy</button><button id="second">Copy over</button></div>`,
+      }))
+      const { overlay } = await open({ children: words })
+      press(overlay, { key: 'Alt', code: 'AltLeft', altKey: true })
+      const ranges = registry.get('cmdr-access-key')?.ranges ?? []
+      // "Copy" takes C, so "Copy over" takes over's O, the word initial, ❌ not the o in "Copy".
+      const second = ranges.find((range) => range.startContainer.parentElement?.id === 'second')
+      expect(second?.toString()).toBe('o')
+      expect(second?.startOffset).toBe(5)
+    })
+
+    it('writes a label without its letter as "保存 (B)", hidden from the accessible name', async () => {
+      const registry = stubHighlights()
+      withConventions(desktop)
+      const { overlay } = await open({ footer: cjkFooter })
+      await new Promise((resolve) => requestAnimationFrame(resolve))
+      const suffix = byId(overlay, 'save').querySelector('.access-key-suffix')
+      // Name, Options, then 取消 takes a, 保存 takes b.
+      expect(suffix?.textContent).toBe(' (B)')
+      expect(suffix?.getAttribute('aria-hidden')).toBe('true')
+      expect(byId(overlay, 'save').getAttribute('aria-keyshortcuts')).toBe('Alt+B')
+      press(byId(overlay, 'name-field'), { key: 'Alt', code: 'AltLeft', altKey: true })
+      const underlined = registry
+        .get('cmdr-access-key')
+        ?.ranges.find((range) => range.startContainer.parentElement === suffix)
+      expect(underlined?.toString()).toBe('B')
+      await expectNoA11yViolations(overlay)
+    })
+
+    it('falls back to keytips where the Highlight API is missing', async () => {
+      withConventions(desktop)
+      const { overlay } = await open()
+      press(byId(overlay, 'name-field'), { key: 'Alt', code: 'AltLeft', altKey: true })
+      await tick()
+      expect(overlay.querySelectorAll('.access-key-tip')).toHaveLength(4)
+    })
+  },
+)
+
+describe('ModalDialog access keys on windows look like Windows 11', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('draws keytips even where underlines could paint, and appends nothing to a label', async () => {
+    const registry = stubHighlights()
+    withConventions('windows')
+    const { overlay } = await open({ footer: cjkFooter })
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    expect(overlay.querySelector('.access-key-suffix')).toBeNull()
+    press(byId(overlay, 'name-field'), { key: 'Alt', code: 'AltLeft', altKey: true })
+    await tick()
+    expect(overlay.querySelectorAll('.access-key-tip')).toHaveLength(4)
+    expect(registry.has('cmdr-access-key')).toBe(false)
   })
 })

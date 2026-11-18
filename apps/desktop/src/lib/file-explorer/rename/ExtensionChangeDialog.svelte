@@ -80,7 +80,7 @@
 
     {#snippet footer()}
         <Button variant="secondary" onclick={onKeepOld}>{keepLabel}</Button>
-        <Button variant="primary" onclick={handleUseNew}>{useLabel}</Button>
+        <Button variant="primary" isDefault onclick={handleUseNew}>{useLabel}</Button>
     {/snippet}
 </ModalDialog>
 

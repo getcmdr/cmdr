@@ -22,6 +22,7 @@
     import { createTransferProgressState } from './transfer-progress-state.svelte'
     import ModalDialog from '#lib/ui/ModalDialog.svelte'
     import Button from '#lib/ui/Button.svelte'
+    import { enterPressesFocusedButton } from '#lib/ui/dialog-keys.js'
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import { useShortenMiddle } from '#lib/utils/shorten-middle-action.js'
     import Icon from '#lib/ui/Icon.svelte'
@@ -514,7 +515,8 @@
 {#snippet actions()}
     {#if done !== null}
         <!-- The finished operation's buttons: Undo where the journal admits one,
-             and Close, which holds focus so Enter closes. An Undo that can't work
+             and Close, the default button, so Return closes (it also holds focus
+             where Return presses the focused button). An Undo that can't work
              yet (the journal row lands at `write-settled`) or at all is
              `aria-disabled` with the reason, ❌ never `disabled`, which would take
              the reason out of the tab order. -->
@@ -526,7 +528,7 @@
                 onclick={doneUndo.request}>{tString('fileOperations.transferProgress.undo')}</Button
             >
         {/if}
-        <Button variant="primary" autoFocus onclick={progress.closeDone}
+        <Button variant="primary" isDefault autoFocus={enterPressesFocusedButton()} onclick={progress.closeDone}
             >{tString('fileOperations.transferProgress.close')}</Button
         >
     {:else}

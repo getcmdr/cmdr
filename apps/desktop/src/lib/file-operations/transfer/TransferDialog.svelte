@@ -741,6 +741,8 @@
 
     function handleKeydown(event: KeyboardEvent) {
         if (event.key === 'Enter') {
+            // Claimed, so `ModalDialog` doesn't press the default button too.
+            event.preventDefault()
             confirmFromUser()
             return
         }
@@ -1015,7 +1017,7 @@
             onclick={() => { confirmFromUser({ startInBackground: true }); }}
             disabled={!!pathError || !!targetRefusal || !!scan.sourceRefusal || confirmPending}
         />
-        <Button variant="primary" onclick={() => { confirmFromUser(); }} disabled={!!pathError || !!targetRefusal || !!scan.sourceRefusal || confirmPending}>
+        <Button variant="primary" isDefault onclick={() => { confirmFromUser(); }} disabled={!!pathError || !!targetRefusal || !!scan.sourceRefusal || confirmPending}>
             <span class="confirm-content">
                 {#if confirmPending}
                     <Spinner size="sm" />

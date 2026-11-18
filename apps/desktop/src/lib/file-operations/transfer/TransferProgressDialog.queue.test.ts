@@ -269,7 +269,7 @@ function queryButton(target: HTMLElement, ariaLabel: string): HTMLButtonElement 
  *  holds for both of its words. Which word shows is the point of the last
  *  describe block; every other test here runs with an empty queue. */
 function backgroundButton(target: HTMLElement): HTMLButtonElement | null {
-  return target.querySelector<HTMLButtonElement>('button[aria-keyshortcuts="F2"]')
+  return target.querySelector<HTMLButtonElement>('button[aria-keyshortcuts~="F2"]')
 }
 
 /** The one visible word the button shows right now. */
@@ -629,7 +629,8 @@ describe('TransferProgressDialog background/queue button label', () => {
 
     expect(backgroundButtonLabel(target)).toBe('Background')
     expect(backgroundButtonChip(target), 'the button shows its shortcut').toBe('F2')
-    expect(backgroundButton(target)?.getAttribute('aria-keyshortcuts'), 'and says it').toBe('F2')
+    // Its access key, where the platform has them, sits beside it (`Alt+B`).
+    expect(backgroundButton(target)?.getAttribute('aria-keyshortcuts')?.split(' '), 'and says it').toContain('F2')
     // WCAG 2.5.3 (label in name): no aria-label, so the name IS the visible word
     // (the chip is aria-hidden), and a speech-control user can say what they see.
     expect(backgroundButton(target)?.getAttribute('aria-label'), 'named by the word itself').toBeNull()

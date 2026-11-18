@@ -11,6 +11,7 @@
      */
     import ModalDialog from '#lib/ui/ModalDialog.svelte'
     import Button from '#lib/ui/Button.svelte'
+    import { enterPressesFocusedButton } from '#lib/ui/dialog-keys.js'
     import { tString } from '#lib/intl/messages.svelte.js'
     import { formatInteger } from '#lib/intl/number-format.js'
     import { tooltip } from '#lib/tooltip/tooltip.js'
@@ -93,8 +94,13 @@
         >
         <!-- Doing the rest is the answer people mean nearly every time, and it
              overwrites nothing that wasn't already going to be written, so it's
-             the one Enter presses. -->
-        <Button variant="primary" autoFocus disabled={answering} onclick={onContinue}
+             the default button, the one Return presses. -->
+        <Button
+            variant="primary"
+            isDefault
+            autoFocus={enterPressesFocusedButton()}
+            disabled={answering}
+            onclick={onContinue}
             >{tString('fileOperations.sourcesGone.continue', { type: event.operationType })}</Button
         >
     {/snippet}

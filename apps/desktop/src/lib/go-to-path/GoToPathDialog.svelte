@@ -301,7 +301,7 @@
 
     {#snippet footer()}
         <Button variant="secondary" onclick={onCancel}>{tString('goToPath.dialog.cancel')}</Button>
-        <Button variant="primary" onclick={() => void confirmGo()} disabled={!canGo || isGoing}
+        <Button variant="primary" isDefault onclick={() => void confirmGo()} disabled={!canGo || isGoing}
             >{tString('goToPath.dialog.confirm')}</Button
         >
     {/snippet}

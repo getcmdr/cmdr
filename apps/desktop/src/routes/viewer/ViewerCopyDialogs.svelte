@@ -9,6 +9,7 @@
 <script lang="ts">
     import ModalDialog from '#lib/ui/ModalDialog.svelte'
     import Button from '#lib/ui/Button.svelte'
+    import { enterPressesFocusedButton } from '#lib/ui/dialog-keys.js'
     import { tString } from '#lib/intl/messages.svelte.js'
     import { formatByteSize } from '#lib/units/index.js'
     import type { Snippet } from 'svelte'
@@ -64,7 +65,9 @@
         {#snippet footer()}
             <Button variant="secondary" onclick={onCancelConfirm}>{tString('viewer.copyDialog.cancel')}</Button>
             <Button variant="secondary" onclick={onSaveAs}>{tString('viewer.copyDialog.saveAsFile')}</Button>
-            <Button variant="primary" autoFocus onclick={onProceedConfirm}>{tString('viewer.copyDialog.copy')}</Button>
+            <Button variant="primary" isDefault autoFocus={enterPressesFocusedButton()} onclick={onProceedConfirm}
+                >{tString('viewer.copyDialog.copy')}</Button
+            >
         {/snippet}
     </ModalDialog>
 {/if}
@@ -85,7 +88,9 @@
         </p>
         {#snippet footer()}
             <Button variant="secondary" onclick={onDismissRefuse}>{tString('viewer.copyDialog.cancel')}</Button>
-            <Button variant="primary" autoFocus onclick={onSaveAs}>{tString('viewer.copyDialog.saveAsFile')}</Button>
+            <Button variant="primary" isDefault autoFocus={enterPressesFocusedButton()} onclick={onSaveAs}
+                >{tString('viewer.copyDialog.saveAsFile')}</Button
+            >
         {/snippet}
     </ModalDialog>
 {/if}

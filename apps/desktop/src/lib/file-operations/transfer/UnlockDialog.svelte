@@ -178,7 +178,7 @@
             </span>
         {/if}
         <Button variant="secondary" onclick={onCancel}>{tString('fileOperations.button.cancel')}</Button>
-        <Button variant="primary" onclick={handleSubmit} disabled={!canSubmit}
+        <Button variant="primary" isDefault onclick={handleSubmit} disabled={!canSubmit}
             >{tString('fileOperations.archivePassword.unlock')}</Button
         >
     {/snippet}

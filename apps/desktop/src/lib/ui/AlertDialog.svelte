@@ -53,16 +53,10 @@
         return `${path.slice(0, head)}…${path.slice(path.length - (keep - head))}`
     })
 
-    function handleKeydown(event: KeyboardEvent) {
-        if (event.key === 'Enter') {
-            onClose()
-        }
-    }
 </script>
 
 <ModalDialog
     titleId="alert-dialog-title"
-    onkeydown={handleKeydown}
     role="alertdialog"
     dialogId="alert"
     onclose={onClose}
@@ -82,7 +76,8 @@
     {/if}
 
     {#snippet footer()}
-        <Button variant="primary" onclick={onClose}>{resolvedButtonText}</Button>
+        <!-- The default button: Return presses it (`ModalDialog`). -->
+        <Button variant="primary" isDefault onclick={onClose}>{resolvedButtonText}</Button>
     {/snippet}
 </ModalDialog>
 

@@ -6802,12 +6802,24 @@ export type AccentColorChanged = {
   hex: string
 }
 
-// Whether labeled controls carry access keys (an underlined letter pressed with Alt).
+/**
+ *  Whether labeled controls carry access keys (a letter pressed with Alt), and how holding Alt
+ *  shows them.
+ */
 export type AccessKeys =
   // The platform has no access keys.
   | 'none'
-  // Alt plus the marked letter presses the control, and holding Alt reveals the marks.
-  | 'alt'
+  /**
+   *  Alt plus the letter presses the control; holding Alt shows a keytip badge by each one, as
+   *  Windows 11's own apps (WinUI) do.
+   */
+  | 'keytips'
+  /**
+   *  Alt plus the letter presses the control; holding Alt underlines the letter in its label, as
+   *  GTK and Qt do. A label without the letter (Chinese, Japanese) carries it in parentheses,
+   *  "保存 (S)", the way GTK and Qt apps write a CJK label's mnemonic.
+   */
+  | 'underlines'
 
 /**
  *  Something turned away that the person hears about. Carries its source, so it's also the
@@ -10970,7 +10982,10 @@ export type FilesystemKind =
   | 'xfs'
   // ZFS.
   | 'zfs'
-  // NTFS, including the `ntfs3` and `ufsd_ntfs` drivers.
+  /**
+   *  NTFS, including the `ntfs3`, `ufsd_ntfs`, and ntfs-3g drivers (ntfs-3g only when it
+   *  reports its own type; a bare `fuseblk` mount stays [`FilesystemKind::Other`]).
+   */
   | 'ntfs'
   // exFAT: the common big-USB format, and NOT size-capped (unlike FAT32).
   | 'ex_fat'

@@ -10,6 +10,7 @@
      */
     import ModalDialog from '#lib/ui/ModalDialog.svelte'
     import Button from '#lib/ui/Button.svelte'
+    import { enterPressesFocusedButton } from '#lib/ui/dialog-keys.js'
     import Icon from '#lib/ui/Icon.svelte'
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import { operationTypeIcon } from '#lib/file-operations/queue/operation-icon.js'
@@ -94,7 +95,12 @@
     <p class="countdown" aria-live="polite" aria-label={tString('main.quit.countdownAria')}>{countdown}</p>
 
     {#snippet footer()}
-        <Button variant="secondary" autoFocus onclick={onKeepWorking}>{tString('main.quit.keepWorking')}</Button>
+        <!-- No default button: a reflex Return quits nothing. Where Return presses the focused
+             button (Windows, Linux), Keep working takes focus so Return keeps working; on the Mac
+             Return does nothing here, and Escape or ⌘. keeps working (Apple's HIG). -->
+        <Button variant="secondary" autoFocus={enterPressesFocusedButton()} onclick={onKeepWorking}
+            >{tString('main.quit.keepWorking')}</Button
+        >
         <Button variant="danger" onclick={onQuit}>{tString('main.quit.quitNow')}</Button>
     {/snippet}
 </ModalDialog>

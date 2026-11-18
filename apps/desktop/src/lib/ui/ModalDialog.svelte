@@ -6,6 +6,17 @@
     import { convention } from '#lib/platform/index.js'
     import type { CommandScope } from '#lib/commands/types.js'
     import { createAccessKeys, type AccessKeyTip } from './access-keys'
+    import {
+        DEFAULT_BUTTON_ATTRIBUTE,
+        commandPeriodCancels,
+        defaultButtonIn,
+        isButtonLike,
+        isCommandPeriod,
+        isDestructiveDefault,
+        isPlainEnter,
+        ownsReturn,
+        returnPressesTarget,
+    } from './dialog-keys'
     import { captureFocusOrigin, restoreFocus, type FocusOrigin } from './focus-restore'
     import { anchoredTopFor } from './modal-anchor'
     import { clampDragOffset, clampPointToArea, dragFrameOf } from './modal-drag'
@@ -212,16 +223,22 @@
      */
     const affirmativeFirst = convention('dialogButtonOrder') === 'affirmativeFirst'
 
+    /** ⌘. cancels on the Mac, as Escape does (`dialog-keys.ts`; DETAILS § Platform conventions). */
+    const cancelsOnCommandPeriod = commandPeriodCancels()
+
     /** Where the keytips are drawn while Alt is held, on a platform with access keys. */
     let accessKeyTips = $state<AccessKeyTip[]>([])
+    /** How holding Alt shows the access keys: keytips (Windows), underlines (Linux), or none (macOS). */
+    const accessKeyStyle = convention('accessKeys')
     /**
      * Alt+letter access keys (`access-keys.ts`), on Windows and Linux; macOS has none. A dialog
      * whose bare letters answer it (`letterKeysAnswer`) already has a key per button, shown on the
      * button, so it gets no second set: one key scheme per dialog.
      */
     const accessKeys =
-        convention('accessKeys') === 'alt' && !untrack(() => letterKeysAnswer)
+        accessKeyStyle !== 'none' && !untrack(() => letterKeysAnswer)
             ? createAccessKeys({
+                  style: accessKeyStyle,
                   scope: () => dialogElement,
                   layer: () => overlayElement,
                   commandScope: () => keyScope,
@@ -541,6 +558,18 @@
 
     function handleOverlayKeydown(event: KeyboardEvent) {
         event.stopPropagation()
+        if (cancelsOnCommandPeriod && isCommandPeriod(event)) {
+            // ⌘. is the Mac's Escape. Pressed again as Escape from where it landed, so whatever
+            // answers Escape (a popover in the body, an `ownsKeyboard` dialog, this one) answers it.
+            // ❌ Never drop the `preventDefault`: unprevented, AppKit reads ⌘. as `cancelOperation:`,
+            // the same full-screen exit Escape's comment below guards against.
+            event.preventDefault()
+            const from = event.target instanceof Node ? event.target : overlayElement
+            from?.dispatchEvent(
+                new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true, cancelable: true }),
+            )
+            return
+        }
         // The consumer owns Escape and Enter (see `ownsKeyboard`); forward untouched.
         if (ownsKeyboard) {
             onkeydown?.(event)
@@ -555,19 +584,51 @@
             escapeAction()
             return
         }
-        // When a button is focused (user Tab'd to it), let the browser activate
-        // that button on Enter instead of firing the dialog's default action.
-        // Without this, Tab'ing to Cancel and pressing Enter would still trigger
-        // Copy/Move/etc., which surprises users coming from Windows or the web. Plain Enter
-        // only: ⌘↩ is a dialog's own key from anywhere in it (Multi-rename's Rename, the
-        // Operation log's Roll back), a focused button included.
-        const plainEnter = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey
-        if (event.key === 'Enter' && plainEnter && event.target instanceof HTMLButtonElement) {
+        // Plain Return only: ⌘↩ is a dialog's own key from anywhere in it (Multi-rename's
+        // Rename, the Operation log's Roll back), a focused button included.
+        if (isPlainEnter(event)) {
+            handleReturn(event)
             return
         }
         onkeydown?.(event)
         // After the dialog's own keys: an Alt+letter it claimed (`defaultPrevented`) stays its own.
         accessKeys?.handleKeydown(event)
+    }
+
+    /**
+     * Return, per `enterActivates` (DETAILS § Platform conventions). The dialog's `onkeydown` hears
+     * it first and claims it with `preventDefault()`; unclaimed, it presses the default button
+     * (`Button`'s `isDefault`). On a `focusedButton` desktop a focused button takes Return as its
+     * own press; on the Mac Return on a footer button presses the default one (Space presses the
+     * focused one), and while the default button is destructive, Return on any other footer button
+     * does nothing at all: someone who moved to Cancel and pressed Return meant to cancel, and
+     * mustn't delete instead.
+     */
+    function handleReturn(event: KeyboardEvent) {
+        const target = event.target
+        const onButton = isButtonLike(target)
+        // A focused button (Windows, Linux), or on the Mac a widget's own button or a body
+        // button (a recent path's row, a suggestion chip): the browser presses it.
+        if (returnPressesTarget(target)) return
+        // A field that owns Return (a new line, a list's row) keeps it; the dialog may still claim it.
+        if (ownsReturn(target)) {
+            onkeydown?.(event)
+            return
+        }
+        const marked = dialogElement?.querySelector<HTMLElement>(`[${DEFAULT_BUTTON_ATTRIBUTE}]`)
+        if (onButton && marked && target !== marked && isDestructiveDefault(marked)) {
+            event.preventDefault()
+            return
+        }
+        onkeydown?.(event)
+        if (event.defaultPrevented) return
+        // Return never presses the focused button here (macOS); only the default one does.
+        if (onButton) event.preventDefault()
+        const defaultButton = defaultButtonIn(dialogElement)
+        if (defaultButton) {
+            event.preventDefault()
+            defaultButton.click()
+        }
     }
 
     /**
@@ -1174,5 +1235,13 @@
         font-weight: 600;
         line-height: var(--font-line-height-flat);
         pointer-events: none;
+    }
+
+    /* An access key's letter on GNOME and KDE, underlined in its label while Alt is held
+       (`access-keys.ts`), painted through the CSS Custom Highlight API so the label's text nodes,
+       which Svelte owns, stay untouched. `currentColor` keeps it the label's own color. */
+    :global(::highlight(cmdr-access-key)) {
+        text-decoration: underline;
+        text-decoration-color: currentColor;
     }
 </style>

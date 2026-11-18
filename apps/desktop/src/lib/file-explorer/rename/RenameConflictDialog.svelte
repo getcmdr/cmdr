@@ -155,6 +155,7 @@
             >
             <Button
                 variant={enterResolution === 'continue' ? 'primary' : 'secondary'}
+                isDefault={enterResolution === 'continue'}
                 onclick={() => {
                     onResolve('continue')
                 }}>{tString('fileExplorer.renameConflict.continueRenaming')}</Button
@@ -164,8 +165,11 @@
 
     {#snippet footer()}
         {#if !existingIsFolder}
+            <!-- Return's when the volume has no trash: a danger default, so Return on any other
+                 button (Cancel) never overwrites instead (`ModalDialog`). -->
             <Button
                 variant="danger"
+                isDefault={enterResolution === 'overwrite-delete'}
                 onclick={() => {
                     onResolve('overwrite-delete')
                 }}>{tString('fileExplorer.renameConflict.overwriteDelete')}</Button
@@ -174,6 +178,7 @@
         {#if supportsTrash}
             <Button
                 variant="primary"
+                isDefault={enterResolution === 'overwrite-trash'}
                 onclick={() => {
                     onResolve('overwrite-trash')
                 }}

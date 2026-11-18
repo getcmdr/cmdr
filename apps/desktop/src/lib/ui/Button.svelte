@@ -61,6 +61,13 @@
          * dialog leaves the scrim unfocused once something inside owns focus).
          */
         autoFocus?: boolean
+        /**
+         * The dialog's default button: what Return presses (`ModalDialog`, per the platform's
+         * `enterActivates`), announced to screen readers as `Enter`. At most one per dialog, and
+         * none where people should read before answering. A `danger` default makes Return on any
+         * other button do nothing on the Mac. DETAILS § Platform conventions.
+         */
+        isDefault?: boolean
         children: Snippet
     }
 
@@ -80,8 +87,16 @@
         'aria-controls': ariaControls,
         tabindex,
         autoFocus = false,
+        isDefault = false,
         children,
     }: Props = $props()
+
+    /** `data-dialog-default` (`dialog-keys.ts`): `'destructive'` on a danger default, so Return guards it. */
+    const defaultMark = $derived(isDefault ? (variant === 'danger' ? 'destructive' : '') : undefined)
+    /** The default button's Return, beside any key the caller names. */
+    const keyshortcuts = $derived(
+        isDefault ? (ariaKeyshortcuts ? `${ariaKeyshortcuts} Enter` : 'Enter') : ariaKeyshortcuts,
+    )
 
     let buttonEl: HTMLButtonElement | undefined
     onMount(() => {
@@ -103,7 +118,8 @@
     {onclick}
     aria-label={ariaLabel}
     aria-describedby={ariaDescribedby}
-    aria-keyshortcuts={ariaKeyshortcuts}
+    aria-keyshortcuts={keyshortcuts}
+    data-dialog-default={defaultMark}
     aria-expanded={ariaExpanded}
     aria-controls={ariaControls}
     {tabindex}

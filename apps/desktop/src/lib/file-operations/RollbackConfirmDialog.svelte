@@ -10,7 +10,9 @@
      * and wording every one as a restore would hide a real deletion. Hence `variant`.
      * Rationale and the surfaces that raise it: `DETAILS.md` § "Rollback asks first".
      *
-     * The safe answer takes focus in every variant, so a reflex Enter never rolls back.
+     * No default button in any variant, so a reflex Return never rolls back: where Return
+     * presses the focused button (Windows, Linux) the safe answer takes focus, and on the Mac
+     * Return does nothing here (`#lib/ui/DETAILS.md` § Platform conventions).
      * Presentational: each host owns the pending-rollback state and calls its own
      * rollback in `onConfirm`. It registers that yes for `dialog_confirm`
      * (`rollback-confirmers.ts`), whichever host raised it.
@@ -19,6 +21,7 @@
     import ModalDialog from '#lib/ui/ModalDialog.svelte'
     import type { ToolInitiator } from '#lib/ui/started-elsewhere-guard.js'
     import Button from '#lib/ui/Button.svelte'
+    import { enterPressesFocusedButton } from '#lib/ui/dialog-keys.js'
     import type { MessageKey } from '#lib/intl/keys.gen.js'
     import { tString } from '#lib/intl/messages.svelte.js'
     import type { RollbackConfirmVariant } from './reversal-wording'
@@ -146,8 +149,12 @@
     </p>
 
     {#snippet footer()}
-        <!-- The safe answer takes focus, so a reflex Enter keeps things as they are. -->
-        <Button variant="secondary" autoFocus onclick={onCancel}>{tString(words.cancel)}</Button>
+        <!-- No default button, so a reflex Return rolls nothing back. Where Return presses the
+             focused button (Windows, Linux), the safe answer takes focus; on the Mac Return does
+             nothing here, and Escape or ⌘. cancels (Apple's HIG). -->
+        <Button variant="secondary" autoFocus={enterPressesFocusedButton()} onclick={onCancel}
+            >{tString(words.cancel)}</Button
+        >
         <Button
             variant={words.destructive ? 'danger' : 'primary'}
             onclick={() => {
