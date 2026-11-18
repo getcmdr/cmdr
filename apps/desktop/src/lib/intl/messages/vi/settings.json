@@ -738,6 +738,10 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {Giúp bạn tìm kiếm được văn bản trong hình ảnh. Văn bản không bao giờ rời khỏi máy Mac của bạn.} windows {Giúp bạn tìm kiếm được văn bản trong hình ảnh. Văn bản không bao giờ rời khỏi PC của bạn.} other {Giúp bạn tìm kiếm được văn bản trong hình ảnh. Văn bản không bao giờ rời khỏi máy tính của bạn.}}",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "2a55989"
+  },
   "settings.mediaIndex.enabled.keywords": "hình ảnh, ảnh, văn bản, chữ, tìm kiếm, chỉ mục, lập chỉ mục, ảnh chụp màn hình, nội dung",
   "@settings.mediaIndex.enabled.keywords": {
     "sourceHash": "a451d8e"
@@ -809,6 +813,10 @@
   "settings.mediaIndex.networkVolumes.optInLabel": "Lập chỉ mục ảnh trên {name}",
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
+  },
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {Cmdr đọc văn bản bên trong những ảnh này để bạn có thể tìm kiếm nó. Việc này chạy trên máy Mac của bạn, và ảnh không bao giờ rời khỏi mạng của bạn.} windows {Cmdr đọc văn bản bên trong những ảnh này để bạn có thể tìm kiếm nó. Việc này chạy trên PC của bạn, và ảnh không bao giờ rời khỏi mạng của bạn.} other {Cmdr đọc văn bản bên trong những ảnh này để bạn có thể tìm kiếm nó. Việc này chạy trên máy tính của bạn, và ảnh không bao giờ rời khỏi mạng của bạn.}}",
+  "@settings.mediaIndex.networkVolumes.optInHelp": {
+    "sourceHash": "c81e602"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Luôn lập chỉ mục ổ đĩa này",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -913,6 +921,10 @@
   "settings.mediaIndex.importanceThreshold.keywords": "hình ảnh, ảnh, chỉ mục, mức độ quan trọng, quan trọng, thư mục, phạm vi, độ sâu, bao nhiêu",
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
+  },
+  "settings.mediaIndex.progress.local": "{platform, select, macos {Máy Mac này} windows {PC này} other {Máy tính này}}",
+  "@settings.mediaIndex.progress.local": {
+    "sourceHash": "80e7006"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, other {Đã lập chỉ mục {enrichedText} trên {totalText} ảnh}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1062,6 +1074,10 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": "Đi tới bản tải về mới nhất",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
+  },
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {Nhảy đến mục tải về gần đây nhất của bạn từ bất kỳ ứng dụng nào bằng một phím tắt toàn hệ thống. Cần quyền truy cập đầy đủ vào ổ đĩa.} other {Nhảy đến mục tải về gần đây nhất của bạn từ bất kỳ ứng dụng nào bằng một phím tắt toàn hệ thống.}}",
+  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
+    "sourceHash": "9748f9b"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "phím tắt, tổ hợp phím, toàn cục, tải về, bản tải về, nhảy tới, đi tới, mới nhất",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2790,6 +2806,14 @@
   "settings.summary.driveIndexing": "Lập chỉ mục ổ đĩa ở chế độ nền để tìm kiếm nhanh chóng tìm thấy tệp của bạn.",
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
+  },
+  "settings.summary.imageIndexing": "{platform, select, macos {Tìm kiếm văn bản bên trong hình ảnh của bạn. Chạy trên máy Mac của bạn và không có gì rời khỏi đó.} windows {Tìm kiếm văn bản bên trong hình ảnh của bạn. Chạy trên PC của bạn và không có gì rời khỏi đó.} other {Tìm kiếm văn bản bên trong hình ảnh của bạn. Chạy trên máy tính của bạn và không có gì rời khỏi đó.}}",
+  "@settings.summary.imageIndexing": {
+    "sourceHash": "287c7fc"
+  },
+  "settings.summary.fallback": "Cài đặt cho {section}.",
+  "@settings.summary.fallback": {
+    "sourceHash": "83b4a28"
   },
   "settings.summary.noSubsections": "Mục này không có tiểu mục.",
   "@settings.summary.noSubsections": {

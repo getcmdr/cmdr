@@ -111,6 +111,10 @@
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "6594500"
   },
+  "ai.cloudConsent.aboutThis.item.appAndSigner": "{platform, select, macos {Pour une app ou un programme, son nom, son identifiant et sa version. Pour ceux-ci ou une image disque, le nom et l’identifiant d’équipe du signataire, si son code correspond toujours à cette signature et si le ticket de notarisation d’Apple y est joint} windows {Aucun détail d’app ni signature de code : Cmdr ne les lit pas sur ce PC} other {Aucun détail d’app ni signature de code : Cmdr ne les lit pas sur cet ordinateur}}",
+  "@ai.cloudConsent.aboutThis.item.appAndSigner": {
+    "sourceHash": "d597a97"
+  },
   "ai.cloudConsent.aboutThis.item.use": "La date de votre dernière ouverture, le nombre d’ouvertures et l’app qui ouvre l’élément",
   "@ai.cloudConsent.aboutThis.item.use": {
     "sourceHash": "9664a6e"

@@ -738,6 +738,10 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {Umožní prohledávat text ve vašich obrázcích. Text nikdy neopustí váš Mac.} windows {Umožní prohledávat text ve vašich obrázcích. Text nikdy neopustí váš počítač.} other {Umožní prohledávat text ve vašich obrázcích. Text nikdy neopustí váš počítač.}}",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "2a55989"
+  },
   "settings.mediaIndex.enabled.keywords": "obrázek, fotka, fotografie, text, hledání, index, snímek obrazovky, obsah, OCR",
   "@settings.mediaIndex.enabled.keywords": {
     "sourceHash": "a451d8e"
@@ -809,6 +813,10 @@
   "settings.mediaIndex.networkVolumes.optInLabel": "Indexovat fotky na disku {name}",
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
+  },
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {Cmdr čte text v těchto fotkách, takže v něm můžete hledat. Běží to na vašem Macu a fotky nikdy neopustí vaši síť.} windows {Cmdr čte text v těchto fotkách, takže v něm můžete hledat. Běží to na vašem počítači a fotky nikdy neopustí vaši síť.} other {Cmdr čte text v těchto fotkách, takže v něm můžete hledat. Běží to na vašem počítači a fotky nikdy neopustí vaši síť.}}",
+  "@settings.mediaIndex.networkVolumes.optInHelp": {
+    "sourceHash": "c81e602"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Vždy indexovat tento disk",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -913,6 +921,10 @@
   "settings.mediaIndex.importanceThreshold.keywords": "obrázek, fotka, index, důležitost, složky, pokrytí, hloubka, rozsah",
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
+  },
+  "settings.mediaIndex.progress.local": "{platform, select, macos {Tento Mac} windows {Tento počítač} other {Tento počítač}}",
+  "@settings.mediaIndex.progress.local": {
+    "sourceHash": "80e7006"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {Zaindexováno {enrichedText} z {totalText} obrázku} few {Zaindexováno {enrichedText} z {totalText} obrázků} many {Zaindexováno {enrichedText} z {totalText} obrázku} other {Zaindexováno {enrichedText} z {totalText} obrázků}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1062,6 +1074,10 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": "Přejít na poslední stažený soubor",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
+  },
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {Přejděte na naposledy stažený soubor z jakékoli aplikace pomocí globální klávesové zkratky. Vyžaduje plný přístup k disku.} other {Přejděte na naposledy stažený soubor z jakékoli aplikace pomocí globální klávesové zkratky.}}",
+  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
+    "sourceHash": "9748f9b"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "zkratka, klávesová zkratka, globální, stahování, stažené soubory, skok, přejít, otevřít",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2790,6 +2806,14 @@
   "settings.summary.driveIndexing": "Indexování disků na pozadí, aby hledání rychle našlo vaše soubory.",
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
+  },
+  "settings.summary.imageIndexing": "{platform, select, macos {Hledání textu ve vašich obrázcích. Běží na vašem Macu a nic z něj neodchází.} windows {Hledání textu ve vašich obrázcích. Běží na vašem počítači a nic z něj neodchází.} other {Hledání textu ve vašich obrázcích. Běží na vašem počítači a nic z něj neodchází.}}",
+  "@settings.summary.imageIndexing": {
+    "sourceHash": "287c7fc"
+  },
+  "settings.summary.fallback": "Nastavení pro sekci {section}.",
+  "@settings.summary.fallback": {
+    "sourceHash": "83b4a28"
   },
   "settings.summary.noSubsections": "Tato sekce nemá žádné podsekce.",
   "@settings.summary.noSubsections": {

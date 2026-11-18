@@ -111,6 +111,10 @@
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "6594500"
   },
+  "ai.cloudConsent.aboutThis.item.appAndSigner": "{platform, select, macos {如果是 App 或程式，它的名稱、ID 和版本。對它或磁碟映像檔來說，簽章者的名稱和團隊 ID、它的程式碼是否仍和那個簽章相符，以及是否附上了 Apple 的公證票證} windows {不含 App 詳細資訊和程式碼簽章：Cmdr 在這台電腦上不會讀取它們} other {不含 App 詳細資訊和程式碼簽章：Cmdr 在這台電腦上不會讀取它們}}",
+  "@ai.cloudConsent.aboutThis.item.appAndSigner": {
+    "sourceHash": "d597a97"
+  },
   "ai.cloudConsent.aboutThis.item.use": "你上次開啟它的時間、開啟過幾次，以及用哪個 App 開啟它",
   "@ai.cloudConsent.aboutThis.item.use": {
     "sourceHash": "9664a6e"

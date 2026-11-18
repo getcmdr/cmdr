@@ -111,6 +111,10 @@
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "6594500"
   },
+  "ai.cloudConsent.aboutThis.item.appAndSigner": "{platform, select, macos {Для приложения или программы: имя, идентификатор и версия. Для них и для образов диска: имя и идентификатор команды того, кто их подписал, совпадает ли код с подписью и прикреплена ли отметка Apple о нотаризации} windows {Сведения о приложениях и подписи кода не отправляются: Cmdr не читает их на этом компьютере} other {Сведения о приложениях и подписи кода не отправляются: Cmdr не читает их на этом компьютере}}",
+  "@ai.cloudConsent.aboutThis.item.appAndSigner": {
+    "sourceHash": "d597a97"
+  },
   "ai.cloudConsent.aboutThis.item.use": "Когда вы последний раз открывали объект, сколько раз и в каком приложении он открывается",
   "@ai.cloudConsent.aboutThis.item.use": {
     "sourceHash": "9664a6e"

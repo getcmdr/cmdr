@@ -742,6 +742,10 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {Macht den Text in deinen Bildern durchsuchbar. Er verlässt deinen Mac nie.} windows {Macht den Text in deinen Bildern durchsuchbar. Er verlässt deinen PC nie.} other {Macht den Text in deinen Bildern durchsuchbar. Er verlässt deinen Computer nie.}}",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "2a55989"
+  },
   "settings.mediaIndex.enabled.keywords": "Bild, Foto, Text, Texterkennung, Suche, suchen, Index, indizieren, Bildschirmfoto, Screenshot, Inhalt",
   "@settings.mediaIndex.enabled.keywords": {
     "sourceHash": "a451d8e"
@@ -813,6 +817,10 @@
   "settings.mediaIndex.networkVolumes.optInLabel": "Fotos auf {name} indizieren",
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
+  },
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {Cmdr liest den Text in diesen Fotos, damit du danach suchen kannst. Das läuft auf deinem Mac, und die Fotos verlassen dein Netzwerk nie.} windows {Cmdr liest den Text in diesen Fotos, damit du danach suchen kannst. Das läuft auf deinem PC, und die Fotos verlassen dein Netzwerk nie.} other {Cmdr liest den Text in diesen Fotos, damit du danach suchen kannst. Das läuft auf deinem Computer, und die Fotos verlassen dein Netzwerk nie.}}",
+  "@settings.mediaIndex.networkVolumes.optInHelp": {
+    "sourceHash": "c81e602"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Dieses Laufwerk immer indizieren",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -917,6 +925,10 @@
   "settings.mediaIndex.importanceThreshold.keywords": "Bild, Foto, Index, indizieren, Wichtigkeit, Ordner, Abdeckung, Umfang, Tiefe",
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
+  },
+  "settings.mediaIndex.progress.local": "{platform, select, macos {Dieser Mac} windows {Dieser PC} other {Dieser Computer}}",
+  "@settings.mediaIndex.progress.local": {
+    "sourceHash": "80e7006"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {{enrichedText} von {totalText} Bild indiziert} other {{enrichedText} von {totalText} Bildern indiziert}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1066,6 +1078,10 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": "Zum neuesten Download gehen",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
+  },
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {Spring mit einem systemweiten Kurzbefehl aus jeder App zu deinem neuesten Download. Erfordert „Festplattenvollzugriff“.} other {Spring mit einem systemweiten Kurzbefehl aus jeder App zu deinem neuesten Download.}}",
+  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
+    "sourceHash": "9748f9b"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "Kurzbefehl, Tastenkombination, Tastaturkurzbefehl, global, Download, Downloads, springen, gehe zu, neuester",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2798,6 +2814,14 @@
   "settings.summary.driveIndexing": "Laufwerksindizierung im Hintergrund, damit die Suche deine Dateien schnell findet.",
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
+  },
+  "settings.summary.imageIndexing": "{platform, select, macos {Durchsuche den Text in deinen Bildern. Läuft auf deinem Mac, und nichts verlässt ihn.} windows {Durchsuche den Text in deinen Bildern. Läuft auf deinem PC, und nichts verlässt ihn.} other {Durchsuche den Text in deinen Bildern. Läuft auf deinem Computer, und nichts verlässt ihn.}}",
+  "@settings.summary.imageIndexing": {
+    "sourceHash": "287c7fc"
+  },
+  "settings.summary.fallback": "Einstellungen für {section}.",
+  "@settings.summary.fallback": {
+    "sourceHash": "83b4a28"
   },
   "settings.summary.noSubsections": "Dieser Abschnitt hat keine Unterabschnitte.",
   "@settings.summary.noSubsections": {

@@ -738,6 +738,10 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {Позволяет искать по тексту на изображениях. Этот текст никогда не покидает ваш Mac.} windows {Позволяет искать по тексту на изображениях. Этот текст никогда не покидает ваш компьютер.} other {Позволяет искать по тексту на изображениях. Этот текст никогда не покидает ваш компьютер.}}",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "2a55989"
+  },
   "settings.mediaIndex.enabled.keywords": "изображение, фото, фотография, картинка, текст, распознавание, поиск, индекс, индексация, снимок экрана, скриншот, содержимое",
   "@settings.mediaIndex.enabled.keywords": {
     "sourceHash": "a451d8e"
@@ -809,6 +813,10 @@
   "settings.mediaIndex.networkVolumes.optInLabel": "Индексировать фотографии на диске {name}",
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
+  },
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {Cmdr читает текст на этих фотографиях, чтобы по нему можно было искать. Все работает на Mac, фотографии не покидают вашу сеть.} windows {Cmdr читает текст на этих фотографиях, чтобы по нему можно было искать. Все работает на компьютере, фотографии не покидают вашу сеть.} other {Cmdr читает текст на этих фотографиях, чтобы по нему можно было искать. Все работает на компьютере, фотографии не покидают вашу сеть.}}",
+  "@settings.mediaIndex.networkVolumes.optInHelp": {
+    "sourceHash": "c81e602"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Всегда индексировать этот диск",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -913,6 +921,10 @@
   "settings.mediaIndex.importanceThreshold.keywords": "изображение, фото, индекс, индексация, важность, папки, охват, глубина, сколько",
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
+  },
+  "settings.mediaIndex.progress.local": "{platform, select, macos {Этот Mac} windows {Этот компьютер} other {Этот компьютер}}",
+  "@settings.mediaIndex.progress.local": {
+    "sourceHash": "80e7006"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {Проиндексировано {enrichedText} из {totalText} изображения} few {Проиндексировано {enrichedText} из {totalText} изображений} many {Проиндексировано {enrichedText} из {totalText} изображений} other {Проиндексировано {enrichedText} из {totalText} изображения}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1062,6 +1074,10 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": "Перейти к последней загрузке",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
+  },
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {Переход к последней загрузке из любого приложения по глобальному сочетанию клавиш. Нужен полный доступ к диску.} other {Переход к последней загрузке из любого приложения по глобальному сочетанию клавиш.}}",
+  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
+    "sourceHash": "9748f9b"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "сочетание клавиш, горячая клавиша, глобальный, загрузка, загрузки, последняя загрузка, перейти, переход",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2788,6 +2804,14 @@
   "settings.summary.driveIndexing": "Фоновая индексация дисков для быстрого поиска файлов.",
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
+  },
+  "settings.summary.imageIndexing": "{platform, select, macos {Поиск текста на изображениях. Работает на Mac, данные его не покидают.} windows {Поиск текста на изображениях. Работает на компьютере, данные его не покидают.} other {Поиск текста на изображениях. Работает на компьютере, данные его не покидают.}}",
+  "@settings.summary.imageIndexing": {
+    "sourceHash": "287c7fc"
+  },
+  "settings.summary.fallback": "Настройки раздела «{section}».",
+  "@settings.summary.fallback": {
+    "sourceHash": "83b4a28"
   },
   "settings.summary.noSubsections": "В этом разделе нет подразделов.",
   "@settings.summary.noSubsections": {

@@ -111,6 +111,10 @@
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "6594500"
   },
+  "ai.cloudConsent.aboutThis.item.appAndSigner": "{platform, select, macos {Egy appnál vagy programnál a neve, azonosítója és verziója. Ennél vagy egy lemezképnél annak a neve és csapatazonosítója, aki aláírta, hogy a kódja egyezik-e még az aláírással, és hogy csatolva van-e az Apple hitelesítési jegye} windows {Se appadatok, se kódaláírások: a Cmdr ezen a gépen nem olvassa be őket} other {Se appadatok, se kódaláírások: a Cmdr ezen a számítógépen nem olvassa be őket}}",
+  "@ai.cloudConsent.aboutThis.item.appAndSigner": {
+    "sourceHash": "d597a97"
+  },
   "ai.cloudConsent.aboutThis.item.use": "Mikor nyitottad meg utoljára, hányszor, és melyik app nyitja meg",
   "@ai.cloudConsent.aboutThis.item.use": {
     "sourceHash": "9664a6e"

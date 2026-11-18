@@ -425,6 +425,10 @@
   "@licensing.section.includedFeatures": {
     "sourceHash": "0a54a41"
   },
+  "licensing.section.includedMacs": "{platform, select, macos {Tất cả máy Mac của riêng bạn, để dùng cá nhân} windows {Tất cả PC của riêng bạn, để dùng cá nhân} other {Tất cả máy tính của riêng bạn, để dùng cá nhân}}",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "109bfe5"
+  },
   "licensing.section.includedUpdates": "Cập nhật tự động",
   "@licensing.section.includedUpdates": {
     "sourceHash": "147b1b6"

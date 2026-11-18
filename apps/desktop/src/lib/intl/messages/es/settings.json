@@ -741,6 +741,10 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {Permite buscar el texto de tus imágenes. Ese texto nunca sale de tu Mac.} windows {Permite buscar el texto de tus imágenes. Ese texto nunca sale de tu PC.} other {Permite buscar el texto de tus imágenes. Ese texto nunca sale de tu ordenador.}}",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "2a55989"
+  },
   "settings.mediaIndex.enabled.keywords": "imagen, imágenes, foto, fotos, texto, buscar, búsqueda, índice, indexar, captura de pantalla, contenido, reconocimiento de texto",
   "@settings.mediaIndex.enabled.keywords": {
     "sourceHash": "a451d8e"
@@ -812,6 +816,10 @@
   "settings.mediaIndex.networkVolumes.optInLabel": "Indexar las fotos en {name}",
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
+  },
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {Cmdr lee el texto dentro de estas fotos para que puedas buscarlo. Se ejecuta en tu Mac y las fotos nunca salen de tu red.} windows {Cmdr lee el texto dentro de estas fotos para que puedas buscarlo. Se ejecuta en tu PC y las fotos nunca salen de tu red.} other {Cmdr lee el texto dentro de estas fotos para que puedas buscarlo. Se ejecuta en tu ordenador y las fotos nunca salen de tu red.}}",
+  "@settings.mediaIndex.networkVolumes.optInHelp": {
+    "sourceHash": "c81e602"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Indexar siempre esta unidad",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -916,6 +924,10 @@
   "settings.mediaIndex.importanceThreshold.keywords": "imagen, foto, índice, importancia, carpetas, cobertura, profundidad, cuánto",
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
+  },
+  "settings.mediaIndex.progress.local": "{platform, select, macos {Este Mac} windows {Este PC} other {Este ordenador}}",
+  "@settings.mediaIndex.progress.local": {
+    "sourceHash": "80e7006"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {{enrichedText} de {totalText} imagen indexada} other {{enrichedText} de {totalText} imágenes indexadas} many {{enrichedText} de {totalText} imágenes indexadas}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1065,6 +1077,10 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": "Ir a la última descarga",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
+  },
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {Salta a tu descarga más reciente desde cualquier app con un atajo global. Requiere acceso total al disco.} other {Salta a tu descarga más reciente desde cualquier app con un atajo global.}}",
+  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
+    "sourceHash": "9748f9b"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "atajo, atajo de teclado, combinación de teclas, global, descarga, descargas, saltar, ir a, última",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2792,6 +2808,14 @@
   "settings.summary.driveIndexing": "Indexación de unidades en segundo plano para que la búsqueda encuentre tus archivos rápido.",
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
+  },
+  "settings.summary.imageIndexing": "{platform, select, macos {Busca el texto dentro de tus imágenes. Se ejecuta en tu Mac y nada sale de ahí.} windows {Busca el texto dentro de tus imágenes. Se ejecuta en tu PC y nada sale de ahí.} other {Busca el texto dentro de tus imágenes. Se ejecuta en tu ordenador y nada sale de ahí.}}",
+  "@settings.summary.imageIndexing": {
+    "sourceHash": "287c7fc"
+  },
+  "settings.summary.fallback": "Ajustes de {section}.",
+  "@settings.summary.fallback": {
+    "sourceHash": "83b4a28"
   },
   "settings.summary.noSubsections": "Esta sección no tiene subsecciones.",
   "@settings.summary.noSubsections": {

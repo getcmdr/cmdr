@@ -690,6 +690,10 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
+  "aboutThis.standardFolder.home": "{platform, select, windows {你的用户文件夹} other {你的个人文件夹}}",
+  "@aboutThis.standardFolder.home": {
+    "sourceHash": "d93508f"
+  },
   "aboutThis.standardFolder.desktop": "你的“桌面”文件夹",
   "@aboutThis.standardFolder.desktop": {
     "sourceHash": "9b1dabb"
@@ -934,6 +938,10 @@
   "aboutThis.ownerPlace.sandboxHome": "App 主目录",
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
+  },
+  "aboutThis.removal.standardFolder.home": "{platform, select, windows {这是你的用户文件夹：你在这台电脑上的所有东西都在里面，系统和每个 App 都需要它。} other {这是你的个人文件夹：你在这台电脑上的所有东西都在里面，系统和每个 App 都需要它。}}",
+  "@aboutThis.removal.standardFolder.home": {
+    "sourceHash": "f01131f"
   },
   "aboutThis.removal.standardFolder.personal": "这是你的标准文件夹之一：系统和你的 App 都要用到它，里面的所有东西也会随它一起消失。",
   "@aboutThis.removal.standardFolder.personal": {

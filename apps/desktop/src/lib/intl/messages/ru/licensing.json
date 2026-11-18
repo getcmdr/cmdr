@@ -424,6 +424,10 @@
   "@licensing.section.includedFeatures": {
     "sourceHash": "0a54a41"
   },
+  "licensing.section.includedMacs": "{platform, select, macos {Все ваши Mac для личного использования} windows {Все ваши компьютеры для личного использования} other {Все ваши компьютеры для личного использования}}",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "109bfe5"
+  },
   "licensing.section.includedUpdates": "Автоматические обновления",
   "@licensing.section.includedUpdates": {
     "sourceHash": "147b1b6"

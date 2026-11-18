@@ -59,6 +59,10 @@
   "@settings.mediaIndex.clip.deleteFailed": {
     "sourceHash": "946a4f8"
   },
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {Permite buscar el texto de tus imágenes. Ese texto nunca sale de tu Mac.} windows {Permite buscar el texto de tus imágenes. Ese texto nunca sale de tu PC.} other {Permite buscar el texto de tus imágenes. Ese texto nunca sale de tu computadora.}}",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "cfc325b"
+  },
   "settings.mediaIndex.showFileStatusIcons.description": "Agrega una pequeña insignia a cada imagen de la lista de archivos que indica si se ha indexado para la búsqueda.",
   "@settings.mediaIndex.showFileStatusIcons.description": {
     "sourceHash": "5b078ea"
@@ -83,9 +87,17 @@
   "@settings.mediaIndex.excludedFolders.description": {
     "sourceHash": "94e09af"
   },
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {Cmdr lee el texto dentro de estas fotos para que puedas buscarlo. Se ejecuta en tu Mac y las fotos nunca salen de tu red.} windows {Cmdr lee el texto dentro de estas fotos para que puedas buscarlo. Se ejecuta en tu PC y las fotos nunca salen de tu red.} other {Cmdr lee el texto dentro de estas fotos para que puedas buscarlo. Se ejecuta en tu computadora y las fotos nunca salen de tu red.}}",
+  "@settings.mediaIndex.networkVolumes.optInHelp": {
+    "sourceHash": "6edf4a9"
+  },
   "settings.mediaIndex.importanceThreshold.deltaAdd": "{images, plural, one {Agrega alrededor de {imagesText} imagen} other {Agrega alrededor de {imagesText} imágenes} many {Agrega alrededor de {imagesText} imágenes}}",
   "@settings.mediaIndex.importanceThreshold.deltaAdd": {
     "sourceHash": "7c4b83c"
+  },
+  "settings.mediaIndex.progress.local": "{platform, select, macos {Este Mac} windows {Este PC} other {Esta computadora}}",
+  "@settings.mediaIndex.progress.local": {
+    "sourceHash": "900ab7e"
   },
   "settings.mediaIndex.reclaim.line": "Tienes {totalText} {total, plural, one {imagen indexada} many {imágenes indexadas} other {imágenes indexadas}}; tu configuración cubre {coveredText}. {doomed, plural, one {La entrada adicional sigue disponible para búsquedas hasta que la elimines} many {Las {doomedText} entradas adicionales siguen disponibles para búsquedas hasta que las elimines} other {Las {doomedText} entradas adicionales siguen disponibles para búsquedas hasta que las elimines}}.",
   "@settings.mediaIndex.reclaim.line": {
@@ -114,6 +126,10 @@
   "settings.indexing.silencedDrives.description": "Interno: unidades para las que el usuario silenció el aviso de indexación.",
   "@settings.indexing.silencedDrives.description": {
     "sourceHash": "ed73a6c"
+  },
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {Salta a tu descarga más reciente desde cualquier app con un atajo global. Requiere acceso completo al disco.} other {Salta a tu descarga más reciente desde cualquier app con un atajo global.}}",
+  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
+    "sourceHash": "6c4ed44"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged.description": "La primera vez que presionas el atajo que salta a tu última descarga desde cualquier app, Cmdr te pregunta si quieres mantenerlo activado. Al cambiar el atajo, esto se desactiva, así que también se pregunta por la combinación nueva. Desactiva esto para volver a ver la pregunta.",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.acknowledged.description": {
@@ -294,6 +310,14 @@
   "settings.summary.servers": "Las claves de host SSH en las que confiaste.",
   "@settings.summary.servers": {
     "sourceHash": "fa43caa"
+  },
+  "settings.summary.imageIndexing": "{platform, select, macos {Busca el texto dentro de tus imágenes. Se ejecuta en tu Mac y nada sale de ahí.} windows {Busca el texto dentro de tus imágenes. Se ejecuta en tu PC y nada sale de ahí.} other {Busca el texto dentro de tus imágenes. Se ejecuta en tu computadora y nada sale de ahí.}}",
+  "@settings.summary.imageIndexing": {
+    "sourceHash": "0c4a64f"
+  },
+  "settings.summary.fallback": "Configuración de {section}.",
+  "@settings.summary.fallback": {
+    "sourceHash": "2583b46"
   },
   "settings.control.resetToDefault": "Restablecer al valor predeterminado",
   "@settings.control.resetToDefault": {
