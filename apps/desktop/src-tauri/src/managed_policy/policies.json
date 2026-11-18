@@ -1,0 +1,76 @@
+{
+  "about": "Every managed policy Cmdr reads, in catalog order: the one definition the app's tests, the /trust page, and the Group Policy template read. Rules: managed_policy/DETAILS.md § The policy definition.",
+  "preferenceDomain": "com.veszelovszki.cmdr",
+  "windowsPolicyKey": "SOFTWARE\\Policies\\Rymd\\Cmdr",
+  "groupPolicy": {
+    "revision": "1.0",
+    "vendorCategory": "Rymd",
+    "productCategory": "Cmdr",
+    "productExplain": "Policies for Cmdr, the file manager. Set one under Computer Configuration for everyone on the PC, or under User Configuration for one user. When both set the same policy, the computer's wins. Cmdr applies a change while it runs.",
+    "supportedOn": "Cmdr for Windows, on Windows 10 version 22H2 or later"
+  },
+  "policies": [
+    {
+      "name": "DisableUsageStats",
+      "kind": "bool",
+      "displayName": "Turn off usage stats",
+      "explain": "Cmdr sends no usage stats: no heartbeat and no feature events. Events waiting to be sent are deleted, and the \"Send usage stats\" setting stays off.\n\nIf you disable or don't configure this policy, users choose in Cmdr's settings."
+    },
+    {
+      "name": "DisableCrashAndErrorReports",
+      "kind": "bool",
+      "displayName": "Turn off crash and error reports",
+      "explain": "Cmdr sends no crash reports and no error reports, automatic or sent by hand. A crash report waiting from the last session is deleted without being offered. Users can still save an error report to disk. In-app feedback isn't covered: it's a message the user writes and sends on purpose.\n\nIf you disable or don't configure this policy, users choose in Cmdr's settings."
+    },
+    {
+      "name": "DisableAutomaticUpdateChecks",
+      "kind": "bool",
+      "displayName": "Turn off automatic update checks",
+      "explain": "Cmdr doesn't check for updates in the background. Users can still check by hand.\n\nA Microsoft Store install gets its updates from the Store, which this policy doesn't control.\n\nIf you disable or don't configure this policy, users choose in Cmdr's settings."
+    },
+    {
+      "name": "DisableUpdates",
+      "kind": "bool",
+      "displayName": "Turn off updates",
+      "explain": "Cmdr doesn't check for, download, or install updates of any kind, so it never contacts the update servers. For teams that ship new versions themselves. Overrides \"Turn off automatic update checks\" and \"Highest version to update to\".\n\nA Microsoft Store install gets its updates from the Store, which this policy doesn't control.\n\nIf you disable or don't configure this policy, updates follow the other update policies and Cmdr's settings."
+    },
+    {
+      "name": "MaxUpdateVersion",
+      "kind": "string",
+      "displayName": "Highest version to update to",
+      "label": "Highest version:",
+      "explain": "Cmdr never updates past this version. 0.52 allows up to the last 0.52.x release, 0.52.3 up to and including 0.52.3, and 1 anything below 2.0.0. A value Cmdr can't read turns updates off.\n\nWhat it can't do: Cmdr only learns about its newest release, so once a release past this version ships, the PC gets no more updates, patches included, until you raise it. It holds Cmdr at a version; it isn't an update channel.\n\nIf you disable or don't configure this policy, Cmdr may update to any newer version."
+    },
+    {
+      "name": "DisableAI",
+      "kind": "bool",
+      "displayName": "Turn off AI",
+      "explain": "Cmdr uses no AI at all: no request to any AI provider, no on-device model download, no local AI server, and no Ask Cmdr. AI search over Cmdr's MCP server refuses too.\n\nIf you disable or don't configure this policy, AI follows \"Allow only on-device AI\", \"Allowed cloud AI hosts\", and Cmdr's settings."
+    },
+    {
+      "name": "DisableCloudAI",
+      "kind": "bool",
+      "displayName": "Allow only on-device AI",
+      "explain": "Nothing goes to a cloud AI provider. An Ollama or LM Studio server counts as cloud, even on the same PC, because localhost can be a tunnel to another machine. On-device AI isn't affected.\n\nIf you disable or don't configure this policy, cloud AI follows \"Allowed cloud AI hosts\" and Cmdr's settings."
+    },
+    {
+      "name": "AllowedCloudAIHosts",
+      "kind": "stringList",
+      "displayName": "Allowed cloud AI hosts",
+      "label": "Hosts:",
+      "explain": "Cloud AI may reach only the hosts in this list. Each entry is a host (api.openai.com), a host and port (localhost:11434), a pattern for any subdomain (*.openai.azure.com, which doesn't match openai.azure.com itself), or a pasted URL, of which only the host and port count. Case doesn't matter. Cmdr checks every request and every redirect, and skips entries it can't read.\n\nAn empty list counts as not configured. To allow no cloud host at all, use \"Allow only on-device AI\".\n\nIf you disable or don't configure this policy, cloud AI may reach any host users set up."
+    },
+    {
+      "name": "DisableSecurityLogOptOut",
+      "kind": "bool",
+      "displayName": "Keep the security event log on",
+      "explain": "The security event log stays on, and users can't turn it off. It's a small local file of security-relevant changes and refusals (a policy taking effect, an update installed or refused, the MCP server switching on, a rejected access attempt). It never leaves the PC, and \"Delete all Cmdr data\" still removes it.\n\nIf you disable or don't configure this policy, users choose in Cmdr's settings."
+    },
+    {
+      "name": "RequireSMBEncryption",
+      "kind": "bool",
+      "displayName": "Always require SMB encryption",
+      "explain": "Every connection Cmdr makes to an SMB share is encrypted, even when the server doesn't ask for it, and Cmdr doesn't connect to a server that can't encrypt. Guest connections can't be encrypted, so users sign in. The \"Always require SMB encryption\" setting stays on, and users can't turn it off. It covers Cmdr's own connections: a drive Windows maps follows Windows' own settings. A connection that's already open when the policy arrives keeps going until it reconnects.\n\nIf you disable or don't configure this policy, users choose in Cmdr's settings."
+    }
+  ]
+}

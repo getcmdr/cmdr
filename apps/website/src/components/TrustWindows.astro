@@ -2,10 +2,13 @@
 // The body of `/trust#windows`. Its `<h2>` and DevTodo stay in `src/pages/trust.astro`, where the
 // trust review finds the anchor, and the page renders this only in `pnpm dev` or once the published
 // release has a Windows download. Same truth rule as the rest of the page, for that release.
-import { windowsPolicyKey } from '../lib/trust-mdm'
+import { policyNamed, windowsPolicyKey } from '../lib/trust-mdm'
 
 const machinePolicyKey = `HKLM\\${windowsPolicyKey}`
 const userPolicyKey = `HKCU\\${windowsPolicyKey}`
+// The page's one string key and one list key, checked against the definition at build time.
+const versionKey = policyNamed('MaxUpdateVersion', 'string')
+const hostsKey = policyNamed('AllowedCloudAIHosts', 'stringList')
 ---
 
 <h3 id="windows-secrets">Passwords and API keys</h3>
@@ -27,8 +30,8 @@ const userPolicyKey = `HKCU\\${windowsPolicyKey}`
 <ul>
     <li>
         <strong>Values</strong>: an on/off key takes a <code>REG_DWORD</code>, where 0 is off and anything else is on.
-        <code>MaxUpdateVersion</code> takes a <code>REG_SZ</code> string like <code>0.52</code>.
-        <code>AllowedCloudAIHosts</code> takes a <code>REG_MULTI_SZ</code>, or a subkey of string values named
+        <code>{versionKey}</code> takes a <code>REG_SZ</code> string like <code>0.52</code>.
+        <code>{hostsKey}</code> takes a <code>REG_MULTI_SZ</code>, or a subkey of string values named
         <code>1</code>, <code>2</code>, and so on. Names are compared without regard to case, as Windows does. A value
         Cmdr can't read counts as the strictest setting of that key.
     </li>

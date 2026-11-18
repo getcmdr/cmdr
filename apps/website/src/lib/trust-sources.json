@@ -167,6 +167,7 @@
         "apps/desktop/src-tauri/src/secrets/mod.rs",
         "apps/desktop/src-tauri/src/managed_policy/platform/windows/**",
         "apps/desktop/src-tauri/src/managed_policy/platform/registry_values.rs",
+        "apps/desktop/src-tauri/src/managed_policy/policies.json",
         "apps/desktop/src-tauri/src/updater/**",
         "apps/desktop/src-tauri/tauri.windows.conf.json",
         "apps/desktop/src-tauri/src/tools/sensitive.rs",

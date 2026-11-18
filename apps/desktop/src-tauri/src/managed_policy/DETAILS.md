@@ -2,13 +2,29 @@
 
 The canonical key catalog for Cmdr's MDM support. `/trust` and the sample profile mirror this file.
 
+## The policy definition
+
+- `policies.json` is the one machine-readable definition: every key's name and kind (`bool`, `string`, `stringList`)
+  in `ALL_KEYS` order, the macOS preference domain, the Windows registry key, and the Group Policy template's copy
+  (display names and explain texts). Its readers: the tests here, and `/trust` (`apps/website/src/lib/trust-mdm.ts`
+  builds its key list and every Windows key mention from it).
+- The app itself reads `keys.rs`; tests hold the two together. `public_docs_test.rs`: the names equal `ALL_KEYS` in
+  order, the domain equals `config::BUNDLE_ID`, the key equals `POLICY_KEY`, and the sample profile writes each key as
+  its kind. `registry_values.rs`: what the template writes for each kind (a bool's `REG_DWORD` 1 and 0, a string's
+  `REG_SZ`, a list's numbered subkey) is what `keys::parse` reads as that key's restriction, with no warning.
+- `/trust`'s effect copy stays in `trust-mdm.ts` (`policyEffects`); the page refuses to build when it misses a key or
+  names an extra one, and the Rust test checks the same.
+- The website reads a file in the app crate, so `policies.json` is in the website lane's inputs (`websiteInputs`, CI's
+  `website` filter) and in the website image (`.dockerignore`, `apps/website/Dockerfile`).
+
 ## The public mirror
 
 - `apps/website/public/mdm/cmdr-managed-preferences.mobileconfig` (a whole unsigned profile, one payload of type
   `com.veszelovszki.cmdr`) and `apps/website/public/mdm/com.veszelovszki.cmdr.plist` (the bare key dictionary, for MDM
   "preference file" uploads), served at `getcmdr.com/mdm/` with their own types (`apps/website/nginx.conf`).
-- `/trust#mdm` renders its key list from `managedPreferenceKeys` in `apps/website/src/lib/trust-mdm.ts`.
-- **Drift guard** (`public_docs_test.rs`): all three key sets equal `ALL_KEYS`, every example value parses without a
+- `/trust#mdm` renders its key list from `managedPreferenceKeys` in `apps/website/src/lib/trust-mdm.ts`, built from
+  `policies.json` (§ The policy definition).
+- **Drift guard** (`public_docs_test.rs`): the two files' key sets and `/trust`'s effect copy equal `ALL_KEYS`, every example value parses without a
   warning, and the two files carry the same values. A new key fails it until the files and `/trust` list it. The Rust
   lanes and CI's `rust` filter list the three files as inputs, so editing only them isn't a cached pass.
 - Example values: the telemetry keys and background checks on, the rest at their permissive value (`false`,
@@ -59,8 +75,8 @@ The canonical key catalog for Cmdr's MDM support. `/trust` and the sample profil
 - A hive we can't read at all is logged and read as empty, like a CFPreferences read that fails on macOS.
 - ❗ The key path is a public contract once Windows ships: admins' GPOs and any ADMX template name it. No ADMX template
   exists yet, and the sample files are macOS-only. `/trust#windows` names the path from `windowsPolicyKey` in
-  `apps/website/src/lib/trust-mdm.ts`, which `public_docs_test.rs` pins to `POLICY_KEY`; that section stays hidden
-  until a release ships Windows.
+  `apps/website/src/lib/trust-mdm.ts`, read from `policies.json`, which `public_docs_test.rs` pins to `POLICY_KEY`;
+  that section stays hidden until a release ships Windows.
 
 ## Key catalog
 

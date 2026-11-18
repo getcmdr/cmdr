@@ -264,6 +264,44 @@ mod tests {
         );
     }
 
+    /// What the ADMX template writes for each policy's kind (`policies.json`) is what the app reads
+    /// as that key's restriction: a bool's `REG_DWORD` 1 restricts and 0 doesn't, a string's
+    /// `REG_SZ` and a list's numbered subkey restrict, all without a warning. A kind that
+    /// disagreed with the parse would warn, or, for `MaxUpdateVersion` as a bool, restrict on 0.
+    #[test]
+    fn each_policy_reads_from_what_the_template_writes_for_its_kind() {
+        use crate::managed_policy::definition::{self, Kind};
+
+        for policy in definition::load().policies {
+            let name = policy.name.as_str();
+            let hive = |values: Vec<RawEntry>, lists: Vec<(String, Vec<RawEntry>)>| {
+                keys::parse(&RegistryPolicy::merge(Hive { values, lists }, Hive::default()))
+            };
+            let on = match policy.kind {
+                Kind::Bool => {
+                    let off = hive(vec![entry(name, REG_DWORD, 0u32.to_le_bytes().to_vec())], Vec::new());
+                    assert!(off.warnings.is_empty(), "{name}: {:?}", off.warnings);
+                    assert!(
+                        keys::restricting(&off.policy).is_empty(),
+                        "{name} = 0 restricts nothing"
+                    );
+                    hive(vec![entry(name, REG_DWORD, 1u32.to_le_bytes().to_vec())], Vec::new())
+                }
+                Kind::String => hive(vec![entry(name, REG_SZ, sz("0.52"))], Vec::new()),
+                Kind::StringList => hive(
+                    Vec::new(),
+                    vec![(name.to_string(), vec![entry("1", REG_SZ, sz("api.openai.com"))])],
+                ),
+            };
+            assert!(on.warnings.is_empty(), "{name}: {:?}", on.warnings);
+            assert_eq!(
+                keys::restricting(&on.policy),
+                vec![name],
+                "the policy {name} must restrict"
+            );
+        }
+    }
+
     /// Every key reads off registry types the way the same plist value would, so a GPO and a
     /// macOS profile with the same settings make the same policy.
     #[test]

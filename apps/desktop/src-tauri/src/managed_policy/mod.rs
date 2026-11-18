@@ -10,6 +10,8 @@
 
 mod cache;
 mod ceiling;
+#[cfg(test)]
+mod definition;
 mod egress;
 mod hosts;
 pub(crate) mod keys;
