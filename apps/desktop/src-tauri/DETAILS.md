@@ -133,7 +133,11 @@ tauri-utils 2.10.2's config parser and tauri-cli 2.12.4's config loader, source 
 - **Linux**: `bundle.linux` (the `.desktop` template) and `bundle.targets` `deb`, `rpm`, `appimage`.
 - **Windows**: `bundle.targets` `nsis`, an NSIS install per user (`currentUser`, no admin), and the WebView2 bootstrapper
   embedded in the installer (`embedBootstrapper`, about 1.8 MB). MSI waits until an enterprise asks. Rationale:
-  `docs/notes/windows-port/frontend-build-audit.md` § 2.
+  `docs/notes/windows-port/frontend-build-audit.md` § 2. Plus the whole CSP, restated with `http://cmdr-media.localhost`
+  where the shared one says `cmdr-media:`: WebView2 serves a custom scheme as `http://<scheme>.localhost` (tauri 2.12.5
+  `protocol::origin`, source read 2026-11-18). Restated rather than shared so the macOS and Linux CSP never name a
+  plain-`http` localhost origin. `tauri_config.rs` fails when the copy drifts or `useHttpsScheme` appears (it would move
+  the origin to `https://`).
 - Each platform's targets are exactly what `"all"` expanded to there (tauri-bundler filters the list by the target OS),
   Windows' minus MSI.
 

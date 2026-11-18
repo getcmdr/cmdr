@@ -1,0 +1,112 @@
+{
+  "about": "Where each OS puts an identifier's app data dir and app cache dir (the drive index). Read by `scripts/instance-id.test.ts` (against `computeAppDataDir` / `computeAppCacheDir`) and by `config_os_dirs_test.rs` (against a model of the `dirs` crate that Tauri's `app_data_dir()` / `app_cache_dir()` join, itself pinned to the real `dirs` on the test host). `os` is macos, linux, or windows; `env` lists only the variables a case sets.",
+  "cases": [
+    {
+      "name": "macOS keeps data in Application Support",
+      "os": "macos",
+      "home": "/Users/test_user_1",
+      "env": {},
+      "identifier": "com.veszelovszki.cmdr-dev",
+      "dataDir": "/Users/test_user_1/Library/Application Support/com.veszelovszki.cmdr-dev",
+      "cacheDir": "/Users/test_user_1/Library/Caches/com.veszelovszki.cmdr-dev"
+    },
+    {
+      "name": "macOS ignores the XDG and Windows variables",
+      "os": "macos",
+      "home": "/Users/test_user_1",
+      "env": {
+        "XDG_DATA_HOME": "/custom/data",
+        "XDG_CACHE_HOME": "/custom/cache",
+        "APPDATA": "C:\\Roaming",
+        "LOCALAPPDATA": "C:\\Local"
+      },
+      "identifier": "com.veszelovszki.cmdr",
+      "dataDir": "/Users/test_user_1/Library/Application Support/com.veszelovszki.cmdr",
+      "cacheDir": "/Users/test_user_1/Library/Caches/com.veszelovszki.cmdr"
+    },
+    {
+      "name": "Linux uses XDG_DATA_HOME and XDG_CACHE_HOME when set",
+      "os": "linux",
+      "home": "/home/test_user_1",
+      "env": { "XDG_DATA_HOME": "/custom/data", "XDG_CACHE_HOME": "/custom/cache" },
+      "identifier": "com.veszelovszki.cmdr-dev-foo",
+      "dataDir": "/custom/data/com.veszelovszki.cmdr-dev-foo",
+      "cacheDir": "/custom/cache/com.veszelovszki.cmdr-dev-foo"
+    },
+    {
+      "name": "Linux falls back to ~/.local/share and ~/.cache when XDG is unset",
+      "os": "linux",
+      "home": "/home/test_user_1",
+      "env": {},
+      "identifier": "com.veszelovszki.cmdr-dev",
+      "dataDir": "/home/test_user_1/.local/share/com.veszelovszki.cmdr-dev",
+      "cacheDir": "/home/test_user_1/.cache/com.veszelovszki.cmdr-dev"
+    },
+    {
+      "name": "Linux treats an empty XDG variable as unset",
+      "os": "linux",
+      "home": "/home/test_user_1",
+      "env": { "XDG_DATA_HOME": "", "XDG_CACHE_HOME": "" },
+      "identifier": "com.veszelovszki.cmdr-dev",
+      "dataDir": "/home/test_user_1/.local/share/com.veszelovszki.cmdr-dev",
+      "cacheDir": "/home/test_user_1/.cache/com.veszelovszki.cmdr-dev"
+    },
+    {
+      "name": "Linux ignores a relative XDG variable, as the XDG spec and the dirs crate do",
+      "os": "linux",
+      "home": "/home/test_user_1",
+      "env": { "XDG_DATA_HOME": "relative/data", "XDG_CACHE_HOME": "relative/cache" },
+      "identifier": "com.veszelovszki.cmdr",
+      "dataDir": "/home/test_user_1/.local/share/com.veszelovszki.cmdr",
+      "cacheDir": "/home/test_user_1/.cache/com.veszelovszki.cmdr"
+    },
+    {
+      "name": "Linux ignores the Windows variables",
+      "os": "linux",
+      "home": "/home/test_user_1",
+      "env": { "APPDATA": "/custom/roaming", "LOCALAPPDATA": "/custom/local" },
+      "identifier": "com.veszelovszki.cmdr",
+      "dataDir": "/home/test_user_1/.local/share/com.veszelovszki.cmdr",
+      "cacheDir": "/home/test_user_1/.cache/com.veszelovszki.cmdr"
+    },
+    {
+      "name": "Windows keeps data in Roaming and the cache in Local",
+      "os": "windows",
+      "home": "C:\\Users\\test_user_1",
+      "env": {
+        "APPDATA": "C:\\Users\\test_user_1\\AppData\\Roaming",
+        "LOCALAPPDATA": "C:\\Users\\test_user_1\\AppData\\Local"
+      },
+      "identifier": "com.veszelovszki.cmdr",
+      "dataDir": "C:\\Users\\test_user_1\\AppData\\Roaming\\com.veszelovszki.cmdr",
+      "cacheDir": "C:\\Users\\test_user_1\\AppData\\Local\\com.veszelovszki.cmdr"
+    },
+    {
+      "name": "Windows follows a redirected Roaming and Local",
+      "os": "windows",
+      "home": "C:\\Users\\test_user_1",
+      "env": { "APPDATA": "D:\\Profiles\\Roaming", "LOCALAPPDATA": "E:\\Local" },
+      "identifier": "com.veszelovszki.cmdr-dev-foo",
+      "dataDir": "D:\\Profiles\\Roaming\\com.veszelovszki.cmdr-dev-foo",
+      "cacheDir": "E:\\Local\\com.veszelovszki.cmdr-dev-foo"
+    },
+    {
+      "name": "Windows falls back to the profile's AppData when the variables are unset or empty",
+      "os": "windows",
+      "home": "C:\\Users\\test_user_1",
+      "env": { "LOCALAPPDATA": "" },
+      "identifier": "com.veszelovszki.cmdr-dev",
+      "dataDir": "C:\\Users\\test_user_1\\AppData\\Roaming\\com.veszelovszki.cmdr-dev",
+      "cacheDir": "C:\\Users\\test_user_1\\AppData\\Local\\com.veszelovszki.cmdr-dev"
+    },
+    {
+      "name": "Windows ignores the XDG variables",
+      "os": "windows",
+      "home": "C:\\Users\\test_user_1",
+      "env": { "XDG_DATA_HOME": "C:\\xdg\\data", "XDG_CACHE_HOME": "C:\\xdg\\cache" },
+      "identifier": "com.veszelovszki.cmdr",
+      "dataDir": "C:\\Users\\test_user_1\\AppData\\Roaming\\com.veszelovszki.cmdr",
+      "cacheDir": "C:\\Users\\test_user_1\\AppData\\Local\\com.veszelovszki.cmdr"
+    }
+  ]
+}

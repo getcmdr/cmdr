@@ -13,7 +13,7 @@
 
 import { createServer } from 'net'
 import { mkdirSync, openSync, writeSync, fsyncSync, closeSync, renameSync, unlinkSync } from 'fs'
-import { join } from 'path'
+import { join, posix, win32 } from 'path'
 
 const PROD_IDENTIFIER = 'com.veszelovszki.cmdr'
 const PROD_PRODUCT_NAME = 'Cmdr'
@@ -111,56 +111,70 @@ export function resolveWorktreeLabel({
 }
 
 /**
- * Compute the Tauri-equivalent app_data_dir for an identifier on this OS. Mirrors the
- * platform branches in resolved_app_data_dir on the Rust side and the legacy block this
- * file replaces in tauri-wrapper.ts.
+ * The environment variables the OS dir rules read: XDG on Linux, `APPDATA` / `LOCALAPPDATA` on
+ * Windows, none on macOS. `process.env` fits.
  */
-export function computeAppDataDir({
-  identifier,
-  platform,
-  home,
-  xdgDataHome,
-}: {
+export interface OsDirEnv {
+  XDG_DATA_HOME?: string | undefined
+  XDG_CACHE_HOME?: string | undefined
+  APPDATA?: string | undefined
+  LOCALAPPDATA?: string | undefined
+}
+
+interface OsDirInput {
   /** e.g. com.veszelovszki.cmdr-dev */
   identifier: string
   platform: NodeJS.Platform
   /** homedir() */
   home: string
-  /** process.env.XDG_DATA_HOME */
-  xdgDataHome: string | undefined
-}): string {
-  if (platform === 'darwin') {
-    return join(home, 'Library', 'Application Support', identifier)
+  env: OsDirEnv
+}
+
+/** The target OS's path flavor, so a Windows path joins with `\` even when a test runs on a Mac. */
+function pathFor(platform: NodeJS.Platform): typeof posix {
+  return platform === 'win32' ? win32 : posix
+}
+
+/** An XDG base dir: set, non-empty, and absolute, else ignored (the XDG spec, and the `dirs` crate). */
+function xdgBase(value: string | undefined): string | null {
+  return value !== undefined && posix.isAbsolute(value) ? value : null
+}
+
+/** A Windows profile folder variable: set and non-empty, else ignored. */
+function windowsBase(value: string | undefined): string | null {
+  return value !== undefined && value.length > 0 ? value : null
+}
+
+/**
+ * Compute the Tauri-equivalent app_data_dir for an identifier on this OS: `dirs::data_dir()`
+ * joined with the identifier, which `resolved_app_data_dir` gets from Tauri. Windows keeps it in
+ * Roaming (`%APPDATA%`), which follows the user between machines. The shared case table
+ * `src-tauri/src/os_app_dirs_cases.json` pins this and the Rust side to one answer.
+ */
+export function computeAppDataDir({ identifier, platform, home, env }: OsDirInput): string {
+  const path = pathFor(platform)
+  if (platform === 'darwin') return path.join(home, 'Library', 'Application Support', identifier)
+  if (platform === 'win32') {
+    return path.join(windowsBase(env.APPDATA) ?? path.join(home, 'AppData', 'Roaming'), identifier)
   }
-  const base = xdgDataHome && xdgDataHome.length > 0 ? xdgDataHome : join(home, '.local', 'share')
-  return join(base, identifier)
+  return path.join(xdgBase(env.XDG_DATA_HOME) ?? path.join(home, '.local', 'share'), identifier)
 }
 
 /**
  * Compute the Tauri-equivalent app_cache_dir for an identifier on this OS: where the drive
  * index lives (in its `drive-index/` subfolder). Mirrors `drive_index_dir` in `config.rs`, whose OS
  * default follows the build's own identifier too, so `CMDR_CACHE_DIR` and the backend's default agree.
- * macOS keeps Time Machine out of `~/Library/Caches`, which is the point.
+ * macOS keeps Time Machine out of `~/Library/Caches`, which is the point; Windows keeps the
+ * gigabytes of index in Local (`%LOCALAPPDATA%`), out of the Roaming profile. Pinned by the same
+ * case table as `computeAppDataDir`.
  */
-export function computeAppCacheDir({
-  identifier,
-  platform,
-  home,
-  xdgCacheHome,
-}: {
-  /** e.g. com.veszelovszki.cmdr-dev */
-  identifier: string
-  platform: NodeJS.Platform
-  /** homedir() */
-  home: string
-  /** process.env.XDG_CACHE_HOME */
-  xdgCacheHome: string | undefined
-}): string {
-  if (platform === 'darwin') {
-    return join(home, 'Library', 'Caches', identifier)
+export function computeAppCacheDir({ identifier, platform, home, env }: OsDirInput): string {
+  const path = pathFor(platform)
+  if (platform === 'darwin') return path.join(home, 'Library', 'Caches', identifier)
+  if (platform === 'win32') {
+    return path.join(windowsBase(env.LOCALAPPDATA) ?? path.join(home, 'AppData', 'Local'), identifier)
   }
-  const base = xdgCacheHome && xdgCacheHome.length > 0 ? xdgCacheHome : join(home, '.cache')
-  return join(base, identifier)
+  return path.join(xdgBase(env.XDG_CACHE_HOME) ?? path.join(home, '.cache'), identifier)
 }
 
 /**
@@ -277,21 +291,19 @@ export function deriveInstance({
   instanceId,
   platform,
   home,
-  xdgDataHome,
-  xdgCacheHome,
+  env,
   vitePort,
 }: {
   instanceId: string | null
   platform: NodeJS.Platform
   home: string
-  xdgDataHome: string | undefined
-  xdgCacheHome?: string
+  env: OsDirEnv
   /** threaded into `build.devUrl` (dev only) */
   vitePort?: number
 }): { identifier: string; dataDir: string; cacheDir: string; config: InstanceConfig | null } {
   const identifier = bundleIdentifier(instanceId)
-  const dataDir = computeAppDataDir({ identifier, platform, home, xdgDataHome })
-  const cacheDir = computeAppCacheDir({ identifier, platform, home, xdgCacheHome })
+  const dataDir = computeAppDataDir({ identifier, platform, home, env })
+  const cacheDir = computeAppCacheDir({ identifier, platform, home, env })
   const config = buildInstanceConfig(instanceId, typeof vitePort === 'number' ? { vitePort } : {})
   return { identifier, dataDir, cacheDir, config }
 }
