@@ -128,11 +128,9 @@ pub struct InMemoryVolume {
     /// central-directory tail-read strategy: one tail read, a second only if the
     /// directory exceeds the first window). See [`Self::read_range_log`].
     read_range_log: std::sync::Mutex<Vec<(u64, usize)>>,
-    /// When `true`, [`Volume::read_range`] returns `NotSupported` (as a real
-    /// backend without a positioned-read primitive does — `SmbVolume` before its
-    /// smb2 primitive lands). Models the "refuse typed" remote-archive path.
-    /// Default `false` (positioned reads work). Set via [`Self::with_read_range_unsupported`].
-    read_range_unsupported: bool,
+    /// What [`Volume::read_range`] fails with instead of reading. Default `None`
+    /// (positioned reads work). Set via [`Self::with_read_range_failing`].
+    read_range_failure: Option<VolumeError>,
     /// When `true`, [`Volume::create_directory_errors_on_existing_dir`] reports
     /// `false`, modeling a backend that ALLOWS same-name sibling objects (MTP).
     /// The remote-archive-edit swap uses that flag to pick delete-then-rename over
@@ -285,7 +283,7 @@ impl InMemoryVolume {
             local_fs_access: false,
             routes_over_a_parent: false,
             read_range_log: std::sync::Mutex::new(Vec::new()),
-            read_range_unsupported: false,
+            read_range_failure: None,
             sibling_duplicates_allowed: false,
             held_folders_only: false,
             delete_fails: false,
@@ -672,13 +670,12 @@ impl InMemoryVolume {
         }
     }
 
-    /// Makes [`Volume::read_range`] return `NotSupported`, modeling a remote
-    /// backend without a positioned-read primitive (`SmbVolume` before its smb2
-    /// primitive lands). `get_metadata` still works, so `VolumeManager::resolve`
-    /// exercises its "route on an unavailable primitive, refuse typed downstream"
-    /// path.
-    pub fn with_read_range_unsupported(mut self) -> Self {
-        self.read_range_unsupported = true;
+    /// Makes every [`Volume::read_range`] fail with `error` while `get_metadata`
+    /// still answers: `NotSupported` models a remote backend without a
+    /// positioned-read primitive, anything else a transient fault mid-read. The
+    /// remote archive confirm routes on both and refuses typed downstream.
+    pub fn with_read_range_failing(mut self, error: VolumeError) -> Self {
+        self.read_range_failure = Some(error);
         self
     }
 

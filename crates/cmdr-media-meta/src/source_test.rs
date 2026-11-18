@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use cmdr_fs::deadline::Deadline;
 use cmdr_fs::testing::WedgedVolume;
-use cmdr_fs::volume::{InMemoryVolume, Volume};
+use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
 
 use crate::{BlockReader, ByteSource, MAX_FETCHED_BYTES_PER_FILE, ReadError, VolumeByteSource};
 
@@ -345,7 +345,7 @@ async fn a_volume_that_never_answers_times_out() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn a_volume_without_ranged_reads_is_not_supported() {
-    let volume = Arc::new(InMemoryVolume::new("test").with_read_range_unsupported());
+    let volume = Arc::new(InMemoryVolume::new("test").with_read_range_failing(VolumeError::NotSupported));
     volume.create_file(Path::new(FILE), b"bytes").await.unwrap();
 
     let out = read_through(volume, 5, roomy(), Arc::default()).await;

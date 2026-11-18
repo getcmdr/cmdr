@@ -341,7 +341,7 @@ fn archive_in_snapshot_volume_id(view: &Arc<dyn Volume>, zip_path: &Path) -> Str
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::file_system::volume::InMemoryVolume;
+    use crate::file_system::volume::{InMemoryVolume, VolumeError};
 
     /// Writes a file whose first bytes are a valid zip start-of-file signature.
     /// Enough for `confirm_archive_boundary`'s magic check (routing only; these
@@ -444,7 +444,7 @@ mod tests {
         // mis-listing the `.zip` as a plain file — and it lights up unchanged once
         // the primitive lands.
         let zip = PathBuf::from("/share/bundle.zip");
-        let parent = InMemoryVolume::new("Remote").with_read_range_unsupported();
+        let parent = InMemoryVolume::new("Remote").with_read_range_failing(VolumeError::NotSupported);
         parent
             .create_file(&zip, b"PK\x03\x04body")
             .await
@@ -628,7 +628,7 @@ mod tests {
         // archive-inner so the edit driver refuses typed rather than the write
         // silently landing on the parent volume.
         let zip = PathBuf::from("/share/bundle.zip");
-        let parent = InMemoryVolume::new("Remote").with_read_range_unsupported();
+        let parent = InMemoryVolume::new("Remote").with_read_range_failing(VolumeError::NotSupported);
         parent
             .create_file(&zip, b"PK\x03\x04body")
             .await
@@ -656,5 +656,100 @@ mod tests {
                 .path_crosses_archive_boundary("root", &mislabeled.join("inner"))
                 .await
         );
+    }
+
+    #[tokio::test]
+    async fn a_transient_remote_sniff_fault_still_routes() {
+        // A dropped connection mid-sniff can't rule the file out, so it routes like
+        // a missing primitive: the archive layer then refuses typed if it's unreadable.
+        let zip = PathBuf::from("/share/bundle.zip");
+        let parent = InMemoryVolume::new("Remote").with_read_range_failing(VolumeError::IoError {
+            message: "connection reset".into(),
+            raw_os_error: None,
+        });
+        parent
+            .create_file(&zip, b"PK\x03\x04body")
+            .await
+            .expect("seed remote zip");
+        let manager = VolumeManager::new();
+        manager.register("root", Arc::new(parent));
+
+        assert!(manager.resolve("root", &zip.join("inner")).await.is_routed());
+        assert!(manager.path_is_inside_archive("root", &zip.join("inner")).await);
+    }
+
+    #[tokio::test]
+    async fn a_missing_remote_archive_does_not_route() {
+        let manager = VolumeManager::new();
+        manager.register("root", Arc::new(InMemoryVolume::new("Remote")));
+
+        let ghost = PathBuf::from("/device/ghost.zip");
+        assert!(!manager.resolve("root", &ghost.join("inner")).await.is_routed());
+        assert!(!manager.path_crosses_archive_boundary("root", &ghost).await);
+    }
+
+    #[tokio::test]
+    async fn the_remote_confirm_checks_the_named_formats_magic() {
+        // A `.tar.gz` confirms on gzip magic, not zip magic, through the parent too.
+        let parent = InMemoryVolume::new("Remote");
+        let tgz = PathBuf::from("/device/real.tar.gz");
+        parent
+            .create_file(&tgz, &[0x1f, 0x8b, 0x08, 0x00])
+            .await
+            .expect("seed tgz");
+        let zip_bytes_as_tgz = PathBuf::from("/device/fake.tar.gz");
+        parent
+            .create_file(&zip_bytes_as_tgz, b"PK\x03\x04body")
+            .await
+            .expect("seed fake tgz");
+        let manager = VolumeManager::new();
+        manager.register("root", Arc::new(parent));
+
+        assert!(manager.path_is_inside_archive("root", &tgz.join("d/f.txt")).await);
+        assert!(!manager.path_crosses_archive_boundary("root", &zip_bytes_as_tgz).await);
+    }
+
+    #[tokio::test]
+    async fn a_local_parent_confirms_on_disk_never_through_its_own_io() {
+        // The fork is `supports_local_fs_access`: a local parent holding the zip only
+        // in its own store (nothing on disk) does NOT confirm, because the local
+        // confirm is `std::fs`.
+        let dir = tempfile::tempdir().expect("tempdir");
+        let zip = dir.path().join("only-in-the-store.zip");
+        let parent = InMemoryVolume::new("Local").with_local_fs_access();
+        parent
+            .create_file(&zip, b"PK\x03\x04body")
+            .await
+            .expect("seed the store");
+        let manager = VolumeManager::new();
+        manager.register("root", Arc::new(parent));
+
+        assert!(!manager.resolve("root", &zip.join("inner")).await.is_routed());
+        assert!(!manager.path_crosses_archive_boundary("root", &zip).await);
+    }
+
+    #[tokio::test]
+    async fn a_remote_parent_confirms_through_its_own_io_never_on_disk() {
+        // The mirror image: a real zip on disk at the path, but a remote parent that
+        // doesn't hold it, doesn't confirm (its OS mount may be hung).
+        let dir = tempfile::tempdir().expect("tempdir");
+        let zip = dir.path().join("only-on-disk.zip");
+        write_zip_magic(&zip);
+        let manager = VolumeManager::new();
+        manager.register("root", Arc::new(InMemoryVolume::new("Remote")));
+
+        assert!(!manager.resolve("root", &zip.join("inner")).await.is_routed());
+        assert!(!manager.path_is_inside_archive("root", &zip.join("inner")).await);
+    }
+
+    #[tokio::test]
+    async fn the_boundary_predicates_answer_false_for_an_unregistered_volume() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let zip = dir.path().join("bundle.zip");
+        write_zip_magic(&zip);
+        let manager = VolumeManager::new();
+
+        assert!(!manager.path_crosses_archive_boundary("nobody", &zip).await);
+        assert!(!manager.path_is_inside_archive("nobody", &zip.join("inner")).await);
     }
 }
