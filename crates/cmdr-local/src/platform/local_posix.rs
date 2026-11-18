@@ -35,7 +35,6 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
-use std::time::Duration;
 // An ambient `spawn_blocking`, not the host's runtime: a `Volume` method runs on its
 // caller's. `DETAILS.md` § "Decisions".
 use tokio::task::spawn_blocking;
@@ -254,7 +253,7 @@ impl LocalPosixVolume {
     /// [`cmdr_fs::durable::BARRIER_INTERVAL`], so a test can leave only the
     /// closing one (`Duration::MAX`).
     #[cfg(any(test, feature = "testing"))]
-    pub fn with_barrier_interval(mut self, interval: Duration) -> Self {
+    pub fn with_barrier_interval(mut self, interval: std::time::Duration) -> Self {
         self.barriers = Arc::new(cmdr_fs::durable::DeviceBarriers::with_interval(interval));
         self
     }
