@@ -317,15 +317,22 @@ fn starts_with_and_strip_prefix_match_whole_names() {
     assert_eq!(
         posix("/Volumes/share/a/b")
             .strip_prefix(&base)
+            .as_deref()
             .map(RelativeAppPath::as_str),
         Some("a/b")
     );
     assert_eq!(
-        posix("/Volumes/share").strip_prefix(&base).map(RelativeAppPath::as_str),
+        posix("/Volumes/share")
+            .strip_prefix(&base)
+            .as_deref()
+            .map(RelativeAppPath::as_str),
         Some("")
     );
     assert_eq!(
-        posix("/a/b").strip_prefix(&posix("/")).map(RelativeAppPath::as_str),
+        posix("/a/b")
+            .strip_prefix(&posix("/"))
+            .as_deref()
+            .map(RelativeAppPath::as_str),
         Some("a/b")
     );
     let sftp = posix("sftp://u@h:22/srv/data");
@@ -684,7 +691,9 @@ fn a_volume_root_matches_its_unc_server_and_share_without_case() {
     let path = win("//nas/media/Films/a.mkv");
     assert!(!path.starts_with(&volume));
     assert_eq!(
-        path.strip_volume_prefix(&volume).map(RelativeAppPath::as_str),
+        path.strip_volume_prefix(&volume)
+            .as_deref()
+            .map(RelativeAppPath::as_str),
         Some("Films/a.mkv")
     );
     assert!(path.is_on_volume(&win("//nas/MEDIA/Films")));
@@ -901,14 +910,6 @@ fn a_verbatim_unc_prefix_reads_without_case() {
     assert_eq!(path.map(AppPathBuf::into_string).as_deref(), Ok("//srv/sh/x"));
 }
 
-/// Typed arithmetic is for canonical values; a bridge value's text isn't one.
-#[cfg(debug_assertions)]
-#[test]
-fn typed_arithmetic_on_a_bridge_value_is_a_debug_assertion() {
-    let bridged = AppPath::legacy_unchecked(Path::new("/a/")).into_owned();
-    assert!(std::panic::catch_unwind(|| bridged.parent().map(|p| p.as_str().len())).is_err());
-}
-
 #[test]
 fn from_native_windows_refuses_typed() {
     for (native, refusal) in [
@@ -1043,6 +1044,108 @@ fn the_wire_is_a_plain_string() {
     let back: AppPathBuf = serde_json::from_str(&serde_json::to_string(&sftp).expect("serializes")).expect("any host");
     assert_eq!(back, sftp);
     assert!(serde_json::from_str::<AppPathBuf>("\"relative\"").is_err());
+}
+
+// ---- Arithmetic on a transition-bridge value, right in release builds (review 2's N6) ----
+
+fn bridge(text: &str) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(Path::new(text))
+}
+
+/// Unnormalized POSIX bridge text answers what `Path` answers, and the typed tails and joins
+/// come out canonical: `rebase` never builds `/new//b`.
+#[test]
+fn a_posix_bridge_value_answers_what_path_answers() {
+    let sloppy = bridge("/a//b/");
+    assert!(!sloppy.is_canonical());
+    assert_eq!(sloppy.parent().map(AppPath::as_str), Some("/a"));
+    assert_eq!(sloppy.file_name(), Some("b"));
+    assert_eq!(sloppy.names().collect::<Vec<_>>(), ["a", "b"]);
+    assert!(sloppy.starts_with(&posix("/a")));
+    assert_eq!(
+        sloppy
+            .strip_prefix(&posix("/a"))
+            .as_deref()
+            .map(RelativeAppPath::as_str),
+        Some("b")
+    );
+    let moved = sloppy.rebase(&posix("/a"), &posix("/new")).expect("under /a");
+    assert_eq!(moved.as_str(), "/new/b");
+    assert_eq!(
+        sloppy.join(name("c")).map(AppPathBuf::into_string).as_deref(),
+        Ok("/a/b/c")
+    );
+    assert_eq!(bridge("/a/./b").parent().map(AppPath::as_str), Some("/a"));
+    assert_eq!(bridge("/a/").parent().map(AppPath::as_str), Some("/"));
+    assert!(bridge("/").is_root() && bridge("//").is_root());
+    // A sloppy root join is the path std opens.
+    assert_eq!(bridge("//Users").parent().map(AppPath::as_str), Some("/"));
+    // A `..` has no canonical twin: it sits under nothing, and a join is a typed refusal.
+    let climbing = bridge("/a/x/../b");
+    assert!(!climbing.starts_with(&posix("/a")));
+    assert_eq!(climbing.join(name("c")), Err(NotAnAppPath::DotName));
+    assert_eq!(bridge("rel/x").to_canonical().err(), Some(NotAnAppPath::Relative));
+}
+
+/// Windows bridge text (`std`'s spelling, `C:\x\y`) read with Windows' rules, on every OS.
+#[test]
+fn a_windows_bridge_value_reads_as_windows_reads_it() {
+    let windows = PathFlavor::Windows;
+    let read = lenient::read_as(r"C:\x\y", windows);
+    assert_eq!(read.kind(), PathKind::Drive);
+    assert_eq!(read.parent_end(), Some(r"C:\x".len()));
+    assert_eq!(read.file_name(), Some("y"));
+    assert_eq!(read.names(r"C:\x\y"), ["x", "y"]);
+    assert!(lenient::read_as(r"C:\", windows).is_root());
+    assert_eq!(lenient::read_as(r"C:\x", windows).parent_end(), Some(r"C:\".len()));
+    assert_eq!(lenient::read_as(r"\\srv\sh\x", windows).kind(), PathKind::Unc);
+    for (text, canonical) in [
+        (r"C:\x\y", "C:/x/y"),
+        (r"c:\x\y\", "C:/x/y"),
+        (r"\\srv\sh\x", "//srv/sh/x"),
+        (r"\\?\C:\x\dup.", "C:/x/dup."),
+        (r"\\?\UNC\srv\sh\x", "//srv/sh/x"),
+        ("/d/a\\b", "/d/a\\b"),
+    ] {
+        assert_eq!(
+            lenient::canonical_as(text, windows)
+                .map(AppPathBuf::into_string)
+                .as_deref(),
+            Ok(canonical),
+            "{text}"
+        );
+    }
+    assert_eq!(
+        lenient::canonical_as("C:x", windows).err(),
+        Some(NotAnAppPath::DriveRelative)
+    );
+    assert_eq!(
+        lenient::canonical_as(r"\\.\pipe\x", windows).err(),
+        Some(NotAnAppPath::DevicePath)
+    );
+    assert_eq!(
+        lenient::canonical_as(r"C:\x\..\y", windows).err(),
+        Some(NotAnAppPath::DotName)
+    );
+}
+
+/// On the Windows host itself, the reviewer's inputs through the type.
+#[cfg(windows)]
+#[test]
+fn a_windows_bridge_value_answers_through_the_type() {
+    let bridged = bridge(r"C:\x\y");
+    assert!(bridged.starts_with(&win("C:/x")));
+    assert_eq!(bridged.parent().map(AppPath::as_str), Some(r"C:\x"));
+    assert_eq!(bridged.file_name(), Some("y"));
+    assert_eq!(bridged.kind(), PathKind::Drive);
+    assert!(bridged.same_root(&win("C:/")));
+    assert_eq!(
+        bridged
+            .strip_prefix(&win("C:/"))
+            .as_deref()
+            .map(RelativeAppPath::as_str),
+        Some("x/y")
+    );
 }
 
 #[test]

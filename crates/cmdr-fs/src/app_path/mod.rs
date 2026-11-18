@@ -30,6 +30,7 @@
 
 mod bridge;
 mod escape;
+mod lenient;
 mod native;
 mod parse;
 mod platform;
@@ -93,6 +94,10 @@ pub struct AppPathBuf(String);
 #[repr(transparent)]
 pub struct RelativeAppPath(str);
 
+/// An owned [`RelativeAppPath`]: what [`AppPath::strip_prefix`] answers for a bridge value.
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct RelativeAppPathBuf(String);
+
 /// One plain name of an app path, as a backend spells it: never empty, `.`, or `..`, never
 /// holding a `/`, a NUL only as an MTP pick, and its escapes canonical. The only thing
 /// [`AppPath::join`] takes.
@@ -117,37 +122,68 @@ impl AppPath {
         &self.0
     }
 
-    /// Typed arithmetic is defined on canonical values only: a transition-bridge value keeps
-    /// unnormalized text (`/a/`, `C:\x`), whose parent or name the type would read wrong. Such
-    /// a body does its arithmetic on `as_std_legacy` until it converts.
-    fn debug_check_canonical(&self) {
-        debug_assert!(
-            parse::validate_canonical_any(&self.0).is_ok(),
-            "typed arithmetic on a non-canonical app path: {:?}",
-            &self.0
-        );
+    /// Whether this is in canonical form. Every value but a transition-bridge one is; on a
+    /// bridge value (`/a/`, `C:\x`) the arithmetic below answers through `lenient.rs`, right
+    /// in release builds too, ❌ never by reading the text as if it were canonical.
+    pub fn is_canonical(&self) -> bool {
+        lenient::is_canonical(&self.0)
+    }
+
+    /// The canonical value naming the same place, borrowed when this already is one.
+    ///
+    /// # Errors
+    ///
+    /// For a bridge value with no canonical twin: no root (`Relative`), `C:x`
+    /// (`DriveRelative`), a device path, or a `..` (`DotName`: by text it can name a
+    /// different file across a symlink).
+    pub fn to_canonical(&self) -> Result<Cow<'_, AppPath>, NotAnAppPath> {
+        if self.is_canonical() {
+            return Ok(Cow::Borrowed(self));
+        }
+        lenient::canonical(&self.0).map(Cow::Owned)
     }
 
     /// The shape of the root.
     pub fn kind(&self) -> PathKind {
-        shape::root_of(&self.0).0
+        if self.is_canonical() {
+            shape::root_of(&self.0).0
+        } else {
+            lenient::read(&self.0).kind()
+        }
     }
 
-    /// The root itself: `/`, `C:/`, `//server/share/`, or `scheme://authority/`.
+    /// The byte length of the root, the root's own trailing `/` included.
+    fn root_len(&self) -> usize {
+        if self.is_canonical() {
+            shape::root_of(&self.0).1
+        } else {
+            lenient::read(&self.0).root_end()
+        }
+    }
+
+    /// The root itself: `/`, `C:/`, `//server/share/`, or `scheme://authority/` (a bridge
+    /// value's root as its text spells it: `C:\`).
     pub fn root(&self) -> &AppPath {
-        AppPath::new_unchecked(&self.0[..shape::root_of(&self.0).1])
+        AppPath::new_unchecked(&self.0[..self.root_len()])
     }
 
     /// Whether this is its volume's root.
     pub fn is_root(&self) -> bool {
-        shape::root_of(&self.0).1 >= self.0.len()
+        if self.is_canonical() {
+            shape::root_of(&self.0).1 >= self.0.len()
+        } else {
+            lenient::read(&self.0).is_root()
+        }
     }
 
     /// The folder holding this path (a slice, no allocation), or `None` at a root: there is
     /// no parent INSIDE the volume. A row under an MTP pick answers the pick, as `Path` did;
     /// `twin_path::folder_of` steps over it.
     pub fn parent(&self) -> Option<&AppPath> {
-        self.debug_check_canonical();
+        if !self.is_canonical() {
+            let end = lenient::read(&self.0).parent_end()?;
+            return Some(AppPath::new_unchecked(&self.0[..end]));
+        }
         let root_len = shape::root_of(&self.0).1;
         if root_len >= self.0.len() {
             return None;
@@ -159,7 +195,9 @@ impl AppPath {
 
     /// The last name, or `None` at a root.
     pub fn file_name(&self) -> Option<&str> {
-        self.debug_check_canonical();
+        if !self.is_canonical() {
+            return lenient::read(&self.0).file_name();
+        }
         let root_len = shape::root_of(&self.0).1;
         if root_len >= self.0.len() {
             return None;
@@ -193,13 +231,16 @@ impl AppPath {
         self.file_name().map(shown_name)
     }
 
-    /// The names under the root, outermost first.
+    /// The names under the root, outermost first (a bridge value's as `Path` lists them, a
+    /// `..` included).
     pub fn names(&self) -> impl DoubleEndedIterator<Item = &str> {
-        self.debug_check_canonical();
-        let root_len = shape::root_of(&self.0).1;
-        self.0[root_len.min(self.0.len())..]
-            .split('/')
-            .filter(|name| !name.is_empty())
+        let (canonical, lenient) = if self.is_canonical() {
+            let root_len = shape::root_of(&self.0).1;
+            (&self.0[root_len.min(self.0.len())..], Vec::new())
+        } else {
+            ("", lenient::read(&self.0).names(&self.0))
+        };
+        canonical.split('/').filter(|name| !name.is_empty()).chain(lenient)
     }
 
     /// `name` inside this folder: THE join, one plain name, so it can neither climb nor
@@ -227,7 +268,10 @@ impl AppPath {
     }
 
     fn join_text(&self, tail: &str) -> Result<AppPathBuf, NotAnAppPath> {
-        self.debug_check_canonical();
+        if !self.is_canonical() {
+            // A bridge base joins as the canonical place it names, so the result is canonical.
+            return lenient::canonical(&self.0)?.join_text(tail);
+        }
         if matches!(self.kind(), PathKind::Drive | PathKind::Unc) && tail.contains('\\') {
             return Err(NotAnAppPath::Backslash);
         }
@@ -248,9 +292,19 @@ impl AppPath {
     }
 
     /// The names below `ancestor` (empty for `ancestor` itself), or `None` when this isn't
-    /// `ancestor` or under it. A slice, no allocation.
-    pub fn strip_prefix(&self, ancestor: &AppPath) -> Option<&RelativeAppPath> {
-        self.debug_check_canonical();
+    /// `ancestor` or under it. A slice, no allocation, for canonical values. A bridge value
+    /// (either side) is read as the canonical place it names, its tail owned; one with no
+    /// canonical twin (a `..`, no root) sits under nothing, since by text a `..` can name a
+    /// different file across a symlink.
+    pub fn strip_prefix(&self, ancestor: &AppPath) -> Option<Cow<'_, RelativeAppPath>> {
+        if self.is_canonical() && ancestor.is_canonical() {
+            return self.strip_prefix_canonical(ancestor).map(Cow::Borrowed);
+        }
+        let (mine, theirs) = (self.to_canonical().ok()?, ancestor.to_canonical().ok()?);
+        Some(Cow::Owned(mine.strip_prefix_canonical(&theirs)?.to_owned()))
+    }
+
+    fn strip_prefix_canonical(&self, ancestor: &AppPath) -> Option<&RelativeAppPath> {
         // Never across roots: `//s/h/x` is not under `/`, though its text starts with it.
         if self.root().0 != ancestor.root().0 {
             return None;
@@ -266,7 +320,7 @@ impl AppPath {
     }
 
     /// [`Self::strip_prefix`], named for readers asking "where is this, from there".
-    pub fn relative_to(&self, ancestor: &AppPath) -> Option<&RelativeAppPath> {
+    pub fn relative_to(&self, ancestor: &AppPath) -> Option<Cow<'_, RelativeAppPath>> {
         self.strip_prefix(ancestor)
     }
 
@@ -274,7 +328,7 @@ impl AppPath {
     /// share, a renamed drive), or `None` when it isn't under `old_root`, or when `new_root`
     /// can't hold its names.
     pub fn rebase(&self, old_root: &AppPath, new_root: &AppPath) -> Option<AppPathBuf> {
-        new_root.join_relative(self.strip_prefix(old_root)?).ok()
+        new_root.join_relative(&self.strip_prefix(old_root)?).ok()
     }
 
     /// Whether both paths sit on the same root. A UNC server compares without ASCII case (DNS
@@ -283,6 +337,12 @@ impl AppPath {
     /// backend mints its authority lowercase). What a volume pick asks; ❌ never `Eq`, which
     /// stays exact.
     pub fn same_root(&self, other: &AppPath) -> bool {
+        if !(self.is_canonical() && other.is_canonical()) {
+            return match (self.to_canonical(), other.to_canonical()) {
+                (Ok(mine), Ok(theirs)) => mine.same_root(&theirs),
+                _ => false,
+            };
+        }
         let (mine, theirs) = (self.root(), other.root());
         match (mine.kind(), theirs.kind()) {
             (PathKind::Unc, PathKind::Unc) => {
@@ -305,8 +365,15 @@ impl AppPath {
     /// (a UNC server and share without case), the names below it exactly. What a volume pick
     /// and a "does this path belong to that volume" check ask; [`Self::strip_prefix`] is the
     /// exact twin.
-    pub fn strip_volume_prefix(&self, volume_root: &AppPath) -> Option<&RelativeAppPath> {
-        self.debug_check_canonical();
+    pub fn strip_volume_prefix(&self, volume_root: &AppPath) -> Option<Cow<'_, RelativeAppPath>> {
+        if self.is_canonical() && volume_root.is_canonical() {
+            return self.strip_volume_prefix_canonical(volume_root).map(Cow::Borrowed);
+        }
+        let (mine, theirs) = (self.to_canonical().ok()?, volume_root.to_canonical().ok()?);
+        Some(Cow::Owned(mine.strip_volume_prefix_canonical(&theirs)?.to_owned()))
+    }
+
+    fn strip_volume_prefix_canonical(&self, volume_root: &AppPath) -> Option<&RelativeAppPath> {
         if !self.same_root(volume_root) {
             return None;
         }
@@ -543,6 +610,32 @@ impl ToOwned for AppPath {
     type Owned = AppPathBuf;
     fn to_owned(&self) -> AppPathBuf {
         AppPathBuf(self.0.to_owned())
+    }
+}
+
+impl Deref for RelativeAppPathBuf {
+    type Target = RelativeAppPath;
+    fn deref(&self) -> &RelativeAppPath {
+        RelativeAppPath::new_unchecked(&self.0)
+    }
+}
+
+impl Borrow<RelativeAppPath> for RelativeAppPathBuf {
+    fn borrow(&self) -> &RelativeAppPath {
+        self
+    }
+}
+
+impl ToOwned for RelativeAppPath {
+    type Owned = RelativeAppPathBuf;
+    fn to_owned(&self) -> RelativeAppPathBuf {
+        RelativeAppPathBuf(self.0.to_owned())
+    }
+}
+
+impl fmt::Debug for RelativeAppPathBuf {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&**self, f)
     }
 }
 

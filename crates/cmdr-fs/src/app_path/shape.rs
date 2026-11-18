@@ -125,7 +125,9 @@ pub(super) fn components_for(text: &str, host: super::PathFlavor) -> Components<
         let token = text[..root_len].strip_suffix('/').unwrap_or(&text[..root_len]);
         return Components {
             head: [Some(Component::Normal(token)), None],
+            head_spans: [(0, root_len), (0, 0)],
             rest: &text[root_len..],
+            text_len: text.len(),
             windows: false,
             verbatim: false,
         };
@@ -159,9 +161,17 @@ pub(super) fn components_for(text: &str, host: super::PathFlavor) -> Components<
     } else {
         after
     };
+    let prefix_end = text.len() - after.len();
+    let second_span = match second {
+        Some(Component::RootDir) => (prefix_end, prefix_end + usize::from(physical_root)),
+        Some(_) => (prefix_end, prefix_end + 1),
+        None => (prefix_end, prefix_end),
+    };
     Components {
         head: [prefix.map(Component::Prefix), second],
+        head_spans: [(0, prefix_end), second_span],
         rest,
+        text_len: text.len(),
         windows,
         verbatim,
     }
@@ -240,18 +250,21 @@ fn windows_prefix(text: &str) -> (Option<Prefix<'_>>, &str, bool) {
 /// The iterator [`components`] answers: no allocation, so `Eq`, `Hash`, and `Ord` stay free.
 pub(super) struct Components<'a> {
     head: [Option<Component<'a>>; 2],
+    /// Each head component's byte range in the text.
+    head_spans: [(usize, usize); 2],
     rest: &'a str,
+    text_len: usize,
     windows: bool,
     verbatim: bool,
 }
 
-impl<'a> Iterator for Components<'a> {
-    type Item = Component<'a>;
-
-    fn next(&mut self) -> Option<Component<'a>> {
-        for slot in &mut self.head {
+impl<'a> Components<'a> {
+    /// The next component and its byte range in the text: what the transition bridge's
+    /// release-safe arithmetic (`lenient.rs`) slices with.
+    pub(super) fn next_spanned(&mut self) -> Option<(Component<'a>, usize, usize)> {
+        for (slot, span) in self.head.iter_mut().zip(self.head_spans) {
             if let Some(component) = slot.take() {
-                return Some(component);
+                return Some((component, span.0, span.1));
             }
         }
         loop {
@@ -260,16 +273,26 @@ impl<'a> Iterator for Components<'a> {
             }
             let (windows, verbatim) = (self.windows, self.verbatim);
             let is_sep = |c: char| c == '\\' && windows || c == '/' && !verbatim;
+            let start = self.text_len - self.rest.len();
             let end = self.rest.find(is_sep).unwrap_or(self.rest.len());
             let name = &self.rest[..end];
             self.rest = self.rest.get(end + 1..).unwrap_or("");
-            match name {
-                "" => {}
-                "." if verbatim => return Some(Component::CurDir),
-                "." => {}
-                ".." => return Some(Component::ParentDir),
-                name => return Some(Component::Normal(name)),
-            }
+            let component = match name {
+                "" => continue,
+                "." if verbatim => Component::CurDir,
+                "." => continue,
+                ".." => Component::ParentDir,
+                name => Component::Normal(name),
+            };
+            return Some((component, start, start + end));
         }
+    }
+}
+
+impl<'a> Iterator for Components<'a> {
+    type Item = Component<'a>;
+
+    fn next(&mut self) -> Option<Component<'a>> {
+        self.next_spanned().map(|(component, _, _)| component)
     }
 }

@@ -151,8 +151,11 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   `from_normalized` (zero-copy, this host's shapes; `from_normalized_as` for a test of the other), `from_native` (this
   host; `from_native_as`), and `app_path!` in tests. Arithmetic: `join`, `join_relative`, `parent`, `file_name`,
   `extension`, `file_stem`, `with_file_name`, `names`, `root`, `starts_with` / `strip_prefix` (exact, never across
-  roots), `rebase`, and the volume-root matches below. Typed arithmetic is for canonical values; on a bridge value it's
-  a debug assertion.
+  roots), `rebase`, and the volume-root matches below. ❗ On a bridge value (`/a//b/`, `C:\x\y`) the arithmetic is right
+  in release builds too, ❌ never a debug-only check (review 2's N6: `C:\x\y` sat under no `C:\x`):
+  `app_path/lenient.rs` answers slices as `Path` would, and reads `join`, `strip_prefix`, and the volume-root matches
+  through the canonical twin (`to_canonical`), so typed output is canonical; a value with none (a `..`, no root) joins
+  with a typed refusal and sits under nothing. `strip_prefix` answers a `Cow`: borrowed for canonical values.
 - **Two name worlds, one door each** (Decision/Why): `AppName::new(&str)` takes a BACKEND-spelled name (a
   `FileEntry.name`, its escapes live); `AppNameBuf::from_native_os(&OsStr)` (and `from_native_bytes` /
   `from_native_units`) takes a name a native API holds, escaping what isn't valid text and a literal escape code point

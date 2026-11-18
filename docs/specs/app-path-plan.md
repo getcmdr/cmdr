@@ -675,9 +675,17 @@ caller turns into "not found"):
   of `caf\xE9.txt` would land as a file literally named with U+10FEE9). Its one door is
   `AppNameBuf::from_native_os(child.as_os_str())`, explicitly native; 10a replaces `ChildName::new(&entry.name)` with
   `AppName::new(&entry.name)`.
-- **Typed arithmetic is defined on canonical values only**: `parent`, `file_name`, `names`, `join`, `strip_prefix`, and
-  `strip_volume_prefix` `debug_assert!` it. A bridge value's arithmetic stays on `as_std_legacy` until its body
-  converts.
+- **Typed arithmetic on a bridge value is right in release builds too** (decided by the lead after the type's second
+  review, 2026-11-18; the first review's fix was a `debug_assert!`, which left `C:\x\y` with no parent and under no
+  `C:\x` in release, N6). `is_canonical()` picks the path: a canonical value reads its text directly; a bridge value
+  (`/a//b/`, `C:\x\y`) reads through the same hybrid components `Eq` uses (`app_path/lenient.rs`). Slices (`parent`,
+  `file_name`, `names`, `root`, `kind`, `is_root`) answer what `Path` answers, cut from the text; `join`,
+  `strip_prefix`, `strip_volume_prefix`, `same_root`, and `rebase` read the bridge value as the canonical place it names
+  (`to_canonical()`), so their output is canonical (`rebase` never builds `/new//b`). `strip_prefix` and
+  `strip_volume_prefix` answer `Option<Cow<RelativeAppPath>>`, borrowed for canonical values, owned
+  (`RelativeAppPathBuf`) for a bridge one. A bridge value with no canonical twin (no root, `C:x`, a device path, a `..`)
+  joins with a typed refusal and sits under nothing: by text a `..` can name a different file across a symlink. A
+  property holds every bridge value's `parent`, `file_name`, and `starts_with` to `Path`'s on Unix.
 - Tests only (`any(test, feature = "testing")`): `app_path!("/a/b")` returns a `&'static AppPath`-like value, panicking
   on a bad literal, so the 4,800 test literals convert by sed.
 - **The transition bridge, deleted in milestone 11**: `AppPath::legacy_unchecked(&Path) -> Cow<'_, AppPath>` and

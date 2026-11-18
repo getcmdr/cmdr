@@ -89,10 +89,12 @@ fn the_arithmetic_borrows() {
         assert_eq!(path.file_name(), Some("notes.txt"));
         assert_eq!(path.names().count(), 4);
         assert!(path.starts_with(base));
-        assert_eq!(
-            path.strip_prefix(base).map(|rel| rel.as_str()),
-            Some("Documents/notes.txt")
+        let rel = path.strip_prefix(base);
+        assert!(
+            matches!(rel, Some(std::borrow::Cow::Borrowed(_))),
+            "a canonical tail borrows"
         );
+        assert_eq!(rel.as_deref().map(|rel| rel.as_str()), Some("Documents/notes.txt"));
         assert!(path.same_root(other));
         assert!(path != other && path < other);
         let mut hasher = DefaultHasher::new();

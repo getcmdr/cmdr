@@ -217,7 +217,7 @@ proptest! {
                 // Never across roots, and the tail is always a valid one.
                 prop_assert_eq!(path.root(), ancestor.root());
                 prop_assert!(RelativeAppPath::new(rel.as_str()).is_ok(), "{:?} under {:?}: {:?}", path, ancestor, rel);
-                prop_assert_eq!(&ancestor.join_relative(rel).expect("it was there"), path);
+                prop_assert_eq!(&ancestor.join_relative(&rel).expect("it was there"), path);
                 if let Some(moved) = path.rebase(ancestor, &b) {
                     prop_assert!(AppPath::from_normalized_as(moved.as_str(), PathFlavor::Windows).is_ok(), "{:?}", moved);
                 }
@@ -457,6 +457,39 @@ mod bridge_windows {
             let bridged = AppPath::legacy_unchecked(&path);
             let units: Vec<u16> = bridged.as_std_legacy().as_os_str().encode_wide().collect();
             assert_eq!(units, text.encode_utf16().collect::<Vec<u16>>(), "{text:?}");
+        }
+    }
+}
+
+/// Typed arithmetic on a POSIX bridge value answers what `Path` answers, in release builds
+/// too (review 2's N6), so a guard written in typed arithmetic during the transition can't
+/// answer "no" where `std` said "yes".
+#[cfg(unix)]
+mod bridge_arithmetic_unix {
+    use std::path::Path;
+
+    use proptest::prelude::*;
+
+    use super::super::super::*;
+    use super::posix_text;
+
+    proptest! {
+        #[test]
+        fn a_bridge_values_arithmetic_is_paths(a in posix_text(), b in posix_text()) {
+            let (typed, std_path) = (AppPath::legacy_unchecked(Path::new(&a)), Path::new(&a));
+            let parent = typed.parent().map(|p| AppPath::legacy_unchecked(Path::new(p.as_str())).into_owned());
+            let std_parent = std_path.parent().map(|p| AppPath::legacy_unchecked(p).into_owned());
+            prop_assert_eq!(parent, std_parent, "parent of {:?}", a);
+            prop_assert_eq!(typed.file_name(), std_path.file_name().and_then(|n| n.to_str()), "file name of {:?}", a);
+            // `..` is the one place they part: by text it can name another file, so the type
+            // places a `..`-holding value under nothing.
+            if !a.split('/').any(|n| n == "..") && !b.split('/').any(|n| n == "..") {
+                let ancestor = AppPath::legacy_unchecked(Path::new(&b));
+                prop_assert_eq!(typed.starts_with(&ancestor), std_path.starts_with(&b), "{:?} under {:?}", a, b);
+                if let Some(rel) = typed.strip_prefix(&ancestor) {
+                    prop_assert!(RelativeAppPath::new(rel.as_str()).is_ok(), "a typed tail is canonical: {:?}", rel);
+                }
+            }
         }
     }
 }
