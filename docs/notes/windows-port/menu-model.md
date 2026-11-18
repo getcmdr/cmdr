@@ -5,7 +5,9 @@ Linux desktop, carried as values of the `menuModel` convention (`apps/desktop/sr
 Researched 2026-11-18. "Verified" means read from the page that day (Firecrawl scrape or search excerpt, quoted text);
 "unverified" means from memory, a secondary source, or not checked on our own stack.
 
-Decided by the lead on David's delegation, 2026-11-18. David can still overturn it at QA.
+Recommended by the lead, 2026-11-18. **Provisional**: David runs the menu spike on two real Windows laptops before any
+custom-menu build (`docs/notes/windows-port/menu-spike.md`, which also rechecks this note's Windows facts against
+upstream as of 2026-11-18; read its "Upstream facts" before relying on the "Technical constraints" section below).
 
 ## The decision in one screen
 

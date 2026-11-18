@@ -102,11 +102,24 @@ Settled:
     `x86_64-pc-windows-msvc` has required Windows 10 since 2024 (the Win7 target is tier 3, no prebuilt std). Total
     Commander reaches Windows 95 only because it's a native Win32 app with no browser engine.
 
-- **D5. The menu model** (decided by the lead on David's delegation, 2026-11-18): off macOS, Cmdr draws its menus in the
-  page from `cmdr-menu`'s data. Windows, KDE, and other Linux desktops get an in-window menu bar (`windowMenuBar`),
-  GNOME a "Main menu" button opened by F10 (`primaryMenu`, new), and a "Show menu bar" setting flips between the two.
-  muda keeps macOS's bar and every right-click menu. Task 63; evidence and rejected options:
-  `docs/notes/windows-port/menu-model.md`.
+- **D5. The menu model** (PROVISIONAL, 2026-11-18; recommended by the lead's research, pending David's spikes on two
+  real Windows laptops): off macOS, Cmdr draws its menus in the page from `cmdr-menu`'s data. Windows, KDE, and other
+  Linux desktops get an in-window menu bar (`windowMenuBar`), GNOME a "Main menu" button opened by F10 (`primaryMenu`,
+  new), and a "Show menu bar" setting flips between the two. muda keeps macOS's bar and every right-click menu. Task 63;
+  evidence and rejected options: `docs/notes/windows-port/menu-model.md`.
+  - **Why provisional**: David prefers native menus if they're little work, and expects Tauri to close gaps over time.
+    The recommendation rests on evidence nobody ran on our stack, so no custom-menu build starts before the spike.
+  - **What the spike must answer** (`tools/menu-spike/`, test script and results in
+    `docs/notes/windows-port/menu-spike.md`), on Windows 10 and Windows 11:
+    1. With focus in the page, do a lone Alt, F10, and Alt+letter reach muda's native bar (highlight it, open the right
+       menu), and does Escape give focus back to the page?
+    2. Do the bar's accelerators fire while the page has focus, and does any key fire twice (page and menu)?
+    3. Does the native bar and its menus follow dark and light mode, and high contrast, well enough?
+    4. Do AltGr combos on a second layout type their character, not open a menu?
+    5. Does Narrator read each mode's bar as a menu bar?
+  - **Decision rule**: the native bar if 1–3 are acceptable (with a small key bridge if that's what it takes); the
+    hybrid (an in-page title strip opening native popups) if only the bar strip fails; the in-page bar only if both
+    fail.
 
 - **D3. Code signing and distribution** (David, 2026-11-04): Store first, a paid certificate only once Windows pays for
   it.
@@ -610,11 +623,11 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
         machine with two layouts.
       - The global go-to-latest hotkey `Ctrl+Alt+Win+J` registers and isn't one of Windows' own; try `Win+Alt+J` as a
         simpler default there.
-      - The menu bar (task 63; Cmdr draws it in the page, so no Win32 accelerator is in play): a lone Alt tap and F10
-        reach the page and focus the bar, without Windows' menu loop stalling IPC (`SC_KEYMENU`; a click on the panes
-        still answers within a second); Alt+Space still opens the system menu; with the search dialog or Multi-rename
-        open, `Alt+F` / `Alt+S` / `Alt+V` and `Alt+F` / `Alt+E` / `Alt+G` stay the dialog's and the bar doesn't open;
-        with "Show menu bar" off, Alt and F10 show it until focus leaves.
+      - The menu bar (task 63; if D5's in-page bar holds after the spike, no Win32 accelerator is in play): a lone Alt
+        tap and F10 reach the page and focus the bar, without Windows' menu loop stalling IPC (`SC_KEYMENU`; a click on
+        the panes still answers within a second); Alt+Space still opens the system menu; with the search dialog or
+        Multi-rename open, `Alt+F` / `Alt+S` / `Alt+V` and `Alt+F` / `Alt+E` / `Alt+G` stay the dialog's and the bar
+        doesn't open; with "Show menu bar" off, Alt and F10 show it until focus leaves.
       - The download toast's hotkey animation: its PC key caps read `Ctrl`, `Fn`, `Win`, and `Alt` where a Windows
         laptop has them.
       - With a text field focused, a menu CLICK on a file-moving command (File > Delete, Edit > Move here) runs, and the
@@ -711,16 +724,18 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
 62. [S] Windows. Typography and motion: Segoe UI Variable through the system font stack, the Windows type ramp, Windows
     animation curves and durations, and the system's animation setting. Linux: follows the desktop's font and
     reduced-motion settings. Needs 40.
-63. [L] Windows and Linux. The menu model. **Decided** by the lead on David's delegation (2026-11-18, D5): off macOS,
-    Cmdr draws its menus in the page from `cmdr-menu`'s data, and muda keeps only macOS's bar and every right-click
-    menu. Windows, KDE, and other Linux show an in-window menu bar (`menuModel: 'windowMenuBar'`), Fluent on Windows and
-    the neutral theme on Linux; a tap of Alt or F10 focuses it, Alt plus a title's letter opens a menu, letters and
-    keytips come from the dialogs' `access-keys.ts`, and a modal surface makes it inert. GNOME shows a "Main menu"
-    button instead (`'primaryMenu'`, new): the bar's menus as submenus plus the HIG's standard group, F10 opens it. A
-    "Show menu bar" setting swaps the two everywhere off macOS (on Windows a hidden bar shows on Alt or F10, on KDE a
-    hamburger button stands in; no default key, since KDE's `Ctrl+M` is Multi-rename). The palette stays the way to
-    every command. Evidence, per-desktop walk-throughs, and rejected options (muda's Win32 bar, a command bar, palette
-    only, a bar on GNOME): `docs/notes/windows-port/menu-model.md`. Steps:
+63. [L] Windows and Linux. The menu model. **Provisional** (D5): blocked on the menu spike (`tools/menu-spike/`,
+    `docs/notes/windows-port/menu-spike.md`), which David runs on a Windows 10 and a Windows 11 laptop before any
+    custom-menu build; the plan below is the in-page outcome, kept as researched. Recommended by the lead (2026-11-18):
+    off macOS, Cmdr draws its menus in the page from `cmdr-menu`'s data, and muda keeps only macOS's bar and every
+    right-click menu. Windows, KDE, and other Linux show an in-window menu bar (`menuModel: 'windowMenuBar'`), Fluent on
+    Windows and the neutral theme on Linux; a tap of Alt or F10 focuses it, Alt plus a title's letter opens a menu,
+    letters and keytips come from the dialogs' `access-keys.ts`, and a modal surface makes it inert. GNOME shows a "Main
+    menu" button instead (`'primaryMenu'`, new): the bar's menus as submenus plus the HIG's standard group, F10 opens
+    it. A "Show menu bar" setting swaps the two everywhere off macOS (on Windows a hidden bar shows on Alt or F10, on
+    KDE a hamburger button stands in; no default key, since KDE's `Ctrl+M` is Multi-rename). The palette stays the way
+    to every command. Evidence, per-desktop walk-throughs, and rejected options (muda's Win32 bar, a command bar,
+    palette only, a bar on GNOME): `docs/notes/windows-port/menu-model.md`. Steps:
     1. [XS] `MenuModel::PrimaryMenu`, the GNOME row, `bindings.ts`, `conventions-on.json`, and the conventions docs
        (`platform-conventions.md`'s `menuModel` line points to the menu-model note).
     2. [S] A desktop command answering the bar for a window the way `cmdr-listing-wasm`'s `DemoMenuBar` does (rows,
