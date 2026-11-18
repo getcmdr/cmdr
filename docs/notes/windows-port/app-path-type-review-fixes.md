@@ -75,4 +75,12 @@ milestone (the trait flip) starts from a known state.
 
 ## Checks
 
-Recorded in the lead's report and the plan's milestone 3 entry; the Windows builder's run is in `build-progress.md`.
+- `--ci --fresh` on macOS: `rust-tests` scoped to `cmdr`, `cmdr-fs`, `cmdr-index`, `cmdr-listing`, `cmdr-local`,
+  `cmdr-operation-log`, and `cmdr-operations` (13,221 passed, the merged pins included), `clippy`, `rustfmt`, `rustdoc`,
+  `fuzz-compile` (12 targets), `mutant-records`, and `listing-wasm`; `svelte-tests-related --fresh` (the escape's vitest
+  files); `--fast`; `app-path-std-bridge` and its Go tests, `go-vet`, `staticcheck`, `gocyclo`.
+- The Mac's zig cross-check (`--all-targets`, `x86_64-pc-windows-gnu`) over `cmdr-fs`, `cmdr-operation-log`,
+  `cmdr-operations`, and `cmdr-local`: clean.
+- The Windows builder: `cmdr-fs` 899 of 899 and clippy clean (`build-progress.md`'s entry for this branch).
+- Not run to the end locally: `property-mutants`, the slow CI-only lane (its `app_path_native` record validates under
+  `mutant-records`).
