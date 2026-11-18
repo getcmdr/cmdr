@@ -335,6 +335,6 @@
   },
   "shortcuts.window.editInSettings": "{platform, select, windows {Kurzbefehle in den Einstellungen bearbeiten} linuxGnome {Kurzbefehle in den Einstellungen bearbeiten} linuxKde {Kurzbefehle unter „Cmdr einrichten“ bearbeiten} other {Kurzbefehle in den Einstellungen bearbeiten}}",
   "@shortcuts.window.editInSettings": {
-    "sourceHash": "875f6b7"
+    "sourceHash": "12661fd"
   }
 }

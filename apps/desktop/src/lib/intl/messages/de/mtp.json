@@ -3,10 +3,10 @@
   "@mtp.connectedToast.title": {
     "sourceHash": "562319d"
   },
-  "mtp.connectedToast.body": "{platform, select, macos {Cmdr hat den macOS-Kameradienst (ptpcamerad) angehalten, um auf dieses Gerät zuzugreifen. Um es in einer anderen App zu nutzen, deaktiviere die MTP-Unterstützung in den Einstellungen.} windows {} linuxGnome {Um dieses Gerät in einer anderen App zu nutzen, deaktiviere die MTP-Unterstützung in den Einstellungen.} linuxKde {To use this device in another app, disable MTP support in Configure Cmdr.} other {Um dieses Gerät in einer anderen App zu nutzen, deaktiviere die MTP-Unterstützung in den Einstellungen.}}",
+  "mtp.connectedToast.body": "{platform, select, macos {Cmdr hat den macOS-Kameradienst (ptpcamerad) angehalten, um auf dieses Gerät zuzugreifen. Um es in einer anderen App zu nutzen, deaktiviere die MTP-Unterstützung in den Einstellungen.} windows {} linuxGnome {Um dieses Gerät in einer anderen App zu nutzen, deaktiviere die MTP-Unterstützung in den Einstellungen.} linuxKde {Um dieses Gerät in einer anderen App zu nutzen, deaktiviere die MTP-Unterstützung unter „Cmdr einrichten“.} other {Um dieses Gerät in einer anderen App zu nutzen, deaktiviere die MTP-Unterstützung in den Einstellungen.}}",
   "@mtp.connectedToast.body": {
-    "sourceHash": "d1c6175",
-    "sameAsSourceJustification": "The windows branch is empty on purpose (the toast has no body line on Windows), per the key's description."
+    "sourceHash": "b7aa493",
+    "sameAsSourceJustification": "The windows branch is empty in English (Windows has no camera daemon to pause, so the toast carries no body there); an empty branch is empty in every language."
   },
   "mtp.connectedToast.dontShowAgain": "Nicht mehr anzeigen",
   "@mtp.connectedToast.dontShowAgain": {

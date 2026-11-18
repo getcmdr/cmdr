@@ -37,7 +37,7 @@
   },
   "commands.appSettings.label": "{platform, select, windows {Einstellungen öffnen} linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
   "@commands.appSettings.label": {
-    "sourceHash": "e535825"
+    "sourceHash": "a28ffff"
   },
   "commands.appCheckForUpdates.label": "Nach Updates suchen …",
   "@commands.appCheckForUpdates.label": {
@@ -1266,7 +1266,7 @@
   },
   "commands.handler.openTerminalHere.hint": "{platform, select, windows {Ordner in deiner Terminal-App geöffnet. Soll Cmdr beim nächsten Mal eine andere App öffnen? Wähle sie in den Einstellungen unter „Navigation & Dateioperationen“.} linuxGnome {Ordner in deiner Terminal-App geöffnet. Soll Cmdr beim nächsten Mal eine andere App öffnen? Wähle sie in den Einstellungen unter „Navigation & Dateioperationen“.} linuxKde {Ordner in deiner Terminal-App geöffnet. Soll Cmdr beim nächsten Mal eine andere App öffnen? Wähle sie unter „Cmdr einrichten“ > „Navigation & Dateioperationen“.} other {Ordner in deiner Terminal-App geöffnet. Soll Cmdr beim nächsten Mal eine andere App öffnen? Wähle sie in den Einstellungen unter „Navigation & Dateioperationen“.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b73c1db"
+    "sourceHash": "5d6063c"
   },
   "commands.handler.openTerminalHere.dismiss": "Schließen",
   "@commands.handler.openTerminalHere.dismiss": {
@@ -1274,7 +1274,7 @@
   },
   "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Einstellungen öffnen} linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "e535825"
+    "sourceHash": "a28ffff"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} ist nicht mehr installiert, also wurde stattdessen Terminal geöffnet.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1346,7 +1346,7 @@
   },
   "commands.handler.viewDebugLog.disabled": "{platform, select, windows {Die Protokollspeicherung ist deaktiviert. Setze das Speicherplatz-Limit unter Einstellungen > Erweitert auf mehr als 0 und starte Cmdr neu, um das Debug-Protokoll anzusehen.} linuxGnome {Die Protokollspeicherung ist deaktiviert. Setze das Speicherplatz-Limit unter Einstellungen > Erweitert auf mehr als 0 und starte Cmdr neu, um das Debug-Protokoll anzusehen.} linuxKde {Die Protokollspeicherung ist deaktiviert. Setze das Speicherplatz-Limit unter „Cmdr einrichten“ > Erweitert auf mehr als 0 und starte Cmdr neu, um das Debug-Protokoll anzusehen.} other {Die Protokollspeicherung ist deaktiviert. Setze das Speicherplatz-Limit unter Einstellungen > Erweitert auf mehr als 0 und starte Cmdr neu, um das Debug-Protokoll anzusehen.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "bda730a"
+    "sourceHash": "1fb0c6a"
   },
   "commands.handler.viewDebugLog.unavailable": "Das Debug-Protokoll ließ sich nicht öffnen. Versuche es noch einmal.",
   "@commands.handler.viewDebugLog.unavailable": {

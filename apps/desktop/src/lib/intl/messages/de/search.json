@@ -69,7 +69,7 @@
   },
   "search.imageResults.networkOff": "{platform, select, windows {Aktiviere in den Einstellungen die Bildindizierung für dieses Netzlaufwerk, um den Text in seinen Fotos zu durchsuchen.} linuxGnome {Aktiviere in den Einstellungen die Bildindizierung für dieses Netzlaufwerk, um den Text in seinen Fotos zu durchsuchen.} linuxKde {Aktiviere unter „Cmdr einrichten“ die Bildindizierung für dieses Netzlaufwerk, um den Text in seinen Fotos zu durchsuchen.} other {Aktiviere in den Einstellungen die Bildindizierung für dieses Netzlaufwerk, um den Text in seinen Fotos zu durchsuchen.}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "30b2455"
+    "sourceHash": "5f0699a"
   },
   "search.imageResults.paused": "Dieses Laufwerk ist getrennt, daher sind das die bisher indizierten Fotos.",
   "@search.imageResults.paused": {
@@ -221,7 +221,7 @@
   },
   "search.coverage.toast.indexingOff": "{platform, select, windows {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird nichts indiziert. Schalte sie unter Indizierung > Laufwerksindizierung ein.} linuxGnome {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird nichts indiziert. Schalte sie unter Indizierung > Laufwerksindizierung ein.} linuxKde {Die Laufwerksindizierung ist unter „Cmdr einrichten“ aus, deshalb wird nichts indiziert. Schalte sie unter Indizierung > Laufwerksindizierung ein.} other {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird nichts indiziert. Schalte sie unter Indizierung > Laufwerksindizierung ein.}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "7c4ff62"
+    "sourceHash": "15b2ffc"
   },
   "search.coverage.toast.deferredUntilSearchEnds": "Cmdr durchsucht {drive} bereits. Die Indizierung startet, sobald das fertig ist.",
   "@search.coverage.toast.deferredUntilSearchEnds": {
