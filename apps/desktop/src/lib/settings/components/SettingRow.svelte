@@ -1,18 +1,31 @@
 <script lang="ts">
     import type { Snippet } from 'svelte'
-    import { isModified, resetSetting, onSpecificSettingChange, type SettingId } from '#lib/settings/index.js'
+    import {
+        getSettingDefinition,
+        isModified,
+        resetSetting,
+        onSpecificSettingChange,
+        type SettingId,
+    } from '#lib/settings/index.js'
     import { getMatchIndicesForLabel, highlightMatches } from '#lib/settings/settings-search.js'
     import { disabledNoteId, settingAnchorId } from '#lib/settings/settings-window.js'
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import Icon from '#lib/ui/Icon.svelte'
+    import InfoTip from '#lib/ui/InfoTip.svelte'
     import { onMount } from 'svelte'
     import { tString } from '#lib/intl/messages.svelte.js'
     import { isSettingLocked } from '#lib/managed-policy/managed-policy.svelte.js'
     import { registerSectionRow } from './section-rows.svelte'
+    import { placeDescription } from './description-placement'
 
     interface Props {
         id: SettingId
         label: string
+        /**
+         * The full description. Renders where the registry's `descriptionPlacement` says: under
+         * the row (`inline`), or behind an ⓘ after the label (`tip`, with the registry's
+         * `summary` under the label when it has one). `''` renders nothing.
+         */
         description: string
         disabled?: boolean
         disabledReason?: string
@@ -27,6 +40,7 @@
         split?: boolean
         searchQuery?: string
         children: Snippet
+        /** A rich inline description (links, say). Always renders under the row, whatever the placement. */
         descriptionContent?: Snippet
         /**
          * Rendered right after the label, inside the label wrapper, ahead of the reset pip
@@ -61,6 +75,19 @@
 
     registerSectionRow(id)
 
+    // Where the description goes is the registry's call (`descriptionInTip`), so a row opts in
+    // without its section changing. Absent from the registry (a test stub, say) reads as inline.
+    // A rich `descriptionContent` always stays inline.
+    const definition = $derived(getSettingDefinition(id))
+    const placed = $derived(
+        placeDescription({
+            placement: descriptionContent ? 'inline' : (definition?.descriptionPlacement ?? 'inline'),
+            description,
+            summary: definition?.summary ?? '',
+            searchQuery,
+        }),
+    )
+
     // Get highlighted label segments based on search query
     const labelSegments = $derived.by(() => {
         if (!searchQuery.trim()) {
@@ -90,29 +117,37 @@
      convention; the `<label for>` above keeps naming the control, not this row. -->
 <div class="setting-row" id={settingAnchorId(id)} class:disabled>
     <div class="setting-header" class:split>
-        <div class="setting-label-wrapper">
-            <label class="setting-label" for={id}
-                >{#each labelSegments as segment, i (i)}{#if segment.matched}<mark class="search-highlight"
-                            >{segment.text}</mark
-                        >{:else}{segment.text}{/if}{/each}</label
-            >
-            {#if labelTrailing}{@render labelTrailing()}{/if}
-            {#if modified && !locked}
-                <button
-                    class="reset-button"
-                    use:tooltip={tString('settings.control.resetToDefault')}
-                    onclick={handleReset}
-                    aria-label={tString('settings.control.resetToDefault')}
+        <div class="setting-label-column">
+            <div class="setting-label-wrapper">
+                <label class="setting-label" for={id}
+                    >{#each labelSegments as segment, i (i)}{#if segment.matched}<mark class="search-highlight"
+                                >{segment.text}</mark
+                            >{:else}{segment.text}{/if}{/each}</label
                 >
-                    <Icon name="rotate-ccw" size={14} aria-hidden="true" />
-                </button>
-            {/if}
-            {#if disabled && disabledReason}
-                <span class="disabled-badge">{disabledReason}</span>
-            {/if}
-            {#if requiresRestart}
-                <span class="restart-badge">{tString('settings.control.restartRequired')}</span>
-            {/if}
+                {#if placed.tip}
+                    <InfoTip label={tString('settings.control.moreAbout', { setting: label })} text={placed.tip} />
+                {/if}
+                {#if labelTrailing}{@render labelTrailing()}{/if}
+                {#if modified && !locked}
+                    <button
+                        class="reset-button"
+                        use:tooltip={tString('settings.control.resetToDefault')}
+                        onclick={handleReset}
+                        aria-label={tString('settings.control.resetToDefault')}
+                    >
+                        <Icon name="rotate-ccw" size={14} aria-hidden="true" />
+                    </button>
+                {/if}
+                {#if disabled && disabledReason}
+                    <span class="disabled-badge">{disabledReason}</span>
+                {/if}
+                {#if requiresRestart}
+                    <span class="restart-badge">{tString('settings.control.restartRequired')}</span>
+                {/if}
+            </div>
+            {#each placed.underLabel as line, i (i)}
+                <p class="setting-summary">{line}</p>
+            {/each}
         </div>
         <div class="setting-control">
             {@render children()}
@@ -120,8 +155,8 @@
     </div>
     {#if descriptionContent}
         <p class="setting-description">{@render descriptionContent()}</p>
-    {:else}
-        <p class="setting-description">{description}</p>
+    {:else if placed.inline}
+        <p class="setting-description">{placed.inline}</p>
     {/if}
     {#if disabled && disabledNote}
         <p class="setting-disabled-note" id={disabledNoteId(id)}>
@@ -159,6 +194,20 @@
         grid-template-columns: 1fr 1fr;
         align-items: center;
         gap: var(--spacing-md);
+    }
+
+    /* The label line plus, for a tip setting, its summary under it. In a split row this is the
+       left grid cell, so the summary stays beside the label instead of under the whole row. */
+    .setting-label-column {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .setting-summary {
+        margin: var(--spacing-xxs) 0 0;
+        color: var(--color-text-secondary);
+        font-size: var(--font-size-sm);
     }
 
     .setting-label-wrapper {

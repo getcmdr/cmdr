@@ -23,10 +23,6 @@
   "@settings.theme.mode.label": {
     "sourceHash": "0f79f19"
   },
-  "settings.theme.mode.description": "Vyberte světlý nebo tmavý motiv, případně motiv podle systému.",
-  "@settings.theme.mode.description": {
-    "sourceHash": "42b18b9"
-  },
   "settings.theme.mode.opt.light": "Světlý",
   "@settings.theme.mode.opt.light": {
     "sourceHash": "dbcd5e7"
@@ -115,10 +111,6 @@
   "@settings.appearance.dateTimeFormat.label": {
     "sourceHash": "fcfc2a6"
   },
-  "settings.appearance.dateTimeFormat.description": "Jak zobrazovat datum a čas v seznamu souborů.",
-  "@settings.appearance.dateTimeFormat.description": {
-    "sourceHash": "628571a"
-  },
   "settings.appearance.dateTimeFormat.opt.system": "Podle systému",
   "@settings.appearance.dateTimeFormat.opt.system": {
     "sourceHash": "b045921"
@@ -128,17 +120,19 @@
     "sourceHash": "408dd66",
     "sameAsSourceJustification": "Standard name ISO 8601; kept verbatim in every locale (DC and macOS cs keep ISO names untranslated)."
   },
-  "settings.appearance.dateTimeFormat.optDesc.iso": "např. 2025-01-25 14:30",
+  "settings.appearance.dateTimeFormat.optDesc.iso": "2025-01-25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.iso": {
-    "sourceHash": "63c1f1d"
+    "sourceHash": "dc76ffd",
+    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
   },
   "settings.appearance.dateTimeFormat.opt.short": "Krátký",
   "@settings.appearance.dateTimeFormat.opt.short": {
     "sourceHash": "f5d61ea"
   },
-  "settings.appearance.dateTimeFormat.optDesc.short": "např. 01/25 14:30",
+  "settings.appearance.dateTimeFormat.optDesc.short": "01/25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.short": {
-    "sourceHash": "4475197"
+    "sourceHash": "72b6f9f",
+    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
   },
   "settings.appearance.dateTimeFormat.opt.custom": "Vlastní…",
   "@settings.appearance.dateTimeFormat.opt.custom": {
@@ -1514,9 +1508,9 @@
   "@settings.fileExplorer.git.showVirtualGitPortal.label": {
     "sourceHash": "40d9fa1"
   },
-  "settings.fileExplorer.git.showVirtualGitPortal.description": "Při otevření složky `.git` zobrazí větve, značky, commity a worktree jako virtuální složky, které můžete procházet. Když volbu vypnete, uvidíte místo toho surový obsah `.git`.",
+  "settings.fileExplorer.git.showVirtualGitPortal.description": "Při otevření složky .git zobrazí větve, značky, commity a worktree jako virtuální složky, které můžete procházet. Když volbu vypnete, uvidíte místo toho surový obsah .git.",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
-    "sourceHash": "70eae72"
+    "sourceHash": "331e0a5"
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "portál, virtuální, větve, značky, commity, worktree, historie",
   "@settings.fileExplorer.git.showVirtualGitPortal.keywords": {
@@ -2831,6 +2825,10 @@
   "settings.summary.noSubsections": "Tato sekce nemá žádné podsekce.",
   "@settings.summary.noSubsections": {
     "sourceHash": "ba4b5b5"
+  },
+  "settings.control.moreAbout": "More about “{setting}”",
+  "@settings.control.moreAbout": {
+    "sourceHash": "57968f3"
   },
   "settings.control.resetToDefault": "Obnovit výchozí",
   "@settings.control.resetToDefault": {

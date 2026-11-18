@@ -23,10 +23,6 @@
   "@settings.theme.mode.label": {
     "sourceHash": "0f79f19"
   },
-  "settings.theme.mode.description": "Elige entre tema claro, oscuro o basado en el sistema.",
-  "@settings.theme.mode.description": {
-    "sourceHash": "42b18b9"
-  },
   "settings.theme.mode.opt.light": "Claro",
   "@settings.theme.mode.opt.light": {
     "sourceHash": "dbcd5e7"
@@ -117,10 +113,6 @@
   "@settings.appearance.dateTimeFormat.label": {
     "sourceHash": "fcfc2a6"
   },
-  "settings.appearance.dateTimeFormat.description": "Cómo se muestran las fechas y horas en la lista de archivos.",
-  "@settings.appearance.dateTimeFormat.description": {
-    "sourceHash": "628571a"
-  },
   "settings.appearance.dateTimeFormat.opt.system": "Por omisión del sistema",
   "@settings.appearance.dateTimeFormat.opt.system": {
     "sourceHash": "b045921"
@@ -130,17 +122,19 @@
     "sourceHash": "408dd66",
     "sameAsSourceJustification": "'ISO 8601' is the standard format name; kept verbatim (standard names are not translated)."
   },
-  "settings.appearance.dateTimeFormat.optDesc.iso": "p. ej., 2025-01-25 14:30",
+  "settings.appearance.dateTimeFormat.optDesc.iso": "2025-01-25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.iso": {
-    "sourceHash": "63c1f1d"
+    "sourceHash": "dc76ffd",
+    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
   },
   "settings.appearance.dateTimeFormat.opt.short": "Corto",
   "@settings.appearance.dateTimeFormat.opt.short": {
     "sourceHash": "f5d61ea"
   },
-  "settings.appearance.dateTimeFormat.optDesc.short": "p. ej., 01/25 14:30",
+  "settings.appearance.dateTimeFormat.optDesc.short": "01/25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.short": {
-    "sourceHash": "4475197"
+    "sourceHash": "72b6f9f",
+    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
   },
   "settings.appearance.dateTimeFormat.opt.custom": "Personalizado…",
   "@settings.appearance.dateTimeFormat.opt.custom": {
@@ -1518,9 +1512,9 @@
   "@settings.fileExplorer.git.showVirtualGitPortal.label": {
     "sourceHash": "40d9fa1"
   },
-  "settings.fileExplorer.git.showVirtualGitPortal.description": "Al entrar en `.git`, muestra ramas, etiquetas, commits y worktrees como carpetas virtuales navegables. Desactívalo para ver en su lugar el contenido en bruto de `.git`.",
+  "settings.fileExplorer.git.showVirtualGitPortal.description": "Al entrar en .git, muestra ramas, etiquetas, commits y worktrees como carpetas virtuales navegables. Desactívalo para ver en su lugar el contenido en bruto de .git.",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
-    "sourceHash": "70eae72"
+    "sourceHash": "331e0a5"
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "portal, virtual, ramas, etiquetas, commits, confirmaciones, historial",
   "@settings.fileExplorer.git.showVirtualGitPortal.keywords": {
@@ -2834,6 +2828,10 @@
   "settings.summary.noSubsections": "Esta sección no tiene subsecciones.",
   "@settings.summary.noSubsections": {
     "sourceHash": "ba4b5b5"
+  },
+  "settings.control.moreAbout": "More about “{setting}”",
+  "@settings.control.moreAbout": {
+    "sourceHash": "57968f3"
   },
   "settings.control.resetToDefault": "Restablecer al valor por omisión",
   "@settings.control.resetToDefault": {

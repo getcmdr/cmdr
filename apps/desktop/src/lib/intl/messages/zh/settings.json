@@ -23,10 +23,6 @@
   "@settings.theme.mode.label": {
     "sourceHash": "0f79f19"
   },
-  "settings.theme.mode.description": "在浅色、深色或跟随系统的主题之间选择。",
-  "@settings.theme.mode.description": {
-    "sourceHash": "42b18b9"
-  },
   "settings.theme.mode.opt.light": "浅色",
   "@settings.theme.mode.opt.light": {
     "sourceHash": "dbcd5e7"
@@ -117,10 +113,6 @@
   "@settings.appearance.dateTimeFormat.label": {
     "sourceHash": "fcfc2a6"
   },
-  "settings.appearance.dateTimeFormat.description": "文件列表中日期和时间的显示方式。",
-  "@settings.appearance.dateTimeFormat.description": {
-    "sourceHash": "628571a"
-  },
   "settings.appearance.dateTimeFormat.opt.system": "跟随系统",
   "@settings.appearance.dateTimeFormat.opt.system": {
     "sourceHash": "b045921"
@@ -130,17 +122,19 @@
     "sourceHash": "408dd66",
     "sameAsSourceJustification": "\"ISO 8601\" is the proper name of the date-format standard, kept verbatim in Chinese UI (Apple/Microsoft zh keep \"ISO 8601\"). Its sibling options ARE translated (System default→跟随系统, Short→简短, Custom→自定义)."
   },
-  "settings.appearance.dateTimeFormat.optDesc.iso": "例如 2025-01-25 14:30",
+  "settings.appearance.dateTimeFormat.optDesc.iso": "2025-01-25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.iso": {
-    "sourceHash": "63c1f1d"
+    "sourceHash": "dc76ffd",
+    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
   },
   "settings.appearance.dateTimeFormat.opt.short": "简短",
   "@settings.appearance.dateTimeFormat.opt.short": {
     "sourceHash": "f5d61ea"
   },
-  "settings.appearance.dateTimeFormat.optDesc.short": "例如 01/25 14:30",
+  "settings.appearance.dateTimeFormat.optDesc.short": "01/25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.short": {
-    "sourceHash": "4475197"
+    "sourceHash": "72b6f9f",
+    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
   },
   "settings.appearance.dateTimeFormat.opt.custom": "自定义…",
   "@settings.appearance.dateTimeFormat.opt.custom": {
@@ -1516,9 +1510,9 @@
   "@settings.fileExplorer.git.showVirtualGitPortal.label": {
     "sourceHash": "40d9fa1"
   },
-  "settings.fileExplorer.git.showVirtualGitPortal.description": "进入 `.git` 时，将分支、标签、提交和 worktree 显示为可浏览的虚拟文件夹。禁用后则改为查看原始的 `.git` 内容。",
+  "settings.fileExplorer.git.showVirtualGitPortal.description": "进入 .git 时，将分支、标签、提交和 worktree 显示为可浏览的虚拟文件夹。禁用后则改为查看原始的 .git 内容。",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
-    "sourceHash": "70eae72"
+    "sourceHash": "331e0a5"
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "门户、虚拟、分支、标签、提交、工作树、历史、历史记录",
   "@settings.fileExplorer.git.showVirtualGitPortal.keywords": {
@@ -2831,6 +2825,10 @@
   "settings.summary.noSubsections": "这个部分没有子部分。",
   "@settings.summary.noSubsections": {
     "sourceHash": "ba4b5b5"
+  },
+  "settings.control.moreAbout": "More about “{setting}”",
+  "@settings.control.moreAbout": {
+    "sourceHash": "57968f3"
   },
   "settings.control.resetToDefault": "重置为默认",
   "@settings.control.resetToDefault": {

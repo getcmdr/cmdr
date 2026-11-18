@@ -133,7 +133,6 @@ describe('keywords from the catalog, terms from TS', () => {
   /** Theme mode in Hungarian, so an English word in its text can only come from the keywords. */
   const huThemeMode = {
     'settings.theme.mode.label': 'Témamód',
-    'settings.theme.mode.description': 'Válassz a világos, sötét vagy rendszer szerinti téma közül.',
   }
 
   it('finds a row by a keyword the UI language wrote for it', () => {

@@ -72,7 +72,7 @@ export interface SettingConstraintsSource extends Omit<SettingConstraints, 'opti
  */
 export interface SettingDefinitionSource extends Omit<
   SettingDefinition,
-  'label' | 'description' | 'constraints' | 'card'
+  'label' | 'description' | 'descriptionPlacement' | 'summary' | 'constraints' | 'card'
 > {
   labelKey: MessageKey
   /** Omitted for settings with no description (rendered as an empty string). */
@@ -83,6 +83,13 @@ export interface SettingDefinitionSource extends Omit<
    * user removed it), `descriptionKey` renders instead, so it holds the same sentence without one.
    */
   descriptionWithKey?: { key: MessageKey; commandId: CommandId }
+  /**
+   * Moves the description (`descriptionKey` / `descriptionWithKey`) behind an ⓘ after the label.
+   * Absent: the description shows inline under the row. `true`: only the ⓘ carries it.
+   * `{ summaryKey }`: a short line under the label too, with the ⓘ holding the detail. A setting
+   * with no description at all leaves both this and `descriptionKey` out.
+   */
+  descriptionInTip?: true | { summaryKey: MessageKey }
   /** i18n KEY for the in-page SectionCard group title this setting belongs to. Resolved to `card`. */
   cardKey?: MessageKey
   constraints?: SettingConstraintsSource
@@ -157,6 +164,8 @@ export interface SearchableEntry {
   section: string[]
   label: string
   description: string
+  /** See `SettingDefinition.summary`. */
+  summary?: string
   card?: string
   /** The keys behind `label` / `card`, so search can index them in another language (the English fallback). */
   labelKey: MessageKey
@@ -209,7 +218,12 @@ export interface SettingDefinition {
 
   // Display
   label: string
+  /** The full description, wherever it renders (`descriptionPlacement`); `''` when there's none. */
   description: string
+  /** Where `SettingRow` puts `description`: under the row, or behind an ⓘ after the label. */
+  descriptionPlacement: 'inline' | 'tip'
+  /** A `tip` setting's short line under the label (from `summaryKey`); `''` when there's none. */
+  summary: string
   /**
    * Resolved in-page SectionCard group title this setting belongs to (from `cardKey`).
    * Descriptive/searchable only: it feeds the search index so a card title is findable,

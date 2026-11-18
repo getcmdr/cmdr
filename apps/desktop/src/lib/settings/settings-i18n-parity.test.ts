@@ -96,7 +96,7 @@ describe('settings enum-option label parity (en)', () => {
     const def = getSettingDefinition('appearance.dateTimeFormat')
     const iso = def?.constraints?.options?.find((o) => o.value === 'iso')
     expect(iso?.label).toBe('ISO 8601')
-    expect(iso?.description).toBe('e.g., 2025-01-25 14:30')
+    expect(iso?.description).toBe('2025-01-25 14:30')
   })
 
   it('resolves the file-size-format option with a parenthetical', () => {

@@ -32,11 +32,6 @@
     "description": "Label for the theme picker in Settings > Appearance > Colors and formats. Lets the user choose light, dark, or follow-the-system appearance.",
     "screenshot": "settings-appearance.png"
   },
-  "settings.theme.mode.description": "Choose between light, dark, or system-based theme.",
-  "@settings.theme.mode.description": {
-    "description": "Help text under the theme-mode label in Settings > Appearance. Explains the three choices below it.",
-    "screenshot": "settings-appearance.png"
-  },
   "settings.theme.mode.opt.light": "Light",
   "@settings.theme.mode.opt.light": {
     "description": "Theme-mode option: always-light appearance. The UI renders a sun icon before this label; the label itself is text-only. Short toggle-button label, keep it brief.",
@@ -142,11 +137,6 @@
     "description": "Label for the date/time display-format picker in Settings > Appearance > Colors and formats.",
     "screenshot": "settings-appearance.png"
   },
-  "settings.appearance.dateTimeFormat.description": "How to display dates and times in the file list.",
-  "@settings.appearance.dateTimeFormat.description": {
-    "description": "Help text for the date/time format setting. Says it controls how dates and times appear in the file list.",
-    "screenshot": "settings-appearance.png"
-  },
   "settings.appearance.dateTimeFormat.opt.system": "System default",
   "@settings.appearance.dateTimeFormat.opt.system": {
     "description": "Date/time format option: use the system date and time format. Radio-button label.",
@@ -159,9 +149,9 @@
     "screenshot": "settings-appearance.png",
     "screenshotNote": "Settings > Appearance, pictured here. Your string is one of the date and time format choices, or the example shown under one of them."
   },
-  "settings.appearance.dateTimeFormat.optDesc.iso": "e.g., 2025-01-25 14:30",
+  "settings.appearance.dateTimeFormat.optDesc.iso": "2025-01-25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.iso": {
-    "description": "Example shown under the ISO 8601 option. The date string \"2025-01-25 14:30\" is a literal ISO example and must stay exactly in that digit layout (year-month-day 24-hour time); only translate the \"e.g.,\" lead-in.",
+    "description": "Example shown under the ISO 8601 option. The date string \"2025-01-25 14:30\" is a literal ISO example and must stay exactly in that digit layout (year-month-day 24-hour time). The whole value is the sample, with no lead-in: keep it identical to the source.",
     "screenshot": "settings-appearance.png",
     "screenshotNote": "Settings > Appearance, pictured here. Your string is one of the date and time format choices, or the example shown under one of them."
   },
@@ -171,9 +161,9 @@
     "screenshot": "settings-appearance.png",
     "screenshotNote": "Settings > Appearance, pictured here. Your string is one of the date and time format choices, or the example shown under one of them."
   },
-  "settings.appearance.dateTimeFormat.optDesc.short": "e.g., 01/25 14:30",
+  "settings.appearance.dateTimeFormat.optDesc.short": "01/25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.short": {
-    "description": "Example shown under the Short option. \"01/25 14:30\" is a literal example (month/day 24-hour time) and must stay in that digit layout; only translate the \"e.g.,\" lead-in.",
+    "description": "Example shown under the Short option. \"01/25 14:30\" is a literal example (month/day 24-hour time) and must stay in that digit layout. The whole value is the sample, with no lead-in: keep it identical to the source.",
     "screenshot": "settings-appearance.png",
     "screenshotNote": "Settings > Appearance, pictured here. Your string is one of the date and time format choices, or the example shown under one of them."
   },
@@ -1800,9 +1790,9 @@
     "description": "Label for the toggle that turns the .git folder into browsable virtual folders. \"git\" is the version-control tool name; keep it. \"portal\" here is Cmdr's name for the virtual-folder view. In Settings > File systems > Git.",
     "screenshot": "settings-file-systems-git.png"
   },
-  "settings.fileExplorer.git.showVirtualGitPortal.description": "When entering `.git`, show branches, tags, commits, and worktrees as browsable virtual folders. Disable to see the raw `.git` contents instead.",
+  "settings.fileExplorer.git.showVirtualGitPortal.description": "When entering .git, show branches, tags, commits, and worktrees as browsable virtual folders. Disable to see the raw .git contents instead.",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
-    "description": "Help text for the virtual-git-portal toggle. \"`.git`\" is a literal folder name; keep it exactly (it stays in backticks in the source). \"branches\", \"tags\", \"commits\", and \"worktrees\" are git terms; use standard git terminology.",
+    "description": "Help text for the virtual-git-portal toggle. \".git\" is a literal folder name; keep it exactly, with no quotes or backticks around it. \"branches\", \"tags\", \"commits\", and \"worktrees\" are git terms; use standard git terminology.",
     "screenshot": "settings-file-systems-git.png"
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "portal, virtual, branches, tags, commits, worktrees, history",
@@ -3387,6 +3377,13 @@
   "settings.summary.noSubsections": "This section has no subsections.",
   "@settings.summary.noSubsections": {
     "description": "Placeholder text shown when a settings section has no subsections to list."
+  },
+  "settings.control.moreAbout": "More about “{setting}”",
+  "@settings.control.moreAbout": {
+    "description": "Accessible name (read by screen readers, never shown) for the small ⓘ glyph after a setting’s name in Settings. Hovering or focusing the glyph shows a longer explanation of that setting. Use your language’s usual quotation marks around the name.",
+    "placeholders": {
+      "setting": "the setting’s name the glyph sits beside, already translated (for example \"Show hidden files\")"
+    }
   },
   "settings.control.resetToDefault": "Reset to default",
   "@settings.control.resetToDefault": {

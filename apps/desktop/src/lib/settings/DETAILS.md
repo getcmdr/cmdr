@@ -77,11 +77,11 @@ Each entry is authored as a `SettingDefinitionSource` (in `types.ts`) carrying:
 ### i18n: the registry stores message KEYS, resolved through `t()`
 
 **Decision / why.** Settings copy is translation-ready: `settings-registry.ts` stores message KEYS, and the rendered
-text lives in `messages/en/settings.json` (the i18n catalog), not inline. `resolveDefinition` turns each authored
-`SettingDefinitionSource` into a `SettingDefinition` whose `label`, `description`, and enum-option `label`s are
-**getter-backed**: reading `getSettingDefinition(id).label` calls `tString(labelKey)` at read time. This was the
-cleanest shape because it leaves the entire `getSettingDefinition(...).label` / `.description` consumer surface (the
-section components, the search index in `settings-search.ts`, the MCP YAML bridge in `mcp-main-bridge.ts`,
+text lives in `messages/en/settings.json` (the i18n catalog), not inline. `resolveDefinition` (`settings-resolve.ts`)
+turns each authored `SettingDefinitionSource` into a `SettingDefinition` whose `label`, `description`, and enum-option
+`label`s are **getter-backed**: reading `getSettingDefinition(id).label` calls `tString(labelKey)` at read time. This
+was the cleanest shape because it leaves the entire `getSettingDefinition(...).label` / `.description` consumer surface
+(the section components, the search index in `settings-search.ts`, the MCP YAML bridge in `mcp-main-bridge.ts`,
 `AdvancedSection`) unchanged — zero call-site churn — while moving the copy into the catalog. Getters also give the
 right reactivity semantics for free: a `t()` read in markup re-renders on a locale change, and a read in plain `.ts` is
 a snapshot (the same semantics the transfer pilot uses). An empty description (no `descriptionKey`) resolves to `''`.
@@ -93,6 +93,25 @@ reactive; why a description is a text sink: `../shortcuts/DETAILS.md` § Shortcu
 a key the user moved, or a dangling "with". ❌ Never a literal key in a catalog value: the copy row either passes the
 key or doesn't name one. A key that isn't a command's (the global go-to-latest hotkey) is rendered by its section from
 the setting, and the registry keeps keyless text for search and agents.
+
+**Where the description shows** is the registry's call, so a row opts in without its section changing.
+`descriptionInTip` on the source picks one of four shapes:
+
+- No `descriptionKey` (or `descriptionWithKey`): no description. The row renders no empty paragraph.
+- `descriptionKey` alone: inline under the whole row (the default).
+- `descriptionKey` + `descriptionInTip: true`: an ⓘ `InfoTip` after the label carries it, nothing inline.
+- `descriptionKey` + `descriptionInTip: { summaryKey }`: a short line under the label (in the label column, also in a
+  `split` row) and the ⓘ holding the detail.
+
+The resolved definition keeps `description` as the FULL text whatever the placement, so search, the MCP bridge, and
+agents read the same thing, and adds `descriptionPlacement` (`'inline' | 'tip'`) and `summary` (`''` when none). Search
+indexes the summary too. While Settings search has a query, a tip's text shows under the label and the ⓘ steps aside:
+search matches description text (in translated locales too), so a hit on hidden words would read as a wrong result. Both
+renderers (`SettingRow` and `AdvancedSection`'s auto-rendered rows) take that rule from one pure helper,
+`components/description-placement.ts`. A section's rich `descriptionContent` snippet always stays inline. The ⓘ's
+accessible name is `settings.control.moreAbout`. No control points `aria-describedby` at the description today, so the
+tip's text is reached through the ⓘ button (focus opens it). `settings-resolve.ts` holds `resolveDefinition`, split out
+of the registry so its tests can feed it authored sources directly.
 
 **Why `section` stays English.** The `section: string[]` array is a STRUCTURAL identity used for routing
 (`SettingsContent`), the section tree (`buildSectionTree`), section matching (`getSettingsInSection`), and search's

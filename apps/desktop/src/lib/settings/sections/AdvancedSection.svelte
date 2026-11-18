@@ -17,6 +17,7 @@
     import SectionCard from '#lib/ui/SectionCard.svelte'
     import Button from '#lib/ui/Button.svelte'
     import Icon from '#lib/ui/Icon.svelte'
+    import InfoTip from '#lib/ui/InfoTip.svelte'
     import Switch from '#lib/ui/Switch.svelte'
     import SettingNumberInput from '../components/SettingNumberInput.svelte'
     import {
@@ -26,6 +27,7 @@
         highlightMatches,
     } from '#lib/settings/settings-search.js'
     import { groupAdvancedByCard, type AdvancedCardGroup } from './advanced-grouping'
+    import { placeDescription } from '../components/description-placement'
     import { confirmDialog } from '#lib/utils/confirm-dialog.js'
     import { tString } from '#lib/intl/messages.svelte.js'
     import { getAppLogger } from '#lib/logging/logger.js'
@@ -208,6 +210,12 @@ Timestamp: ${info.timestamp}
                         {#if shouldShow(setting.id)}
                             {@const id = setting.id}
                             {@const modified = isModified(id)}
+                            {@const placed = placeDescription({
+                                placement: setting.descriptionPlacement,
+                                description: setting.description,
+                                summary: setting.summary,
+                                searchQuery,
+                            })}
                             <div class="advanced-setting-row">
                 <div class="setting-info">
                     <div class="setting-name">
@@ -217,8 +225,18 @@ Timestamp: ${info.timestamp}
                         {#each getLabelSegments(setting.label, setting.id) as segment, i (i)}{#if segment.matched}<mark
                                     class="search-highlight">{segment.text}</mark
                                 >{:else}{segment.text}{/if}{/each}
+                        {#if placed.tip}
+                            <InfoTip
+                                label={tString('settings.control.moreAbout', { setting: setting.label })}
+                                text={placed.tip}
+                            />
+                        {/if}
                     </div>
-                    <div class="setting-description">{setting.description}</div>
+                    <!-- `SettingRow`'s placement rule; here the name column is the whole row, so
+                         the under-label lines and the inline one stack in the same place. -->
+                    {#each [...placed.underLabel, placed.inline].filter(Boolean) as line, i (i)}
+                        <div class="setting-description">{line}</div>
+                    {/each}
                     <div class="setting-default">
                         {tString('settings.advanced.defaultPrefix')}
                         {defaultText(setting)}

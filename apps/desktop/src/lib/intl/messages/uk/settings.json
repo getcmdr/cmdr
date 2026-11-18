@@ -23,10 +23,6 @@
   "@settings.theme.mode.label": {
     "sourceHash": "0f79f19"
   },
-  "settings.theme.mode.description": "Виберіть світлий, темний або системний режим теми.",
-  "@settings.theme.mode.description": {
-    "sourceHash": "42b18b9"
-  },
   "settings.theme.mode.opt.light": "Світлий",
   "@settings.theme.mode.opt.light": {
     "sourceHash": "dbcd5e7"
@@ -115,10 +111,6 @@
   "@settings.appearance.dateTimeFormat.label": {
     "sourceHash": "fcfc2a6"
   },
-  "settings.appearance.dateTimeFormat.description": "Як показувати дати й час у списку файлів.",
-  "@settings.appearance.dateTimeFormat.description": {
-    "sourceHash": "628571a"
-  },
   "settings.appearance.dateTimeFormat.opt.system": "Типовий системний",
   "@settings.appearance.dateTimeFormat.opt.system": {
     "sourceHash": "b045921"
@@ -128,17 +120,19 @@
     "sourceHash": "408dd66",
     "sameAsSourceJustification": "Standard name kept as-is per the @key description; Ukrainian writes the standard as ISO 8601 (the pile's MS terminology keeps it Latin)."
   },
-  "settings.appearance.dateTimeFormat.optDesc.iso": "наприклад, 2025-01-25 14:30",
+  "settings.appearance.dateTimeFormat.optDesc.iso": "2025-01-25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.iso": {
-    "sourceHash": "63c1f1d"
+    "sourceHash": "dc76ffd",
+    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
   },
   "settings.appearance.dateTimeFormat.opt.short": "Короткий",
   "@settings.appearance.dateTimeFormat.opt.short": {
     "sourceHash": "f5d61ea"
   },
-  "settings.appearance.dateTimeFormat.optDesc.short": "наприклад, 01/25 14:30",
+  "settings.appearance.dateTimeFormat.optDesc.short": "01/25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.short": {
-    "sourceHash": "4475197"
+    "sourceHash": "72b6f9f",
+    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
   },
   "settings.appearance.dateTimeFormat.opt.custom": "Власний…",
   "@settings.appearance.dateTimeFormat.opt.custom": {
@@ -1514,9 +1508,9 @@
   "@settings.fileExplorer.git.showVirtualGitPortal.label": {
     "sourceHash": "40d9fa1"
   },
-  "settings.fileExplorer.git.showVirtualGitPortal.description": "Коли ви відкриваєте `.git`, показувати гілки, теги, коміти й worktree як віртуальні папки, які можна переглядати. Вимкніть, щоб бачити справжній вміст `.git`.",
+  "settings.fileExplorer.git.showVirtualGitPortal.description": "Коли ви відкриваєте .git, показувати гілки, теги, коміти й worktree як віртуальні папки, які можна переглядати. Вимкніть, щоб бачити справжній вміст .git.",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
-    "sourceHash": "70eae72"
+    "sourceHash": "331e0a5"
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "портал, віртуальні папки, гілки, теги, коміти, історія, репозиторій",
   "@settings.fileExplorer.git.showVirtualGitPortal.keywords": {
@@ -2829,6 +2823,10 @@
   "settings.summary.noSubsections": "У цьому розділі немає підрозділів.",
   "@settings.summary.noSubsections": {
     "sourceHash": "ba4b5b5"
+  },
+  "settings.control.moreAbout": "More about “{setting}”",
+  "@settings.control.moreAbout": {
+    "sourceHash": "57968f3"
   },
   "settings.control.resetToDefault": "Скинути до типового",
   "@settings.control.resetToDefault": {

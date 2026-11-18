@@ -100,7 +100,7 @@ function buildSearchIndex(): SearchIndex {
  * One entry's searchable text, in this order:
  *
  * 1. The localized part: translated section titles (like "Megjelenés › Színek és formátumok"),
- *    label, description, keywords, the language-neutral `terms`, and card-group title, so searching
+ *    label, description, keywords, the language-neutral `terms`, a tip's summary, and card-group title, so searching
  *    a card title surfaces its rows.
  * 2. Outside English, the English fallback: label, keywords, card title, and section path. Not the
  *    description: long common-word sentences make short queries noisy.
@@ -115,6 +115,8 @@ function indexEntry(entry: SearchableEntry, locale: string): SearchIndexEntry {
   const sectionPath = entry.section.map(sectionTitle).join(' › ')
   const label = entry.label
   const parts = [sectionPath, label, entry.description, ...keywordsIn(locale, entry), ...(entry.terms ?? [])]
+  // A tip's summary line shows under the label, so it's findable like the description it heads.
+  if (entry.summary) parts.push(entry.summary)
   if (entry.card !== undefined) parts.push(entry.card)
 
   if (!isEnglish(locale)) {
