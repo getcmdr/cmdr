@@ -602,13 +602,12 @@ async fn live_hostile_races() {
             .map(|e| PathBuf::from(e.path))
             .collect();
         let late = at(&volume, &format!("{prefix}busy/late.txt"));
+        let listed_app: Vec<_> = listed
+            .iter()
+            .map(|p| AppPath::legacy_unchecked(p).into_owned())
+            .collect();
         let (deleted, added) = tokio::join!(
-            volume.delete_files(
-                &listed
-                    .iter()
-                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                    .collect::<Vec<_>>()
-            ),
+            volume.delete_files(&listed_app),
             write(&volume, &late, WriteMode::CreateNew, b"late".to_vec())
         );
         let left = volume
@@ -635,8 +634,9 @@ async fn live_hostile_races() {
             .await
             .expect("a folder");
         let inside = at(&volume, &format!("{prefix}lonely/new.txt"));
+        let lonely_app = AppPath::legacy_unchecked(&lonely);
         let (removed, wrote) = tokio::join!(
-            volume.delete(&AppPath::legacy_unchecked(&lonely)),
+            volume.delete(&lonely_app),
             write(&volume, &inside, WriteMode::CreateNew, b"new".to_vec())
         );
         let survived = read_back(&volume, &inside).await == b"new";

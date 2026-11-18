@@ -358,7 +358,7 @@ async fn a_scan_keeps_every_objects_size_and_upload_date(service: FixtureService
 
     let folder = at(&volume, prefix.trim_end_matches('/'));
     let batch = volume
-        .scan_for_copy_batch(std::slice::from_ref(&folder))
+        .scan_for_copy_batch(std::slice::from_ref(&AppPath::legacy_unchecked(&folder).into_owned()))
         .await
         .unwrap_or_else(|e| panic!("{}: scanning: {e:?} ({FIXTURE})", service.key));
 
