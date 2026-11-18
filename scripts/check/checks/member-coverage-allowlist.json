@@ -3,7 +3,6 @@
   "windowsPending": {
     "cmdr": "blocked by `cmdr-fs`, `usearch`'s build script, and an unconditional `xattr` dependency",
     "cmdr-listing-wasm": "blocked by `cmdr-fs`",
-    "cmdr-local": "blocked by `cmdr-fs`",
     "cmdr-multi-rename": "blocked by `cmdr-fs`",
     "cmdr-operations": "blocked by `cmdr-fs`",
     "cmdr-restic": "blocked by `cmdr-fs`"

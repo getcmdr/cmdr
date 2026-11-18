@@ -21,7 +21,8 @@ use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::listing_progress::report_while;
 use cmdr_fs::volume::{
-    EntryKind, ListingProgress, MountClass, MutationEvent, Presence, SpaceInfo, SupportedDates, Volume, VolumeError,
+    EntryKind, ListingProgress, MountClass, MutationEvent, Presence, ScanConflict, SourceItemInfo, SpaceInfo,
+    SupportedDates, Volume, VolumeError,
 };
 use tokio::task::spawn_blocking;
 
@@ -295,7 +296,52 @@ impl Volume for LocalWindowsVolume {
         }))
     }
 
+    /// The same per-name probe as `LocalPosixVolume`'s: a name is a conflict when something
+    /// answers a stat there (a link followed), so a missing destination folder reads empty.
+    fn scan_for_conflicts<'a>(
+        &'a self,
+        source_items: &'a [SourceItemInfo],
+        dest_path: &'a Path,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
+        let dest_abs = self.resolve(dest_path);
+        let source_items = source_items.to_vec();
+        Box::pin(blocking("scan_for_conflicts", move || {
+            let mut conflicts = Vec::new();
+            for item in &source_items {
+                let dest_file_path = paths::child_app_path(&dest_abs, &item.name);
+                let Ok(meta) = native(&dest_file_path).and_then(std::fs::metadata) else {
+                    continue;
+                };
+                let dest_modified = meta
+                    .modified()
+                    .ok()
+                    .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                    .and_then(|d| i64::try_from(d.as_secs()).ok());
+                conflicts.push(ScanConflict {
+                    source_path: item.name.clone(),
+                    dest_path: dest_file_path.to_string_lossy().into_owned(),
+                    source_size: item.size,
+                    dest_size: meta.len(),
+                    source_modified: item.modified,
+                    dest_modified,
+                    source_is_directory: item.is_directory,
+                    dest_is_directory: meta.is_dir(),
+                });
+            }
+            Ok(conflicts)
+        }))
+    }
+
     fn is_writable(&self) -> bool {
+        true
+    }
+
+    /// A forced rename is `std::fs::rename`, which replaces in one filesystem step
+    /// (`FILE_RENAME_FLAG_REPLACE_IF_EXISTS`, or `MoveFileExW` with
+    /// `MOVEFILE_REPLACE_EXISTING`): a crash leaves the old file or the new one, never
+    /// neither. A destination another program holds open, or a read-only one, is refused
+    /// whole (verified on Windows 10 22H2, NTFS, `local_windows_test.rs`, 2026-11-18).
+    fn supports_atomic_replace_rename(&self) -> bool {
         true
     }
 

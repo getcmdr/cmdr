@@ -338,6 +338,41 @@ FAT image, so `rename_exclusive_with` takes the attempt as a parameter and `loca
 so nothing a test can set up fails one without failing the other, and only a transient failure separates them.
 `local_posix_test.rs` hands `rename_if_free` the verdict directly instead.
 
+## The Windows sibling
+
+`LocalWindowsVolume` (`src/platform/local_windows.rs`) is the local disk on Windows, a SIBLING of `LocalPosixVolume`,
+and `src/platform/mod.rs` picks one per OS family (`cfg(unix)` / `cfg(target_os = "windows")`). Callers name the one
+their OS has; `rename_local_exclusive` is pinned to one signature across both.
+
+**Decision**: siblings, ❌ not Windows arms inside the POSIX volume (windows-port plan, task 35). **Why**: the POSIX
+volume is `lstat`, kernel rename flags, modes, xattrs, and `fsync` through and through, and a Windows one is `\\?\`
+paths, `MoveFileExW`, attributes, reparse points, and alternate data streams. Arms inside one type would put a `cfg` on
+nearly every method and hide which answers are real.
+
+- **App paths in, app paths out** (plan D1): the volume's root and every path it takes and hands back is
+  `C:/Users/test_user_1` or `//server/share/x`. `platform/local_windows/paths.rs` is its one crossing to Win32
+  (`native`, through `cmdr_fs::volume::path_grammar`'s `to_native`), so every call reaches the OS as `\\?\C:\…` and a
+  path past `MAX_PATH` works like any other. `resolve_under` is the volume's slash-only twin of
+  `cmdr_fs::volume::root_anchored`, whose `Path::join` writes a `\` into an app path on Windows (#1225); it reads a
+  relative path by `Path::components`, so a caller's `level\a.txt` lands where `level/a.txt` does.
+- **The no-replace rename** is `MoveFileExW` with no flags: the filesystem refuses a taken name in the same step that
+  renames, so Windows needs no degraded check-then-rename path. ❗ `std::fs::rename` REPLACES on Windows, so it's the
+  forced path only, and it's one replacement step (`supports_atomic_replace_rename` is true). A destination another
+  program holds open, or a read-only one, is refused whole (verified on Windows 10 22H2, NTFS, the hostile cells in
+  `local_windows_test.rs`, 2026-11-18).
+- **Delete** picks `RemoveDirectoryW` by the entry's own `FILE_ATTRIBUTE_DIRECTORY`, so a directory symlink or junction
+  goes as the link, its target untouched, broken or not.
+- **The reader** is `reading.rs` with a Windows arm (`src/reading/platform/windows.rs`): `read_dir`, no added date,
+  `FILE_ATTRIBUTE_HIDDEN` as `is_hidden`. `reading/platform/` is the reader's seam on every OS now (the per-entry stat,
+  the lister pick, the single-entry finish); the listing loop and the entry's shape stay shared.
+- **Space** is `GetDiskFreeSpaceExW` (`src/space/platform/windows.rs`), beside `statvfs` for macOS and Linux.
+
+What's real and what's stubbed, by name: the windows-port plan, § "Windows build state" and task 35's entry. Every
+capability not yet real keeps the trait's conservative default (streams, copy scan, symlink creation, xattrs, metadata,
+the write-access probe), so nothing answers by guessing. `local_windows_conformance_test.rs` runs the shared conformance
+cells on the builder, each not-yet-kept one `#[ignore]`d with the piece of task 35 that owns it; its link cells build
+junctions with `mklink /J`, which needs no privilege.
+
 ## Landing a link
 
 `read_link_target` and `create_symlink` are the local half of `Volume`'s link seam, and they store and read a target
@@ -352,6 +387,8 @@ with the preview and `scan_walk`.
 
 - `local_posix_test.rs`: real-FS cells (write ops, symlinks, copy, space info, the rename's degradation) on scratch
   dirs, against a detached or recording host.
+- `local_windows_conformance_test.rs` and `local_windows_test.rs` (Windows only, the builder): the shared conformance
+  cells and the Windows volume's hostile cells (§ "The Windows sibling").
 - `local_posix_conformance_test.rs`: the shared `cmdr_fs::volume::conformance` assertions this backend can run, the way
   every crate backend keeps its own. The roster and what each defends: `crates/cmdr-fs/DETAILS.md` § "The shared
   assertions in `volume::conformance`".

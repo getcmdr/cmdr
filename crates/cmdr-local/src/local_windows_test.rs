@@ -11,7 +11,7 @@ use std::path::Path;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{SpaceInfo, Volume, VolumeError};
 
-use crate::local_windows_conformance_test::{app_root, volume_at};
+use crate::local_windows_conformance_test::{app_root, junction, volume_at};
 
 /// `FILE_SHARE_READ` alone: another program reading the file, refusing writers and deleters,
 /// which is how Office and most editors hold a document open.
@@ -236,14 +236,7 @@ async fn a_folder_symlink_deletes_as_the_link_and_keeps_the_target() {
         .create_file(Path::new("real/keep.txt"), b"keep")
         .await
         .expect("create");
-    // Junctions need no privilege, unlike symlinks, so this cell runs everywhere.
-    let status = std::process::Command::new("cmd")
-        .args(["/C", "mklink", "/J"])
-        .arg(test_dir.join("link"))
-        .arg(test_dir.join("real"))
-        .status()
-        .expect("run mklink");
-    assert!(status.success(), "mklink /J");
+    junction(&test_dir, "link", "real");
 
     volume.delete(Path::new("link")).await.expect("delete the junction");
 
