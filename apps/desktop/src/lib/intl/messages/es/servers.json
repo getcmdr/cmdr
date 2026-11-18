@@ -123,9 +123,9 @@
   "@servers.hub.discoveryOff": {
     "sourceHash": "cadcceb"
   },
-  "servers.hub.discoveryOffLink": "{platform, select, windows {Actívala en Ajustes} linuxGnome {Actívala en Preferencias} linuxKde {Actívala en Configurar Cmdr} other {Actívala en Ajustes}}",
+  "servers.hub.discoveryOffLink": "{platform, select, windows {Actívala en Configuración} linuxGnome {Actívala en Preferencias} linuxKde {Actívala en Configurar Cmdr} other {Actívala en Ajustes}}",
   "@servers.hub.discoveryOffLink": {
-    "sourceHash": "65a3d5a"
+    "sourceHash": "cd006e8"
   },
   "servers.hub.nfsHint": "Los servidores NFS no se anuncian, así que no aparecen aquí.",
   "@servers.hub.nfsHint": {

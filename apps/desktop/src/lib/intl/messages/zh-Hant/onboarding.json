@@ -309,7 +309,7 @@
   },
   "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {在你允許之前，雲端 AI 會一直保持關閉。之後可以到「設定 > AI」允許。} linuxGnome {在你允許之前，雲端 AI 會一直保持關閉。之後可以到「偏好設定 > AI」允許。} linuxKde {在你允許之前，雲端 AI 會一直保持關閉。之後可以到「設定 Cmdr > AI」允許。} other {在你允許之前，雲端 AI 會一直保持關閉。之後可以到「設定 > AI」允許。}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
-    "sourceHash": "6e0eb09"
+    "sourceHash": "6075ac0"
   },
   "onboarding.stepAi.off.label": "謝謝，還是算了，我不用 AI",
   "@onboarding.stepAi.off.label": {
@@ -317,7 +317,7 @@
   },
   "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr 不用 AI 也完全能用。你之後隨時可以在「設定」裡把它打開。} linuxGnome {Cmdr 不用 AI 也完全能用。你之後隨時可以在「偏好設定」裡把它打開。} linuxKde {Cmdr 不用 AI 也完全能用。你之後隨時可以在「設定 Cmdr」裡把它打開。} other {Cmdr 不用 AI 也完全能用。你之後隨時可以在「設定」裡把它打開。}}",
   "@onboarding.stepAi.off.help": {
-    "sourceHash": "b20cf1d"
+    "sourceHash": "f4c9871"
   },
   "onboarding.localDownloadFailed.title": "本機 AI 模型的下載沒有完成",
   "@onboarding.localDownloadFailed.title": {
@@ -393,7 +393,7 @@
   },
   "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {注意，它預設是開著的，好鼓勵大家在測試期間把資料傳給我。\n你隨時可以在「設定」裡改。} linuxGnome {注意，它預設是開著的，好鼓勵大家在測試期間把資料傳給我。\n你隨時可以在「偏好設定」裡改。} linuxKde {注意，它預設是開著的，好鼓勵大家在測試期間把資料傳給我。\n你隨時可以在「設定 Cmdr」裡改。} other {注意，它預設是開著的，好鼓勵大家在測試期間把資料傳給我。\n你隨時可以在「設定」裡改。}}",
   "@onboarding.stepBeta.analyticsCaption": {
-    "sourceHash": "47a7511"
+    "sourceHash": "9dc83f9"
   },
   "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 macOS 版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「設定」裡關掉。} windows {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Windows 版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「設定」裡關掉。} linuxGnome {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Linux 發行版和版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「偏好設定」裡關掉。} linuxKde {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Linux 發行版和版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「設定 Cmdr」裡關掉。} other {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Linux 發行版和版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「設定」裡關掉。}}",
   "@onboarding.stepBeta.crashReportsNote": {
@@ -470,7 +470,7 @@
   },
   "onboarding.stepOptional.changeAnytime": "{platform, select, windows {你隨時可以在「設定」裡改。} linuxGnome {你隨時可以在「偏好設定」裡改。} linuxKde {你隨時可以在「設定 Cmdr」裡改。} other {你隨時可以在「設定」裡改。}}",
   "@onboarding.stepOptional.changeAnytime": {
-    "sourceHash": "320f582"
+    "sourceHash": "ff84784"
   },
   "onboarding.stepOptional.networking.title": "網路",
   "@onboarding.stepOptional.networking.title": {

@@ -5,6 +5,6 @@
   },
   "whatsNew.optOutToast": "{platform, select, windows {Entendido, no más notas de actualización. Vuelve a activarlas cuando quieras en Configuración > Actualizaciones y privacidad.} linuxGnome {Entendido, no más notas de actualización. Vuelve a activarlas cuando quieras en Preferencias > Actualizaciones y privacidad.} linuxKde {Entendido, no más notas de actualización. Vuelve a activarlas cuando quieras en Configurar Cmdr > Actualizaciones y privacidad.} other {Entendido, no más notas de actualización. Vuelve a activarlas cuando quieras en Configuración > Actualizaciones y privacidad.}}",
   "@whatsNew.optOutToast": {
-    "sourceHash": "67da976"
+    "sourceHash": "7f59127"
   }
 }

@@ -2645,9 +2645,9 @@
   "@errors.listing.smbEncryptionRequired.explanation": {
     "sourceHash": "5eeef51"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, windows {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Ajustes, si no lo necesitas} linuxGnome {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Preferencias, si no lo necesitas} linuxKde {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Configurar Cmdr, si no lo necesitas} other {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Ajustes, si no lo necesitas}}",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, windows {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Configuración, si no lo necesitas} linuxGnome {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Preferencias, si no lo necesitas} linuxKde {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Configurar Cmdr, si no lo necesitas} other {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Ajustes, si no lo necesitas}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
-    "sourceHash": "5d8e637"
+    "sourceHash": "c91f084"
   },
   "errors.volume.encryptionRequired": "La conexión a este recurso compartido no se puede cifrar y Cmdr tiene activado “Requerir siempre cifrado SMB”.",
   "@errors.volume.encryptionRequired": {
@@ -2669,9 +2669,9 @@
   "@errors.write.smbEncryptionRequired.message": {
     "sourceHash": "ec53744"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, windows {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Ajustes.} linuxGnome {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Preferencias.} linuxKde {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Configurar Cmdr.} other {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Ajustes.}}",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, windows {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Configuración.} linuxGnome {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Preferencias.} linuxKde {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Configurar Cmdr.} other {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Ajustes.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
-    "sourceHash": "bab81dc"
+    "sourceHash": "a7fe1d2"
   },
   "errors.listing.smbNegotiationInvalid.title": "El servidor no ha confirmado esta conexión",
   "@errors.listing.smbNegotiationInvalid.title": {

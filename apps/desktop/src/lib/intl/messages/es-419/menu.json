@@ -5,7 +5,7 @@
   },
   "menu.app.settings": "{platform, select, windows {Configuración} linuxGnome {Preferencias} linuxKde {Configurar Cmdr…} other {Configuración…}}",
   "@menu.app.settings": {
-    "sourceHash": "2ff20c4"
+    "sourceHash": "5bcedec"
   },
   "menu.file.showInFileManager": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Mostrar en Archivos} linuxKde {Mostrar en Dolphin} other {Mostrar en el administrador de archivos}}",
   "@menu.file.showInFileManager": {

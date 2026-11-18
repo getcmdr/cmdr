@@ -49,7 +49,7 @@
   },
   "crashReporter.sentToast.changeSettings": "{platform, select, windows {Cambiar en Configuración} linuxGnome {Cambiar en Preferencias} linuxKde {Cambiar en Configurar Cmdr} other {Cambiar en Configuración}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "385db85"
+    "sourceHash": "f634e43"
   },
   "crashReporter.sentToast.logNotSent": "El registro no se envió. {reason}",
   "@crashReporter.sentToast.logNotSent": {

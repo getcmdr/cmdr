@@ -145,6 +145,6 @@
   },
   "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Oculta este aviso. Puedes recuperarlo en Configuración > Avanzado.} linuxGnome {Oculta este aviso. Puedes recuperarlo en Preferencias > Avanzado.} linuxKde {Oculta este aviso. Puedes recuperarlo en Configurar Cmdr > Avanzado.} other {Oculta este aviso. Puedes recuperarlo en Configuración > Avanzado.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "f621a69"
+    "sourceHash": "fc18fa7"
   }
 }

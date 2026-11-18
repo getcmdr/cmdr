@@ -17,7 +17,7 @@
   },
   "operationLog.dialog.recordingOff": "{platform, select, windows {Nhật ký thao tác hiện không ghi lại gì, nên các lần sao chép, di chuyển, đổi tên và xóa mới không xuất hiện ở đây và không thể hoàn tác. Hãy bật lại trong Cài đặt để ghi lại chúng.} linuxGnome {Nhật ký thao tác hiện không ghi lại gì, nên các lần sao chép, di chuyển, đổi tên và xóa mới không xuất hiện ở đây và không thể hoàn tác. Hãy bật lại trong Tùy thích để ghi lại chúng.} linuxKde {Nhật ký thao tác hiện không ghi lại gì, nên các lần sao chép, di chuyển, đổi tên và xóa mới không xuất hiện ở đây và không thể hoàn tác. Hãy bật lại trong Cấu hình Cmdr để ghi lại chúng.} other {Nhật ký thao tác hiện không ghi lại gì, nên các lần sao chép, di chuyển, đổi tên và xóa mới không xuất hiện ở đây và không thể hoàn tác. Hãy bật lại trong Cài đặt để ghi lại chúng.}}",
   "@operationLog.dialog.recordingOff": {
-    "sourceHash": "3204ad8"
+    "sourceHash": "8b5c5f2"
   },
   "operationLog.dialog.noItems": "Thao tác này không có mục nào được ghi lại.",
   "@operationLog.dialog.noItems": {

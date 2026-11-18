@@ -334,6 +334,6 @@
   },
   "shortcuts.window.editInSettings": "{platform, select, windows {Sửa phím tắt trong Cài đặt} linuxGnome {Sửa phím tắt trong Tùy thích} linuxKde {Sửa phím tắt trong Cấu hình Cmdr} other {Sửa phím tắt trong Cài đặt}}",
   "@shortcuts.window.editInSettings": {
-    "sourceHash": "875f6b7"
+    "sourceHash": "12661fd"
   }
 }

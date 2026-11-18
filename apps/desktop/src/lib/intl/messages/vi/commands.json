@@ -37,7 +37,7 @@
   },
   "commands.appSettings.label": "{platform, select, windows {Mở cài đặt} linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
   "@commands.appSettings.label": {
-    "sourceHash": "e535825"
+    "sourceHash": "a28ffff"
   },
   "commands.appCheckForUpdates.label": "Kiểm tra cập nhật…",
   "@commands.appCheckForUpdates.label": {
@@ -1266,7 +1266,7 @@
   },
   "commands.handler.openTerminalHere.hint": "{platform, select, windows {Đã mở thư mục này trong ứng dụng terminal của bạn. Bạn muốn Cmdr mở ứng dụng khác vào lần sau? Hãy chọn trong Cài đặt, mục “Điều hướng & thao tác tệp”.} linuxGnome {Đã mở thư mục này trong ứng dụng terminal của bạn. Bạn muốn Cmdr mở ứng dụng khác vào lần sau? Hãy chọn trong Tùy thích, mục “Điều hướng & thao tác tệp”.} linuxKde {Đã mở thư mục này trong ứng dụng terminal của bạn. Bạn muốn Cmdr mở ứng dụng khác vào lần sau? Hãy chọn trong Cấu hình Cmdr, mục “Điều hướng & thao tác tệp”.} other {Đã mở thư mục này trong ứng dụng terminal của bạn. Bạn muốn Cmdr mở ứng dụng khác vào lần sau? Hãy chọn trong Cài đặt, mục “Điều hướng & thao tác tệp”.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b73c1db"
+    "sourceHash": "5d6063c"
   },
   "commands.handler.openTerminalHere.dismiss": "Bỏ qua",
   "@commands.handler.openTerminalHere.dismiss": {
@@ -1274,7 +1274,7 @@
   },
   "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Mở cài đặt} linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "e535825"
+    "sourceHash": "a28ffff"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} không còn được cài đặt, nên mục này đã mở trong Terminal.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1346,7 +1346,7 @@
   },
   "commands.handler.viewDebugLog.disabled": "{platform, select, windows {Lưu nhật ký đang tắt. Đặt giới hạn dung lượng đĩa lớn hơn 0 trong Cài đặt > Nâng cao, rồi khởi động lại Cmdr để xem nhật ký gỡ lỗi.} linuxGnome {Lưu nhật ký đang tắt. Đặt giới hạn dung lượng đĩa lớn hơn 0 trong Tùy thích > Nâng cao, rồi khởi động lại Cmdr để xem nhật ký gỡ lỗi.} linuxKde {Lưu nhật ký đang tắt. Đặt giới hạn dung lượng đĩa lớn hơn 0 trong Cấu hình Cmdr > Nâng cao, rồi khởi động lại Cmdr để xem nhật ký gỡ lỗi.} other {Lưu nhật ký đang tắt. Đặt giới hạn dung lượng đĩa lớn hơn 0 trong Cài đặt > Nâng cao, rồi khởi động lại Cmdr để xem nhật ký gỡ lỗi.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "bda730a"
+    "sourceHash": "1fb0c6a"
   },
   "commands.handler.viewDebugLog.unavailable": "Không mở được nhật ký gỡ lỗi. Hãy thử lại.",
   "@commands.handler.viewDebugLog.unavailable": {

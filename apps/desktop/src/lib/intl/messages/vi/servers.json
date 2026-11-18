@@ -125,7 +125,7 @@
   },
   "servers.hub.discoveryOffLink": "{platform, select, windows {Bật trong Cài đặt} linuxGnome {Bật trong Tùy thích} linuxKde {Bật trong Cấu hình Cmdr} other {Bật trong Cài đặt}}",
   "@servers.hub.discoveryOffLink": {
-    "sourceHash": "65a3d5a"
+    "sourceHash": "cd006e8"
   },
   "servers.hub.nfsHint": "Máy chủ NFS không tự thông báo trên mạng, nên không xuất hiện ở đây.",
   "@servers.hub.nfsHint": {

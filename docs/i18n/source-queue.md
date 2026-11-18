@@ -195,6 +195,18 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   the `windows` branches of `fileExplorer.navigation.driveIndex.*` and `search.coverage.toast.indexingOff`. Windows'
   French word for a drive is `lecteur` (the `drive` ruling's Windows form), so the label reads `Indexation du disque` on
   Windows while the prose around it now says `lecteur`. A per-OS label would let the two agree. (fr)
+- `onboarding.localDownloadFailed.openSettings` ("Open Settings") names Cmdr's settings window as a plain value, so
+  Windows reads the macOS word (`Abrir Ajustes`) beside `Abrir Configuración` in its per-OS siblings; it needs the same
+  per-OS value as `stateRecovery.settings.openSettings`. Allowlisted for es and pt until then. (es, pt)
+- Six keys whose `windows` branch names the settings window carry no `identicalBranches` note and weren't stale, so a
+  translator finds them only by grepping: `menu.app.settings`, `fileExplorer.functionKeyBar.hiddenToast`,
+  `fileExplorer.quickFilter.intro.openSettings`, `onboarding.stepBeta.signup.unreachable`, `whatsNew.optOutToast`,
+  `ai.cloudConsent.logsNote` ("Advanced settings"). es and pt changed them to Microsoft's word; other locales where it
+  differs (fr, de, hu, ru) likely need the same. (es, pt)
+- The seeded `windows` branches copied the macOS text whole, so they also carried macOS words beyond "Settings" (pt
+  `disco` for drive, `iniciar a sessão` for sign in), which the termbase caught. And the plain Settings label
+  `settings.indexing.enabled.label` ("Drive indexing", pt `Indexação de disco`) then pins `disco` in four Windows
+  pointers that quote it: a per-OS value there would let Windows say `unidade`. (pt)
 
 ## Process feedback
 
@@ -319,3 +331,12 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   flag to add keys to the batch. (fr)
 - The empty `mtp.connectedToast.body` `windows` branch needed the same `sameAsSourceJustification` in de, nl, sv, and fr
   too (see the entry above). (de, nl, sv, fr)
+- Rewording one word across a branch in 66 keys (Ajustes → Configuración on `windows`) had no tool, so I wrote two
+  throwaway helpers under `_ignored/i18n-work/tools/`: one dumps each key's `windows` / English `linuxKde` branch as a
+  draft values file, one applies ordered find-and-replace pairs to the `windows` branch and fills `{ "keep": true }` for
+  the rest. An `i18n:apply --branch windows --replace "A=>B"` (with a dry-run diff) would cover it. (es, pt)
+- Android labels have no pile source: the `usb-preferences` rulings came from AOSP Settings `strings.xml`
+  (`usb_preference`, `settings_label`, `usb_use_file_transfers`) fetched with `curl` from `aosp-mirror` for five
+  locales. Adding AOSP Settings to `i18n:pile-fetch` would make it a lookup. (es, pt, vi, zh, zh-Hant)
+- The worktree guard refused pipes and loops naming the scratchpad path (it contains `projects-git`), so the working
+  files moved under `_ignored/i18n-work/`. (es)

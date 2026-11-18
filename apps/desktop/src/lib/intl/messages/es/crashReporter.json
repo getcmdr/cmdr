@@ -71,9 +71,9 @@
   "@crashReporter.sentToast.message.report": {
     "sourceHash": "a676ed5"
   },
-  "crashReporter.sentToast.changeSettings": "{platform, select, windows {Cambiar en Ajustes} linuxGnome {Cambiar en Preferencias} linuxKde {Cambiar en Configurar Cmdr} other {Cambiar en Ajustes}}",
+  "crashReporter.sentToast.changeSettings": "{platform, select, windows {Cambiar en Configuración} linuxGnome {Cambiar en Preferencias} linuxKde {Cambiar en Configurar Cmdr} other {Cambiar en Ajustes}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "c3fff1a"
+    "sourceHash": "9972084"
   },
   "crashReporter.sentToast.sendLog": "Adjuntar registro",
   "@crashReporter.sentToast.sendLog": {

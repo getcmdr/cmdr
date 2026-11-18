@@ -769,11 +769,11 @@
   },
   "fileExplorer.edit.hint": "{platform, select, windows {已在 {app} 里打开这个文件。想下次换个编辑器？在“设置”里选一个。} linuxGnome {已在 {app} 里打开这个文件。想下次换个编辑器？在“首选项”里选一个。} linuxKde {已在 {app} 里打开这个文件。想下次换个编辑器？在“配置 Cmdr”里选一个。} other {已在 {app} 里打开这个文件。想下次换个编辑器？在“设置”里选一个。}}",
   "@fileExplorer.edit.hint": {
-    "sourceHash": "1ec59c2"
+    "sourceHash": "2640119"
   },
   "fileExplorer.edit.hintUnnamed": "{platform, select, windows {已在你的默认文本编辑器里打开这个文件。想下次换一个？在“设置”里选一个。} linuxGnome {已在你的默认文本编辑器里打开这个文件。想下次换一个？在“首选项”里选一个。} linuxKde {已在你的默认文本编辑器里打开这个文件。想下次换一个？在“配置 Cmdr”里选一个。} other {已在你的默认文本编辑器里打开这个文件。想下次换一个？在“设置”里选一个。}}",
   "@fileExplorer.edit.hintUnnamed": {
-    "sourceHash": "00354cc"
+    "sourceHash": "5b5c767"
   },
   "fileExplorer.edit.dismiss": "关闭",
   "@fileExplorer.edit.dismiss": {
@@ -781,7 +781,7 @@
   },
   "fileExplorer.edit.openSettings": "{platform, select, windows {打开设置} linuxGnome {打开首选项} linuxKde {配置 Cmdr} other {打开设置}}",
   "@fileExplorer.edit.openSettings": {
-    "sourceHash": "e535825"
+    "sourceHash": "a28ffff"
   },
   "fileExplorer.edit.appMissing": "Cmdr 找不到你选的编辑器，所以这个文件改在 {app} 里打开了。",
   "@fileExplorer.edit.appMissing": {
@@ -837,7 +837,7 @@
   },
   "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {设置} linuxGnome {首选项} linuxKde {配置 Cmdr} other {设置}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
-    "sourceHash": "02ce4ce"
+    "sourceHash": "6613a01"
   },
   "fileExplorer.clipboard.copiedPath": "已将路径拷贝到剪贴板：",
   "@fileExplorer.clipboard.copiedPath": {
@@ -1835,11 +1835,11 @@
   },
   "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {通过 MTP 访问手机和相机的功能已在设置中关闭。} linuxGnome {通过 MTP 访问手机和相机的功能已在首选项中关闭。} linuxKde {通过 MTP 访问手机和相机的功能已在“配置 Cmdr”中关闭。} other {通过 MTP 访问手机和相机的功能已在设置中关闭。}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
-    "sourceHash": "064a270"
+    "sourceHash": "53f2cbb"
   },
   "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {访问 Android 手机的功能已在设置中关闭。} linuxGnome {访问 Android 手机的功能已在首选项中关闭。} linuxKde {访问 Android 手机的功能已在“配置 Cmdr”中关闭。} other {访问 Android 手机的功能已在设置中关闭。}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
-    "sourceHash": "bc261dc"
+    "sourceHash": "eb9bed4"
   },
   "fileExplorer.navigation.favoriteUnreachable.forgotten": "Cmdr 已经不知道怎样连接到{kind, select, share {共享“{place}”} server {服务器“{place}”} phone {手机“{place}”} other {“{place}”}}了。从“服务器”重新连接它，这项个人收藏就又能用了。",
   "@fileExplorer.navigation.favoriteUnreachable.forgotten": {
@@ -1851,7 +1851,7 @@
   },
   "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {打开设置} linuxGnome {打开首选项} linuxKde {配置 Cmdr} other {打开设置}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
-    "sourceHash": "e535825"
+    "sourceHash": "a28ffff"
   },
   "fileExplorer.navigation.favoriteUnreachable.openServers": "显示服务器",
   "@fileExplorer.navigation.favoriteUnreachable.openServers": {
@@ -2211,7 +2211,7 @@
   },
   "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {驱动器索引已在设置中关闭，因此 {name} 仍未建立索引。可在“索引 > 驱动器索引”中开启。} linuxGnome {驱动器索引已在首选项中关闭，因此 {name} 仍未建立索引。可在“索引 > 驱动器索引”中开启。} linuxKde {驱动器索引已在“配置 Cmdr”中关闭，因此 {name} 仍未建立索引。可在“索引 > 驱动器索引”中开启。} other {驱动器索引已在设置中关闭，因此 {name} 仍未建立索引。可在“索引 > 驱动器索引”中开启。}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
-    "sourceHash": "f7b3cad"
+    "sourceHash": "e91977e"
   },
   "fileExplorer.navigation.driveIndex.driveLeaving": "{name} 正在断开连接，所以 Cmdr 让它的索引保持原样。如果驱动器仍保持连接，请稍后重试。",
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
@@ -2219,11 +2219,11 @@
   },
   "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {驱动器索引已在设置中关闭，因此目前没有驱动器在建立索引。} linuxGnome {驱动器索引已在首选项中关闭，因此目前没有驱动器在建立索引。} linuxKde {驱动器索引已在“配置 Cmdr”中关闭，因此目前没有驱动器在建立索引。} other {驱动器索引已在设置中关闭，因此目前没有驱动器在建立索引。}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
-    "sourceHash": "4c4d376"
+    "sourceHash": "76cf912"
   },
   "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {驱动器索引已在设置中关闭。可在“索引 > 驱动器索引”中开启，此驱动器会从上次的进度继续。} linuxGnome {驱动器索引已在首选项中关闭。可在“索引 > 驱动器索引”中开启，此驱动器会从上次的进度继续。} linuxKde {驱动器索引已在“配置 Cmdr”中关闭。可在“索引 > 驱动器索引”中开启，此驱动器会从上次的进度继续。} other {驱动器索引已在设置中关闭。可在“索引 > 驱动器索引”中开启，此驱动器会从上次的进度继续。}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
-    "sourceHash": "453d08d"
+    "sourceHash": "90d82ab"
   },
   "fileExplorer.dragOut.failed": "{count, plural, =1 {无法拷贝“{name}”。} other {无法拷贝 {countText} 个项目。}}",
   "@fileExplorer.dragOut.failed": {
@@ -2331,7 +2331,7 @@
   },
   "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {想把光标移到匹配的名称上，而不隐藏任何内容？可以在这里或在“设置”中切换到“跳转”。} linuxGnome {想把光标移到匹配的名称上，而不隐藏任何内容？可以在这里或在“首选项”中切换到“跳转”。} linuxKde {想把光标移到匹配的名称上，而不隐藏任何内容？可以在这里或在“配置 Cmdr”中切换到“跳转”。} other {想把光标移到匹配的名称上，而不隐藏任何内容？可以在这里或在“设置”中切换到“跳转”。}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
-    "sourceHash": "ed0bb5f"
+    "sourceHash": "a9cadc8"
   },
   "fileExplorer.quickFilter.intro.switchToJump": "切换到“跳转”",
   "@fileExplorer.quickFilter.intro.switchToJump": {
@@ -2399,7 +2399,7 @@
   },
   "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr 会记住你对这两台服务器的答复。你可以在“设置”的“服务器”中忘记它。} linuxGnome {Cmdr 会记住你对这两台服务器的答复。你可以在“首选项”的“服务器”中忘记它。} linuxKde {Cmdr 会记住你对这两台服务器的答复。你可以在“配置 Cmdr”的“服务器”中忘记它。} other {Cmdr 会记住你对这两台服务器的答复。你可以在“设置”的“服务器”中忘记它。}}",
   "@fileExplorer.smbLinkConsent.note": {
-    "sourceHash": "d32b664"
+    "sourceHash": "4e49784"
   },
   "fileExplorer.smbLinkConsent.allow": "允许并登录",
   "@fileExplorer.smbLinkConsent.allow": {

@@ -257,11 +257,11 @@
   },
   "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr usa el proveedor de IA y la clave que configuraste en Configuración › IA ({provider}).} linuxGnome {Cmdr usa el proveedor de IA y la clave que configuraste en Preferencias › IA ({provider}).} linuxKde {Cmdr usa el proveedor de IA y la clave que configuraste en Configurar Cmdr › IA ({provider}).} other {Cmdr usa el proveedor de IA y la clave que configuraste en Configuración › IA ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "e5850b8"
+    "sourceHash": "80c3537"
   },
   "settings.askCmdr.provider.off": "{platform, select, windows {Activa un proveedor de IA en Configuración › IA para empezar a chatear.} linuxGnome {Activa un proveedor de IA en Preferencias › IA para empezar a chatear.} linuxKde {Activa un proveedor de IA en Configurar Cmdr › IA para empezar a chatear.} other {Activa un proveedor de IA en Configuración › IA para empezar a chatear.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "c27cd77"
+    "sourceHash": "caf45ee"
   },
   "settings.askCmdr.chatMemorySize.overWindow": "Tu modelo puede rechazar un mensaje tan largo. Cmdr mantiene el valor que elegiste.",
   "@settings.askCmdr.chatMemorySize.overWindow": {
@@ -307,9 +307,9 @@
   "@settings.sidebar.searchPlaceholder": {
     "sourceHash": "cd34ad0"
   },
-  "settings.sidebar.sections": "{platform, select, windows {Secciones de configuración} linuxGnome {Secciones de preferencias} linuxKde {Configure Cmdr sections} other {Secciones de configuración}}",
+  "settings.sidebar.sections": "{platform, select, windows {Secciones de configuración} linuxGnome {Secciones de preferencias} linuxKde {Secciones de Configurar Cmdr} other {Secciones de configuración}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "47e4916"
+    "sourceHash": "58e33d1"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Ninguna opción coincide} one {{countText} sección coincide} many {{countText} secciones coinciden} other {{countText} secciones coinciden}}",
   "@settings.sidebar.matchCount": {
@@ -389,7 +389,7 @@
   },
   "settings.window.title": "{platform, select, windows {Configuración} linuxGnome {Preferencias} linuxKde {Configurar – Cmdr} other {Configuración}}",
   "@settings.window.title": {
-    "sourceHash": "6ba540c"
+    "sourceHash": "a632fcd"
   },
   "settings.window.loading": "Cargando configuración…",
   "@settings.window.loading": {

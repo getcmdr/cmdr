@@ -307,17 +307,17 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {La IA en la nube seguirá desactivada hasta que la permitas. Puedes hacerlo más tarde en Ajustes > IA.} linuxGnome {La IA en la nube seguirá desactivada hasta que la permitas. Puedes hacerlo más tarde en Preferencias > IA.} linuxKde {La IA en la nube seguirá desactivada hasta que la permitas. Puedes hacerlo más tarde en Configurar Cmdr > IA.} other {La IA en la nube seguirá desactivada hasta que la permitas. Puedes hacerlo más tarde en Ajustes > IA.}}",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {La IA en la nube seguirá desactivada hasta que la permitas. Puedes hacerlo más tarde en Configuración > IA.} linuxGnome {La IA en la nube seguirá desactivada hasta que la permitas. Puedes hacerlo más tarde en Preferencias > IA.} linuxKde {La IA en la nube seguirá desactivada hasta que la permitas. Puedes hacerlo más tarde en Configurar Cmdr > IA.} other {La IA en la nube seguirá desactivada hasta que la permitas. Puedes hacerlo más tarde en Ajustes > IA.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
-    "sourceHash": "6e0eb09"
+    "sourceHash": "6075ac0"
   },
   "onboarding.stepAi.off.label": "Gracias, pero no, nada de IA para mí",
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr funciona perfectamente sin IA. Puedes activarla más tarde en Ajustes.} linuxGnome {Cmdr funciona perfectamente sin IA. Puedes activarla más tarde en Preferencias.} linuxKde {Cmdr funciona perfectamente sin IA. Puedes activarla más tarde en Configurar Cmdr.} other {Cmdr funciona perfectamente sin IA. Puedes activarla más tarde en Ajustes.}}",
+  "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr funciona perfectamente sin IA. Puedes activarla más tarde en Configuración.} linuxGnome {Cmdr funciona perfectamente sin IA. Puedes activarla más tarde en Preferencias.} linuxKde {Cmdr funciona perfectamente sin IA. Puedes activarla más tarde en Configurar Cmdr.} other {Cmdr funciona perfectamente sin IA. Puedes activarla más tarde en Ajustes.}}",
   "@onboarding.stepAi.off.help": {
-    "sourceHash": "b20cf1d"
+    "sourceHash": "f4c9871"
   },
   "onboarding.localDownloadFailed.title": "El modelo de IA local no ha terminado de descargarse",
   "@onboarding.localDownloadFailed.title": {
@@ -391,9 +391,9 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Ten en cuenta que está ACTIVADO por omisión para animar a la gente a enviarme datos durante la beta.\nPuedes cambiarlo cuando quieras en Ajustes.} linuxGnome {Ten en cuenta que está ACTIVADO por omisión para animar a la gente a enviarme datos durante la beta.\nPuedes cambiarlo cuando quieras en Preferencias.} linuxKde {Ten en cuenta que está ACTIVADO por omisión para animar a la gente a enviarme datos durante la beta.\nPuedes cambiarlo cuando quieras en Configurar Cmdr.} other {Ten en cuenta que está ACTIVADO por omisión para animar a la gente a enviarme datos durante la beta.\nPuedes cambiarlo cuando quieras en Ajustes.}}",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Ten en cuenta que está ACTIVADO por omisión para animar a la gente a enviarme datos durante la beta.\nPuedes cambiarlo cuando quieras en Configuración.} linuxGnome {Ten en cuenta que está ACTIVADO por omisión para animar a la gente a enviarme datos durante la beta.\nPuedes cambiarlo cuando quieras en Preferencias.} linuxKde {Ten en cuenta que está ACTIVADO por omisión para animar a la gente a enviarme datos durante la beta.\nPuedes cambiarlo cuando quieras en Configurar Cmdr.} other {Ten en cuenta que está ACTIVADO por omisión para animar a la gente a enviarme datos durante la beta.\nPuedes cambiarlo cuando quieras en Ajustes.}}",
   "@onboarding.stepBeta.analyticsCaption": {
-    "sourceHash": "47a7511"
+    "sourceHash": "9dc83f9"
   },
   "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Los informes de fallos también están activados: si Cmdr se cierra de golpe, envía la versión de la app, tu versión de macOS y el punto del código donde se detuvo.\nNunca tus archivos.\nPuedes desactivar ambas cosas en Ajustes cuando quieras.} windows {Los informes de fallos también están activados: si Cmdr se cierra de golpe, envía la versión de la app, tu versión de Windows y el punto del código donde se detuvo.\nNunca tus archivos.\nPuedes desactivar ambas cosas en Ajustes cuando quieras.} linuxGnome {Los informes de fallos también están activados: si Cmdr se cierra de golpe, envía la versión de la app, tu distribución de Linux y su versión, y el punto del código donde se detuvo.\nNunca tus archivos.\nPuedes desactivar ambas cosas en Preferencias cuando quieras.} linuxKde {Los informes de fallos también están activados: si Cmdr se cierra de golpe, envía la versión de la app, tu distribución de Linux y su versión, y el punto del código donde se detuvo.\nNunca tus archivos.\nPuedes desactivar ambas cosas en Configurar Cmdr cuando quieras.} other {Los informes de fallos también están activados: si Cmdr se cierra de golpe, envía la versión de la app, tu distribución de Linux y su versión, y el punto del código donde se detuvo.\nNunca tus archivos.\nPuedes desactivar ambas cosas en Ajustes cuando quieras.}}",
   "@onboarding.stepBeta.crashReportsNote": {
@@ -427,7 +427,7 @@
   "@onboarding.stepBeta.signup.rejected": {
     "sourceHash": "5a1bca7"
   },
-  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {No se ha podido acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en este Mac: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Ajustes › Actualizaciones y privacidad.} windows {No se ha podido acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en este PC: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Ajustes › Actualizaciones y privacidad.} linuxGnome {No se ha podido acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en este ordenador: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Preferencias › Actualizaciones y privacidad.} linuxKde {No se ha podido acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en este ordenador: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Configurar Cmdr › Actualizaciones y privacidad.} other {No se ha podido acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en este ordenador: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Ajustes › Actualizaciones y privacidad.}}",
+  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {No se ha podido acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en este Mac: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Ajustes › Actualizaciones y privacidad.} windows {No se ha podido acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en este PC: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Configuración › Actualizaciones y privacidad.} linuxGnome {No se ha podido acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en este ordenador: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Preferencias › Actualizaciones y privacidad.} linuxKde {No se ha podido acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en este ordenador: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Configurar Cmdr › Actualizaciones y privacidad.} other {No se ha podido acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en este ordenador: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Ajustes › Actualizaciones y privacidad.}}",
   "@onboarding.stepBeta.signup.unreachable": {
     "sourceHash": "ae9c4a5"
   },
@@ -467,9 +467,9 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Puedes cambiarlo cuando quieras en Ajustes.} linuxGnome {Puedes cambiarlo cuando quieras en Preferencias.} linuxKde {Puedes cambiarlo cuando quieras en Configurar Cmdr.} other {Puedes cambiarlo cuando quieras en Ajustes.}}",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Puedes cambiarlo cuando quieras en Configuración.} linuxGnome {Puedes cambiarlo cuando quieras en Preferencias.} linuxKde {Puedes cambiarlo cuando quieras en Configurar Cmdr.} other {Puedes cambiarlo cuando quieras en Ajustes.}}",
   "@onboarding.stepOptional.changeAnytime": {
-    "sourceHash": "320f582"
+    "sourceHash": "ff84784"
   },
   "onboarding.stepOptional.networking.title": "Red",
   "@onboarding.stepOptional.networking.title": {

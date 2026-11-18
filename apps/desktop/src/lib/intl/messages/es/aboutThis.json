@@ -1228,9 +1228,9 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Oculta este aviso. Puedes recuperarlo en Ajustes > Avanzado.} linuxGnome {Oculta este aviso. Puedes recuperarlo en Preferencias > Avanzado.} linuxKde {Oculta este aviso. Puedes recuperarlo en Configurar Cmdr > Avanzado.} other {Oculta este aviso. Puedes recuperarlo en Ajustes > Avanzado.}}",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Oculta este aviso. Puedes recuperarlo en Configuración > Avanzado.} linuxGnome {Oculta este aviso. Puedes recuperarlo en Preferencias > Avanzado.} linuxKde {Oculta este aviso. Puedes recuperarlo en Configurar Cmdr > Avanzado.} other {Oculta este aviso. Puedes recuperarlo en Ajustes > Avanzado.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "22d9d84"
+    "sourceHash": "aa27809"
   },
   "aboutThis.action.continueInAskCmdr": "Continuar en Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {

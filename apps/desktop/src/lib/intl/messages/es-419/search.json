@@ -5,7 +5,7 @@
   },
   "search.imageResults.networkOff": "{platform, select, windows {Activa la indexación de imágenes para esta unidad de red en Configuración para buscar el texto dentro de sus fotos.} linuxGnome {Activa la indexación de imágenes para esta unidad de red en Preferencias para buscar el texto dentro de sus fotos.} linuxKde {Activa la indexación de imágenes para esta unidad de red en Configurar Cmdr para buscar el texto dentro de sus fotos.} other {Activa la indexación de imágenes para esta unidad de red en Configuración para buscar el texto dentro de sus fotos.}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "146aba2"
+    "sourceHash": "ea54737"
   },
   "search.imageResults.similarEmpty": "No se encontraron imágenes similares.",
   "@search.imageResults.similarEmpty": {
@@ -69,7 +69,7 @@
   },
   "search.coverage.toast.indexingOff": "{platform, select, windows {La indexación de unidades está desactivada en Configuración, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.} linuxGnome {La indexación de unidades está desactivada en Preferencias, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.} linuxKde {La indexación de unidades está desactivada en Configurar Cmdr, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.} other {La indexación de unidades está desactivada en Configuración, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "3eb77b3"
+    "sourceHash": "3c36a4b"
   },
   "search.coverage.pressEnter": "Presiona Intro y Cmdr las recorrerá ahora.",
   "@search.coverage.pressEnter": {

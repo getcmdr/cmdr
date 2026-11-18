@@ -57,7 +57,7 @@
   },
   "ai.translateError.off.body": "{platform, select, windows {Bật một nhà cung cấp trong Cài đặt > AI để dùng tìm kiếm bằng AI.} linuxGnome {Bật một nhà cung cấp trong Tùy thích > AI để dùng tìm kiếm bằng AI.} linuxKde {Bật một nhà cung cấp trong Cấu hình Cmdr > AI để dùng tìm kiếm bằng AI.} other {Bật một nhà cung cấp trong Cài đặt > AI để dùng tìm kiếm bằng AI.}}",
   "@ai.translateError.off.body": {
-    "sourceHash": "5e5f8d2"
+    "sourceHash": "c9c11e2"
   },
   "ai.cloudConsent.label": "Cho phép AI đám mây",
   "@ai.cloudConsent.label": {
@@ -249,7 +249,7 @@
   },
   "ai.translateError.notConfigured.body": "{platform, select, windows {Hoàn tất thiết lập nhà cung cấp trong Cài đặt > AI, rồi thử lại.} linuxGnome {Hoàn tất thiết lập nhà cung cấp trong Tùy thích > AI, rồi thử lại.} linuxKde {Hoàn tất thiết lập nhà cung cấp trong Cấu hình Cmdr > AI, rồi thử lại.} other {Hoàn tất thiết lập nhà cung cấp trong Cài đặt > AI, rồi thử lại.}}",
   "@ai.translateError.notConfigured.body": {
-    "sourceHash": "bf48aec"
+    "sourceHash": "cdb4ab5"
   },
   "ai.translateError.noCloudConsent.title": "AI đám mây đang tắt",
   "@ai.translateError.noCloudConsent.title": {
@@ -257,7 +257,7 @@
   },
   "ai.translateError.noCloudConsent.body": "{platform, select, windows {Hãy cho phép trong Cài đặt > AI, rồi thử lại.} linuxGnome {Hãy cho phép trong Tùy thích > AI, rồi thử lại.} linuxKde {Hãy cho phép trong Cấu hình Cmdr > AI, rồi thử lại.} other {Hãy cho phép trong Cài đặt > AI, rồi thử lại.}}",
   "@ai.translateError.noCloudConsent.body": {
-    "sourceHash": "4485cc1"
+    "sourceHash": "f54d181"
   },
   "ai.translateError.authFailed.title": "Khóa API đó bị từ chối",
   "@ai.translateError.authFailed.title": {
@@ -265,7 +265,7 @@
   },
   "ai.translateError.authFailed.body": "{platform, select, windows {Hãy kiểm tra khóa của bạn trong Cài đặt > AI - có thể nó sai hoặc đã bị thu hồi.} linuxGnome {Hãy kiểm tra khóa của bạn trong Tùy thích > AI - có thể nó sai hoặc đã bị thu hồi.} linuxKde {Hãy kiểm tra khóa của bạn trong Cấu hình Cmdr > AI - có thể nó sai hoặc đã bị thu hồi.} other {Hãy kiểm tra khóa của bạn trong Cài đặt > AI - có thể nó sai hoặc đã bị thu hồi.}}",
   "@ai.translateError.authFailed.body": {
-    "sourceHash": "4fd6281"
+    "sourceHash": "efd14fb"
   },
   "ai.translateError.rateLimited.title": "Nhà cung cấp AI của bạn đã hết dung lượng",
   "@ai.translateError.rateLimited.title": {
@@ -297,7 +297,7 @@
   },
   "ai.translateError.emptyResponse.body": "{platform, select, windows {Có thể mô hình của bạn đã dùng hết ngân sách token trước khi kịp trả lời. Hãy thử một mô hình nhanh hơn như gpt-4.1-mini trong Cài đặt > AI.} linuxGnome {Có thể mô hình của bạn đã dùng hết ngân sách token trước khi kịp trả lời. Hãy thử một mô hình nhanh hơn như gpt-4.1-mini trong Tùy thích > AI.} linuxKde {Có thể mô hình của bạn đã dùng hết ngân sách token trước khi kịp trả lời. Hãy thử một mô hình nhanh hơn như gpt-4.1-mini trong Cấu hình Cmdr > AI.} other {Có thể mô hình của bạn đã dùng hết ngân sách token trước khi kịp trả lời. Hãy thử một mô hình nhanh hơn như gpt-4.1-mini trong Cài đặt > AI.}}",
   "@ai.translateError.emptyResponse.body": {
-    "sourceHash": "b16ff79"
+    "sourceHash": "9068319"
   },
   "ai.translateError.serverError.title": "Nhà cung cấp AI của bạn gặp trục trặc",
   "@ai.translateError.serverError.title": {
@@ -313,7 +313,7 @@
   },
   "ai.translateError.parseError.body": "{platform, select, windows {Hãy thử lại, hoặc chọn một mô hình khác trong Cài đặt > AI.} linuxGnome {Hãy thử lại, hoặc chọn một mô hình khác trong Tùy thích > AI.} linuxKde {Hãy thử lại, hoặc chọn một mô hình khác trong Cấu hình Cmdr > AI.} other {Hãy thử lại, hoặc chọn một mô hình khác trong Cài đặt > AI.}}",
   "@ai.translateError.parseError.body": {
-    "sourceHash": "6082b7e"
+    "sourceHash": "5ebf991"
   },
   "ai.translateError.unknownProvider.title": "Nhà cung cấp AI đó không được nhận diện",
   "@ai.translateError.unknownProvider.title": {
@@ -321,7 +321,7 @@
   },
   "ai.translateError.unknownProvider.body": "{platform, select, windows {Chọn một nhà cung cấp trong Cài đặt > AI.} linuxGnome {Chọn một nhà cung cấp trong Tùy thích > AI.} linuxKde {Chọn một nhà cung cấp trong Cấu hình Cmdr > AI.} other {Chọn một nhà cung cấp trong Cài đặt > AI.}}",
   "@ai.translateError.unknownProvider.body": {
-    "sourceHash": "c45eba0"
+    "sourceHash": "a3988aa"
   },
   "ai.translateError.managed.title": "Tổ chức của bạn quản lý AI trong Cmdr",
   "@ai.translateError.managed.title": {

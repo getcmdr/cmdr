@@ -4355,5 +4355,11 @@
       "chosen": "首选项",
       "note": "GNOME (linuxGnome) names an app's preferences window 首选项: Nautilus zh-CN _Preferences → 首选项(_P), Show Preferences → 显示首选项, Thunar 首选项; used for the window title `settings.window.title`, the menu row `menu.app.settings`, the command `commands.appSettings.label` (打开首选项), and every pointer (在“首选项 > AI”中). KDE's (linuxKde) word is 配置: see the configure ruling's other form"
     }
+  },
+  "usb-preferences": {
+    "chosen": "USB 偏好设置",
+    "confidence": "high",
+    "sources": "AOSP packages/apps/Settings res/values-zh-rCN/strings.xml usb_preference → USB 偏好设置, settings_label → 设置, usb_use_file_transfers → 文件传输 (aosp-mirror main, 2026-11-18)",
+    "note": "Android phone label quoted in settings.fileOperations.mtpEnabled.description: “设置 > USB 偏好设置”."
   }
 }

@@ -61,11 +61,11 @@
   },
   "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {La IA en la nube seguirá desactivada hasta que la permitas. Puedes hacerlo más tarde en Configuración > IA.} linuxGnome {La IA en la nube seguirá desactivada hasta que la permitas. Puedes hacerlo más tarde en Preferencias > IA.} linuxKde {La IA en la nube seguirá desactivada hasta que la permitas. Puedes hacerlo más tarde en Configurar Cmdr > IA.} other {La IA en la nube seguirá desactivada hasta que la permitas. Puedes hacerlo más tarde en Configuración > IA.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
-    "sourceHash": "578ce81"
+    "sourceHash": "7229f06"
   },
   "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr funciona perfectamente sin IA. Puedes activarla más tarde en Configuración.} linuxGnome {Cmdr funciona perfectamente sin IA. Puedes activarla más tarde en Preferencias.} linuxKde {Cmdr funciona perfectamente sin IA. Puedes activarla más tarde en Configurar Cmdr.} other {Cmdr funciona perfectamente sin IA. Puedes activarla más tarde en Configuración.}}",
   "@onboarding.stepAi.off.help": {
-    "sourceHash": "af2976c"
+    "sourceHash": "96a9e65"
   },
   "onboarding.stepBeta.checklist.email": "Ingresa tu correo <field></field> para recibir novedades y preguntas muy de vez en cuando",
   "@onboarding.stepBeta.checklist.email": {
@@ -73,7 +73,7 @@
   },
   "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Ten en cuenta que está ACTIVADO de forma predeterminada para animar a la gente a enviarme datos durante la beta.\nPuedes cambiarlo cuando quieras en Configuración.} linuxGnome {Ten en cuenta que está ACTIVADO de forma predeterminada para animar a la gente a enviarme datos durante la beta.\nPuedes cambiarlo cuando quieras en Preferencias.} linuxKde {Ten en cuenta que está ACTIVADO de forma predeterminada para animar a la gente a enviarme datos durante la beta.\nPuedes cambiarlo cuando quieras en Configurar Cmdr.} other {Ten en cuenta que está ACTIVADO de forma predeterminada para animar a la gente a enviarme datos durante la beta.\nPuedes cambiarlo cuando quieras en Configuración.}}",
   "@onboarding.stepBeta.analyticsCaption": {
-    "sourceHash": "63246da"
+    "sourceHash": "58befce"
   },
   "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Los reportes de fallos también están activados: si Cmdr se cierra de golpe, envía la versión de la app, tu versión de macOS y el punto del código donde se detuvo.\nNunca tus archivos.\nPuedes desactivar ambas cosas en Configuración cuando quieras.} windows {Los reportes de fallos también están activados: si Cmdr se cierra de golpe, envía la versión de la app, tu versión de Windows y el punto del código donde se detuvo.\nNunca tus archivos.\nPuedes desactivar ambas cosas en Configuración cuando quieras.} linuxGnome {Los reportes de fallos también están activados: si Cmdr se cierra de golpe, envía la versión de la app, tu distribución de Linux y su versión, y el punto del código donde se detuvo.\nNunca tus archivos.\nPuedes desactivar ambas cosas en Preferencias cuando quieras.} linuxKde {Los reportes de fallos también están activados: si Cmdr se cierra de golpe, envía la versión de la app, tu distribución de Linux y su versión, y el punto del código donde se detuvo.\nNunca tus archivos.\nPuedes desactivar ambas cosas en Configurar Cmdr cuando quieras.} other {Los reportes de fallos también están activados: si Cmdr se cierra de golpe, envía la versión de la app, tu distribución de Linux y su versión, y el punto del código donde se detuvo.\nNunca tus archivos.\nPuedes desactivar ambas cosas en Configuración cuando quieras.}}",
   "@onboarding.stepBeta.crashReportsNote": {
@@ -89,7 +89,7 @@
   },
   "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {No se pudo acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en este Mac: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Configuración › Actualizaciones y privacidad.} windows {No se pudo acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en este PC: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Configuración › Actualizaciones y privacidad.} linuxGnome {No se pudo acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en esta computadora: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Preferencias › Actualizaciones y privacidad.} linuxKde {No se pudo acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en esta computadora: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Configurar Cmdr › Actualizaciones y privacidad.} other {No se pudo acceder al servidor de altas ahora mismo, así que todavía no estás en la lista. Tu dirección está guardada en esta computadora: vuelve a hacer clic en Guardar dentro de un minuto, o cuando quieras desde Configuración › Actualizaciones y privacidad.}}",
   "@onboarding.stepBeta.signup.unreachable": {
-    "sourceHash": "b7882e7"
+    "sourceHash": "ee5b7c6"
   },
   "onboarding.stepBeta.emailNote": "{platform, select, macos {Déjame tu correo y te escribiré con alguna pregunta o novedad de vez en cuando.\nLa dirección de correo que pongas aquí se guarda solo en tu Mac y nunca se vincula a tus estadísticas de uso; son dos subsistemas intencionadamente separados.} windows {Déjame tu correo y te escribiré con alguna pregunta o novedad de vez en cuando.\nLa dirección de correo que pongas aquí se guarda solo en tu PC y nunca se vincula a tus estadísticas de uso; son dos subsistemas intencionadamente separados.} other {Déjame tu correo y te escribiré con alguna pregunta o novedad de vez en cuando.\nLa dirección de correo que pongas aquí se guarda solo en tu computadora y nunca se vincula a tus estadísticas de uso; son dos subsistemas intencionadamente separados.}}",
   "@onboarding.stepBeta.emailNote": {
@@ -101,7 +101,7 @@
   },
   "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Puedes cambiarlo cuando quieras en Configuración.} linuxGnome {Puedes cambiarlo cuando quieras en Preferencias.} linuxKde {Puedes cambiarlo cuando quieras en Configurar Cmdr.} other {Puedes cambiarlo cuando quieras en Configuración.}}",
   "@onboarding.stepOptional.changeAnytime": {
-    "sourceHash": "ac12fd1"
+    "sourceHash": "f75909a"
   },
   "onboarding.stepOptional.networking.desc": "{platform, select, macos {Tener esto <em>activado</em> significa que puedes conectarte a servidores SMB como recursos compartidos de una empresa, un NAS doméstico y similares.\nEl único costo es un diálogo de permiso de macOS que aparece y te pide permitir la “Red local”, y otro para “Aceptar conexiones entrantes”.\nAmbos diálogos son inofensivos, pero si no sabes qué son, pueden dar miedo o resultar molestos.} windows {Tener esto <em>activado</em> significa que puedes conectarte a servidores SMB como recursos compartidos de una empresa, un NAS doméstico y similares.\nPuede que Windows pregunte una vez si quieres dejar pasar a Cmdr por su firewall.} other {Tener esto <em>activado</em> significa que puedes conectarte a servidores SMB como recursos compartidos de una empresa, un NAS doméstico y similares.}}",
   "@onboarding.stepOptional.networking.desc": {

@@ -301,7 +301,7 @@
   },
   "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Configuración. Si sobrescribe archivos, verás un aviso antes.} linuxGnome {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Preferencias. Si sobrescribe archivos, verás un aviso antes.} linuxKde {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Configurar Cmdr. Si sobrescribe archivos, verás un aviso antes.} other {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Configuración. Si sobrescribe archivos, verás un aviso antes.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "6d51cf7"
+    "sourceHash": "1ab1cd0"
   },
   "fileOperations.alreadyGone.one": "“{name}” ya no estaba. Seguramente se movió o se eliminó desde otra app.",
   "@fileOperations.alreadyGone.one": {

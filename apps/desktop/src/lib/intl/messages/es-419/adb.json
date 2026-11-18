@@ -5,7 +5,7 @@
   },
   "adb.connect.openSettings": "{platform, select, windows {Abrir Configuración} linuxGnome {Abrir Preferencias} linuxKde {Configurar Cmdr} other {Abrir Configuración}}",
   "@adb.connect.openSettings": {
-    "sourceHash": "d90615c"
+    "sourceHash": "363e828"
   },
   "adb.connect.serverUnreachable": "{platform, select, macos {Las herramientas de Android en este Mac no respondieron.} windows {Las herramientas de Android en este PC no respondieron.} other {Las herramientas de Android en esta computadora no respondieron.}}",
   "@adb.connect.serverUnreachable": {

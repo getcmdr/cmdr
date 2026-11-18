@@ -429,7 +429,7 @@
   },
   "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {下次 Cmdr 會預先選好這個選項，你可以在「設定」裡更改。如果這個選項會覆寫檔案，你會先看到警告。} linuxGnome {下次 Cmdr 會預先選好這個選項，你可以在「偏好設定」裡更改。如果這個選項會覆寫檔案，你會先看到警告。} linuxKde {下次 Cmdr 會預先選好這個選項，你可以在「設定 Cmdr」裡更改。如果這個選項會覆寫檔案，你會先看到警告。} other {下次 Cmdr 會預先選好這個選項，你可以在「設定」裡更改。如果這個選項會覆寫檔案，你會先看到警告。}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "d75e9f6"
+    "sourceHash": "b23a78a"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "有些衝突是同名的檔案和資料夾。覆寫會取代掉不同類型的項目，包括整個資料夾的內容。",
   "@fileOperations.transferDialog.typeMismatchWarning": {

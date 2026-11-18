@@ -4017,5 +4017,11 @@
       "chosen": "Tùy thích",
       "note": "GNOME's name for an app's preferences window: Nautilus vi _Preferences → Tù_y thích, Show Preferences → Hiển thị Tùy thích; Thunar Tùy thích. linuxGnome branches: window title (`settings.window.title`) and menu row (`menu.app.settings`) Tùy thích, the command and buttons Mở Tùy thích, pointers trong Tùy thích > AI. Always capitalized as the window's name, since lowercase tùy thích reads as the adverb (as you like). KDE's row is Cấu hình Cmdr… (see configure)"
     }
+  },
+  "usb-preferences": {
+    "chosen": "Lựa chọn ưu tiên về USB",
+    "confidence": "high",
+    "sources": "AOSP packages/apps/Settings res/values-vi/strings.xml usb_preference → Lựa chọn ưu tiên về USB, settings_label → Cài đặt, usb_use_file_transfers → Truyền tệp (aosp-mirror main, 2026-11-18)",
+    "note": "Android phone labels quoted in settings.fileOperations.mtpEnabled.description: Cài đặt > Lựa chọn ưu tiên về USB, mode “Truyền tệp”. A vi phone shows them in Vietnamese, so they are not kept English."
   }
 }

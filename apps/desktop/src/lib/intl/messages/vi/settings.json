@@ -1442,7 +1442,7 @@
   "@settings.fileOperations.mtpEnabled.label": {
     "sourceHash": "6a315a8"
   },
-  "settings.fileOperations.mtpEnabled.description": "Phát hiện và kết nối tới các thiết bị Android cùng thiết bị khác qua cáp USB để duyệt và truyền tệp. Để dùng tính năng này trên điện thoại Android, bạn nên dùng cáp USB, rồi trên điện thoại, vào đại loại như Settings > USB Preferences, và đặt kết nối thành “File transfer”, “Android Auto”, hoặc tương tự. (Tùy thiết bị mà khác nhau.)",
+  "settings.fileOperations.mtpEnabled.description": "Phát hiện và kết nối tới các thiết bị Android cùng thiết bị khác qua cáp USB để duyệt và truyền tệp. Để dùng tính năng này trên điện thoại Android, bạn nên dùng cáp USB, rồi trên điện thoại, vào đại loại như Cài đặt > Lựa chọn ưu tiên về USB, và đặt kết nối thành “Truyền tệp”, “Android Auto”, hoặc tương tự. (Tùy thiết bị mà khác nhau.)",
   "@settings.fileOperations.mtpEnabled.description": {
     "sourceHash": "c66df04"
   },
@@ -2508,11 +2508,11 @@
   },
   "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr dùng nhà cung cấp AI và khóa mà bạn đã thiết lập trong Cài đặt › AI ({provider}).} linuxGnome {Cmdr dùng nhà cung cấp AI và khóa mà bạn đã thiết lập trong Tùy thích › AI ({provider}).} linuxKde {Cmdr dùng nhà cung cấp AI và khóa mà bạn đã thiết lập trong Cấu hình Cmdr › AI ({provider}).} other {Cmdr dùng nhà cung cấp AI và khóa mà bạn đã thiết lập trong Cài đặt › AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "f4ea2f0"
+    "sourceHash": "0cc24da"
   },
   "settings.askCmdr.provider.off": "{platform, select, windows {Bật một nhà cung cấp AI trong Cài đặt › AI để bắt đầu trò chuyện.} linuxGnome {Bật một nhà cung cấp AI trong Tùy thích › AI để bắt đầu trò chuyện.} linuxKde {Bật một nhà cung cấp AI trong Cấu hình Cmdr › AI để bắt đầu trò chuyện.} other {Bật một nhà cung cấp AI trong Cài đặt › AI để bắt đầu trò chuyện.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "0196a5c"
+    "sourceHash": "89d8531"
   },
   "settings.askCmdr.interactiveModel.label": "Mô hình Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2957,9 +2957,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, windows {Các mục cài đặt} linuxGnome {Các mục trong Tùy thích} linuxKde {Configure Cmdr sections} other {Các mục cài đặt}}",
+  "settings.sidebar.sections": "{platform, select, windows {Các mục cài đặt} linuxGnome {Các mục trong Tùy thích} linuxKde {Các mục trong Cấu hình Cmdr} other {Các mục cài đặt}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "4fa3c2e"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Không có cài đặt nào khớp} other {{countText} mục khớp}}",
   "@settings.sidebar.matchCount": {
@@ -3430,7 +3430,7 @@
   },
   "settings.window.title": "{platform, select, windows {Cài đặt} linuxGnome {Tùy thích} linuxKde {Cấu hình – Cmdr} other {Cài đặt}}",
   "@settings.window.title": {
-    "sourceHash": "80cee55"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Đang tải cài đặt…",
   "@settings.window.loading": {

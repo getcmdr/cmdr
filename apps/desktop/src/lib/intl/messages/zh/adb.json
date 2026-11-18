@@ -5,7 +5,7 @@
   },
   "adb.connect.openSettings": "{platform, select, windows {打开设置} linuxGnome {打开首选项} linuxKde {配置 Cmdr} other {打开设置}}",
   "@adb.connect.openSettings": {
-    "sourceHash": "f970930"
+    "sourceHash": "cd63cf5"
   },
   "adb.connect.serverUnreachable": "{platform, select, macos {这台 Mac 上的 Android 工具没有响应。} windows {这台电脑上的 Android 工具没有响应。} other {这台电脑上的 Android 工具没有响应。}}",
   "@adb.connect.serverUnreachable": {

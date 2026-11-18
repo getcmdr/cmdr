@@ -430,7 +430,7 @@
   },
   "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Cài đặt. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.} linuxGnome {Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Tùy thích. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.} linuxKde {Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Cấu hình Cmdr. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.} other {Lần sau Cmdr sẽ bắt đầu với lựa chọn này, và bạn có thể thay đổi trong Cài đặt. Nếu lựa chọn này ghi đè tệp, bạn sẽ thấy cảnh báo trước.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "d75e9f6"
+    "sourceHash": "b23a78a"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "Một số xung đột lẫn lộn một tệp và một thư mục trùng tên. Việc ghi đè sẽ thay thế các mục khác loại, bao gồm toàn bộ nội dung của một thư mục.",
   "@fileOperations.transferDialog.typeMismatchWarning": {

@@ -1229,7 +1229,7 @@
   },
   "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {隐藏这条提示。你可以在“设置 > 高级”中让它重新显示。} linuxGnome {隐藏这条提示。你可以在“首选项 > 高级”中让它重新显示。} linuxKde {隐藏这条提示。你可以在“配置 Cmdr > 高级”中让它重新显示。} other {隐藏这条提示。你可以在“设置 > 高级”中让它重新显示。}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "22d9d84"
+    "sourceHash": "aa27809"
   },
   "aboutThis.action.continueInAskCmdr": "在 Ask Cmdr 中继续",
   "@aboutThis.action.continueInAskCmdr": {
