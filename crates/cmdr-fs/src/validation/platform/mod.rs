@@ -7,7 +7,8 @@ use super::{LengthLimit, WindowsFormatTiers};
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
 #[cfg_attr(target_os = "linux", path = "linux.rs")]
 #[cfg_attr(target_os = "windows", path = "windows.rs")]
-#[cfg_attr(target_family = "wasm", path = "wasm.rs")]
+// The browser build has no drivers of its own; its demo plays a Mac, so it takes the macOS arm.
+#[cfg_attr(target_family = "wasm", path = "macos.rs")]
 mod imp;
 
 const _: LengthLimit = HOST_PATH_LIMIT;

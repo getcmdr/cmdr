@@ -3,7 +3,8 @@
 //! Windows can't use, a trailing space or period, as private-use stand-ins, and a
 //! device name as itself (verified on macOS 27.0 with `hdiutil` images,
 //! `docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`, 2026-11-18). So
-//! nothing is refused there; everything is warned about.
+//! nothing is refused there; everything is warned about. The browser build takes this
+//! arm too: it has no drivers of its own, and its demo plays a Mac.
 
 use super::super::{LengthLimit, LengthUnit, NameTier, WindowsFormatTiers};
 

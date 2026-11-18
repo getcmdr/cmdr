@@ -35,7 +35,7 @@ holds the chip's pure pick-and-measure rules; `operation-failure-watch.svelte.ts
 - **Render the session's `etaSecondsDisplay`, ❌ never `progress.etaSeconds`**: the raw value once read "8m 12s" in one
   window, "5m 46s" in the other.
 - **The FIRST appearance waits `CHIP_SETTLE_MS`** (blink-long work never flashes the corner, and the beat closes a race
-  with the foreground modal's claim); a handover is immediate.
+  with the foreground modal's claim); a handover is immediate. ❌ No session before it settles (DETAILS).
 - **The failure toast NEVER auto-dismisses**, and past three they collapse into one summary. A stack full of persistent
   toasts silently DROPS new ones, so ❌ don't raise that cap, and keep `toastGroup: 'operation-failure'`.
 - **Suppression needs BOTH foreground slots**, in the chip and in the watch: the dialog releases

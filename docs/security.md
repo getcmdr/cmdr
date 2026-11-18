@@ -77,21 +77,12 @@ malicious websites can't access the system APIs even on your machine.
 
 ## The webview CSP's `connect-src`
 
-The app CSP (`apps/desktop/src-tauri/tauri.conf.json`, restated in `tauri.windows.conf.json` with WebView2's
-`http://<scheme>.localhost` origins, a drift `tauri_config.rs` guards) allows `connect-src` to exactly two places:
-`'self'` and Tauri's own IPC channel, `ipc:` on macOS and Linux (`ipc://localhost/<cmd>`), `http://ipc.localhost` on
-Windows.
-
-- **Why the IPC origin**: Tauri's IPC first `fetch`es its `ipc` custom protocol and, when that fails, drops the window
-  to `window.ipc.postMessage` for good (tauri 2.12.5 `scripts/ipc-protocol.js`). Tauri adds nothing to a hand-written
-  CSP; its own docs' example lists `connect-src ipc: http://ipc.localhost` (`tauri-utils` 2.10.2 `config.rs`). Blocking
-  it cost every window the faster path for large answers and a CSP violation at start (#1234). Measured:
-  `docs/notes/performance/ipc-transport-2026-11-18.md`.
-- **Why it's safe**: the `ipc` scheme is served by the app's own process and answers only the app's commands, which the
-  `postMessage` path reached anyway, so it adds no reachable endpoint and no network egress. The command surface and its
-  gating are the same on both transports (§ "Why there's no caller-window authorization guard").
-- ❌ **Nothing broader**: no `http:`, `https:`, `*`, or a remote host. The webview never fetches outside the app; the
-  outbound requests live in Rust, where the cloud-AI and update rules above govern them.
+The app CSP (`apps/desktop/src-tauri/tauri.conf.json`, restated in `tauri.windows.conf.json`, a drift `tauri_config.rs`
+guards) allows `connect-src 'self'` only. That blocks Tauri's `ipc://localhost` fetch, so every window runs IPC on the
+`postMessage` fallback, and logs one CSP violation at start. Allowing `ipc:` is safe (it adds no endpoint the fallback
+didn't reach) and faster for big answers, but it reorders command answers against events and was reverted until that's
+measured on every webview: `docs/notes/performance/ipc-transport-2026-11-18.md`, issue #1234. ❌ Nothing broader than
+`ipc:` ever goes in: no `http:`, `https:`, `*`, or a remote host; outbound requests live in Rust.
 
 ## Error reports
 

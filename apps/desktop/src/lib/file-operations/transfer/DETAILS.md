@@ -1058,11 +1058,15 @@ Pinned by `TransferErrorDialog.typed.test.ts`, `DialogManager.svelte.test.ts`, a
   `CANCEL_SETTLE_FALLBACK_MS` (20 s) sits above the backend's 15 s `CANCEL_DRAIN_DEADLINE`, so the automatic path can't
   report `0 files` before the real count lands. A settle disarms that timer, so a `write-settled` with NO terminal event
   before it gets its own exit: after `SETTLED_WITHOUT_ENDING_GRACE_MS` (1 s, for a trailing event's delivery lag) the
-  view logs a warning and closes as a cancel with the last count it heard. That's a backend contract breach, but it once
-  happened: a cancel at a clash prompt went out as `Failed(Cancelled)` and emitted nothing, and the dialog sat on the
-  stale prompt (cmdr-reports #48). Why the cancel wait matters: the original incident was an MTP delete cancel followed
-  by an immediate second F8 — the device was still mid-teardown, the second op queued behind the 17 s tail, hit the 30 s
-  op timeout, and wedged the USB session.
+  view asks the operation log how the operation ended (`getOperationLogDetail`, readable from `write-settled` on) and
+  logs a warning with the answer. `done` closes as the completion it was, with the journal's `itemsDone` and
+  `bytesTotal`; anything else, or no journal row (the operation log off), takes the neutral `onCancelled` close. ❌
+  Never read a settle without a terminal event as a cancel: a finished move would run the cancel tail (re-select the
+  moved rows) over the panes. It once happened as a backend contract breach (a cancel at a clash prompt went out as
+  `Failed(Cancelled)` and emitted nothing, cmdr-reports #48), and once as a frontend one (an ambient session took the
+  `write-complete`, `../operation-session/DETAILS.md` § "How an operation ended"). Why the cancel wait matters: the
+  original incident was an MTP delete cancel followed by an immediate second F8 — the device was still mid-teardown, the
+  second op queued behind the 17 s tail, hit the 30 s op timeout, and wedged the USB session.
 - **Scan preview reuse, and who waits for it.** `TransferDialog` starts a scan preview on mount. If the user confirms
   before the scan finishes, the scan keeps running (`TransferDialog` sets `confirmed = true` and skips cancellation in
   `onDestroy`), and `TransferProgressDialog` dispatches the operation IMMEDIATELY. The wait lives in the backend: the
