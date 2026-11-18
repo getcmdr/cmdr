@@ -493,6 +493,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-time",
+ "windows-sys 0.61.2",
  "xattr",
 ]
 
@@ -535,6 +536,7 @@ dependencies = [
  "log",
  "tokio",
  "tokio-util",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
