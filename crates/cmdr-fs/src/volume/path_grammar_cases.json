@@ -826,9 +826,9 @@
       "base": "C:/x",
       "arg": "a\\b",
       "flavor": "windows",
-      "refused": "NotAChildName",
+      "refused": "Backslash",
       "std": "C:/x/a\\b",
-      "note": "std joins any text (an absolute arg replaces the base, `..` climbs); the type joins one plain name"
+      "note": "`a\\b` is a plain name (an SFTP server can list one), but a drive can't hold it: Windows would read a subfolder"
     },
     { "op": "join", "base": "C:/x", "arg": "a:b", "flavor": "windows", "target": "C:/x/a:b", "std": "C:/x/a:b" },
     {
@@ -982,8 +982,9 @@
       "op": "parent",
       "base": "sftp://test_user_1@testnas.local:22/home",
       "flavor": "posix",
-      "target": "sftp://test_user_1@testnas.local:22",
-      "std": "sftp://test_user_1@testnas.local:22"
+      "target": "sftp://test_user_1@testnas.local:22/",
+      "std": "sftp://test_user_1@testnas.local:22",
+      "note": "a scheme root keeps its `/`, as every root does and as `RemoteRoot::app_root` spells a server-rooted volume; `Eq` holds the two spellings equal"
     },
     {
       "op": "parent",
@@ -1133,8 +1134,9 @@
       "op": "parent",
       "base": "nfs://testnas.local:2049/volume1%2Fdata",
       "flavor": "posix",
-      "target": "nfs://testnas.local:2049",
-      "std": "nfs://testnas.local:2049"
+      "target": "nfs://testnas.local:2049/",
+      "std": "nfs://testnas.local:2049",
+      "note": "a scheme root keeps its `/`, as every root does and as `RemoteRoot::app_root` spells a server-rooted volume; `Eq` holds the two spellings equal"
     },
     {
       "op": "names",
@@ -1190,7 +1192,7 @@
       "op": "parent",
       "base": "file:///x",
       "flavor": "posix",
-      "target": "file://",
+      "target": "file:///",
       "std": "file:",
       "note": "std climbs above a scheme root (and collapses `//`); the type clamps there"
     },

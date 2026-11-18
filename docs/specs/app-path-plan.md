@@ -872,9 +872,12 @@ included; the hidden couplings it found are why waves B and C differ from round 
   plus 8 vitest cases and 119 case-table rows, none removed):
   - (a) `path_grammar_cases.json` gains 112 `arithmetic` rows (`std`: today's `std::path` answer, asserted on Unix;
     `target` or a typed `refused`: the type's answer, asserted against today's grammar for the local roots on every OS),
-    25 with a `note` where the two differ on purpose. Decided here for milestone 3: a scheme root is
-    `scheme://authority` (no trailing `/`), so `parent("sftp://h:22/home")` stays today's `sftp://h:22` byte for byte
-    and an empty authority's root is `scheme://`.
+    25 with a `note` where the two differ on purpose. This branch proposed a scheme root of `scheme://authority` (no
+    trailing `/`, today's `std` parent byte for byte); the type, built in parallel, spells it `scheme://authority/`, and
+    the integration (2026-11-18) kept the type's: every root ends in `/`, today's `RemoteRoot::app_root` of a
+    server-rooted volume is already `sftp://u@h:22/`, and `Eq` holds the two spellings equal, so a parent never
+    mismatches its volume's root. The three scheme-parent rows carry that `note`, and `join("C:/x", "a\\b")` names the
+    type's real refusal, `Backslash`. Since the merge, the pin asserts every row against the type itself.
   - (b) `crates/cmdr-fs/src/volume/path_helper_pin_test.rs` (15) plus cells in `patching_test.rs` and
     `scan_walk_test.rs`. (c) `list_alloc_ceiling_test.rs` in `cmdr-fs` and `cmdr-local`: one entry over none (a slope
     over many isn't stable: `InMemoryVolume`'s sort lowercases per comparison, and the comparison count follows

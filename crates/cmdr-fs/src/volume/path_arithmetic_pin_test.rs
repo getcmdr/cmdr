@@ -150,7 +150,7 @@ fn every_arithmetic_row_names_a_target_or_a_typed_refusal() {
     for row in rows() {
         match row.refused.as_deref() {
             None => {}
-            Some("DotName" | "NotAChildName") => {
+            Some("DotName" | "NotAChildName" | "Backslash") => {
                 assert!(row.target.is_null(), "a refused row has no target: {}", label(&row))
             }
             Some(other) => panic!("unknown refusal {other:?} in {}", label(&row)),
