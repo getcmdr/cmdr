@@ -388,20 +388,33 @@ describe('buffering for an unclaimed operation', () => {
   it('flushes in arrival order, with each kind at the position of its newest event', () => {
     const fanout = createOperationEventFanout()
     fanout._testEmit({ kind: 'progress', event: progress('a', { bytesDone: 10 }) })
+    fanout._testEmit({ kind: 'conflictResolved', event: { operationId: 'a', conflictId: 1 } })
+    fanout._testEmit({ kind: 'progress', event: progress('a', { bytesDone: 20 }) })
+
+    const a = recorder()
+    fanout.attach('a', a.sink)
+
+    expect(a.deliveries.map((d) => d.kind)).toEqual(['conflictResolved', 'progress'])
+    expect(a.deliveries[1]).toMatchObject({ event: { bytesDone: 20 } })
+    fanout.dispose()
+  })
+
+  it('delivers an ending after every tick, terminal event first, whatever order they arrived in', () => {
+    const fanout = createOperationEventFanout()
+    fanout._testEmit({ kind: 'settled', event: settled('a') })
     fanout._testEmit({ kind: 'cancelled', event: cancelled('a') })
     fanout._testEmit({ kind: 'progress', event: progress('a', { bytesDone: 20 }) })
 
     const a = recorder()
     fanout.attach('a', a.sink)
 
-    expect(a.deliveries.map((d) => d.kind)).toEqual(['cancelled', 'progress'])
-    expect(a.deliveries[1]).toMatchObject({ event: { bytesDone: 20 } })
+    expect(a.deliveries.map((d) => d.kind)).toEqual(['progress', 'cancelled', 'settled'])
     fanout.dispose()
   })
 
-  it('drops a claimed id`s buffer, so a later session never replays an ended operation twice', () => {
+  it('drops a claimed id`s buffer, so a later session isn`t handed the first one`s ticks', () => {
     const fanout = createOperationEventFanout()
-    fanout._testEmit({ kind: 'complete', event: complete('a') })
+    fanout._testEmit({ kind: 'conflictResolved', event: { operationId: 'a', conflictId: 1 } })
 
     const first = recorder()
     fanout.attach('a', first.sink).detach()
@@ -410,6 +423,71 @@ describe('buffering for an unclaimed operation', () => {
 
     expect(first.deliveries).toHaveLength(1)
     expect(second.deliveries).toHaveLength(0)
+    fanout.dispose()
+  })
+
+  it('hands every later session how the operation ended, not only the first one to claim it', () => {
+    // The corner chip binds to an operation the moment its row appears, a hair
+    // before the start command's answer lets the progress dialog claim it. When
+    // the chip took the `write-complete` and let go, the dialog's fresh session
+    // heard only the `write-settled` and closed a finished copy as cancelled.
+    const fanout = createOperationEventFanout()
+    const chip = recorder()
+    const held = fanout.attach('a', chip.sink)
+    fanout._testEmit({ kind: 'complete', event: complete('a') })
+    held.detach()
+    fanout._testEmit({ kind: 'settled', event: settled('a') })
+
+    const dialog = recorder()
+    fanout.attach('a', dialog.sink)
+
+    expect(dialog.deliveries.map((d) => d.kind)).toEqual(['complete', 'settled'])
+    fanout.dispose()
+  })
+
+  it('replays an ending once per session, even when the buffer also held it', () => {
+    const fanout = createOperationEventFanout()
+    fanout._testEmit({ kind: 'cancelled', event: cancelled('a') })
+    fanout._testEmit({ kind: 'settled', event: settled('a') })
+
+    const first = recorder()
+    fanout.attach('a', first.sink).detach()
+    const second = recorder()
+    fanout.attach('a', second.sink)
+
+    expect(first.deliveries.map((d) => d.kind)).toEqual(['cancelled', 'settled'])
+    expect(second.deliveries.map((d) => d.kind)).toEqual(['cancelled', 'settled'])
+    fanout.dispose()
+  })
+
+  it('keeps the FIRST terminal event, matching the session`s first-outcome-wins rule', () => {
+    const fanout = createOperationEventFanout()
+    fanout.attach('a', recorder().sink).detach()
+    fanout._testEmit({ kind: 'complete', event: complete('a') })
+    fanout._testEmit({ kind: 'cancelled', event: cancelled('a') })
+    const first = recorder()
+    fanout.attach('a', first.sink).detach()
+
+    const late = recorder()
+    fanout.attach('a', late.sink)
+
+    expect(late.deliveries.map((d) => d.kind)).toEqual(['complete'])
+    fanout.dispose()
+  })
+
+  it('ages an ending out on the same TTL, swept by the next event', () => {
+    vi.useFakeTimers()
+    const fanout = createOperationEventFanout()
+    fanout.attach('a', recorder().sink).detach()
+    fanout._testEmit({ kind: 'complete', event: complete('a') })
+    fanout.attach('a', recorder().sink).detach()
+
+    vi.advanceTimersByTime(UNCLAIMED_BUFFER_TTL_MS + 1)
+    fanout._testEmit({ kind: 'settled', event: settled('fresh') })
+
+    const late = recorder()
+    fanout.attach('a', late.sink)
+    expect(late.deliveries).toHaveLength(0)
     fanout.dispose()
   })
 
@@ -497,7 +575,8 @@ describe('where an operation had got to, for a session that arrives later', () =
     const second = recorder()
     fanout.attach('a', second.sink)
 
-    expect(second.deliveries).toHaveLength(0)
+    // The ending, and no tick in front of it.
+    expect(second.deliveries.map((d) => d.kind)).toEqual(['complete'])
     fanout.dispose()
   })
 

@@ -410,6 +410,9 @@ describe('an archive password, for a job with no dialog', () => {
     expect(dialogs.showUnlockDialog).toBe(true)
     expect(dialogs.showTransferProgressDialog).toBe(false)
 
+    // A re-dispatch is a new operation with a new id, as the backend mints one
+    // per start. Reusing `op-1` would hand its session op-1's ending again.
+    vi.mocked(copyBetweenVolumes).mockResolvedValueOnce({ operationId: 'op-2', operationType: 'copy' })
     dialogs.handleUnlockSubmit({ password: 'hunter2', remember: false })
     await settle()
 

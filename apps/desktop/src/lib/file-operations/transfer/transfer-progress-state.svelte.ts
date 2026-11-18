@@ -52,6 +52,7 @@
 
 import {
   cancelOperation,
+  getOperationLogDetail,
   releaseTransferTree,
   type TransferActivity,
   type WriteCancelledEvent,
@@ -72,7 +73,7 @@ import type {
 } from '#lib/file-explorer/types.js'
 import type { CompletionView, TransferCompletePayload } from '#lib/file-explorer/pane/dialog-props.js'
 import type { ProgressAtStop, WriteCompleteEvent } from '#lib/tauri-commands/index.js'
-import type { ProgressStep, RollbackSupport } from '#lib/ipc/bindings.js'
+import type { OperationRow, ProgressStep, RollbackSupport } from '#lib/ipc/bindings.js'
 import { pluralize } from '#lib/utils/pluralize.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 import { tString } from '#lib/intl/messages.svelte.js'
@@ -606,9 +607,53 @@ export function createTransferProgressState(config: TransferProgressStateConfig)
     else clearWindDownTimers()
   })
 
+  /**
+   * The backend settled, and no terminal event reached this view. ❌ Never read
+   * that as a cancel: the backend has the answer, so ask it. The operation log
+   * records how every journaled operation ended, and its row is readable from
+   * `write-settled` on (`../CLAUDE.md`), which is exactly now.
+   *
+   * A finished operation closes as the completion it was, with the journal's
+   * counts. Anything else (cancelled, failed, or not journaled at all, as with
+   * the operation log off) takes the neutral close `dismiss()` and `gone` take:
+   * `onCancelled` puts nothing on screen (the rollback toast comes only from a
+   * real `write-cancelled`), so it claims no outcome we don't know.
+   */
+  async function closeOnRecordedEnding(): Promise<void> {
+    const id = operationId
+    let recorded: OperationRow | null = null
+    if (id !== null) {
+      try {
+        recorded = (await getOperationLogDetail(id, 0, 0))?.operation ?? null
+      } catch (error) {
+        log.warn("Couldn't read how op={operationId} ended from the operation log: {error}", { operationId: id, error })
+      }
+    }
+    // A trailing terminal event, or the person, got there first.
+    if (closed || outcome() !== null) return
+    log.warn('op={operationId} settled with no terminal event; the operation log says {status}', {
+      operationId: id,
+      status: recorded?.executionStatus ?? 'nothing',
+    })
+    if (id !== null && recorded?.executionStatus === 'done') {
+      reportCompletion({
+        operationId: id,
+        operationType: config.operationType,
+        filesProcessed: recorded.itemsDone,
+        filesSkipped: 0,
+        bytesProcessed: recorded.bytesTotal,
+      })
+      return
+    }
+    const filesProcessed = recorded?.itemsDone ?? reportedFilesProcessed()
+    close(() => {
+      config.onCancelled(filesProcessed)
+    })
+  }
+
   // The backend task is gone, yet nothing said how the operation ended. Nothing
   // else will close the view now (the settle disarmed the last-resort timer), so
-  // close on what we were told, after a beat for a trailing terminal event.
+  // after a beat for a trailing terminal event, ask the backend how it ended.
   $effect(() => {
     const op = bound.current
     if (op === null || !op.settleEventReceived || op.outcome !== null || reversalLeftRegistry()) {
@@ -618,13 +663,7 @@ export function createTransferProgressState(config: TransferProgressStateConfig)
     if (settledWithoutEndingTimer !== null) return
     settledWithoutEndingTimer = setTimeout(() => {
       settledWithoutEndingTimer = null
-      log.warn('op={operationId} settled with no terminal event; closing the dialog', { operationId })
-      // The same neutral close `dismiss()` and `gone` take: `onCancelled` puts
-      // nothing on screen (the rollback toast comes only from a real
-      // `write-cancelled`), so it claims no outcome we don't know.
-      close(() => {
-        config.onCancelled(reportedFilesProcessed())
-      })
+      void closeOnRecordedEnding()
     }, SETTLED_WITHOUT_ENDING_GRACE_MS)
   })
 
