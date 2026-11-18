@@ -156,9 +156,13 @@ impl Volume for SmbVolume {
         path: &'a AppPath,
         cancel: Option<&'a tokio_util::sync::CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Option<AppPathBuf>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(self.find_stored_spelling_impl(path, cancel))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.find_stored_spelling_impl(path, cancel)
+                .await
+                .map(|found| found.map(|stored| AppPath::legacy_unchecked(&stored).into_owned()))
+        })
     }
 
     fn begin_scan_session<'a>(&'a self) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
@@ -330,7 +334,7 @@ impl Volume for SmbVolume {
         debug!(
             "SmbVolume share={:?}: the mount at path={:?} is gone; still browsing over smb2, but its paths are no longer OS-openable",
             LogPrivate::volume(&self.inner.share_name),
-            LogPrivate::dir_path(&self.mount_path)
+            LogPrivate::dir_path(self.mount_path.as_path())
         );
     }
 
