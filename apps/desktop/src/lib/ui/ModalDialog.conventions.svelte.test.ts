@@ -1,7 +1,7 @@
 /**
  * `ModalDialog` follows the platform's dialog conventions (`#lib/platform`'s `convention()`) on
  * every desktop row: button order, Tab order, Return and Escape (and ⌘. on the Mac), the default
- * button, and access keys (keytips on Windows, underlines on Linux). The macOS block pins the Mac
+ * button, and access keys (underlines on Windows and Linux). The macOS block pins the Mac
  * markup and keys, so a convention change can't move them unnoticed.
  */
 
@@ -244,7 +244,8 @@ describe.each(['windows', 'gnome', 'kde', 'otherLinux'] as const)('ModalDialog a
     expect(byId(overlay, 'save').getAttribute('aria-keyshortcuts')).toBe('Alt+S')
   })
 
-  it('shows keytips while Alt is held and hides them on release', async () => {
+  // jsdom has no Highlight API, so this is the fallback WebKitGTK takes: keytips in place of underlines.
+  it('falls back to keytips without the Highlight API, shown while Alt is held and hidden on release', async () => {
     withConventions(desktop)
     const { overlay } = await open()
     press(byId(overlay, 'name-field'), { key: 'Alt', code: 'AltLeft', altKey: true })
@@ -442,8 +443,8 @@ const cjkFooter = createRawSnippet(() => ({
   },
 }))
 
-describe.each(['gnome', 'kde', 'otherLinux'] as const)(
-  'ModalDialog access keys on %s look like GTK and Qt',
+describe.each(['windows', 'gnome', 'kde', 'otherLinux'] as const)(
+  'ModalDialog access keys on %s look like Win32, GTK, and Qt',
   (desktop) => {
     afterEach(() => {
       vi.unstubAllGlobals()
@@ -494,31 +495,5 @@ describe.each(['gnome', 'kde', 'otherLinux'] as const)(
       expect(underlined?.toString()).toBe('B')
       await expectNoA11yViolations(overlay)
     })
-
-    it('falls back to keytips where the Highlight API is missing', async () => {
-      withConventions(desktop)
-      const { overlay } = await open()
-      press(byId(overlay, 'name-field'), { key: 'Alt', code: 'AltLeft', altKey: true })
-      await tick()
-      expect(overlay.querySelectorAll('.access-key-tip')).toHaveLength(4)
-    })
   },
 )
-
-describe('ModalDialog access keys on windows look like Windows 11', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('draws keytips even where underlines could paint, and appends nothing to a label', async () => {
-    const registry = stubHighlights()
-    withConventions('windows')
-    const { overlay } = await open({ footer: cjkFooter })
-    await new Promise((resolve) => requestAnimationFrame(resolve))
-    expect(overlay.querySelector('.access-key-suffix')).toBeNull()
-    press(byId(overlay, 'name-field'), { key: 'Alt', code: 'AltLeft', altKey: true })
-    await tick()
-    expect(overlay.querySelectorAll('.access-key-tip')).toHaveLength(4)
-    expect(registry.has('cmdr-access-key')).toBe(false)
-  })
-})

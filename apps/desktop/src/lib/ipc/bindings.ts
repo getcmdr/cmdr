@@ -6817,22 +6817,14 @@ export type AccentColorChanged = {
   hex: string
 }
 
-/**
- *  Whether labeled controls carry access keys (a letter pressed with Alt), and how holding Alt
- *  shows them.
- */
+// Whether labeled controls carry access keys (a letter pressed with Alt), and how they show.
 export type AccessKeys =
   // The platform has no access keys.
   | 'none'
   /**
-   *  Alt plus the letter presses the control; holding Alt shows a keytip badge by each one, as
-   *  Windows 11's own apps (WinUI) do.
-   */
-  | 'keytips'
-  /**
-   *  Alt plus the letter presses the control; holding Alt underlines the letter in its label, as
-   *  GTK and Qt do. A label without the letter (Chinese, Japanese) carries it in parentheses,
-   *  "保存 (S)", the way GTK and Qt apps write a CJK label's mnemonic.
+   *  Alt plus the letter presses the control, and the letter shows underlined in its label, as
+   *  Win32, GTK, and Qt draw it. A label without the letter (Chinese, Japanese) carries it in
+   *  parentheses, "保存 (S)", the way those toolkits write a CJK label's mnemonic.
    */
   | 'underlines'
 
@@ -8964,6 +8956,13 @@ export type ConnectionState =
  *  straight out of the shortcut registry, so a command nobody has bound is simply absent.
  */
 export type ContextMenuShortcuts = { [key in string]: string }
+
+// Who draws the right-click (context) menus.
+export type ContextMenus =
+  // The OS's own popup menus (muda's native popups).
+  | 'native'
+  // Cmdr draws them in the page, on the same menu component as the in-window bar.
+  | 'inPage'
 
 // A thread's last measured context usage, on the wire. Both figures are `chars/4` estimates.
 export type ContextUsageView = {
@@ -14607,6 +14606,11 @@ export type MenuModel =
   | 'systemMenuBar'
   // A menu bar inside each window, under its title bar.
   | 'windowMenuBar'
+  /**
+   *  No menu bar: a "Main menu" button in the window's header holds the menus, the "primary
+   *  menu" GNOME's HIG asks for.
+   */
+  | 'primaryMenu'
 
 /**
  *  `menu-sort`: a Sort-by menu item (column or order) clicked. `action` is
@@ -17248,6 +17252,8 @@ export type PlatformConventions = {
   accessKeys: AccessKeys
   // Where the app's menus live.
   menuModel: MenuModel
+  // Who draws the right-click menus.
+  contextMenus: ContextMenus
   /**
    *  The screen readers this platform's users run, most used first: the ones a screen reader
    *  pass tests with and any hint names.

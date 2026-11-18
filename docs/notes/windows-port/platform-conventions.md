@@ -111,20 +111,22 @@ secondary sources, not confirmed on a primary page.
 - `accessKeys`: macOS `none` (no mnemonics on the Mac, unverified on an Apple page). Windows `underlines` (David's
   decision in D5, 2026-11-18, which reversed task 61's keytips: Microsoft's access keys guide shows WinUI's keytips on
   Alt, verified, but Cmdr draws Win32's underlines, hidden until Alt or other keyboard use and always shown with
-  Windows' "Underline access keys" on, `SPI_GETKEYBOARDCUES`; the shipped row still says `keytips` until task 63's step
-  1). GNOME, KDE, and other Linux `underlines` (verified for GNOME: underlined letter "displayed when Alt is held down";
-  KDE's underline-on-Alt is Breeze's default with a setting to always show them, unverified on a primary page). A CJK
-  label's mnemonic as "保存(_S)", the letter in parentheses after the label, is GTK and Qt translators' practice
-  (unverified on a primary page); Cmdr appends " (S)" itself, since its letters are picked from rendered labels.
+  Windows' "Underline access keys" on, `SPI_GETKEYBOARDCUES`). GNOME, KDE, and other Linux `underlines` (verified for
+  GNOME: underlined letter "displayed when Alt is held down"; KDE's underline-on-Alt is Breeze's default with a setting
+  to always show them, unverified on a primary page). A CJK label's mnemonic as "保存(_S)", the letter in parentheses
+  after the label, is GTK and Qt translators' practice (unverified on a primary page); Cmdr appends " (S)" itself, since
+  its letters are picked from rendered labels.
 - How task 61 applied `enterActivates` on the Mac: the HIG's "no default button" for a confirmation people should read
   (the quit prompt, the tool question, the rollback question, the data wipe), and Return keeps confirming a deliberately
   chosen destructive action (permanent delete, Delete AI model, Forget memory), as the Empty Trash passage allows. One
   deliberate departure from AppKit for data safety: while the default button is destructive, Return on another footer
   button does nothing, where AppKit would press the default. The table: `apps/desktop/src/lib/ui/DETAILS.md` § Platform
   conventions.
-- `menuModel`: macOS `systemMenuBar` (verified). Windows and every Linux desktop `windowMenuBar`, carrying today's bar
-  until task 63 builds D5's in-page one; GNOME moves to `primaryMenu` there, and Windows' right-click menus go in-page
-  (a `contextMenus` value). Evidence: `docs/notes/windows-port/menu-model.md`.
+- `menuModel`: macOS `systemMenuBar` (verified). GNOME `primaryMenu` (D5, following the HIG's "Main Menu" button,
+  verified above). Windows, KDE, and other Linux `windowMenuBar` (D5: an in-window bar, drawn in the page by task 63).
+  Evidence: `docs/notes/windows-port/menu-model.md`.
+- `contextMenus`: Windows `inPage` (D5: one menu component for the bar's flyouts and the right-click menus, so both get
+  Windows 11's look); macOS and every Linux desktop `native` (muda's popups, the OS's own menus).
 - `screenReaders`: macOS `voiceOver`; Windows `jaws`, `nvda`, `narrator` (verified, WebAIM #11); Linux `orca` on every
   desktop (verified for KDE).
 - `linuxDesktop`: from `XDG_CURRENT_DESKTOP` (the freedesktop.org desktop-entry spec's registered names,

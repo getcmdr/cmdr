@@ -5,6 +5,7 @@
     "cancelKeys": "escapeOrCommandPeriod",
     "accessKeys": "none",
     "menuModel": "systemMenuBar",
+    "contextMenus": "native",
     "screenReaders": ["voiceOver"],
     "linuxDesktop": null
   },
@@ -12,8 +13,9 @@
     "dialogButtonOrder": "affirmativeFirst",
     "enterActivates": "focusedButton",
     "cancelKeys": "escape",
-    "accessKeys": "keytips",
+    "accessKeys": "underlines",
     "menuModel": "windowMenuBar",
+    "contextMenus": "inPage",
     "screenReaders": ["jaws", "nvda", "narrator"],
     "linuxDesktop": null
   },
@@ -22,7 +24,8 @@
     "enterActivates": "focusedButton",
     "cancelKeys": "escape",
     "accessKeys": "underlines",
-    "menuModel": "windowMenuBar",
+    "menuModel": "primaryMenu",
+    "contextMenus": "native",
     "screenReaders": ["orca"],
     "linuxDesktop": "gnome"
   },
@@ -32,6 +35,7 @@
     "cancelKeys": "escape",
     "accessKeys": "underlines",
     "menuModel": "windowMenuBar",
+    "contextMenus": "native",
     "screenReaders": ["orca"],
     "linuxDesktop": "kde"
   },
@@ -41,6 +45,7 @@
     "cancelKeys": "escape",
     "accessKeys": "underlines",
     "menuModel": "windowMenuBar",
+    "contextMenus": "native",
     "screenReaders": ["orca"],
     "linuxDesktop": "other"
   }
