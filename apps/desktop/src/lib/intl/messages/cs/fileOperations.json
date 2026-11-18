@@ -1317,6 +1317,18 @@
   "@fileOperations.resticPassword.unreachable": {
     "sourceHash": "cc4542d"
   },
+  "fileOperations.validation.disallowedCharacter": "{kind, select, folder {Názvy složek tady nesmí obsahovat znak „{character}“} other {Názvy souborů tady nesmí obsahovat znak „{character}“}}",
+  "@fileOperations.validation.disallowedCharacter": {
+    "sourceHash": "7bae6c0"
+  },
+  "fileOperations.validation.reservedName": "{kind, select, folder {Název „{name}“ je vyhrazený systémem Windows a tady nemůže být názvem složky} other {Název „{name}“ je vyhrazený systémem Windows a tady nemůže být názvem souboru}}",
+  "@fileOperations.validation.reservedName": {
+    "sourceHash": "72cfc4d"
+  },
+  "fileOperations.validation.endsWithSpaceOrPeriod": "{kind, select, folder {Názvy složek tady nesmí končit mezerou ani tečkou} other {Názvy souborů tady nesmí končit mezerou ani tečkou}}",
+  "@fileOperations.validation.endsWithSpaceOrPeriod": {
+    "sourceHash": "da6de8e"
+  },
   "fileOperations.validation.empty": "{kind, select, folder {Název složky nesmí být prázdný} other {Název souboru nesmí být prázdný}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"

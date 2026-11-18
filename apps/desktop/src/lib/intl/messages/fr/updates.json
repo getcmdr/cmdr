@@ -23,9 +23,9 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "{platform, select, macos {Redémarrez maintenant, ou vous l’aurez à la prochaine ouverture de Cmdr.} other {Cmdr closes to install it, then opens again.}}",
+  "updates.toast.readyDetail": "{platform, select, macos {Redémarrez maintenant, ou vous l’aurez à la prochaine ouverture de Cmdr.} other {Cmdr se ferme pour l’installer, puis se rouvre.}}",
   "@updates.toast.readyDetail": {
-    "sourceHash": "42ce099"
+    "sourceHash": "4abee27"
   },
   "updates.toast.securityFix": "Cette mise à jour corrige {count, plural, one {un problème de sécurité} many {# problèmes de sécurité} other {# problèmes de sécurité}}.",
   "@updates.toast.securityFix": {

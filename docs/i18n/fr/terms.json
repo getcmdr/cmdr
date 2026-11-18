@@ -4375,5 +4375,11 @@
     "confidence": "high",
     "accept": ["généré", "générés", "générée", "générées"],
     "sources": "MS FRA (generated code → code généré); git.po (généré)"
+  },
+  "powershell": {
+    "chosen": "PowerShell",
+    "confidence": "high",
+    "forms": "kept English, no article: Dans PowerShell, lancez …",
+    "sources": "ms TBX fr (PowerShell → PowerShell); the catalog's Windows branches already write Dans PowerShell"
   }
 }

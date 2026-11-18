@@ -3973,5 +3973,11 @@
     "forms": "<size> on disk → <size> trên đĩa; the size-display option and tooltip header → Trên đĩa",
     "sources": "catalog (settings.listing.sizeDisplay.opt.physical, fileExplorer.dirSize.onDiskLabel, fileExplorer.selectionTooltip.onDiskHeader: Trên đĩa); Xfce Thunar (Size on Disk → Kích cỡ trên đĩa); macOS Finder writes trên ổ đĩa (IN_G1), accepted",
     "accept": ["trên ổ đĩa"]
+  },
+  "powershell": {
+    "chosen": "PowerShell",
+    "confidence": "high",
+    "forms": "kept English, no classifier: Trong PowerShell, chạy …",
+    "sources": "ms TBX vi (PowerShell → Windows PowerShell, the product name kept English); the catalog's Windows branches already write Trong PowerShell"
   }
 }

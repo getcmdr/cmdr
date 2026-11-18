@@ -153,9 +153,11 @@ Considered and deliberately NOT forked, so nobody re-litigates them:
 - **Date and time formats.** `en-GB` day-first, 24-hour is real (`Finder/LocalizableMerged.json:DATE_FORMATTER1`), but
   Cmdr formats dates through `#lib/intl/number-format.ts` and the OS region, not through catalog strings. Nothing to
   fork.
-- **`checkbox` → `tickbox`, `webpages` → `web pages`, `signed into` → `signed in to`, `period` → `full stop`.** All
-  genuine `en-GB` forks with no matching string in Cmdr's catalog today. If copy ever introduces one of these words,
-  fork it then.
+- **`checkbox` → `tickbox`, `webpages` → `web pages`, `signed into` → `signed in to`.** All genuine `en-GB` forks with
+  no matching string in Cmdr's catalog today. If copy ever introduces one of these words, fork it then.
+- **`period` (the character) → `full stop`** forks, in `en-GB` and `en-AU` alike, as both write it in Apple's
+  `AppKit/SavePanel.json` (`begins with a full stop “.”`): `fileOperations.validation.endsWithSpaceOrPeriod` and
+  `multiRename.reason.endsWithSpaceOrPeriod`. The time sense (`periodic`, `Periodically`) stays.
 - **`Show less` → `Show fewer`.** Not a fork at all. `en-GB` Finder keeps `Show Less` on the button in all four
   attestations (`LocalizableMerged.json:GV6`, `:PV2`, `ColumnPreview.json:4jc-Hy-JNJ.alternateTitle`,
   `IconCollectionGroupHeaderView.json:Y6z-b0-II4.title`); the single flip, `show less options` → `show fewer options`

@@ -158,6 +158,11 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   mounts", "Your desktop may also") in four `errors.listing.*.suggestion` keys, `mtp.ptpcameradDialog.explanation`, and
   `onboarding.stepOptional.mtp.desc`, so uk and vi each carry six exceptions. Add those as `notMatch` and drop them.
   (vi)
+- `fileOperations.validation.disallowedCharacter` / `endsWithSpaceOrPeriod` say "Filenames", while their
+  `multiRename.reason.disallowedCharacter` sibling says "File names"; pick one spelling. (all)
+- `updates.toast.readyDetail`'s `other` branch serves Windows and Linux, but most locales' `app-closes` ruling is
+  Windows-only (Linux says "quit"), so Linux reads the Windows verb. Split a `windows` branch if Linux should differ.
+  (all)
 
 ## Process feedback
 
@@ -236,3 +241,6 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   new ruling for a no-ruling term (`on-disk-size`, `importance`, `desktop`) also flagged 15 shipped keys only at the
   check; `apply-terms` could report a new ruling's catalog drift as it writes (same root as es above). No script; one
   read-only `plutil` + `jq` over CoreServicesUIAgent's loctables hunting Apple's vi "notarization" (none found). (vi)
+- A 7-key batch for 13 locales: the worktree guard refused a `for` loop of `pnpm i18n:brief` calls, so each brief was
+  its own call; a `--lang all --out-dir` mode writing one brief per locale would save it. The termbase check also failed
+  on `decisions.md` budgets (de, es, nl, pt, zh: 2–10 bytes over) that this batch didn't touch. (Windows port batch)

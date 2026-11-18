@@ -1318,6 +1318,18 @@
   "@fileOperations.resticPassword.unreachable": {
     "sourceHash": "cc4542d"
   },
+  "fileOperations.validation.disallowedCharacter": "{kind, select, folder {Aqui, nomes de pasta não podem conter “{character}”} other {Aqui, nomes de arquivo não podem conter “{character}”}}",
+  "@fileOperations.validation.disallowedCharacter": {
+    "sourceHash": "7bae6c0"
+  },
+  "fileOperations.validation.reservedName": "{kind, select, folder {O nome “{name}” é reservado pelo Windows, então não pode ser usado como nome de pasta aqui} other {O nome “{name}” é reservado pelo Windows, então não pode ser usado como nome de arquivo aqui}}",
+  "@fileOperations.validation.reservedName": {
+    "sourceHash": "72cfc4d"
+  },
+  "fileOperations.validation.endsWithSpaceOrPeriod": "{kind, select, folder {Aqui, nomes de pasta não podem terminar com espaço ou ponto} other {Aqui, nomes de arquivo não podem terminar com espaço ou ponto}}",
+  "@fileOperations.validation.endsWithSpaceOrPeriod": {
+    "sourceHash": "da6de8e"
+  },
   "fileOperations.validation.empty": "{kind, select, folder {O nome da pasta não pode ficar em branco} other {O nome do arquivo não pode ficar em branco}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"

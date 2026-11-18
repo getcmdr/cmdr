@@ -98,5 +98,9 @@
   "fileOperations.trash.undoPartlyGone": "{platform, select, windows {{countText} {count, plural, one {item was} other {items were}} no longer in the Recycle Bin.} other {{countText} {count, plural, one {item was} other {items were}} no longer in the Bin.}}",
   "@fileOperations.trash.undoPartlyGone": {
     "sourceHash": "acece5b"
+  },
+  "fileOperations.validation.endsWithSpaceOrPeriod": "{kind, select, folder {Folder names here can’t end with a space or a full stop} other {Filenames here can’t end with a space or a full stop}}",
+  "@fileOperations.validation.endsWithSpaceOrPeriod": {
+    "sourceHash": "da6de8e"
   }
 }

@@ -239,6 +239,10 @@
   "@multiRename.status.disallowedCharacter": {
     "sourceHash": "2f21c26"
   },
+  "multiRename.status.reservedDeviceName": "Reservado por Windows",
+  "@multiRename.status.reservedDeviceName": {
+    "sourceHash": "8bf464a"
+  },
   "multiRename.error.unclosed": "A un marcador le falta el “]” de cierre",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -631,6 +635,14 @@
   "multiRename.reason.disallowedCharacter": "Los nombres de archivo no pueden contener {character}.",
   "@multiRename.reason.disallowedCharacter": {
     "sourceHash": "66a09f6"
+  },
+  "multiRename.reason.reservedDeviceName": "El nombre “{name}” está reservado por Windows, así que esta unidad no puede usarlo.",
+  "@multiRename.reason.reservedDeviceName": {
+    "sourceHash": "bb181fa"
+  },
+  "multiRename.reason.endsWithSpaceOrPeriod": "Esta unidad no puede almacenar un nombre que termine en espacio o en punto.",
+  "@multiRename.reason.endsWithSpaceOrPeriod": {
+    "sourceHash": "8c033d3"
   },
   "multiRename.selectionChanged": "La carpeta ha cambiado mientras se abría “Renombrado múltiple”. Comprueba la selección e inténtalo de nuevo.",
   "@multiRename.selectionChanged": {

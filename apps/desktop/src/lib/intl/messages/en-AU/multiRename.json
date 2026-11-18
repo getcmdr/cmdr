@@ -14,5 +14,9 @@
   "multiRename.queueCanceled": "Rename cancelled",
   "@multiRename.queueCanceled": {
     "sourceHash": "cdd1d0e"
+  },
+  "multiRename.reason.endsWithSpaceOrPeriod": "This drive can’t store a name that ends with a space or a full stop.",
+  "@multiRename.reason.endsWithSpaceOrPeriod": {
+    "sourceHash": "8c033d3"
   }
 }

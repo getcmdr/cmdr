@@ -1315,6 +1315,18 @@
   "@fileOperations.resticPassword.unreachable": {
     "sourceHash": "cc4542d"
   },
+  "fileOperations.validation.disallowedCharacter": "{kind, select, folder {这里的文件夹名不能包含“{character}”} other {这里的文件名不能包含“{character}”}}",
+  "@fileOperations.validation.disallowedCharacter": {
+    "sourceHash": "7bae6c0"
+  },
+  "fileOperations.validation.reservedName": "{kind, select, folder {“{name}”是 Windows 保留的名称，所以不能在这里用作文件夹名} other {“{name}”是 Windows 保留的名称，所以不能在这里用作文件名}}",
+  "@fileOperations.validation.reservedName": {
+    "sourceHash": "72cfc4d"
+  },
+  "fileOperations.validation.endsWithSpaceOrPeriod": "{kind, select, folder {这里的文件夹名不能以空格或句点结尾} other {这里的文件名不能以空格或句点结尾}}",
+  "@fileOperations.validation.endsWithSpaceOrPeriod": {
+    "sourceHash": "da6de8e"
+  },
   "fileOperations.validation.empty": "{kind, select, folder {文件夹名不能为空} other {文件名不能为空}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
