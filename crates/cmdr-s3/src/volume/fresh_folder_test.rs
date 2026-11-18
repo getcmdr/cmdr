@@ -4,6 +4,7 @@
 //! creation proved it empty. Counted over `fake_s3.rs` on Wasabi's preset,
 //! which trusts no conditional header at all.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::ops::ControlFlow;
 use std::pin::Pin;
@@ -38,9 +39,13 @@ async fn write(s3: &FakeS3, key: &str, mode: WriteMode) {
     let source = BytesSource::new(vec![7; 100]);
     let length = source.total_size();
     let written = volume
-        .write_from_stream(&volume.root().join(key), mode, length, Box::new(source), &|_| {
-            ControlFlow::Continue(())
-        })
+        .write_from_stream(
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join(key)),
+            mode,
+            length,
+            Box::new(source),
+            &|_| ControlFlow::Continue(()),
+        )
         .await;
     assert!(matches!(written, Ok(StreamWritten { bytes: 100, .. })), "{written:?}");
 }
@@ -68,8 +73,8 @@ async fn a_server_copy_into_a_fresh_folder_sends_no_head_at_its_destination() {
         let copied = volume
             .copy_on_server(
                 &volume,
-                &volume.root().join("src.bin"),
-                &volume.root().join(key),
+                &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("src.bin")),
+                &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join(key)),
                 mode,
                 &Straight,
             )

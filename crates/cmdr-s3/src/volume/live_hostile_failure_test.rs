@@ -8,6 +8,7 @@
 //! `apps/desktop/test/s3-servers/live.sh all live_hostile`. Findings:
 //! `docs/notes/s3/live-hostile-2026-10.md`.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
@@ -155,8 +156,8 @@ async fn live_hostile_cancel_server_copies() {
             let outcome = volume
                 .copy_on_server(
                     &volume,
-                    &at(&volume, &format!("{prefix}{from}")),
-                    &at(&volume, &to),
+                    &AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}{from}"))),
+                    &AppPath::legacy_unchecked(&at(&volume, &to)),
                     WriteMode::CreateNew,
                     &hook,
                 )
@@ -277,7 +278,7 @@ async fn live_hostile_crash_child() {
     let size = 40 * MIB as u64;
     let outcome = volume
         .write_from_stream(
-            &at(&volume, &key),
+            &AppPath::legacy_unchecked(&at(&volume, &key)),
             WriteMode::CreateNew,
             StreamLength::Known(size),
             Box::new(PatternSource::new(size, 11).paced(Duration::from_millis(300))),
@@ -368,7 +369,7 @@ async fn live_hostile_crash_recovery() {
             tokio::spawn(async move {
                 uploader
                     .write_from_stream(
-                        &path,
+                        &AppPath::legacy_unchecked(&path),
                         WriteMode::CreateNew,
                         StreamLength::Known(size),
                         Box::new(PatternSource::new(size, 12).paced(Duration::from_millis(150))),
@@ -562,8 +563,8 @@ async fn live_hostile_races() {
         let copied = volume
             .copy_on_server(
                 &volume,
-                &at(&volume, &source),
-                &at(&volume, &to),
+                &AppPath::legacy_unchecked(&at(&volume, &source)),
+                &AppPath::legacy_unchecked(&at(&volume, &to)),
                 WriteMode::CreateNew,
                 &hook,
             )
@@ -594,7 +595,7 @@ async fn live_hostile_races() {
         }
         let busy = at(&volume, &format!("{prefix}busy"));
         let listed: Vec<PathBuf> = volume
-            .list_directory(&busy, None)
+            .list_directory(&AppPath::legacy_unchecked(&busy), None)
             .await
             .expect("lists")
             .into_iter()
@@ -602,11 +603,16 @@ async fn live_hostile_races() {
             .collect();
         let late = at(&volume, &format!("{prefix}busy/late.txt"));
         let (deleted, added) = tokio::join!(
-            volume.delete_files(&listed),
+            volume.delete_files(
+                &listed
+                    .iter()
+                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                    .collect::<Vec<_>>()
+            ),
             write(&volume, &late, WriteMode::CreateNew, b"late".to_vec())
         );
         let left = volume
-            .list_directory(&busy, None)
+            .list_directory(&AppPath::legacy_unchecked(&busy), None)
             .await
             .map(|rows| rows.into_iter().map(|e| e.name).collect::<Vec<_>>());
         m.check(
@@ -624,10 +630,13 @@ async fn live_hostile_races() {
 
         // Delete an emptied folder while a writer puts a file in it.
         let lonely = at(&volume, &format!("{prefix}lonely"));
-        volume.create_directory(&lonely).await.expect("a folder");
+        volume
+            .create_directory(&AppPath::legacy_unchecked(&lonely))
+            .await
+            .expect("a folder");
         let inside = at(&volume, &format!("{prefix}lonely/new.txt"));
         let (removed, wrote) = tokio::join!(
-            volume.delete(&lonely),
+            volume.delete(&AppPath::legacy_unchecked(&lonely)),
             write(&volume, &inside, WriteMode::CreateNew, b"new".to_vec())
         );
         let survived = read_back(&volume, &inside).await == b"new";
@@ -646,7 +655,9 @@ async fn live_hostile_races() {
         write(&volume, &b, WriteMode::CreateNew, b"from b".to_vec())
             .await
             .expect("b");
-        let refused = volume.rename(&a, &b, false).await;
+        let refused = volume
+            .rename(&AppPath::legacy_unchecked(&a), &AppPath::legacy_unchecked(&b), false)
+            .await;
         let both_kept = read_back(&volume, &a).await == b"from a" && read_back(&volume, &b).await == b"from b";
         m.check(
             matches!(refused, Err(VolumeError::AlreadyExists(_))) && both_kept,
@@ -654,9 +665,14 @@ async fn live_hostile_races() {
             format!("{refused:?}, both kept: {both_kept}"),
         );
         breathe().await;
-        let forced = volume.rename(&a, &b, true).await;
+        let forced = volume
+            .rename(&AppPath::legacy_unchecked(&a), &AppPath::legacy_unchecked(&b), true)
+            .await;
         let b_now = read_back(&volume, &b).await;
-        let a_gone = matches!(volume.get_metadata(&a).await, Err(VolumeError::NotFound(_)));
+        let a_gone = matches!(
+            volume.get_metadata(&AppPath::legacy_unchecked(&a)).await,
+            Err(VolumeError::NotFound(_))
+        );
         m.check(
             forced.is_ok() && b_now == b"from a" && a_gone,
             "rename onto a taken name, forced",
