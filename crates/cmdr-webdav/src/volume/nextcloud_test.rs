@@ -55,7 +55,7 @@ async fn nextcloud_with_scratch() -> (WebdavVolume, PathBuf) {
 /// (`webdav://test_user_1@127.0.0.1:13482/cmdr-test-…`), because that is what a pane
 /// holds. The two cells that go straight at the server need the other half.
 fn server_relative(volume: &WebdavVolume, dir: &Path) -> String {
-    dir.strip_prefix(volume.root())
+    dir.strip_prefix(volume.root().as_std_legacy())
         .expect("a scratch dir made under this volume's own root")
         .display()
         .to_string()
