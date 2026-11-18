@@ -2,6 +2,7 @@
 //! `#[path]` child so the module itself stays readable. `super::` here is
 //! `naming` and `super::super::` is `volume`, the same one-level-shallower rule
 //! every other `*_tests.rs` in this directory follows.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::*;
 use cmdr_fs::volume::InMemoryVolume;

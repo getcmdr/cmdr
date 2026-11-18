@@ -3,6 +3,7 @@
 //! both (every reader drops an entry whose parent is a file), so a folder only
 //! lands there when a person answered Overwrite for that clash; a blanket
 //! policy skips it, and a skip keeps a move's source.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::test_support::*;
 use cmdr_operation_log::types::OperationId;

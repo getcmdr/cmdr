@@ -5,6 +5,7 @@
 //! pin what the delete does around it: a re-run re-checks the entry against
 //! what the walk listed first, a `NotFound` after a wait counts as deleted (and
 //! only after one), and an outage that ends the delete names the server.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_operation_log::types::OperationId;
 use std::future::Future;

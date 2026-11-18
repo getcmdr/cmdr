@@ -10,6 +10,7 @@
 //!
 //! Pins the same invariant as the local-FS test: terminal `bytes_processed`
 //! must equal the dedup'd source-side total.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::fs;
 use std::path::{Path, PathBuf};

@@ -723,10 +723,11 @@ fn unrepresentable_name() -> MutationError {
     }
 }
 
-/// Checks if a directory is writable using access(W_OK).
+/// Checks if a directory is writable, by the OS's write probe (`access(W_OK)` on
+/// POSIX). A host with no probe passes, and the rename itself decides.
 fn check_dir_writable(dir: &Path) -> Result<(), MutationError> {
     match crate::local_disk::write_probe(dir) {
-        crate::local_disk::WriteProbe::Allowed => Ok(()),
+        crate::local_disk::WriteProbe::Allowed | crate::local_disk::WriteProbe::Unknown => Ok(()),
         crate::local_disk::WriteProbe::Refused(_) => Err(MutationError::ParentNotWritable {
             path: dir.display().to_string(),
         }),

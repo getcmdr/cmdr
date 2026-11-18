@@ -2,6 +2,7 @@
 //! extract through the copy engine, then a batch archive delete only on a fully
 //! clean extract. The data-safety core: a dest failure, a skipped collision, or a
 //! cancel must delete NOTHING from the archive.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_operation_log::types::OperationId;
 use std::future::Future;

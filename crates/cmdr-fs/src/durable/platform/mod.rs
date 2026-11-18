@@ -22,9 +22,13 @@ const _: bool = NEEDS_DEVICE_BARRIER;
 const _: fn(&File) -> bool = defers_data_sync;
 const _: fn(&File) -> io::Result<()> = sync_volume;
 const _: fn(&std::path::Path) -> io::Result<File> = open_to_sync;
+const _: fn(&std::path::Path) -> io::Result<File> = open_dir_to_sync;
 
 /// The written file at `path`, opened so [`sync_to_drive`] can take it.
 pub(super) use imp::open_to_sync;
+
+/// The folder at `path`, opened so [`sync_dir_to_drive`] can take it.
+pub(super) use imp::open_dir_to_sync;
 
 /// One file's data, all the way to the platter: the full sync for a writer of
 /// one file.

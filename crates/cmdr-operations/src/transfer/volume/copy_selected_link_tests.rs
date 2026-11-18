@@ -8,6 +8,7 @@
 //! and the read stream, which follows the link, refused: "Cannot stream a
 //! directory". These cells run the REAL local walk, publish it the way the
 //! dialog does, and copy through it.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use crate::testing::TestOperations;
 use cmdr_fs::testing::symlink;

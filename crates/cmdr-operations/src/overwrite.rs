@@ -51,8 +51,11 @@ pub(super) struct Staged {
 impl Staged {
     /// A write with nothing to put on after landing.
     #[cfg_attr(
-        all(target_os = "linux", not(test)),
-        expect(dead_code, reason = "both Linux arms hand their source's ACL to the landing")
+        all(any(target_os = "linux", target_os = "windows"), not(test)),
+        expect(
+            dead_code,
+            reason = "both Linux arms hand their source's ACL to the landing, and Windows' one arm is the chunked copy, which does too"
+        )
     )]
     pub(super) fn bytes(bytes: u64) -> Self {
         Staged {

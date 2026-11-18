@@ -6,6 +6,7 @@
 //! The source is a real `ArchiveVolume` over a `.tar.gz` on disk (a compressed
 //! tar is sequential-access, so it takes the one-pass path); the destination is
 //! an `InMemoryVolume`, so the write lands through the normal `write_from_stream`.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::super::faulty_volume::forward_volume_methods;
 use super::super::folder_metadata::SourceFolderDates;

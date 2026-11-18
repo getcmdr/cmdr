@@ -1,6 +1,7 @@
 //! A copy lands a symlink as a symlink where the destination holds one, and
 //! skips it, counted, where neither the destination nor the source can do better.
 //! `DETAILS.md` § "A copy carries a link as the link".
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_fs::testing::symlink;
 use std::path::{Path, PathBuf};

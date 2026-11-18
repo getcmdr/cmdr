@@ -7,6 +7,7 @@
 //! publish settles first: a temp gone and an archive at the size written is
 //! published, ❌ never reported as a failure, and a whole temp is published
 //! without making the archive again.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::future::Future;
 use std::io::Cursor;

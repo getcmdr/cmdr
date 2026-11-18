@@ -3,6 +3,7 @@
 //!
 //! A `#[path]` child of `overwrite.rs`, so `super::` here is `overwrite` and
 //! `super::super::` is `cmdr-operations`.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::super::ledger::CopyTransaction;
 use super::super::state::WriteOperationState;

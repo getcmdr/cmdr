@@ -13,6 +13,7 @@
 //! `volume/move_progress_tests.rs`, and `volume/move_merge_tests.rs`. Shared
 //! fixtures and doubles live in `volume/move_test_support.rs`
 //! (`super::test_support`).
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::super::super::conflict_responder_test_support::await_prompted_clash;
 use super::test_support::{self, make_state, make_state_with_interval_ms, make_volumes};

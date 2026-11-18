@@ -11,6 +11,7 @@
 //! real POSIX `rename`-moves-a-subtree and empty-only `delete`, which is why
 //! this family runs on `LocalPosixVolume` behind a wrapper
 //! (`rename_merge_test_support.rs`).
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::move_same::move_within_same_volume_with_progress;
 use super::rename_merge_test_support::{exists, make_state, read, write_file};

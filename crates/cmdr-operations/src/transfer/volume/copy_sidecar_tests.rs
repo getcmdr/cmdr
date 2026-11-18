@@ -2,6 +2,7 @@
 //! AppleDouble sidecar behind, the way the native engine's walk does
 //! (`cmdr_fs::apple_double`). The source plays a FAT volume on APFS through an
 //! injected probe, since no automated test may attach a FAT image.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::fs;
 use std::path::{Path, PathBuf};

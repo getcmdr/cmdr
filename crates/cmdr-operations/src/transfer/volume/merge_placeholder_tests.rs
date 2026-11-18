@@ -10,6 +10,7 @@
 //!
 //! Needs a real local-FS destination: the `O_EXCL` branch only runs when
 //! `dest_volume.local_path()` is `Some`.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::tests::make_state;
 use super::*;

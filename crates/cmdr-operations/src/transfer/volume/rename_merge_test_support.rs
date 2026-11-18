@@ -35,7 +35,7 @@ pub(super) fn make_state(engine: &TestOperations) -> Arc<WriteOperationState> {
 /// A `LocalPosixVolume` rooted at a fresh tempdir. The `TempDir` is returned so
 /// the caller keeps it alive for the test's duration.
 pub(super) fn local_volume() -> (Arc<dyn Volume>, TempDir) {
-    let dir = TempDir::new().unwrap();
+    let dir = TempDir::new().expect("a scratch dir");
     let vol: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
         "V",
         dir.path().to_path_buf(),

@@ -472,6 +472,7 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
     #[test]
     fn test_chunked_copy_preserves_permissions() {
         use std::os::unix::fs::PermissionsExt;

@@ -15,6 +15,7 @@
 //!   current offset, byte-exact, with NO release/reopen. The `ReleasingSource`
 //!   double records every open and counts any (now-unexpected) `cancel_and_release`,
 //!   so no real device is needed. Includes a no-pause sanity case.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::super::transfer_error::PathedVolumeError;
 use super::test_support::{

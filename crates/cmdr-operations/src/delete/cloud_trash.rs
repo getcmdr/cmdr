@@ -137,8 +137,11 @@ pub(crate) fn metadata_is_online_only(metadata: &std::fs::Metadata) -> bool {
     metadata.st_flags() & SF_DATALESS != 0
 }
 
-/// `SF_DATALESS` is Apple's; nothing elsewhere evicts a file behind our back.
-#[cfg(any(target_os = "linux", target_family = "wasm"))]
+/// `SF_DATALESS` is Apple's; Linux evicts nothing behind our back. Windows' Cloud
+/// Files placeholders (`FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS`) are windows-port
+/// task 37's; until then "not online-only" keeps the trash, the cautious branch
+/// (a wrong "yes" would route a recoverable trash to a permanent delete).
+#[cfg(any(target_os = "linux", target_os = "windows", target_family = "wasm"))]
 pub(crate) fn metadata_is_online_only(_metadata: &std::fs::Metadata) -> bool {
     false
 }

@@ -21,6 +21,7 @@
 //!
 //! Shared fixtures `make_state` / `make_volumes` live in `volume/copy_tests/`
 //! (`super::tests`) so they aren't duplicated.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::super::super::conflict_responder_test_support::await_prompted_clash;
 use super::tests::{make_state, make_volumes};

@@ -10,6 +10,7 @@
 //!
 //! Shared fixtures and the `MoveRenameFailsDestVolume` double live in
 //! `volume/move_test_support.rs` (`super::test_support`).
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::super::strategy::test_support::{FlakyDest, UndeletableSource};
 use super::test_support::{MoveRenameFailsDestVolume, config_default, make_state};

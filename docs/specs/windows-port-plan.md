@@ -178,6 +178,28 @@ owns its real body. Remove a line when its body lands.
   group; only `FILE_ATTRIBUTE_HIDDEN` is real.
 - `cmdr_local::mounts` Windows arm (`mounts/platform/windows.rs`) and `filesystem_kind::probe_mount_for_path`, task 35:
   no mount table and no filesystem type, so every answer is "can't say" (its one test is ignored by name).
+- `cmdr_operations::local_disk` Windows arm (`local_disk/platform/windows.rs`), tasks 35 and 36: `set_mode` and
+  `symlink` refuse as unsupported (a copied link fails its item; a copied folder's mode narrowing is skipped), nothing
+  reads as locked (`is_locked_item`, so a refusal never gets the "uncheck Locked" advice), and there's no
+  purgeable-space figure. Real: the write probe (`FILE_WRITE_DATA` open), free space (`GetDiskFreeSpaceExW`), and the
+  folder volume (`LocalWindowsVolume`).
+- `cmdr_operations` local copy strategy on Windows (`transfer/copy_strategy.rs`), task 36: every file takes the chunked
+  loop (cancellable, live progress, staged). No `CopyFileExW` yet, so a copy carries no attributes or alternate data
+  streams (Mark of the Web included), and gets no ReFS block clone or SMB copy offload.
+- `cmdr_operations` trash on Windows (`delete/trash.rs`), task 36: `move_to_trash_sync` refuses with the typed
+  `TrashNotSupported`, and `trash_dir_for_path` answers `None`; no Recycle Bin yet.
+- `cmdr_operations::delete::cloud_trash::metadata_is_online_only` on Windows, task 37: never online-only, the cautious
+  branch, so a Cloud Files placeholder trashes (and hydrates) like any file.
+- `cmdr_operations` extract quarantine on Windows (`transfer/volume/extract_quarantine.rs`), task 37: an extract carries
+  no Mark of the Web.
+- `cmdr_fs::file_identity` on Windows (`file_identity/platform/windows.rs`), task 36: every answer is `Unknown`, since
+  `std::fs::Metadata` doesn't carry the file id there. The guards take the cautious-but-silent branch on it today: a
+  copy onto a taken name duplicates to a ` (N)` name, a move onto one counts the item in place and leaves both, and a
+  compress onto an existing archive refuses. Nothing is lost, but each is the wrong outcome until the path-based id
+  reader (`GetFileInformationByHandleEx(FileIdInfo)`) and task 36's `Unknown` rule land.
+- `cmdr-operations` tests on Windows: 65 test files that drive `LocalPosixVolume`, POSIX modes, or errnos are
+  `#![cfg(unix)]` (three single cells too), and `lib.rs` allows `dead_code` and `unused_imports` in a Windows test build
+  for the fixtures only they use. Each file un-gates as `LocalWindowsVolume` grows.
 - Tests ignored on Windows by issue: 24 app-path tests in `cmdr-fs` (#1225, app paths through `std::path`) and one
   `sqlite_util` deletion test (#1226). `cmdr-index`'s suite isn't green there yet: 158 of 1,911 fail, filed as #1232.
 

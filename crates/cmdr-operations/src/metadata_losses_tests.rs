@@ -1,5 +1,6 @@
 //! The counters, and the probe's one promise: a pair that loses nothing never
 //! asks the source anything.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::future::Future;
 use std::pin::Pin;

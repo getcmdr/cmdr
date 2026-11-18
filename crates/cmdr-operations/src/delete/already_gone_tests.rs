@@ -529,6 +529,7 @@ async fn a_local_delete_whose_preview_found_the_item_gone_completes() {
 
 /// The preview's "missing" steps aside only for an operation whose goal is the
 /// absence. A copy of a missing source still fails on it.
+#[cfg(unix)] // `scan_bridge_tests` drives `LocalPosixVolume`.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_copy_whose_preview_found_a_source_missing_still_fails() {
     let engine = TestOperations::new();

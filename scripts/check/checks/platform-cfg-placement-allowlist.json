@@ -536,9 +536,6 @@
     "crates/cmdr-operations/src/error_classification.rs": {
       "outsideSeam": 1
     },
-    "crates/cmdr-operations/src/free_space.rs": {
-      "outsideSeam": 4
-    },
     "crates/cmdr-operations/src/home_folder.rs": {
       "outsideSeam": 2
     },
@@ -546,10 +543,7 @@
       "outsideSeam": 1
     },
     "crates/cmdr-operations/src/local_disk/mod.rs": {
-      "outsideSeam": 10
-    },
-    "crates/cmdr-operations/src/local_disk/posix.rs": {
-      "outsideSeam": 6
+      "outsideSeam": 1
     },
     "crates/cmdr-operations/src/overwrite.rs": {
       "outsideSeam": 1
@@ -579,7 +573,7 @@
       "outsideSeam": 3
     },
     "crates/cmdr-operations/src/transfer/copy_strategy.rs": {
-      "outsideSeam": 19
+      "outsideSeam": 12
     },
     "crates/cmdr-operations/src/transfer/mod.rs": {
       "outsideSeam": 2
@@ -588,9 +582,6 @@
       "outsideSeam": 1
     },
     "crates/cmdr-operations/src/transfer/volume/extract_quarantine.rs": {
-      "outsideSeam": 3
-    },
-    "crates/cmdr-operations/src/validation.rs": {
       "outsideSeam": 3
     },
     "crates/cmdr-update-trust/src/lib.rs": {

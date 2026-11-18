@@ -1924,6 +1924,7 @@ dependencies = [
  "unicode-normalization",
  "uuid",
  "walkdir",
+ "windows-sys 0.61.2",
  "xattr",
  "zip",
 ]

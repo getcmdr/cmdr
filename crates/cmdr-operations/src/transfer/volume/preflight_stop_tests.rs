@@ -11,6 +11,7 @@
 //! same way the rename-merge suites wire theirs: a `Volume` double fires
 //! `cancel_write_operation` the instant the walk crosses its third entry, so the
 //! walk is provably mid-flight when the boundary has to answer.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::preflight::scan_volume_sources;
 use super::rename_merge_test_support::make_state;

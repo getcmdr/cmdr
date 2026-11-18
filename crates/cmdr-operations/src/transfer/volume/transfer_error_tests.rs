@@ -11,6 +11,7 @@
 //! `*_tests.rs` in this directory follows). The end-to-end counterpart, where a
 //! real copy into an unaddressable destination must still name the destination,
 //! lives with the copy engine in `copy_tests/destination.rs`.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::*;
 use crate::types::PermissionRefusal;

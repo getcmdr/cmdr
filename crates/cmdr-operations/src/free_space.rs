@@ -75,23 +75,17 @@ pub(super) fn check_local_copy_space(
 /// The destination's free bytes for a copy of `required_bytes`, or `None` when
 /// nothing answered. `None` lets the copy go ahead: a full disk then stops it
 /// as `DestinationFull`.
-#[cfg(unix)]
 pub(super) fn available_space(destination: &Path, required_bytes: u64) -> Option<u64> {
     available_space_from(
         required_bytes,
-        || statvfs_available(destination),
-        || important_usage_available(destination),
+        || crate::local_disk::free_bytes(destination),
+        || crate::local_disk::important_free_bytes(destination),
     )
-}
-
-#[cfg(target_family = "wasm")]
-pub(super) fn available_space(_destination: &Path, _required_bytes: u64) -> Option<u64> {
-    None
 }
 
 /// The decision behind [`available_space`], with the platform calls passed in.
 ///
-/// `fast` is `statvfs`: physically free blocks. `important` also counts what
+/// `fast` is `statvfs` (`GetDiskFreeSpaceExW` on Windows): physically free blocks. `important` also counts what
 /// the OS frees on demand, so it's the honest figure when `fast` falls short,
 /// and the slow one, so it's asked only then. The larger of the two wins: free
 /// blocks are free whatever the other figure says.
@@ -108,42 +102,6 @@ pub(super) fn available_space_from(
         (Some(fast), Some(important)) => Some(fast.max(important)),
         (fast, important) => fast.or(important),
     }
-}
-
-/// Free blocks available to an unprivileged writer, from `statvfs`.
-#[cfg(unix)]
-fn statvfs_available(path: &Path) -> Option<u64> {
-    use std::ffi::CString;
-    use std::mem::MaybeUninit;
-    use std::os::unix::ffi::OsStrExt;
-
-    let c_path = CString::new(path.as_os_str().as_bytes()).ok()?;
-    let mut stat = MaybeUninit::<libc::statvfs>::uninit();
-    // SAFETY: c_path is a valid null-terminated C string, stat is a valid pointer
-    let result = unsafe { libc::statvfs(c_path.as_ptr(), stat.as_mut_ptr()) };
-    if result != 0 {
-        return None;
-    }
-    // SAFETY: statvfs succeeded, stat is initialized
-    let stat = unsafe { stat.assume_init() };
-    #[allow(
-        clippy::unnecessary_cast,
-        reason = "Required for macOS where statvfs fields are not u64"
-    )]
-    Some(stat.f_bavail as u64 * stat.f_frsize as u64)
-}
-
-/// `NSURLVolumeAvailableCapacityForImportantUsageKey`: free space including
-/// what macOS purges on demand, matching Finder and the status bar.
-#[cfg(target_os = "macos")]
-fn important_usage_available(destination: &Path) -> Option<u64> {
-    cmdr_local::space::get_volume_space(&destination.to_string_lossy())?.available_bytes()
-}
-
-/// Linux has no purgeable space, so `statvfs` is the whole answer.
-#[cfg(target_os = "linux")]
-fn important_usage_available(_destination: &Path) -> Option<u64> {
-    None
 }
 
 /// What a copy can add to its destination, as an upper bound.

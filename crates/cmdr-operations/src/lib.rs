@@ -29,6 +29,17 @@
         reason = "only a `testing` build can tell which `pub` is truly unreachable"
     )
 )]
+// Off Unix the POSIX-only test files (`#![cfg(unix)]`: they drive
+// `LocalPosixVolume`, modes, or errnos) aren't compiled, so the re-exports and
+// shared fixtures they use go unused there. macOS and Linux still judge them.
+#![cfg_attr(
+    all(test, target_os = "windows"),
+    allow(
+        dead_code,
+        unused_imports,
+        reason = "the POSIX-only test files that use these fixtures and imports are gated off Windows"
+    )
+)]
 // `clippy.toml` refuses an ambient spawn and a global `sync(2)` in the engine; a
 // test drives the engine from threads and tasks of its own, as a host does.
 #![cfg_attr(

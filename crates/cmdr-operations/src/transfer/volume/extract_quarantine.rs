@@ -187,8 +187,10 @@ fn archive_quarantine(state: &WriteOperationState, source_volume: &Arc<dyn Volum
     }
 }
 
-/// Linux has no quarantine to carry.
-#[cfg(any(target_os = "linux", target_family = "wasm"))]
+/// Linux has no quarantine to carry. Windows' twin, Mark of the Web (the
+/// `Zone.Identifier` stream), is windows-port task 37's: until then an extract
+/// there carries none.
+#[cfg(any(target_os = "linux", target_os = "windows", target_family = "wasm"))]
 fn archive_quarantine(_state: &WriteOperationState, _source_volume: &Arc<dyn Volume>) -> Option<Vec<u8>> {
     None
 }

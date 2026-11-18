@@ -224,12 +224,14 @@ fn canonicalize_or_nearest_ancestor(path: &Path) -> std::io::Result<PathBuf> {
 ///
 /// ❗ It's a syscall, so on a hung network mount it blocks like every other one
 /// (`file_system/CLAUDE.md`). `None` also for a path the OS can't be handed at all (an
-/// interior NUL, which no path the OS produced has); the write itself then refuses it.
-#[cfg(unix)]
+/// interior NUL, which no path the OS produced has), and for a host with no probe
+/// (Windows today); the write itself then refuses it.
 pub(crate) fn folder_write_refusal(folder: &Path) -> Option<i32> {
     match crate::local_disk::write_probe(folder) {
         crate::local_disk::WriteProbe::Refused(errno) => Some(errno),
-        crate::local_disk::WriteProbe::Allowed | crate::local_disk::WriteProbe::Unrepresentable => None,
+        crate::local_disk::WriteProbe::Allowed
+        | crate::local_disk::WriteProbe::Unrepresentable
+        | crate::local_disk::WriteProbe::Unknown => None,
     }
 }
 
@@ -251,7 +253,6 @@ pub(crate) fn folder_write_refusal(folder: &Path) -> Option<i32> {
 ///
 /// On the REFUSAL path only, so the happy path pays nothing: at most two `access(2)`
 /// calls plus the walk's stats, on a path the failing syscall just answered for.
-#[cfg(unix)]
 pub(crate) fn refusing_folder(path: &Path) -> Option<String> {
     let mut candidate = path.parent();
     while let Some(dir) = candidate {
@@ -272,13 +273,8 @@ pub(crate) fn refusing_folder(path: &Path) -> Option<String> {
     None
 }
 
-#[cfg(target_family = "wasm")]
-pub(crate) fn refusing_folder(_path: &Path) -> Option<String> {
-    None
-}
-
-/// Checks whether the destination directory is writable using access(W_OK).
-#[cfg(unix)]
+/// Checks whether the destination directory is writable, by the OS's write probe
+/// (`access(W_OK)` on POSIX). A host with no probe passes, and the write decides.
 pub(crate) fn validate_destination_writable(destination: &Path) -> Result<(), WriteOperationError> {
     let Some(errno) = folder_write_refusal(destination) else {
         return Ok(());
@@ -291,11 +287,6 @@ pub(crate) fn validate_destination_writable(destination: &Path) -> Result<(), Wr
         Some(destination.display().to_string()),
         Some(PermissionSide::Destination),
     ))
-}
-
-#[cfg(target_family = "wasm")]
-pub(crate) fn validate_destination_writable(_destination: &Path) -> Result<(), WriteOperationError> {
-    Ok(())
 }
 
 /// Maximum number of offending files to name in the error (the rest are

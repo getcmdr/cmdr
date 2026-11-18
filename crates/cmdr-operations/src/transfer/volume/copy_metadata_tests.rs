@@ -6,6 +6,7 @@
 //! these pin the engine and the local destination between the two ends: the
 //! stream's `metadata`, the staged write, the landing rename, and the folder
 //! pass. The contract: `DETAILS.md` § "Copies keep the source's metadata".
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::os::unix::fs::PermissionsExt as _;
 use std::path::{Path, PathBuf};

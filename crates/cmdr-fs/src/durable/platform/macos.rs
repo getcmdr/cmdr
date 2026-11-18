@@ -37,6 +37,11 @@ pub(crate) fn open_to_sync(path: &std::path::Path) -> io::Result<File> {
     File::open(path)
 }
 
+/// A read-only open, which `fsync` takes on a folder.
+pub(crate) fn open_dir_to_sync(path: &std::path::Path) -> io::Result<File> {
+    File::open(path)
+}
+
 pub(crate) fn sync_dir_to_drive(dir: &File) -> io::Result<()> {
     plain_fsync(dir)
 }
