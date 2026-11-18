@@ -11,6 +11,7 @@
 //! implementation here is [`InMemoryVolume`], which needs no host at all and is
 //! what a test reaches for.
 
+use crate::app_path::{AppPath, AppPathBuf};
 use crate::entry::FileEntry;
 use crate::metadata::{CarriedMetadata, MetadataClasses, MetadataReport, Unblock};
 use std::future::Future;
@@ -43,7 +44,7 @@ pub trait Volume: Send + Sync {
 
     /// Returns the root path of this volume: the ACTIVE mount root of the
     /// registry entry it sits in, when it sits in one.
-    fn root(&self) -> &Path;
+    fn root(&self) -> &AppPath;
 
     /// Builds an equivalent volume rooted at `new_root`, or `None` when this
     /// backend can't change root without rebuilding its transport.
@@ -66,7 +67,7 @@ pub trait Volume: Send + Sync {
     /// it builds the answer, and `SmbVolume` does exactly that: it re-points the
     /// watcher that the whole share (not any one mount) owns. Call it once, at the
     /// moment of promotion, and install what it returns.
-    fn rerooted(&self, _new_root: &Path) -> Option<Arc<dyn Volume>> {
+    fn rerooted(&self, _new_root: &AppPath) -> Option<Arc<dyn Volume>> {
         None
     }
 
@@ -139,7 +140,7 @@ pub trait Volume: Send + Sync {
     /// mount root, `MtpVolume` → device serial (one USB pipe), `SmbVolume` →
     /// `server+port+share` id. Never parse a `volume_id` string here.
     fn lane_key(&self) -> LaneKey {
-        LaneKey::new(self.root().to_string_lossy().into_owned())
+        LaneKey::new(self.root().as_std_legacy().to_string_lossy().into_owned())
     }
 
     // ========================================
@@ -156,7 +157,7 @@ pub trait Volume: Send + Sync {
     /// flooding the IPC layer.
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>>;
 
@@ -175,7 +176,7 @@ pub trait Volume: Send + Sync {
     /// Default impl delegates to `list_directory`, dropping the token.
     fn list_directory_with_cancel<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
@@ -195,7 +196,7 @@ pub trait Volume: Send + Sync {
     /// such entries.
     fn list_directory_as_source<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.list_directory(path, None)
     }
@@ -218,7 +219,7 @@ pub trait Volume: Send + Sync {
     /// device; ❌ never around a device round trip (`ScanListingClock`).
     fn list_directory_for_scan<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         cancel: Option<&'a CancellationToken>,
         clock: &'a ScanListingClock,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
@@ -266,9 +267,9 @@ pub trait Volume: Send + Sync {
     /// own lookups already fold.
     fn find_stored_spelling<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         cancel: Option<&'a CancellationToken>,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<PathBuf>, VolumeError>> + Send + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = Result<Option<AppPathBuf>, VolumeError>> + Send + 'a>> {
         let _ = (path, cancel);
         Box::pin(async { Ok(None) })
     }
@@ -279,7 +280,7 @@ pub trait Volume: Send + Sync {
     /// Default: [`IndexWalk::unless_link`], so a real directory is walked and a link
     /// never is. A backend overrides this to keep trees out of its walks (a phone's
     /// `/proc`), or to name the link that IS its storage (a phone's `/sdcard`).
-    fn index_walk(&self, dir: &Path, is_symlink: bool) -> IndexWalk {
+    fn index_walk(&self, dir: &AppPath, is_symlink: bool) -> IndexWalk {
         let _ = dir;
         IndexWalk::unless_link(is_symlink)
     }
@@ -312,13 +313,13 @@ pub trait Volume: Send + Sync {
     /// Gets metadata for a single path (relative to volume root).
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>>;
 
     /// Checks if a path exists (relative to volume root): [`presence`](Self::presence)
     /// as a plain yes/no, where "couldn't tell" is a no. The right fold for a
     /// conflict check; ❌ the wrong one wherever "no" means "deleted".
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async move { self.presence(path).await.is_present() })
     }
 
@@ -334,7 +335,7 @@ pub trait Volume: Send + Sync {
     /// more cheaply (a bare protocol `stat`, an in-memory index) or when its
     /// truth differs: `LocalPosixVolume` uses `symlink_metadata`, because a
     /// BROKEN symlink is still a thing on disk the user can see and delete.
-    fn presence<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
+    fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
         Box::pin(async move { Presence::of(&self.get_metadata(path).await) })
     }
 
@@ -345,7 +346,7 @@ pub trait Volume: Send + Sync {
     /// Same reasons to override as [`presence`](Self::presence).
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async move { self.get_metadata(path).await.map(|entry| entry.is_directory) })
     }
@@ -363,7 +364,7 @@ pub trait Volume: Send + Sync {
     /// follows links, or when a bare `lstat` is cheaper than full metadata.
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
         Box::pin(async move { self.get_metadata(path).await.map(|entry| EntryKind::of(&entry)) })
     }
@@ -378,7 +379,7 @@ pub trait Volume: Send + Sync {
     /// the source has no bytes for it.
     fn read_link_target<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Option<PathBuf>, VolumeError>> + Send + 'a>> {
         let _ = path;
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -401,7 +402,7 @@ pub trait Volume: Send + Sync {
     /// `NotSupported`.
     fn create_symlink<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         target: &'a Path,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         let _ = (path, target);
@@ -417,7 +418,7 @@ pub trait Volume: Send + Sync {
     /// node ids; `LocalPosixVolume` answers with one `lstat`.
     fn node_identity<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Option<NodeIdentity>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(None) })
     }
@@ -456,7 +457,7 @@ pub trait Volume: Send + Sync {
     /// Default: `NotSupported`.
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         let _ = (path, content);
@@ -466,7 +467,7 @@ pub trait Volume: Send + Sync {
     /// Creates a directory.
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         let _ = path;
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -522,9 +523,11 @@ pub trait Volume: Send + Sync {
     /// merely slower, so that direction stays unpinned.
     fn create_directory_all<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             // Collect the missing ancestors, walking leaf→root until we reach
             // one that already exists (or run out). A component with no
             // filename (the volume root `/`, an empty path, or `.`) has nothing to
@@ -549,7 +552,7 @@ pub trait Volume: Send + Sync {
             // be created before its parent.
             let mut leaf = DirectoryCreation::AlreadyExisted;
             for (index, dir) in missing.iter().enumerate().rev() {
-                match self.create_directory(dir).await {
+                match self.create_directory(&AppPath::legacy_unchecked(dir)).await {
                     Ok(()) => {
                         if index == 0 {
                             leaf = DirectoryCreation::Created;
@@ -603,7 +606,7 @@ pub trait Volume: Send + Sync {
     /// (ADB's sync protocol), and for every read-only backend.
     fn apply_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         carried: &'a CarriedMetadata,
         modified: Option<std::time::SystemTime>,
     ) -> Pin<Box<dyn Future<Output = MetadataReport> + Send + 'a>> {
@@ -622,7 +625,7 @@ pub trait Volume: Send + Sync {
     /// Finder-made zip's `__MACOSX` sidecar or a tar's pax records.
     fn folder_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         wanted: MetadataClasses,
     ) -> Pin<Box<dyn Future<Output = CarriedMetadata> + Send + 'a>> {
         let _ = (path, wanted);
@@ -642,7 +645,7 @@ pub trait Volume: Send + Sync {
     ///
     /// Default [`Unblock::NothingToClear`], with no I/O: a backend whose items
     /// can't wear a blocker.
-    fn clear_blockers<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Unblock> + Send + 'a>> {
+    fn clear_blockers<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Unblock> + Send + 'a>> {
         let _ = path;
         Box::pin(async { Unblock::NothingToClear })
     }
@@ -670,7 +673,7 @@ pub trait Volume: Send + Sync {
     /// `crates/cmdr-operations/src/transfer/volume/cleanup.rs`.
     ///
     /// Default: `NotSupported`.
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         let _ = path;
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
@@ -685,7 +688,7 @@ pub trait Volume: Send + Sync {
     /// Default impl delegates to `delete`, dropping the token.
     fn delete_with_cancel<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         let _ = cancel;
@@ -709,7 +712,7 @@ pub trait Volume: Send + Sync {
     /// every backend where a name holds one thing.
     fn delete_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.delete_with_cancel(path, cancel)
@@ -742,8 +745,8 @@ pub trait Volume: Send + Sync {
     /// only).
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         let _ = (from, to, force);
@@ -765,7 +768,7 @@ pub trait Volume: Send + Sync {
     /// [`renames_can_copy`](Self::renames_can_copy).
     fn rename_work<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<RenameWork, VolumeError>> + Send + 'a>> {
         let _ = path;
         Box::pin(async { Ok(RenameWork::OneCall) })
@@ -792,10 +795,13 @@ pub trait Volume: Send + Sync {
     /// request whatever the nesting.
     fn tally_subtree<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         cap: u64,
     ) -> Pin<Box<dyn Future<Output = Result<SubtreeTally, VolumeError>> + Send + 'a>> {
-        Box::pin(server_side::tally_by_listing(self, path, cap))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            server_side::tally_by_listing(self, &path_std, cap).await
+        })
     }
 
     /// Deletes several FILES, answering one result per path, in order.
@@ -813,7 +819,7 @@ pub trait Volume: Send + Sync {
     )]
     fn delete_files<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
     ) -> Pin<Box<dyn Future<Output = Vec<Result<(), VolumeError>>> + Send + 'a>> {
         Box::pin(async move {
             let mut results = Vec::with_capacity(paths.len());
@@ -861,7 +867,7 @@ pub trait Volume: Send + Sync {
     fn notify_mutation<'a>(
         &'a self,
         volume_id: &'a str,
-        parent_path: &'a Path,
+        parent_path: &'a AppPath,
         mutation: MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
         let _ = (volume_id, parent_path, mutation);
@@ -1094,7 +1100,7 @@ pub trait Volume: Send + Sync {
     /// from outside (`cmdr_fs::deadline`), ❌ never by dropping this future.
     fn read_xattr_many<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         _name: &'a str,
         _mode: XattrReadMode,
     ) -> Pin<Box<dyn Future<Output = Vec<XattrAnswer>> + Send + 'a>> {
@@ -1105,7 +1111,7 @@ pub trait Volume: Send + Sync {
     /// [`VolumeError::NotFound`], and is ❌ never created.
     fn write_xattr<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _name: &'a str,
         _value: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
@@ -1118,7 +1124,7 @@ pub trait Volume: Send + Sync {
     /// ❗ so clearing tags writes an empty plist instead (`tags.rs`).
     fn remove_xattr<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _name: &'a str,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -1159,7 +1165,7 @@ pub trait Volume: Send + Sync {
     /// tolerate.
     ///
     /// Default `None`: a new backend claims coverage explicitly or gets none.
-    fn listing_watch_coverage(&self, _path: &Path) -> WatchCoverage {
+    fn listing_watch_coverage(&self, _path: &AppPath) -> WatchCoverage {
         WatchCoverage::None
     }
 
@@ -1176,7 +1182,7 @@ pub trait Volume: Send + Sync {
     ///
     /// Called on the listing open path, after the read: cheap and non-blocking,
     /// detach any I/O. Default `None`: nothing to keep.
-    fn watch_listing(&self, _path: &Path) -> Option<ListingWatch> {
+    fn watch_listing(&self, _path: &AppPath) -> Option<ListingWatch> {
         None
     }
 
@@ -1190,8 +1196,8 @@ pub trait Volume: Send + Sync {
     ///
     /// Default: `path` verbatim, for a backend with one spelling. Must be pure and
     /// cheap: it runs on every listing lookup.
-    fn listing_path(&self, path: &Path) -> PathBuf {
-        path.to_path_buf()
+    fn listing_path(&self, path: &AppPath) -> AppPathBuf {
+        path.to_owned()
     }
 
     // ========================================
@@ -1224,7 +1230,7 @@ pub trait Volume: Send + Sync {
     /// [`supports_share_links`](Self::supports_share_links) `true`.
     fn share_link<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         expires_in: ShareLinkExpiry,
     ) -> Pin<Box<dyn Future<Output = Result<ShareLink, VolumeError>> + Send + 'a>> {
         let _ = (path, expires_in);
@@ -1268,7 +1274,7 @@ pub trait Volume: Send + Sync {
     /// it. ❗ Filling a date it doesn't claim fails
     /// `conformance::assert_listing_dates_are_claimed`. Each backend's answer:
     /// `crates/cmdr-fs/DETAILS.md` § "Which dates each volume lists".
-    fn supported_dates<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {
+    fn supported_dates<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {
         let _ = path;
         Box::pin(async { SupportedDates::NONE })
     }
@@ -1377,7 +1383,7 @@ pub trait Volume: Send + Sync {
     /// O(n²). A planner that sees `true` should extract the subtree in ONE
     /// sequential pass. Default `false` keeps the existing per-entry behavior for
     /// random-access backends.
-    fn extraction_is_sequential(&self, _path: &Path) -> bool {
+    fn extraction_is_sequential(&self, _path: &AppPath) -> bool {
         false
     }
 
@@ -1396,7 +1402,7 @@ pub trait Volume: Send + Sync {
     )]
     fn open_sequential_extract<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn SequentialExtract>, VolumeError>> + Send + 'a>> {
         let _ = path;
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -1412,7 +1418,7 @@ pub trait Volume: Send + Sync {
     /// goes through. ❌ Don't reach for this from an operation's pre-flight.
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         let _ = path;
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -1427,7 +1433,7 @@ pub trait Volume: Send + Sync {
     /// which is where every backend's real batch strategy lives.
     fn scan_for_copy_batch<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             let boundary = ScanBoundary::silent();
@@ -1480,7 +1486,7 @@ pub trait Volume: Send + Sync {
     /// inside its own recursion at the same time.
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -1503,7 +1509,7 @@ pub trait Volume: Send + Sync {
                 aggregate.dir_count += scan.dir_count;
                 aggregate.total_bytes += scan.total_bytes;
                 aggregate.dedup_bytes += scan.dedup_bytes;
-                boundary.subtree(path, &scan).await?;
+                boundary.subtree(&path.as_std_legacy(), &scan).await?;
                 per_path.push((path.clone(), scan));
             }
             Ok(BatchScanResult {
@@ -1532,7 +1538,7 @@ pub trait Volume: Send + Sync {
     fn scan_for_conflicts<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
-        dest_path: &'a Path,
+        dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
         let _ = (source_items, dest_path);
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -1565,7 +1571,7 @@ pub trait Volume: Send + Sync {
     /// on. The pane's indicator and the space poller keep the volume's figure.
     fn get_space_info_at<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
         let _ = path;
         self.get_space_info()
@@ -1580,7 +1586,7 @@ pub trait Volume: Send + Sync {
     /// ❌ never answers a guess. The transfer pre-flight asks this BEFORE it
     /// measures space, so a folder nothing can be written to never reads as a full
     /// one.
-    fn write_access_at<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = WriteAccess> + Send + 'a>> {
+    fn write_access_at<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = WriteAccess> + Send + 'a>> {
         let _ = path;
         Box::pin(async { WriteAccess::Unknown })
     }
@@ -1603,7 +1609,7 @@ pub trait Volume: Send + Sync {
     /// Returns the local filesystem path if this volume is backed by one.
     /// Used to optimize local-to-local copies using native OS APIs (such as copyfile on macOS).
     /// Returns None for non-local volumes (MTP, S3, FTP, etc.).
-    fn local_path(&self) -> Option<PathBuf> {
+    fn local_path(&self) -> Option<AppPathBuf> {
         None
     }
 
@@ -1612,7 +1618,7 @@ pub trait Volume: Send + Sync {
     /// then reads as the desktop words its own disk's, `~/Documents` and
     /// `/Applications` rather than `<volume name>/…`. `None` for every real
     /// backend; the local disk is recognized by its `local_path` instead.
-    fn stands_in_for_own_disk(&self) -> Option<&Path> {
+    fn stands_in_for_own_disk(&self) -> Option<&AppPath> {
         None
     }
 
@@ -1626,7 +1632,7 @@ pub trait Volume: Send + Sync {
     /// It's a question about the volume's backing, so the engine asks it without
     /// knowing which backend it holds, and the backend never reads its own
     /// parent's metadata.
-    fn local_backing_file(&self) -> Option<&Path> {
+    fn local_backing_file(&self) -> Option<&AppPath> {
         None
     }
 
@@ -1741,7 +1747,7 @@ pub trait Volume: Send + Sync {
     )]
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let _ = path;
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -1763,7 +1769,7 @@ pub trait Volume: Send + Sync {
     )]
     fn open_read_stream_with_hint<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         size_hint: Option<u64>,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let _ = size_hint;
@@ -1787,7 +1793,7 @@ pub trait Volume: Send + Sync {
     )]
     fn open_read_stream_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         size_hint: Option<u64>,
         ask: crate::metadata::MetadataAsk,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
@@ -1811,7 +1817,7 @@ pub trait Volume: Send + Sync {
     )]
     fn open_read_stream_for_scan<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         size_hint: Option<u64>,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.open_read_stream_with_hint(path, size_hint)
@@ -1840,7 +1846,7 @@ pub trait Volume: Send + Sync {
     )]
     fn open_read_stream_at_offset<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let _ = (path, offset);
@@ -1884,7 +1890,7 @@ pub trait Volume: Send + Sync {
     )]
     fn resume_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         version: &'a SourceVersion,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
@@ -1895,7 +1901,7 @@ pub trait Volume: Send + Sync {
             let stream = self.open_read_stream_at_offset(path, offset).await?;
             match stream.source_version() {
                 Some(now) if version.is_same_as(&now) == Some(true) => Ok(stream),
-                _ => Err(VolumeError::SourceChanged(path.display().to_string())),
+                _ => Err(VolumeError::SourceChanged(path.as_std_legacy().display().to_string())),
             }
         })
     }
@@ -1927,7 +1933,7 @@ pub trait Volume: Send + Sync {
     )]
     fn read_range<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
@@ -1950,7 +1956,7 @@ pub trait Volume: Send + Sync {
     )]
     fn open_random_reader<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeRandomReader>, VolumeError>> + Send + 'a>> {
         let _ = path;
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -2227,7 +2233,7 @@ pub trait Volume: Send + Sync {
     /// Enforced by `conformance::assert_landed_time_agrees_with_get_metadata`.
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -2273,7 +2279,7 @@ pub trait Volume: Send + Sync {
     /// Default `NotSupported`.
     fn continue_write_from_stream<'a>(
         &'a self,
-        target: &'a Path,
+        target: &'a AppPath,
         at: u64,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -2330,8 +2336,8 @@ pub trait Volume: Send + Sync {
     /// asks it.
     fn copy_within<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         on_progress: &'a (dyn Fn(u64, u64) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<u64, VolumeError>> + Send + 'a>> {
         let _ = (from, to, on_progress);
@@ -2367,8 +2373,8 @@ pub trait Volume: Send + Sync {
     fn copy_on_server<'a>(
         &'a self,
         source: &'a dyn Volume,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         mode: WriteMode,
         progress: &'a dyn ServerCopyProgress,
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {

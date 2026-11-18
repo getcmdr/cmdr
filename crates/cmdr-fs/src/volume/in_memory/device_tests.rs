@@ -1,3 +1,5 @@
+use crate::app_path;
+use crate::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -22,12 +24,18 @@ fn device_with_photo(len: u64) -> InMemoryVolume {
 
 /// Streams `from` on `source` into `to` on `dest`, the way the copy engine does.
 async fn stream_copy(source: &InMemoryVolume, from: &str, dest: &InMemoryVolume, to: &str) -> Result<u64, VolumeError> {
-    let stream = source.open_read_stream(Path::new(from)).await?;
+    let stream = source
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(from)))
+        .await?;
     let length = stream.total_size();
     let written = dest
-        .write_from_stream(Path::new(to), WriteMode::CreateNew, length, stream, &|_| {
-            std::ops::ControlFlow::Continue(())
-        })
+        .write_from_stream(
+            &AppPath::legacy_unchecked(Path::new(to)),
+            WriteMode::CreateNew,
+            length,
+            stream,
+            &|_| std::ops::ControlFlow::Continue(()),
+        )
         .await?;
     Ok(written.bytes)
 }
@@ -52,17 +60,17 @@ async fn a_streamed_copy_of_a_synthetic_file_stays_a_descriptor_and_reads_back_i
         content_of(&dest, "/copy.jpg"),
         InMemoryContent::synthetic(42, 3 * MIB + 17)
     );
-    let size = dest.get_metadata(Path::new("/copy.jpg")).await.unwrap().size;
+    let size = dest.get_metadata(app_path!("/copy.jpg")).await.unwrap().size;
     assert_eq!(size, Some(3 * MIB + 17));
-    let window = dest.read_range(Path::new("/copy.jpg"), MIB - 3, 100).await.unwrap();
-    let original = source.read_range(Path::new("/photo.jpg"), MIB - 3, 100).await.unwrap();
+    let window = dest.read_range(app_path!("/copy.jpg"), MIB - 3, 100).await.unwrap();
+    let original = source.read_range(app_path!("/photo.jpg"), MIB - 3, 100).await.unwrap();
     assert_eq!(window, original);
 }
 
 #[tokio::test]
 async fn a_listing_only_file_still_streams_as_empty() {
     let volume = InMemoryVolume::with_entries("plain", vec![FileEntry::new("a".into(), "/a".into(), false, false)]);
-    let mut stream = volume.open_read_stream(Path::new("/a")).await.unwrap();
+    let mut stream = volume.open_read_stream(app_path!("/a")).await.unwrap();
     assert!(stream.next_chunk().await.is_none());
 }
 
@@ -80,7 +88,7 @@ async fn capacity_answers_free_space_live_and_refuses_a_write_that_wont_fit() {
 
     let refused = stream_copy(&source, "/photo.jpg", &dest, "/out/b.jpg").await;
     assert!(matches!(refused, Err(VolumeError::StorageFull { .. })), "{refused:?}");
-    assert!(!dest.exists(Path::new("/out/b.jpg")).await, "nothing landed");
+    assert!(!dest.exists(app_path!("/out/b.jpg")).await, "nothing landed");
 }
 
 #[tokio::test(start_paused = true)]
@@ -88,7 +96,7 @@ async fn a_slow_device_paces_streams_but_never_positioned_reads() {
     let volume = device_with_photo(2 * MIB).with_bandwidth(MIB);
     let started = rt::time::now();
     volume
-        .read_range(Path::new("/photo.jpg"), 0, MIB as usize)
+        .read_range(app_path!("/photo.jpg"), 0, MIB as usize)
         .await
         .unwrap();
     assert_eq!(rt::time::now(), started, "a positioned read is memory-fast");
@@ -101,13 +109,13 @@ async fn a_slow_device_paces_streams_but_never_positioned_reads() {
 #[tokio::test]
 async fn a_yielding_device_hands_the_thread_back_at_a_call() {
     let volume = device_with_photo(10).with_yielding(Duration::ZERO);
-    let listing = volume.list_directory(Path::new("/"), None);
+    let listing = volume.list_directory(app_path!("/"), None);
     assert!(
         futures_util::FutureExt::now_or_never(listing).is_none(),
         "a spent slice yields before answering"
     );
     let quiet = device_with_photo(10);
-    assert!(futures_util::FutureExt::now_or_never(quiet.list_directory(Path::new("/"), None)).is_some());
+    assert!(futures_util::FutureExt::now_or_never(quiet.list_directory(app_path!("/"), None)).is_some());
 }
 
 /// Regression: the browser viewer polls a volume call once (`cmdr-viewer`'s bridge), so a
@@ -118,10 +126,10 @@ async fn a_caller_that_polls_once_gets_an_answer_from_a_paced_device() {
         .with_yielding(Duration::ZERO)
         .with_bandwidth(1);
     let answered = rt::in_one_poll(|| {
-        let metadata = futures_util::FutureExt::now_or_never(volume.get_metadata(Path::new("/photo.jpg")));
-        let range = futures_util::FutureExt::now_or_never(volume.read_range(Path::new("/photo.jpg"), 0, 64));
+        let metadata = futures_util::FutureExt::now_or_never(volume.get_metadata(app_path!("/photo.jpg")));
+        let range = futures_util::FutureExt::now_or_never(volume.read_range(app_path!("/photo.jpg"), 0, 64));
         let stream = futures_util::FutureExt::now_or_never(async {
-            let mut stream = volume.open_read_stream(Path::new("/photo.jpg")).await?;
+            let mut stream = volume.open_read_stream(app_path!("/photo.jpg")).await?;
             stream
                 .next_chunk()
                 .await
@@ -132,7 +140,7 @@ async fn a_caller_that_polls_once_gets_an_answer_from_a_paced_device() {
     });
     assert_eq!(answered, (true, true, true), "metadata, a range, and a streamed chunk");
     assert!(
-        futures_util::FutureExt::now_or_never(volume.get_metadata(Path::new("/photo.jpg"))).is_none(),
+        futures_util::FutureExt::now_or_never(volume.get_metadata(app_path!("/photo.jpg"))).is_none(),
         "outside the poll, the device paces again"
     );
 }

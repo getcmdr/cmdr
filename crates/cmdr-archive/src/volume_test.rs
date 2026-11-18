@@ -3,6 +3,7 @@
 //! needs a real file). Clean zips are built with the reading core's fixture
 //! builders; hostile variants byte-patch a clean one.
 
+use cmdr_fs::app_path;
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -67,7 +68,7 @@ fn names(entries: &[FileEntry]) -> Vec<String> {
 }
 
 async fn read_all(volume: &ArchiveVolume, path: &Path) -> Result<Vec<u8>, VolumeError> {
-    let mut stream = volume.open_read_stream(path).await?;
+    let mut stream = volume.open_read_stream(&AppPath::legacy_unchecked(path)).await?;
     drain(stream.as_mut()).await
 }
 
@@ -106,13 +107,24 @@ async fn lists_root_nested_and_synthetic_directories() {
     let volume = archive.volume();
 
     // Root: directories first, then files.
-    let root = volume.list_directory(Path::new(""), None).await.unwrap();
+    let root = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert_eq!(names(&root), vec!["dir", "a.txt"]);
 
-    let nested = volume.list_directory(Path::new("dir"), None).await.unwrap();
+    let nested = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("dir")), None)
+        .await
+        .unwrap();
     assert_eq!(names(&nested), vec!["sub", "b.txt"]);
     assert_eq!(
-        names(&volume.list_directory(Path::new("dir/sub"), None).await.unwrap()),
+        names(
+            &volume
+                .list_directory(&AppPath::legacy_unchecked(Path::new("dir/sub")), None)
+                .await
+                .unwrap()
+        ),
         vec!["c.txt"]
     );
 
@@ -127,7 +139,10 @@ async fn metadata_maps_size_name_and_transparent_path() {
     let archive = TestArchive::from_entries(&[deflated("dir/file.txt", "abcde")]);
     let volume = archive.volume();
 
-    let meta = volume.get_metadata(Path::new("dir/file.txt")).await.unwrap();
+    let meta = volume
+        .get_metadata(&AppPath::legacy_unchecked(Path::new("dir/file.txt")))
+        .await
+        .unwrap();
     assert_eq!(meta.name, "file.txt");
     assert_eq!(meta.size, Some(5));
     assert!(!meta.is_directory);
@@ -148,9 +163,15 @@ async fn a_unix_mode_in_the_external_attributes_reaches_the_entry() {
     ]);
     let volume = archive.volume();
 
-    let script = volume.get_metadata(Path::new("scripts/run.sh")).await.unwrap();
+    let script = volume
+        .get_metadata(&AppPath::legacy_unchecked(Path::new("scripts/run.sh")))
+        .await
+        .unwrap();
     assert_eq!(script.permissions, 0o755, "the archive recorded an executable entry");
-    let notes = volume.get_metadata(Path::new("notes.txt")).await.unwrap();
+    let notes = volume
+        .get_metadata(&AppPath::legacy_unchecked(Path::new("notes.txt")))
+        .await
+        .unwrap();
     assert_eq!(notes.permissions, 0o644);
 }
 
@@ -164,12 +185,18 @@ async fn an_entry_with_no_recorded_mode_reports_the_no_concept_sentinel() {
     let archive = TestArchive::from_entries(&[with_unix_mode("docs/notes.txt", "plain", 0o600)]);
     let volume = archive.volume();
 
-    let synthetic = volume.get_metadata(Path::new("docs")).await.unwrap();
+    let synthetic = volume
+        .get_metadata(&AppPath::legacy_unchecked(Path::new("docs")))
+        .await
+        .unwrap();
     assert_eq!(
         synthetic.permissions, 0,
         "nothing recorded a mode for a synthesized dir"
     );
-    let notes = volume.get_metadata(Path::new("docs/notes.txt")).await.unwrap();
+    let notes = volume
+        .get_metadata(&AppPath::legacy_unchecked(Path::new("docs/notes.txt")))
+        .await
+        .unwrap();
     assert_eq!(notes.permissions, 0o600, "and a recorded one travels verbatim");
 }
 
@@ -178,7 +205,10 @@ async fn metadata_on_root_reports_the_archive_itself() {
     let archive = TestArchive::from_entries(&[stored("a.txt", "x")]);
     let volume = archive.volume();
 
-    let root = volume.get_metadata(Path::new("")).await.unwrap();
+    let root = volume
+        .get_metadata(&AppPath::legacy_unchecked(Path::new("")))
+        .await
+        .unwrap();
     assert!(root.is_directory);
     assert_eq!(root.name, volume.name());
     assert_eq!(root.path, archive.path.to_string_lossy());
@@ -189,12 +219,18 @@ async fn a_symlink_entry_surfaces_as_a_symlink_not_a_directory() {
     let archive = TestArchive::from_bytes(zip_with_symlink());
     let volume = archive.volume();
 
-    let link = volume.get_metadata(Path::new("link.txt")).await.unwrap();
+    let link = volume
+        .get_metadata(&AppPath::legacy_unchecked(Path::new("link.txt")))
+        .await
+        .unwrap();
     assert!(link.is_symlink, "a symlink entry must map to is_symlink");
     assert!(!link.is_directory, "a symlink is never a directory");
 
     // Same classification through a listing.
-    let root = volume.list_directory(Path::new(""), None).await.unwrap();
+    let root = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     let listed = root.iter().find(|e| e.name == "link.txt").expect("link.txt is listed");
     assert!(listed.is_symlink);
     assert!(!listed.is_directory);
@@ -233,14 +269,28 @@ async fn exists_and_is_directory_round_trip() {
     let archive = TestArchive::from_entries(&[deflated("dir/b.txt", "world")]);
     let volume = archive.volume();
 
-    assert!(volume.exists(Path::new("dir")).await);
-    assert!(volume.exists(Path::new("dir/b.txt")).await);
-    assert!(!volume.exists(Path::new("dir/missing")).await);
+    assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("dir"))).await);
+    assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("dir/b.txt"))).await);
+    assert!(
+        !volume
+            .exists(&AppPath::legacy_unchecked(Path::new("dir/missing")))
+            .await
+    );
 
-    assert!(volume.is_directory(Path::new("dir")).await.unwrap());
-    assert!(!volume.is_directory(Path::new("dir/b.txt")).await.unwrap());
+    assert!(
+        volume
+            .is_directory(&AppPath::legacy_unchecked(Path::new("dir")))
+            .await
+            .unwrap()
+    );
+    assert!(
+        !volume
+            .is_directory(&AppPath::legacy_unchecked(Path::new("dir/b.txt")))
+            .await
+            .unwrap()
+    );
     assert!(matches!(
-        volume.is_directory(Path::new("nope")).await,
+        volume.is_directory(&AppPath::legacy_unchecked(Path::new("nope"))).await,
         Err(VolumeError::NotFound(_))
     ));
 }
@@ -254,7 +304,12 @@ async fn accepts_absolute_paths_carrying_the_archive_prefix() {
 
     let absolute = archive.path.join("dir");
     assert_eq!(
-        names(&volume.list_directory(&absolute, None).await.unwrap()),
+        names(
+            &volume
+                .list_directory(&AppPath::legacy_unchecked(&absolute), None)
+                .await
+                .unwrap()
+        ),
         vec!["b.txt"]
     );
 }
@@ -266,7 +321,10 @@ async fn list_directory_reports_one_cumulative_progress_tick() {
 
     let seen = Mutex::new(Vec::<ListingProgress>::new());
     let callback = |p: ListingProgress| seen.lock_ignore_poison().push(p);
-    volume.list_directory(Path::new(""), Some(&callback)).await.unwrap();
+    volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), Some(&callback))
+        .await
+        .unwrap();
 
     let seen = seen
         .into_inner()
@@ -293,7 +351,7 @@ async fn cancelable_listing_returns_the_full_listing() {
 
     let cancel = tokio_util::sync::CancellationToken::new();
     let entries = volume
-        .list_directory_with_cancel(Path::new(""), None, Some(&cancel))
+        .list_directory_with_cancel(&AppPath::legacy_unchecked(Path::new("")), None, Some(&cancel))
         .await
         .unwrap();
     assert_eq!(names(&entries), vec!["dir", "a.txt"]);
@@ -308,7 +366,10 @@ async fn open_read_stream_decompresses_an_entry_end_to_end() {
     let archive = TestArchive::from_entries(&[deflated("big.bin", content.clone())]);
     let volume = archive.volume();
 
-    let mut stream = volume.open_read_stream(Path::new("big.bin")).await.unwrap();
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new("big.bin")))
+        .await
+        .unwrap();
     assert_eq!(stream.total_size(), StreamLength::Known(content.len() as u64));
     let data = drain(stream.as_mut()).await.unwrap();
     assert_eq!(data, content);
@@ -323,7 +384,7 @@ async fn open_read_stream_at_offset_yields_the_tail() {
 
     let offset = 40_000u64;
     let mut stream = volume
-        .open_read_stream_at_offset(Path::new("data.bin"), offset)
+        .open_read_stream_at_offset(&AppPath::legacy_unchecked(Path::new("data.bin")), offset)
         .await
         .unwrap();
     // `total_size` stays the full file; `bytes_read` counts only this segment.
@@ -360,7 +421,10 @@ async fn scan_for_copy_counts_a_directory_subtree() {
     ]);
     let volume = archive.volume();
 
-    let scan = volume.scan_for_copy(Path::new("top")).await.unwrap();
+    let scan = volume
+        .scan_for_copy(&AppPath::legacy_unchecked(Path::new("top")))
+        .await
+        .unwrap();
     assert_eq!(scan.file_count, 3);
     assert_eq!(scan.dir_count, 2, "sub/ and sub/deep/");
     assert_eq!(scan.total_bytes, 7);
@@ -373,7 +437,10 @@ async fn scan_for_copy_sizes_a_single_file() {
     let archive = TestArchive::from_entries(&[deflated("only.txt", "twelve bytes")]);
     let volume = archive.volume();
 
-    let scan = volume.scan_for_copy(Path::new("only.txt")).await.unwrap();
+    let scan = volume
+        .scan_for_copy(&AppPath::legacy_unchecked(Path::new("only.txt")))
+        .await
+        .unwrap();
     assert_eq!(scan.file_count, 1);
     assert_eq!(scan.dir_count, 0);
     assert_eq!(scan.total_bytes, 12);
@@ -398,7 +465,13 @@ async fn a_batch_scan_records_every_entry_under_the_callers_paths() {
     let boundary = ScanBoundary::silent().recording_to(Arc::clone(&recording) as Arc<dyn ScanRecorder>);
 
     let batch = volume
-        .scan_for_copy_batch_with_boundary(&[PathBuf::from("top"), PathBuf::from("loose.txt")], &boundary)
+        .scan_for_copy_batch_with_boundary(
+            &[
+                AppPath::legacy_unchecked(&PathBuf::from("top")).into_owned(),
+                AppPath::legacy_unchecked(&PathBuf::from("loose.txt")).into_owned(),
+            ],
+            &boundary,
+        )
         .await
         .unwrap();
 
@@ -421,7 +494,9 @@ async fn scan_for_copy_on_a_missing_path_is_not_found() {
     let volume = archive.volume();
 
     assert!(matches!(
-        volume.scan_for_copy(Path::new("nope")).await,
+        volume
+            .scan_for_copy(&AppPath::legacy_unchecked(Path::new("nope")))
+            .await,
         Err(VolumeError::NotFound(_))
     ));
 }
@@ -434,37 +509,47 @@ async fn every_mutation_is_unsupported() {
     let volume = archive.volume();
 
     assert!(matches!(
-        volume.create_file(Path::new("new.txt"), b"x").await,
+        volume
+            .create_file(&AppPath::legacy_unchecked(Path::new("new.txt")), b"x")
+            .await,
         Err(VolumeError::NotSupported)
     ));
     assert!(matches!(
-        volume.create_directory(Path::new("new")).await,
+        volume
+            .create_directory(&AppPath::legacy_unchecked(Path::new("new")))
+            .await,
         Err(VolumeError::NotSupported)
     ));
     // Even for an ALREADY-EXISTING dir, `create_directory_all` must refuse
     // rather than no-op to `Ok(())` (the trait default would).
     assert!(matches!(
-        volume.create_directory_all(Path::new("dir")).await,
+        volume
+            .create_directory_all(&AppPath::legacy_unchecked(Path::new("dir")))
+            .await,
         Err(VolumeError::NotSupported)
     ));
     assert!(matches!(
-        volume.delete(Path::new("dir/b.txt")).await,
+        volume.delete(&AppPath::legacy_unchecked(Path::new("dir/b.txt"))).await,
         Err(VolumeError::NotSupported)
     ));
     assert!(matches!(
         volume
-            .rename(Path::new("dir/b.txt"), Path::new("dir/c.txt"), false)
+            .rename(
+                &AppPath::legacy_unchecked(Path::new("dir/b.txt")),
+                &AppPath::legacy_unchecked(Path::new("dir/c.txt")),
+                false
+            )
             .await,
         Err(VolumeError::NotSupported)
     ));
 
     // `write_from_stream` needs a source stream; any one does.
     let mem = InMemoryVolume::new("m");
-    mem.create_file(Path::new("/src"), b"hi").await.unwrap();
-    let source = mem.open_read_stream(Path::new("/src")).await.unwrap();
+    mem.create_file(app_path!("/src"), b"hi").await.unwrap();
+    let source = mem.open_read_stream(app_path!("/src")).await.unwrap();
     let result = volume
         .write_from_stream(
-            Path::new("dest"),
+            &AppPath::legacy_unchecked(Path::new("dest")),
             WriteMode::CreateOrReplace,
             StreamLength::Known(2),
             source,
@@ -485,13 +570,20 @@ async fn browsing_works_but_extracting_an_encrypted_entry_needs_a_password() {
 
     // Names live in the central directory, so browsing still lists it.
     assert_eq!(
-        names(&volume.list_directory(Path::new(""), None).await.unwrap()),
+        names(
+            &volume
+                .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+                .await
+                .unwrap()
+        ),
         vec!["secret.txt"]
     );
     // Extraction with no password maps to the typed needs-password signal (not
     // "damaged"), so the frontend prompts.
     assert!(matches!(
-        volume.open_read_stream(Path::new("secret.txt")).await,
+        volume
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new("secret.txt")))
+            .await,
         Err(VolumeError::NeedsPassword {
             container: LockedContainer::Archive,
             wrong_attempt: false,
@@ -509,7 +601,9 @@ async fn set_password_lets_the_volume_extract_an_encrypted_entry() {
 
     // No password yet: typed needs-password.
     assert!(matches!(
-        volume.open_read_stream(Path::new("secret.txt")).await,
+        volume
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new("secret.txt")))
+            .await,
         Err(VolumeError::NeedsPassword {
             container: LockedContainer::Archive,
             wrong_attempt: false,
@@ -538,7 +632,10 @@ async fn a_wrong_password_surfaces_as_needs_password_wrong_attempt() {
     volume.set_password("not-the-password".to_string());
 
     // The stream opens, then fails on decode — drained here to the typed error.
-    let mut stream = volume.open_read_stream(Path::new("secret.txt")).await.unwrap();
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new("secret.txt")))
+        .await
+        .unwrap();
     let err = drain(stream.as_mut()).await.unwrap_err();
     assert!(
         matches!(
@@ -565,7 +662,9 @@ async fn header_encrypted_7z_browse_prompts_then_lists_and_extracts() {
     // No password: even the directory listing surfaces the typed needs-password
     // signal — the browse-time prompt (a zip would have listed fine here).
     assert!(matches!(
-        volume.list_directory(Path::new(""), None).await,
+        volume
+            .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+            .await,
         Err(VolumeError::NeedsPassword {
             container: LockedContainer::Archive,
             wrong_attempt: false,
@@ -575,7 +674,12 @@ async fn header_encrypted_7z_browse_prompts_then_lists_and_extracts() {
     // After storing the password, browsing AND extraction work.
     volume.set_password("hunter2".to_string());
     assert_eq!(
-        names(&volume.list_directory(Path::new(""), None).await.unwrap()),
+        names(
+            &volume
+                .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+                .await
+                .unwrap()
+        ),
         vec!["secret.txt"]
     );
     assert_eq!(
@@ -591,11 +695,26 @@ async fn a_locked_archive_cant_say_whats_inside_but_an_open_one_can() {
     let bytes = build_encrypted_7z(&[("secret.txt", b"top secret 7z")], "hunter2", true);
     let archive = TestArchive::from_bytes(bytes);
     let volume = archive.sevenz_volume();
-    assert_eq!(volume.presence(Path::new("secret.txt")).await, Presence::Unknown);
+    assert_eq!(
+        volume
+            .presence(&AppPath::legacy_unchecked(Path::new("secret.txt")))
+            .await,
+        Presence::Unknown
+    );
 
     volume.set_password("hunter2".to_string());
-    assert_eq!(volume.presence(Path::new("secret.txt")).await, Presence::Present);
-    assert_eq!(volume.presence(Path::new("missing.txt")).await, Presence::Absent);
+    assert_eq!(
+        volume
+            .presence(&AppPath::legacy_unchecked(Path::new("secret.txt")))
+            .await,
+        Presence::Present
+    );
+    assert_eq!(
+        volume
+            .presence(&AppPath::legacy_unchecked(Path::new("missing.txt")))
+            .await,
+        Presence::Absent
+    );
 }
 
 #[tokio::test]
@@ -606,7 +725,9 @@ async fn header_encrypted_7z_wrong_password_browse_is_wrong_attempt() {
     volume.set_password("wrong".to_string());
     // Browsing with the wrong password re-prompts with the wrong-attempt copy.
     assert!(matches!(
-        volume.list_directory(Path::new(""), None).await,
+        volume
+            .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+            .await,
         Err(VolumeError::NeedsPassword {
             container: LockedContainer::Archive,
             wrong_attempt: true,
@@ -629,7 +750,9 @@ async fn a_freshly_minted_volume_forgets_the_password_lru_eviction_semantic() {
     // A fresh instance (an LRU re-mint) has no password.
     let reminted = archive.volume();
     assert!(matches!(
-        reminted.open_read_stream(Path::new("secret.txt")).await,
+        reminted
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new("secret.txt")))
+            .await,
         Err(VolumeError::NeedsPassword {
             container: LockedContainer::Archive,
             wrong_attempt: false,
@@ -661,7 +784,9 @@ async fn the_unlock_seam_stores_the_password_unchecked() {
 
     locked.forget_password();
     assert!(matches!(
-        volume.open_read_stream(Path::new("secret.txt")).await,
+        volume
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new("secret.txt")))
+            .await,
         Err(VolumeError::NeedsPassword {
             container: LockedContainer::Archive,
             wrong_attempt: false,
@@ -677,7 +802,9 @@ async fn a_corrupt_archive_lists_as_a_typed_io_error() {
     let volume = archive.volume();
 
     assert!(matches!(
-        volume.list_directory(Path::new(""), None).await,
+        volume
+            .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+            .await,
         Err(VolumeError::IoError { .. })
     ));
 }
@@ -688,7 +815,9 @@ async fn a_non_zip_file_is_unsupported() {
     let volume = archive.volume();
 
     assert!(matches!(
-        volume.list_directory(Path::new(""), None).await,
+        volume
+            .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+            .await,
         Err(VolumeError::NotSupported)
     ));
 }
@@ -722,7 +851,10 @@ async fn get_space_info_delegates_to_the_parent() {
     assert_eq!(volume.get_space_info().await.unwrap(), SpaceInfo::bounded(1_000, 400));
     let inside = archive.path.join("a.txt");
     assert_eq!(
-        volume.get_space_info_at(&inside).await.unwrap(),
+        volume
+            .get_space_info_at(&AppPath::legacy_unchecked(&inside))
+            .await
+            .unwrap(),
         SpaceInfo::bounded(500, 100)
     );
 }
@@ -773,7 +905,7 @@ async fn a_sequential_extract_member_stream_reports_the_member_date() {
     );
 
     let mut extract = volume
-        .open_sequential_extract(Path::new("docs"))
+        .open_sequential_extract(&AppPath::legacy_unchecked(Path::new("docs")))
         .await
         .expect("open the extract");
     extract.next_file().await.expect("next_file").expect("the one member");
@@ -795,7 +927,7 @@ fn capability_flags_are_read_only_and_virtual() {
     let volume = archive.volume();
 
     assert_eq!(volume.name(), archive.path.file_name().unwrap().to_string_lossy());
-    assert_eq!(volume.root(), archive.path);
+    assert_eq!(volume.root().as_std_legacy(), archive.path);
     assert!(volume.supports_export());
     assert!(volume.supports_streaming());
     // Reports the mode and the sidecars' xattrs, and keeps nothing. The compress
@@ -813,7 +945,10 @@ fn capability_flags_are_read_only_and_virtual() {
     assert!(!volume.supports_local_fs_access());
     assert_eq!(volume.space_poll_interval(), None);
     // No live watcher yet: never claim listing freshness.
-    assert_eq!(volume.listing_watch_coverage(Path::new("")), WatchCoverage::None);
+    assert_eq!(
+        volume.listing_watch_coverage(&AppPath::legacy_unchecked(Path::new(""))),
+        WatchCoverage::None
+    );
 }
 
 // ---- Remote-backed archives (SMB / MTP parent) ----------------------------
@@ -831,7 +966,7 @@ async fn remote_archive(bytes: Vec<u8>) -> (Arc<InMemoryVolume>, ArchiveVolume) 
     let parent = Arc::new(InMemoryVolume::new("remote"));
     let archive_path = PathBuf::from("/remote/archive.zip");
     parent
-        .create_file(&archive_path, &bytes)
+        .create_file(&AppPath::legacy_unchecked(&archive_path), &bytes)
         .await
         .expect("load remote zip into parent store");
     let volume = ArchiveVolume::new(
@@ -849,10 +984,18 @@ async fn remote_backed_archive_browses_and_extracts_through_read_range() {
     let (parent, volume) = remote_archive(bytes).await;
 
     // Browse: root + a synthetic directory, same as a local archive.
-    let root = volume.list_directory(Path::new(""), None).await.unwrap();
+    let root = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert_eq!(names(&root), vec!["dir", "a.txt"]);
     assert_eq!(
-        names(&volume.list_directory(Path::new("dir"), None).await.unwrap()),
+        names(
+            &volume
+                .list_directory(&AppPath::legacy_unchecked(Path::new("dir")), None)
+                .await
+                .unwrap()
+        ),
         vec!["b.txt"]
     );
 
@@ -885,7 +1028,7 @@ async fn entry_paths_keep_a_url_rooted_archive_path_spelled_exactly() {
     let parent = Arc::new(InMemoryVolume::new("remote"));
     parent
         .create_file(
-            &archive_path,
+            &AppPath::legacy_unchecked(&archive_path),
             &build_zip(&[stored("a.txt", "x"), deflated("dir/b.txt", "y")]),
         )
         .await
@@ -897,7 +1040,10 @@ async fn entry_paths_keep_a_url_rooted_archive_path_spelled_exactly() {
         VolumeHost::detached(),
     );
 
-    let root = volume.list_directory(pane_path, None).await.unwrap();
+    let root = volume
+        .list_directory(&AppPath::legacy_unchecked(pane_path), None)
+        .await
+        .unwrap();
     let paths: Vec<&str> = root.iter().map(|e| e.path.as_str()).collect();
     assert_eq!(
         paths,
@@ -910,7 +1056,7 @@ async fn entry_paths_keep_a_url_rooted_archive_path_spelled_exactly() {
     // And one level in, reached by the path the pane just got handed.
     let inner = volume
         .list_directory(
-            Path::new("sftp://test_user_1@testnas.local:22/srv/data/archive.zip/dir"),
+            app_path!("sftp://test_user_1@testnas.local:22/srv/data/archive.zip/dir"),
             None,
         )
         .await
@@ -930,7 +1076,10 @@ async fn remote_central_directory_parse_is_a_single_tail_read() {
     let bytes = build_zip(&[stored("a.txt", "x"), deflated("dir/b.txt", "y")]);
     let (parent, volume) = remote_archive(bytes).await;
 
-    volume.list_directory(Path::new(""), None).await.unwrap();
+    volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert_eq!(
         parent.read_range_log().len(),
         1,
@@ -952,7 +1101,7 @@ async fn remote_backed_archive_never_reports_watch_coverage() {
     let archive_path = PathBuf::from("/remote/archive.zip");
 
     assert_eq!(
-        volume.listing_watch_coverage(&archive_path),
+        volume.listing_watch_coverage(&AppPath::legacy_unchecked(&archive_path)),
         WatchCoverage::None,
         "a remote-backed archive must never claim listing freshness"
     );
@@ -960,7 +1109,7 @@ async fn remote_backed_archive_never_reports_watch_coverage() {
     // the answer must remain `None`.
     volume.start_content_watch("remote", WatchCoverage::EveryWriter);
     assert_eq!(
-        volume.listing_watch_coverage(&archive_path),
+        volume.listing_watch_coverage(&AppPath::legacy_unchecked(&archive_path)),
         WatchCoverage::None,
         "start_content_watch must not arm a watch for a remote parent"
     );
@@ -972,7 +1121,9 @@ async fn remote_archive_reports_a_damaged_zip_typed_not_a_panic() {
     // (NotSupported/IoError), never a panic — the mid-browse backstop still holds
     // when the bytes come from a remote parent.
     let (_parent, volume) = remote_archive(b"this is not a zip file".to_vec()).await;
-    let result = volume.list_directory(Path::new(""), None).await;
+    let result = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await;
     assert!(
         matches!(result, Err(VolumeError::NotSupported | VolumeError::IoError { .. })),
         "a non-zip remote file lists as a typed error, got {result:?}"

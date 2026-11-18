@@ -11,16 +11,16 @@ fn a_path_repeating_the_server_folder_is_flagged_with_both_readings() {
     // anchoring glues it onto the root. Anchoring stays; the echo names what
     // happens and offers the stripped reading.
     let echo = root_echo(Path::new(SERVER_ROOT), Path::new("/srv/data/photos")).expect("an echo");
-    assert_eq!(echo.root_folder, Path::new("/srv/data"));
-    assert_eq!(echo.resolved, Path::new("/srv/data/srv/data/photos"));
-    assert_eq!(echo.stripped, Path::new("/photos"));
+    assert_eq!(echo.root_folder.as_std_legacy(), Path::new("/srv/data"));
+    assert_eq!(echo.resolved.as_std_legacy(), Path::new("/srv/data/srv/data/photos"));
+    assert_eq!(echo.stripped.as_std_legacy(), Path::new("/photos"));
 }
 
 #[test]
 fn the_bare_server_folder_strips_to_the_place_root() {
     let echo = root_echo(Path::new(SERVER_ROOT), Path::new("/srv/data")).expect("an echo");
-    assert_eq!(echo.resolved, Path::new("/srv/data/srv/data"));
-    assert_eq!(echo.stripped, Path::new("/"));
+    assert_eq!(echo.resolved.as_std_legacy(), Path::new("/srv/data/srv/data"));
+    assert_eq!(echo.stripped.as_std_legacy(), Path::new("/"));
 }
 
 #[test]
@@ -77,6 +77,6 @@ fn a_trailing_slash_on_the_root_still_matches() {
         Path::new("/dav/files/a"),
     )
     .expect("an echo");
-    assert_eq!(echo.root_folder, Path::new("/dav/files"));
-    assert_eq!(echo.stripped, Path::new("/a"));
+    assert_eq!(echo.root_folder.as_std_legacy(), Path::new("/dav/files"));
+    assert_eq!(echo.stripped.as_std_legacy(), Path::new("/a"));
 }
