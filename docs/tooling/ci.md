@@ -672,9 +672,9 @@ on any build script that needs MSVC's `cl.exe`.
   4. Then `desktop-rust-tests` on Windows, which isn't green yet: the app's suite there and the crates' failure clusters
      (#1225 app paths, #1226, #1232) are in the build log, and `docs/notes/windows-port/frontend-build-audit.md` § 3
      covers the frontend half.
-- **Windows 10 on real hardware: `ssh mami`**, a 2-core laptop on Windows 10 22H2 with MSVC. Read infra
-  `mami-laptop/CLAUDE.md` first: the `D:` build drive needs unlocking, and the toolchain and the checkout
-  (`D:\src\cmdr`) live on it. To run Cmdr's GUI on its desktop from the Mac, use
+- **Windows 10 on real hardware: `ssh mami`**, a 2-core laptop on Windows 10 22H2 with MSVC. Read
+  `~/projects-git/vdavid/infra/mami-laptop/CLAUDE.md` first: the `D:` build drive needs unlocking, and the toolchain and
+  the checkout (`D:\src\cmdr`) live on it. To run Cmdr's GUI on its desktop from the Mac, use
   `~/projects-git/vdavid/infra/mami-laptop/run-on-desktop.sh --unlock-d -- 'D:\src\cmdr\target\debug\cmdr.exe'`: it
   returns the program's logs and a screenshot (`--help` lists the options, like `--wait`, `--keys`, and `--close`).
 - **Only a real run can prove**: that `jdx/mise-action` installs Go on `windows-latest` through the action's retry
