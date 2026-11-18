@@ -125,7 +125,7 @@
   },
   "servers.hub.discoveryOffLink": "{platform, select, windows {Kapcsold be a Beállításokban} linuxGnome {Kapcsold be a Beállításokban} linuxKde {Kapcsold be a Cmdr beállításaiban} other {Kapcsold be a Beállításokban}}",
   "@servers.hub.discoveryOffLink": {
-    "sourceHash": "65a3d5a"
+    "sourceHash": "cd006e8"
   },
   "servers.hub.nfsHint": "Az NFS-szerverek nem hirdetik magukat, ezért itt nem jelennek meg.",
   "@servers.hub.nfsHint": {

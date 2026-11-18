@@ -73,7 +73,7 @@
   },
   "crashReporter.sentToast.changeSettings": "{platform, select, windows {Módosítás a Beállításokban} linuxGnome {Módosítás a Beállításokban} linuxKde {Módosítás a Cmdr beállításaiban} other {Módosítás a Beállításokban}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "c3fff1a"
+    "sourceHash": "9972084"
   },
   "crashReporter.sentToast.sendLog": "Napló csatolása",
   "@crashReporter.sentToast.sendLog": {

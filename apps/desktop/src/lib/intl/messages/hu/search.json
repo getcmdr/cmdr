@@ -69,7 +69,7 @@
   },
   "search.imageResults.networkOff": "{platform, select, windows {Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Beállításokban, hogy rá tudj keresni a fotóiban lévő szövegre.} linuxGnome {Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Beállításokban, hogy rá tudj keresni a fotóiban lévő szövegre.} linuxKde {Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Cmdr beállításaiban, hogy rá tudj keresni a fotóiban lévő szövegre.} other {Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Beállításokban, hogy rá tudj keresni a fotóiban lévő szövegre.}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "30b2455"
+    "sourceHash": "5f0699a"
   },
   "search.imageResults.paused": "Ez a meghajtó jelenleg nincs csatlakoztatva, ezért ezek az eddig indexelt fotók.",
   "@search.imageResults.paused": {
@@ -221,7 +221,7 @@
   },
   "search.coverage.toast.indexingOff": "{platform, select, windows {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.} linuxGnome {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.} linuxKde {A meghajtó indexelése ki van kapcsolva a Cmdr beállításaiban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.} other {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "7c4ff62"
+    "sourceHash": "15b2ffc"
   },
   "search.coverage.toast.deferredUntilSearchEnds": "A Cmdr már keres itt: {drive}. Az indexelés elindul, amint ez befejeződik.",
   "@search.coverage.toast.deferredUntilSearchEnds": {

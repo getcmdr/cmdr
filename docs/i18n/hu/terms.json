@@ -3590,14 +3590,23 @@
     "confidence": "high",
     "sources": "macOS (Beállítások); ms",
     "windows": {
-      "chosen": "Gépház",
+      "chosen": "Beállítások",
       "accept": ["beállítás", "állít"],
-      "note": "the Windows Settings app is Gépház (ms TBX: Settings, “The app where people can find Windows and device settings” → Gépház), so a Windows Settings path reads itt: **Gépház > Hálózat és internet**; Cmdr's own Settings stay Beállítások"
+      "note": "Windows names an app's settings Beállítások, the same word as macOS (ms TBX Settings, “The feature in an app that allows users to change its properties or behavior” → Beállítások), so Cmdr's own window on Windows reads like the macOS branch: title Beállítások, prose a beállításokban, paths itt: Beállítások > AI. The Windows Settings app itself is Gépház (ms TBX: Settings, “The app where people can find Windows and device settings” → Gépház), so a path into Windows' own Settings app reads itt: **Gépház > Hálózat és internet**."
     },
     "other": {
       "chosen": "Beállítások",
       "accept": ["beállítás", "állít", "Cmdr beállítása"],
       "note": "Linux desktop branches: GNOME's Preferences is Beállítások (nautilus.po), so the linuxGnome branch reads like the other branch. KDE titles the window Beállítások – Cmdr (dolphin.po Configure @title:window → Beállítások) and the menu item is Cmdr beállítása… (KDE's Configure %1… pattern), so the linuxKde branch names Cmdr: buttons and links Cmdr beállítása, paths itt: Cmdr beállítása > AI, prose a Cmdr beállításaiban (the don't-translate check requires the Cmdr the English KDE branch carries). Title and menu share beállít but not their first word: Hungarian word order puts Cmdr first in the menu item."
+    },
+    "exceptions": {
+      "errors.listing.diskFullErrno.suggestion": "Windows branch: quotes the Windows Settings app (Gépház > Rendszer > Tárterület), not Cmdr's window.",
+      "errors.listing.networkDown.suggestion": "Windows branch: quotes the Windows Settings app (Gépház > Hálózat és internet), not Cmdr's window.",
+      "errors.listing.storageFull.suggestion": "Windows branch: quotes the Windows Settings app (Gépház > Rendszer > Tárterület), not Cmdr's window.",
+      "settings.appearance.appColor.description": "Windows branch: quotes the Windows Settings app (Gépház > Személyre szabás > Színek), not Cmdr's window.",
+      "settings.appearance.appColorHintLink": "Windows branch: quotes the Windows Settings app (Gépház > Személyre szabás > Színek), not Cmdr's window.",
+      "settings.appearance.themeColorSwatchAria": "Windows branch: opens the Windows Settings app (Gépház), not Cmdr's window.",
+      "settings.dataWipe.doneMessage": "Windows branch: quotes the Windows Settings app (Gépház > Alkalmazások), not Cmdr's window."
     }
   },
   "share-menu": {
@@ -4564,8 +4573,15 @@
   "preferences": {
     "chosen": "Beállítások",
     "confidence": "high",
-    "sources": "macOS AppKit MenuCommands (Preferences → Beállítások); GNOME and Thunar (Beállítások)",
+    "sources": "GNOME nautilus.po (_Preferences → _Beállítások); macOS AppKit MenuCommands (Preferences → Beállítások); Thunar (Beállítások)",
     "accept": ["beállítás", "Beállítás"],
-    "note": "Hungarian has one word for Preferences and Settings: GNOME's Preferences is Beállítások too (nautilus.po _Preferences → _Beállítások), so a linuxGnome branch naming Cmdr's window reads like the other branch (Beállítási szakaszok included)."
+    "note": "GNOME's name for Cmdr's settings window in the linuxGnome branch. Hungarian has one word for Preferences and Settings (nautilus.po _Preferences → _Beállítások), so a linuxGnome branch reads like the other branch (Beállítási szakaszok included). Android's label is the usb-preferences concept."
+  },
+  "usb-preferences": {
+    "chosen": "USB-beállítások",
+    "accept": ["USB-beállítás"],
+    "confidence": "tentative",
+    "sources": "no Android source in the pile; settings.fileOperations.mtpEnabled.description quotes USB-beállítások, built on the preferences ruling (Beállítások) with Hungarian's hyphenated acronym compound",
+    "note": "Quote the label the user's phone shows."
   }
 }

@@ -335,6 +335,6 @@
   },
   "shortcuts.window.editInSettings": "{platform, select, windows {Billentyűparancsok szerkesztése a Beállításokban} linuxGnome {Billentyűparancsok szerkesztése a Beállításokban} linuxKde {Billentyűparancsok szerkesztése a Cmdr beállításaiban} other {Billentyűparancsok szerkesztése a Beállításokban}}",
   "@shortcuts.window.editInSettings": {
-    "sourceHash": "875f6b7"
+    "sourceHash": "12661fd"
   }
 }
