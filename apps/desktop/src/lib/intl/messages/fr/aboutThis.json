@@ -330,7 +330,7 @@
   "@aboutThis.download.unrecognized": {
     "sourceHash": "5e9fa42"
   },
-  "aboutThis.download.noSource": "macOS a noté ce téléchargement{hasApp, select, yes { avec {app}} other {}}{hasDate, select, yes { le <date></date>} other {}}, sans dire d’où il vient.",
+  "aboutThis.download.noSource": "{platform, select, macos {macOS a noté ce téléchargement{hasApp, select, yes { avec {app}} other {}}{hasDate, select, yes { le <date></date>} other {}}, sans dire d’où il vient.} windows {Windows recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} other {This carries a record of being downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.}}",
   "@aboutThis.download.noSource": {
     "sourceHash": "7edb92b"
   },
@@ -754,7 +754,7 @@
   "@aboutThis.standardFolder.users": {
     "sourceHash": "955c56c"
   },
-  "aboutThis.standardFolder.startupDisk": "Le dossier racine du disque de démarrage",
+  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {Le dossier racine du disque de démarrage} windows {The top of the system drive} other {The top of the system disk}}",
   "@aboutThis.standardFolder.startupDisk": {
     "sourceHash": "6e69278"
   },
@@ -981,7 +981,7 @@
   "@aboutThis.removal.standardFolder.users": {
     "sourceHash": "b72c1fe"
   },
-  "aboutThis.removal.standardFolder.startupDisk": "Ce dossier contient tout ce qui se trouve sur le disque de démarrage, macOS compris.",
+  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {Ce dossier contient tout ce qui se trouve sur le disque de démarrage, macOS compris.} windows {It holds everything on the system drive, Windows included.} other {It holds everything on the system disk, the operating system included.}}",
   "@aboutThis.removal.standardFolder.startupDisk": {
     "sourceHash": "3f6c151"
   },

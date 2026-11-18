@@ -107,7 +107,7 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "Die Website, von der es laut Vermerk heruntergeladen wurde (nur die Hauptadresse der Website, etwa github.com, nie eine Subdomain oder der vollständige Link), wann, und die App, die es heruntergeladen hat. Bei einem Mail-Anhang oder AirDrop nur, dass es einer war, nie, wer es gesendet hat",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {Die Website, von der es laut Vermerk heruntergeladen wurde (nur die Hauptadresse der Website, etwa github.com, nie eine Subdomain oder der vollständige Link), wann, und die App, die es heruntergeladen hat. Bei einem Mail-Anhang oder AirDrop nur, dass es einer war, nie, wer es gesendet hat} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "40d185c"
   },

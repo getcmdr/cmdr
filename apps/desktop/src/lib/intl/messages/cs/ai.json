@@ -107,7 +107,7 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "Web, ze kterého byl soubor podle záznamu stažen (jen hlavní adresa webu, třeba github.com, nikdy subdoména ani celý odkaz), kdy a aplikace, která ho stáhla. U přílohy z Mailu nebo souboru z AirDropu jen to, že o ně jde, nikdy ne to, kdo ho poslal",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {Web, ze kterého byl soubor podle záznamu stažen (jen hlavní adresa webu, třeba github.com, nikdy subdoména ani celý odkaz), kdy a aplikace, která ho stáhla. U přílohy z Mailu nebo souboru z AirDropu jen to, že o ně jde, nikdy ne to, kdo ho poslal} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "40d185c"
   },

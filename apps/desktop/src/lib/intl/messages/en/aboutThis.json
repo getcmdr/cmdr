@@ -354,9 +354,9 @@
     "description": "Answer on the \"Downloaded\" row of the \"Tell me about this\" card when the recorded source is text Cmdr can't read as a web address. The text follows the colon as it was recorded.",
     "placeholders": { "text": { "description": "The recorded text, shortened if long." } }
   },
-  "aboutThis.download.noSource": "macOS recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.",
+  "aboutThis.download.noSource": "{platform, select, macos {macOS recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} windows {Windows recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} other {This carries a record of being downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.}}",
   "@aboutThis.download.noSource": {
-    "description": "Answer on the \"Downloaded\" row of the \"Tell me about this\" card when macOS recorded that the file was downloaded but not where from. <date></date> becomes the download date.",
+    "description": "Answer on the \"Downloaded\" row of the \"Tell me about this\" card when the system recorded that the file was downloaded but not where from. <date></date> becomes the download date. Each OS branch names its own recorder: macOS and Windows record downloads themselves, so they are the subject; on Linux (the `other` branch) the record is an attribute a browser wrote on the file, so the file is the subject and no OS is named.",
     "placeholders": {
       "app": { "description": "The app that downloaded it, for example \"Chrome\"." },
       "hasApp": { "description": "\"yes\" when the record names the app." },
@@ -897,9 +897,9 @@
   "@aboutThis.standardFolder.users": {
     "description": "One of the folders the operating system creates, as the \"Tell me about this\" card names it: the folder at the top of the startup disk that holds every account's home folder. Starts a sentence and is followed by a comma, as in \"Your Downloads folder, set up by the system\". Use the name Finder shows for this folder in your language."
   },
-  "aboutThis.standardFolder.startupDisk": "The top of the startup disk",
+  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {The top of the startup disk} windows {The top of the system drive} other {The top of the system disk}}",
   "@aboutThis.standardFolder.startupDisk": {
-    "description": "One of the folders the operating system creates, as the \"Tell me about this\" card names it: the topmost folder of the disk the computer starts from. Starts a sentence and is followed by a comma, as in \"Your Downloads folder, set up by the system\"."
+    "description": "One of the folders the operating system creates, as the \"Tell me about this\" card names it: the topmost folder of the disk the computer starts from: the \"startup disk\" on macOS, the \"system drive\" on Windows, the \"system disk\" on Linux (the `other` branch), each OS's own term. Starts a sentence and is followed by a comma, as in \"Your Downloads folder, set up by the system\"."
   },
   "aboutThis.owner.insideApp": "Part of {app}",
   "@aboutThis.owner.insideApp": {
@@ -1188,9 +1188,9 @@
   "@aboutThis.removal.standardFolder.users": {
     "description": "One consequence under \"What removing it means\" on the \"Tell me about this\" card, for the Users folder at the top of the startup disk, a folder the operating system creates and expects. Never reassuring: it says what the folder holds and what expects it."
   },
-  "aboutThis.removal.standardFolder.startupDisk": "It holds everything on the startup disk, macOS included.",
+  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {It holds everything on the startup disk, macOS included.} windows {It holds everything on the system drive, Windows included.} other {It holds everything on the system disk, the operating system included.}}",
   "@aboutThis.removal.standardFolder.startupDisk": {
-    "description": "One consequence under \"What removing it means\" on the \"Tell me about this\" card, for the topmost folder of the startup disk, a folder the operating system creates and expects. Never reassuring: it says what the folder holds and what expects it."
+    "description": "One consequence under \"What removing it means\" on the \"Tell me about this\" card, for the topmost folder of the disk the computer starts from (\"startup disk\" on macOS, \"system drive\" on Windows, \"system disk\" on Linux, each OS's own term), a folder the operating system creates and expects. Linux names no operating system, since a distribution has its own name. Never reassuring: it says what the folder holds and what expects it."
   },
   "aboutThis.removal.uncommittedWork": "It has changes no commit holds, so git can’t bring those back.",
   "@aboutThis.removal.uncommittedWork": {

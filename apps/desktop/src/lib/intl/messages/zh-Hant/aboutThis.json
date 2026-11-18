@@ -328,7 +328,7 @@
   "@aboutThis.download.unrecognized": {
     "sourceHash": "5e9fa42"
   },
-  "aboutThis.download.noSource": "macOS 記錄這是{hasDate, select, yes {在 <date></date> } other {}}{hasApp, select, yes {用 {app} } other {}}下載的，但沒有說是從哪裡。",
+  "aboutThis.download.noSource": "{platform, select, macos {macOS 記錄這是{hasDate, select, yes {在 <date></date> } other {}}{hasApp, select, yes {用 {app} } other {}}下載的，但沒有說是從哪裡。} windows {Windows recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} other {This carries a record of being downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.}}",
   "@aboutThis.download.noSource": {
     "sourceHash": "7edb92b"
   },
@@ -746,7 +746,7 @@
   "@aboutThis.standardFolder.users": {
     "sourceHash": "955c56c"
   },
-  "aboutThis.standardFolder.startupDisk": "啟動磁碟的最上層",
+  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {啟動磁碟的最上層} windows {The top of the system drive} other {The top of the system disk}}",
   "@aboutThis.standardFolder.startupDisk": {
     "sourceHash": "6e69278"
   },
@@ -971,7 +971,7 @@
   "@aboutThis.removal.standardFolder.users": {
     "sourceHash": "b72c1fe"
   },
-  "aboutThis.removal.standardFolder.startupDisk": "啟動磁碟上的所有東西都在裡面，包括 macOS。",
+  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {啟動磁碟上的所有東西都在裡面，包括 macOS。} windows {It holds everything on the system drive, Windows included.} other {It holds everything on the system disk, the operating system included.}}",
   "@aboutThis.removal.standardFolder.startupDisk": {
     "sourceHash": "3f6c151"
   },
