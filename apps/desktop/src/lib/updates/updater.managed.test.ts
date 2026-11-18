@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
   addToastMock,
+  dismissToastMock,
   checkForUpdateMock,
   downloadUpdateMock,
   installUpdateMock,
@@ -17,6 +18,7 @@ const {
   logger,
 } = vi.hoisted(() => ({
   addToastMock: vi.fn(),
+  dismissToastMock: vi.fn(),
   checkForUpdateMock: vi.fn(),
   downloadUpdateMock: vi.fn(() => Promise.resolve()),
   installUpdateMock: vi.fn(() => Promise.resolve({ securityNotice: null })),
@@ -40,7 +42,7 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
 }))
 
 vi.hoisted(() => vi.stubGlobal('__CMDR_PLATFORM__', 'macos'))
-vi.mock('#lib/ui/toast/index.js', () => ({ addToast: addToastMock, dismissToast: vi.fn() }))
+vi.mock('#lib/ui/toast/index.js', () => ({ addToast: addToastMock, dismissToast: dismissToastMock }))
 vi.mock('#lib/settings/settings-store.js', () => ({
   getSetting: getSettingMock,
   setSetting: vi.fn(),
@@ -86,14 +88,14 @@ afterEach(() => {
 
 describe('updates turned off by the organization', () => {
   it('ends the check on the managed answer, downloads nothing, and reports no failure', async () => {
-    checkForUpdateMock.mockResolvedValueOnce({ kind: 'updatesDisabledByPolicy' })
+    checkForUpdateMock.mockResolvedValueOnce({ kind: 'updatesDisabledByPolicy', stagedWithdrawn: false })
 
     await checkForUpdates('settings')
 
     expect(downloadUpdateMock).not.toHaveBeenCalled()
     expect(updateState.status).toBe('idle')
     expect(updateState.failure).toBeNull()
-    expect(updateState.managed).toEqual({ kind: 'updatesDisabledByPolicy' })
+    expect(updateState.managed).toEqual({ kind: 'updatesDisabledByPolicy', stagedWithdrawn: false })
     expect(formatUpdateStatus(updateState)).toBe('Your organization manages updates for Cmdr.')
     expect(lastReport()).toEqual({
       trigger: 'settings',
@@ -105,7 +107,7 @@ describe('updates turned off by the organization', () => {
   })
 
   it('shows the managed sentence in the menu check’s toast instead of a check', async () => {
-    checkForUpdateMock.mockResolvedValueOnce({ kind: 'updatesDisabledByPolicy' })
+    checkForUpdateMock.mockResolvedValueOnce({ kind: 'updatesDisabledByPolicy', stagedWithdrawn: false })
 
     await runMenuTriggeredCheck()
 
@@ -116,7 +118,7 @@ describe('updates turned off by the organization', () => {
   })
 
   it('clears the managed answer when the next check starts', async () => {
-    checkForUpdateMock.mockResolvedValueOnce({ kind: 'updatesDisabledByPolicy' })
+    checkForUpdateMock.mockResolvedValueOnce({ kind: 'updatesDisabledByPolicy', stagedWithdrawn: false })
     await checkForUpdates('settings')
     checkForUpdateMock.mockResolvedValueOnce({ kind: 'upToDate' })
     await checkForUpdates('settings')
@@ -127,7 +129,7 @@ describe('updates turned off by the organization', () => {
 })
 
 describe('an update held back by the organization’s ceiling', () => {
-  const held = { kind: 'heldByPolicy', available: '0.53.0', ceiling: '0.52' } as const
+  const held = { kind: 'heldByPolicy', available: '0.53.0', ceiling: '0.52', stagedWithdrawn: false } as const
 
   it('says a release exists and the organization holds this Mac back, without downloading', async () => {
     checkForUpdateMock.mockResolvedValueOnce(held)
@@ -175,6 +177,41 @@ describe('an update held back by the organization’s ceiling', () => {
       failure: 'none',
       staged_version: '0.52.1',
     })
+  })
+})
+
+describe('a staged installer the policy now refuses (Windows, Linux)', () => {
+  it('takes the restart prompt down and says the organization’s answer when the backend withdrew it', async () => {
+    checkForUpdateMock.mockResolvedValueOnce({ kind: 'available', version: '0.52.1' })
+    await checkForUpdates('poll')
+    expect(updateState.status).toBe('ready')
+
+    const withdrawn = { kind: 'updatesDisabledByPolicy', stagedWithdrawn: true } as const
+    checkForUpdateMock.mockResolvedValueOnce(withdrawn)
+    await checkForUpdates('poll')
+
+    expect(updateState.status).toBe('idle')
+    expect(updateState.nextVersion).toBeNull()
+    expect(updateState.managed).toEqual(withdrawn)
+    expect(dismissToastMock).toHaveBeenCalledWith('update')
+    expect(formatUpdateStatus(updateState)).toBe('Your organization manages updates for Cmdr.')
+    expectNothingLoggedAsAProblem()
+  })
+
+  it('does the same for a ceiling below the staged version', async () => {
+    checkForUpdateMock.mockResolvedValueOnce({ kind: 'available', version: '0.53.0' })
+    await checkForUpdates('poll')
+
+    checkForUpdateMock.mockResolvedValueOnce({
+      kind: 'heldByPolicy',
+      available: '0.53.0',
+      ceiling: '0.52',
+      stagedWithdrawn: true,
+    })
+    await checkForUpdates('poll')
+
+    expect(updateState.status).toBe('idle')
+    expect(dismissToastMock).toHaveBeenCalledWith('update')
   })
 })
 

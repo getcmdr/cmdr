@@ -136,9 +136,19 @@ pub enum UpdateCheckOutcome {
     /// A newer release this Mac may install. `download_update` fetches exactly this one.
     Available { version: String },
     /// A newer release is out, but `MaxUpdateVersion` holds this Mac at `ceiling` or earlier.
-    HeldByPolicy { available: String, ceiling: String },
+    /// `staged_withdrawn`: see [`UpdateCheckOutcome::UpdatesDisabledByPolicy`].
+    HeldByPolicy {
+        available: String,
+        ceiling: String,
+        staged_withdrawn: bool,
+    },
     /// `DisableUpdates`: no request was made.
-    UpdatesDisabledByPolicy,
+    ///
+    /// `staged_withdrawn` is true when this answer also dropped a staged installer the policy now
+    /// refuses (Windows, Linux: `handoff::withdraw_if_refused`), so Restart no longer installs it
+    /// and the restart prompt must go. Always false on macOS, where install already wrote the
+    /// bundle.
+    UpdatesDisabledByPolicy { staged_withdrawn: bool },
     /// `DisableAutomaticUpdateChecks` refused a background check: no request was made. A check a
     /// person asks for still runs.
     AutomaticChecksDisabledByPolicy,
@@ -253,7 +263,9 @@ where
     match policy.updates() {
         UpdatePolicy::Disabled => {
             log::info!(target: "managed_policy", "Not checking for updates: the organization's policy turns updates off");
-            return Ok(UpdateCheckOutcome::UpdatesDisabledByPolicy);
+            return Ok(UpdateCheckOutcome::UpdatesDisabledByPolicy {
+                staged_withdrawn: handoff::withdraw_if_refused(state, &policy),
+            });
         }
         UpdatePolicy::Enabled {
             automatic_checks: false,
@@ -285,11 +297,14 @@ where
             Ok(UpdateCheckOutcome::HeldByPolicy {
                 available: version,
                 ceiling: ceiling.to_string(),
+                staged_withdrawn: handoff::withdraw_if_refused(state, &policy),
             })
         }
         // The policy said "enabled" a moment ago and it's the same read, so this can't happen;
         // answering it truthfully costs nothing.
-        Err(UpdateRefusal::Disabled) => Ok(UpdateCheckOutcome::UpdatesDisabledByPolicy),
+        Err(UpdateRefusal::Disabled) => Ok(UpdateCheckOutcome::UpdatesDisabledByPolicy {
+            staged_withdrawn: handoff::withdraw_if_refused(state, &policy),
+        }),
     }
 }
 

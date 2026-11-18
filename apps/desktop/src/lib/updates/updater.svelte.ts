@@ -321,7 +321,10 @@ function refusedByPolicy(error: unknown): boolean {
  * phase, not a failure: nothing to log above info, no failure copy, and no toast of its own (a background check that
  * finds only a held release stays silent; Settings and a manual check's toast read the sentence off `managed`).
  *
- * A build already staged keeps its state: it's in the bundle and the next restart applies it whatever the policy says now.
+ * A build already staged keeps its state when the backend kept it: on macOS it's in the bundle and the next restart
+ * applies it whatever the policy says now. Off macOS nothing is written until Restart, so the backend drops a staged
+ * installer the policy now refuses and says so (`stagedWithdrawn`): the restart prompt goes, and the answer shows like
+ * any other managed one.
  */
 function finishCheckWithManagedOutcome(
   trigger: UpdateCheckTrigger,
@@ -334,9 +337,15 @@ function finishCheckWithManagedOutcome(
     outcome: outcome.kind === 'heldByPolicy' ? 'held_by_policy' : 'updates_disabled_by_policy',
     stagedVersion: staged,
   })
-  if (staged !== null) {
+  if (staged !== null && !outcome.stagedWithdrawn) {
     renudgeRestartIfDue()
     return
+  }
+  if (staged !== null) {
+    log.info('The organization’s policy withdrew the update staged for restart (v{version})', { version: staged })
+    dismissToast('update')
+    updateState.update = null
+    updateState.securityNotice = null
   }
   updateState.status = 'idle'
   updateState.nextVersion = null

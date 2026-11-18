@@ -195,7 +195,10 @@ how the backend tells a background check from a person asking.
   holds the outcome, and `formatUpdateStatus` words it (`updates.status.managedOff` / `updates.status.heldByPolicy`) in
   Settings and in the menu check's toast. No failure, no report link, nothing above info in the log. A background check
   raises no toast for it (the person can't act on a held release, and it would return every poll). A build already
-  staged stays `ready`: it's in the bundle and the restart applies it. `managed` clears when the next check starts.
+  staged stays `ready` unless the outcome's `stagedWithdrawn` says the backend dropped it (off macOS nothing is written
+  until Restart, so a policy that now refuses the staged version withdraws it): then the restart toast is dismissed and
+  the managed answer shows as with nothing staged. No OS branch: on macOS the flag is always false, since the bundle was
+  already written. `managed` clears when the next check starts.
 - **`automaticChecksDisabledByPolicy`** → `finishRefusedAutomaticCheck`: stops the poll loop and shows nothing. It's the
   backstop: `locked_settings` pins `updates.autoCheck` off under `DisableAutomaticUpdateChecks`, and where the frontend
   settings overlay applies that lock the loop never starts.

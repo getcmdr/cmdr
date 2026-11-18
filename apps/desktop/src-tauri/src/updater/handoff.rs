@@ -59,11 +59,8 @@ where
         pubkey,
     });
     // The installer this one supersedes has nothing left to do; its own name keeps it apart.
-    if let Some(old) = replaced.filter(|old| old.file != file)
-        && let Err(e) = std::fs::remove_file(&old.file)
-        && e.kind() != std::io::ErrorKind::NotFound
-    {
-        log::warn!("Couldn't remove the superseded installer: {e}");
+    if let Some(old) = replaced.filter(|old| old.file != file) {
+        remove_installer(&old.file, "superseded");
     }
     Ok(UpdateInstalled { security_notice })
 }
@@ -99,18 +96,60 @@ fn staged_version(state: &UpdateState) -> Option<semver::Version> {
         .map(|staged| staged.offer.version.clone())
 }
 
-/// Notes the install in the security log while the log can still write it: `RunEvent::Exit` calls
-/// this before `security_log::on_exit` flushes, and [`run_at_exit`] runs last, since on Windows it
-/// never returns.
+/// Drops the staged installer, and its file, when `policy` no longer allows its version: a
+/// profile that arrived after the stage (`DisableUpdates`, or a `MaxUpdateVersion` below it). Off
+/// macOS nothing is written until Restart, so the policy still gets the last word. Returns whether
+/// it dropped one, which a check answers so the restart prompt goes too.
+pub(super) fn withdraw_if_refused(state: &UpdateState, policy: &crate::managed_policy::ManagedPolicy) -> bool {
+    let refused = {
+        let mut slots = state.slots();
+        match slots
+            .staged_installer
+            .as_ref()
+            .map(|staged| policy.update_to(&staged.offer.version))
+        {
+            Some(Err(refusal)) => slots.staged_installer.take().map(|staged| (staged, refusal)),
+            _ => None,
+        }
+    };
+    let Some((staged, refusal)) = refused else {
+        return false;
+    };
+    log::info!(target: "managed_policy", "Withdrawing staged update {}: the organization's policy refuses it ({refusal:?})", staged.offer.version);
+    super::security_events::on_policy_refusal(&staged.offer.version, refusal);
+    remove_installer(&staged.file, "withdrawn");
+    true
+}
+
+/// Asks the policy one last time and notes the outcome in the security log while the log can
+/// still write it: `RunEvent::Exit` calls this before `security_log::on_exit` flushes, and
+/// [`run_at_exit`] runs last, since on Windows it never returns. A refusal withdraws the installer
+/// here, so `run_at_exit` finds nothing and Restart is a plain restart.
 pub(crate) fn note_handoff<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     if let Some(state) = tauri::Manager::try_state::<UpdateState>(app) {
-        note_handoff_of(&state);
+        // A fresh read: the cache can be minutes old. Only an off-macOS stage gets here, where
+        // the read is local and quick, so blocking the exit on it is fine.
+        crate::managed_policy::refresh();
+        note_handoff_of(&state, &crate::managed_policy::current());
     }
 }
 
-fn note_handoff_of(state: &UpdateState) {
+fn note_handoff_of(state: &UpdateState, policy: &crate::managed_policy::ManagedPolicy) {
+    if withdraw_if_refused(state, policy) {
+        return;
+    }
     if let Some(version) = staged_version(state) {
         super::security_events::on_handoff(&version);
+    }
+}
+
+/// Removes a staged installer Cmdr no longer needs (`why` names the reason in the log). Gone
+/// already is fine.
+fn remove_installer(file: &std::path::Path, why: &str) {
+    if let Err(e) = std::fs::remove_file(file)
+        && e.kind() != std::io::ErrorKind::NotFound
+    {
+        log::warn!("Couldn't remove the {why} installer: {e}");
     }
 }
 
@@ -251,15 +290,35 @@ mod tests {
     async fn the_hand_off_reaches_the_security_log() {
         let state = UpdateState::new();
         let capture = crate::security_log::testing::capture_events();
-        note_handoff_of(&state);
+        note_handoff_of(&state, &forcing(&[]));
         assert!(capture.events().is_empty(), "nothing staged, nothing noted");
         downloaded(&state, offer("0.53.0", false));
         stage(&state, "0.52.0", |_| async { None }).await.expect("staged");
-        note_handoff_of(&state);
+        note_handoff_of(&state, &forcing(&[]));
         assert!(
             matches!(
                 capture.events().as_slice(),
                 [crate::security_log::SecurityEvent::UpdateInstalled { to_version, .. }] if to_version == "0.53.0"
+            ),
+            "{:?}",
+            capture.events()
+        );
+    }
+
+    /// Hostile: a profile that arrives AFTER the stage (`DisableUpdates` here) must stop Restart
+    /// from installing. Nothing is written until exit off macOS, so the policy can still say no.
+    #[tokio::test]
+    async fn a_policy_that_arrives_after_staging_withdraws_it_before_the_hand_off() {
+        let state = UpdateState::new();
+        let capture = crate::security_log::testing::capture_events();
+        downloaded(&state, offer("0.53.0", false));
+        stage(&state, "0.52.0", |_| async { None }).await.expect("staged");
+        note_handoff_of(&state, &forcing(&[DISABLE_UPDATES]));
+        assert_eq!(staged_version(&state), None, "Restart must not hand it off");
+        assert!(
+            matches!(
+                capture.events().as_slice(),
+                [crate::security_log::SecurityEvent::UpdateRefusedByPolicy { .. }]
             ),
             "{:?}",
             capture.events()

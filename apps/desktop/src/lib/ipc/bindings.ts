@@ -6202,8 +6202,8 @@ export const commands = {
    *  Fetches `latest.json` (via the update check proxy for analytics) and says what it found, with
    *  the organization's policy applied. An `Available` release is remembered for `download_update`.
    *
-   *  Answers `UpToDate` when this isn't a real user's production install ([`skip_reason`]): the
-   *  executable isn't inside a `.app` bundle (dev builds: install can't possibly succeed), or one of
+   *  Answers `UpToDate` when this isn't a real user's production install ([`skip_reason`]): nothing
+   *  an update could reach (`install_kind::current`: a dev build, a `.deb`), or one of
    *  [`crate::prod_instance::NON_PROD_ENV_VARS`] is set. Every check reaches
    *  `api.getcmdr.com/update-check`, which writes an `update_checks` row that the dashboard counts as
    *  an active install, so Cmdr's own runs must never call it. Also `UpToDate` when the remote version
@@ -6223,8 +6223,11 @@ export const commands = {
    *
    *  Returns `None` outside a `.app` bundle too: there's no bundle to classify, and the check gate
    *  (`skip_reason`) has already stopped that process from getting here. A classification that
-   *  doesn't finish in [`CLASSIFY_TIMEOUT`] (a stalled mount under the bundle) answers `None` as
+   *  doesn't finish in `CLASSIFY_TIMEOUT` (a stalled mount under the bundle) answers `None` as
    *  well: the installer runs the same check again before writing anything.
+   *
+   *  Off macOS there's no bundle to classify, so it answers `None`: the NSIS installer writes a
+   *  per-user install, and an AppImage the plugin can't replace fails the hand-off at exit.
    */
   updateWriteBlocker: () =>
     typedError<
@@ -6250,19 +6253,22 @@ export const commands = {
     >(__TAURI_INVOKE('update_write_blocker')),
   /**
    *  The running bundle's path, for the notice that asks someone to replace it ("`/Applications/Cmdr.app`
-   *  belongs to another account"), so it names the real folder and app name. `None` outside a bundle.
-   *  No filesystem access: it walks up from the executable's own path.
+   *  belongs to another account"), so it names the real folder and app name. `None` outside a bundle,
+   *  and off macOS, where no notice asks for it. No filesystem access: it walks up from the
+   *  executable's own path.
    */
   updateBundlePath: () => __TAURI_INVOKE<string | null>('update_bundle_path'),
   /**
    *  Downloads the update the last check offered and verifies its minisign signature. Takes no URL:
    *  the backend fetches only what it offered, so a bypassed frontend can't stage anything else.
    *
-   *  On success, records the tarball and its version in `UpdateState` for `install_update`.
+   *  On success, records the file and its offer in `UpdateState` for `install_update`.
    */
   downloadUpdate: () => typedError<null, UpdateDownloadError>(__TAURI_INVOKE('download_update')),
   /**
-   *  Installs a previously downloaded update by syncing files into the running `.app` bundle.
+   *  Makes a previously downloaded update ready for the restart: macOS syncs it into the running
+   *  `.app` bundle; Windows and Linux stage the verified installer, which Restart hands off
+   *  (`handoff.rs`).
    *
    *  Takes the download `download_update` recorded, and refuses it when the CURRENT policy doesn't
    *  allow its version: a download staged before a profile arrived must not install.
@@ -23337,10 +23343,20 @@ export type UpdateCheckOutcome =
   | { kind: 'upToDate' }
   // A newer release this Mac may install. `download_update` fetches exactly this one.
   | { kind: 'available'; version: string }
-  // A newer release is out, but `MaxUpdateVersion` holds this Mac at `ceiling` or earlier.
-  | { kind: 'heldByPolicy'; available: string; ceiling: string }
-  // `DisableUpdates`: no request was made.
-  | { kind: 'updatesDisabledByPolicy' }
+  /**
+   *  A newer release is out, but `MaxUpdateVersion` holds this Mac at `ceiling` or earlier.
+   *  `staged_withdrawn`: see [`UpdateCheckOutcome::UpdatesDisabledByPolicy`].
+   */
+  | { kind: 'heldByPolicy'; available: string; ceiling: string; stagedWithdrawn: boolean }
+  /**
+   *  `DisableUpdates`: no request was made.
+   *
+   *  `staged_withdrawn` is true when this answer also dropped a staged installer the policy now
+   *  refuses (Windows, Linux: `handoff::withdraw_if_refused`), so Restart no longer installs it
+   *  and the restart prompt must go. Always false on macOS, where install already wrote the
+   *  bundle.
+   */
+  | { kind: 'updatesDisabledByPolicy'; stagedWithdrawn: boolean }
   /**
    *  `DisableAutomaticUpdateChecks` refused a background check: no request was made. A check a
    *  person asks for still runs.
@@ -23409,13 +23425,14 @@ export type UpdateInstallError =
   /**
    *  The staged bundle's Apple code signature isn't a valid Cmdr Developer ID signature, though
    *  its archive passed minisign. Nothing was written. Means the updater key signed something
-   *  that isn't a Cmdr release (or the release itself is broken): log it at error.
+   *  that isn't a Cmdr release (or the release itself is broken): log it at error. macOS only.
    */
   | { type: 'untrustedCodeSignature'; detail: string }
   /**
    *  This install can't write its own bundle (`BundleWriteBlocker`), caught by the installer's own
    *  pre-flight check or by a write the sync was refused. The same answer `update_write_blocker`
    *  gives, so the frontend raises the same notice. Not a failure: ❌ never log it at error.
+   *  macOS only.
    */
   | { type: 'unwritable'; blocker: BundleWriteBlocker }
   // The install ran and didn't finish.
@@ -23424,8 +23441,9 @@ export type UpdateInstallError =
 // What a finished install tells the frontend beyond "restart to apply".
 export type UpdateInstalled = {
   /**
-   *  The security fixes this update carries, from the staged bundle's own signed advisory list
-   *  (never from `latest.json`), or `None` when it carries none the running build lacks.
+   *  The security fixes this update carries, from a signed advisory list (the staged bundle's on
+   *  macOS, the release's signed asset elsewhere; never from `latest.json` itself), or `None`
+   *  when it carries none the running build lacks.
    */
   securityNotice: SecurityNotice | null
 }

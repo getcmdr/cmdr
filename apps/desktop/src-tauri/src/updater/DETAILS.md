@@ -115,8 +115,11 @@ The organization's `DisableUpdates`, `DisableAutomaticUpdateChecks`, and `MaxUpd
 - **Already synced.** A build `install_update` already wrote into the bundle (frontend `ready`) applies at the next
   restart whatever the policy says later: the sync is the install.
 - The ceiling compares the release core only (`UpdateCeiling::allows`), so `0.53.0-rc.1` doesn't pass `"0.52"`.
-- Every OS runs these steps; off macOS `install_update` is the stage (§ Windows and Linux), so the fresh read there is
-  what keeps a Restart from installing a version a later profile refuses. The policy SOURCE is macOS-only today
+- Every OS runs these steps; off macOS `install_update` is the stage (§ Windows and Linux), and nothing is written
+  until Restart, so the policy keeps the last word past the stage too: a check answering `UpdatesDisabledByPolicy` or
+  `HeldByPolicy` drops a staged installer the policy now refuses (`handoff::withdraw_if_refused`, `staged_withdrawn:
+  true`, which takes the frontend's restart prompt down), and the exit re-reads the policy before the hand-off
+  (`handoff::note_handoff`, before the security log flushes, so a refusal is logged as one and never as an install). The policy SOURCE is macOS-only today
   (`managed_policy/`), so off macOS it answers "no policy" until a Windows source exists.
 - **No install, no notice.** Under `DisableUpdates` or a held version nothing is staged, so no bundle can say a fix
   exists. Advisories for managed fleets go out through the channels `docs/security-incident-procedure.md` lists.
@@ -303,8 +306,9 @@ policy are the macOS code, unchanged. What differs lives in `handoff.rs`, `insta
   newer stage deletes the one it supersedes. The frontend reaches `ready` exactly as on macOS.
 - **Restart hands off.** The toast's Restart calls `relaunch_app` as on macOS. `quit::relaunch` sees `is_staged`, arms
   the hand-off, and exits through the quit gate like ⌘Q, so a transfer in flight still asks, and "Keep working" disarms
-  it (`relaunch::disarm`) so a later plain quit installs nothing. In `RunEvent::Exit`, `before_flush` records
-  `UpdateInstalled` in the security log (the last moment it can still write), and `relaunch::on_exit`, last of all,
+  it (`relaunch::disarm`) so a later plain quit installs nothing. In `RunEvent::Exit`, `before_flush` re-reads the
+  policy (a refusal withdraws the installer and logs `UpdateRefusedByPolicy`, so Restart is a plain restart) and
+  otherwise records `UpdateInstalled` in the security log (the last moment it can still write), and `relaunch::on_exit`, last of all,
   runs `run_at_exit`, which hands a `HandoffPlan` to `platform::hand_off` (`platform/plugin.rs`):
   `updater_builder().target(<the manifest key>).pubkey(<the verifying key>)`, then
   `restore_update` on a one-platform manifest of exactly the verified offer, then `Update::install(bytes)`. The plugin
