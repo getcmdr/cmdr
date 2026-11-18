@@ -274,14 +274,17 @@ impl Volume for NfsVolume {
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
-        let dest_std = dest.as_std_legacy();
-        let dest: &Path = &dest_std;
         // ❗ Refused before anything opens: this backend hasn't opted into
         // unknown-length writes.
         if length.known().is_none() {
             return Box::pin(async { Err(VolumeError::NotSupported) });
         }
-        Box::pin(self.noting(self.write_from_stream_impl(dest, mode, length, stream, on_progress)))
+        Box::pin(async move {
+            let dest_std = dest.as_std_legacy();
+            let dest: &Path = &dest_std;
+            self.noting(self.write_from_stream_impl(dest, mode, length, stream, on_progress))
+                .await
+        })
     }
 
     fn metadata_caps(&self) -> MetadataCaps {
