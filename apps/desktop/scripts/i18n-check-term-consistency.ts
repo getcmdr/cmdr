@@ -261,7 +261,7 @@ const OWN_BRANCH: Readonly<Record<RenderedPlatform, PlatformSelectBranch | undef
  */
 function groupBySourceValue(
   source: Catalog,
-  senses: ReadonlyMap<string, string>,
+  senses: ReadonlyMap<string, string> | undefined,
 ): Map<string, { text: string; os: RenderedPlatform; members: Member[] }> {
   const groups = new Map<string, { text: string; os: RenderedPlatform; members: Member[] }>()
   for (const os of RENDERED_PLATFORMS) {
@@ -270,7 +270,7 @@ function groupBySourceValue(
       const normalized = normalizeForComparison(text, key)
       if (normalized.length < 2) continue
       const label = agreesWith(source, key)
-      const sense = senses.get(key)
+      const sense = senses?.get(key)
       const groupKey = [os, normalized, label ?? '', sense ?? ''].join('\u0000')
       const member = { key, branch }
       const bucket = groups.get(groupKey)
@@ -311,7 +311,7 @@ export function findDivergences(
   catalog: Catalog,
   isOverlay: boolean,
   english?: Record<string, string>,
-  senses: ReadonlyMap<string, string> = new Map(),
+  senses?: ReadonlyMap<string, string>,
 ): DivergenceFinding[] {
   // A split every OS shows (two plain keys) is found once per OS; one entry per distinct split is the finding.
   const findings = new Map<string, DivergenceFinding>()

@@ -254,7 +254,8 @@ export function runPlatformSelectCheck(opts: LocaleCheckOptions = {}): number {
     inspectLocale: ({ locale, source, catalog, findings }) => {
       for (const [key, value] of Object.entries(catalog.messages)) {
         const sourceValue = locale === 'en' ? undefined : source.messages[key]
-        const identicalBranches = locale === 'en' ? catalog.metadata[key]?.identicalBranches : undefined
+        const meta = locale === 'en' && key in catalog.metadata ? catalog.metadata[key] : undefined
+        const identicalBranches = meta?.identicalBranches
         for (const issue of platformSelectIssues({ key, value, sourceValue, identicalBranches })) {
           findings.add(key, issue)
         }

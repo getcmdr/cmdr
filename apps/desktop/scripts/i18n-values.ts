@@ -42,12 +42,17 @@ export interface ValuesLocale {
   base?: string
 }
 
+/** A catalog value, or `undefined` where the catalog lacks the key (its index type says it never does). */
+function valueOf(messages: Record<string, string>, key: string): string | undefined {
+  return key in messages ? messages[key] : undefined
+}
+
 /** Whether `locale` translated `key` from other English than its source holds now. */
 function isStale(locale: ValuesLocale, key: string): boolean {
-  if (!(key in locale.catalog.messages)) return false
-  const stored = locale.catalog.metadata[key]?.sourceHash
-  const sourceValue = locale.source.messages[key]
-  return sourceValue !== undefined && stored !== sourceHash(sourceValue)
+  const sourceValue = valueOf(locale.source.messages, key)
+  if (!(key in locale.catalog.messages) || sourceValue === undefined) return false
+  const stored = key in locale.catalog.metadata ? locale.catalog.metadata[key].sourceHash : undefined
+  return stored !== sourceHash(sourceValue)
 }
 
 /** The report: per key, per branch of the English, the English and each locale's text. */
@@ -56,7 +61,7 @@ export function valuesReport(en: Catalog, locales: readonly ValuesLocale[], keys
   const pad = (tag: string) => tag.padEnd(width)
   const out: string[] = []
   for (const key of keys) {
-    const english = en.messages[key]
+    const english = valueOf(en.messages, key)
     if (english === undefined) continue
     const stale = locales.filter((locale) => isStale(locale, key)).map(({ tag }) => tag)
     out.push(`## ${key}${stale.length > 0 ? `  (stale: ${stale.join(', ')})` : ''}`)
@@ -66,9 +71,9 @@ export function valuesReport(en: Catalog, locales: readonly ValuesLocale[], keys
       out.push(`${indent}${pad(BASE_LOCALE)}  ${text}`)
       const read = (value: string) => (name === null ? value : pickPlatformBranch(value, branchReader(name)))
       for (const locale of locales) {
-        const value = locale.catalog.messages[key]
+        const value = valueOf(locale.catalog.messages, key)
         if (locale.base !== undefined) {
-          const baseValue = locale.source.messages[key]
+          const baseValue = valueOf(locale.source.messages, key)
           if (baseValue !== undefined && baseValue !== english) {
             out.push(`${indent}${pad(locale.base)}  ${read(baseValue)}`)
           }
@@ -116,7 +121,7 @@ export function parseValuesArgs(argv: string[]): ValuesArgs {
     langs: lang === 'all' ? 'all' : lang.split(',').map((tag) => tag.trim()),
     keys: values.keys,
     keysFile: values['keys-file'],
-    stale: values.stale ?? false,
+    stale: values.stale,
     messagesRoot: values['messages-root'],
   }
 }
