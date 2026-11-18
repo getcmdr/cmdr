@@ -204,6 +204,21 @@ Translators log here every script they wrote and every workaround they needed (t
 after each wave. Two locales logging the same kind of script is a missing tool: build it or fix the brief, then delete
 the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
 
+- The worktree guard refused a plain shell `for` loop over `node scripts/i18n-values.ts --lang $l` (no git in it), so
+  per-locale reads need `--lang all` or one call per locale. (all locales, per-OS settings-window batch)
+- `--lang all` in `i18n:values` and `i18n:brief` leaves out the `es-419` overlay, so its forks needed a separate
+  `i18n:values --lang es-419` read and a hand-made values file under `_ignored/i18n-work/es-419/manual/` (the brief
+  creates no run directory for it). A `--lang all` that includes overlay forks would save both. (es-419)
+- `i18n-terms` reports a stale allowlist entry ("no longer diverges; drop it") but never rewrites
+  `i18n-term-consistency-allowlist.json`, unlike the shrink-wrapping allowlists, so the entry had to be removed by hand.
+  (es, pt)
+- `i18n-quoted-labels` pairs a quote with any key whose English is the same capitalized label, so a quote of a Windows
+  dialog's own control reads as a quote of a Cmdr key: the `windows` branches of
+  `errors.write.permissionDenied.suggestion.delete` and `errors.write.fileLocked.suggestion` quote File Explorer's
+  “Read-only” checkbox, which Czech Windows labels „Jen pro čtení“ (Microsoft TBX: read-only → jen pro čtení), but the
+  check demands Cmdr's own `errors.listing.readOnly.title` (`Jen ke čtení`, Apple's wording). The catalog is right and
+  the warning has no opt-out. Needs a per-pair exemption with a reason (or a `@key` marker for "quotes an OS control").
+  (cs)
 - The brief for 88 per-OS keys was 445 KB (about 110k tokens): too big for one read, and the Keys section alone needed
   three. Each key repeats its English three times (the value, the word diff, and the English branches inside "now") and
   an identical boilerplate bullet ("Per-OS value"). Print it once per brief, drop the diff when the only change is the
