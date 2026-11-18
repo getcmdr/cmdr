@@ -364,6 +364,10 @@
     ],
     "sv": [
       {
+        "source": "Preferences",
+        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the real on-disk name of the macOS `~/Library/Preferences` folder, kept verbatim, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's settings menu row, which GNOME Swedish calls `Inställningar` (sv/gnome-nautilus/nautilus.po `_Preferences`)."
+      },
+      {
         "source": "Checking",
         "reason": "`Kontrollerar` verifies something you already have (an API key, a license); `Söker` looks for something that may exist (`updates.status.checking`), matching the update family's `Sök efter uppdateringar`. See `docs/i18n/sv/terms.json` `check`."
       },

@@ -745,7 +745,11 @@
     "chosen": "konfigurera",
     "confidence": "high",
     "forms": "Konfigurera…; configuration profile → konfigurationsprofil",
-    "sources": "macOS/MS (Konfigurera), macOS SystemSettings (Konfigurationsprofil)"
+    "sources": "macOS/MS (Konfigurera), macOS SystemSettings (Konfigurationsprofil)",
+    "exceptions": {
+      "menu.app.settings": "linuxKde branch quotes KDE's standard Configure %1… action, which KDE Swedish writes Anpassa (sv/kde-dolphin/dolphin.po Configure… → Anpassa…): Anpassa Cmdr…",
+      "fileExplorer.quickFilter.intro.openSettings": "linuxKde branch quotes the same KDE menu row as menu.app.settings: Anpassa Cmdr…"
+    }
   },
   "confirm": {
     "accept": ["bekräftade", "bekräftelse", "bekräftat", "obekräftad"],
@@ -1931,7 +1935,8 @@
     "confidence": "high",
     "decision": "Apple translates Quick Look and Keychain",
     "forms": "the store nyckelringen (Kom ihåg i nyckelringen); the app Keychain Access → Nyckelhanterare",
-    "sources": "macOS Keychain Access.app InfoPlist.loctable (CFBundleDisplayName = Nyckelhanterare), Localizable (nyckelring)"
+    "sources": "macOS Keychain Access.app InfoPlist.loctable (CFBundleDisplayName = Nyckelhanterare), Localizable (nyckelring)",
+    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Kom ihåg i KWallet; a wallet → plånbok, tentative: KDE's own catalog isn't in the pile); GNOME's Passwords and Keys (Seahorse) → Lösenord och nycklar (tentative, not in the pile)."
   },
   "kind": {
     "chosen": "typ",
@@ -1988,7 +1993,8 @@
     "accept": ["list"],
     "chosen": "lista",
     "exceptions": {
-      "ai.cloudConsent.askCmdr.contentsRule": "the list of files inside an archive reads naturally as vilka filer som finns i ett arkiv; nothing names a list"
+      "ai.cloudConsent.askCmdr.contentsRule": "the list of files inside an archive reads naturally as vilka filer som finns i ett arkiv; nothing names a list",
+      "fileOperations.validation.notPortable.reservedName": "\"list\" is the verb here (a share lists the item under another name): visa, not the noun lista."
     },
     "confidence": "high",
     "forms": "listan; compound stem list- (Listfärgläggning); a named list by apposition: listan Servrar; compounds serverlista, värdlista, volymlista",
@@ -3270,7 +3276,15 @@
   "startup-disk": {
     "chosen": "startskiva",
     "confidence": "high",
-    "sources": "macOS Finder (Startskiva)"
+    "sources": "macOS Finder (Startskiva)",
+    "windows": {
+      "chosen": "systemenhet",
+      "note": "MS TBX system drive → systemenhet (tentative: from the TBX sense, not re-mined per entry)."
+    },
+    "other": {
+      "chosen": "systemdisk",
+      "note": "The English Linux branch says system disk; disk is the sv drive ruling's word for the English disk."
+    }
   },
   "status": {
     "accept": ["statusen"],
@@ -4006,7 +4020,8 @@
     "chosen": "filhanterare",
     "confidence": "high",
     "forms": "the Linux branch's generic app → din filhanterare",
-    "sources": "kde-dolphin, xfce-thunar (File Manager → Filhanterare), 2026-11-13"
+    "sources": "kde-dolphin, xfce-thunar (File Manager → Filhanterare), 2026-11-13",
+    "note": "Desktop branches name the app: GNOME Files → Filer (sv/gnome-nautilus/nautilus.po Files → Filer): Visa i Filer; KDE → Visa i Dolphin."
   },
   "powershell": {
     "chosen": "PowerShell",
@@ -4161,5 +4176,11 @@
     "chosen": "uppdateringsnoteringar",
     "confidence": "tentative",
     "sources": "catalog: whatsNew.optOutToast macOS/Linux branch (inga fler uppdateringsnoteringar), 2026-11-13"
+  },
+  "preferences": {
+    "chosen": "Inställningar",
+    "confidence": "high",
+    "sources": "macOS AppKit MenuCommands (Preferences → Inställningar); sv/gnome-nautilus/nautilus.po _Preferences → _Inställningar; sv/xfce-thunar/thunar.po Inställninga_r...",
+    "note": "GNOME's app-menu row (the linuxGnome branch of menu.app.settings) is Inställningar with no ellipsis."
   }
 }

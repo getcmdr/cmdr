@@ -107,9 +107,9 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {Webbplatsen som det enligt noteringen hämtades från (bara webbplatsens huvudadress, som github.com, aldrig en underdomän eller hela länken), när och vilken app som hämtade det. För en bilaga i Mail eller en AirDrop bara att det var en sådan, aldrig vem som skickade den} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {Webbplatsen som det enligt noteringen hämtades från (bara webbplatsens huvudadress, som github.com, aldrig en underdomän eller hela länken), när och vilken app som hämtade det. För en bilaga i Mail eller en AirDrop bara att det var en sådan, aldrig vem som skickade den} other {Webbplatsen som det enligt noteringen hämtades från (bara webbplatsens huvudadress, som github.com, aldrig en underdomän eller hela länken), när och vilken app som hämtade det}}",
   "@ai.cloudConsent.aboutThis.item.download": {
-    "sourceHash": "40d185c"
+    "sourceHash": "6594500"
   },
   "ai.cloudConsent.aboutThis.item.appAndSigner": "För en app eller ett program: namn, ID och version. För dem och för skivavbilder: namnet och team-ID för den som signerade, om koden fortfarande stämmer med signaturen och om Apples notariseringsintyg är bifogat",
   "@ai.cloudConsent.aboutThis.item.appAndSigner": {
@@ -599,29 +599,29 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Det gick inte att spara din API-nyckel: macOS Nyckelring nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: macOS Nyckelring nekade åtkomst}}} windows {{op, select, save {Det gick inte att spara din API-nyckel: Autentiseringshanteraren nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: Autentiseringshanteraren nekade åtkomst}}} linuxKde {{op, select, save {Couldn’t save your API key: KWallet denied access} other {Couldn’t read your saved API key: KWallet denied access}}} other {{op, select, save {Det gick inte att spara din API-nyckel: systemets nyckelring nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: systemets nyckelring nekade åtkomst}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Det gick inte att spara din API-nyckel: macOS Nyckelring nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: macOS Nyckelring nekade åtkomst}}} windows {{op, select, save {Det gick inte att spara din API-nyckel: Autentiseringshanteraren nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: Autentiseringshanteraren nekade åtkomst}}} linuxKde {{op, select, save {Det gick inte att spara din API-nyckel: KWallet nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: KWallet nekade åtkomst}}} other {{op, select, save {Det gick inte att spara din API-nyckel: systemets nyckelring nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: systemets nyckelring nekade åtkomst}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "25b34c4"
+    "sourceHash": "6daa595"
   },
-  "ai.secretError.body": "{platform, select, macos {{op, select, save {Öppna Nyckelhanterare och kontrollera posten ”Cmdr”, eller radera den och försök spara igen.} other {Öppna Nyckelhanterare, leta upp posten ”Cmdr”, ge åtkomst, eller radera den och ange din nyckel på nytt.}}} windows {{op, select, save {Öppna Autentiseringshanteraren och kontrollera posten ”Cmdr” under Windows-autentiseringsuppgifter, eller ta bort den och försök spara igen.} other {Öppna Autentiseringshanteraren, leta upp posten ”Cmdr” under Windows-autentiseringsuppgifter, eller ta bort den och ange din nyckel igen.}}} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Lås upp din nyckelring (appen Lösenord eller Nyckelringar) och försök igen.}}",
+  "ai.secretError.body": "{platform, select, macos {{op, select, save {Öppna Nyckelhanterare och kontrollera posten ”Cmdr”, eller radera den och försök spara igen.} other {Öppna Nyckelhanterare, leta upp posten ”Cmdr”, ge åtkomst, eller radera den och ange din nyckel på nytt.}}} windows {{op, select, save {Öppna Autentiseringshanteraren och kontrollera posten ”Cmdr” under Windows-autentiseringsuppgifter, eller ta bort den och försök spara igen.} other {Öppna Autentiseringshanteraren, leta upp posten ”Cmdr” under Windows-autentiseringsuppgifter, eller ta bort den och ange din nyckel igen.}}} linuxGnome {Lås upp din nyckelring i Lösenord och nycklar och försök igen.} linuxKde {Lås upp din plånbok i KWalletManager och försök igen.} other {Lås upp din nyckelring (appen Lösenord eller Nyckelringar) och försök igen.}}",
   "@ai.secretError.body": {
-    "sourceHash": "d65c5e3"
+    "sourceHash": "8a5496f"
   },
   "ai.secretError.genericTitle": "{op, select, save {Det gick inte att spara din API-nyckel.} other {Det gick inte att läsa din sparade API-nyckel.}}",
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Kontrollera att nyckelringen är tillgänglig och försök igen. Om det kvarstår, starta om appen.} windows {Kontrollera att Autentiseringshanteraren är tillgänglig och försök igen. Om det fortsätter att hända, starta om Cmdr.} linuxKde {Check that KWallet is available, then try again. If it persists, restart the app.} other {Kontrollera att systemets nyckelring är tillgänglig och försök igen. Om det kvarstår, starta om appen.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Kontrollera att nyckelringen är tillgänglig och försök igen. Om det kvarstår, starta om appen.} windows {Kontrollera att Autentiseringshanteraren är tillgänglig och försök igen. Om det fortsätter att hända, starta om Cmdr.} linuxKde {Kontrollera att KWallet är tillgänglig och försök igen. Om det kvarstår, starta om appen.} other {Kontrollera att systemets nyckelring är tillgänglig och försök igen. Om det kvarstår, starta om appen.}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "9fc0702"
+    "sourceHash": "cb879fa"
   },
   "ai.secretError.removeTitle": "Det gick inte att ta bort din sparade API-nyckel.",
   "@ai.secretError.removeTitle": {
     "sourceHash": "5986628"
   },
-  "ai.secretError.removeBody": "{platform, select, macos {Öppna Nyckelhanterare, leta upp posten ”Cmdr” och radera den där.} windows {Öppna Autentiseringshanteraren, leta upp posten ”Cmdr” under Windows-autentiseringsuppgifter och ta bort den där.} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Lås upp din nyckelring (appen Lösenord eller Nyckelringar) och försök igen.}}",
+  "ai.secretError.removeBody": "{platform, select, macos {Öppna Nyckelhanterare, leta upp posten ”Cmdr” och radera den där.} windows {Öppna Autentiseringshanteraren, leta upp posten ”Cmdr” under Windows-autentiseringsuppgifter och ta bort den där.} linuxGnome {Lås upp din nyckelring i Lösenord och nycklar och försök igen.} linuxKde {Lås upp din plånbok i KWalletManager och försök igen.} other {Lås upp din nyckelring (appen Lösenord eller Nyckelringar) och försök igen.}}",
   "@ai.secretError.removeBody": {
-    "sourceHash": "3a85511"
+    "sourceHash": "ab0d2ec"
   },
   "ai.managed.aiOff": "Din organisation har stängt av AI i Cmdr.",
   "@ai.managed.aiOff": {

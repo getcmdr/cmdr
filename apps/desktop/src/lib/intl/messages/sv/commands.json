@@ -844,9 +844,9 @@
   "@commands.dialogConfirm.label": {
     "sourceHash": "fef0684"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {Visa i Finder} windows {Visa i Utforskaren} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Visa i filhanteraren}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {Visa i Finder} windows {Visa i Utforskaren} linuxGnome {Visa i Filer} linuxKde {Visa i Dolphin} other {Visa i filhanteraren}}",
   "@commands.fileShowInFileManager.label": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "commands.fileOpenTerminalHere.label": "Öppna terminal här",
   "@commands.fileOpenTerminalHere.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från nyckelringen och låser säkerhetskopian igen} windows {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från Autentiseringshanteraren och låser säkerhetskopian igen} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från din nyckelring och låser säkerhetskopian igen}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från nyckelringen och låser säkerhetskopian igen} windows {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från Autentiseringshanteraren och låser säkerhetskopian igen} linuxKde {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från KWallet och låser säkerhetskopian igen} other {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från din nyckelring och låser säkerhetskopian igen}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "0f616ca"
+    "sourceHash": "5b48a77"
   },
   "commands.fileCopyShareLink.label": "Kopiera delningslänk (sju dagar)",
   "@commands.fileCopyShareLink.label": {
