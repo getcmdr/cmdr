@@ -125,7 +125,7 @@ impl ListingVolumes for OneVolume {
     fn resolve_local_only(&self, _volume_id: &str, path: &Path) -> ResolvedVolume {
         ResolvedVolume {
             volume: Some(Arc::clone(&self.volume)),
-            path: AppPath::legacy_unchecked(&path.to_path_buf()).into_owned(),
+            path: AppPath::legacy_unchecked(path).into_owned(),
             routed: self.routed,
             unconfirmed: None,
         }
