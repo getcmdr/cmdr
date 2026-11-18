@@ -418,6 +418,30 @@
   "@licensing.section.getLicense": {
     "sourceHash": "fab19d3"
   },
+  "licensing.section.includedTitle": "Das ist enthalten",
+  "@licensing.section.includedTitle": {
+    "sourceHash": "a441e05"
+  },
+  "licensing.section.includedFeatures": "Alle Funktionen des Dateimanagers",
+  "@licensing.section.includedFeatures": {
+    "sourceHash": "0a54a41"
+  },
+  "licensing.section.includedMacs": "Alle deine eigenen Macs, zur privaten Nutzung",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "d0968e4"
+  },
+  "licensing.section.includedUpdates": "Automatische Updates",
+  "@licensing.section.includedUpdates": {
+    "sourceHash": "147b1b6"
+  },
+  "licensing.section.includedAi": "Cmdr AI, kostenlos während der Beta, mit deinem eigenen API-Schlüssel oder lokal",
+  "@licensing.section.includedAi": {
+    "sourceHash": "1fec548"
+  },
+  "licensing.section.commercialNeeded": "Wenn du Cmdr für die Arbeit nutzt, auch im Job, für Auftragsarbeiten oder dein eigenes Unternehmen, brauchst du eine gewerbliche Lizenz. Bei der Arbeit kannst du Cmdr vorher bis zu 14 Tage lang ausprobieren.",
+  "@licensing.section.commercialNeeded": {
+    "sourceHash": "a3d7314"
+  },
   "licensing.section.typePersonal": "Privat (kostenlos)",
   "@licensing.section.typePersonal": {
     "sourceHash": "4af5ca9"
