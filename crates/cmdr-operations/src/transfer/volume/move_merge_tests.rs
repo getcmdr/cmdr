@@ -22,6 +22,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
 
 /// A folder move that MERGES must keep the source of every child it skipped.
@@ -37,17 +38,17 @@ async fn cross_volume_move_folder_merge_keeps_the_source_of_a_skipped_deep_child
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
 
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     source
-        .create_file(Path::new("/album/clash.txt"), b"SRC-clash")
+        .create_file(app_path!("/album/clash.txt"), b"SRC-clash")
         .await
         .unwrap();
     source
-        .create_file(Path::new("/album/fresh.txt"), b"SRC-fresh")
+        .create_file(app_path!("/album/fresh.txt"), b"SRC-fresh")
         .await
         .unwrap();
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(Path::new("/album/clash.txt"), b"DEST-clash")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(app_path!("/album/clash.txt"), b"DEST-clash")
         .await
         .unwrap();
 
@@ -73,17 +74,17 @@ async fn cross_volume_move_folder_merge_keeps_the_source_of_a_skipped_deep_child
     assert!(result.is_ok(), "expected Ok, got {result:?}");
 
     // The dest keeps its own version of the clashing child (Skip honored).
-    let mut kept = dest.open_read_stream(Path::new("/album/clash.txt")).await.unwrap();
+    let mut kept = dest.open_read_stream(app_path!("/album/clash.txt")).await.unwrap();
     assert_eq!(kept.next_chunk().await.unwrap().unwrap(), b"DEST-clash");
 
     // The non-clashing child moved through: at the dest, gone from the source.
-    assert!(dest.exists(Path::new("/album/fresh.txt")).await);
-    assert!(!source.exists(Path::new("/album/fresh.txt")).await);
+    assert!(dest.exists(app_path!("/album/fresh.txt")).await);
+    assert!(!source.exists(app_path!("/album/fresh.txt")).await);
 
     // ❗ THE INVARIANT: the skipped child never landed anywhere, so its source
     // must survive. Deleting it loses the only copy of the user's data.
     assert!(
-        source.exists(Path::new("/album/clash.txt")).await,
+        source.exists(app_path!("/album/clash.txt")).await,
         "a deep child skipped by the conflict policy must keep its source — it never landed at the dest"
     );
 }
@@ -97,17 +98,31 @@ async fn cross_volume_move_folder_merge_keeps_the_source_of_a_skipped_deep_child
 /// Builds the SOURCE half of the merge fixture under `root`.
 async fn build_merge_source_tree(vol: &Arc<dyn Volume>, root: &str) {
     let p = |rest: &str| PathBuf::from(format!("{root}{rest}"));
-    vol.create_directory(&p("")).await.unwrap();
-    vol.create_file(&p("/fresh.txt"), b"SRC-fresh").await.unwrap();
-    vol.create_file(&p("/clash.txt"), b"SRC-c").await.unwrap();
-    vol.create_directory(&p("/sub")).await.unwrap();
-    vol.create_file(&p("/sub/fresh2.txt"), b"SRC-fresh2").await.unwrap();
-    vol.create_file(&p("/sub/clash2.txt"), b"SRC-c2").await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(&p(""))).await.unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(&p("/fresh.txt")), b"SRC-fresh")
+        .await
+        .unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(&p("/clash.txt")), b"SRC-c")
+        .await
+        .unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(&p("/sub")))
+        .await
+        .unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(&p("/sub/fresh2.txt")), b"SRC-fresh2")
+        .await
+        .unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(&p("/sub/clash2.txt")), b"SRC-c2")
+        .await
+        .unwrap();
     // Cross-type clash A: source FILE onto a dest DIRECTORY.
-    vol.create_file(&p("/swap"), b"SRC-swap-file").await.unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(&p("/swap")), b"SRC-swap-file")
+        .await
+        .unwrap();
     // Cross-type clash B: source DIRECTORY onto a dest FILE.
-    vol.create_directory(&p("/swap2")).await.unwrap();
-    vol.create_file(&p("/swap2/inner.txt"), b"SRC-swap2-inner")
+    vol.create_directory(&AppPath::legacy_unchecked(&p("/swap2")))
+        .await
+        .unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(&p("/swap2/inner.txt")), b"SRC-swap2-inner")
         .await
         .unwrap();
 }
@@ -117,22 +132,35 @@ async fn build_merge_source_tree(vol: &Arc<dyn Volume>, root: &str) {
 /// is deliberately LARGER (so `OverwriteSmaller` reduces to Skip) and newer.
 async fn build_merge_dest_tree(vol: &Arc<dyn Volume>, root: &str) {
     let p = |rest: &str| PathBuf::from(format!("{root}{rest}"));
-    vol.create_directory(&p("")).await.unwrap();
-    vol.create_file(&p("/keep.txt"), b"DEST-keep").await.unwrap();
-    vol.create_file(&p("/clash.txt"), b"DEST-clash-is-bigger")
+    vol.create_directory(&AppPath::legacy_unchecked(&p(""))).await.unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(&p("/keep.txt")), b"DEST-keep")
         .await
         .unwrap();
-    vol.create_directory(&p("/sub")).await.unwrap();
-    vol.create_file(&p("/sub/keep2.txt"), b"DEST-keep2").await.unwrap();
-    vol.create_file(&p("/sub/clash2.txt"), b"DEST-clash2-is-bigger")
+    vol.create_file(&AppPath::legacy_unchecked(&p("/clash.txt")), b"DEST-clash-is-bigger")
         .await
         .unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(&p("/sub")))
+        .await
+        .unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(&p("/sub/keep2.txt")), b"DEST-keep2")
+        .await
+        .unwrap();
+    vol.create_file(
+        &AppPath::legacy_unchecked(&p("/sub/clash2.txt")),
+        b"DEST-clash2-is-bigger",
+    )
+    .await
+    .unwrap();
     // The other half of the two cross-type clashes.
-    vol.create_directory(&p("/swap")).await.unwrap();
-    vol.create_file(&p("/swap/inner.txt"), b"DEST-swap-inner")
+    vol.create_directory(&AppPath::legacy_unchecked(&p("/swap")))
         .await
         .unwrap();
-    vol.create_file(&p("/swap2"), b"DEST-swap2-file").await.unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(&p("/swap/inner.txt")), b"DEST-swap-inner")
+        .await
+        .unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(&p("/swap2")), b"DEST-swap2-file")
+        .await
+        .unwrap();
 }
 
 /// A folder-merge fixture for the move matrix: a source tree and a same-named
@@ -268,7 +296,7 @@ async fn same_volume_move_folder_merge_never_loses_a_byte_under_every_policy() {
         // One volume holding both trees: `/album` merges onto `/dest/album`.
         let volume: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("One").with_space_info(10_000_000, 10_000_000));
         build_merge_source_tree(&volume, "/album").await;
-        volume.create_directory(Path::new("/dest")).await.unwrap();
+        volume.create_directory(app_path!("/dest")).await.unwrap();
         build_merge_dest_tree(&volume, "/dest/album").await;
 
         let state = make_state_with_interval_ms(&engine, 0);

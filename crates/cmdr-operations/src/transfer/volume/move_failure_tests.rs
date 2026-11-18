@@ -18,6 +18,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, PermissionRefusal, PermissionSide};
+use cmdr_fs::app_path;
 use cmdr_fs::volume::{InMemoryVolume, VolumeError};
 
 /// Cross-volume MOVE, file→file Overwrite, streaming write SUCCEEDS but every
@@ -30,11 +31,11 @@ use cmdr_fs::volume::{InMemoryVolume, VolumeError};
 async fn cross_volume_move_preserves_new_data_on_finalize_failure() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/f.txt"), b"NEW").await.unwrap();
+    source.create_file(app_path!("/f.txt"), b"NEW").await.unwrap();
     let source: Arc<dyn Volume> = source;
 
     let dest_inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest_inner.create_file(Path::new("/f.txt"), b"OLD").await.unwrap();
+    dest_inner.create_file(app_path!("/f.txt"), b"OLD").await.unwrap();
     let dest: Arc<dyn Volume> = Arc::new(MoveRenameFailsDestVolume {
         inner: Arc::clone(&dest_inner),
     });
@@ -61,7 +62,10 @@ async fn cross_volume_move_preserves_new_data_on_finalize_failure() {
     assert!(result.is_err(), "a finalize-rename failure must surface as an error");
 
     async fn read(volume: &dyn Volume, path: &str) -> Option<Vec<u8>> {
-        let mut stream = volume.open_read_stream(Path::new(path)).await.ok()?;
+        let mut stream = volume
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+            .await
+            .ok()?;
         let mut buf = Vec::new();
         while let Some(Ok(chunk)) = stream.next_chunk().await {
             buf.extend_from_slice(&chunk);
@@ -90,10 +94,10 @@ async fn cross_volume_move_preserves_new_data_on_finalize_failure() {
 async fn cross_volume_move_error_names_the_child_that_failed_not_the_selected_folder() {
     let engine = TestOperations::new();
     let src = Arc::new(InMemoryVolume::new("source").with_space_info(10_000_000, 10_000_000));
-    src.create_directory(Path::new("/tree")).await.unwrap();
-    src.create_directory(Path::new("/tree/nested")).await.unwrap();
-    src.create_file(Path::new("/tree/fine.txt"), b"fine").await.unwrap();
-    src.create_file(Path::new("/tree/nested/doomed.txt"), b"doomed")
+    src.create_directory(app_path!("/tree")).await.unwrap();
+    src.create_directory(app_path!("/tree/nested")).await.unwrap();
+    src.create_file(app_path!("/tree/fine.txt"), b"fine").await.unwrap();
+    src.create_file(app_path!("/tree/nested/doomed.txt"), b"doomed")
         .await
         .unwrap();
     let source: Arc<dyn Volume> = src as Arc<dyn Volume>;
@@ -132,8 +136,8 @@ async fn cross_volume_move_error_names_the_child_that_failed_not_the_selected_fo
     );
 
     // The move must not have deleted anything: the copy phase never completed.
-    assert!(source.exists(Path::new("/tree/fine.txt")).await);
-    assert!(source.exists(Path::new("/tree/nested/doomed.txt")).await);
+    assert!(source.exists(app_path!("/tree/fine.txt")).await);
+    assert!(source.exists(app_path!("/tree/nested/doomed.txt")).await);
 }
 
 /// Same bug, second phase: a cross-volume move whose SOURCE DELETE trips on one
@@ -155,11 +159,11 @@ async fn cross_volume_move_delete_error_names_the_child_that_failed_not_the_sele
         },
     );
     let source: Arc<dyn Volume> = Arc::clone(&src) as Arc<dyn Volume>;
-    source.create_directory(Path::new("/tree")).await.unwrap();
-    source.create_directory(Path::new("/tree/nested")).await.unwrap();
-    source.create_file(Path::new("/tree/fine.txt"), b"fine").await.unwrap();
+    source.create_directory(app_path!("/tree")).await.unwrap();
+    source.create_directory(app_path!("/tree/nested")).await.unwrap();
+    source.create_file(app_path!("/tree/fine.txt"), b"fine").await.unwrap();
     source
-        .create_file(Path::new("/tree/nested/doomed.txt"), b"doomed")
+        .create_file(app_path!("/tree/nested/doomed.txt"), b"doomed")
         .await
         .unwrap();
 
@@ -193,8 +197,8 @@ async fn cross_volume_move_delete_error_names_the_child_that_failed_not_the_sele
 
     // The copy phase completed, so the data is safe at the destination, and the
     // file that refused to go is still at the source.
-    assert!(dest.exists(Path::new("/tree/nested/doomed.txt")).await);
-    assert!(source.exists(Path::new("/tree/nested/doomed.txt")).await);
+    assert!(dest.exists(app_path!("/tree/nested/doomed.txt")).await);
+    assert!(source.exists(app_path!("/tree/nested/doomed.txt")).await);
 }
 
 /// A cross-volume move of a FOLDER onto the user's FILE, answered Overwrite on
@@ -205,8 +209,8 @@ async fn cross_volume_move_delete_error_names_the_child_that_failed_not_the_sele
 async fn a_cross_type_move_that_fails_halfway_keeps_the_file_it_was_replacing() {
     let engine = TestOperations::new();
     let src = Arc::new(InMemoryVolume::new("source").with_space_info(10_000_000, 10_000_000));
-    src.create_directory(Path::new("/clash")).await.unwrap();
-    src.create_file(Path::new("/clash/a.txt"), b"incoming").await.unwrap();
+    src.create_directory(app_path!("/clash")).await.unwrap();
+    src.create_file(app_path!("/clash/a.txt"), b"incoming").await.unwrap();
     let source = super::super::faulty_volume::FaultyVolume::wrapping(src)
         .failing_call(
             super::super::faulty_volume::FaultyOp::OpenReadStream,
@@ -219,7 +223,7 @@ async fn a_cross_type_move_that_fails_halfway_keeps_the_file_it_was_replacing() 
         .arc();
     let dest_inner = Arc::new(InMemoryVolume::new("dest").with_space_info(10_000_000, 10_000_000));
     dest_inner
-        .create_file(Path::new("/clash"), b"the user's only copy")
+        .create_file(app_path!("/clash"), b"the user's only copy")
         .await
         .unwrap();
     let dest: Arc<dyn Volume> = dest_inner.clone();
@@ -255,10 +259,10 @@ async fn a_cross_type_move_that_fails_halfway_keeps_the_file_it_was_replacing() 
         "the failure names where the user's file went: {:?}",
         failure.error
     );
-    let mut stream = dest.open_read_stream(Path::new("/clash (recovered)")).await.unwrap();
+    let mut stream = dest.open_read_stream(app_path!("/clash (recovered)")).await.unwrap();
     assert_eq!(stream.next_chunk().await.unwrap().unwrap(), b"the user's only copy");
     assert!(
-        source.inner().exists(Path::new("/clash/a.txt")).await,
+        source.inner().exists(app_path!("/clash/a.txt")).await,
         "and the source never left"
     );
 }
@@ -279,7 +283,7 @@ async fn cross_volume_move_that_cannot_remove_the_original_says_the_copy_landed(
         VolumeError::from_io_at(&std::io::Error::from_raw_os_error(libc::EPERM), "/locked.jpg"),
     );
     let source: Arc<dyn Volume> = Arc::clone(&src) as Arc<dyn Volume>;
-    source.create_file(Path::new("/locked.jpg"), b"photo").await.unwrap();
+    source.create_file(app_path!("/locked.jpg"), b"photo").await.unwrap();
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
 
     let result = move_volumes_with_progress(
@@ -313,8 +317,8 @@ async fn cross_volume_move_that_cannot_remove_the_original_says_the_copy_landed(
     );
 
     // Both copies are real: nothing was lost, and nothing was rolled back.
-    assert!(dest.exists(Path::new("/photos/locked.jpg")).await);
-    assert!(source.exists(Path::new("/locked.jpg")).await);
+    assert!(dest.exists(app_path!("/photos/locked.jpg")).await);
+    assert!(source.exists(app_path!("/locked.jpg")).await);
 }
 
 /// The refusal a drive gives when it won't confirm a flush.
@@ -335,7 +339,7 @@ async fn a_move_whose_destination_wont_confirm_its_flush_keeps_the_source() {
 
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/f.txt"), b"only copy").await.unwrap();
+    source.create_file(app_path!("/f.txt"), b"only copy").await.unwrap();
     let source: Arc<dyn Volume> = source;
     let dest_inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
     let dest = FaultyVolume::wrapping(Arc::clone(&dest_inner))
@@ -361,8 +365,8 @@ async fn a_move_whose_destination_wont_confirm_its_flush_keeps_the_source() {
         "the move says the copy landed and the original stayed: {:?}",
         failure.error
     );
-    assert!(source.exists(Path::new("/f.txt")).await, "the original stays");
-    assert!(dest_inner.exists(Path::new("/f.txt")).await, "the copy landed");
+    assert!(source.exists(app_path!("/f.txt")).await, "the original stays");
+    assert!(dest_inner.exists(app_path!("/f.txt")).await, "the copy landed");
 }
 
 /// The copy twin: a copy deletes nothing, so it completes, carrying the typed
@@ -373,7 +377,7 @@ async fn a_copy_whose_destination_wont_confirm_its_flush_completes_unconfirmed()
 
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/f.txt"), b"bytes").await.unwrap();
+    source.create_file(app_path!("/f.txt"), b"bytes").await.unwrap();
     let dest = FaultyVolume::wrapping(Arc::new(
         InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000),
     ))

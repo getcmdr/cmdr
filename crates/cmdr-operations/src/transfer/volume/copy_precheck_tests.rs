@@ -24,6 +24,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
+use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::WriteMode;
@@ -114,7 +115,11 @@ impl RecordingDest {
             return path.to_path_buf();
         };
         let name = name.to_string_lossy();
-        let Ok(entries) = self.inner.list_directory(parent, None).await else {
+        let Ok(entries) = self
+            .inner
+            .list_directory(&AppPath::legacy_unchecked(parent), None)
+            .await
+        else {
             return path.to_path_buf();
         };
         let folded = backend_fold(&name);
@@ -127,7 +132,11 @@ impl RecordingDest {
     }
 
     async fn read(&self, path: &str) -> Option<Vec<u8>> {
-        let mut stream = self.inner.open_read_stream(Path::new(path)).await.ok()?;
+        let mut stream = self
+            .inner
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+            .await
+            .ok()?;
         let mut buf = Vec::new();
         while let Some(Ok(chunk)) = stream.next_chunk().await {
             buf.extend_from_slice(&chunk);
@@ -140,7 +149,7 @@ impl RecordingDest {
     async fn names_under(&self, dir: &str) -> Vec<String> {
         let mut names: Vec<String> = self
             .inner
-            .list_directory(Path::new(dir), None)
+            .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
             .await
             .expect("listing the destination")
             .into_iter()
@@ -158,7 +167,7 @@ impl Volume for RecordingDest {
     fn operations_are_local(&self) -> bool {
         self.operations_are_local
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -172,9 +181,12 @@ impl Volume for RecordingDest {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         self.listed.lock_ignore_poison().push(path.to_path_buf());
         if let Some(message) = self.listing_failure {
             return Box::pin(async move {
@@ -184,80 +196,105 @@ impl Volume for RecordingDest {
                 })
             });
         }
-        self.inner.list_directory(path, on_progress)
+        self.inner.list_directory(path_app, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         self.probed.lock_ignore_poison().push(path.to_path_buf());
         Box::pin(async move {
+            let path_std = path_app.as_std_legacy();
+            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.get_metadata(&real).await
+            self.inner.get_metadata(&AppPath::legacy_unchecked(&real)).await
         })
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.exists(&real).await
+            self.inner.exists(&AppPath::legacy_unchecked(&real)).await
         })
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.is_directory(&real).await
+            self.inner.is_directory(&AppPath::legacy_unchecked(&real)).await
         })
     }
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::volume::EntryKind, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.entry_kind(&real).await
+            self.inner.entry_kind(&AppPath::legacy_unchecked(&real)).await
         })
     }
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_directory(path)
     }
     fn create_directory_all<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
         self.inner.create_directory_all(path)
     }
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.create_file(&real, content).await
+            self.inner.create_file(&AppPath::legacy_unchecked(&real), content).await
         })
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.delete(&real).await
+            self.inner.delete(&AppPath::legacy_unchecked(&real)).await
         })
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let from_std = from.as_std_legacy();
+            let from: &Path = &from_std;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
             let real_from = self.resolve(from).await;
             let real_to = self.resolve(to).await;
-            self.inner.rename(&real_from, &real_to, force).await
+            self.inner
+                .rename(
+                    &AppPath::legacy_unchecked(&real_from),
+                    &AppPath::legacy_unchecked(&real_to),
+                    force,
+                )
+                .await
         })
     }
     fn get_space_info<'a>(&'a self) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
@@ -265,17 +302,19 @@ impl Volume for RecordingDest {
     }
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let real = self.resolve(path).await;
-            self.inner.open_read_stream(&real).await
+            self.inner.open_read_stream(&AppPath::legacy_unchecked(&real)).await
         })
     }
     fn create_directory_errors_on_existing_dir(&self) -> bool {
@@ -283,16 +322,24 @@ impl Volume for RecordingDest {
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         _mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let dest_std = dest.as_std_legacy();
+            let dest: &Path = &dest_std;
             let real = self.resolve(dest).await;
             self.inner
-                .write_from_stream(&real, WriteMode::CreateOrReplace, length, stream, on_progress)
+                .write_from_stream(
+                    &AppPath::legacy_unchecked(&real),
+                    WriteMode::CreateOrReplace,
+                    length,
+                    stream,
+                    on_progress,
+                )
                 .await
         })
     }
@@ -310,7 +357,10 @@ async fn sources_named(names: &[&str]) -> (Arc<InMemoryVolume>, Vec<PathBuf>) {
     for name in names {
         let path = format!("/{name}");
         source
-            .create_file(Path::new(&path), format!("source {name}").as_bytes())
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&path)),
+                format!("source {name}").as_bytes(),
+            )
             .await
             .expect("seed a source file");
         paths.push(PathBuf::from(path));
@@ -355,11 +405,11 @@ async fn a_merge_answers_every_conflict_from_one_listing() {
     let (source, paths) = five_sources().await;
     let dest = RecordingDest::new();
     dest.inner
-        .create_directory(Path::new("/inbox"))
+        .create_directory(app_path!("/inbox"))
         .await
         .expect("seed the pre-existing destination");
     dest.inner
-        .create_file(Path::new("/inbox/doc-2.txt"), b"the user's own copy")
+        .create_file(app_path!("/inbox/doc-2.txt"), b"the user's own copy")
         .await
         .expect("seed the colliding file");
 
@@ -403,11 +453,11 @@ async fn a_destination_name_differing_only_in_case_is_still_a_conflict() {
     let (source, paths) = five_sources().await;
     let dest = RecordingDest::new();
     dest.inner
-        .create_directory(Path::new("/inbox"))
+        .create_directory(app_path!("/inbox"))
         .await
         .expect("seed the pre-existing destination");
     dest.inner
-        .create_file(Path::new("/inbox/DOC-2.TXT"), b"the user's own copy")
+        .create_file(app_path!("/inbox/DOC-2.TXT"), b"the user's own copy")
         .await
         .expect("seed the colliding file, spelled differently");
 
@@ -449,11 +499,14 @@ async fn a_destination_name_differing_only_in_unicode_normalization_is_still_a_c
     let (source, paths) = sources_named(&["a.txt", "b.txt", "cafe\u{301}.txt"]).await;
     let dest = RecordingDest::new();
     dest.inner
-        .create_directory(Path::new("/inbox"))
+        .create_directory(app_path!("/inbox"))
         .await
         .expect("seed the pre-existing destination");
     dest.inner
-        .create_file(Path::new("/inbox/caf\u{e9}.txt"), b"the user's own copy")
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new("/inbox/caf\u{e9}.txt")),
+            b"the user's own copy",
+        )
         .await
         .expect("seed the colliding file, composed differently");
 
@@ -482,11 +535,11 @@ async fn a_failed_listing_falls_back_to_per_file_probes() {
     let (source, paths) = five_sources().await;
     let dest = RecordingDest::with_failing_listing();
     dest.inner
-        .create_directory(Path::new("/inbox"))
+        .create_directory(app_path!("/inbox"))
         .await
         .expect("seed the pre-existing destination");
     dest.inner
-        .create_file(Path::new("/inbox/doc-2.txt"), b"the user's own copy")
+        .create_file(app_path!("/inbox/doc-2.txt"), b"the user's own copy")
         .await
         .expect("seed the colliding file");
 
@@ -562,7 +615,7 @@ async fn an_empty_but_preexisting_destination_is_never_assumed_free() {
     let (source, paths) = five_sources().await;
     let dest = RecordingDest::with_failing_listing();
     dest.inner
-        .create_directory(Path::new("/empty"))
+        .create_directory(app_path!("/empty"))
         .await
         .expect("seed an empty pre-existing destination");
 
@@ -605,7 +658,7 @@ async fn a_copy_into_the_volume_root_is_a_merge() {
     let (source, paths) = five_sources().await;
     let dest = RecordingDest::new();
     dest.inner
-        .create_file(Path::new("/doc-2.txt"), b"the user's own copy")
+        .create_file(app_path!("/doc-2.txt"), b"the user's own copy")
         .await
         .expect("seed the colliding file at the root");
 
@@ -634,11 +687,11 @@ async fn a_local_destination_keeps_its_per_file_probes() {
     let (source, paths) = five_sources().await;
     let dest = RecordingDest::local();
     dest.inner
-        .create_directory(Path::new("/inbox"))
+        .create_directory(app_path!("/inbox"))
         .await
         .expect("seed the pre-existing destination");
     dest.inner
-        .create_file(Path::new("/inbox/doc-2.txt"), b"the user's own copy")
+        .create_file(app_path!("/inbox/doc-2.txt"), b"the user's own copy")
         .await
         .expect("seed the colliding file");
 
@@ -668,16 +721,16 @@ async fn a_directory_source_still_merges_and_keeps_destination_only_files() {
     let source = Arc::new(InMemoryVolume::new("source").with_space_info(10_000_000, 10_000_000));
     for name in ["/loose-a.txt", "/loose-b.txt"] {
         source
-            .create_file(Path::new(name), b"loose")
+            .create_file(&AppPath::legacy_unchecked(Path::new(name)), b"loose")
             .await
             .expect("seed a loose source file");
     }
     source
-        .create_directory(Path::new("/photos"))
+        .create_directory(app_path!("/photos"))
         .await
         .expect("seed the source directory");
     source
-        .create_file(Path::new("/photos/new.jpg"), b"new photo")
+        .create_file(app_path!("/photos/new.jpg"), b"new photo")
         .await
         .expect("seed a file inside the source directory");
     let paths = vec![
@@ -688,15 +741,15 @@ async fn a_directory_source_still_merges_and_keeps_destination_only_files() {
 
     let dest = RecordingDest::new();
     dest.inner
-        .create_directory(Path::new("/inbox"))
+        .create_directory(app_path!("/inbox"))
         .await
         .expect("seed the pre-existing destination");
     dest.inner
-        .create_directory(Path::new("/inbox/photos"))
+        .create_directory(app_path!("/inbox/photos"))
         .await
         .expect("seed the same-named destination directory");
     dest.inner
-        .create_file(Path::new("/inbox/photos/old.jpg"), b"the user's own photo")
+        .create_file(app_path!("/inbox/photos/old.jpg"), b"the user's own photo")
         .await
         .expect("seed a destination-only file inside it");
 

@@ -23,6 +23,7 @@ use super::rename_merge_test_support::{exists, local_volume, make_state, mkdir, 
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, VolumeCopyConfig};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::Volume;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -445,7 +446,15 @@ async fn a_top_level_dir_link_is_not_merged_when_a_preview_scanned_it_as_a_folde
     mkdir(root, "dst/album");
 
     let sources = vec![PathBuf::from("src/album")];
-    let batch = volume.scan_for_copy_batch(&sources).await.expect("preview scan");
+    let batch = volume
+        .scan_for_copy_batch(
+            &sources
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+        )
+        .await
+        .expect("preview scan");
     assert!(
         batch.per_path[0].1.top_level_is_directory,
         "precondition: the preview's scan follows the link"

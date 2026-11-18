@@ -3,6 +3,8 @@
 //! `DETAILS.md` § "A copy carries a link as the link".
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::symlink;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -41,8 +43,8 @@ fn no_links() -> Arc<InMemoryVolume> {
 const ESCAPING: &str = "../../../etc/passwd";
 async fn source_with_link() -> Arc<InMemoryVolume> {
     let source = no_links();
-    source.create_directory(Path::new("/tree")).await.unwrap();
-    source.create_file(Path::new("/tree/keep.txt"), b"kept").await.unwrap();
+    source.create_directory(app_path!("/tree")).await.unwrap();
+    source.create_file(app_path!("/tree/keep.txt"), b"kept").await.unwrap();
     source.plant_symlink(Path::new("/tree/link"), Path::new(ESCAPING));
     source
 }
@@ -80,7 +82,10 @@ async fn copy(
 }
 
 async fn target_at(volume: &InMemoryVolume, path: &str) -> Option<PathBuf> {
-    volume.read_link_target(Path::new(path)).await.unwrap()
+    volume
+        .read_link_target(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .unwrap()
 }
 
 fn skipped(events: &CollectorEventSink) -> usize {
@@ -95,7 +100,10 @@ fn no_temps(names: &[String]) {
 }
 
 async fn names_at(volume: &dyn Volume, dir: &str) -> Vec<String> {
-    let listed = volume.list_directory(Path::new(dir), None).await.unwrap();
+    let listed = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
+        .await
+        .unwrap();
     listed.into_iter().map(|entry| entry.name).collect()
 }
 
@@ -118,7 +126,7 @@ async fn a_folder_copy_lands_a_link_verbatim_wherever_it_points() {
         target_at(&dest, "/tree/link").await.as_deref(),
         Some(Path::new(ESCAPING))
     );
-    assert!(dest.exists(Path::new("/tree/keep.txt")).await);
+    assert!(dest.exists(app_path!("/tree/keep.txt")).await);
     assert_eq!(skipped(&events), 0);
     no_temps(&names_at(&*dest, "/tree").await);
     no_temps(&names_at(&*dest, "/").await);
@@ -191,7 +199,7 @@ async fn a_selected_link_a_destination_cant_hold_is_a_counted_skip_not_a_failure
 
     assert!(source.fault_fired(FaultyOp::OpenReadStream));
     assert!(result.is_ok(), "{result:?}");
-    assert!(!dest.exists(Path::new("/alone")).await);
+    assert!(!dest.exists(app_path!("/alone")).await);
     assert_eq!(skipped(&events), 1);
 }
 
@@ -200,8 +208,8 @@ async fn the_concurrent_driver_counts_a_selected_link_it_cant_land() {
     let engine = TestOperations::new();
     let inner = no_links();
     inner.plant_symlink(Path::new("/alone"), Path::new("somewhere"));
-    inner.create_file(Path::new("/a.txt"), b"a").await.unwrap();
-    inner.create_file(Path::new("/b.txt"), b"b").await.unwrap();
+    inner.create_file(app_path!("/a.txt"), b"a").await.unwrap();
+    inner.create_file(app_path!("/b.txt"), b"b").await.unwrap();
     let source = answering_no_content(inner, "/alone");
     let dest = no_links();
     let sources = [
@@ -213,7 +221,7 @@ async fn the_concurrent_driver_counts_a_selected_link_it_cant_land() {
 
     assert!(source.fault_fired(FaultyOp::OpenReadStream));
     assert!(result.is_ok(), "{result:?}");
-    assert!(dest.exists(Path::new("/a.txt")).await && dest.exists(Path::new("/b.txt")).await);
+    assert!(dest.exists(app_path!("/a.txt")).await && dest.exists(app_path!("/b.txt")).await);
     assert_eq!(skipped(&events), 1);
 }
 
@@ -260,7 +268,7 @@ async fn a_local_link_to_a_folder_lands_as_the_link_on_a_destination_that_holds_
         target_at(&dest, "/tree/link").await.as_deref(),
         Some(Path::new("../real"))
     );
-    assert!(!dest.exists(Path::new("/tree/link/a.txt")).await);
+    assert!(!dest.exists(app_path!("/tree/link/a.txt")).await);
     let last = events.progress.lock_ignore_poison().last().cloned().expect("progress");
     assert_eq!(last.files_total, 2, "the file and the link");
     assert_eq!(last.files_done, 2);
@@ -299,7 +307,7 @@ async fn a_destination_with_no_links_still_gets_what_a_local_link_points_at() {
     let (result, _) = copy(&engine, local_folder(&dir), &[PathBuf::from("/tree")], dest.clone()).await;
 
     assert!(result.is_ok(), "{result:?}");
-    assert!(dest.exists(Path::new("/tree/link/a.txt")).await);
+    assert!(dest.exists(app_path!("/tree/link/a.txt")).await);
 }
 
 /// A link-capable backend on a filesystem with no links (exFAT under a local
@@ -318,7 +326,7 @@ async fn a_destination_whose_filesystem_refuses_links_takes_the_older_route() {
     let (result, events) = copy(&engine, local_folder(&dir), &[PathBuf::from("/tree")], dest.clone()).await;
 
     assert!(result.is_ok(), "{result:?}");
-    assert!(dest.exists(Path::new("/tree/link/a.txt")).await);
+    assert!(dest.exists(app_path!("/tree/link/a.txt")).await);
     assert_eq!(skipped(&events), 0);
     no_temps(&names_at(&*dest, "/").await);
 }
@@ -343,7 +351,7 @@ async fn a_move_still_follows_a_link_onto_a_destination_that_could_hold_it() {
     .await;
 
     assert!(result.is_ok(), "{result:?}");
-    assert!(dest.exists(Path::new("/tree/link/a.txt")).await);
+    assert!(dest.exists(app_path!("/tree/link/a.txt")).await);
     assert_eq!(
         std::fs::read(dir.join("real/a.txt")).unwrap(),
         b"aaa",
@@ -356,7 +364,7 @@ async fn a_move_still_follows_a_link_onto_a_destination_that_could_hold_it() {
 async fn a_copy_inside_one_volume_carries_nothing() {
     let engine = TestOperations::new();
     let volume = holds_links();
-    volume.create_directory(Path::new("/real")).await.unwrap();
+    volume.create_directory(app_path!("/real")).await.unwrap();
     volume.plant_symlink(Path::new("/alone"), Path::new("/real"));
     let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
     let as_dyn: Arc<dyn Volume> = volume;
@@ -372,8 +380,8 @@ async fn a_link_meeting_a_file_honors_the_policy() {
         let engine = TestOperations::new();
         let source = source_with_link().await;
         let dest = holds_links();
-        dest.create_directory(Path::new("/tree")).await.unwrap();
-        dest.create_file(Path::new("/tree/link"), b"mine").await.unwrap();
+        dest.create_directory(app_path!("/tree")).await.unwrap();
+        dest.create_file(app_path!("/tree/link"), b"mine").await.unwrap();
         let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
         let events = Arc::new(ConflictResponderSink::new(&state, ConflictResolution::Skip, false));
 
@@ -397,7 +405,7 @@ async fn a_link_meeting_a_file_honors_the_policy() {
         let at_name = target_at(&dest, "/tree/link").await;
         assert_eq!(at_name.is_some(), replaced, "{policy:?}");
         if !replaced {
-            let kept = dest.read_range(Path::new("/tree/link"), 0, 16).await.unwrap();
+            let kept = dest.read_range(app_path!("/tree/link"), 0, 16).await.unwrap();
             assert_eq!(kept, b"mine");
         }
         no_temps(&names_at(&*dest, "/tree").await);
@@ -412,9 +420,9 @@ async fn a_link_meeting_a_real_folder_leaves_the_folder_alone() {
     let engine = TestOperations::new();
     let source = source_with_link().await;
     let dest = holds_links();
-    dest.create_directory(Path::new("/tree")).await.unwrap();
-    dest.create_directory(Path::new("/tree/link")).await.unwrap();
-    dest.create_file(Path::new("/tree/link/mine.txt"), b"mine")
+    dest.create_directory(app_path!("/tree")).await.unwrap();
+    dest.create_directory(app_path!("/tree/link")).await.unwrap();
+    dest.create_file(app_path!("/tree/link/mine.txt"), b"mine")
         .await
         .unwrap();
     let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
@@ -437,7 +445,7 @@ async fn a_link_meeting_a_real_folder_leaves_the_folder_alone() {
     .await;
 
     assert!(result.is_ok(), "{result:?}");
-    assert!(dest.exists(Path::new("/tree/link/mine.txt")).await);
+    assert!(dest.exists(app_path!("/tree/link/mine.txt")).await);
     assert_eq!(target_at(&dest, "/tree/link").await, None);
 }
 
@@ -470,7 +478,7 @@ async fn a_rollback_removes_the_links_it_landed_and_only_those() {
     )
     .await;
 
-    assert!(!dest.exists(Path::new("/ours")).await);
+    assert!(!dest.exists(app_path!("/ours")).await);
     assert_eq!(
         target_at(&dest, "/changed").await.as_deref(),
         Some(Path::new("someone else's"))

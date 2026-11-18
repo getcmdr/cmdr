@@ -13,6 +13,7 @@
 //! at the end, which would hide every defect these suites are about.
 
 use super::*;
+use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::WriteMode;
 use cmdr_fs::volume::{
@@ -132,7 +133,7 @@ impl Volume for GatedSource {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -149,43 +150,46 @@ impl Volume for GatedSource {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> StdPin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> StdPin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> StdPin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let file_size = self.file_size;
         let gate = Arc::clone(&self.gate);
         let opened = Arc::clone(&self.opened);
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             // An empty source file streams nothing and its copy lands at once;
             // anything else streams `file_size` gated bytes.
-            let real_size = self.inner.get_metadata(path).await.ok().and_then(|m| m.size);
+            let real_size = self.inner.get_metadata(path_app).await.ok().and_then(|m| m.size);
             let total = if real_size == Some(0) { 0 } else { file_size };
             opened.fetch_add(1, Ordering::SeqCst);
             let stream: Box<dyn VolumeReadStream> = match self.failing.as_ref().filter(|f| f.path == path) {
@@ -272,8 +276,8 @@ impl IncrementalDest {
     /// at the write path chunk by chunk (`InMemoryVolume::create_file` refuses to
     /// overwrite).
     async fn publish(&self, path: &Path, data: &[u8]) -> Result<(), VolumeError> {
-        let _ = self.inner.delete(path).await;
-        self.inner.create_file(path, data).await
+        let _ = self.inner.delete(&AppPath::legacy_unchecked(path)).await;
+        self.inner.create_file(&AppPath::legacy_unchecked(path), data).await
     }
 }
 
@@ -281,7 +285,7 @@ impl Volume for IncrementalDest {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -298,52 +302,55 @@ impl Volume for IncrementalDest {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> StdPin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> StdPin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> StdPin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_directory(path)
     }
     fn create_directory_all<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
         self.inner.create_directory_all(path)
     }
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_file(path, content)
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.delete(path)
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         if !self.wedge_rename {
@@ -368,7 +375,7 @@ impl Volume for IncrementalDest {
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.inner.open_read_stream(path)
     }
@@ -378,13 +385,13 @@ impl Volume for IncrementalDest {
     fn scan_for_conflicts<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
-        dest_path: &'a Path,
+        dest_path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_conflicts(source_items, dest_path)
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         _mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
@@ -394,6 +401,9 @@ impl Volume for IncrementalDest {
             return Box::pin(async { Err(VolumeError::NotSupported) });
         };
         Box::pin(async move {
+            let dest_app = dest;
+            let dest_std = dest.as_std_legacy();
+            let dest: &Path = &dest_std;
             let mut data: Vec<u8> = Vec::new();
             // Publish an empty file up front, like a `File::create` / SMB CREATE
             // does: this is the zero-byte artifact the incident left behind.
@@ -407,7 +417,7 @@ impl Volume for IncrementalDest {
                 if on_progress(StreamWriteProgress::new(data.len() as u64, StreamLength::Known(size))).is_break() {
                     // What every real backend does on cancel: drop the handle and
                     // remove the partial at the WRITE path.
-                    let _ = self.inner.delete(dest).await;
+                    let _ = self.inner.delete(dest_app).await;
                     self.aborted.fetch_add(1, Ordering::SeqCst);
                     return Err(VolumeError::Cancelled("Operation cancelled by user".into()));
                 }
@@ -419,7 +429,7 @@ impl Volume for IncrementalDest {
 
 /// Names of everything sitting in the destination root.
 pub(super) async fn dest_names(dest: &Arc<InMemoryVolume>) -> Vec<String> {
-    dest.list_directory(Path::new("/"), None)
+    dest.list_directory(app_path!("/"), None)
         .await
         .unwrap()
         .into_iter()
@@ -429,7 +439,10 @@ pub(super) async fn dest_names(dest: &Arc<InMemoryVolume>) -> Vec<String> {
 
 /// Full contents of a destination file, or `None` if it isn't there.
 pub(super) async fn read_dest(dest: &Arc<InMemoryVolume>, path: &str) -> Option<Vec<u8>> {
-    let mut stream = dest.open_read_stream(Path::new(path)).await.ok()?;
+    let mut stream = dest
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .ok()?;
     let mut buf = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         buf.extend_from_slice(&chunk);

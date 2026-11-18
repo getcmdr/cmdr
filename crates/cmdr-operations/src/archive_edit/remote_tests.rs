@@ -10,6 +10,8 @@
 //! machinery. The end-to-end SMB (Docker) and MTP (virtual-device) round-trips
 //! live in the integration suites.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::future::Future;
 use std::io::{Cursor, Write};
@@ -52,7 +54,10 @@ fn build_zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
 /// `name -> contents` map. Panics if the archive can't be opened (a corrupt swap
 /// fails loudly here).
 async fn read_remote_zip(parent: &dyn Volume, path: &Path) -> HashMap<String, Vec<u8>> {
-    let mut stream = parent.open_read_stream(path).await.expect("open remote archive");
+    let mut stream = parent
+        .open_read_stream(&AppPath::legacy_unchecked(path))
+        .await
+        .expect("open remote archive");
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend_from_slice(&chunk.expect("read chunk"));
@@ -75,7 +80,7 @@ async fn read_remote_zip(parent: &dyn Volume, path: &Path) -> HashMap<String, Ve
 async fn sibling_names(parent: &dyn Volume, archive_path: &Path) -> Vec<String> {
     let dir = archive_path.parent().expect("archive has a parent dir");
     parent
-        .list_directory(dir, None)
+        .list_directory(&AppPath::legacy_unchecked(dir), None)
         .await
         .expect("list parent dir")
         .into_iter()
@@ -96,10 +101,13 @@ fn add_entry(inner: &str, bytes: &[u8]) -> AddEntry {
 async fn remote_parent_with_zip(archive_path: &Path, zip_bytes: &[u8]) -> Arc<InMemoryVolume> {
     let parent = InMemoryVolume::new("Remote");
     if let Some(dir) = archive_path.parent() {
-        parent.create_directory(dir).await.expect("seed parent dir");
+        parent
+            .create_directory(&AppPath::legacy_unchecked(dir))
+            .await
+            .expect("seed parent dir");
     }
     parent
-        .create_file(archive_path, zip_bytes)
+        .create_file(&AppPath::legacy_unchecked(archive_path), zip_bytes)
         .await
         .expect("seed remote zip");
     Arc::new(parent)
@@ -123,7 +131,7 @@ fn now_secs() -> u64 {
 /// The bytes don't matter — the reaper only lists names and mtimes, then deletes.
 async fn seed_temp(parent: &InMemoryVolume, temp_path: &Path, modified_at_secs: u64) {
     parent
-        .create_file(temp_path, b"partial upload")
+        .create_file(&AppPath::legacy_unchecked(temp_path), b"partial upload")
         .await
         .expect("seed temp");
     parent.set_modified_at(temp_path, Some(modified_at_secs));
@@ -386,8 +394,11 @@ async fn remote_edit_swaps_via_delete_then_rename_on_a_sibling_allowing_backend(
     let original = build_zip(&[("keep.txt", b"keep me")]);
 
     let parent = InMemoryVolume::new("Remote-MTP").with_sibling_duplicates_allowed();
-    parent.create_directory(Path::new("/device")).await.expect("seed dir");
-    parent.create_file(&archive_path, &original).await.expect("seed zip");
+    parent.create_directory(app_path!("/device")).await.expect("seed dir");
+    parent
+        .create_file(&AppPath::legacy_unchecked(&archive_path), &original)
+        .await
+        .expect("seed zip");
     let parent = Arc::new(parent);
     let state = running_state();
 
@@ -491,9 +502,12 @@ const SWAP_VOLUME_ID: &str = "remote-swap";
 /// with `bundle.zip`.
 async fn sibling_allowing_parent(archive_path: &Path) -> Arc<InMemoryVolume> {
     let parent = InMemoryVolume::new("Remote-MTP").with_sibling_duplicates_allowed();
-    parent.create_directory(Path::new("/device")).await.expect("seed dir");
+    parent.create_directory(app_path!("/device")).await.expect("seed dir");
     parent
-        .create_file(archive_path, &build_zip(&[("keep.txt", b"keep me")]))
+        .create_file(
+            &AppPath::legacy_unchecked(archive_path),
+            &build_zip(&[("keep.txt", b"keep me")]),
+        )
         .await
         .expect("seed zip");
     Arc::new(parent)
@@ -551,7 +565,7 @@ async fn sweep_transfer_temps(parent: &dyn Volume) {
     for name in names_in(parent, "/device").await {
         if name.contains(".cmdr-tmp-") {
             parent
-                .delete(&Path::new("/device").join(name))
+                .delete(&AppPath::legacy_unchecked(&Path::new("/device").join(name)))
                 .await
                 .expect("sweep a temp");
         }
@@ -711,7 +725,10 @@ async fn a_crash_after_any_step_of_the_swap_loses_no_archive() {
         );
         let inner = sibling_allowing_parent(&archive_path).await;
         inner
-            .create_file(&sibling, &build_zip(&[("other.txt", b"other")]))
+            .create_file(
+                &AppPath::legacy_unchecked(&sibling),
+                &build_zip(&[("other.txt", b"other")]),
+            )
             .await
             .expect("seed the sibling zip");
         let dying = Arc::new(GoesSilentAfter::new(Arc::clone(&inner), cut));
@@ -723,7 +740,8 @@ async fn a_crash_after_any_step_of_the_swap_loses_no_archive() {
         assert_eq!(landed, cut >= 3, "cut {cut}: success only once the edit took its name");
         if cut == 2 {
             assert!(
-                !inner.exists(&archive_path).await && aside_in_device(inner.as_ref()).await.is_some(),
+                !inner.exists(&AppPath::legacy_unchecked(&archive_path)).await
+                    && aside_in_device(inner.as_ref()).await.is_some(),
                 "cut 2: the original is aside, its name empty"
             );
         }
@@ -778,22 +796,23 @@ async fn two_asides_claiming_one_empty_name_both_stay_put() {
     let older = PathBuf::from("/device/bundle.zip.cmdr-temp-00000000-0000-4000-8000-000000000001");
     let newer = PathBuf::from("/device/bundle.zip.cmdr-temp-ffffffff-0000-4000-8000-000000000002");
     inner
-        .create_file(&older, &build_zip(&[("v.txt", b"older")]))
+        .create_file(&AppPath::legacy_unchecked(&older), &build_zip(&[("v.txt", b"older")]))
         .await
         .expect("seed the older aside");
     inner
-        .create_file(&newer, &build_zip(&[("v.txt", b"newer")]))
+        .create_file(&AppPath::legacy_unchecked(&newer), &build_zip(&[("v.txt", b"newer")]))
         .await
         .expect("seed the newer aside");
 
     assert!(add_edit(inner.clone() as Arc<dyn Volume>, sibling).await.is_ok());
 
     assert!(
-        !inner.exists(Path::new("/device/bundle.zip")).await,
+        !inner.exists(app_path!("/device/bundle.zip")).await,
         "an ambiguous pair must not pick a version for the name"
     );
     assert!(
-        inner.exists(&older).await && inner.exists(&newer).await,
+        inner.exists(&AppPath::legacy_unchecked(&older)).await
+            && inner.exists(&AppPath::legacy_unchecked(&newer)).await,
         "both asides stay"
     );
 }
@@ -855,7 +874,7 @@ impl Volume for GoesSilentAfter {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         if self.silent() {
@@ -866,7 +885,7 @@ impl Volume for GoesSilentAfter {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         if self.silent() {
             return Box::pin(async { Err(gone()) });
@@ -876,7 +895,7 @@ impl Volume for GoesSilentAfter {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn cmdr_fs::volume::VolumeReadStream>, VolumeError>> + Send + 'a>>
     {
         if self.silent() {
@@ -887,7 +906,7 @@ impl Volume for GoesSilentAfter {
 
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: cmdr_fs::volume::WriteMode,
         length: cmdr_fs::volume::StreamLength,
         stream: Box<dyn cmdr_fs::volume::VolumeReadStream>,
@@ -901,8 +920,8 @@ impl Volume for GoesSilentAfter {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         if let Err(e) = self.mutate() {
@@ -911,7 +930,7 @@ impl Volume for GoesSilentAfter {
         self.inner.rename(from, to, force)
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         if let Err(e) = self.mutate() {
             return Box::pin(async { Err(e) });
         }
@@ -985,8 +1004,8 @@ impl Volume for RenameLandsButErrs {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -1060,7 +1079,7 @@ impl Volume for ClearsThenDiesOnAForcedRename {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -1071,7 +1090,7 @@ impl Volume for ClearsThenDiesOnAForcedRename {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             self.alive()?;
@@ -1081,7 +1100,7 @@ impl Volume for ClearsThenDiesOnAForcedRename {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn cmdr_fs::volume::VolumeReadStream>, VolumeError>> + Send + 'a>>
     {
         Box::pin(async move {
@@ -1092,7 +1111,7 @@ impl Volume for ClearsThenDiesOnAForcedRename {
 
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: cmdr_fs::volume::WriteMode,
         length: cmdr_fs::volume::StreamLength,
         stream: Box<dyn cmdr_fs::volume::VolumeReadStream>,
@@ -1108,22 +1127,25 @@ impl Volume for ClearsThenDiesOnAForcedRename {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let to_app = to;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
             self.alive()?;
-            if force && self.inner.exists(to).await {
-                self.inner.delete(to).await?;
+            if force && self.inner.exists(&AppPath::legacy_unchecked(to)).await {
+                self.inner.delete(&AppPath::legacy_unchecked(to)).await?;
                 self.dead.store(true, Ordering::SeqCst);
                 return Err(gone());
             }
-            self.inner.rename(from, to, force).await
+            self.inner.rename(from, to_app, force).await
         })
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             self.alive()?;
             self.inner.delete(path).await

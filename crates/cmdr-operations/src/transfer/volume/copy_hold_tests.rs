@@ -8,6 +8,8 @@ use crate::event_sinks::{CollectorEventSink, OperationEventSink};
 use crate::manager::{DeferredStart, ManagedTaskGuard, OperationDescriptor};
 use crate::testing::{TestOperations, pause_write_operation, resume_write_operation};
 use crate::types::{OperationSummaryText, RollbackSupport, VolumeCopyConfig, WriteOperationType};
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
@@ -27,7 +29,10 @@ async fn volumes(name: &str) -> (Arc<InMemoryVolume>, Arc<dyn Volume>) {
             .counting_transfer_holds(),
     );
     for file in ["/a.txt", "/b.txt"] {
-        source.create_file(Path::new(file), b"restored").await.expect("seed");
+        source
+            .create_file(&AppPath::legacy_unchecked(Path::new(file)), b"restored")
+            .await
+            .expect("seed");
     }
     let dest: Arc<dyn Volume> = Arc::new(
         InMemoryVolume::new("Disk")
@@ -120,11 +125,11 @@ async fn a_paused_copy_holds_its_source_and_lets_go_when_it_completes() {
         source.live_transfer_holds() == 1
     })
     .await;
-    assert!(!dest.exists(Path::new("/b.txt")).await, "still paused");
+    assert!(!dest.exists(app_path!("/b.txt")).await, "still paused");
 
     assert!(resume_write_operation(&engine, &id));
     settled(&events).await;
-    assert!(dest.exists(Path::new("/b.txt")).await, "the copy finished");
+    assert!(dest.exists(app_path!("/b.txt")).await, "the copy finished");
     assert_eq!(source.live_transfer_holds(), 0, "let go of once settled");
 }
 

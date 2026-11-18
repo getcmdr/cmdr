@@ -13,6 +13,7 @@ use super::test_support::make_state;
 use super::*;
 use crate::testing::TestOperations;
 use crate::transfer::transfer_driver::LeafProgressLedger;
+use cmdr_fs::app_path;
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -66,31 +67,31 @@ impl Volume for SingleShotDest {
     fn name(&self) -> &str {
         "single-shot-dest"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { false })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(false) })
     }
@@ -99,15 +100,23 @@ impl Volume for SingleShotDest {
     }
     /// Nothing is ever at a name here, so a swap's delete of the original
     /// finds nothing to remove.
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(async move { Err(VolumeError::NotFound(path.display().to_string())) })
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            Err(VolumeError::NotFound(path.display().to_string()))
+        })
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         _force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let from_std = from.as_std_legacy();
+        let from: &Path = &from_std;
+        let to_std = to.as_std_legacy();
+        let to: &Path = &to_std;
         let renames = Arc::clone(&self.renames);
         let pair = (from.to_path_buf(), to.to_path_buf());
         Box::pin(async move {
@@ -126,12 +135,14 @@ impl Volume for SingleShotDest {
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
+        let dest_std = dest.as_std_legacy();
+        let dest: &Path = &dest_std;
         let Some(size) = length.known() else {
             return Box::pin(async { Err(VolumeError::NotSupported) });
         };
@@ -180,7 +191,7 @@ async fn copy_one_to(
 ) {
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("source"));
     source
-        .create_file(Path::new("/notes.txt"), &vec![0xAB; size])
+        .create_file(app_path!("/notes.txt"), &vec![0xAB; size])
         .await
         .unwrap();
     let Fixture { dest, writes, renames } = SingleShotDest::fixture(limit, whole);

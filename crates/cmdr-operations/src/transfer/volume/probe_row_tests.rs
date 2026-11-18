@@ -27,6 +27,7 @@
 //!
 //! Shared fixtures live in `volume/move_test_support.rs` (`super::test_support`).
 
+use cmdr_fs::app_path;
 use cmdr_operation_log::types::OperationId;
 use std::pin::Pin;
 use std::sync::Mutex;
@@ -104,7 +105,7 @@ impl Volume for TablePhotographingDest {
 
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn cmdr_fs::volume::VolumeReadStream>,
@@ -133,11 +134,14 @@ impl Volume for TablePhotographingDest {
 /// Builds `/album` with `count` files on a fresh in-memory source.
 async fn folder_of(count: usize) -> Arc<dyn Volume> {
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_directory(Path::new("/album")).await.expect("mkdir");
+    source.create_directory(app_path!("/album")).await.expect("mkdir");
     for index in 0..count {
         let name = format!("/album/f-{index:02}.bin");
         source
-            .create_file(Path::new(&name), &vec![index as u8; LEAF_BYTES])
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&name)),
+                &vec![index as u8; LEAF_BYTES],
+            )
             .await
             .expect("seed file");
     }

@@ -5,6 +5,8 @@
 //! destination here is an in-memory volume with a Linux host's FAT rules preset,
 //! holding the siblings a stripped name would land on.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -38,24 +40,34 @@ const SIBLING: &[u8] = b"the user's own bytes";
 async fn run_case(driver: Driver) {
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for dir in ["/album", "/album/dir."] {
-        source.create_directory(Path::new(dir)).await.unwrap();
+        source
+            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .await
+            .unwrap();
     }
     for file in ["/album/ok.txt", "/album/dup.", "/album/dir./x.txt"] {
-        source.create_file(Path::new(file), b"incoming").await.unwrap();
+        source
+            .create_file(&AppPath::legacy_unchecked(Path::new(file)), b"incoming")
+            .await
+            .unwrap();
     }
     let mut sources = vec![PathBuf::from("/album")];
     if driver != Driver::SerialCopy {
-        source.create_file(Path::new("/top."), b"incoming").await.unwrap();
+        source.create_file(app_path!("/top."), b"incoming").await.unwrap();
         sources.push(PathBuf::from("/top."));
     }
 
     // What a stripped name would land on: siblings the user already has.
     let dest = Arc::new(InMemoryVolume::new("Stick").with_space_info(10_000_000, 10_000_000));
     for dir in ["/inbox", "/inbox/album", "/inbox/album/dir"] {
-        dest.create_directory(Path::new(dir)).await.unwrap();
+        dest.create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .await
+            .unwrap();
     }
     for file in ["/inbox/album/dup", "/inbox/album/dir/x.txt", "/inbox/top"] {
-        dest.create_file(Path::new(file), SIBLING).await.unwrap();
+        dest.create_file(&AppPath::legacy_unchecked(Path::new(file)), SIBLING)
+            .await
+            .unwrap();
     }
 
     let engine = TestOperations::new();
@@ -101,7 +113,7 @@ async fn run_case(driver: Driver) {
 
     for sibling in ["/inbox/album/dup", "/inbox/album/dir/x.txt", "/inbox/top"] {
         let mut stream = dest
-            .open_read_stream(Path::new(sibling))
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new(sibling)))
             .await
             .expect("the sibling opens");
         let mut bytes = Vec::new();
@@ -111,10 +123,13 @@ async fn run_case(driver: Driver) {
         assert_eq!(bytes, SIBLING, "{driver:?}: {sibling} was written over");
     }
     for refused in ["/inbox/album/dup.", "/inbox/album/dir.", "/inbox/top."] {
-        assert!(!dest.exists(Path::new(refused)).await, "{driver:?}: {refused} landed");
+        assert!(
+            !dest.exists(&AppPath::legacy_unchecked(Path::new(refused))).await,
+            "{driver:?}: {refused} landed"
+        );
     }
     assert!(
-        dest.exists(Path::new("/inbox/album/ok.txt")).await,
+        dest.exists(app_path!("/inbox/album/ok.txt")).await,
         "{driver:?}: ok.txt"
     );
 
@@ -139,7 +154,7 @@ async fn run_case(driver: Driver) {
     if driver == Driver::CrossVolumeMove {
         for kept in ["/album/dup.", "/album/dir./x.txt", "/top."] {
             assert!(
-                source.exists(Path::new(kept)).await,
+                source.exists(&AppPath::legacy_unchecked(Path::new(kept))).await,
                 "a move keeps a skipped source: {kept}"
             );
         }

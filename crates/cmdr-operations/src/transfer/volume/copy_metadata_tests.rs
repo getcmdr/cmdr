@@ -8,6 +8,7 @@
 //! pass. The contract: `DETAILS.md` § "Copies keep the source's metadata".
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path::AppPath;
 use std::os::unix::fs::PermissionsExt as _;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -68,7 +69,10 @@ async fn a_routed_mode_lands_folded_with_no_source_stat() {
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for (name, mode) in [("run.sh", 0o755), ("private.txt", 0o600), ("modeless.txt", 0)] {
         let path = PathBuf::from("/").join(name);
-        source.create_file(&path, b"#!/bin/sh\n").await.unwrap();
+        source
+            .create_file(&AppPath::legacy_unchecked(&path), b"#!/bin/sh\n")
+            .await
+            .unwrap();
         let carried = CarriedMetadata {
             mode: Some(mode),
             ..CarriedMetadata::default()
@@ -111,6 +115,8 @@ async fn a_routed_mode_lands_folded_with_no_source_stat() {
 /// Birth is macOS-only: Linux can't set one.
 #[cfg(target_os = "macos")]
 mod birth {
+    use cmdr_fs::app_path;
+    use cmdr_fs::app_path::AppPath;
     use std::time::UNIX_EPOCH;
 
     use super::*;
@@ -141,10 +147,22 @@ mod birth {
     async fn seed_born_album(source: &InMemoryVolume) -> PathBuf {
         let album = PathBuf::from("/album");
         let inner = album.join("inner");
-        source.create_directory(&album).await.unwrap();
-        source.create_directory(&inner).await.unwrap();
-        source.create_file(&album.join("photo.bin"), b"photo").await.unwrap();
-        source.create_file(&inner.join("deep.bin"), b"deep").await.unwrap();
+        source
+            .create_directory(&AppPath::legacy_unchecked(&album))
+            .await
+            .unwrap();
+        source
+            .create_directory(&AppPath::legacy_unchecked(&inner))
+            .await
+            .unwrap();
+        source
+            .create_file(&AppPath::legacy_unchecked(&album.join("photo.bin")), b"photo")
+            .await
+            .unwrap();
+        source
+            .create_file(&AppPath::legacy_unchecked(&inner.join("deep.bin")), b"deep")
+            .await
+            .unwrap();
         source.set_carried_metadata(&album.join("photo.bin"), born(PHOTO_BORN));
         source.set_carried_metadata(&inner.join("deep.bin"), born(PHOTO_BORN));
         source.set_carried_metadata(&inner, born(INNER_BORN));
@@ -206,7 +224,7 @@ mod birth {
     async fn a_file_selected_on_its_own_keeps_its_creation_date() {
         let engine = TestOperations::new();
         let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-        source.create_file(Path::new("/old.txt"), b"old").await.unwrap();
+        source.create_file(app_path!("/old.txt"), b"old").await.unwrap();
         source.set_carried_metadata(Path::new("/old.txt"), born(PHOTO_BORN));
         source.set_modified_at(Path::new("/old.txt"), Some(MODIFIED));
         let dest_dir = TestDir::new("copy_metadata_birth_alone");

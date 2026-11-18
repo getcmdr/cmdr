@@ -815,10 +815,8 @@ async fn merge_level<'a>(
                 };
 
                 let (dest_index, entries) = if legs_may_overlap {
-                    tokio::join!(
-                        dest_prepare,
-                        source_volume.list_directory_as_source(&AppPath::legacy_unchecked(source_path))
-                    )
+                    let source_path_app = AppPath::legacy_unchecked(source_path);
+                    tokio::join!(dest_prepare, source_volume.list_directory_as_source(&source_path_app))
                 } else {
                     (
                         dest_prepare.await,

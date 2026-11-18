@@ -7,6 +7,8 @@
 use super::*;
 use crate::host::testing::PaneListings;
 use crate::testing::{TestOperationLog, TestOperations};
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::BridgedPath;
 use std::fs;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -173,7 +175,7 @@ async fn create_directory_invalid_chars() {
 async fn create_on_a_share_takes_a_reserved_name_and_refuses_what_it_cant_store() {
     let engine = TestOperations::new();
     let share = InMemoryVolume::new("Share").with_backend_kind(BackendKind::Smb);
-    share.create_directory(Path::new("/docs")).await.expect("seed dir");
+    share.create_directory(app_path!("/docs")).await.expect("seed dir");
     let share = Arc::new(share);
     engine
         .volumes()
@@ -206,7 +208,9 @@ async fn create_on_a_share_takes_a_reserved_name_and_refuses_what_it_cant_store(
         );
     }
     assert!(
-        !share.exists(&Path::new("/docs").join(&long)).await,
+        !share
+            .exists(&AppPath::legacy_unchecked(&Path::new("/docs").join(&long)))
+            .await,
         "the long name landed"
     );
 }
@@ -217,7 +221,7 @@ async fn create_on_a_share_takes_a_reserved_name_and_refuses_what_it_cant_store(
 async fn create_on_an_opaque_backend_takes_posix_names() {
     let engine = TestOperations::new();
     let server = InMemoryVolume::new("Server").with_backend_kind(BackendKind::Sftp);
-    server.create_directory(Path::new("/home")).await.expect("seed dir");
+    server.create_directory(app_path!("/home")).await.expect("seed dir");
     engine
         .volumes()
         .register("sftp-server", Arc::new(server) as Arc<dyn Volume>);
@@ -382,38 +386,38 @@ async fn create_directory_managed_creates_folder_and_cleans_up_record() {
 /// stub.
 struct DeniedVolume {
     name: String,
-    root: PathBuf,
+    root: BridgedPath,
 }
 
 impl Volume for DeniedVolume {
     fn name(&self) -> &str {
         &self.name
     }
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(vec![]) })
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { false })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
@@ -425,9 +429,11 @@ impl Volume for DeniedVolume {
     // in the path payload pass here.
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             Err(VolumeError::PermissionDenied {
                 path: path.display().to_string(),
                 raw_os_error: None,
@@ -436,10 +442,12 @@ impl Volume for DeniedVolume {
     }
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         _content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             Err(VolumeError::PermissionDenied {
                 path: path.display().to_string(),
                 raw_os_error: None,
@@ -456,7 +464,7 @@ async fn create_directory_core_maps_permission_denied_to_friendly_message() {
         &vid,
         Arc::new(DeniedVolume {
             name: vid.clone(),
-            root: PathBuf::from("/"),
+            root: BridgedPath::new(PathBuf::from("/")),
         }),
     );
     let result = create_directory_core_on(engine.host(), Some(vid), "/somewhere", "folder").await;
@@ -478,7 +486,7 @@ async fn create_file_core_maps_permission_denied_to_friendly_message() {
         &vid,
         Arc::new(DeniedVolume {
             name: vid.clone(),
-            root: PathBuf::from("/"),
+            root: BridgedPath::new(PathBuf::from("/")),
         }),
     );
     let result = create_file_core_on(engine.host(), Some(vid), "/somewhere", "file.txt").await;

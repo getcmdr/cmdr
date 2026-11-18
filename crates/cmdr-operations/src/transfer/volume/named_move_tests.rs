@@ -4,6 +4,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
+use cmdr_fs::app_path;
 
 #[tokio::test]
 async fn named_volume_moves_honor_skip_and_overwrite_at_the_requested_leaf() {
@@ -13,11 +14,11 @@ async fn named_volume_moves_honor_skip_and_overwrite_at_the_requested_leaf() {
             let (source, other) = make_volumes();
             let dest = if same_volume { Arc::clone(&source) } else { other };
             source
-                .create_file(Path::new("/original.txt"), b"new bytes")
+                .create_file(app_path!("/original.txt"), b"new bytes")
                 .await
                 .unwrap();
-            dest.create_directory(Path::new("/dest")).await.unwrap();
-            dest.create_file(Path::new("/dest/renamed.txt"), b"old bytes")
+            dest.create_directory(app_path!("/dest")).await.unwrap();
+            dest.create_file(app_path!("/dest/renamed.txt"), b"old bytes")
                 .await
                 .unwrap();
             let config = VolumeCopyConfig {
@@ -54,12 +55,12 @@ async fn named_volume_moves_honor_skip_and_overwrite_at_the_requested_leaf() {
                 .await
                 .unwrap();
             }
-            let mut reader = dest.open_read_stream(Path::new("/dest/renamed.txt")).await.unwrap();
+            let mut reader = dest.open_read_stream(app_path!("/dest/renamed.txt")).await.unwrap();
             let skipped = policy == ConflictResolution::Skip;
             let expected = if skipped { b"old bytes" } else { b"new bytes" };
             assert_eq!(reader.next_chunk().await.unwrap().unwrap(), expected);
-            assert_eq!(source.exists(Path::new("/original.txt")).await, skipped);
-            assert!(!dest.exists(Path::new("/dest/original.txt")).await);
+            assert_eq!(source.exists(app_path!("/original.txt")).await, skipped);
+            assert!(!dest.exists(app_path!("/dest/original.txt")).await);
         }
     }
 }
@@ -71,11 +72,11 @@ async fn named_volume_folder_moves_keep_empty_directories() {
         let (source, other) = make_volumes();
         let dest = if same_volume { Arc::clone(&source) } else { other };
         source
-            .create_directory_all(Path::new("/original/empty/nested"))
+            .create_directory_all(app_path!("/original/empty/nested"))
             .await
             .unwrap();
         source
-            .create_file(Path::new("/original/child.txt"), b"payload")
+            .create_file(app_path!("/original/child.txt"), b"payload")
             .await
             .unwrap();
         let config = VolumeCopyConfig {
@@ -111,13 +112,13 @@ async fn named_volume_folder_moves_keep_empty_directories() {
             .await
             .unwrap();
         }
-        assert!(dest.exists(Path::new("/dest/renamed/child.txt")).await);
+        assert!(dest.exists(app_path!("/dest/renamed/child.txt")).await);
         assert!(
-            dest.is_directory(Path::new("/dest/renamed/empty/nested"))
+            dest.is_directory(app_path!("/dest/renamed/empty/nested"))
                 .await
                 .unwrap()
         );
-        assert!(!source.exists(Path::new("/original")).await);
-        assert!(!dest.exists(Path::new("/dest/original")).await);
+        assert!(!source.exists(app_path!("/original")).await);
+        assert!(!dest.exists(app_path!("/dest/original")).await);
     }
 }

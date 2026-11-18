@@ -8,6 +8,8 @@
 //! `attributes_integration_test.rs` and the app's `smb_transfer_semantics_test.rs`
 //! cells. The contract: `DETAILS.md` § "Copies keep the source's metadata".
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -45,7 +47,7 @@ impl Volume for CountingDest {
 
     fn apply_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         carried: &'a CarriedMetadata,
         modified: Option<std::time::SystemTime>,
     ) -> Pin<Box<dyn Future<Output = MetadataReport> + Send + 'a>> {
@@ -81,7 +83,10 @@ async fn copy(
 }
 
 async fn seed_file(volume: &InMemoryVolume, path: &str, flags: UserFlags) {
-    volume.create_file(Path::new(path), b"bytes").await.unwrap();
+    volume
+        .create_file(&AppPath::legacy_unchecked(Path::new(path)), b"bytes")
+        .await
+        .unwrap();
     volume.set_carried_metadata(
         Path::new(path),
         CarriedMetadata {
@@ -110,7 +115,7 @@ async fn hidden_and_locked_land_on_files_and_folders() {
     let source = source();
     seed_file(&source, "/locked.txt", UserFlags::HIDDEN | UserFlags::LOCKED).await;
     seed_file(&source, "/hidden.txt", UserFlags::HIDDEN).await;
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     seed_file(&source, "/album/inside.txt", UserFlags::NONE).await;
     source.set_carried_metadata(
         Path::new("/album"),
@@ -133,7 +138,7 @@ async fn hidden_and_locked_land_on_files_and_folders() {
     assert_eq!(flags_at(&dest, "/locked.txt"), UserFlags::HIDDEN | UserFlags::LOCKED);
     assert_eq!(flags_at(&dest, "/hidden.txt"), UserFlags::HIDDEN);
     assert_eq!(flags_at(&dest, "/album"), UserFlags::LOCKED, "a folder keeps its flags");
-    assert!(dest.exists(Path::new("/album/inside.txt")).await);
+    assert!(dest.exists(app_path!("/album/inside.txt")).await);
 }
 
 /// An Overwrite lands through a safe-replace swap, so the file takes its flags
@@ -144,7 +149,7 @@ async fn an_overwrite_lands_locked_at_the_name_it_replaced() {
     let source = source();
     seed_file(&source, "/notes.txt", UserFlags::LOCKED).await;
     let dest = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest.create_file(Path::new("/notes.txt"), b"the old notes")
+    dest.create_file(app_path!("/notes.txt"), b"the old notes")
         .await
         .unwrap();
 
@@ -162,7 +167,7 @@ async fn an_overwrite_lands_locked_at_the_name_it_replaced() {
 
     assert_eq!(flags_at(&dest, "/notes.txt"), UserFlags::LOCKED);
     let names: Vec<String> = dest
-        .list_directory(Path::new("/"), None)
+        .list_directory(app_path!("/"), None)
         .await
         .unwrap()
         .into_iter()

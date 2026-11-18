@@ -92,7 +92,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, list_directory) => {
         fn list_directory<'a>(
             &'a self,
-            path: &'a ::std::path::Path,
+            path: &'a ::cmdr_fs::app_path::AppPath,
             on_progress: Option<&'a (dyn Fn(::cmdr_fs::volume::ListingProgress) + Sync)>,
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<Vec<::cmdr_fs::entry::FileEntry>, ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
             self.$inner.list_directory(path, on_progress)
@@ -101,7 +101,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, get_metadata) => {
         fn get_metadata<'a>(
             &'a self,
-            path: &'a ::std::path::Path,
+            path: &'a ::cmdr_fs::app_path::AppPath,
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<::cmdr_fs::entry::FileEntry, ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
             self.$inner.get_metadata(path)
         }
@@ -114,7 +114,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, is_directory) => {
         fn is_directory<'a>(
             &'a self,
-            path: &'a ::std::path::Path,
+            path: &'a ::cmdr_fs::app_path::AppPath,
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<bool, ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
             self.$inner.is_directory(path)
         }
@@ -122,7 +122,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, create_file) => {
         fn create_file<'a>(
             &'a self,
-            path: &'a ::std::path::Path,
+            path: &'a ::cmdr_fs::app_path::AppPath,
             content: &'a [u8],
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<(), ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
             self.$inner.create_file(path, content)
@@ -131,7 +131,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, create_directory) => {
         fn create_directory<'a>(
             &'a self,
-            path: &'a ::std::path::Path,
+            path: &'a ::cmdr_fs::app_path::AppPath,
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<(), ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
             self.$inner.create_directory(path)
         }
@@ -139,7 +139,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, create_directory_all) => {
         fn create_directory_all<'a>(
             &'a self,
-            path: &'a ::std::path::Path,
+            path: &'a ::cmdr_fs::app_path::AppPath,
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<::cmdr_fs::volume::DirectoryCreation, ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
             self.$inner.create_directory_all(path)
         }
@@ -177,15 +177,15 @@ macro_rules! forward_volume_methods {
         }
     };
     (@one $inner:ident, delete) => {
-        fn delete<'a>(&'a self, path: &'a ::std::path::Path) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<(), ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
+        fn delete<'a>(&'a self, path: &'a ::cmdr_fs::app_path::AppPath) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<(), ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
             self.$inner.delete(path)
         }
     };
     (@one $inner:ident, rename) => {
         fn rename<'a>(
             &'a self,
-            from: &'a ::std::path::Path,
-            to: &'a ::std::path::Path,
+            from: &'a ::cmdr_fs::app_path::AppPath,
+            to: &'a ::cmdr_fs::app_path::AppPath,
             force: bool,
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<(), ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
             self.$inner.rename(from, to, force)
@@ -264,7 +264,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, open_read_stream) => {
         fn open_read_stream<'a>(
             &'a self,
-            path: &'a ::std::path::Path,
+            path: &'a ::cmdr_fs::app_path::AppPath,
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<Box<dyn ::cmdr_fs::volume::VolumeReadStream>, ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
             self.$inner.open_read_stream(path)
         }
@@ -272,7 +272,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, write_from_stream) => {
         fn write_from_stream<'a>(
             &'a self,
-            dest: &'a ::std::path::Path,
+            dest: &'a ::cmdr_fs::app_path::AppPath,
             mode: ::cmdr_fs::volume::WriteMode,
             length: ::cmdr_fs::volume::StreamLength,
             stream: Box<dyn ::cmdr_fs::volume::VolumeReadStream>,

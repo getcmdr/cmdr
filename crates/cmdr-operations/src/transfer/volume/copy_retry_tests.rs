@@ -12,6 +12,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
+use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{
     DirectoryCreation, InMemoryVolume, ListingProgress, ScanConflict, SourceItemInfo, SpaceInfo, StreamLength,
@@ -63,7 +64,7 @@ impl Volume for FlakyMergeDest {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -77,46 +78,52 @@ impl Volume for FlakyMergeDest {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> StdPin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> StdPin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> StdPin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_directory(path)
     }
     fn create_directory_all<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
         self.inner.create_directory_all(path)
     }
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_file(path, content)
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let is_temp = path
             .file_name()
             .is_some_and(|name| name.to_string_lossy().contains(".cmdr-tmp-"));
@@ -133,12 +140,12 @@ impl Volume for FlakyMergeDest {
                 })
             });
         }
-        self.inner.delete(path)
+        self.inner.delete(path_app)
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> StdPin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.rename(from, to, force)
@@ -148,7 +155,7 @@ impl Volume for FlakyMergeDest {
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.inner.open_read_stream(path)
     }
@@ -158,18 +165,21 @@ impl Volume for FlakyMergeDest {
     fn scan_for_conflicts<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
-        dest_path: &'a Path,
+        dest_path: &'a AppPath,
     ) -> StdPin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_conflicts(source_items, dest_path)
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> StdPin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
+        let dest_app = dest;
+        let dest_std = dest.as_std_legacy();
+        let dest: &Path = &dest_std;
         let Some(size) = length.known() else {
             return Box::pin(async { Err(VolumeError::NotSupported) });
         };
@@ -185,7 +195,7 @@ impl Volume for FlakyMergeDest {
             if attempt >= self.fail_writes {
                 return self
                     .inner
-                    .write_from_stream(dest, mode, StreamLength::Known(size), stream, on_progress)
+                    .write_from_stream(dest_app, mode, StreamLength::Known(size), stream, on_progress)
                     .await;
             }
             // Leave the partial behind, like a backend that never reached its own
@@ -194,8 +204,8 @@ impl Volume for FlakyMergeDest {
             if let Some(Ok(chunk)) = stream.next_chunk().await {
                 partial.extend_from_slice(&chunk);
             }
-            let _ = self.inner.delete(dest).await;
-            let _ = self.inner.create_file(dest, &partial).await;
+            let _ = self.inner.delete(dest_app).await;
+            let _ = self.inner.create_file(dest_app, &partial).await;
             Err(self.error.clone())
         })
     }
@@ -205,24 +215,24 @@ impl Volume for FlakyMergeDest {
 /// file and each keep one of their own.
 async fn merge_fixture() -> (Arc<dyn Volume>, Arc<InMemoryVolume>) {
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     source
-        .create_file(Path::new("/album/fresh.txt"), b"SRC-fresh")
+        .create_file(app_path!("/album/fresh.txt"), b"SRC-fresh")
         .await
         .unwrap();
     source
-        .create_file(Path::new("/album/clash.txt"), b"SRC-clash")
+        .create_file(app_path!("/album/clash.txt"), b"SRC-clash")
         .await
         .unwrap();
 
     let dest_inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest_inner.create_directory(Path::new("/album")).await.unwrap();
+    dest_inner.create_directory(app_path!("/album")).await.unwrap();
     dest_inner
-        .create_file(Path::new("/album/keep.txt"), b"DEST-keep")
+        .create_file(app_path!("/album/keep.txt"), b"DEST-keep")
         .await
         .unwrap();
     dest_inner
-        .create_file(Path::new("/album/clash.txt"), b"DEST-clash")
+        .create_file(app_path!("/album/clash.txt"), b"DEST-clash")
         .await
         .unwrap();
 
@@ -230,7 +240,10 @@ async fn merge_fixture() -> (Arc<dyn Volume>, Arc<InMemoryVolume>) {
 }
 
 async fn read_all(vol: &Arc<InMemoryVolume>, path: &str) -> Option<Vec<u8>> {
-    let mut stream = vol.open_read_stream(Path::new(path)).await.ok()?;
+    let mut stream = vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .ok()?;
     let mut out = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         out.extend_from_slice(&chunk);
@@ -345,7 +358,7 @@ async fn a_finished_copy_removes_the_temp_a_retried_file_could_not_delete() {
         "the attempt's delete must actually have been refused"
     );
     let mut names: Vec<String> = dest_inner
-        .list_directory(Path::new("/album"), None)
+        .list_directory(app_path!("/album"), None)
         .await
         .unwrap()
         .into_iter()

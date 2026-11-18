@@ -2,6 +2,7 @@
 //! folder, and tree order.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
 use std::future::Future;
 
 use super::*;
@@ -16,7 +17,7 @@ async fn distinct_handles_for_one_remote_resource_still_reject_containment() {
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("source").with_lane_key(lane));
     let destination: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("destination").with_lane_key(lane));
     source
-        .create_directory(Path::new("/folder"))
+        .create_directory(app_path!("/folder"))
         .await
         .expect("create source folder");
 
@@ -49,7 +50,7 @@ impl Volume for CountingStats {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.stats.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         self.inner.get_metadata(path)
@@ -60,11 +61,14 @@ impl Volume for CountingStats {
 async fn planning_a_remote_tree_stats_only_the_selected_items() {
     let engine = TestOperations::new();
     let inner = InMemoryVolume::new("remote");
-    inner.create_directory(Path::new("/tree")).await.expect("mkdir");
-    inner.create_directory(Path::new("/tree/sub")).await.expect("mkdir sub");
+    inner.create_directory(app_path!("/tree")).await.expect("mkdir");
+    inner.create_directory(app_path!("/tree/sub")).await.expect("mkdir sub");
     for index in 0..20 {
         inner
-            .create_file(&PathBuf::from(format!("/tree/sub/f{index}.txt")), b"x")
+            .create_file(
+                &AppPath::legacy_unchecked(&PathBuf::from(format!("/tree/sub/f{index}.txt"))),
+                b"x",
+            )
             .await
             .expect("seed file");
     }
@@ -122,28 +126,43 @@ impl Volume for LinkFollowingStat {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { self.inner.list_directory(&Self::target(path), on_progress).await })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.inner
+                .list_directory(&AppPath::legacy_unchecked(&Self::target(path)), on_progress)
+                .await
+        })
     }
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { self.inner.get_metadata(&Self::target(path)).await })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.inner
+                .get_metadata(&AppPath::legacy_unchecked(&Self::target(path)))
+                .await
+        })
     }
 
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if path == Path::new("/link") {
                 Ok(EntryKind::Symlink)
             } else {
-                self.inner.entry_kind(path).await
+                self.inner.entry_kind(path_app).await
             }
         })
     }
@@ -156,9 +175,9 @@ async fn a_selected_symlink_is_skipped_even_where_stat_follows_links() {
     // selected link has to be skipped too, or SFTP (whose `stat` follows)
     // packs the target that the same link would never pack one level down.
     let inner = InMemoryVolume::new("remote");
-    inner.create_directory(Path::new("/target")).await.expect("mkdir");
+    inner.create_directory(app_path!("/target")).await.expect("mkdir");
     inner
-        .create_file(Path::new("/target/inside.txt"), b"x")
+        .create_file(app_path!("/target/inside.txt"), b"x")
         .await
         .expect("seed");
     let source: Arc<dyn Volume> = Arc::new(LinkFollowingStat { inner });
@@ -354,7 +373,7 @@ impl Volume for ReversedListing {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         use futures_util::TryFutureExt;
@@ -374,7 +393,10 @@ async fn the_plan_lists_the_selection_in_tree_order() {
     let engine = TestOperations::new();
     let inner = InMemoryVolume::new("remote");
     for dir in ["/src", "/src/a", "/src/a/sub", "/src/b"] {
-        inner.create_directory(Path::new(dir)).await.expect("mkdir");
+        inner
+            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .await
+            .expect("mkdir");
     }
     for file in [
         "/src/a/zzz.txt",
@@ -383,7 +405,10 @@ async fn the_plan_lists_the_selection_in_tree_order() {
         "/src/Y.txt",
         "/src/z.txt",
     ] {
-        inner.create_file(Path::new(file), b"x").await.expect("seed");
+        inner
+            .create_file(&AppPath::legacy_unchecked(Path::new(file)), b"x")
+            .await
+            .expect("seed");
     }
     let source: Arc<dyn Volume> = Arc::new(ReversedListing { inner });
     let state = Arc::new(engine.new_operation_state(Duration::ZERO));

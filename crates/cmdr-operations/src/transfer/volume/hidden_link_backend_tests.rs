@@ -21,6 +21,9 @@ use super::rename_merge_test_support::{exists, make_state, mkdir, read, write_fi
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, VolumeCopyConfig};
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{
     BackendKind, BatchScanResult, EntryKind, InMemoryVolume, ListingProgress, ScanBoundary, Volume, VolumeError,
@@ -65,7 +68,7 @@ impl Volume for HiddenLinkVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -79,13 +82,13 @@ impl Volume for HiddenLinkVolume {
     /// The stat names the link, as Samba 4.23's does.
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
         self.inner.entry_kind(path)
     }
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy_batch_with_boundary(paths, boundary)
@@ -233,13 +236,19 @@ async fn a_copy_never_merges_into_a_hidden_destination_link() {
     link(root, "dst/album/link", "outside/target");
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for dir in ["/album", "/album/link"] {
-        source.create_directory(Path::new(dir)).await.expect("source dir");
+        source
+            .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+            .await
+            .expect("source dir");
     }
     for (path, content) in [
         ("/album/plain.txt", b"PLAIN".as_slice()),
         ("/album/link/new.txt", b"NEW"),
     ] {
-        source.create_file(Path::new(path), content).await.expect("source file");
+        source
+            .create_file(&AppPath::legacy_unchecked(Path::new(path)), content)
+            .await
+            .expect("source file");
     }
 
     let result = copy_volumes_with_progress(
@@ -293,7 +302,7 @@ async fn a_cross_volume_move_of_a_folder_holding_a_hidden_link_spares_the_target
     assert_target_untouched(root);
     assert!(!exists(root, "src/album"), "the moved folder is gone, link and all");
     assert!(
-        dest.exists(Path::new("/album/link/inside.txt")).await,
+        dest.exists(app_path!("/album/link/inside.txt")).await,
         "the copy carried the target's file"
     );
 }

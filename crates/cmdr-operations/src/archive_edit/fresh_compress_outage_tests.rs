@@ -9,6 +9,8 @@
 //! without making the archive again.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::io::Cursor;
 use std::ops::ControlFlow;
@@ -86,7 +88,7 @@ impl Volume for CompressNas {
         self.atomic
     }
 
-    fn read_range<'a>(&'a self, path: &'a Path, offset: u64, len: usize) -> Fut<'a, Result<Vec<u8>, VolumeError>> {
+    fn read_range<'a>(&'a self, path: &'a AppPath, offset: u64, len: usize) -> Fut<'a, Result<Vec<u8>, VolumeError>> {
         self.inner.read_range(path, offset, len)
     }
 
@@ -94,7 +96,7 @@ impl Volume for CompressNas {
     /// outage double at its length, so the drop arms count it like any write.
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
@@ -112,8 +114,8 @@ impl Volume for CompressNas {
                 bytes.extend_from_slice(&chunk?);
             }
             let buffer = InMemoryVolume::new("buffer");
-            buffer.create_file(Path::new("/zip"), &bytes).await?;
-            let buffered = buffer.open_read_stream(Path::new("/zip")).await?;
+            buffer.create_file(app_path!("/zip"), &bytes).await?;
+            let buffered = buffer.open_read_stream(app_path!("/zip")).await?;
             self.outage
                 .write_from_stream(
                     dest,
@@ -176,9 +178,12 @@ async fn compress(direct: bool, atomic: bool, replace: bool, cut: Cut, meanwhile
     ));
 
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
-    inner.create_directory(Path::new("/share")).await.unwrap();
+    inner.create_directory(app_path!("/share")).await.unwrap();
     if replace {
-        inner.create_file(Path::new(ARCHIVE), &old_archive()).await.unwrap();
+        inner
+            .create_file(&AppPath::legacy_unchecked(Path::new(ARCHIVE)), &old_archive())
+            .await
+            .unwrap();
     }
     let nas = OutageVolume::wrap(Arc::clone(&inner), &format!("compress-{label}"));
     match cut {
@@ -258,7 +263,7 @@ async fn compress(direct: bool, atomic: bool, replace: bool, cut: Cut, meanwhile
 }
 
 async fn read_all(volume: &dyn Volume, path: &Path) -> Option<Vec<u8>> {
-    let mut stream = volume.open_read_stream(path).await.ok()?;
+    let mut stream = volume.open_read_stream(&AppPath::legacy_unchecked(path)).await.ok()?;
     let mut buf = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         buf.extend_from_slice(&chunk.ok()?);
@@ -274,7 +279,7 @@ impl Ran {
     async fn names(&self) -> Vec<String> {
         let mut names: Vec<String> = self
             .inner
-            .list_directory(Path::new("/share"), None)
+            .list_directory(app_path!("/share"), None)
             .await
             .unwrap()
             .into_iter()
@@ -393,7 +398,7 @@ async fn a_refused_upload_fails_at_once() {
         crate::host::testing::pane_order_host(),
     ));
     let inner = Arc::new(InMemoryVolume::new("Remote"));
-    inner.create_directory(Path::new("/share")).await.unwrap();
+    inner.create_directory(app_path!("/share")).await.unwrap();
     let faulty = FaultyVolume::wrapping(Arc::clone(&inner))
         .failing_call(
             FaultyOp::WriteFromStream,
@@ -433,5 +438,8 @@ async fn a_refused_upload_fails_at_once() {
         "the refusal reached the upload"
     );
     assert!(result.is_err(), "the refusal ends the compress");
-    assert!(!inner.exists(Path::new(ARCHIVE)).await, "nothing published");
+    assert!(
+        !inner.exists(&AppPath::legacy_unchecked(Path::new(ARCHIVE))).await,
+        "nothing published"
+    );
 }

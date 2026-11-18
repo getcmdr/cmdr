@@ -14,6 +14,7 @@ use crate::event_sinks::CollectorEventSink;
 use crate::state::ConflictResolutionResponse;
 use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, WriteConflictResolvedEvent, WriteErrorEvent, WriteSourceItemDoneEvent};
+use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{CopyScanResult, InMemoryVolume, ListingProgress, SpaceInfo, VolumeReadStream};
 
@@ -32,7 +33,7 @@ async fn test_concurrent_copy_50_files_all_succeed() {
     for i in 0..50 {
         let name = format!("/file_{:02}.bin", i);
         source
-            .create_file(Path::new(&name), &vec![i as u8; 1024])
+            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), &vec![i as u8; 1024])
             .await
             .unwrap();
     }
@@ -61,7 +62,10 @@ async fn test_concurrent_copy_50_files_all_succeed() {
     // All 50 files landed at destination with the right content.
     for i in 0..50 {
         let name = format!("/file_{:02}.bin", i);
-        let mut stream = dest.open_read_stream(Path::new(&name)).await.unwrap();
+        let mut stream = dest
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new(&name)))
+            .await
+            .unwrap();
         let mut collected = Vec::new();
         while let Some(Ok(chunk)) = stream.next_chunk().await {
             collected.extend_from_slice(&chunk);
@@ -95,7 +99,7 @@ impl Volume for PoisonedReadVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -103,23 +107,23 @@ impl Volume for PoisonedReadVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
@@ -134,7 +138,7 @@ impl Volume for PoisonedReadVolume {
     }
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
@@ -143,18 +147,21 @@ impl Volume for PoisonedReadVolume {
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let name = self.poisoned_file.clone();
         let inner = Arc::clone(&self.inner);
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if path.to_string_lossy() == name {
                 return Err(VolumeError::IoError {
                     message: "Injected read failure".into(),
                     raw_os_error: Some(5), // EIO
                 });
             }
-            inner.open_read_stream(path).await
+            inner.open_read_stream(path_app).await
         })
     }
 }
@@ -166,7 +173,7 @@ async fn test_concurrent_copy_aborts_on_first_error() {
     for i in 0..20 {
         let name = format!("/file_{:02}.bin", i);
         inner_source
-            .create_file(Path::new(&name), &vec![0xAB; 1024])
+            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), &vec![0xAB; 1024])
             .await
             .unwrap();
     }
@@ -207,7 +214,7 @@ async fn test_concurrent_copy_aborts_on_first_error() {
     // Not all 20 files should be at the dest (some were still in flight
     // or not yet started when the abort fired). The poisoned file itself
     // cannot have landed.
-    assert!(!dest.exists(Path::new("/file_05.bin")).await);
+    assert!(!dest.exists(app_path!("/file_05.bin")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
@@ -260,7 +267,7 @@ async fn test_concurrent_copy_cancellation_mid_batch() {
     for i in 0..20 {
         let name = format!("/big_{:02}.bin", i);
         source
-            .create_file(Path::new(&name), &vec![i as u8; 200_000])
+            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), &vec![i as u8; 200_000])
             .await
             .unwrap();
     }
@@ -314,7 +321,10 @@ async fn test_concurrent_copy_cancellation_mid_batch() {
     // Less than all 20 landed (cancellation worked somewhere).
     let mut total = 0;
     for i in 0..20 {
-        if dest.exists(Path::new(&format!("/big_{:02}.bin", i))).await {
+        if dest
+            .exists(&AppPath::legacy_unchecked(Path::new(&format!("/big_{:02}.bin", i))))
+            .await
+        {
             total += 1;
         }
     }
@@ -342,10 +352,10 @@ async fn a_top_level_conflict_prompt_holds_back_its_source_and_every_later_one()
     // One source before the clash (already in the window, so it finishes) and
     // one after it (must not even be prepared). The prefixes keep that order:
     // the driver starts sources in tree order, which sorts by name.
-    source.create_file(Path::new("/a-first.bin"), b"ONE").await.unwrap();
-    source.create_file(Path::new("/b-clash.txt"), b"SRC").await.unwrap();
-    source.create_file(Path::new("/c-later.bin"), b"TWO").await.unwrap();
-    dest.create_file(Path::new("/b-clash.txt"), b"DEST").await.unwrap();
+    source.create_file(app_path!("/a-first.bin"), b"ONE").await.unwrap();
+    source.create_file(app_path!("/b-clash.txt"), b"SRC").await.unwrap();
+    source.create_file(app_path!("/c-later.bin"), b"TWO").await.unwrap();
+    dest.create_file(app_path!("/b-clash.txt"), b"DEST").await.unwrap();
 
     let state = make_state(&engine);
     let events = Arc::new(CollectorEventSink::new());
@@ -405,11 +415,11 @@ async fn a_top_level_conflict_prompt_holds_back_its_source_and_every_later_one()
     // elapsed time, not a condition to poll for.
     tokio::time::sleep(Duration::from_millis(150)).await;
     assert!(
-        !dest.exists(Path::new("/c-later.bin")).await,
+        !dest.exists(app_path!("/c-later.bin")).await,
         "a source after the clash must not be copied while the user is still being asked"
     );
     assert_eq!(
-        dest.get_metadata(Path::new("/b-clash.txt")).await.unwrap().size,
+        dest.get_metadata(app_path!("/b-clash.txt")).await.unwrap().size,
         Some(4),
         "the destination the user is being asked about must stay untouched"
     );
@@ -424,8 +434,8 @@ async fn a_top_level_conflict_prompt_holds_back_its_source_and_every_later_one()
 
     assert!(result.is_ok(), "expected Ok, got {result:?}");
     // And once the answer lands, the batch runs to completion normally.
-    assert!(dest.exists(Path::new("/a-first.bin")).await);
-    assert!(dest.exists(Path::new("/c-later.bin")).await);
+    assert!(dest.exists(app_path!("/a-first.bin")).await);
+    assert!(dest.exists(app_path!("/c-later.bin")).await);
 }
 
 /// Progress from several top-level tasks streaming in parallel never steps
@@ -441,7 +451,10 @@ async fn progress_from_parallel_tasks_never_steps_backwards() {
     let (source, dest) = make_volumes();
     let paths: Vec<PathBuf> = (0..16).map(|i| PathBuf::from(format!("/par_{i:02}.bin"))).collect();
     for (i, path) in paths.iter().enumerate() {
-        source.create_file(path, &vec![i as u8; 256 * 1024]).await.unwrap();
+        source
+            .create_file(&AppPath::legacy_unchecked(path), &vec![i as u8; 256 * 1024])
+            .await
+            .unwrap();
     }
 
     let events = Arc::new(CollectorEventSink::new());

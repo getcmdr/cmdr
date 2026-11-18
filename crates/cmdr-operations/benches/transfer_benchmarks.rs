@@ -34,6 +34,7 @@
 //! These run under the `bench` profile on the system allocator, so they don't mix
 //! with test-suite figures (`docs/notes/index-extraction-baseline.md`).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -220,7 +221,7 @@ fn bench_stream_large_file(c: &mut Criterion) {
     let content: Vec<u8> = (0..LARGE_FILE_SIZE).map(|i| (i % 251) as u8).collect();
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Transfer bench source"));
     runtime
-        .block_on(source.create_file(&source_path, &content))
+        .block_on(source.create_file(&AppPath::legacy_unchecked(&source_path), &content))
         .expect("seed the large source file");
     drop(content);
     let sources = vec![source_path];

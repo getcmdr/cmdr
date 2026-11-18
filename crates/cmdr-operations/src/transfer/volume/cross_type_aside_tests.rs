@@ -17,6 +17,7 @@ use crate::testing::TestOperations;
 use crate::types::{
     ConflictResolution, WriteConflictResolvedEvent, WriteErrorEvent, WriteOperationError, WriteSourceItemDoneEvent,
 };
+use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
 
 /// Answers every prompt with a plain `Overwrite`, and, when `rollback_after_first`
@@ -87,7 +88,10 @@ fn stop_config() -> VolumeCopyConfig {
 
 /// Every byte of the file at `path`.
 async fn read_all(volume: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
-    let mut stream = volume.open_read_stream(Path::new(path)).await.unwrap();
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .unwrap();
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend(chunk.unwrap());
@@ -98,7 +102,7 @@ async fn read_all(volume: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
 /// The names at `dir` on `volume`, sorted.
 async fn names_in(volume: &Arc<dyn Volume>, dir: &str) -> Vec<String> {
     let mut names: Vec<String> = volume
-        .list_directory(Path::new(dir), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
         .await
         .unwrap()
         .into_iter()
@@ -139,16 +143,16 @@ async fn a_folder_that_fails_halfway_over_a_file_keeps_the_file() {
     let engine = TestOperations::new();
     let (_, dest) = make_volumes();
     let source = in_memory_source();
-    source.create_directory(Path::new("/clash")).await.unwrap();
+    source.create_directory(app_path!("/clash")).await.unwrap();
     source
-        .create_file(Path::new("/clash/a.txt"), b"incoming a")
+        .create_file(app_path!("/clash/a.txt"), b"incoming a")
         .await
         .unwrap();
     source
-        .create_file(Path::new("/clash/b.txt"), b"incoming b")
+        .create_file(app_path!("/clash/b.txt"), b"incoming b")
         .await
         .unwrap();
-    dest.create_file(Path::new("/clash"), b"the user's only copy")
+    dest.create_file(app_path!("/clash"), b"the user's only copy")
         .await
         .unwrap();
     let faulty = source_failing_first_read(source);
@@ -185,9 +189,9 @@ async fn a_file_that_fails_over_a_folder_puts_the_folder_back() {
     let engine = TestOperations::new();
     let (_, dest) = make_volumes();
     let source = in_memory_source();
-    source.create_file(Path::new("/clash"), b"incoming").await.unwrap();
-    dest.create_directory(Path::new("/clash")).await.unwrap();
-    dest.create_file(Path::new("/clash/precious.txt"), b"precious user data")
+    source.create_file(app_path!("/clash"), b"incoming").await.unwrap();
+    dest.create_directory(app_path!("/clash")).await.unwrap();
+    dest.create_file(app_path!("/clash/precious.txt"), b"precious user data")
         .await
         .unwrap();
     let faulty = source_failing_first_read(source);
@@ -219,14 +223,14 @@ async fn a_deep_folder_that_fails_over_a_file_keeps_the_file() {
     let engine = TestOperations::new();
     let (_, dest) = make_volumes();
     let source = in_memory_source();
-    source.create_directory(Path::new("/album")).await.unwrap();
-    source.create_directory(Path::new("/album/sub")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    source.create_directory(app_path!("/album/sub")).await.unwrap();
     source
-        .create_file(Path::new("/album/sub/x.txt"), b"incoming")
+        .create_file(app_path!("/album/sub/x.txt"), b"incoming")
         .await
         .unwrap();
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(Path::new("/album/sub"), b"the user's sub file")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(app_path!("/album/sub"), b"the user's sub file")
         .await
         .unwrap();
     let faulty = source_failing_first_read(source);
@@ -256,12 +260,12 @@ async fn a_deep_folder_that_fails_over_a_file_keeps_the_file() {
 async fn a_rollback_puts_the_replaced_file_back() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/clash")).await.unwrap();
+    source.create_directory(app_path!("/clash")).await.unwrap();
     source
-        .create_file(Path::new("/clash/inside.txt"), b"incoming")
+        .create_file(app_path!("/clash/inside.txt"), b"incoming")
         .await
         .unwrap();
-    dest.create_file(Path::new("/clash"), b"the user's only copy")
+    dest.create_file(app_path!("/clash"), b"the user's only copy")
         .await
         .unwrap();
 
@@ -293,18 +297,18 @@ async fn a_rollback_puts_the_replaced_file_back() {
 async fn a_replacement_that_lands_leaves_no_aside_behind() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/folder_in")).await.unwrap();
+    source.create_directory(app_path!("/folder_in")).await.unwrap();
     source
-        .create_file(Path::new("/folder_in/inside.txt"), b"incoming")
+        .create_file(app_path!("/folder_in/inside.txt"), b"incoming")
         .await
         .unwrap();
     source
-        .create_file(Path::new("/file_in"), b"incoming file")
+        .create_file(app_path!("/file_in"), b"incoming file")
         .await
         .unwrap();
-    dest.create_file(Path::new("/folder_in"), b"old file").await.unwrap();
-    dest.create_directory(Path::new("/file_in")).await.unwrap();
-    dest.create_file(Path::new("/file_in/old.txt"), b"old").await.unwrap();
+    dest.create_file(app_path!("/folder_in"), b"old file").await.unwrap();
+    dest.create_directory(app_path!("/file_in")).await.unwrap();
+    dest.create_file(app_path!("/file_in/old.txt"), b"old").await.unwrap();
 
     let state = make_state(&engine);
     let events = OverwriteThenMaybeRollback::new(&state, false);
@@ -348,9 +352,9 @@ async fn a_folder_replacing_a_dir_link_drops_the_link_and_never_its_target() {
     ));
 
     let source = in_memory_source();
-    source.create_directory(Path::new("/clash")).await.unwrap();
+    source.create_directory(app_path!("/clash")).await.unwrap();
     source
-        .create_file(Path::new("/clash/inside.txt"), b"incoming")
+        .create_file(app_path!("/clash/inside.txt"), b"incoming")
         .await
         .unwrap();
 

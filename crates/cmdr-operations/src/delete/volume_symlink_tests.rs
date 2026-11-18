@@ -10,6 +10,8 @@
 
 #![cfg(unix)]
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -50,7 +52,7 @@ impl Volume for LinkRig {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -65,7 +67,7 @@ impl Volume for LinkRig {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -80,20 +82,22 @@ impl Volume for LinkRig {
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         if self.follows_links {
             Box::pin(async move {
-                std::fs::metadata(self.inner.root().join(path))
+                let path_std = path.as_std_legacy();
+                let path: &Path = &path_std;
+                std::fs::metadata(self.inner.root().as_std_legacy().join(path))
                     .map(|m| m.is_dir())
                     .map_err(|e| VolumeError::from_io_at(&e, path))
             })
@@ -103,15 +107,15 @@ impl Volume for LinkRig {
     }
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
         self.entry_kind_calls.fetch_add(1, Ordering::Relaxed);
         self.inner.entry_kind(path)
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.delete(path)
     }
-    fn listing_watch_coverage(&self, _path: &Path) -> WatchCoverage {
+    fn listing_watch_coverage(&self, _path: &AppPath) -> WatchCoverage {
         if self.watched {
             WatchCoverage::EveryWriter
         } else {
@@ -120,13 +124,13 @@ impl Volume for LinkRig {
     }
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy_batch_with_boundary(paths, boundary)
@@ -238,7 +242,10 @@ async fn delete(
 /// sets `is_directory` on a link to a folder, as every pane's does).
 #[must_use = "bind the guard; dropping it immediately removes the listing"]
 async fn pane_shows(panes: &PaneListings, volume: &LinkRig, volume_id: &str, parent: &str) -> TestListingGuard {
-    let entries = volume.list_directory(Path::new(parent), None).await.expect("list");
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new(parent)), None)
+        .await
+        .expect("list");
     let link = entries
         .iter()
         .find(|e| e.name == "link")
@@ -249,7 +256,7 @@ async fn pane_shows(panes: &PaneListings, volume: &LinkRig, volume_id: &str, par
     );
     TestListing::new()
         .volume(volume_id)
-        .path(volume.inner.root().join(parent))
+        .path(volume.inner.root().as_std_legacy().join(parent))
         .entries(entries)
         .sequence(1)
         .insert(panes.panes(), "listing")
@@ -281,7 +288,10 @@ async fn a_folder_link_a_listing_hides_inside_a_deleted_folder_goes_as_a_link_an
     let vid = unique("samba");
     let volume = tree.samba_volume();
     engine.volumes().register(&vid, volume.clone() as Arc<dyn Volume>);
-    let listed = volume.list_directory(Path::new("dir"), None).await.expect("list");
+    let listed = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("dir")), None)
+        .await
+        .expect("list");
     let link = listed.iter().find(|e| e.name == "link").expect("listed");
     assert!(
         link.is_directory && !link.is_symlink,
@@ -360,7 +370,15 @@ async fn a_delete_preview_counts_a_selected_link_a_pane_lists_as_a_folder_as_one
     panes.show_volume(&vid, volume.clone() as Arc<dyn Volume>);
     let _listing = pane_shows_hidden_link(&panes, &volume, &vid, "dir").await;
     let sources = vec![tree.root().join("dir/link")];
-    let mut batch = volume.scan_for_copy_batch(&sources).await.expect("scan");
+    let mut batch = volume
+        .scan_for_copy_batch(
+            &sources
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+        )
+        .await
+        .expect("scan");
 
     count_selected_links_as_links(panes.as_ref(), volume.as_ref(), &vid, &mut batch).await;
 
@@ -377,7 +395,10 @@ async fn pane_shows_hidden_link(
     volume_id: &str,
     parent: &str,
 ) -> TestListingGuard {
-    let entries = volume.list_directory(Path::new(parent), None).await.expect("list");
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new(parent)), None)
+        .await
+        .expect("list");
     let link = entries.iter().find(|e| e.name == "link").expect("listed");
     assert!(
         link.is_directory && !link.is_symlink,
@@ -385,7 +406,7 @@ async fn pane_shows_hidden_link(
     );
     TestListing::new()
         .volume(volume_id)
-        .path(volume.inner.root().join(parent))
+        .path(volume.inner.root().as_std_legacy().join(parent))
         .entries(entries)
         .sequence(1)
         .insert(panes.panes(), "listing")
@@ -401,7 +422,15 @@ async fn a_selected_folder_link_with_a_cold_preview_goes_as_a_link() {
     let volume = tree.volume(false, false);
     engine.volumes().register(&vid, volume.clone() as Arc<dyn Volume>);
     let sources = vec![PathBuf::from("dir/link")];
-    let batch = volume.scan_for_copy_batch(&sources).await.expect("scan");
+    let batch = volume
+        .scan_for_copy_batch(
+            &sources
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+        )
+        .await
+        .expect("scan");
     assert!(
         batch.per_path[0].1.top_level_is_directory,
         "precondition: the backend's scan follows the selected link"
@@ -434,7 +463,15 @@ async fn a_delete_preview_counts_a_selected_folder_link_as_one_leaf() {
     let vid = unique("preview_count");
     let volume = tree.volume(false, false);
     let sources = vec![PathBuf::from("dir/link"), PathBuf::from("dir/plain.txt")];
-    let mut batch = volume.scan_for_copy_batch(&sources).await.expect("scan");
+    let mut batch = volume
+        .scan_for_copy_batch(
+            &sources
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+        )
+        .await
+        .expect("scan");
     assert_eq!(
         batch.aggregate.total_bytes, 9,
         "precondition: the scan counted keep.txt behind the link"
