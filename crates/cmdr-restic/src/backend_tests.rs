@@ -1,5 +1,6 @@
 use super::VolumeBackend;
 use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::BridgedPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{InMemoryVolume, ListingProgress, Volume, VolumeError, VolumeRandomReader};
@@ -296,7 +297,7 @@ impl ReaderParent {
 
 struct CountingReader {
     inner: Arc<InMemoryVolume>,
-    path: PathBuf,
+    path: BridgedPath,
     size: u64,
     closes: Arc<AtomicUsize>,
 }
@@ -311,8 +312,7 @@ impl VolumeRandomReader for CountingReader {
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + '_>> {
-        self.inner
-            .read_range(&AppPath::legacy_unchecked(&self.path), offset, len)
+        self.inner.read_range(self.path.app(), offset, len)
     }
 
     fn close(self: Box<Self>) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send>> {
@@ -370,7 +370,7 @@ impl Volume for ReaderParent {
             self.opens.fetch_add(1, Ordering::SeqCst);
             Ok(Box::new(CountingReader {
                 inner: Arc::clone(&self.inner),
-                path: path.to_path_buf(),
+                path: BridgedPath::new(path.to_path_buf()),
                 size,
                 closes: Arc::clone(&self.closes),
             }) as Box<dyn VolumeRandomReader>)
