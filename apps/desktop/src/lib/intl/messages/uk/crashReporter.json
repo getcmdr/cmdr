@@ -73,7 +73,7 @@
   },
   "crashReporter.sentToast.changeSettings": "{platform, select, windows {Змінити в Параметрах} linuxGnome {Змінити в Налаштуваннях} linuxKde {Змінити у вікні «Налаштувати Cmdr»} other {Змінити в Параметрах}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "c3fff1a"
+    "sourceHash": "9972084"
   },
   "crashReporter.sentToast.sendLog": "Вкласти журнали",
   "@crashReporter.sentToast.sendLog": {

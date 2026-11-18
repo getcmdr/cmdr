@@ -80,9 +80,9 @@
   "@queryUi.empty.keysTip": {
     "sourceHash": "cbc047b"
   },
-  "queryUi.ai.cloudOff.body": "{platform, select, windows {Облачный ИИ отключен. Разрешите его в разделе «Настройки» > «ИИ».} linuxGnome {Облачный ИИ отключен. Разрешите его в разделе «Параметры» > «ИИ».} linuxKde {Облачный ИИ отключен. Разрешите его в разделе «Настроить Cmdr» > «ИИ».} other {Облачный ИИ отключен. Разрешите его в разделе «Настройки» > «ИИ».}}",
+  "queryUi.ai.cloudOff.body": "{platform, select, windows {Облачный ИИ отключен. Разрешите его в разделе «Параметры» > «ИИ».} linuxGnome {Облачный ИИ отключен. Разрешите его в разделе «Параметры» > «ИИ».} linuxKde {Облачный ИИ отключен. Разрешите его в разделе «Настроить Cmdr» > «ИИ».} other {Облачный ИИ отключен. Разрешите его в разделе «Настройки» > «ИИ».}}",
   "@queryUi.ai.cloudOff.body": {
-    "sourceHash": "1f64983"
+    "sourceHash": "ce5230d"
   },
   "queryUi.ai.openSettings": "Открыть настройки ИИ",
   "@queryUi.ai.openSettings": {

@@ -309,7 +309,7 @@
   },
   "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Beállítások > AI.} linuxGnome {A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Beállítások > AI.} linuxKde {A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Cmdr beállítása > AI.} other {A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Beállítások > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
-    "sourceHash": "6e0eb09"
+    "sourceHash": "6075ac0"
   },
   "onboarding.stepAi.off.label": "Kösz, de nem kérek, AI-t nem nekem való",
   "@onboarding.stepAi.off.label": {
@@ -317,7 +317,7 @@
   },
   "onboarding.stepAi.off.help": "{platform, select, windows {A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Beállításokban.} linuxGnome {A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Beállításokban.} linuxKde {A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Cmdr beállításaiban.} other {A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Beállításokban.}}",
   "@onboarding.stepAi.off.help": {
-    "sourceHash": "b20cf1d"
+    "sourceHash": "f4c9871"
   },
   "onboarding.localDownloadFailed.title": "Nem sikerült befejezni a helyi AI-modell letöltését",
   "@onboarding.localDownloadFailed.title": {
@@ -393,7 +393,7 @@
   },
   "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Beállításokban.} linuxGnome {Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Beállításokban.} linuxKde {Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Cmdr beállításaiban.} other {Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Beállításokban.}}",
   "@onboarding.stepBeta.analyticsCaption": {
-    "sourceHash": "47a7511"
+    "sourceHash": "9dc83f9"
   },
   "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Az összeomlás-jelentések is be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a macOS-verziódat és azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nMindkettőt kikapcsolhatod a Beállításokban, amikor csak akarod.} windows {Az összeomlás-jelentések is be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a Windows-verziódat és azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nMindkettőt kikapcsolhatod a Beállításokban, amikor csak akarod.} linuxGnome {Az összeomlás-jelentések is be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a Linux-disztribúciódat és annak verzióját, valamint azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nMindkettőt kikapcsolhatod a Beállításokban, amikor csak akarod.} linuxKde {Az összeomlás-jelentések is be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a Linux-disztribúciódat és annak verzióját, valamint azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nMindkettőt kikapcsolhatod a Cmdr beállításaiban, amikor csak akarod.} other {Az összeomlás-jelentések is be vannak kapcsolva: ha a Cmdr összeomlik, elküldi az app verzióját, a Linux-disztribúciódat és annak verzióját, valamint azt a pontot a kódban, ahol megállt.\nA fájljaidat soha.\nMindkettőt kikapcsolhatod a Beállításokban, amikor csak akarod.}}",
   "@onboarding.stepBeta.crashReportsNote": {
@@ -469,7 +469,7 @@
   },
   "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Ezt bármikor módosíthatod a Beállításokban.} linuxGnome {Ezt bármikor módosíthatod a Beállításokban.} linuxKde {Ezt bármikor módosíthatod a Cmdr beállításaiban.} other {Ezt bármikor módosíthatod a Beállításokban.}}",
   "@onboarding.stepOptional.changeAnytime": {
-    "sourceHash": "320f582"
+    "sourceHash": "ff84784"
   },
   "onboarding.stepOptional.networking.title": "Hálózat",
   "@onboarding.stepOptional.networking.title": {

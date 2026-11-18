@@ -5,7 +5,7 @@
   },
   "adb.connect.openSettings": "{platform, select, windows {Beállítások megnyitása} linuxGnome {Beállítások megnyitása} linuxKde {Cmdr beállítása} other {Beállítások megnyitása}}",
   "@adb.connect.openSettings": {
-    "sourceHash": "f970930"
+    "sourceHash": "cd63cf5"
   },
   "adb.connect.serverUnreachable": "{platform, select, macos {Az Android-fejlesztőeszközök nem válaszoltak ezen a Macen.} windows {Az Android-fejlesztőeszközök nem válaszoltak ezen a gépen.} other {Az Android-fejlesztőeszközök nem válaszoltak ezen a számítógépen.}}",
   "@adb.connect.serverUnreachable": {

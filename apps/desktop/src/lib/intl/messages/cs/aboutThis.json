@@ -1231,7 +1231,7 @@
   },
   "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Skrýt tento tip. Vrátit ho můžete v Nastavení > Pokročilé.} linuxGnome {Skrýt tento tip. Vrátit ho můžete v Předvolbách > Pokročilé.} linuxKde {Skrýt tento tip. Vrátit ho můžete v okně Nastavit Cmdr > Pokročilé.} other {Skrýt tento tip. Vrátit ho můžete v Nastavení > Pokročilé.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "22d9d84"
+    "sourceHash": "aa27809"
   },
   "aboutThis.action.continueInAskCmdr": "Pokračovat v Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {
