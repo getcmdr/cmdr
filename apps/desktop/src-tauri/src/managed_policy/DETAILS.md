@@ -6,8 +6,9 @@ The canonical key catalog for Cmdr's MDM support. `/trust` and the sample profil
 
 - `policies.json` is the one machine-readable definition: every key's name and kind (`bool`, `string`, `stringList`)
   in `ALL_KEYS` order, the macOS preference domain, the Windows registry key, and the Group Policy template's copy
-  (display names and explain texts). Its readers: the tests here, and `/trust` (`apps/website/src/lib/trust-mdm.ts`
-  builds its key list and every Windows key mention from it).
+  (display names and explain texts). Three readers: the tests here, `/trust` (`apps/website/src/lib/trust-mdm.ts`
+  builds its key list and every Windows key mention from it), and the template generator (`scripts/group-policy/`,
+  `apps/desktop/packaging/group-policy/CLAUDE.md`). A new key fills in its kind, display name, and explain text here.
 - The app itself reads `keys.rs`; tests hold the two together. `public_docs_test.rs`: the names equal `ALL_KEYS` in
   order, the domain equals `config::BUNDLE_ID`, the key equals `POLICY_KEY`, and the sample profile writes each key as
   its kind. `registry_values.rs`: what the template writes for each kind (a bool's `REG_DWORD` 1 and 0, a string's
@@ -24,8 +25,8 @@ The canonical key catalog for Cmdr's MDM support. `/trust` and the sample profil
   "preference file" uploads), served at `getcmdr.com/mdm/` with their own types (`apps/website/nginx.conf`).
 - `/trust#mdm` renders its key list from `managedPreferenceKeys` in `apps/website/src/lib/trust-mdm.ts`, built from
   `policies.json` (§ The policy definition).
-- **Drift guard** (`public_docs_test.rs`): the two files' key sets and `/trust`'s effect copy equal `ALL_KEYS`, every example value parses without a
-  warning, and the two files carry the same values. A new key fails it until the files and `/trust` list it. The Rust
+- **Drift guard** (`public_docs_test.rs`): the two files' key sets and `/trust`'s effect copy equal `ALL_KEYS`, every
+  example value parses without a warning, and the two files carry the same values. A new key fails it until the files and `/trust` list it. The Rust
   lanes and CI's `rust` filter list the three files as inputs, so editing only them isn't a cached pass.
 - Example values: the telemetry keys and background checks on, the rest at their permissive value (`false`,
   `MaxUpdateVersion` `"1"`, a short host list), so an admin who uploads the file unchanged gets "telemetry off" and
@@ -58,23 +59,26 @@ The canonical key catalog for Cmdr's MDM support. `/trust` and the sample profil
 ## The Windows registry keys
 
 - `HKLM\SOFTWARE\Policies\Rymd\Cmdr` (computer policy) and `HKCU\SOFTWARE\Policies\Rymd\Cmdr` (user policy), read
-  through the 64-bit view. The path is `POLICY_KEY` in `platform/registry_values.rs`.
+  through the 64-bit view. The path is `POLICY_KEY` in `platform/registry_values.rs`. Same key names as macOS,
+  compared case-insensitively as the registry does. Per name, the machine's value wins over the user's (Group Policy's
+  rule; Chrome and Edge read theirs the same way). Only administrators and Group Policy can write under either
+  `Policies` key, so every value there counts as forced, the equivalent of macOS's `IsForced`.
 - **Decision/Why: the vendor level is `Rymd`** (David, 2026-11-18). Group Policy's convention is
   `Policies\<vendor>\<product>` (`Policies\Google\Chrome`, `Policies\Mozilla\Firefox`), and the vendor is
   Rymdskottkärra AB, shortened to `Rymd`, which will ship a second product beside Cmdr. ❗ Settled for good: once admins
   deploy GPOs that name it, the path can't move. Nothing shipped on Windows before the decision, so there's one path
-  and no fallback read of an older one. Same key names as macOS, compared case-insensitively as the registry does. Per name, the machine's value
-  wins over the user's (Group Policy's rule; Chrome and Edge read theirs the same way). Only administrators and Group
-  Policy can write under either `Policies` key, so every value there counts as forced, the equivalent of macOS's
-  `IsForced`.
+  and no fallback read of an older one.
 - Types (`platform/registry_values.rs`, tested on every OS): `REG_DWORD` / `REG_QWORD` → integer (a bool key reads `0`
   as false, anything else true; `MaxUpdateVersion` reads it as a major); `REG_SZ` / `REG_EXPAND_SZ` → string, not
   expanded; `REG_MULTI_SZ`, or a subkey of string values named `1`, `2`, … (what an ADMX `<list>` element writes) →
   array, for `AllowedCloudAIHosts`, ordered numerically. Within one hive a plain value outranks a list subkey of the
   same name. Anything else (`REG_BINARY`, a bad length, broken UTF-16) → data, so that key restricts (rule 4).
+- **Gotcha/Why: an empty list subkey reads as not set.** Disabling an ADMX list policy clears its values and can leave
+  the subkey behind, empty; read as an empty list, "disabled" would have allowed no cloud AI host, the opposite of its
+  meaning. An explicit empty `REG_MULTI_SZ` still allows no host, as on macOS.
 - A hive we can't read at all is logged and read as empty, like a CFPreferences read that fails on macOS.
-- ❗ The key path is a public contract once Windows ships: admins' GPOs and any ADMX template name it. No ADMX template
-  exists yet, and the sample files are macOS-only. `/trust#windows` names the path from `windowsPolicyKey` in
+- The Group Policy template (ADMX and ADML for Group Policy and Intune) is generated from `policies.json`:
+  `apps/desktop/packaging/group-policy/CLAUDE.md`. `/trust#windows` names the path from `windowsPolicyKey` in
   `apps/website/src/lib/trust-mdm.ts`, read from `policies.json`, which `public_docs_test.rs` pins to `POLICY_KEY`;
   that section stays hidden until a release ships Windows.
 
@@ -227,7 +231,8 @@ download, and the user-initiated feedback and beta signup.
 - Tests elsewhere put a policy in force with `testing::override_for_test(testing::forcing(&[KEY]))`: a guard that makes
   `current()` and `for_egress()` answer that policy on the test's own thread (a `#[tokio::test]` runs its tasks there),
   so parallel tests never see each other's policy.
-- `public_docs_test.rs` is the drift guard (§ The public mirror).
+- `public_docs_test.rs` is the drift guard (§ The public mirror, § The policy definition); `desktop-group-policy-fresh`
+  holds the ADMX template to `policies.json`.
 - Unit tests run over `FakeSource`. `platform/macos/mod.rs` has a scratch-domain CF test (`com.getcmdr.policytest.<tag>`)
   proving a value in the user's own layer isn't reported; `source.rs` a `PlistFileSource` round trip. On Windows,
   `platform/windows/` reads two scratch keys under `HKCU\Software\CmdrTest` as the machine and user hives through the

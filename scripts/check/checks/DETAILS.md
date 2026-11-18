@@ -2508,15 +2508,17 @@ Checks by app and tech:
   key; `gemini-smoke` additionally has a warn-level "inconclusive" outcome — see § "Decision: a smoke lane has a THIRD
   outcome"), shipped-locales-fresh (regenerate-and-diff `intl/shipped_locales.gen.rs` from the message-catalog dirs, so
   the locale resolver's CLDR script table can't go stale and leave a new locale both unreachable and unguarded),
-  module-cycles (slow, fails, and in CI on the macOS job; strongly-connected module components per crate with
-  parent-child hubs collapsed, on a per-home ratchet, behind a pinned `cargo-modules` that a mismatched box skips rather
-  than mis-measures — see § "Rust module cycles"), fixture-lane-coverage (a Docker-gated cell in the app crate whose
-  name the integration lane's filter won't select never runs anywhere, so it's a finding; one cell lived its whole life
-  that way, and it was the sole caller of the crate extraction's one sanctioned public-surface widening — see § "Fixture
-  lane coverage"), tests, integration-tests (Docker network fixtures), disk-images (slow, macOS only, not in CI; the
-  real-image tests on synthetic APFS and HFS+ disk images, see § "The disk-image lane"), clippy-linux (slow, not in CI;
-  CI's clippy and rustdoc commands against the Linux target, run from a Mac in Docker), tests-linux (slow; both in §
-  "The Linux Docker lanes share an image and a build cache")
+  group-policy-fresh (filed under Go: the committed ADMX/ADML in `apps/desktop/packaging/group-policy/` equal what
+  `scripts/group-policy/` generates from `managed_policy/policies.json`; locally it regenerates, in `--ci` drift fails;
+  runs in the light lane), module-cycles (slow, fails, and in CI on the macOS job; strongly-connected module components
+  per crate with parent-child hubs collapsed, on a per-home ratchet, behind a pinned `cargo-modules` that a mismatched
+  box skips rather than mis-measures — see § "Rust module cycles"), fixture-lane-coverage (a Docker-gated cell in the
+  app crate whose name the integration lane's filter won't select never runs anywhere, so it's a finding; one cell lived
+  its whole life that way, and it was the sole caller of the crate extraction's one sanctioned public-surface widening —
+  see § "Fixture lane coverage"), tests, integration-tests (Docker network fixtures), disk-images (slow, macOS only, not
+  in CI; the real-image tests on synthetic APFS and HFS+ disk images, see § "The disk-image lane"), clippy-linux (slow,
+  not in CI; CI's clippy and rustdoc commands against the Linux target, run from a Mac in Docker), tests-linux (slow;
+  both in § "The Linux Docker lanes share an image and a build cache")
 
 Four of those scanners share one region tracker, `rustTestModState` / `advanceTestModRegion`
 (`desktop-rust-test-sleep.go`), in opposite polarities: test-sleep and fixed-temp-dir scan ONLY inside an inline test

@@ -1,5 +1,5 @@
 //! `policies.json`, the one policy definition the tests here, the `/trust` page, and the Group
-//! Policy template read. Test-only: the app reads `keys.rs`,
+//! Policy template generator (`scripts/group-policy/`) read. Test-only: the app reads `keys.rs`,
 //! and the tests hold the two together (`DETAILS.md` § The policy definition).
 
 use serde::Deserialize;

@@ -1,5 +1,5 @@
 {
-  "about": "Every managed policy Cmdr reads, in catalog order: the one definition the app's tests, the /trust page, and the Group Policy template read. Rules: managed_policy/DETAILS.md § The policy definition.",
+  "about": "Every managed policy Cmdr reads, in catalog order: the one definition the app's tests, the /trust page, and the Group Policy template generator (scripts/group-policy) read. Rules: managed_policy/DETAILS.md § The policy definition.",
   "preferenceDomain": "com.veszelovszki.cmdr",
   "windowsPolicyKey": "SOFTWARE\\Policies\\Rymd\\Cmdr",
   "groupPolicy": {
