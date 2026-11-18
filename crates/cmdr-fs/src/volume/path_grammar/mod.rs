@@ -342,6 +342,13 @@ pub fn basename_in_volume(text: &str, flavor: PathFlavor) -> Option<String> {
     Some(path.file_name().unwrap_or("").to_string())
 }
 
+/// The app-path spelling of a path the local OS reported (`C:\Users\test_user_1` becomes
+/// `C:/Users/test_user_1` on Windows; macOS and Linux keep it), the one form a pane, a favorite,
+/// and a switcher row hold. Text the grammar can't read keeps its native spelling.
+pub fn app_spelling(native: &str, flavor: PathFlavor) -> String {
+    AppPath::from_native(native, flavor).map_or_else(|| native.to_string(), |app| app.to_string())
+}
+
 /// What a person reads for `text`: a Windows local path with `\`, every other text as is.
 pub fn shown_path(text: &str, flavor: PathFlavor) -> String {
     match AppPath::parse(text, flavor) {

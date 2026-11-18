@@ -146,7 +146,7 @@ Open, waiting on David (each task entry has the detail):
 - **How a consumer names the host's local volume** (task 35/36): about 150 sites, mostly `cmdr-operations` tests, name
   `LocalPosixVolume`, which doesn't exist on Windows (`docs/notes/windows-port/build-progress.md`, last entry).
 - **The drive and UNC volume id scheme** (task 34).
-- **The menu model** on Windows and per Linux desktop (task 63): D5 above is provisional until David's spikes.
+- **The menu model** on Windows and per Linux desktop (task 63): D5 stays provisional until David tries the menu spike.
 - **macOS hand checks** from the keymap work (task 26).
 
 ## Bugs the audits found on the way
@@ -236,7 +236,13 @@ owns its real body. Remove a line when its body lands.
   `sqlite_util` deletion test (#1226). `cmdr-index`'s suite isn't green there yet: 158 of 1,911 fail, filed as #1232.
 - The app's root volume on Windows (`volumes/platform/windows.rs` `root_volume`), task 34: `LocalWindowsVolume` at the
   system drive alone (`%SystemDrive%`, else `C:/`), under today's `root` id and named "Root", which the switcher's
-  main-volume row points at too. Which drives and UNC shares register, and under which ids, is task 34's open decision.
+  main-volume row points at too. `resolve_path_volume_fast` answers that volume for a path on the system drive and no
+  volume for any other drive or share, so Go to path and favorites reach `C:` alone. Which drives and UNC shares
+  register, and under which ids, is task 34's open decision.
+- The root drive index on Windows (`cmdr-index` `start_indexing`), task 34: it starts at `/`, which Windows reads as the
+  process's CURRENT drive, so a `Cmdr.exe` started from `D:\…` walks `D:\`, and the watcher's branches come out as
+  `/C:/Windows` (rejected: "neither a file nor a directory"). Sizes on `C:` are unreliable until the index's path space
+  roots at a drive.
 - The app's eject on Windows (`file_system/volume/eject/platform/windows.rs`), task 39: nothing reads as ejectable, so a
   local drive's eject refuses as `NotEjectable`; a tool run (an SMB share's unmount, "Eject and save") answers that no
   tool could start (`EjectError::Unexpected`); the holder scan is "couldn't tell"; an SMB Disconnect drops the direct
@@ -654,6 +660,22 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
         `%LOCALAPPDATA%\com.veszelovszki.cmdr\drive-index`; a `pnpm dev` build's in its `-dev` twins. Run
         `config_os_dirs_test` there too: it pins the dir model to the known folders `dirs` reads.
       - (Task 57 owns where MSIX redirects them.)
+    - **First launch (verified on Windows 10 22H2 build 19045, mami, the debug `pnpm tauri build --debug` binary run in
+      the signed-in console session by a one-off scheduled task, MCP over an SSH tunnel, 2026-11-18;
+      `docs/notes/windows-port/build-progress.md` has the run)**:
+      - [x] The main window opens with the menu bar, both panes, and the function-key bar, and "What's new" shows on a
+            first launch. No panic, nothing in the Application event log.
+      - [x] The first run opens `~` and `~/Downloads` (`C:/Users/<account>`), listed through `LocalWindowsVolume`.
+      - [x] Up from `~` twice lands on the system drive's root and lists `C:\`; Enter on `Windows` lists `C:\Windows`
+            (107 entries).
+      - [x] Alive and idle (no CPU over 10 s) more than two minutes after the last action.
+      - [x] The data dir is `%APPDATA%\com.veszelovszki.cmdr` and `drive-index`, `logs`, and `EBWebView` are under
+            `%LOCALAPPDATA%\com.veszelovszki.cmdr`.
+      - [x] Real arrow and Enter key presses (`SendKeys`) move the cursor and enter a folder; Go to `C:/` and the four
+            favorites resolve to the root volume.
+      - [ ] The breadcrumb at the root reads `C:\`: it shows nothing past the volume at `/` and `\Windows` one level
+            down, where `~/Downloads` keeps its `/`.
+      - [ ] A digit picks a favorite in the `Ctrl+D` menu (a `SendKeys` `2` left it open with nothing picked).
 
 56. [S] Windows. MTP via `mtp-rs`'s WPD backend (D2): Windows device arrival and removal for phones, the 5–6-minute
     driver stall shown as a "the phone is busy" state with a timeout (a dropped future is safe, later calls queue behind

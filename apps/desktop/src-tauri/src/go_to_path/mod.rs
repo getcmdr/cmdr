@@ -50,7 +50,7 @@ pub mod history;
 
 use std::path::{Component, Path, PathBuf};
 
-use cmdr_fs::volume::path_grammar::{AppPath, PathFlavor};
+use cmdr_fs::volume::path_grammar::{self, PathFlavor};
 use serde::{Deserialize, Serialize};
 
 use crate::commands::file_system::expand_tilde;
@@ -113,8 +113,7 @@ fn lexical_normalize(path: &Path) -> PathBuf {
 /// itself on macOS and Linux), the one form a pane holds. A path the grammar can't read keeps its
 /// native spelling.
 fn app_spelling(path: &Path) -> String {
-    let native = path.to_string_lossy();
-    AppPath::from_native(&native, PathFlavor::HOST).map_or_else(|| native.into_owned(), |app| app.to_string())
+    path_grammar::app_spelling(&path.to_string_lossy(), PathFlavor::HOST)
 }
 
 /// Walks up from `path` to the closest existing ancestor. Worst case returns
