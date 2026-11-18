@@ -1629,7 +1629,7 @@
   },
   "settings.analytics.enabled.description": "{platform, select, windows {Zapněte prosím tuto volbu, ať během otevřené bety vidíme, na kterých funkcích záleží.\nStatistiky nejsou spojené s vaším jménem ani e‑mailem, jen s náhodným ID.\nCmdr nikdy neodesílá názvy souborů, cesty, hledané výrazy ani dotazy pro AI.\nKdyž je volba vypnutá, Cmdr neodesílá žádné statistiky.} other {Zapněte prosím tuto volbu, ať během otevřené bety vidíme, na kterých funkcích záleží.\nStatistiky nejsou spojené s vaším jménem ani e‑mailem, jen s náhodným ID.\nCmdr nikdy neodesílá názvy souborů, cesty, hledané výrazy ani dotazy pro AI.\nKdyž je volba vypnutá, Cmdr neodesílá žádné statistiky.}}",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
+    "sourceHash": "dbbd8c8"
   },
   "settings.analytics.enabled.keywords": "analytika, používání, statistiky, soukromí, telemetrie, beta, sledování, odhlásit",
   "@settings.analytics.enabled.keywords": {
@@ -1653,7 +1653,7 @@
   },
   "settings.updates.crashReports.description": "{platform, select, macos {Automaticky odešle zprávu, když Cmdr neočekávaně skončí nebo na pozadí narazí na problém. Obsahuje verzi aplikace, verzi macOS a místo v kódu, kde k problému došlo. Nikdy neobsahuje názvy souborů ani osobní údaje.} windows {Automaticky odešle zprávu, když Cmdr neočekávaně skončí nebo na pozadí narazí na problém. Obsahuje verzi aplikace, verzi Windows a místo v kódu, kde k problému došlo. Nikdy neobsahuje názvy souborů ani osobní údaje.} other {Automaticky odešle zprávu, když Cmdr neočekávaně skončí nebo na pozadí narazí na problém. Obsahuje verzi aplikace, název a verzi distribuce Linuxu a místo v kódu, kde k problému došlo. Nikdy neobsahuje názvy souborů ani osobní údaje.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "3042746"
   },
   "settings.updates.crashReports.keywords": "havárie, pád, zpráva, soukromí, telemetrie, chyba",
   "@settings.updates.crashReports.keywords": {
@@ -1993,7 +1993,7 @@
   },
   "settings.advanced.logLlmCalls.description": "{platform, select, macos {Uloží každý požadavek na AI a každou odpověď do místní složky (llm-logs) pro účely ladění. Tyto soubory zůstávají na vašem Macu a obsahují názvy souborů a cesty, které Cmdr odesílá vašemu poskytovateli.} windows {Uloží každý požadavek na AI a každou odpověď do místní složky (llm-logs) pro účely ladění. Tyto soubory zůstávají na vašem počítači a obsahují názvy souborů a cesty, které Cmdr odesílá vašemu poskytovateli.} other {Uloží každý požadavek na AI a každou odpověď do místní složky (llm-logs) pro účely ladění. Tyto soubory zůstávají na vašem počítači a obsahují názvy souborů a cesty, které Cmdr odesílá vašemu poskytovateli.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "427e138"
   },
   "settings.advanced.logLlmCalls.keywords": "AI, protokol, log, ladění, požadavek, odpověď, zadání, prompt",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2506,13 +2506,13 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr používá poskytovatele AI a klíč, které máte nastavené v Nastavení > AI ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr používá poskytovatele AI a klíč, které máte nastavené v Předvolbách > AI ({provider}).} linuxKde {Cmdr používá poskytovatele AI a klíč, které máte nastavené v okně Nastavit Cmdr > AI ({provider}).} other {Cmdr používá poskytovatele AI a klíč, které máte nastavené v Nastavení > AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
+    "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Pokud chcete začít chatovat, zapněte poskytovatele AI v Nastavení > AI.}}",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Pokud chcete začít chatovat, zapněte poskytovatele AI v Předvolbách > AI.} linuxKde {Pokud chcete začít chatovat, zapněte poskytovatele AI v okně Nastavit Cmdr > AI.} other {Pokud chcete začít chatovat, zapněte poskytovatele AI v Nastavení > AI.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
+    "sourceHash": "0196a5c"
   },
   "settings.askCmdr.interactiveModel.label": "Model pro Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2957,9 +2957,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {Sekce nastavení}}",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {Sekce předvoleb} other {Sekce nastavení}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "4fa3c2e"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Žádné nastavení neodpovídá} one {Odpovídá {countText} sekce} few {Odpovídají {countText} sekce} many {Odpovídá {countText} sekce} other {Odpovídá {countText} sekcí}}",
   "@settings.sidebar.matchCount": {
@@ -3213,7 +3213,7 @@
   },
   "settings.securityLog.enabled.description": "{platform, select, macos {Uchovávat na tomto Macu malý soubor, který zaznamenává změny a odmítnutí důležité pro bezpečnost, třeba souhlas s cloudovou AI, nainstalovanou aktualizaci nebo aplikaci odmítnutou serverem MCP. Neobsahuje žádné názvy souborů, obsah ani hesla a nikdy neopustí váš Mac.} windows {Uchovávat na tomto počítači malý soubor, který zaznamenává změny a odmítnutí důležité pro bezpečnost, třeba souhlas s cloudovou AI, nainstalovanou aktualizaci nebo aplikaci odmítnutou serverem MCP. Neobsahuje žádné názvy souborů, obsah ani hesla a nikdy neopustí váš počítač.} other {Uchovávat na tomto počítači malý soubor, který zaznamenává změny a odmítnutí důležité pro bezpečnost, třeba souhlas s cloudovou AI, nainstalovanou aktualizaci nebo aplikaci odmítnutou serverem MCP. Neobsahuje žádné názvy souborů, obsah ani hesla a nikdy neopustí váš počítač.}}",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
+    "sourceHash": "7086b00"
   },
   "settings.securityLog.enabled.keywords": "bezpečnost, zabezpečení, protokol, log, audit, záznam, události, přístup, soukromí",
   "@settings.securityLog.enabled.keywords": {
@@ -3428,9 +3428,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Nastavení}}",
+  "settings.window.title": "{platform, select, linuxGnome {Předvolby} linuxKde {Nastavit – Cmdr} other {Nastavení}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "80cee55"
   },
   "settings.window.loading": "Načítání nastavení…",
   "@settings.window.loading": {
@@ -3676,13 +3676,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Jedna položka v aplikaci Klíčenka s názvem „{itemName}“} few {{countText} položky v aplikaci Klíčenka s názvem „{itemName}“} many {{countText} položky v aplikaci Klíčenka s názvem „{itemName}“} other {{countText} položek v aplikaci Klíčenka s názvem „{itemName}“}}} windows {{count, plural, one {Jedna položka ve Správci přihlašovacích údajů s názvem „{itemName}“} few {{countText} položky ve Správci přihlašovacích údajů s názvem „{itemName}“} many {{countText} položky ve Správci přihlašovacích údajů s názvem „{itemName}“} other {{countText} položek ve Správci přihlašovacích údajů s názvem „{itemName}“}}} linuxKde {{count, plural, one {Jedna položka v úložišti KWallet s názvem „{itemName}“} few {{countText} položky v úložišti KWallet s názvem „{itemName}“} many {{countText} položky v úložišti KWallet s názvem „{itemName}“} other {{countText} položek v úložišti KWallet s názvem „{itemName}“}}} other {{count, plural, one {Jedna položka v systémové klíčence s názvem „{itemName}“} few {{countText} položky v systémové klíčence s názvem „{itemName}“} many {{countText} položky v systémové klíčence s názvem „{itemName}“} other {{countText} položek v systémové klíčence s názvem „{itemName}“}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Jedna položka v aplikaci Klíčenka s názvem „{itemName}“} few {{countText} položky v aplikaci Klíčenka s názvem „{itemName}“} many {{countText} položky v aplikaci Klíčenka s názvem „{itemName}“} other {{countText} položek v aplikaci Klíčenka s názvem „{itemName}“}}} windows {{count, plural, one {Jedna položka ve Správci přihlašovacích údajů s názvem „{itemName}“} few {{countText} položky ve Správci přihlašovacích údajů s názvem „{itemName}“} many {{countText} položky ve Správci přihlašovacích údajů s názvem „{itemName}“} other {{countText} položek ve Správci přihlašovacích údajů s názvem „{itemName}“}}} linuxKde {{count, plural, one {Jedna položka v úschovně KDE s názvem „{itemName}“} few {{countText} položky v úschovně KDE s názvem „{itemName}“} many {{countText} položky v úschovně KDE s názvem „{itemName}“} other {{countText} položek v úschovně KDE s názvem „{itemName}“}}} other {{count, plural, one {Jedna položka v systémové klíčence s názvem „{itemName}“} few {{countText} položky v systémové klíčence s názvem „{itemName}“} many {{countText} položky v systémové klíčence s názvem „{itemName}“} other {{countText} položek v systémové klíčence s názvem „{itemName}“}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Všechny položky v aplikaci Klíčenka s názvem „{itemName}“} windows {Všechny položky ve Správci přihlašovacích údajů s názvem „{itemName}“} linuxKde {Všechny položky v úložišti KWallet s názvem „{itemName}“} other {Všechny položky v systémové klíčence s názvem „{itemName}“}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Všechny položky v aplikaci Klíčenka s názvem „{itemName}“} windows {Všechny položky ve Správci přihlašovacích údajů s názvem „{itemName}“} linuxKde {Všechny položky v úschovně KDE s názvem „{itemName}“} other {Všechny položky v systémové klíčence s názvem „{itemName}“}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Ukončit Cmdr} other {Ukončit Cmdr}}",
   "@settings.dataWipe.quit": {

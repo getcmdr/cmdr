@@ -341,9 +341,9 @@
   "@fileExplorer.functionKeyBar.terminalLabel": {
     "sourceHash": "e0926fd"
   },
-  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {Lišta funkčních kláves je teď skrytá. Kdykoli ji můžete znovu zapnout v <settingsLink>Nastavení</settingsLink>.} linuxGnome {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Preferences</settingsLink>.} linuxKde {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Configure Cmdr</settingsLink>.} other {Lišta funkčních kláves je teď skrytá. Kdykoli ji můžete znovu zapnout v <settingsLink>Nastavení</settingsLink>.}}",
+  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {Lišta funkčních kláves je teď skrytá. Kdykoli ji můžete znovu zapnout v <settingsLink>Nastavení</settingsLink>.} linuxGnome {Lišta funkčních kláves je teď skrytá. Kdykoli ji můžete znovu zapnout v <settingsLink>Předvolbách</settingsLink>.} linuxKde {Lišta funkčních kláves je teď skrytá. Kdykoli ji můžete znovu zapnout v okně <settingsLink>Nastavit Cmdr</settingsLink>.} other {Lišta funkčních kláves je teď skrytá. Kdykoli ji můžete znovu zapnout v <settingsLink>Nastavení</settingsLink>.}}",
   "@fileExplorer.functionKeyBar.hiddenToast": {
-    "sourceHash": "cb00b6d"
+    "sourceHash": "a829741"
   },
   "fileExplorer.typeToJump.prefix": "Skok: ",
   "@fileExplorer.typeToJump.prefix": {
@@ -521,9 +521,9 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Přihlašovací údaje jsou uložené místně (Správce přihlašovacích údajů není dostupný)} linuxKde {Přihlašovací údaje jsou uložené místně (KWallet není dostupný)} other {Přihlašovací údaje jsou uložené místně (systémový svazek klíčů nebyl nalezen)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Přihlašovací údaje jsou uložené místně (Správce přihlašovacích údajů není dostupný)} linuxKde {Přihlašovací údaje jsou uložené místně (úschovna KDE není dostupná)} other {Přihlašovací údaje jsou uložené místně (systémový svazek klíčů nebyl nalezen)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
-    "sourceHash": "d279dc9"
+    "sourceHash": "438153a"
   },
   "fileExplorer.network.share.notFound": "Sdílená složka „{shareName}“ na hostiteli {hostName} nebyla nalezena",
   "@fileExplorer.network.share.notFound": {
@@ -557,9 +557,9 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Odstranit uložené heslo ze svazku klíčů} windows {Odstranit uložené heslo ze Správce přihlašovacích údajů} linuxKde {Odstranit uložené heslo z úložiště KWallet} other {Odstranit uložené heslo ze systémové klíčenky}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Odstranit uložené heslo ze svazku klíčů} windows {Odstranit uložené heslo ze Správce přihlašovacích údajů} linuxKde {Odstranit uložené heslo z úschovny KDE} other {Odstranit uložené heslo ze systémové klíčenky}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "3d21c85"
+    "sourceHash": "ed20dcd"
   },
   "fileExplorer.network.share.useGuest": "Procházet jako host",
   "@fileExplorer.network.share.useGuest": {
@@ -769,21 +769,21 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Opened in {app}. Want a different editor next time? Pick one in Preferences.} linuxKde {Opened in {app}. Want a different editor next time? Pick one in Configure Cmdr.} other {Otevřeno v aplikaci {app}. Chcete příště jiný editor? Vyberte ho v Nastavení.}}",
+  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Otevřeno v aplikaci {app}. Chcete příště jiný editor? Vyberte ho v Předvolbách.} linuxKde {Otevřeno v aplikaci {app}. Chcete příště jiný editor? Vyberte ho v okně Nastavit Cmdr.} other {Otevřeno v aplikaci {app}. Chcete příště jiný editor? Vyberte ho v Nastavení.}}",
   "@fileExplorer.edit.hint": {
-    "sourceHash": "3632f06"
+    "sourceHash": "1ec59c2"
   },
-  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Opened in your default text editor. Want a different one next time? Pick one in Preferences.} linuxKde {Opened in your default text editor. Want a different one next time? Pick one in Configure Cmdr.} other {Otevřeno ve vašem výchozím textovém editoru. Chcete příště jiný? Vyberte ho v Nastavení.}}",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Otevřeno ve vašem výchozím textovém editoru. Chcete příště jiný? Vyberte ho v Předvolbách.} linuxKde {Otevřeno ve vašem výchozím textovém editoru. Chcete příště jiný? Vyberte ho v okně Nastavit Cmdr.} other {Otevřeno ve vašem výchozím textovém editoru. Chcete příště jiný? Vyberte ho v Nastavení.}}",
   "@fileExplorer.edit.hintUnnamed": {
-    "sourceHash": "6216471"
+    "sourceHash": "00354cc"
   },
   "fileExplorer.edit.dismiss": "Zavřít",
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Otevřít Nastavení}}",
+  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@fileExplorer.edit.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "fileExplorer.edit.appMissing": "Cmdr nemůže najít vybraný editor, proto se tento soubor otevřel v aplikaci {app}.",
   "@fileExplorer.edit.appMissing": {
@@ -837,9 +837,9 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Preferences} linuxKde {Configure Cmdr} other {Nastavení}}",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Předvolby} linuxKde {Nastavit Cmdr} other {Nastavení}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
-    "sourceHash": "74a883a"
+    "sourceHash": "02ce4ce"
   },
   "fileExplorer.clipboard.copiedPath": "Cesta je zkopírovaná, teď ji máte ve schránce:",
   "@fileExplorer.clipboard.copiedPath": {
@@ -949,9 +949,9 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr zálohu {name} zatím zamkl, ale svazek klíčů si uložené heslo ponechal. Pokud ho chcete odstranit natrvalo, smažte ho v Klíčence.} windows {Cmdr zálohu {name} zatím zamkl, ale Správce přihlašovacích údajů si uložené heslo ponechal. Pokud ho chcete odstranit natrvalo, smažte ho ve Správci přihlašovacích údajů.} linuxGnome {Cmdr zálohu {name} zatím zamkl, ale klíčenka si uložené heslo ponechala. Pokud ho chcete odstranit natrvalo, smažte ho v aplikaci Hesla a klíče.} linuxKde {Cmdr zálohu {name} zatím zamkl, ale KWallet si uložené heslo ponechal. Pokud ho chcete odstranit natrvalo, smažte ho v aplikaci KWalletManager.} other {Cmdr zálohu {name} zatím zamkl, ale systémová klíčenka si uložené heslo ponechala. Pokud ho chcete odstranit natrvalo, smažte ho v aplikaci, která klíčenku spravuje.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr zálohu {name} zatím zamkl, ale svazek klíčů si uložené heslo ponechal. Pokud ho chcete odstranit natrvalo, smažte ho v Klíčence.} windows {Cmdr zálohu {name} zatím zamkl, ale Správce přihlašovacích údajů si uložené heslo ponechal. Pokud ho chcete odstranit natrvalo, smažte ho ve Správci přihlašovacích údajů.} linuxGnome {Cmdr zálohu {name} zatím zamkl, ale klíčenka si uložené heslo ponechala. Pokud ho chcete odstranit natrvalo, smažte ho v aplikaci Hesla a klíče.} linuxKde {Cmdr zálohu {name} zatím zamkl, ale úschovna KDE si uložené heslo ponechala. Pokud ho chcete odstranit natrvalo, smažte ho v aplikaci KWalletManager.} other {Cmdr zálohu {name} zatím zamkl, ale systémová klíčenka si uložené heslo ponechala. Pokud ho chcete odstranit natrvalo, smažte ho v aplikaci, která klíčenku spravuje.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
-    "sourceHash": "366f06a"
+    "sourceHash": "52da364"
   },
   "fileExplorer.restic.forgetPassword.unreachable": "Záloha {name} je teď pro Cmdr nedostupná, takže její heslo zůstává uložené. Zkuste to za chvíli znovu.",
   "@fileExplorer.restic.forgetPassword.unreachable": {
@@ -1839,13 +1839,13 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Phone and camera access over MTP is turned off in Preferences.} linuxKde {Phone and camera access over MTP is turned off in Configure Cmdr.} other {Přístup k telefonům a fotoaparátům přes MTP je v Nastavení vypnutý.}}",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Přístup k telefonům a fotoaparátům přes MTP je v Předvolbách vypnutý.} linuxKde {Přístup k telefonům a fotoaparátům přes MTP je v okně Nastavit Cmdr vypnutý.} other {Přístup k telefonům a fotoaparátům přes MTP je v Nastavení vypnutý.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
-    "sourceHash": "53be5f6"
+    "sourceHash": "064a270"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Android phone access is turned off in Preferences.} linuxKde {Android phone access is turned off in Configure Cmdr.} other {Přístup k telefonům s Androidem je v Nastavení vypnutý.}}",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Přístup k telefonům s Androidem je v Předvolbách vypnutý.} linuxKde {Přístup k telefonům s Androidem je v okně Nastavit Cmdr vypnutý.} other {Přístup k telefonům s Androidem je v Nastavení vypnutý.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
-    "sourceHash": "4fba610"
+    "sourceHash": "bc261dc"
   },
   "fileExplorer.navigation.favoriteUnreachable.forgotten": "Cmdr už neví, jak se připojit {kind, select, share {ke sdílené složce „{place}“} server {k serveru „{place}“} phone {k telefonu „{place}“} other {k umístění „{place}“}}. Připojte se znovu přes Servery a tato oblíbená položka zase začne fungovat.",
   "@fileExplorer.navigation.favoriteUnreachable.forgotten": {
@@ -1855,9 +1855,9 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Otevřít Nastavení}}",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "fileExplorer.navigation.favoriteUnreachable.openServers": "Zobrazit servery",
   "@fileExplorer.navigation.favoriteUnreachable.openServers": {
@@ -2217,21 +2217,21 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} linuxKde {Drive indexing is off in Configure Cmdr, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} other {Indexování disků je v Nastavení vypnuté, takže disk {name} zůstává neindexovaný. Zapněte ho v části „Indexování > Indexování disků“.}}",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Indexování disků je v Předvolbách vypnuté, takže disk {name} zůstává neindexovaný. Zapněte ho v části „Indexování > Indexování disků“.} linuxKde {Indexování disků je v okně Nastavit Cmdr vypnuté, takže disk {name} zůstává neindexovaný. Zapněte ho v části „Indexování > Indexování disků“.} other {Indexování disků je v Nastavení vypnuté, takže disk {name} zůstává neindexovaný. Zapněte ho v části „Indexování > Indexování disků“.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
-    "sourceHash": "0253edd"
+    "sourceHash": "f7b3cad"
   },
   "fileExplorer.navigation.driveIndex.driveLeaving": "Disk {name} se odpojuje, takže Cmdr nechal index tohoto disku beze změny. Pokud disk zůstane připojený, zkuste to za chvíli znovu.",
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so no drive is indexed right now.} linuxKde {Drive indexing is off in Configure Cmdr, so no drive is indexed right now.} other {Indexování disků je v Nastavení vypnuté, takže se teď neindexuje žádný disk.}}",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Indexování disků je v Předvolbách vypnuté, takže se teď neindexuje žádný disk.} linuxKde {Indexování disků je v okně Nastavit Cmdr vypnuté, takže se teď neindexuje žádný disk.} other {Indexování disků je v Nastavení vypnuté, takže se teď neindexuje žádný disk.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
-    "sourceHash": "6ebf6f4"
+    "sourceHash": "4c4d376"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Drive indexing is off in Preferences. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} linuxKde {Drive indexing is off in Configure Cmdr. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} other {Indexování disků je v Nastavení vypnuté. Zapněte ho v části „Indexování > Indexování disků“ a tento disk naváže tam, kde skončil.}}",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Indexování disků je v Předvolbách vypnuté. Zapněte ho v části „Indexování > Indexování disků“ a tento disk naváže tam, kde skončil.} linuxKde {Indexování disků je v okně Nastavit Cmdr vypnuté. Zapněte ho v části „Indexování > Indexování disků“ a tento disk naváže tam, kde skončil.} other {Indexování disků je v Nastavení vypnuté. Zapněte ho v části „Indexování > Indexování disků“ a tento disk naváže tam, kde skončil.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
-    "sourceHash": "26e250c"
+    "sourceHash": "453d08d"
   },
   "fileExplorer.dragOut.failed": "{count, plural, =1 {Položku „{name}“ se nepodařilo zkopírovat.} one {{countText} položku se nepodařilo zkopírovat.} few {{countText} položky se nepodařilo zkopírovat.} many {{countText} položky se nepodařilo zkopírovat.} other {{countText} položek se nepodařilo zkopírovat.}}",
   "@fileExplorer.dragOut.failed": {
@@ -2337,9 +2337,9 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Preferences.} linuxKde {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Configure Cmdr.} other {Chcete raději jen přesunout kurzor na odpovídající název a nic neskrývat? Přepněte na Skok, tady nebo v Nastavení.}}",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Chcete raději jen přesunout kurzor na odpovídající název a nic neskrývat? Přepněte na Skok, tady nebo v Předvolbách.} linuxKde {Chcete raději jen přesunout kurzor na odpovídající název a nic neskrývat? Přepněte na Skok, tady nebo v okně Nastavit Cmdr.} other {Chcete raději jen přesunout kurzor na odpovídající název a nic neskrývat? Přepněte na Skok, tady nebo v Nastavení.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
-    "sourceHash": "ac6d3c8"
+    "sourceHash": "ed0bb5f"
   },
   "fileExplorer.quickFilter.intro.switchToJump": "Přepnout na Skok",
   "@fileExplorer.quickFilter.intro.switchToJump": {
@@ -2405,9 +2405,9 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr remembers your answer for these two servers. You can forget it in Preferences, under Servers.} linuxKde {Cmdr remembers your answer for these two servers. You can forget it in Configure Cmdr, under Servers.} other {Cmdr si vaši odpověď pro tyto dva servery zapamatuje. Zapomenout ji můžete v Nastavení v části Servery.}}",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr si vaši odpověď pro tyto dva servery zapamatuje. Zapomenout ji můžete v Předvolbách v části Servery.} linuxKde {Cmdr si vaši odpověď pro tyto dva servery zapamatuje. Zapomenout ji můžete v okně Nastavit Cmdr v části Servery.} other {Cmdr si vaši odpověď pro tyto dva servery zapamatuje. Zapomenout ji můžete v Nastavení v části Servery.}}",
   "@fileExplorer.smbLinkConsent.note": {
-    "sourceHash": "3f9615a"
+    "sourceHash": "d32b664"
   },
   "fileExplorer.smbLinkConsent.allow": "Povolit a přihlásit se",
   "@fileExplorer.smbLinkConsent.allow": {

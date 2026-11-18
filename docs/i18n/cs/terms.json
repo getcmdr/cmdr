@@ -896,7 +896,7 @@
     "confidence": "high",
     "sources": "macOS NetAuthAgent (Uložit heslo do svazku klíčů), Time Machine (záznam v systémovém svazku klíčů; Zkuste použít Klíčenku), i.e. the store is svazek klíčů and the app Klíčenka",
     "decision": "Keychain: svazek klíčů and Klíčenka",
-    "note": "on non-macOS the generic store (keyring) is systémová klíčenka (ai.secretError.title, body, removeBody, genericBody); svazek klíčů stays the macOS store. KDE's KWallet stays a name: nominative KWallet (odepřel, je otevřený), oblique cases through úložiště KWallet (v úložišti KWallet, z úložiště KWallet) so the name never declines (tentative, no pile hit)."
+    "note": "on non-macOS the generic store (keyring) is systémová klíčenka (ai.secretError.title, body, removeBody, genericBody); svazek klíčů stays the macOS store. KDE Wallet → úschovna KDE, as KDE's own Czech catalog names it (kwalletd6.po: Use the KDE wallet to store sensitive information → K ukládání citlivých údajů použijte úschovnu KDE; KDE Wallet Service → Služba úschovny KDE; read-only from websvn.kde.org trunk/l10n-kf6 cs, 2026-11-18); feminine and declinable: úschovna KDE odepřela přístup, v úschovně KDE, z úschovny KDE. KWalletManager stays a name (v aplikaci KWalletManager)."
   },
   "kind": {
     "chosen": "druh",
@@ -1621,7 +1621,12 @@
     "forms": "n., indeclinable in sg.: the window → Nastavení; in Settings → v Nastavení; a single setting → nastavení (pl. nastavení), or volba for a switch",
     "confidence": "high",
     "sources": "macOS AppKit (Settings… → Nastavení…), SystemSettings; Double Commander; Dolphin; MS (Nastavení)",
-    "note": "Capitalize when naming Cmdr's Settings window as a place; lowercase for a setting."
+    "note": "Capitalize when naming Cmdr's Settings window as a place; lowercase for a setting.",
+    "other": {
+      "chosen": "Nastavení",
+      "accept": ["nastaven", "Předvolb", "předvoleb", "Nastavit Cmdr", "Nastavit – Cmdr"],
+      "note": "Linux desktop branches name the window the way that desktop does: GNOME → Předvolby (nautilus.po _Preferences → _Předvolby; macOS AppKit also says Předvolby), so v Předvolbách > AI, button Otevřít Předvolby; KDE → window title Nastavit – Cmdr (dolphin.po Configure @title:window → Nastavit), menu Nastavit Cmdr…, pointers v okně Nastavit Cmdr > AI (the head noun okně keeps the verb-shaped name from reading as an instruction), button Nastavit Cmdr. Other Linux desktops keep Nastavení."
+    }
   },
   "shortcut": {
     "chosen": "klávesová zkratka",

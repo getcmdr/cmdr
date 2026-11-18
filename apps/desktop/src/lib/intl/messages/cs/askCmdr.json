@@ -705,21 +705,21 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, linuxGnome {Add your API key in preferences to start chatting.} other {Pokud chcete začít chatovat, přidejte v Nastavení svůj klíč API.}}",
+  "askCmdr.error.noKey": "{platform, select, linuxGnome {Pokud chcete začít chatovat, přidejte v Předvolbách svůj klíč API.} other {Pokud chcete začít chatovat, přidejte v Nastavení svůj klíč API.}}",
   "@askCmdr.error.noKey": {
-    "sourceHash": "0a78f37"
+    "sourceHash": "124df6a"
   },
-  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {Chatting needs an AI provider. Turn one on in preferences.} other {Ke chatování je potřeba poskytovatel AI. Zapněte některého v Nastavení.}}",
+  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {Ke chatování je potřeba poskytovatel AI. Zapněte některého v Předvolbách.} other {Ke chatování je potřeba poskytovatel AI. Zapněte některého v Nastavení.}}",
   "@askCmdr.error.notConfigured": {
-    "sourceHash": "2d55d2c"
+    "sourceHash": "54fb846"
   },
   "askCmdr.error.askCmdrOff": "Ask Cmdr je vypnutý.",
   "@askCmdr.error.askCmdrOff": {
     "sourceHash": "6599ee1"
   },
-  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {Cloud AI is off. Allow it in Preferences > AI.} linuxKde {Cloud AI is off. Allow it in Configure Cmdr > AI.} other {Cloudová AI je vypnutá. Povolte ji v Nastavení > AI.}}",
+  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {Cloudová AI je vypnutá. Povolte ji v Předvolbách > AI.} linuxKde {Cloudová AI je vypnutá. Povolte ji v okně Nastavit Cmdr > AI.} other {Cloudová AI je vypnutá. Povolte ji v Nastavení > AI.}}",
   "@askCmdr.error.noCloudConsent": {
-    "sourceHash": "cd2af1d"
+    "sourceHash": "6490317"
   },
   "askCmdr.error.managedByOrganization": "Vaše organizace tuto službu AI nepovoluje. Vaše IT oddělení vám řekne, které služby můžete používat.",
   "@askCmdr.error.managedByOrganization": {
@@ -737,29 +737,29 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, linuxGnome {The provider didn’t accept your API key. Check it in preferences.} other {Poskytovatel váš klíč API nepřijal. Zkontrolujte ho v Nastavení.}}",
+  "askCmdr.error.authFailed": "{platform, select, linuxGnome {Poskytovatel váš klíč API nepřijal. Zkontrolujte ho v Předvolbách.} other {Poskytovatel váš klíč API nepřijal. Zkontrolujte ho v Nastavení.}}",
   "@askCmdr.error.authFailed": {
-    "sourceHash": "a2302ca"
+    "sourceHash": "9e02aad"
   },
   "askCmdr.error.rateLimited": "Poskytovatel je zaneprázdněný, nebo vám došla kvóta. Zkuste to za chvíli znovu.",
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {Your {provider} plan doesn’t include this model. Pick another model in preferences, or upgrade your plan.} other {Váš tarif u poskytovatele {provider} tento model nezahrnuje. Vyberte v Nastavení jiný model, nebo přejděte na vyšší tarif.}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {Váš tarif u poskytovatele {provider} tento model nezahrnuje. Vyberte v Předvolbách jiný model, nebo přejděte na vyšší tarif.} other {Váš tarif u poskytovatele {provider} tento model nezahrnuje. Vyberte v Nastavení jiný model, nebo přejděte na vyšší tarif.}}",
   "@askCmdr.error.modelNotInPlan.named": {
-    "sourceHash": "9f2c237"
+    "sourceHash": "efbf38b"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {Your plan with this AI provider doesn’t include this model. Pick another model in preferences, or upgrade your plan.} other {Váš tarif u tohoto poskytovatele AI tento model nezahrnuje. Vyberte v Nastavení jiný model, nebo přejděte na vyšší tarif.}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {Váš tarif u tohoto poskytovatele AI tento model nezahrnuje. Vyberte v Předvolbách jiný model, nebo přejděte na vyšší tarif.} other {Váš tarif u tohoto poskytovatele AI tento model nezahrnuje. Vyberte v Nastavení jiný model, nebo přejděte na vyšší tarif.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
-    "sourceHash": "b90bf30"
+    "sourceHash": "6808950"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in preferences.} other {Poskytovatel {provider} tento požadavek odmítl: limit vašeho tarifu je menší než jediný požadavek z Cmdru, protože každý požadavek vždy obsahuje pokyny Cmdru. Kratší zpráva nepomůže. Zkuste u poskytovatele {provider} větší tarif nebo v Nastavení vyberte jiného poskytovatele.}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {Poskytovatel {provider} tento požadavek odmítl: limit vašeho tarifu je menší než jediný požadavek z Cmdru, protože každý požadavek vždy obsahuje pokyny Cmdru. Kratší zpráva nepomůže. Zkuste u poskytovatele {provider} větší tarif nebo v Předvolbách vyberte jiného poskytovatele.} other {Poskytovatel {provider} tento požadavek odmítl: limit vašeho tarifu je menší než jediný požadavek z Cmdru, protože každý požadavek vždy obsahuje pokyny Cmdru. Kratší zpráva nepomůže. Zkuste u poskytovatele {provider} větší tarif nebo v Nastavení vyberte jiného poskytovatele.}}",
   "@askCmdr.error.requestTooLarge.named": {
-    "sourceHash": "f878555"
+    "sourceHash": "b1850b3"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in preferences.} other {Váš poskytovatel AI tento požadavek odmítl: limit vašeho tarifu je menší než jediný požadavek z Cmdru, protože každý požadavek vždy obsahuje pokyny Cmdru. Kratší zpráva nepomůže. Zkuste větší tarif nebo v Nastavení vyberte jiného poskytovatele.}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {Váš poskytovatel AI tento požadavek odmítl: limit vašeho tarifu je menší než jediný požadavek z Cmdru, protože každý požadavek vždy obsahuje pokyny Cmdru. Kratší zpráva nepomůže. Zkuste větší tarif nebo v Předvolbách vyberte jiného poskytovatele.} other {Váš poskytovatel AI tento požadavek odmítl: limit vašeho tarifu je menší než jediný požadavek z Cmdru, protože každý požadavek vždy obsahuje pokyny Cmdru. Kratší zpráva nepomůže. Zkuste větší tarif nebo v Nastavení vyberte jiného poskytovatele.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
-    "sourceHash": "b81536f"
+    "sourceHash": "455449e"
   },
   "askCmdr.error.providerBusy.named": "Poskytovatel {provider} je teď příliš zaneprázdněný a ani po několika pokusech neodpověděl. Počkejte pár minut a pak zprávu odešlete znovu.",
   "@askCmdr.error.providerBusy.named": {
@@ -977,17 +977,17 @@
   "@askCmdr.composer.sendNeedsProvider": {
     "sourceHash": "9e6aba3"
   },
-  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {Ask Cmdr needs an AI provider to chat. Pick one in Preferences.} linuxKde {Ask Cmdr needs an AI provider to chat. Pick one in Configure Cmdr.} other {Ask Cmdr potřebuje ke chatování poskytovatele AI. Vyberte ho v Nastavení.}}",
+  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {Ask Cmdr potřebuje ke chatování poskytovatele AI. Vyberte ho v Předvolbách.} linuxKde {Ask Cmdr potřebuje ke chatování poskytovatele AI. Vyberte ho v okně Nastavit Cmdr.} other {Ask Cmdr potřebuje ke chatování poskytovatele AI. Vyberte ho v Nastavení.}}",
   "@askCmdr.providerNotice.off": {
-    "sourceHash": "8696c99"
+    "sourceHash": "6e9f73c"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Preferences.} linuxKde {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Configure Cmdr.} other {Váš poskytovatel cloudové AI potřebuje klíč API, aby Ask Cmdr mohl chatovat. Přidejte ho v Nastavení.}}",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {Váš poskytovatel cloudové AI potřebuje klíč API, aby Ask Cmdr mohl chatovat. Přidejte ho v Předvolbách.} linuxKde {Váš poskytovatel cloudové AI potřebuje klíč API, aby Ask Cmdr mohl chatovat. Přidejte ho v okně Nastavit Cmdr.} other {Váš poskytovatel cloudové AI potřebuje klíč API, aby Ask Cmdr mohl chatovat. Přidejte ho v Nastavení.}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
-    "sourceHash": "dccf257"
+    "sourceHash": "16dc8a0"
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Preferences.} linuxKde {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Configure Cmdr.} other {Váš poskytovatel cloudové AI potřebuje adresu, aby Ask Cmdr mohl chatovat. Přidejte ji v Nastavení.}}",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {Váš poskytovatel cloudové AI potřebuje adresu, aby Ask Cmdr mohl chatovat. Přidejte ji v Předvolbách.} linuxKde {Váš poskytovatel cloudové AI potřebuje adresu, aby Ask Cmdr mohl chatovat. Přidejte ji v okně Nastavit Cmdr.} other {Váš poskytovatel cloudové AI potřebuje adresu, aby Ask Cmdr mohl chatovat. Přidejte ji v Nastavení.}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
-    "sourceHash": "1b1682b"
+    "sourceHash": "1ae5e35"
   },
   "askCmdr.providerNotice.localNotSetUp": "Místní AI ještě není stažená, takže Ask Cmdr nemůže chatovat. Připravte ji v Nastavení.",
   "@askCmdr.providerNotice.localNotSetUp": {
@@ -1021,9 +1021,9 @@
   "@askCmdr.gate.cloudOff.title": {
     "sourceHash": "2e56781"
   },
-  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Preferences first, and you’re ready to chat.} linuxKde {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Configure Cmdr first, and you’re ready to chat.} other {Ask Cmdr komunikuje se službou cloudové AI, kterou máte nastavenou. Nejdřív v Nastavení povolte cloudovou AI a můžete chatovat.}}",
+  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {Ask Cmdr komunikuje se službou cloudové AI, kterou máte nastavenou. Nejdřív v Předvolbách povolte cloudovou AI a můžete chatovat.} linuxKde {Ask Cmdr komunikuje se službou cloudové AI, kterou máte nastavenou. Nejdřív v okně Nastavit Cmdr povolte cloudovou AI a můžete chatovat.} other {Ask Cmdr komunikuje se službou cloudové AI, kterou máte nastavenou. Nejdřív v Nastavení povolte cloudovou AI a můžete chatovat.}}",
   "@askCmdr.gate.cloudOff.body": {
-    "sourceHash": "d3d3252"
+    "sourceHash": "076c788"
   },
   "askCmdr.gate.cloudOff.openSettings": "Otevřít nastavení AI",
   "@askCmdr.gate.cloudOff.openSettings": {
@@ -1410,9 +1410,9 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {AI features are on, but they need a provider to work. Click to set one up in preferences.} other {Funkce AI jsou zapnuté, ale aby fungovaly, potřebují poskytovatele. Klikněte a přidejte ho v Nastavení.}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {Funkce AI jsou zapnuté, ale aby fungovaly, potřebují poskytovatele. Klikněte a přidejte ho v Předvolbách.} other {Funkce AI jsou zapnuté, ale aby fungovaly, potřebují poskytovatele. Klikněte a přidejte ho v Nastavení.}}",
   "@askCmdr.wake.needsApiKey": {
-    "sourceHash": "0f71f75"
+    "sourceHash": "2f1b3e9"
   },
   "askCmdr.wakeDigest.summary": "Co se změnilo: {foldersText} {folders, plural, one {složka} few {složky} many {složky} other {složek}}",
   "@askCmdr.wakeDigest.summary": {
