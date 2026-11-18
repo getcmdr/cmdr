@@ -7,6 +7,18 @@ import { collectPageErrors, skipWithoutDemo, visitorOf } from './demo-support.js
 // Where each suite runs: `demo-support.ts`. Boot, indexing, and the first listing: `demo-smoke.spec.ts`.
 skipWithoutDemo()
 
+// Every command the app called got an answer or a decided refusal: a gap nobody decided on lands in
+// `__cmdrDemo.unanswered` (`apps/desktop/src/lib/demo/unanswered.ts`), and fails the test that hit it.
+test.afterEach(async ({ page }) => {
+  const gaps = await page
+    .evaluate(() => {
+      const demo = (window as unknown as { __cmdrDemo?: { unanswered: Map<string, number> } }).__cmdrDemo
+      return demo ? [...demo.unanswered.keys()] : []
+    })
+    .catch(() => [])
+  expect(gaps, 'commands the demo has no answer for').toEqual([])
+})
+
 test.describe('Browser demo', () => {
   // ⌘F runs the real search core in the WASM module (crates/cmdr-listing-wasm, `search.rs`) over the
   // volume the panes list. Enter (Go to file) lands the pane's cursor on the found file.

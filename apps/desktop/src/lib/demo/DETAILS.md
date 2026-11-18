@@ -320,11 +320,11 @@ origin) from framing `localhost`; serve the parent page from a real loopback ser
 
 - One colocated `*.test.ts` per module. They pin what breaks the demo silently: the tree's parents and its 1,200 photos
   (the engine refuses a bad tree at boot), the browser-safe map (real command ids, the canonical combo vocabulary, no
-  clash in an overlapping scope, no browser-reserved combo left), no TS answer for an engine command
-  (`engine-commands.test.ts`), the backend's routing order (TS tables, then `handles()`, then `unanswered`), the
-  webview's JSON wire and event targets, the window panels' open/close/raise/refuse/zoom, the traffic lights' actions
-  and key-window state, the Cmdr gold seed, and the boot role pick. The lights' look is QA'd against AppKit's renders in
-  a real browser (§ Traffic lights).
+  clash in an overlapping scope, no browser-reserved combo left), every bindings command answered or left out with a
+  reason (`coverage.test.ts`), no TS answer for an engine command (`engine-commands.test.ts`), the backend's routing
+  order (TS tables, then `handles()`, then `unanswered`), the webview's JSON wire and event targets, the window panels'
+  open/close/raise/refuse/zoom, the traffic lights' actions and key-window state, the Cmdr gold seed, and the boot role
+  pick. The lights' look is QA'd against AppKit's renders in a real browser (§ Traffic lights).
 - vitest aliases `#lib/demo/boot.js` to `boot-absent.ts`, `$app/paths` to `apps/desktop/src/test-app-paths-shim.ts`, and
   `virtual:cmdr-listing-wasm` to `apps/desktop/src/test-listing-wasm-shim.ts`; `listing.test.ts` mocks the last with a
   fake engine. `test-setup.ts` stubs `@tauri-apps/api/event` app-wide, so `webview.test.ts` unmocks it to test the real
@@ -335,16 +335,27 @@ origin) from framing `localhost`; serve the parent page from a real loopback ser
 
 ## Answering a command
 
-1. Find what's unanswered: open the demo, then read `window.__cmdrDemo.unanswered` (command → call count) in devtools.
-   The first unanswered call per command also logs `[demo] no answer for …` at debug level.
+**Every bindings command is accounted for** (`coverage.ts`): answered by a TS table, an engine's list
+(`engine-command-names.ts`, which `crates/cmdr-listing-wasm/src/engine_command_names_test.rs` holds equal to the crate's
+own lists), or a page host (`WINDOW_HOST_COMMANDS`, `DRAG_COMMANDS`), or left out in `notInDemo` with the reason a
+browser can't. `notInDemo satisfies Record<Unanswered, string>`, so a new command in none of them fails `svelte-check`,
+and `coverage.test.ts` fails in `svelte-tests-related` (it imports `bindings.ts` at runtime, so a bindings change
+reaches it). Why: a pane-boot command (`live_volume_path`) once shipped unanswered, the app read the rejection as "not
+ready", and every pane said "didn't respond in time"; only the nightly demo suite would have caught it. A `notInDemo`
+command takes the unanswered path quietly.
+
+1. Find what's unanswered at runtime: a command no table, engine, or `notInDemo` knows (a raw `invoke`, a plugin
+   command) logs `[demo] no answer for …` as a console error and lands in `window.__cmdrDemo.unanswered` (command → call
+   count). `demo.spec.ts`'s `afterEach` fails any test that left one there.
 2. A listing command belongs to the engine (`crates/cmdr-listing-wasm`): ask there, don't answer it in TS.
 3. Look up its return type in `bindings.ts` (the `__TAURI_INVOKE<...>` or `typedError<Ok, Err>`).
 4. Void command (returns `()`): add its bindings name to `silentCommands` in `answers.ts`. `VoidCommand` rejects a
-   command that returns a value. Unanswered voids work anyway (the fallback answers `null`); listing them only keeps the
-   log quiet. Any OTHER unanswered command rejects with a string, as Tauri rejects a command it lacks: a `null` posing
-   as an answer crashed the search dialog once. Which are void (`Promise<void>`, or a `Result<(), E>` whose success is
-   `null`) is `virtual:cmdr-demo-void-commands`, which `apps/desktop/scripts/vite-demo-void-commands.ts` reads off
-   `bindings.ts` at build time (registered in `vite.config.js` for the demo build only, and in `vitest.config.ts`).
+   command that returns a value. A void the demo shouldn't acknowledge goes in `notInDemo` instead; either way the
+   fallback answers it `null`. Any OTHER unanswered command rejects with a string, as Tauri rejects a command it lacks:
+   a `null` posing as an answer crashed the search dialog once. Which are void (`Promise<void>`, or a `Result<(), E>`
+   whose success is `null`) is `virtual:cmdr-demo-void-commands`, which
+   `apps/desktop/scripts/vite-demo-void-commands.ts` reads off `bindings.ts` at build time (registered in
+   `vite.config.js` for the demo build only, and in `vitest.config.ts`).
 5. Value command: add an entry to `appAnswers` (app state) or `volumeAnswers` (volumes, paths, and the tree), keyed by
    its bindings (camelCase) name. The answer is the `ok` value (`RawAnswer<K>`); a `typedError` command's error branch
    is `refuse('openPath', { type: 'unsupported' })`, typed against that command's error, which `invoke` rejects with as

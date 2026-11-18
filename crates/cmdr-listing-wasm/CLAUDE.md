@@ -28,7 +28,8 @@ The engine's second host, beside `apps/desktop/src-tauri/src/listing_host/`. Not
   `commands/menu.rs`, `commands/file_viewer.rs`, `commands/search.rs`, `commands/multi_rename.rs`, and
   `listing_host/events.rs` (writes: the desktop's `operations_host/` and its write commands; search events:
   `search/live/events.rs`). A change there needs one here; `events_test.rs`, `menu_test.rs`, `context_menu_test.rs`,
-  `search_test.rs`, and `multi_rename_test.rs` pin event keys and names against `bindings.ts`.
+  `search_test.rs`, and `multi_rename_test.rs` pin event keys and names against `bindings.ts`; a command added or
+  dropped here also goes in the demo's `engine-command-names.ts` (`engine_command_names_test.rs`).
 - **One volume, one `Listings`, shared by every engine** (listing, writes, viewer, Multi-Rename), or a copy lands unseen
   by the panes.
 - **Everything but `bindings.rs` builds natively**, so the tests run with `cargo nextest` like any crate. Keep JS types
