@@ -26,6 +26,7 @@
     reason = "a measurement harness reports its measurements; run it with --no-capture"
 )]
 
+use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
@@ -313,7 +314,7 @@ async fn write_concurrently(volume: &SftpVolume, depth: usize, width: usize) -> 
         .sum();
     let elapsed = started.elapsed();
     for name in &names {
-        let _ = cmdr_fs::volume::Volume::delete(volume, std::path::Path::new(name)).await;
+        let _ = cmdr_fs::volume::Volume::delete(volume, &AppPath::legacy_unchecked(std::path::Path::new(name))).await;
     }
     (bytes, elapsed)
 }
@@ -339,7 +340,7 @@ async fn a_windowed_write_beats_a_serial_one_by_at_least_four_times() {
     let windowed = rate(windowed_bytes, started.elapsed());
 
     for name in [&serial_name, &windowed_name] {
-        let _ = cmdr_fs::volume::Volume::delete(&volume, std::path::Path::new(name)).await;
+        let _ = cmdr_fs::volume::Volume::delete(&volume, &AppPath::legacy_unchecked(std::path::Path::new(name))).await;
     }
 
     println!("serial (depth 1):            {serial:.1} MB/s, bytes written: {serial_bytes}");
