@@ -742,9 +742,9 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "Permet de rechercher le texte de vos images. Ce texte ne quitte jamais votre Mac.",
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {Permet de rechercher le texte de vos images. Ce texte ne quitte jamais votre Mac.} windows {Permet de rechercher le texte de vos images. Ce texte ne quitte jamais votre PC.} other {Permet de rechercher le texte de vos images. Ce texte ne quitte jamais votre ordinateur.}}",
   "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
+    "sourceHash": "2a55989"
   },
   "settings.mediaIndex.enabled.keywords": "image, photo, texte, rechercher, recherche, index, indexer, capture d’écran, contenu, reconnaissance de texte",
   "@settings.mediaIndex.enabled.keywords": {
@@ -818,9 +818,9 @@
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
   },
-  "settings.mediaIndex.networkVolumes.optInHelp": "Cmdr lit le texte à l’intérieur de ces photos pour que vous puissiez le rechercher. Cela fonctionne sur votre Mac, et les photos ne quittent jamais votre réseau.",
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {Cmdr lit le texte à l’intérieur de ces photos pour que vous puissiez le rechercher. Cela fonctionne sur votre Mac, et les photos ne quittent jamais votre réseau.} windows {Cmdr lit le texte à l’intérieur de ces photos pour que vous puissiez le rechercher. Cela fonctionne sur votre PC, et les photos ne quittent jamais votre réseau.} other {Cmdr lit le texte à l’intérieur de ces photos pour que vous puissiez le rechercher. Cela fonctionne sur votre ordinateur, et les photos ne quittent jamais votre réseau.}}",
   "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
+    "sourceHash": "c81e602"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Toujours indexer ce disque",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -926,9 +926,9 @@
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
   },
-  "settings.mediaIndex.progress.local": "Ce Mac",
+  "settings.mediaIndex.progress.local": "{platform, select, macos {Ce Mac} windows {Ce PC} other {Cet ordinateur}}",
   "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
+    "sourceHash": "80e7006"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {{enrichedText} image indexée sur {totalText}} other {{enrichedText} images indexées sur {totalText}} many {{enrichedText} images indexées sur {totalText}}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1079,9 +1079,9 @@
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
   },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Allez à votre téléchargement le plus récent depuis n’importe quelle app avec un raccourci global. Nécessite l’accès complet au disque.",
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {Allez à votre téléchargement le plus récent depuis n’importe quelle app avec un raccourci global. Nécessite l’accès complet au disque.} other {Allez à votre téléchargement le plus récent depuis n’importe quelle app avec un raccourci global.}}",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
+    "sourceHash": "9748f9b"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "raccourci, raccourci clavier, global, téléchargement, téléchargements, sauter, aller à, dernier",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2820,9 +2820,13 @@
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
   },
-  "settings.summary.imageIndexing": "Recherchez le texte à l’intérieur de vos images. Fonctionne sur votre Mac, et rien ne le quitte.",
+  "settings.summary.imageIndexing": "{platform, select, macos {Recherchez le texte à l’intérieur de vos images. Fonctionne sur votre Mac, et rien ne le quitte.} windows {Recherchez le texte à l’intérieur de vos images. Fonctionne sur votre PC, et rien ne le quitte.} other {Recherchez le texte à l’intérieur de vos images. Fonctionne sur votre ordinateur, et rien ne le quitte.}}",
   "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
+    "sourceHash": "287c7fc"
+  },
+  "settings.summary.fallback": "Réglages de la section {section}.",
+  "@settings.summary.fallback": {
+    "sourceHash": "83b4a28"
   },
   "settings.summary.noSubsections": "Cette section n’a aucune sous-section.",
   "@settings.summary.noSubsections": {

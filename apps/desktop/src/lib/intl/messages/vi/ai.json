@@ -111,9 +111,9 @@
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "6594500"
   },
-  "ai.cloudConsent.aboutThis.item.appAndSigner": "Với một ứng dụng hoặc chương trình: tên, ID và phiên bản. Với ứng dụng, chương trình hoặc ảnh đĩa: tên và ID nhóm của bên đã ký, mã có còn khớp với chữ ký đó không và có đính kèm phiếu công chứng của Apple không",
+  "ai.cloudConsent.aboutThis.item.appAndSigner": "{platform, select, macos {Với một ứng dụng hoặc chương trình: tên, ID và phiên bản. Với ứng dụng, chương trình hoặc ảnh đĩa: tên và ID nhóm của bên đã ký, mã có còn khớp với chữ ký đó không và có đính kèm phiếu công chứng của Apple không} windows {Không có thông tin ứng dụng và chữ ký mã: Cmdr không đọc chúng trên PC này} other {Không có thông tin ứng dụng và chữ ký mã: Cmdr không đọc chúng trên máy tính này}}",
   "@ai.cloudConsent.aboutThis.item.appAndSigner": {
-    "sourceHash": "471891d"
+    "sourceHash": "d597a97"
   },
   "ai.cloudConsent.aboutThis.item.use": "Lần cuối bạn mở mục đó, số lần mở và ứng dụng nào mở mục đó",
   "@ai.cloudConsent.aboutThis.item.use": {

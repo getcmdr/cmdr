@@ -89,7 +89,7 @@ pub(crate) fn probe(path: &str, home: Option<&str>) -> Result<Probe, AboutUnavai
 /// the pane already listed.
 pub(crate) fn sealed(path: &str, home: &str) -> bool {
     let is_a_container = |place: OwnerPlace| matches!(place, OwnerPlace::Containers | OwnerPlace::GroupContainers);
-    let itself = match OwnerQuestion::of(path, home) {
+    let itself = match OwnerQuestion::of(path, home, platform::DISK_LAYOUT) {
         OwnerQuestion::BundleId { place, .. } | OwnerQuestion::Name { place, .. } => is_a_container(place),
         OwnerQuestion::Receipt | OwnerQuestion::Answered(_) | OwnerQuestion::Nothing => false,
     };

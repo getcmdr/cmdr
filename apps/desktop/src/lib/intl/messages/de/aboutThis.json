@@ -694,9 +694,9 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "Dein persönlicher Ordner",
+  "aboutThis.standardFolder.home": "{platform, select, windows {Dein Benutzerordner} other {Dein persönlicher Ordner}}",
   "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
+    "sourceHash": "d93508f"
   },
   "aboutThis.standardFolder.desktop": "Dein Ordner „Schreibtisch“",
   "@aboutThis.standardFolder.desktop": {
@@ -944,9 +944,9 @@
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
   },
-  "aboutThis.removal.standardFolder.home": "Das ist dein persönlicher Ordner: Alles, was dir auf diesem Computer gehört, liegt darin, und das System und jede App erwarten ihn.",
+  "aboutThis.removal.standardFolder.home": "{platform, select, windows {Das ist dein Benutzerordner: Alles, was dir auf diesem PC gehört, liegt darin, und das System und jede App erwarten ihn.} other {Das ist dein persönlicher Ordner: Alles, was dir auf diesem Computer gehört, liegt darin, und das System und jede App erwarten ihn.}}",
   "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
+    "sourceHash": "f01131f"
   },
   "aboutThis.removal.standardFolder.personal": "Das ist einer deiner Standardordner: Das System und deine Apps erwarten, ihn vorzufinden, und alles darin wird mit ihm entfernt.",
   "@aboutThis.removal.standardFolder.personal": {

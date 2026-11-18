@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
-use cmdr_about::owner::KnownApp;
+use cmdr_about::owner::{DiskLayout, KnownApp};
 
 use crate::ignore_poison::IgnorePoison;
 
@@ -19,6 +19,8 @@ use cmdr_about::provenance::{Download, MAX_XATTR_BYTES, xdg_download_fact};
 
 use super::StatExtras;
 use super::unix::{XattrSyscalls, download_with, errno, executable, hard_links, physical_size};
+
+pub(crate) const DISK_LAYOUT: DiskLayout = DiskLayout::Other;
 
 pub(crate) fn os_caps() -> OsCaps {
     OsCaps {

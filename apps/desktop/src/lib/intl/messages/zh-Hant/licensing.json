@@ -424,9 +424,9 @@
   "@licensing.section.includedFeatures": {
     "sourceHash": "0a54a41"
   },
-  "licensing.section.includedMacs": "你自己所有的 Mac，供你個人使用",
+  "licensing.section.includedMacs": "{platform, select, macos {你自己所有的 Mac，供你個人使用} windows {你自己所有的電腦，供你個人使用} other {你自己所有的電腦，供你個人使用}}",
   "@licensing.section.includedMacs": {
-    "sourceHash": "d0968e4"
+    "sourceHash": "109bfe5"
   },
   "licensing.section.includedUpdates": "自動更新",
   "@licensing.section.includedUpdates": {

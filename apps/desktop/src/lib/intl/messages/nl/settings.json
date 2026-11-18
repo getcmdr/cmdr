@@ -743,9 +743,9 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "Maakt de tekst in je afbeeldingen doorzoekbaar. Die verlaat je Mac nooit.",
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {Maakt de tekst in je afbeeldingen doorzoekbaar. Die verlaat je Mac nooit.} windows {Maakt de tekst in je afbeeldingen doorzoekbaar. Die verlaat je pc nooit.} other {Maakt de tekst in je afbeeldingen doorzoekbaar. Die verlaat je computer nooit.}}",
   "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
+    "sourceHash": "2a55989"
   },
   "settings.mediaIndex.enabled.keywords": "afbeelding, afbeeldingen, foto, foto''s, plaatje, tekst, zoeken, index, indexeren, schermafbeelding, inhoud",
   "@settings.mediaIndex.enabled.keywords": {
@@ -819,9 +819,9 @@
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
   },
-  "settings.mediaIndex.networkVolumes.optInHelp": "Cmdr leest de tekst in deze foto''s zodat je erin kunt zoeken. Het draait op je Mac, en de foto''s verlaten je netwerk nooit.",
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {Cmdr leest de tekst in deze foto''s zodat je erin kunt zoeken. Het draait op je Mac, en de foto''s verlaten je netwerk nooit.} windows {Cmdr leest de tekst in deze foto''s zodat je erin kunt zoeken. Het draait op je pc, en de foto''s verlaten je netwerk nooit.} other {Cmdr leest de tekst in deze foto''s zodat je erin kunt zoeken. Het draait op je computer, en de foto''s verlaten je netwerk nooit.}}",
   "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
+    "sourceHash": "c81e602"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Deze schijf altijd indexeren",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -927,9 +927,9 @@
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
   },
-  "settings.mediaIndex.progress.local": "Deze Mac",
+  "settings.mediaIndex.progress.local": "{platform, select, macos {Deze Mac} windows {Deze pc} other {Deze computer}}",
   "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
+    "sourceHash": "80e7006"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {{enrichedText} van {totalText} afbeelding geïndexeerd} other {{enrichedText} van {totalText} afbeeldingen geïndexeerd}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1080,9 +1080,9 @@
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
   },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Spring vanuit elke app naar je meest recente download met een systeembrede sneltoets. Vereist Volledige schijftoegang.",
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {Spring vanuit elke app naar je meest recente download met een systeembrede sneltoets. Vereist Volledige schijftoegang.} other {Spring vanuit elke app naar je meest recente download met een systeembrede sneltoets.}}",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
+    "sourceHash": "9748f9b"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "sneltoets, toetsencombinatie, globaal, download, downloads, springen, ga naar, laatste",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2818,9 +2818,13 @@
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
   },
-  "settings.summary.imageIndexing": "Doorzoek de tekst in je afbeeldingen. Draait op je Mac en niets verlaat die.",
+  "settings.summary.imageIndexing": "{platform, select, macos {Doorzoek de tekst in je afbeeldingen. Draait op je Mac en niets verlaat die.} windows {Doorzoek de tekst in je afbeeldingen. Draait op je pc en niets verlaat die.} other {Doorzoek de tekst in je afbeeldingen. Draait op je computer en niets verlaat die.}}",
   "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
+    "sourceHash": "287c7fc"
+  },
+  "settings.summary.fallback": "Instellingen voor {section}.",
+  "@settings.summary.fallback": {
+    "sourceHash": "83b4a28"
   },
   "settings.summary.noSubsections": "Dit onderdeel heeft geen subonderdelen.",
   "@settings.summary.noSubsections": {

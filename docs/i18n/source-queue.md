@@ -390,3 +390,9 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   locales. Adding AOSP Settings to `i18n:pile-fetch` would make it a lookup. (es, pt, vi, zh, zh-Hant)
 - The worktree guard refused pipes and loops naming the scratchpad path (it contains `projects-git`), so the working
   files moved under `_ignored/i18n-work/`. (es)
+- A branch that removed translations when it made keys per-OS left the `macos` branch to restore from git history, and
+  no tool reads a key's value at a ref: a read-only script over a `git archive` of the old catalogs filled the gap, and
+  retyping those values from terminal output silently dropped Czech's U+00A0 after one-letter prepositions (caught by
+  `i18n-mechanics`, then a byte-compare script). An `i18n:values --ref <rev>` that prints escapes, or an
+  `i18n:apply --restore-from <rev>` for the `macos` branch, would make the restore exact. (all locales, per-OS machine
+  names batch)

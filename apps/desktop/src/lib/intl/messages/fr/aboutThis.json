@@ -698,9 +698,9 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "Votre dossier personnel",
+  "aboutThis.standardFolder.home": "{platform, select, windows {Votre dossier utilisateur} other {Votre dossier personnel}}",
   "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
+    "sourceHash": "d93508f"
   },
   "aboutThis.standardFolder.desktop": "Votre dossier Bureau",
   "@aboutThis.standardFolder.desktop": {
@@ -949,9 +949,9 @@
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
   },
-  "aboutThis.removal.standardFolder.home": "C’est votre dossier personnel : tout ce qui vous appartient sur cet ordinateur s’y trouve, et le système comme chaque app s’attendent à le trouver.",
+  "aboutThis.removal.standardFolder.home": "{platform, select, windows {C’est votre dossier utilisateur : tout ce qui vous appartient sur ce PC s’y trouve, et le système comme chaque app s’attendent à le trouver.} other {C’est votre dossier personnel : tout ce qui vous appartient sur cet ordinateur s’y trouve, et le système comme chaque app s’attendent à le trouver.}}",
   "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
+    "sourceHash": "f01131f"
   },
   "aboutThis.removal.standardFolder.personal": "C’est l’un de vos dossiers standard : le système et vos apps s’attendent à le trouver, et tout ce qu’il contient disparaît avec lui.",
   "@aboutThis.removal.standardFolder.personal": {

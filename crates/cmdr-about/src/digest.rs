@@ -11,7 +11,7 @@ use std::cmp::Ordering;
 use serde::Serialize;
 
 use crate::fact::{Fact, UnknownWhy};
-use crate::owner::{OwnerPlace, OwnerQuestion, belongs_to};
+use crate::owner::{DiskLayout, OwnerPlace, OwnerQuestion, belongs_to};
 use crate::payload::{RecursiveSize, SizeCoverage};
 use crate::sniff::{SniffedKind, claimed_kind};
 use crate::text::ItemText;
@@ -359,7 +359,9 @@ pub const APP_DATA_PLACES: [(&str, OwnerPlace); 7] = [
 /// group container named after a team's shared id (`<TEAM>.com.vendor`) isn't
 /// counted for one app of that vendor either: other apps may live off it.
 pub fn app_data_place(path: &str, home: &str, bundle_id: &str) -> Option<OwnerPlace> {
-    match OwnerQuestion::of(path, home) {
+    // Only the bundle-id places count, and no standard folder is one, so the layout
+    // changes nothing here.
+    match OwnerQuestion::of(path, home, DiskLayout::Mac) {
         OwnerQuestion::BundleId { id, place }
             if APP_DATA_PLACES.iter().any(|(_, known)| *known == place) && belongs_to(&id, bundle_id) =>
         {

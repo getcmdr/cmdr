@@ -815,11 +815,14 @@ var surfaceGuardedCrates = []struct {
 		// 151 → 153 (2026-11-14, the real app's card): `owner::StandardFolder`, a
 		// wire type naming the folders the OS sets up, and `RealType::by_name`, the
 		// Kind row where Cmdr reads no bytes, argued in that section.
+		//
+		// 153 → 154 (2026-11-18, Mac-only standard folders): `owner::DiskLayout`,
+		// whose folder layout the item's disk follows, argued in that section.
 		Name: "cmdr-about",
 		Ceilings: surfaceCeilings{
 			RootPromises:   13,
 			PublicModules:  13,
-			SubsystemItems: 153,
+			SubsystemItems: 154,
 		},
 	},
 }

@@ -250,13 +250,15 @@ word certainty honestly. `home` is a parameter, so a fixture home never touches 
 - **By path**: a Homebrew `Cellar/<name>` or `Caskroom/<name>` under `/opt/homebrew`, `/usr/local`, or
   `/home/linuxbrew/.linuxbrew`; anything inside an `.app` bundle is that app's (the bundle itself isn't inside one).
 - **Standard folders, by path alone** (`OwnerClaim::StandardFolder`, checked first): the home folder itself, its
-  `Desktop`, `Documents`, `Downloads`, `Movies`, `Music`, `Pictures`, `Public`, `Library`, and `Applications`, and `/`,
-  `/Applications`, `/Library`, `/System`, `/Users`. Only the folder itself, exact case: what's inside is the person's
-  own or another rule's (a folder in `/Library` still asks the receipts). The on-disk name is English whatever Finder
-  shows (`.localized`), so a translated name never needs matching. **Why**: `~/Downloads` claimed nothing, so its
-  removal row fell back to "Nothing Cmdr knows of made this", underselling what the system and apps expect of it (the
-  real app, 2026-11-14). Not covered: Linux's `Videos` and `Templates` (they'd be wrong on a Mac, and the rule takes no
-  OS), and the insides of `/System`, `/usr`, `/bin`.
+  `Desktop`, `Documents`, `Downloads`, `Music`, `Pictures`, and `Public`, and `/`, on every disk; on a Mac's own disk
+  (`DiskLayout::Mac`, which the host passes for its own disk on macOS) also `~/Movies`, `~/Library`, `~/Applications`,
+  `/Applications`, `/Library`, `/System`, and `/Users`. **Why**: a Linux `~/Applications` of AppImages read as "Your own
+  Applications folder", and `/System` as macOS. XDG's `Videos` has no variant, so it says nothing. Only the folder
+  itself, exact case: what's inside is the person's own or another rule's (a folder in `/Library` still asks the
+  receipts). The on-disk name is English whatever Finder shows (`.localized`), so a translated name never needs
+  matching. **Why**: `~/Downloads` claimed nothing, so its removal row fell back to "Nothing Cmdr knows of made this",
+  underselling what the system and apps expect of it (the real app, 2026-11-14). Not covered: Linux's `Videos` and
+  `Templates` (they'd be wrong on a Mac, and the rule takes no OS), and the insides of `/System`, `/usr`, `/bin`.
 - **Not claimed**: dot-folders in home (`~/.npm`, `~/.cargo`), plain names in Library folders other than
   `Application Support`, anything else. A curated tool table is #1179.
 
@@ -553,3 +555,10 @@ Raised 151 → 153 by the real app's card (2026-11-14):
   argue, and the removal row ranks on it, so it lives with the owner rule (§ The owner).
 - **`RealType::by_name`**: what the Kind row says where Cmdr reads no bytes, and that it's a claim. A host building the
   struct itself would decide the agreement and when a name claims nothing, both rules here.
+
+Raised 153 → 154 by the Mac-only standard folders (2026-11-18):
+
+- **`owner::DiskLayout`**: whose folder layout the item's disk follows, an argument to `OwnerQuestion::of`. Which
+  folders are the OS's on which disk is this crate's rule; the host knows only which OS it runs on, and says so. A
+  `bool` would have fit the ceiling, but `of(path, home, true)` reads as nothing at a call site, and the variants carry
+  the docs (fold, delete, and gate don't apply: the host must say it).

@@ -19,7 +19,7 @@
     })
 
     // Subsection name (English structural identity) → its summary-blurb catalog
-    // key. A name without a blurb falls back to the generic "Configure …" line.
+    // key. A name without a blurb falls back to the generic "Settings for …" line.
     const SUMMARY_KEY: Partial<Record<string, MessageKey>> = {
         'Colors and formats': 'settings.summary.colorsAndFormats',
         'Zoom and density': 'settings.summary.zoomAndDensity',
@@ -43,7 +43,7 @@
 
     function getSubsectionDescription(subsection: SettingsSection): string {
         const key = SUMMARY_KEY[subsection.name]
-        return key ? tString(key) : `Configure ${subsection.name.toLowerCase()} settings.`
+        return key ? tString(key) : tString('settings.summary.fallback', { section: sectionTitle(subsection.name) })
     }
 </script>
 

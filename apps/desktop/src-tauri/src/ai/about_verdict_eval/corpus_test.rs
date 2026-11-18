@@ -343,7 +343,7 @@ impl<'a> Item<'a> {
             .rsplit_once('.')
             .filter(|(stem, _)| !stem.is_empty())
             .map(|(_, extension)| extension);
-        let owner = OwnerQuestion::of(self.path, HOME);
+        let owner = OwnerQuestion::of(self.path, HOME, cmdr_about::owner::DiskLayout::Mac);
         let plan = plan(PlanInput {
             target: self.target,
             extension,

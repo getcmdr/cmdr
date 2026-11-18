@@ -690,9 +690,9 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "你的個人專屬資料夾",
+  "aboutThis.standardFolder.home": "{platform, select, windows {你的使用者資料夾} other {你的個人專屬資料夾}}",
   "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
+    "sourceHash": "d93508f"
   },
   "aboutThis.standardFolder.desktop": "你的「桌面」資料夾",
   "@aboutThis.standardFolder.desktop": {
@@ -939,9 +939,9 @@
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
   },
-  "aboutThis.removal.standardFolder.home": "這是你的個人專屬資料夾：你在這台電腦上的所有東西都在裡面，系統和每個 App 都預期它存在。",
+  "aboutThis.removal.standardFolder.home": "{platform, select, windows {這是你的使用者資料夾：你在這台電腦上的所有東西都在裡面，系統和每個 App 都預期它存在。} other {這是你的個人專屬資料夾：你在這台電腦上的所有東西都在裡面，系統和每個 App 都預期它存在。}}",
   "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
+    "sourceHash": "f01131f"
   },
   "aboutThis.removal.standardFolder.personal": "這是你的標準資料夾之一：系統和你的 App 預期會找到它，裡面的所有東西也會跟著一起刪掉。",
   "@aboutThis.removal.standardFolder.personal": {

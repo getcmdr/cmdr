@@ -741,9 +741,9 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "Permite buscar o texto das suas imagens. O texto nunca sai do seu Mac.",
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {Permite buscar o texto das suas imagens. O texto nunca sai do seu Mac.} windows {Permite buscar o texto das suas imagens. O texto nunca sai do seu PC.} other {Permite buscar o texto das suas imagens. O texto nunca sai do seu computador.}}",
   "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
+    "sourceHash": "2a55989"
   },
   "settings.mediaIndex.enabled.keywords": "imagem, foto, texto, busca, buscar, índice, indexar, figura, captura de tela, conteúdo",
   "@settings.mediaIndex.enabled.keywords": {
@@ -817,9 +817,9 @@
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
   },
-  "settings.mediaIndex.networkVolumes.optInHelp": "O Cmdr lê o texto dentro dessas fotos para você poder buscá-lo. Roda no seu Mac, e as fotos nunca saem da sua rede.",
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {O Cmdr lê o texto dentro dessas fotos para você poder buscá-lo. Roda no seu Mac, e as fotos nunca saem da sua rede.} windows {O Cmdr lê o texto dentro dessas fotos para você poder buscá-lo. Roda no seu PC, e as fotos nunca saem da sua rede.} other {O Cmdr lê o texto dentro dessas fotos para você poder buscá-lo. Roda no seu computador, e as fotos nunca saem da sua rede.}}",
   "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
+    "sourceHash": "c81e602"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Sempre indexar este disco",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -925,9 +925,9 @@
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
   },
-  "settings.mediaIndex.progress.local": "Este Mac",
+  "settings.mediaIndex.progress.local": "{platform, select, macos {Este Mac} windows {Este PC} other {Este computador}}",
   "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
+    "sourceHash": "80e7006"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {{enrichedText} de {totalText} imagem indexada} other {{enrichedText} de {totalText} imagens indexadas} many {{enrichedText} de {totalText} imagens indexadas}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1078,9 +1078,9 @@
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
   },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Pule para o seu download mais recente a partir de qualquer app com um atalho global. Requer Acesso Total ao Disco.",
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {Pule para o seu download mais recente a partir de qualquer app com um atalho global. Requer Acesso Total ao Disco.} other {Pule para o seu download mais recente a partir de qualquer app com um atalho global.}}",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
+    "sourceHash": "9748f9b"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "atalho, tecla de atalho, global, download, downloads, último download, pular, saltar, ir para",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2809,9 +2809,13 @@
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
   },
-  "settings.summary.imageIndexing": "Busque o texto dentro das suas imagens. Roda no seu Mac e nada sai dele.",
+  "settings.summary.imageIndexing": "{platform, select, macos {Busque o texto dentro das suas imagens. Roda no seu Mac e nada sai dele.} windows {Busque o texto dentro das suas imagens. Roda no seu PC e nada sai dele.} other {Busque o texto dentro das suas imagens. Roda no seu computador e nada sai dele.}}",
   "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
+    "sourceHash": "287c7fc"
+  },
+  "settings.summary.fallback": "Ajustes de {section}.",
+  "@settings.summary.fallback": {
+    "sourceHash": "83b4a28"
   },
   "settings.summary.noSubsections": "Esta seção não tem subseções.",
   "@settings.summary.noSubsections": {
