@@ -173,6 +173,7 @@
     fillBody
     onclose={onClose}
     onkeydown={handleKeydown}
+    keyScope="Main window/Tell me about this"
     containerStyle={withTake ? 'width: 60rem; max-height: 85vh;' : 'width: 40rem; max-height: 85vh;'}
 >
     {#snippet title()}

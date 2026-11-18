@@ -68,7 +68,9 @@ secondary sources, not confirmed on a primary page.
   14 `Alt+<letter>` keys, all scoped to one surface's controls (the multi-rename dialog's options, the viewer's search
   toggles, Stop in About this), so they already work as access keys by hand; task 61 should make them the dialogs'
   access keys rather than a second mechanism beside them (checked against
-  `apps/desktop/src/lib/commands/__snapshots__/default-keymap.linux.txt`, 2026-11-18).
+  `apps/desktop/src/lib/commands/__snapshots__/default-keymap.linux.txt`, 2026-11-18). Task 61 did, for the 12 inside
+  dialogs: they keep their commands and reserve their letters in their dialog's access keys
+  (`apps/desktop/src/lib/ui/DETAILS.md` § Platform conventions).
 - **Window chrome: Windows (native decorations)**: holds as a decision; no guideline disagrees. GNOME draws decorations
   client-side (a header bar), which a GTK window gets natively.
 - **Paths, Trash, permissions: macOS (POSIX)**: not a guideline question (the freedesktop.org Trash spec and POSIX);

@@ -13,7 +13,10 @@ Pull-tier docs for `lib/ui/`: architecture, component APIs, and decision rationa
 - **`modal-drag.ts`**: where `ModalDialog` may be dragged: the clamp that keeps the title bar grabbable
 - **`scrollbar-width.ts`**: `trackScrollbarWidth`, the live `--spacing-scrollbar-width` on `:root`, installed once per
   window by `routes/+layout.svelte`. § Scrollbar gutters
-- **`focus-trap.ts`**: `use:trapFocus` action: Tab wrapping, focus-leak guard, Escape fallback, trap stack
+- **`focus-trap.ts`**: `use:trapFocus` action: Tab wrapping (in reading order), focus-leak guard, Escape fallback, trap
+  stack
+- **`access-keys.ts`**: a dialog's Alt+letter access keys where the platform has them: allocation, the labeled-control
+  search, keytips, and the press. § Platform conventions
 - **`dialog-registry.ts`**: `SOFT_DIALOG_REGISTRY` array: single source of truth for all dialog IDs
 - **`markdown-link-click.ts`**: `handleMarkdownLinkClick`, the click delegate every `{@html}`-rendered markdown block
   hangs on its container (`ErrorPane`, the What's new popup). Tauri blocks raw `<a>` navigation, so without it a link in
@@ -130,6 +133,7 @@ Props:
 | `overlayClass`        | `string`                      | Extra class on the overlay, for a shared dialog's stable test hook    |
 | `closeOnOverlayClick` | `boolean`                     | Default `false`. Scrim click dismisses (see § "Scrim clicks")         |
 | `topmost`             | `boolean`                     | Default `false`. Renders at `--z-modal-top`, above every other modal  |
+| `keyScope`            | `CommandScope?`               | Its Alt+letter commands keep their letters (§ Platform conventions)   |
 
 **The panel surface is `--color-bg-dialog`**, not `--color-bg-secondary`. It's the opaque twin of the settings window's
 backdrop, deliberately one step off `--color-bg-secondary` (the `SectionCard` fill), so a card, a details box, or any
@@ -142,33 +146,34 @@ the words plus a trailing `StatusBadge` or icon as siblings and get the spacing 
 re-wrap them in a caller-side flex span, and don't rely on inline flow: inline, a badge shares the title's text baseline
 and its padded background hangs below the words.
 
-**Layout convention (macOS-style).** Title and body text are LEFT-aligned; action buttons are RIGHT-aligned with the
-primary action last (rightmost). Pass buttons via the `footer` snippet — `ModalDialog` renders them in a `.modal-footer`
-that owns the right-alignment, gap, and the dialog's bottom padding, so callers don't hand-roll a button-row. The
-buttons sit in one `.modal-footer-actions` row that never wraps, in any language: neither a label nor a button drops to
-a second line. Instead the panel's `min-width` rises to the row's width (`modal-resize.ts::panelMinWidth` over
-`footerRowWidth`, re-measured by a `ResizeObserver` on the row, since a label can change while the dialog is open), so a
-long translation widens the dialog. A `min-width` beats the caller's `width` and `max-width`, so this holds against any
-`containerStyle` and any drag. **Why**: French's "Revenir en arrière" dropped the progress dialog's Rollback onto a row
-of its own under the fixed 580 px. When the footer can't also hold a `footerLeading` control beside them, the whole
-group drops to its own row below it, still right-aligned (the trash dialog's switch + Cancel + Background + "Move to
-trash" squeezed each label onto two lines before). A dialog that hand-rolls its buttons in `children` gets none of this,
-so put them in `footer`, and a left-side group (the rename conflict's Cancel + Continue renaming, the error report's
-dev-only Save to disk) in `footerLeading`; the floor covers the `footer` row only, so keep a leading group short.
-`cmdr/dialog-buttons-in-footer` enforces it: inside a `ModalDialog` body, two or more full-size `Button`s in one parent
-(seeing through `{#if}` / `{#each}`) are a hand-built row. `size="mini"` toolbars and a lone in-body button pass. A
-layout the footer can't express opts out per element with its reason (`SuggestedOpsDialog`'s per-card actions,
-`CommercialReminderModal`'s equal-width pair). Pinned by `ModalDialog.svelte.test.ts` § "footer floor" (the arithmetic)
-and `dialog-resize.spec.ts` § "Dialog footer" (the progress dialog, plus each dialog whose row moved into the footer,
-opened through the gallery, with every button's longest translation). The title bar's padding, the footer's, and the
-body's side inset all come from ONE token (`--spacing-dialog`), so title, body, and buttons line up flush at the same
-inset and nothing crowds the title or the action row. **The body inset is not opt-outable**: there is no `padded` prop,
-and a body section must never re-add a horizontal inset of its OWN, in any token (that's a double inset; the offenders
-that drifted in all paid it with `--spacing-xl`, which is why grepping for `--spacing-dialog` found none of them). A
-block that genuinely needs to reach the panel edge cancels the inset locally with a negative inline margin, so the
-exception is visible at the one place it applies instead of the rule being off for the whole dialog.
-`dialog-inset.spec.ts` measures it: it walks the dialog gallery and compares the CONTENT edges (rect + border + padding,
-so a padded `<p>` can't pass on its box alone) of each title and its first body section.
+**Layout convention.** Title and body text are LEFT-aligned; action buttons are RIGHT-aligned, written in macOS order
+(primary action last), which Windows and KDE show reversed (§ Platform conventions). Pass buttons via the `footer`
+snippet — `ModalDialog` renders them in a `.modal-footer` that owns the right-alignment, gap, and the dialog's bottom
+padding, so callers don't hand-roll a button-row. The buttons sit in one `.modal-footer-actions` row that never wraps,
+in any language: neither a label nor a button drops to a second line. Instead the panel's `min-width` rises to the row's
+width (`modal-resize.ts::panelMinWidth` over `footerRowWidth`, re-measured by a `ResizeObserver` on the row, since a
+label can change while the dialog is open), so a long translation widens the dialog. A `min-width` beats the caller's
+`width` and `max-width`, so this holds against any `containerStyle` and any drag. **Why**: French's "Revenir en arrière"
+dropped the progress dialog's Rollback onto a row of its own under the fixed 580 px. When the footer can't also hold a
+`footerLeading` control beside them, the whole group drops to its own row below it, still right-aligned (the trash
+dialog's switch + Cancel + Background + "Move to trash" squeezed each label onto two lines before). A dialog that
+hand-rolls its buttons in `children` gets none of this, so put them in `footer`, and a left-side group (the rename
+conflict's Cancel + Continue renaming, the error report's dev-only Save to disk) in `footerLeading`; the floor covers
+the `footer` row only, so keep a leading group short. `cmdr/dialog-buttons-in-footer` enforces it: inside a
+`ModalDialog` body, two or more full-size `Button`s in one parent (seeing through `{#if}` / `{#each}`) are a hand-built
+row. `size="mini"` toolbars and a lone in-body button pass. A layout the footer can't express opts out per element with
+its reason (`SuggestedOpsDialog`'s per-card actions, `CommercialReminderModal`'s equal-width pair). Pinned by
+`ModalDialog.svelte.test.ts` § "footer floor" (the arithmetic) and `dialog-resize.spec.ts` § "Dialog footer" (the
+progress dialog, plus each dialog whose row moved into the footer, opened through the gallery, with every button's
+longest translation). The title bar's padding, the footer's, and the body's side inset all come from ONE token
+(`--spacing-dialog`), so title, body, and buttons line up flush at the same inset and nothing crowds the title or the
+action row. **The body inset is not opt-outable**: there is no `padded` prop, and a body section must never re-add a
+horizontal inset of its OWN, in any token (that's a double inset; the offenders that drifted in all paid it with
+`--spacing-xl`, which is why grepping for `--spacing-dialog` found none of them). A block that genuinely needs to reach
+the panel edge cancels the inset locally with a negative inline margin, so the exception is visible at the one place it
+applies instead of the rule being off for the whole dialog. `dialog-inset.spec.ts` measures it: it walks the dialog
+gallery and compares the CONTENT edges (rect + border + padding, so a padded `<p>` can't pass on its box alone) of each
+title and its first body section.
 
 **The body wraps unbreakable tokens, and only those** (`overflow-wrap: break-word`). A path, a URL, or a long filename
 has no break opportunity inside its last segment, so without it the string overflows the inset and runs to the panel
@@ -315,6 +320,41 @@ overlay also carries `use:trapFocus` with Escape's action (`onescape ?? onclose`
 every `ModalDialog` consumer gets Tab containment and the Escape fallback for free. `trapFocus` deliberately doesn't
 move focus on mount.
 
+### Platform conventions
+
+`ModalDialog` follows the platform's dialog habits by asking `convention()` (`#lib/platform`, `../platform/DETAILS.md` §
+Conventions), ❌ never the OS. Each value is read once as the dialog mounts (conventions never change in a session).
+Pinned on all five desktop rows, a11y included, by `ModalDialog.conventions.svelte.test.ts`, whose macOS block holds the
+markup and keys every Mac had before this existed.
+
+- **Button order** (`dialogButtonOrder`): consumers write the footer in macOS order (Cancel first, primary last). On
+  `affirmativeFirst` (Windows, KDE) `.modal-footer-actions` gets `flex-direction: row-reverse`, so the same buttons read
+  primary first, still hard right, and `data-focus-order="reverse"` makes the focus trap walk them in that order. The
+  flip is per direct child of the row, so ❌ don't wrap several buttons in one element (it flips as one, and Tab with
+  it). Win32 and Qt order the extra buttons the same way reversed, so no per-dialog branch is needed. Screen readers'
+  browse mode still reads DOM order; Chromium's `reading-flow` could align it later (WebView2 only, unverified).
+- **Alignment**: trailing (right) on every desktop: the Win32 guide, Qt's `KdeLayout`, and GNOME all right-align.
+- **Escape** cancels on every row; **Enter** on a focused button presses that button. macOS's row says `defaultButton`
+  and `escapeOrCommandPeriod`, but today's Mac behavior (focused-button Enter, which the "safe answer takes focus"
+  dialogs rely on, and no ⌘.) stays until David decides (`docs/specs/windows-port-plan.md` task 61), so neither field is
+  read yet.
+- **Access keys** (`accessKeys: 'alt'`, Windows and every Linux desktop; `access-keys.ts`): holding Alt shows a keytip
+  under each labeled control, and Alt plus its letter presses it (a button, a checkbox) or focuses it (a text field, via
+  its `<label>`). Letters come from the labels as rendered, by the Linux menu bar's rule (`mnemonics.rs`: word initials
+  first, unique per dialog, case-insensitive), so every language gets its own and no translator places a marker; a label
+  with no Latin, Greek, or Cyrillic letter (Chinese, Japanese) takes a free `a`–`z`, as Windows does. Each control also
+  gets `aria-keyshortcuts="Alt+X"` unless the dialog named its own. The key goes to the dialog's `onkeydown` FIRST: one
+  it claims (`defaultPrevented`) never presses a control. `keyScope` reserves the dialog's own Alt+letter commands'
+  letters (the multi-rename sheet's options, About this's Stop), which are its access keys already, so nothing else is
+  given them. A `letterKeysAnswer` dialog (bare letters answer it, shown on its buttons) gets none: one key scheme per
+  dialog, and its report offer stays keyless on purpose.
+- Decision/Why: keytips (WinUI's look, drawn over the panel in `.access-key-tip`) rather than an underlined letter. The
+  label is a consumer snippet, so underlining would mean rewriting Svelte-owned text nodes, and a keytip also carries a
+  letter the label lacks (a reserved command's, a Chinese label's). Underlines (GNOME, KDE, Win32) remain an option
+  David may pick when he QAs the look.
+- Gotcha: Windows' native menu bar takes a lone Alt press (Alt, release, focuses the bar), which may hide keytips there;
+  task 63 settles the menu model (unverified on Windows).
+
 ### Scrim clicks
 
 Every click inside the panel bubbles to the overlay's `onclick`, so `handleOverlayClick` checks that the click landed on
@@ -451,7 +491,11 @@ Tab-Tab bug: Esc, ⌘⇧P, and Tab all dead, mouse-only recovery). The action do
    focusable AND out of the tab order, and Ark's `Select` ships both shapes (a visually-hidden `<select tabindex="-1">`
    mirroring the value, and a `[hidden]` `tabindex="0"` listbox when closed). Focusing either is a silent no-op in a
    real browser, which strands the wrap on something the user can't see. There's no computed-style filtering, though:
-   jsdom/happy-dom return `null` for every `offsetParent`, which would empty the list in tests.
+   jsdom/happy-dom return `null` for every `offsetParent`, which would empty the list in tests. The list is in READING
+   order: a `[data-focus-order="reverse"]` row (`ModalDialog`'s footer where the affirmative button goes first) lists
+   its children last to first. With such a row inside, the trap moves EVERY Tab itself (the browser's mid-list step
+   would walk the row backwards), skipping what `checkVisibility()` says isn't rendered and all but one radio per group,
+   as the browser would.
 2. **Leak guard**: a document-level capture `focusin` listener pulls focus back if it lands outside the container anyway
    (a programmatic `.focus()` from background code). The pull-back is deferred by one microtask so a closing dialog's
    own focus-restore (`onDestroy` → `restoreFocus(...)`) wins — the action's destroy unregisters the trap before the

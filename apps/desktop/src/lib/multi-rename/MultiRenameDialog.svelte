@@ -312,6 +312,7 @@
     fillBody
     onclose={onClose}
     onkeydown={handleKeydown}
+    keyScope="Main window/Multi-rename"
 >
     <!-- The title bar's `<h2>` is already the row (gap + badge alignment live there),
          so the words and the badge are its direct children. -->
@@ -527,9 +528,8 @@
         </div>
     {/snippet}
     {#snippet footer()}
-        <!-- One unit that never shrinks: on a narrow sheet the summary on the left wraps, never a
-             button's label away from its key chip. -->
-        <span class="footer-actions">
+        <!-- Each button a direct child of the footer's own row, which never shrinks (the summary on
+             the left wraps instead) and reverses their order where the affirmative button goes first. -->
             {#if lastRun}
                 <!-- A way back, beside Cancel: only there while there's a run to undo. -->
                 <Button
@@ -564,7 +564,6 @@
             >
                 {tool.queued ? tString('multiRename.starting') : tString('multiRename.rename', { count: tool.counts.ready })}
             </Button>
-        </span>
     {/snippet}
 </ModalDialog>
 
@@ -731,14 +730,6 @@
     .results-words {
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-
-    .footer-actions {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-md);
-        flex-shrink: 0;
-        white-space: nowrap;
     }
 
     .footer-leading {

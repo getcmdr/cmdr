@@ -105,8 +105,12 @@ dialog buttons like macOS, KDE like Windows.
   and not listed), else the fallback's, so a primitive never meets a value it has no branch for.
 - **Tests**: `withConventions('kde')` sets a desktop's real row, `withConventions('gnome', { accessKeys: 'none' })` one
   field on top. It moves neither the platform nor the capabilities, the same split as `withPlatform()`.
-- **What asks**: nothing yet. Dialogs (task 61), the Windows theme (60), the menu model (63), and the screen reader pass
-  (64) read it.
+- **What asks**: `ModalDialog` reads `dialogButtonOrder` and `accessKeys` (`../ui/DETAILS.md` § Platform conventions);
+  `enterActivates` and `cancelKeys` wait on a decision there, since the macOS row differs from today's Mac behavior. The
+  Windows theme (task 60), the menu model (63), and the screen reader pass (64) will read the rest.
+- **Seeing another desktop's row**: `CMDR_MOCK_CONVENTIONS=windows pnpm dev` (or `gnome`, `kde`, `otherLinux`, `macos`;
+  debug builds only, `mock_conventions` in `conventions.rs`) hands every webview that row instead, which moves neither
+  the platform nor the capabilities.
 
 ## The fallback
 

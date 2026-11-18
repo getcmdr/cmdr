@@ -16,9 +16,8 @@ Reusable components (Ark UI backs the complex ones).
 
 ## Must-knows
 
-- **A missing primitive is the cue to add a wrapper here** (`@ark-ui/svelte` and lucide imports are allowed here). A new
-  one owes a tier-3 a11y test, a Debug > Components row, and a `design-system.md` entry, all check-enforced.
-  `docs/guides/building-ui.md`.
+- **A missing primitive is the cue to add a wrapper here** (Ark and lucide imports allowed). It owes a tier-3 a11y test,
+  a Debug > Components row, and a `design-system.md` entry (check-enforced). `docs/guides/building-ui.md`.
 - **Every `role="dialog"` / `role="alertdialog"` element MUST carry `use:trapFocus` on the SAME element**
   (`cmdr/dialog-needs-focus-trap`), else Tab leaks into the shortcut-suppressed background: a keyboard lockout.
   `ModalDialog` owns it.
@@ -33,15 +32,16 @@ Reusable components (Ark UI backs the complex ones).
   `.modal-overlay:focus { outline: none }` (the scrim holds focus, so a UA ring lines the title bar in the SYSTEM
   accent), ❌ keep the MCP close registration in its `$effect`, or `dialog close` lies, ❌ no `overflow-wrap: anywhere`
   (splits words). DETAILS § ModalDialog.
+- **Dialogs follow `convention()`, ❌ never the OS**: footer in macOS order, one button per child (Windows flips it).
+  DETAILS § Platform conventions.
 - **Dialog scrollers reserve their gutter**, minus `--spacing-scrollbar-width` (#889). DETAILS § Scrollbar gutters.
 - **A button's key is `Button`'s `keyHint`**, ❌ never a chip in its content (`cmdr/key-hint-via-button-prop`).
 - **Don't restyle `.btn-*` colors from a scoped feature component** (`scripts/check-btn-restyle`; one-offs need
   `/* allowed-btn-restyle: <reason> */`). `LinkButton` is the ONLY `cursor: pointer` opt-in.
 - **Per-component traps.** Each has its own section in `DETAILS.md`:
   - `Tooltip`: keep BOTH detached-trigger guards (`destroy()` cancels the timer, `showTooltip` / `positionTooltip` bail
-    on `!el.isConnected`), or a recycled virtual-scroll row fires the timer on a dead node. The hover-suppress flag
-    stays (scrolling slides rows under a still pointer). ❌ Never a native `title` (`cmdr/no-title-attribute`): it skips
-    keyboard focus. Keep any `aria-label`.
+    on `!el.isConnected`): recycled virtual-scroll rows. Keep the hover-suppress flag. ❌ Never a native `title`
+    (`cmdr/no-title-attribute`): it skips keyboard focus. Keep any `aria-label`.
   - `ColumnList`: demands read row DATA, ❌ never DOM text (it'd oscillate).
   - `ShortcutChip`: import `openShortcutCustomization` dynamically: a static import drags
     `@tauri-apps/api/webviewWindow` into the capability-restricted viewer. Set exactly one of `commandId` / `key` (a

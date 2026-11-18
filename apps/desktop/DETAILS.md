@@ -188,6 +188,8 @@ for each of the three above, through `CMDR_CACHE_DIR`. A run that sets only `CMD
 - **Dev mock flags** (read by the backend process, so set them in the `pnpm dev` shell): `CMDR_MOCK_LICENSE=commercial`
   mocks the license; `CMDR_SIMULATE_UPDATE_FROM=<version>` forces the "What's new" popup on every launch as if just
   updated from that version (it never stamps `lastSeenVersion`). See `src/lib/whats-new/CLAUDE.md`.
+  `CMDR_MOCK_CONVENTIONS=windows` (or `gnome`, `kde`, `otherLinux`) runs the frontend on that desktop's dialog
+  conventions (`src/lib/platform/DETAILS.md` § Conventions).
 
 ## Testing the running app via MCP
 
