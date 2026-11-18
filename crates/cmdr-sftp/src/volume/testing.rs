@@ -9,6 +9,7 @@
 //! Gated behind the `testing` feature, so it exists in dev targets and in no
 //! shipped build. The stack itself: `apps/desktop/test/sftp-servers/README.md`.
 
+use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
@@ -320,12 +321,12 @@ pub async fn clean_scratch(volume: &SftpVolume, dir: &str) {
     use std::path::Path;
 
     let root = Path::new(dir);
-    if let Ok(entries) = volume.list_directory(root, None).await {
+    if let Ok(entries) = volume.list_directory(&AppPath::legacy_unchecked(root), None).await {
         for entry in entries {
-            let _ = volume.delete(&root.join(&entry.name)).await;
+            let _ = volume.delete(&AppPath::legacy_unchecked(&root.join(&entry.name))).await;
         }
     }
-    let _ = volume.delete(root).await;
+    let _ = volume.delete(&AppPath::legacy_unchecked(root)).await;
 }
 
 /// The same, for a cell that builds a tree on purpose.
@@ -341,12 +342,12 @@ pub async fn clean_scratch_deep(volume: &SftpVolume, dir: &str) {
 
     fn remove<'a>(volume: &'a SftpVolume, path: &'a Path) -> std::pin::Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
         Box::pin(async move {
-            if let Ok(entries) = volume.list_directory(path, None).await {
+            if let Ok(entries) = volume.list_directory(&AppPath::legacy_unchecked(path), None).await {
                 for entry in entries {
                     remove(volume, &path.join(&entry.name)).await;
                 }
             }
-            let _ = volume.delete(path).await;
+            let _ = volume.delete(&AppPath::legacy_unchecked(path)).await;
         })
     }
 

@@ -13,16 +13,24 @@
 
 use super::test_support::*;
 use super::*;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::EntryKind;
 
 /// `<dir>/target/keep.txt` written through the share, then `<dir>/dirlink ->
 /// target` and `<dir>/filelink -> target/keep.txt` made on the server's disk.
 async fn seed_links(vol: &SmbVolume, dir: &str) {
-    vol.create_directory(Path::new(dir)).await.unwrap();
-    vol.create_directory(Path::new(&format!("{dir}/target"))).await.unwrap();
-    vol.create_file(Path::new(&format!("{dir}/target/keep.txt")), b"keep")
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
         .await
         .unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/target"))))
+        .await
+        .unwrap();
+    vol.create_file(
+        &AppPath::legacy_unchecked(Path::new(&format!("{dir}/target/keep.txt"))),
+        b"keep",
+    )
+    .await
+    .unwrap();
     let on_disk = format!("/shares/public/{dir}");
     run_in_the_guest_container(&["ln", "-s", "target", &format!("{on_disk}/dirlink")]);
     run_in_the_guest_container(&["ln", "-s", "target/keep.txt", &format!("{on_disk}/filelink")]);
@@ -41,16 +49,27 @@ async fn smb_integration_deleting_a_symlink_leaves_its_target() {
 
     for link in ["dirlink", "filelink"] {
         let path = format!("{dir}/{link}");
-        let entry = vol.get_metadata(Path::new(&path)).await.unwrap();
+        let entry = vol
+            .get_metadata(&AppPath::legacy_unchecked(Path::new(&path)))
+            .await
+            .unwrap();
         assert!(entry.is_symlink, "a stat reports {link} as a link");
-        assert_eq!(vol.entry_kind(Path::new(&path)).await.unwrap(), EntryKind::Symlink);
+        assert_eq!(
+            vol.entry_kind(&AppPath::legacy_unchecked(Path::new(&path)))
+                .await
+                .unwrap(),
+            EntryKind::Symlink
+        );
 
-        vol.delete(Path::new(&path)).await.unwrap();
-        assert!(!vol.exists(Path::new(&path)).await, "{link} is gone");
+        vol.delete(&AppPath::legacy_unchecked(Path::new(&path))).await.unwrap();
+        assert!(
+            !vol.exists(&AppPath::legacy_unchecked(Path::new(&path))).await,
+            "{link} is gone"
+        );
     }
 
     let kept = vol
-        .get_metadata(Path::new(&format!("{dir}/target/keep.txt")))
+        .get_metadata(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/target/keep.txt"))))
         .await
         .expect("the links' target stays");
     assert_eq!(kept.size, Some(4), "the links' target stays whole");
@@ -70,13 +89,18 @@ async fn smb_integration_samba_lists_a_symlink_as_its_target() {
     ensure_clean(&vol, &dir).await;
     seed_links(&vol, &dir).await;
 
-    let entries = vol.list_directory(Path::new(&dir), None).await.unwrap();
+    let entries = vol
+        .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+        .await
+        .unwrap();
     let listed = |name: &str| entries.iter().find(|e| e.name == name).expect("listed");
     assert!(listed("dirlink").is_directory && !listed("dirlink").is_symlink);
     assert!(!listed("filelink").is_directory && !listed("filelink").is_symlink);
 
     for link in ["dirlink", "filelink"] {
-        vol.delete(Path::new(&format!("{dir}/{link}"))).await.unwrap();
+        vol.delete(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/{link}"))))
+            .await
+            .unwrap();
     }
     ensure_clean(&vol, &dir).await;
 }
@@ -102,7 +126,13 @@ async fn smb_integration_entry_kind_names_a_listed_folder_link_in_one_frame() {
     ] {
         let path = format!("{dir}/{name}");
         let (requests_before, frames_before) = request_counts(&vol).await;
-        assert_eq!(vol.entry_kind(Path::new(&path)).await.unwrap(), kind, "{name}");
+        assert_eq!(
+            vol.entry_kind(&AppPath::legacy_unchecked(Path::new(&path)))
+                .await
+                .unwrap(),
+            kind,
+            "{name}"
+        );
         let (requests_after, frames_after) = request_counts(&vol).await;
         assert_eq!(
             (frames_after - frames_before, requests_after - requests_before),
@@ -112,7 +142,9 @@ async fn smb_integration_entry_kind_names_a_listed_folder_link_in_one_frame() {
     }
 
     for link in ["dirlink", "filelink"] {
-        vol.delete(Path::new(&format!("{dir}/{link}"))).await.unwrap();
+        vol.delete(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/{link}"))))
+            .await
+            .unwrap();
     }
     ensure_clean(&vol, &dir).await;
 }
@@ -136,7 +168,10 @@ async fn smb_integration_a_selected_folder_symlink_copies_as_its_folder() {
     let filelink = PathBuf::from(format!("{dir}/filelink"));
 
     let scan = vol
-        .scan_for_copy_batch(&[dirlink.clone(), filelink.clone()])
+        .scan_for_copy_batch(&[
+            AppPath::legacy_unchecked(&dirlink.clone()).into_owned(),
+            AppPath::legacy_unchecked(&filelink.clone()).into_owned(),
+        ])
         .await
         .expect("the selection scans");
     let (_, of_dirlink) = &scan.per_path[0];
@@ -150,25 +185,42 @@ async fn smb_integration_a_selected_folder_symlink_copies_as_its_folder() {
     assert!(!of_filelink.top_level_is_directory);
     assert_eq!(of_filelink.total_bytes, 4, "a file link scans as its target's bytes");
 
-    assert!(vol.is_directory(&dirlink).await.unwrap());
-    let entry = vol.get_metadata(&dirlink).await.unwrap();
+    assert!(vol.is_directory(&AppPath::legacy_unchecked(&dirlink)).await.unwrap());
+    let entry = vol.get_metadata(&AppPath::legacy_unchecked(&dirlink)).await.unwrap();
     assert!(
         entry.is_directory && entry.is_symlink,
         "a link to a folder, like a local one"
     );
-    assert_eq!(vol.entry_kind(&dirlink).await.unwrap(), EntryKind::Symlink);
-    assert!(!vol.is_directory(&filelink).await.unwrap());
+    assert_eq!(
+        vol.entry_kind(&AppPath::legacy_unchecked(&dirlink)).await.unwrap(),
+        EntryKind::Symlink
+    );
+    assert!(!vol.is_directory(&AppPath::legacy_unchecked(&filelink)).await.unwrap());
 
     // What the copy then does with each: list the folder link, stream the file link.
-    let listed = vol.list_directory(&dirlink, None).await.unwrap();
+    let listed = vol
+        .list_directory(&AppPath::legacy_unchecked(&dirlink), None)
+        .await
+        .unwrap();
     let names: Vec<&str> = listed.iter().map(|e| e.name.as_str()).collect();
     assert_eq!(names, vec!["keep.txt"]);
-    let stream = vol.open_read_stream(&dirlink.join("keep.txt")).await.unwrap();
+    let stream = vol
+        .open_read_stream(&AppPath::legacy_unchecked(&dirlink.join("keep.txt")))
+        .await
+        .unwrap();
     assert_eq!(drain(stream).await, b"keep");
-    assert_eq!(drain(vol.open_read_stream(&filelink).await.unwrap()).await, b"keep");
+    assert_eq!(
+        drain(
+            vol.open_read_stream(&AppPath::legacy_unchecked(&filelink))
+                .await
+                .unwrap()
+        )
+        .await,
+        b"keep"
+    );
 
     for link in [&dirlink, &filelink] {
-        vol.delete(link).await.unwrap();
+        vol.delete(&AppPath::legacy_unchecked(link)).await.unwrap();
     }
     ensure_clean(&vol, &dir).await;
 }

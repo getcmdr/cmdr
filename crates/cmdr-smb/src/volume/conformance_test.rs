@@ -12,6 +12,7 @@
 
 use super::test_support::*;
 use super::*;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::StreamLength;
 
 /// The shared `Volume::delete` non-recursion assertion, against a real SMB
@@ -26,10 +27,19 @@ async fn smb_integration_delete_honors_the_shared_non_recursion_contract() {
     ensure_clean(&smb_vol, &base).await;
 
     let album = format!("{base}/album");
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
-    smb_vol.create_directory(Path::new(&album)).await.unwrap();
     smb_vol
-        .create_file(Path::new(&format!("{album}/keep.txt")), b"content")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&album)))
+        .await
+        .unwrap();
+    smb_vol
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{album}/keep.txt"))),
+            b"content",
+        )
         .await
         .unwrap();
 
@@ -57,12 +67,21 @@ async fn smb_integration_rename_honors_the_shared_no_clobber_contract() {
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
 
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
     let source = format!("{base}/source.txt");
     let target = format!("{base}/target.txt");
-    smb_vol.create_file(Path::new(&source), b"source").await.unwrap();
     smb_vol
-        .create_file(Path::new(&target), b"the user's target file")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&source)), b"source")
+        .await
+        .unwrap();
+    smb_vol
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&target)),
+            b"the user's target file",
+        )
         .await
         .unwrap();
 
@@ -87,10 +106,13 @@ async fn smb_integration_create_file_honors_the_shared_no_clobber_contract() {
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
 
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
     let notes = format!("{base}/notes.txt");
     smb_vol
-        .create_file(Path::new(&notes), b"the user's notes")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&notes)), b"the user's notes")
         .await
         .unwrap();
 
@@ -112,11 +134,14 @@ async fn smb_integration_write_from_stream_create_new_honors_the_shared_no_clobb
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
 
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
     let notes = format!("{base}/notes.txt");
     let fresh = format!("{base}/fresh.txt");
     smb_vol
-        .create_file(Path::new(&notes), b"the user's notes")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&notes)), b"the user's notes")
         .await
         .unwrap();
     assert!(
@@ -146,8 +171,14 @@ async fn smb_integration_create_directory_all_honors_the_shared_honesty_contract
     ensure_clean(&smb_vol, &base).await;
 
     let album = format!("{base}/album");
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
-    smb_vol.create_directory(Path::new(&album)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&album)))
+        .await
+        .unwrap();
 
     cmdr_fs::volume::conformance::assert_create_directory_all_reports_an_existing_dir_honestly(
         smb_vol.as_ref(),
@@ -168,9 +199,12 @@ async fn smb_integration_create_directory_all_honors_the_shared_file_in_the_way_
     ensure_clean(&smb_vol, &base).await;
 
     let notes = format!("{base}/notes");
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
     smb_vol
-        .create_file(Path::new(&notes), b"the user's notes")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
+    smb_vol
+        .create_file(&AppPath::legacy_unchecked(Path::new(&notes)), b"the user's notes")
         .await
         .unwrap();
 
@@ -206,13 +240,19 @@ async fn smb_integration_listing_dates_honor_the_shared_claim_contract() {
     let smb_vol = Arc::new(make_docker_volume().await);
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
     smb_vol
-        .create_file(&Path::new(&base).join("dated.txt"), b"bytes")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
         .await
         .unwrap();
     smb_vol
-        .create_directory(&Path::new(&base).join("folder"))
+        .create_file(
+            &AppPath::legacy_unchecked(&Path::new(&base).join("dated.txt")),
+            b"bytes",
+        )
+        .await
+        .unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(&Path::new(&base).join("folder")))
         .await
         .unwrap();
 
@@ -230,10 +270,16 @@ async fn smb_integration_export_honors_the_shared_handshake_contract() {
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
 
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
     let file = format!("{base}/exported.txt");
     let content = b"the bytes a copy would move";
-    smb_vol.create_file(Path::new(&file), content).await.unwrap();
+    smb_vol
+        .create_file(&AppPath::legacy_unchecked(Path::new(&file)), content)
+        .await
+        .unwrap();
 
     cmdr_fs::volume::conformance::assert_export_matches_the_bytes_offered(smb_vol.as_ref(), Path::new(&file), content)
         .await;
@@ -251,7 +297,10 @@ async fn smb_integration_a_copy_keeps_the_source_date_per_the_shared_contract() 
     let smb_vol = Arc::new(make_docker_volume().await);
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
 
     let dated = format!("{base}/dated.txt");
     cmdr_fs::volume::conformance::assert_write_from_stream_keeps_the_source_date(
@@ -277,7 +326,10 @@ async fn smb_integration_apply_metadata_dates_a_folder() {
     let smb_vol = Arc::new(make_docker_volume().await);
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
 
     cmdr_fs::volume::conformance::assert_apply_metadata_dates_a_folder(
         smb_vol.as_ref(),
@@ -301,7 +353,10 @@ async fn smb_integration_a_copy_keeps_the_creation_date_per_the_shared_contract(
     let smb_vol = Arc::new(make_docker_volume().await);
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
 
     // A staging-shaped name, so the write goes through the temp and the rename
     // the copy engine lands it with, which mustn't cost the creation date.
@@ -309,11 +364,15 @@ async fn smb_integration_a_copy_keeps_the_creation_date_per_the_shared_contract(
     let born = format!("{base}/born.txt");
     cmdr_fs::volume::conformance::assert_write_from_stream_keeps_metadata(smb_vol.as_ref(), Path::new(&temp)).await;
     smb_vol
-        .rename(Path::new(&temp), Path::new(&born), false)
+        .rename(
+            &AppPath::legacy_unchecked(Path::new(&temp)),
+            &AppPath::legacy_unchecked(Path::new(&born)),
+            false,
+        )
         .await
         .expect("the landing rename");
     let landed = smb_vol
-        .get_metadata(Path::new(&born))
+        .get_metadata(&AppPath::legacy_unchecked(Path::new(&born)))
         .await
         .expect("stat the landed file");
     assert_eq!(
@@ -339,7 +398,10 @@ async fn smb_integration_a_streamed_write_keeps_the_source_date() {
     let smb_vol = Arc::new(make_docker_volume().await);
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
 
     let max_write = smb_vol
         .negotiated_max_write()
@@ -352,7 +414,7 @@ async fn smb_integration_a_streamed_write_keeps_the_source_date() {
     );
     let aged = format!("{base}/aged.bin");
     smb_vol
-        .create_file(Path::new(&aged), &vec![0x5A; size as usize])
+        .create_file(&AppPath::legacy_unchecked(Path::new(&aged)), &vec![0x5A; size as usize])
         .await
         .unwrap();
     age_in_the_container(&aged, cmdr_fs::volume::conformance::SOURCE_DATE_SECS);
@@ -361,9 +423,14 @@ async fn smb_integration_a_streamed_write_keeps_the_source_date() {
         created: Some(birth),
         ..Default::default()
     };
-    smb_vol.apply_metadata(Path::new(&aged), &born, None).await;
+    smb_vol
+        .apply_metadata(&AppPath::legacy_unchecked(Path::new(&aged)), &born, None)
+        .await;
 
-    let stream = smb_vol.open_read_stream(Path::new(&aged)).await.unwrap();
+    let stream = smb_vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&aged)))
+        .await
+        .unwrap();
     assert!(
         stream.modified_at().is_some(),
         "the aged source's stream must carry its 2021 date, or this cell proves nothing about the destination"
@@ -371,7 +438,7 @@ async fn smb_integration_a_streamed_write_keeps_the_source_date() {
     let copy = format!("{base}/copy.bin");
     smb_vol
         .write_from_stream(
-            Path::new(&copy),
+            &AppPath::legacy_unchecked(Path::new(&copy)),
             cmdr_fs::volume::WriteMode::CreateNew,
             StreamLength::Known(size),
             stream,
@@ -380,7 +447,10 @@ async fn smb_integration_a_streamed_write_keeps_the_source_date() {
         .await
         .unwrap();
 
-    let listed = smb_vol.get_metadata(Path::new(&copy)).await.unwrap();
+    let listed = smb_vol
+        .get_metadata(&AppPath::legacy_unchecked(Path::new(&copy)))
+        .await
+        .unwrap();
     assert_eq!(
         listed.modified_at,
         Some(cmdr_fs::volume::conformance::SOURCE_DATE_SECS),
@@ -407,19 +477,29 @@ async fn smb_integration_a_read_stream_reports_the_listed_date_on_both_read_path
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
 
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
     let aged = format!("{base}/aged.txt");
     smb_vol
-        .create_file(Path::new(&aged), b"bytes from a file last changed in 2021\n")
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&aged)),
+            b"bytes from a file last changed in 2021\n",
+        )
         .await
         .unwrap();
     age_in_the_container(&aged, cmdr_fs::volume::conformance::SOURCE_DATE_SECS);
 
     cmdr_fs::volume::conformance::assert_read_stream_reports_the_listed_date(smb_vol.as_ref(), Path::new(&aged)).await;
 
-    let size = smb_vol.get_metadata(Path::new(&aged)).await.unwrap().size;
+    let size = smb_vol
+        .get_metadata(&AppPath::legacy_unchecked(Path::new(&aged)))
+        .await
+        .unwrap()
+        .size;
     let hinted = smb_vol
-        .open_read_stream_with_hint(Path::new(&aged), size)
+        .open_read_stream_with_hint(&AppPath::legacy_unchecked(Path::new(&aged)), size)
         .await
         .unwrap();
     let reported = hinted
@@ -431,7 +511,11 @@ async fn smb_integration_a_read_stream_reports_the_listed_date_on_both_read_path
         Some(cmdr_fs::volume::conformance::SOURCE_DATE_SECS),
         "the one-frame compound read of {aged} must report the date the share lists"
     );
-    let listed_created = smb_vol.get_metadata(Path::new(&aged)).await.unwrap().created_at;
+    let listed_created = smb_vol
+        .get_metadata(&AppPath::legacy_unchecked(Path::new(&aged)))
+        .await
+        .unwrap()
+        .created_at;
     let reported_created = hinted
         .metadata(cmdr_fs::metadata::MetadataClasses::CREATED)
         .created
@@ -469,7 +553,10 @@ async fn smb_integration_not_found_honors_the_shared_path_payload_contract() {
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
 
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
     let missing = format!("{base}/no-such-file.txt");
 
     cmdr_fs::volume::conformance::assert_not_found_carries_the_path(smb_vol.as_ref(), Path::new(&missing)).await;
@@ -487,7 +574,10 @@ async fn smb_integration_conflict_scan_honors_the_shared_missing_destination_con
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
 
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
+    smb_vol
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .await
+        .unwrap();
     let unborn = format!("{base}/not-created-yet");
 
     cmdr_fs::volume::conformance::assert_conflict_scan_reads_a_missing_destination_as_empty(
@@ -512,13 +602,16 @@ async fn smb_integration_a_batch_scan_stops_when_it_is_told_to() {
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
 
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
     smb_vol
-        .create_file(Path::new(&format!("{base}/a.txt")), b"a")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
         .await
         .unwrap();
     smb_vol
-        .create_file(Path::new(&format!("{base}/b.txt")), b"bb")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("{base}/a.txt"))), b"a")
+        .await
+        .unwrap();
+    smb_vol
+        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("{base}/b.txt"))), b"bb")
         .await
         .unwrap();
 
@@ -534,17 +627,23 @@ async fn smb_integration_a_batch_scan_asks_its_boundary_inside_the_walk() {
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
 
-    smb_vol.create_directory(Path::new(&base)).await.unwrap();
     smb_vol
-        .create_directory(Path::new(&format!("{base}/nested")))
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
         .await
         .unwrap();
     smb_vol
-        .create_file(Path::new(&format!("{base}/a.txt")), b"a")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&format!("{base}/nested"))))
         .await
         .unwrap();
     smb_vol
-        .create_file(Path::new(&format!("{base}/nested/c.txt")), b"ccc")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("{base}/a.txt"))), b"a")
+        .await
+        .unwrap();
+    smb_vol
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{base}/nested/c.txt"))),
+            b"ccc",
+        )
         .await
         .unwrap();
 

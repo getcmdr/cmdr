@@ -16,6 +16,8 @@
 
 use super::test_support::*;
 use super::*;
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::host::listings::{ListingHost, RecordingListings};
 use cmdr_fs::volume::{DirectoryChange, MutationEvent};
 
@@ -40,8 +42,12 @@ async fn a_mutation_reports_exactly_one_change_naming_its_parent() {
     let parent = PathBuf::from("/Volumes/TestShare/Documents");
 
     for name in ["a.txt", "b.txt", "c.txt"] {
-        vol.notify_mutation("volumestestshare", &parent, MutationEvent::Deleted(name.to_string()))
-            .await;
+        vol.notify_mutation(
+            "volumestestshare",
+            &AppPath::legacy_unchecked(&parent),
+            MutationEvent::Deleted(name.to_string()),
+        )
+        .await;
     }
 
     assert_eq!(
@@ -75,7 +81,7 @@ async fn a_creation_the_backend_cannot_stat_patches_nothing() {
 
     vol.notify_mutation(
         "volumestestshare",
-        Path::new("/Volumes/TestShare/Documents"),
+        app_path!("/Volumes/TestShare/Documents"),
         MutationEvent::Created("ghost.txt".to_string()),
     )
     .await;
@@ -134,12 +140,17 @@ async fn a_walk_over_a_directory_reports_nothing_however_many_entries_it_holds()
     let vol = unwatched_docker_volume(host).await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     for i in 0..WALKED_FILES {
-        vol.create_file(Path::new(&format!("{dir}/file-{i:03}.txt")), b"x")
-            .await
-            .unwrap();
+        vol.create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/file-{i:03}.txt"))),
+            b"x",
+        )
+        .await
+        .unwrap();
     }
 
     // The directory itself plus one file each: every WRITE reported exactly once.
@@ -159,7 +170,10 @@ async fn a_walk_over_a_directory_reports_nothing_however_many_entries_it_holds()
         "a listing is a READ: it crossed the whole fixture and must tell the panes nothing"
     );
 
-    let scan = vol.scan_for_copy(Path::new(&dir)).await.unwrap();
+    let scan = vol
+        .scan_for_copy(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     assert_eq!(scan.file_count, WALKED_FILES, "the scan walked the same tree");
     assert_eq!(
         listings.change_count(),
@@ -169,7 +183,9 @@ async fn a_walk_over_a_directory_reports_nothing_however_many_entries_it_holds()
 
     // And one more mutation still costs exactly one call, so the counter is
     // measuring dispatch rather than having stopped moving.
-    vol.delete(Path::new(&format!("{dir}/file-000.txt"))).await.unwrap();
+    vol.delete(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/file-000.txt"))))
+        .await
+        .unwrap();
     assert_eq!(
         listings.change_count(),
         after_seeding + 1,

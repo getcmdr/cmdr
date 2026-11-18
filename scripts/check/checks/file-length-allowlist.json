@@ -334,8 +334,8 @@
       "reason": "The crate's headline invariant is that `russh` is named in exactly one module so a breaking minor stays one file's problem (eight breaking minors in eight months), stated in the module doc and again in `crates/cmdr-sftp/CLAUDE.md`; everything russh-free has already been pushed out to `auth.rs`, `trust.rs`, `known_hosts.rs`, `extensions.rs`, and `errors.rs`, so what remains is one dial conversation (`open_session` to `authenticate` to `hello`) plus the `PendingEngine` teardown guard and the two `Handler` impls, under a 57-line module doc for the three abort hazards the shape defends against. The per-OS agent connect sits in its `transport/platform/` seam, still inside this module."
     },
     "crates/cmdr-smb/src/volume/volume_impl.rs": {
-      "lines": 832,
-      "reason": "The one `impl Volume for SmbVolume`, which Rust needs in one block: one-line delegators plus the capability answers, whose doc comments are their whole content. Every body already lives in its concern module (`DETAILS.md` § Layout), so a split could only move delegators."
+      "lines": 1039,
+      "reason": "The one `impl Volume for SmbVolume`, which Rust needs in one block: one-line delegators plus the capability answers, whose doc comments are their whole content. Every body already lives in its concern module (`DETAILS.md` § Layout), so a split could only move delegators. The trait's flip to app paths added a two-line bridge prelude to most methods, and moved each lazy delegator into an `async move` block, which go once this crate speaks app paths internally."
     },
     "crates/cmdr-viewer/src/rows_test.rs": {
       "lines": 1212,

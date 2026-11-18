@@ -4,6 +4,7 @@
 //! and `Overwrite: F` are preconditions the server evaluates atomically, where
 //! a stat-then-write would be a TOCTOU window.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -106,7 +107,7 @@ impl WebdavVolume {
     pub(super) async fn create_directory_all_impl(&self, path: &Path) -> Result<DirectoryCreation, VolumeError> {
         let made = mkdir_all::create_directory_all(self, path).await?;
         if let Some(created) = made.shallowest_created {
-            patch_created(self, &created).await;
+            patch_created(self, &created.as_std_legacy()).await;
         }
         Ok(made.leaf)
     }
@@ -255,8 +256,12 @@ impl PatchSource for WebdavVolume {
         self.inner.host.listings()
     }
 
-    fn patch_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
-        Box::pin(self.get_metadata_impl(path))
+    fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.get_metadata_impl(path).await
+        })
     }
 
     fn patch_display_path(&self, path: &Path) -> Option<PathBuf> {

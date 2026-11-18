@@ -12,6 +12,7 @@ use super::session::{LeaseOn, SessionLease, TransferLease};
 use super::stamping::{source_times, stamped};
 use super::state::RanOn;
 use super::write_carries::{CarriedForWrite, ClosedWriter, WriteCarries};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::error_detail::ErrorDetail;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::{MetadataClasses, Xattr};
@@ -331,7 +332,7 @@ impl SmbVolume {
         {
             self.notify_mutation(
                 &self.inner.volume_id,
-                &parent_display,
+                &AppPath::legacy_unchecked(&parent_display),
                 MutationEvent::Created(name.to_string_lossy().to_string()),
             )
             .await;

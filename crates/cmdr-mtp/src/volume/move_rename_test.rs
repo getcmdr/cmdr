@@ -7,6 +7,8 @@
 //! virtual device's), so the user's file there was lost and the moved one then
 //! renamed onto the new name.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use cmdr_fs::volume::Volume;
@@ -30,8 +32,8 @@ async fn a_move_with_a_new_name_spares_a_file_holding_the_old_name_in_the_destin
 
     volume
         .rename(
-            Path::new("/Documents/notes.txt"),
-            Path::new("/Music/2026 notes.txt"),
+            app_path!("/Documents/notes.txt"),
+            app_path!("/Music/2026 notes.txt"),
             false,
         )
         .await
@@ -62,8 +64,8 @@ async fn a_rename_to_a_name_too_long_for_mtp_is_refused_as_an_invalid_name() {
     let long = format!("{}.txt", "a".repeat(mtp_rs::MAX_NAME_UNITS + 1 - ".txt".len()));
     let refused = volume
         .rename(
-            Path::new("/Documents/notes.txt"),
-            Path::new(&format!("/Documents/{long}")),
+            app_path!("/Documents/notes.txt"),
+            &AppPath::legacy_unchecked(Path::new(&format!("/Documents/{long}"))),
             false,
         )
         .await;
@@ -80,8 +82,8 @@ async fn a_rename_to_a_name_too_long_for_mtp_is_refused_as_an_invalid_name() {
     );
     volume
         .rename(
-            Path::new("/Documents/notes.txt"),
-            Path::new("/Documents/notes 2.txt"),
+            app_path!("/Documents/notes.txt"),
+            app_path!("/Documents/notes 2.txt"),
             false,
         )
         .await
@@ -91,7 +93,9 @@ async fn a_rename_to_a_name_too_long_for_mtp_is_refused_as_an_invalid_name() {
 }
 
 async fn read(volume: &crate::volume::MtpVolume, path: &str) -> Result<Vec<u8>, cmdr_fs::volume::VolumeError> {
-    let mut stream = volume.open_read_stream(Path::new(path)).await?;
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await?;
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend(chunk?);
@@ -115,7 +119,7 @@ async fn a_folder_moved_with_a_new_name_and_back_reads_its_children_at_each_path
         b"page"
     );
     volume
-        .rename(Path::new("/Documents/scans"), Path::new("/Music/2026 scans"), false)
+        .rename(app_path!("/Documents/scans"), app_path!("/Music/2026 scans"), false)
         .await
         .expect("away");
     assert_eq!(
@@ -123,7 +127,7 @@ async fn a_folder_moved_with_a_new_name_and_back_reads_its_children_at_each_path
         b"page"
     );
     volume
-        .rename(Path::new("/Music/2026 scans"), Path::new("/Documents/scans"), false)
+        .rename(app_path!("/Music/2026 scans"), app_path!("/Documents/scans"), false)
         .await
         .expect("back");
     assert_eq!(
@@ -148,8 +152,8 @@ async fn a_move_with_a_new_name_taken_in_both_folders_spares_both_files() {
 
     volume
         .rename(
-            Path::new("/Documents/notes.txt"),
-            Path::new("/Music/2026 notes.txt"),
+            app_path!("/Documents/notes.txt"),
+            app_path!("/Music/2026 notes.txt"),
             false,
         )
         .await

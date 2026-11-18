@@ -12,6 +12,7 @@
 //! ([`Sidecars::seen`]). Until then a delete sends what it always did.
 
 use super::SmbVolume;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{MutationEvent, Volume};
@@ -186,7 +187,7 @@ impl SmbVolume {
         {
             self.notify_mutation(
                 &self.inner.volume_id,
-                &parent_display,
+                &AppPath::legacy_unchecked(&parent_display),
                 MutationEvent::Deleted(name.to_string_lossy().to_string()),
             )
             .await;

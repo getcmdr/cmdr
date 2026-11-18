@@ -9,6 +9,7 @@
 //! `seed` makes the folder and N files, 5% of them tagged. `sweep` runs the same 500-path
 //! chunks `pane/tag-sweep.ts` sends. `clean` removes the folder. It touches nothing else.
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{Volume, XattrReadMode};
 use cmdr_smb::volume::{MountAnchor, SmbConnectionParams, connect_smb_volume};
@@ -55,16 +56,22 @@ async fn main() {
         "seed" => {
             let count: usize = rest.first().unwrap_or_else(|| usage()).parse().expect("a count");
             volume
-                .create_directory(scratch)
+                .create_directory(&AppPath::legacy_unchecked(scratch))
                 .await
                 .expect("the scratch folder is new");
             let volume = &volume;
             futures_util::stream::iter(0..count)
                 .map(|i| async move {
                     let file = scratch.join(format!("file-{i:05}.txt"));
-                    volume.create_file(&file, b"x").await.expect("create");
+                    volume
+                        .create_file(&AppPath::legacy_unchecked(&file), b"x")
+                        .await
+                        .expect("create");
                     if i % 20 == 0 {
-                        volume.write_xattr(&file, TAGS, RED).await.expect("tag");
+                        volume
+                            .write_xattr(&AppPath::legacy_unchecked(&file), TAGS, RED)
+                            .await
+                            .expect("tag");
                     }
                 })
                 .buffer_unordered(16)
@@ -72,7 +79,10 @@ async fn main() {
                 .await;
         }
         "sweep" => {
-            let entries = volume.list_directory(scratch, None).await.expect("list");
+            let entries = volume
+                .list_directory(&AppPath::legacy_unchecked(scratch), None)
+                .await
+                .expect("list");
             let paths: Vec<PathBuf> = entries.iter().map(|entry| scratch.join(&entry.name)).collect();
             for run in 0..RUNS {
                 for (label, mode) in [
@@ -84,7 +94,16 @@ async fn main() {
                     let mut tagged = 0;
                     for chunk in paths.chunks(SWEEP_CHUNK) {
                         let chunk_started = Instant::now();
-                        let answers = volume.read_xattr_many(chunk, TAGS, mode).await;
+                        let answers = volume
+                            .read_xattr_many(
+                                &chunk
+                                    .iter()
+                                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                                    .collect::<Vec<_>>(),
+                                TAGS,
+                                mode,
+                            )
+                            .await;
                         slowest = slowest.max(chunk_started.elapsed());
                         tagged += answers.iter().filter(|answer| matches!(answer, Ok(Some(_)))).count();
                         assert!(answers.iter().all(Result::is_ok), "a read failed");
@@ -114,14 +133,25 @@ async fn main() {
             }
         }
         "clean" => {
-            let entries = volume.list_directory(scratch, None).await.expect("list");
+            let entries = volume
+                .list_directory(&AppPath::legacy_unchecked(scratch), None)
+                .await
+                .expect("list");
             let volume = &volume;
             futures_util::stream::iter(entries)
-                .map(|entry| async move { volume.delete(&scratch.join(&entry.name)).await.expect("delete") })
+                .map(|entry| async move {
+                    volume
+                        .delete(&AppPath::legacy_unchecked(&scratch.join(&entry.name)))
+                        .await
+                        .expect("delete")
+                })
                 .buffer_unordered(16)
                 .collect::<Vec<_>>()
                 .await;
-            volume.delete(scratch).await.expect("the scratch folder is empty");
+            volume
+                .delete(&AppPath::legacy_unchecked(scratch))
+                .await
+                .expect("the scratch folder is empty");
         }
         _ => usage(),
     }

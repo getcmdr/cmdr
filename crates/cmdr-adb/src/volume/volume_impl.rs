@@ -5,9 +5,12 @@
 //! a promise it may not be able to keep: `supports_local_fs_access` defaults
 //! to `true` in the trait, and a device path handed to the OS opens nothing.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::volume::Presence;
 use std::ops::ControlFlow;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
@@ -65,8 +68,8 @@ impl Volume for AdbVolume {
         &self.name
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -95,63 +98,85 @@ impl Volume for AdbVolume {
     }
 
     /// The phone's storage and nothing else: `volume/index_scope.rs`.
-    fn index_walk(&self, dir: &Path, is_symlink: bool) -> cmdr_fs::volume::IndexWalk {
+    fn index_walk(&self, dir: &AppPath, is_symlink: bool) -> cmdr_fs::volume::IndexWalk {
+        let dir_std = dir.as_std_legacy();
+        let dir: &Path = &dir_std;
         self.index_walk_impl(dir, is_symlink)
     }
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.list_directory_impl(path, on_progress, None)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.list_directory_impl(path, on_progress, None)).await
+        })
     }
 
     fn list_directory_with_cancel<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.list_directory_impl(path, on_progress, cancel)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.list_directory_impl(path, on_progress, cancel)).await
+        })
     }
 
     fn list_directory_for_scan<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         cancel: Option<&'a CancellationToken>,
         _clock: &'a cmdr_fs::volume::ScanListingClock,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.list_directory_taking_empty_as(
-            path,
-            None,
-            cancel,
-            super::query::EmptyListing::Believe,
-        )))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.list_directory_taking_empty_as(path, None, cancel, super::query::EmptyListing::Believe))
+                .await
+        })
     }
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.get_metadata_impl(path)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.get_metadata_impl(path)).await
+        })
     }
 
     /// One bare `STAT`: the trait default's `get_metadata` also runs a shell
     /// `readlink` to follow a link, which this question never needs.
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.entry_kind_impl(path)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.entry_kind_impl(path)).await
+        })
     }
 
     /// Kept rather than taken from the trait default: the default routes through
     /// `Volume::get_metadata`, which is `noting`-wrapped, so a bare existence
     /// probe on a dropped link would report a connection transition and drive a
     /// reconnect. An existence question stays a question.
-    fn presence<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
-        Box::pin(self.presence_impl(path))
+    fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.presence_impl(path).await
+        })
     }
 
     // ── The byte path ────────────────────────────────────────────────
@@ -177,7 +202,7 @@ impl Volume for AdbVolume {
     )]
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.open_read_stream_at_offset(path, 0)
     }
@@ -188,7 +213,7 @@ impl Volume for AdbVolume {
     )]
     fn open_read_stream_with_hint<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         _size_hint: Option<u64>,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.open_read_stream_at_offset(path, 0)
@@ -200,7 +225,7 @@ impl Volume for AdbVolume {
     )]
     fn open_read_stream_for_scan<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         _size_hint: Option<u64>,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.open_read_stream_at_offset(path, 0)
@@ -214,10 +239,12 @@ impl Volume for AdbVolume {
     )]
     fn open_read_stream_at_offset<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, offset).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -231,11 +258,15 @@ impl Volume for AdbVolume {
     )]
     fn read_range<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.read_range_impl(path, offset, len)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.read_range_impl(path, offset, len)).await
+        })
     }
 
     // ── The write path ───────────────────────────────────────────────
@@ -248,24 +279,36 @@ impl Volume for AdbVolume {
 
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.create_file_impl(path, content)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.create_file_impl(path, content)).await
+        })
     }
 
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.create_directory_impl(path)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.create_directory_impl(path)).await
+        })
     }
 
     fn create_directory_all<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.create_directory_all_impl(path)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.create_directory_all_impl(path)).await
+        })
     }
 
     /// `mkdir -p` succeeds on a directory that is already there, so the
@@ -274,16 +317,22 @@ impl Volume for AdbVolume {
         false
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.delete_impl(path)))
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.delete_impl(path)).await
+        })
     }
 
     fn delete_with_cancel<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if cancel.is_some_and(CancellationToken::is_cancelled) {
                 return Err(VolumeError::Cancelled(path.to_string_lossy().into_owned().into()));
             }
@@ -293,23 +342,33 @@ impl Volume for AdbVolume {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.rename_impl(from, to, force)))
+        Box::pin(async move {
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
+            let from_std = from.as_std_legacy();
+            let from: &Path = &from_std;
+            self.noting(self.rename_impl(from, to, force)).await
+        })
     }
 
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
-        let write = self.write_from_stream_impl(dest, mode, length, stream, on_progress);
-        Box::pin(async move { self.noting(write).await })
+        Box::pin(async move {
+            let dest_std = dest.as_std_legacy();
+            let dest: &Path = &dest_std;
+            let write = self.write_from_stream_impl(dest, mode, length, stream, on_progress);
+            self.noting(write).await
+        })
     }
 
     fn supports_unknown_length_writes(&self) -> bool {
@@ -318,11 +377,17 @@ impl Volume for AdbVolume {
 
     fn copy_within<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         on_progress: &'a (dyn Fn(u64, u64) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<u64, VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(self.copy_within_impl(from, to, on_progress)))
+        Box::pin(async move {
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
+            let from_std = from.as_std_legacy();
+            let from: &Path = &from_std;
+            self.noting(self.copy_within_impl(from, to, on_progress)).await
+        })
     }
 
     fn supports_copy_within(&self) -> bool {
@@ -334,35 +399,52 @@ impl Volume for AdbVolume {
     fn notify_mutation<'a>(
         &'a self,
         _volume_id: &'a str,
-        parent_path: &'a Path,
+        parent_path: &'a AppPath,
         mutation: MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
-        Box::pin(patching::patch_mutation(self, parent_path, mutation))
+        Box::pin(async move {
+            let parent_path_std = parent_path.as_std_legacy();
+            let parent_path: &Path = &parent_path_std;
+            patching::patch_mutation(self, parent_path, mutation).await
+        })
     }
 
     // ── Scanning, before a copy runs ─────────────────────────────────
 
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(scan_walk::scan_one(self, path)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(scan_walk::scan_one(self, path)).await
+        })
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(scan_walk::scan_trees(self, paths, boundary)))
+        Box::pin(async move {
+            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+            let paths: &[PathBuf] = &paths_std;
+            self.noting(scan_walk::scan_trees(self, paths, boundary)).await
+        })
     }
 
     fn scan_for_conflicts<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
-        dest_path: &'a Path,
+        dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
-        Box::pin(self.noting(scan_walk::scan_conflicts(self, source_items, dest_path)))
+        Box::pin(async move {
+            let dest_path_std = dest_path.as_std_legacy();
+            let dest_path: &Path = &dest_path_std;
+            self.noting(scan_walk::scan_conflicts(self, source_items, dest_path))
+                .await
+        })
     }
 
     // ── Lifecycle ────────────────────────────────────────────────────
@@ -427,7 +509,7 @@ impl Volume for AdbVolume {
         false
     }
 
-    fn local_path(&self) -> Option<PathBuf> {
+    fn local_path(&self) -> Option<AppPathBuf> {
         None
     }
 
@@ -440,7 +522,7 @@ impl Volume for AdbVolume {
         false
     }
 
-    fn listing_watch_coverage(&self, _path: &Path) -> WatchCoverage {
+    fn listing_watch_coverage(&self, _path: &AppPath) -> WatchCoverage {
         WatchCoverage::None
     }
 
@@ -454,9 +536,11 @@ impl Volume for AdbVolume {
     /// what's on it.
     fn get_space_info_at<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let device = self.to_device_path(path)?;
             self.df_space(&device).await
         }))
@@ -470,10 +554,12 @@ impl Volume for AdbVolume {
     /// meets the silence is what reports it.
     fn write_access_at<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = cmdr_fs::volume::WriteAccess> + Send + 'a>> {
         use cmdr_fs::volume::{UnwritableReason, WriteAccess};
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let Ok(device) = self.to_device_path(path) else {
                 return WriteAccess::Unknown;
             };
