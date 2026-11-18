@@ -18,6 +18,7 @@ export {
   convention,
   FALLBACK_CONVENTIONS,
   linuxDesktop,
+  pageDrawsMenuBar,
   platformConventions,
   type ConventionsDesktop,
   type PlatformConventions,

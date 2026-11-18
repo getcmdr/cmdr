@@ -69,7 +69,8 @@
     import { navCommandForMouseButton } from './mouse-nav'
     import { resolveGlobalKeyAction, unclaimedDispatchWarning } from './global-keydown'
     import { exitFullScreenOnEscape, installEscapeStopClaims } from './escape-key'
-    import { hasCapability } from '#lib/platform/index.js'
+    import { hasCapability, pageDrawsMenuBar } from '#lib/platform/index.js'
+    import MainMenuBar from './MainMenuBar.svelte'
     import { getMessage, tString } from '#lib/intl/messages.svelte.js'
     import { showMainOnMount } from './show-main-on-mount'
     import {
@@ -807,6 +808,10 @@
                 {decorateMainWindowTitle(windowTitle, appMode)}
             </span>
         </header>
+    {/if}
+
+    {#if pageDrawsMenuBar()}
+        <MainMenuBar inert={dialogsOnScreen().dialogOpen || dialogsOnScreen().paletteOpen} />
     {/if}
 
     <main class="main-content">

@@ -221,8 +221,8 @@ on that OS removed) pair by pair for the same combo in overlapping scopes, using
 - Not a clash by scope, worth knowing: `Alt+↑` is Go to parent (File list), Move row up (Multi-rename), and Move earlier
   (operation queue window). The scopes never meet, but on Windows and Linux the queue window wears the main bar, so Go
   to parent only SHOWS `Alt+↑` there (keydown dispatch runs it in the main window), and no bar row may register a key
-  the queue's commands use (`page_owned_keys.tsv`, `bar_parity_test.rs`). A real-X check in `menu-mnemonic-mask.spec.ts`
-  presses `Alt+↑` and `Alt+↓` in the queue window.
+  the queue's commands use (`page_owned_keys.tsv`, `bar_parity_test.rs`). A real-X check in `menu-bar.spec.ts` presses
+  `Alt+↑` and `Alt+↓` in the queue window.
 
 ## Reservations behind the Linux keys
 
@@ -298,8 +298,8 @@ Every new or moved Linux key against those five plus IBus and GTK:
   modifier is an unreachable mask, and Alt comes back after the last one closes, like a native modal
   (`apps/desktop/src-tauri/src/menu/DETAILS.md` § "A modal surface takes the mnemonics away"). Settings, the queue, the
   Keyboard shortcuts window, and Debug wear the main bar on Linux too; Settings' shortcut recorders hold the mask while
-  they listen. `menu-mnemonic-mask.spec.ts` proves it in the Linux E2E lane with real X key events through `xdotool`.
-  The viewer's bar has no mnemonics, so its `Alt+R` / `Alt+C` are safe.
+  they listen. `menu-bar.spec.ts` proves it in the Linux E2E lane with real X key events through `xdotool`. The viewer's
+  bar has no mnemonics, so its `Alt+R` / `Alt+C` are safe.
 
 ## Windows checks
 

@@ -83,7 +83,6 @@ export {
   viewerSearchCancel,
   viewerGetStatus,
   viewerClose,
-  viewerSetupMenu,
   viewerSetWordWrap,
   viewerSetSearchInputFocused,
   viewerSetHistoryState,

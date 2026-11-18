@@ -97,6 +97,10 @@ here:
   time.
 - **`+page.svelte` mounts Ask Cmdr's bulk-rename review beside the rail, but doesn't own it**: the rail owns its user
   decisions and the proposal's lifetime.
+- **`MainMenuBar.svelte` is the window's in-page menu bar off macOS** (`pageDrawsMenuBar()`), between the title bar and
+  the content, so it takes the panes' height from the top. It follows `get_menu_bar` live (`followMenuBar`), sends a
+  pick down `pick_menu_bar_item` (the native click's handler, so it reaches the frontend on the menu road), and goes
+  inert with `dialogsOnScreen()`'s dialog or palette bit, as the dialog gate does. `#lib/ui/DETAILS.md` § Command menus.
 
 ## Startup: showing the main window
 

@@ -360,7 +360,9 @@ webkit2gtk = "2.0"
 # Win32 calls behind the app's `platform/` seams: the registry (device id, OS names, managed
 # policy and its change watch), `RtlGetVersion`, the memory counters, the instance lock's
 # message box, the drive table (volume GUIDs, drive types, mapped shares), and the system look's
-# settings window (`WM_SETTINGCHANGE`; `WNDCLASSW` needs Gdi's brush type). Already in the lockfile through the workspace crates.
+# settings window (`WM_SETTINGCHANGE`; `WNDCLASSW` needs Gdi's brush type), and the windows' `SC_KEYMENU`
+# guard (`platform/windows/keymenu.rs`: comctl32's `SetWindowSubclass`, in `Win32_UI_Shell`). Already in the
+# lockfile through the workspace crates.
 windows-sys = { version = "0.61", features = [
     "Wdk_System_SystemServices",
     "Win32_Foundation",
@@ -373,6 +375,7 @@ windows-sys = { version = "0.61", features = [
     "Win32_System_Registry",
     "Win32_System_SystemInformation",
     "Win32_System_Threading",
+    "Win32_UI_Shell",
     "Win32_UI_WindowsAndMessaging",
 ] }
 # Secrets in Windows Credential Manager (`secrets/platform/windows/`): the `keyring-core` backend

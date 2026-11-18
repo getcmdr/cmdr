@@ -608,8 +608,7 @@ pub const MENU_BAR: &[BarMenu] = &[
             SEPARATOR,
             // Shown, never registered, so keydown dispatch runs it and the page keeps the key
             // (`page_owned_keys.tsv`): on macOS `⌘↑` is a text field's caret to the start, and on
-            // Windows and Linux the operation queue window wears this bar, where `Alt+↑` is Move
-            // earlier.
+            // Windows and Linux `Alt+↑` is the operation queue window's Move earlier.
             displayed_item(
                 GO_PARENT_ID,
                 "menu.go.parentFolder",

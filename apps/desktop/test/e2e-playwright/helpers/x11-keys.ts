@@ -1,8 +1,9 @@
 /**
- * Real X key events for the Linux lane, through the packaged `xdotool` (XTest, so the X server
- * and GTK see a device keypress). `pressKey` builds a synthetic DOM event inside the webview,
- * which GTK never sees: anything GTK takes before the page (the bar's `Alt+<letter>` mnemonics,
- * the F-keys) needs this. Linux only; `xdotool` comes with the lane's base image.
+ * Real X key and mouse events for the Linux lane, through the packaged `xdotool` (XTest, so the X
+ * server and GTK see a device keypress). `pressKey` builds a synthetic DOM event inside the
+ * webview, which GTK never sees: anything GTK could take before the page (F10, a lone Alt, the
+ * F-keys) needs this, as does anything that must prove GTK DIDN'T take it. Linux only; `xdotool`
+ * comes with the lane's base image.
  *
  * The Xvfb display has no window manager, so nothing gives a window focus by itself:
  * `focusMainWindow` sets the X input focus and parks the pointer on the biggest visible
@@ -40,13 +41,29 @@ function area(windowId: string): number {
   return width * height
 }
 
-/** Gives the main window the X input focus and the pointer, so real keys reach it. */
-export function focusMainWindow(): void {
+/** The main window's X id: the biggest visible top-level window. */
+export function mainWindowId(): string {
   const windows = visibleTopLevelWindows()
   if (windows.length === 0) throw new Error('no visible X window to focus')
-  const main = windows.reduce((best, id) => (area(id) > area(best) ? id : best))
+  return windows.reduce((best, id) => (area(id) > area(best) ? id : best))
+}
+
+/** Gives the main window the X input focus and the pointer, so real keys reach it. */
+export function focusMainWindow(): void {
+  const main = mainWindowId()
   xdotool('windowfocus', '--sync', main)
   xdotool('mousemove', '--window', main, '400', '300')
+}
+
+/**
+ * Clicks one X window at a point in its own coordinates, as a real mouse does: the window gets the
+ * input focus, the pointer moves there, and button 1 goes down and up. A page point (a DOM rect's)
+ * is the window's point here: the lane's windows have no decorations and the page fills them.
+ */
+export function clickRealAt(windowId: string, x: number, y: number): void {
+  xdotool('windowfocus', '--sync', windowId)
+  xdotool('mousemove', '--window', windowId, String(Math.round(x)), String(Math.round(y)))
+  xdotool('click', '1')
 }
 
 /**

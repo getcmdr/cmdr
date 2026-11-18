@@ -1,6 +1,7 @@
 //! Building the menu bar at app startup and stashing what mutates it later.
 //!
-//! One call from `lib.rs`'s `setup`. The order inside is load-bearing: the UI
+//! One call from `lib.rs`'s `setup`. Only macOS gets a native bar (`builds_native_bar`); elsewhere
+//! the page draws it, so only the `MenuState` is placed. The order inside is load-bearing: the UI
 //! language has to be pinned before `build_menu` reads the catalog through
 //! `menu_t`, the macOS AppKit passes only work on an already-installed bar, and
 //! the `MenuState` refs have to be stored before any frontend push can arrive.
@@ -20,7 +21,7 @@ use crate::settings::loader::Settings;
 
 use super::{MenuState, ViewMode};
 
-/// Build the menu bar in the user's language, run the macOS post-construction
+/// Build the menu bar in the user's language where it's native, run the macOS post-construction
 /// passes, and place the `MenuState` the frontend and IPC layer mutate.
 pub fn at_startup(app: &tauri::App, settings: &Settings) -> tauri::Result<()> {
     // Check if there's an existing license (for menu text)
@@ -35,6 +36,24 @@ pub fn at_startup(app: &tauri::App, settings: &Settings) -> tauri::Result<()> {
     // statements down, already in the right language.
     intl::set_language_preference(settings.appearance_language.clone());
 
+    let menu_state = MenuState::default();
+    // Cached so a language-change rebuild puts the same licence wording
+    // back without repeating the lookup.
+    menu_state
+        .has_existing_license
+        .store(has_existing_license, std::sync::atomic::Ordering::Relaxed);
+    // The check the bar starts on, for the page bar (`page_bar.rs`) and the native item alike.
+    menu_state
+        .show_hidden_checked
+        .store(settings.show_hidden_files, std::sync::atomic::Ordering::Relaxed);
+
+    // Off macOS the page draws the bar (`page_bar.rs`) from the facts `MenuState` holds, so no
+    // native bar is built: the state is placed and that's all.
+    if !super::builds_native_bar() {
+        app.manage(menu_state);
+        return Ok(());
+    }
+
     // Build and set the application menu with persisted showHiddenFiles
     // Note: view mode is per-pane and managed by frontend, so we default to Brief here
     let menu_items = super::build_menu(
@@ -45,17 +64,6 @@ pub fn at_startup(app: &tauri::App, settings: &Settings) -> tauri::Result<()> {
         None,
         has_existing_license,
     )?;
-
-    let menu_state = MenuState::default();
-    // Cached so a language-change rebuild puts the same licence wording
-    // back without repeating the lookup.
-    menu_state
-        .has_existing_license
-        .store(has_existing_license, std::sync::atomic::Ordering::Relaxed);
-    // The check the item was just built with, for the page bar (`page_bar.rs`).
-    menu_state
-        .show_hidden_checked
-        .store(settings.show_hidden_files, std::sync::atomic::Ordering::Relaxed);
     let main_menu = menu_state.store_item_refs(menu_items);
 
     // On macOS, keep a clone of the main menu so `activate_window_menu` can swap the
@@ -93,7 +101,7 @@ pub fn at_startup(app: &tauri::App, settings: &Settings) -> tauri::Result<()> {
     #[cfg(target_os = "macos")]
     {
         *menu_state.main_menu.lock_ignore_poison() = Some(main_menu_clone);
-        let viewer_menu_items = super::build_viewer_menu(app.handle())?;
+        let viewer_menu_items = super::menu_structure::build_viewer_menu(app.handle())?;
         *menu_state.viewer_word_wrap.lock_ignore_poison() = Some(viewer_menu_items.word_wrap);
         *menu_state.viewer_edit_cut.lock_ignore_poison() = Some(viewer_menu_items.edit_cut);
         *menu_state.viewer_edit_paste.lock_ignore_poison() = Some(viewer_menu_items.edit_paste);

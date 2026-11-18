@@ -114,7 +114,6 @@ export const appAnswers: AnswerTable = {
   getIsolatedStorePath: none,
   whatsNewDevOverride: none,
   // The viewer window's native-menu plumbing: a panel has no native menu to sync.
-  viewerSetupMenu: none,
   viewerSetWordWrap: none,
   viewerSetSearchInputFocused: none,
   viewerSetHistoryState: none,

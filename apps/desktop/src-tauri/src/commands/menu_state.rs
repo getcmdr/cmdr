@@ -36,15 +36,13 @@ use tauri_specta::Event as _;
 #[specta::specta]
 pub fn toggle_hidden_files<R: Runtime>(app: AppHandle<R>) -> Result<bool, String> {
     let menu_state = app.state::<MenuState<R>>();
-    // A handle, ❌ not the guard: the MCP tool calls this off the main thread (`cloned_handle`).
-    let Some(check_item) = cloned_handle(&menu_state.show_hidden_files) else {
-        return Err("Menu not initialized".to_string());
-    };
-
-    // Get current state and toggle it
-    let current = check_item.is_checked().unwrap_or(false);
-    let new_state = !current;
-    check_item.set_checked(new_state).map_err(|e| e.to_string())?;
+    // The stored check is the truth on every platform; the native item, where one is built,
+    // follows it. A handle, ❌ not the guard: the MCP tool calls this off the main thread
+    // (`cloned_handle`).
+    let new_state = !menu_state.show_hidden_checked.load(Ordering::Relaxed);
+    if let Some(check_item) = cloned_handle(&menu_state.show_hidden_files) {
+        check_item.set_checked(new_state).map_err(|e| e.to_string())?;
+    }
     menu_state.show_hidden_checked.store(new_state, Ordering::Relaxed);
     notify_bar_changed(&app);
 
@@ -143,8 +141,9 @@ pub fn update_pin_tab_menu<R: Runtime>(app: AppHandle<R>, is_pinned: bool) -> Re
     let menu_state = app.state::<MenuState<R>>();
     menu_state.pin_tab_pinned.store(is_pinned, Ordering::Relaxed);
     notify_bar_changed(&app);
+    // No native bar (the page draws it): the stored fact is all there is to write.
     let Some(item) = cloned_handle(&menu_state.pin_tab) else {
-        return Err("Menu not initialized".to_string());
+        return Ok(());
     };
     item.set_text(crate::menu::pin_tab_label(is_pinned))
         .map_err(|e| e.to_string())

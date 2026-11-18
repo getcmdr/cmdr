@@ -1,7 +1,13 @@
-//! Ties the bar to the frontend's registry: on each platform, every row with a command registers
-//! and shows what a rebind to that command's first default key would (`rebound_row_key`, the same
-//! door `update_menu_accelerator` takes), or sits on [`EXCEPTIONS`] with its reason. And no row
-//! registers a key the page owns (`page_owned_keys.tsv`), past [`PAGE_OWNED_BY_DESIGN`].
+//! Ties the bar to the frontend's registry: on each platform, every row with a command shows what
+//! a rebind to that command's first default key would (`rebound_row_key`, the same door
+//! `update_menu_accelerator` takes), and on macOS registers it too, or sits on [`EXCEPTIONS`] with
+//! its reason. And no macOS row registers a key the page owns (`page_owned_keys.tsv`), past
+//! [`PAGE_OWNED_BY_DESIGN`].
+//!
+//! Only macOS builds a native bar that registers anything (D5, task 63 of
+//! `docs/specs/windows-port-plan.md`): Windows and Linux draw it in the page, where a row's key is
+//! text and the page's keydown runs it. So those two compare what a row SHOWS, ❌ never what it
+//! would register.
 //!
 //! The registry side is `registry_default_keys.tsv`, which the frontend's
 //! `lib/commands/default-keymap.test.ts` writes under each OS's capability fixture and checks
@@ -13,8 +19,8 @@ use super::{RowKey, every_entry, rebound_row_key, registered_accelerators};
 use crate::accelerators::{same_chord, to_menu_text};
 use crate::ids::{
     EDIT_COPY_ID, EDIT_PASTE_MOVE_ID, FILE_COPY_ID, FILE_MOVE_ID, GO_BACK_ID, GO_PARENT_ID, QUICK_LOOK_ID,
-    SELECT_ALL_ID, SELECT_SAME_KIND_ID, SWITCH_PANE_ID, VIEW_MODE_BRIEF_LEFT_ID, VIEW_MODE_FULL_LEFT_ID,
-    VIEW_ZOOM_IN_ID, menu_id_to_command,
+    SELECT_SAME_KIND_ID, SWITCH_PANE_ID, VIEW_MODE_BRIEF_LEFT_ID, VIEW_MODE_FULL_LEFT_ID, VIEW_ZOOM_IN_ID,
+    menu_id_to_command,
 };
 use crate::spec::{EntryKind, Platform};
 
@@ -29,13 +35,11 @@ struct Exception {
 
 const MACOS: &[Platform] = &[Platform::MacOs];
 const WINDOWS: &[Platform] = &[Platform::Windows];
-const WINDOWS_AND_LINUX: &[Platform] = &[Platform::Windows, Platform::Linux];
 const EVERY_PLATFORM: &[Platform] = &Platform::ALL;
 
-/// The Windows bar registers the Linux bar's key where the two keymaps differ only in order, so its
-/// F-key chords stay with keydown dispatch, as Linux's do.
-const WINDOWS_FOLLOWS_LINUX: &str = "the first key there is an F-key chord, which the bar leaves to keydown dispatch; the Windows \
-                                     bar registers Linux's first key (a default on Windows too) until its menu model is decided";
+/// The Windows bar shows the Linux bar's key where the two keymaps differ only in order.
+const WINDOWS_FOLLOWS_LINUX: &str = "the first key there is TC's F-key chord; the Windows bar shows Linux's first key (a default on \
+                                     Windows too), as it did while the bar was native and left F-key chords to keydown dispatch";
 
 /// The registry's first key can't be registered (bare, or a key muda has no `Code` for), so the
 /// bar registers the command's second default.
@@ -49,8 +53,7 @@ const EXCEPTIONS: &[Exception] = &[
         reason: SECOND_KEY,
     },
     // `Backspace` is bare, so the bar shows the second key, which the page owns everywhere: macOS's
-    // `⌘↑` is a text field's caret to the start, and the queue window (wearing this bar on Windows
-    // and Linux) uses `Alt+↑` for Move earlier.
+    // `⌘↑` is a text field's caret to the start, and the queue window uses `Alt+↑` for Move earlier.
     Exception {
         platforms: EVERY_PLATFORM,
         menu_id: GO_PARENT_ID,
@@ -70,21 +73,16 @@ const EXCEPTIONS: &[Exception] = &[
     },
 ];
 
-/// Rows whose built accelerator is a key the page owns, on purpose.
-const PAGE_OWNED_BY_DESIGN: &[(&[Platform], &str, &str)] = &[
-    (
-        EVERY_PLATFORM,
-        EDIT_COPY_ID,
-        "Copy routes through `execute-command`, and the frontend copies the selected text when a field or a text \
-         selection has it (`handleTextRegionShortcut`), so the key stays the field's",
-    ),
-    (
-        WINDOWS_AND_LINUX,
-        SELECT_ALL_ID,
-        "the operation queue window's Select all reaches it through this row, by design \
-         (`menu_handlers.rs`, `QueueSelectAll`)",
-    ),
-];
+/// macOS rows whose built accelerator is a key the page owns, on purpose.
+const PAGE_OWNED_BY_DESIGN: &[(&[Platform], &str, &str)] = &[(
+    MACOS,
+    EDIT_COPY_ID,
+    "Copy routes through `execute-command`, and the frontend copies the selected text when a field or a text \
+     selection has it (`handleTextRegionShortcut`), so the key stays the field's",
+)];
+
+/// The platforms whose bar is native, so its accelerators register and fire before the page.
+const NATIVE_BAR: &[Platform] = MACOS;
 
 /// The command a row stands for, as the registry names it. The left pane's Full / Brief checks
 /// carry the view-mode keys at build time (the active pane's pair does, and the build starts with
@@ -115,7 +113,8 @@ fn registry_keys() -> HashMap<(&'static str, &'static str), &'static str> {
 }
 
 /// What the row registers and shows against what the registry's first key would, as chords, or
-/// `None` where they agree.
+/// `None` where they agree. A page-drawn bar (off macOS) registers nothing, so only what it shows
+/// counts there: a registered key and a display-only one both read as the row's key text.
 fn mismatch(built: &RowKey, expected: &RowKey, platform: Platform) -> Option<String> {
     let same = |a: &Option<String>, b: &Option<String>| match (a, b) {
         (None, None) => true,
@@ -128,7 +127,15 @@ fn mismatch(built: &RowKey, expected: &RowKey, platform: Platform) -> Option<Str
             .as_deref()
             .and_then(|shortcut| to_menu_text(shortcut, platform))
     };
-    if same(&built.accelerator, &expected.accelerator) && same(&shown(built), &shown(expected)) {
+    let agrees = if NATIVE_BAR.contains(&platform) {
+        same(&built.accelerator, &expected.accelerator) && same(&shown(built), &shown(expected))
+    } else {
+        same(
+            &built.accelerator.clone().or_else(|| shown(built)),
+            &expected.accelerator.clone().or_else(|| shown(expected)),
+        )
+    };
+    if agrees {
         return None;
     }
     let describe = |key: &RowKey| match (&key.accelerator, &key.display) {
@@ -229,12 +236,12 @@ fn takes_page_key(accelerator: &str, platform: Platform) -> Option<(&'static str
         .find(|(combo, _)| to_menu_text(combo, platform).is_some_and(|owned| same_chord(&owned, accelerator)))
 }
 
-/// A bar accelerator fires before the page, so a row registering a key the page owns takes it from
-/// every focused text field, or from a window that wears the bar.
+/// A native bar accelerator fires before the page, so a row registering a key the page owns takes
+/// it from every focused text field.
 #[test]
 fn no_bar_row_registers_a_key_the_page_owns() {
     let mut taken = Vec::new();
-    for platform in Platform::ALL {
+    for &platform in NATIVE_BAR {
         for (menu_id, accelerator) in registered_accelerators(platform) {
             let by_design = PAGE_OWNED_BY_DESIGN
                 .iter()

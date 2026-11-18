@@ -1,5 +1,6 @@
 //! The Windows arm of the platform-identity seam.
 
+mod keymenu;
 pub(crate) mod registry;
 mod version;
 mod webview;

@@ -92,6 +92,11 @@ dialog buttons like macOS, KDE like Windows.
   `contextMenus` (`native` | `inPage`), `screenReaders` (most used first), and `linuxDesktop` (`gnome` | `kde` |
   `other`, `null` off Linux). Each value and its guideline, with dates and what stayed unverified:
   `docs/notes/windows-port/platform-conventions.md`.
+- **`pageDrawsMenuBar()`** is the one reading of `menuModel` the windows mount their bar on: true for every model but
+  `systemMenuBar`, GNOME's `primaryMenu` included until its main-menu button (task 63 step 8). The backend asks the same
+  question of its own row (`menu::builds_native_bar`), so the page and the native bar never both draw, past a
+  `CMDR_MOCK_CONVENTIONS` dev run (which moves the webview alone: macOS keeps its bar and the page shows another
+  desktop's beside it).
 - **One table, five rows**: `conventions_on(Desktop)` answers macOS, Windows, and each Linux desktop in one `match`,
   compiled on every target; each OS arm (`macos.rs`, `windows.rs`, `linux/mod.rs`) only picks its row, Linux by the
   session's desktop (`apps/desktop/src-tauri/src/platform/linux/desktop.rs`, `XDG_CURRENT_DESKTOP` read once).
