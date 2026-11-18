@@ -18,12 +18,12 @@ predicates confirm a `.zip` via `std::fs::metadata` + a local magic read, which 
 (data-safe, but wrong). So the routing seams call the async `OperationVolumes::path_is_inside_archive` (delete
 `../delete/mod.rs`, rename `../rename.rs`, copy-out / move-out source
 `commands/file_system/volume_copy.rs::resolve_source` and the scan-preview source) and `path_crosses_archive_boundary`
-(create `../create.rs`), which confirm through the parent's OWN `get_metadata` + four-byte `read_range` for a remote
-parent (mirroring the registry's `resolve`) and keep the zero-network `std::fs` fast path for a local one. Copy/move
-INTO already routed correctly (the dest goes through the async `resolve` → `dest_resolved.is_archive`). The `route_*`
-functions then re-split the confirmed path with the pure-string `archive_boundary_candidate` (NOT
-`confirm_archive_boundary`, whose `std::fs` confirm would wrongly fail for a remote zip) — confirmation already happened
-at the seam. Pinned by the `path_is_inside_archive_*` unit tests in
+(create `../create.rs`), which confirm through the parent's OWN `get_metadata` + 512-byte `read_range` for a remote
+parent (`cmdr-archive`'s `confirm_archive_boundary_on_parent`, the same one the registry's `resolve` asks) and keep the
+zero-network `std::fs` fast path for a local one. Copy/move INTO already routed correctly (the dest goes through the
+async `resolve` → `dest_resolved.is_archive`). The `route_*` functions then re-split the confirmed path with the
+pure-string `archive_boundary_candidate` (NOT `confirm_archive_boundary`, whose `std::fs` confirm would wrongly fail for
+a remote zip) — confirmation already happened at the seam. Pinned by the `path_is_inside_archive_*` unit tests in
 `apps/desktop/src-tauri/src/file_system/volume/manager.rs` (local + remote + `read_range`-unsupported + mislabeled).
 
 ## Local vs remote: one closure, one dispatcher (`run_managed_edit`)

@@ -254,7 +254,7 @@ This surfaces on:
 
 Both are machine-readable.
 
-## Routing and lifecycle (`src/boundary.rs` + `VolumeManager::resolve`)
+## Routing and lifecycle (`src/boundary.rs` + `src/boundary_on_parent.rs` + `VolumeManager::resolve`)
 
 An `ArchiveVolume` is never constructed here directly in production — it's minted on demand by
 `VolumeManager::resolve(volume_id, path)` when a path crosses a `.zip` boundary. The detector is `src/boundary.rs`:
@@ -265,14 +265,17 @@ An `ArchiveVolume` is never constructed here directly in production — it's min
   the I/O: the component must be a real FILE (a directory named `foo.zip` loses to normal navigation) whose first bytes
   are a zip signature (a mislabeled file isn't routed). Extension-only feeds `FileEntry.is_archive` at listing time (no
   per-entry byte read — that's a round-trip-per-file on a remote backend); confirm runs once at navigation time.
-- **Confirm is parent-aware, so `resolve` is `async`.** `confirm_archive_boundary` is `std::fs`-only, so it can confirm
-  only a LOCAL parent. For a REMOTE parent (direct SMB / MTP), the `.zip` isn't reachable through the local filesystem,
-  so `VolumeManager::resolve` confirms through the parent volume's OWN I/O
-  (`apps/desktop/src-tauri/src/file_system/volume/manager/archive_routing.rs`'s `confirm_remote_archive_boundary`):
-  `parent.get_metadata(zip)` (must be a file, not a directory) plus a four-byte `parent.read_range(zip, 0, 4)` sniffed
-  with the SAME `bytes_start_with_zip_signature` predicate the local path uses — one shared detector, never forked.
-  `resolve` picks local-vs-remote confirm by `parent.supports_local_fs_access()`, keeping the local path's zero-I/O fast
-  filter (no archive-extension component ⇒ no I/O at all) byte-identical.
+- **Confirm is parent-aware, so `resolve` is `async`, and this crate owns both halves.** `confirm_archive_boundary` is
+  `std::fs`-only, so it can confirm only a LOCAL parent. For a REMOTE parent (direct SMB / MTP, a restic snapshot), the
+  `.zip` isn't reachable through the local filesystem, so `confirm_remote_archive_boundary`
+  (`src/boundary_on_parent.rs`) confirms through the parent volume's OWN I/O: `parent.get_metadata(zip)` (must be a
+  file, not a directory) plus a `parent.read_range(zip, 0, ARCHIVE_MAGIC_PREFIX_LEN)` (512 bytes, one tar block) sniffed
+  with the SAME `bytes_match_archive_magic` predicate the local path uses — one shared detector, never forked.
+  `confirm_archive_boundary_on_parent` picks between them by `parent.supports_local_fs_access()`, keeping the local
+  path's zero-I/O fast filter (no archive-extension component ⇒ no I/O at all). The host's `VolumeManager` keeps only
+  what needs its registry (minting and registering the `ArchiveVolume`, the LRU, the content watch and its coverage
+  probe, the archive-in-snapshot nesting, the route dispatcher); its `resolve` and both boundary predicates are thin
+  calls into these two functions. Tests: `src/boundary_on_parent_test.rs`, on `InMemoryVolume` parents.
   - **Refuse-typed when the primitive is missing.** If `read_range` is `NotSupported` (a backend without a positioned
     read) or hits a transient remote fault, we can't rule the file out, so we route it anyway. The archive layer then
     re-attempts the read while parsing and surfaces a clean typed "unreadable archive" (`NotSupported`/`IoError` →
@@ -302,9 +305,9 @@ An `ArchiveVolume` is never constructed here directly in production — it's min
   don't `resolve` — they need only a yes/no "is this archive-inner?" — so they call
   `VolumeManager::path_is_inside_archive` / `path_crosses_archive_boundary` (in
   `apps/desktop/src-tauri/src/file_system/volume/manager/`), the async siblings of the `std::fs`-only `src/boundary.rs`
-  predicates. Same `supports_local_fs_access()` fork, same `confirm_remote_archive_boundary` for a remote parent.
-  Without them a write inside a remote zip falls through to the parent volume and errors; see
-  `crates/cmdr-operations/DETAILS.md` for the "Reaching the edit driver: parent-aware write-routing" section.
+  predicates, both over `confirm_archive_boundary_on_parent`. Without them a write inside a remote zip falls through to
+  the parent volume and errors; see `crates/cmdr-operations/DETAILS.md` for the "Reaching the edit driver: parent-aware
+  write-routing" section.
 
 **resolve returns the FULL path, unchanged.** The decision (over returning a stripped inner path): `ArchiveVolume`
 already maps a volume-namespace path to its inner key via `inner_path()`, `node_to_entry` builds full paths, and
@@ -341,7 +344,9 @@ tail, concurrent two-entry reads, `scan_for_copy` (subtree / single file / missi
 the `create_directory_all` guard), encrypted/corrupt/non-zip typed errors through the `Volume` API, the parent
 `lane_key` / `get_space_info` delegation, and the capability flags. It uses the shared `src/test_fixtures.rs` builders
 (at the archive root). `src/boundary.rs` tests the per-format magic (incl. plain-tar ustar-at-257) and the
-double-extension split. The reading-core, mutation, and watch tests live with their modules.
+double-extension split; `src/boundary_on_parent_test.rs` the parent-aware confirm (the local-or-remote fork, a folder
+named `foo.zip`, a mislabeled file, and the sniff's refuse-typed routing on a missing primitive or a transient fault).
+The reading-core, mutation, and watch tests live with their modules.
 
 ## Left for later
 

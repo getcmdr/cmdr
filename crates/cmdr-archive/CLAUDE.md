@@ -10,7 +10,7 @@ browses, extracts, and **writes**; tar (every codec), 7z, and OOXML are **read-o
 ## Module map
 
 - `src/volume.rs` (+ `src/volume_streams.rs`, `src/volume_scan.rs`): the only `Volume`-trait code.
-- `src/boundary.rs`: the SHARED boundary detector + per-format magic, called by host routing and volume commands.
+- `src/boundary.rs` (+ `src/boundary_on_parent.rs`): the SHARED boundary detector, magic, and local-or-remote confirm.
 - `src/apple_double.rs`: the AppleDouble sidecar codec (`__MACOSX/._x`), read on extract and written on compress.
 - `src/read/CLAUDE.md` (the reading engine: Zip Slip, DoS caps, sans-IO fsm, codecs), `src/mutation/CLAUDE.md` (the
   zip-only temp+rename write side), `src/watch/CLAUDE.md` (the live content watch).
