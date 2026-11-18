@@ -59,7 +59,7 @@ Registry: SOFTWARE\Policies\Rymd\Cmdr, value DisableCloudAI (REG_DWORD), 1 when 
       <string id="AllowedCloudAIHosts">Allowed cloud AI hosts</string>
       <string id="AllowedCloudAIHosts_Explain">Cloud AI may reach only the hosts in this list. Each entry is a host (api.openai.com), a host and port (localhost:11434), a pattern for any subdomain (*.openai.azure.com, which doesn't match openai.azure.com itself), or a pasted URL, of which only the host and port count. Case doesn't matter. Cmdr checks every request and every redirect, and skips entries it can't read.
 
-An empty list counts as not configured. To allow no cloud host at all, use "Allow only on-device AI".
+An empty list (what Group Policy writes when you enable this policy with no entries) counts as not configured, because Windows leaves the same empty list behind when you disable it. To allow no cloud host at all, use "Allow only on-device AI".
 
 If you disable or don't configure this policy, cloud AI may reach any host users set up.
 

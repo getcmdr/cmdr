@@ -9,6 +9,7 @@ const userPolicyKey = `HKCU\\${windowsPolicyKey}`
 // The page's one string key and one list key, checked against the definition at build time.
 const versionKey = policyNamed('MaxUpdateVersion', 'string')
 const hostsKey = policyNamed('AllowedCloudAIHosts', 'stringList')
+const noCloudKey = policyNamed('DisableCloudAI', 'bool')
 ---
 
 <h3 id="windows-secrets">Passwords and API keys</h3>
@@ -32,7 +33,10 @@ const hostsKey = policyNamed('AllowedCloudAIHosts', 'stringList')
         <strong>Values</strong>: an on/off key takes a <code>REG_DWORD</code>, where 0 is off and anything else is on.
         <code>{versionKey}</code> takes a <code>REG_SZ</code> string like <code>0.52</code>.
         <code>{hostsKey}</code> takes a <code>REG_MULTI_SZ</code>, or a subkey of string values named
-        <code>1</code>, <code>2</code>, and so on (an empty subkey counts as not set). Names are compared without regard to case, as Windows does. A value
+        <code>1</code>, <code>2</code>, and so on. An empty <code>REG_MULTI_SZ</code> allows no host, as on a Mac, but an
+        empty subkey counts as not set: Group Policy leaves one behind both when the policy is disabled and when it's
+        enabled with no entries, so the two can't be told apart. To allow no cloud host, set <code>{noCloudKey}</code>.
+        Names are compared without regard to case, as Windows does. A value
         Cmdr can't read counts as the strictest setting of that key.
     </li>
     <li>
