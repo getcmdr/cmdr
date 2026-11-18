@@ -122,7 +122,7 @@ impl Volume for LocalWindowsVolume {
         let path_std = path.as_std_legacy();
         let path: &Path = &path_std;
         let abs_path = self.resolve(path);
-        let is_volume_root = abs_path == self.root;
+        let is_volume_root = abs_path == *self.root;
         #[cfg(any(test, feature = "testing"))]
         let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
         #[cfg(not(any(test, feature = "testing")))]
