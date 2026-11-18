@@ -84,12 +84,20 @@ func parseStream(data []byte) streamSummary {
 	return s
 }
 
+// bareHashRE matches a unit dir of cargo's build-dir layout (`build/<package>/<h>/`), whose
+// name is the hash alone.
+var bareHashRE = regexp.MustCompile(`^[0-9a-f]{16}$`)
+
 // addPathHashes adds every unit hash a path names: `build/ring-<h>/out` names one in a
-// directory, `deps/libserde-<h>.rlib` one in the file name.
+// directory, `deps/libserde-<h>.rlib` one in the file name, and the build-dir layout's
+// `build/ring/<h>/out` one as a bare segment. A bare 16-hex segment anywhere counts: an extra
+// hash only ever keeps more.
 func addPathHashes(into map[string]bool, path string) {
 	for _, seg := range strings.Split(path, "/") {
 		if h, ok := unitHash(seg); ok {
 			into[h] = true
+		} else if bareHashRE.MatchString(seg) {
+			into[seg] = true
 		}
 	}
 }

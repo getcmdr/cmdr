@@ -6,7 +6,8 @@ import (
 )
 
 // Unit is one entry directly under `debug/deps/`, `debug/.fingerprint/`, `debug/build/`,
-// or `debug/examples/`: a file, or a whole directory.
+// or `debug/examples/` (a file, or a whole directory), or one `debug/build/<package>/<16 hex>/`
+// dir of cargo's build-dir layout.
 type Unit struct {
 	// Path is relative to the target dir, slash-separated.
 	Path string
@@ -18,7 +19,8 @@ type Unit struct {
 	Newest time.Time
 	// Links is a file's hard-link count; 1 for a directory.
 	Links uint64
-	// Fingerprint marks an entry of `.fingerprint/`.
+	// Fingerprint marks an entry of `.fingerprint/`, or a build-dir layout unit holding
+	// nothing but its fingerprint (rustdoc's).
 	Fingerprint bool
 	// Size is the apparent size of everything in it.
 	Size int64
@@ -43,6 +45,8 @@ type Listing struct {
 	// LayoutProblem says why the tree doesn't look like the cargo layout the unit rules
 	// assume; non-empty means no unit goes.
 	LayoutProblem string
+	// buildDirLayout: some unit is a `build/<package>/<16 hex>/` dir, cargo 1.100's layout.
+	buildDirLayout bool
 }
 
 // Policy is the time context of one sweep.

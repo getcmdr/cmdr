@@ -1947,6 +1947,15 @@ GiB (65 GiB of it `incremental/`). The fix is a mark-and-sweep of our own. Evide
   stream names only the unhashed copy: without this rule the spike's hash-only prune rebuilt every bin and example); it
   was written after the seed stamp (the checkout's own work, recorded or not); or it's a fingerprint dir under 30 days
   old. Everything else goes.
+- **Two cargo layouts, both read, mixed too.** Cargo 1.100 writes the build-dir layout: one
+  `debug/build/<package>/<16 hex>/` dir per unit holding its `fingerprint/` and `out/`, no `deps/` or `.fingerprint/`
+  (verified on cargo 1.100.0, the layout pin's tiny workspace, 2026-11-18, #1227). There the unit is that dir, its hash
+  is the dir's bare name (the streams name it as a bare path segment, `build/ring/<h>/out`), and the uplift rule matches
+  a file in it against the copies directly under `debug/` and `debug/examples/` by inode OR by name and size: cargo
+  1.100 on macOS COPIES a bin or example there instead of hard-linking it, and a bare link count misleads, since the
+  `.o` files in `out/` are hard links of the incremental cache's. A unit holding nothing outside `fingerprint/`
+  (rustdoc's) counts as a fingerprint for the 30-day window. A volume an older toolchain built into holds both layouts;
+  each unit is read in its own.
 - **Decision: one rule set for every unit, no workspace/third-party split.** Why: the spike's two sets differed only in
   the seed, hard-link, and fingerprint rules, which are safe for any unit, so applying them everywhere keeps a superset
   and drops the name classification (and its false matches) altogether.
@@ -1967,10 +1976,10 @@ GiB (65 GiB of it `incremental/`). The fix is a mark-and-sweep of our own. Evide
   work", and a cold volume's first run starts the clock.
 - **Guards: the unit rules run only on sound inputs, else no unit goes and the hook's line says why** (the incremental
   rule needs none of them and still runs): every lane (`targetsweep.Lanes`) has a complete stream that parses, ends in a
-  finished build, and names at least one unit; the layout is the one the rules assume (`debug/.fingerprint/` exists and
-  every entry is a `<name>-<16 hex>` dir); and a seed stamp exists. A volume from before the recording (today's main
-  clone's) has no streams, so its first handoffs sweep `incremental/` only, until a worktree that ran all three Linux
-  lanes promotes.
+  finished build, and names at least one unit; the layout is one the rules assume (`debug/.fingerprint/` exists with
+  every entry a `<name>-<16 hex>` dir, or a `build/<package>/` holds `<16 hex>` unit dirs and nothing else); and a seed
+  stamp exists. A volume from before the recording (today's main clone's) has no streams, so its first handoffs sweep
+  `incremental/` only, until a worktree that ran all three Linux lanes promotes.
 - **Decision: partial streams instead of a `Cargo.lock` staleness check.** The spike proposed skipping the sweep when a
   lane's list is older than the last `Cargo.lock` change. Why not: a stale but complete stream deletes nothing live. A
   unit it doesn't name was either outside its graph (dead) or built after it, and every run after it left a record: a
@@ -1981,8 +1990,9 @@ GiB (65 GiB of it `incremental/`). The fix is a mark-and-sweep of our own. Evide
 - **Layout pin**: `TestCargoLayoutMatchesTheSweepsAssumptions` builds a tiny workspace with the pinned toolchain (a lib,
   a bin, an example, a build script, an integration test, docs), sweeps it with every time rule expired, and requires
   the rebuild to be fully fresh, then bumps a version and requires the old generation gone and the rebuild fresh again.
-  It skips where the pinned toolchain isn't installed (CI's light lane). `-Z build-dir-new-layout`, once stable, will
-  fail it; once rust-lang/cargo#5026 lands with real last-use tracking, replace all of this with cargo's.
+  It skips where the pinned toolchain isn't installed (CI's light lane); the Rust lane, which installs it and is what a
+  toolchain bump reruns, runs it on Linux with `CMDR_REQUIRE_LAYOUT_PIN=1`, which turns that skip into a failure. Once
+  rust-lang/cargo#5026 lands with real last-use tracking, replace all of this with cargo's.
 
 End to end, 2026-11-12, OrbStack, host load 30–47, on reflink clones of the main clone's volume (`sweep-dev-*`), never
 the live ones: the three lanes recorded on a clone (111 GiB after their runs), then a promotion-mode copy swept it to

@@ -219,9 +219,98 @@ func TestListFlagsAnUnknownLayout(t *testing.T) {
 // The executor refuses any path outside the swept dirs, whatever the plan says.
 func TestRemoveUnderRefusesPathsOutsideTheSweptDirs(t *testing.T) {
 	root := t.TempDir()
-	for _, rel := range []string{"doc/cmdr", "debug/cmdr", "debug/deps", "debug/deps/../../x", "debug/other/x", "../x", ".cmdr-live/x"} {
+	for _, rel := range []string{"doc/cmdr", "debug/cmdr", "debug/deps", "debug/deps/../../x", "debug/other/x", "../x", ".cmdr-live/x",
+		"debug/build/serde/out", "debug/deps/serde/1111111111111111", "debug/build/serde/1111111111111111/out"} {
 		if err := removeUnder(root, rel); err == nil {
 			t.Errorf("removeUnder(%q) should refuse", rel)
 		}
+	}
+	unit := filepath.Join(root, "debug/build/serde/1111111111111111/out")
+	if err := os.MkdirAll(unit, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := removeUnder(root, "debug/build/serde/1111111111111111"); err != nil || exists(root, "debug/build/serde/1111111111111111") {
+		t.Errorf("a build-dir layout unit must go: %v", err)
+	}
+}
+
+// Cargo 1.100's build-dir layout: one `build/<package>/<16 hex>/` dir per unit. The dead
+// generation goes; a live one, the source of an uplifted copy (cargo copies there, so only the
+// name and size match), and a young doc unit (fingerprint only) stay.
+func TestRunPromoteSweepsTheBuildDirLayout(t *testing.T) {
+	now := time.Now()
+	root := t.TempDir()
+	old := now.Add(-40 * 24 * time.Hour)
+	write := func(rel, content string, at time.Time) {
+		t.Helper()
+		full := filepath.Join(root, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		touch(t, full, at)
+	}
+	write("debug/build/serde/1111111111111111/fingerprint/lib-serde", "x", old)
+	write("debug/build/serde/1111111111111111/out/libserde-1111111111111111.rlib", "x", old)
+	write("debug/build/serde/9999999999999999/fingerprint/lib-serde", "x", old)
+	write("debug/build/serde/9999999999999999/out/libserde-9999999999999999.rlib", "x", old)
+	write("debug/build/cmdr/2222222222222222/fingerprint/bin-cmdr", "x", old)
+	write("debug/build/cmdr/2222222222222222/out/cmdr", "the bin", old)
+	write("debug/build/cmdr/8888888888888888/fingerprint/bin-cmdr", "x", old)
+	write("debug/build/cmdr/8888888888888888/out/cmdr", "an older bin", old)
+	write("debug/cmdr", "the bin", old)
+	write("debug/build/cmdr/3333333333333333/fingerprint/doc-lib-cmdr", "x", now.Add(-24*time.Hour))
+	for _, dir := range []string{"1111111111111111", "9999999999999999"} {
+		for _, sub := range []string{"/fingerprint", "/out", ""} {
+			touch(t, filepath.Join(root, "debug/build/serde", dir+sub), old)
+		}
+	}
+	for _, dir := range []string{"2222222222222222", "8888888888888888"} {
+		for _, sub := range []string{"/fingerprint", "/out", ""} {
+			touch(t, filepath.Join(root, "debug/build/cmdr", dir+sub), old)
+		}
+	}
+	stream := artifactLine("/cargo-target/debug/build/serde/1111111111111111/out/libserde-1111111111111111.rlib") + "\n" +
+		artifactLine("/cargo-target/debug/cmdr") + "\n" + finished + "\n"
+	for _, lane := range Lanes {
+		write(LiveDir+"/"+CompleteStream(lane), stream, now.Add(-2*time.Hour))
+	}
+	writeSeedStamp(t, root, now.Add(-5*time.Hour))
+
+	r, err := Run(root, ModePromote, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Plan.UnitsSkipped != "" || r.Failures != 0 {
+		t.Fatalf("UnitsSkipped=%q Failures=%d", r.Plan.UnitsSkipped, r.Failures)
+	}
+	for _, gone := range []string{"debug/build/serde/9999999999999999", "debug/build/cmdr/8888888888888888"} {
+		if exists(root, gone) {
+			t.Errorf("%s should be gone", gone)
+		}
+	}
+	for _, kept := range []string{"debug/build/serde/1111111111111111", "debug/build/cmdr/2222222222222222", "debug/build/cmdr/3333333333333333", "debug/cmdr"} {
+		if !exists(root, kept) {
+			t.Errorf("%s should be kept", kept)
+		}
+	}
+}
+
+// A build package dir holding anything beside its unit dirs isn't the layout the rules know.
+func TestListFlagsAStrayEntryInABuildPackageDir(t *testing.T) {
+	root := t.TempDir()
+	for _, dir := range []string{"debug/build/serde/1111111111111111/fingerprint", "debug/build/serde/surprise"} {
+		if err := os.MkdirAll(filepath.Join(root, dir), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	l, err := list(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(l.LayoutProblem, "surprise") {
+		t.Errorf("a stray entry must read as a changed layout, got %q", l.LayoutProblem)
 	}
 }
