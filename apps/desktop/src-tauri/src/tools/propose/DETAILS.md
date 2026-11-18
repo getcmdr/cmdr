@@ -138,6 +138,11 @@ placed, the store isn't there) stay their own shape: there's no row to name.
 
 - **A stopped check answers `PreflightStopped`, ❌ never a partial row list**: everything apply trusts comes from an outcome that saw every allowed row, and an acceptance recorded after a stop could overwrite the newer check's.
 - **`LOCAL_SCANS` bounds the abandoned threads.** A stopped local scan holds its pool thread until its stat returns, so a dead mount could otherwise collect them. A remote scan awaits instead and holds no thread.
+- **The folder's name rules are a preflight check, not a plan one** (#1229). The plan boundary checks POSIX shape only
+  (`validate_destination_name`), since the rules are the destination's; preflight asks `Operations::name_rules_at` once
+  per check (2 s, POSIX past it) and blocks a row the folder refuses (`NameNotAllowed`: too long in its unit, or a
+  character its driver refuses) or warns on one it takes but won't keep portable (`NotPortable`). Apply's engine run
+  checks again (`cmdr-operations`' `rename/bulk.rs::refused_rows`), so a skipped preflight can't land a refused name.
 - **Cmdr's own database not answering is not an expired review.** It surfaces as `StoreUnavailable`, so the review offers Check again rather than telling the user to throw the plan away. The same goes for `ReviseRefusal` and for apply's `Unexpected`.
 
 Frontend half: `apps/desktop/src/lib/ask-cmdr/DETAILS.md` § A check with no time limit.

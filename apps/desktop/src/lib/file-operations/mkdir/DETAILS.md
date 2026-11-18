@@ -7,8 +7,9 @@ Depth for the F7 new-folder dialog. `CLAUDE.md` holds the must-knows; the flows 
 1. F7 (or the `file.newFolder` command) opens `NewFolderDialog` pre-filled with the cursor item name. For files the
    extension is stripped via `removeExtension()`; for directories the full name is used; for ".." the field is empty.
 2. As the user types, validation runs on a 100 ms debounce:
-   - Sync validators from `#lib/utils/filename-validation`: `validateDisallowedChars`, `validateNameLength`,
-     `validatePathLength`.
+   - Sync validators from `#lib/utils/filename-validation`, against the folder's rules (`getNameRules`): `validateName`
+     (a refusal is `errorMessage`; a name the folder takes but won't keep portable is `warningMessage`, shown under the
+     field without blocking OK) and `validatePathLength`.
    - Async conflict check via `findFileIndex(listingId, name, showHiddenFiles)` + `getFileAt`, reporting "There is
      already a folder/file by this name in this folder."
 3. The AI suggestion panel queries `getAiStatus()` once. When available, `streamFolderSuggestions` streams suggestion

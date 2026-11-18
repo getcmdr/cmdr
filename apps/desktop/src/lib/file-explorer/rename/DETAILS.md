@@ -147,9 +147,11 @@ and every backend that arrived after MTP refused F2 outright (ERR-KVERS).
 ## Validation
 
 - **Frontend (instant)** `filename-validation.ts`: the folder's name rules (`folder-name-rules.ts` asks `getNameRules`
-  once per session, `posix` until it lands; then a changed name re-validates), empty/whitespace-only, byte limits (255
-  name, 1024 path), extension change vs setting. The red border while editing follows the policy: "no" draws it on an
-  extension change, "ask" doesn't (the dialog waits for save), "yes" never validates the extension.
+  once per session, `POSIX_RULES` until it lands; then a changed name re-validates), empty or invisible-only, `.` and
+  `..`, the folder's name and path limits in their own unit, extension change vs setting. A name the folder takes but
+  won't keep portable (a `:` on a Mac's exFAT stick) shows as a WARNING, below a clash, and the rename goes ahead. The
+  red border while editing follows the policy: "no" draws it on an extension change, "ask" doesn't (the dialog waits for
+  save), "yes" never validates the extension.
 - **Backend (authoritative)** `cmdr_fs::validation` against the folder's `NameRules`, in `check_rename_validity` and
   again in the rename itself; the command accepts an optional `volumeId`: local FS (`None` or `"root"`) uses
   `symlink_metadata` + inode comparison for case-only detection; every other volume uses `Volume::get_metadata()` for

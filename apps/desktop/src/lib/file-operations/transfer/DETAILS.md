@@ -212,7 +212,8 @@ destinations".
      triggered (F5/F6, command palette, drag-and-drop).
    - Resolves a complete single-item Copy/Move target as described in § "Single-item destinations", then validates path
      structure via `validateDirectoryPath()` from `#lib/utils/filename-validation` (empty, absolute, null bytes, length
-     limits), then checks logical constraints (a folder into its own subfolder). A destination that IS the source's own
+     limits: the destination's own, in its unit, once `transfer-dest-name-rules.svelte.ts` hears them, this OS's
+     before), then checks logical constraints (a folder into its own subfolder). A destination that IS the source's own
      folder is allowed: it duplicates, and the backend resolves that per item
      (`crates/cmdr-operations/src/transfer/DETAILS.md` § "Self-collision (duplicating in place)").
    - The logical check anchors BOTH sides on their own volumes first (`anchorOnVolume`, the frontend twin of
@@ -894,6 +895,22 @@ When the directory has a parent entry shown at index 0, frontend indices are off
 - Frontend `[0, 1, 2, 3]` with `hasParent=true` → Backend `[-1, 0, 1, 2]` → filtered to `[0, 1, 2]`
 - Index 0 with `hasParent=true` is always the ".." entry (backend index `-1`, invalid)
 - `toBackendCursorIndex(0, true)` returns `null` to signal no-op
+
+## Names that won't work on Windows
+
+A copy to a Mac's exFAT stick or to a share takes `12:30.txt` and `CON`, but Windows (and, for a stick's stand-ins,
+Linux) won't read them as typed (`crates/cmdr-fs/DETAILS.md` § "Name rules"). The dialog says so before any byte moves,
+in yellow under the path box, ❌ never blocking Confirm:
+
+- **The scan counts, the destination decides.** The transfer's scan counts the names Windows can't use per class,
+  destination-blind (`ScanPreviewCompleteEvent.namePortability`, kept by `transfer-scan-state.svelte.ts`).
+  `transfer-dest-name-rules.svelte.ts` asks `getNameRules` for the typed destination (debounced, latest wins), and
+  `namePortabilitySummary` (`transfer-name-portability.ts`) counts only the classes that destination WARNS about. A
+  class it refuses (a Linux driver's `:`) stays the landing's per-item refused-name prompt; a POSIX destination says
+  nothing.
+- **The one name the dialog names** (rename mode's new name, a compress's zip, a single item's leaf) is checked against
+  the same rules: a refusal is the red path error, a warning a yellow line.
+- **Before the rules answer**, POSIX's apply (no warning), and a typed path is held to this OS's limits.
 
 ## When the dialog can't find out
 
