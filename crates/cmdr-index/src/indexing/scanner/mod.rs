@@ -91,6 +91,8 @@ mod heartbeat_tests;
 #[cfg(test)]
 mod live_emit_tests;
 #[cfg(test)]
+mod non_utf8_names_tests;
+#[cfg(test)]
 mod policy_tests;
 #[cfg(test)]
 mod test_fixtures;

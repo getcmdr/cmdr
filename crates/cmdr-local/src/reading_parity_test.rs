@@ -779,6 +779,41 @@ fn a_non_utf8_name_lists_lossily() {
     }
 }
 
+/// ❗ Today's wrong behavior, pinned so the lossless-name change flips it on
+/// purpose (#1236): two names that differ only in their invalid bytes, and a
+/// UTF-8 sibling literally named with U+FFFD, list as three rows with ONE name
+/// and ONE path. Each row still carries its own file's size (the reader stats
+/// through the raw name), so nothing but the size tells them apart, and any
+/// action addressed by that path or name reaches the U+FFFD sibling.
+#[cfg(target_os = "linux")]
+#[test]
+fn non_utf8_names_differing_only_in_invalid_bytes_list_as_one_spelling() {
+    let dir = TestDir::new("parity_non_utf8_collision");
+    fs::write(dir.join(std::ffi::OsStr::from_bytes(b"caf\xe9.txt")), b"1").expect("caf\\xe9.txt");
+    fs::write(dir.join(std::ffi::OsStr::from_bytes(b"caf\xe8.txt")), b"22").expect("caf\\xe8.txt");
+    fs::write(dir.join("caf\u{FFFD}.txt"), b"333").expect("the literal U+FFFD sibling");
+
+    for &lister in LISTERS {
+        let listed = list(lister, &dir, false);
+        assert_eq!(listed.len(), 3, "{lister:?}: three files, three rows");
+        let lossy_path = dir.join("caf\u{FFFD}.txt").to_string_lossy().into_owned();
+        for entry in &listed {
+            assert_eq!(
+                entry.name, "caf\u{FFFD}.txt",
+                "{lister:?}: every row has the lossy name"
+            );
+            assert_eq!(entry.path, lossy_path, "{lister:?}: every row has the lossy path");
+        }
+        let mut sizes: Vec<_> = listed.iter().map(|entry| entry.size).collect();
+        sizes.sort();
+        assert_eq!(
+            sizes,
+            vec![Some(1), Some(2), Some(3)],
+            "{lister:?}: each row is stat'ed through its own raw name"
+        );
+    }
+}
+
 /// Puts a folder back to a mode its `TestDir` can delete, even when the test
 /// fails first. Declared after the `TestDir`, so it drops before it.
 struct RestoreMode<'a>(&'a Path);

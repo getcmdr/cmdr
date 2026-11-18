@@ -307,6 +307,8 @@ mod lifecycle_order_test;
 #[cfg(test)]
 mod name_filter_test;
 #[cfg(test)]
+mod non_utf8_names_test;
+#[cfg(test)]
 mod operations_test;
 #[cfg(test)]
 mod overlay_read_paths_test;

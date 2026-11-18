@@ -108,3 +108,29 @@ fn build_pre_skip_set_never_bulk_skips_a_merging_directory() {
         "a merging directory must never be bulk-skipped wholesale"
     );
 }
+
+/// ❗ Today's wrong behavior (#1236): the conflict list a dry run hands the
+/// frontend spells a non-UTF-8 name lossily (`caf\u{FFFD}.txt`), and the
+/// frontend sends that name back as a pre-known conflict. The non-UTF-8 source
+/// itself never matches it (its name has no `str` spelling), while a UTF-8
+/// source LITERALLY named `caf\u{FFFD}.txt` does, so a conflict reported for
+/// one file bulk-skips another. A lossless name on both sides flips this.
+#[cfg(target_os = "linux")]
+#[test]
+fn a_lossy_pre_known_conflict_skips_the_literal_sibling_and_never_the_non_utf8_source() {
+    use std::os::unix::ffi::OsStrExt;
+    let raw = PathBuf::from("/d").join(std::ffi::OsStr::from_bytes(b"caf\xe9.txt"));
+    let sibling = PathBuf::from("/d/caf\u{FFFD}.txt");
+    let sources = vec![raw.clone(), sibling.clone()];
+    let set = build_pre_skip_set(
+        &sources,
+        ConflictResolution::Skip,
+        &["caf\u{FFFD}.txt".into()],
+        &HashSet::new(),
+    );
+    assert_eq!(set, HashSet::from([sibling]), "only the literal sibling is pre-skipped");
+    assert!(
+        !set.contains(&raw),
+        "the non-UTF-8 source never matches a pre-known name"
+    );
+}
