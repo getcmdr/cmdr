@@ -403,7 +403,7 @@ impl Inner {
         // Volume root for the event (the FE uses it to decide "at volume root"). For
         // an archive this is the `.zip` path, so the FE breadcrumb renders
         // `…/foo.zip/inner` and treats the archive root as the volume root.
-        let volume_root = volume.root().to_path_buf();
+        let volume_root = volume.root().as_std_legacy().to_path_buf();
         // An empty listing AT the volume root is what macOS TCC makes of a hidden
         // volume (iCloud Drive without Full Disk Access); the host decides whether
         // that reads as a hint instead of a blank pane. "Empty" means the READ found

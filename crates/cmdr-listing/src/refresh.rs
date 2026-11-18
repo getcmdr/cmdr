@@ -2,6 +2,7 @@
 //! of `FullRefresh` changes to two reads, the re-read itself, and the archive
 //! listings a rewritten archive re-reads.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
@@ -141,7 +142,7 @@ impl Inner {
 
         // After the turn, right before the read (`reread.rs`).
         let generation = self.next_read_generation();
-        let new_entries = match vol.list_directory(&parent_path, None).await {
+        let new_entries = match vol.list_directory(&AppPath::legacy_unchecked(&parent_path), None).await {
             Ok(entries) => entries,
             Err(e) => {
                 log::warn!(
