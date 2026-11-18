@@ -1318,10 +1318,6 @@
   "@fileOperations.resticPassword.unreachable": {
     "sourceHash": "cc4542d"
   },
-  "fileOperations.validation.disallowedChars": "{kind, select, folder {Een mapnaam mag geen ‘/’ of null-tekens bevatten} other {Een bestandsnaam mag geen ‘/’ of null-tekens bevatten}}",
-  "@fileOperations.validation.disallowedChars": {
-    "sourceHash": "1a3c594"
-  },
   "fileOperations.validation.empty": "{kind, select, folder {Een mapnaam mag niet leeg zijn} other {Een bestandsnaam mag niet leeg zijn}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"

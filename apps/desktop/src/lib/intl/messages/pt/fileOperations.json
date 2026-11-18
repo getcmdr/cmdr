@@ -1318,10 +1318,6 @@
   "@fileOperations.resticPassword.unreachable": {
     "sourceHash": "cc4542d"
   },
-  "fileOperations.validation.disallowedChars": "{kind, select, folder {O nome da pasta não pode conter “/” nem caracteres nulos} other {O nome do arquivo não pode conter “/” nem caracteres nulos}}",
-  "@fileOperations.validation.disallowedChars": {
-    "sourceHash": "1a3c594"
-  },
   "fileOperations.validation.empty": "{kind, select, folder {O nome da pasta não pode ficar em branco} other {O nome do arquivo não pode ficar em branco}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"

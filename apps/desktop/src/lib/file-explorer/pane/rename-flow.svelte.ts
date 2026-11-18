@@ -18,6 +18,7 @@ import { createChainMoveDialog } from './rename-move-dialog'
 import { createRenameNeighbour } from './rename-neighbour'
 import { createRenameToolCommit } from './rename-tool-commit'
 import type { Initiator } from '#lib/tauri-commands/index.js'
+import { createFolderNameRules } from '../rename/folder-name-rules'
 import { captureFocusOrigin, restoreFocus as restoreFocusTo, type FocusOrigin } from '#lib/ui/focus-restore.js'
 import { startedByWhenGuarded, type ToolInitiator } from '#lib/ui/started-elsewhere-guard.js'
 import { lastName } from '#lib/path/grammar.js'
@@ -96,6 +97,7 @@ export function createRenameFlow(deps: RenameFlowDeps) {
   // pages the listing once rather than 20 times. Hint only: `decideStepFate`
   // never reads it (see `rename/sibling-names.ts`).
   const siblingNames = createSiblingNames()
+  const nameRules = createFolderNameRules(deps.getVolumeId, rename)
 
   // What a chain tells the user about the names it didn't apply and the renames
   // a slow volume is still working on: two running toasts, one per pane (`chain-reports.ts`).
@@ -236,6 +238,7 @@ export function createRenameFlow(deps: RenameFlowDeps) {
 
     rename.activate(target)
     const sessionId = rename.sessionId
+    nameRules.ask(target.parentPath, sessionId, revalidate)
     // Seed a proposed name (MCP `rename`) instead of the current one, and validate
     // it so a bad proposal shows the red border immediately (the directory's names
     // may still be loading; they re-validate on the first keystroke). The editor
@@ -243,15 +246,7 @@ export function createRenameFlow(deps: RenameFlowDeps) {
     // with one keypress.
     if (initialName !== undefined) {
       rename.setCurrentName(initialName)
-      const result = validateFilename(
-        initialName,
-        entry.name,
-        deps.getCurrentPath(),
-        siblingNames.names,
-        effectiveExtensionPolicy(),
-        target.nameKind,
-      )
-      rename.setValidation(result)
+      revalidate()
     }
 
     // Scoped to the listing rather than to the session, so a read that lands
@@ -566,13 +561,18 @@ export function createRenameFlow(deps: RenameFlowDeps) {
   function applyName(value: string) {
     rename.setCurrentName(value)
     dismissTransientToastsForPane(deps.paneId)
-    const extensionPolicy = effectiveExtensionPolicy()
+    revalidate()
+  }
+
+  /** Validates the editor's current name against its folder, its siblings, and the extension policy. */
+  function revalidate() {
     const result = validateFilename(
-      value,
+      rename.currentName,
       rename.target?.originalName ?? '',
       deps.getCurrentPath(),
       siblingNames.names,
-      extensionPolicy,
+      effectiveExtensionPolicy(),
+      nameRules.current,
       rename.target?.nameKind ?? 'file',
     )
     rename.setValidation(result)

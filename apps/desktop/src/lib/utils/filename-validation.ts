@@ -3,6 +3,7 @@
 import { tString } from '#lib/intl/messages.svelte.js'
 import { fromUserInput, isLocalPath, joinPath, parsePath } from '#lib/path/grammar.js'
 import { fileExtension, kindOfRenamedName, type NameKind } from './file-extension'
+import type { NameRules, ValidationError } from '#lib/ipc/bindings.js'
 
 /** Defaults match macOS. Call initPathLimits() at startup to get platform-specific values from the backend. */
 let maxNameBytes = 255
@@ -15,9 +16,6 @@ export async function initPathLimits(): Promise<void> {
   maxNameBytes = limits.maxNameBytes
   maxPathBytes = limits.maxPathBytes
 }
-
-/** Characters disallowed on macOS (APFS/HFS+). TODO: Per-OS logic for future platforms. */
-const DISALLOWED_CHARS_REGEX = /[/\0]/
 
 export type ValidationSeverity = 'error' | 'warning' | 'ok'
 
@@ -33,38 +31,94 @@ function nameKind(isDir: boolean): 'file' | 'folder' {
   return isDir ? 'folder' : 'file'
 }
 
-/** Validates a file or dir name for disallowed characters. Operates on trimmed value. */
-export function validateDisallowedChars(name: string, isDir = false): ValidationResult {
-  if (DISALLOWED_CHARS_REGEX.test(name)) {
-    return {
-      severity: 'error',
-      message: tString('fileOperations.validation.disallowedChars', { kind: nameKind(isDir) }),
-    }
+/** The device names Windows reserves, matched ignoring case against the part before the first period. */
+const WINDOWS_RESERVED_NAMES = new Set([
+  'CON', 'PRN', 'AUX', 'NUL',
+  'COM0', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'COM¹', 'COM²', 'COM³',
+  'LPT0', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9', 'LPT¹', 'LPT²', 'LPT³',
+]) // prettier-ignore
+
+/** The printable characters a FAT32, exFAT, or NTFS name can't hold. */
+const WINDOWS_FORBIDDEN_CHARACTERS = new Set(['"', '*', ':', '<', '>', '?', '\\', '|'])
+
+/** How a refused character reads in the message: itself, `NUL`, or its `U+` code. */
+function disallowedCharacter(ch: string, rules: NameRules): string | null {
+  if (ch === '/') return '/'
+  if (ch === '\0') return 'NUL'
+  if (rules !== 'windows') return null
+  const code = ch.codePointAt(0) ?? 0
+  if (code >= 0x01 && code <= 0x1f) return `U+${code.toString(16).toUpperCase().padStart(4, '0')}`
+  return WINDOWS_FORBIDDEN_CHARACTERS.has(ch) ? ch : null
+}
+
+/** The part of `name` that makes it a Windows device name, as typed, or `null`. */
+function reservedDeviceName(name: string): string | null {
+  const stem = (name.split('.')[0] ?? name).replace(/ +$/, '')
+  // ASCII-only folding, as the Rust side's `eq_ignore_ascii_case`.
+  const folded = stem.replace(/[a-z]/g, (c) => c.toUpperCase())
+  return WINDOWS_RESERVED_NAMES.has(folded) ? stem : null
+}
+
+/**
+ * Why a destination following `rules` refuses `name`, or `null` when it takes it: the
+ * keystroke mirror of `cmdr_fs::validation::validate_filename`. Both run the cases in
+ * `crates/cmdr-fs/src/name_rules_cases.json`, so the two can't drift. `rules` is the
+ * folder's (`getNameRules`), ❌ never a guess from the host OS.
+ */
+export function nameRefusal(name: string, rules: NameRules): ValidationError | null {
+  if (name.trim().length === 0) return { kind: 'empty' }
+  for (const ch of name) {
+    const character = disallowedCharacter(ch, rules)
+    if (character !== null) return { kind: 'disallowedCharacter', character }
   }
-  return OK_RESULT
+  const bytes = new TextEncoder().encode(name).length
+  if (bytes > maxNameBytes) return { kind: 'nameTooLong', bytes, max: maxNameBytes }
+  if (rules !== 'posix') {
+    const reserved = reservedDeviceName(name)
+    if (reserved !== null) return { kind: 'reservedName', name: reserved }
+  }
+  if (rules === 'windows' && /[ .]$/.test(name)) return { kind: 'endsWithSpaceOrPeriod' }
+  return null
+}
+
+/** The words for a name refusal, the live check's and the backend's alike, so the two read the same. */
+export function validationMessage(error: ValidationError, isDir: boolean): string {
+  const kind = nameKind(isDir)
+  switch (error.kind) {
+    case 'empty':
+      return tString('fileOperations.validation.empty', { kind })
+    case 'disallowedCharacter':
+      return tString('fileOperations.validation.disallowedCharacter', { kind, character: error.character })
+    case 'nameTooLong':
+      return tString('fileOperations.validation.nameTooLong', {
+        kind,
+        byteCount: String(error.bytes),
+        maxBytes: String(error.max),
+        max: error.max,
+      })
+    case 'pathTooLong':
+      return tString('fileOperations.validation.pathTooLong', {
+        byteCount: String(error.bytes),
+        maxBytes: String(error.max),
+        max: error.max,
+      })
+    case 'reservedName':
+      return tString('fileOperations.validation.reservedName', { kind, name: error.name })
+    case 'endsWithSpaceOrPeriod':
+      return tString('fileOperations.validation.endsWithSpaceOrPeriod', { kind })
+  }
+}
+
+/** Validates a (trimmed) file or folder name for a destination following `rules`. */
+export function validateName(name: string, isDir: boolean, rules: NameRules): ValidationResult {
+  const refusal = nameRefusal(name, rules)
+  return refusal === null ? OK_RESULT : { severity: 'error', message: validationMessage(refusal, isDir) }
 }
 
 /** Validates that a file or dir name is not empty after trimming. */
 export function validateNotEmpty(name: string, isDir = false): ValidationResult {
   if (name.trim().length === 0) {
     return { severity: 'error', message: tString('fileOperations.validation.empty', { kind: nameKind(isDir) }) }
-  }
-  return OK_RESULT
-}
-
-/** Validates name byte length (max 255 bytes). */
-export function validateNameLength(name: string, isDir = false): ValidationResult {
-  const byteLength = new TextEncoder().encode(name.trim()).length
-  if (byteLength >= maxNameBytes) {
-    return {
-      severity: 'error',
-      message: tString('fileOperations.validation.nameTooLong', {
-        kind: nameKind(isDir),
-        byteCount: String(byteLength),
-        maxBytes: String(maxNameBytes),
-        max: maxNameBytes,
-      }),
-    }
   }
   return OK_RESULT
 }
@@ -244,7 +298,7 @@ export function validateDirectoryPath(path: string): ValidationResult {
   const segments = wire.split('/').filter((s) => s.length > 0)
   for (const segment of segments) {
     const segmentBytes = encoder.encode(segment).length
-    if (segmentBytes >= maxNameBytes) {
+    if (segmentBytes > maxNameBytes) {
       return {
         severity: 'error',
         message: tString('fileOperations.validation.pathSegmentTooLong', {
@@ -259,27 +313,24 @@ export function validateDirectoryPath(path: string): ValidationResult {
   return OK_RESULT
 }
 
-/** Runs all validation checks and returns the first error, then the first warning, or ok. */
+/**
+ * Runs all validation checks and returns the first error, then the first warning, or ok.
+ * `rules` is the folder's filesystem's (`getNameRules`).
+ */
 export function validateFilename(
   newName: string,
   originalName: string,
   parentPath: string,
   siblingNames: string[],
   allowExtensionChanges: 'yes' | 'no' | 'ask',
+  rules: NameRules,
   kind: NameKind = 'file',
 ): ValidationResult {
-  const trimmed = newName.trim()
   const isDir = kind !== 'file'
 
   // Error checks
-  const emptyCheck = validateNotEmpty(newName, isDir)
-  if (emptyCheck.severity === 'error') return emptyCheck
-
-  const charCheck = validateDisallowedChars(trimmed, isDir)
-  if (charCheck.severity === 'error') return charCheck
-
-  const nameLen = validateNameLength(newName, isDir)
-  if (nameLen.severity === 'error') return nameLen
+  const nameCheck = validateName(newName.trim(), isDir, rules)
+  if (nameCheck.severity === 'error') return nameCheck
 
   const pathLen = validatePathLength(parentPath, newName)
   if (pathLen.severity === 'error') return pathLen

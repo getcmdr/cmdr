@@ -1,7 +1,7 @@
 /**
  * Validates the name typed into the New folder and New file dialogs.
  *
- * Sync checks first (disallowed characters, name length, full path length),
+ * Sync checks first (the folder's name rules, name length, full path length),
  * then an async clash lookup against the live listing. The lookup re-runs on a
  * debounce while the user types and whenever a `directory-diff` lands for the
  * listing, so a folder created underneath the dialog shows up as a clash. The
@@ -9,8 +9,9 @@
  * when the create itself comes back refused.
  */
 
-import { findFileIndex, getFileAt, onDirectoryDiff, type UnlistenFn } from '#lib/tauri-commands/index.js'
-import { validateDisallowedChars, validateNameLength, validatePathLength } from '#lib/utils/filename-validation.js'
+import { findFileIndex, getFileAt, getNameRules, onDirectoryDiff, type UnlistenFn } from '#lib/tauri-commands/index.js'
+import { validateName, validatePathLength } from '#lib/utils/filename-validation.js'
+import type { NameRules } from '#lib/ipc/bindings.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import type { ReportIncident } from '#lib/error-reporter/report-incident.js'
 import type { CreateRefusal } from './create-submission.svelte'
@@ -18,6 +19,8 @@ import type { CreateRefusal } from './create-submission.svelte'
 /** Where the entry would land, and how to read the name being typed. */
 export interface NewEntryNameCheckOptions {
   currentPath: string
+  /** The folder's volume, for its name rules; absent reads as the local disk. */
+  volumeId?: string
   listingId: string
   showHiddenFiles: boolean
   /** Read when the debounce fires, so a re-validation sees the latest keystroke. */
@@ -40,6 +43,11 @@ export class NewEntryNameCheck {
   refusal = $state<ReportIncident | null>(null)
 
   readonly #options: NewEntryNameCheckOptions
+  /**
+   * Which names the folder takes (`getNameRules`). `posix` until `listen` hears back; the
+   * create itself checks the folder's own rules either way.
+   */
+  #rules: NameRules = 'posix'
   #timer: ReturnType<typeof setTimeout> | undefined
   /** Bumped per validate, so only the latest lookup's answer is shown. */
   #asked = 0
@@ -68,15 +76,10 @@ export class NewEntryNameCheck {
       return
     }
 
-    // Sync validators: chars, name length, full path length
-    const charCheck = validateDisallowedChars(trimmed, true)
-    if (charCheck.severity === 'error') {
-      this.errorMessage = charCheck.message
-      return
-    }
-    const nameLenCheck = validateNameLength(trimmed, true)
-    if (nameLenCheck.severity === 'error') {
-      this.errorMessage = nameLenCheck.message
+    // Sync validators: the folder's name rules (characters, reserved names, length), full path length
+    const nameCheck = validateName(trimmed, true, this.#rules)
+    if (nameCheck.severity === 'error') {
+      this.errorMessage = nameCheck.message
       return
     }
     const pathLenCheck = validatePathLength(this.#options.currentPath, trimmed)
@@ -115,12 +118,24 @@ export class NewEntryNameCheck {
     }, DEBOUNCE_MS)
   }
 
-  /** Re-validates when the listing changes underneath the dialog. */
+  /** Re-validates when the listing changes underneath the dialog, and once the folder's name rules land. */
   async listen(): Promise<void> {
+    void this.#askNameRules()
     this.#unlistenDiff = await onDirectoryDiff((payload) => {
       if (payload.listingId !== this.#options.listingId) return
       this.schedule()
     })
+  }
+
+  async #askNameRules(): Promise<void> {
+    try {
+      const rules = await getNameRules(this.#options.volumeId ?? null, this.#options.currentPath)
+      if (rules === this.#rules) return
+      this.#rules = rules
+      if (this.#options.getName().trim() !== '') this.schedule()
+    } catch {
+      // Keep `posix`: the create answers for the folder's own rules.
+    }
   }
 
   dispose(): void {

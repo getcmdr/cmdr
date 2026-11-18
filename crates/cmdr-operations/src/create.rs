@@ -402,9 +402,6 @@ pub async fn create_directory_core_on(
     if name.is_empty() {
         return Err(MutationError::NameEmpty);
     }
-    if name.contains('/') || name.contains('\0') {
-        return Err(MutationError::NameHasDisallowedCharacter);
-    }
 
     // Defensive fallback: the managed wrapper (`create_directory_managed`) routes
     // an archive-crossing parent to `route_archive_create` BEFORE reaching core,
@@ -419,6 +416,7 @@ pub async fn create_directory_core_on(
 
     let volume_id = volume_id.unwrap_or_else(|| "root".to_string());
     let expanded_path = parent_path.to_string();
+    crate::name_rules::check_new_name(host, &volume_id, Path::new(parent_path), name).await?;
 
     // Try to use Volume abstraction. Plain `get`: the archive gates above sent an
     // in-zip parent to the archive-edit driver.
@@ -498,9 +496,6 @@ pub(crate) async fn create_file_core_on(
     if name.is_empty() {
         return Err(MutationError::NameEmpty);
     }
-    if name.contains('/') || name.contains('\0') {
-        return Err(MutationError::NameHasDisallowedCharacter);
-    }
 
     // Defensive fallback, same as `create_directory_core_on`: the managed wrapper
     // (`create_file_managed`) routes an archive-crossing parent to
@@ -513,6 +508,7 @@ pub(crate) async fn create_file_core_on(
 
     let volume_id = volume_id.unwrap_or_else(|| "root".to_string());
     let expanded_path = parent_path.to_string();
+    crate::name_rules::check_new_name(host, &volume_id, Path::new(parent_path), name).await?;
 
     // Try to use Volume abstraction. Plain `get`: the archive gates above sent an
     // in-zip parent to the archive-edit driver.

@@ -4,7 +4,7 @@
  * except for the actual backend calls which are awaited.
  */
 
-import { extensionChangeNeedsConfirmation } from '#lib/utils/filename-validation.js'
+import { extensionChangeNeedsConfirmation, validationMessage } from '#lib/utils/filename-validation.js'
 import { fileExtension, kindOfRenamedName } from '#lib/utils/file-extension.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 
@@ -49,39 +49,6 @@ export type RenameResult =
   | { type: 'confirm-move'; newName: string }
 
 /**
- * Words for the backend's typed verdict on a name it won't take.
- *
- * The same catalog messages the editor's live validation uses, so a name the
- * backend turns down reads the way the red border already read. The backend
- * names the offending character; the message doesn't, because it lists the
- * whole forbidden set instead, which is what the user needs in order to fix it.
- */
-function validityMessage(error: RenameValidityResult['error'], isDirectory: boolean): string {
-  const kind = isDirectory ? 'folder' : 'file'
-  switch (error?.kind) {
-    case 'empty':
-      return tString('fileOperations.validation.empty', { kind })
-    case 'disallowedCharacter':
-      return tString('fileOperations.validation.disallowedChars', { kind })
-    case 'nameTooLong':
-      return tString('fileOperations.validation.nameTooLong', {
-        kind,
-        byteCount: String(error.bytes),
-        maxBytes: String(error.max),
-        max: error.max,
-      })
-    case 'pathTooLong':
-      return tString('fileOperations.validation.pathTooLong', {
-        byteCount: String(error.bytes),
-        maxBytes: String(error.max),
-        max: error.max,
-      })
-    default:
-      return tString('fileOperations.validation.nameNotUsable', { kind })
-  }
-}
-
-/**
  * Runs the full rename save flow.
  * Stops at the first point requiring user interaction (extension dialog or conflict dialog).
  */
@@ -122,7 +89,12 @@ export async function executeRenameSave(
   }
 
   if (!validity.valid) {
-    return { type: 'error', message: validityMessage(validity.error, target.isDirectory) }
+    return {
+      type: 'error',
+      message: validity.error
+        ? validationMessage(validity.error, target.isDirectory)
+        : tString('fileOperations.validation.nameNotUsable', { kind: target.isDirectory ? 'folder' : 'file' }),
+    }
   }
 
   // Conflict detected (and not a case-only rename of the same file)

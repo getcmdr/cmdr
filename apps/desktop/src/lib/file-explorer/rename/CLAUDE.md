@@ -10,7 +10,8 @@ context menu, or click-to-rename. Operates on the cursor item only; selection is
 - **rename-state.svelte.ts**: reactive state, and the session ids.
 - **rename-operations.ts**: pure save flow, returns the `RenameResult` union.
 - **rename-activation.ts**: click-to-rename timer. **rename-step.ts**: the pure halves of a chained rename.
-  **sibling-names.ts**: the directory's names, read once per chain. **rename-selection.ts**: F2 cycle, dot stops.
+  **sibling-names.ts**: the directory's names, read once per chain. **folder-name-rules.ts**: which names the folder
+  takes, asked once per session. **rename-selection.ts**: F2 cycle, dot stops.
 
 Full details (save flow, validation tiers, cursor tracking, decisions): `DETAILS.md`.
 

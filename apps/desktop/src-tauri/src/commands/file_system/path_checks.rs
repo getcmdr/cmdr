@@ -1,13 +1,14 @@
 //! Tauri commands that ask about a path before anything lists or writes it:
-//! the platform's name and path limits, and whether a path exists on its volume.
+//! the platform's name and path limits, which names a folder's filesystem takes, and
+//! whether a path exists on its volume.
 
 use std::path::{Path, PathBuf};
 
 use tokio::time::Duration;
 
 use crate::file_system::volume::manager::get_volume_manager;
-use cmdr_fs::deadline::{TimedOut, timeout_detached_typed};
-use cmdr_fs::validation::{MAX_NAME_BYTES, MAX_PATH_BYTES};
+use cmdr_fs::deadline::{TimedOut, blocking_with_timeout, timeout_detached_typed};
+use cmdr_fs::validation::{MAX_NAME_BYTES, MAX_PATH_BYTES, NameRules};
 use cmdr_fs::volume::Presence;
 use cmdr_operations::held_in_another_spelling;
 
@@ -30,6 +31,28 @@ pub fn get_path_limits() -> PathLimits {
         max_path_bytes: MAX_PATH_BYTES,
     }
 }
+
+/// Which names the filesystem holding `dir` on `volume_id` takes
+/// (`cmdr_operations::Operations::name_rules_at`), for the rename editor's and the
+/// New folder dialog's keystroke checks, asked once per editor. The create or
+/// rename itself checks again, so a slow answer (2 s, a hung mount's `statfs`) or
+/// an engine that isn't up yet reads as `Posix` and costs only early feedback.
+#[tauri::command]
+#[specta::specta]
+pub async fn get_name_rules(volume_id: Option<String>, dir: String) -> NameRules {
+    let Ok(engine) = crate::operations_host::operations() else {
+        return NameRules::Posix;
+    };
+    let volume_id = volume_id.unwrap_or_else(|| crate::volumes::local_volume_id_for_path(&dir));
+    let dir = if volume_id == "root" { expand_tilde(&dir) } else { dir };
+    let engine = engine.clone();
+    blocking_with_timeout(NAME_RULES_TIMEOUT, NameRules::Posix, move || {
+        engine.name_rules_at(&volume_id, Path::new(&dir))
+    })
+    .await
+}
+
+const NAME_RULES_TIMEOUT: Duration = Duration::from_secs(2);
 
 /// Returns `TimedOut<bool>` so the frontend can distinguish a real "doesn't exist"
 /// from "we couldn't tell" (timeout, an SMB volume in `Disconnected` state, or a

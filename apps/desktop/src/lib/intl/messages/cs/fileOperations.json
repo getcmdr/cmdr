@@ -1317,10 +1317,6 @@
   "@fileOperations.resticPassword.unreachable": {
     "sourceHash": "cc4542d"
   },
-  "fileOperations.validation.disallowedChars": "{kind, select, folder {Název složky nesmí obsahovat „/“ ani znaky null} other {Název souboru nesmí obsahovat „/“ ani znaky null}}",
-  "@fileOperations.validation.disallowedChars": {
-    "sourceHash": "1a3c594"
-  },
   "fileOperations.validation.empty": "{kind, select, folder {Název složky nesmí být prázdný} other {Název souboru nesmí být prázdný}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"

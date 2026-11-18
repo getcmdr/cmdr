@@ -58,7 +58,13 @@
     let nameInputRef: HTMLInputElement | undefined = $state()
 
     // Name validation + clash lookup; `NewEntryNameField` runs its lifecycle.
-    const check = new NewEntryNameCheck({ currentPath, listingId, showHiddenFiles, getName: () => folderName })
+    const check = new NewEntryNameCheck({
+        currentPath,
+        volumeId,
+        listingId,
+        showHiddenFiles,
+        getName: () => folderName,
+    })
 
     // OK to how the create really ended, slow volumes included.
     const submission = new CreateSubmission({

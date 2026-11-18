@@ -178,7 +178,7 @@ describe('NewEntryNameCheck', () => {
 
     await check.validate('holiday/photos')
 
-    expect(check.errorMessage).toMatch(/null characters/)
+    expect(check.errorMessage).toMatch(/can’t contain “\/”/)
     expect(findFileIndex).not.toHaveBeenCalled()
   })
 

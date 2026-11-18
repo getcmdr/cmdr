@@ -118,7 +118,7 @@ fn log_rename_refusal(stage: RenameStage, from: &Path, volume_id: &str, error: &
         error,
         MutationError::AlreadyExists { .. }
             | MutationError::NameEmpty
-            | MutationError::NameHasDisallowedCharacter
+            | MutationError::NameNotAllowed { .. }
             | MutationError::CantRenameVolumeRoot
             | MutationError::HomeFolder { .. }
     );
@@ -165,6 +165,15 @@ async fn rename_managed_inner(
     for path in [&from, &to] {
         if route_serving(host, &volume_id, path).await.is_some() {
             return (Err(routed_mutation_refusal(path)), InstantTarget::Volume);
+        }
+    }
+
+    // A name the destination doesn't take is refused here too, not only by the
+    // editor's validity check: an agent's rename never asked that check.
+    if let (Some(dir), Some(name)) = (to.parent(), to.file_name()) {
+        let name = name.to_string_lossy();
+        if let Err(refusal) = crate::name_rules::check_new_name(host, &volume_id, dir, &name).await {
+            return (Err(refusal), InstantTarget::Volume);
         }
     }
 
@@ -705,6 +714,15 @@ fn check_rename_permission_sync(path: &Path) -> Result<(), MutationError> {
     Ok(())
 }
 
+/// A path the OS call can't take: it holds a NUL byte, which no C string carries.
+fn unrepresentable_name() -> MutationError {
+    MutationError::NameNotAllowed {
+        reason: cmdr_fs::validation::ValidationError::DisallowedCharacter {
+            character: "NUL".to_string(),
+        },
+    }
+}
+
 /// Checks if a directory is writable using access(W_OK).
 fn check_dir_writable(dir: &Path) -> Result<(), MutationError> {
     match crate::local_disk::write_probe(dir) {
@@ -712,7 +730,7 @@ fn check_dir_writable(dir: &Path) -> Result<(), MutationError> {
         crate::local_disk::WriteProbe::Refused(_) => Err(MutationError::ParentNotWritable {
             path: dir.display().to_string(),
         }),
-        crate::local_disk::WriteProbe::Unrepresentable => Err(MutationError::NameHasDisallowedCharacter),
+        crate::local_disk::WriteProbe::Unrepresentable => Err(unrepresentable_name()),
     }
 }
 
@@ -725,7 +743,7 @@ fn check_macos_flags(path: &Path) -> Result<(), MutationError> {
         BsdFlags::Read(flags) => flags,
         // Can't stat; file may have been deleted, let the rename itself fail with a clear error
         BsdFlags::Unreadable => return Ok(()),
-        BsdFlags::Unrepresentable => return Err(MutationError::NameHasDisallowedCharacter),
+        BsdFlags::Unrepresentable => return Err(unrepresentable_name()),
     };
 
     // UF_IMMUTABLE (user immutable / "uchg" flag)

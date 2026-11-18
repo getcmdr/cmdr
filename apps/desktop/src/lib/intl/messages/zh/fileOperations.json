@@ -1315,10 +1315,6 @@
   "@fileOperations.resticPassword.unreachable": {
     "sourceHash": "cc4542d"
   },
-  "fileOperations.validation.disallowedChars": "{kind, select, folder {文件夹名中不能包含“/”或空字符} other {文件名中不能包含“/”或空字符}}",
-  "@fileOperations.validation.disallowedChars": {
-    "sourceHash": "1a3c594"
-  },
   "fileOperations.validation.empty": "{kind, select, folder {文件夹名不能为空} other {文件名不能为空}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"

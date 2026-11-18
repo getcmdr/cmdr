@@ -46,6 +46,7 @@ const INVALID_REASONS = {
   empty: 'multiRename.reason.empty',
   tooLong: 'multiRename.reason.tooLong',
   reserved: 'multiRename.reason.reserved',
+  endsWithSpaceOrPeriod: 'multiRename.reason.endsWithSpaceOrPeriod',
 } as const satisfies Record<string, MessageKey>
 
 export function rowStatusView(status: RowStatus): RowStatusView {
@@ -90,6 +91,13 @@ export function rowStatusView(status: RowStatus): RowStatusView {
           'circle-slash',
           { key: 'multiRename.status.disallowedCharacter', params },
           { key: 'multiRename.reason.disallowedCharacter', params },
+        )
+      }
+      if (reason.type === 'reservedDeviceName') {
+        return problem(
+          'circle-slash',
+          { key: 'multiRename.status.reservedDeviceName' },
+          { key: 'multiRename.reason.reservedDeviceName', params: { name: reason.name } },
         )
       }
       return problem('circle-slash', { key: 'multiRename.status.invalidName' }, { key: INVALID_REASONS[reason.type] })

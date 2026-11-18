@@ -31,7 +31,7 @@ use crate::location::resolve::{LocationInput, VolumeFacts, resolve};
 use crate::tools::params::{ParamViolation, check_object, list_names};
 use crate::tools::propose::evidence::{EvidenceRejection, EvidenceScope, ImageFactsLedger};
 use crate::tools::{ToolError, ToolResult};
-use cmdr_fs::validation::validate_filename;
+use cmdr_fs::validation::{NameRules, validate_filename};
 
 pub(super) const MAX_RENAMES: usize = 200;
 
@@ -678,5 +678,8 @@ pub(super) fn validate_destination_name(name: &str) -> Result<(), ToolError> {
             "Each destinationName must be one filename, not a path.",
         ));
     }
-    validate_filename(name).map_err(|_| ToolError::invalid_params("Each destinationName must be a valid filename."))
+    // A shape check of the model's params, so POSIX's rules: what a share or an
+    // exFAT stick refuses on top is the destination's to say, at the rename.
+    validate_filename(name, NameRules::Posix)
+        .map_err(|_| ToolError::invalid_params("Each destinationName must be a valid filename."))
 }

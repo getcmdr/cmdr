@@ -1,12 +1,16 @@
 //! Filename and path validation utilities.
 //!
-//! Reusable validation for rename, mkdir, and file transfer operations.
-//! Contains platform-aware checks for disallowed characters, name length,
-//! and path length limits.
+//! Reusable validation for rename, mkdir, Multi-Rename, and file transfer
+//! operations: which names a destination filesystem takes ([`NameRules`],
+//! keyed on its kind, never the host OS), name length, and path length limits.
 
 use serde::{Deserialize, Serialize};
 
-/// Maximum file name length in bytes (APFS/HFS+/ext4 limit).
+/// Maximum file name length in bytes. A name of exactly this many is fine
+/// (verified on macOS 27.0 with a 255-byte ASCII name on APFS, exFAT, FAT32,
+/// and a QNAP SMB share, 2026-11-18); ext4, ZFS, and Samba over them count bytes,
+/// so it's the floor every destination meets. APFS, HFS+, exFAT, FAT32, and NTFS
+/// count UTF-16 units instead and take some longer non-ASCII names.
 pub const MAX_NAME_BYTES: usize = 255;
 
 /// Maximum path length in bytes.
@@ -41,6 +45,16 @@ pub enum ValidationError {
         reason = "a field doc would change `bindings.ts`; the variant doc says what it holds"
     )]
     PathTooLong { bytes: usize, max: usize },
+    /// Name is a device name Windows reserves (`CON`, `NUL`, `COM1`, …), on a
+    /// destination that refuses one ([`NameRules::SmbShare`], [`NameRules::Windows`]).
+    #[allow(
+        missing_docs,
+        reason = "a field doc would change `bindings.ts`; the variant doc says what it holds"
+    )]
+    ReservedName { name: String },
+    /// Name ends in a space or a period, on a FAT32, exFAT, or NTFS destination
+    /// ([`NameRules::Windows`]).
+    EndsWithSpaceOrPeriod,
 }
 
 impl std::fmt::Display for ValidationError {
@@ -57,51 +71,120 @@ impl std::fmt::Display for ValidationError {
             Self::PathTooLong { bytes, max } => {
                 write!(f, "Path is {} bytes, which exceeds the {} byte limit", bytes, max)
             }
+            Self::ReservedName { name } => write!(f, "Name is the reserved device name {name}"),
+            Self::EndsWithSpaceOrPeriod => write!(f, "Name ends in a space or a period"),
         }
     }
 }
 
 impl std::error::Error for ValidationError {}
 
-/// Validates a filename for use on the current platform.
+/// Which names a destination filesystem takes, keyed on its
+/// [`FilesystemKind`](crate::filesystem_kind::FilesystemKind)
+/// ([`FilesystemKind::name_rules`](crate::filesystem_kind::FilesystemKind::name_rules)),
+/// ❌ never on the host OS: a Mac writing to an SMB share meets the share's
+/// rules, and Windows writing over MTP meets none of its own.
 ///
-/// Checks performed (on trimmed input):
+/// What each format does with a name its rules refuse, read on a Mac:
+/// `docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum NameRules {
+    /// Only `/` and NUL are refused: APFS, HFS+, ext4, Btrfs, XFS, ZFS, MTP, and
+    /// any filesystem Cmdr can't see through, which answers for itself.
+    Posix,
+    /// An SMB share: [`Posix`](Self::Posix), plus the device names Windows
+    /// reserves (`CON`, `NUL`, `COM1`, `con.txt`, …), which Samba stores but
+    /// lists back to every client under a mangled 8.3 name (`CON` reads
+    /// `CR23RR~9`). The characters Windows forbids are fine here: smb2 and
+    /// macOS smbfs both carry them in the private-use area, both ways.
+    SmbShare,
+    /// FAT32, exFAT, and NTFS: [`SmbShare`](Self::SmbShare), plus the characters
+    /// the format can't store (`"`, `*`, `:`, `<`, `>`, `?`, `\`, `|`, and the
+    /// control characters) and a name that ends in a space or a period. Windows
+    /// refuses each one; macOS's drivers write them as private-use stand-ins
+    /// that any other reader shows as something else, so the name that would
+    /// land isn't the name the person typed.
+    Windows,
+}
+
+/// The device names Windows reserves in every folder, matched ignoring case
+/// against a name's part before its first period, trailing spaces trimmed
+/// (`nul.tar.gz` and `CON .txt` are reserved too). Microsoft's list, superscript
+/// digits included: "Naming Files, Paths, and Namespaces", learn.microsoft.com,
+/// read 2026-11-18.
+const WINDOWS_RESERVED_NAMES: &[&str] = &[
+    "CON", "PRN", "AUX", "NUL", "COM0", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "COM¹",
+    "COM²", "COM³", "LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9", "LPT¹", "LPT²",
+    "LPT³",
+];
+
+/// The printable characters a FAT32, exFAT, or NTFS name can't hold.
+const WINDOWS_FORBIDDEN_CHARACTERS: &[char] = &['"', '*', ':', '<', '>', '?', '\\', '|'];
+
+/// Validates `name` for a destination that follows `rules`.
+///
+/// Checks performed (the input is checked as-is; callers trim if they want to):
 /// - Not empty / whitespace-only
-/// - No disallowed characters (`/` and `\0` on macOS and Linux)
-/// - Byte length < 255 (APFS/HFS+/ext4 limit)
-///
-/// The input is checked as-is; callers are responsible for trimming if desired.
-// TODO: Add per-OS logic for Windows (backslash, reserved names like CON, NUL, etc.)
-pub fn validate_filename(name: &str) -> Result<(), ValidationError> {
+/// - No `/` or NUL, on every filesystem
+/// - No more than [`MAX_NAME_BYTES`] bytes
+/// - [`NameRules::SmbShare`] and [`NameRules::Windows`]: not a reserved device name
+/// - [`NameRules::Windows`]: none of the characters the format can't store, and
+///   no trailing space or period
+pub fn validate_filename(name: &str, rules: NameRules) -> Result<(), ValidationError> {
     if name.trim().is_empty() {
         return Err(ValidationError::Empty);
     }
 
-    // Check disallowed characters (macOS + Linux: / and \0)
-    // TODO: Per-OS disallowed character sets for Windows
     for ch in name.chars() {
-        if ch == '/' {
-            return Err(ValidationError::DisallowedCharacter {
-                character: "/".to_string(),
-            });
-        }
-        if ch == '\0' {
-            return Err(ValidationError::DisallowedCharacter {
-                character: "NUL".to_string(),
-            });
+        if let Some(character) = disallowed_character(ch, rules) {
+            return Err(ValidationError::DisallowedCharacter { character });
         }
     }
 
-    // Check byte length
     let byte_len = name.len();
-    if byte_len >= MAX_NAME_BYTES {
+    if byte_len > MAX_NAME_BYTES {
         return Err(ValidationError::NameTooLong {
             bytes: byte_len,
             max: MAX_NAME_BYTES,
         });
     }
 
+    if matches!(rules, NameRules::SmbShare | NameRules::Windows)
+        && let Some(reserved) = reserved_device_name(name)
+    {
+        return Err(ValidationError::ReservedName {
+            name: reserved.to_string(),
+        });
+    }
+
+    if rules == NameRules::Windows && name.ends_with([' ', '.']) {
+        return Err(ValidationError::EndsWithSpaceOrPeriod);
+    }
+
     Ok(())
+}
+
+/// How `ch` reads in a [`ValidationError::DisallowedCharacter`] when `rules`
+/// refuse it: itself when it's visible, `NUL` or its `U+` code when it isn't.
+fn disallowed_character(ch: char, rules: NameRules) -> Option<String> {
+    match ch {
+        '/' => Some("/".to_string()),
+        '\0' => Some("NUL".to_string()),
+        _ if rules != NameRules::Windows => None,
+        '\u{1}'..='\u{1f}' => Some(format!("U+{:04X}", u32::from(ch))),
+        _ if WINDOWS_FORBIDDEN_CHARACTERS.contains(&ch) => Some(ch.to_string()),
+        _ => None,
+    }
+}
+
+/// The part of `name` that makes it a Windows device name, as typed, or `None`.
+fn reserved_device_name(name: &str) -> Option<&str> {
+    let stem = name.split('.').next().unwrap_or(name).trim_end_matches(' ');
+    WINDOWS_RESERVED_NAMES
+        .iter()
+        .any(|reserved| stem.eq_ignore_ascii_case(reserved))
+        .then_some(stem)
 }
 
 /// Why a name isn't one plain, visible leaf, for [`validate_plain_leaf`].
@@ -204,76 +287,13 @@ pub fn validate_path_length(path: &std::path::Path) -> Result<(), ValidationErro
 mod plain_leaf_tests;
 
 #[cfg(test)]
+#[path = "validation_name_rules_test.rs"]
+mod name_rules_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use std::path::Path;
-
-    // ========================================================================
-    // validate_filename
-    // ========================================================================
-
-    #[test]
-    fn valid_simple_name() {
-        assert!(validate_filename("document.txt").is_ok());
-    }
-
-    #[test]
-    fn valid_name_with_spaces() {
-        assert!(validate_filename("my document.txt").is_ok());
-    }
-
-    #[test]
-    fn valid_dotfile() {
-        assert!(validate_filename(".gitignore").is_ok());
-    }
-
-    #[test]
-    fn valid_unicode_name() {
-        assert!(validate_filename("日本語ファイル.txt").is_ok());
-    }
-
-    #[test]
-    fn rejects_empty_string() {
-        assert_eq!(validate_filename(""), Err(ValidationError::Empty));
-    }
-
-    #[test]
-    fn rejects_whitespace_only() {
-        assert_eq!(validate_filename("   "), Err(ValidationError::Empty));
-    }
-
-    #[test]
-    fn rejects_slash() {
-        assert_eq!(
-            validate_filename("foo/bar"),
-            Err(ValidationError::DisallowedCharacter {
-                character: "/".to_string()
-            })
-        );
-    }
-
-    #[test]
-    fn rejects_null_byte() {
-        assert_eq!(
-            validate_filename("foo\0bar"),
-            Err(ValidationError::DisallowedCharacter {
-                character: "NUL".to_string()
-            })
-        );
-    }
-
-    #[test]
-    fn rejects_name_at_255_bytes() {
-        let long_name = "a".repeat(255);
-        let result = validate_filename(&long_name);
-        assert!(matches!(result, Err(ValidationError::NameTooLong { .. })));
-    }
-
-    #[test]
-    fn accepts_name_at_254_bytes() {
-        let name = "a".repeat(254);
-        assert!(validate_filename(&name).is_ok());
-    }
 
     // ========================================================================
     // validate_path_length

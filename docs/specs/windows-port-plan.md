@@ -54,9 +54,9 @@ Each is worth landing even if Windows never ships. Together they're most of the 
 5. **The backend tells the frontend what exists.** A synchronous platform value plus a typed capability set (Quick Look,
    Services, FDA, drag-out, OS file-manager name, …) replaces the UA sniff, so features hide on purpose and tests can
    run each platform.
-6. **Name validity follows the destination filesystem, not the host OS.** An exFAT stick or an SMB share on a Mac
-   already enforces Windows' rules (reserved names, forbidden characters, trailing dots), so this fixes real macOS cases
-   and makes Windows a data entry.
+6. **Name validity follows the destination filesystem, not the host OS.** An exFAT stick or an SMB share on a Mac takes
+   Windows' forbidden names but stores something else (private-use stand-ins, a mangled 8.3 name for `CON`), so this
+   fixes real macOS cases and makes Windows a data entry.
 7. **N-platform release and services.** One release asset manifest drives `latest.json`, checksums, SBOM, vetting, and
    the website; downloads and telemetry gain an explicit `os`. The Linux release falls out of the same work.
 8. **Smaller seams with Linux payoffs**: a watcher backend trait (Windows then gets watching from `notify`), one mount
@@ -208,9 +208,16 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     `platform/` seam (macOS `phys_footprint`, Linux `RssAnon` + `VmSwap`, Windows none yet), and the watchdog runs on
     every OS with a reader, with a trip's breakdown per OS (`cmdr-index` `resources/platform/`). The CPU readers
     (`process_cpu`, `thread_cpu`) still answer `None` off macOS.
-14. [S] Win. Name and path validity keyed on the destination's `filesystem_kind`, not the host OS (`cmdr-fs` validation,
-    `cmdr-operations` rename validity, Multi-Rename). Start with a quick check of today's exFAT and SMB behavior on a
-    Mac.
+14. [S] Win. **Done**. Name validity is keyed on the destination's `FilesystemKind` (`FilesystemKind::name_rules` →
+    `NameRules`: `Posix`, `SmbShare` refusing Windows' reserved device names, `Windows` for FAT32, exFAT, and NTFS
+    adding the forbidden characters, control characters, and a trailing space or period). `cmdr-operations`'
+    `name_rules.rs` resolves a folder (a local probe, or the backend), and create, rename (the engine itself, not only
+    the editor's validity check), Multi-Rename, and the MCP `multi_rename` tool all apply it; the frontend's keystroke
+    mirror asks `get_name_rules` once per editor, pinned to the Rust rule by `crates/cmdr-fs/src/name_rules_cases.json`.
+    A 255-byte name is accepted now (it was refused at `>= 255`). On a Mac, exFAT, FAT32, and a Samba share all ACCEPT
+    these names but store private-use stand-ins, and Samba lists `CON` back as `CR23RR~9`
+    (`docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`). Path length stays the host's `PATH_MAX` on every
+    volume, and a transfer's names keep the per-item refused-name prompt.
 15. [XS] Win. **Done**. `cmdr_fs::testing::{symlink, is_root, can_create_symlinks, make_fifo}` behind a `platform/`
     seam; the crates' 83 test `symlink` calls, seven `geteuid` root checks, and four `mkfifo` fixtures use them. The
     tests' own `cfg(unix)` gates stay until a Windows lane can say which ones compile there.

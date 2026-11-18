@@ -16,8 +16,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use tempfile::TempDir;
 
 use cmdr_fs::entry::FileEntry;
+use cmdr_fs::validation::ValidationError;
+use cmdr_fs::volume::{BackendKind, InMemoryVolume, Volume, VolumeError};
 use cmdr_fs::volume::{LaneKey, ListingProgress};
-use cmdr_fs::volume::{Volume, VolumeError};
 
 fn unique(label: &str) -> String {
     static N: AtomicU64 = AtomicU64::new(0);
@@ -150,13 +151,66 @@ async fn create_directory_invalid_chars() {
     let engine = TestOperations::new();
     let tmp = create_test_dir("create_invalid");
     let parent = tmp.path().to_string_lossy().to_string();
-    let result = create_directory_core_on(engine.host(), None, &parent, "foo/bar").await;
-    assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MutationError::NameHasDisallowedCharacter));
+    for (name, character) in [("foo/bar", "/"), ("foo\0bar", "NUL")] {
+        let result = create_directory_core_on(engine.host(), None, &parent, name).await;
+        assert!(
+            matches!(
+                result,
+                Err(MutationError::NameNotAllowed {
+                    reason: ValidationError::DisallowedCharacter { character: ref c }
+                }) if c == character
+            ),
+            "{name:?}: {result:?}"
+        );
+    }
+}
 
-    let result = create_directory_core_on(engine.host(), None, &parent, "foo\0bar").await;
-    assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MutationError::NameHasDisallowedCharacter));
+/// An SMB share refuses a Windows device name before any I/O: Samba would store
+/// `CON` and list it back as `CR23RR~9` (`docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`).
+/// A `:` is fine there, since smb2 carries it in the private-use area.
+#[tokio::test]
+async fn create_on_a_share_refuses_a_reserved_device_name() {
+    let engine = TestOperations::new();
+    let share = InMemoryVolume::new("Share").with_backend_kind(BackendKind::Smb);
+    share.create_directory(Path::new("/docs")).await.expect("seed dir");
+    let share = Arc::new(share);
+    engine
+        .volumes()
+        .register("smb-share", Arc::clone(&share) as Arc<dyn Volume>);
+
+    for name in ["CON", "nul.txt"] {
+        let result = create_file_core_on(engine.host(), Some("smb-share".into()), "/docs", name).await;
+        assert!(
+            matches!(
+                result,
+                Err(MutationError::NameNotAllowed {
+                    reason: ValidationError::ReservedName { .. }
+                })
+            ),
+            "{name:?}: {result:?}"
+        );
+        assert!(!share.exists(&Path::new("/docs").join(name)).await, "{name:?} landed");
+    }
+
+    let made = create_directory_core_on(engine.host(), Some("smb-share".into()), "/docs", "12:30").await;
+    assert!(made.is_ok(), "{made:?}");
+}
+
+/// A backend Cmdr can't see behind (SFTP here) takes what POSIX takes:
+/// `CON` and `a:b` are the server's to refuse, not ours.
+#[tokio::test]
+async fn create_on_an_opaque_backend_takes_posix_names() {
+    let engine = TestOperations::new();
+    let server = InMemoryVolume::new("Server").with_backend_kind(BackendKind::Sftp);
+    server.create_directory(Path::new("/home")).await.expect("seed dir");
+    engine
+        .volumes()
+        .register("sftp-server", Arc::new(server) as Arc<dyn Volume>);
+
+    for name in ["CON", "a:b", "trail."] {
+        let made = create_file_core_on(engine.host(), Some("sftp-server".into()), "/home", name).await;
+        assert!(made.is_ok(), "{name:?}: {made:?}");
+    }
 }
 
 #[tokio::test]
@@ -257,13 +311,18 @@ async fn create_file_invalid_chars() {
     let engine = TestOperations::new();
     let tmp = create_test_dir("create_file_invalid");
     let parent = tmp.path().to_string_lossy().to_string();
-    let result = create_file_core_on(engine.host(), None, &parent, "foo/bar.txt").await;
-    assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MutationError::NameHasDisallowedCharacter));
-
-    let result = create_file_core_on(engine.host(), None, &parent, "foo\0bar.txt").await;
-    assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MutationError::NameHasDisallowedCharacter));
+    for (name, character) in [("foo/bar.txt", "/"), ("foo\0bar.txt", "NUL")] {
+        let result = create_file_core_on(engine.host(), None, &parent, name).await;
+        assert!(
+            matches!(
+                result,
+                Err(MutationError::NameNotAllowed {
+                    reason: ValidationError::DisallowedCharacter { character: ref c }
+                }) if c == character
+            ),
+            "{name:?}: {result:?}"
+        );
+    }
 }
 
 // ============================================================================

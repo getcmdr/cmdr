@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use unicode_normalization::UnicodeNormalization;
 
 use cmdr_fs::entry::FileEntry;
-use cmdr_fs::validation::{ValidationError, validate_filename};
+use cmdr_fs::validation::{NameRules, ValidationError, validate_filename};
 
 use cmdr_media_meta::{MediaFacts, MediaField};
 
@@ -117,6 +117,13 @@ pub enum InvalidNameReason {
     TooLong,
     /// `.` and `..` name the folder itself and its parent.
     Reserved,
+    /// A device name Windows reserves (`CON`, `NUL`, `COM1`, …), on a share or a
+    /// FAT32, exFAT, or NTFS drive.
+    ReservedDeviceName {
+        name: String,
+    },
+    /// Ends in a space or a period, on a FAT32, exFAT, or NTFS drive.
+    EndsWithSpaceOrPeriod,
 }
 
 impl RowStatus {
@@ -387,10 +394,12 @@ pub(crate) fn local_time_in(unix_seconds: u64, zone: &TimeZone) -> Option<DateTi
 /// The preview for `rows` (in rename order) of the folder at `dir`, whose every
 /// entry, hidden ones included, is in `siblings`. A row the user named by hand in
 /// Results (`edits`) takes that name instead of the computed one, and every check.
-/// `media` answers each row's media facts.
+/// `media` answers each row's media facts. A new name is judged by `rules`, the
+/// folder's filesystem's (`Operations::name_rules_at`).
 pub(crate) fn preview(
     compiled: &Compiled,
     dir: &Path,
+    rules: NameRules,
     rows: &[(usize, &FileEntry)],
     siblings: &[FileEntry],
     edits: &NameEdits,
@@ -409,7 +418,7 @@ pub(crate) fn preview(
             let (new_name, status) = match new_name {
                 Err(gap) => (entry.name.clone(), gap_status(gap)),
                 Ok(new_name) => {
-                    let status = match invalid(&new_name) {
+                    let status = match invalid(&new_name, rules) {
                         Some(reason) => RowStatus::InvalidName { reason },
                         None if compiled.same_name(&new_name, &entry.name) => RowStatus::Unchanged,
                         None => RowStatus::Ready,
@@ -441,6 +450,7 @@ pub(crate) fn preview(
 pub fn preview_names(
     compiled: &Compiled,
     dir: &Path,
+    rules: NameRules,
     names: &[String],
     siblings: &[FileEntry],
     edits: &NameEdits,
@@ -455,7 +465,7 @@ pub fn preview_names(
             None => missing.push(row),
         }
     }
-    let mut previewed = preview(compiled, dir, &present, siblings, edits, media);
+    let mut previewed = preview(compiled, dir, rules, &present, siblings, edits, media);
     previewed.extend(missing.into_iter().map(|row| PreviewRow {
         row,
         old_name: names[row].clone(),
@@ -575,11 +585,11 @@ fn gap_status(gap: FieldGap) -> RowStatus {
     }
 }
 
-fn invalid(name: &str) -> Option<InvalidNameReason> {
+fn invalid(name: &str, rules: NameRules) -> Option<InvalidNameReason> {
     if name == "." || name == ".." {
         return Some(InvalidNameReason::Reserved);
     }
-    match validate_filename(name) {
+    match validate_filename(name, rules) {
         Ok(()) => None,
         Err(ValidationError::Empty) => Some(InvalidNameReason::Empty),
         Err(ValidationError::DisallowedCharacter { character }) => {
@@ -588,5 +598,7 @@ fn invalid(name: &str) -> Option<InvalidNameReason> {
         Err(ValidationError::NameTooLong { .. } | ValidationError::PathTooLong { .. }) => {
             Some(InvalidNameReason::TooLong)
         }
+        Err(ValidationError::ReservedName { name }) => Some(InvalidNameReason::ReservedDeviceName { name }),
+        Err(ValidationError::EndsWithSpaceOrPeriod) => Some(InvalidNameReason::EndsWithSpaceOrPeriod),
     }
 }

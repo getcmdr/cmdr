@@ -623,6 +623,15 @@ export const commands = {
     ),
   getPathLimits: () => __TAURI_INVOKE<PathLimits>('get_path_limits'),
   /**
+   *  Which names the filesystem holding `dir` on `volume_id` takes
+   *  (`cmdr_operations::Operations::name_rules_at`), for the rename editor's and the
+   *  New folder dialog's keystroke checks, asked once per editor. The create or
+   *  rename itself checks again, so a slow answer (2 s, a hung mount's `statfs`) or
+   *  an engine that isn't up yet reads as `Posix` and costs only early feedback.
+   */
+  getNameRules: (volumeId: string | null, dir: string) =>
+    __TAURI_INVOKE<NameRules>('get_name_rules', { volumeId, dir }),
+  /**
    *  Reads macOS Finder tags for the given paths and patches them into the cached
    *  listing, emitting a coalesced `directory-diff` so the panes show the colored
    *  dots. The frontend calls this for the VISIBLE range (and a background sweep
@@ -12466,6 +12475,13 @@ export type InvalidNameReason =
   | { type: 'tooLong' }
   // `.` and `..` name the folder itself and its parent.
   | { type: 'reserved' }
+  /**
+   *  A device name Windows reserves (`CON`, `NUL`, `COM1`, …), on a share or a
+   *  FAT32, exFAT, or NTFS drive.
+   */
+  | { type: 'reservedDeviceName'; name: string }
+  // Ends in a space or a period, on a FAT32, exFAT, or NTFS drive.
+  | { type: 'endsWithSpaceOrPeriod' }
 
 /**
  *  How many of an operation's top-level items are files and how many are
@@ -15363,8 +15379,16 @@ export type MultiRenameStarted = {
 export type MutationError =
   // The name was blank, or only whitespace.
   | { type: 'nameEmpty' }
-  // The name held a `/` or a null byte, neither of which any filesystem takes.
-  | { type: 'nameHasDisallowedCharacter' }
+  /**
+   *  The destination's filesystem doesn't take the name: a `/` or a null byte
+   *  anywhere, or what its `NameRules` refuse (a reserved device name on a share,
+   *  a `:` on an exFAT stick). Carries which rule, for the frontend to word.
+   */
+  | {
+      type: 'nameNotAllowed'
+      // Which rule the name breaks.
+      reason: ValidationError
+    }
   // The item to rename isn't there any more.
   | {
       type: 'notFound'
@@ -15564,6 +15588,40 @@ export type NameFilterResult = {
    */
   sequence: number | null
 }
+
+/**
+ *  Which names a destination filesystem takes, keyed on its
+ *  [`FilesystemKind`](crate::filesystem_kind::FilesystemKind)
+ *  ([`FilesystemKind::name_rules`](crate::filesystem_kind::FilesystemKind::name_rules)),
+ *  ❌ never on the host OS: a Mac writing to an SMB share meets the share's
+ *  rules, and Windows writing over MTP meets none of its own.
+ *
+ *  What each format does with a name its rules refuse, read on a Mac:
+ *  `docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`.
+ */
+export type NameRules =
+  /**
+   *  Only `/` and NUL are refused: APFS, HFS+, ext4, Btrfs, XFS, ZFS, MTP, and
+   *  any filesystem Cmdr can't see through, which answers for itself.
+   */
+  | 'posix'
+  /**
+   *  An SMB share: [`Posix`](Self::Posix), plus the device names Windows
+   *  reserves (`CON`, `NUL`, `COM1`, `con.txt`, …), which Samba stores but
+   *  lists back to every client under a mangled 8.3 name (`CON` reads
+   *  `CR23RR~9`). The characters Windows forbids are fine here: smb2 and
+   *  macOS smbfs both carry them in the private-use area, both ways.
+   */
+  | 'smbShare'
+  /**
+   *  FAT32, exFAT, and NTFS: [`SmbShare`](Self::SmbShare), plus the characters
+   *  the format can't store (`"`, `*`, `:`, `<`, `>`, `?`, `\`, `|`, and the
+   *  control characters) and a name that ends in a space or a period. Windows
+   *  refuses each one; macOS's drivers write them as private-use stand-ins
+   *  that any other reader shows as something else, so the name that would
+   *  land isn't the name the person typed.
+   */
+  | 'windows'
 
 /**
  *  Why a transfer that names its items one by one refused to start, for
@@ -23460,6 +23518,16 @@ export type ValidationError =
   | { kind: 'nameTooLong'; bytes: number; max: number }
   // Full path exceeds the maximum byte length.
   | { kind: 'pathTooLong'; bytes: number; max: number }
+  /**
+   *  Name is a device name Windows reserves (`CON`, `NUL`, `COM1`, …), on a
+   *  destination that refuses one ([`NameRules::SmbShare`], [`NameRules::Windows`]).
+   */
+  | { kind: 'reservedName'; name: string }
+  /**
+   *  Name ends in a space or a period, on a FAT32, exFAT, or NTFS destination
+   *  ([`NameRules::Windows`]).
+   */
+  | { kind: 'endsWithSpaceOrPeriod' }
 
 // What of the item's contents rides with the facts to the model.
 export type VerdictContents =

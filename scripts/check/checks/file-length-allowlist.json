@@ -9,6 +9,10 @@
     "scripts/check/checks/registry.go": "append-only check registry (one CheckDefinition entry per check); line count tracks the number of checks, not splittable logic"
   },
   "files": {
+    "scripts/check/checks/index-crate-isolation-ceilings.go": {
+      "lines": 806,
+      "reason": "data, one entry per isolated crate with its ceilings and the dated reason behind each raise (the audit trail the check asks for); length tracks how often a surface grew, not logic. Splitting by crate would only scatter one table"
+    },
     "apps/desktop/src/lib/settings/definitions/advanced.ts": {
       "lines": 820,
       "reason": "flat registry data, one object literal per Advanced setting in page order (no logic); length tracks how many settings the Advanced page holds, and splitting it would only scatter one page's rows across files"

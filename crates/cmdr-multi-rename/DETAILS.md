@@ -101,12 +101,13 @@ it today), "next step" chaining, and editing names in an editor.
 
 ## Session, preview, and apply (`session.rs`, `plan.rs`, `run.rs`)
 
-- Row statuses: `Ready`, `Unchanged` (same name), `InvalidName` (via `validate_filename`, plus `.` / `..`), `Duplicate`
-  (two rows get one folded name), `TargetExists` (a sibling that STAYS holds the folded name; siblings include hidden
-  entries), and `Missing` (the session's file left the folder; set by `session.rs`, never by `plan`). A batch row
-  renaming away frees its name, so chains and swaps preview as ready. Names fold as the Mac does, so a case-sensitive
-  volume gets over-cautious statuses; a block cascades (a blocked row stays, which can block the row renaming into it)
-  through a worklist, so a long chain stays linear.
+- Row statuses: `Ready`, `Unchanged` (same name), `InvalidName` (via `validate_filename` against the folder's
+  `NameRules`, read once at open through `Operations::name_rules_at`, so `12:30` is fine on APFS and refused on an exFAT
+  stick, and `CON` is refused on a share; plus `.` / `..`), `Duplicate` (two rows get one folded name), `TargetExists`
+  (a sibling that STAYS holds the folded name; siblings include hidden entries), and `Missing` (the session's file left
+  the folder; set by `session.rs`, never by `plan`). A batch row renaming away frees its name, so chains and swaps
+  preview as ready. Names fold as the Mac does, so a case-sensitive volume gets over-cautious statuses; a block cascades
+  (a blocked row stays, which can block the row renaming into it) through a worklist, so a long chain stays linear.
 - **Decision: a backend session holds the files, by name.**
   `open_multi_rename(listing, includeHidden, rows | null, sequence)` reads the pane's rows (`null`: every row the pane
   shows, which is what "all selected" and "nothing selected" both mean) through `Listings::selection_names`, refuses

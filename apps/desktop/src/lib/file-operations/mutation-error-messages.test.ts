@@ -57,7 +57,7 @@ const VOLUME_CASES: VolumeError[] = [
 /** One value per `MutationError` variant, in declaration order. */
 const MUTATION_CASES: MutationError[] = [
   { type: 'nameEmpty' },
-  { type: 'nameHasDisallowedCharacter' },
+  { type: 'nameNotAllowed', reason: { kind: 'reservedName', name: 'CON' } },
   { type: 'notFound', path: '/Users/me/gone.txt' },
   { type: 'cantRenameVolumeRoot' },
   { type: 'parentNotWritable', path: '/Users/me/locked' },

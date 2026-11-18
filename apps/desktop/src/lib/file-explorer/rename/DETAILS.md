@@ -146,17 +146,18 @@ and every backend that arrived after MTP refused F2 outright (ERR-KVERS).
 
 ## Validation
 
-- **Frontend (instant)** `filename-validation.ts`: disallowed chars (slash, null on macOS), empty/whitespace-only, byte
-  limits (255 name, 1024 path), extension change vs setting. The red border while editing follows the policy: "no" draws
-  it on an extension change, "ask" doesn't (the dialog waits for save), "yes" never validates the extension.
-- **Backend (authoritative)** `cmdr_fs::validation` + `check_rename_validity` command, accepts an optional `volumeId`:
-  local FS (`None` or `"root"`) uses `symlink_metadata` + inode comparison for case-only detection; every other volume
-  uses `Volume::get_metadata()` for conflict detection. There's no inode there, and SMB names the entry it found the way
-  it was asked, so a hit on a name that differs from the source only in case (`fold_name`) is settled by the folder's
-  listing (the pane's, when it's authoritative): it holds the source's name and not the new one, so the lookup found the
-  source itself, and `is_case_only_rename` is `true`. A case-sensitive volume holding both names lists both: a real
-  conflict. Without it, F2 `c.txt` → `C.txt` on a QNAP share opened the conflict dialog comparing the file with itself
-  (QA 2026-10-14).
+- **Frontend (instant)** `filename-validation.ts`: the folder's name rules (`folder-name-rules.ts` asks `getNameRules`
+  once per session, `posix` until it lands; then a changed name re-validates), empty/whitespace-only, byte limits (255
+  name, 1024 path), extension change vs setting. The red border while editing follows the policy: "no" draws it on an
+  extension change, "ask" doesn't (the dialog waits for save), "yes" never validates the extension.
+- **Backend (authoritative)** `cmdr_fs::validation` against the folder's `NameRules`, in `check_rename_validity` and
+  again in the rename itself; the command accepts an optional `volumeId`: local FS (`None` or `"root"`) uses
+  `symlink_metadata` + inode comparison for case-only detection; every other volume uses `Volume::get_metadata()` for
+  conflict detection. There's no inode there, and SMB names the entry it found the way it was asked, so a hit on a name
+  that differs from the source only in case (`fold_name`) is settled by the folder's listing (the pane's, when it's
+  authoritative): it holds the source's name and not the new one, so the lookup found the source itself, and
+  `is_case_only_rename` is `true`. A case-sensitive volume holding both names lists both: a real conflict. Without it,
+  F2 `c.txt` → `C.txt` on a QNAP share opened the conflict dialog comparing the file with itself (QA 2026-10-14).
 
 The backend answers with a word-free `ValidationError` kind, and `validityMessage` renders it from the SAME
 `fileOperations.validation.*` keys the live validation uses. So a name the backend turns down reads exactly the way the

@@ -22,6 +22,7 @@ use unicode_normalization::UnicodeNormalization;
 
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::rt::{self, Instant, Runtime};
+use cmdr_fs::validation::NameRules;
 use cmdr_listing::{ListingId, ListingLookupError, Listings};
 
 use crate::error::MultiRenameError;
@@ -122,6 +123,8 @@ struct Session {
     listing_id: String,
     volume_id: String,
     dir: PathBuf,
+    /// Which names the folder's filesystem takes, read once at open, for every preview and the apply.
+    name_rules: NameRules,
     /// The files, in rename order. A row's `row` is its index here.
     names: Arc<[String]>,
     /// Names the user typed in Results, which every preview from now on takes.
@@ -218,6 +221,7 @@ impl MultiRename {
     /// rename order; `None` for every row the pane shows), read at
     /// `expected_sequence`. Refuses with `SelectionChanged` when the pane's rows
     /// aren't the listing's state any more, rather than reading them in a newer one.
+    /// ❗ Blocks for one local mount probe (`Operations::name_rules_at`): call it off the async workers.
     pub fn open(
         &self,
         listing_id: &str,
@@ -246,6 +250,11 @@ impl MultiRename {
             self.inner.next_session.fetch_add(1, Ordering::Relaxed)
         );
         let media = Arc::new(SessionMedia::seed(&session_id, dir.clone(), &names, &entries));
+        // Before the sessions lock: a local folder's answer is one mount probe.
+        let name_rules = self
+            .host()
+            .operations()
+            .map_or(NameRules::Posix, |engine| engine.name_rules_at(&volume_id, &dir));
         let mut sessions = self.inner.sessions.lock_ignore_poison();
         evict_to(&mut sessions, rt::now(), self.inner.max_sessions);
         sessions.insert(
@@ -254,6 +263,7 @@ impl MultiRename {
                 listing_id: listing_id.to_string(),
                 volume_id,
                 dir,
+                name_rules,
                 names: names.into(),
                 edits: Arc::default(),
                 written: None,
@@ -372,7 +382,8 @@ impl MultiRename {
                 listing_id: inputs.listing_id.clone(),
             })?;
         let media = inputs.media.lookup();
-        let rows = preview_names(compiled, &inputs.dir, &inputs.names, &siblings, edits, &media);
+        let rules = inputs.name_rules;
+        let rows = preview_names(compiled, &inputs.dir, rules, &inputs.names, &siblings, edits, &media);
         media.finish();
         Ok(rows)
     }
@@ -639,6 +650,7 @@ struct Inputs {
     listing_id: String,
     volume_id: String,
     dir: PathBuf,
+    name_rules: NameRules,
     names: Arc<[String]>,
     edits: Arc<NameEdits>,
     media: Arc<SessionMedia>,
@@ -649,6 +661,7 @@ fn inputs_of(s: &Session) -> Inputs {
         listing_id: s.listing_id.clone(),
         volume_id: s.volume_id.clone(),
         dir: s.dir.clone(),
+        name_rules: s.name_rules,
         names: Arc::clone(&s.names),
         edits: Arc::clone(&s.edits),
         media: Arc::clone(&s.media),
@@ -705,6 +718,7 @@ mod tests {
             listing_id: String::new(),
             volume_id: "root".to_string(),
             dir: PathBuf::new(),
+            name_rules: NameRules::Posix,
             names: Vec::new().into(),
             edits: Arc::default(),
             written: None,

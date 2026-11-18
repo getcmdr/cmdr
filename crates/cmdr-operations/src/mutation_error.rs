@@ -27,8 +27,13 @@ use serde::{Deserialize, Serialize};
 pub enum MutationError {
     /// The name was blank, or only whitespace.
     NameEmpty,
-    /// The name held a `/` or a null byte, neither of which any filesystem takes.
-    NameHasDisallowedCharacter,
+    /// The destination's filesystem doesn't take the name: a `/` or a null byte
+    /// anywhere, or what its `NameRules` refuse (a reserved device name on a share,
+    /// a `:` on an exFAT stick). Carries which rule, for the frontend to word.
+    NameNotAllowed {
+        /// Which rule the name breaks.
+        reason: cmdr_fs::validation::ValidationError,
+    },
     /// The item to rename isn't there any more.
     NotFound {
         /// The path that was asked for.
@@ -137,7 +142,7 @@ impl ErrorLogText for MutationError {
         use std::fmt::Write as _;
         match self {
             Self::NameEmpty => out.write_str("name is empty"),
-            Self::NameHasDisallowedCharacter => out.write_str("name holds a disallowed character"),
+            Self::NameNotAllowed { reason } => write!(out, "the destination doesn't take the name: {reason:?}"),
             Self::NotFound { path } => {
                 out.write_str("not found: ")?;
                 out.value(LogPrivate::path(path))
