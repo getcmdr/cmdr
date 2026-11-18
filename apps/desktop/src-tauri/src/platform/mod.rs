@@ -32,6 +32,7 @@ const _: fn() -> String = os_version;
 const _: fn(i64, i64) -> bool = macos_at_least;
 const _: fn() -> PlatformCapabilities = capabilities;
 const _: fn() -> PlatformConventions = conventions;
+const _: fn(&tauri::Webview<tauri::Wry>) = prepare_webview;
 
 /// A human-readable OS version string, for example `macOS 26.0` or `Ubuntu 24.04 LTS`.
 ///
@@ -56,6 +57,11 @@ pub(crate) use imp::capabilities;
 /// How this platform's own apps behave, for the desktop this session runs (Linux answers per
 /// desktop). Read once per webview, by the init script.
 pub(crate) use imp::conventions;
+
+/// Readies a new webview before it's used: on Windows, WebView2's browser accelerator keys go off
+/// (`windows/webview.rs`); nothing elsewhere. Called for every webview from the `cmdr-platform`
+/// plugin's `on_webview_ready` (`tauri_builder.rs`).
+pub(crate) use imp::prepare_webview;
 
 /// The Linux distribution, for package-manager install hints. Linux-only by nature, so only Linux
 /// code reaches it.

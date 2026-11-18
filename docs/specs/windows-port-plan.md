@@ -789,6 +789,10 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     - Done when: #1115's list (`F5`, `Ctrl+R`, `Ctrl+F`, `Ctrl+P`, `Ctrl+Shift+P`, `Ctrl+J`, `Ctrl+G`, `Shift+F5`,
       `Ctrl+F5`, `Alt+←/→`, `F7`) does only what Cmdr binds, and nothing where it binds nothing, in the main window,
       Settings, and the viewer. Needs the app running on Windows (done).
+    - **Built** (2026-11-18): `platform::prepare_webview`, called from the `cmdr-platform` plugin's `on_webview_ready`,
+      turns the switch off in every webview (`apps/desktop/src-tauri/DETAILS.md` § Every webview's native setup).
+      Clippy-clean for `x86_64-pc-windows-gnu` (the Mac cross-check). Not yet run on a signed-in Windows desktop: the
+      done-when keys, the first page of each window, and `F6` stay on task 55's keyboard list.
 
 ### Phase 7: native feel
 

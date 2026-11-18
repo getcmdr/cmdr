@@ -376,6 +376,11 @@ windows-sys = { version = "0.61", features = [
 # from the same maintainers as the Linux Secret Service one, so both arms share one API.
 keyring-core = "1"
 windows-native-keyring-store = "1.1"
+# WebView2's own settings, reached through Tauri's `with_webview` (`platform/windows/webview.rs`):
+# the COM bindings and the `Interface::cast` they need. Pinned to the versions wry links, so the
+# controller Tauri hands over is this crate's type; both already in the lockfile through wry.
+webview2-com = "=0.39.1"
+windows-core = "0.62"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # The custom updater's trust check: unpacking the release tarball and requiring Cmdr's Developer

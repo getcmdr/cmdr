@@ -119,6 +119,27 @@ set across the cargo lanes".
 The Ask Cmdr bulk-rename review commands register in the same builder and type collector as every other typed command.
 Their authority and filesystem behavior live with the agent and write-operation modules, not at this registration edge.
 
+## Every webview's native setup (`platform::prepare_webview`)
+
+The `cmdr-platform` plugin (`src/tauri_builder.rs`) reaches every webview the app creates, the config's main window and each
+one the frontend opens later, so it carries both the init script and an `on_webview_ready` hook that calls
+`platform::prepare_webview`, a seam with one arm per OS (`src/platform/mod.rs` pins the signature).
+
+- **Windows** (`src/platform/windows/webview.rs`): WebView2's browser accelerator keys go off
+  (`ICoreWebView2Settings3::SetAreBrowserAcceleratorKeysEnabled(false)` through `with_webview`), so `F5`, `Ctrl+R`,
+  `Ctrl+F`, `F3`, `Ctrl+P`, `Ctrl+J`, `Ctrl+G`, `Alt+←/→`, `F7`, zoom, and DevTools do only what Cmdr binds, in every
+  window and state, even where nothing claims the key. The keys still reach the page, and the editing and movement keys
+  stay WebView2's (`Ctrl+X/C/V`, `Ctrl+A`, `Ctrl+Z`, `Home`/`End`, `Page Up`/`Down`), so text fields keep copy, paste,
+  undo, and select-all (Microsoft Learn, `ICoreWebView2Settings3`, `ms.date` 2026-10-19, read 2026-11-18). Tauri 2.12.5
+  doesn't expose the switch; tauri-apps/tauri#16397 (`browserAcceleratorKeys`, open on 2026-11-18) would replace this
+  with a config field.
+- **macOS and Linux**: nothing; a bare WKWebView or WebKitGTK webview has no browser keys of its own.
+- Unverified on a signed-in Windows desktop (task 55's keyboard list holds the checks): whether the switch covers the
+  first page of each window (it's set as the webview becomes ready, and WebView2 may read some settings per
+  navigation), and whether `F6` / `Shift+F6` / `Ctrl+M` sit outside it and need the per-key
+  `IsBrowserAcceleratorKeyEnabled(FALSE)` in an `AcceleratorKeyPressed` handler (`tools/menu-spike/src/win.rs` shows
+  the wiring).
+
 ## Tauri config per platform
 
 `tauri.conf.json` holds what every platform shares; `tauri.macos.conf.json`, `tauri.linux.conf.json`, and

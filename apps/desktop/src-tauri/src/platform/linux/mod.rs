@@ -94,6 +94,10 @@ pub(crate) fn macos_at_least(_major: i64, _minor: i64) -> bool {
     false
 }
 
+/// Nothing to set: a bare WebKitGTK webview has no browser keys of its own (reload, find, and print
+/// are a host app's, and Cmdr binds what it wants).
+pub(crate) fn prepare_webview(_webview: &tauri::Webview<tauri::Wry>) {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
