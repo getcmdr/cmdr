@@ -19,6 +19,7 @@ use super::types::{
     HomeFolderAction, ReadOnlySide, VolumeCopyConfig, WriteOperationConfig, WriteOperationError,
     WriteOperationStartResult,
 };
+use super::wire_paths::{named_as_given, owned_without_trailing_separators};
 use super::{OperationEventSink, Operations, transfer_sides};
 
 impl Operations {
@@ -44,6 +45,9 @@ impl Operations {
         expected_sources: Option<ExpectedSources>,
         sides: Option<transfer_sides::TransferSides>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
+        let sources = named_as_given(sources);
+        let destination = owned_without_trailing_separators(destination);
         let root = cmdr_fs::volume::DEFAULT_VOLUME_ID;
         // Never the person's own home folder, nor a folder holding it (`home_folder.rs`).
         if let Some(refusal) = self.home_folder_guard(root, &sources, HomeFolderAction::Move) {
@@ -98,6 +102,8 @@ impl Operations {
         initiator: Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
+        let sources = named_as_given(sources);
         let volume_id_str = volume_id.unwrap_or_else(|| "root".to_string());
 
         log::info!(
@@ -172,6 +178,8 @@ impl Operations {
         initiator: Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
+        let sources = named_as_given(sources);
         log::info!(
             "trash_files_start: sources={:?}",
             sources.iter().map(LogPrivate::path).collect::<Vec<_>>()

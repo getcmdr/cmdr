@@ -28,6 +28,8 @@ The full text of each, with its why: DETAILS § "Must-knows, in full".
   `AlreadyResolved`, `StaleAnswer`, or `NoPendingConflict`.
 - **Crossing types takes a person's consent, per SHAPE** (`conflict::resolution_for_clash`); ❌ never reduce a
   conditional before it.
+- **A new public mutating start runs its paths through `wire_paths`** first: `x/link/` resolves THROUGH the link, so
+  without it a delete empties the target.
 - **Emit through `OperationEventSink`**; `write-settled` fires once, AFTER the terminal event.
 - **EVERY local write lands via `overwrite::stage_and_land_file`**, its destination announced (`host::Announced`). ❌
   Only a `temp` leftover goes on sight.

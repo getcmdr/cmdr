@@ -1130,8 +1130,11 @@ included; the hidden couplings it found are why waves B and C differ from round 
   canonical source), ❌ never from a SHOWN name, or a copy of `caf\xe9.txt` lands as `caf\u{FFFD}.txt`, possibly over a
   real file of that name. Switch `rename_local_exclusive`'s callers to the typed form and delete the `&Path` one; same
   for every wave-B typed-beside pair this crate calls. A destination that can't store a source name's escapes refuses
-  that item typed and counts it on the op's summary (the cross-namer rule). Rollback planner and journal rows carry app
-  paths into the operation log (pinned). Big enough to split by subagent (transfer, delete and trash, archive edit,
+  that item typed and counts it on the op's summary (the cross-namer rule). Every mutating start already drops a
+  trailing `/` and `/.` from its caller's paths (`crates/cmdr-operations/src/wire_paths.rs`, the stopgap for the raw IPC
+  `delete_files` of `x/link/` that emptied the link's target); once the starts take `AppPath` from `from_wire`, delete
+  that module and its call sites, keeping `trailing_separator_tests.rs` green. Rollback planner and journal rows carry
+  app paths into the operation log (pinned). Big enough to split by subagent (transfer, delete and trash, archive edit,
   rename and create, scans), sequential on one branch. Non-UTF-8 safety (milestone 1's pins (f)):
   - The native walks (`scan_walker.rs`, `delete/walker.rs`, the move sweep, `scan_dry_run.rs`, `reversal.rs`) stay
     native inside, and any path they hand to a typed API goes through `from_native`, which escapes. ❌ A walk never
@@ -1381,7 +1384,8 @@ Round one's four, decided by the lead (2026-11-18) and written in by review roun
    rule 1). Review round 2 folded the typed-`..` resolver into the second.
 9. **Today's live bugs: the non-UTF-8 family is #1236** (filed in review round 2, with the name-addressed protocols
    round two found). The trailing-`/` case (a wire path `/x/link/` stats and walks the link's target) has no issue: the
-   frontend never sends one (rows are built by `join`), so only an MCP input can, and 10d fixes it.
+   frontend never sends one (rows are built by `join`), so only a raw IPC or MCP input can, and 10d fixes it. Its write
+   half is already guarded at the engine's starts (`crates/cmdr-operations/src/wire_paths.rs`), which 10a absorbs.
 
 Round two's three, decided by the lead (2026-11-18) and written in by review round 3:
 

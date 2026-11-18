@@ -62,6 +62,9 @@ impl super::Operations {
         volume_id: String,
         initiator: Initiator,
     ) -> Result<(), MutationError> {
+        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
+        let from = super::wire_paths::owned_without_trailing_separators(from);
+        let to = super::wire_paths::owned_without_trailing_separators(to);
         // Kept for the refusal line below: `rename_managed_inner` consumes both, and a
         // refusal nobody can place is a refusal nobody can diagnose.
         let attempted = from.clone();

@@ -142,8 +142,11 @@ The full top-level inventory is here:
   scenarios, written once against a `World`, their normalizer, and `VOLUME_GOLDENS`, the volume fixtures embedded; run
   by `golden_trace_tests.rs` on both engines and by `cmdr-listing-wasm`'s `golden_test.rs` on the demo's host, natively
   and in wasm. Its own feature because `testing` pulls `cmdr-local`, which wasm32 can't build), `write_start.rs` (the
-  same-`root` move, delete, and trash starts, routing to the local disk or the volume engine), `local_start.rs` (the
-  local copy, move, delete, and trash starters and the `start_write_operation` lifecycle they share), `local_disk/` (the
+  same-`root` move, delete, and trash starts, routing to the local disk or the volume engine), `wire_paths.rs` (the
+  guard every mutating start runs its caller's paths through: a trailing `/` or `/.` is dropped, because POSIX resolves
+  `x/link/` through the link, so a raw IPC delete of one emptied the link's target and a move or rename took the target;
+  pinned per op by `trailing_separator_tests.rs`, absorbed later by #1225's `from_wire`), `local_start.rs` (the local
+  copy, move, delete, and trash starters and the `start_write_operation` lifecycle they share), `local_disk/` (the
   host's own disk as the shared code needs it: errnos, a file's device and mode, the no-replace rename, mount and
   filesystem questions, a volume over a local folder; natively forwards to `cmdr_local` / `libc` / `std::os::unix`, in
   the browser build the answers of a host with none), `rt.rs` (the clocks, timers, and yields, over `cmdr_fs::rt`;
