@@ -62,6 +62,91 @@ func TestABridgeTemporaryAHeldFutureOutlivesIsHoisted(t *testing.T) {
 	}
 }
 
+func TestABridgeTemporaryInASelectArmIsHoistedBeforeTheSelect(t *testing.T) {
+	text := "async fn t() {\n    let opened = tokio::select! {\n        biased;\n        () = abort.cancelled() => {\n            return Err(gone(path));\n        }\n        opened = v.open(&AppPath::legacy_unchecked(path), size) => opened,\n    };\n}\n"
+	got := run(t, text, diag("E0716", "temporary value dropped while borrowed", spanOf(t, text, "AppPath::legacy_unchecked(path)", "", "", true)))
+	want := "async fn t() { let path_app = AppPath::legacy_unchecked(path); let opened = tokio::select! { biased; () = abort.cancelled() => { return Err(gone(path)); } opened = v.open(&path_app, size) => opened, }; }"
+	if !strings.Contains(squash(got), want) {
+		t.Fatalf("not hoisted before the select:\n%s", got)
+	}
+	// Inside an arm's own block, the statement is the arm's.
+	arm := "async fn t() {\n    tokio::select! {\n        () = a() => {\n            let d = make();\n            let fut = v.list(&AppPath::legacy_unchecked(&d));\n            fut.await;\n        }\n    };\n}\n"
+	got = run(t, arm, diag("E0716", "temporary value dropped while borrowed", spanOf(t, arm, "AppPath::legacy_unchecked(&d)", "", "", true)))
+	if !strings.Contains(squash(got), "let d = make(); let d_app = AppPath::legacy_unchecked(&d); let fut = v.list(&d_app);") {
+		t.Fatalf("arm-local hoist left its block:\n%s", got)
+	}
+}
+
+func TestABridgeTemporaryAClosureReturnsIsHoistedBeforeItsStatement(t *testing.T) {
+	text := "async fn t() {\n    let mut children =\n        retry(state, source, &path, || {\n            source.list_directory(&AppPath::legacy_unchecked(&path), None)\n        })\n        .await?;\n}\n"
+	call := "source.list_directory(&AppPath::legacy_unchecked(&path), None)"
+	d := diag("E0515", "cannot return value referencing temporary value",
+		spanOf(t, text, call, "", "returns a value referencing data owned by the current function", true),
+		spanOf(t, text, "AppPath::legacy_unchecked(&path)", "", "temporary value created here", false))
+	got := run(t, text, d)
+	want := "async fn t() { let path_app = AppPath::legacy_unchecked(&path); let mut children = retry(state, source, &path, || { source.list_directory(&path_app, None) }) .await?; }"
+	if !strings.Contains(squash(got), want) {
+		t.Fatalf("not hoisted out of the closure:\n%s", got)
+	}
+	// In a match arm, before the whole match; ❌ never when an arm could bind the root.
+	arm := "async fn t(path: &Path) {\n    let children = match cache.get() {\n        Some(cached) => {\n            cached\n        }\n        None => retry(|| v.list(&AppPath::legacy_unchecked(path))).await?,\n    };\n}\n"
+	d = diag("E0515", "cannot return value referencing temporary value",
+		spanOf(t, arm, "v.list(&AppPath::legacy_unchecked(path))", "", "returns a value referencing data owned by the current function", true),
+		spanOf(t, arm, "AppPath::legacy_unchecked(path)", "", "temporary value created here", false))
+	got = run(t, arm, d)
+	if !strings.Contains(squash(got), "{ let path_app = AppPath::legacy_unchecked(path); let children = match cache.get() {") {
+		t.Fatalf("not hoisted before the match:\n%s", got)
+	}
+	bound := strings.Replace(arm, "Some(cached) =>", "Some(path) =>", 1)
+	d = diag("E0515", "cannot return value referencing temporary value",
+		spanOf(t, bound, "v.list(&AppPath::legacy_unchecked(path))", "", "returns a value referencing data owned by the current function", true),
+		spanOf(t, bound, "AppPath::legacy_unchecked(path)", "", "temporary value created here", false))
+	if got := run(t, bound, d); got != bound {
+		t.Fatalf("an arm binding the root must stay residue:\n%s", got)
+	}
+	// Rooted in the closure's own param: nothing to hoist it to.
+	own := "async fn t() {\n    let a = join_all(rows.iter().map(|row| v.rename_work(&AppPath::legacy_unchecked(&row.source))));\n}\n"
+	d = diag("E0515", "cannot return value referencing temporary value",
+		spanOf(t, own, "v.rename_work(&AppPath::legacy_unchecked(&row.source))", "", "returns a value referencing data owned by the current function", true),
+		spanOf(t, own, "AppPath::legacy_unchecked(&row.source)", "", "temporary value created here", false))
+	if got := run(t, own, d); got != own {
+		t.Fatalf("a closure param's bridge must stay residue:\n%s", got)
+	}
+}
+
+func TestAnUnusedPreludeIsDroppedAndItsKeptParamRestored(t *testing.T) {
+	text := implHead + "    fn rename<'a>(&'a self, from: &'a AppPath, to: &'a AppPath) -> Fut<'a> {\n" +
+		"        let to_app = to;\n        let to_std = to.as_std_legacy();\n        let to: &Path = &to_std;\n" +
+		"        let from_app = from;\n        let from_std = from.as_std_legacy();\n        let from: &Path = &from_std;\n" +
+		"        if to != self.fails_onto {\n            return self.inner.rename(from_app, to_app);\n        }\n        todo!()\n    }\n}\n"
+	d := diag("unused_variables", "unused variable: `from`", spanOf(t, text, "from", "let from_std = from.as_std_legacy();\n        let ", "", true))
+	got := run(t, text, d)
+	want := "let to_app = to; let to_std = to.as_std_legacy(); let to: &Path = &to_std; if to != self.fails_onto { return self.inner.rename(from, to_app); }"
+	if !strings.Contains(squash(got), want) {
+		t.Fatalf("unused prelude not dropped:\n%s", got)
+	}
+}
+
+func TestAReturnedAsyncBlockGetsItsOwnPrelude(t *testing.T) {
+	text := implHead + "    fn delete<'a>(&'a self, path: &'a AppPath) -> Fut<'a> {\n" + prelude1 +
+		"        if self.gone == Some(path) {\n            return Box::pin(async move { Err(gone(path.display())) });\n        }\n        todo!()\n    }\n}\n"
+	d := diag("E0515", "cannot return value referencing local variable `path_std`", spanOf(t, text, "Box::pin(async move { Err(gone(path.display())) })", "", "", true))
+	got := run(t, text, d)
+	want := "{ let path_app = path; let path_std = path.as_std_legacy(); let path: &Path = &path_std; if self.gone == Some(path) { return Box::pin(async move { let path_std = path_app.as_std_legacy(); let path: &Path = &path_std; Err(gone(path.display())) }); }"
+	if !strings.Contains(squash(got), want) {
+		t.Fatalf("no nested prelude:\n%s", got)
+	}
+	// Once nothing outside reads the top prelude, it goes, and the nested ones read the param.
+	unused := implHead + "    fn is_directory<'a>(&'a self, path: &'a AppPath) -> Fut<'a> {\n        let path_app = path;\n" + prelude1 +
+		"        if self.follows {\n            Box::pin(async move {\n                let path_std = path_app.as_std_legacy();\n                let path: &Path = &path_std;\n                stat(path)\n            })\n        } else {\n            self.inner.is_directory(path_app)\n        }\n    }\n}\n"
+	d = diag("unused_variables", "unused variable: `path`", spanOf(t, unused, "path", "let path_std = path.as_std_legacy();\n        let ", "", true))
+	got = run(t, unused, d)
+	want = "{ if self.follows { Box::pin(async move { let path_std = path.as_std_legacy(); let path: &Path = &path_std; stat(path) }) } else { self.inner.is_directory(path) } }"
+	if !strings.Contains(squash(got), want) {
+		t.Fatalf("top prelude not dropped under a nested one:\n%s", got)
+	}
+}
+
 func TestAHoistThatWouldReorderOrShadowStaysResidue(t *testing.T) {
 	for _, text := range []string{
 		"async fn t() {\n    let fut = volume.list_directory(&AppPath::legacy_unchecked(&next_dir()), None);\n    fut.await;\n}\n",

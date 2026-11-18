@@ -5,6 +5,7 @@
 //! vocabulary, and the refusal rules a give-up meets; the proofs it settles by
 //! live in `interrupted_landing.rs`.
 
+use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 
 use super::super::super::interrupted_landing::{NameHeld, holds_the_source};
@@ -61,7 +62,10 @@ impl CutOffLanding {
     /// again; one that meets a refusal settles by the refusal rules.
     pub(crate) async fn resume(self, dest_volume: &Arc<dyn Volume>, source: Option<LandingSource<'_>>) -> Resumed {
         let Self { mut landing, at, error } = self;
-        match dest_volume.get_metadata(landing.temp()).await {
+        match dest_volume
+            .get_metadata(&AppPath::legacy_unchecked(landing.temp()))
+            .await
+        {
             Ok(entry) if !entry.is_directory && !entry.is_symlink && entry.size == Some(landing.size) => {
                 resume_with_a_whole_temp(dest_volume, landing, at).await
             }
@@ -180,7 +184,10 @@ async fn give_up_onto_cleared(
     mut landing: Landing,
     error: VolumeError,
 ) -> Result<(), FinalizeFailure> {
-    match dest_volume.get_metadata(landing.temp()).await {
+    match dest_volume
+        .get_metadata(&AppPath::legacy_unchecked(landing.temp()))
+        .await
+    {
         Ok(_) => Err(rescue(dest_volume, landing, error).await),
         Err(VolumeError::NotFound(_)) if !landing.discard_asked => {
             let landed = holds_our_size(dest_volume, &landing.final_path, landing.size).await;
@@ -199,7 +206,10 @@ async fn resume_with_a_whole_temp(dest_volume: &Arc<dyn Volume>, landing: Landin
         CutOffAt::RenameOntoCleared => rename_onto_cleared(dest_volume, landing, Patience::Waits).await.into(),
         CutOffAt::RenameOntoAside => rename_onto_aside(dest_volume, landing, Patience::Waits).await.into(),
         CutOffAt::SettingAside => resume_setting_aside(dest_volume, landing).await,
-        CutOffAt::ClearingDelete(first) => match dest_volume.get_metadata(&landing.final_path).await {
+        CutOffAt::ClearingDelete(first) => match dest_volume
+            .get_metadata(&AppPath::legacy_unchecked(&landing.final_path))
+            .await
+        {
             // The delete went through before the drop.
             Err(VolumeError::NotFound(_)) => rename_onto_cleared(dest_volume, landing, Patience::Waits).await.into(),
             // It never reached the server: what was in the way still is.

@@ -96,7 +96,10 @@ pub(crate) fn native_roots(
     source_volume: &dyn cmdr_fs::volume::Volume,
     dest_volume: &dyn cmdr_fs::volume::Volume,
 ) -> Option<(std::path::PathBuf, std::path::PathBuf)> {
-    source_volume.local_path().zip(dest_volume.local_path())
+    source_volume
+        .local_path()
+        .map(|root| root.as_std_legacy().into_owned())
+        .zip(dest_volume.local_path().map(|root| root.as_std_legacy().into_owned()))
 }
 
 // Driven directly by the SMB/MTP integration suites and the volume-journal

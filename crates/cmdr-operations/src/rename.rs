@@ -17,6 +17,7 @@
 //!   entry whose rename copies (`Volume::rename_work`) starts a background move
 //!   instead (`start_rename_as_move`).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use super::archive_edit::{self, ArchiveEditRequest};
@@ -215,7 +216,7 @@ async fn rename_managed_inner(
     // with progress and cancel, and this answers once that has started, the
     // way an in-zip rename does.
     if !on_local_disk && let Some(volume) = manager.get(&volume_id) {
-        match volume.rename_work(&from).await {
+        match volume.rename_work(&AppPath::legacy_unchecked(&from)).await {
             Ok(RenameWork::OneCall) => {}
             Ok(RenameWork::CopyThenDelete) => {
                 return (
@@ -251,11 +252,15 @@ async fn rename_managed_inner(
             // A failed probe journals no kind, size, or mtime: the row reads as a
             // file and its undo skips as unverifiable, the fail-safe answer. It
             // reaches no destructive branch.
-            Some(v) => v.get_metadata(&from).await.ok().map(|entry| VolumeSnapshot {
-                is_dir: entry.is_directory,
-                size: entry.size.map(|s| s as i64),
-                mtime: entry.modified_at.map(|m| m as i64),
-            }),
+            Some(v) => v
+                .get_metadata(&AppPath::legacy_unchecked(&from))
+                .await
+                .ok()
+                .map(|entry| VolumeSnapshot {
+                    is_dir: entry.is_directory,
+                    size: entry.size.map(|s| s as i64),
+                    mtime: entry.modified_at.map(|m| m as i64),
+                }),
             None => None,
         }
     };
@@ -299,12 +304,19 @@ async fn rename_managed_inner(
                 // A taken name is reported by the NAME, matching the local branch and
                 // the live validation the user just saw; everything else rides as the
                 // volume's own typed answer.
-                volume.rename(&from, &to, force).await.map_err(|e| match e {
-                    cmdr_fs::volume::VolumeError::AlreadyExists(_) => {
-                        MutationError::AlreadyExists { name: name_of(&to) }
-                    }
-                    other => MutationError::Volume { error: other },
-                })
+                volume
+                    .rename(
+                        &AppPath::legacy_unchecked(&from),
+                        &AppPath::legacy_unchecked(&to),
+                        force,
+                    )
+                    .await
+                    .map_err(|e| match e {
+                        cmdr_fs::volume::VolumeError::AlreadyExists(_) => {
+                            MutationError::AlreadyExists { name: name_of(&to) }
+                        }
+                        other => MutationError::Volume { error: other },
+                    })
             } else {
                 // Local filesystem rename on the blocking pool.
                 let from_syscall = from.clone();
@@ -611,7 +623,7 @@ async fn notify_rename_in_listing(host: &host::EngineHost, volume_id: &str, from
             volume
                 .notify_mutation(
                     volume_id,
-                    from_parent,
+                    &AppPath::legacy_unchecked(from_parent),
                     MutationEvent::Renamed {
                         from: from_name.to_string_lossy().to_string(),
                         to: to_name.to_string_lossy().to_string(),
@@ -623,7 +635,7 @@ async fn notify_rename_in_listing(host: &host::EngineHost, volume_id: &str, from
             volume
                 .notify_mutation(
                     volume_id,
-                    from_parent,
+                    &AppPath::legacy_unchecked(from_parent),
                     MutationEvent::Deleted(from_name.to_string_lossy().to_string()),
                 )
                 .await;
@@ -631,7 +643,7 @@ async fn notify_rename_in_listing(host: &host::EngineHost, volume_id: &str, from
                 volume
                     .notify_mutation(
                         volume_id,
-                        to_parent,
+                        &AppPath::legacy_unchecked(to_parent),
                         MutationEvent::Created(to_name.to_string_lossy().to_string()),
                     )
                     .await;

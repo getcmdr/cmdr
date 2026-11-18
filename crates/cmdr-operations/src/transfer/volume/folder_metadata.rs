@@ -26,6 +26,7 @@
 //! cancelled subtree. A quarantine a SIDECAR carries is replaced by the
 //! archive's here, so this pass never undoes that one.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -228,7 +229,9 @@ async fn source_set(
     if wanted.is_empty() {
         return (CarriedMetadata::default(), false);
     }
-    let mut carried = source_volume.folder_metadata(&folder.source, wanted).await;
+    let mut carried = source_volume
+        .folder_metadata(&AppPath::legacy_unchecked(&folder.source), wanted)
+        .await;
     super::extract_quarantine::keep_archive_quarantine(state, source_volume, &mut carried.xattrs);
     (carried, true)
 }
@@ -296,7 +299,9 @@ async fn stamp_one(dest_volume: &Arc<dyn Volume>, folder: &FilledFolder, carried
         };
     }
     let dest = folder.dest.as_path();
-    let report = dest_volume.apply_metadata(dest, &carried, modified).await;
+    let report = dest_volume
+        .apply_metadata(&AppPath::legacy_unchecked(dest), &carried, modified)
+        .await;
     if report.holds_none() {
         return Stamped::HeldNone;
     }

@@ -8,6 +8,7 @@
 //! counted ([`RenameValidityCheck`]), and the host prices it before the editor
 //! hears the answer.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use super::super::ScanCostFacts;
@@ -231,11 +232,14 @@ async fn rename_by_move(
 ) -> Option<(RenameByMove, Option<ScanCostFacts>)> {
     // Plain `get`: the drive's own rename cost (an in-zip rename is an archive edit).
     let volume = host.volumes().get(volume_id)?;
-    match volume.rename_work(old_path).await {
+    match volume.rename_work(&AppPath::legacy_unchecked(old_path)).await {
         Ok(RenameWork::CopyThenDelete) => {}
         Ok(RenameWork::OneCall) | Err(_) => return None,
     }
-    let tally = match volume.tally_subtree(old_path, SMALL_RENAME_FILES).await {
+    let tally = match volume
+        .tally_subtree(&AppPath::legacy_unchecked(old_path), SMALL_RENAME_FILES)
+        .await
+    {
         Ok(tally) => Some(tally),
         Err(e) => {
             log::debug!(target: "volume", "couldn't count what renaming {} carries: {e}", LogPrivate::path(old_path), e = LogError(&e));
@@ -321,7 +325,7 @@ async fn check_sibling_conflict_via_volume(
         None => return (false, false, None),
     };
 
-    let entry = match volume.get_metadata(new_path).await {
+    let entry = match volume.get_metadata(&AppPath::legacy_unchecked(new_path)).await {
         Ok(e) => e,
         Err(cmdr_fs::volume::VolumeError::NotFound(_)) => {
             match place_new_entry(host.listings(), volume.as_ref(), volume_id, new_path, Some(old_path)).await {
@@ -329,7 +333,7 @@ async fn check_sibling_conflict_via_volume(
                 // Respelled onto a name the folder holds exactly, which the rename
                 // itself refuses (or, confirmed, replaces).
                 Ok(NewEntry::Free(spelled)) if spelled != new_path && spelled != old_path => {
-                    match volume.get_metadata(&spelled).await {
+                    match volume.get_metadata(&AppPath::legacy_unchecked(&spelled)).await {
                         Ok(entry) => entry,
                         Err(_) => return (false, false, None),
                     }

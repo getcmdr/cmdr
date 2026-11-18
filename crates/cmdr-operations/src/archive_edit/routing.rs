@@ -4,6 +4,7 @@
 //! oracle the create/rename pre-check consults. The per-flow routes (`copy_into`,
 //! `move_out`, `driver`) layer their planning and drivers on top of these.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -91,7 +92,9 @@ pub async fn archive_inner_exists(
         };
         let resolved = host.volumes().resolve(parent_volume_id, &full_path).await;
         return match resolved.volume {
-            Some(volume) if resolved.routed == Some(RoutedKind::Archive) => volume.exists(&full_path).await,
+            Some(volume) if resolved.routed == Some(RoutedKind::Archive) => {
+                volume.exists(&AppPath::legacy_unchecked(&full_path)).await
+            }
             _ => false,
         };
     }

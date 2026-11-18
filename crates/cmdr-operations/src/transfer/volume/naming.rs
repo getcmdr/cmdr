@@ -7,6 +7,7 @@
 //! `ClaimedNames` ledger over both. Kept out of `conflict.rs`, which decides
 //! conflict POLICY and only asks this for a name.
 
+use cmdr_fs::app_path::AppPath;
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -107,7 +108,7 @@ pub(super) async fn find_unique_volume_name(
         if let Some(root) = &local_root {
             // Local-FS dest: reserve the name with an O_CREAT|O_EXCL placeholder
             // so no concurrent writer can sneak a file in before our write lands.
-            let local_path = resolve_local_path(root, &new_path);
+            let local_path = resolve_local_path(&root.as_std_legacy(), &new_path);
             match std::fs::OpenOptions::new()
                 .write(true)
                 .create_new(true)
@@ -136,7 +137,9 @@ pub(super) async fn find_unique_volume_name(
             // before returning to keep the residual window as narrow as we can.
             // A byte-exact backend also holds names in other spellings, which
             // the probe can't see and which are just as taken.
-            if !dest_volume.exists(&new_path).await && !holds_a_look_alike(dest_volume, &new_path).await {
+            if !dest_volume.exists(&AppPath::legacy_unchecked(&new_path)).await
+                && !holds_a_look_alike(dest_volume, &new_path).await
+            {
                 return ClaimedName::probed(new_path);
             }
             candidates.advance();
@@ -198,9 +201,9 @@ pub(super) async fn take_back_reservation(dest_volume: &Arc<dyn Volume>, path: &
     // Released FIRST: once we've looked, a later sweep has no business looking
     // again, and the name may be someone else's by then.
     claimed.release_placeholder(path);
-    match dest_volume.get_metadata(path).await {
+    match dest_volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
         Ok(entry) if !entry.is_directory && entry.size.unwrap_or(0) == 0 => {
-            if let Err(e) = dest_volume.delete(path).await {
+            if let Err(e) = dest_volume.delete(&AppPath::legacy_unchecked(path)).await {
                 log::debug!(target: "copy", "couldn't take back the reservation at {}: {e}", LogPrivate::file_path(path), e = LogError(&e));
             }
         }

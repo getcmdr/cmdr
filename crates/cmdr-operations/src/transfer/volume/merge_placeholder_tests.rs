@@ -17,6 +17,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
+use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{InMemoryVolume, VolumeError, VolumeReadStream};
 use cmdr_local::LocalPosixVolume;
@@ -45,8 +46,11 @@ impl Volume for FailReadForPath {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         if path == self.fail_for {
             return Box::pin(async move {
                 Err(VolumeError::IoError {
@@ -55,7 +59,7 @@ impl Volume for FailReadForPath {
                 })
             });
         }
-        self.inner.open_read_stream(path)
+        self.inner.open_read_stream(path_app)
     }
 }
 
@@ -91,13 +95,13 @@ async fn a_merge_child_that_never_lands_takes_its_rename_placeholder_back() {
     ));
 
     let source_inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source_inner.create_directory(Path::new("/album")).await.unwrap();
+    source_inner.create_directory(app_path!("/album")).await.unwrap();
     source_inner
-        .create_file(Path::new("/album/clash.txt"), b"the incoming file")
+        .create_file(app_path!("/album/clash.txt"), b"the incoming file")
         .await
         .unwrap();
     source_inner
-        .create_file(Path::new("/album/fine.txt"), b"lands cleanly")
+        .create_file(app_path!("/album/fine.txt"), b"lands cleanly")
         .await
         .unwrap();
     let source: Arc<dyn Volume> = Arc::new(FailReadForPath {
@@ -155,9 +159,9 @@ async fn a_merge_child_that_lands_keeps_its_rename_name() {
     ));
 
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     source
-        .create_file(Path::new("/album/clash.txt"), b"the incoming file")
+        .create_file(app_path!("/album/clash.txt"), b"the incoming file")
         .await
         .unwrap();
 
@@ -213,12 +217,12 @@ async fn an_empty_file_that_lands_on_its_reservation_is_kept() {
         ));
 
         let source_inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-        source_inner.create_directory(Path::new("/album")).await.unwrap();
+        source_inner.create_directory(app_path!("/album")).await.unwrap();
         source_inner
-            .create_file(Path::new("/album/clash.txt"), b"")
+            .create_file(app_path!("/album/clash.txt"), b"")
             .await
             .unwrap();
-        source_inner.create_file(Path::new("/clash.txt"), b"").await.unwrap();
+        source_inner.create_file(app_path!("/clash.txt"), b"").await.unwrap();
         let source: Arc<dyn Volume> = source_inner.clone();
 
         let config = VolumeCopyConfig {
@@ -294,11 +298,11 @@ async fn a_merge_child_abandoned_at_the_drain_deadline_takes_its_rename_placehol
     ));
 
     let gated = gated_source(CHUNK as u64 * 4);
-    gated.source_inner.create_directory(Path::new("/album")).await.unwrap();
+    gated.source_inner.create_directory(app_path!("/album")).await.unwrap();
     for name in ["/album/clash.bin", "/wedge-a.bin", "/wedge-b.bin"] {
         gated
             .source_inner
-            .create_file(Path::new(name), &vec![0xAB; CHUNK * 4])
+            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![0xAB; CHUNK * 4])
             .await
             .unwrap();
     }

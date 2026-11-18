@@ -7,6 +7,8 @@
 //! only after one), and an outage that ends the delete names the server.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_operation_log::types::OperationId;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -45,9 +47,9 @@ fn outage_state(engine: &TestOperations, budget: Duration) -> Arc<WriteOperation
 /// inner volume, so a cell can change the share behind the session's back.
 async fn nas(lane: &str) -> (Arc<InMemoryVolume>, Arc<OutageVolume>) {
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
-    inner.create_directory(Path::new("/dir")).await.unwrap();
-    inner.create_file(Path::new("/dir/a.txt"), b"aaaa").await.unwrap();
-    inner.create_file(Path::new("/dir/b.txt"), b"bbbb").await.unwrap();
+    inner.create_directory(app_path!("/dir")).await.unwrap();
+    inner.create_file(app_path!("/dir/a.txt"), b"aaaa").await.unwrap();
+    inner.create_file(app_path!("/dir/b.txt"), b"bbbb").await.unwrap();
     let nas = OutageVolume::wrap(Arc::clone(&inner), lane);
     (inner, nas)
 }
@@ -101,7 +103,7 @@ async fn delete(
 }
 
 async fn exists(inner: &InMemoryVolume, path: &str) -> bool {
-    inner.exists(Path::new(path)).await
+    inner.exists(&AppPath::legacy_unchecked(Path::new(path))).await
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -175,7 +177,7 @@ async fn a_file_put_there_during_the_outage_is_left_and_reported() {
         // Another client saves a different file under the same name while
         // Cmdr can't see the share.
         someone_else
-            .create_file(Path::new("/dir/b.txt"), b"someone else's")
+            .create_file(app_path!("/dir/b.txt"), b"someone else's")
             .await
             .expect("the other client's save");
         control.become_reachable();
@@ -206,11 +208,11 @@ async fn a_file_that_became_a_folder_during_the_outage_is_left_with_everything_i
     let (control, someone_else) = (Arc::clone(&nas), Arc::clone(&inner));
     when_waited_for(&state, async move {
         someone_else
-            .create_directory(Path::new("/dir/b.txt"))
+            .create_directory(app_path!("/dir/b.txt"))
             .await
             .expect("the other client's folder");
         someone_else
-            .create_file(Path::new("/dir/b.txt/keep.txt"), b"keep")
+            .create_file(app_path!("/dir/b.txt/keep.txt"), b"keep")
             .await
             .expect("the other client's file in it");
         control.become_reachable();
@@ -421,14 +423,14 @@ impl Volume for CountingStats {
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         self.stats.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         self.inner.get_metadata(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.stats.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         self.inner.is_directory(path)
@@ -472,7 +474,7 @@ impl Volume for WatchedCountingStats {
     fn backend_kind(&self) -> BackendKind {
         BackendKind::S3
     }
-    fn listing_watch_coverage(&self, _path: &Path) -> cmdr_fs::volume::WatchCoverage {
+    fn listing_watch_coverage(&self, _path: &AppPath) -> cmdr_fs::volume::WatchCoverage {
         cmdr_fs::volume::WatchCoverage::EveryWriter
     }
 }

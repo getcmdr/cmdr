@@ -15,6 +15,8 @@ use crate::transfer::outage_volume_test_support::OutageVolume;
 use crate::types::{
     TransferWaitReason, VolumeCopyConfig, WriteOperationError, WriteOperationPhase, WriteOperationType,
 };
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
 use std::path::{Path, PathBuf};
@@ -41,8 +43,8 @@ fn outage_state(engine: &TestOperations, budget: Duration) -> Arc<WriteOperation
 /// files, 6 bytes each, two folders.
 async fn nas(lane: &str) -> (Arc<OutageVolume>, Arc<dyn Volume>) {
     let inner = Arc::new(InMemoryVolume::new("Testnas").with_space_info(10_000_000, 10_000_000));
-    inner.create_directory(Path::new("/batch")).await.unwrap();
-    inner.create_directory(Path::new("/batch/sub")).await.unwrap();
+    inner.create_directory(app_path!("/batch")).await.unwrap();
+    inner.create_directory(app_path!("/batch/sub")).await.unwrap();
     for path in [
         "/batch/f0.txt",
         "/batch/f1.txt",
@@ -51,7 +53,10 @@ async fn nas(lane: &str) -> (Arc<OutageVolume>, Arc<dyn Volume>) {
         "/batch/sub/g0.txt",
         "/batch/sub/g1.txt",
     ] {
-        inner.create_file(Path::new(path), b"file 0").await.unwrap();
+        inner
+            .create_file(&AppPath::legacy_unchecked(Path::new(path)), b"file 0")
+            .await
+            .unwrap();
     }
     let nas = OutageVolume::wrap(inner, lane);
     let volume = Arc::clone(&nas) as Arc<dyn Volume>;

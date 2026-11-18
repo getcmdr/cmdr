@@ -22,6 +22,7 @@ use crate::event_sinks::CollectorEventSink;
 use crate::state::ConflictResolutionResponse;
 use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, WriteOperationError};
+use cmdr_fs::app_path;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{InMemoryVolume, UnwritableReason, WriteAccess};
 use cmdr_local::LocalPosixVolume;
@@ -33,10 +34,10 @@ async fn cross_volume_move_happy_path() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
 
-    source.create_file(Path::new("/a.txt"), b"alpha").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"bravo").await.unwrap();
-    source.create_directory(Path::new("/dir")).await.unwrap();
-    source.create_file(Path::new("/dir/c.txt"), b"charlie").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"alpha").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"bravo").await.unwrap();
+    source.create_directory(app_path!("/dir")).await.unwrap();
+    source.create_file(app_path!("/dir/c.txt"), b"charlie").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -57,14 +58,14 @@ async fn cross_volume_move_happy_path() {
     assert!(result.is_ok(), "expected Ok, got {:?}", result);
 
     // Sources are gone, dest has the data.
-    assert!(!source.exists(Path::new("/a.txt")).await);
-    assert!(!source.exists(Path::new("/b.txt")).await);
-    assert!(!source.exists(Path::new("/dir")).await);
-    let mut a = dest.open_read_stream(Path::new("/a.txt")).await.unwrap();
+    assert!(!source.exists(app_path!("/a.txt")).await);
+    assert!(!source.exists(app_path!("/b.txt")).await);
+    assert!(!source.exists(app_path!("/dir")).await);
+    let mut a = dest.open_read_stream(app_path!("/a.txt")).await.unwrap();
     assert_eq!(a.next_chunk().await.unwrap().unwrap(), b"alpha");
-    let mut b = dest.open_read_stream(Path::new("/b.txt")).await.unwrap();
+    let mut b = dest.open_read_stream(app_path!("/b.txt")).await.unwrap();
     assert_eq!(b.next_chunk().await.unwrap().unwrap(), b"bravo");
-    let mut c = dest.open_read_stream(Path::new("/dir/c.txt")).await.unwrap();
+    let mut c = dest.open_read_stream(app_path!("/dir/c.txt")).await.unwrap();
     assert_eq!(c.next_chunk().await.unwrap().unwrap(), b"charlie");
 
     // Completion event with 3 top-level sources processed.
@@ -81,9 +82,9 @@ async fn cross_volume_move_conflict_skip_preserves_source_and_dest() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
 
-    source.create_file(Path::new("/keep.txt"), b"new").await.unwrap();
-    source.create_file(Path::new("/fresh.txt"), b"fresh").await.unwrap();
-    dest.create_file(Path::new("/keep.txt"), b"old").await.unwrap();
+    source.create_file(app_path!("/keep.txt"), b"new").await.unwrap();
+    source.create_file(app_path!("/fresh.txt"), b"fresh").await.unwrap();
+    dest.create_file(app_path!("/keep.txt"), b"old").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state_with_interval_ms(&engine, 0);
@@ -108,17 +109,17 @@ async fn cross_volume_move_conflict_skip_preserves_source_and_dest() {
     assert!(result.is_ok(), "expected Ok, got {:?}", result);
 
     // Skipped: dest keeps "old", source still has "new" (skip must not delete source).
-    let mut dest_stream = dest.open_read_stream(Path::new("/keep.txt")).await.unwrap();
+    let mut dest_stream = dest.open_read_stream(app_path!("/keep.txt")).await.unwrap();
     assert_eq!(dest_stream.next_chunk().await.unwrap().unwrap(), b"old");
     assert!(
-        source.exists(Path::new("/keep.txt")).await,
+        source.exists(app_path!("/keep.txt")).await,
         "source must remain when conflict was skipped"
     );
 
     // Fresh source: moved through.
-    let mut fresh = dest.open_read_stream(Path::new("/fresh.txt")).await.unwrap();
+    let mut fresh = dest.open_read_stream(app_path!("/fresh.txt")).await.unwrap();
     assert_eq!(fresh.next_chunk().await.unwrap().unwrap(), b"fresh");
-    assert!(!source.exists(Path::new("/fresh.txt")).await);
+    assert!(!source.exists(app_path!("/fresh.txt")).await);
 
     // files_processed: both (1 skipped + 1 moved).
     let complete = events.complete.lock().unwrap();
@@ -139,8 +140,8 @@ async fn cross_volume_move_conflict_skip_preserves_source_and_dest() {
 async fn cross_volume_move_conflict_overwrite_replaces_dest_and_deletes_source() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_file(Path::new("/f.txt"), b"new").await.unwrap();
-    dest.create_file(Path::new("/f.txt"), b"old").await.unwrap();
+    source.create_file(app_path!("/f.txt"), b"new").await.unwrap();
+    dest.create_file(app_path!("/f.txt"), b"old").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -163,9 +164,9 @@ async fn cross_volume_move_conflict_overwrite_replaces_dest_and_deletes_source()
 
     assert!(result.is_ok(), "expected Ok, got {:?}", result);
 
-    let mut dest_stream = dest.open_read_stream(Path::new("/f.txt")).await.unwrap();
+    let mut dest_stream = dest.open_read_stream(app_path!("/f.txt")).await.unwrap();
     assert_eq!(dest_stream.next_chunk().await.unwrap().unwrap(), b"new");
-    assert!(!source.exists(Path::new("/f.txt")).await, "source must be deleted");
+    assert!(!source.exists(app_path!("/f.txt")).await, "source must be deleted");
 }
 
 /// Conflict + Rename (matrix cell): the original dest is kept untouched, the
@@ -175,8 +176,8 @@ async fn cross_volume_move_conflict_overwrite_replaces_dest_and_deletes_source()
 async fn cross_volume_move_conflict_rename_keeps_dest_and_renames_incoming() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_file(Path::new("/notes.txt"), b"incoming").await.unwrap();
-    dest.create_file(Path::new("/notes.txt"), b"existing").await.unwrap();
+    source.create_file(app_path!("/notes.txt"), b"incoming").await.unwrap();
+    dest.create_file(app_path!("/notes.txt"), b"existing").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -200,16 +201,16 @@ async fn cross_volume_move_conflict_rename_keeps_dest_and_renames_incoming() {
     assert!(result.is_ok(), "expected Ok, got {:?}", result);
 
     // Original dest kept untouched.
-    let mut keep = dest.open_read_stream(Path::new("/notes.txt")).await.unwrap();
+    let mut keep = dest.open_read_stream(app_path!("/notes.txt")).await.unwrap();
     assert_eq!(keep.next_chunk().await.unwrap().unwrap(), b"existing");
 
     // Incoming landed under the renamed name.
-    let mut renamed = dest.open_read_stream(Path::new("/notes (1).txt")).await.unwrap();
+    let mut renamed = dest.open_read_stream(app_path!("/notes (1).txt")).await.unwrap();
     assert_eq!(renamed.next_chunk().await.unwrap().unwrap(), b"incoming");
 
     // Source moved => deleted.
     assert!(
-        !source.exists(Path::new("/notes.txt")).await,
+        !source.exists(app_path!("/notes.txt")).await,
         "source must be deleted after Rename"
     );
 }
@@ -220,8 +221,8 @@ async fn cross_volume_move_conflict_rename_keeps_dest_and_renames_incoming() {
 async fn cross_volume_move_conflict_stop_resolves_via_oneshot() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_file(Path::new("/x.txt"), b"new").await.unwrap();
-    dest.create_file(Path::new("/x.txt"), b"old").await.unwrap();
+    source.create_file(app_path!("/x.txt"), b"new").await.unwrap();
+    dest.create_file(app_path!("/x.txt"), b"old").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -262,9 +263,9 @@ async fn cross_volume_move_conflict_stop_resolves_via_oneshot() {
     assert_eq!(events.conflicts.lock().unwrap().len(), 1);
 
     // Skip resolved: dest keeps old, source untouched.
-    let mut dest_stream = dest.open_read_stream(Path::new("/x.txt")).await.unwrap();
+    let mut dest_stream = dest.open_read_stream(app_path!("/x.txt")).await.unwrap();
     assert_eq!(dest_stream.next_chunk().await.unwrap().unwrap(), b"old");
-    assert!(source.exists(Path::new("/x.txt")).await);
+    assert!(source.exists(app_path!("/x.txt")).await);
 }
 
 /// Pre-known-conflicts bulk-skip: the first non-zero progress event accounts
@@ -277,15 +278,15 @@ async fn cross_volume_move_pre_known_conflicts_bulk_skip() {
     let (source, dest) = make_volumes();
 
     // 5 sources: a, c, e are pre-known conflicts; b, d are fresh.
-    source.create_file(Path::new("/a.txt"), b"AA").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"BBBB").await.unwrap();
-    source.create_file(Path::new("/c.txt"), b"CCCCCC").await.unwrap();
-    source.create_file(Path::new("/d.txt"), b"DDDDDDDD").await.unwrap();
-    source.create_file(Path::new("/e.txt"), b"EEEEEEEEEE").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"AA").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"BBBB").await.unwrap();
+    source.create_file(app_path!("/c.txt"), b"CCCCCC").await.unwrap();
+    source.create_file(app_path!("/d.txt"), b"DDDDDDDD").await.unwrap();
+    source.create_file(app_path!("/e.txt"), b"EEEEEEEEEE").await.unwrap();
 
-    dest.create_file(Path::new("/a.txt"), b"old-a").await.unwrap();
-    dest.create_file(Path::new("/c.txt"), b"old-c").await.unwrap();
-    dest.create_file(Path::new("/e.txt"), b"old-e").await.unwrap();
+    dest.create_file(app_path!("/a.txt"), b"old-a").await.unwrap();
+    dest.create_file(app_path!("/c.txt"), b"old-c").await.unwrap();
+    dest.create_file(app_path!("/e.txt"), b"old-e").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state_with_interval_ms(&engine, 0);
@@ -320,7 +321,10 @@ async fn cross_volume_move_pre_known_conflicts_bulk_skip() {
     // still on source (skip never deletes source).
     for name in ["a.txt", "c.txt", "e.txt"] {
         let path = format!("/{}", name);
-        let mut s = dest.open_read_stream(Path::new(&path)).await.unwrap();
+        let mut s = dest
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
+            .await
+            .unwrap();
         let chunk = s.next_chunk().await.unwrap().unwrap();
         assert!(
             chunk.starts_with(b"old-"),
@@ -329,15 +333,15 @@ async fn cross_volume_move_pre_known_conflicts_bulk_skip() {
             chunk
         );
         assert!(
-            source.exists(Path::new(&path)).await,
+            source.exists(&AppPath::legacy_unchecked(Path::new(&path))).await,
             "source {} must remain (skip is non-destructive)",
             name
         );
     }
 
     // Non-conflict sources moved through (data at dest, gone from source).
-    assert!(!source.exists(Path::new("/b.txt")).await);
-    assert!(!source.exists(Path::new("/d.txt")).await);
+    assert!(!source.exists(app_path!("/b.txt")).await);
+    assert!(!source.exists(app_path!("/d.txt")).await);
 
     // The first non-zero Copying progress event must bump files_done to 3 in
     // one shot (bulk-skip emit), not trickle one-per-conflict. Filter to
@@ -388,16 +392,16 @@ async fn cross_volume_move_top_level_directory_excluded_from_bulk_skip() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
 
-    source.create_file(Path::new("/file.txt"), b"new-file").await.unwrap();
-    source.create_directory(Path::new("/docs")).await.unwrap();
+    source.create_file(app_path!("/file.txt"), b"new-file").await.unwrap();
+    source.create_directory(app_path!("/docs")).await.unwrap();
     source
-        .create_file(Path::new("/docs/guide.txt"), b"new-guide")
+        .create_file(app_path!("/docs/guide.txt"), b"new-guide")
         .await
         .unwrap();
 
-    dest.create_file(Path::new("/file.txt"), b"old-file").await.unwrap();
-    dest.create_directory(Path::new("/docs")).await.unwrap();
-    dest.create_file(Path::new("/docs/guide.txt"), b"old-guide")
+    dest.create_file(app_path!("/file.txt"), b"old-file").await.unwrap();
+    dest.create_directory(app_path!("/docs")).await.unwrap();
+    dest.create_file(app_path!("/docs/guide.txt"), b"old-guide")
         .await
         .unwrap();
 
@@ -426,9 +430,9 @@ async fn cross_volume_move_top_level_directory_excluded_from_bulk_skip() {
 
     // Skip is non-destructive: dest content preserved on both sides, source
     // files survive too.
-    let mut dest_file = dest.open_read_stream(Path::new("/file.txt")).await.unwrap();
+    let mut dest_file = dest.open_read_stream(app_path!("/file.txt")).await.unwrap();
     assert_eq!(dest_file.next_chunk().await.unwrap().unwrap(), b"old-file");
-    assert!(source.exists(Path::new("/file.txt")).await);
+    assert!(source.exists(app_path!("/file.txt")).await);
 
     // Pin the bulk-skip exclusion: the first non-zero Copying progress event
     // must account exactly ONE source (`file.txt`), not two. If `docs` were
@@ -575,9 +579,9 @@ async fn a_cross_volume_move_carries_the_executable_bit() {
 async fn cross_volume_move_creates_missing_nested_dest() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_file(Path::new("/a.txt"), b"alpha").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"bravo").await.unwrap();
-    assert!(!dest.exists(Path::new("/incoming")).await);
+    source.create_file(app_path!("/a.txt"), b"alpha").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"bravo").await.unwrap();
+    assert!(!dest.exists(app_path!("/incoming")).await);
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -603,15 +607,17 @@ async fn cross_volume_move_creates_missing_nested_dest() {
 
     for dir in ["/incoming", "/incoming/2026", "/incoming/2026/trip"] {
         assert!(
-            dest.is_directory(Path::new(dir)).await.expect("ancestor statable"),
+            dest.is_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+                .await
+                .expect("ancestor statable"),
             "{dir} should be a directory"
         );
     }
     // Sources gone, files landed in the freshly-created dest.
-    assert!(!source.exists(Path::new("/a.txt")).await);
-    assert!(!source.exists(Path::new("/b.txt")).await);
-    assert!(dest.exists(Path::new("/incoming/2026/trip/a.txt")).await);
-    assert!(dest.exists(Path::new("/incoming/2026/trip/b.txt")).await);
+    assert!(!source.exists(app_path!("/a.txt")).await);
+    assert!(!source.exists(app_path!("/b.txt")).await);
+    assert!(dest.exists(app_path!("/incoming/2026/trip/a.txt")).await);
+    assert!(dest.exists(app_path!("/incoming/2026/trip/b.txt")).await);
 }
 
 /// A move into a directory reaps the stale `.cmdr-tmp-*` leftovers a crash or a
@@ -630,13 +636,19 @@ async fn a_move_into_a_directory_reaps_the_stale_temps_a_crash_left_there() {
     let engine = TestOperations::new();
     let source_vol = Arc::new(InMemoryVolume::new("Source"));
     let dest_vol = Arc::new(InMemoryVolume::new("Dest"));
-    source_vol.create_file(Path::new("/notes.txt"), b"hello").await.unwrap();
-    dest_vol.create_directory(Path::new("/inbox")).await.unwrap();
+    source_vol.create_file(app_path!("/notes.txt"), b"hello").await.unwrap();
+    dest_vol.create_directory(app_path!("/inbox")).await.unwrap();
 
     let stale = Path::new("/inbox/holiday.jpg.cmdr-tmp-4d1f9c");
     let fresh = Path::new("/inbox/report.pdf.cmdr-tmp-77aa10");
-    dest_vol.create_file(stale, b"an abandoned partial").await.unwrap();
-    dest_vol.create_file(fresh, b"someone is writing this").await.unwrap();
+    dest_vol
+        .create_file(&AppPath::legacy_unchecked(stale), b"an abandoned partial")
+        .await
+        .unwrap();
+    dest_vol
+        .create_file(&AppPath::legacy_unchecked(fresh), b"someone is writing this")
+        .await
+        .unwrap();
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
@@ -663,15 +675,15 @@ async fn a_move_into_a_directory_reaps_the_stale_temps_a_crash_left_there() {
     .expect("the move itself succeeds");
 
     assert!(
-        !dest_vol.exists(stale).await,
+        !dest_vol.exists(&AppPath::legacy_unchecked(stale)).await,
         "an hours-old partial in the destination goes when a move starts into it"
     );
     assert!(
-        dest_vol.exists(fresh).await,
+        dest_vol.exists(&AppPath::legacy_unchecked(fresh)).await,
         "a minutes-old partial may belong to a transfer running right now, so it stays"
     );
     assert!(
-        dest_vol.exists(Path::new("/inbox/notes.txt")).await,
+        dest_vol.exists(app_path!("/inbox/notes.txt")).await,
         "the move still lands"
     );
 }
@@ -683,7 +695,7 @@ async fn a_move_into_a_directory_reaps_the_stale_temps_a_crash_left_there() {
 async fn a_cross_volume_move_into_a_folder_that_takes_no_writes_is_refused_before_anything_moves() {
     let engine = TestOperations::new();
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/a.txt"), b"alpha").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"alpha").await.unwrap();
     let dest: Arc<dyn Volume> = Arc::new(
         InMemoryVolume::new("Dest")
             .with_space_info(10_000_000, 10_000_000)
@@ -720,11 +732,11 @@ async fn a_cross_volume_move_into_a_folder_that_takes_no_writes_is_refused_befor
         failure.error
     );
     assert!(
-        source.exists(Path::new("/a.txt")).await,
+        source.exists(app_path!("/a.txt")).await,
         "the source stays where it was"
     );
     assert!(
-        !dest.exists(Path::new("/locked/inbox")).await,
+        !dest.exists(app_path!("/locked/inbox")).await,
         "no destination folder was created"
     );
 }
@@ -742,8 +754,8 @@ async fn a_volume_move_reports_why_it_cant_roll_back() {
 
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_file(Path::new("/a.txt"), b"alpha").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"bravo").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"alpha").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"bravo").await.unwrap();
     let source: Arc<dyn Volume> = source;
     let dest: Arc<dyn Volume> = dest;
 

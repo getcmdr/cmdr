@@ -10,6 +10,8 @@
 //! share's next arrival, whose sweep puts it back. A drop before the swap leaves
 //! the original as it was.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::io::{Cursor, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -110,8 +112,11 @@ async fn run_on(cut: Cut, meanwhile: Meanwhile, replace: Replace) -> Ran {
     let label = format!("{cut:?}/{meanwhile:?}/{replace:?}");
     let engine = TestOperations::new();
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
-    inner.create_directory(Path::new("/share")).await.unwrap();
-    inner.create_file(Path::new(ARCHIVE), &original_zip()).await.unwrap();
+    inner.create_directory(app_path!("/share")).await.unwrap();
+    inner
+        .create_file(&AppPath::legacy_unchecked(Path::new(ARCHIVE)), &original_zip())
+        .await
+        .unwrap();
     let nas = OutageVolume::wrap(Arc::clone(&inner), &format!("zip-edit-{label}"));
     if replace == Replace::InOneStep {
         nas.replace_atomically();
@@ -198,7 +203,7 @@ async fn run_on(cut: Cut, meanwhile: Meanwhile, replace: Replace) -> Ran {
 }
 
 async fn read_all(volume: &dyn Volume, path: &Path) -> Option<Vec<u8>> {
-    let mut stream = volume.open_read_stream(path).await.ok()?;
+    let mut stream = volume.open_read_stream(&AppPath::legacy_unchecked(path)).await.ok()?;
     let mut buf = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         buf.extend_from_slice(&chunk.ok()?);
@@ -220,7 +225,7 @@ impl Ran {
     async fn names(&self) -> Vec<String> {
         let mut names: Vec<String> = self
             .inner
-            .list_directory(Path::new("/share"), None)
+            .list_directory(app_path!("/share"), None)
             .await
             .unwrap()
             .into_iter()
@@ -452,8 +457,11 @@ async fn a_cancel_while_the_upload_waits_leaves_the_original() {
 #[tokio::test]
 async fn a_refused_upload_fails_at_once() {
     let inner = Arc::new(InMemoryVolume::new("Remote"));
-    inner.create_directory(Path::new("/share")).await.unwrap();
-    inner.create_file(Path::new(ARCHIVE), &original_zip()).await.unwrap();
+    inner.create_directory(app_path!("/share")).await.unwrap();
+    inner
+        .create_file(&AppPath::legacy_unchecked(Path::new(ARCHIVE)), &original_zip())
+        .await
+        .unwrap();
     let faulty = FaultyVolume::wrapping(Arc::clone(&inner))
         .failing_call(
             FaultyOp::WriteFromStream,

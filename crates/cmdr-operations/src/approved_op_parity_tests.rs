@@ -17,6 +17,8 @@
 //! ❌ These are not "the agent's tests". Nothing in the engine knows who called
 //! it, and that is exactly the property being pinned.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -433,10 +435,13 @@ fn unique_lane(label: &str) -> String {
 
 async fn seed(volume: &dyn cmdr_fs::volume::Volume, path: &str, bytes: &[u8]) {
     let path = Path::new(path);
-    if volume.exists(path).await {
-        volume.delete(path).await.expect("clear");
+    if volume.exists(&AppPath::legacy_unchecked(path)).await {
+        volume.delete(&AppPath::legacy_unchecked(path)).await.expect("clear");
     }
-    volume.create_file(path, bytes).await.expect("seed");
+    volume
+        .create_file(&AppPath::legacy_unchecked(path), bytes)
+        .await
+        .expect("seed");
 }
 
 /// The whole chain, on the route an approved SMB or MTP group actually takes: a binding
@@ -460,7 +465,7 @@ async fn a_bound_cross_volume_copy_skips_the_source_that_changed_while_it_waited
             .with_lane_key(unique_lane("dst"))
             .with_space_info(1_000_000, 900_000),
     );
-    dest.create_directory(Path::new("/incoming"))
+    dest.create_directory(app_path!("/incoming"))
         .await
         .expect("seed the destination folder");
     seed(source.as_ref(), "/holiday.jpg", b"as reviewed").await;
@@ -524,12 +529,12 @@ async fn a_bound_cross_volume_copy_skips_the_source_that_changed_while_it_waited
         .map(|e| format!("{:?}", e.error))
         .collect();
     assert!(
-        dest.exists(Path::new("/incoming/holiday.jpg")).await,
+        dest.exists(app_path!("/incoming/holiday.jpg")).await,
         "the untouched source still copies: a binding filters, it does not refuse the batch. \
          verdicts={verdicts:?} errors={errors:?}"
     );
     assert!(
-        !dest.exists(Path::new("/incoming/invoice.pdf")).await,
+        !dest.exists(app_path!("/incoming/invoice.pdf")).await,
         "and the file the user never approved in this state is not written"
     );
 }

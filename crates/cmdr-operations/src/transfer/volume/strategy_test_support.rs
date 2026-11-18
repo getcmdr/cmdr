@@ -11,6 +11,7 @@
 use super::super::faulty_volume::forward_volume_methods;
 use super::*;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 use std::future::Future;
 use std::ops::ControlFlow;
 use std::path::Path;
@@ -101,31 +102,31 @@ impl Volume for SlowSource {
     fn name(&self) -> &str {
         "slow-source"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(false) })
     }
@@ -134,7 +135,7 @@ impl Volume for SlowSource {
     }
     fn open_read_stream<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let gate = Arc::clone(&self.gate);
         Box::pin(async move {
@@ -165,31 +166,31 @@ impl Volume for FailOnceStaleDest {
     fn name(&self) -> &str {
         "fail-once-stale-dest"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { false })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(false) })
     }
@@ -202,15 +203,15 @@ impl Volume for FailOnceStaleDest {
     /// file twice, which is not what any of these suites are measuring.
     fn rename<'a>(
         &'a self,
-        _from: &'a Path,
-        _to: &'a Path,
+        _from: &'a AppPath,
+        _to: &'a AppPath,
         _force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(()) })
     }
     fn write_from_stream<'a>(
         &'a self,
-        _dest: &'a Path,
+        _dest: &'a AppPath,
         _mode: WriteMode,
         length: StreamLength,
         _stream: Box<dyn VolumeReadStream>,
@@ -284,7 +285,7 @@ impl FlakyDest {
     /// Everything sitting in the destination root, by name.
     pub(crate) async fn names(&self) -> Vec<String> {
         self.inner
-            .list_directory(Path::new("/"), None)
+            .list_directory(app_path!("/"), None)
             .await
             .unwrap_or_default()
             .into_iter()
@@ -294,7 +295,11 @@ impl FlakyDest {
 
     /// The bytes at `path`, or `None` when nothing is there.
     pub(crate) async fn read(&self, path: &str) -> Option<Vec<u8>> {
-        let mut stream = self.inner.open_read_stream(Path::new(path)).await.ok()?;
+        let mut stream = self
+            .inner
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+            .await
+            .ok()?;
         let mut buf = Vec::new();
         while let Some(Ok(chunk)) = stream.next_chunk().await {
             buf.extend_from_slice(&chunk);
@@ -330,12 +335,15 @@ impl Volume for FlakyDest {
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
+        let dest_app = dest;
+        let dest_std = dest.as_std_legacy();
+        let dest: &Path = &dest_std;
         let Some(size) = length.known() else {
             return Box::pin(async { Err(VolumeError::NotSupported) });
         };
@@ -352,7 +360,7 @@ impl Volume for FlakyDest {
             if attempt >= self.fail_writes {
                 return self
                     .inner
-                    .write_from_stream(dest, mode, StreamLength::Known(size), stream, on_progress)
+                    .write_from_stream(dest_app, mode, StreamLength::Known(size), stream, on_progress)
                     .await;
             }
             // Drain one chunk and leave it on disk, unremoved: a wedged backend
@@ -362,8 +370,8 @@ impl Volume for FlakyDest {
             if let Some(Ok(chunk)) = stream.next_chunk().await {
                 partial.extend_from_slice(&chunk);
             }
-            let _ = self.inner.delete(dest).await;
-            let _ = self.inner.create_file(dest, &partial).await;
+            let _ = self.inner.delete(dest_app).await;
+            let _ = self.inner.create_file(dest_app, &partial).await;
             Err(self.error.clone())
         })
     }
@@ -400,14 +408,14 @@ impl Volume for RecursiveDeleteVolume {
         self
     }
     /// Recursive delete: contractually wrong, but plausible for some backends.
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             if self.inner.is_directory(path).await.unwrap_or(false) {
                 let entries = self.inner.list_directory(path, None).await?;
                 for entry in entries {
                     let child = PathBuf::from(&entry.path);
                     // Recurse: child might also be a non-empty directory.
-                    Box::pin(self.delete(&child)).await.ok();
+                    Box::pin(self.delete(&AppPath::legacy_unchecked(&child))).await.ok();
                 }
             }
             self.inner.delete(path).await
@@ -480,8 +488,11 @@ impl Volume for UndeletableSource {
     fn supports_streaming(&self) -> bool {
         true
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if path
                 .file_name()
                 .is_some_and(|n| n.to_string_lossy() == self.undeletable.as_str())
@@ -490,15 +501,15 @@ impl Volume for UndeletableSource {
             }
             // A real backend's `delete` is "file or EMPTY directory"; refuse a
             // directory that still has contents, the way `remove_dir` does.
-            if self.inner.is_directory(path).await.unwrap_or(false)
-                && !self.inner.list_directory(path, None).await?.is_empty()
+            if self.inner.is_directory(path_app).await.unwrap_or(false)
+                && !self.inner.list_directory(path_app, None).await?.is_empty()
             {
                 return Err(VolumeError::IoError {
                     message: "Directory not empty".into(),
                     raw_os_error: None,
                 });
             }
-            self.inner.delete(path).await
+            self.inner.delete(path_app).await
         })
     }
 }
@@ -538,7 +549,7 @@ impl Volume for WedgedThenWorkingDest {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -549,46 +560,46 @@ impl Volume for WedgedThenWorkingDest {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.delete(path)
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.rename(from, to, force)
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.inner.open_read_stream(path)
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -631,31 +642,31 @@ impl Volume for WedgedOpenSource {
     fn name(&self) -> &str {
         "wedged-open-source"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(false) })
     }
@@ -664,7 +675,7 @@ impl Volume for WedgedOpenSource {
     }
     fn open_read_stream<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let opening = Arc::clone(&self.opening);
         Box::pin(async move {
@@ -706,7 +717,7 @@ impl TierOneWitnessDest {
     /// Everything sitting in the destination root, by name.
     pub(super) async fn names(&self) -> Vec<String> {
         self.inner
-            .list_directory(Path::new("/"), None)
+            .list_directory(app_path!("/"), None)
             .await
             .unwrap_or_default()
             .into_iter()
@@ -718,8 +729,8 @@ impl TierOneWitnessDest {
     /// at the write path chunk by chunk (`InMemoryVolume::create_file` refuses to
     /// overwrite an existing entry).
     async fn publish(&self, path: &Path, data: &[u8]) -> Result<(), VolumeError> {
-        let _ = self.inner.delete(path).await;
-        self.inner.create_file(path, data).await
+        let _ = self.inner.delete(&AppPath::legacy_unchecked(path)).await;
+        self.inner.create_file(&AppPath::legacy_unchecked(path), data).await
     }
 }
 
@@ -750,7 +761,7 @@ impl Volume for TierOneWitnessDest {
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         _mode: WriteMode,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
@@ -760,6 +771,9 @@ impl Volume for TierOneWitnessDest {
             return Box::pin(async { Err(VolumeError::NotSupported) });
         };
         Box::pin(async move {
+            let dest_app = dest;
+            let dest_std = dest.as_std_legacy();
+            let dest: &Path = &dest_std;
             let mut data: Vec<u8> = Vec::new();
             self.publish(dest, &data).await?;
             while let Some(chunk) = stream.next_chunk().await {
@@ -769,7 +783,7 @@ impl Volume for TierOneWitnessDest {
                 if on_progress(StreamWriteProgress::new(data.len() as u64, StreamLength::Known(size))).is_break() {
                     // What every real backend does on a cooperative cancel: drop
                     // the handle and remove the partial it was writing.
-                    let _ = self.inner.delete(dest).await;
+                    let _ = self.inner.delete(dest_app).await;
                     self.own_cleanup_ran.store(true, Ordering::SeqCst);
                     return Err(VolumeError::Cancelled("Operation cancelled by user".into()));
                 }
@@ -885,31 +899,31 @@ impl Volume for ReleasingSource {
     fn name(&self) -> &str {
         "releasing-source"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(false) })
     }
@@ -918,13 +932,13 @@ impl Volume for ReleasingSource {
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.open_read_stream_at_offset(path, 0)
     }
     fn open_read_stream_at_offset<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let log = Arc::clone(&self.log);
@@ -1010,31 +1024,31 @@ impl Volume for YieldingSource {
     fn name(&self) -> &str {
         "yielding-source"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(false) })
     }
@@ -1064,13 +1078,13 @@ impl Volume for YieldingSource {
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.open_read_stream_at_offset(path, 0)
     }
     fn open_read_stream_at_offset<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let log = Arc::clone(&self.log);
@@ -1100,31 +1114,31 @@ impl Volume for NeverPendingYieldSource {
     fn name(&self) -> &str {
         "never-pending-yield-source"
     }
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(false) })
     }
@@ -1144,7 +1158,7 @@ impl Volume for NeverPendingYieldSource {
     }
     fn open_read_stream<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         let opens = Arc::clone(&self.opens);
         Box::pin(async move {

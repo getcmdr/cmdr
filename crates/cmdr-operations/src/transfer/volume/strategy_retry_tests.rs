@@ -23,6 +23,7 @@ use super::super::super::transfer_probe::TaskRow;
 use super::test_support::{FlakyDest, make_state};
 use super::*;
 use crate::transfer::transfer_driver::LeafProgressLedger;
+use cmdr_fs::app_path;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
@@ -37,7 +38,7 @@ const PAYLOAD: &[u8] = b"the-bytes-that-must-arrive-whole";
 /// An in-memory source holding one file at `/a.txt`.
 async fn source_with_payload() -> Arc<dyn Volume> {
     let inner = Arc::new(InMemoryVolume::new("source").with_space_info(10_000_000, 10_000_000));
-    inner.create_file(Path::new("/a.txt"), PAYLOAD).await.unwrap();
+    inner.create_file(app_path!("/a.txt"), PAYLOAD).await.unwrap();
     inner as Arc<dyn Volume>
 }
 
@@ -291,7 +292,7 @@ async fn a_retried_safe_replace_replaces_the_original_once_its_bytes_are_whole()
     let source = source_with_payload().await;
     let flaky = FlakyDest::new(1, VolumeError::ConnectionTimeout("send timed out".into()));
     let dest: Arc<dyn Volume> = Arc::clone(&flaky) as Arc<dyn Volume>;
-    flaky.inner.create_file(Path::new("/a.txt"), b"ORIGINAL").await.unwrap();
+    flaky.inner.create_file(app_path!("/a.txt"), b"ORIGINAL").await.unwrap();
 
     let bytes = copy_one(&source, &dest, guard.state(), WriteStaging::StageOverOriginal, "/a.txt")
         .await
@@ -320,7 +321,7 @@ async fn a_safe_replace_that_fails_every_attempt_still_leaves_the_original() {
     let source = source_with_payload().await;
     let flaky = FlakyDest::new(usize::MAX, VolumeError::ConnectionTimeout("send timed out".into()));
     let dest: Arc<dyn Volume> = Arc::clone(&flaky) as Arc<dyn Volume>;
-    flaky.inner.create_file(Path::new("/a.txt"), b"ORIGINAL").await.unwrap();
+    flaky.inner.create_file(app_path!("/a.txt"), b"ORIGINAL").await.unwrap();
 
     let _ = copy_one(&source, &dest, guard.state(), WriteStaging::StageOverOriginal, "/a.txt").await;
 
@@ -356,9 +357,9 @@ async fn a_retried_child_is_recorded_in_the_rollback_ledger_exactly_once() {
     let engine = TestOperations::new();
     let guard = engine.register_state("retry-ledger", make_state(&engine));
     let src = Arc::new(InMemoryVolume::new("source").with_space_info(10_000_000, 10_000_000));
-    src.create_directory(Path::new("/tree")).await.unwrap();
-    src.create_file(Path::new("/tree/one.txt"), b"one").await.unwrap();
-    src.create_file(Path::new("/tree/two.txt"), b"two").await.unwrap();
+    src.create_directory(app_path!("/tree")).await.unwrap();
+    src.create_file(app_path!("/tree/one.txt"), b"one").await.unwrap();
+    src.create_file(app_path!("/tree/two.txt"), b"two").await.unwrap();
     let source: Arc<dyn Volume> = src as Arc<dyn Volume>;
 
     // Only `two.txt` blips, and only once.

@@ -14,6 +14,7 @@
 //! registry the drive coming back registers on, which is what wakes the ledger
 //! waiting for it.
 
+use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -627,7 +628,9 @@ async fn a_volume_move_of_a_folder_that_holds_a_mounted_drive_refuses_and_moves_
         nested.assert_untouched();
         for copied in ["/folder", "/mnt", "/mine.txt", "/precious.txt"] {
             assert!(
-                !dest.exists(std::path::Path::new(copied)).await,
+                !dest
+                    .exists(&AppPath::legacy_unchecked(std::path::Path::new(copied)))
+                    .await,
                 "nothing was copied: {copied}"
             );
         }

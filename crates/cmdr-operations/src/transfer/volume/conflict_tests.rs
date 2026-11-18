@@ -14,6 +14,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::WriteOperationError;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
 use std::sync::Arc;
 
@@ -27,13 +28,13 @@ async fn dir_overwrite_must_merge_not_replace_even_with_recursive_delete() {
     // Build a dest dir with two files: one will conflict with the source,
     // one is unique to dest (`keep-me.jpg`) and MUST survive merge.
     let inner = Arc::new(InMemoryVolume::new("dest"));
-    inner.create_directory(Path::new("/photos")).await.unwrap();
+    inner.create_directory(app_path!("/photos")).await.unwrap();
     inner
-        .create_file(Path::new("/photos/keep-me.jpg"), b"existing")
+        .create_file(app_path!("/photos/keep-me.jpg"), b"existing")
         .await
         .unwrap();
     inner
-        .create_file(Path::new("/photos/will-conflict.jpg"), b"old")
+        .create_file(app_path!("/photos/will-conflict.jpg"), b"old")
         .await
         .unwrap();
 
@@ -63,7 +64,7 @@ async fn dir_overwrite_must_merge_not_replace_even_with_recursive_delete() {
     // for dirs" UX has silently flipped to "Overwrite means replace", and any
     // file in dest that isn't in source is gone.
     assert!(
-        inner.exists(Path::new("/photos/keep-me.jpg")).await,
+        inner.exists(app_path!("/photos/keep-me.jpg")).await,
         "Overwrite resolution must NOT recursively delete the dest directory. \
          Cmdr's UX promise is merge-not-replace for dirs; if this fails, users \
          will lose files that exist in dest but not in source."
@@ -71,7 +72,7 @@ async fn dir_overwrite_must_merge_not_replace_even_with_recursive_delete() {
 
     // Also check the dir itself is intact (not a `delete` retry surprise).
     assert!(
-        inner.exists(Path::new("/photos")).await,
+        inner.exists(app_path!("/photos")).await,
         "Dest directory itself must remain; the recursive copy needs it as a merge target."
     );
 }
@@ -93,14 +94,14 @@ async fn dir_overwrite_must_merge_not_replace_even_with_recursive_delete() {
 async fn a_source_whose_type_cannot_be_established_never_clears_the_destination_folder() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("source"));
-    source.create_directory(Path::new("/album")).await.unwrap();
-    source.create_file(Path::new("/album/new.jpg"), b"new").await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    source.create_file(app_path!("/album/new.jpg"), b"new").await.unwrap();
     source.set_stat_failing(Path::new("/album"));
     let source_dyn: Arc<dyn Volume> = source.clone();
 
     let dest = Arc::new(InMemoryVolume::new("dest"));
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(Path::new("/album/precious.txt"), b"precious user data")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(app_path!("/album/precious.txt"), b"precious user data")
         .await
         .unwrap();
     let dest_dyn: Arc<dyn Volume> = dest.clone();
@@ -131,11 +132,11 @@ async fn a_source_whose_type_cannot_be_established_never_clears_the_destination_
     .await;
 
     assert!(
-        dest.exists(Path::new("/album/precious.txt")).await,
+        dest.exists(app_path!("/album/precious.txt")).await,
         "an unanswerable source stat must never authorize clearing the destination folder"
     );
     assert!(
-        dest.exists(Path::new("/album")).await,
+        dest.exists(app_path!("/album")).await,
         "the destination folder must survive"
     );
     let err = result
@@ -155,11 +156,11 @@ async fn a_source_whose_type_cannot_be_established_never_clears_the_destination_
 async fn a_destination_whose_type_cannot_be_established_is_left_alone() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("source"));
-    source.create_file(Path::new("/notes.txt"), b"new").await.unwrap();
+    source.create_file(app_path!("/notes.txt"), b"new").await.unwrap();
     let source_dyn: Arc<dyn Volume> = source.clone();
 
     let dest = Arc::new(InMemoryVolume::new("dest"));
-    dest.create_directory(Path::new("/notes.txt")).await.unwrap();
+    dest.create_directory(app_path!("/notes.txt")).await.unwrap();
     dest.set_stat_failing(Path::new("/notes.txt"));
     let dest_dyn: Arc<dyn Volume> = dest.clone();
 
@@ -188,7 +189,7 @@ async fn a_destination_whose_type_cannot_be_established_is_left_alone() {
     .await;
 
     assert!(
-        dest.exists(Path::new("/notes.txt")).await,
+        dest.exists(app_path!("/notes.txt")).await,
         "an unanswerable destination stat must never authorize deleting it"
     );
     let err = result
@@ -208,7 +209,7 @@ async fn a_destination_whose_type_cannot_be_established_is_left_alone() {
 async fn a_destination_that_raced_away_still_resolves_as_a_plain_write() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("source"));
-    source.create_file(Path::new("/notes.txt"), b"new").await.unwrap();
+    source.create_file(app_path!("/notes.txt"), b"new").await.unwrap();
     let source_dyn: Arc<dyn Volume> = source.clone();
 
     // Empty destination: the conflict was detected, then the dest vanished.
@@ -263,11 +264,11 @@ async fn a_share_that_drops_as_the_destination_is_probed_is_waited_for() {
 
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("source"));
-    source.create_file(Path::new("/notes.txt"), b"new").await.unwrap();
+    source.create_file(app_path!("/notes.txt"), b"new").await.unwrap();
     let source_dyn: Arc<dyn Volume> = source.clone();
 
     let dest = Arc::new(InMemoryVolume::new("dest"));
-    dest.create_file(Path::new("/notes.txt"), b"old").await.unwrap();
+    dest.create_file(app_path!("/notes.txt"), b"old").await.unwrap();
     let nas = OutageVolume::wrap(Arc::clone(&dest), "conflict-probe-outage");
     nas.drop_at_stat_of(Path::new("/notes.txt"));
     let dest_dyn: Arc<dyn Volume> = nas.clone();
@@ -327,7 +328,7 @@ async fn a_share_that_drops_as_the_destination_is_probed_is_waited_for() {
     assert_eq!(resolved.replaces, Replaces::Swap);
     assert_eq!(resolved.write_path, PathBuf::from("/notes.txt"));
     assert_eq!(
-        dest.get_metadata(Path::new("/notes.txt")).await.unwrap().size,
+        dest.get_metadata(app_path!("/notes.txt")).await.unwrap().size,
         Some(3),
         "the original is untouched"
     );
@@ -344,11 +345,11 @@ async fn a_share_that_stays_gone_as_the_destination_is_probed_says_it_lost_the_c
 
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("source"));
-    source.create_file(Path::new("/notes.txt"), b"new").await.unwrap();
+    source.create_file(app_path!("/notes.txt"), b"new").await.unwrap();
     let source_dyn: Arc<dyn Volume> = source.clone();
 
     let dest = Arc::new(InMemoryVolume::new("Testnas"));
-    dest.create_file(Path::new("/notes.txt"), b"old").await.unwrap();
+    dest.create_file(app_path!("/notes.txt"), b"old").await.unwrap();
     let nas = OutageVolume::wrap(Arc::clone(&dest), "conflict-probe-gone");
     nas.drop_at_stat_of(Path::new("/notes.txt"));
     let dest_dyn: Arc<dyn Volume> = nas.clone();
@@ -397,7 +398,7 @@ async fn a_share_that_stays_gone_as_the_destination_is_probed_says_it_lost_the_c
         "the connection is the cause: {error:?}"
     );
     assert_eq!(
-        dest.get_metadata(Path::new("/notes.txt")).await.unwrap().size,
+        dest.get_metadata(app_path!("/notes.txt")).await.unwrap().size,
         Some(3),
         "the original is untouched"
     );
@@ -419,7 +420,7 @@ impl Volume for StatCounting {
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         self.stats.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         self.inner.get_metadata(path)
@@ -433,10 +434,10 @@ async fn a_blanket_file_overwrite_asks_the_destination_type_once() {
     let engine = TestOperations::new();
     let state = Arc::new(engine.new_operation_state(std::time::Duration::from_millis(0)));
     let source = Arc::new(InMemoryVolume::new("source"));
-    source.create_file(Path::new("/notes.txt"), b"new").await.unwrap();
+    source.create_file(app_path!("/notes.txt"), b"new").await.unwrap();
     let source_dyn: Arc<dyn Volume> = source.clone();
     let inner = Arc::new(InMemoryVolume::new("dest"));
-    inner.create_file(Path::new("/notes.txt"), b"old").await.unwrap();
+    inner.create_file(app_path!("/notes.txt"), b"old").await.unwrap();
     let dest = Arc::new(StatCounting {
         inner,
         stats: std::sync::atomic::AtomicUsize::new(0),
@@ -480,7 +481,7 @@ async fn file_overwrite_keeps_the_original_and_writes_at_its_name() {
     // streaming write. This is the safe-replace contract that protects data on
     // a mid-stream failure.
     let dest = Arc::new(InMemoryVolume::new("dest"));
-    dest.create_file(Path::new("/notes.txt"), b"old content").await.unwrap();
+    dest.create_file(app_path!("/notes.txt"), b"old content").await.unwrap();
     let dest_dyn: Arc<dyn Volume> = dest.clone();
 
     let resolved = apply_volume_conflict_resolution(
@@ -498,7 +499,7 @@ async fn file_overwrite_keeps_the_original_and_writes_at_its_name() {
     // (a) The original MUST still exist after resolution — current code
     // deletes it here, so this assertion is RED against the buggy version.
     assert!(
-        dest.exists(Path::new("/notes.txt")).await,
+        dest.exists(app_path!("/notes.txt")).await,
         "Overwrite resolution must NOT delete the existing FILE before the \
          streaming write. The original must survive so a mid-stream failure \
          can't lose both the old and the new copy."
@@ -523,7 +524,7 @@ async fn file_overwrite_keeps_the_original_and_writes_at_its_name() {
 async fn file_overwrite_on_a_whole_publishing_destination_writes_in_place() {
     let engine = TestOperations::new();
     let dest = Arc::new(InMemoryVolume::new("dest").with_whole_publish());
-    dest.create_file(Path::new("/notes.txt"), b"old content").await.unwrap();
+    dest.create_file(app_path!("/notes.txt"), b"old content").await.unwrap();
     let dest_dyn: Arc<dyn Volume> = dest.clone();
 
     let resolved = apply_volume_conflict_resolution(
@@ -541,7 +542,7 @@ async fn file_overwrite_on_a_whole_publishing_destination_writes_in_place() {
     assert_eq!(resolved.write_path, PathBuf::from("/notes.txt"));
     assert_eq!(resolved.replaces, Replaces::InPlace);
     assert!(
-        dest.exists(Path::new("/notes.txt")).await,
+        dest.exists(app_path!("/notes.txt")).await,
         "the original must survive resolution"
     );
 }

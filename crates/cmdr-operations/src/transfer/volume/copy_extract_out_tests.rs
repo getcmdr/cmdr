@@ -40,7 +40,7 @@ fn build_extract_out_fixture() -> (tempfile::TempDir, PathBuf) {
 
 async fn read_dest_file(dest: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
     let mut stream = dest
-        .open_read_stream(Path::new(path))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
         .await
         .unwrap_or_else(|e| panic!("dest missing {path}: {e:?}"));
     let mut out = Vec::new();
@@ -506,7 +506,7 @@ mod quarantine {
 
         let source = local_archive_volume(&archive, cmdr_archive::ArchiveFormat::Tar(cmdr_archive::TarCodec::Gzip));
         assert!(
-            source.extraction_is_sequential(&archive.join("docs")),
+            source.extraction_is_sequential(&AppPath::legacy_unchecked(&archive.join("docs"))),
             "the fixture must take the one-pass path"
         );
         let sources = [archive.join("top.txt"), archive.join("docs")];
@@ -543,7 +543,7 @@ mod quarantine {
 
         fn write_from_stream<'a>(
             &'a self,
-            dest: &'a Path,
+            dest: &'a AppPath,
             mode: cmdr_fs::volume::WriteMode,
             length: cmdr_fs::volume::StreamLength,
             stream: Box<dyn cmdr_fs::volume::VolumeReadStream>,

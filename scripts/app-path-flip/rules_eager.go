@@ -297,8 +297,7 @@ func paramRetype(src *source, fn *implMethod, at int) (edit, bool) {
 			}
 			start, end := offset+colon+1, offset+len(part)
 			typ := string(src.text[start:end])
-			retyped := stdPathBufWord.ReplaceAllString(typ, "AppPathBuf")
-			retyped = stdPathWord.ReplaceAllString(retyped, "AppPath")
+			retyped := retypeStd(typ)
 			if retyped == typ {
 				return edit{}, false
 			}

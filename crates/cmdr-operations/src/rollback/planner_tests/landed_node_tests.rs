@@ -9,6 +9,8 @@
 //! (written before the journal kept it, or landed where no stable identity exists),
 //! which keeps exactly the checks it always had.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -22,7 +24,7 @@ const ORIGINAL: &str = "/DCIM/a.jpg";
 const LANDED: &str = "/photos/a.jpg";
 
 async fn identity_at(vol: &InMemoryVolume, path: &str) -> NodeIdentity {
-    vol.node_identity(Path::new(path))
+    vol.node_identity(&AppPath::legacy_unchecked(Path::new(path)))
         .await
         .expect("stat")
         .expect("the double reports an identity")
@@ -30,7 +32,9 @@ async fn identity_at(vol: &InMemoryVolume, path: &str) -> NodeIdentity {
 
 /// Someone else's file takes the landed one's place: same name, same size, same date.
 async fn replace_with_a_twin(vol: &InMemoryVolume, path: &str, bytes: &[u8]) {
-    vol.delete(Path::new(path)).await.expect("the landed file leaves");
+    vol.delete(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .expect("the landed file leaves");
     put(vol, path, bytes).await;
 }
 
@@ -141,7 +145,9 @@ async fn undoing_a_copy_whose_volume_cannot_report_an_identity_keeps_it() {
 #[tokio::test]
 async fn undoing_a_copy_that_is_already_gone_counts_it_reversed() {
     let (rig, v, landed) = copied().await;
-    v.delete(Path::new(LANDED)).await.expect("gone");
+    v.delete(&AppPath::legacy_unchecked(Path::new(LANDED)))
+        .await
+        .expect("gone");
     seed_copy(&rig, Some(landed));
 
     let report = rig.rollback("op").await;
@@ -219,7 +225,7 @@ async fn undoing_a_move_leaves_another_folder_made_under_the_moved_ones_name() {
     let v = Arc::new(InMemoryVolume::new("V"));
     mkdir(&v, "/album").await;
     let landed = identity_at(&v, "/album").await;
-    v.delete(Path::new("/album")).await.expect("the moved folder leaves");
+    v.delete(app_path!("/album")).await.expect("the moved folder leaves");
     mkdir(&v, "/album").await;
     put(&v, "/album/someone-elses.jpg", b"stranger").await;
     rig.register("v", v.clone());
@@ -262,7 +268,7 @@ async fn undoing_a_copy_leaves_another_empty_folder_made_under_the_created_ones_
     let v = Arc::new(InMemoryVolume::new("V"));
     mkdir(&v, "/album").await;
     let created = identity_at(&v, "/album").await;
-    v.delete(Path::new("/album")).await.expect("the created folder leaves");
+    v.delete(app_path!("/album")).await.expect("the created folder leaves");
     mkdir(&v, "/album").await;
     rig.register("v", v.clone());
     rig.seed(

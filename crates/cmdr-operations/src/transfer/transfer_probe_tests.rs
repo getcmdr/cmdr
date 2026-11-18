@@ -6,6 +6,7 @@
 //! directory uses. `watchdog_step` is a pure function of (probe, carry-over,
 //! now), so every case here drives synthetic ticks instead of sleeping.
 
+use cmdr_fs::app_path;
 use std::sync::atomic::AtomicUsize;
 
 use super::super::liveness_test_support::ScriptedConnectionVolume;
@@ -469,10 +470,10 @@ async fn a_read_resumed_from_a_pause_reads_as_streaming_again() {
     let task = probe.begin_task(TaskRow::source(0), TaskRole::File, "/src/a", "/dst/a");
     let volume: Arc<dyn Volume> = Arc::new(cmdr_fs::volume::InMemoryVolume::new("Source"));
     volume
-        .create_file(Path::new("/a"), b"some bytes")
+        .create_file(app_path!("/a"), b"some bytes")
         .await
         .expect("a source file");
-    let inner = volume.open_read_stream(Path::new("/a")).await.expect("its stream");
+    let inner = volume.open_read_stream(app_path!("/a")).await.expect("its stream");
     let mut stream = super::super::checkpoint_stream::CheckpointStream::new(
         inner,
         Arc::clone(&state),

@@ -65,6 +65,8 @@
 //! - **permission-denied and quota faults.** The backend decides those, not the
 //!   driver; injecting them tests `FaultyVolume`, not the code under it.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_operation_log::types::OperationId;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -205,15 +207,15 @@ fn seed_cache(
 /// no outcome may touch.
 async fn tier_a_source() -> Arc<InMemoryVolume> {
     let vol = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    vol.create_directory(Path::new("/album")).await.unwrap();
-    vol.create_file(Path::new("/album/one.bin"), &vec![0xA1; 2048])
+    vol.create_directory(app_path!("/album")).await.unwrap();
+    vol.create_file(app_path!("/album/one.bin"), &vec![0xA1; 2048])
         .await
         .unwrap();
-    vol.create_file(Path::new("/album/two.bin"), &vec![0xA2; 2048])
+    vol.create_file(app_path!("/album/two.bin"), &vec![0xA2; 2048])
         .await
         .unwrap();
-    vol.create_directory(Path::new("/album/inner")).await.unwrap();
-    vol.create_file(Path::new("/album/inner/three.bin"), &vec![0xA3; 2048])
+    vol.create_directory(app_path!("/album/inner")).await.unwrap();
+    vol.create_file(app_path!("/album/inner/three.bin"), &vec![0xA3; 2048])
         .await
         .unwrap();
     vol
@@ -221,12 +223,12 @@ async fn tier_a_source() -> Arc<InMemoryVolume> {
 
 async fn tier_a_dest() -> Arc<dyn Volume> {
     let vol: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    vol.create_directory(Path::new("/album")).await.unwrap();
-    vol.create_file(Path::new("/album/keep.txt"), b"DEST-keep")
+    vol.create_directory(app_path!("/album")).await.unwrap();
+    vol.create_file(app_path!("/album/keep.txt"), b"DEST-keep")
         .await
         .unwrap();
-    vol.create_directory(Path::new("/album/inner")).await.unwrap();
-    vol.create_file(Path::new("/album/inner/keep2.txt"), b"DEST-keep2")
+    vol.create_directory(app_path!("/album/inner")).await.unwrap();
+    vol.create_file(app_path!("/album/inner/keep2.txt"), b"DEST-keep2")
         .await
         .unwrap();
     vol
@@ -514,26 +516,32 @@ async fn tier_a_move_merge_is_safe_when_it_is_cancelled_mid_op() {
 /// sibling the operation was NEVER asked to touch. `/other` is the assertion.
 async fn tier_a_delete_volume() -> Arc<InMemoryVolume> {
     let vol = Arc::new(InMemoryVolume::new("DeleteTarget").with_space_info(10_000_000, 10_000_000));
-    vol.create_directory(Path::new("/requested")).await.unwrap();
-    vol.create_directory(Path::new("/requested/nested")).await.unwrap();
+    vol.create_directory(app_path!("/requested")).await.unwrap();
+    vol.create_directory(app_path!("/requested/nested")).await.unwrap();
     // Enough leaves that a cancel landing after the first progress event still
     // has work left to refuse; a two-file tree would be gone either way.
     for i in 0..8 {
-        vol.create_file(&PathBuf::from(format!("/requested/a{i}.bin")), &vec![0xD1; 1024])
-            .await
-            .unwrap();
-        vol.create_file(&PathBuf::from(format!("/requested/nested/b{i}.bin")), &vec![0xD2; 1024])
-            .await
-            .unwrap();
+        vol.create_file(
+            &AppPath::legacy_unchecked(&PathBuf::from(format!("/requested/a{i}.bin"))),
+            &vec![0xD1; 1024],
+        )
+        .await
+        .unwrap();
+        vol.create_file(
+            &AppPath::legacy_unchecked(&PathBuf::from(format!("/requested/nested/b{i}.bin"))),
+            &vec![0xD2; 1024],
+        )
+        .await
+        .unwrap();
     }
 
     // The sibling the op was not asked to touch, at two depths.
-    vol.create_directory(Path::new("/other")).await.unwrap();
-    vol.create_file(Path::new("/other/untouched.txt"), b"OTHER-untouched")
+    vol.create_directory(app_path!("/other")).await.unwrap();
+    vol.create_file(app_path!("/other/untouched.txt"), b"OTHER-untouched")
         .await
         .unwrap();
-    vol.create_directory(Path::new("/other/deep")).await.unwrap();
-    vol.create_file(Path::new("/other/deep/untouched2.txt"), b"OTHER-untouched2")
+    vol.create_directory(app_path!("/other/deep")).await.unwrap();
+    vol.create_file(app_path!("/other/deep/untouched2.txt"), b"OTHER-untouched2")
         .await
         .unwrap();
     vol
@@ -608,11 +616,11 @@ async fn run_tier_a_delete(engine: &TestOperations, cache: CacheState, cell: &st
     // interrupted cells make no such promise, by design.
     if !faulty && !cancel {
         assert!(
-            !real.exists(Path::new("/requested/a0.bin")).await,
+            !real.exists(app_path!("/requested/a0.bin")).await,
             "{label}: a clean delete left the requested tree behind"
         );
         assert!(
-            !real.exists(Path::new("/requested/nested/b7.bin")).await,
+            !real.exists(app_path!("/requested/nested/b7.bin")).await,
             "{label}: a clean delete left a nested requested file behind"
         );
     }
@@ -714,7 +722,7 @@ async fn tier_b_fixture(
 
     let outcome: TierBOutcome = match kind {
         ItemKind::File => {
-            source.create_file(Path::new("/solo.bin"), b"SRC-solo").await.unwrap();
+            source.create_file(app_path!("/solo.bin"), b"SRC-solo").await.unwrap();
             sources.push(PathBuf::from("/solo.bin"));
             TierBOutcome {
                 at_dest: vec![("/solo.bin", b"SRC-solo")],
@@ -723,14 +731,14 @@ async fn tier_b_fixture(
             }
         }
         ItemKind::DirOntoFreshDest => {
-            source.create_directory(Path::new("/album")).await.unwrap();
+            source.create_directory(app_path!("/album")).await.unwrap();
             source
-                .create_file(Path::new("/album/one.bin"), b"SRC-one")
+                .create_file(app_path!("/album/one.bin"), b"SRC-one")
                 .await
                 .unwrap();
-            source.create_directory(Path::new("/album/inner")).await.unwrap();
+            source.create_directory(app_path!("/album/inner")).await.unwrap();
             source
-                .create_file(Path::new("/album/inner/two.bin"), b"SRC-two")
+                .create_file(app_path!("/album/inner/two.bin"), b"SRC-two")
                 .await
                 .unwrap();
             sources.push(PathBuf::from("/album"));
@@ -743,12 +751,12 @@ async fn tier_b_fixture(
             }
         }
         ItemKind::DirOntoExistingFile => {
-            source.create_directory(Path::new("/album")).await.unwrap();
+            source.create_directory(app_path!("/album")).await.unwrap();
             source
-                .create_file(Path::new("/album/one.bin"), b"SRC-one")
+                .create_file(app_path!("/album/one.bin"), b"SRC-one")
                 .await
                 .unwrap();
-            dest.create_file(Path::new("/album"), b"DEST-was-a-file").await.unwrap();
+            dest.create_file(app_path!("/album"), b"DEST-was-a-file").await.unwrap();
             sources.push(PathBuf::from("/album"));
             TierBOutcome {
                 // The clash is refused, so what's readable at the destination is
@@ -762,7 +770,10 @@ async fn tier_b_fixture(
 
     if concurrent {
         for name in ["/filler_a.bin", "/filler_b.bin"] {
-            source.create_file(Path::new(name), b"filler").await.unwrap();
+            source
+                .create_file(&AppPath::legacy_unchecked(Path::new(name)), b"filler")
+                .await
+                .unwrap();
             sources.push(PathBuf::from(name));
         }
     }

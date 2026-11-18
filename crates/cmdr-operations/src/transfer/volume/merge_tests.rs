@@ -20,6 +20,7 @@ use super::*;
 use crate::Operations;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 
 use crate::types::{
     ConflictResolution, WriteCancelledEvent, WriteCompleteEvent, WriteConflictResolvedEvent, WriteErrorEvent,
@@ -34,7 +35,10 @@ use std::sync::atomic::AtomicU8;
 
 /// Reads a whole file from a volume into a `Vec<u8>`.
 async fn read_all(vol: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
-    let mut stream = vol.open_read_stream(Path::new(path)).await.unwrap();
+    let mut stream = vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .unwrap();
     let mut out = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         out.extend_from_slice(&chunk);
@@ -54,48 +58,48 @@ async fn make_rich_merge() -> (Arc<dyn Volume>, Arc<dyn Volume>) {
     let (source, dest) = make_volumes();
 
     // Source tree.
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     source
-        .create_file(Path::new("/album/fresh.txt"), b"SRC-fresh")
+        .create_file(app_path!("/album/fresh.txt"), b"SRC-fresh")
         .await
         .unwrap();
     source
-        .create_file(Path::new("/album/clash.txt"), b"SRC-clash-larger")
+        .create_file(app_path!("/album/clash.txt"), b"SRC-clash-larger")
         .await
         .unwrap();
-    source.create_directory(Path::new("/album/sub")).await.unwrap();
+    source.create_directory(app_path!("/album/sub")).await.unwrap();
     source
-        .create_file(Path::new("/album/sub/fresh2.txt"), b"SRC-fresh2")
+        .create_file(app_path!("/album/sub/fresh2.txt"), b"SRC-fresh2")
         .await
         .unwrap();
     source
-        .create_file(Path::new("/album/sub/clash2.txt"), b"SRC-clash2")
+        .create_file(app_path!("/album/sub/clash2.txt"), b"SRC-clash2")
         .await
         .unwrap();
     // Type mismatch: source FILE named `swap`.
     source
-        .create_file(Path::new("/album/swap"), b"SRC-swap-file")
+        .create_file(app_path!("/album/swap"), b"SRC-swap-file")
         .await
         .unwrap();
 
     // Dest tree (pre-existing).
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(Path::new("/album/keep.txt"), b"DEST-keep")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(app_path!("/album/keep.txt"), b"DEST-keep")
         .await
         .unwrap();
-    dest.create_file(Path::new("/album/clash.txt"), b"DEST-clash")
+    dest.create_file(app_path!("/album/clash.txt"), b"DEST-clash")
         .await
         .unwrap();
-    dest.create_directory(Path::new("/album/sub")).await.unwrap();
-    dest.create_file(Path::new("/album/sub/keep2.txt"), b"DEST-keep2")
+    dest.create_directory(app_path!("/album/sub")).await.unwrap();
+    dest.create_file(app_path!("/album/sub/keep2.txt"), b"DEST-keep2")
         .await
         .unwrap();
-    dest.create_file(Path::new("/album/sub/clash2.txt"), b"DEST-clash2")
+    dest.create_file(app_path!("/album/sub/clash2.txt"), b"DEST-clash2")
         .await
         .unwrap();
     // Type mismatch: dest DIR named `swap` with a file inside it.
-    dest.create_directory(Path::new("/album/swap")).await.unwrap();
-    dest.create_file(Path::new("/album/swap/inner.txt"), b"DEST-swap-inner")
+    dest.create_directory(app_path!("/album/swap")).await.unwrap();
+    dest.create_file(app_path!("/album/swap/inner.txt"), b"DEST-swap-inner")
         .await
         .unwrap();
 
@@ -469,18 +473,18 @@ async fn stop_mode_deep_file_clash_emits_conflict_and_resumes() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
     // One deep clash, plus a dest-only sibling that must survive.
-    source.create_directory(Path::new("/album")).await.unwrap();
-    source.create_directory(Path::new("/album/sub")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    source.create_directory(app_path!("/album/sub")).await.unwrap();
     source
-        .create_file(Path::new("/album/sub/clash.txt"), b"SRC-deep")
+        .create_file(app_path!("/album/sub/clash.txt"), b"SRC-deep")
         .await
         .unwrap();
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_directory(Path::new("/album/sub")).await.unwrap();
-    dest.create_file(Path::new("/album/sub/clash.txt"), b"DEST-deep")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_directory(app_path!("/album/sub")).await.unwrap();
+    dest.create_file(app_path!("/album/sub/clash.txt"), b"DEST-deep")
         .await
         .unwrap();
-    dest.create_file(Path::new("/album/sub/keep.txt"), b"DEST-keep")
+    dest.create_file(app_path!("/album/sub/keep.txt"), b"DEST-keep")
         .await
         .unwrap();
 
@@ -552,25 +556,25 @@ async fn merge_reports_exact_byte_total_across_levels() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
     // Source: top-level file (7), a deep file (11), and a deeper file (13).
-    source.create_directory(Path::new("/album")).await.unwrap();
-    source.create_file(Path::new("/album/a.txt"), &[1u8; 7]).await.unwrap();
-    source.create_directory(Path::new("/album/sub")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    source.create_file(app_path!("/album/a.txt"), &[1u8; 7]).await.unwrap();
+    source.create_directory(app_path!("/album/sub")).await.unwrap();
     source
-        .create_file(Path::new("/album/sub/b.txt"), &[2u8; 11])
+        .create_file(app_path!("/album/sub/b.txt"), &[2u8; 11])
         .await
         .unwrap();
-    source.create_directory(Path::new("/album/sub/deep")).await.unwrap();
+    source.create_directory(app_path!("/album/sub/deep")).await.unwrap();
     source
-        .create_file(Path::new("/album/sub/deep/c.txt"), &[3u8; 13])
+        .create_file(app_path!("/album/sub/deep/c.txt"), &[3u8; 13])
         .await
         .unwrap();
     // Dest pre-exists at every level so all three levels MERGE (each takes the
     // AlreadyExists branch and the byte total accumulates through recursion).
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_directory(Path::new("/album/sub")).await.unwrap();
-    dest.create_directory(Path::new("/album/sub/deep")).await.unwrap();
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_directory(app_path!("/album/sub")).await.unwrap();
+    dest.create_directory(app_path!("/album/sub/deep")).await.unwrap();
     // A clashing dest file at the deepest level, Overwrite ⇒ written ⇒ counted.
-    dest.create_file(Path::new("/album/sub/deep/c.txt"), b"old")
+    dest.create_file(app_path!("/album/sub/deep/c.txt"), b"old")
         .await
         .unwrap();
 
@@ -613,15 +617,15 @@ async fn merge_reports_exact_byte_total_across_levels() {
 /// comparison hang off that difference.
 async fn make_deep_clash_with_bigger_dest() -> (Arc<dyn Volume>, Arc<dyn Volume>) {
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/album")).await.unwrap();
-    source.create_directory(Path::new("/album/sub")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    source.create_directory(app_path!("/album/sub")).await.unwrap();
     source
-        .create_file(Path::new("/album/sub/clash.txt"), b"SRC")
+        .create_file(app_path!("/album/sub/clash.txt"), b"SRC")
         .await
         .unwrap();
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_directory(Path::new("/album/sub")).await.unwrap();
-    dest.create_file(Path::new("/album/sub/clash.txt"), b"DEST-is-much-bigger")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_directory(app_path!("/album/sub")).await.unwrap();
+    dest.create_file(app_path!("/album/sub/clash.txt"), b"DEST-is-much-bigger")
         .await
         .unwrap();
     (source, dest)

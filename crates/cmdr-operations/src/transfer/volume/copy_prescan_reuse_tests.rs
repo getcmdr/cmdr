@@ -29,6 +29,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
+use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{CopyScanResult, InMemoryVolume, ListingProgress};
@@ -62,7 +63,7 @@ async fn test_stop_conflict_does_not_rescan_source_when_hint_provided() {
         fn name(&self) -> &str {
             self.inner.name()
         }
-        fn root(&self) -> &Path {
+        fn root(&self) -> &AppPath {
             self.inner.root()
         }
         fn as_any(&self) -> &dyn std::any::Any {
@@ -70,31 +71,31 @@ async fn test_stop_conflict_does_not_rescan_source_when_hint_provided() {
         }
         fn list_directory<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
             on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
             self.inner.list_directory(path, on_progress)
         }
         fn get_metadata<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
             self.get_metadata_calls.fetch_add(1, Ordering::Relaxed);
             self.inner.get_metadata(path)
         }
-        fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+        fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
             self.inner.exists(path)
         }
         fn is_directory<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
             self.is_directory_calls.fetch_add(1, Ordering::Relaxed);
             self.inner.is_directory(path)
         }
         fn scan_for_copy<'a>(
             &'a self,
-            path: &'a Path,
+            path: &'a AppPath,
         ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
             self.scan_calls.fetch_add(1, Ordering::Relaxed);
             self.inner.scan_for_copy(path)
@@ -104,7 +105,7 @@ async fn test_stop_conflict_does_not_rescan_source_when_hint_provided() {
     // Source has the file; dest has the same name → conflict.
     let source_inner = Arc::new(InMemoryVolume::new("Source").with_space_info(1_000_000, 500_000));
     source_inner
-        .create_file(Path::new("/photo.jpg"), b"new photo bytes")
+        .create_file(app_path!("/photo.jpg"), b"new photo bytes")
         .await
         .unwrap();
     let scan_calls = Arc::new(AtomicUsize::new(0));
@@ -118,7 +119,7 @@ async fn test_stop_conflict_does_not_rescan_source_when_hint_provided() {
     });
 
     let dest_inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(1_000_000, 900_000));
-    dest_inner.create_file(Path::new("/photo.jpg"), b"old").await.unwrap();
+    dest_inner.create_file(app_path!("/photo.jpg"), b"old").await.unwrap();
     let dest: Arc<dyn Volume> = dest_inner;
 
     // Priming the cache through the real `start_scan_preview` path would need a
@@ -294,16 +295,16 @@ async fn test_pre_known_conflicts_are_bulk_skipped_upfront() {
     // 5 sources: 3 pre-known conflicts (a, c, e) + 2 fresh (b, d).
     // Conflicts are interleaved with non-conflicts so the bulk skip's
     // benefit (one front-loaded jump vs. trickling in between copies) shows.
-    source.create_file(Path::new("/a.txt"), b"AA").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"BBBB").await.unwrap();
-    source.create_file(Path::new("/c.txt"), b"CCCCCC").await.unwrap();
-    source.create_file(Path::new("/d.txt"), b"DDDDDDDD").await.unwrap();
-    source.create_file(Path::new("/e.txt"), b"EEEEEEEEEE").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"AA").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"BBBB").await.unwrap();
+    source.create_file(app_path!("/c.txt"), b"CCCCCC").await.unwrap();
+    source.create_file(app_path!("/d.txt"), b"DDDDDDDD").await.unwrap();
+    source.create_file(app_path!("/e.txt"), b"EEEEEEEEEE").await.unwrap();
 
     // Existing dest files for a, c, e (these are the pre-known conflicts).
-    dest.create_file(Path::new("/a.txt"), b"old").await.unwrap();
-    dest.create_file(Path::new("/c.txt"), b"old").await.unwrap();
-    dest.create_file(Path::new("/e.txt"), b"old").await.unwrap();
+    dest.create_file(app_path!("/a.txt"), b"old").await.unwrap();
+    dest.create_file(app_path!("/c.txt"), b"old").await.unwrap();
+    dest.create_file(app_path!("/e.txt"), b"old").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -345,17 +346,17 @@ async fn test_pre_known_conflicts_are_bulk_skipped_upfront() {
     assert_eq!(bytes_processed, 30);
 
     // Skipped files must keep their pre-existing dest content.
-    let mut a = dest.open_read_stream(Path::new("/a.txt")).await.unwrap();
+    let mut a = dest.open_read_stream(app_path!("/a.txt")).await.unwrap();
     assert_eq!(a.next_chunk().await.unwrap().unwrap(), b"old");
-    let mut c = dest.open_read_stream(Path::new("/c.txt")).await.unwrap();
+    let mut c = dest.open_read_stream(app_path!("/c.txt")).await.unwrap();
     assert_eq!(c.next_chunk().await.unwrap().unwrap(), b"old");
-    let mut e = dest.open_read_stream(Path::new("/e.txt")).await.unwrap();
+    let mut e = dest.open_read_stream(app_path!("/e.txt")).await.unwrap();
     assert_eq!(e.next_chunk().await.unwrap().unwrap(), b"old");
 
     // Non-conflict files copied through.
-    let mut b = dest.open_read_stream(Path::new("/b.txt")).await.unwrap();
+    let mut b = dest.open_read_stream(app_path!("/b.txt")).await.unwrap();
     assert_eq!(b.next_chunk().await.unwrap().unwrap(), b"BBBB");
-    let mut d = dest.open_read_stream(Path::new("/d.txt")).await.unwrap();
+    let mut d = dest.open_read_stream(app_path!("/d.txt")).await.unwrap();
     assert_eq!(d.next_chunk().await.unwrap().unwrap(), b"DDDDDDDD");
 
     // Critical assertion: the bulk skip must emit a Copying-phase progress
@@ -391,8 +392,8 @@ async fn test_stop_mode_does_not_bulk_skip_pre_known_conflicts() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
 
-    source.create_file(Path::new("/a.txt"), b"new").await.unwrap();
-    dest.create_file(Path::new("/a.txt"), b"old").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"new").await.unwrap();
+    dest.create_file(app_path!("/a.txt"), b"old").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -445,7 +446,7 @@ async fn test_stop_mode_does_not_bulk_skip_pre_known_conflicts() {
     }
 
     // And the dest content stayed "old" because the resolver chose Skip.
-    let mut a = dest.open_read_stream(Path::new("/a.txt")).await.unwrap();
+    let mut a = dest.open_read_stream(app_path!("/a.txt")).await.unwrap();
     assert_eq!(a.next_chunk().await.unwrap().unwrap(), b"old");
 }
 
@@ -461,8 +462,8 @@ async fn test_pre_known_conflicts_with_stale_entries_is_safe() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
 
-    source.create_file(Path::new("/a.txt"), b"AA").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"BBBB").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"AA").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"BBBB").await.unwrap();
     // Note: dest is empty. The pre_known_conflicts list is stale — claims
     // "a.txt" conflicts but dest doesn't actually have it.
 
@@ -496,14 +497,14 @@ async fn test_pre_known_conflicts_with_stale_entries_is_safe() {
     // it wasn't actually at dest, the user chose to skip files of this name.
     // SOURCE is intact (Skip never deletes source). DEST is untouched (no
     // bytes written for a.txt). No data loss.
-    assert!(source.exists(Path::new("/a.txt")).await, "source a.txt must remain");
+    assert!(source.exists(app_path!("/a.txt")).await, "source a.txt must remain");
     assert!(
-        !dest.exists(Path::new("/a.txt")).await,
+        !dest.exists(app_path!("/a.txt")).await,
         "dest a.txt must not have been created"
     );
 
     // b.txt was NOT in pre_known_conflicts → normal copy path → reaches dest.
-    let mut b = dest.open_read_stream(Path::new("/b.txt")).await.unwrap();
+    let mut b = dest.open_read_stream(app_path!("/b.txt")).await.unwrap();
     assert_eq!(b.next_chunk().await.unwrap().unwrap(), b"BBBB");
 
     // Completion: 2 sources processed (1 skipped + 1 copied), no error.
@@ -522,8 +523,8 @@ async fn test_pre_known_conflicts_ignored_outside_skip_mode() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
 
-    source.create_file(Path::new("/a.txt"), b"new").await.unwrap();
-    dest.create_file(Path::new("/a.txt"), b"old").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"new").await.unwrap();
+    dest.create_file(app_path!("/a.txt"), b"old").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -549,7 +550,7 @@ async fn test_pre_known_conflicts_ignored_outside_skip_mode() {
     assert!(result.is_ok());
 
     // Despite being pre-known, Overwrite should have replaced it with source content.
-    let mut a = dest.open_read_stream(Path::new("/a.txt")).await.unwrap();
+    let mut a = dest.open_read_stream(app_path!("/a.txt")).await.unwrap();
     assert_eq!(a.next_chunk().await.unwrap().unwrap(), b"new");
 }
 

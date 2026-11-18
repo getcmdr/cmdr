@@ -13,6 +13,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, WriteConflictResolvedEvent, WriteErrorEvent, WriteSourceItemDoneEvent};
+use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
 
 /// Sink that flips the operation's intent to `RollingBack` once it sees a
@@ -72,20 +73,20 @@ async fn rollback_of_merged_directory_preserves_preexisting_dest_files() {
     let (source, dest) = make_volumes();
 
     // Source directory with two new files the op will write.
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     source
-        .create_file(Path::new("/album/new1.bin"), &vec![0u8; 200_000])
+        .create_file(app_path!("/album/new1.bin"), &vec![0u8; 200_000])
         .await
         .unwrap();
     source
-        .create_file(Path::new("/album/new2.bin"), &vec![0u8; 200_000])
+        .create_file(app_path!("/album/new2.bin"), &vec![0u8; 200_000])
         .await
         .unwrap();
 
     // Pre-existing dest directory of the same name, holding a unique sentinel
     // file that the operation must never touch.
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(Path::new("/album/sentinel.txt"), b"precious user data")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(app_path!("/album/sentinel.txt"), b"precious user data")
         .await
         .unwrap();
 
@@ -124,17 +125,17 @@ async fn rollback_of_merged_directory_preserves_preexisting_dest_files() {
     // rollback. Rollback may delete only what the op created (new1/new2), never
     // the dest-only sentinel.
     assert!(
-        dest.exists(Path::new("/album/sentinel.txt")).await,
+        dest.exists(app_path!("/album/sentinel.txt")).await,
         "rollback wrongly deleted a pre-existing dest-only file in the merged directory",
     );
 
     // And the files the op actually wrote should be gone (rollback removed them).
     assert!(
-        !dest.exists(Path::new("/album/new1.bin")).await,
+        !dest.exists(app_path!("/album/new1.bin")).await,
         "rollback should have removed the file the op created",
     );
     assert!(
-        !dest.exists(Path::new("/album/new2.bin")).await,
+        !dest.exists(app_path!("/album/new2.bin")).await,
         "rollback should have removed the file the op created",
     );
 }
@@ -154,9 +155,9 @@ async fn same_volume_copy_into_own_descendant_is_rejected() {
     // One volume used as BOTH source and dest (same Arc ⇒ Arc::ptr_eq is true,
     // matching how the command layer resolves a same-volume-id copy).
     let vol: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("V").with_space_info(10_000_000, 10_000_000));
-    vol.create_directory(Path::new("/A")).await.unwrap();
-    vol.create_directory(Path::new("/A/sub")).await.unwrap();
-    vol.create_file(Path::new("/A/file.txt"), b"payload").await.unwrap();
+    vol.create_directory(app_path!("/A")).await.unwrap();
+    vol.create_directory(app_path!("/A/sub")).await.unwrap();
+    vol.create_file(app_path!("/A/file.txt"), b"payload").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -195,9 +196,9 @@ async fn same_volume_copy_into_own_descendant_is_rejected() {
 async fn same_volume_copy_into_sibling_dir_is_allowed() {
     let engine = TestOperations::new();
     let vol: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("V").with_space_info(10_000_000, 10_000_000));
-    vol.create_directory(Path::new("/A")).await.unwrap();
-    vol.create_file(Path::new("/A/file.txt"), b"payload").await.unwrap();
-    vol.create_directory(Path::new("/dest")).await.unwrap();
+    vol.create_directory(app_path!("/A")).await.unwrap();
+    vol.create_file(app_path!("/A/file.txt"), b"payload").await.unwrap();
+    vol.create_directory(app_path!("/dest")).await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -217,7 +218,7 @@ async fn same_volume_copy_into_sibling_dir_is_allowed() {
     .await;
 
     assert!(result.is_ok(), "sibling-dir copy should succeed: {:?}", result);
-    assert!(vol.exists(Path::new("/dest/A/file.txt")).await);
+    assert!(vol.exists(app_path!("/dest/A/file.txt")).await);
 }
 
 /// A test sink that flips the operation intent to a chosen terminal state the
@@ -271,17 +272,20 @@ impl OperationEventSink for TripIntentOnFirstByteSink {
 async fn make_merge_scenario(n: usize) -> (Arc<dyn Volume>, Arc<dyn Volume>) {
     let (source, dest) = make_volumes();
 
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     for i in 0..n {
         source
-            .create_file(Path::new(&format!("/album/new{}.bin", i)), &vec![0u8; 200_000])
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/album/new{}.bin", i))),
+                &vec![0u8; 200_000],
+            )
             .await
             .unwrap();
     }
 
     // Pre-existing dest directory of the same name with a sentinel file.
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(Path::new("/album/sentinel.txt"), b"precious user data")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(app_path!("/album/sentinel.txt"), b"precious user data")
         .await
         .unwrap();
 
@@ -331,7 +335,7 @@ async fn cancel_mid_merge_stream_preserves_preexisting_dest_file() {
 
     // THE BUG: cancel mid-merge-stream must not destroy the pre-existing sentinel.
     assert!(
-        dest.exists(Path::new("/album/sentinel.txt")).await,
+        dest.exists(app_path!("/album/sentinel.txt")).await,
         "cancel mid-merge-stream wrongly deleted a pre-existing dest-only file",
     );
 }
@@ -372,7 +376,7 @@ async fn rollback_mid_merge_stream_preserves_preexisting_dest_file() {
 
     // THE BUG: rollback mid-merge-stream must not destroy the pre-existing sentinel.
     assert!(
-        dest.exists(Path::new("/album/sentinel.txt")).await,
+        dest.exists(app_path!("/album/sentinel.txt")).await,
         "rollback mid-merge-stream wrongly deleted a pre-existing dest-only file",
     );
 }
@@ -389,25 +393,28 @@ async fn cancel_mid_merge_stream_concurrent_preserves_preexisting_dest_file() {
     let (source, dest) = make_volumes();
 
     // Directory source that merges into a pre-existing dest dir with a sentinel.
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     for i in 0..3 {
         source
-            .create_file(Path::new(&format!("/album/new{}.bin", i)), &vec![0u8; 200_000])
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/album/new{}.bin", i))),
+                &vec![0u8; 200_000],
+            )
             .await
             .unwrap();
     }
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(Path::new("/album/sentinel.txt"), b"precious user data")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(app_path!("/album/sentinel.txt"), b"precious user data")
         .await
         .unwrap();
 
     // Two sibling files so the batch has ≥3 sources → concurrent path.
     source
-        .create_file(Path::new("/sib1.bin"), &vec![0u8; 200_000])
+        .create_file(app_path!("/sib1.bin"), &vec![0u8; 200_000])
         .await
         .unwrap();
     source
-        .create_file(Path::new("/sib2.bin"), &vec![0u8; 200_000])
+        .create_file(app_path!("/sib2.bin"), &vec![0u8; 200_000])
         .await
         .unwrap();
 
@@ -444,7 +451,7 @@ async fn cancel_mid_merge_stream_concurrent_preserves_preexisting_dest_file() {
     // THE BUG: the pre-existing sentinel must survive a mid-stream cancel on the
     // concurrent path too.
     assert!(
-        dest.exists(Path::new("/album/sentinel.txt")).await,
+        dest.exists(app_path!("/album/sentinel.txt")).await,
         "concurrent cancel mid-merge-stream wrongly deleted a pre-existing dest-only file",
     );
 }
@@ -507,12 +514,12 @@ async fn rollback_after_rename_keeps_preexisting_dest_file() {
     // A non-conflicting source so rollback has a clean first file to land,
     // letting us trip Rollback after BOTH sources have been processed.
     source
-        .create_file(Path::new("/fresh.bin"), b"fresh data")
+        .create_file(app_path!("/fresh.bin"), b"fresh data")
         .await
         .unwrap();
     // The Rename source: collides with a pre-existing dest file of the same name.
-    source.create_file(Path::new("/doc.txt"), b"incoming").await.unwrap();
-    dest.create_file(Path::new("/doc.txt"), b"original dest").await.unwrap();
+    source.create_file(app_path!("/doc.txt"), b"incoming").await.unwrap();
+    dest.create_file(app_path!("/doc.txt"), b"original dest").await.unwrap();
 
     let state = make_state(&engine);
     // Trip Rollback after 2 files done (both sources landed), so the rollback
@@ -545,10 +552,10 @@ async fn rollback_after_rename_keeps_preexisting_dest_file() {
 
     // The pre-existing dest file the op never created must survive rollback.
     assert!(
-        dest.exists(Path::new("/doc.txt")).await,
+        dest.exists(app_path!("/doc.txt")).await,
         "rollback wrongly deleted the pre-existing dest file the Rename never replaced",
     );
-    let mut stream = dest.open_read_stream(Path::new("/doc.txt")).await.unwrap();
+    let mut stream = dest.open_read_stream(app_path!("/doc.txt")).await.unwrap();
     assert_eq!(
         stream.next_chunk().await.unwrap().unwrap(),
         b"original dest",
@@ -556,12 +563,12 @@ async fn rollback_after_rename_keeps_preexisting_dest_file() {
     );
     // The Rename-landed copy the op DID create must be gone after rollback.
     assert!(
-        !dest.exists(Path::new("/doc (1).txt")).await,
+        !dest.exists(app_path!("/doc (1).txt")).await,
         "rollback should have removed the Rename-landed file the op created",
     );
     // The fresh non-conflicting file the op created must be gone after rollback.
     assert!(
-        !dest.exists(Path::new("/fresh.bin")).await,
+        !dest.exists(app_path!("/fresh.bin")).await,
         "rollback should have removed the fresh file the op created",
     );
 }
@@ -583,25 +590,28 @@ async fn rollback_of_a_concurrently_merged_directory_preserves_preexisting_dest_
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
 
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     for i in 0..3 {
         source
-            .create_file(Path::new(&format!("/album/new{i}.bin")), &vec![0u8; 20_000])
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/album/new{i}.bin"))),
+                &vec![0u8; 20_000],
+            )
             .await
             .unwrap();
     }
     // Two sibling files so the batch has ≥3 sources → concurrent driver.
     source
-        .create_file(Path::new("/sib1.bin"), &vec![1u8; 20_000])
+        .create_file(app_path!("/sib1.bin"), &vec![1u8; 20_000])
         .await
         .unwrap();
     source
-        .create_file(Path::new("/sib2.bin"), &vec![2u8; 20_000])
+        .create_file(app_path!("/sib2.bin"), &vec![2u8; 20_000])
         .await
         .unwrap();
 
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(Path::new("/album/sentinel.txt"), b"precious user data")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(app_path!("/album/sentinel.txt"), b"precious user data")
         .await
         .unwrap();
 
@@ -639,13 +649,13 @@ async fn rollback_of_a_concurrently_merged_directory_preserves_preexisting_dest_
     assert!(result.is_err(), "expected a rolled-back result, got {result:?}");
 
     assert!(
-        dest.exists(Path::new("/album/sentinel.txt")).await,
+        dest.exists(app_path!("/album/sentinel.txt")).await,
         "rollback wrongly deleted a pre-existing dest-only file in a concurrently merged directory",
     );
     for i in 0..3 {
         let leaf = format!("/album/new{i}.bin");
         assert!(
-            !dest.exists(Path::new(&leaf)).await,
+            !dest.exists(&AppPath::legacy_unchecked(Path::new(&leaf))).await,
             "rollback left behind {leaf}, a file this operation created",
         );
     }

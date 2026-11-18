@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"regexp"
 	"strings"
 )
@@ -124,6 +125,12 @@ var bridgeTemporary = regexp.MustCompile(`^AppPath::legacy_unchecked\(\s*(&?\s*[
 // moves, so nothing in the statement runs in a different order; a name the fn already uses
 // stays residue.
 func hoistEdits(src *source, p *diagSpan) []edit {
+	return hoistFrom(src, p, p.ByteStart, nil)
+}
+
+// hoistFrom hoists the bridge temporary spanned by p to before the statement holding from,
+// unless its argument's root is one of the names in bound (a closure's own params).
+func hoistFrom(src *source, p *diagSpan, from int, bound []string) []edit {
 	// The span is the call (the `Cow` temporary), or the borrow of it.
 	expr := strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(string(src.text[p.ByteStart:p.ByteEnd])), "&"))
 	m := bridgeTemporary.FindStringSubmatch(expr)
@@ -135,11 +142,25 @@ func hoistEdits(src *source, p *diagSpan) []edit {
 		return nil
 	}
 	segments := regexp.MustCompile(`\w+`).FindAllString(m[1], -1)
+	for _, b := range bound {
+		if segments[0] == b {
+			return nil
+		}
+	}
 	name := segments[len(segments)-1] + "_app"
 	if len(identUses(src.masked, fn.bodyStart, fn.bodyEnd, name)) > 0 {
 		return nil
 	}
-	at := statementStart(src.masked, p.ByteStart, fn.bodyStart)
+	at := statementStart(src.masked, from, fn.bodyStart)
+	inner := blockStatementStart(src.masked, outsideMacros(src.masked, from, fn.bodyStart), fn.bodyStart)
+	if inner != at {
+		// Out of a match arm: an arm's pattern may bind the root (`Some(dir) => …`), so the
+		// root may not appear anywhere in the match's body before the bridge.
+		open := enclosingOpenBrace(src.masked, inner, fn.bodyStart)
+		if open < 0 || len(identUses(src.masked, open, p.ByteStart, segments[0])) > 0 {
+			return nil
+		}
+	}
 	start := p.ByteStart + strings.Index(string(src.text[p.ByteStart:p.ByteEnd]), expr)
 	return []edit{
 		{file: src.path, start: at, end: at, text: "\nlet " + name + " = " + expr + ";", rule: ruleHoist},
@@ -147,10 +168,102 @@ func hoistEdits(src *source, p *diagSpan) []edit {
 	}
 }
 
+// ---- E0515: a closure returning a future that borrows a bridge temporary ----
+
+var closureParams = regexp.MustCompile(`(?:move\s+)?\|([^|]*)\|\s*(\{\s*)?$`)
+
+// closureHoistEdits answers E0515 "cannot return value referencing temporary value" on a
+// closure whose whole body is the call returning the future (`|| source.list_directory(
+// &AppPath::legacy_unchecked(&path), None)`, a retry helper's closure): the temporary can't
+// outlive the closure's own call, so it moves to `let path_app = …;` before the statement
+// holding the closure, which the closure then borrows. A plain argument only, and ❌ never
+// one rooted in the closure's own params (`|row| v.rename_work(&…(&row.source))`): residue.
+func closureHoistEdits(d *diagnostic, src *source) []edit {
+	if d.code() != "E0515" || d.Message != "cannot return value referencing temporary value" {
+		return nil
+	}
+	call := d.primary()
+	if call == nil {
+		return nil
+	}
+	head := src.masked[:call.ByteStart]
+	loc := closureParams.FindSubmatchIndex(head)
+	if loc == nil {
+		return nil
+	}
+	if loc[4] >= 0 && !bytes.HasPrefix(bytes.TrimLeft(src.masked[call.ByteEnd:], " \t\r\n"), []byte("}")) {
+		return nil // a block body with more in it than the call
+	}
+	var bound []string
+	for _, prm := range strings.Split(string(head[loc[2]:loc[3]]), ",") {
+		if ident := regexp.MustCompile(`\w+`).FindString(prm); ident != "" {
+			bound = append(bound, ident)
+		}
+	}
+	for i := range d.Spans {
+		s := &d.Spans[i]
+		if s.IsPrimary || s.label() != "temporary value created here" || s.ByteStart < call.ByteStart || s.ByteEnd > call.ByteEnd {
+			continue
+		}
+		return hoistFrom(src, s, loc[0], bound)
+	}
+	return nil
+}
+
 // statementStart walks back from offset to just past the `;`, `{`, or `}` that ends the
 // previous statement at offset's own block level (enclosing parens and brackets are crossed,
-// closed blocks skipped), never before floor.
+// closed blocks skipped), never before floor. Inside a macro's token tree (`tokio::select! {
+// biased; … }`, whose `;` and arm blocks are no statement ends) it starts from the outermost
+// enclosing macro invocation instead.
+// A match arm's expression (`None => read(…)`) is no statement either: the start is the
+// whole `match`'s.
 func statementStart(masked []byte, offset, floor int) int {
+	offset = outsideMacros(masked, offset, floor)
+	at := blockStatementStart(masked, offset, floor)
+	if hasTopLevelArrow(masked[at:offset]) {
+		if open := enclosingOpenBrace(masked, at, floor); open >= floor {
+			return statementStart(masked, open, floor)
+		}
+	}
+	return at
+}
+
+// hasTopLevelArrow answers whether a `=>` sits outside every bracket in b.
+func hasTopLevelArrow(b []byte) bool {
+	depth := 0
+	for k := 0; k < len(b); k++ {
+		switch b[k] {
+		case '(', '[', '{':
+			depth++
+		case ')', ']', '}':
+			depth--
+		case '=':
+			if depth == 0 && k+1 < len(b) && b[k+1] == '>' {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// enclosingOpenBrace is the offset of the unmatched `{` before at, or -1.
+func enclosingOpenBrace(masked []byte, at, floor int) int {
+	depth := 0
+	for k := at - 1; k >= floor; k-- {
+		switch masked[k] {
+		case '}':
+			depth++
+		case '{':
+			if depth == 0 {
+				return k
+			}
+			depth--
+		}
+	}
+	return -1
+}
+
+func blockStatementStart(masked []byte, offset, floor int) int {
 	braces, parens := 0, 0
 	for k := offset - 1; k >= floor; k-- {
 		switch masked[k] {
@@ -177,6 +290,35 @@ func statementStart(masked []byte, offset, floor int) int {
 		}
 	}
 	return floor
+}
+
+// outsideMacros returns the offset of the outermost macro invocation (its `!`) whose
+// delimited token tree encloses offset, or offset itself when none does, never before floor.
+func outsideMacros(masked []byte, offset, floor int) int {
+	depth, out := 0, offset
+	for k := offset - 1; k >= floor; k-- {
+		switch masked[k] {
+		case ')', ']', '}':
+			depth++
+		case '(', '[', '{':
+			if depth > 0 {
+				depth--
+				continue
+			}
+			j := k - 1
+			for j >= floor && (masked[j] == ' ' || masked[j] == '\t' || masked[j] == '\n' || masked[j] == '\r') {
+				j--
+			}
+			if j > floor && masked[j] == '!' && isIdentByte(masked[j-1]) {
+				out = j
+			} else if masked[k] == '{' {
+				// A real block (a fn body, a closure, a `select!` arm's `=> { … }`): the
+				// statement lives in it, so no macro further out is ours.
+				return out
+			}
+		}
+	}
+	return out
 }
 
 // isStatementEnd answers whether the `}` at k closes a block statement (followed by a new

@@ -2,6 +2,7 @@
 //! behind a `Volume`): an oracle-aware recursive listing, then `Volume::delete`
 //! per file or `delete_files` per batch. The local-FS twin is `walker.rs`.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -108,7 +109,14 @@ async fn delete_batch(
 ) -> Vec<Result<Removed, EntryStop>> {
     let paths: Vec<PathBuf> = batch.iter().map(|entry| entry.path.clone()).collect();
     let started_on = StartedOn::now(&[volume]);
-    let answers = volume.delete_files(&paths).await;
+    let answers = volume
+        .delete_files(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+        )
+        .await;
     let mut results = Vec::with_capacity(batch.len());
     let mut stopped = false;
     for (entry, answer) in batch.iter().zip(answers) {

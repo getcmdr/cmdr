@@ -12,6 +12,8 @@
 //! sink lets that be an assertion instead of a Stop-mode deadlock when the rule
 //! regresses.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -50,7 +52,10 @@ fn duplicate_config() -> VolumeCopyConfig {
 }
 
 async fn read_all(vol: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
-    let mut stream = vol.open_read_stream(Path::new(path)).await.unwrap();
+    let mut stream = vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .unwrap();
     let mut out = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         out.extend_from_slice(&chunk);
@@ -61,7 +66,7 @@ async fn read_all(vol: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
 /// Child names of a directory on a volume, sorted.
 async fn children(vol: &Arc<dyn Volume>, path: &str) -> Vec<String> {
     let mut names: Vec<String> = vol
-        .list_directory(Path::new(path), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(path)), None)
         .await
         .expect("directory should be listable")
         .into_iter()
@@ -77,7 +82,11 @@ async fn subtree(vol: &Arc<dyn Volume>, root: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut queue = vec![root.to_string()];
     while let Some(dir) = queue.pop() {
-        for entry in vol.list_directory(Path::new(&dir), None).await.expect("listable") {
+        for entry in vol
+            .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+            .await
+            .expect("listable")
+        {
             let full = format!("{}/{}", dir.trim_end_matches('/'), entry.name);
             out.push(
                 full.strip_prefix(root)
@@ -103,9 +112,9 @@ async fn subtree(vol: &Arc<dyn Volume>, root: &str) -> Vec<String> {
 async fn duplicating_a_file_in_place_on_one_volume_renames_it_and_never_prompts() {
     let engine = TestOperations::new();
     let volume = one_volume();
-    volume.create_directory(Path::new("/photos")).await.unwrap();
+    volume.create_directory(app_path!("/photos")).await.unwrap();
     volume
-        .create_file(Path::new("/photos/photo.jpg"), b"pixels")
+        .create_file(app_path!("/photos/photo.jpg"), b"pixels")
         .await
         .unwrap();
 
@@ -147,10 +156,10 @@ async fn duplicating_a_file_in_place_on_one_volume_renames_it_and_never_prompts(
 async fn duplicating_a_whole_series_at_once_gives_every_source_its_own_name() {
     let engine = TestOperations::new();
     let volume = one_volume();
-    volume.create_directory(Path::new("/photos")).await.unwrap();
+    volume.create_directory(app_path!("/photos")).await.unwrap();
     for (name, bytes) in [("photo.jpg", b"a"), ("photo (1).jpg", b"b"), ("photo (2).jpg", b"c")] {
         volume
-            .create_file(&Path::new("/photos").join(name), bytes)
+            .create_file(&AppPath::legacy_unchecked(&Path::new("/photos").join(name)), bytes)
             .await
             .unwrap();
     }
@@ -220,15 +229,15 @@ async fn duplicating_a_whole_series_at_once_gives_every_source_its_own_name() {
 async fn duplicating_a_folder_in_place_lands_the_whole_subtree_under_the_renamed_root() {
     let engine = TestOperations::new();
     let volume = one_volume();
-    volume.create_directory(Path::new("/photos")).await.unwrap();
-    volume.create_directory(Path::new("/photos/docs")).await.unwrap();
-    volume.create_directory(Path::new("/photos/docs/sub")).await.unwrap();
+    volume.create_directory(app_path!("/photos")).await.unwrap();
+    volume.create_directory(app_path!("/photos/docs")).await.unwrap();
+    volume.create_directory(app_path!("/photos/docs/sub")).await.unwrap();
     volume
-        .create_file(Path::new("/photos/docs/a.txt"), b"alpha")
+        .create_file(app_path!("/photos/docs/a.txt"), b"alpha")
         .await
         .unwrap();
     volume
-        .create_file(Path::new("/photos/docs/sub/b.txt"), b"beta")
+        .create_file(app_path!("/photos/docs/sub/b.txt"), b"beta")
         .await
         .unwrap();
 
@@ -274,8 +283,8 @@ async fn duplicating_a_folder_in_place_lands_the_whole_subtree_under_the_renamed
 async fn duplicating_an_empty_folder_in_place_lands_an_empty_sibling() {
     let engine = TestOperations::new();
     let volume = one_volume();
-    volume.create_directory(Path::new("/photos")).await.unwrap();
-    volume.create_directory(Path::new("/photos/docs")).await.unwrap();
+    volume.create_directory(app_path!("/photos")).await.unwrap();
+    volume.create_directory(app_path!("/photos/docs")).await.unwrap();
 
     let state = make_state(&engine);
     let events = Arc::new(ConflictResponderSink::new(&state, ConflictResolution::Rename, true));
@@ -305,9 +314,9 @@ async fn duplicating_an_empty_folder_in_place_lands_an_empty_sibling() {
 async fn a_pre_known_conflict_naming_the_source_itself_does_not_skip_the_duplicate() {
     let engine = TestOperations::new();
     let volume = one_volume();
-    volume.create_directory(Path::new("/photos")).await.unwrap();
+    volume.create_directory(app_path!("/photos")).await.unwrap();
     volume
-        .create_file(Path::new("/photos/photo.jpg"), b"pixels")
+        .create_file(app_path!("/photos/photo.jpg"), b"pixels")
         .await
         .unwrap();
 
@@ -346,14 +355,14 @@ async fn a_pre_known_conflict_naming_the_source_itself_does_not_skip_the_duplica
 async fn a_genuine_conflict_on_one_volume_still_raises_the_normal_flow() {
     let engine = TestOperations::new();
     let volume = one_volume();
-    volume.create_directory(Path::new("/from")).await.unwrap();
-    volume.create_directory(Path::new("/to")).await.unwrap();
+    volume.create_directory(app_path!("/from")).await.unwrap();
+    volume.create_directory(app_path!("/to")).await.unwrap();
     volume
-        .create_file(Path::new("/from/photo.jpg"), b"a different photo")
+        .create_file(app_path!("/from/photo.jpg"), b"a different photo")
         .await
         .unwrap();
     volume
-        .create_file(Path::new("/to/photo.jpg"), b"the one already there")
+        .create_file(app_path!("/to/photo.jpg"), b"the one already there")
         .await
         .unwrap();
 
@@ -437,9 +446,9 @@ async fn resolve(
 async fn a_case_differing_path_on_one_volume_is_the_same_item() {
     let engine = TestOperations::new();
     let volume = one_volume();
-    volume.create_directory(Path::new("/photos")).await.unwrap();
+    volume.create_directory(app_path!("/photos")).await.unwrap();
     volume
-        .create_file(Path::new("/photos/photo.jpg"), b"pixels")
+        .create_file(app_path!("/photos/photo.jpg"), b"pixels")
         .await
         .unwrap();
 
@@ -471,8 +480,11 @@ async fn an_nfd_path_on_one_volume_is_the_same_item_as_its_nfc_twin() {
     let decomposed = "/photos/cafe\u{301}.jpg";
 
     let volume = one_volume();
-    volume.create_directory(Path::new("/photos")).await.unwrap();
-    volume.create_file(Path::new(composed), b"pixels").await.unwrap();
+    volume.create_directory(app_path!("/photos")).await.unwrap();
+    volume
+        .create_file(&AppPath::legacy_unchecked(Path::new(composed)), b"pixels")
+        .await
+        .unwrap();
 
     let events = CollectorEventSink::new();
     let write_path = resolve(
@@ -500,14 +512,14 @@ async fn an_nfd_path_on_one_volume_is_the_same_item_as_its_nfc_twin() {
 async fn a_case_differing_parent_is_not_the_same_item() {
     let engine = TestOperations::new();
     let volume = one_volume();
-    volume.create_directory(Path::new("/DCIM")).await.unwrap();
-    volume.create_directory(Path::new("/dcim")).await.unwrap();
+    volume.create_directory(app_path!("/DCIM")).await.unwrap();
+    volume.create_directory(app_path!("/dcim")).await.unwrap();
     volume
-        .create_file(Path::new("/DCIM/photo.jpg"), b"upper")
+        .create_file(app_path!("/DCIM/photo.jpg"), b"upper")
         .await
         .unwrap();
     volume
-        .create_file(Path::new("/dcim/photo.jpg"), b"lower")
+        .create_file(app_path!("/dcim/photo.jpg"), b"lower")
         .await
         .unwrap();
 
@@ -538,13 +550,13 @@ async fn the_same_path_on_two_volumes_is_not_a_self_collision() {
     let engine = TestOperations::new();
     let source = one_volume();
     let dest = one_volume();
-    source.create_directory(Path::new("/photos")).await.unwrap();
+    source.create_directory(app_path!("/photos")).await.unwrap();
     source
-        .create_file(Path::new("/photos/photo.jpg"), b"source")
+        .create_file(app_path!("/photos/photo.jpg"), b"source")
         .await
         .unwrap();
-    dest.create_directory(Path::new("/photos")).await.unwrap();
-    dest.create_file(Path::new("/photos/photo.jpg"), b"dest").await.unwrap();
+    dest.create_directory(app_path!("/photos")).await.unwrap();
+    dest.create_file(app_path!("/photos/photo.jpg"), b"dest").await.unwrap();
 
     let events = CollectorEventSink::new();
     let write_path = resolve(
@@ -574,9 +586,9 @@ async fn the_same_path_on_two_volumes_is_not_a_self_collision() {
 async fn moving_a_file_into_its_own_folder_on_one_volume_leaves_it_alone() {
     let engine = TestOperations::new();
     let volume = one_volume();
-    volume.create_directory(Path::new("/photos")).await.unwrap();
+    volume.create_directory(app_path!("/photos")).await.unwrap();
     volume
-        .create_file(Path::new("/photos/photo.jpg"), b"pixels")
+        .create_file(app_path!("/photos/photo.jpg"), b"pixels")
         .await
         .unwrap();
 
@@ -624,10 +636,10 @@ async fn moving_a_file_into_its_own_folder_on_one_volume_leaves_it_alone() {
 async fn moving_into_a_case_differing_folder_on_one_volume_really_moves() {
     let engine = TestOperations::new();
     let volume = one_volume();
-    volume.create_directory(Path::new("/DCIM")).await.unwrap();
-    volume.create_directory(Path::new("/dcim")).await.unwrap();
+    volume.create_directory(app_path!("/DCIM")).await.unwrap();
+    volume.create_directory(app_path!("/dcim")).await.unwrap();
     volume
-        .create_file(Path::new("/DCIM/photo.jpg"), b"pixels")
+        .create_file(app_path!("/DCIM/photo.jpg"), b"pixels")
         .await
         .unwrap();
 
@@ -683,15 +695,15 @@ async fn moving_into_a_case_differing_folder_on_one_volume_really_moves() {
 async fn moving_a_folder_into_its_own_parent_on_one_volume_leaves_the_subtree_alone() {
     let engine = TestOperations::new();
     let volume = one_volume();
-    volume.create_directory(Path::new("/photos")).await.unwrap();
-    volume.create_directory(Path::new("/photos/docs")).await.unwrap();
-    volume.create_directory(Path::new("/photos/docs/sub")).await.unwrap();
+    volume.create_directory(app_path!("/photos")).await.unwrap();
+    volume.create_directory(app_path!("/photos/docs")).await.unwrap();
+    volume.create_directory(app_path!("/photos/docs/sub")).await.unwrap();
     volume
-        .create_file(Path::new("/photos/docs/a.txt"), b"alpha")
+        .create_file(app_path!("/photos/docs/a.txt"), b"alpha")
         .await
         .unwrap();
     volume
-        .create_file(Path::new("/photos/docs/sub/b.txt"), b"beta")
+        .create_file(app_path!("/photos/docs/sub/b.txt"), b"beta")
         .await
         .unwrap();
 
@@ -726,14 +738,14 @@ async fn moving_a_folder_into_its_own_parent_on_one_volume_leaves_the_subtree_al
 async fn a_mixed_move_batch_on_one_volume_leaves_the_local_source_and_moves_the_other() {
     let engine = TestOperations::new();
     let volume = one_volume();
-    volume.create_directory(Path::new("/photos")).await.unwrap();
-    volume.create_directory(Path::new("/elsewhere")).await.unwrap();
+    volume.create_directory(app_path!("/photos")).await.unwrap();
+    volume.create_directory(app_path!("/elsewhere")).await.unwrap();
     volume
-        .create_file(Path::new("/photos/photo.jpg"), b"pixels")
+        .create_file(app_path!("/photos/photo.jpg"), b"pixels")
         .await
         .unwrap();
     volume
-        .create_file(Path::new("/elsewhere/notes.txt"), b"words")
+        .create_file(app_path!("/elsewhere/notes.txt"), b"words")
         .await
         .unwrap();
 
@@ -758,7 +770,7 @@ async fn a_mixed_move_batch_on_one_volume_leaves_the_local_source_and_moves_the_
     assert_eq!(children(&volume, "/photos").await, vec!["notes.txt", "photo.jpg"]);
     assert_eq!(read_all(&volume, "/photos/photo.jpg").await, b"pixels");
     assert!(
-        !volume.exists(Path::new("/elsewhere/notes.txt")).await,
+        !volume.exists(app_path!("/elsewhere/notes.txt")).await,
         "the outside source moved"
     );
     assert!(events.inner.conflicts.lock_ignore_poison().is_empty());

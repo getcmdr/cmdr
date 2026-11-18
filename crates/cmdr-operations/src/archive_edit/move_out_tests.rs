@@ -4,6 +4,8 @@
 //! cancel must delete NOTHING from the archive.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_operation_log::types::OperationId;
 use std::future::Future;
 use std::pin::Pin;
@@ -25,7 +27,7 @@ impl Volume for FailingWriteVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -33,23 +35,23 @@ impl Volume for FailingWriteVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
@@ -420,7 +422,7 @@ impl Volume for FailOnNameVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -431,23 +433,23 @@ impl Volume for FailOnNameVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
@@ -464,24 +466,27 @@ impl Volume for FailOnNameVolume {
     }
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_directory(path)
     }
     fn create_directory_all<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
         self.inner.create_directory_all(path)
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn cmdr_fs::volume::VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
+        let dest_app = dest;
+        let dest_std = dest.as_std_legacy();
+        let dest: &Path = &dest_std;
         let fails = dest
             .file_name()
             .map(|n| n.to_string_lossy() == self.fail_name)
@@ -494,7 +499,8 @@ impl Volume for FailOnNameVolume {
                 })
             });
         }
-        self.inner.write_from_stream(dest, mode, length, stream, on_progress)
+        self.inner
+            .write_from_stream(dest_app, mode, length, stream, on_progress)
     }
 }
 
@@ -581,7 +587,7 @@ async fn move_out_error_mid_tree_deletes_only_the_durable_prefix() {
             .with_lane_key(unique_lane_id())
             .with_space_info(1 << 30, 1 << 30),
     );
-    inner.create_directory(Path::new("/out")).await.expect("seed dest dir");
+    inner.create_directory(app_path!("/out")).await.expect("seed dest dir");
     let dest_volume: Arc<dyn Volume> = Arc::new(FailOnNameVolume {
         inner: Arc::clone(&inner),
         fail_name: "b.txt".to_string(),

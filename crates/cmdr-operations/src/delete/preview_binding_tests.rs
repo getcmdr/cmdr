@@ -8,6 +8,8 @@
 //! Delete has no rollback, so this is the worst place in the app for a believed
 //! fact, and these tests are its fence.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -35,7 +37,10 @@ fn unique(tag: &str) -> String {
 /// Reads a file back off the volume, so the assertion checks CONTENT survival
 /// rather than just a name. `None` when the path is gone.
 async fn read_back(volume: &InMemoryVolume, path: &str) -> Option<Vec<u8>> {
-    let mut stream = volume.open_read_stream(std::path::Path::new(path)).await.ok()?;
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(std::path::Path::new(path)))
+        .await
+        .ok()?;
     let mut collected = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         collected.extend_from_slice(&chunk);
@@ -212,11 +217,11 @@ async fn a_volume_delete_stays_bound_to_its_own_sources() {
     let volume_id = unique("vol");
     let volume = Arc::new(InMemoryVolume::new("binding-vol"));
     volume
-        .create_file(std::path::Path::new("/requested.txt"), b"requested")
+        .create_file(app_path!("/requested.txt"), b"requested")
         .await
         .expect("seed requested file");
     volume
-        .create_file(std::path::Path::new("/foreign.txt"), b"foreign")
+        .create_file(app_path!("/foreign.txt"), b"foreign")
         .await
         .expect("seed foreign file");
     let engine = TestOperations::new();

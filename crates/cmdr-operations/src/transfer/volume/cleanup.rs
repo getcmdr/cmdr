@@ -10,6 +10,7 @@
 //! from reaching a recursive delete: on the cleanup path there isn't one in
 //! scope. `DETAILS.md` § "Three ways to delete, and who may use each".
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -183,12 +184,12 @@ async fn reverse_written_file(runtime: &Handle, volume: &Arc<dyn Volume>, entry:
         }
     };
     let recheck = if let WrittenIdentity::VolumeLink { target } = &entry.identity {
-        match volume.read_link_target(&entry.path).await {
+        match volume.read_link_target(&AppPath::legacy_unchecked(&entry.path)).await {
             Ok(live) => recheck_volume_link(target, live.as_deref()),
             Err(e) => return couldnt_recheck(&e),
         }
     } else {
-        match volume.get_metadata(&entry.path).await {
+        match volume.get_metadata(&AppPath::legacy_unchecked(&entry.path)).await {
             Ok(live) => recheck_volume(entry, live.size),
             Err(e) => return couldnt_recheck(&e),
         }
@@ -326,7 +327,7 @@ async fn remove_what_a_live_destination_takes(
             left.out.push(temp);
             continue;
         }
-        match crate::rt::time::timeout_at(deadline, volume.delete(&temp)).await {
+        match crate::rt::time::timeout_at(deadline, volume.delete(&AppPath::legacy_unchecked(&temp))).await {
             // Already gone counts as removed: the end state this wants already
             // holds, and reporting it would send the user hunting for a file
             // that isn't there.
@@ -391,7 +392,7 @@ pub(super) async fn reap_stale_transfer_temps(
     volume: &Arc<dyn Volume>,
     dir: &Path,
 ) -> Option<Vec<FileEntry>> {
-    let entries = match volume.list_directory(dir, None).await {
+    let entries = match volume.list_directory(&AppPath::legacy_unchecked(dir), None).await {
         Ok(entries) => entries,
         Err(e) => {
             log::debug!(target: "copy", "skipping stale-temp reap of {}: {e}", LogPrivate::dir_path(dir), e = LogError(&e));
@@ -407,9 +408,9 @@ pub(super) async fn reap_stale_transfer_temps(
     // An operation that never named its destination volume can't ask: nothing
     // of its own was persisted, and its live temps are in its own state.
     let recorded_by_the_ledger = |path: &Path| {
-        state
-            .dest_volume_id()
-            .is_some_and(|volume_id| in_flight_temps::is_recorded_on(state, volume_id, volume.root(), path))
+        state.dest_volume_id().is_some_and(|volume_id| {
+            in_flight_temps::is_recorded_on(state, volume_id, &volume.root().as_std_legacy(), path)
+        })
     };
 
     let mut survivors = Vec::with_capacity(entries.len());
@@ -429,7 +430,7 @@ pub(super) async fn reap_stale_transfer_temps(
             "reap_stale_transfer_temps: removing a transfer partial left by an earlier run: {}",
             LogPrivate::file_path(&temp_path)
         );
-        if let Err(e) = volume.delete(&temp_path).await {
+        if let Err(e) = volume.delete(&AppPath::legacy_unchecked(&temp_path)).await {
             log::debug!(target: "copy", "couldn't reap stale temp {}: {e}", LogPrivate::file_path(&temp_path), e = LogError(&e));
         }
     }
@@ -448,7 +449,7 @@ pub(super) async fn reap_stale_transfer_temps(
 /// Best-effort and quiet — a directory kept because it still holds something is
 /// the normal outcome, not a failure.
 async fn prune_created_dir_if_empty(runtime: &Handle, volume: &Arc<dyn Volume>, dir: &Path) -> ItemResult {
-    match volume.list_directory(dir, None).await {
+    match volume.list_directory(&AppPath::legacy_unchecked(dir), None).await {
         // Verified empty and ours, so a Locked one is ours to unlock (invariant 9).
         Ok(entries) if entries.is_empty() => {
             match delete_clearing_blockers(runtime, volume, dir, NodeKind::Directory).await {
@@ -550,7 +551,7 @@ pub(super) async fn remove_tree(
 /// must keep this directory. `side` is the volume's role in the transfer.
 async fn remove_tree_inner(volume: &Arc<dyn Volume>, path: &Path, side: PathRole) -> Result<bool, PathedVolumeError> {
     let refused = |at: &Path, error| PathedVolumeError::new(side, at, error);
-    let kind = match volume.entry_kind(path).await {
+    let kind = match volume.entry_kind(&AppPath::legacy_unchecked(path)).await {
         Ok(kind) => kind,
         Err(_) => {
             // Path may not exist (already deleted or never fully created). Nothing to do.
@@ -559,12 +560,18 @@ async fn remove_tree_inner(volume: &Arc<dyn Volume>, path: &Path, side: PathRole
     };
 
     if kind != EntryKind::Directory {
-        volume.delete(path).await.map_err(|e| refused(path, e))?;
+        volume
+            .delete(&AppPath::legacy_unchecked(path))
+            .await
+            .map_err(|e| refused(path, e))?;
         return Ok(false);
     }
 
     // List directory contents and delete children first
-    let children = volume.list_directory(path, None).await.map_err(|e| refused(path, e))?;
+    let children = volume
+        .list_directory(&AppPath::legacy_unchecked(path), None)
+        .await
+        .map_err(|e| refused(path, e))?;
 
     let mut first_child_failure: Option<PathedVolumeError> = None;
     let mut content_remains = false;
@@ -578,7 +585,7 @@ async fn remove_tree_inner(volume: &Arc<dyn Volume>, path: &Path, side: PathRole
             Box::pin(remove_tree_inner(volume, &child_path, side)).await
         } else {
             volume
-                .delete(&child_path)
+                .delete(&AppPath::legacy_unchecked(&child_path))
                 .await
                 .map_err(|e| refused(&child_path, e))
                 .map(|()| false)
@@ -609,7 +616,7 @@ async fn remove_tree_inner(volume: &Arc<dyn Volume>, path: &Path, side: PathRole
     }
 
     // Delete the now-empty directory, as a directory (`Volume::delete_directory`)
-    match volume.delete_directory(path, None).await {
+    match volume.delete_directory(&AppPath::legacy_unchecked(path), None).await {
         Ok(()) => Ok(false),
         Err(e) => Err(refused(path, e)),
     }

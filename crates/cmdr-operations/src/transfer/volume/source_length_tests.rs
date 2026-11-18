@@ -10,6 +10,8 @@
 //! The double declares a length other than the bytes it holds; everything else
 //! is an ordinary `InMemoryVolume`.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -62,7 +64,7 @@ impl Volume for MisdeclaringSource {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             let inner = self.inner.open_read_stream(path).await?;
@@ -106,7 +108,7 @@ const BYTES: &[u8] = b"the first six";
 
 async fn source_declaring(declared: u64) -> (Arc<InMemoryVolume>, Arc<MisdeclaringSource>) {
     let inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    inner.create_file(Path::new("/log.txt"), BYTES).await.unwrap();
+    inner.create_file(app_path!("/log.txt"), BYTES).await.unwrap();
     let source = Arc::new(MisdeclaringSource {
         inner: Arc::clone(&inner),
         declared,
@@ -116,7 +118,7 @@ async fn source_declaring(declared: u64) -> (Arc<InMemoryVolume>, Arc<Misdeclari
 
 async fn empty_dest() -> Arc<InMemoryVolume> {
     let dest = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest.create_directory(Path::new("/inbox")).await.unwrap();
+    dest.create_directory(app_path!("/inbox")).await.unwrap();
     dest
 }
 
@@ -159,7 +161,7 @@ async fn run(is_move: bool, source: Arc<MisdeclaringSource>, dest: Arc<InMemoryV
 }
 
 async fn assert_nothing_landed(dest: &InMemoryVolume) {
-    let left = dest.list_directory(Path::new("/inbox"), None).await.unwrap();
+    let left = dest.list_directory(app_path!("/inbox"), None).await.unwrap();
     assert!(left.is_empty(), "no file and no staged temp may stay behind: {left:?}");
 }
 
@@ -206,7 +208,7 @@ async fn a_move_whose_source_ends_short_keeps_the_original() {
     assert_source_changed(&error);
     assert_nothing_landed(&dest).await;
     assert!(
-        inner.exists(Path::new("/log.txt")).await,
+        inner.exists(app_path!("/log.txt")).await,
         "the original must survive a move whose copy was short"
     );
 }

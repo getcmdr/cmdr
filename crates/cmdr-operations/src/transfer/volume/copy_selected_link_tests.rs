@@ -11,6 +11,7 @@
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use crate::testing::TestOperations;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::symlink;
 use std::collections::HashSet;
 use std::time::{Duration, Instant};
@@ -110,7 +111,7 @@ fn plant_linked_folder(root: &Path) -> PathBuf {
 }
 
 async fn read_dest(dest: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
-    dest.read_range(Path::new(path), 0, 1024)
+    dest.read_range(&AppPath::legacy_unchecked(Path::new(path)), 0, 1024)
         .await
         .unwrap_or_else(|e| panic!("{path} should have landed: {e:?}"))
 }

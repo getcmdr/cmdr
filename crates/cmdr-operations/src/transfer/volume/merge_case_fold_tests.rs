@@ -19,6 +19,7 @@ use super::tests::make_state;
 use super::*;
 use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, VolumeCopyConfig, WriteOperationError};
+use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::WriteMode;
 use cmdr_fs::volume::{
@@ -82,7 +83,10 @@ impl CaseFoldingDest {
             };
             let parent = self.fold(parent).await;
             let key = fold_key(name);
-            if let Ok(entries) = self.inner.list_directory(&parent, None).await
+            if let Ok(entries) = self
+                .inner
+                .list_directory(&AppPath::legacy_unchecked(&parent), None)
+                .await
                 && let Some(hit) = entries.into_iter().find(|e| fold_key(&e.name) == key)
             {
                 return parent.join(&hit.name);
@@ -96,7 +100,7 @@ impl Volume for CaseFoldingDest {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -104,115 +108,155 @@ impl Volume for CaseFoldingDest {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let folded = self.fold(path).await;
-            self.inner.list_directory(&folded, on_progress).await
+            self.inner
+                .list_directory(&AppPath::legacy_unchecked(&folded), on_progress)
+                .await
         })
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             self.probes.lock_ignore_poison().push(path.to_path_buf());
             let folded = self.fold(path).await;
             if self.probe_is_unanswerable && folded != *path {
                 return Err(VolumeError::DeviceDisconnected("the share stopped answering".into()));
             }
-            self.inner.get_metadata(&folded).await
+            self.inner.get_metadata(&AppPath::legacy_unchecked(&folded)).await
         })
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let folded = self.fold(path).await;
-            self.inner.exists(&folded).await
+            self.inner.exists(&AppPath::legacy_unchecked(&folded)).await
         })
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let folded = self.fold(path).await;
-            self.inner.is_directory(&folded).await
+            self.inner.is_directory(&AppPath::legacy_unchecked(&folded)).await
         })
     }
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::volume::EntryKind, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let folded = self.fold(path).await;
-            self.inner.entry_kind(&folded).await
+            self.inner.entry_kind(&AppPath::legacy_unchecked(&folded)).await
         })
     }
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let folded = self.fold(path).await;
-            self.inner.create_file(&folded, content).await
+            self.inner
+                .create_file(&AppPath::legacy_unchecked(&folded), content)
+                .await
         })
     }
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let folded = self.fold(path).await;
-            self.inner.create_directory(&folded).await
+            self.inner.create_directory(&AppPath::legacy_unchecked(&folded)).await
         })
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let folded = self.fold(path).await;
-            self.inner.delete(&folded).await
+            self.inner.delete(&AppPath::legacy_unchecked(&folded)).await
         })
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let from_std = from.as_std_legacy();
+            let from: &Path = &from_std;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
             let folded_to = self.fold(to).await;
-            if !force && folded_to != *to && self.inner.exists(&folded_to).await {
+            if !force && folded_to != *to && self.inner.exists(&AppPath::legacy_unchecked(&folded_to)).await {
                 return Err(VolumeError::AlreadyExists(to.display().to_string()));
             }
             let folded_from = self.fold(from).await;
             // The landing name resolves through the folded parents too, so a
             // file renamed into `Sub/` arrives in the `sub/` the backend has.
-            self.inner.rename(&folded_from, &folded_to, force).await
+            self.inner
+                .rename(
+                    &AppPath::legacy_unchecked(&folded_from),
+                    &AppPath::legacy_unchecked(&folded_to),
+                    force,
+                )
+                .await
         })
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         _mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let dest_std = dest.as_std_legacy();
+            let dest: &Path = &dest_std;
             let folded = self.fold(dest).await;
             self.inner
-                .write_from_stream(&folded, WriteMode::CreateOrReplace, length, stream, on_progress)
+                .write_from_stream(
+                    &AppPath::legacy_unchecked(&folded),
+                    WriteMode::CreateOrReplace,
+                    length,
+                    stream,
+                    on_progress,
+                )
                 .await
         })
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let folded = self.fold(path).await;
-            self.inner.open_read_stream(&folded).await
+            self.inner.open_read_stream(&AppPath::legacy_unchecked(&folded)).await
         })
     }
     fn get_space_info<'a>(&'a self) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
@@ -223,7 +267,7 @@ impl Volume for CaseFoldingDest {
     }
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
@@ -233,24 +277,33 @@ impl Volume for CaseFoldingDest {
 /// `/album/<dest_name>`, the two names differing only by fold.
 async fn folded_pair(source_name: &str, dest_name: &str) -> (Arc<dyn Volume>, Arc<InMemoryVolume>) {
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     source
-        .create_file(&Path::new("/album").join(source_name), b"SOURCE")
+        .create_file(
+            &AppPath::legacy_unchecked(&Path::new("/album").join(source_name)),
+            b"SOURCE",
+        )
         .await
         .unwrap();
 
     let dest = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(&Path::new("/album").join(dest_name), b"THE USER'S FILE")
-        .await
-        .unwrap();
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(
+        &AppPath::legacy_unchecked(&Path::new("/album").join(dest_name)),
+        b"THE USER'S FILE",
+    )
+    .await
+    .unwrap();
     (source, dest)
 }
 
 /// Reads a file straight off the in-memory backing store, so an assertion sees
 /// the bytes the backend really holds rather than what a folded lookup finds.
 async fn stored_bytes(dest: &Arc<InMemoryVolume>, path: &str) -> Option<Vec<u8>> {
-    let mut stream = dest.open_read_stream(Path::new(path)).await.ok()?;
+    let mut stream = dest
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .ok()?;
     let mut out = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         out.extend_from_slice(&chunk);
@@ -422,18 +475,18 @@ async fn an_unanswerable_probe_fails_the_item_instead_of_writing() {
 async fn a_case_differing_directory_child_merges_into_the_one_that_is_there() {
     let engine = TestOperations::new();
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_directory(Path::new("/album")).await.unwrap();
-    source.create_directory(Path::new("/album/Sub")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    source.create_directory(app_path!("/album/Sub")).await.unwrap();
     source
-        .create_file(Path::new("/album/Sub/fresh.txt"), b"SOURCE")
+        .create_file(app_path!("/album/Sub/fresh.txt"), b"SOURCE")
         .await
         .unwrap();
 
     let dest_inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest_inner.create_directory(Path::new("/album")).await.unwrap();
-    dest_inner.create_directory(Path::new("/album/sub")).await.unwrap();
+    dest_inner.create_directory(app_path!("/album")).await.unwrap();
+    dest_inner.create_directory(app_path!("/album/sub")).await.unwrap();
     dest_inner
-        .create_file(Path::new("/album/sub/keep.txt"), b"THE USER'S FILE")
+        .create_file(app_path!("/album/sub/keep.txt"), b"THE USER'S FILE")
         .await
         .unwrap();
     let dest: Arc<dyn Volume> = Arc::new(CaseFoldingDest::new(&dest_inner));
@@ -451,7 +504,7 @@ async fn a_case_differing_directory_child_merges_into_the_one_that_is_there() {
         "and the source child lands inside the directory that was already there"
     );
     assert!(
-        !dest_inner.exists(Path::new("/album/Sub")).await,
+        !dest_inner.exists(app_path!("/album/Sub")).await,
         "a second directory differing only in case must not appear"
     );
     assert_eq!(
@@ -478,7 +531,7 @@ impl Volume for LateArrivalDest {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -486,7 +539,7 @@ impl Volume for LateArrivalDest {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -499,42 +552,45 @@ impl Volume for LateArrivalDest {
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if path == self.arriving {
                 return Err(VolumeError::NotFound(path.display().to_string()));
             }
-            self.inner.get_metadata(path).await
+            self.inner.get_metadata(path_app).await
         })
     }
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_directory(path)
     }
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_file(path, content)
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.delete(path)
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.rename(from, to, force)
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -544,7 +600,7 @@ impl Volume for LateArrivalDest {
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.inner.open_read_stream(path)
     }
@@ -556,7 +612,7 @@ impl Volume for LateArrivalDest {
     }
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
@@ -616,17 +672,20 @@ async fn a_name_that_fills_up_after_the_listing_is_not_cleared_by_the_landing() 
 async fn an_ordinary_merge_costs_no_probes() {
     let engine = TestOperations::new();
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_directory(Path::new("/album")).await.unwrap();
-    source.create_directory(Path::new("/album/sub")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    source.create_directory(app_path!("/album/sub")).await.unwrap();
     for path in ["/album/fresh.txt", "/album/clash.txt", "/album/sub/deep.txt"] {
-        source.create_file(Path::new(path), b"SOURCE").await.unwrap();
+        source
+            .create_file(&AppPath::legacy_unchecked(Path::new(path)), b"SOURCE")
+            .await
+            .unwrap();
     }
 
     let dest_inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest_inner.create_directory(Path::new("/album")).await.unwrap();
-    dest_inner.create_directory(Path::new("/album/sub")).await.unwrap();
+    dest_inner.create_directory(app_path!("/album")).await.unwrap();
+    dest_inner.create_directory(app_path!("/album/sub")).await.unwrap();
     dest_inner
-        .create_file(Path::new("/album/clash.txt"), b"THE USER'S FILE")
+        .create_file(app_path!("/album/clash.txt"), b"THE USER'S FILE")
         .await
         .unwrap();
     let counting = Arc::new(CaseFoldingDest::new(&dest_inner));

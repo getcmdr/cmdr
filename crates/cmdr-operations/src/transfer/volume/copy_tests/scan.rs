@@ -3,6 +3,7 @@
 
 use super::*;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 
 #[test]
 fn test_volume_copy_config_default() {
@@ -48,16 +49,16 @@ async fn a_volume_copy_hands_its_operation_the_tree_its_scan_recorded() {
     let engine = TestOperations::new();
 
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/src/photos/2024")).await.unwrap();
+    source.create_directory(app_path!("/src/photos/2024")).await.unwrap();
     source
-        .create_file(Path::new("/src/photos/a.jpg"), b"aaa")
+        .create_file(app_path!("/src/photos/a.jpg"), b"aaa")
         .await
         .unwrap();
     source
-        .create_file(Path::new("/src/photos/2024/b.jpg"), b"bbbbb")
+        .create_file(app_path!("/src/photos/2024/b.jpg"), b"bbbbb")
         .await
         .unwrap();
-    source.create_file(Path::new("/src/notes.txt"), b"nn").await.unwrap();
+    source.create_file(app_path!("/src/notes.txt"), b"nn").await.unwrap();
     let state = make_state(&engine);
 
     copy_volumes_with_progress(
@@ -97,12 +98,12 @@ async fn a_cached_preview_without_a_tree_gives_the_operation_its_sources_as_opaq
     let engine = TestOperations::new();
 
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/src/photos")).await.unwrap();
+    source.create_directory(app_path!("/src/photos")).await.unwrap();
     source
-        .create_file(Path::new("/src/photos/a.jpg"), b"aaa")
+        .create_file(app_path!("/src/photos/a.jpg"), b"aaa")
         .await
         .unwrap();
-    source.create_file(Path::new("/src/notes.txt"), b"nn").await.unwrap();
+    source.create_file(app_path!("/src/notes.txt"), b"nn").await.unwrap();
     let scan = |files: usize, bytes: u64, is_directory: bool| CopyScanResult {
         file_count: files,
         dir_count: 0,
@@ -170,9 +171,9 @@ async fn test_scan_for_copy_batch_with_progress_fires_callback() {
     use std::sync::Mutex;
 
     let vol = InMemoryVolume::new("V").with_space_info(1_000_000, 500_000);
-    vol.create_file(Path::new("/a.txt"), b"AA").await.unwrap();
-    vol.create_file(Path::new("/b.txt"), b"BBBB").await.unwrap();
-    vol.create_file(Path::new("/c.txt"), b"CCCCCC").await.unwrap();
+    vol.create_file(app_path!("/a.txt"), b"AA").await.unwrap();
+    vol.create_file(app_path!("/b.txt"), b"BBBB").await.unwrap();
+    vol.create_file(app_path!("/c.txt"), b"CCCCCC").await.unwrap();
     let vol: Arc<dyn Volume> = Arc::new(vol);
 
     let calls = Arc::new(Mutex::new(Vec::<usize>::new()));
@@ -181,13 +182,22 @@ async fn test_scan_for_copy_batch_with_progress_fires_callback() {
         calls_for_cb.lock().unwrap().push(p.files);
     };
 
-    let paths = vec![
+    let paths = [
         PathBuf::from("/a.txt"),
         PathBuf::from("/b.txt"),
         PathBuf::from("/c.txt"),
     ];
     let boundary = cmdr_fs::volume::ScanBoundary::new(Some(&on_progress));
-    let result = vol.scan_for_copy_batch_with_boundary(&paths, &boundary).await.unwrap();
+    let result = vol
+        .scan_for_copy_batch_with_boundary(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+            &boundary,
+        )
+        .await
+        .unwrap();
 
     assert_eq!(result.aggregate.file_count, 3);
     assert_eq!(result.aggregate.total_bytes, 12); // 2 + 4 + 6
@@ -211,10 +221,13 @@ async fn test_scan_for_copy_batch_with_progress_fires_callback() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_scan_for_copy_batch_without_progress_still_works() {
     let vol = InMemoryVolume::new("V").with_space_info(1_000_000, 500_000);
-    vol.create_file(Path::new("/x.txt"), b"hello").await.unwrap();
+    vol.create_file(app_path!("/x.txt"), b"hello").await.unwrap();
     let vol: Arc<dyn Volume> = Arc::new(vol);
 
-    let result = vol.scan_for_copy_batch(&[PathBuf::from("/x.txt")]).await.unwrap();
+    let result = vol
+        .scan_for_copy_batch(&[AppPath::legacy_unchecked(&PathBuf::from("/x.txt")).into_owned()])
+        .await
+        .unwrap();
     assert_eq!(result.aggregate.file_count, 1);
     assert_eq!(result.aggregate.total_bytes, 5);
 }

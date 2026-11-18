@@ -10,6 +10,7 @@
 //! redirects the operation: a stat that fails records no identity, and the row
 //! keeps the checks a row from before identities gets.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::{BTreeMap, HashMap};
 use std::ffi::OsStr;
 use std::fs::Metadata;
@@ -111,7 +112,7 @@ impl LandedReadBack {
             vec![landed]
         };
         for path in paths {
-            if let Ok(Some(node)) = dest.node_identity(path).await {
+            if let Ok(Some(node)) = dest.node_identity(&AppPath::legacy_unchecked(path)).await {
                 nodes.insert(path.to_path_buf(), node);
             }
         }
@@ -127,7 +128,7 @@ impl LandedReadBack {
         let mut times = HashMap::new();
         if !source_is_dir {
             if let Some(secs) = dest
-                .get_metadata(landed)
+                .get_metadata(&AppPath::legacy_unchecked(landed))
                 .await
                 .ok()
                 .and_then(|entry| entry.modified_at)
@@ -149,7 +150,7 @@ impl LandedReadBack {
             }
         }
         for (folder, wanted) in by_folder {
-            let Ok(entries) = dest.list_directory(folder, None).await else {
+            let Ok(entries) = dest.list_directory(&AppPath::legacy_unchecked(folder), None).await else {
                 continue;
             };
             for entry in &entries {
@@ -188,5 +189,5 @@ impl LandedReadBack {
 /// with no call to it; only a local disk pays the one `statfs`.
 fn volume_keeps_landed_nodes(dest: &dyn Volume, landed: &Path) -> bool {
     dest.mount_class() == Some(MountClass::LocalDisk)
-        && crate::local_disk::keeps_node_identity(&cmdr_fs::volume::root_anchored(dest.root(), landed))
+        && crate::local_disk::keeps_node_identity(&cmdr_fs::volume::root_anchored(&dest.root().as_std_legacy(), landed))
 }

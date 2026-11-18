@@ -27,6 +27,7 @@
 //! pause (the op's `PauseGate`), and progress (`write-progress` frames).
 
 use crate::rt::Instant;
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::ops::ControlFlow;
 use std::path::Path;
@@ -194,7 +195,7 @@ impl RollbackRunner for ReversalRunner {
                     // never produce. Creating a directory only ever adds, so it
                     // can't take anything away from the user.
                     if let Some(parent) = to_path.parent() {
-                        to.create_directory_all(parent).await?;
+                        to.create_directory_all(&AppPath::legacy_unchecked(parent)).await?;
                     }
                     // ❗ On an object store a rename of a big file isn't one call
                     // (`Volume::rename_work`), and `rename` refuses it: that one
@@ -202,13 +203,19 @@ impl RollbackRunner for ReversalRunner {
                     // server, where it can) and then deleted.
                     let renames_in_one_call = same_volume
                         && matches!(
-                            from.rename_work(from_path).await,
+                            from.rename_work(&AppPath::legacy_unchecked(from_path)).await,
                             Ok(cmdr_fs::volume::RenameWork::OneCall)
                         );
                     if renames_in_one_call {
                         // A same-FS move / rename-back / trash-restore: one rename,
                         // atomic, nothing to stream.
-                        Ok(from.rename(from_path, to_path, force).await?)
+                        Ok(from
+                            .rename(
+                                &AppPath::legacy_unchecked(from_path),
+                                &AppPath::legacy_unchecked(to_path),
+                                force,
+                            )
+                            .await?)
                     } else {
                         // Cross-volume, or a rename that copies: the staged per-file move, which is what buys
                         // mid-file cancel, byte progress, a `.cmdr-tmp-*` landing,
@@ -240,7 +247,9 @@ impl RollbackRunner for ReversalRunner {
                     name,
                     value,
                 } => {
-                    volume.write_xattr(path, name, value).await?;
+                    volume
+                        .write_xattr(&AppPath::legacy_unchecked(path), name, value)
+                        .await?;
                     if let Some(parent) = path.parent() {
                         self.state.scope().host().listings().row_xattrs_may_have_changed(
                             volume_id,

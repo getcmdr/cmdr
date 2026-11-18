@@ -4,15 +4,16 @@
 
 use super::*;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_multi_file_copy_all_files_arrive() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
 
-    source.create_file(Path::new("/a.txt"), b"alpha").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"bravo").await.unwrap();
-    source.create_file(Path::new("/c.txt"), b"charlie").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"alpha").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"bravo").await.unwrap();
+    source.create_file(app_path!("/c.txt"), b"charlie").await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -37,11 +38,11 @@ async fn test_multi_file_copy_all_files_arrive() {
     assert!(result.is_ok(), "copy should succeed: {:?}", result);
 
     // All 3 files at destination with correct content
-    let mut stream_a = dest.open_read_stream(Path::new("/a.txt")).await.unwrap();
+    let mut stream_a = dest.open_read_stream(app_path!("/a.txt")).await.unwrap();
     assert_eq!(stream_a.next_chunk().await.unwrap().unwrap(), b"alpha");
-    let mut stream_b = dest.open_read_stream(Path::new("/b.txt")).await.unwrap();
+    let mut stream_b = dest.open_read_stream(app_path!("/b.txt")).await.unwrap();
     assert_eq!(stream_b.next_chunk().await.unwrap().unwrap(), b"bravo");
-    let mut stream_c = dest.open_read_stream(Path::new("/c.txt")).await.unwrap();
+    let mut stream_c = dest.open_read_stream(app_path!("/c.txt")).await.unwrap();
     assert_eq!(stream_c.next_chunk().await.unwrap().unwrap(), b"charlie");
 
     // Completion event emitted
@@ -55,8 +56,8 @@ async fn test_multi_file_copy_progress_tracking() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
 
-    source.create_file(Path::new("/x.bin"), &[0; 100_000]).await.unwrap();
-    source.create_file(Path::new("/y.bin"), &[0; 50_000]).await.unwrap();
+    source.create_file(app_path!("/x.bin"), &[0; 100_000]).await.unwrap();
+    source.create_file(app_path!("/y.bin"), &[0; 50_000]).await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = make_state(&engine);
@@ -105,8 +106,8 @@ async fn test_cross_volume_copy_serial_emits_intra_file_progress() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
     let payload: Vec<u8> = vec![0u8; 1_048_576];
-    source.create_file(Path::new("/a.bin"), &payload).await.unwrap();
-    source.create_file(Path::new("/b.bin"), &payload).await.unwrap();
+    source.create_file(app_path!("/a.bin"), &payload).await.unwrap();
+    source.create_file(app_path!("/b.bin"), &payload).await.unwrap();
     let total_bytes = (payload.len() * 2) as u64;
 
     let events = Arc::new(CollectorEventSink::new());
@@ -195,11 +196,11 @@ async fn test_cross_volume_copy_serial_emits_intra_file_progress() {
 async fn test_cross_volume_copy_directory_source_progress_is_leaf_granular() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/folder")).await.unwrap();
+    source.create_directory(app_path!("/folder")).await.unwrap();
     let one_mb: Vec<u8> = vec![0u8; 1_048_576];
-    source.create_file(Path::new("/folder/a.bin"), &one_mb).await.unwrap();
-    source.create_file(Path::new("/folder/b.bin"), &one_mb).await.unwrap();
-    source.create_file(Path::new("/folder/c.bin"), &one_mb).await.unwrap();
+    source.create_file(app_path!("/folder/a.bin"), &one_mb).await.unwrap();
+    source.create_file(app_path!("/folder/b.bin"), &one_mb).await.unwrap();
+    source.create_file(app_path!("/folder/c.bin"), &one_mb).await.unwrap();
     let one_file = one_mb.len() as u64;
     let total_bytes = one_file * 3;
 
@@ -289,7 +290,10 @@ async fn test_cross_volume_copy_concurrent_emits_intra_file_progress() {
     let payload: Vec<u8> = vec![0u8; 524_288]; // 512 KB × 5 sources = 2.5 MB
     for i in 0..5 {
         source
-            .create_file(Path::new(&format!("/big_{}.bin", i)), &payload)
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/big_{}.bin", i))),
+                &payload,
+            )
             .await
             .unwrap();
     }
@@ -360,7 +364,7 @@ async fn test_cross_volume_copy_serial_reaches_files_done_n() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
     let payload: Vec<u8> = vec![0u8; 1_048_576];
-    source.create_file(Path::new("/big.bin"), &payload).await.unwrap();
+    source.create_file(app_path!("/big.bin"), &payload).await.unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let state = Arc::new(engine.new_operation_state(Duration::from_millis(0)));
@@ -415,7 +419,10 @@ async fn test_cross_volume_copy_concurrent_reaches_files_done_n() {
     let payload: Vec<u8> = vec![0u8; 524_288];
     for i in 0..5 {
         source
-            .create_file(Path::new(&format!("/big_{}.bin", i)), &payload)
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/big_{}.bin", i))),
+                &payload,
+            )
             .await
             .unwrap();
     }

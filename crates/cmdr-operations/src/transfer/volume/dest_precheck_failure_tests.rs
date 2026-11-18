@@ -19,6 +19,8 @@
 //! so the assertion proves the failure came from the PROBE rather than from a
 //! write that shouldn't have been reached.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -51,11 +53,14 @@ fn flaky_dest(inner: Arc<InMemoryVolume>, nth: usize) -> Arc<FaultyVolume<InMemo
 
 async fn seeded_dest(names: &[&str]) -> Arc<InMemoryVolume> {
     let dest = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest.create_directory(Path::new("/inbox")).await.unwrap();
+    dest.create_directory(app_path!("/inbox")).await.unwrap();
     for name in names {
-        dest.create_file(&PathBuf::from(format!("/inbox/{name}")), THE_USERS_BYTES)
-            .await
-            .unwrap();
+        dest.create_file(
+            &AppPath::legacy_unchecked(&PathBuf::from(format!("/inbox/{name}"))),
+            THE_USERS_BYTES,
+        )
+        .await
+        .unwrap();
     }
     dest
 }
@@ -65,14 +70,20 @@ async fn seeded_source(names: &[&str]) -> (Arc<InMemoryVolume>, Vec<PathBuf>) {
     let mut paths = Vec::new();
     for name in names {
         let path = PathBuf::from(format!("/{name}"));
-        source.create_file(&path, b"the incoming bytes").await.unwrap();
+        source
+            .create_file(&AppPath::legacy_unchecked(&path), b"the incoming bytes")
+            .await
+            .unwrap();
         paths.push(path);
     }
     (source, paths)
 }
 
 async fn bytes_at(volume: &Arc<InMemoryVolume>, path: &str) -> Option<Vec<u8>> {
-    let mut stream = volume.open_read_stream(&PathBuf::from(path)).await.ok()?;
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(&PathBuf::from(path)))
+        .await
+        .ok()?;
     let mut out = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         out.extend_from_slice(&chunk);
@@ -220,7 +231,7 @@ async fn a_cross_volume_move_fails_the_item_whose_destination_stat_times_out() {
         "and under Skip the user's file must be exactly as it was"
     );
     assert!(
-        source.exists(Path::new("/doc.txt")).await,
+        source.exists(app_path!("/doc.txt")).await,
         "a move whose item failed keeps its source"
     );
 }
@@ -231,13 +242,13 @@ async fn a_cross_volume_move_fails_the_item_whose_destination_stat_times_out() {
 async fn a_same_volume_move_fails_the_item_whose_destination_stat_times_out() {
     let engine = TestOperations::new();
     let inner = Arc::new(InMemoryVolume::new("One").with_space_info(10_000_000, 10_000_000));
-    inner.create_directory(Path::new("/inbox")).await.unwrap();
+    inner.create_directory(app_path!("/inbox")).await.unwrap();
     inner
-        .create_file(Path::new("/doc.txt"), b"the incoming bytes")
+        .create_file(app_path!("/doc.txt"), b"the incoming bytes")
         .await
         .unwrap();
     inner
-        .create_file(Path::new("/inbox/doc.txt"), THE_USERS_BYTES)
+        .create_file(app_path!("/inbox/doc.txt"), THE_USERS_BYTES)
         .await
         .unwrap();
     let volume = flaky_dest(Arc::clone(&inner), 1);
@@ -274,7 +285,7 @@ async fn a_same_volume_move_fails_the_item_whose_destination_stat_times_out() {
         "and under Skip the user's file must be exactly as it was"
     );
     assert!(
-        inner.exists(Path::new("/doc.txt")).await,
+        inner.exists(app_path!("/doc.txt")).await,
         "a move whose item failed keeps its source"
     );
 }
