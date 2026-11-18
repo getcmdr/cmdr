@@ -76,6 +76,10 @@ fn a_local_directory_records_its_node_and_no_size() {
 /// copied link is recognizable even when it dangles.
 #[test]
 fn a_symlink_records_the_link_not_its_target() {
+    // A link needs Developer Mode or elevation on Windows.
+    if !cmdr_fs::testing::can_create_symlinks() {
+        return;
+    }
     let tmp = tempfile::tempdir().unwrap();
     let target = tmp.path().join("target.bin");
     fs::write(&target, vec![0u8; 4096]).unwrap();

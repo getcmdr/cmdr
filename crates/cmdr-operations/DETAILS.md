@@ -3122,7 +3122,9 @@ ledger file:
   truncates, or sweeps a file.
 - **`Operations::claim_ledger(data_dir)`** (`in_flight_claim.rs`) is the one path to a file: it opens and truncates
   `data_dir`'s log, replays it, and starts the sweep. It consumes the engine's one claim; a second is
-  `Err(AlreadyClaimed)` and leaves the file alone. ❌ Never call it from `build()`.
+  `Err(AlreadyClaimed)` and leaves the file alone. ❌ Never call it from `build()`. The truncate is its own truncating
+  open (`log_writer::open_emptied`), ❌ never `set_len(0)` on the append handle: Windows refuses that on an append-only
+  handle, so the log never emptied there and every launch replayed every record the log ever held.
 - **The app claims through `operations_host::claim_ledger`**, which goes through `operations()`, so only the `OnceLock`
   winner can be claimed. It runs where the launch sweep always ran: after the instance lock (`instance_lock.rs` keeps a
   second process off the data dir whenever its lock can be taken), before `init_volume_manager`, unconditionally.

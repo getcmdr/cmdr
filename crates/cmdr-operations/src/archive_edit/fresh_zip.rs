@@ -18,7 +18,7 @@ use cmdr_fs::rt::Runtime as Handle;
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 use zip::write::SimpleFileOptions;
-use zip::{CompressionMethod, ZipWriter};
+use zip::{CompressionMethod, System, ZipWriter};
 
 use cmdr_fs::volume::{StreamLength, VolumeError, VolumeReadStream};
 
@@ -437,7 +437,10 @@ fn produce(
             .compression_level(level.map(|value| value.clamp(1, 9)))
             .large_file(needs_zip64(entry.size));
         if let Some(mode) = entry.unix_mode {
-            options = options.unix_permissions(mode);
+            // ❗ A recorded mode names a Unix creator: the `zip` crate declares the
+            // host's own (DOS on Windows), and a reader takes a DOS entry's
+            // attributes for a read-only flag, so the mode would be lost.
+            options = options.unix_permissions(mode).system(System::Unix);
         }
         // A source with no mtime is dated now; the helper owns the ZIP convention
         // (local DOS time plus the exact UTC second), shared with the mutator.

@@ -11,18 +11,42 @@ import (
 func TestClassifyTextReadsEachCauseFromItsOutput(t *testing.T) {
 	cases := map[string]cluster{
 		`panicked: not an absolute Windows app path: C:\Users\Admin\AppData\Local\Temp\.tmpX`: clusterNativeTempdir,
-		`left: "/srv/data\\photos"`:                        clusterStdArithmetic,
-		`NotFound("sftp://test_user_1@h:22\\srv")`:         clusterStdArithmetic,
-		`rename_local_exclusive refused \\?\C:\x`:          clusterFinalize,
-		`Err(MountedVolumeInside)`:                         clusterIdentity,
-		`A folyamat nem fér hozzá a fájlhoz (os error 32)`: clusterOpenFile,
-		`the transfer must complete`:                       clusterUnread,
-		`C:\Users\Admin (os error 2)`:                      clusterUnread,
+		`left: "/srv/data\\photos"`:                                    clusterStdArithmetic,
+		`NotFound("sftp://test_user_1@h:22\\srv")`:                     clusterStdArithmetic,
+		`rename_local_exclusive refused \\?\C:\x`:                      clusterFinalize,
+		`Err(MountedVolumeInside)`:                                     clusterIdentity,
+		`A folyamat nem fér hozzá a fájlhoz (os error 32)`:             clusterOpenFile,
+		`"mountPoint": "<tmp>\\docs", "type": "mounted_volume_inside"`: clusterIdentity,
+		`symlink: Os { code: 1314, kind: Uncategorized, message: "A required privilege is not held by the client." }`:                     clusterSymlink,
+		`start the test ledger empty: Os { code: 5, kind: PermissionDenied, message: "Access is denied." }`:                               clusterAppendTruncate,
+		`folders: Os { code: 123, kind: InvalidFilename, message: "The filename, directory name, or volume label syntax is incorrect." }`: clusterWindowsNames,
+		`HOME is set: NotPresent`: clusterHomeEnv,
+		`left: Directory { path: "C:/Users/Admin" } right: Directory { path: "C:\\Users\\Admin" }`: clusterNativeHome,
+		`right: ["/Users/test_user_3/Documents"]`:                                                  clusterPosixFixture,
+		`the transfer must complete`:                                                               clusterUnread,
+		`C:\Users\Admin (os error 2)`:                                                              clusterUnread,
 	}
 	for text, want := range cases {
 		if got := classifyText(text); got != want {
 			t.Errorf("classifyText(%q) = %s, want %s", text, got.Key, want.Key)
 		}
+	}
+}
+
+func TestAZipModeCellIsNamedByItsTest(t *testing.T) {
+	f := failure{ID: testID{"cmdr-archive", "volume::volume_test::a_unix_mode_in_the_external_attributes_reaches_the_entry"}, Text: "left: 438"}
+	if got := classifyOne(f); got != clusterZipCreator {
+		t.Fatalf("got %s", got.Key)
+	}
+}
+
+func TestAnUnreadFailureNeverInheritsAnotherTestsOwnCause(t *testing.T) {
+	tags := classifyAll([]failure{
+		{ID: testID{"cmdr-operations", "in_flight_temps::tests::a"}, Text: `start the test ledger empty: Os { code: 5, kind: PermissionDenied }`},
+		{ID: testID{"cmdr-operations", "in_flight_temps::tests::b"}, Text: "the remote edit should commit"},
+	})
+	if tags[1].Cluster != clusterUnread {
+		t.Fatalf("got %+v", tags[1])
 	}
 }
 

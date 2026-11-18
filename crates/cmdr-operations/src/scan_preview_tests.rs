@@ -70,6 +70,8 @@ fn get_scan_preview_totals_returns_cached_counts_after_complete() {
 /// A transfer's walk counts the names Windows can't use, from the scan, so the
 /// dialog can warn before any byte moves; the recovery path carries the same
 /// tally. Folder names count too, the selected source's own included.
+/// Unix-only: the fixture's names are the ones Windows refuses to create.
+#[cfg(unix)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_transfer_scan_counts_the_names_windows_cant_use() {
     use super::event_sinks::CollectorScanPreviewSink;
