@@ -107,7 +107,7 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "Сайт, с которого, по записи, загружен файл (только основной адрес сайта, например github.com, без поддоменов и полной ссылки), когда и в каком приложении. Для вложения из Почты или файла из AirDrop: только сам этот факт, без отправителя",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {Сайт, с которого, по записи, загружен файл (только основной адрес сайта, например github.com, без поддоменов и полной ссылки), когда и в каком приложении. Для вложения из Почты или файла из AirDrop: только сам этот факт, без отправителя} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "40d185c"
   },

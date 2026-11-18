@@ -328,7 +328,7 @@
   "@aboutThis.download.unrecognized": {
     "sourceHash": "5e9fa42"
   },
-  "aboutThis.download.noSource": "A macOS feljegyezte, hogy ezt letöltötték{hasApp, select, yes {, ezzel az appal: {app}} other {}}{hasDate, select, yes {, ekkor: <date></date>} other {}}, de azt nem, hogy honnan.",
+  "aboutThis.download.noSource": "{platform, select, macos {A macOS feljegyezte, hogy ezt letöltötték{hasApp, select, yes {, ezzel az appal: {app}} other {}}{hasDate, select, yes {, ekkor: <date></date>} other {}}, de azt nem, hogy honnan.} windows {Windows recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} other {This carries a record of being downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.}}",
   "@aboutThis.download.noSource": {
     "sourceHash": "7edb92b"
   },
@@ -747,7 +747,7 @@
   "@aboutThis.standardFolder.users": {
     "sourceHash": "955c56c"
   },
-  "aboutThis.standardFolder.startupDisk": "Az indítólemez legfelső szintje",
+  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {Az indítólemez legfelső szintje} windows {The top of the system drive} other {The top of the system disk}}",
   "@aboutThis.standardFolder.startupDisk": {
     "sourceHash": "6e69278"
   },
@@ -972,7 +972,7 @@
   "@aboutThis.removal.standardFolder.users": {
     "sourceHash": "b72c1fe"
   },
-  "aboutThis.removal.standardFolder.startupDisk": "Ebben van minden, ami az indítólemezen van, a macOS-t is beleértve.",
+  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {Ebben van minden, ami az indítólemezen van, a macOS-t is beleértve.} windows {It holds everything on the system drive, Windows included.} other {It holds everything on the system disk, the operating system included.}}",
   "@aboutThis.removal.standardFolder.startupDisk": {
     "sourceHash": "3f6c151"
   },

@@ -20,7 +20,7 @@ never sees it.
   can't resurrect a gone operation. `write-complete` precedes the snapshot that drops the op (the engine's `on_settled`
   runs after the terminal event); an op that leaves with no `write-complete` counts as cancelled.
 - **Honesty rules live in `aggregate.rs`**: unmeasured = indeterminate, capped at 99 % while work is listed, paused only
-  when a PERSON holds every started op, error while the queue keeps a failure. Change them there, with a test.
+  when a PERSON holds every started op, error only when nothing is live and the queue keeps a failure (live work wins, like the status corner). Change them there, with a test.
 - **Each arm sets both status and value**: tao keeps the old value when one is `None`.
 - **No polling**: the worker blocks on a channel woken only when the summary changes, and spaces OS updates by
   `MIN_UPDATE_GAP`.

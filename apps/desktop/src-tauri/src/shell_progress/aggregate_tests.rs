@@ -383,13 +383,29 @@ fn a_failure_alone_shows_a_full_error_bar_until_dismissed() {
 }
 
 #[test]
-fn a_failure_beside_live_work_colors_the_bar_without_weighing_on_it() {
+fn running_work_beside_a_failure_wins_and_the_failure_neither_colors_nor_weighs() {
     let mut aggregate = Aggregate::default();
     aggregate.note_operations(&[row("a", LifecycleStatus::Running), row("b", LifecycleStatus::Running)]);
     aggregate.note_progress(&copying("a", 100, 1_000));
     aggregate.note_progress(&copying("b", 500, 1_000));
     aggregate.note_operations(&[row("a", LifecycleStatus::Failed), row("b", LifecycleStatus::Running)]);
-    assert_eq!(aggregate.summary(), shown(Some(50), Tone::Error));
+    assert_eq!(aggregate.summary(), shown(Some(50), Tone::Normal));
+}
+
+#[test]
+fn paused_work_beside_a_failure_reads_paused() {
+    let mut aggregate = Aggregate::default();
+    aggregate.note_operations(&[row("a", LifecycleStatus::Failed), row("b", LifecycleStatus::Paused)]);
+    assert_eq!(aggregate.summary(), shown(None, Tone::Paused));
+}
+
+#[test]
+fn the_failure_turns_the_bar_red_once_the_last_live_work_ends() {
+    let mut aggregate = Aggregate::default();
+    aggregate.note_operations(&[row("a", LifecycleStatus::Failed), row("b", LifecycleStatus::Running)]);
+    aggregate.note_completed("b");
+    aggregate.note_operations(&[row("a", LifecycleStatus::Failed), row("b", LifecycleStatus::Done)]);
+    assert_eq!(aggregate.summary(), shown(Some(100), Tone::Error));
 }
 
 #[test]

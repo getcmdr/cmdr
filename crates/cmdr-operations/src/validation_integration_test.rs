@@ -346,6 +346,7 @@ fn test_ensure_destination_dir_surfaces_create_failure() {
     let dest = parent.join("child");
     let result = ensure_destination_dir(&dest);
     assert!(result.is_err(), "a create failure must surface as an error");
+    assert_details_carry_the_os_sentence(&result);
     assert!(!dest.exists());
 
     // Restore perms so cleanup can remove the tree.
@@ -548,9 +549,22 @@ fn test_validate_destination_writable_readonly() {
         matches!(result, Err(WriteOperationError::PermissionDenied { .. })),
         "Should reject read-only destination"
     );
+    assert_details_carry_the_os_sentence(&result);
 
     // Restore for cleanup
     fs::set_permissions(&dest, fs::Permissions::from_mode(0o755)).unwrap();
+}
+
+/// A refusal's `message` is the technical-details text, read on every OS: the OS's own
+/// sentence, ❌ never advice naming one OS's file manager (#1235). The advice is the
+/// catalog's, per OS (`errors.write.permissionDenied.suggestion.*`).
+fn assert_details_carry_the_os_sentence(result: &Result<(), WriteOperationError>) {
+    let Err(WriteOperationError::PermissionDenied { message, .. }) = result else {
+        panic!("expected a permission refusal, got {result:?}");
+    };
+    let text = message.to_string();
+    assert!(!text.contains("Finder"), "no macOS-only advice in the details: {text}");
+    assert!(text.contains("os error 13"), "the OS's own sentence: {text}");
 }
 
 // ============================================================================

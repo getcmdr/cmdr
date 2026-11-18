@@ -23,7 +23,9 @@ use std::sync::LazyLock;
 use rusqlite::{Connection, OpenFlags, ffi};
 
 mod thread_conn_cache;
-pub use thread_conn_cache::{THREAD_CONN_SLOTS, ThreadConnCache, live_read_connections, retire_read_connections};
+pub use thread_conn_cache::{
+    THREAD_CONN_SLOTS, ThreadConnCache, live_read_connections, retire_read_connections, retire_read_connections_under,
+};
 
 // ── Process-wide shared page cache ───────────────────────────────────
 
@@ -560,14 +562,14 @@ pub fn delete_sidecars(db_path: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-/// Delete a database and its sidecars, retiring the read connections cached to it.
+/// Delete a database and its sidecars, closing the read connections cached to it
+/// first (Windows refuses to delete an open file, #1226).
 ///
 /// A file that isn't there is fine. Every file is attempted even when one
 /// refuses, and the first refusal is what comes back.
 ///
 /// ⚠️ The caller stops whatever WRITES the database first (its writer thread, a
-/// running pass). This only reaches the cached READ connections, and only as far
-/// as [`retire_read_connections`] can.
+/// running pass). This only reaches the cached READ connections.
 pub fn delete_database(db_path: &Path) -> std::io::Result<()> {
     retire_read_connections(db_path);
     let mut first_refusal = None;

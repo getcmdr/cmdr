@@ -107,7 +107,7 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "Webbplatsen som det enligt noteringen hämtades från (bara webbplatsens huvudadress, som github.com, aldrig en underdomän eller hela länken), när och vilken app som hämtade det. För en bilaga i Mail eller en AirDrop bara att det var en sådan, aldrig vem som skickade den",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {Webbplatsen som det enligt noteringen hämtades från (bara webbplatsens huvudadress, som github.com, aldrig en underdomän eller hela länken), när och vilken app som hämtade det. För en bilaga i Mail eller en AirDrop bara att det var en sådan, aldrig vem som skickade den} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "40d185c"
   },

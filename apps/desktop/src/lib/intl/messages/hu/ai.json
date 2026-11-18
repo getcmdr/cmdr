@@ -107,7 +107,7 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "A webhely, ahonnan a feljegyzés szerint letöltötték (csak a webhely fő címe, például github.com, soha nem egy aldomain vagy a teljes link), hogy mikor, és az app, amely letöltötte. Mail-mellékletnél vagy AirDropnál csak annyi, hogy az volt, soha nem az, hogy ki küldte",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {A webhely, ahonnan a feljegyzés szerint letöltötték (csak a webhely fő címe, például github.com, soha nem egy aldomain vagy a teljes link), hogy mikor, és az app, amely letöltötte. Mail-mellékletnél vagy AirDropnál csak annyi, hogy az volt, soha nem az, hogy ki küldte} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "40d185c"
   },

@@ -39,8 +39,11 @@ A SESSION starts when the first operation goes live (queued, running, or paused)
   (`TransferWaitReason::Paused` / `Conflict`, which the engine re-announces on both edges of the wait). A stall on a
   slow share, a reconnect, or an unknown wait is NOT a pause: nobody can resume it. Queued work behind a paused
   operation doesn't count as moving (it waits on that operation's lane).
-- **Error** while the queue keeps a non-instant failure, the status corner's failure mark. Beside live work it only
-  colors the bar; alone it's a full red bar until the person dismisses the failure.
+- **Error** only when nothing is live and the queue keeps a non-instant failure: a full red bar until the person
+  dismisses the failure, the status corner's failure mark. Beside live work the work wins: the bar reads normal (or
+  paused) and the failure neither colors nor weighs on it, as the status corner shows progress over failure
+  (`operation-chip.ts`). Why: the bar answers "what's happening now", and a red bar over a moving copy reads as that
+  copy failing.
 - Instant operations (rename, create folder, create file) never count, as in the status corner.
 
 ## Each OS
@@ -48,7 +51,7 @@ A SESSION starts when the first operation goes live (queued, running, or paused)
 - **macOS** (Dock tile): tao draws a bar over the icon: blue, yellow (paused), red (error). No indeterminate look (tao
   draws `Indeterminate` as `Normal` at its LAST value), so an unmeasured start shows an empty bar.
 - **Windows** (taskbar button, `ITaskbarList3`): every look, including the marquee for an unmeasured start. A marquee
-  has no color, so an unmeasured start that's paused or beside a failure shows a full bar in that color.
+  has no color, so an unmeasured start that's paused shows a full yellow bar.
 - **Linux** (Unity `LauncherEntry` via `libunity`, dlopened by tao): read by Ubuntu Dock, KDE, and Plank; value and
   visibility only, so paused and error draw like normal. Tauri names the entry `<package name>.desktop`, which must
   match the installed `.desktop` file for the dock to find it (unverified: the real-machine checklist).

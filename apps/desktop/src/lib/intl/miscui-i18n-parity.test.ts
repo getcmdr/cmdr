@@ -190,6 +190,12 @@ describe('updates area parity (en)', () => {
   it('resolves the toast copy', () => {
     expect(tString('updates.toast.ready')).toBe('A new version of Cmdr is ready.')
     expect(tString('updates.toast.readyDetail')).toBe('Restart now, or you’ll get it the next time you open Cmdr.')
+    // Windows narrates "closes", Linux says "quits" (style guide § Platform vocabulary, Quit).
+    withPlatform('windows')
+    expect(tString('updates.toast.readyDetail')).toBe('Cmdr closes to install it, then opens again.')
+    withPlatform('linux')
+    expect(tString('updates.toast.readyDetail')).toBe('Cmdr quits to install it, then opens again.')
+    withPlatform('macos')
     expect(t('updates.toast.versionChange', { prev: '0.28.3', next: '0.29.0' })).toBe('v0.28.3 → v0.29.0')
     expect(t('updates.toast.versionChangeAria', { prev: '0.28.3', next: '0.29.0' })).toBe(
       'Updating from version 0.28.3 to version 0.29.0',

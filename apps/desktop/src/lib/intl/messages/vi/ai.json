@@ -107,7 +107,7 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "Trang web mà mục đó được ghi nhận là đã tải về (chỉ địa chỉ chính của trang, như github.com, không bao giờ là tên miền phụ hay liên kết đầy đủ), thời điểm tải và ứng dụng đã tải về. Với tệp đính kèm Mail hoặc AirDrop, chỉ cho biết mục đó là như vậy, không bao giờ cho biết ai đã gửi",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {Trang web mà mục đó được ghi nhận là đã tải về (chỉ địa chỉ chính của trang, như github.com, không bao giờ là tên miền phụ hay liên kết đầy đủ), thời điểm tải và ứng dụng đã tải về. Với tệp đính kèm Mail hoặc AirDrop, chỉ cho biết mục đó là như vậy, không bao giờ cho biết ai đã gửi} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "40d185c"
   },

@@ -128,7 +128,7 @@ fn run<R: Runtime>(app: &AppHandle<R>) -> WipeReport {
     };
     let plan = plan::build_plan(&roots);
     log::info!(target: "data_wipe", "deleting all Cmdr data: {} target(s)", plan.len());
-    quiesce();
+    quiesce(&plan);
     let report = execute::wipe(
         &plan,
         &roots.identifier,
@@ -147,7 +147,11 @@ fn run<R: Runtime>(app: &AppHandle<R>) -> WipeReport {
 /// database. Anything not stopped here keeps its open handles into the tombstone, which is
 /// harmless (POSIX keeps an unlinked file alive for its holder), and whatever it writes back by
 /// path is the exit sweep's.
-fn quiesce() {
+///
+/// Last, every cached SQLite read connection under a target closes: Windows refuses to move a
+/// folder with a file open in it, so a cached reader would otherwise keep the whole data dir from
+/// its tombstone (#1226).
+fn quiesce(plan: &[WipeTarget]) {
     crate::search::cancel_all_live_runs();
     if let Err(e) = crate::index_host::index().forget_all_volumes() {
         log::warn!(target: "data_wipe", "the drive index didn't stop cleanly: {e}");
@@ -155,6 +159,9 @@ fn quiesce() {
     crate::search::drop_all_indices();
     crate::ai::manager::shutdown();
     crate::mcp::stop_mcp_server();
+    for target in plan {
+        cmdr_fs::sqlite_util::retire_read_connections_under(&target.path);
+    }
 }
 
 /// The last pass, at `RunEvent::Exit`, after the plugins have saved their stores: removes what

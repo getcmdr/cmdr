@@ -41,8 +41,10 @@ pub enum Protected {
     Credentials,
     /// A browser's profile: cookies, saved passwords, history.
     BrowserData,
-    /// Mail, messages, and notes: Apple's Mail, Messages, and Notes, and the mail clients
-    /// each OS has (Thunderbird, Outlook, Windows Mail, Evolution, Geary, KMail, Claws Mail).
+    /// Mail, messages, and notes: Apple's Mail, Messages, and Notes, the mail clients each OS
+    /// has (Thunderbird, Outlook, Windows Mail, Evolution, Geary, KMail, Claws Mail), the chat
+    /// apps (Signal, WhatsApp, Telegram, Slack, Discord, Element, Teams), and macOS Contacts,
+    /// Calendar, and Reminders.
     MessageStore,
     /// Cmdr's own data dir: tokens, databases, raw logs.
     CmdrData,
