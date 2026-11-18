@@ -158,23 +158,42 @@ pub enum StandardFolder {
     StartupDisk,
 }
 
-/// The home folder's standard children, by their name ON DISK: Finder may show a
-/// translated name (`.localized`), and the path stays English.
-const HOME_STANDARD_FOLDERS: [(&str, StandardFolder); 9] = [
+/// Whose folder layout the item's disk follows, which decides which folders are the
+/// OS's own. The host says (this crate reads no OS): an item on this computer's own
+/// disk follows the OS Cmdr runs on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DiskLayout {
+    /// A Mac's own disk: `/Applications`, `/System`, `~/Library`, and `~/Movies`
+    /// are the OS's too.
+    Mac,
+    /// Any other disk (Linux, Windows): only the home folder, the children every
+    /// desktop shares with the Mac, and the disk's top. A Linux `~/Applications` of
+    /// AppImages is an ordinary folder.
+    Other,
+}
+
+/// The home folder's standard children every desktop sets up, by their name ON
+/// DISK: Finder may show a translated name (`.localized`), and the path stays
+/// English. (XDG's `Videos` has no [`StandardFolder`], so it says nothing.)
+const HOME_STANDARD_FOLDERS: [(&str, StandardFolder); 6] = [
     ("Desktop", StandardFolder::Desktop),
     ("Documents", StandardFolder::Documents),
     ("Downloads", StandardFolder::Downloads),
-    ("Movies", StandardFolder::Movies),
     ("Music", StandardFolder::Music),
     ("Pictures", StandardFolder::Pictures),
     ("Public", StandardFolder::Public),
+];
+
+/// The home folder's standard children only a Mac sets up.
+const MAC_HOME_STANDARD_FOLDERS: [(&str, StandardFolder); 3] = [
+    ("Movies", StandardFolder::Movies),
     ("Library", StandardFolder::HomeLibrary),
     ("Applications", StandardFolder::HomeApplications),
 ];
 
-/// The startup disk's standard folders.
-const ROOT_STANDARD_FOLDERS: [(&str, StandardFolder); 5] = [
-    ("/", StandardFolder::StartupDisk),
+/// The startup disk's standard folders only a Mac has. Its top, `/`, is every
+/// disk's.
+const MAC_ROOT_STANDARD_FOLDERS: [(&str, StandardFolder); 4] = [
     ("/Applications", StandardFolder::Applications),
     ("/Library", StandardFolder::Library),
     ("/System", StandardFolder::System),
@@ -182,24 +201,33 @@ const ROOT_STANDARD_FOLDERS: [(&str, StandardFolder); 5] = [
 ];
 
 /// The standard folder `path` (no trailing `/`, except `/` itself) IS, with `home`
-/// the person's home folder.
-fn standard_folder(path: &str, home: &str) -> Option<StandardFolder> {
+/// the person's home folder, on a disk with `layout`.
+fn standard_folder(path: &str, home: &str, layout: DiskLayout) -> Option<StandardFolder> {
+    let on_a_mac = layout == DiskLayout::Mac;
+    let named = |table: &[(&str, StandardFolder)], name: &str| {
+        table
+            .iter()
+            .find(|(known, _)| *known == name)
+            .map(|(_, folder)| *folder)
+    };
     if !home.is_empty() {
         match under(path, home) {
             Some("") => return Some(StandardFolder::Home),
             Some(in_home) => {
-                if let Some((_, folder)) = HOME_STANDARD_FOLDERS.iter().find(|(name, _)| *name == in_home) {
-                    return Some(*folder);
+                let folder = named(&HOME_STANDARD_FOLDERS, in_home)
+                    .or_else(|| on_a_mac.then(|| named(&MAC_HOME_STANDARD_FOLDERS, in_home)).flatten());
+                if folder.is_some() {
+                    return folder;
                 }
             }
             None => {}
         }
     }
     let path = if path.is_empty() { "/" } else { path };
-    ROOT_STANDARD_FOLDERS
-        .iter()
-        .find(|(root, _)| *root == path)
-        .map(|(_, folder)| *folder)
+    if path == "/" {
+        return Some(StandardFolder::StartupDisk);
+    }
+    on_a_mac.then(|| named(&MAC_ROOT_STANDARD_FOLDERS, path)).flatten()
 }
 
 /// Which kind of Homebrew package a path belongs to.
@@ -321,12 +349,12 @@ const ID_SUFFIXES: [&str; 3] = [".plist", ".savedState", ".binarycookies"];
 impl OwnerQuestion {
     /// What `path` (absolute, `/`-separated) says about its owner, with `home` the
     /// person's home folder (a parameter, so a test or a fixture home never
-    /// touches the real one).
-    pub fn of(path: &str, home: &str) -> OwnerQuestion {
+    /// touches the real one), on a disk with `layout`.
+    pub fn of(path: &str, home: &str, layout: DiskLayout) -> OwnerQuestion {
         let path = path.trim_end_matches('/');
         // Before the receipt roots: `/Library` itself is the OS's folder, whatever
         // packages also wrote into it.
-        if let Some(folder) = standard_folder(path, home.trim_end_matches('/')) {
+        if let Some(folder) = standard_folder(path, home.trim_end_matches('/'), layout) {
             return OwnerQuestion::Answered(OwnerClaim::StandardFolder { folder });
         }
         if let Some((app, app_path)) = inside_an_app(path) {

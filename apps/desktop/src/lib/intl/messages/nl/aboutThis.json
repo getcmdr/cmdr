@@ -696,10 +696,6 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "Je thuismap",
-  "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
-  },
   "aboutThis.standardFolder.desktop": "Je map ‘Bureaublad’",
   "@aboutThis.standardFolder.desktop": {
     "sourceHash": "9b1dabb"
@@ -945,10 +941,6 @@
   "aboutThis.ownerPlace.sandboxHome": "Thuismap van de app",
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
-  },
-  "aboutThis.removal.standardFolder.home": "Het is je thuismap: alles van jou op deze computer staat erin, en het systeem en elke app rekenen erop.",
-  "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
   },
   "aboutThis.removal.standardFolder.personal": "Het is een van je standaardmappen: het systeem en je apps verwachten de map te vinden, en alles erin gaat mee.",
   "@aboutThis.removal.standardFolder.personal": {

@@ -204,7 +204,7 @@ async function handleSetSetting(event: { payload: SetSettingPayload }): Promise<
       requestId,
       ok: false,
       refusal,
-      error: `'${settingId}' is managed by the organization's policy on this Mac, so it can't be changed here.`,
+      error: `'${settingId}' is managed by the organization's policy on this computer, so it can't be changed here.`,
     })
     return
   }

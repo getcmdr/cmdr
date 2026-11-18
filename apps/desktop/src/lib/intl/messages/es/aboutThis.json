@@ -691,10 +691,6 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "Tu carpeta de inicio",
-  "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
-  },
   "aboutThis.standardFolder.desktop": "Tu carpeta Escritorio",
   "@aboutThis.standardFolder.desktop": {
     "sourceHash": "9b1dabb"
@@ -939,10 +935,6 @@
   "aboutThis.ownerPlace.sandboxHome": "Carpeta de inicio de la app",
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
-  },
-  "aboutThis.removal.standardFolder.home": "Es tu carpeta de inicio: dentro está todo lo tuyo en este ordenador, y el sistema y todas las apps cuentan con ella.",
-  "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
   },
   "aboutThis.removal.standardFolder.personal": "Es una de tus carpetas estándar: el sistema y tus apps esperan encontrarla, y todo lo que contiene se va con ella.",
   "@aboutThis.removal.standardFolder.personal": {

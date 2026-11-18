@@ -599,9 +599,9 @@
   "@licensing.section.includedFeatures": {
     "description": "Item in the Settings > License “What’s included” list for the free Personal license: the whole file manager, nothing held back."
   },
-  "licensing.section.includedMacs": "All your own Macs, for your personal use",
+  "licensing.section.includedMacs": "{platform, select, macos {All your own Macs, for your personal use} windows {All your own PCs, for your personal use} other {All your own computers, for your personal use}}",
   "@licensing.section.includedMacs": {
-    "description": "Item in the Settings > License “What’s included” list for the free Personal license: install it on as many of your own Macs as you like, as long as you’re the only user."
+    "description": "Item in the Settings > License “What’s included” list for the free Personal license: install it on as many of your own computers as you like, as long as you’re the only user. Each system names the machine its own way: “Macs” on macOS, “PCs” on Windows, “computers” on Linux."
   },
   "licensing.section.includedUpdates": "Automatic updates",
   "@licensing.section.includedUpdates": {

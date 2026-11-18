@@ -111,10 +111,6 @@
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "6594500"
   },
-  "ai.cloudConsent.aboutThis.item.appAndSigner": "Para um app ou programa, o nome, o ID e a versão. Para ele ou uma imagem de disco, o nome e o ID da equipe de quem assinou, se o código ainda confere com essa assinatura, e se o comprovante de notarização da Apple está anexado",
-  "@ai.cloudConsent.aboutThis.item.appAndSigner": {
-    "sourceHash": "471891d"
-  },
   "ai.cloudConsent.aboutThis.item.use": "Quando você abriu o item pela última vez, quantas vezes e qual app o abre",
   "@ai.cloudConsent.aboutThis.item.use": {
     "sourceHash": "9664a6e"

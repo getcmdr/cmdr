@@ -5601,6 +5601,7 @@ export type MessageKey =
   | 'settings.summary.askCmdr'
   | 'settings.summary.colorsAndFormats'
   | 'settings.summary.driveIndexing'
+  | 'settings.summary.fallback'
   | 'settings.summary.fileAndFolderSizes'
   | 'settings.summary.git'
   | 'settings.summary.imageIndexing'

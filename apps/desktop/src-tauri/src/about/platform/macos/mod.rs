@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 
 use cmdr_about::card::OsCaps;
 use cmdr_about::fact::{Fact, UnknownWhy};
+use cmdr_about::owner::DiskLayout;
 use cmdr_about::payload::AppRef;
 use cmdr_about::provenance::{Download, MAX_XATTR_BYTES, download_fact};
 use cmdr_about::text::ItemText;
@@ -20,6 +21,8 @@ use super::unix::{XattrSyscalls, download_with, errno, executable, hard_links, p
 pub(crate) use apps::{app_with_id, installed_apps, receipts};
 pub(crate) use signature::signature;
 pub(crate) use spotlight::last_opened;
+
+pub(crate) const DISK_LAYOUT: DiskLayout = DiskLayout::Mac;
 
 pub(crate) fn os_caps() -> OsCaps {
     OsCaps {

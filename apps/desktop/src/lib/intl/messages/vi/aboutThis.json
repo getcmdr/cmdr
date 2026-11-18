@@ -691,10 +691,6 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "Thư mục chính của bạn",
-  "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
-  },
   "aboutThis.standardFolder.desktop": "Thư mục Màn hình nền của bạn",
   "@aboutThis.standardFolder.desktop": {
     "sourceHash": "9b1dabb"
@@ -940,10 +936,6 @@
   "aboutThis.ownerPlace.sandboxHome": "Thư mục chính của ứng dụng",
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
-  },
-  "aboutThis.removal.standardFolder.home": "Đây là thư mục chính của bạn: mọi thứ của bạn trên máy tính này đều nằm trong đó, và hệ thống cùng mọi ứng dụng đều cần đến thư mục này.",
-  "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
   },
   "aboutThis.removal.standardFolder.personal": "Đây là một trong các thư mục chuẩn của bạn: hệ thống và các ứng dụng của bạn đều trông đợi sẽ thấy thư mục này, và mọi thứ bên trong cũng mất theo.",
   "@aboutThis.removal.standardFolder.personal": {

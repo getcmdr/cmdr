@@ -3,8 +3,8 @@
  * same without a key once none runs it (`descriptionWithKey`). Never an empty slot or a Mac glyph
  * off macOS: the key comes from the store's live reader, already in this OS's display form.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { withEveryCapability } from '#lib/platform/test-platform.js'
+import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
+import { withEveryCapability, withPlatform } from '#lib/platform/test-platform.js'
 
 const liveKey = new Map<string, string>()
 
@@ -70,8 +70,15 @@ describe('descriptions that name a key', () => {
   })
 
   it('leave the global hotkey’s registry text keyless: its row shows the live binding itself', () => {
+    onTestFinished(withPlatform('macos'))
     expect(description('behavior.fileSystemWatching.globalGoToLatestShortcut.enabled')).toBe(
       'Jump to your most recent download from any app with a system-wide shortcut. Requires Full Disk Access.',
+    )
+  })
+
+  it('names Full Disk Access only on macOS, the one system that asks for it', () => {
+    expect(description('behavior.fileSystemWatching.globalGoToLatestShortcut.enabled')).toBe(
+      'Jump to your most recent download from any app with a system-wide shortcut.',
     )
   })
 })

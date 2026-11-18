@@ -692,10 +692,6 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "Vaše domovská složka",
-  "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
-  },
   "aboutThis.standardFolder.desktop": "Vaše složka Plocha",
   "@aboutThis.standardFolder.desktop": {
     "sourceHash": "9b1dabb"
@@ -940,10 +936,6 @@
   "aboutThis.ownerPlace.sandboxHome": "Domovská složka aplikace",
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
-  },
-  "aboutThis.removal.standardFolder.home": "Je to vaše domovská složka: je v ní všechno vaše na tomto počítači a počítá s ní systém i každá aplikace.",
-  "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
   },
   "aboutThis.removal.standardFolder.personal": "Je to jedna z vašich standardních složek: systém i vaše aplikace počítají s tím, že ji najdou, a všechno, co je v ní, zmizí s ní.",
   "@aboutThis.removal.standardFolder.personal": {

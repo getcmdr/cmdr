@@ -742,10 +742,6 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "Gör texten i dina bilder sökbar. Den lämnar aldrig din Mac.",
-  "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
-  },
   "settings.mediaIndex.enabled.keywords": "bild, bilder, foto, text, sök, sökning, index, indexering, skärmbild, innehåll",
   "@settings.mediaIndex.enabled.keywords": {
     "sourceHash": "a451d8e"
@@ -817,10 +813,6 @@
   "settings.mediaIndex.networkVolumes.optInLabel": "Indexera bilder på {name}",
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
-  },
-  "settings.mediaIndex.networkVolumes.optInHelp": "Cmdr läser texten i de här bilderna så att du kan söka i den. Det körs på din Mac, och bilderna lämnar aldrig ditt nätverk.",
-  "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Indexera alltid den här enheten",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -925,10 +917,6 @@
   "settings.mediaIndex.importanceThreshold.keywords": "bild, bilder, index, vikt, viktig, mappar, täckning, djup, hur mycket",
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
-  },
-  "settings.mediaIndex.progress.local": "Den här Macen",
-  "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {{enrichedText} av {totalText} bild indexerad} other {{enrichedText} av {totalText} bilder indexerade}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1078,10 +1066,6 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": "Gå till senaste hämtning",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
-  },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Hoppa till din senaste hämtning från valfri app med en systemövergripande genväg. Kräver Full skivtillgång.",
-  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "genväg, kortkommando, snabbtangent, global, hämtade filer, hämtning, nedladdning, senaste, hoppa, gå till",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2815,10 +2799,6 @@
   "settings.summary.driveIndexing": "Enhetsindexering i bakgrunden så att sökningen hittar dina filer snabbt.",
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
-  },
-  "settings.summary.imageIndexing": "Sök i texten i dina bilder. Körs på din Mac, och inget lämnar den.",
-  "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
   },
   "settings.summary.noSubsections": "Den här sektionen har inga underavsnitt.",
   "@settings.summary.noSubsections": {

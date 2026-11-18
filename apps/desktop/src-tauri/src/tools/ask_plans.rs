@@ -169,7 +169,7 @@ pub(super) fn setting_plan(
     if setting.locked {
         return AskPlan::Refuse(
             ToolError::invalid_params(format!(
-                "'{id}' is managed by the organization's policy on this Mac, so it can't be changed here."
+                "'{id}' is managed by the organization's policy on this computer, so it can't be changed here."
             ))
             .with_data(json!({ "refusal": "managedByOrganization" })),
         );

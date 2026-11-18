@@ -884,9 +884,9 @@
     "description": "The longer text behind the ⓘ after the “Index image contents” label. Scopes the feature to local drives: network drives come later.",
     "screenshot": "settings-indexing-image-indexing.png"
   },
-  "settings.mediaIndex.enabled.summary": "Makes the text in your images searchable. It never leaves your Mac.",
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {Makes the text in your images searchable. It never leaves your Mac.} windows {Makes the text in your images searchable. It never leaves your PC.} other {Makes the text in your images searchable. It never leaves your computer.}}",
   "@settings.mediaIndex.enabled.summary": {
-    "description": "Short line under the “Index image contents” switch. Says what it does and reassures the user it is on-device: the text read from images is never uploaded. \"OCR\" is not used in the copy on purpose; keep it plain."
+    "description": "Short line under the “Index image contents” switch. Says what it does and reassures the user it is on-device: the text read from images is never uploaded. \"OCR\" is not used in the copy on purpose; keep it plain. The machine is “your Mac” on macOS, “your PC” on Windows, and “your computer” on Linux."
   },
   "settings.mediaIndex.enabled.keywords": "image, photo, text, search, index, picture, screenshot, content",
   "@settings.mediaIndex.enabled.keywords": {
@@ -963,9 +963,9 @@
       "name": "The network drive’s name, like \"testshare\"."
     }
   },
-  "settings.mediaIndex.networkVolumes.optInHelp": "Cmdr reads the text inside these photos so you can search it. It runs on your Mac, and the photos never leave your network.",
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {Cmdr reads the text inside these photos so you can search it. It runs on your Mac, and the photos never leave your network.} windows {Cmdr reads the text inside these photos so you can search it. It runs on your PC, and the photos never leave your network.} other {Cmdr reads the text inside these photos so you can search it. It runs on your computer, and the photos never leave your network.}}",
   "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "description": "Help text shown under a network drive once its indexing is turned on. Reassures the user the work is on-device and private."
+    "description": "Help text shown under a network drive once its indexing is turned on. Reassures the user the work is on-device and private. The machine is “your Mac” on macOS, “your PC” on Windows, and “your computer” on Linux."
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Always index this drive",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -1092,9 +1092,9 @@
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "description": "Search keywords for the “How much to index” setting (settings.mediaIndex.importanceThreshold.label) in Settings > Indexing > Image indexing. What it does: sets how far image indexing reaches, from the most-used folders down to all of them. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
-  "settings.mediaIndex.progress.local": "This Mac",
+  "settings.mediaIndex.progress.local": "{platform, select, macos {This Mac} windows {This PC} other {This computer}}",
   "@settings.mediaIndex.progress.local": {
-    "description": "Name shown for the built-in local disk in the per-drive image-indexing progress list (as opposed to a named network drive)."
+    "description": "Name shown for the built-in local disk in the per-drive image-indexing progress list (as opposed to a named network drive). Each system names the machine its own way: “This Mac” on macOS, “This PC” on Windows (File Explorer’s own name for it), “This computer” on Linux."
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {{enrichedText} of {totalText} image indexed} other {{enrichedText} of {totalText} images indexed}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1293,9 +1293,9 @@
     "description": "Label for the toggle enabling a system-wide hotkey that jumps to the newest download. On the \"Downloads\" card in Settings > Behavior > File system watching.",
     "screenshot": "settings-behavior-notifications.png"
   },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Jump to your most recent download from any app with a system-wide shortcut. Requires Full Disk Access.",
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {Jump to your most recent download from any app with a system-wide shortcut. Requires Full Disk Access.} other {Jump to your most recent download from any app with a system-wide shortcut.}}",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "description": "What the global go-to-latest-download toggle does, as Settings search and AI agents read it (the row itself shows the live shortcut through \"downloads.toggleDescription.bound\"). \"Full Disk Access\" is the macOS permission name; use the OS's localized name for it."
+    "description": "What the global go-to-latest-download toggle does, as Settings search and AI agents read it (the row itself shows the live shortcut through \"downloads.toggleDescription.bound\"). \"Full Disk Access\" is the macOS permission name; use the OS's localized name for it. Only macOS asks for that permission, so Windows and Linux read the first sentence alone."
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "shortcut, hotkey, global, download, downloads, jump, go to, goto",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -3339,10 +3339,19 @@
     "description": "One-line summary shown on the Indexing section's Drive indexing card. Describes the background file-system indexer that scans drives so search is fast.",
     "screenshot": "settings-summary-indexing.png"
   },
-  "settings.summary.imageIndexing": "Search the text inside your images. Runs on your Mac, and nothing leaves it.",
+  "settings.summary.imageIndexing": "{platform, select, macos {Search the text inside your images. Runs on your Mac, and nothing leaves it.} windows {Search the text inside your images. Runs on your PC, and nothing leaves it.} other {Search the text inside your images. Runs on your computer, and nothing leaves it.}}",
   "@settings.summary.imageIndexing": {
-    "description": "One-line summary shown on the Indexing section's Image indexing card. The feature reads the text inside images (OCR) so it can be searched; it runs on-device. \"Mac\" is the Apple computer.",
+    "description": "One-line summary shown on the Indexing section's Image indexing card. The feature reads the text inside images (OCR) so it can be searched; it runs on-device. The machine is “your Mac” on macOS, “your PC” on Windows, and “your computer” on Linux.",
     "screenshot": "settings-summary-indexing.png"
+  },
+  "settings.summary.fallback": "Settings for {section}.",
+  "@settings.summary.fallback": {
+    "description": "One-line summary on a subsection card of a Settings section page (like the Indexing page's cards) when that subsection has no summary of its own yet. {section} is the subsection's title exactly as the Settings sidebar shows it, already translated, and starts with a capital letter, so the sentence must read naturally with it in that form.",
+    "placeholders": {
+      "section": {
+        "description": "The subsection's title as the sidebar shows it, like “Image indexing”."
+      }
+    }
   },
   "settings.summary.noSubsections": "This section has no subsections.",
   "@settings.summary.noSubsections": {

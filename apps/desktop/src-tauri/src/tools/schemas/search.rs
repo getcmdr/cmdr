@@ -53,7 +53,7 @@ pub fn search_schema() -> Value {
             },
             "caseSensitive": {
                 "type": "boolean",
-                "description": "Case-sensitive matching. Default: false on macOS, true on Linux"
+                "description": "Case-sensitive matching. Default: false on macOS and Windows, true on Linux"
             },
             "excludeSystemDirs": {
                 "type": "boolean",

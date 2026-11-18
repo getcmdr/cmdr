@@ -690,10 +690,6 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "Ваша домашня папка",
-  "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
-  },
   "aboutThis.standardFolder.desktop": "Ваша папка «Робочий стіл»",
   "@aboutThis.standardFolder.desktop": {
     "sourceHash": "9b1dabb"
@@ -938,10 +934,6 @@
   "aboutThis.ownerPlace.sandboxHome": "Домівка програми",
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
-  },
-  "aboutThis.removal.standardFolder.home": "Це ваша домашня папка: у ній усе ваше на цьому компʼютері, і на неї розраховують система й усі програми.",
-  "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
   },
   "aboutThis.removal.standardFolder.personal": "Це одна з ваших стандартних папок: система й ваші програми очікують її знайти, і все, що в ній, зникне разом із нею.",
   "@aboutThis.removal.standardFolder.personal": {

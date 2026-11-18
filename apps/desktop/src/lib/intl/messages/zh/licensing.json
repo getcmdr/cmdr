@@ -424,10 +424,6 @@
   "@licensing.section.includedFeatures": {
     "sourceHash": "0a54a41"
   },
-  "licensing.section.includedMacs": "你自己的所有 Mac，供你个人使用",
-  "@licensing.section.includedMacs": {
-    "sourceHash": "d0968e4"
-  },
   "licensing.section.includedUpdates": "自动更新",
   "@licensing.section.includedUpdates": {
     "sourceHash": "147b1b6"

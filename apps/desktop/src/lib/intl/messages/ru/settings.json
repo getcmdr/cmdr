@@ -738,10 +738,6 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "Позволяет искать по тексту на изображениях. Этот текст никогда не покидает ваш Mac.",
-  "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
-  },
   "settings.mediaIndex.enabled.keywords": "изображение, фото, фотография, картинка, текст, распознавание, поиск, индекс, индексация, снимок экрана, скриншот, содержимое",
   "@settings.mediaIndex.enabled.keywords": {
     "sourceHash": "a451d8e"
@@ -813,10 +809,6 @@
   "settings.mediaIndex.networkVolumes.optInLabel": "Индексировать фотографии на диске {name}",
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
-  },
-  "settings.mediaIndex.networkVolumes.optInHelp": "Cmdr читает текст на этих фотографиях, чтобы по нему можно было искать. Все работает на Mac, фотографии не покидают вашу сеть.",
-  "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Всегда индексировать этот диск",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -921,10 +913,6 @@
   "settings.mediaIndex.importanceThreshold.keywords": "изображение, фото, индекс, индексация, важность, папки, охват, глубина, сколько",
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
-  },
-  "settings.mediaIndex.progress.local": "Этот Mac",
-  "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {Проиндексировано {enrichedText} из {totalText} изображения} few {Проиндексировано {enrichedText} из {totalText} изображений} many {Проиндексировано {enrichedText} из {totalText} изображений} other {Проиндексировано {enrichedText} из {totalText} изображения}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1074,10 +1062,6 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": "Перейти к последней загрузке",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
-  },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Переход к последней загрузке из любого приложения по глобальному сочетанию клавиш. Нужен полный доступ к диску.",
-  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "сочетание клавиш, горячая клавиша, глобальный, загрузка, загрузки, последняя загрузка, перейти, переход",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2804,10 +2788,6 @@
   "settings.summary.driveIndexing": "Фоновая индексация дисков для быстрого поиска файлов.",
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
-  },
-  "settings.summary.imageIndexing": "Поиск текста на изображениях. Работает на Mac, данные его не покидают.",
-  "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
   },
   "settings.summary.noSubsections": "В этом разделе нет подразделов.",
   "@settings.summary.noSubsections": {

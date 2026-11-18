@@ -738,10 +738,6 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "Дає змогу шукати текст на ваших зображеннях. Цей текст ніколи не залишає ваш Mac.",
-  "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
-  },
   "settings.mediaIndex.enabled.keywords": "розпізнавання тексту, напис, картинка, знімок екрана, скріншот, світлина, вміст",
   "@settings.mediaIndex.enabled.keywords": {
     "sourceHash": "a451d8e"
@@ -813,10 +809,6 @@
   "settings.mediaIndex.networkVolumes.optInLabel": "Індексувати фото на диску «{name}»",
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
-  },
-  "settings.mediaIndex.networkVolumes.optInHelp": "Cmdr читає текст на цих фото, щоб його можна було шукати. Усе працює на вашому Mac, і фото ніколи не залишають вашу мережу.",
-  "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Завжди індексувати цей диск",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -921,10 +913,6 @@
   "settings.mediaIndex.importanceThreshold.keywords": "важливість, охоплення, глибина, обсяг, повзунок, рівень, каталоги",
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
-  },
-  "settings.mediaIndex.progress.local": "Цей Mac",
-  "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {Проіндексовано {enrichedText} з {totalText} зображення} few {Проіндексовано {enrichedText} з {totalText} зображень} many {Проіндексовано {enrichedText} з {totalText} зображень} other {Проіндексовано {enrichedText} з {totalText} зображення}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1074,10 +1062,6 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": "Перейти до останнього викачаного файлу",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
-  },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Перехід до останнього викачаного файлу з будь-якої програми глобальним скороченням. Потрібен «Повний доступ до диска».",
-  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "скорочення, гаряча клавіша, глобальний, завантаження, завантажене, перейти, стрибнути",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2804,10 +2788,6 @@
   "settings.summary.driveIndexing": "Фонове індексування дисків, щоб пошук швидко знаходив ваші файли.",
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
-  },
-  "settings.summary.imageIndexing": "Пошук тексту на ваших зображеннях. Працює на вашому Mac, і ніщо не виходить за його межі.",
-  "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
   },
   "settings.summary.noSubsections": "У цьому розділі немає підрозділів.",
   "@settings.summary.noSubsections": {

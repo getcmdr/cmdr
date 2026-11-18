@@ -4,7 +4,8 @@
  * sees its own license facts and nothing that reads like an upsell.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
+import { withPlatform } from '#lib/platform/test-platform.js'
 import { mount, tick } from 'svelte'
 import type { LicenseInfo, LicenseStatus } from '#lib/tauri-commands/index.js'
 
@@ -44,6 +45,7 @@ describe('LicenseSection', () => {
   })
 
   it('lists what Personal includes and when work needs a commercial license, above the two buttons', async () => {
+    onTestFinished(withPlatform('macos'))
     const target = await mountSection()
     const items = Array.from(target.querySelectorAll('.included-list li')).map((li) => li.textContent.trim())
     expect(items).toEqual([
@@ -54,6 +56,17 @@ describe('LicenseSection', () => {
     ])
     expect(target.querySelector('.commercial-line')?.textContent).toContain('needs a commercial license')
     expect(buttonLabels(target)).toEqual(['Enter license key', 'Get a license'])
+    target.remove()
+  })
+
+  it.each([
+    ['windows', 'All your own PCs, for your personal use'],
+    ['linux', 'All your own computers, for your personal use'],
+  ] as const)('names the machines the way %s does', async (platform, line) => {
+    onTestFinished(withPlatform(platform))
+    const target = await mountSection()
+    const items = Array.from(target.querySelectorAll('.included-list li')).map((li) => li.textContent.trim())
+    expect(items[1]).toBe(line)
     target.remove()
   })
 

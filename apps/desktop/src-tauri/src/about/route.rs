@@ -420,9 +420,9 @@ async fn local_card(resolved: &ResolvedLocation, path: String) -> Result<Gathere
         index: Some(index_place(resolved, &path)),
         image: image_place(resolved, &path),
         // No home folder (a sandboxed test runner) names no Library places.
-        owner: home
-            .as_deref()
-            .map_or(OwnerQuestion::Nothing, |home| OwnerQuestion::of(&path, home)),
+        owner: home.as_deref().map_or(OwnerQuestion::Nothing, |home| {
+            OwnerQuestion::of(&path, home, platform::DISK_LAYOUT)
+        }),
         home,
         apps: AppSource::of_the_os(),
         os: OsReads::of_the_os(),
