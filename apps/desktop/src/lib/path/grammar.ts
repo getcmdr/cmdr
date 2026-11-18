@@ -44,7 +44,8 @@ export interface CaseRule {
   caseSensitive: boolean
 }
 
-const SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i
+/** A scheme of two or more characters: a one-letter one is a drive (`C://x` is `C:/x` with a doubled separator). */
+const SCHEME = /^[a-z][a-z0-9+.-]+:\/\//i
 const DRIVE = /^([A-Za-z]):(?=\/|$)/
 
 /** The local backend's flavor, from the platform the backend injected. */

@@ -116,6 +116,17 @@ impl AppPath {
         &self.0
     }
 
+    /// Typed arithmetic is defined on canonical values only: a transition-bridge value keeps
+    /// unnormalized text (`/a/`, `C:\x`), whose parent or name the type would read wrong. Such
+    /// a body does its arithmetic on `as_std_legacy` until it converts.
+    fn debug_check_canonical(&self) {
+        debug_assert!(
+            parse::validate_canonical_any(&self.0).is_ok(),
+            "typed arithmetic on a non-canonical app path: {:?}",
+            &self.0
+        );
+    }
+
     /// The shape of the root.
     pub fn kind(&self) -> PathKind {
         shape::root_of(&self.0).0
@@ -135,6 +146,7 @@ impl AppPath {
     /// no parent INSIDE the volume. A row under an MTP pick answers the pick, as `Path` did;
     /// `twin_path::folder_of` steps over it.
     pub fn parent(&self) -> Option<&AppPath> {
+        self.debug_check_canonical();
         let root_len = shape::root_of(&self.0).1;
         if root_len >= self.0.len() {
             return None;
@@ -146,11 +158,33 @@ impl AppPath {
 
     /// The last name, or `None` at a root.
     pub fn file_name(&self) -> Option<&str> {
+        self.debug_check_canonical();
         let root_len = shape::root_of(&self.0).1;
         if root_len >= self.0.len() {
             return None;
         }
         Some(&self.0[self.0.rfind('/').map_or(0, |i| i + 1).max(root_len)..])
+    }
+
+    /// The last name's extension, as `Path::extension` reads one: after the last `.`, `None`
+    /// for a name with no `.` past its first character (`.bashrc`) and at a root.
+    pub fn extension(&self) -> Option<&str> {
+        split_at_dot(self.file_name()?).1
+    }
+
+    /// The last name without its extension, as `Path::file_stem` reads it.
+    pub fn file_stem(&self) -> Option<&str> {
+        split_at_dot(self.file_name()?).0
+    }
+
+    /// This path with its last name replaced by `name` (at a root, `name` under it, as
+    /// `Path::with_file_name` does).
+    ///
+    /// # Errors
+    ///
+    /// As [`Self::join`].
+    pub fn with_file_name(&self, name: &AppName) -> Result<AppPathBuf, NotAnAppPath> {
+        self.parent().unwrap_or(self).join(name)
     }
 
     /// The last name as a person reads it (every escape as U+FFFD), or `None` at a root.
@@ -160,6 +194,7 @@ impl AppPath {
 
     /// The names under the root, outermost first.
     pub fn names(&self) -> impl DoubleEndedIterator<Item = &str> {
+        self.debug_check_canonical();
         let root_len = shape::root_of(&self.0).1;
         self.0[root_len.min(self.0.len())..]
             .split('/')
@@ -191,6 +226,7 @@ impl AppPath {
     }
 
     fn join_text(&self, tail: &str) -> Result<AppPathBuf, NotAnAppPath> {
+        self.debug_check_canonical();
         if matches!(self.kind(), PathKind::Drive | PathKind::Unc) && tail.contains('\\') {
             return Err(NotAnAppPath::Backslash);
         }
@@ -213,6 +249,11 @@ impl AppPath {
     /// The names below `ancestor` (empty for `ancestor` itself), or `None` when this isn't
     /// `ancestor` or under it. A slice, no allocation.
     pub fn strip_prefix(&self, ancestor: &AppPath) -> Option<&RelativeAppPath> {
+        self.debug_check_canonical();
+        // Never across roots: `//s/h/x` is not under `/`, though its text starts with it.
+        if self.root().0 != ancestor.root().0 {
+            return None;
+        }
         let rest = self.0.strip_prefix(&ancestor.0)?;
         if rest.is_empty() {
             return Some(RelativeAppPath::new_unchecked(""));
@@ -235,19 +276,54 @@ impl AppPath {
         new_root.join_relative(self.strip_prefix(old_root)?).ok()
     }
 
-    /// Whether both paths sit on the same root. A UNC server and share compare without case
-    /// (DNS, NetBIOS, and SMB share names are case-insensitive on the wire), every other root
-    /// exactly. What a volume pick and a root match ask; ❌ never `Eq`, which stays exact.
+    /// Whether both paths sit on the same root. A UNC server compares without ASCII case (DNS
+    /// and NetBIOS names) and its share with Unicode simple case folding (SMB share names are
+    /// case-insensitive on the wire); every other root exactly, a scheme root included (every
+    /// backend mints its authority lowercase). What a volume pick asks; ❌ never `Eq`, which
+    /// stays exact.
     pub fn same_root(&self, other: &AppPath) -> bool {
         let (mine, theirs) = (self.root(), other.root());
         match (mine.kind(), theirs.kind()) {
-            (PathKind::Unc, PathKind::Unc) => mine
-                .0
-                .chars()
-                .flat_map(char::to_lowercase)
-                .eq(theirs.0.chars().flat_map(char::to_lowercase)),
+            (PathKind::Unc, PathKind::Unc) => {
+                let split = |root: &AppPath| -> (String, String) {
+                    let mut parts = root.0[2..].splitn(2, '/');
+                    let server = parts.next().unwrap_or("").to_string();
+                    let share = parts.next().unwrap_or("").trim_end_matches('/').to_string();
+                    (server, share)
+                };
+                let ((server_a, share_a), (server_b, share_b)) = (split(mine), split(theirs));
+                server_a.eq_ignore_ascii_case(&server_b)
+                    && share_a.chars().map(simple_fold).eq(share_b.chars().map(simple_fold))
+            }
             _ => mine.0 == theirs.0,
         }
+    }
+
+    /// The names below the volume root `volume_root` (empty for the root itself), or `None`
+    /// when this path isn't on that volume: the root matched as [`Self::same_root`] matches it
+    /// (a UNC server and share without case), the names below it exactly. What a volume pick
+    /// and a "does this path belong to that volume" check ask; [`Self::strip_prefix`] is the
+    /// exact twin.
+    pub fn strip_volume_prefix(&self, volume_root: &AppPath) -> Option<&RelativeAppPath> {
+        self.debug_check_canonical();
+        if !self.same_root(volume_root) {
+            return None;
+        }
+        let mine = &self.0[shape::root_of(&self.0).1..];
+        let theirs = &volume_root.0[shape::root_of(&volume_root.0).1..];
+        if theirs.is_empty() {
+            return Some(RelativeAppPath::new_unchecked(mine));
+        }
+        let rest = mine.strip_prefix(theirs)?;
+        if rest.is_empty() {
+            return Some(RelativeAppPath::new_unchecked(""));
+        }
+        rest.strip_prefix('/').map(RelativeAppPath::new_unchecked)
+    }
+
+    /// Whether this path is on the volume rooted at `volume_root` ([`Self::strip_volume_prefix`]).
+    pub fn is_on_volume(&self, volume_root: &AppPath) -> bool {
+        self.strip_volume_prefix(volume_root).is_some()
     }
 
     /// What a person reads, the ONE formatter, twin of the frontend's `displayPath`: every
@@ -385,6 +461,20 @@ impl AppNameBuf {
         AppName::new(&literal).map(|name| AppNameBuf(name.0.to_owned()))
     }
 
+    /// The app spelling of a name THIS HOST's `OsStr` holds natively (from a `read_dir`, a
+    /// `Path::file_name`): every unit the host's decoder rejects escaped, and an escape-range
+    /// code point it holds as text escaped as literal. The one door from a `ChildName`, which
+    /// lives in the `std::path` world: `AppNameBuf::from_native_os(child.as_os_str())`. ❌ Never
+    /// feed it app text (a `FileEntry.name`): that's [`AppName::new`].
+    ///
+    /// # Errors
+    ///
+    /// As [`AppName::new`].
+    pub fn from_native_os(name: &std::ffi::OsStr) -> Result<AppNameBuf, NotAChildName> {
+        let text = platform::os_name_to_app(name);
+        AppName::new(&text).map(|name| AppNameBuf(name.0.to_owned()))
+    }
+
     /// The app spelling of a native name in raw bytes (a Unix disk, SFTP, NFS).
     ///
     /// # Errors
@@ -411,20 +501,25 @@ impl AppNameBuf {
     }
 }
 
-impl crate::volume::ChildName<'_> {
-    /// `dir/<name>` as an app path: [`AppPath::join`] for a listed name. A name that is
-    /// valid UTF-8 is read as its backend spelled it (its escapes live); a raw native one is
-    /// escaped through this host's namer.
-    ///
-    /// # Errors
-    ///
-    /// [`NotAChildName`] for non-canonical escapes, and for a name holding a `\` under a
-    /// drive or UNC folder.
-    pub fn under_app(self, dir: &AppPath) -> Result<AppPathBuf, NotAChildName> {
-        let refused = |name: &str| NotAChildName(shown_name(name).into_owned());
-        let spelled = platform::os_name_to_app(self.as_os_str());
-        let name = AppName::new(&spelled)?;
-        dir.join(name).map_err(|_| refused(&spelled))
+/// The one simple case folding the UNC share match uses: a character's lowercase when it's a
+/// single character (so `K`, the Kelvin sign, folds to `k`), else the character itself (so
+/// `İ` doesn't become `i` plus a combining dot).
+fn simple_fold(c: char) -> char {
+    let mut lower = c.to_lowercase();
+    match (lower.next(), lower.next()) {
+        (Some(single), None) => single,
+        _ => c,
+    }
+}
+
+/// `Path`'s split of a name at its extension's dot: `(stem, extension)`.
+fn split_at_dot(name: &str) -> (Option<&str>, Option<&str>) {
+    if name == ".." {
+        return (Some(name), None);
+    }
+    match name.rsplit_once('.') {
+        Some(("", _)) | None => (Some(name), None),
+        Some((stem, extension)) => (Some(stem), Some(extension)),
     }
 }
 
@@ -549,6 +644,12 @@ impl PartialEq for RelativeAppPath {
 
 impl Eq for RelativeAppPath {}
 
+impl Hash for RelativeAppPath {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+
 impl PartialEq for AppName {
     fn eq(&self, other: &AppName) -> bool {
         self.0 == other.0
@@ -556,6 +657,26 @@ impl PartialEq for AppName {
 }
 
 impl Eq for AppName {}
+
+// By the text, the same as `AppNameBuf`'s derived impls, so a `HashMap<AppNameBuf, _>` or a
+// `BTreeMap` is looked up by `&AppName` through `Borrow`.
+impl Hash for AppName {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+
+impl PartialOrd for AppName {
+    fn partial_cmp(&self, other: &AppName) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for AppName {
+    fn cmp(&self, other: &AppName) -> Ordering {
+        self.0.cmp(&other.0)
+    }
+}
 
 // ---- Text ----
 
@@ -582,6 +703,12 @@ impl fmt::Debug for AppPath {
 impl fmt::Debug for AppPathBuf {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(self.as_app_path(), f)
+    }
+}
+
+impl fmt::Display for RelativeAppPath {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
     }
 }
 

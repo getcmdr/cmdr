@@ -7,6 +7,12 @@
 //! listing into a DESTINATION path takes a [`ChildName`], and the only way to get
 //! one is [`ChildName::new`], which refuses anything but a single plain name.
 //!
+//! ❗ It lives in the `std::path` world: its `OsStr` is a NATIVE name. The app path's name
+//! is `app_path::AppName` (backend spelling, escapes live), and the one way across is
+//! `AppNameBuf::from_native_os(child.as_os_str())`. There's no app-path join here on
+//! purpose: a `ChildName` built from a `FileEntry.name` holds APP text, and reading it
+//! either way would be a guess (`crates/cmdr-fs/DETAILS.md` § "App paths").
+//!
 //! What it refuses: the empty name, `.`, `..`, any `/`, and NUL. An absolute
 //! name starts with `/`, so it's covered. What it keeps:
 //!

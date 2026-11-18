@@ -206,6 +206,18 @@
       "shown": "~/Documents"
     },
     {
+      "path": "c://x",
+      "flavor": "posix",
+      "kind": null,
+      "root": null,
+      "normalized": null,
+      "isRoot": null,
+      "parent": null,
+      "basename": null,
+      "segments": null,
+      "shown": "c://x"
+    },
+    {
       "path": "foo/bar",
       "flavor": "posix",
       "kind": null,
@@ -579,6 +591,7 @@
     { "text": "\\\\server\\share", "flavor": "windows", "wire": "//server/share/" },
     { "text": "relative\\dir", "flavor": "windows", "wire": "relative/dir" },
     { "text": "~", "flavor": "windows", "wire": "~" },
+    { "text": "C:\\\\x", "flavor": "windows", "wire": "C:/x" },
     {
       "text": "sftp://test_user_1@testnas.local:22/home",
       "flavor": "windows",
@@ -660,7 +673,12 @@
     }
   ],
   "escapedUserInput": [
-    { "text": "/d/\udbff\ude80", "flavor": "posix", "wire": "/d/\udbff\udef4\udbff\ude8f\udbff\udeba\udbff\ude80" },
-    { "text": "C:\\x\\\udbff\ude80", "flavor": "windows", "wire": "C:/x/\udbfa\udfff\udbfb\ude80" }
+    {
+      "text": "/d/\udbff\ude80",
+      "flavor": "posix",
+      "namer": "bytes",
+      "wire": "/d/\udbff\udef4\udbff\ude8f\udbff\udeba\udbff\ude80"
+    },
+    { "text": "C:\\x\\\udbff\ude80", "flavor": "windows", "namer": "units", "wire": "C:/x/\udbfa\udfff\udbfb\ude80" }
   ]
 }

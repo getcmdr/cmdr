@@ -25,17 +25,7 @@
 
 pub use crate::app_path::{PathFlavor, PathKind};
 
-/// Whether `text` starts with `<scheme>://`, the scheme being RFC 3986's shape. The
-/// frontend twin's `isSchemeUrl`; the typed path's own reads a one-letter scheme as a drive
-/// (`crate::app_path::is_scheme_url`).
-pub fn is_scheme_url(text: &str) -> bool {
-    let Some((scheme, _)) = text.split_once("://") else {
-        return false;
-    };
-    let mut chars = scheme.chars();
-    chars.next().is_some_and(|first| first.is_ascii_alphabetic())
-        && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '.' | '-'))
-}
+pub use crate::app_path::is_scheme_url;
 
 /// Win32's long-path prefix, and its UNC form.
 const VERBATIM: &str = r"\\?\";

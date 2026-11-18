@@ -21,8 +21,10 @@ const _: fn(&super::AppPath) -> Result<std::path::PathBuf, super::NativeRefusal>
 #[cfg(cmdr_host)]
 const _: fn(&super::AppPath) -> Result<std::path::PathBuf, super::NativeRefusal> = super::AppPath::to_native_plain;
 #[cfg(cmdr_host)]
+const _: fn(&std::path::Path) -> Result<super::AppPathBuf, super::NotAnAppPath> = super::AppPathBuf::from_native;
+#[cfg(cmdr_host)]
 const _: fn(&std::path::Path, PathFlavor) -> Result<super::AppPathBuf, super::NotAnAppPath> =
-    super::AppPathBuf::from_native;
+    super::AppPathBuf::from_native_as;
 
 /// This OS's flavor: drives and UNC shares on Windows, `/` elsewhere (the browser build's
 /// demo tree is POSIX).

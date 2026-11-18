@@ -154,8 +154,7 @@ impl AppTestDir {
     #[track_caller]
     fn from_dir(dir: TestDir) -> Self {
         let long = long_path(&dir).expect("the scratch directory's long name resolves");
-        let app = crate::app_path::AppPathBuf::from_native(&long, crate::app_path::PathFlavor::HOST)
-            .expect("a scratch directory is an absolute path");
+        let app = crate::app_path::AppPathBuf::from_native(&long).expect("a scratch directory is an absolute path");
         Self { dir, app }
     }
 

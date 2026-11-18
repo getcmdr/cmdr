@@ -39,6 +39,11 @@ pub enum NotAnAppPath {
     Nul,
     /// A name mixing byte escapes and unit escapes, which no namer makes.
     MixedEscape,
+    /// A UNC server holding a NUL or spelled `..`, which names no server.
+    BadServer,
+    /// A typed Windows name of only dots and spaces (`...`, `. `): Windows strips a name's
+    /// trailing dots and spaces, which leaves none.
+    BlankName,
     /// Text [`AppPath::from_normalized`] was given that isn't in canonical form: a trailing
     /// `/`, a repeated `/`, a `.` name, a lowercase drive letter, or non-canonical escapes.
     NotCanonical,
@@ -59,6 +64,8 @@ impl fmt::Display for NotAnAppPath {
             NotAnAppPath::VerbatimName => "an empty, `.`, or `..` name in a verbatim path",
             NotAnAppPath::Nul => "a NUL outside a pick segment",
             NotAnAppPath::MixedEscape => "a name mixing two escape alphabets",
+            NotAnAppPath::BadServer => "a UNC server name that names no server",
+            NotAnAppPath::BlankName => "a name of only dots and spaces",
             NotAnAppPath::NotCanonical => "a path not in canonical form",
         })
     }
@@ -124,6 +131,18 @@ fn scheme_root(text: &str) -> Result<(&str, &str), NotAnAppPath> {
     Ok((root, rest))
 }
 
+/// A UNC server, checked: not a device namespace (`?`, `.`), not empty, and never a NUL or
+/// `..`. Its characters are otherwise the server's own (an IPv6 literal keeps its `:`).
+fn check_server(server: &str) -> Result<(), NotAnAppPath> {
+    match server {
+        "?" | "." => Err(NotAnAppPath::DevicePath),
+        "" => Err(NotAnAppPath::MissingShare),
+        ".." => Err(NotAnAppPath::BadServer),
+        _ if server.contains('\0') => Err(NotAnAppPath::BadServer),
+        _ => Ok(()),
+    }
+}
+
 /// A Windows root at the start of `text`: the drive or UNC share, spelled canonically, and
 /// the text after it.
 fn windows_root(text: &str) -> Result<(String, &str), NotAnAppPath> {
@@ -144,10 +163,8 @@ fn windows_root(text: &str) -> Result<(String, &str), NotAnAppPath> {
         let server = parts.next().unwrap_or("");
         let share = parts.next().unwrap_or("");
         let rest = parts.next().unwrap_or("");
-        if server == "?" || server == "." {
-            return Err(NotAnAppPath::DevicePath);
-        }
-        if server.is_empty() || share.is_empty() {
+        check_server(server)?;
+        if share.is_empty() {
             return Err(NotAnAppPath::MissingShare);
         }
         if matches!(share, "." | "..") {
@@ -216,30 +233,56 @@ impl AppPathBuf {
         Self::parse(text, PathFlavor::HOST)
     }
 
-    /// Typed or pasted text: on Windows both `\` and `/` separate; `.` names drop; every
-    /// escape-range code point is LITERAL text (escaped through its own units, the way the
-    /// path's namer would store it), so a person can't type a live escape.
+    /// Typed or pasted text, read as the person means it: `.` names drop, and every
+    /// escape-range code point is LITERAL text, escaped through `namer`'s units (the namer of
+    /// the volume the path lands on: a Unix disk's bytes, SMB's UTF-16), so a person can't
+    /// type a live escape. On Windows, for a drive or UNC path, both `\` and `/` separate and
+    /// each name's trailing dots and spaces go, as Explorer's address bar and every plain
+    /// Win32 path read them (`C:\x\dup.` opens `dup`).
     ///
     /// # Errors
     ///
-    /// As [`Self::parse`]. A `..` is refused here too: what it means is a volume's answer,
-    /// which the app's typed-path resolver asks before it calls this on each resolved prefix.
-    pub fn from_user_input(text: &str, flavor: PathFlavor) -> Result<AppPathBuf, NotAnAppPath> {
+    /// As [`Self::parse`], plus [`NotAnAppPath::BlankName`] for a Windows name of only dots
+    /// and spaces. A `..` is refused here too: what it means is a volume's answer, which the
+    /// app's typed-path resolver asks before it calls this on each resolved prefix.
+    pub fn from_user_input(text: &str, flavor: PathFlavor, namer: Namer) -> Result<AppPathBuf, NotAnAppPath> {
         let separated: Cow<'_, str> = if flavor == PathFlavor::Windows && !is_scheme_url(text) {
-            Cow::Owned(text.replace('\\', "/"))
+            Cow::Owned(win32_trimmed(&text.replace('\\', "/"))?)
         } else {
             Cow::Borrowed(text)
-        };
-        let namer = match flavor {
-            PathFlavor::Windows if !is_scheme_url(&separated) => Namer::Units,
-            _ => Namer::Bytes,
         };
         Self::parse(&escape::literal(&separated, namer), flavor)
     }
 }
 
-/// The text's kind and root length if `text` is canonical, else why not.
-pub(super) fn validate_canonical(text: &str) -> Result<(), NotAnAppPath> {
+/// `/`-separated Windows text with each name's trailing dots and spaces stripped, as Win32
+/// reads a plain path (`GetFullPathNameW`). A drive token, the UNC server and share, and the
+/// `.` and `..` names stay as they are.
+pub(super) fn win32_trimmed(text: &str) -> Result<String, NotAnAppPath> {
+    let unc = text.starts_with("//");
+    let mut out = String::with_capacity(text.len());
+    for (i, name) in text.split('/').enumerate() {
+        if i > 0 {
+            out.push('/');
+        }
+        let is_drive = i == 0 && name.len() == 2 && name.as_bytes()[1] == b':';
+        let is_unc_root = unc && i <= 3;
+        if is_drive || is_unc_root || matches!(name, "" | "." | "..") {
+            out.push_str(name);
+            continue;
+        }
+        let trimmed = name.trim_end_matches(['.', ' ']);
+        if trimmed.is_empty() {
+            return Err(NotAnAppPath::BlankName);
+        }
+        out.push_str(trimmed);
+    }
+    Ok(out)
+}
+
+/// Whether `text` is canonical in SOME flavor, else why not: the check typed arithmetic and
+/// the native crossings lean on, where the text's own shape says its kind.
+pub(super) fn validate_canonical_any(text: &str) -> Result<(), NotAnAppPath> {
     if text.is_empty() {
         return Err(NotAnAppPath::Empty);
     }
@@ -249,9 +292,7 @@ pub(super) fn validate_canonical(text: &str) -> Result<(), NotAnAppPath> {
         let server = parts.next().unwrap_or("");
         let share = parts.next().unwrap_or("");
         let rest = parts.next().ok_or(NotAnAppPath::NotCanonical)?;
-        if server == "?" || server == "." {
-            return Err(NotAnAppPath::DevicePath);
-        }
+        check_server(server)?;
         if share.is_empty() {
             return Err(NotAnAppPath::MissingShare);
         }
@@ -299,16 +340,31 @@ pub(super) fn validate_canonical(text: &str) -> Result<(), NotAnAppPath> {
 }
 
 impl AppPath {
-    /// `text`, validated as already canonical and borrowed as is: the zero-copy door for a
-    /// path a backend built (a `FileEntry.path`). Flavor-free, since canonical text says its
-    /// own kind.
+    /// `text`, validated as already canonical for THIS host and borrowed as is: the
+    /// zero-copy door for a path a backend built (a `FileEntry.path`). On macOS and Linux a
+    /// drive or UNC shape is refused (`//a/b/x` there is a POSIX path written sloppily, never
+    /// a share); on Windows the POSIX `/` root stays a valid value (the in-memory volume's).
     ///
     /// # Errors
     ///
-    /// [`NotAnAppPath`]: anything [`AppPathBuf::parse`] would refuse, and
-    /// [`NotAnAppPath::NotCanonical`] for text `parse` would respell.
+    /// As [`Self::from_normalized_as`].
     pub fn from_normalized(text: &str) -> Result<&AppPath, NotAnAppPath> {
-        validate_canonical(text)?;
-        Ok(AppPath::new_unchecked(text))
+        Self::from_normalized_as(text, PathFlavor::HOST)
+    }
+
+    /// [`Self::from_normalized`] for `flavor`'s host, for a test of the other grammar.
+    ///
+    /// # Errors
+    ///
+    /// [`NotAnAppPath`]: anything [`AppPathBuf::parse`] would refuse,
+    /// [`NotAnAppPath::NotCanonical`] for text `parse` would respell, and `WrongFlavor` for a
+    /// drive or UNC shape under the POSIX flavor.
+    pub fn from_normalized_as(text: &str, flavor: PathFlavor) -> Result<&AppPath, NotAnAppPath> {
+        validate_canonical_any(text)?;
+        let path = AppPath::new_unchecked(text);
+        if flavor == PathFlavor::Posix && matches!(path.kind(), PathKind::Drive | PathKind::Unc) {
+            return Err(NotAnAppPath::WrongFlavor);
+        }
+        Ok(path)
     }
 }

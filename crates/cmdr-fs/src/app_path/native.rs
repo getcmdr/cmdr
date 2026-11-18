@@ -123,6 +123,18 @@ fn server_has_port(server: &str) -> bool {
     outside.contains(':') || server.contains('@')
 }
 
+/// Whether `name` means itself in a plain Win32 path: no trailing dot or space (Win32 strips
+/// one), and no device name (Win32 opens the device).
+fn plain_safe(name: &str) -> Result<(), NativeRefusal> {
+    if name.ends_with(['.', ' ']) {
+        return Err(NativeRefusal::NotPlainSafe(NotPlainSafe::TrailingDotOrSpace));
+    }
+    if is_reserved_device_name(name) {
+        return Err(NativeRefusal::NotPlainSafe(NotPlainSafe::ReservedName));
+    }
+    Ok(())
+}
+
 impl AppPath {
     /// The bytes a POSIX OS call takes for this path: the text with each byte escape
     /// decoded. Borrowed when there's none.
@@ -170,7 +182,7 @@ impl AppPath {
     }
 
     fn check_canonical(&self) -> Result<(), NativeRefusal> {
-        super::parse::validate_canonical(self.as_str()).map_err(|_| NativeRefusal::NotCanonical)
+        super::parse::validate_canonical_any(self.as_str()).map_err(|_| NativeRefusal::NotCanonical)
     }
 
     fn windows_units(&self, verbatim: bool) -> Result<Vec<u16>, NativeRefusal> {
@@ -201,6 +213,9 @@ impl AppPath {
                 if share.chars().any(forbidden_on_windows) {
                     return Err(NativeRefusal::ForbiddenCharacter);
                 }
+                if !verbatim {
+                    plain_safe(share)?;
+                }
                 escape::push_unescaped_units(server, &mut out)?;
                 out.push(u16::from(b'\\'));
                 (share, split.next().unwrap_or(""))
@@ -213,12 +228,7 @@ impl AppPath {
                 return Err(NativeRefusal::ForbiddenCharacter);
             }
             if !verbatim {
-                if name.ends_with(['.', ' ']) {
-                    return Err(NativeRefusal::NotPlainSafe(NotPlainSafe::TrailingDotOrSpace));
-                }
-                if is_reserved_device_name(name) {
-                    return Err(NativeRefusal::NotPlainSafe(NotPlainSafe::ReservedName));
-                }
+                plain_safe(name)?;
             }
             if i > 0 {
                 out.push(u16::from(b'\\'));
@@ -278,14 +288,16 @@ fn windows_from_native(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
     if text.is_empty() {
         return Err(NotAnAppPath::Empty);
     }
-    if let Some(unc) = text.strip_prefix(VERBATIM_UNC) {
+    // NT reads the `UNC` of `\\?\UNC\` without case.
+    let verbatim_unc = text
+        .get(..VERBATIM_UNC.len())
+        .is_some_and(|head| head.eq_ignore_ascii_case(VERBATIM_UNC));
+    if verbatim_unc {
+        let unc = &text[VERBATIM_UNC.len()..];
         let mut parts = unc.splitn(3, '\\');
         let server = parts.next().unwrap_or("");
         let share = parts.next().unwrap_or("");
-        if server == "?" || server == "." {
-            return Err(NotAnAppPath::DevicePath);
-        }
-        if server.is_empty() || share.is_empty() {
+        if share.is_empty() && !server.is_empty() && server != "?" && server != "." {
             return Err(NotAnAppPath::MissingShare);
         }
         return verbatim_names(&format!("//{server}/{share}/"), parts.next().unwrap_or(""));
@@ -310,7 +322,9 @@ fn windows_from_native(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
         }
         return Err(NotAnAppPath::DevicePath);
     }
-    let slashed = text.replace('\\', "/");
+    // A plain path names what Win32 makes of it: each name's trailing dots and spaces go
+    // (`C:\x\dup.` opens `dup`), and `.` and `..` resolve by text.
+    let slashed = super::parse::win32_trimmed(&text.replace('\\', "/"))?;
     if slashed.starts_with("//./") || slashed.starts_with("//?/") {
         return Err(NotAnAppPath::DevicePath);
     }

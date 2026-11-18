@@ -34,9 +34,8 @@ fn name() -> impl Strategy<Value = String> {
     prop::collection::vec(name_char(), 0..5).prop_map(|chars| chars.into_iter().collect())
 }
 
-/// Text shaped like a POSIX path, unnormalized: `//`, a trailing `/`, `.`, `..`, every name
-/// character. Excludes a leading `//` + server, the one shape POSIX gives no meaning and the
-/// type reads as a UNC root.
+/// Text shaped like a POSIX path, unnormalized: `//` (leading too), a trailing `/`, `.`,
+/// `..`, every name character.
 fn posix_text() -> impl Strategy<Value = String> {
     let segment = prop_oneof![
         3 => prop::collection::vec(prop_oneof![Just('a'), Just('b'), Just('.'), Just(' '), Just('-'), Just('\u{e9}')], 1..4)
@@ -45,9 +44,7 @@ fn posix_text() -> impl Strategy<Value = String> {
         1 => Just(".".to_string()),
         1 => Just("..".to_string()),
     ];
-    prop::collection::vec(segment, 0..6)
-        .prop_map(|segments| format!("/{}", segments.join("/")))
-        .prop_filter("not a UNC shape", |text| !shape::is_unc(text))
+    prop::collection::vec(segment, 0..6).prop_map(|segments| format!("/{}", segments.join("/")))
 }
 
 /// Any text an app path might be parsed from, every root shape included.
@@ -153,7 +150,7 @@ proptest! {
         let path = AppPathBuf::from_native_posix(&native, PathFlavor::Posix).expect("an absolute path");
         let back = path.to_native_posix().expect("crosses back");
         prop_assert_eq!(back.as_ref(), &native[..]);
-        prop_assert_eq!(AppPath::from_normalized(path.as_str()).map(AppPath::as_str), Ok(path.as_str()));
+        prop_assert_eq!(AppPath::from_normalized_as(path.as_str(), PathFlavor::Posix).map(AppPath::as_str), Ok(path.as_str()));
     }
 
     /// A native name through a whole verbatim Windows path and back, exactly: UTF-16 units,
@@ -166,7 +163,7 @@ proptest! {
         native.extend_from_slice(&name);
         let path = AppPathBuf::from_native_windows(&native, PathFlavor::Windows).expect("an absolute path");
         prop_assert_eq!(path.to_native_windows().expect("crosses back"), native);
-        prop_assert_eq!(AppPath::from_normalized(path.as_str()).map(AppPath::as_str), Ok(path.as_str()));
+        prop_assert_eq!(AppPath::from_normalized_as(path.as_str(), PathFlavor::Windows).map(AppPath::as_str), Ok(path.as_str()));
     }
 
     #[test]
@@ -178,13 +175,17 @@ proptest! {
         }
     }
 
-    /// `from_normalized` takes exactly what `parse` leaves alone.
+    /// `from_normalized_as` takes exactly what `parse` leaves alone (on Windows, a POSIX
+    /// root's value too: the in-memory volume's).
     #[test]
     fn from_normalized_accepts_exactly_the_fixed_points_of_parse(text in any_text()) {
-        let fixed = [PathFlavor::Posix, PathFlavor::Windows]
-            .into_iter()
-            .any(|flavor| AppPathBuf::parse(&text, flavor).is_ok_and(|p| p.as_str() == text));
-        prop_assert_eq!(AppPath::from_normalized(&text).is_ok(), fixed, "{:?}", text);
+        let fixed = |flavor| AppPathBuf::parse(&text, flavor).is_ok_and(|p| p.as_str() == text);
+        prop_assert_eq!(AppPath::from_normalized_as(&text, PathFlavor::Posix).is_ok(), fixed(PathFlavor::Posix), "{:?}", text);
+        prop_assert_eq!(
+            AppPath::from_normalized_as(&text, PathFlavor::Windows).is_ok(),
+            fixed(PathFlavor::Windows) || fixed(PathFlavor::Posix),
+            "{:?}", text
+        );
     }
 
     #[test]
@@ -201,19 +202,29 @@ proptest! {
                 prop_assert_eq!(joined.parent(), Some(path.as_app_path()));
                 prop_assert_eq!(joined.file_name(), Some(child.as_str()));
                 prop_assert!(joined.starts_with(&path));
-                prop_assert_eq!(AppPath::from_normalized(joined.as_str()).map(AppPath::as_str), Ok(joined.as_str()));
+                prop_assert_eq!(AppPath::from_normalized_as(joined.as_str(), flavor).map(AppPath::as_str), Ok(joined.as_str()));
             }
     }
 
     #[test]
-    fn starts_with_and_strip_prefix_agree(a in any_text(), b in any_text(), windows in any::<bool>()) {
-        let flavor = if windows { PathFlavor::Windows } else { PathFlavor::Posix };
-        let (Ok(a), Ok(b)) = (AppPathBuf::parse(&a, flavor), AppPathBuf::parse(&b, flavor)) else { return Ok(()) };
-        for (path, ancestor) in [(&a, &b), (&b, &a), (&a, &a.root().to_owned())] {
+    fn starts_with_and_strip_prefix_agree(a in any_text(), b in any_text(), windows_a in any::<bool>(), windows_b in any::<bool>()) {
+        let flavor = |windows: bool| if windows { PathFlavor::Windows } else { PathFlavor::Posix };
+        let (Ok(a), Ok(b)) = (AppPathBuf::parse(&a, flavor(windows_a)), AppPathBuf::parse(&b, flavor(windows_b))) else { return Ok(()) };
+        for (path, ancestor) in [(&a, &b), (&b, &a), (&a, &a.root().to_owned()), (&b, &a.root().to_owned())] {
             let rel = path.strip_prefix(ancestor);
             prop_assert_eq!(path.starts_with(ancestor), rel.is_some());
             if let Some(rel) = rel {
+                // Never across roots, and the tail is always a valid one.
+                prop_assert_eq!(path.root(), ancestor.root());
+                prop_assert!(RelativeAppPath::new(rel.as_str()).is_ok(), "{:?} under {:?}: {:?}", path, ancestor, rel);
                 prop_assert_eq!(&ancestor.join_relative(rel).expect("it was there"), path);
+                if let Some(moved) = path.rebase(ancestor, &b) {
+                    prop_assert!(AppPath::from_normalized_as(moved.as_str(), PathFlavor::Windows).is_ok(), "{:?}", moved);
+                }
+            }
+            if let Some(rel) = path.strip_volume_prefix(ancestor) {
+                prop_assert!(path.same_root(ancestor));
+                prop_assert!(RelativeAppPath::new(rel.as_str()).is_ok(), "{:?} on {:?}: {:?}", path, ancestor, rel);
             }
         }
     }
@@ -243,7 +254,7 @@ proptest! {
     fn typed_text_means_what_it_says(typed in name()) {
         let text = format!("/d/{typed}");
         let names: Vec<&str> = text.split('/').filter(|n| !n.is_empty() && *n != ".").collect();
-        match AppPathBuf::from_user_input(&text, PathFlavor::Posix) {
+        match AppPathBuf::from_user_input(&text, PathFlavor::Posix, Namer::Bytes) {
             Ok(path) => {
                 let typed_bytes = format!("/{}", names.join("/"));
                 let native = path.to_native_posix().expect("local");
@@ -251,6 +262,89 @@ proptest! {
                 prop_assert!(path.names().all(|n| !n.chars().any(is_unit_escape)));
             }
             Err(refusal) => prop_assert_eq!(refusal, NotAnAppPath::DotName),
+        }
+    }
+}
+
+/// A name this host's `OsStr` holds natively reaches the OS again byte for byte through
+/// `from_native_os` and a typed join, whatever its bytes.
+#[cfg(unix)]
+mod native_name_unix {
+    use std::ffi::OsStr;
+    use std::os::unix::ffi::OsStrExt;
+
+    use proptest::prelude::*;
+
+    use super::super::super::*;
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(2_000))]
+
+        #[test]
+        fn a_native_name_joins_to_its_own_bytes(name in prop::collection::vec(any::<u8>().prop_filter("no separator", |b| *b != b'/' && *b != 0), 1..16)) {
+            prop_assume!(name != b"." && name != b"..");
+            let app = AppNameBuf::from_native_os(OsStr::from_bytes(&name)).expect("a plain name");
+            let joined = AppPath::from_normalized("/d").expect("canonical").join(&app).expect("joins");
+            let native = joined.to_native_posix().expect("crosses");
+            let mut expected = b"/d/".to_vec();
+            expected.extend_from_slice(&name);
+            prop_assert_eq!(native.as_ref(), &expected[..]);
+        }
+    }
+}
+
+/// On Windows, `Eq`, `Hash`, and `Ord` answer what `PathBuf` answers there, bridge text with
+/// `\`, drive and UNC prefixes, and verbatim forms included.
+#[cfg(windows)]
+mod comparison_windows {
+    use std::path::{Path, PathBuf};
+
+    use proptest::prelude::*;
+
+    use super::super::super::*;
+    use super::hash_of;
+
+    fn windows_text() -> impl Strategy<Value = String> {
+        let prefix = prop_oneof![
+            Just(String::new()),
+            Just("C:".to_string()),
+            Just("c:".to_string()),
+            Just(r"\\srv\share".to_string()),
+            Just("//srv/share".to_string()),
+            Just(r"\\?\C:".to_string()),
+            Just(r"\\?\UNC\srv\share".to_string()),
+            Just("/".to_string()),
+        ];
+        let segment = prop_oneof![
+            3 => prop::collection::vec(prop_oneof![Just('a'), Just('b'), Just('.'), Just(' '), Just('-')], 1..4)
+                .prop_map(|chars| chars.into_iter().collect::<String>()),
+            1 => Just(String::new()),
+            1 => Just(".".to_string()),
+            1 => Just("..".to_string()),
+        ];
+        let sep = prop_oneof![Just('/'), Just('\\')];
+        (prefix, prop::collection::vec((sep, segment), 0..5)).prop_map(|(prefix, parts)| {
+            let mut text = prefix;
+            for (sep, segment) in parts {
+                text.push(sep);
+                text.push_str(&segment);
+            }
+            text
+        })
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(4_000))]
+
+        #[test]
+        fn comparison_matches_pathbuf_on_windows_text(a in windows_text(), b in windows_text()) {
+            let (typed_a, typed_b) = (AppPath::legacy_unchecked(Path::new(&a)), AppPath::legacy_unchecked(Path::new(&b)));
+            let (std_a, std_b) = (PathBuf::from(&a), PathBuf::from(&b));
+            prop_assert_eq!(typed_a == typed_b, std_a == std_b, "{:?} {:?}", a, b);
+            prop_assert_eq!(typed_a.cmp(&typed_b), std_a.cmp(&std_b), "{:?} {:?}", a, b);
+            if typed_a == typed_b {
+                prop_assert_eq!(hash_of(&typed_a), hash_of(&typed_b));
+            }
         }
     }
 }

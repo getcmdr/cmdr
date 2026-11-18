@@ -58,42 +58,172 @@ pub(super) fn is_unc(text: &str) -> bool {
     text.starts_with("//") && text.as_bytes().get(2).is_some_and(|&b| b != b'/')
 }
 
-/// One component, in the order `std::path::Component` sorts them (`RootDir` < `CurDir` <
-/// `ParentDir` < `Normal`), so a POSIX app path orders exactly as its `PathBuf` did.
+/// A Windows path prefix, in the order `std::path::Prefix` sorts them, so a Windows host's
+/// app path orders and dedups as its `PathBuf` did. The drive letter is uppercased, as std
+/// does.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub(super) enum Prefix<'a> {
+    Verbatim(&'a str),
+    VerbatimUnc(&'a str, &'a str),
+    VerbatimDisk(u8),
+    DeviceNs(&'a str),
+    Unc(&'a str, &'a str),
+    Disk(u8),
+}
+
+/// One component, in the order `std::path::Component` sorts them (`Prefix` < `RootDir` <
+/// `CurDir` < `ParentDir` < `Normal`), so an app path orders exactly as its `PathBuf` did.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(super) enum Component<'a> {
+    Prefix(Prefix<'a>),
     RootDir,
     CurDir,
     ParentDir,
-    /// A name, or a non-POSIX root as one token (`C:`, `//server/share`,
-    /// `scheme://authority`), compared by bytes as `OsStr` compares them.
+    /// A name, or a scheme root as one token (`scheme://authority`), compared by bytes as
+    /// `OsStr` compares them.
     Normal(&'a str),
 }
 
-/// The components `Eq`, `Hash`, and `Ord` compare: POSIX `Path::components` over the text
-/// (empty and `.` names skipped, a leading `.` of a relative text kept, `..` kept), except
-/// that a UNC or scheme root is ONE token. Without that, `//srv/share/x` would equal
-/// `/srv/share/x`, and `sftp:///x` would equal `sftp://x/`: two canonical values naming
-/// different places.
-pub(super) fn components(text: &str) -> impl Iterator<Item = Component<'_>> {
-    let (head, rest) = if is_unc(text) {
-        let (_, root_len) = root_of(text);
-        let token = text[..root_len].trim_end_matches('/');
-        (Some(Component::Normal(token)), &text[root_len..])
-    } else if text.starts_with('/') {
-        (Some(Component::RootDir), text)
-    } else if is_scheme_url(text) {
+/// The components `Eq`, `Hash`, and `Ord` compare: `Path::components` over the text, with
+/// THIS host's rules, so a set keyed on app paths dedups and sorts as one keyed on `PathBuf`
+/// did on the same host (unnormalized bridge values included: `/a/`, `/a/./b`, and on
+/// Windows `C:\x` beside `C:/x`). One deliberate difference: a scheme root is ONE token,
+/// since as std components `sftp:///x` would equal `sftp://x/`.
+///
+/// On macOS and Linux a leading `//` is a plain root, as std reads it, so a UNC value (made
+/// only by `parse(_, Windows)`, test-only there) compares as the POSIX path with its text.
+pub(super) fn components(text: &str) -> Components<'_> {
+    components_for(text, super::PathFlavor::HOST)
+}
+
+/// [`components`] read with `flavor`'s rules, whatever the host.
+pub(super) fn components_for(text: &str, flavor: super::PathFlavor) -> Components<'_> {
+    let windows = flavor == super::PathFlavor::Windows;
+    if is_scheme_url(text) {
         let (_, root_len) = root_of(text);
         let token = text[..root_len].strip_suffix('/').unwrap_or(&text[..root_len]);
-        (Some(Component::Normal(token)), &text[root_len..])
-    } else if text == "." || text.starts_with("./") {
-        (Some(Component::CurDir), &text[1..])
+        return Components {
+            head: [Some(Component::Normal(token)), None],
+            rest: &text[root_len..],
+            windows: false,
+            verbatim: false,
+        };
+    }
+    let (prefix, after, verbatim) = if windows {
+        windows_prefix(text)
     } else {
-        (None, text)
+        (None, text, false)
     };
-    head.into_iter().chain(rest.split('/').filter_map(|name| match name {
-        "" | "." => None,
-        ".." => Some(Component::ParentDir),
-        name => Some(Component::Normal(name)),
-    }))
+    let is_sep = |b: u8| b == b'/' || (windows && b == b'\\');
+    let after_bytes = after.as_bytes();
+    let rooted = match after_bytes.first() {
+        Some(&b) if verbatim => b == b'\\',
+        Some(&b) => is_sep(b),
+        None => false,
+    };
+    let second = if rooted {
+        Some(Component::RootDir)
+    } else if prefix.is_none()
+        && (after == "." || (after.len() > 1 && after.as_bytes()[0] == b'.' && is_sep(after.as_bytes()[1])))
+    {
+        Some(Component::CurDir)
+    } else {
+        None
+    };
+    let rest = if second == Some(Component::CurDir) {
+        &after[1..]
+    } else {
+        after
+    };
+    Components {
+        head: [prefix.map(Component::Prefix), second],
+        rest,
+        windows,
+        verbatim,
+    }
+}
+
+/// The prefix at the start of `text` as a Windows path, the text after it, and whether it's
+/// a verbatim one (where only `\` separates, and `.` is a name).
+fn windows_prefix(text: &str) -> (Option<Prefix<'_>>, &str, bool) {
+    let is_sep = |b: u8| b == b'/' || b == b'\\';
+    let bytes = text.as_bytes();
+    let until = |s: &str, sep: &dyn Fn(u8) -> bool| s.bytes().position(sep).unwrap_or(s.len());
+    if let Some(rest) = text.strip_prefix(r"\\?\") {
+        if rest.get(..4).is_some_and(|head| head.eq_ignore_ascii_case(r"UNC\")) {
+            let after = &rest[4..];
+            let server_end = until(after, &|b| b == b'\\');
+            let server = &after[..server_end];
+            let after = after.get(server_end + 1..).unwrap_or("");
+            let share_end = until(after, &|b| b == b'\\');
+            return (
+                Some(Prefix::VerbatimUnc(server, &after[..share_end])),
+                &after[share_end..],
+                true,
+            );
+        }
+        let rb = rest.as_bytes();
+        if rb.len() >= 2 && rb[0].is_ascii_alphabetic() && rb[1] == b':' && rb.get(2).is_none_or(|&b| b == b'\\') {
+            return (Some(Prefix::VerbatimDisk(rb[0].to_ascii_uppercase())), &rest[2..], true);
+        }
+        let end = until(rest, &|b| b == b'\\');
+        return (Some(Prefix::Verbatim(&rest[..end])), &rest[end..], true);
+    }
+    if let Some(rest) = text.strip_prefix(r"\\.\") {
+        let end = until(rest, &is_sep);
+        return (Some(Prefix::DeviceNs(&rest[..end])), &rest[end..], false);
+    }
+    if bytes.len() > 2 && is_sep(bytes[0]) && is_sep(bytes[1]) && !is_sep(bytes[2]) {
+        let after = &text[2..];
+        let server_end = until(after, &is_sep);
+        let server = &after[..server_end];
+        let after = after.get(server_end + 1..).unwrap_or("");
+        let share_end = until(after, &is_sep);
+        return (
+            Some(Prefix::Unc(server, &after[..share_end])),
+            &after[share_end..],
+            false,
+        );
+    }
+    if bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
+        return (Some(Prefix::Disk(bytes[0].to_ascii_uppercase())), &text[2..], false);
+    }
+    (None, text, false)
+}
+
+/// The iterator [`components`] answers: no allocation, so `Eq`, `Hash`, and `Ord` stay free.
+pub(super) struct Components<'a> {
+    head: [Option<Component<'a>>; 2],
+    rest: &'a str,
+    windows: bool,
+    verbatim: bool,
+}
+
+impl<'a> Iterator for Components<'a> {
+    type Item = Component<'a>;
+
+    fn next(&mut self) -> Option<Component<'a>> {
+        for slot in &mut self.head {
+            if let Some(component) = slot.take() {
+                return Some(component);
+            }
+        }
+        loop {
+            if self.rest.is_empty() {
+                return None;
+            }
+            let (windows, verbatim) = (self.windows, self.verbatim);
+            let is_sep = |c: char| c == '\\' && windows || c == '/' && !verbatim;
+            let end = self.rest.find(is_sep).unwrap_or(self.rest.len());
+            let name = &self.rest[..end];
+            self.rest = self.rest.get(end + 1..).unwrap_or("");
+            match name {
+                "" => {}
+                "." if verbatim => return Some(Component::CurDir),
+                "." => {}
+                ".." => return Some(Component::ParentDir),
+                name => return Some(Component::Normal(name)),
+            }
+        }
+    }
 }

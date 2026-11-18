@@ -140,10 +140,21 @@ text, so on Windows a `join` or `parent` adds `\` to a remote path, reads `a:b` 
 boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225); this section is its durable home.
 
 - **The types**: `AppPath` (borrowed, unsized, like `Path`) and `AppPathBuf`; `RelativeAppPath`, a validated tail;
-  `AppName` / `AppNameBuf`, one plain name, the only thing `join` takes. `ChildName::under_app` joins a listed name. ❌
-  No `From`, `AsRef`, or `Deref` to or from `std::path`, ever: "unrepresentable" would stop being true the day one
-  landed. Construction is named and greppable: `parse(text, flavor)`, `from_wire` (the host's flavor),
-  `from_user_input`, `from_normalized` (zero-copy, for a backend's own path), `from_native*`, and `app_path!` in tests.
+  `AppName` / `AppNameBuf`, one plain name in APP spelling, the only thing `join` takes. ❌ No `From`, `AsRef`, or
+  `Deref` to or from `std::path`, ever: "unrepresentable" would stop being true the day one landed. Construction is
+  named and greppable: `parse(text, flavor)`, `from_wire` (the host's flavor), `from_user_input(text, flavor, namer)`,
+  `from_normalized` (zero-copy, this host's shapes; `from_normalized_as` for a test of the other), `from_native` (this
+  host; `from_native_as`), and `app_path!` in tests. Arithmetic: `join`, `join_relative`, `parent`, `file_name`,
+  `extension`, `file_stem`, `with_file_name`, `names`, `root`, `starts_with` / `strip_prefix` (exact, never across
+  roots), `rebase`, and the volume-root matches below. Typed arithmetic is for canonical values; on a bridge value it's
+  a debug assertion.
+- **Two name worlds, one door each** (Decision/Why): `AppName::new(&str)` takes a BACKEND-spelled name (a
+  `FileEntry.name`, its escapes live); `AppNameBuf::from_native_os(&OsStr)` (and `from_native_bytes` /
+  `from_native_units`) takes a name a native API holds, escaping what isn't valid text and a literal escape code point
+  as literal; `from_typed(text, namer)` takes typed text. `volume::ChildName` (over `&OsStr`) is the `std::path` world's
+  name and has NO app-path join: reading its text as app spelling respells nothing today but would, once escapes exist,
+  turn a live escape into a literal one and land a copy of `caf\xE9.txt` under a different name. The wrong combination
+  has no API.
 - **Canonical form**: no empty, `.`, or `..` name, no trailing `/` except the root's own; every root ends in `/` (`/`,
   `C:/`, `//server/share/`, `scheme://authority/`). The drive letter is uppercased; nothing else is folded, and the
   Unicode form is never touched (NFC and NFD `café` are two values). `parse` normalizes into it, `from_normalized` takes
@@ -160,6 +171,12 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   Every escape is a scalar value (a `String`, JSON, SQLite `TEXT`, and a JS string all carry it), and private use has no
   case mapping or decomposition, so folding can't merge one. Rejected: PEP 383's lone surrogates (not scalar values),
   WTF-8 (not UTF-8), and the BMP private-use area (Nerd Fonts and Apple's SFM live there).
+- **❗ The escape gate**: app TEXT turned into a `std::path` value (`Path::new(&entry.path)`, `OsStr::new(p.as_str())`,
+  `ChildName::new(&entry.name)`) is the identity only while no name holds an escape; with one, the `Path` carries the
+  escape's own UTF-8 bytes and `std::fs` opens a file literally named with it. `app-path-std-bridge` counts those sites
+  per file (`appTextToPath`, shrinking) and fails while any production code outside this module calls an escape producer
+  (`from_native*`) with the count above zero. So the escape producers land last (`docs/specs/app-path-plan.md`,
+  milestone 10f).
 - **One spelling per native name**, so `to_native` is injective over canonical text: a code point of either alphabet a
   name holds as valid text is escaped through its own units, escapes that decode to valid text aren't canonical (the
   bytes of `é` spell `é`), and a name mixing the alphabets is refused. Typed text never carries a live escape
@@ -179,13 +196,22 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
     what Win32 does.
   - The conversions are pure (`to_native_posix`, `to_native_windows`, `from_native_posix`, `from_native_windows`), so
     Linux CI tests the Windows arm as data; only `platform/` touches `OsStr`.
-- **`Eq`, `Hash`, `Ord` are component-wise**: POSIX `Path::components` over the text (empty and `.` names skipped, `..`
-  kept), so a `BTreeSet` or `HashSet` keyed on app paths sorts and dedups exactly as one keyed on `PathBuf`
-  (property-tested against `PathBuf`, unnormalized bridge text included). Two deliberate differences: a UNC or scheme
-  root is ONE component (else `//srv/share/x` would equal `/srv/share/x`, and `sftp:///x` equal `sftp://x/`), and an
-  escaped name sorts at its escape code point, above every raw byte. Rejected: bytewise, which reorders the in-memory
-  sorted maps and splits `/a` from `/a/` while bridge values are unnormalized. `same_root` folds a UNC server and
-  share's case for a root match; `Eq` stays exact (case is the volume's business).
+- **`Eq`, `Hash`, `Ord` are component-wise, with the HOST's `Path::components`** (`shape.rs`): POSIX components on macOS
+  and Linux (a leading `//` is a plain root, as std reads it), Windows components on Windows (both separators, drive,
+  UNC, and verbatim prefixes ordered as std's `Prefix`), so a `BTreeSet` or `HashSet` keyed on app paths sorts and
+  dedups exactly as one keyed on `PathBuf` on that host, unnormalized bridge text included (property-tested against
+  `PathBuf` on each). Two deliberate differences: a scheme root is ONE component (else `sftp:///x` would equal
+  `sftp://x/`), and an escaped name sorts at its escape code point, above every raw byte. A UNC value on a POSIX host
+  (only `parse(_, Windows)` makes one, test-only there) compares as the POSIX path with its text. Rejected: bytewise,
+  which reorders the in-memory sorted maps and splits `/a` from `/a/` while bridge values are unnormalized; and one
+  flavor-free reading, which made `//Users` and `/Users` unequal on macOS and `C:\x` and `C:/x` unequal on Windows.
+- **Volume-root matches fold a UNC root**: `same_root`, `strip_volume_prefix`, and `is_on_volume` compare the UNC server
+  with ASCII case (DNS, NetBIOS) and the share with Unicode simple case folding (the Kelvin sign is `k`; `İ` isn't `i`),
+  the names below the root exactly, and a scheme root exactly. `Eq` and `starts_with` stay exact.
+- **Trailing dots and spaces on Windows**: a stored or verbatim name keeps every dot and space (`dup` and `dup.` are two
+  files) and has no plain form (`to_native_plain` refuses `NotPlainSafe`). A PLAIN Windows path from outside and typed
+  input read as Win32 and Explorer's address bar do: each name's trailing dots and spaces go (`C:\x\dup.` is
+  `C:/x/dup`), and a name of only dots and spaces is `BlankName`.
 - **The transition bridge** (`legacy_unchecked`, `as_std_legacy`) lets the `Volume` trait take app paths while bodies
   still do `std::path` arithmetic. It never validates or normalizes, and it's lossless: a property test holds
   `legacy_unchecked(p).as_std_legacy()` to `p`'s exact `OsStr` bytes or units, ❌ never `Path ==`, which ignores a

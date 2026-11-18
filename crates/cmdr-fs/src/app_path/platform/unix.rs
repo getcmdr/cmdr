@@ -45,14 +45,22 @@ impl AppPath {
 }
 
 impl AppPathBuf {
-    /// The app path for a path this OS reported, read with `flavor` (this host's,
-    /// `PathFlavor::HOST`, everywhere but a test of the other grammar). Lossless: a name that
-    /// isn't valid UTF-8 is escaped, ❌ never spelled lossily.
+    /// The app path for a path this OS reported. Lossless: a name that isn't valid Unicode
+    /// text is escaped, ❌ never spelled lossily. The one way up from the OS.
     ///
     /// # Errors
     ///
-    /// As [`AppPathBuf::from_native_posix`].
-    pub fn from_native(path: &Path, flavor: PathFlavor) -> Result<AppPathBuf, NotAnAppPath> {
+    /// As [`AppPathBuf::from_native_as`] with this host's flavor.
+    pub fn from_native(path: &Path) -> Result<AppPathBuf, NotAnAppPath> {
+        Self::from_native_as(path, PathFlavor::HOST)
+    }
+
+    /// [`AppPathBuf::from_native`] read with `flavor`'s grammar, for a test of the other one.
+    ///
+    /// # Errors
+    ///
+    /// As [`AppPathBuf::from_native_posix`] and [`AppPathBuf::from_native_windows`].
+    pub fn from_native_as(path: &Path, flavor: PathFlavor) -> Result<AppPathBuf, NotAnAppPath> {
         Self::from_native_posix(path.as_os_str().as_bytes(), flavor)
     }
 }

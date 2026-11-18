@@ -76,7 +76,24 @@ struct EscapeCase {
 struct UserInputCase {
     text: String,
     flavor: Flavor,
+    namer: NamerCase,
     wire: String,
+}
+
+#[derive(serde::Deserialize, Clone, Copy, Debug)]
+#[serde(rename_all = "camelCase")]
+enum NamerCase {
+    Bytes,
+    Units,
+}
+
+impl From<NamerCase> for Namer {
+    fn from(namer: NamerCase) -> Self {
+        match namer {
+            NamerCase::Bytes => Namer::Bytes,
+            NamerCase::Units => Namer::Units,
+        }
+    }
 }
 
 #[derive(serde::Deserialize)]
@@ -119,7 +136,7 @@ fn every_grammar_row_holds_for_the_typed_path() {
         }
         assert_eq!(typed.as_str(), normalized, "{what}");
         assert_eq!(
-            AppPath::from_normalized(&normalized).map(AppPath::as_str),
+            AppPath::from_normalized_as(&normalized, flavor).map(AppPath::as_str),
             Ok(normalized.as_str()),
             "{what}"
         );
@@ -155,7 +172,7 @@ fn every_escape_row_holds() {
                 assert_eq!(refusal, "mixedEscape", "{what}: a refusal the test knows");
                 assert_eq!(parsed, Err(NotAnAppPath::MixedEscape), "{what}");
                 assert_eq!(
-                    AppPath::from_normalized(&case.path),
+                    AppPath::from_normalized_as(&case.path, flavor),
                     Err(NotAnAppPath::MixedEscape),
                     "{what}"
                 );
@@ -165,7 +182,11 @@ fn every_escape_row_holds() {
         }
         let path = parsed.expect("checked above");
         let canonical = case.normalized.as_deref() == Some(case.path.as_str());
-        assert_eq!(AppPath::from_normalized(&case.path).is_ok(), canonical, "{what}");
+        assert_eq!(
+            AppPath::from_normalized_as(&case.path, flavor).is_ok(),
+            canonical,
+            "{what}"
+        );
         if let Some(parent) = &case.parent {
             assert_eq!(
                 path.parent().map(AppPath::as_str),
@@ -209,7 +230,7 @@ fn every_escape_row_holds() {
 #[test]
 fn every_escaped_user_input_row_holds() {
     for case in table().escaped_user_input {
-        let typed = AppPathBuf::from_user_input(&case.text, PathFlavor::from(case.flavor));
+        let typed = AppPathBuf::from_user_input(&case.text, PathFlavor::from(case.flavor), Namer::from(case.namer));
         assert_eq!(typed.map(AppPathBuf::into_string), Ok(case.wire.clone()), "{case:?}");
     }
 }
@@ -384,17 +405,74 @@ fn a_typed_name_holding_an_escape_code_point_names_that_literal_character() {
     assert_eq!(units, wide("\\\\?\\C:\\d\\a\u{10FE80}"));
 }
 
+/// A `FileEntry.name` is app text: its escapes are live, and `AppName::new` keeps them. A
+/// name a `std::path` holds is native: only `from_native_os` turns it into app spelling.
+/// The one wrong combination, reading app text as native (which respells a live escape as a
+/// literal one and names a different file), has no API.
 #[test]
-fn a_child_name_joins_onto_an_app_path_beside_the_std_join() {
-    let dir = posix("/dest");
-    let joined = crate::volume::ChildName::new("photo.jpg")
-        .expect("plain")
-        .under_app(&dir);
-    assert_eq!(joined.map(AppPathBuf::into_string).as_deref(), Ok("/dest/photo.jpg"));
-    let refused = crate::volume::ChildName::new("a\\b")
-        .expect("plain")
-        .under_app(&win("C:/x"));
-    assert!(refused.is_err());
+fn a_listed_escaped_name_lands_on_its_own_native_name() {
+    let dest = posix("/dest");
+    let listed = name("caf\u{10FEE9}");
+    let native = dest
+        .join(listed)
+        .expect("joins")
+        .to_native_posix()
+        .expect("native")
+        .into_owned();
+    assert_eq!(native, b"/dest/caf\xe9");
+    // A literal plane-16 code point a host's `OsStr` holds as text is escaped as literal.
+    let literal = AppNameBuf::from_native_os(std::ffi::OsStr::new("caf\u{10FEE9}")).expect("a name");
+    assert_ne!(literal.as_app_name(), listed);
+    let back = dest
+        .join(&literal)
+        .expect("joins")
+        .to_native_posix()
+        .expect("native")
+        .into_owned();
+    assert_eq!(back, "/dest/caf\u{10FEE9}".as_bytes());
+}
+
+#[test]
+fn a_name_is_looked_up_by_its_borrowed_form() {
+    let mut names = std::collections::HashMap::new();
+    names.insert(AppNameBuf::from_typed("a.txt", Namer::Bytes).expect("a name"), 1);
+    assert_eq!(names.get(name("a.txt")), Some(&1));
+    let set: BTreeSet<AppNameBuf> = ["b", "a"].iter().map(|n| name(n).to_owned()).collect();
+    assert!(set.contains(name("a")));
+}
+
+#[test]
+fn extension_stem_and_with_file_name_read_as_path_does() {
+    for (text, stem, ext) in [
+        ("/d/a.tar.gz", Some("a.tar"), Some("gz")),
+        ("/d/.bashrc", Some(".bashrc"), None),
+        ("/d/a.", Some("a"), Some("")),
+        ("/d/a", Some("a"), None),
+        ("/", None, None),
+    ] {
+        let path = posix(text);
+        assert_eq!(path.file_stem(), stem, "{text}");
+        assert_eq!(path.extension(), ext, "{text}");
+        assert_eq!(
+            path.file_stem(),
+            Path::new(text).file_stem().and_then(|s| s.to_str()),
+            "{text}"
+        );
+        assert_eq!(
+            path.extension(),
+            Path::new(text).extension().and_then(|s| s.to_str()),
+            "{text}"
+        );
+    }
+    let renamed = posix("/d/a.txt").with_file_name(name("b.txt"));
+    assert_eq!(renamed.map(AppPathBuf::into_string).as_deref(), Ok("/d/b.txt"));
+    assert_eq!(
+        posix("/")
+            .with_file_name(name("x"))
+            .map(AppPathBuf::into_string)
+            .as_deref(),
+        Ok("/x")
+    );
 }
 
 // ---- Normalization ----
@@ -426,6 +504,22 @@ fn parse_normalizes_and_refuses_what_it_cant_respell_safely() {
 
 #[test]
 fn from_normalized_takes_only_canonical_text() {
+    for good in ["/", "/a/b", "sftp://h/", "sftp://h/x", "/a\\b"] {
+        assert_eq!(
+            AppPath::from_normalized(good).map(AppPath::as_str),
+            Ok(good),
+            "{good:?}"
+        );
+    }
+    // On macOS and Linux a drive or UNC shape is no app path: `//a/b/x` there is a POSIX
+    // path written sloppily, never a share.
+    for windows_shape in ["C:/x", "//s/sh/x"] {
+        assert_eq!(
+            AppPath::from_normalized_as(windows_shape, PathFlavor::Posix).err(),
+            Some(NotAnAppPath::WrongFlavor)
+        );
+        assert!(AppPath::from_normalized_as(windows_shape, PathFlavor::Windows).is_ok());
+    }
     for good in [
         "/",
         "/a/b",
@@ -438,7 +532,7 @@ fn from_normalized_takes_only_canonical_text() {
         "/a\\b",
     ] {
         assert_eq!(
-            AppPath::from_normalized(good).map(AppPath::as_str),
+            AppPath::from_normalized_as(good, PathFlavor::Windows).map(AppPath::as_str),
             Ok(good),
             "{good:?}"
         );
@@ -454,7 +548,10 @@ fn from_normalized_takes_only_canonical_text() {
         "sftp://h/x/",
         "C:/a\\b",
     ] {
-        assert!(AppPath::from_normalized(bad).is_err(), "{bad:?}");
+        assert!(
+            AppPath::from_normalized_as(bad, PathFlavor::Windows).is_err(),
+            "{bad:?}"
+        );
     }
     assert_eq!(AppPath::from_normalized("/a/../b"), Err(NotAnAppPath::DotName));
 }
@@ -527,17 +624,67 @@ fn a_hashed_set_dedups_bridge_values_as_pathbuf_did() {
     assert!(set.insert(AppPath::legacy_unchecked(Path::new("/a/..")).into_owned()));
 }
 
-/// The two places the component order departs from POSIX `Path::components`, on purpose: a
-/// UNC root and a scheme root are ONE token, so two canonical values naming different places
-/// never compare equal.
+/// A scheme root is ONE component, so two canonical values naming different places never
+/// compare equal (as std components, `sftp:///x` would equal `sftp://x/`).
 #[test]
-fn a_unc_or_scheme_root_is_one_component() {
-    assert_ne!(win("//srv/share/x"), posix("/srv/share/x"));
+fn a_scheme_root_is_one_component() {
     assert_ne!(posix("sftp:///x"), posix("sftp://x/"));
     assert_ne!(
         posix("sftp://h/x"),
         AppPath::legacy_unchecked(Path::new("sftp:/h/x")).into_owned()
     );
+}
+
+/// Equality reads text with THIS host's rules, so a set dedups bridge values as `PathBuf`
+/// did there: on macOS and Linux a leading `//` is a plain root; on Windows it's a share,
+/// and `\` separates as `/` does.
+#[test]
+fn equality_follows_the_hosts_path_rules() {
+    let bridged = |text: &str| AppPath::legacy_unchecked(Path::new(text)).into_owned();
+    let windows = PathFlavor::HOST == PathFlavor::Windows;
+    assert_eq!(bridged("//Users") == bridged("/Users"), !windows);
+    assert_eq!(win("//srv/share/x") == posix("/srv/share/x"), !windows);
+    assert_eq!(bridged(r"C:\Users\x") == win("C:/Users/x"), windows);
+    assert_eq!(bridged(r"C:\Users\x\") == bridged(r"C:\Users\x"), windows);
+    for (a, b) in [
+        ("//Users", "/Users"),
+        (r"C:\Users\x", "C:/Users/x"),
+        ("/a/./b/", "/a/b"),
+    ] {
+        assert_eq!(bridged(a) == bridged(b), Path::new(a) == Path::new(b), "{a:?} {b:?}");
+    }
+}
+
+#[test]
+fn strip_prefix_never_matches_across_roots() {
+    let unc = win("//s/h/x");
+    let slash = posix("/");
+    assert!(!unc.starts_with(&slash));
+    assert_eq!(unc.strip_prefix(&slash), None);
+    assert_eq!(unc.rebase(&slash, &posix("/new")), None);
+    assert!(!win("C:/x").starts_with(&slash));
+    assert!(!posix("sftp://h/x").starts_with(&slash));
+}
+
+#[test]
+fn a_volume_root_matches_its_unc_server_and_share_without_case() {
+    let volume = win("//NAS/Media/");
+    let path = win("//nas/media/Films/a.mkv");
+    assert!(!path.starts_with(&volume));
+    assert_eq!(
+        path.strip_volume_prefix(&volume).map(RelativeAppPath::as_str),
+        Some("Films/a.mkv")
+    );
+    assert!(path.is_on_volume(&win("//nas/MEDIA/Films")));
+    // Below the root, names compare exactly: case there is the volume's business.
+    assert!(!path.is_on_volume(&win("//nas/media/films")));
+    assert!(!win("//nas/media-1/x").is_on_volume(&volume));
+    // The server folds ASCII case only; the share folds simple case (the Kelvin sign is `k`).
+    assert!(!win("//\u{130}srv/s/").same_root(&win("//isrv/s/")));
+    assert!(win("//srv/\u{212A}/").same_root(&win("//srv/k/")));
+    // Scheme roots compare exactly.
+    assert!(!posix("sftp://H/x").is_on_volume(&posix("sftp://h/")));
+    assert!(posix("/a/b").is_on_volume(&posix("/a")));
 }
 
 // ---- The native boundary ----
@@ -655,6 +802,71 @@ fn from_native_windows_takes_every_spelling_to_one_app_path() {
     assert_eq!(plain.map(AppPathBuf::into_string).as_deref(), Ok("C:/b"));
 }
 
+/// A plain Windows path names what Win32 makes of it, so a trailing dot or space goes, as
+/// Explorer's address bar reads it; a verbatim one and a listed name keep every character,
+/// and such a name has no plain form.
+#[test]
+fn a_plain_windows_path_drops_trailing_dots_and_spaces_as_win32_does() {
+    for plain in [r"C:\x\dup.", r"C:\x\dup ", r"C:\x\dup. . ", "C:/x/dup."] {
+        let path = AppPathBuf::from_native_windows(&wide(plain), PathFlavor::Windows).expect(plain);
+        assert_eq!(path.as_str(), "C:/x/dup", "{plain}");
+        let typed = AppPathBuf::from_user_input(plain, PathFlavor::Windows, Namer::Units).expect(plain);
+        assert_eq!(typed.as_str(), "C:/x/dup", "{plain}");
+    }
+    let verbatim = AppPathBuf::from_native_windows(&wide(r"\\?\C:\x\dup."), PathFlavor::Windows).expect("verbatim");
+    assert_eq!(verbatim.as_str(), "C:/x/dup.");
+    assert_eq!(verbatim.to_native_windows(), Ok(wide(r"\\?\C:\x\dup.")));
+    assert_eq!(
+        verbatim.to_native_windows_plain(),
+        Err(NativeRefusal::NotPlainSafe(NotPlainSafe::TrailingDotOrSpace))
+    );
+    for blank in [r"C:\x\...", r"C:\x\. ."] {
+        assert_eq!(
+            AppPathBuf::from_user_input(blank, PathFlavor::Windows, Namer::Units),
+            Err(NotAnAppPath::BlankName),
+            "{blank}"
+        );
+    }
+    // On POSIX a trailing dot is an ordinary character.
+    let posix_typed = AppPathBuf::from_user_input("/x/dup.", PathFlavor::Posix, Namer::Bytes);
+    assert_eq!(posix_typed.map(AppPathBuf::into_string).as_deref(), Ok("/x/dup."));
+}
+
+#[test]
+fn a_unc_server_and_share_are_checked() {
+    for (text, refusal) in [
+        ("//\u{0}12/h/x", NotAnAppPath::BadServer),
+        ("//../h/x", NotAnAppPath::BadServer),
+        ("//?/h/x", NotAnAppPath::DevicePath),
+    ] {
+        assert_eq!(AppPathBuf::parse(text, PathFlavor::Windows), Err(refusal), "{text:?}");
+    }
+    for share in ["//srv/h./x", "//srv/CON/x"] {
+        assert!(
+            matches!(
+                win(share).to_native_windows_plain(),
+                Err(NativeRefusal::NotPlainSafe(_))
+            ),
+            "{share}"
+        );
+        assert!(win(share).to_native_windows().is_ok(), "{share}");
+    }
+}
+
+#[test]
+fn a_verbatim_unc_prefix_reads_without_case() {
+    let path = AppPathBuf::from_native_windows(&wide(r"\\?\unc\srv\sh\x"), PathFlavor::Windows);
+    assert_eq!(path.map(AppPathBuf::into_string).as_deref(), Ok("//srv/sh/x"));
+}
+
+/// Typed arithmetic is for canonical values; a bridge value's text isn't one.
+#[cfg(debug_assertions)]
+#[test]
+fn typed_arithmetic_on_a_bridge_value_is_a_debug_assertion() {
+    let bridged = AppPath::legacy_unchecked(Path::new("/a/")).into_owned();
+    assert!(std::panic::catch_unwind(|| bridged.parent().map(|p| p.as_str().len())).is_err());
+}
+
 #[test]
 fn from_native_windows_refuses_typed() {
     for (native, refusal) in [
@@ -746,9 +958,9 @@ fn the_host_flavor_and_namer_follow_the_build_target() {
 #[test]
 fn the_host_crossing_matches_its_pure_arm() {
     let dir = crate::testing::TestDir::new("host_crossing");
-    let path = AppPathBuf::from_native(&dir, PathFlavor::HOST).expect("a scratch directory is absolute");
+    let path = AppPathBuf::from_native(&dir).expect("a scratch directory is absolute");
     let back = path.to_native().expect("it crosses back");
-    assert_eq!(AppPathBuf::from_native(&back, PathFlavor::HOST), Ok(path.clone()));
+    assert_eq!(AppPathBuf::from_native(&back), Ok(path.clone()));
     assert_eq!(path.to_native_plain().is_ok(), path.to_native().is_ok());
 }
 
