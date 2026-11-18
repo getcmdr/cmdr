@@ -988,13 +988,13 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "feefb7f"
   },
-  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {本地 AI 尚未下载，所以 Ask Cmdr 无法聊天。请在“设置”中完成设置。}}",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {本地 AI 尚未下载，所以 Ask Cmdr 无法聊天。请在“设置”中完成设置。} linuxGnome {本地 AI 尚未下载，所以 Ask Cmdr 无法聊天。请在“首选项”中完成设置。} linuxKde {本地 AI 尚未下载，所以 Ask Cmdr 无法聊天。请在“配置 Cmdr”中完成设置。} other {本地 AI 尚未下载，所以 Ask Cmdr 无法聊天。请在“设置”中完成设置。}}",
   "@askCmdr.providerNotice.localNotSetUp": {
-    "sourceHash": "efaeacd"
+    "sourceHash": "70b6a70"
   },
-  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {本地 AI 没有运行，所以 Ask Cmdr 无法聊天。请在“设置”中启动。}}",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {本地 AI 没有运行，所以 Ask Cmdr 无法聊天。请在“设置”中启动。} linuxGnome {本地 AI 没有运行，所以 Ask Cmdr 无法聊天。请在“首选项”中启动。} linuxKde {本地 AI 没有运行，所以 Ask Cmdr 无法聊天。请在“配置 Cmdr”中启动。} other {本地 AI 没有运行，所以 Ask Cmdr 无法聊天。请在“设置”中启动。}}",
   "@askCmdr.providerNotice.localNotRunning": {
-    "sourceHash": "786d469"
+    "sourceHash": "81e79c1"
   },
   "askCmdr.providerNotice.openSettings": "打开 AI 设置",
   "@askCmdr.providerNotice.openSettings": {

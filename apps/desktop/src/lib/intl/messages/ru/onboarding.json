@@ -323,13 +323,13 @@
   "@onboarding.localDownloadFailed.title": {
     "sourceHash": "9612750"
   },
-  "onboarding.localDownloadFailed.body": "{platform, select, windows {Start it again from Settings › AI.} linuxGnome {Start it again from Preferences › AI.} linuxKde {Start it again from Configure Cmdr › AI.} other {Запустите загрузку снова в разделе «Настройки › ИИ».}}",
+  "onboarding.localDownloadFailed.body": "{platform, select, windows {Запустите загрузку снова в разделе «Параметры › ИИ».} linuxGnome {Запустите загрузку снова в разделе «Параметры › ИИ».} linuxKde {Запустите загрузку снова в разделе «Настроить Cmdr › ИИ».} other {Запустите загрузку снова в разделе «Настройки › ИИ».}}",
   "@onboarding.localDownloadFailed.body": {
-    "sourceHash": "6601872"
+    "sourceHash": "1dcab85"
   },
-  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Open Settings} linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Открыть настройки}}",
+  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Открыть параметры} linuxGnome {Открыть параметры} linuxKde {Настроить Cmdr} other {Открыть настройки}}",
   "@onboarding.localDownloadFailed.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "onboarding.stepBeta.footer.start": "Начать пользоваться Cmdr!",
   "@onboarding.stepBeta.footer.start": {

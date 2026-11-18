@@ -994,13 +994,13 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "feefb7f"
   },
-  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {Lokale AI is nog niet gedownload, dus Ask Cmdr kan niet chatten. Stel die in bij Instellingen.}}",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Lokale AI is nog niet gedownload, dus Ask Cmdr kan niet chatten. Stel die in bij Instellingen.} linuxGnome {Lokale AI is nog niet gedownload, dus Ask Cmdr kan niet chatten. Stel die in bij Voorkeuren.} linuxKde {Lokale AI is nog niet gedownload, dus Ask Cmdr kan niet chatten. Stel die in bij ‘Cmdr configureren’.} other {Lokale AI is nog niet gedownload, dus Ask Cmdr kan niet chatten. Stel die in bij Instellingen.}}",
   "@askCmdr.providerNotice.localNotSetUp": {
-    "sourceHash": "efaeacd"
+    "sourceHash": "70b6a70"
   },
-  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {Lokale AI draait niet, dus Ask Cmdr kan niet chatten. Start die in Instellingen.}}",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Lokale AI draait niet, dus Ask Cmdr kan niet chatten. Start die in Instellingen.} linuxGnome {Lokale AI draait niet, dus Ask Cmdr kan niet chatten. Start die in Voorkeuren.} linuxKde {Lokale AI draait niet, dus Ask Cmdr kan niet chatten. Start die in ‘Cmdr configureren’.} other {Lokale AI draait niet, dus Ask Cmdr kan niet chatten. Start die in Instellingen.}}",
   "@askCmdr.providerNotice.localNotRunning": {
-    "sourceHash": "786d469"
+    "sourceHash": "81e79c1"
   },
   "askCmdr.providerNotice.openSettings": "Ga naar AI-instellingen",
   "@askCmdr.providerNotice.openSettings": {

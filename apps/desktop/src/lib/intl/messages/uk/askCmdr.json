@@ -989,13 +989,13 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "feefb7f"
   },
-  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {Локальний ШІ ще не викачано, тож чат Ask Cmdr не працює. Налаштуйте його в Параметрах.}}",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Локальний ШІ ще не завантажено, тож чат Ask Cmdr не працює. Налаштуйте його в Параметрах.} linuxGnome {Локальний ШІ ще не викачано, тож чат Ask Cmdr не працює. Підготуйте його в Налаштуваннях.} linuxKde {Локальний ШІ ще не викачано, тож чат Ask Cmdr не працює. Підготуйте його у вікні «Налаштувати Cmdr».} other {Локальний ШІ ще не викачано, тож чат Ask Cmdr не працює. Налаштуйте його в Параметрах.}}",
   "@askCmdr.providerNotice.localNotSetUp": {
-    "sourceHash": "efaeacd"
+    "sourceHash": "70b6a70"
   },
-  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {Локальний ШІ не запущено, тож чат Ask Cmdr не працює. Запустіть його в Параметрах.}}",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Локальний ШІ не запущено, тож чат Ask Cmdr не працює. Запустіть його в Параметрах.} linuxGnome {Локальний ШІ не запущено, тож чат Ask Cmdr не працює. Запустіть його в Налаштуваннях.} linuxKde {Локальний ШІ не запущено, тож чат Ask Cmdr не працює. Запустіть його у вікні «Налаштувати Cmdr».} other {Локальний ШІ не запущено, тож чат Ask Cmdr не працює. Запустіть його в Параметрах.}}",
   "@askCmdr.providerNotice.localNotRunning": {
-    "sourceHash": "786d469"
+    "sourceHash": "81e79c1"
   },
   "askCmdr.providerNotice.openSettings": "Перейти до параметрів ШІ",
   "@askCmdr.providerNotice.openSettings": {

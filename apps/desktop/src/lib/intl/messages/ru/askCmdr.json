@@ -989,13 +989,13 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "feefb7f"
   },
-  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {Локальный ИИ еще не загружен, поэтому Ask Cmdr не может общаться. Установите его в настройках.}}",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Локальный ИИ еще не загружен, поэтому Ask Cmdr не может общаться. Установите его в параметрах.} linuxGnome {Локальный ИИ еще не загружен, поэтому Ask Cmdr не может общаться. Установите его в параметрах.} linuxKde {Локальный ИИ еще не загружен, поэтому Ask Cmdr не может общаться. Установите его в окне «Настроить Cmdr».} other {Локальный ИИ еще не загружен, поэтому Ask Cmdr не может общаться. Установите его в настройках.}}",
   "@askCmdr.providerNotice.localNotSetUp": {
-    "sourceHash": "efaeacd"
+    "sourceHash": "70b6a70"
   },
-  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {Локальный ИИ не запущен, поэтому Ask Cmdr не может общаться. Запустите его в настройках.}}",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Локальный ИИ не запущен, поэтому Ask Cmdr не может общаться. Запустите его в параметрах.} linuxGnome {Локальный ИИ не запущен, поэтому Ask Cmdr не может общаться. Запустите его в параметрах.} linuxKde {Локальный ИИ не запущен, поэтому Ask Cmdr не может общаться. Запустите его в окне «Настроить Cmdr».} other {Локальный ИИ не запущен, поэтому Ask Cmdr не может общаться. Запустите его в настройках.}}",
   "@askCmdr.providerNotice.localNotRunning": {
-    "sourceHash": "786d469"
+    "sourceHash": "81e79c1"
   },
   "askCmdr.providerNotice.openSettings": "Открыть настройки ИИ",
   "@askCmdr.providerNotice.openSettings": {

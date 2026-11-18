@@ -323,13 +323,13 @@
   "@onboarding.localDownloadFailed.title": {
     "sourceHash": "9612750"
   },
-  "onboarding.localDownloadFailed.body": "{platform, select, windows {Start it again from Settings › AI.} linuxGnome {Start it again from Preferences › AI.} linuxKde {Start it again from Configure Cmdr › AI.} other {Starte den Download unter Einstellungen › KI neu.}}",
+  "onboarding.localDownloadFailed.body": "{platform, select, windows {Starte den Download unter Einstellungen › KI neu.} linuxGnome {Starte den Download unter Einstellungen › KI neu.} linuxKde {Starte den Download unter „Cmdr einrichten“ › KI neu.} other {Starte den Download unter Einstellungen › KI neu.}}",
   "@onboarding.localDownloadFailed.body": {
-    "sourceHash": "6601872"
+    "sourceHash": "1dcab85"
   },
-  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Open Settings} linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Einstellungen öffnen}}",
+  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Einstellungen öffnen} linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
   "@onboarding.localDownloadFailed.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "onboarding.stepBeta.footer.start": "Cmdr nutzen!",
   "@onboarding.stepBeta.footer.start": {

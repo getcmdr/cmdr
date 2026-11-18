@@ -323,13 +323,13 @@
   "@onboarding.localDownloadFailed.title": {
     "sourceHash": "9612750"
   },
-  "onboarding.localDownloadFailed.body": "{platform, select, windows {Start it again from Settings › AI.} linuxGnome {Start it again from Preferences › AI.} linuxKde {Start it again from Configure Cmdr › AI.} other {Hãy tải lại trong Cài đặt › AI.}}",
+  "onboarding.localDownloadFailed.body": "{platform, select, windows {Hãy tải lại trong Cài đặt › AI.} linuxGnome {Hãy tải lại trong Tùy thích › AI.} linuxKde {Hãy tải lại trong Cấu hình Cmdr › AI.} other {Hãy tải lại trong Cài đặt › AI.}}",
   "@onboarding.localDownloadFailed.body": {
-    "sourceHash": "6601872"
+    "sourceHash": "1dcab85"
   },
-  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Open Settings} linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Mở cài đặt}}",
+  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Mở cài đặt} linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
   "@onboarding.localDownloadFailed.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "onboarding.stepBeta.footer.start": "Bắt đầu dùng Cmdr!",
   "@onboarding.stepBeta.footer.start": {

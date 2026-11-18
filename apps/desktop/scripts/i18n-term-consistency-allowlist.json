@@ -88,10 +88,6 @@
       {
         "source": "View",
         "reason": "The menu bar's View menu is Apple's own Spanish title `Visualización` (Finder); F3 and the File-menu item are the action `Ver`."
-      },
-      {
-        "source": "Open Settings",
-        "reason": "Windows names an app's settings `Configuración` and macOS `Ajustes`, so the per-OS keys' `windows` branch says `Abrir Configuración`. `onboarding.localDownloadFailed.openSettings` is a plain value every OS reads, so it keeps the macOS `Abrir Ajustes` until its English gets a per-OS value (logged in `docs/i18n/source-queue.md`)."
       }
     ],
     "fr": [
@@ -356,10 +352,6 @@
       {
         "source": "Unknown",
         "reason": "Gender agreement, not drift: `Desconhecido` agrees with a model (`ai.local.modelUnknown`); `suggestedOps.factUnknown` stands for both a size (masculine) and a date (feminine), so it takes the neutral `Sem informação`."
-      },
-      {
-        "source": "Open Settings",
-        "reason": "Windows names an app's settings `Configurações` and macOS `Ajustes`, so the per-OS keys' `windows` branch says `Abrir Configurações`. `onboarding.localDownloadFailed.openSettings` is a plain value every OS reads, so it keeps the macOS `Abrir Ajustes` until its English gets a per-OS value (logged in `docs/i18n/source-queue.md`)."
       }
     ],
     "sv": [

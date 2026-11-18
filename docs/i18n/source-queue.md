@@ -183,21 +183,10 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   `mtp.connectedToast.body`) read as an everyday word where GNOME's term is one (vi `tùy thích`, "as you like"); KDE now
   names the window "Configure Cmdr" there. Proposed rule: a pointer naming the settings window is capitalized as a name
   on GNOME too. Rewords the GNOME branch only. (es, pt, vi, zh, zh-Hant)
-- `onboarding.localDownloadFailed.openSettings` ("Open Settings") is a plain value, while every sibling button naming
-  the settings window (`adb.connect.openSettings`, `stateRecovery.*.openSettings`) now carries `windows`, `linuxGnome`,
-  and `linuxKde` branches. Where Microsoft's word differs (ru `Параметры` beside Apple's `Настройки`) term-consistency
-  warns, and Windows, GNOME, and KDE users read the macOS word there. Give it the same per-OS value. (ru)
-- `onboarding.localDownloadFailed.openSettings` ("Open Settings") is still a plain value, while every other button
-  opening Cmdr's settings window gained a `windows` branch. French Windows says `Ouvrir les paramètres`, so the plain
-  `Ouvrir les réglages` now trips `i18n-terms` against `adb.connect.openSettings` and the `stateRecovery.*.openSettings`
-  windows branches. Give it the same per-OS shape (and GNOME/KDE branches). (fr)
 - `settings.indexing.enabled.label` and `settings.section.driveIndexing` ("Drive indexing") are plain values, quoted by
   the `windows` branches of `fileExplorer.navigation.driveIndex.*` and `search.coverage.toast.indexingOff`. Windows'
   French word for a drive is `lecteur` (the `drive` ruling's Windows form), so the label reads `Indexation du disque` on
   Windows while the prose around it now says `lecteur`. A per-OS label would let the two agree. (fr)
-- `onboarding.localDownloadFailed.openSettings` ("Open Settings") names Cmdr's settings window as a plain value, so
-  Windows reads the macOS word (`Abrir Ajustes`) beside `Abrir Configuración` in its per-OS siblings; it needs the same
-  per-OS value as `stateRecovery.settings.openSettings`. Allowlisted for es and pt until then. (es, pt)
 - Six keys whose `windows` branch names the settings window carry no `identicalBranches` note and weren't stale, so a
   translator finds them only by grepping: `menu.app.settings`, `fileExplorer.functionKeyBar.hiddenToast`,
   `fileExplorer.quickFilter.intro.openSettings`, `onboarding.stepBeta.signup.unreachable`, `whatsNew.optOutToast`,

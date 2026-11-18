@@ -992,13 +992,13 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "feefb7f"
   },
-  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {La IA local aún no se ha descargado, así que Ask Cmdr no puede chatear. Configúrala en Ajustes.}}",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {La IA local aún no se ha descargado, así que Ask Cmdr no puede chatear. Prepárala en Configuración.} linuxGnome {La IA local aún no se ha descargado, así que Ask Cmdr no puede chatear. Configúrala en Preferencias.} linuxKde {La IA local aún no se ha descargado, así que Ask Cmdr no puede chatear. Prepárala en Configurar Cmdr.} other {La IA local aún no se ha descargado, así que Ask Cmdr no puede chatear. Configúrala en Ajustes.}}",
   "@askCmdr.providerNotice.localNotSetUp": {
-    "sourceHash": "efaeacd"
+    "sourceHash": "70b6a70"
   },
-  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {La IA local no está en marcha, así que Ask Cmdr no puede chatear. Iníciala en Ajustes.}}",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {La IA local no está en marcha, así que Ask Cmdr no puede chatear. Iníciala en Configuración.} linuxGnome {La IA local no está en marcha, así que Ask Cmdr no puede chatear. Iníciala en Preferencias.} linuxKde {La IA local no está en marcha, así que Ask Cmdr no puede chatear. Iníciala en Configurar Cmdr.} other {La IA local no está en marcha, así que Ask Cmdr no puede chatear. Iníciala en Ajustes.}}",
   "@askCmdr.providerNotice.localNotRunning": {
-    "sourceHash": "786d469"
+    "sourceHash": "81e79c1"
   },
   "askCmdr.providerNotice.openSettings": "Abrir los ajustes de IA",
   "@askCmdr.providerNotice.openSettings": {

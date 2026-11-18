@@ -323,13 +323,13 @@
   "@onboarding.localDownloadFailed.title": {
     "sourceHash": "9612750"
   },
-  "onboarding.localDownloadFailed.body": "{platform, select, windows {Start it again from Settings › AI.} linuxGnome {Start it again from Preferences › AI.} linuxKde {Start it again from Configure Cmdr › AI.} other {Starta hämtningen igen i Inställningar › AI.}}",
+  "onboarding.localDownloadFailed.body": "{platform, select, windows {Starta hämtningen igen i Inställningar › AI.} linuxGnome {Starta hämtningen igen i Inställningar › AI.} linuxKde {Starta hämtningen igen i ”Anpassa Cmdr” › AI.} other {Starta hämtningen igen i Inställningar › AI.}}",
   "@onboarding.localDownloadFailed.body": {
-    "sourceHash": "6601872"
+    "sourceHash": "1dcab85"
   },
-  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Open Settings} linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Öppna inställningar}}",
+  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Öppna inställningar} linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
   "@onboarding.localDownloadFailed.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "onboarding.stepBeta.footer.start": "Börja använda Cmdr!",
   "@onboarding.stepBeta.footer.start": {

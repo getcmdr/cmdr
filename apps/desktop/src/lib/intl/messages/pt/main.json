@@ -199,9 +199,9 @@
   "@main.escapeFullScreenHint.switchLabel": {
     "sourceHash": "f98be5e"
   },
-  "main.escapeFullScreenHint.settingsLine": "{platform, select, windows {You can also change this in <settingsLink>Settings > Advanced</settingsLink>.} linuxGnome {You can also change this in <settingsLink>Preferences > Advanced</settingsLink>.} linuxKde {You can also change this in <settingsLink>Configure Cmdr > Advanced</settingsLink>.} other {Você também pode mudar isso em <settingsLink>Ajustes > Avançado</settingsLink>.}}",
+  "main.escapeFullScreenHint.settingsLine": "{platform, select, windows {Você também pode mudar isso em <settingsLink>Configurações > Avançado</settingsLink>.} linuxGnome {Você também pode mudar isso em <settingsLink>Preferências > Avançado</settingsLink>.} linuxKde {Você também pode mudar isso em <settingsLink>Configurar Cmdr > Avançado</settingsLink>.} other {Você também pode mudar isso em <settingsLink>Ajustes > Avançado</settingsLink>.}}",
   "@main.escapeFullScreenHint.settingsLine": {
-    "sourceHash": "a7fc48a"
+    "sourceHash": "b156976"
   },
   "main.escapeFullScreenHint.onceNote": "Este aviso só aparece uma vez.",
   "@main.escapeFullScreenHint.onceNote": {

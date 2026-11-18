@@ -989,13 +989,13 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "feefb7f"
   },
-  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {A helyi AI még nincs letöltve, ezért az Ask Cmdr nem tud csevegni. Állítsd be a Beállításokban.}}",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {A helyi AI még nincs letöltve, ezért az Ask Cmdr nem tud csevegni. Állítsd be a Beállításokban.} linuxGnome {A helyi AI még nincs letöltve, ezért az Ask Cmdr nem tud csevegni. Állítsd be a Beállításokban.} linuxKde {A helyi AI még nincs letöltve, ezért az Ask Cmdr nem tud csevegni. Állítsd be a Cmdr beállításaiban.} other {A helyi AI még nincs letöltve, ezért az Ask Cmdr nem tud csevegni. Állítsd be a Beállításokban.}}",
   "@askCmdr.providerNotice.localNotSetUp": {
-    "sourceHash": "efaeacd"
+    "sourceHash": "70b6a70"
   },
-  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {A helyi AI nem fut, ezért az Ask Cmdr nem tud csevegni. Indítsd el a Beállításokban.}}",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {A helyi AI nem fut, ezért az Ask Cmdr nem tud csevegni. Indítsd el a Beállításokban.} linuxGnome {A helyi AI nem fut, ezért az Ask Cmdr nem tud csevegni. Indítsd el a Beállításokban.} linuxKde {A helyi AI nem fut, ezért az Ask Cmdr nem tud csevegni. Indítsd el a Cmdr beállításaiban.} other {A helyi AI nem fut, ezért az Ask Cmdr nem tud csevegni. Indítsd el a Beállításokban.}}",
   "@askCmdr.providerNotice.localNotRunning": {
-    "sourceHash": "786d469"
+    "sourceHash": "81e79c1"
   },
   "askCmdr.providerNotice.openSettings": "AI-beállítások megnyitása",
   "@askCmdr.providerNotice.openSettings": {

@@ -989,13 +989,13 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "feefb7f"
   },
-  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {AI cục bộ chưa được tải về nên Ask Cmdr chưa thể trò chuyện. Hãy thiết lập trong Cài đặt.}}",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {AI cục bộ chưa được tải về nên Ask Cmdr chưa thể trò chuyện. Hãy thiết lập trong Cài đặt.} linuxGnome {AI cục bộ chưa được tải về nên Ask Cmdr chưa thể trò chuyện. Hãy thiết lập trong Tùy thích.} linuxKde {AI cục bộ chưa được tải về nên Ask Cmdr chưa thể trò chuyện. Hãy thiết lập trong Cấu hình Cmdr.} other {AI cục bộ chưa được tải về nên Ask Cmdr chưa thể trò chuyện. Hãy thiết lập trong Cài đặt.}}",
   "@askCmdr.providerNotice.localNotSetUp": {
-    "sourceHash": "efaeacd"
+    "sourceHash": "70b6a70"
   },
-  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {AI cục bộ chưa chạy nên Ask Cmdr chưa thể trò chuyện. Hãy khởi động trong Cài đặt.}}",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {AI cục bộ chưa chạy nên Ask Cmdr chưa thể trò chuyện. Hãy khởi động trong Cài đặt.} linuxGnome {AI cục bộ chưa chạy nên Ask Cmdr chưa thể trò chuyện. Hãy khởi động trong Tùy thích.} linuxKde {AI cục bộ chưa chạy nên Ask Cmdr chưa thể trò chuyện. Hãy khởi động trong Cấu hình Cmdr.} other {AI cục bộ chưa chạy nên Ask Cmdr chưa thể trò chuyện. Hãy khởi động trong Cài đặt.}}",
   "@askCmdr.providerNotice.localNotRunning": {
-    "sourceHash": "786d469"
+    "sourceHash": "81e79c1"
   },
   "askCmdr.providerNotice.openSettings": "Mở cài đặt AI",
   "@askCmdr.providerNotice.openSettings": {

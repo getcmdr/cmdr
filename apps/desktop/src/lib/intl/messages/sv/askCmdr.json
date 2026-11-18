@@ -989,13 +989,13 @@
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "feefb7f"
   },
-  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Settings.} linuxGnome {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Preferences.} linuxKde {Local AI isn’t downloaded yet, so Ask Cmdr can’t chat. Set it up in Configure Cmdr.} other {Lokal AI är inte hämtad än, så Ask Cmdr kan inte chatta. Ställ in den i Inställningar.}}",
+  "askCmdr.providerNotice.localNotSetUp": "{platform, select, windows {Lokal AI är inte hämtad än, så Ask Cmdr kan inte chatta. Ställ in den i Inställningar.} linuxGnome {Lokal AI är inte hämtad än, så Ask Cmdr kan inte chatta. Ställ in den i Inställningar.} linuxKde {Lokal AI är inte hämtad än, så Ask Cmdr kan inte chatta. Ställ in den i ”Anpassa Cmdr”.} other {Lokal AI är inte hämtad än, så Ask Cmdr kan inte chatta. Ställ in den i Inställningar.}}",
   "@askCmdr.providerNotice.localNotSetUp": {
-    "sourceHash": "efaeacd"
+    "sourceHash": "70b6a70"
   },
-  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Settings.} linuxGnome {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Preferences.} linuxKde {Local AI isn’t running, so Ask Cmdr can’t chat. Start it in Configure Cmdr.} other {Lokal AI körs inte, så Ask Cmdr kan inte chatta. Starta den i Inställningar.}}",
+  "askCmdr.providerNotice.localNotRunning": "{platform, select, windows {Lokal AI körs inte, så Ask Cmdr kan inte chatta. Starta den i Inställningar.} linuxGnome {Lokal AI körs inte, så Ask Cmdr kan inte chatta. Starta den i Inställningar.} linuxKde {Lokal AI körs inte, så Ask Cmdr kan inte chatta. Starta den i ”Anpassa Cmdr”.} other {Lokal AI körs inte, så Ask Cmdr kan inte chatta. Starta den i Inställningar.}}",
   "@askCmdr.providerNotice.localNotRunning": {
-    "sourceHash": "786d469"
+    "sourceHash": "81e79c1"
   },
   "askCmdr.providerNotice.openSettings": "Gå till AI-inställningar",
   "@askCmdr.providerNotice.openSettings": {

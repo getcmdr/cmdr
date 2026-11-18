@@ -199,9 +199,9 @@
   "@main.escapeFullScreenHint.switchLabel": {
     "sourceHash": "f98be5e"
   },
-  "main.escapeFullScreenHint.settingsLine": "{platform, select, windows {You can also change this in <settingsLink>Settings > Advanced</settingsLink>.} linuxGnome {You can also change this in <settingsLink>Preferences > Advanced</settingsLink>.} linuxKde {You can also change this in <settingsLink>Configure Cmdr > Advanced</settingsLink>.} other {Змінити це можна й тут: <settingsLink>Параметри > Експертні</settingsLink>.}}",
+  "main.escapeFullScreenHint.settingsLine": "{platform, select, windows {Змінити це можна й тут: <settingsLink>Параметри > Експертні</settingsLink>.} linuxGnome {Змінити це можна й тут: <settingsLink>Налаштування > Експертні</settingsLink>.} linuxKde {Змінити це можна й тут: <settingsLink>«Налаштувати Cmdr» > Експертні</settingsLink>.} other {Змінити це можна й тут: <settingsLink>Параметри > Експертні</settingsLink>.}}",
   "@main.escapeFullScreenHint.settingsLine": {
-    "sourceHash": "a7fc48a"
+    "sourceHash": "b156976"
   },
   "main.escapeFullScreenHint.onceNote": "Це повідомлення зʼявиться лише раз.",
   "@main.escapeFullScreenHint.onceNote": {

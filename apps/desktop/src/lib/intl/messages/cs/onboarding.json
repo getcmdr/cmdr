@@ -323,13 +323,13 @@
   "@onboarding.localDownloadFailed.title": {
     "sourceHash": "9612750"
   },
-  "onboarding.localDownloadFailed.body": "{platform, select, windows {Start it again from Settings › AI.} linuxGnome {Start it again from Preferences › AI.} linuxKde {Start it again from Configure Cmdr › AI.} other {Spusťte ho znovu v Nastavení > AI.}}",
+  "onboarding.localDownloadFailed.body": "{platform, select, windows {Spusťte ho znovu v Nastavení > AI.} linuxGnome {Spusťte ho znovu v Předvolbách > AI.} linuxKde {Spusťte ho znovu v okně Nastavit Cmdr > AI.} other {Spusťte ho znovu v Nastavení > AI.}}",
   "@onboarding.localDownloadFailed.body": {
-    "sourceHash": "6601872"
+    "sourceHash": "1dcab85"
   },
-  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Open Settings} linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Otevřít Nastavení}}",
+  "onboarding.localDownloadFailed.openSettings": "{platform, select, windows {Otevřít Nastavení} linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@onboarding.localDownloadFailed.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "onboarding.stepBeta.footer.start": "Začít používat Cmdr!",
   "@onboarding.stepBeta.footer.start": {
