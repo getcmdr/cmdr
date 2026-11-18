@@ -34,7 +34,7 @@ export function namePortabilitySummary(
   const reserved = warned(rules.reservedNames, tally.reservedNames)
   const classes = reserved === null ? standIns : [...standIns, reserved]
   const count = classes.reduce((sum, cls) => sum + cls.count, 0)
-  const example = classes.flatMap((cls) => cls.examples)[0]
+  const example = classes.flatMap((cls) => cls.examples).at(0)
   if (count === 0 || example === undefined) return null
   return { count, alsoLinux: rules.format === 'windows' && standIns.length > 0, example }
 }
