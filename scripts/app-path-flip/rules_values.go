@@ -215,15 +215,31 @@ func stdPathOperand(expr, base, refs string) (string, bool) {
 		return "*" + postfix(expr) + ".as_path()", true
 	case base == "BridgedPath": // `.as_path()` is already one `&`
 		return refs[1:] + postfix(expr) + ".as_path()", true
-	case base == "Cow<Path>" && strings.HasSuffix(expr, ".as_std_legacy()"):
-		return refs + "*" + expr, true
+	case base == "Cow<Path>" || base == "Path":
+		// An earlier pass's `x.as_std_legacy()` / `*x.as_std_legacy()` / `&*…`, reshaped.
+		inner := strings.TrimPrefix(strings.TrimLeft(expr, "&"), "*")
+		if strings.HasSuffix(inner, ".as_std_legacy()") {
+			return refs + "*" + inner, true
+		}
 	}
 	return "", false
 }
 
+var requiredForEq = regexp.MustCompile("^required for `(.+)` to implement `PartialEq<(.+)>`$")
+
+// comparedTypes are the two operands' types. For `&a == &b` rustc names the INNER pair
+// (`can't compare `AppPath` with `Path“) and gives the real one in a note (`required for
+// `&AppPath` to implement `PartialEq<&Path>“, one per reference level, outermost last), so
+// the note's pair wins: the depth the rewrite must match is the operands' own.
 func comparedTypes(d *diagnostic) (string, string, bool) {
 	if m := cantCompare.FindStringSubmatch(d.Message); m != nil && d.code() == "E0277" {
-		return stripModules(m[1]), stripModules(m[2]), true
+		left, right := m[1], m[2]
+		for _, child := range d.Children {
+			if r := requiredForEq.FindStringSubmatch(child.Message); r != nil {
+				left, right = r[1], r[2]
+			}
+		}
+		return stripModules(left), stripModules(right), true
 	}
 	if m := binaryOnType.FindStringSubmatch(d.Message); m != nil && d.code() == "E0369" {
 		var labels []string
@@ -242,7 +258,8 @@ func comparedTypes(d *diagnostic) (string, string, bool) {
 var modulePrefix = regexp.MustCompile(`\b(?:app_path|bridge|std::path|path)::`)
 
 func stripModules(t string) string {
-	return modulePrefix.ReplaceAllString(t, "")
+	// The full qualifiers first (`cmdr_fs::app_path::`), then the short ones rustc trims to.
+	return modulePrefix.ReplaceAllString(normalizeType(t), "")
 }
 
 // macroArgs splits a macro call's arguments (`assert_eq!(a, b, "msg")`) at top-level commas,

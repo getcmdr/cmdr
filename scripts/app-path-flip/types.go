@@ -25,6 +25,7 @@ const (
 	ruleCompare       = "comparison operand to std"
 	ruleAsyncHelper   = "async helper call moved into its future"
 	ruleRoundTrip     = "bridge round trip collapsed"
+	ruleHoist         = "bridge temporary hoisted to a let"
 )
 
 var (
