@@ -18,9 +18,10 @@ go -C scripts/app-path-flip run . -p <crate> [-cargo-args "--features testing"] 
 ```
 
 - `-p` repeats; crates flip in the order given. Flip a crate only after every crate it depends on (dev-deps included).
-- `-cargo-args` is passed to every `cargo check` and `cargo clippy` (space-separated). Run once with the default
-  features, then again with every feature combination CI builds for the crate (`--features testing`, `--all-features`),
-  since code behind a feature is invisible otherwise. A re-run over a converted tree is a no-op.
+- `-cargo-args` is passed to every `cargo check` and `cargo clippy` (space-separated; `--all-targets` is already there,
+  and passing it again fails cargo, which the run reports as 0 diagnostics and `checks: false`). Run once with the
+  default features, then again with every feature combination CI builds for the crate (`--features testing`,
+  `--all-features`), since code behind a feature is invisible otherwise. A re-run over a converted tree is a no-op.
 - `-report` writes the rule counts, per-file edit counts, and the residue as JSON. Stdout has the same summary.
 - `-no-fmt` skips the final `cargo fmt -p`. `-max-rounds` (default 40) caps each phase.
 - It touches only the crate's own files (diagnostics elsewhere are ignored) and only code rustc complains about.
@@ -32,10 +33,11 @@ formats the result, so a re-run on the same base gives the same tree. The audit 
 
 Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a small fixture.
 
-- **E0053 signature**: a `Volume` impl method's param or return type rustc says is incompatible with the trait is
-  retyped (`&Path` → `&AppPath`, `&[PathBuf]` → `&[AppPathBuf]`, `PathBuf` → `AppPathBuf`). A reverse mismatch (a link
-  target the trait keeps as `Path`) is left alone. While a method's signature is being retyped, errors in its body are
-  skipped for that round: they're stale (rustc checked the body against the old signature).
+- **E0053 signature**: a `Volume` (or `ScanSource`, `PatchSource`) impl method's param or return type rustc says is
+  incompatible with the trait is retyped (`&Path` → `&AppPath`, `&[PathBuf]` → `&[AppPathBuf]`, `PathBuf` →
+  `AppPathBuf`). A reverse mismatch (a link target the trait keeps as `Path`) is left alone. While a method's signature
+  is being retyped, errors in its body are skipped for that round: they're stale (rustc checked the body against the old
+  signature).
 - **Body prelude**: an error inside a flipped method's body that names a typed param gives the body
   `let path_std = path.as_std_legacy(); let path: &Path = &path_std;` (a `Vec<PathBuf>` twin for a batch). It goes
   inside the `async move` block(s) when every use is there (a future must own what it borrows), else at the top of the
@@ -64,7 +66,8 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   `&AppPath::legacy_unchecked(…)`; a batch maps each through the bridge; an owned `PathBuf` into an `AppPathBuf` slot is
   `AppPath::legacy_unchecked(&…).into_owned()`; a typed value into a `&Path` or `PathBuf` slot is `.as_std_legacy()`
   (`.into_owned()`); the `BridgedPath` rows wrap (`BridgedPath::new`), unwrap (`.into_path_buf()`), or read (`.app()`).
-  A struct literal's shorthand field (`Foo { path }`) is spelled out.
+  A struct literal's shorthand field (`Foo { path }`) is spelled out. `cmdr_fs::testing`'s `TestDir` and
+  `MetadataFixture` deref to `Path`, so they ride the `&PathBuf` rows (`&AppPath::legacy_unchecked(&dir)`).
 - **Receiver**: a typed receiver calling a `Path` method (E0599: the typed twins of `Path`'s methods sit on the
   `PathArithmetic` trait, which nothing outside `cmdr-fs`'s app path module and pins imports during the flip, so
   `x.file_name()` on a typed `x` never compiles silently), or a same-named `AppPath` method fed a `std::path` argument
@@ -75,7 +78,11 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   (`.as_ref().map(BridgedPath::app)`). A literal root becomes `AppPath::from_normalized("/").expect(…)`. A `self.x()`
   accessor is no field: residue.
 - **Comparison**: `assert_eq!`/`assert_ne!` (and an in-file `==` that rustc labels) comparing a typed value with a std
-  one drops the typed operand to `.as_std_legacy()` (a `BridgedPath` to `.as_path()`); the expected value is untouched.
+  one drops the typed operand to `Path` behind as many `&` as the other side has (`&*path.as_std_legacy()` against a
+  `&PathBuf`, `*path.as_std_legacy()` against a `PathBuf`; `Cow<Path>` compares with neither), a `BridgedPath` through
+  `.as_path()`, and an `Option`/`Vec` of typed paths against one of `PathBuf`s to the same container of owned std paths.
+  An operand an earlier pass left as `….as_std_legacy()` gets reshaped the same way. The expected value is untouched;
+  any other shape (`Option<&AppPath>`) is residue.
 - **Imports**: a name a rule introduced (`AppPath`, `AppPathBuf`, `BridgedPath`, `app_path!`, `Path`, `PathBuf`) is
   imported at rustc's suggested point, or at the head of the innermost module when rustc suggests none (it doesn't for
   another crate's items). Never twice in one module, and ❌ never between an item and its outer attributes or doc

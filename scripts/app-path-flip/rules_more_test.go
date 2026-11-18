@@ -33,7 +33,7 @@ func TestAnAssertComparingATypedValueDropsItToStd(t *testing.T) {
 	d := diag("E0277", "can't compare `app_path::AppPathBuf` with `&std::path::Path`",
 		diagSpan{FileName: fixtureFile, ByteStart: start, ByteEnd: end, IsPrimary: true, Macro: "assert_eq"})
 	got := run(t, text, d)
-	if !strings.Contains(got, "assert_eq!(echo.stripped.as_std_legacy(), Path::new(\"/photos\"))") {
+	if !strings.Contains(got, "assert_eq!(&*echo.stripped.as_std_legacy(), Path::new(\"/photos\"))") {
 		t.Fatalf("typed operand not dropped:\n%s", got)
 	}
 }
