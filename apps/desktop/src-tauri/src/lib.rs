@@ -154,6 +154,8 @@ pub mod services_menu;
 mod settings;
 // The saved-and-live SFTP and WebDAV servers, as volume rows.
 mod server_volumes;
+// The queue's progress on the Dock tile, the taskbar button, or the launcher entry.
+mod shell_progress;
 mod short_id;
 mod space_poller;
 /// Ask Spotlight which folders this user has been working in. One narrow question,
@@ -273,6 +275,9 @@ pub fn run() {
             // Its runtime is the volume host's, so after it; unconditional, so a
             // data-dir failure still leaves an app that can copy. Mirror of
             // `cmdr_operations::host`.
+            // The OS shell's progress bar, before the engine whose facts feed it.
+            shell_progress::install(app.handle());
+
             operations_host::install(app.handle(), operation_log.clone());
 
             // Mount the typed `tauri-specta` events onto the app. Required before any

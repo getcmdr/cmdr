@@ -286,6 +286,9 @@ All under `apps/desktop/src-tauri/src/`.
   Tauri events, the indexing transfer gauge, and instant-op analytics; the volume registry; own writes; the index;
   pacing; name order), and owns the per-op Tauri sinks with their terminal side effects. See
   `apps/desktop/src-tauri/src/operations_host/CLAUDE.md`
+- `shell_progress/`: the write queue as one progress bar the OS shell draws (the Dock tile, the Windows taskbar button,
+  the Linux launcher entry), fed by `operations_host`, throttled, mapped per OS behind a `platform/` seam. See
+  `apps/desktop/src-tauri/src/shell_progress/CLAUDE.md`
 - `security_log/`: The local security event log (`security-events.jsonl`): typed `SecurityEvent`s from consent, MCP,
   managed-policy, and updater hooks, one emitter that also feeds subscribers, a background writer, and the opt-out. See
   its `apps/desktop/src-tauri/src/security_log/CLAUDE.md`

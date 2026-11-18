@@ -641,6 +641,10 @@ property of which surfaces exist, and it moves underneath the enum every time on
 same park agent-answerable without the operation changing at all, and a name written from the dialog's point of view was
 wrong the day that landed. The rule lives on the enum itself (`types.rs`), where somebody adding a variant will read it.
 
+**`TransferActivity::is_held_by_a_person` is the one reading of "a person holds it"** (`Paused` or `Conflict`), for a
+host that colors by it, like the app's OS progress bar (`apps/desktop/src-tauri/src/shell_progress/DETAILS.md`). A host
+asks the method rather than matching variants, so a new person-held wait joins every reader at once.
+
 **`Reconnecting` names the one device wait that has a reason of its own**: a volume the transfer runs on went away, and
 the operation is waiting for it to come back (`src/transfer/DETAILS.md` § "Waiting out a volume that went away"). It's
 the only variant that carries a name, `TransferActivity::reconnecting_volume`, set exactly when the reason is

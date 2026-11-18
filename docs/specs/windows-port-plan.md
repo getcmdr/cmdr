@@ -492,7 +492,10 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
 48. [XS] Windows. WebView2 specifics: `cmdr-media` URLs via `convertFileSrc` plus the `.localhost` CSP origin, and
     `instance-id.ts` Windows data (Roaming) and cache (Local) dirs in lockstep with the Rust mirror.
 49. [S] Windows (taskbar progress is a win: Dock progress too). Shell integration: an "Open in Cmdr" Explorer verb,
-    taskbar progress for long operations (`Window::set_progress_bar`), jump lists of recent folders.
+    taskbar progress for long operations (`Window::set_progress_bar`), jump lists of recent folders. **Progress part
+    done**: `shell_progress/` folds the write queue into one bar (Dock tile, taskbar button, Linux launcher entry), its
+    Windows arm unit-tested on every host; real-machine checks are in task 55. Left: the Explorer verb and jump lists,
+    both needing a Windows install to verify.
 50. [S] Windows, later (D3 step 3). `cmdr-update-trust` Authenticode check (`WinVerifyTrust` plus a pinned signer) for
     the signed direct download's updater artifact. Needs 33, 51.
 51. [XS] Windows, David, later (D3 step 3). Azure Artifact Signing account and org validation for Rymdskottkärra AB,
@@ -541,6 +544,17 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       - The browser demo for a Windows or Linux visitor: the search dialog's new query keeps `Ctrl+N`, which Chromium
         keeps from the page, because a fixed-key command can't be seeded (`lib/demo/browser-shortcuts.ts`). It needs a
         demo-only key once task 63 decides the demo's bar.
+    - **Taskbar progress (from task 49; `apps/desktop/src-tauri/src/shell_progress/DETAILS.md` has the rules and a QA
+      recipe)**:
+      - A large copy shows a green bar on the main window's taskbar button, filling in whole percents, and the scan
+        before it shows the marquee.
+      - Pause (and a conflict dialog left open) turns it yellow; a failure left in the queue turns it red, full when
+        nothing else runs; cancel and completion clear it within half a second.
+      - With the main window hidden or minimized to the tray, nothing throws or logs a warning (`shell_progress`
+        target), and the bar comes back on the button once the window shows.
+      - After quitting with a failure still shown, no button keeps a stale bar (pinned taskbar icon included).
+      - On Linux (whenever a Linux desktop is at hand, Ubuntu Dock or KDE): the bar appears at all, which needs Tauri's
+        `<package name>.desktop` to match the installed `.desktop` file's name.
 
 56. [S] Windows. MTP via `mtp-rs`'s WPD backend (D2): Windows device arrival and removal for phones, the 5–6-minute
     driver stall shown as a "the phone is busy" state with a timeout (a dropped future is safe, later calls queue behind
