@@ -53,7 +53,11 @@
     "crates/cmdr-listing/src/stall_test.rs": 2,
     "crates/cmdr-listing/src/streaming.rs": 1,
     "crates/cmdr-listing/src/streaming_test.rs": 3,
-    "crates/cmdr-listing/src/testing/volumes.rs": 4
+    "crates/cmdr-listing/src/testing/volumes.rs": 4,
+    "crates/cmdr-operation-log/src/rollback/inverse.rs": 9,
+    "crates/cmdr-operation-log/src/rollback/self_collision.rs": 1,
+    "crates/cmdr-operation-log/src/rollback/tags.rs": 1,
+    "crates/cmdr-operation-log/src/rollback/target.rs": 1
   },
   "appTextToPath": {
     "apps/desktop/src-tauri/src/about/digest.rs": 1,
