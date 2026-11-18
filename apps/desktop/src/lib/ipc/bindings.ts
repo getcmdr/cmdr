@@ -9783,8 +9783,9 @@ export type DiscoveryState =
   | 'active'
 
 /**
- *  The macOS Accessibility > Display options the UI mirrors as classes on
- *  `<html>`. All `false` off macOS. Read by `get_display_accessibility`.
+ *  The OS display options the UI mirrors as classes on `<html>`: macOS's
+ *  Accessibility > Display options, plus Windows' Underline access keys. Each is
+ *  `false` where its OS doesn't have it. Read by `get_display_accessibility`.
  */
 export type DisplayAccessibility = {
   // Reduce transparency: translucent materials go opaque.
@@ -9800,11 +9801,17 @@ export type DisplayAccessibility = {
   invertColors: boolean
   // Show borders: buttons and controls that draw no edge of their own gain one.
   showBorders: boolean
+  /**
+   *  Windows' Underline access keys (Settings › Accessibility › Keyboard,
+   *  `SPI_GETKEYBOARDCUES`): access-key letters stay underlined all the time,
+   *  not only once the keyboard is in use. `false` on macOS and Linux.
+   */
+  underlineAccessKeys: boolean
 }
 
 /**
- *  `display-accessibility-changed`: one of the macOS Accessibility > Display
- *  options changed. `options` is the fresh full set, re-read on every change.
+ *  `display-accessibility-changed`: one of the display options above changed.
+ *  `options` is the fresh full set, re-read on every change.
  */
 export type DisplayAccessibilityChanged = {
   options: DisplayAccessibility

@@ -1,5 +1,6 @@
 /**
- * The macOS Accessibility > Display options the UI honors, mirrored onto `<html>` as classes:
+ * The OS's display options the UI honors (macOS Accessibility > Display, plus one Windows
+ * keyboard setting), mirrored onto `<html>` as classes:
  *
  * - **Reduce transparency** → `reduce-transparency`: every translucent material goes opaque
  *   (`app.css` § Reduced transparency).
@@ -9,6 +10,9 @@
  *   pane (cursor hairlines, tab accent band) step up to 3:1 (`app.css` § Differentiate without color).
  * - **Show borders** → `show-borders`: controls that draw no edge of their own gain one
  *   (`app-utilities.css` § Show borders).
+ * - **Underline access keys** (Windows, Settings › Accessibility › Keyboard) →
+ *   `underline-access-keys`: access-key letters stay underlined all the time, not only once the
+ *   keyboard is in use (task 63's keyboard-cue rule reads it). Off on macOS and Linux.
  *
  * Invert colors is read too, but gets no class: it only changes the icons macOS draws, which
  * `#lib/icon-cache` follows on its own.
@@ -35,6 +39,7 @@ export interface DisplayAccessibilityState {
   differentiateWithoutColor: boolean
   invertColors: boolean
   showBorders: boolean
+  underlineAccessKeys: boolean
 }
 
 /** The options mirrored as an `<html>` class. */
@@ -45,6 +50,7 @@ const CLASS_BY_OPTION: Record<ClassOption, string> = {
   increaseContrast: 'increase-contrast',
   differentiateWithoutColor: 'differentiate-without-color',
   showBorders: 'show-borders',
+  underlineAccessKeys: 'underline-access-keys',
 }
 
 const CONTRAST_QUERY = '(prefers-contrast: more)'
@@ -55,6 +61,7 @@ const allOff = (): DisplayAccessibilityState => ({
   differentiateWithoutColor: false,
   invertColors: false,
   showBorders: false,
+  underlineAccessKeys: false,
 })
 
 let fromOs = allOff()

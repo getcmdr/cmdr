@@ -18,8 +18,9 @@ pub struct AccentColorChanged {
     pub hex: String,
 }
 
-/// The macOS Accessibility > Display options the UI mirrors as classes on
-/// `<html>`. All `false` off macOS. Read by `get_display_accessibility`.
+/// The OS display options the UI mirrors as classes on `<html>`: macOS's
+/// Accessibility > Display options, plus Windows' Underline access keys. Each is
+/// `false` where its OS doesn't have it. Read by `get_display_accessibility`.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DisplayAccessibility {
@@ -34,10 +35,14 @@ pub struct DisplayAccessibility {
     pub invert_colors: bool,
     /// Show borders: buttons and controls that draw no edge of their own gain one.
     pub show_borders: bool,
+    /// Windows' Underline access keys (Settings › Accessibility › Keyboard,
+    /// `SPI_GETKEYBOARDCUES`): access-key letters stay underlined all the time,
+    /// not only once the keyboard is in use. `false` on macOS and Linux.
+    pub underline_access_keys: bool,
 }
 
-/// `display-accessibility-changed`: one of the macOS Accessibility > Display
-/// options changed. `options` is the fresh full set, re-read on every change.
+/// `display-accessibility-changed`: one of the display options above changed.
+/// `options` is the fresh full set, re-read on every change.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, specta::Type, Event)]
 #[serde(rename_all = "camelCase")]
 pub struct DisplayAccessibilityChanged {
