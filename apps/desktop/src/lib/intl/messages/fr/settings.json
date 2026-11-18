@@ -1196,7 +1196,7 @@
   "@settings.ai.provider.opt.local": {
     "sourceHash": "6689271"
   },
-  "settings.ai.provider.localUnavailable": "{platform, select, windows {Vos réglages demandent « LLM local », que ce PC ne peut pas exécuter, donc l’IA est désactivée.} other {Vos réglages demandent « LLM local », que cet ordinateur ne peut pas exécuter, donc l’IA est désactivée.}}",
+  "settings.ai.provider.localUnavailable": "{platform, select, windows {Vos paramètres demandent « LLM local », que ce PC ne peut pas exécuter, donc l’IA est désactivée.} other {Vos réglages demandent « LLM local », que cet ordinateur ne peut pas exécuter, donc l’IA est désactivée.}}",
   "@settings.ai.provider.localUnavailable": {
     "sourceHash": "5974157"
   },
@@ -1599,7 +1599,7 @@
   },
   "settings.analytics.enabled.description": "Merci d’activer cette option pour nous aider à voir quelles fonctionnalités comptent pendant la bêta ouverte.\nLes statistiques sont reliées à un identifiant aléatoire, pas à votre nom ni à votre e-mail.\nCmdr n’envoie jamais de noms de fichiers, de chemins, de termes de recherche ni de prompts.\nQuand cette option est désactivée, Cmdr n’envoie aucune statistique.",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "a8d8db1"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "statistiques, stats, usage, utilisation, confidentialité, vie privée, télémétrie, bêta, suivi, pistage, désactiver",
   "@settings.analytics.enabled.keywords": {
@@ -1623,7 +1623,7 @@
   },
   "settings.updates.crashReports.summary": "Ne contient jamais de noms de fichiers ni de données personnelles.",
   "@settings.updates.crashReports.summary": {
-    "sourceHash": "7814a28"
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "plantage, incident, rapport, rapport d’incident, confidentialité, télémétrie, bug, bogue, erreur",
   "@settings.updates.crashReports.keywords": {
@@ -2956,9 +2956,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Sections de réglages",
+  "settings.sidebar.sections": "{platform, select, windows {Sections de paramètres} linuxGnome {Sections des préférences} linuxKde {Sections de « Configurer Cmdr »} other {Sections de réglages}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Aucun réglage ne correspond} one {{countText} section correspond} many {{countText} sections correspondent} other {{countText} sections correspondent}}",
   "@settings.sidebar.matchCount": {
@@ -3217,7 +3217,7 @@
   },
   "settings.securityLog.enabled.description": "Ce registre note les changements et les refus liés à la sécurité, comme le consentement à l’IA dans le cloud, une mise à jour installée ou une app refusée par le serveur MCP. Le registre ne contient ni noms de fichiers, ni contenus, ni mots de passe.",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "97e24a4"
+    "sourceHash": "3692a3d"
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {Un petit registre local des évènements de sécurité. Ce registre ne quitte jamais votre Mac.} windows {Un petit registre local des évènements de sécurité. Ce registre ne quitte jamais votre PC.} other {Un petit registre local des évènements de sécurité. Ce registre ne quitte jamais votre ordinateur.}}",
   "@settings.securityLog.enabled.summary": {
@@ -3436,9 +3436,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Réglages",
+  "settings.window.title": "{platform, select, windows {Paramètres} linuxGnome {Préférences} linuxKde {Configurer – Cmdr} other {Réglages}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Chargement des réglages…",
   "@settings.window.loading": {
@@ -3684,13 +3684,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Un élément nommé « {itemName} » dans Trousseaux d’accès} many {{countText} éléments nommés « {itemName} » dans Trousseaux d’accès} other {{countText} éléments nommés « {itemName} » dans Trousseaux d’accès}}} windows {{count, plural, one {Un élément nommé « {itemName} » dans le Gestionnaire d’identification} many {{countText} éléments nommés « {itemName} » dans le Gestionnaire d’identification} other {{countText} éléments nommés « {itemName} » dans le Gestionnaire d’identification}}} linuxKde {{count, plural, one {Un élément nommé « {itemName} » dans KWallet} many {{countText} éléments nommés « {itemName} » dans KWallet} other {{countText} éléments nommés « {itemName} » dans KWallet}}} other {{count, plural, one {Un élément nommé « {itemName} » dans votre trousseau de clés} many {{countText} éléments nommés « {itemName} » dans votre trousseau de clés} other {{countText} éléments nommés « {itemName} » dans votre trousseau de clés}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Un élément nommé « {itemName} » dans Trousseaux d’accès} many {{countText} éléments nommés « {itemName} » dans Trousseaux d’accès} other {{countText} éléments nommés « {itemName} » dans Trousseaux d’accès}}} windows {{count, plural, one {Un élément nommé « {itemName} » dans le Gestionnaire d’identification} many {{countText} éléments nommés « {itemName} » dans le Gestionnaire d’identification} other {{countText} éléments nommés « {itemName} » dans le Gestionnaire d’identification}}} linuxKde {{count, plural, one {Un élément nommé « {itemName} » dans le portefeuille KDE} many {{countText} éléments nommés « {itemName} » dans le portefeuille KDE} other {{countText} éléments nommés « {itemName} » dans le portefeuille KDE}}} other {{count, plural, one {Un élément nommé « {itemName} » dans votre trousseau de clés} many {{countText} éléments nommés « {itemName} » dans votre trousseau de clés} other {{countText} éléments nommés « {itemName} » dans votre trousseau de clés}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Les éventuels éléments nommés « {itemName} » dans Trousseaux d’accès} windows {Les éventuels éléments nommés « {itemName} » dans le Gestionnaire d’identification} linuxKde {Les éventuels éléments nommés « {itemName} » dans KWallet} other {Les éventuels éléments nommés « {itemName} » dans votre trousseau de clés}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Les éventuels éléments nommés « {itemName} » dans Trousseaux d’accès} windows {Les éventuels éléments nommés « {itemName} » dans le Gestionnaire d’identification} linuxKde {Les éventuels éléments nommés « {itemName} » dans le portefeuille KDE} other {Les éventuels éléments nommés « {itemName} » dans votre trousseau de clés}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Quitter Cmdr} other {Quitter Cmdr}}",
   "@settings.dataWipe.quit": {

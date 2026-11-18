@@ -96,7 +96,7 @@ impl Rig {
         let log = TestOperationLog::new("named-leaves-volume");
         let engine = TestOperations::journaling_into(&log);
         let tmp = TestDir::new("named_leaves_volume");
-        let local: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+        let local: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
             "Test root",
             "/",
             crate::host::testing::pane_order_host(),

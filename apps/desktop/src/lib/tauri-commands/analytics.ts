@@ -7,7 +7,7 @@ import { commands } from '#lib/ipc/bindings.js'
  * Fire-and-forget: the backend gates it (consent + dev/CI suppression) and spools it for the next
  * heartbeat, so call it unconditionally.
  *
- * `props` must be a PII-free map of enums, counts, and bools only: never paths, file names, search
+ * `props` must be a PII-free map of enums, counts, and bools only: never paths, filenames, search
  * queries, prompts, or hostnames. It's serialized to JSON for the IPC boundary (the prop set is open
  * and can't be a fixed type). A debug-build backend guard warns if a prop value looks PII-shaped.
  */

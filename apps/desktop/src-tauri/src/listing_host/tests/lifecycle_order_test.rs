@@ -42,15 +42,15 @@ fn is_watching(listing_id: &str) -> bool {
     WATCHER_MANAGER.read_ignore_poison().watches.contains_key(listing_id)
 }
 
-/// A real folder on a `LocalPosixVolume`, registered under a fresh id.
+/// A real folder on a `LocalVolume`, registered under a fresh id.
 fn local_volume(tag: &str) -> (crate::test_support::TestDir, String) {
     use cmdr_fs::volume::Volume;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let scratch = crate::test_support::TestDir::new(tag);
     std::fs::write(scratch.join("a.txt"), b"a").expect("scratch dir is writable");
     let volume_id = unique_test_id(&format!("{tag}-vol"));
-    let volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Arming",
         scratch.to_path_buf(),
         crate::volume_host::host(),

@@ -55,9 +55,9 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "Kapcsolj be egy szolgáltatót itt: Beállítások > AI, hogy használd az AI-keresést.",
+  "ai.translateError.off.body": "{platform, select, windows {Kapcsolj be egy szolgáltatót itt: Beállítások > AI, hogy használd az AI-keresést.} linuxGnome {Kapcsolj be egy szolgáltatót itt: Beállítások > AI, hogy használd az AI-keresést.} linuxKde {Kapcsolj be egy szolgáltatót itt: Cmdr beállítása > AI, hogy használd az AI-keresést.} other {Kapcsolj be egy szolgáltatót itt: Beállítások > AI, hogy használd az AI-keresést.}}",
   "@ai.translateError.off.body": {
-    "sourceHash": "d8d6368"
+    "sourceHash": "c9c11e2"
   },
   "ai.cloudConsent.label": "Felhő-AI engedélyezése",
   "@ai.cloudConsent.label": {
@@ -247,25 +247,25 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "Fejezd be a szolgáltató beállítását itt: Beállítások > AI, majd próbáld újra.",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {Fejezd be a szolgáltató beállítását itt: Beállítások > AI, majd próbáld újra.} linuxGnome {Fejezd be a szolgáltató beállítását itt: Beállítások > AI, majd próbáld újra.} linuxKde {Fejezd be a szolgáltató beállítását itt: Cmdr beállítása > AI, majd próbáld újra.} other {Fejezd be a szolgáltató beállítását itt: Beállítások > AI, majd próbáld újra.}}",
   "@ai.translateError.notConfigured.body": {
-    "sourceHash": "65133a8"
+    "sourceHash": "cdb4ab5"
   },
   "ai.translateError.noCloudConsent.title": "A felhő-AI ki van kapcsolva",
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "Engedélyezd itt: Beállítások > AI, majd próbáld újra.",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {Engedélyezd itt: Beállítások > AI, majd próbáld újra.} linuxGnome {Engedélyezd itt: Beállítások > AI, majd próbáld újra.} linuxKde {Engedélyezd itt: Cmdr beállítása > AI, majd próbáld újra.} other {Engedélyezd itt: Beállítások > AI, majd próbáld újra.}}",
   "@ai.translateError.noCloudConsent.body": {
-    "sourceHash": "fde3eb5"
+    "sourceHash": "f54d181"
   },
   "ai.translateError.authFailed.title": "Az API-kulcsot elutasították",
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "Ellenőrizd a kulcsodat itt: Beállítások > AI – lehet, hogy hibás vagy visszavont.",
+  "ai.translateError.authFailed.body": "{platform, select, windows {Ellenőrizd a kulcsodat itt: Beállítások > AI – lehet, hogy hibás vagy visszavont.} linuxGnome {Ellenőrizd a kulcsodat itt: Beállítások > AI – lehet, hogy hibás vagy visszavont.} linuxKde {Ellenőrizd a kulcsodat itt: Cmdr beállítása > AI – lehet, hogy hibás vagy visszavont.} other {Ellenőrizd a kulcsodat itt: Beállítások > AI – lehet, hogy hibás vagy visszavont.}}",
   "@ai.translateError.authFailed.body": {
-    "sourceHash": "2159d5e"
+    "sourceHash": "efd14fb"
   },
   "ai.translateError.rateLimited.title": "Az AI-szolgáltatódnál elfogyott a hely",
   "@ai.translateError.rateLimited.title": {
@@ -295,9 +295,9 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "Lehet, hogy a modelled elhasználta a tokenkeretét, mielőtt válaszolt volna. Próbálj egy gyorsabb modellt, például a gpt-4.1-mini-t itt: Beállítások > AI.",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {Lehet, hogy a modelled elhasználta a tokenkeretét, mielőtt válaszolt volna. Próbálj egy gyorsabb modellt, például a gpt-4.1-mini-t itt: Beállítások > AI.} linuxGnome {Lehet, hogy a modelled elhasználta a tokenkeretét, mielőtt válaszolt volna. Próbálj egy gyorsabb modellt, például a gpt-4.1-mini-t itt: Beállítások > AI.} linuxKde {Lehet, hogy a modelled elhasználta a tokenkeretét, mielőtt válaszolt volna. Próbálj egy gyorsabb modellt, például a gpt-4.1-mini-t itt: Cmdr beállítása > AI.} other {Lehet, hogy a modelled elhasználta a tokenkeretét, mielőtt válaszolt volna. Próbálj egy gyorsabb modellt, például a gpt-4.1-mini-t itt: Beállítások > AI.}}",
   "@ai.translateError.emptyResponse.body": {
-    "sourceHash": "d74db0d"
+    "sourceHash": "9068319"
   },
   "ai.translateError.serverError.title": "Az AI-szolgáltatód problémába ütközött",
   "@ai.translateError.serverError.title": {
@@ -311,17 +311,17 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "Próbáld újra, vagy válassz másik modellt itt: Beállítások > AI.",
+  "ai.translateError.parseError.body": "{platform, select, windows {Próbáld újra, vagy válassz másik modellt itt: Beállítások > AI.} linuxGnome {Próbáld újra, vagy válassz másik modellt itt: Beállítások > AI.} linuxKde {Próbáld újra, vagy válassz másik modellt itt: Cmdr beállítása > AI.} other {Próbáld újra, vagy válassz másik modellt itt: Beállítások > AI.}}",
   "@ai.translateError.parseError.body": {
-    "sourceHash": "c299ec6"
+    "sourceHash": "5ebf991"
   },
   "ai.translateError.unknownProvider.title": "Ez az AI-szolgáltató nem ismerős",
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "Válassz egy szolgáltatót itt: Beállítások > AI.",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {Válassz egy szolgáltatót itt: Beállítások > AI.} linuxGnome {Válassz egy szolgáltatót itt: Beállítások > AI.} linuxKde {Válassz egy szolgáltatót itt: Cmdr beállítása > AI.} other {Válassz egy szolgáltatót itt: Beállítások > AI.}}",
   "@ai.translateError.unknownProvider.body": {
-    "sourceHash": "7042a75"
+    "sourceHash": "a3988aa"
   },
   "ai.translateError.managed.title": "A Cmdrben az AI-t a szervezeted kezeli",
   "@ai.translateError.managed.title": {
@@ -597,9 +597,9 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a macOS kulcskarika megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a macOS kulcskarika megtagadta a hozzáférést}}} windows {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a Hitelesítőadat-kezelő megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a Hitelesítőadat-kezelő megtagadta a hozzáférést}}} linuxKde {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a KWallet megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a KWallet megtagadta a hozzáférést}}} other {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a rendszer kulcstartója megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a rendszer kulcstartója megtagadta a hozzáférést}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a macOS kulcskarika megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a macOS kulcskarika megtagadta a hozzáférést}}} windows {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a Hitelesítőadat-kezelő megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a Hitelesítőadat-kezelő megtagadta a hozzáférést}}} linuxKde {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a KDE jelszókezelő megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a KDE jelszókezelő megtagadta a hozzáférést}}} other {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a rendszer kulcstartója megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a rendszer kulcstartója megtagadta a hozzáférést}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "6daa595"
+    "sourceHash": "4612cfb"
   },
   "ai.secretError.body": "{platform, select, macos {{op, select, save {Nyisd meg a Kulcskarika-elérés appot, és nézd meg a „Cmdr” bejegyzést, vagy töröld, majd próbáld újra a mentést.} other {Nyisd meg a Kulcskarika-elérés appot, keresd meg a „Cmdr” bejegyzést, és adj hozzáférést, vagy töröld, majd add meg újra a kulcsodat.}}} windows {{op, select, save {Nyisd meg a Hitelesítőadat-kezelőt, és nézd meg a „Cmdr” bejegyzést a „Windows hitelesítő adatok” szakaszban, vagy távolítsd el, majd próbáld újra a mentést.} other {Nyisd meg a Hitelesítőadat-kezelőt, keresd meg a „Cmdr” bejegyzést a „Windows hitelesítő adatok” szakaszban, vagy távolítsd el, majd add meg újra a kulcsodat.}}} linuxGnome {Oldd fel a kulcstartódat a Jelszavak és kulcsok appban, majd próbáld újra.} linuxKde {Oldd fel a KWalletet a KWalletManager appban, majd próbáld újra.} other {Oldd fel a kulcstartódat (Jelszavak / Kulcstartók alkalmazás), majd próbáld újra.}}",
   "@ai.secretError.body": {
@@ -609,9 +609,9 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Ellenőrizd, hogy a kulcskarikád elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.} windows {Ellenőrizd, hogy a Hitelesítőadat-kezelő elérhető-e, majd próbáld újra. Ha továbbra is előfordul, indítsd újra a Cmdrt.} linuxKde {Ellenőrizd, hogy a KWallet elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.} other {Ellenőrizd, hogy a rendszer kulcstartója elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Ellenőrizd, hogy a kulcskarikád elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.} windows {Ellenőrizd, hogy a Hitelesítőadat-kezelő elérhető-e, majd próbáld újra. Ha továbbra is előfordul, indítsd újra a Cmdrt.} linuxKde {Ellenőrizd, hogy a KDE jelszókezelő elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.} other {Ellenőrizd, hogy a rendszer kulcstartója elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "cb879fa"
+    "sourceHash": "1c198ff"
   },
   "ai.secretError.removeTitle": "Nem sikerült eltávolítani a mentett API-kulcsodat.",
   "@ai.secretError.removeTitle": {

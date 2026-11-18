@@ -763,7 +763,7 @@ async fn assert_reaches(label: &str, backend: AiBackend, request: &str, wanted: 
 async fn smoke_anthropic_what_is_this_folder() {
     crate::file_system::volume::manager::get_volume_manager().register_if_absent(
         "root",
-        std::sync::Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+        std::sync::Arc::new(cmdr_local::LocalVolume::local_folder(
             "Test root",
             "/",
             crate::volume_host::host(),

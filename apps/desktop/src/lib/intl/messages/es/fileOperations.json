@@ -428,9 +428,9 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Ajustes. Si sobrescribe archivos, verás un aviso antes.",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Configuración. Si sobrescribe archivos, verás un aviso antes.} linuxGnome {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Preferencias. Si sobrescribe archivos, verás un aviso antes.} linuxKde {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Configurar Cmdr. Si sobrescribe archivos, verás un aviso antes.} other {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Ajustes. Si sobrescribe archivos, verás un aviso antes.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "c26d762"
+    "sourceHash": "b23a78a"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "Algunos conflictos mezclan un archivo y una carpeta con el mismo nombre. Sobrescribir reemplazará elementos de distinto tipo, incluido todo el contenido de una carpeta.",
   "@fileOperations.transferDialog.typeMismatchWarning": {
@@ -1305,9 +1305,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Recordar en el Llavero} windows {Recordar contraseña} linuxKde {Recordar en KWallet} other {Recordar en el llavero}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Recordar en el Llavero} windows {Recordar contraseña} linuxKde {Recordar en la cartera de KDE} other {Recordar en el llavero}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "fileOperations.resticPassword.checking": "Comprobando la contraseña…",
   "@fileOperations.resticPassword.checking": {

@@ -23,6 +23,12 @@ impl VolumeLookup for AppOperationVolumes {
     fn get(&self, volume_id: &str) -> Option<Arc<dyn Volume>> {
         get_volume_manager().get(volume_id)
     }
+
+    /// The saved-roots rebase (`location::last_roots`): an undo follows the disk to its
+    /// root now, as a restored tab does, for an id that is provably one disk.
+    fn root_move(&self, volume_id: &str) -> Option<cmdr_fs::volume::app_paths::RootMove> {
+        crate::location::last_roots::root_move(volume_id)
+    }
 }
 
 impl OperationVolumes for AppOperationVolumes {

@@ -151,7 +151,7 @@ fn scan_sources_internal(
         listings: state.scope().host().listings(),
     };
 
-    // Local FS scan goes through `LocalPosixVolume`, which is always registered as
+    // Local FS scan goes through `LocalVolume`, which is always registered as
     // the `"root"` volume. Passing it threads the oracle through: when the source
     // (or any subdirectory we recurse into) is open in a pane with a live FSEvents
     // watcher, the walker skips the disk read for that level.

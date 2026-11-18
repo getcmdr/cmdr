@@ -360,7 +360,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
             );
             // Index cached entries by their last path component so we can resolve
             // selected paths without a per-path linear search. `path` on a cached
-            // FileEntry is the absolute path string, so the file name component
+            // FileEntry is the absolute path string, so the filename component
             // is the disambiguator within this parent.
             let by_name: HashMap<String, &FileEntry> = cached_entries
                 .iter()

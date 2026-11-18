@@ -35,9 +35,9 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "Abrir ajustes",
+  "commands.appSettings.label": "{platform, select, windows {Abrir configurações} linuxGnome {Abrir preferências} linuxKde {Configurar Cmdr} other {Abrir ajustes}}",
   "@commands.appSettings.label": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "commands.appCheckForUpdates.label": "Verificar atualizações…",
   "@commands.appCheckForUpdates.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Remove do Acesso às Chaves a senha salva do backup do restic em que você está e bloqueia o backup de novo} windows {Remove do Gerenciador de Credenciais a senha salva do backup do restic em que você está e bloqueia o backup de novo} linuxKde {Remove do KWallet a senha salva do backup do restic em que você está e bloqueia o backup de novo} other {Remove do seu chaveiro a senha salva do backup do restic em que você está e bloqueia o backup de novo}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Remove do Acesso às Chaves a senha salva do backup do restic em que você está e bloqueia o backup de novo} windows {Remove do Gerenciador de Credenciais a senha salva do backup do restic em que você está e bloqueia o backup de novo} linuxKde {Remove da Carteira do KDE a senha salva do backup do restic em que você está e bloqueia o backup de novo} other {Remove do seu chaveiro a senha salva do backup do restic em que você está e bloqueia o backup de novo}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "5b48a77"
+    "sourceHash": "e7106da"
   },
   "commands.fileCopyShareLink.label": "Copiar link de compartilhamento (sete dias)",
   "@commands.fileCopyShareLink.label": {
@@ -1264,17 +1264,17 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "Pasta aberta no seu app de terminal. Quer que o Cmdr abra outro app da próxima vez? Escolha um em Ajustes, em “Navegação e operações de arquivo”.",
+  "commands.handler.openTerminalHere.hint": "{platform, select, windows {Pasta aberta no seu app de terminal. Quer que o Cmdr abra outro app da próxima vez? Escolha um em Configurações, em “Navegação e operações de arquivo”.} linuxGnome {Pasta aberta no seu app de terminal. Quer que o Cmdr abra outro app da próxima vez? Escolha um em Preferências, em “Navegação e operações de arquivo”.} linuxKde {Pasta aberta no seu app de terminal. Quer que o Cmdr abra outro app da próxima vez? Escolha um em Configurar Cmdr, em “Navegação e operações de arquivo”.} other {Pasta aberta no seu app de terminal. Quer que o Cmdr abra outro app da próxima vez? Escolha um em Ajustes, em “Navegação e operações de arquivo”.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b29b744"
+    "sourceHash": "5d6063c"
   },
   "commands.handler.openTerminalHere.dismiss": "Dispensar",
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "Abrir ajustes",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Abrir configurações} linuxGnome {Abrir preferências} linuxKde {Configurar Cmdr} other {Abrir ajustes}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} não está mais instalado, então isto abriu no Terminal.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1344,9 +1344,9 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "O armazenamento de registros está desativado. Defina um limite de espaço em disco maior que 0 em Ajustes > Avançado e reinicie o Cmdr para visualizar o registro de depuração.",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, windows {O armazenamento de registros está desativado. Defina um limite de espaço em disco maior que 0 em Configurações > Avançado e reinicie o Cmdr para visualizar o registro de depuração.} linuxGnome {O armazenamento de registros está desativado. Defina um limite de espaço em disco maior que 0 em Preferências > Avançado e reinicie o Cmdr para visualizar o registro de depuração.} linuxKde {O armazenamento de registros está desativado. Defina um limite de espaço em disco maior que 0 em Configurar Cmdr > Avançado e reinicie o Cmdr para visualizar o registro de depuração.} other {O armazenamento de registros está desativado. Defina um limite de espaço em disco maior que 0 em Ajustes > Avançado e reinicie o Cmdr para visualizar o registro de depuração.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "96f16fc"
+    "sourceHash": "1fb0c6a"
   },
   "commands.handler.viewDebugLog.unavailable": "Não foi possível abrir o registro de depuração. Tente de novo.",
   "@commands.handler.viewDebugLog.unavailable": {

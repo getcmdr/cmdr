@@ -32,7 +32,7 @@ const QUERY_KEYS = {
   scopeVolume: sameOnAll('⌥V'),
   /** Fires the primary action over the result set (Search's "Show all in main window"). */
   primaryAction: sameOnAll('⌥Enter'),
-  /** Bare Enter: what the run button and the footer's Go to file name. */
+  /** Bare Enter: what the run button and the footer's Go to filename. */
   enter: sameOnAll('Enter'),
 } as const satisfies Record<string, PlatformShortcuts>
 

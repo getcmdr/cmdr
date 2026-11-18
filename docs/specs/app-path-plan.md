@@ -772,7 +772,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
 
 - **Size**: S.
 - **Scope**: tests only, plus test helpers. (a) Extend `path_grammar_cases.json` with arithmetic rows (join a name,
-  parent, file name, names, starts-with, strip-prefix, rebase, shown) for every root shape: `/`, `C:/`,
+  parent, filename, names, starts-with, strip-prefix, rebase, shown) for every root shape: `/`, `C:/`,
   `//server/share/`, and scheme roots for sftp (rooted at `/` and at a subfolder), webdav, s3, nfs (`%2F` export), mtp
   (with a pick segment), adb, restic, and an archive-inner path (`/x/a.zip/inner`). Rows carry the POSIX answer (pinned
   from today's `std::path` behavior on macOS and Linux) and the Windows answer (the target, asserted against the new
@@ -838,6 +838,20 @@ included; the hidden couplings it found are why waves B and C differ from round 
   builder; no new tests.
 - **DONE**: `rg LocalPosixVolume` hits only POSIX-specific code, `cmdr-local`'s own files, and docs about the type;
   `apps/desktop/src-tauri/src/volumes/platform/` names `LocalVolume` where it can.
+- **Done** (2026-11-18, branch `worktree-agent-a6fb518d61314b3ef`, `bc690227d6`): 91 files moved to `LocalVolume` (318
+  sites), and the Windows arms of `volumes/platform/` and `local_disk/platform/` too; 56 files keep `LocalPosixVolume`
+  (modes, xattrs, inodes, errnos, symlinks, `std::os::unix`, the POSIX-only methods, plus the POSIX type's own host
+  suite and the inode-dedup cell); 100 more name it only in comments about the type or in the `#![cfg(unix)]` reason
+  lines, which stay until each crate's milestone un-gates them. The rename is a rerunnable classifier (POSIX signals in
+  a file's code, comments stripped, plus a hand-read keep and rename list), not per-site judgment. Where the code
+  differed: the survey's 262 files are 247 Rust files outside `cmdr-local` today, and the gates are item-level too (12
+  renamed files keep `#[cfg(unix)]` cells), not only file-level. Verified: workspace `cargo nextest list` identical
+  before and after on macOS (16,482 tests), the Desktop (Rust) job's 33 checks green with `--ci --fresh`, `clippy-linux`
+  and `rust-tests-linux` green, the zig cross-check `cargo check --all-targets --target x86_64-pc-windows-gnu` for
+  `cmdr-local`, `cmdr-operations`, `cmdr-restic`, and the app, and clippy `--all-targets -D warnings` for the same four
+  on the builder, whose nextest run (7,327 tests, 6,788 pass) is unchanged by construction
+  (`docs/notes/windows-port/build-progress.md`). The still-gated files whose only POSIX-ism was the name (53 file-level,
+  12 with cell gates) are listed on #1225.
 
 ### 3. The type
 
@@ -1116,8 +1130,11 @@ included; the hidden couplings it found are why waves B and C differ from round 
   canonical source), ❌ never from a SHOWN name, or a copy of `caf\xe9.txt` lands as `caf\u{FFFD}.txt`, possibly over a
   real file of that name. Switch `rename_local_exclusive`'s callers to the typed form and delete the `&Path` one; same
   for every wave-B typed-beside pair this crate calls. A destination that can't store a source name's escapes refuses
-  that item typed and counts it on the op's summary (the cross-namer rule). Rollback planner and journal rows carry app
-  paths into the operation log (pinned). Big enough to split by subagent (transfer, delete and trash, archive edit,
+  that item typed and counts it on the op's summary (the cross-namer rule). Every mutating start already drops a
+  trailing `/` and `/.` from its caller's paths (`crates/cmdr-operations/src/wire_paths.rs`, the stopgap for the raw IPC
+  `delete_files` of `x/link/` that emptied the link's target); once the starts take `AppPath` from `from_wire`, delete
+  that module and its call sites, keeping `trailing_separator_tests.rs` green. Rollback planner and journal rows carry
+  app paths into the operation log (pinned). Big enough to split by subagent (transfer, delete and trash, archive edit,
   rename and create, scans), sequential on one branch. Non-UTF-8 safety (milestone 1's pins (f)):
   - The native walks (`scan_walker.rs`, `delete/walker.rs`, the move sweep, `scan_dry_run.rs`, `reversal.rs`) stay
     native inside, and any path they hand to a typed API goes through `from_native`, which escapes. ❌ A walk never
@@ -1367,7 +1384,8 @@ Round one's four, decided by the lead (2026-11-18) and written in by review roun
    rule 1). Review round 2 folded the typed-`..` resolver into the second.
 9. **Today's live bugs: the non-UTF-8 family is #1236** (filed in review round 2, with the name-addressed protocols
    round two found). The trailing-`/` case (a wire path `/x/link/` stats and walks the link's target) has no issue: the
-   frontend never sends one (rows are built by `join`), so only an MCP input can, and 10d fixes it.
+   frontend never sends one (rows are built by `join`), so only a raw IPC or MCP input can, and 10d fixes it. Its write
+   half is already guarded at the engine's starts (`crates/cmdr-operations/src/wire_paths.rs`), which 10a absorbs.
 
 Round two's three, decided by the lead (2026-11-18) and written in by review round 3:
 

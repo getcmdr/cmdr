@@ -12,7 +12,8 @@
  *    matches, with every sense's definition (trap 4: the first sense is often not
  *    the UI one) and the target terms with their region
  *  - **Linux and the orthodox pair** (Tier 3): the gettext catalogs (Nautilus,
- *    Thunar, Dolphin, Double Commander, git) by `msgid`, mnemonics (`_`, `&`) ignored
+ *    Thunar, Dolphin, the GNOME and KDE desktop apps, Double Commander, git) by
+ *    `msgid`, mnemonics (`_`, `&`) ignored
  *  - **Total Commander**: no English side exists, so only a reverse lookup reads it
  *
  * A forward lookup (`--term`) matches the English; a reverse one (`--target`)
@@ -31,7 +32,8 @@ export const PILE_SOURCES: readonly PileSource[] = Object.freeze(['macos', 'micr
 
 /** The gettext catalogs per source, by pile subfolder. */
 const GETTEXT: Readonly<Record<'linux' | 'orthodox' | 'git', readonly string[]>> = {
-  linux: ['gnome-nautilus', 'xfce-thunar', 'kde-dolphin'],
+  // `gnome-desktop` / `kde-desktop`: the desktops' own apps beside their file managers (`pnpm i18n:pile-fetch`).
+  linux: ['gnome-nautilus', 'xfce-thunar', 'kde-dolphin', 'gnome-desktop', 'kde-desktop'],
   orthodox: ['double-commander'],
   git: ['git'],
 }

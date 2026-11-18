@@ -154,8 +154,8 @@ pub fn is_deleting_aside_name(name: &str) -> bool {
 }
 
 /// The length of a hyphenated UUID, which is what `Uuid::to_string` writes, the
-/// only form [`is_staging_dir_name`] accepts, and the room every scratch file
-/// name keeps for its unique suffix (`staging/names.rs`).
+/// only form [`is_staging_dir_name`] accepts, and the room every scratch
+/// filename keeps for its unique suffix (`staging/names.rs`).
 const UUID_TEXT_LEN: usize = 36;
 
 /// Whether `name` is scratch Cmdr itself left there, of any shape: a staged
@@ -180,7 +180,7 @@ pub fn is_cmdr_scratch_name(name: &str) -> bool {
 /// task's leaked guard harmless.
 pub type StagingOwner = Option<Weak<()>>;
 
-/// The scratch files Cmdr has on disk right now, by file name, each with the
+/// The scratch files Cmdr has on disk right now, by filename, each with the
 /// owner of every outstanding claim.
 ///
 /// A `Vec` rather than a count because each claim carries its own owner. In
@@ -203,7 +203,7 @@ static ACTIVE_TEMPS: LazyLock<Mutex<HashMap<String, Vec<StagingOwner>>>> = LazyL
 pub struct StagingTemp {
     path: PathBuf,
     /// The registry key, kept so `Drop` doesn't have to re-derive it from
-    /// `path`. `None` when the path had no file name and nothing was registered.
+    /// `path`. `None` when the path had no filename and nothing was registered.
     name: Option<String>,
 }
 
@@ -358,7 +358,7 @@ mod tests {
     fn name_of(temp: &StagingTemp) -> String {
         temp.path()
             .file_name()
-            .expect("a minted temp always has a file name")
+            .expect("a minted temp always has a filename")
             .to_string_lossy()
             .into_owned()
     }

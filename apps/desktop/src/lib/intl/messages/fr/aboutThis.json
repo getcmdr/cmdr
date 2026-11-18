@@ -1237,9 +1237,9 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "Masquer cette astuce. Vous pouvez la réafficher dans Réglages > Avancé.",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Masquer cette astuce. Vous pouvez la réafficher dans Paramètres > Avancé.} linuxGnome {Masquer cette astuce. Vous pouvez la réafficher dans Préférences > Avancé.} linuxKde {Masquer cette astuce. Vous pouvez la réafficher dans « Configurer Cmdr » > Avancé.} other {Masquer cette astuce. Vous pouvez la réafficher dans Réglages > Avancé.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "6a3a4b3"
+    "sourceHash": "aa27809"
   },
   "aboutThis.action.continueInAskCmdr": "Continuer dans Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {

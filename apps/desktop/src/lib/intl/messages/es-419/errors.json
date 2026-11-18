@@ -995,13 +995,13 @@
   "@errors.shareList.encryptionRequired": {
     "sourceHash": "38a5e02"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Configuración, si no lo necesitas",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, windows {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Configuración, si no lo necesitas} linuxGnome {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Preferencias, si no lo necesitas} linuxKde {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Configurar Cmdr, si no lo necesitas} other {Esto es lo que puedes probar:\n- Inicia sesión con una cuenta: las conexiones como invitado no se pueden cifrar\n- Activa el cifrado SMB en el servidor\n- Desactiva “Requerir siempre cifrado SMB” en Configuración, si no lo necesitas}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
-    "sourceHash": "dd02c16"
+    "sourceHash": "c7798cd"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Configuración.",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, windows {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Configuración.} linuxGnome {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Preferencias.} linuxKde {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Configurar Cmdr.} other {Inicia sesión con una cuenta en vez de como invitado, o activa el cifrado SMB en el servidor. También puedes desactivar “Requerir siempre cifrado SMB” en Configuración.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
-    "sourceHash": "c9c5630"
+    "sourceHash": "836c7ae"
   },
   "errors.write.homeFolder.suggestion.holdsHome": "Si quieres liberar espacio, elige algo más concreto. Si quieres deshacerte de todo lo que hay en esta computadora, restablece el sistema de fábrica.",
   "@errors.write.homeFolder.suggestion.holdsHome": {

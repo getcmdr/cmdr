@@ -3,10 +3,10 @@
   "@mtp.connectedToast.title": {
     "sourceHash": "562319d"
   },
-  "mtp.connectedToast.body": "{platform, select, macos {Cmdr heeft de macOS-cameradaemon (ptpcamerad) gepauzeerd om toegang te krijgen tot dit apparaat. Wil je het in een andere app gebruiken, zet MTP-ondersteuning dan uit in Instellingen.} windows {} other {Wil je dit apparaat in een andere app gebruiken, zet MTP-ondersteuning dan uit in Instellingen.}}",
+  "mtp.connectedToast.body": "{platform, select, macos {Cmdr heeft de macOS-cameradaemon (ptpcamerad) gepauzeerd om toegang te krijgen tot dit apparaat. Wil je het in een andere app gebruiken, zet MTP-ondersteuning dan uit in Instellingen.} windows {} linuxGnome {Wil je dit apparaat in een andere app gebruiken, zet MTP-ondersteuning dan uit in voorkeuren.} linuxKde {Wil je dit apparaat in een andere app gebruiken, zet MTP-ondersteuning dan uit in ‘Cmdr configureren’.} other {Wil je dit apparaat in een andere app gebruiken, zet MTP-ondersteuning dan uit in Instellingen.}}",
   "@mtp.connectedToast.body": {
-    "sourceHash": "74349d8",
-    "sameAsSourceJustification": "The windows branch is empty on purpose in every language (Windows shares the device with File Explorer, so the toast has no body line)."
+    "sourceHash": "b7aa493",
+    "sameAsSourceJustification": "The windows branch is empty in English (Windows has no camera daemon to pause, so the toast carries no body there); an empty branch is empty in every language."
   },
   "mtp.connectedToast.dontShowAgain": "Niet meer tonen",
   "@mtp.connectedToast.dontShowAgain": {

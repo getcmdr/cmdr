@@ -342,9 +342,9 @@
     "sourceHash": "e0926fd",
     "sameAsSourceJustification": "Loanword: the generic name for this class of app is \"Terminal\" here too, and Apple keeps the app name English in its localized Finder (\"Mở trong Terminal\", key N67, verified against the macOS reference pile 2026-09-05); matches settings.navigationAndFileOps.card.terminal."
   },
-  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {Thanh phím chức năng hiện đã ẩn, có thể bật lại bất cứ lúc nào trong <settingsLink>Cài đặt</settingsLink>.} other {Thanh phím chức năng hiện đã ẩn, có thể bật lại bất cứ lúc nào trong <settingsLink>Cài đặt</settingsLink>.}}",
+  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {Thanh phím chức năng hiện đã ẩn, có thể bật lại bất cứ lúc nào trong <settingsLink>Cài đặt</settingsLink>.} linuxGnome {Thanh phím chức năng hiện đã ẩn, có thể bật lại bất cứ lúc nào trong <settingsLink>Tùy thích</settingsLink>.} linuxKde {Thanh phím chức năng hiện đã ẩn, có thể bật lại bất cứ lúc nào trong <settingsLink>Cấu hình Cmdr</settingsLink>.} other {Thanh phím chức năng hiện đã ẩn, có thể bật lại bất cứ lúc nào trong <settingsLink>Cài đặt</settingsLink>.}}",
   "@fileExplorer.functionKeyBar.hiddenToast": {
-    "sourceHash": "cb00b6d"
+    "sourceHash": "a829741"
   },
   "fileExplorer.typeToJump.prefix": "Nhảy tới: ",
   "@fileExplorer.typeToJump.prefix": {
@@ -522,9 +522,9 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Thông tin đăng nhập được lưu cục bộ (Trình quản lý thông tin xác thực không có sẵn)} linuxKde {Thông tin đăng nhập được lưu cục bộ (KWallet không có sẵn)} other {Thông tin đăng nhập được lưu cục bộ (không phát hiện thấy kho khóa hệ thống)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Thông tin đăng nhập được lưu cục bộ (Trình quản lý thông tin xác thực không có sẵn)} linuxKde {Thông tin đăng nhập được lưu cục bộ (Ví KDE không có sẵn)} other {Thông tin đăng nhập được lưu cục bộ (không phát hiện thấy kho khóa hệ thống)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
-    "sourceHash": "d279dc9"
+    "sourceHash": "438153a"
   },
   "fileExplorer.network.share.notFound": "Không tìm thấy mục chia sẻ “{shareName}” trên {hostName}",
   "@fileExplorer.network.share.notFound": {
@@ -558,9 +558,9 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Xóa mật khẩu đã lưu khỏi chuỗi khóa} windows {Xóa mật khẩu đã lưu khỏi Trình quản lý thông tin xác thực} linuxKde {Xóa mật khẩu đã lưu khỏi KWallet} other {Xóa mật khẩu đã lưu khỏi kho khóa của bạn}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Xóa mật khẩu đã lưu khỏi chuỗi khóa} windows {Xóa mật khẩu đã lưu khỏi Trình quản lý thông tin xác thực} linuxKde {Xóa mật khẩu đã lưu khỏi Ví KDE} other {Xóa mật khẩu đã lưu khỏi kho khóa của bạn}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "3d21c85"
+    "sourceHash": "ed20dcd"
   },
   "fileExplorer.network.share.useGuest": "Duyệt với tư cách khách",
   "@fileExplorer.network.share.useGuest": {
@@ -770,21 +770,21 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.",
+  "fileExplorer.edit.hint": "{platform, select, windows {Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.} linuxGnome {Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Tùy thích.} linuxKde {Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cấu hình Cmdr.} other {Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.}}",
   "@fileExplorer.edit.hint": {
-    "sourceHash": "3632f06"
+    "sourceHash": "2640119"
   },
-  "fileExplorer.edit.hintUnnamed": "Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, windows {Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.} linuxGnome {Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Tùy thích.} linuxKde {Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cấu hình Cmdr.} other {Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.}}",
   "@fileExplorer.edit.hintUnnamed": {
-    "sourceHash": "6216471"
+    "sourceHash": "5b5c767"
   },
   "fileExplorer.edit.dismiss": "Bỏ qua",
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "Mở cài đặt",
+  "fileExplorer.edit.openSettings": "{platform, select, windows {Mở cài đặt} linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
   "@fileExplorer.edit.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "fileExplorer.edit.appMissing": "Cmdr không tìm thấy trình soạn thảo bạn đã chọn, nên tệp này đã mở trong {app}.",
   "@fileExplorer.edit.appMissing": {
@@ -838,9 +838,9 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "Cài đặt",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {Cài đặt} linuxGnome {Tùy thích} linuxKde {Cấu hình Cmdr} other {Cài đặt}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
-    "sourceHash": "74a883a"
+    "sourceHash": "6613a01"
   },
   "fileExplorer.clipboard.copiedPath": "Đã sao chép đường dẫn vào bảng nhớ tạm:",
   "@fileExplorer.clipboard.copiedPath": {
@@ -951,9 +951,9 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong chuỗi khóa. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong Truy cập chuỗi khóa.} windows {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong Trình quản lý thông tin xác thực. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong Trình quản lý thông tin xác thực.} linuxGnome {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong chùm chìa khóa của bạn. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong Mật khẩu và Chìa khóa.} linuxKde {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong KWallet. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong KWalletManager.} other {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong kho khóa của bạn. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong ứng dụng kho khóa của bạn.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong chuỗi khóa. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong Truy cập chuỗi khóa.} windows {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong Trình quản lý thông tin xác thực. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong Trình quản lý thông tin xác thực.} linuxGnome {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong chùm chìa khóa của bạn. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong Mật khẩu và Chìa khóa.} linuxKde {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong Ví KDE. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong KWalletManager.} other {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong kho khóa của bạn. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong ứng dụng kho khóa của bạn.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
-    "sourceHash": "366f06a"
+    "sourceHash": "52da364"
   },
   "fileExplorer.restic.forgetPassword.unreachable": "Cmdr không thể truy cập {name} lúc này, nên mật khẩu vẫn được lưu. Hãy thử lại sau giây lát.",
   "@fileExplorer.restic.forgetPassword.unreachable": {
@@ -1840,13 +1840,13 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Cài đặt.",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Cài đặt.} linuxGnome {Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Tùy thích.} linuxKde {Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Cấu hình Cmdr.} other {Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Cài đặt.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
-    "sourceHash": "53be5f6"
+    "sourceHash": "53f2cbb"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "Tính năng truy cập điện thoại Android đang tắt trong Cài đặt.",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {Tính năng truy cập điện thoại Android đang tắt trong Cài đặt.} linuxGnome {Tính năng truy cập điện thoại Android đang tắt trong Tùy thích.} linuxKde {Tính năng truy cập điện thoại Android đang tắt trong Cấu hình Cmdr.} other {Tính năng truy cập điện thoại Android đang tắt trong Cài đặt.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
-    "sourceHash": "4fba610"
+    "sourceHash": "eb9bed4"
   },
   "fileExplorer.navigation.favoriteUnreachable.forgotten": "Cmdr không còn biết cách kết nối tới {kind, select, share {mục chia sẻ “{place}”} server {máy chủ “{place}”} phone {điện thoại “{place}”} other {“{place}”}}. Hãy kết nối lại từ danh sách Máy chủ, và mục ưa thích này sẽ hoạt động trở lại.",
   "@fileExplorer.navigation.favoriteUnreachable.forgotten": {
@@ -1856,9 +1856,9 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "Mở cài đặt",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {Mở cài đặt} linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "fileExplorer.navigation.favoriteUnreachable.openServers": "Hiển thị máy chủ",
   "@fileExplorer.navigation.favoriteUnreachable.openServers": {
@@ -2216,21 +2216,21 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.} linuxGnome {Lập chỉ mục ổ đĩa đang tắt trong Tùy thích, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.} linuxKde {Lập chỉ mục ổ đĩa đang tắt trong Cấu hình Cmdr, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
-    "sourceHash": "0253edd"
+    "sourceHash": "e91977e"
   },
   "fileExplorer.navigation.driveIndex.driveLeaving": "{name} đang được ngắt kết nối, nên Cmdr để nguyên chỉ mục của ổ đĩa. Nếu ổ đĩa vẫn được kết nối, hãy thử lại sau giây lát.",
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên hiện không có ổ đĩa nào được lập chỉ mục.",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên hiện không có ổ đĩa nào được lập chỉ mục.} linuxGnome {Lập chỉ mục ổ đĩa đang tắt trong Tùy thích, nên hiện không có ổ đĩa nào được lập chỉ mục.} linuxKde {Lập chỉ mục ổ đĩa đang tắt trong Cấu hình Cmdr, nên hiện không có ổ đĩa nào được lập chỉ mục.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên hiện không có ổ đĩa nào được lập chỉ mục.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
-    "sourceHash": "6ebf6f4"
+    "sourceHash": "76cf912"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "Lập chỉ mục ổ đĩa đang tắt trong Cài đặt. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.} linuxGnome {Lập chỉ mục ổ đĩa đang tắt trong Tùy thích. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.} linuxKde {Lập chỉ mục ổ đĩa đang tắt trong Cấu hình Cmdr. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
-    "sourceHash": "26e250c"
+    "sourceHash": "90d82ab"
   },
   "fileExplorer.dragOut.failed": "{count, plural, =1 {Không thể sao chép “{name}”.} other {Không thể sao chép {countText} mục.}}",
   "@fileExplorer.dragOut.failed": {
@@ -2336,9 +2336,9 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Cài đặt.",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Cài đặt.} linuxGnome {Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Tùy thích.} linuxKde {Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Cấu hình Cmdr.} other {Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Cài đặt.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
-    "sourceHash": "ac6d3c8"
+    "sourceHash": "a9cadc8"
   },
   "fileExplorer.quickFilter.intro.switchToJump": "Chuyển sang “Nhảy tới”",
   "@fileExplorer.quickFilter.intro.switchToJump": {
@@ -2404,9 +2404,9 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Cài đặt, mục Máy chủ.",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Cài đặt, mục Máy chủ.} linuxGnome {Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Tùy thích, mục Máy chủ.} linuxKde {Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Cấu hình Cmdr, mục Máy chủ.} other {Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Cài đặt, mục Máy chủ.}}",
   "@fileExplorer.smbLinkConsent.note": {
-    "sourceHash": "3f9615a"
+    "sourceHash": "4e49784"
   },
   "fileExplorer.smbLinkConsent.allow": "Cho phép và đăng nhập",
   "@fileExplorer.smbLinkConsent.allow": {

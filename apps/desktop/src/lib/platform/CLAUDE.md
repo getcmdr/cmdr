@@ -25,7 +25,8 @@ behave, as the backend says, read synchronously.
   `docs/notes/windows-port/platform-conventions.md`.
 - **All three values are injected, never sniffed.** The backend's init script defines `window.__CMDR_PLATFORM__`,
   `__CMDR_CAPABILITIES__`, and `__CMDR_CONVENTIONS__` in every webview before any script runs, so module-load reads are
-  safe. ❌ Never read `navigator.userAgent` or `navigator.platform` to decide the OS.
+  safe. A mocked dev run adds `__CMDR_COPY_PLATFORM__`, read by `getCopyPlatform()` for the message runtime alone. ❌
+  Never read `navigator.userAgent` or `navigator.platform` to decide the OS.
 - **No backend, no injection: `'linux'`, no capabilities, and the desktop-neutral Linux conventions** (Vitest, a plain
   browser), so no OS-backed surface shows by accident. The browser demo answers for the visitor's computer
   (`apps/desktop/src/lib/demo/platform.ts`).

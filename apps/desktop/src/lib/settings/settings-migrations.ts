@@ -95,7 +95,7 @@ async function dropLeftoverOpenaiApiKey(store: Store): Promise<boolean> {
 
 /**
  * Migration 9 (#1001): before #943, a Linux install could turn image indexing on, and the test
- * fake that was its backend filled `media.db` with text made up from file names. Without an image
+ * fake that was its backend filled `media.db` with text made up from filenames. Without an image
  * engine the backend now purges those stores and starts nothing, and the Settings page is gone,
  * so a stored "on" would leave the file-list badges and the search grid pointing at nothing, with
  * no switch to turn them off. Dropping the key reads as the default, off.

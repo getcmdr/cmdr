@@ -43,8 +43,8 @@ const script: Section[] = [
     ],
     // The share lists 5,000 photos on "way faster"; the copy within the share lands on "right on the server". The
     // shots hold a light crop to the bottom left: the volume picker at the top shows the test server's address (see
-    // video-beats.json), and `closeFraming` keeps it cropped off inside the window for the whole shot, while the file
-    // names and the "5,000 files" count stay in frame.
+    // video-beats.json), and `closeFraming` keeps it cropped off inside the window for the whole shot, while the
+    // filenames and the "5,000 files" count stay in frame.
     shots: [
       shot(
         'smb',

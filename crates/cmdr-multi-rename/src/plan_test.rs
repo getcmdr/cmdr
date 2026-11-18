@@ -496,7 +496,7 @@ fn examples_read_the_made_up_files_exif_and_tags() {
     );
 }
 
-/// Media facts by file name; a file not listed is `NotMedia`.
+/// Media facts by filename; a file not listed is `NotMedia`.
 struct MediaByName<'a>(Vec<(&'a str, RowMedia<'a>)>);
 
 impl MediaLookup for MediaByName<'_> {

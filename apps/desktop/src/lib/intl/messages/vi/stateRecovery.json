@@ -3,13 +3,13 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "Thống kê sử dụng và báo cáo sự cố vẫn tắt cho đến khi bạn bật lại trong Cài đặt › Cập nhật & quyền riêng tư.",
+  "stateRecovery.settings.body": "{platform, select, windows {Thống kê sử dụng và báo cáo sự cố vẫn tắt cho đến khi bạn bật lại trong Cài đặt › Cập nhật & quyền riêng tư.} linuxGnome {Thống kê sử dụng và báo cáo sự cố vẫn tắt cho đến khi bạn bật lại trong Tùy thích › Cập nhật & quyền riêng tư.} linuxKde {Thống kê sử dụng và báo cáo sự cố vẫn tắt cho đến khi bạn bật lại trong Cấu hình Cmdr › Cập nhật & quyền riêng tư.} other {Thống kê sử dụng và báo cáo sự cố vẫn tắt cho đến khi bạn bật lại trong Cài đặt › Cập nhật & quyền riêng tư.}}",
   "@stateRecovery.settings.body": {
-    "sourceHash": "20439e1"
+    "sourceHash": "253a6ed"
   },
-  "stateRecovery.settings.openSettings": "Mở cài đặt",
+  "stateRecovery.settings.openSettings": "{platform, select, windows {Mở cài đặt} linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
   "@stateRecovery.settings.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.shortcuts.title": "Cmdr không đọc được phím tắt của bạn, nên các phím tắt đã trở về mặc định",
   "@stateRecovery.shortcuts.title": {
@@ -19,13 +19,13 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "Nếu giờ Cmdr hiển thị là không có giấy phép, hãy nhập lại khóa giấy phép trong Cài đặt › Giấy phép.",
+  "stateRecovery.license.body": "{platform, select, windows {Nếu giờ Cmdr hiển thị là không có giấy phép, hãy nhập lại khóa giấy phép trong Cài đặt › Giấy phép.} linuxGnome {Nếu giờ Cmdr hiển thị là không có giấy phép, hãy nhập lại khóa giấy phép trong Tùy thích › Giấy phép.} linuxKde {Nếu giờ Cmdr hiển thị là không có giấy phép, hãy nhập lại khóa giấy phép trong Cấu hình Cmdr › Giấy phép.} other {Nếu giờ Cmdr hiển thị là không có giấy phép, hãy nhập lại khóa giấy phép trong Cài đặt › Giấy phép.}}",
   "@stateRecovery.license.body": {
-    "sourceHash": "ea51589"
+    "sourceHash": "e4d10c4"
   },
-  "stateRecovery.license.openSettings": "Mở cài đặt",
+  "stateRecovery.license.openSettings": "{platform, select, windows {Mở cài đặt} linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
   "@stateRecovery.license.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.appStatus.title": "{platform, select, windows {Cmdr không đọc được các thư mục mà khung đã mở trước đó, nên các khung bắt đầu ở thư mục người dùng} other {Cmdr không đọc được các thư mục mà khung đã mở trước đó, nên các khung bắt đầu ở thư mục chính}}",
   "@stateRecovery.appStatus.title": {

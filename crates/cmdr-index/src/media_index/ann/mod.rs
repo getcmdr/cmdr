@@ -105,7 +105,7 @@ pub(crate) enum AnnSpace {
 }
 
 impl AnnSpace {
-    /// The file-name suffix distinguishing this space's index beside the media DB.
+    /// The filename suffix distinguishing this space's index beside the media DB.
     fn suffix(self) -> &'static str {
         match self {
             AnnSpace::Clip => crate::volume_files::ANN_SPACE_CLIP,

@@ -705,21 +705,21 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "Add meg az API-kulcsodat a beállításokban, hogy elkezdhess csevegni.",
+  "askCmdr.error.noKey": "{platform, select, windows {Add meg az API-kulcsodat a beállításokban, hogy elkezdhess csevegni.} linuxGnome {Add meg az API-kulcsodat a beállításokban, hogy elkezdhess csevegni.} linuxKde {Add meg az API-kulcsodat a Cmdr beállításaiban, hogy elkezdhess csevegni.} other {Add meg az API-kulcsodat a beállításokban, hogy elkezdhess csevegni.}}",
   "@askCmdr.error.noKey": {
-    "sourceHash": "0a78f37"
+    "sourceHash": "fcbb328"
   },
-  "askCmdr.error.notConfigured": "A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a beállításokban.",
+  "askCmdr.error.notConfigured": "{platform, select, windows {A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a beállításokban.} linuxGnome {A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a beállításokban.} linuxKde {A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a Cmdr beállításaiban.} other {A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a beállításokban.}}",
   "@askCmdr.error.notConfigured": {
-    "sourceHash": "2d55d2c"
+    "sourceHash": "b0d3e93"
   },
   "askCmdr.error.askCmdrOff": "Az Ask Cmdr ki van kapcsolva.",
   "@askCmdr.error.askCmdrOff": {
     "sourceHash": "6599ee1"
   },
-  "askCmdr.error.noCloudConsent": "A felhő-AI ki van kapcsolva. Engedélyezd itt: Beállítások > AI.",
+  "askCmdr.error.noCloudConsent": "{platform, select, windows {A felhő-AI ki van kapcsolva. Engedélyezd itt: Beállítások > AI.} linuxGnome {A felhő-AI ki van kapcsolva. Engedélyezd itt: Beállítások > AI.} linuxKde {A felhő-AI ki van kapcsolva. Engedélyezd itt: Cmdr beállítása > AI.} other {A felhő-AI ki van kapcsolva. Engedélyezd itt: Beállítások > AI.}}",
   "@askCmdr.error.noCloudConsent": {
-    "sourceHash": "cd2af1d"
+    "sourceHash": "85cf9ae"
   },
   "askCmdr.error.managedByOrganization": "A szervezeted nem engedélyezi ezt az AI-szolgáltatást. Az IT-csapatodtól megtudhatod, melyeket használhatod.",
   "@askCmdr.error.managedByOrganization": {
@@ -737,29 +737,29 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a beállításokban.",
+  "askCmdr.error.authFailed": "{platform, select, windows {A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a beállításokban.} linuxGnome {A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a beállításokban.} linuxKde {A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a Cmdr beállításaiban.} other {A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a beállításokban.}}",
   "@askCmdr.error.authFailed": {
-    "sourceHash": "a2302ca"
+    "sourceHash": "98e4d60"
   },
   "askCmdr.error.rateLimited": "A szolgáltató most elfoglalt, vagy elfogyott a kvótád. Próbáld újra egy kicsit később.",
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.} linuxGnome {A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.} linuxKde {A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a Cmdr beállításaiban, vagy bővítsd a csomagodat.} other {A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.}}",
   "@askCmdr.error.modelNotInPlan.named": {
-    "sourceHash": "9f2c237"
+    "sourceHash": "72f16d4"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.} linuxGnome {A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.} linuxKde {A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a Cmdr beállításaiban, vagy bővítsd a csomagodat.} other {A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
-    "sourceHash": "b90bf30"
+    "sourceHash": "4b84567"
   },
-  "askCmdr.error.requestTooLarge.named": "{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a beállításokban.",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a beállításokban.} linuxGnome {{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a beállításokban.} linuxKde {{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a Cmdr beállításaiban.} other {{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a beállításokban.}}",
   "@askCmdr.error.requestTooLarge.named": {
-    "sourceHash": "f878555"
+    "sourceHash": "956dae8"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a beállításokban.",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a beállításokban.} linuxGnome {Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a beállításokban.} linuxKde {Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a Cmdr beállításaiban.} other {Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a beállításokban.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
-    "sourceHash": "b81536f"
+    "sourceHash": "aace2fc"
   },
   "askCmdr.error.providerBusy.named": "{provider} most annyira elfoglalt, hogy pár próbálkozás után sem válaszolt. Várj néhány percet, aztán küldd el újra az üzenetedet.",
   "@askCmdr.error.providerBusy.named": {
@@ -977,17 +977,17 @@
   "@askCmdr.composer.sendNeedsProvider": {
     "sourceHash": "9e6aba3"
   },
-  "askCmdr.providerNotice.off": "Az Ask Cmdrnek AI-szolgáltató kell a csevegéshez. Válassz egyet a Beállításokban.",
+  "askCmdr.providerNotice.off": "{platform, select, windows {Az Ask Cmdrnek AI-szolgáltató kell a csevegéshez. Válassz egyet a Beállításokban.} linuxGnome {Az Ask Cmdrnek AI-szolgáltató kell a csevegéshez. Válassz egyet a Beállításokban.} linuxKde {Az Ask Cmdrnek AI-szolgáltató kell a csevegéshez. Válassz egyet a Cmdr beállításaiban.} other {Az Ask Cmdrnek AI-szolgáltató kell a csevegéshez. Válassz egyet a Beállításokban.}}",
   "@askCmdr.providerNotice.off": {
-    "sourceHash": "8696c99"
+    "sourceHash": "5531c7f"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "A felhő-AI-szolgáltatódnak API-kulcs kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Beállításokban.",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, windows {A felhő-AI-szolgáltatódnak API-kulcs kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Beállításokban.} linuxGnome {A felhő-AI-szolgáltatódnak API-kulcs kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Beállításokban.} linuxKde {A felhő-AI-szolgáltatódnak API-kulcs kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Cmdr beállításaiban.} other {A felhő-AI-szolgáltatódnak API-kulcs kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Beállításokban.}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
-    "sourceHash": "dccf257"
+    "sourceHash": "6e39e10"
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "A felhő-AI-szolgáltatódnak cím kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Beállításokban.",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, windows {A felhő-AI-szolgáltatódnak cím kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Beállításokban.} linuxGnome {A felhő-AI-szolgáltatódnak cím kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Beállításokban.} linuxKde {A felhő-AI-szolgáltatódnak cím kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Cmdr beállításaiban.} other {A felhő-AI-szolgáltatódnak cím kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Beállításokban.}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
-    "sourceHash": "1b1682b"
+    "sourceHash": "feefb7f"
   },
   "askCmdr.providerNotice.localNotSetUp": "A helyi AI még nincs letöltve, ezért az Ask Cmdr nem tud csevegni. Állítsd be a Beállításokban.",
   "@askCmdr.providerNotice.localNotSetUp": {
@@ -1021,9 +1021,9 @@
   "@askCmdr.gate.cloudOff.title": {
     "sourceHash": "2e56781"
   },
-  "askCmdr.gate.cloudOff.body": "Az Ask Cmdr a beállított felhő-AI-szolgáltatással beszélget. Előbb engedélyezd a felhő-AI-t a Beállításokban, és máris cseveghetsz.",
+  "askCmdr.gate.cloudOff.body": "{platform, select, windows {Az Ask Cmdr a beállított felhő-AI-szolgáltatással beszélget. Előbb engedélyezd a felhő-AI-t a Beállításokban, és máris cseveghetsz.} linuxGnome {Az Ask Cmdr a beállított felhő-AI-szolgáltatással beszélget. Előbb engedélyezd a felhő-AI-t a Beállításokban, és máris cseveghetsz.} linuxKde {Az Ask Cmdr a beállított felhő-AI-szolgáltatással beszélget. Előbb engedélyezd a felhő-AI-t a Cmdr beállításaiban, és máris cseveghetsz.} other {Az Ask Cmdr a beállított felhő-AI-szolgáltatással beszélget. Előbb engedélyezd a felhő-AI-t a Beállításokban, és máris cseveghetsz.}}",
   "@askCmdr.gate.cloudOff.body": {
-    "sourceHash": "d3d3252"
+    "sourceHash": "c695a94"
   },
   "askCmdr.gate.cloudOff.openSettings": "AI-beállítások megnyitása",
   "@askCmdr.gate.cloudOff.openSettings": {
@@ -1411,9 +1411,9 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a beállításokban.",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a beállításokban.} linuxGnome {Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a beállításokban.} linuxKde {Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a Cmdr beállításaiban.} other {Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a beállításokban.}}",
   "@askCmdr.wake.needsApiKey": {
-    "sourceHash": "0f71f75"
+    "sourceHash": "c8908e4"
   },
   "askCmdr.wakeDigest.summary": "Ez változott {foldersText} {folders, plural, one {mappában} other {mappában}}",
   "@askCmdr.wakeDigest.summary": {

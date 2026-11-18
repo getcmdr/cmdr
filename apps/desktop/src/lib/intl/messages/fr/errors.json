@@ -2645,9 +2645,9 @@
   "@errors.listing.smbEncryptionRequired.explanation": {
     "sourceHash": "5eeef51"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "Voici ce que vous pouvez essayer :\n- Identifiez-vous avec un compte : les connexions en tant qu’invité ne peuvent pas être chiffrées\n- Activez le chiffrement SMB sur le serveur\n- Désactivez « Toujours exiger le chiffrement SMB » dans les Réglages, si vous n’en avez pas besoin",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, windows {Voici ce que vous pouvez essayer :\n- Identifiez-vous avec un compte : les connexions en tant qu’invité ne peuvent pas être chiffrées\n- Activez le chiffrement SMB sur le serveur\n- Désactivez « Toujours exiger le chiffrement SMB » dans les Paramètres, si vous n’en avez pas besoin} linuxGnome {Voici ce que vous pouvez essayer :\n- Identifiez-vous avec un compte : les connexions en tant qu’invité ne peuvent pas être chiffrées\n- Activez le chiffrement SMB sur le serveur\n- Désactivez « Toujours exiger le chiffrement SMB » dans les Préférences, si vous n’en avez pas besoin} linuxKde {Voici ce que vous pouvez essayer :\n- Identifiez-vous avec un compte : les connexions en tant qu’invité ne peuvent pas être chiffrées\n- Activez le chiffrement SMB sur le serveur\n- Désactivez « Toujours exiger le chiffrement SMB » dans « Configurer Cmdr », si vous n’en avez pas besoin} other {Voici ce que vous pouvez essayer :\n- Identifiez-vous avec un compte : les connexions en tant qu’invité ne peuvent pas être chiffrées\n- Activez le chiffrement SMB sur le serveur\n- Désactivez « Toujours exiger le chiffrement SMB » dans les Réglages, si vous n’en avez pas besoin}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
-    "sourceHash": "f16274b"
+    "sourceHash": "c91f084"
   },
   "errors.volume.encryptionRequired": "La connexion à ce partage ne peut pas être chiffrée et l’option « Toujours exiger le chiffrement SMB » est activée dans Cmdr.",
   "@errors.volume.encryptionRequired": {
@@ -2669,9 +2669,9 @@
   "@errors.write.smbEncryptionRequired.message": {
     "sourceHash": "ec53744"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "Identifiez-vous avec un compte plutôt qu’en tant qu’invité, ou activez le chiffrement SMB sur le serveur. Vous pouvez aussi désactiver « Toujours exiger le chiffrement SMB » dans les Réglages.",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, windows {Identifiez-vous avec un compte plutôt qu’en tant qu’invité, ou activez le chiffrement SMB sur le serveur. Vous pouvez aussi désactiver « Toujours exiger le chiffrement SMB » dans les Paramètres.} linuxGnome {Identifiez-vous avec un compte plutôt qu’en tant qu’invité, ou activez le chiffrement SMB sur le serveur. Vous pouvez aussi désactiver « Toujours exiger le chiffrement SMB » dans les Préférences.} linuxKde {Identifiez-vous avec un compte plutôt qu’en tant qu’invité, ou activez le chiffrement SMB sur le serveur. Vous pouvez aussi désactiver « Toujours exiger le chiffrement SMB » dans « Configurer Cmdr ».} other {Identifiez-vous avec un compte plutôt qu’en tant qu’invité, ou activez le chiffrement SMB sur le serveur. Vous pouvez aussi désactiver « Toujours exiger le chiffrement SMB » dans les Réglages.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
-    "sourceHash": "20a90d4"
+    "sourceHash": "a7fe1d2"
   },
   "errors.listing.smbNegotiationInvalid.title": "Le serveur n’a pas confirmé cette connexion",
   "@errors.listing.smbNegotiationInvalid.title": {

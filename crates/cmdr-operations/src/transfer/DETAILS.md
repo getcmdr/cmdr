@@ -1088,7 +1088,7 @@ FINISH out of order; each row only claims its own state, so that's honest.
 **Decision**: the pane's sort column doesn't steer copy order; `WriteOperationConfig` and `start_scan_preview` carry
 none. **Why**: the tree displays one order, so the rows below the active one are only upcoming when the drivers start
 files in that same order. A tree-ordered copy also finishes folders one by one, which is what the panes' gradual
-deselection wants. The old flat sort by file name alone interleaved folders (`b/aaa.txt` before `a/zzz.txt`), so most
+deselection wants. The old flat sort by filename alone interleaved folders (`b/aaa.txt` before `a/zzz.txt`), so most
 folders finished near the end.
 
 ## Durability (flush before reporting complete)

@@ -1591,7 +1591,7 @@
   },
   "settings.analytics.enabled.description": "Пожалуйста, включите этот параметр, чтобы помочь нам понять, какие возможности важны во время открытого бета-тестирования.\nСтатистика связана со случайным идентификатором, а не с вашим именем или почтой.\nCmdr никогда не отправляет имена файлов, пути, поисковые запросы и запросы к ИИ.\nЕсли параметр выключен, Cmdr не отправляет никакой статистики.",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "a8d8db1"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "аналитика, использование, статистика, конфиденциальность, приватность, телеметрия, бета, отслеживание, отказаться",
   "@settings.analytics.enabled.keywords": {
@@ -1615,7 +1615,7 @@
   },
   "settings.updates.crashReports.summary": "Отчет никогда не содержит имен файлов и личных данных.",
   "@settings.updates.crashReports.summary": {
-    "sourceHash": "7814a28"
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "сбой, вылет, падение, отчет, конфиденциальность, приватность, телеметрия, баг, ошибка",
   "@settings.updates.crashReports.keywords": {
@@ -2941,9 +2941,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Разделы настроек",
+  "settings.sidebar.sections": "{platform, select, windows {Разделы параметров} linuxGnome {Разделы параметров} linuxKde {Разделы окна «Настроить Cmdr»} other {Разделы настроек}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Настройки не найдены} one {Найден {countText} раздел} few {Найдено {countText} раздела} many {Найдено {countText} разделов} other {Найдено {countText} раздела}}",
   "@settings.sidebar.matchCount": {
@@ -3201,7 +3201,7 @@
   },
   "settings.securityLog.enabled.description": "В журнал попадают изменения и отказы, важные для безопасности: например, согласие на облачный ИИ, установленное обновление или приложение, которому сервер MCP отказал в доступе. Имен файлов, содержимого и паролей в нем нет.",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "97e24a4"
+    "sourceHash": "3692a3d"
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {Небольшой локальный журнал событий безопасности. Он никогда не покидает ваш Mac.} windows {Небольшой локальный журнал событий безопасности. Он никогда не покидает ваш компьютер.} other {Небольшой локальный журнал событий безопасности. Он никогда не покидает ваш компьютер.}}",
   "@settings.securityLog.enabled.summary": {
@@ -3420,9 +3420,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Настройки",
+  "settings.window.title": "{platform, select, windows {Параметры} linuxGnome {Параметры} linuxKde {Настройка – Cmdr} other {Настройки}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Загрузка настроек…",
   "@settings.window.loading": {
@@ -3668,13 +3668,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, =1 {Одна запись с именем «{itemName}» в приложении «Связка ключей»} one {{countText} запись с именем «{itemName}» в приложении «Связка ключей»} few {{countText} записи с именем «{itemName}» в приложении «Связка ключей»} many {{countText} записей с именем «{itemName}» в приложении «Связка ключей»} other {{countText} записи с именем «{itemName}» в приложении «Связка ключей»}}} windows {{count, plural, =1 {Одна запись с именем «{itemName}» в Диспетчере учетных данных} one {{countText} запись с именем «{itemName}» в Диспетчере учетных данных} few {{countText} записи с именем «{itemName}» в Диспетчере учетных данных} many {{countText} записей с именем «{itemName}» в Диспетчере учетных данных} other {{countText} записи с именем «{itemName}» в Диспетчере учетных данных}}} linuxKde {{count, plural, =1 {Одна запись с именем «{itemName}» в KWallet} one {{countText} запись с именем «{itemName}» в KWallet} few {{countText} записи с именем «{itemName}» в KWallet} many {{countText} записей с именем «{itemName}» в KWallet} other {{countText} записи с именем «{itemName}» в KWallet}}} other {{count, plural, =1 {Одна запись с именем «{itemName}» в хранилище ключей} one {{countText} запись с именем «{itemName}» в хранилище ключей} few {{countText} записи с именем «{itemName}» в хранилище ключей} many {{countText} записей с именем «{itemName}» в хранилище ключей} other {{countText} записи с именем «{itemName}» в хранилище ключей}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, =1 {Одна запись с именем «{itemName}» в приложении «Связка ключей»} one {{countText} запись с именем «{itemName}» в приложении «Связка ключей»} few {{countText} записи с именем «{itemName}» в приложении «Связка ключей»} many {{countText} записей с именем «{itemName}» в приложении «Связка ключей»} other {{countText} записи с именем «{itemName}» в приложении «Связка ключей»}}} windows {{count, plural, =1 {Одна запись с именем «{itemName}» в Диспетчере учетных данных} one {{countText} запись с именем «{itemName}» в Диспетчере учетных данных} few {{countText} записи с именем «{itemName}» в Диспетчере учетных данных} many {{countText} записей с именем «{itemName}» в Диспетчере учетных данных} other {{countText} записи с именем «{itemName}» в Диспетчере учетных данных}}} linuxKde {{count, plural, =1 {Одна запись с именем «{itemName}» в бумажнике KDE} one {{countText} запись с именем «{itemName}» в бумажнике KDE} few {{countText} записи с именем «{itemName}» в бумажнике KDE} many {{countText} записей с именем «{itemName}» в бумажнике KDE} other {{countText} записи с именем «{itemName}» в бумажнике KDE}}} other {{count, plural, =1 {Одна запись с именем «{itemName}» в хранилище ключей} one {{countText} запись с именем «{itemName}» в хранилище ключей} few {{countText} записи с именем «{itemName}» в хранилище ключей} many {{countText} записей с именем «{itemName}» в хранилище ключей} other {{countText} записи с именем «{itemName}» в хранилище ключей}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Все записи с именем «{itemName}» в приложении «Связка ключей», если они есть} windows {Все записи с именем «{itemName}» в Диспетчере учетных данных, если они есть} linuxKde {Все записи с именем «{itemName}» в KWallet, если они есть} other {Все записи с именем «{itemName}» в хранилище ключей, если они есть}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Все записи с именем «{itemName}» в приложении «Связка ключей», если они есть} windows {Все записи с именем «{itemName}» в Диспетчере учетных данных, если они есть} linuxKde {Все записи с именем «{itemName}» в бумажнике KDE, если они есть} other {Все записи с именем «{itemName}» в хранилище ключей, если они есть}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Выйти из Cmdr} other {Завершить Cmdr}}",
   "@settings.dataWipe.quit": {

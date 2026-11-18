@@ -1,7 +1,7 @@
 {
-  "operationLog.dialog.recordingOff": "El registro de operaciones está desactivado, así que las nuevas copias, movimientos, cambios de nombre y eliminaciones no aparecen aquí y no se pueden deshacer. Vuelve a activarlo en Configuración para que se registren de nuevo.",
+  "operationLog.dialog.recordingOff": "{platform, select, windows {El registro de operaciones está desactivado, así que las nuevas copias, movimientos, cambios de nombre y eliminaciones no aparecen aquí y no se pueden deshacer. Vuelve a activarlo en Configuración para que se registren de nuevo.} linuxGnome {El registro de operaciones está desactivado, así que las nuevas copias, movimientos, cambios de nombre y eliminaciones no aparecen aquí y no se pueden deshacer. Vuelve a activarlo en Preferencias para que se registren de nuevo.} linuxKde {El registro de operaciones está desactivado, así que las nuevas copias, movimientos, cambios de nombre y eliminaciones no aparecen aquí y no se pueden deshacer. Vuelve a activarlo en Configurar Cmdr para que se registren de nuevo.} other {El registro de operaciones está desactivado, así que las nuevas copias, movimientos, cambios de nombre y eliminaciones no aparecen aquí y no se pueden deshacer. Vuelve a activarlo en Configuración para que se registren de nuevo.}}",
   "@operationLog.dialog.recordingOff": {
-    "sourceHash": "5e268ed"
+    "sourceHash": "afa4f88"
   },
   "operationLog.dialog.loadError": "No se pudo cargar tu historial de operaciones. Inténtalo de nuevo en un momento.",
   "@operationLog.dialog.loadError": {

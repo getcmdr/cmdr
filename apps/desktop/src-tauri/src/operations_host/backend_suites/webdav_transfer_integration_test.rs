@@ -33,7 +33,7 @@ use super::network_transfer_test_support::{
 };
 use super::webdav_test_support::{WebdavFixture, connect, fixture};
 use crate::test_support::TestDir;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 /// Big enough to cross the read and write windows rather than ride in one
 /// request, so reassembly and offset bookkeeping are actually exercised.
@@ -61,7 +61,7 @@ async fn webdav_integration_copying_off_a_server_lands_every_byte() {
     assert_eq!(source_digest, sha256(&content), "the fixture seed must round-trip");
 
     let local_dir = TestDir::new("webdav_copy_off_server");
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),
@@ -100,7 +100,7 @@ async fn webdav_integration_copying_onto_a_server_lands_every_byte() {
 
     let content = self_describing_bytes(PAYLOAD_BYTES, "uploaded.bin");
     let local_dir = TestDir::new("webdav_copy_onto_server");
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),

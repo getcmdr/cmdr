@@ -3,13 +3,13 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "A használati statisztika és az összeomlási jelentések kikapcsolva maradnak, amíg vissza nem kapcsolod őket itt: Beállítások › Frissítések és adatvédelem.",
+  "stateRecovery.settings.body": "{platform, select, windows {A használati statisztika és az összeomlási jelentések kikapcsolva maradnak, amíg vissza nem kapcsolod őket itt: Beállítások › Frissítések és adatvédelem.} linuxGnome {A használati statisztika és az összeomlási jelentések kikapcsolva maradnak, amíg vissza nem kapcsolod őket itt: Beállítások › Frissítések és adatvédelem.} linuxKde {A használati statisztika és az összeomlási jelentések kikapcsolva maradnak, amíg vissza nem kapcsolod őket itt: Cmdr beállítása › Frissítések és adatvédelem.} other {A használati statisztika és az összeomlási jelentések kikapcsolva maradnak, amíg vissza nem kapcsolod őket itt: Beállítások › Frissítések és adatvédelem.}}",
   "@stateRecovery.settings.body": {
-    "sourceHash": "20439e1"
+    "sourceHash": "253a6ed"
   },
-  "stateRecovery.settings.openSettings": "Beállítások megnyitása",
+  "stateRecovery.settings.openSettings": "{platform, select, windows {Beállítások megnyitása} linuxGnome {Beállítások megnyitása} linuxKde {Cmdr beállítása} other {Beállítások megnyitása}}",
   "@stateRecovery.settings.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.shortcuts.title": "A Cmdr nem tudta beolvasni a billentyűparancsaidat, ezért visszaálltak alapértékre",
   "@stateRecovery.shortcuts.title": {
@@ -19,13 +19,13 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "Ha a Cmdr most licenc nélkülinek látszik, add meg újra a licenckulcsodat itt: Beállítások › Licenc.",
+  "stateRecovery.license.body": "{platform, select, windows {Ha a Cmdr most licenc nélkülinek látszik, add meg újra a licenckulcsodat itt: Beállítások › Licenc.} linuxGnome {Ha a Cmdr most licenc nélkülinek látszik, add meg újra a licenckulcsodat itt: Beállítások › Licenc.} linuxKde {Ha a Cmdr most licenc nélkülinek látszik, add meg újra a licenckulcsodat itt: Cmdr beállítása › Licenc.} other {Ha a Cmdr most licenc nélkülinek látszik, add meg újra a licenckulcsodat itt: Beállítások › Licenc.}}",
   "@stateRecovery.license.body": {
-    "sourceHash": "ea51589"
+    "sourceHash": "e4d10c4"
   },
-  "stateRecovery.license.openSettings": "Beállítások megnyitása",
+  "stateRecovery.license.openSettings": "{platform, select, windows {Beállítások megnyitása} linuxGnome {Beállítások megnyitása} linuxKde {Cmdr beállítása} other {Beállítások megnyitása}}",
   "@stateRecovery.license.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.appStatus.title": "{platform, select, windows {A Cmdr nem tudta beolvasni, mely mappák voltak megnyitva a paneleidben, ezért a panelek a felhasználói mappádban nyílnak meg} other {A Cmdr nem tudta beolvasni, mely mappák voltak megnyitva a paneleidben, ezért a panelek a saját mappádban nyílnak meg}}",
   "@stateRecovery.appStatus.title": {

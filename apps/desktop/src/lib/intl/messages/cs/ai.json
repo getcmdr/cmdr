@@ -55,9 +55,9 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "Pokud chcete hledat pomocí AI, zapněte poskytovatele v Nastavení > AI.",
+  "ai.translateError.off.body": "{platform, select, windows {Pokud chcete hledat pomocí AI, zapněte poskytovatele v Nastavení > AI.} linuxGnome {Pokud chcete hledat pomocí AI, zapněte poskytovatele v Předvolbách > AI.} linuxKde {Pokud chcete hledat pomocí AI, zapněte poskytovatele v okně Nastavit Cmdr > AI.} other {Pokud chcete hledat pomocí AI, zapněte poskytovatele v Nastavení > AI.}}",
   "@ai.translateError.off.body": {
-    "sourceHash": "d8d6368"
+    "sourceHash": "c9c11e2"
   },
   "ai.cloudConsent.label": "Povolit cloudovou AI",
   "@ai.cloudConsent.label": {
@@ -247,25 +247,25 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "Dokončete nastavení poskytovatele v Nastavení > AI a zkuste to znovu.",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {Dokončete nastavení poskytovatele v Nastavení > AI a zkuste to znovu.} linuxGnome {Dokončete nastavení poskytovatele v Předvolbách > AI a zkuste to znovu.} linuxKde {Dokončete nastavení poskytovatele v okně Nastavit Cmdr > AI a zkuste to znovu.} other {Dokončete nastavení poskytovatele v Nastavení > AI a zkuste to znovu.}}",
   "@ai.translateError.notConfigured.body": {
-    "sourceHash": "65133a8"
+    "sourceHash": "cdb4ab5"
   },
   "ai.translateError.noCloudConsent.title": "Cloudová AI je vypnutá",
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "Povolte ji v Nastavení > AI a zkuste to znovu.",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {Povolte ji v Nastavení > AI a zkuste to znovu.} linuxGnome {Povolte ji v Předvolbách > AI a zkuste to znovu.} linuxKde {Povolte ji v okně Nastavit Cmdr > AI a zkuste to znovu.} other {Povolte ji v Nastavení > AI a zkuste to znovu.}}",
   "@ai.translateError.noCloudConsent.body": {
-    "sourceHash": "fde3eb5"
+    "sourceHash": "f54d181"
   },
   "ai.translateError.authFailed.title": "Tenhle klíč API byl odmítnut",
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "Zkontrolujte klíč v Nastavení > AI – může být chybný nebo odvolaný.",
+  "ai.translateError.authFailed.body": "{platform, select, windows {Zkontrolujte klíč v Nastavení > AI – může být chybný nebo odvolaný.} linuxGnome {Zkontrolujte klíč v Předvolbách > AI – může být chybný nebo odvolaný.} linuxKde {Zkontrolujte klíč v okně Nastavit Cmdr > AI – může být chybný nebo odvolaný.} other {Zkontrolujte klíč v Nastavení > AI – může být chybný nebo odvolaný.}}",
   "@ai.translateError.authFailed.body": {
-    "sourceHash": "2159d5e"
+    "sourceHash": "efd14fb"
   },
   "ai.translateError.rateLimited.title": "Vašemu poskytovateli AI došla kapacita",
   "@ai.translateError.rateLimited.title": {
@@ -295,9 +295,9 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "Váš model možná vyčerpal limit tokenů dřív, než odpověděl. Zkuste rychlejší model, třeba gpt-4.1-mini, v Nastavení > AI.",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {Váš model možná vyčerpal limit tokenů dřív, než odpověděl. Zkuste rychlejší model, třeba gpt-4.1-mini, v Nastavení > AI.} linuxGnome {Váš model možná vyčerpal limit tokenů dřív, než odpověděl. Zkuste rychlejší model, třeba gpt-4.1-mini, v Předvolbách > AI.} linuxKde {Váš model možná vyčerpal limit tokenů dřív, než odpověděl. Zkuste rychlejší model, třeba gpt-4.1-mini, v okně Nastavit Cmdr > AI.} other {Váš model možná vyčerpal limit tokenů dřív, než odpověděl. Zkuste rychlejší model, třeba gpt-4.1-mini, v Nastavení > AI.}}",
   "@ai.translateError.emptyResponse.body": {
-    "sourceHash": "d74db0d"
+    "sourceHash": "9068319"
   },
   "ai.translateError.serverError.title": "Váš poskytovatel AI narazil na problém",
   "@ai.translateError.serverError.title": {
@@ -311,17 +311,17 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "Zkuste to znovu, nebo vyberte jiný model v Nastavení > AI.",
+  "ai.translateError.parseError.body": "{platform, select, windows {Zkuste to znovu, nebo vyberte jiný model v Nastavení > AI.} linuxGnome {Zkuste to znovu, nebo vyberte jiný model v Předvolbách > AI.} linuxKde {Zkuste to znovu, nebo vyberte jiný model v okně Nastavit Cmdr > AI.} other {Zkuste to znovu, nebo vyberte jiný model v Nastavení > AI.}}",
   "@ai.translateError.parseError.body": {
-    "sourceHash": "c299ec6"
+    "sourceHash": "5ebf991"
   },
   "ai.translateError.unknownProvider.title": "Tohoto poskytovatele AI Cmdr nezná",
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "Vyberte poskytovatele v Nastavení > AI.",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {Vyberte poskytovatele v Nastavení > AI.} linuxGnome {Vyberte poskytovatele v Předvolbách > AI.} linuxKde {Vyberte poskytovatele v okně Nastavit Cmdr > AI.} other {Vyberte poskytovatele v Nastavení > AI.}}",
   "@ai.translateError.unknownProvider.body": {
-    "sourceHash": "7042a75"
+    "sourceHash": "a3988aa"
   },
   "ai.translateError.managed.title": "AI v Cmdru spravuje vaše organizace",
   "@ai.translateError.managed.title": {
@@ -599,9 +599,9 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Klíč API se nepodařilo uložit: svazek klíčů v macOS odepřel přístup} other {Uložený klíč API se nepodařilo přečíst: svazek klíčů v macOS odepřel přístup}}} windows {{op, select, save {Klíč API se nepodařilo uložit: Správce přihlašovacích údajů odepřel přístup} other {Uložený klíč API se nepodařilo přečíst: Správce přihlašovacích údajů odepřel přístup}}} linuxKde {{op, select, save {Klíč API se nepodařilo uložit: KWallet odepřel přístup} other {Uložený klíč API se nepodařilo přečíst: KWallet odepřel přístup}}} other {{op, select, save {Klíč API se nepodařilo uložit: systémová klíčenka odepřela přístup} other {Uložený klíč API se nepodařilo přečíst: systémová klíčenka odepřela přístup}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Klíč API se nepodařilo uložit: svazek klíčů v macOS odepřel přístup} other {Uložený klíč API se nepodařilo přečíst: svazek klíčů v macOS odepřel přístup}}} windows {{op, select, save {Klíč API se nepodařilo uložit: Správce přihlašovacích údajů odepřel přístup} other {Uložený klíč API se nepodařilo přečíst: Správce přihlašovacích údajů odepřel přístup}}} linuxKde {{op, select, save {Klíč API se nepodařilo uložit: úschovna KDE odepřela přístup} other {Uložený klíč API se nepodařilo přečíst: úschovna KDE odepřela přístup}}} other {{op, select, save {Klíč API se nepodařilo uložit: systémová klíčenka odepřela přístup} other {Uložený klíč API se nepodařilo přečíst: systémová klíčenka odepřela přístup}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "6daa595"
+    "sourceHash": "4612cfb"
   },
   "ai.secretError.body": "{platform, select, macos {{op, select, save {Otevřete Klíčenku a zkontrolujte záznam „Cmdr“, nebo ho smažte a zkuste klíč uložit znovu.} other {Otevřete Klíčenku, najděte záznam „Cmdr“ a udělte přístup, nebo záznam smažte a zadejte klíč znovu.}}} windows {{op, select, save {Otevřete Správce přihlašovacích údajů a zkontrolujte záznam „Cmdr“ v části Přihlašovací údaje systému Windows, nebo ho odstraňte a zkuste klíč uložit znovu.} other {Otevřete Správce přihlašovacích údajů a najděte záznam „Cmdr“ v části Přihlašovací údaje systému Windows, nebo ho odstraňte a zadejte klíč znovu.}}} linuxGnome {Odemkněte klíčenku v aplikaci Hesla a klíče a zkuste to znovu.} linuxKde {Odemkněte KWallet v aplikaci KWalletManager a zkuste to znovu.} other {Odemkněte klíčenku (v aplikaci Hesla a klíče nebo podobné) a zkuste to znovu.}}",
   "@ai.secretError.body": {
@@ -611,9 +611,9 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Zkontrolujte, že je svazek klíčů dostupný, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.} windows {Zkontrolujte, že je Správce přihlašovacích údajů dostupný, a zkuste to znovu. Pokud se to bude opakovat, restartujte Cmdr.} linuxKde {Zkontrolujte, že je KWallet dostupný, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.} other {Zkontrolujte, že je systémová klíčenka dostupná, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Zkontrolujte, že je svazek klíčů dostupný, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.} windows {Zkontrolujte, že je Správce přihlašovacích údajů dostupný, a zkuste to znovu. Pokud se to bude opakovat, restartujte Cmdr.} linuxKde {Zkontrolujte, že je úschovna KDE dostupná, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.} other {Zkontrolujte, že je systémová klíčenka dostupná, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "cb879fa"
+    "sourceHash": "1c198ff"
   },
   "ai.secretError.removeTitle": "Uložený klíč API se nepodařilo odstranit.",
   "@ai.secretError.removeTitle": {

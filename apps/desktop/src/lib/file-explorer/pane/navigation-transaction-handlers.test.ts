@@ -114,6 +114,7 @@ vi.mock('#lib/app-status-store.js', () => ({
       },
     ],
     activeTabId: 'left-tab',
+    registryPendingTabIds: [],
   }),
   savePaneTabs: vi.fn().mockResolvedValue(undefined),
 }))

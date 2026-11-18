@@ -190,7 +190,7 @@ fn os_junk_names_ship_verbatim() {
 
 /// A failed move's two WARN lines (`move` and `write_operations`) printed its
 /// `WriteOperationError::PermissionDenied` through the derived `Debug`, unmarked. The fallback
-/// ends a prose path at `, ` after its last separator, so a file name holding a comma-space
+/// ends a prose path at `, ` after its last separator, so a filename holding a comma-space
 /// shipped its tail in clear (cmdr-reports#103, ERR-KU8UY). Both lines log `log_detail()`.
 #[test]
 fn a_failed_move_ships_no_part_of_a_file_name_holding_a_comma() {

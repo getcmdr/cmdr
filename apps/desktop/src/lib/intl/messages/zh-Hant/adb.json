@@ -3,9 +3,9 @@
   "@adb.connect.adbNotInstalled": {
     "sourceHash": "a842454"
   },
-  "adb.connect.openSettings": "開啟設定",
+  "adb.connect.openSettings": "{platform, select, windows {開啟設定} linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
   "@adb.connect.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "adb.connect.serverUnreachable": "{platform, select, macos {這部 Mac 上的 Android 工具沒有回應。} windows {這台電腦上的 Android 工具沒有回應。} other {這台電腦上的 Android 工具沒有回應。}}",
   "@adb.connect.serverUnreachable": {

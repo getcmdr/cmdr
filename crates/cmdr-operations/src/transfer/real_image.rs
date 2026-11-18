@@ -34,7 +34,7 @@ use crate::types::{ConflictResolution, TransferRole, WriteOperationConfig, Write
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::Volume;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 /// The bytes of the file already on the drive, which an overwrite displaces.
 /// Deliberately unlike the source's, so "the original survived" can't pass on
@@ -212,7 +212,7 @@ fn aside_records(ledger: &Ledger) -> Vec<std::path::PathBuf> {
 fn drive_is_back(engine: &TestOperations, volume: &MountedVolume) {
     engine.volumes().register(
         "vol-image",
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             volume.name.clone(),
             &volume.mount_point,
             pane_order_host(),
@@ -529,7 +529,7 @@ fn a_safe_overwrite_of_a_folder_that_holds_a_mounted_drive_refuses_and_removes_n
     nested.assert_untouched();
 }
 
-/// The cross-volume twin: a `LocalPosixVolume` destination's folder set aside
+/// The cross-volume twin: a `LocalVolume` destination's folder set aside
 /// for an Overwrite goes as a tree (`cleanup::remove_tree`) once the
 /// replacement lands, so the refusal comes before the set-aside.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -540,7 +540,7 @@ async fn a_volume_overwrite_of_a_folder_that_holds_a_mounted_drive_refuses_and_r
 
     let nested = NestedMount::mount();
     let state = Arc::new(TestOperations::new().new_operation_state(Duration::from_millis(50)));
-    let volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "V",
         nested.dir.to_path_buf(),
         pane_order_host(),
@@ -591,7 +591,7 @@ async fn a_move_onto_another_drive_of_a_folder_that_holds_a_mounted_drive_refuse
     }
 }
 
-/// The cross-volume engine's twin: a `LocalPosixVolume` source moving onto a
+/// The cross-volume engine's twin: a `LocalVolume` source moving onto a
 /// volume of another kind copies and deletes per file.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "attaches a real disk image; run via `pnpm check disk-images`"]
@@ -603,7 +603,7 @@ async fn a_volume_move_of_a_folder_that_holds_a_mounted_drive_refuses_and_moves_
 
     let nested = NestedMount::mount();
     let state = Arc::new(TestOperations::new().new_operation_state(Duration::from_millis(50)));
-    let source: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "V",
         nested.dir.to_path_buf(),
         pane_order_host(),
@@ -657,7 +657,7 @@ async fn a_move_into_a_zip_of_a_folder_that_holds_a_mounted_drive_refuses_and_mo
     let archive_before = std::fs::read(&archive).expect("read the zip");
 
     let engine = TestOperations::new();
-    let source: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "V",
         nested.dir.to_path_buf(),
         pane_order_host(),

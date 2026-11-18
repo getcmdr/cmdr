@@ -5,7 +5,7 @@
 
 use super::*;
 use crate::test_support::TestDir;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use std::sync::Arc;
 
 /// A volume registered for the length of one test, under an id no other test uses.
@@ -16,7 +16,7 @@ impl Registered {
         let id = format!("test-direct-switch-{label}");
         get_volume_manager().register(
             &id,
-            Arc::new(LocalPosixVolume::local_folder(label, root, crate::volume_host::host())),
+            Arc::new(LocalVolume::local_folder(label, root, crate::volume_host::host())),
         );
         Self(id)
     }

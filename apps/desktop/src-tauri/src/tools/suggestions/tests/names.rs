@@ -179,7 +179,7 @@ fn two_files_sharing_a_name_refuse_where_the_route_cant_tell_them_apart() {
     use crate::file_system::volume::{InMemoryVolume, Volume};
     use crate::tools::suggestions::input::check_own_names;
 
-    let disk: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let disk: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "Root",
         "/",
         crate::volume_host::host(),

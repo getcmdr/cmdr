@@ -1596,7 +1596,7 @@
   },
   "settings.analytics.enabled.description": "Slå gärna på det här så att vi ser vilka funktioner som spelar roll under den öppna betan.\nStatistiken är kopplad till ett slumpmässigt id, inte till ditt namn eller din e-post.\nCmdr skickar aldrig filnamn, sökvägar, sökord eller prompter.\nNär det är avstängt skickar Cmdr ingen statistik alls.",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "a8d8db1"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "analys, användning, statistik, användningsstatistik, integritet, telemetri, beta, spårning, avstå",
   "@settings.analytics.enabled.keywords": {
@@ -1620,7 +1620,7 @@
   },
   "settings.updates.crashReports.summary": "Innehåller aldrig filnamn eller personuppgifter.",
   "@settings.updates.crashReports.summary": {
-    "sourceHash": "7814a28"
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "krasch, kraschrapport, rapport, integritet, telemetri, bugg, fel",
   "@settings.updates.crashReports.keywords": {
@@ -2953,9 +2953,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Inställningssektioner",
+  "settings.sidebar.sections": "{platform, select, windows {Inställningssektioner} linuxGnome {Inställningssektioner} linuxKde {Sektioner i ”Anpassa Cmdr”} other {Inställningssektioner}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Inga inställningar matchar} one {{countText} sektion matchar} other {{countText} sektioner matchar}}",
   "@settings.sidebar.matchCount": {
@@ -3213,7 +3213,7 @@
   },
   "settings.securityLog.enabled.description": "Loggen registrerar säkerhetsrelevanta ändringar och avvisningar, till exempel samtycke till moln-AI, en installerad uppdatering eller en app som MCP-servern nekade. Den innehåller varken filnamn, filinnehåll eller lösenord.",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "97e24a4"
+    "sourceHash": "3692a3d"
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {En liten lokal logg över säkerhetshändelser. Den lämnar aldrig din Mac.} windows {En liten lokal logg över säkerhetshändelser. Den lämnar aldrig din dator.} other {En liten lokal logg över säkerhetshändelser. Den lämnar aldrig din dator.}}",
   "@settings.securityLog.enabled.summary": {
@@ -3432,9 +3432,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Inställningar",
+  "settings.window.title": "{platform, select, windows {Inställningar} linuxGnome {Inställningar} linuxKde {Anpassa – Cmdr} other {Inställningar}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Läser in inställningar…",
   "@settings.window.loading": {
@@ -3681,13 +3681,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Ett objekt i Nyckelhanterare som heter ”{itemName}”} other {{countText} objekt i Nyckelhanterare som heter ”{itemName}”}}} windows {{count, plural, one {Ett objekt i Autentiseringshanteraren som heter ”{itemName}”} other {{countText} objekt i Autentiseringshanteraren som heter ”{itemName}”}}} linuxKde {{count, plural, one {Ett objekt i KWallet som heter ”{itemName}”} other {{countText} objekt i KWallet som heter ”{itemName}”}}} other {{count, plural, one {Ett objekt i din nyckelring som heter ”{itemName}”} other {{countText} objekt i din nyckelring som heter ”{itemName}”}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Ett objekt i Nyckelhanterare som heter ”{itemName}”} other {{countText} objekt i Nyckelhanterare som heter ”{itemName}”}}} windows {{count, plural, one {Ett objekt i Autentiseringshanteraren som heter ”{itemName}”} other {{countText} objekt i Autentiseringshanteraren som heter ”{itemName}”}}} linuxKde {{count, plural, one {Ett objekt i KDE:s plånbok som heter ”{itemName}”} other {{countText} objekt i KDE:s plånbok som heter ”{itemName}”}}} other {{count, plural, one {Ett objekt i din nyckelring som heter ”{itemName}”} other {{countText} objekt i din nyckelring som heter ”{itemName}”}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Eventuella objekt i Nyckelhanterare som heter ”{itemName}”} windows {Eventuella objekt i Autentiseringshanteraren som heter ”{itemName}”} linuxKde {Eventuella objekt i KWallet som heter ”{itemName}”} other {Eventuella objekt i din nyckelring som heter ”{itemName}”}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Eventuella objekt i Nyckelhanterare som heter ”{itemName}”} windows {Eventuella objekt i Autentiseringshanteraren som heter ”{itemName}”} linuxKde {Eventuella objekt i KDE:s plånbok som heter ”{itemName}”} other {Eventuella objekt i din nyckelring som heter ”{itemName}”}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Avsluta Cmdr} other {Avsluta Cmdr}}",
   "@settings.dataWipe.quit": {

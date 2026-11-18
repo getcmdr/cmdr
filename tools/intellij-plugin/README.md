@@ -10,7 +10,7 @@ screen's code reads like the screen:
 
 ```
 const note = tString('crashReporter.dialog.privacyNote')
-const note = “It includes the app version, macOS version, and which part of the code crashed. No file names…”
+const note = “It includes the app version, macOS version, and which part of the code crashed. No filenames…”
 ```
 
 Folds open with the stock shortcuts: ⌘+ expands the one under the caret, ⌘⇧+ expands the whole file, ⌘− and ⌘⇧− collapse

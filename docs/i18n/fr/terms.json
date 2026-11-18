@@ -1412,7 +1412,7 @@
     "chosen": "récupérer",
     "confidence": "high",
     "decision": "La visionneuse récupère d'abord le fichier",
-    "forms": "status noun Récupération…; title follows Finder’s progress moule (Préparation de la copie de « ^1 »), with the file name in « »",
+    "forms": "status noun Récupération…; title follows Finder’s progress moule (Préparation de la copie de « ^1 »), with the filename in « »",
     "sources": "macOS Réglages Système Localizable.json (Fetching… → Récupération…)"
   },
   "history": {
@@ -1945,7 +1945,7 @@
     "decision": "Le hub des serveurs : la table",
     "forms": "the store → le trousseau (Mémoriser dans le trousseau); the app Keychain Access → Trousseaux d’accès (Apple’s plural); ai.secretError says Trousseau macOS",
     "sources": "Keychain Access.app InfoPlist.loctable CFBundleDisplayName (macOS 26.6.2 build 25G83, 2026-09-06)",
-    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Mémoriser dans KWallet), and KDE French calls a wallet portefeuille (kwalletmanager.po: Wallet → Portefeuille); GNOME's Passwords and Keys (Seahorse) → Mots de passe et clés, its keyring → trousseau (seahorse.po). Verified read-only on l10n.gnome.org seahorse.main fr.po and websvn.kde.org trunk/l10n-kf6 fr, 2026-11-18."
+    "note": "Linux desktop branches: KDE's password store KDE Wallet → le portefeuille KDE (kwalletd6.po fr: Use the KDE wallet … → Utiliser le portefeuille KDE …, KDE Wallet Service → Service de portefeuilles de KDE; kwalletmanager.po: Wallet → Portefeuille), so Mémoriser dans le portefeuille KDE; KDE keeps KWalletManager as the app's name; GNOME's Passwords and Keys (Seahorse) → Mots de passe et clés, its keyring → trousseau (seahorse.po). Verified read-only on l10n.gnome.org seahorse.main fr.po and websvn.kde.org trunk/l10n-kf6 fr (kwallet/kwalletd6.po, kwalletmanager.po), 2026-11-18."
   },
   "keyword": {
     "accept": ["mots-clés"],
@@ -3175,14 +3175,14 @@
     "exceptions": {
       "servers.sheet.s3GcsKeyHelp": "Third-party UI: Google Cloud’s French console names Cloud Storage’s settings page Paramètres, so the hint quotes the vendor’s word (tentative).",
       "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome and linuxKde branches quote the desktop's own settings app, never Cmdr's Réglages: GNOME Paramètres > Clavier > Voir et personnaliser les raccourcis (gnome-control-center.po fr) and KDE Configuration du système > Clavier > Raccourcis (systemsettings.po fr, kcm_keyboard and kcm_keys metadata). Verified read-only, 2026-11-18.",
-      "settings.fileOperations.mtpEnabled.description": "quotes the phone's own menu path: Android French names its Settings app Paramètres (Paramètres > Préférences USB)"
+      "settings.fileOperations.mtpEnabled.description": "Quotes Android's own path on the phone: French Android names its Settings app Paramètres (see usb-preferences), not Apple's Réglages."
     },
     "forms": "Cmdr’s own window → les Réglages (Ouvrir les réglages, Activez-la dans les Réglages); breadcrumbs Réglages > IA, Réglages › Mises à jour et confidentialité (mirror EN’s separator); Apple’s app is Réglages Système",
     "sources": "macOS (Réglages Système CFBundleName)",
     "windows": {
       "chosen": "Paramètres",
-      "accept": ["paramètre", "paramètres", "réglage", "réglages", "Réglages"],
-      "note": "Windows names its own Settings app Paramètres (Paramètres > Système > Stockage, Paramètres > Réseau et Internet; a setting on the PC is un paramètre); Cmdr’s own Réglages and a server’s réglages keep the base form."
+      "accept": ["paramètre", "paramètres", "réglage", "réglages"],
+      "note": "Microsoft's French for an app's settings is Paramètres (fr/microsoft-terminology/FRENCH.tbx: Settings → Paramètres, 'the feature in an app that allows users to change its properties'; also Windows' own Settings app), so every windows branch naming Cmdr's window takes it: title and menu row Paramètres (settings.window.title, menu.app.settings), buttons Ouvrir les paramètres (commands.appSettings.label), pointers dans les Paramètres / Paramètres > IA / Paramètres › Mises à jour et confidentialité; masculine plural like Réglages, so the grammar around it doesn't change. A setting on the PC is un paramètre (les paramètres avancés). A server's own configuration keeps the base réglages (les réglages du serveur, vos réglages SSH): it isn't a Windows surface."
     }
   },
   "share-menu": {
@@ -4403,7 +4403,7 @@
     "chosen": "Préférences",
     "confidence": "high",
     "sources": "macOS AppKit MenuCommands (Preferences → Préférences); fr/gnome-nautilus/nautilus.po _Preferences → _Préférences; fr/xfce-thunar/thunar.po Préfé_rences…",
-    "note": "GNOME's app-menu row (the linuxGnome branch of menu.app.settings) is Préférences with no ellipsis; KDE's Configure Cmdr… → Configurer Cmdr… (fr/kde-dolphin/dolphin.po Configure… → Configurer...)."
+    "note": "Cmdr's settings window per desktop: GNOME titles it Préférences (fr/gnome-nautilus/nautilus.po _Preferences → _Préférences), with no ellipsis on the app-menu row (menu.app.settings), so linuxGnome pointers say dans Préférences > IA / dans les Préférences and buttons Ouvrir les préférences. KDE titles it Configurer – Cmdr (fr/kde-dolphin/dolphin.po @title:window Configure → Configurer); its menu row is Configurer Cmdr… (Configure… → Configurer...), every button Configurer Cmdr, and pointers quote it: dans « Configurer Cmdr » > IA."
   },
   "bug": {
     "chosen": "bug",
@@ -4446,5 +4446,11 @@
     "accept": ["rapide", "rapides", "plus vite", "accélérer", "accélèr"],
     "forms": "faster file operations → des opérations sur les fichiers plus rapides; fix bugs faster → corriger les bugs plus vite",
     "sources": "MS TBX playback speed → vitesse de lecture; fr/double-commander/doublecmd.po Speed → Vitesse"
+  },
+  "usb-preferences": {
+    "chosen": "Préférences USB",
+    "confidence": "tentative",
+    "sources": "catalog (settings.fileOperations.mtpEnabled.description); no pile source carries Android's strings",
+    "note": "Quote the label French Android shows on the phone. The path's first step is Android's own Settings app, which French Android names Paramètres (never Apple's Réglages): Paramètres > Préférences USB."
   }
 }

@@ -1479,7 +1479,7 @@
     "distinct": ["extension"],
     "en": "Finder extension",
     "match": ["finder extension", "finder extensions"],
-    "sense": "Cmdr's opt-in add-on that puts its item at the top level of Finder's right-click menu: a macOS app extension, not a file name's ending."
+    "sense": "Cmdr's opt-in add-on that puts its item at the top level of Finder's right-click menu: a macOS app extension, not a filename's ending."
   },
   "fingerprint": {
     "distinct": ["host-key"],
@@ -2805,16 +2805,18 @@
     "sense": "A network port number, or a USB port."
   },
   "preferences": {
-    "distinct": ["settings"],
+    "distinct": ["settings", "usb-preferences"],
     "en": "Preferences",
     "match": ["preferences"],
-    "sense": "An OS or device Preferences label the user must find (Android's USB Preferences).",
+    "sense": "GNOME's name for an app's settings window and its menu row: the `linuxGnome` branch of Cmdr's settings window title, menu row, and every pointer to it (“in Preferences”, “Preferences > AI”).",
     "notMatch": [
+      "usb preferences",
       {
         "key": "aboutThis.ownerPlace.preferences",
         "why": "the literal macOS Library folder name Preferences, kept as the system names it"
       }
-    ]
+    ],
+    "note": "Take GNOME's own word in your language (Nautilus' `_Preferences` row, `gnome-nautilus/nautilus.po`); it often differs from the macOS word the `settings` ruling holds."
   },
   "preset": {
     "distinct": ["custom", "default"],
@@ -2922,7 +2924,7 @@
     "distinct": ["undo", "rollback"],
     "en": "Put back",
     "match": ["put back", "puts back", "putting back", "put them back"],
-    "sense": "Returning trashed items, or old file names, to where they were."
+    "sense": "Returning trashed items, or old filenames, to where they were."
   },
   "query": {
     "distinct": ["search"],
@@ -3479,7 +3481,7 @@
     "sense": "An online service (an AI provider, a cloud-sync service)."
   },
   "settings": {
-    "distinct": ["system-settings"],
+    "distinct": ["system-settings", "preferences"],
     "en": "Settings",
     "match": ["settings", "setting"],
     "notMatch": ["higher settings", "setting up", "setting it up", "desktop’s keyboard settings"],
@@ -4437,5 +4439,12 @@
     "en": "private key",
     "match": ["private key", "private keys"],
     "sense": "The secret half of an SSH or other key pair, which Cmdr keeps away from the AI."
+  },
+  "usb-preferences": {
+    "en": "USB Preferences",
+    "match": ["usb preferences"],
+    "sense": "Android's USB Preferences screen: a label on the user's phone that Cmdr quotes so they can find it.",
+    "distinct": ["preferences"],
+    "note": "Quote the label the user's phone shows in your language; no pile source carries Android's strings."
   }
 }

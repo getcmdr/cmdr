@@ -49,14 +49,14 @@ Ranked by what losing them costs a user.
 - **Other processes as the same user.** Out of scope as an attacker (they already hold the user's power), but we still
   avoid handing them anything for free: no unauthenticated control channels, no plaintext secrets on disk.
 - **Other local users and processes on the same Mac.** Can reach loopback ports. In scope for loopback servers.
-- **A malicious file, archive, git repo, or file name.** Arrives by download, USB drive, email, or a shared folder. In
+- **A malicious file, archive, git repo, or filename.** Arrives by download, USB drive, email, or a shared folder. In
   scope: Cmdr lists, previews, indexes, OCRs, and extracts these, often in the background.
 - **A hostile server or device**: an SMB, SFTP, WebDAV, or S3 endpoint, an Android phone over ADB or MTP, or a spoofed
   Bonjour (mDNS) answer on the LAN. In scope: everything such a peer sends is untrusted.
 - **A network attacker**: coffee-shop Wi-Fi, a hostile LAN, or a corporate TLS-inspecting proxy (trusted by the
   organization, but still a party that sees traffic).
 - **A cloud AI provider, or text that steers it.** The provider is chosen and trusted by the user for what they send;
-  prompt injection through file names and contents is in scope.
+  prompt injection through filenames and contents is in scope.
 - **A compromised update channel or maintainer account**: the GitHub account, the release workflow, the website host
   serving `latest.json`, or a signing key.
 - **The backend and its subprocessors** (Cloudflare, PostHog, GitHub, SMTP2Go, Google, Paddle, Hetzner): hold report and
@@ -73,8 +73,8 @@ risk.
 
 - **Entry points**: every Tauri command in `generate_handler![]`, callable from every window; the `cmdr-media:` URI
   scheme; the window's CSP.
-- **Threats**: script injection into a webview (a file name, an error message, or an AI reply rendered as HTML) that
-  then calls privileged commands (elevation of privilege); a command that leaks a secret into the webview (information
+- **Threats**: script injection into a webview (a filename, an error message, or an AI reply rendered as HTML) that then
+  calls privileged commands (elevation of privilege); a command that leaks a secret into the webview (information
   disclosure).
 - **Mitigations**:
   - The CSP allows scripts only from the app bundle (`script-src 'self'`, no `unsafe-inline`), allows no frames, and
@@ -129,7 +129,7 @@ risk.
 
 ### 3. Untrusted file content
 
-- **Entry points**: listings (file names), the file viewer, Quick Look, `inspect_file` (text, PDF, archive listings,
+- **Entry points**: listings (filenames), the file viewer, Quick Look, `inspect_file` (text, PDF, archive listings,
   EXIF), archive browse and extract (zip, tar, 7z), image dimension and EXIF reads, the media index (ImageIO decode,
   Vision OCR and tags), the git status columns and the `.git` portal, the drive indexer walking everything, and the
   "Tell me about this" card's reads: the download-record xattrs (`com.apple.quarantine`, the `kMDItemWhereFroms` binary
@@ -170,7 +170,7 @@ risk.
     the CRA (2026-10-16): only ImageIO (in the image index, off by default) and the zstd decoder for zip entries parse
     untrusted bytes natively, the rest is Rust, and the viewer renders images and PDFs in WebKit's sandboxed process.
   - **Decompression bombs** are bounded by disk space and cancelation, not by a ratio cap. Low impact.
-  - **File names aren't stripped of control and bidi characters**, so a name can look like something else in a log line
+  - **Filenames aren't stripped of control and bidi characters**, so a name can look like something else in a log line
     or a confirmation. Low.
   - Gaps found in hostile-content handling are tracked privately and reviewed before every release.
 
@@ -180,7 +180,7 @@ risk.
   S3 (in-house SigV4 over `reqwest`), ADB (the ADB server on loopback, which relays the phone), MTP (the in-house
   `mtp-rs` over USB), and Bonjour discovery of SMB servers.
 - **Threats**: credential theft (a spoofed server or a plaintext protocol); malformed protocol messages (memory
-  exhaustion, parser bugs); remote file names that escape the destination folder on copy; a server that lies about sizes
+  exhaustion, parser bugs); remote filenames that escape the destination folder on copy; a server that lies about sizes
   or contents; a hostile device on a USB port.
 - **Mitigations**:
   - **SMB**: NTLMv2 auth, signing whenever the session is authenticated or the server asks, unsigned replies on a signed
@@ -224,7 +224,7 @@ risk.
     and 7).
 - **Residual risk**:
   - **A TLS-inspecting proxy sees everything** that crosses it, by design of the organization: report bundles, usage
-    stats, and cloud AI requests including file names and requested file contents. Organizations that inspect TLS should
+    stats, and cloud AI requests including filenames and requested file contents. Organizations that inspect TLS should
     treat cloud AI as visible to the proxy.
   - **Proxy sign-in is limited to a user name and password in the proxy's address** (`HTTPS_PROXY` / `ALL_PROXY`).
     Routing itself follows macOS: the system proxy settings, PAC files, auto-discovery (WPAD), the bypass list, and
@@ -322,11 +322,11 @@ risk.
 
 ### 8. Cloud AI providers and prompt injection
 
-- **Entry points**: the user's configured provider and base URL; every untrusted string that reaches the model (file
-  names, `inspect_file` text, PDF pages, archive entry names, EXIF, OCR text, and a "Tell me about this" card's facts: a
-  download host and the downloading app's name, an `Info.plist`'s name, id, and version, a signer's name and team id, a
-  branch name, a folder's child names, a picture's image index tags and recognized text); the model's replies, tool
-  calls, and memory writes.
+- **Entry points**: the user's configured provider and base URL; every untrusted string that reaches the model
+  (filenames, `inspect_file` text, PDF pages, archive entry names, EXIF, OCR text, and a "Tell me about this" card's
+  facts: a download host and the downloading app's name, an `Info.plist`'s name, id, and version, a signer's name and
+  team id, a branch name, a folder's child names, a picture's image index tags and recognized text); the model's
+  replies, tool calls, and memory writes.
 - **Threats**: data sent to a third party (disclosure); a key harvested by a malicious base URL; injected instructions
   steering the agent to start or propose harmful operations, to read and send sensitive content, or to plant persistent
   instructions in its memory.
@@ -432,12 +432,12 @@ Impact × likelihood, highest first. Gaps tracked privately aren't ranked here.
    key that doesn't live on GitHub.
 2. **A parser bug in a dependency or Apple framework, reached by a downloaded file or a hostile server, runs with Full
    Disk Access** (boundaries 3 and 4). Impact: high. Likelihood: low. Cmdr isn't sandboxed and parses in process.
-3. **Prompt injection through file names or contents steers Ask Cmdr** into reading and sending more than intended,
+3. **Prompt injection through filenames or contents steers Ask Cmdr** into reading and sending more than intended,
    starting or proposing a harmful operation, or saving a persistent note (boundary 8). Impact: medium (writes still
    need a person, apart from a tag or a named folder). Likelihood: medium, and rising as the agent does more.
 4. **Credentials or traffic exposed on a hostile LAN**: user-chosen plaintext WebDAV or S3, optional SMB encryption,
    NTLMv2 to a spoofed Bonjour name (boundary 4). Impact: medium. Likelihood: medium on untrusted networks.
-5. **Personal data in reports**: free-text file names in error reports, opt-out usage stats, data leaving the EU
+5. **Personal data in reports**: free-text filenames in error reports, opt-out usage stats, data leaving the EU
    (boundary 9). Impact: medium (privacy, compliance). Likelihood: medium.
 6. **A proxy that needs more than a user name and password in its address**: Cmdr follows macOS's proxy settings and PAC
    files, but can't sign in to such a proxy, so its calls fail there (boundary 5). Impact: medium (availability). IT can

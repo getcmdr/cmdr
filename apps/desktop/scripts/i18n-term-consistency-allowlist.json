@@ -6,10 +6,6 @@
         "reason": "Two senses: the menu-bar File menu (`menu.bar.file`) is Apple's name `Ablage` (Finder's own German menu bar), while the Tell me about this card's item kind (`aboutThis.what.file`) is the noun `Datei` (ruling `file`). A file kind can't read `Ablage`, which means a filing tray."
       },
       {
-        "source": "Preferences",
-        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the real on-disk name of the macOS `~/Library/Preferences` folder, kept verbatim, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's settings menu row, which GNOME German calls `Einstellungen` (de/gnome-nautilus/nautilus.po `_Preferences`)."
-      },
-      {
         "source": "Browse",
         "reason": "Two senses of one English word, split into the `browse-file-picker` and `browse` rulings in `docs/i18n/de/terms.json`. `Durchsuchen…` is the button that opens the system file picker (`servers.sheet.browse`, `settings.adb.browse`), taken from Finder's own `ConnectToWindow.strings` `48.title`. `Durchsehen` is the archives segmented cell (`settings.archives.opt.browse`), which means step INTO the archive and list it like a folder (KDE Dolphin, \"Archive durchsehen\"). The archive sense cannot take `Durchsuchen`: that is the settled scan/search verb (\"Laufwerk wird durchsucht …\"), so merging them would tell the reader the app is searching the archive."
       },
@@ -94,15 +90,11 @@
         "reason": "The menu bar's View menu is Apple's own Spanish title `Visualización` (Finder); F3 and the File-menu item are the action `Ver`."
       },
       {
-        "source": "Preferences",
-        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the literal macOS Library folder name, kept as the system names it on disk, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own menu row, `Preferencias` (Nautilus `_Preferences`)."
+        "source": "Open Settings",
+        "reason": "Windows names an app's settings `Configuración` and macOS `Ajustes`, so the per-OS keys' `windows` branch says `Abrir Configuración`. `onboarding.localDownloadFailed.openSettings` is a plain value every OS reads, so it keeps the macOS `Abrir Ajustes` until its English gets a per-OS value (logged in `docs/i18n/source-queue.md`)."
       }
     ],
     "fr": [
-      {
-        "source": "Preferences",
-        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the real on-disk name of the macOS `~/Library/Preferences` folder, kept verbatim, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's settings menu row, which GNOME French calls `Préférences` (fr/gnome-nautilus/nautilus.po `_Preferences`)."
-      },
       {
         "source": "Unknown",
         "reason": "The adjective agrees with the value it stands for: `ai.local.modelUnknown` is a model (`Inconnu`); `suggestedOps.factUnknown` fills a size or date cell (la taille, la date: `Inconnue`), like `fileOperations.transferProgress.sizeUnknown` (`(inconnue)`)."
@@ -158,10 +150,6 @@
     ],
     "hu": [
       {
-        "source": "Preferences",
-        "reason": "`aboutThis.ownerPlace.preferences` is the real name of the macOS `~/Library/Preferences` folder, kept as the system names it; the GNOME branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own app-menu word, Beállítások (hu nautilus.po `_Preferences`)."
-      },
-      {
         "source": "Not connected yet",
         "reason": "Two surfaces with two verbs, per the `connect` ruling in `docs/i18n/hu/terms.json`. The servers hub status cell (`servers.hub.status.notConnectedYet`) sits in one column with `Kapcsolódva` (AppKit SavePanel's `Nem kapcsolódik` stem), so it reads `Még nincs kapcsolódva`. The error titles (`errors.listing.notConnected.title`, `errors.write.notConnected.title`) cover a phone as well as a server, where the attach verb `csatlakoztat` fits, so they keep `Még nincs csatlakoztatva`."
       },
@@ -215,10 +203,6 @@
       }
     ],
     "nl": [
-      {
-        "source": "Preferences",
-        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the real on-disk name of the macOS `~/Library/Preferences` folder, kept verbatim, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's settings menu row, which GNOME Dutch calls `Voorkeuren` (nl/gnome-nautilus/nautilus.po `_Preferences`)."
-      },
       {
         "source": "File",
         "reason": "Two senses: the menu-bar File menu (`menu.bar.file`) is Apple's name `Archief` (Finder's own Dutch menu bar), while the Tell me about this card's item kind (`aboutThis.what.file`) is the noun `Bestand` (ruling `file`). A file kind can't read `Archief`, which means an archive."
@@ -374,15 +358,11 @@
         "reason": "Gender agreement, not drift: `Desconhecido` agrees with a model (`ai.local.modelUnknown`); `suggestedOps.factUnknown` stands for both a size (masculine) and a date (feminine), so it takes the neutral `Sem informação`."
       },
       {
-        "source": "Preferences",
-        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the literal macOS Library folder name, kept as the system names it on disk, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own menu row, `Preferências` (Nautilus pt-BR `_Preferências`)."
+        "source": "Open Settings",
+        "reason": "Windows names an app's settings `Configurações` and macOS `Ajustes`, so the per-OS keys' `windows` branch says `Abrir Configurações`. `onboarding.localDownloadFailed.openSettings` is a plain value every OS reads, so it keeps the macOS `Abrir Ajustes` until its English gets a per-OS value (logged in `docs/i18n/source-queue.md`)."
       }
     ],
     "sv": [
-      {
-        "source": "Preferences",
-        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the real on-disk name of the macOS `~/Library/Preferences` folder, kept verbatim, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's settings menu row, which GNOME Swedish calls `Inställningar` (sv/gnome-nautilus/nautilus.po `_Preferences`)."
-      },
       {
         "source": "Checking",
         "reason": "`Kontrollerar` verifies something you already have (an API key, a license); `Söker` looks for something that may exist (`updates.status.checking`), matching the update family's `Sök efter uppdateringar`. See `docs/i18n/sv/terms.json` `check`."
@@ -456,10 +436,6 @@
       {
         "source": "Modified",
         "reason": "`Đã sửa đổi` is the date column (Finder Get Info \"Modified:\"); `shortcuts.section.filterModified` filters commands whose shortcut the user CHANGED, so `Đã thay đổi`. One word would make the shortcut filter read like a date filter. See `docs/i18n/vi/terms.json` `modified`."
-      },
-      {
-        "source": "Preferences",
-        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the literal macOS Library folder name, kept as the system names it on disk, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own menu row, `Tùy thích` (Nautilus vi `Tù_y thích`)."
       }
     ],
     "zh": [
@@ -530,10 +506,6 @@
       {
         "source": "Why",
         "reason": "Two shapes. `onboarding.stepFda.why` is a question link (`为什么？`); `suggestedOps.agentReason` is a label leading the AI's reason, where Chinese names the noun (`原因：`, which its spoken form `原因，按 AI 的说法：` starts with). A `为什么：` label before a statement reads wrong."
-      },
-      {
-        "source": "Preferences",
-        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the literal macOS Library folder name, kept as the system names it on disk, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own menu row, `首选项` (Nautilus zh-CN `首选项(_P)`)."
       }
     ],
     "zh-Hant": [
@@ -612,17 +584,9 @@
       {
         "source": "Skip",
         "reason": "`略過` answers ONE clash (`fileOperations.transferProgress.conflictSkip`); the Settings option `settings.fileOperations.defaultConflictPolicy.opt.skip` is a standing policy and reuses the copy dialog radio `fileOperations.transferDialog.policySkip`, whose Chinese has no one-clash form, so both say `全部略過`."
-      },
-      {
-        "source": "Preferences",
-        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the literal macOS Library folder name, kept as the system names it on disk, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own menu row, `偏好設定` (Nautilus zh-TW `偏好設定(_P)`)."
       }
     ],
     "ru": [
-      {
-        "source": "Preferences",
-        "reason": "`aboutThis.ownerPlace.preferences` is the real name of the macOS `~/Library/Preferences` folder, kept as the system names it; the GNOME branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own app-menu word, Параметры (ru nautilus.po `_Preferences`)."
-      },
       {
         "source": "System",
         "reason": "`settings.theme.mode.opt.system` is the theme that follows the system (Системная, agreeing with тема); the notification options `settings.behavior.fileSystemWatching.*Notifications.opt.macos` (Linux branch) name where the notice shows, next to their siblings `В приложении` and `Оба варианта` (В системе)."
@@ -726,10 +690,6 @@
     ],
     "uk": [
       {
-        "source": "Preferences",
-        "reason": "`aboutThis.ownerPlace.preferences` is the real name of the macOS `~/Library/Preferences` folder, kept as the system names it; the GNOME branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own app-menu word, Налаштування (uk nautilus.po `_Preferences`)."
-      },
-      {
         "source": "{count, plural, one {file} other {files}}",
         "reason": "Case, not drift: Ukrainian declines the counted noun by its slot. `fileExplorer.summary.fileNoun` follows «з» (genitive: «з 21 файлу»); the scan lines are nominative counts («21 файл»)."
       },
@@ -815,10 +775,6 @@
       }
     ],
     "cs": [
-      {
-        "source": "Preferences",
-        "reason": "`aboutThis.ownerPlace.preferences` is the real name of the macOS `~/Library/Preferences` folder, kept as the system names it; the GNOME branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own app-menu word, Předvolby (cs nautilus.po `_Preferences`)."
-      },
       {
         "source": "Disconnecting {name}",
         "reason": "`fileExplorer.navigation.detachingShareAriaLabel` names a network share (sdílené složky), `adb.disconnectingDeviceAriaLabel` an Android phone (zařízení); Czech needs the object noun, so the two can't share a form."

@@ -150,7 +150,7 @@ export const commands = {
   getFileAt: (listingId: string, index: number, includeHidden: boolean) =>
     typedError<
       {
-        // The entry's own file name (the last path component).
+        // The entry's own filename (the last path component).
         name: string
         // The entry's full path, in the namespace its volume reports.
         path: string
@@ -321,7 +321,7 @@ export const commands = {
   getFileBeside: (listingId: string, name: string, side: RowBeside, includeHidden: boolean) =>
     typedError<
       {
-        // The entry's own file name (the last path component).
+        // The entry's own filename (the last path component).
         name: string
         // The entry's full path, in the namespace its volume reports.
         path: string
@@ -1259,9 +1259,9 @@ export const commands = {
       | { type: 'read_error'; path: string; message: string }
       // Couldn't write to the destination.
       | { type: 'write_error'; path: string; message: string }
-      // File name exceeds the destination filesystem's length limit.
+      // Filename exceeds the destination filesystem's length limit.
       | { type: 'name_too_long'; path: string }
-      // File name contains characters not allowed at the destination.
+      // Filename contains characters not allowed at the destination.
       | { type: 'invalid_name'; path: string; message: string }
       /**
        *  The file is in `STATUS_DELETE_PENDING` on the server: a delete was requested
@@ -4103,7 +4103,7 @@ export const commands = {
   clearRecentPaths: () => typedError<null, string>(__TAURI_INVOKE('clear_recent_paths')),
   /**
    *  Adds a favorite for `path`, on the volume the add gate names. When `name` is omitted, the label
-   *  defaults to the path's file name. A re-add of the same folder on the same volume moves the
+   *  defaults to the path's filename. A re-add of the same folder on the same volume moves the
    *  existing favorite rather than adding a second.
    *
    *  Refuses a path a favorite can't point at ([`favorite_volume_for`]). The frontend greys its add
@@ -4881,6 +4881,15 @@ export const commands = {
    *  didn't respond within 2s.
    */
   resolvePathVolume: (path: string) => __TAURI_INVOKE<PathVolumeResolution>('resolve_path_volume', { path }),
+  /**
+   *  Where a restored tab recorded on volume `volume_id` at `path` opens: as stored, on the
+   *  volume's live root when that root moved (a drive back on another letter), or "not ready"
+   *  when the startup sweep hasn't registered the volume yet, so the tab keeps its stored id.
+   *  In-memory reads plus a bounded wait for the sweep, off the IPC thread.
+   *  `crate::location::last_roots::restored_tab_path` has the rule.
+   */
+  liveVolumePath: (volumeId: string, path: string) =>
+    __TAURI_INVOKE<RestoredTabPath>('live_volume_path', { volumeId, path }),
   /**
    *  Resolves a path to a `Location` (`volume_id` + the path itself), the
    *  canonical path→volume resolver for navigation edges. Shares the full
@@ -7791,7 +7800,7 @@ export type AskCmdrTurn = {
 
 /**
  *  What a question is about. Each arm is one sentence in `tool-ask-sentence.ts`, and every string in
- *  here passes through [`fact_text`], since a file name or a setting value can be anything.
+ *  here passes through [`fact_text`], since a filename or a setting value can be anything.
  */
 export type AskFacts =
   // Open what's under the cursor in another app, or launch it.
@@ -8215,7 +8224,7 @@ export type CancelRollback = {
   outcome: CancelRollbackOutcome
   // Items undone, counting the ones already in the desired end state.
   reversed: number
-  // One group per reason, with the complete count and one example file name.
+  // One group per reason, with the complete count and one example filename.
   skips: SkipBreakdown[]
   /**
    *  Cmdr's own unfinished writes the cleanup couldn't take off the
@@ -10766,7 +10775,7 @@ export type FileEncoding =
  *  specta's `validate_exported_command` accepts the type in Unified mode.
  */
 export type FileEntry = {
-  // The entry's own file name (the last path component).
+  // The entry's own filename (the last path component).
   name: string
   // The entry's full path, in the namespace its volume reports.
   path: string
@@ -12921,7 +12930,7 @@ export type LandedBy =
 
 /**
  *  Successful resolution: the path to surface plus the pre-split parent dir +
- *  file name so the frontend doesn't have to parse the path itself.
+ *  filename so the frontend doesn't have to parse the path itself.
  */
 export type LatestDownload = {
   path: string
@@ -16558,7 +16567,7 @@ export type OperationUndoOutcome = {
   skipped: number
   /**
    *  WHICH reason left which file alone, one group per typed reason, each with its
-   *  complete count and one example file name. Lets the UI say what happened to a
+   *  complete count and one example filename. Lets the UI say what happened to a
    *  specific file instead of naming a reason class for the whole batch. Empty on a
    *  refusal (nothing was examined) and on a clean undo.
    */
@@ -16960,7 +16969,7 @@ export type PastedClipboardFile = {
 
 /**
  *  The kind of clipboard content pasted as a file. Drives the paste toast's
- *  noun (text / image / PDF); the file name's extension carries the finer detail
+ *  noun (text / image / PDF); the filename's extension carries the finer detail
  *  (`.md` / `.txt` / `.png` / `.jpg` / `.pdf`). Ungated so the Linux command
  *  stub can name it in its signature.
  */
@@ -17452,7 +17461,7 @@ export type PromiseDropStarted = {
  *  user message, AND across IPC as a display block. So a field rename here is a change to data
  *  already on disk, not a refactor.
  *
- *  ❌ **No rationale, no file names, no op paths.** A decision line goes into the agent's memory
+ *  ❌ **No rationale, no filenames, no op paths.** A decision line goes into the agent's memory
  *  ring, which reaches every later thread; the group's own display text (a path or a
  *  pattern the user already saw) plus a count is the whole of what a lesson needs.
  */
@@ -18461,6 +18470,23 @@ export type ResticSnapshotMeta = {
    */
   paths: string[]
 }
+
+// What a restored tab does with its stored path ([`restored_tab_path`]).
+export type RestoredTabPath =
+  // The stored path stands on its volume as it is.
+  | { kind: 'keep' }
+  // The volume's root moved: the tab opens here instead.
+  | {
+      kind: 'moved'
+      // The stored path on the volume's live root.
+      path: string
+    }
+  /**
+   *  The registry isn't complete yet, so nothing can tell where this volume is: keep the
+   *  stored path AND id untouched, unprobed. ❌ Never re-key the tab from an incomplete
+   *  registry: the old root may now be another disk.
+   */
+  | { kind: 'notReady' }
 
 export type RestrictedPathsChangedPayload = {
   /**
@@ -25893,9 +25919,9 @@ export type WriteOperationError =
   | { type: 'read_error'; path: string; message: string }
   // Couldn't write to the destination.
   | { type: 'write_error'; path: string; message: string }
-  // File name exceeds the destination filesystem's length limit.
+  // Filename exceeds the destination filesystem's length limit.
   | { type: 'name_too_long'; path: string }
-  // File name contains characters not allowed at the destination.
+  // Filename contains characters not allowed at the destination.
   | { type: 'invalid_name'; path: string; message: string }
   /**
    *  The file is in `STATUS_DELETE_PENDING` on the server: a delete was requested

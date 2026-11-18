@@ -53,7 +53,7 @@ VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/C
 [ "$BUNDLE_ID" = "$EXPECTED_ID" ] || fail "$APP is $BUNDLE_ID, expected $EXPECTED_ID."
 codesign --verify --deep --strict "$APP" || fail "$APP doesn't pass codesign --verify --deep --strict."
 
-# File names follow the DMGs (`docs/guides/releasing.md` § What a release publishes): `x64`,
+# Filenames follow the DMGs (`docs/guides/releasing.md` § What a release publishes): `x64`,
 # never `x86_64`. The distribution's host architectures follow the binary, so a single-arch
 # package refuses to install on the other kind of Mac instead of installing an app that can't run.
 ARCHS=$(lipo -archs "$APP/Contents/MacOS/Cmdr")

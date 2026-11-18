@@ -440,7 +440,7 @@ fn full_path_match_misses_inner_mtp_entry_from_url_notifier() {
     );
 }
 
-/// The fix: `remove_entry_by_name` matches by the entry's file name within the
+/// The fix: `remove_entry_by_name` matches by the entry's filename within the
 /// directory listing, so the inner-path entry is found from the URL notifier path.
 #[test]
 fn name_match_removes_inner_mtp_entry() {

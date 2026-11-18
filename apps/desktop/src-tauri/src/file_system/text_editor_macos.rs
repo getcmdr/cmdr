@@ -149,7 +149,7 @@ fn parse_choice(setting: &str) -> TextEditorChoice {
 
 /// The argv that opens `file` in `choice`, with `open` itself first. Pure, so every
 /// shape is unit-tested without launching anything. Nothing goes through a shell,
-/// so an awkward file name is an ordinary argument.
+/// so an awkward filename is an ordinary argument.
 fn launch_argv(choice: &TextEditorChoice, file: &Path) -> Vec<String> {
     let file_arg = file.to_string_lossy().into_owned();
     match choice {

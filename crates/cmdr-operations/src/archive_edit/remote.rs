@@ -194,7 +194,7 @@ async fn place_local_file(
     let size = std::fs::metadata(local_file)
         .map_err(|e| io_op(&local_file.display().to_string(), &e.to_string()))?
         .len();
-    // A `LocalPosixVolume` gives us a streaming reader over the local working file
+    // A `LocalVolume` gives us a streaming reader over the local working file
     // (the same primitive the cross-volume copy engine uses for a local source),
     // and is what a settled swap compares the remote archive against.
     let local: Arc<dyn Volume> =

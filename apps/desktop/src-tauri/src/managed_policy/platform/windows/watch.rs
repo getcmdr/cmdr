@@ -1,6 +1,6 @@
 //! The refresh trigger on Windows: a change notification on `SOFTWARE\Policies` in both hives, which
 //! a Group Policy refresh (or an admin's `reg add`) writes. Watches the parent, subtree included,
-//! because `Policies\Cmdr` doesn't exist until the first policy creates it. Only calls
+//! because `Policies\Rymd\Cmdr` doesn't exist until the first policy creates it. Only calls
 //! [`crate::managed_policy::refresh`]; the registry stays the source of truth.
 
 use crate::platform::registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, Key};
@@ -150,8 +150,8 @@ mod tests {
     use crate::platform::registry::ScratchKey;
 
     /// A write under the watched key (here a scratch key, never `Policies`) wakes the watch, a
-    /// quiet key times out, and a nested key's change counts too (`Policies\Cmdr` under the
-    /// watched `Policies`).
+    /// quiet key times out, and a change two levels down counts too (`Policies\Rymd\Cmdr` under
+    /// the watched `Policies`).
     #[test]
     fn a_change_under_the_watched_key_wakes_it() {
         let scratch = ScratchKey::new("policy-watch");
@@ -164,7 +164,7 @@ mod tests {
         );
 
         watch.arm().expect("arm");
-        crate::platform::registry::set_dword_at(&format!("{}\\Cmdr", scratch.path()), "DisableUpdates", 1);
+        crate::platform::registry::set_dword_at(&format!("{}\\Rymd\\Cmdr", scratch.path()), "DisableUpdates", 1);
         assert_eq!(
             watch.block(Some(Duration::from_secs(10))),
             Ok(true),

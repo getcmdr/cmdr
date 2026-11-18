@@ -114,9 +114,9 @@ fn parse_request(params: &Value) -> Result<Request, ToolError> {
                 .iter()
                 .map(|v| v.as_str().map(str::to_owned))
                 .collect::<Option<Vec<_>>>()
-                .ok_or_else(|| ToolError::invalid_params("'names' must be an array of file names"))?,
+                .ok_or_else(|| ToolError::invalid_params("'names' must be an array of filenames"))?,
         ),
-        Some(_) => return Err(ToolError::invalid_params("'names' must be an array of file names")),
+        Some(_) => return Err(ToolError::invalid_params("'names' must be an array of filenames")),
     };
     let dry_run = match params.get("dryRun") {
         None | Some(Value::Null) => true,
@@ -528,7 +528,7 @@ pub async fn execute_multi_rename<R: Runtime>(app: &AppHandle<R>, ctx: &ToolCtx,
             Path::new(p)
                 .file_name()
                 .map(|n| n.to_string_lossy().into_owned())
-                .ok_or_else(|| ToolError::internal(format!("'{p}' has no file name")))
+                .ok_or_else(|| ToolError::internal(format!("'{p}' has no filename")))
         })
         .collect::<Result<_, _>>()?;
     let siblings = crate::listing_host::listings()

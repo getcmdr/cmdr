@@ -88,8 +88,8 @@ struct CacheEntry {
     stored_at: Instant,
 }
 
-/// Splits a file path into the (directory, file name) pair the cache keys on.
-/// A path with no file name (`/`, `..`) is not cacheable.
+/// Splits a file path into the (directory, filename) pair the cache keys on.
+/// A path with no filename (`/`, `..`) is not cacheable.
 fn split(path: &Path) -> Option<(&Path, &std::ffi::OsStr)> {
     Some((path.parent()?, path.file_name()?))
 }

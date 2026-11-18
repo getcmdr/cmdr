@@ -91,7 +91,7 @@ const wcagA: CriterionRow[] = [
     level: 'A',
     conformance: 'supports',
     remark:
-      'Icon buttons have names, the image viewer uses the file name as the image\'s text alternative, and the sync-status and symlink badges on file icons are named. Each file\'s name for assistive technology also says its kind (folder, symlink, package, or archive), so the file-type icon needs no text of its own: VoiceOver reads "Photos (folder)" and "backup.zip (archive)". Pictures in a Markdown file keep the text alternative the document gives them.',
+      'Icon buttons have names, the image viewer uses the filename as the image\'s text alternative, and the sync-status and symlink badges on file icons are named. Each file\'s name for assistive technology also says its kind (folder, symlink, package, or archive), so the file-type icon needs no text of its own: VoiceOver reads "Photos (folder)" and "backup.zip (archive)". Pictures in a Markdown file keep the text alternative the document gives them.',
   },
   {
     id: '1.2.1',
@@ -208,7 +208,7 @@ const wcagA: CriterionRow[] = [
     level: 'A',
     conformance: 'supports',
     remark:
-      'Every window has a title in the app\'s language: "Cmdr" for the main window, the file name in the viewer, and a name for Settings, Keyboard shortcuts, and the queue.',
+      'Every window has a title in the app\'s language: "Cmdr" for the main window, the filename in the viewer, and a name for Settings, Keyboard shortcuts, and the queue.',
   },
   {
     id: '2.4.3',
@@ -292,7 +292,7 @@ const wcagA: CriterionRow[] = [
     level: 'A',
     conformance: 'supports',
     remark:
-      "Rename, new folder, server, license key, and archive and backup password forms mark the field in error and tie the message to it. VoiceOver reads an invalid file name's message as soon as it appears, and a failed license activation is also announced as an alert.",
+      "Rename, new folder, server, license key, and archive and backup password forms mark the field in error and tie the message to it. VoiceOver reads an invalid filename's message as soon as it appears, and a failed license activation is also announced as an alert.",
   },
   {
     id: '3.3.2',
@@ -362,7 +362,7 @@ const wcagAA: CriterionRow[] = [
     level: 'AA',
     conformance: 'partially-supports',
     remark:
-      'An automated check on every change measures every text color against its background in light and dark mode, with all macOS accent colors and pane tints, at 4.5:1 (3:1 for large text). Marked file names measure at least 4.52:1. The check also covers the stronger colors the macOS Increase contrast setting turns on. One exception: the optional "App" date and size colors can put a pale accent color on text (about 2.4:1 with the gold accent).',
+      'An automated check on every change measures every text color against its background in light and dark mode, with all macOS accent colors and pane tints, at 4.5:1 (3:1 for large text). Marked filenames measure at least 4.52:1. The check also covers the stronger colors the macOS Increase contrast setting turns on. One exception: the optional "App" date and size colors can put a pale accent color on text (about 2.4:1 with the gold accent).',
     issues: [454],
   },
   {
@@ -403,7 +403,7 @@ const wcagAA: CriterionRow[] = [
     level: 'AA',
     conformance: 'partially-supports',
     remark:
-      "File list rows have a fixed height. Larger line spacing fits the default row density but gets cut off in the Compact density, and shortened file names don't account for extra letter or word spacing. A manual text-spacing test is pending.",
+      "File list rows have a fixed height. Larger line spacing fits the default row density but gets cut off in the Compact density, and shortened filenames don't account for extra letter or word spacing. A manual text-spacing test is pending.",
   },
   {
     id: '1.4.13',

@@ -158,7 +158,7 @@ impl SearchIndex {
         self.entries[idx].parent_id
     }
 
-    /// The file name at `idx`, borrowed from the names buffer.
+    /// The filename at `idx`, borrowed from the names buffer.
     #[inline]
     pub fn name(&self, idx: usize) -> &str {
         let entry = &self.entries[idx];

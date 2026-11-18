@@ -25,7 +25,7 @@ covers Svelte, so it's the obvious thing to try first. Three properties of our c
 
 - One locale is a **directory** of per-area files (`messages/en/crashReporter.json`, …) while the keys inside are
   already fully qualified (`crashReporter.dialog.title` lives inside `crashReporter.json`). Every i18next-shaped parser
-  reads the file name as a namespace and goes looking for `crashReporter:crashReporter.dialog.title`.
+  reads the filename as a namespace and goes looking for `crashReporter:crashReporter.dialog.title`.
 - The catalogs carry ARB-style `@key` metadata siblings, which a generic parser reads as real keys.
 - Our keys also reach the UI as bare literals on `labelKey` / `descriptionKey` properties, not only inside a call.
 

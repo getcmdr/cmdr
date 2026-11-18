@@ -11,10 +11,10 @@ use crate::types::{LockedKept, LockedSourcesAnswer};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::testing::metadata_fixture::{LOCKED_FLAG, MetadataFixture, flags};
 use cmdr_fs::volume::InMemoryVolume;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 fn local_source(fixture: &MetadataFixture) -> Arc<dyn Volume> {
-    Arc::new(LocalPosixVolume::local_folder(
+    Arc::new(LocalVolume::local_folder(
         "Source",
         fixture.join(""),
         crate::host::testing::pane_order_host(),

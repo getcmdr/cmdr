@@ -35,9 +35,9 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "Einstellungen öffnen",
+  "commands.appSettings.label": "{platform, select, windows {Einstellungen öffnen} linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
   "@commands.appSettings.label": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "commands.appCheckForUpdates.label": "Nach Updates suchen …",
   "@commands.appCheckForUpdates.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus dem Schlüsselbund und sperrt das Backup wieder} windows {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus der Anmeldeinformationsverwaltung und sperrt das Backup wieder} linuxKde {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus KWallet und sperrt das Backup wieder} other {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus deinem Schlüsselbund und sperrt das Backup wieder}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus dem Schlüsselbund und sperrt das Backup wieder} windows {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus der Anmeldeinformationsverwaltung und sperrt das Backup wieder} linuxKde {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus dem KDE-Passwortspeicher und sperrt das Backup wieder} other {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus deinem Schlüsselbund und sperrt das Backup wieder}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "5b48a77"
+    "sourceHash": "e7106da"
   },
   "commands.fileCopyShareLink.label": "Freigabelink kopieren (sieben Tage)",
   "@commands.fileCopyShareLink.label": {
@@ -1264,17 +1264,17 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "Ordner in deiner Terminal-App geöffnet. Soll Cmdr beim nächsten Mal eine andere App öffnen? Wähle sie in den Einstellungen unter „Navigation & Dateioperationen“.",
+  "commands.handler.openTerminalHere.hint": "{platform, select, windows {Ordner in deiner Terminal-App geöffnet. Soll Cmdr beim nächsten Mal eine andere App öffnen? Wähle sie in den Einstellungen unter „Navigation & Dateioperationen“.} linuxGnome {Ordner in deiner Terminal-App geöffnet. Soll Cmdr beim nächsten Mal eine andere App öffnen? Wähle sie in den Einstellungen unter „Navigation & Dateioperationen“.} linuxKde {Ordner in deiner Terminal-App geöffnet. Soll Cmdr beim nächsten Mal eine andere App öffnen? Wähle sie unter „Cmdr einrichten“ > „Navigation & Dateioperationen“.} other {Ordner in deiner Terminal-App geöffnet. Soll Cmdr beim nächsten Mal eine andere App öffnen? Wähle sie in den Einstellungen unter „Navigation & Dateioperationen“.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b29b744"
+    "sourceHash": "5d6063c"
   },
   "commands.handler.openTerminalHere.dismiss": "Schließen",
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "Einstellungen öffnen",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Einstellungen öffnen} linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} ist nicht mehr installiert, also wurde stattdessen Terminal geöffnet.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1344,9 +1344,9 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "Die Protokollspeicherung ist deaktiviert. Setze das Speicherplatz-Limit unter Einstellungen > Erweitert auf mehr als 0 und starte Cmdr neu, um das Debug-Protokoll anzusehen.",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, windows {Die Protokollspeicherung ist deaktiviert. Setze das Speicherplatz-Limit unter Einstellungen > Erweitert auf mehr als 0 und starte Cmdr neu, um das Debug-Protokoll anzusehen.} linuxGnome {Die Protokollspeicherung ist deaktiviert. Setze das Speicherplatz-Limit unter Einstellungen > Erweitert auf mehr als 0 und starte Cmdr neu, um das Debug-Protokoll anzusehen.} linuxKde {Die Protokollspeicherung ist deaktiviert. Setze das Speicherplatz-Limit unter „Cmdr einrichten“ > Erweitert auf mehr als 0 und starte Cmdr neu, um das Debug-Protokoll anzusehen.} other {Die Protokollspeicherung ist deaktiviert. Setze das Speicherplatz-Limit unter Einstellungen > Erweitert auf mehr als 0 und starte Cmdr neu, um das Debug-Protokoll anzusehen.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "96f16fc"
+    "sourceHash": "1fb0c6a"
   },
   "commands.handler.viewDebugLog.unavailable": "Das Debug-Protokoll ließ sich nicht öffnen. Versuche es noch einmal.",
   "@commands.handler.viewDebugLog.unavailable": {

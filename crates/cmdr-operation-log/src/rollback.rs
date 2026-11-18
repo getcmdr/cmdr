@@ -138,7 +138,7 @@ pub struct RollbackReport {
     /// attempted. Any keeps the op `partially_rolled_back`.
     pub left_out: u64,
     /// Which reason left which file alone: one group per [`SkipReason`], with the
-    /// complete count and one example file name. The counts sum to `skipped`, so a
+    /// complete count and one example filename. The counts sum to `skipped`, so a
     /// report can name a file instead of a reason class without understating the rest.
     pub skips: Vec<SkipBreakdown>,
     /// The run stopped early because it was canceled.
@@ -414,6 +414,10 @@ pub async fn execute_rollback_with_selection(
     // the files they hold. Dirs are a small fraction of an op (interning shares
     // them), so buffering just the dir rows stays bounded.
     let mut deferred_dirs: Vec<RollbackUnit> = Vec::new();
+    // Each unit lands on its volumes' live roots HERE, once, before anything reads it: the
+    // progress line, the skip report, the inverse op's journal rows, and the act all name the
+    // same place (`rollback/live_roots.rs`).
+    let mut live_roots = LiveRoots::new(volumes);
     let mut before = i64::MAX;
     'pages: loop {
         // Also asked per page, not only per item: a narrow selection over a big op
@@ -448,6 +452,7 @@ pub async fn execute_rollback_with_selection(
         };
 
         for unit in page {
+            let unit = live_roots.rebase(unit);
             if runner.should_stop() {
                 canceled = true;
                 break 'pages;
@@ -654,6 +659,7 @@ pub(crate) mod action_table;
 mod bookkeeping;
 mod gate;
 mod inverse;
+mod live_roots;
 mod order;
 mod reconcile;
 mod runner;
@@ -669,6 +675,7 @@ pub use gate::{
     InversePlan, InverseSummary, check_rollbackable, rollback_operation, rollback_operation_with_selection,
 };
 use inverse::reverse_item;
+use live_roots::LiveRoots;
 pub use order::undo_order;
 pub use reconcile::reconcile_rolling_back_on_open;
 use runner::ProgressStand;

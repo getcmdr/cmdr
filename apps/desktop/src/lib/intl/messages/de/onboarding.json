@@ -307,17 +307,17 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.} linuxGnome {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.} linuxKde {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter „Cmdr einrichten“ > KI.} other {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
-    "sourceHash": "82d27b6"
+    "sourceHash": "6075ac0"
   },
   "onboarding.stepAi.off.label": "Danke, aber nein, KI ist nichts für mich",
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.",
+  "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.} linuxGnome {Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.} linuxKde {Cmdr funktioniert vollständig ohne KI. Du kannst sie später unter „Cmdr einrichten“ aktivieren.} other {Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.}}",
   "@onboarding.stepAi.off.help": {
-    "sourceHash": "3f261be"
+    "sourceHash": "f4c9871"
   },
   "onboarding.localDownloadFailed.title": "Das lokale KI-Modell wurde nicht fertig heruntergeladen",
   "@onboarding.localDownloadFailed.title": {
@@ -391,21 +391,21 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.} linuxGnome {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.} linuxKde {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit unter „Cmdr einrichten“ ändern.} other {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.}}",
   "@onboarding.stepBeta.analyticsCaption": {
-    "sourceHash": "06ce4eb"
+    "sourceHash": "9dc83f9"
   },
-  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine macOS-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.} windows {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Windows-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.} other {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.}}",
+  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine macOS-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.} windows {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Windows-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.} linuxGnome {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.} linuxKde {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit unter „Cmdr einrichten“ ausschalten.} other {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.}}",
   "@onboarding.stepBeta.crashReportsNote": {
-    "sourceHash": "55b9634"
+    "sourceHash": "4efc7dc"
   },
   "onboarding.stepBeta.analyticsManaged": "Deine Organisation hat die Nutzungsstatistiken ausgeschaltet.",
   "@onboarding.stepBeta.analyticsManaged": {
     "sourceHash": "49484ee"
   },
-  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine macOS-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.} windows {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Windows-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.} other {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.}}",
+  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine macOS-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.} windows {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Windows-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.} linuxGnome {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.} linuxKde {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit unter „Cmdr einrichten“ ausschalten.} other {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.}}",
   "@onboarding.stepBeta.crashReportsNoteAlone": {
-    "sourceHash": "27d4b1b"
+    "sourceHash": "bd11273"
   },
   "onboarding.stepBeta.emailTitle": "In Kontakt bleiben (optional)",
   "@onboarding.stepBeta.emailTitle": {
@@ -427,9 +427,9 @@
   "@onboarding.stepBeta.signup.rejected": {
     "sourceHash": "5a1bca7"
   },
-  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem Mac gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.} windows {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem PC gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.} other {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem Computer gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.}}",
+  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem Mac gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.} windows {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem PC gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.} linuxGnome {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem Computer gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.} linuxKde {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem Computer gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter „Cmdr einrichten“ › Updates & Datenschutz.} other {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem Computer gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.}}",
   "@onboarding.stepBeta.signup.unreachable": {
-    "sourceHash": "6032194"
+    "sourceHash": "ae9c4a5"
   },
   "onboarding.stepBeta.emailNote": "{platform, select, macos {Gib deine E-Mail-Adresse an, und ich melde mich ab und zu mit einer Frage oder einem Update.\nDie hier eingegebene E-Mail-Adresse wird nur auf deinem Mac gespeichert und nie mit deinen Nutzungsstatistiken verknüpft, die beiden sind bewusst zwei getrennte Teilsysteme.} windows {Gib deine E-Mail-Adresse an, und ich melde mich ab und zu mit einer Frage oder einem Update.\nDie hier eingegebene E-Mail-Adresse wird nur auf deinem PC gespeichert und nie mit deinen Nutzungsstatistiken verknüpft, die beiden sind bewusst zwei getrennte Teilsysteme.} other {Gib deine E-Mail-Adresse an, und ich melde mich ab und zu mit einer Frage oder einem Update.\nDie hier eingegebene E-Mail-Adresse wird nur auf deinem Computer gespeichert und nie mit deinen Nutzungsstatistiken verknüpft, die beiden sind bewusst zwei getrennte Teilsysteme.}}",
   "@onboarding.stepBeta.emailNote": {
@@ -467,9 +467,9 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "Du kannst das jederzeit in den Einstellungen ändern.",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Du kannst das jederzeit in den Einstellungen ändern.} linuxGnome {Du kannst das jederzeit in den Einstellungen ändern.} linuxKde {Du kannst das jederzeit unter „Cmdr einrichten“ ändern.} other {Du kannst das jederzeit in den Einstellungen ändern.}}",
   "@onboarding.stepOptional.changeAnytime": {
-    "sourceHash": "895d675"
+    "sourceHash": "ff84784"
   },
   "onboarding.stepOptional.networking.title": "Netzwerk",
   "@onboarding.stepOptional.networking.title": {

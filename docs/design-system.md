@@ -5,7 +5,7 @@ Design language for the Cmdr desktop app and getcmdr.com website.
 ## Principles
 
 1. **The tool recedes, the content leads.** The file list is 90% of the app. Chrome (toolbars, dialogs, headers) should
-   be quiet so file names, sizes, and icons can breathe. Rich data, calm surroundings.
+   be quiet so filenames, sizes, and icons can breathe. Rich data, calm surroundings.
 2. **Personal, not branded.** In the app, the user's macOS accent color drives all interactive UI (selection, focus,
    buttons). The Cmdr brand (mustard yellow) lives only on marketing surfaces. The app feels like _their_ tool, not
    ours.
@@ -277,7 +277,7 @@ regression. Dialogs opened from the main window are on the list, so they still r
 
 **Weight:**
 
-- **Body text, file names**: 400 (regular)
+- **Body text, filenames**: 400 (regular)
 - **Labels, button text**: 500 (medium)
 - **Headings, emphasis**: 600 (semibold)
 

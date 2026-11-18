@@ -55,9 +55,9 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "Aktiviere unter Einstellungen > KI einen Anbieter, um die KI-Suche zu nutzen.",
+  "ai.translateError.off.body": "{platform, select, windows {Aktiviere unter Einstellungen > KI einen Anbieter, um die KI-Suche zu nutzen.} linuxGnome {Aktiviere unter Einstellungen > KI einen Anbieter, um die KI-Suche zu nutzen.} linuxKde {Aktiviere unter „Cmdr einrichten“ > KI einen Anbieter, um die KI-Suche zu nutzen.} other {Aktiviere unter Einstellungen > KI einen Anbieter, um die KI-Suche zu nutzen.}}",
   "@ai.translateError.off.body": {
-    "sourceHash": "d8d6368"
+    "sourceHash": "c9c11e2"
   },
   "ai.cloudConsent.label": "Cloud-KI erlauben",
   "@ai.cloudConsent.label": {
@@ -247,25 +247,25 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "Schließe die Einrichtung deines Anbieters unter Einstellungen > KI ab und versuche es dann erneut.",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {Schließe die Einrichtung deines Anbieters unter Einstellungen > KI ab und versuche es dann erneut.} linuxGnome {Schließe die Einrichtung deines Anbieters unter Einstellungen > KI ab und versuche es dann erneut.} linuxKde {Schließe die Einrichtung deines Anbieters unter „Cmdr einrichten“ > KI ab und versuche es dann erneut.} other {Schließe die Einrichtung deines Anbieters unter Einstellungen > KI ab und versuche es dann erneut.}}",
   "@ai.translateError.notConfigured.body": {
-    "sourceHash": "65133a8"
+    "sourceHash": "cdb4ab5"
   },
   "ai.translateError.noCloudConsent.title": "Cloud-KI ist ausgeschaltet",
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "Erlaube sie unter Einstellungen > KI und versuche es dann erneut.",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {Erlaube sie unter Einstellungen > KI und versuche es dann erneut.} linuxGnome {Erlaube sie unter Einstellungen > KI und versuche es dann erneut.} linuxKde {Erlaube sie unter „Cmdr einrichten“ > KI und versuche es dann erneut.} other {Erlaube sie unter Einstellungen > KI und versuche es dann erneut.}}",
   "@ai.translateError.noCloudConsent.body": {
-    "sourceHash": "fde3eb5"
+    "sourceHash": "f54d181"
   },
   "ai.translateError.authFailed.title": "Dieser API-Schlüssel wurde abgelehnt",
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "Prüfe deinen Schlüssel unter Einstellungen > KI – er ist möglicherweise falsch oder widerrufen.",
+  "ai.translateError.authFailed.body": "{platform, select, windows {Prüfe deinen Schlüssel unter Einstellungen > KI – er ist möglicherweise falsch oder widerrufen.} linuxGnome {Prüfe deinen Schlüssel unter Einstellungen > KI – er ist möglicherweise falsch oder widerrufen.} linuxKde {Prüfe deinen Schlüssel unter „Cmdr einrichten“ > KI – er ist möglicherweise falsch oder widerrufen.} other {Prüfe deinen Schlüssel unter Einstellungen > KI – er ist möglicherweise falsch oder widerrufen.}}",
   "@ai.translateError.authFailed.body": {
-    "sourceHash": "2159d5e"
+    "sourceHash": "efd14fb"
   },
   "ai.translateError.rateLimited.title": "Dein KI-Anbieter hat keine Kapazität mehr",
   "@ai.translateError.rateLimited.title": {
@@ -295,9 +295,9 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "Dein Modell hat sein Token-Budget möglicherweise aufgebraucht, bevor es geantwortet hat. Probiere unter Einstellungen > KI ein schnelleres Modell wie gpt-4.1-mini.",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {Dein Modell hat sein Token-Budget möglicherweise aufgebraucht, bevor es geantwortet hat. Probiere unter Einstellungen > KI ein schnelleres Modell wie gpt-4.1-mini.} linuxGnome {Dein Modell hat sein Token-Budget möglicherweise aufgebraucht, bevor es geantwortet hat. Probiere unter Einstellungen > KI ein schnelleres Modell wie gpt-4.1-mini.} linuxKde {Dein Modell hat sein Token-Budget möglicherweise aufgebraucht, bevor es geantwortet hat. Probiere unter „Cmdr einrichten“ > KI ein schnelleres Modell wie gpt-4.1-mini.} other {Dein Modell hat sein Token-Budget möglicherweise aufgebraucht, bevor es geantwortet hat. Probiere unter Einstellungen > KI ein schnelleres Modell wie gpt-4.1-mini.}}",
   "@ai.translateError.emptyResponse.body": {
-    "sourceHash": "d74db0d"
+    "sourceHash": "9068319"
   },
   "ai.translateError.serverError.title": "Dein KI-Anbieter hatte ein Problem",
   "@ai.translateError.serverError.title": {
@@ -311,17 +311,17 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "Versuche es erneut oder wähle unter Einstellungen > KI ein anderes Modell.",
+  "ai.translateError.parseError.body": "{platform, select, windows {Versuche es erneut oder wähle unter Einstellungen > KI ein anderes Modell.} linuxGnome {Versuche es erneut oder wähle unter Einstellungen > KI ein anderes Modell.} linuxKde {Versuche es erneut oder wähle unter „Cmdr einrichten“ > KI ein anderes Modell.} other {Versuche es erneut oder wähle unter Einstellungen > KI ein anderes Modell.}}",
   "@ai.translateError.parseError.body": {
-    "sourceHash": "c299ec6"
+    "sourceHash": "5ebf991"
   },
   "ai.translateError.unknownProvider.title": "Dieser KI-Anbieter wird nicht erkannt",
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "Wähle unter Einstellungen > KI einen Anbieter.",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {Wähle unter Einstellungen > KI einen Anbieter.} linuxGnome {Wähle unter Einstellungen > KI einen Anbieter.} linuxKde {Wähle unter „Cmdr einrichten“ > KI einen Anbieter.} other {Wähle unter Einstellungen > KI einen Anbieter.}}",
   "@ai.translateError.unknownProvider.body": {
-    "sourceHash": "7042a75"
+    "sourceHash": "a3988aa"
   },
   "ai.translateError.managed.title": "Deine Organisation verwaltet die KI in Cmdr",
   "@ai.translateError.managed.title": {
@@ -599,9 +599,9 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Der macOS-Schlüsselbund hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Der macOS-Schlüsselbund hat den Zugriff verweigert}}} windows {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Die Anmeldeinformationsverwaltung hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Die Anmeldeinformationsverwaltung hat den Zugriff verweigert}}} linuxKde {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: KWallet hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: KWallet hat den Zugriff verweigert}}} other {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Dein System-Schlüsselbund hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Dein System-Schlüsselbund hat den Zugriff verweigert}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Der macOS-Schlüsselbund hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Der macOS-Schlüsselbund hat den Zugriff verweigert}}} windows {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Die Anmeldeinformationsverwaltung hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Die Anmeldeinformationsverwaltung hat den Zugriff verweigert}}} linuxKde {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Der KDE-Passwortspeicher hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Der KDE-Passwortspeicher hat den Zugriff verweigert}}} other {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Dein System-Schlüsselbund hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Dein System-Schlüsselbund hat den Zugriff verweigert}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "6daa595"
+    "sourceHash": "4612cfb"
   },
   "ai.secretError.body": "{platform, select, macos {{op, select, save {Öffne die Schlüsselbundverwaltung und prüfe den Eintrag „Cmdr“, oder lösche ihn und speichere noch einmal.} other {Öffne die Schlüsselbundverwaltung, suche den Eintrag „Cmdr“ und gewähre den Zugriff, oder lösche ihn und gib deinen Schlüssel neu ein.}}} windows {{op, select, save {Öffne die Anmeldeinformationsverwaltung und prüfe den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“, oder entferne ihn und speichere noch einmal.} other {Öffne die Anmeldeinformationsverwaltung, suche den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“, oder entferne ihn und gib deinen Schlüssel noch einmal ein.}}} linuxGnome {Entsperre deinen Schlüsselbund in „Passwörter und Verschlüsselung“ und versuche es erneut.} linuxKde {Entsperre deinen Passwortspeicher in KWalletManager und versuche es erneut.} other {Entsperre deinen Schlüsselbund (App „Passwörter“ / „Schlüsselbunde“) und versuche es erneut.}}",
   "@ai.secretError.body": {
@@ -611,9 +611,9 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Prüfe, ob dein Schlüsselbund verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.} windows {Prüfe, ob die Anmeldeinformationsverwaltung verfügbar ist, und versuche es erneut. Wenn es weiterhin passiert, starte Cmdr neu.} linuxKde {Prüfe, ob KWallet verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.} other {Prüfe, ob dein System-Schlüsselbund verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Prüfe, ob dein Schlüsselbund verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.} windows {Prüfe, ob die Anmeldeinformationsverwaltung verfügbar ist, und versuche es erneut. Wenn es weiterhin passiert, starte Cmdr neu.} linuxKde {Prüfe, ob der KDE-Passwortspeicher verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.} other {Prüfe, ob dein System-Schlüsselbund verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "cb879fa"
+    "sourceHash": "1c198ff"
   },
   "ai.secretError.removeTitle": "Dein gespeicherter API-Schlüssel ließ sich nicht entfernen.",
   "@ai.secretError.removeTitle": {

@@ -20,8 +20,8 @@ in a container of their own on a runner of their own, so they share nothing eith
 `--test-only` skips the cargo build and refuses to start without an executable `<triple>/e2e/Cmdr` there, and `--shard`
 passes Playwright's `--shard` (by spec file, since the config isn't `fullyParallel`). `--no-bundle` leaves nothing else
 the app needs beside the binary; the frontend is embedded. Each slice pays the base image pull, an in-container
-`pnpm install`, Chromium, and the fixture stacks (~2 min) for about a third of the ~8.5 min of tests (run 42116859486,
-2026-11-05: 465 tests on one worker).
+`pnpm install`, and the fixture stacks (~2 min) for about a third of the ~8.5 min of tests (run 42116859486, 2026-11-05:
+465 tests on one worker).
 
 ## Architecture
 
@@ -43,10 +43,9 @@ Files:
 
 - `../../scripts/e2e-linux-fixtures.sh`: the fixture stacks, sourced by `e2e-linux.sh`: one lease model for SMB, SFTP,
   and WebDAV, the published-port probes, and the `--network` and env args the E2E container gets.
-- `docker/Dockerfile.base`: Ubuntu 26.04 system layer (Tauri prereqs, Xvfb, Rust, Node, Playwright chromium libs,
-  patchelf).
+- `docker/Dockerfile.base`: Ubuntu 26.04 system layer (Tauri prereqs, Xvfb, Rust, Node, patchelf).
 - `docker/Dockerfile`: thin final layer (`FROM cmdr-e2e-base:<hash>` + entrypoint).
-- `docker/entrypoint.sh`: Xvfb/dbus/GVFS/VNC setup for headless GUI, plus the Playwright host-platform override.
+- `docker/entrypoint.sh`: Xvfb/dbus/GVFS/VNC setup for headless GUI.
 
 ## Build caching
 
@@ -54,10 +53,10 @@ Files:
 
 The image is split in two so per-run builds never re-install the slow system layer.
 
-- **Base image** (`docker/Dockerfile.base`): apt packages (Tauri prereqs, GVFS, Playwright chromium libs, patchelf),
-  Node, pnpm, Rust. `e2e-linux.sh` tags it `cmdr-e2e-base:<first 12 hex of sha256(Dockerfile.base)>` (plus `latest`), so
-  invalidation is automatic: editing `Dockerfile.base` changes the hash, the tag is missing, and the next run rebuilds.
-  An unchanged file reuses the existing image with zero build work. After building a new base, the script prunes older
+- **Base image** (`docker/Dockerfile.base`): apt packages (Tauri prereqs, GVFS, patchelf), Node, pnpm, Rust.
+  `e2e-linux.sh` tags it `cmdr-e2e-base:<first 12 hex of sha256(Dockerfile.base)>` (plus `latest`), so invalidation is
+  automatic: editing `Dockerfile.base` changes the hash, the tag is missing, and the next run rebuilds. An unchanged
+  file reuses the existing image with zero build work. After building a new base, the script prunes older
   `cmdr-e2e-base` tags (~3.5 GB each).
 - **Final image** (`docker/Dockerfile`): `FROM <base>` + `entrypoint.sh`. Rebuilt every run (~1 s with layer cache), so
   `entrypoint.sh` and `Dockerfile` edits propagate automatically (no `--build` needed).
@@ -251,30 +250,22 @@ probing the status-bar text (`user-select: text`) returns sensible offsets even 
 Kept because it's cheap evidence: if a future caret regression shows up only on Linux, this probe (offsets on
 `user-select: none` text vs. the `user-select: text` status bar) is how you tell a webview bug from ours.
 
-## Playwright on the 26.04 base image (and bumping Playwright)
+## No Playwright browser in the image
 
-26.04 is newer than Playwright knows about. Playwright 1.59's bundled platform registry
-(`node_modules/playwright-core/.../server/registry/index.js`) only lists `ubuntu20.04` / `22.04` / `24.04` (each with
-`-x64` and `-arm64`). On 26.04, an unguarded `playwright install chromium` fails the platform check with
-`Error: Playwright does not support chromium on ubuntu26.04`. Two workarounds, both must stay in sync on a Playwright
-bump:
+The container installs no Playwright browser. Upstream `tauriPage` destructures Playwright's `page` to serve its browser
+mode, and Playwright sets up every fixture a fixture names, so each worker used to launch a headless Chromium that Tauri
+mode never touches. Without one, every test failed at setup with `browserType.launch: Executable doesn't exist`.
+`createTauriTest({ mode: 'tauri' })` in `../e2e-playwright/fixtures.ts` defines the fixture without `page`, so nothing
+launches (verified with Playwright 1.65.1 and `PLAYWRIGHT_BROWSERS_PATH=/nonexistent`: pinned passes, unpinned fails,
+2026-11-18).
 
-1. **Host-platform override (`entrypoint.sh`).** Exports `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE` so Playwright downloads the
-   24.04 fallback build (libc-compatible, runs fine on 26.04). It MUST carry the arch suffix and match the runtime arch:
-   `ubuntu24.04-arm64` on Apple Silicon (local), `ubuntu24.04-x64` on x86_64 CI. A bare `ubuntu24.04` matches no
-   registry key and reproduces the "does not support chromium" error. A local arm64 run passes and masks an amd64-only
-   break: reproduce override changes under `docker run --platform linux/amd64` before trusting them.
-2. **Chromium runtime libs (`Dockerfile.base`).** We run `playwright install chromium` (binary only), NOT `--with-deps`:
-   the `--with-deps` apt step re-derives the distro from `/etc/os-release` (sees 26.04, has no dep list, fails)
-   regardless of the override. So the chromium runtime libs `--with-deps` would install (`libnss3`, `libnspr4`,
-   `libgbm1`, `libdrm2`, `libcups2t64`, `libxkbcommon0`, `libatspi2.0-0`, `libatk-bridge2.0-0`, `libasound2t64`,
-   `libxcb1`) are apt-installed explicitly in `Dockerfile.base`, where plain apt on 26.04 has no Playwright version
-   gate. Keep that list in sync with Playwright's `registry/nativeDeps.js` (`ubuntu24.04-x64` chromium deps) on a bump.
-
-On a Playwright bump: first check whether the new registry natively lists `ubuntu26.04`. If yes, delete both workarounds
-(the `entrypoint.sh` override block and the chromium-libs stanza) and switch to plain
-`playwright install --with-deps chromium`. If no, re-confirm the override arch tags still match a registry key and
-re-sync the `Dockerfile.base` lib list against the new `nativeDeps.js`.
+- **The `mode` option is our pnpm patch** (`patches/@srsholmes__tauri-playwright@0.4.1.patch`, wired in
+  `pnpm-workspace.yaml`), offered upstream as `srsholmes/tauri-playwright` branch `vdavid:fix/tauri-mode-skip-chromium`.
+  On a tauri-playwright bump: if the new version has `mode`, drop the patch; if not, re-apply it, or every test fails at
+  setup again.
+- **Why it mattered beyond the download**: Ubuntu 26.04 is newer than Playwright's platform registry, so installing
+  Chromium took a `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE` arch tag plus a hand-synced list of Chromium runtime libs (since
+  `--with-deps` refuses 26.04), both re-checked on every Playwright bump. A Playwright bump now touches nothing here.
 
 ## Ubuntu test VM (faster than CI roundtrips)
 

@@ -62,6 +62,24 @@ pub async fn get_volume_space(path: String) -> TimedOut<Option<SpaceInfo>> {
     blocking_with_timeout_flag(VOLUME_TIMEOUT, None, move || crate::volumes::get_volume_space(&path)).await
 }
 
+/// Where a restored tab recorded on volume `volume_id` at `path` opens: as stored, on the
+/// volume's live root when that root moved (a drive back on another letter), or "not ready"
+/// when the startup sweep hasn't registered the volume yet, so the tab keeps its stored id.
+/// In-memory reads plus a bounded wait for the sweep, off the IPC thread.
+/// `crate::location::last_roots::restored_tab_path` has the rule.
+#[tauri::command]
+#[specta::specta]
+pub async fn live_volume_path(volume_id: String, path: String) -> crate::location::last_roots::RestoredTabPath {
+    use crate::location::last_roots::{RestoredTabPath, restored_tab_path};
+    cmdr_fs::deadline::blocking_with_timeout(RESTORED_TAB_TIMEOUT, RestoredTabPath::NotReady, move || {
+        restored_tab_path(&volume_id, &path)
+    })
+    .await
+}
+
+/// The backend bound on [`live_volume_path`]: the sweep wait (5 s) plus headroom.
+const RESTORED_TAB_TIMEOUT: Duration = Duration::from_secs(6);
+
 /// Resolves a path to its containing volume without enumerating all volumes.
 /// Reads the mount table for filesystem paths (`statfs` on macOS,
 /// `/proc/self/mountinfo` on Linux; <1ms for local disks) and dispatches on

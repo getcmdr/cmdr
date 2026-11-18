@@ -1593,7 +1593,7 @@
   },
   "settings.analytics.enabled.description": "请开启这一项，帮我们了解在公开测试期间哪些功能最重要。\n统计关联到一个随机标识符，而不是你的姓名或邮箱。\nCmdr 绝不会发送文件名、路径、搜索词或提示词。\n关闭时，Cmdr 不会发送任何统计。",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "a8d8db1"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "分析、使用情况、统计、使用统计、隐私、遥测、测试版、公测、跟踪、追踪、退出",
   "@settings.analytics.enabled.keywords": {
@@ -1617,7 +1617,7 @@
   },
   "settings.updates.crashReports.summary": "绝不包含文件名或个人数据。",
   "@settings.updates.crashReports.summary": {
-    "sourceHash": "7814a28"
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "崩溃、闪退、报告、崩溃报告、隐私、遥测、问题、错误报告",
   "@settings.updates.crashReports.keywords": {
@@ -2944,9 +2944,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "设置部分",
+  "settings.sidebar.sections": "{platform, select, windows {设置部分} linuxGnome {首选项部分} linuxKde {“配置 Cmdr”的各部分} other {设置部分}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {没有匹配的设置} other {{countText} 个部分匹配}}",
   "@settings.sidebar.matchCount": {
@@ -3204,7 +3204,7 @@
   },
   "settings.securityLog.enabled.description": "这份记录会记下与安全相关的改动和拒绝，比如是否允许使用云端 AI、安装了更新，或 MCP 服务器拒绝了某个 App。其中不含文件名、文件内容或密码。",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "97e24a4"
+    "sourceHash": "3692a3d"
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {一份小小的本地安全事件记录，绝不会离开你的 Mac。} windows {一份小小的本地安全事件记录，绝不会离开你的电脑。} other {一份小小的本地安全事件记录，绝不会离开你的电脑。}}",
   "@settings.securityLog.enabled.summary": {
@@ -3424,9 +3424,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "设置",
+  "settings.window.title": "{platform, select, windows {设置} linuxGnome {首选项} linuxKde {配置 – Cmdr} other {设置}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "正在加载设置…",
   "@settings.window.loading": {
@@ -3672,13 +3672,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {“钥匙串访问”中名为“{itemName}”的 {countText} 个项目}}} windows {{count, plural, other {“凭据管理器”中名为“{itemName}”的 {countText} 个项目}}} linuxKde {{count, plural, other {KWallet 中名为“{itemName}”的 {countText} 个项目}}} other {{count, plural, other {你的密钥环中名为“{itemName}”的 {countText} 个项目}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {“钥匙串访问”中名为“{itemName}”的 {countText} 个项目}}} windows {{count, plural, other {“凭据管理器”中名为“{itemName}”的 {countText} 个项目}}} linuxKde {{count, plural, other {KDE 密码库中名为“{itemName}”的 {countText} 个项目}}} other {{count, plural, other {你的密钥环中名为“{itemName}”的 {countText} 个项目}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {“钥匙串访问”中名为“{itemName}”的项目，如果有的话} windows {“凭据管理器”中名为“{itemName}”的项目，如果有的话} linuxKde {KWallet 中名为“{itemName}”的项目，如果有的话} other {你的密钥环中名为“{itemName}”的项目，如果有的话}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {“钥匙串访问”中名为“{itemName}”的项目，如果有的话} windows {“凭据管理器”中名为“{itemName}”的项目，如果有的话} linuxKde {KDE 密码库中名为“{itemName}”的项目，如果有的话} other {你的密钥环中名为“{itemName}”的项目，如果有的话}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {退出 Cmdr} other {退出 Cmdr}}",
   "@settings.dataWipe.quit": {

@@ -294,7 +294,7 @@ pub struct Explanation {
 /// A convenience for callers assembling [`FolderSignals`] from a listing: it
 /// folds each extension to lowercase and counts the distinct set. Files with no
 /// extension count as a single "no extension" bucket. Pure and allocation-light.
-/// Only the corpus scenarios build a signal set from raw file names; the app
+/// Only the corpus scenarios build a signal set from raw filenames; the app
 /// derives it while walking.
 #[cfg(any(test, feature = "tooling"))]
 pub fn extension_count<'a>(file_names: impl IntoIterator<Item = &'a str>) -> u32 {

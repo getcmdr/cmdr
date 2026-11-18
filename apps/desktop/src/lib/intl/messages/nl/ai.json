@@ -55,9 +55,9 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "Schakel een aanbieder in bij Instellingen > AI om AI-zoeken te gebruiken.",
+  "ai.translateError.off.body": "{platform, select, windows {Schakel een aanbieder in bij Instellingen > AI om AI-zoeken te gebruiken.} linuxGnome {Schakel een aanbieder in bij Voorkeuren > AI om AI-zoeken te gebruiken.} linuxKde {Schakel een aanbieder in bij ‘Cmdr configureren’ > AI om AI-zoeken te gebruiken.} other {Schakel een aanbieder in bij Instellingen > AI om AI-zoeken te gebruiken.}}",
   "@ai.translateError.off.body": {
-    "sourceHash": "d8d6368"
+    "sourceHash": "c9c11e2"
   },
   "ai.cloudConsent.label": "Cloud-AI toestaan",
   "@ai.cloudConsent.label": {
@@ -247,25 +247,25 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "Rond de instelling van je aanbieder af bij Instellingen > AI en probeer het opnieuw.",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {Rond de instelling van je aanbieder af bij Instellingen > AI en probeer het opnieuw.} linuxGnome {Rond de instelling van je aanbieder af bij Voorkeuren > AI en probeer het opnieuw.} linuxKde {Rond de instelling van je aanbieder af bij ‘Cmdr configureren’ > AI en probeer het opnieuw.} other {Rond de instelling van je aanbieder af bij Instellingen > AI en probeer het opnieuw.}}",
   "@ai.translateError.notConfigured.body": {
-    "sourceHash": "65133a8"
+    "sourceHash": "cdb4ab5"
   },
   "ai.translateError.noCloudConsent.title": "Cloud-AI staat uit",
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "Sta cloud-AI toe bij Instellingen > AI en probeer het opnieuw.",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {Sta cloud-AI toe bij Instellingen > AI en probeer het opnieuw.} linuxGnome {Sta cloud-AI toe bij Voorkeuren > AI en probeer het opnieuw.} linuxKde {Sta cloud-AI toe bij ‘Cmdr configureren’ > AI en probeer het opnieuw.} other {Sta cloud-AI toe bij Instellingen > AI en probeer het opnieuw.}}",
   "@ai.translateError.noCloudConsent.body": {
-    "sourceHash": "fde3eb5"
+    "sourceHash": "f54d181"
   },
   "ai.translateError.authFailed.title": "Die API-sleutel werd geweigerd",
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "Controleer je sleutel bij Instellingen > AI - hij is mogelijk onjuist of ingetrokken.",
+  "ai.translateError.authFailed.body": "{platform, select, windows {Controleer je sleutel bij Instellingen > AI - hij is mogelijk onjuist of ingetrokken.} linuxGnome {Controleer je sleutel bij Voorkeuren > AI - hij is mogelijk onjuist of ingetrokken.} linuxKde {Controleer je sleutel bij ‘Cmdr configureren’ > AI - hij is mogelijk onjuist of ingetrokken.} other {Controleer je sleutel bij Instellingen > AI - hij is mogelijk onjuist of ingetrokken.}}",
   "@ai.translateError.authFailed.body": {
-    "sourceHash": "2159d5e"
+    "sourceHash": "efd14fb"
   },
   "ai.translateError.rateLimited.title": "Je AI-aanbieder zit vol",
   "@ai.translateError.rateLimited.title": {
@@ -295,9 +295,9 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "Je model heeft misschien zijn tokenlimiet opgebruikt voordat het antwoordde. Probeer een sneller model zoals gpt-4.1-mini bij Instellingen > AI.",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {Je model heeft misschien zijn tokenlimiet opgebruikt voordat het antwoordde. Probeer een sneller model zoals gpt-4.1-mini bij Instellingen > AI.} linuxGnome {Je model heeft misschien zijn tokenlimiet opgebruikt voordat het antwoordde. Probeer een sneller model zoals gpt-4.1-mini bij Voorkeuren > AI.} linuxKde {Je model heeft misschien zijn tokenlimiet opgebruikt voordat het antwoordde. Probeer een sneller model zoals gpt-4.1-mini bij ‘Cmdr configureren’ > AI.} other {Je model heeft misschien zijn tokenlimiet opgebruikt voordat het antwoordde. Probeer een sneller model zoals gpt-4.1-mini bij Instellingen > AI.}}",
   "@ai.translateError.emptyResponse.body": {
-    "sourceHash": "d74db0d"
+    "sourceHash": "9068319"
   },
   "ai.translateError.serverError.title": "Je AI-aanbieder liep tegen een probleem aan",
   "@ai.translateError.serverError.title": {
@@ -311,17 +311,17 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "Probeer het opnieuw, of kies een ander model bij Instellingen > AI.",
+  "ai.translateError.parseError.body": "{platform, select, windows {Probeer het opnieuw, of kies een ander model bij Instellingen > AI.} linuxGnome {Probeer het opnieuw, of kies een ander model bij Voorkeuren > AI.} linuxKde {Probeer het opnieuw, of kies een ander model bij ‘Cmdr configureren’ > AI.} other {Probeer het opnieuw, of kies een ander model bij Instellingen > AI.}}",
   "@ai.translateError.parseError.body": {
-    "sourceHash": "c299ec6"
+    "sourceHash": "5ebf991"
   },
   "ai.translateError.unknownProvider.title": "Die AI-aanbieder wordt niet herkend",
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "Kies een aanbieder bij Instellingen > AI.",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {Kies een aanbieder bij Instellingen > AI.} linuxGnome {Kies een aanbieder bij Voorkeuren > AI.} linuxKde {Kies een aanbieder bij ‘Cmdr configureren’ > AI.} other {Kies een aanbieder bij Instellingen > AI.}}",
   "@ai.translateError.unknownProvider.body": {
-    "sourceHash": "7042a75"
+    "sourceHash": "a3988aa"
   },
   "ai.translateError.managed.title": "Je organisatie beheert AI in Cmdr",
   "@ai.translateError.managed.title": {
@@ -603,9 +603,9 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Je API-sleutel kon niet worden bewaard: de macOS-sleutelhanger weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: de macOS-sleutelhanger weigerde toegang}}} windows {{op, select, save {Je API-sleutel kon niet worden bewaard: Referentiebeheer weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: Referentiebeheer weigerde toegang}}} linuxKde {{op, select, save {Je API-sleutel kon niet worden bewaard: KWallet weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: KWallet weigerde toegang}}} other {{op, select, save {Je API-sleutel kon niet worden bewaard: de sleutelhanger van je systeem weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: de sleutelhanger van je systeem weigerde toegang}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Je API-sleutel kon niet worden bewaard: de macOS-sleutelhanger weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: de macOS-sleutelhanger weigerde toegang}}} windows {{op, select, save {Je API-sleutel kon niet worden bewaard: Referentiebeheer weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: Referentiebeheer weigerde toegang}}} linuxKde {{op, select, save {Je API-sleutel kon niet worden bewaard: de KDE-portefeuille weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: de KDE-portefeuille weigerde toegang}}} other {{op, select, save {Je API-sleutel kon niet worden bewaard: de sleutelhanger van je systeem weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: de sleutelhanger van je systeem weigerde toegang}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "6daa595"
+    "sourceHash": "4612cfb"
   },
   "ai.secretError.body": "{platform, select, macos {{op, select, save {Open Sleutelhangertoegang en controleer het onderdeel ‘Cmdr’, of verwijder het en bewaar opnieuw.} other {Open Sleutelhangertoegang, zoek het onderdeel ‘Cmdr’, verleen toegang, of verwijder het en voer je sleutel opnieuw in.}}} windows {{op, select, save {Open Referentiebeheer en controleer de referentie ‘Cmdr’ onder Windows-referenties, of verwijder die en bewaar opnieuw.} other {Open Referentiebeheer, zoek de referentie ‘Cmdr’ onder Windows-referenties, of verwijder die en voer je sleutel opnieuw in.}}} linuxGnome {Ontgrendel je sleutelbos in Wachtwoorden en sleutels en probeer het opnieuw.} linuxKde {Ontgrendel je portefeuille in KWalletManager en probeer het opnieuw.} other {Ontgrendel je sleutelhanger (de app Wachtwoorden / Sleutelhangers) en probeer het opnieuw.}}",
   "@ai.secretError.body": {
@@ -615,9 +615,9 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Controleer of Sleutelhanger beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.} windows {Controleer of Referentiebeheer beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan Cmdr.} linuxKde {Controleer of KWallet beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.} other {Controleer of de sleutelhanger van je systeem beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Controleer of Sleutelhanger beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.} windows {Controleer of Referentiebeheer beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan Cmdr.} linuxKde {Controleer of de KDE-portefeuille beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.} other {Controleer of de sleutelhanger van je systeem beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "cb879fa"
+    "sourceHash": "1c198ff"
   },
   "ai.secretError.removeTitle": "Je bewaarde API-sleutel kon niet worden verwijderd.",
   "@ai.secretError.removeTitle": {

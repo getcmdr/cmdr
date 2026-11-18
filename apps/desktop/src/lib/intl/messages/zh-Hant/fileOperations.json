@@ -427,9 +427,9 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "下次 Cmdr 會預先選好這個選項，你可以在「設定」裡更改。如果這個選項會覆寫檔案，你會先看到警告。",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {下次 Cmdr 會預先選好這個選項，你可以在「設定」裡更改。如果這個選項會覆寫檔案，你會先看到警告。} linuxGnome {下次 Cmdr 會預先選好這個選項，你可以在「偏好設定」裡更改。如果這個選項會覆寫檔案，你會先看到警告。} linuxKde {下次 Cmdr 會預先選好這個選項，你可以在「設定 Cmdr」裡更改。如果這個選項會覆寫檔案，你會先看到警告。} other {下次 Cmdr 會預先選好這個選項，你可以在「設定」裡更改。如果這個選項會覆寫檔案，你會先看到警告。}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "c26d762"
+    "sourceHash": "b23a78a"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "有些衝突是同名的檔案和資料夾。覆寫會取代掉不同類型的項目，包括整個資料夾的內容。",
   "@fileOperations.transferDialog.typeMismatchWarning": {
@@ -1303,9 +1303,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {記住在鑰匙圈中} windows {記住密碼} linuxKde {記住在 KWallet 中} other {記住在鑰匙圈中}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {記住在鑰匙圈中} windows {記住密碼} linuxKde {記住在 KDE 錢包中} other {記住在鑰匙圈中}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "fileOperations.resticPassword.checking": "正在檢查密碼⋯",
   "@fileOperations.resticPassword.checking": {

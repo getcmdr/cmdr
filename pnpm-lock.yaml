@@ -186,6 +186,9 @@ overrides:
   source-map-js@1: ^1.2.2
   basic-ftp@5: ^6.2.4
 
+patchedDependencies:
+  '@srsholmes/tauri-playwright@0.4.1': b2a874e54af1a1c425cf3bf9a1cc93aaec4c259a3ffeea0ae8538d7634dc7726
+
 importers:
 
   .:
@@ -399,7 +402,7 @@ importers:
         version: 1.65.1
       '@srsholmes/tauri-playwright':
         specifier: ^0.4.1
-        version: 0.4.1(@playwright/test@1.65.1)
+        version: 0.4.1(patch_hash=b2a874e54af1a1c425cf3bf9a1cc93aaec4c259a3ffeea0ae8538d7634dc7726)(@playwright/test@1.65.1)
       '@sveltejs/adapter-static':
         specifier: ^4.0.1
         version: 4.0.1(@sveltejs/kit@3.2.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.3(@typescript-eslint/types@8.72.2))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))(svelte@5.57.3(@typescript-eslint/types@8.72.2))(typescript@6.0.3)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))
@@ -8719,7 +8722,7 @@ snapshots:
 
   '@speed-highlight/core@1.2.17': {}
 
-  '@srsholmes/tauri-playwright@0.4.1(@playwright/test@1.65.1)':
+  '@srsholmes/tauri-playwright@0.4.1(patch_hash=b2a874e54af1a1c425cf3bf9a1cc93aaec4c259a3ffeea0ae8538d7634dc7726)(@playwright/test@1.65.1)':
     dependencies:
       '@playwright/test': 1.65.1
 

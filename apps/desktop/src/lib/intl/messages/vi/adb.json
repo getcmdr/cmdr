@@ -3,9 +3,9 @@
   "@adb.connect.adbNotInstalled": {
     "sourceHash": "a842454"
   },
-  "adb.connect.openSettings": "Mở cài đặt",
+  "adb.connect.openSettings": "{platform, select, windows {Mở cài đặt} linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
   "@adb.connect.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "adb.connect.serverUnreachable": "{platform, select, macos {Công cụ Android trên máy Mac này đã không phản hồi.} windows {Công cụ Android trên PC này đã không phản hồi.} other {Công cụ Android trên máy tính này đã không phản hồi.}}",
   "@adb.connect.serverUnreachable": {

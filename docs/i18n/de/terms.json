@@ -2066,7 +2066,7 @@
     "chosen": "Schlüsselbund",
     "confidence": "high",
     "forms": "the store → Schlüsselbund; the Keychain Access app → Schlüsselbundverwaltung; the generic OS keyring fallback → System-Schlüsselbund; checkbox Im Schlüsselbund merken",
-    "note": "A localized Apple feature name, like Quick Look, so it isn't a verbatim brand. Linux desktop branches: KDE keeps KWallet and KWalletManager as names (In KWallet merken), and KDE German calls a wallet Passwortspeicher (kwalletmanager.po: Wallet → Passwortspeicher), so Entsperre deinen Passwortspeicher in KWalletManager; GNOME's Passwords and Keys (Seahorse) app → „Passwörter und Verschlüsselung“, its keyring → Schlüsselbund (seahorse.po: Password keyring → Passwort-Schlüsselbund). Verified read-only on l10n.gnome.org seahorse.main de.po and websvn.kde.org trunk/l10n-kf6 de, 2026-11-18.",
+    "note": "A localized Apple feature name, like Quick Look, so it isn't a verbatim brand. Linux desktop branches: KDE's password store KDE Wallet → der KDE-Passwortspeicher (kwalletd6.po de: KDE Wallet Service → KDE-Dienst für Passwortspeicher, Use the KDE wallet … → den Passwortspeicher von KDE, KWallet → KWallet-Passwortspeicher; kwalletmanager.po: Wallet → Passwortspeicher), so Im KDE-Passwortspeicher merken; KDE keeps KWalletManager as the app's name (Entsperre deinen Passwortspeicher in KWalletManager); GNOME's Passwords and Keys (Seahorse) app → „Passwörter und Verschlüsselung“, its keyring → Schlüsselbund (seahorse.po: Password keyring → Passwort-Schlüsselbund). Verified read-only on l10n.gnome.org seahorse.main de.po and websvn.kde.org trunk/l10n-kf6 de (kwallet/kwalletd6.po, kwalletmanager.po), 2026-11-18.",
     "sources": "macOS de; Keychain Access.app InfoPlist.loctable CFBundleDisplayName (macOS 26.6.2, 2026-09-06); NetAuthAgent 600268.title"
   },
   "kind": {
@@ -2814,7 +2814,7 @@
     "chosen": "zurücklegen",
     "confidence": "high",
     "decision": "Papierkorb-Toast: Widerrufen und Zurücklegen",
-    "forms": "trashed items to their old place → zurücklegen (ORTE); old file names back → zurücksetzen (NAMEN), the rename-undo verb",
+    "forms": "trashed items to their old place → zurücklegen (ORTE); old filenames back → zurücksetzen (NAMEN), the rename-undo verb",
     "note": "The English shares one phrase for two reversals; German keeps them apart.",
     "sources": "macOS Finder (N153.1 Put Back → Zurücklegen)"
   },
@@ -3296,7 +3296,12 @@
     "confidence": "high",
     "decision": "Einstellungsabschnitte",
     "forms": "a Settings path → Einstellungen › Updates & Datenschutz (separator mirrors the English)",
-    "sources": "macOS Systemeinstellungen, MS"
+    "sources": "macOS Systemeinstellungen, MS",
+    "windows": {
+      "chosen": "Einstellungen",
+      "accept": ["Einstellung"],
+      "note": "Microsoft names an app's settings Einstellungen too (de/microsoft-terminology/GERMAN.tbx: Settings → Einstellungen, 'the feature in an app that allows users to change its properties'), so every windows branch naming Cmdr's window (settings.window.title, commands.appSettings.label, each in den Einstellungen / Einstellungen > KI pointer) reads like macOS."
+    }
   },
   "share-menu": {
     "avoid": [
@@ -4634,7 +4639,8 @@
     "chosen": "Einstellungen",
     "confidence": "high",
     "sources": "macOS AppKit MenuCommands Preferences → Einstellungen; de/gnome-nautilus/nautilus.po _Preferences → _Einstellungen; de/xfce-thunar/thunar.po Pr_eferences... → _Einstellungen …",
-    "note": "GNOME's app-menu row (the linuxGnome branch of menu.app.settings) is Einstellungen with no ellipsis; KDE's Configure Cmdr… is Cmdr einrichten … (KDE's standard Configure %1… action: kconfigwidgets6.po de &Configure %1… → %1 ein&richten …, websvn.kde.org trunk/l10n-kf6, 2026-11-18)."
+    "note": "Cmdr's settings window per desktop: GNOME titles it Einstellungen (de/gnome-nautilus/nautilus.po _Preferences → _Einstellungen), so the linuxGnome branches read like macOS and Windows, and the app-menu row (menu.app.settings) has no ellipsis. KDE titles it Einrichten – Cmdr (de/kde-dolphin/dolphin.po @title:window Configure → Einrichten); its menu row Configure Cmdr… is Cmdr einrichten … (kconfigwidgets6.po de &Configure %1… → %1 ein&richten …, websvn.kde.org trunk/l10n-kf6, 2026-11-18), and a pointer quotes it: unter „Cmdr einrichten“ > KI, unter „Cmdr einrichten“ ändern; the button is Cmdr einrichten.",
+    "accept": ["Einstellung"]
   },
   "bug": {
     "chosen": "Fehler",
@@ -4647,5 +4653,11 @@
     "confidence": "high",
     "forms": "the menu bar title → Hilfe (menu.bar.help); named in prose → das Menü „Hilfe“ (über das Menü „Hilfe“, im Menü „Hilfe“), never das Hilfe-Menü",
     "sources": "macOS de Finder BN43 (im Menü „Ablage“ die Option „Informationen“); catalog menu.bar.help Hilfe"
+  },
+  "usb-preferences": {
+    "chosen": "USB-Einstellungen",
+    "confidence": "tentative",
+    "sources": "catalog (settings.fileOperations.mtpEnabled.description: Einstellungen > USB-Einstellungen); no pile source carries Android's strings",
+    "note": "Quote the label German Android shows on the phone; the path's first step is Android's Einstellungen app."
   }
 }

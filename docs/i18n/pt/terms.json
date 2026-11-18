@@ -65,7 +65,9 @@
     "chosen": "Avançado",
     "confidence": "high",
     "forms": "Cmdr Settings section → Avançado; quote settings.section.advanced exactly in navigation paths",
-    "sources": "Network.appex Localizable (ADVANCED); catalog settings.section.advanced (macOS 26.6.2 build 25G83, live loctable key cross-reference, 2026-10-02)"
+    "sources": "Network.appex Localizable (ADVANCED); catalog settings.section.advanced (macOS 26.6.2 build 25G83, live loctable key cross-reference, 2026-10-02)",
+    "accept": ["avançadas", "avançado"],
+    "note": "Agrees with its head noun: Configurações avançadas in a windows branch (ai.cloudConsent.logsNote)."
   },
   "ai-context": {
     "chosen": "contexto",
@@ -1091,7 +1093,11 @@
     "confidence": "confirmed",
     "sources": "macOS Finder pt-BR (Discos rígidos, Discos externos, ~40 disco values)",
     "exceptions": {
-      "settings.indexing.overriddenBadge": "Badge brevity: it renders only under the Indexação de disco toggle, so the short a indexação carries the drive."
+      "settings.indexing.overriddenBadge": "Badge brevity: it renders only under the Indexação de disco toggle, so the short a indexação carries the drive.",
+      "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "Names and quotes the Settings label “Indexação de disco” (settings.indexing.enabled.label), a plain value every OS reads, so the windows branch keeps disco to match it.",
+      "fileExplorer.navigation.driveIndex.refusedIndexingOff": "Names and quotes the Settings label “Indexação de disco” (settings.indexing.enabled.label), a plain value every OS reads, so the windows branch keeps disco to match it.",
+      "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "Names the Settings label “Indexação de disco” (settings.indexing.enabled.label), a plain value every OS reads, so the windows branch keeps disco to match it.",
+      "search.coverage.toast.indexingOff": "Names and quotes the Settings label “Indexação de disco” (settings.indexing.enabled.label), a plain value every OS reads, so the windows branch keeps disco to match it."
     },
     "decision": "`drive` is always `disco`",
     "windows": {
@@ -1240,7 +1246,7 @@
     "chosen": "extensão",
     "accept": ["extensões"],
     "confidence": "confirmed",
-    "sources": "MS terminology pt-BR (file name extension → extensão)"
+    "sources": "MS terminology pt-BR (filename extension → extensão)"
   },
   "extract": {
     "chosen": "Extrair",
@@ -1767,8 +1773,8 @@
     "sources": "Keychain Access.app InfoPlist.loctable pt_BR",
     "other": {
       "chosen": "chaveiro",
-      "accept": ["KWallet"],
-      "note": "Linux branches: the keyring is chaveiro, which GNOME's Senhas e chaves also says (seahorse pt_BR.po: O chaveiro está bloqueado); KDE keeps KWallet and KWalletManager as names, with a wallet → carteira (kwalletmanager pt_BR.po)"
+      "accept": ["Carteira do KDE"],
+      "note": "Linux branches: the keyring is chaveiro, which GNOME's Senhas e chaves also says (seahorse pt_BR.po: O chaveiro está bloqueado). The linuxKde branch names KDE Wallet as KDE's pt_BR catalogs do: Carteira do KDE (kwallet._desktop_.po Name=KDE Wallet → Carteira do KDE; kwalletd6.po: carteira do KDE, Serviço de Carteiras do KDE; l10n-kf6 trunk on websvn.kde.org, read 2026-11-18). Feminine: a, na, da Carteira do KDE. KWalletManager stays as the app's name; KWallet no longer names the store."
     }
   },
   "kind": {
@@ -2860,7 +2866,7 @@
     "confidence": "confirmed",
     "sources": "macOS Finder pt-BR MenuBar (172 Selecionar Tudo)",
     "exceptions": {
-      "viewer.saveAs.defaultName": "A default file name: selecao without the cedilla, safe on any file system."
+      "viewer.saveAs.defaultName": "A default filename: selecao without the cedilla, safe on any file system."
     }
   },
   "send": {
@@ -2892,7 +2898,7 @@
     "avoid": [
       {
         "form": "Configurações",
-        "why": "Microsoft's; only for a NAS's own server settings"
+        "why": "Microsoft's word: right in the windows branch only (and for a NAS's own server settings); macOS pt says Ajustes"
       }
     ],
     "confidence": "confirmed",
@@ -2907,12 +2913,17 @@
       "errors.listing.storageFull.suggestion": "The windows branch names Windows' own Settings app: Configurações > Sistema > Armazenamento (MS pt-BR).",
       "errors.listing.serverRefused.explanation": "The windows branch means a setting on the PC, which Windows pt-BR calls configuração; the other branch macOS reads keeps ajuste.",
       "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome branch quotes GNOME Settings' own path (Configurações > Teclado > Veja e personalize atalhos, gnome-control-center pt_BR.po) and the linuxKde branch KDE's (Configurações do sistema > Teclado > Atalhos, systemsettings and kcm_keyboard pt_BR.po): a desktop's settings app, not Cmdr's Ajustes.",
-      "settings.fileOperations.mtpEnabled.description": "Quotes Android's own pt-BR Settings app label (AOSP: Configurações) as an on-phone path the user must find; a quoted third-party label wins over the Ajustes ruling."
+      "settings.fileOperations.mtpEnabled.description": "Quotes the Android phone path, and Android pt-BR names its Settings app Configurações (AOSP settings_label), not Cmdr’s window."
     },
     "windows": {
       "chosen": "Configurações",
-      "accept": ["configurações", "Ajustes", "ajuste"],
-      "note": "Windows' own Settings app and its panes (Configurações > Personalização > Cores, Configurações > Aplicativos; MS pt-BR) and a firewall's configurações. Cmdr's own Settings window stays Ajustes in every branch."
+      "accept": ["configurações", "ajuste"],
+      "note": "Windows apps name their settings Configurações (MS pt-BR TBX Settings → Configurações; the Windows Settings app too: Configurações > Personalização > Cores), so Cmdr's own window on Windows is Configurações: title and menu row Configurações, Abrir Configurações (the window) / Abrir configurações (the concept), nas Configurações / em Configurações > IA (feminine plural: nas, not nos), Seções de configurações, nas configurações avançadas. A generic lowercase settings that isn't the window (your SSH settings, a data wipe's ajustes) keeps ajustes."
+    },
+    "other": {
+      "chosen": "Ajustes",
+      "accept": ["ajustes", "Preferências", "preferências", "Configurar Cmdr", "Configurar – Cmdr"],
+      "note": "Cmdr's own settings window per Linux desktop: plain Linux (other) keeps Ajustes; linuxGnome says Preferências (Nautilus pt-BR _Preferences → _Preferências): in Preferences → nas Preferências, in preferences → nas preferências, Preferences > AI → Preferências > IA, Open preferences → Abrir preferências; linuxKde says Configurar Cmdr (Dolphin pt-BR Configure Dolphin → Configurar Dolphin; @title:window Configure → Configurar): window title Configurar – Cmdr, pointers em Configurar Cmdr with no article, as Dolphin's own em Configurar Dolphin > Exibir > Geral. Title (`settings.window.title`), command (`commands.appSettings.label`), and menu row (`menu.app.settings`) share each desktop's word."
     }
   },
   "share-menu": {
@@ -4109,7 +4120,7 @@
     "chosen": "Preferências",
     "confidence": "high",
     "sources": "GNOME Nautilus pt-BR _Preferences → _Preferências; Thunar Pr_eferências; MS TBX Preferences → Preferências",
-    "note": "GNOME's own settings row (the linuxGnome branch of `menu.app.settings`), no ellipsis; KDE's row is Configurar Cmdr… (Dolphin pt-BR: Configurar Dolphin)"
+    "note": "GNOME's own settings row (the linuxGnome branch of `menu.app.settings`), no ellipsis, and every linuxGnome pointer at Cmdr's settings window (see the settings ruling's other form); KDE's row is Configurar Cmdr… (Dolphin pt-BR: Configurar Dolphin)"
   },
   "bug": {
     "chosen": "bug",
@@ -4123,5 +4134,11 @@
     "sources": "catalog menu.bar.help → Ajuda (macOS pt-BR Help menu title); settings.updates.errorReports.description publishes pelo menu Ajuda (2026-11-18)",
     "accept": ["Ajuda"],
     "note": "The menu title alone is Ajuda; prose names it menu Ajuda."
+  },
+  "usb-preferences": {
+    "chosen": "Preferências de USB",
+    "confidence": "high",
+    "sources": "AOSP packages/apps/Settings res/values-pt-rBR/strings.xml usb_preference → Preferências de USB (aosp-mirror main, 2026-11-18)",
+    "note": "Android phone label quoted in settings.fileOperations.mtpEnabled.description: Configurações > Preferências de USB, with the mode “Transferência de arquivo” (AOSP usb_use_file_transfers), as the phone shows them."
   }
 }

@@ -49,7 +49,7 @@ var kaniPackageNamePattern = regexp.MustCompile(`^name\s*=\s*"([^"]+)"`)
 // findKaniProofs lists every harness in the tree, sorted by property. It reads
 // tracked and new `.rs` files outside `vendor/`, so the fast lane sees a proof
 // before its first commit. Proofs live in a library crate's `src/` and follow
-// the file layout (no `#[path]`), which is what lets a file name its module.
+// the file layout (no `#[path]`), which is what lets a filename its module.
 func findKaniProofs(rootDir string) ([]kaniProof, error) {
 	// The record files' listing, so the fast lane asks git once.
 	files, err := corpus.GitLsFiles(rootDir, "-co", "--exclude-standard")

@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use cmdr_listing::testing::{TestListing, TestListingGuard};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_local::reading::list_directory_core;
 use cmdr_media_meta::MediaField;
 use cmdr_media_meta::test_fixtures::{apple_meta, atom, concat, exif_jpeg, ftyp, id3_mp3_with_cover, mvhd_v0};
@@ -26,11 +26,7 @@ use crate::test_support::{TestDir, wait_until_async};
 fn ensure_root_volume() {
     get_volume_manager().register_if_absent(
         "root",
-        Arc::new(LocalPosixVolume::local_folder(
-            "Test root",
-            "/",
-            crate::volume_host::host(),
-        )),
+        Arc::new(LocalVolume::local_folder("Test root", "/", crate::volume_host::host())),
     );
 }
 

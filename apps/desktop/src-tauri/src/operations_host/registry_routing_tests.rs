@@ -72,7 +72,7 @@ fn create_test_dir(name: &str) -> TestDir {
 #[tokio::test]
 async fn resolve_source_treats_the_zip_file_itself_as_a_plain_file() {
     use crate::file_system::volume::manager::test_support::TestVolumeRegistration;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = super::test_engine();
 
@@ -84,7 +84,7 @@ async fn resolve_source_treats_the_zip_file_itself_as_a_plain_file() {
     let parent_id = cmdr_fs::testing::unique_test_id("routing-zip-parent");
     let _parent = TestVolumeRegistration::install(
         &parent_id,
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Root",
             dir.path().to_str().unwrap(),
             crate::volume_host::host(),
@@ -121,7 +121,7 @@ async fn resolve_source_routes_a_snapshot_path_to_the_git_portal() {
     use crate::file_system::git;
     use crate::file_system::volume::manager::test_support::TestVolumeRegistration;
     use cmdr_git::test_fixtures::{Fixture, cleanup, temp_dir};
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = super::test_engine();
     let dir = temp_dir("write_routing", "copy_out");
@@ -132,7 +132,7 @@ async fn resolve_source_routes_a_snapshot_path_to_the_git_portal() {
     let parent_id = cmdr_fs::testing::unique_test_id("routing-repo-parent");
     let _parent = TestVolumeRegistration::install(
         &parent_id,
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Root",
             dir.to_str().unwrap(),
             crate::volume_host::host(),
@@ -249,7 +249,7 @@ async fn rename_managed_routes_an_in_archive_rename_to_the_edit_driver() {
     // production always has. (nextest isolates the global per test process.)
     get_volume_manager().register_if_absent(
         "root",
-        Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+        Arc::new(cmdr_local::LocalVolume::local_folder(
             "Test root",
             "/",
             crate::volume_host::host(),

@@ -54,7 +54,7 @@ pub fn local_should_enrich(
 /// [`local_should_enrich`] — the DIRECTORY-level coverage filter, over the same two
 /// inputs (`config.covers` and the score map) that the per-image gate reads.
 ///
-/// **The contract that makes it usable as a filter:** for every file name,
+/// **The contract that makes it usable as a filter:** for every filename,
 /// `local_should_enrich("{dir}/{name}", ..)` implies `local_dir_may_be_covered(dir, ..)`
 /// over the same `scores` and `config`. Both halves hold structurally: the score map is
 /// keyed by the PARENT folder, which is `dir` itself, and
@@ -208,7 +208,7 @@ pub(super) fn start() -> Option<Arc<MediaScheduler>> {
 /// `None` where no on-device engine exists (Linux, Windows): Vision and CLIP's Core ML
 /// towers are macOS frameworks, so image enrichment is unavailable there and the
 /// scheduler doesn't start. ❌ Never fall back to `FakeVisionBackend` in a shipped
-/// build: it derives OCR text and tags from file names, and as production's backend it
+/// build: it derives OCR text and tags from filenames, and as production's backend it
 /// filled the real `media.db` with invented data (#943). The ONE exception is the Linux
 /// E2E build (`playwright-e2e`, never shipped), so the image-indexing specs keep running
 /// there against a throwaway data dir. Unit tests inject their own fake via
@@ -238,7 +238,7 @@ fn platform_backends() -> Option<(Arc<dyn VisionBackend>, BackendFactory)> {
 
 /// Settle a platform with no image engine: the master toggle goes off and every
 /// volume's media store goes. Before #943 the test fake ran as this platform's backend,
-/// so any `media.db` here holds OCR text and tags invented from file names (#1001), and
+/// so any `media.db` here holds OCR text and tags invented from filenames (#1001), and
 /// nothing can ever enrich it honestly. Runs every launch; with nothing on disk it reads
 /// one folder. The frontend turns the persisted setting off (`settings-migrations.ts`).
 fn retire_media_without_an_engine(dirs: &crate::volume_files::StoreDirs) {
@@ -608,7 +608,7 @@ mod tests {
 
     /// Regression anchor for #943, run in the Linux lane against the real selector: the
     /// test fake used to be Linux's production backend, writing OCR text and tags derived
-    /// from file names into the real `media.db`. A shipped build has no engine there.
+    /// from filenames into the real `media.db`. A shipped build has no engine there.
     #[cfg(all(target_os = "linux", not(feature = "playwright-e2e")))]
     #[test]
     fn off_macos_the_platform_has_no_inference_engine() {

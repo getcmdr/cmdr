@@ -1594,7 +1594,7 @@
   },
   "settings.analytics.enabled.description": "Actívalo, por favor: nos ayuda a ver qué funciones importan durante la beta abierta.\nLas estadísticas se vinculan a un identificador aleatorio, no a tu nombre ni a tu correo.\nCmdr nunca envía nombres de archivo, rutas, términos de búsqueda ni prompts.\nCuando está desactivado, Cmdr no envía ninguna estadística.",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "a8d8db1"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "estadísticas, analíticas, uso, privacidad, telemetría, beta, seguimiento, rastreo, desactivar",
   "@settings.analytics.enabled.keywords": {
@@ -1618,7 +1618,7 @@
   },
   "settings.updates.crashReports.summary": "Nunca incluye nombres de archivo ni datos personales.",
   "@settings.updates.crashReports.summary": {
-    "sourceHash": "7814a28"
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "fallo, fallos, cierre inesperado, informe, informe de fallos, privacidad, telemetría, bug, error",
   "@settings.updates.crashReports.keywords": {
@@ -2945,9 +2945,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Secciones de ajustes",
+  "settings.sidebar.sections": "{platform, select, windows {Secciones de configuración} linuxGnome {Secciones de preferencias} linuxKde {Secciones de Configurar Cmdr} other {Secciones de ajustes}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Ningún ajuste coincide} one {{countText} sección coincide} many {{countText} secciones coinciden} other {{countText} secciones coinciden}}",
   "@settings.sidebar.matchCount": {
@@ -3205,7 +3205,7 @@
   },
   "settings.securityLog.enabled.description": "Anota los cambios y rechazos relevantes para la seguridad, como el consentimiento de la IA en la nube, una actualización instalada o una app rechazada por el servidor MCP. No guarda nombres de archivo, contenidos ni contraseñas.",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "97e24a4"
+    "sourceHash": "3692a3d"
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {Un pequeño registro local de eventos de seguridad. Nunca sale de tu Mac.} windows {Un pequeño registro local de eventos de seguridad. Nunca sale de tu PC.} other {Un pequeño registro local de eventos de seguridad. Nunca sale de tu ordenador.}}",
   "@settings.securityLog.enabled.summary": {
@@ -3424,9 +3424,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Ajustes",
+  "settings.window.title": "{platform, select, windows {Configuración} linuxGnome {Preferencias} linuxKde {Configurar – Cmdr} other {Ajustes}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Cargando ajustes…",
   "@settings.window.loading": {
@@ -3672,13 +3672,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Un elemento en Acceso a Llaveros con el nombre “{itemName}”} many {{countText} elementos en Acceso a Llaveros con el nombre “{itemName}”} other {{countText} elementos en Acceso a Llaveros con el nombre “{itemName}”}}} windows {{count, plural, one {Una credencial en el Administrador de credenciales con el nombre “{itemName}”} many {{countText} credenciales en el Administrador de credenciales con el nombre “{itemName}”} other {{countText} credenciales en el Administrador de credenciales con el nombre “{itemName}”}}} linuxKde {{count, plural, one {Un elemento en KWallet con el nombre “{itemName}”} many {{countText} elementos en KWallet con el nombre “{itemName}”} other {{countText} elementos en KWallet con el nombre “{itemName}”}}} other {{count, plural, one {Un elemento en tu llavero con el nombre “{itemName}”} many {{countText} elementos en tu llavero con el nombre “{itemName}”} other {{countText} elementos en tu llavero con el nombre “{itemName}”}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Un elemento en Acceso a Llaveros con el nombre “{itemName}”} many {{countText} elementos en Acceso a Llaveros con el nombre “{itemName}”} other {{countText} elementos en Acceso a Llaveros con el nombre “{itemName}”}}} windows {{count, plural, one {Una credencial en el Administrador de credenciales con el nombre “{itemName}”} many {{countText} credenciales en el Administrador de credenciales con el nombre “{itemName}”} other {{countText} credenciales en el Administrador de credenciales con el nombre “{itemName}”}}} linuxKde {{count, plural, one {Un elemento en la cartera de KDE con el nombre “{itemName}”} many {{countText} elementos en la cartera de KDE con el nombre “{itemName}”} other {{countText} elementos en la cartera de KDE con el nombre “{itemName}”}}} other {{count, plural, one {Un elemento en tu llavero con el nombre “{itemName}”} many {{countText} elementos en tu llavero con el nombre “{itemName}”} other {{countText} elementos en tu llavero con el nombre “{itemName}”}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Los elementos que haya en Acceso a Llaveros con el nombre “{itemName}”} windows {Las credenciales que haya en el Administrador de credenciales con el nombre “{itemName}”} linuxKde {Los elementos que haya en KWallet con el nombre “{itemName}”} other {Los elementos que haya en tu llavero con el nombre “{itemName}”}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Los elementos que haya en Acceso a Llaveros con el nombre “{itemName}”} windows {Las credenciales que haya en el Administrador de credenciales con el nombre “{itemName}”} linuxKde {Los elementos que haya en la cartera de KDE con el nombre “{itemName}”} other {Los elementos que haya en tu llavero con el nombre “{itemName}”}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Salir de Cmdr} other {Salir de Cmdr}}",
   "@settings.dataWipe.quit": {

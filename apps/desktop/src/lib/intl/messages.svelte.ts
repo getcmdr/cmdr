@@ -40,7 +40,7 @@ import {
   type PlatformSelectReader,
 } from './platform-select'
 import { displayPath } from '#lib/utils/display-path.js'
-import { getPlatform, linuxDesktop } from '#lib/platform/index.js'
+import { getCopyPlatform, linuxDesktop } from '#lib/platform/index.js'
 import { shownPath } from '#lib/path/grammar.js'
 import enCatalog from 'virtual:cmdr-catalog/en'
 import { loaders, manifestMessages, shippedLocales } from 'virtual:cmdr-locale-manifest'
@@ -413,7 +413,7 @@ export function getMessage(key: MessageKey): string {
  * desktop. Asks the desktop only on Linux, so macOS and Windows resolve exactly as the platform says.
  */
 function selectReader(): PlatformSelectReader {
-  const platform = getPlatform()
+  const platform = getCopyPlatform()
   return selectReaderFor(platform, platform === 'linux' ? linuxDesktop() : null)
 }
 

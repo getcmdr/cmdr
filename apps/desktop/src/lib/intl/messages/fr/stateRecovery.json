@@ -3,13 +3,13 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans Réglages › Mises à jour et confidentialité.",
+  "stateRecovery.settings.body": "{platform, select, windows {Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans Paramètres › Mises à jour et confidentialité.} linuxGnome {Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans Préférences › Mises à jour et confidentialité.} linuxKde {Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans « Configurer Cmdr » › Mises à jour et confidentialité.} other {Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans Réglages › Mises à jour et confidentialité.}}",
   "@stateRecovery.settings.body": {
-    "sourceHash": "20439e1"
+    "sourceHash": "253a6ed"
   },
-  "stateRecovery.settings.openSettings": "Ouvrir les réglages",
+  "stateRecovery.settings.openSettings": "{platform, select, windows {Ouvrir les paramètres} linuxGnome {Ouvrir les préférences} linuxKde {Configurer Cmdr} other {Ouvrir les réglages}}",
   "@stateRecovery.settings.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.shortcuts.title": "Cmdr n’a pas pu lire vos raccourcis clavier, ils sont donc revenus aux réglages par défaut",
   "@stateRecovery.shortcuts.title": {
@@ -19,13 +19,13 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans Réglages › Licence.",
+  "stateRecovery.license.body": "{platform, select, windows {Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans Paramètres › Licence.} linuxGnome {Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans Préférences › Licence.} linuxKde {Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans « Configurer Cmdr » › Licence.} other {Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans Réglages › Licence.}}",
   "@stateRecovery.license.body": {
-    "sourceHash": "ea51589"
+    "sourceHash": "e4d10c4"
   },
-  "stateRecovery.license.openSettings": "Ouvrir les réglages",
+  "stateRecovery.license.openSettings": "{platform, select, windows {Ouvrir les paramètres} linuxGnome {Ouvrir les préférences} linuxKde {Configurer Cmdr} other {Ouvrir les réglages}}",
   "@stateRecovery.license.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.appStatus.title": "{platform, select, windows {Cmdr n’a pas pu lire quels dossiers étaient ouverts dans vos panneaux, ils s’ouvrent donc sur votre dossier utilisateur} other {Cmdr n’a pas pu lire quels dossiers étaient ouverts dans vos panneaux, ils s’ouvrent donc sur votre dossier personnel}}",
   "@stateRecovery.appStatus.title": {

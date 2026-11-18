@@ -7,7 +7,7 @@
 use super::Volume;
 use crate::ignore_poison::RwLockIgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::Path;
 use std::sync::{Arc, LazyLock, Mutex, RwLock};
 
@@ -66,6 +66,13 @@ pub struct VolumeManager {
     /// Who wants to hear that a volume has become available. See
     /// [`Self::on_volume_arrival`].
     arrival_listeners: RwLock<Vec<VolumeArrivalListener>>,
+    /// Every id this run has seen at two roots at once (an identity conflict), so not
+    /// provably one disk: a cloned disk, a double mount, a btrfs subvolume, a bind mount.
+    /// Never cleared while the app runs, even once a root leaves. See
+    /// [`Self::has_shared_identity`].
+    shared_ids: RwLock<HashSet<String>>,
+    /// Who wants to hear that an id turned out shared. See [`Self::on_identity_conflict`].
+    conflict_listeners: RwLock<Vec<VolumeArrivalListener>>,
 }
 
 /// Notified with the ID of a volume the registry has just taken on.
@@ -153,6 +160,39 @@ impl VolumeManager {
             git_portal_lru: Mutex::new(VecDeque::new()),
             restic_routes: Mutex::new(restic_routing::ResticRoutes::default()),
             arrival_listeners: RwLock::new(Vec::new()),
+            shared_ids: RwLock::new(HashSet::new()),
+            conflict_listeners: RwLock::new(Vec::new()),
+        }
+    }
+
+    /// Asks to be told, once per id and run, when an id turns out to be reached at two
+    /// different roots at once. Runs outside the `volumes` lock, but still inside the
+    /// registration: return at once, hand real work to a task.
+    pub fn on_identity_conflict(&self, listener: impl Fn(&str) + Send + Sync + 'static) {
+        self.conflict_listeners.write_ignore_poison().push(Box::new(listener));
+    }
+
+    /// Whether `id` is not provably one tree: it holds two roots now, or held two at once
+    /// earlier this run. Anything that would carry a path from one of an id's roots to
+    /// another (the saved-root rebase) must refuse such an id, or it could land on a clone.
+    pub fn has_shared_identity(&self, id: &str) -> bool {
+        if self.shared_ids.read_ignore_poison().contains(id) {
+            return true;
+        }
+        self.volumes
+            .read_ignore_poison()
+            .get(id)
+            .is_some_and(|entry| entry.roots.len() > 1)
+    }
+
+    /// Note `id` as shared, telling the listeners the first time. ❌ Never call this while
+    /// holding the `volumes` lock.
+    fn note_identity_conflict(&self, id: &str) {
+        let first = self.shared_ids.write_ignore_poison().insert(id.to_string());
+        if first {
+            for listener in self.conflict_listeners.read_ignore_poison().iter() {
+                listener(id);
+            }
         }
     }
 
@@ -199,27 +239,30 @@ impl VolumeManager {
     /// those mounts before they get here (`volumes::mounts::collapse_by_volume_id`);
     /// this is the registry's own guard, and it stays loud either way.
     pub fn register(&self, id: &str, volume: Arc<dyn Volume>) {
-        self.register_locked(id, volume);
+        if self.register_locked(id, volume) {
+            self.note_identity_conflict(id);
+        }
         // Outside the `volumes` guard, and unconditional: every arm above leaves
         // a usable volume serving `id`, whether it's the newcomer or a kept
         // incumbent.
         self.announce_arrival(id);
     }
 
-    /// [`register`](Self::register)'s body, so the announcement happens after the
-    /// `volumes` guard is gone.
-    fn register_locked(&self, id: &str, volume: Arc<dyn Volume>) {
+    /// [`register`](Self::register)'s body, so the announcements happen after the
+    /// `volumes` guard is gone. `true` on an identity conflict.
+    fn register_locked(&self, id: &str, volume: Arc<dyn Volume>) -> bool {
         let mut volumes = self.volumes.write_ignore_poison();
         if let Some(existing) = volumes.get_mut(id) {
             report_identity_conflict(id, &existing.volume, &volume, ROOT_RECORDED_RESOLUTION);
             if is_identity_conflict(existing.volume.root(), volume.root()) {
                 existing.record_root(volume.root());
-                return;
+                return true;
             }
             existing.replace_volume(volume);
-            return;
+            return false;
         }
         volumes.insert(id.to_string(), Registration::new(volume));
+        false
     }
 
     /// Registers a volume under `id`, replacing whatever is there even across a
@@ -266,18 +309,22 @@ impl VolumeManager {
     /// and the new mount point is recorded as a fallback root.
     pub fn register_if_absent(&self, id: &str, volume: Arc<dyn Volume>) -> bool {
         use std::collections::hash_map::Entry;
-        let registered = match self.volumes.write_ignore_poison().entry(id.to_string()) {
+        let (registered, conflict) = match self.volumes.write_ignore_poison().entry(id.to_string()) {
             Entry::Occupied(mut existing) => {
                 let entry = existing.get_mut();
                 report_identity_conflict(id, &entry.volume, &volume, ROOT_RECORDED_RESOLUTION);
+                let conflict = is_identity_conflict(entry.volume.root(), volume.root());
                 entry.record_root(volume.root());
-                false
+                (false, conflict)
             }
             Entry::Vacant(e) => {
                 e.insert(Registration::new(volume));
-                true
+                (true, false)
             }
         };
+        if conflict {
+            self.note_identity_conflict(id);
+        }
         if registered {
             self.announce_arrival(id);
         }
@@ -432,3 +479,7 @@ mod tests;
 #[cfg(test)]
 #[path = "manager/arrival_tests.rs"]
 mod arrival_tests;
+
+#[cfg(test)]
+#[path = "manager/shared_identity_tests.rs"]
+mod shared_identity_tests;

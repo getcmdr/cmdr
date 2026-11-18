@@ -126,8 +126,8 @@ func TestE2EStaleSelector_ExtractsClassesAndDataAttributes(t *testing.T) {
 		{"attribute name built from an interpolation", `§[data-${name}-id]§`, nil},
 		{"id selector", `'#loading-screen'`, nil},
 
-		{"file name", `'file-a.txt'`, nil},
-		{"tag-shaped file name", `'a.txt'`, nil},
+		{"filename", `'file-a.txt'`, nil},
+		{"tag-shaped filename", `'a.txt'`, nil},
 		{"dotted command id", `'nav.back'`, nil},
 		{"camelCase command id", `'nav.goToPath'`, nil},
 		{"uppercase attribute name", `'[Content_Types].xml'`, nil},

@@ -219,17 +219,17 @@
   "@askCmdr.toolGroup.summary": {
     "sourceHash": "543c3b8"
   },
-  "askCmdr.error.noKey": "Agrega tu clave de API en Configuración para empezar a chatear.",
+  "askCmdr.error.noKey": "{platform, select, windows {Agrega tu clave de API en Configuración para empezar a chatear.} linuxGnome {Agrega tu clave de API en Preferencias para empezar a chatear.} linuxKde {Agrega tu clave de API en Configurar Cmdr para empezar a chatear.} other {Agrega tu clave de API en Configuración para empezar a chatear.}}",
   "@askCmdr.error.noKey": {
-    "sourceHash": "8b4a1d0"
+    "sourceHash": "e8fdc2c"
   },
-  "askCmdr.error.notConfigured": "Para chatear necesitas un proveedor de IA. Activa uno en Configuración.",
+  "askCmdr.error.notConfigured": "{platform, select, windows {Para chatear necesitas un proveedor de IA. Activa uno en Configuración.} linuxGnome {Para chatear necesitas un proveedor de IA. Activa uno en Preferencias.} linuxKde {Para chatear necesitas un proveedor de IA. Activa uno en Configurar Cmdr.} other {Para chatear necesitas un proveedor de IA. Activa uno en Configuración.}}",
   "@askCmdr.error.notConfigured": {
-    "sourceHash": "1e70c7b"
+    "sourceHash": "78c79fc"
   },
-  "askCmdr.error.noCloudConsent": "La IA en la nube está desactivada. Permítela en Configuración > IA.",
+  "askCmdr.error.noCloudConsent": "{platform, select, windows {La IA en la nube está desactivada. Permítela en Configuración > IA.} linuxGnome {La IA en la nube está desactivada. Permítela en Preferencias > IA.} linuxKde {La IA en la nube está desactivada. Permítela en Configurar Cmdr > IA.} other {La IA en la nube está desactivada. Permítela en Configuración > IA.}}",
   "@askCmdr.error.noCloudConsent": {
-    "sourceHash": "e5be5d2"
+    "sourceHash": "9f75665"
   },
   "askCmdr.error.localWindowTooSmall": "Cmdr necesita una ventana de contexto más grande que la de tu modelo local. Elige 32 768 tokens o más en Configuración, en IA.",
   "@askCmdr.error.localWindowTooSmall": {
@@ -239,29 +239,29 @@
   "@askCmdr.error.unavailable": {
     "sourceHash": "0d5701d"
   },
-  "askCmdr.error.authFailed": "El proveedor no aceptó tu clave de API. Revísala en Configuración.",
+  "askCmdr.error.authFailed": "{platform, select, windows {El proveedor no aceptó tu clave de API. Revísala en Configuración.} linuxGnome {El proveedor no aceptó tu clave de API. Revísala en Preferencias.} linuxKde {El proveedor no aceptó tu clave de API. Revísala en Configurar Cmdr.} other {El proveedor no aceptó tu clave de API. Revísala en Configuración.}}",
   "@askCmdr.error.authFailed": {
-    "sourceHash": "ce0f802"
+    "sourceHash": "d86b455"
   },
   "askCmdr.error.rateLimited": "El proveedor está ocupado o se te acabó la cuota. Inténtalo de nuevo en un rato.",
   "@askCmdr.error.rateLimited": {
     "sourceHash": "f376ed1"
   },
-  "askCmdr.error.requestTooLarge.named": "{provider} rechazó esto: el límite de tu plan es menor que una sola solicitud de Cmdr, porque cada solicitud siempre lleva las instrucciones de Cmdr. Un mensaje más corto no servirá. Prueba un plan mayor con {provider} o elige otro proveedor en Configuración.",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} rechazó esto: el límite de tu plan es menor que una sola solicitud de Cmdr, porque cada solicitud siempre lleva las instrucciones de Cmdr. Un mensaje más corto no servirá. Prueba un plan mayor con {provider} o elige otro proveedor en Configuración.} linuxGnome {{provider} rechazó esto: el límite de tu plan es menor que una sola solicitud de Cmdr, porque cada solicitud siempre lleva las instrucciones de Cmdr. Un mensaje más corto no servirá. Prueba un plan mayor con {provider} o elige otro proveedor en Preferencias.} linuxKde {{provider} rechazó esto: el límite de tu plan es menor que una sola solicitud de Cmdr, porque cada solicitud siempre lleva las instrucciones de Cmdr. Un mensaje más corto no servirá. Prueba un plan mayor con {provider} o elige otro proveedor en Configurar Cmdr.} other {{provider} rechazó esto: el límite de tu plan es menor que una sola solicitud de Cmdr, porque cada solicitud siempre lleva las instrucciones de Cmdr. Un mensaje más corto no servirá. Prueba un plan mayor con {provider} o elige otro proveedor en Configuración.}}",
   "@askCmdr.error.requestTooLarge.named": {
-    "sourceHash": "840faa2"
+    "sourceHash": "74dac8a"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "Tu proveedor de IA rechazó esto: el límite de tu plan es menor que una sola solicitud de Cmdr, porque cada solicitud siempre lleva las instrucciones de Cmdr. Un mensaje más corto no servirá. Prueba un plan mayor o elige otro proveedor en Configuración.",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Tu proveedor de IA rechazó esto: el límite de tu plan es menor que una sola solicitud de Cmdr, porque cada solicitud siempre lleva las instrucciones de Cmdr. Un mensaje más corto no servirá. Prueba un plan mayor o elige otro proveedor en Configuración.} linuxGnome {Tu proveedor de IA rechazó esto: el límite de tu plan es menor que una sola solicitud de Cmdr, porque cada solicitud siempre lleva las instrucciones de Cmdr. Un mensaje más corto no servirá. Prueba un plan mayor o elige otro proveedor en Preferencias.} linuxKde {Tu proveedor de IA rechazó esto: el límite de tu plan es menor que una sola solicitud de Cmdr, porque cada solicitud siempre lleva las instrucciones de Cmdr. Un mensaje más corto no servirá. Prueba un plan mayor o elige otro proveedor en Configurar Cmdr.} other {Tu proveedor de IA rechazó esto: el límite de tu plan es menor que una sola solicitud de Cmdr, porque cada solicitud siempre lleva las instrucciones de Cmdr. Un mensaje más corto no servirá. Prueba un plan mayor o elige otro proveedor en Configuración.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
-    "sourceHash": "5f41c18"
+    "sourceHash": "9bd7dc9"
   },
-  "askCmdr.error.modelNotInPlan.named": "Tu plan de {provider} no incluye este modelo. Elige otro modelo en Configuración o mejora tu plan.",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Tu plan de {provider} no incluye este modelo. Elige otro modelo en Configuración o mejora tu plan.} linuxGnome {Tu plan de {provider} no incluye este modelo. Elige otro modelo en Preferencias o mejora tu plan.} linuxKde {Tu plan de {provider} no incluye este modelo. Elige otro modelo en Configurar Cmdr o mejora tu plan.} other {Tu plan de {provider} no incluye este modelo. Elige otro modelo en Configuración o mejora tu plan.}}",
   "@askCmdr.error.modelNotInPlan.named": {
-    "sourceHash": "df58eb6"
+    "sourceHash": "1f3c089"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "Tu plan con este proveedor de IA no incluye este modelo. Elige otro modelo en Configuración o mejora tu plan.",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Tu plan con este proveedor de IA no incluye este modelo. Elige otro modelo en Configuración o mejora tu plan.} linuxGnome {Tu plan con este proveedor de IA no incluye este modelo. Elige otro modelo en Preferencias o mejora tu plan.} linuxKde {Tu plan con este proveedor de IA no incluye este modelo. Elige otro modelo en Configurar Cmdr o mejora tu plan.} other {Tu plan con este proveedor de IA no incluye este modelo. Elige otro modelo en Configuración o mejora tu plan.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
-    "sourceHash": "aa8f744"
+    "sourceHash": "48a46c9"
   },
   "askCmdr.error.budgetExhausted": "Esta respuesta llegó a su límite antes de terminar. Intenta preguntar algo más concreto.",
   "@askCmdr.error.budgetExhausted": {
@@ -323,9 +323,9 @@
   "@askCmdr.composer.selectionCapped": {
     "sourceHash": "8c1eaa6"
   },
-  "askCmdr.gate.cloudOff.body": "Ask Cmdr habla con el servicio de IA en la nube que configuraste. Permite primero la IA en la nube en Configuración y ya podrás chatear.",
+  "askCmdr.gate.cloudOff.body": "{platform, select, windows {Ask Cmdr habla con el servicio de IA en la nube que configuraste. Permite primero la IA en la nube en Configuración y ya podrás chatear.} linuxGnome {Ask Cmdr habla con el servicio de IA en la nube que configuraste. Permite primero la IA en la nube en Preferencias y ya podrás chatear.} linuxKde {Ask Cmdr habla con el servicio de IA en la nube que configuraste. Permite primero la IA en la nube en Configurar Cmdr y ya podrás chatear.} other {Ask Cmdr habla con el servicio de IA en la nube que configuraste. Permite primero la IA en la nube en Configuración y ya podrás chatear.}}",
   "@askCmdr.gate.cloudOff.body": {
-    "sourceHash": "0e65edc"
+    "sourceHash": "0b1ef9f"
   },
   "askCmdr.gate.cloudOff.openSettings": "Abrir la configuración de IA",
   "@askCmdr.gate.cloudOff.openSettings": {
@@ -443,9 +443,9 @@
   "@askCmdr.wake.thinking": {
     "sourceHash": "fb0553c"
   },
-  "askCmdr.wake.needsApiKey": "Las funciones de IA están activadas, pero necesitan un proveedor para funcionar. Haz clic para configurar uno en Configuración.",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {Las funciones de IA están activadas, pero necesitan un proveedor para funcionar. Haz clic para configurar uno en Configuración.} linuxGnome {Las funciones de IA están activadas, pero necesitan un proveedor para funcionar. Haz clic para configurar uno en Preferencias.} linuxKde {Las funciones de IA están activadas, pero necesitan un proveedor para funcionar. Haz clic para elegir uno en Configurar Cmdr.} other {Las funciones de IA están activadas, pero necesitan un proveedor para funcionar. Haz clic para configurar uno en Configuración.}}",
   "@askCmdr.wake.needsApiKey": {
-    "sourceHash": "826c784"
+    "sourceHash": "5177b37"
   },
   "askCmdr.wakeDigest.summary": "Qué cambió en {foldersText} {folders, plural, one {carpeta} many {carpetas} other {carpetas}}",
   "@askCmdr.wakeDigest.summary": {
@@ -463,17 +463,17 @@
   "@askCmdr.railBoundary.closedToast": {
     "sourceHash": "017a215"
   },
-  "askCmdr.providerNotice.off": "Ask Cmdr necesita un proveedor de IA para chatear. Elige uno en Configuración.",
+  "askCmdr.providerNotice.off": "{platform, select, windows {Ask Cmdr necesita un proveedor de IA para chatear. Elige uno en Configuración.} linuxGnome {Ask Cmdr necesita un proveedor de IA para chatear. Elige uno en Preferencias.} linuxKde {Ask Cmdr necesita un proveedor de IA para chatear. Elige uno en Configurar Cmdr.} other {Ask Cmdr necesita un proveedor de IA para chatear. Elige uno en Configuración.}}",
   "@askCmdr.providerNotice.off": {
-    "sourceHash": "3bfdf76"
+    "sourceHash": "ac566bc"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "Tu proveedor de IA en la nube necesita una clave de API para que Ask Cmdr pueda chatear. Agrégala en Configuración.",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, windows {Tu proveedor de IA en la nube necesita una clave de API para que Ask Cmdr pueda chatear. Agrégala en Configuración.} linuxGnome {Tu proveedor de IA en la nube necesita una clave de API para que Ask Cmdr pueda chatear. Agrégala en Preferencias.} linuxKde {Tu proveedor de IA en la nube necesita una clave de API para que Ask Cmdr pueda chatear. Agrégala en Configurar Cmdr.} other {Tu proveedor de IA en la nube necesita una clave de API para que Ask Cmdr pueda chatear. Agrégala en Configuración.}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
-    "sourceHash": "8ed76f6"
+    "sourceHash": "7e91e9a"
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "Tu proveedor de IA en la nube necesita una dirección para que Ask Cmdr pueda chatear. Agrégala en Configuración.",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, windows {Tu proveedor de IA en la nube necesita una dirección para que Ask Cmdr pueda chatear. Agrégala en Configuración.} linuxGnome {Tu proveedor de IA en la nube necesita una dirección para que Ask Cmdr pueda chatear. Agrégala en Preferencias.} linuxKde {Tu proveedor de IA en la nube necesita una dirección para que Ask Cmdr pueda chatear. Agrégala en Configurar Cmdr.} other {Tu proveedor de IA en la nube necesita una dirección para que Ask Cmdr pueda chatear. Agrégala en Configuración.}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
-    "sourceHash": "e7bf67b"
+    "sourceHash": "9dcaed9"
   },
   "askCmdr.providerNotice.localNotSetUp": "La IA local todavía no se descargó, así que Ask Cmdr no puede chatear. Prepárala en Configuración.",
   "@askCmdr.providerNotice.localNotSetUp": {

@@ -71,9 +71,9 @@
   "@fileExplorer.pane.detachShareFailedToast": {
     "sourceHash": "739ebe1"
   },
-  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {La barra de teclas de función ahora está oculta. Puedes volver a activarla cuando quieras en <settingsLink>Configuración</settingsLink>.} other {La barra de teclas de función ahora está oculta. Puedes volver a activarla cuando quieras en <settingsLink>Configuración</settingsLink>.}}",
+  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {La barra de teclas de función ahora está oculta. Puedes volver a activarla cuando quieras en <settingsLink>Configuración</settingsLink>.} linuxGnome {La barra de teclas de función ahora está oculta. Puedes volver a activarla cuando quieras en <settingsLink>Preferencias</settingsLink>.} linuxKde {La barra de teclas de función ahora está oculta. Puedes volver a activarla cuando quieras en <settingsLink>Configurar Cmdr</settingsLink>.} other {La barra de teclas de función ahora está oculta. Puedes volver a activarla cuando quieras en <settingsLink>Configuración</settingsLink>.}}",
   "@fileExplorer.functionKeyBar.hiddenToast": {
-    "sourceHash": "ae34eb7"
+    "sourceHash": "409958d"
   },
   "fileExplorer.searchResults.unavailableBody": "El conjunto de resultados de esta búsqueda se borró. Abre una nueva búsqueda para empezar de nuevo.",
   "@fileExplorer.searchResults.unavailableBody": {
@@ -123,9 +123,9 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "dedbdef"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Credenciales guardadas localmente (el Administrador de credenciales no está disponible)} linuxKde {Credenciales guardadas localmente (KWallet no está disponible)} other {Credenciales guardadas localmente (no se detectó ningún llavero del sistema)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Credenciales guardadas localmente (el Administrador de credenciales no está disponible)} linuxKde {Credenciales guardadas localmente (la cartera de KDE no está disponible)} other {Credenciales guardadas localmente (no se detectó ningún llavero del sistema)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
-    "sourceHash": "2be0ce8"
+    "sourceHash": "bb20608"
   },
   "fileExplorer.network.share.notFound": "El recurso compartido “{shareName}” no se encontró en {hostName}",
   "@fileExplorer.network.share.notFound": {
@@ -167,17 +167,17 @@
   "@fileExplorer.compareDirectories.couldNotFinish": {
     "sourceHash": "40e603a"
   },
-  "fileExplorer.edit.hint": "Archivo abierto en {app}. ¿Quieres otro editor la próxima vez? Elígelo en Configuración.",
+  "fileExplorer.edit.hint": "{platform, select, windows {Archivo abierto en {app}. ¿Quieres otro editor la próxima vez? Elígelo en Configuración.} linuxGnome {Archivo abierto en {app}. ¿Quieres otro editor la próxima vez? Elígelo en Preferencias.} linuxKde {Archivo abierto en {app}. ¿Quieres otro editor la próxima vez? Elígelo en Configurar Cmdr.} other {Archivo abierto en {app}. ¿Quieres otro editor la próxima vez? Elígelo en Configuración.}}",
   "@fileExplorer.edit.hint": {
-    "sourceHash": "f48751c"
+    "sourceHash": "8059416"
   },
-  "fileExplorer.edit.hintUnnamed": "Archivo abierto en tu editor de texto predeterminado. ¿Quieres otro la próxima vez? Elígelo en Configuración.",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, windows {Archivo abierto en tu editor de texto predeterminado. ¿Quieres otro la próxima vez? Elígelo en Configuración.} linuxGnome {Archivo abierto en tu editor de texto predeterminado. ¿Quieres otro la próxima vez? Elígelo en Preferencias.} linuxKde {Archivo abierto en tu editor de texto predeterminado. ¿Quieres otro la próxima vez? Elígelo en Configurar Cmdr.} other {Archivo abierto en tu editor de texto predeterminado. ¿Quieres otro la próxima vez? Elígelo en Configuración.}}",
   "@fileExplorer.edit.hintUnnamed": {
-    "sourceHash": "d224ab0"
+    "sourceHash": "c312f54"
   },
-  "fileExplorer.edit.openSettings": "Abrir la configuración",
+  "fileExplorer.edit.openSettings": "{platform, select, windows {Abrir la configuración} linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir la configuración}}",
   "@fileExplorer.edit.openSettings": {
-    "sourceHash": "3e708b0"
+    "sourceHash": "0ee74e6"
   },
   "fileExplorer.edit.appMissing": "Cmdr no encuentra el editor que elegiste, así que este archivo se abrió en {app}.",
   "@fileExplorer.edit.appMissing": {
@@ -199,9 +199,9 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "8b6ffb6"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "Configuración",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {Configuración} linuxGnome {Preferencias} linuxKde {Configurar Cmdr} other {Configuración}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
-    "sourceHash": "4f2debb"
+    "sourceHash": "18ac003"
   },
   "fileExplorer.clipboard.selectionChanged": "La carpeta acaba de cambiar, así que no se copió nada. Inténtalo de nuevo.",
   "@fileExplorer.clipboard.selectionChanged": {
@@ -235,9 +235,9 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "b6fcb36"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en el Llavero. Para quitarla del todo, elimínala en Acceso a Llaveros.} windows {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en el Administrador de credenciales. Para quitarla del todo, elimínala en el Administrador de credenciales.} linuxGnome {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en tu depósito de claves. Para quitarla del todo, elimínala en Contraseñas y claves.} linuxKde {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en KWallet. Para quitarla del todo, elimínala en KWalletManager.} other {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en tu llavero. Para quitarla del todo, elimínala en la app de tu llavero.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en el Llavero. Para quitarla del todo, elimínala en Acceso a Llaveros.} windows {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en el Administrador de credenciales. Para quitarla del todo, elimínala en el Administrador de credenciales.} linuxGnome {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en tu depósito de claves. Para quitarla del todo, elimínala en Contraseñas y claves.} linuxKde {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en la cartera de KDE. Para quitarla del todo, elimínala en KWalletManager.} other {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en tu llavero. Para quitarla del todo, elimínala en la app de tu llavero.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
-    "sourceHash": "3a23842"
+    "sourceHash": "6c6d3c9"
   },
   "fileExplorer.restic.forgetPassword.unreachable": "Cmdr no pudo acceder a {name} ahora mismo, así que la contraseña sigue guardada. Inténtalo de nuevo en un momento.",
   "@fileExplorer.restic.forgetPassword.unreachable": {
@@ -307,17 +307,17 @@
   "@fileExplorer.navigation.favoriteShortcutSaveFailed": {
     "sourceHash": "4ce4c6b"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "El acceso a teléfonos y cámaras por MTP está desactivado en Configuración.",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {El acceso a teléfonos y cámaras por MTP está desactivado en Configuración.} linuxGnome {El acceso a teléfonos y cámaras por MTP está desactivado en Preferencias.} linuxKde {El acceso a teléfonos y cámaras por MTP está desactivado en Configurar Cmdr.} other {El acceso a teléfonos y cámaras por MTP está desactivado en Configuración.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
-    "sourceHash": "fe6f725"
+    "sourceHash": "962a0f6"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "El acceso a teléfonos Android está desactivado en Configuración.",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {El acceso a teléfonos Android está desactivado en Configuración.} linuxGnome {El acceso a teléfonos Android está desactivado en Preferencias.} linuxKde {El acceso a teléfonos Android está desactivado en Configurar Cmdr.} other {El acceso a teléfonos Android está desactivado en Configuración.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
-    "sourceHash": "24fe719"
+    "sourceHash": "0b9019f"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "Abrir la configuración",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {Abrir la configuración} linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir la configuración}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
-    "sourceHash": "3e708b0"
+    "sourceHash": "0ee74e6"
   },
   "fileExplorer.navigation.removeFavoriteFailed": "No se pudo quitar ese favorito. ¿Reintentar?",
   "@fileExplorer.navigation.removeFavoriteFailed": {
@@ -407,21 +407,21 @@
   "@fileExplorer.navigation.driveIndex.queuedBehindScan": {
     "sourceHash": "f6cd615"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "La indexación de unidades está desactivada en Configuración, así que {name} sigue sin indexar. Actívala en “Indexación > Indexación de unidades”.",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {La indexación de unidades está desactivada en Configuración, así que {name} sigue sin indexar. Actívala en “Indexación > Indexación de unidades”.} linuxGnome {La indexación de unidades está desactivada en Preferencias, así que {name} sigue sin indexar. Actívala en “Indexación > Indexación de unidades”.} linuxKde {La indexación de unidades está desactivada en Configurar Cmdr, así que {name} sigue sin indexar. Actívala en “Indexación > Indexación de unidades”.} other {La indexación de unidades está desactivada en Configuración, así que {name} sigue sin indexar. Actívala en “Indexación > Indexación de unidades”.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
-    "sourceHash": "4fbe8e9"
+    "sourceHash": "e9159b4"
   },
   "fileExplorer.navigation.driveIndex.driveLeaving": "{name} se está desconectando, así que Cmdr dejó su índice como estaba. Si la unidad sigue conectada, vuelve a intentarlo en un momento.",
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "9bb86e9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "La indexación de unidades está desactivada en Configuración, así que ahora mismo no se indexa ninguna unidad.",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {La indexación de unidades está desactivada en Configuración, así que ahora mismo no se indexa ninguna unidad.} linuxGnome {La indexación de unidades está desactivada en Preferencias, así que ahora mismo no se indexa ninguna unidad.} linuxKde {La indexación de unidades está desactivada en Configurar Cmdr, así que ahora mismo no se indexa ninguna unidad.} other {La indexación de unidades está desactivada en Configuración, así que ahora mismo no se indexa ninguna unidad.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
-    "sourceHash": "b388385"
+    "sourceHash": "b34e28c"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "La indexación de unidades está desactivada en Configuración. Actívala en “Indexación > Indexación de unidades”, y esta unidad continuará donde lo dejó.",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {La indexación de unidades está desactivada en Configuración. Actívala en “Indexación > Indexación de unidades”, y esta unidad continuará donde lo dejó.} linuxGnome {La indexación de unidades está desactivada en Preferencias. Actívala en “Indexación > Indexación de unidades”, y esta unidad continuará donde lo dejó.} linuxKde {La indexación de unidades está desactivada en Configurar Cmdr. Actívala en “Indexación > Indexación de unidades”, y esta unidad continuará donde lo dejó.} other {La indexación de unidades está desactivada en Configuración. Actívala en “Indexación > Indexación de unidades”, y esta unidad continuará donde lo dejó.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
-    "sourceHash": "ed4b144"
+    "sourceHash": "11044cf"
   },
   "fileExplorer.dragOut.failed": "{count, plural, =1 {No se pudo copiar “{name}”.} one {No se pudo copiar {countText} elemento.} many {No se pudieron copiar {countText} elementos.} other {No se pudieron copiar {countText} elementos.}}",
   "@fileExplorer.dragOut.failed": {
@@ -455,13 +455,13 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "db65860"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "¿Prefieres mover el cursor a un nombre que coincida sin ocultar nada? Cambia a “Saltar”, aquí o en Configuración.",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {¿Prefieres mover el cursor a un nombre que coincida sin ocultar nada? Cambia a “Saltar”, aquí o en Configuración.} linuxGnome {¿Prefieres mover el cursor a un nombre que coincida sin ocultar nada? Cambia a “Saltar”, aquí o en Preferencias.} linuxKde {¿Prefieres mover el cursor a un nombre que coincida sin ocultar nada? Cambia a “Saltar”, aquí o en Configurar Cmdr.} other {¿Prefieres mover el cursor a un nombre que coincida sin ocultar nada? Cambia a “Saltar”, aquí o en Configuración.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
-    "sourceHash": "0d1e2b4"
+    "sourceHash": "e9239e8"
   },
   "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Configuración} linuxGnome {Preferencias} linuxKde {Configurar Cmdr…} other {Configuración…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
-    "sourceHash": "2ff20c4"
+    "sourceHash": "5bcedec"
   },
   "fileExplorer.tags.skipped": "{count, plural, one {Cmdr dejó las etiquetas de un elemento como estaban, porque no pudo leer las que ya tenía. Comprueba que puedes abrirlo o etiquétalo en el Finder.} many {Cmdr dejó las etiquetas de {countText} elementos como estaban, porque no pudo leer las que ya tenían. Comprueba que puedes abrirlos o etiquétalos en el Finder.} other {Cmdr dejó las etiquetas de {countText} elementos como estaban, porque no pudo leer las que ya tenían. Comprueba que puedes abrirlos o etiquétalos en el Finder.}}",
   "@fileExplorer.tags.skipped": {
@@ -499,9 +499,9 @@
   "@fileExplorer.pane.ejectAllHeldToast": {
     "sourceHash": "3011356"
   },
-  "fileExplorer.smbLinkConsent.note": "Cmdr recuerda tu respuesta para estos dos servidores. Puedes olvidarla en Configuración, en Servidores.",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr recuerda tu respuesta para estos dos servidores. Puedes olvidarla en Configuración, en Servidores.} linuxGnome {Cmdr recuerda tu respuesta para estos dos servidores. Puedes olvidarla en Preferencias, en Servidores.} linuxKde {Cmdr recuerda tu respuesta para estos dos servidores. Puedes olvidarla en Configurar Cmdr, en Servidores.} other {Cmdr recuerda tu respuesta para estos dos servidores. Puedes olvidarla en Configuración, en Servidores.}}",
   "@fileExplorer.smbLinkConsent.note": {
-    "sourceHash": "7e85e0c"
+    "sourceHash": "4cb112b"
   },
   "fileExplorer.network.osMountFallback.otherServerNotAllowed": "{platform, select, macos {No se pudo conectar directamente a <shareName>{share}</shareName>, porque sus archivos están en otro servidor y Cmdr no inicia sesión allí por su cuenta. Sigues teniendo acceso, pero a través de la conexión de red SMB nativa de macOS, que es mucho más lenta.} windows {No se pudo conectar directamente a <shareName>{share}</shareName>, porque sus archivos están en otro servidor y Cmdr no inicia sesión allí por su cuenta. Sigues teniendo acceso, pero a través de la conexión SMB propia de Windows, que es mucho más lenta.} other {No se pudo conectar directamente a <shareName>{share}</shareName>, porque sus archivos están en otro servidor y Cmdr no inicia sesión allí por su cuenta. Sigues teniendo acceso, pero a través de la conexión SMB de tu sistema, que es mucho más lenta.}}",
   "@fileExplorer.network.osMountFallback.otherServerNotAllowed": {

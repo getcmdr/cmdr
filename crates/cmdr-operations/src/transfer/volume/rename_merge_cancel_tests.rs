@@ -2,7 +2,7 @@
 //! moved, and what hasn't stays at the source.
 //!
 //! The cancel is wired to the merge's own progress rather than a wall clock: a
-//! `LocalPosixVolume` wrapper fires `cancel_write_operation` the instant the
+//! `LocalVolume` wrapper fires `cancel_write_operation` the instant the
 //! first child rename lands, so `rename_merge_directory`'s per-child recheck
 //! bails on the next iteration with the rest of the tree untouched. The merge
 //! semantics these tests assume are in `rename_merge_tests.rs`.
@@ -18,7 +18,7 @@ use cmdr_operation_log::types::OperationId;
 use crate::types::{ConflictResolution, VolumeCopyConfig, WriteOperationError};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{Volume, VolumeError};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -26,7 +26,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tempfile::TempDir;
 
-/// A `LocalPosixVolume` wrapper that fires `cancel_write_operation` the instant
+/// A `LocalVolume` wrapper that fires `cancel_write_operation` the instant
 /// the FIRST child rename lands, so the cancel is deterministically wired to the
 /// operation's own progress instead of a wall clock. The first child still moves
 /// (we cancel AFTER its rename returns `Ok`), and `rename_merge_directory`'s
@@ -35,7 +35,7 @@ use tempfile::TempDir;
 /// source. This kills the old 1 ms-sleep flake (a fast run finished the whole
 /// merge before the sleep elapsed, so the op returned `Ok` and the test failed).
 struct CancelOnFirstRenameVolume {
-    inner: Arc<LocalPosixVolume>,
+    inner: Arc<LocalVolume>,
     engine: Operations,
     operation_id: OperationId,
     renames: AtomicUsize,
@@ -121,7 +121,7 @@ async fn rename_merge_cancel_keeps_moved_children_and_preserves_source() {
     let op = engine.register_state("rename-merge-cancel", make_state(&engine));
     let volume: Arc<dyn Volume> = Arc::new(CancelOnFirstRenameVolume {
         engine: Operations::clone(&engine),
-        inner: Arc::new(LocalPosixVolume::local_folder(
+        inner: Arc::new(LocalVolume::local_folder(
             "V",
             root.to_path_buf(),
             crate::host::testing::pane_order_host(),

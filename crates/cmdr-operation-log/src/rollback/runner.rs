@@ -21,6 +21,7 @@ use std::time::Duration;
 use super::super::store::RollbackUnit;
 use super::super::types::EntryType;
 use super::removal_target;
+use cmdr_fs::volume::app_paths::RootMove;
 use cmdr_fs::volume::{Volume, VolumeError};
 
 /// Which volume serves an id, asked when the gate checks that every volume an
@@ -28,6 +29,18 @@ use cmdr_fs::volume::{Volume, VolumeError};
 pub trait VolumeLookup: Send + Sync {
     /// The volume registered under `volume_id`, or `None` when it isn't connected.
     fn get(&self, volume_id: &str) -> Option<Arc<dyn Volume>>;
+
+    /// Where `volume_id`'s recorded paths move now, when its root moved since the operation
+    /// ran (a Windows drive back on another letter, a disk back at another mount point);
+    /// `None` keeps every recorded path. A volume's id is its identity and its root only an
+    /// address, so an undo follows the DISK, ❌ never whatever now sits at the old root. ❗
+    /// A host answers only for an id that is provably one tree (never seen at two roots at
+    /// once): a cloned disk shares its twin's id. Asked once per volume per run
+    /// ([`super::live_roots::LiveRoots`]). Defaults to `None`: a host that can't tell keeps
+    /// every recorded path, and the planner's snapshot checks still guard each act.
+    fn root_move(&self, _volume_id: &str) -> Option<RootMove> {
+        None
+    }
 }
 
 /// One decided inverse act. The planner has already resolved both volumes,

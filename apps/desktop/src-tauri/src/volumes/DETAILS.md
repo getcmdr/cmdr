@@ -16,13 +16,11 @@ twin.
 ❌ never through the arm's root. **Why**: the watchers announce through `volume_broadcast`, which lists through
 `volume_listing`, which reads the model and the arm root. A model in `mod.rs` beside the seam's re-exports, or a watcher
 re-exported by the arm root, closes that into a module cycle (`desktop-rust-module-cycles`).
-`platform/windows.rs` lists the root and three home folders and answers "nothing here" to every mount-table question.
 
 `local_volume_id_for_path` answers which local volume a path lies on, from the path alone, for a command handed a path
 without its volume (`commands/rename.rs`, `commands/file_system/path_checks.rs`): macOS and Linux have one local root
 volume, so every path answers `DEFAULT_VOLUME_ID`, exactly what those commands hard-coded. On Windows each drive and UNC
-share will be its own volume (`cmdr_fs::volume::path_grammar` names the root); until their volume ids are decided, the
-Windows arm answers the root volume too, a marked seam.
+share is its own volume, so it answers that drive's id (§ "Windows: a volume per drive").
 
 What only one OS has stays in its arm, re-exported under a positive gate: on macOS, disk images, whole-disk units, the
 unmount approver, and the readers eject and the SMB paths use; on Linux, the GVFS dirname parser the mount helper reads.
@@ -40,6 +38,45 @@ longest-prefix match over `/proc/mounts` that never fails, so Linux already reso
 drive (verified by running the macOS test against the pre-merge Linux module in the Docker lane, where it passed). It's
 shared so the contract is explicit: a stat-based fast path added later would otherwise silently start answering `None`
 for archive-inner paths.
+
+## Windows: a volume per drive
+
+Every drive letter, folder mount, and mapped share is its own volume (plan D1), keyed by the disk's identity (plan D8,
+`docs/specs/windows-port-plan.md`): the system drive is `root`, a local drive or folder mount keys on its volume GUID,
+a mapped drive and its UNC spelling on `(server, 445, share)`, a `subst` drive on its path. The ladder and the drive
+table's pure rules (`covering_drive`, `display_name`) are `cmdr_fs::volume::windows_volume_ids`, tested on every OS.
+
+- **The drive table** (`platform/windows/drives.rs::enumerate`): `GetLogicalDriveStringsW` for the letters, then per
+  letter `GetDriveTypeW`, the GUID (`GetVolumeNameForVolumeMountPointW`), the `subst` target (`QueryDosDeviceW`), a
+  mapped drive's share (`WNetGetConnectionW`, the redirector's own table, no server round trip), and for a local drive
+  only `GetVolumeInformationW` (label, filesystem, read-only). Folder mounts come from the `FindFirstVolumeW` sweep. What
+  each call answers on Windows 10 22H2 sits in that file's header, with its evidence anchor.
+- **When it's read**: at startup (`register_every_mount` through `registrable_mount_roots`), on every switcher refresh
+  (`list_locations` reads it fresh), and when a path names a root the cached table (2 s) doesn't hold. ❌ No arrival
+  watcher yet: task 39's `CM_Register_Notification`. A drive plugged in later shows on the next refresh.
+- **Alias roots**: `registrable_mount_roots` lists a mapped drive's root (`Z:/`) AND its UNC spelling
+  (`//server/share/`). Both derive one id, so the registry's double-mount rule records the UNC one as a fallback root of
+  the same volume, and the switcher publishes one row (the mapped drive, `canonical_root`'s shortest root).
+  `resolve_path_volume_fast` answers a UNC path with the alias row: the same id, rooted at the spelling the path uses,
+  so a pane on `//server/share/x` stays consistent with its root. A share nobody mapped answers as an `smb-` volume of
+  its own.
+- **What a mapped share doesn't get yet**: no `SmbMountInfo` (the SMB-mount readers answer nothing), so nothing
+  upgrades it to a direct session; its index and mount class come from the generic local paths.
+- **Names** read like Explorer's This PC (`build (D:)`, `D:` with no label, `media (\\server) (Z:)`); words around
+  them are the frontend's. An empty optical drive or card reader lists nothing until media is in.
+- **A path that moved roots** (a stick back on another letter) follows its disk through `location/last_roots.rs`: the
+  tab restore and the undo planner rebase a recorded path onto the volume's live root.
+  - **Decision/Why: only an id that is provably one disk rebases.** An id the registry ever saw at two roots at once
+    (`VolumeManager::has_shared_identity`: a `dd` clone, a double mount, a btrfs subvolume or bind mount, a mapped
+    share beside its UNC alias) is marked shared in `volume-roots.json` for good and never rebases: an undo then acts
+    on the stored path or refuses, as before the rebase existed. Without it, a clone plugged in alone could take the
+    undo meant for its twin, since a block clone also carries the same size, mtime, and inode.
+  - **Decision/Why: a restored tab waits for the startup sweep.** `live_volume_path` answers at once for a registered
+    id, else waits up to 5 s for `volume-init` (`apps/desktop/src-tauri/src/file_system/discovery.rs`) and then answers `notReady`, and the tab
+    keeps its stored id and path, unreachable. Asking before the sweep, the old letter's new disk would answer the path
+    and re-key the tab for good.
+  - The arrival listener only notes a root in memory; the `volume-roots` thread writes the file, debounced 2 s, pruned
+    to 256 volumes seen within a year (a shared one kept longest).
 
 ## Location categories
 

@@ -80,7 +80,7 @@ const MAX_DESCENT_DEPTH: usize = 256;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CoverageDimension {
     /// Whether a directory's direct contents have been listed. What every walk
-    /// writes today and what search's file-name matching needs.
+    /// writes today and what search's filename matching needs.
     Listing,
 }
 

@@ -1594,7 +1594,7 @@
   },
   "settings.analytics.enabled.description": "Por favor, ative isto para nos ajudar a ver quais recursos fazem diferença durante o beta aberto.\nAs estatísticas ficam ligadas a um identificador aleatório, não ao seu nome nem ao seu e-mail.\nO Cmdr nunca envia nomes de arquivo, caminhos, termos de busca nem prompts.\nCom isto desativado, o Cmdr não envia nenhuma estatística.",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "a8d8db1"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "estatísticas, uso, análise, privacidade, telemetria, beta, rastreamento, desativar",
   "@settings.analytics.enabled.keywords": {
@@ -1618,7 +1618,7 @@
   },
   "settings.updates.crashReports.summary": "Nunca inclui nomes de arquivo nem dados pessoais.",
   "@settings.updates.crashReports.summary": {
-    "sourceHash": "7814a28"
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "falha, travamento, relatório, relatório de falha, privacidade, telemetria, bug, problema, erro",
   "@settings.updates.crashReports.keywords": {
@@ -2945,9 +2945,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Seções de ajustes",
+  "settings.sidebar.sections": "{platform, select, windows {Seções de configurações} linuxGnome {Seções de preferências} linuxKde {Seções de Configurar Cmdr} other {Seções de ajustes}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Nenhum ajuste corresponde} one {{countText} seção corresponde} many {{countText} seções correspondem} other {{countText} seções correspondem}}",
   "@settings.sidebar.matchCount": {
@@ -3206,7 +3206,7 @@
   },
   "settings.securityLog.enabled.description": "O registro anota mudanças e recusas relevantes para a segurança, como o consentimento para a IA na nuvem, uma atualização instalada ou um app recusado pelo servidor MCP. O registro não inclui nomes de arquivo, conteúdo nem senhas.",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "97e24a4"
+    "sourceHash": "3692a3d"
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {Um pequeno registro local de eventos de segurança. Nunca sai do seu Mac.} windows {Um pequeno registro local de eventos de segurança. Nunca sai do seu PC.} other {Um pequeno registro local de eventos de segurança. Nunca sai do seu computador.}}",
   "@settings.securityLog.enabled.summary": {
@@ -3425,9 +3425,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Ajustes",
+  "settings.window.title": "{platform, select, windows {Configurações} linuxGnome {Preferências} linuxKde {Configurar – Cmdr} other {Ajustes}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Carregando ajustes…",
   "@settings.window.loading": {
@@ -3674,13 +3674,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Um item chamado “{itemName}” no Acesso às Chaves} many {{countText} itens chamados “{itemName}” no Acesso às Chaves} other {{countText} itens chamados “{itemName}” no Acesso às Chaves}}} windows {{count, plural, one {Uma credencial chamada “{itemName}” no Gerenciador de Credenciais} many {{countText} credenciais chamadas “{itemName}” no Gerenciador de Credenciais} other {{countText} credenciais chamadas “{itemName}” no Gerenciador de Credenciais}}} linuxKde {{count, plural, one {Um item chamado “{itemName}” no KWallet} many {{countText} itens chamados “{itemName}” no KWallet} other {{countText} itens chamados “{itemName}” no KWallet}}} other {{count, plural, one {Um item chamado “{itemName}” no seu chaveiro} many {{countText} itens chamados “{itemName}” no seu chaveiro} other {{countText} itens chamados “{itemName}” no seu chaveiro}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Um item chamado “{itemName}” no Acesso às Chaves} many {{countText} itens chamados “{itemName}” no Acesso às Chaves} other {{countText} itens chamados “{itemName}” no Acesso às Chaves}}} windows {{count, plural, one {Uma credencial chamada “{itemName}” no Gerenciador de Credenciais} many {{countText} credenciais chamadas “{itemName}” no Gerenciador de Credenciais} other {{countText} credenciais chamadas “{itemName}” no Gerenciador de Credenciais}}} linuxKde {{count, plural, one {Um item chamado “{itemName}” na Carteira do KDE} many {{countText} itens chamados “{itemName}” na Carteira do KDE} other {{countText} itens chamados “{itemName}” na Carteira do KDE}}} other {{count, plural, one {Um item chamado “{itemName}” no seu chaveiro} many {{countText} itens chamados “{itemName}” no seu chaveiro} other {{countText} itens chamados “{itemName}” no seu chaveiro}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Qualquer item chamado “{itemName}” no Acesso às Chaves} windows {Qualquer credencial chamada “{itemName}” no Gerenciador de Credenciais} linuxKde {Qualquer item chamado “{itemName}” no KWallet} other {Qualquer item chamado “{itemName}” no seu chaveiro}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Qualquer item chamado “{itemName}” no Acesso às Chaves} windows {Qualquer credencial chamada “{itemName}” no Gerenciador de Credenciais} linuxKde {Qualquer item chamado “{itemName}” na Carteira do KDE} other {Qualquer item chamado “{itemName}” no seu chaveiro}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Sair do Cmdr} other {Encerrar Cmdr}}",
   "@settings.dataWipe.quit": {

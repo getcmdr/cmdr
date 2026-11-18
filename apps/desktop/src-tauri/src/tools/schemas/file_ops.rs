@@ -108,7 +108,7 @@ pub fn mkfile_schema() -> Value {
         "properties": {
             "name": {
                 "type": "string",
-                "description": "File name: creates it directly. Omit to open the naming dialog for a person."
+                "description": "Filename: creates it directly. Omit to open the naming dialog for a person."
             },
             "pane": pane_prop("Which pane to create in.")
         },

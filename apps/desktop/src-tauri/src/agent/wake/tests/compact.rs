@@ -217,7 +217,7 @@ fn an_empty_input_produces_an_empty_digest() {
 }
 
 /// The rendered digest names the folder and its counts, because those two facts are the whole
-/// point: WHERE something happened and HOW MUCH. The agent pulls the file names itself with a
+/// point: WHERE something happened and HOW MUCH. The agent pulls the filenames itself with a
 /// `list_dir` if it decides it needs them.
 #[test]
 fn a_line_names_the_folder_and_what_happened_in_it() {

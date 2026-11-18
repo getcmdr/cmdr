@@ -103,7 +103,7 @@ wording into `terms.json` (and `decisions.md` when the reason is worth keeping).
   say `Copie en cours` / `Déplacement en cours` because a bare `Copie` reads as "a copy" to a screen reader.
 - **Damaged-state notices** (`stateRecovery.*`, `transfer.durabilityUnconfirmed*`): `historique d’annulation` for "undo
   history" (the UI elsewhere says `Historique des opérations`); `vous repartez donc de zéro` for the chats (the people
-  restart, not the chats); `Cmdr a conservé l’ancien fichier sous {path}` (`sous` because {path} ends in the file name);
+  restart, not the chats); `Cmdr a conservé l’ancien fichier sous {path}` (`sous` because {path} ends in the filename);
   `est défaillant` for a failing drive; subjunctive `confirmer que les copies soient …`.
 - **Restic backups** (`errors.write.sourcesSpanVolumes.*`, `fileOperations.resticPassword.*`): `vue` for the English
   "view" (a read-only virtual folder); does it read as a display mode? `à l’instant` for "couldn’t check the password

@@ -61,7 +61,7 @@ libfuzzer_sys::fuzz_target!(|data: &[u8]| {
             }
         }
         for path in files.into_iter().take(FILES_READ) {
-            let Ok(mut reader) = index.open_read(&path, Arc::clone(&source), None) else {
+            let Ok(mut reader) = index.open_read(&path, Arc::clone(&source), None, runtime.handle()) else {
                 continue;
             };
             while reader.bytes_read() < BYTES_PER_FILE {

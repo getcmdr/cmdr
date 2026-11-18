@@ -3,13 +3,13 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "Gebruiksstatistieken en crashrapporten blijven uit tot je ze weer aanzet in Instellingen › Updates en privacy.",
+  "stateRecovery.settings.body": "{platform, select, windows {Gebruiksstatistieken en crashrapporten blijven uit tot je ze weer aanzet in Instellingen › Updates en privacy.} linuxGnome {Gebruiksstatistieken en crashrapporten blijven uit tot je ze weer aanzet in Voorkeuren › Updates en privacy.} linuxKde {Gebruiksstatistieken en crashrapporten blijven uit tot je ze weer aanzet in ‘Cmdr configureren’ › Updates en privacy.} other {Gebruiksstatistieken en crashrapporten blijven uit tot je ze weer aanzet in Instellingen › Updates en privacy.}}",
   "@stateRecovery.settings.body": {
-    "sourceHash": "20439e1"
+    "sourceHash": "253a6ed"
   },
-  "stateRecovery.settings.openSettings": "Open Instellingen",
+  "stateRecovery.settings.openSettings": "{platform, select, windows {Open Instellingen} linuxGnome {Open Voorkeuren} linuxKde {Cmdr configureren} other {Open Instellingen}}",
   "@stateRecovery.settings.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.shortcuts.title": "Cmdr kon je sneltoetsen niet lezen, dus ze staan weer op de standaardwaarden",
   "@stateRecovery.shortcuts.title": {
@@ -19,13 +19,13 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "Heeft Cmdr nu geen licentie meer, voer je licentiesleutel dan opnieuw in via Instellingen › Licentie.",
+  "stateRecovery.license.body": "{platform, select, windows {Heeft Cmdr nu geen licentie meer, voer je licentiesleutel dan opnieuw in via Instellingen › Licentie.} linuxGnome {Heeft Cmdr nu geen licentie meer, voer je licentiesleutel dan opnieuw in via Voorkeuren › Licentie.} linuxKde {Heeft Cmdr nu geen licentie meer, voer je licentiesleutel dan opnieuw in via ‘Cmdr configureren’ › Licentie.} other {Heeft Cmdr nu geen licentie meer, voer je licentiesleutel dan opnieuw in via Instellingen › Licentie.}}",
   "@stateRecovery.license.body": {
-    "sourceHash": "ea51589"
+    "sourceHash": "e4d10c4"
   },
-  "stateRecovery.license.openSettings": "Open Instellingen",
+  "stateRecovery.license.openSettings": "{platform, select, windows {Open Instellingen} linuxGnome {Open Voorkeuren} linuxKde {Cmdr configureren} other {Open Instellingen}}",
   "@stateRecovery.license.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.appStatus.title": "{platform, select, windows {Cmdr kon niet lezen welke mappen er in je panelen openstonden, dus beide panelen beginnen in je gebruikersmap} other {Cmdr kon niet lezen welke mappen er in je panelen openstonden, dus beide panelen beginnen in je thuismap}}",
   "@stateRecovery.appStatus.title": {

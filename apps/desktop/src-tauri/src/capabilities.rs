@@ -16,7 +16,7 @@ mod tests {
     /// carrying one needn't name it (`default.json`, `debug.json`).
     const BUNDLES_TOGGLE_MAXIMIZE: [&str; 2] = ["core:default", "core:window:default"];
 
-    /// Every manifest under `capabilities/`, as `(file name, permission
+    /// Every manifest under `capabilities/`, as `(filename, permission
     /// strings)`. Object-form permissions (scoped `fs` / `opener` grants) carry
     /// their name under `identifier`.
     fn manifests() -> Vec<(String, Vec<String>)> {
@@ -30,7 +30,7 @@ mod tests {
             }
             let name = path
                 .file_name()
-                .expect("a .json path has a file name")
+                .expect("a .json path has a filename")
                 .to_string_lossy()
                 .into_owned();
             let text = fs::read_to_string(&path).expect("capability manifest is readable");

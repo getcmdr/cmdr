@@ -190,7 +190,7 @@ func parsePlaywrightDurations(path string) ([]e2eTestDuration, error) {
 
 // collectSuiteDurations recurses Playwright's nested suite tree, accumulating
 // the describe chain. The top-level suite is the spec file itself (its title
-// equals the file name), so it contributes no chain segment.
+// equals the filename), so it contributes no chain segment.
 func collectSuiteDurations(s e2eJSONSuite, file string, describe []string, byKey map[string]int) {
 	scope := describe
 	if s.Title != "" && s.Title != filepath.Base(file) && s.Title != file {

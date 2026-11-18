@@ -1246,7 +1246,7 @@
         return cursorIndex
     }
 
-    /** Snapshots the current selection as file names for diff-driven adjustment during operations. */
+    /** Snapshots the current selection as filenames for diff-driven adjustment during operations. */
     export async function snapshotSelectionForOperation(): Promise<void> {
         const token = rowState.capture()
         const endWork = rowState.beginAsyncWork()

@@ -217,7 +217,7 @@
   "@fileOperations.mkfile.notCreatedToast": {
     "description": "Toast shown when a new file on a slow volume turns out NOT to have been created, after the person already closed the new-file dialog while it was still working.",
     "placeholders": {
-      "name": "the file name the person typed, e.g. notes.txt",
+      "name": "the filename the person typed, e.g. notes.txt",
       "reason": "a full sentence saying why, already translated, e.g. 'There is already a file by this name in this folder.'"
     }
   },
@@ -225,7 +225,7 @@
   "@fileOperations.newEntry.stillCreating": {
     "description": "Notice in the new-folder and new-file dialogs once the volume (a slow network share, a phone) has taken more than a couple of seconds to create the entry. It is still working and will most likely finish; the dialog closes by itself when it does. At this moment the dialog’s Cancel button turns into Close: closing the dialog does NOT stop the creation, which carries on in the background. There is no way to cancel it because the request is already with the volume, and the sentence tells the user so plainly.",
     "placeholders": {
-      "name": "the folder or file name being created, e.g. photos"
+      "name": "the folder or filename being created, e.g. photos"
     }
   },
   "fileOperations.mkfile.title": "New file",
@@ -248,7 +248,7 @@
   },
   "fileOperations.mkfile.placeholder": "Example: notes.txt",
   "@fileOperations.mkfile.placeholder": {
-    "description": "Placeholder text inside the new-file name field, showing an example filename. 'notes.txt' is an example file name; translate 'Example' but keep a plausible example filename.",
+    "description": "Placeholder text inside the new-filename field, showing an example filename. 'notes.txt' is an example filename; translate 'Example' but keep a plausible example filename.",
     "screenshot": "new-file-dialog.png"
   },
   "fileOperations.mkdir.title": "New folder",
@@ -607,7 +607,7 @@
   },
   "fileOperations.transferDialog.macOnlyFiles.toggle": "Skip Mac-only hidden files (.DS_Store, ._*)",
   "@fileOperations.transferDialog.macOnlyFiles.toggle": {
-    "description": "Checkbox label in the 'To' group of the copy, move, and compress dialog. When checked, this one operation leaves out the hidden files only macOS uses (Finder’s .DS_Store and the ._ files beside items), which other systems show as clutter. Keep \".DS_Store\" and \"._*\" exactly as written: they are file names. Same wording as the setting (settings.fileOperations.macOnlyFiles.label).",
+    "description": "Checkbox label in the 'To' group of the copy, move, and compress dialog. When checked, this one operation leaves out the hidden files only macOS uses (Finder’s .DS_Store and the ._ files beside items), which other systems show as clutter. Keep \".DS_Store\" and \"._*\" exactly as written: they are filenames. Same wording as the setting (settings.fileOperations.macOnlyFiles.label).",
     "screenshot": "conflict-dialog.png"
   },
   "fileOperations.transferDialog.macOnlyFiles.dontAskAgain": "Don’t ask again",
@@ -631,9 +631,12 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "description": "Accessible name (read by screen readers) of the ⓘ button beside the 'Remember this choice' checkbox (fileOperations.transferDialog.rememberChoice) in the copy/move dialog. Hovering or focusing it shows fileOperations.transferDialog.rememberChoiceHelp. Quote the checkbox label exactly as translated."
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "Cmdr starts on this choice next time, and you can change it in Settings. If it overwrites files, you’ll see a warning first.",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Cmdr starts on this choice next time, and you can change it in Settings. If it overwrites files, you’ll see a warning first.} linuxGnome {Cmdr starts on this choice next time, and you can change it in Preferences. If it overwrites files, you’ll see a warning first.} linuxKde {Cmdr starts on this choice next time, and you can change it in Configure Cmdr. If it overwrites files, you’ll see a warning first.} other {Cmdr starts on this choice next time, and you can change it in Settings. If it overwrites files, you’ll see a warning first.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "description": "Tooltip behind the ⓘ beside the 'Remember this choice' checkbox in the copy/move dialog. 'this choice' = the selected 'files already exist' option (Skip, Overwrite, and so on); 'starts on' = it comes preselected the next time the copy or move dialog opens. 'Settings' is the app's Settings window. 'a warning' = a note under the options saying which files the saved option overwrites."
+    "description": "Tooltip behind the ⓘ beside the 'Remember this choice' checkbox in the copy/move dialog. 'this choice' = the selected 'files already exist' option (Skip, Overwrite, and so on); 'starts on' = it comes preselected the next time the copy or move dialog opens. 'Settings' is the app's Settings window. 'a warning' = a note under the options saying which files the saved option overwrites. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    }
   },
   "fileOperations.transferDialog.typeMismatchWarning": "Some clashes mix a file and a folder by the same name. Overwriting will replace items of a different type, including the entire contents of a folder.",
   "@fileOperations.transferDialog.typeMismatchWarning": {
@@ -675,22 +678,22 @@
   },
   "fileOperations.transferDialog.pathErrorSubfolder": "Can’t {verb, select, copy {copy} other {move}} “{name}” into its own subfolder",
   "@fileOperations.transferDialog.pathErrorSubfolder": {
-    "description": "Validation error under the destination-path field when the chosen destination is inside the item being transferred. The verb matches the operation (copy/move). The name is the source folder/file name, kept in straight double quotes.",
+    "description": "Validation error under the destination-path field when the chosen destination is inside the item being transferred. The verb matches the operation (copy/move). The name is the source folder/filename, kept in straight double quotes.",
     "placeholders": {
       "verb": "the operation: copy or move",
-      "name": "the source folder or file name"
+      "name": "the source folder or filename"
     }
   },
   "fileOperations.transferDialog.pathErrorAlreadyThere": "“{name}” is already in this location",
   "@fileOperations.transferDialog.pathErrorAlreadyThere": {
     "description": "Validation error under the destination-path field when the destination is the item's current parent folder, so the transfer would be a no-op. The name is kept in straight double quotes.",
     "placeholders": {
-      "name": "the source folder or file name"
+      "name": "the source folder or filename"
     }
   },
   "fileOperations.transferDialog.pathErrorNotZip": "The archive name must end in “.zip”.",
   "@fileOperations.transferDialog.pathErrorNotZip": {
-    "description": "Validation error under the destination-path field in the Compress dialog when the typed target file name doesn't end in the .zip extension. Cmdr only creates zip archives for now. “.zip” is the literal file extension: keep it exactly, and quote it with your language’s quotation marks."
+    "description": "Validation error under the destination-path field in the Compress dialog when the typed target filename doesn't end in the .zip extension. Cmdr only creates zip archives for now. “.zip” is the literal file extension: keep it exactly, and quote it with your language’s quotation marks."
   },
   "fileOperations.transferDialog.confirmCopy": "Copy",
   "@fileOperations.transferDialog.confirmCopy": {
@@ -941,7 +944,7 @@
   },
   "fileOperations.transferProgress.titleRefusedNameTooLong": "Name too long for the destination",
   "@fileOperations.transferProgress.titleRefusedNameTooLong": {
-    "description": "Dialog title when a copy or move pauses because the destination (often a network drive) refused to store one item: its file name is longer than the destination allows. Nothing already exists there; the user can only skip the item (or every such item) or stop. Heads the same two dialogs as the 'File already exists' title.",
+    "description": "Dialog title when a copy or move pauses because the destination (often a network drive) refused to store one item: its filename is longer than the destination allows. Nothing already exists there; the user can only skip the item (or every such item) or stop. Heads the same two dialogs as the 'File already exists' title.",
     "screenshot": "transfer-dialog.png",
     "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
   },
@@ -953,13 +956,13 @@
   },
   "fileOperations.transferProgress.refusedNameTooLongBody": "The destination can’t store a name this long. Skip this item to carry on with the rest, then rename it and try it again.",
   "@fileOperations.transferProgress.refusedNameTooLongBody": {
-    "description": "Explanation under the file name in the 'Name too long for the destination' prompt of a copy or move. The buttons below it are Skip, Skip all, Cancel, and Rollback. 'This item' is a file or folder.",
+    "description": "Explanation under the filename in the 'Name too long for the destination' prompt of a copy or move. The buttons below it are Skip, Skip all, Cancel, and Rollback. 'This item' is a file or folder.",
     "screenshot": "transfer-dialog.png",
     "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
   },
   "fileOperations.transferProgress.refusedNameNotAllowedBody": "The destination can’t store this name. It may be too long, be a reserved name, or use a character the destination doesn’t allow. Skip this item to carry on with the rest, then rename it and try it again.",
   "@fileOperations.transferProgress.refusedNameNotAllowedBody": {
-    "description": "Explanation under the file name in the 'Name not allowed at the destination' prompt of a copy or move. 'Reserved name' means names like CON or NUL that some systems keep for themselves. The buttons below it are Skip, Skip all, Cancel, and Rollback. 'This item' is a file or folder.",
+    "description": "Explanation under the filename in the 'Name not allowed at the destination' prompt of a copy or move. 'Reserved name' means names like CON or NUL that some systems keep for themselves. The buttons below it are Skip, Skip all, Cancel, and Rollback. 'This item' is a file or folder.",
     "screenshot": "transfer-dialog.png",
     "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
   },
@@ -1607,7 +1610,7 @@
   "@fileOperations.backgroundStart.needsPasswordToast": {
     "description": "Quiet toast for an operation that was running in the background and stopped because it reads from a password-protected archive (zip) or an encrypted restic backup. It needs a password prompt, but another dialog is on screen, so the prompt waits and appears by itself the moment that dialog closes. Nothing is lost and the user doesn’t need to do anything now; the toast only says why the prompt isn’t up yet.",
     "placeholders": {
-      "archiveName": "file name of the archive, for example \"photos.zip\", or the backup folder’s name, for example \"test-restic-repo\""
+      "archiveName": "filename of the archive, for example \"photos.zip\", or the backup folder’s name, for example \"test-restic-repo\""
     }
   },
   "fileOperations.transferProgress.foregroundBusyToast": "Something else is open here. Close it, then bring this one up.",
@@ -2057,9 +2060,9 @@
     "description": "Accessible label for the masked password input in the backup-password dialog (there is no visible label next to the field). Short.",
     "screenshot": "archive-password-repo-first-attempt.png"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Remember in Keychain} windows {Remember password} linuxKde {Remember in KWallet} other {Remember in keyring}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Remember in Keychain} windows {Remember password} linuxKde {Remember in KDE Wallet} other {Remember in keyring}}",
   "@fileOperations.resticPassword.remember": {
-    "description": "Checkbox label in the backup-password dialog, checked by default. When checked, Cmdr saves the password in the system’s password store so it doesn’t ask again next time. Each branch uses that OS’s own words in your language: the Keychain on macOS, \"Remember password\" on Windows (its checkboxes don’t name Credential Manager), the keyring on Linux. The screenshot shows the macOS wording. The `linuxKde` branch names KDE’s password store, KWallet: a name, which KDE keeps as is in every language.",
+    "description": "Checkbox label in the backup-password dialog, checked by default. When checked, Cmdr saves the password in the system’s password store so it doesn’t ask again next time. Each branch uses that OS’s own words in your language: the Keychain on macOS, \"Remember password\" on Windows (its checkboxes don’t name Credential Manager), the keyring on Linux. The screenshot shows the macOS wording. The `linuxKde` branch names KDE’s password store, KDE Wallet: use the name KDE’s own translation gives it in your language.",
     "screenshot": "archive-password-repo-first-attempt.png"
   },
   "fileOperations.resticPassword.checking": "Checking the password…",

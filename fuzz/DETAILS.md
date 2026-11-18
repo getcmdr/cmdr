@@ -6,7 +6,10 @@
   instrumented build (one `target/`, one lock, one CI cache). Per-crate dirs would build the common dependency graph
   (tokio, quick-xml, the codecs) once per crate.
 - **Outside the workspace** (`[workspace]` in its own `Cargo.toml`): the sanitizer build needs nightly flags no other
-  lane should see, and cargo-fuzz wants its own lock and target dir. The lane holds no lock on the shared `target/`.
+  lane should see, and cargo-fuzz wants its own lock and target dir. The lane holds no lock on the shared `target/`. The
+  cost: no workspace lane compiles the targets, so `desktop-rust-fuzz-targets-compile` (`fuzz-compile`) does, a plain
+  stable `cargo check` into `target/fuzz-check/` on the landing Rust lane. Before it, an `ArchiveIndex::open_read`
+  signature change broke `archive_index` and only the next day's slow-checks run noticed (fixed in 08a9ac4afb).
 - **`libfuzzer-sys` only, no `arbitrary`**: every target reads raw bytes, which is what the attacker sends. A target
   that needs structure takes it from leading bytes (`adb_sync`'s feature byte, `archive_index`'s format byte).
 - **Seams behind a `fuzzing` feature** where the parser is `pub(crate)`. The seam adds no logic: it calls the parser the

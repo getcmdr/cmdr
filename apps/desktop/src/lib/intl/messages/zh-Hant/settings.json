@@ -1593,7 +1593,7 @@
   },
   "settings.analytics.enabled.description": "請開啟這一項，幫我們了解公開測試期間哪些功能比較重要。\n它對應的是一組隨機產生的識別碼，不是你的姓名或電子郵件地址。\nCmdr 絕不會傳送檔名、路徑、搜尋字詞或提示詞。\n關閉時，Cmdr 不會傳送任何統計資料。",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "a8d8db1"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "分析, 使用情況, 使用統計, 統計, 隱私, 遙測, 測試版, 追蹤, 停用",
   "@settings.analytics.enabled.keywords": {
@@ -1617,7 +1617,7 @@
   },
   "settings.updates.crashReports.summary": "絕不含檔名或個人資料。",
   "@settings.updates.crashReports.summary": {
-    "sourceHash": "7814a28"
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "當機, 崩潰, 閃退, 報告, 隱私, 遙測, 錯誤, 臭蟲, 問題",
   "@settings.updates.crashReports.keywords": {
@@ -2944,9 +2944,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "設定的各個部分",
+  "settings.sidebar.sections": "{platform, select, windows {設定的各個部分} linuxGnome {偏好設定的各個部分} linuxKde {「設定 Cmdr」的各個部分} other {設定的各個部分}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {沒有相符的設定} other {有 {countText} 個區段相符}}",
   "@settings.sidebar.matchCount": {
@@ -3204,7 +3204,7 @@
   },
   "settings.securityLog.enabled.description": "這份記錄會記下與安全性相關的更動和拒絕，例如雲端 AI 同意、已安裝的更新，或被 MCP 伺服器拒絕的 App。裡面不含檔名、檔案內容或密碼。",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "97e24a4"
+    "sourceHash": "3692a3d"
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {一份小小的本機安全性事件記錄。絕不會離開你的 Mac。} windows {一份小小的本機安全性事件記錄。絕不會離開你的電腦。} other {一份小小的本機安全性事件記錄。絕不會離開你的電腦。}}",
   "@settings.securityLog.enabled.summary": {
@@ -3424,9 +3424,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "設定",
+  "settings.window.title": "{platform, select, windows {設定} linuxGnome {偏好設定} linuxKde {設定 – Cmdr} other {設定}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "正在載入設定⋯",
   "@settings.window.loading": {
@@ -3672,13 +3672,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {「鑰匙圈存取」中名為「{itemName}」的 {countText} 個項目}}} windows {{count, plural, other {「認證管理員」中名為「{itemName}」的 {countText} 個項目}}} linuxKde {{count, plural, other {KWallet 中名為「{itemName}」的 {countText} 個項目}}} other {{count, plural, other {你的鑰匙圈中名為「{itemName}」的 {countText} 個項目}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {「鑰匙圈存取」中名為「{itemName}」的 {countText} 個項目}}} windows {{count, plural, other {「認證管理員」中名為「{itemName}」的 {countText} 個項目}}} linuxKde {{count, plural, other {KDE 錢包中名為「{itemName}」的 {countText} 個項目}}} other {{count, plural, other {你的鑰匙圈中名為「{itemName}」的 {countText} 個項目}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {「鑰匙圈存取」中任何名為「{itemName}」的項目} windows {「認證管理員」中任何名為「{itemName}」的項目} linuxKde {KWallet 中任何名為「{itemName}」的項目} other {你的鑰匙圈中任何名為「{itemName}」的項目}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {「鑰匙圈存取」中任何名為「{itemName}」的項目} windows {「認證管理員」中任何名為「{itemName}」的項目} linuxKde {KDE 錢包中任何名為「{itemName}」的項目} other {你的鑰匙圈中任何名為「{itemName}」的項目}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {結束 Cmdr} other {結束 Cmdr}}",
   "@settings.dataWipe.quit": {

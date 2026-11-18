@@ -387,7 +387,8 @@ var websiteInputs = []string{
 	".dockerignore",
 	"CHANGELOG.md",
 	"feature-status.json",
-	"apps/desktop/src-tauri/src/intl/shipped_locales.gen.rs", // the language count (`src/lib/shipped-languages.ts`)
+	"apps/desktop/src-tauri/src/intl/shipped_locales.gen.rs",  // the language count (`src/lib/shipped-languages.ts`)
+	"apps/desktop/src-tauri/src/managed_policy/policies.json", // the policy names `/trust` lists (`src/lib/trust-mdm.ts`)
 	"pnpm-lock.yaml",
 }
 

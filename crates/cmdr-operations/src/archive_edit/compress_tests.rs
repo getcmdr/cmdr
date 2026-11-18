@@ -8,7 +8,7 @@ use cmdr_operation_log::types::OperationId;
 /// End-to-end: compress two local files into a new ZIP and read both entries back.
 #[tokio::test]
 async fn compress_start_packs_local_files_into_a_new_zip() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -24,7 +24,7 @@ async fn compress_start_packs_local_files_into_a_new_zip() {
     let source_bytes = (one.len() + two.len()) as u64;
     std::fs::write(src_root.join("one.txt"), &one).expect("w1");
     std::fs::write(src_root.join("two.txt"), &two).expect("w2");
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root.clone(),
         crate::host::testing::pane_order_host(),
@@ -144,14 +144,14 @@ async fn compress_start_packs_local_files_into_a_new_zip() {
 
 #[tokio::test]
 async fn a_name_taken_after_start_is_not_replaced_or_reported_complete() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
     let src_root = tmp.path().join("src");
     std::fs::create_dir_all(&src_root).expect("mkdir src");
     std::fs::write(src_root.join("new.txt"), b"new archive bytes").expect("write source");
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root,
         crate::host::testing::pane_order_host(),
@@ -193,7 +193,7 @@ async fn a_name_taken_after_start_is_not_replaced_or_reported_complete() {
 
 #[tokio::test]
 async fn stop_policy_prompts_for_duplicate_source_names_and_honors_overwrite() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -202,7 +202,7 @@ async fn stop_policy_prompts_for_duplicate_source_names_and_honors_overwrite() {
     std::fs::create_dir_all(src_root.join("second")).expect("mkdir second");
     std::fs::write(src_root.join("first/report.txt"), b"first").expect("write first");
     std::fs::write(src_root.join("second/report.txt"), b"second").expect("write second");
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root,
         crate::host::testing::pane_order_host(),
@@ -248,14 +248,14 @@ async fn stop_policy_prompts_for_duplicate_source_names_and_honors_overwrite() {
 
 #[tokio::test]
 async fn an_existing_local_archive_stays_byte_exact_until_publication() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
     let src_root = tmp.path().join("src");
     std::fs::create_dir_all(&src_root).expect("mkdir src");
     std::fs::write(src_root.join("new.txt"), b"new bytes").expect("write source");
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root,
         crate::host::testing::pane_order_host(),
@@ -297,7 +297,7 @@ async fn an_existing_local_archive_stays_byte_exact_until_publication() {
 
 #[tokio::test]
 async fn local_alias_and_destination_inside_source_are_refused_before_registration() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -307,7 +307,7 @@ async fn local_alias_and_destination_inside_source_are_refused_before_registrati
     std::fs::write(&source_archive, b"source").expect("write source");
     let alias = tmp.path().join("alias.zip");
     std::fs::hard_link(&source_archive, &alias).expect("hard link alias");
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         "/",
         crate::host::testing::pane_order_host(),
@@ -360,7 +360,7 @@ async fn local_alias_and_destination_inside_source_are_refused_before_registrati
 /// merely that the call returned an error.
 #[tokio::test]
 async fn compress_refuses_a_read_only_destination_without_touching_its_bytes() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -376,7 +376,7 @@ async fn compress_refuses_a_read_only_destination_without_touching_its_bytes() {
         let original: &[u8] = b"the user's real document, which must survive a refused compress";
         std::fs::write(&dest, original).expect("pre-write the victim file");
 
-        let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+        let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
             "src",
             src_root.clone(),
             crate::host::testing::pane_order_host(),
@@ -425,7 +425,7 @@ async fn compress_refuses_a_read_only_destination_without_touching_its_bytes() {
 /// the driver, not the op type.
 #[tokio::test]
 async fn compress_journals_subkind_and_net_new_from_the_driver() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     use cmdr_operation_log::store::{open_read_connection, read_operation, read_operation_items};
     use cmdr_operation_log::types::{ArchiveSubkind, ExecutionStatus, Initiator, OpKind, RollbackState, RowRole};
 
@@ -437,7 +437,7 @@ async fn compress_journals_subkind_and_net_new_from_the_driver() {
     let src_root = tmp.path().join("src");
     std::fs::create_dir_all(&src_root).expect("mkdir src");
     std::fs::write(src_root.join("one.txt"), b"first").expect("w1");
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root.clone(),
         crate::host::testing::pane_order_host(),
@@ -507,7 +507,7 @@ async fn compress_journals_subkind_and_net_new_from_the_driver() {
 /// so a Mac-to-phone compress read as a phone-to-phone one that packed nothing.
 #[tokio::test]
 async fn compress_journals_the_source_volume_and_what_it_packed() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     use cmdr_operation_log::store::{open_read_connection, read_operation};
     use cmdr_operation_log::types::{ExecutionStatus, Initiator};
 
@@ -520,7 +520,7 @@ async fn compress_journals_the_source_volume_and_what_it_packed() {
     std::fs::create_dir_all(src_root.join("album")).expect("mkdir src");
     std::fs::write(src_root.join("one.txt"), b"first").expect("w1");
     std::fs::write(src_root.join("album/two.txt"), b"second!").expect("w2");
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root.clone(),
         crate::host::testing::pane_order_host(),
@@ -572,7 +572,7 @@ async fn compress_journals_the_source_volume_and_what_it_packed() {
 /// "compress the directory under the cursor" case.
 #[tokio::test]
 async fn compress_start_packs_a_directory_subtree() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -580,7 +580,7 @@ async fn compress_start_packs_a_directory_subtree() {
     std::fs::create_dir_all(src_root.join("project/sub")).expect("mkdir");
     std::fs::write(src_root.join("project/readme.txt"), b"top").expect("w1");
     std::fs::write(src_root.join("project/sub/deep.txt"), b"nested").expect("w2");
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root.clone(),
         crate::host::testing::pane_order_host(),
@@ -648,12 +648,12 @@ async fn compress_payload_at(
     level: Option<i64>,
     payload: &[u8],
 ) -> PathBuf {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let src_root = dir.join(format!("src-{tag}"));
     std::fs::create_dir_all(&src_root).expect("mkdir src");
     std::fs::write(src_root.join("data.txt"), payload).expect("write payload");
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root.clone(),
         crate::host::testing::pane_order_host(),
@@ -761,7 +761,7 @@ async fn compress_out_of_range_level_clamps_instead_of_failing() {
 #[tokio::test]
 async fn a_tree_that_fails_to_build_leaves_the_compress_as_it_would_run_without_one() {
     use crate::transfer_tree::test_support::TREE_BUG_NAME;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -769,7 +769,7 @@ async fn a_tree_that_fails_to_build_leaves_the_compress_as_it_would_run_without_
     std::fs::create_dir_all(src_root.join("project")).expect("mkdir");
     std::fs::write(src_root.join("project/readme.txt"), b"top").expect("w1");
     std::fs::write(src_root.join("project").join(TREE_BUG_NAME), b"bug").expect("w2");
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root.clone(),
         crate::host::testing::pane_order_host(),

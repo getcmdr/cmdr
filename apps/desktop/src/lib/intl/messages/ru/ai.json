@@ -55,9 +55,9 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "Включите поставщика ИИ в разделе «Настройки > ИИ», чтобы пользоваться поиском с ИИ.",
+  "ai.translateError.off.body": "{platform, select, windows {Включите поставщика ИИ в разделе «Параметры > ИИ», чтобы пользоваться поиском с ИИ.} linuxGnome {Включите поставщика ИИ в разделе «Параметры > ИИ», чтобы пользоваться поиском с ИИ.} linuxKde {Включите поставщика ИИ в разделе «Настроить Cmdr > ИИ», чтобы пользоваться поиском с ИИ.} other {Включите поставщика ИИ в разделе «Настройки > ИИ», чтобы пользоваться поиском с ИИ.}}",
   "@ai.translateError.off.body": {
-    "sourceHash": "d8d6368"
+    "sourceHash": "c9c11e2"
   },
   "ai.cloudConsent.label": "Разрешить облачный ИИ",
   "@ai.cloudConsent.label": {
@@ -247,25 +247,25 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "Завершите настройку поставщика ИИ в разделе «Настройки > ИИ» и попробуйте еще раз.",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {Завершите настройку поставщика ИИ в разделе «Параметры > ИИ» и попробуйте еще раз.} linuxGnome {Завершите настройку поставщика ИИ в разделе «Параметры > ИИ» и попробуйте еще раз.} linuxKde {Завершите настройку поставщика ИИ в разделе «Настроить Cmdr > ИИ» и попробуйте еще раз.} other {Завершите настройку поставщика ИИ в разделе «Настройки > ИИ» и попробуйте еще раз.}}",
   "@ai.translateError.notConfigured.body": {
-    "sourceHash": "65133a8"
+    "sourceHash": "cdb4ab5"
   },
   "ai.translateError.noCloudConsent.title": "Облачный ИИ выключен",
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "Разрешите его в разделе «Настройки > ИИ» и повторите попытку.",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {Разрешите его в разделе «Параметры > ИИ» и повторите попытку.} linuxGnome {Разрешите его в разделе «Параметры > ИИ» и повторите попытку.} linuxKde {Разрешите его в разделе «Настроить Cmdr > ИИ» и повторите попытку.} other {Разрешите его в разделе «Настройки > ИИ» и повторите попытку.}}",
   "@ai.translateError.noCloudConsent.body": {
-    "sourceHash": "fde3eb5"
+    "sourceHash": "f54d181"
   },
   "ai.translateError.authFailed.title": "Этот API-ключ не приняли",
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "Проверьте ключ в разделе «Настройки > ИИ» — возможно, он неверен или отозван.",
+  "ai.translateError.authFailed.body": "{platform, select, windows {Проверьте ключ в разделе «Параметры > ИИ» — возможно, он неверен или отозван.} linuxGnome {Проверьте ключ в разделе «Параметры > ИИ» — возможно, он неверен или отозван.} linuxKde {Проверьте ключ в разделе «Настроить Cmdr > ИИ» — возможно, он неверен или отозван.} other {Проверьте ключ в разделе «Настройки > ИИ» — возможно, он неверен или отозван.}}",
   "@ai.translateError.authFailed.body": {
-    "sourceHash": "2159d5e"
+    "sourceHash": "efd14fb"
   },
   "ai.translateError.rateLimited.title": "Поставщик ИИ достиг лимита",
   "@ai.translateError.rateLimited.title": {
@@ -295,9 +295,9 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "Возможно, модель израсходовала свой лимит токенов, не успев ответить. Попробуйте более быструю модель, например gpt-4.1-mini, в разделе «Настройки > ИИ».",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {Возможно, модель израсходовала свой лимит токенов, не успев ответить. Попробуйте более быструю модель, например gpt-4.1-mini, в разделе «Параметры > ИИ».} linuxGnome {Возможно, модель израсходовала свой лимит токенов, не успев ответить. Попробуйте более быструю модель, например gpt-4.1-mini, в разделе «Параметры > ИИ».} linuxKde {Возможно, модель израсходовала свой лимит токенов, не успев ответить. Попробуйте более быструю модель, например gpt-4.1-mini, в разделе «Настроить Cmdr > ИИ».} other {Возможно, модель израсходовала свой лимит токенов, не успев ответить. Попробуйте более быструю модель, например gpt-4.1-mini, в разделе «Настройки > ИИ».}}",
   "@ai.translateError.emptyResponse.body": {
-    "sourceHash": "d74db0d"
+    "sourceHash": "9068319"
   },
   "ai.translateError.serverError.title": "У поставщика ИИ что-то пошло не так",
   "@ai.translateError.serverError.title": {
@@ -311,17 +311,17 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "Попробуйте еще раз или выберите другую модель в разделе «Настройки > ИИ».",
+  "ai.translateError.parseError.body": "{platform, select, windows {Попробуйте еще раз или выберите другую модель в разделе «Параметры > ИИ».} linuxGnome {Попробуйте еще раз или выберите другую модель в разделе «Параметры > ИИ».} linuxKde {Попробуйте еще раз или выберите другую модель в разделе «Настроить Cmdr > ИИ».} other {Попробуйте еще раз или выберите другую модель в разделе «Настройки > ИИ».}}",
   "@ai.translateError.parseError.body": {
-    "sourceHash": "c299ec6"
+    "sourceHash": "5ebf991"
   },
   "ai.translateError.unknownProvider.title": "Cmdr не знает такого поставщика ИИ",
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "Выберите поставщика ИИ в разделе «Настройки > ИИ».",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {Выберите поставщика ИИ в разделе «Параметры > ИИ».} linuxGnome {Выберите поставщика ИИ в разделе «Параметры > ИИ».} linuxKde {Выберите поставщика ИИ в разделе «Настроить Cmdr > ИИ».} other {Выберите поставщика ИИ в разделе «Настройки > ИИ».}}",
   "@ai.translateError.unknownProvider.body": {
-    "sourceHash": "7042a75"
+    "sourceHash": "a3988aa"
   },
   "ai.translateError.managed.title": "Функциями ИИ в Cmdr управляет ваша организация",
   "@ai.translateError.managed.title": {
@@ -596,9 +596,9 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Не удалось сохранить API-ключ: Связка ключей macOS отказала в доступе} other {Не удалось прочитать сохраненный API-ключ: Связка ключей macOS отказала в доступе}}} windows {{op, select, save {Не удалось сохранить API-ключ: «Диспетчер учетных данных» отказал в доступе} other {Не удалось прочитать сохраненный API-ключ: «Диспетчер учетных данных» отказал в доступе}}} linuxKde {{op, select, save {Не удалось сохранить API-ключ: KWallet отказал в доступе} other {Не удалось прочитать сохраненный API-ключ: KWallet отказал в доступе}}} other {{op, select, save {Не удалось сохранить API-ключ: системное хранилище ключей отказало в доступе} other {Не удалось прочитать сохраненный API-ключ: системное хранилище ключей отказало в доступе}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Не удалось сохранить API-ключ: Связка ключей macOS отказала в доступе} other {Не удалось прочитать сохраненный API-ключ: Связка ключей macOS отказала в доступе}}} windows {{op, select, save {Не удалось сохранить API-ключ: «Диспетчер учетных данных» отказал в доступе} other {Не удалось прочитать сохраненный API-ключ: «Диспетчер учетных данных» отказал в доступе}}} linuxKde {{op, select, save {Не удалось сохранить API-ключ: бумажник KDE отказал в доступе} other {Не удалось прочитать сохраненный API-ключ: бумажник KDE отказал в доступе}}} other {{op, select, save {Не удалось сохранить API-ключ: системное хранилище ключей отказало в доступе} other {Не удалось прочитать сохраненный API-ключ: системное хранилище ключей отказало в доступе}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "6daa595"
+    "sourceHash": "4612cfb"
   },
   "ai.secretError.body": "{platform, select, macos {{op, select, save {Откройте приложение «Связка ключей», проверьте запись «Cmdr» или удалите ее и попробуйте сохранить ключ снова.} other {Откройте приложение «Связка ключей», найдите запись «Cmdr» и разрешите доступ или удалите запись и введите ключ снова.}}} windows {{op, select, save {Откройте «Диспетчер учетных данных», проверьте запись «Cmdr» в разделе «Учетные данные Windows» или удалите ее и попробуйте сохранить ключ снова.} other {Откройте «Диспетчер учетных данных», найдите запись «Cmdr» в разделе «Учетные данные Windows» или удалите ее и введите ключ снова.}}} linuxGnome {Разблокируйте хранилище ключей в приложении «Пароли и ключи» и попробуйте еще раз.} linuxKde {Разблокируйте KWallet в приложении KWalletManager и попробуйте еще раз.} other {Разблокируйте хранилище ключей (например, в приложении «Пароли и ключи») и попробуйте еще раз.}}",
   "@ai.secretError.body": {
@@ -608,9 +608,9 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Убедитесь, что Связка ключей доступна, и повторите попытку. Если проблема останется, перезапустите приложение.} windows {Убедитесь, что «Диспетчер учетных данных» доступен, и повторите попытку. Если проблема повторяется, перезапустите Cmdr.} linuxKde {Убедитесь, что KWallet доступен, и повторите попытку. Если проблема останется, перезапустите приложение.} other {Убедитесь, что системное хранилище ключей доступно, и повторите попытку. Если проблема останется, перезапустите приложение.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Убедитесь, что Связка ключей доступна, и повторите попытку. Если проблема останется, перезапустите приложение.} windows {Убедитесь, что «Диспетчер учетных данных» доступен, и повторите попытку. Если проблема повторяется, перезапустите Cmdr.} linuxKde {Убедитесь, что бумажник KDE доступен, и повторите попытку. Если проблема останется, перезапустите приложение.} other {Убедитесь, что системное хранилище ключей доступно, и повторите попытку. Если проблема останется, перезапустите приложение.}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "cb879fa"
+    "sourceHash": "1c198ff"
   },
   "ai.secretError.removeTitle": "Не удалось удалить сохраненный API-ключ.",
   "@ai.secretError.removeTitle": {

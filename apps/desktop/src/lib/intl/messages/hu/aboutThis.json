@@ -1228,9 +1228,9 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "A tipp elrejtése. Visszahozhatod itt: Beállítások > Speciális.",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {A tipp elrejtése. Visszahozhatod itt: Beállítások > Speciális.} linuxGnome {A tipp elrejtése. Visszahozhatod itt: Beállítások > Speciális.} linuxKde {A tipp elrejtése. Visszahozhatod itt: Cmdr beállítása > Speciális.} other {A tipp elrejtése. Visszahozhatod itt: Beállítások > Speciális.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "6a3a4b3"
+    "sourceHash": "aa27809"
   },
   "aboutThis.action.continueInAskCmdr": "Folytatás az Ask Cmdrben",
   "@aboutThis.action.continueInAskCmdr": {

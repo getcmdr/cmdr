@@ -13,7 +13,7 @@ use std::sync::atomic::AtomicBool;
 
 use super::{BackendCapabilities, FileViewerBackend, LineChunk, Matcher, SearchMatch, SeekTarget, ViewerError};
 
-/// No-op backend for media (Image/PDF) sessions. Holds only the file name and size so
+/// No-op backend for media (Image/PDF) sessions. Holds only the filename and size so
 /// `ViewerOpenResult` can report them; it never reads file content.
 pub struct MediaBackend {
     file_name: String,

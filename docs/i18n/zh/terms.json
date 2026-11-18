@@ -703,7 +703,11 @@
     "chosen": "配置",
     "confidence": "high",
     "forms": "trailing … is the single U+2026 character",
-    "sources": "macOS"
+    "sources": "macOS",
+    "other": {
+      "chosen": "配置",
+      "note": "KDE (linuxKde) titles an app's settings window 配置 and names it 配置 <app> in menus and pointers: Dolphin zh-CN @title:window Configure → 配置, Configure %1… → 配置 %1…, “Configure Dolphin > View” → 配置 Dolphin > 视图. So `settings.window.title` → 配置 – Cmdr, `menu.app.settings` → 配置 Cmdr…, the command and buttons → 配置 Cmdr, and a pointer quotes it whole: 在“配置 Cmdr > AI”中, 在“配置 Cmdr”中 (quoted even where the GNOME sibling isn't, since bare 配置 reads as the verb)"
+    }
   },
   "confirm": {
     "chosen": "确认",
@@ -768,7 +772,7 @@
     "chosen": "Finder 扩展",
     "accept": ["扩展"],
     "confidence": "high",
-    "sources": "macOS pane 登录项与扩展 (errors.provider.pCloudFuse.needsAction); 系统扩展; kept apart from the file name ending 扩展名"
+    "sources": "macOS pane 登录项与扩展 (errors.provider.pCloudFuse.needsAction); 系统扩展; kept apart from the filename ending 扩展名"
   },
   "learn-more": {
     "chosen": "进一步了解",
@@ -1929,8 +1933,14 @@
     "sources": "macOS",
     "other": {
       "chosen": "密钥环",
-      "accept": ["KWallet", "密码库", "钥匙串"],
-      "note": "Linux branches: the keyring is 密钥环, which GNOME’s 密码和密钥 also says (seahorse zh_CN.po: 密钥环已锁定); KDE keeps KWallet and KWalletManager as names, with a wallet → 密码库 (kwalletmanager zh_CN.po). 钥匙串 stays accepted where an other branch is also what macOS reads (a block with no macos branch)"
+      "accept": ["KDE 密码库", "密码库", "钥匙串"],
+      "avoid": [
+        {
+          "form": "KWallet",
+          "why": "English names the KDE store “KDE Wallet”, which KDE's zh_CN catalogs translate KDE 密码库 (kwalletd6.po: KDE Wallet Service → KDE 密码库服务; kwalletmanager.po: The KDE Wallet system → KDE 密码库系统, Wallet → 密码库)"
+        }
+      ],
+      "note": "Linux branches: the keyring is 密钥环, which GNOME’s 密码和密钥 also says (seahorse zh_CN.po: 密钥环已锁定). KDE (linuxKde): the store KDE Wallet → KDE 密码库 (Remember in KDE Wallet → 记住到 KDE 密码库), and its app KWalletManager → “KWalletManager 密码库管理器”, quoted, the launcher Name in kwalletmanager._desktop_.po (websvn l10n-kf6 zh_CN, read 2026-11-18). 钥匙串 stays accepted where an other branch is also what macOS reads (a block with no macos branch)"
     }
   },
   "kind": {
@@ -3124,7 +3134,7 @@
     "confidence": "high",
     "decision": "Select/deselect dialog",
     "exceptions": {
-      "viewer.saveAs.defaultName": "A default file name base, kept as the ASCII `selection` so it stays filename-safe."
+      "viewer.saveAs.defaultName": "A default filename base, kept as the ASCII `selection` so it stays filename-safe."
     },
     "forms": "verb and menu 选择; Select all 全选; the selected set 所选 / 选中的; placeholder 请选择; Invert selection 反选",
     "note": "zh-Hant says 選取 for this sense; never convert between the scripts.",
@@ -3164,7 +3174,11 @@
     "chosen": "设置",
     "confidence": "confirmed",
     "forms": "a path in a sentence: “设置 > AI” (whole path in full-width quotes, separator mirrors the English)",
-    "sources": "macOS"
+    "sources": "macOS",
+    "windows": {
+      "chosen": "设置",
+      "note": "Windows names an app's settings 设置 (MS terminology Settings → 设置; the Windows Settings app is 设置), so the windows branch matches the macOS ruling"
+    }
   },
   "share-link": {
     "chosen": "共享链接",
@@ -3982,7 +3996,7 @@
         "why": "Double Commander's 掩码 is netmask jargon; Total Commander zh and the catalog's rename-pattern form both say 规则"
       }
     ],
-    "sources": "Total Commander zh-CN (WCMD.LNG 6602 Rename mask: file name → 重命名规则: 名称); Double Commander zh-CN (Mask → 掩码, rejected); catalog pattern ruling (a rename pattern 重命名规则)"
+    "sources": "Total Commander zh-CN (WCMD.LNG 6602 Rename mask: filename → 重命名规则: 名称); Double Commander zh-CN (Mask → 掩码, rejected); catalog pattern ruling (a rename pattern 重命名规则)"
   },
   "rename-counter": {
     "chosen": "计数器",
@@ -4336,7 +4350,7 @@
     "sources": "macOS AppKit MenuCommands (Preferences… → 偏好设置…); System Settings InfoPlist (Preferences → 偏好设置)",
     "other": {
       "chosen": "首选项",
-      "note": "GNOME's own app-menu row: Nautilus zh-CN _Preferences → 首选项(_P), Thunar 首选项 (the linuxGnome branch of `menu.app.settings`, no ellipsis); KDE's row is 配置 Cmdr… (Dolphin zh-CN: 配置 Dolphin)"
+      "note": "GNOME (linuxGnome) names an app's preferences window 首选项: Nautilus zh-CN _Preferences → 首选项(_P), Show Preferences → 显示首选项, Thunar 首选项; used for the window title `settings.window.title`, the menu row `menu.app.settings`, the command `commands.appSettings.label` (打开首选项), and every pointer (在“首选项 > AI”中). KDE's (linuxKde) word is 配置: see the configure ruling's other form"
     }
   },
   "bug": {
@@ -4383,5 +4397,11 @@
     "forms": "the noun 速度; faster / speeds up → 更快 / 加快 (加快文件操作, 更快修复 bug)",
     "sources": "Microsoft TBX zh-CN: 速度 compounds; Double Commander zh-CN 速度（MB/秒）; Thunar 快门速度",
     "accept": ["快", "加速"]
+  },
+  "usb-preferences": {
+    "chosen": "USB 偏好设置",
+    "confidence": "high",
+    "sources": "AOSP packages/apps/Settings res/values-zh-rCN/strings.xml usb_preference → USB 偏好设置, settings_label → 设置, usb_use_file_transfers → 文件传输 (aosp-mirror main, 2026-11-18)",
+    "note": "Android phone label quoted in settings.fileOperations.mtpEnabled.description: “设置 > USB 偏好设置”."
   }
 }

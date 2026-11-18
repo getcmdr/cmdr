@@ -190,7 +190,7 @@ fn every_live_loop_owns_a_real_activity_tap() {
     fn collect(dir: &std::path::Path, prefix: &str, out: &mut Vec<(String, std::path::PathBuf)>) {
         for entry in std::fs::read_dir(dir).expect("event_loop dir") {
             let path = entry.expect("dir entry").path();
-            let name = path.file_name().expect("file name").to_string_lossy().to_string();
+            let name = path.file_name().expect("filename").to_string_lossy().to_string();
             let rel = if prefix.is_empty() {
                 name.clone()
             } else {
@@ -219,7 +219,7 @@ fn every_live_loop_owns_a_real_activity_tap() {
         }
         assert!(
             src.contains("BatchObservers::from_env("),
-            // allowed-pluralize-noun: `{name}` is a file name and `drives` is the verb, not a plural noun.
+            // allowed-pluralize-noun: `{name}` is a filename and `drives` is the verb, not a plural noun.
             "{name} drives live batches but never builds a real observer bundle, so the folder-activity \
              rollups would silently stop being produced on that route"
         );

@@ -36,7 +36,7 @@ pub(crate) fn classify(types: &[String], promise_types: &[String], in_app: bool)
     DragPayloadKind::Nothing
 }
 
-/// The file name for an image that arrived as bytes: the page URL's last path
+/// The filename for an image that arrived as bytes: the page URL's last path
 /// segment with its extension swapped for `ext`, else `image.<ext>`. Never a path
 /// component: separators and dot-only names fall back too.
 pub(crate) fn image_file_name(page_url: Option<&str>, ext: &str) -> String {
@@ -45,7 +45,7 @@ pub(crate) fn image_file_name(page_url: Option<&str>, ext: &str) -> String {
 }
 
 /// The last path segment of `url`, decoded and without its extension, when it makes
-/// a usable file name.
+/// a usable filename.
 fn url_leaf_stem(url: &str) -> Option<String> {
     let parsed = url::Url::parse(url).ok()?;
     let leaf = parsed.path_segments()?.next_back()?;

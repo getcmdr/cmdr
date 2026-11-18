@@ -102,9 +102,14 @@ fn cached_roots() -> Vec<PathBuf> {
         return roots.clone();
     }
 
-    let roots = collect_inputs()
+    let roots: Vec<PathBuf> = collect_inputs()
         .map(|inputs| rank_roots(&inputs, &is_on_another_volume))
-        .unwrap_or_default();
+        .unwrap_or_default()
+        .into_iter()
+        // On Windows the ranking joins names onto the native home; the root index holds app
+        // paths (plan D1).
+        .map(cmdr_fs::volume::path_grammar::host_app_path)
+        .collect();
     *cached = Some((Instant::now(), roots.clone()));
     roots
 }

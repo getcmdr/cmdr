@@ -32,7 +32,10 @@ Windows, Linux, and macOS are each first-class, and a few extra lines of per-OS 
   - Why: Nautilus and Dolphin never name an actor; Thunar says "your system" and "the computer"; "Linux" appears in the
     pile's file-manager catalogs only as a platform name in a compatibility note.
 - **Keychain**: as proposed. Windows checkboxes say "Remember password" and name Credential Manager only where the user
-  has to go there; Linux "Remember in keyring"; KDE "KWallet" in the `linuxKde` branch.
+  has to go there; Linux "Remember in keyring"; KDE "KDE Wallet" in the `linuxKde` branch (David, 2026-11-18: KDE's own
+  user-facing name, never "KWallet"; "KWalletManager" stays where it names that app).
+- **Filename**: one word on every OS, Windows too (David, 2026-11-18), though Microsoft writes "file name". The rule:
+  `docs/style-guide.md` § Specific terms.
 - **Home folder on Windows**: "user folder" everywhere, including the command ("Go to user folder"), with "home" kept as
   a palette search alias.
   - Why: Windows 11 File Explorer's "Home" is the quick-access landing page, and Microsoft's "home folder" term means an
@@ -63,12 +66,13 @@ Windows, Linux, and macOS are each first-class, and a few extra lines of per-OS 
   the rest (they stay macOS text until their platform path exists).
 - **Mechanism for the non-ICU families** (`errors.*`, `menu.*`): one top-level platform block.
 - **Linux desktop terms**: a block's `linuxGnome` / `linuxKde` branches (#1231) carry GNOME's and KDE's own words in the
-  rows where they name an app or a path: reveal (Files, Dolphin), the password store (KDE's KWallet and KWalletManager,
-  GNOME's Passwords and Keys where the app is named), the settings row (GNOME "Preferences", KDE "Configure Cmdr…"), and
-  the shortcut path. `other` stays desktop-neutral. Terms and sources: `copy-glossary-evidence.md` § Linux desktop
-  branches. The `errors.listing.*` suggestions keep their desktop-neutral Linux text ("a terminal", "your file
-  manager"): the proposal's GNOME/KDE variants there change a word, not the advice, and don't earn two more branches per
-  locale.
+  rows where they name an app or a path: reveal (Files, Dolphin), the password store (KDE's KDE Wallet and
+  KWalletManager, GNOME's Passwords and Keys where the app is named), the settings row (GNOME "Preferences", KDE
+  "Configure Cmdr…") with the window's title and every pointer to it (David, 2026-11-18: GNOME "Preferences", KDE
+  "Configure Cmdr"; Windows keeps "Settings"), and the shortcut path. `other` stays desktop-neutral. Terms and sources:
+  `copy-glossary-evidence.md` § Linux desktop branches. The `errors.listing.*` suggestions keep their desktop-neutral
+  Linux text ("a terminal", "your file manager"): the proposal's GNOME/KDE variants there change a word, not the advice,
+  and don't earn two more branches per locale.
 - **Translations**: in a platform select, each branch uses that OS's own localized term, and `@key` descriptions of keys
   shown off macOS are reworded to say so. This is a rule in the translator guide; translating is task 28.
 - **The two Mac text changes** are accepted: `ai.secretError.genericBody` ("keyring" → "Keychain") and "e.g." in the Go

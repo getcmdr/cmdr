@@ -333,8 +333,8 @@
   "@shortcuts.window.hideEmpty": {
     "sourceHash": "d3cb18e"
   },
-  "shortcuts.window.editInSettings": "Editar atajos en Ajustes",
+  "shortcuts.window.editInSettings": "{platform, select, windows {Editar atajos en Configuración} linuxGnome {Editar atajos en Preferencias} linuxKde {Editar atajos en Configurar Cmdr} other {Editar atajos en Ajustes}}",
   "@shortcuts.window.editInSettings": {
-    "sourceHash": "847b526"
+    "sourceHash": "12661fd"
   }
 }

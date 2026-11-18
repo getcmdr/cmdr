@@ -2,7 +2,9 @@ import { describe, expect, it, onTestFinished } from 'vitest'
 import {
   applyPlatformAttributes,
   CAPABILITIES_GLOBAL,
+  COPY_PLATFORM_GLOBAL,
   FALLBACK_PLATFORM,
+  getCopyPlatform,
   getPlatform,
   hasCapability,
   isMacOS,
@@ -15,6 +17,19 @@ import {
 import { capabilitiesWith, withCapabilities, withPlatform } from './test-platform.js'
 
 const host = globalThis as Record<string, unknown>
+
+describe('getCopyPlatform', () => {
+  it('reads the platform unless a dev run mocked another desktop', () => {
+    onTestFinished(withPlatform('macos'))
+    expect(getCopyPlatform()).toBe('macos')
+    host[COPY_PLATFORM_GLOBAL] = 'linux'
+    onTestFinished(() => {
+      Reflect.deleteProperty(host, COPY_PLATFORM_GLOBAL)
+    })
+    expect(getCopyPlatform()).toBe('linux')
+    expect(getPlatform()).toBe('macos')
+  })
+})
 
 describe('getPlatform', () => {
   it('reads the value the backend injected', () => {

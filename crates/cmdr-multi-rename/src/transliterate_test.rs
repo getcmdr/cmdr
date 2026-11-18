@@ -1,4 +1,4 @@
-//! Greek to Latin per ELOT 743, as file names need it.
+//! Greek to Latin per ELOT 743, as filenames need it.
 
 use super::transliterate::greek_to_latin;
 

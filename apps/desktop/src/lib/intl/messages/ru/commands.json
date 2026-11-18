@@ -35,9 +35,9 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "Открыть настройки",
+  "commands.appSettings.label": "{platform, select, windows {Открыть параметры} linuxGnome {Открыть параметры} linuxKde {Настроить Cmdr} other {Открыть настройки}}",
   "@commands.appSettings.label": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "commands.appCheckForUpdates.label": "Проверить обновления…",
   "@commands.appCheckForUpdates.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Удалить из Связки ключей сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию} windows {Удалить из Диспетчера учетных данных сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию} linuxKde {Удалить из KWallet сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию} other {Удалить из хранилища ключей сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Удалить из Связки ключей сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию} windows {Удалить из Диспетчера учетных данных сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию} linuxKde {Удалить из бумажника KDE сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию} other {Удалить из хранилища ключей сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "5b48a77"
+    "sourceHash": "e7106da"
   },
   "commands.fileCopyShareLink.label": "Скопировать публичную ссылку (семь дней)",
   "@commands.fileCopyShareLink.label": {
@@ -1264,17 +1264,17 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "Папка открыта в вашем терминале. Хотите, чтобы Cmdr в следующий раз открывал другое приложение? Выберите его в настройках, в разделе «Навигация и файловые операции».",
+  "commands.handler.openTerminalHere.hint": "{platform, select, windows {Папка открыта в вашем терминале. Хотите, чтобы Cmdr в следующий раз открывал другое приложение? Выберите его в параметрах, в разделе «Навигация и файловые операции».} linuxGnome {Папка открыта в вашем терминале. Хотите, чтобы Cmdr в следующий раз открывал другое приложение? Выберите его в параметрах, в разделе «Навигация и файловые операции».} linuxKde {Папка открыта в вашем терминале. Хотите, чтобы Cmdr в следующий раз открывал другое приложение? Выберите его в окне «Настроить Cmdr», в разделе «Навигация и файловые операции».} other {Папка открыта в вашем терминале. Хотите, чтобы Cmdr в следующий раз открывал другое приложение? Выберите его в настройках, в разделе «Навигация и файловые операции».}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b29b744"
+    "sourceHash": "5d6063c"
   },
   "commands.handler.openTerminalHere.dismiss": "Закрыть",
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "Открыть настройки",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Открыть параметры} linuxGnome {Открыть параметры} linuxKde {Настроить Cmdr} other {Открыть настройки}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "commands.handler.openTerminalHere.appMissing": "Приложение {app} больше не установлено, поэтому папка открылась в Терминале.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1344,9 +1344,9 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "Хранение журналов выключено. Задайте ограничение места для журналов больше 0 в разделе «Настройки > Дополнения» и перезапустите Cmdr, чтобы просмотреть журнал отладки.",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, windows {Хранение журналов выключено. Задайте ограничение места для журналов больше 0 в разделе «Параметры > Дополнения» и перезапустите Cmdr, чтобы просмотреть журнал отладки.} linuxGnome {Хранение журналов выключено. Задайте ограничение места для журналов больше 0 в разделе «Параметры > Дополнения» и перезапустите Cmdr, чтобы просмотреть журнал отладки.} linuxKde {Хранение журналов выключено. Задайте ограничение места для журналов больше 0 в разделе «Настроить Cmdr > Дополнения» и перезапустите Cmdr, чтобы просмотреть журнал отладки.} other {Хранение журналов выключено. Задайте ограничение места для журналов больше 0 в разделе «Настройки > Дополнения» и перезапустите Cmdr, чтобы просмотреть журнал отладки.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "96f16fc"
+    "sourceHash": "1fb0c6a"
   },
   "commands.handler.viewDebugLog.unavailable": "Не удалось открыть журнал отладки. Попробуйте еще раз.",
   "@commands.handler.viewDebugLog.unavailable": {

@@ -67,9 +67,9 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Instellingen om de tekst in de foto''s te doorzoeken.",
+  "search.imageResults.networkOff": "{platform, select, windows {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Instellingen om de tekst in de foto''s te doorzoeken.} linuxGnome {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Voorkeuren om de tekst in de foto''s te doorzoeken.} linuxKde {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via ‘Cmdr configureren’ om de tekst in de foto''s te doorzoeken.} other {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Instellingen om de tekst in de foto''s te doorzoeken.}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "ccf901b"
+    "sourceHash": "5f0699a"
   },
   "search.imageResults.paused": "Deze schijf is losgekoppeld, dus dit zijn de foto''s die tot nu toe zijn geïndexeerd.",
   "@search.imageResults.paused": {
@@ -220,9 +220,9 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "Het indexeren van schijven staat uit in Instellingen, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.",
+  "search.coverage.toast.indexingOff": "{platform, select, windows {Het indexeren van schijven staat uit in Instellingen, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.} linuxGnome {Het indexeren van schijven staat uit in Voorkeuren, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.} linuxKde {Het indexeren van schijven staat uit in ‘Cmdr configureren’, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.} other {Het indexeren van schijven staat uit in Instellingen, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "abfe24b"
+    "sourceHash": "15b2ffc"
   },
   "search.coverage.toast.deferredUntilSearchEnds": "Cmdr doorzoekt {drive} al. Indexeren begint zodra dat klaar is.",
   "@search.coverage.toast.deferredUntilSearchEnds": {

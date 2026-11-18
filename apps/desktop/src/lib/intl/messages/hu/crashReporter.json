@@ -21,7 +21,7 @@
   },
   "crashReporter.dialog.privacyNote": "{platform, select, macos {Tartalmazza az app verzióját, a macOS verzióját, és hogy a kód melyik része ütközött a problémába. Fájlnevek és személyes adatok nélkül.} windows {Tartalmazza az app verzióját, a Windows verzióját, és hogy a kód melyik része ütközött a problémába. Fájlnevek és személyes adatok nélkül.} other {Tartalmazza az app verzióját, a Linux-disztribúció nevét és verzióját, és hogy a kód melyik része ütközött a problémába. Fájlnevek és személyes adatok nélkül.}}",
   "@crashReporter.dialog.privacyNote": {
-    "sourceHash": "ebe2d23"
+    "sourceHash": "6f58653"
   },
   "crashReporter.dialog.reportIdLabel": "Jelentésazonosító:",
   "@crashReporter.dialog.reportIdLabel": {
@@ -71,9 +71,9 @@
   "@crashReporter.sentToast.message.report": {
     "sourceHash": "a676ed5"
   },
-  "crashReporter.sentToast.changeSettings": "Módosítás a Beállításokban",
+  "crashReporter.sentToast.changeSettings": "{platform, select, windows {Módosítás a Beállításokban} linuxGnome {Módosítás a Beállításokban} linuxKde {Módosítás a Cmdr beállításaiban} other {Módosítás a Beállításokban}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "144d0bd"
+    "sourceHash": "9972084"
   },
   "crashReporter.sentToast.sendLog": "Napló csatolása",
   "@crashReporter.sentToast.sendLog": {

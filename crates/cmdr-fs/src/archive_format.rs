@@ -1,6 +1,6 @@
-//! Which archive format a file name denotes.
+//! Which archive format a filename denotes.
 //!
-//! Format is decided by file-name SUFFIX (extension-only, no I/O), and this is
+//! Format is decided by filename SUFFIX (extension-only, no I/O), and this is
 //! the single source of truth for it. `FileEntry.is_archive` uses
 //! [`has_supported_archive_extension`] at listing time, where a magic-byte sniff
 //! per entry would be a round-trip-per-file on a remote backend; the app's

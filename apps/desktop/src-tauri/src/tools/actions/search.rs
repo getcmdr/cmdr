@@ -285,9 +285,10 @@ fn build_search_query_from_translate(
 fn translate_refusal(e: &crate::ai::AiTranslateError) -> ToolError {
     use crate::ai::translate_error::AiTranslateErrorKind as K;
     match e.kind {
-        K::Off | K::NotConfigured => ToolError::invalid_params(
-            "AI isn't set up yet. Configure an AI provider in Settings > AI, then run ai_search again.",
-        ),
+        K::Off | K::NotConfigured => ToolError::invalid_params(format!(
+            "AI isn't set up yet. Configure an AI provider in {} > AI, then run ai_search again.",
+            crate::intl::settings_window_name_en()
+        )),
         // Only the user can allow it, in the app: an MCP client can't flip this switch.
         K::NoCloudConsent => ToolError::invalid_params("Cloud AI isn't allowed in Cmdr's settings.")
             .with_data(serde_json::json!({ "reason": "cloudAiNotAllowed" })),

@@ -18,7 +18,7 @@ use cmdr_fs::volume::conformance::{SOURCE_DATE_SECS, assert_write_from_stream_ke
 
 use super::network_transfer_test_support::{clean_deep, run_copy, self_describing_bytes};
 use crate::test_support::TestDir;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 /// What `path` lists as its modification date, which the scenarios insist on.
 async fn listed_date(volume: &dyn Volume, path: &Path, what: &str) -> u64 {
@@ -51,7 +51,7 @@ pub(super) async fn a_copy_onto_the_server_keeps_the_source_date(
         .open(&local_file)
         .and_then(|file| file.set_modified(source_date))
         .expect("date the local file into the past");
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),
@@ -136,7 +136,7 @@ pub(super) async fn copied_folders_onto_the_server_keep_their_dates(
 ) {
     let local_dir = TestDir::new("network_dated_folders_onto_server");
     seed_dated_local_folder(&local_dir);
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),
@@ -174,7 +174,7 @@ pub(super) async fn copied_folders_onto_the_server_keep_their_dates(
 pub(super) async fn copied_folders_off_the_server_keep_their_dates(remote: Arc<dyn Volume>, dir: PathBuf) {
     let seed_dir = TestDir::new("network_dated_folders_seed");
     seed_dated_local_folder(&seed_dir);
-    let seed: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let seed: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Seed",
         &*seed_dir,
         crate::volume_host::host(),
@@ -207,7 +207,7 @@ pub(super) async fn copied_folders_off_the_server_keep_their_dates(remote: Arc<d
     let listed_inner = listed_date(remote.as_ref(), &album.join("inner"), "the seed").await;
 
     let local_dir = TestDir::new("network_dated_folders_off_server");
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),
@@ -264,7 +264,7 @@ pub(super) async fn a_copy_off_the_server_keeps_the_date_it_lists(remote: Arc<dy
         .to_owned();
 
     let local_dir = TestDir::new("network_dated_off_server");
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),
@@ -338,7 +338,7 @@ pub(super) async fn a_copy_onto_the_server_keeps_the_creation_dates(remote: Arc<
             .await,
         "fixture precondition: the big file must stream, not go out in one frame"
     );
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*fixture,
         crate::volume_host::host(),
@@ -425,7 +425,7 @@ pub(super) async fn a_copy_off_the_server_keeps_the_creation_dates(remote: Arc<d
     }
 
     let local_dir = TestDir::new("network_birth_off_server");
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),

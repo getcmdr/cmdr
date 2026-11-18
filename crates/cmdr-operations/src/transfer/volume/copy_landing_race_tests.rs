@@ -32,7 +32,7 @@ use crate::transfer::outage_volume_test_support::{OutageVolume, RenameDrop};
 use crate::transfer::volume::forward_volume_methods;
 use crate::types::{ConflictResolution, WriteOperationError};
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 /// What the other writer puts at the name.
 const THEIRS: &[u8] = b"someone else's file, written while ours was in flight";
@@ -304,7 +304,7 @@ async fn concurrent_a_landing_answered_by_a_replaced_session_counts_as_landed_on
 /// file is there before our rename arrives. Once: a later delete of the name
 /// is a delete of their file.
 struct SavedOverOurClearedName {
-    inner: LocalPosixVolume,
+    inner: LocalVolume,
     taken: PathBuf,
     saved: AtomicBool,
 }
@@ -371,7 +371,7 @@ async fn copy_onto_a_claimed_name_someone_saves_over(
     let dest_dir = tempfile::tempdir().expect("tempdir");
     std::fs::write(dest_dir.path().join("photo.jpg"), b"the user's photo").unwrap();
     let dest = Arc::new(SavedOverOurClearedName {
-        inner: LocalPosixVolume::local_folder(
+        inner: LocalVolume::local_folder(
             "Dest",
             dest_dir.path().to_path_buf(),
             crate::host::testing::pane_order_host(),
@@ -560,7 +560,7 @@ async fn a_merge_childs_rename_pick_taken_at_landing_is_never_deleted() {
 /// A local destination where someone writes into the ` (1)` placeholder our
 /// `Rename` pick reserved, right before our landing comes for it.
 struct WrittenIntoOurPlaceholder {
-    inner: LocalPosixVolume,
+    inner: LocalVolume,
     root: PathBuf,
     taken: &'static str,
 }
@@ -628,7 +628,7 @@ async fn a_rename_placeholder_someone_wrote_into_is_never_cleared() {
     let dest_dir = tempfile::tempdir().expect("tempdir");
     std::fs::write(dest_dir.path().join("photo.jpg"), b"the user's photo").unwrap();
     let dest = Arc::new(WrittenIntoOurPlaceholder {
-        inner: LocalPosixVolume::local_folder(
+        inner: LocalVolume::local_folder(
             "Dest",
             dest_dir.path().to_path_buf(),
             crate::host::testing::pane_order_host(),

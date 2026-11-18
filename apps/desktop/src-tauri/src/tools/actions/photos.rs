@@ -40,9 +40,20 @@ const MAX_LIMIT: usize = 200;
 const MAX_HIDING_FETCH: usize = 4 * MAX_LIMIT;
 
 /// Honest note when image indexing is off entirely.
-const OFF_NOTE: &str = "Image indexing is off, so there are no photos to search. The user can turn it on under Settings › AI › Image search.";
+/// Names the settings window the way this system titles it (`crate::intl::settings_window_name_en`).
+fn off_note() -> String {
+    format!(
+        "Image indexing is off, so there are no photos to search. The user can turn it on under {} › AI › Image search.",
+        crate::intl::settings_window_name_en()
+    )
+}
 /// Honest note when a description (semantic) search was asked for but no CLIP model is installed.
-const MODEL_MISSING_NOTE: &str = "Description search needs the on-device photo-search model, which isn't installed. The user can download it under Settings › AI › Image search, or search by in-image text (mode: ocr) instead.";
+fn model_missing_note() -> String {
+    format!(
+        "Description search needs the on-device photo-search model, which isn't installed. The user can download it under {} › AI › Image search, or search by in-image text (mode: ocr) instead.",
+        crate::intl::settings_window_name_en()
+    )
+}
 
 // ── Result DTOs ─────────────────────────────────────────────────────────────
 
@@ -356,9 +367,7 @@ pub async fn execute_search_photos<R: Runtime>(app: &AppHandle<R>, params: &Valu
 
     // Feature off ⇒ nothing is enriched. Voice it honestly rather than an empty list.
     if !cmdr_index::media_index::gate::is_enabled() {
-        return shape(&SearchPhotosResult::ImageIndexingOff {
-            note: OFF_NOTE.to_string(),
-        });
+        return shape(&SearchPhotosResult::ImageIndexingOff { note: off_note() });
     }
 
     let data_dir = crate::config::resolved_app_data_dir(app).map_err(ToolError::internal)?;
@@ -367,7 +376,7 @@ pub async fn execute_search_photos<R: Runtime>(app: &AppHandle<R>, params: &Valu
     let (mode, degraded_to_ocr) = match resolve_effective_mode(requested, model_installed) {
         ModeResolution::SemanticModelMissing => {
             return shape(&SearchPhotosResult::SemanticModelNotInstalled {
-                note: MODEL_MISSING_NOTE.to_string(),
+                note: model_missing_note(),
             });
         }
         ModeResolution::Search { mode, degraded_to_ocr } => (mode, degraded_to_ocr),

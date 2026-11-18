@@ -36,7 +36,7 @@ const TRIM_SLACK: usize = MAX_SPOOLED_EVENTS / 10;
 /// and one that did could push a whole beat past the server's body cap.
 pub(super) const MAX_EVENT_LINE_BYTES: usize = 8 * 1024;
 
-/// The file name, in the app data dir.
+/// The filename, in the app data dir.
 pub(super) const SPOOL_FILE_NAME: &str = "analytics-events.jsonl";
 
 /// One feature event as it waits in the spool, and exactly as a heartbeat carries it (the `events`

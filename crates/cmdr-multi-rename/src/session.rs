@@ -1,7 +1,7 @@
 //! A Multi-Rename session: the files one open sheet renames, resolved ONCE.
 //!
 //! Opening the sheet turns the pane's selection (row numbers, checked against the
-//! listing's sequence) into file names in that folder, and every preview and the
+//! listing's sequence) into filenames in that folder, and every preview and the
 //! apply work from those names. A file appearing in the folder while the sheet
 //! is open shifts the pane's rows but never the session's files; a session file
 //! that vanished previews as `Missing`, never as another file.

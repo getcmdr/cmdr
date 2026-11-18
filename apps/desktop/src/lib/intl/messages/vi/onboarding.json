@@ -307,17 +307,17 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cài đặt > AI.",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cài đặt > AI.} linuxGnome {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Tùy thích > AI.} linuxKde {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cấu hình Cmdr > AI.} other {AI đám mây sẽ tắt cho đến khi bạn cho phép. Bạn có thể làm việc đó sau trong Cài đặt > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
-    "sourceHash": "82d27b6"
+    "sourceHash": "6075ac0"
   },
   "onboarding.stepAi.off.label": "Cảm ơn nhưng thôi, tôi không cần AI",
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cài đặt.",
+  "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cài đặt.} linuxGnome {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Tùy thích.} linuxKde {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cấu hình Cmdr.} other {Cmdr hoạt động đầy đủ mà không cần AI. Bạn có thể bật nó sau trong Cài đặt.}}",
   "@onboarding.stepAi.off.help": {
-    "sourceHash": "3f261be"
+    "sourceHash": "f4c9871"
   },
   "onboarding.localDownloadFailed.title": "Mô hình AI cục bộ chưa tải về xong",
   "@onboarding.localDownloadFailed.title": {
@@ -391,21 +391,21 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.} linuxGnome {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Tùy thích.} linuxKde {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cấu hình Cmdr.} other {Lưu ý rằng nó được BẬT theo mặc định để khuyến khích mọi người gửi dữ liệu cho mình trong giai đoạn Beta.\nBạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.}}",
   "@onboarding.stepBeta.analyticsCaption": {
-    "sourceHash": "06ce4eb"
+    "sourceHash": "9dc83f9"
   },
-  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản macOS của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.} windows {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản Windows của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.} other {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.}}",
+  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản macOS của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.} windows {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản Windows của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.} linuxGnome {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Tùy thích bất cứ lúc nào.} linuxKde {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cấu hình Cmdr bất cứ lúc nào.} other {Báo cáo sự cố cũng đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt cả hai trong Cài đặt bất cứ lúc nào.}}",
   "@onboarding.stepBeta.crashReportsNote": {
-    "sourceHash": "55b9634"
+    "sourceHash": "4efc7dc"
   },
   "onboarding.stepBeta.analyticsManaged": "Tổ chức của bạn đã tắt thống kê sử dụng.",
   "@onboarding.stepBeta.analyticsManaged": {
     "sourceHash": "49484ee"
   },
-  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản macOS của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cài đặt bất cứ lúc nào.} windows {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản Windows của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cài đặt bất cứ lúc nào.} other {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cài đặt bất cứ lúc nào.}}",
+  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản macOS của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cài đặt bất cứ lúc nào.} windows {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, phiên bản Windows của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cài đặt bất cứ lúc nào.} linuxGnome {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Tùy thích bất cứ lúc nào.} linuxKde {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cấu hình Cmdr bất cứ lúc nào.} other {Báo cáo sự cố đang bật: nếu Cmdr sập, ứng dụng gửi phiên bản ứng dụng, bản phân phối và phiên bản Linux của bạn và chỗ mã dừng lại.\nKhông bao giờ gồm tệp của bạn.\nBạn có thể tắt chúng trong Cài đặt bất cứ lúc nào.}}",
   "@onboarding.stepBeta.crashReportsNoteAlone": {
-    "sourceHash": "27d4b1b"
+    "sourceHash": "bd11273"
   },
   "onboarding.stepBeta.emailTitle": "Giữ liên lạc (tùy chọn)",
   "@onboarding.stepBeta.emailTitle": {
@@ -427,9 +427,9 @@
   "@onboarding.stepBeta.signup.rejected": {
     "sourceHash": "5a1bca7"
   },
-  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên máy Mac này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cài đặt › Cập nhật & quyền riêng tư.} windows {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên PC này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cài đặt › Cập nhật & quyền riêng tư.} other {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên máy tính này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cài đặt › Cập nhật & quyền riêng tư.}}",
+  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên máy Mac này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cài đặt › Cập nhật & quyền riêng tư.} windows {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên PC này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cài đặt › Cập nhật & quyền riêng tư.} linuxGnome {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên máy tính này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Tùy thích › Cập nhật & quyền riêng tư.} linuxKde {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên máy tính này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cấu hình Cmdr › Cập nhật & quyền riêng tư.} other {Lúc này chưa kết nối được tới máy chủ đăng ký, nên bạn chưa có trong danh sách. Địa chỉ của bạn đã được lưu trên máy tính này: lát nữa hãy nhấn Lưu lần nữa, hoặc bất cứ lúc nào trong Cài đặt › Cập nhật & quyền riêng tư.}}",
   "@onboarding.stepBeta.signup.unreachable": {
-    "sourceHash": "6032194"
+    "sourceHash": "ae9c4a5"
   },
   "onboarding.stepBeta.emailNote": "{platform, select, macos {Để lại email của bạn và thi thoảng mình sẽ liên hệ với một câu hỏi hoặc bản cập nhật.\nĐịa chỉ email bạn nhập ở đây chỉ được lưu trên máy Mac của bạn và không bao giờ liên kết với thống kê sử dụng của bạn, hai thứ này cố ý là hai hệ thống con riêng biệt.} windows {Để lại email của bạn và thi thoảng mình sẽ liên hệ với một câu hỏi hoặc bản cập nhật.\nĐịa chỉ email bạn nhập ở đây chỉ được lưu trên PC của bạn và không bao giờ liên kết với thống kê sử dụng của bạn, hai thứ này cố ý là hai hệ thống con riêng biệt.} other {Để lại email của bạn và thi thoảng mình sẽ liên hệ với một câu hỏi hoặc bản cập nhật.\nĐịa chỉ email bạn nhập ở đây chỉ được lưu trên máy tính của bạn và không bao giờ liên kết với thống kê sử dụng của bạn, hai thứ này cố ý là hai hệ thống con riêng biệt.}}",
   "@onboarding.stepBeta.emailNote": {
@@ -467,9 +467,9 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.} linuxGnome {Bạn có thể thay đổi điều này bất cứ lúc nào trong Tùy thích.} linuxKde {Bạn có thể thay đổi điều này bất cứ lúc nào trong Cấu hình Cmdr.} other {Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.}}",
   "@onboarding.stepOptional.changeAnytime": {
-    "sourceHash": "895d675"
+    "sourceHash": "ff84784"
   },
   "onboarding.stepOptional.networking.title": "Kết nối mạng",
   "@onboarding.stepOptional.networking.title": {

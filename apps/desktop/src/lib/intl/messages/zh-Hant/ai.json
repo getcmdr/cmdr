@@ -55,9 +55,9 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "到「設定 > AI」開啟一個提供者，就能使用 AI 搜尋。",
+  "ai.translateError.off.body": "{platform, select, windows {到「設定 > AI」開啟一個提供者，就能使用 AI 搜尋。} linuxGnome {到「偏好設定 > AI」開啟一個提供者，就能使用 AI 搜尋。} linuxKde {到「設定 Cmdr > AI」開啟一個提供者，就能使用 AI 搜尋。} other {到「設定 > AI」開啟一個提供者，就能使用 AI 搜尋。}}",
   "@ai.translateError.off.body": {
-    "sourceHash": "d8d6368"
+    "sourceHash": "c9c11e2"
   },
   "ai.cloudConsent.label": "允許使用雲端 AI",
   "@ai.cloudConsent.label": {
@@ -247,25 +247,25 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "請在「設定 > AI」把提供者設定完成，然後再試一次。",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {請在「設定 > AI」把提供者設定完成，然後再試一次。} linuxGnome {請在「偏好設定 > AI」把提供者設定完成，然後再試一次。} linuxKde {請在「設定 Cmdr > AI」把提供者設定完成，然後再試一次。} other {請在「設定 > AI」把提供者設定完成，然後再試一次。}}",
   "@ai.translateError.notConfigured.body": {
-    "sourceHash": "65133a8"
+    "sourceHash": "cdb4ab5"
   },
   "ai.translateError.noCloudConsent.title": "雲端 AI 已關閉",
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "請到「設定 > AI」允許使用，然後再試一次。",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {請到「設定 > AI」允許使用，然後再試一次。} linuxGnome {請到「偏好設定 > AI」允許使用，然後再試一次。} linuxKde {請到「設定 Cmdr > AI」允許使用，然後再試一次。} other {請到「設定 > AI」允許使用，然後再試一次。}}",
   "@ai.translateError.noCloudConsent.body": {
-    "sourceHash": "fde3eb5"
+    "sourceHash": "f54d181"
   },
   "ai.translateError.authFailed.title": "那把 API 金鑰被拒絕了",
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "到「設定 > AI」檢查你的金鑰，它可能不對，也可能已經被撤銷。",
+  "ai.translateError.authFailed.body": "{platform, select, windows {到「設定 > AI」檢查你的金鑰，它可能不對，也可能已經被撤銷。} linuxGnome {到「偏好設定 > AI」檢查你的金鑰，它可能不對，也可能已經被撤銷。} linuxKde {到「設定 Cmdr > AI」檢查你的金鑰，它可能不對，也可能已經被撤銷。} other {到「設定 > AI」檢查你的金鑰，它可能不對，也可能已經被撤銷。}}",
   "@ai.translateError.authFailed.body": {
-    "sourceHash": "2159d5e"
+    "sourceHash": "efd14fb"
   },
   "ai.translateError.rateLimited.title": "你的 AI 提供者沒有餘裕了",
   "@ai.translateError.rateLimited.title": {
@@ -295,9 +295,9 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "你的模型可能在回答之前就把 token 預算用完了。到「設定 > AI」換一個比較快的模型，像是 gpt-4.1-mini。",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {你的模型可能在回答之前就把 token 預算用完了。到「設定 > AI」換一個比較快的模型，像是 gpt-4.1-mini。} linuxGnome {你的模型可能在回答之前就把 token 預算用完了。到「偏好設定 > AI」換一個比較快的模型，像是 gpt-4.1-mini。} linuxKde {你的模型可能在回答之前就把 token 預算用完了。到「設定 Cmdr > AI」換一個比較快的模型，像是 gpt-4.1-mini。} other {你的模型可能在回答之前就把 token 預算用完了。到「設定 > AI」換一個比較快的模型，像是 gpt-4.1-mini。}}",
   "@ai.translateError.emptyResponse.body": {
-    "sourceHash": "d74db0d"
+    "sourceHash": "9068319"
   },
   "ai.translateError.serverError.title": "你的 AI 提供者遇到了狀況",
   "@ai.translateError.serverError.title": {
@@ -311,17 +311,17 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "再試一次，或到「設定 > AI」換一個模型。",
+  "ai.translateError.parseError.body": "{platform, select, windows {再試一次，或到「設定 > AI」換一個模型。} linuxGnome {再試一次，或到「偏好設定 > AI」換一個模型。} linuxKde {再試一次，或到「設定 Cmdr > AI」換一個模型。} other {再試一次，或到「設定 > AI」換一個模型。}}",
   "@ai.translateError.parseError.body": {
-    "sourceHash": "c299ec6"
+    "sourceHash": "5ebf991"
   },
   "ai.translateError.unknownProvider.title": "無法辨識那個 AI 提供者",
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "請到「設定 > AI」選一個提供者。",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {請到「設定 > AI」選一個提供者。} linuxGnome {請到「偏好設定 > AI」選一個提供者。} linuxKde {請到「設定 Cmdr > AI」選一個提供者。} other {請到「設定 > AI」選一個提供者。}}",
   "@ai.translateError.unknownProvider.body": {
-    "sourceHash": "7042a75"
+    "sourceHash": "a3988aa"
   },
   "ai.translateError.managed.title": "Cmdr 的 AI 由你的組織管理",
   "@ai.translateError.managed.title": {
@@ -597,9 +597,9 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {無法儲存你的 API 金鑰：macOS 鑰匙圈拒絕存取} other {無法讀取你已儲存的 API 金鑰：macOS 鑰匙圈拒絕存取}}} windows {{op, select, save {無法儲存你的 API 金鑰：認證管理員拒絕存取} other {無法讀取你已儲存的 API 金鑰：認證管理員拒絕存取}}} linuxKde {{op, select, save {無法儲存你的 API 金鑰：KWallet 拒絕存取} other {無法讀取你已儲存的 API 金鑰：KWallet 拒絕存取}}} other {{op, select, save {無法儲存你的 API 金鑰：系統鑰匙圈拒絕存取} other {無法讀取你已儲存的 API 金鑰：系統鑰匙圈拒絕存取}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {無法儲存你的 API 金鑰：macOS 鑰匙圈拒絕存取} other {無法讀取你已儲存的 API 金鑰：macOS 鑰匙圈拒絕存取}}} windows {{op, select, save {無法儲存你的 API 金鑰：認證管理員拒絕存取} other {無法讀取你已儲存的 API 金鑰：認證管理員拒絕存取}}} linuxKde {{op, select, save {無法儲存你的 API 金鑰：KDE 錢包拒絕存取} other {無法讀取你已儲存的 API 金鑰：KDE 錢包拒絕存取}}} other {{op, select, save {無法儲存你的 API 金鑰：系統鑰匙圈拒絕存取} other {無法讀取你已儲存的 API 金鑰：系統鑰匙圈拒絕存取}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "6daa595"
+    "sourceHash": "4612cfb"
   },
   "ai.secretError.body": "{platform, select, macos {{op, select, save {請開啟「鑰匙圈存取」，檢查其中的「Cmdr」項目，或是把它刪掉再儲存一次。} other {請開啟「鑰匙圈存取」，找到「Cmdr」項目並授予存取權，或是把它刪掉，重新輸入你的金鑰。}}} windows {{op, select, save {請開啟「認證管理員」，在「Windows 認證」下檢查「Cmdr」項目，或是把它移除再儲存一次。} other {請開啟「認證管理員」，在「Windows 認證」下找到「Cmdr」項目，或是把它移除，重新輸入你的金鑰。}}} linuxGnome {請在「密碼及加密金鑰」中解鎖你的鑰匙圈，然後再試一次。} linuxKde {請在 KWalletManager 中解鎖你的錢包，然後再試一次。} other {請解鎖你的鑰匙圈（「密碼」或「鑰匙圈」App），然後再試一次。}}",
   "@ai.secretError.body": {
@@ -609,9 +609,9 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {請確認你的鑰匙圈可以使用，然後再試一次。如果還是這樣，請重新啟動 App。} windows {請確認認證管理員可以使用，然後再試一次。如果一直發生，請重新啟動 Cmdr。} linuxKde {請確認 KWallet 可以使用，然後再試一次。如果還是這樣，請重新啟動 App。} other {請確認你的系統鑰匙圈可以使用，然後再試一次。如果還是這樣，請重新啟動 App。}}",
+  "ai.secretError.genericBody": "{platform, select, macos {請確認你的鑰匙圈可以使用，然後再試一次。如果還是這樣，請重新啟動 App。} windows {請確認認證管理員可以使用，然後再試一次。如果一直發生，請重新啟動 Cmdr。} linuxKde {請確認 KDE 錢包可以使用，然後再試一次。如果還是這樣，請重新啟動 App。} other {請確認你的系統鑰匙圈可以使用，然後再試一次。如果還是這樣，請重新啟動 App。}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "cb879fa"
+    "sourceHash": "1c198ff"
   },
   "ai.secretError.removeTitle": "無法移除你已儲存的 API 金鑰。",
   "@ai.secretError.removeTitle": {

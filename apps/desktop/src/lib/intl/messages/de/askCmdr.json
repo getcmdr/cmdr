@@ -705,21 +705,21 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "Füge deinen API-Schlüssel in den Einstellungen hinzu, um chatten zu können.",
+  "askCmdr.error.noKey": "{platform, select, windows {Füge deinen API-Schlüssel in den Einstellungen hinzu, um chatten zu können.} linuxGnome {Füge deinen API-Schlüssel in den Einstellungen hinzu, um chatten zu können.} linuxKde {Füge deinen API-Schlüssel unter „Cmdr einrichten“ hinzu, um chatten zu können.} other {Füge deinen API-Schlüssel in den Einstellungen hinzu, um chatten zu können.}}",
   "@askCmdr.error.noKey": {
-    "sourceHash": "0a78f37"
+    "sourceHash": "fcbb328"
   },
-  "askCmdr.error.notConfigured": "Zum Chatten brauchst du einen KI-Anbieter. Aktiviere einen in den Einstellungen.",
+  "askCmdr.error.notConfigured": "{platform, select, windows {Zum Chatten brauchst du einen KI-Anbieter. Aktiviere einen in den Einstellungen.} linuxGnome {Zum Chatten brauchst du einen KI-Anbieter. Aktiviere einen in den Einstellungen.} linuxKde {Zum Chatten brauchst du einen KI-Anbieter. Aktiviere einen unter „Cmdr einrichten“.} other {Zum Chatten brauchst du einen KI-Anbieter. Aktiviere einen in den Einstellungen.}}",
   "@askCmdr.error.notConfigured": {
-    "sourceHash": "2d55d2c"
+    "sourceHash": "b0d3e93"
   },
   "askCmdr.error.askCmdrOff": "Ask Cmdr ist ausgeschaltet.",
   "@askCmdr.error.askCmdrOff": {
     "sourceHash": "6599ee1"
   },
-  "askCmdr.error.noCloudConsent": "Cloud-KI ist ausgeschaltet. Erlaube sie unter Einstellungen > KI.",
+  "askCmdr.error.noCloudConsent": "{platform, select, windows {Cloud-KI ist ausgeschaltet. Erlaube sie unter Einstellungen > KI.} linuxGnome {Cloud-KI ist ausgeschaltet. Erlaube sie unter Einstellungen > KI.} linuxKde {Cloud-KI ist ausgeschaltet. Erlaube sie unter „Cmdr einrichten“ > KI.} other {Cloud-KI ist ausgeschaltet. Erlaube sie unter Einstellungen > KI.}}",
   "@askCmdr.error.noCloudConsent": {
-    "sourceHash": "cd2af1d"
+    "sourceHash": "85cf9ae"
   },
   "askCmdr.error.managedByOrganization": "Deine Organisation erlaubt diesen KI-Dienst nicht. Dein IT-Team kann dir sagen, welche Dienste du nutzen kannst.",
   "@askCmdr.error.managedByOrganization": {
@@ -737,29 +737,29 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "Der Anbieter hat deinen API-Schlüssel abgelehnt. Prüfe ihn in den Einstellungen.",
+  "askCmdr.error.authFailed": "{platform, select, windows {Der Anbieter hat deinen API-Schlüssel abgelehnt. Prüfe ihn in den Einstellungen.} linuxGnome {Der Anbieter hat deinen API-Schlüssel abgelehnt. Prüfe ihn in den Einstellungen.} linuxKde {Der Anbieter hat deinen API-Schlüssel abgelehnt. Prüfe ihn unter „Cmdr einrichten“.} other {Der Anbieter hat deinen API-Schlüssel abgelehnt. Prüfe ihn in den Einstellungen.}}",
   "@askCmdr.error.authFailed": {
-    "sourceHash": "a2302ca"
+    "sourceHash": "98e4d60"
   },
   "askCmdr.error.rateLimited": "Der Anbieter ist gerade ausgelastet, oder dein Kontingent ist ausgeschöpft. Versuche es gleich noch mal.",
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "Dein Tarif bei {provider} enthält dieses Modell nicht. Wähle in den Einstellungen ein anderes Modell oder wechsle zu einem höheren Tarif.",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Dein Tarif bei {provider} enthält dieses Modell nicht. Wähle in den Einstellungen ein anderes Modell oder wechsle zu einem höheren Tarif.} linuxGnome {Dein Tarif bei {provider} enthält dieses Modell nicht. Wähle in den Einstellungen ein anderes Modell oder wechsle zu einem höheren Tarif.} linuxKde {Dein Tarif bei {provider} enthält dieses Modell nicht. Wähle unter „Cmdr einrichten“ ein anderes Modell oder wechsle zu einem höheren Tarif.} other {Dein Tarif bei {provider} enthält dieses Modell nicht. Wähle in den Einstellungen ein anderes Modell oder wechsle zu einem höheren Tarif.}}",
   "@askCmdr.error.modelNotInPlan.named": {
-    "sourceHash": "9f2c237"
+    "sourceHash": "72f16d4"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "Dein Tarif bei diesem KI-Anbieter enthält dieses Modell nicht. Wähle in den Einstellungen ein anderes Modell oder wechsle zu einem höheren Tarif.",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Dein Tarif bei diesem KI-Anbieter enthält dieses Modell nicht. Wähle in den Einstellungen ein anderes Modell oder wechsle zu einem höheren Tarif.} linuxGnome {Dein Tarif bei diesem KI-Anbieter enthält dieses Modell nicht. Wähle in den Einstellungen ein anderes Modell oder wechsle zu einem höheren Tarif.} linuxKde {Dein Tarif bei diesem KI-Anbieter enthält dieses Modell nicht. Wähle unter „Cmdr einrichten“ ein anderes Modell oder wechsle zu einem höheren Tarif.} other {Dein Tarif bei diesem KI-Anbieter enthält dieses Modell nicht. Wähle in den Einstellungen ein anderes Modell oder wechsle zu einem höheren Tarif.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
-    "sourceHash": "b90bf30"
+    "sourceHash": "4b84567"
   },
-  "askCmdr.error.requestTooLarge.named": "{provider} hat das abgelehnt: Das Limit deines Tarifs ist kleiner als eine einzige Anfrage von Cmdr, denn jede Anfrage enthält immer die Anweisungen von Cmdr. Eine kürzere Nachricht hilft nicht. Wechsle bei {provider} zu einem größeren Tarif oder wähle in den Einstellungen einen anderen Anbieter.",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} hat das abgelehnt: Das Limit deines Tarifs ist kleiner als eine einzige Anfrage von Cmdr, denn jede Anfrage enthält immer die Anweisungen von Cmdr. Eine kürzere Nachricht hilft nicht. Wechsle bei {provider} zu einem größeren Tarif oder wähle in den Einstellungen einen anderen Anbieter.} linuxGnome {{provider} hat das abgelehnt: Das Limit deines Tarifs ist kleiner als eine einzige Anfrage von Cmdr, denn jede Anfrage enthält immer die Anweisungen von Cmdr. Eine kürzere Nachricht hilft nicht. Wechsle bei {provider} zu einem größeren Tarif oder wähle in den Einstellungen einen anderen Anbieter.} linuxKde {{provider} hat das abgelehnt: Das Limit deines Tarifs ist kleiner als eine einzige Anfrage von Cmdr, denn jede Anfrage enthält immer die Anweisungen von Cmdr. Eine kürzere Nachricht hilft nicht. Wechsle bei {provider} zu einem größeren Tarif oder wähle unter „Cmdr einrichten“ einen anderen Anbieter.} other {{provider} hat das abgelehnt: Das Limit deines Tarifs ist kleiner als eine einzige Anfrage von Cmdr, denn jede Anfrage enthält immer die Anweisungen von Cmdr. Eine kürzere Nachricht hilft nicht. Wechsle bei {provider} zu einem größeren Tarif oder wähle in den Einstellungen einen anderen Anbieter.}}",
   "@askCmdr.error.requestTooLarge.named": {
-    "sourceHash": "f878555"
+    "sourceHash": "956dae8"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "Dein KI-Anbieter hat das abgelehnt: Das Limit deines Tarifs ist kleiner als eine einzige Anfrage von Cmdr, denn jede Anfrage enthält immer die Anweisungen von Cmdr. Eine kürzere Nachricht hilft nicht. Wechsle zu einem größeren Tarif oder wähle in den Einstellungen einen anderen Anbieter.",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Dein KI-Anbieter hat das abgelehnt: Das Limit deines Tarifs ist kleiner als eine einzige Anfrage von Cmdr, denn jede Anfrage enthält immer die Anweisungen von Cmdr. Eine kürzere Nachricht hilft nicht. Wechsle zu einem größeren Tarif oder wähle in den Einstellungen einen anderen Anbieter.} linuxGnome {Dein KI-Anbieter hat das abgelehnt: Das Limit deines Tarifs ist kleiner als eine einzige Anfrage von Cmdr, denn jede Anfrage enthält immer die Anweisungen von Cmdr. Eine kürzere Nachricht hilft nicht. Wechsle zu einem größeren Tarif oder wähle in den Einstellungen einen anderen Anbieter.} linuxKde {Dein KI-Anbieter hat das abgelehnt: Das Limit deines Tarifs ist kleiner als eine einzige Anfrage von Cmdr, denn jede Anfrage enthält immer die Anweisungen von Cmdr. Eine kürzere Nachricht hilft nicht. Wechsle zu einem größeren Tarif oder wähle unter „Cmdr einrichten“ einen anderen Anbieter.} other {Dein KI-Anbieter hat das abgelehnt: Das Limit deines Tarifs ist kleiner als eine einzige Anfrage von Cmdr, denn jede Anfrage enthält immer die Anweisungen von Cmdr. Eine kürzere Nachricht hilft nicht. Wechsle zu einem größeren Tarif oder wähle in den Einstellungen einen anderen Anbieter.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
-    "sourceHash": "b81536f"
+    "sourceHash": "aace2fc"
   },
   "askCmdr.error.providerBusy.named": "{provider} ist gerade zu ausgelastet und antwortet auch nach ein paar Versuchen nicht. Warte ein paar Minuten und sende deine Nachricht dann noch einmal.",
   "@askCmdr.error.providerBusy.named": {
@@ -979,17 +979,17 @@
   "@askCmdr.composer.sendNeedsProvider": {
     "sourceHash": "9e6aba3"
   },
-  "askCmdr.providerNotice.off": "Ask Cmdr braucht zum Chatten einen KI-Anbieter. Wähle einen in den Einstellungen.",
+  "askCmdr.providerNotice.off": "{platform, select, windows {Ask Cmdr braucht zum Chatten einen KI-Anbieter. Wähle einen in den Einstellungen.} linuxGnome {Ask Cmdr braucht zum Chatten einen KI-Anbieter. Wähle einen in den Einstellungen.} linuxKde {Ask Cmdr braucht zum Chatten einen KI-Anbieter. Wähle einen unter „Cmdr einrichten“.} other {Ask Cmdr braucht zum Chatten einen KI-Anbieter. Wähle einen in den Einstellungen.}}",
   "@askCmdr.providerNotice.off": {
-    "sourceHash": "8696c99"
+    "sourceHash": "5531c7f"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "Dein Cloud-KI-Anbieter braucht einen API-Schlüssel, bevor Ask Cmdr chatten kann. Füge ihn in den Einstellungen hinzu.",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, windows {Dein Cloud-KI-Anbieter braucht einen API-Schlüssel, bevor Ask Cmdr chatten kann. Füge ihn in den Einstellungen hinzu.} linuxGnome {Dein Cloud-KI-Anbieter braucht einen API-Schlüssel, bevor Ask Cmdr chatten kann. Füge ihn in den Einstellungen hinzu.} linuxKde {Dein Cloud-KI-Anbieter braucht einen API-Schlüssel, bevor Ask Cmdr chatten kann. Füge ihn unter „Cmdr einrichten“ hinzu.} other {Dein Cloud-KI-Anbieter braucht einen API-Schlüssel, bevor Ask Cmdr chatten kann. Füge ihn in den Einstellungen hinzu.}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
-    "sourceHash": "dccf257"
+    "sourceHash": "6e39e10"
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "Dein Cloud-KI-Anbieter braucht eine Adresse, bevor Ask Cmdr chatten kann. Füge sie in den Einstellungen hinzu.",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, windows {Dein Cloud-KI-Anbieter braucht eine Adresse, bevor Ask Cmdr chatten kann. Füge sie in den Einstellungen hinzu.} linuxGnome {Dein Cloud-KI-Anbieter braucht eine Adresse, bevor Ask Cmdr chatten kann. Füge sie in den Einstellungen hinzu.} linuxKde {Dein Cloud-KI-Anbieter braucht eine Adresse, bevor Ask Cmdr chatten kann. Füge sie unter „Cmdr einrichten“ hinzu.} other {Dein Cloud-KI-Anbieter braucht eine Adresse, bevor Ask Cmdr chatten kann. Füge sie in den Einstellungen hinzu.}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
-    "sourceHash": "1b1682b"
+    "sourceHash": "feefb7f"
   },
   "askCmdr.providerNotice.localNotSetUp": "Die lokale KI ist noch nicht heruntergeladen, deshalb kann Ask Cmdr nicht chatten. Richte sie in den Einstellungen ein.",
   "@askCmdr.providerNotice.localNotSetUp": {
@@ -1023,9 +1023,9 @@
   "@askCmdr.gate.cloudOff.title": {
     "sourceHash": "2e56781"
   },
-  "askCmdr.gate.cloudOff.body": "Ask Cmdr spricht mit dem Cloud-KI-Dienst, den du eingerichtet hast. Erlaube zuerst Cloud-KI in den Einstellungen, dann kannst du loschatten.",
+  "askCmdr.gate.cloudOff.body": "{platform, select, windows {Ask Cmdr spricht mit dem Cloud-KI-Dienst, den du eingerichtet hast. Erlaube zuerst Cloud-KI in den Einstellungen, dann kannst du loschatten.} linuxGnome {Ask Cmdr spricht mit dem Cloud-KI-Dienst, den du eingerichtet hast. Erlaube zuerst Cloud-KI in den Einstellungen, dann kannst du loschatten.} linuxKde {Ask Cmdr spricht mit dem Cloud-KI-Dienst, den du eingerichtet hast. Erlaube zuerst Cloud-KI unter „Cmdr einrichten“, dann kannst du loschatten.} other {Ask Cmdr spricht mit dem Cloud-KI-Dienst, den du eingerichtet hast. Erlaube zuerst Cloud-KI in den Einstellungen, dann kannst du loschatten.}}",
   "@askCmdr.gate.cloudOff.body": {
-    "sourceHash": "d3d3252"
+    "sourceHash": "c695a94"
   },
   "askCmdr.gate.cloudOff.openSettings": "KI-Einstellungen öffnen",
   "@askCmdr.gate.cloudOff.openSettings": {
@@ -1412,9 +1412,9 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "KI-Funktionen sind eingeschaltet, brauchen zum Arbeiten aber einen Anbieter. Klicken, um in den Einstellungen einen einzurichten.",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {KI-Funktionen sind eingeschaltet, brauchen zum Arbeiten aber einen Anbieter. Klicken, um in den Einstellungen einen einzurichten.} linuxGnome {KI-Funktionen sind eingeschaltet, brauchen zum Arbeiten aber einen Anbieter. Klicken, um in den Einstellungen einen einzurichten.} linuxKde {KI-Funktionen sind eingeschaltet, brauchen zum Arbeiten aber einen Anbieter. Klicken, um unter „Cmdr einrichten“ einen einzurichten.} other {KI-Funktionen sind eingeschaltet, brauchen zum Arbeiten aber einen Anbieter. Klicken, um in den Einstellungen einen einzurichten.}}",
   "@askCmdr.wake.needsApiKey": {
-    "sourceHash": "0f71f75"
+    "sourceHash": "c8908e4"
   },
   "askCmdr.wakeDigest.summary": "Was sich in {foldersText} {folders, plural, one {Ordner} other {Ordnern}} getan hat",
   "@askCmdr.wakeDigest.summary": {

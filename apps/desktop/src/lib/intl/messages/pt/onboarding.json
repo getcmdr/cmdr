@@ -307,17 +307,17 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "A IA na nuvem fica desativada até você permitir. Dá para fazer isso depois em Ajustes > IA.",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {A IA na nuvem fica desativada até você permitir. Dá para fazer isso depois em Configurações > IA.} linuxGnome {A IA na nuvem fica desativada até você permitir. Dá para fazer isso depois em Preferências > IA.} linuxKde {A IA na nuvem fica desativada até você permitir. Dá para fazer isso depois em Configurar Cmdr > IA.} other {A IA na nuvem fica desativada até você permitir. Dá para fazer isso depois em Ajustes > IA.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
-    "sourceHash": "82d27b6"
+    "sourceHash": "6075ac0"
   },
   "onboarding.stepAi.off.label": "Agradeço, mas não, IA não é para mim",
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "O Cmdr funciona totalmente sem IA. Você pode ativá-la mais tarde nos Ajustes.",
+  "onboarding.stepAi.off.help": "{platform, select, windows {O Cmdr funciona totalmente sem IA. Você pode ativá-la mais tarde nas Configurações.} linuxGnome {O Cmdr funciona totalmente sem IA. Você pode ativá-la mais tarde nas Preferências.} linuxKde {O Cmdr funciona totalmente sem IA. Você pode ativá-la mais tarde em Configurar Cmdr.} other {O Cmdr funciona totalmente sem IA. Você pode ativá-la mais tarde nos Ajustes.}}",
   "@onboarding.stepAi.off.help": {
-    "sourceHash": "3f261be"
+    "sourceHash": "f4c9871"
   },
   "onboarding.localDownloadFailed.title": "O download do modelo de IA local não foi concluído",
   "@onboarding.localDownloadFailed.title": {
@@ -391,21 +391,21 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "Note que está ATIVADO por padrão para incentivar as pessoas a me enviarem dados durante o Beta.\nVocê pode mudar isto a qualquer momento nos Ajustes.",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Note que está ATIVADO por padrão para incentivar as pessoas a me enviarem dados durante o Beta.\nVocê pode mudar isto a qualquer momento nas Configurações.} linuxGnome {Note que está ATIVADO por padrão para incentivar as pessoas a me enviarem dados durante o Beta.\nVocê pode mudar isto a qualquer momento nas Preferências.} linuxKde {Note que está ATIVADO por padrão para incentivar as pessoas a me enviarem dados durante o Beta.\nVocê pode mudar isto a qualquer momento em Configurar Cmdr.} other {Note que está ATIVADO por padrão para incentivar as pessoas a me enviarem dados durante o Beta.\nVocê pode mudar isto a qualquer momento nos Ajustes.}}",
   "@onboarding.stepBeta.analyticsCaption": {
-    "sourceHash": "06ce4eb"
+    "sourceHash": "9dc83f9"
   },
-  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Os relatórios de falha também estão ativados: se o Cmdr cair, ele envia a versão do app, a sua versão do macOS e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativar os dois nos Ajustes quando quiser.} windows {Os relatórios de falha também estão ativados: se o Cmdr cair, ele envia a versão do app, a sua versão do Windows e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativar os dois nos Ajustes quando quiser.} other {Os relatórios de falha também estão ativados: se o Cmdr cair, ele envia a versão do app, a sua distribuição e versão do Linux e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativar os dois nos Ajustes quando quiser.}}",
+  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Os relatórios de falha também estão ativados: se o Cmdr cair, ele envia a versão do app, a sua versão do macOS e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativar os dois nos Ajustes quando quiser.} windows {Os relatórios de falha também estão ativados: se o Cmdr cair, ele envia a versão do app, a sua versão do Windows e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativar os dois nos Ajustes quando quiser.} linuxGnome {Os relatórios de falha também estão ativados: se o Cmdr cair, ele envia a versão do app, a sua distribuição e versão do Linux e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativar os dois nas Preferências quando quiser.} linuxKde {Os relatórios de falha também estão ativados: se o Cmdr cair, ele envia a versão do app, a sua distribuição e versão do Linux e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativar os dois em Configurar Cmdr quando quiser.} other {Os relatórios de falha também estão ativados: se o Cmdr cair, ele envia a versão do app, a sua distribuição e versão do Linux e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativar os dois nos Ajustes quando quiser.}}",
   "@onboarding.stepBeta.crashReportsNote": {
-    "sourceHash": "55b9634"
+    "sourceHash": "4efc7dc"
   },
   "onboarding.stepBeta.analyticsManaged": "Sua organização desativou as estatísticas de uso.",
   "@onboarding.stepBeta.analyticsManaged": {
     "sourceHash": "49484ee"
   },
-  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Os relatórios de falha estão ativados: se o Cmdr cair, ele envia a versão do app, a sua versão do macOS e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativá-los nos Ajustes quando quiser.} windows {Os relatórios de falha estão ativados: se o Cmdr cair, ele envia a versão do app, a sua versão do Windows e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativá-los nos Ajustes quando quiser.} other {Os relatórios de falha estão ativados: se o Cmdr cair, ele envia a versão do app, a sua distribuição e versão do Linux e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativá-los nos Ajustes quando quiser.}}",
+  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Os relatórios de falha estão ativados: se o Cmdr cair, ele envia a versão do app, a sua versão do macOS e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativá-los nos Ajustes quando quiser.} windows {Os relatórios de falha estão ativados: se o Cmdr cair, ele envia a versão do app, a sua versão do Windows e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativá-los nos Ajustes quando quiser.} linuxGnome {Os relatórios de falha estão ativados: se o Cmdr cair, ele envia a versão do app, a sua distribuição e versão do Linux e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativá-los nas Preferências quando quiser.} linuxKde {Os relatórios de falha estão ativados: se o Cmdr cair, ele envia a versão do app, a sua distribuição e versão do Linux e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativá-los em Configurar Cmdr quando quiser.} other {Os relatórios de falha estão ativados: se o Cmdr cair, ele envia a versão do app, a sua distribuição e versão do Linux e o ponto do código onde parou.\nNunca os seus arquivos.\nVocê pode desativá-los nos Ajustes quando quiser.}}",
   "@onboarding.stepBeta.crashReportsNoteAlone": {
-    "sourceHash": "27d4b1b"
+    "sourceHash": "bd11273"
   },
   "onboarding.stepBeta.emailTitle": "Mantenha contato (opcional)",
   "@onboarding.stepBeta.emailTitle": {
@@ -427,9 +427,9 @@
   "@onboarding.stepBeta.signup.rejected": {
     "sourceHash": "5a1bca7"
   },
-  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Não deu para acessar o servidor de inscrição agora, então você ainda não está na lista. Seu endereço está salvo neste Mac: clique em Salvar de novo daqui a pouco, ou quando quiser em Ajustes › Atualizações e privacidade.} windows {Não deu para acessar o servidor de inscrição agora, então você ainda não está na lista. Seu endereço está salvo neste PC: clique em Salvar de novo daqui a pouco, ou quando quiser em Ajustes › Atualizações e privacidade.} other {Não deu para acessar o servidor de inscrição agora, então você ainda não está na lista. Seu endereço está salvo neste computador: clique em Salvar de novo daqui a pouco, ou quando quiser em Ajustes › Atualizações e privacidade.}}",
+  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Não deu para acessar o servidor de inscrição agora, então você ainda não está na lista. Seu endereço está salvo neste Mac: clique em Salvar de novo daqui a pouco, ou quando quiser em Ajustes › Atualizações e privacidade.} windows {Não deu para acessar o servidor de inscrição agora, então você ainda não está na lista. Seu endereço está salvo neste PC: clique em Salvar de novo daqui a pouco, ou quando quiser em Configurações › Atualizações e privacidade.} linuxGnome {Não deu para acessar o servidor de inscrição agora, então você ainda não está na lista. Seu endereço está salvo neste computador: clique em Salvar de novo daqui a pouco, ou quando quiser em Preferências › Atualizações e privacidade.} linuxKde {Não deu para acessar o servidor de inscrição agora, então você ainda não está na lista. Seu endereço está salvo neste computador: clique em Salvar de novo daqui a pouco, ou quando quiser em Configurar Cmdr › Atualizações e privacidade.} other {Não deu para acessar o servidor de inscrição agora, então você ainda não está na lista. Seu endereço está salvo neste computador: clique em Salvar de novo daqui a pouco, ou quando quiser em Ajustes › Atualizações e privacidade.}}",
   "@onboarding.stepBeta.signup.unreachable": {
-    "sourceHash": "6032194"
+    "sourceHash": "ae9c4a5"
   },
   "onboarding.stepBeta.emailNote": "{platform, select, macos {Deixe seu e-mail e eu entro em contato com alguma pergunta ou novidade de vez em quando.\nO endereço de e-mail que você digita aqui fica salvo só no seu Mac e nunca é ligado às suas estatísticas de uso; os dois são, de propósito, dois subsistemas separados.} windows {Deixe seu e-mail e eu entro em contato com alguma pergunta ou novidade de vez em quando.\nO endereço de e-mail que você digita aqui fica salvo só no seu PC e nunca é ligado às suas estatísticas de uso; os dois são, de propósito, dois subsistemas separados.} other {Deixe seu e-mail e eu entro em contato com alguma pergunta ou novidade de vez em quando.\nO endereço de e-mail que você digita aqui fica salvo só no seu computador e nunca é ligado às suas estatísticas de uso; os dois são, de propósito, dois subsistemas separados.}}",
   "@onboarding.stepBeta.emailNote": {
@@ -467,9 +467,9 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "Você pode mudar isto a qualquer momento nos Ajustes.",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Você pode mudar isto a qualquer momento nas Configurações.} linuxGnome {Você pode mudar isto a qualquer momento nas Preferências.} linuxKde {Você pode mudar isto a qualquer momento em Configurar Cmdr.} other {Você pode mudar isto a qualquer momento nos Ajustes.}}",
   "@onboarding.stepOptional.changeAnytime": {
-    "sourceHash": "895d675"
+    "sourceHash": "ff84784"
   },
   "onboarding.stepOptional.networking.title": "Rede",
   "@onboarding.stepOptional.networking.title": {

@@ -185,11 +185,19 @@ async function expectCursorInView(tauriPage: Parameters<typeof ensureAppReady>[0
   }
   const prevHolder: { sample: Sample | null } = { sample: null }
   const stableHolder: { sample: Sample | null } = { sample: null }
+  // The last few reads, so a failure says what kept moving.
+  const recent: string[] = []
 
   const settled = await pollUntil(
     tauriPage,
     async () => {
       const next = await readCursorAndContainer(tauriPage)
+      recent.push(
+        next.cursor && next.container
+          ? `cursor ${String(Math.round(next.cursor.left))}–${String(Math.round(next.cursor.right))}, container ${String(Math.round(next.container.left))}–${String(Math.round(next.container.right))}`
+          : `cursor ${next.cursor ? 'found' : 'missing'}, container ${next.container ? 'found' : 'missing'}`,
+      )
+      if (recent.length > 6) recent.shift()
       if (!next.cursor || !next.container) {
         prevHolder.sample = null
         return false
@@ -215,7 +223,7 @@ async function expectCursorInView(tauriPage: Parameters<typeof ensureAppReady>[0
     waitBudget(3000),
     16,
   )
-  expect(settled, `${context}: cursor/container rects did not settle`).toBe(true)
+  expect(settled, `${context}: cursor/container rects did not settle; last reads: ${recent.join('; ')}`).toBe(true)
 
   // The stable sample came straight from the satisfying poll iteration, no extra IPC needed.
   const sample = stableHolder.sample

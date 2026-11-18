@@ -118,7 +118,7 @@ Core terms confirmed against Microsoft terminology and GNOME Nautilus. Extend as
 | volume             | волумен         | the storage volume sense                       |
 | settings           | параметри       |                                                |
 | destination folder | целна папка     |                                                |
-| file name          | име на датотека |                                                |
+| filename           | име на датотека |                                                |
 
 ## Brand and do-not-translate
 

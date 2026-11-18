@@ -30,7 +30,7 @@ The non-obvious why behind `terms.json` rulings. Forms: `terms.json`; voice: `st
 ## Archives (`settings.archives.*`, `fileExplorer.archiveEnterMenu.*`, `fileExplorer.readOnly.*`, `fileOperations.archivePassword.*`)
 
 - A double `arquivo` (file + `arquivo compactado`) reads fine; a named format is plain `arquivo zip`. `pathErrorNotZip`
-  says `nome do arquivo compactado` so it doesn't ask for a file name.
+  says `nome do arquivo compactado` so it doesn't ask for a filename.
 - Browse → `Navegar`, beside `Abrir` in one segmented control. `settings.archives.ooxml.*` keeps bare `pacotes` so the
   row stays wider than the bundles card. Compress → `Comprimir`; level → `Nível de compressão`.
 
@@ -130,7 +130,7 @@ The non-obvious why behind `terms.json` rulings. Forms: `terms.json`; voice: `st
 - Agreement isn't drift: keep `Ambos` / `Ambas`, `Modificado` / `Modificados`. `Pré-visualização` vs `Pré-visualizar`,
   `Busca` (a section) vs `Buscar`. `Em execução` (a server) vs `Em andamento` (a task); `memória` (RAM) vs `anotações`
   (Ask Cmdr's memory). ❌ Never sweep `de novo` → `novamente`.
-- `viewer.saveAs.defaultName` is `selecao` without the cedilla: a default file name.
+- `viewer.saveAs.defaultName` is `selecao` without the cedilla: a default filename.
 
 ## Native menus (`menu.*`, `licensing.windowTitle.*`, `main.instanceLock.*`)
 

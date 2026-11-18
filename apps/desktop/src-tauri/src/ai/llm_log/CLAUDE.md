@@ -7,7 +7,7 @@ metadata schema, privacy, setting wiring): `DETAILS.md`.
 ## Module map
 
 - `mod.rs`: the logger — `JobKind`/`LlmLogContext`, `log_request` → `CallLog::log_response`, the enabled + dir globals,
-  the pure counter/slug/file-name helpers, and the detached-thread writer.
+  the pure counter/slug/filename helpers, and the detached-thread writer.
 - `redact.rs`: defense-in-depth secret scrubbing (`redact_secrets`), run over every file before writing.
 
 ## Must-knows

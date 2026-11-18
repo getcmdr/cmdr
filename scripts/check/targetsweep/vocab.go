@@ -39,10 +39,10 @@ const (
 // Lanes is every recording lane.
 var Lanes = []string{LaneClippy, LaneDoc, LaneTests}
 
-// CompleteStream is the file name of a lane's last finished build's stream.
+// CompleteStream is the filename of a lane's last finished build's stream.
 func CompleteStream(lane string) string { return lane + ".jsonl" }
 
-// PartialStreamPrefix starts the file name of a run's stream while it runs, and of one
+// PartialStreamPrefix starts the filename of a run's stream while it runs, and of one
 // whose build didn't finish (a compile error, a kill).
 func PartialStreamPrefix(lane string) string { return lane + ".partial-" }
 

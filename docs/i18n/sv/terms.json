@@ -741,15 +741,12 @@
     "sources": "standard Swedish security text; no first-party source"
   },
   "configure": {
-    "accept": ["konfiguration", "ställ in", "ställer in"],
+    "accept": ["konfiguration", "ställ in", "ställer in", "anpassa"],
     "chosen": "konfigurera",
     "confidence": "high",
     "forms": "Konfigurera…; configuration profile → konfigurationsprofil",
     "sources": "macOS/MS (Konfigurera), macOS SystemSettings (Konfigurationsprofil)",
-    "exceptions": {
-      "menu.app.settings": "linuxKde branch quotes KDE's standard Configure %1… action, which KDE Swedish writes Anpassa (sv/kde-dolphin/dolphin.po Configure… → Anpassa…): Anpassa Cmdr…",
-      "fileExplorer.quickFilter.intro.openSettings": "linuxKde branch quotes the same KDE menu row as menu.app.settings: Anpassa Cmdr…"
-    }
+    "note": "anpassa is accepted for KDE's settings window, which KDE Swedish names Anpassa (sv/kde-dolphin/dolphin.po @title:window Configure → Anpassa, Configure… → Anpassa…; kconfigwidgets6.po Configure %1… → Anpassa %1…): the window title Anpassa – Cmdr, the menu row and every button Anpassa Cmdr(…), and pointers i ”Anpassa Cmdr” > AI. Cmdr's own buttons elsewhere keep Konfigurera."
   },
   "confirm": {
     "accept": ["bekräftade", "bekräftelse", "bekräftat", "obekräftad"],
@@ -1933,7 +1930,7 @@
     "decision": "Apple translates Quick Look and Keychain",
     "forms": "the store nyckelringen (Kom ihåg i nyckelringen); the app Keychain Access → Nyckelhanterare",
     "sources": "macOS Keychain Access.app InfoPlist.loctable (CFBundleDisplayName = Nyckelhanterare), Localizable (nyckelring)",
-    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Kom ihåg i KWallet), and KDE Swedish calls a wallet plånbok (kwalletmanager.po: Wallet → Plånbok); GNOME's Passwords and Keys (Seahorse) → Lösenord och nycklar, its keyring → nyckelring (seahorse.po). GNOME's keyboard path is Inställningar > Tangentbord > Visa och anpassa kortkommandon (gnome-control-center.po: _View and Customize Shortcuts → _Visa och anpassa kortkommandon), KDE's Systeminställningar > Tangentbord > Genvägar. Verified read-only on l10n.gnome.org and websvn.kde.org trunk/l10n-kf6 sv, 2026-11-18."
+    "note": "Linux desktop branches: KDE's password store KDE Wallet → KDE:s plånbok (kwalletd6.po sv: The KDE Wallet System → KDE:s plånbokssystem, Use the KDE wallet … → … KDE:s plånbok …; kwalletmanager.po: Wallet → Plånbok), so Kom ihåg i KDE:s plånbok; KDE keeps KWalletManager as the app's name; GNOME's Passwords and Keys (Seahorse) → Lösenord och nycklar, its keyring → nyckelring (seahorse.po). GNOME's keyboard path is Inställningar > Tangentbord > Visa och anpassa kortkommandon (gnome-control-center.po: _View and Customize Shortcuts → _Visa och anpassa kortkommandon), KDE's Systeminställningar > Tangentbord > Genvägar. Verified read-only on l10n.gnome.org and websvn.kde.org trunk/l10n-kf6 sv (kwallet/kwalletd6.po, kwalletmanager.po), 2026-11-18."
   },
   "kind": {
     "chosen": "typ",
@@ -3120,7 +3117,12 @@
     "chosen": "inställningar",
     "confidence": "high",
     "forms": "window Inställningar; paths Inställningar > AI",
-    "sources": "macOS Finder (Inställningar…)"
+    "sources": "macOS Finder (Inställningar…)",
+    "windows": {
+      "chosen": "Inställningar",
+      "accept": ["inställning", "inställningar"],
+      "note": "Microsoft names an app's settings Inställningar too (sv/microsoft-terminology/SWEDISH.tbx: Settings → Inställningar, 'the feature in an app that allows users to change its properties'), so every windows branch naming Cmdr's window (settings.window.title, commands.appSettings.label, each i inställningarna / Inställningar > AI pointer) reads like macOS."
+    }
   },
   "share-menu": {
     "accept": ["delning"],
@@ -4181,7 +4183,8 @@
     "chosen": "Inställningar",
     "confidence": "high",
     "sources": "macOS AppKit MenuCommands (Preferences → Inställningar); sv/gnome-nautilus/nautilus.po _Preferences → _Inställningar; sv/xfce-thunar/thunar.po Inställninga_r...",
-    "note": "GNOME's app-menu row (the linuxGnome branch of menu.app.settings) is Inställningar with no ellipsis."
+    "note": "GNOME titles Cmdr's settings window Inställningar too (sv/gnome-nautilus/nautilus.po _Preferences → _Inställningar), so the linuxGnome branches read like macOS and Windows, and the app-menu row (menu.app.settings) has no ellipsis. KDE's window is Anpassa – Cmdr (see configure).",
+    "accept": ["inställnings"]
   },
   "bug": {
     "chosen": "bugg",
@@ -4205,5 +4208,11 @@
     "forms": "always definite in prose: från Hjälp-menyn",
     "sources": "catalog (menu.bar.help Hjälp, from macOS's localized menu bar); style.md compounds rule (Hjälp-menyn)",
     "accept": ["Hjälp"]
+  },
+  "usb-preferences": {
+    "chosen": "USB-inställningar",
+    "confidence": "tentative",
+    "sources": "catalog (settings.fileOperations.mtpEnabled.description: Inställningar > USB-inställningar); no pile source carries Android's strings",
+    "note": "Quote the label Swedish Android shows on the phone; the path's first step is Android's Inställningar app."
   }
 }

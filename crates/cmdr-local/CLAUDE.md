@@ -1,8 +1,8 @@
 # cmdr-local
 
 The local disk: `LocalPosixVolume` (the `Volume` over a `std::fs` root) and its Windows sibling `LocalWindowsVolume`,
-the local reader, the one no-replace rename, local volume space, and the mount probes. Tauri-free; the app builds every
-local volume with its `VolumeHost`.
+the local reader, the one no-replace rename, local volume space, and the mount probes. Tauri-free. Callers name the
+alias `LocalVolume`; only OS-dependent code names a sibling (`platform/mod.rs`).
 
 ## Module map
 

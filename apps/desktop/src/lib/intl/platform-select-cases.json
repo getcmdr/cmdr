@@ -57,12 +57,12 @@
     },
     {
       "name": "only a KDE branch: GNOME reads other",
-      "value": "{platform, select, macos {Keychain} windows {Credential Manager} linuxKde {KWallet} other {your keyring}}",
+      "value": "{platform, select, macos {Keychain} windows {Credential Manager} linuxKde {KDE Wallet} other {your keyring}}",
       "reads": {
         "macos": "Keychain",
         "windows": "Credential Manager",
         "linuxGnome": "your keyring",
-        "linuxKde": "KWallet",
+        "linuxKde": "KDE Wallet",
         "linux": "your keyring"
       }
     },

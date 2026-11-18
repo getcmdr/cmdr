@@ -39,7 +39,7 @@ pub struct FolderSpec {
     /// classification and its full path drives the path-class prior, exactly as in
     /// production — so name a `node_modules` `node_modules` and it floors.
     pub path: String,
-    /// Representative file names directly in the folder (extensions are what
+    /// Representative filenames directly in the folder (extensions are what
     /// matter — `["a.pdf", "b.jpg"]` reads as two-kind diversity). The count is the
     /// file count; the distinct extensions drive diversity.
     pub files: Vec<String>,
@@ -58,7 +58,7 @@ pub struct FolderSpec {
 }
 
 impl FolderSpec {
-    /// A folder at `path` with the given file names, aged `age_days`, no marker, no
+    /// A folder at `path` with the given filenames, aged `age_days`, no marker, no
     /// optional signals. Chainable setters cover the rest.
     pub fn new(path: &str, files: &[&str], age_days: u64) -> Self {
         Self {

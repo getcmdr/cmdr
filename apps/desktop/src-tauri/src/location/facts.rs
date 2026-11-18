@@ -57,30 +57,56 @@ impl RootHistory {
 
 static ROOT_HISTORY: LazyLock<RootHistory> = LazyLock::new(RootHistory::default);
 
-/// Start the earlier-roots record: seed it with every saved share's last mount
-/// path, record each registered volume's root, and listen for every volume that
-/// arrives from here on.
+/// The roots `id` held before `current`, this session's and the one saved last session
+/// (`super::last_roots`), oldest first.
+pub(crate) fn earlier_roots_of(id: &str, current: &str) -> Vec<String> {
+    ROOT_HISTORY.earlier_roots(id, current)
+}
+
+/// Start the earlier-roots record: seed it with each volume's last root from the last
+/// session (`super::last_roots`) and every saved share's last mount path, record each
+/// registered volume's root, and listen for every volume that arrives from here on, saving
+/// each one's root (and each id seen at two roots at once) for the next session.
 ///
 /// Call once at startup, after the saved-share store loads (its last mount paths
 /// are the seed) and before a remount could move one. A root move that isn't an
 /// arrival (a renamed drive) is caught by [`VolumeFacts::now`], which records
 /// every live root it reads.
 pub(crate) fn start_root_history() {
+    for (id, root) in super::last_roots::saved_roots() {
+        ROOT_HISTORY.record(&id, &root);
+    }
     for share in crate::network::known_shares::saved_shares() {
         if let (Some(id), Some(mount_path)) = (share.volume_id, share.mount_path) {
             ROOT_HISTORY.record(&id, &mount_path);
         }
     }
     let manager = get_volume_manager();
+    // Both listeners run INSIDE a registration: memory only, the file write happens on
+    // `last_roots`' own thread. Subscribed before the sweep below, so an id that turns
+    // shared in between is still heard.
+    manager.on_identity_conflict(super::last_roots::note_shared);
     for (id, volume) in manager.list_volumes_with_handles() {
-        ROOT_HISTORY.record(&id, &volume.root().to_string_lossy());
+        if manager.has_shared_identity(&id) {
+            super::last_roots::note_shared(&id);
+        }
+        note_live_root(&id, volume.as_ref());
     }
-    // Runs INSIDE the registration: one lookup and one map insert, then return.
     manager.on_volume_arrival(|id| {
         if let Some(volume) = get_volume_manager().get(id) {
-            ROOT_HISTORY.record(id, &volume.root().to_string_lossy());
+            note_live_root(id, volume.as_ref());
         }
     });
+}
+
+/// Record `volume`'s live root this session and save it as its last root. A view into
+/// another volume (an archive, a `.git` portal) has no root of its own to save.
+fn note_live_root(id: &str, volume: &dyn cmdr_fs::volume::Volume) {
+    let root = volume.root().to_string_lossy();
+    ROOT_HISTORY.record(id, &root);
+    if !volume.routes_over_a_parent() {
+        super::last_roots::note(id, &root);
+    }
 }
 
 impl VolumeFacts {

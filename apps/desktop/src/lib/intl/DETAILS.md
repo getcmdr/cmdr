@@ -228,13 +228,17 @@ space after each comma). Never a block inside a sentence, never `{platform}` int
 
 - **Linux desktops are flat branches, not a nested select** (#1231). A running system is a READER
   (`PlatformSelectReader`: `macos`, `windows`, `linuxGnome`, `linuxKde`, or `linux`),
-  `selectReaderFor(platform, linuxDesktop)` names it (the desktop is `convention('linuxDesktop')`, asked only on Linux,
-  so macOS and Windows resolve exactly by platform), and a reader reads its own branch where the block has one, else
-  `other`. A block without desktop branches reads exactly as before on every desktop. Write a desktop branch only where
-  that desktop's own UI says it differently (style guide § "Platform vocabulary"); a source branch equal to `other`
-  fails the shape check. **Decision/Why flat**: one level keeps every reader a lookup with one fallback (the raw
-  splitter, the ES5 boot guard, Rust's table), a nested `{desktop, select}` inside `other` would need a second injected
-  arg and a second split in each, and translators see every system's text side by side.
+  `selectReaderFor(platform, linuxDesktop)` names it (the platform is `getCopyPlatform()`, which a
+  `CMDR_MOCK_CONVENTIONS` dev run moves to the mocked desktop's OS; the desktop is `convention('linuxDesktop')`, asked
+  only on Linux, so macOS and Windows resolve exactly by platform), and a reader reads its own branch where the block
+  has one, else `other`. A block without desktop branches reads exactly as before on every desktop. Write a desktop
+  branch only where that desktop's own UI says it differently (style guide § "Platform vocabulary"); a source branch
+  equal to `other` fails the shape check, unless the key's `@key.identicalBranches` names it with a reason (the English
+  matches, but translations split there: every settings-window pointer's `windows` branch, since Microsoft's word for an
+  app's settings differs from Apple's in French and Spanish; schema in `messages/DETAILS.md`). **Decision/Why flat**:
+  one level keeps every reader a lookup with one fallback (the raw splitter, the ES5 boot guard, Rust's table), a nested
+  `{desktop, select}` inside `other` would need a second injected arg and a second split in each, and translators see
+  every system's text side by side.
 - **One shared table keeps the resolvers in agreement**: `platform-select-cases.json` (which reader each platform plus
   desktop is, and what each reader reads from sample blocks) is passed by `platform-select-cases.test.ts` (`t()`,
   `getMessage()`, the splitter), `app-boot-guard.test.ts` (the ES5 `pickText`), `gen-native-strings.test.ts` (the
@@ -315,7 +319,8 @@ Keychain, ⌘, a `{system_settings}` token) or the other OS's word (Trash, Quit,
 "disconnect" on Linux); a branch that keeps a macOS word on purpose goes in its `EXCEPTIONS`, with the reason. It also
 fails ANY plain `en` value that types a macOS key glyph (⌘, ⌥, ⌃, ⇧): a key in a sentence is a key cap tag or a
 `{combo}` param (`../shortcuts/DETAILS.md` § Shortcuts as text), and a sentence naming the glyphs themselves keeps them
-in its `macos` branch.
+in its `macos` branch. And it fails a word Cmdr spells one way on every OS ("file name" for "filename", "KWallet" for
+"KDE Wallet") in any `en` branch or `@key` description.
 
 - **A desktop branch is a branch-set edit like any other.** Add `linuxGnome` / `linuxKde` only with words that desktop's
   own UI or docs use (cite them in `docs/notes/windows-port/copy-glossary-evidence.md`), and keep `other`

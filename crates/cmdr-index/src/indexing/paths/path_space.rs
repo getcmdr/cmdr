@@ -117,7 +117,10 @@ impl IndexPathSpace {
     /// filesystem (see `local_external_index::classify`); only a FAT/exFAT local
     /// external drive is `false`.
     pub(crate) fn for_volume(kind: IndexVolumeKind, volume_root: &Path, inodes_trustworthy: bool) -> Self {
-        let base = if kind.mount_rooted() {
+        // `root` on Windows is the system drive (`C:/`), mount-rooted like any other drive
+        // (`routing::root_mount_root`); on macOS and Linux it's the pass-through boot disk.
+        let rooted_at_a_drive = super::routing::root_mount_root().is_some();
+        let base = if kind.mount_rooted() || rooted_at_a_drive {
             Self::mount_rooted(volume_root.to_string_lossy().into_owned())
         } else {
             Self::root()
@@ -251,13 +254,13 @@ mod tests {
         // A mount-rooted space keeps the raw absolute path (no firmlink normalization).
         assert_eq!(mount.absolute("/Volumes/NONAME/sub"), "/Volumes/NONAME/sub");
 
-        // `for_volume` derives the space from the kind + root.
-        assert_eq!(
-            IndexPathSpace::for_volume(IndexVolumeKind::Local, Path::new("/"), true)
-                .exclusion_scope()
-                .tier(),
-            ExclusionTier::BootDisk,
-        );
+        // `for_volume` derives the space from the kind + root: `root` is the `/`-rooted boot
+        // disk on macOS and Linux, and mount-rooted at the system drive on Windows.
+        let local = IndexPathSpace::for_volume(IndexVolumeKind::Local, Path::new("/"), true);
+        match super::super::routing::root_mount_root() {
+            None => assert_eq!(local.exclusion_scope().tier(), ExclusionTier::BootDisk),
+            Some(_) => assert_eq!(local.exclusion_scope().tier(), ExclusionTier::MountRooted),
+        }
         assert_eq!(
             IndexPathSpace::for_volume(IndexVolumeKind::LocalExternal, Path::new("/Volumes/NONAME"), true)
                 .exclusion_scope()

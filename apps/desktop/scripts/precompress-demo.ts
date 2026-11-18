@@ -26,7 +26,7 @@ export const MIN_BYTES = 10 * 1024
 
 const EXTENSIONS = ['.wasm', '.js', '.css']
 
-/** Whether `name` (a file name, `size` bytes) gets a `.br` copy. Pure. */
+/** Whether `name` (a filename, `size` bytes) gets a `.br` copy. Pure. */
 export function shouldPrecompress(name: string, size: number): boolean {
   return size >= MIN_BYTES && EXTENSIONS.some((extension) => name.endsWith(extension))
 }

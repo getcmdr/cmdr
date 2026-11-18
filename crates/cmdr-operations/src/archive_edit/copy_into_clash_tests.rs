@@ -18,9 +18,9 @@ async fn run_into(
     policy: ConflictResolution,
     is_move: bool,
 ) -> Arc<CollectorEventSink> {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root.to_path_buf(),
         crate::host::testing::pane_order_host(),
@@ -246,7 +246,7 @@ async fn an_answered_overwrite_on_a_move_lands_the_folder_and_removes_the_source
 /// sources.
 #[tokio::test]
 async fn a_file_and_a_folder_of_one_name_in_one_move_are_refused_whole() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let engine = TestOperations::new();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -258,7 +258,7 @@ async fn a_file_and_a_folder_of_one_name_in_one_move_are_refused_whole() {
     std::fs::write(src_root.join("f/notes"), b"the file").expect("w file");
     notes_folder(&src_root.join("d"));
 
-    let source_volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source_volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "src",
         src_root.clone(),
         crate::host::testing::pane_order_host(),

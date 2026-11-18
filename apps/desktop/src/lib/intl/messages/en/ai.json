@@ -90,9 +90,12 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.off.body": "Turn on a provider in Settings > AI to use AI search.",
+  "ai.translateError.off.body": "{platform, select, windows {Turn on a provider in Settings > AI to use AI search.} linuxGnome {Turn on a provider in Preferences > AI to use AI search.} linuxKde {Turn on a provider in Configure Cmdr > AI to use AI search.} other {Turn on a provider in Settings > AI to use AI search.}}",
   "@ai.translateError.off.body": {
-    "description": "Next-step line under the AI is turned off toast. Settings > AI is a navigation path to the AI settings section; keep the menu/section names as shown.",
+    "description": "Next-step line under the AI is turned off toast. Settings > AI is a navigation path to the AI settings section; keep the menu/section names as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -326,7 +329,7 @@
   },
   "ai.cloudConsent.askCmdr.protectedContents": "{platform, select, macos {Some contents stay home whatever anyone asks: SSH keys, cloud and tool credentials, your keychains, browser data, Mail, Messages, Notes, Cmdr’s own data, and any file holding a private key. Their names can still reach your provider.} windows {Some contents stay home whatever anyone asks: SSH keys, cloud and tool credentials, Windows credentials, browser data, email data, Cmdr’s own data, and any file holding a private key. Their names can still reach your provider.} other {Some contents stay home whatever anyone asks: SSH keys, cloud and tool credentials, your keyrings, browser data, email data, Cmdr’s own data, and any file holding a private key. Their names can still reach your provider.}}",
   "@ai.cloudConsent.askCmdr.protectedContents": {
-    "description": "Shown under Settings > AI > Provider, in the Allow cloud AI fold, as a paragraph after the Ask Cmdr list: the assistant is never given the contents of these places, even if a prompt asks for them, but their file names may still reach the provider. Keep the whole list and that last sentence. Each branch names what that OS has. macOS: Mail, Messages, and Notes are Apple app names, and “keychains” are the macOS password stores. Windows: “Windows credentials” are the sign-ins Credential Manager keeps, under the name it gives them. Linux: “keyrings” are the desktop’s password stores. On Windows and Linux, “email data” is what a mail app keeps on the computer (messages, attachments, accounts), whichever app it is. The apostrophe is U+2019. The screenshot shows the macOS wording.",
+    "description": "Shown under Settings > AI > Provider, in the Allow cloud AI fold, as a paragraph after the Ask Cmdr list: the assistant is never given the contents of these places, even if a prompt asks for them, but their filenames may still reach the provider. Keep the whole list and that last sentence. Each branch names what that OS has. macOS: Mail, Messages, and Notes are Apple app names, and “keychains” are the macOS password stores. Windows: “Windows credentials” are the sign-ins Credential Manager keeps, under the name it gives them. Linux: “keyrings” are the desktop’s password stores. On Windows and Linux, “email data” is what a mail app keeps on the computer (messages, attachments, accounts), whichever app it is. The apostrophe is U+2019. The screenshot shows the macOS wording.",
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -378,9 +381,12 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.notConfigured.body": "Finish your provider setup in Settings > AI, then try again.",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {Finish your provider setup in Settings > AI, then try again.} linuxGnome {Finish your provider setup in Preferences > AI, then try again.} linuxKde {Finish your provider setup in Configure Cmdr > AI, then try again.} other {Finish your provider setup in Settings > AI, then try again.}}",
   "@ai.translateError.notConfigured.body": {
-    "description": "Next-step line under the AI needs more setup toast. Settings > AI is a navigation path; keep it as shown.",
+    "description": "Next-step line under the AI needs more setup toast. Settings > AI is a navigation path; keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -390,9 +396,12 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.noCloudConsent.body": "Allow it in Settings > AI, then try again.",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {Allow it in Settings > AI, then try again.} linuxGnome {Allow it in Preferences > AI, then try again.} linuxKde {Allow it in Configure Cmdr > AI, then try again.} other {Allow it in Settings > AI, then try again.}}",
   "@ai.translateError.noCloudConsent.body": {
-    "description": "Next-step line under the Cloud AI is off toast. \"it\" is cloud AI; Settings > AI is a navigation path, keep it as shown.",
+    "description": "Next-step line under the Cloud AI is off toast. \"it\" is cloud AI; Settings > AI is a navigation path, keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -402,9 +411,12 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.authFailed.body": "Check your key in Settings > AI - it might be wrong or revoked.",
+  "ai.translateError.authFailed.body": "{platform, select, windows {Check your key in Settings > AI - it might be wrong or revoked.} linuxGnome {Check your key in Preferences > AI - it might be wrong or revoked.} linuxKde {Check your key in Configure Cmdr > AI - it might be wrong or revoked.} other {Check your key in Settings > AI - it might be wrong or revoked.}}",
   "@ai.translateError.authFailed.body": {
-    "description": "Next-step line under the API key rejected toast. Settings > AI is a navigation path; keep it as shown.",
+    "description": "Next-step line under the API key rejected toast. Settings > AI is a navigation path; keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -450,9 +462,12 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.emptyResponse.body": "Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Settings > AI.",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Settings > AI.} linuxGnome {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Preferences > AI.} linuxKde {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Configure Cmdr > AI.} other {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Settings > AI.}}",
   "@ai.translateError.emptyResponse.body": {
-    "description": "Next-step line under the AI-came-back-empty toast. A “token budget” is how much text the model may write (its thinking included) for one answer; a slow, thinking model can spend it all before answering. gpt-4.1-mini is a model name; keep it as shown. Settings > AI is a navigation path; keep it as shown.",
+    "description": "Next-step line under the AI-came-back-empty toast. A “token budget” is how much text the model may write (its thinking included) for one answer; a slow, thinking model can spend it all before answering. gpt-4.1-mini is a model name; keep it as shown. Settings > AI is a navigation path; keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -474,9 +489,12 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.parseError.body": "Try again, or pick a different model in Settings > AI.",
+  "ai.translateError.parseError.body": "{platform, select, windows {Try again, or pick a different model in Settings > AI.} linuxGnome {Try again, or pick a different model in Preferences > AI.} linuxKde {Try again, or pick a different model in Configure Cmdr > AI.} other {Try again, or pick a different model in Settings > AI.}}",
   "@ai.translateError.parseError.body": {
-    "description": "Next-step line under the couldn't-read-the-answer toast. Settings > AI is a navigation path; keep it as shown.",
+    "description": "Next-step line under the couldn't-read-the-answer toast. Settings > AI is a navigation path; keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -486,9 +504,12 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.translateError.unknownProvider.body": "Pick a provider in Settings > AI.",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {Pick a provider in Settings > AI.} linuxGnome {Pick a provider in Preferences > AI.} linuxKde {Pick a provider in Configure Cmdr > AI.} other {Pick a provider in Settings > AI.}}",
   "@ai.translateError.unknownProvider.body": {
-    "description": "Next-step line under the unrecognized-provider toast. Settings > AI is a navigation path; keep it as shown.",
+    "description": "Next-step line under the unrecognized-provider toast. Settings > AI is a navigation path; keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -952,9 +973,9 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Couldn’t save your API key: macOS Keychain denied access} other {Couldn’t read your saved API key: macOS Keychain denied access}}} windows {{op, select, save {Couldn’t save your API key: Credential Manager denied access} other {Couldn’t read your saved API key: Credential Manager denied access}}} linuxKde {{op, select, save {Couldn’t save your API key: KWallet denied access} other {Couldn’t read your saved API key: KWallet denied access}}} other {{op, select, save {Couldn’t save your API key: your system keyring denied access} other {Couldn’t read your saved API key: your system keyring denied access}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Couldn’t save your API key: macOS Keychain denied access} other {Couldn’t read your saved API key: macOS Keychain denied access}}} windows {{op, select, save {Couldn’t save your API key: Credential Manager denied access} other {Couldn’t read your saved API key: Credential Manager denied access}}} linuxKde {{op, select, save {Couldn’t save your API key: KDE Wallet denied access} other {Couldn’t read your saved API key: KDE Wallet denied access}}} other {{op, select, save {Couldn’t save your API key: your system keyring denied access} other {Couldn’t read your saved API key: your system keyring denied access}}}}",
   "@ai.secretError.title": {
-    "description": "Title of an error shown in the cloud-AI provider settings (Settings > AI cloud, and the onboarding cloud-provider step) when saving or reading the API key fails because the system’s password store refused access: the macOS Keychain, Credential Manager on Windows, or the keyring on Linux, one per branch. Name each store as its OS does in your language: in the macOS branch, \"macOS Keychain\" and \"Keychain\" are the proper name of the Apple credential store, so keep them as Apple names them (Apple ships a localized Keychain Access app); in the Windows branch, use Microsoft’s name for Credential Manager. Write each branch as a complete, natural sentence in your language rather than a shared prefix plus a clause. The screenshot shows the macOS wording. The `linuxKde` branch names KDE’s password store, KWallet: a name, which KDE keeps as is in every language.",
+    "description": "Title of an error shown in the cloud-AI provider settings (Settings > AI cloud, and the onboarding cloud-provider step) when saving or reading the API key fails because the system’s password store refused access: the macOS Keychain, Credential Manager on Windows, or the keyring on Linux, one per branch. Name each store as its OS does in your language: in the macOS branch, \"macOS Keychain\" and \"Keychain\" are the proper name of the Apple credential store, so keep them as Apple names them (Apple ships a localized Keychain Access app); in the Windows branch, use Microsoft’s name for Credential Manager. Write each branch as a complete, natural sentence in your language rather than a shared prefix plus a clause. The screenshot shows the macOS wording. The `linuxKde` branch names KDE’s password store, KDE Wallet: use the name KDE’s own translation gives it in your language.",
     "placeholders": {
       "op": "which action failed: \"save\" when storing a new key, anything else when reading the stored key"
     },
@@ -963,7 +984,7 @@
   },
   "ai.secretError.body": "{platform, select, macos {{op, select, save {Open Keychain Access and check the “Cmdr” entry, or delete it and try saving again.} other {Open Keychain Access, find the “Cmdr” entry, grant access, or delete it and re-enter your key.}}} windows {{op, select, save {Open Credential Manager, check the “Cmdr” entry under Windows Credentials, or remove it and try saving again.} other {Open Credential Manager, find the “Cmdr” entry under Windows Credentials, or remove it and enter your key again.}}} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Unlock your keyring (Passwords / Keyrings app) and try again.}}",
   "@ai.secretError.body": {
-    "description": "Guidance shown below the password-store-denied error in the cloud-AI provider settings, telling the user how to fix it: in Apple’s Keychain Access app in the macOS branch, in Credential Manager’s “Windows Credentials” section in the Windows branch, and by unlocking the keyring in the Linux branch. Use each OS’s own localized name for its app and section: Apple ships Keychain Access localized, and Microsoft localizes Credential Manager and Windows Credentials. “Cmdr” is the app name (the stored entry’s label) and must NOT be translated. Write each branch as a natural full sentence. The screenshot shows the macOS wording. The `linuxGnome` branch names GNOME’s password app, “Passwords and Keys” (use the name GNOME gives it in your language), and the `linuxKde` branch KDE’s store and manager, KWallet and KWalletManager (names, kept as is).",
+    "description": "Guidance shown below the password-store-denied error in the cloud-AI provider settings, telling the user how to fix it: in Apple’s Keychain Access app in the macOS branch, in Credential Manager’s “Windows Credentials” section in the Windows branch, and by unlocking the keyring in the Linux branch. Use each OS’s own localized name for its app and section: Apple ships Keychain Access localized, and Microsoft localizes Credential Manager and Windows Credentials. “Cmdr” is the app name (the stored entry’s label) and must NOT be translated. Write each branch as a natural full sentence. The screenshot shows the macOS wording. The `linuxGnome` branch names GNOME’s password app, “Passwords and Keys” (use the name GNOME gives it in your language), and the `linuxKde` branch KDE’s store and manager: KDE Wallet (use the name KDE’s own translation gives it in your language) and KWalletManager (an app name, kept as is).",
     "placeholders": {
       "op": "which action failed: \"save\" when storing a new key, anything else when reading the stored key"
     },
@@ -979,9 +1000,9 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Check that your Keychain is available, then try again. If it persists, restart the app.} windows {Check that Credential Manager is available, then try again. If it keeps happening, restart Cmdr.} linuxKde {Check that KWallet is available, then try again. If it persists, restart the app.} other {Check that your system keyring is available, then try again. If it persists, restart the app.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Check that your Keychain is available, then try again. If it persists, restart the app.} windows {Check that Credential Manager is available, then try again. If it keeps happening, restart Cmdr.} linuxKde {Check that KDE Wallet is available, then try again. If it persists, restart the app.} other {Check that your system keyring is available, then try again. If it persists, restart the app.}}",
   "@ai.secretError.genericBody": {
-    "description": "Guidance shown below the fall-back save/read error, suggesting the user verify their OS credential store (keyring) is available and restart the app if the problem continues. \"keyring\" is the generic term for the system credential store; use whatever your platform calls it. The screenshot shows the macOS wording. The `linuxKde` branch names KDE’s password store, KWallet: a name, which KDE keeps as is in every language.",
+    "description": "Guidance shown below the fall-back save/read error, suggesting the user verify their OS credential store (keyring) is available and restart the app if the problem continues. \"keyring\" is the generic term for the system credential store; use whatever your platform calls it. The screenshot shows the macOS wording. The `linuxKde` branch names KDE’s password store, KDE Wallet: use the name KDE’s own translation gives it in your language.",
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
@@ -993,7 +1014,7 @@
   },
   "ai.secretError.removeBody": "{platform, select, macos {Open Keychain Access, find the “Cmdr” entry, and delete it there.} windows {Open Credential Manager, find the “Cmdr” entry under Windows Credentials, and remove it there.} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Unlock your keyring (Passwords / Keyrings app) and try again.}}",
   "@ai.secretError.removeBody": {
-    "description": "Guidance shown below the remove-key error when the system’s password store denied access, telling the user to delete the stored key by hand: in Apple’s Keychain Access app in the macOS branch, in Credential Manager’s “Windows Credentials” section in the Windows branch, and by unlocking the keyring in the Linux branch. Use each OS’s own localized name for its app and section: Apple ships Keychain Access localized, and Microsoft localizes Credential Manager and Windows Credentials. “Cmdr” is the app name (the stored entry’s label) and must NOT be translated. The screenshot shows the macOS wording. The `linuxGnome` branch names GNOME’s password app, “Passwords and Keys” (use the name GNOME gives it in your language), and the `linuxKde` branch KDE’s store and manager, KWallet and KWalletManager (names, kept as is).",
+    "description": "Guidance shown below the remove-key error when the system’s password store denied access, telling the user to delete the stored key by hand: in Apple’s Keychain Access app in the macOS branch, in Credential Manager’s “Windows Credentials” section in the Windows branch, and by unlocking the keyring in the Linux branch. Use each OS’s own localized name for its app and section: Apple ships Keychain Access localized, and Microsoft localizes Credential Manager and Windows Credentials. “Cmdr” is the app name (the stored entry’s label) and must NOT be translated. The screenshot shows the macOS wording. The `linuxGnome` branch names GNOME’s password app, “Passwords and Keys” (use the name GNOME gives it in your language), and the `linuxKde` branch KDE’s store and manager: KDE Wallet (use the name KDE’s own translation gives it in your language) and KWalletManager (an app name, kept as is).",
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },

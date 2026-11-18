@@ -45,6 +45,7 @@ mod macos_fallback_test;
 pub(crate) mod native_strings;
 #[cfg(not(test))]
 mod native_strings;
+mod settings_window_name;
 
 pub use live_locale::observe_os_locale_changes;
 /// The catalog the native surfaces open while the user hasn't pinned a language. Distinct from
@@ -54,6 +55,7 @@ pub(crate) use platform::os_ui_locale;
 // `live_locale.rs`, one module down, and re-exporting it would leave a dead
 // public name on every platform that has no live-locale observer.
 pub use native_strings::{active_locale, menu_t, menu_t_with, set_language_preference};
+pub(crate) use settings_window_name::settings_window_name_en;
 
 /// One catalog we ship, plus the CLDR facts the resolver needs.
 ///

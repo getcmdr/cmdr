@@ -39,7 +39,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use super::{STAGING_DELETING_MARKER, STAGING_TEMP_MARKER, UUID_TEXT_LEN};
 
-/// The longest scratch file name Cmdr creates, in UTF-8 bytes: eCryptfs's
+/// The longest scratch filename Cmdr creates, in UTF-8 bytes: eCryptfs's
 /// 143-byte name limit (Synology encrypted shares), the strictest a write meets.
 /// See the module docs for why bytes alone also bound UTF-16 units.
 pub const MAX_SCRATCH_NAME_BYTES: usize = 143;
@@ -80,7 +80,7 @@ pub(super) fn scratch_name(file_name: &str, marker: &str, uuid: uuid::Uuid) -> S
     format!("{}{marker}{uuid}", fitted(file_name, marker))
 }
 
-/// A path's parent and its file name as text, for the minting side.
+/// A path's parent and its filename as text, for the minting side.
 pub(super) fn split_final_path(final_path: &Path) -> (&Path, String) {
     let parent = final_path.parent().unwrap_or(Path::new(""));
     let file_name = final_path

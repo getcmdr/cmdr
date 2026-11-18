@@ -39,8 +39,8 @@
   "@whatsNew.dialog.close": {
     "sourceHash": "7d9eb7a"
   },
-  "whatsNew.optOutToast": "{platform, select, windows {Rendben, nincs több frissítési jegyzet. Bármikor visszakapcsolhatod itt: Beállítások > Frissítések és adatvédelem.} other {Rendben, nincs több frissítési jegyzet. Bármikor visszakapcsolhatod itt: Beállítások > Frissítések és adatvédelem.}}",
+  "whatsNew.optOutToast": "{platform, select, windows {Rendben, nincs több frissítési jegyzet. Bármikor visszakapcsolhatod itt: Beállítások > Frissítések és adatvédelem.} linuxGnome {Rendben, nincs több frissítési jegyzet. Bármikor visszakapcsolhatod itt: Beállítások > Frissítések és adatvédelem.} linuxKde {Rendben, nincs több frissítési jegyzet. Bármikor visszakapcsolhatod itt: Cmdr beállítása > Frissítések és adatvédelem.} other {Rendben, nincs több frissítési jegyzet. Bármikor visszakapcsolhatod itt: Beállítások > Frissítések és adatvédelem.}}",
   "@whatsNew.optOutToast": {
-    "sourceHash": "e27e52a"
+    "sourceHash": "edde996"
   }
 }

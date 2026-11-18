@@ -17,7 +17,7 @@ You need Node (mise), pnpm, ffmpeg, and `secret OPENAI_API_KEY`. Everything unde
 gitignored and comes from these steps. Scripts take `--video=demo` (the default) or `--video=anywhere`.
 
 1. `pnpm install`: a standalone pnpm root (its own `pnpm-workspace.yaml`), separate from the monorepo.
-2. Get the music: download each MP3 from its track page in `CREDITS.md` into `assets/music/` under the file name the
+2. Get the music: download each MP3 from its track page in `CREDITS.md` into `assets/music/` under the filename the
    video spec names (`music.source` in `src/videos/<id>.ts`).
 3. `pnpm prepare-assets`: copies the logo, the dark screenshots, Inter, and both tracks into `public/`, and maps each
    track's drum hits (the warm theme's pulses follow the real drummer).

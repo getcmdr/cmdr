@@ -93,7 +93,9 @@ fork table `apps/desktop/scripts/i18n-en-overlays.test.ts` mirrors.
   `Windows` keeps the OS name out of `window`, which still reads "close all windows". When no phrase tells the senses
   apart (the bare label `Archive` names the zip noun in one key and archiving a chat in another), an entry can be
   `{ "key": "<message key>", "why": "…" }` instead of a form: it excludes that one key, which must exist in the English
-  catalog. An `exceptions` entry for that key then turns stale, so drop it.
+  catalog. An `exceptions` entry for that key then turns stale, so drop it. The term-consistency check reads these too:
+  a key excluded this way never groups with same-English keys the concept still names, so no locale needs an allowlist
+  entry for that split.
 - `sense` (required): one sentence, what this concept means in Cmdr. Split one English word into several concepts when
   it has several senses (`browse-file-picker` vs `browse-archive`), give each a `match` as specific as possible (they
   may overlap; the brief shows both), and link them with `distinct`.
@@ -195,7 +197,7 @@ A locale's typography, which the brief prints beside its digest and `i18n-mechan
   flag), with a one-line `why`. The pattern runs over the scanned text ("What the scanner reads" under § Tooling), where
   an insert is U+FFFC, so a rule can require a space next to one. Macros name what a rule wants at an insert (a lone
   brace is invalid in `u` mode, so no real regex means one):
-  - `{@name}`: a value Cmdr can't know (a file name, a path, a host, a reason): its first sound, gender, and ending are
+  - `{@name}`: a value Cmdr can't know (a filename, a path, a host, a reason): its first sound, gender, and ending are
     unknown, so this is what an article or suffix hedge targets.
   - `{@number}`: a count or a quantity Cmdr formats (`#`, `{countText}`, a size, a date, a duration).
   - `{@token}`: a value from a closed set Cmdr supplies (`{system_settings}`, `{localNetwork}`, a key chip, a verb).
@@ -243,7 +245,7 @@ A `###` section whose `##` parent also matches is left out, since the parent's b
   proposal, or process feedback to the report. Each locale's own files can't race, so they stay as usual.
 - `--out <file>` (`-` for stdout), `--stats` (chars and rough tokens per section, to stderr). Without `--out`, the brief
   goes into each language's run directory, `_ignored/i18n-work/<tag>/<timestamp>/` in the checkout (gitignored, so
-  neither git nor the doc checks see it, and per run, so parallel translators never share a file name), beside
+  neither git nor the doc checks see it, and per run, so parallel translators never share a filename), beside
   `keys.txt`, the batch. The header names the directory, the `values.json` to write there, and the batch-scoped
   `pnpm i18n:check-locale <tag> --keys-file <dir>/keys.txt`.
 - `--exclude-target-values`: a blind run for A/B tests. Withholds the batch keys' current translations and the decision

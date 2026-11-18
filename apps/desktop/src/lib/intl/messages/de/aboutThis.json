@@ -1232,9 +1232,9 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "Diesen Hinweis ausblenden. Unter Einstellungen > Erweitert kannst du ihn zurückholen.",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Diesen Hinweis ausblenden. Unter Einstellungen > Erweitert kannst du ihn zurückholen.} linuxGnome {Diesen Hinweis ausblenden. Unter Einstellungen > Erweitert kannst du ihn zurückholen.} linuxKde {Diesen Hinweis ausblenden. Unter „Cmdr einrichten“ > Erweitert kannst du ihn zurückholen.} other {Diesen Hinweis ausblenden. Unter Einstellungen > Erweitert kannst du ihn zurückholen.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "6a3a4b3"
+    "sourceHash": "aa27809"
   },
   "aboutThis.action.continueInAskCmdr": "In Ask Cmdr weitermachen",
   "@aboutThis.action.continueInAskCmdr": {

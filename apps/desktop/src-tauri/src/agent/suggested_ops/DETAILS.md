@@ -271,7 +271,7 @@ winner claims), never as an extra check on the execution path.
 **Decision: an amend announces but does not emit analytics.**
 **Why**: two different questions. The acceptance-rate metric counts DECISIONS, and counting a re-propose as a second proposal would inflate its denominator and make an agent that revises its own suggestions look worse than one that doesn't. The event refreshes a VIEW, and a view that missed an amend would show the user stale rows.
 
-❌ No path, file name, rationale, or selector pattern rides on the event. It crosses to every window, and `main.db` is a map of the user's life that stays local.
+❌ No path, filename, rationale, or selector pattern rides on the event. It crosses to every window, and `main.db` is a map of the user's life that stays local.
 
 The emitter is wired once at startup (`init_suggestions_event_emitter`, beside the operation manager's). Before wiring — every unit test — emitting is a silent no-op, and a count that can't be read is logged and dropped rather than propagated: failing an approval that already succeeded because a badge couldn't refresh would be the tail wagging the dog.
 

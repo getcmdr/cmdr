@@ -20,9 +20,12 @@
     "description": "Empty state in the Operation log dialog when nothing has been logged yet. The apostrophe is a curly typographic apostrophe (U+2019).",
     "screenshot": "operation-log-empty.png"
   },
-  "operationLog.dialog.recordingOff": "The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Settings to record them again.",
+  "operationLog.dialog.recordingOff": "{platform, select, windows {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Settings to record them again.} linuxGnome {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Preferences to record them again.} linuxKde {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Configure Cmdr to record them again.} other {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Settings to record them again.}}",
   "@operationLog.dialog.recordingOff": {
-    "description": "Shown at the top of the Operation log dialog while the user has turned recording off (the \"Record file operations\" switch in Settings). It explains why the list is empty or stops at some point, and that new operations can't be undone until recording is back on. The apostrophes are curly typographic apostrophes (U+2019).",
+    "description": "Shown at the top of the Operation log dialog while the user has turned recording off (the \"Record file operations\" switch in Settings). It explains why the list is empty or stops at some point, and that new operations can't be undone until recording is back on. The apostrophes are curly typographic apostrophes (U+2019). The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "operation-log-more-pages.png",
     "screenshotNote": "The operation log dialog, pictured here with recording on. Your string is a notice at the top of this dialog, above the list, shown in every state while recording is off."
   },

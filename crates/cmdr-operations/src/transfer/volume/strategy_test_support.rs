@@ -251,7 +251,7 @@ pub(crate) struct FlakyDest {
     pub(crate) fail_writes: usize,
     pub(crate) error: VolumeError,
     pub(crate) calls: AtomicUsize,
-    /// When set, only writes whose target file name STARTS WITH this string are
+    /// When set, only writes whose target filename STARTS WITH this string are
     /// eligible to fail (a staged write targets `<name>.cmdr-tmp-<uuid>`, so the
     /// prefix is how a test names one child of a merge). `None` ⇒ every write.
     pub(crate) fail_only_named: Option<String>,
@@ -430,7 +430,7 @@ impl Volume for RecursiveDeleteVolume {
 /// directory entry whether or not the directory still has children.
 pub(crate) struct UndeletableSource {
     inner: Arc<cmdr_fs::volume::InMemoryVolume>,
-    /// File name (exact) whose delete always fails.
+    /// Filename (exact) whose delete always fails.
     undeletable: String,
     error: VolumeError,
 }

@@ -75,7 +75,7 @@ describe('accessKeyCandidates', () => {
 
   it('takes each reachable labeled control in DOM order, with the label a person reads', () => {
     const el = scope(`
-      <label for="f">File name</label><input id="f" />
+      <label for="f">Filename</label><input id="f" />
       <button>Rename <span class="btn-key-hint" aria-hidden="true"><kbd>F2</kbd></span></button>
       <button disabled>Disabled</button>
       <button tabindex="-1">×</button>
@@ -84,7 +84,7 @@ describe('accessKeyCandidates', () => {
       <button><span class="sr-only">Only for screen readers</span></button>
     `)
     expect(accessKeyCandidates(el).map((c) => [c.control.tagName, c.label])).toEqual([
-      ['INPUT', 'File name'],
+      ['INPUT', 'Filename'],
       ['BUTTON', 'Rename'],
     ])
     el.remove()

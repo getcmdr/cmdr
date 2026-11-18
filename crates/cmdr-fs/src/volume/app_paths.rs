@@ -45,6 +45,37 @@ pub fn rebase(path: &str, old_root: &str, new_root: &str) -> Option<String> {
     Some(format!("{}/{relative}", new_root.trim_end_matches('/')))
 }
 
+/// A volume whose root moved: the root it answers at now and the roots it held before
+/// (oldest first), for a path recorded under one of those to find the same folder again.
+///
+/// Only for a volume id that is provably ONE tree: the app hands one out for an id that has
+/// never been seen at two roots at once (a cloned disk, a double mount, a btrfs subvolume,
+/// and a bind mount all share one id), so a rebase never lands on a sibling.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RootMove {
+    /// The root the volume answers at now.
+    pub live: String,
+    /// Roots the volume held before, oldest first.
+    pub earlier: Vec<String>,
+}
+
+impl RootMove {
+    /// `path` rebased from the deepest of [`Self::earlier`] that holds it onto
+    /// [`Self::live`], or `None` when the live root already holds it or no earlier root
+    /// does. `/` never counts as an earlier root: it's the boot disk's, never an address
+    /// a moved disk had.
+    pub fn rebase(&self, path: &str) -> Option<String> {
+        if path_is_under(path, &self.live) {
+            return None;
+        }
+        self.earlier
+            .iter()
+            .filter(|root| path_is_under(path, root) && !root.trim_end_matches('/').is_empty())
+            .max_by_key(|root| root.len())
+            .and_then(|root| rebase(path, root, &self.live))
+    }
+}
+
 #[cfg(test)]
 #[path = "app_paths_test.rs"]
 mod app_paths_test;

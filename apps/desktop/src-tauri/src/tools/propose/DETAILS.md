@@ -85,7 +85,7 @@ order:
    an archive, a repo's history, or a backup's snapshots, and a valid new name.
 2. **Across rows**: one `volumeId`, one folder, no repeated source, no repeated name. The volume and folder are the ones
    MOST rows name (`rows.rs::most_common`), so one stray row is the one refused, ❌ not the 39 that agree. A repeated
-   source is keyed by the same fold as a repeated name (`destination_key` on the file name): on a case-insensitive disk
+   source is keyed by the same fold as a repeated name (`destination_key` on the filename): on a case-insensitive disk
    `A.png` and `a.png` are one file, and two rows for it would reach the review as two renames, one bound to fail at
    apply (preflight has no file-identity dedupe). The cost, on a case-sensitive disk, is that two files differing only
    in case can't share one plan; the refusal names the row.

@@ -68,7 +68,7 @@ impl TerminalEffects for AppTerminalEffects<'_> {
         // path and the message in named fields and can't drift from them, and
         // `log_detail` marks each value, so a report hashes a name exactly
         // instead of guessing where it ends (a derived `{:?}` shipped most of a
-        // file name holding ", ", cmdr-reports#103).
+        // filename holding ", ", cmdr-reports#103).
         log::warn!(
             target: "write_operations",
             "op {} ({:?}) failed: detail={:?}",

@@ -373,7 +373,8 @@ fn home_dir() -> Option<PathBuf> {
     if let Some(home) = tests::home_override() {
         return Some(home);
     }
-    dirs::home_dir()
+    // App-spelled, so on Windows `C:/Users/x` lies under the `C:/` root it's compared to.
+    dirs::home_dir().map(cmdr_fs::volume::path_grammar::host_app_path)
 }
 
 /// How one group of frontier roots ended.

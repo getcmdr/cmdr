@@ -265,7 +265,7 @@ Backend events fire at success chokepoints; frontend events ride `track_event`.
 - `viewer_opened` (backend, `file_viewer/analytics.rs`, from `session::open_session_inner`): `content` (`text` /
   `image` / `pdf` / `markdown`, or `unknown` on a failure), `size_bucket` (`<1MB` / `1-10MB` / `10-100MB` / `100MB-1GB` / `1GB+`,
   stepping where the viewer's own backends step), `outcome` (`opened` / `failed`), `failure` (the `ViewerError`
-  variant's token, or `none`), `from_archive` and `forced_text` bools. ❌ NEVER a file name, an extension, or a byte
+  variant's token, or `none`), `from_archive` and `forced_text` bools. ❌ NEVER a filename, an extension, or a byte
   count: an extension list fingerprints a person's work in a population of a few hundred installs. Every open passes
   `open_session_inner` (F3, the "View as text" override, preview-inside-a-zip), and it's wrapped rather than emitted
   inline because the media path is an early return and the text path has a dozen `?`s.
@@ -306,7 +306,7 @@ Backend events fire at success chokepoints; frontend events ride `track_event`.
   `agent/suggested_ops/analytics.rs`): `verb` (the `ProposalVerb` token, `add_server` / `edit_server` included) +
   `op_count` bucket (`0` for a server group, which has no ops; never a host or name). Acceptance rate is the
   agent's north-star metric, which is why the proposal and both outcomes are all counted; `approved` counts a group
-  whose operation STARTED, not a claim (`agent/suggested_ops/DETAILS.md` § The metric). Never a path, file name,
+  whose operation STARTED, not a claim (`agent/suggested_ops/DETAILS.md` § The metric). Never a path, filename,
   rationale, or selector pattern.
 - `rename_plan_from_cut_listing` (backend, `../tools/propose/rename/cut_listing.rs`, when a rename plan stages):
   fires only when the thread's latest `list_pane_files` result was cut (`returned < total`) and the plan renames files
@@ -456,7 +456,7 @@ Backend events fire at success chokepoints; frontend events ride `track_event`.
   palette, one `downloads.goToLatest` command; `global_shortcut`: the system-wide hotkey; `toast`: the download toast's
   own jump, to the file it advertised rather than the latest), `outcome` (`revealed` / `unreachable`, a file no pane
   could show / `empty`, no download found / `no_access`, Downloads can't be watched). `trigger` is
-  `goToLatestDownload`'s required parameter, so a new entry point decides what it reports. Never a file name or path.
+  `goToLatestDownload`'s required parameter, so a new entry point decides what it reports. Never a filename or path.
 
 ## Session length, in detail
 

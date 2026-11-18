@@ -270,7 +270,7 @@ fn a_paused_folder_merge_stops_renaming_its_children() {
     for name in children {
         assert!(
             dest_dir.join(name).exists(),
-            // allowed-pluralize-noun: `{name}` is a file name, not a count.
+            // allowed-pluralize-noun: `{name}` is a filename, not a count.
             "{name} lands in the destination once the user resumes"
         );
     }
@@ -450,7 +450,7 @@ fn a_rollback_during_the_source_sweep_reports_the_originals_it_did_not_reach() {
     for name in names {
         assert!(
             dst_dir.join(name).exists(),
-            // allowed-pluralize-noun: `{name}` is a file name, not a count.
+            // allowed-pluralize-noun: `{name}` is a filename, not a count.
             "{name} landed in phase 3, before the sweep ever started"
         );
     }

@@ -101,7 +101,7 @@ class I18nKeyFoldingTest : FoldingTestCase() {
 
     fun testAMultiSentenceMessageFoldsInFull() {
         val long = "It includes the app version, macOS version, and which part of the code crashed. " +
-            "No file names or personal data. You can read the whole report before it's sent, and you can say no."
+            "No filenames or personal data. You can read the whole report before it's sent, and you can say no."
         myFixture.cmdrProjectWith("a.privacyNote" to long)
         myFixture.configureByText("sample.ts", "const note = tString('a.privacyNote')")
 

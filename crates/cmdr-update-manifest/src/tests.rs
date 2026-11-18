@@ -236,8 +236,8 @@ static WRITER_BUILT: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| w
 
 #[test]
 fn every_published_shape_reads_in_every_reader_that_shipped() {
-    // Every manifest shape that went out: the plugin era, the `dmgSizes` era, the versioned file
-    // names, the mirror URLs (v0.61.0 as published), and today's writer.
+    // Every manifest shape that went out: the plugin era, the `dmgSizes` era, the versioned
+    // filenames, the mirror URLs (v0.61.0 as published), and today's writer.
     let published = writer_fixture("latest.json");
     let shapes = [
         ("v0.7.1", include_str!("history/v0.7.1.json")),

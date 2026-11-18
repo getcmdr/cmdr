@@ -12,7 +12,7 @@
 //! file, chains to whatever handler was installed before ours, and returns so the abort and the
 //! SIGABRT handler run as before. The next launch folds the line into the report's
 //! `panic_message`, where `prepare_for_delivery` redacts and caps it like any panic payload: the
-//! reason is free text from AppKit and can quote a file name or path.
+//! reason is free text from AppKit and can quote a filename or path.
 
 use std::panic::AssertUnwindSafe;
 use std::path::{Path, PathBuf};

@@ -371,7 +371,7 @@ the gap:
   installs it after `process_pending_crash`, so the previous session's sidecar is read before anything can overwrite it.
 - **Assembly**: `convert_raw_signal_crash` puts it in `panic_message` as `Uncaught Objective-C exception <name>:
   <reason>`, when the sidecar's mtime is within 60 s of the raw file's. `prepare_for_delivery` then redacts and caps it
-  like any panic payload, which matters: the reason is free text from AppKit and can quote a path or file name (pinned
+  like any panic payload, which matters: the reason is free text from AppKit and can quote a path or filename (pinned
   by `an_uncaught_objc_exception_reason_ships_redacted_with_the_signal_crash`). `process_pending_crash` deletes the
   sidecar whatever happened, so it can't attach itself to a later crash.
 - `panic_message` was the honest field to reuse: it's "the message the process died with", already redacted, capped,

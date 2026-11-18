@@ -760,7 +760,7 @@ impl TreeModel {
 }
 
 /// A name cut to what a node's `u16` length holds, on a char boundary. No real
-/// file name comes near it (macOS caps a path at 1,024 bytes); it keeps a
+/// filename comes near it (macOS caps a path at 1,024 bytes); it keeps a
 /// pathological one from corrupting the arena.
 pub(super) fn clip_name(name: &str) -> &str {
     if name.len() <= u16::MAX as usize {

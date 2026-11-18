@@ -264,7 +264,7 @@ pub(crate) fn selection_touches_known_cloud_drive(paths: &[PathBuf]) -> bool {
 /// must keep the ordinary behavior.
 ///
 /// `None` for anything that can't be resolved into an absolute, ordinary path (a
-/// root with no file name, a `..` component below the existing ancestor, a virtual
+/// root with no filename, a `..` component below the existing ancestor, a virtual
 /// MTP/SMB path), which the caller reads as "not a cloud path".
 fn resolve_through_symlinks(path: &Path) -> Option<PathBuf> {
     let mut tail: Vec<OsString> = Vec::new();

@@ -123,9 +123,9 @@
   "@servers.hub.discoveryOff": {
     "sourceHash": "cadcceb"
   },
-  "servers.hub.discoveryOffLink": "在设置中开启",
+  "servers.hub.discoveryOffLink": "{platform, select, windows {在设置中开启} linuxGnome {在首选项中开启} linuxKde {在“配置 Cmdr”中开启} other {在设置中开启}}",
   "@servers.hub.discoveryOffLink": {
-    "sourceHash": "818571b"
+    "sourceHash": "cd006e8"
   },
   "servers.hub.nfsHint": "NFS 服务器不会主动通告自己，所以不会出现在这里。",
   "@servers.hub.nfsHint": {
@@ -251,13 +251,13 @@
   "@servers.refusal.saveUnconfirmed": {
     "sourceHash": "3fb55a6"
   },
-  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr 没能把这个密码存到钥匙串。请再试一次，或者关闭“记住到钥匙串”，不存密码直接登录。} windows {Cmdr 没能保存这个密码。请再试一次，或者关闭“记住密码”，不保存密码直接登录。} linuxKde {Cmdr 没能把这个密码存到 KWallet。请再试一次，或者关闭“记住到 KWallet”，不存密码直接登录。} other {Cmdr 没能把这个密码存到密钥环。请再试一次，或者关闭“记住到密钥环”，不存密码直接登录。}}",
+  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr 没能把这个密码存到钥匙串。请再试一次，或者关闭“记住到钥匙串”，不存密码直接登录。} windows {Cmdr 没能保存这个密码。请再试一次，或者关闭“记住密码”，不保存密码直接登录。} linuxKde {Cmdr 没能把这个密码存到 KDE 密码库。请再试一次，或者关闭“记住到 KDE 密码库”，不存密码直接登录。} other {Cmdr 没能把这个密码存到密钥环。请再试一次，或者关闭“记住到密钥环”，不存密码直接登录。}}",
   "@servers.refusal.secretNotStored": {
-    "sourceHash": "19deece"
+    "sourceHash": "2645206"
   },
-  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Cmdr 已保存你的更改，但没能更新钥匙串里的密码。再保存一次即可重试。} windows {Cmdr 已保存你的更改，但没能更新保存的密码。再保存一次即可重试。} linuxKde {Cmdr 已保存你的更改，但没能更新 KWallet 里的密码。再保存一次即可重试。} other {Cmdr 已保存你的更改，但没能更新密钥环里的密码。再保存一次即可重试。}}",
+  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Cmdr 已保存你的更改，但没能更新钥匙串里的密码。再保存一次即可重试。} windows {Cmdr 已保存你的更改，但没能更新保存的密码。再保存一次即可重试。} linuxKde {Cmdr 已保存你的更改，但没能更新 KDE 密码库里的密码。再保存一次即可重试。} other {Cmdr 已保存你的更改，但没能更新密钥环里的密码。再保存一次即可重试。}}",
   "@servers.refusal.savedSecretNotUpdated": {
-    "sourceHash": "d9b6621"
+    "sourceHash": "cdc32d0"
   },
   "servers.refusal.s3AuthenticationRejected": "那个秘密访问密钥不起作用。",
   "@servers.refusal.s3AuthenticationRejected": {
@@ -271,13 +271,13 @@
   "@servers.refusal.s3SecretMissing": {
     "sourceHash": "f1f32f2"
   },
-  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr 没能把这个秘密访问密钥存到钥匙串。请再试一次，或者关闭“记住到钥匙串”，不存密钥直接登录。} windows {Cmdr 没能保存这个秘密访问密钥。请再试一次，或者关闭“记住密码”，不保存密钥直接登录。} linuxKde {Cmdr 没能把这个秘密访问密钥存到 KWallet。请再试一次，或者关闭“记住到 KWallet”，不存密钥直接登录。} other {Cmdr 没能把这个秘密访问密钥存到密钥环。请再试一次，或者关闭“记住到密钥环”，不存密钥直接登录。}}",
+  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr 没能把这个秘密访问密钥存到钥匙串。请再试一次，或者关闭“记住到钥匙串”，不存密钥直接登录。} windows {Cmdr 没能保存这个秘密访问密钥。请再试一次，或者关闭“记住密码”，不保存密钥直接登录。} linuxKde {Cmdr 没能把这个秘密访问密钥存到 KDE 密码库。请再试一次，或者关闭“记住到 KDE 密码库”，不存密钥直接登录。} other {Cmdr 没能把这个秘密访问密钥存到密钥环。请再试一次，或者关闭“记住到密钥环”，不存密钥直接登录。}}",
   "@servers.refusal.s3SecretNotStored": {
-    "sourceHash": "9aa6628"
+    "sourceHash": "313e2ae"
   },
-  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Cmdr 已保存你的更改，但没能更新钥匙串里的秘密访问密钥。再保存一次即可重试。} windows {Cmdr 已保存你的更改，但没能更新保存的秘密访问密钥。再保存一次即可重试。} linuxKde {Cmdr 已保存你的更改，但没能更新 KWallet 里的秘密访问密钥。再保存一次即可重试。} other {Cmdr 已保存你的更改，但没能更新密钥环里的秘密访问密钥。再保存一次即可重试。}}",
+  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Cmdr 已保存你的更改，但没能更新钥匙串里的秘密访问密钥。再保存一次即可重试。} windows {Cmdr 已保存你的更改，但没能更新保存的秘密访问密钥。再保存一次即可重试。} linuxKde {Cmdr 已保存你的更改，但没能更新 KDE 密码库里的秘密访问密钥。再保存一次即可重试。} other {Cmdr 已保存你的更改，但没能更新密钥环里的秘密访问密钥。再保存一次即可重试。}}",
   "@servers.refusal.s3SavedSecretNotUpdated": {
-    "sourceHash": "8c62f24"
+    "sourceHash": "bf474d0"
   },
   "servers.refusal.accessDenied": "这个密钥无法访问这个存储桶。请检查存储桶名称和秘密访问密钥，并确认这个密钥有权读取这个存储桶。",
   "@servers.refusal.accessDenied": {
@@ -335,13 +335,13 @@
   "@servers.refusal.addressTaken": {
     "sourceHash": "5a14a92"
   },
-  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr 没能把保存的密码带到新地址，所以什么都没改。检查一下钥匙串有没有解锁，然后再保存一次。} windows {Cmdr 没能把保存的密码带到新地址，所以什么都没改。再保存一次即可重试。} linuxKde {Cmdr 没能把保存的密码带到新地址，所以什么都没改。检查一下 KWallet 有没有打开，然后再保存一次。} other {Cmdr 没能把保存的密码带到新地址，所以什么都没改。检查一下密钥环有没有解锁，然后再保存一次。}}",
+  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr 没能把保存的密码带到新地址，所以什么都没改。检查一下钥匙串有没有解锁，然后再保存一次。} windows {Cmdr 没能把保存的密码带到新地址，所以什么都没改。再保存一次即可重试。} linuxKde {Cmdr 没能把保存的密码带到新地址，所以什么都没改。检查一下 KDE 密码库有没有打开，然后再保存一次。} other {Cmdr 没能把保存的密码带到新地址，所以什么都没改。检查一下密钥环有没有解锁，然后再保存一次。}}",
   "@servers.refusal.secretNotMoved": {
-    "sourceHash": "a59f35e"
+    "sourceHash": "f962555"
   },
-  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr 没能把保存的秘密访问密钥带到新端点，所以什么都没改。检查一下钥匙串有没有解锁，然后再保存一次。} windows {Cmdr 没能把保存的秘密访问密钥带到新端点，所以什么都没改。再保存一次即可重试。} linuxKde {Cmdr 没能把保存的秘密访问密钥带到新端点，所以什么都没改。检查一下 KWallet 有没有打开，然后再保存一次。} other {Cmdr 没能把保存的秘密访问密钥带到新端点，所以什么都没改。检查一下密钥环有没有解锁，然后再保存一次。}}",
+  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr 没能把保存的秘密访问密钥带到新端点，所以什么都没改。检查一下钥匙串有没有解锁，然后再保存一次。} windows {Cmdr 没能把保存的秘密访问密钥带到新端点，所以什么都没改。再保存一次即可重试。} linuxKde {Cmdr 没能把保存的秘密访问密钥带到新端点，所以什么都没改。检查一下 KDE 密码库有没有打开，然后再保存一次。} other {Cmdr 没能把保存的秘密访问密钥带到新端点，所以什么都没改。检查一下密钥环有没有解锁，然后再保存一次。}}",
   "@servers.refusal.s3SecretNotMoved": {
-    "sourceHash": "a990f83"
+    "sourceHash": "e222c5e"
   },
   "servers.refusal.accountChanged": "不同的账户就是不同的服务器，所以什么都没保存。把它添加为一台新服务器吧。",
   "@servers.refusal.accountChanged": {
@@ -579,9 +579,9 @@
   "@servers.sheet.password": {
     "sourceHash": "e7cf3ef"
   },
-  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {已保存在钥匙串中。留空则保持不变。} windows {已保存。留空则保持不变。} linuxKde {已保存在 KWallet 中。留空则保持不变。} other {已保存在你的密钥环中。留空则保持不变。}}",
+  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {已保存在钥匙串中。留空则保持不变。} windows {已保存。留空则保持不变。} linuxKde {已保存在 KDE 密码库中。留空则保持不变。} other {已保存在你的密钥环中。留空则保持不变。}}",
   "@servers.sheet.secretKeptPlaceholder": {
-    "sourceHash": "eedbd26"
+    "sourceHash": "d9f173a"
   },
   "servers.sheet.smbUsernamePlaceholder": "可选",
   "@servers.sheet.smbUsernamePlaceholder": {
@@ -595,9 +595,9 @@
   "@servers.sheet.passphrase": {
     "sourceHash": "2510031"
   },
-  "servers.sheet.remember": "{platform, select, macos {记住到钥匙串} windows {记住密码} linuxKde {记住到 KWallet} other {记住到密钥环}}",
+  "servers.sheet.remember": "{platform, select, macos {记住到钥匙串} windows {记住密码} linuxKde {记住到 KDE 密码库} other {记住到密钥环}}",
   "@servers.sheet.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "servers.sheet.connectionModeLegend": "连接方式",
   "@servers.sheet.connectionModeLegend": {
@@ -784,9 +784,9 @@
   "@servers.sheet.autoReconnectInfoLabel": {
     "sourceHash": "edb9b82"
   },
-  "servers.sheet.needsStoredSecret": "{platform, select, macos {自动重新连接需要一个记住的密码。请打开“记住到钥匙串”，然后登录一次。} windows {自动重新连接需要一个保存的密码。请打开“记住密码”，然后登录一次。} linuxKde {自动重新连接需要一个记住的密码。请打开“记住到 KWallet”，然后登录一次。} other {自动重新连接需要一个记住的密码。请打开“记住到密钥环”，然后登录一次。}}",
+  "servers.sheet.needsStoredSecret": "{platform, select, macos {自动重新连接需要一个记住的密码。请打开“记住到钥匙串”，然后登录一次。} windows {自动重新连接需要一个保存的密码。请打开“记住密码”，然后登录一次。} linuxKde {自动重新连接需要一个记住的密码。请打开“记住到 KDE 密码库”，然后登录一次。} other {自动重新连接需要一个记住的密码。请打开“记住到密钥环”，然后登录一次。}}",
   "@servers.sheet.needsStoredSecret": {
-    "sourceHash": "29e22ae"
+    "sourceHash": "422f1c5"
   },
   "servers.sheet.tryNextcloudAddress": "试试 Nextcloud 地址",
   "@servers.sheet.tryNextcloudAddress": {

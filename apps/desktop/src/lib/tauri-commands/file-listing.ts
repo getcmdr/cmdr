@@ -201,7 +201,7 @@ export async function cancelFolderSizeCount(listingId: string): Promise<boolean>
 /**
  * Finds the index of a file by name in a cached listing.
  * @param listingId - The listing ID from listDirectoryStart.
- * @param name - File name to find.
+ * @param name - Filename to find.
  * @param includeHidden - Whether to include hidden files when calculating index.
  */
 export async function findFileIndex(listingId: string, name: string, includeHidden: boolean): Promise<number | null> {
@@ -560,7 +560,7 @@ export async function createDirectory(
 /**
  * Creates a new empty file. Same waiting as `createDirectory`.
  * @param parentPath - The parent directory path.
- * @param name - The file name to create.
+ * @param name - The filename to create.
  * @param volumeId - Optional volume ID. Defaults to "root" for local filesystem.
  */
 export async function createFile(

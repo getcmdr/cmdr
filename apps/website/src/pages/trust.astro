@@ -7,7 +7,9 @@ import LegalLayout from '../layouts/LegalLayout.astro'
 import DevTodo from '../components/DevTodo.astro'
 import Icon from '../components/icons/Icon.astro'
 import NewsletterForm from '../components/NewsletterForm.astro'
+import TrustWindows from '../components/TrustWindows.astro'
 import { codeRequirement, managedPreferenceKeys } from '../lib/trust-mdm'
+import { releaseShipsWindows } from '../lib/release'
 import {
     allowlistHosts,
     complianceBadges,
@@ -31,6 +33,10 @@ import {
 const fmt = (n: number) => n.toLocaleString('en-US')
 const euLabel = { yes: 'In the EU', no: 'Outside the EU', partly: 'Partly outside the EU' } as const
 
+// The Windows section describes an app that isn't out yet. It renders in `pnpm dev` for David's
+// review, and in the built site only once the published release has a Windows download.
+const showWindows = import.meta.env.DEV || releaseShipsWindows
+
 const toc = [
     { id: 'summary', label: 'Summary' },
     { id: 'compliance', label: 'Compliance and documents' },
@@ -43,6 +49,7 @@ const toc = [
     { id: 'signing', label: 'Signing, notarization, and updates' },
     { id: 'permissions', label: 'Sandbox and permissions' },
     { id: 'ai', label: 'AI features and your files' },
+    ...(showWindows ? [{ id: 'windows', label: 'Cmdr on Windows' }] : []),
     { id: 'development', label: 'How Cmdr is built' },
     { id: 'accessibility', label: 'Accessibility' },
     { id: 'company', label: 'Company, license, and continuity' },
@@ -568,7 +575,7 @@ const toc = [
         </li>
         <li>
             A security event log, <code>security-events.jsonl</code>: security-relevant changes and refusals (consent
-            given, an update installed or refused, a rejected access attempt), with no file names or secrets. Up to
+            given, an update installed or refused, a rejected access attempt), with no filenames or secrets. Up to
             about 2 MB, never part of an error report. On by default; users can turn it off unless the organization
             sets <code>DisableSecurityLogOptOut</code>. When Cmdr turns something away in the moment (a web page
             trying to reach its MCP server, a network share's reply without the server's signature, or an update that
@@ -844,6 +851,28 @@ const toc = [
         off (<a href="#permissions">details</a>).
     </p>
 
+    {
+        showWindows && (
+            <>
+                <h2 id="windows">Cmdr on Windows</h2>
+                <p>
+                    The rest of this page describes Cmdr for macOS. This section covers what works differently in Cmdr
+                    for Windows.
+                </p>
+                <DevTodo>
+                    Draft, not public: the built site shows this section only once the published release has a Windows
+                    download (<code>releaseShipsWindows</code> in <code>src/lib/release.ts</code>). Before that release,
+                    re-check: the Store lines (the MSIX build and Store submission are tasks 52 and 57), where an MSIX
+                    install really keeps its data (task 57), and the security notice line, which needs the release to
+                    publish its signed advisory list (task 52). Not covered here yet, and still worded for macOS
+                    elsewhere on the page: proxy settings (WinHTTP is task 46), certificate trust, and system
+                    permissions.
+                </DevTodo>
+                <TrustWindows />
+            </>
+        )
+    }
+
     <h2 id="development">How Cmdr is built</h2>
     <p>
         The full answer to "Do you have a secure development lifecycle, and do you keep the software up to date?",
@@ -1029,7 +1058,7 @@ const toc = [
                     that server. Cmdr remembers the answer and warns if it changes.
                 </li>
                 <li>
-                    <strong>Turning on cloud AI</strong>: file names and, when asked, parts of files go to the AI
+                    <strong>Turning on cloud AI</strong>: filenames and, when asked, parts of files go to the AI
                     provider. Text inside a file can try to steer the assistant. It still can't copy, move, delete, or
                     rename anything without the user's confirmation; on its own it can only create an empty folder or
                     file and change Finder tags, and a tag change can be undone.
@@ -1044,7 +1073,7 @@ const toc = [
                     stay open on that Mac.
                 </li>
                 <li>
-                    <strong>Using a Mac without FileVault</strong>: Cmdr's own data, like the index of file names and
+                    <strong>Using a Mac without FileVault</strong>: Cmdr's own data, like the index of filenames and
                     the log of file operations, sits unencrypted on the disk.
                 </li>
             </ul>

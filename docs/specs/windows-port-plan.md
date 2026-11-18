@@ -105,6 +105,11 @@ Settled:
   native path can't go where an app path belongs, and a consumer that means "this machine's local disk" names
   `cmdr_local::LocalVolume` (the lead, on David's delegation). Plan: `docs/specs/app-path-plan.md`. (Numbered D6 because
   the menu model's branch already holds D5.)
+- **D7. The Group Policy key** (David, 2026-11-18): `SOFTWARE\Policies\Rymd\Cmdr`, under `HKLM` and `HKCU`, the machine
+  winning per value. `Rymd` is the vendor level (Rymdskottkärra AB, which will ship a second product), the
+  `Policies\<vendor>\<product>` shape Chrome and Firefox use. Settled for good: admins' GPOs name the path once they
+  deploy, so it can't move. Nothing shipped on Windows before it, so there's no older path to read or migrate.
+  Canonical: `apps/desktop/src-tauri/src/managed_policy/DETAILS.md` § The Windows registry keys.
 
 - **D5. The menu model** (PROVISIONAL, 2026-11-18; recommended by the lead's research, pending David's spikes on two
   real Windows laptops): off macOS, Cmdr draws its menus in the page from `cmdr-menu`'s data. Windows, KDE, and other
@@ -145,9 +150,25 @@ Settled:
     for its company (valid 2025-09-26 to 2028-09-25, read from `tcmd115801x64.exe`), costs more for the same trust as
     Azure. Since 2024, EV no longer buys instant SmartScreen reputation either.
 
+- **D8. Volume ids on Windows** (David, 2026-11-18, option (d) of `docs/notes/windows-port/volume-id-options.md`):
+  Windows runs the rule macOS and Linux already run. A volume's id is the disk's identity; its root is only its address.
+  Task 34.
+  - A local drive or folder mount keys on its volume GUID (`\\?\Volume{…}\`, through `local_volume_id`, `vol-`); the
+    system drive keeps `"root"`. A mapped drive (`Z:`), the same share by its UNC path, and Cmdr's own SMB connection to
+    it are ONE `smb-` volume keyed on `(server, port, share)`, with `Z:/` as its canonical root and the UNC spelling as
+    an alias root. A `subst` drive, which has no GUID, keys on its path (`path-`). macOS and Linux don't change.
+  - Plus a saved last root per volume, so a restored tab or an undo after a drive-letter swap finds the disk it meant
+    instead of whatever now sits on that letter.
+  - Why: identity-keyed state (the drive index, favorites, `lastUsedPaths`, the operation log's volume) follows the
+    disk, a share gets the answer macOS already gives an OS mount plus the direct backend, and tasks 35 (the mount table
+    falls out of the GUID sweep), 39 (an arrival names the GUID), and 45 (a mapped share is the `smb-` id) get simpler.
+  - ❌ Rejected: (a) the root path as the id: a letter swap hands one disk's index, favorites, and rollbacks to the
+    other, and one share gets three volumes. (b) the GUID with the letter as display only: fights D1 (the letter is in
+    every app path) and has no answer for UNC shares. (c) path ids with a GUID keying only the index: fixes the cheapest
+    store and leaves every store holding user intent on the letter, with a Windows-only second identity in shared code.
+
 Open, waiting on David (each task entry has the detail):
 
-- **The drive and UNC volume id scheme** (task 34).
 - **The menu model** on Windows and per Linux desktop (task 63): D5 stays provisional until David tries the menu spike.
 - **macOS hand checks** from the keymap work (task 26).
 
@@ -156,7 +177,7 @@ Open, waiting on David (each task entry has the detail):
 - **Linux: image indexing writes invented data.** Off macOS the production media backend is `FakeVisionBackend`
   (`crates/cmdr-index/src/media_index/scheduler/lifecycle.rs:231`), and the setting isn't hidden
   (`apps/desktop/src/lib/settings/definitions/indexing.ts:91`), so turning it on fills `media.db` with OCR text and tags
-  derived from file names. Fixed in [#943](https://github.com/getcmdr/cmdr/issues/943) (task 1): off macOS the scheduler
+  derived from filenames. Fixed in [#943](https://github.com/getcmdr/cmdr/issues/943) (task 1): off macOS the scheduler
   doesn't start, and the Image indexing settings page is gone.
 - **Linux: dialog backdrops left a 29px strip live** at the top (`--titlebar-height` was unconditional, the title bar
   renders only on macOS). Fixed in task 24: `--titlebar-height` is 0 off macOS, the viewer's 35px override and the queue
@@ -236,15 +257,10 @@ owns its real body. Remove a line when its body lands.
   for the fixtures only they use. Each file un-gates as `LocalWindowsVolume` grows.
 - Tests ignored on Windows by issue: 24 app-path tests in `cmdr-fs` (#1225, app paths through `std::path`) and one
   `sqlite_util` deletion test (#1226). `cmdr-index`'s suite isn't green there yet: 158 of 1,911 fail, filed as #1232.
-- The app's root volume on Windows (`volumes/platform/windows.rs` `root_volume`), task 34: `LocalWindowsVolume` at the
-  system drive alone (`%SystemDrive%`, else `C:/`), under today's `root` id and named "Root", which the switcher's
-  main-volume row points at too. `resolve_path_volume_fast` answers that volume for a path on the system drive and no
-  volume for any other drive or share, so Go to path and favorites reach `C:` alone. Which drives and UNC shares
-  register, and under which ids, is task 34's open decision.
-- The root drive index on Windows (`cmdr-index` `start_indexing`), task 34: it starts at `/`, which Windows reads as the
-  process's CURRENT drive, so a `Cmdr.exe` started from `D:\…` walks `D:\`, and the watcher's branches come out as
-  `/C:/Windows` (rejected: "neither a file nor a directory"). Sizes on `C:` are unreliable until the index's path space
-  roots at a drive.
+- The drive table on Windows (`volumes/platform/windows/`), task 39: read at startup and on each switcher refresh, with
+  no arrival or removal watcher, so a drive plugged in later shows on the next refresh and one pulled stays registered
+  until then. A mapped share carries no `SmbMountInfo`, so nothing upgrades it to a direct session (task 45).
+  `live_volume_space`, `mount_identity_at`, and `network_mount_under` answer nothing (task 35's mount table).
 - The app's eject on Windows (`file_system/volume/eject/platform/windows.rs`), task 39: nothing reads as ejectable, so a
   local drive's eject refuses as `NotEjectable`; a tool run (an SMB share's unmount, "Eject and save") answers that no
   tool could start (`EjectError::Unexpected`); the holder scan is "couldn't tell"; an SMB Disconnect drops the direct
@@ -449,8 +465,7 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     `docs/guides/i18n-translation.md` § New feature. The macOS text is guarded by a written rule, no test: a `macos`
     branch's translation stays unless it's wrong, and a fix there is an ordinary translation edit with its reason in the
     commit message (`docs/i18n/translator-instructions.md`, Per-OS values). David approved the macOS texts that moved on
-    purpose during the pass on 2026-11-18; `docs/notes/windows-port/macos-copy-accepted-review.md` is the record. Left
-    for a translator pass: `fr` and `vi` `terms.json` lack a `powershell` ruling (both catalogs write `PowerShell`).
+    purpose during the pass on 2026-11-18; `docs/notes/windows-port/macos-copy-accepted-review.md` is the record.
 29. [S] Windows, lint half is a win. **Done**. `lib/path/grammar.ts` holds the grammar (drive and UNC roots, a shared
     case table with Rust in `cmdr-fs`'s `path_grammar_cases.json`), `LocationInfo.case_sensitive` comes from the
     `volumes/` seam (macOS `false`, Linux `true`, Windows `false`; no frontend site consults it yet,
@@ -501,15 +516,19 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     **Platform-independent part done**: `cmdr_fs::volume::path_grammar` (`AppPath`/`AppRoot`, `PathFlavor::HOST` behind
     a `platform/` seam, `to_native`/`from_native` for `\\?\C:\…` and `\\?\UNC\…`, pure and tested on Linux) runs the
     frontend's case table, and `volumes::local_volume_id_for_path` is the seam the missing-volume defaults in
-    `commands/rename.rs` and `commands/file_system/path_checks.rs` now ask (every arm answers `"root"` today). Left: the
-    drive and UNC volume id scheme (open), registering a volume per drive (with 35 and 39), and the remaining
-    single-root sites, most of which only change once those volumes exist (the root `LocalPosixVolume` at `/`, the
-    index's `ROOT_VOLUME_ID`, the boot-volume priority roots, the MCP volumes resource's non-macOS row). The app's root
-    volume now comes from `volumes::root_volume` (a `volumes/platform/` pin beside `local_volume_on_mount` and
-    `is_local_volume`, so `file_system/mod.rs` and `smb_mount_gate` name no concrete local volume); Windows' arm is the
-    stub in § "Windows build state". Open: whether "the system drive under `root`" survives the id scheme. Decided
-    (2026-11-18): consumers name the host's local volume `cmdr_local::LocalVolume`, and app paths become a typed
-    `AppPath` the `Volume` trait takes (#1225); both are milestones of `docs/specs/app-path-plan.md`.
+    `commands/rename.rs` and `commands/file_system/path_checks.rs` ask. **Done (2026-11-18, D8)**: the id scheme
+    (`cmdr_fs::volume::windows_volume_ids`, the system drive staying `root`), a volume per drive, folder mount, and
+    mapped share from the Windows arm's drive table (`volumes/platform/windows/`, with each Win32 answer verified on the
+    builder), a mapped share's UNC spelling as an alias root of its one `smb-` volume, path resolution for any drive and
+    UNC path, the root index mount-rooted at the system drive (`cmdr_fs::mount_layout::boot_volume_root`, a non-system
+    drive indexing under its own id from its own root), app-spelled priority roots and index paths, the MCP volumes
+    row's real mount path, the path bar reading like Explorer's address bar (`C:\`, `C:\Windows`), and each volume's
+    last roots saved across sessions (`location/last_roots.rs`) so a restored tab and an undo follow a drive to its new
+    letter, for an id never seen at two roots at once. Volumes/`DETAILS.md` § "Windows: a volume per drive" has the
+    shape. Left for later tasks: arrival and removal (39), a mapped share's direct-SMB upgrade (45), and the mount
+    table's identity and space readers (35); the stub line in § "Windows build state". Decided (2026-11-18): consumers
+    name the host's local volume `cmdr_local::LocalVolume`, and app paths become a typed `AppPath` the `Volume` trait
+    takes (#1225); both are milestones of `docs/specs/app-path-plan.md`.
 35. [L] Windows. `LocalWindowsVolume` in `cmdr-local`, a sibling of `LocalPosixVolume`: `FindFirstFileExW` reader,
     space, no-replace and atomic-replace rename (❗ `std::fs::rename` replaces on Windows), streams, file vs dir
     symlinks, junctions, reparse tags, ADS-backed xattrs, write-access probe, metadata caps, the conformance suite
@@ -573,7 +592,7 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       `Windows 10 Pro 22H2 (build 19045.6466)` on the builder. Memory: `GlobalMemoryStatusEx` + `GetPerformanceInfo`
       (`system_memory/platform/windows.rs`).
     - The "already running" alert: `MessageBoxW` on its own thread (`instance_lock/platform/windows.rs`).
-    - Managed policy: `SOFTWARE\Policies\Cmdr` in HKLM then HKCU, with a live registry watch
+    - Managed policy: `SOFTWARE\Policies\Rymd\Cmdr` in HKLM then HKCU (D7), with a live registry watch
       (`managed_policy/DETAILS.md` § The Windows registry keys).
     - On the builder (Windows 10 Pro 22H2, build 19045.6466, `52047a9377`, 2026-11-18):
       `cargo clippy -p cmdr --all-targets -D warnings` clean (297 s warm); `cargo nextest run -p cmdr --lib` over
@@ -583,8 +602,14 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       with `ERROR_NO_SUCH_LOGON_SESSION` (key-based OpenSSH logons get no credential vault) and pass, with no `CmdrTest`
       credential left behind, when the same test binary runs as SYSTEM from a scheduled task. The other two failures are
       the pid cells below.
-    - Left for later tasks: an ADMX template and the Windows half of `/trust` (the key path is a public contract once
-      Windows ships), and the instance lock's holder pid, which reads as unknown on Windows (the two
+    - The Windows half of `/trust` is drafted, hidden until a release carries a Windows download
+      (`apps/website/DETAILS.md` § Patterns, "Copy for an OS that hasn't shipped"); David reviews its copy.
+    - The Group Policy template (2026-11-18): `rymd.admx` + `cmdr.admx` and their en-US ADMLs in
+      `apps/desktop/packaging/group-policy/`, generated from `managed_policy/policies.json` by `scripts/group-policy/`
+      and held to it by `desktop-group-policy-fresh`. Schema-valid under libxml2 and .NET (on mami, from a temp folder);
+      not yet loaded in the Group Policy editor or Intune (task 55). Details:
+      `apps/desktop/packaging/group-policy/DETAILS.md`.
+    - Left for later tasks: the instance lock's holder pid, which reads as unknown on Windows (the two
       `instance_lock::tests` pid cells fail there, as before this task: `LockFileEx` locks the bytes the pid sits in).
 39. [M] Windows. Drives: drive letters and labels, the device-arrival watcher (`CM_Register_Notification`), mapped and
     UNC drives, eject. Needs 20, 34. **Eject seam in place** (2026-11-18): eject is every-OS code, and what differs sits
@@ -632,8 +657,15 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     `latest.json` (`latest.go`); without it Windows and Linux show no security notice (the update still installs). Once
     it's written, drop `securityAdvisories` from `NOT_WRITTEN_YET` in `crates/cmdr-update-manifest/src/tests.rs`
     (`scripts/release-assets/DETAILS.md` § Update payloads off macOS). Needs 6, 30.
+    - **Ship no `Policies` keys inside the MSIX**: a packaged app reads the real policy hive through a merged view with
+      the package's own keys, so a shipped key would mix into what admins set (Microsoft Learn's MSIX registry
+      virtualization page, read 2026-11-18). Task 57 holds the read-only half.
 53. [S] Windows. Release vetting and distribution: `deny.toml` triple, third-party notices and SBOM, checksums for both
     packages, and a winget manifest for the NSIS installer. Needs 52.
+    - **The Group Policy template**: attach `apps/desktop/packaging/group-policy/` to each release as one zip
+      (`cmdr-group-policy-<version>.zip`, the folder's layout: two ADMX files plus `en-US/` with their ADMLs), as a
+      manifest row with its checksum, and link the latest one from `/trust#windows-policy` once that section is public.
+      The release reads the committed files (`desktop-group-policy-fresh` already holds them to `policies.json`).
 54. [S] Windows. E2E smoke on `windows-latest`: `tauri-plugin-playwright` over TCP, three-way helpers, a Windows fixture
     root, a small spec subset. Needs the app to run on Windows (34–36).
 55. [M] Windows. Windows QA pass on a real machine: an agent drives the checklist and fixes what it finds; David QAs
@@ -679,6 +711,24 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       - After quitting with a failure still shown, no button keeps a stale bar (pinned taskbar icon included).
       - On Linux (whenever a Linux desktop is at hand, Ubuntu Dock or KDE): the bar appears at all, which needs Tauri's
         `<package name>.desktop` to match the installed `.desktop` file's name.
+    - **Group Policy (from task 38; the schema check and the registry reads are covered, these need a real policy
+      store)**. On a machine where changing local policy is fine (a VM or a fresh test box, ❌ not mami while it's
+      shared):
+      - Copy `rymd.admx`, `cmdr.admx`, and `en-US\` from `apps/desktop/packaging/group-policy/` into
+        `C:\Windows\PolicyDefinitions` (the local store), open `gpedit.msc`, and find Administrative Templates › Rymd ›
+        Cmdr under both Computer and User Configuration, each policy with its explain text, the "Highest version" text
+        box, and the "Hosts" list. No "resource not found" or namespace warning when the editor opens.
+      - Enable "Turn off usage stats" for the computer, run `gpupdate /force`, and
+        `reg query HKLM\SOFTWARE\Policies\Rymd\Cmdr` shows `DisableUsageStats REG_DWORD 0x1`; a running Cmdr locks the
+        setting within a second (the watch). Disable it: `0x0`, unlocked. Not configured: the value is gone.
+      - "Allowed cloud AI hosts" with two entries writes `...\Rymd\Cmdr\AllowedCloudAIHosts` with values `1` and `2`,
+        and Cmdr's Settings lists both hosts in its summary of what the organization manages. Disable it: whatever is
+        left of the subkey reads as no restriction.
+      - The same policy set to Enabled for the user and Disabled for the computer: the computer's wins.
+      - Intune (needs a tenant): import `rymd.admx` + `rymd.adml`, then `cmdr.admx` + `cmdr.adml` (Devices ›
+        Configuration › Import ADMX), both reach Available, and an "Imported Administrative templates" profile shows the
+        Cmdr policies.
+      - Remove the files from `PolicyDefinitions` and the test GPO's settings afterwards.
     - **WebView2 and data dirs (from task 48; unit tests cover the URL and dir rules, these need the real OS)**:
       - An image, a PDF, a Markdown document's local pictures, image search's thumbnails, and the bulk-rename review's
         previews all load over `http://cmdr-media.localhost/<token>`, with no CSP violation in the devtools console, and
@@ -711,6 +761,9 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     opens the account and reviews the listing copy), Store submission automated from the release pipeline, the Store
     build's own updater off, and a check of where MSIX redirects Cmdr's data and cache folders so the data dir, the
     drive index, and "Delete all Cmdr data" all find them. Needs 52.
+    - **The Store build only reads policy keys, never writes them**: policies are the admin's, and a packaged app's
+      registry view is merged and virtualized (Microsoft Learn's MSIX registry virtualization page, read 2026-11-18).
+      Task 52 keeps `Policies` keys out of the package.
 58. [XS] Windows. The website's "Run anyway" download (D3 step 2): the unsigned NSIS installer on the download page with
     a short explainer of SmartScreen's "More info → Run anyway" step, next to the Store link. David reviews the copy.
     Needs 32, 52.

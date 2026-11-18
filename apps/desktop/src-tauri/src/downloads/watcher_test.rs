@@ -591,7 +591,7 @@ fn scripted() -> (
     (td, canon_root, watcher, rx)
 }
 
-/// File names of everything the sink got so far. `deliver` is synchronous, so
+/// Filenames of everything the sink got so far. `deliver` is synchronous, so
 /// this is the whole answer, no waiting.
 fn emitted(rx: &mpsc::Receiver<DownloadDetectedEvent>) -> Vec<String> {
     rx.try_iter().map(|e| e.file_name).collect()

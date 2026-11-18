@@ -1596,7 +1596,7 @@
   },
   "settings.analytics.enabled.description": "Schalte das bitte ein, damit wir während der offenen Beta sehen, welche Funktionen wichtig sind.\nDie Statistiken sind mit einer zufälligen ID verknüpft, nicht mit deinem Namen oder deiner E-Mail-Adresse.\nCmdr sendet nie Dateinamen, Pfade, Suchbegriffe oder Prompts.\nWenn das ausgeschaltet ist, sendet Cmdr keine Statistiken.",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "a8d8db1"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "Analyse, Nutzung, Nutzungsdaten, Statistik, Statistiken, Datenschutz, Privatsphäre, Telemetrie, Beta, Tracking, abmelden, deaktivieren",
   "@settings.analytics.enabled.keywords": {
@@ -1620,7 +1620,7 @@
   },
   "settings.updates.crashReports.summary": "Enthält nie Dateinamen oder persönliche Daten.",
   "@settings.updates.crashReports.summary": {
-    "sourceHash": "7814a28"
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "Absturz, abgestürzt, Bericht, Absturzbericht, Datenschutz, Privatsphäre, Telemetrie, Bug, Fehler",
   "@settings.updates.crashReports.keywords": {
@@ -2952,9 +2952,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Einstellungsabschnitte",
+  "settings.sidebar.sections": "{platform, select, windows {Einstellungsabschnitte} linuxGnome {Einstellungsabschnitte} linuxKde {Abschnitte von „Cmdr einrichten“} other {Einstellungsabschnitte}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Keine passenden Einstellungen} one {{countText} Abschnitt passt} other {{countText} Abschnitte passen}}",
   "@settings.sidebar.matchCount": {
@@ -3215,7 +3215,7 @@
   },
   "settings.securityLog.enabled.description": "Die Aufzeichnung hält sicherheitsrelevante Änderungen und Ablehnungen fest, etwa die Zustimmung zu Cloud-KI, ein installiertes Update oder eine App, die der MCP-Server abgewiesen hat. Sie enthält keine Dateinamen, Inhalte oder Passwörter.",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "97e24a4"
+    "sourceHash": "3692a3d"
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {Eine kleine lokale Aufzeichnung der Sicherheitsereignisse. Sie verlässt deinen Mac nie.} windows {Eine kleine lokale Aufzeichnung der Sicherheitsereignisse. Sie verlässt deinen PC nie.} other {Eine kleine lokale Aufzeichnung der Sicherheitsereignisse. Sie verlässt deinen Computer nie.}}",
   "@settings.securityLog.enabled.summary": {
@@ -3434,9 +3434,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Einstellungen",
+  "settings.window.title": "{platform, select, windows {Einstellungen} linuxGnome {Einstellungen} linuxKde {Einrichten – Cmdr} other {Einstellungen}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Einstellungen werden geladen …",
   "@settings.window.loading": {
@@ -3683,13 +3683,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Ein Eintrag namens „{itemName}“ in der Schlüsselbundverwaltung} other {{countText} Einträge namens „{itemName}“ in der Schlüsselbundverwaltung}}} windows {{count, plural, one {Ein Eintrag namens „{itemName}“ in der Anmeldeinformationsverwaltung} other {{countText} Einträge namens „{itemName}“ in der Anmeldeinformationsverwaltung}}} linuxKde {{count, plural, one {Ein Eintrag namens „{itemName}“ in KWallet} other {{countText} Einträge namens „{itemName}“ in KWallet}}} other {{count, plural, one {Ein Eintrag namens „{itemName}“ in deinem Schlüsselbund} other {{countText} Einträge namens „{itemName}“ in deinem Schlüsselbund}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Ein Eintrag namens „{itemName}“ in der Schlüsselbundverwaltung} other {{countText} Einträge namens „{itemName}“ in der Schlüsselbundverwaltung}}} windows {{count, plural, one {Ein Eintrag namens „{itemName}“ in der Anmeldeinformationsverwaltung} other {{countText} Einträge namens „{itemName}“ in der Anmeldeinformationsverwaltung}}} linuxKde {{count, plural, one {Ein Eintrag namens „{itemName}“ im KDE-Passwortspeicher} other {{countText} Einträge namens „{itemName}“ im KDE-Passwortspeicher}}} other {{count, plural, one {Ein Eintrag namens „{itemName}“ in deinem Schlüsselbund} other {{countText} Einträge namens „{itemName}“ in deinem Schlüsselbund}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Einträge namens „{itemName}“ in der Schlüsselbundverwaltung, falls vorhanden} windows {Einträge namens „{itemName}“ in der Anmeldeinformationsverwaltung, falls vorhanden} linuxKde {Einträge namens „{itemName}“ in KWallet, falls vorhanden} other {Einträge namens „{itemName}“ in deinem Schlüsselbund, falls vorhanden}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Einträge namens „{itemName}“ in der Schlüsselbundverwaltung, falls vorhanden} windows {Einträge namens „{itemName}“ in der Anmeldeinformationsverwaltung, falls vorhanden} linuxKde {Einträge namens „{itemName}“ im KDE-Passwortspeicher, falls vorhanden} other {Einträge namens „{itemName}“ in deinem Schlüsselbund, falls vorhanden}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Cmdr beenden} other {Cmdr beenden}}",
   "@settings.dataWipe.quit": {

@@ -21,7 +21,7 @@
   },
   "crashReporter.dialog.privacyNote": "{platform, select, macos {它包含应用版本、macOS 版本，以及代码中出现问题的部分。不含文件名或个人数据。} windows {它包含应用版本、Windows 版本，以及代码中出现问题的部分。不含文件名或个人数据。} other {它包含应用版本、Linux 发行版及其版本，以及代码中出现问题的部分。不含文件名或个人数据。}}",
   "@crashReporter.dialog.privacyNote": {
-    "sourceHash": "ebe2d23"
+    "sourceHash": "6f58653"
   },
   "crashReporter.dialog.reportIdLabel": "报告 ID：",
   "@crashReporter.dialog.reportIdLabel": {
@@ -71,9 +71,9 @@
   "@crashReporter.sentToast.message.report": {
     "sourceHash": "a676ed5"
   },
-  "crashReporter.sentToast.changeSettings": "在设置中更改",
+  "crashReporter.sentToast.changeSettings": "{platform, select, windows {在设置中更改} linuxGnome {在首选项中更改} linuxKde {在“配置 Cmdr”中更改} other {在设置中更改}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "144d0bd"
+    "sourceHash": "9972084"
   },
   "crashReporter.sentToast.sendLog": "附上日志",
   "@crashReporter.sentToast.sendLog": {

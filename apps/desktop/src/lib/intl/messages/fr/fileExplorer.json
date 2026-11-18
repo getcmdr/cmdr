@@ -342,9 +342,9 @@
     "sourceHash": "e0926fd",
     "sameAsSourceJustification": "Same word as `settings.navigationAndFileOps.card.terminal` (terms.json `terminal`): the generic name for this class of app is \"Terminal\" in French too, and Apple keeps the app name in its localized Finder (\"Ouvrir dans Terminal\")."
   },
-  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {La barre des touches de fonction est maintenant masquée. Vous pouvez la réactiver à tout moment dans <settingsLink>Réglages</settingsLink>.} other {La barre des touches de fonction est maintenant masquée. Vous pouvez la réactiver à tout moment dans <settingsLink>Réglages</settingsLink>.}}",
+  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {La barre des touches de fonction est maintenant masquée. Vous pouvez la réactiver à tout moment dans <settingsLink>Paramètres</settingsLink>.} linuxGnome {La barre des touches de fonction est maintenant masquée. Vous pouvez la réactiver à tout moment dans <settingsLink>Préférences</settingsLink>.} linuxKde {La barre des touches de fonction est maintenant masquée. Vous pouvez la réactiver à tout moment dans <settingsLink>Configurer Cmdr</settingsLink>.} other {La barre des touches de fonction est maintenant masquée. Vous pouvez la réactiver à tout moment dans <settingsLink>Réglages</settingsLink>.}}",
   "@fileExplorer.functionKeyBar.hiddenToast": {
-    "sourceHash": "cb00b6d"
+    "sourceHash": "a829741"
   },
   "fileExplorer.typeToJump.prefix": "Aller à : ",
   "@fileExplorer.typeToJump.prefix": {
@@ -522,9 +522,9 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Identifiants stockés localement (Gestionnaire d’identification indisponible)} linuxKde {Identifiants stockés localement (KWallet indisponible)} other {Identifiants stockés localement (aucun trousseau système détecté)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Identifiants stockés localement (Gestionnaire d’identification indisponible)} linuxKde {Identifiants stockés localement (portefeuille KDE indisponible)} other {Identifiants stockés localement (aucun trousseau système détecté)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
-    "sourceHash": "d279dc9"
+    "sourceHash": "438153a"
   },
   "fileExplorer.network.share.notFound": "Le partage « {shareName} » est introuvable sur {hostName}",
   "@fileExplorer.network.share.notFound": {
@@ -558,9 +558,9 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Retirer le mot de passe enregistré du trousseau} windows {Retirer le mot de passe enregistré du Gestionnaire d’identification} linuxKde {Retirer le mot de passe enregistré de KWallet} other {Retirer le mot de passe enregistré de votre trousseau de clés}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Retirer le mot de passe enregistré du trousseau} windows {Retirer le mot de passe enregistré du Gestionnaire d’identification} linuxKde {Retirer le mot de passe enregistré du portefeuille KDE} other {Retirer le mot de passe enregistré de votre trousseau de clés}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "3d21c85"
+    "sourceHash": "ed20dcd"
   },
   "fileExplorer.network.share.useGuest": "Parcourir en tant qu’invité",
   "@fileExplorer.network.share.useGuest": {
@@ -770,21 +770,21 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "Fichier ouvert dans {app}. Vous voulez un autre éditeur la prochaine fois ? Choisissez-le dans les réglages.",
+  "fileExplorer.edit.hint": "{platform, select, windows {Fichier ouvert dans {app}. Vous voulez un autre éditeur la prochaine fois ? Choisissez-le dans les paramètres.} linuxGnome {Fichier ouvert dans {app}. Vous voulez un autre éditeur la prochaine fois ? Choisissez-le dans les préférences.} linuxKde {Fichier ouvert dans {app}. Vous voulez un autre éditeur la prochaine fois ? Choisissez-le dans « Configurer Cmdr ».} other {Fichier ouvert dans {app}. Vous voulez un autre éditeur la prochaine fois ? Choisissez-le dans les réglages.}}",
   "@fileExplorer.edit.hint": {
-    "sourceHash": "3632f06"
+    "sourceHash": "2640119"
   },
-  "fileExplorer.edit.hintUnnamed": "Fichier ouvert dans votre éditeur de texte par défaut. Vous en voulez un autre la prochaine fois ? Choisissez-le dans les réglages.",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, windows {Fichier ouvert dans votre éditeur de texte par défaut. Vous en voulez un autre la prochaine fois ? Choisissez-le dans les paramètres.} linuxGnome {Fichier ouvert dans votre éditeur de texte par défaut. Vous en voulez un autre la prochaine fois ? Choisissez-le dans les préférences.} linuxKde {Fichier ouvert dans votre éditeur de texte par défaut. Vous en voulez un autre la prochaine fois ? Choisissez-le dans « Configurer Cmdr ».} other {Fichier ouvert dans votre éditeur de texte par défaut. Vous en voulez un autre la prochaine fois ? Choisissez-le dans les réglages.}}",
   "@fileExplorer.edit.hintUnnamed": {
-    "sourceHash": "6216471"
+    "sourceHash": "5b5c767"
   },
   "fileExplorer.edit.dismiss": "Ignorer",
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "Ouvrir les réglages",
+  "fileExplorer.edit.openSettings": "{platform, select, windows {Ouvrir les paramètres} linuxGnome {Ouvrir les préférences} linuxKde {Configurer Cmdr} other {Ouvrir les réglages}}",
   "@fileExplorer.edit.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "fileExplorer.edit.appMissing": "Cmdr ne trouve pas l’éditeur que vous avez choisi, donc ce fichier s’est ouvert dans {app}.",
   "@fileExplorer.edit.appMissing": {
@@ -838,9 +838,9 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "Réglages",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {Paramètres} linuxGnome {Préférences} linuxKde {Configurer Cmdr} other {Réglages}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
-    "sourceHash": "74a883a"
+    "sourceHash": "6613a01"
   },
   "fileExplorer.clipboard.copiedPath": "Chemin copié, il est maintenant dans le presse-papiers :",
   "@fileExplorer.clipboard.copiedPath": {
@@ -950,9 +950,9 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans le trousseau. Pour le retirer définitivement, supprimez-le dans Trousseaux d’accès.} windows {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans le Gestionnaire d’identification. Pour le retirer définitivement, supprimez-le dans le Gestionnaire d’identification.} linuxGnome {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans votre trousseau. Pour le retirer définitivement, supprimez-le dans Mots de passe et clés.} linuxKde {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans KWallet. Pour le retirer définitivement, supprimez-le dans KWalletManager.} other {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans votre trousseau de clés. Pour le retirer définitivement, supprimez-le dans l’app qui gère votre trousseau de clés.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans le trousseau. Pour le retirer définitivement, supprimez-le dans Trousseaux d’accès.} windows {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans le Gestionnaire d’identification. Pour le retirer définitivement, supprimez-le dans le Gestionnaire d’identification.} linuxGnome {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans votre trousseau. Pour le retirer définitivement, supprimez-le dans Mots de passe et clés.} linuxKde {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans le portefeuille KDE. Pour le retirer définitivement, supprimez-le dans KWalletManager.} other {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans votre trousseau de clés. Pour le retirer définitivement, supprimez-le dans l’app qui gère votre trousseau de clés.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
-    "sourceHash": "366f06a"
+    "sourceHash": "52da364"
   },
   "fileExplorer.restic.forgetPassword.unreachable": "Cmdr n’a pas pu joindre {name} à l’instant, le mot de passe reste donc enregistré. Réessayez dans un moment.",
   "@fileExplorer.restic.forgetPassword.unreachable": {
@@ -1845,13 +1845,13 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "L’accès aux téléphones et appareils photo via MTP est désactivé dans les Réglages.",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {L’accès aux téléphones et appareils photo via MTP est désactivé dans les Paramètres.} linuxGnome {L’accès aux téléphones et appareils photo via MTP est désactivé dans les Préférences.} linuxKde {L’accès aux téléphones et appareils photo via MTP est désactivé dans « Configurer Cmdr ».} other {L’accès aux téléphones et appareils photo via MTP est désactivé dans les Réglages.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
-    "sourceHash": "53be5f6"
+    "sourceHash": "53f2cbb"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "L’accès aux téléphones Android est désactivé dans les Réglages.",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {L’accès aux téléphones Android est désactivé dans les Paramètres.} linuxGnome {L’accès aux téléphones Android est désactivé dans les Préférences.} linuxKde {L’accès aux téléphones Android est désactivé dans « Configurer Cmdr ».} other {L’accès aux téléphones Android est désactivé dans les Réglages.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
-    "sourceHash": "4fba610"
+    "sourceHash": "eb9bed4"
   },
   "fileExplorer.navigation.favoriteUnreachable.forgotten": "Cmdr ne sait plus comment joindre {kind, select, share {le partage « {place} »} server {le serveur « {place} »} phone {le téléphone « {place} »} other {« {place} »}}. Connectez-vous-y de nouveau depuis Serveurs, et ce favori fonctionnera à nouveau.",
   "@fileExplorer.navigation.favoriteUnreachable.forgotten": {
@@ -1861,9 +1861,9 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "Ouvrir les réglages",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {Ouvrir les paramètres} linuxGnome {Ouvrir les préférences} linuxKde {Configurer Cmdr} other {Ouvrir les réglages}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "fileExplorer.navigation.favoriteUnreachable.openServers": "Afficher les serveurs",
   "@fileExplorer.navigation.favoriteUnreachable.openServers": {
@@ -2223,21 +2223,21 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "L’indexation est désactivée dans les Réglages, donc Cmdr n’indexe pas {name}. Activez-la dans « Indexation > Indexation du disque ».",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {L’indexation des lecteurs est désactivée dans les Paramètres, donc Cmdr n’indexe pas {name}. Activez-la dans « Indexation > Indexation du disque ».} linuxGnome {L’indexation est désactivée dans les Préférences, donc Cmdr n’indexe pas {name}. Activez-la dans « Indexation > Indexation du disque ».} linuxKde {L’indexation est désactivée dans « Configurer Cmdr », donc Cmdr n’indexe pas {name}. Activez-la dans « Indexation > Indexation du disque ».} other {L’indexation est désactivée dans les Réglages, donc Cmdr n’indexe pas {name}. Activez-la dans « Indexation > Indexation du disque ».}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
-    "sourceHash": "0253edd"
+    "sourceHash": "e91977e"
   },
   "fileExplorer.navigation.driveIndex.driveLeaving": "{name} est en cours de déconnexion, Cmdr a donc laissé son index tel quel. Si le disque reste connecté, réessayez dans un instant.",
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "L’indexation est désactivée dans les Réglages, donc aucun disque n’est indexé pour le moment.",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {L’indexation est désactivée dans les Paramètres, donc aucun lecteur n’est indexé pour le moment.} linuxGnome {L’indexation est désactivée dans les Préférences, donc aucun disque n’est indexé pour le moment.} linuxKde {L’indexation est désactivée dans « Configurer Cmdr », donc aucun disque n’est indexé pour le moment.} other {L’indexation est désactivée dans les Réglages, donc aucun disque n’est indexé pour le moment.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
-    "sourceHash": "6ebf6f4"
+    "sourceHash": "76cf912"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "L’indexation est désactivée dans les Réglages. Activez-la dans « Indexation > Indexation du disque », et ce disque reprendra là où il s’était arrêté.",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {L’indexation est désactivée dans les Paramètres. Activez-la dans « Indexation > Indexation du disque », et ce lecteur reprendra là où il s’était arrêté.} linuxGnome {L’indexation est désactivée dans les Préférences. Activez-la dans « Indexation > Indexation du disque », et ce disque reprendra là où il s’était arrêté.} linuxKde {L’indexation est désactivée dans « Configurer Cmdr ». Activez-la dans « Indexation > Indexation du disque », et ce disque reprendra là où il s’était arrêté.} other {L’indexation est désactivée dans les Réglages. Activez-la dans « Indexation > Indexation du disque », et ce disque reprendra là où il s’était arrêté.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
-    "sourceHash": "26e250c"
+    "sourceHash": "90d82ab"
   },
   "fileExplorer.dragOut.failed": "{count, plural, =1 {Copie de « {name} » impossible.} one {Copie de {countText} élément impossible.} many {Copie de {countText} éléments impossible.} other {Copie de {countText} éléments impossible.}}",
   "@fileExplorer.dragOut.failed": {
@@ -2343,15 +2343,15 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "Vous préférez placer le curseur sur un nom correspondant sans rien masquer ? Passez à « Aller à », ici ou dans les Réglages.",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {Vous préférez placer le curseur sur un nom correspondant sans rien masquer ? Passez à « Aller à », ici ou dans les Paramètres.} linuxGnome {Vous préférez placer le curseur sur un nom correspondant sans rien masquer ? Passez à « Aller à », ici ou dans les Préférences.} linuxKde {Vous préférez placer le curseur sur un nom correspondant sans rien masquer ? Passez à « Aller à », ici ou dans « Configurer Cmdr ».} other {Vous préférez placer le curseur sur un nom correspondant sans rien masquer ? Passez à « Aller à », ici ou dans les Réglages.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
-    "sourceHash": "ac6d3c8"
+    "sourceHash": "a9cadc8"
   },
   "fileExplorer.quickFilter.intro.switchToJump": "Passer à « Aller à »",
   "@fileExplorer.quickFilter.intro.switchToJump": {
     "sourceHash": "38642f9"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Réglages} linuxGnome {Préférences} linuxKde {Configurer Cmdr…} other {Réglages…}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Paramètres} linuxGnome {Préférences} linuxKde {Configurer Cmdr…} other {Réglages…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
     "sourceHash": "4b21626"
   },
@@ -2411,9 +2411,9 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "Cmdr mémorise votre réponse pour ces deux serveurs. Vous pouvez l’oublier dans les Réglages, sous Serveurs.",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr mémorise votre réponse pour ces deux serveurs. Vous pouvez l’oublier dans les Paramètres, sous Serveurs.} linuxGnome {Cmdr mémorise votre réponse pour ces deux serveurs. Vous pouvez l’oublier dans les Préférences, sous Serveurs.} linuxKde {Cmdr mémorise votre réponse pour ces deux serveurs. Vous pouvez l’oublier dans « Configurer Cmdr », sous Serveurs.} other {Cmdr mémorise votre réponse pour ces deux serveurs. Vous pouvez l’oublier dans les Réglages, sous Serveurs.}}",
   "@fileExplorer.smbLinkConsent.note": {
-    "sourceHash": "3f9615a"
+    "sourceHash": "4e49784"
   },
   "fileExplorer.smbLinkConsent.allow": "Autoriser et s’identifier",
   "@fileExplorer.smbLinkConsent.allow": {

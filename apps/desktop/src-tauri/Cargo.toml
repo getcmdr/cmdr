@@ -136,7 +136,7 @@ cmdr-listing = { path = "../../../crates/cmdr-listing" }
 cmdr-viewer = { path = "../../../crates/cmdr-viewer" }
 # The Multi-Rename Tool's engine; this crate hosts it (`src/multi_rename/`).
 cmdr-multi-rename = { path = "../../../crates/cmdr-multi-rename" }
-# The file-name collator the panes sort with. The write engine names it from
+# The filename collator the panes sort with. The write engine names it from
 # here rather than through `cmdr-listing`'s re-export, so it never needs the
 # listing engine for one type.
 cmdr-collation = { path = "../../../crates/cmdr-collation" }
@@ -358,12 +358,14 @@ webkit2gtk = "2.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 # Win32 calls behind the app's `platform/` seams: the registry (device id, OS names, managed
-# policy and its change watch), `RtlGetVersion`, the memory counters, and the instance lock's
-# message box. Already in the lockfile through the workspace crates.
+# policy and its change watch), `RtlGetVersion`, the memory counters, the instance lock's
+# message box, and the drive table (volume GUIDs, drive types, mapped shares). Already in the lockfile through the workspace crates.
 windows-sys = { version = "0.61", features = [
     "Wdk_System_SystemServices",
     "Win32_Foundation",
+    "Win32_NetworkManagement_WNet",
     "Win32_Security",
+    "Win32_Storage_FileSystem",
     "Win32_System_ProcessStatus",
     "Win32_System_Registry",
     "Win32_System_SystemInformation",

@@ -60,7 +60,7 @@ class MessageCatalogTest : TestCase() {
         assertTrue("expected thousands of keys, got ${catalog.size}", catalog.size > 2_000)
         assertEquals(
             "It includes the app version, macOS version, and which part of the code crashed. " +
-                "No file names or personal data.",
+                "No filenames or personal data.",
             catalog["crashReporter.dialog.privacyNote"]?.text,
         )
         assertEquals("crashReporter.json", catalog["crashReporter.dialog.privacyNote"]?.fileName)

@@ -1,6 +1,6 @@
 # cmdr-search
 
-The drive search's core (⌘F over one volume's file names): query model, the one matcher and exclusion set, ranking, and
+The drive search's core (⌘F over one volume's filenames): query model, the one matcher and exclusion set, ranking, and
 the in-memory arena it scans. Tauri-free and `cmdr-index`-free; Cmdr hosts it from `apps/desktop/src-tauri/src/search/`.
 
 ## Module map

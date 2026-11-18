@@ -816,7 +816,7 @@ item the way any unusable name does.
   (`apps/desktop/src-tauri/src/native_drag/fulfillment.rs`) do too. One check under every backend, so a new backend
   can't forget it.
 - `InMemoryVolume::set_reported_name` models a source that lists a hostile name. Pinned by `hostile_names_tests.rs` (a
-  bad file name, a folder listed as `..`, and the symlink-then-folder trick: a copy never merges a source folder through
+  bad filename, a folder listed as `..`, and the symlink-then-folder trick: a copy never merges a source folder through
   a link already at the destination, under every policy) and a drag-out cell in
   `apps/desktop/src-tauri/src/native_drag/fulfillment_test.rs`.
 

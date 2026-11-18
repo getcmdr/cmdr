@@ -15,7 +15,7 @@ use tauri::AppHandle;
 use super::watcher::resolved_downloads_dir;
 
 /// Successful resolution: the path to surface plus the pre-split parent dir +
-/// file name so the frontend doesn't have to parse the path itself.
+/// filename so the frontend doesn't have to parse the path itself.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct LatestDownload {

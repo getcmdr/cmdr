@@ -13,6 +13,7 @@ import {
   type Location,
   type LowDiskSpacePayload,
   type ResolveLocationResult,
+  type RestoredTabPath,
   type ServerPlaceMoved,
   type SpaceInfo,
   type VolumeConnectionChanged,
@@ -93,6 +94,25 @@ export async function resolvePathVolume(path: string): Promise<PathVolumeResolut
     return { volume: null, timedOut: false }
   }
 }
+
+/**
+ * Where a restored tab recorded on `volumeId` at `path` opens: as stored, on the volume's live
+ * root when that root moved (a drive back on another letter), or `notReady` when the startup
+ * sweep hasn't registered the volume yet (the tab then keeps its stored id and path, unprobed).
+ * The backend waits up to 5 s for the sweep (`location/last_roots.rs::restored_tab_path`); an
+ * IPC failure or a stall past that is `notReady` too, the answer that changes nothing.
+ */
+export async function liveVolumePath({ volumeId, path }: { volumeId: string; path: string }): Promise<RestoredTabPath> {
+  const notReady: RestoredTabPath = { kind: 'notReady' }
+  try {
+    return await withTimeout(commands.liveVolumePath(volumeId, path), LIVE_VOLUME_PATH_TIMEOUT_MS, notReady)
+  } catch {
+    return notReady
+  }
+}
+
+/** Above the backend's own 6 s bound, so its honest answer wins; fires only on a stalled IPC. */
+const LIVE_VOLUME_PATH_TIMEOUT_MS = 7000
 
 /** Frontend timeout for `resolveLocation`, the outer layer of the two-layer
  * timeout defense (the backend already caps the statfs at 2s). Slightly above

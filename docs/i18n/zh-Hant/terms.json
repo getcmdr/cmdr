@@ -913,7 +913,7 @@
     "chosen": "Finder 延伸功能",
     "accept": ["延伸功能"],
     "confidence": "high",
-    "sources": "macOS pane 登入項目與延伸功能 (errors.provider.pCloudFuse.needsAction); 系統延伸功能; kept apart from the file name ending 副檔名"
+    "sources": "macOS pane 登入項目與延伸功能 (errors.provider.pCloudFuse.needsAction); 系統延伸功能; kept apart from the filename ending 副檔名"
   },
   "global": {
     "chosen": "全域",
@@ -1458,7 +1458,7 @@
     ],
     "chosen": "副檔名",
     "confidence": "high",
-    "sources": "AP-TW (38), AP-HK (40), MS (file name extension)"
+    "sources": "AP-TW (38), AP-HK (40), MS (filename extension)"
   },
   "extract": {
     "avoid": [
@@ -2199,8 +2199,14 @@
     "sources": "AP-TW = AP-HK (Keychain Access CFBundleName 鑰匙圈存取, MainMenu 825.title); GNOME gnome-keyring / gcr zh_TW 鑰匙圈",
     "other": {
       "chosen": "鑰匙圈",
-      "accept": ["KWallet", "錢包"],
-      "note": "Linux branches: the keyring is 鑰匙圈, which GNOME’s 密碼及加密金鑰 also says (seahorse zh_TW.po: 鑰匙圈已鎖定); KDE keeps KWallet and KWalletManager as names, with a wallet → 錢包 (kwalletmanager zh_TW.po)"
+      "accept": ["KDE 錢包", "錢包"],
+      "avoid": [
+        {
+          "form": "KWallet",
+          "why": "English names the KDE store “KDE Wallet”, which KDE's zh_TW catalog translates KDE 錢包 (kwalletd6.po: KDE Wallet Service → KDE 錢包服務, The KDE Wallet System → KDE 錢包系統; kwalletmanager._desktop_.po: KDE Wallet → KDE 錢包)"
+        }
+      ],
+      "note": "Linux branches: the keyring is 鑰匙圈, which GNOME’s 密碼及加密金鑰 also says (seahorse zh_TW.po: 鑰匙圈已鎖定). KDE (linuxKde): the store KDE Wallet → KDE 錢包 and its app KWalletManager → 「KDE 錢包管理員」 (kwalletmanager._desktop_.po Name, websvn l10n-kf6 zh_TW r1749399, fetched 2026-11-18); Remember in KDE Wallet → 記住在 KDE 錢包中."
     }
   },
   "kind": {
@@ -3651,7 +3657,16 @@
     "chosen": "設定",
     "confidence": "confirmed",
     "forms": "Cmdr's own Settings in prose → 「設定」; a path → 「設定 › AI」",
-    "sources": "AP-TW (160), AP-HK (160), MS"
+    "sources": "AP-TW (160), AP-HK (160), MS",
+    "other": {
+      "chosen": "設定",
+      "accept": ["偏好設定", "設定 Cmdr", "設定 – Cmdr"],
+      "note": "Cmdr's settings window per Linux desktop: GNOME (linuxGnome) → 偏好設定 (nautilus.po _Preferences → 偏好設定(_P), Show Preferences → 顯示偏好設定), so “Open preferences” → 開啟偏好設定 and a path → 「偏好設定 > AI」; KDE (linuxKde) → 設定 Cmdr, as KDE titles an app's settings: dolphin.po @title:window Configure → 設定 and Configure Dolphin → 「設定 Dolphin」, so the window title “Configure – Cmdr” → 設定 – Cmdr, the button “Configure Cmdr” → 設定 Cmdr, a prose pointer → 「設定 Cmdr」, a path → 「設定 Cmdr > AI」. Other Linux desktops keep 設定. settings.window.title, commands.appSettings.label, and menu.app.settings (設定 Cmdr⋯) start with the same word on every branch, as settings-window-name.test.ts pins in English. macOS (Settings… → 設定⋯) and Windows (MS settings → 設定) both say 設定."
+    },
+    "windows": {
+      "chosen": "設定",
+      "note": "Windows names an app's settings 設定 too (MS zh-Hant TBX settings → 設定 (HKG, TWN)), so the windows branch matches macOS: the window 設定, its pointers 「設定」 and 「設定 › AI」."
+    }
   },
   "share-link": {
     "chosen": "分享連結",
@@ -4717,7 +4732,7 @@
     "confidence": "high",
     "forms": "Not a valid name → 不是有效的名稱; isn't valid → 無效 (這個正規表示式無效); license validity → 有效性 / 有效期至",
     "exceptions": {
-      "errors.write.invalidName.title": "Invalid file name → 檔名不合用: a write-error title written as plain advice; not this batch's key, left for a follow-up alignment with 無效"
+      "errors.write.invalidName.title": "Invalid filename → 檔名不合用: a write-error title written as plain advice; not this batch's key, left for a follow-up alignment with 無效"
     },
     "sources": "MS terminology valid → 有效, invalid → 無效; catalog (licensing.dialog.validityActive 有效, ai.cloud.authError 無效, licensing.error.badSignature 不是有效的授權碼)"
   },
@@ -4917,5 +4932,11 @@
       }
     ],
     "forms": "the menu title → 輔助說明 (menu.bar.help); in prose → 「輔助說明」選單"
+  },
+  "usb-preferences": {
+    "chosen": "USB 偏好設定",
+    "confidence": "high",
+    "sources": "AOSP packages/apps/Settings res/values-zh-rTW/strings.xml usb_preference → USB 偏好設定, settings_label → 設定, usb_use_file_transfers → 檔案傳輸 (aosp-mirror main, 2026-11-18)",
+    "note": "Android phone label quoted in settings.fileOperations.mtpEnabled.description: 「設定 > USB 偏好設定」."
   }
 }

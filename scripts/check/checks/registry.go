@@ -427,6 +427,23 @@ var AllChecks = []CheckDefinition{
 		Inputs: inputs([]string{"Cargo.lock", "fuzz/Cargo.lock"}),
 		Run:    RunFuzzLockInStep,
 	},
+	// Every fuzz target type-checks on stable, so an API change that breaks one fails
+	// the land instead of the next day's `desktop-rust-fuzz`. ~15 s cold, ~1 s warm.
+	// Its own target dir (`target/fuzz-check`, a separate cargo lock), so no
+	// `Exclusive`. After clippy, so a crate that doesn't compile reports once, there.
+	{
+		ID:          "desktop-rust-fuzz-targets-compile",
+		CpuWeight:   4,
+		Nickname:    "fuzz-compile",
+		DisplayName: "fuzz targets compile",
+		App:         AppDesktop,
+		Tech:        "🦀 Rust",
+		DependsOn:   []string{"desktop-rust-clippy"},
+		// `fuzz/`'s sources and manifests, plus every crate a target links (the
+		// shared Rust set, which carries the toolchain pin and `vendor/`).
+		Inputs: inputs(rustCompileInputs, []string{"fuzz/Cargo.toml", "fuzz/Cargo.lock", "fuzz/fuzz_targets/**"}),
+		Run:    RunFuzzTargetsCompile,
+	},
 	{
 		ID:          "desktop-rust-listing-wasm",
 		CpuWeight:   8,
@@ -617,6 +634,23 @@ var AllChecks = []CheckDefinition{
 			"apps/desktop/src/lib/intl/platform-select-cases.json",
 		}),
 		Run: RunDesktopShippedLocalesFresh,
+	},
+	{
+		ID:          "desktop-group-policy-fresh",
+		Nickname:    "group-policy-fresh",
+		DisplayName: "group-policy-fresh",
+		App:         AppDesktop,
+		// Filed under Go because the generator is: what it reads is one JSON file in the app
+		// crate, and what goes stale is the template in `packaging/`.
+		Tech:      "🐹 Go",
+		DependsOn: nil,
+		IsFast:    false, // `go run` compiles the generator
+		Inputs: inputs([]string{
+			"apps/desktop/src-tauri/src/managed_policy/policies.json",
+			"apps/desktop/packaging/group-policy/**",
+			"scripts/group-policy/**",
+		}),
+		Run: RunDesktopGroupPolicyFresh,
 	},
 	{
 		ID:          "desktop-native-strings-fresh",

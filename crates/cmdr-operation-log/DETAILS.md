@@ -856,6 +856,17 @@ name search shows one; `get_operation` still reads one by id.
   `tools/actions/operation_log/tests.rs::what_the_journal_refuses_is_typed_with_no_dialog`, and
   `query/tests.rs::neither_the_feed_nor_a_search_lists_a_rollback`.
 
+### A volume whose root moved
+
+A volume's root can move between an op and its undo (a Windows drive back on another letter). `VolumeLookup::root_move`
+says where a volume's recorded paths land now, and `src/rollback/live_roots.rs` rebases each unit ONCE, as the page loop
+takes it, before anything reads it: the progress line, the skip report, the inverse op's own journal rows, and the act
+all name the same place, and the confirm summary (`gate.rs::summarize_inverse`) rebases its sample the same way. The
+host is asked once per volume per run. The app answers only for an id that is provably one disk (never seen at two roots
+at once: a block clone shares its twin's id, size, mtime, and inode, so the snapshot check alone can't tell them apart);
+otherwise `None`, and the undo acts on the recorded path or refuses as it always did. Regression cell:
+`crates/cmdr-operations/src/rollback/planner_tests/root_move_tests.rs`.
+
 ### Streaming + ordering
 
 Reversal streams the original op's `rollback_unit` rows via `store::read_rollback_units_page` (a `seq DESC` paged

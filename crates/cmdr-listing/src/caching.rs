@@ -228,7 +228,7 @@ impl Inner {
 
     /// Removes an entry from the cache and queues a single-remove change.
     ///
-    /// Matches by file name within the listing (its directory), NOT the full path, so
+    /// Matches by filename within the listing (its directory), NOT the full path, so
     /// it works when the listing's stored entry paths use a different path space than
     /// the notifier's resolved parent (MTP: inner `/Dir/file` entries vs `mtp://…`
     /// parent). See `remove_entry_by_name`.

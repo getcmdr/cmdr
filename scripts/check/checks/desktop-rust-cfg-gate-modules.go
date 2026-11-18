@@ -50,7 +50,7 @@ func buildModuleGatedFileSet(srcDir string) (map[string]bool, error) {
 	return gatedFiles, nil
 }
 
-// isModuleRootFile reports whether a file name is one whose `mod x;` declarations resolve
+// isModuleRootFile reports whether a filename is one whose `mod x;` declarations resolve
 // against its own directory.
 func isModuleRootFile(name string) bool {
 	return name == "lib.rs" || name == "main.rs" || name == "mod.rs"

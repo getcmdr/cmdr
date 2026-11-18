@@ -738,7 +738,7 @@ starts calling the rendered bar "the caret" and then wonders why `viewer-caret-g
 The viewer window opens with `titleBarStyle: 'overlay'` and `trafficLightPosition: { x: 9, y: 17 }` (see
 `lib/file-viewer/open-viewer.ts` — kept in sync with the main window's `tauri.conf.json`). The toolbar at the top of
 `+page.svelte` reserves 80 px of left padding for the macOS traffic lights and lets the empty space remain draggable via
-`data-tauri-drag-region`. The pickers and indexing status sit on the right; the file name occupies the flexible middle.
+`data-tauri-drag-region`. The pickers and indexing status sit on the right; the filename occupies the flexible middle.
 
 The encoding picker fetches its options once via `commands.viewerGetEncodingOptions(sessionId)` on open; the list is
 backend-authoritative (no FE-side encoding catalog). Switching encoding calls `commands.viewerSetEncoding`, clears the
@@ -906,7 +906,7 @@ so the page shows how far it got. Backend half: `apps/desktop/src-tauri/src/file
   key presses are synthetic and never trip the heuristic, so Vitest pins this, not Playwright.
 - **`user-select: none` on `.file-content` is deliberate.** The viewer owns its own selection model (above); the
   browser's native selection would render a competing-and-broken one on top of ours that loses its anchor as soon as the
-  line scrolls out. `.status-bar` opts back in with `user-select: text` so users can still copy the file name or line
+  line scrolls out. `.status-bar` opts back in with `user-select: text` so users can still copy the filename or line
   count. `.line-number` keeps the global default (`none`), it's aria-hidden chrome.
   - The browser's caret-from-point APIs are wrong on `user-select: none` text in some WebKit builds, so we don't use
     them at all (§ "Pointer → caret"). ❌ Don't reintroduce one as a "fast path": the wrong answer looks exactly like a

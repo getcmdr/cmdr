@@ -349,6 +349,17 @@ pub fn app_spelling(native: &str, flavor: PathFlavor) -> String {
     AppPath::from_native(native, flavor).map_or_else(|| native.to_string(), |app| app.to_string())
 }
 
+/// A path the local OS handed back (`read_dir`'s children, a watcher's event, the home
+/// folder) in the app spelling, on THIS host: on Windows through [`app_spelling`]
+/// (`C:/Windows\System32` becomes `C:/Windows/System32`), on macOS and Linux untouched, byte
+/// for byte, since there the OS already speaks app paths.
+pub fn host_app_path(native: std::path::PathBuf) -> std::path::PathBuf {
+    match PathFlavor::HOST {
+        PathFlavor::Windows => std::path::PathBuf::from(app_spelling(&native.to_string_lossy(), PathFlavor::Windows)),
+        PathFlavor::Posix => native,
+    }
+}
+
 /// What a person reads for `text`: a Windows local path with `\`, every other text as is.
 pub fn shown_path(text: &str, flavor: PathFlavor) -> String {
     match AppPath::parse(text, flavor) {

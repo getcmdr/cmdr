@@ -18,7 +18,7 @@ use crate::test_support::isolate_secrets;
 use cmdr_archive::test_fixtures::{build_encrypted_7z, build_zip, deflated, dir, stored};
 use cmdr_fs::volume::{LockedContainer, RoutedKind, Volume, VolumeError};
 use cmdr_listing::host::ListingVolumes;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_operation_log::types::Initiator;
 use cmdr_operations::testing::{CollectorEventSink, copy_volumes_with_progress, new_operation_state};
 use cmdr_operations::{MutationError, ReadOnlySide, VolumeCopyConfig, WriteOperationConfig, WriteOperationError};
@@ -53,11 +53,7 @@ async fn drive_with_a_zip(tag: &str) -> (BackedUpDrive, PathBuf) {
 fn dest_drive(tag: &str) -> (tempfile::TempDir, PathBuf, String, Arc<dyn Volume>) {
     let dir = tempfile::tempdir().expect("tempdir");
     let root = std::fs::canonicalize(dir.path()).expect("canonical tempdir");
-    let volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
-        "Dest",
-        &root,
-        crate::volume_host::host(),
-    ));
+    let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder("Dest", &root, crate::volume_host::host()));
     let id = cmdr_fs::testing::unique_test_id(tag);
     get_volume_manager().register(&id, Arc::clone(&volume));
     (dir, root, id, volume)

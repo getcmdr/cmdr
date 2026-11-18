@@ -1592,7 +1592,7 @@
   },
   "settings.analytics.enabled.description": "Zapněte prosím tuto volbu a pomozte nám během otevřené bety zjistit, na kterých funkcích záleží.\nStatistiky jsou spojené s náhodným ID, ne s vaším jménem ani e‑mailem.\nCmdr nikdy neodesílá názvy souborů, cesty, hledané výrazy ani zadání pro AI.\nKdyž je volba vypnutá, Cmdr neodesílá žádné statistiky.",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "a8d8db1"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "analytika, používání, statistiky, soukromí, telemetrie, beta, sledování, odhlásit",
   "@settings.analytics.enabled.keywords": {
@@ -1616,7 +1616,7 @@
   },
   "settings.updates.crashReports.summary": "Nikdy neobsahuje názvy souborů ani osobní údaje.",
   "@settings.updates.crashReports.summary": {
-    "sourceHash": "7814a28"
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "havárie, pád, zpráva, soukromí, telemetrie, chyba",
   "@settings.updates.crashReports.keywords": {
@@ -2944,9 +2944,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Sekce nastavení",
+  "settings.sidebar.sections": "{platform, select, windows {Sekce nastavení} linuxGnome {Sekce předvoleb} linuxKde {Sekce okna Nastavit Cmdr} other {Sekce nastavení}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Žádné nastavení neodpovídá} one {Odpovídá {countText} sekce} few {Odpovídají {countText} sekce} many {Odpovídá {countText} sekce} other {Odpovídá {countText} sekcí}}",
   "@settings.sidebar.matchCount": {
@@ -3204,7 +3204,7 @@
   },
   "settings.securityLog.enabled.description": "Zaznamenává změny a odmítnutí důležitá pro bezpečnost, třeba souhlas s cloudovou AI, nainstalovanou aktualizaci nebo aplikaci, kterou server MCP odmítl. Neobsahuje žádné názvy souborů, jejich obsah ani hesla.",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "97e24a4"
+    "sourceHash": "3692a3d"
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {Malý místní záznam bezpečnostních událostí. Nikdy neopustí váš Mac.} windows {Malý místní záznam bezpečnostních událostí. Nikdy neopustí váš počítač.} other {Malý místní záznam bezpečnostních událostí. Nikdy neopustí váš počítač.}}",
   "@settings.securityLog.enabled.summary": {
@@ -3423,9 +3423,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Nastavení",
+  "settings.window.title": "{platform, select, windows {Nastavení} linuxGnome {Předvolby} linuxKde {Nastavit – Cmdr} other {Nastavení}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Načítání nastavení…",
   "@settings.window.loading": {
@@ -3671,13 +3671,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Jedna položka v aplikaci Klíčenka s názvem „{itemName}“} few {{countText} položky v aplikaci Klíčenka s názvem „{itemName}“} many {{countText} položky v aplikaci Klíčenka s názvem „{itemName}“} other {{countText} položek v aplikaci Klíčenka s názvem „{itemName}“}}} windows {{count, plural, one {Jedna položka ve Správci přihlašovacích údajů s názvem „{itemName}“} few {{countText} položky ve Správci přihlašovacích údajů s názvem „{itemName}“} many {{countText} položky ve Správci přihlašovacích údajů s názvem „{itemName}“} other {{countText} položek ve Správci přihlašovacích údajů s názvem „{itemName}“}}} linuxKde {{count, plural, one {Jedna položka v úložišti KWallet s názvem „{itemName}“} few {{countText} položky v úložišti KWallet s názvem „{itemName}“} many {{countText} položky v úložišti KWallet s názvem „{itemName}“} other {{countText} položek v úložišti KWallet s názvem „{itemName}“}}} other {{count, plural, one {Jedna položka v systémové klíčence s názvem „{itemName}“} few {{countText} položky v systémové klíčence s názvem „{itemName}“} many {{countText} položky v systémové klíčence s názvem „{itemName}“} other {{countText} položek v systémové klíčence s názvem „{itemName}“}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Jedna položka v aplikaci Klíčenka s názvem „{itemName}“} few {{countText} položky v aplikaci Klíčenka s názvem „{itemName}“} many {{countText} položky v aplikaci Klíčenka s názvem „{itemName}“} other {{countText} položek v aplikaci Klíčenka s názvem „{itemName}“}}} windows {{count, plural, one {Jedna položka ve Správci přihlašovacích údajů s názvem „{itemName}“} few {{countText} položky ve Správci přihlašovacích údajů s názvem „{itemName}“} many {{countText} položky ve Správci přihlašovacích údajů s názvem „{itemName}“} other {{countText} položek ve Správci přihlašovacích údajů s názvem „{itemName}“}}} linuxKde {{count, plural, one {Jedna položka v úschovně KDE s názvem „{itemName}“} few {{countText} položky v úschovně KDE s názvem „{itemName}“} many {{countText} položky v úschovně KDE s názvem „{itemName}“} other {{countText} položek v úschovně KDE s názvem „{itemName}“}}} other {{count, plural, one {Jedna položka v systémové klíčence s názvem „{itemName}“} few {{countText} položky v systémové klíčence s názvem „{itemName}“} many {{countText} položky v systémové klíčence s názvem „{itemName}“} other {{countText} položek v systémové klíčence s názvem „{itemName}“}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Všechny položky v aplikaci Klíčenka s názvem „{itemName}“} windows {Všechny položky ve Správci přihlašovacích údajů s názvem „{itemName}“} linuxKde {Všechny položky v úložišti KWallet s názvem „{itemName}“} other {Všechny položky v systémové klíčence s názvem „{itemName}“}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Všechny položky v aplikaci Klíčenka s názvem „{itemName}“} windows {Všechny položky ve Správci přihlašovacích údajů s názvem „{itemName}“} linuxKde {Všechny položky v úschovně KDE s názvem „{itemName}“} other {Všechny položky v systémové klíčence s názvem „{itemName}“}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Ukončit Cmdr} other {Ukončit Cmdr}}",
   "@settings.dataWipe.quit": {

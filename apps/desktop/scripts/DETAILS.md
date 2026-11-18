@@ -191,6 +191,15 @@ output: `docs/i18n/termbase.md` § Tooling; the translator-facing rules: `docs/i
   `docs/i18n/reference-pile/how-to-mine.md` as one lookup: macOS joined by key, every TBX sense with its definition, the
   gettext catalogs by `msgid` with mnemonics ignored, Total Commander in reverse only (it has no English side). Reads
   whole files (the 63 MB German TBX parses in about half a second), no index.
+- **`i18n-pile-fetch.ts`** (`pnpm i18n:pile-fetch [--lang …]`): fetches the GNOME and KDE desktop catalogs the
+  `linuxGnome` / `linuxKde` branches cite (Seahorse, gnome-keyring, GNOME Settings; `kconfigwidgets6`, `kxmlgui6`,
+  KWallet, KWalletManager, System Settings, the keyboard and shortcuts KCMs, `plasma-desktop._json_` for KCM names) into
+  the pile's `<folder>/gnome-desktop/` and `kde-desktop/`, which `i18n:pile` reads as Linux evidence. Three translator
+  waves had `curl`ed them by hand; an error page never lands (`looksLikePo`).
+- **`i18n-values.ts`** (`pnpm i18n:values`): read-only, the current values of `--keys` / `--keys-file` / `--stale` in
+  one or more locales, branch by branch beside the English, marking stale keys and branches still in English; an overlay
+  prints its base beside it. Replaces the `dump.ts` / `node -e` dumps translators wrote when a per-OS brief was too big
+  to read.
 - **`i18n-repo-lib.ts`**: git, the main clone (from `--git-common-dir`, so a worktree finds the pile without anyone
   naming the main clone's path), the per-language, per-run working directories under `_ignored/i18n-work/`
   (`newWorkDir`, `latestWorkDir`: the brief writes `keys.txt` there and `i18n:apply` reads `values.json` from the

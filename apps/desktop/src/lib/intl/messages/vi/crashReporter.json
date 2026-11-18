@@ -21,7 +21,7 @@
   },
   "crashReporter.dialog.privacyNote": "{platform, select, macos {Báo cáo gồm phiên bản ứng dụng, phiên bản macOS, và phần mã nào đã gặp sự cố. Không có tên tệp hay dữ liệu cá nhân.} windows {Báo cáo gồm phiên bản ứng dụng, phiên bản Windows, và phần mã nào đã gặp sự cố. Không có tên tệp hay dữ liệu cá nhân.} other {Báo cáo gồm phiên bản ứng dụng, bản phân phối và phiên bản Linux, và phần mã nào đã gặp sự cố. Không có tên tệp hay dữ liệu cá nhân.}}",
   "@crashReporter.dialog.privacyNote": {
-    "sourceHash": "ebe2d23"
+    "sourceHash": "6f58653"
   },
   "crashReporter.dialog.reportIdLabel": "Mã báo cáo:",
   "@crashReporter.dialog.reportIdLabel": {
@@ -71,9 +71,9 @@
   "@crashReporter.sentToast.message.report": {
     "sourceHash": "a676ed5"
   },
-  "crashReporter.sentToast.changeSettings": "Đổi trong Cài đặt",
+  "crashReporter.sentToast.changeSettings": "{platform, select, windows {Đổi trong Cài đặt} linuxGnome {Đổi trong Tùy thích} linuxKde {Đổi trong Cấu hình Cmdr} other {Đổi trong Cài đặt}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "144d0bd"
+    "sourceHash": "9972084"
   },
   "crashReporter.sentToast.sendLog": "Đính kèm nhật ký",
   "@crashReporter.sentToast.sendLog": {

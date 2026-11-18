@@ -16,6 +16,11 @@ Writing, code, and design styles.
     takes a destination; `Delete` only asks whether to go ahead. Use the U+2026 character, never three periods. The
     verdict per item, and why this beats Apple's own "requires further input" phrasing, live in
     `apps/desktop/src-tauri/src/menu/DETAILS.md`.
+  - **The settings window's menu row is the one exception: it keeps its system's own ellipsis** ("Settings…" on macOS
+    and other Linux, KDE's standard `Configure %1…` from KStandardAction; none on Windows or GNOME), because it's a
+    standard item users look for by its exact OS spelling. The command and every button that opens the window follow the
+    rule above and take none ("Open settings", "Configure Cmdr"). A label quoting the menu row (the quick filter toast's
+    button) copies the row.
 - Ellipsis
   - **Cmdr writes every ellipsis as `…` (U+2026), never three periods**: progress text ("Loading…"), placeholders
     ("Example: sk-ant-abc123…"), and truncation (leading or trailing) all use the same character.
@@ -49,6 +54,9 @@ Writing, code, and design styles.
     keep `Chooser` (`shortcuts.scope.volumeChooser`, `pane.leftVolumeChooser`), because those are persisted in
     everyone's shortcut settings and can't be renamed; translate the value and ignore the key. Per-locale resolutions:
     each locale's `docs/i18n/<locale>/terms.json`.
+  - **"Filename" is one word, on every OS**, in UI copy, `@key` descriptions, docs, and code comments ("filenames",
+    "Copy filename"). Apple writes "filename" and Microsoft "file name"; Cmdr picks one word everywhere so the docs and
+    the UI read the same on all three OSes. `i18n-platform-vocabulary.test.ts` guards the `en` catalog.
   - **The file list's two layouts are "Full view" and "Brief view"**, the View menu's own names, never "view modes".
   - **Folder vs directory**: We know these mean the same. We allow both. Use whichever feels better in each situation.
     Like, on the backend, listing "folders" with `readdir` feels wrong, but also, "folder" comes more natural on the
@@ -69,11 +77,14 @@ Linux on GNOME or KDE Plasma gets its own branch (`linuxGnome`, `linuxKde`) only
 itself; `other` stays desktop-neutral for every other desktop. Today's desktop words:
 
 - **GNOME**: the file manager is **Files** ("Show in Files"); the password store is **your keyring**, managed in
-  **Passwords and Keys**; an app's settings row is **Preferences**; shortcuts live in **Settings > Keyboard > View and
-  Customize Shortcuts**.
-- **KDE Plasma**: the file manager is **Dolphin** ("Show in Dolphin"); the password store is **KWallet** ("Remember in
-  KWallet"), managed in **KWalletManager**; an app's settings row is **Configure Cmdr…**; shortcuts live in **System
-  Settings > Keyboard > Shortcuts**.
+  **Passwords and Keys**; an app's settings row is **Preferences** and so is its window ("in Preferences",
+  "Preferences > AI"); shortcuts live in **Settings > Keyboard > View and Customize Shortcuts**.
+- **KDE Plasma**: the file manager is **Dolphin** ("Show in Dolphin"); the password store is **KDE Wallet** ("Remember
+  in KDE Wallet"; KDE's own user-facing name, so never "KWallet"), managed in **KWalletManager**; an app's settings row
+  is **Configure Cmdr…**, its window is titled "Configure – Cmdr", and copy points there as **Configure Cmdr** ("in
+  Configure Cmdr", "Configure Cmdr > AI", and a button that only opens it reads "Configure Cmdr"), also where the other
+  systems write a lowercase "in settings" ("Add your API key in Configure Cmdr"), since KDE has no generic word that
+  names the window; shortcuts live in **System Settings > Keyboard > Shortcuts**.
 
 - The machine
   - **This Mac, your Mac** / **this PC, your PC** / **this computer, your computer**. On Windows, never "PC" and
@@ -121,7 +132,16 @@ itself; `other` stays desktop-neutral for every other desktop. Today's desktop w
 - System apps and places
   - **System Settings** (pane names come localized from the OS) / **Settings**, with the path written out ("Settings >
     Personalization > Colors") / "your system settings" (or the setting in words: "your system’s network settings").
-  - Cmdr's own settings window in a menu: "Settings…" / "Settings" / "Settings…".
+  - Cmdr's own settings window in a menu: "Settings…" / "Settings" / "Settings…" (GNOME "Preferences", KDE "Configure
+    Cmdr…"). **The window's title, and every string that sends the user there, starts with the menu row's word**:
+    "Settings" on macOS, Windows, and other Linux; "Preferences" on GNOME; "Configure" on KDE. A path inside it follows
+    too ("Preferences > File operations"). Windows keeps "Settings" because Microsoft's app-settings guidance and its
+    own apps say so, and one word is easier in docs. Every key naming the window still carries a `windows` branch with
+    the same English (`@key.identicalBranches` says why), so a translation can use Microsoft's word where it differs
+    from Apple's (French `Paramètres` beside `Réglages`). Evidence: `copy-glossary-evidence.md` § The settings window's
+    title; `apps/desktop/src/lib/settings/settings-window-name.test.ts` pins the English title against the menu row on
+    all five systems; translations follow each desktop's own catalog there (`docs/i18n/translator-instructions.md`,
+    Per-OS values).
   - **Keychain**, **Keychain Access** / **Credential Manager**, named only where the user has to go there (a checkbox
     says "Remember password") / **your keyring** ("Remember in keyring").
   - **Terminal** ("In Terminal, run…") / **PowerShell** ("In PowerShell, run…", with a command that works there) / **a

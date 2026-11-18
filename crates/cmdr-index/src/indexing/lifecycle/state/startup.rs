@@ -194,10 +194,12 @@ pub(crate) fn record_drive_index_enabled(volume_id: &str) {
 /// `start_indexing` starts the local `root` volume; `start_indexing_for_smb`
 /// starts an SMB share. Both funnel through `start_indexing_for`.
 pub fn start_indexing() -> Result<(), String> {
-    // The boot disk is APFS, so its inodes are trustworthy.
+    // The boot disk is APFS (NTFS on Windows), so its inodes are trustworthy. It starts at
+    // `/` on macOS and Linux and at the system drive's root on Windows, ❌ never a bare `/`
+    // there, which Windows reads as the process's current drive.
     start_indexing_for(
         ROOT_VOLUME_ID,
-        PathBuf::from("/"),
+        PathBuf::from(cmdr_fs::mount_layout::boot_volume_root()),
         IndexVolumeKind::Local,
         true,
         Activation::IndexTheVolume,

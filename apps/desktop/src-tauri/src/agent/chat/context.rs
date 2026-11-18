@@ -271,7 +271,7 @@ pub struct ContextEnvelope {
 /// full price after every note. Memory rides the user turn instead ([`memory_notes_for_turn`]),
 /// so it can't reach the prefix by construction. And ❌ never fold it into `cmdr_md`: `CMDR.md`
 /// is what the USER tells the agent, memory is what the AGENT wrote down and can be steered by
-/// a file name or a photographed sentence, so merging them would launder the second into the
+/// a filename or a photographed sentence, so merging them would launder the second into the
 /// first's voice.
 pub struct PrefixInputs<'a> {
     pub system_prompt: &'a str,

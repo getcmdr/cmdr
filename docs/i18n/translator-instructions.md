@@ -35,7 +35,9 @@ style guide disagree, the style guide's general rule wins unless the ruling says
 - **Tools, not scripts**: the tools below cover writing and looking up. ❌ Never write your own script that writes a
   catalog or a termbase file, and never hand-edit one: the tools validate and keep the formatting, and a homemade writer
   does neither. When a tool can't do what you need, do the smallest manual step and say so under Process feedback
-  (below).
+  (below). To see what your batch's keys say now, branch by branch beside the English (the brief too big to read whole,
+  a per-OS batch), run `pnpm i18n:values --lang {{TAG}} --keys-file <keys.txt>` (in apps/desktop; `--keys a,b` and `*`
+  globs work too, `--stale` picks every stale key) instead of a dump script.
 - **Search keywords** (`settings.*.keywords`): a hidden, comma-separated list Settings search matches, never shown.
   Search already matches the setting's label and description, so write OTHER words a user of your language might type:
   synonyms, everyday words, the related idea, any count, not a 1:1 translation. Term rulings, avoid-lists, and brand
@@ -65,14 +67,28 @@ style guide disagree, the style guide's general rule wins unless the ruling says
     one line saying what was wrong under a "macOS text fixed" heading in your report, so the commit message carries the
     reason. An overlay such as es-419 follows its base catalog's fix unless it forks that key.
   - **Where each OS's word lives** in the pile: `macos` mines `macOS/`; `windows` mines `microsoft-terminology/` (the
-    TBX) and `microsoft-style-guides/`; `linuxGnome` (Linux on GNOME) mines `gnome-nautilus/` and takes GNOME's own word
-    (the English names GNOME's apps: Files, Passwords and Keys, Settings); `linuxKde` (Linux on KDE Plasma) mines
-    `kde-dolphin/` and takes KDE's (Dolphin, KWallet, System Settings); `other` (every other Linux desktop) mines
-    `gnome-nautilus/`, `kde-dolphin/`, and `xfce-thunar/`, taking the word they share, or the desktop-neutral one where
-    they split. A localized app name follows that desktop's own catalog (GNOME ships "Files" translated, KDE keeps
-    "Dolphin" and "KWallet" as names). The TBX has no "This PC" or "user folder", and its "home folder" is a different
-    sense (a folder an admin assigns on a server); where the pile lacks the OS's word, choose by the evidence you have
-    and record it `tentative`.
+    TBX) and `microsoft-style-guides/`; `linuxGnome` (Linux on GNOME) mines `gnome-nautilus/` and `gnome-desktop/`
+    (Seahorse, gnome-keyring, GNOME Settings) and takes GNOME's own word (the English names GNOME's apps: Files,
+    Passwords and Keys, Settings); `linuxKde` (Linux on KDE Plasma) mines `kde-dolphin/` and `kde-desktop/`
+    (`kconfigwidgets6.po` for "Configure %1…", `kwalletd6.po` for "KDE Wallet", `systemsettings.po`, and
+    `plasma-desktop._json_.po` for KCM names like Keyboard and Shortcuts) and takes KDE's (Dolphin, KDE Wallet, System
+    Settings); `pnpm i18n:pile` searches both, so ❌ never `curl` a catalog yourself; `other` (every other Linux
+    desktop) mines `gnome-nautilus/`, `kde-dolphin/`, and `xfce-thunar/`, taking the word they share, or the
+    desktop-neutral one where they split. A localized app name follows that desktop's own catalog (GNOME ships "Files"
+    translated, KDE keeps "Dolphin" and "KWalletManager" as names, and translates "KDE Wallet" in its own catalogs). The
+    TBX has no "This PC" or "user folder", and its "home folder" is a different sense (a folder an admin assigns on a
+    server); where the pile lacks the OS's word, choose by the evidence you have and record it `tentative`.
+  - **Cmdr's settings window has a `windows` branch in every key that names it** (its title, the menu row, the command,
+    and every "in Settings" or "Settings > AI" pointer), even where its English equals the macOS one: name the window
+    with Windows' own word for an app's settings in {{LANGUAGE}} (Microsoft's, which can differ from Apple's: French
+    `Paramètres` beside `Réglages`), the same word in the title (`settings.window.title`) and every pointer. Where both
+    vendors use one word, the branch keeps it. Each key's `@key.identicalBranches` records why the English repeats.
+  - **The window title and its menu row follow each desktop's own catalog**, even where they then don't start with the
+    same word. English pins both to one first word ("Configure – Cmdr" / "Configure Cmdr…",
+    `settings-window-name.test.ts` checks English only), but KDE's catalogs translate the `@title:window` and the
+    `@action:inmenu` forms apart: Russian `Настройка – Cmdr` beside `Настроить Cmdr…`, Hungarian `Beállítások – Cmdr`
+    beside `Cmdr beállítása…`. Take each form from Dolphin's and `kconfigwidgets6.po`'s own entries; a shared root is
+    enough.
   - **Two registers on Windows**, which the English branch already picks: Trash is "Delete" as an action's name (a
     button, menu row, or command) and "the Recycle Bin" in a sentence; Quit is "Exit" as an action and "close" when Cmdr
     is the subject ("Cmdr closes"). Use {{LANGUAGE}} Windows' own word for each, in the same register.

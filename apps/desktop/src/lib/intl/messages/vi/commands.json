@@ -35,9 +35,9 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "Mở cài đặt",
+  "commands.appSettings.label": "{platform, select, windows {Mở cài đặt} linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
   "@commands.appSettings.label": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "commands.appCheckForUpdates.label": "Kiểm tra cập nhật…",
   "@commands.appCheckForUpdates.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi chuỗi khóa, rồi khóa lại bản sao lưu đó} windows {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi Trình quản lý thông tin xác thực, rồi khóa lại bản sao lưu đó} linuxKde {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi KWallet, rồi khóa lại bản sao lưu đó} other {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi kho khóa của bạn, rồi khóa lại bản sao lưu đó}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi chuỗi khóa, rồi khóa lại bản sao lưu đó} windows {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi Trình quản lý thông tin xác thực, rồi khóa lại bản sao lưu đó} linuxKde {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi Ví KDE, rồi khóa lại bản sao lưu đó} other {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi kho khóa của bạn, rồi khóa lại bản sao lưu đó}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "5b48a77"
+    "sourceHash": "e7106da"
   },
   "commands.fileCopyShareLink.label": "Sao chép liên kết chia sẻ (bảy ngày)",
   "@commands.fileCopyShareLink.label": {
@@ -1264,17 +1264,17 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "Đã mở thư mục này trong ứng dụng terminal của bạn. Bạn muốn Cmdr mở ứng dụng khác vào lần sau? Hãy chọn trong Cài đặt, mục “Điều hướng & thao tác tệp”.",
+  "commands.handler.openTerminalHere.hint": "{platform, select, windows {Đã mở thư mục này trong ứng dụng terminal của bạn. Bạn muốn Cmdr mở ứng dụng khác vào lần sau? Hãy chọn trong Cài đặt, mục “Điều hướng & thao tác tệp”.} linuxGnome {Đã mở thư mục này trong ứng dụng terminal của bạn. Bạn muốn Cmdr mở ứng dụng khác vào lần sau? Hãy chọn trong Tùy thích, mục “Điều hướng & thao tác tệp”.} linuxKde {Đã mở thư mục này trong ứng dụng terminal của bạn. Bạn muốn Cmdr mở ứng dụng khác vào lần sau? Hãy chọn trong Cấu hình Cmdr, mục “Điều hướng & thao tác tệp”.} other {Đã mở thư mục này trong ứng dụng terminal của bạn. Bạn muốn Cmdr mở ứng dụng khác vào lần sau? Hãy chọn trong Cài đặt, mục “Điều hướng & thao tác tệp”.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b29b744"
+    "sourceHash": "5d6063c"
   },
   "commands.handler.openTerminalHere.dismiss": "Bỏ qua",
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "Mở cài đặt",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Mở cài đặt} linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} không còn được cài đặt, nên mục này đã mở trong Terminal.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1344,9 +1344,9 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "Lưu nhật ký đang tắt. Đặt giới hạn dung lượng đĩa lớn hơn 0 trong Cài đặt > Nâng cao, rồi khởi động lại Cmdr để xem nhật ký gỡ lỗi.",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, windows {Lưu nhật ký đang tắt. Đặt giới hạn dung lượng đĩa lớn hơn 0 trong Cài đặt > Nâng cao, rồi khởi động lại Cmdr để xem nhật ký gỡ lỗi.} linuxGnome {Lưu nhật ký đang tắt. Đặt giới hạn dung lượng đĩa lớn hơn 0 trong Tùy thích > Nâng cao, rồi khởi động lại Cmdr để xem nhật ký gỡ lỗi.} linuxKde {Lưu nhật ký đang tắt. Đặt giới hạn dung lượng đĩa lớn hơn 0 trong Cấu hình Cmdr > Nâng cao, rồi khởi động lại Cmdr để xem nhật ký gỡ lỗi.} other {Lưu nhật ký đang tắt. Đặt giới hạn dung lượng đĩa lớn hơn 0 trong Cài đặt > Nâng cao, rồi khởi động lại Cmdr để xem nhật ký gỡ lỗi.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "96f16fc"
+    "sourceHash": "1fb0c6a"
   },
   "commands.handler.viewDebugLog.unavailable": "Không mở được nhật ký gỡ lỗi. Hãy thử lại.",
   "@commands.handler.viewDebugLog.unavailable": {

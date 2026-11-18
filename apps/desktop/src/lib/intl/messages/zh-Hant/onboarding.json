@@ -307,17 +307,17 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "在你允許之前，雲端 AI 會一直保持關閉。之後可以到「設定 > AI」允許。",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {在你允許之前，雲端 AI 會一直保持關閉。之後可以到「設定 > AI」允許。} linuxGnome {在你允許之前，雲端 AI 會一直保持關閉。之後可以到「偏好設定 > AI」允許。} linuxKde {在你允許之前，雲端 AI 會一直保持關閉。之後可以到「設定 Cmdr > AI」允許。} other {在你允許之前，雲端 AI 會一直保持關閉。之後可以到「設定 > AI」允許。}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
-    "sourceHash": "82d27b6"
+    "sourceHash": "6075ac0"
   },
   "onboarding.stepAi.off.label": "謝謝，還是算了，我不用 AI",
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "Cmdr 不用 AI 也完全能用。你之後隨時可以在「設定」裡把它打開。",
+  "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr 不用 AI 也完全能用。你之後隨時可以在「設定」裡把它打開。} linuxGnome {Cmdr 不用 AI 也完全能用。你之後隨時可以在「偏好設定」裡把它打開。} linuxKde {Cmdr 不用 AI 也完全能用。你之後隨時可以在「設定 Cmdr」裡把它打開。} other {Cmdr 不用 AI 也完全能用。你之後隨時可以在「設定」裡把它打開。}}",
   "@onboarding.stepAi.off.help": {
-    "sourceHash": "3f261be"
+    "sourceHash": "f4c9871"
   },
   "onboarding.localDownloadFailed.title": "本機 AI 模型的下載沒有完成",
   "@onboarding.localDownloadFailed.title": {
@@ -391,21 +391,21 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "注意，它預設是開著的，好鼓勵大家在測試期間把資料傳給我。\n你隨時可以在「設定」裡改。",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {注意，它預設是開著的，好鼓勵大家在測試期間把資料傳給我。\n你隨時可以在「設定」裡改。} linuxGnome {注意，它預設是開著的，好鼓勵大家在測試期間把資料傳給我。\n你隨時可以在「偏好設定」裡改。} linuxKde {注意，它預設是開著的，好鼓勵大家在測試期間把資料傳給我。\n你隨時可以在「設定 Cmdr」裡改。} other {注意，它預設是開著的，好鼓勵大家在測試期間把資料傳給我。\n你隨時可以在「設定」裡改。}}",
   "@onboarding.stepBeta.analyticsCaption": {
-    "sourceHash": "06ce4eb"
+    "sourceHash": "9dc83f9"
   },
-  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 macOS 版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「設定」裡關掉。} windows {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Windows 版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「設定」裡關掉。} other {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Linux 發行版和版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「設定」裡關掉。}}",
+  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 macOS 版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「設定」裡關掉。} windows {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Windows 版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「設定」裡關掉。} linuxGnome {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Linux 發行版和版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「偏好設定」裡關掉。} linuxKde {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Linux 發行版和版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「設定 Cmdr」裡關掉。} other {當機報告也是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Linux 發行版和版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n這兩項你隨時都能在「設定」裡關掉。}}",
   "@onboarding.stepBeta.crashReportsNote": {
-    "sourceHash": "55b9634"
+    "sourceHash": "4efc7dc"
   },
   "onboarding.stepBeta.analyticsManaged": "你的組織已關閉使用統計。",
   "@onboarding.stepBeta.analyticsManaged": {
     "sourceHash": "49484ee"
   },
-  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {當機報告是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 macOS 版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n你隨時都能在「設定」裡把它關掉。} windows {當機報告是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Windows 版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n你隨時都能在「設定」裡把它關掉。} other {當機報告是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Linux 發行版和版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n你隨時都能在「設定」裡把它關掉。}}",
+  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {當機報告是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 macOS 版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n你隨時都能在「設定」裡把它關掉。} windows {當機報告是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Windows 版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n你隨時都能在「設定」裡把它關掉。} linuxGnome {當機報告是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Linux 發行版和版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n你隨時都能在「偏好設定」裡把它關掉。} linuxKde {當機報告是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Linux 發行版和版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n你隨時都能在「設定 Cmdr」裡把它關掉。} other {當機報告是開著的：Cmdr 要是掛了，它會傳送 App 版本、你的 Linux 發行版和版本，還有程式碼停在哪裡。\n絕不會有你的檔案。\n你隨時都能在「設定」裡把它關掉。}}",
   "@onboarding.stepBeta.crashReportsNoteAlone": {
-    "sourceHash": "27d4b1b"
+    "sourceHash": "bd11273"
   },
   "onboarding.stepBeta.emailTitle": "保持聯絡（可選）",
   "@onboarding.stepBeta.emailTitle": {
@@ -428,9 +428,9 @@
   "@onboarding.stepBeta.signup.rejected": {
     "sourceHash": "5a1bca7"
   },
-  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {剛剛無法連上註冊伺服器，所以你還沒加到清單裡。你的地址已經存在這部 Mac 上了：過一分鐘再按一次「儲存」，或是隨時在「設定 › 更新與隱私」裡按。} windows {剛剛無法連上註冊伺服器，所以你還沒加到清單裡。你的地址已經存在這台電腦上了：過一分鐘再按一次「儲存」，或是隨時在「設定 › 更新與隱私」裡按。} other {剛剛無法連上註冊伺服器，所以你還沒加到清單裡。你的地址已經存在這台電腦上了：過一分鐘再按一次「儲存」，或是隨時在「設定 › 更新與隱私」裡按。}}",
+  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {剛剛無法連上註冊伺服器，所以你還沒加到清單裡。你的地址已經存在這部 Mac 上了：過一分鐘再按一次「儲存」，或是隨時在「設定 › 更新與隱私」裡按。} windows {剛剛無法連上註冊伺服器，所以你還沒加到清單裡。你的地址已經存在這台電腦上了：過一分鐘再按一次「儲存」，或是隨時在「設定 › 更新與隱私」裡按。} linuxGnome {剛剛無法連上註冊伺服器，所以你還沒加到清單裡。你的地址已經存在這台電腦上了：過一分鐘再按一次「儲存」，或是隨時在「偏好設定 › 更新與隱私」裡按。} linuxKde {剛剛無法連上註冊伺服器，所以你還沒加到清單裡。你的地址已經存在這台電腦上了：過一分鐘再按一次「儲存」，或是隨時在「設定 Cmdr › 更新與隱私」裡按。} other {剛剛無法連上註冊伺服器，所以你還沒加到清單裡。你的地址已經存在這台電腦上了：過一分鐘再按一次「儲存」，或是隨時在「設定 › 更新與隱私」裡按。}}",
   "@onboarding.stepBeta.signup.unreachable": {
-    "sourceHash": "6032194"
+    "sourceHash": "ae9c4a5"
   },
   "onboarding.stepBeta.emailNote": "{platform, select, macos {留下你的電子郵件地址，我會偶爾來問個問題或報個近況。\n你在這裡填的地址只留在你的 Mac 上，絕不會和你的使用統計串在一起，這兩個是刻意分開的子系統。} windows {留下你的電子郵件地址，我會偶爾來問個問題或報個近況。\n你在這裡填的地址只留在你的電腦上，絕不會和你的使用統計串在一起，這兩個是刻意分開的子系統。} other {留下你的電子郵件地址，我會偶爾來問個問題或報個近況。\n你在這裡填的地址只留在你的電腦上，絕不會和你的使用統計串在一起，這兩個是刻意分開的子系統。}}",
   "@onboarding.stepBeta.emailNote": {
@@ -468,9 +468,9 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "你隨時可以在「設定」裡改。",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {你隨時可以在「設定」裡改。} linuxGnome {你隨時可以在「偏好設定」裡改。} linuxKde {你隨時可以在「設定 Cmdr」裡改。} other {你隨時可以在「設定」裡改。}}",
   "@onboarding.stepOptional.changeAnytime": {
-    "sourceHash": "895d675"
+    "sourceHash": "ff84784"
   },
   "onboarding.stepOptional.networking.title": "網路",
   "@onboarding.stepOptional.networking.title": {

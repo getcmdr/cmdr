@@ -4,8 +4,8 @@
 //! whose suggestions get rejected is worse than none, and the only way to know is to count
 //! both. These three events are what answer it.
 //!
-//! Every property is categorical: the verb and a coarse count bucket. ❌ Never a path, a file
-//! name, the agent's rationale, or a selector pattern — all four are the user's own data, and
+//! Every property is categorical: the verb and a coarse count bucket. ❌ Never a path, a
+//! filename, the agent's rationale, or a selector pattern — all four are the user's own data, and
 //! `main.db` is a map of their life that stays local.
 
 use serde_json::json;

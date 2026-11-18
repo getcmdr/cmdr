@@ -429,9 +429,9 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "Příště Cmdr začne s touto volbou a v Nastavení ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Příště Cmdr začne s touto volbou a v Nastavení ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.} linuxGnome {Příště Cmdr začne s touto volbou a v Předvolbách ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.} linuxKde {Příště Cmdr začne s touto volbou a v okně Nastavit Cmdr ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.} other {Příště Cmdr začne s touto volbou a v Nastavení ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "c26d762"
+    "sourceHash": "b23a78a"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "Některé konflikty kombinují soubor a složku se stejným názvem. Přepsání nahradí i položky jiného typu, včetně celého obsahu složky.",
   "@fileOperations.transferDialog.typeMismatchWarning": {
@@ -1305,9 +1305,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Pamatovat si ve svazku klíčů} windows {Zapamatovat si heslo} linuxKde {Pamatovat si v úložišti KWallet} other {Pamatovat si v klíčence}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Pamatovat si ve svazku klíčů} windows {Zapamatovat si heslo} linuxKde {Pamatovat si v úschovně KDE} other {Pamatovat si v klíčence}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "fileOperations.resticPassword.checking": "Kontroluje se heslo…",
   "@fileOperations.resticPassword.checking": {

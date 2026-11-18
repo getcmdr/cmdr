@@ -15,9 +15,9 @@
   "@operationLog.dialog.empty": {
     "sourceHash": "2dea414"
   },
-  "operationLog.dialog.recordingOff": "O Registro de operações não está registrando nada, então novas cópias, movimentações, renomeações e apagamentos não aparecem aqui e não podem ser desfeitos. Ative-o de novo nos Ajustes para voltar a registrá-los.",
+  "operationLog.dialog.recordingOff": "{platform, select, windows {O Registro de operações não está registrando nada, então novas cópias, movimentações, renomeações e apagamentos não aparecem aqui e não podem ser desfeitos. Ative-o de novo nas Configurações para voltar a registrá-los.} linuxGnome {O Registro de operações não está registrando nada, então novas cópias, movimentações, renomeações e apagamentos não aparecem aqui e não podem ser desfeitos. Ative-o de novo nas Preferências para voltar a registrá-los.} linuxKde {O Registro de operações não está registrando nada, então novas cópias, movimentações, renomeações e apagamentos não aparecem aqui e não podem ser desfeitos. Ative-o de novo em Configurar Cmdr para voltar a registrá-los.} other {O Registro de operações não está registrando nada, então novas cópias, movimentações, renomeações e apagamentos não aparecem aqui e não podem ser desfeitos. Ative-o de novo nos Ajustes para voltar a registrá-los.}}",
   "@operationLog.dialog.recordingOff": {
-    "sourceHash": "0519736"
+    "sourceHash": "8b5c5f2"
   },
   "operationLog.dialog.noItems": "Esta operação não tem itens registrados.",
   "@operationLog.dialog.noItems": {

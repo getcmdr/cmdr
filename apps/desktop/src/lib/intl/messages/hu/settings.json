@@ -1594,7 +1594,7 @@
   },
   "settings.analytics.enabled.description": "Kérlek, kapcsold be, hogy a nyílt béta alatt lássuk, mely funkciók fontosak.\nEgy véletlenszerű azonosítóhoz kötődik, nem a nevedhez vagy az e-mail-címedhez.\nA Cmdr soha nem küld fájlneveket, útvonalakat, keresési kifejezéseket vagy AI-promptokat.\nHa ki van kapcsolva, a Cmdr semmilyen statisztikát nem küld.",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "a8d8db1"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "analitika, használat, használati statisztika, statisztika, adatvédelem, telemetria, béta, követés, kikapcsolás, leiratkozás",
   "@settings.analytics.enabled.keywords": {
@@ -1618,7 +1618,7 @@
   },
   "settings.updates.crashReports.summary": "Soha nem tartalmaz fájlneveket vagy személyes adatokat.",
   "@settings.updates.crashReports.summary": {
-    "sourceHash": "7814a28"
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "összeomlás, összeomlási jelentés, jelentés, adatvédelem, telemetria, hiba, programhiba",
   "@settings.updates.crashReports.keywords": {
@@ -2946,9 +2946,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Beállítási szakaszok",
+  "settings.sidebar.sections": "{platform, select, windows {Beállítási szakaszok} linuxGnome {Beállítási szakaszok} linuxKde {A Cmdr beállításainak szakaszai} other {Beállítási szakaszok}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Nincs egyező beállítás} one {{countText} szakaszban van találat} other {{countText} szakaszban van találat}}",
   "@settings.sidebar.matchCount": {
@@ -3206,7 +3206,7 @@
   },
   "settings.securityLog.enabled.description": "Feljegyzést vezet a biztonság szempontjából fontos változásokról és elutasításokról, például a felhő-AI-hozzájárulásról, egy frissítés telepítéséről, vagy arról, ha az MCP-szerver elutasít egy appot. Nem tartalmaz fájlneveket, tartalmakat vagy jelszavakat.",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "97e24a4"
+    "sourceHash": "3692a3d"
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {A biztonsági események kis, helyi feljegyzése. Soha nem hagyja el a Macet.} windows {A biztonsági események kis, helyi feljegyzése. Soha nem hagyja el a gépedet.} other {A biztonsági események kis, helyi feljegyzése. Soha nem hagyja el a számítógépedet.}}",
   "@settings.securityLog.enabled.summary": {
@@ -3425,9 +3425,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Beállítások",
+  "settings.window.title": "{platform, select, windows {Beállítások} linuxGnome {Beállítások} linuxKde {Beállítások – Cmdr} other {Beállítások}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Beállítások betöltése…",
   "@settings.window.loading": {
@@ -3673,13 +3673,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Egy „{itemName}” nevű elem a Kulcskarika-elérés appban} other {{countText} „{itemName}” nevű elem a Kulcskarika-elérés appban}}} windows {{count, plural, one {Egy „{itemName}” nevű elem a Hitelesítőadat-kezelőben} other {{countText} „{itemName}” nevű elem a Hitelesítőadat-kezelőben}}} linuxKde {{count, plural, one {Egy „{itemName}” nevű elem a KWalletben} other {{countText} „{itemName}” nevű elem a KWalletben}}} other {{count, plural, one {Egy „{itemName}” nevű elem a kulcstartódban} other {{countText} „{itemName}” nevű elem a kulcstartódban}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Egy „{itemName}” nevű elem a Kulcskarika-elérés appban} other {{countText} „{itemName}” nevű elem a Kulcskarika-elérés appban}}} windows {{count, plural, one {Egy „{itemName}” nevű elem a Hitelesítőadat-kezelőben} other {{countText} „{itemName}” nevű elem a Hitelesítőadat-kezelőben}}} linuxKde {{count, plural, one {Egy „{itemName}” nevű elem a KDE jelszókezelőben} other {{countText} „{itemName}” nevű elem a KDE jelszókezelőben}}} other {{count, plural, one {Egy „{itemName}” nevű elem a kulcstartódban} other {{countText} „{itemName}” nevű elem a kulcstartódban}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Az esetleges „{itemName}” nevű elemek a Kulcskarika-elérés appban} windows {Az esetleges „{itemName}” nevű elemek a Hitelesítőadat-kezelőben} linuxKde {Az esetleges „{itemName}” nevű elemek a KWalletben} other {Az esetleges „{itemName}” nevű elemek a kulcstartódban}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Az esetleges „{itemName}” nevű elemek a Kulcskarika-elérés appban} windows {Az esetleges „{itemName}” nevű elemek a Hitelesítőadat-kezelőben} linuxKde {Az esetleges „{itemName}” nevű elemek a KDE jelszókezelőben} other {Az esetleges „{itemName}” nevű elemek a kulcstartódban}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Kilépés a Cmdrből} other {Kilépés a Cmdrből}}",
   "@settings.dataWipe.quit": {

@@ -232,7 +232,7 @@ async fn copy_through_a_cut(conflict_resolution: ConflictResolution) {
     for index in 0..FILE_COUNT {
         std::fs::write(folder.join(format!("f-{index:02}.bin")), content(index)).expect("a source file");
     }
-    let source: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let source: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "src",
         local.path().to_path_buf(),
         crate::volume_host::host(),
@@ -379,7 +379,7 @@ async fn smb_integration_a_cancel_while_the_share_is_out_reports_at_once_and_rem
     let local = tempfile::TempDir::new().expect("a local source dir");
     let big = content(0).into_iter().cycle().take(BIG_FILE_BYTES).collect::<Vec<u8>>();
     std::fs::write(local.path().join("big.bin"), &big).expect("the source file");
-    let source: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let source: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "src",
         local.path().to_path_buf(),
         crate::volume_host::host(),
@@ -771,7 +771,7 @@ async fn smb_integration_an_overwrite_copy_rides_out_a_share_that_keeps_going_aw
     for index in 0..SOAK_FILES {
         std::fs::write(folder.join(format!("f-{index:02}.bin")), content(index)).expect("a source file");
     }
-    let source: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let source: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "src",
         local.path().to_path_buf(),
         crate::volume_host::host(),
@@ -954,7 +954,7 @@ async fn smb_integration_a_download_carries_on_after_a_long_outage_instead_of_st
     let proxy = Arc::new(OutageProxy::start(guest_port()).await);
     let share: Arc<dyn Volume> = Arc::new(make_docker_volume_through(proxy.port(), crate::volume_host::host()).await);
     let local = tempfile::TempDir::new().expect("a local destination dir");
-    let disk: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let disk: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "dest",
         local.path().to_path_buf(),
         crate::volume_host::host(),
@@ -1059,7 +1059,7 @@ async fn smb_integration_an_upload_carries_on_after_a_long_outage_instead_of_sta
     let data = content(2).into_iter().cycle().take(UPLOAD_BYTES).collect::<Vec<u8>>();
     let local = tempfile::TempDir::new().expect("a local source dir");
     std::fs::write(local.path().join("big.bin"), &data).expect("the file on the local disk");
-    let disk: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let disk: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "source",
         local.path().to_path_buf(),
         crate::volume_host::host(),

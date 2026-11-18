@@ -13,7 +13,9 @@
 //!
 //! The tools' location resolver lives here too: `resolve.rs` (the pure core and
 //! the one root function), `facts.rs` (the in-memory volume facts it reads, and
-//! the earlier-roots record), and `miss.rs` (a miss as a tool result). Its
+//! the earlier-roots record), `last_roots.rs` (each volume's last root, saved across sessions,
+//! and the rebase a restored tab or an undo asks for), and `miss.rs` (a miss as a tool
+//! result). Its
 //! contract: `tools/DETAILS.md` § The location contract. `store_path.rs`
 //! translates app paths to and from an importance store's path space, and
 //! `same_share.rs` proves two volumes one share and picks which may answer (and
@@ -22,6 +24,7 @@
 use serde::{Deserialize, Serialize};
 
 pub(crate) mod facts;
+pub(crate) mod last_roots;
 pub(crate) mod miss;
 pub(crate) mod resolve;
 pub(crate) mod same_share;

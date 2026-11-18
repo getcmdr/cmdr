@@ -28,7 +28,7 @@
   type Props = {
     /** `cmdr-media://localhost/<token>` URL for the image bytes. */
     src: string
-    /** File name, used as the image's alt text. */
+    /** Filename, used as the image's alt text. */
     fileName: string
   }
 
@@ -166,7 +166,7 @@
 
 <!--
   The stage is a focusable region so keyboard users can zoom/pan. role="img" with the
-  file name as the label keeps the announcement meaningful while the interactive
+  filename as the label keeps the announcement meaningful while the interactive
   handlers live on the container. Its keys (Enter / Space toggle zoom, + / - / 0) arrive
   through `handleKey` from the window-level router in `+page.svelte`.
 -->

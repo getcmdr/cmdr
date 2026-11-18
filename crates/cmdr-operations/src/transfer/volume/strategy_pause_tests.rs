@@ -38,7 +38,7 @@ use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{
     InMemoryVolume, StreamLength, StreamWriteProgress, StreamWritten, Volume, VolumeError, VolumeReadStream, WriteMode,
 };
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 /// Waits until the copy has reported at least `target` bytes. Progress is the
 /// real signal, so a descheduled runtime can't race the assertion.
@@ -137,10 +137,10 @@ async fn streaming_copy_cancel_while_paused_mid_file_unblocks() {
         gate: Arc::clone(&gate),
     });
     // Local-FS destination — the user's real case is MTP→local, whose dest is
-    // `LocalPosixVolume`. On cancel its `write_from_stream` returns typed
+    // `LocalVolume`. On cancel its `write_from_stream` returns typed
     // `VolumeError::Cancelled` and removes the in-flight partial.
     let dst_dir = TestDir::new("midchunk_cancel_dst");
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),
@@ -237,7 +237,7 @@ async fn paused_mtp_copy_parks_in_place_then_resumes_byte_exact() {
     });
 
     let dst_dir = TestDir::new("relpause_dst");
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),
@@ -341,7 +341,7 @@ async fn paused_mtp_copy_cancel_while_paused_keeps_no_partial() {
     });
 
     let dst_dir = TestDir::new("relpause_cancel_dst");
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),
@@ -436,7 +436,7 @@ async fn unpaused_mtp_copy_streams_straight_through() {
     });
 
     let dst_dir = TestDir::new("relpause_nopause_dst");
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),

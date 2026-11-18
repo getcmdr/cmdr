@@ -220,6 +220,13 @@ jobs:
       - name: Run clippy
         run: ./scripts/check/check --check desktop-rust-clippy --ci
 
+      # `fuzz/` sits outside the workspace, so nothing above compiles it, and an API change
+      # that breaks a target used to surface only in the next day's slow-checks fuzz run. A
+      # plain stable `cargo check` into `target/fuzz-check`, which rust-cache saves with the
+      # rest of `target/`.
+      - name: Check the fuzz targets compile
+        run: ./scripts/check/check --check desktop-rust-fuzz-targets-compile --ci
+
       # A broken intra-doc link is invisible to every other lane, because only
       # `cargo doc` resolves one. These steps are sequential, so this lane keeps
       # the shared, cached `target/` here; locally it gets a private one to stay

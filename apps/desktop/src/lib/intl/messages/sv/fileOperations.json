@@ -429,9 +429,9 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "Cmdr börjar med det här valet nästa gång, och du kan ändra det i Inställningar. Om valet skriver över filer ser du en varning först.",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Cmdr börjar med det här valet nästa gång, och du kan ändra det i Inställningar. Om valet skriver över filer ser du en varning först.} linuxGnome {Cmdr börjar med det här valet nästa gång, och du kan ändra det i Inställningar. Om valet skriver över filer ser du en varning först.} linuxKde {Cmdr börjar med det här valet nästa gång, och du kan ändra det i ”Anpassa Cmdr”. Om valet skriver över filer ser du en varning först.} other {Cmdr börjar med det här valet nästa gång, och du kan ändra det i Inställningar. Om valet skriver över filer ser du en varning först.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "c26d762"
+    "sourceHash": "b23a78a"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "Vissa konflikter blandar en fil och en mapp med samma namn. Att skriva över ersätter objekt av en annan typ, inklusive hela innehållet i en mapp.",
   "@fileOperations.transferDialog.typeMismatchWarning": {
@@ -1305,9 +1305,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Kom ihåg i nyckelringen} windows {Kom ihåg lösenord} linuxKde {Kom ihåg i KWallet} other {Kom ihåg i nyckelringen}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Kom ihåg i nyckelringen} windows {Kom ihåg lösenord} linuxKde {Kom ihåg i KDE:s plånbok} other {Kom ihåg i nyckelringen}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "fileOperations.resticPassword.checking": "Kontrollerar lösenordet…",
   "@fileOperations.resticPassword.checking": {

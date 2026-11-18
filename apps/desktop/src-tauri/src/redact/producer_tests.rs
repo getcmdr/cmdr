@@ -314,7 +314,7 @@ fn the_listing_and_mtp_lines_ship_each_value_as_one_token_of_its_kind() {
         "{marked}\n{keyed}"
     );
 
-    // The upload line's folder and file name, each its own value.
+    // The upload line's folder and filename, each its own value.
     let upload = |dir: &dyn std::fmt::Debug, file: &dyn std::fmt::Debug| {
         format!("{HEAD}Upload failed for dir={dir:?} file={file:?} on mtp-1: Busy")
     };

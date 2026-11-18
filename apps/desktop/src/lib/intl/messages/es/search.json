@@ -67,9 +67,9 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "Activa la indexación de imágenes para esta unidad de red en Ajustes para buscar el texto dentro de sus fotos.",
+  "search.imageResults.networkOff": "{platform, select, windows {Activa la indexación de imágenes para esta unidad de red en Configuración para buscar el texto dentro de sus fotos.} linuxGnome {Activa la indexación de imágenes para esta unidad de red en Preferencias para buscar el texto dentro de sus fotos.} linuxKde {Activa la indexación de imágenes para esta unidad de red en Configurar Cmdr para buscar el texto dentro de sus fotos.} other {Activa la indexación de imágenes para esta unidad de red en Ajustes para buscar el texto dentro de sus fotos.}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "ccf901b"
+    "sourceHash": "5f0699a"
   },
   "search.imageResults.paused": "Esta unidad está desconectada, así que estas son las fotos indexadas hasta ahora.",
   "@search.imageResults.paused": {
@@ -219,9 +219,9 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "La indexación de unidades está desactivada en Ajustes, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.",
+  "search.coverage.toast.indexingOff": "{platform, select, windows {La indexación de unidades está desactivada en Configuración, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.} linuxGnome {La indexación de unidades está desactivada en Preferencias, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.} linuxKde {La indexación de unidades está desactivada en Configurar Cmdr, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.} other {La indexación de unidades está desactivada en Ajustes, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "abfe24b"
+    "sourceHash": "15b2ffc"
   },
   "search.coverage.toast.deferredUntilSearchEnds": "Cmdr ya está buscando en {drive}. La indexación empezará en cuanto termine.",
   "@search.coverage.toast.deferredUntilSearchEnds": {

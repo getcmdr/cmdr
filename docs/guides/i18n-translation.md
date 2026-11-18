@@ -90,7 +90,7 @@ branch takes its own OS's term. The rule and the branch-to-OS map are canonical 
      in a sentence; Quit: "Exit" as an action, "close" in narration; `docs/style-guide.md` § "Platform vocabulary").
    - `linuxGnome` (Linux on GNOME) mines `<tag>/gnome-nautilus/` and `linuxKde` (Linux on KDE Plasma)
      `<tag>/kde-dolphin/`, each taking that desktop's own word: the English branch names the desktop's app (Files,
-     Dolphin, Passwords and Keys, KWallet), so translate it the way that desktop's catalog does.
+     Dolphin, Passwords and Keys, KDE Wallet), so translate it the way that desktop's catalog does.
    - `other` (every other Linux desktop) mines `<tag>/gnome-nautilus/`, `<tag>/kde-dolphin/`, and `<tag>/xfce-thunar/`
      and picks the word they share, or the desktop-neutral one where they split.
    - A plain value shows on every OS: the word the OSes share, else the macOS Finder term, with the key logged in
@@ -458,8 +458,12 @@ in the same queue: the lead reads it after each wave, since two translators writ
 
 **The tools a translator runs** (in `apps/desktop`; flags in `docs/i18n/termbase.md` § Tooling): `pnpm i18n:brief`
 (read), `pnpm i18n:apply` (write values, stamped and validated), `pnpm i18n:apply-terms` (write the termbase),
-`pnpm i18n:term` (a word's senses and rulings), `pnpm i18n:pile` (the reference pile), and `pnpm i18n:check-locale`
-(check). The instructions forbid homemade catalog- or termbase-writing scripts.
+`pnpm i18n:term` (a word's senses and rulings), `pnpm i18n:pile` (the reference pile),
+`pnpm i18n:values --lang <tag> --keys <keys>` (read-only: those keys' current values, branch by branch beside the
+English, stale ones marked; `--stale` picks every stale key; the small view to read before or instead of a big per-OS
+brief), and `pnpm i18n:check-locale` (check). The instructions forbid homemade catalog- or termbase-writing scripts. The
+lead runs `pnpm i18n:pile-fetch` once per pile refresh: it puts the GNOME and KDE desktop catalogs (Seahorse, GNOME
+Settings, KDE Wallet, KStandardAction, System Settings and its KCMs) into the pile for all 13 languages.
 
 **Translators run on Opus** (`model: 'opus'` on each translator agent), whatever model the lead runs on: a fan-out is
 dozens of runs reading 100k-token briefs, and the top-tier model costs far more there for no better translation (David,

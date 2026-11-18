@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use cmdr_fs::volume::{StreamLength, Volume, WriteMode};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_operation_log::rollback::{execute_rollback, rollback_operation};
 use cmdr_operation_log::types::Initiator;
 use cmdr_operations::testing::{CollectorEventSink, Reversal, TestOperationLog};
@@ -185,7 +185,7 @@ async fn put(volume: &dyn Volume, path: &Path, bytes: &[u8]) {
         .expect("the fixture's folder");
     let staged = TestDir::new("named_leaves_put");
     std::fs::write(staged.join("bytes"), bytes).expect("the fixture's bytes");
-    let local = LocalPosixVolume::local_folder("Staged", &*staged, crate::volume_host::host());
+    let local = LocalVolume::local_folder("Staged", &*staged, crate::volume_host::host());
     let stream = local
         .open_read_stream(Path::new("bytes"))
         .await
@@ -219,7 +219,7 @@ pub(super) async fn local_items_land_named_on_the_server_and_undo_restores_them(
     std::fs::write(local_dir.join("downloads/Invoice-X.pdf"), b"invoice").expect("invoice");
     std::fs::write(local_dir.join("downloads/receipt.pdf"), b"receipt").expect("receipt");
     std::fs::write(local_dir.join("downloads/scans/page.png"), b"page").expect("page");
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),

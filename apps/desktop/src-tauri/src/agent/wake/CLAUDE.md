@@ -15,7 +15,7 @@ an interest score, scores deadlines, and a wake turns what waits into one budget
 
 - ❌ **Nothing on the live-loop thread may take a lock or touch SQLite.** The tap builds a `FolderActivity`, sends it,
   returns; a mutex there stalls every live batch on a model call.
-- **Bundles carry counters, never file names**: this path must survive five million events. The digest says WHERE and
+- **Bundles carry counters, never filenames**: this path must survive five million events. The digest says WHERE and
   HOW MUCH; the agent looks up WHAT.
 - **Floored never gets in; unscored always does.** `admit_if_permitted` refuses `Floored`. ❌ Never refuse `Unknown`:
   that ignores every new folder.

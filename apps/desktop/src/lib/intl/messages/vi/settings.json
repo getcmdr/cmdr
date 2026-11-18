@@ -1397,7 +1397,7 @@
   "@settings.fileOperations.mtpEnabled.label": {
     "sourceHash": "6a315a8"
   },
-  "settings.fileOperations.mtpEnabled.description": "Cmdr phát hiện điện thoại Android, Kindle và máy ảnh cắm qua cáp USB để bạn duyệt và truyền tệp. Trên Android, hãy tìm đại loại như Settings > USB Preferences; “Android Auto” cũng được. Tùy thiết bị mà khác nhau.",
+  "settings.fileOperations.mtpEnabled.description": "Cmdr phát hiện điện thoại Android, Kindle và máy ảnh cắm qua cáp USB để bạn duyệt và truyền tệp. Trên Android, hãy tìm đại loại như Cài đặt > Lựa chọn ưu tiên về USB; “Android Auto” cũng được. Tùy thiết bị mà khác nhau.",
   "@settings.fileOperations.mtpEnabled.description": {
     "sourceHash": "a5b7ef3"
   },
@@ -1591,7 +1591,7 @@
   },
   "settings.analytics.enabled.description": "Hãy bật mục này để giúp chúng tôi biết tính năng nào quan trọng trong giai đoạn beta công khai.\nThống kê gắn với một mã định danh ngẫu nhiên, không gắn với tên hay email của bạn.\nCmdr không bao giờ gửi tên tệp, đường dẫn, cụm từ tìm kiếm hay lời nhắc gửi cho AI.\nKhi tắt, Cmdr không gửi bất kỳ thống kê nào.",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "a8d8db1"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "phân tích, sử dụng, thống kê, quyền riêng tư, đo từ xa, thử nghiệm, theo dõi, từ chối",
   "@settings.analytics.enabled.keywords": {
@@ -1615,7 +1615,7 @@
   },
   "settings.updates.crashReports.summary": "Không bao giờ gồm tên tệp hay dữ liệu cá nhân.",
   "@settings.updates.crashReports.summary": {
-    "sourceHash": "7814a28"
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "sự cố, báo cáo sự cố, báo cáo, thoát bất ngờ, quyền riêng tư, đo từ xa, lỗi",
   "@settings.updates.crashReports.keywords": {
@@ -2944,9 +2944,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Các mục cài đặt",
+  "settings.sidebar.sections": "{platform, select, windows {Các mục cài đặt} linuxGnome {Các mục trong Tùy thích} linuxKde {Các mục trong Cấu hình Cmdr} other {Các mục cài đặt}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Không có cài đặt nào khớp} other {{countText} mục khớp}}",
   "@settings.sidebar.matchCount": {
@@ -3204,7 +3204,7 @@
   },
   "settings.securityLog.enabled.description": "Bản ghi này ghi nhận các thay đổi và lần từ chối liên quan tới bảo mật, như sự đồng ý dùng AI đám mây, một bản cập nhật đã cài, hay một ứng dụng bị máy chủ MCP từ chối. Bản ghi không chứa tên tệp, nội dung hay mật khẩu.",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "97e24a4"
+    "sourceHash": "3692a3d"
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {Một bản ghi cục bộ nhỏ về các sự kiện bảo mật. Bản ghi không bao giờ rời khỏi máy Mac của bạn.} windows {Một bản ghi cục bộ nhỏ về các sự kiện bảo mật. Bản ghi không bao giờ rời khỏi PC của bạn.} other {Một bản ghi cục bộ nhỏ về các sự kiện bảo mật. Bản ghi không bao giờ rời khỏi máy tính của bạn.}}",
   "@settings.securityLog.enabled.summary": {
@@ -3423,9 +3423,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Cài đặt",
+  "settings.window.title": "{platform, select, windows {Cài đặt} linuxGnome {Tùy thích} linuxKde {Cấu hình – Cmdr} other {Cài đặt}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Đang tải cài đặt…",
   "@settings.window.loading": {
@@ -3671,13 +3671,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {{countText} mục có tên “{itemName}” trong Truy cập chuỗi khóa}}} windows {{count, plural, other {{countText} mục có tên “{itemName}” trong Trình quản lý thông tin xác thực}}} linuxKde {{count, plural, other {{countText} mục có tên “{itemName}” trong KWallet}}} other {{count, plural, other {{countText} mục có tên “{itemName}” trong kho khóa của bạn}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {{countText} mục có tên “{itemName}” trong Truy cập chuỗi khóa}}} windows {{count, plural, other {{countText} mục có tên “{itemName}” trong Trình quản lý thông tin xác thực}}} linuxKde {{count, plural, other {{countText} mục có tên “{itemName}” trong Ví KDE}}} other {{count, plural, other {{countText} mục có tên “{itemName}” trong kho khóa của bạn}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Mọi mục có tên “{itemName}” trong Truy cập chuỗi khóa, nếu có} windows {Mọi mục có tên “{itemName}” trong Trình quản lý thông tin xác thực, nếu có} linuxKde {Mọi mục có tên “{itemName}” trong KWallet, nếu có} other {Mọi mục có tên “{itemName}” trong kho khóa của bạn, nếu có}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Mọi mục có tên “{itemName}” trong Truy cập chuỗi khóa, nếu có} windows {Mọi mục có tên “{itemName}” trong Trình quản lý thông tin xác thực, nếu có} linuxKde {Mọi mục có tên “{itemName}” trong Ví KDE, nếu có} other {Mọi mục có tên “{itemName}” trong kho khóa của bạn, nếu có}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Thoát Cmdr} other {Thoát Cmdr}}",
   "@settings.dataWipe.quit": {

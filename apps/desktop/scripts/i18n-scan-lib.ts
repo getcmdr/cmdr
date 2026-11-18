@@ -33,7 +33,7 @@ export const CODE_MARK = '\ue000'
  *
  * - `number`: a count or a quantity Cmdr formats (a size, a date, a duration, a counted phrase).
  * - `token`: a value from a closed set Cmdr supplies (a System Settings pane, a key glyph, an operation's verb).
- * - `name`: anything else: a file name, a path, a host, a reason. What the user or the system brings, so its first
+ * - `name`: anything else: a filename, a path, a host, a reason. What the user or the system brings, so its first
  *   sound, gender, and ending are unknown.
  */
 export type InsertKind = 'number' | 'token' | 'name'

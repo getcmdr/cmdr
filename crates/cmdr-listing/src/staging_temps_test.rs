@@ -40,7 +40,7 @@ fn running_operation() -> Arc<()> {
 fn name_of(temp: &StagingTemp) -> String {
     temp.path()
         .file_name()
-        .expect("a minted temp always has a file name")
+        .expect("a minted temp always has a filename")
         .to_string_lossy()
         .into_owned()
 }

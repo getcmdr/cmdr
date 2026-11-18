@@ -427,9 +427,9 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "下次 Cmdr 会默认选中这个选项，你可以在“设置”中更改。如果这个选项会覆盖文件，你会先看到警告。",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {下次 Cmdr 会默认选中这个选项，你可以在“设置”中更改。如果这个选项会覆盖文件，你会先看到警告。} linuxGnome {下次 Cmdr 会默认选中这个选项，你可以在“首选项”中更改。如果这个选项会覆盖文件，你会先看到警告。} linuxKde {下次 Cmdr 会默认选中这个选项，你可以在“配置 Cmdr”中更改。如果这个选项会覆盖文件，你会先看到警告。} other {下次 Cmdr 会默认选中这个选项，你可以在“设置”中更改。如果这个选项会覆盖文件，你会先看到警告。}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "c26d762"
+    "sourceHash": "b23a78a"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "有些冲突涉及同名的文件和文件夹。覆盖会替换掉类型不同的项目，包括整个文件夹的内容。",
   "@fileOperations.transferDialog.typeMismatchWarning": {
@@ -1303,9 +1303,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {记住到钥匙串} windows {记住密码} linuxKde {记住到 KWallet} other {记住到密钥环}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {记住到钥匙串} windows {记住密码} linuxKde {记住到 KDE 密码库} other {记住到密钥环}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "fileOperations.resticPassword.checking": "正在检查密码…",
   "@fileOperations.resticPassword.checking": {

@@ -123,9 +123,9 @@
   "@servers.hub.discoveryOff": {
     "sourceHash": "cadcceb"
   },
-  "servers.hub.discoveryOffLink": "Actívala en Ajustes",
+  "servers.hub.discoveryOffLink": "{platform, select, windows {Actívala en Configuración} linuxGnome {Actívala en Preferencias} linuxKde {Actívala en Configurar Cmdr} other {Actívala en Ajustes}}",
   "@servers.hub.discoveryOffLink": {
-    "sourceHash": "818571b"
+    "sourceHash": "cd006e8"
   },
   "servers.hub.nfsHint": "Los servidores NFS no se anuncian, así que no aparecen aquí.",
   "@servers.hub.nfsHint": {
@@ -251,13 +251,13 @@
   "@servers.refusal.saveUnconfirmed": {
     "sourceHash": "3fb55a6"
   },
-  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr no ha podido guardar esta contraseña en el Llavero. Inténtalo de nuevo o desactiva “Recordar en el Llavero” para iniciar sesión sin guardarla.} windows {Cmdr no ha podido guardar esta contraseña. Inténtalo de nuevo o desactiva “Recordar contraseña” para iniciar sesión sin guardarla.} linuxKde {Cmdr no ha podido guardar esta contraseña en KWallet. Inténtalo de nuevo o desactiva “Recordar en KWallet” para iniciar sesión sin guardarla.} other {Cmdr no ha podido guardar esta contraseña en el llavero. Inténtalo de nuevo o desactiva “Recordar en el llavero” para iniciar sesión sin guardarla.}}",
+  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr no ha podido guardar esta contraseña en el Llavero. Inténtalo de nuevo o desactiva “Recordar en el Llavero” para iniciar sesión sin guardarla.} windows {Cmdr no ha podido guardar esta contraseña. Inténtalo de nuevo o desactiva “Recordar contraseña” para iniciar sesión sin guardarla.} linuxKde {Cmdr no ha podido guardar esta contraseña en la cartera de KDE. Inténtalo de nuevo o desactiva “Recordar en la cartera de KDE” para iniciar sesión sin guardarla.} other {Cmdr no ha podido guardar esta contraseña en el llavero. Inténtalo de nuevo o desactiva “Recordar en el llavero” para iniciar sesión sin guardarla.}}",
   "@servers.refusal.secretNotStored": {
-    "sourceHash": "19deece"
+    "sourceHash": "2645206"
   },
-  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Cmdr ha guardado tus cambios, pero no ha podido actualizar la contraseña en el Llavero. Vuelve a guardar para intentarlo otra vez.} windows {Cmdr ha guardado tus cambios, pero no ha podido actualizar la contraseña guardada. Vuelve a guardar para intentarlo otra vez.} linuxKde {Cmdr ha guardado tus cambios, pero no ha podido actualizar la contraseña en KWallet. Vuelve a guardar para intentarlo otra vez.} other {Cmdr ha guardado tus cambios, pero no ha podido actualizar la contraseña en el llavero. Vuelve a guardar para intentarlo otra vez.}}",
+  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Cmdr ha guardado tus cambios, pero no ha podido actualizar la contraseña en el Llavero. Vuelve a guardar para intentarlo otra vez.} windows {Cmdr ha guardado tus cambios, pero no ha podido actualizar la contraseña guardada. Vuelve a guardar para intentarlo otra vez.} linuxKde {Cmdr ha guardado tus cambios, pero no ha podido actualizar la contraseña en la cartera de KDE. Vuelve a guardar para intentarlo otra vez.} other {Cmdr ha guardado tus cambios, pero no ha podido actualizar la contraseña en el llavero. Vuelve a guardar para intentarlo otra vez.}}",
   "@servers.refusal.savedSecretNotUpdated": {
-    "sourceHash": "d9b6621"
+    "sourceHash": "cdc32d0"
   },
   "servers.refusal.s3AuthenticationRejected": "Esa clave de acceso secreta no ha funcionado.",
   "@servers.refusal.s3AuthenticationRejected": {
@@ -271,13 +271,13 @@
   "@servers.refusal.s3SecretMissing": {
     "sourceHash": "f1f32f2"
   },
-  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr no ha podido guardar esta clave de acceso secreta en el Llavero. Inténtalo de nuevo o desactiva “Recordar en el Llavero” para iniciar sesión sin guardarla.} windows {Cmdr no ha podido guardar esta clave de acceso secreta. Inténtalo de nuevo o desactiva “Recordar contraseña” para iniciar sesión sin guardarla.} linuxKde {Cmdr no ha podido guardar esta clave de acceso secreta en KWallet. Inténtalo de nuevo o desactiva “Recordar en KWallet” para iniciar sesión sin guardarla.} other {Cmdr no ha podido guardar esta clave de acceso secreta en el llavero. Inténtalo de nuevo o desactiva “Recordar en el llavero” para iniciar sesión sin guardarla.}}",
+  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr no ha podido guardar esta clave de acceso secreta en el Llavero. Inténtalo de nuevo o desactiva “Recordar en el Llavero” para iniciar sesión sin guardarla.} windows {Cmdr no ha podido guardar esta clave de acceso secreta. Inténtalo de nuevo o desactiva “Recordar contraseña” para iniciar sesión sin guardarla.} linuxKde {Cmdr no ha podido guardar esta clave de acceso secreta en la cartera de KDE. Inténtalo de nuevo o desactiva “Recordar en la cartera de KDE” para iniciar sesión sin guardarla.} other {Cmdr no ha podido guardar esta clave de acceso secreta en el llavero. Inténtalo de nuevo o desactiva “Recordar en el llavero” para iniciar sesión sin guardarla.}}",
   "@servers.refusal.s3SecretNotStored": {
-    "sourceHash": "9aa6628"
+    "sourceHash": "313e2ae"
   },
-  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Cmdr ha guardado tus cambios, pero no ha podido actualizar la clave de acceso secreta en el Llavero. Vuelve a guardar para intentarlo otra vez.} windows {Cmdr ha guardado tus cambios, pero no ha podido actualizar la clave de acceso secreta guardada. Vuelve a guardar para intentarlo otra vez.} linuxKde {Cmdr ha guardado tus cambios, pero no ha podido actualizar la clave de acceso secreta en KWallet. Vuelve a guardar para intentarlo otra vez.} other {Cmdr ha guardado tus cambios, pero no ha podido actualizar la clave de acceso secreta en el llavero. Vuelve a guardar para intentarlo otra vez.}}",
+  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Cmdr ha guardado tus cambios, pero no ha podido actualizar la clave de acceso secreta en el Llavero. Vuelve a guardar para intentarlo otra vez.} windows {Cmdr ha guardado tus cambios, pero no ha podido actualizar la clave de acceso secreta guardada. Vuelve a guardar para intentarlo otra vez.} linuxKde {Cmdr ha guardado tus cambios, pero no ha podido actualizar la clave de acceso secreta en la cartera de KDE. Vuelve a guardar para intentarlo otra vez.} other {Cmdr ha guardado tus cambios, pero no ha podido actualizar la clave de acceso secreta en el llavero. Vuelve a guardar para intentarlo otra vez.}}",
   "@servers.refusal.s3SavedSecretNotUpdated": {
-    "sourceHash": "8c62f24"
+    "sourceHash": "bf474d0"
   },
   "servers.refusal.accessDenied": "Esta clave no puede acceder a este bucket. Comprueba el nombre del bucket y la clave de acceso secreta, y que la clave tenga permiso para leer el bucket.",
   "@servers.refusal.accessDenied": {
@@ -335,13 +335,13 @@
   "@servers.refusal.addressTaken": {
     "sourceHash": "5a14a92"
   },
-  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr no ha podido llevar la contraseña guardada a la nueva dirección, así que no ha cambiado nada. Comprueba que el Llavero esté desbloqueado y vuelve a guardar.} windows {Cmdr no ha podido llevar la contraseña guardada a la nueva dirección, así que no ha cambiado nada. Vuelve a guardar para intentarlo otra vez.} linuxKde {Cmdr no ha podido llevar la contraseña guardada a la nueva dirección, así que no ha cambiado nada. Comprueba que KWallet esté abierto y vuelve a guardar.} other {Cmdr no ha podido llevar la contraseña guardada a la nueva dirección, así que no ha cambiado nada. Comprueba que el llavero esté desbloqueado y vuelve a guardar.}}",
+  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr no ha podido llevar la contraseña guardada a la nueva dirección, así que no ha cambiado nada. Comprueba que el Llavero esté desbloqueado y vuelve a guardar.} windows {Cmdr no ha podido llevar la contraseña guardada a la nueva dirección, así que no ha cambiado nada. Vuelve a guardar para intentarlo otra vez.} linuxKde {Cmdr no ha podido llevar la contraseña guardada a la nueva dirección, así que no ha cambiado nada. Comprueba que la cartera de KDE esté abierta y vuelve a guardar.} other {Cmdr no ha podido llevar la contraseña guardada a la nueva dirección, así que no ha cambiado nada. Comprueba que el llavero esté desbloqueado y vuelve a guardar.}}",
   "@servers.refusal.secretNotMoved": {
-    "sourceHash": "a59f35e"
+    "sourceHash": "f962555"
   },
-  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr no ha podido llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no ha cambiado nada. Comprueba que el Llavero esté desbloqueado y vuelve a guardar.} windows {Cmdr no ha podido llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no ha cambiado nada. Vuelve a guardar para intentarlo otra vez.} linuxKde {Cmdr no ha podido llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no ha cambiado nada. Comprueba que KWallet esté abierto y vuelve a guardar.} other {Cmdr no ha podido llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no ha cambiado nada. Comprueba que el llavero esté desbloqueado y vuelve a guardar.}}",
+  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr no ha podido llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no ha cambiado nada. Comprueba que el Llavero esté desbloqueado y vuelve a guardar.} windows {Cmdr no ha podido llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no ha cambiado nada. Vuelve a guardar para intentarlo otra vez.} linuxKde {Cmdr no ha podido llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no ha cambiado nada. Comprueba que la cartera de KDE esté abierta y vuelve a guardar.} other {Cmdr no ha podido llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no ha cambiado nada. Comprueba que el llavero esté desbloqueado y vuelve a guardar.}}",
   "@servers.refusal.s3SecretNotMoved": {
-    "sourceHash": "a990f83"
+    "sourceHash": "e222c5e"
   },
   "servers.refusal.accountChanged": "Una cuenta distinta es un servidor distinto, así que no se ha guardado nada. Añádela como un servidor nuevo.",
   "@servers.refusal.accountChanged": {
@@ -579,9 +579,9 @@
   "@servers.sheet.password": {
     "sourceHash": "e7cf3ef"
   },
-  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {Guardada en el Llavero. Déjalo vacío para conservarla.} windows {Guardada. Déjalo vacío para conservarla.} linuxKde {Guardada en KWallet. Déjalo vacío para conservarla.} other {Guardada en tu llavero. Déjalo vacío para conservarla.}}",
+  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {Guardada en el Llavero. Déjalo vacío para conservarla.} windows {Guardada. Déjalo vacío para conservarla.} linuxKde {Guardada en la cartera de KDE. Déjalo vacío para conservarla.} other {Guardada en tu llavero. Déjalo vacío para conservarla.}}",
   "@servers.sheet.secretKeptPlaceholder": {
-    "sourceHash": "eedbd26"
+    "sourceHash": "d9f173a"
   },
   "servers.sheet.smbUsernamePlaceholder": "Opcional",
   "@servers.sheet.smbUsernamePlaceholder": {
@@ -595,9 +595,9 @@
   "@servers.sheet.passphrase": {
     "sourceHash": "2510031"
   },
-  "servers.sheet.remember": "{platform, select, macos {Recordar en el Llavero} windows {Recordar contraseña} linuxKde {Recordar en KWallet} other {Recordar en el llavero}}",
+  "servers.sheet.remember": "{platform, select, macos {Recordar en el Llavero} windows {Recordar contraseña} linuxKde {Recordar en la cartera de KDE} other {Recordar en el llavero}}",
   "@servers.sheet.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "servers.sheet.connectionModeLegend": "Cómo conectarse",
   "@servers.sheet.connectionModeLegend": {
@@ -785,9 +785,9 @@
   "@servers.sheet.autoReconnectInfoLabel": {
     "sourceHash": "edb9b82"
   },
-  "servers.sheet.needsStoredSecret": "{platform, select, macos {Para volver a conectar por su cuenta hace falta una contraseña recordada. Activa “Recordar en el Llavero” e inicia sesión una vez.} windows {Para volver a conectar por su cuenta hace falta una contraseña guardada. Activa “Recordar contraseña” e inicia sesión una vez.} linuxKde {Para volver a conectar por su cuenta hace falta una contraseña recordada. Activa “Recordar en KWallet” e inicia sesión una vez.} other {Para volver a conectar por su cuenta hace falta una contraseña recordada. Activa “Recordar en el llavero” e inicia sesión una vez.}}",
+  "servers.sheet.needsStoredSecret": "{platform, select, macos {Para volver a conectar por su cuenta hace falta una contraseña recordada. Activa “Recordar en el Llavero” e inicia sesión una vez.} windows {Para volver a conectar por su cuenta hace falta una contraseña guardada. Activa “Recordar contraseña” e inicia sesión una vez.} linuxKde {Para volver a conectar por su cuenta hace falta una contraseña recordada. Activa “Recordar en la cartera de KDE” e inicia sesión una vez.} other {Para volver a conectar por su cuenta hace falta una contraseña recordada. Activa “Recordar en el llavero” e inicia sesión una vez.}}",
   "@servers.sheet.needsStoredSecret": {
-    "sourceHash": "29e22ae"
+    "sourceHash": "422f1c5"
   },
   "servers.sheet.tryNextcloudAddress": "Probar la dirección de Nextcloud",
   "@servers.sheet.tryNextcloudAddress": {

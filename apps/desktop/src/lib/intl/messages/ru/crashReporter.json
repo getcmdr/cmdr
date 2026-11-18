@@ -21,7 +21,7 @@
   },
   "crashReporter.dialog.privacyNote": "{platform, select, macos {В отчет входят версия приложения, версия macOS и участок кода, где возникла проблема. Имена файлов и личные данные не включены.} windows {В отчет входят версия приложения, версия Windows и участок кода, где возникла проблема. Имена файлов и личные данные не включены.} other {В отчет входят версия приложения, название и версия дистрибутива Linux и участок кода, где возникла проблема. Имена файлов и личные данные не включены.}}",
   "@crashReporter.dialog.privacyNote": {
-    "sourceHash": "ebe2d23"
+    "sourceHash": "6f58653"
   },
   "crashReporter.dialog.reportIdLabel": "Идентификатор отчета:",
   "@crashReporter.dialog.reportIdLabel": {
@@ -71,9 +71,9 @@
   "@crashReporter.sentToast.message.report": {
     "sourceHash": "a676ed5"
   },
-  "crashReporter.sentToast.changeSettings": "Изменить в настройках",
+  "crashReporter.sentToast.changeSettings": "{platform, select, windows {Изменить в параметрах} linuxGnome {Изменить в параметрах} linuxKde {Изменить в окне «Настроить Cmdr»} other {Изменить в настройках}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "144d0bd"
+    "sourceHash": "9972084"
   },
   "crashReporter.sentToast.sendLog": "Приложить журналы",
   "@crashReporter.sentToast.sendLog": {

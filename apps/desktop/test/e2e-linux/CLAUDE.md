@@ -25,13 +25,9 @@ pnpm test:e2e:linux:vnc                # VNC mode with hot reload (pnpm dev)
 - **The base is pinned to `ubuntu:26.04`, not 24.04.** Nothing in the app depends on 24.04's broken
   `caretRangeFromPoint` any more, so the pin rests on the rest of the stack; ❌ don't drop it back without a full suite
   run. (§ "webkit2gtk caret bug")
-- **Don't "optimize away" the chromium install** in `Dockerfile.base`. No spec drives a browser (all run the `tauri`
-  socket-bridge project), but `@playwright/test` still launches a headless chromium per worker as a runtime dependency;
-  remove it and every test fails at setup with `Executable doesn't exist`.
-- **Two Playwright-on-26.04 workarounds must stay in sync on every Playwright bump** (26.04 is newer than Playwright's
-  platform registry knows): the `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE` arch tag in `entrypoint.sh`, and the chromium
-  runtime libs apt-installed in `Dockerfile.base` (❌ never `--with-deps`: DETAILS). A local arm64 run masks amd64-only
-  breaks: reproduce override changes under `--platform linux/amd64`.
+- **The image has no Playwright browser, on purpose.** `createTauriTest({ mode: 'tauri' })` (our tauri-playwright pnpm
+  patch) keeps Playwright from launching Chromium. Bumping tauri-playwright without that option makes every test fail at
+  setup with `Executable doesn't exist`. DETAILS § "No Playwright browser in the image".
 - **Fixture readiness is always actively probed** (`probe_smb_ports`, `wait_for_published_port` in
   `scripts/e2e-linux-fixtures.sh`): Docker's `running` doesn't mean the port is bound. ❌ Never a `sleep`. DETAILS §
   "SMB E2E networking".

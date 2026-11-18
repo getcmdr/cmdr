@@ -24,7 +24,7 @@ pub(crate) fn indexing_sources() -> Vec<(String, PathBuf)> {
     fn collect(dir: &Path, prefix: &str, out: &mut Vec<(String, PathBuf)>) {
         for entry in std::fs::read_dir(dir).expect("an indexing dir") {
             let path = entry.expect("dir entry").path();
-            let name = path.file_name().expect("file name").to_string_lossy().to_string();
+            let name = path.file_name().expect("filename").to_string_lossy().to_string();
             let rel = if prefix.is_empty() {
                 name.clone()
             } else {

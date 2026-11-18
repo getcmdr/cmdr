@@ -4,6 +4,8 @@ pub mod backend_settings;
 pub mod cloud_actions;
 /// Ungated: `open_path` answers with its error type on every platform.
 pub mod default_app;
+/// Whether the startup sweep has registered every discovered volume yet.
+pub(crate) mod discovery;
 #[cfg(target_os = "macos")]
 pub mod file_provider_actions;
 /// A bounded pool of 8 MB-stack OS threads for synchronous macOS framework calls, and on
@@ -125,6 +127,7 @@ pub fn init_volume_manager() {
         .name("volume-init".into())
         .spawn(|| {
             register_discovered_volumes();
+            discovery::mark_done();
             crate::volume_broadcast::emit_volumes_changed();
         })
         .expect("spawn volume-init thread");

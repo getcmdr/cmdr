@@ -1229,9 +1229,9 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "Ocultar esta dica. Você pode trazê-la de volta em Ajustes > Avançado.",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Ocultar esta dica. Você pode trazê-la de volta em Configurações > Avançado.} linuxGnome {Ocultar esta dica. Você pode trazê-la de volta em Preferências > Avançado.} linuxKde {Ocultar esta dica. Você pode trazê-la de volta em Configurar Cmdr > Avançado.} other {Ocultar esta dica. Você pode trazê-la de volta em Ajustes > Avançado.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "6a3a4b3"
+    "sourceHash": "aa27809"
   },
   "aboutThis.action.continueInAskCmdr": "Continuar no Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {

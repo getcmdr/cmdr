@@ -1597,7 +1597,7 @@
   },
   "settings.analytics.enabled.description": "Zet dit alsjeblieft aan, dan zien we tijdens de open bèta welke functies ertoe doen.\nDe statistieken zijn gekoppeld aan een willekeurige id, niet aan je naam of e-mailadres.\nCmdr verstuurt nooit bestandsnamen, paden, zoektermen of prompts.\nAls dit uit staat, verstuurt Cmdr geen statistieken.",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "a8d8db1"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "analyse, gebruik, gebruiksstatistieken, statistieken, privacy, telemetrie, bèta, volgen, tracking, afmelden",
   "@settings.analytics.enabled.keywords": {
@@ -1621,7 +1621,7 @@
   },
   "settings.updates.crashReports.summary": "Bevat nooit bestandsnamen of persoonlijke gegevens.",
   "@settings.updates.crashReports.summary": {
-    "sourceHash": "7814a28"
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "crash, crashrapport, vastgelopen, rapport, privacy, telemetrie, bug, fout",
   "@settings.updates.crashReports.keywords": {
@@ -2956,9 +2956,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Instellingenonderdelen",
+  "settings.sidebar.sections": "{platform, select, windows {Instellingenonderdelen} linuxGnome {Voorkeurenonderdelen} linuxKde {Onderdelen van ‘Cmdr configureren’} other {Instellingenonderdelen}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Geen overeenkomende instellingen} one {{countText} onderdeel komt overeen} other {{countText} onderdelen komen overeen}}",
   "@settings.sidebar.matchCount": {
@@ -3219,7 +3219,7 @@
   },
   "settings.securityLog.enabled.description": "Hierin staan beveiligingsrelevante wijzigingen en weigeringen, zoals toestemming voor cloud-AI, een geïnstalleerde update of een app die geen toegang kreeg tot de MCP-server. Er staan geen bestandsnamen, inhoud of wachtwoorden in.",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "97e24a4"
+    "sourceHash": "3692a3d"
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {Een klein lokaal logboek van beveiligingsgebeurtenissen. Het verlaat je Mac nooit.} windows {Een klein lokaal logboek van beveiligingsgebeurtenissen. Het verlaat je pc nooit.} other {Een klein lokaal logboek van beveiligingsgebeurtenissen. Het verlaat je computer nooit.}}",
   "@settings.securityLog.enabled.summary": {
@@ -3438,9 +3438,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Instellingen",
+  "settings.window.title": "{platform, select, windows {Instellingen} linuxGnome {Voorkeuren} linuxKde {Configureren – Cmdr} other {Instellingen}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Instellingen laden…",
   "@settings.window.loading": {
@@ -3687,13 +3687,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Eén onderdeel in Sleutelhangertoegang met de naam ‘{itemName}’} other {{countText} onderdelen in Sleutelhangertoegang met de naam ‘{itemName}’}}} windows {{count, plural, one {Eén referentie in Referentiebeheer met de naam ‘{itemName}’} other {{countText} referenties in Referentiebeheer met de naam ‘{itemName}’}}} linuxKde {{count, plural, one {Eén onderdeel in KWallet met de naam ‘{itemName}’} other {{countText} onderdelen in KWallet met de naam ‘{itemName}’}}} other {{count, plural, one {Eén onderdeel in je sleutelhanger met de naam ‘{itemName}’} other {{countText} onderdelen in je sleutelhanger met de naam ‘{itemName}’}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Eén onderdeel in Sleutelhangertoegang met de naam ‘{itemName}’} other {{countText} onderdelen in Sleutelhangertoegang met de naam ‘{itemName}’}}} windows {{count, plural, one {Eén referentie in Referentiebeheer met de naam ‘{itemName}’} other {{countText} referenties in Referentiebeheer met de naam ‘{itemName}’}}} linuxKde {{count, plural, one {Eén onderdeel in de KDE-portefeuille met de naam ‘{itemName}’} other {{countText} onderdelen in de KDE-portefeuille met de naam ‘{itemName}’}}} other {{count, plural, one {Eén onderdeel in je sleutelhanger met de naam ‘{itemName}’} other {{countText} onderdelen in je sleutelhanger met de naam ‘{itemName}’}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Eventuele onderdelen in Sleutelhangertoegang met de naam ‘{itemName}’} windows {Eventuele referenties in Referentiebeheer met de naam ‘{itemName}’} linuxKde {Eventuele onderdelen in KWallet met de naam ‘{itemName}’} other {Eventuele onderdelen in je sleutelhanger met de naam ‘{itemName}’}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Eventuele onderdelen in Sleutelhangertoegang met de naam ‘{itemName}’} windows {Eventuele referenties in Referentiebeheer met de naam ‘{itemName}’} linuxKde {Eventuele onderdelen in de KDE-portefeuille met de naam ‘{itemName}’} other {Eventuele onderdelen in je sleutelhanger met de naam ‘{itemName}’}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Sluit Cmdr af} other {Stop Cmdr}}",
   "@settings.dataWipe.quit": {

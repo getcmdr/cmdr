@@ -32,7 +32,7 @@ use crate::types::ConflictResolution;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{CopyScanResult, InMemoryVolume, ListingProgress};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 /// `resolve_volume_conflict` in `Stop` mode must NOT call `scan_for_copy` on the
 /// source when a size hint is available. On MTP, `scan_for_copy(file_path)` lists
@@ -556,7 +556,7 @@ async fn test_pre_known_conflicts_ignored_outside_skip_mode() {
 /// Real-FS coverage: the unit tests use `InMemoryVolume`, which makes it easy
 /// for behaviour to silently regress on real filesystems (path normalisation,
 /// case folding, FS-specific quirks of `local_path`). This drives the bulk-skip
-/// flow against `LocalPosixVolume` on tmpfile to catch any divergence.
+/// flow against `LocalVolume` on tmpfile to catch any divergence.
 ///
 /// Note: when both volumes are local, `copy_between_volumes` short-circuits to
 /// `copy_files_start` (see `volume/copy.rs:97`), so the bulk-skip code path
@@ -583,12 +583,12 @@ async fn test_pre_known_conflicts_bulk_skip_on_real_local_volumes() {
     fs::write(dst_dir.join("c.txt"), "old-c").unwrap();
     fs::write(dst_dir.join("e.txt"), "old-e").unwrap();
 
-    let source: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Source",
         src_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),
     ));
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),

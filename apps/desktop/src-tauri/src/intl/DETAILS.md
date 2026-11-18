@@ -371,6 +371,11 @@ so the menu bar reads a block's `linuxGnome` / `linuxKde` branch on those deskto
 (`native_strings_per_os_test.rs`). The debug-only `CMDR_MOCK_CONVENTIONS` moves the webview alone, so a mocked desktop
 shows in the window and not in the native menu bar.
 
+- **Agent-facing notes name the settings window per system**: `settings_window_name_en()` (`settings_window_name.rs`)
+  answers "Settings", "Preferences" (GNOME), or "Configure Cmdr" (KDE) in English for MCP tool notes ("under Preferences
+  › AI"). Its test pins the first word to the English `menu.app.settings` row on every system; user-facing copy stays
+  in the catalog.
+
 - **Why every OS's text ships in every binary**: a few KB of labels buys a generated file with no OS `cfg`, which
   would otherwise sit outside a seam (`desktop-rust-platform-cfg-placement`). `menu_t`'s signature and callers stay.
 - **❌ Never choose text with `cmdr-menu`'s `Platform`**: it answers Linux on Windows, so Windows would read Linux

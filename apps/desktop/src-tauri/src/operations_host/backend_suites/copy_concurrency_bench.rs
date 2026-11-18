@@ -86,7 +86,7 @@ use cmdr_fs::volume::{
     BatchScanResult, CopyScanResult, LaneKey, ListingProgress, SpaceInfo, Volume, VolumeError, VolumeReadStream,
     smb_volume_id,
 };
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_operations::testing::{CollectorEventSink, TestOperations, copy_volumes_with_progress};
 use cmdr_operations::{ConflictResolution, OperationEventSink, VolumeCopyConfig};
 use cmdr_smb::volume::MountAnchor;
@@ -134,7 +134,7 @@ const COPY_DEADLINE: Duration = Duration::from_secs(300);
 
 // ── The source wrapper that makes the window sweepable ──────────────
 
-/// A `LocalPosixVolume` that reports a fixed `max_concurrent_ops`.
+/// A `LocalVolume` that reports a fixed `max_concurrent_ops`.
 ///
 /// The destination side of the window is already runtime-settable
 /// (`set_smb_concurrency`); pinning the source side high moves the whole sweep
@@ -149,7 +149,7 @@ const COPY_DEADLINE: Duration = Duration::from_secs(300);
 ///
 /// Everything else delegates, so what gets measured is the production path.
 struct FixedConcurrencySource {
-    inner: LocalPosixVolume,
+    inner: LocalVolume,
     concurrency: usize,
 }
 
@@ -340,7 +340,7 @@ struct Corpus {
     /// What the copy is handed as its top-level sources: every file for the loose
     /// shapes, the single folder for `Subtree`.
     paths: Vec<PathBuf>,
-    /// The leaf file names, which is what the verification pass and every
+    /// The leaf filenames, which is what the verification pass and every
     /// per-file number in the report are about. ❌ Not `paths.len()`: a subtree
     /// run has one source and hundreds of files.
     file_names: Vec<String>,
@@ -390,7 +390,7 @@ fn build_corpus(shape: Shape, source_concurrency: usize) -> Corpus {
         None => file_names.iter().map(PathBuf::from).collect(),
     };
     let volume: Arc<dyn Volume> = Arc::new(FixedConcurrencySource {
-        inner: LocalPosixVolume::local_folder("bench-src", dir.path().to_path_buf(), crate::volume_host::host()),
+        inner: LocalVolume::local_folder("bench-src", dir.path().to_path_buf(), crate::volume_host::host()),
         concurrency: source_concurrency,
     });
     Corpus {

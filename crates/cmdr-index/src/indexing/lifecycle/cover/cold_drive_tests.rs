@@ -227,7 +227,7 @@ impl ColdDrive {
 }
 
 /// Create files named `{stem}-{n}.txt` in `dir` until `landed` says one of them
-/// (by file name) reached the index through the watcher, and return its name.
+/// (by filename) reached the index through the watcher, and return its name.
 ///
 /// ⚠️ **Why redo rather than wait longer**: a stream that was JUST started drops a
 /// change landing in its arming window outright, and a saturated `fseventsd` can

@@ -16,8 +16,8 @@ import { getAdbDisplayPath } from '#lib/adb/adb-path-utils.js'
 import { boundShortcuts } from '#lib/shortcuts/index.js'
 import { isVolumeEjectable } from '../navigation/eject-predicate'
 import type { VolumeChangePayload } from './types'
-import { displayPath } from '#lib/utils/display-path.js'
-import { volumePrefix } from '#lib/path/grammar.js'
+import { displayPath, withoutPicks } from '#lib/utils/display-path.js'
+import { parsePath, shownPath, volumePrefix } from '#lib/path/grammar.js'
 
 export interface BreadcrumbDisplayPathInput {
   currentPath: string
@@ -47,9 +47,29 @@ export function breadcrumbDisplayPath(input: BreadcrumbDisplayPathInput): string
   if (input.isSearchResultsView) {
     return input.searchLabel ?? 'Search'
   }
+  const drive = driveOrShareDisplayPath(input.currentPath, input.volumePath)
+  if (drive !== null) return drive
   // A same-named twin folder's pick never shows (`displayPath`); clicking a
   // segment still reaches that twin (`breadcrumb-navigation.ts`).
   return displayPath(volumeDisplayPath(input))
+}
+
+/**
+ * A Windows drive or share volume reads the way Explorer's address bar does: the whole
+ * path from its root (`C:\Windows`, `\\server\share\x`), the root alone at the root (`C:\`).
+ * The names stay `/`-joined for the segment split, with the root as the first segment
+ * (`C:` or `\\server\share`, no `/` inside), and the bar draws `\` between them. `null` for
+ * every other volume, so macOS and Linux keep their readout.
+ */
+function driveOrShareDisplayPath(currentPath: string, volumePath: string): string | null {
+  const volumeKind = parsePath(volumePath)?.kind
+  if (volumeKind !== 'drive' && volumeKind !== 'unc') return null
+  const parsed = parsePath(currentPath)
+  if (parsed?.root == null || parsed.names === null) return null
+  const shownRoot = shownPath(parsed.root)
+  if (parsed.names.length === 0) return shownRoot
+  const head = parsed.kind === 'drive' ? shownRoot.slice(0, -1) : shownRoot
+  return withoutPicks([head, ...parsed.names].join('/'))
 }
 
 /** The path readout for a real folder, before a twin's pick is taken out. */
@@ -60,8 +80,7 @@ function volumeDisplayPath(input: BreadcrumbDisplayPathInput): string {
   if (scheme === 'mtp') return getMtpDisplayPath(currentPath)
   if (scheme === 'adb') return getAdbDisplayPath(currentPath)
 
-  // For non-root volumes, strip the volume path prefix. A drive or share root keeps
-  // its `/` for the path below it (`C:/Users` reads `/Users`, shown `\Users` on Windows).
+  // For non-root volumes, strip the volume path prefix (`/Volumes/X/sub` reads `/sub`).
   if (volumePath !== '/') {
     const prefix = volumePrefix(volumePath)
     return currentPath.startsWith(prefix) ? currentPath.slice(prefix.length) || '/' : currentPath

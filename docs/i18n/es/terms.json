@@ -82,7 +82,9 @@
     "chosen": "Avanzado",
     "confidence": "high",
     "forms": "Cmdr Settings section → Avanzado; quote settings.section.advanced exactly in navigation paths",
-    "sources": "Network.appex Localizable (ADVANCED); catalog settings.section.advanced (macOS 26.6.2 build 25G83, live loctable key cross-reference, 2026-10-02)"
+    "sources": "Network.appex Localizable (ADVANCED); catalog settings.section.advanced (macOS 26.6.2 build 25G83, live loctable key cross-reference, 2026-10-02)",
+    "accept": ["avanzada"],
+    "note": "Agrees with its head noun: Ajustes avanzados (macOS), Configuración avanzada (the windows branch, e.g. ai.cloudConsent.logsNote)."
   },
   "ai-client": {
     "chosen": "cliente de IA",
@@ -1890,8 +1892,8 @@
     },
     "other": {
       "chosen": "llavero",
-      "accept": ["depósito de claves", "KWallet"],
-      "note": "Linux branches: the generic keyring is llavero; GNOME's own branch says depósito de claves, Seahorse's word (Contraseñas y claves: “El depósito de claves está bloqueado”, l10n.gnome.org seahorse.main es.po, 2026-11-18); KDE names its store KWallet and its manager KWalletManager, kept as names, with a wallet → cartera (kwalletmanager.po)"
+      "accept": ["depósito de claves", "cartera de KDE"],
+      "note": "Linux branches: the generic keyring is llavero; GNOME's own branch says depósito de claves, Seahorse's word (Contraseñas y claves: “El depósito de claves está bloqueado”, l10n.gnome.org seahorse.main es.po, 2026-11-18); KDE's store (English KDE Wallet) is la cartera de KDE, as KDE Spanish writes it (kwalletd6.po: The KDE Wallet System → El sistema de cartera de KDE, KDE Wallet Service → Servicio de cartera de KDE; kwalletmanager.po: Wallet → Cartera), and its manager KWalletManager stays a name, as kwalletmanager.po keeps it. Verified read-only on websvn.kde.org trunk/l10n-kf6 es, 2026-11-18."
     }
   },
   "kind": {
@@ -3002,11 +3004,11 @@
   "settings": {
     "chosen": "Ajustes",
     "accept": ["ajuste"],
-    "forms": "capitalized even when English says lowercase settings (en Ajustes, en Ajustes avanzados); the window Ajustes; Open Settings (the window) → Abrir Ajustes; Open settings (the concept) → Abrir los ajustes",
+    "forms": "capitalized even when English says lowercase settings (en Ajustes, en Ajustes avanzados); the window Ajustes; Open Settings (the window) → Abrir Ajustes; Open settings (the concept) → Abrir los ajustes. The windows branch names the window with Microsoft's word, Configuración (see the windows form). Linux desktop branches name the window as that desktop titles it: linuxGnome Preferencias (en Preferencias > IA, Abrir Preferencias / Abrir las preferencias; Nautilus _Preferences → Prefere_ncias); linuxKde Configurar Cmdr, window title Configurar – Cmdr (en Configurar Cmdr > IA, the button Configurar Cmdr, the sidebar Secciones de Configurar Cmdr; kconfigwidgets6.po &Configure %1… → &Configurar %1…, dolphin.po Configure Dolphin > View → Configurar Dolphin > Vista, websvn.kde.org trunk/l10n-kf6 es, 2026-11-18). The window title and menu.app.settings start with the same word on every desktop.",
     "avoid": [
       {
         "form": "Configuración",
-        "why": "the Windows term"
+        "why": "Microsoft's word: right in the windows branch only; macOS es says Ajustes"
       }
     ],
     "confidence": "high",
@@ -3020,7 +3022,7 @@
     "windows": {
       "chosen": "Configuración",
       "accept": ["configuración", "ajuste"],
-      "note": "the Windows Settings app is Configuración (ms TBX Settings → Configuración), so a Windows Settings path reads **Configuración > Red e Internet**, **Configuración > Sistema > Almacenamiento**; a server's or PC's settings in a windows branch → la configuración (del servidor). Cmdr's own Settings stay Ajustes in every branch (Tus ajustes piden …)"
+      "note": "Windows apps name their settings Configuración (ms TBX Settings → Configuración, every region incl. ESP), so Cmdr's own window on Windows is Configuración too: title and menu row Configuración, Abrir Configuración (the window) / Abrir la configuración (the concept), en Configuración > IA, en Configuración avanzada, Secciones de configuración. The Windows Settings app shares the word: Configuración > Red e Internet. A generic lowercase settings that isn't the window (Tus ajustes piden …, tus ajustes de SSH, a data wipe's ajustes) keeps ajustes."
     }
   },
   "share-menu": {
@@ -4321,5 +4323,11 @@
     "confidence": "high",
     "sources": "macOS AppKit MenuCommands (Preferences… → Preferencias…); GNOME Nautilus _Preferences → Prefere_ncias; Thunar Preferencias",
     "note": "GNOME's own settings row (the linuxGnome branch of `menu.app.settings`), no ellipsis; KDE's row is Configurar Cmdr… (Dolphin: Configurar Dolphin)"
+  },
+  "usb-preferences": {
+    "chosen": "Preferencias de USB",
+    "confidence": "high",
+    "sources": "AOSP packages/apps/Settings res/values-es/strings.xml usb_preference → Preferencias de USB (aosp-mirror main, 2026-11-18); usb_use_file_transfers → Transferencia de archivos",
+    "note": "Android phone label quoted in settings.fileOperations.mtpEnabled.description (Ajustes > Preferencias de USB); the phone path keeps Android Ajustes in every branch."
   }
 }

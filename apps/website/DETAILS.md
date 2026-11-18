@@ -140,7 +140,7 @@ was deleted.)
   works when the `rehypeDownloadDropdown` plugin (`src/plugins/download-dropdown.ts`) emits an inline copy into a blog
   post from the `[download](cmdr:download)` marker. That plugin must run after `rehype-external-links` (so its mirror
   links don't get `target="_blank"`) and reads `public/latest.json` directly, building `src/lib/release.ts`'s
-  no-download-base links (direct to `download.getcmdr.com`). Both take file names and sizes from
+  no-download-base links (direct to `download.getcmdr.com`). Both take filenames and sizes from
   `src/lib/release-downloads.ts`, which reads the manifest's `downloads` list (written from the release asset manifest,
   `docs/guides/releasing.md` § The release asset manifest) and falls back to `dmgSizes` for a manifest from before it.
 - **`public/latest.json` is live only in production.** The committed copy is frozen (dev and the check lanes build with
@@ -233,6 +233,12 @@ was deleted.)
   default mime table knows neither). The page's key list renders from `managedPreferenceKeys` in `src/lib/trust-mdm.ts`.
   A Rust test guards all three key sets against the app's (`apps/desktop/src-tauri/src/managed_policy/DETAILS.md` § The
   public mirror), so a key edit here needs the app's key list to match.
+- **Copy for an OS that hasn't shipped**: `/trust#windows` (body in `src/components/TrustWindows.astro`) renders in
+  `pnpm dev` and, in the built site, only once the published release's `latest.json` lists a Windows download
+  (`releaseShipsWindows` in `src/lib/release.ts`, from `releaseShipsOs` in `release-downloads.ts`). So it goes live with
+  the deploy of the first Windows release, whose trust review checks it. The Windows registry policy path is
+  `windowsPolicyKey` in `src/lib/trust-mdm.ts`, the one place the page names it; it mirrors `POLICY_KEY` in the app's
+  `managed_policy/platform/windows/mod.rs` by hand.
 
 ## Icons
 
@@ -580,7 +586,7 @@ desktop app writes plain CSS and has no Tailwind.
 
 The website uses three analytics layers. The desktop app separately sends anonymous beta usage analytics: an
 `anal_`-keyed hourly heartbeat (true DAU) plus curated PII-free feature events stored in D1, all behind a tri-state
-opt-out and stripped of file names, paths, queries, and prompts by allowlist. See
+opt-out and stripped of filenames, paths, queries, and prompts by allowlist. See
 `apps/desktop/src-tauri/src/analytics/CLAUDE.md`.
 
 - **Umami** (`Layout.astro`): Cookieless page analytics (pageviews, referrers, geo, UTM). Self-hosted. Script served at

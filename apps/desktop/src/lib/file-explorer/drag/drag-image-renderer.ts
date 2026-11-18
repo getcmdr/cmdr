@@ -35,13 +35,13 @@ const fadeRight = 6
 const fallbackFileColor = 'rgba(255, 255, 255, 0.35)'
 const fallbackFolderColor = 'rgba(255, 255, 255, 0.40)'
 
-/** Returns an emoji prefix for a file name (folder vs file heuristic). */
+/** Returns an emoji prefix for a filename (folder vs file heuristic). */
 export function getEntryEmoji(name: string, isDirectory: boolean): string {
   return isDirectory ? '\uD83D\uDCC1 ' : '\uD83D\uDCC4 '
 }
 
 /**
- * Middle-truncates a file name, preserving the extension.
+ * Middle-truncates a filename, preserving the extension.
  * For example, "very-long-filename.txt" becomes "very-long\u2026me.txt".
  */
 export function truncateMiddle(name: string, maxLength: number): string {

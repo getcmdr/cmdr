@@ -56,7 +56,7 @@ fn rename_descriptor_marks_only_nonroot_volumes_busy() {
 
 /// An instant rename journals through the real store: its own `rename` row,
 /// finalized `done` and rollbackable, with one item row naming both ends. The
-/// op id isn't returned, so the row is found by the test's unique file name.
+/// op id isn't returned, so the row is found by the test's unique filename.
 #[tokio::test]
 async fn an_instant_rename_journals_its_row_through_the_real_store() {
     use cmdr_operation_log::store::{open_read_connection, read_operation_items, recent_operations};

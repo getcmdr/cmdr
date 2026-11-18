@@ -161,7 +161,7 @@ fn the_jump_lands_on_the_row_the_pane_shows() {
     let temp_name = temp
         .path()
         .file_name()
-        .expect("a minted temp always has a file name")
+        .expect("a minted temp always has a filename")
         .to_string_lossy()
         .into_owned();
 

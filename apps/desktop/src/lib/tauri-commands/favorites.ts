@@ -28,7 +28,7 @@ export function favoriteLocationId(favoriteId: string): string {
 }
 
 /**
- * Favorites `path`. When `name` is null the backend defaults the label to the path's file name.
+ * Favorites `path`. When `name` is null the backend defaults the label to the path's filename.
  * Deduping by normalized path: re-adding an existing path moves it to the end and keeps its id.
  * A refusal throws an `AddFavoriteFailure` carrying the typed `AddFavoriteError`; `asAddFavoriteError`
  * gets it back.

@@ -134,6 +134,11 @@ The shape:
   explains how a stand-in screenshot maps to this key ("this shows a different error, but your string is the
   title/explanation in this same pane"). Absent on direct (captured) couplings. Like `screenshot`, it's harness-written,
   never hand-authored, and stripped before runtime/codegen.
+- `identicalBranches` (`en` only, optional): `{ "<branch>": "<why>" }`, the branches of a per-OS block that repeat
+  `other`'s English on purpose because translations split there. Every settings-window pointer carries
+  `{ "windows": "…" }`: English says "Settings" on macOS and Windows, but French Windows says `Paramètres` where macOS
+  says `Réglages`. It lets `desktop-i18n-platform-select` accept that branch, and it shrink-wraps: naming `other`, a
+  missing branch, or one that already differs fails the check (`src/lib/intl/DETAILS.md` § Platform variants).
 - `agreesWith` (`en` only, optional): the key of the LABEL this value sits beside and agrees with in gender and number,
   for a value word English writes identically across rows (the managed card's per-row "Off":
   `@settings.managed.summary.usageStatsOff` carries `"agreesWith": "settings.managed.summary.usageStats"`). It takes the

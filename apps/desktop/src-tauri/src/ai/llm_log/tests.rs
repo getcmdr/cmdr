@@ -1,6 +1,6 @@
 //! Tests for the LLM call logger.
 //!
-//! The pure helpers (slug, counter, file name, redaction round-trip) are tested directly and
+//! The pure helpers (slug, counter, filename, redaction round-trip) are tested directly and
 //! deterministically. The orchestration tests drive [`record_request`] / [`CallLog::log_response`]
 //! against a per-test temp directory: the file write is on a detached thread, so they poll for
 //! the files with a bounded timeout. Each temp dir is unique, so the per-session `COUNTERS`

@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { lookUp, normalizeLabel, parsePo, parseTbx, presentFolders } from './i18n-pile-lib.ts'
 import { parsePileArgs } from './i18n-pile.ts'
+import { desktopCatalogs, desktopTarget, looksLikePo, parseFetchArgs } from './i18n-pile-fetch.ts'
 import { conceptsForWord, keyVerdicts, parseTermArgs, senseBlock } from './i18n-term.ts'
 import type { Concepts } from './i18n-termbase-lib.ts'
 
@@ -103,6 +104,36 @@ describe('the pile parsers', () => {
   })
 })
 
+describe('pnpm i18n:pile-fetch', () => {
+  it('writes each tag’s catalogs where `i18n:pile` mines that tag’s Linux sources', () => {
+    expect(desktopTarget('de')).toEqual({ folder: 'de', code: 'de' })
+    expect(desktopTarget('pt')).toEqual({ folder: 'pt-BR', code: 'pt_BR' })
+    expect(desktopTarget('zh')).toEqual({ folder: 'zh-CN', code: 'zh_CN', alias: 'zh' })
+    expect(desktopTarget('zh-Hant')).toEqual({ folder: 'zh-TW', code: 'zh_TW' })
+  })
+
+  it('names one GNOME and one KDE URL per catalog, into the folders the pile lookup reads', () => {
+    const catalogs = desktopCatalogs('pt')
+    expect(catalogs).toHaveLength(13)
+    expect(catalogs).toContainEqual({
+      url: 'https://l10n.gnome.org/POT/seahorse.main/seahorse.main.pt_BR.po',
+      path: join('pt-BR', 'gnome-desktop', 'seahorse.po'),
+    })
+    expect(catalogs).toContainEqual({
+      url: 'https://websvn.kde.org/trunk/l10n-kf6/pt_BR/messages/kconfigwidgets/kconfigwidgets6.po?view=co',
+      path: join('pt-BR', 'kde-desktop', 'kconfigwidgets6.po'),
+    })
+  })
+
+  it('keeps an error page out of the pile, and refuses a tag Cmdr doesn’t ship', () => {
+    expect(looksLikePo('msgid ""\nmsgstr ""\n')).toBe(true)
+    expect(looksLikePo('<html>404</html>')).toBe(false)
+    expect(parseFetchArgs([]).tags).toHaveLength(13)
+    expect(parseFetchArgs(['--lang', 'de,hu']).tags).toEqual(['de', 'hu'])
+    expect(() => parseFetchArgs(['--lang', 'xx'])).toThrow('Not a full translation')
+  })
+})
+
 describe('lookUp', () => {
   it('joins macOS by key, skips English-valued entries, and puts exact matches first', () => {
     const hits = lookUp({ pileRootDir: pile, folders: ['de'], query: { side: 'english', text: 'Trash' } })
@@ -134,6 +165,18 @@ describe('lookUp', () => {
       sources: ['linux'],
     })
     expect(hits.map((hit) => hit.english)).toEqual(['Empty Trash'])
+  })
+
+  it('reads the GNOME and KDE desktop catalogs as Linux evidence', () => {
+    mkdirSync(join(pile, 'de', 'kde-desktop'), { recursive: true })
+    writeFileSync(
+      join(pile, 'de', 'kde-desktop', 'kwalletd6.po'),
+      'msgid "KDE Wallet"\nmsgstr "KDE-Passwortspeicher"\n',
+    )
+    const hits = lookUp({ pileRootDir: pile, folders: ['de'], query: { side: 'english', text: 'KDE Wallet' } })
+    expect(hits.map((hit) => [hit.source, hit.file, hit.target])).toEqual([
+      ['linux', join('de', 'kde-desktop', 'kwalletd6.po'), 'KDE-Passwortspeicher'],
+    ])
   })
 
   it('reports a pile folder that is missing', () => {

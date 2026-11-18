@@ -509,7 +509,7 @@ pub struct OperationUndoOutcome {
     /// forced overwrite.
     pub skipped: u64,
     /// WHICH reason left which file alone, one group per typed reason, each with its
-    /// complete count and one example file name. Lets the UI say what happened to a
+    /// complete count and one example filename. Lets the UI say what happened to a
     /// specific file instead of naming a reason class for the whole batch. Empty on a
     /// refusal (nothing was examined) and on a clean undo.
     pub skips: Vec<SkipBreakdown>,

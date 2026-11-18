@@ -429,9 +429,9 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "Na próxima vez, o Cmdr começa com esta opção, e você pode mudá-la nos Ajustes. Se ela substituir arquivos, você verá um aviso antes.",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Na próxima vez, o Cmdr começa com esta opção, e você pode mudá-la nas Configurações. Se ela substituir arquivos, você verá um aviso antes.} linuxGnome {Na próxima vez, o Cmdr começa com esta opção, e você pode mudá-la nas Preferências. Se ela substituir arquivos, você verá um aviso antes.} linuxKde {Na próxima vez, o Cmdr começa com esta opção, e você pode mudá-la em Configurar Cmdr. Se ela substituir arquivos, você verá um aviso antes.} other {Na próxima vez, o Cmdr começa com esta opção, e você pode mudá-la nos Ajustes. Se ela substituir arquivos, você verá um aviso antes.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "c26d762"
+    "sourceHash": "b23a78a"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "Alguns conflitos misturam um arquivo e uma pasta com o mesmo nome. Substituir vai trocar itens de tipos diferentes, incluindo todo o conteúdo de uma pasta.",
   "@fileOperations.transferDialog.typeMismatchWarning": {
@@ -1306,9 +1306,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Lembrar no Acesso às Chaves} windows {Lembrar senha} linuxKde {Lembrar no KWallet} other {Lembrar no chaveiro}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Lembrar no Acesso às Chaves} windows {Lembrar senha} linuxKde {Lembrar na Carteira do KDE} other {Lembrar no chaveiro}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "fileOperations.resticPassword.checking": "Verificando a senha…",
   "@fileOperations.resticPassword.checking": {

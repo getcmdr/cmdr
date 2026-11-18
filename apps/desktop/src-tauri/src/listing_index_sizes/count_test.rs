@@ -14,7 +14,7 @@ use crate::test_support::TestDir;
 use cmdr_fs::entry::FileEntry;
 use cmdr_listing::IndexSizes;
 use cmdr_listing::testing::{TestListing, TestListingGuard};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 const DIR: &str = "/data";
 
@@ -205,7 +205,7 @@ async fn a_folder_the_disk_cant_read_goes_back_to_what_it_showed_and_is_reported
         .insert(crate::listing_host::listings(), "count-unreadable");
     let (_events, sink) = collect();
     let plan = plan(listing.id(), false, None, |_| false).expect("cached");
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder("Disk", "/", crate::volume_host::host()));
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder("Disk", "/", crate::volume_host::host()));
 
     let outcome = count_with(listing.id(), plan, local, &sink).await;
 

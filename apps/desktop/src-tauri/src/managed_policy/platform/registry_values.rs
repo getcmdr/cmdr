@@ -8,13 +8,19 @@
 //!   `0` = false, anything else true, and `MaxUpdateVersion` as a major version.
 //! - `REG_SZ` / `REG_EXPAND_SZ` → a string (not expanded: no policy value names a path).
 //! - `REG_MULTI_SZ`, or a subkey of string values (what an ADMX `<list>` element writes, named
-//!   `1`, `2`, …) → an array of strings, for `AllowedCloudAIHosts`.
+//!   `1`, `2`, …) → an array of strings, for `AllowedCloudAIHosts`. An empty subkey is not set:
+//!   Group Policy leaves one behind when the list policy is disabled.
 //! - Anything else (`REG_BINARY`, `REG_NONE`, a malformed length or UTF-16) → data, the wrong type
 //!   for every key, so the key takes its most restrictive reading (rule 4).
 
 use std::collections::HashMap;
 
 use crate::managed_policy::source::ManagedPrefsSource;
+
+/// The policy key under `HKLM` and `HKCU`. `Rymd` is the vendor level (Rymdskottkärra AB), so a
+/// second product sits beside `Cmdr`. ❗ A public contract: admins' GPOs and the ADMX template
+/// name it, so it never moves (`DETAILS.md` § The Windows registry keys).
+pub(crate) const POLICY_KEY: &str = "SOFTWARE\\Policies\\Rymd\\Cmdr";
 
 pub(crate) const REG_SZ: u32 = 1;
 pub(crate) const REG_EXPAND_SZ: u32 = 2;
@@ -115,7 +121,8 @@ impl RegistryPolicy {
 }
 
 /// One hive's names and values. Within a hive a plain value outranks a list subkey of the same
-/// name, so a `REG_MULTI_SZ` and an ADMX list can't both count.
+/// name, so a `REG_MULTI_SZ` and an ADMX list can't both count. A list subkey with no values is
+/// not set: Group Policy leaves one behind when a list policy is disabled.
 fn flatten(hive: Hive) -> Vec<(String, plist::Value)> {
     let mut out: Vec<(String, plist::Value)> = hive
         .values
@@ -126,7 +133,7 @@ fn flatten(hive: Hive) -> Vec<(String, plist::Value)> {
         })
         .collect();
     for (name, entries) in hive.lists {
-        if !out.iter().any(|(taken, _)| taken.eq_ignore_ascii_case(&name)) {
+        if !entries.is_empty() && !out.iter().any(|(taken, _)| taken.eq_ignore_ascii_case(&name)) {
             out.push((name, decode_list(entries)));
         }
     }
@@ -243,6 +250,31 @@ mod tests {
         assert_eq!(keys::parse(&policy).policy, expected.policy);
     }
 
+    /// Group Policy leaves a list policy's subkey behind, empty, when the policy is disabled (its
+    /// `**delvals.` clears the values, not the key), so an empty subkey means "not set". Read as
+    /// an empty list it would allow no cloud AI host: the opposite of what disabling it means. An
+    /// explicit empty `REG_MULTI_SZ` still allows no host.
+    #[test]
+    fn an_empty_list_subkey_reads_as_not_set() {
+        let empty_subkey = Hive {
+            values: Vec::new(),
+            lists: vec![(ALLOWED_CLOUD_AI_HOSTS.to_string(), Vec::new())],
+        };
+        let policy = RegistryPolicy::merge(empty_subkey, Hive::default());
+        assert_eq!(policy.forced_value(ALLOWED_CLOUD_AI_HOSTS), None);
+        assert!(policy.listed_keys().is_empty());
+
+        let empty_multi_sz = Hive {
+            values: vec![entry(ALLOWED_CLOUD_AI_HOSTS, REG_MULTI_SZ, multi_sz(&[]))],
+            lists: Vec::new(),
+        };
+        let policy = RegistryPolicy::merge(empty_multi_sz, Hive::default());
+        assert_eq!(
+            policy.forced_value(ALLOWED_CLOUD_AI_HOSTS),
+            Some(Value::Array(Vec::new()))
+        );
+    }
+
     #[test]
     fn a_plain_value_outranks_a_list_subkey_of_the_same_name() {
         let hive = Hive {
@@ -257,6 +289,44 @@ mod tests {
             policy.forced_value(ALLOWED_CLOUD_AI_HOSTS),
             Some(Value::Array(vec![Value::String("a.example".into())]))
         );
+    }
+
+    /// What the ADMX template writes for each policy's kind (`policies.json`) is what the app reads
+    /// as that key's restriction: a bool's `REG_DWORD` 1 restricts and 0 doesn't, a string's
+    /// `REG_SZ` and a list's numbered subkey restrict, all without a warning. A kind that
+    /// disagreed with the parse would warn, or, for `MaxUpdateVersion` as a bool, restrict on 0.
+    #[test]
+    fn each_policy_reads_from_what_the_template_writes_for_its_kind() {
+        use crate::managed_policy::definition::{self, Kind};
+
+        for policy in definition::load().policies {
+            let name = policy.name.as_str();
+            let hive = |values: Vec<RawEntry>, lists: Vec<(String, Vec<RawEntry>)>| {
+                keys::parse(&RegistryPolicy::merge(Hive { values, lists }, Hive::default()))
+            };
+            let on = match policy.kind {
+                Kind::Bool => {
+                    let off = hive(vec![entry(name, REG_DWORD, 0u32.to_le_bytes().to_vec())], Vec::new());
+                    assert!(off.warnings.is_empty(), "{name}: {:?}", off.warnings);
+                    assert!(
+                        keys::restricting(&off.policy).is_empty(),
+                        "{name} = 0 restricts nothing"
+                    );
+                    hive(vec![entry(name, REG_DWORD, 1u32.to_le_bytes().to_vec())], Vec::new())
+                }
+                Kind::String => hive(vec![entry(name, REG_SZ, sz("0.52"))], Vec::new()),
+                Kind::StringList => hive(
+                    Vec::new(),
+                    vec![(name.to_string(), vec![entry("1", REG_SZ, sz("api.openai.com"))])],
+                ),
+            };
+            assert!(on.warnings.is_empty(), "{name}: {:?}", on.warnings);
+            assert_eq!(
+                keys::restricting(&on.policy),
+                vec![name],
+                "the policy {name} must restrict"
+            );
+        }
     }
 
     /// Every key reads off registry types the way the same plist value would, so a GPO and a

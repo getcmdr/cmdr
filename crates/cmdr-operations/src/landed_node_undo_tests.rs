@@ -23,7 +23,7 @@ use crate::host::testing::FakeVolumes;
 use crate::rollback::Reversal;
 use crate::testing::{TestOperationLog, TestOperations};
 use cmdr_fs::volume::Volume;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_operation_log::rollback::{RollbackReport, execute_rollback, rollback_operation};
 use cmdr_operation_log::store::{open_read_connection, read_rollback_units_page};
 use cmdr_operation_log::types::{ExecutionStatus, Initiator, OpKind, RollbackState, SkipReason};
@@ -50,7 +50,7 @@ impl UndoRig {
         let vm = FakeVolumes::default();
         vm.register(
             "root",
-            Arc::new(LocalPosixVolume::local_folder(
+            Arc::new(LocalVolume::local_folder(
                 "Test root",
                 "/",
                 crate::host::testing::pane_order_host(),

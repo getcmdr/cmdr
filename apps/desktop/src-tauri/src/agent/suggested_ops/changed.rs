@@ -6,7 +6,7 @@
 //! timer — against principle 5 and against subscribe-don't-poll, for a store that changes a
 //! handful of times a day.
 //!
-//! ❌ No path, file name, rationale, or selector pattern ever rides on this. It crosses to
+//! ❌ No path, filename, rationale, or selector pattern ever rides on this. It crosses to
 //! every window, and `main.db` is a map of the user's life that stays local; the ids and
 //! counts here are enough to render an indicator and to decide whether an open group is the
 //! one that moved.

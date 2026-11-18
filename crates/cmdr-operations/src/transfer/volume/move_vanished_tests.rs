@@ -16,7 +16,7 @@ use crate::testing::TestOperations;
 use crate::transfer_sides::test_hook;
 use crate::types::TransferRole;
 use cmdr_fs::volume::InMemoryVolume;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 fn state(engine: &TestOperations) -> Arc<WriteOperationState> {
     Arc::new(
@@ -27,7 +27,7 @@ fn state(engine: &TestOperations) -> Arc<WriteOperationState> {
 }
 
 fn local(name: &str, root: &Path) -> Arc<dyn Volume> {
-    Arc::new(LocalPosixVolume::local_folder(
+    Arc::new(LocalVolume::local_folder(
         name,
         root.to_path_buf(),
         crate::host::testing::pane_order_host(),

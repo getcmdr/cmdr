@@ -56,9 +56,6 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   renders as "just closed" (`vừa đóng`), as its `commands.handler.noRecentlyClosedTabs` already does under an exception.
   Only vi deviates, and the concept's sense names recently closed tabs, so it stays a vi exception unless another locale
   does the same. (vi)
-- The pile lacks the KDE Frameworks catalogs (`kxmlgui`, `kconfigwidgets`), where KStandardAction labels like "Full
-  Screen Mode" live, so `i18n:pile` finds nothing for them and a Linux branch falls back to the base ruling. Add them to
-  the pile beside Dolphin. (de, es, cs, hu, nl, vi, zh, zh-Hant)
 - The pile has no Windows shell label "This PC" (the Microsoft TBX lacks it), so the `windows` branches naming it rest
   on judgment and stay `tentative`. Source it from a localized Windows, or a Microsoft support page per language. (es,
   hu, vi)
@@ -159,32 +156,13 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   `onboarding.stepOptional.mtp.desc`, so uk and vi each carry six exceptions. Add those as `notMatch` and drop them.
   (vi)
 - `fileOperations.validation.disallowedCharacter` / `endsWithSpaceOrPeriod` say "Filenames", while their
-  `multiRename.reason.disallowedCharacter` sibling says "File names"; pick one spelling. (all)
+  `multiRename.reason.disallowedCharacter` sibling says "Filenames"; pick one spelling. (all)
 - `updates.toast.readyDetail`'s `other` branch serves Windows and Linux, but most locales' `app-closes` ruling is
   Windows-only (Linux says "quit"), so Linux reads the Windows verb. Split a `windows` branch if Linux should differ.
   (all)
-- The `preferences` concept hits the new `linuxGnome` branch of `menu.app.settings` and
-  `fileExplorer.quickFilter.intro.openSettings`, whose GNOME word (ru Параметры, cs Předvolby, uk Налаштування, hu
-  Beállítások) differs from both the ruling (an Android label) and the macOS folder name
-  `aboutThis.ownerPlace.preferences`, so `i18n-terms` and `i18n-termbase` flag it in every locale. Consider a `notMatch`
-  for the GNOME app-menu sense, or a per-desktop form in the termbase schema. (cs, ru, uk, hu)
 - `askCmdr.renameReview.notPortableBadge` is "(Windows)", identical in every locale, so each one needs a
   `sameAsSourceJustification`; the brand-only check could treat a parenthesized brand as identical by design. (cs, ru,
   uk, hu)
-- `aboutThis.ownerPlace.preferences` ("Preferences", the macOS Library folder name kept verbatim) shares its English
-  with the new `linuxGnome` branch of `menu.app.settings` / `fileExplorer.quickFilter.intro.openSettings`, so
-  `i18n-terms` flags every locale that translates GNOME's row; de, nl, sv, and fr each carry an allowlist entry. A
-  `notMatch` on the `preferences` concept, or a term-consistency rule that skips a key carrying a
-  `sameAsSourceJustification`, would fix it once. (de, nl, sv, fr)
-- The `linuxGnome` / `linuxKde` branches name apps and paths the pile doesn't carry: GNOME's Passwords and Keys
-  (Seahorse), GNOME Settings > Keyboard > View and Customize Shortcuts, KDE System Settings > Keyboard > Shortcuts,
-  KDE's standard `Configure %1…` (kxmlgui), and KDE's word for a wallet. de, nl, sv, and fr record them `tentative`,
-  from memory; adding `seahorse.po`, `gnome-control-center.po`, `kxmlgui6.po`, `kwalletmanager.po`, and
-  `systemsettings.po` to the pile would let a translator cite them. (de, nl, sv, fr)
-- `i18n-terms` pairs the literal macOS folder name `aboutThis.ownerPlace.preferences` ("Preferences", kept as on disk)
-  with GNOME's translated row in `menu.app.settings` / `fileExplorer.quickFilter.intro.openSettings` (`linuxGnome`), so
-  every locale needs an allowlist entry; the `preferences` concept already `notMatch`es that key. Exclude it in the term
-  check too. (es, pt, vi, zh, zh-Hant)
 - KDE branches: the descriptions say KDE keeps "KWallet" / "KWalletManager" as names in every language, but KDE zh-CN
   ships `KWalletManager 密码库管理器` and zh-TW `KDE 錢包管理員` as the launcher name; we kept the Latin names. Check
   whether the descriptions should allow the localized launcher name. (zh, zh-Hant)
@@ -223,6 +201,43 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - vi `settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label` uses `Thiếu`, which its `free-space` ruling
   avoids; retranslate. Czech `quoted-labels` warns on Windows' own „Jen pro čtení“ in two `errors.write.*` keys; the
   check needs a carve-out for quoted OS labels. (vi, cs)
+- zh and zh-Hant now quote KDE's localized wallet manager launcher name (zh `KWalletManager 密码库管理器`, zh-Hant
+  `KDE 錢包管理員`, from `kwalletmanager._desktop_.po`) in `fileExplorer.restic.forgetPassword.keychainKeptIt`, which
+  answers the older KWalletManager entry above for those two; the descriptions still say "KWalletManager (an app name,
+  kept as is)". Let them allow the catalog's launcher name. (zh, zh-Hant)
+- Overlay forks whose English gained per-OS branches kept those branches in English, overriding the base language's
+  translation: es-419 had English `windows` / `other` text in `onboarding.stepBeta.crashReportsNote`,
+  `.crashReportsNoteAlone`, `.signup.unreachable`, and `mtp.connectedToast.body` (fixed now). Coverage didn't flag them
+  (stale only said the fork was stale); a check that flags an overlay fork with a non-empty branch byte-identical to
+  English would. (es-419)
+- GNOME's lowercase pointers ("in preferences" in `askCmdr.error.*`, `askCmdr.wake.needsApiKey`,
+  `mtp.connectedToast.body`) read as an everyday word where GNOME's term is one (vi `tùy thích`, "as you like"); KDE now
+  names the window "Configure Cmdr" there. Proposed rule: a pointer naming the settings window is capitalized as a name
+  on GNOME too. Rewords the GNOME branch only. (es, pt, vi, zh, zh-Hant)
+- `onboarding.localDownloadFailed.openSettings` ("Open Settings") is a plain value, while every sibling button naming
+  the settings window (`adb.connect.openSettings`, `stateRecovery.*.openSettings`) now carries `windows`, `linuxGnome`,
+  and `linuxKde` branches. Where Microsoft's word differs (ru `Параметры` beside Apple's `Настройки`) term-consistency
+  warns, and Windows, GNOME, and KDE users read the macOS word there. Give it the same per-OS value. (ru)
+- `onboarding.localDownloadFailed.openSettings` ("Open Settings") is still a plain value, while every other button
+  opening Cmdr's settings window gained a `windows` branch. French Windows says `Ouvrir les paramètres`, so the plain
+  `Ouvrir les réglages` now trips `i18n-terms` against `adb.connect.openSettings` and the `stateRecovery.*.openSettings`
+  windows branches. Give it the same per-OS shape (and GNOME/KDE branches). (fr)
+- `settings.indexing.enabled.label` and `settings.section.driveIndexing` ("Drive indexing") are plain values, quoted by
+  the `windows` branches of `fileExplorer.navigation.driveIndex.*` and `search.coverage.toast.indexingOff`. Windows'
+  French word for a drive is `lecteur` (the `drive` ruling's Windows form), so the label reads `Indexation du disque` on
+  Windows while the prose around it now says `lecteur`. A per-OS label would let the two agree. (fr)
+- `onboarding.localDownloadFailed.openSettings` ("Open Settings") names Cmdr's settings window as a plain value, so
+  Windows reads the macOS word (`Abrir Ajustes`) beside `Abrir Configuración` in its per-OS siblings; it needs the same
+  per-OS value as `stateRecovery.settings.openSettings`. Allowlisted for es and pt until then. (es, pt)
+- Six keys whose `windows` branch names the settings window carry no `identicalBranches` note and weren't stale, so a
+  translator finds them only by grepping: `menu.app.settings`, `fileExplorer.functionKeyBar.hiddenToast`,
+  `fileExplorer.quickFilter.intro.openSettings`, `onboarding.stepBeta.signup.unreachable`, `whatsNew.optOutToast`,
+  `ai.cloudConsent.logsNote` ("Advanced settings"). es and pt changed them to Microsoft's word; other locales where it
+  differs (fr, de, hu, ru) likely need the same. (es, pt)
+- The seeded `windows` branches copied the macOS text whole, so they also carried macOS words beyond "Settings" (pt
+  `disco` for drive, `iniciar a sessão` for sign in), which the termbase caught. And the plain Settings label
+  `settings.indexing.enabled.label` ("Drive indexing", pt `Indexação de disco`) then pins `disco` in four Windows
+  pointers that quote it: a per-OS value there would let Windows say `unidade`. (pt)
 
 ## Process feedback
 
@@ -339,3 +354,42 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   after a real apply reports dropped forks as failures. (es, nl, sv, zh-Hant)
 - The brief needed `node scripts/sync-locale-keys.ts <tag>` first (38 keys missing from the catalog); the brief could
   run it. (de, fr, nl, vi)
+- `decisions.md` budgets sit at the files' current size, so a parallel translator can't record a decision without
+  editing the shared `i18n-termbase-baseline.json`; vi and zh-Hant reverted theirs and kept the evidence in `terms.json`
+  notes. (vi, zh-Hant)
+- A ruling's `windows` / `other` form REPLACES the base `accept` for those branches instead of merging it, so adding one
+  to `settings` raised drift on three unrelated keys until the base accept was repeated in each form. Document it, or
+  inherit. (vi)
+- A deliberately empty English branch (`mtp.connectedToast.body`'s `windows {}`) counts as "still English" and needs a
+  `sameAsSourceJustification` in every locale; an empty source branch could be exempt. (es, pt, vi, zh, zh-Hant)
+- A ruling form scoped to the KDE branch (`linuxKde` beside `windows` / `other`) would replace the KDE `configure` words
+  each locale carries as an `accept` (46–56 termbase warnings cleared that way). (de, nl, sv, fr)
+- cs, ru, uk, hu settings-window batch: no catalog or termbase script. Each `values.json` was a `jq` one-liner turning
+  `keys.txt` into `{ "keep": true }` entries, merged with a hand-written file of the branches to change; a
+  `pnpm i18n:apply --keep-rest` (keep every batch key the file doesn't name) would replace it. `i18n:values` has no way
+  to show only the branches still in English, so finding the `linuxKde` gaps took a `grep "= English"` over its output.
+  The worktree guard refused a `for` loop over `i18n:values` per locale and a `while read` over the brief. (cs, ru, uk,
+  hu)
+- The settings-window `windows` pass listed only the 61 stale keys, but nine more keys already had a `windows` branch
+  carrying the macOS word (`menu.app.settings`, `fileExplorer.quickFilter.intro.openSettings`,
+  `fileExplorer.functionKeyBar.hiddenToast`, `whatsNew.optOutToast`, three `onboarding.stepBeta.*`, two more); only
+  `i18n-terms` surfaced two of them, and a catalog `grep` found the rest. A per-OS term ruling (`settings`' `windows`
+  form) could drive a check that lists every `windows` branch still using the base form. The seeded `windows` branches
+  also carried the macOS `drive` word (`disque`), flagged by the termbase only after apply. (fr)
+- Copying 70 `windows` branches out of `pnpm i18n:values` with a branch swap took a one-off `gawk` extractor (my own
+  values file, no catalog write), since the tool has no JSON output; a `--json` mode (key → branch → text) would have
+  made it a `jq` one-liner. KDE values typed by hand needed the U+00A0 inside « » added after the mechanics check. The
+  worktree guard refused a `jq … && mv` chain and an `echo >> keys.txt && jq` chain; split into single calls. (fr)
+- Extending a run's batch with keys that aren't stale meant appending to my own `keys.txt` by hand; `i18n:apply` has no
+  flag to add keys to the batch. (fr)
+- The empty `mtp.connectedToast.body` `windows` branch needed the same `sameAsSourceJustification` in de, nl, sv, and fr
+  too (see the entry above). (de, nl, sv, fr)
+- Rewording one word across a branch in 66 keys (Ajustes → Configuración on `windows`) had no tool, so I wrote two
+  throwaway helpers under `_ignored/i18n-work/tools/`: one dumps each key's `windows` / English `linuxKde` branch as a
+  draft values file, one applies ordered find-and-replace pairs to the `windows` branch and fills `{ "keep": true }` for
+  the rest. An `i18n:apply --branch windows --replace "A=>B"` (with a dry-run diff) would cover it. (es, pt)
+- Android labels have no pile source: the `usb-preferences` rulings came from AOSP Settings `strings.xml`
+  (`usb_preference`, `settings_label`, `usb_use_file_transfers`) fetched with `curl` from `aosp-mirror` for five
+  locales. Adding AOSP Settings to `i18n:pile-fetch` would make it a lookup. (es, pt, vi, zh, zh-Hant)
+- The worktree guard refused pipes and loops naming the scratchpad path (it contains `projects-git`), so the working
+  files moved under `_ignored/i18n-work/`. (es)

@@ -343,9 +343,9 @@
     "sourceHash": "e0926fd",
     "sameAsSourceJustification": "Loanword: the generic name for this class of app is \"Terminal\" here too, and Apple keeps the app name English in its localized Finder (\"Open in Terminal\", key N67); same as settings.navigationAndFileOps.card.terminal."
   },
-  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {De functietoetsbalk is nu verborgen. Zet hem op elk moment weer aan in <settingsLink>Instellingen</settingsLink>.} other {De functietoetsbalk is nu verborgen. Zet hem op elk moment weer aan in <settingsLink>Instellingen</settingsLink>.}}",
+  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {De functietoetsbalk is nu verborgen. Zet hem op elk moment weer aan in <settingsLink>Instellingen</settingsLink>.} linuxGnome {De functietoetsbalk is nu verborgen. Zet hem op elk moment weer aan in <settingsLink>Voorkeuren</settingsLink>.} linuxKde {De functietoetsbalk is nu verborgen. Zet hem op elk moment weer aan in <settingsLink>Cmdr configureren</settingsLink>.} other {De functietoetsbalk is nu verborgen. Zet hem op elk moment weer aan in <settingsLink>Instellingen</settingsLink>.}}",
   "@fileExplorer.functionKeyBar.hiddenToast": {
-    "sourceHash": "cb00b6d"
+    "sourceHash": "a829741"
   },
   "fileExplorer.typeToJump.prefix": "Ga naar: ",
   "@fileExplorer.typeToJump.prefix": {
@@ -524,9 +524,9 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Inloggegevens lokaal opgeslagen (Referentiebeheer niet beschikbaar)} linuxKde {Inloggegevens lokaal opgeslagen (KWallet niet beschikbaar)} other {Inloggegevens lokaal opgeslagen (geen systeemsleutelhanger gevonden)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Inloggegevens lokaal opgeslagen (Referentiebeheer niet beschikbaar)} linuxKde {Inloggegevens lokaal opgeslagen (KDE-portefeuille niet beschikbaar)} other {Inloggegevens lokaal opgeslagen (geen systeemsleutelhanger gevonden)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
-    "sourceHash": "d279dc9"
+    "sourceHash": "438153a"
   },
   "fileExplorer.network.share.notFound": "Gedeelde map ‘{shareName}’ niet gevonden op {hostName}",
   "@fileExplorer.network.share.notFound": {
@@ -560,9 +560,9 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Verwijder opgeslagen wachtwoord uit Sleutelhanger} windows {Verwijder opgeslagen wachtwoord uit Referentiebeheer} linuxKde {Verwijder opgeslagen wachtwoord uit KWallet} other {Verwijder opgeslagen wachtwoord uit je sleutelhanger}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Verwijder opgeslagen wachtwoord uit Sleutelhanger} windows {Verwijder opgeslagen wachtwoord uit Referentiebeheer} linuxKde {Verwijder opgeslagen wachtwoord uit de KDE-portefeuille} other {Verwijder opgeslagen wachtwoord uit je sleutelhanger}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "3d21c85"
+    "sourceHash": "ed20dcd"
   },
   "fileExplorer.network.share.useGuest": "Blader als gast",
   "@fileExplorer.network.share.useGuest": {
@@ -772,21 +772,21 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "Geopend in {app}. Wil je de volgende keer een andere editor? Kies er een in Instellingen.",
+  "fileExplorer.edit.hint": "{platform, select, windows {Geopend in {app}. Wil je de volgende keer een andere editor? Kies er een in Instellingen.} linuxGnome {Geopend in {app}. Wil je de volgende keer een andere editor? Kies er een in Voorkeuren.} linuxKde {Geopend in {app}. Wil je de volgende keer een andere editor? Kies er een in ‘Cmdr configureren’.} other {Geopend in {app}. Wil je de volgende keer een andere editor? Kies er een in Instellingen.}}",
   "@fileExplorer.edit.hint": {
-    "sourceHash": "3632f06"
+    "sourceHash": "2640119"
   },
-  "fileExplorer.edit.hintUnnamed": "Geopend in je standaardeditor. Wil je de volgende keer een andere? Kies er een in Instellingen.",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, windows {Geopend in je standaardeditor. Wil je de volgende keer een andere? Kies er een in Instellingen.} linuxGnome {Geopend in je standaardeditor. Wil je de volgende keer een andere? Kies er een in Voorkeuren.} linuxKde {Geopend in je standaardeditor. Wil je de volgende keer een andere? Kies er een in ‘Cmdr configureren’.} other {Geopend in je standaardeditor. Wil je de volgende keer een andere? Kies er een in Instellingen.}}",
   "@fileExplorer.edit.hintUnnamed": {
-    "sourceHash": "6216471"
+    "sourceHash": "5b5c767"
   },
   "fileExplorer.edit.dismiss": "Sluit",
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "Open instellingen",
+  "fileExplorer.edit.openSettings": "{platform, select, windows {Open instellingen} linuxGnome {Open voorkeuren} linuxKde {Cmdr configureren} other {Open instellingen}}",
   "@fileExplorer.edit.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "fileExplorer.edit.appMissing": "Cmdr kan de editor die je koos niet vinden, dus dit bestand is geopend in {app}.",
   "@fileExplorer.edit.appMissing": {
@@ -840,9 +840,9 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "Instellingen",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {Instellingen} linuxGnome {Voorkeuren} linuxKde {Cmdr configureren} other {Instellingen}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
-    "sourceHash": "74a883a"
+    "sourceHash": "6613a01"
   },
   "fileExplorer.clipboard.copiedPath": "Pad gekopieerd, het staat nu op het klembord:",
   "@fileExplorer.clipboard.copiedPath": {
@@ -953,9 +953,9 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in Sleutelhanger. Wil je het voorgoed kwijt, verwijder het dan in Sleutelhangertoegang.} windows {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in Referentiebeheer. Wil je het voorgoed kwijt, verwijder het dan in Referentiebeheer.} linuxGnome {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in je sleutelhanger. Wil je het voorgoed kwijt, verwijder het dan in Wachtwoorden en sleutels.} linuxKde {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in KWallet. Wil je het voorgoed kwijt, verwijder het dan in KWalletManager.} other {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in je sleutelhanger. Wil je het voorgoed kwijt, verwijder het dan in je sleutelhangerapp.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in Sleutelhanger. Wil je het voorgoed kwijt, verwijder het dan in Sleutelhangertoegang.} windows {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in Referentiebeheer. Wil je het voorgoed kwijt, verwijder het dan in Referentiebeheer.} linuxGnome {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in je sleutelhanger. Wil je het voorgoed kwijt, verwijder het dan in Wachtwoorden en sleutels.} linuxKde {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in de KDE-portefeuille. Wil je het voorgoed kwijt, verwijder het dan in KWalletManager.} other {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in je sleutelhanger. Wil je het voorgoed kwijt, verwijder het dan in je sleutelhangerapp.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
-    "sourceHash": "366f06a"
+    "sourceHash": "52da364"
   },
   "fileExplorer.restic.forgetPassword.unreachable": "Cmdr kon {name} zojuist niet bereiken, dus het wachtwoord blijft opgeslagen. Probeer het zo meteen opnieuw.",
   "@fileExplorer.restic.forgetPassword.unreachable": {
@@ -1850,13 +1850,13 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "Toegang tot telefoons en camera’s via MTP staat uit in Instellingen.",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {Toegang tot telefoons en camera’s via MTP staat uit in Instellingen.} linuxGnome {Toegang tot telefoons en camera’s via MTP staat uit in Voorkeuren.} linuxKde {Toegang tot telefoons en camera’s via MTP staat uit in ‘Cmdr configureren’.} other {Toegang tot telefoons en camera’s via MTP staat uit in Instellingen.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
-    "sourceHash": "53be5f6"
+    "sourceHash": "53f2cbb"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "Toegang tot Android-telefoons staat uit in Instellingen.",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {Toegang tot Android-telefoons staat uit in Instellingen.} linuxGnome {Toegang tot Android-telefoons staat uit in Voorkeuren.} linuxKde {Toegang tot Android-telefoons staat uit in ‘Cmdr configureren’.} other {Toegang tot Android-telefoons staat uit in Instellingen.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
-    "sourceHash": "4fba610"
+    "sourceHash": "eb9bed4"
   },
   "fileExplorer.navigation.favoriteUnreachable.forgotten": "Cmdr weet niet meer hoe het {kind, select, share {de gedeelde map ‘{place}’} server {de server ‘{place}’} phone {de telefoon ‘{place}’} other {‘{place}’}} kan bereiken. Maak er opnieuw verbinding mee vanuit Servers, dan werkt deze favoriet weer.",
   "@fileExplorer.navigation.favoriteUnreachable.forgotten": {
@@ -1866,9 +1866,9 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "Open instellingen",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {Open instellingen} linuxGnome {Open voorkeuren} linuxKde {Cmdr configureren} other {Open instellingen}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "fileExplorer.navigation.favoriteUnreachable.openServers": "Toon servers",
   "@fileExplorer.navigation.favoriteUnreachable.openServers": {
@@ -2229,21 +2229,21 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "Het indexeren van schijven staat uit in Instellingen, dus {name} wordt niet geïndexeerd. Zet het aan bij ‘Indexeren > Schijf indexeren’.",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {Het indexeren van schijven staat uit in Instellingen, dus {name} wordt niet geïndexeerd. Zet het aan bij ‘Indexeren > Schijf indexeren’.} linuxGnome {Het indexeren van schijven staat uit in Voorkeuren, dus {name} wordt niet geïndexeerd. Zet het aan bij ‘Indexeren > Schijf indexeren’.} linuxKde {Het indexeren van schijven staat uit in ‘Cmdr configureren’, dus {name} wordt niet geïndexeerd. Zet het aan bij ‘Indexeren > Schijf indexeren’.} other {Het indexeren van schijven staat uit in Instellingen, dus {name} wordt niet geïndexeerd. Zet het aan bij ‘Indexeren > Schijf indexeren’.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
-    "sourceHash": "0253edd"
+    "sourceHash": "e91977e"
   },
   "fileExplorer.navigation.driveIndex.driveLeaving": "{name} wordt losgekoppeld, dus Cmdr heeft de index gelaten zoals die was. Als de schijf verbonden blijft, probeer het dan zo meteen opnieuw.",
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "Het indexeren van schijven staat uit in Instellingen, dus er wordt nu geen schijf geïndexeerd.",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {Het indexeren van schijven staat uit in Instellingen, dus er wordt nu geen schijf geïndexeerd.} linuxGnome {Het indexeren van schijven staat uit in Voorkeuren, dus er wordt nu geen schijf geïndexeerd.} linuxKde {Het indexeren van schijven staat uit in ‘Cmdr configureren’, dus er wordt nu geen schijf geïndexeerd.} other {Het indexeren van schijven staat uit in Instellingen, dus er wordt nu geen schijf geïndexeerd.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
-    "sourceHash": "6ebf6f4"
+    "sourceHash": "76cf912"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "Het indexeren van schijven staat uit in Instellingen. Zet het aan bij ‘Indexeren > Schijf indexeren’, dan pakt deze schijf de draad weer op.",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {Het indexeren van schijven staat uit in Instellingen. Zet het aan bij ‘Indexeren > Schijf indexeren’, dan pakt deze schijf de draad weer op.} linuxGnome {Het indexeren van schijven staat uit in Voorkeuren. Zet het aan bij ‘Indexeren > Schijf indexeren’, dan pakt deze schijf de draad weer op.} linuxKde {Het indexeren van schijven staat uit in ‘Cmdr configureren’. Zet het aan bij ‘Indexeren > Schijf indexeren’, dan pakt deze schijf de draad weer op.} other {Het indexeren van schijven staat uit in Instellingen. Zet het aan bij ‘Indexeren > Schijf indexeren’, dan pakt deze schijf de draad weer op.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
-    "sourceHash": "26e250c"
+    "sourceHash": "90d82ab"
   },
   "fileExplorer.dragOut.failed": "{count, plural, =1 {Kon ‘{name}’ niet kopiëren.} one {Kon {countText} onderdeel niet kopiëren.} other {Kon {countText} onderdelen niet kopiëren.}}",
   "@fileExplorer.dragOut.failed": {
@@ -2349,9 +2349,9 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "Liever de cursor naar een overeenkomende naam verplaatsen zonder iets te verbergen? Schakel naar ‘Ga naar’, hier of in Instellingen.",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {Liever de cursor naar een overeenkomende naam verplaatsen zonder iets te verbergen? Schakel naar ‘Ga naar’, hier of in Instellingen.} linuxGnome {Liever de cursor naar een overeenkomende naam verplaatsen zonder iets te verbergen? Schakel naar ‘Ga naar’, hier of in Voorkeuren.} linuxKde {Liever de cursor naar een overeenkomende naam verplaatsen zonder iets te verbergen? Schakel naar ‘Ga naar’, hier of in ‘Cmdr configureren’.} other {Liever de cursor naar een overeenkomende naam verplaatsen zonder iets te verbergen? Schakel naar ‘Ga naar’, hier of in Instellingen.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
-    "sourceHash": "ac6d3c8"
+    "sourceHash": "a9cadc8"
   },
   "fileExplorer.quickFilter.intro.switchToJump": "Schakel naar ‘Ga naar’",
   "@fileExplorer.quickFilter.intro.switchToJump": {
@@ -2417,9 +2417,9 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "Cmdr onthoudt je antwoord voor deze twee servers. Je kunt het vergeten in Instellingen, onder Servers.",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr onthoudt je antwoord voor deze twee servers. Je kunt het vergeten in Instellingen, onder Servers.} linuxGnome {Cmdr onthoudt je antwoord voor deze twee servers. Je kunt het vergeten in Voorkeuren, onder Servers.} linuxKde {Cmdr onthoudt je antwoord voor deze twee servers. Je kunt het vergeten in ‘Cmdr configureren’, onder Servers.} other {Cmdr onthoudt je antwoord voor deze twee servers. Je kunt het vergeten in Instellingen, onder Servers.}}",
   "@fileExplorer.smbLinkConsent.note": {
-    "sourceHash": "3f9615a"
+    "sourceHash": "4e49784"
   },
   "fileExplorer.smbLinkConsent.allow": "Toestaan en inloggen",
   "@fileExplorer.smbLinkConsent.allow": {

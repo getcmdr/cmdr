@@ -429,9 +429,9 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "A Cmdr legközelebb ezzel a választással indul, és a Beállításokban módosíthatod. Ha ez a választás felülír fájlokat, előbb figyelmeztetést látsz.",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {A Cmdr legközelebb ezzel a választással indul, és a Beállításokban módosíthatod. Ha ez a választás felülír fájlokat, előbb figyelmeztetést látsz.} linuxGnome {A Cmdr legközelebb ezzel a választással indul, és a Beállításokban módosíthatod. Ha ez a választás felülír fájlokat, előbb figyelmeztetést látsz.} linuxKde {A Cmdr legközelebb ezzel a választással indul, és a Cmdr beállításaiban módosíthatod. Ha ez a választás felülír fájlokat, előbb figyelmeztetést látsz.} other {A Cmdr legközelebb ezzel a választással indul, és a Beállításokban módosíthatod. Ha ez a választás felülír fájlokat, előbb figyelmeztetést látsz.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "c26d762"
+    "sourceHash": "b23a78a"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "Néhány ütközésben egy fájl és egy azonos nevű mappa keveredik. A felülírás eltérő típusú elemeket cserél le, beleértve egy mappa teljes tartalmát is.",
   "@fileOperations.transferDialog.typeMismatchWarning": {
@@ -1305,9 +1305,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Megjegyzés a kulcskarikában} windows {Jelszó megjegyzése} linuxKde {Megjegyzés a KWalletben} other {Megjegyzés a kulcstartóban}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Megjegyzés a kulcskarikában} windows {Jelszó megjegyzése} linuxKde {Megjegyzés a KDE jelszókezelőben} other {Megjegyzés a kulcstartóban}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "fileOperations.resticPassword.checking": "Jelszó ellenőrzése…",
   "@fileOperations.resticPassword.checking": {

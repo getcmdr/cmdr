@@ -111,7 +111,11 @@ dialog buttons like macOS, KDE like Windows.
   screen reader pass (64) will read the rest.
 - **Seeing another desktop's row**: `CMDR_MOCK_CONVENTIONS=windows pnpm dev` (or `gnome`, `kde`, `otherLinux`, `macos`;
   debug builds only, `mock_conventions` in `conventions.rs`) hands every webview that row instead, which moves neither
-  the platform nor the capabilities.
+  the platform nor the capabilities. It also defines `__CMDR_COPY_PLATFORM__` (the mocked desktop's OS), which only
+  `getCopyPlatform()` and so the message runtime's branch pick follow, so the window speaks that desktop's words too
+  (`CMDR_MOCK_CONVENTIONS=gnome` on a Mac shows "Preferences"). **Decision/Why**: copy and conventions disagreeing in
+  dev hid every desktop branch from a Mac; moving the platform itself would also move keymaps and capabilities. The
+  native menu bar doesn't follow (`apps/desktop/src-tauri/src/intl/DETAILS.md`).
 
 ## The fallback
 

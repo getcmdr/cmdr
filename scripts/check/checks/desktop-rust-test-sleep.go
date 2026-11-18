@@ -130,7 +130,7 @@ func scanForTestSleep(rootDir, srcDir string) ([]testSleepSite, []orphanDirectiv
 }
 
 // isRustTestPath reports whether every line of a file is test code. That's the
-// conventional test-file names (isRustTestFile), plus any file under a `/tests/`
+// conventional test-filenames (isRustTestFile), plus any file under a `/tests/`
 // or `/<subject>_tests/` module directory (e.g. `indexing/tests/external_drive_fixture.rs`,
 // `mcp/tests/mod.rs`, `transfer/volume/copy_tests/progress.rs`), plus a
 // `*test_support*.rs` or `*test_fixtures*.rs` helper module. A production file

@@ -97,7 +97,9 @@ suite:
   name is a LaunchServices lookup by EXTENSION (`default_app_name`), never by the file's URL, so a slow share can't
   delay it; the price is that a per-file Get Info "Open with" override isn't seen. `default-app-open.ts`: the
   default-app open itself (§ "Opening a file in its default app").
-- `breadcrumb-bar.ts`: the displayed path plus the segment-click, context-menu, and volume-switch handlers.
+- `breadcrumb-bar.ts`: the displayed path plus the segment-click, context-menu, and volume-switch handlers. A Windows
+  drive or share reads like Explorer's address bar, its whole path from the root (`C:\Windows`, the root alone as
+  `C:\`), with the root as the first, clickable segment; every other volume reads relative to its mount point.
 - `deleted-dir-poll.ts` / `mtp-disconnect-watch.svelte.ts`: the two "what I'm showing is gone" recoveries.
 - `snapshot-selection-sync.svelte.ts`: a search-results pane's cursor and selection remapped by PATH whenever its
   entries array is replaced. It exists because the selection is a set of INDICES and a snapshot pane has no listing to
@@ -1528,6 +1530,14 @@ that store; this is only about what reaches disk and what comes off it.
 
 Both layers earn their place: the save side keeps the user on the folder they searched from, and the load side is what
 rescues an `app-status.json` that already holds a snapshot path, plus the tab whose history had no real folder to write.
+
+**A tab follows its disk when the disk moved roots.** `loadPaneTabs` asks `liveVolumePath({ volumeId, path })` (the
+backend's `location/last_roots.rs`) for each stored tab BEFORE the existence walk: a Windows drive back on another
+letter, or a Mac disk back at `/Volumes/Backup 1`, rebases the tab's path onto the volume's live root, so the walk never
+probes the old root, which may hold another disk now. A volume sitting where it did answers `keep` and the tab loads as
+before. A volume the startup sweep hasn't registered yet answers `notReady` (after a bounded wait): the tab keeps its
+stored path and id unprobed, `loadPaneTabs` lists it in `registryPendingTabIds`, and `initialization.ts` skips
+`resolveVolumeId` for it and shows it unreachable, so the old letter's new disk can't claim it.
 
 **Why it mattered.** `resolvePersistedPath` passes every `scheme://` path through unprobed (a server or phone path can't
 answer a probe at launch) and `initialization.ts::resolveVolumeId` exempts only `network`, so a restored snapshot tab

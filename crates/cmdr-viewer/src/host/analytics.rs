@@ -1,4 +1,4 @@
-//! The `viewer_opened` facts, for the host's usage stats. ❌ Never a file name or
+//! The `viewer_opened` facts, for the host's usage stats. ❌ Never a filename or
 //! extension: the app's `file_viewer/analytics.rs` turns these into coarse tokens.
 
 use super::super::{ViewerError, ViewerOpenResult};

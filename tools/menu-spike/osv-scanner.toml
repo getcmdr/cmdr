@@ -1,0 +1,16 @@
+# osv-scanner ignores for `tools/menu-spike/Cargo.lock` only (see the root `osv-scanner.toml`). The
+# menu spike is a throwaway measuring tool for the Windows menu model: nothing here ships in the app,
+# the website, or the API server. Its lockfile started as a copy of the root one, so these are the
+# root's own entries; the app's copies are ignored there with their reasons.
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2024-0370"
+reason = "proc-macro-error is unmaintained: a build-time proc macro under Tauri's Linux GTK stack, in a spike that never ships."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2024-0429"
+reason = "glib 0.18 (unsound VariantStrIter): Tauri's Linux GTK stack, pinned by the app's Tauri version, in a spike that never ships."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0543"
+reason = "chrono is unmaintained (notice only, no known vulnerability): transitive only, in a spike that never ships."

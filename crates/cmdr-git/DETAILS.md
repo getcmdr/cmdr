@@ -463,7 +463,7 @@ approver"), which:
 Every portal lookup that can legitimately find nothing answers `Lookup<T>` (`Result<Option<T>, FriendlyGitError>`, in
 `lib.rs`): `Ok(None)` means "that path isn't in this snapshot", `Err` means the repo couldn't answer at all.
 `found_or_not_found` folds the first into `VolumeError::NotFound` carrying the path the caller asked for, which is what
-the transfer layer renders as the user's own file name, and the second into `VolumeError::FriendlyGit` with the
+the transfer layer renders as the user's own filename, and the second into `VolumeError::FriendlyGit` with the
 git-specific repair copy.
 
 Four things resolve to `Ok(None)`: a name `gix`'s tree walk doesn't find (`tree::resolve_tree_at`, `get_tree_entry`,

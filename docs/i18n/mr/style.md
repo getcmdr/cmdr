@@ -110,7 +110,7 @@ Devanagari digits are available only via an explicit `-nu deva` override.
 Marathi has THREE grammatical genders (masculine, feminine, neuter) and finite verbs agree with the subject's gender and
 number. This is the highest dynamic-string risk in Marathi:
 
-- A sentence whose verb agrees with a runtime-inserted noun (a file name, an item the user picked) can't be written
+- A sentence whose verb agrees with a runtime-inserted noun (a filename, an item the user picked) can't be written
   gender-correctly, because the gender of `{name}` isn't known at translation time.
 - **Two natural escape hatches Cmdr's UI already favors:** (1) the `-आ` imperative used for buttons/actions is
   gender-neutral, and (2) future-tense verb forms do NOT mark gender in Marathi. Past-tense and completed-action

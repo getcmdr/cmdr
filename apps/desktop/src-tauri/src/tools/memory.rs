@@ -107,7 +107,7 @@ fn detail_of(refusal: &MemoryRefusal) -> String {
             "That path leaves your memory folder. Use a plain relative name like AGENTS.md.".to_string()
         }
         MemoryRefusal::NotMarkdown => "Memory holds Markdown only, so the name has to end in .md.".to_string(),
-        MemoryRefusal::NoPath => "No file name was given.".to_string(),
+        MemoryRefusal::NoPath => "No filename was given.".to_string(),
         // The refusal's own `cap`, ❌ never the folder constant: a tool write is priced against
         // what the tools may claim, which is the folder minus the decision ring's reserve, and
         // quoting the bigger number would send the model pruning to a ceiling it can't reach.

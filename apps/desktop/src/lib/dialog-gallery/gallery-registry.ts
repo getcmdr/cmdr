@@ -224,7 +224,7 @@ export const DIALOG_GALLERY_ENTRIES: DialogGalleryEntry[] = [
     label: 'Tool question',
     hostWindow: 'main',
     status: 'ready',
-    note: 'Nothing happens either way: the answer lives in props the gallery leaves empty. In the app a tool waits on this, and whatever fills the blanks comes from a file name or a model. Opens unarmed: the Allow button stays muted and keys do nothing but Escape until the keyboard has been quiet for 800 ms.',
+    note: 'Nothing happens either way: the answer lives in props the gallery leaves empty. In the app a tool waits on this, and whatever fills the blanks comes from a filename or a model. Opens unarmed: the Allow button stays muted and keys do nothing but Escape until the keyboard has been quiet for 800 ms.',
     states: [
       { id: 'openFile', label: 'Open a file' },
       { id: 'openFileUnknownApp', label: 'Open a file nothing claims' },

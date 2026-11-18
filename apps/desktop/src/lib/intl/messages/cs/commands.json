@@ -35,9 +35,9 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "Otevřít Nastavení",
+  "commands.appSettings.label": "{platform, select, windows {Otevřít Nastavení} linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@commands.appSettings.label": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "commands.appCheckForUpdates.label": "Vyhledat aktualizace…",
   "@commands.appCheckForUpdates.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Odstraní uložené heslo zálohy restic, ve které právě jste, ze svazku klíčů a zálohu znovu zamkne} windows {Odstraní uložené heslo zálohy restic, ve které právě jste, ze Správce přihlašovacích údajů a zálohu znovu zamkne} linuxKde {Odstraní uložené heslo zálohy restic, ve které právě jste, z úložiště KWallet a zálohu znovu zamkne} other {Odstraní uložené heslo zálohy restic, ve které právě jste, ze systémové klíčenky a zálohu znovu zamkne}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Odstraní uložené heslo zálohy restic, ve které právě jste, ze svazku klíčů a zálohu znovu zamkne} windows {Odstraní uložené heslo zálohy restic, ve které právě jste, ze Správce přihlašovacích údajů a zálohu znovu zamkne} linuxKde {Odstraní uložené heslo zálohy restic, ve které právě jste, z úschovny KDE a zálohu znovu zamkne} other {Odstraní uložené heslo zálohy restic, ve které právě jste, ze systémové klíčenky a zálohu znovu zamkne}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "5b48a77"
+    "sourceHash": "e7106da"
   },
   "commands.fileCopyShareLink.label": "Zkopírovat odkaz ke sdílení (na sedm dní)",
   "@commands.fileCopyShareLink.label": {
@@ -1264,17 +1264,17 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "Tato složka se otevřela ve vaší terminálové aplikaci. Chcete, aby Cmdr příště otevřel jinou aplikaci? Vyberte ji v Nastavení v části Navigace a operace se soubory.",
+  "commands.handler.openTerminalHere.hint": "{platform, select, windows {Tato složka se otevřela ve vaší terminálové aplikaci. Chcete, aby Cmdr příště otevřel jinou aplikaci? Vyberte ji v Nastavení v části Navigace a operace se soubory.} linuxGnome {Tato složka se otevřela ve vaší terminálové aplikaci. Chcete, aby Cmdr příště otevřel jinou aplikaci? Vyberte ji v Předvolbách v části Navigace a operace se soubory.} linuxKde {Tato složka se otevřela ve vaší terminálové aplikaci. Chcete, aby Cmdr příště otevřel jinou aplikaci? Vyberte ji v okně Nastavit Cmdr v části Navigace a operace se soubory.} other {Tato složka se otevřela ve vaší terminálové aplikaci. Chcete, aby Cmdr příště otevřel jinou aplikaci? Vyberte ji v Nastavení v části Navigace a operace se soubory.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b29b744"
+    "sourceHash": "5d6063c"
   },
   "commands.handler.openTerminalHere.dismiss": "Zavřít",
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "Otevřít Nastavení",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Otevřít Nastavení} linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "a28ffff"
   },
   "commands.handler.openTerminalHere.appMissing": "Aplikace {app} už není nainstalovaná, proto se složka otevřela v Terminálu.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1344,9 +1344,9 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "Ukládání protokolů je vypnuté. Chcete-li zobrazit ladicí protokol, nastavte v Nastavení > Pokročilé limit místa na disku větší než 0 a restartujte Cmdr.",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, windows {Ukládání protokolů je vypnuté. Chcete-li zobrazit ladicí protokol, nastavte v Nastavení > Pokročilé limit místa na disku větší než 0 a restartujte Cmdr.} linuxGnome {Ukládání protokolů je vypnuté. Chcete-li zobrazit ladicí protokol, nastavte v Předvolbách > Pokročilé limit místa na disku větší než 0 a restartujte Cmdr.} linuxKde {Ukládání protokolů je vypnuté. Chcete-li zobrazit ladicí protokol, nastavte v okně Nastavit Cmdr > Pokročilé limit místa na disku větší než 0 a restartujte Cmdr.} other {Ukládání protokolů je vypnuté. Chcete-li zobrazit ladicí protokol, nastavte v Nastavení > Pokročilé limit místa na disku větší než 0 a restartujte Cmdr.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "96f16fc"
+    "sourceHash": "1fb0c6a"
   },
   "commands.handler.viewDebugLog.unavailable": "Ladicí protokol se nepodařilo otevřít. Zkuste to znovu.",
   "@commands.handler.viewDebugLog.unavailable": {

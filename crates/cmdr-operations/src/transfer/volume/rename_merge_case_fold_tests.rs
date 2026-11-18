@@ -17,20 +17,20 @@ use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, VolumeCopyConfig};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{Volume, VolumeError};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 use tempfile::TempDir;
 
-/// A `LocalPosixVolume` wrapper that makes `rename` and `list_directory`
+/// A `LocalVolume` wrapper that makes `rename` and `list_directory`
 /// case-insensitive, modeling SMB / APFS. Renaming onto an existing
 /// case-folded name returns `AlreadyExists` even when the exact-match map
 /// missed it; listing reflects the real on-disk (lowercased fixture) names so
 /// the late-detection path can find the case-folded sibling.
 struct CaseInsensitiveVolume {
-    inner: Arc<LocalPosixVolume>,
+    inner: Arc<LocalVolume>,
 }
 
 impl CaseInsensitiveVolume {
@@ -141,7 +141,7 @@ async fn case_folded_file_collision_prompts_exactly_once() {
     write_file(root, "dst/album/clash.txt", b"DEST");
 
     let volume: Arc<dyn Volume> = Arc::new(CaseInsensitiveVolume {
-        inner: Arc::new(LocalPosixVolume::local_folder(
+        inner: Arc::new(LocalVolume::local_folder(
             "V",
             root.to_path_buf(),
             crate::host::testing::pane_order_host(),
@@ -193,7 +193,7 @@ async fn case_folded_overwrite_does_not_prompt_twice() {
     write_file(root, "dst/album/photo.jpg", b"DEST-OLD");
 
     let volume: Arc<dyn Volume> = Arc::new(CaseInsensitiveVolume {
-        inner: Arc::new(LocalPosixVolume::local_folder(
+        inner: Arc::new(LocalVolume::local_folder(
             "V",
             root.to_path_buf(),
             crate::host::testing::pane_order_host(),

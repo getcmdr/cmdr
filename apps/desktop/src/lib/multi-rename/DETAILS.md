@@ -190,7 +190,7 @@
   on like a set filter chip (the chip family's one "on" look, `#lib/ui/DETAILS.md` § Chip), and `size="field"` so they
   stand as tall as the text fields. Each tooltip names the option, shows its key chip, and gives one tiny replace on a
   made-up file with the option on and off: "Replacing `photo` with `pic` in `Photo photo.jpg`:", then
-  `On  Photo pic.jpg` / `Off  pic pic.jpg`, the text the replace put in bold, the rest quiet. Each option's file name is
+  `On  Photo pic.jpg` / `Off  pic pic.jpg`, the text the replace put in bold, the rest quiet. Each option's filename is
   chosen so the option changes the result (`search-option-help.ts`).
 - **Option keys**: ⌘⌥U opens Letter case (focus + click on its `.select-trigger`, `Select`'s stable class, so the menu
   opens on the checked row as a click would), and ⌘⌥ G/N/P/I/F/E/R/W flip Greek to Latin, Remove diacritics, Normalize
@@ -301,7 +301,7 @@ The session reads its files' EXIF and tags in the background from the moment it 
 
 ## Tooltip examples
 
-- **Made-up files, rendered by the real engine.** Every example is a `RenameExample` (a file name and a full spec on
+- **Made-up files, rendered by the real engine.** Every example is a `RenameExample` (a filename and a full spec on
   `DEFAULT_SPEC`), all asked in ONE `render_multi_rename_examples` call on open (`renderExamples`, keyed by mask or by
   `searchExampleKey`) and answered by `plan::render_examples`, which runs `Compiled::render` (what the preview runs) on
   the file in `Trips/Lisbon 2026`, last changed 2026-07-14 09:05:30. So an example can't drift from what a rename does,

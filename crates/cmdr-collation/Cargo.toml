@@ -12,7 +12,7 @@ publish = false
 workspace = true
 
 [dependencies]
-# Unicode collation for file-name ordering: normalization-insensitive, numeric
+# Unicode collation for filename ordering: normalization-insensitive, numeric
 # ordering (so `img_9` precedes `img_10`), and locale-correct accent placement.
 # `unstable` is for `write_sort_key_to`; ICU4X exempts it from semver, and an API
 # change there is a compile error, never a silent one. ❌ Never persist a key:
