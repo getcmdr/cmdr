@@ -101,9 +101,10 @@ Settled:
   - Hard floor: Windows 7/8/8.1 are out. WebView2 stopped updating there in 2023-01, and Rust's tier-1
     `x86_64-pc-windows-msvc` has required Windows 10 since 2024 (the Win7 target is tier 3, no prebuilt std). Total
     Commander reaches Windows 95 only because it's a native Win32 app with no browser engine.
-- **D5. App paths are a type** (David, 2026-11-18, #1225 option a): the `Volume` trait takes a typed `AppPath`, so a
+- **D6. App paths are a type** (David, 2026-11-18, #1225 option a): the `Volume` trait takes a typed `AppPath`, so a
   native path can't go where an app path belongs, and a consumer that means "this machine's local disk" names
-  `cmdr_local::LocalVolume` (the lead, on David's delegation). Plan: `docs/specs/app-path-plan.md`.
+  `cmdr_local::LocalVolume` (the lead, on David's delegation). Plan: `docs/specs/app-path-plan.md`. (Numbered D6 because
+  the menu model's branch already holds D5.)
 
 - **D3. Code signing and distribution** (David, 2026-11-04): Store first, a paid certificate only once Windows pays for
   it.
