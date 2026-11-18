@@ -7,19 +7,20 @@
 //! reading would be wrong whenever that doubled folder really exists, so the
 //! anchoring stays and the dialog warns instead, naming both readings.
 
+use crate::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 
 /// A typed path that starts with its volume's root folder, in both readings.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RootEcho {
     /// The server-side folder the volume is rooted at (`/srv/data`).
-    pub root_folder: PathBuf,
+    pub root_folder: AppPathBuf,
     /// Where the path goes as typed, spelled server-side
     /// (`/srv/data/srv/data/photos`).
-    pub resolved: PathBuf,
+    pub resolved: AppPathBuf,
     /// The path with the repeated root folder taken off, in the box's own
     /// volume-relative dialect (`/photos`).
-    pub stripped: PathBuf,
+    pub stripped: AppPathBuf,
 }
 
 /// The two readings of `path` when it starts with `root`'s own folder, or `None`
@@ -40,9 +41,9 @@ pub fn root_echo(root: &Path, path: &Path) -> Option<RootEcho> {
     let server_spelling = Path::new("/").join(relative);
     let rest = server_spelling.strip_prefix(&root_folder).ok()?;
     Some(RootEcho {
-        resolved: root_folder.join(relative),
-        stripped: Path::new("/").join(rest),
-        root_folder,
+        resolved: AppPath::legacy_unchecked(&root_folder.join(relative)).into_owned(),
+        stripped: AppPath::legacy_unchecked(&Path::new("/").join(rest)).into_owned(),
+        root_folder: AppPath::legacy_unchecked(&root_folder).into_owned(),
     })
 }
 
