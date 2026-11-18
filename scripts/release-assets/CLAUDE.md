@@ -26,4 +26,5 @@ targets), and the CLI the release pipeline's shell steps call (`../release-asset
 - ❌ Don't drop `dmgSizes` from `latest.json` before the release after the first one with `downloads`: website builds
   from before read it.
 
-Design, the dry run's reach, and what only a real release proves: `DETAILS.md`.
+Design, the dry run's reach, and what only a real release proves: `DETAILS.md`. Read it before any non-trivial work
+here: editing, planning, reorganizing, or advising.

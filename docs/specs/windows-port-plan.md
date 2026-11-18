@@ -1,8 +1,9 @@
 # Windows port plan
 
-**Cmdr runs on macOS (and builds on Linux), and has zero Windows code.** This plan gets there gradually: most steps are
-refactors that make the codebase better on their own (platform seams, decoupling, typed errors), each landable on a Mac,
-so the Windows-only work at the end shrinks to filling in arms behind seams that already exist.
+**Cmdr runs on macOS (and builds on Linux), and had zero Windows code when this plan started.** This plan gets there
+gradually: most steps are refactors that make the codebase better on their own (platform seams, decoupling, typed
+errors), each landable on a Mac, so the Windows-only work at the end shrinks to filling in arms behind seams that
+already exist.
 
 Status: planned 2026-11-04 at `7a199a9705`. Tracking issue: [#942](https://github.com/getcmdr/cmdr/issues/942). Evidence
 (static reads, no Windows compile yet):
@@ -117,6 +118,17 @@ Settled:
     $119.88/year (SmartScreen still warns until reputation builds). Total Commander's route, a Sectigo OV certificate
     for its company (valid 2025-09-26 to 2028-09-25, read from `tcmd115801x64.exe`), costs more for the same trust as
     Azure. Since 2024, EV no longer buys instant SmartScreen reputation either.
+
+Open, waiting on David (each task entry has the detail):
+
+- **How a consumer names the host's local volume** (task 35/36): about 150 sites, mostly `cmdr-operations` tests, name
+  `LocalPosixVolume`, which doesn't exist on Windows (`docs/notes/windows-port/build-progress.md`, last entry).
+- **The drive and UNC volume id scheme** (task 34).
+- **Dialog keys** (task 61): (a) Enter and ⌘. per the macOS row, (b) keytips versus underlined letters.
+- **The menu model** on Windows and per Linux desktop (task 63).
+- **The frozen-macOS copy guard's removal**, after reviewing `docs/notes/windows-port/macos-copy-accepted-review.md`
+  (task 28).
+- **macOS hand checks** from the keymap work (task 26).
 
 ## Bugs the audits found on the way
 
@@ -303,7 +315,7 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     `nfs`/`s3`/`servers`/`sftp`/`volume_sign_in`/`webdav` commands are on every OS (their IPC groups are `cfg(all())`),
     and `smb2` and `mdns-sd` sit in `[dependencies]` (both build for `x86_64-pc-windows-gnu`). Still macOS+Linux: MTP,
     eject, volumes, `commands::network`, and `network/`'s OS-mount files, whose per-OS gates now mark exactly where
-    Windows lacks an arm (tasks 20 and 22). The backend crates themselves stop only in `cmdr-fs` on Windows.
+    Windows lacks an arm (tasks 20 and 22).
 22. [M] Win. **Done**. `network/os_mount/` holds `mount_share`, the NetFS-wedge ledger, the mount watch, and one
     `MountResult`/`MountError` (three hand-mirrored copies before); `os_mount/platform/` pins each arm's mount, unmount,
     share-list CLI (smbutil, smbclient, none), and sign-in-helper probe, with an explicit Windows arm. `keychain.rs` and
@@ -325,7 +337,8 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     `platform/` seam, typed into `bindings.ts`) arrives beside the platform in the same init script; 46 of the 72
     `isMacOS()` calls (in 28 files) now ask `hasCapability()`, settings' `macOSOnly` and `needsImageIndexing` became one
     `needsCapability`, and CSS keys the title bar on `data-overlay-title-bar`. Left as platform questions: 11 (key
-    glyphs, the macOS updater flow, the old-macOS notice); for 26: 5 keymap sites; for 27: 10 copy variants.
+    glyphs, the macOS updater flow (task 33 removed it), the old-macOS notice); for 26: 5 keymap sites; for 27: 10 copy
+    variants.
 26. [S] Win. **Done**. Per-platform default keymap ([#1102](https://github.com/getcmdr/cmdr/issues/1102), with
     [#1110](https://github.com/getcmdr/cmdr/issues/1110) and [#1114](https://github.com/getcmdr/cmdr/issues/1114)):
     every command's `shortcuts` is three lists, one per OS in its own spelling, written with `sameOnAll` / `cmdOrCtrl` /
@@ -613,7 +626,7 @@ choices, checked against the GNOME and KDE guidelines in task 59 (2026-11-18; so
 unverified: `docs/notes/windows-port/platform-conventions.md`):
 
 - **Shortcuts**: Windows (Ctrl-based), minus what GNOME and KDE reserve (task 26's per-desktop survey). GNOME's HIG also
-  keeps Alt+letter for access keys, which task 61 settles.
+  keeps Alt+letter for access keys, which task 61 gives every Linux desktop.
 - **Window chrome**: Windows (native decorations, already decided).
 - **Paths, Trash, permissions**: macOS (POSIX).
 - **Dialog button order**: splits by desktop, GNOME like macOS (its HIG) and KDE like Windows (Qt's `KdeLayout`; the KDE
@@ -629,9 +642,10 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
     in the same init script. One cross-target table answers all five desktops and each OS arm picks its row, so a Rust
     test pins the frontend's `conventions-on.json` (the demo's and the test helpers' copy) on any machine. Primitives
     ask `convention('dialogButtonOrder')`, ❌ never the platform (`apps/desktop/src/lib/platform/DETAILS.md` §
-    Conventions); nothing asks yet. The guidelines confirmed the table above, with KDE's order from Qt since its HIG is
-    silent, and corrected task 64: Windows' leading screen reader is JAWS. The menu model carries today's bar until
-    task 63. Evidence: `docs/notes/windows-port/platform-conventions.md`. Needs 25.
+    Conventions); `ModalDialog` asks for the button order and access keys (task 61). The guidelines confirmed the table
+    above, with KDE's order from Qt since its HIG is silent, and corrected task 64: Windows' leading screen reader is
+    JAWS. The menu model carries today's bar until task 63. Evidence: `docs/notes/windows-port/platform-conventions.md`.
+    Needs 25.
 60. [M] Windows. A Windows theme for the `lib/ui` primitives, following Fluent 2: buttons, dropdowns, checkboxes,
     switches, text fields, scrollbars, focus visuals, tooltips, and context menus, as tokens keyed on the platform so
     components stay one implementation. David reviews the design. Linux: its own neutral theme, same token set.

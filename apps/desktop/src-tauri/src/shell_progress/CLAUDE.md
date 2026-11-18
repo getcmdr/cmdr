@@ -26,4 +26,5 @@ never sees it.
   `MIN_UPDATE_GAP`.
 - Exit needs no cleanup: the bar belongs to the process (macOS Dock tile, Windows window, Unity's D-Bus name).
 
-The aggregation rules with their whys, each OS's look, and the QA recipe: `DETAILS.md`.
+The aggregation rules with their whys, each OS's look, and the QA recipe: `DETAILS.md`. Read it before any non-trivial
+work here: editing, planning, reorganizing, or advising.

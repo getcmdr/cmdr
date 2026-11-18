@@ -23,8 +23,9 @@ parent (`cmdr-archive`'s `confirm_archive_boundary_on_parent`, the same one the 
 zero-network `std::fs` fast path for a local one. Copy/move INTO already routed correctly (the dest goes through the
 async `resolve` → `dest_resolved.is_archive`). The `route_*` functions then re-split the confirmed path with the
 pure-string `archive_boundary_candidate` (NOT `confirm_archive_boundary`, whose `std::fs` confirm would wrongly fail for
-a remote zip) — confirmation already happened at the seam. Pinned by the `path_is_inside_archive_*` unit tests in
-`apps/desktop/src-tauri/src/file_system/volume/manager.rs` (local + remote + `read_range`-unsupported + mislabeled).
+a remote zip): confirmation already happened at the seam. Pinned by `crates/cmdr-archive/src/boundary_on_parent_test.rs`
+(the confirm: local, remote, a sniff fault, mislabeled) and the `path_is_inside_archive_*` tests in
+`apps/desktop/src-tauri/src/file_system/volume/manager/archive_routing.rs` (the registry's routing).
 
 ## Local vs remote: one closure, one dispatcher (`run_managed_edit`)
 

@@ -88,7 +88,7 @@ Depth for the handlers shared with outside clients. `CLAUDE.md` holds the must-k
   `commands::memory_diagnostics::get_memory_diagnostics` straight through. It exists so the reading can be taken from
   OUTSIDE the app — the command ships in release builds precisely because the interesting numbers only appear in one
   under a real workload, and until this tool nothing could call it there. `sizesPerTag` defaults to 8 (the command
-  clamps at 24). macOS only: the tool isn't offered elsewhere (`needs: ProcessDiagnostics`), since a payload of zeros would read as a
+  clamps at 24). macOS only: the tool isn't offered elsewhere (`needs: MemoryDiagnostics`), since a payload of zeros would read as a
   measurement. How to read the payload: `../../commands/memory_diagnostics.rs` module docs and
   `docs/tooling/memory-debugging.md`.
 - **`multi_rename.rs`**: `multi_rename`, the Multi-Rename Tool (⌃M) for an external agent, `Access::Propose`. Every

@@ -184,7 +184,7 @@ parse and every decompress run on the host runtime's blocking pool), but `Volume
 `VolumeByteSource` holds the host's runtime (`host.runtime()`, handed in by `open_remote_source`, never an ambient
 `Handle::current()`) and `block_on`s the parent's `read_range` inside the blocking read. In the browser build, where a
 page can't block, it answers `NotSupported`. Sound because `read_at` only ever runs on a `spawn_blocking` thread (never
-a runtime worker), so `block_on` doesn't reenter the executor — the same bridge the viewer's archive extractor uses. It
+a runtime worker), so `block_on` doesn't reenter the executor: the same bridge the viewer's archive extractor uses. It
 clamps requests to the known size so rc-zip's read-ahead past EOF doesn't ask the backend for absent bytes.
 
 **One tail read for the central directory (`TailCachedSource`, `src/read/source.rs`).** rc-zip's sans-IO fsm finds the
@@ -271,7 +271,7 @@ An `ArchiveVolume` is never constructed here directly in production — it's min
   `.zip` isn't reachable through the local filesystem, so `confirm_remote_archive_boundary`
   (`src/boundary_on_parent.rs`) confirms through the parent volume's OWN I/O: `parent.get_metadata(zip)` (must be a
   file, not a directory) plus a `parent.read_range(zip, 0, ARCHIVE_MAGIC_PREFIX_LEN)` (512 bytes, one tar block) sniffed
-  with the SAME `bytes_match_archive_magic` predicate the local path uses — one shared detector, never forked.
+  with the SAME `bytes_match_archive_magic` predicate the local path uses: one shared detector, never forked.
   `confirm_archive_boundary_on_parent` picks between them by `parent.supports_local_fs_access()`, keeping the local
   path's zero-I/O fast filter (no archive-extension component ⇒ no I/O at all). The host's `VolumeManager` keeps only
   what needs its registry (minting and registering the `ArchiveVolume`, the LRU, the content watch and its coverage
