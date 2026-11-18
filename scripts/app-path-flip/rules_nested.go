@@ -30,16 +30,35 @@ func nestedPreludeEdits(d *diagnostic, src *source, p *diagSpan) []edit {
 	if fn == nil {
 		return nil
 	}
-	kind := ""
-	for _, prm := range fn.params {
-		if prm.name == name {
-			kind = typedParamKind(prm.typ)
-		}
-	}
+	kind := paramKind(fn, name)
 	span := preludeSpan(src, fn, name)
 	if kind == "" || span == nil || span[1] > p.ByteStart {
 		return nil
 	}
+	edits := nestedBlockEdits(src, p, name, kind)
+	if len(edits) == 0 {
+		return nil
+	}
+	keep := "let " + name + "_app = " + name + ";"
+	if !strings.HasSuffix(strings.TrimRight(string(src.text[fn.bodyStart:span[0]]), " \t\n"), keep) {
+		edits = append(edits, edit{file: src.path, start: span[0], end: span[0], text: "\n" + keep, rule: ruleNestedPrelude})
+	}
+	return edits
+}
+
+// paramKind is typedParamKind of fn's param called name, or "".
+func paramKind(fn *implMethod, name string) string {
+	for _, prm := range fn.params {
+		if prm.name == name {
+			return typedParamKind(prm.typ)
+		}
+	}
+	return ""
+}
+
+// nestedBlockEdits gives each outermost `async move { … }` in p that reads name its prelude;
+// none when a block runs past p.
+func nestedBlockEdits(src *source, p *diagSpan, name, kind string) []edit {
 	var edits []edit
 	for k := p.ByteStart; k < p.ByteEnd; {
 		loc := asyncMoveOpen.FindIndex(src.masked[k:p.ByteEnd])
@@ -55,13 +74,6 @@ func nestedPreludeEdits(d *diagnostic, src *source, p *diagSpan) []edit {
 			edits = append(edits, edit{file: src.path, start: open, end: open, text: nestedPreludeText(name, kind), rule: ruleNestedPrelude})
 		}
 		k = end + 1
-	}
-	if len(edits) == 0 {
-		return nil
-	}
-	keep := "let " + name + "_app = " + name + ";"
-	if !strings.HasSuffix(strings.TrimRight(string(src.text[fn.bodyStart:span[0]]), " \t\n"), keep) {
-		edits = append(edits, edit{file: src.path, start: span[0], end: span[0], text: "\n" + keep, rule: ruleNestedPrelude})
 	}
 	return edits
 }
