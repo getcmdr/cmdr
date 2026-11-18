@@ -68,8 +68,15 @@ Flip your crates in dependency order (a crate after every crate it depends on, d
   `cmdr-archive`'s `a_typed_root_has_no_path_shaped_arithmetic_in_reach` fails to compile if the trait is imported or
   the methods go back on the inherent impl.
 - **Line numbers in the residue list** are from before the final `cargo fmt`; `cargo check` gives the current ones.
-- **A helper that does work before its future starts** (`fn … -> Pin<Box<…>>`) stays residue: moving its call into an
-  `async move` would delay that work to the first poll.
+- **A helper that does work before its future starts** (`fn … -> Pin<Box<…>>` with a statement before its `Box::pin`)
+  stays residue: moving its call into an `async move` would delay that work to the first poll. A lazy one (an
+  `async fn`, or a body that is only `Box::pin(async move { … })`), nested or in another crate, is the codemod's (README
+  § "Lazy helper"). Of the reported sites: `cmdr-smb`'s five (`scan_for_copy_impl`, `scan_for_copy_batch_impl`,
+  `scan_for_conflicts_impl`, `write_from_stream_impl`, `continue_write_from_stream_impl`) and `cmdr-sftp`'s
+  `noting`/`scan_walk`/`patch_mutation` trees are lazy; of `cmdr-local`'s nine only
+  `scan_for_copy_batch_with_boundary_impl` is (the rest call `self.resolve(path)` first, or `stream_into`, which does).
+- **Trees flipped before the import fix**: run `go -C scripts/app-path-flip run . -audit-imports <crate dir>` and lift
+  any hit that took an item's `#[cfg]` (README § "Imports").
 - **`app_path!` takes only canonical literals**: relative literals (`Path::new("dir/file.txt")`, an archive's inner
   paths) and ones with a trailing `/` ride `legacy_unchecked`, as the plan says.
 - **Imports**: one `use` line per name (rustfmt doesn't merge them), so a file can gain

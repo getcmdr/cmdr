@@ -12,6 +12,7 @@ type source struct {
 	text    []byte
 	masked  []byte
 	methods []implMethod
+	fns     []implMethod // every fn with a body, for the rules that aren't about a Volume impl
 }
 
 // implMethod is one `fn` inside an `impl … Volume for …` block.
@@ -34,6 +35,7 @@ type param struct {
 func newSource(path string, text []byte) *source {
 	s := &source{path: path, text: text, masked: mask(text)}
 	s.methods = findVolumeImplMethods(s.masked)
+	s.fns = allFns(s.masked)
 	return s
 }
 
@@ -237,6 +239,42 @@ func matchBracket(masked []byte, open int, left, right byte) int {
 		}
 	}
 	return -1
+}
+
+// allFns lists every `fn` with a body anywhere in the file, nested ones and the ones a
+// `macro_rules!` body spells included (`forward_to_inner!`'s methods), in source order.
+func allFns(masked []byte) []implMethod {
+	var fns []implMethod
+	for _, loc := range fnPattern.FindAllSubmatchIndex(masked, -1) {
+		if fn, _, ok := parseMethod(masked, loc[2], loc[3], len(masked)); ok {
+			fns = append(fns, fn)
+		}
+	}
+	return fns
+}
+
+// fnAt returns the innermost fn (any, not only a Volume impl's) whose body holds offset.
+func (s *source) fnAt(offset int) *implMethod {
+	var best *implMethod
+	for i := range s.fns {
+		f := &s.fns[i]
+		if offset >= f.bodyStart && offset < f.bodyEnd && (best == nil || f.bodyStart > best.bodyStart) {
+			best = f
+		}
+	}
+	return best
+}
+
+// fnWithSignatureAt returns the innermost fn whose signature (name to body) holds offset.
+func (s *source) fnWithSignatureAt(offset int) *implMethod {
+	var best *implMethod
+	for i := range s.fns {
+		f := &s.fns[i]
+		if offset >= f.sigStart && offset < f.bodyStart && (best == nil || f.sigStart > best.sigStart) {
+			best = f
+		}
+	}
+	return best
 }
 
 // methodAt returns the Volume impl method whose body holds offset, or nil.
