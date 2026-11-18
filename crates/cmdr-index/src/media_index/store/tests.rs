@@ -393,3 +393,53 @@ fn read_connections_get_a_smaller_page_cache_than_write_connections() {
     assert_eq!(page_cache_kib(&write), WRITE_PAGE_CACHE_KIB);
     assert_eq!(page_cache_kib(&read), READ_PAGE_CACHE_KIB);
 }
+
+/// `media_file.path` is a full path string, stored as the writer was handed it and
+/// keyed EXACTLY: every shape a row path takes reads back byte for byte, and a
+/// trailing `/` is a different key (no row path carries one; the app-path type
+/// drops it at the wire, so the key never sees it). #1225.
+#[test]
+fn a_stored_path_reads_back_byte_for_byte_and_keys_exactly() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let db_path = media_db_path(dir.path(), "root");
+    MediaStore::open(&db_path).expect("open");
+    let writer = MediaWriter::spawn(&db_path, "root").expect("writer");
+    let paths = [
+        "/Users/test_user_1/a b/c-d.jpg",
+        "/srv/a\\b/c:d.jpg",
+        "/Users/test_user_1/.hidden/x.jpg",
+        "/Users/test_user_1/cafe\u{0301}.jpg",
+        "/Users/test_user_1/caf\u{FFFD}.jpg",
+        "/DCIM/\u{0}4242/IMG_1.JPG",
+        "smb://testnas.local/share/x.jpg",
+    ];
+    for path in paths {
+        let status = MediaStatusRow {
+            path: path.to_string(),
+            ..row(Some(1), Some(2), "e1")
+        };
+        writer.upsert(status, None).expect("upsert");
+    }
+    writer.flush_blocking().expect("flush");
+
+    let store = MediaStore::open(&db_path).expect("reopen");
+    let mut stored = read_status_paths(store.read_conn()).expect("paths");
+    stored.sort();
+    let mut expected: Vec<String> = paths.iter().map(|p| p.to_string()).collect();
+    expected.sort();
+    assert_eq!(stored, expected);
+    assert!(
+        store
+            .status_for("/Users/test_user_1/a b/c-d.jpg")
+            .expect("read")
+            .is_some()
+    );
+    assert!(
+        store
+            .status_for("/Users/test_user_1/a b/c-d.jpg/")
+            .expect("read")
+            .is_none(),
+        "a trailing `/` is another key"
+    );
+    writer.shutdown();
+}

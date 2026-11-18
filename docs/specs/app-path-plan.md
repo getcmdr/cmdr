@@ -820,6 +820,41 @@ included; the hidden couplings it found are why waves B and C differ from round 
   today's `path_grammar` where it already answers (parse, parent, basename, shown, to/from native).
 - **DONE**: every helper above has a pin, the case table has every shape, the alloc ceilings and ordering pins exist,
   and `pnpm check --fast` plus the touched crates' tests are green.
+- **Done** (2026-11-18, branch `worktree-agent-a1e86a0d33a4ba4ab`, `c6fc36dd1d`..`6f955520c7`; tests only, 71 Rust cells
+  plus 8 vitest cases and 119 case-table rows, none removed):
+  - (a) `path_grammar_cases.json` gains 112 `arithmetic` rows (`std`: today's `std::path` answer, asserted on Unix;
+    `target` or a typed `refused`: the type's answer, asserted against today's grammar for the local roots on every OS),
+    25 with a `note` where the two differ on purpose. Decided here for milestone 3: a scheme root is
+    `scheme://authority` (no trailing `/`), so `parent("sftp://h:22/home")` stays today's `sftp://h:22` byte for byte
+    and an empty authority's root is `scheme://`.
+  - (b) `crates/cmdr-fs/src/volume/path_helper_pin_test.rs` (15) plus cells in `patching_test.rs` and
+    `scan_walk_test.rs`. (c) `list_alloc_ceiling_test.rs` in `cmdr-fs` and `cmdr-local`: one entry over none (a slope
+    over many isn't stable: `InMemoryVolume`'s sort lowercases per comparison, and the comparison count follows
+    `HashMap` order), 5 in memory, 9 on macOS's disk, 13 on Linux's. (d) `path_order_pin_test.rs`. (e) every store, 11
+    cells. (f) the non-UTF-8 cells, 8 sub-items (`crates/cmdr-operations/src/non_utf8_name_tests.rs` and siblings).
+    (g)/(h) 14 cells across `cmdr-local`, the delete engines, `stat_paths_kinds`, the MCP resolver and live-read gate,
+    go-to-path, and 7 `userInput` rows. (i) `docs/notes/windows-port/app-path-baseline.md`, made by
+    `scripts/windows-test-baseline` (`render`, `diff`, `explain` over the nextest JUnit report).
+  - Wrong today, pinned as such, and who flips them: the row and name lossiness, `walk_cached_entries`, and the index's
+    collapsed rows (9); the engine's row-path delete and the pre-skip match (10a); resort, cursor, and rename validity
+    (10c); a trailing `/` and a `..` across a symlink at the wire (10c/10d), `root_anchored` and `path_under` passing
+    `..` through, `folder_of` climbing above a scheme root, `sftp://h/x == sftp:/h/x` (the type), the operation log's
+    drive and UNC roots (8). ❗ Two are live data loss, not only Windows debt: with the folder open in a pane, a local
+    delete of a folder holding `caf\xe9.txt` reports success and deletes nothing (#1236), and the raw IPC `delete_files`
+    of `x/link/` (a folder symlink with a trailing `/`) empties the link's target.
+  - Where the code differed: MCP `delete`/`rename` take the pane selection, never a wire path, so only the raw IPC
+    `delete_files` can send `x/link/` (question 9's "only an MCP input can" is wrong); item (f)(4)'s copy gets no name,
+    it fails or copies the sibling; the pre-known-conflict bug sits in `build_pre_skip_set`; the protocol and sort cells
+    run on in-memory rows on every OS; `PersistedTab` stores no `cursorFilename` and closed tabs aren't persisted;
+    `path_exists` needs the volume manager, so stat is pinned through `stat_paths_kinds`; the full Windows workspace run
+    needs `--exclude cmdr-fsevent-stream` (macOS-only, never built there before).
+  - Verified: macOS `cargo nextest list --workspace` 16,515 (per touched crate: `cmdr` 6,777, `cmdr-fs` 1,016,
+    `cmdr-index` 1,999, `cmdr-listing` 384, `cmdr-local` 150, `cmdr-operation-log` 167, `cmdr-operations` 2,583); the
+    Desktop (Rust) job's 38 checks and the Desktop (Svelte) job's 34 with `--ci --fresh` green; `clippy-linux` and
+    `rust-tests-linux` green. Every pin seen red under a deliberate break, except the two row-path deletes and the
+    same-filesystem move guard (no code break flips them) and NFC/NFD (the filesystem's answer, covered on both OSes).
+    Windows: the baseline run at `e03f087946`, 934 of 13,831 failing (869 failed, 65 timed out); the leftover cold-cover
+    trees removed from `D:\src\cmdr` (46) and from this run's checkout (47).
 
 ### 2. `cmdr_local::LocalVolume`
 

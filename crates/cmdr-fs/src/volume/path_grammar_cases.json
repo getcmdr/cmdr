@@ -1,5 +1,5 @@
 {
-  "about": "The app-path grammar's cases, read by both `src/volume/path_grammar_test.rs` and `apps/desktop/src/lib/path/grammar.test.ts`, so Rust and TypeScript can't disagree. `flavor` is the local backend's: `posix` (macOS, Linux) or `windows`. `kind` null means the text is no app path at all. A scheme URL's root, root-ness, and segments belong to its volume, not the grammar, so they read null; its parent and basename are plain slash arithmetic. `parent` is null at a root: there is no parent inside the volume. `shown` is what a person reads; `fromUserInput` is what typed or pasted text becomes before it goes on the wire.",
+  "about": "The app-path grammar's cases, read by both `src/volume/path_grammar_test.rs` and `apps/desktop/src/lib/path/grammar.test.ts`, so Rust and TypeScript can't disagree. `flavor` is the local backend's: `posix` (macOS, Linux) or `windows`. `kind` null means the text is no app path at all. A scheme URL's root, root-ness, and segments belong to its volume, not the grammar, so they read null; its parent and basename are plain slash arithmetic. `parent` is null at a root: there is no parent inside the volume. `shown` is what a person reads; `fromUserInput` is what typed or pasted text becomes before it goes on the wire. `arithmetic` rows (read by the Rust suite) pin path arithmetic per root shape: `std` is what `std::path` answers today on macOS and Linux (`names` is `components()`, root included; `rebase` is `app_paths::rebase`; `shown` is `Path::display`), and `target` is the typed app path's answer with the base parsed in `flavor` (`names` without the root; a scheme root is `scheme://authority`), or `refused` names the typed refusal. A `note` marks a row where the two differ on purpose.",
   "cases": [
     {
       "path": "/",
@@ -583,6 +583,611 @@
       "text": "sftp://test_user_1@testnas.local:22/home",
       "flavor": "windows",
       "wire": "sftp://test_user_1@testnas.local:22/home"
+    },
+    { "text": "/x/link/", "flavor": "posix", "wire": "/x/link/" },
+    { "text": "/x/link/../y", "flavor": "posix", "wire": "/x/link/../y" },
+    { "text": "../y", "flavor": "posix", "wire": "../y" },
+    { "text": "/x//./y", "flavor": "posix", "wire": "/x//./y" },
+    { "text": "C:\\x\\link\\..\\y", "flavor": "windows", "wire": "C:/x/y" },
+    { "text": "C:/x/link/", "flavor": "windows", "wire": "C:/x/link" },
+    { "text": "..\\y", "flavor": "windows", "wire": "../y" }
+  ],
+  "arithmetic": [
+    { "op": "parent", "base": "/", "flavor": "posix", "target": null, "std": null },
+    { "op": "parent", "base": "/Users", "flavor": "posix", "target": "/", "std": "/" },
+    { "op": "parent", "base": "/Users/test_user_1", "flavor": "posix", "target": "/Users", "std": "/Users" },
+    { "op": "parent", "base": "/a/", "flavor": "posix", "target": "/", "std": "/" },
+    { "op": "parent", "base": "/a/./b", "flavor": "posix", "target": "/a", "std": "/a" },
+    { "op": "parent", "base": "/a//b", "flavor": "posix", "target": "/a", "std": "/a" },
+    {
+      "op": "parent",
+      "base": "/a/..",
+      "flavor": "posix",
+      "refused": "DotName",
+      "std": "/a",
+      "note": "std keeps `..` as a name; the type refuses it"
+    },
+    { "op": "parent", "base": "/a b/c", "flavor": "posix", "target": "/a b", "std": "/a b" },
+    { "op": "parent", "base": "/x/a.zip/inner", "flavor": "posix", "target": "/x/a.zip", "std": "/x/a.zip" },
+    {
+      "op": "parent",
+      "base": "/Volumes/testshare/backups/test-restic/Browse snapshots/latest/Users",
+      "flavor": "posix",
+      "target": "/Volumes/testshare/backups/test-restic/Browse snapshots/latest",
+      "std": "/Volumes/testshare/backups/test-restic/Browse snapshots/latest"
+    },
+    { "op": "fileName", "base": "/", "flavor": "posix", "target": null, "std": null },
+    {
+      "op": "fileName",
+      "base": "/Users/test_user_1",
+      "flavor": "posix",
+      "target": "test_user_1",
+      "std": "test_user_1"
+    },
+    { "op": "fileName", "base": "/a/", "flavor": "posix", "target": "a", "std": "a" },
+    { "op": "fileName", "base": "/a/.", "flavor": "posix", "target": "a", "std": "a" },
+    {
+      "op": "fileName",
+      "base": "/a/..",
+      "flavor": "posix",
+      "refused": "DotName",
+      "std": null,
+      "note": "std keeps `..` as a name; the type refuses it"
+    },
+    { "op": "fileName", "base": "/x/a\\b", "flavor": "posix", "target": "a\\b", "std": "a\\b" },
+    { "op": "fileName", "base": "/x/a:b", "flavor": "posix", "target": "a:b", "std": "a:b" },
+    { "op": "names", "base": "/", "flavor": "posix", "target": [], "std": ["/"] },
+    { "op": "names", "base": "/a/b", "flavor": "posix", "target": ["a", "b"], "std": ["/", "a", "b"] },
+    { "op": "names", "base": "/a//b/./c/", "flavor": "posix", "target": ["a", "b", "c"], "std": ["/", "a", "b", "c"] },
+    {
+      "op": "names",
+      "base": "/x/a.zip/inner",
+      "flavor": "posix",
+      "target": ["x", "a.zip", "inner"],
+      "std": ["/", "x", "a.zip", "inner"]
+    },
+    { "op": "join", "base": "/", "arg": "Users", "flavor": "posix", "target": "/Users", "std": "/Users" },
+    {
+      "op": "join",
+      "base": "/Users",
+      "arg": "test_user_1",
+      "flavor": "posix",
+      "target": "/Users/test_user_1",
+      "std": "/Users/test_user_1"
+    },
+    {
+      "op": "join",
+      "base": "/x",
+      "arg": "/y",
+      "flavor": "posix",
+      "refused": "NotAChildName",
+      "std": "/y",
+      "note": "std joins any text (an absolute arg replaces the base, `..` climbs); the type joins one plain name"
+    },
+    {
+      "op": "join",
+      "base": "/x",
+      "arg": "../y",
+      "flavor": "posix",
+      "refused": "NotAChildName",
+      "std": "/x/../y",
+      "note": "std joins any text (an absolute arg replaces the base, `..` climbs); the type joins one plain name"
+    },
+    {
+      "op": "join",
+      "base": "/x",
+      "arg": "..",
+      "flavor": "posix",
+      "refused": "NotAChildName",
+      "std": "/x/..",
+      "note": "std joins any text (an absolute arg replaces the base, `..` climbs); the type joins one plain name"
+    },
+    {
+      "op": "join",
+      "base": "/x",
+      "arg": ".",
+      "flavor": "posix",
+      "refused": "NotAChildName",
+      "std": "/x/.",
+      "note": "std joins any text (an absolute arg replaces the base, `..` climbs); the type joins one plain name"
+    },
+    {
+      "op": "join",
+      "base": "/x",
+      "arg": "",
+      "flavor": "posix",
+      "refused": "NotAChildName",
+      "std": "/x/",
+      "note": "std joins any text (an absolute arg replaces the base, `..` climbs); the type joins one plain name"
+    },
+    {
+      "op": "join",
+      "base": "/x",
+      "arg": "a/b",
+      "flavor": "posix",
+      "refused": "NotAChildName",
+      "std": "/x/a/b",
+      "note": "std joins any text (an absolute arg replaces the base, `..` climbs); the type joins one plain name"
+    },
+    { "op": "join", "base": "/x", "arg": "a\\b", "flavor": "posix", "target": "/x/a\\b", "std": "/x/a\\b" },
+    { "op": "join", "base": "/x", "arg": "a:b", "flavor": "posix", "target": "/x/a:b", "std": "/x/a:b" },
+    { "op": "join", "base": "/x", "arg": "C:", "flavor": "posix", "target": "/x/C:", "std": "/x/C:" },
+    {
+      "op": "join",
+      "base": "/x/a.zip",
+      "arg": "inner",
+      "flavor": "posix",
+      "target": "/x/a.zip/inner",
+      "std": "/x/a.zip/inner"
+    },
+    { "op": "startsWith", "base": "/a/b", "arg": "/a", "flavor": "posix", "target": true, "std": true },
+    { "op": "startsWith", "base": "/a", "arg": "/a", "flavor": "posix", "target": true, "std": true },
+    { "op": "startsWith", "base": "/a", "arg": "/a/", "flavor": "posix", "target": true, "std": true },
+    { "op": "startsWith", "base": "/a/b", "arg": "/", "flavor": "posix", "target": true, "std": true },
+    { "op": "startsWith", "base": "/a-b", "arg": "/a", "flavor": "posix", "target": false, "std": false },
+    { "op": "startsWith", "base": "/ab", "arg": "/a", "flavor": "posix", "target": false, "std": false },
+    { "op": "startsWith", "base": "/a", "arg": "/a/b", "flavor": "posix", "target": false, "std": false },
+    { "op": "stripPrefix", "base": "/a/b/c", "arg": "/a", "flavor": "posix", "target": "b/c", "std": "b/c" },
+    { "op": "stripPrefix", "base": "/a", "arg": "/a", "flavor": "posix", "target": "", "std": "" },
+    { "op": "stripPrefix", "base": "/a/b", "arg": "/", "flavor": "posix", "target": "a/b", "std": "a/b" },
+    { "op": "stripPrefix", "base": "/a-b", "arg": "/a", "flavor": "posix", "target": null, "std": null },
+    {
+      "op": "rebase",
+      "base": "/Volumes/testshare/docs/x",
+      "arg": "/Volumes/testshare",
+      "to": "/Volumes/testshare-1",
+      "flavor": "posix",
+      "target": "/Volumes/testshare-1/docs/x",
+      "std": "/Volumes/testshare-1/docs/x"
+    },
+    {
+      "op": "rebase",
+      "base": "/Volumes/testshare-1/x",
+      "arg": "/Volumes/testshare",
+      "to": "/z",
+      "flavor": "posix",
+      "target": null,
+      "std": null
+    },
+    { "op": "rebase", "base": "/a", "arg": "/a", "to": "/b", "flavor": "posix", "target": "/b", "std": "/b" },
+    {
+      "op": "rebase",
+      "base": "/a/b",
+      "arg": "/",
+      "to": "/mnt",
+      "flavor": "posix",
+      "target": "/mnt/a/b",
+      "std": "/mnt/a/b"
+    },
+    {
+      "op": "shown",
+      "base": "/Users/test_user_1",
+      "flavor": "posix",
+      "target": "/Users/test_user_1",
+      "std": "/Users/test_user_1"
+    },
+    { "op": "shown", "base": "/x/a\\b", "flavor": "posix", "target": "/x/a\\b", "std": "/x/a\\b" },
+    {
+      "op": "parent",
+      "base": "C:/",
+      "flavor": "windows",
+      "target": null,
+      "std": "",
+      "note": "std on POSIX reads a drive or share root as plain names"
+    },
+    {
+      "op": "parent",
+      "base": "C:/Users",
+      "flavor": "windows",
+      "target": "C:/",
+      "std": "C:",
+      "note": "std on POSIX reads a drive or share root as plain names"
+    },
+    { "op": "parent", "base": "C:/Users/test_user_1", "flavor": "windows", "target": "C:/Users", "std": "C:/Users" },
+    {
+      "op": "fileName",
+      "base": "C:/",
+      "flavor": "windows",
+      "target": null,
+      "std": "C:",
+      "note": "std on POSIX reads a drive or share root as plain names"
+    },
+    {
+      "op": "fileName",
+      "base": "C:/Users/test_user_1",
+      "flavor": "windows",
+      "target": "test_user_1",
+      "std": "test_user_1"
+    },
+    { "op": "names", "base": "C:/", "flavor": "windows", "target": [], "std": ["C:"] },
+    {
+      "op": "names",
+      "base": "C:/Users/test_user_1",
+      "flavor": "windows",
+      "target": ["Users", "test_user_1"],
+      "std": ["C:", "Users", "test_user_1"]
+    },
+    { "op": "join", "base": "C:/", "arg": "Users", "flavor": "windows", "target": "C:/Users", "std": "C:/Users" },
+    {
+      "op": "join",
+      "base": "C:/x",
+      "arg": "a\\b",
+      "flavor": "windows",
+      "refused": "NotAChildName",
+      "std": "C:/x/a\\b",
+      "note": "std joins any text (an absolute arg replaces the base, `..` climbs); the type joins one plain name"
+    },
+    { "op": "join", "base": "C:/x", "arg": "a:b", "flavor": "windows", "target": "C:/x/a:b", "std": "C:/x/a:b" },
+    {
+      "op": "startsWith",
+      "base": "C:/Users/test_user_1",
+      "arg": "C:/Users",
+      "flavor": "windows",
+      "target": true,
+      "std": true
+    },
+    { "op": "startsWith", "base": "C:/Users", "arg": "C:/", "flavor": "windows", "target": true, "std": true },
+    { "op": "startsWith", "base": "C:/Users-1", "arg": "C:/Users", "flavor": "windows", "target": false, "std": false },
+    { "op": "startsWith", "base": "D:/Users", "arg": "C:/", "flavor": "windows", "target": false, "std": false },
+    {
+      "op": "stripPrefix",
+      "base": "C:/Users/test_user_1",
+      "arg": "C:/",
+      "flavor": "windows",
+      "target": "Users/test_user_1",
+      "std": "Users/test_user_1"
+    },
+    {
+      "op": "rebase",
+      "base": "C:/a/b",
+      "arg": "C:/a",
+      "to": "D:/z",
+      "flavor": "windows",
+      "target": "D:/z/b",
+      "std": "D:/z/b"
+    },
+    {
+      "op": "shown",
+      "base": "C:/",
+      "flavor": "windows",
+      "target": "C:\\",
+      "std": "C:/",
+      "note": "std on POSIX reads a drive or share root as plain names"
+    },
+    {
+      "op": "shown",
+      "base": "C:/Users/test_user_1",
+      "flavor": "windows",
+      "target": "C:\\Users\\test_user_1",
+      "std": "C:/Users/test_user_1",
+      "note": "std on POSIX reads a drive or share root as plain names"
+    },
+    {
+      "op": "parent",
+      "base": "//server/share/",
+      "flavor": "windows",
+      "target": null,
+      "std": "//server",
+      "note": "std on POSIX reads a drive or share root as plain names"
+    },
+    {
+      "op": "parent",
+      "base": "//server/share/x",
+      "flavor": "windows",
+      "target": "//server/share/",
+      "std": "//server/share",
+      "note": "std on POSIX reads a drive or share root as plain names"
+    },
+    {
+      "op": "parent",
+      "base": "//server/share/x/y",
+      "flavor": "windows",
+      "target": "//server/share/x",
+      "std": "//server/share/x"
+    },
+    {
+      "op": "fileName",
+      "base": "//server/share/",
+      "flavor": "windows",
+      "target": null,
+      "std": "share",
+      "note": "std on POSIX reads a drive or share root as plain names"
+    },
+    { "op": "fileName", "base": "//server/share/x", "flavor": "windows", "target": "x", "std": "x" },
+    {
+      "op": "names",
+      "base": "//server/share/x/y",
+      "flavor": "windows",
+      "target": ["x", "y"],
+      "std": ["/", "server", "share", "x", "y"]
+    },
+    {
+      "op": "join",
+      "base": "//server/share/",
+      "arg": "x",
+      "flavor": "windows",
+      "target": "//server/share/x",
+      "std": "//server/share/x"
+    },
+    {
+      "op": "startsWith",
+      "base": "//server/share/x",
+      "arg": "//server/share/",
+      "flavor": "windows",
+      "target": true,
+      "std": true
+    },
+    {
+      "op": "startsWith",
+      "base": "//server/share-1/x",
+      "arg": "//server/share/",
+      "flavor": "windows",
+      "target": false,
+      "std": false
+    },
+    {
+      "op": "stripPrefix",
+      "base": "//server/share/x/y",
+      "arg": "//server/share/",
+      "flavor": "windows",
+      "target": "x/y",
+      "std": "x/y"
+    },
+    {
+      "op": "shown",
+      "base": "//server/share/",
+      "flavor": "windows",
+      "target": "\\\\server\\share",
+      "std": "//server/share/",
+      "note": "std on POSIX reads a drive or share root as plain names"
+    },
+    {
+      "op": "shown",
+      "base": "//server/share/x",
+      "flavor": "windows",
+      "target": "\\\\server\\share\\x",
+      "std": "//server/share/x",
+      "note": "std on POSIX reads a drive or share root as plain names"
+    },
+    {
+      "op": "parent",
+      "base": "sftp://test_user_1@testnas.local:22",
+      "flavor": "posix",
+      "target": null,
+      "std": "sftp:",
+      "note": "std climbs above a scheme root (and collapses `//`); the type clamps there"
+    },
+    {
+      "op": "parent",
+      "base": "sftp://test_user_1@testnas.local:22/",
+      "flavor": "posix",
+      "target": null,
+      "std": "sftp:",
+      "note": "std climbs above a scheme root (and collapses `//`); the type clamps there"
+    },
+    {
+      "op": "parent",
+      "base": "sftp://test_user_1@testnas.local:22/home",
+      "flavor": "posix",
+      "target": "sftp://test_user_1@testnas.local:22",
+      "std": "sftp://test_user_1@testnas.local:22"
+    },
+    {
+      "op": "parent",
+      "base": "sftp://test_user_1@nas:22/srv/data/photos",
+      "flavor": "posix",
+      "target": "sftp://test_user_1@nas:22/srv/data",
+      "std": "sftp://test_user_1@nas:22/srv/data"
+    },
+    {
+      "op": "parent",
+      "base": "sftp://test_user_1@nas:22/x/a.zip/inner",
+      "flavor": "posix",
+      "target": "sftp://test_user_1@nas:22/x/a.zip",
+      "std": "sftp://test_user_1@nas:22/x/a.zip"
+    },
+    {
+      "op": "fileName",
+      "base": "sftp://test_user_1@testnas.local:22/",
+      "flavor": "posix",
+      "target": null,
+      "std": "test_user_1@testnas.local:22",
+      "note": "std climbs above a scheme root (and collapses `//`); the type clamps there"
+    },
+    {
+      "op": "fileName",
+      "base": "sftp://test_user_1@nas:22/srv/data/photos",
+      "flavor": "posix",
+      "target": "photos",
+      "std": "photos"
+    },
+    {
+      "op": "names",
+      "base": "sftp://test_user_1@nas:22/srv/data/photos",
+      "flavor": "posix",
+      "target": ["srv", "data", "photos"],
+      "std": ["sftp:", "test_user_1@nas:22", "srv", "data", "photos"]
+    },
+    {
+      "op": "join",
+      "base": "sftp://test_user_1@testnas.local:22",
+      "arg": "home",
+      "flavor": "posix",
+      "target": "sftp://test_user_1@testnas.local:22/home",
+      "std": "sftp://test_user_1@testnas.local:22/home"
+    },
+    {
+      "op": "join",
+      "base": "sftp://test_user_1@nas:22/srv",
+      "arg": "a\\b",
+      "flavor": "posix",
+      "target": "sftp://test_user_1@nas:22/srv/a\\b",
+      "std": "sftp://test_user_1@nas:22/srv/a\\b"
+    },
+    {
+      "op": "startsWith",
+      "base": "sftp://test_user_1@nas:22/srv/data/photos",
+      "arg": "sftp://test_user_1@nas:22/srv/data",
+      "flavor": "posix",
+      "target": true,
+      "std": true
+    },
+    {
+      "op": "startsWith",
+      "base": "sftp://test_user_1@nas:22/srv/data-1",
+      "arg": "sftp://test_user_1@nas:22/srv/data",
+      "flavor": "posix",
+      "target": false,
+      "std": false
+    },
+    {
+      "op": "startsWith",
+      "base": "sftp://test_user_1@nas:2222/srv/data",
+      "arg": "sftp://test_user_1@nas:22/srv",
+      "flavor": "posix",
+      "target": false,
+      "std": false
+    },
+    {
+      "op": "startsWith",
+      "base": "sftp://test_user_1@nas:22/srv",
+      "arg": "sftp://test_user_1@nas:22",
+      "flavor": "posix",
+      "target": true,
+      "std": true
+    },
+    {
+      "op": "stripPrefix",
+      "base": "sftp://test_user_1@nas:22/srv/data/photos",
+      "arg": "sftp://test_user_1@nas:22/srv",
+      "flavor": "posix",
+      "target": "data/photos",
+      "std": "data/photos"
+    },
+    {
+      "op": "rebase",
+      "base": "sftp://test_user_1@nas:22/srv/data/x",
+      "arg": "sftp://test_user_1@nas:22/srv/data",
+      "to": "sftp://test_user_1@nas:22/srv/data2",
+      "flavor": "posix",
+      "target": "sftp://test_user_1@nas:22/srv/data2/x",
+      "std": "sftp://test_user_1@nas:22/srv/data2/x"
+    },
+    {
+      "op": "parent",
+      "base": "webdav://test_user_1@testnas.local:8080/Photos/2026",
+      "flavor": "posix",
+      "target": "webdav://test_user_1@testnas.local:8080/Photos",
+      "std": "webdav://test_user_1@testnas.local:8080/Photos"
+    },
+    {
+      "op": "names",
+      "base": "webdav://test_user_1@testnas.local:8080/Photos/2026",
+      "flavor": "posix",
+      "target": ["Photos", "2026"],
+      "std": ["webdav:", "test_user_1@testnas.local:8080", "Photos", "2026"]
+    },
+    {
+      "op": "parent",
+      "base": "s3://AKIATEST@s3.eu-central-003.backblazeb2.com:443/photos/a.jpg",
+      "flavor": "posix",
+      "target": "s3://AKIATEST@s3.eu-central-003.backblazeb2.com:443/photos",
+      "std": "s3://AKIATEST@s3.eu-central-003.backblazeb2.com:443/photos"
+    },
+    {
+      "op": "fileName",
+      "base": "s3://AKIATEST@s3.eu-central-003.backblazeb2.com:443/photos/a.jpg",
+      "flavor": "posix",
+      "target": "a.jpg",
+      "std": "a.jpg"
+    },
+    {
+      "op": "join",
+      "base": "s3://AKIATEST@s3.eu-central-003.backblazeb2.com:443/photos",
+      "arg": "a b.jpg",
+      "flavor": "posix",
+      "target": "s3://AKIATEST@s3.eu-central-003.backblazeb2.com:443/photos/a b.jpg",
+      "std": "s3://AKIATEST@s3.eu-central-003.backblazeb2.com:443/photos/a b.jpg"
+    },
+    {
+      "op": "parent",
+      "base": "nfs://testnas.local:2049/volume1%2Fdata/photos",
+      "flavor": "posix",
+      "target": "nfs://testnas.local:2049/volume1%2Fdata",
+      "std": "nfs://testnas.local:2049/volume1%2Fdata"
+    },
+    {
+      "op": "parent",
+      "base": "nfs://testnas.local:2049/volume1%2Fdata",
+      "flavor": "posix",
+      "target": "nfs://testnas.local:2049",
+      "std": "nfs://testnas.local:2049"
+    },
+    {
+      "op": "names",
+      "base": "nfs://testnas.local:2049/volume1%2Fdata/photos",
+      "flavor": "posix",
+      "target": ["volume1%2Fdata", "photos"],
+      "std": ["nfs:", "testnas.local:2049", "volume1%2Fdata", "photos"]
+    },
+    {
+      "op": "parent",
+      "base": "mtp://pixel/65537/DCIM/\u00004242/IMG_1.JPG",
+      "flavor": "posix",
+      "target": "mtp://pixel/65537/DCIM/\u00004242",
+      "std": "mtp://pixel/65537/DCIM/\u00004242"
+    },
+    {
+      "op": "fileName",
+      "base": "mtp://pixel/65537/DCIM/\u00004242/IMG_1.JPG",
+      "flavor": "posix",
+      "target": "IMG_1.JPG",
+      "std": "IMG_1.JPG"
+    },
+    {
+      "op": "names",
+      "base": "mtp://pixel/65537/DCIM/\u00004242/IMG_1.JPG",
+      "flavor": "posix",
+      "target": ["65537", "DCIM", "\u00004242", "IMG_1.JPG"],
+      "std": ["mtp:", "pixel", "65537", "DCIM", "\u00004242", "IMG_1.JPG"]
+    },
+    {
+      "op": "shown",
+      "base": "mtp://pixel/65537/DCIM/\u00004242/IMG_1.JPG",
+      "flavor": "posix",
+      "target": "mtp://pixel/65537/DCIM/IMG_1.JPG",
+      "std": "mtp://pixel/65537/DCIM/\u00004242/IMG_1.JPG",
+      "note": "std shows the pick segment; the person-facing formatter takes it out (`twin_path::shown`)"
+    },
+    {
+      "op": "parent",
+      "base": "adb://R58M1/sdcard/DCIM",
+      "flavor": "posix",
+      "target": "adb://R58M1/sdcard",
+      "std": "adb://R58M1/sdcard"
+    },
+    {
+      "op": "names",
+      "base": "adb://R58M1/sdcard/DCIM",
+      "flavor": "posix",
+      "target": ["sdcard", "DCIM"],
+      "std": ["adb:", "R58M1", "sdcard", "DCIM"]
+    },
+    {
+      "op": "parent",
+      "base": "file:///x",
+      "flavor": "posix",
+      "target": "file://",
+      "std": "file:",
+      "note": "std climbs above a scheme root (and collapses `//`); the type clamps there"
+    },
+    {
+      "op": "parent",
+      "base": "file://",
+      "flavor": "posix",
+      "target": null,
+      "std": "",
+      "note": "std climbs above a scheme root (and collapses `//`); the type clamps there"
     }
   ]
 }

@@ -2580,9 +2580,17 @@ mod in_memory_stream_test;
 #[cfg(test)]
 mod in_memory_test;
 #[cfg(test)]
+mod list_alloc_ceiling_test;
+#[cfg(test)]
 mod listing_progress_test;
 #[cfg(test)]
 mod password_locked_test;
+#[cfg(test)]
+mod path_arithmetic_pin_test;
+#[cfg(test)]
+mod path_helper_pin_test;
+#[cfg(test)]
+mod path_order_pin_test;
 #[cfg(test)]
 mod read_window_test;
 #[cfg(test)]

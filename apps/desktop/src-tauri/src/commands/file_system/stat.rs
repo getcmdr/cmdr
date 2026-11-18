@@ -210,4 +210,28 @@ mod tests {
 
         cleanup(&dir);
     }
+
+    /// What the stat does TODAY with a wire path a listing never builds. A trailing
+    /// `/` makes `symlink_metadata` follow a link, so a link to a folder reads as a
+    /// folder; and `link/..` is the link TARGET's parent, so `x/link/../y` stats
+    /// `real/y` (a file here), ❌ not the `x/y` folder its text names. The app-path
+    /// type flips both at the wire: a trailing `/` dropped (the link is a non-folder
+    /// again), a `..` resolved by the volume or refused. #1225.
+    #[cfg(unix)] // POSIX symlinks and the OS's own `..` through one.
+    #[test]
+    fn a_trailing_slash_and_a_dot_dot_through_a_link_are_the_os_answers_today() {
+        let tmp = test_dir("wire_shapes");
+        fs::create_dir_all(tmp.join("real/inner")).unwrap();
+        fs::write(tmp.join("real/y"), b"real").unwrap();
+        fs::create_dir_all(tmp.join("x/y")).unwrap();
+        std::os::unix::fs::symlink("../real/inner", tmp.join("x/link")).unwrap();
+        let wire = |rel: &str| format!("{}/{rel}", tmp.to_string_lossy());
+
+        let kinds = stat_paths_kinds_blocking(&[wire("x/link"), wire("x/link/"), wire("x/link/../y"), wire("x/y")]);
+        assert_eq!(
+            kinds,
+            vec![Some(false), Some(true), Some(false), Some(true)],
+            "the link, its target through the slash, `real/y` through the `..`, and the folder `x/y`"
+        );
+    }
 }

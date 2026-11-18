@@ -81,3 +81,5 @@ mod volume_hardlink_progress_tests;
 mod volume_source_done_tests;
 #[cfg(test)]
 mod volume_symlink_tests;
+#[cfg(test)]
+mod wire_path_shape_tests;

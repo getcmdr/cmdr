@@ -31,11 +31,14 @@
 //!
 //! [`WedgedVolume`] is a volume that never answers: the fixture for every bound
 //! that exists to survive a wedged mount.
+//!
+//! [`alloc_count`] counts heap allocations, for the cells that pin an allocation ceiling.
 #![allow(
     clippy::disallowed_methods,
     reason = "test scaffolding (the `testing` feature) runs only in a host's test binary, on its own clocks"
 )]
 
+pub mod alloc_count;
 #[cfg(target_os = "macos")]
 pub mod disk_images;
 #[cfg(target_os = "macos")]
