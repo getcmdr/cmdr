@@ -26,7 +26,8 @@ pub(crate) enum Tone {
     /// Nothing is moving because of a person: every started operation is
     /// paused or waiting on a conflict answer.
     Paused,
-    /// The queue holds a failure the person hasn't dismissed.
+    /// Nothing is live and the queue holds a failure the person hasn't
+    /// dismissed.
     Error,
 }
 
@@ -155,9 +156,10 @@ impl Aggregate {
                 ShellProgress::Hidden
             };
         }
-        let tone = if failed {
-            Tone::Error
-        } else if self.all_started_parked() {
+        // Live work wins over a failure waiting in the queue, as in the status
+        // corner (`operation-chip.ts`, progress beats failure): the bar says
+        // what's happening now, and the failure turns it red once nothing is.
+        let tone = if self.all_started_parked() {
             Tone::Paused
         } else {
             Tone::Normal

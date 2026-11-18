@@ -2,8 +2,8 @@
 //! (`SetProgressState` + `SetProgressValue`, tao 0.37.1). It has every look:
 //! green, yellow when paused, red on error, and a moving marquee for an
 //! unmeasured start. A marquee has no color, so an unmeasured start that is
-//! paused or next to a failure shows a full bar in that color instead: an
-//! empty one would show nothing at all.
+//! paused shows a full yellow bar instead: an empty one would show nothing
+//! at all.
 
 use tauri::window::{ProgressBarState, ProgressBarStatus};
 
