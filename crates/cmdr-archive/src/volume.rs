@@ -384,9 +384,11 @@ impl ArchiveVolume {
     )]
     fn open_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let inner = self.inner_path(path);
         Box::pin(async move {
             let (index, source) = self.load().await?;
@@ -632,8 +634,6 @@ impl Volume for ArchiveVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         self.open_stream(path, 0)
     }
 
@@ -642,8 +642,6 @@ impl Volume for ArchiveVolume {
         path: &'a AppPath,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
         self.open_stream(path, offset)
     }
 
