@@ -1764,7 +1764,12 @@
     "accept": ["chaveiro"],
     "forms": "Remember in Keychain → Lembrar no Acesso às Chaves",
     "confidence": "confirmed",
-    "sources": "Keychain Access.app InfoPlist.loctable pt_BR"
+    "sources": "Keychain Access.app InfoPlist.loctable pt_BR",
+    "other": {
+      "chosen": "chaveiro",
+      "accept": ["KWallet"],
+      "note": "Linux branches: the keyring is chaveiro, which GNOME's Senhas e chaves also says (seahorse pt_BR.po: O chaveiro está bloqueado); KDE keeps KWallet and KWalletManager as names, with a wallet → carteira (kwalletmanager pt_BR.po)"
+    }
   },
   "kind": {
     "chosen": "Tipo",
@@ -1979,7 +1984,7 @@
   },
   "name": {
     "chosen": "Nome",
-    "forms": "New name / Current name → Novo nome / Nome atual",
+    "forms": "New name / Current name → Novo nome / Nome atual; filename → Nome de arquivo, in labels and prose alike (`fileOperations.mkfile.nameAria`, `queryUi.mode.filename.label`); folder name → nome de pasta",
     "confidence": "confirmed",
     "sources": "macOS Finder pt-BR"
   },
@@ -2900,7 +2905,8 @@
       "errors.listing.networkDown.suggestion": "The windows branch names Windows' own Settings app (Configurações > Rede e Internet, MS pt-BR), and the Linux branch the desktop's settings (GNOME and KDE pt-BR: Configurações); Ajustes stays Cmdr's and Apple's window.",
       "errors.listing.diskFullErrno.suggestion": "The windows branch names Windows' own Settings app: Configurações > Sistema > Armazenamento (MS pt-BR).",
       "errors.listing.storageFull.suggestion": "The windows branch names Windows' own Settings app: Configurações > Sistema > Armazenamento (MS pt-BR).",
-      "errors.listing.serverRefused.explanation": "The windows branch means a setting on the PC, which Windows pt-BR calls configuração; the other branch macOS reads keeps ajuste."
+      "errors.listing.serverRefused.explanation": "The windows branch means a setting on the PC, which Windows pt-BR calls configuração; the other branch macOS reads keeps ajuste.",
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome branch quotes GNOME Settings' own path (Configurações > Teclado > Veja e personalize atalhos, gnome-control-center pt_BR.po) and the linuxKde branch KDE's (Configurações do sistema > Teclado > Atalhos, systemsettings and kcm_keyboard pt_BR.po): a desktop's settings app, not Cmdr's Ajustes."
     },
     "windows": {
       "chosen": "Configurações",
@@ -3184,6 +3190,9 @@
       "chosen": "ajustes do sistema",
       "accept": ["ajustes do seu sistema", "ajustes de aparência"],
       "note": "Linux names no settings app, so the other branch says the system's settings generically, like settings.appearance.appColorHintLink."
+    },
+    "exceptions": {
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxKde branch names KDE's System Settings app as KDE pt-BR does, Configurações do sistema (systemsettings._desktop_ pt_BR.po); Ajustes do Sistema is the macOS app."
     }
   },
   "system-settings-pane": {
@@ -4094,5 +4103,11 @@
     "confidence": "high",
     "sources": "MS terminology pt-BR (accent color → cor de destaque)",
     "note": "The Windows and Linux accent color is cor de destaque; the diacritic sense is acento."
+  },
+  "preferences": {
+    "chosen": "Preferências",
+    "confidence": "high",
+    "sources": "GNOME Nautilus pt-BR _Preferences → _Preferências; Thunar Pr_eferências; MS TBX Preferences → Preferências",
+    "note": "GNOME's own settings row (the linuxGnome branch of `menu.app.settings`), no ellipsis; KDE's row is Configurar Cmdr… (Dolphin pt-BR: Configurar Dolphin)"
   }
 }

@@ -117,9 +117,9 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {Em {desktops}, o ambiente de desktop costuma usar {combo} para si, então o atalho pode nunca chegar ao Cmdr. Você pode liberar o atalho nas configurações de teclado do seu ambiente de desktop.}}",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {Em {desktops}, o ambiente de desktop costuma usar {combo} para si, então o atalho pode nunca chegar ao Cmdr. Você pode liberar o atalho em Configurações > Teclado > Veja e personalize atalhos.} linuxKde {Em {desktops}, o ambiente de desktop costuma usar {combo} para si, então o atalho pode nunca chegar ao Cmdr. Você pode liberar o atalho em Configurações do sistema > Teclado > Atalhos.} other {Em {desktops}, o ambiente de desktop costuma usar {combo} para si, então o atalho pode nunca chegar ao Cmdr. Você pode liberar o atalho nas configurações de teclado do seu ambiente de desktop.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
-    "sourceHash": "610146a"
+    "sourceHash": "8aefc0b"
   },
   "shortcuts.conflict.opensMenuBarMenu": "{combo} abre o menu {menu} na barra de menus do Cmdr, então o atalho não vai chegar a este comando, a menos que uma caixa de diálogo esteja aberta.",
   "@shortcuts.conflict.opensMenuBarMenu": {

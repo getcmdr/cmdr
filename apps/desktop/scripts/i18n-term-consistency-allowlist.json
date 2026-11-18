@@ -356,6 +356,10 @@
       {
         "source": "Unknown",
         "reason": "Gender agreement, not drift: `Desconhecido` agrees with a model (`ai.local.modelUnknown`); `suggestedOps.factUnknown` stands for both a size (masculine) and a date (feminine), so it takes the neutral `Sem informação`."
+      },
+      {
+        "source": "Preferences",
+        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the literal macOS Library folder name, kept as the system names it on disk, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own menu row, `Preferências` (Nautilus pt-BR `_Preferências`)."
       }
     ],
     "sv": [

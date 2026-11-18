@@ -5,7 +5,7 @@ The non-obvious why behind `terms.json` rulings. Forms: `terms.json`; voice: `st
 
 ## The bare `pt` pile is European (`settings.archives.compressionLevel.description`, `fileOperations.transferDialog.compressLevelCaption`)
 
-- Mining `_ignored/i18n/pt/` once shipped `ficheiros` and `demoram mais tempo a comprimir`. Re-check rulings citing it.
+- Mining `_ignored/i18n/pt/` once shipped `ficheiros` and `demoram mais tempo a comprimir`. Recheck rulings citing it.
 
 ## Apagar, never Excluir (`fileOperations.delete.*`, `commands.fileDelete*`, `ai.local.delete*`, `settings.mediaIndex.*`, `transfer.delete`)
 
@@ -14,12 +14,12 @@ The non-obvious why behind `terms.json` rulings. Forms: `terms.json`; voice: `st
 
 ## `drive` is always `disco` (`errors.listing.*`, `errors.provider.pCloudFuse.*`, `fileExplorer.unreachable.*`)
 
-- Finder says `Discos externos`; its `unidade` is only the physical mechanism. `disco virtual do pCloud`: a common noun
+- Finder says `Discos externos`; its `unidade` is only the physical mechanism. `disco virtual do pCloud`: common noun
   after the brand.
 
 ## Parent folder (`commands.navParent.label`, `settings.behavior.doubleClickPane*`, `fileExplorer.doubleClickHint.body`)
 
-- `pasta superior` over the pile's `pasta pai`: switching is a whole-catalog migration or nothing (review queue).
+- `pasta superior` over the pile's `pasta pai`: a switch is a whole-catalog migration or nothing (review queue).
   `pasta principal` means something else; a volume's top is `a pasta raiz de um volume`.
 
 ## Go to folder (`menu.go.goToPath`, `commands.navGoToPath.label`, `goToPath.dialog.*`)

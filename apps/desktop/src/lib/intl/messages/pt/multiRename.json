@@ -244,6 +244,14 @@
   "@multiRename.status.reservedDeviceName": {
     "sourceHash": "8bf464a"
   },
+  "multiRename.status.notPortable": "{alsoLinux, select, yes {Não vai funcionar no Windows nem no Linux} other {Não vai funcionar no Windows}}",
+  "@multiRename.status.notPortable": {
+    "sourceHash": "cc3ed09"
+  },
+  "multiRename.notPortableSummary": "{count, plural, one {{alsoLinux, select, yes {{countText} nome novo não vai funcionar no Windows nem no Linux. O arquivo é renomeado mesmo assim.} other {{countText} nome novo não vai funcionar no Windows. O arquivo é renomeado mesmo assim.}}} many {{alsoLinux, select, yes {{countText} nomes novos não vão funcionar no Windows nem no Linux. Os arquivos são renomeados mesmo assim.} other {{countText} nomes novos não vão funcionar no Windows. Os arquivos são renomeados mesmo assim.}}} other {{alsoLinux, select, yes {{countText} nomes novos não vão funcionar no Windows nem no Linux. Os arquivos são renomeados mesmo assim.} other {{countText} nomes novos não vão funcionar no Windows. Os arquivos são renomeados mesmo assim.}}}}",
+  "@multiRename.notPortableSummary": {
+    "sourceHash": "4eb996d"
+  },
   "multiRename.error.unclosed": "Falta o “]” de fechamento em um marcador",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -627,15 +635,15 @@
   },
   "multiRename.reason.tooLong": "O novo nome é longo demais para um nome de arquivo.",
   "@multiRename.reason.tooLong": {
-    "sourceHash": "b709218"
+    "sourceHash": "c49d459"
   },
   "multiRename.reason.reserved": "“.” e “..” não podem ser nomes de arquivo.",
   "@multiRename.reason.reserved": {
-    "sourceHash": "dcca507"
+    "sourceHash": "b0c0c33"
   },
   "multiRename.reason.disallowedCharacter": "Nomes de arquivo não podem conter {character}.",
   "@multiRename.reason.disallowedCharacter": {
-    "sourceHash": "66a09f6"
+    "sourceHash": "2d58251"
   },
   "multiRename.reason.reservedDeviceName": "O nome “{name}” é reservado pelo Windows, então este disco não pode usá-lo.",
   "@multiRename.reason.reservedDeviceName": {
