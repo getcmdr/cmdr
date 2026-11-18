@@ -467,7 +467,8 @@ deliberately toward the safe answer with a pin:
   letter in `\\?\d:\x` opens the drive. ❗ Not run, and not volume-wide: Windows 10 1803+ lets a FOLDER be
   case-sensitive (`fsutil file setCaseSensitiveInfo`, what WSL sets on folders it creates), so one NTFS volume can hold
   `A` and `a` side by side in that folder. The builder refused the switch (no WSL feature installed). A per-volume
-  `NameRules` folds the two together there, and the drive index's lowercase key collides; open question 13.
+  `NameRules` folds the two together there, and the drive index's lowercase key collides; Windows plan task 35 makes it
+  a per-directory property of the local Windows volume (question 13).
 
 ### Typed and pasted `..`
 
@@ -555,7 +556,8 @@ caller turns into "not found"):
   (`dunce::simplified` and the like), which is exactly the wrong-file hazard above. UNC working directories are another
   limit: `cmd.exe` started in `\\localhost\D$\x` falls back to `C:\Windows` with a warning (ran), so "open a terminal
   here" on a UNC path needs `pushd` or a terminal that takes UNC. Its call sites join `app-path-native-crossing`'s
-  allowlist (milestone 11).
+  allowlist (milestone 11). This plan ships the type and its reasons; each consumer's Windows plan task writes the words
+  a person sees (question 14).
 - **Length**: a pure fence at 32,767 UTF-16 units including the `\\?\` prefix is `TooLong`, but NTFS stops earlier: a
   `create_dir` at 32,750 units answered `ERROR_FILENAME_EXCED_RANGE` (206, `InvalidFilename`) where 32,649 worked (ran,
   review round 3, 100-unit steps). So the OS's 206 maps to the typed `NameTooLong` too, ❌ never a hard-coded exact
@@ -800,7 +802,16 @@ included; the hidden couplings it found are why waves B and C differ from round 
   addressed as NFC: pin today's stat and listing answers. (i) **The Windows baseline**: the builder's full
   `cargo nextest run --workspace` with per-test outcomes, saved as `docs/notes/windows-port/app-path-baseline.md` (the
   failing test names grouped by crate and cluster, nothing else). Every later milestone diffs against it, so "turned
-  green" and "newly red" are lists, not counts.
+  green" and "newly red" are lists, not counts. Review round 4's lessons from the existing logs: (1) read outcomes from
+  a nextest JUnit report (a `ci`-style profile with `junit.path` set, `--no-fail-fast`), never from console output:
+  PowerShell wrapped the earlier logs at 98 columns and two are UTF-16, so names and panics had to be stitched back
+  together; (2) tag each failure with its cause cluster and owner from § "Windows failures, mapped", including the ones
+  that are NOT this plan's, so a milestone's diff never counts a #1226 or task-35 cell as its own; (3) about 150 of the
+  failures panic with no cause in the message ("the transfer must complete", "the remote edit should commit"), so the
+  report keeps each failing test's captured output, and a test whose output names no error is listed as "cause unread"
+  with its nearest sibling's cluster, never silently filed under one; (4) run in a fresh checkout and remove
+  `crates/cmdr-index/cmdr-*` afterwards: the index fixtures make their trees in the CWD, and a timed-out test (nextest
+  kills it) never drops its `TempDir`.
 - **Intentions**: make the flip and every crate conversion provably byte-identical on macOS and Linux.
 - **Landmines**: pin reality, not the plan. If today's behavior looks wrong (a relative path anchored oddly), pin it
   anyway, add a comment, and tell the lead; fixing it is a separate change. Verify each new pin bites (break the helper
@@ -841,7 +852,12 @@ included; the hidden couplings it found are why waves B and C differ from round 
   case table would otherwise fail `grammar.test.ts` until 9): `lib/path`'s `shownName` and `nativeNameLength`,
   `displayPath` mapping escapes to U+FFFD over any text, `t()` doing it over every param, and the escaped rows in
   `path_grammar_cases.json` (join, parent, basename, shown, the canonical form, a mixed-alphabet refusal). Inert until 9
-  makes an escape exist; pure, so vitest proves it.
+  makes an escape exist; pure, so vitest proves it. **The test tempdir helper lands here too** (moved from 9 in review
+  round 4: 10b may run inside wave B, before 9, and its 134 path failures are fixtures rooted in native tempdirs):
+  `cmdr_fs::testing` (behind its feature, outside the wasm-clean `app_path` module) makes a tempdir and returns it with
+  its app path (`from_native` after `GetLongPathNameW` on Windows, since a `TEMP` under an account name past eight
+  characters is an 8.3 spelling), with a `tempdir_in` twin for the index fixtures that root in the CWD on purpose
+  (`/tmp` is excluded on Linux and a symlink on macOS).
 - **Intentions**: the whole vocabulary exists and is tested before anything uses it.
 - **Landmines**: `Eq`, `Hash`, and `Ord` are component-wise (§ "Design decisions"), and `Hash` must agree with `Eq` on
   unnormalized bridge values. A pick segment (`␀4242`) is a valid name. Under `PathFlavor::Posix` `\` and `:` are name
@@ -990,9 +1006,13 @@ included; the hidden couplings it found are why waves B and C differ from round 
   tell the lead which it picks. Escaping is the default for SFTP (byte escapes in its own alphabet, decoded back to
   bytes for the server); WebDAV and S3 are UTF-8-only, so a name carrying any escape is `NotRepresentable` on write (the
   cross-namer rule). SFTP overrides `parent_for_dot_dot` in 10c's commit, not here.
-- **Test plan**: Windows: `cmdr-sftp` 7 (`paths_test`), `cmdr-webdav` 23, `cmdr-s3` 43 plus the 5 pause timeouts,
-  `cmdr-nfs` 49 (including the 7 `ExportNotFound` fake mounts). macOS/Linux: each crate's suite plus its Docker fixture
-  lane where CI runs one.
+- **Test plan**: Windows: `cmdr-sftp` 7 (`paths_test`), `cmdr-webdav` 23, `cmdr-s3` 42 plus the 5 pause timeouts,
+  `cmdr-nfs` 45 (30 with a `\` in the path, and 15 fake mounts answering `ExportNotFound`, not 7: the export is picked
+  by a prefix match over the typed path). Not here (review round 4): `cmdr-nfs`'s three `errors_test` cells and
+  `cmdr-adb`'s `an_unlisted_device_errno_arrives_as_its_linux_class`, a product bug, not a path (§ "Windows failures,
+  mapped"); `cmdr-s3`'s `nanoseconds_survive_and_trailing_zeros_drop` (Windows' `SystemTime` holds 100 ns); `cmdr-nfs`'s
+  `apply_metadata_dates_and_modes_a_folder` (modes) unless the baseline shows it path-shaped. macOS/Linux: each crate's
+  suite plus its Docker fixture lane where CI runs one.
 - **DONE**: the four crates' bridge counts are zero and their Windows suites green.
 
 ### 7. Device backends: SMB, MTP, ADB
@@ -1006,7 +1026,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
   wire: pin what `smb2` does with an unpaired surrogate today (lossy, or refused); the target is unit escapes, which may
   need an `smb2` change (David's crate, so it's fine to make; file it there). `cmdr-smb`'s UNC root matching folds
   server and share case (§ "Normalization", Case).
-- **Test plan**: Windows: `cmdr-adb` 52, `cmdr-smb` 13, `cmdr-mtp` 2.
+- **Test plan**: Windows: `cmdr-adb` 51 (the fake device answers `errno 30` to a write whose path gained a `\`, so those
+  are paths too), `cmdr-smb` 13 (the anchored-mount prefix arithmetic over `/Volumes/…`), `cmdr-mtp` 1 (plus
+  `host_seam_test`'s mutation count, to diagnose: it may not be a path).
 - **DONE**: bridge counts zero; Windows suites green.
 
 ### 8. Virtual volumes and leaf crates
@@ -1028,12 +1050,12 @@ included; the hidden couplings it found are why waves B and C differ from round 
   bytes (the root `""` row and the `/`-led names are unchanged). Restic snapshot paths are POSIX paths from the
   repository, whatever OS made the backup. Archive entry names come through the archive crate's sanitizer
   (`read/name/`); a name it can't make UTF-8 (a CP437 zip) keeps whatever the sanitizer answers today, pinned.
-- **Test plan**: Windows: `cmdr-archive` 5, `cmdr-git` 1 (un-ignore), `cmdr-viewer` 13, `cmdr-listing` 2 (one is
-  `foreign_path_test`; the stall-attribution one is not #1225 and may stay), `cmdr-operation-log` 3, and `cmdr-restic`'s
-  share of the 61 failures plus 10 timeouts over `cmdr-restic`, `cmdr-listing-wasm`, and `cmdr-multi-rename` (the other
-  two crates' share turns green in 10e; milestone 1's baseline list says which is which). New on every OS (the store is
-  pure SQL): intern, find, and reconstruct round-trip `C:/x/y`, `C:/`, `//srv/share/x`, and `//srv/share/`, and a
-  rollback plan for a drive-rooted op targets the drive path.
+- **Test plan**: Windows: `cmdr-archive` 5 (its other two, the zip's Unix mode bits reading `0o666`, aren't paths),
+  `cmdr-git` 1 (un-ignore), `cmdr-viewer` 13, `cmdr-listing` 2 (one is `foreign_path_test`; the stall-attribution one is
+  not #1225 and may stay), `cmdr-operation-log` 3, and `cmdr-restic` 55 plus 9 timeouts (review round 4; the rest of
+  that run's 61 and 10 are `cmdr-listing-wasm`'s, 10e). New on every OS (the store is pure SQL): intern, find, and
+  reconstruct round-trip `C:/x/y`, `C:/`, `//srv/share/x`, and `//srv/share/`, and a rollback plan for a drive-rooted op
+  targets the drive path.
 - **DONE**: bridge counts zero in these crates; the named Windows clusters green; the operation log round-trips every
   root shape.
 
@@ -1059,14 +1081,14 @@ included; the hidden couplings it found are why waves B and C differ from round 
   (an unpaired surrogate escapes too). `scan_for_conflicts_impl` builds the destination from the source PATH's
   `file_name()`, ❌ never the lossy `item.name`. Watch events from the OS go through `from_native`, which escapes, so an
   event for a non-UTF-8 name patches the row it listed. The two listers stay field-for-field identical. Run the alloc
-  ceilings and benches (§ "Cost"). ❗ The constructors' `root` (`local_folder`, `on_mount`) is documented as an app path
-  but typed `impl Into<PathBuf>`, and every test hands it `tempfile`'s NATIVE `C:\Users\…\Temp\.tmpXYZ`, which
-  `paths::native` refuses as "not an absolute Windows app path" (review round 3, read in code; likely the bulk of the
-  app run's 65 panics with that message, which milestone 1's baseline confirms by name). So the typed constructor takes
-  an `AppPathBuf` (beside the old one, per the wave-B rule), and `cmdr_fs::testing` gains one helper that makes a
-  tempdir and returns it with its app path (`from_native` after `GetLongPathNameW`, since a `TEMP` under an account name
-  past eight characters is an 8.3 spelling). Tests switch to it in their crate's milestone, which is why those panics
-  turn green in 10a, 10c, and 10d rather than here.
+  ceilings and benches (§ "Cost"). ❗ Tests hand `cmdr-local` `tempfile`'s NATIVE `C:\Users\…\Temp\.tmpXYZ` where an app
+  path belongs, and `paths::native` refuses it as "not an absolute Windows app path". Two entry points, both typed
+  `&Path`/`impl Into<PathBuf>` today: the free function `reading::list_directory_core(&Path, …)` (59 of the app run's 65
+  panics with that message, by name: "the dir lists", "the scratch dir lists") and a `LocalVolume` rooted at or asked
+  for a tempdir (the other six, plus the 84 in `cmdr-operations`, below). Review round 4 confirmed this from the
+  builder's logs. So `list_directory_core` and the constructors (`local_folder`, `on_mount`) gain typed `&AppPath` /
+  `AppPathBuf` forms beside the old ones (the wave-B rule), and tests switch to the tempdir helper of milestone 3 in
+  their crate's milestone, which is why those panics turn green in 10a, 10b, 10c, and 10d rather than here.
 - **Test plan**: Windows: `cmdr-local` 30 of 30 plus the conformance cells that only waited on paths, plus new NTFS
   cells (each reproduced by hand in review round 3): `dup` and `dup.` side by side, a delete of the row `dup.` removes
   `dup.` and leaves `dup`; `con.txt`, `NUL`, and `a ` list, stat, rename, and delete as files; a row path holding `:`
@@ -1111,12 +1133,18 @@ included; the hidden couplings it found are why waves B and C differ from round 
     source named `LONGFI~1.TXT` meets `Long File Name.txt` as a conflict on that name (§ "The native boundary", 8.3).
   - The Recycle Bin, once Windows has one (today `move_to_trash_sync` refuses `TrashNotSupported` there), goes through
     `to_native_plain`, so a name that can't survive the plain form is refused per item, never recycled as its neighbor.
-- **Test plan**: Windows: the 289 failures' path clusters (the finalize's native `C:\…` refusal is the largest; the
-  in-memory and remote-fixture ones next), plus a Windows-only cell in a tempdir on the system drive (the builder's
-  `TEMP` is on `C:`, where 8.3 is on; the cell skips, saying so, when `GetShortPathNameW` returns no short name): a copy
-  of a file named `LONGFI~1.TXT` into a folder holding `Long File Name.txt` reports a conflict and leaves its bytes
-  alone. Not in scope: the `MountedVolumeInside` refusals (task 35's mount table and file id) and the in-flight ledger
-  lock (#1226's family). macOS/Linux: full suite, `transfer_benchmarks` before/after.
+- **Test plan**: Windows: the 289 failures' path clusters (review round 4, from the builder's log: 68 name the
+  finalize's native `C:\…` refusal, 16 more a native tempdir handed to `LocalVolume`, about 45 local-engine flows whose
+  panic carries no cause but whose siblings show the finalize, 37 a `\` joined into an in-memory or remote app path,
+  mostly `transfer::volume`, and 25 `archive_edit::remote` cells over a remote fixture), plus a Windows-only cell in a
+  tempdir on the system drive (the builder's `TEMP` is on `C:`, where 8.3 is on; the cell skips, saying so, when
+  `GetShortPathNameW` returns no short name): a copy of a file named `LONGFI~1.TXT` into a folder holding
+  `Long File Name.txt` reports a conflict and leaves its bytes alone. Not in scope, about 60 that stay red here: the
+  `MountedVolumeInside` refusals (25, task 35's mount table and file id); the in-flight-temps test ledger that can't be
+  emptied while a connection holds it (25, "start the test ledger empty: Access is denied", #1226's family); node
+  identity answering `Unverifiable` (about 8: `ledger::tests`, `reversal::tests`'s drift cells, `source_binding::tests`,
+  task 35's `file_identity`); `delete::trash`'s missing-path cell (no Recycle Bin yet); and `archive_edit::fresh_zip`'s
+  Unix mode bits. macOS/Linux: full suite, `transfer_benchmarks` before/after.
 - **DONE**: bridge count zero in `cmdr-operations`; a local copy and move land on the builder's NTFS.
 
 ### 10b. `cmdr-index`
@@ -1132,10 +1160,17 @@ included; the hidden couplings it found are why waves B and C differ from round 
   the lossy spelling to the escaped one (a cache: the reconciler sees one remove and one add, then converges; pin that
   it converges and doesn't churn every pass, which a lossy name compared against a raw disk name would). Same for media
   and importance `path` columns (§ "Persisted formats").
-- **Test plan**: Windows, #1232's clusters: `reconcile::*` (about 25), `lifecycle::phases::tests` (about 12),
-  `scanner::convergence_tests`, `scanner::policy_tests`, `store::tests::path_resolution`, `watch::branches` and
-  `watch::event_loop::tests::replay_chunks` (with task 12's smoke test), `lifecycle::cover::cold_drive_tests` (47, as
-  far as task 34 allows). Not here: `importance::store::legacy_split` (3, #1226). macOS/Linux: suite plus
+- **Test plan**: Windows, #1232's clusters as review round 4 counted them from the builder's log (87 failures and 47
+  timeouts, all fixtures whose tree is a native tempdir in the CWD, `D:\src\cmdr\crates\cmdr-index\cmdr_test_…`, read
+  against the index's `/`-rooted path space, so rows land as `/D:\src\…` or not at all): `reconcile::*` (41),
+  `lifecycle::phases::tests` (19), `lifecycle::cover` (8 plus the 46 cold-drive timeouts, as far as task 34 allows),
+  `scanner::convergence_tests` (6), `scanner::policy_tests` (4), `watch::branches` (4) and
+  `watch::event_loop::tests::replay_chunks` (3, with task 12's smoke test), `partial_agg` (1), the concurrency stress
+  cell (1), and one reconciler timeout. The fixtures switch to milestone 3's `tempdir_in` helper. Not here: 20 that are
+  #1226's family (`importance::store::legacy_split` is 17, not 3, plus `handle::tests::building_splits_…` and two
+  database deletes while a connection holds the file); `store::tests::path_resolution` (3), which aren't paths at all
+  (the `*_off_macos` cells expect Linux's binary compare, and Windows now folds case: a cfg fix, #1232); and the
+  cold-drive cell that renames a mount point with handles open (Windows refuses the rename). macOS/Linux: suite plus
   `index_benchmarks` before/after.
 - **DONE**: bridge count zero in `cmdr-index` and `index-query`; #1232 updated with what's left.
 
@@ -1145,8 +1180,8 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `cmdr-multi-rename`, and `cmdr-operation-log`), so they convert after 10a.
 - **Scope**: as 8: bodies drop their bridges; `cmdr-multi-rename`'s `names_file.rs` crosses at `to_native` for the names
   file it owns. `cmdr-listing-wasm` builds for `wasm32` (no `to_native` there at all: it has no OS).
-- **Test plan**: Windows: those two crates' share of the 61 failures and 10 timeouts (milestone 1's baseline).
-  macOS/Linux: both suites, plus the wasm build.
+- **Test plan**: Windows: `cmdr-listing-wasm`'s 6 failures and 1 timeout (`cmdr-multi-rename` had none on the builder;
+  review round 4). macOS/Linux: both suites, plus the wasm build.
 - **DONE**: bridge counts zero in both.
 
 ### 10c. The app, part one: file system and listings
@@ -1166,11 +1201,13 @@ included; the hidden couplings it found are why waves B and C differ from round 
   method with its lexical default and its two overrides (`cmdr-local`'s Unix volume, `cmdr-sftp`; both crates are done
   by then, so this is a small, owned edit there); go-to-path's `CLAUDE.md` "never `canonicalize`" rule rewritten to the
   new one. The UNC root fold (`same_root`) lands with the resolver's volume pick.
-- **Test plan**: Windows: the app failures in these directories (of the 188 in `cmdr`; milestone 1's baseline lists
-  them), and the `#![cfg(unix)]` files here gated only for #1225 un-gate. Not here: the root volume's lookups
-  (`resolve_location`, `a_home_relative_path_resolves_to_root`), task 34's. macOS/Linux: suite and `desktop-e2e-linux`
-  (it touches listings); pins (g) and (h) per entry point, an IPC delete of `/x/link/` removes the link and leaves the
-  target's contents, and § "Typed and pasted `..`"'s cells.
+- **Test plan**: Windows: the app failures in these directories (about 72 of the 188 in `cmdr`, review round 4: 11
+  native-tempdir panics in `file_system/watcher*` and `network/smb_mount_gate`, the rest `std::path` on app paths, most
+  in `network/`, `go_to_path/`, `about/`, and `commands/`; `about/`'s 13 carry no path in the panic and are the least
+  certain; milestone 1's baseline lists them), and the `#![cfg(unix)]` files here gated only for #1225 un-gate. Not
+  here: the root volume's lookups (`resolve_location`, `a_home_relative_path_resolves_to_root`), task 34's. macOS/Linux:
+  suite and `desktop-e2e-linux` (it touches listings); pins (g) and (h) per entry point, an IPC delete of `/x/link/`
+  removes the link and leaves the target's contents, and § "Typed and pasted `..`"'s cells.
 - **DONE**: bridge count zero in these directories.
 
 ### 10d. The app, part two: operations host, tools, and the rest
@@ -1185,11 +1222,12 @@ included; the hidden couplings it found are why waves B and C differ from round 
   (today's `root_anchored` joins a relative path onto the root). Agent surfaces never carry an escape: outputs use the
   shown form plus `unaddressable`, and an input holding U+FFFD that a sibling's shown name matches is `AmbiguousName` (§
   "The escape on the wire and in the frontend", Agent surfaces).
-- **Test plan**: Windows: the remaining app failures that name "not an absolute Windows app path" or a `\photos`-style
-  path; `cmdr` totals reported against the baseline. macOS/Linux: suite, plus an MCP write given `/x/link/../y` lands
-  where `ls` says and one given a path past the root refuses typed; Linux: an MCP listing of the non-UTF-8 fixture shows
-  `caf\u{FFFD}.txt` flagged `unaddressable`, and an MCP delete of `caf\u{FFFD}.txt` with both files present refuses as
-  `AmbiguousName`.
+- **Test plan**: Windows: the remaining app failures that name "not an absolute Windows app path" (54 of the 65:
+  `multi_rename/` 44, `tools/actions/multi_rename_test.rs` 9, `redact/` 1; review round 4 by name, none in
+  `operations_host/`) or a `\photos`-style path; `cmdr` totals reported against the baseline. macOS/Linux: suite, plus
+  an MCP write given `/x/link/../y` lands where `ls` says and one given a path past the root refuses typed; Linux: an
+  MCP listing of the non-UTF-8 fixture shows `caf\u{FFFD}.txt` flagged `unaddressable`, and an MCP delete of
+  `caf\u{FFFD}.txt` with both files present refuses as `AmbiguousName`.
 - **DONE**: the app's bridge count is zero.
 
 ### 11. Close
@@ -1232,32 +1270,66 @@ none acted on the row):
   diff against it, by test name.
 - No test checks a frontend surface for a leaked private-use code point. Closed by milestone 9's DOM catch-all.
 
-**Windows failures, mapped** (2026-11-18 runs; milestone 1's baseline replaces these counts with names):
+**Windows failures, mapped** (review round 4, from the builder's own logs of the 2026-11-18 runs, clustered by the panic
+text and assertion diffs; `D:\logs\{batch1,final,w2-index,w4-nextest2}…` and `D:\tmp\{ops,g2}-nextest.log`; milestone
+1's baseline replaces these counts with names). The causes:
+
+- **N, a native tempdir where an app path belongs** ("not an absolute Windows app path"): the test hands `cmdr-local`
+  `C:\Users\…\Temp\.tmpX` (`list_directory_core`, a `LocalVolume` root or argument), or the index fixture roots its tree
+  at `D:\src\cmdr\crates\cmdr-index\cmdr_…`. Round three's reading is confirmed, widened from "volume roots" to
+  `list_directory_core` too. Fix: milestone 3's tempdir helper, then each crate's milestone.
+- **F, the local engine's finalize** hands `rename_local_exclusive` a native path: 9 (typed form) then 10a.
+- **S, `std::path` arithmetic on an app path**: a `\` joined into a POSIX, in-memory, or scheme path (`/srv/data\x`,
+  `sftp://h:22\srv`), or a POSIX literal that `Path::is_absolute` calls relative on Windows. The owning crate's
+  milestone.
+- **Not this plan**: root-volume lookups (task 34), `MountedVolumeInside` and `Unverifiable` node identity (task 35),
+  open-file deletes and renames (#1226's family), and the Windows-only test-fixture and product cases listed per crate.
+
+Per crate:
 
 - `cmdr-fs` 24 ignored: 5.
-- `cmdr-sftp` 7, `cmdr-webdav` 23, `cmdr-s3` 43 plus 5 timeouts, `cmdr-nfs` 49 (of the app run's 235): 6.
-- `cmdr-adb` 52, `cmdr-smb` 13, `cmdr-mtp` 2: 7.
-- `cmdr-archive` 5, `cmdr-git` 1, `cmdr-viewer` 13, `cmdr-listing` 2 (one is not #1225), `cmdr-operation-log` 3, and
-  `cmdr-restic`'s share of the 61 failures plus 10 timeouts: 8.
+- `cmdr-sftp` 7 (S), `cmdr-webdav` 23 (S), `cmdr-s3` 42 (S) plus 5 timeouts, `cmdr-nfs` 45 (30 S, 15 `ExportNotFound`
+  from the export prefix match): 6. Not 6: `cmdr-s3`'s nanosecond cell (Windows' 100 ns `SystemTime`), `cmdr-nfs`'s
+  three `errors_test` cells and one modes cell.
+- `cmdr-adb` 51 (S; the fake device's `errno 30` writes too), `cmdr-smb` 13 (S), `cmdr-mtp` 1 (S): 7. Not 7:
+  `cmdr-adb`'s device-errno cell; `cmdr-mtp`'s `host_seam_test` mutation count until diagnosed.
+- `cmdr-archive` 5 (S), `cmdr-git` 1, `cmdr-viewer` 13 (S: markdown links and images resolve to `Blocked`),
+  `cmdr-listing` 1 (`foreign_path_test`), `cmdr-operation-log` 3, and `cmdr-restic` 55 plus 9 timeouts (S, rooted at
+  `/Volumes/…`): 8. Not 8: `cmdr-archive`'s two Unix-mode cells, `cmdr-listing`'s stall attribution (`Unknown` for
+  `Drive`).
 - `cmdr-local` 30: 9.
-- `cmdr-operations` 289: 10a for the path clusters (the finalize's native `C:\…` refusal first); not this plan:
-  `MountedVolumeInside` (task 35) and the in-flight ledger lock (#1226's family).
-- `cmdr-index` 111 plus 47 timeouts (#1232): 10b, per the list below.
-- `cmdr-multi-rename` and `cmdr-listing-wasm`'s share of the 61 and 10: 10e.
-- The app `cmdr` 188 (of the 235; the other 49 are `cmdr-nfs`) plus two timeouts: 10c (`file_system/`, `commands/`,
-  `go_to_path/`, and the rest of its directories) and 10d (the 65 "not an absolute Windows app path" panics sit mostly
-  in `tools/` and `operations_host/` fixtures: the baseline list splits them). Not this plan: the root volume's lookups
-  (task 34) and the two timeouts (a dead-share card, an agent-cancelled walk), unless the baseline shows them
-  path-shaped.
+- `cmdr-operations` 289: 10a for about 230 (F 68, N 16, S 37, about 45 local-engine flows with no cause in the panic,
+  and 25 `archive_edit::remote` cells over a remote fixture, likely S). Not 10a, about 60: `MountedVolumeInside` 25
+  (task 35), the in-flight-temps test ledger 25 (#1226's family), node identity `Unverifiable` about 8 (task 35), trash
+  1, Unix modes 1.
+- `cmdr-index` 111 plus 47 timeouts (#1232): 10b for 87 and the 47 (N); not 10b: 20 (#1226's family: `legacy_split` 17,
+  `building_splits` 1, two database deletes), 3 case-collation cells (not paths), and one mount-point rename with
+  handles open.
+- `cmdr-listing-wasm` 6 plus 1 timeout (S): 10e. `cmdr-multi-rename` had no failures.
+- The app `cmdr` 186 plus two timeouts (of the 235 failures; the other 49 are `cmdr-nfs`): N 65 (`multi_rename/` 44,
+  `tools/actions/multi_rename_test.rs` 9, `file_system/watcher*` 10, `redact/` 1, `network/smb_mount_gate` 1), S about
+  95 (`network/`, `go_to_path/`, `about/`, `commands/`, `tools/`, `server_volumes/`, `priority/`, `agent/`, `search/`
+  goldens), root-volume lookups 8 (task 34), the two timeouts (a dead-share card, an agent-cancelled walk; unread), and
+  about 17 that aren't paths (below). So 10c about 72, 10d about 89.
 
-#1232's clusters:
+Not paths, found in the logs, each with its owner:
 
-- `lifecycle::cover::cold_drive_tests` (47 timeouts): 10b, with task 34 for drive volumes.
-- `reconcile::{reconciler,local_reconcile,reconcile_correctness,verifier}` (about 25): 10b.
-- `lifecycle::phases::tests` (about 12), `scanner::{convergence_tests,policy_tests}`, `store::tests::path_resolution`:
-  10b.
-- `importance::store::legacy_split::tests` (3): not this plan (#1226).
-- `watch::branches`, `watch::event_loop::tests::replay_chunks`: 10b plus Windows plan task 12.
+- **Product bug, every network or device backend that maps a remote errno**: `cmdr-nfs` `errors_test` (3) and `cmdr-adb`
+  `an_unlisted_device_errno_arrives_as_its_linux_class`. The server's or the phone's errno is Linux-numbered, and the
+  code reads it through the HOST's `libc` constants and `io::Error::from_raw_os_error`, which on Windows means a Win32
+  code (16 is `ERROR_CURRENT_DIRECTORY` there, not `EBUSY`). So on Windows a busy phone or an NFS refusal gets the wrong
+  error class. Goes to a new sentence in the Windows plan's "Windows build state" (D2's backends), with an issue.
+- **Windows-only test expectations**: `crash_reporter` stamps and `cmdr-s3` nanoseconds (100 ns `SystemTime`);
+  `cmdr-index` `path_resolution` (3: `*_off_macos` expects Linux's binary compare, Windows now folds); `data_wipe`'s
+  plan tests (5) and `tools::sensitive` (1), which build POSIX home and XDG literals for the app's OWN dirs, native by §
+  "App path or native path"; `subprocess` (2, no `echo` program); one `HOME is set` cell. #1232 and the Windows build
+  state.
+- **Windows behavior the product hasn't met yet**: `instance_lock` (2, the holder's pid reads `None`),
+  `logging::rotating_file` (1, a rotation while another writer holds the file), the menu's "Undo delete" (no Recycle
+  Bin), the zip Unix-mode cells. Their Windows plan tasks.
+- **#1226's family is bigger than the plan said**: 25 in `cmdr-operations`, 20 in `cmdr-index`, 3 in the app.
+- **Leftovers on the builder**: about 40 `crates/cmdr-index/cmdr-cold-cover-*` trees in `D:\src\cmdr`, left by the
+  timed-out cold-drive tests (milestone 1 (i) cleans up after its run).
 
 ## Review questions
 
@@ -1306,16 +1378,17 @@ Round two's three, decided by the lead (2026-11-18) and written in by review rou
     follows the volume's OS. Review round 3 ran the Windows half: lexical is what Win32 does through junctions and
     directory symlinks (§ "Typed and pasted `..`").
 
-Open for the lead (review round 3):
+Round three's two, decided by the lead (2026-11-18) and written in by review round 4:
 
-13. **Per-folder case sensitivity on Windows.** A folder WSL made (or one switched with `fsutil`) can hold `A` and `a`;
-    a volume-wide `NameRules` and the drive index's lowercase key merge them (documented, not run: the builder lacks
-    WSL). This plan doesn't make it worse (paths stay exact), but the index and the conflict scan would. Proposed: not
-    this plan; a Windows plan task (14's `NameRules` or 35's lister) reads `FileCaseSensitiveInformation` per folder,
-    and until then the drive index skips (counted) a folder whose folded names collide. Agree, and which task?
-14. **`to_native_plain`'s scope.** Proposed here: the type gains it in milestone 3, and every caller is a Windows plan
-    task's (trash, reveal, open with, drag-out, terminal), since none has a Windows arm yet. Agree, or should this plan
-    also own the refusal message key so those tasks share one string?
+13. **Per-folder case sensitivity on NTFS: decided, Windows plan task 35.** A folder WSL made (or one switched with
+    `fsutil setCaseSensitiveInfo`) can hold `A` and `a`, which a volume-wide `NameRules` and the drive index's lowercase
+    key would merge, and so would the conflict scan. The local Windows volume reports case sensitivity as a property PER
+    DIRECTORY (`FileCaseSensitiveInformation`), and the index and the conflict scan ask it there. Not this plan: app
+    paths stay exact, so nothing here makes it worse.
+14. **`to_native_plain`'s refusal: decided, split by layer.** This plan owns the `NotPlainSafe` refusal TYPE (milestone
+    3, with its reasons: trailing dot or space, reserved device name, length). The tasks that build its consumers
+    (trash, open with, child processes, and the rest of § "The native boundary"'s list) own the user-facing wording, so
+    no message key lands here.
 
 ## Invariants
 
@@ -1406,3 +1479,23 @@ Open for the lead (review round 3):
     goes to task 35's identity); the Windows lexical `..` confirmed, with the verbatim reason it must happen in the app;
     NTFS cells for milestone 9; the constructor-root landmine and test-tempdir helper in milestone 9; two invariants.
     Questions 10–12 written in as the lead decided them; 13 (per-folder case) and 14 opened.
+- **Round 4, the milestone mapping against the real failing tests** (2026-11-18). Read the builder's existing nextest
+  logs, nothing rerun (the logs match the code this plan builds on: the app run at `df87f01096`, the others from the
+  same day's legs): the app and `cmdr-nfs` (`D:\logs\w4-nextest2.log`), `cmdr-operations` (`D:\tmp\ops-nextest.log`),
+  `cmdr-index` (`D:\w2-index.log`), `cmdr-restic`/`cmdr-listing-wasm`/`cmdr-multi-rename` (`D:\tmp\g2-nextest.log`), the
+  backends (`D:\logs\batch1-nextest.log`), and `cmdr-listing` after its fixture fixes (`D:\logs\final-nextest.log`).
+  Each failure's panic text and assertion diff were parsed out (the logs are PowerShell-wrapped, two UTF-16) and
+  clustered; § "Windows failures, mapped" holds the table. Confirmed: the 65 "not an absolute Windows app path" panics
+  are tests handing a native tempdir where an app path belongs, by name; corrected: they sit in the app's
+  `multi_rename/` (44), `tools/actions/multi_rename_test.rs` (9), and `file_system/watcher*` (10), none in
+  `operations_host/`, and 59 of them enter through `cmdr_local::reading::list_directory_core`, not a volume root.
+  Changed: milestone 9's landmine names `list_directory_core`; the tempdir helper moves to milestone 3 (10b may run
+  before 9, and all 134 of `cmdr-index`'s path failures are fixtures with native trees in the CWD); every milestone's
+  Windows test list carries round four's counts and its not-this-plan cells; #1226's family is 48 cells, not 3
+  (`legacy_split` alone is 17); `cmdr-index`'s `path_resolution` cells aren't paths; `cmdr-multi-rename` had no
+  failures; NFS's `ExportNotFound` is 15, not 7; milestone 1 (i) reads outcomes from JUnit, tags the not-this-plan
+  cells, and cleans up the index's CWD trees. Found and handed off: backends that read a Linux-numbered remote errno
+  through the host's `libc` and `from_raw_os_error` (wrong error class on Windows; NFS and ADB), the Windows-only test
+  expectations, and the about 40 leftover cold-drive trees in the builder's checkout. Questions 13 and 14 written in as
+  the lead decided them. Readiness: ready to execute once PR #1233 lands; no design changed, only counts, owners, and
+  where the helper lands.
