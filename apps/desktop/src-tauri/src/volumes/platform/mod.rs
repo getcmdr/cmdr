@@ -51,7 +51,7 @@ const _: bool = LOCAL_DISK_CASE_SENSITIVE;
 
 /// The host's local volume the registry serves as `DEFAULT_VOLUME_ID` ("root"), the default
 /// pane's volume: the whole filesystem at `/` on macOS and Linux, the system drive on Windows,
-/// where every other drive and share is a volume of its own (plans D1 and D7).
+/// where every other drive and share is a volume of its own (plans D1 and D8).
 pub(crate) use imp::root_volume;
 
 /// A volume over a folder on this host's own filesystem at `root`, with the mount class its

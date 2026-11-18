@@ -1,5 +1,5 @@
 /**
- * What loading a stored tab does when its volume came back at another root (plan D7): a drive
+ * What loading a stored tab does when its volume came back at another root (plan D8): a drive
  * on another letter, a disk at another mount point. The path follows the DISK, rebased before
  * the existence walk, so the walk never probes the old root, which may hold another disk now.
  * Same fake `@tauri-apps/plugin-store` rig as `app-status-store.smb-tabs.test.ts`.

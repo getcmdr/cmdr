@@ -1,4 +1,4 @@
-//! Each volume's last roots, saved across sessions (plan D7), so a path recorded under an
+//! Each volume's last roots, saved across sessions (plan D8), so a path recorded under an
 //! earlier root finds its disk again after that root moved.
 //!
 //! A volume's id is its identity and its root only an address. On Windows the address moves

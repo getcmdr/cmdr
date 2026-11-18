@@ -1,5 +1,5 @@
 //! The Win32 reads behind Windows' volume list: every drive letter and folder mount, what
-//! each one is, and the facts its id comes from (plan D7). The id ladder itself is pure and
+//! each one is, and the facts its id comes from (plan D8). The id ladder itself is pure and
 //! lives in `cmdr_fs::volume::windows_volume_ids`, tested on every OS.
 //!
 //! What Windows 10 22H2 answers (verified on the builder, `ssh mami`, PowerShell P/Invoke of

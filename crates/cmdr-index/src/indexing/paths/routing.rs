@@ -337,12 +337,27 @@ mod tests {
     /// fixes the SMB read-side gap where a mount-absolute path resolved to nothing.
     #[test]
     fn index_read_path_routes_root_vs_smb() {
-        // Root: the absolute path is already index-rooted (no mount_root needed).
-        assert_eq!(
-            index_read_path_pure(ROOT_VOLUME_ID, "/Users/me/project", None),
-            Some("/Users/me/project".to_string()),
-            "root passes the absolute path straight through",
-        );
+        // Root: on macOS and Linux the absolute path is already index-rooted (no mount_root
+        // needed); on Windows `root` is the system drive, stripped like any mount.
+        match root_mount_root() {
+            None => assert_eq!(
+                index_read_path_pure(ROOT_VOLUME_ID, "/Users/me/project", None),
+                Some("/Users/me/project".to_string()),
+                "root passes the absolute path straight through",
+            ),
+            Some(system) => {
+                assert_eq!(
+                    index_read_path_pure(ROOT_VOLUME_ID, &format!("{system}Users/me"), None),
+                    Some("/Users/me".to_string()),
+                    "root strips the system drive",
+                );
+                assert_eq!(
+                    index_read_path_pure(ROOT_VOLUME_ID, "Q:/Users/me", None),
+                    None,
+                    "another drive's path is not root's",
+                );
+            }
+        }
 
         // SMB: strip the mount root to a mount-relative path.
         assert_eq!(

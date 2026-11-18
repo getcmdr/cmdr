@@ -254,13 +254,13 @@ mod tests {
         // A mount-rooted space keeps the raw absolute path (no firmlink normalization).
         assert_eq!(mount.absolute("/Volumes/NONAME/sub"), "/Volumes/NONAME/sub");
 
-        // `for_volume` derives the space from the kind + root.
-        assert_eq!(
-            IndexPathSpace::for_volume(IndexVolumeKind::Local, Path::new("/"), true)
-                .exclusion_scope()
-                .tier(),
-            ExclusionTier::BootDisk,
-        );
+        // `for_volume` derives the space from the kind + root: `root` is the `/`-rooted boot
+        // disk on macOS and Linux, and mount-rooted at the system drive on Windows.
+        let local = IndexPathSpace::for_volume(IndexVolumeKind::Local, Path::new("/"), true);
+        match super::super::routing::root_mount_root() {
+            None => assert_eq!(local.exclusion_scope().tier(), ExclusionTier::BootDisk),
+            Some(_) => assert_eq!(local.exclusion_scope().tier(), ExclusionTier::MountRooted),
+        }
         assert_eq!(
             IndexPathSpace::for_volume(IndexVolumeKind::LocalExternal, Path::new("/Volumes/NONAME"), true)
                 .exclusion_scope()

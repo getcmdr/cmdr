@@ -41,7 +41,7 @@ for archive-inner paths.
 
 ## Windows: a volume per drive
 
-Every drive letter, folder mount, and mapped share is its own volume (plan D1), keyed by the disk's identity (plan D7,
+Every drive letter, folder mount, and mapped share is its own volume (plan D1), keyed by the disk's identity (plan D8,
 `docs/specs/windows-port-plan.md`): the system drive is `root`, a local drive or folder mount keys on its volume GUID,
 a mapped drive and its UNC spelling on `(server, 445, share)`, a `subst` drive on its path. The ladder and the drive
 table's pure rules (`covering_drive`, `display_name`) are `cmdr_fs::volume::windows_volume_ids`, tested on every OS.

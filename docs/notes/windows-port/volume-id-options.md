@@ -1,7 +1,7 @@
 # Windows volume ids: the options (task 34)
 
 A PISS for what was the open decision in `docs/specs/windows-port-plan.md` task 34: which id a Windows drive, folder
-mount, and UNC share gets. **Decided**: David chose (d) on 2026-11-18, recorded as D7 in the plan. Researched 2026-11-18
+mount, and UNC share gets. **Decided**: David chose (d) on 2026-11-18, recorded as D8 in the plan. Researched 2026-11-18
 on the integration branch (code reading; Windows API behavior marked "to verify" wasn't run on the builder).
 
 ## Problem

@@ -145,7 +145,7 @@ Settled:
     for its company (valid 2025-09-26 to 2028-09-25, read from `tcmd115801x64.exe`), costs more for the same trust as
     Azure. Since 2024, EV no longer buys instant SmartScreen reputation either.
 
-- **D7. Volume ids on Windows** (David, 2026-11-18, option (d) of `docs/notes/windows-port/volume-id-options.md`):
+- **D8. Volume ids on Windows** (David, 2026-11-18, option (d) of `docs/notes/windows-port/volume-id-options.md`):
   Windows runs the rule macOS and Linux already run. A volume's id is the disk's identity; its root is only its address.
   Task 34.
   - A local drive or folder mount keys on its volume GUID (`\\?\Volume{…}\`, through `local_volume_id`, `vol-`); the
@@ -512,7 +512,7 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     **Platform-independent part done**: `cmdr_fs::volume::path_grammar` (`AppPath`/`AppRoot`, `PathFlavor::HOST` behind
     a `platform/` seam, `to_native`/`from_native` for `\\?\C:\…` and `\\?\UNC\…`, pure and tested on Linux) runs the
     frontend's case table, and `volumes::local_volume_id_for_path` is the seam the missing-volume defaults in
-    `commands/rename.rs` and `commands/file_system/path_checks.rs` ask. **Done (2026-11-18, D7)**: the id scheme
+    `commands/rename.rs` and `commands/file_system/path_checks.rs` ask. **Done (2026-11-18, D8)**: the id scheme
     (`cmdr_fs::volume::windows_volume_ids`, the system drive staying `root`), a volume per drive, folder mount, and
     mapped share from the Windows arm's drive table (`volumes/platform/windows/`, with each Win32 answer verified on the
     builder), a mapped share's UNC spelling as an alias root of its one `smb-` volume, path resolution for any drive and

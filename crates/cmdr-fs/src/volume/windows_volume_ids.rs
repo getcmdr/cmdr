@@ -1,4 +1,4 @@
-//! Which id a Windows drive, folder mount, or UNC share gets (plan D7): the macOS and Linux
+//! Which id a Windows drive, folder mount, or UNC share gets (plan D8): the macOS and Linux
 //! ladder, fed what Windows reports. Pure, so it's tested on every OS; the Win32 reads that
 //! gather the facts live in the app's `volumes/platform/windows/` arm.
 //!
