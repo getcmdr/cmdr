@@ -243,6 +243,14 @@
   "@multiRename.status.reservedDeviceName": {
     "sourceHash": "8bf464a"
   },
+  "multiRename.status.notPortable": "{alsoLinux, select, yes {No funcionará en Windows ni en Linux} other {No funcionará en Windows}}",
+  "@multiRename.status.notPortable": {
+    "sourceHash": "cc3ed09"
+  },
+  "multiRename.notPortableSummary": "{count, plural, one {{alsoLinux, select, yes {{countText} nombre nuevo no funcionará en Windows ni en Linux. El archivo se renombra igualmente.} other {{countText} nombre nuevo no funcionará en Windows. El archivo se renombra igualmente.}}} many {{alsoLinux, select, yes {{countText} nombres nuevos no funcionarán en Windows ni en Linux. Los archivos se renombran igualmente.} other {{countText} nombres nuevos no funcionarán en Windows. Los archivos se renombran igualmente.}}} other {{alsoLinux, select, yes {{countText} nombres nuevos no funcionarán en Windows ni en Linux. Los archivos se renombran igualmente.} other {{countText} nombres nuevos no funcionarán en Windows. Los archivos se renombran igualmente.}}}}",
+  "@multiRename.notPortableSummary": {
+    "sourceHash": "4eb996d"
+  },
   "multiRename.error.unclosed": "A un marcador le falta el “]” de cierre",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -626,15 +634,15 @@
   },
   "multiRename.reason.tooLong": "El nombre nuevo es demasiado largo para un nombre de archivo.",
   "@multiRename.reason.tooLong": {
-    "sourceHash": "b709218"
+    "sourceHash": "c49d459"
   },
   "multiRename.reason.reserved": "“.” y “..” no pueden ser nombres de archivo.",
   "@multiRename.reason.reserved": {
-    "sourceHash": "dcca507"
+    "sourceHash": "b0c0c33"
   },
   "multiRename.reason.disallowedCharacter": "Los nombres de archivo no pueden contener {character}.",
   "@multiRename.reason.disallowedCharacter": {
-    "sourceHash": "66a09f6"
+    "sourceHash": "2d58251"
   },
   "multiRename.reason.reservedDeviceName": "El nombre “{name}” está reservado por Windows, así que esta unidad no puede usarlo.",
   "@multiRename.reason.reservedDeviceName": {

@@ -123,9 +123,9 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "dedbdef"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Credenciales guardadas localmente (el Administrador de credenciales no está disponible)} linuxKde {Credentials stored locally (KWallet not available)} other {Credenciales guardadas localmente (no se detectó ningún llavero del sistema)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Credenciales guardadas localmente (el Administrador de credenciales no está disponible)} linuxKde {Credenciales guardadas localmente (KWallet no está disponible)} other {Credenciales guardadas localmente (no se detectó ningún llavero del sistema)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
-    "sourceHash": "fe1187b"
+    "sourceHash": "2be0ce8"
   },
   "fileExplorer.network.share.notFound": "El recurso compartido “{shareName}” no se encontró en {hostName}",
   "@fileExplorer.network.share.notFound": {
@@ -235,9 +235,9 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "b6fcb36"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en el Llavero. Para quitarla del todo, elimínala en Acceso a Llaveros.} windows {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en el Administrador de credenciales. Para quitarla del todo, elimínala en el Administrador de credenciales.} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en tu llavero. Para quitarla del todo, elimínala en la app de tu llavero.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en el Llavero. Para quitarla del todo, elimínala en Acceso a Llaveros.} windows {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en el Administrador de credenciales. Para quitarla del todo, elimínala en el Administrador de credenciales.} linuxGnome {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en tu depósito de claves. Para quitarla del todo, elimínala en Contraseñas y claves.} linuxKde {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en KWallet. Para quitarla del todo, elimínala en KWalletManager.} other {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en tu llavero. Para quitarla del todo, elimínala en la app de tu llavero.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
-    "sourceHash": "e7d9d4d"
+    "sourceHash": "3a23842"
   },
   "fileExplorer.restic.forgetPassword.unreachable": "Cmdr no pudo acceder a {name} ahora mismo, así que la contraseña sigue guardada. Inténtalo de nuevo en un momento.",
   "@fileExplorer.restic.forgetPassword.unreachable": {
@@ -459,9 +459,9 @@
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "0d1e2b4"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Configuración} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Configuración…}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Configuración} linuxGnome {Preferencias} linuxKde {Configurar Cmdr…} other {Configuración…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
-    "sourceHash": "802a5bb"
+    "sourceHash": "2ff20c4"
   },
   "fileExplorer.tags.skipped": "{count, plural, one {Cmdr dejó las etiquetas de un elemento como estaban, porque no pudo leer las que ya tenía. Comprueba que puedes abrirlo o etiquétalo en el Finder.} many {Cmdr dejó las etiquetas de {countText} elementos como estaban, porque no pudo leer las que ya tenían. Comprueba que puedes abrirlos o etiquétalos en el Finder.} other {Cmdr dejó las etiquetas de {countText} elementos como estaban, porque no pudo leer las que ya tenían. Comprueba que puedes abrirlos o etiquétalos en el Finder.}}",
   "@fileExplorer.tags.skipped": {

@@ -88,6 +88,10 @@
       {
         "source": "View",
         "reason": "The menu bar's View menu is Apple's own Spanish title `Visualización` (Finder); F3 and the File-menu item are the action `Ver`."
+      },
+      {
+        "source": "Preferences",
+        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the literal macOS Library folder name, kept as the system names it on disk, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own menu row, `Preferencias` (Nautilus `_Preferences`)."
       }
     ],
     "fr": [

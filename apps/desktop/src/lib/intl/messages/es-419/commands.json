@@ -59,9 +59,9 @@
   "@commands.fileGoToTrash.description": {
     "sourceHash": "bcc9610"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar en el administrador de archivos}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Mostrar en Archivos} linuxKde {Mostrar en Dolphin} other {Mostrar en el administrador de archivos}}",
   "@commands.fileShowInFileManager.label": {
-    "sourceHash": "a11bd4b"
+    "sourceHash": "1ade975"
   },
   "commands.tagsToggleGrey.description": "Agrega o quita la etiqueta Gris del Finder en los archivos seleccionados",
   "@commands.tagsToggleGrey.description": {
@@ -203,9 +203,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "b241432"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Quita del Llavero la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} windows {Quita del Administrador de credenciales la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {Quita de tu llavero la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Quita del Llavero la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} windows {Quita del Administrador de credenciales la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} linuxKde {Quita de KWallet la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} other {Quita de tu llavero la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "816f96b"
+    "sourceHash": "0151234"
   },
   "commands.multiRenameInsertField.label": "Insertar un campo de foto, video o música",
   "@commands.multiRenameInsertField.label": {

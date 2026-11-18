@@ -67,9 +67,9 @@
   "@errorReporter.amendedToast.message": {
     "sourceHash": "7ded0bc"
   },
-  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar en el administrador de archivos}}",
+  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Mostrar en Archivos} linuxKde {Mostrar en Dolphin} other {Mostrar en el administrador de archivos}}",
   "@errorReporter.bundleSavedToast.reveal": {
-    "sourceHash": "a11bd4b"
+    "sourceHash": "1ade975"
   },
   "errorReporter.autoSentToast.title": "Reporte de error enviado",
   "@errorReporter.autoSentToast.title": {

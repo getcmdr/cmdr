@@ -1887,6 +1887,11 @@
     "windows": {
       "chosen": "Administrador de credenciales",
       "note": "Windows' counterpart is the credential-manager concept (Administrador de credenciales)"
+    },
+    "other": {
+      "chosen": "llavero",
+      "accept": ["depósito de claves", "KWallet"],
+      "note": "Linux branches: the generic keyring is llavero; GNOME's own branch says depósito de claves, Seahorse's word (Contraseñas y claves: “El depósito de claves está bloqueado”, l10n.gnome.org seahorse.main es.po, 2026-11-18); KDE names its store KWallet and its manager KWalletManager, kept as names, with a wallet → cartera (kwalletmanager.po)"
     }
   },
   "kind": {
@@ -2100,7 +2105,8 @@
     "sources": "macOS Finder (N220 Nombre)",
     "exceptions": {
       "errors.write.duplicateSourceNames.title": "The idiom se llaman igual carries the name."
-    }
+    },
+    "forms": "filename → nombre de archivo, in labels and prose alike (`fileOperations.mkfile.nameAria`, `queryUi.mode.filename.label`); folder name → nombre de carpeta"
   },
   "nas": {
     "chosen": "NAS",
@@ -3007,7 +3013,8 @@
     "sources": "macOS SystemSettings (Ajustes, Ajustes del Sistema)",
     "exceptions": {
       "servers.sheet.s3GcsKeyHelp": "Google Cloud’s own Spanish console names that page Configuración; a third-party label is quoted from its own UI.",
-      "aboutThis.folderClass.versionControl": "A git repository's own configuration (.git/config), not Cmdr's Settings: la configuración de un repositorio, as git's own Spanish says."
+      "aboutThis.folderClass.versionControl": "A git repository's own configuration (.git/config), not Cmdr's Settings: la configuración de un repositorio, as git's own Spanish says.",
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome branch quotes GNOME Settings' own path (Configuración > Teclado > Ver y personalizar atajos, gnome-control-center es.po) and the linuxKde branch KDE's (Preferencias del sistema > Teclado > Atajos de teclado, systemsettings es.po): a desktop's settings app, not Cmdr's Ajustes."
     },
     "decision": "Ask Cmdr",
     "windows": {
@@ -3331,7 +3338,8 @@
     "confidence": "high",
     "sources": "macOS",
     "exceptions": {
-      "settings.appearance.themeColorSwatchAria": "The Linux branch names no settings app, only the system's settings in general (los ajustes de tu sistema); Ajustes del Sistema is the macOS app."
+      "settings.appearance.themeColorSwatchAria": "The Linux branch names no settings app, only the system's settings in general (los ajustes de tu sistema); Ajustes del Sistema is the macOS app.",
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxKde branch names KDE's System Settings app as KDE Spanish does, Preferencias del sistema (systemsettings._desktop_ es.po); Ajustes del Sistema is the macOS app."
     }
   },
   "system-settings-pane": {
@@ -4307,5 +4315,11 @@
     "forms": "the catalog's settled form: column option En disco, el tamaño en disco; <size> on disk → <size> en disco",
     "confidence": "high",
     "sources": "the catalog (settings.listing.sizeDisplay.opt.physical, fileExplorer.dirSize.onDiskLabel); Thunar Tamaño en disco; macOS Finder writes en el disco (IN_G1)"
+  },
+  "preferences": {
+    "chosen": "Preferencias",
+    "confidence": "high",
+    "sources": "macOS AppKit MenuCommands (Preferences… → Preferencias…); GNOME Nautilus _Preferences → Prefere_ncias; Thunar Preferencias",
+    "note": "GNOME's own settings row (the linuxGnome branch of `menu.app.settings`), no ellipsis; KDE's row is Configurar Cmdr… (Dolphin: Configurar Dolphin)"
   }
 }
