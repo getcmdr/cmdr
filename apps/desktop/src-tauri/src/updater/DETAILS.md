@@ -119,8 +119,8 @@ The organization's `DisableUpdates`, `DisableAutomaticUpdateChecks`, and `MaxUpd
   until Restart, so the policy keeps the last word past the stage too: a check answering `UpdatesDisabledByPolicy` or
   `HeldByPolicy` drops a staged installer the policy now refuses (`handoff::withdraw_if_refused`, `staged_withdrawn:
   true`, which takes the frontend's restart prompt down), and the exit re-reads the policy before the hand-off
-  (`handoff::note_handoff`, before the security log flushes, so a refusal is logged as one and never as an install). The policy SOURCE is macOS-only today
-  (`managed_policy/`), so off macOS it answers "no policy" until a Windows source exists.
+  (`handoff::note_handoff`, before the security log flushes, so a refusal is logged as one and never as an install). macOS and Windows have a
+  policy source (`managed_policy/DETAILS.md`); Linux answers "no policy".
 - **No install, no notice.** Under `DisableUpdates` or a held version nothing is staged, so no bundle can say a fix
   exists. Advisories for managed fleets go out through the channels `docs/security-incident-procedure.md` lists.
 

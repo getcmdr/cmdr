@@ -1,10 +1,12 @@
-//! Managed preferences: what an organization's MDM profile restricts, read from the forced layer
-//! of the `com.veszelovszki.cmdr` preferences domain. Named after the UI phrase "Managed by your
+//! Managed preferences: what an organization's MDM profile or Group Policy restricts, read from the
+//! forced layer of the `com.veszelovszki.cmdr` preferences domain on macOS and from
+//! `SOFTWARE\Policies\Cmdr` in the registry on Windows. Named after the UI phrase "Managed by your
 //! organization".
 //!
 //! Everything downstream asks [`current`] (cached) or [`for_egress`] (fresh, at the point bytes
-//! would leave the Mac) and gets typed answers. Nothing outside this module touches CFPreferences
-//! or spells a key name. The key catalog, parse rules, and refresh triggers: `DETAILS.md`.
+//! would leave the machine) and gets typed answers. Nothing outside this module touches the OS's
+//! policy store or spells a key name. The key catalog, parse rules, and refresh triggers:
+//! `DETAILS.md`.
 
 mod cache;
 mod ceiling;
@@ -14,6 +16,7 @@ pub(crate) mod keys;
 mod locked;
 #[cfg(any(debug_assertions, feature = "playwright-e2e", test))]
 mod override_watch;
+mod platform;
 #[cfg(test)]
 mod pppc_profile_test;
 #[cfg(test)]
@@ -21,8 +24,6 @@ mod public_docs_test;
 mod refusal;
 mod source;
 pub(crate) mod view;
-#[cfg(target_os = "macos")]
-mod watch;
 
 pub use cache::{current, for_egress, init, refresh};
 pub use ceiling::UpdateCeiling;

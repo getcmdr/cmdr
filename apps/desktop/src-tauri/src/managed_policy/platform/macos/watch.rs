@@ -1,5 +1,5 @@
 //! The two background refresh triggers on macOS: app activation, and a file watch on the folder
-//! configuration profiles write to. Both only call [`super::refresh`]; CFPreferences stays the
+//! configuration profiles write to. Both only call [`crate::managed_policy::refresh`]; CFPreferences stays the
 //! source of truth. Why both: `DETAILS.md` § Refresh.
 
 use std::path::Path;
@@ -20,7 +20,7 @@ pub(super) fn start() {
 }
 
 fn refresh_and_log(trigger: &str) {
-    if super::refresh() {
+    if crate::managed_policy::refresh() {
         log::debug!(target: "managed_policy", "Re-read the managed policy after {trigger}: changed");
     }
 }

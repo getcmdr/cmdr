@@ -107,11 +107,10 @@ pub fn init(app: &AppHandle) {
     #[cfg(any(debug_assertions, feature = "playwright-e2e", test))]
     if let Some(path) = std::env::var_os(OVERRIDE_ENV) {
         // The file stands in for the whole managed layer, so its own watch is the trigger that
-        // matters; the macOS ones below only re-read the same file.
+        // matters; the OS ones below only re-read the same file.
         super::override_watch::start(std::path::PathBuf::from(path));
     }
-    #[cfg(target_os = "macos")]
-    super::watch::start();
+    super::platform::start_refresh_triggers();
 }
 
 /// Everything a policy change does, in one visible list: log it, note it in the security log,
@@ -151,14 +150,7 @@ fn read_configured_source() -> Parsed {
         log::debug!(target: "managed_policy", "Reading the managed policy from {OVERRIDE_ENV}");
         return keys::parse(&super::source::PlistFileSource::read(std::path::Path::new(&path)));
     }
-    #[cfg(target_os = "macos")]
-    {
-        keys::parse(&super::source::CfPrefsSource::synchronized(crate::config::BUNDLE_ID))
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        keys::parse(&super::source::NoManagedPrefs)
-    }
+    keys::parse(&*super::platform::system_source())
 }
 
 /// A policy change: the one in force before and the one now.
