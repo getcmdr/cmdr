@@ -130,6 +130,7 @@
                                     <div class="custom-timeout">
                                         <SettingNumberInput
                                             id="network.customTimeout"
+                                            size="compact"
                                             unit={tString('settings.network.customTimeoutUnit')}
                                         />
                                     </div>

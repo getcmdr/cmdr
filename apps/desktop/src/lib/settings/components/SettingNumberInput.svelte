@@ -24,9 +24,11 @@
             setting's own unit (`ms` / `s` / `min` / …); pass this to override or to label a
             plain `number`. */
         unit?: string
+        /** `compact` for a stepper inline with a radio option or label text; see `#lib/ui/NumberInput`. */
+        size?: 'regular' | 'compact'
     }
 
-    const { id, disabled = false, unit = '' }: Props = $props()
+    const { id, disabled = false, unit = '', size = 'regular' }: Props = $props()
     const lock = useSettingLock(id)
 
     const definition = getSettingDefinition(id)
@@ -75,4 +77,5 @@
     ariaLabel={label}
     ariaDescribedBy={lock.describedBy()}
     unit={displayUnit}
+    {size}
 />

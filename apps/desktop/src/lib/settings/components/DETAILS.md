@@ -28,7 +28,8 @@ shape:
   (`src-tauri/src/analytics/DETAILS.md` § The language events).
 - `SettingToggleGroup`: segmented control for a short enum list.
 - `SettingRadioGroup`: vertical radio for a longer list, an option needing a `customContent` snippet, or an option
-  carrying a control on its own line (`itemTrailing`, as Brief mode's "Limit to" does).
+  carrying a control on its own line (`itemTrailing`, as Brief mode's "Limit to" does). A stepper there passes
+  `size="compact"` so it matches the option line.
 - `SettingSlider` vs `SettingNumberInput`: see the next section, and § Index-mapped stops for the discrete mode. A
   `duration` setting on the number input edits in `constraints.unit` while the store stays in ms (`durationValueToMs` /
   `msToDurationValue`).

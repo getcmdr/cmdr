@@ -126,7 +126,7 @@
                             >{:else}{segment.text}{/if}{/each}</label
                 >
                 {#if placed.tip}
-                    <InfoTip label={tString('settings.control.moreAbout', { setting: label })} text={placed.tip} />
+                    <InfoTip label={tString('settings.control.moreAbout', { setting: label })} text={placed.tip} size={12} />
                 {/if}
                 {#if labelTrailing}{@render labelTrailing()}{/if}
                 {#if modified && !locked}

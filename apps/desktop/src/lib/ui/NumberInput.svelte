@@ -22,10 +22,26 @@
         unit?: string
         /** Id of an element that explains the field, for example why it's disabled. */
         ariaDescribedBy?: string
+        /**
+         * `regular` (the default) matches a text field's height. `compact` matches a line of
+         * `--font-size-sm` text, for a stepper sitting inline with a radio option or a label,
+         * where the full field would tower over the words beside it.
+         */
+        size?: 'regular' | 'compact'
     }
 
-    const { value, onChange, min, max, step = 1, disabled = false, ariaLabel, unit = '', ariaDescribedBy }: Props =
-        $props()
+    const {
+        value,
+        onChange,
+        min,
+        max,
+        step = 1,
+        disabled = false,
+        ariaLabel,
+        unit = '',
+        ariaDescribedBy,
+        size = 'regular',
+    }: Props = $props()
 
     function handleValueChange(details: NumberInputValueChangeDetails): void {
         // An emptied field parses as `NaN`. Swallow it rather than committing a broken
@@ -35,7 +51,7 @@
     }
 </script>
 
-<div class="ni-wrapper">
+<div class="ni-wrapper" class:compact={size === 'compact'}>
     <NumberInput.Root value={String(value)} onValueChange={handleValueChange} {min} {max} {step} {disabled}>
         <NumberInput.Control class="ni-control">
             <NumberInput.DecrementTrigger class="ni-btn" aria-label={tString('ui.numberInput.decrease', { label: ariaLabel })}
@@ -128,6 +144,20 @@
     :global(.ni-input[data-disabled]) {
         opacity: 0.5;
         cursor: not-allowed;
+    }
+
+    /* `compact`: the field shrinks to a `--font-size-sm` line plus a hairline of padding, about
+       the height of the radio option or label it sits beside. Everything else (frame, focus
+       ring, steppers) stays the regular field's. */
+    .ni-wrapper.compact :global(.ni-btn) {
+        width: 20px;
+        font-size: var(--font-size-sm);
+    }
+
+    .ni-wrapper.compact :global(.ni-input) {
+        width: 48px;
+        padding: var(--spacing-xxs) var(--spacing-xs);
+        font-size: var(--font-size-sm);
     }
 
     .ni-unit {

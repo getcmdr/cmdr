@@ -2499,8 +2499,13 @@ dragged; a setting that wants an exact typed number uses `NumberInput` instead (
 ## NumberInput
 
 Framed numeric field over Ark's `NumberInput`: −/+ steppers around a centered input, with an optional quiet `unit` label
-after it. One shape, no variants. Props: `value` / `onChange` (numbers, not Ark's strings), `min` / `max` / `step` /
-`disabled`, `ariaLabel`, `unit`.
+after it. Props: `value` / `onChange` (numbers, not Ark's strings), `min` / `max` / `step` / `disabled`, `ariaLabel`,
+`unit`, `size`.
+
+`size: 'compact'` (default `regular`, a text field's height) shrinks the input and steppers to a `--font-size-sm` line
+plus a hairline of padding, about 21px against a radio option's 25px row. Use it wherever the stepper sits inline with a
+radio option or label text (Brief mode's "Limit to", the custom network timeout), where the full field towers over the
+words beside it. Frame, focus ring, and stepper behavior stay the same.
 
 The component owns two behaviors so no caller has to: it clamps every emitted value into `[min, max]`, and it SWALLOWS
 an emptied field (`NaN`) instead of committing it, leaving Ark's `clampValueOnBlur` to restore a real value when focus

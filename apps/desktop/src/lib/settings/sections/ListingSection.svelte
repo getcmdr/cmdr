@@ -172,6 +172,7 @@
                                     <SettingNumberInput
                                         id="listing.briefColumnWidthMaxPx"
                                         unit="px"
+                                        size="compact"
                                         disabled={widthFieldDisabled}
                                     />
                                 {/if}

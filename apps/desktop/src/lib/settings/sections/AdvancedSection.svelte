@@ -229,6 +229,7 @@ Timestamp: ${info.timestamp}
                             <InfoTip
                                 label={tString('settings.control.moreAbout', { setting: setting.label })}
                                 text={placed.tip}
+                                size={12}
                             />
                         {/if}
                     </div>
