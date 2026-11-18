@@ -1725,6 +1725,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LIVE_VERSION: ${{ needs.guard.outputs.live-version }}
+          SHIPS_WINDOWS: ${{ needs.guard.outputs.ships-windows }}
         run: |
           set -euo pipefail
           VERSION="${{ github.ref_name }}"
@@ -1740,13 +1741,18 @@ jobs:
           printf '%s\n' "$RELEASE_JSON" > /tmp/release.json
           gh release download "$TAG" -p "Cmdr_*.sig" -D /tmp/signatures --clobber
 
-          # A re-run keeps the legs of the latest.json an earlier attempt put on the release: the
-          # mirror's files are immutable, so the legs, once written down, don't change.
+          # A re-run of a release with legs keeps the legs of the latest.json an earlier attempt put
+          # up, when that file is whole and passes the validator (`-previous`; a damaged one gets a
+          # warning and the snapshot decides): the mirror's files are immutable, so legs once
+          # mirrored don't change. A macOS-only release reads none, and overwrites a damaged one.
           CARRIED=()
-          if jq -e '.assets[] | select(.name == "latest.json")' /tmp/release.json > /dev/null; then
+          if [ "$SHIPS_WINDOWS" = true ] && jq -e '.assets[] | select(.name == "latest.json" and .state == "uploaded")' /tmp/release.json > /dev/null; then
             rm -rf /tmp/carried && mkdir -p /tmp/carried
-            gh release download "$TAG" -p latest.json -D /tmp/carried
-            CARRIED=(-carried-by /tmp/carried/latest.json)
+            if gh release download "$TAG" -p latest.json -D /tmp/carried; then
+              CARRIED=(-previous /tmp/carried/latest.json)
+            else
+              echo "::warning::The latest.json an earlier attempt uploaded didn't download, so the release as it stands decides its legs."
+            fi
           fi
 
           # The EU mirror (`scripts/release-mirror.sh`, run below before the release goes Latest).

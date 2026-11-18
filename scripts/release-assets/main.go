@@ -48,7 +48,7 @@ func main() {
 // options are the parsed flags every command reads its own from.
 type options struct {
 	version, vetted, attested, subjectDir, assets, sigs, notes, baseURL, pubDate, out, file string
-	osName, from, advisories, carriedBy, newerThan                                          string
+	osName, from, advisories, carriedBy, previous, newerThan                                string
 	args                                                                                    []string
 }
 
@@ -73,6 +73,7 @@ func run(args []string) error {
 	fs.StringVar(&o.from, "from", "", "stage: the downloaded build artifact")
 	fs.StringVar(&o.advisories, "advisories", "", "stage: the checkout's advisory list")
 	fs.StringVar(&o.carriedBy, "carried-by", "", "latest-json, validate-latest, checksum-files: a latest.json of this version whose platforms fix which legs the release carries (without it: the legs whole on the release, signatures included)")
+	fs.StringVar(&o.previous, "previous", "", "latest-json: the latest.json an earlier attempt uploaded, whose legs a re-run keeps if it passes the validator (else a warning, and the snapshot decides)")
 	fs.StringVar(&o.newerThan, "newer-than", "", "latest-json, validate-latest: the live manifest's version, which this one must move past (empty: unknown, or a deliberate republish)")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
@@ -122,9 +123,6 @@ func runLatest(o options, release manifest.Release, validate bool) error {
 	if err != nil {
 		return err
 	}
-	if release, err = carriedRelease(release, have, o.carriedBy); err != nil {
-		return err
-	}
 	keys, err := trustedKeyIDs(os.Getenv("RELEASE_ASSETS_ROOT"))
 	if err != nil {
 		return fmt.Errorf("reading the updater keys the app trusts (run this through scripts/release-assets.sh): %w", err)
@@ -132,6 +130,11 @@ func runLatest(o options, release manifest.Release, validate bool) error {
 	in := latestInput{
 		release: release, assets: have, sigDir: o.sigs, pubDate: o.pubDate,
 		baseURL: strings.TrimSuffix(o.baseURL, "/"), trustedKeyIDs: keys, newerThan: o.newerThan,
+	}
+	if prev, ok := previousLegs(in, o.previous); ok {
+		in.release = prev
+	} else if in.release, err = carriedRelease(in.release, have, o.carriedBy); err != nil {
+		return err
 	}
 	if validate {
 		return validateFile(o.file, in.rules())
@@ -174,6 +177,11 @@ func runChecksumFiles(o options, release manifest.Release) error {
 // with a `::warning::` for each leg the release ships without. A macOS-only release has no legs, so
 // it comes back as it went in.
 func carriedRelease(release manifest.Release, assets []releaseAsset, carriedBy string) (manifest.Release, error) {
+	if len(release.LegOSes()) == 0 {
+		// Nothing to carry, so nothing to read: a macOS-only release behaves as it always did, a
+		// damaged earlier `latest.json` included (a re-run overwrites it).
+		return release, nil
+	}
 	if carriedBy != "" {
 		raw, err := os.ReadFile(carriedBy)
 		if err != nil {
@@ -188,6 +196,36 @@ func carriedRelease(release manifest.Release, assets []releaseAsset, carriedBy s
 		}
 	}
 	return whole, nil
+}
+
+// previousLegs is the release as an earlier `publish` attempt's `latest.json` (at path) carried
+// its legs, when that file is one to keep: this version's, naming whole legs, and passing
+// `validateLatest` against the release as it stands. A damaged, half-saved, or stale one is never
+// carried: it gets a `::warning::` and the snapshot decides instead, which is safe until the
+// mirror holds the release (`latest.json` itself is never mirrored). Only a release with legs reads
+// it; a macOS-only one has nothing to keep.
+func previousLegs(in latestInput, path string) (manifest.Release, bool) {
+	if path == "" || len(in.release.LegOSes()) == 0 {
+		return manifest.Release{}, false
+	}
+	raw, err := os.ReadFile(path)
+	if err == nil {
+		var carried manifest.Release
+		if carried, err = in.release.CarriedBy(raw); err == nil {
+			rules := in.rules()
+			rules.release = carried
+			if err = validateLatest(raw, rules); err == nil {
+				return carried, true
+			}
+		}
+	}
+	fmt.Fprintf(os.Stderr, "::warning::The latest.json an earlier attempt uploaded isn't one to keep (%v), so this release's contents come from the release as it stands.\n", oneLine(err))
+	return manifest.Release{}, false
+}
+
+// oneLine folds an error onto one line, for a workflow annotation.
+func oneLine(err error) string {
+	return strings.Join(strings.Fields(err.Error()), " ")
 }
 
 // vetNSISFiles runs `nsis.Vet` on each installer, printing a verdict per file, and fails if any

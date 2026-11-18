@@ -39,9 +39,13 @@ var windowsScenarios = []scenario{
 	{name: "publish-late", job: "publish", event: "push", mode: "ci", drop: noLatest, artifacts: gateArtifact},
 	// Half a leg (the installer's signature missing) is no leg.
 	{name: "publish-half", job: "publish", event: "push", mode: "ci", drop: noLatest, add: windowsLeg[2:], artifacts: gateArtifact},
-	// A re-run keeps the legs of the `latest.json` an earlier attempt put up (the fixture's,
-	// macOS-only), though the leg is whole now.
-	{name: "publish-rerun", job: "publish", event: "push", mode: "ci", add: windowsLeg, artifacts: gateArtifact},
+	// A re-run keeps the legs of the `latest.json` an earlier attempt put up (macOS-only, and it
+	// passes the validator), though the leg is whole now.
+	{name: "publish-rerun", job: "publish", event: "push", mode: "ci", add: windowsLeg, earlierLatest: "latest.built.json", artifacts: gateArtifact},
+	// The fixture's own `latest.json` predates `downloads`, so the validator refuses it: not kept.
+	{name: "publish-rerun-stale", job: "publish", event: "push", mode: "ci", add: windowsLeg, artifacts: gateArtifact},
+	// A re-run after a damaged `latest.json` upload: that file is never carried; the snapshot decides.
+	{name: "publish-rerun-damaged", job: "publish", event: "push", mode: "ci", add: windowsLeg, damage: noLatest, artifacts: gateArtifact},
 	// `local` mode's dispatch: the laptop signed the leg, so it's verified and carried.
 	{name: "publish-dispatch", job: "publish", event: "workflow_dispatch", mode: "local", drop: noLatest, add: windowsLeg, artifacts: gateArtifact},
 	{name: "vet", job: "vet-update-archives", event: "push", mode: "ci", add: windowsLeg},

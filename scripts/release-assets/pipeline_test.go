@@ -49,6 +49,13 @@ type scenario struct {
 	windowsOn bool
 	// add puts these assets on the fixture release (`windowsAsset` makes each).
 	add []string
+	// starter marks these assets as still being saved (GitHub's `state: starter`).
+	starter []string
+	// damage cuts these assets on the release to half their bytes (a damaged upload).
+	damage []string
+	// earlierLatest replaces the release's `latest.json` with this `testdata/v0.61.0/` file: what an
+	// earlier attempt of this pipeline uploaded (`latest.built.json`, macOS-only).
+	earlierLatest string
 	// made maps a `download-artifact` name to the files the scenario makes where the step puts it
 	// (a build job's artifact), each made by `windowsAsset`.
 	made map[string][]string
@@ -74,6 +81,8 @@ var scenarios = []scenario{
 	{name: "publish-dispatch", job: "publish", event: "workflow_dispatch", mode: "local", artifacts: gateArtifact},
 	{name: "publish-no-pkg", job: "publish", event: "push", mode: "ci", drop: []string{"Cmdr_0.61.0_universal.pkg"}, artifacts: gateArtifact},
 	{name: "publish-missing-sig", job: "publish", event: "push", mode: "ci", drop: []string{"Cmdr_0.61.0_x64.app.tar.gz.sig"}, artifacts: gateArtifact},
+	// A re-run after a damaged `latest.json` upload overwrites it, as it always has.
+	{name: "publish-rerun-damaged", job: "publish", event: "push", mode: "ci", damage: []string{"latest.json"}, artifacts: gateArtifact},
 	{name: "vet", job: "vet-update-archives", event: "push", mode: "ci"},
 	{name: "vet-missing-archive", job: "vet-update-archives", event: "push", mode: "ci", drop: []string{"Cmdr_0.61.0_universal.app.tar.gz"}},
 	{name: "sbom", job: "sbom", event: "push", mode: "ci"},
@@ -209,13 +218,11 @@ func newHarness(t *testing.T, sc scenario) *harness {
 
 	// The release: every asset v0.61.0 carries, minus the scenario's drops. The signatures,
 	// `latest.json`, and `checksums.txt` are the real ones; every other file is a short stand-in,
-	// while the `gh api` view keeps the real sizes.
+	// while the `gh api` view keeps the real sizes. Each asset is `uploaded` (GitHub's `state`),
+	// except the scenario's `starter` ones, still being saved.
 	var rel struct {
-		TagName string `json:"tag_name"`
-		Assets  []struct {
-			Name string `json:"name"`
-			Size int64  `json:"size"`
-		} `json:"assets"`
+		TagName string         `json:"tag_name"`
+		Assets  []fixtureAsset `json:"assets"`
 	}
 	raw, err := os.ReadFile(filepath.Join(fixture, "release.json"))
 	must(t, err)
@@ -239,15 +246,35 @@ func newHarness(t *testing.T, sc scenario) *harness {
 		h.windowsAsset(path)
 		info, err := os.Stat(path)
 		must(t, err)
-		rel.Assets = append(rel.Assets, struct {
-			Name string `json:"name"`
-			Size int64  `json:"size"`
-		}{name, info.Size()})
+		rel.Assets = append(rel.Assets, fixtureAsset{Name: name, Size: info.Size()})
+	}
+	for i := range rel.Assets {
+		rel.Assets[i].State = "uploaded"
+		if slices.Contains(sc.starter, rel.Assets[i].Name) {
+			rel.Assets[i].State = "starter"
+		}
+	}
+	if sc.earlierLatest != "" {
+		copyFile(t, filepath.Join(fixture, sc.earlierLatest), filepath.Join(h.releaseDir, "latest.json"), 0o644)
+	}
+	// A damaged upload: the first half of the file's bytes.
+	for _, name := range sc.damage {
+		path := filepath.Join(h.releaseDir, name)
+		b, err := os.ReadFile(path)
+		must(t, err)
+		must(t, os.WriteFile(path, b[:len(b)/2], 0o644))
 	}
 	out, err := json.Marshal(rel)
 	must(t, err)
 	must(t, os.WriteFile(filepath.Join(base, "release.json"), out, 0o644))
 	return h
+}
+
+// fixtureAsset is one asset in the fixture release's `gh api` view.
+type fixtureAsset struct {
+	Name  string `json:"name"`
+	Size  int64  `json:"size"`
+	State string `json:"state"`
 }
 
 func (h *harness) env(outputFile, envFile string) []string {
