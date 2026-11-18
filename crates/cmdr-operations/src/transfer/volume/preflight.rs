@@ -25,6 +25,7 @@
 //! top-level directories from the file-only bulk-skip.
 
 use crate::rt::Instant;
+use cmdr_fs::app_path::AppPath;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -374,7 +375,13 @@ pub(super) async fn scan_volume_sources(
         .cloned()
         .collect();
     let batch = volume
-        .scan_for_copy_batch_with_boundary(&to_walk, &boundary)
+        .scan_for_copy_batch_with_boundary(
+            &to_walk
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+            &boundary,
+        )
         .await
         .map_err(|e| {
             // ❗ A stopped scan takes the operation's own cancel exit, so the
@@ -559,7 +566,7 @@ pub(super) async fn top_level_move_hints(
         // the lost connection, the parent as context.
         let entries = through_outages(state, &[volume], || async {
             volume
-                .list_directory(&parent, None)
+                .list_directory(&AppPath::legacy_unchecked(&parent), None)
                 .await
                 .map_err(|e| PathedVolumeError::new(PathRole::Source, &parent, e))
         })
@@ -607,7 +614,7 @@ pub(super) async fn source_merges_as_a_directory(
     match hint {
         Some(hint) => Ok(hint.is_directory),
         None => volume
-            .entry_kind(source)
+            .entry_kind(&AppPath::legacy_unchecked(source))
             .await
             .map(|kind| kind == EntryKind::Directory)
             .map_err(|e| map_volume_error(&source.display().to_string(), PathRole::Source, e)),

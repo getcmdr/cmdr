@@ -11,6 +11,7 @@
 //! ❗ The clearing lives here, never in a volume's `delete`: the local volume's
 //! delete is also F8's, which must never unlock the user's own files.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -65,7 +66,7 @@ pub(super) async fn delete_clearing_blockers(
         Err(e @ VolumeError::PermissionDenied { .. }) => e,
         other => return Ok(other?),
     };
-    let refused = match volume.clear_blockers(path).await {
+    let refused = match volume.clear_blockers(&AppPath::legacy_unchecked(path)).await {
         Unblock::Cleared(_) => match remove(volume, path, kind).await {
             Err(e @ VolumeError::PermissionDenied { .. }) => e,
             other => return Ok(other?),
@@ -76,7 +77,7 @@ pub(super) async fn delete_clearing_blockers(
     let Some(root) = volume.local_path() else {
         return Err(refused.into());
     };
-    let local = cmdr_fs::volume::root_anchored(&root, path);
+    let local = cmdr_fs::volume::root_anchored(&root.as_std_legacy(), path);
     // A few syscalls, but on a mounted share each one can block: off the runtime.
     match runtime.spawn_blocking(move || open_parent_folder(&local)).await {
         Ok(ParentOpening::Opened(folder)) => {
@@ -97,7 +98,7 @@ pub(super) async fn delete_clearing_blockers(
 /// One removal attempt of `path` as the `kind` it is.
 async fn remove(volume: &Arc<dyn Volume>, path: &Path, kind: NodeKind) -> Result<(), VolumeError> {
     match kind {
-        NodeKind::File => volume.delete(path).await,
-        NodeKind::Directory => volume.delete_directory(path, None).await,
+        NodeKind::File => volume.delete(&AppPath::legacy_unchecked(path)).await,
+        NodeKind::Directory => volume.delete_directory(&AppPath::legacy_unchecked(path), None).await,
     }
 }

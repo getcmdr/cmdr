@@ -60,7 +60,13 @@ fn side(volume: &dyn Volume, id: Option<&String>) -> (TransferSide, bool) {
     let name = volume.name().to_string();
     match volume.local_path() {
         // Watched only if it's a mount the table listed (`TransferSide::at_start`).
-        Some(mount) => (TransferSide::at_start(id, name, mount), true),
-        None => (TransferSide::new(id, name, volume.root().to_path_buf()), false),
+        Some(mount) => (
+            TransferSide::at_start(id, name, mount.as_std_legacy().into_owned()),
+            true,
+        ),
+        None => (
+            TransferSide::new(id, name, volume.root().as_std_legacy().to_path_buf()),
+            false,
+        ),
     }
 }

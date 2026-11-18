@@ -97,9 +97,9 @@ pub(crate) fn volume_location(volume: &dyn cmdr_fs::volume::Volume, path: &Path)
         return local_location(path);
     }
     if let Some(home) = volume.stands_in_for_own_disk() {
-        return tildify(path, Some(home));
+        return tildify(path, Some(&home.as_std_legacy()));
     }
-    location_on(volume.name(), volume.root(), path)
+    location_on(volume.name(), &volume.root().as_std_legacy(), path)
 }
 
 fn tildify(path: &Path, home: Option<&Path>) -> String {

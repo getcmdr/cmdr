@@ -4,6 +4,7 @@
 //! the op — against the real archive for a LOCAL parent, or the pulled-local
 //! working copy for a REMOTE one.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashSet;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -304,12 +305,15 @@ async fn pull_one_source(
     dest_path: &Path,
     state: &Arc<WriteOperationState>,
 ) -> Result<(), EditError> {
-    let is_directory = source_volume.is_directory(source_path).await.map_err(|e| {
-        EditError::Op(WriteOperationError::ReadError {
-            path: source_path.display().to_string(),
-            message: cmdr_fs::error_detail::ErrorDetail::of(e),
-        })
-    })?;
+    let is_directory = source_volume
+        .is_directory(&AppPath::legacy_unchecked(source_path))
+        .await
+        .map_err(|e| {
+            EditError::Op(WriteOperationError::ReadError {
+                path: source_path.display().to_string(),
+                message: cmdr_fs::error_detail::ErrorDetail::of(e),
+            })
+        })?;
 
     pull_path_to_local(source_volume, source_path, is_directory, dest_volume, dest_path, state)
         .await

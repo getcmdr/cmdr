@@ -42,6 +42,7 @@
 //! single-shot-ness, ❌ NEVER by smallness: the destination is asked
 //! (`Volume::write_is_single_shot`), the caller never guesses from a size.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -430,7 +431,7 @@ impl StagedWrite {
         // the driver's post-loop cleanup takes it later, whatever the ending, or
         // the ledger does on the share's next reconnect. Retired first, it would
         // be forgotten on the share.
-        match dest_volume.delete(temp.path()).await {
+        match dest_volume.delete(&AppPath::legacy_unchecked(temp.path())).await {
             // The cut-off upload may land after this delete (a WebDAV server
             // still reading the dropped PUT stores what arrived, #732), so the
             // background pass asks again, and retires it then.
@@ -476,7 +477,7 @@ impl StagedWrite {
         }
         if self.unstaged {
             let target = self.final_path.clone();
-            if let Err(e) = dest_volume.delete(&target).await {
+            if let Err(e) = dest_volume.delete(&AppPath::legacy_unchecked(&target)).await {
                 log::debug!(
                     target: "copy",
                     "staged write: couldn't clear {} before the next attempt: {e}",

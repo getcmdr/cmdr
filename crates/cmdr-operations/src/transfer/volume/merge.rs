@@ -23,6 +23,7 @@
 //! `safety_oracle.rs`, never fresh inline asserts. See `CLAUDE.md` § Merge and
 //! conflicts, and `DETAILS.md` § "Scan-as-you-merge".
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashSet;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -519,7 +520,10 @@ async fn skip_if_folder_refused(
         return Err(error);
     }
     pool.drive(skip_if_refused(ctx, &subject, error)).await?;
-    let (files, bytes) = match pool.drive(source_volume.scan_for_copy(folder.source)).await {
+    let (files, bytes) = match pool
+        .drive(source_volume.scan_for_copy(&AppPath::legacy_unchecked(folder.source)))
+        .await
+    {
         Ok(scan) => (scan.file_count, scan.total_bytes),
         // The skip stands either way; only its count is short.
         Err(e) => {
@@ -739,7 +743,10 @@ async fn merge_level<'a>(
                     // ❌ never the `NotSupported` "treat as fresh" case below.
                     let mut made_here = false;
                     let level_pre_existed = if backend_create_directory_detects_collisions(dest_volume) {
-                        match dest_volume.create_directory(dest_path).await {
+                        match dest_volume
+                            .create_directory(&AppPath::legacy_unchecked(dest_path))
+                            .await
+                        {
                             Ok(()) => {
                                 created.record_dir(dest_path.to_path_buf());
                                 // Made here, so it is the extract's to quarantine, now rather than
@@ -765,10 +772,13 @@ async fn merge_level<'a>(
                         }
                     } else {
                         // Untrusted-collision backend (MTP): pre-check existence.
-                        if dest_volume.exists(dest_path).await {
+                        if dest_volume.exists(&AppPath::legacy_unchecked(dest_path)).await {
                             true
                         } else {
-                            match dest_volume.create_directory(dest_path).await {
+                            match dest_volume
+                                .create_directory(&AppPath::legacy_unchecked(dest_path))
+                                .await
+                            {
                                 Ok(()) => {
                                     created.record_dir(dest_path.to_path_buf());
                                     // Made here, so it is the extract's to quarantine, now rather than
@@ -805,11 +815,16 @@ async fn merge_level<'a>(
                 };
 
                 let (dest_index, entries) = if legs_may_overlap {
-                    tokio::join!(dest_prepare, source_volume.list_directory_as_source(source_path))
+                    tokio::join!(
+                        dest_prepare,
+                        source_volume.list_directory_as_source(&AppPath::legacy_unchecked(source_path))
+                    )
                 } else {
                     (
                         dest_prepare.await,
-                        source_volume.list_directory_as_source(source_path).await,
+                        source_volume
+                            .list_directory_as_source(&AppPath::legacy_unchecked(source_path))
+                            .await,
                     )
                 };
                 // Each leg's failure is its own volume's: a share that won't create the

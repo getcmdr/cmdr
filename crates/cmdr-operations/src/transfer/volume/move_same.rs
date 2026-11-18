@@ -11,6 +11,7 @@
 //! copy-then-delete engine instead (`moves_by_copy`, `DETAILS.md` § "A
 //! same-volume move whose renames copy").
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::future::Future;
 
@@ -253,7 +254,7 @@ async fn moves_by_copy(
     for source in sources {
         let work = through_outages(state, &[volume], || async {
             volume
-                .rename_work(source)
+                .rename_work(&AppPath::legacy_unchecked(source))
                 .await
                 .map_err(|e| PathedVolumeError::new(PathRole::Source, source, e))
         })
@@ -341,7 +342,7 @@ pub async fn move_within_same_volume_with_progress(
 
     for source in source_paths {
         if (dest_path == source.as_path() || dest_path.starts_with(source))
-            && matches!(volume.is_directory(source).await, Ok(true))
+            && matches!(volume.is_directory(&AppPath::legacy_unchecked(source)).await, Ok(true))
         {
             return Err(WriteOperationError::DestinationInsideSource {
                 source: source.display().to_string(),
@@ -363,7 +364,7 @@ pub async fn move_within_same_volume_with_progress(
         return Err(refusal);
     }
     volume
-        .create_directory_all(dest_path)
+        .create_directory_all(&AppPath::legacy_unchecked(dest_path))
         .await
         .map_err(|e| map_volume_error(&dest_path.display().to_string(), PathRole::Destination, e))?;
 
@@ -743,7 +744,7 @@ pub async fn move_within_same_volume_with_progress(
                     // rename); anything else fails the item. A LINK at the
                     // destination is a leaf like any other, ❌ never merged
                     // through: the files would land in its target.
-                    let dest_item_is_dir = match volume.entry_kind(&dest_item_path).await {
+                    let dest_item_is_dir = match volume.entry_kind(&AppPath::legacy_unchecked(&dest_item_path)).await {
                         Ok(kind) => kind == EntryKind::Directory,
                         Err(VolumeError::NotFound(_)) => false,
                         Err(e) => {
@@ -799,8 +800,10 @@ pub async fn move_within_same_volume_with_progress(
                         // failure as "gone" on most backends, and "we couldn't
                         // look" is no evidence (`../../DETAILS.md` §
                         // "Per-source outcomes").
-                        let source_removed =
-                            matches!(volume.get_metadata(&source_path).await, Err(VolumeError::NotFound(_)));
+                        let source_removed = matches!(
+                            volume.get_metadata(&AppPath::legacy_unchecked(&source_path)).await,
+                            Err(VolumeError::NotFound(_))
+                        );
                         landed_whole(&state, &*events, &operation_id, &source_path, source_removed);
                         // A rename moves no bytes: the item counts 1 (driver's
                         // milestone), the byte axis stays at 0.
@@ -818,7 +821,14 @@ pub async fn move_within_same_volume_with_progress(
                     // under its `.cmdr-temp-<uuid>` aside waiting to hear whether
                     // the rename landed.
                     let displaced = displaced_dests.lock_ignore_poison().remove(&source_path);
-                    if let Err(e) = volume.rename(&source_path, &dest_item_path, false).await {
+                    if let Err(e) = volume
+                        .rename(
+                            &AppPath::legacy_unchecked(&source_path),
+                            &AppPath::legacy_unchecked(&dest_item_path),
+                            false,
+                        )
+                        .await
+                    {
                         let cause = map_volume_error(&source_path.display().to_string(), PathRole::Source, e);
                         let Some(displaced) = displaced else { return Err(cause) };
                         return Err(match displaced.restore(&volume).await {

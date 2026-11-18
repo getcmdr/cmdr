@@ -55,7 +55,7 @@ pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: String) -> Pa
     } else {
         dest_path
     };
-    cmdr_fs::volume::root_anchored(dest_volume.root(), Path::new(&expanded))
+    cmdr_fs::volume::root_anchored(&dest_volume.root().as_std_legacy(), Path::new(&expanded))
 }
 
 /// The folder a transfer's sources land in, as its engine takes it: a zip's
@@ -124,8 +124,8 @@ pub(crate) fn transfer_would_land_on_its_source(
 ) -> bool {
     match (source_volume.local_path(), dest_volume.local_path()) {
         (Some(source_root), Some(dest_root)) => super::validation::may_be_same_file(
-            &source_root.join(source_path),
-            &cmdr_fs::volume::root_anchored(&dest_root, dest_path),
+            &source_root.as_std_legacy().join(source_path),
+            &cmdr_fs::volume::root_anchored(&dest_root.as_std_legacy(), dest_path),
         ),
         _ => super::transfer::volume::is_the_same_item(source_volume, source_path, dest_volume, dest_path),
     }
@@ -233,7 +233,7 @@ impl crate::Operations {
 /// that was fine.
 fn source_cannot_give_up_its_files(source_volume: &Arc<dyn Volume>) -> WriteOperationError {
     WriteOperationError::ReadOnlyDevice {
-        path: source_volume.root().display().to_string(),
+        path: source_volume.root().as_std_legacy().display().to_string(),
         device_name: Some(source_volume.name().to_string()),
         side: ReadOnlySide::Source,
     }
@@ -248,7 +248,7 @@ fn source_cannot_give_up_its_files(source_volume: &Arc<dyn Volume>) -> WriteOper
 /// which really does write.
 fn destination_takes_no_writes(dest_volume: &Arc<dyn Volume>) -> WriteOperationError {
     WriteOperationError::ReadOnlyDevice {
-        path: dest_volume.root().display().to_string(),
+        path: dest_volume.root().as_std_legacy().display().to_string(),
         device_name: Some(dest_volume.name().to_string()),
         side: ReadOnlySide::Destination,
     }

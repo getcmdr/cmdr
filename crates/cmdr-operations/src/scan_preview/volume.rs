@@ -2,6 +2,7 @@
 //! `Volume`), with the fresh-listing oracle in front of the backend's own
 //! batch scan. The contract it owes: the parent module.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -380,7 +381,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
                     // Cache doesn't know this child. Could be a stale selection
                     // (entry deleted out-of-band) or a name encoding mismatch.
                     // Either way, fall through to a real stat for safety.
-                    let scan = volume.scan_for_copy(source).await?;
+                    let scan = volume.scan_for_copy(&AppPath::legacy_unchecked(source)).await?;
                     if let Some(recorder) = &recorder {
                         recorder.subtree(source, &scan);
                     }
@@ -531,14 +532,20 @@ pub(crate) async fn run_oracle_aware_batch_scan(
             }
             group_boundary = group_boundary.leaving_out(mac_only);
             let group_result = volume
-                .scan_for_copy_batch_with_boundary(paths_in_group, &group_boundary)
+                .scan_for_copy_batch_with_boundary(
+                    &paths_in_group
+                        .iter()
+                        .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                        .collect::<Vec<_>>(),
+                    &group_boundary,
+                )
                 .await?;
             aggregate.file_count += group_result.aggregate.file_count;
             aggregate.dir_count += group_result.aggregate.dir_count;
             aggregate.total_bytes += group_result.aggregate.total_bytes;
             aggregate.dedup_bytes += group_result.aggregate.dedup_bytes;
             for (path, scan) in group_result.per_path {
-                per_path_unordered.insert(path, scan);
+                per_path_unordered.insert(path.as_std_legacy().into_owned(), scan);
             }
             files = match (files, group_result.files) {
                 (Some(mut so_far), Some(more)) => {

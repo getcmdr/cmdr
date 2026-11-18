@@ -23,6 +23,7 @@
 //! control WHEN bytes arrive, which is a different axis; they stay where they
 //! are.
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::{
@@ -64,7 +65,7 @@ macro_rules! forward_volume_methods {
         }
     };
     (@one $inner:ident, root) => {
-        fn root(&self) -> &::std::path::Path {
+        fn root(&self) -> &::cmdr_fs::app_path::AppPath {
             self.$inner.root()
         }
     };
@@ -106,7 +107,7 @@ macro_rules! forward_volume_methods {
         }
     };
     (@one $inner:ident, exists) => {
-        fn exists<'a>(&'a self, path: &'a ::std::path::Path) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = bool> + Send + 'a>> {
+        fn exists<'a>(&'a self, path: &'a ::cmdr_fs::app_path::AppPath) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = bool> + Send + 'a>> {
             self.$inner.exists(path)
         }
     };
@@ -146,7 +147,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, apply_metadata) => {
         fn apply_metadata<'a>(
             &'a self,
-            path: &'a ::std::path::Path,
+            path: &'a ::cmdr_fs::app_path::AppPath,
             carried: &'a ::cmdr_fs::metadata::CarriedMetadata,
             modified: ::std::option::Option<::std::time::SystemTime>,
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = ::cmdr_fs::metadata::MetadataReport> + Send + 'a>> {
@@ -161,7 +162,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, folder_metadata) => {
         fn folder_metadata<'a>(
             &'a self,
-            path: &'a ::std::path::Path,
+            path: &'a ::cmdr_fs::app_path::AppPath,
             wanted: ::cmdr_fs::metadata::MetadataClasses,
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = ::cmdr_fs::metadata::CarriedMetadata> + Send + 'a>> {
             self.$inner.folder_metadata(path, wanted)
@@ -170,7 +171,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, clear_blockers) => {
         fn clear_blockers<'a>(
             &'a self,
-            path: &'a ::std::path::Path,
+            path: &'a ::cmdr_fs::app_path::AppPath,
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = ::cmdr_fs::metadata::Unblock> + Send + 'a>> {
             self.$inner.clear_blockers(path)
         }
@@ -196,7 +197,7 @@ macro_rules! forward_volume_methods {
         }
     };
     (@one $inner:ident, local_path) => {
-        fn local_path(&self) -> Option<::std::path::PathBuf> {
+        fn local_path(&self) -> Option<::cmdr_fs::app_path::AppPathBuf> {
             self.$inner.local_path()
         }
     };
@@ -238,7 +239,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, scan_for_copy) => {
         fn scan_for_copy<'a>(
             &'a self,
-            path: &'a ::std::path::Path,
+            path: &'a ::cmdr_fs::app_path::AppPath,
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<::cmdr_fs::volume::CopyScanResult, ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
             self.$inner.scan_for_copy(path)
         }
@@ -246,7 +247,7 @@ macro_rules! forward_volume_methods {
     (@one $inner:ident, scan_for_copy_batch) => {
         fn scan_for_copy_batch<'a>(
             &'a self,
-            paths: &'a [::std::path::PathBuf],
+            paths: &'a [::cmdr_fs::app_path::AppPathBuf],
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<::cmdr_fs::volume::BatchScanResult, ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
             self.$inner.scan_for_copy_batch(paths)
         }
@@ -255,7 +256,7 @@ macro_rules! forward_volume_methods {
         fn scan_for_conflicts<'a>(
             &'a self,
             source_items: &'a [::cmdr_fs::volume::SourceItemInfo],
-            dest_path: &'a ::std::path::Path,
+            dest_path: &'a ::cmdr_fs::app_path::AppPath,
         ) -> ::std::pin::Pin<Box<dyn ::std::future::Future<Output = Result<Vec<::cmdr_fs::volume::ScanConflict>, ::cmdr_fs::volume::VolumeError>> + Send + 'a>> {
             self.$inner.scan_for_conflicts(source_items, dest_path)
         }
@@ -521,7 +522,7 @@ impl<V: Volume + 'static> Volume for FaultyVolume<V> {
 
     fn read_link_target<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Option<PathBuf>, VolumeError>> + Send + 'a>> {
         self.inner.read_link_target(path)
     }
@@ -532,7 +533,7 @@ impl<V: Volume + 'static> Volume for FaultyVolume<V> {
 
     fn create_symlink<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         target: &'a Path,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.create_symlink(path, target)
@@ -544,159 +545,206 @@ impl<V: Volume + 'static> Volume for FaultyVolume<V> {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         match self.fault_for(FaultyOp::ListDirectory, path) {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.inner.list_directory(path, on_progress),
+            None => self.inner.list_directory(path_app, on_progress),
         }
     }
 
     fn list_directory_with_cancel<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         match self.fault_for(FaultyOp::ListDirectory, path) {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.inner.list_directory_with_cancel(path, on_progress, cancel),
+            None => self.inner.list_directory_with_cancel(path_app, on_progress, cancel),
         }
     }
 
     fn list_directory_for_scan<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         cancel: Option<&'a CancellationToken>,
         clock: &'a cmdr_fs::volume::ScanListingClock,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         match self.fault_for(FaultyOp::ListDirectory, path) {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.inner.list_directory_for_scan(path, cancel, clock),
+            None => self.inner.list_directory_for_scan(path_app, cancel, clock),
         }
     }
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         match self.fault_for(FaultyOp::GetMetadata, path) {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.inner.get_metadata(path),
+            None => self.inner.get_metadata(path_app),
         }
     }
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         match self.fault_for(FaultyOp::IsDirectory, path) {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.inner.is_directory(path),
+            None => self.inner.is_directory(path_app),
         }
     }
 
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         match self
             .fault_for(FaultyOp::CreateDirectory, path)
             .or_else(|| self.over_name_cap(path))
         {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.inner.create_directory(path),
+            None => self.inner.create_directory(path_app),
         }
     }
 
     fn create_directory_all<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         match self.fault_for(FaultyOp::CreateDirectory, path) {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.inner.create_directory_all(path),
+            None => self.inner.create_directory_all(path_app),
         }
     }
 
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         match self.fault_for(FaultyOp::CreateFile, path) {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.inner.create_file(path, content),
+            None => self.inner.create_file(path_app, content),
         }
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         match self.fault_for(FaultyOp::Delete, path) {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.inner.delete(path),
+            None => self.inner.delete(path_app),
         }
     }
 
     fn delete_with_cancel<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         match self.fault_for(FaultyOp::Delete, path) {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.inner.delete_with_cancel(path, cancel),
+            None => self.inner.delete_with_cancel(path_app, cancel),
         }
     }
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let to_app = to;
+        let to_std = to.as_std_legacy();
+        let to: &Path = &to_std;
+        let from_app = from;
+        let from_std = from.as_std_legacy();
+        let from: &Path = &from_std;
         match self
             .fault_for(FaultyOp::RenameFrom, from)
             .or_else(|| self.fault_for(FaultyOp::Rename, to))
             .or_else(|| self.over_name_cap(to))
         {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.inner.rename(from, to, force),
+            None => self.inner.rename(from_app, to_app, force),
         }
     }
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         match self.fault_for(FaultyOp::OpenReadStream, path) {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.breaking_its_first_read(path, self.inner.open_read_stream(path)),
+            None => self.breaking_its_first_read(path, self.inner.open_read_stream(path_app)),
         }
     }
 
     fn open_read_stream_with_hint<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         size_hint: Option<u64>,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         match self.fault_for(FaultyOp::OpenReadStream, path) {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.breaking_its_first_read(path, self.inner.open_read_stream_with_hint(path, size_hint)),
+            None => self.breaking_its_first_read(path, self.inner.open_read_stream_with_hint(path_app, size_hint)),
         }
     }
 
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
+        let dest_app = dest;
+        let dest_std = dest.as_std_legacy();
+        let dest: &Path = &dest_std;
         match self.fault_for(FaultyOp::WriteFromStream, dest) {
             Some(e) => Box::pin(async move { Err(e) }),
-            None => self.inner.write_from_stream(dest, mode, length, stream, on_progress),
+            None => self
+                .inner
+                .write_from_stream(dest_app, mode, length, stream, on_progress),
         }
     }
 

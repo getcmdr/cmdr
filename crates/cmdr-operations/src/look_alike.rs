@@ -11,6 +11,7 @@
 //! `Report` and `report` read as two names, and a case-sensitive destination
 //! keeps both on purpose. `DETAILS.md` § "Look-alike names".
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -228,7 +229,7 @@ impl<'v> ListedFolders<'v> {
     /// nothing.
     async fn read(&self, dir: &Path) -> Result<Vec<FileEntry>, VolumeError> {
         let start = crate::rt::now();
-        let entries = match self.volume.list_directory(dir, None).await {
+        let entries = match self.volume.list_directory(&AppPath::legacy_unchecked(dir), None).await {
             Ok(entries) => entries,
             Err(VolumeError::NotFound(_)) => Vec::new(),
             Err(e) => return Err(e),

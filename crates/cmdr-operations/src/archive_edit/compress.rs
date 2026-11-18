@@ -1,6 +1,7 @@
 //! Fresh ZIP routing. The managed seedless creator owns creation; existing ZIP
 //! mutation continues through the archive mutator's separate routes.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -14,7 +15,7 @@ use cmdr_fs::volume::Volume;
 /// Picks the concrete remote spelling that the overwrite warning referred to.
 /// One equivalent spelling is the target; several are ambiguous and refused.
 async fn archive_landing(parent: &dyn Volume, target: PathBuf) -> Result<(PathBuf, bool), WriteOperationError> {
-    if parent.exists(&target).await {
+    if parent.exists(&AppPath::legacy_unchecked(&target)).await {
         return Ok((target, true));
     }
     let (Some(dir), Some(name)) = (target.parent(), target.file_name().and_then(|name| name.to_str())) else {
@@ -102,7 +103,7 @@ impl crate::Operations {
                 archive_landing(parent.as_ref(), dest_zip_full_path).await?
             }
             Some(parent) => {
-                let existed = parent.exists(&dest_zip_full_path).await;
+                let existed = parent.exists(&AppPath::legacy_unchecked(&dest_zip_full_path)).await;
                 (dest_zip_full_path, existed)
             }
             None => {
