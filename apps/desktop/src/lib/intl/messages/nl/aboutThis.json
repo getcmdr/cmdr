@@ -1235,9 +1235,9 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Hide this hint. You can bring it back in Preferences > Advanced.} linuxKde {Hide this hint. You can bring it back in Configure Cmdr > Advanced.} other {Verberg deze hint. Je kunt hem terughalen in Instellingen > Geavanceerd.}}",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Verberg deze hint. Je kunt hem terughalen in Voorkeuren > Geavanceerd.} linuxKde {Verberg deze hint. Je kunt hem terughalen in ‘Cmdr configureren’ > Geavanceerd.} other {Verberg deze hint. Je kunt hem terughalen in Instellingen > Geavanceerd.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "6a3a4b3"
+    "sourceHash": "22d9d84"
   },
   "aboutThis.action.continueInAskCmdr": "Ga verder in Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {

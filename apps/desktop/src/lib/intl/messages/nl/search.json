@@ -67,9 +67,9 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Instellingen om de tekst in de foto''s te doorzoeken.}}",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Voorkeuren om de tekst in de foto''s te doorzoeken.} linuxKde {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via ‘Cmdr configureren’ om de tekst in de foto''s te doorzoeken.} other {Schakel het indexeren van afbeeldingen voor deze netwerkschijf in via Instellingen om de tekst in de foto''s te doorzoeken.}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "ccf901b"
+    "sourceHash": "30b2455"
   },
   "search.imageResults.paused": "Deze schijf is losgekoppeld, dus dit zijn de foto''s die tot nu toe zijn geïndexeerd.",
   "@search.imageResults.paused": {
@@ -220,9 +220,9 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {Het indexeren van schijven staat uit in Instellingen, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.}}",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Het indexeren van schijven staat uit in Voorkeuren, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.} linuxKde {Het indexeren van schijven staat uit in ‘Cmdr configureren’, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.} other {Het indexeren van schijven staat uit in Instellingen, dus er wordt niets geïndexeerd. Zet het aan bij Indexeren > Schijf indexeren.}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "abfe24b"
+    "sourceHash": "7c4ff62"
   },
   "search.coverage.toast.deferredUntilSearchEnds": "Cmdr doorzoekt {drive} al. Indexeren begint zodra dat klaar is.",
   "@search.coverage.toast.deferredUntilSearchEnds": {

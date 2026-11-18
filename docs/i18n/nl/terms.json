@@ -725,15 +725,12 @@
     "sources": "common Dutch security term; no Apple or MS source"
   },
   "configure": {
-    "accept": ["configuratie", "geconfigureerd", "stel", "ingesteld"],
+    "accept": ["configuratie", "geconfigureerd", "stel", "ingesteld", "configureren"],
     "chosen": "Configureer",
     "confidence": "high",
     "forms": "button Configureer…; configuration profile → configuratieprofiel; Configure it below → Stel het hieronder in",
     "sources": "macOS Finder (Configure Time Machine… → Configureer Time Machine…), System Settings (Configuratieprofiel)",
-    "exceptions": {
-      "menu.app.settings": "linuxKde branch quotes KDE's standard Configure %1… action, which KDE Dutch writes with the infinitive configureren (nl/kde-dolphin/dolphin.po Configure… → Configureren…): Cmdr configureren…",
-      "fileExplorer.quickFilter.intro.openSettings": "linuxKde branch quotes the same KDE menu row as menu.app.settings: Cmdr configureren…"
-    }
+    "note": "configureren is accepted for KDE's settings window, which KDE Dutch names with the infinitive (nl/kde-dolphin/dolphin.po @title:window Configure → Configureren, Configure… → Configureren…): the window title Configureren – Cmdr, the menu row and every button Cmdr configureren(…), and pointers in ‘Cmdr configureren’ > AI. Cmdr's own buttons elsewhere keep Configureer."
   },
   "confirm": {
     "accept": ["bevestig", "bevestiging"],
@@ -1967,7 +1964,7 @@
     "confidence": "high",
     "forms": "the store → Sleutelhanger (Onthoud in Sleutelhanger); the app → Sleutelhangertoegang; another system's keyring → sleutelhanger, Passwords / Keyrings app → Wachtwoorden / Sleutelhangers",
     "sources": "macOS Dutch; Keychain Access.app InfoPlist.loctable (CFBundleName Sleutelhangertoegang); MS (Windows Sleutelhanger)",
-    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Onthoud in KWallet), and KDE Dutch calls a wallet portefeuille (kwalletmanager.po: Wallet → Portefeuille); GNOME's Passwords and Keys (Seahorse) → Wachtwoorden en sleutels, and GNOME's keyring is a sleutelbos, not macOS's sleutelhanger (seahorse.po: Password keyring → Wachtwoordsleutelbos), so the linuxGnome branch of ai.secretError.body says Ontgrendel je sleutelbos. Verified read-only on l10n.gnome.org seahorse.main nl.po and websvn.kde.org trunk/l10n-kf6 nl, 2026-11-18.",
+    "note": "Linux desktop branches: KDE's password store KDE Wallet → de KDE-portefeuille (kwalletd6.po nl: Use the KDE wallet … → De KDE-portefeuille gebruiken …, The KDE Wallet System → Het KDE portefeuillesysteem; kwalletmanager.po: Wallet → Portefeuille), so Onthoud in KDE-portefeuille; KDE keeps KWalletManager as the app's name; GNOME's Passwords and Keys (Seahorse) → Wachtwoorden en sleutels, and GNOME's keyring is a sleutelbos, not macOS's sleutelhanger (seahorse.po: Password keyring → Wachtwoordsleutelbos), so the linuxGnome branch of ai.secretError.body says Ontgrendel je sleutelbos. Verified read-only on l10n.gnome.org seahorse.main nl.po and websvn.kde.org trunk/l10n-kf6 nl (kwallet/kwalletd6.po, kwalletmanager.po), 2026-11-18.",
     "exceptions": {
       "ai.secretError.body": "The linuxGnome branch names GNOME's keyring the way GNOME Dutch does, sleutelbos (seahorse.po: Password keyring → Wachtwoordsleutelbos, verified 2026-11-18); the macos and other branches keep sleutelhanger.",
       "ai.secretError.removeBody": "Same linuxGnome branch as ai.secretError.body: GNOME Dutch's keyring is a sleutelbos (seahorse.po, verified 2026-11-18)."
@@ -4412,7 +4409,7 @@
     "sources": "macOS AppKit (Preferences → Instellingen); nl/gnome-nautilus/nautilus.po _Preferences → _Voorkeuren",
     "other": {
       "chosen": "Voorkeuren",
-      "note": "GNOME's app-menu row is Voorkeuren with no ellipsis (nl/gnome-nautilus/nautilus.po _Preferences; nl/xfce-thunar/thunar.po Voork_euren...): the linuxGnome branch of menu.app.settings."
+      "note": "GNOME titles Cmdr's settings window Voorkeuren (nl/gnome-nautilus/nautilus.po _Preferences → _Voorkeuren; nl/xfce-thunar/thunar.po Voork_euren...), with no ellipsis on the app-menu row (menu.app.settings), so every linuxGnome pointer says Voorkeuren (bij Voorkeuren > AI). KDE's window is Configureren – Cmdr (see configure)."
     }
   }
 }

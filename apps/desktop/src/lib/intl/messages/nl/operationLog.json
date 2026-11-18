@@ -15,9 +15,9 @@
   "@operationLog.dialog.empty": {
     "sourceHash": "2dea414"
   },
-  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Preferences to record them again.} linuxKde {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Configure Cmdr to record them again.} other {Het bewerkingenlogboek houdt niets bij, dus wat je nu kopieert, verplaatst of verwijdert, of welke namen je wijzigt, verschijnt hier niet en kun je niet ongedaan maken. Zet het weer aan in Instellingen om dat weer bij te houden.}}",
+  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {Het bewerkingenlogboek houdt niets bij, dus wat je nu kopieert, verplaatst of verwijdert, of welke namen je wijzigt, verschijnt hier niet en kun je niet ongedaan maken. Zet het weer aan in Voorkeuren om dat weer bij te houden.} linuxKde {Het bewerkingenlogboek houdt niets bij, dus wat je nu kopieert, verplaatst of verwijdert, of welke namen je wijzigt, verschijnt hier niet en kun je niet ongedaan maken. Zet het weer aan in ‘Cmdr configureren’ om dat weer bij te houden.} other {Het bewerkingenlogboek houdt niets bij, dus wat je nu kopieert, verplaatst of verwijdert, of welke namen je wijzigt, verschijnt hier niet en kun je niet ongedaan maken. Zet het weer aan in Instellingen om dat weer bij te houden.}}",
   "@operationLog.dialog.recordingOff": {
-    "sourceHash": "0519736"
+    "sourceHash": "3204ad8"
   },
   "operationLog.dialog.noItems": "Deze bewerking heeft geen vastgelegde onderdelen.",
   "@operationLog.dialog.noItems": {
