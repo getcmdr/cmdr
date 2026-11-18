@@ -26,6 +26,9 @@
 //! paths don't exist on disk, so `notify` has nothing to arm on. Invalidation
 //! comes from the per-repo `.git/*` watcher (`watcher.rs`) instead.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
+use cmdr_fs::app_path::BridgedPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -67,7 +70,7 @@ pub struct GitPortalVolume {
     portal: Arc<GitPortal>,
     /// `<worktree>/.git`: this volume's root, and the prefix of every path it
     /// serves.
-    dot_git: PathBuf,
+    dot_git: BridgedPath,
     /// The volume physically holding the repo. Source of the shared lane key
     /// (portal work must not run in parallel with other work on the same disk)
     /// and of the space answer.
@@ -86,7 +89,7 @@ impl GitPortalVolume {
     pub fn new(portal: Arc<GitPortal>, repo_root: PathBuf, parent: Arc<dyn Volume>) -> Self {
         Self {
             portal,
-            dot_git: repo_root.join(".git"),
+            dot_git: BridgedPath::new(repo_root.join(".git")),
             parent,
         }
     }
@@ -131,8 +134,8 @@ impl Volume for GitPortalVolume {
         cmdr_fs::volume::BackendKind::GitPortal
     }
 
-    fn root(&self) -> &Path {
-        &self.dot_git
+    fn root(&self) -> &AppPath {
+        self.dot_git.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -148,9 +151,11 @@ impl Volume for GitPortalVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let owned = path.to_path_buf();
         let portal = Arc::clone(&self.portal);
         let control = Arc::new(log::WalkControl::default());
@@ -185,8 +190,10 @@ impl Volume for GitPortalVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let owned = path.to_path_buf();
         let portal = Arc::clone(&self.portal);
         self.blocking(move |_| {
@@ -214,7 +221,7 @@ impl Volume for GitPortalVolume {
     /// have a read-only volume claim it created something.
     fn create_directory_all<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
         let _ = path;
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -239,8 +246,10 @@ impl Volume for GitPortalVolume {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let owned = path.to_path_buf();
         let portal = Arc::clone(&self.portal);
         self.blocking(move |_| {
@@ -260,16 +269,20 @@ impl Volume for GitPortalVolume {
 
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         scan_walk::scan_one(self, path)
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
+        let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+        let paths: &[PathBuf] = &paths_std;
         scan_walk::scan_trees(self, paths, boundary)
     }
 
@@ -283,7 +296,7 @@ impl Volume for GitPortalVolume {
 
     /// `None`: a virtual path has no counterpart on disk, so there's no
     /// `copyfile(2)` fast path to advertise.
-    fn local_path(&self) -> Option<PathBuf> {
+    fn local_path(&self) -> Option<AppPathBuf> {
         None
     }
 
@@ -312,9 +325,13 @@ impl Volume for GitPortalVolume {
     /// parent's volume-wide figure doesn't describe.
     fn get_space_info_at<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { self.parent.get_space_info_at(&self.dot_git).await })
+        Box::pin(async move {
+            self.parent
+                .get_space_info_at(&AppPath::legacy_unchecked(&self.dot_git))
+                .await
+        })
     }
 
     /// `false`, and `listing_watch_coverage` stays at the trait's `None`: these
@@ -357,10 +374,10 @@ fn listing_for(
 /// out to another volume work at all.
 impl ScanSource for GitPortalVolume {
     fn scan_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
-        self.get_metadata(path)
+        self.get_metadata(&AppPath::legacy_unchecked(path))
     }
 
     fn scan_list<'a>(&'a self, path: &'a Path) -> Walking<'a, Vec<FileEntry>> {
-        self.list_directory(path, None)
+        self.list_directory(&AppPath::legacy_unchecked(path), None)
     }
 }
