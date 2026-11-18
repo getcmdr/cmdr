@@ -15,9 +15,9 @@
   "@aboutThis.action.openTooltip": {
     "sourceHash": "4bbaa35"
   },
-  "aboutThis.action.showInFileManager": "{platform, select, macos {在 Finder 中显示} windows {在文件资源管理器中显示} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {在文件管理器中显示}}",
+  "aboutThis.action.showInFileManager": "{platform, select, macos {在 Finder 中显示} windows {在文件资源管理器中显示} linuxGnome {在“文件”中显示} linuxKde {在 Dolphin 中显示} other {在文件管理器中显示}}",
   "@aboutThis.action.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "aboutThis.action.downloadPage": "下载页面",
   "@aboutThis.action.downloadPage": {
@@ -328,9 +328,9 @@
   "@aboutThis.download.unrecognized": {
     "sourceHash": "5e9fa42"
   },
-  "aboutThis.download.noSource": "{platform, select, macos {据 macOS 记录，这是{hasDate, select, yes {于 <date></date> } other {}}{hasApp, select, yes {用 {app} } other {}}下载的，但没有说从哪里下载。} windows {Windows recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} other {This carries a record of being downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.}}",
+  "aboutThis.download.noSource": "{platform, select, macos {据 macOS 记录，这是{hasDate, select, yes {于 <date></date> } other {}}{hasApp, select, yes {用 {app} } other {}}下载的，但没有说从哪里下载。} windows {据 Windows 记录，这是{hasDate, select, yes {于 <date></date> } other {}}{hasApp, select, yes {用 {app} } other {}}下载的，但没有说从哪里下载。} other {这里有一条记录表明它是{hasDate, select, yes {于 <date></date> } other {}}{hasApp, select, yes {用 {app} } other {}}下载的，但没有说从哪里下载。}}",
   "@aboutThis.download.noSource": {
-    "sourceHash": "7edb92b"
+    "sourceHash": "83ec9b3"
   },
   "aboutThis.cmdrOperation.noRecord": "没有 Cmdr 拷贝或移动它的记录",
   "@aboutThis.cmdrOperation.noRecord": {
@@ -746,9 +746,9 @@
   "@aboutThis.standardFolder.users": {
     "sourceHash": "955c56c"
   },
-  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {启动磁盘的顶层} windows {The top of the system drive} other {The top of the system disk}}",
+  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {启动磁盘的顶层} windows {系统驱动器的顶层} other {系统磁盘的顶层}}",
   "@aboutThis.standardFolder.startupDisk": {
-    "sourceHash": "6e69278"
+    "sourceHash": "d7764f1"
   },
   "aboutThis.owner.insideApp": "{app} 的一部分",
   "@aboutThis.owner.insideApp": {
@@ -971,9 +971,9 @@
   "@aboutThis.removal.standardFolder.users": {
     "sourceHash": "b72c1fe"
   },
-  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {里面存放着启动磁盘上的所有东西，包括 macOS。} windows {It holds everything on the system drive, Windows included.} other {It holds everything on the system disk, the operating system included.}}",
+  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {里面存放着启动磁盘上的所有东西，包括 macOS。} windows {里面存放着系统驱动器上的所有东西，包括 Windows。} other {里面存放着系统磁盘上的所有东西，包括操作系统。}}",
   "@aboutThis.removal.standardFolder.startupDisk": {
-    "sourceHash": "3f6c151"
+    "sourceHash": "a50aa6f"
   },
   "aboutThis.removal.uncommittedWork": "它有未提交的改动，所以 git 没法找回这些改动。",
   "@aboutThis.removal.uncommittedWork": {

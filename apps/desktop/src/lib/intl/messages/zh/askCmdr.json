@@ -1192,6 +1192,23 @@
   "@askCmdr.renameReview.sourceMissingTooltip": {
     "sourceHash": "acd6306"
   },
+  "askCmdr.renameReview.nameNotAllowedBadge": "（这里不允许）",
+  "@askCmdr.renameReview.nameNotAllowedBadge": {
+    "sourceHash": "b699ad0"
+  },
+  "askCmdr.renameReview.nameNotAllowedTooltip": "这个驱动器无法存储这个名称。编辑名称后即可重命名这个文件。",
+  "@askCmdr.renameReview.nameNotAllowedTooltip": {
+    "sourceHash": "8cb209e"
+  },
+  "askCmdr.renameReview.notPortableBadge": "(Windows)",
+  "@askCmdr.renameReview.notPortableBadge": {
+    "sourceHash": "dc44dab",
+    "sameAsSourceJustification": "The badge is the OS name Windows in parentheses, kept verbatim in every locale as the description asks; around a Latin word alone the ASCII parentheses stay, as the catalog's Latin-only labels do."
+  },
+  "askCmdr.renameReview.notPortableTooltip": "这个名称在 Windows 上无法使用。Cmdr 仍会重命名这个文件。",
+  "@askCmdr.renameReview.notPortableTooltip": {
+    "sourceHash": "f7ffcc2"
+  },
   "askCmdr.renameReview.extensionBadge": "（扩展名）",
   "@askCmdr.renameReview.extensionBadge": {
     "sourceHash": "bcc0b2c"

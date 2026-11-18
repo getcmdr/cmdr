@@ -510,6 +510,10 @@
       {
         "source": "Why",
         "reason": "Two shapes. `onboarding.stepFda.why` is a question link (`为什么？`); `suggestedOps.agentReason` is a label leading the AI's reason, where Chinese names the noun (`原因：`, which its spoken form `原因，按 AI 的说法：` starts with). A `为什么：` label before a statement reads wrong."
+      },
+      {
+        "source": "Preferences",
+        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the literal macOS Library folder name, kept as the system names it on disk, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own menu row, `首选项` (Nautilus zh-CN `首选项(_P)`)."
       }
     ],
     "zh-Hant": [
