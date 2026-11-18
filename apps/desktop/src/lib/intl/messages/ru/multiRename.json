@@ -243,6 +243,14 @@
   "@multiRename.status.reservedDeviceName": {
     "sourceHash": "8bf464a"
   },
+  "multiRename.status.notPortable": "{alsoLinux, select, yes {Не будет работать в Windows и Linux} other {Не будет работать в Windows}}",
+  "@multiRename.status.notPortable": {
+    "sourceHash": "cc3ed09"
+  },
+  "multiRename.notPortableSummary": "{count, plural, one {{alsoLinux, select, yes {{countText} новое имя не будет работать в Windows и Linux. Переименование все равно будет выполнено.} other {{countText} новое имя не будет работать в Windows. Переименование все равно будет выполнено.}}} few {{alsoLinux, select, yes {{countText} новых имени не будут работать в Windows и Linux. Переименование все равно будет выполнено.} other {{countText} новых имени не будут работать в Windows. Переименование все равно будет выполнено.}}} many {{alsoLinux, select, yes {{countText} новых имен не будут работать в Windows и Linux. Переименование все равно будет выполнено.} other {{countText} новых имен не будут работать в Windows. Переименование все равно будет выполнено.}}} other {{alsoLinux, select, yes {{countText} нового имени не будут работать в Windows и Linux. Переименование все равно будет выполнено.} other {{countText} нового имени не будут работать в Windows. Переименование все равно будет выполнено.}}}}",
+  "@multiRename.notPortableSummary": {
+    "sourceHash": "4eb996d"
+  },
   "multiRename.error.unclosed": "У обозначения нет закрывающей скобки «]»",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -626,15 +634,15 @@
   },
   "multiRename.reason.tooLong": "Новое имя слишком длинное для имени файла.",
   "@multiRename.reason.tooLong": {
-    "sourceHash": "b709218"
+    "sourceHash": "c49d459"
   },
   "multiRename.reason.reserved": "«.» и «..» не могут быть именами файлов.",
   "@multiRename.reason.reserved": {
-    "sourceHash": "dcca507"
+    "sourceHash": "b0c0c33"
   },
   "multiRename.reason.disallowedCharacter": "Имя файла не может содержать символ {character}.",
   "@multiRename.reason.disallowedCharacter": {
-    "sourceHash": "66a09f6"
+    "sourceHash": "2d58251"
   },
   "multiRename.reason.reservedDeviceName": "Имя «{name}» зарезервировано системой Windows, поэтому этот диск не может его использовать.",
   "@multiRename.reason.reservedDeviceName": {

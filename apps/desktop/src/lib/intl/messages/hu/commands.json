@@ -844,9 +844,9 @@
   "@commands.dialogConfirm.label": {
     "sourceHash": "fef0684"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {Megjelenítés a Finderben} windows {Megjelenítés a Fájlkezelőben} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Megjelenítés a fájlkezelőben}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {Megjelenítés a Finderben} windows {Megjelenítés a Fájlkezelőben} linuxGnome {Megjelenítés a Fájlokban} linuxKde {Megjelenítés a Dolphinban} other {Megjelenítés a fájlkezelőben}}",
   "@commands.fileShowInFileManager.label": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "commands.fileOpenTerminalHere.label": "Terminál megnyitása itt",
   "@commands.fileOpenTerminalHere.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Eltávolítja a kulcskarikából annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést} windows {Eltávolítja a Hitelesítőadat-kezelőből annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {Eltávolítja a kulcstartódból annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Eltávolítja a kulcskarikából annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést} windows {Eltávolítja a Hitelesítőadat-kezelőből annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést} linuxKde {Eltávolítja a KWalletből annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést} other {Eltávolítja a kulcstartódból annak a restic biztonsági mentésnek a mentett jelszavát, amelyben éppen vagy, és újra lezárja a biztonsági mentést}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "0f616ca"
+    "sourceHash": "5b48a77"
   },
   "commands.fileCopyShareLink.label": "Megosztási link másolása (hét nap)",
   "@commands.fileCopyShareLink.label": {

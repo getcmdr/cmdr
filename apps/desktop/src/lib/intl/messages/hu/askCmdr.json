@@ -1194,6 +1194,23 @@
   "@askCmdr.renameReview.sourceMissingTooltip": {
     "sourceHash": "acd6306"
   },
+  "askCmdr.renameReview.nameNotAllowedBadge": "(itt nem engedélyezett)",
+  "@askCmdr.renameReview.nameNotAllowedBadge": {
+    "sourceHash": "b699ad0"
+  },
+  "askCmdr.renameReview.nameNotAllowedTooltip": "Ez a meghajtó nem tudja tárolni ezt a nevet. Módosítsd a nevet, hogy átnevezhesd ezt a fájlt.",
+  "@askCmdr.renameReview.nameNotAllowedTooltip": {
+    "sourceHash": "8cb209e"
+  },
+  "askCmdr.renameReview.notPortableBadge": "(Windows)",
+  "@askCmdr.renameReview.notPortableBadge": {
+    "sourceHash": "dc44dab",
+    "sameAsSourceJustification": "Product name Windows in brackets; the description says to keep it as is, and Hungarian writes Windows verbatim (MS TBX)."
+  },
+  "askCmdr.renameReview.notPortableTooltip": "Ez a név nem fog működni Windowson. A Cmdr ettől még átnevezi a fájlt.",
+  "@askCmdr.renameReview.notPortableTooltip": {
+    "sourceHash": "f7ffcc2"
+  },
   "askCmdr.renameReview.extensionBadge": "(kiterjesztés)",
   "@askCmdr.renameReview.extensionBadge": {
     "sourceHash": "bcc0b2c"

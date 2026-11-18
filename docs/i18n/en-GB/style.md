@@ -156,8 +156,11 @@ Considered and deliberately NOT forked, so nobody re-litigates them:
 - **`checkbox` → `tickbox`, `webpages` → `web pages`, `signed into` → `signed in to`.** All genuine `en-GB` forks with
   no matching string in Cmdr's catalog today. If copy ever introduces one of these words, fork it then.
 - **`period` (the character) → `full stop`** forks, in `en-GB` and `en-AU` alike, as both write it in Apple's
-  `AppKit/SavePanel.json` (`begins with a full stop “.”`): `fileOperations.validation.endsWithSpaceOrPeriod` and
-  `multiRename.reason.endsWithSpaceOrPeriod`. The time sense (`periodic`, `Periodically`) stays.
+  `AppKit/SavePanel.json` (`begins with a full stop “.”`): `fileOperations.validation.endsWithSpaceOrPeriod`,
+  `fileOperations.validation.notPortable.endsWithSpaceOrPeriod`, and `multiRename.reason.endsWithSpaceOrPeriod`. The
+  rest of the Windows-portability batch (name-length, reserved-name, and transfer-dialog warnings, the `filename`
+  rewordings, `updates.status.noBuildForThisPlatform`) holds nothing that forks. The time sense (`periodic`,
+  `Periodically`) stays.
 - **`Show less` → `Show fewer`.** Not a fork at all. `en-GB` Finder keeps `Show Less` on the button in all four
   attestations (`LocalizableMerged.json:GV6`, `:PV2`, `ColumnPreview.json:4jc-Hy-JNJ.alternateTitle`,
   `IconCollectionGroupHeaderView.json:Y6z-b0-II4.title`); the single flip, `show less options` → `show fewer options`

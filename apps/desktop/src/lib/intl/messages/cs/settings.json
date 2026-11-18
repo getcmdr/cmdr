@@ -3219,9 +3219,9 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Zobrazit ve Finderu} windows {Zobrazit v Průzkumníku souborů} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Zobrazit ve správci souborů}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Zobrazit ve Finderu} windows {Zobrazit v Průzkumníku souborů} linuxGnome {Zobrazit v aplikaci Soubory} linuxKde {Zobrazit v Dolphinu} other {Zobrazit ve správci souborů}}",
   "@settings.securityLog.showInFinder": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "settings.updates.showSecurityLog.keywords": "bezpečnost, protokol, log, audit, události, soubor, otevřít, zobrazit, složka, umístění",
   "@settings.updates.showSecurityLog.keywords": {
@@ -3676,13 +3676,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Jedna položka v aplikaci Klíčenka s názvem „{itemName}“} few {{countText} položky v aplikaci Klíčenka s názvem „{itemName}“} many {{countText} položky v aplikaci Klíčenka s názvem „{itemName}“} other {{countText} položek v aplikaci Klíčenka s názvem „{itemName}“}}} windows {{count, plural, one {Jedna položka ve Správci přihlašovacích údajů s názvem „{itemName}“} few {{countText} položky ve Správci přihlašovacích údajů s názvem „{itemName}“} many {{countText} položky ve Správci přihlašovacích údajů s názvem „{itemName}“} other {{countText} položek ve Správci přihlašovacích údajů s názvem „{itemName}“}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, one {Jedna položka v systémové klíčence s názvem „{itemName}“} few {{countText} položky v systémové klíčence s názvem „{itemName}“} many {{countText} položky v systémové klíčence s názvem „{itemName}“} other {{countText} položek v systémové klíčence s názvem „{itemName}“}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Jedna položka v aplikaci Klíčenka s názvem „{itemName}“} few {{countText} položky v aplikaci Klíčenka s názvem „{itemName}“} many {{countText} položky v aplikaci Klíčenka s názvem „{itemName}“} other {{countText} položek v aplikaci Klíčenka s názvem „{itemName}“}}} windows {{count, plural, one {Jedna položka ve Správci přihlašovacích údajů s názvem „{itemName}“} few {{countText} položky ve Správci přihlašovacích údajů s názvem „{itemName}“} many {{countText} položky ve Správci přihlašovacích údajů s názvem „{itemName}“} other {{countText} položek ve Správci přihlašovacích údajů s názvem „{itemName}“}}} linuxKde {{count, plural, one {Jedna položka v úložišti KWallet s názvem „{itemName}“} few {{countText} položky v úložišti KWallet s názvem „{itemName}“} many {{countText} položky v úložišti KWallet s názvem „{itemName}“} other {{countText} položek v úložišti KWallet s názvem „{itemName}“}}} other {{count, plural, one {Jedna položka v systémové klíčence s názvem „{itemName}“} few {{countText} položky v systémové klíčence s názvem „{itemName}“} many {{countText} položky v systémové klíčence s názvem „{itemName}“} other {{countText} položek v systémové klíčence s názvem „{itemName}“}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "6cf1e9c"
+    "sourceHash": "ba023b8"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Všechny položky v aplikaci Klíčenka s názvem „{itemName}“} windows {Všechny položky ve Správci přihlašovacích údajů s názvem „{itemName}“} linuxKde {Any items in KWallet named “{itemName}”} other {Všechny položky v systémové klíčence s názvem „{itemName}“}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Všechny položky v aplikaci Klíčenka s názvem „{itemName}“} windows {Všechny položky ve Správci přihlašovacích údajů s názvem „{itemName}“} linuxKde {Všechny položky v úložišti KWallet s názvem „{itemName}“} other {Všechny položky v systémové klíčence s názvem „{itemName}“}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "0e9e95b"
+    "sourceHash": "de668e2"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Ukončit Cmdr} other {Ukončit Cmdr}}",
   "@settings.dataWipe.quit": {

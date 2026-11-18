@@ -664,7 +664,10 @@
     ],
     "forms": "progress Ellenőrzés…; Checking for changes → Változások ellenőrzése; Checking for conflicts → Ütközések keresése; Re-check button → Újraellenőrzés; I've checked the key / the certificate → Ellenőriztem a kulcsot / Ellenőriztem a tanúsítványt",
     "confidence": "high",
-    "sources": "macOS Finder (BN9 „^0” tartalmának ellenőrzése); TextToSpeech VB_CHECK_AGAIN (Check Again = Újraellenőrzés)"
+    "sources": "macOS Finder (BN9 „^0” tartalmának ellenőrzése); TextToSpeech VB_CHECK_AGAIN (Check Again = Újraellenőrzés)",
+    "exceptions": {
+      "updates.status.noBuildForThisPlatform": "The update check succeeded; the line says this build can't update yet (description), so it reads „egyelőre nem tud frissülni”, with no check verb."
+    }
   },
   "checklist": {
     "chosen": "ellenőrzőlista",
@@ -2261,7 +2264,8 @@
       }
     ],
     "confidence": "high",
-    "sources": "macOS 26.6.2 Keychain Access.app InfoPlist.loctable (CFBundleDisplayName Kulcskarika-elérés); Apple's Hungarian Mac User Guide (iCloud-kulcskarika)"
+    "sources": "macOS 26.6.2 Keychain Access.app InfoPlist.loctable (CFBundleDisplayName Kulcskarika-elérés); Apple's Hungarian Mac User Guide (iCloud-kulcskarika)",
+    "note": "KDE's KWallet stays a name and takes front-vowel suffixes with no hyphen, by its written and spoken last vowel (a KWalletben, a KWalletből, a KWalletet); KWalletManager takes the base word app (a KWalletManager appban). GNOME's store is kulcstartó in the Jelszavak és kulcsok app. Tentative, no pile hit."
   },
   "kind": {
     "chosen": "Fajta",

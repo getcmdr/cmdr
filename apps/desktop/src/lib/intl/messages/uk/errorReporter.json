@@ -172,9 +172,9 @@
   "@errorReporter.bundleSavedToast.dismiss": {
     "sourceHash": "48845bf"
   },
-  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показати у файловому менеджері}}",
+  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} linuxGnome {Показати у програмі «Файли»} linuxKde {Показати у Dolphin} other {Показати у файловому менеджері}}",
   "@errorReporter.bundleSavedToast.reveal": {
-    "sourceHash": "4d7fe91"
+    "sourceHash": "c3b4773"
   },
   "errorReporter.autoSentToast.title": "Звіт про помилку надіслано",
   "@errorReporter.autoSentToast.title": {

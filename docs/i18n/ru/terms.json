@@ -828,7 +828,10 @@
     "proseAccept": ["убед", "посмотр", "свер"],
     "forms": "progress Проверка…; Re-check → Проверить снова; Check for updates → Проверить обновления; Not checked → Не проверено; I’ve checked the key / the certificate → Ключ проверен / Сертификат проверен (impersonal, so the user isn’t gendered)",
     "confidence": "high",
-    "sources": "macOS Finder LocalizableMerged PW22 (Verifying → Проверка), BN5 (Verifying “^0” → Проверка диска «^0»); AppKit MenuCommands (Check Spelling → Проверить правописание); MS (check → проверить, verify → проверять); DC, Thunar (Проверка)"
+    "sources": "macOS Finder LocalizableMerged PW22 (Verifying → Проверка), BN5 (Verifying “^0” → Проверка диска «^0»); AppKit MenuCommands (Check Spelling → Проверить правописание); MS (check → проверить, verify → проверять); DC, Thunar (Проверка)",
+    "exceptions": {
+      "updates.status.noBuildForThisPlatform": "The update check succeeded; the line says this build can't update yet (description), so it reads «пока не может обновиться», with no check verb."
+    }
   },
   "checklist": {
     "chosen": "контрольный список",
@@ -2670,7 +2673,7 @@
     "chosen": "Связка ключей",
     "accept": ["Связк", "хранилищ"],
     "forms": "Remember in Keychain → Запомнить в Связке ключей; the app → приложение «Связка ключей»; a generic system keyring → системное хранилище ключей",
-    "note": "An Apple-localized name, so never kept as the English Keychain.",
+    "note": "An Apple-localized name, so never kept as the English Keychain. KDE's KWallet stays a Latin name, undeclined (в KWallet, из KWallet; masculine: KWallet отказал, открыт); tentative, no pile hit.",
     "confidence": "high",
     "sources": "macOS Keychain Access.app (Localizable Keychain → Связка ключей; Keychain Access → Связка ключей), verified on macOS 27.0 (26A428), 2026-10-02"
   },
@@ -2826,7 +2829,10 @@
     "accept": ["список", "списк"],
     "forms": "your Servers list → список «Серверы»",
     "confidence": "high",
-    "sources": "macOS AppKit (List → Список); Finder ViewOptionsWindow; MS"
+    "sources": "macOS AppKit (List → Список); Finder ViewOptionsWindow; MS",
+    "exceptions": {
+      "fileOperations.validation.notPortable.reservedName": "Verb sense: the share may list the item under another name → показывать; not the noun список."
+    }
   },
   "listing": {
     "chosen": "просмотр",
@@ -3723,7 +3729,11 @@
     "forms": "Android's USB Preferences → «Настройки USB» (quote the label as Russian Android shows it)",
     "confidence": "high",
     "sources": "macOS live IntentsLocalizable Preferences → «Настройки»; MS Preferences → «Настройки»",
-    "note": "Russian has one word for Preferences and Settings; the concept only exists to quote another OS's label."
+    "note": "Russian has one word for Preferences and Settings; the concept only exists to quote another OS's label.",
+    "exceptions": {
+      "fileExplorer.quickFilter.intro.openSettings": "The linuxGnome branch is GNOME's own app-menu word, «Параметры» (ru nautilus.po `_Preferences` → `_Параметры`), not the Android USB Preferences label this concept quotes.",
+      "menu.app.settings": "The linuxGnome branch is GNOME's own app-menu word, «Параметры» (ru nautilus.po `_Preferences` → `_Параметры`)."
+    }
   },
   "preset": {
     "chosen": "набор настроек",
@@ -5366,7 +5376,8 @@
     "sources": "Finder LocalizableMerged.json GROUP_SYSTEM_PREFS: System Settings → Системные настройки; Finder: Choose Apple menu > System Settings → Выберите меню Apple > «Системные настройки»",
     "note": "Usually a runtime placeholder; Finder quotes the app name in prose, so keep the case-bearing words outside the quotes.",
     "exceptions": {
-      "settings.appearance.themeColorSwatchAria": "The Linux branch names the desktop's own settings generically (настройки системы), not the macOS app."
+      "settings.appearance.themeColorSwatchAria": "The Linux branch names the desktop's own settings generically (настройки системы), not the macOS app.",
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxKde branch names KDE Plasma's System Settings as KDE ru names it, «Параметры системы» (ru dolphin.po), not the macOS app."
     },
     "other": {
       "chosen": "настройки системы",

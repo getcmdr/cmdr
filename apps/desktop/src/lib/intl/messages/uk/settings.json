@@ -3216,9 +3216,9 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показати у файловому менеджері}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} linuxGnome {Показати у програмі «Файли»} linuxKde {Показати у Dolphin} other {Показати у файловому менеджері}}",
   "@settings.securityLog.showInFinder": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "settings.updates.showSecurityLog.keywords": "безпека, журнал, аудит, події, файл, відкрити, показати, папка, розташування",
   "@settings.updates.showSecurityLog.keywords": {
@@ -3673,13 +3673,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, =1 {Один елемент вʼязки з назвою «{itemName}» у програмі «Ключар»} one {{countText} елемент вʼязки з назвою «{itemName}» у програмі «Ключар»} few {{countText} елементи вʼязки з назвою «{itemName}» у програмі «Ключар»} many {{countText} елементів вʼязки з назвою «{itemName}» у програмі «Ключар»} other {{countText} елемента вʼязки з назвою «{itemName}» у програмі «Ключар»}}} windows {{count, plural, =1 {Один елемент з назвою «{itemName}» у Диспетчері облікових даних} one {{countText} елемент з назвою «{itemName}» у Диспетчері облікових даних} few {{countText} елементи з назвою «{itemName}» у Диспетчері облікових даних} many {{countText} елементів з назвою «{itemName}» у Диспетчері облікових даних} other {{countText} елемента з назвою «{itemName}» у Диспетчері облікових даних}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, =1 {Один елемент з назвою «{itemName}» у вашій вʼязці ключів} one {{countText} елемент з назвою «{itemName}» у вашій вʼязці ключів} few {{countText} елементи з назвою «{itemName}» у вашій вʼязці ключів} many {{countText} елементів з назвою «{itemName}» у вашій вʼязці ключів} other {{countText} елемента з назвою «{itemName}» у вашій вʼязці ключів}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, =1 {Один елемент вʼязки з назвою «{itemName}» у програмі «Ключар»} one {{countText} елемент вʼязки з назвою «{itemName}» у програмі «Ключар»} few {{countText} елементи вʼязки з назвою «{itemName}» у програмі «Ключар»} many {{countText} елементів вʼязки з назвою «{itemName}» у програмі «Ключар»} other {{countText} елемента вʼязки з назвою «{itemName}» у програмі «Ключар»}}} windows {{count, plural, =1 {Один елемент з назвою «{itemName}» у Диспетчері облікових даних} one {{countText} елемент з назвою «{itemName}» у Диспетчері облікових даних} few {{countText} елементи з назвою «{itemName}» у Диспетчері облікових даних} many {{countText} елементів з назвою «{itemName}» у Диспетчері облікових даних} other {{countText} елемента з назвою «{itemName}» у Диспетчері облікових даних}}} linuxKde {{count, plural, =1 {Один елемент з назвою «{itemName}» у KWallet} one {{countText} елемент з назвою «{itemName}» у KWallet} few {{countText} елементи з назвою «{itemName}» у KWallet} many {{countText} елементів з назвою «{itemName}» у KWallet} other {{countText} елемента з назвою «{itemName}» у KWallet}}} other {{count, plural, =1 {Один елемент з назвою «{itemName}» у вашій вʼязці ключів} one {{countText} елемент з назвою «{itemName}» у вашій вʼязці ключів} few {{countText} елементи з назвою «{itemName}» у вашій вʼязці ключів} many {{countText} елементів з назвою «{itemName}» у вашій вʼязці ключів} other {{countText} елемента з назвою «{itemName}» у вашій вʼязці ключів}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "6cf1e9c"
+    "sourceHash": "ba023b8"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Будь-які елементи вʼязки з назвою «{itemName}» у програмі «Ключар»} windows {Будь-які елементи з назвою «{itemName}» у Диспетчері облікових даних} linuxKde {Any items in KWallet named “{itemName}”} other {Будь-які елементи з назвою «{itemName}» у вашій вʼязці ключів}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Будь-які елементи вʼязки з назвою «{itemName}» у програмі «Ключар»} windows {Будь-які елементи з назвою «{itemName}» у Диспетчері облікових даних} linuxKde {Будь-які елементи з назвою «{itemName}» у KWallet} other {Будь-які елементи з назвою «{itemName}» у вашій вʼязці ключів}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "0e9e95b"
+    "sourceHash": "de668e2"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Вийти з Cmdr} other {Завершити Cmdr}}",
   "@settings.dataWipe.quit": {

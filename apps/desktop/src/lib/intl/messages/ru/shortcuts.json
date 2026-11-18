@@ -116,9 +116,9 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {Сочетание {combo} обычно занимает сама рабочая среда ({desktops}), поэтому оно может не доходить до Cmdr. Освободить его можно в настройках клавиатуры вашей рабочей среды.}}",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {Сочетание {combo} обычно занимает сама рабочая среда ({desktops}), поэтому оно может не доходить до Cmdr. Освободить его можно здесь: Параметры > Клавиатура > Просмотр и настройка комбинаций клавиш.} linuxKde {Сочетание {combo} обычно занимает сама рабочая среда ({desktops}), поэтому оно может не доходить до Cmdr. Освободить его можно здесь: Параметры системы > Клавиатура > Комбинации клавиш.} other {Сочетание {combo} обычно занимает сама рабочая среда ({desktops}), поэтому оно может не доходить до Cmdr. Освободить его можно в настройках клавиатуры вашей рабочей среды.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
-    "sourceHash": "610146a"
+    "sourceHash": "8aefc0b"
   },
   "shortcuts.conflict.opensMenuBarMenu": "Сочетание {combo} открывает меню «{menu}» в строке меню Cmdr, поэтому до этой команды сочетание дойдет, только когда открыто диалоговое окно.",
   "@shortcuts.conflict.opensMenuBarMenu": {

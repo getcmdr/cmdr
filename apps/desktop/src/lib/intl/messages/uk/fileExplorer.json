@@ -521,9 +521,9 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Облікові дані збережено локально (Диспетчер облікових даних недоступний)} linuxKde {Credentials stored locally (KWallet not available)} other {Облікові дані збережено локально (системну вʼязку ключів не виявлено)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Облікові дані збережено локально (Диспетчер облікових даних недоступний)} linuxKde {Облікові дані збережено локально (KWallet недоступний)} other {Облікові дані збережено локально (системну вʼязку ключів не виявлено)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
-    "sourceHash": "e14f91d"
+    "sourceHash": "d279dc9"
   },
   "fileExplorer.network.share.notFound": "Спільну папку «{shareName}» не знайдено на сервері «{hostName}»",
   "@fileExplorer.network.share.notFound": {
@@ -557,9 +557,9 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Вилучити збережений пароль із вʼязки ключів} windows {Вилучити збережений пароль із Диспетчера облікових даних} linuxKde {Remove saved password from KWallet} other {Вилучити збережений пароль із вашої вʼязки ключів}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Вилучити збережений пароль із вʼязки ключів} windows {Вилучити збережений пароль із Диспетчера облікових даних} linuxKde {Вилучити збережений пароль із KWallet} other {Вилучити збережений пароль із вашої вʼязки ключів}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "4ae6a02"
+    "sourceHash": "3d21c85"
   },
   "fileExplorer.network.share.useGuest": "Переглядати як гість",
   "@fileExplorer.network.share.useGuest": {
@@ -949,9 +949,9 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився у вʼязці ключів. Щоб вилучити його назавжди, видаліть його в програмі «Ключар».} windows {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився в Диспетчері облікових даних. Щоб вилучити його назавжди, видаліть його в Диспетчері облікових даних.} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився у вашій вʼязці ключів. Щоб вилучити його назавжди, видаліть його в програмі для керування вʼязкою ключів.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився у вʼязці ключів. Щоб вилучити його назавжди, видаліть його в програмі «Ключар».} windows {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився в Диспетчері облікових даних. Щоб вилучити його назавжди, видаліть його в Диспетчері облікових даних.} linuxGnome {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився у вашій вʼязці ключів. Щоб вилучити його назавжди, видаліть його в програмі «Паролі та ключі».} linuxKde {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився в KWallet. Щоб вилучити його назавжди, видаліть його в програмі KWalletManager.} other {Cmdr поки що замкнув резервну копію «{name}», але її збережений пароль залишився у вашій вʼязці ключів. Щоб вилучити його назавжди, видаліть його в програмі для керування вʼязкою ключів.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
-    "sourceHash": "20277f3"
+    "sourceHash": "366f06a"
   },
   "fileExplorer.restic.forgetPassword.unreachable": "Cmdr щойно не вдалося звʼязатися з резервною копією «{name}», тож її пароль і далі збережено. Спробуйте ще раз за мить.",
   "@fileExplorer.restic.forgetPassword.unreachable": {
@@ -2340,9 +2340,9 @@
   "@fileExplorer.quickFilter.intro.switchToJump": {
     "sourceHash": "38642f9"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Параметри} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Параметри…}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Параметри} linuxGnome {Налаштування} linuxKde {Налаштувати Cmdr…} other {Параметри…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
-    "sourceHash": "7af8e23"
+    "sourceHash": "4b21626"
   },
   "fileExplorer.quickFilter.intro.gotIt": "Зрозуміло",
   "@fileExplorer.quickFilter.intro.gotIt": {

@@ -1551,7 +1551,7 @@
   },
   "errors.write.nameTooLong.message": "Název souboru je pro cíl příliš dlouhý.",
   "@errors.write.nameTooLong.message": {
-    "sourceHash": "03258f0"
+    "sourceHash": "91a01a0"
   },
   "errors.write.nameTooLong.suggestion": "Zkuste soubor přejmenovat na kratší název.",
   "@errors.write.nameTooLong.suggestion": {
@@ -1631,7 +1631,7 @@
   },
   "errors.write.invalidName.title": "Neplatný název souboru",
   "@errors.write.invalidName.title": {
-    "sourceHash": "1fb1e45"
+    "sourceHash": "0af3e69"
   },
   "errors.write.invalidName.message": "Položka {path} má název, který cíl nedokáže uložit.",
   "@errors.write.invalidName.message": {

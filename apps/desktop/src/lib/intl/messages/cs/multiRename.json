@@ -243,6 +243,14 @@
   "@multiRename.status.reservedDeviceName": {
     "sourceHash": "8bf464a"
   },
+  "multiRename.status.notPortable": "{alsoLinux, select, yes {Nebude fungovat ve Windows ani v Linuxu} other {Nebude fungovat ve Windows}}",
+  "@multiRename.status.notPortable": {
+    "sourceHash": "cc3ed09"
+  },
+  "multiRename.notPortableSummary": "{count, plural, one {{alsoLinux, select, yes {{countText} nový název nebude fungovat ve Windows ani v Linuxu. Položka se přesto přejmenuje.} other {{countText} nový název nebude fungovat ve Windows. Položka se přesto přejmenuje.}}} few {{alsoLinux, select, yes {{countText} nové názvy nebudou fungovat ve Windows ani v Linuxu. Položky se přesto přejmenují.} other {{countText} nové názvy nebudou fungovat ve Windows. Položky se přesto přejmenují.}}} many {{alsoLinux, select, yes {{countText} nového názvu nebude fungovat ve Windows ani v Linuxu. Položky se přesto přejmenují.} other {{countText} nového názvu nebude fungovat ve Windows. Položky se přesto přejmenují.}}} other {{alsoLinux, select, yes {{countText} nových názvů nebude fungovat ve Windows ani v Linuxu. Položky se přesto přejmenují.} other {{countText} nových názvů nebude fungovat ve Windows. Položky se přesto přejmenují.}}}}",
+  "@multiRename.notPortableSummary": {
+    "sourceHash": "4eb996d"
+  },
   "multiRename.error.unclosed": "Zástupnému symbolu chybí uzavírací „]“",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -627,15 +635,15 @@
   },
   "multiRename.reason.tooLong": "Nový název je na název souboru příliš dlouhý.",
   "@multiRename.reason.tooLong": {
-    "sourceHash": "b709218"
+    "sourceHash": "c49d459"
   },
   "multiRename.reason.reserved": "„.“ a „..“ nemůžou být názvy souborů.",
   "@multiRename.reason.reserved": {
-    "sourceHash": "dcca507"
+    "sourceHash": "b0c0c33"
   },
   "multiRename.reason.disallowedCharacter": "Názvy souborů nesmí obsahovat znak {character}.",
   "@multiRename.reason.disallowedCharacter": {
-    "sourceHash": "66a09f6"
+    "sourceHash": "2d58251"
   },
   "multiRename.reason.reservedDeviceName": "Název „{name}“ je vyhrazený systémem Windows, takže ho tento disk nemůže použít.",
   "@multiRename.reason.reservedDeviceName": {

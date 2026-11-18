@@ -154,7 +154,7 @@
   },
   "fileOperations.mkfile.nameAria": "Имя файла",
   "@fileOperations.mkfile.nameAria": {
-    "sourceHash": "3efed3d"
+    "sourceHash": "971b974"
   },
   "fileOperations.mkfile.placeholder": "Пример: заметки.txt",
   "@fileOperations.mkfile.placeholder": {
@@ -1304,9 +1304,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Запомнить в Связке ключей} windows {Запомнить пароль} linuxKde {Remember in KWallet} other {Запомнить в хранилище ключей}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Запомнить в Связке ключей} windows {Запомнить пароль} linuxKde {Запомнить в KWallet} other {Запомнить в хранилище ключей}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "42237e1"
+    "sourceHash": "8f125e3"
   },
   "fileOperations.resticPassword.checking": "Проверка пароля…",
   "@fileOperations.resticPassword.checking": {
@@ -1331,6 +1331,30 @@
   "fileOperations.validation.empty": "{kind, select, folder {Имя папки не может быть пустым} other {Имя файла не может быть пустым}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
+  },
+  "fileOperations.validation.dotName": "{kind, select, folder {Имя папки не может быть «.» или «..»} other {Имя файла не может быть «.» или «..»}}",
+  "@fileOperations.validation.dotName": {
+    "sourceHash": "bfa0ccb"
+  },
+  "fileOperations.validation.nameLength": "{kind, select, folder {Слишком длинное имя папки ({length}/{maxLength} {unit, select, bytes {{max, plural, one {байт} few {байта} many {байт} other {байта}}} other {{max, plural, one {символ} few {символа} many {символов} other {символа}}}})} other {Слишком длинное имя файла ({length}/{maxLength} {unit, select, bytes {{max, plural, one {байт} few {байта} many {байт} other {байта}}} other {{max, plural, one {символ} few {символа} many {символов} other {символа}}}})}}",
+  "@fileOperations.validation.nameLength": {
+    "sourceHash": "acef623"
+  },
+  "fileOperations.validation.pathLength": "Слишком длинный полный путь ({length}/{maxLength} {unit, select, bytes {{max, plural, one {байт} few {байта} many {байт} other {байта}}} other {{max, plural, one {символ} few {символа} many {символов} other {символа}}}})",
+  "@fileOperations.validation.pathLength": {
+    "sourceHash": "1791bc2"
+  },
+  "fileOperations.validation.notPortable.windowsCharacter": "{format, select, smbShare {Имена с символом «{character}» не будут работать в Windows} other {Имена с символом «{character}» не будут работать в Windows и Linux}}",
+  "@fileOperations.validation.notPortable.windowsCharacter": {
+    "sourceHash": "66201fa"
+  },
+  "fileOperations.validation.notPortable.reservedName": "{format, select, smbShare {Имя «{name}» зарезервировано в Windows, поэтому там такое имя работать не будет, а общая папка может показывать его под другим именем} other {Имя «{name}» зарезервировано в Windows, поэтому там такое имя работать не будет}}",
+  "@fileOperations.validation.notPortable.reservedName": {
+    "sourceHash": "b46ff0c"
+  },
+  "fileOperations.validation.notPortable.endsWithSpaceOrPeriod": "{format, select, smbShare {Имена, которые заканчиваются пробелом или точкой, не будут работать в Windows} other {Имена, которые заканчиваются пробелом или точкой, не будут работать в Windows и Linux}}",
+  "@fileOperations.validation.notPortable.endsWithSpaceOrPeriod": {
+    "sourceHash": "86ce7a7"
   },
   "fileOperations.validation.extensionChangeBlocked": "Менять расширение файла не разрешено (было «{oldExt}»)",
   "@fileOperations.validation.extensionChangeBlocked": {
@@ -1359,6 +1383,18 @@
   "fileOperations.validation.pathNullChar": "Путь содержит нулевой символ",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
+  },
+  "fileOperations.validation.typedPathLength": "Слишком длинный путь ({length}/{maxLength} {unit, select, bytes {{max, plural, one {байт} few {байта} many {байт} other {байта}}} other {{max, plural, one {символ} few {символа} many {символов} other {символа}}}})",
+  "@fileOperations.validation.typedPathLength": {
+    "sourceHash": "f953ea2"
+  },
+  "fileOperations.validation.typedSegmentLength": "Слишком длинное имя папки в пути ({length}/{maxLength} {unit, select, bytes {{max, plural, one {байт} few {байта} many {байт} other {байта}}} other {{max, plural, one {символ} few {символа} many {символов} other {символа}}}})",
+  "@fileOperations.validation.typedSegmentLength": {
+    "sourceHash": "50ce47b"
+  },
+  "fileOperations.transferDialog.namePortability": "{count, plural, one {{alsoLinux, select, yes {{countText} имя здесь не будет работать в Windows и Linux: «{example}»} other {{countText} имя здесь не будет работать в Windows: «{example}»}}} few {{alsoLinux, select, yes {{countText} имени здесь не будут работать в Windows и Linux, например «{example}»} other {{countText} имени здесь не будут работать в Windows, например «{example}»}}} many {{alsoLinux, select, yes {{countText} имен здесь не будут работать в Windows и Linux, например «{example}»} other {{countText} имен здесь не будут работать в Windows, например «{example}»}}} other {{alsoLinux, select, yes {{countText} имени здесь не будут работать в Windows и Linux, например «{example}»} other {{countText} имени здесь не будут работать в Windows, например «{example}»}}}}",
+  "@fileOperations.transferDialog.namePortability": {
+    "sourceHash": "e8c7d0f"
   },
   "fileOperations.transferTree.treeLabel": "Файлы этой передачи",
   "@fileOperations.transferTree.treeLabel": {

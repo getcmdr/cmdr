@@ -102,5 +102,9 @@
   "fileOperations.validation.endsWithSpaceOrPeriod": "{kind, select, folder {Folder names here can’t end with a space or a full stop} other {Filenames here can’t end with a space or a full stop}}",
   "@fileOperations.validation.endsWithSpaceOrPeriod": {
     "sourceHash": "da6de8e"
+  },
+  "fileOperations.validation.notPortable.endsWithSpaceOrPeriod": "{format, select, smbShare {Names ending in a space or a full stop won’t work on Windows} other {Names ending in a space or a full stop won’t work on Windows or Linux}}",
+  "@fileOperations.validation.notPortable.endsWithSpaceOrPeriod": {
+    "sourceHash": "86ce7a7"
   }
 }

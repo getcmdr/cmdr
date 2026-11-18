@@ -1551,7 +1551,7 @@
   },
   "errors.write.nameTooLong.message": "Назва файлу задовга для місця призначення.",
   "@errors.write.nameTooLong.message": {
-    "sourceHash": "03258f0"
+    "sourceHash": "91a01a0"
   },
   "errors.write.nameTooLong.suggestion": "Спробуйте перейменувати файл, щоб назва стала коротшою.",
   "@errors.write.nameTooLong.suggestion": {
@@ -1631,7 +1631,7 @@
   },
   "errors.write.invalidName.title": "Неприпустима назва файлу",
   "@errors.write.invalidName.title": {
-    "sourceHash": "1fb1e45"
+    "sourceHash": "0af3e69"
   },
   "errors.write.invalidName.message": "Назву файлу «{path}» неможливо зберегти в місці призначення.",
   "@errors.write.invalidName.message": {

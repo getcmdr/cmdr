@@ -23,9 +23,9 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "{platform, select, macos {Перезапустіть зараз, або нова версія запрацює, щойно ви наступного разу відкриєте Cmdr.} windows {Cmdr закриється, щоб інсталювати оновлення, а потім знову відкриється.} other {Cmdr quits to install it, then opens again.}}",
+  "updates.toast.readyDetail": "{platform, select, macos {Перезапустіть зараз, або нова версія запрацює, щойно ви наступного разу відкриєте Cmdr.} windows {Cmdr закриється, щоб інсталювати оновлення, а потім знову відкриється.} other {Cmdr завершить роботу, щоб інсталювати оновлення, а потім знову відкриється.}}",
   "@updates.toast.readyDetail": {
-    "sourceHash": "4abee27"
+    "sourceHash": "12ced25"
   },
   "updates.toast.securityFix": "Це оновлення виправляє {count, plural, =1 {проблему безпеки} one {# проблему безпеки} few {# проблеми безпеки} many {# проблем безпеки} other {# проблеми безпеки}}.",
   "@updates.toast.securityFix": {
@@ -107,6 +107,10 @@
   "updates.status.installing": "Інсталяція v{next} (поточна версія: v{prev})…",
   "@updates.status.installing": {
     "sourceHash": "214ef12"
+  },
+  "updates.status.noBuildForThisPlatform": "Ця збірка Cmdr поки що не може оновитися. Спробуйте пізніше.",
+  "@updates.status.noBuildForThisPlatform": {
+    "sourceHash": "e64ebc5"
   },
   "updates.status.managedOff": "Оновленнями Cmdr керує ваша установа.",
   "@updates.status.managedOff": {
