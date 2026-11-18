@@ -69,12 +69,22 @@ Menu-like surfaces (`Menu`, `Select`, the breadcrumb popup) also take the macOS 
 ## Display accessibility classes
 
 `#lib/display-accessibility` (inited per window) mirrors four macOS Accessibility > Display options onto `<html>` as
-classes: `reduce-transparency`, `increase-contrast`, `differentiate-without-color`, and `show-borders`. The backend
-reads all four from `NSWorkspace` in one typed `DisplayAccessibility` value and re-reads them on every
-`NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification`
+classes: `reduce-transparency`, `increase-contrast`, `differentiate-without-color`, and `show-borders` (plus one Windows
+setting, below). The backend reads all four from `NSWorkspace` in one typed `DisplayAccessibility` value and re-reads
+them on every `NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification`
 (`apps/desktop/src-tauri/src/system_look/platform/macos/display_accessibility.rs`), so they follow System Settings live.
 The same value carries Invert colors, which gets no class: it only changes the icons macOS draws, which
 `#lib/icon-cache` follows itself (`apps/desktop/src-tauri/src/icons/DETAILS.md` § Flushes and in-flight fetches).
+
+- **Windows' Underline access keys** → `underline-access-keys`: the one Windows field (`underlineAccessKeys`, false on
+  macOS and Linux), read with `SPI_GETKEYBOARDCUES`
+  (`apps/desktop/src-tauri/src/system_look/platform/windows/keyboard_cues.rs`). With it on, access-key letters stay
+  underlined all the time; task 63's step 4 has the menus' and dialogs' keyboard-cue rule read the class. Live: a hidden
+  top-level window on its own thread hears every `WM_SETTINGCHANGE` broadcast, re-reads, and emits
+  `display-accessibility-changed` only when a value moved
+  (`apps/desktop/src-tauri/src/system_look/platform/windows/setting_changes.rs`; ❌ never a message-only window, which
+  gets no broadcasts). Task 40's Windows readers hang off the same re-read. That Settings' toggle broadcasts is
+  unverified on a real machine (2026-11-18).
 
 - **Why classes**: WKWebView ignores `prefers-reduced-transparency` (verified, see the module doc), and CSS has no query
   for Differentiate without color or Show borders at all. `increase-contrast` is ALSO on when `prefers-contrast: more`

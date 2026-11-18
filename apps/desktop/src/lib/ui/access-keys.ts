@@ -1,10 +1,10 @@
 /**
  * Access keys (mnemonics) for a dialog, on the platforms that have them (`convention('accessKeys')`
  * isn't `'none'`: Windows and every Linux desktop). Alt plus a control's letter presses it (a
- * button, a checkbox) or focuses it (a text field). Holding Alt shows the letters the platform's
- * way: a keytip badge by each control (`'keytips'`, Windows 11), or the letter underlined in its
- * label (`'underlines'`, GTK and Qt), with a label that lacks its letter carrying it in parentheses
- * ("保存 (A)"). macOS has none, and `ModalDialog` builds no controller there.
+ * button, a checkbox) or focuses it (a text field). Holding Alt underlines each letter in its
+ * label, as Win32, GTK, and Qt draw it, with a label that lacks its letter carrying it in
+ * parentheses ("保存 (A)"). Where the Highlight API is missing (WebKitGTK), a keytip badge by each
+ * control stands in. macOS has none, and `ModalDialog` builds no controller there.
  *
  * The letters are allocated from the labels as rendered, in the user's language, by the same rule
  * the Linux menu bar uses (`src-tauri/src/menu/mnemonics.rs`): word initials first, then any other
@@ -238,9 +238,6 @@ export function pressAccessKey(control: HTMLElement): void {
   if (!takesText(control)) control.click()
 }
 
-/** How holding Alt shows the letters: `convention('accessKeys')`, minus `'none'`. */
-export type AccessKeyStyle = 'keytips' | 'underlines'
-
 interface HighlightRegistry {
   set: (name: string, highlight: unknown) => void
   delete: (name: string) => void
@@ -273,8 +270,6 @@ function underlineRangeOf(anchor: Element, letter: string): Range | null {
 }
 
 export interface AccessKeysOptions {
-  /** How holding Alt shows the letters. */
-  style: AccessKeyStyle
   /** The panel whose controls get access keys. */
   scope: () => HTMLElement | undefined
   /** The element the keytips are positioned against. */
@@ -315,8 +310,8 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
   const announced = new Map<HTMLElement, Announced>()
   /** The "(A)"s this controller appended, removed with it. */
   const suffixes = new Set<HTMLElement>()
-  /** Underlines need the Highlight API; without it, the keytips draw instead. */
-  const highlights = options.style === 'underlines' ? highlightApi() : null
+  /** Underlines need the Highlight API; without it (WebKitGTK), the keytips draw instead. */
+  const highlights = highlightApi()
 
   function assignments(): AccessKeyAssignment[] {
     const scope = options.scope()

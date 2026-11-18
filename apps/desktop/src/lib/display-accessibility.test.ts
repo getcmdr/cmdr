@@ -7,7 +7,17 @@ interface Options {
   differentiateWithoutColor: boolean
   invertColors: boolean
   showBorders: boolean
+  underlineAccessKeys: boolean
 }
+
+const allOff = (): Options => ({
+  reduceTransparency: false,
+  increaseContrast: false,
+  differentiateWithoutColor: false,
+  invertColors: false,
+  showBorders: false,
+  underlineAccessKeys: false,
+})
 
 // `vi.mock` is hoisted above the imports, so its factory can only reach these through `vi.hoisted`.
 interface MockState {
@@ -21,6 +31,7 @@ const state = vi.hoisted((): MockState => ({
     differentiateWithoutColor: false,
     invertColors: false,
     showBorders: false,
+    underlineAccessKeys: false,
   },
 }))
 
@@ -40,13 +51,7 @@ let mediaListener: ((e: { matches: boolean }) => void) | undefined
 
 describe('display accessibility', () => {
   beforeEach(() => {
-    state.options = {
-      reduceTransparency: false,
-      increaseContrast: false,
-      differentiateWithoutColor: false,
-      invertColors: false,
-      showBorders: false,
-    }
+    state.options = allOff()
     mediaMatches = false
     mediaListener = undefined
     vi.stubGlobal(
@@ -78,6 +83,7 @@ describe('display accessibility', () => {
       differentiateWithoutColor: true,
       invertColors: true,
       showBorders: true,
+      underlineAccessKeys: false,
     }
     await initDisplayAccessibility()
     expect(has('reduce-transparency')).toBe(true)
@@ -92,32 +98,25 @@ describe('display accessibility', () => {
     expect(has('increase-contrast')).toBe(false)
     expect(has('differentiate-without-color')).toBe(false)
     expect(has('show-borders')).toBe(false)
+    expect(has('underline-access-keys')).toBe(false)
   })
 
   it('follows live System Settings changes', async () => {
     await initDisplayAccessibility()
-    state.listener?.({
-      options: {
-        reduceTransparency: false,
-        increaseContrast: false,
-        differentiateWithoutColor: true,
-        invertColors: false,
-        showBorders: true,
-      },
-    })
+    state.listener?.({ options: { ...allOff(), differentiateWithoutColor: true, showBorders: true } })
     expect(has('differentiate-without-color')).toBe(true)
     expect(has('show-borders')).toBe(true)
-    state.listener?.({
-      options: {
-        reduceTransparency: false,
-        increaseContrast: false,
-        differentiateWithoutColor: false,
-        invertColors: false,
-        showBorders: false,
-      },
-    })
+    state.listener?.({ options: allOff() })
     expect(has('differentiate-without-color')).toBe(false)
     expect(has('show-borders')).toBe(false)
+  })
+
+  it("mirrors Windows' Underline access keys as a class, live", async () => {
+    state.options = { ...allOff(), underlineAccessKeys: true }
+    await initDisplayAccessibility()
+    expect(has('underline-access-keys')).toBe(true)
+    state.listener?.({ options: allOff() })
+    expect(has('underline-access-keys')).toBe(false)
   })
 
   it('also turns on increase-contrast from the prefers-contrast media query, live', async () => {

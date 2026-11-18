@@ -1,12 +1,13 @@
 /**
  * How this platform's own apps behave (dialog button order, the keys that commit and cancel a
- * dialog, access keys, the menu model, the screen readers to expect, and on Linux the desktop), as
+ * dialog, access keys, the menu model, who draws the context menus, the screen readers to expect, and on Linux the desktop), as
  * the backend says, read synchronously. A UI primitive asks a convention, ❌ never "is this
  * Windows", so Linux follows its desktop with no extra branch. Mechanics: `DETAILS.md` § Conventions.
  */
 import type {
   AccessKeys,
   CancelKeys,
+  ContextMenus,
   DialogButtonOrder,
   EnterActivates,
   LinuxDesktop,
@@ -46,8 +47,9 @@ function every<T extends string>() {
 const DIALOG_BUTTON_ORDERS = every<DialogButtonOrder>()('cancelFirst', 'affirmativeFirst')
 const ENTER_ACTIVATES = every<EnterActivates>()('defaultButton', 'focusedButton')
 const CANCEL_KEYS = every<CancelKeys>()('escape', 'escapeOrCommandPeriod')
-const ACCESS_KEYS = every<AccessKeys>()('none', 'keytips', 'underlines')
-const MENU_MODELS = every<MenuModel>()('systemMenuBar', 'windowMenuBar')
+const ACCESS_KEYS = every<AccessKeys>()('none', 'underlines')
+const MENU_MODELS = every<MenuModel>()('systemMenuBar', 'windowMenuBar', 'primaryMenu')
+const CONTEXT_MENUS = every<ContextMenus>()('native', 'inPage')
 const SCREEN_READERS = every<ScreenReader>()('voiceOver', 'jaws', 'nvda', 'narrator', 'orca')
 const LINUX_DESKTOPS = every<LinuxDesktop>()('gnome', 'kde', 'other')
 
@@ -73,6 +75,7 @@ export function platformConventions(): PlatformConventions {
     cancelKeys: oneOf(CANCEL_KEYS, answered.cancelKeys, fallback.cancelKeys),
     accessKeys: oneOf(ACCESS_KEYS, answered.accessKeys, fallback.accessKeys),
     menuModel: oneOf(MENU_MODELS, answered.menuModel, fallback.menuModel),
+    contextMenus: oneOf(CONTEXT_MENUS, answered.contextMenus, fallback.contextMenus),
     screenReaders:
       Array.isArray(readers) &&
       readers.length > 0 &&

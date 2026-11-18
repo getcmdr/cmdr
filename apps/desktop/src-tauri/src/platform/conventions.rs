@@ -20,6 +20,8 @@ pub struct PlatformConventions {
     pub access_keys: AccessKeys,
     /// Where the app's menus live.
     pub menu_model: MenuModel,
+    /// Who draws the right-click menus.
+    pub context_menus: ContextMenus,
     /// The screen readers this platform's users run, most used first: the ones a screen reader
     /// pass tests with and any hint names.
     pub screen_readers: &'static [ScreenReader],
@@ -58,19 +60,15 @@ pub enum CancelKeys {
     EscapeOrCommandPeriod,
 }
 
-/// Whether labeled controls carry access keys (a letter pressed with Alt), and how holding Alt
-/// shows them.
+/// Whether labeled controls carry access keys (a letter pressed with Alt), and how they show.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum AccessKeys {
     /// The platform has no access keys.
     None,
-    /// Alt plus the letter presses the control; holding Alt shows a keytip badge by each one, as
-    /// Windows 11's own apps (WinUI) do.
-    Keytips,
-    /// Alt plus the letter presses the control; holding Alt underlines the letter in its label, as
-    /// GTK and Qt do. A label without the letter (Chinese, Japanese) carries it in parentheses,
-    /// "保存 (S)", the way GTK and Qt apps write a CJK label's mnemonic.
+    /// Alt plus the letter presses the control, and the letter shows underlined in its label, as
+    /// Win32, GTK, and Qt draw it. A label without the letter (Chinese, Japanese) carries it in
+    /// parentheses, "保存 (S)", the way those toolkits write a CJK label's mnemonic.
     Underlines,
 }
 
@@ -82,6 +80,19 @@ pub enum MenuModel {
     SystemMenuBar,
     /// A menu bar inside each window, under its title bar.
     WindowMenuBar,
+    /// No menu bar: a "Main menu" button in the window's header holds the menus, the "primary
+    /// menu" GNOME's HIG asks for.
+    PrimaryMenu,
+}
+
+/// Who draws the right-click (context) menus.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum ContextMenus {
+    /// The OS's own popup menus (muda's native popups).
+    Native,
+    /// Cmdr draws them in the page, on the same menu component as the in-window bar.
+    InPage,
 }
 
 /// A screen reader a platform's users run.
@@ -137,9 +148,8 @@ impl Desktop {
 /// frontend's fixture of all five (`conventions-on.json`) is pinned by one test on any machine;
 /// each OS arm only picks its row.
 ///
-/// Every value cites its guideline in `docs/notes/windows-port/platform-conventions.md`. Where the
-/// value is a product decision still open (the menu model on Windows and GNOME), it carries
-/// today's behavior.
+/// Every value cites its guideline in `docs/notes/windows-port/platform-conventions.md`; the menu
+/// model and the context menus follow decision D5 (`docs/notes/windows-port/menu-model.md`).
 pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
     match desktop {
         Desktop::Macos => PlatformConventions {
@@ -148,6 +158,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             cancel_keys: CancelKeys::EscapeOrCommandPeriod,
             access_keys: AccessKeys::None,
             menu_model: MenuModel::SystemMenuBar,
+            context_menus: ContextMenus::Native,
             screen_readers: &[ScreenReader::VoiceOver],
             linux_desktop: None,
         },
@@ -155,9 +166,10 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             dialog_button_order: DialogButtonOrder::AffirmativeFirst,
             enter_activates: EnterActivates::FocusedButton,
             cancel_keys: CancelKeys::Escape,
-            access_keys: AccessKeys::Keytips,
-            // Today's in-window bar (muda's Win32 menu); the model is still open.
+            access_keys: AccessKeys::Underlines,
             menu_model: MenuModel::WindowMenuBar,
+            // In the page, so the bar's flyouts and the right-click menus share one look (D5).
+            context_menus: ContextMenus::InPage,
             screen_readers: &[ScreenReader::Jaws, ScreenReader::Nvda, ScreenReader::Narrator],
             linux_desktop: None,
         },
@@ -172,9 +184,14 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             cancel_keys: CancelKeys::Escape,
             // GTK and Qt both underline, so every Linux desktop does.
             access_keys: AccessKeys::Underlines,
-            // Today's in-window bar on every desktop. GNOME's HIG has no menu bar (a primary
-            // menu in the header bar instead); whether to follow it is still open.
-            menu_model: MenuModel::WindowMenuBar,
+            // GNOME's HIG has no menu bar, only a primary menu in the header bar; KDE and the
+            // other desktops keep an in-window bar, as their own apps do.
+            menu_model: match desktop {
+                LinuxDesktop::Gnome => MenuModel::PrimaryMenu,
+                LinuxDesktop::Kde | LinuxDesktop::Other => MenuModel::WindowMenuBar,
+            },
+            // muda's GTK popups are the desktop's own menus.
+            context_menus: ContextMenus::Native,
             screen_readers: &[ScreenReader::Orca],
             linux_desktop: Some(desktop),
         },
@@ -283,9 +300,30 @@ mod tests {
     fn access_keys_look_like_each_desktops_own() {
         let keys = |desktop| conventions_on(desktop).access_keys;
         assert_eq!(keys(Desktop::Macos), AccessKeys::None);
-        assert_eq!(keys(Desktop::Windows), AccessKeys::Keytips);
-        for linux in [LinuxDesktop::Gnome, LinuxDesktop::Kde, LinuxDesktop::Other] {
-            assert_eq!(keys(Desktop::Linux(linux)), AccessKeys::Underlines);
+        for desktop in Desktop::ALL.into_iter().filter(|d| *d != Desktop::Macos) {
+            assert_eq!(keys(desktop), AccessKeys::Underlines, "{desktop:?}");
+        }
+    }
+
+    #[test]
+    fn gnome_gets_a_primary_menu_and_the_rest_off_macos_a_window_menu_bar() {
+        let model = |desktop| conventions_on(desktop).menu_model;
+        assert_eq!(model(Desktop::Macos), MenuModel::SystemMenuBar);
+        assert_eq!(model(Desktop::Windows), MenuModel::WindowMenuBar);
+        assert_eq!(model(Desktop::Linux(LinuxDesktop::Gnome)), MenuModel::PrimaryMenu);
+        assert_eq!(model(Desktop::Linux(LinuxDesktop::Kde)), MenuModel::WindowMenuBar);
+        assert_eq!(model(Desktop::Linux(LinuxDesktop::Other)), MenuModel::WindowMenuBar);
+    }
+
+    #[test]
+    fn only_windows_draws_its_context_menus_in_the_page() {
+        for desktop in Desktop::ALL {
+            let expected = if desktop == Desktop::Windows {
+                ContextMenus::InPage
+            } else {
+                ContextMenus::Native
+            };
+            assert_eq!(conventions_on(desktop).context_menus, expected, "{desktop:?}");
         }
     }
 

@@ -16,7 +16,7 @@ Pull-tier docs for `lib/ui/`: architecture, component APIs, and decision rationa
 - **`focus-trap.ts`**: `use:trapFocus` action: Tab wrapping (in reading order), focus-leak guard, Escape fallback, trap
   stack
 - **`access-keys.ts`**: a dialog's Alt+letter access keys where the platform has them: allocation, the labeled-control
-  search, keytips, and the press. § Platform conventions
+  search, the underlines (keytips where the Highlight API is missing), and the press. § Platform conventions
 - **`dialog-registry.ts`**: `SOFT_DIALOG_REGISTRY` array: single source of truth for all dialog IDs
 - **`markdown-link-click.ts`**: `handleMarkdownLinkClick`, the click delegate every `{@html}`-rendered markdown block
   hangs on its container (`ErrorPane`, the What's new popup). Tauri blocks raw `<a>` navigation, so without it a link in
@@ -386,7 +386,7 @@ the Mac markup and keys, so a convention change can't move them unnoticed.
   - Decision prompts (`letterKeysAnswer`: the transfer conflict, the operation conflict, the transfer error): Enter is
     their safe answer (Skip, Close) from anywhere but a button; on a Mac footer button it does nothing. The onboarding
     wizard is no `ModalDialog` and keeps its own keys.
-- **Access keys** (`accessKeys` is `keytips` on Windows, `underlines` on every Linux desktop, `none` on the Mac;
+- **Access keys** (`accessKeys` is `underlines` on Windows and every Linux desktop, `none` on the Mac;
   `access-keys.ts`): Alt plus a control's letter presses it (a button, a checkbox) or focuses it (a text field, via its
   `<label>`). Letters come from the labels as rendered, by the Linux menu bar's rule (`mnemonics.rs`: word initials
   first, unique per dialog, case-insensitive), so every language gets its own and no translator places a marker; a label
@@ -396,24 +396,23 @@ the Mac markup and keys, so a convention change can't move them unnoticed.
   `keyScope` reserves the dialog's own Alt+letter commands' letters (the multi-rename sheet's options, About this's
   Stop), which are its access keys already, so nothing else is given them. A `letterKeysAnswer` dialog (bare letters
   answer it, shown on its buttons) gets none: one key scheme per dialog, and its report offer stays keyless on purpose.
-- **How holding Alt shows them**: `keytips` draws WinUI's badge under each control (`.access-key-tip`). `underlines`
-  underlines the letter in the label, as GTK and Qt do, painting the picked occurrence (`accessKeyRangeIn`: its first
-  word-initial occurrence, else its first, the allocator's own order) under the `cmdr-access-key` highlight. A label
-  without its letter (Chinese, Japanese) carries it after the label all the time, "保存 (B)", as GTK and Qt apps write a
-  CJK mnemonic: an `aria-hidden` `.access-key-suffix` span appended to the label's element, kept out of the label text
-  the allocator reads, and removed with the dialog.
+- **How holding Alt shows them**: the letter underlined in the label, as Win32, GTK, and Qt draw it, painting the picked
+  occurrence (`accessKeyRangeIn`: its first word-initial occurrence, else its first, the allocator's own order) under
+  the `cmdr-access-key` highlight. A label without its letter (Chinese, Japanese) carries it after the label all the
+  time, "保存 (B)", as GTK and Qt apps write a CJK mnemonic: an `aria-hidden` `.access-key-suffix` span appended to the
+  label's element, kept out of the label text the allocator reads, and removed with the dialog.
 - Decision/Why: underlines through the CSS Custom Highlight API, ❌ never by wrapping the letter in markup. The label is
   a consumer snippet whose text nodes Svelte owns; a `Range` paints over them without touching them. The suffix is the
-  one DOM write, appended last so Svelte's anchors stay before it. Without the API (an old WebKitGTK) the underline
-  desktops fall back to keytips; WebKitGTK's `::highlight()` with `text-decoration` is unverified on a Linux machine
-  (Chromium and WKWebView support it).
+  one DOM write, appended last so Svelte's anchors stay before it. Without the API (an old WebKitGTK) a keytip badge
+  under each control stands in (`.access-key-tip`), the only place keytips still draw; WebKitGTK's `::highlight()` with
+  `text-decoration` is unverified on a Linux machine (Chromium and WKWebView support it).
 - Gotcha: Alt plus a numpad key never names an access key (`accessKeyLettersOf`): Windows types a character by its code
   that way (Alt, 0, 2, 3, 3 for é), one Alt keydown per digit, and a label like "Delete 3 items" can hold the digit `3`
   as its key once its letters are taken. Without the guard, typing é in a dialog field could press it.
 - Decision/Why: Windows moves to underlines (D5 in `docs/specs/windows-port-plan.md`, David, 2026-11-18, reversing the
-  earlier keytips): they match the in-page menu bar's, and Windows' "Underline access keys" setting governs them. The
-  Windows row still answers `keytips` until task 63's step 1 flips it, and its step 4 adds Win32's keyboard-cue rule
-  (hidden until Alt or other keyboard use).
+  earlier keytips): they match the in-page menu bar's, and Windows' "Underline access keys" setting governs them. Today
+  they show on held Alt, as on Linux; task 63's step 4 adds Win32's keyboard-cue rule (hidden until Alt or other
+  keyboard use).
 - Gotcha: Windows' native menu bar takes a lone Alt press (Alt, release, focuses the bar) until task 63 replaces it with
   the in-page bar (unverified on Windows for dialogs).
 

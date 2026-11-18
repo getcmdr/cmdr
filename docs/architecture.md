@@ -336,10 +336,10 @@ All under `apps/desktop/src-tauri/src/`.
 - `system_look/`: what the OS says about how things should look, one command each, per OS behind `platform/`: the accent
   color (macOS `NSColor`, Linux XDG portal), Accessibility > Display options (Reduce transparency, Increase contrast,
   Differentiate without color, Invert colors, Show borders; also re-keys the icon caches via
-  `icons::apply_display_accessibility`), the macOS 27 Liquid Glass slider (undocumented `NSGlassTintAmount`), and Text
-  Size (undocumented Apple APIs; risk notes in each macOS source). Emits `accent-color-changed`,
-  `display-accessibility-changed`, `glass-tint-changed`, and `system-text-size-changed`; the frontend sides are
-  `#lib/display-accessibility` and `#lib/glass-material`
+  `icons::apply_display_accessibility`) plus Windows' Underline access keys (live through a `WM_SETTINGCHANGE` window),
+  the macOS 27 Liquid Glass slider (undocumented `NSGlassTintAmount`), and Text Size (undocumented Apple APIs; risk
+  notes in each macOS source). Emits `accent-color-changed`, `display-accessibility-changed`, `glass-tint-changed`, and
+  `system-text-size-changed`; the frontend sides are `#lib/display-accessibility` and `#lib/glass-material`
 - `system_strings.rs`: Localized macOS pane labels from `.loctable` system bundles (loctable catalog + risks in source).
   Also the ordered `AppleLanguages` read that `intl/` walks
 - `intl/`: What the OS says about language and region. Walks the user's ordered macOS language preferences against the

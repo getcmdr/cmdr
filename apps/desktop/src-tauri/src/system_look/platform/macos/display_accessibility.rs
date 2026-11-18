@@ -52,6 +52,8 @@ fn read_display_accessibility(_mtm: MainThreadMarker) -> DisplayAccessibility {
         differentiate_without_color: workspace.accessibilityDisplayShouldDifferentiateWithoutColor(),
         invert_colors: workspace.accessibilityDisplayShouldInvertColors(),
         show_borders: should_show_borders(&workspace),
+        // A Windows setting; macOS shows no access keys.
+        underline_access_keys: false,
     }
 }
 

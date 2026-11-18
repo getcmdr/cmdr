@@ -225,19 +225,19 @@
     /** ⌘. cancels on the Mac, as Escape does (`dialog-keys.ts`; DETAILS § Platform conventions). */
     const cancelsOnCommandPeriod = commandPeriodCancels()
 
-    /** Where the keytips are drawn while Alt is held, on a platform with access keys. */
+    /**
+     * Where the keytips are drawn while Alt is held: the stand-in for underlines where the
+     * Highlight API is missing (WebKitGTK; `access-keys.ts`).
+     */
     let accessKeyTips = $state<AccessKeyTip[]>([])
-    /** How holding Alt shows the access keys: keytips (Windows), underlines (Linux), or none (macOS). */
-    const accessKeyStyle = convention('accessKeys')
     /**
      * Alt+letter access keys (`access-keys.ts`), on Windows and Linux; macOS has none. A dialog
      * whose bare letters answer it (`letterKeysAnswer`) already has a key per button, shown on the
      * button, so it gets no second set: one key scheme per dialog.
      */
     const accessKeys =
-        accessKeyStyle !== 'none' && !untrack(() => letterKeysAnswer)
+        convention('accessKeys') !== 'none' && !untrack(() => letterKeysAnswer)
             ? createAccessKeys({
-                  style: accessKeyStyle,
                   scope: () => dialogElement,
                   layer: () => overlayElement,
                   commandScope: () => keyScope,
@@ -1216,7 +1216,8 @@
         flex-direction: row-reverse;
     }
 
-    /* An access key's keytip, drawn while Alt is held (`access-keys.ts`), centered on the bottom
+    /* An access key's keytip, drawn while Alt is held where underlines can't paint (no Highlight
+       API, `access-keys.ts`), centered on the bottom
        edge of the control it presses. Never in the way of a click: Alt up, a key, or a pointer
        press hides it. */
     .access-key-tip {
