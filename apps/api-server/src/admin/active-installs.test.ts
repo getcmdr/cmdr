@@ -25,7 +25,7 @@ const today = '2026-07-10'
 const dates = buildDateList(10, new Date(`${today}T12:00:00Z`))
 
 function row(date: string, installId: string, version = '0.60.0', seconds = 3_600): BeatRow {
-  return { date, installId, version, seconds }
+  return { date, installId, version, os: 'macos', osVersion: 'macOS 26.0', seconds }
 }
 
 function day(response: ActiveInstallsResponse, date: string) {
@@ -74,6 +74,7 @@ describe('assembleActiveInstalls', () => {
       wau: 0,
       mau: 0,
       byVersion: {},
+      byOs: {},
     })
   })
 
@@ -189,13 +190,33 @@ describe('readSinceFor', () => {
     expect(readSinceFor(long)).toBe(shiftDate(long[0], -27))
   })
 
+  it("counts installs by OS, summing to DAU, reading a pre-field beat's OS from its os_version", () => {
+    const rows = [
+      row('2026-07-05', 'a'),
+      { ...row('2026-07-05', 'b'), os: 'windows', osVersion: 'Windows 11 Pro 24H2 (build 26100.1)' },
+      { ...row('2026-07-05', 'c'), os: null, osVersion: '15.3.1' },
+      { ...row('2026-07-05', 'd'), os: null, osVersion: 'Ubuntu 24.04 LTS' },
+      { ...row('2026-07-05', 'd'), os: null, osVersion: 'Ubuntu 24.04 LTS' },
+    ]
+    const d = day(assembleActiveInstalls(rows, [], dates), '2026-07-05')
+    expect(d.byOs).toEqual({ macos: 2, windows: 1, linux: 1 })
+    expect(d.dau).toBe(4)
+  })
+
   it('reaches 90 days back for a short range, so the 90-day window stays whole', () => {
     expect(readSinceFor(dates)).toBe(shiftDate(today, -90))
   })
 })
 
-function beat(db: DatabaseSync, id: string, at: string, version = '0.60.0', uptime: number | null = null): void {
-  db.prepare(insertHeartbeatSql).run(id, version, '26.0', 'aarch64', 'release', null, uptime, null, null, at)
+function beat(
+  db: DatabaseSync,
+  id: string,
+  at: string,
+  version = '0.60.0',
+  uptime: number | null = null,
+  os: string | null = 'macos',
+): void {
+  db.prepare(insertHeartbeatSql).run(id, version, '26.0', 'aarch64', 'release', null, uptime, null, null, at, os)
   db.prepare(upsertInstallSummarySql).run(id, at, null, null)
 }
 
@@ -207,8 +228,8 @@ function seeded(): SqliteD1 {
   beat(db, 'anal_a', '2026-07-02 10:00:00', '0.60.0')
   beat(db, 'anal_a', '2026-07-02 23:59:59', '0.61.0', 1_800)
   beat(db, 'anal_a', '2026-07-09 08:00:00', '0.61.0', 10_800)
-  beat(db, 'anal_b', '2026-07-09 00:00:00', '0.61.0', 3_600)
-  beat(db, 'anal_c', '2026-07-10 00:00:00', '0.61.0', 600)
+  beat(db, 'anal_b', '2026-07-09 00:00:00', '0.61.0', 3_600, 'windows')
+  beat(db, 'anal_c', '2026-07-10 00:00:00', '0.61.0', 600, null) // a client older than the os field
   return sqlite
 }
 
@@ -235,6 +256,14 @@ describe('the active-installs queries against real SQLite', () => {
     const funnel = assembleFunnel(dates, funnelRows, null, now)
     expect(response.days.map((d) => d.newInstalls)).toEqual(funnel.map((d) => d.newInstalls))
     expect(day(response, '2026-07-02').newInstalls).toBe(1)
+  })
+
+  it('reads each install-day under its OS, an older beat under the one its os_version names', async () => {
+    const { d1 } = seeded()
+    const response = await queryActiveInstalls(d1, dates)
+    expect(day(response, '2026-07-09').byOs).toEqual({ macos: 1, windows: 1 })
+    // The seed's os_version is a bare `26.0`, the shape the oldest macOS clients sent.
+    expect(day(response, today).byOs).toEqual({ macos: 1 })
   })
 
   it('reads versions per install-day, and older beats for WAU, MAU, and the windows', async () => {

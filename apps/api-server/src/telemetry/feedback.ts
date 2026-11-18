@@ -1,4 +1,5 @@
 import { Hono, type Context } from 'hono'
+import { parseClientOs } from '../client-os'
 import { enforceIpRateLimit, hasEmailShape, isAbsent, type Bindings } from '../types'
 import { SHORT_ID_PATTERN } from './error-report'
 
@@ -7,7 +8,7 @@ const feedback = new Hono<{ Bindings: Bindings }>()
 /**
  * In-app "Send feedback" ingestion. JSON body (no log bundle, unlike `/error-report`):
  * required `feedback` text plus `appVersion` / `osVersion`, optional reply-to `email`,
- * `buildMode`, and `errorReportId`. The last is the `ERR-XXXXX` of the logs the sender chose to
+ * `buildMode`, `os` (stored as NULL when absent or unknown, never a 400), and `errorReportId`. The last is the `ERR-XXXXX` of the logs the sender chose to
  * include: the app sends them right after this request, as an ordinary `/error-report` upload
  * under that id, and the cron puts the two on one card (`report-outbox.ts`). The row is written to the D1 `feedback` table (the durable sink; the
  * write is awaited so a failure surfaces as a retryable soft 502, not a silent drop).
@@ -37,6 +38,8 @@ interface FeedbackBody {
   email?: string | null
   buildMode?: 'release' | 'debug' | null
   errorReportId?: string | null
+  /** `macos` / `windows` / `linux`, read through `parseClientOs`; older clients send none. */
+  os?: unknown
 }
 
 /**
@@ -130,8 +133,8 @@ feedback.post('/feedback', async (c) => {
   // NULL and the cron files its card (`report-outbox.ts`).
   try {
     await c.env.TELEMETRY_DB.prepare(
-      `INSERT INTO feedback (feedback, email, app_version, os_version, build_mode, error_report_id)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO feedback (feedback, email, app_version, os_version, build_mode, error_report_id, os)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
     )
       .bind(
         text,
@@ -140,6 +143,7 @@ feedback.post('/feedback', async (c) => {
         body.osVersion,
         body.buildMode ?? null,
         body.errorReportId ?? null,
+        parseClientOs(body.os),
       )
       .run()
   } catch (e) {

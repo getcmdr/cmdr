@@ -230,6 +230,12 @@ SUPPORT_EMAIL = "david@getcmdr.com"
 # which a later `wrangler deploy` would silently clobber back to this value.
 PADDLE_ENVIRONMENT = "live"
 
+# The OSes whose builds `/download/:version/:os/:arch` serves, comma-separated. A release can carry Windows or
+# Linux files before they're announced; until their OS is listed here, the route answers 404 for them and logs
+# nothing. Adding `windows` is the switch that makes the Windows download public (`src/telemetry/DETAILS.md`
+# § Download tracking). Absent means macOS only; macOS is always served, whatever this says.
+PUBLIC_DOWNLOAD_OSES = "macos"
+
 # D1's per-database cap on the account's plan, in MB: Workers Paid, 10 GB (the D1 limits page, checked
 # 2026-11-05, the day the account moved from Workers Free's 500 MB). The daily size check alerts at
 # 40/60/80/90% of it, so change it with the plan.

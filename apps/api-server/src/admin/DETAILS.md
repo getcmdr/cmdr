@@ -103,11 +103,14 @@ Per-day columns and how each is derived:
   already sanitized at write time, so the grouping is on the stored value as-is.
 - `downloadsByReferer`: the same rows grouped by the stored `Referer` host, the breakdown that illuminates the large
   `(none)` `ref` bucket.
+- `downloadsByOs` (`{ macos: n, windows: n, … }`, only OSes with downloads, summing to `downloads`): the file's OS, read
+  off the same rows as the UA split (`queryDownloadsByUa` groups by `os` too), so it costs no query of its own. Every
+  row before migration `0033` is `macos`. Also on each `CountryDay` (optional, like the other breakdowns).
 - `downloadsByUaFamily` (`{ human, bot, unknown }`) + `humanInstalls`: per-row family via `resolveUaFamily`
-  (`../user-agent.ts`), which prefers the stored `ua_family` and falls back to classifying the raw UA for pre-`0013`
-  rows. `humanInstalls = human + unknown`: it drops only the provably-impossible downloads and keeps every ambiguous
-  one, so it never overclaims. The classification rules and why `human` is NOT a clean count: `../telemetry/DETAILS.md`
-  § Download tracking.
+  (`../user-agent.ts`), which prefers the stored `ua_family` and falls back to classifying the raw UA against the row's
+  `os` for pre-`0013` rows. `humanInstalls = human + unknown`: it drops only the provably-impossible downloads and keeps
+  every ambiguous one, so it never overclaims. The classification rules and why `human` is NOT a clean count:
+  `../telemetry/DETAILS.md` § Download tracking.
 - `newInstalls` + `newInstallsByChannel` (`{ homebrew, direct, unknown }`, summing to `newInstalls`): installs whose
   **first-ever** beat (`install_summary.first_beat_at`) fell on that UTC day, so an install that first beat months ago
   never counts as "new" inside the window. The channel is the install's first non-NULL `install_channel`; NULL (clients
@@ -296,7 +299,8 @@ leave the Worker.
   `install_summary.first_beat_at`, so it equals `/admin/funnel`'s), `appHours` (`beatSecondsSql`, so it equals
   `/admin/heartbeat-dau`'s), `wau` / `mau` (distinct installs with a beat in [day − 6, day] / [day − 27, day]), and
   `byVersion` (installs by the version they ran that day; an install on two versions counts under the higher, so the
-  values sum to `dau`).
+  values sum to `dau`), and `byOs` (installs by OS, also summing to `dau`: the beat's `os`, or for a beat from a client
+  older than the field, what its `os_version` says, through `osOfRow` in `../client-os.ts`).
 - `windows`: `VersionWindow[]` for 7, 30, and 90 days, each `{ days, since, until, installs, byVersion }` over complete
   days ending yesterday (`since` = today − days, `until` = yesterday, both inclusive). Here `byVersion[v]` counts the
   installs with ANY beat on `v` in the window, the "installs exposed to v" denominator an errors-per-100 rate needs, so
@@ -326,7 +330,8 @@ Two endpoints read a summary table that the retention sweep or the daily cron fi
 the summary doesn't cover yet:
 
 - `/admin/downloads` prefers `downloads_daily_unique` (migration `0014`, written by the retention sweep BEFORE it clears
-  `hashed_ip`) and falls back to `COUNT(DISTINCT hashed_ip)` over live rows inside the 90-day window.
+  `hashed_ip`; keyed by `os` too since `0033`, so a Mac and a Windows `x86_64` count of one day never merge) and falls
+  back to `COUNT(DISTINCT hashed_ip)` over live rows inside the 90-day window.
 - `/admin/update-activity` prefers `daily_active_users` (written by the daily aggregation job) and falls back to raw
   `update_checks` for the seven days before pruning.
 

@@ -138,6 +138,7 @@ fn convert_raw_signal_crash(crash_json_path: &Path, raw_crash_path: &Path) {
         thread_count: 0,
         app_version: crash_app_version,
         os_version: crate::platform::os_version(),
+        os: crate::platform::os_name(),
         arch: std::env::consts::ARCH.to_string(),
         uptime_secs: 0.0, // Unknown for signal crashes from previous session
         active_settings: CACHED_SETTINGS.get().cloned().unwrap_or_default(),

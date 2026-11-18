@@ -20,6 +20,7 @@ fn crash_report_roundtrip() {
         thread_count: 8,
         app_version: "0.8.2".to_string(),
         os_version: "macOS 15.3".to_string(),
+        os: "macos".to_string(),
         arch: "aarch64".to_string(),
         uptime_secs: 42.5,
         active_settings: ActiveSettings {
@@ -475,6 +476,7 @@ fn make_test_report() -> CrashReport {
         thread_count: 1,
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         os_version: "test".to_string(),
+        os: "macos".to_string(),
         arch: "test".to_string(),
         uptime_secs: 0.0,
         active_settings: ActiveSettings::default(),
@@ -932,6 +934,20 @@ fn a_crash_file_written_before_app_fate_existed_claims_nothing() {
 
     let loaded = read_crash_report(&path).expect("a crash file from an older build still parses");
     assert_eq!(loaded.app_fate, AppFate::Unknown);
+}
+
+#[test]
+fn a_crash_file_written_before_os_existed_reads_as_this_machines_os() {
+    // The crash file never leaves the machine before it's sent, so the OS it crashed on is this one.
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join(CRASH_FILE_NAME);
+
+    let mut json = serde_json::to_value(make_test_report()).unwrap();
+    json.as_object_mut().unwrap().remove("os");
+    std::fs::write(&path, serde_json::to_string(&json).unwrap()).unwrap();
+
+    let loaded = read_crash_report(&path).expect("a crash file from an older build still parses");
+    assert_eq!(loaded.os, std::env::consts::OS);
 }
 
 #[test]

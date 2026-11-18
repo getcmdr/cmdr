@@ -427,6 +427,27 @@ describe('POST /error-report', () => {
     ])
   })
 
+  it("stores the manifest's os, and NULL for an older client or an unknown value rather than refusing the bundle", async () => {
+    const { d1, sqlite } = createSqliteD1()
+    const bindings = createBindings({ TELEMETRY_DB: d1 })
+
+    for (const os of ['windows', undefined, 'freebsd']) {
+      const meta = { ...validMeta, os }
+      const res = await app.request(
+        '/error-report',
+        { method: 'POST', body: buildMultipart(new Uint8Array([1]), meta) },
+        bindings,
+      )
+      expect(res.status).toBe(200)
+    }
+
+    expect(sqlite.prepare(`SELECT os FROM error_reports ORDER BY id`).all()).toEqual([
+      { os: 'windows' },
+      { os: null },
+      { os: null },
+    ])
+  })
+
   it('raises ONE ops alert when the budget runs out, not one per rejected upload', async () => {
     const kv = createKv()
     await kv.put(dailyBytesKey(todayUtc()), String(DAILY_INTAKE_BUDGET_BYTES))

@@ -146,6 +146,10 @@ pub struct CrashReport {
     pub thread_count: usize,
     pub app_version: String,
     pub os_version: String,
+    /// `macos` / `windows` / `linux` ([`crate::platform::os_name`]). A crash file written before
+    /// this field reads as this machine's OS, which is the OS it crashed on.
+    #[serde(default = "crate::platform::os_name")]
+    pub os: String,
     pub arch: String,
     pub uptime_secs: f64,
     pub active_settings: ActiveSettings,
@@ -534,6 +538,7 @@ fn build_panic_report(info: &std::panic::PanicHookInfo<'_>) -> CrashReport {
         thread_count: platform::current_thread_count(),
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         os_version: crate::platform::os_version(),
+        os: crate::platform::os_name(),
         arch: std::env::consts::ARCH.to_string(),
         uptime_secs: uptime_secs(),
         active_settings: CACHED_SETTINGS.get().cloned().unwrap_or_default(),

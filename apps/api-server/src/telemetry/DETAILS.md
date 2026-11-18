@@ -7,8 +7,11 @@ Read this before any non-trivial work here: editing, planning, reorganizing, or 
 
 ## Files
 
-- **`telemetry.ts`**: routes `/crash-report`, `/update-check/:version`, `/download/:version/:arch`, plus
-  `extractTopFunction`, `validateOptionalEnum` / `validateOptionalPattern`, `versionPattern`, and the sanitizers.
+- **`telemetry.ts`**: routes `/crash-report` and `/update-check/:version`, plus `extractTopFunction`,
+  `validateOptionalEnum` / `validateOptionalPattern`, `versionPattern`, and `todayUtc`.
+- **`download.ts`**: `/download/:version/:os/:arch`, its macOS alias `/download/:version/:arch`, and
+  `/download/:version/checksums`, plus the public-OS gate (`publicDownloadOses`), the release lookups, and the
+  attribution sanitizers.
 - **`heartbeat.ts`**: `POST /heartbeat`: the beat, its uptime, and the feature events it relays.
 - **`error-report.ts`**: `POST /error-report` (multipart upload to R2, the KV index write, the `error_reports` outbox
   row) and `buildPresignedUrl`, which the cron uses for bundle links.
@@ -21,9 +24,10 @@ Read this before any non-trivial work here: editing, planning, reorganizing, or 
 - **`feedback.ts`**: `POST /feedback` (in-app feedback → the D1 `feedback` row, which is also its outbox entry).
 - Tests: `crash-report.test.ts` (incl. § "top_function derivation" over real backtraces), `heartbeat.test.ts`,
   `heartbeat-sql.test.ts` (the INSERTs against a real SQLite with the real migrations),
-  `download-and-update-check.test.ts`, `error-report.test.ts`, `error-report-intake.test.ts`,
-  `error-report-eviction.test.ts`, `error-report-amend.test.ts`, `feedback.test.ts`. The route-level R2/KV/D1 fakes live
-  in `error-report-test-helpers.ts`; the `sendEmail` mock can't (`vi.mock` is hoisted per file).
+  `download-and-update-check.test.ts` (the macOS route and `/update-check`), `download-os.test.ts` (the OS route and its
+  gate), `error-report.test.ts`, `error-report-intake.test.ts`, `error-report-eviction.test.ts`,
+  `error-report-amend.test.ts`, `feedback.test.ts`. The route-level R2/KV/D1 fakes live in
+  `error-report-test-helpers.ts`; the `sendEmail` mock can't (`vi.mock` is hoisted per file).
 
 ## Request flows
 
@@ -38,7 +42,7 @@ Heartbeat: POST /heartbeat → rate-limit by IP (HEARTBEAT_LIMITER, 429 if over)
 
 Feedback: POST /feedback → rate-limit by IP (FEEDBACK_LIMITER, 429 if over) → validate shape (required feedback text ≤ 100k code points + appVersion/osVersion, optional email/buildMode/errorReportId) → AWAITED D1 write to `feedback` (failure → soft 502 so the app offers a retry) → 204 → the 3-hourly cron files its card and mails it in the report digest (`../../DETAILS.md` § Cron handler)
 
-Download redirect: GET /download/:version/:arch → write to D1 (fire-and-forget) → 302 to the EU mirror (`download.getcmdr.com`) for 0.59.0 and later, else GitHub Releases
+Download redirect: GET /download/:version/:os/:arch (or the macOS alias /download/:version/:arch) → validate version, OS, arch, and ?kind= (400) → OS not in PUBLIC_DOWNLOAD_OSES → 404, no lookup, no row → resolve `latest` → the release's filename (a macOS DMG by name, else its latest.json `downloads`; none → 404, no row) → write to D1 (fire-and-forget) → 302 to the EU mirror (`download.getcmdr.com`) for 0.59.0 and later, else GitHub Releases
 
 Update check proxy: GET /update-check/:version → hash IP with daily salt → INSERT OR IGNORE into D1 (fire-and-forget) → 302 to latest.json
 ```
@@ -49,10 +53,11 @@ D1 table `crash_reports`. Columns: `hashed_ip`, `app_version`, `os_version`, `ar
 `backtrace`, `image_base` (nullable), `build_mode` (`'release'` / `'debug'`, nullable for legacy rows), `short_id`
 (`CRASH-XXXXX`, nullable for legacy rows), `diag_id` (`diag_<uuid>`, nullable), `email` (nullable), `panic_message`
 (nullable: signal crashes carry no panic payload, and legacy rows predate the column), `app_fate` (nullable, migration
-`0015`), `os_exception` and `os_frames` (nullable, migration `0019`). Validates payload size (max 64 KB), required
-fields, and the shape of optional fields before writing. `diagId` must match `^diag_[0-9a-f-]{36}$` (a malformed value,
-including any `anal_`-prefixed one, is rejected 400); `email` is loosely shape-checked and surfaced as the "Reply to"
-column in the crash-notification email (`../scheduled.ts` / `../email/crash.ts`). No authentication required.
+`0015`), `os_exception` and `os_frames` (nullable, migration `0019`), `os` (nullable, migration `0033`, § The OS field).
+Validates payload size (max 64 KB), required fields, and the shape of optional fields before writing. `diagId` must
+match `^diag_[0-9a-f-]{36}$` (a malformed value, including any `anal_`-prefixed one, is rejected 400); `email` is
+loosely shape-checked and surfaced as the "Reply to" column in the crash-notification email (`../scheduled.ts` /
+`../email/crash.ts`). No authentication required.
 
 **`app_fate` is what ranks a report's severity:** `'ended'` (the app went down with it) versus `'keptRunning'` (a
 background-thread panic it survived), plus `'unknown'` / `'unconfirmed'`, which claim nothing. Without it a real crash
@@ -98,11 +103,12 @@ app spooled since its last successful one. Identity is the random `anal_<uuid>` 
 `^anal_[0-9a-f-]{36}$`); the IP keys the rate limiter and is never stored. The wire contract is
 `docs/specs/network-chatter-plan.md` § Wire contract.
 
-**The beat.** Required: `analId`, `appVersion` (semver), `osVersion`, `arch`. Optional: `buildMode`, `config` (an
-arbitrary object stored verbatim as `config_json`), `uptimeSeconds`, `events`, and `installChannel`. The config is a
-single JSON blob, not per-field columns, so new settings absorb without a migration: DAU/engagement queries never touch
-it. Caps: 256 KB whole body (read through `readCappedBody`), 16 KB config blob. No UNIQUE/dedup constraint: every beat
-is kept, and DAU (`COUNT(DISTINCT anal_id)`) and app hours are computed at query time by `/admin/heartbeat-dau`.
+**The beat.** Required: `analId`, `appVersion` (semver), `osVersion`, `arch`. Optional: `os` (§ The OS field),
+`buildMode`, `config` (an arbitrary object stored verbatim as `config_json`), `uptimeSeconds`, `events`, and
+`installChannel`. The config is a single JSON blob, not per-field columns, so new settings absorb without a migration:
+DAU/engagement queries never touch it. Caps: 256 KB whole body (read through `readCappedBody`), 16 KB config blob. No
+UNIQUE/dedup constraint: every beat is kept, and DAU (`COUNT(DISTINCT anal_id)`) and app hours are computed at query
+time by `/admin/heartbeat-dau`.
 
 **`uptimeSeconds`** is the app runtime this beat accounts for that no earlier successful beat reported, so summing it
 per day gives app hours regardless of how often the app beats. A non-negative integer or 400; clamped to seven days
@@ -155,50 +161,76 @@ touching real users, even behind a shared address. Fatter beats don't change tha
 stores, and a 429'd client keeps its events for its next beat. Over the limit returns 429 before any parsing or D1
 write. The binding is typed optional so tests and incomplete envs can omit it (the gate is then a no-op).
 
+## The OS field
+
+`/heartbeat`, `/feedback`, `/crash-report`, and `/error-report` (in the manifest) take an optional `os`: `macos`,
+`windows`, or `linux`, the app's `std::env::consts::OS` (`crate::platform::os_name()`), stored in each table's `os`
+column (migration `0033`). It goes through `parseClientOs` (`../client-os.ts`): absent, `null`, or any other value is
+stored as NULL and never fails the request, since a 400 would make the app resend a beat forever or lose a report over a
+field nothing needs to read it. Readers take a NULL row's OS from its `os_version` (`osOfRow`): only the three arms ever
+sent one, and their shapes differ (`macOS 26.0` or a bare `15.3.1`, `Windows 11 …`, a distro name).
+
 ## Download tracking
 
-D1 table `downloads`. One row per download event with `app_version`, `arch`, `country`, `continent`, `hashed_ip`,
-`source`, `ref`, `referer`, `user_agent`, and `ua_family`. The D1 write is fire-and-forget via `waitUntil` +
-`.catch(() => {})`. What makes the count meaningful as an install signal:
+D1 table `downloads`. One row per download event with `app_version`, `os`, `kind`, `arch`, `country`, `continent`,
+`hashed_ip`, `source`, `ref`, `referer`, `user_agent`, and `ua_family`. The D1 write is fire-and-forget via `waitUntil`
 
-- **`latest` is a valid `:version`,** for links we can't edit per release (app directories, the README, blog posts, a
-  chat message from last year). `resolveLatestVersion` reads `getcmdr.com/latest.json` (the same manifest the in-app
+- `.catch(() => {})`. What makes the count meaningful as an install signal:
+
+* **Which file: `GET /download/:version/:os/:arch`**, with `?kind=` for an OS's other file (`pkg`, `msix`, `deb`; the
+  defaults are `dmg`, `nsis`, `appimage`, mirroring `downloadKinds` in `scripts/release-assets/manifest/manifest.go`).
+  `/download/:version/:arch` stays as the macOS DMG alias for good: every link printed before Windows names it. A macOS
+  DMG's filename is built without a lookup, as it always was. Every other file's comes from the release's own
+  `latest.json` `downloads` list (`getcmdr.com/latest.json` for `latest`, the GitHub release's copy for a pinned
+  version, edge-cached a day): filenames are data, never derived from os and arch (`scripts/release-assets/DETAILS.md`).
+  A filename outside `^Cmdr_[0-9A-Za-z._-]+$` is ignored, so a bad manifest can't steer the redirect. A release without
+  that file answers 404 and writes no row. `downloads.os` / `downloads.kind` default to `macos` / `dmg`, which every row
+  from before migration `0033` (and from an older Worker in the migrate-then-deploy window) is.
+* **The public-OS gate: `PUBLIC_DOWNLOAD_OSES`** (`wrangler.toml` `[vars]`, comma-separated, `macos` today; absent means
+  macOS only). macOS is always public whatever the var says (`publicDownloadOses`): its DMG was public before the gate,
+  so an emptied or mistyped var must never 404 every published Mac link. Any other OS off the list answers 404 before
+  any lookup or row, so a release can carry Windows files before anyone announces them. Adding `windows` there (and
+  deploying) is the one switch that makes the Windows download public; the website's download page (Windows port plan
+  task 32) links it only after that.
+
+* **`latest` is a valid `:version`,** for links we can't edit per release (app directories, the README, blog posts, a
+  chat message from last year). `resolveLatestRelease` reads `getcmdr.com/latest.json` (the same manifest the in-app
   updater reads, so `latest` can never name a version the updater doesn't know), falling back to GitHub's
   `releases/latest` API for the window where the website is down or mid-deploy. Both answers are validated against
   `versionPattern` before they reach a redirect URL or a D1 row, and both fetches are edge-cached for five minutes, so a
   download burst costs one origin fetch. D1 stores the RESOLVED version, never `latest`. When neither source answers,
   the handler 302s to the GitHub releases page and writes NO row. `getcmdr.com/download/latest/<arch>` is the public
   face of this, an nginx redirect in `apps/website/nginx.conf`.
-- **Where it redirects: the EU mirror from 0.59.0 on, GitHub before.** `releaseFileUrl` sends a version at or past
+* **Where it redirects: the EU mirror from 0.59.0 on, GitHub before.** `releaseFileUrl` sends a version at or past
   `firstMirroredVersion` (0.59.0, backfilled 2026-11-05) to `download.getcmdr.com/v<version>/<file>`, and anything older
   to its GitHub release, which keeps every version. No lookup: the release pipeline mirrors every release before it goes
   Latest, so the boundary is a constant. Lower it only after backfilling the older releases with
   `scripts/release-mirror.sh`. `docs/guides/releasing.md` § Where downloads are served from.
-- **`/download/:version/checksums` is a sibling redirect, not an architecture.** It resolves `latest` through the same
-  `resolveLatestVersion` and 302s to the release's `checksums.txt`, which the website links as `SHA-256 checksums` in
+* **`/download/:version/checksums` is a sibling redirect, not an architecture.** It resolves `latest` through the same
+  `resolveLatestRelease` and 302s to the release's `checksums.txt`, which the website links as `SHA-256 checksums` in
   the download card so a person who took a DMG from the site can verify it (the Homebrew cask and the updater already
   verify themselves). Two things keep it honest: it is registered BEFORE `/:version/:arch`, so the static segment wins
   over the param rather than building `Cmdr_<v>_checksums.dmg`, and ❌ it writes no `downloads` row, because a checksum
   fetch is not an app download and counting one would inflate the per-version breakdown. `checksums` is deliberately
-  absent from `validArchitectures`, which answers a different question the D1 rollups read.
-- **Bot/unfurler hits are dropped:** link-preview bots (Discord, Slack, etc.) and crawlers would inflate the count, so a
+  absent from `archesByOs`, which answers a different question the D1 rollups read.
+* **Bot/unfurler hits are dropped:** link-preview bots (Discord, Slack, etc.) and crawlers would inflate the count, so a
   User-Agent denylist skips the D1 write (the 302 is still served). A missing UA is treated as a bot too. Homebrew
   downloads via curl, which would match the `curl` rule, so Homebrew is explicitly exempted.
-- **`hashed_ip` enables same-day dedup:** `SHA-256(IP_HASH_PEPPER + IP + daily salt)`, the same scheme as
+* **`hashed_ip` enables same-day dedup:** `SHA-256(IP_HASH_PEPPER + IP + daily salt)`, the same scheme as
   `update_checks`. One row per request (raw count is `COUNT(*)`); the dashboard derives distinct same-day downloaders
   with `COUNT(DISTINCT hashed_ip)`. Both ingredients are load-bearing, and the pepper rule is app-wide
   (`../../CLAUDE.md`): the daily salt stops the value linking a visitor across days, and the pepper is what makes it
   one-way at all.
-- **`source` tags origin:** `homebrew` (by User-Agent), `website` (the getcmdr.com button, which sends `?src=website`),
+* **`source` tags origin:** `homebrew` (by User-Agent), `website` (the getcmdr.com button, which sends `?src=website`),
   or `other`. In-app auto-updates never appear here: they fetch the tarball straight from GitHub.
-- **`ref` tags the first-touch channel** (migration `0009`): where a website visitor originally arrived from (a UTM
+* **`ref` tags the first-touch channel** (migration `0009`): where a website visitor originally arrived from (a UTM
   source/campaign, or an external referrer hostname), so the dashboard can attribute installs to a channel. The website
   computes it client-side from URL state only (no localStorage/cookie, to stay banner-free) and forwards it as `?ref=`.
   The handler never trusts that input: `sanitizeRef` lowercases, drops anything outside `[a-z0-9._:-]`, and caps at 120
   chars, mirroring the website's normalization. Absent or sanitizes-to-empty → stored NULL (not `''`). Homebrew, direct
   links, and return visits in a later session carry no ref and stay NULL. The charset rule is the trust boundary; the
   matching admin-side sanitizer lives in `../website/link-codes.ts`.
-- **`referer` and `user_agent` capture the hit's own HTTP metadata** (migration `0010`), the first-party signal that
+* **`referer` and `user_agent` capture the hit's own HTTP metadata** (migration `0010`), the first-party signal that
   illuminates the large `(none)` `ref` bucket: a DIRECT hit to `/download` (a link shared on AlternativeTo, a directory,
   GitHub, Reddit, a forum) carries no `ref` yet arrives with a `Referer` naming the page that linked it. Unlike `ref`
   this is NOT client-supplied attribution, so there's no website-side sanitizer to keep in sync. `sanitizeRefererHost`
@@ -207,19 +239,21 @@ D1 table `downloads`. One row per download event with `app_version`, `arch`, `co
   beside the daily-rotating `hashed_ip`, so neither adds a cross-day identifier.
 
 **User-Agent family classification (`../user-agent.ts`):** the raw download count over-reads as an install signal
-because a large share of `/download` hits are scrapers and non-macOS clients. Cmdr is macOS-only, which is the whole
-basis: a Windows/Android/Linux/X11 client fetching the `.dmg` literally cannot install it.
+because a large share of `/download` hits are scrapers and clients on the wrong OS. The basis is the FILE's OS
+(`classifyUaFamily(ua, os)`): a client on another OS literally cannot install it, so a Windows browser fetching the
+`.dmg` is a bot and fetching the `-setup.exe` is a possible install.
 
-- **`human`** (a possible install, checked first so a Mac-claiming UA is never excluded): UA contains `Macintosh` or
-  `Mac OS`, `Homebrew`, or `curl`/`wget`.
-- **`bot`** (the one high-confidence exclusion): UA contains `Windows`, `Android`, `Linux`, or `X11`.
+- **`human`** (a possible install, checked first so a UA naming the file's OS is never excluded): the UA names that OS
+  (macOS: `Macintosh`, `Mac OS`, or `Homebrew`; Windows: `Windows`; Linux: `Linux` or `X11`, which covers ChromeOS's
+  Linux container), or `curl`/`wget`. For a Linux file, Android is ruled out first, since its UA says `Linux` too.
+- **`bot`** (the one high-confidence exclusion): the UA names another OS's markers, or Android.
 - **`unknown`**: anything else, including a NULL UA on rows captured before `user_agent` existed. NEVER excluded.
 - **Computed at WRITE time** into `downloads.ua_family` (migration `0013`), so the signal outlives the raw UA that the
   retention sweep clears after 90 days. The read side (`../admin/funnel.ts`) calls `resolveUaFamily`, which prefers the
-  stored value and falls back to the classifier for pre-`0013` rows. `classifyUaFamily` stays the single pure definition
-  of the rules; the 90-day UA window is what still lets us re-tune it against real UAs. The derived `humanInstalls`
-  headline is `human + unknown`, deliberately conservative — and the scraper spoofs Mac UAs, so `human` is NOT a clean
-  count. We never exclude by country. Aggregation: `../admin/DETAILS.md` § "Per-day funnel".
+  stored value and falls back to the classifier, against the row's `os`, for pre-`0013` rows. `classifyUaFamily` stays
+  the single pure definition of the rules; the 90-day UA window is what still lets us re-tune it against real UAs. The
+  derived `humanInstalls` headline is `human + unknown`, deliberately conservative — and the scraper spoofs Mac UAs, so
+  `human` is NOT a clean count. We never exclude by country. Aggregation: `../admin/DETAILS.md` § "Per-day funnel".
 
 ## Update check tracking
 
@@ -399,11 +433,11 @@ overshoot small.
 
 `POST /feedback` is the open-beta "Send feedback" channel. JSON body: required `feedback` text (trimmed, 1–100 000
 Unicode code points; the cap matches the desktop dialog and the Rust validator) plus `appVersion` / `osVersion`,
-optional reply-to `email` (loose shape check), `buildMode`, and `errorReportId`. Body capped at 512 KB. The D1
-`feedback` table is the durable sink, so unlike the other telemetry writes this one is AWAITED: a D1 failure returns a
-soft 502 the desktop app surfaces as a gentle retry. Nothing else happens at intake. No install id of any kind is read
-or stored, so feedback can't be joined to the analytics stream. Rate-limited at 5/min/IP via `FEEDBACK_LIMITER` (the IP
-is never stored).
+optional reply-to `email` (loose shape check), `buildMode`, `os` (§ The OS field), and `errorReportId`. Body capped at
+512 KB. The D1 `feedback` table is the durable sink, so unlike the other telemetry writes this one is AWAITED: a D1
+failure returns a soft 502 the desktop app surfaces as a gentle retry. Nothing else happens at intake. No install id of
+any kind is read or stored, so feedback can't be joined to the analytics stream. Rate-limited at 5/min/IP via
+`FEEDBACK_LIMITER` (the IP is never stored).
 
 `errorReportId` (`feedback.error_report_id`, migration `0026`) is the `ERR-XXXXX` of the logs the sender chose to
 include, validated against the same pattern `/error-report` uses. The app posts the feedback FIRST and then uploads the
@@ -421,7 +455,7 @@ Frontend counterpart: `apps/desktop/src/lib/feedback/CLAUDE.md`.
 
 ## Gotchas
 
-- **The `/download/:version/:arch` redirect maps `x86_64` → `x64` in the filename.** `tauri-action` names the Intel DMG
+- **The macOS DMG redirect maps `x86_64` → `x64` in the filename.** `tauri-action` names the Intel DMG
   `Cmdr_<ver>_x64.dmg`, but the rest of the codebase (URL path, D1 telemetry, website data attrs, Rust target triple,
   `uname -m`) consistently uses `x86_64`. Mapping at the boundary keeps everything else canonical; the same convention
   is in `.github/workflows/release-pipeline.yml` when reading DMG sizes for `latest.json`.

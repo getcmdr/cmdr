@@ -20,7 +20,7 @@ export function normalizeCountry(value: string | null): string {
 export interface FunnelDay {
   /** UTC day, `YYYY-MM-DD`. */
   date: string
-  /** Server-side DMG downloads logged that day (raw request count, bots already filtered at write time). */
+  /** Server-side downloads logged that day, every OS (raw request count, bots already filtered at write time). */
   downloads: number
   /** Server downloads split by attribution source. Rows before 2026-06-11 land in `other` (NULL source). */
   downloadsBySource: { website: number; homebrew: number; other: number }
@@ -40,17 +40,23 @@ export interface FunnelDay {
    */
   downloadsByReferer: Record<string, number>
   /**
-   * Server downloads split by User-Agent family for that day. Cmdr is macOS-only, so a non-macOS client
-   * fetching the `.dmg` cannot be a real install. `human` = a Mac browser, Homebrew, or curl/wget (a
-   * possible install); `bot` = a Windows/Android/Linux/X11 UA (provably impossible, excluded from
-   * `humanInstalls`); `unknown` = anything else, including a NULL UA on pre-capture rows (we can't tell,
-   * so it stays counted). See `classifyUaFamily`. Note: the scraper spoofs Mac browser UAs too, so
-   * `human` is "could be a real install", not "is one"; only `bot` is the high-confidence exclusion.
+   * Server downloads split by the OS of the file fetched (`macos`, `windows`, `linux`), keyed only by OSes
+   * with downloads that day (every row before migration 0033 is `macos`). Sums to `downloads`.
+   */
+  downloadsByOs: Record<string, number>
+  /**
+   * Server downloads split by User-Agent family for that day, judged against the OS of the file fetched: a
+   * client on another OS cannot install it. `human` = a browser on the file's OS, Homebrew for a DMG, or
+   * curl/wget (a possible install); `bot` = a UA naming another OS, or Android (provably impossible,
+   * excluded from `humanInstalls`); `unknown` = anything else, including a NULL UA on pre-capture rows (we
+   * can't tell, so it stays counted). See `classifyUaFamily`. Note: the scraper spoofs Mac browser UAs
+   * too, so `human` is "could be a real install", not "is one"; only `bot` is the high-confidence exclusion.
    */
   downloadsByUaFamily: { human: number; bot: number; unknown: number }
   /**
-   * Downloads minus the provably-impossible `bot` (non-macOS UA) hits, i.e. `human + unknown`. A
-   * conservative install signal that drops only the clearly-fake downloads and keeps every ambiguous one.
+   * Downloads minus the provably-impossible `bot` hits (a UA on another OS than the file's), i.e.
+   * `human + unknown`. A conservative install signal that drops only the clearly-fake downloads and keeps
+   * every ambiguous one.
    */
   humanInstalls: number
   /** Installs whose very first heartbeat ever landed that day (a true new-install count). */
@@ -112,6 +118,7 @@ export interface CountryDay {
   downloadsBySource: { website: number; homebrew: number; other: number }
   downloadsByRef?: Record<string, number>
   downloadsByReferer?: Record<string, number>
+  downloadsByOs?: Record<string, number>
   downloadsByUaFamily?: SparseUaFamilyCounts
   newInstalls: number
   newInstallsByChannel: { homebrew: number; direct: number; unknown: number }
@@ -149,6 +156,8 @@ export interface DownloadByUaRow {
   uaFamily: string | null
   /** The raw UA. NULL once the retention sweep has cleared it, and on pre-0010 rows. */
   userAgent: string | null
+  /** The OS of the file fetched (migration 0033; `macos` on every older row). */
+  os: string
   country: string | null
   count: number
 }
@@ -192,6 +201,7 @@ interface Tally {
   bySource: { website: number; homebrew: number; other: number }
   byRef: Record<string, number>
   byReferer: Record<string, number>
+  byOs: Record<string, number>
   uaFamily: { human: number; bot: number; unknown: number }
   byChannel: { homebrew: number; direct: number; unknown: number }
   /** Installs of this day's cohort retained at each day offset the retention query read. */
@@ -203,6 +213,7 @@ function emptyTally(): Tally {
     bySource: { website: 0, homebrew: 0, other: 0 },
     byRef: {},
     byReferer: {},
+    byOs: {},
     uaFamily: { human: 0, bot: 0, unknown: 0 },
     byChannel: { homebrew: 0, direct: 0, unknown: 0 },
     retained: new Map(),
@@ -221,6 +232,7 @@ function sumTallies(tallies: Iterable<Tally>): Tally {
     for (const key of ['website', 'homebrew', 'other'] as const) total.bySource[key] += tally.bySource[key]
     for (const [ref, count] of Object.entries(tally.byRef)) addTo(total.byRef, ref, count)
     for (const [referer, count] of Object.entries(tally.byReferer)) addTo(total.byReferer, referer, count)
+    for (const [os, count] of Object.entries(tally.byOs)) addTo(total.byOs, os, count)
     for (const key of ['human', 'bot', 'unknown'] as const) total.uaFamily[key] += tally.uaFamily[key]
     for (const key of ['homebrew', 'direct', 'unknown'] as const) total.byChannel[key] += tally.byChannel[key]
     for (const [offset, count] of tally.retained) total.retained.set(offset, (total.retained.get(offset) ?? 0) + count)
@@ -288,6 +300,7 @@ function countryDay(tally: Tally, cohortAgeDays: number): CountryDay {
       ? {
           downloadsByRef: tally.byRef,
           downloadsByReferer: tally.byReferer,
+          downloadsByOs: tally.byOs,
           downloadsByUaFamily: sparseUaFamily(tally.uaFamily),
         }
       : {}
@@ -326,7 +339,12 @@ function tallyRows(rows: FunnelRows): Map<string, Map<string, Tally>> {
   }
   for (const row of rows.downloadsByRef) addTo(tally(row.date, row.country).byRef, row.ref, row.count)
   for (const row of rows.downloadsByReferer) addTo(tally(row.date, row.country).byReferer, row.referer, row.count)
-  for (const row of rows.downloadsByUa) tally(row.date, row.country).uaFamily[resolveUaFamily(row)] += row.count
+  // The UA rows cover every download row, so they carry the OS split too: no query of its own.
+  for (const row of rows.downloadsByUa) {
+    const target = tally(row.date, row.country)
+    target.uaFamily[resolveUaFamily(row)] += row.count
+    addTo(target.byOs, row.os, row.count)
+  }
   for (const row of rows.installsByChannel) {
     const { byChannel } = tally(row.date, row.country)
     if (row.channel === 'homebrew') byChannel.homebrew += row.count
@@ -371,6 +389,7 @@ export function assembleFunnel(
       downloadsBySource: total.bySource,
       downloadsByRef: total.byRef,
       downloadsByReferer: total.byReferer,
+      downloadsByOs: total.byOs,
       downloadsByUaFamily: total.uaFamily,
       humanInstalls,
       newInstalls: installs,

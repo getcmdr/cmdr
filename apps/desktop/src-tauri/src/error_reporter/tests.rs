@@ -29,6 +29,7 @@ fn sample_manifest() -> BundleManifest {
         build_mode: BuildMode::Release,
         app_version: "0.0.0-test".to_string(),
         os_version: "macOS test".to_string(),
+        os: "macos".to_string(),
         arch: "aarch64".to_string(),
         active_settings: ResolvedSettings {
             indexing_enabled: true,

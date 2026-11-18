@@ -123,6 +123,7 @@ pub async fn build_bundle<R: tauri::Runtime>(
         build_mode: BuildMode::current(),
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         os_version: crate::platform::os_version(),
+        os: crate::platform::os_name(),
         arch: std::env::consts::ARCH.to_string(),
         active_settings: cached_active_settings(app),
         triage_settings: super::triage_settings::current(app),

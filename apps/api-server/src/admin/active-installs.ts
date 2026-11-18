@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { verifyAdminAuth } from '../admin-auth'
+import { osOfRow } from '../client-os'
 import type { Bindings } from '../types'
 import { beatSecondsSql } from './admin'
 import { buildDateList, invalidDaysMessage, parseDays, shiftDate } from './funnel'
@@ -40,6 +41,11 @@ export interface ActiveInstallsDay {
    * HIGHER one (`compareVersions`), so the values sum to `dau`.
    */
   byVersion: Record<string, number>
+  /**
+   * Installs by the OS they run (`macos`, `windows`, `linux`), summing to `dau`. A beat from a client older
+   * than the `os` field is read from its `os_version` (`osOfRow`).
+   */
+  byOs: Record<string, number>
 }
 
 export interface VersionWindow {
@@ -65,11 +71,14 @@ export interface ActiveInstallsResponse {
   windows: VersionWindow[]
 }
 
-/** One beat from `activeInstallBeatsSql`: its UTC day, install, version, and the runtime it accounts for. */
+/** One beat from `activeInstallBeatsSql`: its UTC day, install, version, OS, and the runtime it accounts for. */
 export interface BeatRow {
   date: string
   installId: string
   version: string
+  /** The `os` the app sent; NULL from clients older than the field. */
+  os: string | null
+  osVersion: string
   seconds: number
 }
 
@@ -181,6 +190,8 @@ export function assembleActiveInstalls(
   const beatDaysByInstall = new Map<string, Set<number>>()
   /** Per output day: install → its highest version that day. */
   const versionsByDay = new Map<string, Map<string, string>>()
+  /** Per output day: install → its OS. */
+  const osesByDay = new Map<string, Map<string, string>>()
   const secondsByDay = new Map<string, number>()
   for (const row of rows) {
     const beatDay = dayNumber(row.date)
@@ -193,6 +204,9 @@ export function assembleActiveInstalls(
     const current = versions.get(row.installId)
     if (current === undefined || compareVersions(row.version, current) > 0) versions.set(row.installId, row.version)
     versionsByDay.set(row.date, versions)
+    const oses = osesByDay.get(row.date) ?? new Map<string, string>()
+    oses.set(row.installId, osOfRow(row))
+    osesByDay.set(row.date, oses)
   }
 
   const newByDay = new Map(newRows.map((r) => [r.date, r.count]))
@@ -208,6 +222,7 @@ export function assembleActiveInstalls(
       wau: wau[i],
       mau: mau[i],
       byVersion: countBy(versions.values()),
+      byOs: countBy((osesByDay.get(date) ?? new Map<string, string>()).values()),
     }
   })
 
@@ -244,7 +259,7 @@ export function assembleActiveInstalls(
  * puts `0.9.0` above `0.10.0`, so `assembleActiveInstalls` picks the highest version.
  */
 export const activeInstallBeatsSql = `SELECT date(created_at) AS date, anal_id AS installId, app_version AS version,
-       ${beatSecondsSql} AS seconds
+       os, os_version AS osVersion, ${beatSecondsSql} AS seconds
   FROM heartbeat
  WHERE created_at >= ?1`
 

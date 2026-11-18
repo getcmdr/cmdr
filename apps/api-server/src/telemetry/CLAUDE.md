@@ -1,7 +1,7 @@
 # Telemetry
 
-Everything the app sends home: `telemetry.ts` (`/crash-report`, `/download`, `/update-check`), `heartbeat.ts` (plus its
-event relay), the `error-report*` quartet, and `feedback.ts`. File map: DETAILS § Files.
+Everything the app sends home: `telemetry.ts` (`/crash-report`, `/update-check`), `download.ts` (`/download`),
+`heartbeat.ts` (plus its event relay), the `error-report*` quartet, and `feedback.ts`. File map: DETAILS § Files.
 
 ## Must-knows
 
@@ -33,8 +33,11 @@ event relay), the `error-report*` quartet, and `feedback.ts`. File map: DETAILS 
   DETAILS §§ The report index, Amendments.
 - **The error-report id comes from the client and is used as-is** (validated against `^ERR-[23456789A-Z]{5}$`); on an R2
   key collision retry with a fresh UUID, ❌ never a fresh id — the user already read it in the preview dialog.
-- **A download's UA family is computed at WRITE time** into `downloads.ua_family` (`../user-agent.ts`), outliving the
-  raw `user_agent` the retention sweep clears at 90 days.
+- **A download's UA family is computed at WRITE time, against the file's OS**, outliving the raw `user_agent` the
+  retention sweep clears at 90 days.
+- **Windows and Linux downloads stay private until `PUBLIC_DOWNLOAD_OSES` (`wrangler.toml`) lists them** (macOS is
+  always public): off the list, `/download` answers 404 before any lookup or row. ❌ Never route around it. The app's
+  `os` field is an enrichment: unknown is NULL, ❌ never a 400.
 - **`/download` never stores a guessed version.** `latest` resolves through `latest.json` (GitHub as fallback); when
   neither answers it 302s and writes NO row, because a guess corrupts the per-version breakdown.
 - **`sanitizeRef` (`[a-z0-9._:-]`) is a cross-repo contract** with the website's normalizer, and `sanitizeRefererHost`

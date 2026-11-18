@@ -16,7 +16,7 @@ Five areas own their code, tests, and `C+D.md`; read an area's docs before worki
 
 Root holds the assembly and the shared leaves (`index.ts`, `types.ts`, `admin-auth.ts`, `email/`, `ops-events.ts`, the
 `report-*.ts` + `github-issues.ts` + `morning-brief.ts` board, `project-board.ts`, `scheduled.ts`, `cron-health.ts`,
-`ci-*.ts`, `user-agent.ts`; DETAILS § Root files). ❌ Areas depend on root leaves, never each other.
+`ci-*.ts`, `user-agent.ts`, `client-os.ts`; DETAILS § Root files). ❌ Areas depend on root leaves, never each other.
 
 `email/` is one module per audience: `send.ts` (the SMTP2Go door), `layout.ts` (HTML chrome), then `crash.ts`,
 `feedback.ts`, `error-report.ts`, `ops-alerts.ts`, `license.ts`, `sale.ts`. Import the specific one; no barrel.
@@ -46,10 +46,9 @@ Root holds the assembly and the shared leaves (`index.ts`, `types.ts`, `admin-au
   the tick reports to healthchecks.io. ❌ Never let `console.error` be a job's only failure path: that's how a dead
   credential ran silently for weeks. DETAILS § Cron alarms.
 - **D1 rejects SQL that SQLite accepts, and mocked tests can't see it**: a dialect rejection (`SQLITE_AUTH` on
-  `pragma_*` functions) passes CI and throws daily in production. Run a new query shape through
-  `wrangler d1 execute --remote` once. DETAILS § Cron jobs, job 4.
+  `pragma_*` functions) passes CI and throws in production. Run a new query shape through `wrangler d1 execute --remote`
+  once. DETAILS § Cron jobs, job 4.
 - **Deploy rails**: apply D1 migrations first (`wrangler d1 migrations apply TELEMETRY_DB`); the default export stays
-  the object form (`{ fetch, scheduled }`) or cron breaks (`app` is also named-exported for tests).
+  the object form (`{ fetch, scheduled }`) or cron breaks. Additive migrations only; rollback: DETAILS § Deployment.
 
-Routes, secrets, bindings, Worker types, cron, retention, and runbooks: `DETAILS.md`. Read it before any non-trivial
-work or advice here.
+Routes, secrets, bindings, cron, retention, and runbooks: `DETAILS.md`. Read it before any non-trivial work here.

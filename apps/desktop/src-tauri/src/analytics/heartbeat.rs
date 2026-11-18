@@ -61,6 +61,8 @@ struct HeartbeatPayload {
     app_version: String,
     /// Human-readable OS version, always non-empty.
     os_version: String,
+    /// `macos` / `windows` / `linux` ([`crate::platform::os_name`]).
+    os: String,
     /// `aarch64` / `x86_64`.
     arch: String,
     /// `"release"` / `"debug"`.
@@ -248,6 +250,7 @@ fn build_payload(
         anal_id: crate::install_id::analytics_id(),
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         os_version: crate::platform::os_version(),
+        os: crate::platform::os_name(),
         arch: std::env::consts::ARCH.to_string(),
         build_mode: Some(current_build_mode().to_string()),
         config,
@@ -333,6 +336,7 @@ mod tests {
             anal_id: "anal_178c8e27-511f-4f0e-a1fc-6a44f2ab7341".to_string(),
             app_version: "1.2.3".to_string(),
             os_version: "macOS 26.0".to_string(),
+            os: "macos".to_string(),
             arch: "aarch64".to_string(),
             build_mode: Some("release".to_string()),
             config: json!({ "theme.mode": "dark", "fdaGranted": true }),
@@ -372,6 +376,7 @@ mod tests {
                 "config",
                 "events",
                 "installChannel",
+                "os",
                 "osVersion",
                 "uptimeSeconds"
             ]
@@ -392,6 +397,7 @@ mod tests {
         assert_eq!(value["analId"], json!("anal_178c8e27-511f-4f0e-a1fc-6a44f2ab7341"));
         assert_eq!(value["appVersion"], json!("1.2.3"));
         assert_eq!(value["osVersion"], json!("macOS 26.0"));
+        assert_eq!(value["os"], json!("macos"));
         assert_eq!(value["arch"], json!("aarch64"));
         assert_eq!(value["buildMode"], json!("release"));
         assert_eq!(value["config"]["theme.mode"], json!("dark"));

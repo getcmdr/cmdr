@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { app } from '../index'
 import { assembleFunnel, buildDateList, normalizeCountry, parseDays, type FunnelRows } from './funnel'
-import { classifyUaFamily, resolveUaFamily } from '../user-agent'
 
 function createMockKv(): KVNamespace {
   return { get: vi.fn(() => null), put: vi.fn() } as unknown as KVNamespace
@@ -241,6 +240,7 @@ describe('assembleFunnel', () => {
       downloadsBySource: { website: 0, homebrew: 0, other: 0 },
       downloadsByRef: {},
       downloadsByReferer: {},
+      downloadsByOs: {},
       downloadsByUaFamily: { human: 0, bot: 0, unknown: 0 },
       humanInstalls: 0,
       newInstalls: 0,
@@ -312,6 +312,7 @@ describe('assembleFunnel', () => {
           // Legacy rows (no stored family), so the raw UA drives the classification.
           // 2026-06-11: a Mac browser (human), a Windows bot (excluded), and a NULL UA (unknown, kept).
           {
+            os: 'macos',
             date: '2026-06-11',
             country: null,
             uaFamily: null,
@@ -319,22 +320,31 @@ describe('assembleFunnel', () => {
             count: 4,
           },
           {
+            os: 'macos',
             date: '2026-06-11',
             country: null,
             uaFamily: null,
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
             count: 6,
           },
-          { date: '2026-06-11', country: null, uaFamily: null, userAgent: null, count: 2 },
+          { date: '2026-06-11', country: null, os: 'macos', uaFamily: null, userAgent: null, count: 2 },
           // 2026-06-12: a Homebrew install (human) and a Linux bot (excluded).
           {
+            os: 'macos',
             date: '2026-06-12',
             country: null,
             uaFamily: null,
             userAgent: 'Homebrew/4.1.0 (Macintosh; arm64)',
             count: 3,
           },
-          { date: '2026-06-12', country: null, uaFamily: null, userAgent: 'Mozilla/5.0 (X11; Linux x86_64)', count: 5 },
+          {
+            date: '2026-06-12',
+            country: null,
+            os: 'macos',
+            uaFamily: null,
+            userAgent: 'Mozilla/5.0 (X11; Linux x86_64)',
+            count: 5,
+          },
         ],
       }),
       null,
@@ -346,15 +356,39 @@ describe('assembleFunnel', () => {
     expect(rows[1].humanInstalls).toBe(3)
   })
 
+  it('splits downloads by the OS of the file, judging each UA against that OS', () => {
+    const windowsUa = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    const rows = assembleFunnel(
+      ['2026-06-11'],
+      funnelRows({
+        downloadsBySource: [
+          { date: '2026-06-11', country: 'SE', source: 'website', count: 7 },
+          { date: '2026-06-11', country: 'HU', source: 'website', count: 3 },
+        ],
+        downloadsByUa: [
+          { date: '2026-06-11', country: 'SE', os: 'macos', uaFamily: null, userAgent: windowsUa, count: 2 },
+          { date: '2026-06-11', country: 'SE', os: 'windows', uaFamily: null, userAgent: windowsUa, count: 5 },
+          { date: '2026-06-11', country: 'HU', os: 'macos', uaFamily: 'human', userAgent: null, count: 3 },
+        ],
+      }),
+      null,
+      now,
+    )
+    expect(rows[0].downloadsByOs).toEqual({ macos: 5, windows: 5 })
+    // The Windows browser fetching a DMG is a bot; fetching the installer, a possible install.
+    expect(rows[0].downloadsByUaFamily).toEqual({ human: 8, bot: 2, unknown: 0 })
+    expect(rows[0].byCountry.SE.downloadsByOs).toEqual({ macos: 2, windows: 5 })
+  })
+
   it('keeps the UA-family split intact after the retention sweep clears the raw User-Agents', () => {
     const rows = assembleFunnel(
       ['2026-06-11'],
       // Swept rows: the raw UA is gone, the family recorded at write time carries the day.
       funnelRows({
         downloadsByUa: [
-          { date: '2026-06-11', country: null, uaFamily: 'human', userAgent: null, count: 4 },
-          { date: '2026-06-11', country: null, uaFamily: 'bot', userAgent: null, count: 6 },
-          { date: '2026-06-11', country: null, uaFamily: 'unknown', userAgent: null, count: 2 },
+          { date: '2026-06-11', country: null, os: 'macos', uaFamily: 'human', userAgent: null, count: 4 },
+          { date: '2026-06-11', country: null, os: 'macos', uaFamily: 'bot', userAgent: null, count: 6 },
+          { date: '2026-06-11', country: null, os: 'macos', uaFamily: 'unknown', userAgent: null, count: 2 },
         ],
       }),
       null,
@@ -503,9 +537,9 @@ describe('assembleFunnel', () => {
           { date: '2026-06-04', country: 'unknown', source: 'website', count: 2 },
         ],
         downloadsByUa: [
-          { date: '2026-06-04', country: 'SE', uaFamily: 'bot', userAgent: null, count: 3 },
-          { date: '2026-06-04', country: 'XX', uaFamily: 'human', userAgent: null, count: 1 },
-          { date: '2026-06-04', country: 'unknown', uaFamily: 'unknown', userAgent: null, count: 2 },
+          { date: '2026-06-04', country: 'SE', os: 'macos', uaFamily: 'bot', userAgent: null, count: 3 },
+          { date: '2026-06-04', country: 'XX', os: 'macos', uaFamily: 'human', userAgent: null, count: 1 },
+          { date: '2026-06-04', country: 'unknown', os: 'macos', uaFamily: 'unknown', userAgent: null, count: 2 },
         ],
         downloadsByRef: [
           { date: '2026-06-04', country: 'SE', ref: 'hn', count: 2 },
@@ -538,6 +572,7 @@ describe('assembleFunnel', () => {
         downloadsBySource: { website: 3, homebrew: 0, other: 0 },
         downloadsByRef: { hn: 2, '(none)': 1 },
         downloadsByReferer: { 'github.com': 3 },
+        downloadsByOs: { macos: 3 },
         downloadsByUaFamily: { bot: 3 },
         newInstalls: 2,
         newInstallsByChannel: { homebrew: 2, direct: 0, unknown: 0 },
@@ -552,6 +587,7 @@ describe('assembleFunnel', () => {
         downloadsBySource: { website: 2, homebrew: 1, other: 0 },
         downloadsByRef: { '(none)': 1, reddit: 2 },
         downloadsByReferer: { '(none)': 3 },
+        downloadsByOs: { macos: 3 },
         downloadsByUaFamily: { human: 1, unknown: 2 },
         newInstalls: 1,
         newInstallsByChannel: { homebrew: 0, direct: 1, unknown: 0 },
@@ -591,62 +627,5 @@ describe('assembleFunnel', () => {
 
   it('leaves byCountry empty for a day with nothing in it', () => {
     expect(assembleFunnel(['2026-06-04'], funnelRows(), null, now)[0].byCountry).toEqual({})
-  })
-})
-
-describe('classifyUaFamily', () => {
-  it('classifies a Mac browser UA as human (Macintosh / Mac OS markers)', () => {
-    expect(classifyUaFamily('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15')).toBe('human')
-    expect(classifyUaFamily('Mozilla/5.0 (Mac OS X) Safari')).toBe('human')
-  })
-
-  it('classifies Homebrew and curl/wget installs as human', () => {
-    expect(classifyUaFamily('Homebrew/4.1.0 (Macintosh; arm64)')).toBe('human')
-    expect(classifyUaFamily('curl/8.4.0')).toBe('human')
-    expect(classifyUaFamily('Wget/1.21.4')).toBe('human')
-  })
-
-  it('classifies non-macOS UAs (Windows / Android / Linux / X11) as bot, the provable exclusion', () => {
-    expect(classifyUaFamily('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')).toBe('bot')
-    expect(classifyUaFamily('Mozilla/5.0 (Linux; Android 13; Pixel 7)')).toBe('bot')
-    expect(classifyUaFamily('Mozilla/5.0 (X11; Linux x86_64)')).toBe('bot')
-    expect(classifyUaFamily('Mozilla/5.0 (X11; Ubuntu; Linux i686)')).toBe('bot')
-  })
-
-  it('classifies a NULL, empty, or unrecognized UA as unknown (never excluded)', () => {
-    expect(classifyUaFamily(null)).toBe('unknown')
-    expect(classifyUaFamily(undefined)).toBe('unknown')
-    expect(classifyUaFamily('')).toBe('unknown')
-    expect(classifyUaFamily('SomeRandomFetcher/2.0')).toBe('unknown')
-  })
-
-  it('lets a Mac marker win over a non-mac one, so a Mac-claiming UA is never excluded', () => {
-    // Contrived, but documents the precedence: human markers are checked first.
-    expect(classifyUaFamily('Macintosh; also mentions Windows')).toBe('human')
-  })
-
-  it('is case-insensitive', () => {
-    expect(classifyUaFamily('MOZILLA/5.0 (MACINTOSH)')).toBe('human')
-    expect(classifyUaFamily('mozilla/5.0 (windows nt 10.0)')).toBe('bot')
-  })
-})
-
-describe('resolveUaFamily', () => {
-  it('trusts the family stored at write time, so a cleared UA keeps its classification', () => {
-    expect(resolveUaFamily({ uaFamily: 'human', userAgent: null })).toBe('human')
-    expect(resolveUaFamily({ uaFamily: 'bot', userAgent: null })).toBe('bot')
-  })
-
-  it('classifies the raw UA for rows written before the column existed', () => {
-    expect(resolveUaFamily({ uaFamily: null, userAgent: 'Mozilla/5.0 (Macintosh)' })).toBe('human')
-    expect(resolveUaFamily({ uaFamily: null, userAgent: 'Mozilla/5.0 (Windows NT 10.0)' })).toBe('bot')
-  })
-
-  it('falls back to unknown for a pre-column row whose UA the sweep already cleared', () => {
-    expect(resolveUaFamily({ uaFamily: null, userAgent: null })).toBe('unknown')
-  })
-
-  it('ignores an unrecognized stored value rather than trusting it blindly', () => {
-    expect(resolveUaFamily({ uaFamily: 'nonsense', userAgent: 'Mozilla/5.0 (Macintosh)' })).toBe('human')
   })
 })

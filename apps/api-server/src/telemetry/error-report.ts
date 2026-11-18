@@ -1,5 +1,6 @@
 import { Hono, type Context } from 'hono'
 import { AwsClient } from 'aws4fetch'
+import { parseClientOs } from '../client-os'
 import {
   enforceIpRateLimit,
   hasEmailShape,
@@ -83,6 +84,11 @@ export interface ErrorReportMeta {
    */
   email?: string
   generatedAt: string
+  /**
+   * `macos` / `windows` / `linux`. Read through `parseClientOs`, so an absent (older client) or unknown
+   * value is stored as NULL and never refuses the bundle. See migration `0033`.
+   */
+  os?: unknown
 }
 
 function isValidMeta(value: unknown): value is ErrorReportMeta {
@@ -202,8 +208,8 @@ async function postUploadWork(env: Bindings, args: UploadedReport): Promise<void
 async function queueErrorReport(db: D1Database, args: Omit<UploadedReport, 'date'>) {
   await db
     .prepare(
-      `INSERT INTO error_reports (short_id, kind, build_mode, app_version, os_version, arch, size_bytes, r2_key, user_note, email)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO error_reports (short_id, kind, build_mode, app_version, os_version, arch, size_bytes, r2_key, user_note, email, os)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       args.id,
@@ -216,6 +222,7 @@ async function queueErrorReport(db: D1Database, args: Omit<UploadedReport, 'date
       args.key,
       args.meta.userNote?.trim() || null,
       args.meta.email ?? null,
+      parseClientOs(args.meta.os),
     )
     .run()
 }

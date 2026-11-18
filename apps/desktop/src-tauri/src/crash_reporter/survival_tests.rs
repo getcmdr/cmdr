@@ -21,6 +21,7 @@ fn write_report(path: &Path, fate: AppFate) {
         thread_count: 12,
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         os_version: "test".to_string(),
+        os: "macos".to_string(),
         arch: "test".to_string(),
         uptime_secs: 61.0,
         active_settings: super::ActiveSettings::default(),
