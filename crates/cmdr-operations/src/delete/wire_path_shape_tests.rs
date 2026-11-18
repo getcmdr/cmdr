@@ -128,23 +128,21 @@ async fn a_delete_of_a_folder_link_removes_the_link_and_keeps_its_target() {
     }
 }
 
-/// ❗ With a trailing `/` the OS follows the link, so BOTH engines walk the TARGET:
-/// they delete everything inside the folder the link points at and leave the link
-/// in place. On macOS the closing `rmdir("link/")` removes the target folder too; on
-/// Linux it refuses (`ENOTDIR`), so the emptied folder stays, and the op still
-/// reports no failure. Data loss through the wire today (the frontend never sends a
-/// trailing `/`; a raw IPC caller can). Dropping the trailing `/` at the wire makes
-/// this cell read like the bare one above.
+/// A trailing `/` once made the OS follow the link, so both engines walked and
+/// emptied the TARGET (data loss through a raw IPC call; this cell pinned it). The
+/// wire now drops it (`crate::wire_paths`, `80dd3735cc`), so the cell reads like the
+/// bare one above. `trailing_separator_tests.rs` holds the guard's own cells; the
+/// typed path's `from_wire` absorbs the guard in milestone 10a.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn a_delete_of_a_folder_link_with_a_trailing_slash_walks_the_target_today() {
+async fn a_delete_of_a_folder_link_with_a_trailing_slash_removes_only_the_link() {
     for through_a_volume in [false, true] {
         let tree = LinkTree::new(&format!("wire_shape_delete_slash_{through_a_volume}"));
         assert_eq!(
             tree.delete("x/link/", through_a_volume).await,
             Left {
-                link: true,
-                target_folder: cfg!(target_os = "linux"),
-                target_child: false,
+                link: false,
+                target_folder: true,
+                target_child: true,
                 lexical_y: true,
                 physical_y: true,
                 errors: 0,

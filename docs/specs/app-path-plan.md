@@ -889,7 +889,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
     `..` through, `folder_of` climbing above a scheme root, `sftp://h/x == sftp:/h/x` (the type), the operation log's
     drive and UNC roots (8). ❗ Two are live data loss, not only Windows debt: with the folder open in a pane, a local
     delete of a folder holding `caf\xe9.txt` reports success and deletes nothing (#1236), and the raw IPC `delete_files`
-    of `x/link/` (a folder symlink with a trailing `/`) empties the link's target.
+    of `x/link/` (a folder symlink with a trailing `/`) emptied the link's target. `main` fixed the second at the
+    engine's starts (`crates/cmdr-operations/src/wire_paths.rs`, `80dd3735cc`), so its delete cell
+    (`a_delete_of_a_folder_link_with_a_trailing_slash_removes_only_the_link`) now pins the fixed answer.
   - Where the code differed: MCP `delete`/`rename` take the pane selection, never a wire path, so only the raw IPC
     `delete_files` can send `x/link/` (question 9's "only an MCP input can" is wrong); item (f)(4)'s copy gets no name,
     it fails or copies the sibling; the pre-known-conflict bug sits in `build_pre_skip_set`; the protocol and sort cells
