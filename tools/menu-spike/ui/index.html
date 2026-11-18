@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cmdr menu spike</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav id="bar" role="menubar" aria-label="Menu bar"></nav>
+    <div id="dropdowns"></div>
+    <section id="controls">
+      <fieldset>
+        <legend>Mode</legend>
+        <label><input type="radio" name="mode" value="native" /> A. Native bar</label>
+        <label><input type="radio" name="mode" value="hybrid" /> B. Hybrid</label>
+        <label><input type="radio" name="mode" value="inpage" /> C. In-page bar</label>
+      </fieldset>
+      <fieldset>
+        <legend>Switches</legend>
+        <label title="Mode A only: forward F10 and Alt+letter from WebView2 to the native bar"
+          ><input type="checkbox" id="bridge" /> Key bridge (A)</label
+        >
+        <label title="Swallow SC_KEYMENU so Windows' menu loop doesn't start with no bar"
+          ><input type="checkbox" id="guard" /> SC_KEYMENU guard</label
+        >
+        <label title="WebView2's own keys: F5 and Ctrl+R reload, Alt+Left goes back"
+          ><input type="checkbox" id="browserKeys" /> WebView2 browser keys</label
+        >
+        <label title="The page calls preventDefault on F1–F9, F11, F12, Ctrl+R, and Alt+arrows, as Cmdr's shortcuts do"
+          ><input type="checkbox" id="pageOwns" checked /> Page owns F-keys (not F10), Ctrl+R, Alt+arrows</label
+        >
+      </fieldset>
+      <fieldset>
+        <legend>Theme</legend>
+        <select id="theme">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+        <button id="clear" type="button">Clear log</button>
+      </fieldset>
+    </section>
+    <main id="panes">
+      <section class="pane">
+        <input id="filter" type="text" placeholder="Type here (a text field)" aria-label="Filter" />
+        <ul id="left" class="list" role="listbox" tabindex="0" aria-label="Left pane"></ul>
+      </section>
+      <section class="pane">
+        <div class="path">C:\Users\test_user_1\Documents</div>
+        <ul id="right" class="list" role="listbox" tabindex="0" aria-label="Right pane"></ul>
+      </section>
+    </main>
+    <section id="log-wrap">
+      <div id="log-head">Event log, newest first. Right-click a row for the native context menu.</div>
+      <ol id="log" aria-live="off"></ol>
+    </section>
+    <script src="app.js"></script>
+  </body>
+</html>
