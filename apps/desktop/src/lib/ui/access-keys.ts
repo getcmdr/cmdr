@@ -55,6 +55,28 @@ export function allocateAccessKeys(labels: readonly string[], taken: Iterable<st
   })
 }
 
+/**
+ * Where `letter` (lowercase, from {@link allocateAccessKeys}) sits in `label`, in UTF-16 offsets:
+ * its first word-initial occurrence, else its first occurrence, else `null` (a Chinese label's
+ * fallback letter, which the label then carries as a "(B)" after it). The string twin of the
+ * dialog's DOM lookup, for surfaces that render the label themselves (the menus).
+ */
+export function accessKeySpanIn(label: string, letter: string): { start: number; end: number } | null {
+  let first: { start: number; end: number } | null = null
+  let previous = ''
+  let offset = 0
+  for (const char of label) {
+    if (char.normalize('NFC').toLowerCase() === letter) {
+      const hit = { start: offset, end: offset + char.length }
+      if (previous === '' || !ALPHANUMERIC.test(previous)) return hit
+      first ??= hit
+    }
+    previous = char
+    offset += char.length
+  }
+  return first
+}
+
 /** The letters `scope`'s own commands bind as Alt plus one key (`Alt+S`), lowercase. */
 export function reservedAccessKeys(scope: CommandScope | undefined): Set<string> {
   const reserved = new Set<string>()

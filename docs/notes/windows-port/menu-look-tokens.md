@@ -73,8 +73,8 @@ Surface:
 Row:
 
 - `--spacing-menu-row-margin-block` / `-inline`: `MenuFlyoutItemMargin` 4,2,4,2.
-- `--spacing-menu-row-padding-top` / `-bottom` / `-inline`: `MenuFlyoutItemThemePaddingNarrow` 11,4,11,5. WinUI picks
-  the narrow padding when a menu opens by mouse, pen, or keyboard (`PaddingSizeStates`, `GetShouldBeNarrow`) and
+- `--spacing-menu-row-padding-top` / `-bottom` / `-start` / `-end`: `MenuFlyoutItemThemePaddingNarrow` 11,4,11,5. WinUI
+  picks the narrow padding when a menu opens by mouse, pen, or keyboard (`PaddingSizeStates`, `GetShouldBeNarrow`) and
   `MenuFlyoutItemThemePadding` 11,8,11,9 for touch. Cmdr's menus open by mouse or keyboard, so the narrow one.
 - `--radius-menu-row`: `ControlCornerRadius` 4.
 - `--font-menu-family`: `ContentControlThemeFontFamily` → `XamlAutoFontFamily`, Segoe UI Variable on Windows 11 (Segoe

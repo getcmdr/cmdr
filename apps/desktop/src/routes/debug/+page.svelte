@@ -50,6 +50,7 @@
         | 'components-text-input'
         | 'components-popover'
         | 'components-menu'
+        | 'components-command-menus'
         | 'components-filter-popover'
         | 'components-chip'
         | 'components-dialogs'
@@ -108,6 +109,7 @@
                 { id: 'components-text-input', label: 'Text input' },
                 { id: 'components-popover', label: 'Popover' },
                 { id: 'components-menu', label: 'Menu' },
+                { id: 'components-command-menus', label: 'Menu bar and context menus' },
                 { id: 'components-filter-popover', label: 'Filter popover' },
                 { id: 'components-chip', label: 'Chip' },
                 { id: 'components-dialogs', label: 'Dialogs' },

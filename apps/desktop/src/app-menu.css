@@ -37,31 +37,49 @@
   --spacing-menu-row-margin-inline: var(--spacing-xs);
   --spacing-menu-row-padding-top: var(--spacing-sm);
   --spacing-menu-row-padding-bottom: var(--spacing-sm);
-  --spacing-menu-row-padding-inline: var(--spacing-sm);
+  --spacing-menu-row-padding-start: var(--spacing-sm);
+  --spacing-menu-row-padding-end: var(--spacing-sm);
+  --spacing-menu-row-min-height: 0;
   --radius-menu-row: var(--radius-md);
   --font-menu-family: var(--font-system);
   --font-menu-size: var(--font-size-sm);
   --font-menu-line-height: normal;
   --color-menu-row-fg: var(--color-text-primary);
   --color-menu-row-fg-hover: var(--color-text-primary);
+  --color-menu-row-fg-focus: var(--color-text-primary);
+  --color-menu-row-fg-open: var(--color-text-primary);
   /* `--color-text-primary` at the 50% a disabled row fades to; written out, since old WebKit
      can't parse `color-mix()` (`lib/utils/CLAUDE.md`). Dark twin below. */
   --color-menu-row-fg-disabled: rgba(26, 26, 26, 0.5);
   --color-menu-row-bg-hover: var(--color-accent-subtle);
+  /* The row the keyboard put the cursor on: the hover fill here, where one cursor serves both */
+  --color-menu-row-bg-focus: var(--color-accent-subtle);
   --color-menu-row-bg-pressed: var(--color-accent-subtle);
   --color-menu-row-bg-open: var(--color-accent-subtle);
+  /* The check, radio, and icon column: the glyph, then the label's inset past it. The house
+     look reserves it in every menu, the way `Menu.svelte` keeps its checkmark column. */
+  --spacing-menu-glyph-size: calc(14px * var(--font-scale));
   --spacing-menu-glyph-column: calc(14px * var(--font-scale) + var(--spacing-sm));
+  --spacing-menu-glyph-column-empty: calc(14px * var(--font-scale) + var(--spacing-sm));
+
+  /* A context menu's header line, naming what it acts on */
+  --font-menu-header-size: var(--font-size-sm);
+  --color-menu-header-fg: var(--color-text-secondary);
+  --spacing-menu-header-min-height: 0;
 
   /* The shortcut (WinUI's "keyboard accelerator text") */
   --font-menu-shortcut-size: var(--font-size-sm);
   --spacing-menu-shortcut-gap: var(--spacing-sm);
   --color-menu-shortcut-fg: currentColor;
   --color-menu-shortcut-fg-hover: currentColor;
+  --color-menu-shortcut-fg-focus: currentColor;
   --color-menu-shortcut-fg-disabled: currentColor;
 
   /* Check, radio, and submenu chevron */
   --color-menu-check-fg: currentColor;
   --color-menu-chevron-fg: var(--color-text-tertiary);
+  --color-menu-chevron-fg-hover: var(--color-text-tertiary);
+  --color-menu-chevron-fg-focus: var(--color-text-tertiary);
   --color-menu-chevron-fg-pressed: var(--color-text-tertiary);
 
   /* Separator */
@@ -88,6 +106,7 @@
   --color-menu-bar-item-fg: var(--color-text-primary);
   /* `--color-text-primary` at 12%, the demo bar's capsule highlight */
   --color-menu-bar-item-bg-hover: rgba(26, 26, 26, 0.12);
+  --color-menu-bar-item-bg-focus: rgba(26, 26, 26, 0.12);
   --color-menu-bar-item-bg-pressed: rgba(26, 26, 26, 0.12);
   --color-menu-bar-item-bg-open: rgba(26, 26, 26, 0.12);
   --spacing-menu-bar-item-border: 0;
@@ -100,6 +119,7 @@
     /* Dark `--color-text-primary` (#e8e8e8) at 50% and 12% */
     --color-menu-row-fg-disabled: rgba(232, 232, 232, 0.5);
     --color-menu-bar-item-bg-hover: rgba(232, 232, 232, 0.12);
+    --color-menu-bar-item-bg-focus: rgba(232, 232, 232, 0.12);
     --color-menu-bar-item-bg-pressed: rgba(232, 232, 232, 0.12);
     --color-menu-bar-item-bg-open: rgba(232, 232, 232, 0.12);
   }
@@ -141,7 +161,10 @@
      pen, or keyboard (MenuFlyoutItemThemePadding 11,8,11,9 is for touch). */
   --spacing-menu-row-padding-top: 4px;
   --spacing-menu-row-padding-bottom: 5px;
-  --spacing-menu-row-padding-inline: 11px;
+  --spacing-menu-row-padding-start: 11px;
+  --spacing-menu-row-padding-end: 11px;
+  /* The padding and the text line make the row's height; WinUI sets no MinHeight on a MenuFlyoutItem. */
+  --spacing-menu-row-min-height: 0;
   /* MenuFlyoutItem CornerRadius → ControlCornerRadius 4 */
   --radius-menu-row: 4px;
   /* ContentControlThemeFontFamily → XamlAutoFontFamily, which is Segoe UI Variable on
@@ -153,17 +176,32 @@
   /* MenuFlyoutItemForeground / …PointerOver / …Pressed → TextFillColorPrimary #E4000000 */
   --color-menu-row-fg: #000000e4;
   --color-menu-row-fg-hover: #000000e4;
+  /* The focused row keeps MenuFlyoutItemForeground; MenuFlyoutSubItemForegroundSubMenuOpened → TextFillColorPrimary */
+  --color-menu-row-fg-focus: #000000e4;
+  --color-menu-row-fg-open: #000000e4;
   /* MenuFlyoutItemForegroundDisabled → TextFillColorDisabled #5C000000 */
   --color-menu-row-fg-disabled: #0000005c;
   /* MenuFlyoutItemBackgroundPointerOver → SubtleFillColorSecondary #09000000 */
   --color-menu-row-bg-hover: #00000009;
+  /* MenuFlyoutItem_Partial.cpp ChangeVisualState: keyboard focus is its own `Focused` state with
+     no fill; the system focus visual (the two rings below) marks the row instead. */
+  --color-menu-row-bg-focus: transparent;
   /* MenuFlyoutItemBackgroundPressed → SubtleFillColorTertiary #06000000 */
   --color-menu-row-bg-pressed: #00000006;
   /* MenuFlyoutSubItemBackgroundSubMenuOpened → SubtleFillColorSecondary #09000000 */
   --color-menu-row-bg-open: #00000009;
   /* MenuFlyoutItemPlaceholderThemeThickness 28,0,0,0: the label's inset when the menu holds
-     a check, radio, or icon (a 12px glyph plus its 16px margin). */
+     a check, radio, or icon (a 12px glyph plus its 16px margin). Collapsed to nothing in a
+     menu without one (the placeholder states apply only when one is present). */
+  --spacing-menu-glyph-size: 12px;
   --spacing-menu-glyph-column: 28px;
+  --spacing-menu-glyph-column-empty: 0;
+
+  /* WinUI's menus have no header line; Cmdr's context menus lead with one, drawn as caption
+     text (CaptionTextBlockFontSize 12) in TextFillColorSecondary, the accelerator text's color. */
+  --font-menu-header-size: var(--font-size-sm);
+  --color-menu-header-fg: #0000009e;
+  --spacing-menu-header-min-height: 0;
 
   /* KeyboardAcceleratorTextBlock Style → CaptionTextBlockStyle → CaptionTextBlockFontSize 12 */
   --font-menu-shortcut-size: var(--font-size-sm);
@@ -172,6 +210,7 @@
   /* MenuFlyoutItemKeyboardAcceleratorTextForeground / …PointerOver → TextFillColorSecondary #9E000000 */
   --color-menu-shortcut-fg: #0000009e;
   --color-menu-shortcut-fg-hover: #0000009e;
+  --color-menu-shortcut-fg-focus: #0000009e;
   /* MenuFlyoutItemKeyboardAcceleratorTextForegroundDisabled → TextFillColorDisabled */
   --color-menu-shortcut-fg-disabled: #0000005c;
 
@@ -180,6 +219,9 @@
   --color-menu-check-fg: #0000009e;
   /* MenuFlyoutSubItemChevron → TextFillColorSecondary; …Pressed → TextFillColorTertiary #72000000 */
   --color-menu-chevron-fg: #0000009e;
+  /* MenuFlyoutSubItemChevronPointerOver → TextFillColorSecondary */
+  --color-menu-chevron-fg-hover: #0000009e;
+  --color-menu-chevron-fg-focus: #0000009e;
   --color-menu-chevron-fg-pressed: #00000072;
 
   /* MenuFlyoutSeparatorBackground → DividerStrokeColorDefault #0F000000 */
@@ -218,6 +260,8 @@
   /* MenuBarItemBackgroundPointerOver → SubtleFillColorSecondary; …Pressed and …Selected
      (its menu open) → SubtleFillColorTertiary */
   --color-menu-bar-item-bg-hover: #00000009;
+  /* A title the keyboard is on: the focus rings, no fill (as a flyout row) */
+  --color-menu-bar-item-bg-focus: transparent;
   --color-menu-bar-item-bg-pressed: #00000006;
   --color-menu-bar-item-bg-open: #00000006;
   /* MenuBarItemBorderThickness 0 outside high contrast */
@@ -240,6 +284,8 @@
     /* TextFillColorPrimary #FFFFFF */
     --color-menu-row-fg: #ffffff;
     --color-menu-row-fg-hover: #ffffff;
+    --color-menu-row-fg-focus: #ffffff;
+    --color-menu-row-fg-open: #ffffff;
     /* TextFillColorDisabled #5DFFFFFF */
     --color-menu-row-fg-disabled: #ffffff5d;
     /* SubtleFillColorSecondary #0FFFFFFF, SubtleFillColorTertiary #0AFFFFFF */
@@ -249,9 +295,13 @@
     /* TextFillColorSecondary #C5FFFFFF */
     --color-menu-shortcut-fg: #ffffffc5;
     --color-menu-shortcut-fg-hover: #ffffffc5;
+    --color-menu-shortcut-fg-focus: #ffffffc5;
     --color-menu-shortcut-fg-disabled: #ffffff5d;
     --color-menu-check-fg: #ffffffc5;
     --color-menu-chevron-fg: #ffffffc5;
+    --color-menu-chevron-fg-hover: #ffffffc5;
+    --color-menu-chevron-fg-focus: #ffffffc5;
+    --color-menu-header-fg: #ffffffc5;
     /* TextFillColorTertiary #87FFFFFF */
     --color-menu-chevron-fg-pressed: #ffffff87;
     /* DividerStrokeColorDefault #15FFFFFF */
@@ -303,10 +353,16 @@
     --color-menu-row-fg: ButtonText;
     /* MenuFlyoutItemForegroundPointerOver / …Pressed → SystemColorHighlightTextColor */
     --color-menu-row-fg-hover: HighlightText;
+    /* No fill under the focused row, so it keeps the rest color */
+    --color-menu-row-fg-focus: ButtonText;
+    /* MenuFlyoutSubItemForegroundSubMenuOpened → SystemColorHighlightColor */
+    --color-menu-row-fg-open: Highlight;
     /* MenuFlyoutItemForegroundDisabled → SystemColorGrayTextColor */
     --color-menu-row-fg-disabled: GrayText;
     /* MenuFlyoutItemBackgroundPointerOver / …Pressed → SystemColorHighlightColor */
     --color-menu-row-bg-hover: Highlight;
+    /* Focus is the two rings (FocusStrokeColor* below), never a fill, here too */
+    --color-menu-row-bg-focus: transparent;
     --color-menu-row-bg-pressed: Highlight;
     /* MenuFlyoutSubItemBackgroundSubMenuOpened → SystemControlTransparentBrush (the label
        turns Highlight instead: MenuFlyoutSubItemForegroundSubMenuOpened) */
@@ -315,11 +371,17 @@
        …PointerOver → SystemColorHighlightTextColor; …Disabled → SystemColorGrayTextColor */
     --color-menu-shortcut-fg: CanvasText;
     --color-menu-shortcut-fg-hover: HighlightText;
+    --color-menu-shortcut-fg-focus: CanvasText;
     --color-menu-shortcut-fg-disabled: GrayText;
     /* MenuFlyoutSubItemChevron → SystemColorButtonTextColor; …Pressed → SystemColorHighlightTextColor */
     --color-menu-check-fg: ButtonText;
     --color-menu-chevron-fg: ButtonText;
+    /* MenuFlyoutSubItemChevronPointerOver → SystemColorHighlightTextColor */
+    --color-menu-chevron-fg-hover: HighlightText;
+    --color-menu-chevron-fg-focus: ButtonText;
     --color-menu-chevron-fg-pressed: HighlightText;
+    /* The header line is accelerator-like text: SystemColorWindowTextColor */
+    --color-menu-header-fg: CanvasText;
     /* MenuFlyoutSeparatorBackground → SystemColorWindowTextColor */
     --color-menu-separator: CanvasText;
     /* FocusStrokeColorOuter → SystemColorWindowTextColor, FocusStrokeColorInner → SystemColorWindowColor */
@@ -333,6 +395,7 @@
        …Selected → SystemControlBackgroundListMediumBrush: both SystemColorButtonFaceColor
        (generic.xaml) */
     --color-menu-bar-item-bg-hover: ButtonFace;
+    --color-menu-bar-item-bg-focus: transparent;
     --color-menu-bar-item-bg-pressed: ButtonFace;
     --color-menu-bar-item-bg-open: ButtonFace;
     /* MenuBarItemBorderThickness 2; MenuBarItemBorderBrush → SystemControlForegroundBaseMediumLowBrush

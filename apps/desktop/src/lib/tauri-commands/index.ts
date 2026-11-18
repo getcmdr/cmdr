@@ -913,6 +913,15 @@ export { showTabContextMenu, onTabContextAction } from './tab'
 // A file list header's Sort by popup
 export { showDateSortMenu, onDateSortMenuPick } from './date-sort-menu'
 
+// The menus a page draws: the in-window bar, the viewer's bar, Windows' in-page right-click menus
+export {
+  followMenuBar,
+  getViewerMenuBar,
+  openContextMenuInPage,
+  pickContextMenuItem,
+  pickMenuBarItem,
+} from './in-page-menus'
+
 // Function key bar context menu
 export { showFunctionKeyBarContextMenu, onFunctionKeyBarHideRequested } from './function-key-bar'
 
