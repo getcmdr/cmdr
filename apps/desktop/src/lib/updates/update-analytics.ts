@@ -40,6 +40,9 @@ export type UpdateCheckOutcome =
   /** The organization's `DisableAutomaticUpdateChecks` refused a background check. */
   | 'automatic_checks_disabled_by_policy'
   /** A policy that arrived after the check refused the download or install (`failure` says which). */
+
+  /** A newer release is out, but `latest.json` has no build for this platform: this build can't update for now. */
+  | 'no_build_for_platform'
   | 'blocked_by_policy'
 
 /** The typed reason behind a non-happy outcome, or `none`. ❌ Never a message. */

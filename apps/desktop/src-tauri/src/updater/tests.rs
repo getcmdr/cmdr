@@ -183,6 +183,29 @@ async fn no_policy_offers_a_newer_release_and_remembers_it() {
     assert_eq!(offer.version, semver::Version::new(0, 53, 0));
 }
 
+/// A newer release without a build for this install's platform is its own answer: this build can't update for
+/// now, which "up to date" would hide. Nothing is offered, so a download can't fetch it.
+#[tokio::test]
+async fn a_newer_release_without_this_platforms_build_says_so_and_offers_nothing() {
+    let state = UpdateState::new();
+    let other_platform = vec!["linux-x86_64-appimage".to_string(), "linux-x86_64".to_string()];
+    let outcome = run_check(
+        UpdateCheckTrigger::Command,
+        &state,
+        None,
+        RUNNING,
+        &other_platform,
+        || async { Ok(manifest_offering("0.53.0")) },
+    )
+    .await
+    .expect("an injected manifest always lands");
+    assert_eq!(outcome, UpdateCheckOutcome::NoBuildForThisPlatform);
+    assert_eq!(
+        offer_to_download(&state).await.expect_err("nothing offered"),
+        UpdateDownloadError::NothingOffered
+    );
+}
+
 #[tokio::test]
 async fn the_same_version_is_up_to_date_and_offers_nothing() {
     let state = UpdateState::new();

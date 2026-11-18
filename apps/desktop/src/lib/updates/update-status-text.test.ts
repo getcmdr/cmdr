@@ -11,7 +11,14 @@ describe('an update that isn’t a genuine Cmdr release', () => {
 })
 
 describe('an update this install can’t write into its own bundle', () => {
-  const base = { status: 'idle', failure: null, managed: null, previousVersion: '0.52.0', nextVersion: null } as const
+  const base = {
+    status: 'idle',
+    failure: null,
+    managed: null,
+    noBuild: false,
+    previousVersion: '0.52.0',
+    nextVersion: null,
+  } as const
 
   it('tells an administrator how to update by hand', () => {
     expect(formatUpdateStatus({ ...base, unwritable: { version: '0.54.0', blocker: 'notWritableAdminUser' } })).toBe(
@@ -22,6 +29,12 @@ describe('an update this install can’t write into its own bundle', () => {
   it('tells a standard user their account can’t update it', () => {
     expect(formatUpdateStatus({ ...base, unwritable: { version: '0.54.0', blocker: 'notWritableStandardUser' } })).toBe(
       'Cmdr 0.54.0 is out, but your account can’t update Cmdr on this Mac.',
+    )
+  })
+
+  it('says this build can’t check right now when a newer release has no build for it, never “no updates found”', () => {
+    expect(formatUpdateStatus({ ...base, unwritable: null, noBuild: true })).toBe(
+      'This build of Cmdr can’t check for updates right now. Try again later.',
     )
   })
 

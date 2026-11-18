@@ -5988,6 +5988,7 @@ export type MessageKey =
   | 'updates.status.heldByPolicy'
   | 'updates.status.installing'
   | 'updates.status.managedOff'
+  | 'updates.status.noBuildForThisPlatform'
   | 'updates.status.noUpdates'
   | 'updates.status.ready'
   | 'updates.status.unwritableAdmin'

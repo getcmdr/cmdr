@@ -58,25 +58,32 @@ pub struct UpdateInfo {
     pub security_advisories: Option<PlatformEntry>,
 }
 
+/// What the manifest says to this install.
+#[derive(Debug)]
+pub enum ManifestAnswer {
+    /// A newer release with a build for this platform.
+    Update(UpdateInfo),
+    /// Nothing newer, or a version that can't be compared (warned).
+    NoUpdate,
+    /// A newer release is out, but the manifest carries no build for this platform, so this
+    /// install can't update. Its own answer, ❌ never "up to date": that would be a false
+    /// "you're current" while the install sits on an old version.
+    NoBuildForThisPlatform,
+}
+
 /// Checks whether the remote version is newer than the current app version, reading the first of
 /// `platform_keys` the manifest carries (`InstallKind::platform_keys`).
-/// Returns `Some(UpdateInfo)` if an update is available, `None` otherwise.
 ///
-/// Three of the four `None` paths mean something is wrong with the manifest rather than "you're up
-/// to date", and the caller can't tell them apart: it gets a bare `None` either way, which the
-/// frontend renders as "Cmdr is up to date". So each one warns. An install that quietly never
-/// updates because the manifest lost its platform entry is otherwise invisible from both ends,
-/// and only the "up to date" path is routine enough to stay at debug.
-pub fn check_manifest(
-    manifest: &UpdateManifest,
-    current_version: &str,
-    platform_keys: &[String],
-) -> Option<UpdateInfo> {
+/// The two non-semver paths mean something is wrong with the manifest rather than "you're up to
+/// date", so each warns; they still answer `NoUpdate`, since there's no version to tell anyone
+/// about. A missing platform entry warns too and answers [`ManifestAnswer::NoBuildForThisPlatform`],
+/// which the frontend words honestly. Only the "up to date" path is routine enough to stay at debug.
+pub fn check_manifest(manifest: &UpdateManifest, current_version: &str, platform_keys: &[String]) -> ManifestAnswer {
     let current = match semver::Version::parse(current_version) {
         Ok(v) => v,
         Err(e) => {
             log::warn!("Can't compare versions: this build's own version {current_version} isn't semver: {e}");
-            return None;
+            return ManifestAnswer::NoUpdate;
         }
     };
     let latest = match semver::Version::parse(&manifest.version) {
@@ -86,13 +93,13 @@ pub fn check_manifest(
                 "Can't compare versions: manifest version {} isn't semver: {e}",
                 manifest.version
             );
-            return None;
+            return ManifestAnswer::NoUpdate;
         }
     };
 
     if latest <= current {
         log::debug!("No update available (current={current}, remote={latest})");
-        return None;
+        return ManifestAnswer::NoUpdate;
     }
 
     let Some((platform, entry)) = platform_keys
@@ -106,11 +113,11 @@ pub fn check_manifest(
             platform_keys.join(" or "), // allowed-log-private: our own manifest keys
             offered.join(", ")
         );
-        return None;
+        return ManifestAnswer::NoBuildForThisPlatform;
     };
 
     log::info!("Update available: {current} -> {latest} (platform={platform})");
-    Some(UpdateInfo {
+    ManifestAnswer::Update(UpdateInfo {
         version: latest,
         platform_key: platform.clone(),
         url: entry.url.clone(),
@@ -122,6 +129,13 @@ pub fn check_manifest(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn offered(answer: ManifestAnswer) -> Option<UpdateInfo> {
+        match answer {
+            ManifestAnswer::Update(info) => Some(info),
+            ManifestAnswer::NoUpdate | ManifestAnswer::NoBuildForThisPlatform => None,
+        }
+    }
 
     fn keys(keys: &[&str]) -> Vec<String> {
         keys.iter().map(|key| (*key).to_string()).collect()
@@ -149,7 +163,8 @@ mod tests {
     #[test]
     fn newer_version_with_this_platform_is_an_update() {
         let m = manifest("0.41.0", &["darwin-aarch64", "darwin-x86_64", "darwin-universal"]);
-        let info = check_manifest(&m, "0.40.0", &keys(&["darwin-x86_64"])).expect("0.41.0 is newer than 0.40.0");
+        let info =
+            offered(check_manifest(&m, "0.40.0", &keys(&["darwin-x86_64"]))).expect("0.41.0 is newer than 0.40.0");
         assert_eq!(info.version.to_string(), "0.41.0");
         assert_eq!(info.platform_key, "darwin-x86_64");
         assert_eq!(info.url, "https://example.invalid/darwin-x86_64.tar.gz");
@@ -162,12 +177,12 @@ mod tests {
         let m = manifest("0.41.0", &["windows-x86_64", "windows-x86_64-nsis"]);
         let wanted = keys(&["windows-x86_64-nsis", "windows-x86_64"]);
         assert_eq!(
-            check_manifest(&m, "0.40.0", &wanted).map(|info| info.platform_key),
+            offered(check_manifest(&m, "0.40.0", &wanted)).map(|info| info.platform_key),
             Some("windows-x86_64-nsis".to_string())
         );
         let bare_only = manifest("0.41.0", &["windows-x86_64"]);
         assert_eq!(
-            check_manifest(&bare_only, "0.40.0", &wanted).map(|info| info.platform_key),
+            offered(check_manifest(&bare_only, "0.40.0", &wanted)).map(|info| info.platform_key),
             Some("windows-x86_64".to_string())
         );
     }
@@ -175,35 +190,49 @@ mod tests {
     #[test]
     fn same_version_is_not_an_update() {
         let m = manifest("0.40.0", &["darwin-aarch64", "darwin-x86_64"]);
-        assert!(check_manifest(&m, "0.40.0", &keys(&["darwin-aarch64"])).is_none());
+        assert!(matches!(
+            check_manifest(&m, "0.40.0", &keys(&["darwin-aarch64"])),
+            ManifestAnswer::NoUpdate
+        ));
     }
 
     #[test]
     fn older_remote_version_is_not_an_update() {
         let m = manifest("0.39.0", &["darwin-aarch64", "darwin-x86_64"]);
-        assert!(check_manifest(&m, "0.40.0", &keys(&["darwin-aarch64"])).is_none());
+        assert!(matches!(
+            check_manifest(&m, "0.40.0", &keys(&["darwin-aarch64"])),
+            ManifestAnswer::NoUpdate
+        ));
     }
 
-    /// A manifest that lost this build's platform entry reads to the caller exactly like "you're
-    /// up to date", so the install would sit on an old version indefinitely with nothing said.
-    /// The `None` is the contract; the warn beside it is what makes the case diagnosable.
+    /// A manifest that lost this build's platform entry is its own answer, never "you're up to
+    /// date": the install would otherwise sit on an old version with nothing said.
     #[test]
     fn a_newer_version_with_no_entry_for_this_platform_is_not_an_update() {
         let m = manifest("0.41.0", &["darwin-aarch64", "darwin-x86_64"]);
-        assert!(check_manifest(&m, "0.40.0", &keys(&["windows-x86_64-nsis", "windows-x86_64"])).is_none());
+        assert!(matches!(
+            check_manifest(&m, "0.40.0", &keys(&["windows-x86_64-nsis", "windows-x86_64"])),
+            ManifestAnswer::NoBuildForThisPlatform
+        ));
     }
 
     #[test]
     fn a_non_semver_manifest_version_is_not_an_update() {
         let m = manifest("latest", &["darwin-aarch64", "darwin-x86_64"]);
-        assert!(check_manifest(&m, "0.40.0", &keys(&["darwin-aarch64"])).is_none());
+        assert!(matches!(
+            check_manifest(&m, "0.40.0", &keys(&["darwin-aarch64"])),
+            ManifestAnswer::NoUpdate
+        ));
     }
 
     #[test]
     fn a_prerelease_is_older_than_its_release() {
         let m = manifest("0.41.0-rc1", &["darwin-aarch64", "darwin-x86_64"]);
         assert!(
-            check_manifest(&m, "0.41.0", &keys(&["darwin-aarch64"])).is_none(),
+            matches!(
+                check_manifest(&m, "0.41.0", &keys(&["darwin-aarch64"])),
+                ManifestAnswer::NoUpdate
+            ),
             "semver orders a prerelease below its release, so 0.41.0 must not downgrade"
         );
     }
@@ -333,7 +362,7 @@ mod tests {
             }))
             .unwrap_or_else(|e| panic!("a manifest with advisory entry {broken} must still parse: {e}"));
             assert!(parsed.security_advisories.is_none(), "{broken}");
-            assert!(check_manifest(&parsed, "0.40.0", &keys(&["darwin-aarch64"])).is_some());
+            assert!(offered(check_manifest(&parsed, "0.40.0", &keys(&["darwin-aarch64"]))).is_some());
         }
     }
 }

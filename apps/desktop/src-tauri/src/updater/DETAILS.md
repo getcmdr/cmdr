@@ -76,7 +76,10 @@ Windows port, `docs/specs/windows-port-plan.md`).
 
 The manifest entry each kind reads (`InstallKind::platform_keys`): macOS `darwin-{arch}`; Windows
 `windows-{arch}-nsis`, then `windows-{arch}`; Linux `linux-{arch}-appimage`, then `linux-{arch}`. The off-macOS order is
-the Tauri plugin's own, so a manifest the plugin can read, this reads too.
+the Tauri plugin's own, so a manifest the plugin can read, this reads too. A newer release with none of
+these keys answers `UpdateCheckOutcome::NoBuildForThisPlatform` (`manifest::ManifestAnswer`), with a warn naming the keys the
+manifest does offer, ❌ never `UpToDate`: that told a stranded install it was current. The frontend says this build
+can't check for updates right now (`apps/desktop/src/lib/updates/DETAILS.md` § No build for this platform).
 
 **The archive URL is whatever the manifest names, on any HTTPS host.** No host allowlist, here or in any shipped
 version: trust rests on the minisign signature and the Developer ID check, so the manifest can move downloads (to
