@@ -8,3 +8,14 @@
 pub(crate) fn normalize_for_comparison(s: &str) -> String {
     s.to_lowercase()
 }
+
+pub(crate) fn compare_for_comparison(a: &str, b: &str) -> std::cmp::Ordering {
+    if a.is_ascii() && b.is_ascii() {
+        // ASCII lowercases byte by byte, so the common case compares without allocating.
+        return a
+            .bytes()
+            .map(|c| c.to_ascii_lowercase())
+            .cmp(b.bytes().map(|c| c.to_ascii_lowercase()));
+    }
+    normalize_for_comparison(a).cmp(&normalize_for_comparison(b))
+}

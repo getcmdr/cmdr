@@ -123,14 +123,12 @@ pub(crate) fn volume_kind(volume_id: &str) -> Option<IndexVolumeKind> {
 /// Matches by the volume id's device-id half (robust `rsplit` via
 /// `cmdr_fs::volume::mtp_ids`, so a `:` in a serial device id doesn't mis-key), NOT a raw
 /// prefix — `mtp-AA` must not match `mtp-AAB:1`.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) fn registered_mtp_volume_ids_for_device(device_id: &str) -> Vec<String> {
     mtp_volume_ids_on(&INDEX_REGISTRY, device_id)
 }
 
 /// [`registered_mtp_volume_ids_for_device`] against a registry passed in, so a
 /// test can drive it through a poisoned lock of its own.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(super) fn mtp_volume_ids_on(reg: &Registry, device_id: &str) -> Vec<String> {
     reg.lock_ignore_poison()
         .keys()

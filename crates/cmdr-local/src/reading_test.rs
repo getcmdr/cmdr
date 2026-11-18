@@ -1,5 +1,7 @@
 //! Tests for the local reader: `std::fs` listing, single-entry stat, and `FileEntry` construction.
 
+#![cfg(unix)]
+
 use crate::reading::{AddedAt, entry_from_lstat, get_single_entry, list_directory_core, withhold_unclaimed_dates};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::TestDir;

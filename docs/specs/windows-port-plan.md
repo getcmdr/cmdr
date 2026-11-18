@@ -169,8 +169,17 @@ owns its real body. Remove a line when its body lands.
   CPU readings, so the watchdog, `memory_diagnostics`, and `cpu_diagnostics` are off on Windows.
 - `cmdr-sftp` agent (`transport/platform/windows.rs`), task 46: asks the OpenSSH agent's pipe (or `SSH_AUTH_SOCK`),
   never Pageant.
+- `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no read or write streams (so no copy onto or
+  off it, no export), no copy scan, no `create_symlink` / `read_link_target` (`can_hold_links` false), no ADS-backed
+  xattrs, no `apply_metadata` or metadata caps, no `write_access_at`, no trash, no listing watch, and no
+  `FindFirstFileExW` lister. Each keeps the trait's conservative default, and each conformance cell it can't pass yet is
+  `#[ignore]`d with its piece (`local_windows_conformance_test.rs`).
+- `cmdr_local::reading` Windows arm (`reading/platform/windows.rs`), task 35: no allocation size, mode `0`, no owner or
+  group; only `FILE_ATTRIBUTE_HIDDEN` is real.
+- `cmdr_local::mounts` Windows arm (`mounts/platform/windows.rs`) and `filesystem_kind::probe_mount_for_path`, task 35:
+  no mount table and no filesystem type, so every answer is "can't say" (its one test is ignored by name).
 - Tests ignored on Windows by issue: 24 app-path tests in `cmdr-fs` (#1225, app paths through `std::path`) and one
-  `sqlite_util` deletion test (#1226).
+  `sqlite_util` deletion test (#1226). `cmdr-index`'s suite isn't green there yet: 158 of 1,911 fail, filed as #1232.
 
 ## Task list
 
@@ -449,7 +458,18 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
 35. [L] Windows. `LocalWindowsVolume` in `cmdr-local`, a sibling of `LocalPosixVolume`: `FindFirstFileExW` reader,
     space, no-replace and atomic-replace rename (❗ `std::fs::rename` replaces on Windows), streams, file vs dir
     symlinks, junctions, reparse tags, ADS-backed xattrs, write-access probe, metadata caps, the conformance suite
-    green. Needs 9, 10, 34.
+    green. Needs 9, 10, 34. **Started** (2026-11-18): `LocalWindowsVolume` is the sibling in `cmdr-local/src/platform/`
+    (the POSIX volume is `cfg(unix)` beside it), and `cmdr-local` builds and passes clippy and nextest on the Windows
+    builder. Real: app paths in and out through `\\?\` (`local_windows/paths.rs`), listing and stat through `std::fs`
+    (the reader's `reading/platform/windows.rs` arm, hidden attribute included), the no-replace rename (`MoveFileExW`,
+    no flags) and the atomic replacing one (`std::fs::rename`, `supports_atomic_replace_rename`), create file and folder
+    (no-clobber), delete (a junction or directory symlink as the link), the conflict scan, and space
+    (`GetDiskFreeSpaceExW`), with hostile cells on real NTFS (a taken name, a file another program holds open, a
+    read-only file, a path past `MAX_PATH`, a junction). Left, in data-safety order: streams (read, write, continue,
+    resume, durability via `FlushFileBuffers`), metadata (dates, attributes, caps, `apply_metadata`), symlink creation
+    (file vs dir) and reparse tags, ADS-backed xattrs, the write-access probe, the copy scan, the mount table and
+    filesystem type, the `FindFirstFileExW` lister, and registering a volume per drive (with 34). The ignored
+    conformance cells in `local_windows_conformance_test.rs` are the checklist.
 36. [M] Windows. `cmdr-operations` arms: `CopyFileExW` strategy (with ReFS/Dev Drive block clone), Recycle Bin via
     `trash` with identity, read-only as "locked" in `clear_blockers`, sharing violations as a typed refusal. Needs 35.
     Plus the honest `Unknown`-identity rule (`cmdr_fs::file_identity` module docs): a move onto a taken name with

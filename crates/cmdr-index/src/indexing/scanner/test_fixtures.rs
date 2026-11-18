@@ -13,6 +13,7 @@ use std::sync::{Arc, Condvar, Mutex};
 use tokio_util::sync::CancellationToken;
 
 use cmdr_fs::ignore_poison::IgnorePoison;
+use cmdr_fs::os_error::OsErrorClass;
 
 use super::walker::{InlineStat, RawDirEntry, RawFileType, ReadDirFn, ReadProgress};
 use crate::indexing::store::{IndexStore, ROOT_ID};
@@ -142,9 +143,10 @@ pub(super) struct MockTree {
     /// directory stays honestly unlisted — what a user pressing Esc looks like
     /// from inside the walker.
     cancel_on_read: Option<PathBuf>,
-    /// Reading these paths fails with permission denied, carrying the errno a
-    /// real refusal would (`refusal.rs` classifies on it).
-    denied: Vec<(PathBuf, i32)>,
+    /// Reading these paths fails with permission denied, carrying this OS's code
+    /// for the class a real refusal would (`refusal.rs` classifies on it), or no
+    /// code where the OS has none for it (`NotPermitted` on Windows).
+    denied: Vec<(PathBuf, OsErrorClass)>,
     /// Reading this path parks until the test opens the gate.
     gated: Option<(PathBuf, Arc<ReadGate>)>,
 }
@@ -170,14 +172,14 @@ impl MockTree {
     /// A directory the walk is allowed to find but not to read, refused the way
     /// macOS's privacy protection refuses (`EPERM` on an unsealed folder).
     pub(super) fn denied_at(mut self, path: impl Into<PathBuf>) -> Self {
-        self.denied.push((path.into(), libc::EPERM));
+        self.denied.push((path.into(), OsErrorClass::NotPermitted));
         self
     }
 
     /// A directory refused by plain file permissions (`EACCES`), which no grant
     /// opens.
     pub(super) fn off_limits_at(mut self, path: impl Into<PathBuf>) -> Self {
-        self.denied.push((path.into(), libc::EACCES));
+        self.denied.push((path.into(), OsErrorClass::AccessDenied));
         self
     }
 
@@ -208,8 +210,11 @@ impl MockTree {
             {
                 gate.wait();
             }
-            if let Some((_, errno)) = denied.iter().find(|(d, _)| d == path) {
-                return Err(std::io::Error::from_raw_os_error(*errno));
+            if let Some((_, class)) = denied.iter().find(|(d, _)| d == path) {
+                return Err(class.host_code().map_or_else(
+                    || std::io::Error::from(std::io::ErrorKind::PermissionDenied),
+                    std::io::Error::from_raw_os_error,
+                ));
             }
             match dirs.get(path) {
                 Some(children) => Ok(children

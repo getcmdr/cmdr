@@ -65,16 +65,17 @@ The `impl IndexStore` block is divided into four more sibling files (each `impl 
   propagation and hasn't run its terminal aggregate yet. See the `../writer/DETAILS.md` § "The dir_stats ledger".
 
 `resolve_component` always queries by `(parent_id, name_folded)` using the `idx_parent_name_folded` composite **UNIQUE**
-index. On Linux/Windows `normalize_for_comparison()` is the identity function, so `name_folded = name` and the index
-behaves identically to a `(parent_id, name)` index. A schema-version mismatch triggers drop+rebuild. `IndexStoreError`
-carries the typed SQLite classifiers callers branch on (never the message string): `sqlite_code()`,
-`is_fatal_storage_error()`, `as_index_failure()`, `is_disk_full()`, `could_be_low_disk_space()`,
-`is_primary_key_conflict()`, `is_transient_lock_error()`, and `indicates_corruption()`. `could_be_low_disk_space()`
-(`SQLITE_IOERR*` or `SQLITE_CANTOPEN`) exists so either on a nearly full disk can pause the index rather than fail it
-(`../lifecycle/DETAILS.md` § "Pausing for disk space"). `is_primary_key_conflict()` separates an `entries.id` collision
-(extended 1555, the writer heals it by resyncing its counter) from a `(parent_id, name_folded)` conflict (2067, which
-must never be retried under a fresh id); rationale and the writer side: `../writer/DETAILS.md` § "Decision: a PRIMARY
-KEY conflict".
+index. On Linux `normalize_for_comparison()` is the identity function, so `name_folded = name` and the index behaves
+identically to a `(parent_id, name)` index; Windows folds case only. The `platform_case` collation is
+`cmdr_fs::name_fold::compare_for_comparison`, the order of those same keys, so collation and key can't disagree. A
+schema-version mismatch triggers drop+rebuild. `IndexStoreError` carries the typed SQLite classifiers callers branch on
+(never the message string): `sqlite_code()`, `is_fatal_storage_error()`, `as_index_failure()`, `is_disk_full()`,
+`could_be_low_disk_space()`, `is_primary_key_conflict()`, `is_transient_lock_error()`, and `indicates_corruption()`.
+`could_be_low_disk_space()` (`SQLITE_IOERR*` or `SQLITE_CANTOPEN`) exists so either on a nearly full disk can pause the
+index rather than fail it (`../lifecycle/DETAILS.md` § "Pausing for disk space"). `is_primary_key_conflict()` separates
+an `entries.id` collision (extended 1555, the writer heals it by resyncing its counter) from a
+`(parent_id, name_folded)` conflict (2067, which must never be retried under a fresh id); rationale and the writer side:
+`../writer/DETAILS.md` § "Decision: a PRIMARY KEY conflict".
 
 **`with_savepoint` releases on the error path too (load-bearing).** The failure arm runs
 `ROLLBACK TO <name>; RELEASE <name>`. `ROLLBACK TO` alone undoes the work but leaves the savepoint — and the implicit

@@ -10,6 +10,8 @@
 //! ❗ LocalPosix is the backend the other suites' fixtures are compared against,
 //! so a contract it stops keeping is one the whole suite stops noticing.
 
+#![cfg(unix)]
+
 use super::*;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::Volume;

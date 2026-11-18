@@ -38,3 +38,32 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
   `index-query`) fails in its own code with 11 errors, mostly its SMB and MTP index transports, gated to macOS and Linux
   while `indexing/handle/mod.rs` calls them unconditionally, plus the `platform_case` collation's missing Windows arm
   and `scanner/refusal.rs` comparing `libc::EPERM`.
+- **2026-11-18, `cmdr-index` and `index-query` compile** (leg 2): off the pending list (6 left). The SMB, MTP, ADB, and
+  local-external index transports were gated to macOS and Linux with Windows stubs beside them; both backends ship on
+  Windows (D2, task 21), so the gates and stubs went and the transports are every-host code. The `platform_case`
+  collation asks `cmdr_fs::name_fold::compare_for_comparison` (a new arm per OS beside `normalize_for_comparison`, so
+  collation and key can't disagree), and the scanner's refusal rule reads `OsErrorClass` where it compared
+  `libc::EPERM`. The Mac cross-check needs numkong's x86 SIMD targets off (`NK_TARGET_<ISA>=0` for each of the 11 x86
+  probes), since zig's clang refuses its AVX-512 kernels. On the builder: clippy `--all-targets -D warnings` clean in 53
+  s warm; nextest 1,753 of 1,911 passed, 111 failed, 47 timed out, nearly all app paths (#1225) and the cold-drive
+  fixture's walks never settling, filed with the clusters as #1232.
+- **2026-11-18, `cmdr-local` compiles, with `LocalWindowsVolume`** (leg 2): off the pending list (5 left). The POSIX
+  volume moved to `src/platform/local_posix*` under `cfg(unix)`, the Windows sibling sits beside it, and the reader and
+  space grew `platform/` seams (`reading.rs` went from 18 OS cfgs to 6). On the builder:
+  `cargo clippy -p cmdr-local --all-targets -D warnings` clean; `cargo nextest run -p cmdr-local` 30 of 30 pass, 8
+  ignored by name (seven conformance cells waiting on task 35's streams, metadata, links, and xattrs, plus the
+  mount-table cell). The hostile rename cells pass on NTFS: an exclusive rename onto a taken file or folder answers
+  `AlreadyExists` with both intact; onto a file another handle holds open (`FILE_SHARE_READ` only), the exclusive rename
+  is `AlreadyExists` and the forced one is refused with both files whole; a forced rename onto a read-only file is
+  all-or-nothing; a 300-plus-character path creates, lists (app paths), stats, renames, and deletes; deleting a junction
+  keeps its target.
+- **Next blockers after leg 2** (Mac cross-check, `cargo check --all-targets --keep-going`): `cmdr-operations` fails its
+  own compile with 15 errors, and blocks `cmdr-multi-rename`, `cmdr-listing-wasm`, `cmdr-restic`, and the app. Each is a
+  POSIX-only function with no Windows arm, task 36's stubs:
+  `validation::{validate_destination_writable, refusing_folder}` and `local_disk`'s `write_probe` (an `access(W_OK)`
+  pre-flight), `free_space::available_space`, `delete/cloud_trash::metadata_is_online_only` (also asked by
+  `scan_preview/local.rs`), `transfer/volume/extract_quarantine::archive_quarantine`, and `local_disk/mod.rs` naming
+  `LocalPosixVolume`. `cmdr-restic`'s own breaks are test-only (`std::os::unix` in `tree_tests.rs` and
+  `volume_tests.rs`) plus its `open_cost` example naming `LocalPosixVolume`. About 150 sites across the consumers name
+  `LocalPosixVolume` (mostly `cmdr-operations` tests), which waits on David's call on how a consumer names the host's
+  local volume.

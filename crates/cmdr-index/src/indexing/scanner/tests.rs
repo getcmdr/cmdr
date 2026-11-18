@@ -665,6 +665,7 @@ fn scan_nulls_inode_on_inode_untrusted_volume() {
 }
 
 #[test]
+#[cfg(unix)]
 fn scan_handles_symlinks() {
     let scan_root = scan_test_tempdir();
     fs::write(scan_root.path().join("real.txt"), "real content").unwrap();
@@ -892,6 +893,7 @@ fn scan_context_subtree_resolves_actual_id() {
 
 /// Sum every stored row's `physical_size` (NULLs count as 0), matching how the
 /// aggregator treats per-entry physical bytes.
+#[cfg(unix)]
 fn sum_stored_physical_bytes(db_path: &Path) -> u64 {
     let conn = IndexStore::open_read_connection(db_path).unwrap();
     conn.query_row("SELECT COALESCE(SUM(physical_size), 0) FROM entries", [], |row| {

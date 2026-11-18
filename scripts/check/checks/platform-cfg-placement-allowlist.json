@@ -446,29 +446,8 @@
     "crates/cmdr-index/src/importance/last_used.rs": {
       "outsideSeam": 5
     },
-    "crates/cmdr-index/src/indexing/handle/mod.rs": {
-      "outsideSeam": 9
-    },
-    "crates/cmdr-index/src/indexing/lifecycle/cover/bootstrap.rs": {
-      "outsideSeam": 4
-    },
-    "crates/cmdr-index/src/indexing/lifecycle/cover/test_support.rs": {
-      "outsideSeam": 2
-    },
-    "crates/cmdr-index/src/indexing/lifecycle/manager/network_scan.rs": {
-      "outsideSeam": 4
-    },
     "crates/cmdr-index/src/indexing/lifecycle/phases/mod.rs": {
       "outsideSeam": 2
-    },
-    "crates/cmdr-index/src/indexing/lifecycle/state.rs": {
-      "outsideSeam": 2
-    },
-    "crates/cmdr-index/src/indexing/lifecycle/state/queries.rs": {
-      "outsideSeam": 2
-    },
-    "crates/cmdr-index/src/indexing/lifecycle/state/startup.rs": {
-      "outsideSeam": 4
     },
     "crates/cmdr-index/src/indexing/network_scanner/mod.rs": {
       "outsideSeam": 1
@@ -500,23 +479,8 @@
     "crates/cmdr-index/src/indexing/scanner/walker/mod.rs": {
       "outsideSeam": 3
     },
-    "crates/cmdr-index/src/indexing/store/collation.rs": {
-      "outsideSeam": 2
-    },
     "crates/cmdr-index/src/indexing/testing.rs": {
-      "outsideSeam": 2
-    },
-    "crates/cmdr-index/src/indexing/transports/mod.rs": {
-      "outsideSeam": 3
-    },
-    "crates/cmdr-index/src/indexing/transports/mtp/watch.rs": {
-      "outsideSeam": 2
-    },
-    "crates/cmdr-index/src/indexing/transports/smb/mod.rs": {
       "outsideSeam": 1
-    },
-    "crates/cmdr-index/src/indexing/transports/smb/watch.rs": {
-      "outsideSeam": 8
     },
     "crates/cmdr-index/src/indexing/watch/watcher/journal.rs": {
       "outsideSeam": 5
@@ -548,11 +512,8 @@
     "crates/cmdr-local/src/lib.rs": {
       "outsideSeam": 5
     },
-    "crates/cmdr-local/src/local_posix.rs": {
-      "outsideSeam": 3
-    },
     "crates/cmdr-local/src/reading.rs": {
-      "outsideSeam": 18
+      "outsideSeam": 6
     },
     "crates/cmdr-local/src/space.rs": {
       "outsideSeam": 4

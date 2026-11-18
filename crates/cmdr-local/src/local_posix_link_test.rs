@@ -1,5 +1,7 @@
 //! The symlink seam, and how the copy scan counts a link.
 
+#![cfg(unix)]
+
 use super::*;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::host::VolumeHost;

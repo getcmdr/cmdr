@@ -35,13 +35,17 @@ pub(super) fn drain(walk: CoverWalk) -> (Vec<CoveredEntry>, CoverOutcome) {
     (entries, walk.finish())
 }
 
-/// A platform-appropriate mount root. Read routing sends a path to a per-mount
-/// index only when it sits under an external-mount prefix, and those differ per
-/// OS, so a hardcoded `/Volumes/…` would route back to `root`'s index on Linux.
-#[cfg(target_os = "macos")]
-const MOUNT_PREFIX: &str = "/Volumes";
-#[cfg(target_os = "linux")]
-const MOUNT_PREFIX: &str = "/media";
+/// Where a test share's root sits. Read routing sends a path to a per-mount index
+/// only when it sits under an external-mount prefix, and those differ per OS
+/// (`cmdr_fs::mount_layout`), so a hardcoded `/Volumes/…` would route back to
+/// `root`'s index on Linux. Windows names no prefix, so a share sits at its UNC
+/// root, the shape D1 gives it (windows-port plan).
+fn share_root(volume_id: &str) -> String {
+    match cmdr_fs::mount_layout::user_mount_prefixes().last() {
+        Some(prefix) => format!("{prefix}{volume_id}"),
+        None => format!("//testnas.local/{volume_id}"),
+    }
+}
 
 /// A share the index has never seen, driven through the public handle.
 ///
@@ -98,7 +102,7 @@ impl Share {
     pub(super) fn with_volume(volume_id: &'static str, describe: impl FnOnce(&str) -> Arc<dyn Volume>) -> Self {
         let serialized = crate::indexing::handle::test_lock();
         let data = tempfile::tempdir().expect("index data dir");
-        let root = format!("{MOUNT_PREFIX}/{volume_id}");
+        let root = share_root(volume_id);
 
         let volumes = crate::indexing::host::volumes::FakeVolumeProvider::shared();
         volumes.register(volume_id, describe(&root)).mark_network(&root);

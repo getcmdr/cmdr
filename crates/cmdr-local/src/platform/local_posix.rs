@@ -13,6 +13,7 @@ mod streams;
 mod xattrs;
 
 use crate::reading::{ListingTally, get_single_entry, list_directory_core_with_tally, supported_dates_of};
+use crate::rename_volume_error;
 use crate::space::{get_space_info_for_path, live_space_info_for_path};
 use cmdr_fs::entry::FileEntry;
 #[cfg(feature = "playwright-e2e")]
@@ -52,27 +53,8 @@ const PROGRESS_SAMPLE_INTERVAL: Duration = if crate::TEST_FAST_PATHS {
     Duration::from_millis(200)
 };
 
-/// Which of a rename's two paths an `io::Error` is talking about.
-///
-/// `ENOENT` is the SOURCE that isn't there; `EEXIST` and `ENOTEMPTY` are the
-/// DESTINATION that already is. Handing both to the same path would name the
-/// wrong file in "there's already something called that", which is the one
-/// sentence in the rename flow the user acts on.
-pub fn rename_volume_error(err: &io::Error, from: &Path, to: &Path) -> VolumeError {
-    match err.kind() {
-        io::ErrorKind::AlreadyExists | io::ErrorKind::DirectoryNotEmpty => VolumeError::from_io_at(err, to),
-        _ => VolumeError::from_io_at(err, from),
-    }
-}
-
-/// Renames a local path only when `destination` is unoccupied.
-///
-/// **The one no-replace rename primitive in the app**: every rename that isn't
-/// meant to overwrite comes through here, from the pane's F2 to a copy landing
-/// its temp on a name the conflict check found free. A plain POSIX `rename(2)`
-/// replaces silently, and both callers have a window between the check and the
-/// rename in which a file can appear, so destroying it would be silent and
-/// unrecoverable.
+/// The POSIX arm of `crate::rename_local_exclusive`: the kernel flag, degrading where a
+/// filesystem has none.
 pub fn rename_local_exclusive(source: &Path, destination: &Path) -> io::Result<()> {
     rename_exclusive_with(source, destination, rename_exclusive_syscall)
 }
@@ -119,7 +101,7 @@ fn rename_exclusive_syscall(source: &Path, destination: &Path) -> io::Result<()>
 /// degrade, to a check-then-rename that is racy but still strictly better than
 /// the unconditional clobber a bare `rename(2)` performs. Every other errno is
 /// the filesystem's own answer and reaches the caller unchanged.
-pub(super) fn rename_exclusive_with(
+pub(crate) fn rename_exclusive_with(
     source: &Path,
     destination: &Path,
     attempt: impl Fn(&Path, &Path) -> io::Result<()>,
@@ -150,7 +132,7 @@ pub(super) fn rename_exclusive_with(
 /// is how a check-then-rename destroys the file it exists to protect. The
 /// exposed filesystems are the ones most likely to answer with something else:
 /// a reconnecting share, a marginal stick, a mount on its way out.
-pub(super) enum NameState {
+pub(crate) enum NameState {
     /// Something is there, so an exclusive rename has to refuse.
     Occupied,
     /// Nothing is there, so the rename may go ahead.
@@ -164,7 +146,7 @@ pub(super) enum NameState {
 /// Takes the result rather than the path so the three-way fold stays pure, and
 /// so [`rename_if_free`] can be handed an `Unknown` a real filesystem only
 /// produces transiently.
-pub(super) fn name_state(stat: io::Result<std::fs::Metadata>) -> NameState {
+pub(crate) fn name_state(stat: io::Result<std::fs::Metadata>) -> NameState {
     match stat {
         Ok(_) => NameState::Occupied,
         Err(err) if err.kind() == io::ErrorKind::NotFound => NameState::Free,
@@ -177,7 +159,7 @@ pub(super) fn name_state(stat: io::Result<std::fs::Metadata>) -> NameState {
 /// Still racy, irreducibly: the name can be taken in the gap between the stat
 /// and the rename, and without the kernel flag there is no way to close that.
 /// What it does guarantee is that the gap is the ONLY way through.
-pub(super) fn rename_if_free(source: &Path, destination: &Path, state: NameState) -> io::Result<()> {
+pub(crate) fn rename_if_free(source: &Path, destination: &Path, state: NameState) -> io::Result<()> {
     match state {
         NameState::Occupied => Err(io::Error::new(
             io::ErrorKind::AlreadyExists,
@@ -304,7 +286,7 @@ impl LocalPosixVolume {
     /// `cmdr_fs::volume::root_anchored`, shared with the IPC boundary so a
     /// destination resolves the same way here and on a remote backend.
     #[cfg(test)]
-    pub(super) fn resolve(&self, path: &Path) -> PathBuf {
+    pub(crate) fn resolve(&self, path: &Path) -> PathBuf {
         self.resolve_internal(path)
     }
 

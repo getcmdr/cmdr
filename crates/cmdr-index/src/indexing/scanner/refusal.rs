@@ -21,6 +21,8 @@
 use std::io;
 use std::path::Path;
 
+use cmdr_fs::os_error::OsErrorClass;
+
 use crate::indexing::store::UnreadableCause;
 
 /// Whether the folder that refused us is sealed beyond any permission the user
@@ -40,15 +42,15 @@ enum Seal {
 /// The cause a permission-denied read earns. Call it only for an error whose
 /// `kind()` is `PermissionDenied`.
 pub(super) fn refusal_cause(path: &Path, err: &io::Error) -> UnreadableCause {
-    cause_for(err.raw_os_error(), || seal_of(path))
+    cause_for(OsErrorClass::of_io(err), || seal_of(path))
 }
 
 /// The rule itself, apart from the one `lstat` it may need, so a test can pin it
 /// without a SIP folder to hand.
-fn cause_for(errno: Option<i32>, seal: impl FnOnce() -> Seal) -> UnreadableCause {
+fn cause_for(class: Option<OsErrorClass>, seal: impl FnOnce() -> Seal) -> UnreadableCause {
     // Only macOS has a permission the user can grant to open a folder. Everywhere
     // else a refusal is file permissions, which Cmdr can't change either.
-    if !cfg!(target_os = "macos") || errno != Some(libc::EPERM) {
+    if !cfg!(target_os = "macos") || class != Some(OsErrorClass::NotPermitted) {
         return UnreadableCause::OffLimits;
     }
     match seal() {
@@ -88,7 +90,10 @@ mod tests {
     fn eacces_is_off_limits_whatever_the_folder_says() {
         // `/usr/sbin/authserver` is SIP AND mode 700: the bits answer EACCES first.
         for seal in [Seal::Sealed, Seal::Open] {
-            assert_eq!(cause_for(Some(libc::EACCES), || seal), UnreadableCause::OffLimits);
+            assert_eq!(
+                cause_for(Some(OsErrorClass::AccessDenied), || seal),
+                UnreadableCause::OffLimits
+            );
         }
     }
 
@@ -101,16 +106,22 @@ mod tests {
     #[test]
     fn eperm_on_a_sealed_folder_is_off_limits_and_on_an_open_one_is_full_disk_access() {
         assert_eq!(
-            cause_for(Some(libc::EPERM), || Seal::Sealed),
+            cause_for(Some(OsErrorClass::NotPermitted), || Seal::Sealed),
             UnreadableCause::OffLimits
         );
-        assert_eq!(cause_for(Some(libc::EPERM), || Seal::Open), UnreadableCause::Denied);
+        assert_eq!(
+            cause_for(Some(OsErrorClass::NotPermitted), || Seal::Open),
+            UnreadableCause::Denied
+        );
     }
 
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     #[test]
     fn eperm_off_macos_is_off_limits() {
-        assert_eq!(cause_for(Some(libc::EPERM), || Seal::Open), UnreadableCause::OffLimits);
+        assert_eq!(
+            cause_for(Some(OsErrorClass::NotPermitted), || Seal::Open),
+            UnreadableCause::OffLimits
+        );
     }
 
     /// The real flag on a real folder: `/System/Library` is SIP-protected on every

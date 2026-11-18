@@ -462,7 +462,6 @@ pub(crate) fn on_device_object_removed(device_id: &str, handle: u32) {
 /// timing (the scan is done, nothing contends), and a failed resolve is dropped:
 /// the scan that just completed already captured the object's then-current state,
 /// and any later change re-fires its own event.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn resolve_and_apply_buffered_handles(volume_id: &str, handles: Vec<(u32, u32)>) {
     let Some(device_id) = cmdr_fs::volume::mtp_ids::device_id_of_volume(volume_id).map(str::to_owned) else {
         return;
@@ -490,10 +489,6 @@ fn resolve_and_apply_buffered_handles(volume_id: &str, handles: Vec<(u32, u32)>)
         }
     });
 }
-
-/// No-op shim while Windows has no MTP transport (the buffer never fills there).
-#[cfg(target_os = "windows")]
-fn resolve_and_apply_buffered_handles(_volume_id: &str, _handles: Vec<(u32, u32)>) {}
 
 /// Discard any buffered mid-scan MTP changes for a volume without replaying them
 /// (the D-interrupted path: the partial index is reset to gray).

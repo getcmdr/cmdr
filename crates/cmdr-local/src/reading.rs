@@ -11,35 +11,19 @@
 
 #[cfg(target_os = "macos")]
 mod bulk;
+mod platform;
 
 use std::collections::HashSet;
 use std::fs;
-#[cfg(unix)]
-use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
 use cmdr_fs::benchmark;
-use cmdr_fs::entry::{FileEntry, get_group_name, get_owner_name, is_hidden_by_name};
+use cmdr_fs::entry::{FileEntry, is_hidden_by_name};
 use cmdr_fs::file_identity::{FileId, link_count};
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::host::listings::ListingHost;
 use cmdr_fs::volume::{ListingProgress, SupportedDates};
-
-/// Whether a POSIX entry's `st_flags` carries `UF_HIDDEN`, what `chflags hidden`
-/// sets. macOS only; the flag doesn't exist on Linux, so this is always `false`
-/// there. Reads a field the `stat`/`lstat` call that produced `metadata` already
-/// fetched, so checking it costs no extra syscall.
-#[cfg(target_os = "macos")]
-fn has_uf_hidden(metadata: &fs::Metadata) -> bool {
-    use std::os::macos::fs::MetadataExt as _;
-    metadata.st_flags() & libc::UF_HIDDEN != 0
-}
-
-#[cfg(target_os = "linux")]
-fn has_uf_hidden(_metadata: &fs::Metadata) -> bool {
-    false
-}
 
 /// Reads a volume root's `/.hidden` file (Finder's legacy per-volume hide list,
 /// still honored today) into the set of names it hides in that one directory.
@@ -129,18 +113,12 @@ pub fn list_directory_with(
 /// HFS+: one `getattrlist` without following a link. `None` elsewhere.
 #[cfg(any(test, feature = "testing"))]
 pub fn added_at_by_path(path: &Path) -> Option<u64> {
-    #[cfg(target_os = "macos")]
-    return bulk::added_at_by_path(path);
-    #[cfg(target_os = "linux")]
-    {
-        let _ = path;
-        None
-    }
+    platform::added_at_by_path(path)
 }
 
 /// Who decides which lister runs.
 #[derive(Clone, Copy)]
-enum Pick {
+pub(crate) enum Pick {
     /// Production: bulk on APFS and HFS+, `read_dir` on everything else.
     ByFilesystem,
     /// A test or the benchmark.
@@ -246,7 +224,7 @@ fn list_directory_core_impl(
 
     benchmark::log_event("read_entries START");
     let read_start = std::time::Instant::now();
-    let mut entries = read_entries(path, &dot_hidden_names, tally, pick)?;
+    let mut entries = platform::read_entries(path, &dot_hidden_names, tally, pick)?;
     let read_time = read_start.elapsed();
     benchmark::log_event_value("read_entries END, entries", entries.len());
 
@@ -274,7 +252,7 @@ fn list_directory_core_impl(
         // Debug, not warn: an empty folder is ordinary (every fresh copy destination is
         // one), and the file target logs Debug unconditionally, so a report bundle still
         // carries this line when the restricted-directory case is the one being chased.
-        let metadata_status = match fs::metadata(path) {
+        let metadata_status = match platform::stat(path) {
             Ok(m) => {
                 let kind = if m.is_dir() {
                     "dir"
@@ -283,7 +261,7 @@ fn list_directory_core_impl(
                 } else {
                     "other"
                 };
-                format!("kind={kind}, perms=0o{:o}, size={}", m.permissions().mode(), m.len())
+                format!("kind={kind}, perms=0o{:o}, size={}", platform::mode_of(&m), m.len())
             }
             Err(e) => format!("metadata failed: {e}"),
         };
@@ -297,36 +275,6 @@ fn list_directory_core_impl(
     Ok(entries)
 }
 
-/// Every entry of `path`, unsorted. macOS picks the lister (`bulk::read_entries`).
-#[cfg(target_os = "macos")]
-fn read_entries(
-    path: &Path,
-    dot_hidden: &HashSet<String>,
-    tally: Option<&ListingTally>,
-    pick: Pick,
-) -> std::io::Result<Vec<FileEntry>> {
-    bulk::read_entries(path, dot_hidden, tally, pick)
-}
-
-/// Every entry of `path`, unsorted. Linux has no `getattrlistbulk`, so always
-/// `read_dir`, and no added date. Each entry keeps only the dates `path`'s
-/// listing claims (`withhold_unclaimed_dates`): one more `stat`, of `path`.
-#[cfg(target_os = "linux")]
-fn read_entries(
-    path: &Path,
-    dot_hidden: &HashSet<String>,
-    tally: Option<&ListingTally>,
-    pick: Pick,
-) -> std::io::Result<Vec<FileEntry>> {
-    let _ = pick;
-    let entries = read_dir_entries(path, dot_hidden, tally, AddedAt::Skip)?;
-    let dates = supported_dates_of(path);
-    Ok(entries
-        .into_iter()
-        .map(|entry| withhold_unclaimed_dates(entry, dates))
-        .collect())
-}
-
 /// The `read_dir` lister: every name, then one `lstat` per entry. A name whose
 /// `lstat` fails lists as the minimal row; an iteration error fails the whole
 /// listing.
@@ -336,12 +284,12 @@ fn read_dir_entries(
     tally: Option<&ListingTally>,
     added: AddedAt,
 ) -> std::io::Result<Vec<FileEntry>> {
-    let dir_entries: Vec<_> = fs::read_dir(path)?.collect();
+    let dir_entries: Vec<_> = platform::read_dir(path)?.collect();
     let mut entries = Vec::with_capacity(dir_entries.len());
     for entry in dir_entries {
         let entry = entry?;
-        let entry_path = entry.path();
         let name = entry.file_name().to_string_lossy().into_owned();
+        let entry_path = platform::child_path(path, &name);
         let file_entry = entry_from_lstat(&entry_path, name.clone(), dot_hidden, added).unwrap_or_else(|| {
             // `d_type` still says whether it's a link, which picks the row's icon.
             let is_symlink = entry.file_type().is_ok_and(|ft| ft.is_symlink());
@@ -364,7 +312,7 @@ pub(crate) fn entry_from_lstat(
     dot_hidden: &HashSet<String>,
     added: AddedAt,
 ) -> Option<FileEntry> {
-    let metadata = fs::symlink_metadata(path).ok()?;
+    let metadata = platform::lstat(path).ok()?;
     let entry = entry_from_metadata(path, name, &metadata, dot_hidden);
     match added {
         #[cfg(target_os = "macos")]
@@ -400,40 +348,13 @@ pub(crate) fn minimal_row(path: &Path, name: String, is_symlink: bool, dot_hidde
 /// `entry_from_metadata`), added date included, except that it never applies a
 /// volume root's `/.hidden`.
 pub fn get_single_entry(path: &Path) -> Result<FileEntry, std::io::Error> {
-    let metadata = fs::symlink_metadata(path)?;
+    let metadata = platform::lstat(path)?;
     let name = path
         .file_name()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| path.to_string_lossy().to_string());
     let entry = entry_from_metadata(path, name, &metadata, &HashSet::new());
-    #[cfg(target_os = "macos")]
-    let entry = FileEntry {
-        added_at: bulk::parent_is_bulk_eligible(path)
-            .then(|| bulk::added_at_by_path(path))
-            .flatten(),
-        ..entry
-    };
-    // Linux: keep the birth time only where the parent's listing claims one, as
-    // `read_entries` does, so a re-stat equals its listing entry. The parent's
-    // `stat` runs only for an entry that has a birth time to lose.
-    #[cfg(target_os = "linux")]
-    let entry = if entry.created_at.is_some() {
-        let parent = parent_dir(path);
-        withhold_unclaimed_dates(entry, supported_dates_of(parent))
-    } else {
-        entry
-    };
-    Ok(entry)
-}
-
-/// The folder whose listing holds `path` (`path` itself at `/`).
-#[cfg(target_os = "linux")]
-fn parent_dir(path: &Path) -> &Path {
-    match path.parent() {
-        Some(parent) if parent.as_os_str().is_empty() => Path::new("."),
-        Some(parent) => parent,
-        None => path,
-    }
+    Ok(platform::finish_single_entry(path, entry))
 }
 
 /// Which dates a listing of the folder `dir` carries beyond the modification
@@ -448,11 +369,8 @@ fn parent_dir(path: &Path) -> &Path {
 /// `stat`), so run it on `spawn_blocking`.
 pub(crate) fn supported_dates_of(dir: &Path) -> SupportedDates {
     SupportedDates {
-        created: fs::metadata(dir).and_then(|metadata| metadata.created()).is_ok(),
-        #[cfg(target_os = "macos")]
-        added: bulk::dir_is_bulk_eligible(dir),
-        #[cfg(target_os = "linux")]
-        added: false,
+        created: platform::stat(dir).and_then(|metadata| metadata.created()).is_ok(),
+        added: platform::added_is_supported(dir),
     }
 }
 
@@ -464,7 +382,10 @@ pub(crate) fn supported_dates_of(dir: &Path) -> SupportedDates {
 /// listing doesn't claim. On macOS every `stat` has `st_birthtime`, and the
 /// added date is fetched only where the folder is bulk-eligible, so both claims
 /// hold by construction there.
-#[cfg_attr(target_os = "macos", allow(dead_code, reason = "Linux-only; tested on every OS"))]
+#[cfg_attr(
+    any(target_os = "macos", target_os = "windows"),
+    allow(dead_code, reason = "Linux-only; tested on every OS")
+)]
 pub(crate) fn withhold_unclaimed_dates(entry: FileEntry, dates: SupportedDates) -> FileEntry {
     FileEntry {
         created_at: entry.created_at.filter(|_| dates.created),
@@ -486,7 +407,7 @@ pub(crate) fn entry_from_metadata(
     dot_hidden: &HashSet<String>,
 ) -> FileEntry {
     let is_symlink = metadata.file_type().is_symlink();
-    let target_is_dir = is_symlink && fs::metadata(path).is_ok_and(|m| m.is_dir());
+    let target_is_dir = is_symlink && platform::stat(path).is_ok_and(|m| m.is_dir());
     let is_dir = metadata.is_dir() || target_is_dir;
 
     let modified = metadata
@@ -501,11 +422,7 @@ pub(crate) fn entry_from_metadata(
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| d.as_secs());
 
-    let physical_size = if metadata.is_file() {
-        Some(metadata.blocks() * 512)
-    } else {
-        None
-    };
+    let os = platform::os_fields(metadata);
 
     // `inode` is populated from `st_ino` for hardlinked files only. Hardlink
     // dedup in write-op walkers uses this to spot multiple paths pointing at the
@@ -520,14 +437,14 @@ pub(crate) fn entry_from_metadata(
 
     FileEntry {
         size: if metadata.is_file() { Some(metadata.len()) } else { None },
-        physical_size,
+        physical_size: os.physical_size,
         inode,
         modified_at: modified,
         created_at: created,
-        permissions: metadata.permissions().mode(),
-        owner: get_owner_name(metadata.uid()),
-        group: get_group_name(metadata.gid()),
-        is_hidden: is_hidden_by_name(&name) || has_uf_hidden(metadata) || dot_hidden.contains(&name),
+        permissions: os.permissions,
+        owner: os.owner,
+        group: os.group,
+        is_hidden: is_hidden_by_name(&name) || os.flag_hidden || dot_hidden.contains(&name),
         ..FileEntry::new(name, path.to_string_lossy().to_string(), is_dir, is_symlink)
     }
 }
