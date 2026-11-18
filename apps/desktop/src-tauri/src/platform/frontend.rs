@@ -13,7 +13,17 @@ const FRONTEND_PLATFORM: &str = std::env::consts::OS;
 /// `window.__CMDR_CONVENTIONS__`, all read-only (the two objects frozen), so nothing in the page can
 /// change its mind later.
 pub(crate) fn init_script() -> String {
-    script_for(FRONTEND_PLATFORM, &capabilities(), &conventions())
+    script_for(FRONTEND_PLATFORM, &capabilities(), &frontend_conventions())
+}
+
+/// This desktop's conventions, or in a debug build the row `CMDR_MOCK_CONVENTIONS` names.
+fn frontend_conventions() -> PlatformConventions {
+    #[cfg(debug_assertions)]
+    if let Some(mocked) = conventions::mock_conventions() {
+        log::info!(target: "platform", "CMDR_MOCK_CONVENTIONS: the frontend follows another desktop's conventions");
+        return mocked;
+    }
+    conventions()
 }
 
 fn script_for(platform: &str, capabilities: &PlatformCapabilities, conventions: &PlatformConventions) -> String {

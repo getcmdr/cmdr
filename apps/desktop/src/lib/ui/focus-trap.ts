@@ -76,13 +76,51 @@ interface TrapEntry {
 const stack: TrapEntry[] = []
 let listenersInstalled = false
 
+/**
+ * Marks a row whose children are laid out in reverse (`flex-direction: row-reverse`), so Tab
+ * walks them in the order the eye reads them rather than the DOM's. `ModalDialog` sets it on its
+ * footer row where the platform puts the affirmative button first (`dialogButtonOrder`).
+ */
+export const REVERSED_FOCUS_ORDER_ATTRIBUTE = 'data-focus-order'
+const REVERSED_ROW_SELECTOR = `[${REVERSED_FOCUS_ORDER_ATTRIBUTE}="reverse"]`
+
 function getTabbables(node: HTMLElement): HTMLElement[] {
   // `[hidden]` is checked on ancestors too: a closed Ark dropdown hides the wrapper,
   // not always the tabbable inside it. A `.focus()` on any of them is a silent no-op in
   // a real browser, which would strand the wrap on an element the user can't see.
-  return Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+  const inDomOrder = Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
     (el) => el.closest('[hidden]') === null,
   )
+  return inReadingOrder(inDomOrder, node)
+}
+
+/**
+ * `tabbables` with each reversed row's controls in the order it shows them: the row's direct
+ * children go last to first, and the controls inside one child keep their own order, the same
+ * granularity `row-reverse` flips.
+ */
+function inReadingOrder(tabbables: HTMLElement[], node: HTMLElement): HTMLElement[] {
+  const rows = Array.from(node.querySelectorAll<HTMLElement>(REVERSED_ROW_SELECTOR))
+  if (rows.length === 0) return tabbables
+  let ordered = tabbables
+  for (const row of rows) {
+    const inRow = ordered.filter((el) => row.contains(el))
+    if (inRow.length < 2) continue
+    const childOf = (el: HTMLElement): Element | null => {
+      let child: Element | null = el
+      while (child && child.parentElement !== row) child = child.parentElement
+      return child
+    }
+    const children = Array.from(row.children)
+    const flipped = [...inRow].sort((a, b) => {
+      const byChild = children.indexOf(childOf(b) as Element) - children.indexOf(childOf(a) as Element)
+      return byChild !== 0 ? byChild : inRow.indexOf(a) - inRow.indexOf(b)
+    })
+    // The row's controls sit together in DOM order, so they take back the same slots.
+    const start = ordered.indexOf(inRow[0])
+    ordered = [...ordered.slice(0, start), ...flipped, ...ordered.slice(start + inRow.length)]
+  }
+  return ordered
 }
 
 /**
@@ -169,6 +207,21 @@ function handleKeyDown(e: KeyboardEvent): void {
   }
 }
 
+/**
+ * What the browser's own Tab would stop on, for the Tabs this trap moves itself: a rendered
+ * control, and one radio per group (the checked one, else the first), since arrows move inside
+ * a group. `checkVisibility` is missing in jsdom, where everything counts as rendered.
+ */
+function isTabStop(el: HTMLElement): boolean {
+  if (typeof el.checkVisibility === 'function' && !el.checkVisibility()) return false
+  if (!(el instanceof HTMLInputElement) || el.type !== 'radio' || el.name === '') return true
+  const group = Array.from(
+    (el.form ?? el.ownerDocument).querySelectorAll<HTMLInputElement>('input[type="radio"]'),
+  ).filter((radio) => radio.name === el.name)
+  const checked = group.find((radio) => radio.checked)
+  return el === (checked ?? group[0])
+}
+
 /** Wraps Tab at the boundaries of the container's tabbable cycle. */
 function wrapTab(e: KeyboardEvent, node: HTMLElement, target: HTMLElement): void {
   const tabbables = getTabbables(node)
@@ -178,6 +231,23 @@ function wrapTab(e: KeyboardEvent, node: HTMLElement, target: HTMLElement): void
   }
   const index = tabbables.indexOf(target)
   const goingForward = !e.shiftKey
+  if (node.querySelector(REVERSED_ROW_SELECTOR) !== null) {
+    // A reversed row makes the reading order differ from the DOM's, so the browser's own
+    // mid-list step would walk that row backwards: every Tab moves here.
+    e.preventDefault()
+    const stops = tabbables.filter((el) => el === target || isTabStop(el))
+    if (stops.length === 0) return
+    const at = stops.indexOf(target)
+    const next = goingForward
+      ? at === -1 || at === stops.length - 1
+        ? 0
+        : at + 1
+      : at <= 0
+        ? stops.length - 1
+        : at - 1
+    stops[next].focus()
+    return
+  }
   if (goingForward && (index === -1 || index === tabbables.length - 1)) {
     // From the last tabbable, the container itself, or a click-focused
     // tabindex="-1" element: wrap to the first.

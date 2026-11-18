@@ -177,8 +177,8 @@
   Remove diacritics, and Normalize Unicode (`WHOLE_NAME_TOGGLES`), each with its dim key chip. Each `Checkbox` sits in a
   wrapper span, since it renders more than one element.
 - **Minimum width** (`MIN_WIDTH_PX`, 880 px, under the app window's 950 px floor): the grid and the footer's four
-  buttons still fit; the footer's buttons sit in one non-shrinking `.footer-actions`, so at the floor with Undo rename
-  showing, the summary beside Presets wraps (to three short lines) rather than a button's label leaving its chip.
+  buttons still fit; the footer's buttons sit in `ModalDialog`'s non-shrinking button row, so at the floor with Undo
+  rename showing, the summary beside Presets wraps (to three short lines) rather than a button's label leaving its chip.
 - **Search option chips** (`SearchOptionChips`): Match case `Aa`, First match only `1×`, Include extension `.ext`,
   Regular expression `.*`, Replace whole name `^$` (the regex way to say "the whole string"). Code-editor style find
   toggles: house `Chip`s, `variant="toggle"` (`aria-pressed`, the full name as `aria-label`), mono glyphs, tinted when

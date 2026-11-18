@@ -3,6 +3,9 @@
     import type { Snippet } from 'svelte'
     import { notifyDialogOpened, notifyDialogClosed } from '#lib/tauri-commands/index.js'
     import { focusFirstField, trapFocus } from './focus-trap'
+    import { convention } from '#lib/platform/index.js'
+    import type { CommandScope } from '#lib/commands/types.js'
+    import { createAccessKeys, type AccessKeyTip } from './access-keys'
     import { captureFocusOrigin, restoreFocus, type FocusOrigin } from './focus-restore'
     import { anchoredTopFor } from './modal-anchor'
     import { clampDragOffset, clampPointToArea, dragFrameOf } from './modal-drag'
@@ -35,9 +38,12 @@
         title: Snippet
         children: Snippet
         /**
-         * Action buttons, rendered in a right-aligned footer to match macOS.
-         * Put the primary action last (rightmost). When omitted, no footer renders
-         * (dialogs that own a custom button layout still place buttons in `children`).
+         * Action buttons, rendered in a right-aligned footer. Write them in macOS order, Cancel
+         * first and the primary action last; where the platform puts the affirmative button
+         * first (`dialogButtonOrder`), the row shows them reversed and Tab follows. Each button
+         * is its own child of the row (a wrapper around several flips as one). When omitted, no
+         * footer renders (dialogs that own a custom button layout still place buttons in
+         * `children`).
          */
         footer?: Snippet
         /**
@@ -151,6 +157,12 @@
         opensOnItsOwn?: boolean
         /** A guarded dialog with no field whose bare letters answer it: they need no click or Tab first. */
         letterKeysAnswer?: boolean
+        /**
+         * The command scope of the dialog's own keys (`'Main window/Multi-rename'`). Its Alt+letter
+         * commands are the dialog's access keys already, so on a platform with access keys
+         * (`convention('accessKeys')`) no other control is given their letters.
+         */
+        keyScope?: CommandScope
         /** Renders × button and handles Escape key */
         onclose?: () => void
         /**
@@ -189,9 +201,36 @@
         startedBy,
         opensOnItsOwn = false,
         letterKeysAnswer = false,
+        keyScope,
         onclose,
         onescape,
     }: Props = $props()
+
+    /**
+     * Where the affirmative button goes (`#lib/platform` § Conventions). The footer is written in
+     * macOS order; Windows and KDE read it reversed, with Tab following (`focus-trap.ts`).
+     */
+    const affirmativeFirst = convention('dialogButtonOrder') === 'affirmativeFirst'
+
+    /** Where the keytips are drawn while Alt is held, on a platform with access keys. */
+    let accessKeyTips = $state<AccessKeyTip[]>([])
+    /**
+     * Alt+letter access keys (`access-keys.ts`), on Windows and Linux; macOS has none. A dialog
+     * whose bare letters answer it (`letterKeysAnswer`) already has a key per button, shown on the
+     * button, so it gets no second set: one key scheme per dialog.
+     */
+    const accessKeys =
+        convention('accessKeys') === 'alt' && !untrack(() => letterKeysAnswer)
+            ? createAccessKeys({
+                  scope: () => dialogElement,
+                  layer: () => overlayElement,
+                  commandScope: () => keyScope,
+                  onTips: (tips) => {
+                      accessKeyTips = tips
+                  },
+              })
+            : null
+    onMount(() => accessKeys?.attach())
 
     /** Read once: a host's prop getter may read state that's already gone as the dialog comes down. */
     const guardedFor = untrack(() => startedBy)
@@ -505,6 +544,7 @@
         // The consumer owns Escape and Enter (see `ownsKeyboard`); forward untouched.
         if (ownsKeyboard) {
             onkeydown?.(event)
+            accessKeys?.handleKeydown(event)
             return
         }
         if (event.key === 'Escape' && escapeAction) {
@@ -526,6 +566,8 @@
             return
         }
         onkeydown?.(event)
+        // After the dialog's own keys: an Alt+letter it claimed (`defaultPrevented`) stays its own.
+        accessKeys?.handleKeydown(event)
     }
 
     /**
@@ -703,7 +745,12 @@
             {#if footer}
                 <div class="modal-footer">
                     {#if footerLeading}<div class="modal-footer-leading">{@render footerLeading()}</div>{/if}
-                    <div class="modal-footer-actions" bind:this={footerActionsElement}>{@render footer()}</div>
+                    <div
+                        class="modal-footer-actions"
+                        class:affirmative-first={affirmativeFirst}
+                        data-focus-order={affirmativeFirst ? 'reverse' : undefined}
+                        bind:this={footerActionsElement}
+                    >{@render footer()}</div>
                     {#if footerNote}<div class="modal-footer-note">{@render footerNote()}</div>{/if}
                 </div>
             {/if}
@@ -720,7 +767,12 @@
                 }}
             ></div>
         {/each}
-    </div>
+    </div>{#if accessKeys}{#each accessKeyTips as tip (tip.letter)}<span
+                class="access-key-tip"
+                aria-hidden="true"
+                style:left="{tip.x}px"
+                style:top="{tip.y}px">{tip.letter}</span
+            >{/each}{/if}
 </div>
 
 <style>
@@ -1098,5 +1150,29 @@
         gap: var(--spacing-md);
         margin-left: auto;
         white-space: nowrap;
+    }
+
+    /* `dialogButtonOrder: affirmativeFirst` (Windows, KDE): the same buttons, affirmative first,
+       still hard right. Only the order flips; Tab follows it through `data-focus-order`. */
+    .modal-footer-actions.affirmative-first {
+        flex-direction: row-reverse;
+    }
+
+    /* An access key's keytip, drawn while Alt is held (`access-keys.ts`), centered on the bottom
+       edge of the control it presses. Never in the way of a click: Alt up, a key, or a pointer
+       press hides it. */
+    .access-key-tip {
+        position: absolute;
+        z-index: 1;
+        transform: translate(-50%, -50%);
+        padding: 0 var(--spacing-xs);
+        background: var(--color-bg-tertiary);
+        border: 1px solid var(--color-border-strong);
+        border-radius: var(--radius-xs);
+        color: var(--color-text-primary);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        line-height: var(--font-line-height-flat);
+        pointer-events: none;
     }
 </style>

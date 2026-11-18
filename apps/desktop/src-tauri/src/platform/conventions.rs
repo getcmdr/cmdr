@@ -174,9 +174,39 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
     }
 }
 
+/// The dev flag `CMDR_MOCK_CONVENTIONS=<desktop>` (`macos`, `windows`, `gnome`, `kde`,
+/// `otherLinux`, the fixture's names): every webview gets that desktop's row instead of this
+/// one's, so a Mac shows the Windows dialog order and access keys. Debug builds only, like the
+/// other `CMDR_MOCK_*` flags; `None` when unset or unknown.
+#[cfg(debug_assertions)]
+pub(crate) fn mock_conventions() -> Option<PlatformConventions> {
+    mock_desktop(std::env::var("CMDR_MOCK_CONVENTIONS").ok().as_deref()).map(conventions_on)
+}
+
+#[cfg(any(debug_assertions, test))]
+fn mock_desktop(value: Option<&str>) -> Option<Desktop> {
+    match value? {
+        "macos" => Some(Desktop::Macos),
+        "windows" => Some(Desktop::Windows),
+        "gnome" => Some(Desktop::Linux(LinuxDesktop::Gnome)),
+        "kde" => Some(Desktop::Linux(LinuxDesktop::Kde)),
+        "otherLinux" => Some(Desktop::Linux(LinuxDesktop::Other)),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_mock_flag_names_each_desktop_as_the_fixture_does() {
+        for desktop in Desktop::ALL {
+            assert_eq!(mock_desktop(Some(fixture_key(desktop))), Some(desktop));
+        }
+        assert_eq!(mock_desktop(Some("beos")), None);
+        assert_eq!(mock_desktop(None), None);
+    }
 
     /// The frontend's copy of every desktop's row, which the browser demo and the per-desktop test
     /// helpers read. Lives beside `#lib/platform`, here only pinned.
