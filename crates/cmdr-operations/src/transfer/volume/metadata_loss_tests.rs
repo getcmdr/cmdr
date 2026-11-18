@@ -9,6 +9,7 @@
 //! name-only xattr outline) onto SFTP's caps here, and a real SFTP server in
 //! `backend_suites`. The contract: `DETAILS.md` § "Copies keep the source's
 //! metadata", invariant 7.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

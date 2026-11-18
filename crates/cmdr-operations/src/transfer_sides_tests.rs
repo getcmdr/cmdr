@@ -4,6 +4,7 @@
 //! whatever the call in flight happened to hit. These drive
 //! `name_the_vanished_drive` with the table answered by
 //! [`test_hook`](super::test_hook), so no test needs a real drive.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::*;
 use crate::error_classification::classify_io_error;

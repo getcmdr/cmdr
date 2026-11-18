@@ -12,3 +12,16 @@ pub(crate) use super::one_sync::{
 pub(crate) fn open_to_sync(path: &std::path::Path) -> std::io::Result<std::fs::File> {
     std::fs::File::options().write(true).open(path)
 }
+
+/// A folder opens only with backup semantics (a plain open answers `Access is denied`), and
+/// `FlushFileBuffers` wants write access on it as on a file. Backup semantics bypass the access
+/// check only for a process that ENABLED `SeBackupPrivilege`, which Cmdr never does.
+pub(crate) fn open_dir_to_sync(path: &std::path::Path) -> std::io::Result<std::fs::File> {
+    use std::os::windows::fs::OpenOptionsExt;
+    use windows_sys::Win32::Storage::FileSystem::FILE_FLAG_BACKUP_SEMANTICS;
+
+    std::fs::File::options()
+        .write(true)
+        .custom_flags(FILE_FLAG_BACKUP_SEMANTICS)
+        .open(path)
+}

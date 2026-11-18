@@ -11,6 +11,7 @@
 //! The scratch disk decides what "records" means: where its filesystem keeps a
 //! lasting identity (APFS on a Mac, ext4 on a Linux box) the row carries the node,
 //! elsewhere (a container's overlay) it carries none, and `expected_at` follows it.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

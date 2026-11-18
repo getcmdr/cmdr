@@ -1,4 +1,5 @@
 //! Integration tests for copy operations.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_fs::testing::TestDir;
 use std::fs;

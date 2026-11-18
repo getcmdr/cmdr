@@ -34,7 +34,6 @@ use crate::types::{
     WriteProgressEvent, WriteSettledEvent, WriteSourceItemDoneEvent,
 };
 use cmdr_fs::volume::{DEFAULT_VOLUME_ID, Volume};
-use cmdr_local::LocalPosixVolume;
 use cmdr_operation_log::OperationLog;
 use cmdr_operation_log::capture::WriterJournal;
 use cmdr_operation_log::store::{OperationLogStoreError, open_read_connection, read_operation_items};
@@ -126,11 +125,7 @@ impl BenchEngine {
     /// A local volume over `root`, the destination a cross-volume copy streams
     /// into, on the host the engine itself runs on.
     pub fn local_volume(&self, root: impl Into<PathBuf>) -> Arc<dyn Volume> {
-        Arc::new(LocalPosixVolume::local_folder(
-            "Transfer bench",
-            root,
-            self.engine.host().volume_host().clone(),
-        ))
+        crate::local_disk::folder_volume("Transfer bench", root, self.engine.host().volume_host().clone())
     }
 
     /// A cross-volume copy through `copy_volumes_with_progress`: the chunked

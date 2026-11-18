@@ -261,7 +261,7 @@ async fn a_cleared_name_that_never_takes_the_rename_rescues_the_bytes_after_the_
 
     assert_eq!(dest.renames_onto_the_name(), retry::MAX_ATTEMPTS as usize);
     assert_eq!(
-        failed.aftermath,
+        failed.aftermath.map(|aftermath| *aftermath),
         Some(LandingAftermath::NewDataKeptAt(PathBuf::from("/a (recovered).txt")))
     );
     assert_eq!(dest.read("/a (recovered).txt").await.as_deref(), Some(PAYLOAD));

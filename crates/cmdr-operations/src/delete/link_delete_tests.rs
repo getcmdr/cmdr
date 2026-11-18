@@ -6,6 +6,7 @@
 //! it as a folder. Each cell covers one place a delete learns what an entry is:
 //! a link inside the selected folder, and a selected link answered by a fresh
 //! probe, by a cold scan preview, and by the parent's cached pane listing.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::future::Future;
 use std::path::{Path, PathBuf};

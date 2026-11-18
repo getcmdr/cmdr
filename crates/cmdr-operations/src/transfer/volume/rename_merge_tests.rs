@@ -17,6 +17,7 @@
 //! late-detected collision), `rename_merge_walk_tests.rs` (the no-subtree-walk
 //! perf pin), `rename_merge_stat_tests.rs` (a stat that refuses to answer), and
 //! `operations_host/backend_suites/rename_merge_mtp_tests.rs` (the whole path against a virtual MTP device).
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::super::conflict_responder_test_support::{
     ConflictResponderSink, file_conflict_count, folder_conflict_count_any_dir,

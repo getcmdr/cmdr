@@ -6,6 +6,7 @@
 //! keep no journal to replay a lost one. These drive `move_with_staging` with the
 //! `durability::test_hook` recorder, which sees every directory the flush syncs
 //! and can fail one with a chosen errno.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::io;
 

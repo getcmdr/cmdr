@@ -5,6 +5,7 @@
 //! live beside them (`transfer/copy/named_copy_tests.rs`,
 //! `transfer/move_op/named_leaves_move_tests.rs`); undo in
 //! `named_leaf_undo_tests.rs` and the move journal suite.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

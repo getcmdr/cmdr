@@ -21,14 +21,17 @@
 //! - Local, non-network → `copy_file_range(2)` (kernel handles reflink on btrfs/XFS)
 //! - Network → chunked copy
 //!
+//! Strategy (Windows):
+//! - Everything → chunked copy, so a copy there is cancellable with live progress.
+//!   `CopyFileExW` (attributes, alternate data streams with Mark of the Web, ReFS
+//!   block clone, SMB copy offload) is windows-port task 36's.
+//!
 //! We evaluated `copyfile` on non-APFS filesystems (HFS+, exFAT, FAT32, NTFS-3G) and found no
 //! practical benefit: no clonefile support, and no metadata edge either, since `copyfile` without
 //! a clone doesn't set birth time and the chunked arm carries birth and flags itself
 //! (`cmdr_fs::metadata`). NTFS-3G is FUSE-based and has the same buffering issues as network
 //! mounts. See `DETAILS.md` § "Copy strategy selection".
 
-#[cfg(target_os = "windows")]
-use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -37,20 +40,16 @@ use super::linux_copy::copy_single_file_linux;
 #[cfg(target_os = "macos")]
 use super::macos_copy::{CopyProgressContext, copy_single_file_native};
 
-#[cfg(target_os = "windows")]
-use super::super::error_classification::IoResultExt;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::LandedMetadata;
 
 use super::super::host::Announced;
-use super::super::overwrite::{PostLanding, Staged, stage_and_land_file};
+use super::super::overwrite::{PostLanding, stage_and_land_file};
 use super::super::state::WriteOperationState;
 use super::super::types::WriteOperationError;
-use super::chunked_copy::ChunkedCopyProgressFn;
-#[cfg(any(target_os = "macos", target_os = "linux"))]
-use super::chunked_copy::chunked_copy_with_metadata;
 #[cfg(target_os = "linux")]
 use super::chunked_copy::is_network_filesystem;
+use super::chunked_copy::{ChunkedCopyProgressFn, chunked_copy_with_metadata};
 
 // ============================================================================
 // macOS: APFS clonefile detection
@@ -157,15 +156,11 @@ pub(super) enum LocalCopyStrategy {
     /// A userspace 1 MiB read/write loop that checks cancellation between
     /// chunks. The fallback wherever a kernel-side copy isn't available or
     /// isn't cancellable in time (network mounts, non-APFS or cross-volume
-    /// destinations).
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    /// destinations, and Windows until its `CopyFileExW` arm lands).
     Chunked,
     /// `copy_file_range(2)`: kernel-side, and a reflink on btrfs/XFS.
     #[cfg(target_os = "linux")]
     KernelCopyRange,
-    /// `std::fs::copy` (`CopyFileExW` underneath on Windows).
-    #[cfg(target_os = "windows")]
-    StdCopy,
 }
 
 /// Picks the mechanism for copying `source` to `dest`.
@@ -193,7 +188,7 @@ pub(super) fn select_local_copy_strategy(source: &Path, dest: &Path) -> LocalCop
     #[cfg(target_os = "windows")]
     {
         let _ = (source, dest);
-        LocalCopyStrategy::StdCopy
+        LocalCopyStrategy::Chunked
     }
 }
 
@@ -247,7 +242,8 @@ pub(super) fn copy_file_using(
         LocalCopyStrategy::AppleClone => {
             let context = CopyProgressContext::with_cancellation(state.intent().clone());
             let landed = stage_and_land_file(state, dest, needs_safe_overwrite, post_landing, |target| {
-                copy_single_file_native(source, target, false, Some(&context)).map(Staged::bytes)
+                copy_single_file_native(source, target, false, Some(&context))
+                    .map(super::super::overwrite::Staged::bytes)
             })?;
             // Clonefile shares CoW extents with the source: flushing is moot.
             Ok(StrategyCopyOutcome {
@@ -256,7 +252,6 @@ pub(super) fn copy_file_using(
                 handed_back: landed.handed_back,
             })
         }
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
         LocalCopyStrategy::Chunked => {
             // Chunked copy notes the file in the operation's barriers, which
             // sync it (inline on a network mount, else at the next pass).
@@ -276,23 +271,10 @@ pub(super) fn copy_file_using(
             // The source's POSIX ACL goes on after the landing, as on every arm.
             let landed = stage_and_land_file(state, dest, needs_safe_overwrite, post_landing, |target| {
                 let bytes = copy_single_file_linux(source, target, false, state, progress_callback)?;
-                Ok(Staged {
+                Ok(super::super::overwrite::Staged {
                     bytes,
                     landed: LandedMetadata::of_source_acl(source),
                 })
-            })?;
-            Ok(StrategyCopyOutcome {
-                bytes: landed.bytes,
-                data_covered: false,
-                handed_back: landed.handed_back,
-            })
-        }
-        #[cfg(target_os = "windows")]
-        LocalCopyStrategy::StdCopy => {
-            let _ = progress_callback; // Unused on this platform
-            // The std fallback doesn't flush; the caller's end-of-op pass does.
-            let landed = stage_and_land_file(state, dest, needs_safe_overwrite, post_landing, |target| {
-                fs::copy(source, target).with_path(source).map(Staged::bytes)
             })?;
             Ok(StrategyCopyOutcome {
                 bytes: landed.bytes,
@@ -369,6 +351,7 @@ mod tests {
         assert_eq!(fs::read_to_string(&dst).unwrap(), "New content");
     }
 
+    #[cfg(unix)]
     #[test]
     fn test_copy_file_with_strategy_preserves_permissions() {
         use std::os::unix::fs::PermissionsExt;

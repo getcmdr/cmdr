@@ -73,6 +73,10 @@ impl Continuation {
     /// The continuation of a write that failed holding `carry`: from the last
     /// byte the destination confirmed. `Err(staged)` when there's nothing to
     /// carry on (no carry, or not a byte confirmed yet).
+    #[allow(
+        clippy::result_large_err,
+        reason = "the `Err` hands the caller's own staged write back by move, once, never up an error chain; its paths take it to 128 bytes on Windows"
+    )]
     pub(super) fn of(staged: StagedWrite, carry: Option<CarryOn>) -> Result<Self, StagedWrite> {
         match carry {
             Some(carry) => {

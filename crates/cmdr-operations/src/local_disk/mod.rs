@@ -3,99 +3,31 @@
 //! working-copy file, and a volume over a local folder.
 //!
 //! The one place (with the local-engine trees, `transfer/copy/` and friends)
-//! that names `cmdr_local`, `libc`, or `std::os::unix`. Natively every function
-//! forwards to the call the engine always made. The browser build has no local
+//! that names `cmdr_local`, `libc`, or `std::os::unix`. What differs per OS sits
+//! behind `platform/`, one arm per OS plus the browser build's; what only tells
+//! the desktop from the browser stays here. The browser build has no local
 //! disk, so there each answers what a host without one would; nothing reaches
 //! them there, because that host's `OperationVolumes::local_disk` is `None` and
 //! every local-disk branch asks it first (`host/DETAILS.md`).
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::host::listings::ListingHost;
 use cmdr_fs::volume::{MutationEvent, Volume, VolumeError};
 
-mod posix;
+/// The per-OS arms. Reached by path only for `symlink`, which macOS's local copy
+/// never asks (it copies a link with `copyfile`); everything else is re-exported
+/// below.
+pub(crate) mod platform;
 
 #[cfg(target_os = "macos")]
-pub(crate) use posix::{BsdFlags, bsd_flags, read_xattr};
-pub(crate) use posix::{WriteProbe, home_dir, is_locked_item, is_mount_point, write_probe};
-
-/// The permission bits of `permissions` (`st_mode`).
-pub(crate) fn mode_of(permissions: &std::fs::Permissions) -> u32 {
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        permissions.mode()
-    }
-    #[cfg(any(windows, target_family = "wasm"))]
-    {
-        if permissions.readonly() { 0o444 } else { 0o644 }
-    }
-}
-
-/// `chmod(path, mode)`.
-pub(crate) fn set_mode(path: &Path, mode: u32) -> std::io::Result<()> {
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(path, std::fs::Permissions::from_mode(mode))
-    }
-    #[cfg(target_family = "wasm")]
-    {
-        let _ = (path, mode);
-        Err(no_local_disk())
-    }
-}
-
-/// `mkdir(dir, mode)`.
-pub(crate) fn create_dir_with_mode(dir: &Path, mode: u32) -> std::io::Result<()> {
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::DirBuilderExt;
-        std::fs::DirBuilder::new().mode(mode).create(dir)
-    }
-    #[cfg(any(windows, target_family = "wasm"))]
-    {
-        let _ = mode;
-        std::fs::create_dir(dir)
-    }
-}
-
-/// `options` opening a new file with `mode`.
-pub(crate) fn with_mode(options: &mut std::fs::OpenOptions, mode: u32) -> &mut std::fs::OpenOptions {
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.mode(mode)
-    }
-    #[cfg(any(windows, target_family = "wasm"))]
-    {
-        let _ = mode;
-        options
-    }
-}
-
-/// `symlink(target, link)`.
-#[cfg_attr(
-    target_os = "macos",
-    allow(
-        dead_code,
-        reason = "macOS copies a link with `copyfile`; the other local copies make it here"
-    )
-)]
-pub(crate) fn symlink(target: &Path, link: &Path) -> std::io::Result<()> {
-    #[cfg(unix)]
-    {
-        std::os::unix::fs::symlink(target, link)
-    }
-    #[cfg(target_family = "wasm")]
-    {
-        let _ = (target, link);
-        Err(no_local_disk())
-    }
-}
+pub(crate) use platform::{BsdFlags, bsd_flags, read_xattr};
+pub(crate) use platform::{
+    WriteProbe, create_dir_with_mode, free_bytes, important_free_bytes, is_locked_item, mode_of, set_mode, with_mode,
+    write_probe,
+};
 
 /// `rename(2)` that fails with `AlreadyExists` instead of clobbering `destination`
 /// (`cmdr_local::rename_local_exclusive`).
@@ -126,13 +58,27 @@ pub(crate) fn rename_error(err: &std::io::Error, from: &Path, to: &Path) -> Volu
 
 /// Every mount point in the OS mount table, or `None` when it can't be read
 /// (and with no local disk, which has no mount table).
-pub(crate) fn mount_points() -> Option<Vec<std::path::PathBuf>> {
+pub(crate) fn mount_points() -> Option<Vec<PathBuf>> {
     #[cfg(not(target_family = "wasm"))]
     {
         cmdr_local::mounts::list()
     }
     #[cfg(target_family = "wasm")]
     {
+        None
+    }
+}
+
+/// Whether `root` is where a filesystem is mounted, by the OS mount table; `None`
+/// when the table can't say (or there's no local disk).
+pub(crate) fn is_mount_point(root: &Path) -> Option<bool> {
+    #[cfg(not(target_family = "wasm"))]
+    {
+        cmdr_local::mounts::is_mount_point(root)
+    }
+    #[cfg(target_family = "wasm")]
+    {
+        let _ = root;
         None
     }
 }
@@ -202,17 +148,19 @@ pub(crate) fn patch_listings_after(listings: &dyn ListingHost, volume_id: &str, 
 }
 
 /// A volume over the local folder `root`, for a working copy or a spool.
-pub(crate) fn folder_volume(name: &str, root: impl Into<std::path::PathBuf>, host: VolumeHost) -> Arc<dyn Volume> {
+pub(crate) fn folder_volume(name: &str, root: impl Into<PathBuf>, host: VolumeHost) -> Arc<dyn Volume> {
+    platform::folder_volume(name, root.into(), host)
+}
+
+/// The person's home folder (`None` in the browser build, which has none).
+pub(crate) fn home_dir() -> Option<PathBuf> {
     #[cfg(not(target_family = "wasm"))]
     {
-        Arc::new(cmdr_local::LocalPosixVolume::local_folder(name, root, host))
+        dirs::home_dir()
     }
     #[cfg(target_family = "wasm")]
     {
-        // Unreachable there (archive edits refuse on a host with no local disk);
-        // an empty in-memory folder is the honest stand-in for "no disk here".
-        let _ = host;
-        Arc::new(cmdr_fs::volume::InMemoryVolume::new(name).with_root(root.into()))
+        None
     }
 }
 

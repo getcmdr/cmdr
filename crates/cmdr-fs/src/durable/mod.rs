@@ -90,6 +90,20 @@ pub fn sync_dir_to_drive(dir: &File) -> io::Result<()> {
     platform::sync_dir_to_drive(dir)
 }
 
+/// The written file at `path`, opened so [`sync_to_drive`] can take it: a
+/// read-only open on macOS and Linux, a write open on Windows (where
+/// `FlushFileBuffers` refuses a read-only handle).
+pub fn open_to_sync(path: &Path) -> io::Result<File> {
+    platform::open_to_sync(path)
+}
+
+/// The folder at `path`, opened so [`sync_dir_to_drive`] can take it: a plain
+/// open on macOS and Linux, a write open with backup semantics on Windows (where
+/// `File::open` refuses a folder).
+pub fn open_dir_to_sync(path: &Path) -> io::Result<File> {
+    platform::open_dir_to_sync(path)
+}
+
 /// Asks the drive holding `file` to empty its write cache, which makes every
 /// file and directory handed to it before durable. `F_FULLFSYNC` on macOS, and
 /// nothing elsewhere, where the per-item sync already flushed the cache. A
@@ -480,7 +494,7 @@ impl DeviceBarriers {
     /// barrier. Best effort: a directory that refuses is logged.
     fn sync_dirs(dirs: Vec<PathBuf>, devices: &mut HashMap<Option<DeviceId>, Holder>) {
         for dir in dirs {
-            match File::open(&dir).and_then(|handle| sync_dir_to_drive(&handle).map(|()| handle)) {
+            match open_dir_to_sync(&dir).and_then(|handle| sync_dir_to_drive(&handle).map(|()| handle)) {
                 Ok(handle) if NEEDS_DEVICE_BARRIER => {
                     let device = handle.metadata().ok().as_ref().and_then(device_of);
                     devices.entry(device).or_insert(Holder {

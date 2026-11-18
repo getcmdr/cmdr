@@ -2838,9 +2838,22 @@ module, which links it. The boundary is enforced: `operations-local-disk-boundar
 (`scripts/check/checks/operations-local-disk-boundary.go`) fails any `libc`, `cmdr_local`, `objc2`, `xattr`, `trash`,
 `dirs`, or `std::os::unix` in production code outside `local_disk/` and the local-engine trees it lists (test files and
 `#[cfg(test)]` modules are exempt), and any listed tree whose `mod` line lacks the browser gate. A new host-disk
-question goes into `local_disk/` (`posix.rs` holds the POSIX ones: `(dev, ino)`, `access(W_OK)`, BSD flags, mount
-points, xattrs, the home folder), each with its browser answer. `walkdir` stays a dependency on every target: the
-archive edits compile in the browser too, and refuse there before any walk.
+question goes into `local_disk/`, each with its browser answer. One whose answer differs per OS goes behind
+`local_disk/platform/` (`docs/guides/platform-seams.md`): an arm per OS plus `wasm.rs`, POSIX code macOS and Linux share
+in `unix.rs`, and a `const _` pin per function in its `mod.rs` (modes, `symlink`, the write probe, free space, lock
+flags, the folder volume; BSD flags and xattrs are macOS-only extras). Desktop-or-browser splits (the rename, the mount
+table, the home folder) stay in `local_disk/mod.rs`.
+
+**The write probe answers `WriteProbe::Unknown` where it can't ask**, and every caller reads that as a pre-flight that
+passed: a pre-flight only words a refusal early, and the write itself still refuses. Windows' probe is real: it opens
+the path for `FILE_WRITE_DATA` (on a folder the same bit is `FILE_ADD_FILE`) with backup semantics and closes it, which
+runs the DACL and read-only checks and writes nothing; only a sharing violation is `Unknown` there (verified on Windows
+10 22H2, NTFS, `src/local_disk/platform/windows_tests.rs`, 2026-11-18).
+
+**Off Unix, POSIX-only test files are `#![cfg(unix)]`** (they drive `LocalPosixVolume`, modes, or errnos), and `lib.rs`
+allows `dead_code` and `unused_imports` in a Windows test build for the fixtures only they use. Un-gating a file is a
+Windows cell gained: do it as `LocalWindowsVolume` grows (windows-port plan, tasks 35 and 36). `walkdir` stays a
+dependency on every target: the archive edits compile in the browser too, and refuse there before any walk.
 
 ## Testing bar
 

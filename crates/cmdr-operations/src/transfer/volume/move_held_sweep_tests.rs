@@ -5,6 +5,7 @@
 //! Each cell sets the operation's barrier interval (`state.barriers`) to pick
 //! its batches: `Duration::MAX` makes the whole move one batch closed by the
 //! final barrier, `Duration::ZERO` closes a batch after every source.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::time::Duration;
 

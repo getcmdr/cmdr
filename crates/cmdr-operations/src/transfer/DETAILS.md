@@ -577,7 +577,10 @@ runs it:
 - macOS, everything else → `Chunked` (`chunked_copy_with_metadata`, 1 MB chunks, cancel and pause between chunks)
 - Linux, network → `Chunked`
 - Linux, local → `KernelCopyRange` (`copy_single_file_linux`, `copy_file_range(2)`, reflink on btrfs/XFS)
-- Other platforms → `StdCopy`, the `std::fs::copy` fallback
+- Windows → `Chunked`, so a copy is cancellable with live progress. `std::fs::copy` (`CopyFileW`, with no progress or
+  cancel) was the earlier arm; the end state is a `CopyFileExW` arm with a progress routine, which also carries
+  attributes and alternate data streams (Mark of the Web among them), block-clones on ReFS, and offloads to an SMB
+  server (windows-port plan, task 36). Until then a Windows copy carries no alternate data streams.
 
 The split exists so the landing discipline is written once instead of once per branch, and so a test can drive a
 mechanism the machine's own filesystems would never select — on a Mac every tempdir pair is one APFS volume, so without

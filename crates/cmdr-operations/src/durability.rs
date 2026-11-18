@@ -220,7 +220,7 @@ fn sync_file_data(file: &Path, barriers: &DeviceBarriers) -> io::Result<()> {
     if fs::symlink_metadata(file)?.file_type().is_symlink() {
         return Ok(());
     }
-    let handle = fs::File::open(file)?;
+    let handle = cmdr_fs::durable::open_to_sync(file)?;
     cmdr_fs::durable::sync_to_drive(&handle)?;
     barriers.note_synced(&handle, file);
     Ok(())
@@ -340,7 +340,7 @@ fn fsync_dir(dir: &Path, barriers: &DeviceBarriers) -> io::Result<()> {
     if let Some(answer) = test_hook::intercept(dir) {
         return answer;
     }
-    let handle = fs::File::open(dir)?;
+    let handle = cmdr_fs::durable::open_dir_to_sync(dir)?;
     cmdr_fs::durable::sync_dir_to_drive(&handle)?;
     barriers.note_synced(&handle, dir);
     Ok(())

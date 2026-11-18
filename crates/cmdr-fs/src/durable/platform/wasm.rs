@@ -9,3 +9,8 @@ pub(crate) use super::one_sync::{
 pub(crate) fn open_to_sync(path: &std::path::Path) -> std::io::Result<std::fs::File> {
     std::fs::File::open(path)
 }
+
+/// A read-only open, as on Linux.
+pub(crate) fn open_dir_to_sync(path: &std::path::Path) -> std::io::Result<std::fs::File> {
+    std::fs::File::open(path)
+}

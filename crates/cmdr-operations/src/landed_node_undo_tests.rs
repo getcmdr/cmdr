@@ -8,6 +8,7 @@
 //! modified time. A row with a node leaves it alone; a row without one (written
 //! before nodes were kept, or on a filesystem that keeps none) undoes exactly as
 //! it always did.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::path::Path;
 use std::sync::Arc;

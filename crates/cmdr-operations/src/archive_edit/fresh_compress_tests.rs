@@ -1,4 +1,5 @@
 //! Fresh compression coordinator shutdown and stage-validation tests.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_local::LocalPosixVolume;
 use std::ops::ControlFlow;

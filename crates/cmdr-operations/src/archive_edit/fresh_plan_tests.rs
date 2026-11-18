@@ -1,5 +1,6 @@
 //! Planning a fresh compress: aliases, counting, duplicate names, the sidecar
 //! folder, and tree order.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::future::Future;
 

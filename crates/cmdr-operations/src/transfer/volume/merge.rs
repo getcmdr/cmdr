@@ -65,7 +65,7 @@ enum LeafEnd {
     /// The destination refused the file's name. Nothing of it is there (its
     /// temp went with the failed landing), and the WALKER asks the person
     /// about it (`LeafPool::settle_refused`): a leaf may never wait on one.
-    Refused(RefusedLeaf),
+    Refused(Box<RefusedLeaf>),
 }
 
 /// A leaf whose name the destination refused, waiting for its walker to ask.
@@ -142,7 +142,7 @@ impl<'a> LeafPool<'a> {
     fn fold(&mut self, result: LeafResult) {
         match result {
             Ok(LeafEnd::Landed(bytes)) => self.bytes += bytes,
-            Ok(LeafEnd::Refused(refused)) => self.refused.push_back(refused),
+            Ok(LeafEnd::Refused(refused)) => self.refused.push_back(*refused),
             Err(e) => {
                 if self.first_error.is_none() {
                     self.first_error = Some(e);
@@ -422,13 +422,13 @@ fn leaf_stopped_short(
         source_is_directory: false,
     };
     if refused_here(&subject, &error).is_some() {
-        return Ok(LeafEnd::Refused(RefusedLeaf {
+        return Ok(LeafEnd::Refused(Box::new(RefusedLeaf {
             error,
             source,
             dest,
             size,
             node,
-        }));
+        })));
     }
     Err(error)
 }

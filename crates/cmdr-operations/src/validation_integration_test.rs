@@ -1,4 +1,5 @@
 //! Integration tests for validation functions, safety checks, and filesystem detection.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::fs;
 use std::os::unix::fs::PermissionsExt;

@@ -2,6 +2,7 @@
 //! pre-resolved conflict policies (Rename, conditional overwrite, move-delete
 //! gating), the data-safety handling of unrepresentable source entries
 //! (symlinks / special files), and the remote-parent copy-into path.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::test_support::*;
 

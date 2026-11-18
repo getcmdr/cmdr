@@ -12,6 +12,7 @@ use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{BackendKind, InMemoryVolume, LockedContainer, Volume, VolumeError, conformance};
 use std::fs::File;
+#[cfg(unix)] // The executable bit only POSIX stores.
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -42,6 +43,7 @@ fn source_folder() -> TestDir {
     std::fs::write(source.join("a.txt"), b"hello").expect("source file");
     std::fs::write(source.join("nested/b.bin"), big_bytes()).expect("source file");
     std::fs::write(source.join("run.sh"), b"#!/bin/sh\n").expect("script");
+    #[cfg(unix)]
     std::fs::set_permissions(source.join("run.sh"), std::fs::Permissions::from_mode(0o755)).expect("chmod");
     std::fs::write(source.join("Cafe\u{301}.txt"), b"nfd").expect("NFD name");
     std::fs::write(source.join("with  two spaces.txt"), b"spaces").expect("spaced name");
@@ -340,6 +342,7 @@ async fn a_snapshot_tree_lists_files_folders_links_and_odd_names() {
     named(&entries, "Cafe\u{301}.txt");
     named(&entries, "with  two spaces.txt");
     named(&entries, &"x".repeat(LONG_NAME_LEN));
+    #[cfg(unix)] // The fixture set the executable bit only where POSIX stores it.
     assert_eq!(named(&entries, "run.sh").permissions, 0o755);
     assert_eq!(
         named(&entries, "a.txt").permissions & 0o777,

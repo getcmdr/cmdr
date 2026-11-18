@@ -20,8 +20,9 @@
 //! everything behind there (verified on macOS 27, `ls ~/.Trash` answers
 //! "Operation not permitted" while `stat` of a fixture in it answers, 2026-11-03).
 
-use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
+
+use cmdr_fs::file_identity::FileId;
 use std::sync::Mutex;
 
 /// Every in-Trash path this process's trashes reported, until a guard claims it.
@@ -40,8 +41,7 @@ pub(crate) fn note_trashed(in_trash: &Path) {
 struct Tracked {
     trash_dir: PathBuf,
     name: String,
-    dev: u64,
-    ino: u64,
+    node: FileId,
 }
 
 /// Removes, on drop, what the tracked sources became in the Trash.
@@ -65,8 +65,7 @@ fn track(source: &Path) -> Option<Tracked> {
     Some(Tracked {
         trash_dir: crate::trash_dir_for_path(source)?,
         name: source.file_name()?.to_string_lossy().into_owned(),
-        dev: meta.dev(),
-        ino: meta.ino(),
+        node: FileId::of(&meta)?,
     })
 }
 
@@ -89,7 +88,7 @@ impl Tracked {
             && path
                 .file_name()
                 .is_some_and(|name| name.to_string_lossy().starts_with(&self.name))
-            && std::fs::symlink_metadata(path).is_ok_and(|meta| meta.dev() == self.dev && meta.ino() == self.ino)
+            && std::fs::symlink_metadata(path).is_ok_and(|meta| FileId::of(&meta) == Some(self.node))
     }
 }
 

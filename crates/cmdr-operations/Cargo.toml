@@ -5,10 +5,6 @@ edition = "2024"
 license = "LicenseRef-BSL-1.1"
 publish = false
 
-[package.metadata.cmdr]
-# Not on Windows yet; see `docs/tooling/ci.md` § Windows lane.
-platforms = ["linux", "macos"]
-
 # The house lint set lives in the workspace root's `[workspace.lints]`, so this
 # crate can't quietly become a lint-free zone. `unused_crate_dependencies` is the
 # one lint that stays at the crate root instead (it's judged per compilation unit).
@@ -132,6 +128,11 @@ objc2-foundation = { version = "0.3", features = [
 # Reading the quarantine an extracted archive carries onto what it extracts.
 # Linux has no quarantine, so the shipped engine reads no xattr there.
 xattr = "1"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+# The write probe's access mask, share mode, and flag constants
+# (`local_disk/platform/windows.rs`). The version `cmdr-fs` and `cmdr-local` use.
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Storage_FileSystem"] }
 
 [dev-dependencies]
 # Depending on ourselves turns the `testing` feature on for every DEV target and

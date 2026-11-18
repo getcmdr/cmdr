@@ -1,3 +1,5 @@
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
+
 use super::*;
 
 /// ❗ A mounted SMB/AFP share has no scheme, so a refusal on one used to read the

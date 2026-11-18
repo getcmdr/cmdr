@@ -4,6 +4,7 @@
 //! `test_hook` recording (and, where a test needs it, failing) every directory
 //! sync. A move deletes its sources only on `Ok`, so these pin which answers keep
 //! a user's originals.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::collections::HashSet;
 use std::fs;

@@ -6,6 +6,7 @@
 //!
 //! A `#[path]` child of `copy.rs`, so `super::` is `copy` and `super::super::` is
 //! `volume`.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::super::{FaultyOp, FaultyVolume};
 use super::tests::{make_state, make_volumes};

@@ -7,6 +7,7 @@
 //! records every `list_directory`, `get_metadata`, and `scan_for_copy` with the
 //! path it was asked about, so the assertions can name what got walked. Merge
 //! semantics live in `rename_merge_tests.rs`.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::move_same::move_within_same_volume_with_progress;
 use super::rename_merge_test_support::{exists, make_state, mkdir, write_file};

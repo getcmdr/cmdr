@@ -1,8 +1,8 @@
 use super::{child, entry_of, permissions_of};
-use cmdr_fs::volume::VolumeError;
 use rustic_core::jiff::Timestamp;
 use rustic_core::repofile::{Metadata, Node, NodeType, Tree};
 use std::ffi::OsStr;
+#[cfg(unix)] // Only the non-UTF-8 name cells build a raw byte name.
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
@@ -142,6 +142,7 @@ fn odd_names_pass_through_as_stored() {
 
 /// A Linux machine's backup can hold a name that isn't UTF-8. It lists the way
 /// `LocalPosixVolume` lists one (lossy), and the lossy name never reaches a file.
+#[cfg(unix)] // A raw byte name is a POSIX `OsStr`; Windows names are UTF-16.
 #[test]
 fn a_non_utf8_name_lists_lossily_and_its_lossy_name_finds_nothing() {
     let raw = OsStr::from_bytes(b"caf\xe9.txt");
@@ -157,11 +158,15 @@ fn a_non_utf8_name_lists_lossily_and_its_lossy_name_finds_nothing() {
 /// ❗ The one way a lossy name could reach ANOTHER file: a real sibling whose
 /// stored name IS the lossy spelling. Both list under one name, so the lookup
 /// refuses rather than guess.
+#[cfg(unix)] // A raw byte name is a POSIX `OsStr`.
 #[test]
 fn a_lossy_name_shared_with_a_real_sibling_is_ambiguous() {
     let raw = node(OsStr::from_bytes(b"caf\xe9.txt"), NodeType::File, Metadata::default());
     let real = file("caf\u{FFFD}.txt", 1);
     let listing = tree(vec![raw, real]);
     let result = child(&listing, OsStr::new("caf\u{FFFD}.txt"), Path::new(DIR));
-    assert!(matches!(result, Err(VolumeError::AmbiguousName(_))), "got {result:?}");
+    assert!(
+        matches!(result, Err(cmdr_fs::volume::VolumeError::AmbiguousName(_))),
+        "got {result:?}"
+    );
 }

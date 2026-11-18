@@ -12,6 +12,7 @@
 //! scripted to `Rename` rather than a bare collector. A self-collision must
 //! raise NO prompt at all, and the sink lets that be an assertion (`conflicts`
 //! is empty) instead of a Stop-mode deadlock when the rule regresses.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use std::fs;
 use std::path::Path;

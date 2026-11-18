@@ -1,5 +1,6 @@
 //! Part of `conflict_preflight.rs`, split out as a `#[path]` child so the
 //! module itself stays readable. `super::` here is `conflict_preflight`.
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::{Deadline, SourceItemInput, VolumeScanError, merge_source_types_from_stats};
 use crate::host::testing::PaneListings;

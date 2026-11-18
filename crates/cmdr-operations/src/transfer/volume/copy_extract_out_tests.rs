@@ -4,6 +4,7 @@
 //! Zip-Slip guard that writes a symlink entry as a regular file.
 //!
 //! Shared fixture `make_state` lives in `volume/copy_tests/mod.rs` (`super::tests`).
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use super::tests::make_state;
 use super::*;
