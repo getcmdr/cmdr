@@ -83,7 +83,8 @@ branch takes its own OS's term. The rule and the branch-to-OS map are canonical 
    `../i18n/translation-learnings.md` § "Quoting a macOS UI label".
 2. **Each branch takes its own OS's term; a plain value takes the macOS one where the OSes split.** Per branch:
    - `macos` mines `<tag>/macOS/`, and the Finder term wins: pt-BR delete = "Apagar" (Finder), German move = "Bewegen"
-     (Finder). This branch is already translated almost everywhere: leave it as it is.
+     (Finder). This branch is already translated almost everywhere: leave it as it is unless it's wrong
+     (translator-instructions, Per-OS values).
    - `windows` mines `<tag>/microsoft-terminology/` and `<tag>/microsoft-style-guides/`, and the Microsoft term wins:
      pt-BR "Excluir" is right THERE. Mirror the English branch's register (Trash: "Delete" as a label, "the Recycle Bin"
      in a sentence; Quit: "Exit" as an action, "close" in narration; `docs/style-guide.md` § "Platform vocabulary").

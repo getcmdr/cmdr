@@ -131,7 +131,9 @@ style guide disagree, the style guide's general rule wins unless the ruling says
   every line is a ✓. It's the one check you need: `pnpm check --fast` runs most of the same checks across every locale
   but skips the termbase.
 - **Report**: your output may ship without human review, so translate only what you're confident in and flag every
-  string where the context was insufficient. End with two sections, each "none" when it's empty:
+  string where the context was insufficient. When you changed text macOS already read, open with a "macOS text fixed"
+  section: each key and one line on what was wrong, which the lead copies into the commit message. End with two
+  sections, each "none" when it's empty:
   - **Source feedback**: `@key` descriptions that were insufficient, screenshots that were missing or unhelpful, English
     that was ambiguous or inconsistent, and proposed cross-language rules. Log each in docs/i18n/source-queue.md too.
   - **Process feedback**: every script you wrote (even a one-off lookup) and why, every workaround (a command a guard
