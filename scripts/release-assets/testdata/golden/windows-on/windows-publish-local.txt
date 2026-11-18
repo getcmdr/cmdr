@@ -1,0 +1,28 @@
+# job windows-publish
+
+## Install the Tauri CLI: ok
+pnpm install --frozen-lockfile --ignore-scripts --filter @cmdr/desktop
+
+## Take exactly the planned Windows files: ok
+
+## Vet the Windows installer: ok
+
+## Sign the updater payload and the advisory list: skipped
+
+## Verify the new signatures against the app's trusted keys: skipped
+
+## Upload the Windows packages to the release: ok
+gh release upload Cmdr_0.61.0_x64-setup.exe
+gh release upload Cmdr_0.61.0_x64.msix
+gh release upload cmdr-group-policy-0.61.0.zip
+gh release upload Cmdr_0.61.0_security-advisories.json
+
+# uploads
+
+## Cmdr_0.61.0_security-advisories.json f07adaf0e0253f855adac2142057b960c9e8c78c6cc40531b2911550ad0ab606
+
+## Cmdr_0.61.0_x64-setup.exe 38b0ab48f6b47ef018d56d79758e14cc5fa18be089fd50e1edc3d8aa0fb27e7b
+
+## Cmdr_0.61.0_x64.msix 1672a9ffeb7487e11739ca9e2e7f908210becb117e2323bc437e99f5d28a3806
+
+## cmdr-group-policy-0.61.0.zip 80632ea5b75e296d02dc0c75bf1e97f294796c717b2a3bbe733dca86fb015b79

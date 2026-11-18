@@ -1,0 +1,11 @@
+# job vet-update-archives
+
+## Download the update archives: ok
+
+## Download the Windows update payloads: ok
+::notice::Cmdr_0.61.0_x64-setup.exe isn't on the release (yet), so this run doesn't vet the Windows leg; windows-publish vetted it before signing.
+
+## Run the updater's own check on each archive: ok
+cargo run --quiet --release --locked -p cmdr-update-trust --bin cmdr-vet-update -- --version 0.61.0 $RUNNER_TEMP/archives/Cmdr_0.61.0_universal.app.tar.gz $RUNNER_TEMP/archives/Cmdr_0.61.0_aarch64.app.tar.gz $RUNNER_TEMP/archives/Cmdr_0.61.0_x64.app.tar.gz
+
+## Check each Windows installer's version: ok

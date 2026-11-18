@@ -1417,7 +1417,7 @@ jobs:
           HAVE=$(gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')
           for name in $ARCHIVES; do
               if ! grep -qxF "$name" <<< "$HAVE"; then
-                  echo "$name isn't on the release (yet), so this run doesn't vet the Windows leg; windows-publish vetted it before signing."
+                  echo "::notice::$name isn't on the release (yet), so this run doesn't vet the Windows leg; windows-publish vetted it before signing."
                   rm -rf "$RUNNER_TEMP/windows"
                   exit 0
               fi

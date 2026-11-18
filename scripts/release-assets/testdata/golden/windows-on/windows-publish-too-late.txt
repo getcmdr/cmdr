@@ -1,0 +1,20 @@
+# job windows-publish
+
+## Install the Tauri CLI: ok
+pnpm install --frozen-lockfile --ignore-scripts --filter @cmdr/desktop
+
+## Take exactly the planned Windows files: ok
+
+## Vet the Windows installer: ok
+
+## Sign the updater payload and the advisory list: ok
+pnpm exec tauri signer sign --app-version 0.61.0 $RUNNER_TEMP/windows-x86_64/Cmdr_0.61.0_x64-setup.exe
+pnpm exec tauri signer sign $RUNNER_TEMP/windows-x86_64/Cmdr_0.61.0_security-advisories.json
+
+## Verify the new signatures against the app's trusted keys: ok
+release-finish.sh -verify-dir $RUNNER_TEMP/windows-x86_64 -leg windows 0.61.0
+  $RUNNER_TEMP/windows-x86_64: Cmdr_0.61.0_security-advisories.json Cmdr_0.61.0_security-advisories.json.sig Cmdr_0.61.0_x64-setup.exe Cmdr_0.61.0_x64-setup.exe.sig Cmdr_0.61.0_x64.msix cmdr-group-policy-0.61.0.zip 
+
+## Upload the Windows packages to the release: FAILED
+::error::v0.61.0 went out without its Windows files: publish wrote latest.json before this job finished. Windows installs get the next release; docs/guides/releasing.md § Windows releases.
+error: ::error::v0.61.0 went out without its Windows files: publish wrote latest.json before this job finished. Windows installs get the next release; docs/guides/releasing.md § Windows releases.

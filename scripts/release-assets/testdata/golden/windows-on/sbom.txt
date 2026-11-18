@@ -1,0 +1,22 @@
+# job sbom
+
+## Install tools with mise: ok
+
+## Install cargo-cyclonedx: ok
+cargo install cargo-cyclonedx --version 0.5.9 --locked
+
+## Fetch the frontend's npm packages: ok
+pnpm install --frozen-lockfile --ignore-scripts --filter @cmdr/desktop
+
+## Generate the SBOMs: ok
+cargo cyclonedx --manifest-path apps/desktop/src-tauri/Cargo.toml --format json --spec-version 1.5 --target aarch64-apple-darwin --override-filename sbom-aarch64 -q
+cargo cyclonedx --manifest-path apps/desktop/src-tauri/Cargo.toml --format json --spec-version 1.5 --target x86_64-apple-darwin --override-filename sbom-x64 -q
+cargo cyclonedx --manifest-path apps/desktop/src-tauri/Cargo.toml --format json --spec-version 1.5 --target x86_64-pc-windows-msvc --override-filename sbom-windows_x64 -q
+pnpm --filter @cmdr/desktop exec svelte-kit sync
+pnpm --filter @cmdr/desktop build
+
+## Hand the SBOMs to the attest job: artifact sboms
+  Cmdr_0.61.0_aarch64.rust.cdx.json 8be54424cbee8127b257489d787165d185145488b359f7331b425696d73c7275
+  Cmdr_0.61.0_frontend.cdx.json fda58069fccb0bb31e660fd689863ef7c9ee80fe703ae3ee1b9c46381b0bed72
+  Cmdr_0.61.0_windows_x64.rust.cdx.json c331d63f26429808703934f650c3bcf1248daa88b3d04838c37f22da13584fdb
+  Cmdr_0.61.0_x64.rust.cdx.json 670644df217e04d769f33defb3eaeac9a2fd6886b8b8b9d70464aa58adbb82b7

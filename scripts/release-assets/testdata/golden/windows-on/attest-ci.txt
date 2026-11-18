@@ -1,0 +1,85 @@
+# job attest
+
+## Download the release assets as published: ok
+
+## Upload the SBOMs to the release: ok
+gh release upload Cmdr_0.61.0_aarch64.rust.cdx.json
+gh release upload Cmdr_0.61.0_frontend.cdx.json
+gh release upload Cmdr_0.61.0_windows_x64.rust.cdx.json
+gh release upload Cmdr_0.61.0_x64.rust.cdx.json
+
+## Attest build provenance for every release asset: attest
+subject-path:
+  release-assets/Cmdr_0.61.0_aarch64.app.tar.gz
+  release-assets/Cmdr_0.61.0_aarch64.app.tar.gz.sig
+  release-assets/Cmdr_0.61.0_aarch64.dmg
+  release-assets/Cmdr_0.61.0_aarch64.rust.cdx.json
+  release-assets/Cmdr_0.61.0_frontend.cdx.json
+  release-assets/Cmdr_0.61.0_security-advisories.json
+  release-assets/Cmdr_0.61.0_security-advisories.json.sig
+  release-assets/Cmdr_0.61.0_universal.app.tar.gz
+  release-assets/Cmdr_0.61.0_universal.app.tar.gz.sig
+  release-assets/Cmdr_0.61.0_universal.dmg
+  release-assets/Cmdr_0.61.0_universal.pkg
+  release-assets/Cmdr_0.61.0_windows_x64.rust.cdx.json
+  release-assets/Cmdr_0.61.0_x64-setup.exe
+  release-assets/Cmdr_0.61.0_x64-setup.exe.sig
+  release-assets/Cmdr_0.61.0_x64.app.tar.gz
+  release-assets/Cmdr_0.61.0_x64.app.tar.gz.sig
+  release-assets/Cmdr_0.61.0_x64.dmg
+  release-assets/Cmdr_0.61.0_x64.msix
+  release-assets/Cmdr_0.61.0_x64.rust.cdx.json
+  release-assets/checksums.txt
+  release-assets/cmdr-group-policy-0.61.0.zip
+  release-assets/latest.json
+
+## Attest the Apple Silicon Rust SBOM: attest
+sbom-path:
+  sbom/Cmdr_0.61.0_aarch64.rust.cdx.json
+subject-path:
+  release-assets/Cmdr_0.61.0_aarch64.app.tar.gz
+  release-assets/Cmdr_0.61.0_aarch64.dmg
+  release-assets/Cmdr_0.61.0_universal.app.tar.gz
+  release-assets/Cmdr_0.61.0_universal.dmg
+  release-assets/Cmdr_0.61.0_universal.pkg
+
+## Attest the Intel Rust SBOM: attest
+sbom-path:
+  sbom/Cmdr_0.61.0_x64.rust.cdx.json
+subject-path:
+  release-assets/Cmdr_0.61.0_universal.app.tar.gz
+  release-assets/Cmdr_0.61.0_universal.dmg
+  release-assets/Cmdr_0.61.0_universal.pkg
+  release-assets/Cmdr_0.61.0_x64.app.tar.gz
+  release-assets/Cmdr_0.61.0_x64.dmg
+
+## Attest the Windows Rust SBOM: attest
+sbom-path:
+  sbom/Cmdr_0.61.0_windows_x64.rust.cdx.json
+subject-path:
+  release-assets/Cmdr_0.61.0_x64-setup.exe
+  release-assets/Cmdr_0.61.0_x64.msix
+
+## Attest the frontend SBOM: attest
+sbom-path:
+  sbom/Cmdr_0.61.0_frontend.cdx.json
+subject-path:
+  release-assets/Cmdr_0.61.0_aarch64.app.tar.gz
+  release-assets/Cmdr_0.61.0_aarch64.dmg
+  release-assets/Cmdr_0.61.0_universal.app.tar.gz
+  release-assets/Cmdr_0.61.0_universal.dmg
+  release-assets/Cmdr_0.61.0_universal.pkg
+  release-assets/Cmdr_0.61.0_x64-setup.exe
+  release-assets/Cmdr_0.61.0_x64.app.tar.gz
+  release-assets/Cmdr_0.61.0_x64.dmg
+  release-assets/Cmdr_0.61.0_x64.msix
+
+# uploads
+
+## Cmdr_0.61.0_aarch64.rust.cdx.json 8be54424cbee8127b257489d787165d185145488b359f7331b425696d73c7275
+
+## Cmdr_0.61.0_frontend.cdx.json fda58069fccb0bb31e660fd689863ef7c9ee80fe703ae3ee1b9c46381b0bed72
+
+## Cmdr_0.61.0_windows_x64.rust.cdx.json c331d63f26429808703934f650c3bcf1248daa88b3d04838c37f22da13584fdb
+
+## Cmdr_0.61.0_x64.rust.cdx.json 670644df217e04d769f33defb3eaeac9a2fd6886b8b8b9d70464aa58adbb82b7

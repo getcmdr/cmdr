@@ -44,6 +44,14 @@ type scenario struct {
 	before string
 	// artifacts maps a `download-artifact` name to the directory (in the workspace) holding it.
 	artifacts map[string]string
+	// windowsOn builds the release tools with Windows shipped (`manifest/shipping_windows_on.go`)
+	// and records the steps' `::warning::`/`::notice::`/`::error::` lines (`pipeline_windowson_test.go`).
+	windowsOn bool
+	// add puts these assets on the fixture release (`windowsAsset` makes each).
+	add []string
+	// made maps a `download-artifact` name to the files the scenario makes where the step puts it
+	// (a build job's artifact), each made by `windowsAsset`.
+	made map[string][]string
 }
 
 // Steps that reach outside the release (tag signatures, the live manifest, Cloudflare, the website
@@ -76,6 +84,12 @@ var scenarios = []scenario{
 }
 
 func TestReleasePipelineDryRun(t *testing.T) {
+	runScenarios(t, readPipeline(t), scenarios, filepath.Join("testdata", "golden"))
+}
+
+// readPipeline parses the release pipeline (or `RELEASE_PIPELINE_WORKFLOW`'s copy).
+func readPipeline(t *testing.T) map[string]*wfJob {
+	t.Helper()
 	for _, tool := range []string{"bash", "jq", "python3", "shasum"} {
 		if _, err := exec.LookPath(tool); err != nil {
 			t.Fatalf("the release pipeline dry run needs %s on PATH, as the release runners have it", tool)
@@ -93,11 +107,17 @@ func TestReleasePipelineDryRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	return jobs
+}
+
+// runScenarios runs each scenario in a fresh workspace and compares its report with
+// `<goldens>/<name>.txt`.
+func runScenarios(t *testing.T, jobs map[string]*wfJob, list []scenario, goldens string) {
 	byName := map[string]scenario{}
-	for _, sc := range scenarios {
+	for _, sc := range list {
 		byName[sc.name] = sc
 	}
-	for _, sc := range scenarios {
+	for _, sc := range list {
 		t.Run(sc.name, func(t *testing.T) {
 			h := newHarness(t, sc)
 			if sc.before != "" {
@@ -105,11 +125,14 @@ func TestReleasePipelineDryRun(t *testing.T) {
 			}
 			var report strings.Builder
 			h.runJob(jobs, sc, &report)
+			if sc.job == "guard" {
+				h.reportOutputs(&report)
+			}
 			h.reportUploads(&report)
-			if sc.name == "publish-ci" {
+			if sc.name == "publish-ci" && !sc.windowsOn {
 				h.requirePublishedPrefix()
 			}
-			compareGolden(t, filepath.Join("testdata", "golden", sc.name+".txt"), report.String())
+			compareGolden(t, filepath.Join(goldens, sc.name+".txt"), report.String())
 		})
 	}
 }
@@ -162,8 +185,9 @@ func newHarness(t *testing.T, sc scenario) *harness {
 	for _, s := range []string{"release-finish.sh", "release-mirror.sh"} {
 		copyFile(t, filepath.Join(fake, "repo-script"), filepath.Join(h.ws, "scripts", s), 0o755)
 	}
-	// The manifest's own CLI is the code under test, so the workspace gets the real one.
-	for _, s := range []string{"release-assets.sh", "release-assets"} {
+	// The manifest's own CLI is the code under test, so the workspace gets the real one, and the
+	// upload helper the Windows publish job runs over the fake `gh`.
+	for _, s := range []string{"release-assets.sh", "release-assets", "release-upload.sh"} {
 		if _, err := os.Stat(filepath.Join(root, "scripts", s)); err == nil {
 			must(t, os.Symlink(filepath.Join(root, "scripts", s), filepath.Join(h.ws, "scripts", s)))
 		}
@@ -173,10 +197,15 @@ func newHarness(t *testing.T, sc scenario) *harness {
 	if _, ok := sc.artifacts["manifest-gate"]; ok {
 		copyFile(t, filepath.Join(fake, "manifest-gate"), filepath.Join(h.ws, "manifest-gate", "cmdr-check-update-manifest"), 0o755)
 	}
-	// The updater keys the app trusts, which `latest-json` checks every signature's key against.
-	for _, f := range []string{"apps/desktop/src-tauri/tauri.conf.json", "apps/desktop/src-tauri/updater-backup.pub"} {
+	// The updater keys the app trusts, which `latest-json` checks every signature's key against, and
+	// the Windows config `vet-nsis` reads the publisher from.
+	for _, f := range []string{"apps/desktop/src-tauri/tauri.conf.json", "apps/desktop/src-tauri/updater-backup.pub", "apps/desktop/src-tauri/tauri.windows.conf.json"} {
 		copyFile(t, filepath.Join(root, f), filepath.Join(h.ws, f), 0o644)
 	}
+	// The checkout's advisory list, which the Windows publish job signs: a stand-in, so a real
+	// advisory doesn't move the goldens.
+	must(t, os.MkdirAll(filepath.Join(h.ws, "apps/desktop/src-tauri/resources"), 0o755))
+	must(t, os.WriteFile(filepath.Join(h.ws, "apps/desktop/src-tauri/resources/security-advisories.json"), []byte(`{"advisories":[]}`+"\n"), 0o644))
 
 	// The release: every asset v0.61.0 carries, minus the scenario's drops. The signatures,
 	// `latest.json`, and `checksums.txt` are the real ones; every other file is a short stand-in,
@@ -205,6 +234,16 @@ func newHarness(t *testing.T, sc scenario) *harness {
 		}
 	}
 	rel.Assets = kept
+	for _, name := range sc.add {
+		path := filepath.Join(h.releaseDir, name)
+		h.windowsAsset(path)
+		info, err := os.Stat(path)
+		must(t, err)
+		rel.Assets = append(rel.Assets, struct {
+			Name string `json:"name"`
+			Size int64  `json:"size"`
+		}{name, info.Size()})
+	}
 	out, err := json.Marshal(rel)
 	must(t, err)
 	must(t, os.WriteFile(filepath.Join(base, "release.json"), out, 0o644))
@@ -212,9 +251,13 @@ func newHarness(t *testing.T, sc scenario) *harness {
 }
 
 func (h *harness) env(outputFile, envFile string) []string {
+	goflags := "-buildvcs=false"
+	if h.sc.windowsOn {
+		goflags += " -tags=cmdr_windows_on"
+	}
 	return append(os.Environ(),
 		"PATH="+h.bin+string(os.PathListSeparator)+os.Getenv("PATH"),
-		"GOFLAGS=-buildvcs=false",
+		"GOFLAGS="+goflags,
 		"GITHUB_WORKSPACE="+h.ws,
 		"GITHUB_REPOSITORY="+fixtureRepo,
 		"GITHUB_REF_NAME="+fixtureTag,
@@ -231,6 +274,8 @@ func (h *harness) env(outputFile, envFile string) []string {
 		"FIXTURE_RELEASE_JSON="+filepath.Join(filepath.Dir(h.releaseDir), "release.json"),
 		"FIXTURE_UPLOADS="+h.uploads,
 		"FIXTURE_LOG="+h.log,
+		// `local` mode builds into a draft, which the fake `gh`'s release list reports.
+		fmt.Sprintf("FIXTURE_DRAFT=%t", h.sc.mode == "local" && h.sc.event == "push"),
 	)
 }
 
@@ -395,6 +440,13 @@ func (h *harness) runScript(step wfStep, resolve func(string) (string, error), o
 	for _, line := range h.logSince(before) {
 		fmt.Fprintf(report, "%s\n", h.normalize(line))
 	}
+	if h.sc.windowsOn {
+		for line := range strings.Lines(string(out)) {
+			if strings.HasPrefix(line, "::warning::") || strings.HasPrefix(line, "::notice::") || strings.HasPrefix(line, "::error::") {
+				fmt.Fprintf(report, "%s\n", h.normalize(strings.TrimRight(line, "\n")))
+			}
+		}
+	}
 	if err != nil {
 		// The last line a failing script prints says why; that much belongs in the golden.
 		lines := strings.Split(strings.TrimSpace(string(out)), "\n")
@@ -474,6 +526,18 @@ func (h *harness) reportAttest(step wfStep, resolve func(string) (string, error)
 
 func (h *harness) downloadArtifact(step wfStep, resolve func(string) (string, error)) {
 	t := h.t
+	if files, ok := h.sc.made[step.With["name"]]; ok {
+		dst, err := expand(step.With["path"], resolve)
+		must(t, err)
+		if !filepath.IsAbs(dst) {
+			dst = filepath.Join(h.ws, dst)
+		}
+		must(t, os.MkdirAll(dst, 0o755))
+		for _, name := range files {
+			h.windowsAsset(filepath.Join(dst, name))
+		}
+		return
+	}
 	src, ok := h.sc.artifacts[step.With["name"]]
 	if !ok {
 		t.Fatalf("step %q downloads artifact %q, which the scenario doesn't provide", step.Name, step.With["name"])
