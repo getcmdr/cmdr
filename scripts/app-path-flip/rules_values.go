@@ -143,16 +143,14 @@ func matchBackward(masked []byte, closeAt int) int {
 // ---- A comparison between a typed and a std value ----
 
 var (
-	cantCompare   = regexp.MustCompile("^can't compare `(.+)` with `(.+)`$")
-	binaryOnType  = regexp.MustCompile("^binary operation `(?:==|!=)` cannot be applied to type `(.+)`$")
-	assertMacros  = map[string]bool{"assert_eq": true, "assert_ne": true, "debug_assert_eq": true, "debug_assert_ne": true}
-	appValueTypes = map[string]string{"AppPath": ".as_std_legacy()", "AppPathBuf": ".as_std_legacy()", "BridgedPath": ".as_path()"}
+	cantCompare  = regexp.MustCompile("^can't compare `(.+)` with `(.+)`$")
+	binaryOnType = regexp.MustCompile("^binary operation `(?:==|!=)` cannot be applied to type `(.+)`$")
+	assertMacros = map[string]bool{"assert_eq": true, "assert_ne": true, "debug_assert_eq": true, "debug_assert_ne": true}
 )
 
 // compareEdits answers `assert_eq!(echo.stripped, Path::new("/photos"))` and `a == b` where
-// one side is now typed: the TYPED operand drops to `std::path` (`.as_std_legacy()`, or
-// `.as_path()` for a `BridgedPath`), so the comparison is `Path`'s, as today, and the
-// expected value is untouched.
+// one side is now typed: the TYPED operand drops to `std::path` (`stdOperand`), so the
+// comparison is `Path`'s, as today, and the expected value is untouched.
 func compareEdits(d *diagnostic, src *source, p *diagSpan) []edit {
 	left, right, ok := comparedTypes(d)
 	if !ok {
@@ -171,17 +169,56 @@ func compareEdits(d *diagnostic, src *source, p *diagSpan) []edit {
 	if len(operands) < 2 {
 		return nil
 	}
+	types := []string{normalizeType(left), normalizeType(right)}
 	var edits []edit
-	for i, typ := range []string{left, right} {
-		suffix, typed := appValueTypes[strings.TrimLeft(normalizeType(typ), "&")]
-		if !typed {
+	for i, typ := range types {
+		expr := strings.TrimSpace(string(src.text[operands[i][0]:operands[i][1]]))
+		text, ok := stdOperand(expr, typ, types[1-i])
+		if !ok {
 			continue
 		}
-		expr := strings.TrimSpace(string(src.text[operands[i][0]:operands[i][1]]))
 		start := operands[i][0] + strings.Index(string(src.text[operands[i][0]:operands[i][1]]), expr)
-		edits = append(edits, edit{file: p.FileName, start: start, end: start + len(expr), text: postfix(expr) + suffix, rule: ruleCompare})
+		edits = append(edits, edit{file: p.FileName, start: start, end: start + len(expr), text: text, rule: ruleCompare})
 	}
 	return edits
+}
+
+// stdOperand is a typed operand dropped to `std::path` in the shape the other operand's
+// type compares with: `Path` behind as many `&` as the other side has (`&*x.as_std_legacy()`
+// against a `&PathBuf`, `*x.as_std_legacy()` against a `PathBuf`), since `Cow<Path>` has no
+// `PartialEq` with a `&PathBuf`. An `Option`/`Vec` of typed paths against one of `PathBuf`s
+// becomes the same container of owned std paths. The bridge is lossless, so the comparison
+// sees the same values. A `Cow<Path>` operand that an earlier pass already wrote as
+// `….as_std_legacy()` gets the same reshaping. Anything else answers false (residue).
+func stdOperand(expr, typ, other string) (string, bool) {
+	depth := len(other) - len(strings.TrimLeft(other, "&"))
+	refs := strings.Repeat("&", depth)
+	base, otherBase := strings.TrimLeft(typ, "&"), strings.TrimLeft(other, "&")
+	if otherBase == "Path" || otherBase == "PathBuf" {
+		return stdPathOperand(expr, base, refs)
+	}
+	switch {
+	case base == "Option<AppPathBuf>" && otherBase == "Option<PathBuf>":
+		return refs + postfix(expr) + ".as_ref().map(|p| p.as_std_legacy().into_owned())", true
+	case (base == "Vec<AppPathBuf>" || base == "[AppPathBuf]") && (otherBase == "Vec<PathBuf>" || otherBase == "[PathBuf]"):
+		return refs + postfix(expr) + ".iter().map(|p| p.as_std_legacy().into_owned()).collect::<Vec<_>>()", true
+	}
+	return "", false
+}
+
+// stdPathOperand is stdOperand against a `Path`/`PathBuf` behind `refs`.
+func stdPathOperand(expr, base, refs string) (string, bool) {
+	switch {
+	case base == "AppPath" || base == "AppPathBuf":
+		return refs + "*" + postfix(expr) + ".as_std_legacy()", true
+	case base == "BridgedPath" && refs == "":
+		return "*" + postfix(expr) + ".as_path()", true
+	case base == "BridgedPath": // `.as_path()` is already one `&`
+		return refs[1:] + postfix(expr) + ".as_path()", true
+	case base == "Cow<Path>" && strings.HasSuffix(expr, ".as_std_legacy()"):
+		return refs + "*" + expr, true
+	}
+	return "", false
 }
 
 func comparedTypes(d *diagnostic) (string, string, bool) {

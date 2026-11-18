@@ -15,7 +15,7 @@ type source struct {
 	fns     []implMethod // every fn with a body, for the rules that aren't about a Volume impl
 }
 
-// implMethod is one `fn` inside an `impl … Volume for …` block.
+// implMethod is one `fn` inside an `impl … Volume for …` block (or `ScanSource`, `PatchSource`).
 type implMethod struct {
 	name      string
 	sigStart  int    // offset of the `fn` name: the signature runs from here to the body
@@ -41,8 +41,10 @@ func newSource(path string, text []byte) *source {
 
 var (
 	implHeaderPattern = regexp.MustCompile(`\bimpl\b`)
-	volumeForPattern  = regexp.MustCompile(`(?:^|[\s:>])Volume\s+for\s+([\w:]+(?:<[^{]*>)?)`)
-	fnPattern         = regexp.MustCompile(`\bfn\s+(\w+)`)
+	// The `Volume` trait and the backend-body traits flipped beside it (their impls get the
+	// same signature, prelude, and lazy-helper rules).
+	volumeForPattern = regexp.MustCompile(`(?:^|[\s:>])(?:Volume|ScanSource|PatchSource)\s+for\s+([\w:]+(?:<[^{]*>)?)`)
+	fnPattern        = regexp.MustCompile(`\bfn\s+(\w+)`)
 )
 
 // findVolumeImplMethods lists every method of every `impl … Volume for X` block.
