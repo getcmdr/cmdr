@@ -7,6 +7,7 @@
 //! The engine's mount table puts `/` on a local disk, so a stall there names a
 //! drive; the app's real table is its own cell (`listing_host/mounts.rs`).
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::VecDeque;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -110,7 +111,7 @@ impl Volume for SilentServerVolume {
         "Silent server"
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         &self.root
     }
 
@@ -120,7 +121,7 @@ impl Volume for SilentServerVolume {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -153,18 +154,18 @@ impl Volume for SilentServerVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotFound("not scripted".to_string())) })
     }
 
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
 
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(true) })
     }
@@ -442,7 +443,7 @@ impl Volume for SlowButSteady {
     fn name(&self) -> &str {
         "Slow but steady"
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         &self.root
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -450,7 +451,7 @@ impl Volume for SlowButSteady {
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -467,16 +468,16 @@ impl Volume for SlowButSteady {
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotFound("not scripted".to_string())) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(true) })
     }

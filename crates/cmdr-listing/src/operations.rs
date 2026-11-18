@@ -3,6 +3,7 @@
 //! This is the synchronous, frontend-facing API. Low-level disk I/O is in reading.rs,
 //! async streaming is in streaming.rs.
 
+use cmdr_fs::app_path::AppPath;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 #[cfg(test)]
@@ -71,7 +72,10 @@ impl Inner {
         // Use the Volume trait to list the directory. A refused read is the error
         // and nothing else: the streaming path's `ListingEvents::finished` is where
         // the host hears about a failure (and moves a volume off a dead mount).
-        let all_entries = volume.list_directory(path, None).await.map_err(std::io::Error::other)?;
+        let all_entries = volume
+            .list_directory(&AppPath::legacy_unchecked(path), None)
+            .await
+            .map_err(std::io::Error::other)?;
         benchmark::log_event_value("volume.list_directory COMPLETE, entries", all_entries.len());
 
         // Generate listing ID
