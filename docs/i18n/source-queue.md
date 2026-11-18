@@ -163,6 +163,17 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `updates.toast.readyDetail`'s `other` branch serves Windows and Linux, but most locales' `app-closes` ruling is
   Windows-only (Linux says "quit"), so Linux reads the Windows verb. Split a `windows` branch if Linux should differ.
   (all)
+- `i18n-terms` pairs the literal macOS folder name `aboutThis.ownerPlace.preferences` ("Preferences", kept as on disk)
+  with GNOME's translated row in `menu.app.settings` / `fileExplorer.quickFilter.intro.openSettings` (`linuxGnome`), so
+  every locale needs an allowlist entry; the `preferences` concept already `notMatch`es that key. Exclude it in the term
+  check too. (es, pt, vi, zh, zh-Hant)
+- KDE branches: the descriptions say KDE keeps "KWallet" / "KWalletManager" as names in every language, but KDE zh-CN
+  ships `KWalletManager 密码库管理器` and zh-TW `KDE 錢包管理員` as the launcher name; we kept the Latin names. Check
+  whether the descriptions should allow the localized launcher name. (zh, zh-Hant)
+- The `ai.secretError.body` / `.removeBody` `other` branch still says "(Passwords / Keyrings app)", GNOME's app name,
+  now that GNOME has its own branch; the `other` branch could name the keyring desktop-neutrally. (all)
+- GNOME vi's own catalog misspells Keyboard as `Bàm phím` (gnome-control-center vi.po); vi's
+  `shortcuts.conflict.takenByLinuxDesktops` writes `Bàn phím`. Worth an upstream GNOME fix. (vi)
 
 ## Process feedback
 
@@ -244,3 +255,10 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
 - A 7-key batch for 13 locales: the worktree guard refused a `for` loop of `pnpm i18n:brief` calls, so each brief was
   its own call; a `--lang all --out-dir` mode writing one brief per locale would save it. The termbase check also failed
   on `decisions.md` budgets (de, es, nl, pt, zh: 2–10 bytes over) that this batch didn't touch. (Windows port batch)
+- The GNOME and KDE branches need catalogs the pile lacks: Seahorse ("Passwords and Keys", keyring),
+  gnome-control-center (Settings > Keyboard > View and Customize Shortcuts), and KDE's systemsettings, kcm_keyboard,
+  kxmlgui, kwalletmanager. Fetched them read-only into a scratch dir with two small `curl` scripts (l10n.gnome.org,
+  websvn.kde.org `?view=co`); the pile should carry them. Also built the batch's `keys.txt` by hand from the stale +
+  coverage output: a brief selector for "everything stale or missing for this locale" would save that. One read-only
+  `node` lookup listed per-OS branches still in English. The guard refused `for` loops and any command whose text
+  contained a URL or `$?`. (es, pt, vi, zh, zh-Hant)
