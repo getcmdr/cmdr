@@ -1,8 +1,8 @@
 # zh decisions
 
-"X over Y because Z" rulings, each defending a choice against a well-meant "fix"; the brief pulls a section whose
-heading cites a batch key. Forms: `terms.json`; voice and typography: `style.md`. Tiers: macOS zh-CN (1), Microsoft
-zh-Hans (2), file managers (3); pile `_ignored/i18n/zh/` in the main clone.
+"X over Y because Z" rulings, each defending a choice against a well-meant "fix"; the brief pulls a section citing a
+batch key. Forms: `terms.json`; voice and typography: `style.md`. Tiers: macOS zh-CN (1), Microsoft zh-Hans (2), file
+managers (3); pile `_ignored/i18n/zh/` in the main clone.
 
 ## Settings vocabulary (`settings.section.*`, `settings.appearance.*`, `settings.summary.*`)
 

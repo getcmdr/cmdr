@@ -172,9 +172,9 @@
   "@errorReporter.bundleSavedToast.dismiss": {
     "sourceHash": "48845bf"
   },
-  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Mostrar no Finder} windows {Mostrar no Explorador de Arquivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar no gerenciador de arquivos}}",
+  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Mostrar no Finder} windows {Mostrar no Explorador de Arquivos} linuxGnome {Mostrar em Arquivos} linuxKde {Mostrar no Dolphin} other {Mostrar no gerenciador de arquivos}}",
   "@errorReporter.bundleSavedToast.reveal": {
-    "sourceHash": "4d7fe91"
+    "sourceHash": "c3b4773"
   },
   "errorReporter.autoSentToast.title": "Relatório de problema enviado",
   "@errorReporter.autoSentToast.title": {

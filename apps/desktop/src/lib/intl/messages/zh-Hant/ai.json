@@ -107,9 +107,9 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {記錄上下載它的網站（只有網站的主要位址，例如 github.com，絕不包括子網域或完整連結）、下載時間，以及下載它的 App。如果是「郵件」附件或透過 AirDrop 收到的檔案，只會說明這一點，絕不包括是誰傳來的} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {記錄上下載它的網站（只有網站的主要位址，例如 github.com，絕不包括子網域或完整連結）、下載時間，以及下載它的 App。如果是「郵件」附件或透過 AirDrop 收到的檔案，只會說明這一點，絕不包括是誰傳來的} other {記錄上下載它的網站（只有網站的主要位址，例如 github.com，絕不包括子網域或完整連結）、下載時間，以及下載它的 App}}",
   "@ai.cloudConsent.aboutThis.item.download": {
-    "sourceHash": "40d185c"
+    "sourceHash": "6594500"
   },
   "ai.cloudConsent.aboutThis.item.appAndSigner": "如果是 App 或程式，它的名稱、ID 和版本。對它或磁碟映像檔來說，簽章者的名稱和團隊 ID、它的程式碼是否仍和那個簽章相符，以及是否附上了 Apple 的公證票證",
   "@ai.cloudConsent.aboutThis.item.appAndSigner": {
@@ -597,29 +597,29 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {無法儲存你的 API 金鑰：macOS 鑰匙圈拒絕存取} other {無法讀取你已儲存的 API 金鑰：macOS 鑰匙圈拒絕存取}}} windows {{op, select, save {無法儲存你的 API 金鑰：認證管理員拒絕存取} other {無法讀取你已儲存的 API 金鑰：認證管理員拒絕存取}}} linuxKde {{op, select, save {Couldn’t save your API key: KWallet denied access} other {Couldn’t read your saved API key: KWallet denied access}}} other {{op, select, save {無法儲存你的 API 金鑰：系統鑰匙圈拒絕存取} other {無法讀取你已儲存的 API 金鑰：系統鑰匙圈拒絕存取}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {無法儲存你的 API 金鑰：macOS 鑰匙圈拒絕存取} other {無法讀取你已儲存的 API 金鑰：macOS 鑰匙圈拒絕存取}}} windows {{op, select, save {無法儲存你的 API 金鑰：認證管理員拒絕存取} other {無法讀取你已儲存的 API 金鑰：認證管理員拒絕存取}}} linuxKde {{op, select, save {無法儲存你的 API 金鑰：KWallet 拒絕存取} other {無法讀取你已儲存的 API 金鑰：KWallet 拒絕存取}}} other {{op, select, save {無法儲存你的 API 金鑰：系統鑰匙圈拒絕存取} other {無法讀取你已儲存的 API 金鑰：系統鑰匙圈拒絕存取}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "25b34c4"
+    "sourceHash": "6daa595"
   },
-  "ai.secretError.body": "{platform, select, macos {{op, select, save {請開啟「鑰匙圈存取」，檢查其中的「Cmdr」項目，或是把它刪掉再儲存一次。} other {請開啟「鑰匙圈存取」，找到「Cmdr」項目並授予存取權，或是把它刪掉，重新輸入你的金鑰。}}} windows {{op, select, save {請開啟「認證管理員」，在「Windows 認證」下檢查「Cmdr」項目，或是把它移除再儲存一次。} other {請開啟「認證管理員」，在「Windows 認證」下找到「Cmdr」項目，或是把它移除，重新輸入你的金鑰。}}} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {請解鎖你的鑰匙圈（「密碼」或「鑰匙圈」App），然後再試一次。}}",
+  "ai.secretError.body": "{platform, select, macos {{op, select, save {請開啟「鑰匙圈存取」，檢查其中的「Cmdr」項目，或是把它刪掉再儲存一次。} other {請開啟「鑰匙圈存取」，找到「Cmdr」項目並授予存取權，或是把它刪掉，重新輸入你的金鑰。}}} windows {{op, select, save {請開啟「認證管理員」，在「Windows 認證」下檢查「Cmdr」項目，或是把它移除再儲存一次。} other {請開啟「認證管理員」，在「Windows 認證」下找到「Cmdr」項目，或是把它移除，重新輸入你的金鑰。}}} linuxGnome {請在「密碼及加密金鑰」中解鎖你的鑰匙圈，然後再試一次。} linuxKde {請在 KWalletManager 中解鎖你的錢包，然後再試一次。} other {請解鎖你的鑰匙圈（「密碼」或「鑰匙圈」App），然後再試一次。}}",
   "@ai.secretError.body": {
-    "sourceHash": "d65c5e3"
+    "sourceHash": "8a5496f"
   },
   "ai.secretError.genericTitle": "{op, select, save {無法儲存你的 API 金鑰。} other {無法讀取你已儲存的 API 金鑰。}}",
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {請確認你的鑰匙圈可以使用，然後再試一次。如果還是這樣，請重新啟動 App。} windows {請確認認證管理員可以使用，然後再試一次。如果一直發生，請重新啟動 Cmdr。} linuxKde {Check that KWallet is available, then try again. If it persists, restart the app.} other {請確認你的系統鑰匙圈可以使用，然後再試一次。如果還是這樣，請重新啟動 App。}}",
+  "ai.secretError.genericBody": "{platform, select, macos {請確認你的鑰匙圈可以使用，然後再試一次。如果還是這樣，請重新啟動 App。} windows {請確認認證管理員可以使用，然後再試一次。如果一直發生，請重新啟動 Cmdr。} linuxKde {請確認 KWallet 可以使用，然後再試一次。如果還是這樣，請重新啟動 App。} other {請確認你的系統鑰匙圈可以使用，然後再試一次。如果還是這樣，請重新啟動 App。}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "9fc0702"
+    "sourceHash": "cb879fa"
   },
   "ai.secretError.removeTitle": "無法移除你已儲存的 API 金鑰。",
   "@ai.secretError.removeTitle": {
     "sourceHash": "5986628"
   },
-  "ai.secretError.removeBody": "{platform, select, macos {請開啟「鑰匙圈存取」，找到「Cmdr」項目，然後在那裡把它刪掉。} windows {請開啟「認證管理員」，在「Windows 認證」下找到「Cmdr」項目，然後在那裡把它移除。} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {請解鎖你的鑰匙圈（「密碼」或「鑰匙圈」App），然後再試一次。}}",
+  "ai.secretError.removeBody": "{platform, select, macos {請開啟「鑰匙圈存取」，找到「Cmdr」項目，然後在那裡把它刪掉。} windows {請開啟「認證管理員」，在「Windows 認證」下找到「Cmdr」項目，然後在那裡把它移除。} linuxGnome {請在「密碼及加密金鑰」中解鎖你的鑰匙圈，然後再試一次。} linuxKde {請在 KWalletManager 中解鎖你的錢包，然後再試一次。} other {請解鎖你的鑰匙圈（「密碼」或「鑰匙圈」App），然後再試一次。}}",
   "@ai.secretError.removeBody": {
-    "sourceHash": "3a85511"
+    "sourceHash": "ab0d2ec"
   },
   "ai.managed.aiOff": "你的組織已關閉 Cmdr 的 AI。",
   "@ai.managed.aiOff": {

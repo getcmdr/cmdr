@@ -71,9 +71,9 @@
   "@menu.app.cliCommandHomebrew": {
     "sourceHash": "cc4c0fd"
   },
-  "menu.app.settings": "{platform, select, windows {Ajustes} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Ajustes…}}",
+  "menu.app.settings": "{platform, select, windows {Ajustes} linuxGnome {Preferencias} linuxKde {Configurar Cmdr…} other {Ajustes…}}",
   "@menu.app.settings": {
-    "sourceHash": "7af8e23"
+    "sourceHash": "4b21626"
   },
   "menu.app.services": "Servicios",
   "@menu.app.services": {
@@ -147,9 +147,9 @@
   "@menu.context.showInFolder": {
     "sourceHash": "da47876"
   },
-  "menu.file.showInFileManager": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar en el gestor de archivos}}",
+  "menu.file.showInFileManager": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Mostrar en Archivos} linuxKde {Mostrar en Dolphin} other {Mostrar en el gestor de archivos}}",
   "@menu.file.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "menu.file.openTerminalHere": "Abrir terminal aquí",
   "@menu.file.openTerminalHere": {

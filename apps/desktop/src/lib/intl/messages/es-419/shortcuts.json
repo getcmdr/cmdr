@@ -51,8 +51,8 @@
   "@shortcuts.section.resetAllConfirm": {
     "sourceHash": "3267d39"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {En {desktops}, el escritorio suele reservarse {combo}, así que puede que el atajo nunca llegue a Cmdr. Puedes liberarlo en la configuración de teclado de tu escritorio.}}",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {En {desktops}, el escritorio suele reservarse {combo}, así que puede que el atajo nunca llegue a Cmdr. Puedes liberarlo en Configuración > Teclado > Ver y personalizar atajos.} linuxKde {En {desktops}, el escritorio suele reservarse {combo}, así que puede que el atajo nunca llegue a Cmdr. Puedes liberarlo en Preferencias del sistema > Teclado > Atajos de teclado.} other {En {desktops}, el escritorio suele reservarse {combo}, así que puede que el atajo nunca llegue a Cmdr. Puedes liberarlo en la configuración de teclado de tu escritorio.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
-    "sourceHash": "458f0fd"
+    "sourceHash": "7d1840d"
   }
 }

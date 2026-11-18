@@ -119,9 +119,9 @@
   "@stateRecovery.keptCopy": {
     "sourceHash": "634e87d"
   },
-  "stateRecovery.showInFinder": "{platform, select, macos {在 Finder 中顯示} windows {在檔案總管中顯示} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {在檔案管理程式中顯示}}",
+  "stateRecovery.showInFinder": "{platform, select, macos {在 Finder 中顯示} windows {在檔案總管中顯示} linuxGnome {在「檔案」中顯示} linuxKde {在 Dolphin 中顯示} other {在檔案管理程式中顯示}}",
   "@stateRecovery.showInFinder": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "stateRecovery.dismiss": "關閉",
   "@stateRecovery.dismiss": {

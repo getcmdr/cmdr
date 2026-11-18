@@ -1926,7 +1926,12 @@
     "chosen": "钥匙串",
     "confidence": "high",
     "forms": "macOS Keychain → macOS 钥匙串; the app “钥匙串访问” (quoted); Remember in Keychain → 记住到钥匙串; a Linux keyring → 密钥环",
-    "sources": "macOS"
+    "sources": "macOS",
+    "other": {
+      "chosen": "密钥环",
+      "accept": ["KWallet", "密码库", "钥匙串"],
+      "note": "Linux branches: the keyring is 密钥环, which GNOME’s 密码和密钥 also says (seahorse zh_CN.po: 密钥环已锁定); KDE keeps KWallet and KWalletManager as names, with a wallet → 密码库 (kwalletmanager zh_CN.po). 钥匙串 stays accepted where an other branch is also what macOS reads (a block with no macos branch)"
+    }
   },
   "kind": {
     "chosen": "种类",
@@ -4326,5 +4331,14 @@
     "confidence": "high",
     "sources": "Microsoft TBX generated code → 生成的代码",
     "forms": "files a tool generates → 生成的文件; a build tool makes it again → 重新生成"
+  },
+  "preferences": {
+    "chosen": "偏好设置",
+    "confidence": "high",
+    "sources": "macOS AppKit MenuCommands (Preferences… → 偏好设置…); System Settings InfoPlist (Preferences → 偏好设置)",
+    "other": {
+      "chosen": "首选项",
+      "note": "GNOME's own app-menu row: Nautilus zh-CN _Preferences → 首选项(_P), Thunar 首选项 (the linuxGnome branch of `menu.app.settings`, no ellipsis); KDE's row is 配置 Cmdr… (Dolphin zh-CN: 配置 Dolphin)"
+    }
   }
 }

@@ -119,9 +119,9 @@
   "@stateRecovery.nfsPlaces.title": {
     "sourceHash": "06d14d3"
   },
-  "stateRecovery.showInFinder": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar en el administrador de archivos}}",
+  "stateRecovery.showInFinder": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Mostrar en Archivos} linuxKde {Mostrar en Dolphin} other {Mostrar en el administrador de archivos}}",
   "@stateRecovery.showInFinder": {
-    "sourceHash": "a11bd4b"
+    "sourceHash": "1ade975"
   },
   "stateRecovery.smbLinkConsents.title": "Cmdr no pudo leer todos los servidores en los que permitiste iniciar sesión a los enlaces SMB, así que puede volver a preguntar por algunos",
   "@stateRecovery.smbLinkConsents.title": {

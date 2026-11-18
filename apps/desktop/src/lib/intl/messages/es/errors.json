@@ -1551,7 +1551,7 @@
   },
   "errors.write.nameTooLong.message": "El nombre del archivo es demasiado largo para el destino.",
   "@errors.write.nameTooLong.message": {
-    "sourceHash": "03258f0"
+    "sourceHash": "91a01a0"
   },
   "errors.write.nameTooLong.suggestion": "Prueba a renombrar el archivo con un nombre más corto.",
   "@errors.write.nameTooLong.suggestion": {
@@ -1631,7 +1631,7 @@
   },
   "errors.write.invalidName.title": "Nombre de archivo no válido",
   "@errors.write.invalidName.title": {
-    "sourceHash": "1fb1e45"
+    "sourceHash": "0af3e69"
   },
   "errors.write.invalidName.message": "{path} tiene un nombre que el destino no puede guardar.",
   "@errors.write.invalidName.message": {

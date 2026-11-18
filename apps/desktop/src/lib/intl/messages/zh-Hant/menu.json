@@ -71,9 +71,9 @@
   "@menu.app.cliCommandHomebrew": {
     "sourceHash": "cc4c0fd"
   },
-  "menu.app.settings": "{platform, select, windows {設定} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {設定⋯}}",
+  "menu.app.settings": "{platform, select, windows {設定} linuxGnome {偏好設定} linuxKde {設定 Cmdr⋯} other {設定⋯}}",
   "@menu.app.settings": {
-    "sourceHash": "7af8e23"
+    "sourceHash": "4b21626"
   },
   "menu.app.services": "服務",
   "@menu.app.services": {
@@ -147,9 +147,9 @@
   "@menu.context.showInFolder": {
     "sourceHash": "da47876"
   },
-  "menu.file.showInFileManager": "{platform, select, macos {在 Finder 中顯示} windows {在檔案總管中顯示} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {在檔案管理程式中顯示}}",
+  "menu.file.showInFileManager": "{platform, select, macos {在 Finder 中顯示} windows {在檔案總管中顯示} linuxGnome {在「檔案」中顯示} linuxKde {在 Dolphin 中顯示} other {在檔案管理程式中顯示}}",
   "@menu.file.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "menu.file.openTerminalHere": "在此開啟終端機",
   "@menu.file.openTerminalHere": {

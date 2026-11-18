@@ -71,9 +71,9 @@
   "@menu.app.cliCommandHomebrew": {
     "sourceHash": "cc4c0fd"
   },
-  "menu.app.settings": "{platform, select, windows {设置} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {设置…}}",
+  "menu.app.settings": "{platform, select, windows {设置} linuxGnome {首选项} linuxKde {配置 Cmdr…} other {设置…}}",
   "@menu.app.settings": {
-    "sourceHash": "7af8e23"
+    "sourceHash": "4b21626"
   },
   "menu.app.services": "服务",
   "@menu.app.services": {
@@ -147,9 +147,9 @@
   "@menu.context.showInFolder": {
     "sourceHash": "da47876"
   },
-  "menu.file.showInFileManager": "{platform, select, macos {在 Finder 中显示} windows {在文件资源管理器中显示} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {在文件管理器中显示}}",
+  "menu.file.showInFileManager": "{platform, select, macos {在 Finder 中显示} windows {在文件资源管理器中显示} linuxGnome {在“文件”中显示} linuxKde {在 Dolphin 中显示} other {在文件管理器中显示}}",
   "@menu.file.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "menu.file.openTerminalHere": "在此处打开终端",
   "@menu.file.openTerminalHere": {

@@ -117,9 +117,9 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {En {desktops}, el escritorio suele reservarse {combo}, así que puede que el atajo nunca llegue a Cmdr. Puedes liberarlo en los ajustes de teclado de tu escritorio.}}",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {En {desktops}, el escritorio suele reservarse {combo}, así que puede que el atajo nunca llegue a Cmdr. Puedes liberarlo en Configuración > Teclado > Ver y personalizar atajos.} linuxKde {En {desktops}, el escritorio suele reservarse {combo}, así que puede que el atajo nunca llegue a Cmdr. Puedes liberarlo en Preferencias del sistema > Teclado > Atajos de teclado.} other {En {desktops}, el escritorio suele reservarse {combo}, así que puede que el atajo nunca llegue a Cmdr. Puedes liberarlo en los ajustes de teclado de tu escritorio.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
-    "sourceHash": "610146a"
+    "sourceHash": "8aefc0b"
   },
   "shortcuts.conflict.opensMenuBarMenu": "{combo} abre el menú {menu} de la barra de menús de Cmdr, así que el atajo no llegará a este comando salvo que haya un diálogo abierto.",
   "@shortcuts.conflict.opensMenuBarMenu": {

@@ -339,9 +339,9 @@
   "@settings.securityLog.enabled.description": {
     "sourceHash": "f3863d0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar en el administrador de archivos}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Mostrar en Archivos} linuxKde {Mostrar en Dolphin} other {Mostrar en el administrador de archivos}}",
   "@settings.securityLog.showInFinder": {
-    "sourceHash": "a11bd4b"
+    "sourceHash": "1ade975"
   },
   "settings.network.manageAnytimePrefix": "Administra esto cuando quieras en",
   "@settings.network.manageAnytimePrefix": {

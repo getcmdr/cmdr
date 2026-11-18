@@ -133,13 +133,12 @@ arms (`esté` / `estén`, `escrito` / `escritos`).
 
 ## Ruta copiada (`fileExplorer.clipboard.copiedPath`)
 
-The path renders below, so: `Ruta copiada, ya está en el portapapeles:` (no possessive).
+The path follows: `Ruta copiada, ya está en el portapapeles:` (no possessive).
 
 ## Cola de operaciones (`queue.*`, `commands.queueShow.*`, `fileOperations.transferProgress.queue*`, `fileOperations.transferProgress.backgroundedToast`)
 
 It lists deletes and renames too, and pairs with `Registro de operaciones`. `queueShow.label` is the bare title (❌
-`Mostrar la cola…`). Feminine head noun: swapping it means redoing every `esta`. `transferencia` still names a copy or
-move.
+`Mostrar la cola…`). Feminine: a swap redoes every `esta`. `transferencia` still names a copy or move.
 
 ## El chip y el aviso de operación sin terminar (`queue.chip.*`, `queue.failureToast.*`, `queue.row.dismiss*`, `queue.toolbar.dismissAll`)
 

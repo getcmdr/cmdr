@@ -1,7 +1,7 @@
 {
-  "aboutThis.action.showInFileManager": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar en el administrador de archivos}}",
+  "aboutThis.action.showInFileManager": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Mostrar en Archivos} linuxKde {Mostrar en Dolphin} other {Mostrar en el administrador de archivos}}",
   "@aboutThis.action.showInFileManager": {
-    "sourceHash": "a11bd4b"
+    "sourceHash": "1ade975"
   },
   "aboutThis.action.trash": "{platform, select, windows {Mover a la Papelera de reciclaje…} other {Mover al basurero…}}",
   "@aboutThis.action.trash": {

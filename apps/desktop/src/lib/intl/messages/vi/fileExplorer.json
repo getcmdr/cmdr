@@ -522,9 +522,9 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Thông tin đăng nhập được lưu cục bộ (Trình quản lý thông tin xác thực không có sẵn)} linuxKde {Credentials stored locally (KWallet not available)} other {Thông tin đăng nhập được lưu cục bộ (không phát hiện thấy kho khóa hệ thống)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Thông tin đăng nhập được lưu cục bộ (Trình quản lý thông tin xác thực không có sẵn)} linuxKde {Thông tin đăng nhập được lưu cục bộ (KWallet không có sẵn)} other {Thông tin đăng nhập được lưu cục bộ (không phát hiện thấy kho khóa hệ thống)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
-    "sourceHash": "e14f91d"
+    "sourceHash": "d279dc9"
   },
   "fileExplorer.network.share.notFound": "Không tìm thấy mục chia sẻ “{shareName}” trên {hostName}",
   "@fileExplorer.network.share.notFound": {
@@ -558,9 +558,9 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Xóa mật khẩu đã lưu khỏi chuỗi khóa} windows {Xóa mật khẩu đã lưu khỏi Trình quản lý thông tin xác thực} linuxKde {Remove saved password from KWallet} other {Xóa mật khẩu đã lưu khỏi kho khóa của bạn}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Xóa mật khẩu đã lưu khỏi chuỗi khóa} windows {Xóa mật khẩu đã lưu khỏi Trình quản lý thông tin xác thực} linuxKde {Xóa mật khẩu đã lưu khỏi KWallet} other {Xóa mật khẩu đã lưu khỏi kho khóa của bạn}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "4ae6a02"
+    "sourceHash": "3d21c85"
   },
   "fileExplorer.network.share.useGuest": "Duyệt với tư cách khách",
   "@fileExplorer.network.share.useGuest": {
@@ -951,9 +951,9 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong chuỗi khóa. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong Truy cập chuỗi khóa.} windows {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong Trình quản lý thông tin xác thực. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong Trình quản lý thông tin xác thực.} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong kho khóa của bạn. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong ứng dụng kho khóa của bạn.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong chuỗi khóa. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong Truy cập chuỗi khóa.} windows {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong Trình quản lý thông tin xác thực. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong Trình quản lý thông tin xác thực.} linuxGnome {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong chùm chìa khóa của bạn. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong Mật khẩu và Chìa khóa.} linuxKde {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong KWallet. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong KWalletManager.} other {Cmdr đã tạm khóa {name}, nhưng mật khẩu đã lưu vẫn còn trong kho khóa của bạn. Để gỡ bỏ hẳn mật khẩu, hãy xóa nó trong ứng dụng kho khóa của bạn.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
-    "sourceHash": "20277f3"
+    "sourceHash": "366f06a"
   },
   "fileExplorer.restic.forgetPassword.unreachable": "Cmdr không thể truy cập {name} lúc này, nên mật khẩu vẫn được lưu. Hãy thử lại sau giây lát.",
   "@fileExplorer.restic.forgetPassword.unreachable": {
@@ -2344,9 +2344,9 @@
   "@fileExplorer.quickFilter.intro.switchToJump": {
     "sourceHash": "38642f9"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Cài đặt} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Cài đặt…}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Cài đặt} linuxGnome {Tùy thích} linuxKde {Cấu hình Cmdr…} other {Cài đặt…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
-    "sourceHash": "7af8e23"
+    "sourceHash": "4b21626"
   },
   "fileExplorer.quickFilter.intro.gotIt": "Đã hiểu",
   "@fileExplorer.quickFilter.intro.gotIt": {

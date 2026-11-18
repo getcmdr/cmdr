@@ -3219,9 +3219,9 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {在 Finder 中显示} windows {在文件资源管理器中显示} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {在文件管理器中显示}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {在 Finder 中显示} windows {在文件资源管理器中显示} linuxGnome {在“文件”中显示} linuxKde {在 Dolphin 中显示} other {在文件管理器中显示}}",
   "@settings.securityLog.showInFinder": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "settings.updates.showSecurityLog.keywords": "安全、日志、审计、事件、文件、打开、显示、文件夹、位置",
   "@settings.updates.showSecurityLog.keywords": {
@@ -3677,13 +3677,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {“钥匙串访问”中名为“{itemName}”的 {countText} 个项目}}} windows {{count, plural, other {“凭据管理器”中名为“{itemName}”的 {countText} 个项目}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, other {你的密钥环中名为“{itemName}”的 {countText} 个项目}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {“钥匙串访问”中名为“{itemName}”的 {countText} 个项目}}} windows {{count, plural, other {“凭据管理器”中名为“{itemName}”的 {countText} 个项目}}} linuxKde {{count, plural, other {KWallet 中名为“{itemName}”的 {countText} 个项目}}} other {{count, plural, other {你的密钥环中名为“{itemName}”的 {countText} 个项目}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "6cf1e9c"
+    "sourceHash": "ba023b8"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {“钥匙串访问”中名为“{itemName}”的项目，如果有的话} windows {“凭据管理器”中名为“{itemName}”的项目，如果有的话} linuxKde {Any items in KWallet named “{itemName}”} other {你的密钥环中名为“{itemName}”的项目，如果有的话}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {“钥匙串访问”中名为“{itemName}”的项目，如果有的话} windows {“凭据管理器”中名为“{itemName}”的项目，如果有的话} linuxKde {KWallet 中名为“{itemName}”的项目，如果有的话} other {你的密钥环中名为“{itemName}”的项目，如果有的话}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "0e9e95b"
+    "sourceHash": "de668e2"
   },
   "settings.dataWipe.quit": "{platform, select, windows {退出 Cmdr} other {退出 Cmdr}}",
   "@settings.dataWipe.quit": {

@@ -243,6 +243,14 @@
   "@multiRename.status.reservedDeviceName": {
     "sourceHash": "8bf464a"
   },
+  "multiRename.status.notPortable": "{alsoLinux, select, yes {Sẽ không dùng được trên Windows hoặc Linux} other {Sẽ không dùng được trên Windows}}",
+  "@multiRename.status.notPortable": {
+    "sourceHash": "cc3ed09"
+  },
+  "multiRename.notPortableSummary": "{count, plural, other {{alsoLinux, select, yes {{countText} tên mới sẽ không dùng được trên Windows hoặc Linux. Tệp vẫn được đổi tên.} other {{countText} tên mới sẽ không dùng được trên Windows. Tệp vẫn được đổi tên.}}}}",
+  "@multiRename.notPortableSummary": {
+    "sourceHash": "4eb996d"
+  },
   "multiRename.error.unclosed": "Một phần giữ chỗ thiếu dấu “]” đóng",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -627,15 +635,15 @@
   },
   "multiRename.reason.tooLong": "Tên mới quá dài đối với tên tệp.",
   "@multiRename.reason.tooLong": {
-    "sourceHash": "b709218"
+    "sourceHash": "c49d459"
   },
   "multiRename.reason.reserved": "“.” và “..” không thể là tên tệp.",
   "@multiRename.reason.reserved": {
-    "sourceHash": "dcca507"
+    "sourceHash": "b0c0c33"
   },
   "multiRename.reason.disallowedCharacter": "Tên tệp không được chứa {character}.",
   "@multiRename.reason.disallowedCharacter": {
-    "sourceHash": "66a09f6"
+    "sourceHash": "2d58251"
   },
   "multiRename.reason.reservedDeviceName": "“{name}” là tên dành riêng của Windows, nên ổ đĩa này không thể dùng tên đó.",
   "@multiRename.reason.reservedDeviceName": {

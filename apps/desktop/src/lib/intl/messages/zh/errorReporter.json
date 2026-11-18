@@ -172,9 +172,9 @@
   "@errorReporter.bundleSavedToast.dismiss": {
     "sourceHash": "48845bf"
   },
-  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {在 Finder 中显示} windows {在文件资源管理器中显示} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {在文件管理器中显示}}",
+  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {在 Finder 中显示} windows {在文件资源管理器中显示} linuxGnome {在“文件”中显示} linuxKde {在 Dolphin 中显示} other {在文件管理器中显示}}",
   "@errorReporter.bundleSavedToast.reveal": {
-    "sourceHash": "4d7fe91"
+    "sourceHash": "c3b4773"
   },
   "errorReporter.autoSentToast.title": "错误报告已发送",
   "@errorReporter.autoSentToast.title": {

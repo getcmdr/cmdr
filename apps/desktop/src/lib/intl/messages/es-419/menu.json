@@ -3,13 +3,13 @@
   "@menu.app.licenseEnter": {
     "sourceHash": "e5dac0a"
   },
-  "menu.app.settings": "{platform, select, windows {Configuración} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Configuración…}}",
+  "menu.app.settings": "{platform, select, windows {Configuración} linuxGnome {Preferencias} linuxKde {Configurar Cmdr…} other {Configuración…}}",
   "@menu.app.settings": {
-    "sourceHash": "802a5bb"
+    "sourceHash": "2ff20c4"
   },
-  "menu.file.showInFileManager": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar en el administrador de archivos}}",
+  "menu.file.showInFileManager": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Mostrar en Archivos} linuxKde {Mostrar en Dolphin} other {Mostrar en el administrador de archivos}}",
   "@menu.file.showInFileManager": {
-    "sourceHash": "a11bd4b"
+    "sourceHash": "1ade975"
   },
   "menu.edit.undoTrash": "{platform, select, windows {Deshacer eliminación} other {Deshacer movimiento al basurero}}",
   "@menu.edit.undoTrash": {

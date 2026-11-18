@@ -15,9 +15,9 @@
   "@aboutThis.action.openTooltip": {
     "sourceHash": "4bbaa35"
   },
-  "aboutThis.action.showInFileManager": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar en el gestor de archivos}}",
+  "aboutThis.action.showInFileManager": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Mostrar en Archivos} linuxKde {Mostrar en Dolphin} other {Mostrar en el gestor de archivos}}",
   "@aboutThis.action.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "aboutThis.action.downloadPage": "Página de descarga",
   "@aboutThis.action.downloadPage": {
@@ -328,9 +328,9 @@
   "@aboutThis.download.unrecognized": {
     "sourceHash": "5e9fa42"
   },
-  "aboutThis.download.noSource": "{platform, select, macos {Según macOS, esto se descargó{hasApp, select, yes { con {app}} other {}}{hasDate, select, yes { el <date></date>} other {}}, sin decir de dónde.} windows {Windows recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} other {This carries a record of being downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.}}",
+  "aboutThis.download.noSource": "{platform, select, macos {Según macOS, esto se descargó{hasApp, select, yes { con {app}} other {}}{hasDate, select, yes { el <date></date>} other {}}, sin decir de dónde.} windows {Según Windows, esto se descargó{hasApp, select, yes { con {app}} other {}}{hasDate, select, yes { el <date></date>} other {}}, sin decir de dónde.} other {Esto guarda constancia de que se descargó{hasApp, select, yes { con {app}} other {}}{hasDate, select, yes { el <date></date>} other {}}, sin decir de dónde.}}",
   "@aboutThis.download.noSource": {
-    "sourceHash": "7edb92b"
+    "sourceHash": "83ec9b3"
   },
   "aboutThis.cmdrOperation.noRecord": "No consta ninguna copia ni movimiento de Cmdr",
   "@aboutThis.cmdrOperation.noRecord": {
@@ -747,9 +747,9 @@
   "@aboutThis.standardFolder.users": {
     "sourceHash": "955c56c"
   },
-  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {La carpeta raíz del disco de arranque} windows {The top of the system drive} other {The top of the system disk}}",
+  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {La carpeta raíz del disco de arranque} windows {La carpeta raíz de la unidad de sistema} other {La carpeta raíz del disco del sistema}}",
   "@aboutThis.standardFolder.startupDisk": {
-    "sourceHash": "6e69278"
+    "sourceHash": "d7764f1"
   },
   "aboutThis.owner.insideApp": "Parte de {app}",
   "@aboutThis.owner.insideApp": {
@@ -972,9 +972,9 @@
   "@aboutThis.removal.standardFolder.users": {
     "sourceHash": "b72c1fe"
   },
-  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {Contiene todo lo que hay en el disco de arranque, macOS incluido.} windows {It holds everything on the system drive, Windows included.} other {It holds everything on the system disk, the operating system included.}}",
+  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {Contiene todo lo que hay en el disco de arranque, macOS incluido.} windows {Contiene todo lo que hay en la unidad de sistema, Windows incluido.} other {Contiene todo lo que hay en el disco del sistema, el sistema operativo incluido.}}",
   "@aboutThis.removal.standardFolder.startupDisk": {
-    "sourceHash": "3f6c151"
+    "sourceHash": "a50aa6f"
   },
   "aboutThis.removal.uncommittedWork": "Tiene cambios que no están en ningún commit, así que git no puede recuperarlos.",
   "@aboutThis.removal.uncommittedWork": {

@@ -1255,7 +1255,12 @@
       "errors.write.trashRefused.suggestion.notPermitted": "Windows branch: file only appears in the app name File Explorer, kept in English by vi Windows"
     },
     "sources": "macOS/MS convention (tệp). Total Commander vi uses the older tập tin throughout (332 strings, no tệp), the folder-vs-directory kind of split; first-party vendors outrank it",
-    "accept": ["File Explorer"]
+    "accept": ["File Explorer"],
+    "other": {
+      "chosen": "tệp",
+      "accept": ["Tập tin"],
+      "note": "Linux branches say tệp; only the linuxGnome branch names GNOME's file manager by its vi app name Tập tin (Nautilus vi Files → Tập tin), as in Hiển thị trong Tập tin"
+    }
   },
   "file-list": {
     "chosen": "danh sách tệp",
@@ -1752,7 +1757,12 @@
     "chosen": "chuỗi khóa",
     "confidence": "confirmed",
     "forms": "Keychain Access (the app) → Truy cập chuỗi khóa; a Linux keyring → kho khóa",
-    "sources": "Keychain Access.app InfoPlist.loctable; Apple vi support guide"
+    "sources": "Keychain Access.app InfoPlist.loctable; Apple vi support guide",
+    "other": {
+      "chosen": "kho khóa",
+      "accept": ["chùm chìa khóa", "KWallet"],
+      "note": "Linux branches: the generic keyring is kho khóa; the linuxGnome branch uses GNOME's own word chùm chìa khóa and its app Mật khẩu và Chìa khóa (seahorse vi.po); KDE keeps KWallet and KWalletManager as names, with a wallet → ví (kwalletmanager vi.po)"
+    }
   },
   "kind": {
     "chosen": "Loại",
@@ -3131,7 +3141,10 @@
     "chosen": "Cài đặt hệ thống",
     "confidence": "high",
     "forms": "usually the {system_settings} token; write it by hand only where no token exists",
-    "sources": "macOS"
+    "sources": "macOS",
+    "exceptions": {
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxKde branch names KDE's System Settings app as KDE vi does, Thiết lập hệ thống (systemsettings vi.po); Cài đặt hệ thống is the macOS app and GNOME's Settings."
+    }
   },
   "system-settings-pane": {
     "accept": ["Mục đăng nhập"],
@@ -3979,5 +3992,17 @@
     "confidence": "high",
     "forms": "kept English, no classifier: Trong PowerShell, chạy …",
     "sources": "ms TBX vi (PowerShell → Windows PowerShell, the product name kept English); the catalog's Windows branches already write Trong PowerShell"
+  },
+  "preferences": {
+    "chosen": "Tùy chọn",
+    "confidence": "high",
+    "sources": "macOS AppKit MenuCommands (Preferences… → Tùy chọn…); MS TBX Preferences → Tùy chọn",
+    "other": {
+      "chosen": "Tùy thích",
+      "note": "GNOME's own app-menu row: Nautilus vi _Preferences → Tù_y thích, Thunar Tùy thích (the linuxGnome branch of `menu.app.settings`, no ellipsis); KDE's row is Cấu hình Cmdr… (Dolphin vi: Cấu hình Dolphin)"
+    },
+    "exceptions": {
+      "settings.fileOperations.mtpEnabled.description": "Quotes the Android path Settings > USB Preferences in English, as this description already does for the phone labels it names; a vi Android may show either, and the sentence hedges with đại loại như."
+    }
   }
 }

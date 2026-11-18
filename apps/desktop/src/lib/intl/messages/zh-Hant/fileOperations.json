@@ -151,9 +151,9 @@
   "@fileOperations.mkfile.createIn": {
     "sourceHash": "20f4a68"
   },
-  "fileOperations.mkfile.nameAria": "檔案名稱",
+  "fileOperations.mkfile.nameAria": "檔名",
   "@fileOperations.mkfile.nameAria": {
-    "sourceHash": "3efed3d"
+    "sourceHash": "971b974"
   },
   "fileOperations.mkfile.placeholder": "例如：notes.txt",
   "@fileOperations.mkfile.placeholder": {
@@ -1303,9 +1303,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {記住在鑰匙圈中} windows {記住密碼} linuxKde {Remember in KWallet} other {記住在鑰匙圈中}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {記住在鑰匙圈中} windows {記住密碼} linuxKde {記住在 KWallet 中} other {記住在鑰匙圈中}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "42237e1"
+    "sourceHash": "8f125e3"
   },
   "fileOperations.resticPassword.checking": "正在檢查密碼⋯",
   "@fileOperations.resticPassword.checking": {
@@ -1330,6 +1330,30 @@
   "fileOperations.validation.empty": "{kind, select, folder {資料夾名稱不能是空的} other {檔名不能是空的}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
+  },
+  "fileOperations.validation.dotName": "{kind, select, folder {資料夾名稱不能是「.」或「..」} other {檔名不能是「.」或「..」}}",
+  "@fileOperations.validation.dotName": {
+    "sourceHash": "bfa0ccb"
+  },
+  "fileOperations.validation.nameLength": "{kind, select, folder {資料夾名稱太長（{length}/{maxLength} {unit, select, bytes {{max, plural, other {位元組}}} other {{max, plural, other {個字元}}}}）} other {檔名太長（{length}/{maxLength} {unit, select, bytes {{max, plural, other {位元組}}} other {{max, plural, other {個字元}}}}）}}",
+  "@fileOperations.validation.nameLength": {
+    "sourceHash": "acef623"
+  },
+  "fileOperations.validation.pathLength": "完整路徑太長（{length}/{maxLength} {unit, select, bytes {{max, plural, other {位元組}}} other {{max, plural, other {個字元}}}}）",
+  "@fileOperations.validation.pathLength": {
+    "sourceHash": "1791bc2"
+  },
+  "fileOperations.validation.notPortable.windowsCharacter": "{format, select, smbShare {含有「{character}」的名稱在 Windows 上無法使用} other {含有「{character}」的名稱在 Windows 或 Linux 上無法使用}}",
+  "@fileOperations.validation.notPortable.windowsCharacter": {
+    "sourceHash": "66201fa"
+  },
+  "fileOperations.validation.notPortable.reservedName": "{format, select, smbShare {「{name}」是 Windows 的保留名稱，所以這個名稱在 Windows 上無法使用，共享資料夾也可能用另一個名稱列出它} other {「{name}」是 Windows 的保留名稱，所以這個名稱在 Windows 上無法使用}}",
+  "@fileOperations.validation.notPortable.reservedName": {
+    "sourceHash": "b46ff0c"
+  },
+  "fileOperations.validation.notPortable.endsWithSpaceOrPeriod": "{format, select, smbShare {以空格或句點結尾的名稱在 Windows 上無法使用} other {以空格或句點結尾的名稱在 Windows 或 Linux 上無法使用}}",
+  "@fileOperations.validation.notPortable.endsWithSpaceOrPeriod": {
+    "sourceHash": "86ce7a7"
   },
   "fileOperations.validation.extensionChangeBlocked": "不允許更改副檔名（原本是「{oldExt}」）",
   "@fileOperations.validation.extensionChangeBlocked": {
@@ -1358,6 +1382,18 @@
   "fileOperations.validation.pathNullChar": "路徑裡有 Null 字元",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
+  },
+  "fileOperations.validation.typedPathLength": "路徑太長（{length}/{maxLength} {unit, select, bytes {{max, plural, other {位元組}}} other {{max, plural, other {個字元}}}}）",
+  "@fileOperations.validation.typedPathLength": {
+    "sourceHash": "f953ea2"
+  },
+  "fileOperations.validation.typedSegmentLength": "路徑中的某個資料夾名稱太長（{length}/{maxLength} {unit, select, bytes {{max, plural, other {位元組}}} other {{max, plural, other {個字元}}}}）",
+  "@fileOperations.validation.typedSegmentLength": {
+    "sourceHash": "50ce47b"
+  },
+  "fileOperations.transferDialog.namePortability": "{count, plural, other {{alsoLinux, select, yes {這裡有 {countText} 個名稱在 Windows 或 Linux 上無法使用，例如「{example}」} other {這裡有 {countText} 個名稱在 Windows 上無法使用，例如「{example}」}}}}",
+  "@fileOperations.transferDialog.namePortability": {
+    "sourceHash": "e8c7d0f"
   },
   "fileOperations.transferTree.treeLabel": "這次傳輸的檔案",
   "@fileOperations.transferTree.treeLabel": {

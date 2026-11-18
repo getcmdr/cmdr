@@ -844,9 +844,9 @@
   "@commands.dialogConfirm.label": {
     "sourceHash": "fef0684"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {在 Finder 中显示} windows {在文件资源管理器中显示} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {在文件管理器中显示}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {在 Finder 中显示} windows {在文件资源管理器中显示} linuxGnome {在“文件”中显示} linuxKde {在 Dolphin 中显示} other {在文件管理器中显示}}",
   "@commands.fileShowInFileManager.label": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "commands.fileOpenTerminalHere.label": "在此处打开终端",
   "@commands.fileOpenTerminalHere.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {从钥匙串中移除你所在的 restic 备份保存的密码，并重新锁定这个备份} windows {从凭据管理器中移除你所在的 restic 备份保存的密码，并重新锁定这个备份} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {从你的密钥环中移除你所在的 restic 备份保存的密码，并重新锁定这个备份}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {从钥匙串中移除你所在的 restic 备份保存的密码，并重新锁定这个备份} windows {从凭据管理器中移除你所在的 restic 备份保存的密码，并重新锁定这个备份} linuxKde {从 KWallet 中移除你所在的 restic 备份保存的密码，并重新锁定这个备份} other {从你的密钥环中移除你所在的 restic 备份保存的密码，并重新锁定这个备份}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "0f616ca"
+    "sourceHash": "5b48a77"
   },
   "commands.fileCopyShareLink.label": "拷贝共享链接（7 天）",
   "@commands.fileCopyShareLink.label": {

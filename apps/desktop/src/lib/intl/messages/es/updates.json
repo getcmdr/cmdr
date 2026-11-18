@@ -23,9 +23,9 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "{platform, select, macos {Reinicia ahora o la tendrás la próxima vez que abras Cmdr.} windows {Cmdr se cierra para instalarla y después vuelve a abrirse.} other {Cmdr quits to install it, then opens again.}}",
+  "updates.toast.readyDetail": "{platform, select, macos {Reinicia ahora o la tendrás la próxima vez que abras Cmdr.} windows {Cmdr se cierra para instalarla y después vuelve a abrirse.} other {Cmdr se cierra para instalarla y después vuelve a abrirse.}}",
   "@updates.toast.readyDetail": {
-    "sourceHash": "4abee27"
+    "sourceHash": "12ced25"
   },
   "updates.toast.securityFix": "Esta actualización corrige {count, plural, one {un problema de seguridad} many {# problemas de seguridad} other {# problemas de seguridad}}.",
   "@updates.toast.securityFix": {
@@ -107,6 +107,10 @@
   "updates.status.installing": "Instalando v{next} (actual: v{prev})…",
   "@updates.status.installing": {
     "sourceHash": "214ef12"
+  },
+  "updates.status.noBuildForThisPlatform": "Esta versión de Cmdr no puede buscar actualizaciones ahora mismo. Inténtalo más tarde.",
+  "@updates.status.noBuildForThisPlatform": {
+    "sourceHash": "e64ebc5"
   },
   "updates.status.managedOff": "Tu organización gestiona las actualizaciones de Cmdr.",
   "@updates.status.managedOff": {

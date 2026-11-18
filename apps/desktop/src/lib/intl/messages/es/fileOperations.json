@@ -151,9 +151,9 @@
   "@fileOperations.mkfile.createIn": {
     "sourceHash": "20f4a68"
   },
-  "fileOperations.mkfile.nameAria": "Nombre del archivo",
+  "fileOperations.mkfile.nameAria": "Nombre de archivo",
   "@fileOperations.mkfile.nameAria": {
-    "sourceHash": "3efed3d"
+    "sourceHash": "971b974"
   },
   "fileOperations.mkfile.placeholder": "Ejemplo: notas.txt",
   "@fileOperations.mkfile.placeholder": {
@@ -1305,9 +1305,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Recordar en el Llavero} windows {Recordar contraseña} linuxKde {Remember in KWallet} other {Recordar en el llavero}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Recordar en el Llavero} windows {Recordar contraseña} linuxKde {Recordar en KWallet} other {Recordar en el llavero}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "42237e1"
+    "sourceHash": "8f125e3"
   },
   "fileOperations.resticPassword.checking": "Comprobando la contraseña…",
   "@fileOperations.resticPassword.checking": {
@@ -1332,6 +1332,30 @@
   "fileOperations.validation.empty": "{kind, select, folder {El nombre de la carpeta no puede estar vacío} other {El nombre del archivo no puede estar vacío}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
+  },
+  "fileOperations.validation.dotName": "{kind, select, folder {Los nombres de carpeta no pueden ser “.” ni “..”} other {Los nombres de archivo no pueden ser “.” ni “..”}}",
+  "@fileOperations.validation.dotName": {
+    "sourceHash": "bfa0ccb"
+  },
+  "fileOperations.validation.nameLength": "{kind, select, folder {El nombre de carpeta es demasiado largo ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} many {bytes} other {bytes}}} other {{max, plural, one {carácter} many {caracteres} other {caracteres}}}})} other {El nombre de archivo es demasiado largo ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} many {bytes} other {bytes}}} other {{max, plural, one {carácter} many {caracteres} other {caracteres}}}})}}",
+  "@fileOperations.validation.nameLength": {
+    "sourceHash": "acef623"
+  },
+  "fileOperations.validation.pathLength": "La ruta completa es demasiado larga ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} many {bytes} other {bytes}}} other {{max, plural, one {carácter} many {caracteres} other {caracteres}}}})",
+  "@fileOperations.validation.pathLength": {
+    "sourceHash": "1791bc2"
+  },
+  "fileOperations.validation.notPortable.windowsCharacter": "{format, select, smbShare {Los nombres con “{character}” no funcionarán en Windows} other {Los nombres con “{character}” no funcionarán en Windows ni en Linux}}",
+  "@fileOperations.validation.notPortable.windowsCharacter": {
+    "sourceHash": "66201fa"
+  },
+  "fileOperations.validation.notPortable.reservedName": "{format, select, smbShare {Windows reserva “{name}”, así que este nombre no funcionará en Windows, y puede que el recurso compartido muestre el elemento en la lista con otro nombre} other {Windows reserva “{name}”, así que este nombre no funcionará en Windows}}",
+  "@fileOperations.validation.notPortable.reservedName": {
+    "sourceHash": "b46ff0c"
+  },
+  "fileOperations.validation.notPortable.endsWithSpaceOrPeriod": "{format, select, smbShare {Los nombres que terminan en espacio o en punto no funcionarán en Windows} other {Los nombres que terminan en espacio o en punto no funcionarán en Windows ni en Linux}}",
+  "@fileOperations.validation.notPortable.endsWithSpaceOrPeriod": {
+    "sourceHash": "86ce7a7"
   },
   "fileOperations.validation.extensionChangeBlocked": "No se permite cambiar la extensión del archivo (era “{oldExt}”)",
   "@fileOperations.validation.extensionChangeBlocked": {
@@ -1360,6 +1384,18 @@
   "fileOperations.validation.pathNullChar": "La ruta contiene un carácter nulo",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
+  },
+  "fileOperations.validation.typedPathLength": "La ruta es demasiado larga ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} many {bytes} other {bytes}}} other {{max, plural, one {carácter} many {caracteres} other {caracteres}}}})",
+  "@fileOperations.validation.typedPathLength": {
+    "sourceHash": "f953ea2"
+  },
+  "fileOperations.validation.typedSegmentLength": "Un nombre de carpeta de la ruta es demasiado largo ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} many {bytes} other {bytes}}} other {{max, plural, one {carácter} many {caracteres} other {caracteres}}}})",
+  "@fileOperations.validation.typedSegmentLength": {
+    "sourceHash": "50ce47b"
+  },
+  "fileOperations.transferDialog.namePortability": "{count, plural, one {{alsoLinux, select, yes {En el destino, {countText} nombre no funcionará en Windows ni en Linux: “{example}”} other {En el destino, {countText} nombre no funcionará en Windows: “{example}”}}} many {{alsoLinux, select, yes {En el destino, {countText} nombres no funcionarán en Windows ni en Linux, como “{example}”} other {En el destino, {countText} nombres no funcionarán en Windows, como “{example}”}}} other {{alsoLinux, select, yes {En el destino, {countText} nombres no funcionarán en Windows ni en Linux, como “{example}”} other {En el destino, {countText} nombres no funcionarán en Windows, como “{example}”}}}}",
+  "@fileOperations.transferDialog.namePortability": {
+    "sourceHash": "e8c7d0f"
   },
   "fileOperations.transferTree.treeLabel": "Archivos de esta operación",
   "@fileOperations.transferTree.treeLabel": {

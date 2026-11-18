@@ -1192,6 +1192,23 @@
   "@askCmdr.renameReview.sourceMissingTooltip": {
     "sourceHash": "acd6306"
   },
+  "askCmdr.renameReview.nameNotAllowedBadge": "（這裡不允許）",
+  "@askCmdr.renameReview.nameNotAllowedBadge": {
+    "sourceHash": "b699ad0"
+  },
+  "askCmdr.renameReview.nameNotAllowedTooltip": "這個磁碟機存不下這個名稱。編輯名稱就能重新命名這個檔案。",
+  "@askCmdr.renameReview.nameNotAllowedTooltip": {
+    "sourceHash": "8cb209e"
+  },
+  "askCmdr.renameReview.notPortableBadge": "(Windows)",
+  "@askCmdr.renameReview.notPortableBadge": {
+    "sourceHash": "dc44dab",
+    "sameAsSourceJustification": "The badge is the OS name Windows in parentheses, kept verbatim in every locale as the description asks; around a Latin word alone the ASCII parentheses stay."
+  },
+  "askCmdr.renameReview.notPortableTooltip": "這個名稱在 Windows 上無法使用。Cmdr 仍會重新命名這個檔案。",
+  "@askCmdr.renameReview.notPortableTooltip": {
+    "sourceHash": "f7ffcc2"
+  },
   "askCmdr.renameReview.extensionBadge": "（副檔名）",
   "@askCmdr.renameReview.extensionBadge": {
     "sourceHash": "bcc0b2c"
