@@ -32,16 +32,14 @@ type planInput struct {
 // plan turns the manifest into the release pipeline's step outputs, made once in `guard` so the
 // jobs after it need no Go and agree on one list:
 //
-//   - `update-archives`: every update payload, space-separated.
-//   - `signed-files`: every file with a `.sig` (the update payloads, plus the advisory list once
-//     one ships), which `publish` requires the signatures of; `release-finish` signs the same list.
+//   - `update-archives`: the core's update payloads (`manifest.Release.Core`: macOS's),
+//     space-separated.
+//   - `signed-files`: the core's files with a `.sig`, which `publish` requires the signatures of.
+//     A leg's (`manifest/legs.go`) are its own job's, and the release carries the leg only whole.
 //   - `update-archives-<os>`: one OS's update payloads, for that OS's vetting.
-//   - `signs-version`: the update payloads whose signature must name the version
-//     (`--app-version`, `manifest.File.SignsVersion`).
 //   - `ships-<os>`: `true` or `false` for each OS beyond macOS, which gates that OS's jobs, and
 //     `uploads-<os>` (a shipped OS only): the files its build job puts on the release.
-//   - `advisory-list`: the advisory list's filename, empty when the release ships none.
-//   - `binaries`: every required build of the app, which `attest` refuses to go without.
+//   - `binaries`: every required core build of the app, which `attest` refuses to go without.
 //   - `rust-sboms`: one `<target> <file>` line per Rust SBOM, for `sbom` to generate.
 //   - `frontend-sbom`: the frontend SBOM's filename.
 //   - `sbom-<slug>` and `sbom-<slug>-subjects`: each SBOM's file and the builds it's attested
@@ -67,7 +65,7 @@ func plan(in planInput) ([]output, error) {
 		out = append(out, output{"update-archives-" + string(osName), strings.Join(names, " ")})
 	}
 
-	out = append(out, output{"binaries", strings.Join(manifest.Names(manifest.Required(r.Binaries())), " ")})
+	out = append(out, output{"binaries", strings.Join(manifest.Names(manifest.Required(r.Core().Binaries())), " ")})
 
 	var rust []string
 	for _, s := range r.SBOMs() {
@@ -92,20 +90,14 @@ func plan(in planInput) ([]output, error) {
 	return out, nil
 }
 
-// signingOutputs are `update-archives`, `signed-files`, `signs-version`, and `advisory-list`.
+// signingOutputs are `update-archives` and `signed-files`: the core's (`manifest.Release.Core`),
+// which `publish` requires whatever the other OSes do. A leg's signed files are its own job's
+// (`windows-publish`'s `stage`), and `publish` takes a leg only when it's whole.
 func signingOutputs(r manifest.Release) []output {
-	var withVersion []string
-	for _, f := range r.Updates() {
-		if f.SignsVersion() {
-			withVersion = append(withVersion, f.Name)
-		}
-	}
-	list, _ := r.AdvisoryList()
+	core := r.Core()
 	return []output{
-		{"update-archives", strings.Join(manifest.Names(r.Updates()), " ")},
-		{"signed-files", strings.Join(manifest.Names(r.Signed()), " ")},
-		{"signs-version", strings.Join(withVersion, " ")},
-		{"advisory-list", list.Name},
+		{"update-archives", strings.Join(manifest.Names(core.Updates()), " ")},
+		{"signed-files", strings.Join(manifest.Names(core.Signed()), " ")},
 	}
 }
 
@@ -159,11 +151,12 @@ func checkWiring(in planInput) error {
 
 // subjectPattern is a file's line in an `actions/attest` `subject-path`. The action fails on a
 // literal path that matches no file but lets a glob match nothing (verified in `actions/attest`'s
-// `src/subject.ts`, `isLiteralPath`, 2026-11-18), so a required file is a literal (its absence
-// fails the attestation) and an optional one is a pattern: `[.]` before its extension matches the
-// one name and turns the line into a glob.
+// `src/subject.ts`, `isLiteralPath`, 2026-11-18), so a required core file is a literal (its
+// absence fails the attestation) and an optional one, or a leg's (which the release may ship
+// without), is a pattern: `[.]` before its extension matches the one name and turns the line into
+// a glob.
 func subjectPattern(dir string, f manifest.File) string {
-	if !f.Optional {
+	if !f.Optional && f.Leg() == "" {
 		return dir + "/" + f.Name
 	}
 	i := strings.LastIndex(f.Name, ".")

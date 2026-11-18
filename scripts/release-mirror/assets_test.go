@@ -4,6 +4,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"cmdr/scripts/release-assets/manifest"
 )
 
 func fullRelease(version string, withPkg bool) []string {
@@ -22,7 +24,7 @@ func fullRelease(version string, withPkg bool) []string {
 }
 
 func TestMirroredAssetsTakesTheDownloadsAndUpdatesButNotTheSBOMsOrManifest(t *testing.T) {
-	got, err := mirroredAssets(fullRelease("0.60.0", true), "0.60.0")
+	got, err := mirroredAssets(fullRelease("0.60.0", true), manifest.For("0.60.0"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +42,7 @@ func TestMirroredAssetsTakesTheDownloadsAndUpdatesButNotTheSBOMsOrManifest(t *te
 }
 
 func TestMirroredAssetsWorksWithoutThePkg(t *testing.T) {
-	got, err := mirroredAssets(fullRelease("0.60.0", false), "0.60.0")
+	got, err := mirroredAssets(fullRelease("0.60.0", false), manifest.For("0.60.0"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +55,7 @@ func TestMirroredAssetsRefusesAReleaseMissingAnUpdateFile(t *testing.T) {
 	names := slices.DeleteFunc(fullRelease("0.60.0", true), func(n string) bool {
 		return n == "Cmdr_0.60.0_x64.app.tar.gz.sig" || n == "checksums.txt"
 	})
-	_, err := mirroredAssets(names, "0.60.0")
+	_, err := mirroredAssets(names, manifest.For("0.60.0"))
 	if err == nil {
 		t.Fatal("a release without the x64 signature and the checksums was accepted")
 	}
@@ -128,7 +130,7 @@ const mirroredManifest = `{
 }`
 
 func TestCheckManifestAcceptsOneNamingTheMirror(t *testing.T) {
-	if err := checkManifest([]byte(mirroredManifest), "0.60.0", "https://download.getcmdr.com"); err != nil {
+	if err := checkManifest([]byte(mirroredManifest), manifest.For("0.60.0"), "https://download.getcmdr.com"); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -141,7 +143,7 @@ func TestCheckManifestRefusesAnyURLOffTheMirror(t *testing.T) {
 		"no platform":   strings.Replace(mirroredManifest, `"darwin-x86_64"`, `"linux-x86_64"`, 1),
 		"not json":      "{",
 	} {
-		if err := checkManifest([]byte(body), "0.60.0", "https://download.getcmdr.com"); err == nil {
+		if err := checkManifest([]byte(body), manifest.For("0.60.0"), "https://download.getcmdr.com"); err == nil {
 			t.Errorf("%s: accepted", name)
 		}
 	}

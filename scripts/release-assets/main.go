@@ -64,6 +64,7 @@ func run(args []string) error {
 	osName := fs.String("os", "", "stage: the OS whose build artifact this is")
 	from := fs.String("from", "", "stage: the downloaded build artifact")
 	advisories := fs.String("advisories", "", "stage: the checkout's advisory list")
+	carriedBy := fs.String("carried-by", "", "latest-json, validate-latest, checksum-files: a latest.json of this version whose platforms fix which legs the release carries (without it: the legs whole on the release, signatures included)")
 	newerThan := fs.String("newer-than", "", "latest-json, validate-latest: the live manifest's version, which this one must move past (empty: unknown, or a deliberate republish)")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
@@ -96,6 +97,9 @@ func run(args []string) error {
 		if err != nil {
 			return err
 		}
+		if release, err = carriedRelease(release, have, *carriedBy); err != nil {
+			return err
+		}
 		keys, err := trustedKeyIDs(os.Getenv("RELEASE_ASSETS_ROOT"))
 		if err != nil {
 			return fmt.Errorf("reading the updater keys the app trusts (run this through scripts/release-assets.sh): %w", err)
@@ -125,6 +129,9 @@ func run(args []string) error {
 		if err != nil {
 			return err
 		}
+		if release, err = carriedRelease(release, have, *carriedBy); err != nil {
+			return err
+		}
 		files, err := manifest.Present(release.Downloads(), assetNames(have))
 		if err != nil {
 			return err
@@ -135,6 +142,27 @@ func run(args []string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown command %q: plan, latest-json, validate-latest, vet-nsis, stage, or checksum-files", args[0])
+}
+
+// carriedRelease is release as it carries its legs (`manifest/legs.go`): the ones the
+// `latest.json` at carriedBy names, when given, or else the ones whole among the release's assets,
+// with a `::warning::` for each leg the release ships without. A macOS-only release has no legs, so
+// it comes back as it went in.
+func carriedRelease(release manifest.Release, assets []releaseAsset, carriedBy string) (manifest.Release, error) {
+	if carriedBy != "" {
+		raw, err := os.ReadFile(carriedBy)
+		if err != nil {
+			return manifest.Release{}, err
+		}
+		return release.CarriedBy(raw)
+	}
+	whole, lacking := release.CarriedWhole(assetNames(assets))
+	for _, osName := range release.LegOSes() {
+		if missing, ok := lacking[osName]; ok {
+			fmt.Fprintf(os.Stderr, "::warning::%s\n", manifest.LackingLine(release.Version, osName, missing))
+		}
+	}
+	return whole, nil
 }
 
 // vetNSISFiles runs `nsis.Vet` on each installer, printing a verdict per file, and fails if any

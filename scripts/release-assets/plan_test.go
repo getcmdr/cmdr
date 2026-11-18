@@ -68,34 +68,34 @@ func TestPlanTodayWiresWindowsAndSkipsIt(t *testing.T) {
 	outs, err := plan(planInput{release: manifest.For("0.62.0"), wiring: manifest.All("0.62.0"), vetted: vettedAll, attested: attestedAll, subjectDir: "release-assets"})
 	must(t, err)
 	got := outputsOf(t, outs)
-	for k, want := range map[string]string{"ships-windows": "false", "ships-linux": "false", "advisory-list": "", "signed-files": got["update-archives"]} {
+	for k, want := range map[string]string{"ships-windows": "false", "ships-linux": "false", "signed-files": got["update-archives"]} {
 		if got[k] != want {
 			t.Errorf("%s = %q, want %q", k, got[k], want)
 		}
 	}
-	if got["signs-version"] != "" {
-		t.Errorf("signs-version = %q for a macOS-only release", got["signs-version"])
-	}
-	for _, k := range []string{"update-archives-windows", "uploads-windows", "sbom-windows-x86_64"} {
+	for _, k := range []string{"update-archives-windows", "uploads-windows", "sbom-windows-x86_64", "signs-version", "advisory-list"} {
 		if _, ok := got[k]; ok {
 			t.Errorf("a macOS-only release plans %s", k)
 		}
 	}
 }
 
+// A Windows release's leg never holds the macOS core: `signed-files`, `update-archives`, and
+// `binaries` (what `publish` and `attest` require) are the core's, and the Windows builds are
+// subject patterns that may match nothing, since the leg joins only when it's whole.
 func TestPlanForAWindowsRelease(t *testing.T) {
 	outs, err := plan(windowsPlanInput("0.70.0"))
 	must(t, err)
 	got := outputsOf(t, outs)
+	core := "Cmdr_0.70.0_universal.app.tar.gz Cmdr_0.70.0_aarch64.app.tar.gz Cmdr_0.70.0_x64.app.tar.gz"
 	want := map[string]string{
 		"ships-windows":                "true",
-		"signs-version":                "Cmdr_0.70.0_x64-setup.exe",
 		"uploads-windows":              "Cmdr_0.70.0_x64-setup.exe Cmdr_0.70.0_x64.msix cmdr-group-policy-0.70.0.zip",
 		"update-archives-windows":      "Cmdr_0.70.0_x64-setup.exe",
-		"advisory-list":                "Cmdr_0.70.0_security-advisories.json",
-		"signed-files":                 got["update-archives"] + " Cmdr_0.70.0_security-advisories.json",
+		"update-archives":              core,
+		"signed-files":                 core,
 		"sbom-windows-x86_64":          "Cmdr_0.70.0_windows_x64.rust.cdx.json",
-		"sbom-windows-x86_64-subjects": "release-assets/Cmdr_0.70.0_x64-setup.exe\nrelease-assets/Cmdr_0.70.0_x64.msix",
+		"sbom-windows-x86_64-subjects": "release-assets/Cmdr_0.70.0_x64-setup[.]exe\nrelease-assets/Cmdr_0.70.0_x64[.]msix",
 	}
 	for k, v := range want {
 		if got[k] != v {
@@ -105,8 +105,11 @@ func TestPlanForAWindowsRelease(t *testing.T) {
 	if !strings.Contains(got["rust-sboms"], "x86_64-pc-windows-msvc Cmdr_0.70.0_windows_x64.rust.cdx.json") {
 		t.Errorf("rust-sboms = %s", got["rust-sboms"])
 	}
-	if strings.Contains(got["binaries"], "group-policy") || !strings.Contains(got["binaries"], "Cmdr_0.70.0_x64.msix") {
-		t.Errorf("binaries = %s (the builds, not the policy template)", got["binaries"])
+	if strings.Contains(got["binaries"], "x64-setup") || strings.Contains(got["binaries"], "msix") {
+		t.Errorf("binaries = %s (the core's required builds only)", got["binaries"])
+	}
+	if !strings.Contains(got["sbom-frontend-subjects"], "release-assets/Cmdr_0.70.0_x64[.]msix") {
+		t.Errorf("sbom-frontend-subjects = %s (the Windows builds as patterns)", got["sbom-frontend-subjects"])
 	}
 }
 

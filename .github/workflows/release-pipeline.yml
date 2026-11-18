@@ -51,12 +51,10 @@ jobs:
       update-archives-macos: ${{ steps.assets.outputs.update-archives-macos }}
       update-archives-windows: ${{ steps.assets.outputs.update-archives-windows }}
       signed-files: ${{ steps.assets.outputs.signed-files }}
-      signs-version: ${{ steps.assets.outputs.signs-version }}
       # `true` once `scripts/release-assets/manifest/manifest.go`'s `ShippedOSes` names Windows,
       # the one switch that turns the Windows jobs on (`docs/guides/releasing.md` § Windows releases).
       ships-windows: ${{ steps.assets.outputs.ships-windows }}
       uploads-windows: ${{ steps.assets.outputs.uploads-windows }}
-      advisory-list: ${{ steps.assets.outputs.advisory-list }}
       binaries: ${{ steps.assets.outputs.binaries }}
       rust-sboms: ${{ steps.assets.outputs.rust-sboms }}
       frontend-sbom: ${{ steps.assets.outputs.frontend-sbom }}
@@ -941,9 +939,16 @@ jobs:
   # build hook and holds no secret. Nothing in its packaging signs, so the NSIS bundle and the
   # MSIX are made here too, and `windows-publish` only signs the updater payload and uploads.
   # ❌ Don't give this job a secret or the `release` environment.
+  #
+  # The Windows leg (this job, `windows-publish`, `windows-attest`) never holds or fails the macOS
+  # release: no macOS job needs it, each is `continue-on-error`, and the release carries the leg only
+  # if it's whole when its contents are fixed (`publish`'s snapshot in `ci` mode, the laptop's
+  # signing in `local` mode), else ships macOS alone with a warning naming what was missing
+  # (`scripts/release-assets/manifest/legs.go`, `docs/guides/releasing.md` § Windows releases).
   windows-build:
     name: Build the Windows packages
     needs: [guard, ci-gate, draft]
+    continue-on-error: true
     # Gated like `compile`, plus the manifest's switch.
     if: >-
       !cancelled() && needs.guard.result == 'success' && needs.guard.outputs.ships-windows == 'true' && (
@@ -1073,6 +1078,7 @@ jobs:
   windows-publish:
     name: Sign and upload the Windows packages
     needs: [guard, windows-build, sign]
+    continue-on-error: true # the Windows leg never fails the release (`windows-build`)
     if: >-
       !cancelled() && needs.guard.result == 'success' && needs.windows-build.result == 'success' && needs.sign.result ==
       'success'
@@ -1081,6 +1087,9 @@ jobs:
     environment: release
     permissions:
       contents: write # upload the Windows files to the release
+    outputs:
+      # The files this job put on the release (`stage`'s names), which `windows-attest` attests.
+      files: ${{ steps.stage.outputs.files }}
 
     steps:
       - name: Checkout code
@@ -1167,6 +1176,13 @@ jobs:
             echo "::error::$TAG's release is published, but local signing builds into a draft."
             exit 1
           fi
+          # Once `publish` has written `latest.json`, the release's legs are fixed (a re-run keeps
+          # them), so a leg arriving after that would sit on the release unreferenced.
+          HAVE=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq '.assets[].name')
+          if grep -qxF latest.json <<< "$HAVE"; then
+            echo "::error::$TAG went out without its Windows files: publish wrote latest.json before this job finished. Windows installs get the next release; docs/guides/releasing.md § Windows releases."
+            exit 1
+          fi
           DIR="$RUNNER_TEMP/windows-x86_64"
           paths=()
           for name in $FILES; do paths+=("$DIR/$name"); done
@@ -1174,6 +1190,41 @@ jobs:
             for name in $SIGNED; do paths+=("$DIR/$name.sig"); done
           fi
           ./scripts/release-upload.sh "$TAG" "$RELEASE_ID" "${paths[@]}"
+
+  # Build provenance for the Windows files as published, as soon as they're up, so `local` mode's
+  # laptop can verify them without `attest` (which no Windows job holds) waiting for the leg. In `ci`
+  # mode `attest` attests every asset again after `publish`; the two agree. Its own job, like
+  # `attest`: the one that mints a signing identity runs nothing from the build and holds no key.
+  windows-attest:
+    name: Attest the Windows packages
+    needs: [guard, windows-publish]
+    continue-on-error: true # the Windows leg never fails the release (`windows-build`)
+    if: ${{ !cancelled() && needs.guard.result == 'success' && needs.windows-publish.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # read the draft release in `local` mode: a read-only token can't see drafts
+      id-token: write # request the short-lived Sigstore signing certificate
+      attestations: write # store the attestations on the repository
+
+    steps:
+      - name: Download the Windows files as published
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          FILES: ${{ needs.windows-publish.outputs.files }}
+        run: |
+          set -euo pipefail
+          [ -n "$FILES" ] || { echo "::error::windows-publish named no files."; exit 1; }
+          for name in $FILES; do
+            gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "$name" -D windows-assets
+          done
+          ls -l windows-assets
+
+      - name: Attest build provenance for the Windows files
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: windows-assets/*
 
   # CycloneDX SBOMs for what ships inside the app: the Rust crate graph (one per arch, since
   # the two target triples resolve slightly different crates) and the frontend's npm packages.
@@ -1300,12 +1351,11 @@ jobs:
   # `docs/guides/releasing.md` § The release gate.
   vet-update-archives:
     name: Vet the update archives
-    needs: [guard, sign, windows-publish]
+    needs: [guard, sign]
     if: >-
       !cancelled() && needs.guard.result == 'success' && (
         github.event_name == 'workflow_dispatch' ||
-        (needs.guard.outputs.update-signing == 'ci' && needs.sign.result == 'success' &&
-          (needs.guard.outputs.ships-windows != 'true' || needs.windows-publish.result == 'success')))
+        (needs.guard.outputs.update-signing == 'ci' && needs.sign.result == 'success'))
     # Apple's code-signature check needs macOS. Same image as `sign`.
     runs-on: macos-26
     timeout-minutes: 30
@@ -1336,7 +1386,10 @@ jobs:
           done
           ls -l "$RUNNER_TEMP/archives"
 
-      # Also before the cargo build, for the same reason: the token stays out of its reach.
+      # Also before the cargo build, for the same reason: the token stays out of its reach. A second
+      # look at the installer `windows-publish` vetted before signing, as published, when it's on the
+      # release by now: the Windows leg never holds this job (it may still be building, or the release
+      # may ship without it), so its absence is a line here, not a failure.
       - name: Download the Windows update payloads
         if: needs.guard.outputs.ships-windows == 'true'
         env:
@@ -1346,7 +1399,13 @@ jobs:
         run: |
           set -euo pipefail
           [ -n "$ARCHIVES" ] || { echo "::error::guard's plan names no Windows update payloads."; exit 1; }
+          HAVE=$(gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')
           for name in $ARCHIVES; do
+              if ! grep -qxF "$name" <<< "$HAVE"; then
+                  echo "$name isn't on the release (yet), so this run doesn't vet the Windows leg; windows-publish vetted it before signing."
+                  rm -rf "$RUNNER_TEMP/windows"
+                  exit 0
+              fi
               gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "$name" -D "$RUNNER_TEMP/windows"
           done
 
@@ -1378,6 +1437,7 @@ jobs:
           ARCHIVES: ${{ needs.guard.outputs.update-archives-windows }}
         run: |
           set -euo pipefail
+          [ -d "$RUNNER_TEMP/windows" ] || { echo "No Windows installer on the release to vet."; exit 0; }
           paths=()
           for name in $ARCHIVES; do paths+=("$RUNNER_TEMP/windows/$name"); done
           ./scripts/release-assets.sh vet-nsis -version "${TAG#v}" "${paths[@]}"
@@ -1558,14 +1618,15 @@ jobs:
     # `ci-gate` (a green full CI run and CodeQL on the tagged commit), `vet-update-archives`, and
     # `demo` (the attested browser demo image the website deploy below ships) are hard
     # requirements. `sign` puts the pkg (if any) on the release before the checksums are taken.
-    needs: [guard, ci-gate, sign, windows-publish, vet-update-archives, demo, manifest-readers]
+    # No Windows job: the release takes the Windows leg only if it's whole when "Generate
+    # latest.json" looks (`windows-build`'s comment), so Windows never holds or fails it.
+    needs: [guard, ci-gate, sign, vet-update-archives, demo, manifest-readers]
     if: >-
       !cancelled() && needs.guard.result == 'success' && needs.ci-gate.result == 'success' &&
       needs.vet-update-archives.result == 'success' && needs.demo.result == 'success' && needs.manifest-readers.result
       == 'success' && (
         github.event_name == 'workflow_dispatch' ||
-        (needs.guard.outputs.update-signing == 'ci' && needs.sign.result == 'success' &&
-          (needs.guard.outputs.ships-windows != 'true' || needs.windows-publish.result == 'success')))
+        (needs.guard.outputs.update-signing == 'ci' && needs.sign.result == 'success'))
     runs-on: ubuntu-latest
     permissions:
       contents: write # publish the draft, upload `latest.json` and checksums, mark the release Latest
@@ -1622,9 +1683,15 @@ jobs:
           TAG="${{ github.ref_name }}"
           VERSION="${TAG#v}"
           mkdir -p /tmp/verify
-          for name in $ARCHIVES; do
-              cp "/tmp/signatures/$name.sig" /tmp/verify/
+          # Every signature on the release with its file: the core's (`-verify-dir` requires each of
+          # `$ARCHIVES`) and a Windows leg's the laptop signed, which it verifies when they're there.
+          for sig in /tmp/signatures/*.sig; do
+              name=$(basename "$sig" .sig)
+              cp "$sig" /tmp/verify/
               gh release download "$TAG" -p "$name" -D /tmp/verify
+          done
+          for name in $ARCHIVES; do
+              [ -f "/tmp/verify/$name" ] || { echo "::error::No $name to verify."; exit 1; }
           done
           ./scripts/release-finish.sh -verify-dir /tmp/verify "$VERSION"
 
@@ -1648,9 +1715,23 @@ jobs:
           VERSION="${VERSION#v}"
           TAG="${{ github.ref_name }}"
 
-          # The release as GitHub has it now: the sizes for `downloads` and `dmgSizes`.
+          # The release as GitHub has it now: the sizes for `downloads` and `dmgSizes`, and the one
+          # look that fixes which legs it carries (`scripts/release-assets/manifest/legs.go`): a leg
+          # whole in this snapshot, signatures included, ships; one that isn't (the Windows jobs
+          # still going, or red) is left out with a warning. The signatures are fetched again after
+          # it, so every one the snapshot lists is on disk.
           RELEASE_JSON=$(gh api "repos/${{ github.repository }}/releases/tags/$TAG")
           printf '%s\n' "$RELEASE_JSON" > /tmp/release.json
+          gh release download "$TAG" -p "Cmdr_*.sig" -D /tmp/signatures --clobber
+
+          # A re-run keeps the legs of the latest.json an earlier attempt put on the release: the
+          # mirror's files are immutable, so the legs, once written down, don't change.
+          CARRIED=()
+          if jq -e '.assets[] | select(.name == "latest.json")' /tmp/release.json > /dev/null; then
+            rm -rf /tmp/carried && mkdir -p /tmp/carried
+            gh release download "$TAG" -p latest.json -D /tmp/carried
+            CARRIED=(-carried-by /tmp/carried/latest.json)
+          fi
 
           # The EU mirror (`scripts/release-mirror.sh`, run below before the release goes Latest).
           # Older installs follow any HTTPS URL here: no shipped updater checks the host.
@@ -1669,7 +1750,7 @@ jobs:
           # where a drifted name fails, while nothing has shipped.
           ./scripts/release-assets.sh latest-json -version "$VERSION" -assets /tmp/release.json \
             -sigs /tmp/signatures -notes /tmp/notes.txt -base-url "$BASE_URL" \
-            -pub-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" -newer-than "$LIVE_VERSION" -out /tmp/latest.json
+            -pub-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" -newer-than "$LIVE_VERSION" ${CARRIED[@]+"${CARRIED[@]}"} -out /tmp/latest.json
 
       - name: Download the update manifest's readers
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -1709,7 +1790,7 @@ jobs:
               || { echo "::error::The release serves a latest.json that differs from the one that passed the gate."; exit 1; }
           ./scripts/release-assets.sh validate-latest -version "${TAG#v}" -assets /tmp/release.json \
             -sigs /tmp/signatures -base-url "https://download.getcmdr.com/$TAG" \
-            -newer-than "$LIVE_VERSION" -file /tmp/readback/latest.json
+            -newer-than "$LIVE_VERSION" -carried-by /tmp/latest.json -file /tmp/readback/latest.json
           manifest-gate/cmdr-check-update-manifest /tmp/readback/latest.json
 
       # The only way someone who clicks Download on the website can check what they got. The
@@ -1728,9 +1809,10 @@ jobs:
           rm -rf /tmp/checksums && mkdir -p /tmp/checksums
           # Every download in the release asset manifest: the required ones (a missing one fails
           # here) and the optional ones the release has (the pkg, which `sign` skips without its
-          # certificate).
+          # certificate), of the legs `latest.json` carries.
           gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json assets > /tmp/assets.json
-          FILES=$(./scripts/release-assets.sh checksum-files -version "$VERSION" -assets /tmp/assets.json)
+          FILES=$(./scripts/release-assets.sh checksum-files -version "$VERSION" -assets /tmp/assets.json \
+            -carried-by /tmp/latest.json)
           EXPECTED=0
           for name in $FILES; do
               gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "$name" -D /tmp/checksums
@@ -1820,12 +1902,13 @@ jobs:
     name: Attest provenance and publish SBOMs
     # In `local` mode the tag push's run attests the pkg along with the rest of the draft: `sign`
     # uploads it.
-    needs: [guard, sign, windows-publish, publish, sbom]
+    # No Windows job: `windows-attest` attests the Windows files as soon as they're up, so the laptop
+    # never waits on the leg here.
+    needs: [guard, sign, publish, sbom]
     if: >-
       !cancelled() && (needs.publish.result == 'success' || (
         github.event_name == 'push' && needs.guard.outputs.update-signing == 'local' &&
-        needs.sign.result == 'success' &&
-        (needs.guard.outputs.ships-windows != 'true' || needs.windows-publish.result == 'success')))
+        needs.sign.result == 'success'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Job-scoped on purpose (`desktop-workflows-hardening` enforces it for `id-token`). A job

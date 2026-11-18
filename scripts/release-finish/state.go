@@ -60,11 +60,12 @@ func nextFinishAction(runs []workflowRun) (finishAction, workflowRun) {
 	}
 }
 
-// signedNames are the assets the updater downloads, the only ones this key signs: every
-// update payload in the release asset manifest (`scripts/release-assets/manifest`), plus the
-// advisory list once a release ships one (`manifest.File.Signed`).
+// signedNames are the core's assets the updater downloads, the ones this key must sign for the
+// release to ship: every core update payload in the release asset manifest
+// (`scripts/release-assets/manifest`). A leg's (Windows: its installer and the advisory list) are
+// `legSigned`'s, signed only when the leg is whole (`legs.go`).
 func signedNames(version string) []string {
-	return manifest.Names(manifest.For(version).Signed())
+	return manifest.Names(manifest.For(version).Core().Signed())
 }
 
 type releaseAsset struct {

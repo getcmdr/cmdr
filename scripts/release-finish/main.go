@@ -95,6 +95,8 @@ type config struct {
 	signerWorkflow string
 	dryRun         bool
 	backupKey      bool
+	// leg is `-leg`: with `-verify-dir`, verify that OS's leg alone (`windows-publish`'s check).
+	leg string
 }
 
 func main() {
@@ -106,6 +108,7 @@ func main() {
 	backupKey := flag.Bool("backup-key", false, "sign with the offline backup key from $"+backupKeyEnv+" and $"+backupPasswordEnv+" instead of sops: the key-rotation release only")
 	ciGateOnly := flag.Bool("ci-gate", false, "only check the release's full CI run and CodeQL gate on the tagged commit (the pipeline's ci-gate job)")
 	wait := flag.Bool("wait", false, "with -ci-gate: wait for the run, failing on the first red job")
+	leg := flag.String("leg", "", "with -verify-dir: verify that OS's leg alone (its installer and the advisory list), every one of its signed files required")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: ./scripts/release-finish.sh [-dry-run] [-backup-key] [-out DIR] [-signer-workflow WORKFLOW] <version>")
 		fmt.Fprintln(os.Stderr, "       ./scripts/release-finish.sh -ci-gate [-wait] <version>")
@@ -124,6 +127,7 @@ func main() {
 		signerWorkflow: *signer,
 		dryRun:         *dryRun,
 		backupKey:      *backupKey,
+		leg:            *leg,
 	}
 	if err := dispatch(cfg, *verifyDir, *ciGateOnly, *wait); err != nil {
 		fail(err)
@@ -231,7 +235,8 @@ func run(cfg config) error {
 		}
 	}
 	names := signedNames(cfg.version)
-	if err := requireArchives(cfg, names); err != nil {
+	rel, err := requireArchives(cfg, names)
+	if err != nil {
 		return err
 	}
 
@@ -243,6 +248,21 @@ func run(cfg config) error {
 
 	if err := checkAndSign(cfg, pubkeys, dir, names, commit); err != nil {
 		return err
+	}
+	// Each leg whole on the draft goes through the same checks; one that fails them is left out
+	// (`publish` then carries the release without it), never holding the core.
+	release := manifest.For(cfg.version)
+	legs, lines := legsOnDraft(release, rel)
+	for _, line := range lines {
+		step("%s", line)
+	}
+	for _, leg := range legs {
+		legNames := legSigned(release, leg)
+		if err := checkAndSign(cfg, pubkeys, dir, legNames, commit); err != nil {
+			step("%s ships without its %s files, which didn't pass the checks: %v", cfg.tag, leg, err)
+			continue
+		}
+		names = append(names, legNames...)
 	}
 
 	if cfg.dryRun {
@@ -271,13 +291,23 @@ func checkAndSign(cfg config, pubkeys []string, dir string, names []string, comm
 }
 
 // verifyOnly is `-verify-dir`: the `publish` job runs it before publishing a draft, so a
-// dispatch can't ship a manifest built from missing, empty, or foreign signatures.
+// dispatch can't ship a manifest built from missing, empty, or foreign signatures, and
+// `windows-publish` runs it on the signatures it just made. Every core signed file must be in dir;
+// each other signed file of the release with its `.sig` there (a leg's) is verified too.
 func verifyOnly(cfg config, dir string) error {
 	pubkeys, err := readTrustedPubkeys(cfg.root)
 	if err != nil {
 		return err
 	}
-	return verifySignatures(pubkeys, dir, signedNames(cfg.version))
+	release := manifest.For(cfg.version)
+	if cfg.leg != "" {
+		names := legSigned(release, manifest.OS(cfg.leg))
+		if len(names) == 0 {
+			return fmt.Errorf("release %s has no %s leg to verify", cfg.version, cfg.leg)
+		}
+		return verifySignatures(pubkeys, dir, names)
+	}
+	return verifySignatures(pubkeys, dir, verifyNames(release, dir))
 }
 
 // waitUntilSignable reports a release that's already published (signing is behind it), and
@@ -295,21 +325,21 @@ func waitUntilSignable(cfg config, commit string) (published bool, err error) {
 
 // requireArchives checks the release is in a state to sign: a draft (or, in a dry run, any
 // release) carrying every update archive.
-func requireArchives(cfg config, names []string) error {
+func requireArchives(cfg config, names []string) (releaseInfo, error) {
 	rel, found, err := findRelease(cfg.tag)
 	if err != nil {
-		return err
+		return rel, err
 	}
 	if !found {
-		return fmt.Errorf("%s has no release on GitHub (a draft included), so there's nothing to sign", cfg.tag)
+		return rel, fmt.Errorf("%s has no release on GitHub (a draft included), so there's nothing to sign", cfg.tag)
 	}
 	if !cfg.dryRun && !rel.IsDraft {
-		return fmt.Errorf("%s was published while this waited. Run this again to finish it", cfg.tag)
+		return rel, fmt.Errorf("%s was published while this waited. Run this again to finish it", cfg.tag)
 	}
 	if missing := rel.missing(names); len(missing) > 0 {
-		return fmt.Errorf("the %s release lacks %s, so the build didn't upload everything", cfg.tag, strings.Join(missing, ", "))
+		return rel, fmt.Errorf("the %s release lacks %s, so the build didn't upload everything", cfg.tag, strings.Join(missing, ", "))
 	}
-	return nil
+	return rel, nil
 }
 
 // workDir is -out, or a temp dir that a real run removes afterwards and a dry run keeps.
@@ -563,11 +593,19 @@ func waitForBuildAndCI(cfg config, commit string) error {
 			for _, line := range jobChanges(seen, v.ciJobs()) {
 				fmt.Println("    Build: " + line)
 			}
-			if v.Status == "completed" {
-				if v.Conclusion != "success" {
-					return fmt.Errorf("the %s build run ended %s: %s. Re-run its failed jobs (`gh run rerun %d --failed`), then run this again", cfg.tag, v.Conclusion, runURL(build.ID), build.ID)
-				}
+			// The Windows leg never holds this: once every other job is done the core is signable,
+			// and the leg is signed only if it's whole on the draft by then (`legs.go`).
+			early, failed := coreDone(v.ciJobs())
+			switch {
+			case v.Status == "completed" && v.Conclusion != "success":
+				return fmt.Errorf("the %s build run ended %s: %s. Re-run its failed jobs (`gh run rerun %d --failed`), then run this again", cfg.tag, v.Conclusion, runURL(build.ID), build.ID)
+			case v.Status == "completed":
 				step("The build run is green (%s)", runURL(build.ID))
+				buildDone = true
+			case early && len(failed) > 0:
+				return fmt.Errorf("the %s build run's %s didn't succeed: %s. Re-run its failed jobs (`gh run rerun %d --failed`), then run this again", cfg.tag, strings.Join(failed, ", "), runURL(build.ID), build.ID)
+			case early:
+				step("The build run's macOS jobs are green (%s); its Windows jobs are still going, and this won't wait for them", runURL(build.ID))
 				buildDone = true
 			}
 		}

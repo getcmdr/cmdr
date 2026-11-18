@@ -5,11 +5,13 @@ import (
 	"os"
 	"slices"
 	"testing"
+
+	"cmdr/scripts/release-assets/manifest"
 )
 
 // v0.61.0 as published (`../release-assets/testdata/v0.61.0/`): the mirror's picks and manifest
 // check against a real release, so a change to how they're derived can't drift from what ships.
-func publishedRelease(t *testing.T) (names []string, manifest []byte) {
+func publishedRelease(t *testing.T) (names []string, body []byte) {
 	t.Helper()
 	raw, err := os.ReadFile("../release-assets/testdata/v0.61.0/release.json")
 	if err != nil {
@@ -26,16 +28,16 @@ func publishedRelease(t *testing.T) (names []string, manifest []byte) {
 	for _, a := range rel.Assets {
 		names = append(names, a.Name)
 	}
-	manifest, err = os.ReadFile("../release-assets/testdata/v0.61.0/latest.json")
+	body, err = os.ReadFile("../release-assets/testdata/v0.61.0/latest.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	return names, manifest
+	return names, body
 }
 
 func TestMirroredAssetsOfAPublishedRelease(t *testing.T) {
-	names, manifest := publishedRelease(t)
-	got, err := mirroredAssets(names, "0.61.0")
+	names, body := publishedRelease(t)
+	got, err := mirroredAssets(names, manifest.For("0.61.0"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +51,7 @@ func TestMirroredAssetsOfAPublishedRelease(t *testing.T) {
 	if !slices.Equal(got, want) {
 		t.Fatalf("mirroredAssets =\n  %v\nwant\n  %v", got, want)
 	}
-	if err := checkManifest(manifest, "0.61.0", defaultHost); err != nil {
+	if err := checkManifest(body, manifest.For("0.61.0"), defaultHost); err != nil {
 		t.Fatalf("v0.61.0's published latest.json: %v", err)
 	}
 }
