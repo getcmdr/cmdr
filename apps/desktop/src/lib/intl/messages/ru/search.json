@@ -67,9 +67,9 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Включите индексацию изображений для этого сетевого диска в настройках, чтобы искать текст на фотографиях.}}",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Включите индексацию изображений для этого сетевого диска в параметрах, чтобы искать текст на фотографиях.} linuxKde {Включите индексацию изображений для этого сетевого диска в окне «Настроить Cmdr», чтобы искать текст на фотографиях.} other {Включите индексацию изображений для этого сетевого диска в настройках, чтобы искать текст на фотографиях.}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "ccf901b"
+    "sourceHash": "30b2455"
   },
   "search.imageResults.paused": "Диск отключен. Показаны фотографии, проиндексированные ранее.",
   "@search.imageResults.paused": {
@@ -219,9 +219,9 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {Индексация дисков выключена в настройках, поэтому ничего не индексируется. Включите ее в разделе «Индексация > Индексация дисков».}}",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Индексация дисков выключена в параметрах, поэтому ничего не индексируется. Включите ее в разделе «Индексация > Индексация дисков».} linuxKde {Индексация дисков выключена в окне «Настроить Cmdr», поэтому ничего не индексируется. Включите ее в разделе «Индексация > Индексация дисков».} other {Индексация дисков выключена в настройках, поэтому ничего не индексируется. Включите ее в разделе «Индексация > Индексация дисков».}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "abfe24b"
+    "sourceHash": "7c4ff62"
   },
   "search.coverage.toast.deferredUntilSearchEnds": "Cmdr уже ищет на диске {drive}. Индексация начнется сразу после завершения поиска.",
   "@search.coverage.toast.deferredUntilSearchEnds": {

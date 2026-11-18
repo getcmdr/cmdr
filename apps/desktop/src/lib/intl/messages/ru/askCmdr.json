@@ -705,21 +705,21 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, linuxGnome {Add your API key in preferences to start chatting.} other {Добавьте API-ключ в настройках, чтобы начать общение.}}",
+  "askCmdr.error.noKey": "{platform, select, linuxGnome {Добавьте API-ключ в параметрах, чтобы начать общение.} other {Добавьте API-ключ в настройках, чтобы начать общение.}}",
   "@askCmdr.error.noKey": {
-    "sourceHash": "0a78f37"
+    "sourceHash": "124df6a"
   },
-  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {Chatting needs an AI provider. Turn one on in preferences.} other {Для общения нужен поставщик ИИ. Включите его в настройках.}}",
+  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {Для общения нужен поставщик ИИ. Включите его в параметрах.} other {Для общения нужен поставщик ИИ. Включите его в настройках.}}",
   "@askCmdr.error.notConfigured": {
-    "sourceHash": "2d55d2c"
+    "sourceHash": "54fb846"
   },
   "askCmdr.error.askCmdrOff": "Ask Cmdr выключен.",
   "@askCmdr.error.askCmdrOff": {
     "sourceHash": "6599ee1"
   },
-  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {Cloud AI is off. Allow it in Preferences > AI.} linuxKde {Cloud AI is off. Allow it in Configure Cmdr > AI.} other {Облачный ИИ выключен. Разрешите его в разделе «Настройки > ИИ».}}",
+  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {Облачный ИИ выключен. Разрешите его в разделе «Параметры > ИИ».} linuxKde {Облачный ИИ выключен. Разрешите его в разделе «Настроить Cmdr > ИИ».} other {Облачный ИИ выключен. Разрешите его в разделе «Настройки > ИИ».}}",
   "@askCmdr.error.noCloudConsent": {
-    "sourceHash": "cd2af1d"
+    "sourceHash": "6490317"
   },
   "askCmdr.error.managedByOrganization": "Ваша организация не разрешает этот сервис ИИ. В вашем ИТ-отделе подскажут, какими сервисами можно пользоваться.",
   "@askCmdr.error.managedByOrganization": {
@@ -737,29 +737,29 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, linuxGnome {The provider didn’t accept your API key. Check it in preferences.} other {Поставщик не принял ваш API-ключ. Проверьте его в настройках.}}",
+  "askCmdr.error.authFailed": "{platform, select, linuxGnome {Поставщик не принял ваш API-ключ. Проверьте его в параметрах.} other {Поставщик не принял ваш API-ключ. Проверьте его в настройках.}}",
   "@askCmdr.error.authFailed": {
-    "sourceHash": "a2302ca"
+    "sourceHash": "9e02aad"
   },
   "askCmdr.error.rateLimited": "Поставщик занят или ваша квота исчерпана. Попробуйте чуть позже.",
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {Your {provider} plan doesn’t include this model. Pick another model in preferences, or upgrade your plan.} other {Ваш тариф у поставщика {provider} не включает эту модель. Выберите другую модель в настройках или перейдите на более высокий тариф.}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {Ваш тариф у поставщика {provider} не включает эту модель. Выберите другую модель в параметрах или перейдите на более высокий тариф.} other {Ваш тариф у поставщика {provider} не включает эту модель. Выберите другую модель в настройках или перейдите на более высокий тариф.}}",
   "@askCmdr.error.modelNotInPlan.named": {
-    "sourceHash": "9f2c237"
+    "sourceHash": "efbf38b"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {Your plan with this AI provider doesn’t include this model. Pick another model in preferences, or upgrade your plan.} other {Ваш тариф у этого поставщика ИИ не включает эту модель. Выберите другую модель в настройках или перейдите на более высокий тариф.}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {Ваш тариф у этого поставщика ИИ не включает эту модель. Выберите другую модель в параметрах или перейдите на более высокий тариф.} other {Ваш тариф у этого поставщика ИИ не включает эту модель. Выберите другую модель в настройках или перейдите на более высокий тариф.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
-    "sourceHash": "b90bf30"
+    "sourceHash": "6808950"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in preferences.} other {Поставщик {provider} отклонил запрос: лимит вашего тарифа меньше одного запроса Cmdr, ведь каждый запрос всегда содержит инструкции Cmdr. Более короткое сообщение не поможет. Перейдите на тариф побольше у поставщика {provider} или выберите другого поставщика в настройках.}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {Поставщик {provider} отклонил запрос: лимит вашего тарифа меньше одного запроса Cmdr, ведь каждый запрос всегда содержит инструкции Cmdr. Более короткое сообщение не поможет. Перейдите на тариф побольше у поставщика {provider} или выберите другого поставщика в параметрах.} other {Поставщик {provider} отклонил запрос: лимит вашего тарифа меньше одного запроса Cmdr, ведь каждый запрос всегда содержит инструкции Cmdr. Более короткое сообщение не поможет. Перейдите на тариф побольше у поставщика {provider} или выберите другого поставщика в настройках.}}",
   "@askCmdr.error.requestTooLarge.named": {
-    "sourceHash": "f878555"
+    "sourceHash": "b1850b3"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in preferences.} other {Ваш поставщик ИИ отклонил запрос: лимит вашего тарифа меньше одного запроса Cmdr, ведь каждый запрос всегда содержит инструкции Cmdr. Более короткое сообщение не поможет. Перейдите на тариф побольше или выберите другого поставщика в настройках.}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {Ваш поставщик ИИ отклонил запрос: лимит вашего тарифа меньше одного запроса Cmdr, ведь каждый запрос всегда содержит инструкции Cmdr. Более короткое сообщение не поможет. Перейдите на тариф побольше или выберите другого поставщика в параметрах.} other {Ваш поставщик ИИ отклонил запрос: лимит вашего тарифа меньше одного запроса Cmdr, ведь каждый запрос всегда содержит инструкции Cmdr. Более короткое сообщение не поможет. Перейдите на тариф побольше или выберите другого поставщика в настройках.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
-    "sourceHash": "b81536f"
+    "sourceHash": "455449e"
   },
   "askCmdr.error.providerBusy.named": "Поставщик {provider} сейчас слишком занят и не ответил даже после нескольких попыток. Подождите несколько минут и отправьте сообщение еще раз.",
   "@askCmdr.error.providerBusy.named": {
@@ -977,17 +977,17 @@
   "@askCmdr.composer.sendNeedsProvider": {
     "sourceHash": "9e6aba3"
   },
-  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {Ask Cmdr needs an AI provider to chat. Pick one in Preferences.} linuxKde {Ask Cmdr needs an AI provider to chat. Pick one in Configure Cmdr.} other {Для общения Ask Cmdr нужен поставщик ИИ. Выберите его в настройках.}}",
+  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {Для общения Ask Cmdr нужен поставщик ИИ. Выберите его в параметрах.} linuxKde {Для общения Ask Cmdr нужен поставщик ИИ. Выберите его в окне «Настроить Cmdr».} other {Для общения Ask Cmdr нужен поставщик ИИ. Выберите его в настройках.}}",
   "@askCmdr.providerNotice.off": {
-    "sourceHash": "8696c99"
+    "sourceHash": "6e9f73c"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Preferences.} linuxKde {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Configure Cmdr.} other {Облачному поставщику ИИ нужен API-ключ, чтобы Ask Cmdr мог общаться. Добавьте его в настройках.}}",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {Облачному поставщику ИИ нужен API-ключ, чтобы Ask Cmdr мог общаться. Добавьте его в параметрах.} linuxKde {Облачному поставщику ИИ нужен API-ключ, чтобы Ask Cmdr мог общаться. Добавьте его в окне «Настроить Cmdr».} other {Облачному поставщику ИИ нужен API-ключ, чтобы Ask Cmdr мог общаться. Добавьте его в настройках.}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
-    "sourceHash": "dccf257"
+    "sourceHash": "16dc8a0"
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Preferences.} linuxKde {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Configure Cmdr.} other {Облачному поставщику ИИ нужен адрес, чтобы Ask Cmdr мог общаться. Добавьте его в настройках.}}",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {Облачному поставщику ИИ нужен адрес, чтобы Ask Cmdr мог общаться. Добавьте его в параметрах.} linuxKde {Облачному поставщику ИИ нужен адрес, чтобы Ask Cmdr мог общаться. Добавьте его в окне «Настроить Cmdr».} other {Облачному поставщику ИИ нужен адрес, чтобы Ask Cmdr мог общаться. Добавьте его в настройках.}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
-    "sourceHash": "1b1682b"
+    "sourceHash": "1ae5e35"
   },
   "askCmdr.providerNotice.localNotSetUp": "Локальный ИИ еще не загружен, поэтому Ask Cmdr не может общаться. Установите его в настройках.",
   "@askCmdr.providerNotice.localNotSetUp": {
@@ -1021,9 +1021,9 @@
   "@askCmdr.gate.cloudOff.title": {
     "sourceHash": "2e56781"
   },
-  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Preferences first, and you’re ready to chat.} linuxKde {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Configure Cmdr first, and you’re ready to chat.} other {Ask Cmdr общается с облачным сервисом ИИ, который вы настроили. Сначала разрешите облачный ИИ в настройках, и можно начинать.}}",
+  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {Ask Cmdr общается с облачным сервисом ИИ, который вы настроили. Сначала разрешите облачный ИИ в параметрах, и можно начинать.} linuxKde {Ask Cmdr общается с облачным сервисом ИИ, который вы настроили. Сначала разрешите облачный ИИ в окне «Настроить Cmdr», и можно начинать.} other {Ask Cmdr общается с облачным сервисом ИИ, который вы настроили. Сначала разрешите облачный ИИ в настройках, и можно начинать.}}",
   "@askCmdr.gate.cloudOff.body": {
-    "sourceHash": "d3d3252"
+    "sourceHash": "076c788"
   },
   "askCmdr.gate.cloudOff.openSettings": "Открыть настройки ИИ",
   "@askCmdr.gate.cloudOff.openSettings": {
@@ -1410,9 +1410,9 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {AI features are on, but they need a provider to work. Click to set one up in preferences.} other {Функции ИИ включены, но для работы им нужен поставщик. Нажмите, чтобы выбрать его в настройках.}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {Функции ИИ включены, но для работы им нужен поставщик. Нажмите, чтобы выбрать его в параметрах.} other {Функции ИИ включены, но для работы им нужен поставщик. Нажмите, чтобы выбрать его в настройках.}}",
   "@askCmdr.wake.needsApiKey": {
-    "sourceHash": "0f71f75"
+    "sourceHash": "2f1b3e9"
   },
   "askCmdr.wakeDigest.summary": "Изменения в {foldersText} {folders, plural, one {папке} few {папках} many {папках} other {папки}}",
   "@askCmdr.wakeDigest.summary": {
