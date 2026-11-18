@@ -541,6 +541,9 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       `JUKEBOX` lose their transient class and read as serious. And `Io`'s host code is `ERROR_CRC` (23), so a generic
       NFS fault would print a CRC error in the technical detail. The honest fix: a backend-built `VolumeError` carries
       its `OsErrorClass` directly (wire format unchanged), and only a real OS error carries a code.
+    - A product bug the same fix closes (found in the Windows builder's test logs): on Windows, the NFS and ADB backends
+      read the server's or the phone's Linux-numbered errno through Windows error codes, so their errors get the wrong
+      class there.
     - Deciders still on raw errnos, each a local-disk or OS-call site: `cmdr-local` `local_posix.rs` (the no-replace
       rename's fallback, ~131; the write-access probe, ~947), `local_posix/links.rs` (~33), `reading/bulk.rs` (~164);
       `cmdr-fs` `durable.rs` (~18); the app's `network/smb_connect_failure.rs` (~219, its log detail); and `cmdr-smb`
