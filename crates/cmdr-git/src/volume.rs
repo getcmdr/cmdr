@@ -377,11 +377,15 @@ fn listing_for(
 /// every transfer come for free — that's what makes copying a whole branch tree
 /// out to another volume work at all.
 impl ScanSource for GitPortalVolume {
-    fn scan_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
+    fn scan_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         self.get_metadata(&AppPath::legacy_unchecked(path))
     }
 
-    fn scan_list<'a>(&'a self, path: &'a Path) -> Walking<'a, Vec<FileEntry>> {
+    fn scan_list<'a>(&'a self, path: &'a AppPath) -> Walking<'a, Vec<FileEntry>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         self.list_directory(&AppPath::legacy_unchecked(path), None)
     }
 }
