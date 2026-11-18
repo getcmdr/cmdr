@@ -212,3 +212,10 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
   construction). Cmd-shell recipe that works there:
   `cmd /c "cd /d <dir> && set "CARGO_TARGET_DIR=<dir>" && cargo nextest run ... > <log> 2>&1"` (an unquoted
   `set X=Y && …` keeps the trailing space in the value).
+- **2026-11-18, the typed app path's review fixes** (`3951274cdf`): comparison now reads text with the host's
+  `Path::components`, so the builder ran the Windows property against `PathBuf` (4,000 cases over drive, UNC, verbatim,
+  and mixed-separator text): its first runs found where the type's prefix reading departed from std's (a UNC prefix
+  needs a server AND a share, `\\.\` takes either separator, a UNC or device prefix implies a root), now mirrored.
+  `cargo nextest run -p cmdr-fs --features testing` 868 of 868 (26 skipped, the `#1225` ignores), and
+  `cargo clippy -p cmdr-fs -p cmdr-local --all-targets -D warnings` clean (it caught a `manual_strip` the Mac's clippy
+  lane didn't).
