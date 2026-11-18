@@ -629,8 +629,8 @@ caller turns into "not found"):
   `join_relative(&self, rel: &RelativeAppPath) -> AppPathBuf` for a validated multi-name tail (the remote-root and
   `rebase` cases). ❌ No `join(&str)`: `Path::join("/x")` replacing the base is exactly the surprise to remove.
 - `starts_with(&self, ancestor: &AppPath) -> bool` (whole names, exact),
-  `strip_prefix(&self, ancestor) -> Option<&RelativeAppPath>`, `relative_to` as the same thing named for readers; folded
-  twins take `&NameRules`.
+  `strip_prefix(&self, ancestor) -> Option<Cow<RelativeAppPath>>` (borrowed for canonical values), `relative_to` as the
+  same thing named for readers; folded twins take `&NameRules`.
 - `rebase(&self, old_root, new_root) -> Option<AppPathBuf>` (replaces `app_paths::rebase`).
 - `to_native` and `from_native`: § "The native boundary" (today's `path_grammar` bodies, moved, with typed refusals).
 - `Display`: the wire spelling (for logs, wrapped in `LogPrivate` as today). `shown()`: what a person reads, the ONE
@@ -1080,6 +1080,15 @@ included; the hidden couplings it found are why waves B and C differ from round 
     `rust-tests-linux`, and on the Windows builder (`7eba6045c3`) `cargo nextest run -p cmdr-fs --features testing` 858
     of 858 (26 skipped: the `#1225` ignores milestone 5 lifts) and
     `cargo clippy -p cmdr-fs -p cmdr-local --all-targets -D warnings` clean.
+  - The second review round (2026-11-18, integrated on one branch with milestone 1's pins and `main`; the lead's six
+    decisions) changed: trailing dots and spaces stay literal everywhere but `from_person_typed` (`from_user_input`
+    split into it and `from_external_text`; N1, N8); the hybrid comparison (N4); release-correct arithmetic on bridge
+    values through `lenient.rs`, with `strip_prefix` answering a `Cow` and a new `RelativeAppPathBuf` (N6); the escape
+    gate rebuilt as the type's compile-asserted half plus a tripwire scan (`pathFromBareText` beside `appTextToPath`),
+    with `from_native_unicode` / `from_native_os_unicode` for 9, 10a, and 10b (N2, N3); `AppName::new` renamed
+    `from_app_spelling` and the OS-text hop refused (N5); the operation log's escape mark and `from_literal_store` (N7);
+    the scheme root kept as `scheme://authority/` against milestone 1's proposal (milestone 1's record says why). Per
+    finding: `docs/notes/windows-port/app-path-type-review-fixes.md`.
 
 ### 4. Flip the trait
 
