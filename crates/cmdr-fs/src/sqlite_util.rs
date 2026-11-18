@@ -566,12 +566,26 @@ pub fn delete_sidecars(db_path: &Path) -> std::io::Result<()> {
 /// first (Windows refuses to delete an open file, #1226).
 ///
 /// A file that isn't there is fine. Every file is attempted even when one
-/// refuses, and the first refusal is what comes back.
+/// refuses; a refusal retires the connections again and tries once more, and the
+/// second attempt's first refusal is what comes back.
 ///
 /// ⚠️ The caller stops whatever WRITES the database first (its writer thread, a
 /// running pass). This only reaches the cached READ connections.
 pub fn delete_database(db_path: &Path) -> std::io::Result<()> {
     retire_read_connections(db_path);
+    if remove_database_files(db_path).is_ok() {
+        retire_read_connections(db_path);
+        return Ok(());
+    }
+    // A refusal can be a reader that opened between the retirement and the unlink
+    // (Windows refuses to delete a file any handle holds): retire again and try the
+    // refused files once more. A second refusal is the answer.
+    retire_read_connections(db_path);
+    remove_database_files(db_path)
+}
+
+/// Removes `db_path` and its sidecars, every one attempted; the first refusal is the answer.
+fn remove_database_files(db_path: &Path) -> std::io::Result<()> {
     let mut first_refusal = None;
     for file in database_files(db_path) {
         match std::fs::remove_file(&file) {
@@ -582,7 +596,6 @@ pub fn delete_database(db_path: &Path) -> std::io::Result<()> {
             }
         }
     }
-    retire_read_connections(db_path);
     first_refusal.map_or(Ok(()), Err)
 }
 

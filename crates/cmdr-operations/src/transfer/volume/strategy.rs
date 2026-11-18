@@ -95,6 +95,15 @@ pub(super) async fn copy_single_path(
     if state.work_stopped() {
         return Err(VolumeError::Cancelled("Operation cancelled by user".into())).at_source(source_path);
     }
+    // A name the destination refuses is refused before anything is written for
+    // it (`crate::name_rules::DestinationNames`): the caller asks about it like
+    // a landing's refusal.
+    if super::landing::destination_refuses(state, dest_path) {
+        return Err(VolumeError::InvalidName(
+            "The destination's filesystem doesn't take this name".into(),
+        ))
+        .at_destination(dest_path);
+    }
 
     // A selected link this copy carries is a leaf, whatever the scan or a hint
     // says it points at. It joins the source's ledger like a walked leaf (a

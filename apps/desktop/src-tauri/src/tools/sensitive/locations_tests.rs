@@ -523,11 +523,35 @@ fn spellings(home: &str, rest: &str) -> Vec<String> {
     ]
 }
 
+/// The cells only a home-anchored rule (`rules.rs`'s `Dir::Home`) protects: names a project's
+/// own folders carry too, so they hold only where a home folder (`Users/<name>`,
+/// `home/<name>`) sits right above them.
+const HOME_ANCHORED: &[&str] = &[
+    "Library/Calendars/Calendar.sqlitedb",
+    "Library/Reminders/x",
+    ".TelegramDesktop/tdata/key_datas",
+    "snap/telegram-desktop/current/x",
+];
+
+/// A spelling that hands over a home folder's contents without the home folder right above
+/// them: a share or a phone rooted at it, a roaming profile, an archive of it, or a folder
+/// between the two.
+fn names_no_home(path: &str) -> bool {
+    path.starts_with("smb://")
+        || path.starts_with("//server/")
+        || path.starts_with("mtp://")
+        || path.contains("backup.zip")
+        || path.contains("Jose\u{301}")
+}
+
 #[test]
 fn a_protected_location_is_refused_in_every_spelling() {
     for (home, cells) in homes() {
         for (rest, reason) in cells {
             for path in spellings(home, rest) {
+                if HOME_ANCHORED.contains(rest) && names_no_home(&path) {
+                    continue;
+                }
                 assert_eq!(classify_plain(&path), Some(*reason), "{path:?} (from {rest})");
             }
         }
@@ -711,8 +735,33 @@ fn neighbors_of_a_protected_location_stay_readable() {
         "C:/Users/someone/Downloads/Telegram Desktop/a.jpg",
         "C:/Users/someone/AppData/Roaming/Microsoft/Teamsx/a",
         "C:/Users/someone/AppData/Local/Packages/MSTeamsx_1/a",
+        // A project's own `library/calendars` or `snap/slack` is no home's: those rules sit
+        // directly under a home folder.
+        "/Users/someone/code/app/src/library/calendars/a.ts",
+        "/home/someone/code/app/library/reminders/a.txt",
+        "/home/someone/code/packaging/snap/slack/snapcraft.yaml",
+        "/home/someone/code/packaging/snap/discord/a",
+        "/home/someone/code/packaging/snap/signal-desktop/a",
+        "/home/someone/code/packaging/snap/telegram-desktop/a",
+        "/home/someone/code/vendor/.TelegramDesktop/a",
     ] {
         assert_eq!(classify_plain(path), None, "{path}");
+    }
+}
+
+/// The home-anchored rules hold in a backup of a home folder too, as every other rule does.
+#[test]
+fn a_backed_up_home_keeps_its_home_anchored_rules() {
+    for (path, reason) in [
+        (
+            "/Volumes/nas/Backups/Users/someone/Library/Calendars/x.ics",
+            MessageStore,
+        ),
+        ("/Volumes/nas/Backups/Users/someone/Library/Reminders/x", MessageStore),
+        ("/mnt/backup/home/someone/snap/slack/current/x", MessageStore),
+        ("/mnt/backup/home/someone/.TelegramDesktop/tdata/x", MessageStore),
+    ] {
+        assert_eq!(classify_plain(path), Some(reason), "{path}");
     }
 }
 

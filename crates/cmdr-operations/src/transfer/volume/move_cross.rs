@@ -106,6 +106,12 @@ pub async fn move_volumes_with_progress(
     if let Some(refusal) = super::copy::destination_refusal(&*dest_volume, dest_path).await {
         return Err(WriteFailure::synthetic(refusal));
     }
+    // Which names the destination refuses, asked once: every item's name is
+    // held to them before its write (`landing.rs::name_at_destination`, the walk).
+    state
+        .destination_names
+        .resolve_on(state.scope().host(), &dest_volume, dest_path)
+        .await;
     dest_volume
         .create_directory_all(dest_path)
         .await

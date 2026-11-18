@@ -32,9 +32,9 @@ describe('an update this install can’t write into its own bundle', () => {
     )
   })
 
-  it('says this build can’t check right now when a newer release has no build for it, never “no updates found”', () => {
+  it('says a newer Cmdr exists but not for this system yet when a newer release has no build for it, never “no updates found”', () => {
     expect(formatUpdateStatus({ ...base, unwritable: null, noBuild: true })).toBe(
-      'This build of Cmdr can’t check for updates right now. Try again later.',
+      'There’s a newer Cmdr, but not for this system yet. Check again later.',
     )
   })
 

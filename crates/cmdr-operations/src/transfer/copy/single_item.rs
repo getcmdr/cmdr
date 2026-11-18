@@ -23,7 +23,9 @@ use super::dest_chain::leaf_in_the_way;
 use super::folder_metadata::{
     DirMapping, create_dir_like_its_source, create_dirs_like_their_sources, narrow_like_its_source,
 };
-use super::settle::{JournalDestUnder, PerFileCtx, record_file_done, settle_landed_leaf, skip_if_refused};
+use super::settle::{
+    JournalDestUnder, PerFileCtx, record_file_done, settle_landed_leaf, skip_folder_if_refused, skip_if_refused,
+};
 
 use crate::conflict::{ApplyToAll, IncomingItem, resolve_conflict};
 use crate::error_classification::IoResultExt;
@@ -59,6 +61,60 @@ fn incoming_folder_for(source: &Path, dest_path: &Path, blocking: &Path) -> Path
             || blocking.to_path_buf(),
             Path::to_path_buf,
         )
+}
+
+/// Refuses `dest_path` when a segment of it below `dest_root` is a name the
+/// destination refuses: the file's own name asks as a file
+/// ([`skip_if_refused`]), a folder's as a folder ([`skip_folder_if_refused`]).
+/// `None` when every segment is one the destination takes.
+#[allow(
+    clippy::too_many_arguments,
+    reason = "The item, where it lands, and the per-file accounting a skip updates."
+)]
+fn refuse_a_refused_segment(
+    source: &Path,
+    dest_path: &Path,
+    dest_root: &Path,
+    write_weight: u64,
+    ctx: &PerFileCtx<'_>,
+    files_done: &mut usize,
+    bytes_done: &mut u64,
+    skipped_subtrees: &mut HashSet<PathBuf>,
+) -> Result<Option<FileVerdict>, WriteOperationError> {
+    let Ok(relative) = dest_path.strip_prefix(dest_root) else {
+        return Ok(None);
+    };
+    let Some(refused) = ctx.state.destination_names.first_refused(relative) else {
+        return Ok(None);
+    };
+    let mut refused_at = dest_root.to_path_buf();
+    for segment in relative {
+        refused_at.push(segment);
+        if segment == refused {
+            break;
+        }
+    }
+    let error = WriteOperationError::InvalidName {
+        path: refused_at.display().to_string(),
+        message: "The destination's filesystem doesn't take this name".into(),
+    };
+    let verdict = if refused_at == dest_path {
+        skip_if_refused(error, source, dest_path, write_weight, ctx, files_done, bytes_done)?
+    } else {
+        let source_folder = incoming_folder_for(source, dest_path, &refused_at);
+        skip_folder_if_refused(
+            error,
+            &source_folder,
+            &refused_at,
+            source,
+            write_weight,
+            ctx,
+            files_done,
+            bytes_done,
+            skipped_subtrees,
+        )?
+    };
+    Ok(Some(verdict))
 }
 
 /// Copies a single file or symlink to its destination.
@@ -170,6 +226,23 @@ pub(in crate::transfer) fn copy_single_item(
             FileVerdict::Skipped,
         );
         return Ok(FileVerdict::Skipped);
+    }
+
+    // A name the destination refuses is refused here, before its folders, its
+    // conflict check, or its write: a driver that strips it (vfat's trailing
+    // period) would otherwise land it on a sibling, or merge a folder into one
+    // (`crate::name_rules::DestinationNames`).
+    if let Some(verdict) = refuse_a_refused_segment(
+        source,
+        &dest_path,
+        dest_root,
+        write_weight,
+        &progress_ctx,
+        files_done,
+        bytes_done,
+        skipped_subtrees,
+    )? {
+        return Ok(verdict);
     }
 
     // Ensure parent directories exist

@@ -120,6 +120,14 @@ Latest mark. By hand:
 and `cargo run -p cmdr-update-manifest --bin cmdr-check-update-manifest -- latest.json`.
 `scripts/release-assets/DETAILS.md` § The `latest.json` gate.
 
+- **Dropping a platform** (Intel Macs, say) is a reviewed change to the release asset manifest (§ The release asset
+  manifest): remove its rows, and `validateLatest` stops expecting its `platforms` key. The readers' gate then lets a
+  manifest without it through and names who gets no update ("no darwin-x86_64 entry: installs on it get no update");
+  what it still refuses is an old reader missing a key this build's reader finds.
+- **Release notes**: empty notes (a hotfix tag with no `CHANGELOG.md` section) publish. Every reader takes an empty
+  string, so `latest-json` warns about them and goes on; by then the release is signed, and refusing would only strand
+  it. Draft the CHANGELOG section before tagging (§ Writing the CHANGELOG) so there's nothing to warn about.
+
 ## Testing the pipeline without releasing
 
 Two levels, cheapest first:

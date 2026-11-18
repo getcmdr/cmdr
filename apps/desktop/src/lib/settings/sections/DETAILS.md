@@ -314,13 +314,13 @@ sections compose).
   only when no in-app conflict, mnemonic first; a combo typing takes first is refused before any of them
   (`lib/shortcuts/DETAILS.md` § Combos typing takes first). Unit-tested
 - **`system-reserved-keys.ts`**: What each OS takes before Cmdr sees it, one table per platform, keyed by canonical
-  combos: macOS features, Windows features, and on Linux every listed desktop (GNOME, KDE Plasma, Xfce, Cinnamon,
-  Ubuntu) that binds the combo, since Cmdr can't ask which desktop runs until task 59 (then `systemReservation` narrows
-  the list, same shape). Only entries `docs/notes/windows-port/keymap-decisions.md` verified from each OS's source. Each
-  owner gets its own banner sentence (`shortcuts.conflict.systemShortcut` / `takenByWindows` / `takenByLinuxDesktops`),
-  picked by the reservation's `os`, and the desktop names go through `formatConjunctionList`. The keymap invariants test
-  reads it too: no Windows default is a key Windows takes, and a Linux command holding a desktop's key also holds one no
-  desktop takes
+  combos: macOS features, Windows features, and on Linux the listed desktops (GNOME, KDE Plasma, Xfce, Cinnamon, Ubuntu)
+  that bind the combo, narrowed to the running one (`linuxDesktop()`: GNOME names GNOME and Ubuntu, which can't be told
+  apart, KDE names KDE Plasma, `other` names Xfce and Cinnamon, and an unknown desktop every one). Only entries
+  `docs/notes/windows-port/keymap-decisions.md` verified from each OS's source. Each owner gets its own banner sentence
+  (`shortcuts.conflict.systemShortcut` / `takenByWindows` / `takenByLinuxDesktops`), picked by the reservation's `os`,
+  and the desktop names go through `formatConjunctionList`. The keymap invariants test reads it too: no Windows default
+  is a key Windows takes, and a Linux command holding a desktop's key also holds one no desktop takes
 
 Every section is axe-audited (tier-3) from one of the four directory-level `*.a11y.test.ts` files here, because
 `svelte-tests` charges per test FILE (`docs/testing.md` § "What a test actually costs"). `McpServerSection`,

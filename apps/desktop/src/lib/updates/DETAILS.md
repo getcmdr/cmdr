@@ -190,12 +190,12 @@ no URL, no bundle path, and no failure text.
 
 The backend answers `noBuildForThisPlatform` when `latest.json` names a newer release with no entry for this install's
 platform (`src-tauri/src/updater/DETAILS.md` § Who may check). `finishCheckWithNoBuild` lands it like a managed answer:
-status `idle`, `updateState.noBuild` set, and `formatUpdateStatus` says `updates.status.noBuildForThisPlatform` ("This
-build of Cmdr can’t check for updates right now") in Settings and the menu check's toast. No failure, no report link,
-nothing above info (the backend warned with the keys the manifest offers), no version shown, and a staged build stays
-staged. **Decision/Why**: it used to answer `upToDate`, telling a stranded install it was current while it sat on an old
-version; "can't check right now" is the honest state the person can read. `updater.no-build.test.ts`. `noBuild` clears
-when the next check starts.
+status `idle`, `updateState.noBuild` set, and `formatUpdateStatus` says `updates.status.noBuildForThisPlatform`
+("There’s a newer Cmdr, but not for this system yet") in Settings and the menu check's toast. No failure, no report
+link, nothing above info (the backend warned with the keys the manifest offers), no version shown, and a staged build
+stays staged. **Decision/Why**: it used to answer `upToDate`, telling a stranded install it was current while it sat on
+an old version; "a newer Cmdr, but not for this system yet" is the honest state the person can read (the check worked).
+`updater.no-build.test.ts`. `noBuild` clears when the next check starts.
 
 ## Managed policy (MDM)
 

@@ -290,6 +290,24 @@ fn a_removed_or_retyped_field_breaks_a_shipped_reader() {
     }
 }
 
+/// Dropping a platform (Intel Macs, say) is the release manifest's decision
+/// (`scripts/release-assets/manifest`, a reviewed change the writer's validator holds
+/// `platforms` to), so the gate lets a manifest without `darwin-x86_64` through and says who
+/// gets no update. What it still refuses is an old reader missing an entry this build's reader
+/// finds: a real reader split.
+#[test]
+fn a_platform_the_release_dropped_passes_the_gate_and_is_named() {
+    let mut body: serde_json::Value = serde_json::from_str(&WRITER_BUILT).expect("JSON");
+    drop(body["platforms"].as_object_mut().map(|p| p.remove("darwin-x86_64")));
+    let report = gate(body.to_string().as_bytes()).unwrap_or_else(|problems| panic!("{problems:?}"));
+    assert!(
+        report
+            .iter()
+            .any(|line| line.contains("darwin-x86_64") && line.contains("no update")),
+        "{report:?}"
+    );
+}
+
 #[test]
 fn the_gate_refuses_an_advisory_entry_this_build_would_drop() {
     let mut body: serde_json::Value = serde_json::from_str(&WRITER_BUILT).expect("JSON");

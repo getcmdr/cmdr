@@ -150,6 +150,12 @@ Network error / unverified   → commitLicense(fullKey, shortCode) → persist +
 Pasting the full key (from the license email) skips `/activate`, so with no server at all the key verifies, commits on
 the network-error path, and the offline policy carries it from there.
 
+A non-2xx `/activate` answer reads by its status alone (`validation_client.rs::activation_refusal`), since a proxy
+answers with an HTML body: 404 is `ShortCodeNotFound`, 400 `InvalidFormat`, 429 (the limiter) and every 5xx (the worker,
+or Cloudflare's 502, 503, and 52x in front of it) `ServerBusy`, which the dialog words as "busy right now, try again
+later", and any other status `ServerError`. **Why**: reading every non-2xx as "not found" told a paying person during an
+outage that their code doesn't exist.
+
 `commit_license` (in `app_status.rs`) does: `license_key::store_license` stores the key in the secret store
 (`StorageError` and nothing stored if that fails) and updates `LICENSE_CACHE`, then it writes the initial
 `cached_license_status`. The frontend shows a `storageError` with the generic "try

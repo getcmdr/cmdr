@@ -896,6 +896,36 @@ async fn merge_level<'a>(
         // walk recurses through it (a backend whose listing follows links).
         let child_row = tree_level.child(&entry.name, merges_as_a_directory(entry), entry.size.unwrap_or(0));
 
+        // A name the destination refuses is refused before anything is written
+        // for it: a driver that strips it (vfat's trailing period) would land it
+        // on a sibling, or merge a folder into one
+        // (`crate::name_rules::DestinationNames`). Asked like a landing's refusal.
+        if state.destination_names.refuses(name.as_os_str()) {
+            let refused_dest = name.under(dest_path);
+            let error = PathedVolumeError::new(
+                PathRole::Destination,
+                &refused_dest,
+                VolumeError::InvalidName("The destination's filesystem doesn't take this name".into()),
+            );
+            if merges_as_a_directory(entry) {
+                let folder = RefusedFolder {
+                    source: &child_source,
+                    dest: &refused_dest,
+                    node: child_row,
+                };
+                skip_if_folder_refused(pool, merge, created, progress, source_volume, &folder, error).await?;
+            } else {
+                pool.refused.push_back(RefusedLeaf {
+                    source: child_source,
+                    dest: refused_dest,
+                    size: entry.size,
+                    node: child_row,
+                    error,
+                });
+            }
+            continue;
+        }
+
         // A Locked child the person said to leave (or the system locked) stays
         // out whole, recorded like a deep Skip so a move's sweep keeps it.
         if merge

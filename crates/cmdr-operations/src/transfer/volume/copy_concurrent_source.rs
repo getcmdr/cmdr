@@ -281,6 +281,11 @@ impl ConcurrentCopy<'_> {
                 dest_item_path,
             );
         }
+        // A refused name skips the probe and the resolver (`landing.rs::
+        // name_at_destination` says why); its copy refuses it before writing.
+        if super::landing::destination_refuses(self.state, dest_item_path) {
+            return Ok(Landing::Free(dest_item_path.to_path_buf()));
+        }
         let name = ChildName::new(name)
             .map_err(VolumeError::from)
             .at_destination(dest_item_path)?;

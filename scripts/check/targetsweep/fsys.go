@@ -353,8 +353,9 @@ func upliftedFiles(debug string) (uplifts, error) {
 	return out, nil
 }
 
-// readBuildDirUnit reads one `build/<package>/<h>/` unit. Its newest mtime looks two levels
-// down (cargo rewrites the files in `fingerprint/` in place, which doesn't touch the dirs); it
+// readBuildDirUnit reads one `build/<package>/<h>/` unit. Its newest mtime is the latest of
+// every entry at any depth (cargo rewrites `fingerprint/` files and a build script its `out/`
+// files in place, which doesn't touch their dirs, and the walk lstats each entry anyway); it
 // counts as hard-linked (`Links` 2) when a file in it is the source of one of `uplifted`, cargo's
 // uplift of a bin or example (a bare link count won't do: the `.o` files in `out/` are hard links
 // of the incremental cache's); and it counts as a fingerprint when nothing outside `fingerprint/` holds
@@ -375,7 +376,7 @@ func readBuildDirUnit(dir, hash string, uplifted uplifts) (Unit, error) {
 		if err != nil {
 			return err
 		}
-		if (rel == "." || strings.Count(rel, string(filepath.Separator)) <= 1) && info.ModTime().After(u.Newest) {
+		if info.ModTime().After(u.Newest) {
 			u.Newest = info.ModTime()
 		}
 		if d.IsDir() {

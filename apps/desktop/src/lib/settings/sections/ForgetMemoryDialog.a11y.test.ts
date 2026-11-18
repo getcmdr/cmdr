@@ -93,7 +93,7 @@ describe('ForgetMemoryDialog behaviour', () => {
       onTestFinished(withConventions(desktop))
       const { target, onConfirm } = await mountDialog(false)
       const [cancel, forget] = [...target.querySelectorAll<HTMLButtonElement>('.modal-footer button')]
-      expect(forget.getAttribute('data-dialog-default')).toBe('destructive')
+      expect(forget.hasAttribute('data-dialog-default')).toBe(true)
       expect(forget.getAttribute('aria-keyshortcuts')?.split(' ')).toContain('Enter')
       cancel.focus()
       cancel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))

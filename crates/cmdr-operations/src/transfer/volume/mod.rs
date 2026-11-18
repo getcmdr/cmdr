@@ -184,6 +184,10 @@ mod failure_side_tests;
 #[cfg(test)]
 mod refused_name_tests;
 
+/// A name the destination's RULES refuse is refused before any write.
+#[cfg(test)]
+mod refused_class_tests;
+
 /// A stopped transfer names the new files its stop kept at the destination.
 #[cfg(test)]
 mod kept_new_data_tests;

@@ -314,3 +314,29 @@ func TestListFlagsAStrayEntryInABuildPackageDir(t *testing.T) {
 		t.Errorf("a stray entry must read as a changed layout, got %q", l.LayoutProblem)
 	}
 }
+
+// A build unit's newest mtime sees a file rewritten in place at any depth (a build script's
+// `out/a/b.rs`), not only the top two levels: rewriting a file touches none of its dirs.
+func TestABuildUnitsNewestSeesADeepRewrite(t *testing.T) {
+	now := time.Now().Truncate(time.Second)
+	old := now.Add(-40 * 24 * time.Hour)
+	unit := filepath.Join(t.TempDir(), "debug", "build", "ring", "3333333333333333")
+	deep := filepath.Join(unit, "out", "a", "b.rs")
+	if err := os.MkdirAll(filepath.Dir(deep), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(deep, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	touch(t, deep, now)
+	for _, dir := range []string{"out/a", "out", ""} {
+		touch(t, filepath.Join(unit, filepath.FromSlash(dir)), old)
+	}
+	u, err := readBuildDirUnit(unit, "3333333333333333", uplifts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !u.Newest.Equal(now) {
+		t.Errorf("Newest = %v, want the deep file's %v", u.Newest, now)
+	}
+}

@@ -6,7 +6,6 @@
 
 use std::collections::BTreeMap;
 
-#[cfg(target_os = "macos")]
 use super::NameTier;
 use super::{
     LengthLimit, LengthUnit, MAX_NAME_BYTES, NameFormat, NameRules, PortabilityWarning, ValidationError,
@@ -133,6 +132,11 @@ fn the_case_files_rules_are_the_ones_kinds_build() {
         FilesystemKind::Apfs.name_rules(),
         "APFS counts UTF-16 units"
     );
+    assert_eq!(
+        spec.rules["hfsPlus"].with_path_limit(None),
+        FilesystemKind::HfsPlus.name_rules(),
+        "HFS+ counts the decomposed name's UTF-16 units"
+    );
     let stick = FilesystemKind::ExFat.name_rules();
     assert_eq!(stick.format, NameFormat::Windows);
     assert_eq!(stick.name_limit, LengthLimit::UTF16_255);
@@ -199,4 +203,44 @@ fn a_path_limit_counts_in_its_own_unit_inclusive() {
         validate_path_length(std::path::Path::new(&"/a".repeat(5000)), NameRules::POSIX),
         Ok(())
     );
+}
+
+/// Every name Win32 refuses or rewrites: a backslash (a path separator), a colon (an NTFS
+/// alternate data stream), a control character, a device name, and a trailing space or period
+/// (stripped, so `dup.` opens `dup`).
+const WIN32_REFUSED: [&str; 7] = ["x\\y", "a:b", "tab\tname", "con", "con.txt", "dup.", "dup "];
+
+/// Win32's floor: every class refused.
+const WIN32_REFUSALS: super::WindowsFormatTiers = super::WindowsFormatTiers {
+    characters: NameTier::Refuse,
+    reserved_names: NameTier::Refuse,
+};
+
+#[test]
+fn the_win32_floor_refuses_what_win32_refuses_whatever_the_kind_said() {
+    // `Other` (a probe that can't tell) is the weakest answer a kind lookup gives.
+    let floored = FilesystemKind::Other.name_rules().at_least(WIN32_REFUSALS);
+    for name in WIN32_REFUSED {
+        assert!(validate_filename(name, floored).is_err(), "{name:?} passed");
+    }
+    // A floor never weakens rules that were already stricter, and leaves the limits alone.
+    assert_eq!(
+        NameRules::windows_format().at_least(WIN32_REFUSALS).name_limit,
+        LengthLimit::UTF16_255
+    );
+    assert_eq!(floored.name_limit, FilesystemKind::Other.name_rules().name_limit);
+}
+
+/// A local disk on a Windows host is held to Win32's refusals whatever its kind; elsewhere the
+/// host adds nothing of its own (the kind's tiers stand).
+#[test]
+fn a_host_local_disk_is_held_to_this_hosts_own_refusals() {
+    let rules = NameRules::POSIX.for_host_local_disk();
+    if cfg!(target_os = "windows") {
+        for name in WIN32_REFUSED {
+            assert!(validate_filename(name, rules).is_err(), "{name:?} passed");
+        }
+    } else {
+        assert_eq!(rules, NameRules::POSIX);
+    }
 }

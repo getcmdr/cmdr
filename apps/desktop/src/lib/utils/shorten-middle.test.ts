@@ -131,4 +131,37 @@ describe('shortenMiddle', () => {
       expect(mockMeasure(result)).toBeLessThanOrEqual(maxWidth)
     })
   })
+
+  describe('never cuts a character in half', () => {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    const graphemes = (text: string): string[] => Array.from(segmenter.segment(text), (s) => s.segment)
+
+    /** Both kept halves are whole graphemes of the original, in order. */
+    function expectWholeGraphemes(text: string, result: string): void {
+      const [start, end] = result.split('…')
+      const original = graphemes(text)
+      expect(graphemes(start)).toEqual(original.slice(0, graphemes(start).length))
+      expect(graphemes(end)).toEqual(original.slice(original.length - graphemes(end).length))
+    }
+
+    it.each([
+      ['an emoji outside the BMP', '😀'.repeat(20)],
+      ['a family emoji (ZWJ sequence)', '👨‍👩‍👧'.repeat(8)],
+      ['a flag', '🇸🇪'.repeat(15)],
+      ['a combining accent', 'e\u0301'.repeat(20)],
+    ])('keeps %s whole at both cuts', (_label, text) => {
+      for (const maxWidth of [40, 56, 72, 88, 104]) {
+        const result = shortenMiddle(text, maxWidth, mockMeasure)
+        expect(result).toContain('…')
+        expectWholeGraphemes(text, result)
+        expect(mockMeasure(result)).toBeLessThanOrEqual(maxWidth)
+      }
+    })
+
+    it('keeps a path break on a whole grapheme', () => {
+      const text = '/Users/test/😀😀😀😀/👨‍👩‍👧/notes/e\u0301e\u0301e\u0301/file.txt'
+      const result = shortenMiddle(text, 160, mockMeasure, { preferBreakAt: '/' })
+      expectWholeGraphemes(text, result)
+    })
+  })
 })

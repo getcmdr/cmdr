@@ -166,6 +166,8 @@ Pinned by `unicode-fuzzy.test.ts`.
 `measureWidth` function. Supports `preferBreakAt` (snap cuts to a delimiter like `/` or `.`), `startRatio` (bias budget
 toward start or end), and custom ellipsis strings. `createPretextMeasure()` creates a `measureWidth` backed by
 `@chenglou/pretext`'s `prepareWithSegments` + `measureNaturalWidth`, caching prepared texts for repeated measurements.
+Both cuts fall between graphemes (`Intl.Segmenter`), ❌ never at a UTF-16 unit, so an emoji, a flag, a ZWJ family, or a
+letter with its combining accent stays whole; a `preferBreakAt` snap that would land inside one is dropped.
 
 ## shorten-middle-action.ts
 

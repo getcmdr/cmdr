@@ -1069,6 +1069,12 @@ a home folder unless they start with `%`. Checked on 2026-11-12 and 2026-11-18 (
     macOS 27.0.1, `ls ~/Library`, 2026-11-18). TCC guards them, but Cmdr with Full Disk Access passes TCC. Linux's ride
     with Evolution (`evolution-data-server` keeps GNOME's contacts and calendars there) and KDE's with `akonadi`;
     Windows' People and Calendar went with the Windows Mail package, already covered.
+- **Home-anchored rules** (`Dir::Home`): `Library/Calendars`, `Library/Reminders`, `.TelegramDesktop`, and the chat
+  apps' `snap/<app>` folders hold only directly under a home folder (`Users/<name>`, `home/<name>`, at any depth so a
+  backup of a home counts). **Why**: a project's own `src/library/calendars` or a snap packaging repo's `snap/slack` is
+  no app's data, and at any depth those rules refused it. **Tradeoff**: a spelling with no home folder right above (a
+  share or phone rooted at the home, a roaming profile, a zip of a home) no longer meets them; the snap ones still
+  meet the `.config` rule inside them. Pinned by `sensitive/locations_tests.rs` (`HOME_ANCHORED`).
 - **Cmdr's own data** (`CmdrData`) and **a private key in any file** (`PrivateKey`): see above and below.
 
 **Not protected, and why:**

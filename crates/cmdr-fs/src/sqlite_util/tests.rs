@@ -463,6 +463,67 @@ fn a_retirement_from_another_thread_closes_the_owning_threads_connection() {
     assert_eq!(live - before, 1, "and the process-wide count followed");
 }
 
+/// A retirement that runs while another thread is still OPENING a connection to the
+/// database closes that connection too: the open happens in a slot the retirement can
+/// already see, so it can't slip in between a delete's retirement and its unlink (which
+/// Windows refuses while a handle is open).
+#[test]
+fn a_retirement_during_an_open_closes_the_connection_being_opened() {
+    let db = PathBuf::from("/retire/opening.db");
+    let before = live_read_connections();
+    let (opening_tx, opening_rx) = std::sync::mpsc::channel::<()>();
+    let (go_tx, go_rx) = std::sync::mpsc::channel::<()>();
+
+    let reader = {
+        let db = db.clone();
+        std::thread::spawn(move || {
+            let mut cache = ThreadConnCache::new(THREAD_CONN_SLOTS);
+            cache
+                .with(
+                    &db,
+                    0,
+                    |_| {
+                        opening_tx.send(()).expect("tell the test the open started");
+                        // With the slot visible, the retirement below waits on it, so this
+                        // waits out its timeout; without, `go` comes at once.
+                        let _ = go_rx.recv_timeout(std::time::Duration::from_millis(300));
+                        open_in_memory()
+                    },
+                    |_| (),
+                )
+                .expect("open");
+            // Handed back whole, so the test reads it after the retirement returned.
+            cache
+        })
+    };
+
+    opening_rx.recv().expect("the reader started opening");
+    retire_read_connections(&db);
+    let _ = go_tx.send(());
+    let cache = reader.join().expect("reader thread");
+    assert_eq!(cache.len(), 0, "the connection opened mid-retirement was closed");
+    assert_eq!(live_read_connections(), before, "and nothing of it is still open");
+    drop(cache);
+}
+
+/// A panic inside `f` on a cache HIT leaves the connection in the cache, still counted:
+/// the count and the cache never disagree.
+#[test]
+fn a_panic_in_a_read_keeps_the_count_and_the_cache_in_step() {
+    let before = live_read_connections();
+    let mut cache = ThreadConnCache::new(THREAD_CONN_SLOTS);
+    let db = Path::new("/panic/hit.db");
+    cache.with(db, 0, |_| open_in_memory(), |_| ()).expect("open");
+    let panicked = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = cache.with(db, 0, |_| open_in_memory(), |_| panic!("a read that panics"));
+    }));
+    assert!(panicked.is_err());
+    assert_eq!(cache.len(), 1, "the connection is still cached");
+    assert_eq!(live_read_connections() - before, 1, "and still counted, once");
+    drop(cache);
+    assert_eq!(live_read_connections(), before);
+}
+
 /// Deleting a database takes its WAL and SHM along, tolerates the ones that were
 /// never there, and retires the cached connections that would otherwise keep the
 /// unlinked file's blocks allocated.

@@ -759,21 +759,20 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
     footer is written in macOS order and Windows and KDE show it reversed, with Tab following through the focus trap's
     reading order; alignment stays trailing everywhere. Return (David's decision, 2026-11-18): a dialog marks its
     default button (`Button`'s `isDefault`), and Return presses it unless the dialog claims the key; Windows and Linux
-    keep a focused button's own press, while on the Mac a footer button hands Return to the default one and ⌘. cancels
-    like Escape. The dialogs that gave their safe answer focus so a reflex Enter was safe (quit, tool question,
-    rollback, data wipe) follow Apple's HIG: no default button, the destructive one styled as such, the safe answer
-    focused only off the Mac. Data safety over convention: while the default is destructive, Return on another footer
-    button does nothing on the Mac. Access keys on Windows and every Linux desktop: Alt plus the letter presses or
-    focuses the control, letters allocated from the rendered labels by the Linux menu bar's rule (no catalog marker, so
-    no translator work and no new strings). How holding Alt shows them (David's decision, 2026-11-18): Windows 11's
-    keytips on Windows, underlined letters on every Linux desktop as GTK and Qt draw them, and a label without its
-    letter (Chinese, Japanese) carries it as "保存 (B)". Of task 59's 14 `Alt+<letter>` keys, the 12 inside dialogs
-    (multi-rename's 11 options, About this's Stop) stay the commands they are and count as their dialog's access keys
-    (`keyScope` keeps their letters off every other control); they can't become label-derived letters because the keymap
-    is per OS, not per language. The viewer's two (Alt+R, Alt+C) aren't in a dialog and stay as they are: the viewer has
-    no other access keys to clash with. All five desktop rows are pinned by `ModalDialog.conventions.svelte.test.ts`,
-    a11y included; `CMDR_MOCK_CONVENTIONS=windows pnpm dev` (or `kde`, `gnome`, `otherLinux`) shows another desktop's
-    row. Linux: per desktop. Needs 59.
+    keep a focused button's own press, while on the Mac Return on a footer button other than the default does nothing
+    (it never falls through to the default) and ⌘. cancels like Escape. The dialogs that gave their safe answer focus so
+    a reflex Enter was safe (quit, tool question, rollback, data wipe) follow Apple's HIG: no default button, the
+    destructive one styled as such, the safe answer focused only off the Mac. Access keys on Windows and every Linux
+    desktop: Alt plus the letter presses or focuses the control, letters allocated from the rendered labels by the Linux
+    menu bar's rule (no catalog marker, so no translator work and no new strings). How holding Alt shows them (David's
+    decision, 2026-11-18): Windows 11's keytips on Windows, underlined letters on every Linux desktop as GTK and Qt draw
+    them, and a label without its letter (Chinese, Japanese) carries it as "保存 (B)". Of task 59's 14 `Alt+<letter>`
+    keys, the 12 inside dialogs (multi-rename's 11 options, About this's Stop) stay the commands they are and count as
+    their dialog's access keys (`keyScope` keeps their letters off every other control); they can't become label-derived
+    letters because the keymap is per OS, not per language. The viewer's two (Alt+R, Alt+C) aren't in a dialog and stay
+    as they are: the viewer has no other access keys to clash with. All five desktop rows are pinned by
+    `ModalDialog.conventions.svelte.test.ts`, a11y included; `CMDR_MOCK_CONVENTIONS=windows pnpm dev` (or `kde`,
+    `gnome`, `otherLinux`) shows another desktop's row. Linux: per desktop. Needs 59.
 62. [S] Windows. Typography and motion: Segoe UI Variable through the system font stack, the Windows type ramp, Windows
     animation curves and durations, and the system's animation setting. Linux: follows the desktop's font and
     reduced-motion settings. Needs 40.

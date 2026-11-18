@@ -62,11 +62,63 @@ pub fn probe_mount_for_path(path: &std::path::Path) -> MountProbe {
     }
 }
 
-/// No mount-table reader on Windows yet: the type is unknown.
+/// [`detect_filesystem_for_path`] on Windows: the volume's filesystem name (`NTFS`, `FAT32`,
+/// `exFAT`, `ReFS`) from `GetVolumeInformationW`, for a fixed or removable drive only. A mapped
+/// network drive reports the server's `NTFS` too, so it stays unknown (`Other`, and network to
+/// [`is_network`]); no source string, since Windows has no mount device to name.
 #[cfg(target_os = "windows")]
-pub fn probe_mount_for_path(_path: &std::path::Path) -> MountProbe {
+pub fn probe_mount_for_path(path: &std::path::Path) -> MountProbe {
+    use std::os::windows::ffi::OsStrExt;
+    use std::path::Path;
+
+    use windows_sys::Win32::Storage::FileSystem::{GetDriveTypeW, GetVolumeInformationW, GetVolumePathNameW};
+
+    /// `GetDriveTypeW`'s `DRIVE_REMOVABLE` and `DRIVE_FIXED` (`WindowsProgramming`'s
+    /// constants, a feature this crate doesn't otherwise need).
+    const DRIVE_REMOVABLE: u32 = 2;
+    const DRIVE_FIXED: u32 = 3;
+
+    /// The filesystem name of the local volume holding `path`, `None` for a network or
+    /// optical drive, or when Windows can't say.
+    fn local_filesystem_name(path: &Path) -> Option<String> {
+        let wide: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
+        // The volume root is never longer than the path itself (plus its trailing `\`).
+        let mut root = vec![0u16; wide.len().max(261) + 1];
+        let root_len = u32::try_from(root.len()).ok()?;
+        // SAFETY: `wide` is NUL-terminated and `root` holds `root_len` units.
+        if unsafe { GetVolumePathNameW(wide.as_ptr(), root.as_mut_ptr(), root_len) } == 0 {
+            return None;
+        }
+        // SAFETY: `root` is the NUL-terminated root `GetVolumePathNameW` wrote.
+        let drive_type = unsafe { GetDriveTypeW(root.as_ptr()) };
+        if drive_type != DRIVE_FIXED && drive_type != DRIVE_REMOVABLE {
+            return None;
+        }
+        // `MAX_PATH + 1`, the documented maximum for the filesystem name.
+        let mut name = [0u16; 261];
+        let name_len = u32::try_from(name.len()).ok()?;
+        // SAFETY: every out pointer is null (not wanted) except `name`, which holds its length.
+        let ok = unsafe {
+            GetVolumeInformationW(
+                root.as_ptr(),
+                std::ptr::null_mut(),
+                0,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                name.as_mut_ptr(),
+                name_len,
+            )
+        };
+        if ok == 0 {
+            return None;
+        }
+        let len = name.iter().position(|&unit| unit == 0).unwrap_or(name.len());
+        Some(String::from_utf16_lossy(&name[..len]))
+    }
+
     MountProbe {
-        info: FilesystemInfo::from_raw_type(None),
+        info: FilesystemInfo::from_raw_type(local_filesystem_name(path)),
         source: None,
     }
 }

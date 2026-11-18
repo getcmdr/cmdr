@@ -10,8 +10,8 @@ export interface ShortenMiddleOptions {
 }
 
 /**
- * Truncates text in the middle, keeping both the start and end visible.
- * Uses the injected `measureWidth` for pixel-accurate measurement.
+ * Truncates text in the middle, keeping both the start and end visible, cutting only between
+ * graphemes (`Intl.Segmenter`). Uses the injected `measureWidth` for pixel-accurate measurement.
  */
 export function shortenMiddle(
   text: string,
@@ -36,19 +36,38 @@ export function shortenMiddle(
   const startBudget = availableBudget * startRatio
   const endBudget = availableBudget - startBudget
 
-  // Binary search for the longest prefix fitting startBudget
-  let startLen = findLongestFitting(0, text.length, startBudget, (len) => measureWidth(text.slice(0, len)))
+  // Cut only between graphemes, ❌ never by UTF-16 unit: a unit cut splits an emoji's surrogate
+  // pair, a ZWJ family, a flag, or a letter from its combining accent.
+  const bounds = graphemeBounds(text)
+  const last = bounds.length - 1
 
-  // Binary search for the longest suffix fitting endBudget
-  let endLen = findLongestFitting(0, text.length, endBudget, (len) => measureWidth(text.slice(text.length - len)))
+  // Binary search for the longest prefix (in graphemes) fitting startBudget
+  let startLen = bounds[findLongestFitting(0, last, startBudget, (n) => measureWidth(text.slice(0, bounds[n])))]
 
-  // Snap to preferBreakAt boundaries if configured
+  // Binary search for the longest suffix (in graphemes) fitting endBudget
+  let endLen =
+    text.length -
+    bounds[last - findLongestFitting(0, last, endBudget, (n) => measureWidth(text.slice(bounds[last - n])))]
+
+  // Snap to preferBreakAt boundaries if configured, only where the snap lands between graphemes
   if (preferBreakAt && preferBreakAt.length > 0) {
-    startLen = snapToBreak(text, startLen, preferBreakAt, 'start', startBudget, measureWidth)
-    endLen = snapToBreak(text, endLen, preferBreakAt, 'end', endBudget, measureWidth)
+    const between = new Set(bounds)
+    const snappedStart = snapToBreak(text, startLen, preferBreakAt, 'start', startBudget, measureWidth)
+    if (between.has(snappedStart)) startLen = snappedStart
+    const snappedEnd = snapToBreak(text, endLen, preferBreakAt, 'end', endBudget, measureWidth)
+    if (between.has(text.length - snappedEnd)) endLen = snappedEnd
   }
 
   return text.slice(0, startLen) + ellipsis + text.slice(text.length - endLen)
+}
+
+const graphemeSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+
+/** The UTF-16 offsets between `text`'s graphemes, `0` and `text.length` included. */
+function graphemeBounds(text: string): number[] {
+  const bounds = Array.from(graphemeSegmenter.segment(text), (segment) => segment.index)
+  bounds.push(text.length)
+  return bounds
 }
 
 /**

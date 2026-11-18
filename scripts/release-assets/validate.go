@@ -119,12 +119,13 @@ func decodeTop(raw []byte, add problemFunc) (map[string]json.RawMessage, bool) {
 	return top, true
 }
 
-func checkNotes(raw json.RawMessage, r latestRules, add problemFunc) {
+// checkNotes holds `notes` to the string every reader takes. Empty notes publish (a hotfix tag
+// with no CHANGELOG section): `writeLatest` warns about them, ❌ never refuses, since by then the
+// release is signed (`docs/guides/releasing.md` § Release notes).
+func checkNotes(raw json.RawMessage, _ latestRules, add problemFunc) {
 	var notes string
 	if err := strictDecode(raw, &notes); err != nil {
 		add("notes: %v", err)
-	} else if strings.TrimSpace(notes) == "" {
-		add("notes are empty: CHANGELOG.md has no section for %s", r.release.Version)
 	}
 }
 

@@ -12973,10 +12973,15 @@ export type LengthUnit =
   // UTF-8 bytes: ext4, Btrfs, XFS, ZFS, and Samba over them.
   | 'bytes'
   /**
-   *  UTF-16 code units: APFS, HFS+, exFAT, FAT32, NTFS, and Windows' own paths.
+   *  UTF-16 code units: APFS, exFAT, FAT32, NTFS, and Windows' own paths.
    *  An emoji outside the Basic Multilingual Plane is two.
    */
   | 'utf16Units'
+  /**
+   *  UTF-16 code units of the name DECOMPOSED (NFD): HFS+, which stores names
+   *  that way, so a precomposed `é` (one unit) takes two there.
+   */
+  | 'utf16UnitsDecomposed'
 
 // One of an app's folders in the Library.
 export type LibraryFolder = {
@@ -13014,6 +13019,11 @@ export type LicenseActivationError =
   | { code: 'networkError'; detail: string }
   // License server returned an unexpected response.
   | { code: 'serverError'; detail: string }
+  /**
+   *  The license server can't answer right now (its limiter's 429, or a 5xx from it or the
+   *  proxy in front of it). Nothing is wrong with the code; trying again later is the fix.
+   */
+  | { code: 'serverBusy'; status: number }
   /**
    *  Couldn't store the key (the Keychain refused the write, or `license.json` didn't open).
    *  Nothing was stored, so trying again is safe.
@@ -15754,7 +15764,10 @@ export type NameRules = {
   pathLimit: LengthLimit | null
 }
 
-// What a destination does with one class of name Windows can't use.
+/**
+ *  What a destination does with one class of name Windows can't use.
+ *  Ordered from the weakest to the strictest, so a floor can raise a tier ([`NameRules::at_least`]).
+ */
 export type NameTier =
   // Nothing to say: a POSIX destination.
   | 'allow'

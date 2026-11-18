@@ -254,6 +254,11 @@ pub(crate) fn copy_files_with_progress_inner(
     // is too large for the destination filesystem (FAT32's 4 GiB cap). No-op for
     // filesystems with no known limit.
     validate_file_sizes_for_filesystem(destination, &scan_result.files)?;
+    // Which names the destination refuses, asked once (one mount probe): every
+    // item is held to them before its write (`copy_single_item`).
+    state
+        .destination_names
+        .resolve(|| crate::name_rules::local_rules_at(destination));
 
     // Phase 2: Copy files in sorted order with rollback support
     let mut transaction = CopyTransaction::new();
@@ -808,6 +813,11 @@ mod tests;
 #[cfg(test)]
 #[path = "copy_failure_tests.rs"]
 mod copy_failure_tests;
+
+/// A name the destination's rules refuse is refused before any write.
+#[cfg(test)]
+#[path = "refused_class_tests.rs"]
+mod refused_class_tests;
 
 #[cfg(test)]
 mod named_copy_tests;

@@ -28,6 +28,9 @@ pub enum LicenseActivationError {
     NetworkError { detail: String },
     /// License server returned an unexpected response.
     ServerError { detail: String },
+    /// The license server can't answer right now (its limiter's 429, or a 5xx from it or the
+    /// proxy in front of it). Nothing is wrong with the code; trying again later is the fix.
+    ServerBusy { status: u16 },
     /// Couldn't store the key (the Keychain refused the write, or `license.json` didn't open).
     /// Nothing was stored, so trying again is safe.
     StorageError { detail: String },
@@ -43,6 +46,7 @@ impl std::fmt::Display for LicenseActivationError {
             Self::ShortCodeNotFound => write!(f, "License code not found"),
             Self::NetworkError { detail } => write!(f, "Failed to connect to license server: {detail}"),
             Self::ServerError { detail } => write!(f, "Invalid response from license server: {detail}"),
+            Self::ServerBusy { status } => write!(f, "License server busy (HTTP {status})"),
             Self::StorageError { detail } => write!(f, "Couldn't store the license key: {detail}"),
         }
     }

@@ -7,6 +7,7 @@
 //! filesystem's own unit.
 
 use serde::{Deserialize, Serialize};
+use unicode_normalization::UnicodeNormalization;
 
 mod platform;
 
@@ -24,9 +25,12 @@ pub const MAX_NAME_BYTES: usize = 255;
 pub enum LengthUnit {
     /// UTF-8 bytes: ext4, Btrfs, XFS, ZFS, and Samba over them.
     Bytes,
-    /// UTF-16 code units: APFS, HFS+, exFAT, FAT32, NTFS, and Windows' own paths.
+    /// UTF-16 code units: APFS, exFAT, FAT32, NTFS, and Windows' own paths.
     /// An emoji outside the Basic Multilingual Plane is two.
     Utf16Units,
+    /// UTF-16 code units of the name DECOMPOSED (NFD): HFS+, which stores names
+    /// that way, so a precomposed `é` (one unit) takes two there.
+    Utf16UnitsDecomposed,
 }
 
 /// A length limit, inclusive, in its filesystem's own unit.
@@ -45,12 +49,18 @@ impl LengthLimit {
         max: MAX_NAME_BYTES,
         unit: LengthUnit::Bytes,
     };
-    /// 255 UTF-16 units: APFS's, HFS+'s, and the Windows formats' name limit
+    /// 255 UTF-16 units: APFS's and the Windows formats' name limit
     /// (verified on macOS 27.0: `é` × 200 lands on APFS, exFAT, and FAT32, and
     /// `😀` × 128 doesn't, 2026-11-18).
     pub const UTF16_255: Self = Self {
         max: 255,
         unit: LengthUnit::Utf16Units,
+    };
+    /// HFS+'s name limit: 255 UTF-16 units of the name as HFS+ stores it,
+    /// decomposed (Apple's TN1150, "HFS Plus Names").
+    pub const HFS_PLUS_255: Self = Self {
+        max: 255,
+        unit: LengthUnit::Utf16UnitsDecomposed,
     };
     /// An SMB2 path's ceiling: CREATE's `NameLength` is a 16-bit byte count
     /// of UTF-16 (MS-SMB2 § 2.2.13, read 2026-11-18), so 32,767 units.
@@ -64,14 +74,16 @@ impl LengthLimit {
         match self.unit {
             LengthUnit::Bytes => text.len(),
             LengthUnit::Utf16Units => text.encode_utf16().count(),
+            LengthUnit::Utf16UnitsDecomposed => text.nfd().map(char::len_utf16).sum(),
         }
     }
 
     /// `text`'s length when it's past this limit, or `None` when it fits.
     fn exceeded_by(&self, text: &str) -> Option<usize> {
         // A UTF-8 string is never shorter in bytes than in UTF-16 units, so a
-        // short one skips the count.
-        if text.len() <= self.max {
+        // short one skips the count. Not decomposed: `Ǖ` is two bytes and three
+        // decomposed units.
+        if self.unit != LengthUnit::Utf16UnitsDecomposed && text.len() <= self.max {
             return None;
         }
         let length = self.length_of(text);
@@ -203,7 +215,8 @@ pub enum NameFormat {
 }
 
 /// What a destination does with one class of name Windows can't use.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+/// Ordered from the weakest to the strictest, so a floor can raise a tier ([`NameRules::at_least`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum NameTier {
     /// Nothing to say: a POSIX destination.
@@ -292,6 +305,25 @@ impl NameRules {
     /// These rules with `path_limit` as the path ceiling.
     pub const fn with_path_limit(self, path_limit: Option<LengthLimit>) -> Self {
         Self { path_limit, ..self }
+    }
+
+    /// These rules for a disk this host writes through its own path API, never weaker than
+    /// what that API itself refuses (`platform::LOCAL_FLOOR`), whatever the filesystem kind
+    /// lookup said. On Windows that's every Win32 refusal (a backslash, a colon, a control
+    /// character, a device name, a trailing space or period), since a `\\?\` path would
+    /// otherwise write an NTFS stream, a name Explorer can't open, or into a subfolder. On
+    /// macOS and Linux the kind's tiers stand.
+    pub fn for_host_local_disk(self) -> Self {
+        self.at_least(platform::LOCAL_FLOOR)
+    }
+
+    /// These rules with each Windows tier raised to at least `floor`'s. The limits stay.
+    pub(crate) fn at_least(self, floor: WindowsFormatTiers) -> Self {
+        Self {
+            windows_characters: self.windows_characters.max(floor.characters),
+            reserved_names: self.reserved_names.max(floor.reserved_names),
+            ..self
+        }
     }
 }
 
@@ -396,22 +428,27 @@ pub fn validate_filename(name: &str, rules: NameRules) -> Result<Option<Portabil
     Ok(warning)
 }
 
-/// Which classes of Windows trouble `name` has, whatever the destination: the
-/// scan's tally reads it, then the destination's [`NameRules`] say whether
-/// each is refused, warned about, or fine there. `None` for a name Windows
-/// takes as is.
-pub fn windows_portability(name: &str) -> Option<PortabilityWarning> {
-    let everywhere_warned = NameRules {
-        format: NameFormat::Windows,
-        windows_characters: NameTier::Warn,
-        reserved_names: NameTier::Warn,
-        name_limit: LengthLimit {
-            max: usize::MAX,
-            unit: LengthUnit::Bytes,
-        },
-        path_limit: None,
-    };
-    validate_filename(name, everywhere_warned).ok().flatten()
+/// Every class of Windows trouble `name` has, whatever the destination, in
+/// [`validate_filename`]'s order (a character, a device name, a trailing space
+/// or period): the scan's tally reads it, then the destination's [`NameRules`]
+/// say whether each is refused, warned about, or fine there. A name in several
+/// classes (`CON.a:b`, `a?.`) answers each, so a destination that warns about
+/// only one of them still hears of it. All `None` for a name Windows takes as
+/// is. Allocates only for a hit's character.
+pub fn windows_portability(name: &str) -> [Option<PortabilityWarning>; 3] {
+    if name.chars().all(renders_blank) {
+        return [None, None, None];
+    }
+    [
+        name.chars()
+            .find_map(windows_character)
+            .map(|character| PortabilityWarning::WindowsCharacter { character }),
+        reserved_device_name(name).map(|reserved| PortabilityWarning::ReservedName {
+            name: reserved.to_string(),
+        }),
+        name.ends_with([' ', '.'])
+            .then_some(PortabilityWarning::EndsWithSpaceOrPeriod),
+    ]
 }
 
 /// How a character no filesystem takes reads in a refusal: `/` itself, NUL by name.
@@ -614,22 +651,21 @@ mod tests {
 
     #[test]
     fn the_tally_reads_every_class_whatever_the_destination() {
+        let character = |c: &str| Some(PortabilityWarning::WindowsCharacter { character: c.into() });
+        let reserved = |n: &str| Some(PortabilityWarning::ReservedName { name: n.into() });
+        let trailing = Some(PortabilityWarning::EndsWithSpaceOrPeriod);
+        assert_eq!(windows_portability("a:b"), [character(":"), None, None]);
+        assert_eq!(windows_portability("con.txt"), [None, reserved("con"), None]);
+        assert_eq!(windows_portability("x."), [None, None, trailing.clone()]);
         assert_eq!(
-            windows_portability("a:b"),
-            Some(PortabilityWarning::WindowsCharacter { character: ":".into() })
+            windows_portability("CON.a:b?."),
+            [character(":"), reserved("CON"), trailing],
+            "every class a name falls in"
         );
-        assert_eq!(
-            windows_portability("con.txt"),
-            Some(PortabilityWarning::ReservedName { name: "con".into() })
-        );
-        assert_eq!(
-            windows_portability("x."),
-            Some(PortabilityWarning::EndsWithSpaceOrPeriod)
-        );
-        assert_eq!(windows_portability("fine.txt"), None);
+        assert_eq!(windows_portability("fine.txt"), [None, None, None]);
         assert_eq!(
             windows_portability(&"a".repeat(300)),
-            None,
+            [None, None, None],
             "length isn't a portability class"
         );
     }

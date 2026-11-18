@@ -1046,8 +1046,10 @@ keeps saying so, and the person can close the dialog; the work was never cancela
 (`cmdr_fs::validation::NameRules`, keyed on its `FilesystemKind`, `crates/cmdr-fs/DETAILS.md` § "Name rules"). The local
 disk and any volume with a `local_path` are probed at the folder (one `statfs`, on the blocking pool; a folder still to
 be created answers for its nearest existing ancestor), so an exFAT stick or a Finder-mounted share answers for its own
-format, with the host's path API limit; an SMB backend is a share whatever the server's disk, with SMB2's path limit;
-every other backend answers `POSIX` with no path limit and leaves the rest to the device or server (#1228).
+format, with the host's path API limit and, on Windows, never weaker than Win32's refusals
+(`NameRules::for_host_local_disk`; Windows reads the format through `GetVolumeInformationW`, a network drive stays
+`Other`); an SMB backend is a share whatever the server's disk, with SMB2's path limit; every other backend answers
+`POSIX` with no path limit and leaves the rest to the device or server (#1228).
 
 - **The engine enforces it, not only the editor.** `check_new_name` runs in `create_directory_core_on`,
   `create_file_core_on`, `rename_managed`, and Ask Cmdr's bulk rename (`rename/bulk.rs::refused_rows`, one lookup per
@@ -1066,8 +1068,9 @@ every other backend answers `POSIX` with no path limit and leaves the rest to th
   volume walk through its `ScanRecorder`, which forwards to the tree's). The tally rides `ScanPreviewCompleteEvent` and
   `ScanPreviewTotals`, destination-blind; the dialog reads it against the destination's rules. A subtree the volume walk
   counts without listing (the fresh-listing oracle) contributes only its own name: an undercount, never an invention. A
-  name the destination REFUSES still asks per item at landing (§ "A name the destination refuses"); the transfer's own
-  pre-check refuses only a name past every filesystem's limit (`over_every_name_limit`) or a local path past the host's.
+  name the destination's rules REFUSE is refused per item before any write (§ "A name the destination refuses", "Refused
+  by the rules"); the transfer's own pre-check otherwise refuses only a name past every filesystem's limit
+  (`over_every_name_limit`) or a local path past the host's.
 - **❌ Not `supports_local_fs_access`** for "probe this path": it defaults to `true`, so an in-memory or demo volume
   would statfs a path that isn't there (and a paused-clock test times out on the blocking hop). `local_path` says it.
 
@@ -2432,7 +2435,20 @@ the batch still has a good name. So the transfer parks on the person, per item: 
   `scan_for_copy` of the source subtree, paid only then), and records the folder as one skipped source, which the sweep
   spares whole. It reads as `notAllowed`: a refused folder create carries no evidence its length is why, so that copy
   names length among the reasons.
-- **Not covered**: on the LOCAL engine, a refused folder deep in a tree still ends the copy (a refused file asks).
+- **Refused by the rules, before any write** (`name_rules.rs::DestinationNames`, resolved once as the transfer starts:
+  `copy_files_with_progress`, the cross-FS move, `copy_volumes_with_progress`, `move_volumes_with_progress`). A Windows
+  class the destination's tier REFUSES (a character, a device name, a trailing space or period) never reaches the
+  landing, because a driver may take it with no error: Linux's vfat strips `dup.` to `dup`, so it would land on a
+  sibling, merge a folder `dir.` into `dir`, and under "Overwrite all" replace the sibling. The local engine checks
+  every segment of a file's destination below the root (`single_item.rs::refuse_a_refused_segment`: the file asks as a
+  file, a folder as a folder, whose Skip leaves it out whole through `skipped_subtrees`); the volume walk checks each
+  child before anything is made for it (`merge.rs`), and a top-level name skips the probe and the resolver
+  (`landing.rs::destination_refuses`) and is refused at the top of `copy_single_path`, where every driver asks. Length
+  stays the destination's to answer. macOS needs none of it: its drivers warn (they store a stand-in, so `dup.` and
+  `dup` stay two names), and a case-only twin is a look-alike `landing.rs` already settles. Pinned by
+  `src/transfer/copy/refused_class_tests.rs` and `src/transfer/volume/refused_class_tests.rs`.
+- **Not covered**: on the LOCAL engine, a folder the destination refuses at its `create_dir` (with no rule saying so)
+  still ends the copy (a refused file asks).
 
 Pinned by `refused_name_tests.rs` (the question) and `transfer/volume/refused_name_tests.rs` (every volume driver,
 including the move keeping each skipped source), plus `transfer/copy/copy_tests.rs` for the local engine.

@@ -163,9 +163,6 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `updates.toast.readyDetail`'s `other` branch serves Windows and Linux, but most locales' `app-closes` ruling is
   Windows-only (Linux says "quit"), so Linux reads the Windows verb. Split a `windows` branch if Linux should differ.
   (all)
-- `updates.status.noBuildForThisPlatform` says "can’t check for updates right now", but its description says the check
-  succeeded and found a release this build can't install. cs, ru, uk, and hu followed the description ("this build can't
-  update yet") and record a `check` exception; reword the English to match, then drop those exceptions. (cs, ru, uk, hu)
 - The `preferences` concept hits the new `linuxGnome` branch of `menu.app.settings` and
   `fileExplorer.quickFilter.intro.openSettings`, whose GNOME word (ru Параметры, cs Předvolby, uk Налаштування, hu
   Beállítások) differs from both the ruling (an Android label) and the macOS folder name

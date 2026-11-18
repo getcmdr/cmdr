@@ -324,15 +324,23 @@ about), or `Ok(None)`; `cmdr-operations`' `name_rules.rs` resolves a folder to i
   U+F020…U+F029, and a device name as itself); Linux refuses the characters (vfat and exfat answer `EINVAL`, and strip a
   trailing period onto a sibling) and warns about reserved names; Windows refuses both (Win32 refuses, strips, or opens
   a device).
+- **A local disk on Windows is never weaker than Win32** (`NameRules::for_host_local_disk`, `platform::LOCAL_FLOOR`):
+  whatever the kind lookup says (`Other` when `GetVolumeInformationW` can't tell, ReFS, a format this map doesn't know),
+  both classes are refused, since a `\\?\` path skips Win32's name rules and `a:b` would write an NTFS stream, `con` and
+  `dup.` a name Explorer can't open, and `x\y` into a subfolder. macOS and Linux have no floor (their path APIs refuse
+  nothing a filesystem doesn't). `cmdr-operations`' local probe applies it, so every local answer is safe by
+  construction. The Windows half is pinned by `cfg(windows)` tests the Windows builder runs.
 - **An SMB share warns about both, on every host**: smb2 and smbfs carry the characters as stand-ins both ways
   (`crates/cmdr-smb/DETAILS.md`), and Samba stores a device name and lists it back mangled (`CON` → `CR23RR~9`). The SMB
   specs forbid no device name (MS-FSCC § 2.1.5.2, v20251121), so a bare `CON` warns too.
-- **Lengths in each filesystem's unit** (`LengthLimit`, inclusive): APFS, HFS+, and the Windows formats count 255 UTF-16
-  units; ext4, Btrfs, XFS, ZFS, a share (a NAS's disk under Samba), MTP, and `Other` count 255 bytes. The path limit is
-  the PATH API's, not the format's: a local probe gets `HOST_PATH_LIMIT` (macOS 1,023 bytes, Linux 4,095, Windows 32,767
-  UTF-16 units through `\\?\`), an SMB backend SMB2's 32,767 units, every other backend none (it answers for itself).
-  `MAX_NAME_BYTES` stays as the floor for a name with no destination yet (`validate_plain_leaf`), and
-  `over_every_name_limit` (past both units) is the only name a transfer refuses up front.
+- **Lengths in each filesystem's unit** (`LengthLimit`, inclusive): APFS and the Windows formats count 255 UTF-16 units;
+  HFS+ counts 255 UTF-16 units of the name DECOMPOSED (`Utf16UnitsDecomposed`, Apple's TN1150), since it stores NFD, so
+  200 precomposed `é` (200 units) is 400 there; ext4, Btrfs, XFS, ZFS, a share (a NAS's disk under Samba), MTP, and
+  `Other` count 255 bytes. The path limit is the PATH API's, not the format's: a local probe gets `HOST_PATH_LIMIT`
+  (macOS 1,023 bytes, Linux 4,095, Windows 32,767 UTF-16 units through `\\?\`), an SMB backend SMB2's 32,767 units,
+  every other backend none (it answers for itself). `MAX_NAME_BYTES` stays as the floor for a name with no destination
+  yet (`validate_plain_leaf`), and `over_every_name_limit` (past both units) is the only name a transfer refuses up
+  front.
 - **`windows_portability(name)`** is the destination-blind class of a name, for a transfer scan's tally; the
   destination's rules decide what it means there. `PortabilityWarning::reaches_linux` says whether Linux misreads it
   too.
@@ -807,17 +815,20 @@ cache until that thread's next use, which a retirement epoch (one atomic load wh
   thread holds.
 
 A connection opened AFTER the retirement is kept, which is what lets a recreated database be cached normally: the
-retirement only reaches the slots registered when it ran.
+retirement only reaches the slots registered when it ran. A slot is registered empty and locked BEFORE its `open`, so a
+retirement that runs mid-open sees it, waits, and closes what the open made. A hit runs `f` on the entry in place, so a
+panic in `f` leaves the connection cached and counted.
 
 `delete_database(db_path)` is the one way a database file is removed: retire, unlink the main file and its `-wal` and
 `-shm`, retire again. The second retirement covers a reader that opened between the first one and the unlink, which
-would otherwise be left holding the unlinked file. A missing file is fine, every file is attempted, and the first
-refusal is returned. ⚠️ It only reaches cached READ connections: the caller stops whatever writes the database first.
-Every place that deletes or replaces a database goes through it (the index reset, the importance, media, and visits
-stores, the operation log's and `main.db`'s set-aside), and "Delete all Cmdr data" closes the caches under each target
-with `retire_read_connections_under` before it moves the folder. `cmdr-index` builds its per-volume removal on it
-(`crates/cmdr-index/DETAILS.md` § "A volume's files, and the one door they leave by"), and the three stores'
-schema-mismatch wipes call it too.
+would otherwise be left holding the unlinked file. A refused unlink retires once more and tries again (Windows refuses
+while a handle is open, and a reader may have opened in between). A missing file is fine, every file is attempted, and
+the second attempt's first refusal is returned. ⚠️ It only reaches cached READ connections: the caller stops whatever
+writes the database first. Every place that deletes or replaces a database goes through it (the index reset, the
+importance, media, and visits stores, the operation log's and `main.db`'s set-aside), and "Delete all Cmdr data" closes
+the caches under each target with `retire_read_connections_under` before it moves the folder. `cmdr-index` builds its
+per-volume removal on it (`crates/cmdr-index/DETAILS.md` § "A volume's files, and the one door they leave by"), and the
+three stores' schema-mismatch wipes call it too.
 
 ## What the app kept, and why
 

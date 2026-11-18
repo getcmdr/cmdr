@@ -6,7 +6,9 @@
 //!
 //! ❗ A counter and a few examples per class, ❌ never a list of names: a
 //! million-file tree costs three counters and nine short strings. One string
-//! scan per name, no allocation unless the name is one of the first examples.
+//! scan per name, no allocation unless the name is a hit. A name counts in
+//! every class it falls in, so the dialog's per-class sum can count a name in
+//! two warned classes twice: an overcount of names, ❌ never a class missed.
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -40,19 +42,22 @@ impl NameTally {
     pub(crate) fn note_path(&self, path: &Path) {
         let Some(name) = path.file_name() else { return };
         let name = name.to_string_lossy();
-        let Some(warning) = windows_portability(&name) else {
+        let classes = windows_portability(&name);
+        if classes.iter().all(Option::is_none) {
             return;
-        };
+        }
         // A counter: a poisoned one still counts.
         let mut tally = self.tally.lock_ignore_poison();
-        let class = match warning {
-            PortabilityWarning::WindowsCharacter { .. } => &mut tally.windows_characters,
-            PortabilityWarning::ReservedName { .. } => &mut tally.reserved_names,
-            PortabilityWarning::EndsWithSpaceOrPeriod => &mut tally.ends_with_space_or_period,
-        };
-        class.count += 1;
-        if class.examples.len() < NAME_TALLY_EXAMPLES {
-            class.examples.push(name.into_owned());
+        for warning in classes.into_iter().flatten() {
+            let class = match warning {
+                PortabilityWarning::WindowsCharacter { .. } => &mut tally.windows_characters,
+                PortabilityWarning::ReservedName { .. } => &mut tally.reserved_names,
+                PortabilityWarning::EndsWithSpaceOrPeriod => &mut tally.ends_with_space_or_period,
+            };
+            class.count += 1;
+            if class.examples.len() < NAME_TALLY_EXAMPLES {
+                class.examples.push(name.clone().into_owned());
+            }
         }
     }
 
@@ -106,6 +111,20 @@ mod tests {
         assert_eq!(tally.reserved_names.count, 1);
         assert_eq!(tally.reserved_names.examples, ["con.txt"]);
         assert_eq!(tally.ends_with_space_or_period.count, 1);
+    }
+
+    /// A name in several classes counts in each: a destination that warns about only one of
+    /// them still hears about it.
+    #[test]
+    fn a_name_counts_in_every_class_it_falls_in() {
+        let tally = NameTally::forwarding_to(None);
+        tally.note_path(Path::new("/src/CON.a:b"));
+        tally.note_path(Path::new("/src/a?."));
+        let tally = tally.finish();
+        assert_eq!(tally.windows_characters.count, 2);
+        assert_eq!(tally.reserved_names.count, 1, "CON.a:b is a device name too");
+        assert_eq!(tally.reserved_names.examples, ["CON.a:b"]);
+        assert_eq!(tally.ends_with_space_or_period.count, 1, "a?. ends with a period too");
     }
 
     /// A million names cost a counter each: the examples never grow past

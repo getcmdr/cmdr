@@ -2,14 +2,15 @@
  * The transfer dialog's upfront warning about names Windows won't read as typed: the scan's
  * destination-blind tally (`NamePortabilityTally`, counted by the walk) read against the
  * destination's `NameRules`. Only the classes the destination WARNS about count: one it
- * refuses (a Linux driver's `:`) is the per-item refused-name prompt's at landing, and a
- * POSIX destination takes every name as is. Pure.
+ * refuses (a Linux driver's `:` or trailing period) the engine refuses per item before any
+ * write, asking Skip, Skip all, or Stop (`cmdr-operations`' `name_rules.rs::DestinationNames`),
+ * and a POSIX destination takes every name as is. Pure.
  */
 
 import type { NameClassTally, NamePortabilityTally, NameRules } from '#lib/ipc/bindings.js'
 
 export interface NamePortabilitySummary {
-  /** How many entries' names won't work on Windows at the destination. */
+  /** How many names won't work on Windows at the destination, per warned class summed (a name in two warned classes counts twice). */
   count: number
   /** Whether Linux misreads some of them too (a stand-in on a Windows-format drive). */
   alsoLinux: boolean

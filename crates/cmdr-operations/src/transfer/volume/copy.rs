@@ -698,6 +698,12 @@ pub async fn copy_volumes_with_progress(
     if let Some(refusal) = destination_refusal(&*dest_volume, dest_path).await {
         return Err(WriteFailure::synthetic(refusal));
     }
+    // Which names the destination refuses, asked once: every item's name is
+    // held to them before its write (`landing.rs::name_at_destination`, the walk).
+    state
+        .destination_names
+        .resolve_on(state.scope().host(), &dest_volume, dest_path)
+        .await;
 
     // Phase 0.5: Ensure the destination directory exists, creating it and any
     // missing ancestors on the dest volume (local, SMB, MTP, in-memory). This

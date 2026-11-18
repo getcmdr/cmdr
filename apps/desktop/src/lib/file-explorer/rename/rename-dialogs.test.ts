@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach, onTestFinished } from 'vitest'
 import { mount, tick } from 'svelte'
-import { withPlatform } from '#lib/platform/test-platform.js'
+import { withConventions, withPlatform } from '#lib/platform/test-platform.js'
+import { ALL_CONVENTION_DESKTOPS, pressReturnOnFooterButtons } from '#lib/ui/test-return-safety.js'
 import {
   getSettingDefinition,
   getDefaultValue,
@@ -471,5 +472,54 @@ describe('ExtensionChangeDialog wording', () => {
     expect(description).toContain('add the “.md” extension')
     expect(description).not.toContain('“.”')
     expect(buttons).toEqual(['Keep no extension', 'Use .md'])
+  })
+})
+
+// Return never confirms an overwrite or an extension change from a footer button other than the
+// default one, on any desktop (`#lib/ui/DETAILS.md` § Platform conventions). The safety baseline
+// is the app before the Windows port: Return on a focused button pressed that button only.
+describe.each(ALL_CONVENTION_DESKTOPS)('the rename dialogs on %s, Return on another footer button', (desktop) => {
+  const isDefault = (button: HTMLButtonElement) => button.hasAttribute('data-dialog-default')
+
+  function freshTarget(): HTMLElement {
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    onTestFinished(() => {
+      target.remove()
+    })
+    return target
+  }
+
+  it.each([true, false])('never overwrites in the rename clash (trash: %s)', async (supportsTrash) => {
+    onTestFinished(withConventions(desktop))
+    const target = freshTarget()
+    const resolutions: RenameConflictResolution[] = []
+    mount(RenameConflictDialog, {
+      target,
+      props: {
+        renamedFile: { name: 'report.md', size: 2048, modifiedAt: undefined, isDirectory: false },
+        existingFile: { name: 'report.md', size: 1024, modifiedAt: undefined, isDirectory: false },
+        supportsTrash,
+        onResolve: (resolution: RenameConflictResolution) => resolutions.push(resolution),
+      },
+    })
+    await tick()
+    expect(pressReturnOnFooterButtons(target, isDefault)).toBeGreaterThan(0)
+    await tick()
+    expect(resolutions.filter((r) => r.startsWith('overwrite'))).toEqual([])
+  })
+
+  it('never changes the extension', async () => {
+    onTestFinished(withConventions(desktop))
+    const target = freshTarget()
+    const onUseNew = vi.fn()
+    mount(ExtensionChangeDialog, {
+      target,
+      props: { oldExtension: 'txt', newExtension: 'md', onKeepOld: () => {}, onUseNew },
+    })
+    await tick()
+    expect(pressReturnOnFooterButtons(target, isDefault)).toBeGreaterThan(0)
+    await tick()
+    expect(onUseNew).not.toHaveBeenCalled()
   })
 })

@@ -13,12 +13,14 @@
  * desktop's default bindings, read in source). Best-effort: a user can free any of these in the
  * OS's settings, so the banner warns and offers "Use anyway" rather than refusing.
  *
- * Cmdr can't yet ask which Linux desktop is running (task 59), so a Linux entry names every listed
- * desktop that takes the combo. Once it can, `systemReservation` narrows `desktops` to the running
- * one, and nothing else changes shape.
+ * A Linux entry names the listed desktops that take the combo, narrowed to the running one
+ * (`linuxDesktop()` from `#lib/platform`): GNOME names GNOME and Ubuntu (Ubuntu's session is
+ * GNOME, and the two can't be told apart), KDE names KDE Plasma, `other` names Xfce and Cinnamon,
+ * and an unknown desktop names every one.
  */
 import type { MessageKey } from '#lib/intl/keys.gen.js'
-import { getPlatform, type Platform } from '#lib/platform/index.js'
+import { getPlatform, linuxDesktop, type Platform } from '#lib/platform/index.js'
+import type { LinuxDesktop as RunningDesktop } from '#lib/ipc/bindings.js'
 
 /** The Linux desktops whose default bindings the table reads, in the order a warning names them. */
 export const LINUX_DESKTOPS = ['GNOME', 'KDE Plasma', 'Xfce', 'Cinnamon', 'Ubuntu'] as const
@@ -207,10 +209,25 @@ function linuxDesktopsTaking(combo: string): LinuxDesktop[] {
   return linuxDesktopsByCombo.get(combo) ?? []
 }
 
-/** Who usually takes `combo` on `platform` before Cmdr sees it, or `null` when nothing listed does. */
-export function systemReservation(combo: string, platform: Platform = getPlatform()): SystemReservation | null {
+/** The listed desktops each running desktop can be, by `linuxDesktop()`'s answer. */
+const LISTED_AS: Readonly<Record<RunningDesktop, readonly LinuxDesktop[]>> = {
+  gnome: ['GNOME', 'Ubuntu'],
+  kde: ['KDE Plasma'],
+  other: ['Xfce', 'Cinnamon'],
+}
+
+/**
+ * Who usually takes `combo` on `platform` before Cmdr sees it, or `null` when nothing listed does.
+ * On Linux, only the desktops `running` can be (every listed one while it's `null`, unknown).
+ */
+export function systemReservation(
+  combo: string,
+  platform: Platform = getPlatform(),
+  running: RunningDesktop | null = linuxDesktop(),
+): SystemReservation | null {
   if (platform === 'linux') {
-    const desktops = linuxDesktopsTaking(combo)
+    const candidates = running === null ? null : LISTED_AS[running]
+    const desktops = linuxDesktopsTaking(combo).filter((desktop) => candidates?.includes(desktop) ?? true)
     return desktops.length > 0 ? { os: 'linux', desktops } : null
   }
   const featureKey = (platform === 'macos' ? MACOS_FEATURES : WINDOWS_FEATURES)[combo]

@@ -135,18 +135,40 @@ fn read_cmdr_0_8(body: &[u8]) -> Result<Reading, String> {
 }
 
 /// The release gate: every reader reads `body` and finds an update in it for each install it
-/// serves (the macOS keys for the old readers, every key for this build), with nothing this build
-/// would drop. Answers one line per reader, or every problem found.
+/// serves, with nothing this build would drop. Answers one line per reader, or every problem
+/// found.
+///
+/// Which platforms a release carries is the release manifest's decision
+/// (`scripts/release-assets/manifest`, a reviewed change the writer's validator holds
+/// `platforms` to), so a macOS key this build's reader doesn't find either is a platform the
+/// release dropped: the gate names it (those installs get no update) and lets it through. An
+/// old reader missing a key this build's reader DOES find is a real reader split, and refused.
 pub fn gate(body: &[u8]) -> Result<Vec<String>, Vec<String>> {
     let mut report = Vec::new();
     let mut problems = Vec::new();
+    let current_keys: Option<Vec<String>> = read(Reader::Current, body)
+        .ok()
+        .map(|reading| reading.urls.into_keys().collect());
+    // The macOS keys the old readers must find: the ones this build finds too.
+    let legacy_wanted: Vec<String> = LEGACY_KEYS
+        .iter()
+        .filter(|key| current_keys.as_ref().is_none_or(|keys| keys.iter().any(|k| k == *key)))
+        .map(|key| (*key).to_string())
+        .collect();
+    for key in LEGACY_KEYS {
+        if !legacy_wanted.iter().any(|k| k == key) {
+            report.push(format!(
+                "no {key} entry: installs on it get no update (a platform the release manifest dropped)"
+            ));
+        }
+    }
     for reader in Reader::ALL {
         match read(reader, body) {
             Err(e) => problems.push(format!("{} can't read it: {e}", reader.label())),
             Ok(reading) => {
                 let keys: Vec<String> = match reader {
                     Reader::Current => reading.urls.keys().cloned().collect(),
-                    _ => LEGACY_KEYS.iter().map(|k| (*k).to_string()).collect(),
+                    _ => legacy_wanted.clone(),
                 };
                 let missing: Vec<&String> = keys.iter().filter(|k| !reading.urls.contains_key(*k)).collect();
                 if missing.is_empty() {
