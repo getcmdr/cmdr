@@ -212,9 +212,9 @@
   "@errorReporter.bundleSavedToast.dismiss": {
     "description": "Button that dismisses the bundle-saved toast. Keep it short (a tight button)."
   },
-  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Reveal in Finder} windows {Show in File Explorer} other {Show in file manager}}",
+  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Reveal in Finder} windows {Show in File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Show in file manager}}",
   "@errorReporter.bundleSavedToast.reveal": {
-    "description": "Button that opens the saved bundle's folder in the OS’s file manager. The macOS branch names Finder, Apple's file browser (do not translate); the Windows branch names File Explorer (use Microsoft's name for it in your language); the Linux branch says \"file manager\"."
+    "description": "Button that opens the saved bundle's folder in the OS’s file manager. The macOS branch names Finder, Apple's file browser (do not translate); the Windows branch names File Explorer (use Microsoft's name for it in your language); the Linux branch says \"file manager\". The `linuxGnome` branch names GNOME’s file manager, Files, and the `linuxKde` branch KDE’s, Dolphin: use the names those desktops give them in your language (GNOME translates “Files”, KDE keeps “Dolphin”)."
   },
   "errorReporter.autoSentToast.title": "Error report sent",
   "@errorReporter.autoSentToast.title": {

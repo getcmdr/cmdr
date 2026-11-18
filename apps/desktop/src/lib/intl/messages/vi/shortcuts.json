@@ -116,7 +116,7 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "Trên {desktops}, môi trường desktop thường giữ {combo} cho riêng mình, nên phím tắt này có thể không bao giờ đến được Cmdr. Bạn có thể giải phóng phím tắt này trong cài đặt bàn phím của môi trường desktop.",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {Trên {desktops}, môi trường desktop thường giữ {combo} cho riêng mình, nên phím tắt này có thể không bao giờ đến được Cmdr. Bạn có thể giải phóng phím tắt này trong cài đặt bàn phím của môi trường desktop.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "610146a"
   },

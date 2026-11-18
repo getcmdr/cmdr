@@ -71,9 +71,9 @@
   "@menu.app.cliCommandHomebrew": {
     "description": "App-menu item (macOS only), shown in place of menu.app.cliCommandInstall when the cmdr terminal command came with Cmdr's Homebrew package, so Cmdr leaves it alone; clicking it explains that Homebrew manages it. A status, not an action. Keep cmdr and Homebrew exactly as they are: cmdr is the literal word the user types in Terminal, Homebrew is a product name."
   },
-  "menu.app.settings": "{platform, select, windows {Settings} other {Settings…}}",
+  "menu.app.settings": "{platform, select, windows {Settings} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Settings…}}",
   "@menu.app.settings": {
-    "description": "NOUN (plural). Opens Cmdr's Settings window: in the macOS app menu (⌘,), and under Edit on Linux. Use the word each OS uses for an app's settings: the macOS branch matches the same app-menu item in your language's macOS (recent macOS says \"Settings\", older versions said \"Preferences\"), and the Windows branch Windows' own word for Settings; matching the system is what makes it findable. The trailing … in the macOS and Linux branch is U+2026 and must stay; the Windows branch has none."
+    "description": "NOUN (plural). Opens Cmdr's Settings window: in the macOS app menu (⌘,), and under Edit on Linux. Use the word each OS uses for an app's settings: the macOS branch matches the same app-menu item in your language's macOS (recent macOS says \"Settings\", older versions said \"Preferences\"), and the Windows branch Windows' own word for Settings; matching the system is what makes it findable. The trailing … in the macOS and Linux branch is U+2026 and must stay; the Windows branch has none. The `linuxGnome` branch is GNOME’s word for an app’s settings row, “Preferences” (no ellipsis), and the `linuxKde` branch KDE’s standard “Configure Cmdr…” (with U+2026): use the wording GNOME and KDE use in your language. “Cmdr” stays as is."
   },
   "menu.app.services": "Services",
   "@menu.app.services": {
@@ -147,9 +147,9 @@
   "@menu.context.showInFolder": {
     "description": "VERB phrase (imperative). Appears only in a search-result row's context menu and as a compact hint in the search-results pane footer. Replaces the virtual results pane with the row's real containing folder and leaves the cursor on that row. The displayed shortcut is the live binding for Go to parent folder. This stays distinct from Show in Finder: the destination is Cmdr's current pane, not another app."
   },
-  "menu.file.showInFileManager": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} other {Show in file manager}}",
+  "menu.file.showInFileManager": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Show in file manager}}",
   "@menu.file.showInFileManager": {
-    "description": "VERB phrase (imperative). Opens the OS's file manager with the selected file highlighted. ❗ In the macOS branch, \"Finder\" is Apple's app name and Apple keeps it English in every language, so it must stay verbatim as \"Finder\"; macOS itself calls this \"Show in Finder\" or \"Reveal in Finder\" depending on the app, so use whichever your Finder's own menus use. The Windows branch names File Explorer, in the name Microsoft gives it in your language; the Linux branch says file manager, generically."
+    "description": "VERB phrase (imperative). Opens the OS's file manager with the selected file highlighted. ❗ In the macOS branch, \"Finder\" is Apple's app name and Apple keeps it English in every language, so it must stay verbatim as \"Finder\"; macOS itself calls this \"Show in Finder\" or \"Reveal in Finder\" depending on the app, so use whichever your Finder's own menus use. The Windows branch names File Explorer, in the name Microsoft gives it in your language; the Linux branch says file manager, generically. The `linuxGnome` branch names GNOME’s file manager, Files, and the `linuxKde` branch KDE’s, Dolphin: use the names those desktops give them in your language (GNOME translates “Files”, KDE keeps “Dolphin”)."
   },
   "menu.file.openTerminalHere": "Open terminal here",
   "@menu.file.openTerminalHere": {

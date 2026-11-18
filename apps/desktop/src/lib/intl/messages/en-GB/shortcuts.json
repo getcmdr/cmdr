@@ -2,5 +2,9 @@
   "shortcuts.scope.favoritesMenu": "Favourites menu",
   "@shortcuts.scope.favoritesMenu": {
     "sourceHash": "7e9f06e"
+  },
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customise Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in your desktop’s keyboard settings.}}",
+  "@shortcuts.conflict.takenByLinuxDesktops": {
+    "sourceHash": "8aefc0b"
   }
 }

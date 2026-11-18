@@ -65,6 +65,16 @@ Linux. Why each choice was made, with the evidence: `docs/notes/windows-port/cop
 
 Each line reads macOS / Windows / Linux.
 
+Linux on GNOME or KDE Plasma gets its own branch (`linuxGnome`, `linuxKde`) only where that desktop names the thing
+itself; `other` stays desktop-neutral for every other desktop. Today's desktop words:
+
+- **GNOME**: the file manager is **Files** ("Show in Files"); the password store is **your keyring**, managed in
+  **Passwords and Keys**; an app's settings row is **Preferences**; shortcuts live in **Settings > Keyboard > View and
+  Customize Shortcuts**.
+- **KDE Plasma**: the file manager is **Dolphin** ("Show in Dolphin"); the password store is **KWallet** ("Remember in
+  KWallet"), managed in **KWalletManager**; an app's settings row is **Configure Cmdr…**; shortcuts live in **System
+  Settings > Keyboard > Shortcuts**.
+
 - The machine
   - **This Mac, your Mac** / **this PC, your PC** / **this computer, your computer**. On Windows, never "PC" and
     "computer" in one string; "device" is the general word there ("which devices the export allows").

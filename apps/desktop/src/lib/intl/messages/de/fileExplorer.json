@@ -522,7 +522,7 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Anmeldedaten lokal gespeichert (Anmeldeinformationsverwaltung nicht verfügbar)} other {Anmeldedaten lokal gespeichert (kein System-Schlüsselbund erkannt)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Anmeldedaten lokal gespeichert (Anmeldeinformationsverwaltung nicht verfügbar)} linuxKde {Credentials stored locally (KWallet not available)} other {Anmeldedaten lokal gespeichert (kein System-Schlüsselbund erkannt)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "e14f91d"
   },
@@ -558,7 +558,7 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Gespeichertes Passwort aus dem Schlüsselbund entfernen} windows {Gespeichertes Passwort aus der Anmeldeinformationsverwaltung entfernen} other {Gespeichertes Passwort aus deinem Schlüsselbund entfernen}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Gespeichertes Passwort aus dem Schlüsselbund entfernen} windows {Gespeichertes Passwort aus der Anmeldeinformationsverwaltung entfernen} linuxKde {Remove saved password from KWallet} other {Gespeichertes Passwort aus deinem Schlüsselbund entfernen}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
     "sourceHash": "4ae6a02"
   },
@@ -951,7 +951,7 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr hat {name} vorerst gesperrt, aber das gespeicherte Passwort ist noch im Schlüsselbund. Um es endgültig zu entfernen, lösche es in der Schlüsselbundverwaltung.} windows {Cmdr hat {name} vorerst gesperrt, aber das gespeicherte Passwort ist noch in der Anmeldeinformationsverwaltung. Um es endgültig zu entfernen, lösche es in der Anmeldeinformationsverwaltung.} other {Cmdr hat {name} vorerst gesperrt, aber das gespeicherte Passwort ist noch in deinem Schlüsselbund. Um es endgültig zu entfernen, lösche es in der Schlüsselbund-App.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr hat {name} vorerst gesperrt, aber das gespeicherte Passwort ist noch im Schlüsselbund. Um es endgültig zu entfernen, lösche es in der Schlüsselbundverwaltung.} windows {Cmdr hat {name} vorerst gesperrt, aber das gespeicherte Passwort ist noch in der Anmeldeinformationsverwaltung. Um es endgültig zu entfernen, lösche es in der Anmeldeinformationsverwaltung.} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {Cmdr hat {name} vorerst gesperrt, aber das gespeicherte Passwort ist noch in deinem Schlüsselbund. Um es endgültig zu entfernen, lösche es in der Schlüsselbund-App.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
     "sourceHash": "20277f3"
   },
@@ -2349,7 +2349,7 @@
   "@fileExplorer.quickFilter.intro.switchToJump": {
     "sourceHash": "38642f9"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Einstellungen} other {Einstellungen …}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Einstellungen} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Einstellungen …}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
     "sourceHash": "7af8e23"
   },

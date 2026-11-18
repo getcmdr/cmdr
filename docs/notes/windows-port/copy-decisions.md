@@ -31,7 +31,7 @@ Windows, Linux, and macOS are each first-class, and a few extra lines of per-OS 
   - Why: Nautilus and Dolphin never name an actor; Thunar says "your system" and "the computer"; "Linux" appears in the
     pile's file-manager catalogs only as a platform name in a compatibility note.
 - **Keychain**: as proposed. Windows checkboxes say "Remember password" and name Credential Manager only where the user
-  has to go there; Linux "Remember in keyring"; KDE "KWallet" once the desktop value exists.
+  has to go there; Linux "Remember in keyring"; KDE "KWallet" in the `linuxKde` branch.
 - **Home folder on Windows**: "user folder" everywhere, including the command ("Go to user folder"), with "home" kept as
   a palette search alias.
   - Why: Windows 11 File Explorer's "Home" is the quick-access landing page, and Microsoft's "home folder" term means an
@@ -61,7 +61,13 @@ Windows, Linux, and macOS are each first-class, and a few extra lines of per-OS 
 - **Errors only macOS produces today**: write the Windows and Linux variants where we know what they should say; skip
   the rest (they stay macOS text until their platform path exists).
 - **Mechanism for the non-ICU families** (`errors.*`, `menu.*`): one top-level platform block.
-- **Linux desktop terms**: ship the generic fallback now; a `desktop` value comes later with the plan's task 59.
+- **Linux desktop terms**: a block's `linuxGnome` / `linuxKde` branches (#1231) carry GNOME's and KDE's own words in the
+  rows where they name an app or a path: reveal (Files, Dolphin), the password store (KDE's KWallet and KWalletManager,
+  GNOME's Passwords and Keys where the app is named), the settings row (GNOME "Preferences", KDE "Configure Cmdr…"), and
+  the shortcut path. `other` stays desktop-neutral. Terms and sources: `copy-glossary-evidence.md` § Linux desktop
+  branches. The `errors.listing.*` suggestions keep their desktop-neutral Linux text ("a terminal", "your file
+  manager"): the proposal's GNOME/KDE variants there change a word, not the advice, and don't earn two more branches per
+  locale.
 - **Translations**: in a platform select, each branch uses that OS's own localized term, and `@key` descriptions of keys
   shown off macOS are reworded to say so. This is a rule in the translator guide; translating is task 28.
 - **The two Mac text changes** are accepted: `ai.secretError.genericBody` ("keyring" → "Keychain") and "e.g." in the Go
@@ -87,10 +93,6 @@ string") and drop the entry here.
     (`cmdr-fs` `metadata/platform/windows.rs`, a stub) say which class a Windows copy reports there.
   - `settings.listing.showHiddenFiles.description`, Windows: "dotfiles (like .zshrc)" stays until the Windows listing
     backend decides its hidden-file rule (the hidden attribute, dotfiles, or both).
-- **Waits on a catalog select on the Linux desktop** ([#1231](https://github.com/getcmdr/cmdr/issues/1231); task 59
-  shipped the value, `linuxDesktop`, and the catalog selects only on the platform): GNOME and KDE wording (KDE Wallet
-  Manager, the Plasma shortcut path, GNOME's "Preferences"). Until then every Linux branch speaks desktop-neutral words
-  ("your keyring", "your file manager").
 - **Waits on no scheduled work**:
   - `settings.advanced.oldMacosNoticeShown.label`, Windows and Linux: the hidden one-shot flag's label ("Old macOS
     notice shown") still lists in the MCP `cmdr://settings` resource. No capability states "this OS has a

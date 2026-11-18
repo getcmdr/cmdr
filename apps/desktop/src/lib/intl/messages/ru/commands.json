@@ -844,7 +844,7 @@
   "@commands.dialogConfirm.label": {
     "sourceHash": "fef0684"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {Показать в Finder} windows {Показать в Проводнике} other {Показать в файловом менеджере}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {Показать в Finder} windows {Показать в Проводнике} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показать в файловом менеджере}}",
   "@commands.fileShowInFileManager.label": {
     "sourceHash": "21f1ff1"
   },
@@ -940,7 +940,7 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Удалить из Связки ключей сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию} windows {Удалить из Диспетчера учетных данных сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию} other {Удалить из хранилища ключей сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Удалить из Связки ключей сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию} windows {Удалить из Диспетчера учетных данных сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {Удалить из хранилища ключей сохраненный пароль резервной копии restic, в которой вы находитесь, и снова заблокировать эту резервную копию}}",
   "@commands.resticForgetPassword.description": {
     "sourceHash": "0f616ca"
   },

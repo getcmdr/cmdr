@@ -521,7 +521,7 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Учетные данные сохранены локально (Диспетчер учетных данных недоступен)} other {Учетные данные сохранены локально (системное хранилище ключей не найдено)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Учетные данные сохранены локально (Диспетчер учетных данных недоступен)} linuxKde {Credentials stored locally (KWallet not available)} other {Учетные данные сохранены локально (системное хранилище ключей не найдено)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "e14f91d"
   },
@@ -557,7 +557,7 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Удалить сохраненный пароль из Связки ключей} windows {Удалить сохраненный пароль из Диспетчера учетных данных} other {Удалить сохраненный пароль из хранилища ключей}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Удалить сохраненный пароль из Связки ключей} windows {Удалить сохраненный пароль из Диспетчера учетных данных} linuxKde {Remove saved password from KWallet} other {Удалить сохраненный пароль из хранилища ключей}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
     "sourceHash": "4ae6a02"
   },
@@ -949,7 +949,7 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr пока заблокировал резервную копию {name}, но сохраненный пароль остался в Связке ключей. Чтобы избавиться от него навсегда, удалите его в приложении «Связка ключей».} windows {Cmdr пока заблокировал резервную копию {name}, но сохраненный пароль остался в Диспетчере учетных данных. Чтобы избавиться от него навсегда, удалите его в Диспетчере учетных данных.} other {Cmdr пока заблокировал резервную копию {name}, но сохраненный пароль остался в хранилище ключей. Чтобы избавиться от него навсегда, удалите его в приложении для управления ключами.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr пока заблокировал резервную копию {name}, но сохраненный пароль остался в Связке ключей. Чтобы избавиться от него навсегда, удалите его в приложении «Связка ключей».} windows {Cmdr пока заблокировал резервную копию {name}, но сохраненный пароль остался в Диспетчере учетных данных. Чтобы избавиться от него навсегда, удалите его в Диспетчере учетных данных.} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {Cmdr пока заблокировал резервную копию {name}, но сохраненный пароль остался в хранилище ключей. Чтобы избавиться от него навсегда, удалите его в приложении для управления ключами.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
     "sourceHash": "20277f3"
   },
@@ -2340,7 +2340,7 @@
   "@fileExplorer.quickFilter.intro.switchToJump": {
     "sourceHash": "38642f9"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Настройки} other {Настройки…}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Настройки} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Настройки…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
     "sourceHash": "7af8e23"
   },

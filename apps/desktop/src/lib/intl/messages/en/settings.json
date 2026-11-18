@@ -3887,9 +3887,9 @@
   "@settings.securityLog.enabled.keywords": {
     "description": "Search keywords for the “Record security events” setting (settings.securityLog.enabled.label) in Settings > Updates & privacy. What it does: turns the local log of security events (consent changes, updates, refused access) on or off. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} other {Show in file manager}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Show in file manager}}",
   "@settings.securityLog.showInFinder": {
-    "description": "Button under the 'Record security events' switch that opens the file manager at the security event log file (or its folder when there's no file yet). Each branch names its OS's file manager: 'Finder' on macOS (the name your language's macOS shows), 'File Explorer' on Windows (Windows' name in your language), and a generic file manager on Linux. The screenshot shows the macOS wording.",
+    "description": "Button under the 'Record security events' switch that opens the file manager at the security event log file (or its folder when there's no file yet). Each branch names its OS's file manager: 'Finder' on macOS (the name your language's macOS shows), 'File Explorer' on Windows (Windows' name in your language), and a generic file manager on Linux. The screenshot shows the macOS wording. The `linuxGnome` branch names GNOME’s file manager, Files, and the `linuxKde` branch KDE’s, Dolphin: use the names those desktops give them in your language (GNOME translates “Files”, KDE keeps “Dolphin”).",
     "screenshot": "settings-updates.png"
   },
   "settings.updates.showSecurityLog.keywords": "security, log, audit, events, file, open, reveal, show, folder, location",
@@ -4434,18 +4434,18 @@
   "@settings.dataWipe.partialMessage": {
     "description": "Line introducing the list of what's left: folder and file paths the user can delete in their file manager, or saved passwords in the system's password store (the Keychain on macOS)."
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {One item in Keychain Access named “{itemName}”} other {{countText} items in Keychain Access named “{itemName}”}}} windows {{count, plural, one {One item in Credential Manager named “{itemName}”} other {{countText} items in Credential Manager named “{itemName}”}}} other {{count, plural, one {One item in your keyring named “{itemName}”} other {{countText} items in your keyring named “{itemName}”}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {One item in Keychain Access named “{itemName}”} other {{countText} items in Keychain Access named “{itemName}”}}} windows {{count, plural, one {One item in Credential Manager named “{itemName}”} other {{countText} items in Credential Manager named “{itemName}”}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, one {One item in your keyring named “{itemName}”} other {{countText} items in your keyring named “{itemName}”}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "description": "Item in the list of what's left: saved passwords or keys in the system's password store that couldn't be deleted. Each branch names its OS's store: Keychain Access on macOS (its name in your language's macOS), Credential Manager on Windows (Windows' name in your language), and the keyring on Linux. \"Item\" here is one saved entry, not a file: use the word that store uses for one entry in your language (Keychain Access calls it a \"keychain item\").",
+    "description": "Item in the list of what's left: saved passwords or keys in the system's password store that couldn't be deleted. Each branch names its OS's store: Keychain Access on macOS (its name in your language's macOS), Credential Manager on Windows (Windows' name in your language), and the keyring on Linux. \"Item\" here is one saved entry, not a file: use the word that store uses for one entry in your language (Keychain Access calls it a \"keychain item\"). The `linuxKde` branch names KDE’s password store, KWallet: a name, which KDE keeps as is in every language.",
     "placeholders": {
       "count": "how many items are left, a number used only to choose the plural form",
       "countText": "the same number, already formatted for the locale",
       "itemName": "the name the items appear under in Keychain Access (for example “Cmdr”); never translated"
     }
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Any items in Keychain Access named “{itemName}”} windows {Any items in Credential Manager named “{itemName}”} other {Any items in your keyring named “{itemName}”}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Any items in Keychain Access named “{itemName}”} windows {Any items in Credential Manager named “{itemName}”} linuxKde {Any items in KWallet named “{itemName}”} other {Any items in your keyring named “{itemName}”}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "description": "Item in the list of what's left when Cmdr couldn't check its keychain items: the user should look for them in the system's password store. Each branch names its OS's store: Keychain Access on macOS (its name in your language's macOS), Credential Manager on Windows (Windows' name in your language), and the keyring on Linux. \"Items\" are saved entries, not files: use the word that store uses for one entry in your language (Keychain Access calls it a \"keychain item\").",
+    "description": "Item in the list of what's left when Cmdr couldn't check its keychain items: the user should look for them in the system's password store. Each branch names its OS's store: Keychain Access on macOS (its name in your language's macOS), Credential Manager on Windows (Windows' name in your language), and the keyring on Linux. \"Items\" are saved entries, not files: use the word that store uses for one entry in your language (Keychain Access calls it a \"keychain item\"). The `linuxKde` branch names KDE’s password store, KWallet: a name, which KDE keeps as is in every language.",
     "placeholders": {
       "itemName": "the name the items appear under in Keychain Access (for example “Cmdr”); never translated"
     }

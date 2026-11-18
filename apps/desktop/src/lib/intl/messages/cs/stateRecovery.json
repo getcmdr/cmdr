@@ -119,7 +119,7 @@
   "@stateRecovery.keptCopy": {
     "sourceHash": "634e87d"
   },
-  "stateRecovery.showInFinder": "{platform, select, macos {Zobrazit ve Finderu} windows {Zobrazit v Průzkumníku souborů} other {Zobrazit ve správci souborů}}",
+  "stateRecovery.showInFinder": "{platform, select, macos {Zobrazit ve Finderu} windows {Zobrazit v Průzkumníku souborů} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Zobrazit ve správci souborů}}",
   "@stateRecovery.showInFinder": {
     "sourceHash": "21f1ff1"
   },

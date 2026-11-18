@@ -3231,7 +3231,7 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Im Finder anzeigen} windows {Im Datei-Explorer anzeigen} other {Im Dateimanager anzeigen}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Im Finder anzeigen} windows {Im Datei-Explorer anzeigen} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Im Dateimanager anzeigen}}",
   "@settings.securityLog.showInFinder": {
     "sourceHash": "21f1ff1"
   },
@@ -3689,11 +3689,11 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Ein Eintrag namens „{itemName}“ in der Schlüsselbundverwaltung} other {{countText} Einträge namens „{itemName}“ in der Schlüsselbundverwaltung}}} windows {{count, plural, one {Ein Eintrag namens „{itemName}“ in der Anmeldeinformationsverwaltung} other {{countText} Einträge namens „{itemName}“ in der Anmeldeinformationsverwaltung}}} other {{count, plural, one {Ein Eintrag namens „{itemName}“ in deinem Schlüsselbund} other {{countText} Einträge namens „{itemName}“ in deinem Schlüsselbund}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Ein Eintrag namens „{itemName}“ in der Schlüsselbundverwaltung} other {{countText} Einträge namens „{itemName}“ in der Schlüsselbundverwaltung}}} windows {{count, plural, one {Ein Eintrag namens „{itemName}“ in der Anmeldeinformationsverwaltung} other {{countText} Einträge namens „{itemName}“ in der Anmeldeinformationsverwaltung}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, one {Ein Eintrag namens „{itemName}“ in deinem Schlüsselbund} other {{countText} Einträge namens „{itemName}“ in deinem Schlüsselbund}}}}",
   "@settings.dataWipe.leftover.secretItems": {
     "sourceHash": "6cf1e9c"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Einträge namens „{itemName}“ in der Schlüsselbundverwaltung, falls vorhanden} windows {Einträge namens „{itemName}“ in der Anmeldeinformationsverwaltung, falls vorhanden} other {Einträge namens „{itemName}“ in deinem Schlüsselbund, falls vorhanden}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Einträge namens „{itemName}“ in der Schlüsselbundverwaltung, falls vorhanden} windows {Einträge namens „{itemName}“ in der Anmeldeinformationsverwaltung, falls vorhanden} linuxKde {Any items in KWallet named “{itemName}”} other {Einträge namens „{itemName}“ in deinem Schlüsselbund, falls vorhanden}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
     "sourceHash": "0e9e95b"
   },

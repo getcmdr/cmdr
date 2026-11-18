@@ -844,7 +844,7 @@
   "@commands.dialogConfirm.label": {
     "sourceHash": "fef0684"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {Afficher dans le Finder} windows {Afficher dans l’Explorateur de fichiers} other {Afficher dans le gestionnaire de fichiers}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {Afficher dans le Finder} windows {Afficher dans l’Explorateur de fichiers} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Afficher dans le gestionnaire de fichiers}}",
   "@commands.fileShowInFileManager.label": {
     "sourceHash": "21f1ff1"
   },
@@ -940,7 +940,7 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Retire du trousseau le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde} windows {Retire du Gestionnaire d’identification le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde} other {Retire de votre trousseau de clés le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Retire du trousseau le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde} windows {Retire du Gestionnaire d’identification le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {Retire de votre trousseau de clés le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde}}",
   "@commands.resticForgetPassword.description": {
     "sourceHash": "0f616ca"
   },

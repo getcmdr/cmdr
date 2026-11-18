@@ -522,7 +522,7 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Credenciais salvas localmente (Gerenciador de Credenciais indisponível)} other {Credenciais salvas localmente (nenhum chaveiro do sistema detectado)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Credenciais salvas localmente (Gerenciador de Credenciais indisponível)} linuxKde {Credentials stored locally (KWallet not available)} other {Credenciais salvas localmente (nenhum chaveiro do sistema detectado)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "e14f91d"
   },
@@ -558,7 +558,7 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Remover a senha salva do Acesso às Chaves} windows {Remover a senha salva do Gerenciador de Credenciais} other {Remover a senha salva do seu chaveiro}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Remover a senha salva do Acesso às Chaves} windows {Remover a senha salva do Gerenciador de Credenciais} linuxKde {Remove saved password from KWallet} other {Remover a senha salva do seu chaveiro}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
     "sourceHash": "4ae6a02"
   },
@@ -951,7 +951,7 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {O Cmdr bloqueou {name} por enquanto, mas a senha salva continua no Acesso às Chaves. Para remover a senha de vez, apague-a no Acesso às Chaves.} windows {O Cmdr bloqueou {name} por enquanto, mas a senha salva continua no Gerenciador de Credenciais. Para remover a senha de vez, apague-a no Gerenciador de Credenciais.} other {O Cmdr bloqueou {name} por enquanto, mas a senha salva continua no seu chaveiro. Para remover a senha de vez, apague-a no app de chaveiro.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {O Cmdr bloqueou {name} por enquanto, mas a senha salva continua no Acesso às Chaves. Para remover a senha de vez, apague-a no Acesso às Chaves.} windows {O Cmdr bloqueou {name} por enquanto, mas a senha salva continua no Gerenciador de Credenciais. Para remover a senha de vez, apague-a no Gerenciador de Credenciais.} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {O Cmdr bloqueou {name} por enquanto, mas a senha salva continua no seu chaveiro. Para remover a senha de vez, apague-a no app de chaveiro.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
     "sourceHash": "20277f3"
   },
@@ -2351,7 +2351,7 @@
   "@fileExplorer.quickFilter.intro.switchToJump": {
     "sourceHash": "38642f9"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Ajustes} other {Ajustes…}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Ajustes} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Ajustes…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
     "sourceHash": "7af8e23"
   },

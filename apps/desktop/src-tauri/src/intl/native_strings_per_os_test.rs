@@ -172,3 +172,23 @@ fn the_trash_undo_and_settings_rows_read_each_os_s_words() {
         );
     }
 }
+
+/// GNOME and KDE name the settings row and the file manager their own way (#1231): GNOME's
+/// "Preferences" and Files, KDE's "Configure Cmdr…" and Dolphin. Any other desktop keeps the
+/// desktop-neutral words.
+#[test]
+fn gnome_and_kde_read_their_own_settings_and_reveal_rows() {
+    let rows: [(&str, [&str; 3]); 2] = [
+        ("menu.app.settings", ["Preferences", "Configure Cmdr…", "Settings…"]),
+        (
+            "menu.file.showInFileManager",
+            ["Show in Files", "Show in Dolphin", "Show in file manager"],
+        ),
+    ];
+    for (key, [gnome, kde, other]) in rows {
+        let text = lookup_text(BASE_LOCALE, key).unwrap_or_else(|| panic!("{key} is in the English table"));
+        assert_eq!(pick(text, NativeOs::Linux(LinuxDesktop::Gnome)), gnome, "{key}");
+        assert_eq!(pick(text, NativeOs::Linux(LinuxDesktop::Kde)), kde, "{key}");
+        assert_eq!(pick(text, NativeOs::Linux(LinuxDesktop::Other)), other, "{key}");
+    }
+}

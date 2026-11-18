@@ -123,7 +123,7 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "dedbdef"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Credenciales guardadas localmente (el Administrador de credenciales no está disponible)} other {Credenciales guardadas localmente (no se detectó ningún llavero del sistema)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Credenciales guardadas localmente (el Administrador de credenciales no está disponible)} linuxKde {Credentials stored locally (KWallet not available)} other {Credenciales guardadas localmente (no se detectó ningún llavero del sistema)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "fe1187b"
   },
@@ -235,7 +235,7 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "b6fcb36"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en el Llavero. Para quitarla del todo, elimínala en Acceso a Llaveros.} windows {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en el Administrador de credenciales. Para quitarla del todo, elimínala en el Administrador de credenciales.} other {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en tu llavero. Para quitarla del todo, elimínala en la app de tu llavero.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en el Llavero. Para quitarla del todo, elimínala en Acceso a Llaveros.} windows {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en el Administrador de credenciales. Para quitarla del todo, elimínala en el Administrador de credenciales.} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {Cmdr bloqueó {name} por ahora, pero la contraseña guardada sigue en tu llavero. Para quitarla del todo, elimínala en la app de tu llavero.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
     "sourceHash": "e7d9d4d"
   },
@@ -459,7 +459,7 @@
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "0d1e2b4"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Configuración} other {Configuración…}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Configuración} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Configuración…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
     "sourceHash": "802a5bb"
   },

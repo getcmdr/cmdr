@@ -3228,7 +3228,7 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Visa i Finder} windows {Visa i Utforskaren} other {Visa i filhanteraren}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Visa i Finder} windows {Visa i Utforskaren} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Visa i filhanteraren}}",
   "@settings.securityLog.showInFinder": {
     "sourceHash": "21f1ff1"
   },
@@ -3686,11 +3686,11 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Ett objekt i Nyckelhanterare som heter ”{itemName}”} other {{countText} objekt i Nyckelhanterare som heter ”{itemName}”}}} windows {{count, plural, one {Ett objekt i Autentiseringshanteraren som heter ”{itemName}”} other {{countText} objekt i Autentiseringshanteraren som heter ”{itemName}”}}} other {{count, plural, one {Ett objekt i din nyckelring som heter ”{itemName}”} other {{countText} objekt i din nyckelring som heter ”{itemName}”}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Ett objekt i Nyckelhanterare som heter ”{itemName}”} other {{countText} objekt i Nyckelhanterare som heter ”{itemName}”}}} windows {{count, plural, one {Ett objekt i Autentiseringshanteraren som heter ”{itemName}”} other {{countText} objekt i Autentiseringshanteraren som heter ”{itemName}”}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, one {Ett objekt i din nyckelring som heter ”{itemName}”} other {{countText} objekt i din nyckelring som heter ”{itemName}”}}}}",
   "@settings.dataWipe.leftover.secretItems": {
     "sourceHash": "6cf1e9c"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Eventuella objekt i Nyckelhanterare som heter ”{itemName}”} windows {Eventuella objekt i Autentiseringshanteraren som heter ”{itemName}”} other {Eventuella objekt i din nyckelring som heter ”{itemName}”}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Eventuella objekt i Nyckelhanterare som heter ”{itemName}”} windows {Eventuella objekt i Autentiseringshanteraren som heter ”{itemName}”} linuxKde {Any items in KWallet named “{itemName}”} other {Eventuella objekt i din nyckelring som heter ”{itemName}”}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
     "sourceHash": "0e9e95b"
   },

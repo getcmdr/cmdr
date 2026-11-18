@@ -122,9 +122,9 @@
       "path": "the full path of the set-aside copy, like /Users/test_user_16/Library/Application Support/com.veszelovszki.cmdr/settings.json.broken-2026-10-16T101500. Never translated."
     }
   },
-  "stateRecovery.showInFinder": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} other {Show in file manager}}",
+  "stateRecovery.showInFinder": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Show in file manager}}",
   "@stateRecovery.showInFinder": {
-    "description": "Button on any of the notices above that opens the file manager with the set-aside copy of the damaged file highlighted. VERB phrase (imperative). ❗ In the macOS branch, \"Finder\" is Apple's app name and stays verbatim as \"Finder\" in every language; the Windows branch names File Explorer (use Microsoft's name for it in your language), and the Linux branch says \"file manager\". Pop-up notice (toast) in the corner of Cmdr's main window."
+    "description": "Button on any of the notices above that opens the file manager with the set-aside copy of the damaged file highlighted. VERB phrase (imperative). ❗ In the macOS branch, \"Finder\" is Apple's app name and stays verbatim as \"Finder\" in every language; the Windows branch names File Explorer (use Microsoft's name for it in your language), and the Linux branch says \"file manager\". Pop-up notice (toast) in the corner of Cmdr's main window. The `linuxGnome` branch names GNOME’s file manager, Files, and the `linuxKde` branch KDE’s, Dolphin: use the names those desktops give them in your language (GNOME translates “Files”, KDE keeps “Dolphin”)."
   },
   "stateRecovery.dismiss": "Dismiss",
   "@stateRecovery.dismiss": {

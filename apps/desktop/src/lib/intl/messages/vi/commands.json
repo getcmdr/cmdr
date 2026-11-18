@@ -844,7 +844,7 @@
   "@commands.dialogConfirm.label": {
     "sourceHash": "fef0684"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {Hiển thị trong Finder} windows {Hiển thị trong File Explorer} other {Hiển thị trong trình quản lý tệp}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {Hiển thị trong Finder} windows {Hiển thị trong File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Hiển thị trong trình quản lý tệp}}",
   "@commands.fileShowInFileManager.label": {
     "sourceHash": "21f1ff1"
   },
@@ -940,7 +940,7 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi chuỗi khóa, rồi khóa lại bản sao lưu đó} windows {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi Trình quản lý thông tin xác thực, rồi khóa lại bản sao lưu đó} other {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi kho khóa của bạn, rồi khóa lại bản sao lưu đó}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi chuỗi khóa, rồi khóa lại bản sao lưu đó} windows {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi Trình quản lý thông tin xác thực, rồi khóa lại bản sao lưu đó} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {Xóa mật khẩu đã lưu của bản sao lưu restic bạn đang mở khỏi kho khóa của bạn, rồi khóa lại bản sao lưu đó}}",
   "@commands.resticForgetPassword.description": {
     "sourceHash": "0f616ca"
   },

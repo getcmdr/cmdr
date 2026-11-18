@@ -116,7 +116,7 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "在 {desktops} 上，桌面环境通常会自己占用 {combo}，因此可能永远传不到 Cmdr。你可以在桌面环境的键盘设置中将它释放出来。",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {在 {desktops} 上，桌面环境通常会自己占用 {combo}，因此可能永远传不到 Cmdr。你可以在桌面环境的键盘设置中将它释放出来。}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "610146a"
   },

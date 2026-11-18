@@ -522,7 +522,7 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Identifiants stockés localement (Gestionnaire d’identification indisponible)} other {Identifiants stockés localement (aucun trousseau système détecté)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Identifiants stockés localement (Gestionnaire d’identification indisponible)} linuxKde {Credentials stored locally (KWallet not available)} other {Identifiants stockés localement (aucun trousseau système détecté)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "e14f91d"
   },
@@ -558,7 +558,7 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Retirer le mot de passe enregistré du trousseau} windows {Retirer le mot de passe enregistré du Gestionnaire d’identification} other {Retirer le mot de passe enregistré de votre trousseau de clés}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Retirer le mot de passe enregistré du trousseau} windows {Retirer le mot de passe enregistré du Gestionnaire d’identification} linuxKde {Remove saved password from KWallet} other {Retirer le mot de passe enregistré de votre trousseau de clés}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
     "sourceHash": "4ae6a02"
   },
@@ -950,7 +950,7 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans le trousseau. Pour le retirer définitivement, supprimez-le dans Trousseaux d’accès.} windows {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans le Gestionnaire d’identification. Pour le retirer définitivement, supprimez-le dans le Gestionnaire d’identification.} other {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans votre trousseau de clés. Pour le retirer définitivement, supprimez-le dans l’app qui gère votre trousseau de clés.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans le trousseau. Pour le retirer définitivement, supprimez-le dans Trousseaux d’accès.} windows {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans le Gestionnaire d’identification. Pour le retirer définitivement, supprimez-le dans le Gestionnaire d’identification.} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {Cmdr a verrouillé {name} pour l’instant, mais le mot de passe enregistré est resté dans votre trousseau de clés. Pour le retirer définitivement, supprimez-le dans l’app qui gère votre trousseau de clés.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
     "sourceHash": "20277f3"
   },
@@ -2351,7 +2351,7 @@
   "@fileExplorer.quickFilter.intro.switchToJump": {
     "sourceHash": "38642f9"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Réglages} other {Réglages…}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Réglages} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Réglages…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
     "sourceHash": "7af8e23"
   },

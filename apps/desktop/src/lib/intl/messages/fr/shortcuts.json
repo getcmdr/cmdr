@@ -116,7 +116,7 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "Sur {desktops}, l’environnement de bureau prend généralement {combo} pour lui, donc ce raccourci pourrait ne jamais atteindre Cmdr. Vous pouvez le libérer dans les paramètres du clavier de votre environnement de bureau.",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {Sur {desktops}, l’environnement de bureau prend généralement {combo} pour lui, donc ce raccourci pourrait ne jamais atteindre Cmdr. Vous pouvez le libérer dans les paramètres du clavier de votre environnement de bureau.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "610146a"
   },

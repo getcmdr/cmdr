@@ -844,7 +844,7 @@
   "@commands.dialogConfirm.label": {
     "sourceHash": "fef0684"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {在 Finder 中顯示} windows {在檔案總管中顯示} other {在檔案管理程式中顯示}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {在 Finder 中顯示} windows {在檔案總管中顯示} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {在檔案管理程式中顯示}}",
   "@commands.fileShowInFileManager.label": {
     "sourceHash": "21f1ff1"
   },
@@ -940,7 +940,7 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {從鑰匙圈中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份} windows {從認證管理員中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份} other {從你的鑰匙圈中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {從鑰匙圈中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份} windows {從認證管理員中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {從你的鑰匙圈中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份}}",
   "@commands.resticForgetPassword.description": {
     "sourceHash": "0f616ca"
   },

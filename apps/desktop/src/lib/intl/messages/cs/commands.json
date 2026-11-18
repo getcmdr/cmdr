@@ -844,7 +844,7 @@
   "@commands.dialogConfirm.label": {
     "sourceHash": "fef0684"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {Zobrazit ve Finderu} windows {Zobrazit v Průzkumníku souborů} other {Zobrazit ve správci souborů}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {Zobrazit ve Finderu} windows {Zobrazit v Průzkumníku souborů} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Zobrazit ve správci souborů}}",
   "@commands.fileShowInFileManager.label": {
     "sourceHash": "21f1ff1"
   },
@@ -940,7 +940,7 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Odstraní uložené heslo zálohy restic, ve které právě jste, ze svazku klíčů a zálohu znovu zamkne} windows {Odstraní uložené heslo zálohy restic, ve které právě jste, ze Správce přihlašovacích údajů a zálohu znovu zamkne} other {Odstraní uložené heslo zálohy restic, ve které právě jste, ze systémové klíčenky a zálohu znovu zamkne}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Odstraní uložené heslo zálohy restic, ve které právě jste, ze svazku klíčů a zálohu znovu zamkne} windows {Odstraní uložené heslo zálohy restic, ve které právě jste, ze Správce přihlašovacích údajů a zálohu znovu zamkne} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {Odstraní uložené heslo zálohy restic, ve které právě jste, ze systémové klíčenky a zálohu znovu zamkne}}",
   "@commands.resticForgetPassword.description": {
     "sourceHash": "0f616ca"
   },

@@ -172,7 +172,7 @@
   "@errorReporter.bundleSavedToast.dismiss": {
     "sourceHash": "48845bf"
   },
-  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Megjelenítés a Finderben} windows {Megjelenítés a Fájlkezelőben} other {Megjelenítés a fájlkezelőben}}",
+  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Megjelenítés a Finderben} windows {Megjelenítés a Fájlkezelőben} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Megjelenítés a fájlkezelőben}}",
   "@errorReporter.bundleSavedToast.reveal": {
     "sourceHash": "4d7fe91"
   },

@@ -71,7 +71,7 @@
   "@menu.app.cliCommandHomebrew": {
     "sourceHash": "cc4c0fd"
   },
-  "menu.app.settings": "{platform, select, windows {Настройки} other {Настройки…}}",
+  "menu.app.settings": "{platform, select, windows {Настройки} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Настройки…}}",
   "@menu.app.settings": {
     "sourceHash": "7af8e23"
   },
@@ -147,7 +147,7 @@
   "@menu.context.showInFolder": {
     "sourceHash": "da47876"
   },
-  "menu.file.showInFileManager": "{platform, select, macos {Показать в Finder} windows {Показать в Проводнике} other {Показать в файловом менеджере}}",
+  "menu.file.showInFileManager": "{platform, select, macos {Показать в Finder} windows {Показать в Проводнике} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показать в файловом менеджере}}",
   "@menu.file.showInFileManager": {
     "sourceHash": "21f1ff1"
   },

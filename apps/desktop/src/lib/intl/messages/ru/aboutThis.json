@@ -15,7 +15,7 @@
   "@aboutThis.action.openTooltip": {
     "sourceHash": "4bbaa35"
   },
-  "aboutThis.action.showInFileManager": "{platform, select, macos {Показать в Finder} windows {Показать в Проводнике} other {Показать в файловом менеджере}}",
+  "aboutThis.action.showInFileManager": "{platform, select, macos {Показать в Finder} windows {Показать в Проводнике} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показать в файловом менеджере}}",
   "@aboutThis.action.showInFileManager": {
     "sourceHash": "21f1ff1"
   },

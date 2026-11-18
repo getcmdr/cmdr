@@ -603,11 +603,11 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Je API-sleutel kon niet worden bewaard: de macOS-sleutelhanger weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: de macOS-sleutelhanger weigerde toegang}}} windows {{op, select, save {Je API-sleutel kon niet worden bewaard: Referentiebeheer weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: Referentiebeheer weigerde toegang}}} other {{op, select, save {Je API-sleutel kon niet worden bewaard: de sleutelhanger van je systeem weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: de sleutelhanger van je systeem weigerde toegang}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Je API-sleutel kon niet worden bewaard: de macOS-sleutelhanger weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: de macOS-sleutelhanger weigerde toegang}}} windows {{op, select, save {Je API-sleutel kon niet worden bewaard: Referentiebeheer weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: Referentiebeheer weigerde toegang}}} linuxKde {{op, select, save {Couldn’t save your API key: KWallet denied access} other {Couldn’t read your saved API key: KWallet denied access}}} other {{op, select, save {Je API-sleutel kon niet worden bewaard: de sleutelhanger van je systeem weigerde toegang} other {Je bewaarde API-sleutel kon niet worden gelezen: de sleutelhanger van je systeem weigerde toegang}}}}",
   "@ai.secretError.title": {
     "sourceHash": "25b34c4"
   },
-  "ai.secretError.body": "{platform, select, macos {{op, select, save {Open Sleutelhangertoegang en controleer het onderdeel ‘Cmdr’, of verwijder het en bewaar opnieuw.} other {Open Sleutelhangertoegang, zoek het onderdeel ‘Cmdr’, verleen toegang, of verwijder het en voer je sleutel opnieuw in.}}} windows {{op, select, save {Open Referentiebeheer en controleer de referentie ‘Cmdr’ onder Windows-referenties, of verwijder die en bewaar opnieuw.} other {Open Referentiebeheer, zoek de referentie ‘Cmdr’ onder Windows-referenties, of verwijder die en voer je sleutel opnieuw in.}}} other {Ontgrendel je sleutelhanger (de app Wachtwoorden / Sleutelhangers) en probeer het opnieuw.}}",
+  "ai.secretError.body": "{platform, select, macos {{op, select, save {Open Sleutelhangertoegang en controleer het onderdeel ‘Cmdr’, of verwijder het en bewaar opnieuw.} other {Open Sleutelhangertoegang, zoek het onderdeel ‘Cmdr’, verleen toegang, of verwijder het en voer je sleutel opnieuw in.}}} windows {{op, select, save {Open Referentiebeheer en controleer de referentie ‘Cmdr’ onder Windows-referenties, of verwijder die en bewaar opnieuw.} other {Open Referentiebeheer, zoek de referentie ‘Cmdr’ onder Windows-referenties, of verwijder die en voer je sleutel opnieuw in.}}} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Ontgrendel je sleutelhanger (de app Wachtwoorden / Sleutelhangers) en probeer het opnieuw.}}",
   "@ai.secretError.body": {
     "sourceHash": "d65c5e3"
   },
@@ -615,7 +615,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Controleer of de sleutelhanger van je systeem beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.} windows {Controleer of Referentiebeheer beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan Cmdr.} other {Controleer of de sleutelhanger van je systeem beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Controleer of de sleutelhanger van je systeem beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.} windows {Controleer of Referentiebeheer beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan Cmdr.} linuxKde {Check that KWallet is available, then try again. If it persists, restart the app.} other {Controleer of de sleutelhanger van je systeem beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },
@@ -623,7 +623,7 @@
   "@ai.secretError.removeTitle": {
     "sourceHash": "5986628"
   },
-  "ai.secretError.removeBody": "{platform, select, macos {Open Sleutelhangertoegang, zoek het onderdeel ‘Cmdr’ en verwijder het daar.} windows {Open Referentiebeheer, zoek de referentie ‘Cmdr’ onder Windows-referenties en verwijder die daar.} other {Ontgrendel je sleutelhanger (de app Wachtwoorden / Sleutelhangers) en probeer het opnieuw.}}",
+  "ai.secretError.removeBody": "{platform, select, macos {Open Sleutelhangertoegang, zoek het onderdeel ‘Cmdr’ en verwijder het daar.} windows {Open Referentiebeheer, zoek de referentie ‘Cmdr’ onder Windows-referenties en verwijder die daar.} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Ontgrendel je sleutelhanger (de app Wachtwoorden / Sleutelhangers) en probeer het opnieuw.}}",
   "@ai.secretError.removeBody": {
     "sourceHash": "3a85511"
   },

@@ -522,7 +522,7 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Inloggningsuppgifter sparade lokalt (Autentiseringshanteraren är inte tillgänglig)} other {Inloggningsuppgifter sparade lokalt (ingen systemnyckelring upptäcktes)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Inloggningsuppgifter sparade lokalt (Autentiseringshanteraren är inte tillgänglig)} linuxKde {Credentials stored locally (KWallet not available)} other {Inloggningsuppgifter sparade lokalt (ingen systemnyckelring upptäcktes)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "e14f91d"
   },
@@ -558,7 +558,7 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Ta bort sparat lösenord från nyckelringen} windows {Ta bort sparat lösenord från Autentiseringshanteraren} other {Ta bort sparat lösenord från din nyckelring}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Ta bort sparat lösenord från nyckelringen} windows {Ta bort sparat lösenord från Autentiseringshanteraren} linuxKde {Remove saved password from KWallet} other {Ta bort sparat lösenord från din nyckelring}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
     "sourceHash": "4ae6a02"
   },
@@ -950,7 +950,7 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr har låst {name} tills vidare, men det sparade lösenordet finns kvar i nyckelringen. Om du vill ta bort det för gott raderar du det i Nyckelhanterare.} windows {Cmdr har låst {name} tills vidare, men det sparade lösenordet finns kvar i Autentiseringshanteraren. Om du vill ta bort det för gott raderar du det i Autentiseringshanteraren.} other {Cmdr har låst {name} tills vidare, men det sparade lösenordet finns kvar i din nyckelring. Om du vill ta bort det för gott raderar du det i din nyckelringsapp.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr har låst {name} tills vidare, men det sparade lösenordet finns kvar i nyckelringen. Om du vill ta bort det för gott raderar du det i Nyckelhanterare.} windows {Cmdr har låst {name} tills vidare, men det sparade lösenordet finns kvar i Autentiseringshanteraren. Om du vill ta bort det för gott raderar du det i Autentiseringshanteraren.} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {Cmdr har låst {name} tills vidare, men det sparade lösenordet finns kvar i din nyckelring. Om du vill ta bort det för gott raderar du det i din nyckelringsapp.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
     "sourceHash": "20277f3"
   },
@@ -2344,7 +2344,7 @@
   "@fileExplorer.quickFilter.intro.switchToJump": {
     "sourceHash": "38642f9"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Inställningar} other {Inställningar…}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Inställningar} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Inställningar…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
     "sourceHash": "7af8e23"
   },

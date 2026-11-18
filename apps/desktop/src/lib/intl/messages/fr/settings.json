@@ -3233,7 +3233,7 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Afficher dans le Finder} windows {Afficher dans l’Explorateur de fichiers} other {Afficher dans le gestionnaire de fichiers}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Afficher dans le Finder} windows {Afficher dans l’Explorateur de fichiers} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Afficher dans le gestionnaire de fichiers}}",
   "@settings.securityLog.showInFinder": {
     "sourceHash": "21f1ff1"
   },
@@ -3690,11 +3690,11 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Un élément nommé « {itemName} » dans Trousseaux d’accès} many {{countText} éléments nommés « {itemName} » dans Trousseaux d’accès} other {{countText} éléments nommés « {itemName} » dans Trousseaux d’accès}}} windows {{count, plural, one {Un élément nommé « {itemName} » dans le Gestionnaire d’identification} many {{countText} éléments nommés « {itemName} » dans le Gestionnaire d’identification} other {{countText} éléments nommés « {itemName} » dans le Gestionnaire d’identification}}} other {{count, plural, one {Un élément nommé « {itemName} » dans votre trousseau de clés} many {{countText} éléments nommés « {itemName} » dans votre trousseau de clés} other {{countText} éléments nommés « {itemName} » dans votre trousseau de clés}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Un élément nommé « {itemName} » dans Trousseaux d’accès} many {{countText} éléments nommés « {itemName} » dans Trousseaux d’accès} other {{countText} éléments nommés « {itemName} » dans Trousseaux d’accès}}} windows {{count, plural, one {Un élément nommé « {itemName} » dans le Gestionnaire d’identification} many {{countText} éléments nommés « {itemName} » dans le Gestionnaire d’identification} other {{countText} éléments nommés « {itemName} » dans le Gestionnaire d’identification}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, one {Un élément nommé « {itemName} » dans votre trousseau de clés} many {{countText} éléments nommés « {itemName} » dans votre trousseau de clés} other {{countText} éléments nommés « {itemName} » dans votre trousseau de clés}}}}",
   "@settings.dataWipe.leftover.secretItems": {
     "sourceHash": "6cf1e9c"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Les éventuels éléments nommés « {itemName} » dans Trousseaux d’accès} windows {Les éventuels éléments nommés « {itemName} » dans le Gestionnaire d’identification} other {Les éventuels éléments nommés « {itemName} » dans votre trousseau de clés}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Les éventuels éléments nommés « {itemName} » dans Trousseaux d’accès} windows {Les éventuels éléments nommés « {itemName} » dans le Gestionnaire d’identification} linuxKde {Any items in KWallet named “{itemName}”} other {Les éventuels éléments nommés « {itemName} » dans votre trousseau de clés}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
     "sourceHash": "0e9e95b"
   },

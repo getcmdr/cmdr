@@ -173,7 +173,7 @@
   "@errorReporter.bundleSavedToast.dismiss": {
     "sourceHash": "48845bf"
   },
-  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Toon in Finder} windows {Toon in Verkenner} other {Toon in bestandsbeheer}}",
+  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Toon in Finder} windows {Toon in Verkenner} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Toon in bestandsbeheer}}",
   "@errorReporter.bundleSavedToast.reveal": {
     "sourceHash": "4d7fe91"
   },

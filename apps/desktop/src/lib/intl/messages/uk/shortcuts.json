@@ -116,7 +116,7 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "Комбінацію {combo} зазвичай забирає собі робоче середовище ({desktops}), тож до Cmdr вона може й не дійти. Звільнити її можна в параметрах клавіатури вашого середовища.",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {Комбінацію {combo} зазвичай забирає собі робоче середовище ({desktops}), тож до Cmdr вона може й не дійти. Звільнити її можна в параметрах клавіатури вашого середовища.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "610146a"
   },

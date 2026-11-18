@@ -524,7 +524,7 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Inloggegevens lokaal opgeslagen (Referentiebeheer niet beschikbaar)} other {Inloggegevens lokaal opgeslagen (geen systeemsleutelhanger gevonden)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Inloggegevens lokaal opgeslagen (Referentiebeheer niet beschikbaar)} linuxKde {Credentials stored locally (KWallet not available)} other {Inloggegevens lokaal opgeslagen (geen systeemsleutelhanger gevonden)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "e14f91d"
   },
@@ -560,7 +560,7 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Verwijder opgeslagen wachtwoord uit Sleutelhanger} windows {Verwijder opgeslagen wachtwoord uit Referentiebeheer} other {Verwijder opgeslagen wachtwoord uit je sleutelhanger}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Verwijder opgeslagen wachtwoord uit Sleutelhanger} windows {Verwijder opgeslagen wachtwoord uit Referentiebeheer} linuxKde {Remove saved password from KWallet} other {Verwijder opgeslagen wachtwoord uit je sleutelhanger}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
     "sourceHash": "4ae6a02"
   },
@@ -953,7 +953,7 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in Sleutelhanger. Wil je het voorgoed kwijt, verwijder het dan in Sleutelhangertoegang.} windows {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in Referentiebeheer. Wil je het voorgoed kwijt, verwijder het dan in Referentiebeheer.} other {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in je sleutelhanger. Wil je het voorgoed kwijt, verwijder het dan in je sleutelhangerapp.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in Sleutelhanger. Wil je het voorgoed kwijt, verwijder het dan in Sleutelhangertoegang.} windows {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in Referentiebeheer. Wil je het voorgoed kwijt, verwijder het dan in Referentiebeheer.} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {Cmdr heeft {name} voorlopig vergrendeld, maar het opgeslagen wachtwoord staat nog in je sleutelhanger. Wil je het voorgoed kwijt, verwijder het dan in je sleutelhangerapp.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
     "sourceHash": "20277f3"
   },
@@ -2357,7 +2357,7 @@
   "@fileExplorer.quickFilter.intro.switchToJump": {
     "sourceHash": "38642f9"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Instellingen} other {Instellingen…}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Instellingen} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Instellingen…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
     "sourceHash": "7af8e23"
   },

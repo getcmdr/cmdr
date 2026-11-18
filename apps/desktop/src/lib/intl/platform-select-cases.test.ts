@@ -66,6 +66,35 @@ describe('platform-select-cases.json', () => {
     })
   })
 
+  it('the shipped English speaks each desktop’s own words where it has them (#1231)', () => {
+    _setLocaleForTests('en-US')
+    const on = (desktop: LinuxDesktop) => {
+      const undo = withPlatform('linux', desktop)
+      const read = {
+        remember: tString('servers.sheet.remember'),
+        reveal: tString('commands.fileShowInFileManager.label'),
+        settings: getMessage('menu.app.settings'),
+      }
+      undo()
+      return read
+    }
+    expect(on('gnome')).toEqual({ remember: 'Remember in keyring', reveal: 'Show in Files', settings: 'Preferences' })
+    expect(on('kde')).toEqual({
+      remember: 'Remember in KWallet',
+      reveal: 'Show in Dolphin',
+      settings: 'Configure Cmdr…',
+    })
+    expect(on('other')).toEqual({
+      remember: 'Remember in keyring',
+      reveal: 'Show in file manager',
+      settings: 'Settings…',
+    })
+    // Windows never reads a desktop branch, whatever the conventions say.
+    onTestFinished(withPlatform('windows'))
+    onTestFinished(withConventions('kde'))
+    expect(tString('servers.sheet.remember')).toBe('Remember password')
+  })
+
   it('withPlatform(linux, desktop) moves the reader too, and its undo restores the neutral desktop', () => {
     _setCatalogForTests(TEST_LOCALE, { 'transfer.trash': BLOCKS[3].value })
     _setLocaleForTests(TEST_LOCALE)
