@@ -369,6 +369,7 @@ impl ByteFetcher for FakeByteFetcher {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cmdr_fs::app_path;
 
     #[test]
     fn os_join_prepends_the_mount_root() {
@@ -554,7 +555,7 @@ mod tests {
         use cmdr_fs::volume::Volume;
         let rt = tokio::runtime::Runtime::new().expect("runtime");
         let volume = std::sync::Arc::new(InMemoryVolume::new("test"));
-        rt.block_on(volume.create_file(std::path::Path::new("/DCIM/a.jpg"), b"direct bytes"))
+        rt.block_on(volume.create_file(app_path!("/DCIM/a.jpg"), b"direct bytes"))
             .expect("seed");
         let fetcher = VolumeByteFetcher::new(volume, rt.handle().clone());
 
@@ -671,12 +672,12 @@ mod tests {
             fn name(&self) -> &str {
                 "yanked"
             }
-            fn root(&self) -> &std::path::Path {
-                std::path::Path::new("/")
+            fn root(&self) -> &AppPath {
+                AppPath::from_normalized("/").expect("a canonical literal")
             }
             fn list_directory<'a>(
                 &'a self,
-                _path: &'a std::path::Path,
+                _path: &'a AppPath,
                 _on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
             ) -> Pin<Box<dyn Future<Output = Result<Vec<cmdr_fs::entry::FileEntry>, VolumeError>> + Send + 'a>>
             {
@@ -684,22 +685,22 @@ mod tests {
             }
             fn get_metadata<'a>(
                 &'a self,
-                _path: &'a std::path::Path,
+                _path: &'a AppPath,
             ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::entry::FileEntry, VolumeError>> + Send + 'a>> {
                 Box::pin(async { Err(VolumeError::NotSupported) })
             }
-            fn exists<'a>(&'a self, _path: &'a std::path::Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+            fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
                 Box::pin(async { true })
             }
             fn is_directory<'a>(
                 &'a self,
-                _path: &'a std::path::Path,
+                _path: &'a AppPath,
             ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
                 Box::pin(async { Ok(false) })
             }
             fn open_read_stream<'a>(
                 &'a self,
-                _path: &'a std::path::Path,
+                _path: &'a AppPath,
             ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
                 Box::pin(async { Ok(Box::new(YankedStream { sent: false }) as Box<dyn VolumeReadStream>) })
             }
