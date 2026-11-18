@@ -63,9 +63,11 @@ impl Volume for NfsVolume {
         path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(self.noting(self.list_for_pane(path, on_progress, None)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.list_for_pane(path, on_progress, None)).await
+        })
     }
 
     fn list_directory_with_cancel<'a>(
@@ -74,18 +76,22 @@ impl Volume for NfsVolume {
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(self.noting(self.list_for_pane(path, on_progress, cancel)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.list_for_pane(path, on_progress, cancel)).await
+        })
     }
 
     fn get_metadata<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(self.noting(self.get_metadata_impl(path)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.get_metadata_impl(path)).await
+        })
     }
 
     /// Kept rather than taken from the trait default, which routes through the
@@ -106,9 +112,11 @@ impl Volume for NfsVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(self.noting(self.entry_kind_impl(path)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.entry_kind_impl(path)).await
+        })
     }
 
     // ── The byte path ────────────────────────────────────────────────
@@ -165,9 +173,11 @@ impl Volume for NfsVolume {
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(self.noting(self.read_range_impl(path, offset, len)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.read_range_impl(path, offset, len)).await
+        })
     }
 
     // ── The write path ───────────────────────────────────────────────
@@ -182,18 +192,22 @@ impl Volume for NfsVolume {
         path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(self.noting(self.create_file_impl(path, content)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.create_file_impl(path, content)).await
+        })
     }
 
     fn create_directory<'a>(
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(self.noting(self.create_directory_impl(path)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.create_directory_impl(path)).await
+        })
     }
 
     /// ❗ Overridden: the trait default spends one `exists()` per ancestor.
@@ -201,9 +215,11 @@ impl Volume for NfsVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(self.noting(self.create_directory_all_impl(path)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.create_directory_all_impl(path)).await
+        })
     }
 
     /// `MKDIR` refuses a taken name with `NFS3ERR_EXIST`, so the folder-merge
@@ -220,9 +236,11 @@ impl Volume for NfsVolume {
     }
 
     fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(self.noting(self.delete_impl(path)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(self.delete_impl(path)).await
+        })
     }
 
     fn rename<'a>(
@@ -231,11 +249,13 @@ impl Volume for NfsVolume {
         to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
-        let to_std = to.as_std_legacy();
-        let to: &Path = &to_std;
-        let from_std = from.as_std_legacy();
-        let from: &Path = &from_std;
-        Box::pin(self.noting(self.rename_impl(from, to, force)))
+        Box::pin(async move {
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
+            let from_std = from.as_std_legacy();
+            let from: &Path = &from_std;
+            self.noting(self.rename_impl(from, to, force)).await
+        })
     }
 
     /// A forced rename is one `RENAME`, which replaces its target atomically.
@@ -287,9 +307,11 @@ impl Volume for NfsVolume {
         parent_path: &'a AppPath,
         mutation: MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
-        let parent_path_std = parent_path.as_std_legacy();
-        let parent_path: &Path = &parent_path_std;
-        Box::pin(patching::patch_mutation(self, parent_path, mutation))
+        Box::pin(async move {
+            let parent_path_std = parent_path.as_std_legacy();
+            let parent_path: &Path = &parent_path_std;
+            patching::patch_mutation(self, parent_path, mutation).await
+        })
     }
 
     // ── Scanning, before a copy runs ─────────────────────────────────
@@ -298,9 +320,11 @@ impl Volume for NfsVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(self.noting(scan_walk::scan_one(self, path)))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.noting(scan_walk::scan_one(self, path)).await
+        })
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
@@ -308,9 +332,11 @@ impl Volume for NfsVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-        let paths: &[PathBuf] = &paths_std;
-        Box::pin(self.noting(scan_walk::scan_trees(self, paths, boundary)))
+        Box::pin(async move {
+            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+            let paths: &[PathBuf] = &paths_std;
+            self.noting(scan_walk::scan_trees(self, paths, boundary)).await
+        })
     }
 
     fn scan_for_conflicts<'a>(
@@ -318,9 +344,12 @@ impl Volume for NfsVolume {
         source_items: &'a [SourceItemInfo],
         dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
-        let dest_path_std = dest_path.as_std_legacy();
-        let dest_path: &Path = &dest_path_std;
-        Box::pin(self.noting(scan_walk::scan_conflicts(self, source_items, dest_path)))
+        Box::pin(async move {
+            let dest_path_std = dest_path.as_std_legacy();
+            let dest_path: &Path = &dest_path_std;
+            self.noting(scan_walk::scan_conflicts(self, source_items, dest_path))
+                .await
+        })
     }
 
     // ── Lifecycle ────────────────────────────────────────────────────
