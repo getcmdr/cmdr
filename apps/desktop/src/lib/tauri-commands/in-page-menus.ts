@@ -17,7 +17,10 @@ import {
   type MenuBarChanged,
   type ViewerBarInputs,
 } from '#lib/ipc/bindings.js'
+import { getAppLogger } from '#lib/logging/logger.js'
 import { applyMenuBarChange } from '#lib/ui/command-menu/bar-change.js'
+
+const log = getAppLogger('inPageMenus')
 
 /** A pick from the in-page bar (the main bar's or the viewer's), run by the handler a native click reaches. */
 export async function pickMenuBarItem(menuId: string): Promise<BarPickOutcome> {
@@ -42,12 +45,18 @@ export async function pickContextMenuItem(token: number, menuId: string): Promis
   return commands.pickContextMenuItem(token, menuId)
 }
 
+/** The first retry of a failed `get_menu_bar`, doubling per failure up to {@link MAX_RETRY_MS}. */
+const FIRST_RETRY_MS = 250
+const MAX_RETRY_MS = 5_000
+
 /**
  * Follows the main window's bar: calls `onMenus` with the whole bar now and after every change.
  * The ordering contract (`menu/DETAILS.md`): subscribe first, then ask; keep the answer's
  * revision, drop an event at or below it, apply one at exactly the next, and on a gap (an event
- * further ahead) ask again. An event that lands before the answer waits for it. Returns the
- * unsubscribe.
+ * further ahead) ask again. An event that lands while an ask is in flight waits for its answer;
+ * one that lands with no answer and no ask in flight is dropped, since the next answer holds it.
+ * A failed ask is retried with backoff. Returns the unsubscribe, whether or not the first ask
+ * answered.
  */
 export async function followMenuBar(onMenus: (menus: BarMenuView[]) => void): Promise<UnlistenFn> {
   let menus: BarMenuView[] | null = null
@@ -55,10 +64,12 @@ export async function followMenuBar(onMenus: (menus: BarMenuView[]) => void): Pr
   let buffered: MenuBarChanged[] = []
   let asking = false
   let stopped = false
+  let retryMs = FIRST_RETRY_MS
+  let retryTimer: ReturnType<typeof setTimeout> | null = null
 
   function apply(change: MenuBarChanged): void {
     if (menus === null || revision === null) {
-      buffered.push(change)
+      if (asking) buffered.push(change)
       return
     }
     if (change.revision <= revision) return
@@ -71,23 +82,42 @@ export async function followMenuBar(onMenus: (menus: BarMenuView[]) => void): Pr
     onMenus(menus)
   }
 
+  function retryLater(): void {
+    if (stopped || retryTimer !== null) return
+    retryTimer = setTimeout(() => {
+      retryTimer = null
+      void ask()
+    }, retryMs)
+    retryMs = Math.min(retryMs * 2, MAX_RETRY_MS)
+  }
+
   async function ask(): Promise<void> {
-    if (asking) return
+    if (asking || stopped) return
     asking = true
     // Everything from here on waits for the answer, which already holds anything older.
     menus = null
     revision = null
+    buffered = []
+    let answered = false
     try {
       const answer = await commands.getMenuBar()
       if (stopped) return
       menus = answer.menus
       revision = answer.revision
+      answered = true
+      retryMs = FIRST_RETRY_MS
       onMenus(menus)
+    } catch (error) {
+      log.warn("Couldn't get the menu bar, retrying: {error}", { error: String(error) })
     } finally {
       asking = false
     }
     const waiting = buffered
     buffered = []
+    if (!answered) {
+      retryLater()
+      return
+    }
     for (const change of waiting) apply(change)
   }
 
@@ -97,6 +127,7 @@ export async function followMenuBar(onMenus: (menus: BarMenuView[]) => void): Pr
   await ask()
   return () => {
     stopped = true
+    if (retryTimer !== null) clearTimeout(retryTimer)
     unlisten()
   }
 }

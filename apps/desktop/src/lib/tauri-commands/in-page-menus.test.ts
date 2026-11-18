@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BarMenuView, MenuBarAnswer, MenuBarChanged } from '#lib/ipc/bindings.js'
 
 const ipc = vi.hoisted(() => ({
-  answers: [] as MenuBarAnswer[],
+  answers: [] as (MenuBarAnswer | Error)[],
   listener: null as ((event: { payload: MenuBarChanged }) => void) | null,
   asked: 0,
   /** Lets a test land events while `get_menu_bar` is in flight. */
@@ -17,7 +17,7 @@ vi.mock('#lib/ipc/bindings.js', () => ({
       ipc.beforeAnswer = null
       const answer = ipc.answers.shift()
       if (!answer) throw new Error('no answer queued')
-      return Promise.resolve(answer)
+      return answer instanceof Error ? Promise.reject(answer) : Promise.resolve(answer)
     },
   },
   events: {
@@ -94,6 +94,10 @@ beforeEach(() => {
   ipc.beforeAnswer = null
 })
 
+afterEach(() => {
+  vi.useRealTimers()
+})
+
 describe('applyMenuBarChange', () => {
   it('moves a row by id, inside a submenu too', () => {
     expect(checkedIn(applyMenuBarChange(bar(false), hiddenFlip(2, true)))).toBe(true)
@@ -135,6 +139,33 @@ describe('followMenuBar', () => {
     await Promise.resolve()
     expect(ipc.asked).toBe(2)
     expect(seen).toEqual([false, true, false])
+  })
+
+  it('retries a failed ask, keeping only the changes newer than the answer it waits for', async () => {
+    vi.useFakeTimers()
+    ipc.answers.push(new Error('the backend is still starting'))
+    const seen: boolean[] = []
+    const stop = await followMenuBar((menus) => seen.push(checkedIn(menus)))
+    expect(seen).toEqual([])
+    // Changes while it has no answer wait for the retry's, which already holds them.
+    for (let revision = 2; revision < 50; revision++) ipc.listener?.({ payload: hiddenFlip(revision, true) })
+    ipc.answers.push({ revision: 49, menus: bar(true) })
+    ipc.beforeAnswer = () => ipc.listener?.({ payload: hiddenFlip(50, false) })
+    await vi.runOnlyPendingTimersAsync()
+    expect(ipc.asked).toBe(2)
+    expect(seen).toEqual([true, false])
+    stop()
+  })
+
+  it('hands back the unsubscribe when the first ask fails, and stops retrying once called', async () => {
+    vi.useFakeTimers()
+    ipc.answers.push(new Error('the backend is still starting'))
+    const stop = await followMenuBar(() => {})
+    expect(ipc.listener).not.toBeNull()
+    stop()
+    expect(ipc.listener).toBeNull()
+    await vi.runAllTimersAsync()
+    expect(ipc.asked).toBe(1)
   })
 
   it('stops following once unsubscribed', async () => {
