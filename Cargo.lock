@@ -1439,6 +1439,7 @@ dependencies = [
  "cmdr-search",
  "cmdr-sftp",
  "cmdr-smb",
+ "cmdr-update-manifest",
  "cmdr-update-trust",
  "cmdr-viewer",
  "cmdr-webdav",
@@ -2047,6 +2048,19 @@ dependencies = [
  "serde",
  "serde_json",
  "specta",
+]
+
+[[package]]
+name = "cmdr-update-manifest"
+version = "0.0.0"
+dependencies = [
+ "log",
+ "proptest",
+ "semver",
+ "serde",
+ "serde_json",
+ "time",
+ "url",
 ]
 
 [[package]]

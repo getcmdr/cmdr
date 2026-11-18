@@ -38,11 +38,12 @@ release without them:
   the update still installs.
 
 Wired so far, ahead of any Windows or Linux row: `release-finish` passes `--app-version` for such a row (`signerArgs`),
-and `latest-json` refuses a `.sig` whose trusted comment lacks `version:<v>` for one (`signatureNamesVersion`), so a
+and the validator refuses a signature whose trusted comment lacks `version:<v>` for one (`signatureNamesVersion`), so a
 version-less signature from either signing mode fails `publish` instead of reaching `latest.json`. Left for Windows port
-plan task 52: the rows, the flag in the CI `sign` job (`ci` mode), and the advisory list. The app's
-`every_field_the_reader_names_is_one_the_writer_writes` (`updater/manifest.rs`) holds that last gap open on purpose: it
-lists `securityAdvisories` as not written yet, against `testdata/v0.61.0/latest.json`, the fixture both sides share.
+plan task 52: the rows, the flag in the CI `sign` job (`ci` mode), and the advisory list. The reader's
+`every_field_the_reader_names_is_one_the_writer_writes` (`crates/cmdr-update-manifest/src/tests.rs`) holds that last gap
+open on purpose: it lists `securityAdvisories` as not written yet, against `testdata/v0.61.0/latest.built.json`, the
+fixture both sides share.
 
 ## Who reads it
 
@@ -71,7 +72,35 @@ missing signature, is an error; the old step wrote a 0 size for a missing DMG.
 
 `dmgSizes` stays one more release after the first with `downloads` (Windows port plan task 30): a website build from an
 older commit (a rollback, or a deploy of an old `main`) reads only `dmgSizes`. Drop it in the release after, along with
-the fallback in `release-downloads.ts` and in `apps/website/scripts/fetch-live-manifest.ts`.
+the fallback in `release-downloads.ts` and in `apps/website/scripts/fetch-live-manifest.ts`, and from `validate.go`'s
+`topLevelKeys` (the validator requires it until then).
+
+## The `latest.json` gate
+
+A bad manifest strands every install (a malformed `securityAdvisories` entry once would have failed every update check
+on every OS), so nothing ships one. Two validators, each run twice, all in `publish` before the mirror and the Latest
+mark, so a failure leaves the live manifest untouched:
+
+- **`validateLatest`** (`validate.go`), the release side. `latest-json` runs it on the bytes it built and writes nothing
+  it refuses; `validate-latest` runs it on the copy `gh release download` reads back after the upload (which must also
+  `cmp` equal). It checks: at most 256 KiB of UTF-8, one JSON object with nothing after it, no member twice and no
+  `null` anywhere (serde refuses a duplicate struct field, and Go reads a null into a string as `""`); exactly the
+  members in `topLevelKeys` (`securityAdvisories` optional); `version` the tag's, Rust-semver, and newer than `guard`'s
+  `live-version` (empty for a deliberate republish); non-empty `notes`; `pub_date` as `YYYY-MM-DDTHH:MM:SSZ` (the 0.7
+  plugin refuses the whole manifest over a bad one); `platforms` keyed by exactly the release asset manifest's updater
+  keys, each `{ signature, url }` with the URL `<base>/<file>` on the release and non-empty, the signature the release's
+  own `.sig` byte for byte, minisign-shaped, by a key the app trusts (`tauri.conf.json`'s or `updater-backup.pub`'s ID),
+  and naming the version where `SignsVersion`; `downloads` exactly `manifest.Present`'s list in order with the release's
+  sizes; `dmgSizes` the three DMG sizes; a `securityAdvisories` entry's URL an asset of the release and its signature by
+  a trusted key. It answers every problem at once.
+- **The shipped readers** (`crates/cmdr-update-manifest`, `history::gate`): the Tauri plugin of Cmdr 0.7, the reader of
+  0.8–0.61, and today's, each of which must read the file and find each install's entry. Built by the `manifest-readers`
+  job, run by `publish` on the candidate and the read-back. `crates/cmdr-update-manifest/DETAILS.md`.
+
+Decision: the Rust readers run as a binary from their own job, not inside the Go validator. Why: the Go side can't parse
+the way serde and the plugin do, and building Rust in `publish` would run crate build scripts beside its write token.
+The two halves share fixtures (`latest.built.json`), so a writer change that a reader refuses fails a test on either
+side before any release.
 
 ## The dry run
 
@@ -87,10 +116,16 @@ The fixture is v0.61.0 as published: its asset list and sizes, its three signatu
 its CHANGELOG section. Other assets are short stand-ins (the sizes in `gh api` stay real), so `checksums.txt` in the
 goldens hashes stand-ins.
 
+The fake `gh release upload` replaces the asset in the fixture release, as `--clobber` does, so the read-back reads the
+upload. `guard`'s `live-version` is `0.60.0` (its step reads the live manifest, so it's `skipped`), and the
+`manifest-gate` artifact is `testdata/fakebin/manifest-gate`, which only checks for JSON: the real readers run over the
+same bytes in the crate's tests (`latest.built.json`).
+
 What only a real release proves: the `sign` job's staging and upload (it runs Apple tools), GitHub's handling of
 multi-line job outputs into `actions/attest` (the dry run substitutes them textually), the real `cargo cyclonedx`
-output, and the mirror's uploads. The first real release after a change here is worth watching through `publish` and
-`attest`.
+output, the mirror's uploads, the `manifest-readers` build and artifact hand-off, the live-version output, and that
+`gh release download` returns the uploaded `latest.json` byte for byte. The first real release after a change here is
+worth watching through `publish` and `attest`.
 
 ## Gotchas
 

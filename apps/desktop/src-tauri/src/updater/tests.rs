@@ -129,18 +129,36 @@ fn test_keys() -> Vec<String> {
 }
 
 fn manifest_offering(version: &str) -> manifest::UpdateManifest {
-    manifest::UpdateManifest {
-        version: version.to_string(),
-        platforms: [(
-            TEST_KEY.to_string(),
-            manifest::PlatformEntry {
-                url: "https://example.invalid/Cmdr.app.tar.gz".to_string(),
-                signature: "sig".to_string(),
-            },
-        )]
-        .into(),
-        security_advisories: None,
-    }
+    let body = serde_json::json!({
+        "version": version,
+        "platforms": { TEST_KEY: { "url": "https://example.invalid/Cmdr.app.tar.gz", "signature": "sig" } },
+    });
+    manifest::parse(body.to_string().as_bytes()).expect("a well-formed manifest")
+}
+
+/// A manifest whose entry for this install doesn't read is the server's answer gone wrong, never
+/// "you're up to date": the release meant to offer this install something.
+#[tokio::test]
+async fn a_broken_entry_for_this_install_is_a_bad_response() {
+    let state = UpdateState::new();
+    let body = serde_json::json!({
+        "version": "0.53.0",
+        "platforms": { TEST_KEY: { "url": "Cmdr.app.tar.gz", "signature": "sig" } },
+    });
+    let outcome = run_check(
+        UpdateCheckTrigger::Poll,
+        &state,
+        None,
+        RUNNING,
+        &test_keys(),
+        || async { Ok(manifest::parse(body.to_string().as_bytes()).expect("parses: the entry is read per platform")) },
+    )
+    .await;
+    assert!(
+        matches!(outcome, Err(ServerRequestError::BadResponse { .. })),
+        "{outcome:?}"
+    );
+    assert!(state.slots().offered.is_none());
 }
 
 fn ceiling(text: &str) -> crate::managed_policy::ManagedPolicy {
@@ -428,7 +446,43 @@ async fn a_manifest_the_server_serves_parses() {
     })))
     .await;
     let manifest = fetch_manifest(&url).await.expect("a well-formed manifest parses");
-    assert_eq!(manifest.version, "0.45.1");
+    assert_eq!(manifest.version.to_string(), "0.45.1");
+}
+
+/// What the server can send with a 200 that isn't a manifest: each is the server's answer gone
+/// wrong (`BadResponse`, which the frontend words calmly and logs at error), never a hang, a
+/// panic, or "up to date". The pure cases live in `cmdr-update-manifest`'s tests; these prove
+/// the fetch hands the bytes over bounded.
+#[tokio::test]
+async fn a_200_that_isnt_a_manifest_is_a_bad_response() {
+    let oversized = vec![b' '; manifest::MAX_MANIFEST_BYTES + 1];
+    let cases = [
+        (
+            "an HTML page",
+            ResponseTemplate::new(200).set_body_string("<!doctype html><title>Sign in to Wi-Fi</title>"),
+        ),
+        (
+            "a truncated body",
+            ResponseTemplate::new(200).set_body_string(r#"{"version":"0.45.1","platfo"#),
+        ),
+        (
+            "a body that isn't UTF-8",
+            ResponseTemplate::new(200).set_body_bytes(b"{\"version\":\"\xff\"}".to_vec()),
+        ),
+        (
+            "a non-semver version",
+            ResponseTemplate::new(200).set_body_json(json!({ "version": "latest", "platforms": {} })),
+        ),
+        (
+            "an oversized body",
+            ResponseTemplate::new(200).set_body_bytes(oversized),
+        ),
+    ];
+    for (name, response) in cases {
+        let (_server, url) = manifest_at(response).await;
+        let err = fetch_manifest(&url).await.expect_err(name);
+        assert!(matches!(err, ServerRequestError::BadResponse { .. }), "{name}: {err:?}");
+    }
 }
 
 /// The shape behind the old "Couldn't parse update manifest" lines: a 2xx that isn't a manifest

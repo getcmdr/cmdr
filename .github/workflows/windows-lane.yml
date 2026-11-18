@@ -40,6 +40,7 @@ on:
       - 'apps/desktop/src/lib/logging/log-markers.json'
       - 'apps/desktop/src/lib/platform/conventions-on.json'
       - 'scripts/release-assets/testdata/v0.61.0/latest.json'
+      - 'scripts/release-assets/testdata/v0.61.0/latest.built.json'
       - 'apps/desktop/src/lib/settings/types.ts'
       - 'apps/desktop/src/lib/units/drive-figure-cases.json'
       - 'apps/desktop/src/lib/units/free-percent-cases.json'

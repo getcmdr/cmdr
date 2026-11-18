@@ -33,6 +33,7 @@ func published(t *testing.T) (latestInput, string) {
 	return latestInput{
 		release: manifest.For("0.61.0"), assets: assets, sigDir: fixtureDir,
 		notes: m.Notes, pubDate: m.PubDate, baseURL: "https://download.getcmdr.com/v0.61.0",
+		trustedKeyIDs: repoKeyIDs(t), newerThan: "0.60.0",
 	}, string(raw)
 }
 
@@ -112,8 +113,8 @@ func TestLatestJSONTakesAWindowsRow(t *testing.T) {
 	in.sigDir = t.TempDir()
 	writeSigs := func(trusted string) {
 		for _, f := range in.release.Updates() {
-			sig := "untrusted comment: x\nRUSIG\ntrusted comment: timestamp:1\tfile:" + f.Name + trusted + "\nGLOBALSIG\n"
-			must(t, os.WriteFile(in.sigDir+"/"+f.Signature(), []byte(base64.StdEncoding.EncodeToString([]byte(sig))), 0o644))
+			sig := fakeSignature(in.trustedKeyIDs[0], "timestamp:1\tfile:"+f.Name+trusted)
+			must(t, os.WriteFile(in.sigDir+"/"+f.Signature(), []byte(sig), 0o644))
 		}
 	}
 	// Signed without `--app-version`, the Windows installer would be refused by every install.

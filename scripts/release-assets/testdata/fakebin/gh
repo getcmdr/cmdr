@@ -61,14 +61,24 @@ case "$1 ${2:-}" in
     shift 2
     tag="$1"; shift
     [ "$tag" = "$FIXTURE_TAG" ] || die "release upload: no release $tag"
+    clobber=false
+    for f in "$@"; do
+      [ "$f" = --clobber ] && clobber=true
+    done
     for f in "$@"; do
       case "$f" in
         --clobber) continue ;;
         -*) die "release upload: unknown flag $f" ;;
       esac
       [ -f "$f" ] || die "release upload: no file $f"
-      cp "$f" "$FIXTURE_UPLOADS/$(basename "$f")"
-      log "gh release upload $(basename "$f")"
+      name="$(basename "$f")"
+      if [ -e "$FIXTURE_RELEASE_DIR/$name" ] && ! $clobber; then
+        die "release upload: $name already exists on the release (gh refuses without --clobber)"
+      fi
+      cp "$f" "$FIXTURE_UPLOADS/$name"
+      # The release now serves the upload, as GitHub does, so a later download reads it back.
+      cp "$f" "$FIXTURE_RELEASE_DIR/$name"
+      log "gh release upload $name"
     done
     ;;
   "release edit")

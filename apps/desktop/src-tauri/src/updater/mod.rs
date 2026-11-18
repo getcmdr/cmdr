@@ -49,6 +49,11 @@ const CLASSIFY_TIMEOUT: Duration = Duration::from_secs(5);
 const DOWNLOAD_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const DOWNLOAD_READ_TIMEOUT: Duration = Duration::from_secs(30);
 
+/// The most an update payload may weigh before the download stops: it's held in memory until its
+/// signature verifies, so a host streaming without end can't fill it. The universal macOS archive,
+/// the biggest, is about 120 MB (v0.61.0).
+const MAX_UPDATE_PAYLOAD_BYTES: usize = 1 << 30;
+
 use crate::ignore_poison::IgnorePoison as _;
 use crate::managed_policy::{Egress, UpdatePolicy, UpdateRefusal};
 use crate::server_request::describe_error_chain;
@@ -283,7 +288,14 @@ where
     }
 
     let manifest = fetch().await?;
-    let Some(update) = manifest::check_manifest(&manifest, current_version, platform_keys) else {
+    // A refusal here is required data gone wrong (this install's entry doesn't read): the same
+    // "couldn't read the server's answer" a manifest that doesn't parse gets, never "up to date".
+    let offered = manifest::check_manifest(&manifest, current_version, platform_keys).map_err(|refusal| {
+        crate::server_request::ServerRequestError::BadResponse {
+            detail: refusal.to_string(),
+        }
+    })?;
+    let Some(update) = offered else {
         return Ok(UpdateCheckOutcome::UpToDate);
     };
     let version = update.version.to_string();
@@ -313,9 +325,11 @@ where
 ///
 /// The status is checked before the body is parsed (`server_request::send`): a 5xx or an HTML
 /// maintenance page would otherwise read as "the manifest is malformed" and send whoever reads the log
-/// to the wrong layer. A 2xx that doesn't parse is `BadResponse`, which the frontend logs at error:
-/// Cmdr's server and this build disagree on the contract. The frontend owns the log line, gated once
-/// per condition, so a Rust warn here would only repeat it every poll tick.
+/// to the wrong layer. A 2xx that doesn't parse (an HTML page with a 200, a truncated or non-UTF-8
+/// body, a non-semver version, or a body over `MAX_MANIFEST_BYTES`, refused as it streams) is
+/// `BadResponse`, which the frontend logs at error: Cmdr's server and this build disagree on the
+/// contract. The frontend owns the log line, gated once per condition, so a Rust warn here would
+/// only repeat it every poll tick. A slow body is bounded by `MANIFEST_REQUEST_TIMEOUT`.
 async fn fetch_manifest(url: &str) -> Result<manifest::UpdateManifest, crate::server_request::ServerRequestError> {
     let client = cmdr_http::client_builder()
         .connect_timeout(MANIFEST_CONNECT_TIMEOUT)
@@ -328,7 +342,10 @@ async fn fetch_manifest(url: &str) -> Result<manifest::UpdateManifest, crate::se
             ))
         })?;
     let response = crate::server_request::send(Egress::UpdateCheck, client.get(url)).await?;
-    crate::server_request::read_json(response).await
+    let body = crate::server_request::read_capped(response, manifest::MAX_MANIFEST_BYTES).await?;
+    manifest::parse(&body).map_err(|refusal| crate::server_request::ServerRequestError::BadResponse {
+        detail: refusal.to_string(),
+    })
 }
 
 /// Reports whether the running bundle sits somewhere an update can be written into, or `None`
@@ -420,10 +437,7 @@ async fn fetch_verified(
         })?;
 
     let response = crate::server_request::send(Egress::UpdateDownload, client.get(url)).await?;
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|e| crate::server_request::ServerRequestError::from_transport(&e))?;
+    let bytes = crate::server_request::read_capped(response, MAX_UPDATE_PAYLOAD_BYTES).await?;
 
     log::info!("Downloaded {} bytes, verifying signature", bytes.len());
     let verified =
@@ -432,8 +446,7 @@ async fn fetch_verified(
         bind_signed_version(&verified, offered).map_err(|detail| UpdateDownloadError::SignatureMismatch { detail })?;
     }
     log::info!("Signature verified");
-    // Zero-copy when the buffer is uniquely owned, which a freshly read body is.
-    Ok((Vec::from(bytes), verified))
+    Ok((bytes, verified))
 }
 
 /// Refuses a signature that doesn't name the offered version. Windows and Linux can't open an

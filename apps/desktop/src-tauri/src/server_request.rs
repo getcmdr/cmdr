@@ -142,11 +142,37 @@ pub async fn check_policy(egress: Egress) -> Result<(), ServerRequestError> {
 /// transport failure instead of passing for a malformed answer. The parse failure's `detail` is
 /// serde's message alone, never the body: an upload's answer carries the amend credential.
 pub async fn read_json<T: DeserializeOwned>(response: reqwest::Response) -> Result<T, ServerRequestError> {
-    let body = response
-        .bytes()
-        .await
-        .map_err(|e| ServerRequestError::from_transport(&e))?;
+    let body = read_capped(response, MAX_JSON_ANSWER_BYTES).await?;
     serde_json::from_slice(&body).map_err(|e| ServerRequestError::BadResponse { detail: e.to_string() })
+}
+
+/// The most a JSON answer from the api server may weigh. Every one is a few hundred bytes.
+const MAX_JSON_ANSWER_BYTES: usize = 1 << 20;
+
+/// Reads a 2xx body in full, refusing it as [`ServerRequestError::BadResponse`] the moment it
+/// passes `max` bytes (by its `Content-Length`, or as it streams), so a misbehaving server can't
+/// fill memory. A drop or stall mid-body stays a transport failure.
+pub async fn read_capped(mut response: reqwest::Response, max: usize) -> Result<Vec<u8>, ServerRequestError> {
+    let over = |bytes: u64| ServerRequestError::BadResponse {
+        detail: format!("the answer's size ({bytes} or more) is over this client's {max}-byte cap"),
+    };
+    if let Some(declared) = response.content_length()
+        && declared > max as u64
+    {
+        return Err(over(declared));
+    }
+    let mut body = Vec::new();
+    while let Some(chunk) = response
+        .chunk()
+        .await
+        .map_err(|e| ServerRequestError::from_transport(&e))?
+    {
+        if body.len() + chunk.len() > max {
+            return Err(over((body.len() + chunk.len()) as u64));
+        }
+        body.extend_from_slice(&chunk);
+    }
+    Ok(body)
 }
 
 #[cfg(test)]
@@ -176,6 +202,23 @@ mod tests {
         let server = MockServer::start().await;
         Mock::given(method("GET")).respond_with(response).mount(&server).await;
         server
+    }
+
+    /// A body over the cap is refused as the server's answer gone wrong, never read into memory
+    /// whole; one at the cap comes back intact.
+    #[tokio::test]
+    async fn a_body_over_the_cap_is_a_bad_response() {
+        let server = server_answering(ResponseTemplate::new(200).set_body_bytes(vec![b'x'; 1025])).await;
+        let response = send(Egress::UpdateCheck, client(Duration::from_secs(5)).get(server.uri()))
+            .await
+            .expect("a 2xx lands");
+        let err = read_capped(response, 1024).await.expect_err("1025 bytes is over 1024");
+        assert!(matches!(err, ServerRequestError::BadResponse { .. }), "{err:?}");
+
+        let response = send(Egress::UpdateCheck, client(Duration::from_secs(5)).get(server.uri()))
+            .await
+            .expect("a 2xx lands");
+        assert_eq!(read_capped(response, 1025).await.expect("at the cap").len(), 1025);
     }
 
     #[tokio::test]

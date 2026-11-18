@@ -7,8 +7,9 @@ the verified installer and hand it to the Tauri updater plugin as Restart quits 
 ## File map
 
 - `mod.rs` (the five Tauri commands, `UpdateState`, typed outcomes; tests in `tests.rs`), `install_kind.rs` (which
-  install this is and why some never update), `handoff.rs` (staging the installer, the exit hand-off), `manifest.rs`,
-  `signature.rs` (both keys, the signed version), `advisories.rs`, `security_events.rs`.
+  install this is and why some never update), `handoff.rs` (staging the installer, the exit hand-off), `manifest.rs`
+  (re-exports `crates/cmdr-update-manifest/CLAUDE.md`, the reader the release gate also runs), `signature.rs` (both
+  keys, the signed version), `advisories.rs`, `security_events.rs`.
 - `platform/`: the per-OS last step. `macos/` holds `installer.rs` (extraction, the sync, `running_bundle()`),
   `bundle_location.rs`, and `local_network_refresh.rs`; `plugin.rs` is the Windows and Linux hand-off. The code
   signature check is `crates/cmdr-update-trust/CLAUDE.md`.
@@ -32,7 +33,9 @@ the verified installer and hand it to the Tauri updater plugin as Restart quits 
   update.
 - **Off macOS the plugin only runs the installer**, last in `RunEvent::Exit`, armed by `quit::relaunch` so "Keep
   working" disarms it. `DETAILS.md` § Windows and Linux.
-- **Manifest fetch is bounded** (10 s connect, 30 s overall); download and install ride `server_request::send` untimed.
+- **Every remote body is bounded** in time and size (manifest 30 s and 1 MiB, advisory list 15 s and 256 KiB, payload
+  30 s per read and 1 GiB). Bad optional data degrades with a warn and ❌ never blocks an update; bad required data is
+  a typed `BadResponse`, ❌ never "up to date". The per-field audit: `DETAILS.md` § Remote data audit.
 
 Sync order, signatures, the hand-off, who may check, the policy, and Local Network after an update: `DETAILS.md`. Read
 it before any non-trivial work here: editing, planning, reorganizing, or advising.

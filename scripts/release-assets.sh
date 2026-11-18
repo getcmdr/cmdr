@@ -10,4 +10,5 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Built, then run from the caller's directory, so relative paths in the flags mean what they say.
 BIN="$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/release-assets.XXXXXX")/release-assets"
 (cd "${ROOT}/scripts/release-assets" && go build -o "$BIN" .)
-exec "$BIN" "$@"
+# Where `latest-json` and `validate-latest` read the updater keys the app trusts.
+RELEASE_ASSETS_ROOT="$ROOT" exec "$BIN" "$@"
