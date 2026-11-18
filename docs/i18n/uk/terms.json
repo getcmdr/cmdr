@@ -717,7 +717,10 @@
     "confidence": "high",
     "sources": "macOS live Security authorization.buttons (Check → Перевірити), DiscRecording (Verifying → Перевірка); Finder PW22 (Verifying → Перевіряння); MS (check → перевіряти)",
     "forms": "Progress: Перевірка… (DiscRecording); Finder's Перевіряння is an older verbal-noun form.",
-    "note": "Added «звір» (b26): comparing a fingerprint against a known one is «Звірте відбиток…» (servers.hostKey.*Body, servers.certificate.*Body); «перевірте» there reads as a vaguer inspect."
+    "note": "Added «звір» (b26): comparing a fingerprint against a known one is «Звірте відбиток…» (servers.hostKey.*Body, servers.certificate.*Body); «перевірте» there reads as a vaguer inspect.",
+    "exceptions": {
+      "updates.status.noBuildForThisPlatform": "The update check succeeded; the line says this build can't update yet (description), so it reads «поки що не може оновитися», with no check verb."
+    }
   },
   "checklist": {
     "chosen": "контрольний список",
@@ -2345,7 +2348,7 @@
     "chosen": "Вʼязка ключів",
     "accept": ["вʼязк", "Ключар", "вʼязц"],
     "forms": "the store: Вʼязка ключів (short: вʼязка; locative у Вʼязці ключів); the Keychain Access app: «Ключар»; the remember checkbox: «Зберегти пароль у Вʼязці ключів» (macOS: «Зберегти пароль у вʼязці»)",
-    "note": "The apostrophe is U+02BC. Apple names the app «Ключар», not a literal of Keychain Access. «вʼязц» covers the locative «у Вʼязці» (к→ц alternation), which «вʼязк» misses.",
+    "note": "The apostrophe is U+02BC. Apple names the app «Ключар», not a literal of Keychain Access. «вʼязц» covers the locative «у Вʼязці» (к→ц alternation), which «вʼязк» misses. KDE's KWallet stays a Latin name, undeclined (у KWallet, із KWallet; masculine: KWallet не надав доступу, відкрито KWallet); tentative, no pile hit.",
     "confidence": "high",
     "sources": "macOS live Keychain Access.app Localizable (Keychain Access → Ключар; Keychain: %@ → Вʼязка: %@); Resources (KeyChain → Вʼязка ключів); iCloudSettings (Keychain → Вʼязка); AMPDevices + DiskImages2 (Remember password in my keychain → Зберегти пароль у вʼязці)",
     "windows": {
@@ -2476,7 +2479,10 @@
     "chosen": "список",
     "accept": ["списк", "список"],
     "confidence": "high",
-    "sources": "macOS AppKit Accessibility (List → Список); MS (list → список)"
+    "sources": "macOS AppKit Accessibility (List → Список); MS (list → список)",
+    "exceptions": {
+      "fileOperations.validation.notPortable.reservedName": "Verb sense: the share may list the item under another name → показувати; not the noun список."
+    }
   },
   "listing": {
     "chosen": "читання",

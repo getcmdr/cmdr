@@ -154,7 +154,7 @@
   },
   "fileOperations.mkfile.nameAria": "Назва файлу",
   "@fileOperations.mkfile.nameAria": {
-    "sourceHash": "3efed3d"
+    "sourceHash": "971b974"
   },
   "fileOperations.mkfile.placeholder": "Приклад: нотатки.txt",
   "@fileOperations.mkfile.placeholder": {
@@ -1304,9 +1304,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Зберегти пароль у Вʼязці ключів} windows {Запамʼятати пароль} linuxKde {Remember in KWallet} other {Зберегти пароль у вʼязці ключів}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Зберегти пароль у Вʼязці ключів} windows {Запамʼятати пароль} linuxKde {Зберегти пароль у KWallet} other {Зберегти пароль у вʼязці ключів}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "42237e1"
+    "sourceHash": "8f125e3"
   },
   "fileOperations.resticPassword.checking": "Перевірка пароля…",
   "@fileOperations.resticPassword.checking": {
@@ -1331,6 +1331,30 @@
   "fileOperations.validation.empty": "{kind, select, folder {Назва папки не може бути порожньою} other {Назва файлу не може бути порожньою}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
+  },
+  "fileOperations.validation.dotName": "{kind, select, folder {Назва папки не може бути «.» або «..»} other {Назва файлу не може бути «.» або «..»}}",
+  "@fileOperations.validation.dotName": {
+    "sourceHash": "bfa0ccb"
+  },
+  "fileOperations.validation.nameLength": "{kind, select, folder {Назва папки задовга ({length}/{maxLength} {unit, select, bytes {{max, plural, one {байт} few {байти} many {байтів} other {байта}}} other {{max, plural, one {символ} few {символи} many {символів} other {символу}}}})} other {Назва файлу задовга ({length}/{maxLength} {unit, select, bytes {{max, plural, one {байт} few {байти} many {байтів} other {байта}}} other {{max, plural, one {символ} few {символи} many {символів} other {символу}}}})}}",
+  "@fileOperations.validation.nameLength": {
+    "sourceHash": "acef623"
+  },
+  "fileOperations.validation.pathLength": "Повний шлях задовгий ({length}/{maxLength} {unit, select, bytes {{max, plural, one {байт} few {байти} many {байтів} other {байта}}} other {{max, plural, one {символ} few {символи} many {символів} other {символу}}}})",
+  "@fileOperations.validation.pathLength": {
+    "sourceHash": "1791bc2"
+  },
+  "fileOperations.validation.notPortable.windowsCharacter": "{format, select, smbShare {Назви із символом «{character}» не працюватимуть у Windows} other {Назви із символом «{character}» не працюватимуть у Windows і Linux}}",
+  "@fileOperations.validation.notPortable.windowsCharacter": {
+    "sourceHash": "66201fa"
+  },
+  "fileOperations.validation.notPortable.reservedName": "{format, select, smbShare {Назву «{name}» зарезервовано у Windows, тож там така назва не працюватиме, а спільна папка може показувати її під іншою назвою} other {Назву «{name}» зарезервовано у Windows, тож там така назва не працюватиме}}",
+  "@fileOperations.validation.notPortable.reservedName": {
+    "sourceHash": "b46ff0c"
+  },
+  "fileOperations.validation.notPortable.endsWithSpaceOrPeriod": "{format, select, smbShare {Назви, що закінчуються пробілом або крапкою, не працюватимуть у Windows} other {Назви, що закінчуються пробілом або крапкою, не працюватимуть у Windows і Linux}}",
+  "@fileOperations.validation.notPortable.endsWithSpaceOrPeriod": {
+    "sourceHash": "86ce7a7"
   },
   "fileOperations.validation.extensionChangeBlocked": "Змінювати розширення файлу не дозволено (було «{oldExt}»)",
   "@fileOperations.validation.extensionChangeBlocked": {
@@ -1359,6 +1383,18 @@
   "fileOperations.validation.pathNullChar": "Шлях містить нульовий символ",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
+  },
+  "fileOperations.validation.typedPathLength": "Шлях задовгий ({length}/{maxLength} {unit, select, bytes {{max, plural, one {байт} few {байти} many {байтів} other {байта}}} other {{max, plural, one {символ} few {символи} many {символів} other {символу}}}})",
+  "@fileOperations.validation.typedPathLength": {
+    "sourceHash": "f953ea2"
+  },
+  "fileOperations.validation.typedSegmentLength": "Назва папки у шляху задовга ({length}/{maxLength} {unit, select, bytes {{max, plural, one {байт} few {байти} many {байтів} other {байта}}} other {{max, plural, one {символ} few {символи} many {символів} other {символу}}}})",
+  "@fileOperations.validation.typedSegmentLength": {
+    "sourceHash": "50ce47b"
+  },
+  "fileOperations.transferDialog.namePortability": "{count, plural, one {{alsoLinux, select, yes {{countText} назва тут не працюватиме у Windows і Linux: «{example}»} other {{countText} назва тут не працюватиме у Windows: «{example}»}}} few {{alsoLinux, select, yes {{countText} назви тут не працюватимуть у Windows і Linux, як-от «{example}»} other {{countText} назви тут не працюватимуть у Windows, як-от «{example}»}}} many {{alsoLinux, select, yes {{countText} назв тут не працюватимуть у Windows і Linux, як-от «{example}»} other {{countText} назв тут не працюватимуть у Windows, як-от «{example}»}}} other {{alsoLinux, select, yes {{countText} назви тут не працюватимуть у Windows і Linux, як-от «{example}»} other {{countText} назви тут не працюватимуть у Windows, як-от «{example}»}}}}",
+  "@fileOperations.transferDialog.namePortability": {
+    "sourceHash": "e8c7d0f"
   },
   "fileOperations.transferTree.treeLabel": "Файли в цій операції",
   "@fileOperations.transferTree.treeLabel": {

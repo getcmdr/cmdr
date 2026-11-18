@@ -119,9 +119,9 @@
   "@stateRecovery.keptCopy": {
     "sourceHash": "634e87d"
   },
-  "stateRecovery.showInFinder": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показати у файловому менеджері}}",
+  "stateRecovery.showInFinder": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} linuxGnome {Показати у програмі «Файли»} linuxKde {Показати у Dolphin} other {Показати у файловому менеджері}}",
   "@stateRecovery.showInFinder": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "stateRecovery.dismiss": "Закрити",
   "@stateRecovery.dismiss": {

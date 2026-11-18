@@ -686,6 +686,10 @@
     ],
     "uk": [
       {
+        "source": "Preferences",
+        "reason": "`aboutThis.ownerPlace.preferences` is the real name of the macOS `~/Library/Preferences` folder, kept as the system names it; the GNOME branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own app-menu word, Налаштування (uk nautilus.po `_Preferences`)."
+      },
+      {
         "source": "{count, plural, one {file} other {files}}",
         "reason": "Case, not drift: Ukrainian declines the counted noun by its slot. `fileExplorer.summary.fileNoun` follows «з» (genitive: «з 21 файлу»); the scan lines are nominative counts («21 файл»)."
       },

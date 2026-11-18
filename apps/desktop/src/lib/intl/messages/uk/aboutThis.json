@@ -15,9 +15,9 @@
   "@aboutThis.action.openTooltip": {
     "sourceHash": "4bbaa35"
   },
-  "aboutThis.action.showInFileManager": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показати у файловому менеджері}}",
+  "aboutThis.action.showInFileManager": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} linuxGnome {Показати у програмі «Файли»} linuxKde {Показати у Dolphin} other {Показати у файловому менеджері}}",
   "@aboutThis.action.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "aboutThis.action.downloadPage": "Сторінка викачування",
   "@aboutThis.action.downloadPage": {
@@ -328,9 +328,9 @@
   "@aboutThis.download.unrecognized": {
     "sourceHash": "5e9fa42"
   },
-  "aboutThis.download.noSource": "{platform, select, macos {macOS записала, що це викачано{hasApp, select, yes { програмою {app}} other {}}{hasDate, select, yes { <date></date>} other {}}, але не вказала звідки.} windows {Windows recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} other {This carries a record of being downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.}}",
+  "aboutThis.download.noSource": "{platform, select, macos {macOS записала, що це викачано{hasApp, select, yes { програмою {app}} other {}}{hasDate, select, yes { <date></date>} other {}}, але не вказала звідки.} windows {Windows записала, що це завантажено{hasApp, select, yes { програмою {app}} other {}}{hasDate, select, yes { <date></date>} other {}}, але не вказала звідки.} other {Тут є запис про те, що це викачано{hasApp, select, yes { програмою {app}} other {}}{hasDate, select, yes { <date></date>} other {}}, але без зазначення звідки.}}",
   "@aboutThis.download.noSource": {
-    "sourceHash": "7edb92b"
+    "sourceHash": "83ec9b3"
   },
   "aboutThis.cmdrOperation.noRecord": "Немає запису про копіювання чи переміщення в Cmdr",
   "@aboutThis.cmdrOperation.noRecord": {
@@ -746,9 +746,9 @@
   "@aboutThis.standardFolder.users": {
     "sourceHash": "955c56c"
   },
-  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {Коренева папка стартового диска} windows {The top of the system drive} other {The top of the system disk}}",
+  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {Коренева папка стартового диска} windows {Коренева папка системного диска} other {Коренева папка системного диска}}",
   "@aboutThis.standardFolder.startupDisk": {
-    "sourceHash": "6e69278"
+    "sourceHash": "d7764f1"
   },
   "aboutThis.owner.insideApp": "Частина програми {app}",
   "@aboutThis.owner.insideApp": {
@@ -971,9 +971,9 @@
   "@aboutThis.removal.standardFolder.users": {
     "sourceHash": "b72c1fe"
   },
-  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {У ній усе, що є на стартовому диску, зокрема macOS.} windows {It holds everything on the system drive, Windows included.} other {It holds everything on the system disk, the operating system included.}}",
+  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {У ній усе, що є на стартовому диску, зокрема macOS.} windows {У ній усе, що є на системному диску, зокрема Windows.} other {У ній усе, що є на системному диску, зокрема операційна система.}}",
   "@aboutThis.removal.standardFolder.startupDisk": {
-    "sourceHash": "3f6c151"
+    "sourceHash": "a50aa6f"
   },
   "aboutThis.removal.uncommittedWork": "Тут є зміни, яких немає в жодному коміті, тож git не зможе їх повернути.",
   "@aboutThis.removal.uncommittedWork": {

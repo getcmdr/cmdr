@@ -71,9 +71,9 @@
   "@menu.app.cliCommandHomebrew": {
     "sourceHash": "cc4c0fd"
   },
-  "menu.app.settings": "{platform, select, windows {Параметри} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Параметри…}}",
+  "menu.app.settings": "{platform, select, windows {Параметри} linuxGnome {Налаштування} linuxKde {Налаштувати Cmdr…} other {Параметри…}}",
   "@menu.app.settings": {
-    "sourceHash": "7af8e23"
+    "sourceHash": "4b21626"
   },
   "menu.app.services": "Служби",
   "@menu.app.services": {
@@ -147,9 +147,9 @@
   "@menu.context.showInFolder": {
     "sourceHash": "da47876"
   },
-  "menu.file.showInFileManager": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показати у файловому менеджері}}",
+  "menu.file.showInFileManager": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} linuxGnome {Показати у програмі «Файли»} linuxKde {Показати у Dolphin} other {Показати у файловому менеджері}}",
   "@menu.file.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "menu.file.openTerminalHere": "Відкрити термінал тут",
   "@menu.file.openTerminalHere": {

@@ -243,6 +243,14 @@
   "@multiRename.status.reservedDeviceName": {
     "sourceHash": "8bf464a"
   },
+  "multiRename.status.notPortable": "{alsoLinux, select, yes {Не працюватиме у Windows і Linux} other {Не працюватиме у Windows}}",
+  "@multiRename.status.notPortable": {
+    "sourceHash": "cc3ed09"
+  },
+  "multiRename.notPortableSummary": "{count, plural, one {{alsoLinux, select, yes {{countText} нова назва не працюватиме у Windows і Linux. Перейменування однаково відбудеться.} other {{countText} нова назва не працюватиме у Windows. Перейменування однаково відбудеться.}}} few {{alsoLinux, select, yes {{countText} нові назви не працюватимуть у Windows і Linux. Перейменування однаково відбудеться.} other {{countText} нові назви не працюватимуть у Windows. Перейменування однаково відбудеться.}}} many {{alsoLinux, select, yes {{countText} нових назв не працюватимуть у Windows і Linux. Перейменування однаково відбудеться.} other {{countText} нових назв не працюватимуть у Windows. Перейменування однаково відбудеться.}}} other {{alsoLinux, select, yes {{countText} нової назви не працюватимуть у Windows і Linux. Перейменування однаково відбудеться.} other {{countText} нової назви не працюватимуть у Windows. Перейменування однаково відбудеться.}}}}",
+  "@multiRename.notPortableSummary": {
+    "sourceHash": "4eb996d"
+  },
   "multiRename.error.unclosed": "У заповнювачі бракує закривної «]»",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -626,15 +634,15 @@
   },
   "multiRename.reason.tooLong": "Нова назва задовга для назви файлу.",
   "@multiRename.reason.tooLong": {
-    "sourceHash": "b709218"
+    "sourceHash": "c49d459"
   },
   "multiRename.reason.reserved": "«.» і «..» не можуть бути назвами файлів.",
   "@multiRename.reason.reserved": {
-    "sourceHash": "dcca507"
+    "sourceHash": "b0c0c33"
   },
   "multiRename.reason.disallowedCharacter": "Назви файлів не можуть містити {character}.",
   "@multiRename.reason.disallowedCharacter": {
-    "sourceHash": "66a09f6"
+    "sourceHash": "2d58251"
   },
   "multiRename.reason.reservedDeviceName": "Назву «{name}» зарезервовано системою Windows, тому цей диск не може її використати.",
   "@multiRename.reason.reservedDeviceName": {
