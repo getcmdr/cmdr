@@ -44,26 +44,8 @@ pub fn get_group_name(gid: u32) -> String {
     name
 }
 
-#[cfg(unix)]
-fn user_name_of(uid: u32) -> Option<String> {
-    uzers::get_user_by_uid(uid).map(|u| u.name().to_string_lossy().into_owned())
-}
-
-#[cfg(unix)]
-fn group_name_of(gid: u32) -> Option<String> {
-    uzers::get_group_by_gid(gid).map(|g| g.name().to_string_lossy().into_owned())
-}
-
-// The browser build has no user database, so owners show as their numeric id.
-#[cfg(target_family = "wasm")]
-fn user_name_of(_uid: u32) -> Option<String> {
-    None
-}
-
-#[cfg(target_family = "wasm")]
-fn group_name_of(_gid: u32) -> Option<String> {
-    None
-}
+mod platform;
+use platform::{group_name_of, user_name_of};
 
 /// Whether a name alone marks an entry hidden: a leading dot, the universal
 /// Unix convention every backend understands with no I/O at all.

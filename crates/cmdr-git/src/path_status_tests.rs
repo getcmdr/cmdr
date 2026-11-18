@@ -15,7 +15,7 @@ fn repo(name: &str) -> PathBuf {
     write(&dir, "src/lib.rs", "fn a() {}\n");
     write(&dir, "src/main.rs", "fn main() {}\n");
     write(&dir, ".gitignore", "*.log\ntarget/\n");
-    write(&dir, "star[1]*.txt", "glob\n");
+    write(&dir, "star[1-9].txt", "glob\n");
     git_cli(&dir, &["add", "."]);
     git_cli(&dir, &["commit", "-q", "-m", "init"]);
     dir
@@ -102,13 +102,13 @@ fn a_folder_named_like_a_tracked_ones_prefix_is_its_own() {
 #[test]
 fn glob_characters_in_a_name_are_literal() {
     let dir = repo("glob");
-    // `star[1]*.txt` as a glob would also match this tracked file, edited since.
-    write(&dir, "star1-other.txt", "x\n");
-    git_cli(&dir, &["add", "star1-other.txt"]);
+    // `star[1-9].txt` as a glob would also match this tracked file, edited since.
+    write(&dir, "star1.txt", "x\n");
+    git_cli(&dir, &["add", "star1.txt"]);
     git_cli(&dir, &["commit", "-q", "-m", "other"]);
-    write(&dir, "star1-other.txt", "edited\n");
-    assert_eq!(status(&dir, "star[1]*.txt", false), PathStatus::Clean);
-    write(&dir, "star[1]*.txt", "changed\n");
-    assert_eq!(status(&dir, "star[1]*.txt", false), PathStatus::Changed);
+    write(&dir, "star1.txt", "edited\n");
+    assert_eq!(status(&dir, "star[1-9].txt", false), PathStatus::Clean);
+    write(&dir, "star[1-9].txt", "changed\n");
+    assert_eq!(status(&dir, "star[1-9].txt", false), PathStatus::Changed);
     cleanup(&dir);
 }

@@ -1,6 +1,5 @@
 use super::*;
 use std::collections::HashSet;
-use std::path::Path;
 
 #[test]
 fn every_marker_is_a_distinct_reserved_char_outside_the_reader_scratch() {
@@ -139,9 +138,11 @@ fn each_debug_layer_moves_the_span_one_depth_down() {
     }
 }
 
+#[cfg(unix)]
 #[test]
 fn a_non_utf8_value_prints_the_way_path_display_does() {
     use std::os::unix::ffi::OsStrExt;
+    use std::path::Path;
     let path = Path::new(OsStr::from_bytes(b"/Volumes/Backup/caf\xe9 dir"));
     assert_eq!(
         LogPrivate::dir_path(path).to_string(),

@@ -9,6 +9,8 @@ use std::borrow::Cow;
 
 use unicode_normalization::UnicodeNormalization;
 
+mod platform;
+
 /// How a volume's names compare: the case rule a query gets when it doesn't say,
 /// whether a typed pattern matches a name stored in either Unicode normal form, and
 /// the fold that keys a name for an exclusion (and, in an in-memory source, a
@@ -35,6 +37,10 @@ pub enum NameFold {
     /// NFD, then lowercase: how APFS compares names, and the key the macOS drive index
     /// stores (`cmdr_fs::name_fold::normalize_for_comparison`'s macOS branch).
     NfdLowercase,
+    /// Lowercase, the Unicode form untouched: how NTFS compares names (case-insensitive,
+    /// but two forms are two names), and the Windows drive index's key
+    /// (`cmdr_fs::name_fold::normalize_for_comparison`'s Windows arm).
+    Lowercase,
     /// The name as it is: a case- and form-sensitive filesystem, where two names that
     /// differ in either are two files.
     Exact,
@@ -45,6 +51,7 @@ impl NameFold {
     pub fn apply<'a>(self, name: &'a str) -> Cow<'a, str> {
         match self {
             Self::NfdLowercase => Cow::Owned(name.nfd().collect::<String>().to_lowercase()),
+            Self::Lowercase => Cow::Owned(name.to_lowercase()),
             Self::Exact => Cow::Borrowed(name),
         }
     }
@@ -66,14 +73,18 @@ impl NameRules {
         fold: NameFold::Exact,
     };
 
-    /// The rules of the machine this build targets: what the desktop app has always
-    /// answered, decided once here instead of at each `cfg!` it replaces.
+    /// Windows: case-insensitive by default, and a pattern in either normal form (NTFS
+    /// keeps whichever form the writer used, and a file from a Mac arrives NFD), folded
+    /// by case alone, since NTFS keeps two forms as two names.
+    pub const WINDOWS: Self = Self {
+        case_insensitive_by_default: true,
+        either_normal_form: true,
+        fold: NameFold::Lowercase,
+    };
+
+    /// The rules of the machine this build targets, decided once in its platform arm.
     pub const fn host() -> Self {
-        if cfg!(target_os = "macos") {
-            Self::MACOS
-        } else {
-            Self::LINUX
-        }
+        platform::HOST
     }
 
     /// `pattern` in every form a name it should find may be stored in.
@@ -126,8 +137,9 @@ mod tests {
     #[test]
     fn the_host_rules_are_what_this_machine_always_answered() {
         let host = NameRules::host();
-        assert_eq!(host.case_insensitive_by_default, cfg!(target_os = "macos"));
-        assert_eq!(host.either_normal_form, cfg!(target_os = "macos"));
+        let folds_case = cfg!(any(target_os = "macos", target_os = "windows"));
+        assert_eq!(host.case_insensitive_by_default, folds_case);
+        assert_eq!(host.either_normal_form, folds_case);
         for name in [
             "Report.PDF",
             "caf\u{e9}",
@@ -148,6 +160,9 @@ mod tests {
     fn the_mac_fold_is_nfd_then_lowercase_and_linux_keeps_the_name() {
         assert_eq!(NameRules::MACOS.fold.apply("Caf\u{e9}"), "cafe\u{301}");
         assert_eq!(NameRules::LINUX.fold.apply("Caf\u{e9}"), "Caf\u{e9}");
+        // Windows folds case and leaves the form: NTFS keeps NFC and NFD as two names.
+        assert_eq!(NameRules::WINDOWS.fold.apply("Caf\u{e9}"), "caf\u{e9}");
+        assert_eq!(NameRules::WINDOWS.fold.apply("Cafe\u{301}"), "cafe\u{301}");
     }
 
     #[test]

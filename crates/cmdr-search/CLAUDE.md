@@ -17,9 +17,9 @@ the in-memory arena it scans. Tauri-free and `cmdr-index`-free; Cmdr hosts it fr
 
 ## Must-knows
 
-- **No I/O, no statics, nothing ambient.** No database, runtime, `cfg!` platform, home folder, or clock read: the host
-  passes `NameRules` and `home_dir` in a `SearchContext`, and timing goes through `cmdr_fs::rt` (`clippy.toml` bans the
-  rest). ❌ No `cmdr-index`: it doesn't build for `wasm32`.
+- **No I/O, no statics, nothing ambient.** No database, runtime, `cfg!` platform (`NameRules::host()` is the one seam),
+  home folder, or clock read: the host passes `NameRules` and `home_dir` in a `SearchContext`, and timing goes through
+  `cmdr_fs::rt` (`clippy.toml` bans the rest). ❌ No `cmdr-index`: it doesn't build for `wasm32`.
 - **The seam is per query, ❌ never per row.** A per-row trait call loses `par_chunks` and the per-chunk regex clones.
 - **A source read that fails fails the search** (`SearchError::SourceUnreadable`), ❌ never an empty map (read as "no
   filter"), an "unresolved" scope (read as a typo), or a sizeless folder.

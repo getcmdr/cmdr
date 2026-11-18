@@ -70,6 +70,7 @@ impl PatchSource for FakeBackend {
 }
 
 #[tokio::test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_new_file_is_added_to_its_parents_listing() {
     let backend = FakeBackend::new(&[("/dir/new.txt", false)]);
 
@@ -96,6 +97,7 @@ async fn a_deleted_file_needs_no_stat_to_leave_its_listing() {
 }
 
 #[tokio::test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_rename_inside_one_directory_is_a_single_renamed_change() {
     let backend = FakeBackend::new(&[("/dir/after.txt", false)]);
 
@@ -110,6 +112,7 @@ async fn a_rename_inside_one_directory_is_a_single_renamed_change() {
 }
 
 #[tokio::test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 async fn a_rename_across_directories_is_a_loss_here_and_a_gain_there() {
     // ❗ A single `Renamed` would leave whichever pane it wasn't sent to stale.
     let backend = FakeBackend::new(&[("/to/moved.txt", false)]);

@@ -37,43 +37,30 @@ fn transport_blips_are_transport_faults() {
     );
 }
 
-#[cfg(unix)]
+/// Through this OS's own code for each class, so Windows' Win32 and Winsock codes are held
+/// to the same answers as the errnos. Includes a write onto a share whose server went away
+/// mid-request (`BrokenPipe`: the sender's own send broke).
 #[test]
-fn transport_errnos_are_transport_faults_carrying_their_class() {
-    for code in [
-        libc::ENOTCONN,
-        libc::ENETDOWN,
-        libc::ENETUNREACH,
-        libc::EHOSTUNREACH,
-        libc::ETIMEDOUT,
-        libc::ECONNRESET,
+fn transport_codes_are_transport_faults_carrying_their_class() {
+    for class in [
+        OsErrorClass::NotConnected,
+        OsErrorClass::NetworkDown,
+        OsErrorClass::NetworkUnreachable,
+        OsErrorClass::HostUnreachable,
+        OsErrorClass::TimedOut,
+        OsErrorClass::ConnectionReset,
+        OsErrorClass::BrokenPipe,
+        OsErrorClass::ConnectionAborted,
     ] {
+        let code = class
+            .host_code()
+            .expect("every transport class has a code on a desktop OS");
         assert_eq!(
             io(code).transport_fault(),
-            Some(TransportFault::OsTransport(OsErrorClass::of_code(code))),
-            "errno {code}"
+            Some(TransportFault::OsTransport(class)),
+            "{class:?} (os error {code})"
         );
     }
-}
-
-/// A write onto a share whose server went away mid-request (the failing
-/// sender's own send broke).
-#[cfg(unix)]
-#[test]
-fn an_epipe_is_a_transport_fault() {
-    assert_eq!(
-        io(libc::EPIPE).transport_fault(),
-        Some(TransportFault::OsTransport(OsErrorClass::BrokenPipe))
-    );
-}
-
-#[cfg(unix)]
-#[test]
-fn an_econnaborted_is_a_transport_fault() {
-    assert_eq!(
-        io(libc::ECONNABORTED).transport_fault(),
-        Some(TransportFault::OsTransport(OsErrorClass::ConnectionAborted))
-    );
 }
 
 /// A cancel is the person's decision, and re-running the work would fight it.

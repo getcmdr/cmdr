@@ -36,7 +36,7 @@ use cmdr_listing as _;
 //noinspection RsUnusedImport
 // Test-only dependencies some partial test builds don't reach.
 #[cfg(test)]
-use {libc as _, tempfile as _, uuid as _};
+use {tempfile as _, uuid as _};
 
 mod authoritative;
 mod cached_listing;

@@ -102,24 +102,6 @@ pub enum ClassOutcome {
     Absent,
 }
 
-impl ClassOutcome {
-    /// The outcome that says more about what the copy lost: a refusal outranks a
-    /// class the destination can't hold, which outranks a kept one.
-    #[cfg_attr(
-        target_family = "wasm",
-        allow(dead_code, reason = "the browser build writes no xattrs")
-    )]
-    pub(super) fn worse(self, other: ClassOutcome) -> ClassOutcome {
-        use ClassOutcome::{Kept, NotApplicable, Refused};
-        match (self, other) {
-            (Refused, _) | (_, Refused) => Refused,
-            (NotApplicable, _) | (_, NotApplicable) => NotApplicable,
-            (Kept, other) | (other, Kept) => other,
-            (a, _) => a,
-        }
-    }
-}
-
 /// Per class, what one apply call did. Returned by every apply function in
 /// place of a `Result`. Each half reports the classes it puts on; the rest read
 /// [`ClassOutcome::Absent`].

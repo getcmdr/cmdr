@@ -32,7 +32,7 @@ Each is what a review of this crate checks first.
 3. The scan runs over a concrete arena inside the crate; every source call is per query, never per row.
 4. One matcher, one exclusion set, one `NameRules` per run: no case folding or normalization derived outside it.
 5. No statics, and no ambient clock, zone, home, platform, or runtime (`clippy.toml` bans the reads; `NameRules::host()`
-   is the one `cfg`, and it's the host's to call).
+   is the one platform pick, made at compile time by its `name_rules/platform/` seam, and it's the host's to call).
 6. `SearchEntry` is 40 bytes, the arena is id-sorted with no id map, and `OptU64` is the only read of size and date.
 7. Every source read error fails the search as `SourceUnreadable` (a live run's `IndexUnreadable`); a scope is a typed
    `ResolvedScope`, never a sentinel id.
@@ -301,8 +301,8 @@ the same query would answer differently depending on whether the drive happened 
 that plan forbids. So both paths call `CompiledQuery::matches`, and the module owns the rules that break silently when
 duplicated: the case-folding resolution (the scope filter and the ranker read it back rather than deriving it again) and
 the Unicode forms the pattern compiles in. Both come from the volume's `NameRules` (`name_rules.rs`), a value the host
-passes in: `NameRules::host()` is the `cfg`-derived desktop answer, and `MACOS` / `LINUX` let a test run either
-platform's rules anywhere (`the_other_platforms_goldens_hold_under_its_rules`).
+passes in: `NameRules::host()` is the desktop answer its `platform/` seam picks, and `MACOS` / `LINUX` / `WINDOWS` let a
+test run any platform's rules anywhere (`the_other_platforms_goldens_hold_under_its_rules`).
 
 It isn't in `cmdr-index` because `index-crate-isolation` forbids that crate from depending on the search side. That
 constraint is also why `Index::cover` hands back `CoveredEntry` batches instead of taking a match callback, and why the

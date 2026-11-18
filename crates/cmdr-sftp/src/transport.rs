@@ -68,6 +68,8 @@ use russh::client::{self, AuthResult, Handler, KeyboardInteractiveAuthResponse};
 use russh::keys::agent::AgentIdentity;
 use russh::keys::{Algorithm, HashAlg, PrivateKeyWithHashAlg, PublicKeyOrCertificate};
 use russh::{Channel, Disconnect};
+
+mod platform;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
@@ -842,7 +844,7 @@ async fn try_agent(
     session: &mut client::Handle<TrustHandler>,
     params: &SftpConnectionParams,
 ) -> Result<Attempt, SftpConnectError> {
-    let Ok(mut agent) = russh::keys::agent::client::AgentClient::connect_env().await else {
+    let Some(mut agent) = platform::connect_agent().await else {
         // No agent running is not a failure; it's a rung that isn't there.
         return Ok(Attempt::NotOffered);
     };

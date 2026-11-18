@@ -411,5 +411,6 @@ pub enum ListingErrorReason {
 #[cfg(test)]
 mod tests;
 
-#[cfg(test)]
+// The characterization tables are macOS's and Linux's errnos.
+#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
 mod errno_tests;

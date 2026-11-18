@@ -73,9 +73,9 @@ fn discover_bare_repo_rejected() {
 fn discover_unborn_head() {
     // Fresh `git init` – HEAD points at refs/heads/main but no commit yet.
     let dir = temp("unborn");
-    // gix::init sets up the same `HEAD -> refs/heads/main` symbolic
+    // The fixture sets up the same `HEAD -> refs/heads/main` symbolic
     // reference; no commit needed for the unborn case.
-    gix::init(&dir).expect("gix::init");
+    drop(Fixture::init(dir.clone()));
     let (handle, root) = discover_repo(&dir).expect("discover");
     let info = repo_info(&handle, &root).unwrap();
     assert!(info.unborn);
@@ -181,9 +181,12 @@ fn a_repo_on_the_startup_disk_keeps_mapping_a_big_packed_refs() {
     let dir = temp("startup_disk_mmap");
     init_repo_with_commit(&dir);
     let (handle, _) = discover_repo(&dir).unwrap();
+    // gix never maps packed-refs on Windows, where a mapping would lock the file (verified on
+    // Windows 10 22H2, gix's default read there, 2026-11-18).
+    let gix_default = if cfg!(windows) { u64::MAX } else { 32 * 1024 };
     assert_eq!(
         packed_refs_mmap_threshold(&handle),
-        32 * 1024,
+        gix_default,
         "gix's own threshold: the startup disk can't go away under a mapping"
     );
     cleanup(&dir);

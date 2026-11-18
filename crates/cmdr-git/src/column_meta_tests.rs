@@ -7,11 +7,9 @@
 
 #![cfg(test)]
 
-use std::os::unix::fs::PermissionsExt;
-
 use crate::path::{Cat, VirtualGitPath, classify};
 use crate::test_fixtures::{
-    Fixture, build_repo_with_branches, build_simple_repo, cleanup, discover_repo, git_cli, temp_dir,
+    Fixture, build_repo_with_branches, build_simple_repo, cleanup, discover_repo, git_cli, make_executable, temp_dir,
 };
 use crate::{log as git_log, stash, submodules, virtual_listing, worktrees};
 use cmdr_fs::git_meta::{GitCountKind, GitEntryMeta};
@@ -296,7 +294,7 @@ fn snapshot_dirs_carry_recursive_bytes() {
     // inside it and `commit_files` carries the tree forward.
     std::fs::create_dir_all(dir.join("scripts")).unwrap();
     std::fs::write(dir.join("scripts").join("a.sh"), "#!/bin/sh\necho hi\n").unwrap();
-    std::fs::set_permissions(dir.join("scripts").join("a.sh"), std::fs::Permissions::from_mode(0o755)).unwrap();
+    make_executable(&dir.join("scripts").join("a.sh"));
     std::fs::write(dir.join("scripts").join("b.sh"), "echo bye\n").unwrap();
     // Two-file commit so `recursive_size` rolls up to non-zero.
     f.commit_files(

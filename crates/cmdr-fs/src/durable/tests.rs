@@ -7,12 +7,19 @@ fn barriers_for_one_device() -> u64 {
     u64::from(NEEDS_DEVICE_BARRIER)
 }
 
+/// A written file's handle the way a writer holds it: Windows' `FlushFileBuffers`
+/// refuses a read-only one (verified on Windows 10 22H2, `cargo test -p cmdr-fs`
+/// on the builder, 2026-11-18: `Access is denied`).
+fn writer(path: &Path) -> File {
+    File::options().write(true).open(path).unwrap()
+}
+
 /// Writes and hands `count` small files in `dir` to the drive, noting each.
 fn write_and_note(barriers: &DeviceBarriers, dir: &Path, count: usize) {
     for i in 0..count {
         let path = dir.join(format!("f{i:04}"));
         std::fs::write(&path, b"small").unwrap();
-        let file = File::open(&path).unwrap();
+        let file = writer(&path);
         sync_to_drive(&file).unwrap();
         barriers.note_synced(&file, &path);
     }
@@ -126,7 +133,7 @@ fn write_and_note_written(barriers: &DeviceBarriers, dir: &Path, count: usize) -
         .map(|i| {
             let path = dir.join(format!("w{i:04}"));
             std::fs::write(&path, b"small").unwrap();
-            let file = File::open(&path).unwrap();
+            let file = writer(&path);
             barriers.note_written(&file, &path).unwrap();
             path
         })
@@ -221,7 +228,7 @@ fn hand_over_syncs_a_written_file_now() {
 fn a_sync_failure_in_an_interval_pass_fails_the_next_flush() {
     let dir = TestDir::new("durable-late-failure");
     let barriers = DeviceBarriers::with_interval(Duration::ZERO);
-    barriers.script_syncs(|_| Some(io::Error::from_raw_os_error(libc::EIO)));
+    barriers.script_syncs(|_| OsErrorClass::Io.host_code().map(io::Error::from_raw_os_error));
     let written = write_and_note_written(&barriers, &dir, 1);
     assert_eq!(barriers.synced_paths(), written, "the interval pass ran at the note");
 
@@ -257,14 +264,15 @@ fn hand_over_written_syncs_now_and_the_flush_answers_its_failure() {
 fn an_inline_sync_failure_answers_the_note() {
     let dir = TestDir::new("durable-inline-failure");
     let barriers = DeviceBarriers::with_interval(Duration::MAX);
-    barriers.script_syncs(|_| Some(io::Error::from_raw_os_error(libc::EIO)));
+    barriers.script_syncs(|_| OsErrorClass::Io.host_code().map(io::Error::from_raw_os_error));
     let path = dir.join("f");
     std::fs::write(&path, b"x").unwrap();
-    let file = File::open(&path).unwrap();
+    let file = writer(&path);
     assert!(barriers.note_written(&file, &path).is_err());
 }
 
 /// The unsupported class is "no barrier to offer"; real I/O failures aren't.
+#[cfg(unix)]
 #[test]
 fn only_the_unsupported_class_counts_as_no_barrier() {
     // By raw errno, since a class can have no code of its own on a host:

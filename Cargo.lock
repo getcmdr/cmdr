@@ -1639,6 +1639,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-time",
+ "windows-sys 0.61.2",
  "xattr",
 ]
 
@@ -1733,7 +1734,6 @@ dependencies = [
  "cmdr-listing",
  "cmdr-sort",
  "futures-util",
- "libc",
  "log",
  "nucleo-matcher",
  "serde",

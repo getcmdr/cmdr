@@ -47,7 +47,7 @@
 // its own test target, which `unused_crate_dependencies` reports.
 #[cfg(test)]
 use cmdr_smb as _;
-#[cfg(test)]
+#[cfg(all(test, unix))]
 use xattr as _;
 
 pub mod connection;

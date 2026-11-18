@@ -4,8 +4,8 @@ Cmdr's SFTP backend: one SSH connection and one SFTP channel per volume. No `tau
 
 ## Module map
 
-- `transport.rs` (the ONLY module naming `russh`), `trust.rs` + `known_hosts.rs` (host-key decisions), `auth.rs` (the
-  rung ladder), `extensions.rs`, `errors.rs`.
+- `transport.rs` (the ONLY module naming `russh`, and its agent seam), `trust.rs` + `known_hosts.rs` (host-key
+  decisions), `auth.rs` (the rung ladder), `extensions.rs`, `errors.rs`.
 - `volume/`: the `Volume` impl by job: `paths`, `query`, `streams`, `writes`, `copy`, `scan`, `mutation`, `state` +
   `reconnect`, `mapping`, `volume_impl`, `testing`.
 - **The scan, `mkdir -p`, and every listing-cache patch are `cmdr_fs::volume`'s** (`ScanSource`, `MakesDirectories`,

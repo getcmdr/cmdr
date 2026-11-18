@@ -149,6 +149,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
     fn a_shown_path_has_every_pick_taken_out() {
         let shown_of = |path: &Path| shown(path.to_str().expect("UTF-8")).into_owned();
 
@@ -169,6 +170,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
     fn text_holding_twin_paths_reads_with_the_plain_paths() {
         let first = row("/DCIM", 1, "a.jpg");
         let second = row("/DCIM", 2, "a.jpg");

@@ -60,23 +60,12 @@ pub enum ParentOpening {
 /// dropping it, puts back its mode, ACL, and flags.
 #[derive(Debug)]
 pub struct OpenedFolder {
-    path: std::path::PathBuf,
-    restore: Option<LandedMetadata>,
+    // The arm that opens folders (`platform/unix.rs`) builds it, so the fields reach that far.
+    pub(in crate::metadata) path: std::path::PathBuf,
+    pub(in crate::metadata) restore: Option<LandedMetadata>,
 }
 
 impl OpenedFolder {
-    /// An opened `path`, which `restore` puts back on close.
-    #[cfg_attr(
-        target_family = "wasm",
-        expect(dead_code, reason = "the browser build has no folder to open")
-    )]
-    pub(super) fn new(path: std::path::PathBuf, restore: LandedMetadata) -> Self {
-        Self {
-            path,
-            restore: Some(restore),
-        }
-    }
-
     /// Puts the folder's own mode, ACL, and flags back, in the order
     /// [`super::apply_landed`] keeps.
     pub fn close(mut self) -> super::MetadataReport {

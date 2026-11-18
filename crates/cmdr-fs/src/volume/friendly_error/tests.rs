@@ -632,7 +632,10 @@ fn a_connected_servers_refusal_is_the_servers() {
     for (path, raw_os_error) in [
         ("sftp://test_user_1@testnas.local:22/etc/ssl", None),
         ("webdav://test_user_1@testnas.local:443/private", None),
-        ("nfs://testnas.local:2049/%2Fexport/private", Some(libc::EACCES)),
+        (
+            "nfs://testnas.local:2049/%2Fexport/private",
+            crate::os_error::OsErrorClass::AccessDenied.host_code(),
+        ),
     ] {
         let err = VolumeError::PermissionDenied {
             path: path.to_string(),

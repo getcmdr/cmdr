@@ -9,6 +9,12 @@
 use crate::status::{EntryStatusCode, list_status};
 use crate::test_fixtures::{Fixture, cleanup, discover_repo, temp_dir};
 
+/// `path` spelled for a git config value: forward slashes, since a backslash starts an escape
+/// there and a Windows path's `\U` makes the whole config unreadable.
+fn config_path(path: &std::path::Path) -> String {
+    path.display().to_string().replace('\\', "/")
+}
+
 #[test]
 fn list_status_returns_one_per_status() {
     let dir = temp_dir("status", "kinds");
@@ -88,7 +94,7 @@ fn a_submodule_with_edits_is_modified_without_running_its_filter_driver() {
     let mut text = std::fs::read_to_string(&config).unwrap();
     text.push_str(&format!(
         "[filter \"evil\"]\n\tclean = \"touch '{0}'; cat\"\n\tprocess = \"touch '{0}'\"\n",
-        marker.display()
+        config_path(&marker)
     ));
     std::fs::write(&config, text).unwrap();
     std::fs::write(sub.join(".gitattributes"), "* filter=evil\n").unwrap();
@@ -126,7 +132,7 @@ fn status_never_runs_a_repos_filter_driver() {
     let mut text = std::fs::read_to_string(&config).unwrap();
     text.push_str(&format!(
         "[filter \"evil\"]\n\tclean = \"touch '{0}'; cat\"\n\tprocess = \"touch '{0}'\"\n",
-        marker.display()
+        config_path(&marker)
     ));
     std::fs::write(&config, text).unwrap();
     std::fs::write(dir.join(".gitattributes"), "* filter=evil\n").unwrap();

@@ -90,6 +90,7 @@ mod tests {
     use crate::volume::VolumeError;
 
     #[test]
+    #[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
     fn a_plain_name_passes_and_joins_as_a_direct_child() {
         for good in ["photo.jpg", "a:b", "back\\slash", "...", ".hidden", "with space", "ünï"] {
             let name = ChildName::new(good).unwrap_or_else(|e| panic!("{good:?} refused: {e}"));

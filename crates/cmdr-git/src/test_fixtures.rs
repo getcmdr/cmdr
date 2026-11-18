@@ -37,7 +37,6 @@
     reason = "Helpers are intentionally shared across multiple *_tests.rs files; not every file uses every helper."
 )]
 
-use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -70,6 +69,20 @@ pub const TEST_AUTHOR_EMAIL: &str = "test@cmdr.local";
 /// Default time used by [`Fixture::commit_file`]. Per-test code that needs
 /// distinct timestamps calls [`Fixture::commit_file_at`] instead.
 const DEFAULT_COMMIT_SECS: u64 = 1_700_000_000;
+
+/// Gives `path` the executable bits (`0o755`), so a worktree file matches a tree entry
+/// committed as executable. Through `cmdr_fs`'s metadata seam: Windows has no mode to set,
+/// and git there ignores the bit (`core.filemode` is false), so it does nothing there.
+pub fn make_executable(path: &Path) {
+    let set = cmdr_fs::metadata::LandedMetadata::default().with_mode(0o755);
+    let report = cmdr_fs::metadata::apply_landed(path, &set);
+    assert_ne!(
+        report.mode,
+        cmdr_fs::metadata::ClassOutcome::Refused,
+        "chmod {}",
+        path.display()
+    );
+}
 
 /// Creates a fresh per-process temp directory under `std::env::temp_dir()`.
 /// The path includes the module prefix, the supplied name, the PID, and a
@@ -159,8 +172,8 @@ pub struct Fixture {
 
 impl Fixture {
     /// Initialize an empty gix repo at `dir`. Equivalent to `git init
-    /// -b main`. gix's default branch is already `main` (deviation
-    /// from upstream git), so no `init.defaultBranch` ceremony.
+    /// -b main`: HEAD is pinned to `main` whatever `init.defaultBranch` the
+    /// machine sets.
     ///
     /// We also write `user.name` / `user.email` into the repo's local
     /// `.git/config` AND re-open the repo so the cached config snapshot
@@ -176,6 +189,10 @@ impl Fixture {
     /// fallback worked there; Docker images don't, which surfaced the bug.
     pub fn init(dir: PathBuf) -> Self {
         let _initial = gix::init(&dir).expect("gix::init");
+        // gix honors `init.defaultBranch` from the system config, which Git for Windows'
+        // installer writes (`master` on the Windows builder, 2026-11-18), so HEAD is pinned
+        // to `main` while the repo has no refs yet.
+        std::fs::write(dir.join(".git").join("HEAD"), "ref: refs/heads/main\n").expect("pin HEAD to main");
         Self::seed_committer_config(&dir);
         let repo = gix::open(&dir).expect("gix::open (post-config)");
         Self {
@@ -412,11 +429,7 @@ pub fn build_repo_with_a_tag_and_a_slashed_branch(prefix: &str) -> PathBuf {
     // which is also what a user would see in a checked-out working tree.
     std::fs::create_dir_all(dir.join("scripts")).expect("make scripts/");
     std::fs::write(dir.join("scripts").join("run.sh"), "#!/bin/sh\necho hi\n").expect("write run.sh");
-    std::fs::set_permissions(
-        dir.join("scripts").join("run.sh"),
-        std::fs::Permissions::from_mode(0o755),
-    )
-    .expect("chmod run.sh");
+    make_executable(&dir.join("scripts").join("run.sh"));
 
     fixture.commit_files_with_modes(
         &[

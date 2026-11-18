@@ -95,6 +95,7 @@ fn list_commits_yields_entries_with_short_sha_and_subject() {
 }
 
 #[test]
+#[cfg_attr(target_os = "windows", ignore = "app paths go through std::path on Windows: #1225")]
 fn commit_tree_browsing_via_short_sha() {
     let (dir, _f) = build_simple_repo("category", 2);
     let (handle, root) = discover_repo(&dir).unwrap();

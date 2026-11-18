@@ -309,7 +309,7 @@ impl DeviceBarriers {
     /// crash can leave neither version. A failure answers here.
     pub fn hand_over(&self, path: &Path) -> io::Result<()> {
         self.forget(path);
-        self.hand_over_file(&File::open(path)?, path)
+        self.hand_over_file(&platform::open_to_sync(path)?, path)
     }
 
     /// Hands the open `file` (at `path`) to its drive now
@@ -525,7 +525,7 @@ impl DeviceBarriers {
     fn sync_written(&self, written: HashMap<PathBuf, Option<DeviceId>>, devices: &HashMap<Option<DeviceId>, Holder>) {
         let mut gone: Vec<(Option<DeviceId>, PathBuf)> = Vec::new();
         for (path, device) in written {
-            match File::open(&path).and_then(|file| self.sync_handle(&file, &path)) {
+            match platform::open_to_sync(&path).and_then(|file| self.sync_handle(&file, &path)) {
                 Ok(()) => {}
                 Err(e) if e.kind() == io::ErrorKind::NotFound => {
                     if !gone.iter().any(|(seen, _)| *seen == device) {
