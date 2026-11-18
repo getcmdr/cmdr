@@ -14,7 +14,7 @@
     },
     "apps/desktop/src-tauri/src/menu/context_menu_facts.rs ↔ crates/cmdr-about/src/gather.rs": {
       "lines": 19,
-      "reason": "TODO: #1178. `cmdr_about::gather` is the context menu's grace-then-late engine made generic over the job key and the answer (`crates/cmdr-about/DETAILS.md` § The gathering engine), so `deliver` and `collect` (the pending removal, the `ready` / `late` switch under the delivery lock, the deadline wait loop) match line for line. Move the menu onto one shared engine so a grace, cancel, or late-answer fix lands once: either lift `gather.rs` into a small tauri-free crate both depend on (the menu shouldn't depend on the fact-card crate for a threading primitive), or have `context_menu_facts.rs` key the generic `Gathering<FactKind, Fact>` by its fact kind and keep only `FactsRequest`, `GRACE`, its pool config, and `Slow<T>`. The menu's tests keep running on plain threads."
+      "reason": "TODO: #1178. `cmdr_about::gather` is the context menu's grace-then-late engine made generic over the job key and the answer (`crates/cmdr-about/DETAILS.md` § The gathering engine), so `deliver` and `collect` (the pending removal, the `ready` / `late` switch under the delivery lock, the deadline wait loop) match line for line. Move the menu onto one shared engine so a grace, cancel, or late-answer fix lands once: either lift `gather.rs` into a small tauri-free crate both depend on (the menu shouldn't depend on the fact-card crate for a threading primitive), or have `context_menu_facts.rs` key the generic `Gathering\u003cFactKind, Fact\u003e` by its fact kind and keep only `FactsRequest`, `GRACE`, its pool config, and `Slow\u003cT\u003e`. The menu's tests keep running on plain threads."
     },
     "apps/desktop/src-tauri/src/network/os_mount/platform/linux/smbclient.rs ↔ apps/desktop/src-tauri/src/network/os_mount/platform/smbutil_output.rs": {
       "lines": 21,
@@ -48,7 +48,15 @@
       "lines": 16,
       "reason": "`OperationVolumes` trait-method signatures with constant bodies: the browser demo's `DemoVolumes` and the engine's test-only `NoOperationVolumes` both answer \"no archive or git-portal routes\" (`routes_over_its_parent`, `path_is_inside_archive`, `path_crosses_archive_boundary`, `forget_archive_index`). Folding them into trait defaults would let a host that DOES serve archives (the desktop's) compile without answering, and silently treat an edit inside a `.zip` as a plain path, so each host spells its answer out. Revisit if a third archive-less host appears: then a named `NoArchiveRoutes` helper the host delegates to pays for itself."
     },
-    "crates/cmdr-local/src/local_posix.rs ↔ crates/cmdr-smb/src/volume/volume_impl.rs": {
+    "crates/cmdr-fs/src/metadata/platform/wasm.rs ↔ crates/cmdr-fs/src/metadata/platform/windows.rs": {
+      "lines": 51,
+      "reason": "TODO: windows-port plan tasks 35 and 36. Windows' metadata arm is honest stubs today (no mode, xattrs, ACL, flags, or removal blockers: `NotApplicable`, `Free`, empty), which read line for line like the browser build's arm, whose answers are final. Each stub gets its real Windows body in those tasks (the read-only attribute, alternate data streams, the DACL, Hidden and Locked as attributes), and the pair stops matching one class at a time. Sharing a \"no metadata\" module now would tie a final answer to a placeholder and be undone class by class."
+    },
+    "crates/cmdr-local/src/platform/local_posix.rs ↔ crates/cmdr-local/src/platform/local_windows.rs": {
+      "lines": 18,
+      "reason": "`Volume` trait boilerplate between the two local siblings: `rerooted` building a new instance of its own type, `as_any`, and the `list_directory` signature, whose body is the shared `reading::list_reporting_progress`. Same trade as the backend `volume_impl.rs` pairs: a macro emitting trait methods costs more lines than it removes and hides them from `codegraph_search` and go-to-definition."
+    },
+    "crates/cmdr-local/src/platform/local_posix.rs ↔ crates/cmdr-smb/src/volume/volume_impl.rs": {
       "lines": 16,
       "reason": "`Volume` trait boilerplate: the `continues_writes() == true` flag and the `continue_write_from_stream` one-line delegation, the same signature every backend that carries a write on repeats. Same trade as the backend `volume_impl.rs` pairs: a macro emitting trait methods costs more lines than it removes and hides them from `codegraph_search` and go-to-definition. Revisit when either body stops being a one-line delegation."
     },

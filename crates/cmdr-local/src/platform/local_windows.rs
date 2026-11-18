@@ -14,30 +14,21 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
-use std::time::Duration;
 
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::host::VolumeHost;
-use cmdr_fs::volume::listing_progress::report_while;
 use cmdr_fs::volume::{
     EntryKind, ListingProgress, MountClass, MutationEvent, Presence, ScanConflict, SourceItemInfo, SpaceInfo,
     SupportedDates, Volume, VolumeError,
 };
 use tokio::task::spawn_blocking;
 
-use crate::reading::{ListingTally, get_single_entry, list_directory_core_with_tally, supported_dates_of};
+use crate::reading::{ListingTally, get_single_entry, list_reporting_progress, supported_dates_of};
 use crate::rename_volume_error;
 use crate::space::{get_space_info_for_path, live_space_info_for_path};
 use paths::native;
 pub use rename::rename_local_exclusive;
-
-/// How often a listing samples its running tally: the same cadence as `LocalPosixVolume`'s.
-const PROGRESS_SAMPLE_INTERVAL: Duration = if crate::TEST_FAST_PATHS {
-    Duration::from_millis(1)
-} else {
-    Duration::from_millis(200)
-};
 
 /// A volume backed by a local Windows filesystem (NTFS, ReFS, FAT, exFAT), rooted at a drive
 /// or a UNC share. It takes and hands back app paths (`C:/Users/test_user_1`), never `\`.
@@ -125,23 +116,17 @@ impl Volume for LocalWindowsVolume {
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         let abs_path = self.resolve(path);
         let is_volume_root = abs_path == self.root;
-        Box::pin(async move {
-            // The same tally bridge as `LocalPosixVolume::list_directory`: the callback can't
-            // ride into `spawn_blocking`, so the lister publishes and this side samples.
-            #[cfg(any(test, feature = "testing"))]
-            let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
-            #[cfg(not(any(test, feature = "testing")))]
-            let tally = Arc::new(ListingTally::default());
-            let tally_for_listing = Arc::clone(&tally);
-            let host = self.host.clone();
-            let listing = spawn_blocking(move || {
-                list_directory_core_with_tally(&abs_path, &tally_for_listing, is_volume_root, host.listings())
-                    .map_err(|e| VolumeError::from_io_at(&e, &abs_path))
-            });
-            report_while(listing, PROGRESS_SAMPLE_INTERVAL, || tally.snapshot(), on_progress)
-                .await
-                .expect("spawn_blocking listing closure doesn't panic and the task is uncancelable")
-        })
+        #[cfg(any(test, feature = "testing"))]
+        let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
+        #[cfg(not(any(test, feature = "testing")))]
+        let tally = Arc::new(ListingTally::default());
+        Box::pin(list_reporting_progress(
+            abs_path,
+            is_volume_root,
+            self.host.clone(),
+            tally,
+            on_progress,
+        ))
     }
 
     fn get_metadata<'a>(

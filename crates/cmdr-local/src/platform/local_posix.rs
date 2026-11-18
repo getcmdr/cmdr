@@ -12,7 +12,7 @@ mod scan;
 mod streams;
 mod xattrs;
 
-use crate::reading::{ListingTally, get_single_entry, list_directory_core_with_tally, supported_dates_of};
+use crate::reading::{ListingTally, get_single_entry, list_reporting_progress, supported_dates_of};
 use crate::rename_volume_error;
 use crate::space::{get_space_info_for_path, live_space_info_for_path};
 use cmdr_fs::entry::FileEntry;
@@ -23,7 +23,6 @@ use cmdr_fs::metadata::{CarriedMetadata, MetadataCaps, MetadataClasses, Metadata
 use cmdr_fs::volume::MountClass;
 use cmdr_fs::volume::Presence;
 use cmdr_fs::volume::host::VolumeHost;
-use cmdr_fs::volume::listing_progress::report_while;
 use cmdr_fs::volume::{
     CopyScanResult, ScanConflict, SourceItemInfo, SpaceInfo, Volume, VolumeError, VolumeReadStream, WatchCoverage,
 };
@@ -40,18 +39,6 @@ use std::time::Duration;
 // An ambient `spawn_blocking`, not the host's runtime: a `Volume` method runs on its
 // caller's. `DETAILS.md` § "Decisions".
 use tokio::task::spawn_blocking;
-
-/// How often a local listing samples its running tally and reports progress.
-///
-/// Sets the cadence of the pane's "Loaded N files..." readout: fast enough that a
-/// multi-second folder visibly climbs, slow enough that the number stays readable.
-/// Shortened in a test build (`crate::TEST_FAST_PATHS`) so a scratch dir
-/// produces ticks without needing to be huge.
-const PROGRESS_SAMPLE_INTERVAL: Duration = if crate::TEST_FAST_PATHS {
-    Duration::from_millis(1)
-} else {
-    Duration::from_millis(200)
-};
 
 /// The POSIX arm of `crate::rename_local_exclusive`: the kernel flag, degrading where a
 /// filesystem has none.
@@ -355,26 +342,17 @@ impl Volume for LocalPosixVolume {
         // somewhere under one: `/.hidden` (`read_dot_hidden_names`) means nothing
         // anywhere else, so this is threaded through rather than re-derived below.
         let is_volume_root = abs_path == self.root;
-        Box::pin(async move {
-            // `on_progress` is `Sync` but not `Send`, so it can't ride into `spawn_blocking`
-            // with the lister. Instead the lister publishes into a shared `ListingTally` and
-            // this side samples it on a timer, leaving the callback on the async task that
-            // owns it. Without this the pane sits on "Opening folder…" for a big folder's
-            // whole read. `DETAILS.md` § "The local reader".
-            #[cfg(any(test, feature = "testing"))]
-            let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
-            #[cfg(not(any(test, feature = "testing")))]
-            let tally = Arc::new(ListingTally::default());
-            let tally_for_listing = Arc::clone(&tally);
-            let host = self.host.clone();
-            let listing = spawn_blocking(move || {
-                list_directory_core_with_tally(&abs_path, &tally_for_listing, is_volume_root, host.listings())
-                    .map_err(|e| VolumeError::from_io_at(&e, &abs_path))
-            });
-            report_while(listing, PROGRESS_SAMPLE_INTERVAL, || tally.snapshot(), on_progress)
-                .await
-                .expect("spawn_blocking listing closure doesn't panic and the task is uncancelable")
-        })
+        #[cfg(any(test, feature = "testing"))]
+        let tally = Arc::new(ListingTally::with_hook(self.listing_hook.clone()));
+        #[cfg(not(any(test, feature = "testing")))]
+        let tally = Arc::new(ListingTally::default());
+        Box::pin(list_reporting_progress(
+            abs_path,
+            is_volume_root,
+            self.host.clone(),
+            tally,
+            on_progress,
+        ))
     }
 
     fn list_directory_as_source<'a>(

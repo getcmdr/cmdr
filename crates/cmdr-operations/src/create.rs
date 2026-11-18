@@ -387,6 +387,33 @@ pub(super) fn instant_descriptor(
     }
 }
 
+/// The checks a new folder or file passes before anything touches a volume, shared by
+/// `create_directory_core_on` and `create_file_core_on`: a name at all, a parent outside any
+/// archive, and a name the destination's filesystem takes. Answers the volume id (`root` when
+/// none was named).
+///
+/// The archive refusal is a defensive fallback: the managed wrappers route an archive-crossing
+/// parent to `route_archive_create` BEFORE reaching core, so in production it never fires. It
+/// guards a direct `*_core` caller (tests): core's plain-FS create can't reach inside a `.zip`,
+/// so it refuses rather than attempting a bogus filesystem write. It asks `path_crosses` (NOT
+/// `path_is_inside`) so a `.zip` file AS the parent (a child at the archive root) is caught too.
+async fn refuse_unless_creatable(
+    host: &EngineHost,
+    volume_id: Option<String>,
+    parent_path: &str,
+    name: &str,
+) -> Result<String, MutationError> {
+    if name.is_empty() {
+        return Err(MutationError::NameEmpty);
+    }
+    if cmdr_archive::path_crosses_archive_boundary(Path::new(parent_path)) {
+        return Err(MutationError::ArchiveNotEditable);
+    }
+    let volume_id = volume_id.unwrap_or_else(|| "root".to_string());
+    crate::name_rules::check_new_name(host, &volume_id, Path::new(parent_path), name).await?;
+    Ok(volume_id)
+}
+
 /// Core mkdir logic: validates the name, resolves the volume, registers the
 /// downloads-watcher ignore, and issues the `create_directory` syscall. Returns
 /// `(new_path, parent_path)` (the parent is the already-expanded path passed in).
@@ -399,38 +426,42 @@ pub async fn create_directory_core_on(
     parent_path: &str,
     name: &str,
 ) -> Result<(PathBuf, String), MutationError> {
-    if name.is_empty() {
-        return Err(MutationError::NameEmpty);
-    }
+    create_entry_core_on(host, volume_id, parent_path, name, CreatedKind::Folder).await
+}
 
-    // Defensive fallback: the managed wrapper (`create_directory_managed`) routes
-    // an archive-crossing parent to `route_archive_create` BEFORE reaching core,
-    // so in production this branch never fires. It stays as a guard for a direct
-    // `*_core` caller (tests): core's plain-FS create can't reach inside a `.zip`,
-    // so it refuses rather than attempting a bogus filesystem write. Uses
-    // `path_crosses` (NOT `path_is_inside`) so a `.zip` file AS the parent (a child
-    // at the archive root) is caught too.
-    if cmdr_archive::path_crosses_archive_boundary(Path::new(parent_path)) {
-        return Err(MutationError::ArchiveNotEditable);
-    }
+/// What a create makes.
+#[derive(Clone, Copy)]
+enum CreatedKind {
+    Folder,
+    EmptyFile,
+}
 
-    let volume_id = volume_id.unwrap_or_else(|| "root".to_string());
+/// The one body behind `create_directory_core_on` and `create_file_core_on`, which differ only
+/// in the volume call that makes the entry.
+async fn create_entry_core_on(
+    host: &EngineHost,
+    volume_id: Option<String>,
+    parent_path: &str,
+    name: &str,
+    kind: CreatedKind,
+) -> Result<(PathBuf, String), MutationError> {
+    let volume_id = refuse_unless_creatable(host, volume_id, parent_path, name).await?;
     let expanded_path = parent_path.to_string();
-    crate::name_rules::check_new_name(host, &volume_id, Path::new(parent_path), name).await?;
 
     // Try to use Volume abstraction. Plain `get`: the archive gates above sent an
     // in-zip parent to the archive-edit driver.
     if let Some(volume) = host.volumes().get(&volume_id) {
         let new_path = new_entry_path(host, volume.as_ref(), &volume_id, &expanded_path, name).await?;
 
-        // Register the new directory path with the downloads watcher's
-        // ignore set; no-ops for paths outside ~/Downloads.
+        // Register the new path with the downloads watcher's ignore set; no-ops for paths
+        // outside ~/Downloads.
         host.announce(&new_path);
 
-        volume
-            .create_directory(&new_path)
-            .await
-            .map_err(|e| named_conflict_or_volume(e, name))?;
+        let created = match kind {
+            CreatedKind::Folder => volume.create_directory(&new_path).await,
+            CreatedKind::EmptyFile => volume.create_file(&new_path, b"").await,
+        };
+        created.map_err(|e| named_conflict_or_volume(e, name))?;
 
         return Ok((new_path, expanded_path));
     }
@@ -438,9 +469,9 @@ pub async fn create_directory_core_on(
     // "root" and every mounted volume is always registered in `VolumeManager`,
     // so reaching here means a phone or saved server nobody connected yet, or a
     // volume unregistered out from under us (an unmount race). Error out instead
-    // of falling back to an untimed synchronous `std::fs::create_dir` on the async
-    // executor, which would violate this module's "every FS-touching command is
-    // timed" contract on a hung mount.
+    // of falling back to an untimed synchronous `std::fs::create_dir` or
+    // `File::create_new` on the async executor, which would violate this module's
+    // "every FS-touching command is timed" contract on a hung mount.
     Err(super::mutation_error::unregistered_volume_refusal(host.volumes(), volume_id, Path::new(parent_path)).await)
 }
 
@@ -493,44 +524,7 @@ pub(crate) async fn create_file_core_on(
     parent_path: &str,
     name: &str,
 ) -> Result<(PathBuf, String), MutationError> {
-    if name.is_empty() {
-        return Err(MutationError::NameEmpty);
-    }
-
-    // Defensive fallback, same as `create_directory_core_on`: the managed wrapper
-    // (`create_file_managed`) routes an archive-crossing parent to
-    // `route_archive_create` before reaching core, so this branch is unreachable
-    // in production. It guards a direct `*_core` caller (tests) from a bogus
-    // plain-FS write into a `.zip`. `path_crosses` also catches a `.zip`-file parent.
-    if cmdr_archive::path_crosses_archive_boundary(Path::new(parent_path)) {
-        return Err(MutationError::ArchiveNotEditable);
-    }
-
-    let volume_id = volume_id.unwrap_or_else(|| "root".to_string());
-    let expanded_path = parent_path.to_string();
-    crate::name_rules::check_new_name(host, &volume_id, Path::new(parent_path), name).await?;
-
-    // Try to use Volume abstraction. Plain `get`: the archive gates above sent an
-    // in-zip parent to the archive-edit driver.
-    if let Some(volume) = host.volumes().get(&volume_id) {
-        let new_path = new_entry_path(host, volume.as_ref(), &volume_id, &expanded_path, name).await?;
-
-        // Register the new file path with the downloads watcher's ignore
-        // set; no-ops for paths outside ~/Downloads.
-        host.announce(&new_path);
-
-        volume
-            .create_file(&new_path, b"")
-            .await
-            .map_err(|e| named_conflict_or_volume(e, name))?;
-
-        return Ok((new_path, expanded_path));
-    }
-
-    // See `create_directory_core_on`: an unregistered volume is one nobody connected
-    // or an unmount race; error out instead of an untimed
-    // `std::fs::File::create_new` fallback.
-    Err(super::mutation_error::unregistered_volume_refusal(host.volumes(), volume_id, Path::new(parent_path)).await)
+    create_entry_core_on(host, volume_id, parent_path, name, CreatedKind::EmptyFile).await
 }
 
 /// Returns true if a synthetic entry diff should be emitted for this volume.

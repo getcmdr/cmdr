@@ -228,6 +228,8 @@ var rustEmbeddedInputs = []string{
 	"apps/desktop/src-tauri/Info.plist",
 	"apps/website/public/mdm/**",
 	"apps/website/src/lib/trust-mdm.ts",
+	// `updater/manifest.rs` reads the release writer's own output, so the two sides share one fixture.
+	"scripts/release-assets/testdata/v0.61.0/latest.json",
 	"crates/cmdr-menu/src/bar.rs",
 	"crates/cmdr-menu/src/ids.rs",
 	// `cmdr-menu`'s `bar.rs` embeds the keys the bar leaves to the page, which the frontend writes.

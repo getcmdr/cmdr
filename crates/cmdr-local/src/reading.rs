@@ -15,15 +15,19 @@ mod platform;
 
 use std::collections::HashSet;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::time::Duration;
 
 use cmdr_fs::benchmark;
 use cmdr_fs::entry::{FileEntry, is_hidden_by_name};
 use cmdr_fs::file_identity::{FileId, link_count};
 use cmdr_fs::log_private::LogPrivate;
+use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::host::listings::ListingHost;
-use cmdr_fs::volume::{ListingProgress, SupportedDates};
+use cmdr_fs::volume::listing_progress::report_while;
+use cmdr_fs::volume::{ListingProgress, SupportedDates, VolumeError};
 
 /// Reads a volume root's `/.hidden` file (Finder's legacy per-volume hide list,
 /// still honored today) into the set of names it hides in that one directory.
@@ -71,6 +75,42 @@ pub(crate) fn list_directory_core_with_tally(
     listings: &dyn ListingHost,
 ) -> Result<Vec<FileEntry>, std::io::Error> {
     list_directory_core_impl(path, Some(tally), is_volume_root, listings, Pick::ByFilesystem)
+}
+
+/// How often a local listing samples its running tally and reports progress.
+///
+/// Sets the cadence of the pane's "Loaded N files..." readout: fast enough that a
+/// multi-second folder visibly climbs, slow enough that the number stays readable.
+/// Shortened in a test build (`crate::TEST_FAST_PATHS`) so a scratch dir
+/// produces ticks without needing to be huge.
+const PROGRESS_SAMPLE_INTERVAL: Duration = if crate::TEST_FAST_PATHS {
+    Duration::from_millis(1)
+} else {
+    Duration::from_millis(200)
+};
+
+/// The body of both local volumes' `list_directory`: lists `abs_path` on a blocking thread
+/// and reports its progress meanwhile.
+///
+/// `on_progress` is `Sync` but not `Send`, so it can't ride into `spawn_blocking` with the
+/// lister. Instead the lister publishes into `tally` and this side samples it on a timer,
+/// leaving the callback on the async task that owns it. Without this the pane sits on
+/// "Opening folder…" for a big folder's whole read. `DETAILS.md` § "The local reader".
+pub(crate) async fn list_reporting_progress(
+    abs_path: PathBuf,
+    is_volume_root: bool,
+    host: VolumeHost,
+    tally: Arc<ListingTally>,
+    on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
+) -> Result<Vec<FileEntry>, VolumeError> {
+    let tally_for_listing = Arc::clone(&tally);
+    let listing = tokio::task::spawn_blocking(move || {
+        list_directory_core_with_tally(&abs_path, &tally_for_listing, is_volume_root, host.listings())
+            .map_err(|e| VolumeError::from_io_at(&e, &abs_path))
+    });
+    report_while(listing, PROGRESS_SAMPLE_INTERVAL, || tally.snapshot(), on_progress)
+        .await
+        .expect("spawn_blocking listing closure doesn't panic and the task is uncancelable")
 }
 
 /// Which lister a test or the listing benchmark forces, where production picks
@@ -155,7 +195,7 @@ pub(crate) struct ListingTally {
 
 /// See [`ListingTally`]'s `after_record`.
 #[cfg(any(test, feature = "testing"))]
-pub type ListingHook = std::sync::Arc<dyn Fn() + Send + Sync>;
+pub type ListingHook = Arc<dyn Fn() + Send + Sync>;
 
 impl ListingTally {
     /// A tally that calls `hook` after each entry it counts.
