@@ -2583,6 +2583,8 @@ mod listing_progress_test;
 #[cfg(test)]
 mod password_locked_test;
 #[cfg(test)]
+mod path_arithmetic_pin_test;
+#[cfg(test)]
 mod read_window_test;
 #[cfg(test)]
 mod retirement_test;
