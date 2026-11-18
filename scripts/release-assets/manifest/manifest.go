@@ -253,6 +253,23 @@ func (r Release) Subjects(sbom File) []File {
 	})
 }
 
+// updatePayloadProblems checks an update payload's own rules, noting its key in `keys` (the
+// updater keys seen so far).
+func updatePayloadProblems(f File, keys map[string]bool) []string {
+	var problems []string
+	if keys[f.UpdaterKey] {
+		problems = append(problems, fmt.Sprintf("updater key %s is on two files", f.UpdaterKey))
+	}
+	keys[f.UpdaterKey] = true
+	if !slices.Contains(updaterKeys(f.OS, f.Arch), f.UpdaterKey) {
+		problems = append(problems, fmt.Sprintf("%s has updater key %s, which no %s %s install reads", f.Name, f.UpdaterKey, f.OS, f.Arch))
+	}
+	if f.Optional {
+		problems = append(problems, fmt.Sprintf("%s is an update payload, so it can't be optional", f.Name))
+	}
+	return problems
+}
+
 // Validate checks the manifest's own rules, the ones a new row could break.
 func (r Release) Validate() error {
 	var problems []string
@@ -269,16 +286,7 @@ func (r Release) Validate() error {
 		}
 		names[f.Name] = true
 		if f.Update() {
-			if keys[f.UpdaterKey] {
-				problems = append(problems, fmt.Sprintf("updater key %s is on two files", f.UpdaterKey))
-			}
-			keys[f.UpdaterKey] = true
-			if !slices.Contains(updaterKeys(f.OS, f.Arch), f.UpdaterKey) {
-				problems = append(problems, fmt.Sprintf("%s has updater key %s, which no %s %s install reads", f.Name, f.UpdaterKey, f.OS, f.Arch))
-			}
-			if f.Optional {
-				problems = append(problems, fmt.Sprintf("%s is an update payload, so it can't be optional", f.Name))
-			}
+			problems = append(problems, updatePayloadProblems(f, keys)...)
 		}
 		if f.Binary() && (f.OS == "" || f.Arch == "" || len(f.Targets) == 0) {
 			problems = append(problems, fmt.Sprintf("%s is a build, so it needs an OS, an arch, and its Rust targets", f.Name))
