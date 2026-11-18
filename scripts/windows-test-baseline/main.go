@@ -6,6 +6,8 @@
 //
 //	go -C scripts/windows-test-baseline run . render -junit FILE -commit SHA [-date YYYY-MM-DD] > OUT.md
 //	go -C scripts/windows-test-baseline run . diff -baseline docs/notes/windows-port/app-path-baseline.md -junit FILE
+//	go -C scripts/windows-test-baseline run . explain -junit FILE [-crate NAME]   # each failure, its cluster, and its panic lines
+//	go -C scripts/windows-test-baseline run . tsv -junit FILE > OUT.tsv           # one line per failure, machine-readable
 //
 // Why JUnit and not the console: PowerShell wraps console output at its window width and some logs come out UTF-16,
 // so test names and panic messages had to be stitched back together from the earlier logs. The JUnit report holds each
@@ -29,7 +31,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: windows-test-baseline render|diff [flags]")
+		fmt.Fprintln(os.Stderr, "usage: windows-test-baseline render|diff|explain|tsv [flags]")
 		os.Exit(2)
 	}
 	var err error
@@ -40,8 +42,10 @@ func main() {
 		err = runDiff(os.Args[2:], os.Stdout)
 	case "explain":
 		err = runExplain(os.Args[2:], os.Stdout)
+	case "tsv":
+		err = runTSV(os.Args[2:], os.Stdout)
 	default:
-		err = fmt.Errorf("unknown command %q (want render or diff)", os.Args[1])
+		err = fmt.Errorf("unknown command %q (want render, diff, explain, or tsv)", os.Args[1])
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -132,6 +136,60 @@ func runExplain(args []string, out io.Writer) error {
 		}
 	}
 	return nil
+}
+
+// runTSV prints one line per failure, `crate`, `test`, `cluster`, `read` (`read` or `unread`), and the first panic
+// line (cut at 200 bytes), with a header: the machine-readable record of a run, small enough to keep in the repo.
+func runTSV(args []string, out io.Writer) error {
+	fs := flag.NewFlagSet("tsv", flag.ContinueOnError)
+	junit := fs.String("junit", "", "nextest JUnit report")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *junit == "" {
+		return errors.New("tsv needs -junit")
+	}
+	report, err := readReport(*junit)
+	if err != nil {
+		return err
+	}
+	tags := classifyAll(report.Failures)
+	order := make([]int, len(tags))
+	for i := range order {
+		order[i] = i
+	}
+	sort.Slice(order, func(a, b int) bool {
+		ia, ib := tags[order[a]].ID, tags[order[b]].ID
+		if ia.Crate != ib.Crate {
+			return ia.Crate < ib.Crate
+		}
+		return ia.Test < ib.Test
+	})
+	w := bufio.NewWriter(out)
+	fmt.Fprintln(w, "crate\ttest\tcluster\tread\tpanic")
+	for _, i := range order {
+		read := "read"
+		if tags[i].Unread {
+			read = "unread"
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", tags[i].ID.Crate, tags[i].ID.Test, tags[i].Cluster.Key, read, firstPanic(report.Failures[i].Text))
+	}
+	return w.Flush()
+}
+
+// firstPanic is the first panic message in a failure's text, one line, tabs flattened, at most 200 bytes.
+func firstPanic(text string) string {
+	lines := strings.Split(text, "\n")
+	for j, line := range lines {
+		if strings.Contains(line, "panicked at") && strings.HasSuffix(line, ":") && j+1 < len(lines) {
+			msg := strings.ReplaceAll(strings.TrimSpace(lines[j+1]), "\t", " ")
+			if len(msg) > 200 {
+				msg = strings.ToValidUTF8(msg[:200], "")
+			}
+			return msg
+		}
+	}
+	return ""
 }
 
 // ── The JUnit report ──────────────────────────────────────────────────────

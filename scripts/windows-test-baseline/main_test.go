@@ -78,6 +78,28 @@ const sampleJUnit = `<?xml version="1.0" encoding="UTF-8"?>
   </testsuite>
 </testsuites>`
 
+func TestTheTSVHasOneLinePerFailureWithItsPanic(t *testing.T) {
+	dir := t.TempDir()
+	junit := filepath.Join(dir, "junit.xml")
+	if err := os.WriteFile(junit, []byte(sampleJUnit), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if err := runTSV([]string{"-junit", junit}, &out); err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimRight(out.String(), "\n"), "\n")
+	if len(lines) != 3 || lines[0] != "crate\ttest\tcluster\tread\tpanic" {
+		t.Fatalf("got:\n%s", out.String())
+	}
+	if !strings.HasPrefix(lines[1], "cmdr\tgo_to_path::tests::c\tN\tread\t") || !strings.HasPrefix(lines[2], "cmdr-fs\tvolume::b\tS\tread\t") {
+		t.Fatalf("got:\n%s", out.String())
+	}
+	if got := firstPanic("thread 'x' panicked at a.rs:1:2:\n\tleft\tright\n"); got != "left right" {
+		t.Fatalf("firstPanic = %q", got)
+	}
+}
+
 func TestARenderedBaselineReadsBackAndDiffsByName(t *testing.T) {
 	dir := t.TempDir()
 	junit := filepath.Join(dir, "junit.xml")
