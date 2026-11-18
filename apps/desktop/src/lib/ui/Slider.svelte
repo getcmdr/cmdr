@@ -159,33 +159,70 @@
     :global(.sl-track) {
         flex: 1;
         height: 4px;
-        background: var(--color-bg-tertiary);
+        background: var(--color-slider-track);
         border-radius: var(--radius-xs);
         position: relative;
     }
 
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.sl-track) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
+    }
+
     :global(.sl-range) {
         height: 100%;
-        background: var(--color-accent);
+        background: var(--color-slider-range);
         border-radius: var(--radius-xs);
         transition: width var(--transition-base);
     }
 
+    /* The house thumb is a white disc in an accent ring; Windows' is an accent dot inside a
+       ring of the solid control fill (an inset shadow), which grows on hover and shrinks
+       on press. */
     :global(.sl-thumb) {
-        width: 16px;
-        height: 16px;
-        background: white;
-        border: 2px solid var(--color-accent);
+        width: var(--spacing-slider-thumb-size);
+        height: var(--spacing-slider-thumb-size);
+        background: var(--color-slider-thumb-bg);
+        border: var(--spacing-slider-thumb-border) solid var(--color-slider-thumb-border);
+        border-bottom-color: var(--color-slider-thumb-border-bottom);
         border-radius: var(--radius-full);
         cursor: default;
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-slider-thumb);
         /* Above the tick marks. */
         z-index: 2;
         position: relative;
     }
 
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.sl-thumb) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
+    }
+
     :global(.sl-thumb:hover) {
-        border-color: var(--color-accent-hover);
+        background: var(--color-slider-thumb-bg-hover);
+        border-color: var(--color-slider-thumb-border-hover);
+        box-shadow: var(--shadow-slider-thumb-hover);
+    }
+
+    :global(.sl-thumb:hover:active) {
+        box-shadow: var(--shadow-slider-thumb-pressed);
+    }
+
+    /* Disabled re-points the state tokens at their disabled twins; the house twins equal
+       what it painted before (the house slider has no disabled look of its own). */
+    :global(.sl-root[data-disabled]) {
+        --color-slider-track: var(--color-slider-track-disabled);
+        --color-slider-range: var(--color-slider-range-disabled);
+        --color-slider-thumb-bg: var(--color-slider-thumb-bg-disabled);
+        --color-slider-thumb-bg-hover: var(--color-slider-thumb-bg-disabled);
+        --shadow-slider-thumb-hover: var(--shadow-slider-thumb-disabled-hover);
+        --shadow-slider-thumb-pressed: var(--shadow-slider-thumb-disabled-hover);
     }
 
     :global(.sl-thumb[data-disabled]) {
@@ -193,9 +230,9 @@
     }
 
     :global(.sl-thumb:focus-visible) {
-        outline: 2px solid var(--color-accent);
-        outline-offset: 2px;
-        box-shadow: var(--shadow-focus);
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: var(--spacing-focus-ring-control-offset);
+        box-shadow: var(--shadow-slider-thumb-focus);
     }
 
     .sl-ticks {

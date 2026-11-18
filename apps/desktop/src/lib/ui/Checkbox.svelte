@@ -117,39 +117,83 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 16px;
-        height: 16px;
-        background: var(--color-bg-tertiary);
-        border: 1px solid var(--color-control-border);
-        border-radius: var(--radius-xs);
+        width: var(--spacing-checkbox-size);
+        height: var(--spacing-checkbox-size);
+        background: var(--color-checkbox-bg);
+        border: 1px solid var(--color-checkbox-border);
+        border-radius: var(--radius-checkbox);
         cursor: default;
         transition:
             background-color var(--transition-base),
             border-color var(--transition-base);
     }
 
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.checkbox-control) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
+    }
+
     :global(.checkbox-control[data-state='checked']),
     :global(.checkbox-control[data-state='indeterminate']) {
-        background: var(--color-accent);
-        border-color: var(--color-accent);
+        background: var(--color-checkbox-checked-bg);
+        border-color: var(--color-checkbox-checked-bg);
     }
 
     :global(.checkbox-control[data-state='checked']:hover),
     :global(.checkbox-control[data-state='indeterminate']:hover) {
-        background: var(--color-accent-hover);
-        border-color: var(--color-accent-hover);
+        background: var(--color-checkbox-checked-bg-hover);
+        border-color: var(--color-checkbox-checked-bg-hover);
     }
 
-    /* Hover must push the outline FURTHER from the surface, so it keys off a text
-       token: `--color-border-strong` is fainter than `--color-control-border` and
+    /* Hover must push the outline FURTHER from the surface, so the house look keys it off
+       a text token: `--color-border-strong` is fainter than `--color-control-border` and
        would make hovering look like a disabled state. */
     :global(.checkbox-control:hover) {
-        border-color: var(--color-text-secondary);
+        background-color: var(--color-checkbox-bg-hover);
+        border-color: var(--color-checkbox-border-hover);
     }
 
+    :global(.checkbox-control[data-state='unchecked']:hover:active) {
+        background-color: var(--color-checkbox-bg-pressed);
+        border-color: var(--color-checkbox-border-pressed);
+    }
+
+    :global(.checkbox-control[data-state='checked']:hover:active),
+    :global(.checkbox-control[data-state='indeterminate']:hover:active) {
+        background: var(--color-checkbox-checked-bg-pressed);
+        border-color: var(--color-checkbox-checked-bg-pressed);
+    }
+
+    /* Disabled re-points the state tokens at their disabled twins, so every rule above
+       paints the disabled look without a specificity contest with `:hover`. The house
+       twins equal what each state painted before (it dims with opacity instead, below). */
     :global(.checkbox-control[data-disabled]) {
+        --color-checkbox-bg: var(--color-checkbox-bg-disabled);
+        --color-checkbox-bg-hover: var(--color-checkbox-bg-disabled);
+        --color-checkbox-bg-pressed: var(--color-checkbox-bg-disabled);
+        --color-checkbox-border: var(--color-checkbox-border-disabled);
+        --color-checkbox-border-hover: var(--color-checkbox-border-disabled-hover);
+        --color-checkbox-border-pressed: var(--color-checkbox-border-disabled-hover);
+        --color-checkbox-checked-bg: var(--color-checkbox-checked-bg-disabled);
+        --color-checkbox-checked-bg-hover: var(--color-checkbox-checked-bg-disabled-hover);
+        --color-checkbox-checked-bg-pressed: var(--color-checkbox-checked-bg-disabled-hover);
+        --color-checkbox-glyph: var(--color-checkbox-glyph-disabled);
+
         cursor: not-allowed;
+    }
+
+    /* The dim is the house look's disabled state; Windows paints WinUI's disabled colors
+       (the twins above) instead. Keyed on the look in the selector because stylelint's
+       `opacity` allowlist takes no `var()`; `:where()` keeps the rule's specificity. */
+    :global(:where(:root:not([data-look='windows'])) .checkbox-control[data-disabled]) {
         opacity: 0.5;
+    }
+
+    :global(.checkbox-root:has(.checkbox-control[data-disabled]) .checkbox-label) {
+        color: var(--color-control-label-disabled);
     }
 
     /* ❌ Never let the glyphs decide this box's size, and ❌ never hide one with
@@ -167,7 +211,7 @@
         position: relative;
         width: 12px;
         height: 12px;
-        color: var(--color-accent-fg);
+        color: var(--color-checkbox-glyph);
     }
 
     /* Ark marks the indicator `hidden` whenever the box isn't CHECKED, indeterminate
@@ -204,7 +248,7 @@
         width: 8px;
         height: 2px;
         border-radius: var(--radius-xs);
-        background: var(--color-accent-fg);
+        background: var(--color-checkbox-glyph);
     }
 
     :global(.checkbox-control[data-state='indeterminate']) .checkbox-dash {
@@ -218,8 +262,8 @@
 
     /* Ark UI uses data-focus attribute when the hidden input is focused */
     :global(.checkbox-control[data-focus]) {
-        outline: 2px solid var(--color-accent);
-        outline-offset: 2px;
-        box-shadow: var(--shadow-focus);
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: var(--spacing-focus-ring-control-offset);
+        box-shadow: var(--shadow-focus-ring-control);
     }
 </style>

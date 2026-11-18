@@ -16,7 +16,12 @@ Pull-tier docs for `lib/ui/`: architecture, component APIs, and decision rationa
 - **`focus-trap.ts`**: `use:trapFocus` action: Tab wrapping (in reading order), focus-leak guard, Escape fallback, trap
   stack
 - **`access-keys.ts`**: a dialog's Alt+letter access keys where the platform has them: allocation, the labeled-control
-  search, keytips, and the press. § Platform conventions
+  search, the underlines (keytips where the Highlight API is missing), and the press. § Platform conventions
+- **`keyboard-cues.ts`**: when access-key underlines show, for dialogs and the command menus alike (Win32's keyboard-cue
+  rule, GTK's held Alt, Windows' always-on setting). § Command menus
+- **`MenuBar.svelte`** / **`ContextMenu.svelte`** over **`command-menu/`**: the command menus, `cmdr-menu`'s rows drawn
+  in the page (the in-window bar with its flyouts, Windows' right-click menus, the browser demo's macOS bar and menus).
+  § Command menus
 - **`dialog-registry.ts`**: `SOFT_DIALOG_REGISTRY` array: single source of truth for all dialog IDs
 - **`markdown-link-click.ts`**: `handleMarkdownLinkClick`, the click delegate every `{@html}`-rendered markdown block
   hangs on its container (`ErrorPane`, the What's new popup). Tauri blocks raw `<a>` navigation, so without it a link in
@@ -386,34 +391,36 @@ the Mac markup and keys, so a convention change can't move them unnoticed.
   - Decision prompts (`letterKeysAnswer`: the transfer conflict, the operation conflict, the transfer error): Enter is
     their safe answer (Skip, Close) from anywhere but a button; on a Mac footer button it does nothing. The onboarding
     wizard is no `ModalDialog` and keeps its own keys.
-- **Access keys** (`accessKeys` is `keytips` on Windows, `underlines` on every Linux desktop, `none` on the Mac;
-  `access-keys.ts`): Alt plus a control's letter presses it (a button, a checkbox) or focuses it (a text field, via its
-  `<label>`). Letters come from the labels as rendered, by the Linux menu bar's rule (`mnemonics.rs`: word initials
-  first, unique per dialog, case-insensitive), so every language gets its own and no translator places a marker; a label
-  with no Latin, Greek, or Cyrillic letter (Chinese, Japanese) takes a free `a`–`z`, as Windows does. Each control also
-  gets `Alt+X` in its `aria-keyshortcuts`, after any key the dialog named itself (`F2 Alt+B`), unless that's already an
-  Alt key. The key goes to the dialog's `onkeydown` FIRST: one it claims (`defaultPrevented`) never presses a control.
-  `keyScope` reserves the dialog's own Alt+letter commands' letters (the multi-rename sheet's options, About this's
-  Stop), which are its access keys already, so nothing else is given them. A `letterKeysAnswer` dialog (bare letters
-  answer it, shown on its buttons) gets none: one key scheme per dialog, and its report offer stays keyless on purpose.
-- **How holding Alt shows them**: `keytips` draws WinUI's badge under each control (`.access-key-tip`). `underlines`
-  underlines the letter in the label, as GTK and Qt do, painting the picked occurrence (`accessKeyRangeIn`: its first
-  word-initial occurrence, else its first, the allocator's own order) under the `cmdr-access-key` highlight. A label
-  without its letter (Chinese, Japanese) carries it after the label all the time, "保存 (B)", as GTK and Qt apps write a
-  CJK mnemonic: an `aria-hidden` `.access-key-suffix` span appended to the label's element, kept out of the label text
-  the allocator reads, and removed with the dialog.
+- **Access keys** (`accessKeys` is `underlinesAfterKeyboardUse` on Windows, `underlinesWhileAltHeld` on every Linux
+  desktop, `none` on the Mac; `access-keys.ts`): Alt plus a control's letter presses it (a button, a checkbox) or
+  focuses it (a text field, via its `<label>`). Letters come from the labels as rendered, by the Linux menu bar's rule
+  (`mnemonics.rs`: word initials first, unique per dialog, case-insensitive), so every language gets its own and no
+  translator places a marker; a label with no Latin, Greek, or Cyrillic letter (Chinese, Japanese) takes a free `a`–`z`,
+  as Windows does. Each control also gets `Alt+X` in its `aria-keyshortcuts`, after any key the dialog named itself
+  (`F2 Alt+B`), unless that's already an Alt key. The key goes to the dialog's `onkeydown` FIRST: one it claims
+  (`defaultPrevented`) never presses a control. `keyScope` reserves the dialog's own Alt+letter commands' letters (the
+  multi-rename sheet's options, About this's Stop), which are its access keys already, so nothing else is given them. A
+  `letterKeysAnswer` dialog (bare letters answer it, shown on its buttons) gets none: one key scheme per dialog, and its
+  report offer stays keyless on purpose.
+- **When they show** is the platform's cue rule (`keyboard-cues.ts`, § Command menus has the rule): on Windows once the
+  keyboard is in use in the dialog (from the start in one a key opened; after Alt, F10, Tab, an arrow, or an Alt chord
+  in one a click opened) and then for the dialog's life; on Linux while Alt is held; always under Windows' "Underline
+  access keys" (the `underline-access-keys` class). Shown letters repaint when the labels change under them.
+- **How they show**: the letter underlined in the label, as Win32, GTK, and Qt draw it, painting the picked occurrence
+  (`accessKeyRangeIn`: its first word-initial occurrence, else its first, the allocator's own order) under the
+  `cmdr-access-key` highlight. A label without its letter (Chinese, Japanese) carries it after the label all the time,
+  "保存 (B)", as GTK and Qt apps write a CJK mnemonic: an `aria-hidden` `.access-key-suffix` span appended to the
+  label's element, kept out of the label text the allocator reads, and removed with the dialog.
 - Decision/Why: underlines through the CSS Custom Highlight API, ❌ never by wrapping the letter in markup. The label is
   a consumer snippet whose text nodes Svelte owns; a `Range` paints over them without touching them. The suffix is the
-  one DOM write, appended last so Svelte's anchors stay before it. Without the API (an old WebKitGTK) the underline
-  desktops fall back to keytips; WebKitGTK's `::highlight()` with `text-decoration` is unverified on a Linux machine
-  (Chromium and WKWebView support it).
+  one DOM write, appended last so Svelte's anchors stay before it. Without the API (an old WebKitGTK) a keytip badge
+  under each control stands in (`.access-key-tip`), the only place keytips still draw; WebKitGTK's `::highlight()` with
+  `text-decoration` is unverified on a Linux machine (Chromium and WKWebView support it).
 - Gotcha: Alt plus a numpad key never names an access key (`accessKeyLettersOf`): Windows types a character by its code
   that way (Alt, 0, 2, 3, 3 for é), one Alt keydown per digit, and a label like "Delete 3 items" can hold the digit `3`
   as its key once its letters are taken. Without the guard, typing é in a dialog field could press it.
 - Decision/Why: Windows moves to underlines (D5 in `docs/specs/windows-port-plan.md`, David, 2026-11-18, reversing the
-  earlier keytips): they match the in-page menu bar's, and Windows' "Underline access keys" setting governs them. The
-  Windows row still answers `keytips` until task 63's step 1 flips it, and its step 4 adds Win32's keyboard-cue rule
-  (hidden until Alt or other keyboard use).
+  earlier keytips): they match the in-page menu bar's, and Windows' "Underline access keys" setting governs them.
 - Gotcha: Windows' native menu bar takes a lone Alt press (Alt, release, focuses the bar) until task 63 replaces it with
   the in-page bar (unverified on Windows for dialogs).
 
@@ -561,7 +568,8 @@ Tab-Tab bug: Esc, ⌘⇧P, and Tab all dead, mouse-only recovery). The action do
 2. **Leak guard**: a document-level capture `focusin` listener pulls focus back if it lands outside the container anyway
    (a programmatic `.focus()` from background code). The pull-back is deferred by one microtask so a closing dialog's
    own focus-restore (`onDestroy` → `restoreFocus(...)`) wins — the action's destroy unregisters the trap before the
-   microtask runs.
+   microtask runs. Focus in a command menu over the dialog (the Mac bar, a context menu: § Command menus) stays: the
+   menu gives it back on a pick or Escape.
 3. **Escape fallback**: if Escape fires while focus is outside the container (the broken state the guard exists for),
    `onEscape` runs. When focus is inside — the healthy state — the action stays out of the way and the dialog's own
    Escape handler works as usual.
@@ -1229,9 +1237,10 @@ those.
 
 ## Menu
 
-The house menu, and the app's only in-app menu primitive (context menus are otherwise native/muda): a portaled, glass,
-keyboard-first popup built from SECTIONS of rows. Data in, callbacks out — the caller hands over sections and gets
-`onSelect` / `onReorder` back, holds no highlight index, and writes no key handler. Four consumers: the volume switcher
+The house menu, the in-app PICKER primitive (the command menus, `cmdr-menu`'s rows drawn in the page, are § Command
+menus; right-click menus are otherwise native/muda): a portaled, glass, keyboard-first popup built from SECTIONS of
+rows. Data in, callbacks out — the caller hands over sections and gets `onSelect` / `onReorder` back, holds no highlight
+index, and writes no key handler. Four consumers: the volume switcher
 (`file-explorer/navigation/VolumeChooserMenu.svelte`, the rich one — grouped sections, a submenu, a disclosure section,
 and all five snippets), the favorites menu (`file-explorer/navigation/FavoritesMenu.svelte` — a reorderable section, the
 digit accelerators, assigned letter shortcuts at the right, and inline editors), the archive Enter popup
@@ -1488,6 +1497,82 @@ switcher's port is what moved them here):
   menu item", Escape back to the badge. A submenu that never takes focus itself stays silent on every ↓. The viewer's
   right-click menu (native muda, not this primitive) was heard by ear in David's VoiceOver guide run on `main` at
   `8feba4c02` (2026-10-15). Full log: `docs/notes/accessibility-audit-2026-10.md` § VoiceOver listening runs.
+
+## Command menus
+
+The menus whose rows come from `cmdr-menu` (`crates/cmdr-menu/DETAILS.md` § "The menus as a page draws them"), drawn in
+the page: the in-window bar and its flyouts (D5's `windowMenuBar`, task 63 of `docs/specs/windows-port-plan.md`),
+Windows' right-click menus (`contextMenus: 'inPage'`), and the browser demo's macOS bar and menus. One implementation
+for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu look tokens).
+
+- **Public API**:
+  - `<MenuBar menus onPick ariaLabel flavor? keyScope? inert? takesWindowKeys? class?>`: `menus` is `get_menu_bar`'s
+    answer kept live by the caller (`followMenuBar` from `#lib/tauri-commands` runs the ordering contract), `onPick(id)`
+    gets the row's menu id with focus already back where it was (send it through `pickMenuBarItem`). `keyScope` reserves
+    the window's own Alt+letter keys (the viewer's `'Viewer window'`). `inert` adds to the dialogs it follows itself
+    (`isAnySoftDialogOpen()`, the `desktop` flavor only): pass the palette and the explorer overlays.
+  - `createContextMenu({ onPick, flavor?, accessKeys?, onClose? })` (`command-menu/context-menu.svelte.ts`) and one
+    `<ContextMenu {menu}>` per window; `menu.open({ rows, at, fromKeyboard, anchorElement?, label? })` with the rows
+    `open_context_menu_in_page` answered, its `anchor` or the pointer as `at`, and `onPick` sending
+    `pickContextMenuItem(token, id)`.
+- **Module map** (`command-menu/`): `rows.ts` (pure: labels, the live-row walk, access keys, the Mac shortcut glyphs),
+  `menu-stack.svelte.ts` (the open surfaces and their cursors, the submenu delay), `menu-bar.svelte.ts` and
+  `context-menu.svelte.ts` (each owner's keys, focus, and dismissal), `MenuSurfaces.svelte` / `MenuSurface.svelte` (the
+  portaled surfaces, placement, roving focus, ARIA), `bar-change.ts` (one `menu-bar-changed` applied).
+- **Flavors** (`MenuFlavor`, ❌ never the OS): `desktop` where `menuModel` isn't `systemMenuBar` (Windows, Linux), `mac`
+  for the demo's macOS bar. `desktop`: lone Alt tap or F10 takes and gives back the bar, Alt+a title's letter opens it,
+  a letter picks the row it underlines, a radio choice wears a bullet, shortcuts are text, a hovered submenu waits
+  Windows' 400 ms `MenuShowDelay`. `mac`: ⌃F2, no letters, a checkmark for a radio choice, glyph-per-cell shortcuts,
+  submenus at once.
+- **Keys** (one capture listener on the window per owner, so they reach the menu wherever focus is, and every key the
+  open menu has stays out of the app): ←/→ along the bar (opening the neighbor while a menu is open), ↓ / Enter / Space
+  open (↑ opens on the last row on `desktop`), ↑/↓ walk the live rows wrapping, → enters a submenu and ← leaves it,
+  Home/End, Enter / Space pick, Esc backs out one level then hands focus back (`focus-restore.ts`, so a pane's list goes
+  through the explorer's own refocus), Tab leaves. The keyboard walks the deepest surface with a cursor: a submenu the
+  pointer only hovered open has none, so ↓ walks its parent and closes it, as on Windows.
+- Gotcha: a lone Alt keydown is never `preventDefault`ed or stopped: the page must still see its keyup, and task 63 step
+  6's `SC_KEYMENU` guard relies on the page acting on that release. A lone Alt doesn't count once another key came
+  between press and release, AltGr (Ctrl+Alt) never does, and window blur resets it (WebView2 sends no keyup then).
+  Alt+Space, Alt+F4, and Shift+F10 pass through untouched.
+- **Keyboard cues** (`keyboard-cues.ts`, for dialogs too): `afterKeyboardUse` (Windows): a surface opened from the
+  keyboard shows them, one a click opened shows them after the first key, then for its life; `whileAltHeld` (Linux):
+  while Alt is held alone; the `underline-access-keys` class shows them always, followed live. The bar at rest
+  underlines while Alt is held; each time it takes the keyboard it starts a session by the platform's rule, its flyouts
+  sharing it. A key the menu handles counts as use (`reveal()`).
+- **Letters**: titles from `allocateAccessKeys` over the titles as shown minus the window's reserved ones; each
+  surface's rows allocated alone, greyed rows included so a letter doesn't move when a row's state does. A label without
+  its letter carries " (B)" after it, `aria-hidden`. The underline is a class toggle (`cues-shown`), never a DOM
+  rewrite.
+- **Placement** (D5's accepted limit: nothing passes the window's edge): a flyout below its title (`placeOffAnchor`), a
+  context menu at the point flipping on either axis (`placeAtPoint`), a submenu beside its row flipping left
+  (`placeBesideRow`); each scrolls on the roomier side when it fits neither. 4 px off the edge.
+- **Dismissal**: a click elsewhere, the window losing focus, a resize (context menus), a scroll of what the context menu
+  was opened on (`anchorElement`), and a dialog opening close it without moving focus. Under a dialog the bar follows
+  its flavor: `desktop` goes `inert` (and closes), as Win32 disables an owner window's bar; `mac` stays usable, as
+  macOS's own bar does over a sheet, with the refused rows greyed by the backend (`set_commands_refused_over_dialog`).
+  `focus-trap.ts` leaves focus in a command menu alone (`[role="menubar"], [data-command-menu]`), which gives it back
+  itself on a pick or Escape.
+- **The bar and focus the app moves** (`menu-bar.svelte.ts` `onFocusIn`): it lets go only when focus leaves something it
+  owns for somewhere outside the window's focus home (a text field a ⌘ command opened). Focus that never came from the
+  bar (a click on a title with focus on `<body>`) and focus the app puts back in its home (the explorer's lists) leave
+  it on the keyboard; the second it takes back once per session.
+  - Gotcha/Why: `DualPaneExplorer`'s "focus after initialization" effect re-runs on state its refocus reads, and on a
+    fresh page it re-homed focus to the list right after the first ⌃F2's title took it, so the bar closed itself and the
+    first ⌃F2 did nothing; a click on a title with focus adrift opened and closed in one frame. Pinned by
+    `MenuBar.svelte.test.ts` § "MenuBar and the app moving focus on its own".
+- **Look**: `forced-color-adjust: var(--color-forced-adjust)` on the surfaces and the bar, inside the floor's
+  `@supports` guard: `none` on the Windows look under `forced-colors: active`, whose tokens already speak system colors
+  (`../../DETAILS.md` § Menu look tokens). A pointer row shows the hover fill; a keyboard row
+  `--color-menu-row-bg-focus` plus WinUI's system focus visual (2 px outer ring, 1 px inner, only on the focused row):
+  on Windows no fill, from `MenuFlyoutItem_Partial.cpp`'s `Focused` state
+  (`docs/notes/windows-port/menu-look-tokens.md`). ❗ Unchecked against Notepad: David's look check decides it. No
+  motion: WinUI switches states instantly.
+- **The demo** puts `DEMO_MENU_CLASS` on its bar and menus and sets the tokens to macOS 27's there
+  (`../demo/menu-bar-style.ts`), so the shared surfaces draw the Mac menus the demo always had.
+- Decision/Why: a component of its own, ❌ not `Menu.svelte` extended. The house `Menu` is a picker over SECTIONS (rich
+  rows, reorder, rename, disclosure) whose focus is `aria-activedescendant` on the surface, tuned for VoiceOver; D5 asks
+  the command menus for roving focus, nested submenus, a bar, access keys, and a platform's own look. The two share the
+  placement rules (`anchored-placement.ts`), the letter allocator, and the focus restore.
 
 ## FilterPopover
 

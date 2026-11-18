@@ -1,10 +1,10 @@
 /**
  * Access keys (mnemonics) for a dialog, on the platforms that have them (`convention('accessKeys')`
  * isn't `'none'`: Windows and every Linux desktop). Alt plus a control's letter presses it (a
- * button, a checkbox) or focuses it (a text field). Holding Alt shows the letters the platform's
- * way: a keytip badge by each control (`'keytips'`, Windows 11), or the letter underlined in its
- * label (`'underlines'`, GTK and Qt), with a label that lacks its letter carrying it in parentheses
- * ("保存 (A)"). macOS has none, and `ModalDialog` builds no controller there.
+ * button, a checkbox) or focuses it (a text field). Holding Alt underlines each letter in its
+ * label, as Win32, GTK, and Qt draw it, with a label that lacks its letter carrying it in
+ * parentheses ("保存 (A)"). Where the Highlight API is missing (WebKitGTK), a keytip badge by each
+ * control stands in. macOS has none, and `ModalDialog` builds no controller there.
  *
  * The letters are allocated from the labels as rendered, in the user's language, by the same rule
  * the Linux menu bar uses (`src-tauri/src/menu/mnemonics.rs`): word initials first, then any other
@@ -20,6 +20,7 @@ import type { CommandScope } from '#lib/commands/types.js'
 // eslint-disable-next-line cmdr/no-raw-shortcut-text -- read as data to reserve letters, never shown as text
 import { getEffectiveShortcuts } from '#lib/shortcuts/shortcuts-store.js'
 import { isAltGraphHeld } from '#lib/shortcuts/key-capture.js'
+import { createKeyboardCues, type KeyboardCues } from './keyboard-cues'
 
 /** A letter a person can press: Latin, Greek, or Cyrillic (with any diacritics), or a digit. */
 const PRESSABLE = /^[\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}\p{Nd}]$/u
@@ -52,6 +53,28 @@ export function allocateAccessKeys(labels: readonly string[], taken: Iterable<st
     if (letter !== null) used.add(letter)
     return letter
   })
+}
+
+/**
+ * Where `letter` (lowercase, from {@link allocateAccessKeys}) sits in `label`, in UTF-16 offsets:
+ * its first word-initial occurrence, else its first occurrence, else `null` (a Chinese label's
+ * fallback letter, which the label then carries as a "(B)" after it). The string twin of the
+ * dialog's DOM lookup, for surfaces that render the label themselves (the menus).
+ */
+export function accessKeySpanIn(label: string, letter: string): { start: number; end: number } | null {
+  let first: { start: number; end: number } | null = null
+  let previous = ''
+  let offset = 0
+  for (const char of label) {
+    if (char.normalize('NFC').toLowerCase() === letter) {
+      const hit = { start: offset, end: offset + char.length }
+      if (previous === '' || !ALPHANUMERIC.test(previous)) return hit
+      first ??= hit
+    }
+    previous = char
+    offset += char.length
+  }
+  return first
 }
 
 /** The letters `scope`'s own commands bind as Alt plus one key (`Alt+S`), lowercase. */
@@ -238,9 +261,6 @@ export function pressAccessKey(control: HTMLElement): void {
   if (!takesText(control)) control.click()
 }
 
-/** How holding Alt shows the letters: `convention('accessKeys')`, minus `'none'`. */
-export type AccessKeyStyle = 'keytips' | 'underlines'
-
 interface HighlightRegistry {
   set: (name: string, highlight: unknown) => void
   delete: (name: string) => void
@@ -273,8 +293,6 @@ function underlineRangeOf(anchor: Element, letter: string): Range | null {
 }
 
 export interface AccessKeysOptions {
-  /** How holding Alt shows the letters. */
-  style: AccessKeyStyle
   /** The panel whose controls get access keys. */
   scope: () => HTMLElement | undefined
   /** The element the keytips are positioned against. */
@@ -315,8 +333,10 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
   const announced = new Map<HTMLElement, Announced>()
   /** The "(A)"s this controller appended, removed with it. */
   const suffixes = new Set<HTMLElement>()
-  /** Underlines need the Highlight API; without it, the keytips draw instead. */
-  const highlights = options.style === 'underlines' ? highlightApi() : null
+  /** Underlines need the Highlight API; without it (WebKitGTK), the keytips draw instead. */
+  const highlights = highlightApi()
+  /** When the letters show, by the platform's rule; live between `attach` and its teardown. */
+  let cues: KeyboardCues | null = null
 
   function assignments(): AccessKeyAssignment[] {
     const scope = options.scope()
@@ -408,13 +428,16 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
     }
   }
 
+  /** Paints or clears the letters to match the cue rule (`keyboard-cues.ts`). */
+  function followCues(): void {
+    if (cues?.shown) show()
+    else hide()
+  }
+
   function handleKeydown(event: KeyboardEvent): boolean {
-    if (event.key === 'Alt') {
-      if (!event.repeat && !event.ctrlKey && !event.metaKey && !event.shiftKey) show()
-      return false
-    }
+    cues?.keydown(event)
+    if (event.key === 'Alt') return false
     const letters = accessKeyLettersOf(event)
-    hide()
     if (letters.length === 0 || event.defaultPrevented) return false
     const reserved = reservedAccessKeys(options.commandScope())
     if (letters.some((letter) => reserved.has(letter))) return false
@@ -427,18 +450,30 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
   }
 
   function attach(): () => void {
+    // Read as the dialog mounts: whether the key or the click that opened it came last.
+    const surfaceCues = createKeyboardCues()
+    cues = surfaceCues
+    const stopFollowing = surfaceCues.onChange(followCues)
     const onKeyup = (event: KeyboardEvent) => {
-      if (event.key === 'Alt') hide()
+      surfaceCues.keyup(event)
+    }
+    const onBlur = () => {
+      surfaceCues.blur()
+    }
+    const onPointerDown = () => {
+      surfaceCues.pointerdown()
     }
     window.addEventListener('keyup', onKeyup, true)
-    window.addEventListener('blur', hide)
-    window.addEventListener('pointerdown', hide, true)
+    window.addEventListener('blur', onBlur)
+    window.addEventListener('pointerdown', onPointerDown, true)
     let frame: number | null = null
     const scheduleAnnounce = () => {
       if (frame !== null) return
       frame = requestAnimationFrame(() => {
         frame = null
         announce()
+        // Shown letters follow a label that changed under them (Win32 keeps them up for a while).
+        if (shown) show()
       })
     }
     const scope = options.scope()
@@ -454,10 +489,14 @@ export function createAccessKeys(options: AccessKeysOptions): AccessKeys {
       })
     }
     announce()
+    followCues()
     return () => {
+      stopFollowing()
+      surfaceCues.destroy()
+      cues = null
       window.removeEventListener('keyup', onKeyup, true)
-      window.removeEventListener('blur', hide)
-      window.removeEventListener('pointerdown', hide, true)
+      window.removeEventListener('blur', onBlur)
+      window.removeEventListener('pointerdown', onPointerDown, true)
       observer.disconnect()
       if (frame !== null) cancelAnimationFrame(frame)
       for (const [control, entry] of announced) {

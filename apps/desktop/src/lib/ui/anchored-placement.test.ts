@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { placeBesideRow, placeOffAnchor, type PlacementRect } from './anchored-placement'
+import { placeAtPoint, placeBesideRow, placeOffAnchor, type PlacementRect } from './anchored-placement'
 
 // A 1000×800 window with the house 8 px margin, so the arithmetic in each case reads plainly.
 const VIEWPORT = { width: 1000, height: 800 }
@@ -149,5 +149,33 @@ describe('placeBesideRow', () => {
     const tall = placeBesideRow({ row: rect(100, 700, 220, 28), size: { width: 220, height: 2000 }, ...SUBMENU })
     expect(tall.top).toBe(8)
     expect(tall.maxHeight).toBe(800 - 16)
+  })
+})
+
+describe('placeAtPoint', () => {
+  const at = (x: number, y: number, width: number, height: number) =>
+    placeAtPoint({ point: { x, y }, size: { width, height }, viewport: VIEWPORT, margin: MARGIN })
+
+  it('opens down and right of the point when it fits, as a context menu does', () => {
+    expect(at(100, 100, 220, 300)).toEqual({ left: 100, top: 100, maxHeight: 800 - 8 - 100 })
+  })
+
+  it('flips left of the point near the right edge, and up near the bottom', () => {
+    const placed = at(900, 700, 220, 300)
+    expect(placed.left).toBe(900 - 220)
+    expect(placed.top).toBe(700 - 300)
+  })
+
+  it('clamps inside the window when neither side fits across', () => {
+    expect(at(500, 100, 990, 100).left).toBe(8)
+  })
+
+  it('scrolls a menu taller than both sides, on the roomier one', () => {
+    const below = at(100, 300, 220, 2000)
+    expect(below.top).toBe(300)
+    expect(below.maxHeight).toBe(800 - 8 - 300)
+    const above = at(100, 600, 220, 1000)
+    expect(above.top).toBe(8)
+    expect(above.maxHeight).toBe(600 - 8)
   })
 })

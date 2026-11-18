@@ -2,6 +2,9 @@
 
 pub(crate) mod registry;
 mod version;
+mod webview;
+
+pub(crate) use webview::prepare_webview;
 
 use super::PlatformCapabilities;
 use super::PlatformConventions;

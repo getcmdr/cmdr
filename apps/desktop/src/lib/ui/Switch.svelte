@@ -97,32 +97,82 @@
         display: inline-flex;
         align-items: center;
         flex-shrink: 0;
-        width: 36px;
+        width: var(--spacing-switch-width);
         height: 20px;
-        background: var(--color-bg-tertiary);
+        background: var(--color-switch-track);
+        /* The house track has no edge (`none`); Windows' is a 1px stroke, a whole `border`
+           shorthand per state so the house look keeps no border at all. */
+        border: var(--color-switch-border);
         border-radius: var(--radius-full);
-        padding: var(--spacing-xxs);
+        padding: var(--spacing-switch-padding);
         cursor: default;
         transition: background-color var(--transition-base);
     }
 
-    :global(.switch-control[data-state='checked']) {
-        background: var(--color-accent);
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.switch-control) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
     }
 
+    :global(.switch-control:hover) {
+        background-color: var(--color-switch-track-hover);
+        border: var(--color-switch-border-hover);
+    }
+
+    :global(.switch-control[data-state='checked']) {
+        background: var(--color-switch-track-on);
+        border: var(--color-switch-border-on);
+    }
+
+    /* Disabled re-points the state tokens at their disabled twins (the house twins equal
+       what it painted before; it dims with opacity instead, below). */
     :global(.switch-control[data-disabled]) {
+        --color-switch-track: var(--color-switch-track-disabled);
+        --color-switch-track-hover: var(--color-switch-track-disabled);
+        --color-switch-border: var(--color-switch-border-disabled);
+        --color-switch-border-hover: var(--color-switch-border-disabled);
+        --color-switch-track-on: var(--color-switch-track-on-disabled);
+        --color-switch-track-on-hover: var(--color-switch-track-on-disabled-hover);
+        --color-switch-border-on: var(--color-switch-border-on-disabled);
+        --color-switch-border-on-hover: var(--color-switch-border-on-disabled);
+        --color-switch-thumb: var(--color-switch-thumb-disabled);
+        --color-switch-thumb-hover: var(--color-switch-thumb-disabled);
+        --color-switch-thumb-on: var(--color-switch-thumb-on-disabled);
+        --color-switch-thumb-on-hover: var(--color-switch-thumb-on-disabled);
+
         cursor: not-allowed;
+    }
+
+    /* The dim is the house look's disabled state; Windows paints WinUI's disabled colors
+       instead. Keyed on the look in the selector because stylelint's `opacity` allowlist
+       takes no `var()`; `:where()` keeps the rule's specificity. */
+    :global(:where(:root:not([data-look='windows'])) .switch-control[data-disabled]) {
         opacity: 0.5;
     }
 
+    :global(.switch-root:has(.switch-control[data-disabled]) .switch-label) {
+        color: var(--color-control-label-disabled);
+    }
+
+    /* The house thumb is literal white in both themes, so it reads against the accent
+       track; Windows' knob is a text-colored dot off and the on-accent color on. */
     :global(.switch-thumb) {
-        width: 16px;
-        height: 16px;
-        /* Literal white, not a token: the thumb stays white in both themes so it
-           reads against the accent track. */
-        background: white;
+        width: var(--spacing-switch-thumb-size);
+        height: var(--spacing-switch-thumb-size);
+        background: var(--color-switch-thumb);
         border-radius: var(--radius-full);
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-switch-thumb);
+    }
+
+    :global(.switch-control:hover .switch-thumb) {
+        background: var(--color-switch-thumb-hover);
+    }
+
+    :global(.switch-control[data-state='checked']:hover .switch-thumb) {
+        background: var(--color-switch-thumb-on-hover);
     }
 
     /* The thumb slides only when motion is welcome; under Reduce motion it jumps. */
@@ -133,11 +183,13 @@
     }
 
     :global(.switch-control[data-state='checked'] .switch-thumb) {
-        transform: translateX(16px);
+        background: var(--color-switch-thumb-on);
+        transform: translateX(var(--spacing-switch-travel));
     }
 
     :global(.switch-control[data-state='checked']:hover) {
-        background: var(--color-accent-hover);
+        background: var(--color-switch-track-on-hover);
+        border: var(--color-switch-border-on-hover);
     }
 
     :global(.switch-label) {
@@ -147,8 +199,8 @@
 
     /* Ark UI uses data-focus attribute when the hidden input is focused */
     :global(.switch-control[data-focus]) {
-        outline: 2px solid var(--color-accent);
-        outline-offset: 2px;
-        box-shadow: var(--shadow-focus);
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: var(--spacing-focus-ring-control-offset);
+        box-shadow: var(--shadow-focus-ring-control);
     }
 </style>

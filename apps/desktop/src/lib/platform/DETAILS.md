@@ -86,9 +86,11 @@ dialog buttons like macOS, KDE like Windows.
 
 - **Source of truth**: `PlatformConventions` in `apps/desktop/src-tauri/src/platform/conventions.rs`, one typed enum per
   question: `dialogButtonOrder` (`cancelFirst` | `affirmativeFirst`), `enterActivates` (`defaultButton` |
-  `focusedButton`), `cancelKeys` (`escape` | `escapeOrCommandPeriod`), `accessKeys` (`none` | `keytips` | `underlines`),
-  `menuModel` (`systemMenuBar` | `windowMenuBar`), `screenReaders` (most used first), and `linuxDesktop` (`gnome` |
-  `kde` | `other`, `null` off Linux). Each value and its guideline, with dates and what stayed unverified:
+  `focusedButton`), `cancelKeys` (`escape` | `escapeOrCommandPeriod`), `accessKeys` (`none` |
+  `underlinesAfterKeyboardUse` | `underlinesWhileAltHeld`: when the underlines show, Win32's keyboard-cue rule or GTK's
+  and Qt's held Alt, `lib/ui/keyboard-cues.ts`), `menuModel` (`systemMenuBar` | `windowMenuBar` | `primaryMenu`),
+  `contextMenus` (`native` | `inPage`), `screenReaders` (most used first), and `linuxDesktop` (`gnome` | `kde` |
+  `other`, `null` off Linux). Each value and its guideline, with dates and what stayed unverified:
   `docs/notes/windows-port/platform-conventions.md`.
 - **One table, five rows**: `conventions_on(Desktop)` answers macOS, Windows, and each Linux desktop in one `match`,
   compiled on every target; each OS arm (`macos.rs`, `windows.rs`, `linux/mod.rs`) only picks its row, Linux by the
@@ -98,8 +100,10 @@ dialog buttons like macOS, KDE like Windows.
   helpers need every desktop's row in TS, and a table compiled everywhere lets one Rust test pin `conventions-on.json`
   to it on any machine (it prints the JSON to write when they differ), where capabilities need a text-parsing test per
   arm file. Each target constructs only its own `Desktop`, hence the `dead_code` allows there.
-- **Product decisions carry today's behavior**: Windows and every Linux desktop say `windowMenuBar` (today's bar),
-  though GNOME's HIG has no menu bar; task 63 of `docs/specs/windows-port-plan.md` decides the model.
+- **The menu rows are D5's** (`docs/notes/windows-port/menu-model.md`): GNOME `primaryMenu`, Windows, KDE, and other
+  Linux `windowMenuBar`; only Windows says `contextMenus: 'inPage'`. Until task 63 of `docs/specs/windows-port-plan.md`
+  builds the in-page bar and menus, nothing reads either, so every desktop still shows today's native bar and popups. A
+  surface that draws a right-click menu asks `contextMenus`, ❌ never the platform.
 - **Reading it**: `convention('dialogButtonOrder')` or `platformConventions()`. Each field reads the injected value only
   where it names a known member (the `every<…>()` lists in `conventions.ts` fail to compile when a Rust variant is added
   and not listed), else the fallback's, so a primitive never meets a value it has no branch for.
@@ -113,7 +117,10 @@ dialog buttons like macOS, KDE like Windows.
   debug builds only, `mock_conventions` in `conventions.rs`) hands every webview that row instead, which moves neither
   the platform nor the capabilities. It also defines `__CMDR_COPY_PLATFORM__` (the mocked desktop's OS), which only
   `getCopyPlatform()` and so the message runtime's branch pick follow, so the window speaks that desktop's words too
-  (`CMDR_MOCK_CONVENTIONS=gnome` on a Mac shows "Preferences"). **Decision/Why**: copy and conventions disagreeing in
+  (`CMDR_MOCK_CONVENTIONS=gnome` on a Mac shows "Preferences"). The same value is `data-look` on `<html>` (`getLook()`),
+  which keys the menu and control look tokens (`apps/desktop/src/DETAILS.md` § Menu look tokens and § Control look
+  tokens), so the mock shows that desktop's menus and controls too, unless a host pins the look in `__CMDR_LOOK__` (the
+  browser demo pins `macos`, `lib/demo/DETAILS.md` § Platform). **Decision/Why**: copy and conventions disagreeing in
   dev hid every desktop branch from a Mac; moving the platform itself would also move keymaps and capabilities. The
   native menu bar doesn't follow (`apps/desktop/src-tauri/src/intl/DETAILS.md`).
 

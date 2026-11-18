@@ -8,6 +8,7 @@ import {
   CAPABILITIES_GLOBAL,
   CONVENTIONS_GLOBAL,
   CONVENTIONS_ON,
+  LOOK_GLOBAL,
   NO_CAPABILITIES,
   PLATFORM_GLOBAL,
   type Platform,
@@ -99,10 +100,20 @@ const VISITOR_CONVENTIONS: Readonly<Record<Platform, Readonly<PlatformConvention
   linux: demoConventions(CONVENTIONS_ON.otherLinux),
 }
 
-/** Defines the platform, its capabilities, and its conventions in `frame` before any app module reads them, read-only as on desktop. */
+/**
+ * The look for every visitor (`data-look`: the menus' and the controls' tokens): the Mac's, whose
+ * bar and chrome the demo draws for everyone (as its `menuModel` above). Without the pin a Windows
+ * visitor's menus wore Windows 11's tokens under the macOS bar (a 40 px bar the window's 30 px
+ * offset didn't know about, and Segoe type), and its buttons, fields, and dialogs WinUI's. Goes
+ * with the `appMenu` flip once the demo follows the visitor's OS (task 63 step 11).
+ */
+const DEMO_LOOK: Platform = 'macos'
+
+/** Defines the platform, its capabilities, its conventions, and the look in `frame` before any app module reads them, read-only as on desktop. */
 export function installPlatform(frame: Window): void {
   const platform = visitorPlatform(frame.navigator.userAgent)
   Object.defineProperty(frame, PLATFORM_GLOBAL, { value: platform })
   Object.defineProperty(frame, CAPABILITIES_GLOBAL, { value: visitorCapabilities(platform) })
   Object.defineProperty(frame, CONVENTIONS_GLOBAL, { value: visitorConventions(platform) })
+  Object.defineProperty(frame, LOOK_GLOBAL, { value: DEMO_LOOK })
 }

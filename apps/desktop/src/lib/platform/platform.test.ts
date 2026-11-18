@@ -3,6 +3,7 @@ import {
   applyPlatformAttributes,
   CAPABILITIES_GLOBAL,
   COPY_PLATFORM_GLOBAL,
+  LOOK_GLOBAL,
   FALLBACK_PLATFORM,
   getCopyPlatform,
   getPlatform,
@@ -151,6 +152,31 @@ describe('applyPlatformAttributes', () => {
     const root = document.createElement('html')
     applyPlatformAttributes(root)
     expect(root.getAttribute('data-platform')).toBe('macos')
+    expect(root.getAttribute('data-look')).toBe('macos')
+  })
+
+  it('gives the menus a mocked desktop look, while the platform stays put', () => {
+    onTestFinished(withPlatform('macos'))
+    host[COPY_PLATFORM_GLOBAL] = 'windows'
+    onTestFinished(() => {
+      Reflect.deleteProperty(host, COPY_PLATFORM_GLOBAL)
+    })
+    const root = document.createElement('html')
+    applyPlatformAttributes(root)
+    expect(root.getAttribute('data-platform')).toBe('macos')
+    expect(root.getAttribute('data-look')).toBe('windows')
+  })
+
+  it('wears a pinned look over the copy platform (the browser demo pins macOS)', () => {
+    onTestFinished(withPlatform('windows'))
+    host[LOOK_GLOBAL] = 'macos'
+    onTestFinished(() => {
+      Reflect.deleteProperty(host, LOOK_GLOBAL)
+    })
+    const root = document.createElement('html')
+    applyPlatformAttributes(root)
+    expect(root.getAttribute('data-platform')).toBe('windows')
+    expect(root.getAttribute('data-look')).toBe('macos')
   })
 
   it('marks an overlay title bar only where the OS offers one', () => {

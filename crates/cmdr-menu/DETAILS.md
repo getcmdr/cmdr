@@ -145,3 +145,35 @@ the one submenu that had been made data. Now `context_test.rs` snapshots every m
 - **Typed IPC shared with the desktop**: `ContextMenuShortcuts`, `QueueRowMenuEntry` / `QueueRowMenuAction`, `PaneSide`,
   and `ViewerEditActionKind` live here with `specta` derives (the app's exact `specta`, like `RequestedSort`), and the
   desktop re-exports them, so `bindings.ts` names one type each.
+
+## The menus as a page draws them
+
+**Decision**: `page/` turns the bar, the viewer bar, and every right-click menu into the rows a page draws (`Row`: item,
+check, submenu, header, system, separator), each with its words as a catalog key (`RowLabel`), its shown key in the
+platform's spelling, the same key in `aria-keyshortcuts` spelling, its enabled and checked state, and whether a check is
+a `checkbox` or a `radio`. Both page hosts draw through it: the demo (every platform's rows, macOS's today) and the
+desktop wherever its menus live in the page (task 63 of `docs/specs/windows-port-plan.md`: the in-window bar off macOS,
+the in-page right-click menus on Windows). **Why**: D5 moved Windows' menus into the page; a second drawing of the same
+rows in the desktop would drift from the demo's on the first new row, and a TS one would put menu rules in the frontend.
+
+- **Inputs**: `BarInputs` is every fact the native bar keeps about itself (the enabled fold's inputs, the checks, the
+  three live labels, the license wording, the pushed rebinds). The demo stores its pushes in one; the desktop reads one
+  out of `MenuState` (`apps/desktop/src-tauri/src/menu/page_bar.rs`), pinned equal to `BarInputs::fresh` for a fresh
+  state. A rebind is kept as pushed and drawn through `rebound_row_key`, the door the native rebind takes.
+- **Shown keys** (`src/page/keys.rs`): a registered accelerator prints as its OS would (macOS's glyphs via `glyphs`,
+  else the frontend's `Ctrl+Alt+Shift+Super` order with `Win` on Windows and arrows as arrows, so a row reads like the
+  palette); a display-only one prints as pushed. `aria-keyshortcuts` follows WAI-ARIA 1.2 (`Control`, `Meta`, UI Events
+  key names, `Space`, `Plus`).
+- **Ids**: a top-level menu is named by its spec id on every platform (the native bar gives one only on macOS); a nested
+  submenu by its spec id, else its title key. `src/page/bar_test.rs` keeps every id unique per bar, since a change event
+  names rows by id.
+- **The diff** (`changed_rows`): the rows whose state moved between two answers of the same shape, or `None` when the
+  shape moved (only a full answer describes that). The desktop's change event carries it.
+- **The viewer bar** (`src/page/viewer.rs`) mirrors `menu_structure.rs` with no OS items: File > Close is its own id
+  (`VIEWER_CLOSE_ID`), Cut and Paste are ours on every platform. Its inputs are the viewer page's own state, so it has
+  no store and no event.
+- **Right-click menus** (`src/page/context.rs`): a menu's `ContextRow`s with the `Slot`s left out (a page has no OS to
+  fill them), each enabled id collected so a host refuses a pick of anything else. A date Sort by check is a radio;
+  every other context check is a checkbox.
+- **Pinned by** `src/page/bar_test.rs` (the Windows bar and viewer bar as text, the diff, rebinds) and
+  `src/page/keys_test.rs`.

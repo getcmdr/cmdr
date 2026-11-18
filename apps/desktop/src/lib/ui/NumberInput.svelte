@@ -87,6 +87,7 @@
         display: flex;
         align-items: stretch;
         border: 1px solid var(--color-field-border);
+        border-bottom-color: var(--color-field-border-bottom);
         border-radius: var(--radius-input);
         overflow: hidden;
         transition:
@@ -118,7 +119,7 @@
         border: none;
         border-left: 1px solid var(--color-border);
         border-right: 1px solid var(--color-border);
-        background: var(--color-bg-primary);
+        background: var(--color-field-bg);
         color: var(--color-text-primary);
         font-size: var(--font-size-input);
         line-height: var(--font-line-height-tight);
@@ -130,8 +131,9 @@
     }
 
     :global(.ni-control:focus-within) {
-        border-color: var(--color-accent);
-        box-shadow: var(--shadow-focus-solid);
+        border-color: var(--color-field-border-focus);
+        border-bottom-color: var(--color-field-border-bottom-focus);
+        box-shadow: var(--shadow-field-focus);
     }
 
     :global(.ni-btn:focus-visible) {
@@ -151,7 +153,7 @@
        ring, steppers) stays the regular field's, with the smaller corner `TextInput`'s
        `compact` takes too (`app-field.css`). */
     .ni-wrapper.compact :global(.ni-control) {
-        border-radius: var(--radius-md);
+        border-radius: var(--radius-field-md);
     }
 
     .ni-wrapper.compact :global(.ni-btn) {

@@ -1,0 +1,249 @@
+/* Control look tokens, Windows contrast themes. The house values are in `app-controls.css`, the
+   light and dark Windows values in `app-controls-windows.css`. Imported by app.css; not loaded on
+   its own. Sources: `docs/notes/windows-port/control-look-tokens.md`.
+
+   === Windows contrast themes ===
+   WinUI's `HighContrast` dictionaries, each `SystemColor…Color` (directly or through a
+   `SystemControl…Brush` in generic.xaml) as its CSS system color: Window → Canvas,
+   WindowText → CanvasText, ButtonFace → ButtonFace, ButtonText → ButtonText, Highlight →
+   Highlight, HighlightText → HighlightText, GrayText → GrayText. A control that paints these
+   sets `forced-color-adjust: var(--color-forced-adjust)`, so Chromium keeps the exact pairs
+   (a checked box's Highlight fill under a HighlightText glyph) instead of forcing its own.
+   The `@supports` guard is what the Safari 15.4 floor accepts (`scripts/vite-webkit-css-floor.ts`):
+   every engine with contrast themes (Chromium, so WebView2, and Firefox) reads
+   `forced-color-adjust`, and WebKit has no contrast themes to follow. */
+@supports (forced-color-adjust: none) {
+  @media (forced-colors: active) {
+    :root[data-look='windows'] {
+      --color-forced-adjust: none;
+      /* FocusStrokeColorOuter → SystemColorWindowTextColor, FocusStrokeColorInner → SystemColorWindowColor */
+      --color-focus-ring: CanvasText;
+      --shadow-focus-ring-button: 0 0 0 1px Canvas;
+      --shadow-focus-ring-control: 0 0 0 1px Canvas;
+      --shadow-focus-ring-select: inset 0 0 0 1px ButtonText, 0 0 0 1px Canvas;
+
+      /* AccentButtonBackground → SystemControlHighlightAccentBrush (Highlight); …PointerOver →
+       SystemControlForegroundAccentBrush (ButtonText); …Pressed / …Disabled →
+       SystemControlBackgroundBaseMediumLow / …BaseLow (ButtonFace). Foreground →
+       SystemControlHighlightAltAccentBrush (HighlightText); …PointerOver →
+       SystemControlBackgroundChromeWhiteBrush (ButtonFace); …Pressed →
+       SystemControlHighlightBaseHighBrush (Highlight); …Disabled → GrayText. Border → Highlight,
+       …Disabled → GrayText. */
+      --color-button-primary-bg: Highlight;
+      --color-button-primary-bg-hover: ButtonText;
+      --color-button-primary-bg-pressed: ButtonFace;
+      --color-button-primary-bg-disabled: ButtonFace;
+      --color-button-primary-fg: HighlightText;
+      --color-button-primary-fg-hover: ButtonFace;
+      --color-button-primary-fg-pressed: Highlight;
+      --color-button-primary-fg-disabled: GrayText;
+      --color-button-primary-border: Highlight;
+      --color-button-primary-border-top: Highlight;
+      --color-button-primary-border-bottom: Highlight;
+      --color-button-primary-border-hover: Highlight;
+      --color-button-primary-border-pressed: Highlight;
+      --color-button-primary-border-disabled: GrayText;
+      /* ButtonBackground → SystemControlBackgroundBaseLowBrush (ButtonFace); …PointerOver /
+       …Pressed → SystemColorHighlightTextColor; ButtonForeground → SystemColorButtonTextColor;
+       …PointerOver / …Pressed → SystemControlHighlightBaseHighBrush (Highlight); …Disabled →
+       GrayText. ButtonBorderBrush → SystemControlForegroundTransparentBrush (ButtonText);
+       …PointerOver → Highlight; …Pressed → HighlightText; …Disabled → GrayText. */
+      --color-button-secondary-bg: ButtonFace;
+      --color-button-secondary-bg-hover: HighlightText;
+      --color-button-secondary-bg-pressed: HighlightText;
+      --color-button-secondary-bg-disabled: ButtonFace;
+      --color-button-secondary-fg: ButtonText;
+      --color-button-secondary-fg-hover: Highlight;
+      --color-button-secondary-fg-pressed: Highlight;
+      --color-button-secondary-fg-disabled: GrayText;
+      --color-button-secondary-border: ButtonText;
+      --color-button-secondary-border-top: ButtonText;
+      --color-button-secondary-border-bottom: ButtonText;
+      --color-button-secondary-border-hover: Highlight;
+      --color-button-secondary-border-pressed: HighlightText;
+      --color-button-secondary-border-disabled: GrayText;
+      /* Danger: the standard Button's contrast pairs */
+      --color-button-danger-bg: ButtonFace;
+      --color-button-danger-bg-hover: HighlightText;
+      --color-button-danger-bg-pressed: HighlightText;
+      --color-button-danger-fg: ButtonText;
+      --color-button-danger-fg-pressed: Highlight;
+      --color-button-danger-border: ButtonText;
+      --color-button-danger-border-top: ButtonText;
+      --color-button-danger-border-bottom: ButtonText;
+      --color-button-danger-border-hover: Highlight;
+      --color-button-danger-border-pressed: HighlightText;
+      --color-button-danger-bg-disabled: ButtonFace;
+      --color-button-danger-fg-disabled: GrayText;
+      --color-button-danger-border-disabled: GrayText;
+
+      /* TextControlBackground → SystemControlBackgroundAltMediumLowBrush (ButtonFace); …PointerOver
+       → …AltMediumBrush (ButtonFace); …Focused → …AltHighBrush (ButtonFace).
+       TextControlBorderBrush → SystemControlForegroundBaseMediumBrush (ButtonText); focused at
+       TextControlBorderThemeThicknessFocused 2 (Highlight, as the HighContrast focused brush).
+       TextControlPlaceholderForeground → SystemControlPageTextBaseMediumBrush (CanvasText). */
+      --color-field-bg: ButtonFace;
+      --color-field-bg-hover: ButtonFace;
+      --color-field-bg-focus: ButtonFace;
+      --color-field-border: ButtonText;
+      --color-field-border-bottom: ButtonText;
+      --color-field-border-focus: Highlight;
+      --color-field-border-bottom-focus: Highlight;
+      --shadow-field-focus: inset 0 0 0 1px Highlight;
+      --color-field-placeholder: CanvasText;
+      /* TextControlBackgroundDisabled → SystemControlBackgroundBaseLowBrush (ButtonFace);
+       …ForegroundDisabled and …BorderBrushDisabled → GrayText */
+      --color-field-bg-disabled: ButtonFace;
+      --color-field-border-disabled: GrayText;
+      --color-field-fg-disabled: GrayText;
+
+      /* CheckBoxCheckBackgroundFillUnchecked → ButtonFace; …PointerOver → HighlightText; …Disabled
+       → Window; Stroke → ButtonText; …PointerOver → Highlight; …Disabled → GrayText.
+       Checked fill and stroke → Highlight; …PointerOver → ButtonText; …Disabled → GrayText.
+       Glyph checked → HighlightText; …PointerOver → ButtonFace; …Disabled → Window. */
+      --color-checkbox-bg: ButtonFace;
+      --color-checkbox-bg-hover: HighlightText;
+      --color-checkbox-bg-pressed: HighlightText;
+      --color-checkbox-bg-disabled: Canvas;
+      --color-checkbox-border: ButtonText;
+      --color-checkbox-border-hover: Highlight;
+      --color-checkbox-border-pressed: Highlight;
+      --color-checkbox-border-disabled: GrayText;
+      --color-checkbox-border-disabled-hover: GrayText;
+      --color-checkbox-checked-bg: Highlight;
+      --color-checkbox-checked-bg-hover: ButtonText;
+      --color-checkbox-checked-bg-pressed: ButtonText;
+      --color-checkbox-checked-bg-disabled: GrayText;
+      --color-checkbox-checked-bg-disabled-hover: GrayText;
+      --color-checkbox-glyph: HighlightText;
+      --color-checkbox-glyph-disabled: Canvas;
+      --color-control-label-disabled: GrayText;
+
+      /* ToggleSwitchFillOff → ButtonFace; …PointerOver → HighlightText; …Disabled → Window.
+       StrokeOff → ButtonText; …PointerOver → Highlight; …Disabled → GrayText. FillOn / StrokeOn
+       → Highlight; …PointerOver → ButtonFace / ButtonText; …Disabled → Window / GrayText.
+       KnobFillOff → ButtonText; …PointerOver → Highlight; KnobFillOn → HighlightText;
+       …PointerOver → ButtonText; both …Disabled → GrayText. ToggleSwitchOnStrokeThickness 1. */
+      --color-switch-track: ButtonFace;
+      --color-switch-track-hover: HighlightText;
+      --color-switch-track-disabled: Canvas;
+      --color-switch-border: 1px solid ButtonText;
+      --color-switch-border-hover: 1px solid Highlight;
+      --color-switch-border-disabled: 1px solid GrayText;
+      --color-switch-track-on: Highlight;
+      --color-switch-track-on-hover: ButtonFace;
+      --color-switch-track-on-disabled: Canvas;
+      --color-switch-track-on-disabled-hover: Canvas;
+      --color-switch-border-on: 1px solid Highlight;
+      --color-switch-border-on-hover: 1px solid ButtonText;
+      --color-switch-border-on-disabled: 1px solid GrayText;
+      --color-switch-thumb: ButtonText;
+      --color-switch-thumb-hover: Highlight;
+      --color-switch-thumb-disabled: GrayText;
+      --color-switch-thumb-on: HighlightText;
+      --color-switch-thumb-on-hover: ButtonText;
+      --color-switch-thumb-on-disabled: GrayText;
+      --shadow-switch-thumb: none;
+
+      /* RadioButtonOuterEllipseFill → ButtonFace; …PointerOver → HighlightText; Stroke →
+       ButtonText; …PointerOver → Highlight; …Disabled → GrayText. CheckedStroke → Highlight;
+       …PointerOver → ButtonText; …Disabled → GrayText. CheckedFill → HighlightText; …PointerOver
+       → ButtonFace; …Disabled → Window. CheckGlyphFill → Highlight; …PointerOver → ButtonText;
+       …Disabled → GrayText: the dot. */
+      --color-radio-label: ButtonText;
+      --color-radio-label-disabled: GrayText;
+      --color-radio-bg: ButtonFace;
+      --color-radio-bg-hover: HighlightText;
+      --color-radio-bg-disabled: Canvas;
+      --color-radio-border: ButtonText;
+      --color-radio-border-hover: Highlight;
+      --color-radio-border-disabled: GrayText;
+      --color-radio-checked-border: Highlight;
+      --color-radio-checked-border-hover: ButtonText;
+      --color-radio-checked-border-disabled: GrayText;
+      --color-radio-checked-border-disabled-hover: GrayText;
+      --color-radio-checked-bg: Highlight;
+      --color-radio-checked-bg-hover: ButtonText;
+      --color-radio-checked-bg-disabled: GrayText;
+      --color-radio-checked-bg-disabled-hover: GrayText;
+      --shadow-radio-checked: inset 0 0 0 3px HighlightText;
+      --shadow-radio-checked-hover: inset 0 0 0 2px ButtonFace;
+      --shadow-radio-checked-disabled: inset 0 0 0 3px Canvas;
+
+      /* SliderTrackFill → SystemControlForegroundBaseMediumLowBrush (ButtonText); …Disabled →
+       SystemControlDisabledChromeDisabledHighBrush (GrayText). TrackValueFill → Highlight.
+       SliderThumbBackground / SliderOuterThumbBackground → SystemControlForegroundAccentBrush
+       (ButtonText); …PointerOver → Highlight; …Disabled → GrayText. */
+      --color-slider-track: ButtonText;
+      --color-slider-track-disabled: GrayText;
+      --color-slider-range: Highlight;
+      --color-slider-range-disabled: GrayText;
+      --color-slider-thumb-bg: ButtonText;
+      --color-slider-thumb-bg-hover: Highlight;
+      --color-slider-thumb-bg-disabled: GrayText;
+      --color-slider-thumb-border: ButtonText;
+      --color-slider-thumb-border-bottom: ButtonText;
+      --color-slider-thumb-border-hover: Highlight;
+      --shadow-slider-thumb: none;
+      --shadow-slider-thumb-hover: none;
+      --shadow-slider-thumb-pressed: none;
+      --shadow-slider-thumb-disabled-hover: none;
+      --shadow-slider-thumb-focus: 0 0 0 1px Canvas;
+
+      /* ProgressBarForeground → SystemColorHighlightColor */
+      --color-progress-fill: Highlight;
+      /* ProgressBarBackground → SystemColorWindowColor, with ProgressBarBorderBrush →
+       SystemColorWindowTextColor (ProgressBarBorderThemeThickness 1): the line in CanvasText */
+      --color-progress-track: linear-gradient(CanvasText 0 0) center / 100% 1px no-repeat;
+
+      /* ComboBoxBackground → SystemControlBackgroundAltMediumLowBrush (ButtonFace); …PointerOver →
+       SystemControlPageBackgroundAltMediumBrush (Window); …Pressed → …BackgroundListMedium
+       (ButtonFace). ComboBoxBorderBrush → …ForegroundBaseMedium (ButtonText); …PointerOver →
+       …HighlightBaseMediumHigh (Highlight). Glyph → …ForegroundBaseMediumHigh (ButtonText). */
+      --color-select-trigger-fg: ButtonText;
+      --color-select-trigger-bg: ButtonFace;
+      --color-select-trigger-bg-hover: Canvas;
+      --color-select-trigger-bg-open: ButtonFace;
+      --shadow-select-trigger: inset 0 0 0 1px ButtonText;
+      --shadow-select-trigger-hover: inset 0 0 0 1px Highlight;
+      --color-select-indicator-bg: transparent;
+      --color-select-indicator-fg: ButtonText;
+      /* ComboBoxItemBackgroundPointerOver → SystemControlHighlightListLowBrush (Highlight);
+       …Selected → …HighlightListAccentLow (Highlight); ComboBoxItemForegroundPointerOver /
+       …Selected → SystemControlHighlightAltBaseHighBrush (HighlightText) */
+      --color-select-item-bg-highlighted: Highlight;
+      --color-select-item-bg-highlighted-hover: Highlight;
+      --color-select-item-fg-highlighted: HighlightText;
+      --color-select-item-description-highlighted: HighlightText;
+      --color-select-item-bg-checked: Highlight;
+      --color-select-item-checked-mark: none;
+      --color-select-check: transparent;
+      --color-select-check-highlighted: transparent;
+      --color-combobox-item-bg-highlighted: Highlight;
+      --color-combobox-item-bg-highlighted-hover: Highlight;
+      --color-combobox-item-fg-highlighted: HighlightText;
+
+      /* ToolTipForegroundBrush → SystemColorWindowTextColorBrush (the surface and border come
+       from the menu tokens' contrast block: Canvas, CanvasText, 2px) */
+      --color-tooltip-fg: CanvasText;
+      --spacing-tooltip-border: 1px;
+      --shadow-tooltip-surface: none;
+
+      /* ContentDialog in HighContrast: ContentDialogBackground → Window, ContentDialogBorderBrush →
+       WindowText, the command space the same Window */
+      --color-bg-dialog: Canvas;
+      --color-dialog-border-outer: CanvasText;
+      --color-dialog-border-inner: transparent;
+      --shadow-dialog: none;
+      /* ContentDialogSmokeFill → SystemColorWindowColor at Opacity 0.8 */
+      --color-dialog-scrim: color-mix(in srgb, Canvas 80%, transparent);
+      --color-dialog-footer-bg: Canvas;
+      --shadow-dialog-footer: inset 0 1px 0 CanvasText;
+
+      /* ScrollBarThumbFill → SystemControlForegroundChromeDisabledLowBrush (ButtonText);
+       …PointerOver → SystemControlHighlightBaseMediumLowBrush (Highlight) */
+      --color-scrollbar-thumb: ButtonText;
+      --color-scrollbar-thumb-hover: Highlight;
+    }
+  }
+}

@@ -91,6 +91,7 @@ export const appAnswers: AnswerTable = {
     differentiateWithoutColor: false,
     invertColors: false,
     showBorders: false,
+    underlineAccessKeys: false,
   }),
   getLocalizedSystemStrings: () => ({
     systemSettings: 'System Settings',

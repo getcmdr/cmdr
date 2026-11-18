@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { tick } from 'svelte'
 
 // A fake engine: claims two commands, one of which a TS table also answers, to pin the order.
 const engine = vi.hoisted(() => ({
@@ -54,12 +55,22 @@ vi.mock('./menu-engine.js', () => ({
     },
     bar: () => [],
     click: () => ({ kind: 'nothing' }),
+    onChange: () => () => {},
     opensPopup: (cmd: string) => Promise.resolve(cmd === 'show_tab_context_menu'),
     popup: (cmd: string, _payload: unknown, label: string) => {
       engine.calls.push(`popup:${cmd}:${label}`)
       return Promise.resolve({
         anchor: null,
-        rows: [{ kind: 'item', id: 'tab_pin', label: { text: 'Pin tab' }, shortcut: null, enabled: true }],
+        rows: [
+          {
+            kind: 'item',
+            id: 'tab_pin',
+            label: { text: 'Pin tab' },
+            shortcut: null,
+            ariaKeyshortcuts: null,
+            enabled: true,
+          },
+        ],
       })
     },
     contextClick: () => ({ kind: 'nothing' }),
@@ -108,10 +119,11 @@ describe('demo backend', () => {
     const origin = { label: 'main', pointer: { x: 12, y: 34 } }
     expect(await backend.invoke('show_tab_context_menu', {}, origin)).toBeNull()
     expect(engine.calls).toContain('popup:show_tab_context_menu:main')
-    const menu = document.querySelector<HTMLElement>('.cmdr-demo-menu')
+    for (let i = 0; i < 4; i++) await tick()
+    const menu = document.querySelector<HTMLElement>('[data-command-menu="context"]')
     expect(menu?.textContent).toContain('Pin tab')
     expect([menu?.style.left, menu?.style.top]).toEqual(['12px', '34px'])
-    menu?.remove()
+    document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
   })
 
   // Regression: `set_app_theme` was a no-op, so Light and Dark did nothing in the demo.

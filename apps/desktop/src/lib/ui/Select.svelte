@@ -344,34 +344,53 @@
         display: inline-flex;
         align-items: center;
         gap: var(--spacing-xs);
-        padding: 3px 3px 3px var(--spacing-sm);
+        min-height: var(--spacing-select-trigger-min-height);
+        padding: var(--spacing-select-trigger-padding);
         border: none;
-        border-radius: var(--radius-md);
-        background: transparent;
-        color: var(--color-text-primary);
-        font-size: var(--font-size-sm);
+        border-radius: var(--radius-select-trigger);
+        background: var(--color-select-trigger-bg);
+        color: var(--color-select-trigger-fg);
+        font-size: var(--font-select-trigger-size);
+        box-shadow: var(--shadow-select-trigger);
         cursor: default;
     }
 
-    /* On hover (and while open) the whole trigger fills with the chevron stepper's color, so the
-       control reads as one uniform pill — the macOS pop-up-button behavior. */
-    :global(.select-trigger:hover:not([data-disabled])),
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.select-trigger) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
+    }
+
+    /* On hover (and while open) the house trigger fills with the chevron stepper's color, so the
+       control reads as one uniform pill — the macOS pop-up-button behavior. Windows' ComboBox is
+       a bordered control-fill button that lightens instead. */
+    :global(.select-trigger:hover:not([data-disabled])) {
+        background: var(--color-select-trigger-bg-hover);
+        box-shadow: var(--shadow-select-trigger-hover);
+    }
+
     :global(.select-trigger[data-state='open']) {
-        background: var(--color-bg-tertiary);
+        background: var(--color-select-trigger-bg-open);
+        box-shadow: var(--shadow-select-trigger-hover);
     }
 
     :global(.select-value) {
         white-space: nowrap;
     }
 
+    /* Every look dims a disabled trigger. On Windows that approximates WinUI's disabled ComboBox
+       (ControlFillColorDisabled under TextFillColorDisabled), close enough for a rare state. */
     :global(.select-trigger[data-disabled]) {
         cursor: not-allowed;
         opacity: 0.5;
     }
 
     :global(.select-trigger:focus-visible) {
-        outline: 2px solid var(--color-accent);
+        outline: 2px solid var(--color-focus-ring);
         outline-offset: 1px;
+        box-shadow: var(--shadow-focus-ring-select);
     }
 
     /* The macOS-style chevron stepper: a circle holding the up/down chevrons. Its fill matches the
@@ -385,8 +404,8 @@
         width: 18px;
         height: 18px;
         border-radius: var(--radius-full);
-        background: var(--color-bg-tertiary);
-        color: var(--color-text-primary);
+        background: var(--color-select-indicator-bg);
+        color: var(--color-select-indicator-fg);
     }
 
     /* Frosted-glass menu. Shared tokens with tooltips / filter-chip popovers so every glass surface
@@ -401,13 +420,14 @@
            paints over the menu. It stacks relative to wherever the menu portals
            (`portal-target.ts`): body level, or a hosting dialog's overlay, under `--z-modal`. */
         z-index: var(--z-dropdown);
-        background: var(--color-bg-glass);
-        -webkit-backdrop-filter: var(--glass-backdrop);
-        backdrop-filter: var(--glass-backdrop);
-        border: 0.5px solid var(--color-border-glass);
-        border-radius: var(--radius-menu);
-        box-shadow: var(--shadow-glass), var(--shadow-glass-rim);
-        padding: var(--spacing-xs);
+        /* The flyout material (`app-menu.css`): the house glass, or Windows' acrylic. */
+        background: var(--color-menu-surface-bg);
+        -webkit-backdrop-filter: var(--glass-menu-backdrop);
+        backdrop-filter: var(--glass-menu-backdrop);
+        border: var(--spacing-menu-surface-border) solid var(--color-menu-surface-border);
+        border-radius: var(--radius-menu-surface);
+        box-shadow: var(--shadow-menu-surface);
+        padding: var(--spacing-select-content-padding);
         max-height: 300px;
         overflow-y: auto;
         /* Consistent width regardless of content. */
@@ -416,6 +436,14 @@
         outline: none;
         /* The macOS overlap shift (transform) and the until-measured hide (opacity) are applied
            inline per instance; see `contentStyle`. */
+    }
+
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        :global(.select-content) {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
     }
 
     :global(.select-content:focus),
@@ -435,10 +463,11 @@
         display: flex;
         align-items: center;
         gap: var(--spacing-xs);
-        padding: 3px var(--spacing-sm);
-        border-radius: var(--radius-sm);
+        margin: var(--spacing-select-item-margin);
+        padding: var(--spacing-select-item-padding);
+        border-radius: var(--radius-select-item);
         cursor: default;
-        font-size: var(--font-size-sm);
+        font-size: var(--font-select-item-size);
         outline: none;
     }
 
@@ -460,17 +489,27 @@
 
     /* No hover visual indication on its own: only the highlighted (cursor) state paints. */
     :global(.select-item:hover) {
-        background: transparent;
+        background-color: transparent;
+    }
+
+    /* The current value's row: nothing extra in the house look (its checkmark marks it); on
+       Windows a subtle fill and WinUI's accent pill on the leading edge, as a background layer. */
+    :global(.select-item[data-state='checked']) {
+        background-color: var(--color-select-item-bg-checked);
+        background-image: var(--color-select-item-checked-mark);
+        background-position: var(--spacing-select-item-checked-mark-position);
+        background-size: var(--spacing-select-item-checked-mark-size);
+        background-repeat: var(--spacing-select-item-checked-mark-repeat);
     }
 
     /* Highlighted item (keyboard / pointer cursor): accent fill, like macOS. */
     :global(.select-item[data-highlighted]) {
-        background: var(--color-accent);
-        color: var(--color-accent-fg);
+        background-color: var(--color-select-item-bg-highlighted);
+        color: var(--color-select-item-fg-highlighted);
     }
 
     :global(.select-item[data-highlighted]:hover) {
-        background: var(--color-accent-hover);
+        background-color: var(--color-select-item-bg-highlighted-hover);
     }
 
     /* A disabled row stays readable but dimmed, and the cursor never lands on it. */
@@ -491,7 +530,7 @@
         justify-content: center;
         flex-shrink: 0;
         min-width: 1em;
-        color: var(--color-accent-text);
+        color: var(--color-select-check);
         visibility: hidden;
     }
 
@@ -501,7 +540,7 @@
 
     /* On the highlighted row the checkmark sits on the accent fill, so it flips to the accent fg. */
     :global(.select-item[data-highlighted] .item-indicator) {
-        color: var(--color-accent-fg);
+        color: var(--color-select-check-highlighted);
     }
 
     /* When a content-level class (`custom-highlighted`) is set, hide the checkmark on the still-checked
@@ -523,6 +562,6 @@
        Apple Purple (the worst dark-fg case). The contrast checker's `dropdown_states.go` matrix
        validates this against every accent variant. */
     :global(.select-item[data-highlighted]) .option-description {
-        color: var(--color-accent-fg);
+        color: var(--color-select-item-description-highlighted);
     }
 </style>

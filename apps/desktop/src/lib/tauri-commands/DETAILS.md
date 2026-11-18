@@ -134,6 +134,10 @@ commands, and notable non-obvious placements.
 - **`tab.ts`**: tab context menu: `showTabContextMenu`, `onTabContextAction`.
 - **`date-sort-menu.ts`**: a file list header's date Sort by popup: `showDateSortMenu` (pane, requested column, anchor
   or `null` for the pointer), `onDateSortMenuPick` (the pick, with the pane it opened over).
+- **`in-page-menus.ts`**: the menus a page draws (D5): `followMenuBar` (the main bar, live: subscribes to
+  `menu-bar-changed`, then asks `get_menu_bar`, and keeps the revision contract of `src-tauri/src/menu/DETAILS.md` §
+  "The bar a page draws"; applies a change through `lib/ui/command-menu/bar-change.ts`), `pickMenuBarItem`,
+  `getViewerMenuBar`, `openContextMenuInPage`, `pickContextMenuItem`. `lib/ui/DETAILS.md` § Command menus draws them.
 - **`function-key-bar.ts`**: the function key bar's one-item context menu: `showFunctionKeyBarContextMenu`,
   `onFunctionKeyBarHideRequested` (payload-less; the frontend owns the setting write and the toast).
 - **`clipboard-files.ts`**: clipboard file operations: copy/cut files to system clipboard, read/paste, clear cut state.

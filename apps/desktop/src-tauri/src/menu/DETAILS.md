@@ -104,6 +104,10 @@ window focus context.
   draws them, and `loan.rs` `lend_tag_row`, which installs the row on the tracking notification. See "The tag row".
 - `tag_icons.rs` (macOS): the circle PNGs for the seven plain tag items, the look the row falls back to.
 - `rebuild.rs`: `rebuild_menu_bar`, which throws the bar away and builds a new one in the current UI language.
+- `page_bar.rs`: the main bar for a page that draws it (`get_menu_bar`, `menu-bar-changed`, `pick_menu_bar_item`):
+  `bar_inputs` reads `MenuState` into `cmdr_menu::page::BarInputs`. See "The bar a page draws".
+- `page_context.rs`: the right-click menus for a page that draws them (`open_context_menu_in_page`,
+  `pick_context_menu_item`): the token a pick names, and `note_native_popup`. See "Right-click menus a page draws".
 - `mnemonics.rs`: `Mnemonics`, the per-submenu allocator for the Linux underline letter.
 - `mnemonic_mask/`: `set_window_mnemonics_suspended` (the IPC command `set_menu_mnemonics_suspended` calls it), which
   turns a window's mnemonics off while a modal surface owns its keyboard; `mnemonic_modifier` is the pure decision and
@@ -331,11 +335,79 @@ Shared state managed via `tauri::State<MenuState<Wry>>`. Holds:
   `filename`, `paths` (full selection if the right-clicked file is part of it, else `[path]`),
   and (macOS) `open_with_apps` (`bundle_id → app_path` map populated when "Open with" submenu
   is built, consumed by `on_menu_event` on click)
+- The pushed facts a page bar draws that the native items keep only inside muda: `show_hidden_checked`,
+  `pin_tab_pinned`, `same_kind_target`, `undo_trash_target` (also the Undo item's enabled input), and
+  `pushed_shortcuts` (every rebind as pushed). `page_bar` holds the page bar's feed. See "The bar a page draws".
 
 The search-results-only “Show in folder” row is gated by `ContextMenuPaneFacts::can_show_in_folder`, independently of
 `restrict_destination_actions`. Its handler emits `ShowSearchResultInFolder { path }` from `MenuContext.path`; it must
 not use `MenuContext.paths`, because that is the selection when the popup opened and the action names the primary
 right-clicked row itself. Its accelerator label is the live `nav.parent` binding looked up through `GO_PARENT_ID`.
+
+### The bar a page draws
+
+Off macOS the bar moves into the page (D5, task 63 of `docs/specs/windows-port-plan.md`). The page asks the backend for
+it, so every row still comes from `cmdr-menu` (`crates/cmdr-menu/DETAILS.md` § "The menus as a page draws them") and no
+row is decided here or in the frontend.
+
+- **`get_menu_bar`** answers `MenuBarAnswer { revision, menus }`, every menu of this platform's bar with each row's
+  catalog-key label, shown key, `aria-keyshortcuts`, enabled and checked state, and check kind. It reads
+  `page_bar::bar_inputs(MenuState)`, the same fields `apply_menu_item_states` and the native builders read, so the
+  page and the native bar can't disagree.
+- **`menu-bar-changed`** `{ revision, rows, menus }`: after every push (`commands/menu_state.rs`'s commands,
+  `update_menu_accelerator`, `set_menu_context`, a click's own check flip), `notify_bar_changed` redraws, diffs against
+  the last answer sent, and emits only when a row moved: `rows` holds the moved rows' states by id, or `menus` the whole
+  bar when its shape moved. Nothing is drawn or emitted until the first `get_menu_bar` (macOS never asks).
+- **Ordering contract** (the event-versus-answer race this codebase has been bitten by): only an event moves the
+  revision on. `take_change` (the redraw, the bump, and `last`) and the emit happen under the one `page_bar` lock, and
+  `get_menu_bar` answers `last` at its revision under the same lock, never a fresher bar of its own. So an answer taken
+  between a push storing its fact and that push's `notify_bar_changed` is the bar as last announced, and the push's
+  event reaches every follower as its next revision, however many follow (pinned by
+  `an_answer_between_a_push_and_its_event_leaves_no_follower_stale`). Only the first answer computes the bar, since
+  nothing was announced before it. ❗ So every write to a `bar_inputs` field must be followed by a
+  `notify_bar_changed`, or no page sees it. A page subscribes to `menu-bar-changed` first, then calls `get_menu_bar`,
+  keeps the answer's revision, drops any event at or below it, applies one at exactly the next revision, and on a gap
+  (an event further ahead) asks `get_menu_bar` again. An event that lands while the ask is in flight is buffered by
+  that rule; `followMenuBar` retries a failed ask with backoff.
+- **The subscription is sticky**: once any page asks, every push for the rest of the session redraws the whole bar,
+  diffs it, and emits to every window (`update_select_same_kind_menu` runs per cursor move). Today only the dev Debug >
+  Components page asks; from task 63 step 6 the bar's own window does, where that cost is the design point. No
+  unsubscribe: a window's bar follows for the window's life.
+- **Live labels** come from the same pushes the native items get (`update_select_same_kind_menu`,
+  `update_undo_trash_menu`, `update_pin_tab_menu`). ❗ The right-click Selection submenu's "same kind" label stays the
+  caller's live value (`show_file_context_menu`'s `same_kind`), never this one, which the frontend debounces.
+- **`pick_menu_bar_item(menuId)`** answers `BarPickOutcome::{Ran, NotLive}`: a greyed row, or an id the bar doesn't
+  build, runs nothing. A live one runs `menu_handlers::handle_menu_pick`, the handler a native click reaches
+  (`handle_menu_event` is a thin wrapper over it), after doing what a native check item does by itself: Show hidden
+  files flips its stored check (and the native item, where one is built) first, since the handler reads the new state
+  off it. The view-mode and sort lanes need no flip: they write every check from the stored state.
+- **The viewer's bar** is `get_viewer_menu_bar(inputs)`, a pure answer from the viewer page's own state
+  (`cmdr_menu::page::viewer`): no store, no event. Its picks go through `pick_menu_bar_item` too, to the focused viewer's
+  lanes; File > Close is `VIEWER_CLOSE_ID`, a lane only a page reaches (the native Close is the OS's own item).
+- A sync command runs on the main thread, as `on_menu_event` does, so a page's pick runs where a native one would.
+
+### Right-click menus a page draws
+
+On Windows the right-click menus move into the page too (D5; the `contextMenus` convention reads `inPage` there, and
+`native` on macOS and every Linux desktop, which keep muda's popups). The frontend asks the convention, ❌ never the
+platform, and calls `open_context_menu_in_page` (`apps/desktop/src-tauri/src/commands/menu_in_page.rs`) instead of the `show_*` command.
+
+- **One request, nine menus**: `InPageContextMenuRequest` is tagged by `menu` (`file`, `breadcrumb`, `parentRow`, `tab`,
+  `dateSort`, `functionKeyBar`, `viewer`, `queueRow`, `networkHost`), each variant carrying its `show_*` command's own
+  arguments. The in-page path stashes the same `MenuState` facts through the same helpers the native path uses
+  (`stash_file_context`, `breadcrumb_rows`, `parent_row_rows`, `network_host_rows` in `commands/menu.rs`), BEFORE the
+  rows go out, so a pick finds them exactly as a native pick does. The file menu's "same kind" label is the caller's
+  live value, as the native command's.
+- **The answer** is `InPageContextMenu { token, rows, anchor }`: `cmdr_menu::page::context::page_rows` over the same
+  `ContextRow`s, OS slots left out (macOS's only, and macOS stays native), and the caller's anchor handed back (a
+  keyboard-opened menu opens at the row, Shift+F10 and the Menu key included; `None` opens at the pointer).
+- **A pick names its menu**: `pick_context_menu_item(token, menuId)` answers `ContextPickOutcome::{Ran, Stale}`. Every
+  menu that opens, native (`note_native_popup` at the top of each `show_*`) or page, moves the token and replaces the
+  pickable ids, so a pick from a menu another right-click replaced (its facts are gone from `MenuState`) runs nothing,
+  and neither does a greyed row. A live one runs `handle_menu_pick`, the same handler and the same `contextMenu` road a
+  native pick takes, once (the menu closes on its pick).
+- Opening focuses the window the menu went up over, as `focus_for_context_menu` does for a native one: the file-scoped
+  guard in `emit_command` asks whether the main window has focus.
 
 ### Accelerator sync
 

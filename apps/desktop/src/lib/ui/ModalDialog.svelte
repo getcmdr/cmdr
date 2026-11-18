@@ -225,19 +225,19 @@
     /** ⌘. cancels on the Mac, as Escape does (`dialog-keys.ts`; DETAILS § Platform conventions). */
     const cancelsOnCommandPeriod = commandPeriodCancels()
 
-    /** Where the keytips are drawn while Alt is held, on a platform with access keys. */
+    /**
+     * Where the keytips are drawn while Alt is held: the stand-in for underlines where the
+     * Highlight API is missing (WebKitGTK; `access-keys.ts`).
+     */
     let accessKeyTips = $state<AccessKeyTip[]>([])
-    /** How holding Alt shows the access keys: keytips (Windows), underlines (Linux), or none (macOS). */
-    const accessKeyStyle = convention('accessKeys')
     /**
      * Alt+letter access keys (`access-keys.ts`), on Windows and Linux; macOS has none. A dialog
      * whose bare letters answer it (`letterKeysAnswer`) already has a key per button, shown on the
      * button, so it gets no second set: one key scheme per dialog.
      */
     const accessKeys =
-        accessKeyStyle !== 'none' && !untrack(() => letterKeysAnswer)
+        convention('accessKeys') !== 'none' && !untrack(() => letterKeysAnswer)
             ? createAccessKeys({
-                  style: accessKeyStyle,
                   scope: () => dialogElement,
                   layer: () => overlayElement,
                   commandScope: () => keyScope,
@@ -840,7 +840,7 @@
            region: the user can still drag the window while a dialog is open.
            `--titlebar-height` is per-window (see app.css § Window chrome). */
         inset: var(--titlebar-height) 0 0 0;
-        background: var(--color-overlay-light);
+        background: var(--color-dialog-scrim);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1112,7 +1112,7 @@
         align-items: center;
         gap: var(--spacing-sm);
         margin: 0;
-        font-size: var(--font-size-lg);
+        font-size: var(--font-dialog-title-size);
         font-weight: 600;
         color: var(--color-text-primary);
         text-align: left;
@@ -1178,6 +1178,10 @@
         justify-content: flex-end;
         gap: var(--spacing-md);
         padding: var(--spacing-dialog);
+        /* Windows' command space: its own fill under a separator line (ContentDialog) */
+        background: var(--color-dialog-footer-bg);
+        box-shadow: var(--shadow-dialog-footer);
+        border-radius: var(--radius-dialog-footer);
     }
 
     /* `margin-right: auto` eats the slack, so the buttons stay hard right no matter
@@ -1205,7 +1209,7 @@
         flex-wrap: nowrap;
         justify-content: flex-end;
         align-items: center;
-        gap: var(--spacing-md);
+        gap: var(--spacing-dialog-actions-gap);
         margin-left: auto;
         white-space: nowrap;
     }
@@ -1216,7 +1220,8 @@
         flex-direction: row-reverse;
     }
 
-    /* An access key's keytip, drawn while Alt is held (`access-keys.ts`), centered on the bottom
+    /* An access key's keytip, drawn while Alt is held where underlines can't paint (no Highlight
+       API, `access-keys.ts`), centered on the bottom
        edge of the control it presses. Never in the way of a click: Alt up, a key, or a pointer
        press hides it. */
     .access-key-tip {

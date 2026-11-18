@@ -268,12 +268,15 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
   `viewer_get_lines` runs through `get_lines_within`, which flips the fetch's cancel flag when its deadline fires
   (`apps/desktop/src-tauri/src/file_viewer/DETAILS.md` § Tauri commands).
 - **`menu.rs`**: the context-menu popups (file / breadcrumb / parent row / tab / a file list header's date Sort by /
-  network host / function key bar),
-  plus `update_menu_context`.
+  network host / function key bar / the viewer's text / a queue row), plus `update_menu_context`, and their in-page twin in
+  `menu_in_page.rs`, `open_context_menu_in_page` + `pick_context_menu_item` (Windows), which stash through the same helpers
+  (`apps/desktop/src-tauri/src/menu/DETAILS.md` § Right-click menus a page draws).
 - **`menu_state.rs`**: the pushes that keep the menu BAR in step with the frontend: the view-mode + hidden-files +
   pin-tab + reopen-tab + same-kind-label + UI-language sync commands, the greying setters, and `activate_window_menu`
   (per-window focus-gain: swaps the macOS app menu bar between main/viewer, then enables/disables file-scoped items via
-  `menu::set_menu_context`, in `menu/item_states.rs`; see `menu/DETAILS.md`).
+  `menu::set_menu_context`, in `menu/item_states.rs`; see `menu/DETAILS.md`). Each push ends in
+  `menu::page_bar::notify_bar_changed`. Also the bar for a page that draws it: `get_menu_bar`, `get_viewer_menu_bar`,
+  and `pick_menu_bar_item`, pass-throughs to `apps/desktop/src-tauri/src/menu/page_bar.rs` (`menu/DETAILS.md` § The bar a page draws).
   - ❗ **`show_file_context_menu` holds a `ServicesLoan` across `popup()`** (macOS): AppKit's one Services menu is
     borrowed for the life of the menu and pointed at the right-clicked rows. `popup()` runs the whole tracking loop, so
     the binding is `let _services_loan = …` and ❌ never `let _ = …`; see `menu/DETAILS.md` § Services in the

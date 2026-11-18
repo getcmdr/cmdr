@@ -73,10 +73,12 @@ out), so answers are exactly what Tauri's `invoke` resolves with.
   `update_menu_accelerator`, `update_sort_menu`, `update_view_mode_menu`, and the rest of `MENU_COMMANDS`) and store
   them, as `commands/menu_state.rs` stores them in `MenuState`. `menu.bar()` answers the macOS bar as it stands:
   `[{ id, title, rows }]`, each row `item` / `check` / `submenu` / `system` / `separator` with its label (a catalog key
-  plus tokens, or the app menu's literal `Cmdr`), its shortcut in a Mac's glyphs, and its enabled and checked state, all
-  from `cmdr-menu`. `menu.click(id)` answers what the click sends: `{ kind: "emit", event, payload, to }`
-  (`execute-command`, `settings-changed`, `view-mode-changed`, `menu-sort`, the payloads `handle_menu_event` emits, `to`
-  the target window's label), `nativeEdit`, `closeFocusedWindow`, or `nothing` for a greyed or OS row.
+  plus tokens, or the app menu's literal `Cmdr`), its shortcut in a Mac's glyphs (plus `ariaKeyshortcuts`), and its
+  enabled and checked state (plus `checkKind`), all drawn by `cmdr_menu::page` (`crates/cmdr-menu/DETAILS.md` § "The
+  menus as a page draws them"), the same function the desktop's in-page bar draws through. `menu.click(id)` answers what
+  the click sends: `{ kind: "emit", event, payload, to }` (`execute-command`, `settings-changed`, `view-mode-changed`,
+  `menu-sort`, the payloads `handle_menu_event` emits, `to` the target window's label), `nativeEdit`,
+  `closeFocusedWindow`, or `nothing` for a greyed or OS row.
 - The right-click menus are the same object (`context_menu.rs`). `DemoMenuBar.opensPopup(command)` claims the
   `show_*_context_menu` commands (`POPUP_COMMANDS`), and `menu.popup(command, args, windowLabel)` stashes what the menu
   went up over (the row's path, the eject target, the host row, the window), as `commands/menu.rs` stashes it in

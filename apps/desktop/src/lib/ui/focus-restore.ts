@@ -58,6 +58,11 @@ export function focusHome(): boolean {
   return true
 }
 
+/** Whether `node` sits inside the window's home (the explorer's lists and container). */
+export function isInFocusHome(node: Node): boolean {
+  return home?.root()?.contains(node) ?? false
+}
+
 /**
  * Whether focus has nowhere useful to be: on `<body>` (its element unmounted under it) or on
  * the home's root itself. Keys reach no pane from `<body>`, so a list that mounts or unmounts

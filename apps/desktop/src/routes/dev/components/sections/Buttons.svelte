@@ -110,24 +110,24 @@
 
     /* allowed-btn-restyle: catalog static-hover preview mirrors Button.svelte */
     .demo-hover-primary :global(.btn-primary) {
-        background: var(--color-accent-hover);
+        background: var(--color-button-primary-bg-hover);
     }
 
     /* allowed-btn-restyle: catalog static-hover preview mirrors Button.svelte */
     .demo-hover-secondary :global(.btn-secondary) {
-        background: var(--color-bg-tertiary);
-        color: var(--color-text-primary);
+        background: var(--color-button-secondary-bg-hover);
+        color: var(--color-button-secondary-fg-hover);
     }
 
     /* allowed-btn-restyle: catalog static-hover preview mirrors Button.svelte */
     .demo-hover-danger :global(.btn-danger) {
-        background: color-mix(in srgb, var(--color-error), transparent 90%);
+        background: var(--color-button-danger-bg-hover);
     }
 
     /* Focus-visible preview: mirror Button.svelte's `:focus-visible` rules. */
     .demo-focus :global(.btn) {
-        outline: 2px solid var(--color-accent);
+        outline: 2px solid var(--color-focus-ring);
         outline-offset: 1px;
-        box-shadow: var(--shadow-focus-contrast);
+        box-shadow: var(--shadow-focus-ring-button);
     }
 </style>

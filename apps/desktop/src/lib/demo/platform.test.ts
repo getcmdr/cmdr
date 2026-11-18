@@ -4,6 +4,7 @@ import {
   CONVENTIONS_GLOBAL,
   CONVENTIONS_ON,
   getPlatform,
+  LOOK_GLOBAL,
   NO_CAPABILITIES,
   PLATFORM_GLOBAL,
   platformCapabilities,
@@ -42,6 +43,16 @@ describe('installPlatform', () => {
     expect(getPlatform()).toBe(visitorPlatform(navigator.userAgent))
     expect(platformCapabilities()).toEqual(visitorCapabilities(getPlatform()))
   })
+
+  it.each(['Macintosh; Intel Mac OS X 10_15_7', 'Windows NT 10.0; Win64; x64', 'X11; Linux x86_64'])(
+    'pins the macOS look (menus and controls) for a %s visitor, under the macOS bar every visitor gets',
+    (os) => {
+      const frame = { navigator: { userAgent: `Mozilla/5.0 (${os})` } } as unknown as Window
+      installPlatform(frame)
+      expect((frame as unknown as Record<string, unknown>)[LOOK_GLOBAL]).toBe('macos')
+      expect(Object.getOwnPropertyDescriptor(frame, LOOK_GLOBAL)?.writable).toBe(false)
+    },
+  )
 
   it('hands the capabilities over read-only too', () => {
     const frame = { navigator: { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)' } } as unknown as Window

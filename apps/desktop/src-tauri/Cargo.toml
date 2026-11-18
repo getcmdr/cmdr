@@ -359,13 +359,16 @@ webkit2gtk = "2.0"
 [target.'cfg(target_os = "windows")'.dependencies]
 # Win32 calls behind the app's `platform/` seams: the registry (device id, OS names, managed
 # policy and its change watch), `RtlGetVersion`, the memory counters, the instance lock's
-# message box, and the drive table (volume GUIDs, drive types, mapped shares). Already in the lockfile through the workspace crates.
+# message box, the drive table (volume GUIDs, drive types, mapped shares), and the system look's
+# settings window (`WM_SETTINGCHANGE`; `WNDCLASSW` needs Gdi's brush type). Already in the lockfile through the workspace crates.
 windows-sys = { version = "0.61", features = [
     "Wdk_System_SystemServices",
     "Win32_Foundation",
+    "Win32_Graphics_Gdi",
     "Win32_NetworkManagement_WNet",
     "Win32_Security",
     "Win32_Storage_FileSystem",
+    "Win32_System_LibraryLoader",
     "Win32_System_ProcessStatus",
     "Win32_System_Registry",
     "Win32_System_SystemInformation",
@@ -376,6 +379,11 @@ windows-sys = { version = "0.61", features = [
 # from the same maintainers as the Linux Secret Service one, so both arms share one API.
 keyring-core = "1"
 windows-native-keyring-store = "1.1"
+# WebView2's own settings, reached through Tauri's `with_webview` (`platform/windows/webview.rs`):
+# the COM bindings and the `Interface::cast` they need. Pinned to the versions wry links, so the
+# controller Tauri hands over is this crate's type; both already in the lockfile through wry.
+webview2-com = "=0.39.1"
+windows-core = "0.62"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # The custom updater's trust check: unpacking the release tarball and requiring Cmdr's Developer

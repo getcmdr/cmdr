@@ -31,6 +31,7 @@ pub mod media_index;
 #[cfg(target_os = "macos")]
 pub mod memory_diagnostics;
 pub mod menu;
+pub mod menu_in_page;
 pub mod menu_state;
 pub mod mtp;
 pub mod multi_rename;

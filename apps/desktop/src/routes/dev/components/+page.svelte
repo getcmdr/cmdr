@@ -15,6 +15,7 @@
     import TextInputSection from './sections/TextInputSection.svelte'
     import PopoverSection from './sections/PopoverSection.svelte'
     import MenuSection from './sections/MenuSection.svelte'
+    import CommandMenusSection from './sections/CommandMenusSection.svelte'
     import FilterPopoverSection from './sections/FilterPopoverSection.svelte'
     import ChipSection from './sections/ChipSection.svelte'
     import Dialogs from './sections/Dialogs.svelte'
@@ -61,6 +62,7 @@
         'text-input',
         'popover',
         'menu',
+        'command-menus',
         'filter-popover',
         'chip',
         'dialogs',
@@ -110,6 +112,7 @@
         <FindBarSection />
         <PopoverSection />
         <MenuSection />
+        <CommandMenusSection />
         <FilterPopoverSection />
         <ChipSection />
         <Dialogs />

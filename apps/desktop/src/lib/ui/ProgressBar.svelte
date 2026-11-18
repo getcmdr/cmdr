@@ -38,24 +38,32 @@
     .track {
         flex: 1;
         min-width: 0;
-        background: var(--color-bg-tertiary);
+        background: var(--color-progress-track);
         overflow: hidden;
     }
 
+    /* The Safari 15.4 floor's guard (`scripts/vite-webkit-css-floor.ts`): every engine with contrast
+       themes reads it. */
+    @supports (forced-color-adjust: none) {
+        .track {
+            forced-color-adjust: var(--color-forced-adjust);
+        }
+    }
+
     .track.sm {
-        height: 4px;
-        border-radius: var(--radius-xs);
+        height: var(--spacing-progress-height-sm);
+        border-radius: var(--radius-progress-sm);
     }
 
     .track.md {
-        height: 8px;
-        border-radius: var(--radius-sm);
+        height: var(--spacing-progress-height-md);
+        border-radius: var(--radius-progress-md);
     }
 
     .fill {
         position: relative;
         height: 100%;
-        background: var(--color-accent);
+        background: var(--color-progress-fill);
         border-radius: inherit;
         transition: width 0.15s ease-out;
         overflow: hidden;

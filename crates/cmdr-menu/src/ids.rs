@@ -278,6 +278,11 @@ pub const VIEWER_EDIT_PASTE_ID: &str = "viewer_edit_paste";
 pub const VIEWER_GO_BACK_ID: &str = "viewer_go_back";
 pub const VIEWER_GO_FORWARD_ID: &str = "viewer_go_forward";
 
+/// Menu item ID for the VIEWER bar's File > Close as a page draws it (`page::viewer`). The native
+/// bar's Close is the OS's own predefined item and carries no id of ours; a page bar has no OS
+/// item, so its pick closes the viewer window it came from. Unmapped in `menu_id_to_command`.
+pub const VIEWER_CLOSE_ID: &str = "viewer_close";
+
 /// Menu item IDs for the viewer's right-click menu over the file text (Copy, Select all).
 ///
 /// ❗ Distinct from the bar's `VIEWER_EDIT_COPY_ID` / `VIEWER_SELECT_ALL_ID`: those go through
