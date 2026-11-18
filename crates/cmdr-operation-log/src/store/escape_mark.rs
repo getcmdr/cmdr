@@ -19,9 +19,14 @@ use super::OperationLogStoreError;
 /// log held none).
 pub(crate) const ESCAPE_MARK_KEY: &str = "escape_mark_last_literal_op_id";
 
-/// How an op's stored paths read.
+/// How an op's stored paths read. Crate-internal until its first reader, the rollback
+/// planner's typed conversion (the app-path plan's milestone 8), lands beside it.
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "the rollback planner's typed conversion is its first caller")
+)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum StoredPathReading {
+pub(crate) enum StoredPathReading {
     /// Written before escapes went live: every escape-range code point is literal text.
     Literal,
     /// Written since: the stored text is the app spelling, its escapes live.
@@ -35,7 +40,11 @@ impl StoredPathReading {
     /// # Errors
     ///
     /// As [`AppPathBuf::from_wire`].
-    pub fn app_path(self, text: &str, namer: Namer) -> Result<AppPathBuf, NotAnAppPath> {
+    #[cfg_attr(
+        not(test),
+        expect(dead_code, reason = "the rollback planner's typed conversion is its first caller")
+    )]
+    pub(crate) fn app_path(self, text: &str, namer: Namer) -> Result<AppPathBuf, NotAnAppPath> {
         match self {
             StoredPathReading::Literal => AppPathBuf::from_literal_store(text, namer),
             StoredPathReading::Live => AppPathBuf::from_wire(text),
@@ -60,7 +69,11 @@ pub(crate) fn stamp_escape_mark(conn: &Connection, escapes_live: bool) -> Result
 /// How `op_id`'s stored paths read: [`StoredPathReading::Literal`] for every op while no mark
 /// is stamped (escapes aren't live yet, so no stored text holds one) and for an op at or below
 /// the mark; [`StoredPathReading::Live`] for one written since.
-pub fn stored_path_reading(conn: &Connection, op_id: &str) -> Result<StoredPathReading, OperationLogStoreError> {
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "the rollback planner's typed conversion is its first caller")
+)]
+pub(crate) fn stored_path_reading(conn: &Connection, op_id: &str) -> Result<StoredPathReading, OperationLogStoreError> {
     let mark: Option<String> = conn
         .query_row(
             "SELECT value FROM meta WHERE key = ?1",
@@ -80,7 +93,7 @@ mod tests {
     use crate::store::migrations::{MIGRATIONS, run_migrations};
 
     fn db() -> Connection {
-        let conn = Connection::open_in_memory().expect("in memory");
+        let conn = cmdr_fs::sqlite_util::open_in_memory().expect("in memory");
         run_migrations(&conn, MIGRATIONS).expect("migrates");
         conn
     }

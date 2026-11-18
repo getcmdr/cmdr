@@ -131,53 +131,7 @@ func RunAppPathStdBridge(ctx *CheckContext) (CheckResult, error) {
 	}
 	staleMsg := formatLockPoisonStaleness(staleChanges, ctx.CI)
 
-	var failures []string
-	if over := overBudget(sites, counts, allowlist.Files); len(over) > 0 {
-		failures = append(failures, fmt.Sprintf(
-			"found %d app-path bridge %s over the file's budget in %s (speak `AppPath` arithmetic instead: "+
-				"`join`, `parent`, `strip_prefix`, and the native crossings `to_native` / `from_native`; "+
-				"the bridge only shrinks, crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
-			len(over), Pluralize(len(over), "call", "calls"), appPathStdBridgeAllowlistRelPath, formatSites(over)))
-	}
-	if over := overBudget(scan.textToPath, textCounts, allowlist.AppTextToPath); len(over) > 0 {
-		failures = append(failures, fmt.Sprintf(
-			"found %d %s turning app text into a std path, over the file's budget in %s (a `FileEntry.path` "+
-				"or `.name` is app text: build an `AppPath` with `AppPath::from_normalized`, a name with "+
-				"`AppName::from_app_spelling`, and cross with `to_native`; crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
-			len(over), Pluralize(len(over), "site", "sites"), appPathStdBridgeAllowlistRelPath, formatSites(over)))
-	}
-	if over := overBudget(scan.bareText, bareCounts, allowlist.PathFromBareText); len(over) > 0 {
-		failures = append(failures, fmt.Sprintf(
-			"found %d %s handing path text to a std path constructor, over the file's budget in %s (if it's "+
-				"app text, take it as an `AppPathBuf` with `from_wire` at the edge and cross with `to_native`; "+
-				"if it's a native path, keep it a `PathBuf` from where the OS handed it over; "+
-				"crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
-			len(over), Pluralize(len(over), "site", "sites"), appPathStdBridgeAllowlistRelPath, formatSites(over)))
-	}
-	textTotal := 0
-	for _, n := range allowlist.AppTextToPath {
-		textTotal += n
-	}
-	for _, n := range allowlist.PathFromBareText {
-		textTotal += n
-	}
-	if len(scan.producers) > 0 && textTotal > 0 {
-		failures = append(failures, fmt.Sprintf(
-			"%d escape-producing %s in production code while %d text-to-std-path %s remain: an escape "+
-				"would reach code that opens a file literally named with it. Until milestone 10f, cross with "+
-				"`from_native_unicode` (a typed refusal where an escape would be needed); the producers land "+
-				"after the type-level ban on the text exits (docs/specs/app-path-plan.md § \"Keeping it that way\"):\n%s",
-			len(scan.producers), Pluralize(len(scan.producers), "call", "calls"),
-			textTotal, Pluralize(textTotal, "site", "sites"), formatSites(scan.producers)))
-	}
-	if len(scan.osTextHops) > 0 {
-		failures = append(failures, fmt.Sprintf(
-			"%d %s hand OS text (`to_str()`, `to_string_lossy()`, `.display()`) to a door that takes APP spelling: "+
-				"a native name holding an escape-range code point as text would cross `to_native` as a different "+
-				"file. Cross a native name with `AppNameBuf::from_native_os` and a native path with "+
-				"`AppPathBuf::from_native` (crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
-			len(scan.osTextHops), Pluralize(len(scan.osTextHops), "site", "sites"), formatSites(scan.osTextHops)))
-	}
+	failures, textTotal := scan.failures(allowlist)
 	if len(failures) > 0 {
 		return CheckResult{}, fmt.Errorf("%s", strings.Join(appendNonEmpty(failures, staleMsg), "\n"))
 	}
@@ -337,4 +291,57 @@ func scanForAppPathStdBridge(rootDir, srcDir string) (appPathScan, int, error) {
 		return nil
 	})
 	return scan, scanned, err
+}
+
+// failures lists every way the scan breaks its budgets or its rules, and the text budgets'
+// total (the tripwire's count).
+func (scan *appPathScan) failures(allowlist appPathStdBridgeAllowlist) ([]string, int) {
+	var failures []string
+	if over := overBudget(scan.bridge, siteCounts(scan.bridge), allowlist.Files); len(over) > 0 {
+		failures = append(failures, fmt.Sprintf(
+			"found %d app-path bridge %s over the file's budget in %s (speak `AppPath` arithmetic instead: "+
+				"`join`, `parent`, `strip_prefix`, and the native crossings `to_native` / `from_native`; "+
+				"the bridge only shrinks, crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
+			len(over), Pluralize(len(over), "call", "calls"), appPathStdBridgeAllowlistRelPath, formatSites(over)))
+	}
+	if over := overBudget(scan.textToPath, siteCounts(scan.textToPath), allowlist.AppTextToPath); len(over) > 0 {
+		failures = append(failures, fmt.Sprintf(
+			"found %d %s turning app text into a std path, over the file's budget in %s (a `FileEntry.path` "+
+				"or `.name` is app text: build an `AppPath` with `AppPath::from_normalized`, a name with "+
+				"`AppName::from_app_spelling`, and cross with `to_native`; crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
+			len(over), Pluralize(len(over), "site", "sites"), appPathStdBridgeAllowlistRelPath, formatSites(over)))
+	}
+	if over := overBudget(scan.bareText, siteCounts(scan.bareText), allowlist.PathFromBareText); len(over) > 0 {
+		failures = append(failures, fmt.Sprintf(
+			"found %d %s handing path text to a std path constructor, over the file's budget in %s (if it's "+
+				"app text, take it as an `AppPathBuf` with `from_wire` at the edge and cross with `to_native`; "+
+				"if it's a native path, keep it a `PathBuf` from where the OS handed it over; "+
+				"crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
+			len(over), Pluralize(len(over), "site", "sites"), appPathStdBridgeAllowlistRelPath, formatSites(over)))
+	}
+	textTotal := 0
+	for _, n := range allowlist.AppTextToPath {
+		textTotal += n
+	}
+	for _, n := range allowlist.PathFromBareText {
+		textTotal += n
+	}
+	if len(scan.producers) > 0 && textTotal > 0 {
+		failures = append(failures, fmt.Sprintf(
+			"%d escape-producing %s in production code while %d text-to-std-path %s remain: an escape "+
+				"would reach code that opens a file literally named with it. Until milestone 10f, cross with "+
+				"`from_native_unicode` (a typed refusal where an escape would be needed); the producers land "+
+				"after the type-level ban on the text exits (docs/specs/app-path-plan.md § \"Keeping it that way\"):\n%s",
+			len(scan.producers), Pluralize(len(scan.producers), "call", "calls"),
+			textTotal, Pluralize(textTotal, "site", "sites"), formatSites(scan.producers)))
+	}
+	if len(scan.osTextHops) > 0 {
+		failures = append(failures, fmt.Sprintf(
+			"%d %s hand OS text (`to_str()`, `to_string_lossy()`, `.display()`) to a door that takes APP spelling: "+
+				"a native name holding an escape-range code point as text would cross `to_native` as a different "+
+				"file. Cross a native name with `AppNameBuf::from_native_os` and a native path with "+
+				"`AppPathBuf::from_native` (crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
+			len(scan.osTextHops), Pluralize(len(scan.osTextHops), "site", "sites"), formatSites(scan.osTextHops)))
+	}
+	return failures, textTotal
 }
