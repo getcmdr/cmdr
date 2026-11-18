@@ -45,19 +45,22 @@ Decision: the user's own paths and names in `cmdr://state` render VERBATIM: pane
 
 ### `cmdr://state` lists no real volumes on Linux
 
-**Known gap, unfixed.** `resources/volumes.rs::snapshot_volumes` enumerates every discovered location under
-`#[cfg(target_os = "macos")]`, through `volume_listing::list_with_timeout` (2 s), then the synthetic `Network` root.
-Linux falls into the `#[cfg(not(target_os = "macos"))]` branch, which pushes ONE hardcoded `root` entry and nothing
-else, plus its own MTP block (macOS gets device storages from the shared pipeline instead).
+**Known gap, unfixed.** `resources/volumes.rs::snapshot_volumes` enumerates every discovered location on macOS and
+Windows (`#[cfg(not(target_os = "linux"))]`), through `volume_listing::list_with_timeout` (2 s), then the synthetic
+`Network` root. Linux falls into the `#[cfg(target_os = "linux")]` branch, which pushes ONE hardcoded `root` entry and
+nothing else, plus its own MTP block (the others get device storages from the shared pipeline instead). Windows took
+the Linux branch until 2026-11-18, so an agent saw `root` alone while the switcher listed `C:` and `D:`; its regression
+anchor is `every_drive_the_switcher_lists_is_a_volume_the_agent_sees`. A row's `mountPath` and its path-routed index
+status key off `path_grammar::is_local_path` in the host flavor, so `C:/` and `//server/share/` count as mount points
+the way `/Volumes/X` does.
 
 So an agent reading `cmdr://state` on Linux sees `root` and any connected phone, and no external drives, CIFS or GVFS
 shares, or cloud drives — and no `Network` root, so it can't tell that browsing shares is even possible. Nothing
 reports the gap; the section is present and plausible, just short.
 
-Fixing it means pointing the Linux branch at the same `volume_listing::list_with_timeout` the macOS one already uses,
-and giving it a summary mapping: `is_smb_fs_type` lives in the
-macOS-only `volumes/platform/macos/fs_type.rs`, so the `VolumeKind::Smb` classification `kind_for_location` makes needs a home both
-platforms can reach before this can just be shared. (The `connection_state` half is already shared: both twins carry the
+Fixing it means pointing the Linux branch at the same `volume_listing::list_with_timeout` the others already use, and
+giving the Linux arm `crate::volumes::is_smb_fs_type` / `is_network_fs_type` (macOS and Windows answer them today;
+`volumes/platform/mod.rs`), which the `VolumeKind::Smb` classification `kind_for_location` makes needs. (The `connection_state` half is already shared: both twins carry the
 `cmdr_fs::volume::ConnectionState` enum.) Roughly 40 lines plus that move. Found during the volume-command dedupe; deliberately
 left out of that branch because it's an agent-facing behavior change, not duplication.
 

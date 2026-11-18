@@ -142,9 +142,15 @@ pub(crate) use imp::LOCAL_DISK_CASE_SENSITIVE;
 // the readers the eject and SMB paths use beyond the seam.
 #[cfg(target_os = "macos")]
 pub(crate) use imp::{
-    disk_units, get_attached_volumes, get_cloud_drives, is_network_fs_type, is_smb_fs_type, mount_points_with_rows,
-    unmount_approver, watcher,
+    disk_units, get_attached_volumes, get_cloud_drives, mount_points_with_rows, unmount_approver, watcher,
 };
+
+/// Whether a row's `fs_type` names an SMB share, and whether it names a network filesystem that
+/// can hang. macOS reads `statfs` type names; Windows tags every mapped share with
+/// [`NETWORK_FS_TYPE`]. ❗ Not on Linux yet (`tools/resources/DETAILS.md` § "`cmdr://state` lists
+/// no real volumes on Linux").
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+pub(crate) use imp::{is_network_fs_type, is_smb_fs_type};
 
 #[cfg(all(test, target_os = "macos"))]
 pub(crate) use imp::location_for_test;

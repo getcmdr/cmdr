@@ -350,7 +350,7 @@
       "outsideSeam": 1
     },
     "apps/desktop/src-tauri/src/tools/resources/volumes.rs": {
-      "negated": 12,
+      "negated": 9,
       "outsideSeam": 22
     },
     "apps/desktop/src-tauri/src/ui_state/pane_state.rs": {
