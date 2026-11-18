@@ -76,8 +76,12 @@ notes.
   imported: a dev build launched through `tauri-wrapper.ts` still uses it on purpose (`CMDR_SECRET_STORE=file`), and a
   release build ignores it, so a stale file sits unread until its data dir goes ("Delete all Cmdr data" removes the data
   dir). Re-enter those secrets once.
+- ❗ **A logon without credentials has no vault.** Over key-based OpenSSH (and in other network or S4U logons) every
+  call answers `ERROR_NO_SUCH_LOGON_SESSION`, so `AccessDenied` (verified on Windows 10 22H2 build 19045, the builder,
+  2026-11-18). An interactive desktop session, a CI runner, and SYSTEM have one.
 - **Tested on the builder** against the real Credential Manager under a `CmdrTest-<tag>-<pid>` service whose
-  credentials each test deletes on drop (`credential_manager.rs` tests).
+  credentials each test deletes on drop (`credential_manager.rs` tests). Over SSH they fail for the reason above; run
+  the test binary from a scheduled task as SYSTEM instead (all five passed that way, none left behind, 2026-11-18).
 
 ## `system_keychain_smb.rs` mechanics (macOS)
 

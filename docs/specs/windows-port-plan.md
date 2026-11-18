@@ -561,9 +561,29 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
 38. [S] Windows. Identity and system bundle: secrets via `windows-native-keyring-store` (❗ a blocker: off macOS and
     Linux secrets fall back to a plaintext file today), device id (`MachineGuid`, hashed like the Linux
     `/etc/machine-id` arm in `licensing/device_id.rs`), OS version, memory, the instance-lock `MessageBoxW`, managed
-    policy from the registry. Needs 18. **Device id done** (2026-11-18): `licensing/device_id/platform/windows.rs` reads
-    `MachineGuid` from the 64-bit registry view and hashes it like Linux's machine id; its two cells pass on the
-    builder. Left: the keyring, OS version, memory, the instance-lock `MessageBoxW`, managed policy.
+    policy from the registry. Needs 18. **Done** (2026-11-18), each behind its seam:
+    - Device id: `licensing/device_id/platform/windows.rs` reads `MachineGuid` from the 64-bit registry view and hashes
+      it like Linux's machine id.
+    - Secrets: Credential Manager (`secrets/platform/windows/`, `windows-native-keyring-store` 1.1 on `keyring-core`),
+      no file fallback on any OS. Details and what happens to an old dev build's `secrets.json`: `secrets/DETAILS.md` §
+      Windows.
+    - OS version: `RtlGetVersion` plus the registry's names (`platform/windows/version.rs`), for example
+      `Windows 10 Pro 22H2 (build 19045.6466)` on the builder. Memory: `GlobalMemoryStatusEx` + `GetPerformanceInfo`
+      (`system_memory/platform/windows.rs`).
+    - The "already running" alert: `MessageBoxW` on its own thread (`instance_lock/platform/windows.rs`).
+    - Managed policy: `SOFTWARE\Policies\Cmdr` in HKLM then HKCU, with a live registry watch
+      (`managed_policy/DETAILS.md` § The Windows registry keys).
+    - On the builder (Windows 10 Pro 22H2, build 19045.6466, `52047a9377`, 2026-11-18):
+      `cargo clippy -p cmdr --all-targets -D warnings` clean (297 s warm); `cargo nextest run -p cmdr --lib` over
+      `secrets`, `platform`, `instance_lock`, `managed_policy`, and `system_memory`, 145 of 151 pass, among them the
+      message box shown and dismissed, the registry policy read and its watch on scratch keys, the
+      kernel-versus-registry build check, and the memory counters. The four Credential Manager round trips fail over SSH
+      with `ERROR_NO_SUCH_LOGON_SESSION` (key-based OpenSSH logons get no credential vault) and pass, with no `CmdrTest`
+      credential left behind, when the same test binary runs as SYSTEM from a scheduled task. The other two failures are
+      the pid cells below.
+    - Left for later tasks: an ADMX template and the Windows half of `/trust` (the key path is a public contract once
+      Windows ships), and the instance lock's holder pid, which reads as unknown on Windows (the two
+      `instance_lock::tests` pid cells fail there, as before this task: `LockFileEx` locks the bytes the pid sits in).
 39. [M] Windows. Drives: drive letters and labels, the device-arrival watcher (`CM_Register_Notification`), mapped and
     UNC drives, eject. Needs 20, 34. **Eject seam in place** (2026-11-18): eject is every-OS code, and what differs sits
     in `file_system/volume/eject/platform/` (the tool, ejectability, whether an SMB disconnect unmounts). The Windows

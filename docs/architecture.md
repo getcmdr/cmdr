@@ -214,8 +214,8 @@ All under `apps/desktop/src-tauri/src/`.
 - `drop_in/`: drops from other apps with no file URLs (a browser image, a Mail attachment): what a drag carries, file
   promises received into a per-drop folder, and that folder's lifetime. See
   `apps/desktop/src-tauri/src/drop_in/CLAUDE.md`
-- `secrets/`: Pluggable secret storage: Keychain (macOS), Secret Service (Linux), encrypted-file fallback. Server
-  passwords, AI keys, and the license key
+- `secrets/`: Pluggable secret storage: Keychain (macOS), Credential Manager (Windows), Secret Service (Linux) with an
+  encrypted-file fallback. Server passwords, AI keys, and the license key
 - `data_wipe/`: "Delete all Cmdr data" (Settings › Updates & privacy): every folder, file, and secret-store item this
   instance keeps, removed crash-safely before the app quits. See `apps/desktop/src-tauri/src/data_wipe/CLAUDE.md`
 - `mtp/`: the app-side half of the MTP backend (`crates/cmdr-mtp/`): the USB hotplug task with its enabled gate and
@@ -420,10 +420,11 @@ All under `apps/desktop/src-tauri/src/`.
   a vetted staged bundle (or, off macOS, the release's signed copy) by `updater/` for the restart toast's security
   variant and from this build's embedded copy by the What's new popup. See
   `apps/desktop/src-tauri/src/security_advisories/CLAUDE.md`
-- `managed_policy/`: What an organization's MDM profile restricts (telemetry, updates, AI), read from the forced layer
-  of the app's preferences domain, cached, refreshed at egress, and shown as one `ManagedPolicyView`. Holds the
-  canonical key catalog. See `apps/desktop/src-tauri/src/managed_policy/CLAUDE.md`; the frontend half (the settings
-  overlay and the locked rows) is `apps/desktop/src/lib/managed-policy/CLAUDE.md`
+- `managed_policy/`: What an organization's MDM profile or Group Policy restricts (telemetry, updates, AI), read from
+  the forced layer of the app's preferences domain (macOS) or `SOFTWARE\Policies\Cmdr` (Windows), cached, refreshed at
+  egress, and shown as one `ManagedPolicyView`. Holds the canonical key catalog. See
+  `apps/desktop/src-tauri/src/managed_policy/CLAUDE.md`; the frontend half (the settings overlay and the locked rows) is
+  `apps/desktop/src/lib/managed-policy/CLAUDE.md`
 - `cf_plist.rs`: macOS-only. Core Foundation property lists as `plist::Value`, shared by every CFPreferences reader
 - `redact/`: Shared PII redactor (path-shape preserving). Used by both crash and error reporters
 - `logging/`: Log directory resolver, `KeepSome(N)` post-rotation pruner, `list_recent_log_files`

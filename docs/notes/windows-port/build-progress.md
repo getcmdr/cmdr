@@ -146,3 +146,11 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
 - **Next blockers for a usable Windows build**: #1225 (app paths through the local engine: no local copy, move, or
   listing of a native path lands yet), task 34's drive ids and multi-root volumes, task 35's streams and lister, and a
   GUI session for the first real launch (task 55).
+- **Task 38's identity bundle** (`52047a9377`): secrets in Credential Manager, the real OS version and memory, the
+  "already running" message box, and managed policy from the registry (plan, task 38). On the builder:
+  `cargo clippy -p cmdr --all-targets -D warnings` clean, 13m 23s cold in a fresh target dir; nextest over the touched
+  modules 145 of 151. Found on the way: key-based OpenSSH logons have no credential vault, so every Credential Manager
+  call answers `ERROR_NO_SUCH_LOGON_SESSION`; the round-trip cells pass when the test binary runs as SYSTEM from a
+  scheduled task (`schtasks /ru SYSTEM`). The cargo here puts test binaries under
+  `target\debug\build\<crate>\<hash>\out\`, not `deps\`. Plain PowerShell `*>` redirection wraps a native tool's stderr
+  at console width; `cmd /c "… > log 2>&1"` keeps lines whole.
