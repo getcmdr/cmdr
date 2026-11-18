@@ -48,7 +48,6 @@ const CATEGORICAL_STRING_KEYS: &[&str] = &[
     "ai.provider",
     "ai.cloudProvider",
     "ai.localContextSize",
-    "network.timeoutMode",
 ];
 
 /// The runtime state the snapshot carries beside the settings.

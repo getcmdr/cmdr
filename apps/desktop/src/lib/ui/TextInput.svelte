@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Snippet } from 'svelte'
     import type { HTMLInputAttributes } from 'svelte/elements'
-    import type { TextFieldRadius, TextFieldVariant, TextInputType } from './text-field-types'
+    import type { TextFieldRadius, TextFieldSize, TextFieldVariant, TextInputType } from './text-field-types'
     import Icon from './Icon.svelte'
     import type { IconName } from './icons/icon-map'
 
@@ -21,6 +21,12 @@
         type?: TextInputType
         radius?: TextFieldRadius
         variant?: TextFieldVariant
+        /**
+         * `regular` (the default) is the full form-field height. `compact` shrinks the field to one
+         * `--font-size-sm` text line, the size `NumberInput`'s `compact` uses, for a field sitting on
+         * a settings row beside its label.
+         */
+        size?: TextFieldSize
         /** Error state: red border and ring, plus `aria-invalid` on the control. */
         invalid?: boolean
         /** Caution state: amber border and ring. `invalid` wins when both are set. */
@@ -45,6 +51,7 @@
         type = 'text',
         radius = 'lg',
         variant = 'default',
+        size = 'regular',
         invalid = false,
         warning = false,
         mono = false,
@@ -96,6 +103,7 @@
     class:text-field-radius-lg={radius === 'lg'}
     class:text-field-radius-full={radius === 'full'}
     class:text-field-chromeless={variant === 'chromeless'}
+    class:text-field-compact={size === 'compact' && variant !== 'chromeless'}
     class:text-field-warning={warning && !invalid}
     class:text-field-invalid={invalid}
     class:text-field-readonly={isReadonly}

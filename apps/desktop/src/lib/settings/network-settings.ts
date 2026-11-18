@@ -5,29 +5,12 @@
 
 import { getSetting } from './settings-store'
 
-// Timeout values in milliseconds for each mode
-const timeoutModeToMs = {
-  normal: 15_000, // 15 seconds
-  slow: 45_000, // 45 seconds
-  custom: 15_000, // Will be overridden by customTimeout
-} as const
-
 /**
- * Gets the network timeout in milliseconds based on current settings.
- * For 'normal' mode: 15 seconds
- * For 'slow' mode: 45 seconds
- * For 'custom' mode: uses the customTimeout setting
+ * Gets the network timeout in milliseconds: how long a network operation waits before giving up.
+ * Uses the network.timeout setting, which is stored in milliseconds and edited in seconds.
  */
 export function getNetworkTimeoutMs(): number {
-  const mode = getSetting('network.timeoutMode')
-
-  if (mode === 'custom') {
-    // customTimeout is in seconds, convert to ms
-    const customTimeoutSec = getSetting('network.customTimeout')
-    return customTimeoutSec * 1000
-  }
-
-  return timeoutModeToMs[mode]
+  return getSetting('network.timeout')
 }
 
 /**

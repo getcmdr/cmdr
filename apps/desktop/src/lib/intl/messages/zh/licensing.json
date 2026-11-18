@@ -416,6 +416,30 @@
   "@licensing.section.getLicense": {
     "sourceHash": "fab19d3"
   },
+  "licensing.section.includedTitle": "包含的内容",
+  "@licensing.section.includedTitle": {
+    "sourceHash": "a441e05"
+  },
+  "licensing.section.includedFeatures": "文件管理器的全部功能",
+  "@licensing.section.includedFeatures": {
+    "sourceHash": "0a54a41"
+  },
+  "licensing.section.includedMacs": "你自己的所有 Mac，供你个人使用",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "d0968e4"
+  },
+  "licensing.section.includedUpdates": "自动更新",
+  "@licensing.section.includedUpdates": {
+    "sourceHash": "147b1b6"
+  },
+  "licensing.section.includedAi": "Cmdr AI，测试期间免费，可使用你自己的密钥，或在本地运行",
+  "@licensing.section.includedAi": {
+    "sourceHash": "1fec548"
+  },
+  "licensing.section.commercialNeeded": "把 Cmdr 用于工作（包括本职工作、合同工作或你自己的生意）需要商业许可证。你可以先在工作中试用，最多 14 天。",
+  "@licensing.section.commercialNeeded": {
+    "sourceHash": "a3d7314"
+  },
   "licensing.section.typePersonal": "个人版（免费）",
   "@licensing.section.typePersonal": {
     "sourceHash": "4af5ca9"

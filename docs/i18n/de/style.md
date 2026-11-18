@@ -293,7 +293,7 @@ Dateien".
   Einrichten des Festplattenzugriffs klicken“ würde den Terminus `Festplattenzugriff einrichten` in einen Genitiv
   auflösen, den `search.coverage.setUpFullDiskAccess` nicht kennt.
 - **„to start chatting“ → „um loszuchatten“.** Die entfernte Meldung askCmdr.error.noConsent hatte die Wendung schon für
-  genau dasselbe Englisch; `settings.askCmdr.provider.off` übernimmt sie, statt ein zweites Wort dafür zu erfinden.
+  genau dasselbe Englisch; `settings.askCmdr.provider.none` übernimmt sie, statt ein zweites Wort dafür zu erfinden.
 - **`pin`/`unpin` hat im Deutschen ZWEI Wortpaare, je nach Fläche.** Für Tabs und Server heißt es `fixieren` / `lösen`
   (`menu.tab.unpinTab`, `commands.serversTogglePin.label`, Safari `de` „Tab fixieren“); für das Dock heißt es
   `im Dock behalten` / `aus dem Dock entfernen`, weil Apples Dock-Menü genau dieses Paar führt

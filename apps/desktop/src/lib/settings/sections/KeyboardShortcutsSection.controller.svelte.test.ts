@@ -154,6 +154,37 @@ describe('key-filter field (macOS)', () => {
     expect(c.keySearchQuery).toBe('')
   })
 
+  // Regression: releasing Shift while ⌘ was still held overwrote ⌘⇧G with `⌘`, which the
+  // final ⌘ release then cleared as a modifiers-only value.
+  it.each([
+    ['⇧ then ⌘', ['Shift', 'Meta']],
+    ['⌘ then ⇧', ['Meta', 'Shift']],
+  ])('keeps a two-modifier combo after releasing all keys (%s last)', (_label, releaseOrder) => {
+    const c = create()
+    c.handleKeyFilterKeyDown(keyEvent({ key: 'Meta', metaKey: true }))
+    c.handleKeyFilterKeyDown(keyEvent({ key: 'Shift', metaKey: true, shiftKey: true }))
+    c.handleKeyFilterKeyDown(keyEvent({ key: 'G', metaKey: true, shiftKey: true }))
+    expect(c.keySearchQuery).toBe('⌘⇧G')
+
+    c.handleKeyFilterKeyUp(keyEvent({ key: 'G', metaKey: true, shiftKey: true }))
+    const held = { metaKey: true, shiftKey: true }
+    for (const key of releaseOrder) {
+      if (key === 'Meta') held.metaKey = false
+      else held.shiftKey = false
+      c.handleKeyFilterKeyUp(keyEvent({ key, ...held }))
+      expect(c.keySearchQuery).toBe('⌘⇧G')
+    }
+  })
+
+  it('still updates a modifiers-only value while some modifiers stay held', () => {
+    const c = create()
+    c.handleKeyFilterKeyDown(keyEvent({ key: 'Meta', metaKey: true }))
+    c.handleKeyFilterKeyDown(keyEvent({ key: 'Shift', metaKey: true, shiftKey: true }))
+    expect(c.keySearchQuery).toBe('⌘⇧')
+    c.handleKeyFilterKeyUp(keyEvent({ key: 'Shift', metaKey: true, shiftKey: false }))
+    expect(c.keySearchQuery).toBe('⌘')
+  })
+
   it('filters by the physical key, so a stored ⌥⇧= is findable by pressing it', () => {
     const c = create()
     c.handleKeyFilterKeyDown(keyEvent({ key: '±', code: 'Equal', altKey: true, shiftKey: true }))
@@ -184,6 +215,17 @@ describe('key-filter field (non-macOS)', () => {
     // the last modifier clears it.
     c.handleKeyFilterKeyUp(keyEvent({ key: 'Control', ctrlKey: false }))
     expect(c.keySearchQuery).toBe('')
+  })
+
+  it('keeps Ctrl+Shift+G after releasing Shift, then Ctrl', () => {
+    onTestFinished(withPlatform('linux'))
+    const c = create()
+    c.handleKeyFilterKeyDown(keyEvent({ key: 'G', ctrlKey: true, shiftKey: true }))
+    expect(c.keySearchQuery).toBe('Ctrl+Shift+G')
+    c.handleKeyFilterKeyUp(keyEvent({ key: 'Shift', ctrlKey: true }))
+    expect(c.keySearchQuery).toBe('Ctrl+Shift+G')
+    c.handleKeyFilterKeyUp(keyEvent({ key: 'Control' }))
+    expect(c.keySearchQuery).toBe('Ctrl+Shift+G')
   })
 
   it.each(['windows', 'linux'] as const)(

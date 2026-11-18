@@ -405,7 +405,6 @@
             id="ai.localContextSize"
             label={tString('settings.ai.localContextSize.label')}
             description={tString('settings.ai.localContextSize.description')}
-            split
             {searchQuery}
         >
             <div class="context-size-controls">

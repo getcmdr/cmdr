@@ -3365,7 +3365,7 @@
   },
   "transfer": {
     "chosen": "transferência",
-    "accept": ["transferindo"],
+    "accept": ["transferindo", "transferir"],
     "confidence": "high",
     "forms": "progress → Transferindo",
     "sources": "shipped pt catalog",
@@ -4121,6 +4121,19 @@
     "confidence": "high",
     "sources": "GNOME Nautilus pt-BR _Preferences → _Preferências; Thunar Pr_eferências; MS TBX Preferences → Preferências",
     "note": "GNOME's own settings row (the linuxGnome branch of `menu.app.settings`), no ellipsis, and every linuxGnome pointer at Cmdr's settings window (see the settings ruling's other form); KDE's row is Configurar Cmdr… (Dolphin pt-BR: Configurar Dolphin)"
+  },
+  "bug": {
+    "chosen": "bug",
+    "confidence": "high",
+    "accept": ["bugs", "defeito"],
+    "sources": "MS terminology pt-BR (bug → bug); git pt-BR (o bug foi corrigido); catalog commands.helpSendErrorReport, settings.updates.errorReports.summary (i18n:pile, 2026-11-18)"
+  },
+  "help-menu": {
+    "chosen": "menu Ajuda",
+    "confidence": "high",
+    "sources": "catalog menu.bar.help → Ajuda (macOS pt-BR Help menu title); settings.updates.errorReports.description publishes pelo menu Ajuda (2026-11-18)",
+    "accept": ["Ajuda"],
+    "note": "The menu title alone is Ajuda; prose names it menu Ajuda."
   },
   "usb-preferences": {
     "chosen": "Preferências de USB",

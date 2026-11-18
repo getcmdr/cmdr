@@ -2507,7 +2507,7 @@
     ],
     "chosen": "選單",
     "confidence": "high",
-    "forms": "menu names in prose take corner brackets: 「說明」選單; menu bar → 選單列 (macOS 27 System Settings pane, ControlCenterSettings)",
+    "forms": "menu names in prose take corner brackets: 「輔助說明」選單 (matching menu.bar.help); menu bar → 選單列 (macOS 27 System Settings pane, ControlCenterSettings)",
     "sources": "AP-HK, TC, DOL",
     "exceptions": {
       "shortcuts.system.startMenu": "quotes a Windows menu by Windows zh-TW’s own name, which says 功能表 (「開始」功能表, MS keyboard-shortcuts page; TBX system menu → 系統功能表)",
@@ -2986,7 +2986,10 @@
     "chosen": "路徑",
     "confidence": "confirmed",
     "forms": "path bar → 路徑列",
-    "sources": "AP-TW/HK, MS"
+    "sources": "AP-TW/HK, MS",
+    "exceptions": {
+      "settings.fileOperations.adbBinaryPath.description": "PATH here is the environment variable's literal name, kept Latin like the English; the path concept doesn't apply"
+    }
   },
   "pause": {
     "chosen": "暫停",
@@ -4917,6 +4920,18 @@
     "confidence": "high",
     "forms": "item kind → 套件; Show Package Contents → 顯示套件內容",
     "sources": "macOS zh-TW Finder N158 (Show Package Contents → 顯示套件內容); catalog fileExplorer.list.rowKind.package 套件"
+  },
+  "help-menu": {
+    "chosen": "輔助說明",
+    "confidence": "high",
+    "sources": "AP-TW (AppKit MenuCommands Help → 輔助說明); catalog menu.bar.help 輔助說明, errorReporter.json 「輔助說明」選單",
+    "avoid": [
+      {
+        "form": "「說明」選單",
+        "why": "MS/DC's Help; the macOS menu bar and menu.bar.help say 輔助說明"
+      }
+    ],
+    "forms": "the menu title → 輔助說明 (menu.bar.help); in prose → 「輔助說明」選單"
   },
   "usb-preferences": {
     "chosen": "USB 偏好設定",

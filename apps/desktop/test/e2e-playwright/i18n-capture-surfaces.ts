@@ -53,8 +53,10 @@ import { CROP_PADDING_TIGHT_CSS_PX, scanForClipping } from './i18n-capture-frame
 
 /** The Colors and formats section, which hosts the two hidden-state surfaces below. */
 const COLORS_SECTION = '[data-section-id="appearance-colors-and-formats"]'
+/** The date and time format row, by the deep-link anchor `SettingRow` stamps on it (`settingAnchorId`). */
+const DATE_TIME_ROW = `${COLORS_SECTION} [id="setting-appearance.dateTimeFormat"]`
 /** The date and time format row's "Custom" choice, as a JS expression for `pointerClick`. */
-const CUSTOM_DATE_FORMAT_ITEM = `document.querySelector('${COLORS_SECTION} .date-time-setting input[value="custom"]')?.closest('.radio-item')`
+const CUSTOM_DATE_FORMAT_ITEM = `document.querySelector('${DATE_TIME_ROW} input[value="custom"]')?.closest('.radio-item')`
 
 /**
  * A state the section hides until the user opens it. Stages it on the settings
@@ -71,7 +73,7 @@ type RevealHiddenState = (page: TauriPage) => Promise<{ readySelector: string; r
  */
 const revealCustomDateFormat: RevealHiddenState = async (page) => {
   const before = await page.evaluate<string | null>(
-    `(function(){ var el = document.querySelector('${COLORS_SECTION} .date-time-setting .radio-item[data-state="checked"] input'); return el ? el.value : null; })()`,
+    `(function(){ var el = document.querySelector('${DATE_TIME_ROW} .radio-item[data-state="checked"] input'); return el ? el.value : null; })()`,
   )
   expect(await pointerClick(page, CUSTOM_DATE_FORMAT_ITEM)).toBe('clicked')
   await page.waitForSelector(`${COLORS_SECTION} .custom-format .help-toggle-wrapper button`, 5000)
@@ -82,7 +84,7 @@ const revealCustomDateFormat: RevealHiddenState = async (page) => {
       if (before === null || before === 'custom') return
       await pointerClick(
         page,
-        `document.querySelector('${COLORS_SECTION} .date-time-setting input[value="${before}"]')?.closest('.radio-item')`,
+        `document.querySelector('${DATE_TIME_ROW} input[value="${before}"]')?.closest('.radio-item')`,
       )
     },
   }

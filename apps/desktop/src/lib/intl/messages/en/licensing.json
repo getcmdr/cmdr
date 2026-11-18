@@ -591,6 +591,30 @@
     "description": "Button in the settings License section (shown when no license exists) that opens the pricing page. Keep it short (a button).",
     "screenshot": "settings-license.png"
   },
+  "licensing.section.includedTitle": "What’s included",
+  "@licensing.section.includedTitle": {
+    "description": "Small heading in Settings > License, above the list of what the free Personal license covers. Sentence case. The apostrophe is U+2019."
+  },
+  "licensing.section.includedFeatures": "Every file manager feature",
+  "@licensing.section.includedFeatures": {
+    "description": "Item in the Settings > License “What’s included” list for the free Personal license: the whole file manager, nothing held back."
+  },
+  "licensing.section.includedMacs": "All your own Macs, for your personal use",
+  "@licensing.section.includedMacs": {
+    "description": "Item in the Settings > License “What’s included” list for the free Personal license: install it on as many of your own Macs as you like, as long as you’re the only user."
+  },
+  "licensing.section.includedUpdates": "Automatic updates",
+  "@licensing.section.includedUpdates": {
+    "description": "Item in the Settings > License “What’s included” list for the free Personal license: new versions install by themselves."
+  },
+  "licensing.section.includedAi": "Cmdr AI, free during the beta, on your own key or on-device",
+  "@licensing.section.includedAi": {
+    "description": "Item in the Settings > License “What’s included” list for the free Personal license. Cmdr AI is the product name of the AI features; keep it verbatim. “Free during the beta” is a deliberate legal qualifier: keep its meaning exactly, never “free forever”. “Your own key” means the user’s own API key with an AI provider; “on-device” means a model that runs on the Mac."
+  },
+  "licensing.section.commercialNeeded": "Using Cmdr for work, including a job, contract work, or your own business, needs a commercial license. You can try it at work for up to 14 days first.",
+  "@licensing.section.commercialNeeded": {
+    "description": "Line in Settings > License under the “What’s included” list, shown with the free Personal license, right above the Enter license key and Get a license buttons. Says when a paid commercial license is needed, and that a 14-day evaluation at work is allowed. Friendly, never accusing: the app knows nothing about how it’s used."
+  },
   "licensing.section.typePersonal": "Personal (free)",
   "@licensing.section.typePersonal": {
     "description": "License-type value in the settings License section for a free personal install. 'Personal' is a license tier name; keep the '(free)' parenthetical.",

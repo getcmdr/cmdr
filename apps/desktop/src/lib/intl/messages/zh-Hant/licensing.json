@@ -416,6 +416,30 @@
   "@licensing.section.getLicense": {
     "sourceHash": "fab19d3"
   },
+  "licensing.section.includedTitle": "包含的內容",
+  "@licensing.section.includedTitle": {
+    "sourceHash": "a441e05"
+  },
+  "licensing.section.includedFeatures": "檔案管理程式的所有功能",
+  "@licensing.section.includedFeatures": {
+    "sourceHash": "0a54a41"
+  },
+  "licensing.section.includedMacs": "你自己所有的 Mac，供你個人使用",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "d0968e4"
+  },
+  "licensing.section.includedUpdates": "自動更新",
+  "@licensing.section.includedUpdates": {
+    "sourceHash": "147b1b6"
+  },
+  "licensing.section.includedAi": "Cmdr AI，測試期間免費，可用你自己的 API 金鑰或在裝置端執行",
+  "@licensing.section.includedAi": {
+    "sourceHash": "1fec548"
+  },
+  "licensing.section.commercialNeeded": "把 Cmdr 用在工作上，包括上班、接案或經營你自己的事業，都需要商業授權。你可以先在工作中試用，最長 14 天。",
+  "@licensing.section.commercialNeeded": {
+    "sourceHash": "a3d7314"
+  },
   "licensing.section.typePersonal": "個人（免費）",
   "@licensing.section.typePersonal": {
     "sourceHash": "4af5ca9"

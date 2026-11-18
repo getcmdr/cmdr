@@ -2,7 +2,7 @@
  * Tier-3 tests for `NavigationAndFileOpsSection.svelte`
  * (Behavior › Navigation & file ops).
  *
- * Labeled cards: "Navigation" (the double-click-to-parent switch), "File
+ * Labeled cards: "Navigation" (the double-click-to-parent switch, the typing mode, and Space sizing folders), "File
  * operations" (the file-extension-change radio, paste as a file, and the copy/move
  * dialog's starting "files already exist" choice), "Text editor" (which app F4
  * opens files in) and "Terminal" (which app "Open terminal here" launches), both
@@ -110,6 +110,29 @@ describe('NavigationAndFileOpsSection', () => {
     expect(fors).toContain('operationLog.enabled')
     expect(fors).toContain('operationLog.maxAge')
     expect(fors).toContain('operationLog.maxSize')
+    target.remove()
+  })
+
+  it('holds the typing mode and Space-sizes-folders rows in the Navigation card', async () => {
+    const target = await mountSection()
+    const navigation = Array.from(target.querySelectorAll('section.section-card-wrap')).find(
+      (card) => card.querySelector('.section-card-label')?.textContent.trim() === 'Navigation',
+    )
+    const fors = Array.from(navigation?.querySelectorAll('label.setting-label') ?? []).map((el) =>
+      el.getAttribute('for'),
+    )
+    expect(fors).toEqual([
+      'behavior.doubleClickPaneNavigatesToParent',
+      'fileExplorer.typeToJump.mode',
+      'listing.spaceCalculatesFolderSize',
+    ])
+    target.remove()
+  })
+
+  it('surfaces the Navigation card under a search for the quick filter', async () => {
+    const target = await mountSection('filter')
+    expect(cardLabels(target)).toContain('Navigation')
+    expect(labelFors(target)).toContain('fileExplorer.typeToJump.mode')
     target.remove()
   })
 

@@ -20,6 +20,7 @@
     import SettingTextInput from '../components/SettingTextInput.svelte'
     import SectionCard from '#lib/ui/SectionCard.svelte'
     import Button from '#lib/ui/Button.svelte'
+    import { tooltip } from '#lib/tooltip/tooltip.js'
     import CopyBox from '#lib/ui/CopyBox.svelte'
     import { pathParam, tString } from '#lib/intl/messages.svelte.js'
     import { getSettingDefinition, setSetting } from '#lib/settings/index.js'
@@ -122,7 +123,8 @@
                 <div class="status-row">
                     <span class="status-label">{tString('settings.adb.status.label')}</span>
                     <div class="status-body">
-                        <span class="status-value">
+                        <!-- One line: a long path truncates, and the tooltip carries all of it. -->
+                        <span class="status-value" use:tooltip={status?.binaryPath ?? ''}>
                             {#if status?.binaryPath}
                                 {tString('settings.adb.status.foundAt', { path: pathParam(status.binaryPath) })}
                             {:else}
@@ -155,7 +157,6 @@
                     id="fileOperations.adbBinaryPath"
                     label={binaryPathDef.label}
                     description={binaryPathDef.description}
-                    split
                     {searchQuery}
                 >
                     <div class="path-field">
@@ -184,7 +185,10 @@
         border-bottom: 1px solid var(--color-border-subtle);
     }
 
+    /* Same weight as a `SettingRow` label, so "Status" reads as one of the rows. */
     .status-label {
+        flex-shrink: 0;
+        font-weight: 500;
         color: var(--color-text-primary);
     }
 
@@ -196,9 +200,16 @@
     }
 
     .status-value {
+        min-width: 0;
+        overflow: hidden;
         color: var(--color-text-secondary);
         font-size: var(--font-size-sm);
-        overflow-wrap: anywhere;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .status-body :global(.btn) {
+        flex-shrink: 0;
     }
 
     .status-note {
@@ -217,9 +228,21 @@
         font-size: var(--font-size-sm);
     }
 
+    /* The field takes what the row's shared field width leaves after Browse, so the button
+       stays inside the card. */
     .path-field {
         display: flex;
         align-items: center;
         gap: var(--spacing-sm);
+        min-width: 0;
+    }
+
+    .path-field :global(.btn) {
+        flex-shrink: 0;
+    }
+
+    /* A flex item's `min-width: auto` would hold the field at its input's intrinsic width. */
+    .path-field :global(.text-field) {
+        min-width: 0;
     }
 </style>

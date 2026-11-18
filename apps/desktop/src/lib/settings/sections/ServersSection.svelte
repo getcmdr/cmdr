@@ -286,8 +286,15 @@
         font-size: var(--font-size-sm);
     }
 
+    /* The empty list reads as a value, not more explanation: the inset well the list would
+       fill, with its "nothing here" line centered in it, the way macOS draws an empty list. */
     .empty {
         margin-top: var(--spacing-sm);
+        padding: var(--spacing-md);
+        background: var(--color-bg-primary);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: var(--radius-md);
+        text-align: center;
     }
 
     .key-list {

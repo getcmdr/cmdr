@@ -150,11 +150,11 @@
                     id="analytics.email"
                     label={emailDef.label}
                     description={emailDef.description}
-                    split
                     {searchQuery}
                 >
                     <TextInput
                         type="email"
+                        size="compact"
                         placeholder={tString('settings.updates.emailPlaceholder')}
                         value={emailSignup.email}
                         oninput={emailSignup.handleInput}

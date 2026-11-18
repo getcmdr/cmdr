@@ -86,6 +86,7 @@ import SettingRow from './SettingRow.svelte'
 import SettingSelect from './SettingSelect.svelte'
 import SettingSlider from './SettingSlider.svelte'
 import SettingSwitch from './SettingSwitch.svelte'
+import SettingSwitchRow from './SettingSwitchRow.svelte'
 import SettingTextInput from './SettingTextInput.svelte'
 import SettingToggleGroup from './SettingToggleGroup.svelte'
 import SettingsContent from './SettingsContent.svelte'
@@ -405,22 +406,6 @@ describe('SettingRow a11y', () => {
     await expectNoA11yViolations(target)
   })
 
-  it('split layout has no a11y violations', async () => {
-    const target = container()
-    mount(SettingRow, {
-      target,
-      props: {
-        id: 'appearance.uiDensity',
-        label: 'UI density',
-        description: 'How much vertical space each row uses.',
-        split: true,
-        children: controlSnippet,
-      },
-    })
-    await tick()
-    await expectNoA11yViolations(target)
-  })
-
   it('disabled + requires-restart has no a11y violations', async () => {
     const target = container()
     mount(SettingRow, {
@@ -561,6 +546,21 @@ describe('SettingSwitch a11y', () => {
     const target = container()
     mount(SettingSwitch, { target, props: { id: 'listing.stripedRows', disabled: true } })
     await tick()
+    await expectNoA11yViolations(target)
+  })
+})
+
+describe('SettingSwitchRow a11y', () => {
+  beforeEach(() => {
+    stubs.getSetting = () => false
+    stubs.settingDefinition = () => ({ label: 'Striped rows', description: 'Alternate row shading.' })
+  })
+
+  it('renders a labelled row with its switch and has no a11y violations', async () => {
+    const target = container()
+    mount(SettingSwitchRow, { target, props: { id: 'listing.stripedRows', searchQuery: '' } })
+    await tick()
+    expect(target.querySelector('[role="switch"]')).not.toBeNull()
     await expectNoA11yViolations(target)
   })
 })

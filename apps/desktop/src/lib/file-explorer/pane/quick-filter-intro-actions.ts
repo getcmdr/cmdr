@@ -20,14 +20,14 @@ export function switchToJumpMode(): void {
   dismissToast(QUICK_FILTER_INTRO_TOAST_ID)
 }
 
-/** "Settings…": the typing-mode row in Settings > Appearance > Listing. */
+/** "Settings…": the typing-mode row in Settings > Behavior > Navigation & file ops. */
 export async function openTypingModeSettings(): Promise<void> {
   dismissToast(QUICK_FILTER_INTRO_TOAST_ID)
   try {
     const { openSettingsWindow } = await import('#lib/settings/settings-window.js')
     await openSettingsWindow(
       'quick-filter-toast',
-      ['Appearance', 'Listing'],
+      ['Behavior', 'Navigation & file ops'],
       settingAnchorId('fileExplorer.typeToJump.mode'),
     )
   } catch (err) {

@@ -176,3 +176,8 @@ German runs 20–35% longer than English. Look at these against the pseudolocale
   for "recorded" reads natural, not bureaucratic.
 - **`Notarisierungsnachweis`** (`aboutThis.signature.ticket*`, `ai.cloudConsent.aboutThis.item.appAndSigner`): coined;
   Apple de may say „notariell beglaubigt“. Swap for Apple's word once verified.
+- **`Zeitüberschreitung im Netzwerk`** (`settings.network.timeout.label`): a number field holding a wait in seconds;
+  follows the `Zeitüberschreitung beim Einbinden` sibling and the timeout ruling, but `Netzwerk-Zeitlimit` may read more
+  natural for a duration. Confirm.
+- **`mit deinem eigenen API-Schlüssel`** (`licensing.section.includedAi`): English says only "your own key"; `API-`
+  added so it doesn't read as the license key on the License page. Confirm.

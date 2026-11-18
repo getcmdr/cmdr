@@ -71,6 +71,14 @@
          * standalone row that should line up with the fields under it.
          */
         fullWidth?: boolean
+        /**
+         * Fills its container's width, sharing the extra space across the cells on top of each
+         * one's natural width, so a long label keeps its longer cell. Unlike `fullWidth`, cells
+         * aren't equal and the height doesn't change. For a group lined up with sibling groups of
+         * other widths (Settings sizes each card's groups to its widest one). In a container that
+         * hugs its content, it renders at its natural width.
+         */
+        stretch?: boolean
     }
 
     const {
@@ -82,7 +90,12 @@
         ariaDescribedBy,
         disabled = false,
         fullWidth = false,
+        stretch = false,
     }: Props = $props()
+
+    const arkRootClass = $derived(
+        ['tg-root', fullWidth ? 'is-full-width' : '', stretch ? 'is-stretch' : ''].filter(Boolean).join(' '),
+    )
 
     // Index of the option that should carry `tabindex=0` in tabs mode: the active one if it's
     // interactive, otherwise the first interactive option. Mirrors today's `SearchModeChips` logic
@@ -168,7 +181,7 @@
 </script>
 
 {#if semantics === 'tabs'}
-    <div bind:this={rootEl} class="tg-root" class:is-full-width={fullWidth} role="tablist"
+    <div bind:this={rootEl} class="tg-root" class:is-full-width={fullWidth} class:is-stretch={stretch} role="tablist"
         aria-label={ariaLabel}
         aria-describedby={ariaDescribedBy}
     >
@@ -209,7 +222,7 @@
 {:else}
     <ArkToggleGroup.Root
         bind:ref={rootEl}
-        class={fullWidth ? 'tg-root is-full-width' : 'tg-root'}
+        class={arkRootClass}
         value={toggleValue}
         onValueChange={handleToggleValueChange}
         {disabled}
@@ -280,6 +293,18 @@
     :global(.tg-root.is-full-width) {
         display: flex;
         width: 100%;
+    }
+
+    /* `stretch`: fill the container, each cell growing by an equal share of the extra space on
+       top of its label's width (`flex: 1 1 auto`), so the labels stay centered in their cells. */
+    :global(.tg-root.is-stretch) {
+        display: flex;
+        width: 100%;
+    }
+
+    :global(.tg-root.is-stretch .tg-item) {
+        flex: 1 1 auto;
+        justify-content: center;
     }
 
     /* A full-width group is a standalone row rather than an inline control, so it

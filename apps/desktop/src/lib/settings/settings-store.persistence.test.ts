@@ -589,6 +589,99 @@ describe('migration 9: image indexing turns off where there is no image engine',
 })
 
 /**
+ * Migration 10 folds the network timeout's Normal / Slow network / Custom radios into the one
+ * `network.timeout` stepper. Everyone keeps the timeout they ran with: Normal was 15 seconds (the
+ * new default, so nothing is written), Slow network 45, and Custom their own number.
+ */
+describe('migration 10: the network timeout mode folds into one timeout', () => {
+  /** A pre-migration file holding the two legacy keys, stamped at the previous schema. */
+  function seedLegacy(mode: string | undefined, customSeconds?: number): void {
+    if (mode !== undefined) disk.set('network.timeoutMode', mode)
+    if (customSeconds !== undefined) disk.set('network.customTimeout', customSeconds)
+    disk.set('_schemaVersion', 9)
+  }
+
+  it('carries Slow network across as 45 seconds', async () => {
+    seedLegacy('slow')
+
+    const store = await loadStore()
+    await store.initializeSettings()
+
+    expect(disk.get('network.timeout')).toBe(45_000)
+    expect(store.getSetting('network.timeout')).toBe(45_000)
+  })
+
+  it('carries a custom timeout across as its own number of seconds', async () => {
+    seedLegacy('custom', 30)
+
+    const store = await loadStore()
+    await store.initializeSettings()
+
+    expect(disk.get('network.timeout')).toBe(30_000)
+  })
+
+  it('leaves Normal on the default, with nothing on disk', async () => {
+    seedLegacy('normal', 30)
+
+    const store = await loadStore()
+    await store.initializeSettings()
+
+    // The 30 was a custom value that Normal ignored, so the person ran with 15 seconds.
+    expect(disk.has('network.timeout')).toBe(false)
+    expect(store.getSetting('network.timeout')).toBe(15_000)
+  })
+
+  it('reads Custom with no stored number as the 15 seconds it ran with', async () => {
+    seedLegacy('custom')
+
+    const store = await loadStore()
+    await store.initializeSettings()
+
+    expect(disk.has('network.timeout')).toBe(false)
+  })
+
+  it('drops both legacy keys, which the sparse save would otherwise leave forever', async () => {
+    seedLegacy('slow', 20)
+
+    const store = await loadStore()
+    await store.initializeSettings()
+
+    expect(disk.has('network.timeoutMode')).toBe(false)
+    expect(disk.has('network.customTimeout')).toBe(false)
+    expect(disk.get('_schemaVersion')).toBe(SCHEMA_VERSION)
+  })
+
+  it('clamps a hand-edited custom value into the stepper range', async () => {
+    seedLegacy('custom', 600)
+
+    const store = await loadStore()
+    await store.initializeSettings()
+
+    expect(disk.get('network.timeout')).toBe(120_000)
+  })
+
+  it('survives a re-run: the second launch finds no legacy key and changes nothing', async () => {
+    seedLegacy('slow')
+    const first = await loadStore()
+    await first.initializeSettings()
+    disk.set('_schemaVersion', 9)
+    disk.set('network.timeout', 60_000)
+
+    const second = await loadStore()
+    await second.initializeSettings()
+
+    expect(disk.get('network.timeout')).toBe(60_000)
+  })
+
+  it('writes nothing on a fresh install', async () => {
+    const store = await loadStore()
+    await store.initializeSettings()
+
+    expect([...disk.keys()]).toEqual([])
+  })
+})
+
+/**
  * Two windows over one backing store (`tauri-plugin-store` shares one in-memory store per
  * path across windows). Settings saves 500 ms after a change, and a window opened inside
  * that half second loads the store without the new value and starts listening only after

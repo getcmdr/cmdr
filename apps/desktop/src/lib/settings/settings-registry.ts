@@ -2,7 +2,7 @@
  * Settings registry - single source of truth for all settings.
  *
  * The registry stores message KEYS for everything user-facing (label,
- * description, enum-option labels), not English. `resolveDefinition` turns each
+ * description, enum-option labels), not English. `resolveDefinition` (`settings-resolve.ts`) turns each
  * authored `SettingDefinitionSource` into a `SettingDefinition` whose `label` /
  * `description` / option labels are getter-backed: reading them resolves the
  * current catalog string through `t()` (`#lib/intl`). This keeps the whole
@@ -13,19 +13,9 @@
  * the rendered section TITLES live in the section components via `t()`.
  */
 
-import type {
-  EnumOption,
-  EnumOptionSource,
-  SettingConstraints,
-  SettingConstraintsSource,
-  SettingDefinition,
-  SettingDefinitionSource,
-  SettingId,
-  SettingsValues,
-} from './types'
+import type { SettingDefinition, SettingDefinitionSource, SettingId, SettingsValues } from './types'
 import { SettingValidationError } from './types'
-import { tString } from '#lib/intl/messages.svelte.js'
-import { shortcutAsText } from '#lib/shortcuts/reactive-shortcuts.svelte.js'
+import { resolveDefinition } from './settings-resolve'
 import { getPlatform, hasCapability } from '#lib/platform/index.js'
 import { resolveDefault } from './platform-default'
 import { appearanceSettings } from './definitions/appearance'
@@ -59,67 +49,6 @@ const settingsRegistrySource: SettingDefinitionSource[] = [
   ...updatesPrivacySettings,
   ...advancedSettings,
 ]
-
-// ============================================================================
-// Resolution: authored keys → rendered (getter-backed) definitions
-//
-// `label`/`description`/option labels are getters that resolve the catalog
-// string through `t()` at READ time. So every `getSettingDefinition(...).label`
-// consumer gets a rendered string (the pre-i18n behavior), reactivity works in
-// markup, and snapshot semantics hold in plain `.ts` (matching the transfer
-// pilot). An option with a literal `label` (brand names, numerals) passes
-// through unchanged; option labels authored with a `labelKey` resolve lazily.
-// ============================================================================
-
-/** Resolves one authored option to a rendered `EnumOption` (getter-backed). */
-function resolveOption(opt: EnumOptionSource | EnumOption): EnumOption {
-  if ('label' in opt) return opt // literal label (brand names, numerals)
-  const out: EnumOption = {
-    value: opt.value,
-    get label() {
-      return tString(opt.labelKey)
-    },
-  }
-  if (opt.icon !== undefined) out.icon = opt.icon
-  if (opt.needsCapability !== undefined) out.needsCapability = opt.needsCapability
-  if (opt.descriptionKey !== undefined) {
-    const descKey = opt.descriptionKey
-    Object.defineProperty(out, 'description', { enumerable: true, get: () => tString(descKey) })
-  }
-  return out
-}
-
-/** Resolves authored constraints, mapping option keys to rendered options. */
-function resolveConstraints(c: SettingConstraintsSource | undefined): SettingConstraints | undefined {
-  if (!c) return undefined
-  const { options, ...rest } = c
-  if (!options) return rest
-  return { ...rest, options: options.map(resolveOption) }
-}
-
-/** Turns an authored source into a `SettingDefinition` with resolved copy. */
-function resolveDefinition(src: SettingDefinitionSource): SettingDefinition {
-  // `labelKey` / `cardKey` stay on the definition (in `rest`): search indexes them in other languages.
-  const { descriptionKey, descriptionWithKey, constraints, ...rest } = src
-  const { labelKey, cardKey } = rest
-  const def = {
-    ...rest,
-    constraints: resolveConstraints(constraints),
-    get label() {
-      return tString(labelKey)
-    },
-    get description() {
-      // A key a hint names must run the command (`shortcutAsText` reads live keys).
-      const combo = descriptionWithKey && shortcutAsText(descriptionWithKey.commandId, 'settingDescription')
-      if (descriptionWithKey && combo !== undefined) return tString(descriptionWithKey.key, { combo })
-      return descriptionKey === undefined ? '' : tString(descriptionKey)
-    },
-    get card() {
-      return cardKey === undefined ? undefined : tString(cardKey)
-    },
-  } as SettingDefinition
-  return def
-}
 
 export const settingsRegistry: SettingDefinition[] = settingsRegistrySource.map(resolveDefinition)
 

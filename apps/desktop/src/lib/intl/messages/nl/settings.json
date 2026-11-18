@@ -3,10 +3,6 @@
   "@settings.appearance.language.label": {
     "sourceHash": "a4fe652"
   },
-  "settings.appearance.language.description": "{platform, select, macos {Kies de taal die Cmdr gebruikt. ‘Systeemstandaard’ volgt de taal van je Mac.} windows {Kies de taal die Cmdr gebruikt. ‘Systeemstandaard’ volgt je Windows-weergavetaal.} other {Kies de taal die Cmdr gebruikt. ‘Systeemstandaard’ volgt de taal van je systeem.}}",
-  "@settings.appearance.language.description": {
-    "sourceHash": "7ca0276"
-  },
   "settings.appearance.language.opt.system": "Systeemstandaard",
   "@settings.appearance.language.opt.system": {
     "sourceHash": "b045921"
@@ -22,10 +18,6 @@
   "settings.theme.mode.label": "Themamodus",
   "@settings.theme.mode.label": {
     "sourceHash": "0f79f19"
-  },
-  "settings.theme.mode.description": "Kies tussen een licht, donker of systeemgebaseerd thema.",
-  "@settings.theme.mode.description": {
-    "sourceHash": "42b18b9"
   },
   "settings.theme.mode.opt.light": "Licht",
   "@settings.theme.mode.opt.light": {
@@ -67,9 +59,9 @@
   "@settings.appearance.sizeColors.label": {
     "sourceHash": "7598e9a"
   },
-  "settings.appearance.sizeColors.description": "Kleur bestandsgroottes in de bestandenlijst per niveau. Regenboog gebruikt groen/geel/oranje/rood/paars. App gebruikt tinten van de app-kleur.",
+  "settings.appearance.sizeColors.description": "Kleur bestandsgroottes in de bestandenlijst per niveau. Regenboog gebruikt groen, geel, oranje, rood en paars. App gebruikt tinten van de app-kleur.",
   "@settings.appearance.sizeColors.description": {
-    "sourceHash": "ecb064a"
+    "sourceHash": "e790d53"
   },
   "settings.appearance.sizeColors.opt.none": "Geen",
   "@settings.appearance.sizeColors.opt.none": {
@@ -117,10 +109,6 @@
   "@settings.appearance.dateTimeFormat.label": {
     "sourceHash": "fcfc2a6"
   },
-  "settings.appearance.dateTimeFormat.description": "Hoe datums en tijden in de bestandenlijst worden weergegeven.",
-  "@settings.appearance.dateTimeFormat.description": {
-    "sourceHash": "628571a"
-  },
   "settings.appearance.dateTimeFormat.opt.system": "Systeemstandaard",
   "@settings.appearance.dateTimeFormat.opt.system": {
     "sourceHash": "b045921"
@@ -130,17 +118,19 @@
     "sourceHash": "408dd66",
     "sameAsSourceJustification": "'ISO 8601' is the international standard name; kept verbatim in Dutch (standard name)."
   },
-  "settings.appearance.dateTimeFormat.optDesc.iso": "bijv. 2025-01-25 14:30",
+  "settings.appearance.dateTimeFormat.optDesc.iso": "2025-01-25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.iso": {
-    "sourceHash": "63c1f1d"
+    "sourceHash": "dc76ffd",
+    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
   },
   "settings.appearance.dateTimeFormat.opt.short": "Kort",
   "@settings.appearance.dateTimeFormat.opt.short": {
     "sourceHash": "f5d61ea"
   },
-  "settings.appearance.dateTimeFormat.optDesc.short": "bijv. 01/25 14:30",
+  "settings.appearance.dateTimeFormat.optDesc.short": "01/25 14:30",
   "@settings.appearance.dateTimeFormat.optDesc.short": {
-    "sourceHash": "4475197"
+    "sourceHash": "72b6f9f",
+    "sameAsSourceJustification": "A literal date-and-time sample in a fixed digit layout, with no words to translate."
   },
   "settings.appearance.dateTimeFormat.opt.custom": "Aangepast…",
   "@settings.appearance.dateTimeFormat.opt.custom": {
@@ -178,10 +168,6 @@
   "@settings.appearance.tintLocal.label": {
     "sourceHash": "d907724"
   },
-  "settings.appearance.tintLocal.description": "Achtergrondtint voor panelen die een lokale schijf tonen.",
-  "@settings.appearance.tintLocal.description": {
-    "sourceHash": "3c86b48"
-  },
   "settings.appearance.tintLocal.keywords": "tint, kleur, paneel, panelen, volume, lokaal, schijf, achtergrond, markeren",
   "@settings.appearance.tintLocal.keywords": {
     "sourceHash": "955fcd6"
@@ -189,10 +175,6 @@
   "settings.appearance.tintSmb.label": "Serverpanelen tinten (SMB, SFTP, WebDAV, S3)",
   "@settings.appearance.tintSmb.label": {
     "sourceHash": "d912bcf"
-  },
-  "settings.appearance.tintSmb.description": "Achtergrondtint voor panelen die een SMB-share, een SFTP-server, een WebDAV-server of S3-opslag tonen.",
-  "@settings.appearance.tintSmb.description": {
-    "sourceHash": "bddee40"
   },
   "settings.appearance.tintSmb.keywords": "tint, kleur, paneel, panelen, volume, server, netwerk, share, achtergrond, markeren",
   "@settings.appearance.tintSmb.keywords": {
@@ -225,10 +207,6 @@
   "settings.appearance.uiDensity.label": "Interfacedichtheid",
   "@settings.appearance.uiDensity.label": {
     "sourceHash": "81344d8"
-  },
-  "settings.appearance.uiDensity.description": "Bepaalt de tussenruimte en grootte van interface-elementen in de hele app.",
-  "@settings.appearance.uiDensity.description": {
-    "sourceHash": "e7ead7a"
   },
   "settings.appearance.uiDensity.opt.compact": "Compact",
   "@settings.appearance.uiDensity.opt.compact": {
@@ -388,10 +366,6 @@
   "@settings.listing.foldersFirst.label": {
     "sourceHash": "a61d73e"
   },
-  "settings.listing.foldersFirst.description": "Toon mappen boven bestanden in de lijst. Zet dit uit om mappen en bestanden door elkaar te tonen.",
-  "@settings.listing.foldersFirst.description": {
-    "sourceHash": "8505ff3"
-  },
   "settings.listing.foldersFirst.keywords": "sorteren, sortering, map, mappen, eerst, bovenaan, gemengd, volgorde, lijst",
   "@settings.listing.foldersFirst.keywords": {
     "sourceHash": "c4f9de2"
@@ -411,10 +385,6 @@
   "settings.listing.directorySortMode.label": "Mappen sorteren",
   "@settings.listing.directorySortMode.label": {
     "sourceHash": "7d0b088"
-  },
-  "settings.listing.directorySortMode.description": "Hoe mappen worden gesorteerd bij het wisselen van sorteerkolom.",
-  "@settings.listing.directorySortMode.description": {
-    "sourceHash": "797d93b"
   },
   "settings.listing.directorySortMode.disabledReason": "Nu uitgeschakeld, omdat mappen en bestanden door elkaar staan. Zet ‘Mappen eerst tonen’ aan om deze instelling in te schakelen.",
   "@settings.listing.directorySortMode.disabledReason": {
@@ -540,9 +510,13 @@
   "@settings.fileOperations.skipConfirmation.label": {
     "sourceHash": "f1b1b39"
   },
-  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {‘Kopieer’ en ‘Verplaats’ gaan meteen naar het andere paneel, en ‘Verwijder’ verplaatst zonder te vragen naar de prullenbak. Een beetje riskant, want één toetsaanslag voert het direct uit. Definitief verwijderen vraagt altijd eerst om bevestiging.} other {‘Kopieer’ en ‘Verplaats’ gaan meteen naar het andere paneel, en ‘Verwijder’ verplaatst zonder te vragen naar de prullenmand. Een beetje riskant, want één toetsaanslag voert het direct uit. Definitief verwijderen vraagt altijd eerst om bevestiging.}}",
+  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {‘Kopieer’ en ‘Verplaats’ gaan meteen naar het andere paneel, en ‘Verwijder’ verplaatst zonder te vragen naar de prullenbak.} other {‘Kopieer’ en ‘Verplaats’ gaan meteen naar het andere paneel, en ‘Verwijder’ verplaatst zonder te vragen naar de prullenmand.}}",
   "@settings.fileOperations.skipConfirmation.explanation": {
-    "sourceHash": "564f000"
+    "sourceHash": "9c53630"
+  },
+  "settings.fileOperations.skipConfirmation.summary": "Een beetje riskant: één toetsaanslag voert het meteen uit. Definitief verwijderen vraagt nog wel om bevestiging.",
+  "@settings.fileOperations.skipConfirmation.summary": {
+    "sourceHash": "ca6d8db"
   },
   "settings.fileOperations.skipConfirmation.keywords": "{platform, select, windows {bevestigen, bevestiging, venster, vragen, kopiëren, verplaatsen, prullenbak, verwijderen, wissen, overslaan, klikken} other {bevestigen, bevestiging, venster, vragen, kopiëren, verplaatsen, prullenmand, verwijderen, overslaan, klikken}}",
   "@settings.fileOperations.skipConfirmation.keywords": {
@@ -765,9 +739,13 @@
   "@settings.mediaIndex.enabled.label": {
     "sourceHash": "a2e6604"
   },
-  "settings.mediaIndex.enabled.description": "Lees de tekst in je afbeeldingen zodat je erin kunt zoeken. Draait op je Mac en verlaat die nooit. Dekt voorlopig lokale schijven.",
+  "settings.mediaIndex.enabled.description": "Werkt voorlopig op lokale schijven.",
   "@settings.mediaIndex.enabled.description": {
-    "sourceHash": "118fc8d"
+    "sourceHash": "517a7c9"
+  },
+  "settings.mediaIndex.enabled.summary": "Maakt de tekst in je afbeeldingen doorzoekbaar. Die verlaat je Mac nooit.",
+  "@settings.mediaIndex.enabled.summary": {
+    "sourceHash": "31aa708"
   },
   "settings.mediaIndex.enabled.keywords": "afbeelding, afbeeldingen, foto, foto''s, plaatje, tekst, zoeken, index, indexeren, schermafbeelding, inhoud",
   "@settings.mediaIndex.enabled.keywords": {
@@ -1146,9 +1124,9 @@
   "@settings.behavior.notifications.keepUntilClosed.label": {
     "sourceHash": "bc58ecc"
   },
-  "settings.behavior.notifications.keepUntilClosed.description": "Meldingen blijven op het scherm staan tot je ze sluit, in plaats van na een paar seconden te verdwijnen.",
+  "settings.behavior.notifications.keepUntilClosed.description": "In plaats van na een paar seconden te verdwijnen.",
   "@settings.behavior.notifications.keepUntilClosed.description": {
-    "sourceHash": "53890bf"
+    "sourceHash": "2df854c"
   },
   "settings.behavior.notifications.keepUntilClosed.keywords": "melding, meldingen, time-out, tijd, verdwijnen, sluiten, laten staan, bewaren, toegankelijkheid",
   "@settings.behavior.notifications.keepUntilClosed.keywords": {
@@ -1157,10 +1135,6 @@
   "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label": "Waarschuwing bij weinig schijfruimte",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label": {
     "sourceHash": "911b74b"
-  },
-  "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": "{platform, select, macos {Hoe je wordt gewaarschuwd wanneer je opstartschijf weinig vrije ruimte heeft.} windows {Hoe je wordt gewaarschuwd wanneer je systeemstation weinig vrije ruimte heeft.} other {Hoe je wordt gewaarschuwd wanneer je systeemschijf weinig vrije ruimte heeft.}}",
-  "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": {
-    "sourceHash": "07714d7"
   },
   "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": "In de app",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": {
@@ -1195,9 +1169,13 @@
   "@settings.search.autoApply.label": {
     "sourceHash": "06b0f9f"
   },
-  "settings.search.autoApply.description": "{platform, select, windows {Voer bestandsnaam- en regex-zoekopdrachten automatisch uit terwijl je typt (1 seconde nadat je stopt). AI-zoekopdrachten wachten altijd op Enter, omdat ze geld kosten. Wanneer dit uit staat, druk je op Enter of selecteer je de uitvoerknop om te zoeken.} other {Voer bestandsnaam- en regex-zoekopdrachten automatisch uit terwijl je typt (1 seconde nadat je stopt). AI-zoekopdrachten wachten altijd op Enter, omdat ze geld kosten. Wanneer dit uit staat, druk je op Enter of klik je op de uitvoerknop om te zoeken.}}",
+  "settings.search.autoApply.description": "{platform, select, windows {Zoekopdrachten starten 1 seconde nadat je stopt met typen. AI-zoekopdrachten wachten, omdat ze geld kosten. Als dit uit staat, druk je op Enter of selecteer je de uitvoerknop.} other {Zoekopdrachten starten 1 seconde nadat je stopt met typen. AI-zoekopdrachten wachten, omdat ze geld kosten. Als dit uit staat, druk je op Enter of klik je op de uitvoerknop.}}",
   "@settings.search.autoApply.description": {
-    "sourceHash": "b0f85fd"
+    "sourceHash": "3aa9f59"
+  },
+  "settings.search.autoApply.summary": "Voert naam- en regex-zoekopdrachten uit terwijl je typt. AI-zoekopdrachten wachten op Enter.",
+  "@settings.search.autoApply.summary": {
+    "sourceHash": "ebc6780"
   },
   "settings.search.autoApply.keywords": "zoeken, zoekopdracht, automatisch, toepassen, live, direct, meteen, bestandsnaam, vertraging",
   "@settings.search.autoApply.keywords": {
@@ -1206,10 +1184,6 @@
   "settings.ai.provider.label": "Aanbieder",
   "@settings.ai.provider.label": {
     "sourceHash": "472590a"
-  },
-  "settings.ai.provider.description": "Kies hoe AI-functies worden aangedreven.",
-  "@settings.ai.provider.description": {
-    "sourceHash": "f8c0f5d"
   },
   "settings.ai.provider.opt.off": "Uit",
   "@settings.ai.provider.opt.off": {
@@ -1248,10 +1222,6 @@
   "@settings.ai.cloudConsent.keywords": {
     "sourceHash": "c0a0566"
   },
-  "settings.ai.cloudProvider.description": "Welke cloud-AI-service Cmdr gebruikt.",
-  "@settings.ai.cloudProvider.description": {
-    "sourceHash": "3300ce9"
-  },
   "settings.ai.cloudProvider.keywords": "cloud, aanbieder, service, dienst, aangepast",
   "@settings.ai.cloudProvider.keywords": {
     "sourceHash": "0ccf0ad"
@@ -1276,9 +1246,13 @@
   "@settings.ai.reasoningEfforts.label.thinkingLevel": {
     "sourceHash": "96f115b"
   },
-  "settings.ai.reasoningEfforts.description": "Hoelang het model nadenkt voordat het antwoordt. Meer nadenken helpt bij lastige taken, maar antwoorden komen trager en het nadenken wordt gefactureerd als uitvoer.",
+  "settings.ai.reasoningEfforts.description": "Het nadenken van het model wordt gefactureerd als uitvoer, net als het antwoord zelf.",
   "@settings.ai.reasoningEfforts.description": {
-    "sourceHash": "0ad6737"
+    "sourceHash": "0a6d851"
+  },
+  "settings.ai.reasoningEfforts.summary": "Meer nadenken helpt bij lastige taken, maar is trager en kost meer.",
+  "@settings.ai.reasoningEfforts.summary": {
+    "sourceHash": "5c3f87f"
   },
   "settings.ai.reasoningEfforts.keywords": "redeneerinspanning, inspanning, redeneren, nadenken, denken, denktijd, diepte, snelheid, kosten, kwaliteit",
   "@settings.ai.reasoningEfforts.keywords": {
@@ -1296,9 +1270,13 @@
   "@settings.aboutThis.aiVerdict.label": {
     "sourceHash": "4c84599"
   },
-  "settings.aboutThis.aiVerdict.description": "Als je de kaart opent, schrijft de AI twee of drie zinnen op basis van de feiten die de kaart toont. Met cloud-AI gaan de feiten op de kaart en een korte blik in het bestand elke keer naar je aanbieder.",
+  "settings.aboutThis.aiVerdict.description": "Als je de kaart opent, schrijft de AI twee of drie zinnen op basis van de feiten die de kaart toont. Dat gebeurt elke keer dat je de kaart opent.",
   "@settings.aboutThis.aiVerdict.description": {
-    "sourceHash": "5dfb5f5"
+    "sourceHash": "4c0ef49"
+  },
+  "settings.aboutThis.aiVerdict.summary": "Met cloud-AI gaan de feiten op de kaart en een fragment uit het bestand naar je aanbieder.",
+  "@settings.aboutThis.aiVerdict.summary": {
+    "sourceHash": "4e34358"
   },
   "settings.aboutThis.aiVerdict.keywords": "uitleggen, uitleg, oordeel, samenvatting, bestandsinfo, wat is dit, beschrijven, commentaar",
   "@settings.aboutThis.aiVerdict.keywords": {
@@ -1312,9 +1290,14 @@
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
   },
-  "settings.network.enabled.description": "{platform, select, macos {Ontdek SMB-servers in je lokale netwerk en maak er verbinding mee. Wanneer dit uit staat, kan Cmdr nog steeds bestanden lezen en schrijven op al aangekoppelde shares, maar vraagt het macOS niet om toegang tot Lokaal netwerk.} windows {Ontdek SMB-servers in je lokale netwerk en maak er verbinding mee. Wanneer dit uit staat, kan Cmdr nog steeds bestanden lezen en schrijven op al aangekoppelde shares, en vraagt Windows niet of Cmdr door de firewall mag.} other {Ontdek SMB-servers in je lokale netwerk en maak er verbinding mee. Wanneer dit uit staat, kan Cmdr nog steeds bestanden lezen en schrijven op al aangekoppelde shares.}}",
+  "settings.network.enabled.description": "{platform, select, macos {Als dit uit staat, vraagt Cmdr macOS niet om toegang tot ‘Lokaal netwerk’.} windows {Als dit uit staat, vraagt Windows niet om Cmdr door de firewall te laten.} other {}}",
   "@settings.network.enabled.description": {
-    "sourceHash": "6994272"
+    "sourceHash": "3e2a4b0",
+    "sameAsSourceJustification": "The Linux branch is empty on purpose, as in English: Linux shows no network permission prompt to mention."
+  },
+  "settings.network.enabled.summary": "Vindt SMB-servers op je netwerk. Aangekoppelde gedeelde mappen werken hoe dan ook.",
+  "@settings.network.enabled.summary": {
+    "sourceHash": "1da1cd9"
   },
   "settings.network.enabled.keywords": "netwerk, inschakelen, ingeschakeld, detectie, lokaal netwerk, toestemming, bevoegdheid",
   "@settings.network.enabled.keywords": {
@@ -1338,7 +1321,7 @@
   },
   "settings.network.directSmbConnection.description": "{platform, select, macos {Als dit is ingeschakeld, maakt Cmdr rechtstreeks verbinding met SMB-shares voor snellere bestandsbewerkingen. De systeemkoppeling blijft voor Finder en andere apps.} windows {Als dit is ingeschakeld, maakt Cmdr rechtstreeks verbinding met SMB-shares voor snellere bestandsbewerkingen. De systeemverbinding blijft voor Verkenner en andere apps.} other {Als dit is ingeschakeld, maakt Cmdr rechtstreeks verbinding met SMB-shares voor snellere bestandsbewerkingen. De systeemkoppeling blijft voor je bestandsbeheerder en andere apps.}}",
   "@settings.network.directSmbConnection.description": {
-    "sourceHash": "429c68c"
+    "sourceHash": "06e2844"
   },
   "settings.network.directSmbConnection.keywords": "rechtstreeks, direct, snel, sneller, verbinding, verbinden, netwerk, prestaties",
   "@settings.network.directSmbConnection.keywords": {
@@ -1348,9 +1331,13 @@
   "@settings.network.requireSmbEncryption.label": {
     "sourceHash": "4519b09"
   },
-  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr versleutelt zijn verbindingen met SMB-shares, ook als de server daar niet om vraagt, en opent geen gedeelde map waarvan de verbinding niet kan worden versleuteld, ook niet als je Mac er zonder versleuteling mee verbonden is. Gastverbindingen kunnen niet worden versleuteld, dus je moet inloggen. Verbindingen die Cmdr al open heeft, blijven zoals ze zijn tot ze opnieuw verbinding maken.} windows {Cmdr versleutelt zijn verbindingen met SMB-shares, ook als de server daar niet om vraagt, en opent geen gedeelde map waarvan de verbinding niet kan worden versleuteld, ook niet als je pc er zonder versleuteling mee verbonden is. Gastverbindingen kunnen niet worden versleuteld, dus je moet je aanmelden. Verbindingen die Cmdr al open heeft, blijven zoals ze zijn tot ze opnieuw verbinding maken.} other {Cmdr versleutelt zijn verbindingen met SMB-shares, ook als de server daar niet om vraagt, en opent geen gedeelde map waarvan de verbinding niet kan worden versleuteld, ook niet als je computer er zonder versleuteling mee verbonden is. Gastverbindingen kunnen niet worden versleuteld, dus je moet inloggen. Verbindingen die Cmdr al open heeft, blijven zoals ze zijn tot ze opnieuw verbinding maken.}}",
+  "settings.network.requireSmbEncryption.description": "{platform, select, macos {Cmdr versleutelt zijn SMB-verbindingen, ook als de server daar niet om vraagt, en dat geldt ook voor gedeelde mappen waarmee je Mac zonder versleuteling verbonden is. Verbindingen die Cmdr al open heeft, blijven zoals ze zijn tot ze opnieuw verbinding maken.} windows {Cmdr versleutelt zijn SMB-verbindingen, ook als de server daar niet om vraagt, en dat geldt ook voor gedeelde mappen waarmee je pc zonder versleuteling verbonden is. Verbindingen die Cmdr al open heeft, blijven zoals ze zijn tot ze opnieuw verbinding maken.} other {Cmdr versleutelt zijn SMB-verbindingen, ook als de server daar niet om vraagt, en dat geldt ook voor gedeelde mappen waarmee je computer zonder versleuteling verbonden is. Verbindingen die Cmdr al open heeft, blijven zoals ze zijn tot ze opnieuw verbinding maken.}}",
   "@settings.network.requireSmbEncryption.description": {
-    "sourceHash": "26291fe"
+    "sourceHash": "6025cf4"
+  },
+  "settings.network.requireSmbEncryption.summary": "Gedeelde mappen die niet versleuteld kunnen worden, gaan niet open, en gasten moeten inloggen.",
+  "@settings.network.requireSmbEncryption.summary": {
+    "sourceHash": "bc73348"
   },
   "settings.network.requireSmbEncryption.keywords": "versleutelen, versleuteld, encryptie, codering, beveiliging, veilig, privacy, afschermen",
   "@settings.network.requireSmbEncryption.keywords": {
@@ -1388,49 +1375,17 @@
   "@settings.network.shareCacheDuration.keywords": {
     "sourceHash": "df14578"
   },
-  "settings.network.timeoutMode.label": "Modus voor netwerk-time-out",
-  "@settings.network.timeoutMode.label": {
-    "sourceHash": "5d1c989"
+  "settings.network.timeout.label": "Netwerktime-out",
+  "@settings.network.timeout.label": {
+    "sourceHash": "fdd0d76"
   },
-  "settings.network.timeoutMode.description": "Hoe lang er gewacht wordt bij het verbinden met netwerkshares.",
-  "@settings.network.timeoutMode.description": {
-    "sourceHash": "9f6de9d"
+  "settings.network.timeout.description": "Hoelang Cmdr op een netwerkshare wacht voordat het opgeeft. 15 seconden past bij gewone lokale netwerken; probeer 45 bij een VPN of een verbinding met hoge latentie.",
+  "@settings.network.timeout.description": {
+    "sourceHash": "8cc6def"
   },
-  "settings.network.timeoutMode.opt.normal": "Normaal",
-  "@settings.network.timeoutMode.opt.normal": {
-    "sourceHash": "a7248ee"
-  },
-  "settings.network.timeoutMode.optDesc.normal": "Voor typische lokale netwerken (15s time-out)",
-  "@settings.network.timeoutMode.optDesc.normal": {
-    "sourceHash": "e20eca1"
-  },
-  "settings.network.timeoutMode.opt.slow": "Traag netwerk",
-  "@settings.network.timeoutMode.opt.slow": {
-    "sourceHash": "3f940f4"
-  },
-  "settings.network.timeoutMode.optDesc.slow": "Voor VPN''s of verbindingen met hoge latentie (45s time-out)",
-  "@settings.network.timeoutMode.optDesc.slow": {
-    "sourceHash": "f8ebf3c"
-  },
-  "settings.network.timeoutMode.opt.custom": "Aangepast",
-  "@settings.network.timeoutMode.opt.custom": {
-    "sourceHash": "494ca78"
-  },
-  "settings.network.timeoutMode.keywords": "time-out, netwerk, traag, langzaam, verbinding, vertraging, latentie",
-  "@settings.network.timeoutMode.keywords": {
-    "sourceHash": "a00bb47"
-  },
-  "settings.network.customTimeout.label": "Aangepaste time-out",
-  "@settings.network.customTimeout.label": {
-    "sourceHash": "ea49e01"
-  },
-  "settings.network.customTimeout.description": "Aangepaste time-out in seconden voor netwerkbewerkingen.",
-  "@settings.network.customTimeout.description": {
-    "sourceHash": "28a8d46"
-  },
-  "settings.network.customTimeout.keywords": "time-out, aangepast, seconden",
-  "@settings.network.customTimeout.keywords": {
-    "sourceHash": "cf816c7"
+  "settings.network.timeout.keywords": "wachttijd, wachten, traag, langzaam, seconden, verbinding, vertraging, latentie, reageert niet, opgeven",
+  "@settings.network.timeout.keywords": {
+    "sourceHash": "bb8a9ac"
   },
   "settings.network.smbConcurrency.label": "Gelijktijdige bewerkingen per SMB-verbinding",
   "@settings.network.smbConcurrency.label": {
@@ -1448,9 +1403,13 @@
   "@settings.fileOperations.mtpEnabled.label": {
     "sourceHash": "6a315a8"
   },
-  "settings.fileOperations.mtpEnabled.description": "Detecteer Android- en andere apparaten via een USB-kabel en maak er verbinding mee om bestanden te bekijken en over te dragen. Om deze functie op een Android-telefoon te gebruiken, gebruik je een USB-kabel en ga je op je telefoon naar zoiets als Instellingen > USB-voorkeuren, waar je de verbinding instelt op ‘Bestandsoverdracht’, ‘Android Auto’ of vergelijkbaar. (Verschilt per apparaat.)",
+  "settings.fileOperations.mtpEnabled.description": "Cmdr herkent Android-telefoons, Kindles en camera''s aan een USB-kabel, zodat je door de bestanden kunt bladeren en ze kunt overdragen. Kijk op Android ergens bij Instellingen > USB-voorkeuren; ‘Android Auto’ werkt ook. Het verschilt per apparaat.",
   "@settings.fileOperations.mtpEnabled.description": {
-    "sourceHash": "c66df04"
+    "sourceHash": "a5b7ef3"
+  },
+  "settings.fileOperations.mtpEnabled.summary": "Zet op je telefoon de USB-verbinding op ‘Bestandsoverdracht’ of iets vergelijkbaars.",
+  "@settings.fileOperations.mtpEnabled.summary": {
+    "sourceHash": "355c987"
   },
   "settings.fileOperations.mtpEnabled.keywords": "apparaat, telefoon, mobiel, smartphone, camera, e-reader",
   "@settings.fileOperations.mtpEnabled.keywords": {
@@ -1460,9 +1419,13 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
-  "settings.fileOperations.adbEnabled.description": "{platform, select, macos {Krijg toegang tot het hele bestandssysteem van een Android-telefoon waarop USB-foutopsporing is ingeschakeld, iets wat MTP je niet kan laten zien. Hiervoor heb je de Android platform tools (de opdracht ‘adb’) op deze Mac nodig. Het kost niets om dit ingeschakeld te laten als je geen Android-tools hebt geïnstalleerd.} windows {Krijg toegang tot het hele bestandssysteem van een Android-telefoon waarop USB-foutopsporing is ingeschakeld, iets wat MTP je niet kan laten zien. Hiervoor heb je de Android platform tools (de opdracht ‘adb’) op deze pc nodig. Het kost niets om dit ingeschakeld te laten als je geen Android-tools hebt geïnstalleerd.} other {Krijg toegang tot het hele bestandssysteem van een Android-telefoon waarop USB-foutopsporing is ingeschakeld, iets wat MTP je niet kan laten zien. Hiervoor heb je de Android platform tools (de opdracht ‘adb’) op deze computer nodig. Het kost niets om dit ingeschakeld te laten als je geen Android-tools hebt geïnstalleerd.}}",
+  "settings.fileOperations.adbEnabled.description": "ADB bereikt het hele bestandssysteem van een Android-telefoon, wat MTP je niet kan laten zien. Het kost niets om dit aan te laten als je geen Android-tools hebt geïnstalleerd.",
   "@settings.fileOperations.adbEnabled.description": {
-    "sourceHash": "4c92b52"
+    "sourceHash": "a16197e"
+  },
+  "settings.fileOperations.adbEnabled.summary": "{platform, select, macos {Vereist USB-foutopsporing op de telefoon en de opdracht adb op deze Mac.} windows {Vereist USB-foutopsporing op de telefoon en de opdracht adb op deze pc.} other {Vereist USB-foutopsporing op de telefoon en de opdracht adb op deze computer.}}",
+  "@settings.fileOperations.adbEnabled.summary": {
+    "sourceHash": "b20dbc7"
   },
   "settings.fileOperations.adbEnabled.keywords": "usb-foutopsporing, foutopsporing, ontwikkelaarsopties, ontwikkelaar, telefoon, apparaat",
   "@settings.fileOperations.adbEnabled.keywords": {
@@ -1472,9 +1435,13 @@
   "@settings.fileOperations.adbBinaryPath.label": {
     "sourceHash": "a67fbbd"
   },
-  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Laat dit leeg, dan zoekt Cmdr op de gebruikelijke manier naar adb, onder meer in de Android SDK en Homebrew. Wijs zelf een pad aan als je de platform tools op een eigen plek bewaart.} other {Laat dit leeg, dan zoekt Cmdr op de gebruikelijke manier naar adb, onder meer in de Android SDK en je PATH. Wijs zelf een pad aan als je de platform tools op een eigen plek bewaart.}}",
+  "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Cmdr zoekt op de gebruikelijke plekken, onder meer in de Android SDK en Homebrew. Wijs zelf een pad aan als je de platform tools op een eigen plek bewaart.} other {Cmdr zoekt op de gebruikelijke plekken, onder meer in de Android SDK en je PATH. Wijs zelf een pad aan als je de platform tools op een eigen plek bewaart.}}",
   "@settings.fileOperations.adbBinaryPath.description": {
-    "sourceHash": "e8cde17"
+    "sourceHash": "e1c5acb"
+  },
+  "settings.fileOperations.adbBinaryPath.summary": "Laat dit leeg, dan vindt Cmdr adb zelf.",
+  "@settings.fileOperations.adbBinaryPath.summary": {
+    "sourceHash": "e62a0d3"
   },
   "settings.fileOperations.adbBinaryPath.keywords": "pad, binair bestand, programma, locatie, plek",
   "@settings.fileOperations.adbBinaryPath.keywords": {
@@ -1508,9 +1475,9 @@
   "@settings.fileExplorer.git.showStatusColumn.label": {
     "sourceHash": "0f6a836"
   },
-  "settings.fileExplorer.git.showStatusColumn.description": "Voeg een kolom toe met de git-status per bestand (gewijzigd, niet gevolgd, enz.) in de Volledige weergave.",
+  "settings.fileExplorer.git.showStatusColumn.description": "Voeg een kolom toe met de git-status van elk bestand (zoals gewijzigd of niet gevolgd) in de Volledige weergave.",
   "@settings.fileExplorer.git.showStatusColumn.description": {
-    "sourceHash": "fc74b38"
+    "sourceHash": "214eb5d"
   },
   "settings.fileExplorer.git.showStatusColumn.keywords": "status, kolom, gewijzigd, niet gevolgd, genegeerd, toegevoegd, verwijderd",
   "@settings.fileExplorer.git.showStatusColumn.keywords": {
@@ -1520,9 +1487,9 @@
   "@settings.fileExplorer.git.showVirtualGitPortal.label": {
     "sourceHash": "40d9fa1"
   },
-  "settings.fileExplorer.git.showVirtualGitPortal.description": "Toon bij het openen van `.git` branches, tags, commits en worktrees als doorzoekbare virtuele mappen. Schakel dit uit om in plaats daarvan de ruwe `.git`-inhoud te zien.",
+  "settings.fileExplorer.git.showVirtualGitPortal.description": "Toon bij het openen van .git branches, tags, commits en worktrees als mappen om in te bladeren. Zet dit uit om de ruwe inhoud van .git te zien.",
   "@settings.fileExplorer.git.showVirtualGitPortal.description": {
-    "sourceHash": "70eae72"
+    "sourceHash": "d58b2c3"
   },
   "settings.fileExplorer.git.showVirtualGitPortal.keywords": "portaal, virtueel, branches, tags, commits, worktrees, geschiedenis",
   "@settings.fileExplorer.git.showVirtualGitPortal.keywords": {
@@ -1531,10 +1498,6 @@
   "settings.viewer.wordWrap.label": "Tekstterugloop",
   "@settings.viewer.wordWrap.label": {
     "sourceHash": "9e210f3"
-  },
-  "settings.viewer.wordWrap.description": "Laat lange regels teruglopen aan de vensterrand in het weergavevenster in plaats van horizontaal te scrollen.",
-  "@settings.viewer.wordWrap.description": {
-    "sourceHash": "8a87bd2"
   },
   "settings.viewer.wordWrap.keywords": "weergavevenster, tekstterugloop, terugloop, regel, regels, afbreken, woord, horizontaal, scrollen",
   "@settings.viewer.wordWrap.keywords": {
@@ -1568,9 +1531,13 @@
   "@settings.developer.mcpPort.label": {
     "sourceHash": "72e9a59"
   },
-  "settings.developer.mcpPort.description": "Voorkeurspoort voor de MCP-server. Laat op 0 staan om het besturingssysteem een tijdelijke poort te laten kiezen (aanbevolen; de daadwerkelijke poort wordt hieronder getoond wanneer de server draait). Leg een specifieke poort vast als externe tooling die nodig heeft.",
+  "settings.developer.mcpPort.description": "De poort die in gebruik is, wordt hieronder getoond zolang de server draait. Stel een vaste poort in als een andere tool die vooraf moet weten.",
   "@settings.developer.mcpPort.description": {
-    "sourceHash": "174e807"
+    "sourceHash": "f2ca537"
+  },
+  "settings.developer.mcpPort.summary": "{platform, select, macos {Laat op 0 staan, dan kiest je Mac een vrije poort.} windows {Laat op 0 staan, dan kiest je pc een vrije poort.} other {Laat op 0 staan, dan kiest je computer een vrije poort.}}",
+  "@settings.developer.mcpPort.summary": {
+    "sourceHash": "cee7df5"
   },
   "settings.developer.mcpPort.keywords": "poort, netwerk, tijdelijk, willekeurig",
   "@settings.developer.mcpPort.keywords": {
@@ -1591,10 +1558,6 @@
   "settings.updates.autoCheck.label": "Automatisch controleren op updates",
   "@settings.updates.autoCheck.label": {
     "sourceHash": "409e6a1"
-  },
-  "settings.updates.autoCheck.description": "Controleer periodiek op de achtergrond op nieuwe versies.",
-  "@settings.updates.autoCheck.description": {
-    "sourceHash": "1ff0b1a"
   },
   "settings.updates.autoCheck.keywords": "update, updates, bijwerken, automatisch, controleren, versie, achtergrond",
   "@settings.updates.autoCheck.keywords": {
@@ -1632,9 +1595,9 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
-  "settings.analytics.enabled.description": "{platform, select, windows {Zet dit aan om ons te helpen zien welke functies ertoe doen tijdens de open bèta.\nDe statistieken zijn niet gekoppeld aan je naam of e-mailadres, maar aan een willekeurige id.\nCmdr stuurt nooit bestandsnamen, paden, zoektermen of prompts.\nStaat het uit, dan stuurt Cmdr helemaal geen statistieken.} other {Zet dit aan om ons te helpen zien welke functies ertoe doen tijdens de open bèta.\nDe statistieken zijn niet gekoppeld aan je naam of e-mailadres, maar aan een willekeurige id.\nCmdr stuurt nooit bestandsnamen, paden, zoektermen of prompts.\nStaat het uit, dan stuurt Cmdr helemaal geen statistieken.}}",
+  "settings.analytics.enabled.description": "Zet dit alsjeblieft aan, dan zien we tijdens de open bèta welke functies ertoe doen.\nDe statistieken zijn gekoppeld aan een willekeurige id, niet aan je naam of e-mailadres.\nCmdr verstuurt nooit bestandsnamen, paden, zoektermen of prompts.\nAls dit uit staat, verstuurt Cmdr geen statistieken.",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "dbbd8c8"
+    "sourceHash": "c7057bd"
   },
   "settings.analytics.enabled.keywords": "analyse, gebruik, gebruiksstatistieken, statistieken, privacy, telemetrie, bèta, volgen, tracking, afmelden",
   "@settings.analytics.enabled.keywords": {
@@ -1644,10 +1607,6 @@
   "@settings.analytics.email.label": {
     "sourceHash": "71e5c9a"
   },
-  "settings.analytics.email.description": "Voorbeeld: jij@voorbeeld.com",
-  "@settings.analytics.email.description": {
-    "sourceHash": "03574f9"
-  },
   "settings.analytics.email.keywords": "e-mail, e-mailadres, mail, bèta, contact, nieuwsbrief, updates, enquête",
   "@settings.analytics.email.keywords": {
     "sourceHash": "61438eb"
@@ -1656,9 +1615,13 @@
   "@settings.updates.crashReports.label": {
     "sourceHash": "2b8f06d"
   },
-  "settings.updates.crashReports.description": "{platform, select, macos {Verstuur automatisch een rapport wanneer Cmdr onverwachts stopt of op de achtergrond een probleem tegenkomt. Bevat de appversie, de macOS-versie en welk deel van de code het probleem tegenkwam. Nooit bestandsnamen of persoonlijke gegevens.} windows {Verstuur automatisch een rapport wanneer Cmdr onverwachts stopt of op de achtergrond een probleem tegenkomt. Bevat de appversie, de Windows-versie en welk deel van de code het probleem tegenkwam. Nooit bestandsnamen of persoonlijke gegevens.} other {Verstuur automatisch een rapport wanneer Cmdr onverwachts stopt of op de achtergrond een probleem tegenkomt. Bevat de appversie, de Linux-distributie en de versie daarvan, en welk deel van de code het probleem tegenkwam. Nooit bestandsnamen of persoonlijke gegevens.}}",
+  "settings.updates.crashReports.description": "{platform, select, macos {Cmdr verstuurt een rapport wanneer het onverwachts stopt of op de achtergrond een probleem tegenkomt. Het rapport bevat de appversie, de macOS-versie en welk deel van de code het probleem tegenkwam.} windows {Cmdr verstuurt een rapport wanneer het onverwachts stopt of op de achtergrond een probleem tegenkomt. Het rapport bevat de appversie, de Windows-versie en welk deel van de code het probleem tegenkwam.} other {Cmdr verstuurt een rapport wanneer het onverwachts stopt of op de achtergrond een probleem tegenkomt. Het rapport bevat de appversie, de Linux-distributie en de versie daarvan, en welk deel van de code het probleem tegenkwam.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "3042746"
+    "sourceHash": "26508c4"
+  },
+  "settings.updates.crashReports.summary": "Bevat nooit bestandsnamen of persoonlijke gegevens.",
+  "@settings.updates.crashReports.summary": {
+    "sourceHash": "94dc717"
   },
   "settings.updates.crashReports.keywords": "crash, crashrapport, vastgelopen, rapport, privacy, telemetrie, bug, fout",
   "@settings.updates.crashReports.keywords": {
@@ -1668,9 +1631,13 @@
   "@settings.updates.errorReports.label": {
     "sourceHash": "471575d"
   },
-  "settings.updates.errorReports.description": "Verstuur een klein logfragment naar de ontwikkelaar wanneer er een fout optreedt. Helpt bugs sneller te verhelpen. Standaard uit. Je kunt altijd handmatig een rapport versturen vanuit het Help-menu.",
+  "settings.updates.errorReports.description": "Standaard uit. Je kunt altijd zelf een rapport versturen via het Help-menu.",
   "@settings.updates.errorReports.description": {
-    "sourceHash": "f3e41eb"
+    "sourceHash": "a33a61c"
+  },
+  "settings.updates.errorReports.summary": "Verstuurt ons een klein logfragment als er iets misgaat, zodat we bugs sneller kunnen oplossen.",
+  "@settings.updates.errorReports.summary": {
+    "sourceHash": "0fdd0ae"
   },
   "settings.updates.errorReports.keywords": "fout, foutrapport, rapport, automatisch, versturen, privacy, telemetrie, bug, logbestand, fragment, diagnose",
   "@settings.updates.errorReports.keywords": {
@@ -1716,9 +1683,9 @@
   "@settings.advanced.virtualizationBufferColumns.label": {
     "sourceHash": "a9e8dba"
   },
-  "settings.advanced.virtualizationBufferColumns.description": "Extra kolommen om te renderen in Beknopte weergave.",
+  "settings.advanced.virtualizationBufferColumns.description": "Extra kolommen om te renderen in de Beknopte weergave.",
   "@settings.advanced.virtualizationBufferColumns.description": {
-    "sourceHash": "a1cbd98"
+    "sourceHash": "a66189f"
   },
   "settings.advanced.virtualizationBufferColumns.keywords": "virtualisatie, buffer, kolom, kolommen, beknopt",
   "@settings.advanced.virtualizationBufferColumns.keywords": {
@@ -1752,9 +1719,13 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "{platform, select, macos {Cmdr pauzeert het indexeren van schijven wanneer de vrije ruimte op je opstartschijf onder dit percentage zakt, zodat de index niet de ruimte inneemt die je eigen bestanden nodig hebben. Het indexeren gaat verder waar het gebleven was zodra de vrije ruimte één procentpunt hoger ligt. Dit werkt of de ‘Waarschuwing bij weinig schijfruimte’ nu aan of uit staat.} windows {Cmdr pauzeert het indexeren van schijven wanneer de vrije ruimte op je systeemstation onder dit percentage zakt, zodat de index niet de ruimte inneemt die je eigen bestanden nodig hebben. Het indexeren gaat verder waar het gebleven was zodra de vrije ruimte één procentpunt hoger ligt. Dit werkt of de ‘Waarschuwing bij weinig schijfruimte’ nu aan of uit staat.} other {Cmdr pauzeert het indexeren van schijven wanneer de vrije ruimte op je systeemschijf onder dit percentage zakt, zodat de index niet de ruimte inneemt die je eigen bestanden nodig hebben. Het indexeren gaat verder waar het gebleven was zodra de vrije ruimte één procentpunt hoger ligt. Dit werkt of de ‘Waarschuwing bij weinig schijfruimte’ nu aan of uit staat.}}",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Het indexeren gaat verder waar het gebleven was zodra de vrije ruimte één procentpunt boven de drempel komt. Dit werkt ongeacht of ‘Waarschuwing bij weinig schijfruimte’ aan of uit staat.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "bb41d41"
+    "sourceHash": "4d80336"
+  },
+  "settings.advanced.indexPauseFreeSpacePercent.summary": "Zo neemt de index niet de ruimte in die je eigen bestanden nodig hebben.",
+  "@settings.advanced.indexPauseFreeSpacePercent.summary": {
+    "sourceHash": "965796f"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "schijf, ruimte, schijfruimte, vol, vrij, index, indexeren, pauze, opslag, drempel, procent, percentage, weinig",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -1764,9 +1735,9 @@
   "@settings.fileViewer.suppressBinaryWarning.label": {
     "sourceHash": "8cdaada"
   },
-  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Het weergavevenster van Cmdr toont ruwe bytes (met verliesgevende UTF-8 voor niet-tekstinhoud). Wanneer je een afbeelding, PDF, archief of ander binair bestand opent, toont het weergavevenster een rode banner die uitlegt dat de snelle weergave of openen in de bijbehorende app waarschijnlijk is wat je wilde. Zet dit aan (of klik op ‘Toon deze waarschuwing niet meer’ in de banner) om de waarschuwing voorgoed te onderdrukken.} windows {Het weergavevenster van Cmdr toont ruwe bytes (met verliesgevende UTF-8 voor niet-tekstinhoud). Wanneer je een afbeelding, PDF, archief of ander binair bestand opent, toont het weergavevenster een rode banner die uitlegt dat openen in de bijbehorende app waarschijnlijk is wat je wilde. Zet dit aan (of selecteer ‘Toon deze waarschuwing niet meer’ in de banner) om de waarschuwing voorgoed te onderdrukken.} other {Het weergavevenster van Cmdr toont ruwe bytes (met verliesgevende UTF-8 voor niet-tekstinhoud). Wanneer je een afbeelding, PDF, archief of ander binair bestand opent, toont het weergavevenster een rode banner die uitlegt dat openen in de bijbehorende app waarschijnlijk is wat je wilde. Zet dit aan (of klik op ‘Toon deze waarschuwing niet meer’ in de banner) om de waarschuwing voorgoed te onderdrukken.}}",
+  "settings.fileViewer.suppressBinaryWarning.explanation": "{platform, select, macos {Het weergavevenster van Cmdr toont de ruwe inhoud van een bestand. Wanneer je een afbeelding, PDF, archief of ander binair bestand opent, toont het weergavevenster een rode banner die uitlegt dat de snelle weergave of openen in de bijbehorende app waarschijnlijk is wat je wilde. Zet dit aan (of klik op ‘Toon deze waarschuwing niet meer’ in de banner) om de waarschuwing voorgoed te onderdrukken.} windows {Het weergavevenster van Cmdr toont de ruwe inhoud van een bestand. Wanneer je een afbeelding, PDF, archief of ander binair bestand opent, toont het weergavevenster een rode banner die uitlegt dat openen in de bijbehorende app waarschijnlijk is wat je wilde. Zet dit aan (of selecteer ‘Toon deze waarschuwing niet meer’ in de banner) om de waarschuwing voorgoed te onderdrukken.} other {Het weergavevenster van Cmdr toont de ruwe inhoud van een bestand. Wanneer je een afbeelding, PDF, archief of ander binair bestand opent, toont het weergavevenster een rode banner die uitlegt dat openen in de bijbehorende app waarschijnlijk is wat je wilde. Zet dit aan (of klik op ‘Toon deze waarschuwing niet meer’ in de banner) om de waarschuwing voorgoed te onderdrukken.}}",
   "@settings.fileViewer.suppressBinaryWarning.explanation": {
-    "sourceHash": "9f90a50"
+    "sourceHash": "c255df8"
   },
   "settings.fileViewer.suppressBinaryWarning.keywords": "weergavevenster, binair, afbeelding, ruw, ruwe weergave, waarschuwing, banner, snelle weergave",
   "@settings.fileViewer.suppressBinaryWarning.keywords": {
@@ -1949,9 +1920,13 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Maximale schijfruimte voor logbestanden. Zet op 0 om logopslag uit te schakelen; foutrapporten kunnen niet worden verstuurd zonder logs. Wijzigingen naar een waarde anders dan nul gaan in bij de volgende start van de app.",
+  "settings.advanced.maxLogStorageMb.description": "Een nieuwe limiet boven 0 gaat in de volgende keer dat Cmdr start.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "725bb26"
+    "sourceHash": "16616b2"
+  },
+  "settings.advanced.maxLogStorageMb.summary": "Zet op 0 om geen logbestanden te bewaren, maar dan kan Cmdr geen foutrapporten versturen.",
+  "@settings.advanced.maxLogStorageMb.summary": {
+    "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "log, logbestand, logboek, opslag, schijf, schijfruimte, limiet, maximum, rotatie, fout, rapport, privacy",
   "@settings.advanced.maxLogStorageMb.keywords": {
@@ -1960,10 +1935,6 @@
   "settings.advanced.mountTimeout.label": "Time-out voor aankoppelen",
   "@settings.advanced.mountTimeout.label": {
     "sourceHash": "b5bce4f"
-  },
-  "settings.advanced.mountTimeout.description": "Time-out voor het aankoppelen van netwerkshares.",
-  "@settings.advanced.mountTimeout.description": {
-    "sourceHash": "3da30e1"
   },
   "settings.advanced.mountTimeout.keywords": "aankoppelen, koppelen, time-out, netwerk, share, gedeelde map",
   "@settings.advanced.mountTimeout.keywords": {
@@ -1997,9 +1968,13 @@
   "@settings.advanced.logLlmCalls.label": {
     "sourceHash": "f865b3e"
   },
-  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Bewaar elk AI-verzoek en -antwoord in een lokale map (llm-logs) om te debuggen. Deze bestanden blijven op je Mac en bevatten de bestandsnamen en paden die Cmdr naar je aanbieder stuurt.} windows {Bewaar elk AI-verzoek en -antwoord in een lokale map (llm-logs) om te debuggen. Deze bestanden blijven op je pc en bevatten de bestandsnamen en paden die Cmdr naar je aanbieder stuurt.} other {Bewaar elk AI-verzoek en -antwoord in een lokale map (llm-logs) om te debuggen. Deze bestanden blijven op je computer en bevatten de bestandsnamen en paden die Cmdr naar je aanbieder stuurt.}}",
+  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Cmdr schrijft ze naar de map llm-logs, voor foutopsporing. Deze bestanden blijven op je Mac.} windows {Cmdr schrijft ze naar de map llm-logs, voor foutopsporing. Deze bestanden blijven op je pc.} other {Cmdr schrijft ze naar de map llm-logs, voor foutopsporing. Deze bestanden blijven op je computer.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "427e138"
+    "sourceHash": "c7e917a"
+  },
+  "settings.advanced.logLlmCalls.summary": "Bewaart elk AI-verzoek en -antwoord lokaal, inclusief bestandspaden.",
+  "@settings.advanced.logLlmCalls.summary": {
+    "sourceHash": "8b9e485"
   },
   "settings.advanced.logLlmCalls.keywords": "ai, log, logboek, foutopsporing, debug, verzoek, antwoord, reactie, prompt",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2084,10 +2059,6 @@
   "settings.advanced.updateCheckInterval.label": "Interval voor updatecontrole",
   "@settings.advanced.updateCheckInterval.label": {
     "sourceHash": "91912bc"
-  },
-  "settings.advanced.updateCheckInterval.description": "Hoe vaak er op de achtergrond op updates wordt gecontroleerd.",
-  "@settings.advanced.updateCheckInterval.description": {
-    "sourceHash": "2bdd38a"
   },
   "settings.advanced.updateCheckInterval.keywords": "update, updates, interval, achtergrond, controleren, hoe vaak",
   "@settings.advanced.updateCheckInterval.keywords": {
@@ -2516,25 +2487,33 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Instellingen › AI ({provider}).} linuxGnome {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Voorkeuren › AI ({provider}).} linuxKde {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in ‘Cmdr configureren’ › AI ({provider}).} other {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Instellingen › AI ({provider}).}}",
-  "@settings.askCmdr.provider.shared": {
-    "sourceHash": "0cc24da"
+  "settings.askCmdr.provider.usesProvider": "Ask Cmdr gebruikt {provider}, dezelfde AI als de rest van Cmdr. <providerLink>Wijzig dit in AI › Aanbieder</providerLink>",
+  "@settings.askCmdr.provider.usesProvider": {
+    "sourceHash": "978e715"
   },
-  "settings.askCmdr.provider.off": "{platform, select, windows {Zet een AI-aanbieder aan in Instellingen › AI om te beginnen met chatten.} linuxGnome {Zet een AI-aanbieder aan in Voorkeuren › AI om te beginnen met chatten.} linuxKde {Zet een AI-aanbieder aan in ‘Cmdr configureren’ › AI om te beginnen met chatten.} other {Zet een AI-aanbieder aan in Instellingen › AI om te beginnen met chatten.}}",
-  "@settings.askCmdr.provider.off": {
-    "sourceHash": "89d8531"
+  "settings.askCmdr.provider.none": "Zet een AI-aanbieder aan in <providerLink>AI › Aanbieder</providerLink> om te beginnen met chatten.",
+  "@settings.askCmdr.provider.none": {
+    "sourceHash": "0e73e8e"
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr-model",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"
   },
-  "settings.askCmdr.interactiveModel.description": "Het model waarmee de chat werkt. Laat leeg om hetzelfde model te gebruiken als de andere AI-functies van Cmdr. Voorbeeld: claude-sonnet-5-5",
+  "settings.askCmdr.interactiveModel.description": "Het model waarmee de chat werkt. ‘Hetzelfde als de AI van Cmdr’ volgt het model dat je in AI › Aanbieder hebt gekozen.",
   "@settings.askCmdr.interactiveModel.description": {
-    "sourceHash": "e301e99"
+    "sourceHash": "a285a77"
   },
   "settings.askCmdr.interactiveModel.placeholder": "Hetzelfde als de AI van Cmdr",
   "@settings.askCmdr.interactiveModel.placeholder": {
     "sourceHash": "2631f3d"
+  },
+  "settings.askCmdr.interactiveModel.sameAs": "Hetzelfde als de AI van Cmdr ({model})",
+  "@settings.askCmdr.interactiveModel.sameAs": {
+    "sourceHash": "e290ccc"
+  },
+  "settings.askCmdr.interactiveModel.localNote": "Lokale AI draait één model, dus de chat gebruikt dat model.",
+  "@settings.askCmdr.interactiveModel.localNote": {
+    "sourceHash": "b2447b5"
   },
   "settings.askCmdr.interactiveModel.keywords": "ai, chat, assistent, model, overschrijven, ander model, afwijkend model",
   "@settings.askCmdr.interactiveModel.keywords": {
@@ -2584,9 +2563,13 @@
   "@settings.askCmdr.proactive.label": {
     "sourceHash": "a85ef48"
   },
-  "settings.askCmdr.proactive.description": "Cmdr houdt de mappen in de gaten waarin je werkt en begint een chat zodra het iets voor te stellen heeft. Er gebeurt niets tot je het goedkeurt.",
+  "settings.askCmdr.proactive.description": "Cmdr houdt de mappen waarin je werkt in de gaten om iets te vinden dat een suggestie waard is.",
   "@settings.askCmdr.proactive.description": {
-    "sourceHash": "556f155"
+    "sourceHash": "e4261b4"
+  },
+  "settings.askCmdr.proactive.summary": "Cmdr begint een chat met een suggestie. Er gebeurt niets tot je het goedkeurt.",
+  "@settings.askCmdr.proactive.summary": {
+    "sourceHash": "675ea47"
   },
   "settings.askCmdr.proactive.keywords": "proactief, suggesties, automatisch, opmerken, gesprek, gesprekken, beginnen, letten op, wakker, ai",
   "@settings.askCmdr.proactive.keywords": {
@@ -2699,9 +2682,13 @@
   "@settings.operationLog.enabled.label": {
     "sourceHash": "edfee55"
   },
-  "settings.operationLog.enabled.description": "Zolang dit uit staat, houdt Cmdr niet bij wat je voortaan kopieert, verplaatst of verwijdert, of welke namen je wijzigt, dus dat kun je niet ongedaan maken. Je bestaande geschiedenis blijft bewaard en wat erin staat, kun je nog steeds ongedaan maken.",
+  "settings.operationLog.enabled.description": "Dit geldt voor alles wat je voortaan kopieert, verplaatst of verwijdert, en voor elke naam die je wijzigt. Je bestaande geschiedenis blijft bewaard en wat erin staat, kun je nog steeds ongedaan maken.",
   "@settings.operationLog.enabled.description": {
-    "sourceHash": "41f90d4"
+    "sourceHash": "87f3b5d"
+  },
+  "settings.operationLog.enabled.summary": "Zolang dit uit staat, houdt Cmdr geen nieuwe wijzigingen bij, dus die kun je niet ongedaan maken.",
+  "@settings.operationLog.enabled.summary": {
+    "sourceHash": "94d4870"
   },
   "settings.operationLog.enabled.keywords": "bewerking, bewerkingen, logboek, log, geschiedenis, bijhouden, vastleggen, opnemen, ongedaan maken, journaal, privacy, uitzetten",
   "@settings.operationLog.enabled.keywords": {
@@ -2710,10 +2697,6 @@
   "settings.operationLog.maxAge.label": "Geschiedenis bewaren gedurende",
   "@settings.operationLog.maxAge.label": {
     "sourceHash": "ca05015"
-  },
-  "settings.operationLog.maxAge.description": "Hoe lang Cmdr geregistreerde bewerkingen bewaart voordat de oudste automatisch worden verwijderd.",
-  "@settings.operationLog.maxAge.description": {
-    "sourceHash": "7d35887"
   },
   "settings.operationLog.maxAge.opt.forever": "Voor altijd",
   "@settings.operationLog.maxAge.opt.forever": {
@@ -2842,6 +2825,10 @@
   "settings.summary.noSubsections": "Dit onderdeel heeft geen subonderdelen.",
   "@settings.summary.noSubsections": {
     "sourceHash": "ba4b5b5"
+  },
+  "settings.control.moreAbout": "Meer over ‘{setting}’",
+  "@settings.control.moreAbout": {
+    "sourceHash": "57968f3"
   },
   "settings.control.resetToDefault": "Herstel naar standaard",
   "@settings.control.resetToDefault": {
@@ -3135,6 +3122,10 @@
   "@settings.appearance.card.namesAndIcons": {
     "sourceHash": "8386169"
   },
+  "settings.appearance.card.sorting": "Sortering",
+  "@settings.appearance.card.sorting": {
+    "sourceHash": "cb24f7d"
+  },
   "settings.appearance.card.briefMode": "Beknopte weergave",
   "@settings.appearance.card.briefMode": {
     "sourceHash": "b75e4b3"
@@ -3226,9 +3217,13 @@
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
   },
-  "settings.securityLog.enabled.description": "{platform, select, macos {Houd op deze Mac een klein bestand bij met beveiligingsrelevante wijzigingen en weigeringen, zoals toestemming voor cloud-AI, een geïnstalleerde update of een app die de MCP-server heeft geweigerd. Het bestand bevat geen bestandsnamen, inhoud of wachtwoorden en verlaat je Mac nooit.} windows {Houd op deze pc een klein bestand bij met beveiligingsrelevante wijzigingen en weigeringen, zoals toestemming voor cloud-AI, een geïnstalleerde update of een app die de MCP-server heeft geweigerd. Het bestand bevat geen bestandsnamen, inhoud of wachtwoorden en verlaat je pc nooit.} other {Houd op deze computer een klein bestand bij met beveiligingsrelevante wijzigingen en weigeringen, zoals toestemming voor cloud-AI, een geïnstalleerde update of een app die de MCP-server heeft geweigerd. Het bestand bevat geen bestandsnamen, inhoud of wachtwoorden en verlaat je computer nooit.}}",
+  "settings.securityLog.enabled.description": "Hierin staan beveiligingsrelevante wijzigingen en weigeringen, zoals toestemming voor cloud-AI, een geïnstalleerde update of een app die geen toegang kreeg tot de MCP-server. Er staan geen bestandsnamen, inhoud of wachtwoorden in.",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "7086b00"
+    "sourceHash": "3692a3d"
+  },
+  "settings.securityLog.enabled.summary": "{platform, select, macos {Een klein lokaal logboek van beveiligingsgebeurtenissen. Het verlaat je Mac nooit.} windows {Een klein lokaal logboek van beveiligingsgebeurtenissen. Het verlaat je pc nooit.} other {Een klein lokaal logboek van beveiligingsgebeurtenissen. Het verlaat je computer nooit.}}",
+  "@settings.securityLog.enabled.summary": {
+    "sourceHash": "84a9146"
   },
   "settings.securityLog.enabled.keywords": "beveiliging, log, logboek, audit, controle, bijhouden, vastleggen, gebeurtenissen, toegang, privacy",
   "@settings.securityLog.enabled.keywords": {
@@ -3275,8 +3270,8 @@
   "@settings.network.permissionWithout": {
     "sourceHash": "a563afd"
   },
-  "settings.network.customTimeoutUnit": "seconden",
-  "@settings.network.customTimeoutUnit": {
+  "settings.network.timeoutUnit": "seconden",
+  "@settings.network.timeoutUnit": {
     "sourceHash": "59f006d"
   },
   "settings.updates.emailPlaceholder": "jij@example.com",
@@ -3540,9 +3535,9 @@
   "@settings.adb.install.intro": {
     "sourceHash": "9f7a0f4"
   },
-  "settings.adb.pathPlaceholder": "Cmdr zoekt op de gebruikelijke manier naar adb",
+  "settings.adb.pathPlaceholder": "Automatisch gevonden",
   "@settings.adb.pathPlaceholder": {
-    "sourceHash": "538b307"
+    "sourceHash": "14fac78"
   },
   "settings.adb.browse": "Blader…",
   "@settings.adb.browse": {

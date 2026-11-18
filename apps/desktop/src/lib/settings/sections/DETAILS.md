@@ -15,15 +15,18 @@ sections compose).
 - **`AppearanceSection.svelte`**: `Appearance > Colors and formats`: language, theme mode, app color, size/date
   palettes, date/time format, striped rows. The language row passes `onPicked` so a hand pick reports `language_changed`
   (`src-tauri/src/analytics/DETAILS.md`); the onboarding wizard's picker is the other caller
-- **`AppearanceZoomSection.svelte`**: `Appearance > Zoom and density`: text size slider and UI density
+- **`AppearanceZoomSection.svelte`**: `Appearance > Zoom and density`: text size slider, UI density, and the function
+  key bar (it spends a row of the window's height)
 - **`AppearanceSizesSection.svelte`**: `Appearance > File and folder sizes`: size display, size unit (binary/SI drives
   `kB`↔`KiB`, `MB`↔`MiB`, `GB`↔`GiB` label overrides), file size format, size mismatch warning
-- **`ListingSection.svelte`**: `Appearance > Listing`: document icons, directory sort, brief column width. The width row
-  is one control, not two: the `listing.briefColumnWidthMode` radio group carries the `briefColumnWidthMaxPx` number
-  field on its "Limit to" option's own line (`SettingRadioGroup`'s `itemTrailing`), greyed out while the other option is
-  picked, so the row reads as the sentence the option label was written for ("Limit to [400 px]")
+- **`ListingSection.svelte`**: `Appearance > Listing`: a Names and icons card (hidden files, extensions, tags, app
+  icons), a Sorting card (folders first, how folders sort), and Brief mode's column width. The width row is one control,
+  not two: the `listing.briefColumnWidthMode` radio group carries the `briefColumnWidthMaxPx` number field on its "Limit
+  to" option's own line (`SettingRadioGroup`'s `itemTrailing`), greyed out while the other option is picked, so the row
+  reads as the sentence the option label was written for ("Limit to [400 px]")
 - **`NavigationAndFileOpsSection.svelte`**: `Behavior > Navigation & file ops`: labeled `SectionCard`s — Navigation (the
-  `behavior.doubleClickPaneNavigatesToParent` switch), File operations (the extension-change confirmation row
+  `behavior.doubleClickPaneNavigatesToParent` switch, the `fileExplorer.typeToJump.mode` jump-or-filter toggle, and the
+  `listing.spaceCalculatesFolderSize` switch), File operations (the extension-change confirmation row
   `allowFileExtensionChanges` + the `pasteClipboardAsFile` toggle group + the `skipConfirmation` switch + the
   `defaultConflictPolicy` select, the copy dialog's starting "files already exist" choice, which the dialog's "Remember
   this choice" box also sets: `lib/file-operations/transfer/DETAILS.md` § "The remembered conflict policy"), Text editor
@@ -190,10 +193,10 @@ sections compose).
   `mediaIndex.enabled` toggle.
 - **`NetworkSection.svelte`**: `File systems > SMB/Network shares`: two `SectionCard` card groups — Connection
   (`network.enabled` master switch + the inline Local Network access info block + `network.directSmbConnection`) and
-  Performance and timeouts (`shareCacheDuration` select, `timeoutMode` radio with its inline custom-timeout number).
-  `network.smbConcurrency` lives ONLY in Advanced now (`section: ['Advanced']`), not on this page. The info block's own
-  heading is `<h4>` (the card's `<h3>` is the group heading). Card frames are gated via `anyVisible(shouldShow, ...)`
-  (same pattern as FSW above).
+  Performance and timeouts (`shareCacheDuration` select, `network.timeout` stepper in seconds, with the recommended 15
+  and 45 behind its ⓘ). `network.smbConcurrency` lives ONLY in Advanced now (`section: ['Advanced']`), not on this page.
+  The info block's own heading is `<h4>` (the card's `<h3>` is the group heading). Card frames are gated via
+  `anyVisible(shouldShow, ...)` (same pattern as FSW above).
 - **`ServersSection.svelte`**: `File systems > Servers (SFTP, WebDAV)`: a "Trusted host keys" `SectionCard` listing
   `listTrustedSftpHostKeys()`, a row per key (host with port, algorithm, fingerprint, the date it was trusted) with a
   confirmed Forget, and a "Trusted certificates" card the same shape over `listTrustedWebdavCertificates()`, and an "SMB
@@ -266,7 +269,11 @@ sections compose).
   block + action buttons live in one unlabeled `SectionCard`; the personal / commercial / expired / loading states are
   presentational variants of that one block, all inside the one card (no `anyVisible` gate — it's not registry
   search-driven). `.license-info` dropped its own background / border / radius so the wrapping card is the only frame
-  (no card-in-card)
+  (no card-in-card). Unlicensed, the card adds a "What's included" list for Personal and one line on when work needs a
+  commercial license, right above the mini Enter key / Get a license buttons, so they read as the next step; a licensed
+  install sees only its facts and "Manage license key". ⚠️ That copy restates `docs/business/pricing.md` § The live
+  tiers and `licensing.md` § Additional Use Grants (the 14-day evaluation): change them together, keep the AI line's
+  "free during the beta", and never quote a price here (`pricing.md` lists every place one is hardcoded)
 - **`AdvancedSection.svelte`**: `Advanced`: auto-generated rows for every `section: ['Advanced']` registry entry (via
   `getAdvancedSettings()`), grouped into `SectionCard`s by `cardKey` via the pure `advanced-grouping.ts`
   (`groupAdvancedByCard`). No custom UI per row. Row visibility rides the SAME global `shouldShow`/`anyVisible` pipeline
@@ -712,10 +719,24 @@ entries all live at `section: ['AI', 'Ask Cmdr']`. Its parts:
   data flow. Consent to send anything to a cloud service is the Allow cloud AI switch in `AI › Provider`; this section
   only reads it (`cloudAiBlocked`) to show a "cloud AI is off" hint with an "Open AI settings" button when Ask Cmdr is
   on over Cloud without it. Mechanics of the switch: `lib/ask-cmdr/DETAILS.md` § Gates, cost, and settings.
-- **The interactive slot is a MODEL-only setting.** `askCmdr.interactiveModel` (a hand-rolled text row — the registry
-  has no generic text-input primitive) overrides the model; the provider, keys, and base URL come from the shared `ai/`
-  config (Settings › AI). The section shows the current `ai.provider` as a hint. Backend resolution:
-  `commands/agent/chat.rs::resolve_agent_llm` + `settings::load_ask_cmdr_interactive_model`.
+- **The interactive slot is a MODEL-only setting.** `askCmdr.interactiveModel` overrides the model; the provider, keys,
+  and base URL come from the shared `ai/` config (Settings › AI). The line under the group title names the provider (the
+  cloud preset's name, or Local LLM) with a `LinkButton` to `AI › Provider` (surface `ask-cmdr-settings-provider`), or
+  says to turn one on. Backend resolution: `commands/agent/chat.rs::resolve_agent_llm` +
+  `settings::load_ask_cmdr_interactive_model`.
+  - **It's a hand-rendered `ui/Select` with a live menu**, ❌ not `SettingSelect` (that one only knows registry
+    options): "Same as Cmdr's AI (<model>)" first (stored `''`, carried as the `SAME_AS_CMDR_AI` sentinel because Ark
+    reads an empty value as no pick), then a stored id the list lacks (typed before this was a dropdown), then the
+    provider's models. Pure ordering: `ask-cmdr-model-items.ts`. The shared model is read the way the controller reads
+    it (saved per-provider pick, else the preset default).
+  - **The list comes from a second `ProviderSetupController`**, read-only (no key or config writes go through it), so
+    the session model cache and the connection check stay single-sourced in `#lib/ai-provider-setup/`. It's pointed at
+    the provider only while the picker is usable, since pointing it may start a check.
+  - **Usable only on Cloud, with consent, not managed off, and with the slot ready** (`providerGap` over the backend's
+    slot status; not-known-yet counts as ready, so no disabled flash). Why Cloud only: the backend applies the override
+    on Cloud alone (`ai::manager::resolve_backend_with_model`). On Local the row says so with a `disabledNote`.
+  - Known gap: the controller re-points only on a provider change, so a Custom endpoint edited in the same session keeps
+    the old endpoint's list until Settings reopens.
 - **Chat memory size** (`askCmdr.chatMemorySize`, a `SettingSelect`): "Automatic (recommended)" or one of five presets
   (16,000 / 32,000 / 60,000 / 128,000 / 200,000). Presets rather than a number field, so there is no bound to misstate,
   no below-minimum case, and no numeric validation copy. Automatic spends the WHOLE window the backend knows the model

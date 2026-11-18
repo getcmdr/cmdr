@@ -123,6 +123,9 @@ is: deploy the new page first, then archive.
   interpolation.
 - `apps/desktop/src/lib/licensing/licensing-i18n-parity.test.ts` pins the `en` reminder string exactly, so the price
   can't drift without a failing test.
+- Settings › License (`LicenseSection.svelte`, `licensing.section.included*` and `licensing.section.commercialNeeded` in
+  `licensing.json`): no price, but it restates what Personal includes (with the AI line's "free during the beta") and
+  the 14-day evaluation, so a tier change updates it too.
 
 ### Repo and off-site
 

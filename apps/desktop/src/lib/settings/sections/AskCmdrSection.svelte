@@ -10,14 +10,30 @@
     import Button from '#lib/ui/Button.svelte'
     import StatusBadge from '#lib/ui/StatusBadge.svelte'
     import { getBadgeStatus } from '#lib/feature-status.js'
-    import { getSetting, onSpecificSettingChange, getSettingDefinition, type AiProvider } from '#lib/settings/index.js'
+    import { onDestroy, untrack } from 'svelte'
+    import {
+        getSetting,
+        setSetting,
+        onSpecificSettingChange,
+        getSettingDefinition,
+        getCloudProvider,
+        getProviderConfigs,
+        type AiProvider,
+    } from '#lib/settings/index.js'
     import { anyVisible, createShouldShow } from '#lib/settings/settings-search.js'
+    import { disabledNoteId, openSettingsWindow } from '#lib/settings/settings-window.js'
     import { tString } from '#lib/intl/messages.svelte.js'
+    import Trans from '#lib/intl/Trans.svelte'
+    import LinkButton from '#lib/ui/LinkButton.svelte'
+    import Select from '#lib/ui/Select.svelte'
     import { getAppLogger } from '#lib/logging/logger.js'
     import SettingSelect from '../components/SettingSelect.svelte'
     import SettingSwitch from '../components/SettingSwitch.svelte'
     import SettingSlider from '../components/SettingSlider.svelte'
-    import SettingTextInput from '../components/SettingTextInput.svelte'
+    import { useSettingLock } from '../components/setting-lock.svelte'
+    import { ProviderSetupController } from '#lib/ai-provider-setup/provider-setup.svelte.js'
+    import { providerGap, slotStatusState, watchSlotStatus } from '#lib/ask-cmdr/ask-cmdr-slot-status.svelte.js'
+    import { askCmdrModelItems, pickFromStoredModel, storedModelFromPick } from './ask-cmdr-model-items'
     import { formatDuration, seconds } from '#lib/units/index.js'
     import {
         askCmdrCostSummary,
@@ -69,6 +85,79 @@
     const modelDef = getSettingDefinition('askCmdr.interactiveModel') ?? { label: '', description: '' }
     let model = $state(getSetting('askCmdr.interactiveModel'))
     $effect(() => onSpecificSettingChange('askCmdr.interactiveModel', (v) => { model = v }))
+
+    // The model picker's menu: "Same as Cmdr's AI", then the cloud provider's models. The
+    // backend applies the override on Cloud only (`ai::manager::resolve_backend_with_model`),
+    // so the picker is live only there, with consent, and with the provider ready.
+    let cloudProviderId = $state(getSetting('ai.cloudProvider'))
+    $effect(() => onSpecificSettingChange('ai.cloudProvider', (v) => { cloudProviderId = v }))
+    let cloudProviderConfigs = $state(getSetting('ai.cloudProviderConfigs'))
+    $effect(() => onSpecificSettingChange('ai.cloudProviderConfigs', (v) => { cloudProviderConfigs = v }))
+    // The model Cmdr's AI uses, read the way the Provider page's controller does
+    // (`ProviderSetupController.#loadFromStore`): the saved pick, else the preset's default.
+    const sharedModel = $derived(
+        (getProviderConfigs(cloudProviderConfigs)[cloudProviderId]?.model ??
+            getCloudProvider(cloudProviderId)?.defaultModel ??
+            '').trim(),
+    )
+    const providerName = $derived(
+        provider === 'cloud'
+            ? (getCloudProvider(cloudProviderId)?.name ?? tString(providerLabelKey.cloud))
+            : tString(providerLabelKey[provider]),
+    )
+
+    // Whether a provider is set up, from the same backend answer the rail reads. Not known yet
+    // counts as ready (`providerGap`), so the picker doesn't flash disabled on every open.
+    $effect(() => watchSlotStatus())
+    const providerReady = $derived(providerGap(slotStatusState.status) === null)
+    const aiManagedOff = $derived(getManagedPolicyView().ai.mode === 'off')
+    const modelPickerUsable = $derived(
+        provider === 'cloud' && !cloudAiBlocked(provider) && !aiManagedOff && providerReady,
+    )
+    const modelLock = useSettingLock('askCmdr.interactiveModel')
+
+    // The model list comes from the SAME controller the Provider page runs: a session-cache hit
+    // serves it instantly, a miss runs one connection check. Read-only here: nothing in this
+    // section saves a key or a provider config through it. Pointed at the provider only while
+    // the picker is usable, since pointing it can start a check (and consent gates any call).
+    const providerModels = new ProviderSetupController({ logScope: 'ask-cmdr-settings-models' })
+    $effect(() => {
+        if (!modelPickerUsable) return
+        const id = cloudProviderId
+        // Untracked: `setProvider` reads and writes the controller's own state
+        // (`lib/ai-provider-setup/CLAUDE.md`).
+        untrack(() => {
+            if (providerModels.providerId !== id) providerModels.setProvider(id)
+        })
+    })
+    onDestroy(() => { providerModels.destroy() })
+
+    const modelItems = $derived(
+        askCmdrModelItems({
+            current: model.trim(),
+            models: modelPickerUsable ? providerModels.models : [],
+            sameAsLabel: sharedModel
+                ? tString('settings.askCmdr.interactiveModel.sameAs', { model: sharedModel })
+                : tString('settings.askCmdr.interactiveModel.placeholder'),
+        }),
+    )
+    // Local AI runs one model, which the override can't change: say so rather than leave a
+    // greyed-out picker unexplained. Every other disabled case is explained by the line above it.
+    const modelDisabledNote = $derived(
+        provider === 'local' ? tString('settings.askCmdr.interactiveModel.localNote') : undefined,
+    )
+
+    function pickModel(pick: string): void {
+        const value = storedModelFromPick(pick)
+        model = value
+        setSetting('askCmdr.interactiveModel', value)
+    }
+
+    function openProviderSettings(): void {
+        openSettingsWindow('ask-cmdr-settings-provider', ['AI', 'Provider']).catch((e: unknown) => {
+            log.warn('opening the AI provider settings failed: {error}', { error: e })
+        })
+    }
 
     // Chat memory size: the presets live in the registry, the warning needs the model's window.
     // The window comes from the backend (one family table, not two), and the COMPARISON happens
@@ -199,6 +288,10 @@
 
 </script>
 
+{#snippet providerLink(children: import('svelte').Snippet)}
+    <LinkButton onclick={openProviderSettings}>{@render children()}</LinkButton>
+{/snippet}
+
 <SettingsSection title={tString('settings.section.askCmdr')}>
     {#snippet badge()}
         {#if askCmdrBadge}<StatusBadge status={askCmdrBadge} />{/if}
@@ -227,13 +320,15 @@
     <!-- Provider + model (the interactive slot over the shared ai/ config) -->
     <h3 class="group-title">{tString('settings.askCmdr.provider.title')}</h3>
     <!-- Under the organization's "no AI", the way back isn't in AI settings, so say who decided. -->
-    {#if getManagedPolicyView().ai.mode === 'off'}
+    {#if aiManagedOff}
         <p class="provider-hint">{tString('ai.managed.aiOff')}</p>
     {:else if provider === 'off'}
-        <p class="provider-hint">{tString('settings.askCmdr.provider.off')}</p>
+        <p class="provider-hint">
+            <Trans key="settings.askCmdr.provider.none" snippets={{ providerLink }} />
+        </p>
     {:else}
         <p class="provider-hint">
-            {tString('settings.askCmdr.provider.shared', { provider: tString(providerLabelKey[provider]) })}
+            <Trans key="settings.askCmdr.provider.usesProvider" params={{ provider: providerName }} snippets={{ providerLink }} />
         </p>
     {/if}
     {#if shouldShow('askCmdr.interactiveModel')}
@@ -241,17 +336,22 @@
             id="askCmdr.interactiveModel"
             label={modelDef.label}
             description={modelDef.description}
-            split
+            disabled={!modelPickerUsable}
+            disabledNote={modelDisabledNote}
             {searchQuery}
         >
-            <SettingTextInput
-                id="askCmdr.interactiveModel"
-                placeholder={tString('settings.askCmdr.interactiveModel.placeholder')}
-                ariaLabel={modelDef.label}
-                onValueChange={(value: string) => {
-                    model = value
-                }}
-            />
+            <div class="model-select">
+                <Select
+                    items={modelItems}
+                    value={pickFromStoredModel(model.trim())}
+                    onChange={pickModel}
+                    ariaLabel={modelDef.label}
+                    ariaDescribedBy={modelLock.describedBy(
+                        modelDisabledNote && !modelPickerUsable ? disabledNoteId('askCmdr.interactiveModel') : undefined,
+                    )}
+                    disabled={!modelPickerUsable || modelLock.locked}
+                />
+            </div>
         </SettingRow>
     {/if}
 
@@ -260,7 +360,6 @@
             id="askCmdr.chatMemorySize"
             label={memoryDef.label}
             description={memoryDef.description}
-            split
             {searchQuery}
         >
             <SettingSelect id="askCmdr.chatMemorySize" />
@@ -275,7 +374,6 @@
             id="askCmdr.spendPause"
             label={spendPauseDef.label}
             description={spendPauseDef.description}
-            split
             {searchQuery}
         >
             <SettingSelect id="askCmdr.spendPause" />
@@ -289,7 +387,6 @@
             id="askCmdr.proactive"
             label={proactiveDef.label}
             description={proactiveDef.description}
-            split
             {searchQuery}
         >
             <SettingSwitch id="askCmdr.proactive" />
@@ -301,7 +398,6 @@
             id="askCmdr.wakeDelay"
             label={wakeDelayDef.label}
             description={wakeDelaySummary}
-            split
             {searchQuery}
         >
             <SettingSlider id="askCmdr.wakeDelay" disabled={!proactive} formatValue={wakeDuration} />
@@ -313,7 +409,6 @@
             id="askCmdr.wakeToast"
             label={wakeToastDef.label}
             description={wakeToastDef.description}
-            split
             {searchQuery}
         >
             <SettingSwitch id="askCmdr.wakeToast" disabled={!proactive} />
@@ -394,6 +489,14 @@
     .cloud-off-hint p {
         flex: 1 1 18rem;
         margin: 0;
+    }
+
+    /* Hugs the pop-up button, so the row's flush-right edge is the button's own edge
+       (the same wrapper `SettingSelect` puts around its `Select`). */
+    .model-select {
+        display: flex;
+        justify-content: flex-end;
+        min-width: 0;
     }
 
     .memory-actions {

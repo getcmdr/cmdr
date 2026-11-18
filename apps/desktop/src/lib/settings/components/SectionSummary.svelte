@@ -47,7 +47,7 @@
     }
 </script>
 
-<div class="section-summary" data-summary-section={sectionName}>
+<div data-summary-section={sectionName}>
     <h2 class="summary-title">{sectionTitle(sectionName)}</h2>
 
     {#if section && section.subsections.length > 0}
@@ -70,10 +70,6 @@
 </div>
 
 <style>
-    .section-summary {
-        padding: var(--spacing-lg);
-    }
-
     .summary-title {
         font-size: var(--font-size-xl);
         font-weight: 600;

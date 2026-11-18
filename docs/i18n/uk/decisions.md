@@ -172,7 +172,7 @@ Over «Динамічний» (macOS's Smart, collides with sizeUnit «Дина�
 «Програма для редагування файлів», «Термінал для «Відкрити термінал тут»» over "Edit files in [X]", which would need a
 locative on the value.
 
-### Settings vocabulary (`settings.section.listing`, `settings.operationLog.enabled.label`, `settings.mediaIndex.parallelism.*`, `settings.mcp.portInUse*`, `settings.network.customTimeoutUnit`, `shortcuts.system.appWindows`)
+### Settings vocabulary (`settings.section.listing`, `settings.operationLog.enabled.label`, `settings.mediaIndex.parallelism.*`, `settings.mcp.portInUse*`, `settings.network.timeoutUnit`, `shortcuts.system.appWindows`)
 
 «Список файлів» (display options, not reading a folder); «операції з файлами» over «файлові операції» (catalog 7:0);
 «Паралельні потоки»; «уже використовується»; unit «с» after a free number; «Вікна програми» (KeyboardSettings).

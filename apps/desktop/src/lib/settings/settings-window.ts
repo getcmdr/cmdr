@@ -114,6 +114,8 @@ export type SettingsSurface =
   | 'ask-cmdr-provider-notice'
   /** Settings > AI > Ask Cmdr's "cloud AI is off" hint, deep-linking to the same switch. */
   | 'ask-cmdr-settings-hint'
+  /** Settings > AI > Ask Cmdr's provider line ("Change it in AI › Provider"), deep-linking to AI > Provider. */
+  | 'ask-cmdr-settings-provider'
   /** The Search or Select dialog's AI mode, while cloud AI isn't allowed. */
   | 'query-ai-cloud-off'
   /** The "Cloud AI is off" translate-error toast's action. */

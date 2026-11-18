@@ -2152,7 +2152,7 @@
     "confidence": "high",
     "sources": "macOS Finder LocalizableMerged (About an hour → близько години); live Installer (%d hours → %d год; %d minutes → %d хв); Double Commander (Hour, Minute → Година, Хвилина)",
     "exceptions": {
-      "settings.network.customTimeoutUnit": "a unit suffix after a free number input: the count is unknown, so a spelled-out unit can't agree with it; uses the short unit «с», as the timeout option descriptions write «15 с»"
+      "settings.network.timeoutUnit": "a unit suffix after a free number input: the count is unknown, so a spelled-out unit can't agree with it; uses the short unit «с», as the timeout option descriptions write «15 с»"
     }
   },
   "icloud-drive": {
@@ -2849,7 +2849,10 @@
     "chosen": "нотатка",
     "accept": ["нотат", "примітк"],
     "confidence": "high",
-    "sources": "macOS live Preview (Note → Нотатка), Resources Schema (note → нотатка); MS (note → нотатка)"
+    "sources": "macOS live Preview (Note → Нотатка), Resources Schema (note → нотатка); MS (note → нотатка)",
+    "exceptions": {
+      "settings.securityLog.enabled.description": "English «It notes» is the verb (records), not a user-written note: «Записує зміни й відмови…»."
+    }
   },
   "notification": {
     "chosen": "сповіщення",
