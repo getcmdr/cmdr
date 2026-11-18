@@ -210,6 +210,15 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
     relaunched); MCP `list_volumes` and `cmdr://state` list `root` alone on Windows (the non-macOS snapshot); the "Turn
     indexing on?" dialog names the volume by its raw id; a short first segment (`C:`) keeps the 26 px hit-width floor,
     so the path bar shows a gap before the first `\`; SendKeys `Enter` didn't press that dialog's focused Allow.
+- **2026-11-18, task 34's leftovers** (`f399bcaeb6` through `324b72e7d8`): MCP `list_volumes` and `cmdr://state` list
+  `C:`, `build (D:)`, and Servers on Windows (the shared listing pipeline, `tools/resources/DETAILS.md`), the "Turn
+  indexing on?" dialog reads "build (D:)", and the path bar's first segment carries its hit floor as an overlay, so
+  `C:\Windows` shows no gap. `a_run_of_walks_reuses_its_threads` failed 3 of 60 nextest stress runs under CPU load (21
+  threads for 20 walks: `walk` returned before its workers re-idled in the pool); with the engine waiting for its live
+  workers, 200 of 200 pass (`walker/DETAILS.md` § The engine). On the builder:
+  `cargo clippy -p cmdr -p cmdr-index --all-targets -D warnings` clean (4m 08s warm), nextest over the touched modules
+  64 of 64, and a `pnpm tauri build --debug` launch from `D:\` with MCP over `ssh -L` confirmed all three by tool call
+  and screenshot.
 - **2026-11-18, the `LocalVolume` alias** (app-path plan milestone 2, `bc690227d6`): consumers that mean "this machine's
   local disk" name `cmdr_local::LocalVolume`, and the Windows arms of `volumes/platform/` and `local_disk/platform/`
   name it too. Windows compiles exactly the code it compiled before: every renamed `LocalPosixVolume` site was already
