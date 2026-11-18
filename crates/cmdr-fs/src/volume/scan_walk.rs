@@ -51,13 +51,19 @@ pub type Walking<'a, T> = Pin<Box<dyn Future<Output = Result<T, VolumeError>> + 
 /// ❗ Both must be the backend's OWN read path, ❌ never a listing-cache lookup:
 /// the module docs say why. Implement it on the volume and the three
 /// `scan_for_*` bodies come with it.
+///
+/// Both take an app path, as the `Volume` reads they forward to do, so an impl
+/// hands its path straight on (`self.get_metadata(path)`) with no bridge
+/// temporary for the returned future to borrow. The walk itself still does its
+/// arithmetic in `std::path` and bridges where it calls back, inside its own
+/// futures.
 pub trait ScanSource: Sync {
     /// One entry's type and size. The top of a walk is the only place a scan
     /// stats anything.
-    fn scan_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry>;
+    fn scan_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry>;
 
     /// One directory's children, each carrying its own type and size.
-    fn scan_list<'a>(&'a self, path: &'a Path) -> Walking<'a, Vec<FileEntry>>;
+    fn scan_list<'a>(&'a self, path: &'a AppPath) -> Walking<'a, Vec<FileEntry>>;
 
     /// Whether [`scan_trees`] keeps every file's size and date in
     /// `BatchScanResult::files`, for a backend whose operations are billed per
@@ -121,8 +127,9 @@ fn scan_tree_keeping<'a>(
     files: &'a mut Option<Vec<ScannedFile>>,
 ) -> Walking<'a, CopyScanResult> {
     Box::pin(async move {
+        let app = AppPath::legacy_unchecked(path);
         let top = boundary
-            .through_outages(path, || unless_stopped(source, boundary, source.scan_stat(path)))
+            .through_outages(path, || unless_stopped(source, boundary, source.scan_stat(&app)))
             .await?;
         if !top.is_directory {
             let size = top.size.unwrap_or(0);
@@ -287,7 +294,7 @@ pub fn scan_conflicts<'a>(
     dest_path: &'a Path,
 ) -> Walking<'a, Vec<ScanConflict>> {
     Box::pin(async move {
-        let entries = match source.scan_list(dest_path).await {
+        let entries = match source.scan_list(&AppPath::legacy_unchecked(dest_path)).await {
             Ok(entries) => entries,
             Err(VolumeError::NotFound(_)) => return Ok(Vec::new()),
             Err(e) => return Err(e),
@@ -310,10 +317,11 @@ fn walk_directory<'a>(
     Box::pin(async move {
         into.dir_count += 1;
         boundary.dir(dir).await?;
+        let app_dir = AppPath::legacy_unchecked(dir);
         // A listing a dropped session cut off runs again once the owner has
         // waited it out; its entries are counted only after it answers.
         for entry in boundary
-            .through_outages(dir, || unless_stopped(source, boundary, source.scan_list(dir)))
+            .through_outages(dir, || unless_stopped(source, boundary, source.scan_list(&app_dir)))
             .await?
         {
             // A Mac-only file the transfer leaves out is no part of it (#314).

@@ -37,8 +37,8 @@ impl PatchSource for Patcher<'_> {
         self.patches.listings.as_ref()
     }
 
-    fn patch_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
-        Box::pin(async move { self.volume.get_metadata(&AppPath::legacy_unchecked(path)).await })
+    fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
+        self.volume.get_metadata(path)
     }
 
     fn patch_display_path(&self, path: &Path) -> Option<PathBuf> {

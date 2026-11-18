@@ -81,10 +81,16 @@ Flip your crates in dependency order (a crate after every crate it depends on, d
   paths) and ones with a trailing `/` ride `legacy_unchecked`, as the plan says.
 - **Imports**: one `use` line per name (rustfmt doesn't merge them), so a file can gain
   `use cmdr_fs::app_path::AppPath;` beside `use cmdr_fs::app_path::AppPathBuf;`.
-- **Not flipped beside the trait**: `ScanSource`, `PatchSource`, `MakesDirectories`, `tally_by_listing`,
-  `ScanBoundary::subtree`, `fold_batch`, `root_anchored`, the `conformance` helpers: still `std::path`, so a backend's
-  calls to them stay as they are. `ScanConflict` and every DTO keep `String`/`PathBuf` (the plan's rule for types that
-  serialize).
+- **Flipped beside the trait**: `ScanSource::scan_stat`/`scan_list` and `PatchSource::patch_stat` take `&'a AppPath`.
+  Their impls forwarded a std path into a typed `Volume` read (`self.get_metadata(&AppPath::legacy_unchecked(path))`), a
+  `Cow` temporary the returned future borrows (E0515), and an `async move` around it would delay work some backends do
+  before their future (git's reads). Typed, an impl hands the path straight on. The codemod treats these impls like a
+  `Volume` impl's (signature, prelude, lazy helper), and `scan_walk`/`patch_mutation` bridge where they call back,
+  inside their own futures.
+- **Not flipped beside the trait**: `PatchSource::patch_display_path` and `MakesDirectories` (sync, or `&str`: no future
+  borrows a path), `tally_by_listing`, `ScanBoundary::subtree`, `fold_batch`, `root_anchored`, the `conformance`
+  helpers: still `std::path`, so a backend's calls to them stay as they are. `ScanConflict` and every DTO keep
+  `String`/`PathBuf` (the plan's rule for types that serialize).
 
 ## Tiers and crates
 
