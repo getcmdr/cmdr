@@ -392,7 +392,7 @@ field). `{name} 没有保存的密码。`, no `过` ("never saved").
 The retry totals keep the `plural` shell, no preposition or `。` (parts of `retryKeepsTrying`). `Cmdr 不会连接到 {name}`
 (standing), never `已停止`. A server row's Open `打开`, as in Finder.
 
-## AI subject (`suggestedOps.agentReason`, `suggestedOps.reversible.moveBack`, `askCmdr.error.notConfigured`, `settings.askCmdr.provider.off`)
+## AI subject (`suggestedOps.agentReason`, `suggestedOps.reversible.moveBack`, `askCmdr.error.notConfigured`, `settings.askCmdr.provider.none`)
 
 The rule is in `style.md`. `AI` in `suggestedOps.*` keeps what the model said apart from what Cmdr checked; ❗ don't
 unify. Subjectless `聊天` / `开始聊天`; `Cmdr 发送的内容` pairs `Cmdr 记住的内容`.

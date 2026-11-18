@@ -2382,14 +2382,6 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "Cmdr використовує постачальника ШІ та ключ, які ви налаштували в Параметрах › ШІ ({provider}).",
-  "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
-  },
-  "settings.askCmdr.provider.off": "Увімкніть постачальника ШІ в Параметрах › ШІ, щоб почати чат.",
-  "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
-  },
   "settings.askCmdr.interactiveModel.label": "Модель для Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"

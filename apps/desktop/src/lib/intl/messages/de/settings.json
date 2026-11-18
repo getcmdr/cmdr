@@ -2392,14 +2392,6 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "Cmdr verwendet den KI-Anbieter und den Schlüssel, die du unter Einstellungen › KI eingerichtet hast ({provider}).",
-  "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
-  },
-  "settings.askCmdr.provider.off": "Aktiviere unter Einstellungen › KI einen KI-Anbieter, um loszuchatten.",
-  "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
-  },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr-Modell",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"

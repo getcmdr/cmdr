@@ -247,14 +247,6 @@
   "@settings.askCmdr.openAiSettings": {
     "sourceHash": "1994c72"
   },
-  "settings.askCmdr.provider.shared": "Cmdr usa el proveedor de IA y la clave que configuraste en Configuración › IA ({provider}).",
-  "@settings.askCmdr.provider.shared": {
-    "sourceHash": "ecabbab"
-  },
-  "settings.askCmdr.provider.off": "Activa un proveedor de IA en Configuración › IA para empezar a chatear.",
-  "@settings.askCmdr.provider.off": {
-    "sourceHash": "638b859"
-  },
   "settings.askCmdr.chatMemorySize.overWindow": "Tu modelo puede rechazar un mensaje tan largo. Cmdr mantiene el valor que elegiste.",
   "@settings.askCmdr.chatMemorySize.overWindow": {
     "sourceHash": "1fb74fc"

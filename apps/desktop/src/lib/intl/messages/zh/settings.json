@@ -2385,14 +2385,6 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "Cmdr 使用你在“设置 › AI”中设置好的 AI 提供方和密钥（{provider}）。",
-  "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
-  },
-  "settings.askCmdr.provider.off": "在“设置 › AI”中开启一个 AI 提供方，即可开始聊天。",
-  "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
-  },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr 模型",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"

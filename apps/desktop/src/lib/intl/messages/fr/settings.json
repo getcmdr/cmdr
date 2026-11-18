@@ -2397,14 +2397,6 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "Cmdr utilise le fournisseur d’IA et la clé que vous avez configurés dans Réglages › IA ({provider}).",
-  "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
-  },
-  "settings.askCmdr.provider.off": "Activez un fournisseur d’IA dans Réglages › IA pour commencer à discuter.",
-  "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
-  },
   "settings.askCmdr.interactiveModel.label": "Modèle d’Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"

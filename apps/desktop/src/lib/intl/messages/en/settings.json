@@ -2906,34 +2906,46 @@
     "description": "Heading of the provider/model group in Ask Cmdr settings. Sentence case.",
     "screenshot": "settings-ai-ask-cmdr.png"
   },
-  "settings.askCmdr.provider.shared": "Cmdr uses the AI provider and key you set up in Settings › AI ({provider}).",
-  "@settings.askCmdr.provider.shared": {
-    "description": "Line telling the user this section shares the provider configured in the AI settings section. provider is the current provider's name (Off, Cloud AI, or Local LLM). The › is a right-pointing angle separating the settings path.",
+  "settings.askCmdr.provider.usesProvider": "Ask Cmdr uses {provider}, the same AI as the rest of Cmdr. <providerLink>Change it in AI › Provider</providerLink>",
+  "@settings.askCmdr.provider.usesProvider": {
+    "description": "Line in Settings > AI > Ask Cmdr naming the AI provider the chat shares with the rest of Cmdr. {provider} is the service name (for example Anthropic or OpenAI) on Cloud AI, or Local LLM. <providerLink> wraps a link that opens Settings > AI > Provider; it starts with a verb. The › is a right-pointing angle separating the settings path.",
     "placeholders": {
-      "provider": "The current AI provider label: Off, Cloud AI, or Local LLM."
+      "provider": "The AI provider: a cloud service name (Anthropic, OpenAI, and so on) or Local LLM."
     },
     "screenshot": "settings-ai-ask-cmdr.png",
     "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
-  "settings.askCmdr.provider.off": "Turn on an AI provider in Settings › AI to start chatting.",
-  "@settings.askCmdr.provider.off": {
-    "description": "Hint shown in Ask Cmdr settings when no AI provider is enabled, pointing the user to the AI settings section. The › is a right-pointing angle separating the settings path.",
+  "settings.askCmdr.provider.none": "Turn on an AI provider in <providerLink>AI › Provider</providerLink> to start chatting.",
+  "@settings.askCmdr.provider.none": {
+    "description": "Hint shown in Settings > AI > Ask Cmdr when no AI provider is on. <providerLink> wraps a link that opens Settings > AI > Provider. The › is a right-pointing angle separating the settings path.",
     "screenshot": "settings-ai-ask-cmdr.png"
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr model",
   "@settings.askCmdr.interactiveModel.label": {
-    "description": "Label for the text field where the user picks a dedicated model for Ask Cmdr. Sentence case.",
+    "description": "Label for the dropdown where the user picks a dedicated model for Ask Cmdr. Sentence case.",
     "screenshot": "settings-ai-ask-cmdr.png"
   },
-  "settings.askCmdr.interactiveModel.description": "The model the chat uses. Leave blank to use the same model as Cmdr’s other AI features. Example: claude-sonnet-5-5",
+  "settings.askCmdr.interactiveModel.description": "The model the chat uses. “Same as Cmdr’s AI” follows the model you picked in AI › Provider.",
   "@settings.askCmdr.interactiveModel.description": {
-    "description": "Help text under the Ask Cmdr model field. Explains that blank falls back to the shared AI model, and gives an example model id. The example id and the apostrophe (U+2019) stay as written; do not translate the example id.",
+    "description": "Help text for the Ask Cmdr model dropdown. “Same as Cmdr’s AI” quotes the dropdown’s first option (settings.askCmdr.interactiveModel.placeholder): match it exactly. The › is a right-pointing angle separating the settings path. The apostrophe is U+2019.",
     "screenshot": "settings-ai-ask-cmdr.png"
   },
   "settings.askCmdr.interactiveModel.placeholder": "Same as Cmdr’s AI",
   "@settings.askCmdr.interactiveModel.placeholder": {
-    "description": "Placeholder text in the empty Ask Cmdr model field, signaling that blank means the shared AI model is used. The apostrophe is U+2019.",
+    "description": "First option of the Ask Cmdr model dropdown when Cmdr doesn’t know which model its AI uses: the chat follows the model set in AI > Provider. The apostrophe is U+2019.",
     "screenshot": "settings-ai-ask-cmdr.png"
+  },
+  "settings.askCmdr.interactiveModel.sameAs": "Same as Cmdr’s AI ({model})",
+  "@settings.askCmdr.interactiveModel.sameAs": {
+    "description": "First option of the Ask Cmdr model dropdown: the chat follows the model set in AI > Provider. {model} is that model’s technical id (for example claude-opus-5-5); never translate it. Keep “Same as Cmdr’s AI” the same as settings.askCmdr.interactiveModel.placeholder. The apostrophe is U+2019.",
+    "placeholders": {
+      "model": "The model id Cmdr’s AI uses, for example claude-opus-5-5."
+    },
+    "screenshot": "settings-ai-ask-cmdr.png"
+  },
+  "settings.askCmdr.interactiveModel.localNote": "Local AI runs one model, so the chat uses that one.",
+  "@settings.askCmdr.interactiveModel.localNote": {
+    "description": "Note under the disabled Ask Cmdr model dropdown while the AI provider is Local LLM: the on-device AI has a single model, so there is nothing to pick. Friendly; avoids the words error and failed."
   },
   "settings.askCmdr.interactiveModel.keywords": "ai, chat, assistant, model, override, different model",
   "@settings.askCmdr.interactiveModel.keywords": {

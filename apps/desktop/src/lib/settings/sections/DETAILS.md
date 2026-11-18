@@ -715,10 +715,24 @@ entries all live at `section: ['AI', 'Ask Cmdr']`. Its parts:
   data flow. Consent to send anything to a cloud service is the Allow cloud AI switch in `AI › Provider`; this section
   only reads it (`cloudAiBlocked`) to show a "cloud AI is off" hint with an "Open AI settings" button when Ask Cmdr is
   on over Cloud without it. Mechanics of the switch: `lib/ask-cmdr/DETAILS.md` § Gates, cost, and settings.
-- **The interactive slot is a MODEL-only setting.** `askCmdr.interactiveModel` (a hand-rolled text row — the registry
-  has no generic text-input primitive) overrides the model; the provider, keys, and base URL come from the shared `ai/`
-  config (Settings › AI). The section shows the current `ai.provider` as a hint. Backend resolution:
-  `commands/agent/chat.rs::resolve_agent_llm` + `settings::load_ask_cmdr_interactive_model`.
+- **The interactive slot is a MODEL-only setting.** `askCmdr.interactiveModel` overrides the model; the provider, keys,
+  and base URL come from the shared `ai/` config (Settings › AI). The line under the group title names the provider (the
+  cloud preset's name, or Local LLM) with a `LinkButton` to `AI › Provider` (surface `ask-cmdr-settings-provider`), or
+  says to turn one on. Backend resolution: `commands/agent/chat.rs::resolve_agent_llm` +
+  `settings::load_ask_cmdr_interactive_model`.
+  - **It's a hand-rendered `ui/Select` with a live menu**, ❌ not `SettingSelect` (that one only knows registry
+    options): "Same as Cmdr's AI (<model>)" first (stored `''`, carried as the `SAME_AS_CMDR_AI` sentinel because Ark
+    reads an empty value as no pick), then a stored id the list lacks (typed before this was a dropdown), then the
+    provider's models. Pure ordering: `ask-cmdr-model-items.ts`. The shared model is read the way the controller reads
+    it (saved per-provider pick, else the preset default).
+  - **The list comes from a second `ProviderSetupController`**, read-only (no key or config writes go through it), so
+    the session model cache and the connection check stay single-sourced in `#lib/ai-provider-setup/`. It's pointed at
+    the provider only while the picker is usable, since pointing it may start a check.
+  - **Usable only on Cloud, with consent, not managed off, and with the slot ready** (`providerGap` over the backend's
+    slot status; not-known-yet counts as ready, so no disabled flash). Why Cloud only: the backend applies the override
+    on Cloud alone (`ai::manager::resolve_backend_with_model`). On Local the row says so with a `disabledNote`.
+  - Known gap: the controller re-points only on a provider change, so a Custom endpoint edited in the same session keeps
+    the old endpoint's list until Settings reopens.
 - **Chat memory size** (`askCmdr.chatMemorySize`, a `SettingSelect`): "Automatic (recommended)" or one of five presets
   (16,000 / 32,000 / 60,000 / 128,000 / 200,000). Presets rather than a number field, so there is no bound to misstate,
   no below-minimum case, and no numeric validation copy. Automatic spends the WHOLE window the backend knows the model

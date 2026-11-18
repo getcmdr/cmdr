@@ -2386,14 +2386,6 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "Cmdr usa el proveedor de IA y la clave que has configurado en Ajustes › IA ({provider}).",
-  "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
-  },
-  "settings.askCmdr.provider.off": "Activa un proveedor de IA en Ajustes › IA para empezar a chatear.",
-  "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
-  },
   "settings.askCmdr.interactiveModel.label": "Modelo de Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"

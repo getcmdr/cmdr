@@ -2393,14 +2393,6 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "Cmdr använder AI-leverantören och nyckeln du har ställt in i Inställningar › AI ({provider}).",
-  "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
-  },
-  "settings.askCmdr.provider.off": "Aktivera en AI-leverantör i Inställningar › AI för att börja chatta.",
-  "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
-  },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr-modell",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"

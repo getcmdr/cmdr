@@ -2386,14 +2386,6 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "A Cmdr azt az AI-szolgáltatót és kulcsot használja, amit itt állítottál be: Beállítások › AI ({provider}).",
-  "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
-  },
-  "settings.askCmdr.provider.off": "Kapcsolj be egy AI-szolgáltatót itt: Beállítások › AI, hogy elkezdhess csevegni.",
-  "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
-  },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr modellje",
   "@settings.askCmdr.interactiveModel.label": {
     "sourceHash": "194255a"

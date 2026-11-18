@@ -190,9 +190,12 @@ export const aiSettings: SettingDefinitionSource[] = [
     descriptionInTip: true,
     keywordsKey: 'settings.askCmdr.interactiveModel.keywords',
     terms: ['ask cmdr', 'llm'],
+    // `''` follows Cmdr's AI model; anything else is a model id the backend uses on Cloud.
+    // A dropdown with NO registry options: its menu is the provider's live model list
+    // (`sections/ask-cmdr-model-items.ts`), and any stored id stays valid.
     type: 'string',
     default: '',
-    component: 'text-input',
+    component: 'select',
   },
   {
     // How much of the thread one message may carry. `auto` spends the model's whole window
