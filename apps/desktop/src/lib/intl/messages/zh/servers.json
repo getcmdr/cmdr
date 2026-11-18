@@ -125,7 +125,7 @@
   },
   "servers.hub.discoveryOffLink": "{platform, select, windows {在设置中开启} linuxGnome {在首选项中开启} linuxKde {在“配置 Cmdr”中开启} other {在设置中开启}}",
   "@servers.hub.discoveryOffLink": {
-    "sourceHash": "65a3d5a"
+    "sourceHash": "cd006e8"
   },
   "servers.hub.nfsHint": "NFS 服务器不会主动通告自己，所以不会出现在这里。",
   "@servers.hub.nfsHint": {

@@ -331,6 +331,6 @@
   },
   "shortcuts.window.editInSettings": "{platform, select, windows {在设置中编辑快捷键} linuxGnome {在首选项中编辑快捷键} linuxKde {在“配置 Cmdr”中编辑快捷键} other {在设置中编辑快捷键}}",
   "@shortcuts.window.editInSettings": {
-    "sourceHash": "875f6b7"
+    "sourceHash": "12661fd"
   }
 }

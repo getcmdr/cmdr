@@ -73,7 +73,7 @@
   },
   "crashReporter.sentToast.changeSettings": "{platform, select, windows {在设置中更改} linuxGnome {在首选项中更改} linuxKde {在“配置 Cmdr”中更改} other {在设置中更改}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "c3fff1a"
+    "sourceHash": "9972084"
   },
   "crashReporter.sentToast.sendLog": "附上日志",
   "@crashReporter.sentToast.sendLog": {

@@ -69,7 +69,7 @@
   },
   "search.imageResults.networkOff": "{platform, select, windows {在“设置”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。} linuxGnome {在“首选项”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。} linuxKde {在“配置 Cmdr”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。} other {在“设置”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。}}",
   "@search.imageResults.networkOff": {
-    "sourceHash": "30b2455"
+    "sourceHash": "5f0699a"
   },
   "search.imageResults.paused": "此驱动器已断开连接，因此这些是目前已索引的照片。",
   "@search.imageResults.paused": {
@@ -221,7 +221,7 @@
   },
   "search.coverage.toast.indexingOff": "{platform, select, windows {驱动器索引已在设置中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。} linuxGnome {驱动器索引已在首选项中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。} linuxKde {驱动器索引已在“配置 Cmdr”中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。} other {驱动器索引已在设置中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。}}",
   "@search.coverage.toast.indexingOff": {
-    "sourceHash": "7c4ff62"
+    "sourceHash": "15b2ffc"
   },
   "search.coverage.toast.deferredUntilSearchEnds": "Cmdr 已经在搜索 {drive}。索引会在搜索结束后立即开始。",
   "@search.coverage.toast.deferredUntilSearchEnds": {
