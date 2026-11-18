@@ -703,9 +703,11 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       - [x] Alive and idle (no CPU over 10 s) more than two minutes after the last action.
       - [x] The data dir is `%APPDATA%\com.veszelovszki.cmdr` and `drive-index`, `logs`, and `EBWebView` are under
             `%LOCALAPPDATA%\com.veszelovszki.cmdr`.
-      - [ ] A real key press reaches the panes (the run drove the frontend through MCP, which skips WebView2's key
-            path), and the breadcrumb at the root reads `C:\`: it shows nothing past the volume at `/` and `\Windows`
-            one level down, where `~/Downloads` keeps its `/`.
+      - [x] Real arrow and Enter key presses (`SendKeys`) move the cursor and enter a folder; Go to `C:/` and the four
+            favorites resolve to the root volume.
+      - [ ] The breadcrumb at the root reads `C:\`: it shows nothing past the volume at `/` and `\Windows` one level
+            down, where `~/Downloads` keeps its `/`.
+      - [ ] A digit picks a favorite in the `Ctrl+D` menu (a `SendKeys` `2` left it open with nothing picked).
 
 56. [S] Windows. MTP via `mtp-rs`'s WPD backend (D2): Windows device arrival and removal for phones, the 5–6-minute
     driver stall shown as a "the phone is busy" state with a timeout (a dropped future is safe, later calls queue behind

@@ -165,10 +165,15 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
     Windows, so `nav_to_path` to `C:/` refused ("Couldn't reach that location's drive") and Go to path and favorites
     couldn't land; it now answers the root volume for a path on the system drive. The favorites seed and the switcher's
     rows published native `C:\Users\…` paths, which no resolver reads (every favorite read `reachable: false`); both now
-    store the app path through `path_grammar::app_spelling`.
+    store the app path through `path_grammar::app_spelling`. Rerun on `a98c04b8a9` with a fresh `favorites.json`: all
+    four favorites resolve to `root` and `nav_to_path` lands on `C:/Users/<account>/Documents`. Its unit tests
+    (`volumes::platform::windows`, `app_spelling`) ran on the Mac only, since another agent held the builder.
   - **Observed, not chased**: the root index starts at `/`, which Windows reads as the current drive, so a binary
     started from `D:\…` walked `D:\` (257,236 entries in 38 s) while its watcher's branches came out as `/C:/Windows`
     and were refused (plan § "Windows build state"); `nav_to_path` with a `\` path resolves but its landing check times
     out (the frontend normalizes typed text, MCP doesn't); the breadcrumb shows nothing at the drive root and `\Windows`
     below it while `~/Downloads` keeps its `/`; the secret store is the plain-file fallback; the focus watchdog warns
-    once at startup (nothing focused for 500 ms); a second `nav_to_parent` at the root times out instead of refusing.
+    once at startup (nothing focused for 500 ms); a second `nav_to_parent` at the root times out instead of refusing;
+    the first `nav_to_path` about 30 s after launch got no frontend answer, and the same call worked a minute later;
+    `Ctrl+D` opens the favorites menu, but a typed `2` (SendKeys) left it open with nothing picked; `index_provider`
+    logs "not an absolute Windows app path" reading the volume's used bytes.
