@@ -14,7 +14,7 @@ use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::Volume;
 use cmdr_fs::volume::conformance;
 use cmdr_fs::volume::host::VolumeHost;
-use cmdr_fs::volume::path_grammar::{AppPath, PathFlavor};
+use cmdr_fs::volume::path_grammar::{self, PathFlavor};
 
 use super::*;
 
@@ -22,9 +22,7 @@ use super::*;
 pub(crate) fn app_root(dir: &Path) -> PathBuf {
     let native = dir.to_str().expect("the test folder's path is Unicode");
     PathBuf::from(
-        AppPath::from_native(native, PathFlavor::Windows)
-            .expect("the test folder is an absolute Windows path")
-            .to_string(),
+        path_grammar::native_to_app(native, PathFlavor::Windows).expect("the test folder is an absolute Windows path"),
     )
 }
 

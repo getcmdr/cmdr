@@ -2470,18 +2470,20 @@ Checks by app and tech:
   sqlite-open-direct (every SQLite connection opens through `crate::sqlite_util`, so the process-wide shared page cache
   is always installed before SQLite initializes), error-string-match, lock-poison (two lanes: an error-level one for an
   acquisition that records no poison-handling choice, and a warn-only one for a failure that's silently discarded, on a
-  per-file ratchet), platform-cfg-placement (negated OS cfgs, and OS cfgs outside a `platform/` seam, on a per-file
-  ratchet; § "Platform cfg placement"), log-private-values (an unmarked path, name, or identity in a log macro, strict
-  with no allowlist, and a marked value made into a `String`; § "The log-private-values check"), test-sleep (flags a
-  fixed `thread::sleep` / `tokio::time::sleep` in test code, where a condition-based `wait_until` belongs; opt out a
-  genuine sleep-is-the-subject site with `// allowed-test-sleep: <reason>`), fixed-temp-dir (flags a test fixture built
-  on `std::env::temp_dir()`, where every process on the machine shares the path and two suite runs delete each other's
-  live fixtures; the sanctioned fixture is `crate::test_support::TestDir`, and a site where the temp root is load
-  bearing opts out with `// allowed-fixed-temp-dir: <reason>`), no-hand-rolled-fixture (bans a struct literal of
-  `CachedScanResult` / `SourceHint` / `VolumePreflight` / `WrittenFile` in test code, so a fixture can only be one of
-  the shapes a named constructor actually builds; it ships with ZERO findings on purpose and is a regression fence
-  rather than a finder — the shapes are already clean, and the point is that the next test author can't undo that by
-  copy-pasting an old literal), derive-default-justified (every `#[derive(..., Default, ...)]` under `file_system/`,
+  per-file ratchet), app-path-std-bridge (the app path's transition-bridge calls, `legacy_unchecked` and
+  `as_std_legacy`, counted per file on a ratchet that only shrinks: the conversion's progress meter;
+  `crates/cmdr-fs/DETAILS.md` § "App paths"), platform-cfg-placement (negated OS cfgs, and OS cfgs outside a `platform/`
+  seam, on a per-file ratchet; § "Platform cfg placement"), log-private-values (an unmarked path, name, or identity in a
+  log macro, strict with no allowlist, and a marked value made into a `String`; § "The log-private-values check"),
+  test-sleep (flags a fixed `thread::sleep` / `tokio::time::sleep` in test code, where a condition-based `wait_until`
+  belongs; opt out a genuine sleep-is-the-subject site with `// allowed-test-sleep: <reason>`), fixed-temp-dir (flags a
+  test fixture built on `std::env::temp_dir()`, where every process on the machine shares the path and two suite runs
+  delete each other's live fixtures; the sanctioned fixture is `crate::test_support::TestDir`, and a site where the temp
+  root is load bearing opts out with `// allowed-fixed-temp-dir: <reason>`), no-hand-rolled-fixture (bans a struct
+  literal of `CachedScanResult` / `SourceHint` / `VolumePreflight` / `WrittenFile` in test code, so a fixture can only
+  be one of the shapes a named constructor actually builds; it ships with ZERO findings on purpose and is a regression
+  fence rather than a finder — the shapes are already clean, and the point is that the next test author can't undo that
+  by copy-pasting an old literal), derive-default-justified (every `#[derive(..., Default, ...)]` under `file_system/`,
   `cmdr-fs`, `cmdr-local`, `cmdr-operations`, and the IPC twins of `cmdr-fs` file types listed in `deriveDefaultTrees`
   carries a `// DEFAULT-OK: <why>` line, because a zero value on a fact-carrying type isn't "no information", it's a
   claim about the disk that nobody made; it and probe-unwrap fail when a governed member scans no file,

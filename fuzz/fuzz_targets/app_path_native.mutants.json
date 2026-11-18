@@ -1,0 +1,40 @@
+{
+  "mutants": [
+    {
+      "property": "fuzz:app_path_native",
+      "why": "an unpaired surrogate is spelled as U+FFFD, the lossy spelling that can name a sibling",
+      "file": "crates/cmdr-fs/src/app_path/escape.rs",
+      "find": "Err(lone) => out.push(unit_escape(lone.unpaired_surrogate())),",
+      "replace": "Err(_) => out.push(char::REPLACEMENT_CHARACTER),",
+      "input": "fuzz/seeds/app_path_native/0-lone-surrogate.bin",
+      "expect": "the unit escape round-trips"
+    },
+    {
+      "property": "fuzz:app_path_native",
+      "why": "only the first byte of an invalid run is escaped, so a name loses bytes",
+      "file": "crates/cmdr-fs/src/app_path/escape.rs",
+      "find": "for &b in chunk.invalid() {",
+      "replace": "for &b in chunk.invalid().iter().take(1) {",
+      "input": "fuzz/seeds/app_path_native/1-invalid-bytes.bin",
+      "expect": "the byte escape round-trips"
+    },
+    {
+      "property": "fuzz:app_path_native",
+      "why": "the verbatim form drops a name's trailing dot, so `a.` reaches the OS as `a`, another file",
+      "file": "crates/cmdr-fs/src/app_path/native.rs",
+      "find": "escape::push_unescaped_units(name, &mut out)?;",
+      "replace": "escape::push_unescaped_units(name.trim_end_matches('.'), &mut out)?;",
+      "input": "fuzz/seeds/app_path_native/2-verbatim-trailing-dot.bin",
+      "expect": "the native round trip moved"
+    },
+    {
+      "property": "fuzz:app_path_native",
+      "why": "a `.` name survives normalizing, so one place gets two spellings",
+      "file": "crates/cmdr-fs/src/app_path/parse.rs",
+      "find": "\"\" | \".\" => continue,",
+      "replace": "\"\" => continue,",
+      "input": "fuzz/seeds/app_path_native/3-posix-dot-name.bin",
+      "expect": "from_native_posix built a non-canonical path"
+    }
+  ]
+}

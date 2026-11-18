@@ -113,3 +113,28 @@ keeps its root through the split, so `D:\backup\x` lands on `D:/` (#1118). A Win
 ROOT, and the grammar uppercases the drive letter, so membership there needs no fold. A volume mounted at a FOLDER on a
 case-insensitive disk would: its whole chain (`isPathOnVolume`, `toVolumeRelativePath`, `anchorOnVolume`) has to fold
 alike, or it picks a volume and then fails to slice its root off. That waits for such a volume to exist on Windows.
+
+## The escape
+
+The backend spells a native name that isn't valid Unicode text (raw bytes from a Linux disk, SFTP, or NFS; an unpaired
+UTF-16 surrogate from Windows or SMB) losslessly, one plane-16 private-use code point per rejected unit: byte escapes
+U+10FE80–U+10FEFF, unit escapes U+10E800–U+10EFFF. The design and its rejected alternatives live in Rust's twin,
+`crates/cmdr-fs/DETAILS.md` § "App paths"; this is the frontend's half.
+
+- **It's an address.** `FileEntry.path` and `FileEntry.name` carry the escaped spelling, and the listing protocols
+  address rows by name (the cursor, a resort's selection, rename validity, a transfer's known conflicts), so every
+  string goes back to the backend exactly as it came. The frontend never makes or respells one: typed text is the
+  backend's to escape as literal text.
+- **It's never shown.** `shownName(name)` and `displayPath(text)` (via `withoutEscapes`) render each escape as U+FFFD,
+  what the lossy spelling always showed. `displayPath` maps escapes over ANY text, and `t()` passes its whole result
+  through it, so a name param (`{name}` in "Delete {name}?") is covered as well as a `pathParam`. "Copy path" shows
+  U+FFFD too: no text clipboard can hold a raw byte. Copying FILES hands the OS file URLs the backend builds from the
+  native path.
+- **Arithmetic is safe.** An escape is one code point (a surrogate pair in UTF-16), never a `/`, so `parsePath`,
+  `joinPath`, `parentInVolume`, `basenameInVolume`, and `pathRelativeTo` can't cut one. Private use has no case mapping
+  or decomposition, so `foldedForCompare` leaves it alone. `shortenMiddle` runs on shown text, where every escape is
+  already U+FFFD.
+- **Length is native.** A 255-byte or 255-unit name limit counts one per escape (it stands for one byte or one unit):
+  `nativeNameLength(name, 'bytes' | 'units')`. `TextEncoder` would count four bytes each.
+- **The shared rows**: `path_grammar_cases.json`'s `escapes` table runs here (`escape.test.ts`: parent, basename, join,
+  `displayPath`, `shownName`) and in Rust, which also checks the canonical form and the refusals.

@@ -110,6 +110,68 @@ impl TestDir {
     }
 }
 
+impl TestDir {
+    /// [`TestDir::new`] inside `parent`, for a fixture whose tree must live there (the index
+    /// fixtures root in the working directory on purpose: `/tmp` is excluded on Linux and a
+    /// symlink on macOS).
+    #[track_caller]
+    pub fn new_in(label: &str, parent: &Path) -> Self {
+        Self(
+            tempfile::Builder::new()
+                .prefix(&format!("cmdr_{label}_"))
+                .tempdir_in(parent)
+                .expect("failed to create a test scratch directory"),
+        )
+    }
+}
+
+/// A [`TestDir`] together with its APP path: what a test hands a volume, an index, or any
+/// API that takes an app path, where the native spelling would be wrong on Windows
+/// (`C:\Users\…\Temp\.tmpX` is no app path; `C:/Users/…/Temp/.tmpX` is).
+///
+/// On Windows the native path's 8.3 short names are expanded first (`GetLongPathNameW`):
+/// `TEMP` under an account name past eight characters is spelled `C:\Users\LONGNA~1\…`,
+/// and the listing never shows a short name, so a row's path would never match a root
+/// spelled that way. On macOS and Linux the app path is the native path's text.
+#[cfg(cmdr_host)]
+#[derive(Debug)]
+pub struct AppTestDir {
+    dir: TestDir,
+    app: crate::app_path::AppPathBuf,
+}
+
+#[cfg(cmdr_host)]
+impl AppTestDir {
+    /// A fresh scratch directory and its app path.
+    #[track_caller]
+    pub fn new(label: &str) -> Self {
+        Self::from_dir(TestDir::new(label))
+    }
+
+    /// [`AppTestDir::new`] inside `parent` (see [`TestDir::new_in`]).
+    #[track_caller]
+    pub fn new_in(label: &str, parent: &Path) -> Self {
+        Self::from_dir(TestDir::new_in(label, parent))
+    }
+
+    #[track_caller]
+    fn from_dir(dir: TestDir) -> Self {
+        let long = long_path(&dir).expect("the scratch directory's long name resolves");
+        let app = crate::app_path::AppPathBuf::from_native(&long).expect("a scratch directory is an absolute path");
+        Self { dir, app }
+    }
+
+    /// The app path.
+    pub fn app_path(&self) -> &crate::app_path::AppPath {
+        &self.app
+    }
+
+    /// The native path, for the test's own `std::fs` setup.
+    pub fn native(&self) -> &Path {
+        &self.dir
+    }
+}
+
 // Both impls, on purpose — see the `TestDir` doc comment before deleting either.
 impl std::ops::Deref for TestDir {
     type Target = Path;

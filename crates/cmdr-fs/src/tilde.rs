@@ -7,7 +7,7 @@
 //! spelling), never the home folder's native `C:\Users\test_user_1` spliced onto a `/` rest (#1109),
 //! and `~\Documents` expands too. On macOS and Linux it's a plain splice, as it always was.
 
-use crate::volume::path_grammar::{AppPath, PathFlavor};
+use crate::volume::path_grammar::{self, PathFlavor};
 
 /// Expands a leading `~` (`~` alone or `~/…`, plus `~\…` on Windows) to the user's home
 /// directory. Any other path, and any path when the home directory can't be found, comes back
@@ -39,10 +39,10 @@ pub fn expand_tilde_with(path: &str, home: Option<&str>, flavor: PathFlavor) -> 
                 Some(rest) if rest.is_empty() || rest.starts_with(['/', '\\']) => rest,
                 _ => return path.to_string(),
             };
-            let Some(home) = AppPath::from_native(home, flavor) else {
+            let Some(home) = path_grammar::native_to_app(home, flavor) else {
                 return path.to_string();
             };
-            home.join(&rest.replace('\\', "/")).to_string()
+            path_grammar::join_lexically(&home, &rest.replace('\\', "/"), flavor).unwrap_or(home)
         }
     }
 }
@@ -120,10 +120,7 @@ mod tests {
     fn the_host_expansion_is_an_app_path() {
         let expanded = expand_tilde("~/Documents");
         assert!(!expanded.contains('~'), "{expanded}");
-        assert!(
-            crate::volume::path_grammar::is_local_path(&expanded, PathFlavor::HOST),
-            "{expanded}"
-        );
+        assert!(path_grammar::is_local_path(&expanded, PathFlavor::HOST), "{expanded}");
         assert!(expanded.ends_with("/Documents"), "{expanded}");
     }
 }

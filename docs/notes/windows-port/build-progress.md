@@ -246,3 +246,23 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
   `D:\logs\m1\baseline-junit.xml`); the timed-out cold-drive tests left 47 `crates/cmdr-index/cmdr-cold-cover-*` trees,
   removed after the run along with 46 older ones in `D:\src\cmdr`; and a `cmdr-index` proptest left a
   `proptest-regressions/indexing/` seed in the checkout.
+- **2026-11-18, the typed app path** (app-path plan milestone 3): `cmdr_fs::app_path` exists and nothing adopts it, so
+  no Windows outcome moves outside `cmdr-fs`'s own new cells. Its native conversions are pure (bytes and UTF-16 units as
+  data), so the Windows arm's refusals (`:`, `NoPortOnUnc`, `NotPlainSafe`, the verbatim `.`/`..`/empty names, `C:` and
+  `C:foo`) run on every OS; only the `OsStr` crossing sits behind `app_path/platform/`. The Mac's zig cross-check
+  `cargo check --all-targets --target x86_64-pc-windows-gnu` is clean for `cmdr-fs` (with `testing`) and `cmdr-local`,
+  and the wasm build of `cmdr-fs` too. On the builder, `cargo nextest run -p cmdr-fs --features testing` in a fresh
+  checkout (`D:\src\cmdr-m3`, `CARGO_TARGET_DIR=D:\target-m3`, `7eba6045c3`): 858 of 858 passed, 26 skipped (the `#1225`
+  ignores), and `cargo clippy -p cmdr-fs -p cmdr-local --all-targets -D warnings` clean. The first run's two reds were
+  the cells, not the type: deserializing a POSIX path is refused on a Windows host (the `from_wire` fence), and the
+  allocation cell's comparison caught today's `PathBuf::join` writing a `\` into an app path (#1225's bug, by
+  construction). Cmd-shell recipe that works there:
+  `cmd /c "cd /d <dir> && set "CARGO_TARGET_DIR=<dir>" && cargo nextest run ... > <log> 2>&1"` (an unquoted
+  `set X=Y && …` keeps the trailing space in the value).
+- **2026-11-18, the typed app path's review fixes** (`3951274cdf`): comparison now reads text with the host's
+  `Path::components`, so the builder ran the Windows property against `PathBuf` (4,000 cases over drive, UNC, verbatim,
+  and mixed-separator text): its first runs found where the type's prefix reading departed from std's (a UNC prefix
+  needs a server AND a share, `\\.\` takes either separator, a UNC or device prefix implies a root), now mirrored.
+  `cargo nextest run -p cmdr-fs --features testing` 868 of 868 (26 skipped, the `#1225` ignores), and
+  `cargo clippy -p cmdr-fs -p cmdr-local --all-targets -D warnings` clean (it caught a `manual_strip` the Mac's clippy
+  lane didn't).

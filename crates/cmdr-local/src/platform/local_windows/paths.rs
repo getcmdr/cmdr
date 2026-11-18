@@ -9,7 +9,7 @@
 use std::io;
 use std::path::{Path, PathBuf};
 
-use cmdr_fs::volume::path_grammar::{AppPath, PathFlavor};
+use cmdr_fs::volume::path_grammar::{self, PathFlavor};
 
 /// The `\\?\` path Win32 opens for the app path `path`.
 ///
@@ -19,18 +19,21 @@ use cmdr_fs::volume::path_grammar::{AppPath, PathFlavor};
 /// bare `/x`, or one holding a `\`. ❌ Never guess one: a path that loses its drive would
 /// resolve against the process's current drive, the wrong disk.
 pub(crate) fn native(path: &Path) -> io::Result<PathBuf> {
-    app_path(path).map(|app| PathBuf::from(app.to_native())).ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "not an absolute Windows app path (C:/… or //server/share/…)",
-        )
-    })
+    app_path(path)
+        .and_then(|app| path_grammar::verbatim_lexically(&app))
+        .map(PathBuf::from)
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "not an absolute Windows app path (C:/… or //server/share/…)",
+            )
+        })
 }
 
 /// The app path for the entry `name` in the folder at the app path `dir`.
 pub(crate) fn child_app_path(dir: &Path, name: &str) -> PathBuf {
     match app_path(dir) {
-        Some(app) => PathBuf::from(app.join(name).to_string()),
+        Some(app) => PathBuf::from(path_grammar::join_lexically(&app, name, PathFlavor::Windows).unwrap_or(app)),
         // A folder that was listed parsed already; keep the shape for one that somehow didn't.
         None => PathBuf::from(format!("{}/{name}", dir.to_string_lossy().trim_end_matches('/'))),
     }
@@ -51,7 +54,7 @@ pub(crate) fn resolve_under(root: &Path, path: &Path) -> PathBuf {
         return root.to_path_buf();
     }
     if let Some(absolute) = app_path(path) {
-        return PathBuf::from(absolute.to_string());
+        return PathBuf::from(absolute);
     }
     let Some(root_app) = app_path(root) else {
         // A root that isn't an app path can't anchor anything; `native` refuses the result.
@@ -65,11 +68,11 @@ pub(crate) fn resolve_under(root: &Path, path: &Path) -> PathBuf {
             Component::Prefix(_) | Component::RootDir | Component::CurDir => None,
         })
         .collect();
-    PathBuf::from(root_app.join(&names.join("/")).to_string())
+    PathBuf::from(path_grammar::join_lexically(&root_app, &names.join("/"), PathFlavor::Windows).unwrap_or(root_app))
 }
 
-fn app_path(path: &Path) -> Option<AppPath> {
-    AppPath::parse(path.to_str()?, PathFlavor::Windows)
+fn app_path(path: &Path) -> Option<String> {
+    path_grammar::normalize_local(path.to_str()?, PathFlavor::Windows)
 }
 
 #[cfg(test)]

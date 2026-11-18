@@ -1,5 +1,5 @@
 {
-  "about": "The app-path grammar's cases, read by both `src/volume/path_grammar_test.rs` and `apps/desktop/src/lib/path/grammar.test.ts`, so Rust and TypeScript can't disagree. `flavor` is the local backend's: `posix` (macOS, Linux) or `windows`. `kind` null means the text is no app path at all. A scheme URL's root, root-ness, and segments belong to its volume, not the grammar, so they read null; its parent and basename are plain slash arithmetic. `parent` is null at a root: there is no parent inside the volume. `shown` is what a person reads; `fromUserInput` is what typed or pasted text becomes before it goes on the wire. `arithmetic` rows (read by the Rust suite) pin path arithmetic per root shape: `std` is what `std::path` answers today on macOS and Linux (`names` is `components()`, root included; `rebase` is `app_paths::rebase`; `shown` is `Path::display`), and `target` is the typed app path's answer with the base parsed in `flavor` (`names` without the root; a scheme root is `scheme://authority`), or `refused` names the typed refusal. A `note` marks a row where the two differ on purpose.",
+  "about": "The app-path grammar's cases, read by both `src/volume/path_grammar_test.rs` and `apps/desktop/src/lib/path/grammar.test.ts`, so Rust and TypeScript can't disagree. `flavor` is the local backend's: `posix` (macOS, Linux) or `windows`. `kind` null means the text is no app path at all. A scheme URL's root, root-ness, and segments belong to its volume, not the grammar, so they read null; its parent and basename are plain slash arithmetic. `parent` is null at a root: there is no parent inside the volume. `shown` is what a person reads; `fromUserInput` is what typed or pasted text becomes before it goes on the wire. `arithmetic` rows (read by the Rust suite) pin path arithmetic per root shape: `std` is what `std::path` answers today on macOS and Linux (`names` is `components()`, root included; `rebase` is `app_paths::rebase`; `shown` is `Path::display`), and `target` is the typed app path's answer with the base parsed in `flavor` (`names` without the root; a scheme root is `scheme://authority`), or `refused` names the typed refusal. A `note` marks a row where the two differ on purpose. `escapes` rows hold names that are not valid Unicode text, spelled by the typed path's lossless escape (byte escapes U+10FE80\u2013U+10FEFF, unit escapes U+10E800\u2013U+10EFFF, written as JSON surrogate pairs so this file stays ASCII): both suites check `parent`, `basename`, `joined`, `shown`, and `shownName` where they are not null; `normalized` (the canonical form) and `refusal` are the Rust type's alone, since the frontend never respells a backend's path. `escapedUserInput` is the typed path's `from_user_input`: a typed escape code point is literal text.",
   "cases": [
     {
       "path": "/",
@@ -204,6 +204,18 @@
       "basename": null,
       "segments": null,
       "shown": "~/Documents"
+    },
+    {
+      "path": "c://x",
+      "flavor": "posix",
+      "kind": null,
+      "root": null,
+      "normalized": null,
+      "isRoot": null,
+      "parent": null,
+      "basename": null,
+      "segments": null,
+      "shown": "c://x"
     },
     {
       "path": "foo/bar",
@@ -579,6 +591,7 @@
     { "text": "\\\\server\\share", "flavor": "windows", "wire": "//server/share/" },
     { "text": "relative\\dir", "flavor": "windows", "wire": "relative/dir" },
     { "text": "~", "flavor": "windows", "wire": "~" },
+    { "text": "C:\\\\x", "flavor": "windows", "wire": "C:/x" },
     {
       "text": "sftp://test_user_1@testnas.local:22/home",
       "flavor": "windows",
@@ -1189,5 +1202,88 @@
       "std": "",
       "note": "std climbs above a scheme root (and collapses `//`); the type clamps there"
     }
+  ],
+  "escapes": [
+    {
+      "path": "/d/caf\udbff\udee9",
+      "flavor": "posix",
+      "normalized": "/d/caf\udbff\udee9",
+      "refusal": null,
+      "parent": "/d",
+      "basename": "caf\udbff\udee9",
+      "joinName": "a.txt",
+      "joined": "/d/caf\udbff\udee9/a.txt",
+      "shown": "/d/caf\ufffd",
+      "shownName": "caf\ufffd"
+    },
+    {
+      "path": "/d/\udbff\udee9\udbff\ude80",
+      "flavor": "posix",
+      "normalized": "/d/\udbff\udee9\udbff\ude80",
+      "refusal": null,
+      "parent": "/d",
+      "basename": "\udbff\udee9\udbff\ude80",
+      "joinName": "\udbff\udeff",
+      "joined": "/d/\udbff\udee9\udbff\ude80/\udbff\udeff",
+      "shown": "/d/\ufffd\ufffd",
+      "shownName": "\ufffd\ufffd"
+    },
+    {
+      "path": "C:/x/a\udbfa\udc00b",
+      "flavor": "windows",
+      "normalized": "C:/x/a\udbfa\udc00b",
+      "refusal": null,
+      "parent": "C:/x",
+      "basename": "a\udbfa\udc00b",
+      "joinName": "c.txt",
+      "joined": "C:/x/a\udbfa\udc00b/c.txt",
+      "shown": "C:\\x\\a\ufffdb",
+      "shownName": "a\ufffdb"
+    },
+    {
+      "path": "sftp://test_user_1@testnas.local:22/srv/caf\udbff\udee9",
+      "flavor": "posix",
+      "normalized": "sftp://test_user_1@testnas.local:22/srv/caf\udbff\udee9",
+      "refusal": null,
+      "parent": "sftp://test_user_1@testnas.local:22/srv",
+      "basename": "caf\udbff\udee9",
+      "joinName": "a.txt",
+      "joined": "sftp://test_user_1@testnas.local:22/srv/caf\udbff\udee9/a.txt",
+      "shown": "sftp://test_user_1@testnas.local:22/srv/caf\ufffd",
+      "shownName": "caf\ufffd"
+    },
+    {
+      "path": "/d/caf\udbff\udec3\udbff\udea9",
+      "flavor": "posix",
+      "normalized": "/d/caf\u00e9",
+      "refusal": null,
+      "parent": null,
+      "basename": null,
+      "joinName": null,
+      "joined": null,
+      "shown": null,
+      "shownName": null
+    },
+    {
+      "path": "/d/a\udbff\ude80\udbfa\udc00",
+      "flavor": "posix",
+      "normalized": null,
+      "refusal": "mixedEscape",
+      "parent": null,
+      "basename": null,
+      "joinName": null,
+      "joined": null,
+      "shown": null,
+      "shownName": null
+    }
+  ],
+  "escapedUserInput": [
+    {
+      "text": "/d/\udbff\ude80",
+      "flavor": "posix",
+      "namer": "bytes",
+      "wire": "/d/\udbff\udef4\udbff\ude8f\udbff\udeba\udbff\ude80"
+    },
+    { "text": "C:\\x\\\udbff\ude80", "flavor": "windows", "namer": "units", "wire": "C:/x/\udbfa\udfff\udbfb\ude80" }
   ]
 }

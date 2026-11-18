@@ -10,9 +10,8 @@
 //!   in its own commit (the rows with a `note`). ❌ Never edit a `std` cell to green a
 //!   conversion. Unix only: on Windows `std::path` applies Windows rules, the very bug
 //!   #1225 removes.
-//! - **`target`** (or `refused`) is the typed app path's answer. Today's grammar
-//!   (`path_grammar`) already gives it for the local roots, on every OS, so those rows
-//!   are asserted against it here; the scheme rows wait for the type.
+//! - **`target`** (or `refused`) is the typed app path's answer (`crate::app_path`),
+//!   asserted against the type itself on every OS, every row.
 
 #[cfg(unix)]
 use std::path::{Component, Path};
@@ -20,7 +19,7 @@ use std::path::{Component, Path};
 use serde_json::Value;
 
 use super::app_paths;
-use super::path_grammar::{AppPath, PathFlavor, basename_in_volume, parent_in_volume, shown_path};
+use crate::app_path::{AppName, AppPathBuf, PathFlavor};
 
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -86,30 +85,32 @@ fn std_answer(row: &Row) -> Value {
     }
 }
 
-/// What today's grammar answers for `row`, when it already speaks this root and op.
-fn grammar_answer(row: &Row) -> Option<Value> {
+/// What the typed app path answers for `row`: its value, or the name of its typed refusal.
+fn type_answer(row: &Row) -> Result<Value, String> {
     let flavor = match row.flavor.as_str() {
         "posix" => PathFlavor::Posix,
         "windows" => PathFlavor::Windows,
         other => panic!("unknown flavor {other:?}"),
     };
-    let parse = |text: &str| AppPath::parse(text, flavor);
-    // The grammar has no scheme roots yet: those rows are the type's.
+    let parse = |text: &str| AppPathBuf::parse(text, flavor).map_err(|refusal| format!("{refusal:?}"));
     let base = parse(&row.base)?;
-    Some(match row.op.as_str() {
-        "parent" => parent_in_volume(&row.base, flavor).map_or(Value::Null, Value::from),
-        "fileName" => basename_in_volume(&row.base, flavor)
-            .filter(|name| !name.is_empty())
-            .map_or(Value::Null, Value::from),
-        "names" => Value::from(base.names().to_vec()),
-        "join" => Value::from(base.join(arg(row)).to_string()),
-        "startsWith" => Value::from(base.starts_with(&parse(arg(row))?)),
-        "rebase" => {
-            app_paths::rebase(&row.base, arg(row), row.to.as_deref().expect("a `to`")).map_or(Value::Null, Value::from)
+    Ok(match row.op.as_str() {
+        "parent" => base.parent().map_or(Value::Null, |parent| Value::from(parent.as_str())),
+        "fileName" => base.file_name().map_or(Value::Null, Value::from),
+        "names" => Value::from(base.names().collect::<Vec<_>>()),
+        "join" => {
+            let name = AppName::new(arg(row)).map_err(|_| "NotAChildName".to_string())?;
+            Value::from(base.join(name).map_err(|refusal| format!("{refusal:?}"))?.as_str())
         }
-        "shown" => Value::from(shown_path(&row.base, flavor)),
-        // No `strip_prefix` in today's grammar.
-        _ => return None,
+        "startsWith" => Value::from(base.starts_with(&parse(arg(row))?)),
+        "stripPrefix" => base
+            .strip_prefix(&parse(arg(row))?)
+            .map_or(Value::Null, |rel| Value::from(rel.as_str())),
+        "rebase" => base
+            .rebase(&parse(arg(row))?, &parse(row.to.as_deref().expect("a `to`"))?)
+            .map_or(Value::Null, |path| Value::from(path.as_str())),
+        "shown" => Value::from(base.shown().as_ref()),
+        other => panic!("unknown op {other:?}"),
     })
 }
 
@@ -125,18 +126,21 @@ fn std_path_answers_every_arithmetic_row_as_pinned() {
     }
 }
 
+/// The typed app path gives every row's `target`, or refuses it as `refused` names.
 #[test]
-fn todays_grammar_gives_the_target_answer_where_it_speaks_the_root() {
-    let mut checked = 0;
-    for row in rows().into_iter().filter(|row| row.refused.is_none()) {
-        if let Some(answer) = grammar_answer(&row) {
-            assert_eq!(answer, row.target, "grammar {}", label(&row));
-            checked += 1;
+fn the_typed_app_path_gives_every_rows_target_or_its_refusal() {
+    let mut wrong = Vec::new();
+    for row in rows() {
+        let expected = row.refused.clone().map_or_else(|| Ok(row.target.clone()), Err);
+        let answer = type_answer(&row);
+        if answer != expected {
+            wrong.push(format!("{}: got {answer:?}, pinned {expected:?}", label(&row)));
         }
     }
     assert!(
-        checked >= 40,
-        "the local-root rows are the grammar's ({checked} checked)"
+        wrong.is_empty(),
+        "the type departs from the table:\n{}",
+        wrong.join("\n")
     );
 }
 

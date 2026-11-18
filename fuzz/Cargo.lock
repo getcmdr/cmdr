@@ -504,6 +504,7 @@ dependencies = [
  "cmdr-about",
  "cmdr-adb",
  "cmdr-archive",
+ "cmdr-fs",
  "cmdr-nfs",
  "cmdr-s3",
  "cmdr-webdav",
