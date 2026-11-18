@@ -3,6 +3,7 @@
 //! entry's shape stay in `reading.rs`, the same on every OS.
 
 use std::collections::HashSet;
+use std::ffi::OsStr;
 use std::fs::{Metadata, ReadDir};
 use std::io;
 use std::path::{Path, PathBuf};
@@ -39,7 +40,7 @@ pub(crate) struct OsFields {
 const _: fn(&Path) -> io::Result<Metadata> = lstat;
 const _: fn(&Path) -> io::Result<Metadata> = stat;
 const _: fn(&Path) -> io::Result<ReadDir> = read_dir;
-const _: fn(&Path, &str) -> PathBuf = child_path;
+const _: fn(&Path, &OsStr) -> PathBuf = child_path;
 const _: fn(&Metadata) -> OsFields = os_fields;
 const _: fn(&Metadata) -> u32 = mode_of;
 /// `read_entries`' shape: the folder, its `/.hidden` names, the tally, and who picks the lister.

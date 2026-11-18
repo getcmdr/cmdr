@@ -7,6 +7,7 @@
 //! concept" value), and no owner (a SID's account name). Only `FILE_ATTRIBUTE_HIDDEN` is real.
 
 use std::collections::HashSet;
+use std::ffi::OsStr;
 use std::fs::{self, Metadata, ReadDir};
 use std::io;
 use std::os::windows::fs::MetadataExt as _;
@@ -33,8 +34,10 @@ pub(crate) fn read_dir(path: &Path) -> io::Result<ReadDir> {
     fs::read_dir(native(path)?)
 }
 
-pub(crate) fn child_path(dir: &Path, name: &str) -> PathBuf {
-    child_app_path(dir, name)
+/// App paths are UTF-8, so a name with an unpaired UTF-16 surrogate (all NTFS allows past
+/// UTF-8) joins lossily here; task 35's `FindFirstFileExW` lister owns reading one.
+pub(crate) fn child_path(dir: &Path, name: &OsStr) -> PathBuf {
+    child_app_path(dir, &name.to_string_lossy())
 }
 
 pub(crate) fn mode_of(_metadata: &Metadata) -> u32 {

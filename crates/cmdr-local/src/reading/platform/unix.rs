@@ -1,6 +1,7 @@
 //! What macOS and Linux read the same way: paths go to the OS as they are, and an entry's
 //! mode, owner, and allocation come off its `lstat`.
 
+use std::ffi::OsStr;
 use std::fs::{self, Metadata, ReadDir};
 use std::io;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
@@ -22,7 +23,9 @@ pub(crate) fn read_dir(path: &Path) -> io::Result<ReadDir> {
     fs::read_dir(path)
 }
 
-pub(crate) fn child_path(dir: &Path, name: &str) -> PathBuf {
+/// The child at the OS's own spelling of `name`: a name that isn't UTF-8 (Linux allows one)
+/// is stat'ed through its raw bytes, never its lossy listing name.
+pub(crate) fn child_path(dir: &Path, name: &OsStr) -> PathBuf {
     dir.join(name)
 }
 

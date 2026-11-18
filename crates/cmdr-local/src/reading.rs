@@ -288,8 +288,9 @@ fn read_dir_entries(
     let mut entries = Vec::with_capacity(dir_entries.len());
     for entry in dir_entries {
         let entry = entry?;
-        let name = entry.file_name().to_string_lossy().into_owned();
-        let entry_path = platform::child_path(path, &name);
+        let raw_name = entry.file_name();
+        let name = raw_name.to_string_lossy().into_owned();
+        let entry_path = platform::child_path(path, &raw_name);
         let file_entry = entry_from_lstat(&entry_path, name.clone(), dot_hidden, added).unwrap_or_else(|| {
             // `d_type` still says whether it's a link, which picks the row's icon.
             let is_symlink = entry.file_type().is_ok_and(|ft| ft.is_symlink());
