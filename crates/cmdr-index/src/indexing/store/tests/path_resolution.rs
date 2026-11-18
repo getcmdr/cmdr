@@ -371,3 +371,39 @@ mod platform_case_proptests {
         }
     }
 }
+
+/// The drive index stores one NAME per row, so a path is whatever the walk back up
+/// spells: every name the walker stores (a space, a `\`, a `:`, a leading dot, NFD)
+/// reads back byte for byte, and resolves from that spelling. The app-path type
+/// keeps every one of these spellings, so no row changes. #1225.
+#[test]
+fn a_stored_name_reads_back_byte_for_byte_and_resolves_from_its_spelling() {
+    let (_store, dir) = open_temp_store();
+    let conn = IndexStore::open_write_connection(&dir.path().join("test-index.db")).unwrap();
+
+    let top = insert_entry(&conn, ROOT_ID, "a b", true, None);
+    for name in ["c-d", "a\\b", "c:d", ".config", "cafe\u{0301}", "caf\u{FFFD}.txt"] {
+        let id = insert_entry(&conn, top, name, false, Some(1));
+        let path = IndexStore::reconstruct_path(&conn, id).unwrap();
+        assert_eq!(path, format!("/a b/{name}"));
+        assert_eq!(resolve_path(&conn, &path).unwrap(), Some(id), "{name}");
+    }
+}
+
+/// What a lookup does TODAY with the shapes a row never holds: a doubled `/` and a
+/// trailing `/` resolve to the plain path (empty names are skipped), while a `.` and
+/// a `..` are looked up as literal NAMES and miss. No caller sends them today (the
+/// index is asked by row paths); the app-path type refuses `..` and drops `.` at
+/// the wire, so these stay unreachable. #1225.
+#[test]
+fn a_lookup_skips_empty_names_and_takes_dots_literally_today() {
+    let (_store, dir) = open_temp_store();
+    let conn = IndexStore::open_write_connection(&dir.path().join("test-index.db")).unwrap();
+
+    let users = insert_entry(&conn, ROOT_ID, "Users", true, None);
+    let foo = insert_entry(&conn, users, "foo", true, None);
+    assert_eq!(resolve_path(&conn, "//Users//foo").unwrap(), Some(foo));
+    assert_eq!(resolve_path(&conn, "/Users/foo/").unwrap(), Some(foo));
+    assert_eq!(resolve_path(&conn, "/Users/./foo").unwrap(), None);
+    assert_eq!(resolve_path(&conn, "/Users/foo/..").unwrap(), None);
+}
