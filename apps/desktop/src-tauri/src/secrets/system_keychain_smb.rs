@@ -4,7 +4,7 @@
 //! keychain", macOS stores an *internet-password* item (`kSecClassInternetPassword`,
 //! protocol `smb`) keyed by the server name Finder used — typically the Bonjour service
 //! name (`Testnas._smb._tcp.local`) — with the username in the item. Cmdr's own secret
-//! store ([`super::keychain_macos`]) holds *generic* passwords under our own service name
+//! store (`platform/macos/keychain.rs`) holds *generic* passwords under our own service name
 //! and can't see these. This module reads Finder's item so we can connect a share the
 //! user already authenticated, without making them retype the password.
 //!

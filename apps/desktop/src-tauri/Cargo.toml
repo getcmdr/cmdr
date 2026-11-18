@@ -354,9 +354,23 @@ gtk = "0.18"
 webkit2gtk = "2.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-# Win32 calls behind the app's `platform/` seams: the registry for the licensing device id
-# (`licensing/device_id/platform/windows.rs`). Already in the lockfile through the workspace crates.
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Registry"] }
+# Win32 calls behind the app's `platform/` seams: the registry (device id, OS names, managed
+# policy and its change watch), `RtlGetVersion`, the memory counters, and the instance lock's
+# message box. Already in the lockfile through the workspace crates.
+windows-sys = { version = "0.61", features = [
+    "Wdk_System_SystemServices",
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Registry",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_UI_WindowsAndMessaging",
+] }
+# Secrets in Windows Credential Manager (`secrets/platform/windows/`): the `keyring-core` backend
+# from the same maintainers as the Linux Secret Service one, so both arms share one API.
+keyring-core = "1"
+windows-native-keyring-store = "1.1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # The custom updater's trust check: unpacking the release tarball and requiring Cmdr's Developer

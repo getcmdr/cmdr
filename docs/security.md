@@ -434,8 +434,10 @@ reach everything. The agent never gets it. The mechanism: `apps/desktop/src-taur
 
 ## AI API keys
 
-The user's BYOK cloud key lives in the OS secret store (`crate::secrets`: macOS Keychain, Linux Secret Service, or an
-encrypted-file fallback), never in `settings.json`. On top of that:
+The user's BYOK cloud key lives in the OS secret store (`crate::secrets`: macOS Keychain, Windows Credential Manager,
+Linux Secret Service, or Linux's encrypted-file fallback), never in `settings.json`. No OS falls back to a plaintext
+file: that store exists only for dev and E2E builds that ask for it (`secrets/CLAUDE.md` § Backend selection). On top of
+that:
 
 - **A stored key never crosses IPC into a webview.** There is deliberately no command that returns it. `configure_ai`
   and `check_ai_connection` take a PROVIDER ID and read the key in the backend; `get_ai_api_key_status` returns only
