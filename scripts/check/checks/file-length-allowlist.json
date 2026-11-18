@@ -9,10 +9,6 @@
     "scripts/check/checks/registry.go": "append-only check registry (one CheckDefinition entry per check); line count tracks the number of checks, not splittable logic"
   },
   "files": {
-    "apps/desktop/src/lib/settings/definitions/advanced.ts": {
-      "lines": 820,
-      "reason": "flat registry data, one object literal per Advanced setting in page order (no logic); length tracks how many settings the Advanced page holds, and splitting it would only scatter one page's rows across files"
-    },
     "apps/desktop/scripts/e2e-linux.sh": {
       "lines": 830,
       "reason": "TODO: move the in-container test run (the ~170-line `bash -c` string from the node_modules install to `exit \"$playwright_status\"`) into `e2e-linux-in-container.sh`, run inside the container by path, like the sourced `e2e-linux-fixtures.sh` on the host side. That also lifts the apostrophe-free-comment rule the single-quoted string imposes."
@@ -133,6 +129,10 @@
       "lines": 1049,
       "reason": "TODO: split it, because most of its lines are script and the markup is small. (Bumped for SMB's Eject and save, which joined the edit save path below as `ejectAndSave` / `settleSmbSave` / `cancel`.) The round machinery (`run`, `applyOutcome`, `refuse`, `focusField`, the refusal and hint state, `refusalSubject`) is pure state with no markup dependency beyond the field refs, and belongs in a `sign-in-sheet-rounds.svelte.ts` the component drives, the pattern `sign-in-sheet-state.svelte.ts` already sets beside it. Edit mode's save path (`save`, `saveTarget`, `saveS3Account`, `saveSmbHost`, `ejectAndSave`, `settleSmbSave`, `writeRememberFlip`, `writeTypedSecret`, `s3EditScope` / `storeId`) is the second seam: it reads the form and the opened-with flags and writes through `saved-server-io.ts`, so it fits a `sign-in-sheet-edit.ts` beside it. The sheet then sits near 500 lines."
     },
+    "apps/desktop/src/lib/settings/definitions/advanced.ts": {
+      "lines": 820,
+      "reason": "flat registry data, one object literal per Advanced setting in page order (no logic); length tracks how many settings the Advanced page holds, and splitting it would only scatter one page's rows across files"
+    },
     "apps/desktop/src/lib/settings/types.ts": {
       "lines": 881,
       "reason": "TODO: two concerns share the file. Move `SettingsValues` (the stored-value map, one line per setting, about 370 lines) and the value unions it uses (`UiDensity` through `LanguageSetting`) into `settings-values.ts`, re-exported from here, so this file keeps only the registry's definition, constraint, and search shapes."
@@ -149,13 +149,13 @@
       "lines": 1053,
       "reason": "The `Props` interface is ~130 script lines whose per-prop docs are this primitive's API contract and can't leave, and the `\u003cstyle\u003e` block (~305 lines) is one primitive's chrome that `ui/CLAUDE.md` pins several rules of. The separable pure part, the edge-and-corner resize geometry, already lives in `modal-resize.ts`; what stays is listener plumbing, focus, the MCP close registry, and the two height effects (parking the user's height while vertical resizing is withdrawn, and taking a caller's remembered one), which read and write the same `resizedSize` state as the drag handlers. The arming guard's logic lives in `started-elsewhere-guard.ts`; what it adds here is the prop's doc, the focus branch, and the unarmed look, none of which can leave."
     },
-    "apps/desktop/src/routes/(main)/command-dispatch.test-harness.ts": {
-      "lines": 805,
-      "reason": "A test harness, not logic: about 90 of its lines are `EXEMPT_IDS`, the deliberately independent copy of every dispatch-exempt command id (one per line, so the characterization suite never trusts the list it checks), and that list grows with each fixed-key command. The rest is the shared mock wiring every `command-dispatch.*.test.ts` file mounts."
-    },
     "apps/desktop/src/routes/(main)/+page.svelte": {
       "lines": 1057,
       "reason": "TODO: Script 661 / markup 134 / style 90, plus ~60 markup lines of one `DialogBoundary` per dialog, which have to sit here, above each dialog's `{#if}`, for a teardown throw to find a live boundary (`apps/desktop/src/DETAILS.md` § \"Error boundaries\"). The route's `CLAUDE.md` is right that `$state` belongs here and logic leaves through setter-and-getter contexts, and most of it already has (`startup-gates.ts`, `window-services.ts`, `command-dispatch.ts`, `listener-setup.ts`, `global-keydown.ts`, `mouse-nav.ts`). Licensing is the holdout: `showExpiredModal`, `expiredOrgName`, `expiredAt`, `showCommercialReminder`, `showAboutWindow`, `showLicenseKeyDialog`, and `licenseIsPersonalUse`, their five `handle*Close` and `handleLicenseKeySuccess` handlers, and the roughly 30-line `loadLicenseStatus` block in `onMount` come to about 110 lines nothing else on the page reads. Move them into a `licensing-dialogs.svelte.ts` trigger module beside the `licensing-store.svelte.ts` they already call, exactly how `whats-new-trigger.svelte.ts`, `acknowledgements-trigger.svelte.ts`, `operation-log-trigger.svelte.ts`, and `suggested-ops-trigger.svelte.ts` already serve four of the dialogs in this same markup; the page then renders off `licensingDialogsState.*` and `windowTitle` reads one getter."
+    },
+    "apps/desktop/src/routes/(main)/command-dispatch.test-harness.ts": {
+      "lines": 805,
+      "reason": "A test harness, not logic: about 90 of its lines are `EXEMPT_IDS`, the deliberately independent copy of every dispatch-exempt command id (one per line, so the characterization suite never trusts the list it checks), and that list grows with each fixed-key command. The rest is the shared mock wiring every `command-dispatch.*.test.ts` file mounts."
     },
     "apps/desktop/src/routes/debug/DebugSmbDiagnosticsPanel.svelte": {
       "lines": 1040,
@@ -177,13 +177,13 @@
       "lines": 1115,
       "reason": "One long-form page a security reviewer reads top to bottom and links into by anchor: each `\u003ch2\u003e` is prose plus thin loops over `src/lib/trust.ts`, which already holds the list data, and the deeper topics already have their own pages under `trust/`. Moving a section into a component would only hide copy from the page that owns it. Grew with the 2026-10-29 full review against 0.57.0, which added what the page was missing (proxy scope, removal steps, CRA risks). Grew again with #805 (2026-11-05): the EU answer, the paragraph for reviewers outside the EU, the SOC 2 substitutes, and the subprocessor change commitment with its signup form and dated log."
     },
-    "crates/cmdr-about/src/model_tests.rs": {
-      "lines": 1236,
-      "reason": "the egress line's tests: `every_field_that_leaves_names_its_disclosure_item` must see every fixture card that reaches a key path, so the fixtures sit beside it; splitting the fixtures out would let a new projection field slip past the one test that files it under a consent line"
-    },
     "crates/cmdr-about/src/model.rs": {
       "lines": 1125,
       "reason": "the one egress projection: each output type sits beside the no-`..` destructuring that stops a new fact field from leaving unread, so splitting types from `for_model` would spread the egress line over files a reviewer has to hold together; its tests already live in `model_tests.rs`"
+    },
+    "crates/cmdr-about/src/model_tests.rs": {
+      "lines": 1236,
+      "reason": "the egress line's tests: `every_field_that_leaves_names_its_disclosure_item` must see every fixture card that reaches a key path, so the fixtures sit beside it; splitting the fixtures out would let a new projection field slip past the one test that files it under a consent line"
     },
     "crates/cmdr-archive/src/volume.rs": {
       "lines": 842,
@@ -245,9 +245,9 @@
       "lines": 1262,
       "reason": "TODO: split along the section banners the file already draws, into the per-concern `*_tests.rs` siblings this directory keeps (`kick_tests.rs`, `live_tests.rs`, `reclaim_tests.rs`, `coalescing_tests.rs`). The CLIP two-part-staleness group (`clip_state`, `clip_pass`, `model_absent_is_vision_only_no_clip_embedding`, `installing_clip_embeds_without_re_running_vision`, `a_clip_model_bump_re_embeds_without_touching_vision`, `delete_clip_model_removes_the_model_and_every_volumes_embeddings`) is roughly 210 lines over a different pass, and the live scoped-walk group (`seed_media`, `touched`, the two `walk_in_dirs_*`, `scoped_gc_spares_rows_in_untouched_dirs`, `whole_store_gc_over_a_scoped_walk_would_wipe_untouched_dirs`, `a_scoped_tick_promotes_a_lone_raw_and_gcs_the_deleted_jpg`) another roughly 205. Move them to `enrich_clip_tests.rs` and `enrich_scoped_tests.rs`, importing `build_index` / `media_writer` / `no_op_hooks` from here the way `live_tests.rs` already imports from `kick_tests.rs`, leaving roughly 850 lines of core-pass, GC, throttle, and progress tests."
     },
-    "crates/cmdr-local/src/local_posix.rs": {
-      "lines": 940,
-      "reason": "TODO: the `impl Volume for LocalPosixVolume` block plus the query and mutation bodies it can't spread across files. `scan` and `streams` already moved to `local_posix/`; the mutation bodies (create, delete, rename, `apply_metadata`) should follow into `local_posix/mutations.rs` as `pub(super)` inherent methods with one-line delegators here, the shape `cmdr-sftp` and `cmdr-smb` use. (The crate-root `mutation.rs` is the listing patch, a different concern.)"
+    "crates/cmdr-local/src/platform/local_posix.rs": {
+      "lines": 972,
+      "reason": "TODO: the `impl Volume for LocalPosixVolume` block plus the query and mutation bodies it can't spread across files. `scan` and `streams` already moved to `local_posix/`; the mutation bodies (create, delete, rename, `apply_metadata`) should follow into `local_posix/mutations.rs` as `pub(crate)` inherent methods with one-line delegators here, the shape `cmdr-sftp` and `cmdr-smb` use. (The crate-root `mutation.rs` is the listing patch, a different concern.) Moved here from the crate root when `LocalWindowsVolume` became its sibling under `platform/`."
     },
     "crates/cmdr-mtp/src/connection/directory_ops.rs": {
       "lines": 983,

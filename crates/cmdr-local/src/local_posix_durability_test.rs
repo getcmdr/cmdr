@@ -2,6 +2,8 @@
 //! `flush_writes`: each file handed to the drive as it lands, one device barrier
 //! for all of them at the close (#1145).
 
+#![cfg(unix)]
+
 use super::*;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::host::VolumeHost;

@@ -533,11 +533,8 @@
     "crates/cmdr-local/src/lib.rs": {
       "outsideSeam": 5
     },
-    "crates/cmdr-local/src/local_posix.rs": {
-      "outsideSeam": 3
-    },
     "crates/cmdr-local/src/reading.rs": {
-      "outsideSeam": 18
+      "outsideSeam": 6
     },
     "crates/cmdr-local/src/space.rs": {
       "outsideSeam": 4

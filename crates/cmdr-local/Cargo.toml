@@ -5,10 +5,6 @@ edition = "2024"
 license = "LicenseRef-BSL-1.1"
 publish = false
 
-[package.metadata.cmdr]
-# Not on Windows yet; see `docs/tooling/ci.md` § Windows lane.
-platforms = ["linux", "macos"]
-
 # The house lint set lives in the workspace root's `[workspace.lints]`, so this
 # crate can't quietly become a lint-free zone. `unused_crate_dependencies` is the
 # one lint that stays at the crate root instead (it's judged per compilation unit).
@@ -40,18 +36,25 @@ log = "0.4"
 # `spawn_blocking` for every `std::fs` call a `Volume` method makes, so a slow
 # disk never stalls the async executor. `rt` only: the backend builds no runtime.
 tokio = { version = "1", features = ["rt"] }
-# The copy scan's subtree walk (`LocalPosixVolume::scan_subtree`).
-walkdir = "2"
 
 # The POSIX half: this backend is a Unix one (`LocalPosixVolume`), and neither
 # builds for Windows the way it's used here (`xattr` imports `std::os::unix`
 # unconditionally; every `libc` call is a POSIX one).
 [target.'cfg(unix)'.dependencies]
+# The copy scan's subtree walk (`LocalPosixVolume::scan_subtree`). Unix until the Windows
+# volume grows its copy scan (task 35).
+walkdir = "2"
 # Reading and writing extended attributes for `Volume`'s xattr methods (Finder tags).
 xattr = "1"
 # The no-replace rename (`renamex_np` / `renameat2`), `statvfs`, `statfs`,
 # `getfsstat`, and the `st_flags` bits a listing reads.
 libc = "0.2"
+
+# The Windows half (`LocalWindowsVolume`): `MoveFileExW` for the no-replace rename and
+# `GetDiskFreeSpaceExW` for space. The version `cmdr-fs` already uses, so no second copy
+# enters the graph.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem"] }
 
 # NSURL resource values: volume space (important-usage, purgeable counted), the
 # volume names and ejectability `volumes/` enriches with, and a file's added and
