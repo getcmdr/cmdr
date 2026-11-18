@@ -1,0 +1,81 @@
+{
+  "about": "Which branch of a `{platform, select, …}` block each running system reads, so every resolver agrees: `selectReaderFor` + `pickPlatformBranch` + `t()` (platform-select-cases.test.ts), the old-WebKit boot guard's `pickText` (gen-boot-guard-lib.test.ts), the native-strings generator (gen-native-strings.test.ts), and Rust's `native_strings::pick` (native_strings.rs). `systems` maps a platform plus its Linux desktop (`convention('linuxDesktop')`, `null` off Linux) to the reader; `blocks` gives what each reader sees. `linux` is any other desktop and reads `other`. Mechanism: `DETAILS.md` § Platform variants.",
+  "systems": [
+    { "platform": "macos", "linuxDesktop": null, "reader": "macos" },
+    { "platform": "windows", "linuxDesktop": null, "reader": "windows" },
+    { "platform": "linux", "linuxDesktop": "gnome", "reader": "linuxGnome" },
+    { "platform": "linux", "linuxDesktop": "kde", "reader": "linuxKde" },
+    { "platform": "linux", "linuxDesktop": "other", "reader": "linux" },
+    { "platform": "linux", "linuxDesktop": null, "reader": "linux" },
+    { "platform": "macos", "linuxDesktop": "kde", "reader": "macos" },
+    { "platform": "windows", "linuxDesktop": "gnome", "reader": "windows" }
+  ],
+  "blocks": [
+    {
+      "name": "a plain value reads the same everywhere",
+      "value": "Settings",
+      "reads": {
+        "macos": "Settings",
+        "windows": "Settings",
+        "linuxGnome": "Settings",
+        "linuxKde": "Settings",
+        "linux": "Settings"
+      }
+    },
+    {
+      "name": "a three-OS block: both desktops read other",
+      "value": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} other {Show in file manager}}",
+      "reads": {
+        "macos": "Show in Finder",
+        "windows": "Show in File Explorer",
+        "linuxGnome": "Show in file manager",
+        "linuxKde": "Show in file manager",
+        "linux": "Show in file manager"
+      }
+    },
+    {
+      "name": "no windows branch: Windows reads other",
+      "value": "{platform, select, macos {Move to Trash} other {Delete}}",
+      "reads": {
+        "macos": "Move to Trash",
+        "windows": "Delete",
+        "linuxGnome": "Delete",
+        "linuxKde": "Delete",
+        "linux": "Delete"
+      }
+    },
+    {
+      "name": "both desktop branches: each desktop reads its own, any other desktop and Windows read other",
+      "value": "{platform, select, macos {Show in Finder} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Show in file manager}}",
+      "reads": {
+        "macos": "Show in Finder",
+        "windows": "Show in file manager",
+        "linuxGnome": "Show in Files",
+        "linuxKde": "Show in Dolphin",
+        "linux": "Show in file manager"
+      }
+    },
+    {
+      "name": "only a KDE branch: GNOME reads other",
+      "value": "{platform, select, macos {Keychain} windows {Credential Manager} linuxKde {KWallet} other {your keyring}}",
+      "reads": {
+        "macos": "Keychain",
+        "windows": "Credential Manager",
+        "linuxGnome": "your keyring",
+        "linuxKde": "KWallet",
+        "linux": "your keyring"
+      }
+    },
+    {
+      "name": "only a GNOME branch: KDE reads other",
+      "value": "{platform, select, linuxGnome {Files} other {your file manager}}",
+      "reads": {
+        "macos": "your file manager",
+        "windows": "your file manager",
+        "linuxGnome": "Files",
+        "linuxKde": "your file manager",
+        "linux": "your file manager"
+      }
+    }
+  ]
+}

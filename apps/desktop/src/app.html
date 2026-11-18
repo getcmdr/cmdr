@@ -68,13 +68,20 @@
         }
 
         // A text is a plain string or a platform block's baked branches. The backend's
-        // init script defines `__CMDR_PLATFORM__` before this runs; `linux`, a missing
-        // global, or one naming no branch reads `other`, as `pickPlatformBranch` does.
+        // init script defines `__CMDR_PLATFORM__` and `__CMDR_CONVENTIONS__` before this
+        // runs. Linux reads its desktop's branch (`linuxGnome`, `linuxKde`) where the block
+        // has one; any other desktop, a missing global, or one naming no branch reads
+        // `other`, as `pickPlatformBranch` does (`platform-select-cases.json`).
         function pickText(text) {
           if (typeof text === 'string') return text
-          var platform = window.__CMDR_PLATFORM__
-          if (typeof platform === 'string' && Object.prototype.hasOwnProperty.call(text, platform)) {
-            return text[platform]
+          var reader = window.__CMDR_PLATFORM__
+          if (reader === 'linux') {
+            var conventions = window.__CMDR_CONVENTIONS__
+            var desktop = conventions ? conventions.linuxDesktop : null
+            reader = desktop === 'gnome' ? 'linuxGnome' : desktop === 'kde' ? 'linuxKde' : 'other'
+          }
+          if (typeof reader === 'string' && Object.prototype.hasOwnProperty.call(text, reader)) {
+            return text[reader]
           }
           return text.other
         }

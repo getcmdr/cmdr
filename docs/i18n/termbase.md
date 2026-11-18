@@ -146,10 +146,10 @@ fork table `apps/desktop/scripts/i18n-en-overlays.test.ts` mirrors.
 - `windows` / `other` (optional): per-OS forms, `{ chosen, accept?, proseAccept?, avoid?, note? }` (same field rules as
   the ruling's own), for a concept a Windows or Linux UI names differently from macOS (Portuguese Windows says "Excluir"
   where a macOS ruling may list it under `avoid`). The drift check judges a platform block's `windows` branch against
-  `windows` and its `other` branch (Linux, plus Windows where the block has no `windows` branch) against `other`, each
-  REPLACING the base forms for that branch; a branch whose OS has no forms, a `macos` branch, and a plain value all meet
-  the base ruling. `exceptions` and `decision` stay ruling-wide. The brief prints them beside the base form. Add them
-  only once a translated branch needs them; no locale carries any yet.
+  `windows` and its `other`, `linuxGnome`, and `linuxKde` branches (Linux, plus Windows where the block has no `windows`
+  branch) against `other`, each REPLACING the base forms for that branch; a branch whose OS has no forms, a `macos`
+  branch, and a plain value all meet the base ruling. `exceptions` and `decision` stay ruling-wide. The brief prints
+  them beside the base form. Add them only once a translated branch needs them; no locale carries any yet.
 - A concept this locale deliberately keeps English still gets an entry, with `chosen` = the English form.
 - A locale may omit concepts it has no ruling for; the brief then says "no ruling" for it.
 
@@ -310,9 +310,10 @@ The translator's one write path into a catalog. `--lang <tag> --values <file.jso
   exactly.
 - `--values` defaults to `values.json` in the language's newest run directory, and the expected keys to the `keys.txt`
   beside the values file.
-- The values file maps key → a string (the whole value), `{ "macos"?, "windows"?, "other"? }` (a per-OS value given
-  branch by branch: a branch left out keeps what that OS reads in the catalog now), or `null` (an overlay drops its
-  fork). `"@<key>": { "sameAsSourceJustification": "…" }` records a justification, ARB-style as in the catalogs.
+- The values file maps key → a string (the whole value),
+  `{ "macos"?, "windows"?, "linuxGnome"?, "linuxKde"?, "other"? }` (a per-OS value given branch by branch, naming only
+  branches the source has: a branch left out keeps what that OS reads in the catalog now), or `null` (an overlay drops
+  its fork). `"@<key>": { "sameAsSourceJustification": "…" }` records a justification, ARB-style as in the catalogs.
 - The whole batch is planned first, and one refused value writes nothing. Refused: a key English lacks; a key a full
   translation's catalog lacks (it names the `sync-locale-keys.ts` call); placeholder/tag parity, ICU validity and
   raw-family apostrophes, the per-OS block shape, and plural coverage, each by the ERROR-class check's own function; a

@@ -87,9 +87,11 @@ branch takes its own OS's term. The rule and the branch-to-OS map are canonical 
    - `windows` mines `<tag>/microsoft-terminology/` and `<tag>/microsoft-style-guides/`, and the Microsoft term wins:
      pt-BR "Excluir" is right THERE. Mirror the English branch's register (Trash: "Delete" as a label, "the Recycle Bin"
      in a sentence; Quit: "Exit" as an action, "close" in narration; `docs/style-guide.md` § "Platform vocabulary").
-   - `other` (Linux) mines `<tag>/gnome-nautilus/`, `<tag>/kde-dolphin/`, and `<tag>/xfce-thunar/` and picks the word
-     they share, or the desktop-neutral one where they split. Desktop-specific words (GNOME's, KDE's) wait for the
-     per-desktop value (Windows port plan task 59).
+   - `linuxGnome` (Linux on GNOME) mines `<tag>/gnome-nautilus/` and `linuxKde` (Linux on KDE Plasma)
+     `<tag>/kde-dolphin/`, each taking that desktop's own word: the English branch names the desktop's app (Files,
+     Dolphin, Passwords and Keys, KWallet), so translate it the way that desktop's catalog does.
+   - `other` (every other Linux desktop) mines `<tag>/gnome-nautilus/`, `<tag>/kde-dolphin/`, and `<tag>/xfce-thunar/`
+     and picks the word they share, or the desktop-neutral one where they split.
    - A plain value shows on every OS: the word the OSes share, else the macOS Finder term, with the key logged in
      `docs/i18n/source-queue.md` as needing a per-OS value. The Microsoft entry is then a tiebreak below macOS. (Same
      shape as the formality trap in `../i18n/reference-pile/how-to-mine.md` § "Source-quality traps", trap 5.)

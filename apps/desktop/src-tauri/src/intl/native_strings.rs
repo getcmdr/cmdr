@@ -19,6 +19,7 @@
 use std::sync::RwLock;
 
 use crate::ignore_poison::RwLockIgnorePoison as _;
+use crate::platform::LinuxDesktop;
 
 // The table is generated from the message catalogs. The `#[path]` keeps the
 // `.gen.rs` spelling the repo already uses to mark a generated artifact.
@@ -41,12 +42,14 @@ pub(crate) struct LocaleStrings {
     pub(crate) entries: &'static [(&'static str, NativeText)],
 }
 
-/// One native string's text: the same on every OS, or one text per OS.
+/// One native string's text: the same on every OS, or one text per system.
 ///
 /// `PerOs` is what a catalog platform block (`{platform, select, …}`) becomes.
 /// The generator has already resolved a branch the block omits to `other`, so
-/// every field is the text that OS reads. The table carries every OS's text, a
-/// few KB, so the generated file needs no OS `cfg`; [`pick`] chooses at lookup.
+/// every field is the text that system reads (Linux on GNOME and on KDE each
+/// have one). The table carries every system's text, a few KB, so the generated
+/// file needs no OS `cfg`; [`pick`] chooses at lookup. Which system reads which
+/// field is pinned against the frontend by `platform-select-cases.json`.
 ///
 /// `PartialEq` compares the WHOLE value on purpose: an overlay that forks only
 /// its Windows text still forks something.
@@ -60,13 +63,17 @@ pub(crate) enum NativeText {
     PerOs {
         macos: &'static str,
         windows: &'static str,
-        /// Linux, and any OS without a branch of its own.
+        /// Linux on GNOME (the block's `linuxGnome` branch, else `other`).
+        linux_gnome: &'static str,
+        /// Linux on KDE Plasma (the block's `linuxKde` branch, else `other`).
+        linux_kde: &'static str,
+        /// Linux on any other desktop, and any OS without a branch of its own.
         other: &'static str,
     },
 }
 
-/// Which OS's text [`pick`] reads. The running OS's answer is
-/// `platform::NATIVE_TEXT_OS`, one per seam arm.
+/// Which system's text [`pick`] reads. The running system's answer is
+/// `platform::native_text_os()`, one per seam arm (Linux's names its desktop).
 ///
 /// ❌ Never derive it from `cmdr-menu`'s `Platform`: that one answers Linux on
 /// Windows, so Windows would read Linux words.
@@ -78,17 +85,25 @@ pub(crate) enum NativeText {
 pub(crate) enum NativeOs {
     MacOs,
     Windows,
-    Linux,
+    Linux(LinuxDesktop),
 }
 
-/// `text` as `os` reads it. Pure, so one test covers every OS on any host.
+/// `text` as `os` reads it. Pure, so one test covers every system on any host.
 fn pick(text: NativeText, os: NativeOs) -> &'static str {
     match text {
         NativeText::All(value) => value,
-        NativeText::PerOs { macos, windows, other } => match os {
+        NativeText::PerOs {
+            macos,
+            windows,
+            linux_gnome,
+            linux_kde,
+            other,
+        } => match os {
             NativeOs::MacOs => macos,
             NativeOs::Windows => windows,
-            NativeOs::Linux => other,
+            NativeOs::Linux(LinuxDesktop::Gnome) => linux_gnome,
+            NativeOs::Linux(LinuxDesktop::Kde) => linux_kde,
+            NativeOs::Linux(LinuxDesktop::Other) => other,
         },
     }
 }
@@ -205,7 +220,7 @@ fn expand_tokens(value: &str, args: &[(&str, &str)]) -> String {
 
 /// The value for `key` in `locale`'s table, as the running OS reads it, or `None`.
 fn lookup(locale: &str, key: &str) -> Option<&'static str> {
-    lookup_text(locale, key).map(|text| pick(text, super::platform::NATIVE_TEXT_OS))
+    lookup_text(locale, key).map(|text| pick(text, super::platform::native_text_os()))
 }
 
 /// The whole value for `key` in `locale`'s table, every OS's text, or `None`.
@@ -288,24 +303,9 @@ mod tests {
     use super::*;
 
     impl NativeText {
-        /// Every OS's text, so a rule about labels holds for the ones this host never reads.
-        fn every_os(self) -> [&'static str; 3] {
-            [NativeOs::MacOs, NativeOs::Windows, NativeOs::Linux].map(|os| pick(self, os))
-        }
-    }
-
-    #[test]
-    fn each_os_reads_its_own_text_and_a_plain_value_reads_the_same_everywhere() {
-        let per_os = NativeText::PerOs {
-            macos: "Show in Finder",
-            windows: "Show in File Explorer",
-            other: "Show in file manager",
-        };
-        assert_eq!(pick(per_os, NativeOs::MacOs), "Show in Finder");
-        assert_eq!(pick(per_os, NativeOs::Windows), "Show in File Explorer");
-        assert_eq!(pick(per_os, NativeOs::Linux), "Show in file manager");
-        for os in [NativeOs::MacOs, NativeOs::Windows, NativeOs::Linux] {
-            assert_eq!(pick(NativeText::All("File"), os), "File");
+        /// Every system's text, so a rule about labels holds for the ones this host never reads.
+        fn every_os(self) -> [&'static str; 5] {
+            per_os_test::EVERY_OS.map(|os| pick(self, os))
         }
     }
 
@@ -336,11 +336,11 @@ mod tests {
         let text = lookup_text(BASE_LOCALE, key).expect("the menu bar's key is in the English table");
         assert_eq!(pick(text, NativeOs::MacOs), "Show in Finder");
         assert_eq!(pick(text, NativeOs::Windows), "Show in File Explorer");
-        assert_eq!(pick(text, NativeOs::Linux), "Show in file manager");
+        assert_eq!(pick(text, NativeOs::Linux(LinuxDesktop::Other)), "Show in file manager");
         // This host reads its own arm's text through the same lookup the menu uses.
         assert_eq!(
             lookup(BASE_LOCALE, key),
-            Some(pick(text, super::super::platform::NATIVE_TEXT_OS))
+            Some(pick(text, super::super::platform::native_text_os()))
         );
         // The macOS-only key it replaced is gone, in every language.
         for locale in NATIVE_STRINGS {
@@ -603,6 +603,8 @@ mod tests {
         NativeText::PerOs {
             macos: "Move to Trash",
             windows,
+            linux_gnome: "Move to Bin",
+            linux_kde: "Move to Bin",
             other: "Move to Bin",
         }
     }

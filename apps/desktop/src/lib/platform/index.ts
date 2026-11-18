@@ -17,6 +17,7 @@ export {
   CONVENTIONS_ON,
   convention,
   FALLBACK_CONVENTIONS,
+  linuxDesktop,
   platformConventions,
   type ConventionsDesktop,
   type PlatformConventions,

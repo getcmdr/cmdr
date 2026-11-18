@@ -5,7 +5,9 @@ use super::super::native_strings::NativeOs;
 
 /// Native strings read their `windows` text here. Never Linux's: `cmdr-menu`'s `Platform`
 /// folds Windows into Linux, which is why text doesn't ask it.
-pub(crate) const NATIVE_TEXT_OS: NativeOs = NativeOs::Windows;
+pub(crate) fn native_text_os() -> NativeOs {
+    NativeOs::Windows
+}
 
 /// `None`: the webview's own default stands.
 pub(crate) fn webview_ui_locale() -> Option<String> {

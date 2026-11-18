@@ -44,7 +44,8 @@ Two locale sources: the UI LANGUAGE for catalog text and numbers, the OS REGION 
 - **Error copy uses `getMessage()` (raw), NOT `t()`/ICU**: its `{system_settings}` tokens and `esc()` entities collide
   with ICU.
 - **Per-OS copy is one whole-value `{platform, select, …}` block**: `t()` injects `platform`, `getMessage()` splits
-  (`platform-select.ts`). Vitest runs as Linux. `DETAILS.md` § Platform variants.
+  (`platform-select.ts`); GNOME/KDE read `linuxGnome`/`linuxKde` first. Vitest runs as Linux. `DETAILS.md` § Platform
+  variants.
 - **An app-path param goes in as `pathParam(path)`**; ❌ nothing guesses, a plain string stays prose. `DETAILS.md` §
   Path params.
 - **`<Trans>` renders tag content via a zero-arg `{#snippet content()}`** (`invalid_snippet_arguments`). No `{@html}`,
@@ -52,8 +53,8 @@ Two locale sources: the UI LANGUAGE for catalog text and numbers, the OS REGION 
 - **Only the runtime writes `<html lang>`** (`setLocale()` and the startup catalog), with the RESOLVED catalog tag
   (`ja-JP` → `en`). ❌ No per-window write.
 - **Copy reads `getUiLocale()`, numbers and joins `getCatalogLocale()`, dates `getFormatLocale()`; nothing else resolves
-  a locale.** Numbers follow the language (English UI, Swedish Mac: `612.00 MB`); dates keep the region. Month NAMES are
-  language, the week start beside them region.
+  a locale.** Numbers follow the language (English UI, Swedish Mac: `612.00 MB`); dates keep the region (month names:
+  language, week start: region).
 - **Format ONLY through this layer + `#lib/settings/format-utils`** (`formatInteger`/`formatNumber`,
   `formatSizeForDisplay`, `formatDateForDisplay`). ❌ Never hardcode a locale or build an `Intl` formatter in feature
   code (`cmdr/no-raw-locale-format`).

@@ -32,6 +32,7 @@ import { pickPlatformBranch } from '../src/lib/intl/platform-select.ts'
 import {
   BASE_LOCALE,
   RENDERED_PLATFORMS,
+  distinctReaders,
   carriesSourceOn,
   loadCatalog,
   pendingTranslationOf,
@@ -96,9 +97,12 @@ export function quotedLabelPairs(english: Record<string, string>): QuotedLabelPa
       }
     }
   }
-  return [...pairs.values()].map(({ platforms, ...pair }) =>
-    platforms?.length === RENDERED_PLATFORMS.length ? pair : { ...pair, platforms },
-  )
+  return [...pairs.values()].map(({ platforms = [], ...pair }) => {
+    // A Linux desktop with no branch of its own in these keys reads what plain Linux reads: drop the repeat.
+    const readers = distinctReaders([english[pair.key], ...pair.sources.map((source) => english[source])])
+    const own = platforms.filter((platform) => readers.includes(platform))
+    return own.length === readers.length ? pair : { ...pair, platforms: own }
+  })
 }
 
 /**

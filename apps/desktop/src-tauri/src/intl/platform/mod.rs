@@ -12,11 +12,12 @@ mod locale_env;
 
 const _: fn() -> Option<String> = webview_ui_locale;
 const _: fn() -> String = os_ui_locale;
-const _: super::native_strings::NativeOs = NATIVE_TEXT_OS;
+const _: fn() -> super::native_strings::NativeOs = native_text_os;
 
-/// Which OS's text a native string reads when its catalog value is a platform block.
-/// `native_strings::pick` does the choosing; only this answer is per-OS.
-pub(crate) use imp::NATIVE_TEXT_OS;
+/// Which system's text a native string reads when its catalog value is a platform block (on
+/// Linux, this session's desktop). `native_strings::pick` does the choosing; only this answer
+/// is per-OS.
+pub(crate) use imp::native_text_os;
 
 /// The catalog the OS asks the WEBVIEW to open, or `None` when the OS has no answer of its own
 /// and the webview's default should stand. Read fresh on every call, so a live change shows.
@@ -37,11 +38,19 @@ mod tests {
         let host = [
             (cfg!(target_os = "macos"), NativeOs::MacOs),
             (cfg!(target_os = "windows"), NativeOs::Windows),
-            (cfg!(target_os = "linux"), NativeOs::Linux),
+            (
+                cfg!(target_os = "linux"),
+                NativeOs::Linux(crate::platform::LinuxDesktop::Other),
+            ),
         ]
         .into_iter()
         .find_map(|(is_host, os)| is_host.then_some(os))
         .expect("the app builds only for macOS, Windows, and Linux");
-        assert_eq!(super::NATIVE_TEXT_OS, host);
+        // Linux names the desktop too; the OS is what an arm can get wrong by copying.
+        let os_only = |os: NativeOs| match os {
+            NativeOs::Linux(_) => NativeOs::Linux(crate::platform::LinuxDesktop::Other),
+            other => other,
+        };
+        assert_eq!(os_only(super::native_text_os()), host);
     }
 }

@@ -60,6 +60,7 @@ export {
   RENDERED_PLATFORMS,
   branchReader,
   carriesSourceOn,
+  distinctReaders,
   formatPlatformBranches,
   judgedBranchPairs,
   pairPlatformBranches,

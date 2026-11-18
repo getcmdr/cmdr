@@ -51,6 +51,7 @@ import {
   BASE_LOCALE,
   RENDERED_PLATFORMS,
   carriesSourceOn,
+  distinctReaders,
   isCheckedLocale,
   isRawKey,
   layerCatalogs,
@@ -115,16 +116,15 @@ export function ariaPairs(source: Catalog): AriaPair[] {
     const labelKey = match[1]
     if (!(labelKey in source.messages)) continue
     // Per rendered OS, never per branch name: either key may be a platform block while the other isn't.
-    const held = RENDERED_PLATFORMS.filter((platform) =>
+    const readers = distinctReaders([source.messages[ariaKey], source.messages[labelKey]])
+    const held = readers.filter((platform) =>
       containsLabel(
         pickPlatformBranch(source.messages[ariaKey], platform),
         pickPlatformBranch(source.messages[labelKey], platform),
       ),
     )
     if (held.length === 0) continue
-    pairs.push(
-      held.length === RENDERED_PLATFORMS.length ? { labelKey, ariaKey } : { labelKey, ariaKey, platforms: held },
-    )
+    pairs.push(held.length === readers.length ? { labelKey, ariaKey } : { labelKey, ariaKey, platforms: held })
   }
   return pairs.sort((a, b) => a.ariaKey.localeCompare(b.ariaKey))
 }

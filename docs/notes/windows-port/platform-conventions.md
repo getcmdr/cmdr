@@ -111,8 +111,3 @@ secondary sources, not confirmed on a primary page.
 - `linuxDesktop`: from `XDG_CURRENT_DESKTOP` (the freedesktop.org desktop-entry spec's registered names,
   colon-separated, most specific first; unverified on the spec page this time): the first `GNOME` or `KDE` entry
   decides, so Ubuntu's `ubuntu:GNOME` and Budgie's `Budgie:GNOME` read as GNOME. Anything else is `other`.
-
-## Left
-
-- Copy that splits by Linux desktop ([#1231](https://github.com/getcmdr/cmdr/issues/1231)): the value exists, but the
-  message catalog selects only on the platform.

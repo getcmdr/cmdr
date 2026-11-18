@@ -37,10 +37,21 @@ function setGlobal(name: string, value: unknown): () => void {
  * helper, so it writes the global itself.
  *
  * It moves the platform only, never the capabilities: a test of a feature says which capability
- * it needs with {@link withCapabilities}.
+ * it needs with {@link withCapabilities}. On Linux, `desktop` also moves the conventions to that
+ * desktop's row ({@link withConventions}), so `withPlatform('linux', 'kde')` reads a catalog
+ * block's `linuxKde` branch; without it the conventions stay as they are (the fallback's
+ * desktop-neutral row unless a test moved them).
  */
-export function withPlatform(platform: Platform): () => void {
-  return setGlobal(PLATFORM_GLOBAL, platform)
+export function withPlatform(platform: Platform): () => void
+export function withPlatform(platform: 'linux', desktop: 'gnome' | 'kde' | 'other'): () => void
+export function withPlatform(platform: Platform, desktop?: 'gnome' | 'kde' | 'other'): () => void {
+  const undoPlatform = setGlobal(PLATFORM_GLOBAL, platform)
+  if (desktop === undefined) return undoPlatform
+  const undoConventions = withConventions(desktop === 'other' ? 'otherLinux' : desktop)
+  return () => {
+    undoConventions()
+    undoPlatform()
+  }
 }
 
 /** A capability set offering exactly `granted`, for code that takes one as data. */

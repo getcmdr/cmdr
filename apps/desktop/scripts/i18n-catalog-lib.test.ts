@@ -423,8 +423,8 @@ describe('carriesSourceOn', () => {
   it('is never true for a plain source: an identical whole value is coverage’s question', () => {
     expect(carriesSourceOn('Finder', 'Finder', 'macos')).toBe(false)
   })
-  it('covers every OS a reader runs', () => {
-    expect(RENDERED_PLATFORMS).toEqual(['macos', 'windows', 'linux'])
+  it('covers every OS a reader runs, and each Linux desktop with branches of its own', () => {
+    expect(RENDERED_PLATFORMS).toEqual(['macos', 'windows', 'linuxGnome', 'linuxKde', 'linux'])
   })
 })
 

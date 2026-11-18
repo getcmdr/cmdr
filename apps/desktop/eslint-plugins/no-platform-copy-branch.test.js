@@ -23,6 +23,11 @@ tsTester.run('cmdr/no-platform-copy-branch', rule, {
       filename: ts,
     },
     { code: `if (hasCapability('get_info')) items.push(t('commands.fileGetInfo.label'))`, filename: ts },
+    // A convention that isn't the desktop (dialog order, access keys) is behavior, not a copy pick.
+    {
+      code: `const label = convention('dialogButtonOrder') === 'cancelFirst' ? t('common.cancel') : t('common.ok')`,
+      filename: ts,
+    },
     // Key-glyph formatting is not copy: a shortcut reads in its OS's symbols.
     {
       code: `const hint = getEffectiveShortcuts('file.deletePermanently')[0] ?? (isMacOS() ? '⇧F8' : 'Shift+F8')`,
@@ -70,6 +75,17 @@ tsTester.run('cmdr/no-platform-copy-branch', rule, {
     },
     {
       code: `const nameKey = { macos: 'commands.appQuit.mac.label', windows: 'commands.appQuit.windows.label', linux: 'commands.appQuit.other.label' }[getPlatform()]`,
+      filename: ts,
+      errors: [{ messageId: 'platformCopyBranch' }],
+    },
+    // A Linux desktop test picking copy: the desktop is a block's `linuxGnome` / `linuxKde` branch.
+    {
+      code: `const label = linuxDesktop() === 'kde' ? t('menu.app.settingsKde') : t('menu.app.settings')`,
+      filename: ts,
+      errors: [{ messageId: 'platformCopyBranch' }],
+    },
+    {
+      code: `const label = convention('linuxDesktop') === 'gnome' ? 'settings.prefs.gnome' : 'settings.prefs.other'`,
       filename: ts,
       errors: [{ messageId: 'platformCopyBranch' }],
     },

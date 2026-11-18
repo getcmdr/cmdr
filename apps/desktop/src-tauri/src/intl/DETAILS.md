@@ -361,9 +361,15 @@ English's.
 
 A native catalog value may be a platform block (`{platform, select, macos {…} windows {…} other {…}}`, the shape and
 the splitter: `apps/desktop/src/lib/intl/DETAILS.md` § "Platform variants"). The generator splits it with that same
-splitter and emits each entry as a `NativeText`: `All("…")` for a plain value, or `PerOs { macos, windows, other }`
-with a branch the block omits already resolved to `other`. `lookup` hands the entry to the pure `pick(text, os)`, and
-the OS comes from `platform::NATIVE_TEXT_OS`, one answer per arm of the `intl/platform/` seam (Linux reads `other`).
+splitter and emits each entry as a `NativeText`: `All("…")` for a plain value, or
+`PerOs { macos, windows, linux_gnome, linux_kde, other }` with a branch the block omits already resolved to `other`.
+`lookup` hands the entry to the pure `pick(text, os)`, and the system comes from `platform::native_text_os()`, one
+answer per arm of the `intl/platform/` seam. The Linux arm names this session's desktop
+(`NativeOs::Linux(LinuxDesktop)`, from `crate::platform::conventions()`, the answer the webview's `linuxDesktop` gets),
+so the menu bar reads a block's `linuxGnome` / `linuxKde` branch on those desktops and `other` elsewhere.
+`platform-select-cases.json`, shared with the frontend resolvers, pins which field each system reads
+(`native_strings_per_os_test.rs`). The debug-only `CMDR_MOCK_CONVENTIONS` moves the webview alone, so a mocked desktop
+shows in the window and not in the native menu bar.
 
 - **Why every OS's text ships in every binary**: a few KB of labels buys a generated file with no OS `cfg`, which
   would otherwise sit outside a seam (`desktop-rust-platform-cfg-placement`). `menu_t`'s signature and callers stay.

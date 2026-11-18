@@ -220,38 +220,61 @@ agents add its translations.
 
 ### Platform variants
 
-A value that reads differently per OS is ONE whole-value block, `{platform, select, macos {…} windows {…} other {…}}`,
-in every family. `other` is Linux and every context without a backend (Vitest, a plain browser); a block carries at
-least two of the three branches, `other` always, in that order and canonical spelling (`{platform, select, ` with one
+A value that reads differently per OS is ONE whole-value block,
+`{platform, select, macos {…} windows {…} linuxGnome {…} linuxKde {…} other {…}}`, in every family. `other` is every
+Linux desktop without a branch of its own, and every context without a backend (Vitest, a plain browser); a block
+carries at least two branches, `other` always, in that order and canonical spelling (`{platform, select, ` with one
 space after each comma). Never a block inside a sentence, never `{platform}` interpolated.
 
-- **ICU family**: `t()` and `tStringIn()` share one private `format()` that passes `{ ...params, platform }`
-  (`getPlatform()`, last so no caller overrides it; a frozen `{ platform }` per OS when there are no params). The engine
-  does the select, so plurals nested in a branch work and `Trans.svelte` needs nothing. `platform` is a format ARG, not
-  part of the compiled cache's key, so one compiled message serves a platform flip. `TranslationParams` carries
+- **Linux desktops are flat branches, not a nested select** (#1231). A running system is a READER
+  (`PlatformSelectReader`: `macos`, `windows`, `linuxGnome`, `linuxKde`, or `linux`),
+  `selectReaderFor(platform, linuxDesktop)` names it (the desktop is `convention('linuxDesktop')`, asked only on Linux,
+  so macOS and Windows resolve exactly by platform), and a reader reads its own branch where the block has one, else
+  `other`. A block without desktop branches reads exactly as before on every desktop. Write a desktop branch only where
+  that desktop's own UI says it differently (style guide § "Platform vocabulary"); a source branch equal to `other`
+  fails the shape check. **Decision/Why flat**: one level keeps every reader a lookup with one fallback (the raw
+  splitter, the ES5 boot guard, Rust's table), a nested `{desktop, select}` inside `other` would need a second injected
+  arg and a second split in each, and translators see every system's text side by side.
+- **One shared table keeps the resolvers in agreement**: `platform-select-cases.json` (which reader each platform plus
+  desktop is, and what each reader reads from sample blocks) is passed by `platform-select-cases.test.ts` (`t()`,
+  `getMessage()`, the splitter), `app-boot-guard.test.ts` (the ES5 `pickText`), `gen-native-strings.test.ts` (the
+  generator's folding), and Rust's `native_strings_per_os_test.rs` (`pick`). The Go check runner has no resolver: its
+  `desktop-i18n-platform-select` runs the TypeScript check.
+- **ICU family**: `t()` and `tStringIn()` share one private `format()` that passes `{ ...params, platform }` (the
+  reader, last so no caller overrides it; a frozen `{ platform }` per reader when there are no params). The engine does
+  the select, and its own `other` fallback is the desktop fallback (plain Linux passes `linux`, which no branch names),
+  so plurals nested in a branch work and `Trans.svelte` needs nothing. `platform` is a format ARG, not part of the
+  compiled cache's key, so one compiled message serves a platform flip. `TranslationParams` carries
   `& { platform?: never }`: passing it is a type error (a plain `Omit` on a `Record<string, …>` would do nothing), and
   `i18n-tag-param-collision` reserves the name, since a `<platform>` tag would shadow the injected arg.
 - **Raw families**: `platform-select.ts` is the one splitter. `parsePlatformSelect()` brace-matches with ICU's
   apostrophe quoting (`''` literal; a lone `'` before `{`, `}`, `<`, or `>` opens a run the next lone `'` closes), and
-  answers `null` for anything that isn't a well-formed block. `pickPlatformBranch(value, platform)` maps `linux` and a
+  answers `null` for anything that isn't a well-formed block. `pickPlatformBranch(value, reader)` maps `linux` and a
   missing branch to `other` and returns a non-block unchanged. `getMessage()` runs it behind a prefix test, so raw
-  `errors.*` and any ICU key read raw get this OS's branch. A raw body therefore never has a lone `'` before `{`, `}`,
-  `<`, or `>`: ICU would quote there and the raw reader wouldn't, and a native key (`menu.*`) is read both ways
+  `errors.*` and any ICU key read raw get this system's branch. A raw body therefore never has a lone `'` before `{`,
+  `}`, `<`, or `>`: ICU would quote there and the raw reader wouldn't, and a native key (`menu.*`) is read both ways
   (`row-menu.ts` formats `menu.volume.eject` through `t()`).
 - **The old-WebKit boot guard** runs before this runtime exists, so the build bakes each block's branches and the ES5
-  guard picks one from `window.__CMDR_PLATFORM__` (`../utils/DETAILS.md` § Old-WebKit boot guard).
+  guard picks one from `window.__CMDR_PLATFORM__` plus, on Linux, `__CMDR_CONVENTIONS__.linuxDesktop`
+  (`../utils/DETAILS.md` § Old-WebKit boot guard).
+- **Native strings** (`menu.*`): the generator resolves every block to five texts (`PerOs`), and Rust's
+  `native_text_os()` names this session's desktop from the same conventions the webview gets
+  (`src-tauri/src/intl/DETAILS.md`).
 - **Other readers**: the macOS-copy test reads each value's macOS branch through `pickPlatformBranch`. A script that
-  needs a branch imports the same file by path (it's dependency-free for that); ❌ never a second splitter. The i18n
-  checks read text through `platformBranches()` / `pairPlatformBranches()` in `scripts/i18n-catalog-lib.ts` (parity,
-  plural, and coverage compare each locale branch with the source's same branch; word sweeps such as the overlay tests
-  read `visibleText()`; generators write a block back with `formatPlatformBranches()`). The JUDGING checks
-  (dont-translate, termbase, mechanics, term consistency) skip a translating locale's branch that is still
-  byte-identical to English, since that is pending translation and stale's worklist (`judgedBranchPairs`,
-  `pendingTranslationOf`); the two that pair KEYS (aria containment, quoted labels) compare per rendered OS
-  (`pickPlatformBranch` for each of `RENDERED_PLATFORMS`), since a block key and a plain one share no branch names. The
-  termbase judges each branch against its OS's optional `windows` / `other` forms (`docs/i18n/termbase.md`). And
-  `desktop-i18n-platform-select` enforces every rule above, plus each locale's branch set matching its source's, in
-  every catalog including `en`.
+  needs a branch imports the same file by path (it's dependency-free for that); ❌ never a second splitter, and ❌ never
+  a hand-written branch list (`PLATFORM_SELECT_BRANCHES`, `PLATFORM_SELECT_READERS`). The i18n checks read text through
+  `platformBranches()` / `pairPlatformBranches()` in `scripts/i18n-catalog-lib.ts` (parity, plural, and coverage compare
+  each locale branch with the source's same branch; word sweeps such as the overlay tests read `visibleText()`;
+  generators write a block back with `formatPlatformBranches()`). The JUDGING checks (dont-translate, termbase,
+  mechanics, term consistency) skip a translating locale's branch that is still byte-identical to English, since that is
+  pending translation and stale's worklist (`judgedBranchPairs`, `pendingTranslationOf`); the two that pair KEYS (aria
+  containment, quoted labels) compare per rendered system (`pickPlatformBranch` for each of `RENDERED_PLATFORMS`, the
+  readers), since a block key and a plain one share no branch names. They walk a Linux desktop only where one of the
+  keys has its branch (`distinctReaders`); elsewhere it reads plain Linux's text and would repeat every Linux finding.
+  Term consistency drops a desktop group none of whose members has that desktop's branch, for the same reason. The
+  termbase judges each branch against its OS's optional `windows` / `other` forms, a desktop branch against `other`'s
+  (`docs/i18n/termbase.md`). And `desktop-i18n-platform-select` enforces every rule above, plus each locale's branch set
+  matching its source's, in every catalog including `en`.
 - **No OS test picks copy**: `cmdr/no-platform-copy-branch` (`apps/desktop/eslint-plugins/`) flags a ternary, `if`,
   `{#if}`, `&&` / `||`, `switch`, or lookup testing `isMacOS()` / `getPlatform()` (or a name bound to one) whose arms
   resolve copy (`t`, `tString`, `tStringIn`, `getMessage`, `<Trans>`, or a key-shaped string literal). Whether a surface
@@ -262,7 +285,8 @@ space after each comma). Never a block inside a sentence, never `{platform}` int
   text and asks no platform question. Only the source decides that: `desktop-i18n-platform-select` fails a locale branch
   that is empty where its source's has text (a blank label on that OS, which no other check reads), or the reverse.
 - **Tests**: `withPlatform('macos' | 'windows' | 'linux')` from `#lib/platform/test-platform` moves both the select and
-  the split; Vitest's fallback is Linux, so an assertion on macOS text names macOS.
+  the split, and `withPlatform('linux', 'gnome' | 'kde')` the desktop too (it moves the conventions to that row);
+  Vitest's fallback is Linux on no named desktop, so an assertion on macOS text names macOS.
 
 ### Path params
 
@@ -293,6 +317,9 @@ fails ANY plain `en` value that types a macOS key glyph (⌘, ⌥, ⌃, ⇧): a 
 `{combo}` param (`../shortcuts/DETAILS.md` § Shortcuts as text), and a sentence naming the glyphs themselves keeps them
 in its `macos` branch.
 
+- **A desktop branch is a branch-set edit like any other.** Add `linuxGnome` / `linuxKde` only with words that desktop's
+  own UI or docs use (cite them in `docs/notes/windows-port/copy-glossary-evidence.md`), and keep `other`
+  desktop-neutral for Xfce, Cinnamon, and the rest. Windows still reads `other`, never a desktop branch.
 - **Windows reads `other` only by decision.** A block with no `windows` branch says "Windows reads what Linux reads".
   Where Windows keeps the macOS text while Linux differs, write `macos` and `windows` as two equal branches, so Windows
   never falls through to Linux words by omission.

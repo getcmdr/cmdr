@@ -67,7 +67,6 @@ export function platformConventions(): PlatformConventions {
   >
   const fallback = FALLBACK_CONVENTIONS
   const readers: unknown = answered.screenReaders
-  const linuxDesktop = answered.linuxDesktop
   return {
     dialogButtonOrder: oneOf(DIALOG_BUTTON_ORDERS, answered.dialogButtonOrder, fallback.dialogButtonOrder),
     enterActivates: oneOf(ENTER_ACTIVATES, answered.enterActivates, fallback.enterActivates),
@@ -80,11 +79,24 @@ export function platformConventions(): PlatformConventions {
       (readers as unknown[]).every((reader) => SCREEN_READERS.includes(reader as ScreenReader))
         ? [...(readers as ScreenReader[])]
         : [...fallback.screenReaders],
-    linuxDesktop:
-      linuxDesktop === null || LINUX_DESKTOPS.includes(linuxDesktop as LinuxDesktop)
-        ? (linuxDesktop as LinuxDesktop | null)
-        : fallback.linuxDesktop,
+    linuxDesktop: validLinuxDesktop(answered.linuxDesktop),
   }
+}
+
+function validLinuxDesktop(value: unknown): LinuxDesktop | null {
+  return value === null || LINUX_DESKTOPS.includes(value as LinuxDesktop)
+    ? (value as LinuxDesktop | null)
+    : FALLBACK_CONVENTIONS.linuxDesktop
+}
+
+/**
+ * The Linux desktop alone (`convention('linuxDesktop')`), without building the whole set: the
+ * message runtime asks it on every `t()` on Linux, to pick a platform block's desktop branch.
+ */
+export function linuxDesktop(): LinuxDesktop | null {
+  const injected = (globalThis as Record<string, unknown>)[CONVENTIONS_GLOBAL]
+  if (typeof injected !== 'object' || injected === null) return FALLBACK_CONVENTIONS.linuxDesktop
+  return validLinuxDesktop((injected as Partial<Record<keyof PlatformConventions, unknown>>).linuxDesktop)
 }
 
 /** One convention of this platform, for example `convention('dialogButtonOrder')`. */

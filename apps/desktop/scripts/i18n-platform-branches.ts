@@ -11,8 +11,14 @@
  * `src/lib/intl/DETAILS.md` § Platform variants.
  */
 
-import { PLATFORM_SELECT_PREFIX, parsePlatformSelect, pickPlatformBranch } from '../src/lib/intl/platform-select.ts'
-import type { PlatformSelectBranch } from '../src/lib/intl/platform-select.ts'
+import {
+  PLATFORM_SELECT_BRANCHES,
+  PLATFORM_SELECT_PREFIX,
+  PLATFORM_SELECT_READERS,
+  parsePlatformSelect,
+  pickPlatformBranch,
+} from '../src/lib/intl/platform-select.ts'
+import type { PlatformSelectBranch, PlatformSelectReader } from '../src/lib/intl/platform-select.ts'
 
 /** One branch of a value, as `platformBranches` reads it. `name` is `null` for a value that isn't a block. */
 export interface PlatformBranch {
@@ -20,22 +26,42 @@ export interface PlatformBranch {
   text: string
 }
 
-/** An OS `pickPlatformBranch` renders for. */
-export type RenderedPlatform = 'macos' | 'windows' | 'linux'
+/** A system `pickPlatformBranch` renders for: an OS, or a Linux desktop with branches of its own. */
+export type RenderedPlatform = PlatformSelectReader
 
-/** Every OS a reader renders on, for a check that compares what two KEYS show side by side. */
-export const RENDERED_PLATFORMS: readonly RenderedPlatform[] = Object.freeze(['macos', 'windows', 'linux'])
+/** Every system a reader renders on, for a check that compares what two KEYS show side by side. */
+export const RENDERED_PLATFORMS: readonly RenderedPlatform[] = PLATFORM_SELECT_READERS
 
-const BRANCH_ORDER: readonly PlatformSelectBranch[] = ['macos', 'windows', 'other']
+const BRANCH_ORDER: readonly PlatformSelectBranch[] = PLATFORM_SELECT_BRANCHES
 
-/** The OS that reads a branch name: `other` is Linux's (and every backend-less context's). */
+/**
+ * The systems that each see something of their own in `values`: macOS, Windows, and plain
+ * Linux always; a Linux desktop (`linuxGnome`, `linuxKde`) only where one of the values carries
+ * its branch, since elsewhere it reads exactly what plain Linux reads and a check walking it
+ * would report every Linux finding three times. For a check that compares KEYS per system.
+ * @param values the catalog values the comparison reads (either family, any locale)
+ */
+export function distinctReaders(values: readonly (string | undefined)[]): RenderedPlatform[] {
+  const blocks = values.flatMap((value) => {
+    const branches = value === undefined ? null : parsePlatformSelect(value)
+    return branches === null ? [] : [branches]
+  })
+  return RENDERED_PLATFORMS.filter(
+    (reader) =>
+      (reader !== 'linuxGnome' && reader !== 'linuxKde') || blocks.some((branches) => branches[reader] !== undefined),
+  )
+}
+
+/** The system that reads a branch name: `other` is plain Linux's (and every backend-less context's). */
 const BRANCH_READER: Readonly<Record<PlatformSelectBranch, RenderedPlatform>> = {
   macos: 'macos',
   windows: 'windows',
+  linuxGnome: 'linuxGnome',
+  linuxKde: 'linuxKde',
   other: 'linux',
 }
 
-/** The OS that reads a platform branch (`other` is Linux's, and every backend-less context's). */
+/** The system that reads a platform branch (`other` is plain Linux's, and every backend-less context's). */
 export function branchReader(name: PlatformSelectBranch): RenderedPlatform {
   return BRANCH_READER[name]
 }

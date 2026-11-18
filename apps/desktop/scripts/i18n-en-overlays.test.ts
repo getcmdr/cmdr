@@ -31,7 +31,7 @@ import { describe, expect, it } from 'vitest'
 
 import { pickPlatformBranch } from '../src/lib/intl/platform-select.ts'
 import {
-  RENDERED_PLATFORMS,
+  distinctReaders,
   loadCatalog,
   isRawKey,
   isSearchKeywordsKey,
@@ -379,7 +379,8 @@ function brokenAriaNames(tag: string, base: Record<string, string>, overlay: Rec
   for (const ariaKey of ariaKeys) {
     for (const labelKey of labelKeys) {
       if (family(labelKey) !== family(ariaKey)) continue
-      for (const platform of RENDERED_PLATFORMS) {
+      const readers = distinctReaders([base[labelKey], base[ariaKey], overlay[labelKey], overlay[ariaKey]])
+      for (const platform of readers) {
         const labelValue = pickPlatformBranch(base[labelKey], platform)
         if (labelValue.length < 4 || !pickPlatformBranch(base[ariaKey], platform).includes(labelValue)) continue
         const ariaValue = overlay[ariaKey] ?? base[ariaKey]

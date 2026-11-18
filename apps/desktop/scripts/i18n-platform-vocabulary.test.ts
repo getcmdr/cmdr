@@ -1,6 +1,6 @@
 /**
- * The wrong-OS-word net over English platform blocks: no `windows` or `other`
- * branch of an `en` value names a macOS thing (Finder, Keychain, ⌘, a
+ * The wrong-OS-word net over English platform blocks: no `windows` or Linux
+ * (`linuxGnome`, `linuxKde`, `other`) branch of an `en` value names a macOS thing (Finder, Keychain, ⌘, a
  * `{system_settings}`-style token), and neither borrows the other's words
  * (Trash, Quit, or Terminal on Windows; Recycle Bin or "disconnect" on Linux).
  * The words are `docs/style-guide.md` § "Platform vocabulary". Reads the catalogs
@@ -63,11 +63,11 @@ const EXCEPTIONS: Readonly<Record<string, string>> = {
     'open on Windows (no Windows metadata bodies yet), so it keeps the macOS text until they land',
 }
 
-/** Every wrong-OS word in `value`'s `windows` and `other` branches, as `<key> <branch>: <rule>`. */
+/** Every wrong-OS word in `value`'s Windows and Linux branches, as `<key> <branch>: <rule>`. */
 function wrongOsWords(key: string, value: string): string[] {
   const hits: string[] = []
   for (const { name, text } of platformBranches(value)) {
-    if (name !== 'windows' && name !== 'other') continue
+    if (name === null || name === 'macos') continue
     const visible = visibleText(key, text)
     const rules = [
       ...MACOS_WORDS.filter(({ pattern }) => pattern.test(visible)).map(({ rule }) => rule),
@@ -109,6 +109,11 @@ describe('wrongOsWords', () => {
       'commands.x.label windows: macOS word “Finder”',
       'commands.x.label other: “Recycle Bin” on Linux: “Trash”',
     ])
+  })
+
+  it('reads a Linux desktop branch as Linux', () => {
+    const value = '{platform, select, macos {Show in Finder} linuxKde {Show in Finder} other {Show in file manager}}'
+    expect(wrongOsWords('commands.x.label', value)).toEqual(['commands.x.label linuxKde: macOS word “Finder”'])
   })
 
   it('reads a raw block branch by branch and catches a macOS-only token', () => {

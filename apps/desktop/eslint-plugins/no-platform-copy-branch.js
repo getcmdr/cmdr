@@ -12,8 +12,8 @@
  * stays legal, copy and all.
  *
  * Flags a ternary, an `if`, a Svelte `{#if}`, an `&&` / `||`, a `switch`, or a
- * lookup (`{ macos: … }[getPlatform()]`) whose TEST calls `isMacOS()` or
- * `getPlatform()` (directly, or through a name bound to one: `const mac =
+ * lookup (`{ macos: … }[getPlatform()]`) whose TEST calls `isMacOS()`,
+ * `getPlatform()`, or a Linux desktop reader (`linuxDesktop()`, `convention('linuxDesktop')`) (directly, or through a name bound to one: `const mac =
  * isMacOS()`) and whose ARMS resolve copy: a call to `t`, `tString`, `tStringIn`,
  * or `getMessage`, a `<Trans>` element, or a string literal shaped like a message
  * key (`commands.fileGetInfo.label`, `fileLocked.suggestion`: dotted
@@ -25,8 +25,8 @@
  *   // eslint-disable-next-line cmdr/no-platform-copy-branch -- <reason>
  */
 
-/** The `#lib/platform` readers that answer "which OS?". */
-const PLATFORM_FUNCTIONS = new Set(['isMacOS', 'getPlatform'])
+/** The `#lib/platform` readers that answer "which OS?", or on Linux "which desktop?". */
+const PLATFORM_FUNCTIONS = new Set(['isMacOS', 'getPlatform', 'linuxDesktop'])
 
 /** The runtime's copy resolvers (`#lib/intl`). */
 const COPY_FUNCTIONS = new Set(['t', 'tString', 'tStringIn', 'getMessage'])
@@ -62,7 +62,14 @@ function calleeName(call) {
   return undefined
 }
 
-const isPlatformCall = (node) => node.type === 'CallExpression' && PLATFORM_FUNCTIONS.has(calleeName(node))
+/** `convention('linuxDesktop')` asks the desktop, the same question as `linuxDesktop()`. */
+const isDesktopConvention = (node) =>
+  calleeName(node) === 'convention' &&
+  node.arguments[0]?.type === 'Literal' &&
+  node.arguments[0].value === 'linuxDesktop'
+
+const isPlatformCall = (node) =>
+  node.type === 'CallExpression' && (PLATFORM_FUNCTIONS.has(calleeName(node)) || isDesktopConvention(node))
 
 /** Whether a subtree resolves copy: a resolver call, a `<Trans>`, or a key-shaped string literal. */
 function resolvesCopy(node) {

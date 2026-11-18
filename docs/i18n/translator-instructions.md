@@ -66,10 +66,14 @@ style guide disagree, the style guide's general rule wins unless the ruling says
     files. ❌ Never edit or regenerate the baseline, and ❌ never fix a macOS text just to restyle it: a Mac user
     already reads it.
   - **Where each OS's word lives** in the pile: `macos` mines `macOS/`; `windows` mines `microsoft-terminology/` (the
-    TBX) and `microsoft-style-guides/`; `other` mines `gnome-nautilus/`, `kde-dolphin/`, and `xfce-thunar/`, taking the
-    word they share, or the desktop-neutral one where they split (GNOME- or KDE-only words wait for per-desktop text).
-    The TBX has no "This PC" or "user folder", and its "home folder" is a different sense (a folder an admin assigns on
-    a server); where the pile lacks the OS's word, choose by the evidence you have and record it `tentative`.
+    TBX) and `microsoft-style-guides/`; `linuxGnome` (Linux on GNOME) mines `gnome-nautilus/` and takes GNOME's own word
+    (the English names GNOME's apps: Files, Passwords and Keys, Settings); `linuxKde` (Linux on KDE Plasma) mines
+    `kde-dolphin/` and takes KDE's (Dolphin, KWallet, System Settings); `other` (every other Linux desktop) mines
+    `gnome-nautilus/`, `kde-dolphin/`, and `xfce-thunar/`, taking the word they share, or the desktop-neutral one where
+    they split. A localized app name follows that desktop's own catalog (GNOME ships "Files" translated, KDE keeps
+    "Dolphin" and "KWallet" as names). The TBX has no "This PC" or "user folder", and its "home folder" is a different
+    sense (a folder an admin assigns on a server); where the pile lacks the OS's word, choose by the evidence you have
+    and record it `tentative`.
   - **Two registers on Windows**, which the English branch already picks: Trash is "Delete" as an action's name (a
     button, menu row, or command) and "the Recycle Bin" in a sentence; Quit is "Exit" as an action and "close" when Cmdr
     is the subject ("Cmdr closes"). Use {{LANGUAGE}} Windows' own word for each, in the same register.
