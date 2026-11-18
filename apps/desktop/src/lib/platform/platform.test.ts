@@ -151,6 +151,19 @@ describe('applyPlatformAttributes', () => {
     const root = document.createElement('html')
     applyPlatformAttributes(root)
     expect(root.getAttribute('data-platform')).toBe('macos')
+    expect(root.getAttribute('data-look')).toBe('macos')
+  })
+
+  it('gives the menus a mocked desktop look, while the platform stays put', () => {
+    onTestFinished(withPlatform('macos'))
+    host[COPY_PLATFORM_GLOBAL] = 'windows'
+    onTestFinished(() => {
+      Reflect.deleteProperty(host, COPY_PLATFORM_GLOBAL)
+    })
+    const root = document.createElement('html')
+    applyPlatformAttributes(root)
+    expect(root.getAttribute('data-platform')).toBe('macos')
+    expect(root.getAttribute('data-look')).toBe('windows')
   })
 
   it('marks an overlay title bar only where the OS offers one', () => {

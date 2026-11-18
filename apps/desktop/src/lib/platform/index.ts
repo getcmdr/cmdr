@@ -48,9 +48,9 @@ export function getPlatform(): Platform {
 export const COPY_PLATFORM_GLOBAL = '__CMDR_COPY_PLATFORM__'
 
 /**
- * The OS whose catalog branch this window's copy reads: {@link getPlatform}, unless a dev run
- * mocks another desktop's conventions. For the message runtime alone; ❌ never for a capability,
- * a key, or a habit.
+ * The OS whose catalog branch this window's copy reads, and whose look its menus wear
+ * (`data-look`): {@link getPlatform}, unless a dev run mocks another desktop's conventions. For
+ * the message runtime and `data-look` alone; ❌ never for a capability, a key, or a habit.
  */
 export function getCopyPlatform(): Platform {
   const mocked = (globalThis as Record<string, unknown>)[COPY_PLATFORM_GLOBAL]
@@ -119,12 +119,14 @@ export function hasCapability(capability: Capability): boolean {
 }
 
 /**
- * Writes `data-platform` on `<html>`, and `data-overlay-title-bar` where the page draws the title
- * bar, so CSS can follow both (`app.css` § Window chrome). Called once per window, before the first
- * route renders (`hooks.client.ts`).
+ * Writes `data-platform` on `<html>`, `data-look` (whose OS look the menus wear, `app-menu.css`),
+ * and `data-overlay-title-bar` where the page draws the title bar, so CSS can follow them
+ * (`app.css` § Window chrome). Called once per window, before the first route renders
+ * (`hooks.client.ts`).
  */
 export function applyPlatformAttributes(root: HTMLElement = document.documentElement): void {
   root.dataset.platform = getPlatform()
+  root.dataset.look = getCopyPlatform()
   if (hasCapability('overlayTitleBar')) root.dataset.overlayTitleBar = ''
   else delete root.dataset.overlayTitleBar
 }
