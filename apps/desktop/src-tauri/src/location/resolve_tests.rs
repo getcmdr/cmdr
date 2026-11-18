@@ -224,3 +224,31 @@ fn location_input_reads_the_flat_pair_and_drops_an_empty_volume_id() {
     assert_eq!(LocationInput::from_params(&params), Some(named("root", "/x")));
     assert_eq!(LocationInput::from_params(&serde_json::json!({ "path": "" })), None);
 }
+
+/// What every tool that takes a place does TODAY with a trailing `/`, a `..`, a `.`,
+/// and a doubled `/`: the resolver keeps the text byte for byte, so the volume (and so
+/// the OS) reads it, and on a local disk `link/` follows the link and `link/..` is the
+/// target's parent (`cmdr-local`'s `wire_path_shape_test.rs`). The app-path type flips
+/// this at the boundary: a trailing `/` dropped, a `..` resolved by the volume or
+/// refused. #1225.
+#[test]
+fn a_trailing_slash_and_a_dot_dot_reach_the_volume_as_typed_today() {
+    for path in [
+        "/Volumes/testshare-1/x/link/",
+        "/Volumes/testshare-1/x/link/../y",
+        "/Volumes/testshare-1/x/./y",
+        "/Volumes/testshare-1//x",
+    ] {
+        let resolved = resolve(&facts(), &bare(path)).expect("the LAN share holds it");
+        assert_eq!(resolved.location.volume_id, LAN, "{path}");
+        assert_eq!(resolved.location.path, path, "kept byte for byte: {path}");
+        let named = resolve(&facts(), &named(LAN, path)).expect("named, the same");
+        assert_eq!(named.location.path, path, "named: {path}");
+    }
+    // A `..` that climbs out of the share's text is still placed by that text: nothing
+    // resolves it before a volume is picked.
+    let climbing = "/Volumes/testshare-1/../testshare/x";
+    let resolved = resolve(&facts(), &bare(climbing)).expect("placed by its text");
+    assert_eq!(resolved.location.volume_id, LAN);
+    assert_eq!(resolved.location.path, climbing);
+}

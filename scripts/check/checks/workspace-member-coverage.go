@@ -38,6 +38,7 @@ type ScannerJurisdiction struct {
 // source scanner reaches. Adding a scanner without an entry fails this check.
 var rustScannerJurisdictions = map[string]ScannerJurisdiction{
 	"desktop-rust-lock-poison":            {Kinds: []MemberKind{KindApp, KindTool}},
+	"desktop-rust-app-path-std-bridge":    {Kinds: []MemberKind{KindApp, KindTool}},
 	"desktop-rust-platform-cfg-placement": {Kinds: []MemberKind{KindApp, KindTool}},
 	"desktop-rust-log-private-values":     {Kinds: []MemberKind{KindApp, KindTool}},
 	"desktop-rust-error-string-match":     {Kinds: []MemberKind{KindApp, KindTool}},

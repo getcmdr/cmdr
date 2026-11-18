@@ -46,15 +46,22 @@ the next section.
   `crates/cmdr-webdav/DETAILS.md` § "Silent or slow") and `tls.rs` (their connect probes' TLS-refusal test, by the typed
   `io::ErrorKind`); `app_paths.rs` (whether an app path sits under a volume root, segment-wise, and rebasing it onto a
   moved root); `remote_paths.rs` (a server tree's `<scheme>://user@host:port` app spelling, and the ONE translation);
-  `path_grammar/` (the app-path grammar every OS shares: the `/`, `C:/`, and `//server/share/` roots, the `AppPath`
-  newtype, and the one conversion to Windows' `\\?\` native form; its module doc is canonical); `friendly_error/`
-  (typed, word-free classification); `usb_speed.rs` (❗ its doc comment reaches `bindings.ts`); `in_memory.rs` (the
-  store and its knobs; `in_memory/volume_impl.rs` is its `impl Volume`; `src/volume/in_memory/imports.rs` its door for
-  outside bytes, the browser demo's dropped files, stored as real bytes beside the synthetic ones, no clobber);
-  `conformance.rs` (+ `conformance/directory_creation.rs`, the three `create_directory_all` promises, and
+  `path_grammar/` (the app-path grammar as TEXT, the frontend twin's: the `/`, `C:/`, and `//server/share/` roots and
+  the string helpers, `..` resolved lexically as they always were; its module doc is canonical); the path pins beside it
+  (`path_arithmetic_pin_test.rs` over the case table's `arithmetic` rows, `path_helper_pin_test.rs`,
+  `path_order_pin_test.rs`, and `list_alloc_ceiling_test.rs`) hold today's macOS and Linux answers for the typed app
+  path conversion (#1225), ❌ never edited to green one; `friendly_error/` (typed, word-free classification);
+  `usb_speed.rs` (❗ its doc comment reaches `bindings.ts`); `in_memory.rs` (the store and its knobs;
+  `in_memory/volume_impl.rs` is its `impl Volume`; `src/volume/in_memory/imports.rs` its door for outside bytes, the
+  browser demo's dropped files, stored as real bytes beside the synthetic ones, no clobber); `conformance.rs` (+
+  `conformance/directory_creation.rs`, the three `create_directory_all` promises, and
   `conformance/modification_date.rs`, the two date ones, `src/volume/conformance/xattrs.rs`, the xattr one, and
   `src/volume/conformance/link_landing.rs`, what `can_hold_links` promises); and `host/` (what a backend needs from the
   app, as named traits; read `src/volume/host/CLAUDE.md` before writing a backend).
+- `app_path/`: the typed app path. `mod.rs` (the types and their arithmetic), `parse.rs` (normalizing and validating
+  text), `escape.rs` (the lossless escape), `native.rs` (the pure native conversions), `bridge.rs` (the transition
+  bridge), `shape.rs` (root shapes and the compared components), `platform/` (the `OsStr` and `PathBuf` crossing per
+  OS). § "App paths".
 - `entry.rs` + `icons/`: `FileEntry` and the classifiers behind `get_icon_id`.
 - `sqlite_util.rs`: the ONE process-wide page-cache slab, the connection factories every store opens through, and the
   one way a database file is deleted. `src/sqlite_util/thread_conn_cache.rs` is the per-thread read-connection cache and
@@ -118,7 +125,8 @@ the next section.
 - `mapped_file_faults/`: the SIGBUS recovery that turns a read of a mapped file whose disk went away into zeros, and the
   generation a reader checks to distrust what it read meanwhile. § "Mapped-file faults".
 - `testing/`: behind the `testing` feature. `TestDir`, the two waits, and `unique_test_id` (a pid-and-counter key for a
-  test-owned entry in a global map) in `mod.rs`; `platform/` (the OS half of the fixtures: `symlink`, `is_root`,
+  test-owned entry in a global map) in `mod.rs`; `alloc_count.rs` (a counting global allocator a test binary installs,
+  for the allocation-ceiling cells); `platform/` (the OS half of the fixtures: `symlink`, `is_root`,
   `can_create_symlinks`, and Unix's `make_fifo`, so a test asks a capability rather than an OS and no test calls
   `std::os::unix::fs::symlink` or `geteuid` itself); `tcp_proxy.rs` (`TcpProxy`, a loopback proxy a network backend's
   test puts in front of a shared Docker fixture to cut the connection, refused or silent, without touching a container
@@ -126,6 +134,126 @@ the next section.
   guarded runner, § "`testing::disk_images`") and `metadata_fixture.rs` (files and folders carrying birth, flags, an
   ACL, xattrs, and mode, for the copy-keeps-metadata cells; its `Drop` unlocks and strips ACLs so a Locked leftover
   can't fail the cleanup).
+
+## App paths
+
+The path a pane, a `Volume` method, a `FileEntry`, and the wire hold is an APP path: a root, then names joined by `/`
+(`/Users/x`, `C:/Users/x`, `//server/share/x`, `sftp://u@h:22/srv/x`). `std::path` applies the HOST's rules to such
+text, so on Windows a `join` or `parent` adds `\` to a remote path, reads `a:b` as a drive, and reparses a drive path.
+`app_path` is the type that does the arithmetic itself, the same on every OS, and crosses to the OS only at named
+boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225); this section is its durable home.
+
+- **The types**: `AppPath` (borrowed, unsized, like `Path`) and `AppPathBuf`; `RelativeAppPath`, a validated tail;
+  `AppName` / `AppNameBuf`, one plain name in APP spelling, the only thing `join` takes. ❌ No `From`, `AsRef`, or
+  `Deref` to or from `std::path`, ever: "unrepresentable" would stop being true the day one landed. Construction is
+  named and greppable: `parse(text, flavor)`, `from_wire` (the host's flavor), `from_external_text(text, flavor, namer)`
+  (machine-handed text, literal) and `from_person_typed` (the address bar: Windows trailing dots and spaces go),
+  `from_normalized` (zero-copy, this host's shapes; `from_normalized_as` for a test of the other), `from_native` (this
+  host; `from_native_as`), and `app_path!` in tests. Arithmetic: `join`, `join_relative`, `parent`, `file_name`,
+  `extension`, `file_stem`, `with_file_name`, `names`, `root`, `starts_with` / `strip_prefix` (exact, never across
+  roots), `rebase`, and the volume-root matches below. ❗ On a bridge value (`/a//b/`, `C:\x\y`) the arithmetic is right
+  in release builds too, ❌ never a debug-only check (review 2's N6: `C:\x\y` sat under no `C:\x`):
+  `app_path/lenient.rs` answers slices as `Path` would, and reads `join`, `strip_prefix`, and the volume-root matches
+  through the canonical twin (`to_canonical`), so typed output is canonical; a value with none (a `..`, no root) joins
+  with a typed refusal and sits under nothing. `strip_prefix` answers a `Cow`: borrowed for canonical values.
+- **Two name worlds, one door each** (Decision/Why): `AppName::from_app_spelling(&str)` takes a BACKEND-spelled name (a
+  `FileEntry.name`, its escapes live); `AppNameBuf::from_native_os(&OsStr)` (and `from_native_bytes` /
+  `from_native_units`) takes a name a native API holds, escaping what isn't valid text and a literal escape code point
+  as literal; `from_typed(text, namer)` takes typed text. `volume::ChildName` (over `&OsStr`) is the `std::path` world's
+  name and has NO app-path join: reading its text as app spelling respells nothing today but would, once escapes exist,
+  turn a live escape into a literal one and land a copy of `caf\xE9.txt` under a different name. The wrong combination
+  has no API.
+- **Canonical form**: no empty, `.`, or `..` name, no trailing `/` except the root's own; every root ends in `/` (`/`,
+  `C:/`, `//server/share/`, `scheme://authority/`). The drive letter is uppercased; nothing else is folded, and the
+  Unicode form is never touched (NFC and NFD `café` are two values). `parse` normalizes into it, `from_normalized` takes
+  exactly its fixed points (a property test). A one-letter scheme is a drive (`C://x` is `C:/x`).
+- **❗ `..` is refused, never resolved by text**: on POSIX the OS resolves `/a/link/../x` through the link, so a lexical
+  answer can retarget a delete. Typed `..` is the volume's answer (the app's resolver). The text helpers in
+  `volume/path_grammar` still resolve it lexically, the answer the frontend twin and their callers pin; new code speaks
+  the type.
+- **The `/` root on a Windows host** is a valid value (the in-memory volume and fixtures use it), fenced at both edges:
+  `from_wire` parses with the host flavor, which refuses `/x`, and `to_native` refuses it (`WrongFlavor`), since Win32
+  would read it as the CURRENT drive's root.
+- **Names that aren't valid Unicode text** (Linux bytes, Windows unpaired surrogates) are spelled losslessly, one
+  plane-16 private-use code point per rejected unit: byte escapes U+10FE80–U+10FEFF, unit escapes U+10E800–U+10EFFF.
+  Every escape is a scalar value (a `String`, JSON, SQLite `TEXT`, and a JS string all carry it), and private use has no
+  case mapping or decomposition, so folding can't merge one. Rejected: PEP 383's lone surrogates (not scalar values),
+  WTF-8 (not UTF-8), and the BMP private-use area (Nerd Fonts and Apple's SFM live there).
+- **❗ The escape gate**: app TEXT turned into a `std::path` value (`Path::new(&entry.path)`, `PathBuf::from(&path)`,
+  `OsStr::new(p.as_str())`) is the identity only while no name holds an escape; with one, the `Path` carries the
+  escape's own UTF-8 bytes and `std::fs` opens a file literally named with it. The sound half is the type's: no app-path
+  type converts to `std::path` or to the text one is built from (`AsRef`, `Borrow<str>`, `Deref<Target = str>`, `Into`;
+  compile-asserted in `app_path/tests.rs`), so a typed carrier can't reach a `Path` constructor except through `as_str`
+  / `into_string` / `Display`, which milestone 10f bans by type (`clippy.toml`). `app-path-std-bridge`'s two text
+  budgets (`appTextToPath`, `pathFromBareText`) are a tripwire and a meter, ❌ not a proof (no scan sees a `let`,
+  `.into()`, or an `impl AsRef<Path>` parameter): while either is above zero it refuses a production escape producer in
+  any spelling, and it always refuses OS text (`to_str()`, `to_string_lossy()`) handed to an app-spelling door. Before
+  10f a typed crossing is `from_native_unicode` / `from_native_os_unicode`: no escape, a typed `NotUnicode` for a name
+  that would need one. `docs/specs/app-path-plan.md` § "Keeping it that way" holds the whole design.
+- **One spelling per native name**, so `to_native` is injective over canonical text: a code point of either alphabet a
+  name holds as valid text is escaped through its own units, escapes that decode to valid text aren't canonical (the
+  bytes of `é` spell `é`), and a name mixing the alphabets is refused. Typed text never carries a live escape
+  (`from_external_text`, `from_person_typed`, `AppNameBuf::from_typed`). Everything a person sees shows an escape as
+  U+FFFD (`shown`, `shown_name`; the frontend's `shownName` and `displayPath`).
+- **The native boundary**, typed both ways (❌ never an `Option` a caller turns into "not found"):
+  - `to_native` is the POSIX bytes on macOS and Linux, the verbatim `\\?\` form on Windows. `NativeRefusal`: `NotLocal`
+    (a scheme path), `WrongFlavor`, `ForbiddenCharacter` (❗ `:` in a Windows name writes an alternate data stream
+    INSIDE another file; `*?"<>|`, control characters, NUL), `NoPortOnUnc`, `TooLong` (32,767 units), `ForeignEscape`,
+    and `NotCanonical` for a bridge value. Trailing dots and spaces and device names (`CON`, `a.`) are NOT refused:
+    through `\\?\` they reach the exact file, the only way to delete one a Linux tool made.
+  - `to_native_plain` (Windows: no `\\?\`, for the shell and child processes) refuses `NotPlainSafe` wherever the plain
+    form would name a DIFFERENT file: a trailing dot or space (a plain `dup.` reads `dup`), a reserved device name with
+    or without an extension (`nul.txt` writes nowhere), past 259 units. ❌ Never strip `\\?\` by hand instead.
+  - `from_native` refuses `C:foo` and a bare `C:` (that drive's current directory), the device namespaces, and an empty,
+    `.`, or `..` name in a verbatim path (NTFS refuses them); a plain Windows path's `..` resolves lexically, which is
+    what Win32 does.
+  - The conversions are pure (`to_native_posix`, `to_native_windows`, `from_native_posix`, `from_native_windows`), so
+    Linux CI tests the Windows arm as data; only `platform/` touches `OsStr`.
+- **`Eq`, `Hash`, `Ord` are component-wise, the HYBRID reading** (`shape::components`, Decision/Why): text the host's OS
+  really opens reads with the host's `Path::components` rules, everything else with the app's own grammar. So POSIX
+  components for every non-scheme text on macOS and Linux (a leading `//` is a plain root, as std reads it), and on
+  Windows std's Windows components (both separators, drive, UNC, and verbatim prefixes ordered as std's `Prefix`) for
+  drive, UNC, verbatim, device, `\`-led, and relative text, but the app's `/`-only reading for a POSIX-kind `/x`, which
+  Win32 never opens as the app means it. A `BTreeSet` or `HashSet` keyed on app paths then sorts and dedups as one keyed
+  on `PathBuf` did for every value the host's `std` meets, unnormalized bridge text included (property-tested against
+  `PathBuf` on each host), while `/d/a\b` never equals `/d/a/b` on Windows (review 2's N4: the all-host reading hid
+  exactly the "`\` joined into an in-memory path" bugs). Still one function of the text, so the three stay mutually
+  consistent and total (`properties_test.rs` § `hybrid_comparison`, both hosts' rules on every OS). Two more deliberate
+  differences: a scheme root is ONE component (else `sftp:///x` would equal `sftp://x/`), and an escaped name sorts at
+  its escape code point, above every raw byte. A UNC value on a POSIX host (only `parse(_, Windows)` makes one,
+  test-only there) compares as the POSIX path with its text, the price of `//Users == /Users` for the bridge values the
+  OS does open. Rejected: bytewise, which reorders the in-memory sorted maps and splits `/a` from `/a/` while bridge
+  values are unnormalized; one flavor-free reading, which made `//Users` and `/Users` unequal on macOS and `C:\x` and
+  `C:/x` unequal on Windows; and the host's rules for everything (N4).
+- **Volume-root matches fold a UNC root**: `same_root`, `strip_volume_prefix`, and `is_on_volume` compare the UNC server
+  with ASCII case (DNS, NetBIOS) and the share with Unicode simple case folding (the Kelvin sign is `k`; `İ` isn't `i`),
+  the names below the root exactly, and a scheme root exactly. `Eq` and `starts_with` stay exact.
+- **Trailing dots and spaces on Windows**: every path is literal (`dup` and `dup.` are two files) except text a person
+  typed: a listed name, a verbatim or plain path the OS reports (`from_native`: a `read_dir` under a plain root joins
+  `dup.` verbatim), machine-handed text (`from_external_text`: MCP, deep links, the CLI), and every stored value. Such a
+  name has no plain form (`to_native_plain` refuses `NotPlainSafe`). Only `from_person_typed` (the address bar, the
+  go-to dialogs) reads as Explorer does: each name's trailing dots and spaces go (`C:\x\dup.` is `C:/x/dup`), and a name
+  of only dots and spaces is `BlankName`.
+- **The transition bridge** (`legacy_unchecked`, `as_std_legacy`) lets the `Volume` trait take app paths while bodies
+  still do `std::path` arithmetic. It never validates or normalizes, and it's lossless: a property test holds
+  `legacy_unchecked(p).as_std_legacy()` to `p`'s exact `OsStr` bytes or units, ❌ never `Path ==`, which ignores a
+  trailing `/`. `app-path-std-bridge` counts every call per file on a shrinking ratchet. A path a `Volume` returns BY
+  REFERENCE (`root`) lives in a `BridgedPath` field (native plus app spelling, made once; it reads as the `Path` it
+  holds, and `.app()` is the return), since a `legacy_unchecked` `Cow` can't be returned borrowed. ❗ A same-named
+  method on a value the flip typed (`starts_with`, `strip_prefix`, `join`, …) drops to `as_std_legacy()`, ❌ never lifts
+  its argument through the bridge: the typed method answers differently on bridge values. Both rules are milestone 4's,
+  pinned in `app_path/flip_shapes_test.rs`.
+- **Cost**: `join` is one `String` sized exactly; `parent`, `file_name`, `names`, `starts_with`, `strip_prefix`, the
+  comparisons, and the bridge over UTF-8 text allocate nothing (`tests/app_path_allocations.rs`, a counting allocator).
+  The listing's row path today, `PathBuf::join` then `to_string_lossy().into_owned()`, is three allocations.
+- **Wire**: `Serialize` and `specta::Type` as a plain `string` (byte-identical for every valid-UTF-8 path, so
+  `bindings.ts` doesn't change); `Deserialize` through `from_wire`, for in-process formats only (persisted DTOs keep
+  `String`).
+- **The shared case table**, `src/volume/path_grammar_cases.json`: the grammar rows run against both the text helpers
+  and the type (both flavors, every OS); the `escapes` rows run in Rust and in the frontend
+  (`apps/desktop/src/lib/path/escape.test.ts`).
+- **Tests rooted in a scratch dir** take `testing::AppTestDir`: the dir plus its app path, 8.3 names expanded on Windows
+  first (`GetLongPathNameW`), since a listing never shows a short name.
 
 ## The browser build
 

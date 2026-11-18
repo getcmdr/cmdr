@@ -332,11 +332,11 @@ today isn't a safe baseline). Ranges settled and the canonical form added in rev
     for arbitrary strings; `from_native` then `to_native` is the identity on arbitrary bytes and arbitrary `u16`s; two
     names differing only in invalid bytes get different spellings; a name holding a literal escape code point
     round-trips.
-- **Text a person types never holds an escape.** `from_user_input` and `ChildName::from_typed` (rename, new file, new
-  folder, the transfer's destination name) escape any escape-range code point as LITERAL text (its own UTF-8 bytes as
-  byte escapes), so typed text always means what it says, and the escape syntax can't be typed or pasted into an
-  address. Round one's "accepted edge" (typed escape code points read as raw bytes) is reversed. Only backend-spelled
-  text (`from_wire`, `from_normalized`) carries live escapes.
+- **Text a person types never holds an escape.** `from_person_typed`, `from_external_text`, and `AppNameBuf::from_typed`
+  (rename, new file, new folder, the transfer's destination name) escape any escape-range code point as LITERAL text
+  (its own UTF-8 bytes as byte escapes), so typed text always means what it says, and the escape syntax can't be typed
+  or pasted into an address. Round one's "accepted edge" (typed escape code points read as raw bytes) is reversed. Only
+  backend-spelled text (`from_wire`, `from_normalized`) carries live escapes.
 - **Cross-namer copies**: a name holding escapes of an alphabet the destination can't store (byte escapes to NTFS, SMB,
   WebDAV, or S3; unit escapes to a Unix disk, SFTP, or NFS; any escape to a UTF-8-only protocol) is a typed per-item
   refusal at the destination (`NativeRefusal::ForeignEscape` locally, `NotRepresentable` from a backend), counted and
@@ -382,7 +382,19 @@ migration, loud rule 4) and behaves as it does today, which is to point at a los
   opens today (nothing, or the `\u{FFFD}` sibling); re-adding the favorite stores the escaped path. Accepted.
 - **The drive index and media index**: caches; one remove and one add per such name, then convergence (pinned in 10b).
 - **Importance** (`visits.path`): the visit history of those few paths starts over. Accepted.
-- **The operation log**: old rows for those names stay unrollbackable, as they are today; new rows roll back.
+- **The operation log**: old rows for those names stay unrollbackable, as they are today; new rows roll back. ❗ The
+  reverse case is a data-loss one (review 2's N7, decided by the lead, 2026-11-18): an old row can hold a plane-16 code
+  point as LITERAL text, and read live `[U+10FEC3, U+10FEA9]` names `é`, a real, different file, so a rollback could
+  delete it. So the log stamps an escape mark in its `meta` (`escape_mark_last_literal_op_id`, the newest op id on
+  record, once, at the first open with `cmdr_fs::app_path::ESCAPES_LIVE` true), and rows at or below it read through
+  `AppPathBuf::from_literal_store` (`crates/cmdr-operation-log/DETAILS.md` § "The escape mark"). Shipped with the type's
+  second review; inert until 10f flips the const. Tag writes journal here, so the tags undo is covered too.
+- **Why the other stores need no mark** (each checked in the type's second review): an old value read live names a
+  different path only if it literally holds a plane-16 code point, and none of them acts on a file unseen. Tabs and
+  closed tabs, favorites, recents, and go-to-path's recent list only NAVIGATE: the pane shows what it opened, and
+  nothing is changed without a person seeing it. The drive index, media index, and importance are caches checked against
+  the disk: a wrong key is one remove and one add, then convergence. Ask Cmdr transcripts hold shown text, which never
+  re-addresses.
 - **Ask Cmdr chat transcripts**: hold whatever text the agent saw (shown form, below); nothing re-addresses from them.
 
 **Display.** Every surface renders an escape as U+FFFD; ❌ never the raw private-use glyph (a box, or nothing):
@@ -417,13 +429,14 @@ separate live bug, reported to the lead in review round 2); it runs on shown tex
 normalizes to `é`), written as JSON `􏻃`-style surrogate-pair escapes so the file stays ASCII.
 
 **Input.** Typed text never carries an escape (§ "Names that aren't UTF-8"): go-to-path, rename, new file and folder,
-the transfer destination, and the CLI go through `from_user_input` / `ChildName::from_typed`. Paste and drop of FILES
-arrive as native paths or file URLs and cross at `from_native` (escaping). Deep links arrive as text: `from_user_input`.
-Rename's "unchanged" check compares the edited text with `shownName(originalName)`, ❌ never `originalName` (an escaped
-original never equals its prefill, so Enter would rename `caf\xe9.txt` to `caf\u{FFFD}.txt`); a real edit lands the
-typed text, U+FFFD included, which is the honest outcome of renaming what the person saw (and the usual way to fix such
-a name). `validateFilename`'s 255-byte rule measures the escaped name by its NATIVE length (one byte per byte escape),
-❌ never `TextEncoder` over the escape (four bytes each): a `nativeNameLength` helper next to `shownName`.
+the transfer destination, and the CLI go through `from_person_typed` (go-to-path), `from_external_text` (the CLI), or
+`AppNameBuf::from_typed` (one name). Paste and drop of FILES arrive as native paths or file URLs and cross at
+`from_native` (escaping). Deep links arrive as text: `from_external_text`. Rename's "unchanged" check compares the
+edited text with `shownName(originalName)`, ❌ never `originalName` (an escaped original never equals its prefill, so
+Enter would rename `caf\xe9.txt` to `caf\u{FFFD}.txt`); a real edit lands the typed text, U+FFFD included, which is the
+honest outcome of renaming what the person saw (and the usual way to fix such a name). `validateFilename`'s 255-byte
+rule measures the escaped name by its NATIVE length (one byte per byte escape), ❌ never `TextEncoder` over the escape
+(four bytes each): a `nativeNameLength` helper next to `shownName`.
 
 **Agent surfaces** (the MCP server's tool outputs, Ask Cmdr's context). A model can't be trusted to echo a plane-16 code
 point back intact, and a mangled echo of `caf<escape>.txt` as `caf\u{FFFD}.txt` would hit the sibling. So:
@@ -457,18 +470,32 @@ deliberately toward the safe answer with a pin:
 - **Unicode form**: never touched. `café` in NFC and NFD are two values; on APFS and HFS+ both open one file, on ext4
   two. Equality is exact, so a typed NFC path and a listed NFD path compare unequal, as `PathBuf`s do today; a folded or
   normalization-insensitive compare is the volume's `NameRules` business.
+- **Trailing dots and spaces on Windows** (decided by the lead after the type's second review, 2026-11-18): every path
+  is LITERAL except text a person typed. A listed name, a verbatim or PLAIN path the OS reports (`from_native`: a
+  `read_dir` child under a plain root joins `dup.` verbatim, and so do watchers, dialogs, `%TEMP%`, and a drop), an MCP
+  tool's argument, a deep link, a CLI argument, and every persisted value keep every dot and space, so `dup` and `dup.`
+  stay two files, and such a name has no plain form (`to_native_plain` refuses it `NotPlainSafe`; it goes through the
+  verbatim one). Only text typed into the address bar or a go-to dialog reads as Explorer's address bar reads it,
+  through its own constructor, `from_person_typed`: each name's trailing dots and spaces go (`C:\x\dup.` opens `dup`),
+  and a name of only dots and spaces is refused `BlankName`. The UNC server and share, the drive, and the `.` and `..`
+  names aren't trimmed. Review round one's M5 stripped in `from_native` too; review two (N1, N8) showed that names `dup`
+  beside a listed `dup.` (a walk under a plain root, an agent echoing a listed path), so it's undone.
 - **Case**: never folded, except the drive letter, uppercased (Windows reads `c:` and `C:` as one drive and the OS
   reports either). A UNC server and share keep their case as typed or reported (decided by the lead, 2026-11-18,
   question 6): `Eq` and `Hash` stay exact, and every ROOT match (the resolver picking a volume for a path, `starts_with`
   against a volume root, `RemoteRoot`-style prefix checks, `same_root`, and the frontend's `isPathOnVolume` for a
   `//server/share/` root) compares the server and share components with Unicode simple case folding, since both are
   case-insensitive on the wire (DNS and NetBIOS names; SMB share names). Below the root, case is the volume's
-  `NameRules`, as everywhere. Ran (review round 3): `\\?\UNC\LOCALHOST\d$\x` opens `\\localhost\D$\x`, and a lowercase
-  letter in `\\?\d:\x` opens the drive. ❗ Not run, and not volume-wide: Windows 10 1803+ lets a FOLDER be
-  case-sensitive (`fsutil file setCaseSensitiveInfo`, what WSL sets on folders it creates), so one NTFS volume can hold
-  `A` and `a` side by side in that folder. The builder refused the switch (no WSL feature installed). A per-volume
-  `NameRules` folds the two together there, and the drive index's lowercase key collides; Windows plan task 35 makes it
-  a per-directory property of the local Windows volume (question 13).
+  `NameRules`, as everywhere. The API (added in the type's review): `same_root` and `strip_volume_prefix` /
+  `is_on_volume` fold the server with ASCII case (DNS and NetBIOS) and the share with Unicode simple case folding (so
+  the Kelvin sign is `k`, and `İ` is not `i`), compare the names below the root exactly, and compare a scheme root
+  exactly (every backend mints its authority lowercase); `starts_with` / `strip_prefix` stay exact and never match
+  across roots. Ran (review round 3): `\\?\UNC\LOCALHOST\d$\x` opens `\\localhost\D$\x`, and a lowercase letter in
+  `\\?\d:\x` opens the drive. ❗ Not run, and not volume-wide: Windows 10 1803+ lets a FOLDER be case-sensitive
+  (`fsutil file setCaseSensitiveInfo`, what WSL sets on folders it creates), so one NTFS volume can hold `A` and `a`
+  side by side in that folder. The builder refused the switch (no WSL feature installed). A per-volume `NameRules` folds
+  the two together there, and the drive index's lowercase key collides; Windows plan task 35 makes it a per-directory
+  property of the local Windows volume (question 13).
 
 ### Typed and pasted `..`
 
@@ -480,9 +507,9 @@ the volume holding the path means", answered by the volume at the input boundary
 
 - **One resolver**: `resolve_typed(text, base: Option<&AppPath>) -> Result<AppPathBuf, TypedPathRefusal>` in the app's
   input layer (go-to-path's module), called by go-to-path, the CLI's path arguments, deep links, and the MCP tools' path
-  inputs. It expands `~`, parses with `from_user_input`'s flavor rules but KEEPS `.`/`..` names as tokens, picks the
-  volume for the path (the resolver, `resolve_path_to_volume`), then walks the names left to right holding a normalized
-  prefix.
+  inputs. It expands `~`, parses with `from_external_text`'s flavor rules (`from_person_typed`'s for the address bar and
+  go-to dialogs) but KEEPS `.`/`..` names as tokens, picks the volume for the path (the resolver,
+  `resolve_path_to_volume`), then walks the names left to right holding a normalized prefix.
 - **A relative input's leading `..`s** (`../foo`, `../../x`) step up from the pane's folder the way the pane's own `..`
   row and Backspace do (`parentInVolume` on the pane path, lexical: "up from where I am", which is also what a shell's
   `cd ..` does). Clamped at the volume root, as the `..` row is.
@@ -569,12 +596,13 @@ caller turns into "not found"):
 - **Escaped names**: decoded back to raw bytes (Unix) or surrogate units (Windows).
 - **`from_native` refuses**, typed: a relative path, a drive-relative `C:foo` AND a bare `C:` (both mean that drive's
   CURRENT directory to Win32: `GetFullPathNameW("D:foo")` answered `D:\foo` only because `D:`'s cwd was its root; ran,
-  review round 3; `parse` and `from_user_input` keep reading a typed `C:` as `C:/`, which is what a person means),
-  `\\.\` device paths, `\\?\Volume{…}` and `\\?\GLOBALROOT\…`, a UNC server of `?` or `.`, and a `.`, `..`, or empty
-  name inside a verbatim path. Win32 doesn't treat those as literal names: NTFS refuses them (`\\?\D:\x\.\y` is
-  `ERROR_PATH_NOT_FOUND`, `\\?\D:\x\\y` and a verbatim `..` `ERROR_INVALID_NAME`, a verbatim `..` over UNC
-  `ERROR_BAD_PATHNAME`, `\\?\D:` without its `\` `ERROR_INVALID_PARAMETER`; ran, review round 3), so the refusal only
-  types what the OS would say. Today's grammar answers `None` for most of these; the conversion only types the reason.
+  review round 3; `parse`, `from_external_text`, and `from_person_typed` keep reading a typed `C:` as `C:/`, which is
+  what a person means), `\\.\` device paths, `\\?\Volume{…}` and `\\?\GLOBALROOT\…`, a UNC server of `?` or `.`, and a
+  `.`, `..`, or empty name inside a verbatim path. Win32 doesn't treat those as literal names: NTFS refuses them
+  (`\\?\D:\x\.\y` is `ERROR_PATH_NOT_FOUND`, `\\?\D:\x\\y` and a verbatim `..` `ERROR_INVALID_NAME`, a verbatim `..`
+  over UNC `ERROR_BAD_PATHNAME`, `\\?\D:` without its `\` `ERROR_INVALID_PARAMETER`; ran, review round 3), so the
+  refusal only types what the OS would say. Today's grammar answers `None` for most of these; the conversion only types
+  the reason.
 - **8.3 short names are aliases** (ran on `C:`, where 8.3 creation is on, as it is by default on a Windows 10 system
   drive; the builder's `D:` has it off; review round 3). `from_native` is pure, so it can't tell `C:/x/LONGFO~1` from
   `C:/x/Long Folder Name`: `read_dir` through the short spelling returns children under it (a second app path for every
@@ -601,18 +629,32 @@ caller turns into "not found"):
   `join_relative(&self, rel: &RelativeAppPath) -> AppPathBuf` for a validated multi-name tail (the remote-root and
   `rebase` cases). ❌ No `join(&str)`: `Path::join("/x")` replacing the base is exactly the surprise to remove.
 - `starts_with(&self, ancestor: &AppPath) -> bool` (whole names, exact),
-  `strip_prefix(&self, ancestor) -> Option<&RelativeAppPath>`, `relative_to` as the same thing named for readers; folded
-  twins take `&NameRules`.
+  `strip_prefix(&self, ancestor) -> Option<Cow<RelativeAppPath>>` (borrowed for canonical values), `relative_to` as the
+  same thing named for readers; folded twins take `&NameRules`.
 - `rebase(&self, old_root, new_root) -> Option<AppPathBuf>` (replaces `app_paths::rebase`).
 - `to_native` and `from_native`: § "The native boundary" (today's `path_grammar` bodies, moved, with typed refusals).
 - `Display`: the wire spelling (for logs, wrapped in `LogPrivate` as today). `shown()`: what a person reads, the ONE
   formatter (Windows `\`, picks taken out through `twin_path::shown`), the twin of the frontend's `shownPath`.
-- `Eq`, `Hash`, `Ord`: **component-wise, defined as POSIX `Path::components` over the text**: the root first (`/` as
-  `RootDir`, which sorts below any name, so `/x` < `sftp://…` as `PathBuf` has it), then the names, skipping empty and
-  `.` names and keeping `..`. On a normalized value `Eq` is the same as comparing bytes; on a bridge value made from an
-  unnormalized `PathBuf` (`/a/`, `/a/./b`) it still equals what `PathBuf` equals, so a `HashSet` keyed on the typed path
-  dedups exactly as today (survey). Within a name, bytes compare as `OsStr` bytes do. The one known divergence: an
-  escaped non-UTF-8 name (§ "Names that aren't UTF-8") sorts by its escape code point, above every raw byte, where
+- `Eq`, `Hash`, `Ord`: **component-wise, the HYBRID reading** (decided by the lead after the type's second review,
+  2026-11-18; round one said POSIX rules everywhere, which broke Windows dedup, and the first review's fix said the
+  host's rules everywhere, which on Windows made `/d/a\b == /d/a/b` and so hid the "`\` joined into an in-memory path"
+  class this plan exists to fix). Host rules apply only to text that host's OS really opens; everything else reads with
+  the app's own grammar (`/` the only separator): on macOS and Linux every non-scheme text is the OS's, so POSIX
+  components (the root first, `/` as `RootDir`, which sorts below any name, so `/x` < `sftp://…` as `PathBuf` has it; a
+  leading `//` is a plain root, as std reads it, so a sloppy `//Users` bridge value equals `/Users`); on Windows std's
+  Windows components (both separators, the drive and UNC and verbatim prefixes as `Prefix`, ordered as std orders them)
+  for drive, UNC, verbatim, device, `\`-led, and relative text, so a bridge value `C:\x` equals `C:/x` and `C:\x\`
+  there, as `PathBuf` does, but a POSIX-kind `/x` (the in-memory volume's and the fixtures') reads with the app's
+  grammar, so `/d/a\b != /d/a/b` there. Empty and `.` names skipped, `..` kept. A scheme root is ONE component on every
+  host (as std components `sftp:///x` would equal `sftp://x/`). Still one function of the text, so `Eq` is an
+  equivalence, `Hash` agrees, and `Ord` is total and `Equal` exactly when `Eq` holds (property-tested under both hosts'
+  rules on every OS, `properties_test.rs` § `hybrid_comparison`, plus the `PathBuf` property on the Windows builder for
+  the text Win32 opens). On a normalized value `Eq` is the same as comparing bytes; on a bridge value made from an
+  unnormalized `PathBuf` (`/a/`, `/a/./b`) it still equals what `PathBuf` equals on that host, so a `HashSet` keyed on
+  the typed path dedups exactly as today (survey; property-tested against `PathBuf` on macOS, Linux, and the Windows
+  builder). The cost, accepted: a UNC value on a POSIX host (made only by `parse(_, Windows)`, so test-only there)
+  compares as the POSIX path with its text. Within a name, bytes compare as `OsStr` bytes do. The one known divergence:
+  an escaped non-UTF-8 name (§ "Names that aren't UTF-8") sorts by its escape code point, above every raw byte, where
   `PathBuf` sorted the raw byte; it's a consistent total order, and no path order is persisted (the `BTree*`s are
   in-memory), so it's accepted.
 
@@ -621,13 +663,41 @@ caller turns into "not found"):
 - `AppPathBuf::parse(text: &str, flavor: PathFlavor) -> Result<AppPathBuf, NotAnAppPath>`: normalizes per §
   "Normalization" (a `..` name is refused, not resolved).
 - `AppPathBuf::from_wire(text: &str)`: `parse` with `PathFlavor::HOST`, for IPC arguments and stored strings.
-- `AppPathBuf::from_user_input(text: &str, flavor)`: typed or pasted text with NO `..` left (separators turned on
-  Windows, `.` dropped, escape-range code points escaped as literal text); a `..` is refused here, since resolving it
-  needs a volume: the app's `resolve_typed` (§ "Typed and pasted `..`") tokenizes first and calls this on each resolved
-  prefix. `ChildName::from_typed` is the same rule for one name.
+- `AppPathBuf::from_external_text(text: &str, flavor, namer: Namer)`: outside text a machine handed over (an MCP
+  argument, a deep link, a CLI argument) with NO `..` left (separators turned on Windows, `.` dropped, escape-range code
+  points escaped as literal text through `namer`, the VOLUME's namer, which `resolve_typed` knows), every name literal;
+  a `..` is refused here, since resolving it needs a volume: the app's `resolve_typed` (§ "Typed and pasted `..`")
+  tokenizes first and calls this on each resolved prefix. `AppNameBuf::from_typed(text, namer)` is the same rule for one
+  name.
+- `AppPathBuf::from_person_typed(text: &str, flavor, namer: Namer)`: the same, plus, on Windows, for a drive or UNC
+  path, each name's trailing dots and spaces go, as Explorer's address bar reads them (§ "Normalization"). ONLY the
+  address bar and the go-to dialogs call it; `resolve_typed` takes which of the two its caller is.
 - `AppPath::from_normalized(text: &str) -> Result<&AppPath, NotAnAppPath>`: zero-copy validation for a string that is
-  already canonical (a `FileEntry.path` a backend built); `FileEntry::app_path()` uses it.
-- `AppPathBuf::from_native(...)`, `RemoteRoot::to_app_path(...)`, `Volume::root()`, and the derivations above.
+  already canonical for THIS host (a `FileEntry.path` a backend built); `FileEntry::app_path()` uses it. On macOS and
+  Linux a drive or UNC shape is refused (`//a/b/x` there is a sloppily joined POSIX path, never a share); on Windows the
+  POSIX `/` root stays valid. `from_normalized_as(text, flavor)` is the other host's, for tests.
+- `AppPathBuf::from_native(&Path)` (this host's flavor; `from_native_as(&Path, flavor)` for a test of the other
+  grammar), `RemoteRoot::to_app_path(...)`, `Volume::root()`, and the derivations above.
+- **Names**: `AppName` (borrowed) / `AppNameBuf` hold one name in APP spelling: `AppName::from_app_spelling(&str)` takes
+  a backend-spelled name (a `FileEntry.name`, escapes live), `AppNameBuf::from_native_os(&OsStr)` (and
+  `from_native_bytes`, `from_native_units`) a name a native API holds (escapes made, a literal escape code point escaped
+  as literal), `from_typed` a typed one. `AppPath::join` takes only `&AppName`. `ChildName` (over `&OsStr`) is the
+  `std::path` world's name and has NO app-path join (decided in the type's review, 2026-11-18): reading its text either
+  way would be a guess, and guessing "app spelling" respells a live escape as a literal one once escapes exist (a copy
+  of `caf\xE9.txt` would land as a file literally named with U+10FEE9). Its one door is
+  `AppNameBuf::from_native_os(child.as_os_str())`, explicitly native; 10a replaces `ChildName::new(&entry.name)` with
+  `AppName::from_app_spelling(&entry.name)`.
+- **Typed arithmetic on a bridge value is right in release builds too** (decided by the lead after the type's second
+  review, 2026-11-18; the first review's fix was a `debug_assert!`, which left `C:\x\y` with no parent and under no
+  `C:\x` in release, N6). `is_canonical()` picks the path: a canonical value reads its text directly; a bridge value
+  (`/a//b/`, `C:\x\y`) reads through the same hybrid components `Eq` uses (`app_path/lenient.rs`). Slices (`parent`,
+  `file_name`, `names`, `root`, `kind`, `is_root`) answer what `Path` answers, cut from the text; `join`,
+  `strip_prefix`, `strip_volume_prefix`, `same_root`, and `rebase` read the bridge value as the canonical place it names
+  (`to_canonical()`), so their output is canonical (`rebase` never builds `/new//b`). `strip_prefix` and
+  `strip_volume_prefix` answer `Option<Cow<RelativeAppPath>>`, borrowed for canonical values, owned
+  (`RelativeAppPathBuf`) for a bridge one. A bridge value with no canonical twin (no root, `C:x`, a device path, a `..`)
+  joins with a typed refusal and sits under nothing: by text a `..` can name a different file across a symlink. A
+  property holds every bridge value's `parent`, `file_name`, and `starts_with` to `Path`'s on Unix.
 - Tests only (`any(test, feature = "testing")`): `app_path!("/a/b")` returns a `&'static AppPath`-like value, panicking
   on a bad literal, so the 4,800 test literals convert by sed.
 - **The transition bridge, deleted in milestone 11**: `AppPath::legacy_unchecked(&Path) -> Cow<'_, AppPath>` and
@@ -732,6 +802,41 @@ The listing hot path builds one path per entry. Today that's two allocations (`P
 - **`app-path-std-bridge`** (new check, milestone 3, Go check runner): counts `legacy_unchecked` and `as_std_legacy` per
   file in a shrink-wrapping allowlist. It's the progress meter during the conversion; at zero, milestone 11 deletes both
   functions, and the check stays as a ban on `Path::new(<x>.as_str())` and `OsStr::new(<x>.as_str())`.
+- **The escape gate** (added in the type's review, 2026-11-18; rebuilt after its second review, the lead's decision 2).
+  The hazard: app TEXT holding a live escape turned into a `std::path` value carries the escape's own UTF-8 bytes, so
+  `std::fs` opens a file literally named with it (`/d/caf\u{10FEE9}` becomes four byte escapes, a "not found", or a
+  write under a mangled name). For a non-UTF-8 name that's no worse than today's lossy text (which names the U+FFFD
+  sibling), but for a valid-UTF-8 name holding a plane-16 code point it's a regression, so escapes must not exist until
+  no app text can reach a `std::path` constructor.
+  - **❗ A text scan can't be that gate, and doesn't pretend to be.** Review 2 (N2) found the first scan's 101 sites a
+    fraction: no lexical rule sees app text arrive through a `let`, a closure, `.into()`, an `impl AsRef<Path>`
+    parameter, or a `format!` join. So `app-path-std-bridge`'s text budgets are a TRIPWIRE and a meter: `appTextToPath`
+    (a `FileEntry.path`/`.name` or an `.as_str()` handed to `Path::new`, `PathBuf::from`, `OsStr::new`,
+    `OsString::from`, or `ChildName::new`; 101 when seeded) and `pathFromBareText` (a bare path- or name-shaped
+    identifier, `PathBuf::from(&path)`, `Path::new(&dest_dir)`, or `.map(PathBuf::from)`; 973 when seeded in the second
+    review, many native). While either is above zero the check refuses a production escape producer, whatever its
+    spelling: a call, a function pointer (`.map(AppPathBuf::from_native)`), or a bare `escape_bytes(` after a `use`. It
+    also refuses outright (production and tests) OS text handed to an app-spelling door on one line
+    (`AppName::from_app_spelling(os.to_str()?)`, `from_normalized(&p.to_string_lossy())`; N5).
+  - **The sound gate is the type's**, in two halves. (1) **No conversion**: no app-path type implements `AsRef<Path>`,
+    `AsRef<OsStr>`, `AsRef<str>`, `Borrow<str>`, `Deref<Target = str>`, `Into<PathBuf>`, `Into<OsString>`, or
+    `Into<String>`, held at compile time (`app_path/tests.rs`, `no_app_path_type_converts_to_std_path_or_its_text`), so
+    `Path::new(&p)`, `PathBuf::from(p)`, `.into()`, and an `impl AsRef<Path>` parameter fed a TYPED value don't compile.
+    That's sound for every carrier that is typed, so 10a–10e make every carrier of app text typed: `FileEntry.path` and
+    `.name` (10f's first commit, before any producer), every IPC parameter (`from_wire` at the command edge, 10c), and
+    every store read. (2) **The exits, banned by type**: the only ways back to text are `as_str`, `into_string`, and
+    `Display`. 10f's second commit adds them to `clippy.toml`'s `disallowed-methods` (type-resolved, so a function
+    pointer or a `let` hop can't hide one) and replaces `Display` with a `wire()` view under the same ban, with a
+    per-site `#[expect(clippy::disallowed_methods, reason = "…")]` only at the IPC serializer, the store writers, and
+    `LogPrivate`. With both halves on, an escape can reach a `std::path` constructor only through a reviewed `expect`.
+  - **Until then, the non-escaping crossing**: `AppPathBuf::from_native_unicode` and
+    `AppNameBuf::from_native_os_unicode` are `from_native` for a name that is plain Unicode text, and a typed refusal
+    (`NotAnAppPath::NotUnicode`) for one that would need an escape. They make no escape, so they aren't producers.
+    Milestones 9, 10a, and 10b cross with them; on `NotUnicode` the caller keeps that child native (its `PathBuf`, or a
+    bridge value) and counts it, ❌ never drops it. 10f swaps each for `from_native`.
+  - `legacy_unchecked` escapes a non-UTF-8 path too, so the bridge stays lossless, and it isn't counted as a producer:
+    its escapes go back to the OS through `as_std_legacy`, the transition's only exit for a bridge value, and its text
+    exits fall under (2). Counting it would block milestone 4, the flip, which is all bridge calls.
 - **`app-path-native-crossing`** (new check, milestone 11): `to_native` and `from_native` only in allowlisted files (the
   native boundaries above), shrink-wrapping.
 
@@ -766,6 +871,10 @@ included; the hidden couplings it found are why waves B and C differ from round 
 - **Then 10c, then 10d** (the app; need 10a, 10b, 10e). Sequential, not parallel as round one had it: 10c owns
   `file_system/`, `commands/`, and `go_to_path/`, whose helpers 10d's `tools/` and `operations_host/` call, and 10c's
   `resolve_typed` is what 10d's MCP inputs use. 10d may start on a branch off 10c's first green push.
+- **Then 10f** (the escape lands; added in the type's review, 2026-11-18): every escape producer, which used to ride 6,
+  7, and 9, waits for the type-level escape gate and for the text budgets to reach zero (§ "Keeping it that way"), so 6,
+  7, and 9 convert their bodies WITHOUT producing escapes (SFTP and NFS keep today's answer for a non-UTF-8 name, the
+  local readers their lossy row), and 10a–10e drive the text-to-path sites to zero.
 - **Then 11** (close).
 
 ### 1. Pin today's behavior, and the Windows targets
@@ -798,7 +907,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
   slashes**: on Linux and macOS, a `stat`, a listing, and a delete of `/x/link/` (a symlink to a folder, with the
   trailing `/`) through each IPC entry point that takes a wire path (`commands/file_system`, the MCP tools, go-to-path),
   pinned as today's answer; and `/x/link/../y` and `../y` (from a pane inside `/x/link`) through the same entry points
-  and through `from_user_input`. (h) **Unicode form**: on macOS (APFS) and Linux, a file created as NFD `café` and
+  and through `from_external_text`. (h) **Unicode form**: on macOS (APFS) and Linux, a file created as NFD `café` and
   addressed as NFC: pin today's stat and listing answers. (i) **The Windows baseline**: the builder's full
   `cargo nextest run --workspace` with per-test outcomes, saved as `docs/notes/windows-port/app-path-baseline.md` (the
   failing test names grouped by crate and cluster, nothing else). Every later milestone diffs against it, so "turned
@@ -820,6 +929,46 @@ included; the hidden couplings it found are why waves B and C differ from round 
   today's `path_grammar` where it already answers (parse, parent, basename, shown, to/from native).
 - **DONE**: every helper above has a pin, the case table has every shape, the alloc ceilings and ordering pins exist,
   and `pnpm check --fast` plus the touched crates' tests are green.
+- **Done** (2026-11-18, branch `worktree-agent-a1e86a0d33a4ba4ab`, `c6fc36dd1d`..`6f955520c7`; tests only, 71 Rust cells
+  plus 8 vitest cases and 119 case-table rows, none removed):
+  - (a) `path_grammar_cases.json` gains 112 `arithmetic` rows (`std`: today's `std::path` answer, asserted on Unix;
+    `target` or a typed `refused`: the type's answer, asserted against today's grammar for the local roots on every OS),
+    25 with a `note` where the two differ on purpose. This branch proposed a scheme root of `scheme://authority` (no
+    trailing `/`, today's `std` parent byte for byte); the type, built in parallel, spells it `scheme://authority/`, and
+    the integration (2026-11-18) kept the type's: every root ends in `/`, today's `RemoteRoot::app_root` of a
+    server-rooted volume is already `sftp://u@h:22/`, and `Eq` holds the two spellings equal, so a parent never
+    mismatches its volume's root. The three scheme-parent rows carry that `note`, and `join("C:/x", "a\\b")` names the
+    type's real refusal, `Backslash`. Since the merge, the pin asserts every row against the type itself.
+  - (b) `crates/cmdr-fs/src/volume/path_helper_pin_test.rs` (15) plus cells in `patching_test.rs` and
+    `scan_walk_test.rs`. (c) `list_alloc_ceiling_test.rs` in `cmdr-fs` and `cmdr-local`: one entry over none (a slope
+    over many isn't stable: `InMemoryVolume`'s sort lowercases per comparison, and the comparison count follows
+    `HashMap` order), 5 in memory, 9 on macOS's disk, 13 on Linux's. (d) `path_order_pin_test.rs`. (e) every store, 11
+    cells. (f) the non-UTF-8 cells, 8 sub-items (`crates/cmdr-operations/src/non_utf8_name_tests.rs` and siblings).
+    (g)/(h) 14 cells across `cmdr-local`, the delete engines, `stat_paths_kinds`, the MCP resolver and live-read gate,
+    go-to-path, and 7 `userInput` rows. (i) `docs/notes/windows-port/app-path-baseline.md`, made by
+    `scripts/windows-test-baseline` (`render`, `diff`, `explain` over the nextest JUnit report).
+  - Wrong today, pinned as such, and who flips them: the row and name lossiness, `walk_cached_entries`, and the index's
+    collapsed rows (9); the engine's row-path delete and the pre-skip match (10a); resort, cursor, and rename validity
+    (10c); a trailing `/` and a `..` across a symlink at the wire (10c/10d), `root_anchored` and `path_under` passing
+    `..` through, `folder_of` climbing above a scheme root, `sftp://h/x == sftp:/h/x` (the type), the operation log's
+    drive and UNC roots (8). ❗ Two are live data loss, not only Windows debt: with the folder open in a pane, a local
+    delete of a folder holding `caf\xe9.txt` reports success and deletes nothing (#1236), and the raw IPC `delete_files`
+    of `x/link/` (a folder symlink with a trailing `/`) emptied the link's target. `main` fixed the second at the
+    engine's starts (`crates/cmdr-operations/src/wire_paths.rs`, `80dd3735cc`), so its delete cell
+    (`a_delete_of_a_folder_link_with_a_trailing_slash_removes_only_the_link`) now pins the fixed answer.
+  - Where the code differed: MCP `delete`/`rename` take the pane selection, never a wire path, so only the raw IPC
+    `delete_files` can send `x/link/` (question 9's "only an MCP input can" is wrong); item (f)(4)'s copy gets no name,
+    it fails or copies the sibling; the pre-known-conflict bug sits in `build_pre_skip_set`; the protocol and sort cells
+    run on in-memory rows on every OS; `PersistedTab` stores no `cursorFilename` and closed tabs aren't persisted;
+    `path_exists` needs the volume manager, so stat is pinned through `stat_paths_kinds`; the full Windows workspace run
+    needs `--exclude cmdr-fsevent-stream` (macOS-only, never built there before).
+  - Verified: macOS `cargo nextest list --workspace` 16,515 (per touched crate: `cmdr` 6,777, `cmdr-fs` 1,016,
+    `cmdr-index` 1,999, `cmdr-listing` 384, `cmdr-local` 150, `cmdr-operation-log` 167, `cmdr-operations` 2,583); the
+    Desktop (Rust) job's 38 checks and the Desktop (Svelte) job's 34 with `--ci --fresh` green; `clippy-linux` and
+    `rust-tests-linux` green. Every pin seen red under a deliberate break, except the two row-path deletes and the
+    same-filesystem move guard (no code break flips them) and NFC/NFD (the filesystem's answer, covered on both OSes).
+    Windows: the baseline run at `e03f087946`, 934 of 13,831 failing (869 failed, 65 timed out); the leftover cold-cover
+    trees removed from `D:\src\cmdr` (46) and from this run's checkout (47).
 
 ### 2. `cmdr_local::LocalVolume`
 
@@ -887,8 +1036,8 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `from_native` then `to_native` is the identity on arbitrary bytes (Unix) and arbitrary `u16` units (Windows, tested as
   data on every OS), two names differing only in invalid bytes get different spellings, a name holding a literal escape
   code point round-trips, `to_native(canon(s)) == to_native(s)` and `from_native(to_native(s)) == canon(s)` on arbitrary
-  strings, `from_user_input` of text holding an escape-range code point names that LITERAL character, and a byte escape
-  is `ForeignEscape` under `to_native` for Windows (a unit escape under POSIX). `to_native` refusal rows: `/x` on
+  strings, `from_external_text` of text holding an escape-range code point names that LITERAL character, and a byte
+  escape is `ForeignEscape` under `to_native` for Windows (a unit escape under POSIX). `to_native` refusal rows: `/x` on
   Windows, `C:/x/a:b`, `C:/x/a*b`, NUL, a 33,000-unit path, `//host:445/share/x` (`NoPortOnUnc`), and acceptance rows
   for `C:/x/CON`, `C:/x/a.`, and `//[::1]/D$/x` (the server's `:` is no name character). `to_native_plain` refusal rows
   (`NotPlainSafe`): `C:/x/a.`, `C:/x/a `, `C:/x/con.txt`, `C:/x/lpt1 .x`, `C:/x/CONIN$`, a 260-unit path; acceptance
@@ -897,6 +1046,49 @@ included; the hidden couplings it found are why waves B and C differ from round 
   unequal values. Windows builder: `cargo nextest run -p cmdr-fs` green with the new module.
 - **DONE**: the module is complete, documented, and unused outside tests, `path_grammar` delegates to it, and the
   frontend's grammar suite still passes the shared table.
+- **Done** (2026-11-18, branch `worktree-agent-afa89bb10a0f54613`, on milestone 2's branch): `cmdr_fs::app_path` with
+  `AppPath`/`AppPathBuf`, `RelativeAppPath`, `AppName`/`AppNameBuf`, the escape, the pure native conversions plus the
+  host `to_native`/`to_native_plain`/`from_native` behind a `platform/` seam, the bridge, serde/specta, `app_path!`,
+  `testing::AppTestDir` (+ `TestDir::new_in`), `app-path-std-bridge` (empty allowlist), the frontend's
+  `lib/path/escape.ts`, the `escapes`/`escapedUserInput` table sections, and the docs (`crates/cmdr-fs/DETAILS.md` §
+  "App paths"). Where the code differed from this plan, deliberately:
+  - `join` takes an `AppName` (a canonical name type), and is fallible: a drive or UNC path refuses a name holding `\`
+    (`NotAnAppPath::Backslash`), the source-listing-from-another-OS case. `ChildName` (over `&OsStr`, used by the
+    transfer engine) stays as is, with no app-path join (§ "The type", Names; the review found the `under_app` this
+    milestone first shipped respelling a live escape).
+  - `path_grammar`'s text helpers keep their exact answers (lexical `..`, the frontend twin's semantics; the shared
+    table pins them), so "delegates" means: its old struct folded away and its callers (`tilde`,
+    `local_windows/paths.rs`, the Windows volume arm, a conformance helper) moved to the text helpers, which changes no
+    behavior on any OS. The typed `to_native`'s refusals reach the local Windows volume in milestone 9, as planned.
+  - The typed path reads a one-letter scheme as a drive (`C://x` is `C:/x`, what `from_person_typed` makes of a typed
+    `C:\\x`); the text helpers keep the old reading.
+  - Comparison follows the host's `Path::components` (§ "The type", `Eq`), a scheme root as one component. A typed
+    `strip_prefix` never matches across roots.
+  - A typed escape-range code point is escaped through the namer of the path it lands in (unit escapes on a Windows
+    drive or UNC path, byte escapes elsewhere), not always byte escapes: NTFS can hold the literal scalar, and byte
+    escapes there would be `ForeignEscape`.
+  - No `starts_with_folded`/`eq_folded`: `NameRules` carries no case fold today (case sensitivity is
+    `LocationInfo.case_sensitive`), so the folded twins wait for a consumer. `same_root` (the UNC root fold) is here.
+  - The review round on the type (2026-11-18) added: the host-flavored comparison and `from_normalized`, the root check
+    in `strip_prefix`, `strip_volume_prefix` / `is_on_volume`, Win32's trailing-dot reading of plain and typed Windows
+    text, the UNC server checks, a case-free `\\?\UNC\`, `from_user_input`'s `namer`, `extension`, `file_stem`,
+    `with_file_name`, `from_native` host-only, the escape gate, and the `app_path_native` fuzz target. Verified:
+    `cargo nextest run -p cmdr-fs` on macOS (1,054 tests), the allocation cells (`join` one allocation, today's row path
+    three, arithmetic and bridge zero), `clippy`, the zig cross-check
+    `cargo check --all-targets --target x86_64-pc-windows-gnu` for `cmdr-fs` (with `testing`) and `cmdr-local`, the wasm
+    build of `cmdr-fs`, every Desktop (Rust) and Desktop (Svelte) lane check with `--ci --fresh`, `clippy-linux`,
+    `rust-tests-linux`, and on the Windows builder (`7eba6045c3`) `cargo nextest run -p cmdr-fs --features testing` 858
+    of 858 (26 skipped: the `#1225` ignores milestone 5 lifts) and
+    `cargo clippy -p cmdr-fs -p cmdr-local --all-targets -D warnings` clean.
+  - The second review round (2026-11-18, integrated on one branch with milestone 1's pins and `main`; the lead's six
+    decisions) changed: trailing dots and spaces stay literal everywhere but `from_person_typed` (`from_user_input`
+    split into it and `from_external_text`; N1, N8); the hybrid comparison (N4); release-correct arithmetic on bridge
+    values through `lenient.rs`, with `strip_prefix` answering a `Cow` and a new `RelativeAppPathBuf` (N6); the escape
+    gate rebuilt as the type's compile-asserted half plus a tripwire scan (`pathFromBareText` beside `appTextToPath`),
+    with `from_native_unicode` / `from_native_os_unicode` for 9, 10a, and 10b (N2, N3); `AppName::new` renamed
+    `from_app_spelling` and the OS-text hop refused (N5); the operation log's escape mark and `from_literal_store` (N7);
+    the scheme root kept as `scheme://authority/` against milestone 1's proposal (milestone 1's record says why). Per
+    finding: `docs/notes/windows-port/app-path-type-review-fixes.md`.
 
 ### 4. Flip the trait
 
@@ -935,8 +1127,36 @@ included; the hidden couplings it found are why waves B and C differ from round 
        (else `unused_variables` reddens clippy); `E0308` at a call whose expected type is `&AppPath`: a canonical string
        literal inside `Path::new(…)`/`PathBuf::from(…)` becomes `app_path!(…)`, anything else
        `&AppPath::legacy_unchecked(&…)`; a returned `AppPathBuf` used as a `Path` gets `.as_std_legacy()`. Re-run until
-       the crate checks or no rule applies. Type-driven, so a native `Path::new` fixture that never meets a `Volume`
-       method is never touched (a textual sed would have rewritten all 4,800 literals, native ones included).
+       the crate checks or no rule applies. Two rules settled in the type's third review (2026-11-18), both pinned in
+       `crates/cmdr-fs/src/app_path/flip_shapes_test.rs`:
+       - **A borrowed return** (`root() -> &AppPath`, `stands_in_for_own_disk()` and
+         `local_backing_file() -> Option<&AppPath>`): `&AppPath::legacy_unchecked(&self.root)` is a temporary (`E0515`),
+         so on an `E0515` or `E0308` in such a method the codemod retypes the FIELD the method returns from `PathBuf` to
+         `cmdr_fs::app_path::BridgedPath` (native path plus its app spelling, made once, lossless) and returns
+         `self.root.app()` (`.then_some(self.archive_path.app())`, `.as_ref().map(BridgedPath::app)` for an `Option`
+         field). Every body use of the field compiles unchanged through `Deref<Target = Path>`; each constructor's
+         `root: path` becomes `root: BridgedPath::new(path)` (an `E0308` there); a `.clone()` or move of the field into
+         a `PathBuf` slot is residue (`.to_path_buf()`). A root that delegates to a helper (`self.root.app_root()`,
+         `RemoteRoot`) retypes the helper's field the same way and the helper returns `&BridgedPath`. A literal root
+         (`Path::new("/")`, the test volumes) becomes `AppPath::from_normalized("/").expect("a canonical literal")`, a
+         `&'static AppPath` in production too. A root with no field to hold it (`self.root.path()` on a `TempDir`) gains
+         a `BridgedPath` field beside it in its constructor: residue. ❌ No borrowed `legacy_unchecked_ref`: it has no
+         answer for a non-UTF-8 mount point. `BridgedPath::new` is counted by `app-path-std-bridge` like the bridge's
+         two functions, and each crate's own milestone turns the field into a plain `AppPathBuf`.
+       - **A `std::path` method on a receiver the flip typed** (`let r = volume.root(); r.starts_with(&pathbuf)`, the
+         in-process types, a `listing_path` result): the `E0308` "expected `&AppPath`" rule applies ONLY when the callee
+         is a `Volume` method or a helper listed beside the trait. When the callee is an `AppPath` / `AppPathBuf` method
+         that `Path` also has (`starts_with`, `strip_prefix`, `relative_to`, `join`, `parent`, `file_name`, `extension`,
+         `file_stem`, `with_file_name`, `ends_with`, `components`, `rebase`), the codemod rewrites the RECEIVER to
+         `.as_std_legacy()` and leaves the argument native, so `Path` answers exactly as today; ❌ never the argument to
+         `legacy_unchecked`. The two answer differently on bridge values (`/a/../b/c` under `/a`, a relative `photos/x`
+         under `photos`, `//Users/d/Docs` under `/Users`: `Path` says yes, the typed method no), so the lift would be a
+         silent behavior change. Same for residue: an app-path value meeting `Path` arithmetic always drops to
+         `as_std_legacy()`. The residue audit greps `legacy_unchecked(` used as an argument to
+         `starts_with|strip_prefix|relative_to|rebase|is_on_volume|same_root|join|ends_with`, and every hit is a
+         finding. The typed twins are for each crate's own later milestone, which flips its pins on purpose.
+         Type-driven, so a native `Path::new` fixture that never meets a `Volume` method is never touched (a textual sed
+         would have rewritten all 4,800 literals, native ones included).
     3. `residue.patch`: what the codemod can't do (generic `P: AsRef<Path>` helpers that forward to a volume, closures
        whose parameter types are inferred, macros, non-canonical literals). Written by the tier agents, kept as its own
        commit per crate.
@@ -1019,7 +1239,8 @@ included; the hidden couplings it found are why waves B and C differ from round 
   "Names that aren't UTF-8") or skips it with a typed count, ❌ never `from_utf8_lossy`; pin today's behavior first and
   tell the lead which it picks. Escaping is the default for SFTP (byte escapes in its own alphabet, decoded back to
   bytes for the server); WebDAV and S3 are UTF-8-only, so a name carrying any escape is `NotRepresentable` on write (the
-  cross-namer rule). SFTP overrides `parent_for_dot_dot` in 10c's commit, not here.
+  cross-namer rule). SFTP overrides `parent_for_dot_dot` in 10c's commit, not here. ❗ The escaping itself lands in 10f
+  (the escape gate); here the bodies convert and a non-UTF-8 name keeps today's answer.
 - **Test plan**: Windows: `cmdr-sftp` 7 (`paths_test`), `cmdr-webdav` 23, `cmdr-s3` 42 plus the 5 pause timeouts,
   `cmdr-nfs` 45 (30 with a `\` in the path, and 15 fake mounts answering `ExportNotFound`, not 7: the export is picked
   by a prefix match over the typed path). Not here (review round 4): `cmdr-nfs`'s three `errors_test` cells and
@@ -1038,8 +1259,8 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `\` must reach that mapping intact. MTP picks (`twin_path`) are the one NUL-bearing name. An SMB share mounted by the
   OS on macOS (`/Volumes/x`) is a POSIX-shaped app path through `LocalVolume`, not `smb://`. SMB names are UTF-16 on the
   wire: pin what `smb2` does with an unpaired surrogate today (lossy, or refused); the target is unit escapes, which may
-  need an `smb2` change (David's crate, so it's fine to make; file it there). `cmdr-smb`'s UNC root matching folds
-  server and share case (§ "Normalization", Case).
+  need an `smb2` change (David's crate, so it's fine to make; file it there). The unit escapes themselves land in 10f.
+  `cmdr-smb`'s UNC root matching folds server and share case (§ "Normalization", Case).
 - **Test plan**: Windows: `cmdr-adb` 51 (the fake device answers `errno 30` to a write whose path gained a `\`, so those
   are paths too), `cmdr-smb` 13 (the anchored-mount prefix arithmetic over `/Volumes/…`), `cmdr-mtp` 1 (plus
   `host_seam_test`'s mutation count, to diagnose: it may not be a path).
@@ -1075,15 +1296,22 @@ included; the hidden couplings it found are why waves B and C differ from round 
 
 ### 9. `cmdr-local`
 
+- **❗ The escape moved to 10f** (the type's review, 2026-11-18): this milestone converts the bodies and the one
+  crossing per OS, but its readers don't produce escapes yet; the non-UTF-8 row stays lossy, as today, until the
+  consumers stop turning app text into `std::path` values (§ "Keeping it that way", the escape gate). Every typed
+  crossing here is `from_native_unicode` / `from_native_os_unicode` (watch events included), never `from_native`: on
+  `NotUnicode` the reader keeps today's native handling for that child, counted. Read every "escaped" and every
+  "`from_native`, which escapes" below as 10f's.
+
 - **Size**: M (review round 2 added the frontend wiring and the Linux E2E).
 - **Scope**: both volumes take `&AppPath` natively: `resolve` and `local_windows/paths.rs` collapse into
   `AppPath::to_native` (the Windows `resolve_under` goes, since callers no longer pass relative paths); `reading.rs`
   builds `FileEntry.path` with one `AppPath::join` and `FileEntry.name` from the same escaped name;
   `rename_local_exclusive` gains a `&AppPath` form beside the `&Path` one (the wave-B rule; 10a switches its callers).
-  Watch events coming back from the OS go through `from_native`. Frontend, same land: every name sink renders through
-  `shownName` (the listing's Full and Brief name cells, the rename prefill and its "unchanged" check, search results,
-  the selection summary, drag images), the backend's menu labels and Brief text widths through `shown_name`, and
-  `validateFilename` measures with `nativeNameLength`.
+  Watch events coming back from the OS go through `from_native_unicode` (10f: `from_native`). Frontend, same land: every
+  name sink renders through `shownName` (the listing's Full and Brief name cells, the rename prefill and its "unchanged"
+  check, search results, the selection summary, drag images), the backend's menu labels and Brief text widths through
+  `shown_name`, and `validateFilename` measures with `nativeNameLength`.
 - **Intentions**: the one local crossing per OS, and the listing hot path at one allocation per entry.
 - **Landmines**: a non-UTF-8 name on Linux: stat through the raw `OsStr` (fix `fdfa5b58cb`) as today, and the row's
   `path` and `name` become the ESCAPED spelling (§ "Names that aren't UTF-8"), `name == path.file_name()`. That's loud
@@ -1137,10 +1365,11 @@ included; the hidden couplings it found are why waves B and C differ from round 
   app paths into the operation log (pinned). Big enough to split by subagent (transfer, delete and trash, archive edit,
   rename and create, scans), sequential on one branch. Non-UTF-8 safety (milestone 1's pins (f)):
   - The native walks (`scan_walker.rs`, `delete/walker.rs`, the move sweep, `scan_dry_run.rs`, `reversal.rs`) stay
-    native inside, and any path they hand to a typed API goes through `from_native`, which escapes. ❌ A walk never
-    drops a child it can't type: there's no such child, by construction; if a backend's walk does skip one, the skip is
-    counted and reported on the op, never silent, because a copy that reports success while missing a file is the data
-    loss a person can't see.
+    native inside, and any path they hand to a typed API goes through `from_native_unicode` until 10f (§ "Keeping it
+    that way"): a child it refuses (`NotUnicode`) goes on as a bridge value (`legacy_unchecked`, lossless), counted, and
+    10f turns each crossing into `from_native`, which escapes. ❌ A walk never drops a child it can't type: there's no
+    such child, by construction; if a backend's walk does skip one, the skip is counted and reported on the op, never
+    silent, because a copy that reports success while missing a file is the data loss a person can't see.
   - `walk_cached_entries` (the listing-oracle short-circuit) builds each child from `entry.path` via `from_normalized`,
     which carries the escape after milestone 9; that fixes today's bug where a pane open on the folder made the scan
     record a lossy, nonexistent path. Its `is_left_out` check takes the path's `file_name()`, not `entry.name`.
@@ -1167,9 +1396,10 @@ included; the hidden couplings it found are why waves B and C differ from round 
 ### 10b. `cmdr-index`
 
 - **Size**: M.
-- **Scope**: the local scanner, reconciler, and watcher ingest native paths through `from_native` at the walk and event
-  edges and hold app paths after; `store/paths.rs` resolves `&AppPath` by names; the exclusion policy's `/`-prefixed
-  rules become app-path rules; media and importance stores keep their `TEXT` columns.
+- **Scope**: the local scanner, reconciler, and watcher ingest native paths through `from_native_unicode` at the walk
+  and event edges (a `NotUnicode` child keeps today's lossy row, counted; 10f swaps in `from_native`, which escapes) and
+  hold app paths after; `store/paths.rs` resolves `&AppPath` by names; the exclusion policy's `/`-prefixed rules become
+  app-path rules; media and importance stores keep their `TEXT` columns.
 - **Landmines**: the drive index's key decision stands (lowercase, Unicode form untouched). The cold-drive fixture roots
   a tempdir; on Windows that's a drive app path, so the index root is that path, not `/`. Some of that may need task
   34's drive volumes: if so, say which tests and stop there. The walker's `RawDirEntry.path` is raw today and the index
@@ -1246,6 +1476,26 @@ included; the hidden couplings it found are why waves B and C differ from round 
   MCP listing of the non-UTF-8 fixture shows `caf\u{FFFD}.txt` flagged `unaddressable`, and an MCP delete of
   `caf\u{FFFD}.txt` with both files present refuses as `AmbiguousName`.
 - **DONE**: the app's bridge count is zero.
+
+### 10f. The escape lands
+
+- **Size**: M. Added in the type's review (2026-11-18): the escape producers used to ride 6, 7, and 9, which land before
+  the consumers stop turning app text into `std::path` values; an escape reaching one of those sites opens a file
+  literally named with the escape code point (§ "Keeping it that way", the escape gate).
+- **First, the type-level gate** (§ "Keeping it that way"), two commits before any producer: `FileEntry.path` and
+  `.name` become typed (the last untyped carriers; IPC parameters went typed in 10c), then `as_str`, `into_string`, and
+  the `Display` replacement go into `clippy.toml`'s `disallowed-methods` with a reasoned `expect` at each IPC, store,
+  and log exit.
+- **Scope**: every escape producer, each in its own commit: every `from_native_unicode` / `from_native_os_unicode` that
+  9, 10a, and 10b left becomes `from_native` / `from_native_os`; `cmdr-local`'s readers and walks spell a non-UTF-8 name
+  (Linux bytes, Windows unpaired surrogates) losslessly, `FileEntry.name == path.file_name()`, with the frontend's name
+  sinks (`shownName`, `nativeNameLength`) and the Linux DOM catch-all, which is loud rule 1's first exception (milestone
+  9's text on it moves here, its pins (f) flip here); SFTP's byte escapes (6); SMB's unit escapes if `smb2` hands up a
+  lone surrogate (7); NFS's choice (6).
+- **Gate**: the type-level gate's two commits are in and clippy is green with them; `app-path-std-bridge`'s
+  `appTextToPath` and `pathFromBareText` budgets are empty (the tripwire refuses a production escape producer
+  otherwise); and 10a–10e are landed.
+- **DONE**: #1236 closes; the escape gate's budget stays empty for good (the check keeps refusing a new site).
 
 ### 11. Close
 

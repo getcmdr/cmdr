@@ -44,6 +44,11 @@
 - `archive_index`: `ArchiveIndex::parse` over in-memory zip, tar (plain, gzip, bzip2, xz, zstd), and 7z; walks the tree
   asserting every listed path is safe and consistent, then reads up to 256 KiB from each of the first three files.
 - `archive_entry_name`: `sanitize_entry_name` never accepts a name that escapes its root, and accepting is idempotent.
+- `app_path_native`: the app path's native boundary (`cmdr_fs::app_path`). The input is a POSIX path's bytes and, read
+  as UTF-16LE, a Windows path's units; asserts the lossless escape round-trips every byte and unit, and that an app path
+  `from_native_windows` or `from_native_posix` builds is canonical, keeps a reported plain path's last name as stored
+  (trailing dots included), and survives `to_native` and back with the same text. Seeds: a lone surrogate, invalid
+  bytes, and the verbatim, `UNC`, `Volume{`, plain-drive, plain trailing-dot, and dot-name shapes.
 - `pdf`: the app's `pdf-extract` calls (load, page tree, encryption, Info strings, the first three pages) inside
   `catch_unwind`, behind the app's `parent_chain_ends` guard. Crash-only by design: only third-party code runs, and the
   app contains its panics.

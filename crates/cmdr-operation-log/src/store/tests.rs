@@ -425,3 +425,69 @@ fn read_connections_get_a_smaller_page_cache_than_write_connections() {
     assert_eq!(page_cache_kib(&write), WRITE_PAGE_CACHE_KIB);
     assert_eq!(page_cache_kib(&read), READ_PAGE_CACHE_KIB);
 }
+
+// ── The stored path forms ────────────────────────────────────────────────────
+
+/// Every dir path the writers store reads back byte for byte: names with a space,
+/// a `\`, a `:`, a leading dot, NFD, and a pick segment, local and scheme-rooted.
+/// The app-path type keeps every one of these spellings, so no row changes. #1225.
+#[test]
+fn a_stored_dir_reads_back_byte_for_byte() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let conn = open_write_connection(&operation_log_db_path(dir.path())).expect("write conn");
+
+    for path in [
+        "/Users/test_user_1/a b/c-d",
+        "/srv/a\\b/c:d",
+        "/Users/test_user_1/.config",
+        "/Users/test_user_1/cafe\u{0301}",
+        "/DCIM/\u{0}4242",
+        "sftp://test_user_1@testnas.local:22/srv/data",
+        "s3://bucket/a b",
+        "nfs://testnas.local/%2Fexport/x",
+        "mtp://device/65537/DCIM",
+    ] {
+        let id = intern_dir(&conn, "vol", path).expect("intern");
+        assert_eq!(reconstruct_dir_path(&conn, id).expect("path"), path);
+    }
+}
+
+/// Interning splits on `/` and drops empty names, so a trailing `/` and a doubled
+/// `/` never reach a row: each is the same dir as its plain spelling and reads back
+/// as it. A `.` and a `..` are NOT resolved: they're stored as names. This is the
+/// normalized form the app-path type writes, so the type changes no row. #1225.
+#[test]
+fn a_trailing_or_doubled_slash_never_reaches_a_row_and_dots_are_names() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let conn = open_write_connection(&operation_log_db_path(dir.path())).expect("write conn");
+
+    let plain = intern_dir(&conn, "vol", "/a/b").expect("intern");
+    for spelling in ["/a/b/", "/a//b", "//a/b", "/a/b//"] {
+        assert_eq!(intern_dir(&conn, "vol", spelling).expect("intern"), plain, "{spelling}");
+    }
+    assert_eq!(reconstruct_dir_path(&conn, plain).expect("path"), "/a/b");
+
+    let remote = intern_dir(&conn, "vol", "sftp://h:22/srv").expect("intern");
+    assert_eq!(intern_dir(&conn, "vol", "sftp://h:22/srv/").expect("intern"), remote);
+    assert_eq!(reconstruct_dir_path(&conn, remote).expect("path"), "sftp://h:22/srv");
+
+    let dotted = intern_dir(&conn, "vol", "/a/./b/../c").expect("intern");
+    assert_ne!(dotted, plain);
+    assert_eq!(reconstruct_dir_path(&conn, dotted).expect("path"), "/a/./b/../c");
+}
+
+/// ❗ Today's answer for the two Windows root shapes, pinned as the bug it is: the
+/// store knows only `/` and a `scheme://authority` head, so a drive path comes back
+/// under `/` and a UNC path loses its leading `//`, both paths a rollback would hand
+/// to a volume that never held them. Rooting a drive and a UNC share as ONE name
+/// each (like a scheme root) flips both; POSIX rows keep their bytes. #1225.
+#[test]
+fn a_drive_or_unc_path_reconstructs_under_the_posix_root_today() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let conn = open_write_connection(&operation_log_db_path(dir.path())).expect("write conn");
+
+    let drive = intern_dir(&conn, "vol", "C:/x/y").expect("intern");
+    assert_eq!(reconstruct_dir_path(&conn, drive).expect("path"), "/C:/x/y");
+    let unc = intern_dir(&conn, "vol", "//srv/share/x").expect("intern");
+    assert_eq!(reconstruct_dir_path(&conn, unc).expect("path"), "/srv/share/x");
+}

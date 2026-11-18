@@ -79,26 +79,17 @@ fn every_shared_case_holds() {
     for case in table().cases {
         let flavor = PathFlavor::from(case.flavor);
         let what = format!("{:?} {:?}", case.flavor, case.path);
-        let parsed = AppPath::parse(&case.path, flavor);
         assert_eq!(
             path_kind(&case.path, flavor).map(Kind::from),
             case.kind,
             "kind of {what}"
         );
-        assert_eq!(
-            parsed.as_ref().map(|p| p.root().to_string()),
-            case.root,
-            "root of {what}"
-        );
+        assert_eq!(root_of(&case.path, flavor), case.root, "root of {what}");
         assert_eq!(normalize_path(&case.path, flavor), case.normalized, "normalized {what}");
-        assert_eq!(
-            parsed.as_ref().map(|p| p.names().to_vec()),
-            case.segments,
-            "segments of {what}"
-        );
+        assert_eq!(names_of(&case.path, flavor), case.segments, "segments of {what}");
         if let Some(is_root) = case.is_root {
             assert_eq!(
-                parsed.as_ref().is_some_and(AppPath::is_root),
+                names_of(&case.path, flavor).is_some_and(|names| names.is_empty()),
                 is_root,
                 "root-ness of {what}"
             );
@@ -127,42 +118,44 @@ fn every_shared_user_input_case_holds() {
     }
 }
 
-fn win(text: &str) -> AppPath {
-    AppPath::parse(text, PathFlavor::Windows).expect("a Windows app path")
-}
-
 #[test]
-fn to_native_is_the_long_path_form_on_windows() {
-    assert_eq!(win("C:/Users/test_user_1").to_native(), r"\\?\C:\Users\test_user_1");
-    assert_eq!(win("C:/").to_native(), r"\\?\C:\");
+fn the_verbatim_form_is_the_long_path_one() {
     assert_eq!(
-        win("//nas/media/films/a.mkv").to_native(),
-        r"\\?\UNC\nas\media\films\a.mkv"
+        verbatim_lexically("C:/Users/test_user_1").as_deref(),
+        Some(r"\\?\C:\Users\test_user_1")
     );
-    assert_eq!(win("//nas/media").to_native(), r"\\?\UNC\nas\media\");
+    assert_eq!(verbatim_lexically("C:/").as_deref(), Some(r"\\?\C:\"));
+    assert_eq!(
+        verbatim_lexically("//nas/media/films/a.mkv").as_deref(),
+        Some(r"\\?\UNC\nas\media\films\a.mkv")
+    );
+    assert_eq!(
+        verbatim_lexically("//nas/media").as_deref(),
+        Some(r"\\?\UNC\nas\media\")
+    );
+    assert_eq!(verbatim_lexically("/Users/x"), None);
 }
 
 #[test]
-fn to_native_is_the_wire_spelling_on_posix() {
-    let path = AppPath::parse("/Users/test_user_1/a\\b", PathFlavor::Posix).expect("a POSIX path");
-    assert_eq!(path.to_native(), "/Users/test_user_1/a\\b");
-    assert_eq!(AppPath::parse("/", PathFlavor::Posix).expect("root").to_native(), "/");
-}
-
-#[test]
-fn from_native_takes_every_windows_spelling_to_one_app_path() {
+fn native_to_app_takes_every_windows_spelling_to_one_app_path() {
     for native in [
         r"\\?\C:\Users\test_user_1",
         r"C:\Users\test_user_1",
         "C:/Users/test_user_1",
         r"c:\Users\test_user_1\",
     ] {
-        let path = AppPath::from_native(native, PathFlavor::Windows).expect(native);
-        assert_eq!(path.to_string(), "C:/Users/test_user_1", "{native}");
+        assert_eq!(
+            native_to_app(native, PathFlavor::Windows).as_deref(),
+            Some("C:/Users/test_user_1"),
+            "{native}"
+        );
     }
     for native in [r"\\?\UNC\nas\media\x", r"\\nas\media\x", "//nas/media/x"] {
-        let path = AppPath::from_native(native, PathFlavor::Windows).expect(native);
-        assert_eq!(path.to_string(), "//nas/media/x", "{native}");
+        assert_eq!(
+            native_to_app(native, PathFlavor::Windows).as_deref(),
+            Some("//nas/media/x"),
+            "{native}"
+        );
     }
 }
 
@@ -184,7 +177,7 @@ fn app_spelling_turns_a_native_windows_path_and_keeps_what_it_cant_read() {
 }
 
 #[test]
-fn from_native_refuses_what_names_no_folder() {
+fn native_to_app_refuses_what_names_no_folder() {
     for native in [
         r"\\.\PhysicalDrive0",
         r"\\?\Volume{0b1c2d3e-0000-0000-0000-100000000000}\",
@@ -192,43 +185,24 @@ fn from_native_refuses_what_names_no_folder() {
         r"\x",
         "",
     ] {
-        assert_eq!(AppPath::from_native(native, PathFlavor::Windows), None, "{native}");
+        assert_eq!(native_to_app(native, PathFlavor::Windows), None, "{native}");
     }
 }
 
 #[test]
-fn native_round_trips() {
-    for wire in ["C:/", "C:/Users/test_user_1", "//nas/media/", "//nas/media/a/b"] {
-        let path = win(wire);
-        assert_eq!(
-            AppPath::from_native(&path.to_native(), PathFlavor::Windows),
-            Some(path),
-            "{wire}"
-        );
-    }
-}
-
-#[test]
-fn join_and_parent_never_leave_the_volume() {
-    let root = win("C:/");
-    assert_eq!(root.parent(), None);
-    assert_eq!(root.join("../../Windows").to_string(), "C:/Windows");
-    assert_eq!(win("//nas/media/x").join("../..").to_string(), "//nas/media/");
-    let posix = AppPath::parse("/Users", PathFlavor::Posix).expect("a POSIX path");
+fn a_lexical_join_never_leaves_the_volume() {
+    let w = PathFlavor::Windows;
+    assert_eq!(join_lexically("C:/", "../../Windows", w).as_deref(), Some("C:/Windows"));
     assert_eq!(
-        posix.join("test_user_1/./notes.txt").to_string(),
-        "/Users/test_user_1/notes.txt"
+        join_lexically("//nas/media/x", "../..", w).as_deref(),
+        Some("//nas/media/")
     );
-    assert_eq!(posix.parent().map(|p| p.to_string()), Some("/".to_string()));
-}
-
-#[test]
-fn starts_with_matches_whole_components_on_one_root() {
-    assert!(win("C:/Users/test_user_1").starts_with(&win("C:/Users")));
-    assert!(win("C:/Users").starts_with(&win("C:/")));
-    assert!(!win("C:/Users-1").starts_with(&win("C:/Users")));
-    assert!(!win("D:/Users").starts_with(&win("C:/")));
-    assert!(!win("//nas/media-1/x").starts_with(&win("//nas/media")));
+    assert_eq!(
+        join_lexically("/Users", "test_user_1/./notes.txt", PathFlavor::Posix).as_deref(),
+        Some("/Users/test_user_1/notes.txt")
+    );
+    assert_eq!(parent_in_volume("/Users", PathFlavor::Posix).as_deref(), Some("/"));
+    assert_eq!(parent_in_volume("C:/", w), None);
 }
 
 #[test]

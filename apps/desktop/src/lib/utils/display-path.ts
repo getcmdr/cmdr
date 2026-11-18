@@ -20,11 +20,16 @@
  * It turns text that IS one path, never a path somewhere inside prose, where a `/`
  * could just as well be "and/or"; a message's path PARAMS get it in `t()`.
  *
+ * A name that isn't valid Unicode text carries a plane-16 escape per rejected byte or
+ * unit (`#lib/path/escape`): an address the backend needs back byte for byte, so a person
+ * sees each as U+FFFD, here and in "Copy path" (no text clipboard can hold a raw byte).
+ *
  * Every place that turns a path, or text holding one, into something SHOWN goes
  * through `displayPath`. Something COPIED goes through `withoutPicks` only: a
  * pasted S3 path has to find its account again (Go to path). A copied PATH
  * ("Copy path") goes through `copiedPath`, so Windows pastes `C:\Users\test_user_1`.
  */
+import { withoutEscapes } from '#lib/path/escape.js'
 import { shownPath } from '#lib/path/grammar.js'
 
 const PICK = '\u0000'
@@ -48,11 +53,12 @@ const S3_ACCOUNT = /s3:\/\/[A-Za-z0-9\-_.~+=]+@/g
 const CONTINUES_A_WORD = /^[\p{L}\p{N}+.-]$/u
 
 /**
- * `text` as a person reads it: every pick segment and every S3 access key id taken out,
+ * `text` as a person reads it: every escape of a name that isn't valid Unicode text as
+ * U+FFFD (`#lib/path/escape`), every pick segment and every S3 access key id taken out,
  * and on Windows text that is one local path spelled with `\`.
  */
 export function displayPath(text: string): string {
-  return shownPath(withoutS3KeyIds(withoutPicks(text)))
+  return shownPath(withoutS3KeyIds(withoutPicks(withoutEscapes(text))))
 }
 
 /**
@@ -61,7 +67,7 @@ export function displayPath(text: string): string {
  * account, so Go to path can find it again.
  */
 export function copiedPath(path: string): string {
-  return shownPath(withoutPicks(path))
+  return shownPath(withoutPicks(withoutEscapes(path)))
 }
 
 /** `text` with every S3 app path's access key id taken out. Text without one comes back as is. */

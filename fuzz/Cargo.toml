@@ -27,6 +27,7 @@ tokio = { version = "1", features = ["rt"] }
 cmdr-about = { path = "../crates/cmdr-about", features = ["fuzzing"] }
 cmdr-adb = { path = "../crates/cmdr-adb", features = ["fuzzing"] }
 cmdr-archive = { path = "../crates/cmdr-archive" }
+cmdr-fs = { path = "../crates/cmdr-fs" }
 cmdr-nfs = { path = "../crates/cmdr-nfs", features = ["fuzzing"] }
 cmdr-s3 = { path = "../crates/cmdr-s3", features = ["fuzzing"] }
 cmdr-webdav = { path = "../crates/cmdr-webdav", features = ["fuzzing"] }
@@ -128,6 +129,13 @@ bench = false
 [[bin]]
 name = "about_provenance"
 path = "fuzz_targets/about_provenance.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "app_path_native"
+path = "fuzz_targets/app_path_native.rs"
 test = false
 doc = false
 bench = false

@@ -16,6 +16,7 @@
 
 mod connection;
 mod dirs;
+mod escape_mark;
 mod migrations;
 mod tree_indexes;
 

@@ -408,3 +408,25 @@ fn the_security_log_reads_as_on_unless_the_file_says_false() {
     assert!(parse_security_log_enabled(r#"{ "securityLog.enabled": true }"#));
     assert!(!parse_security_log_enabled(r#"{ "securityLog.enabled": false }"#));
 }
+
+/// The folder settings the backend reads hold app paths as the person picked them,
+/// and the loader hands each through byte for byte, trailing `/` included: the
+/// app-path type normalizes at use, ❌ never in the stored settings. #1225.
+#[test]
+fn media_index_folder_settings_keep_their_bytes() {
+    let folders = [
+        "/Users/test_user_1/photos/",
+        "/Users/test_user_1/a b/c-d",
+        "/srv/a\\b/c:d",
+        "/Users/test_user_1/cafe\u{0301}",
+        "smb://testnas.local/share/x",
+    ];
+    let json = serde_json::json!({
+        "mediaIndex.alwaysIndexFolders": folders,
+        "mediaIndex.excludedFolders": folders,
+    })
+    .to_string();
+    let settings = parse_settings(&json).expect("parses");
+    assert_eq!(settings.media_index_always_index_folders, folders);
+    assert_eq!(settings.media_index_excluded_folders, folders);
+}

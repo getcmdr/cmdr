@@ -758,3 +758,34 @@ fn a_pass_over_an_index_with_no_completed_scan_clears_the_stamp() {
     assert_eq!(read_meta_value(store.read_conn(), SCORED_SCAN_KEY).expect("meta"), None);
     assert!(needs_full_pass(dir.path(), "root", Some("1000")).expect("probe"));
 }
+
+/// A visit's `path` is user data, stored as recorded: every shape a pane path takes
+/// reads back byte for byte, and a trailing `/` is its own row (a pane path never
+/// carries one; the app-path type drops it at the wire, so no new row forms). #1225.
+#[test]
+fn a_visit_path_reads_back_byte_for_byte_and_a_trailing_slash_is_its_own_row() {
+    let (store, dir) = fresh_store();
+    let path = store.db_path().to_path_buf();
+    let visits_db = visits_db_path(dir.path(), "root");
+    let writer = ImportanceWriter::spawn(&path, Some(&visits_db)).expect("spawn");
+    let visited = [
+        "/Users/test_user_1/a b",
+        "/srv/a\\b/c:d",
+        "/Users/test_user_1/.config",
+        "/Users/test_user_1/cafe\u{0301}",
+        "sftp://test_user_1@testnas.local:22/srv/data",
+        "/Users/test_user_1/docs",
+        "/Users/test_user_1/docs/",
+    ];
+    for (at, visit) in visited.iter().enumerate() {
+        writer.record_visit(visit, 1000 + at as u64).expect("visit");
+    }
+    writer.flush_blocking().expect("flush");
+
+    let mut stored: Vec<String> = visits::all_visits(&visits_db).into_iter().map(|(p, _, _)| p).collect();
+    stored.sort();
+    let mut expected: Vec<String> = visited.iter().map(|p| p.to_string()).collect();
+    expected.sort();
+    assert_eq!(stored, expected);
+    writer.shutdown();
+}

@@ -353,3 +353,26 @@ async fn a_read_that_answers_in_time_is_the_answer() {
     let answer = run_bounded(&volume_id, FAST, &CancellationToken::new(), quick).await;
     assert_eq!(answer.err(), Some(LiveMiss::NotFound));
 }
+
+// ── Wire shapes ───────────────────────────────────────────────────────────────
+
+/// What the live read's gate does TODAY with a trailing `/` and a `..` in the path a
+/// tool was given: it walks the path physically, one link at a time, so both land
+/// where the OS would. Pinned so the app-path type's boundary rules (a trailing `/`
+/// dropped, a `..` resolved by the volume or refused) show up here as deliberate
+/// flips. #1225.
+#[test]
+fn a_trailing_slash_and_a_dot_dot_through_a_link_land_where_the_os_does_today() {
+    let dir = TestDir::new("live-wire-shapes");
+    std::fs::create_dir_all(dir.join("real/inner")).expect("dirs");
+    std::fs::create_dir_all(dir.join("real/y")).expect("dirs");
+    std::fs::create_dir_all(dir.join("x/y")).expect("dirs");
+    symlink("../real/inner", dir.join("x/link")).expect("link");
+    let root = dir.to_string_lossy().into_owned();
+    let gate = |rel: &str| gate_local(&target(&root, &format!("{root}/{rel}")), &answered());
+
+    assert_eq!(gate("x/link"), Ok(format!("{root}/real/inner")));
+    assert_eq!(gate("x/link/"), Ok(format!("{root}/real/inner")));
+    assert_eq!(gate("x/link/../y"), Ok(format!("{root}/real/y")));
+    assert_eq!(gate("x/./y"), Ok(format!("{root}/x/y")));
+}

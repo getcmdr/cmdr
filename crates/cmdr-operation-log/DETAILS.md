@@ -105,6 +105,19 @@ read side), which is what actually happened.
 because their data is regenerable derived state. The operation log's data is the user's history — wiping it loses
 undo-ability, which is exactly what makes the log valuable. So it migrates.
 
+**The escape mark** (`src/store/escape_mark.rs`, Decision/Why; #1225's typed app path, review 2's N7): once the app
+path's escapes go live (`cmdr_fs::app_path::ESCAPES_LIVE`, milestone 10f), a stored path's plane-16 private-use code
+points mean raw bytes or units. A row written before then can hold one as LITERAL text, and read live,
+`/d/\u{10FEC3}\u{10FEA9}.txt` names `/d/é.txt`, a real, different file, so a rollback could act on it (APFS too, not
+only Linux). So the first write open with escapes live stamps one `meta` row, `escape_mark_last_literal_op_id`, the
+newest op id then on record (`INSERT OR IGNORE`: once, ever), and `stored_path_reading(conn, op_id)` answers `Literal`
+for an op at or below it (UUIDv7 ids sort by time as text) and for every op while no mark exists. A reader turns a
+stored path into an app path with `StoredPathReading::app_path`, which for `Literal` goes through
+`AppPathBuf::from_literal_store`: the file the row named, exactly. No row changes shape, so it's no migration step. ❗
+Every reader that turns a stored path into a typed path goes through it (the rollback planner's conversion, the plan's
+milestone 8); a `from_wire` of a stored row skips the mark. Tag writes journal here too (`OpKind::Tag`), so they're
+covered.
+
 ## Case folding, not a collation
 
 The index and importance stores register a `platform_case` collation for case-insensitive `UNIQUE`, which is why the

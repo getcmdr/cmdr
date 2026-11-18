@@ -442,7 +442,8 @@ test.describe('Archive editing', () => {
     await tauriPage.evaluate(`(function(){
         var btns = Array.prototype.slice.call(document.querySelectorAll('.conflict-buttons button'));
         // O is Overwrite's answer key (decision-keys.ts); its text also holds the letter chip.
-        var pick = btns.find(function(b){ return b.getAttribute('aria-keyshortcuts') === 'O'; }) || btns[0];
+        // A token match: on Linux and Windows the access keys add an Alt+letter to the same attribute.
+        var pick = btns.find(function(b){ return (b.getAttribute('aria-keyshortcuts') || '').split(/\\s+/).indexOf('O') !== -1; }) || btns[0];
         if (pick) pick.click();
     })()`)
     await expect

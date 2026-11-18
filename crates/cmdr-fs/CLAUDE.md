@@ -9,6 +9,7 @@ paths (`crate::file_system::volume::VolumeError`); other crates use `cmdr_fs::�
 - `volume/`: the `Volume` trait and its types, the ID funnel, the copy-scan seam, the free backend bodies,
   `InMemoryVolume`, `host/` (read `src/volume/host/CLAUDE.md` before writing a backend), and `connection.rs`'s four
   remote types, whose header says which answers what; ❗ confusing any two is a bug.
+- `app_path/`: the typed app path, its arithmetic, the lossless escape, and the native crossings.
 - Around it: `entry.rs` + `icons/`, `sqlite_util.rs`, `staging.rs`, `metadata/`, `archive_format.rs`, `firmlinks.rs`,
   `attr_buf.rs` (macOS: THE `getattrlistbulk` record decoder), and a dozen small leaves. Per-module responsibilities:
   DETAILS § Module map.
@@ -27,10 +28,12 @@ paths (`crate::file_system::volume::VolumeError`); other crates use `cmdr_fs::�
 - **`InMemoryVolume` is the oracle for the `Volume` contracts data safety leans on**, and LIES on request so a defense
   against a hostile backend is testable. ❌ Never relax a contract to green a test. Cross-backend promises live in
   `volume::conformance`.
-- **Stream length is explicit**: real files use `StreamLength::Known`; generated output may use `Unknown`. A backend
-  that has not opted into unknown writes must reject before opening the destination or polling the source.
-- **Atomic replacement is explicit**: `supports_atomic_replace_rename` means force-rename is one replacement step.
-  Delete-then-rename backends keep the conservative default and need tracked aside/restore publication.
+- **Stream length is explicit** (`StreamLength::Known` for real files); a backend not opted into `Unknown` writes
+  rejects before opening the destination or polling the source.
+- **`supports_atomic_replace_rename` means force-rename is ONE replacement step**; delete-then-rename backends keep the
+  default.
+- **An app path is an `AppPath`, ❌ never `std::path` arithmetic on one**, and ❌ no `From`/`AsRef`/`Deref` between
+  them: cross at `to_native` / `from_native`. DETAILS § App paths.
 - **❌ Never build a volume ID by hand, or by stripping characters.** `volume::ids` is the one funnel: a lossy ID hands
   two disks one identity and sends deletes to the wrong one.
 - **❌ Never open SQLite outside `sqlite_util`'s factories.** They install the process-wide page-cache slab, installable
@@ -39,16 +42,14 @@ paths (`crate::file_system::volume::VolumeError`); other crates use `cmdr_fs::�
 - **Nothing here produces user-facing prose**: errors carry typed reasons and structured params, the frontend renders
   every word, and `FileEntry.git_meta` / `restic_meta` state FACTS, ❌ never a sentence. DETAILS § The one place prose
   is produced here.
-- **A test needing a real removable volume uses `testing::disk_images` (macOS), ❌ never its own `hdiutil` or `diskutil`
-  call**, a physical disk, or a new image. DETAILS § "`testing::disk_images`".
+- **A test needing a removable volume uses `testing::disk_images` (macOS)**, ❌ never its own `hdiutil` / `diskutil`
+  call. DETAILS § "`testing::disk_images`".
 - **Log a user value as `LogPrivate`, a path-carrying error as `LogError(&e)`.** ❌ Never a `String` of either, and ❌
   no marking `Display`. DETAILS § "Marked log values".
-- **The global allocator is decided here** (`process_memory/allocator.rs`: system on macOS, mimalloc on Linux or with
-  the `mimalloc` feature). Gate allocator code on the `cmdr_mimalloc` cfg, ❌ never `feature = "mimalloc"` (false on
-  Linux). DETAILS § Which global allocator.
+- **The global allocator is decided here** (`process_memory/allocator.rs`). Gate allocator code on the `cmdr_mimalloc`
+  cfg, ❌ never `feature = "mimalloc"` (false on Linux). DETAILS § Which global allocator.
 - **A stat-and-listing backend implements three small traits, ❌ never its own copy of the walk**: `ScanSource`,
   `MakesDirectories`, `PatchSource` (DETAILS § Bodies a backend gets for free). `secret_store.rs` is a backend's only
   door to the credential store.
 
-Composition rationale, the boundary decisions, and what deliberately stayed in the app: `DETAILS.md`. Read it before any
-non-trivial work here: editing, planning, reorganizing, or advising.
+Rationale, boundary decisions, and what stayed in the app: `DETAILS.md`. Read it before any non-trivial work here.

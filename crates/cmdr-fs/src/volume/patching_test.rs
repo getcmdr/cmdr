@@ -155,3 +155,37 @@ async fn a_path_with_no_parent_is_no_patch() {
 
     assert!(backend.changes().is_empty());
 }
+
+/// Whether a rename stays in one listing is `Path` equality on the two parents, and
+/// `Path::parent` already drops a `.` and a doubled `/` before the last name: two
+/// spellings of one folder make one `Renamed` change, filed and stat-ed under the clean
+/// parent. A typed app path must answer the same parent, or a rename inside one folder
+/// turns into a remove plus an add.
+#[tokio::test]
+#[cfg(unix)]
+async fn a_rename_between_two_spellings_of_one_folder_is_a_single_renamed_change() {
+    let backend = FakeBackend::new(&[("/dir/after.txt", false)]);
+
+    patch_renamed(&backend, Path::new("/dir/./before.txt"), Path::new("/dir//after.txt")).await;
+
+    let changes = backend.changes();
+    assert_eq!(changes.len(), 1, "one folder, two spellings, one change");
+    assert_eq!(changes[0].1.as_os_str(), "/dir");
+    assert!(matches!(
+        &changes[0].2,
+        DirectoryChange::Renamed { old_name, new_entry } if old_name == "before.txt" && new_entry.name == "after.txt"
+    ));
+}
+
+/// On a scheme path the parent is `Path::parent`'s slice, the folder as the pane holds it.
+#[tokio::test]
+#[cfg(unix)]
+async fn a_scheme_paths_change_is_filed_under_its_folder() {
+    let backend = FakeBackend::new(&[("sftp://test_user_1@nas:22/srv/new.txt", false)]);
+
+    patch_created(&backend, Path::new("sftp://test_user_1@nas:22/srv/new.txt")).await;
+
+    let changes = backend.changes();
+    assert_eq!(changes.len(), 1);
+    assert_eq!(changes[0].1.as_os_str(), "sftp://test_user_1@nas:22/srv");
+}
