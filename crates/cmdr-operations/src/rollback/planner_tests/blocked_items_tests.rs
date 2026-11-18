@@ -12,14 +12,14 @@ use cmdr_fs::testing::metadata_fixture::{LOCKED_FLAG, MetadataFixture, add_deny_
 
 use super::test_support::*;
 use cmdr_fs::volume::Volume;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_operation_log::types::{OpKind, RollbackState};
 
 /// `/` as a local volume, so the seeded rows can name the fixture's real paths.
 fn register_root(rig: &Rig) {
     rig.vm.register(
         "root",
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Test root",
             "/",
             crate::host::testing::pane_order_host(),

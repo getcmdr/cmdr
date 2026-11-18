@@ -217,7 +217,7 @@ mod tests {
     async fn a_row_still_out_at_the_deadline_is_named() {
         crate::file_system::volume::manager::get_volume_manager().register_if_absent(
             "root",
-            Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+            Arc::new(cmdr_local::LocalVolume::local_folder(
                 "Test root",
                 "/",
                 crate::volume_host::host(),

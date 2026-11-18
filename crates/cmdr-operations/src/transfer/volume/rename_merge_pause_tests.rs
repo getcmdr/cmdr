@@ -7,7 +7,7 @@
 //! so a single iteration can move gigabytes.
 //!
 //! The pause is wired to the merge's own progress rather than a wall clock, the
-//! same way `rename_merge_cancel_tests.rs` wires its cancel: a `LocalPosixVolume`
+//! same way `rename_merge_cancel_tests.rs` wires its cancel: a `LocalVolume`
 //! wrapper pauses the op the instant the first child rename lands, so the walk is
 //! provably mid-flight when the gate has to hold it.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
@@ -19,7 +19,7 @@ use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, VolumeCopyConfig};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{Volume, VolumeError};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -32,12 +32,12 @@ use tempfile::TempDir;
 /// long before the test's window closes.
 const CHILDREN: usize = 40;
 
-/// A `LocalPosixVolume` wrapper that pauses the operation the instant the FIRST
+/// A `LocalVolume` wrapper that pauses the operation the instant the FIRST
 /// child rename lands, so the pause is deterministically tied to the merge's own
 /// progress instead of a wall clock. The first child still moves (we pause AFTER
 /// its rename returns `Ok`); every later one is the gate's job to hold.
 struct PauseOnFirstRenameVolume {
-    inner: Arc<LocalPosixVolume>,
+    inner: Arc<LocalVolume>,
     state: Arc<crate::state::WriteOperationState>,
     renames: AtomicUsize,
 }
@@ -114,7 +114,7 @@ async fn a_paused_rename_merge_stops_moving_children_until_it_resumes() {
 
     let op = engine.register_state("rename-merge-pause", make_state(&engine));
     let volume: Arc<dyn Volume> = Arc::new(PauseOnFirstRenameVolume {
-        inner: Arc::new(LocalPosixVolume::local_folder(
+        inner: Arc::new(LocalVolume::local_folder(
             "V",
             root.to_path_buf(),
             crate::host::testing::pane_order_host(),

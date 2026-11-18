@@ -116,7 +116,7 @@ fn git_portal_volume_id(repo_root: &Path) -> String {
 mod tests {
     use super::*;
     use cmdr_git::test_fixtures::{Fixture, cleanup, temp_dir};
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     /// The portal's root for the repo at `dir`. Canonical, because registration
     /// canonicalizes so two spellings of one repo share a registration, and on
@@ -136,7 +136,7 @@ mod tests {
         let manager = VolumeManager::new();
         manager.register(
             "root",
-            Arc::new(LocalPosixVolume::local_folder("Root", &dir, crate::volume_host::host())),
+            Arc::new(LocalVolume::local_folder("Root", &dir, crate::volume_host::host())),
         );
         git::wiring::set_virtual_portal_enabled(true);
         (dir, manager)
@@ -309,7 +309,7 @@ mod tests {
             fixture.commit_file("README.md", b"hello\n", "initial");
             manager.register(
                 "root",
-                Arc::new(LocalPosixVolume::local_folder("Root", &dir, crate::volume_host::host())),
+                Arc::new(LocalVolume::local_folder("Root", &dir, crate::volume_host::host())),
             );
             manager.resolve("root", &dir.join(".git/branches")).await;
             repos.push(dir);
@@ -322,11 +322,7 @@ mod tests {
 
         manager.register(
             "root",
-            Arc::new(LocalPosixVolume::local_folder(
-                "Root",
-                &repos[0],
-                crate::volume_host::host(),
-            )),
+            Arc::new(LocalVolume::local_folder("Root", &repos[0], crate::volume_host::host())),
         );
         assert_eq!(
             manager.resolve("root", &repos[0].join(".git/branches")).await.routed,
@@ -352,7 +348,7 @@ mod tests {
         let manager = VolumeManager::new();
         manager.register(
             "ext",
-            Arc::new(LocalPosixVolume::local_folder("Ext", &dir, crate::volume_host::host())),
+            Arc::new(LocalVolume::local_folder("Ext", &dir, crate::volume_host::host())),
         );
         git::wiring::set_virtual_portal_enabled(true);
 

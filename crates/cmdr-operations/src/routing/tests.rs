@@ -57,7 +57,7 @@ fn a_remote_destination_at_the_share_root_stays_the_root() {
 
 #[test]
 fn a_local_destination_still_expands_the_home_shortcut() {
-    let volume: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let volume: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "Root",
         "/",
         crate::host::testing::pane_order_host(),

@@ -30,7 +30,7 @@ use super::network_gated_source_test_support::{CANCEL_PAYLOAD_BYTES, gated_uploa
 use crate::operations_host::app_engine;
 use crate::test_support::TestDir;
 use cmdr_fs::ignore_poison::IgnorePoison;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_operation_log::types::Initiator;
 use cmdr_operations::Operations;
 use cmdr_operations::testing::CollectorEventSink;
@@ -457,7 +457,7 @@ fn expected_tree_lines() -> Vec<String> {
 pub(super) async fn a_directory_tree_lands_intact_on_the_server(remote: Arc<dyn Volume>, dir: PathBuf) {
     let local_dir = TestDir::new("network_tree_onto_server");
     seed_local_tree(&local_dir.join("tree"));
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),
@@ -523,7 +523,7 @@ pub(super) async fn a_seeded_tree_lands_intact_off_the_server(remote: Arc<dyn Vo
     );
 
     let local_dir = TestDir::new("network_tree_off_server");
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),
@@ -642,7 +642,7 @@ pub(super) async fn an_overwrite_answer_replaces_the_destination_bytes(remote: A
 
     let local_dir = TestDir::new("network_overwrite_answer");
     std::fs::write(local_dir.join("target.bin"), &new).expect("seeding the local file");
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),
@@ -712,7 +712,7 @@ pub(super) async fn a_pre_existing_destination_still_probes_each_name(remote: Ar
         std::fs::write(local_dir.join(name), self_describing_bytes(len, name))
             .unwrap_or_else(|e| panic!("seeding {name}: {e:?}"));
     }
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),
@@ -796,7 +796,7 @@ pub(super) async fn awkward_names_survive_a_round_trip(remote: Arc<dyn Volume>, 
     // silently drops a file the user very much still owns.
     std::fs::write(source_root.join("nothing at all.bin"), b"").expect("seeding the empty file");
 
-    let source: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*out_dir,
         crate::volume_host::host(),
@@ -823,7 +823,7 @@ pub(super) async fn awkward_names_survive_a_round_trip(remote: Arc<dyn Volume>, 
     );
 
     let back_dir = TestDir::new("network_awkward_names_back");
-    let back: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let back: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*back_dir,
         crate::volume_host::host(),

@@ -39,7 +39,7 @@ use cmdr_operations::{ConflictResolution, VolumeCopyConfig};
 )]
 async fn phase4_bench_baseline_smb_to_local_100_tiny_files() {
     use cmdr_fs::volume::smb_volume_id;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     use cmdr_operations::testing::CollectorEventSink;
     use cmdr_smb::volume::MountAnchor;
     use cmdr_smb::volume::{SmbConnectionParams, connect_smb_volume};
@@ -73,7 +73,7 @@ async fn phase4_bench_baseline_smb_to_local_100_tiny_files() {
 
     // ── Set up destination (local temp dir) ───────────────────────
     let tmpdir = tempfile::tempdir().expect("tempdir");
-    let local_volume = Arc::new(LocalPosixVolume::local_folder(
+    let local_volume = Arc::new(LocalVolume::local_folder(
         "bench-local",
         tmpdir.path().to_path_buf(),
         crate::volume_host::host(),

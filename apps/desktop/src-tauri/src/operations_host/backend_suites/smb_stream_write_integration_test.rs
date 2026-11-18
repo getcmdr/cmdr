@@ -2,7 +2,7 @@
 //!
 //! `cmdr-smb`'s own `write_stream_integration_test` covers what a write does with
 //! a source in general; this cell is here because its source is a second app
-//! backend, `LocalPosixVolume`, which is the pairing every local-to-share copy
+//! backend, `LocalVolume`, which is the pairing every local-to-share copy
 //! actually runs.
 //!
 //! Same gating as every SMB integration cell: `#[ignore]`d by default, so start
@@ -17,7 +17,7 @@ use cmdr_fs::testing::TestDir;
 use super::smb_test_support::*;
 use cmdr_fs::volume::{StreamLength, WriteMode};
 
-/// A multi-MB local file streams onto the share through `LocalPosixVolume`'s
+/// A multi-MB local file streams onto the share through `LocalVolume`'s
 /// `open_read_stream` into `SmbVolume`'s `write_from_stream`: progress fires more
 /// than once (so the chunked path really ran) and the destination hashes equal to
 /// the source.
@@ -38,7 +38,7 @@ async fn smb_integration_write_from_stream_local_source_large_file() {
     std::fs::write(local_tmp.join("import-large.bin"), &data).unwrap();
 
     let local_vol =
-        cmdr_local::LocalPosixVolume::local_folder("local-src", local_tmp.to_path_buf(), crate::volume_host::host());
+        cmdr_local::LocalVolume::local_folder("local-src", local_tmp.to_path_buf(), crate::volume_host::host());
 
     let smb_path = format!("{}/import-large.bin", dir);
     let progress_calls = AtomicUsize::new(0);
@@ -105,7 +105,7 @@ async fn smb_integration_staged_write_of_a_name_at_the_byte_limit_lands() {
     let local_tmp = TestDir::new("smb-long-name");
     std::fs::write(local_tmp.join("book.epub"), &data).unwrap();
     let local_vol =
-        cmdr_local::LocalPosixVolume::local_folder("local-src", local_tmp.to_path_buf(), crate::volume_host::host());
+        cmdr_local::LocalVolume::local_folder("local-src", local_tmp.to_path_buf(), crate::volume_host::host());
 
     for name in [
         format!("{}.epub", "a".repeat(250)),
@@ -169,7 +169,7 @@ async fn smb_integration_staged_write_of_a_name_past_the_byte_limit_is_an_invali
     let local_tmp = TestDir::new("smb-too-long-name");
     std::fs::write(local_tmp.join("book.epub"), &data).unwrap();
     let local_vol =
-        cmdr_local::LocalPosixVolume::local_folder("local-src", local_tmp.to_path_buf(), crate::volume_host::host());
+        cmdr_local::LocalVolume::local_folder("local-src", local_tmp.to_path_buf(), crate::volume_host::host());
 
     // 150 Greek letters: 300 bytes, which a Windows server would hold (150
     // UTF-16 units) but a Linux one can't.

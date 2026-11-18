@@ -256,7 +256,7 @@ async fn the_binding_holds_what_preflight_saw_not_what_the_agent_saw() {
     let reviewed = dir.join("reviewed.dmg");
     std::fs::write(&reviewed, b"as reviewed").expect("seed");
 
-    let volume = cmdr_local::LocalPosixVolume::local_folder("Root", "/", crate::volume_host::host());
+    let volume = cmdr_local::LocalVolume::local_folder("Root", "/", crate::volume_host::host());
     let sources = vec![reviewed.clone()];
     let expected = super::capture_expected_sources(&volume, &sources).await;
 
@@ -284,7 +284,7 @@ async fn an_untouched_source_survives_its_own_binding() {
     let reviewed = dir.join("reviewed.dmg");
     std::fs::write(&reviewed, b"as reviewed").expect("seed");
 
-    let volume = cmdr_local::LocalPosixVolume::local_folder("Root", "/", crate::volume_host::host());
+    let volume = cmdr_local::LocalVolume::local_folder("Root", "/", crate::volume_host::host());
     let sources = vec![reviewed.clone()];
     let expected = super::capture_expected_sources(&volume, &sources).await;
 
@@ -309,7 +309,7 @@ async fn a_source_that_vanished_before_preflight_is_left_out_of_the_binding() {
     let dir = TestDir::new("bridge_live_binding_gone");
     let gone = dir.join("gone.dmg");
 
-    let volume = cmdr_local::LocalPosixVolume::local_folder("Root", "/", crate::volume_host::host());
+    let volume = cmdr_local::LocalVolume::local_folder("Root", "/", crate::volume_host::host());
     let expected = super::capture_expected_sources(&volume, std::slice::from_ref(&gone)).await;
 
     let sink = CollectorEventSink::new();
@@ -328,14 +328,10 @@ async fn a_source_that_vanished_before_preflight_is_left_out_of_the_binding() {
 /// Registers the local-FS "root" volume the bridge resolves a group's sources through.
 fn ensure_root_volume() {
     use crate::file_system::volume::manager::get_volume_manager;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     get_volume_manager().register_if_absent(
         "root",
-        Arc::new(LocalPosixVolume::local_folder(
-            "Test root",
-            "/",
-            crate::volume_host::host(),
-        )),
+        Arc::new(LocalVolume::local_folder("Test root", "/", crate::volume_host::host())),
     );
 }
 
@@ -801,7 +797,7 @@ async fn the_names_a_move_carries_are_keyed_by_the_sources_the_binding_keeps() {
     std::fs::write(&renamed, b"invoice").expect("seed");
     std::fs::write(&kept, b"receipt").expect("seed");
 
-    let volume = cmdr_local::LocalPosixVolume::local_folder("Root", "/", crate::volume_host::host());
+    let volume = cmdr_local::LocalVolume::local_folder("Root", "/", crate::volume_host::host());
     let sources = vec![renamed.clone(), kept.clone(), gone.clone()];
     let expected = super::capture_expected_sources(&volume, &sources).await;
     let op = |id: i64, path: &std::path::Path, name: Option<&str>| ProposalOp {

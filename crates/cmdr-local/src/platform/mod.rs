@@ -5,9 +5,19 @@
 //! `lstat`, `renamex_np`/`renameat2`, modes, and xattrs through and through, and a Windows one
 //! is `\\?\` paths, `MoveFileExW`, attributes, and reparse points. Each OS's callers name the
 //! one it has; what both answer the same way is pinned here.
+//!
+//! **Which name to write.** `LocalVolume` is this OS's sibling: name it wherever the code
+//! means "this machine's local disk", whatever the OS (a pane's root, a folder opened as its
+//! own volume, a test's tempdir rig). Name `LocalPosixVolume` or `LocalWindowsVolume` only
+//! where the code depends on that OS family: modes, xattrs, inodes, errnos, `std::os::unix`,
+//! or the POSIX-only inherent methods (`barriers_issued`, `barriers`, `with_barrier_interval`,
+//! `with_sidecar_probe`).
 
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+use cmdr_fs::volume::MountClass;
+use cmdr_fs::volume::host::VolumeHost;
 
 #[cfg(unix)]
 pub(crate) mod local_posix;
@@ -19,12 +29,30 @@ pub use local_posix::LocalPosixVolume;
 #[cfg(target_os = "windows")]
 pub use local_windows::LocalWindowsVolume;
 
+/// This machine's local disk as a `Volume`: `LocalPosixVolume` on macOS and Linux. When to
+/// name it and when the sibling: the module doc.
+#[cfg(unix)]
+pub type LocalVolume = LocalPosixVolume;
+/// This machine's local disk as a `Volume`: `LocalWindowsVolume` on Windows. When to name it
+/// and when the sibling: the module doc.
+#[cfg(target_os = "windows")]
+pub type LocalVolume = LocalWindowsVolume;
+
 #[cfg(unix)]
 use local_posix as imp;
 #[cfg(target_os = "windows")]
 use local_windows as imp;
 
 const _: fn(&Path, &Path) -> io::Result<()> = rename_local_exclusive;
+
+// The constructors every `LocalVolume` caller uses, with one signature on every OS, so a
+// site written on one OS builds on the other.
+const _: fn(String, PathBuf, VolumeHost) -> LocalVolume =
+    |name, root, host| LocalVolume::local_folder(name, root, host);
+const _: fn(String, PathBuf, MountClass, VolumeHost) -> LocalVolume =
+    |name, root, mount, host| LocalVolume::on_mount(name, root, mount, host);
+#[cfg(any(test, feature = "testing"))]
+const _: fn(LocalVolume, crate::reading::ListingHook) -> LocalVolume = |volume, hook| volume.with_listing_hook(hook);
 
 /// Renames a local path only when `destination` is unoccupied.
 ///

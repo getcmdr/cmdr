@@ -18,7 +18,7 @@ use cmdr_fs::restic_view::VIRTUAL_ENTRY_NAME;
 use cmdr_fs::volume::{DirectoryChange, UnlockOutcome, Volume};
 use cmdr_listing::ListingId;
 use cmdr_listing::testing::{read_to_end, request};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_restic::test_fixtures::FixtureRepo;
 
 use super::snapshot_watch;
@@ -45,7 +45,7 @@ struct Repo {
     /// The backed-up file, as the view shows it under `latest`.
     latest_file: PathBuf,
     fixture: FixtureRepo,
-    drive: Arc<LocalPosixVolume>,
+    drive: Arc<LocalVolume>,
     _dir: tempfile::TempDir,
 }
 
@@ -61,11 +61,7 @@ impl Repo {
 
         let fixture = FixtureRepo::init(PASSWORD);
         fixture.backup(&source, at(FIRST));
-        let drive = Arc::new(LocalPosixVolume::local_folder(
-            "Drive",
-            &root,
-            crate::volume_host::host(),
-        ));
+        let drive = Arc::new(LocalVolume::local_folder("Drive", &root, crate::volume_host::host()));
         let repo = root.join("repo");
         fixture.write_into(drive.as_ref(), &repo).await;
 

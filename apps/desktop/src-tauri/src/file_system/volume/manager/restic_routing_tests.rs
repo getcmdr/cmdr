@@ -257,7 +257,7 @@ async fn a_routed_volume_is_never_a_restic_parent() {
 /// boundary sits further left, so the portal never sees it.
 #[tokio::test]
 async fn a_git_portal_path_inside_a_snapshot_belongs_to_the_view() {
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let dir = tempfile::tempdir().expect("tempdir");
     let repo = dir.path().join("repo");
@@ -268,7 +268,7 @@ async fn a_git_portal_path_inside_a_snapshot_belongs_to_the_view() {
     let manager = VolumeManager::new();
     manager.register(
         "restic-git-inside",
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Root",
             dir.path(),
             crate::volume_host::host(),
@@ -288,7 +288,7 @@ async fn a_git_portal_path_inside_a_snapshot_belongs_to_the_view() {
 #[tokio::test]
 async fn a_restic_path_inside_a_git_snapshot_belongs_to_the_portal() {
     use cmdr_git::test_fixtures::{Fixture, cleanup, temp_dir};
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
 
     let dir = temp_dir("restic_routing", "inside_git");
     let mut fixture = Fixture::init(dir.clone());
@@ -296,7 +296,7 @@ async fn a_restic_path_inside_a_git_snapshot_belongs_to_the_portal() {
     let manager = VolumeManager::new();
     manager.register(
         "restic-inside-git",
-        Arc::new(LocalPosixVolume::local_folder("Root", &dir, crate::volume_host::host())),
+        Arc::new(LocalVolume::local_folder("Root", &dir, crate::volume_host::host())),
     );
     crate::file_system::git::wiring::set_virtual_portal_enabled(true);
     let backed_up_repo = dir.join(".git/branches/main/backup");

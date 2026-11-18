@@ -35,7 +35,7 @@ use std::time::Duration;
 use crate::testing::TestOperations;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{Volume, VolumeError};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 #[tokio::test(flavor = "current_thread")]
 async fn auto_yield_parks_before_next_window_then_resumes_byte_exact() {
@@ -55,7 +55,7 @@ async fn auto_yield_parks_before_next_window_then_resumes_byte_exact() {
     });
 
     let dst_dir = TestDir::new("autoyield_dst");
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),
@@ -174,7 +174,7 @@ async fn auto_yield_debounces_a_burst_into_one_park() {
     });
 
     let dst_dir = TestDir::new("autoyield_burst_dst");
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),
@@ -283,7 +283,7 @@ async fn auto_yield_min_progress_floor_prevents_starvation() {
     });
 
     let dst_dir = TestDir::new("autoyield_floor_dst");
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),
@@ -375,7 +375,7 @@ async fn auto_yield_cancel_while_yielding_keeps_no_partial() {
     });
 
     let dst_dir = TestDir::new("autoyield_cancel_dst");
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),
@@ -478,7 +478,7 @@ async fn non_mtp_source_never_auto_yields_for_foreground() {
     );
 
     let dst_dir = TestDir::new("autoyield_nonmtp_dst");
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),
@@ -528,7 +528,7 @@ async fn yield_capable_source_with_no_foreground_pending_never_self_yields() {
     });
 
     let dst_dir = TestDir::new("no_self_yield_dst");
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dst_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),

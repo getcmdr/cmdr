@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use cmdr_fs::volume::Volume;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_operations::{ConflictResolution, VolumeCopyConfig};
 
 use super::network_transfer_test_support::start_copy_on;
@@ -40,7 +40,7 @@ fn notes_landed_in(dir: &Path) -> BTreeSet<String> {
 /// clash, and answers that folder.
 async fn copy_off(label: &str, device_volume: Arc<dyn Volume>, sources: Vec<PathBuf>) -> TestDir {
     let local_dir = TestDir::new(label);
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),

@@ -380,7 +380,7 @@ mod add_gate_tests {
     use super::*;
     use crate::file_system::volume::manager::get_volume_manager;
     use cmdr_fs::volume::ConnectionState;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     use std::sync::Arc;
 
     /// Correctness tests must not inherit the production scheduling deadline. The mount-table read
@@ -393,11 +393,7 @@ mod add_gate_tests {
     fn ensure_root_volume() {
         get_volume_manager().register_if_absent(
             "root",
-            Arc::new(LocalPosixVolume::local_folder(
-                "Test root",
-                "/",
-                crate::volume_host::host(),
-            )),
+            Arc::new(LocalVolume::local_folder("Test root", "/", crate::volume_host::host())),
         );
     }
 
@@ -534,11 +530,7 @@ mod add_gate_tests {
     fn register_share(id: &str, root: &str) {
         get_volume_manager().register_if_absent(
             id,
-            Arc::new(LocalPosixVolume::local_folder(
-                "Share",
-                root,
-                crate::volume_host::host(),
-            )),
+            Arc::new(LocalVolume::local_folder("Share", root, crate::volume_host::host())),
         );
     }
 

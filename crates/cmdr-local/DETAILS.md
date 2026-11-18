@@ -341,8 +341,16 @@ so nothing a test can set up fails one without failing the other, and only a tra
 ## The Windows sibling
 
 `LocalWindowsVolume` (`src/platform/local_windows.rs`) is the local disk on Windows, a SIBLING of `LocalPosixVolume`,
-and `src/platform/mod.rs` picks one per OS family (`cfg(unix)` / `cfg(target_os = "windows")`). Callers name the one
-their OS has; `rename_local_exclusive` is pinned to one signature across both.
+and `src/platform/mod.rs` picks one per OS family (`cfg(unix)` / `cfg(target_os = "windows")`) as the alias
+`LocalVolume`. `rename_local_exclusive` and the shared constructors (`local_folder`, `on_mount`, `with_listing_hook`)
+are pinned to one signature across both.
+
+**Decision**: a caller that means "this machine's local disk" names `LocalVolume`; one that depends on the OS family
+(modes, xattrs, inodes, errnos, `std::os::unix`, or the POSIX-only `barriers_issued`, `barriers`,
+`with_barrier_interval`, `with_sidecar_probe`) names the sibling (app-path plan, decided 2026-11-18). **Why**: a
+consumer that names an OS can't build on the other one, and the sibling's name is the marker that a site really is
+POSIX-only. A `#![cfg(unix)]` test file that names only `LocalVolume` is still gated today: its cells hand native
+tempdirs where app paths belong (#1225), and the milestone that converts its crate un-gates it.
 
 **Decision**: siblings, ❌ not Windows arms inside the POSIX volume (windows-port plan, task 35). **Why**: the POSIX
 volume is `lstat`, kernel rename flags, modes, xattrs, and `fsync` through and through, and a Windows one is `\\?\`

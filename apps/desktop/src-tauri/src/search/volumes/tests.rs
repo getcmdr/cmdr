@@ -139,7 +139,7 @@ fn make_index_db_without_volume_path(data_dir: &Path, volume_id: &str) {
 #[test]
 fn mount_root_falls_back_to_the_volume_registry() {
     use crate::file_system::volume::manager::get_volume_manager;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     use std::sync::Arc;
 
     let dir = tempfile::tempdir().expect("temp dir");
@@ -150,11 +150,7 @@ fn mount_root_falls_back_to_the_volume_registry() {
     let manager = get_volume_manager();
     manager.register(
         vid,
-        Arc::new(LocalPosixVolume::local_folder(
-            "Fallback",
-            root,
-            crate::volume_host::host(),
-        )),
+        Arc::new(LocalVolume::local_folder("Fallback", root, crate::volume_host::host())),
     );
 
     let cancel = AtomicBool::new(false);
@@ -181,7 +177,7 @@ fn mount_root_falls_back_to_the_volume_registry() {
 #[test]
 fn a_live_volumes_root_beats_the_root_its_last_scan_recorded() {
     use crate::file_system::volume::manager::get_volume_manager;
-    use cmdr_local::LocalPosixVolume;
+    use cmdr_local::LocalVolume;
     use std::sync::Arc;
 
     let dir = tempfile::tempdir().expect("temp dir");
@@ -192,7 +188,7 @@ fn a_live_volumes_root_beats_the_root_its_last_scan_recorded() {
     let manager = get_volume_manager();
     manager.register(
         vid,
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Remounted",
             live_root,
             crate::volume_host::host(),

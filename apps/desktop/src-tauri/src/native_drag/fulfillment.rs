@@ -276,14 +276,14 @@ async fn stream_one_file(volume: &dyn Volume, source_path: &Path, dest_path: &Pa
 /// always a local FS path (Finder hands us a `file://` URL on the user's disk),
 /// so we resolve through the local-FS write primitive directly rather than the
 /// VolumeManager: the dest "volume" is whatever local disk Finder picked, and
-/// `LocalPosixVolume` rooted at `/` writes to any absolute local path.
+/// `LocalVolume` rooted at `/` writes to any absolute local path.
 async fn write_to_local_dest(
     dest_path: &Path,
     size: u64,
     stream: Box<dyn VolumeReadStream>,
     on_progress: &(dyn Fn(crate::file_system::volume::StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
 ) -> Result<u64, VolumeError> {
-    let local = cmdr_local::LocalPosixVolume::local_folder("Local", PathBuf::from("/"), crate::volume_host::host());
+    let local = cmdr_local::LocalVolume::local_folder("Local", PathBuf::from("/"), crate::volume_host::host());
     // Finder created `dest_path` as a placeholder for us to fill, so it's ours
     // to replace.
     let written = local

@@ -86,7 +86,7 @@ pub(crate) fn is_locked_item(_path: &Path) -> bool {
 }
 
 pub(crate) fn folder_volume(name: &str, root: PathBuf, host: VolumeHost) -> Arc<dyn Volume> {
-    Arc::new(cmdr_local::LocalWindowsVolume::local_folder(name, root, host))
+    Arc::new(cmdr_local::LocalVolume::local_folder(name, root, host))
 }
 
 #[cfg(test)]

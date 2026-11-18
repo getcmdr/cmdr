@@ -68,7 +68,7 @@ use super::s3_transfer_integration_test::{
 };
 use crate::test_support::TestDir;
 use cmdr_fs::ignore_poison::IgnorePoison;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_operations::{ConflictResolution, VolumeCopyConfig, WriteOperationError};
 
 const MIB: usize = 1024 * 1024;
@@ -389,7 +389,7 @@ async fn an_archived_object_refuses_reads_by_name(target: &S3Target) {
         }
 
         let local_dir = TestDir::new("s3_cold_copy");
-        let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+        let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
             "Local",
             &*local_dir,
             crate::volume_host::host(),

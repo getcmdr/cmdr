@@ -384,7 +384,7 @@ async fn the_agent_creates_a_named_folder_itself_either_way() {
 #[tokio::test]
 async fn the_agent_tags_a_file_itself_either_way() {
     const DISK: &str = "agent-tags-disk";
-    let disk = cmdr_local::LocalPosixVolume::local_folder("Disk", "/", cmdr_fs::volume::host::VolumeHost::detached());
+    let disk = cmdr_local::LocalVolume::local_folder("Disk", "/", cmdr_fs::volume::host::VolumeHost::detached());
     crate::file_system::volume::manager::get_volume_manager().register(DISK, Arc::new(disk));
 
     let dir = crate::test_support::TestDir::new("agent-tags");
@@ -441,7 +441,7 @@ async fn the_agent_reads_the_logs_through_use_tool() {
 async fn the_agent_looks_up_what_a_folder_is_either_way() {
     crate::file_system::volume::manager::get_volume_manager().register_if_absent(
         "root",
-        std::sync::Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+        std::sync::Arc::new(cmdr_local::LocalVolume::local_folder(
             "Test root",
             "/",
             crate::volume_host::host(),

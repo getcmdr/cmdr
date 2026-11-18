@@ -23,7 +23,7 @@ use crate::file_system::volume::manager::get_volume_manager;
 use crate::file_viewer::{MAX_SEARCH_MATCHES, SearchMode};
 use crate::test_support::TestDir;
 use cmdr_archive::test_fixtures::{build_zip, stored};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 // ── Authoring ─────────────────────────────────────────────────────────────────
 
@@ -542,11 +542,7 @@ fn find_skips_an_unparseable_page_and_keeps_going() {
 fn a_pdf_inside_a_zip_reads_as_a_pdf() {
     get_volume_manager().register_if_absent(
         "root",
-        Arc::new(LocalPosixVolume::local_folder(
-            "Test root",
-            "/",
-            crate::volume_host::host(),
-        )),
+        Arc::new(LocalVolume::local_folder("Test root", "/", crate::volume_host::host())),
     );
     let dir = TestDir::new("inspect_pdf_in_zip");
     let zip = write(

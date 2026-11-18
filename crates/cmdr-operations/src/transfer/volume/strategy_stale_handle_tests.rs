@@ -19,7 +19,7 @@ use std::time::Duration;
 use crate::testing::TestOperations;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::Volume;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn stream_pipe_file_retries_once_on_stale_destination_handle() {
@@ -30,7 +30,7 @@ async fn stream_pipe_file_retries_once_on_stale_destination_handle() {
     let src_dir = TestDir::new("retry_stale_src");
     fs::write(src_dir.join("a.txt"), "payload-bytes").unwrap(); // 13 bytes
 
-    let source: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let source: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Source",
         src_dir.to_str().unwrap(),
         crate::host::testing::pane_order_host(),

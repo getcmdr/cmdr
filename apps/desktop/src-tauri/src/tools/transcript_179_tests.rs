@@ -16,7 +16,7 @@ use std::sync::Arc;
 
 use cmdr_fs::volume::{ConnectionState, Volume};
 use cmdr_index::importance::PathClass;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
 
@@ -143,7 +143,7 @@ fn list_dir(facts: &VolumeFacts, mount: &Path, volume_id: &str, path: &str) -> V
         path: path.to_string(),
     };
     let resolved = resolve(facts, &input).expect("a named volume resolves");
-    let volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "testshare",
         mount,
         crate::volume_host::host(),

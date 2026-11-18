@@ -12,7 +12,7 @@ use crate::transfer_sides::test_hook;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::Volume;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 /// The host a cell's sweep runs on: a registry holding only the drives the
 /// cell registers, and the engine-wide facts the sweep reports, read back.
@@ -349,7 +349,7 @@ fn returned_drive(name: &str, volume_id: &str, staged: Option<&[u8]>) -> Returne
     if let Some(bytes) = staged {
         std::fs::write(staging.join("footage.mov"), bytes).expect("stage a file");
     }
-    let volume = Arc::new(LocalPosixVolume::local_folder(
+    let volume = Arc::new(LocalVolume::local_folder(
         "Tëstkamera",
         &root,
         crate::host::testing::pane_order_host(),

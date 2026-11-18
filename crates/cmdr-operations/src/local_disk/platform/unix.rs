@@ -72,5 +72,5 @@ pub(crate) fn free_bytes(path: &Path) -> Option<u64> {
 }
 
 pub(crate) fn folder_volume(name: &str, root: PathBuf, host: VolumeHost) -> Arc<dyn Volume> {
-    Arc::new(cmdr_local::LocalPosixVolume::local_folder(name, root, host))
+    Arc::new(cmdr_local::LocalVolume::local_folder(name, root, host))
 }

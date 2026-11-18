@@ -75,7 +75,7 @@ impl Rig {
     fn with_root_volume(self) -> Self {
         self.volumes.register(
             "root",
-            Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+            Arc::new(cmdr_local::LocalVolume::local_folder(
                 "Test root",
                 "/",
                 crate::host::testing::pane_order_host(),
@@ -462,7 +462,7 @@ async fn an_archive_edit_announces_its_temp_then_the_archive_it_replaces() {
 async fn a_fresh_compress_announces_its_zip_and_temp_before_they_exist() {
     let rig = Rig::new("announce_fresh_compress");
     fs::write(rig.join("src/a.txt"), b"a").expect("source");
-    let source: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let source: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "Source",
         rig.join("src"),
         crate::host::testing::pane_order_host(),
@@ -502,7 +502,7 @@ async fn a_volume_copy_onto_a_local_disk_announces_its_destination_and_temp() {
     let rig = Rig::new("announce_volume_copy");
     let source: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     source.create_file(Path::new("/a.txt"), b"a").await.expect("source");
-    let dest: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "Dest",
         rig.join("dst"),
         crate::host::testing::pane_order_host(),
@@ -536,7 +536,7 @@ async fn a_volume_copy_onto_a_local_disk_announces_its_destination_and_temp() {
 async fn a_same_volume_move_on_a_local_disk_announces_both_ends() {
     let rig = Rig::new("announce_volume_move");
     fs::write(rig.join("src/a.txt"), b"a").expect("source");
-    let volume: Arc<dyn Volume> = Arc::new(cmdr_local::LocalPosixVolume::local_folder(
+    let volume: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "Local",
         rig.dir.to_path_buf(),
         crate::host::testing::pane_order_host(),

@@ -210,3 +210,17 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
     relaunched); MCP `list_volumes` and `cmdr://state` list `root` alone on Windows (the non-macOS snapshot); the "Turn
     indexing on?" dialog names the volume by its raw id; a short first segment (`C:`) keeps the 26 px hit-width floor,
     so the path bar shows a gap before the first `\`; SendKeys `Enter` didn't press that dialog's focused Allow.
+- **2026-11-18, the `LocalVolume` alias** (app-path plan milestone 2, `bc690227d6`): consumers that mean "this machine's
+  local disk" name `cmdr_local::LocalVolume`, and the Windows arms of `volumes/platform/` and `local_disk/platform/`
+  name it too. Windows compiles exactly the code it compiled before: every renamed `LocalPosixVolume` site was already
+  behind `cfg(unix)` (else the Windows lane couldn't have built it), and the Windows arms name the same type through the
+  alias. So the alias changes no Windows test outcome by construction; the tests it can turn on stay gated until their
+  crate's app-path milestone (#1225's list). On the builder:
+  `cargo clippy -p cmdr-local -p cmdr-operations -p cmdr-restic -p cmdr --all-targets -D warnings` clean (25m 44s cold,
+  shared with another agent's build); `cargo nextest run` over the same four: 7,327 tests, 6,788 passed, 528 failed, 11
+  timed out, 112 skipped (237 s). Per crate: `cmdr-local` 30 of 30; `cmdr-operations` 1,455 of 1,747; `cmdr` 5,221 of
+  5,404; `cmdr-restic` 82 of 146. Against the earlier runs above the counts moved with the work that landed in between,
+  not with this rename. The Mac's zig cross-check also needs `CXX_x86_64_pc_windows_gnu` (`zig c++`, for
+  `link-cplusplus`), a fresh `CARGO_TARGET_DIR` (a cloned `target/` carried stale Windows artifacts, E0461), and zig's
+  binary named by path, since mise's `zig` shim has no version outside a pinned project; `cargo clippy` there still
+  fails on host and target artifacts mixing (E0461), so Windows clippy runs on the builder.

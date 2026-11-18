@@ -31,7 +31,7 @@ use super::network_transfer_test_support::{
     tree_files,
 };
 use crate::test_support::TestDir;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 /// Big enough to cross the read windows rather than ride in one chunk.
 const PAYLOAD_BYTES: usize = 700_000;
@@ -61,7 +61,7 @@ async fn copy_off_and_compare(label: &str, remote: Arc<dyn Volume>, source: Path
     let name = source.file_name().expect("a filename").to_string_lossy().into_owned();
 
     let local_dir = TestDir::new(label);
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),
@@ -210,7 +210,7 @@ pub(super) async fn copying_onto_a_bucket_lands_every_byte_and_the_mtime(target:
             .and_then(|file| file.set_modified(mtime))
             .expect("dating the local file");
     }
-    let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let local: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Local",
         &*local_dir,
         crate::volume_host::host(),

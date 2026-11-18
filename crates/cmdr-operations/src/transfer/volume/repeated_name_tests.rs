@@ -18,7 +18,7 @@ use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, VolumeCopyConfig};
 use cmdr_fs::volume::{InMemoryVolume, Volume};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -46,7 +46,7 @@ async fn copy_twins_under(policy: ConflictResolution) -> BTreeSet<String> {
 
     let dest_dir = TempDir::new().unwrap();
     std::fs::create_dir(dest_dir.path().join("inbox")).unwrap();
-    let dest: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let dest: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Dest",
         dest_dir.path().to_path_buf(),
         crate::host::testing::pane_order_host(),

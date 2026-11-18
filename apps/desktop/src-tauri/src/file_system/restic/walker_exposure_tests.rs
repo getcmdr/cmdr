@@ -17,14 +17,14 @@ use crate::file_system::volume::{InMemoryVolume, StreamLength, Volume, WriteMode
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::restic_view::VIRTUAL_ENTRY_NAME;
 use cmdr_listing::testing::TestListing;
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 use cmdr_restic::test_fixtures::FixtureRepo;
 
 /// A real (empty) restic repo at `<tempdir>/repo`, on a local volume rooted at
 /// the tempdir.
 async fn local_repo() -> (tempfile::TempDir, PathBuf, Arc<dyn Volume>) {
     let dir = tempfile::tempdir().expect("tempdir");
-    let volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(
+    let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder(
         "Test",
         dir.path(),
         crate::volume_host::host(),

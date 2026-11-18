@@ -279,7 +279,7 @@ impl Pacing for SettablePacing {
     }
 }
 
-/// A volume host for a backend a test builds (a `LocalPosixVolume`, an archive
+/// A volume host for a backend a test builds (a `LocalVolume`, an archive
 /// volume): no panes, so every change goes nowhere and every oracle question
 /// misses, but a local listing comes back in the panes' name order, as under
 /// the app's host. The engine's walkers take a listing's order as is, so a

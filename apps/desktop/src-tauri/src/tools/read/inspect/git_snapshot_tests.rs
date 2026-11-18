@@ -18,7 +18,7 @@ use crate::file_system::volume::manager::get_volume_manager;
 use crate::file_viewer::materialize::{PREVIEW_CAP_BYTES, extract_if_routed_with};
 use crate::test_support::TestDir;
 use cmdr_git::test_fixtures::{Fixture, cleanup, temp_dir};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 /// A repo with one commit, registered as the local drive holding it, with the
 /// portal switched on. (nextest isolates the process-global manager per test.)
@@ -28,7 +28,7 @@ fn repo_registered_as_the_local_drive(name: &str) -> std::path::PathBuf {
     fixture.commit_file("notes.txt", b"line one\nline two\n", "initial");
     get_volume_manager().register(
         "root",
-        Arc::new(LocalPosixVolume::local_folder(
+        Arc::new(LocalVolume::local_folder(
             "Root",
             dir.to_str().unwrap(),
             crate::volume_host::host(),

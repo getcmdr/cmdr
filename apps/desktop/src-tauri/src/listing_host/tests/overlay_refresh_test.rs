@@ -20,7 +20,7 @@ use crate::file_system::volume::manager::get_volume_manager;
 use cmdr_fs::testing::unique_test_id;
 use cmdr_fs::volume::Volume;
 use cmdr_listing::testing::{TestListing, decorate, full_refresh};
-use cmdr_local::LocalPosixVolume;
+use cmdr_local::LocalVolume;
 
 use crate::listing_host::listings;
 use cmdr_git::test_fixtures::{Fixture, cleanup, temp_dir};
@@ -49,7 +49,7 @@ async fn a_full_refresh_of_dot_git_tracks_what_the_overlay_contributes() {
     crate::file_system::git::wiring::set_virtual_portal_enabled(true);
 
     let volume_id = unique_test_id("overlay-refresh-vol");
-    let volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder("Repo", &dir, crate::volume_host::host()));
+    let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder("Repo", &dir, crate::volume_host::host()));
     get_volume_manager().register(&volume_id, Arc::clone(&volume));
 
     // A pane's listing as the first read left it: real entries plus the six.
@@ -115,7 +115,7 @@ async fn a_listing_refresh_of_dot_git_keeps_the_portal_rows() {
     crate::file_system::git::wiring::set_virtual_portal_enabled(true);
 
     let volume_id = unique_test_id("overlay-listing-refresh-vol");
-    let volume: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder("Repo", &dir, crate::volume_host::host()));
+    let volume: Arc<dyn Volume> = Arc::new(LocalVolume::local_folder("Repo", &dir, crate::volume_host::host()));
     get_volume_manager().register(&volume_id, Arc::clone(&volume));
 
     let mut entries = volume.list_directory(&dot_git, None).await.expect("listing .git");

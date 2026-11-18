@@ -19,7 +19,7 @@ use crate::volumes::{DEFAULT_VOLUME_ID, LocationCategory, LocationInfo, NetworkM
 use cmdr_fs::volume::path_grammar::{AppPath, PathFlavor, PathKind, app_spelling};
 use cmdr_fs::volume::windows_volume_ids::{WindowsDrive, WindowsDriveKind, covering_drive};
 use cmdr_fs::volume::{MountClass, SpaceInfo, Volume, path_volume_id};
-use cmdr_local::LocalWindowsVolume;
+use cmdr_local::LocalVolume;
 
 /// What the synthetic `network` volume reports as its `fs_type`, and what a mapped share's row
 /// carries: the SMB name the other arms report, so a consumer classifying by fs type sees a share.
@@ -116,20 +116,15 @@ pub(crate) fn list_locations() -> Vec<LocationInfo> {
 pub(crate) fn root_volume() -> Arc<dyn Volume> {
     let root = system_drive_root();
     let name = root.trim_end_matches('/').to_string();
-    Arc::new(LocalWindowsVolume::local_folder(name, root, crate::volume_host::host()))
+    Arc::new(LocalVolume::local_folder(name, root, crate::volume_host::host()))
 }
 
 pub(crate) fn local_volume_on_mount(name: &str, root: &Path, mount: MountClass) -> Arc<dyn Volume> {
-    Arc::new(LocalWindowsVolume::on_mount(
-        name,
-        root,
-        mount,
-        crate::volume_host::host(),
-    ))
+    Arc::new(LocalVolume::on_mount(name, root, mount, crate::volume_host::host()))
 }
 
 pub(crate) fn is_local_volume(volume: &dyn Volume) -> bool {
-    volume.as_any().is::<LocalWindowsVolume>()
+    volume.as_any().is::<LocalVolume>()
 }
 
 /// A switcher row for one drive, folder mount, or share.
