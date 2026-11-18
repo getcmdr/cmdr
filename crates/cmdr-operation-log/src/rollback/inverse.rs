@@ -109,7 +109,9 @@ async fn original_stays(volumes: &dyn VolumeLookup, unit: &RollbackUnit) -> Resu
     let path = unit.source_path.as_path();
     let original = match volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
         Ok(entry) => entry,
-        Err(VolumeError::NotFound(_)) if path.starts_with(volume.root()) => return Err(SkipReason::OriginalGone),
+        Err(VolumeError::NotFound(_)) if path.starts_with(volume.root().as_std_legacy()) => {
+            return Err(SkipReason::OriginalGone);
+        }
         Err(_) => return Err(SkipReason::UnverifiablePrecondition),
     };
     if original.is_directory {
