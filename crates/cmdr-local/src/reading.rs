@@ -65,7 +65,7 @@ pub fn list_directory_core(path: &Path, listings: &dyn ListingHost) -> Result<Ve
 /// it accompanies); deciding how often the user sees a number belongs to the sampler.
 ///
 /// `is_volume_root` gates the `/.hidden` read (see `read_dot_hidden_names`):
-/// `LocalPosixVolume::list_directory` is the only caller, and it passes
+/// `list_reporting_progress` is the only caller, and both local volumes pass it
 /// `abs_path == self.root()`, the one place Cmdr knows a directory IS a volume
 /// root rather than merely a directory somewhere under one.
 pub(crate) fn list_directory_core_with_tally(
