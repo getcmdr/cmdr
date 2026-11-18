@@ -269,7 +269,9 @@ All under `apps/desktop/src-tauri/src/`.
 - `platform/`: Which OS and version this is (`os_version()`, `macos_at_least()`, Linux's `LinuxDistro`), used by crash +
   error reports and the heartbeat. The first platform seam: every OS split takes the shape in
   `docs/guides/platform-seams.md`. `platform/startup/` holds each OS's order-free setup-hook installers (observers, the
-  volume watcher, native hooks), one `install(app)` per OS
+  volume watcher, native hooks), one `install(app)` per OS. `platform/conventions.rs` holds `PlatformConventions`, how
+  each desktop's own apps behave (dialog button order, access keys, menu model), which the frontend reads through
+  `#lib/platform`
 - `licensing/`: Ed25519 license verification, server validation
 - `settings/`: Settings persistence (tauri-plugin-store)
 - `priority/`: Who gets the volume, and which of its folders come first. The per-volume signals background work yields
@@ -412,8 +414,8 @@ All under `apps/desktop/src-tauri/src/`.
   media index, importance). See `events/CLAUDE.md`
 - `updater/`: Cmdr's own updater on every OS (check, policy, minisign, advisory list). macOS syncs files into the
   running `.app` in place (per-file atomic renames, the bundle's `com.apple.macl` kept); Windows and Linux stage the
-  verified installer and hand it to the Tauri updater plugin on Restart. See
-  `apps/desktop/src-tauri/src/updater/CLAUDE.md`
+  verified installer and hand it to the Tauri updater plugin on Restart; that last step is per OS in
+  `updater/platform/`. See `apps/desktop/src-tauri/src/updater/CLAUDE.md`
 - `security_advisories/`: The committed list of fixed vulnerabilities (`resources/security-advisories.json`), read from
   a vetted staged bundle (or, off macOS, the release's signed copy) by `updater/` for the restart toast's security
   variant and from this build's embedded copy by the What's new popup. See
@@ -502,10 +504,11 @@ numbers their audits landed on. The vendored fork is an ordinary member.
 - `crates/cmdr-menu/`: the menu bar as data: both platforms' rows, the item ids and their commands, the enabled-state
   fold, and what a click asks for. The desktop's `menu/` builds native menus from it; the browser demo draws the macOS
   bar from it through `cmdr-listing-wasm`. See `crates/cmdr-menu/CLAUDE.md`
-- `crates/cmdr-local/`: the local disk: `LocalPosixVolume` (the `Volume` over a `std::fs` root), the `std::fs` reader
-  the watcher reads through too, `rename_local_exclusive` (the one no-replace rename), local volume space with the
-  live-space memo, and the mount probes (`filesystem_kind`, the macOS mount table and `statfs`, Linux's `/proc/mounts`).
-  It reaches the app through its `VolumeHost` alone. See `crates/cmdr-local/CLAUDE.md`
+- `crates/cmdr-local/`: the local disk: `LocalPosixVolume` (the `Volume` over a `std::fs` root on macOS and Linux) and
+  its Windows sibling `LocalWindowsVolume`, both under `src/platform/`, the `std::fs` reader the watcher reads through
+  too, `rename_local_exclusive` (the one no-replace rename), local volume space with the live-space memo, and the mount
+  probes (`filesystem_kind`, the macOS mount table and `statfs`, Linux's `/proc/mounts`). It reaches the app through its
+  `VolumeHost` alone. See `crates/cmdr-local/CLAUDE.md`
 - `crates/cmdr-operation-log/`: the durable, cross-volume journal of file mutations, the app's first durable DB
   (`operation-log.db`) and the foundation for rollback, indexed name search, and a future undo. Single writer thread, a
   forward-migration ladder (not delete-and-recreate) and retention discipline, interned dir prefixes + per-item rows,
