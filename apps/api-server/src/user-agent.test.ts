@@ -45,6 +45,78 @@ describe('classifyUaFamily for a macOS download', () => {
   })
 })
 
+/**
+ * The macOS-only classifier as it stood before the `os` argument (commit `b9abf85792`), kept verbatim as the
+ * oracle: every stored `ua_family` and every `/admin/downloads` bot count was made with it, so a macOS download
+ * must classify exactly as it did, or the dashboard's historical numbers shift.
+ */
+function macOnlyClassifier(userAgent: string | null | undefined): string {
+  if (!userAgent) return 'unknown'
+  const ua = userAgent.toLowerCase()
+  if (
+    ua.includes('macintosh') ||
+    ua.includes('mac os') ||
+    ua.includes('homebrew') ||
+    ua.includes('curl') ||
+    ua.includes('wget')
+  ) {
+    return 'human'
+  }
+  if (ua.includes('windows') || ua.includes('android') || ua.includes('linux') || ua.includes('x11')) {
+    return 'bot'
+  }
+  return 'unknown'
+}
+
+/** Real-shaped User-Agents, the mix `/download` sees: browsers on every OS, package managers, CLIs, crawlers. */
+const realShapedUserAgents = [
+  macSafari,
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:133.0) Gecko/20100101 Firefox/133.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15',
+  'Homebrew/4.4.11 (Macintosh; arm64 Mac OS X 15.1.1) curl/8.7.1',
+  'curl/8.7.1',
+  'Wget/1.25.0',
+  'Wget/1.21.2 (linux-gnu)',
+  windowsEdge,
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0',
+  'Microsoft Windows NT 10.0.26100.0; WindowsPowerShell/5.1',
+  linuxFirefox,
+  ubuntuFirefox,
+  chromeOs,
+  android,
+  'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36',
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1',
+  'Mozilla/5.0 (iPad; CPU OS 17_6 like Mac OS X) AppleWebKit/605.1.15',
+  'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+  'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+  'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.2; +https://openai.com/gptbot)',
+  'python-requests/2.32.3',
+  'Go-http-client/2.0',
+  'node-fetch/1.0 (+https://github.com/bitinn/node-fetch)',
+  'aria2/1.37.0',
+  'Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)',
+  'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131.0.0.0 Safari/537.36',
+  '',
+  null,
+  undefined,
+]
+
+describe('classifyUaFamily for a macOS download, against the macOS-only classifier it replaced', () => {
+  it.each(realShapedUserAgents.map((ua) => [ua]))('classifies %j exactly as before', (ua) => {
+    expect(classifyUaFamily(ua, 'macos')).toBe(macOnlyClassifier(ua))
+  })
+
+  it("resolves a pre-column row (os NULL, family NULL) exactly as before, so stored rows' counts don't shift", () => {
+    for (const ua of realShapedUserAgents) {
+      expect(resolveUaFamily({ uaFamily: null, userAgent: ua ?? null, os: null })).toBe(macOnlyClassifier(ua))
+      expect(resolveUaFamily({ uaFamily: null, userAgent: ua ?? null, os: 'macos' })).toBe(macOnlyClassifier(ua))
+    }
+  })
+})
+
 describe('classifyUaFamily for a Windows download', () => {
   it('classifies a Windows browser, curl, and wget as human', () => {
     expect(classifyUaFamily(windowsEdge, 'windows')).toBe('human')

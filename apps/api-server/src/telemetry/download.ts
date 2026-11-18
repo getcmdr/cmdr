@@ -28,13 +28,15 @@ const kindsByOs: Record<ClientOs, readonly string[]> = {
 }
 
 /**
- * The OSes whose downloads this route serves, from the `PUBLIC_DOWNLOAD_OSES` var (comma-separated, `wrangler.toml`).
- * Absent means macOS only, so a Worker deployed without the var can't expose a build nobody announced. A Windows or
- * Linux file a release already carries stays unreachable here until its OS joins the list.
+ * The OSes whose downloads this route serves: macOS always, plus what the `PUBLIC_DOWNLOAD_OSES` var lists
+ * (comma-separated, `wrangler.toml`). Absent means macOS only, so a Worker deployed without the var can't expose a build
+ * nobody announced. A Windows or Linux file a release already carries stays unreachable here until its OS joins the
+ * list. macOS is never gated: its DMG was public before the gate existed, so an empty or mistyped var must not turn
+ * every published Mac link into a 404.
  */
 export function publicDownloadOses(env: Pick<Bindings, 'PUBLIC_DOWNLOAD_OSES'>): ReadonlySet<ClientOs> {
-  const listed = (env.PUBLIC_DOWNLOAD_OSES ?? 'macos').split(',').map((os) => os.trim())
-  return new Set(listed.filter(isClientOs))
+  const listed = (env.PUBLIC_DOWNLOAD_OSES ?? '').split(',').map((os) => os.trim())
+  return new Set<ClientOs>(['macos', ...listed.filter(isClientOs)])
 }
 
 // Link-unfurl bots and crawlers fetch the download URL to build a preview (Discord, Slack, etc.) or

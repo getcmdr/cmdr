@@ -109,6 +109,19 @@ describe('GET /download/:version/windows/:arch while Windows is not public', () 
     expect(res.status).toBe(404)
   })
 
+  it.each(['', ' ', 'windows', 'linux,windows', 'macOS'])(
+    'keeps serving the macOS DMG on both routes when the var reads %j: it was public before the gate',
+    async (value) => {
+      stubManifests({})
+      const env = bindings({ PUBLIC_DOWNLOAD_OSES: value })
+      for (const path of ['/download/0.61.0/aarch64', '/download/0.61.0/macos/aarch64']) {
+        const res = await app.request(path, { headers: macUa }, env)
+        expect(res.status, path).toBe(302)
+        expect(res.headers.get('location')).toBe('https://download.getcmdr.com/v0.61.0/Cmdr_0.61.0_aarch64.dmg')
+      }
+    },
+  )
+
   it('answers 404 for latest too, before resolving it', async () => {
     const fetchMock = stubManifests({ 'https://getcmdr.com/latest.json': manifestWithWindows('0.70.0') })
     const res = await app.request('/download/latest/windows/x86_64', { headers: windowsUa }, bindings())

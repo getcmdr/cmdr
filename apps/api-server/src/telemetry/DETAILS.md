@@ -187,12 +187,14 @@ D1 table `downloads`. One row per download event with `app_version`, `os`, `kind
   that file answers 404 and writes no row. `downloads.os` / `downloads.kind` default to `macos` / `dmg`, which every row
   from before migration `0033` (and from an older Worker in the migrate-then-deploy window) is.
 * **The public-OS gate: `PUBLIC_DOWNLOAD_OSES`** (`wrangler.toml` `[vars]`, comma-separated, `macos` today; absent means
-  macOS only). An OS off the list answers 404 before any lookup or row, so a release can carry Windows files before
-  anyone announces them. Adding `windows` there (and deploying) is the one switch that makes the Windows download
-  public; the website's download page (Windows port plan task 32) links it only after that.
+  macOS only). macOS is always public whatever the var says (`publicDownloadOses`): its DMG was public before the gate,
+  so an emptied or mistyped var must never 404 every published Mac link. Any other OS off the list answers 404 before
+  any lookup or row, so a release can carry Windows files before anyone announces them. Adding `windows` there (and
+  deploying) is the one switch that makes the Windows download public; the website's download page (Windows port plan
+  task 32) links it only after that.
 
 * **`latest` is a valid `:version`,** for links we can't edit per release (app directories, the README, blog posts, a
-  chat message from last year). `resolveLatestVersion` reads `getcmdr.com/latest.json` (the same manifest the in-app
+  chat message from last year). `resolveLatestRelease` reads `getcmdr.com/latest.json` (the same manifest the in-app
   updater reads, so `latest` can never name a version the updater doesn't know), falling back to GitHub's
   `releases/latest` API for the window where the website is down or mid-deploy. Both answers are validated against
   `versionPattern` before they reach a redirect URL or a D1 row, and both fetches are edge-cached for five minutes, so a
@@ -205,12 +207,12 @@ D1 table `downloads`. One row per download event with `app_version`, `os`, `kind
   Latest, so the boundary is a constant. Lower it only after backfilling the older releases with
   `scripts/release-mirror.sh`. `docs/guides/releasing.md` § Where downloads are served from.
 * **`/download/:version/checksums` is a sibling redirect, not an architecture.** It resolves `latest` through the same
-  `resolveLatestVersion` and 302s to the release's `checksums.txt`, which the website links as `SHA-256 checksums` in
+  `resolveLatestRelease` and 302s to the release's `checksums.txt`, which the website links as `SHA-256 checksums` in
   the download card so a person who took a DMG from the site can verify it (the Homebrew cask and the updater already
   verify themselves). Two things keep it honest: it is registered BEFORE `/:version/:arch`, so the static segment wins
   over the param rather than building `Cmdr_<v>_checksums.dmg`, and ❌ it writes no `downloads` row, because a checksum
   fetch is not an app download and counting one would inflate the per-version breakdown. `checksums` is deliberately
-  absent from `validArchitectures`, which answers a different question the D1 rollups read.
+  absent from `archesByOs`, which answers a different question the D1 rollups read.
 * **Bot/unfurler hits are dropped:** link-preview bots (Discord, Slack, etc.) and crawlers would inflate the count, so a
   User-Agent denylist skips the D1 write (the 302 is still served). A missing UA is treated as a bot too. Homebrew
   downloads via curl, which would match the `curl` rule, so Homebrew is explicitly exempted.

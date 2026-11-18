@@ -27,6 +27,17 @@ describe('migration 0033 (client OS)', () => {
     ).toEqual([{ date: '2026-08-01', app_version: '0.55.0', os: 'macos', arch: 'x86_64', unique_downloaders: 7 }])
   })
 
+  it("keeps each rollup row's id and the id sequence, which production starts at 1000001", () => {
+    const { sqlite } = createSqliteD1({ before: '0033' })
+    sqlite.exec(`INSERT INTO downloads_daily_unique (id, date, app_version, arch, country, source, unique_downloaders)
+                 VALUES (1003259, '2026-08-01', '0.55.0', 'x86_64', 'SE', 'website', 7)`)
+    applyMigrationsFrom(sqlite, '0033')
+    expect(sqlite.prepare('SELECT id FROM downloads_daily_unique').all()).toEqual([{ id: 1003259 }])
+    expect(sqlite.prepare("SELECT seq FROM sqlite_sequence WHERE name = 'downloads_daily_unique'").get()).toEqual({
+      seq: 1003259,
+    })
+  })
+
   it('keeps a Mac and a Windows x86_64 rollup row of the same day apart, where the old key merged them', () => {
     const sqlite = seededBefore()
     const insert =

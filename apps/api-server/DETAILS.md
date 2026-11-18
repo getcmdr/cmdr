@@ -13,7 +13,8 @@ Read this before any non-trivial work here: editing, planning, reorganizing, or 
 
 ## Root files
 
-- **`index.ts`**: Hono app assembly — mounts each area's route modules, wires the scheduled handler.
+- **`index.ts`**: Hono app assembly — mounts each area's route modules, wires the scheduled handler. The default export
+  is the object form (`{ fetch, scheduled }`); `app` is also named-exported for tests.
 - **`admin-auth.ts`**: `verifyAdminAuth`, the one admin gate every `/admin/` route calls first (§ Admin gate).
 - **`types.ts`**: `Bindings`, shared constants, and the helpers every area calls: `enforceIpRateLimit`, `callerIp`,
   `hashCallerIp`, `isValidEmail`, `hasEmailShape` / `emailShapePattern` (the one loose reply-to check, shared by crash
@@ -961,6 +962,45 @@ stored IP hash is brute-forceable. The Worker warns in the log rather than faili
 `IP_HASH_PEPPER is not set` after the first deploy. Once it's set, the next retention sweep clears the weakly-hashed
 rows written before it (90 days for `downloads`, seven days for `update_checks`). The blog-like pseudonyms are the
 exception to that self-healing, since KV has no retention sweep: `src/website/DETAILS.md` § Blog likes.
+
+### Migrations: rehearsal and rollback
+
+Landing a migration runs it on the production `TELEMETRY_DB` with no human in the loop, then deploys the Worker, so for
+a few minutes the OLD Worker runs against the NEW schema. Keep every migration additive enough that the old Worker's
+statements still succeed (a new column needs a default or must be nullable; a rebuilt table keeps every column and key
+the old code names). A rebuild with a wider UNIQUE key is fine only if the old key's rows can't collide under the new
+one (a superset of the old key can't).
+
+Rehearse a migration that rebuilds a table or touches more than a column add, on D1 itself, not only on SQLite: local D1
+(miniflare) and production differ in their authorizer and limits (production rejects `pragma_*` functions, § Cron jobs,
+job 4; local refused a seven-term `UNION ALL` with "too many terms in compound SELECT"), so only a remote run speaks for
+production. The recipe (verified on wrangler 4.151.0 for `0033`, 2026-11-18):
+
+1. Read production's schema, no rows:
+   `pnpm exec wrangler d1 execute TELEMETRY_DB --remote --json --command "SELECT type, name, tbl_name, sql FROM sqlite_master"`.
+   Check for views, triggers, and `REFERENCES` that name the table: `RENAME` after `DROP` fails on a view that names it.
+2. `pnpm exec wrangler d1 create cmdr-rehearsal-<n> --jurisdiction eu`, point a scratch `wrangler.toml` at it with
+   `migrations_dir` set to this folder, and load the schema (minus `_cf_KV` and `sqlite_sequence`), the applied rows of
+   `d1_migrations`, and fake production-shaped rows (counts from `SELECT COUNT(*)`; NULLs where old rows have them).
+3. Snapshot counts and checksums, `wrangler d1 migrations apply TELEMETRY_DB --remote` (against the scratch config),
+   snapshot again, run main's INSERTs and reads against the new schema, then `wrangler d1 delete cmdr-rehearsal-<n>`.
+   Remote `--file` returns no per-statement results: run each SELECT with `--command`.
+
+Rollback, in order of reach:
+
+1. **Before landing, note the bookmark**: `pnpm exec wrangler d1 time-travel info TELEMETRY_DB --json` prints the
+   current `bookmark`. Time Travel can also restore to a `--timestamp` (Unix or RFC 3339) within 30 days, so a lost
+   bookmark costs only precision.
+2. **The Worker misbehaves, the data is fine**: `pnpm exec wrangler rollback` (in `apps/api-server`) puts the previous
+   Worker version back. An additive migration needs no undo: the old Worker runs on the new schema, which is what the
+   rehearsal's step 3 proves.
+3. **The migration itself damaged data**:
+   `pnpm exec wrangler d1 time-travel restore TELEMETRY_DB --bookmark=<bookmark from 1>` (or
+   `--timestamp=<before the deploy>`). It cancels in-flight queries and DROPS every write since that point (heartbeats,
+   downloads, reports, AND any `license_issuance` row: check `/admin/licenses` against Paddle for sales in that window).
+   It prints a bookmark that undoes the restore. Then roll the Worker back (2), and revert the migration's commit on
+   `main` before anything else deploys: `d1_migrations` is restored too, so the next deploy would apply the migration
+   again.
 
 Deployed to `api.getcmdr.com` via a Cloudflare custom domain (declared in `wrangler.toml` `[[routes]]`).
 `license.getcmdr.com` is a permanent alias for existing app versions. Fallback URL:

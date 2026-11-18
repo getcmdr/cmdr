@@ -33,8 +33,10 @@ CREATE TABLE downloads_daily_unique_by_os (
     UNIQUE(date, app_version, os, arch, country, source)
 );
 
-INSERT INTO downloads_daily_unique_by_os (date, app_version, os, arch, country, source, unique_downloaders)
-    SELECT date, app_version, 'macos', arch, country, source, unique_downloaders FROM downloads_daily_unique;
+-- Copies `id` too, so the rows keep their ids and the AUTOINCREMENT sequence carries on from production's
+-- (it starts at 1000001 after the EU import) instead of restarting at the row count.
+INSERT INTO downloads_daily_unique_by_os (id, date, app_version, os, arch, country, source, unique_downloaders)
+    SELECT id, date, app_version, 'macos', arch, country, source, unique_downloaders FROM downloads_daily_unique;
 
 DROP TABLE downloads_daily_unique;
 ALTER TABLE downloads_daily_unique_by_os RENAME TO downloads_daily_unique;

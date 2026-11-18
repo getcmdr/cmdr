@@ -46,10 +46,9 @@ Root holds the assembly and the shared leaves (`index.ts`, `types.ts`, `admin-au
   the tick reports to healthchecks.io. ❌ Never let `console.error` be a job's only failure path: that's how a dead
   credential ran silently for weeks. DETAILS § Cron alarms.
 - **D1 rejects SQL that SQLite accepts, and mocked tests can't see it**: a dialect rejection (`SQLITE_AUTH` on
-  `pragma_*` functions) passes CI and throws daily in production. Run a new query shape through
-  `wrangler d1 execute --remote` once. DETAILS § Cron jobs, job 4.
+  `pragma_*` functions) passes CI and throws in production. Run a new query shape through `wrangler d1 execute --remote`
+  once. DETAILS § Cron jobs, job 4.
 - **Deploy rails**: apply D1 migrations first (`wrangler d1 migrations apply TELEMETRY_DB`); the default export stays
-  the object form (`{ fetch, scheduled }`) or cron breaks (`app` is also named-exported for tests).
+  the object form (`{ fetch, scheduled }`) or cron breaks. Additive migrations only; rollback: DETAILS § Deployment.
 
-Routes, secrets, bindings, Worker types, cron, retention, and runbooks: `DETAILS.md`. Read it before any non-trivial
-work or advice here.
+Routes, secrets, bindings, cron, retention, and runbooks: `DETAILS.md`. Read it before any non-trivial work here.
