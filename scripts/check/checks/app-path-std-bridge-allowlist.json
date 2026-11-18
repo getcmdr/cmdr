@@ -1,6 +1,14 @@
 {
   "$comment": "Three per-file budgets, all strict ratchets (local runs lower an entry to the current count and drop a file that reaches zero; raising one needs David's OK, scripts/check/checks/DETAILS.md § Allowlist consent). `files`: app-path transition-bridge calls (`AppPath::legacy_unchecked`, `AppPath::as_std_legacy`), the progress meter while the crates move onto the app path. `appTextToPath`: app TEXT (a `FileEntry.path` or `.name`, an app path's `.as_str()`) turned into a `std::path` value or a `ChildName`, seeded from the tree when the app path landed. `pathFromBareText`: a bare path- or name-shaped identifier (`PathBuf::from(&path)`, `Path::new(&dest_dir)`) or a collection mapped through `PathBuf::from`, seeded from the tree in the type's second review; many are native, so it's coarse. ❗ Both text budgets are a TRIPWIRE and a floor, not a gate: no scan sees app text arrive through a `let`, `.into()`, an `impl AsRef<Path>` parameter, or a `format!` join. The escape producers (`from_native*`, `escape_*`) stay out of production code while either is above zero, and the sound gate is the type-level one in docs/specs/app-path-plan.md § \"Keeping it that way\" (crates/cmdr-fs/DETAILS.md § \"App paths\").",
   "files": {
+    "crates/cmdr-archive/src/boundary_on_parent.rs": 2,
+    "crates/cmdr-archive/src/boundary_on_parent_test.rs": 3,
+    "crates/cmdr-archive/src/volume.rs": 12,
+    "crates/cmdr-archive/src/volume_apple_double_test.rs": 10,
+    "crates/cmdr-archive/src/volume_runtime_test.rs": 5,
+    "crates/cmdr-archive/src/volume_streams.rs": 2,
+    "crates/cmdr-archive/src/volume_test.rs": 62,
+    "crates/cmdr-archive/src/watch/host_seam_test.rs": 4,
     "crates/cmdr-fs/src/volume/conformance.rs": 30,
     "crates/cmdr-fs/src/volume/conformance/directory_creation.rs": 9,
     "crates/cmdr-fs/src/volume/conformance/forced_rename.rs": 4,

@@ -924,3 +924,7 @@ mod volume_apple_double_test;
 #[cfg(test)]
 #[path = "volume_runtime_test.rs"]
 mod volume_runtime_test;
+
+#[cfg(test)]
+#[path = "volume_flip_guard_test.rs"]
+mod volume_flip_guard_test;
