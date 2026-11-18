@@ -443,22 +443,27 @@ pub fn validate_filename(name: &str, rules: NameRules) -> Result<Option<Portabil
     Ok(warning)
 }
 
-/// Which classes of Windows trouble `name` has, whatever the destination: the
-/// scan's tally reads it, then the destination's [`NameRules`] say whether
-/// each is refused, warned about, or fine there. `None` for a name Windows
-/// takes as is.
-pub fn windows_portability(name: &str) -> Option<PortabilityWarning> {
-    let everywhere_warned = NameRules {
-        format: NameFormat::Windows,
-        windows_characters: NameTier::Warn,
-        reserved_names: NameTier::Warn,
-        name_limit: LengthLimit {
-            max: usize::MAX,
-            unit: LengthUnit::Bytes,
-        },
-        path_limit: None,
-    };
-    validate_filename(name, everywhere_warned).ok().flatten()
+/// Every class of Windows trouble `name` has, whatever the destination, in
+/// [`validate_filename`]'s order (a character, a device name, a trailing space
+/// or period): the scan's tally reads it, then the destination's [`NameRules`]
+/// say whether each is refused, warned about, or fine there. A name in several
+/// classes (`CON.a:b`, `a?.`) answers each, so a destination that warns about
+/// only one of them still hears of it. All `None` for a name Windows takes as
+/// is. Allocates only for a hit's character.
+pub fn windows_portability(name: &str) -> [Option<PortabilityWarning>; 3] {
+    if name.chars().all(renders_blank) {
+        return [None, None, None];
+    }
+    [
+        name.chars()
+            .find_map(windows_character)
+            .map(|character| PortabilityWarning::WindowsCharacter { character }),
+        reserved_device_name(name).map(|reserved| PortabilityWarning::ReservedName {
+            name: reserved.to_string(),
+        }),
+        name.ends_with([' ', '.'])
+            .then_some(PortabilityWarning::EndsWithSpaceOrPeriod),
+    ]
 }
 
 /// How a character no filesystem takes reads in a refusal: `/` itself, NUL by name.
@@ -661,22 +666,21 @@ mod tests {
 
     #[test]
     fn the_tally_reads_every_class_whatever_the_destination() {
+        let character = |c: &str| Some(PortabilityWarning::WindowsCharacter { character: c.into() });
+        let reserved = |n: &str| Some(PortabilityWarning::ReservedName { name: n.into() });
+        let trailing = Some(PortabilityWarning::EndsWithSpaceOrPeriod);
+        assert_eq!(windows_portability("a:b"), [character(":"), None, None]);
+        assert_eq!(windows_portability("con.txt"), [None, reserved("con"), None]);
+        assert_eq!(windows_portability("x."), [None, None, trailing.clone()]);
         assert_eq!(
-            windows_portability("a:b"),
-            Some(PortabilityWarning::WindowsCharacter { character: ":".into() })
+            windows_portability("CON.a:b?."),
+            [character(":"), reserved("CON"), trailing],
+            "every class a name falls in"
         );
-        assert_eq!(
-            windows_portability("con.txt"),
-            Some(PortabilityWarning::ReservedName { name: "con".into() })
-        );
-        assert_eq!(
-            windows_portability("x."),
-            Some(PortabilityWarning::EndsWithSpaceOrPeriod)
-        );
-        assert_eq!(windows_portability("fine.txt"), None);
+        assert_eq!(windows_portability("fine.txt"), [None, None, None]);
         assert_eq!(
             windows_portability(&"a".repeat(300)),
-            None,
+            [None, None, None],
             "length isn't a portability class"
         );
     }
