@@ -429,7 +429,7 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Cmdr begint de volgende keer met deze keuze, en je kunt dit wijzigen in Voorkeuren. Als de keuze bestanden overschrijft, zie je eerst een waarschuwing.} linuxKde {Cmdr begint de volgende keer met deze keuze, en je kunt dit wijzigen in ‘Cmdr configureren’. Als de keuze bestanden overschrijft, zie je eerst een waarschuwing.} other {Cmdr begint de volgende keer met deze keuze, en je kunt dit wijzigen in Instellingen. Als de keuze bestanden overschrijft, zie je eerst een waarschuwing.}}",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Cmdr begint de volgende keer met deze keuze, en je kunt dit wijzigen in Instellingen. Als de keuze bestanden overschrijft, zie je eerst een waarschuwing.} linuxGnome {Cmdr begint de volgende keer met deze keuze, en je kunt dit wijzigen in Voorkeuren. Als de keuze bestanden overschrijft, zie je eerst een waarschuwing.} linuxKde {Cmdr begint de volgende keer met deze keuze, en je kunt dit wijzigen in ‘Cmdr configureren’. Als de keuze bestanden overschrijft, zie je eerst een waarschuwing.} other {Cmdr begint de volgende keer met deze keuze, en je kunt dit wijzigen in Instellingen. Als de keuze bestanden overschrijft, zie je eerst een waarschuwing.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
     "sourceHash": "d75e9f6"
   },

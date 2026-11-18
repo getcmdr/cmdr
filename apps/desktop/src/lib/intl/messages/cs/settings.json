@@ -2506,11 +2506,11 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr používá poskytovatele AI a klíč, které máte nastavené v Předvolbách > AI ({provider}).} linuxKde {Cmdr používá poskytovatele AI a klíč, které máte nastavené v okně Nastavit Cmdr > AI ({provider}).} other {Cmdr používá poskytovatele AI a klíč, které máte nastavené v Nastavení > AI ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr používá poskytovatele AI a klíč, které máte nastavené v Nastavení > AI ({provider}).} linuxGnome {Cmdr používá poskytovatele AI a klíč, které máte nastavené v Předvolbách > AI ({provider}).} linuxKde {Cmdr používá poskytovatele AI a klíč, které máte nastavené v okně Nastavit Cmdr > AI ({provider}).} other {Cmdr používá poskytovatele AI a klíč, které máte nastavené v Nastavení > AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
     "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Pokud chcete začít chatovat, zapněte poskytovatele AI v Předvolbách > AI.} linuxKde {Pokud chcete začít chatovat, zapněte poskytovatele AI v okně Nastavit Cmdr > AI.} other {Pokud chcete začít chatovat, zapněte poskytovatele AI v Nastavení > AI.}}",
+  "settings.askCmdr.provider.off": "{platform, select, windows {Pokud chcete začít chatovat, zapněte poskytovatele AI v Nastavení > AI.} linuxGnome {Pokud chcete začít chatovat, zapněte poskytovatele AI v Předvolbách > AI.} linuxKde {Pokud chcete začít chatovat, zapněte poskytovatele AI v okně Nastavit Cmdr > AI.} other {Pokud chcete začít chatovat, zapněte poskytovatele AI v Nastavení > AI.}}",
   "@settings.askCmdr.provider.off": {
     "sourceHash": "0196a5c"
   },
@@ -2957,7 +2957,7 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Sekce předvoleb} other {Sekce nastavení}}",
+  "settings.sidebar.sections": "{platform, select, windows {Sekce nastavení} linuxGnome {Sekce předvoleb} other {Sekce nastavení}}",
   "@settings.sidebar.sections": {
     "sourceHash": "4fa3c2e"
   },
@@ -3428,7 +3428,7 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Předvolby} linuxKde {Nastavit – Cmdr} other {Nastavení}}",
+  "settings.window.title": "{platform, select, windows {Nastavení} linuxGnome {Předvolby} linuxKde {Nastavit – Cmdr} other {Nastavení}}",
   "@settings.window.title": {
     "sourceHash": "80cee55"
   },

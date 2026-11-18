@@ -3,11 +3,11 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "{platform, select, linuxGnome {使用统计和崩溃报告会保持关闭，直到你在“首选项 › 更新与隐私”中重新开启。} linuxKde {使用统计和崩溃报告会保持关闭，直到你在“配置 Cmdr › 更新与隐私”中重新开启。} other {使用统计和崩溃报告会保持关闭，直到你在“设置 › 更新与隐私”中重新开启。}}",
+  "stateRecovery.settings.body": "{platform, select, windows {使用统计和崩溃报告会保持关闭，直到你在“设置 › 更新与隐私”中重新开启。} linuxGnome {使用统计和崩溃报告会保持关闭，直到你在“首选项 › 更新与隐私”中重新开启。} linuxKde {使用统计和崩溃报告会保持关闭，直到你在“配置 Cmdr › 更新与隐私”中重新开启。} other {使用统计和崩溃报告会保持关闭，直到你在“设置 › 更新与隐私”中重新开启。}}",
   "@stateRecovery.settings.body": {
     "sourceHash": "8e4debd"
   },
-  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {打开首选项} linuxKde {配置 Cmdr} other {打开设置}}",
+  "stateRecovery.settings.openSettings": "{platform, select, windows {打开设置} linuxGnome {打开首选项} linuxKde {配置 Cmdr} other {打开设置}}",
   "@stateRecovery.settings.openSettings": {
     "sourceHash": "f970930"
   },
@@ -19,11 +19,11 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "{platform, select, linuxGnome {如果 Cmdr 现在显示为无许可证，请在“首选项 › 许可证”中重新输入你的许可证密钥。} linuxKde {如果 Cmdr 现在显示为无许可证，请在“配置 Cmdr › 许可证”中重新输入你的许可证密钥。} other {如果 Cmdr 现在显示为无许可证，请在“设置 › 许可证”中重新输入你的许可证密钥。}}",
+  "stateRecovery.license.body": "{platform, select, windows {如果 Cmdr 现在显示为无许可证，请在“设置 › 许可证”中重新输入你的许可证密钥。} linuxGnome {如果 Cmdr 现在显示为无许可证，请在“首选项 › 许可证”中重新输入你的许可证密钥。} linuxKde {如果 Cmdr 现在显示为无许可证，请在“配置 Cmdr › 许可证”中重新输入你的许可证密钥。} other {如果 Cmdr 现在显示为无许可证，请在“设置 › 许可证”中重新输入你的许可证密钥。}}",
   "@stateRecovery.license.body": {
     "sourceHash": "158e224"
   },
-  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {打开首选项} linuxKde {配置 Cmdr} other {打开设置}}",
+  "stateRecovery.license.openSettings": "{platform, select, windows {打开设置} linuxGnome {打开首选项} linuxKde {配置 Cmdr} other {打开设置}}",
   "@stateRecovery.license.openSettings": {
     "sourceHash": "f970930"
   },

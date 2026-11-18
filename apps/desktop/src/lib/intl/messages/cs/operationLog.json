@@ -15,7 +15,7 @@
   "@operationLog.dialog.empty": {
     "sourceHash": "2dea414"
   },
-  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {Historie operací teď nic nezaznamenává, takže se tu nové kopírování, přesuny, přejmenování a mazání neobjeví a nedají se odvolat. Aby se znovu zaznamenávaly, zapněte ji v Předvolbách.} linuxKde {Historie operací teď nic nezaznamenává, takže se tu nové kopírování, přesuny, přejmenování a mazání neobjeví a nedají se odvolat. Aby se znovu zaznamenávaly, zapněte ji v okně Nastavit Cmdr.} other {Historie operací teď nic nezaznamenává, takže se tu nové kopírování, přesuny, přejmenování a mazání neobjeví a nedají se odvolat. Aby se znovu zaznamenávaly, zapněte ji v Nastavení.}}",
+  "operationLog.dialog.recordingOff": "{platform, select, windows {Historie operací teď nic nezaznamenává, takže se tu nové kopírování, přesuny, přejmenování a mazání neobjeví a nedají se odvolat. Aby se znovu zaznamenávaly, zapněte ji v Nastavení.} linuxGnome {Historie operací teď nic nezaznamenává, takže se tu nové kopírování, přesuny, přejmenování a mazání neobjeví a nedají se odvolat. Aby se znovu zaznamenávaly, zapněte ji v Předvolbách.} linuxKde {Historie operací teď nic nezaznamenává, takže se tu nové kopírování, přesuny, přejmenování a mazání neobjeví a nedají se odvolat. Aby se znovu zaznamenávaly, zapněte ji v okně Nastavit Cmdr.} other {Historie operací teď nic nezaznamenává, takže se tu nové kopírování, přesuny, přejmenování a mazání neobjeví a nedají se odvolat. Aby se znovu zaznamenávaly, zapněte ji v Nastavení.}}",
   "@operationLog.dialog.recordingOff": {
     "sourceHash": "3204ad8"
   },

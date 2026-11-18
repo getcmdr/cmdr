@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {A IA na nuvem fica desativada até você permitir. Dá para fazer isso depois em Preferências > IA.} linuxKde {A IA na nuvem fica desativada até você permitir. Dá para fazer isso depois em Configurar Cmdr > IA.} other {A IA na nuvem fica desativada até você permitir. Dá para fazer isso depois em Ajustes > IA.}}",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {A IA na nuvem fica desativada até você permitir. Dá para fazer isso depois em Ajustes > IA.} linuxGnome {A IA na nuvem fica desativada até você permitir. Dá para fazer isso depois em Preferências > IA.} linuxKde {A IA na nuvem fica desativada até você permitir. Dá para fazer isso depois em Configurar Cmdr > IA.} other {A IA na nuvem fica desativada até você permitir. Dá para fazer isso depois em Ajustes > IA.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "6e0eb09"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {O Cmdr funciona totalmente sem IA. Você pode ativá-la mais tarde nas Preferências.} linuxKde {O Cmdr funciona totalmente sem IA. Você pode ativá-la mais tarde em Configurar Cmdr.} other {O Cmdr funciona totalmente sem IA. Você pode ativá-la mais tarde nos Ajustes.}}",
+  "onboarding.stepAi.off.help": "{platform, select, windows {O Cmdr funciona totalmente sem IA. Você pode ativá-la mais tarde nos Ajustes.} linuxGnome {O Cmdr funciona totalmente sem IA. Você pode ativá-la mais tarde nas Preferências.} linuxKde {O Cmdr funciona totalmente sem IA. Você pode ativá-la mais tarde em Configurar Cmdr.} other {O Cmdr funciona totalmente sem IA. Você pode ativá-la mais tarde nos Ajustes.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "b20cf1d"
   },
@@ -391,7 +391,7 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Note que está ATIVADO por padrão para incentivar as pessoas a me enviarem dados durante o Beta.\nVocê pode mudar isto a qualquer momento nas Preferências.} linuxKde {Note que está ATIVADO por padrão para incentivar as pessoas a me enviarem dados durante o Beta.\nVocê pode mudar isto a qualquer momento em Configurar Cmdr.} other {Note que está ATIVADO por padrão para incentivar as pessoas a me enviarem dados durante o Beta.\nVocê pode mudar isto a qualquer momento nos Ajustes.}}",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Note que está ATIVADO por padrão para incentivar as pessoas a me enviarem dados durante o Beta.\nVocê pode mudar isto a qualquer momento nos Ajustes.} linuxGnome {Note que está ATIVADO por padrão para incentivar as pessoas a me enviarem dados durante o Beta.\nVocê pode mudar isto a qualquer momento nas Preferências.} linuxKde {Note que está ATIVADO por padrão para incentivar as pessoas a me enviarem dados durante o Beta.\nVocê pode mudar isto a qualquer momento em Configurar Cmdr.} other {Note que está ATIVADO por padrão para incentivar as pessoas a me enviarem dados durante o Beta.\nVocê pode mudar isto a qualquer momento nos Ajustes.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "47a7511"
   },
@@ -467,7 +467,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {Você pode mudar isto a qualquer momento nas Preferências.} linuxKde {Você pode mudar isto a qualquer momento em Configurar Cmdr.} other {Você pode mudar isto a qualquer momento nos Ajustes.}}",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Você pode mudar isto a qualquer momento nos Ajustes.} linuxGnome {Você pode mudar isto a qualquer momento nas Preferências.} linuxKde {Você pode mudar isto a qualquer momento em Configurar Cmdr.} other {Você pode mudar isto a qualquer momento nos Ajustes.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "320f582"
   },

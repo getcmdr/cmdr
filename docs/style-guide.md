@@ -130,7 +130,9 @@ itself; `other` stays desktop-neutral for every other desktop. Today's desktop w
     Cmdr…"). **The window's title, and every string that sends the user there, starts with the menu row's word**:
     "Settings" on macOS, Windows, and other Linux; "Preferences" on GNOME; "Configure" on KDE. A path inside it follows
     too ("Preferences > File operations"). Windows keeps "Settings" because Microsoft's app-settings guidance and its
-    own apps say so, and one word is easier in docs. Evidence: `copy-glossary-evidence.md` § The settings window's
+    own apps say so, and one word is easier in docs. Every key naming the window still carries a `windows` branch with
+    the same English (`@key.identicalBranches` says why), so a translation can use Microsoft's word where it differs
+    from Apple's (French `Paramètres` beside `Réglages`). Evidence: `copy-glossary-evidence.md` § The settings window's
     title; `apps/desktop/src/lib/settings/settings-window-name.test.ts` pins the title against the menu row on all five
     systems.
   - **Keychain**, **Keychain Access** / **Credential Manager**, named only where the user has to go there (a checkbox

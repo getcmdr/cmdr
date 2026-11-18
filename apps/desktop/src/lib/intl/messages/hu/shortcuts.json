@@ -333,7 +333,7 @@
   "@shortcuts.window.hideEmpty": {
     "sourceHash": "d3cb18e"
   },
-  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Billentyűparancsok szerkesztése a Beállításokban} linuxKde {Billentyűparancsok szerkesztése a Cmdr beállításaiban} other {Billentyűparancsok szerkesztése a Beállításokban}}",
+  "shortcuts.window.editInSettings": "{platform, select, windows {Billentyűparancsok szerkesztése a Beállításokban} linuxGnome {Billentyűparancsok szerkesztése a Beállításokban} linuxKde {Billentyűparancsok szerkesztése a Cmdr beállításaiban} other {Billentyűparancsok szerkesztése a Beállításokban}}",
   "@shortcuts.window.editInSettings": {
     "sourceHash": "875f6b7"
   }

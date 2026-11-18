@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {到「偏好設定」裡為這個網路磁碟機開啟影像索引，就能搜尋照片裡的文字。} linuxKde {到「設定 Cmdr」裡為這個網路磁碟機開啟影像索引，就能搜尋照片裡的文字。} other {到「設定」裡為這個網路磁碟機開啟影像索引，就能搜尋照片裡的文字。}}",
+  "search.imageResults.networkOff": "{platform, select, windows {到「設定」裡為這個網路磁碟機開啟影像索引，就能搜尋照片裡的文字。} linuxGnome {到「偏好設定」裡為這個網路磁碟機開啟影像索引，就能搜尋照片裡的文字。} linuxKde {到「設定 Cmdr」裡為這個網路磁碟機開啟影像索引，就能搜尋照片裡的文字。} other {到「設定」裡為這個網路磁碟機開啟影像索引，就能搜尋照片裡的文字。}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "30b2455"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {「偏好設定」裡的磁碟機索引是關閉的，所以不會建立任何索引。請到「索引 > 磁碟機索引」底下開啟。} linuxKde {「設定 Cmdr」裡的磁碟機索引是關閉的，所以不會建立任何索引。請到「索引 > 磁碟機索引」底下開啟。} other {「設定」裡的磁碟機索引是關閉的，所以不會建立任何索引。請到「索引 > 磁碟機索引」底下開啟。}}",
+  "search.coverage.toast.indexingOff": "{platform, select, windows {「設定」裡的磁碟機索引是關閉的，所以不會建立任何索引。請到「索引 > 磁碟機索引」底下開啟。} linuxGnome {「偏好設定」裡的磁碟機索引是關閉的，所以不會建立任何索引。請到「索引 > 磁碟機索引」底下開啟。} linuxKde {「設定 Cmdr」裡的磁碟機索引是關閉的，所以不會建立任何索引。請到「索引 > 磁碟機索引」底下開啟。} other {「設定」裡的磁碟機索引是關閉的，所以不會建立任何索引。請到「索引 > 磁碟機索引」底下開啟。}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "7c4ff62"
   },

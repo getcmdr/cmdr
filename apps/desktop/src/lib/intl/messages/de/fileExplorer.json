@@ -770,11 +770,11 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Datei in {app} geöffnet. Möchtest du beim nächsten Mal einen anderen Editor? Wähle ihn in den Einstellungen.} linuxKde {Datei in {app} geöffnet. Möchtest du beim nächsten Mal einen anderen Editor? Wähle ihn unter „Cmdr einrichten“.} other {Datei in {app} geöffnet. Möchtest du beim nächsten Mal einen anderen Editor? Wähle ihn in den Einstellungen.}}",
+  "fileExplorer.edit.hint": "{platform, select, windows {Datei in {app} geöffnet. Möchtest du beim nächsten Mal einen anderen Editor? Wähle ihn in den Einstellungen.} linuxGnome {Datei in {app} geöffnet. Möchtest du beim nächsten Mal einen anderen Editor? Wähle ihn in den Einstellungen.} linuxKde {Datei in {app} geöffnet. Möchtest du beim nächsten Mal einen anderen Editor? Wähle ihn unter „Cmdr einrichten“.} other {Datei in {app} geöffnet. Möchtest du beim nächsten Mal einen anderen Editor? Wähle ihn in den Einstellungen.}}",
   "@fileExplorer.edit.hint": {
     "sourceHash": "1ec59c2"
   },
-  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Datei in deinem Standardeditor geöffnet. Möchtest du beim nächsten Mal einen anderen? Wähle ihn in den Einstellungen.} linuxKde {Datei in deinem Standardeditor geöffnet. Möchtest du beim nächsten Mal einen anderen? Wähle ihn unter „Cmdr einrichten“.} other {Datei in deinem Standardeditor geöffnet. Möchtest du beim nächsten Mal einen anderen? Wähle ihn in den Einstellungen.}}",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, windows {Datei in deinem Standardeditor geöffnet. Möchtest du beim nächsten Mal einen anderen? Wähle ihn in den Einstellungen.} linuxGnome {Datei in deinem Standardeditor geöffnet. Möchtest du beim nächsten Mal einen anderen? Wähle ihn in den Einstellungen.} linuxKde {Datei in deinem Standardeditor geöffnet. Möchtest du beim nächsten Mal einen anderen? Wähle ihn unter „Cmdr einrichten“.} other {Datei in deinem Standardeditor geöffnet. Möchtest du beim nächsten Mal einen anderen? Wähle ihn in den Einstellungen.}}",
   "@fileExplorer.edit.hintUnnamed": {
     "sourceHash": "00354cc"
   },
@@ -782,7 +782,7 @@
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
+  "fileExplorer.edit.openSettings": "{platform, select, windows {Einstellungen öffnen} linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
   "@fileExplorer.edit.openSettings": {
     "sourceHash": "e535825"
   },
@@ -838,7 +838,7 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Einstellungen} linuxKde {Cmdr einrichten} other {Einstellungen}}",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {Einstellungen} linuxGnome {Einstellungen} linuxKde {Cmdr einrichten} other {Einstellungen}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
     "sourceHash": "02ce4ce"
   },
@@ -1843,11 +1843,11 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Der Zugriff auf Telefone und Kameras über MTP ist in den Einstellungen ausgeschaltet.} linuxKde {Der Zugriff auf Telefone und Kameras über MTP ist unter „Cmdr einrichten“ ausgeschaltet.} other {Der Zugriff auf Telefone und Kameras über MTP ist in den Einstellungen ausgeschaltet.}}",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {Der Zugriff auf Telefone und Kameras über MTP ist in den Einstellungen ausgeschaltet.} linuxGnome {Der Zugriff auf Telefone und Kameras über MTP ist in den Einstellungen ausgeschaltet.} linuxKde {Der Zugriff auf Telefone und Kameras über MTP ist unter „Cmdr einrichten“ ausgeschaltet.} other {Der Zugriff auf Telefone und Kameras über MTP ist in den Einstellungen ausgeschaltet.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
     "sourceHash": "064a270"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Der Zugriff auf Android-Telefone ist in den Einstellungen ausgeschaltet.} linuxKde {Der Zugriff auf Android-Telefone ist unter „Cmdr einrichten“ ausgeschaltet.} other {Der Zugriff auf Android-Telefone ist in den Einstellungen ausgeschaltet.}}",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {Der Zugriff auf Android-Telefone ist in den Einstellungen ausgeschaltet.} linuxGnome {Der Zugriff auf Android-Telefone ist in den Einstellungen ausgeschaltet.} linuxKde {Der Zugriff auf Android-Telefone ist unter „Cmdr einrichten“ ausgeschaltet.} other {Der Zugriff auf Android-Telefone ist in den Einstellungen ausgeschaltet.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
     "sourceHash": "bc261dc"
   },
@@ -1859,7 +1859,7 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {Einstellungen öffnen} linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
     "sourceHash": "e535825"
   },
@@ -2221,7 +2221,7 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird {name} nicht indiziert. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein.} linuxKde {Die Laufwerksindizierung ist unter „Cmdr einrichten“ aus, deshalb wird {name} nicht indiziert. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein.} other {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird {name} nicht indiziert. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein.}}",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird {name} nicht indiziert. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein.} linuxGnome {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird {name} nicht indiziert. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein.} linuxKde {Die Laufwerksindizierung ist unter „Cmdr einrichten“ aus, deshalb wird {name} nicht indiziert. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein.} other {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird {name} nicht indiziert. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
     "sourceHash": "f7b3cad"
   },
@@ -2229,11 +2229,11 @@
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird gerade kein Laufwerk indiziert.} linuxKde {Die Laufwerksindizierung ist unter „Cmdr einrichten“ aus, deshalb wird gerade kein Laufwerk indiziert.} other {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird gerade kein Laufwerk indiziert.}}",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird gerade kein Laufwerk indiziert.} linuxGnome {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird gerade kein Laufwerk indiziert.} linuxKde {Die Laufwerksindizierung ist unter „Cmdr einrichten“ aus, deshalb wird gerade kein Laufwerk indiziert.} other {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird gerade kein Laufwerk indiziert.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
     "sourceHash": "4c4d376"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Die Laufwerksindizierung ist in den Einstellungen aus. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein, dann macht dieses Laufwerk dort weiter, wo es aufgehört hat.} linuxKde {Die Laufwerksindizierung ist unter „Cmdr einrichten“ aus. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein, dann macht dieses Laufwerk dort weiter, wo es aufgehört hat.} other {Die Laufwerksindizierung ist in den Einstellungen aus. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein, dann macht dieses Laufwerk dort weiter, wo es aufgehört hat.}}",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {Die Laufwerksindizierung ist in den Einstellungen aus. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein, dann macht dieses Laufwerk dort weiter, wo es aufgehört hat.} linuxGnome {Die Laufwerksindizierung ist in den Einstellungen aus. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein, dann macht dieses Laufwerk dort weiter, wo es aufgehört hat.} linuxKde {Die Laufwerksindizierung ist unter „Cmdr einrichten“ aus. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein, dann macht dieses Laufwerk dort weiter, wo es aufgehört hat.} other {Die Laufwerksindizierung ist in den Einstellungen aus. Schalte sie unter „Indizierung > Laufwerksindizierung“ ein, dann macht dieses Laufwerk dort weiter, wo es aufgehört hat.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
     "sourceHash": "453d08d"
   },
@@ -2341,7 +2341,7 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Lieber den Cursor auf einen passenden Namen setzen, ohne etwas auszublenden? Wechsle zu „Springen“, hier oder in den Einstellungen.} linuxKde {Lieber den Cursor auf einen passenden Namen setzen, ohne etwas auszublenden? Wechsle zu „Springen“, hier oder unter „Cmdr einrichten“.} other {Lieber den Cursor auf einen passenden Namen setzen, ohne etwas auszublenden? Wechsle zu „Springen“, hier oder in den Einstellungen.}}",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {Lieber den Cursor auf einen passenden Namen setzen, ohne etwas auszublenden? Wechsle zu „Springen“, hier oder in den Einstellungen.} linuxGnome {Lieber den Cursor auf einen passenden Namen setzen, ohne etwas auszublenden? Wechsle zu „Springen“, hier oder in den Einstellungen.} linuxKde {Lieber den Cursor auf einen passenden Namen setzen, ohne etwas auszublenden? Wechsle zu „Springen“, hier oder unter „Cmdr einrichten“.} other {Lieber den Cursor auf einen passenden Namen setzen, ohne etwas auszublenden? Wechsle zu „Springen“, hier oder in den Einstellungen.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "ed0bb5f"
   },
@@ -2409,7 +2409,7 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr merkt sich deine Antwort für diese beiden Server. Du kannst sie in den Einstellungen unter „Server“ vergessen.} linuxKde {Cmdr merkt sich deine Antwort für diese beiden Server. Du kannst sie unter „Cmdr einrichten“ > „Server“ vergessen.} other {Cmdr merkt sich deine Antwort für diese beiden Server. Du kannst sie in den Einstellungen unter „Server“ vergessen.}}",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr merkt sich deine Antwort für diese beiden Server. Du kannst sie in den Einstellungen unter „Server“ vergessen.} linuxGnome {Cmdr merkt sich deine Antwort für diese beiden Server. Du kannst sie in den Einstellungen unter „Server“ vergessen.} linuxKde {Cmdr merkt sich deine Antwort für diese beiden Server. Du kannst sie unter „Cmdr einrichten“ > „Server“ vergessen.} other {Cmdr merkt sich deine Antwort für diese beiden Server. Du kannst sie in den Einstellungen unter „Server“ vergessen.}}",
   "@fileExplorer.smbLinkConsent.note": {
     "sourceHash": "d32b664"
   },

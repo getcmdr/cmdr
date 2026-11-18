@@ -55,7 +55,7 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "{platform, select, linuxGnome {Увімкніть постачальника в Налаштуваннях > ШІ, щоб користуватися пошуком із ШІ.} linuxKde {Увімкніть постачальника в розділі «Налаштувати Cmdr > ШІ», щоб користуватися пошуком із ШІ.} other {Увімкніть постачальника в Параметрах > ШІ, щоб користуватися пошуком із ШІ.}}",
+  "ai.translateError.off.body": "{platform, select, windows {Увімкніть постачальника в Параметрах > ШІ, щоб користуватися пошуком із ШІ.} linuxGnome {Увімкніть постачальника в Налаштуваннях > ШІ, щоб користуватися пошуком із ШІ.} linuxKde {Увімкніть постачальника в розділі «Налаштувати Cmdr > ШІ», щоб користуватися пошуком із ШІ.} other {Увімкніть постачальника в Параметрах > ШІ, щоб користуватися пошуком із ШІ.}}",
   "@ai.translateError.off.body": {
     "sourceHash": "5e5f8d2"
   },
@@ -247,7 +247,7 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Завершіть налаштування постачальника в Налаштуваннях > ШІ, а потім спробуйте ще раз.} linuxKde {Завершіть налаштування постачальника в розділі «Налаштувати Cmdr > ШІ», а потім спробуйте ще раз.} other {Завершіть налаштування постачальника в Параметрах > ШІ, а потім спробуйте ще раз.}}",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {Завершіть налаштування постачальника в Параметрах > ШІ, а потім спробуйте ще раз.} linuxGnome {Завершіть налаштування постачальника в Налаштуваннях > ШІ, а потім спробуйте ще раз.} linuxKde {Завершіть налаштування постачальника в розділі «Налаштувати Cmdr > ШІ», а потім спробуйте ще раз.} other {Завершіть налаштування постачальника в Параметрах > ШІ, а потім спробуйте ще раз.}}",
   "@ai.translateError.notConfigured.body": {
     "sourceHash": "bf48aec"
   },
@@ -255,7 +255,7 @@
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Дозвольте його в Налаштуваннях > ШІ, а потім спробуйте ще раз.} linuxKde {Дозвольте його в розділі «Налаштувати Cmdr > ШІ», а потім спробуйте ще раз.} other {Дозвольте його в Параметрах > ШІ, а потім спробуйте ще раз.}}",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {Дозвольте його в Параметрах > ШІ, а потім спробуйте ще раз.} linuxGnome {Дозвольте його в Налаштуваннях > ШІ, а потім спробуйте ще раз.} linuxKde {Дозвольте його в розділі «Налаштувати Cmdr > ШІ», а потім спробуйте ще раз.} other {Дозвольте його в Параметрах > ШІ, а потім спробуйте ще раз.}}",
   "@ai.translateError.noCloudConsent.body": {
     "sourceHash": "4485cc1"
   },
@@ -263,7 +263,7 @@
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Перевірте ключ у Налаштуваннях > ШІ: можливо, він неправильний або його відкликали.} linuxKde {Перевірте ключ у розділі «Налаштувати Cmdr > ШІ»: можливо, він неправильний або його відкликали.} other {Перевірте ключ у Параметрах > ШІ: можливо, він неправильний або його відкликали.}}",
+  "ai.translateError.authFailed.body": "{platform, select, windows {Перевірте ключ у Параметрах > ШІ: можливо, він неправильний або його відкликали.} linuxGnome {Перевірте ключ у Налаштуваннях > ШІ: можливо, він неправильний або його відкликали.} linuxKde {Перевірте ключ у розділі «Налаштувати Cmdr > ШІ»: можливо, він неправильний або його відкликали.} other {Перевірте ключ у Параметрах > ШІ: можливо, він неправильний або його відкликали.}}",
   "@ai.translateError.authFailed.body": {
     "sourceHash": "4fd6281"
   },
@@ -295,7 +295,7 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Можливо, ваша модель вичерпала свій ліміт токенів, перш ніж відповісти. Спробуйте швидшу модель, як-от gpt-4.1-mini, у Налаштуваннях > ШІ.} linuxKde {Можливо, ваша модель вичерпала свій ліміт токенів, перш ніж відповісти. Спробуйте швидшу модель, як-от gpt-4.1-mini, у розділі «Налаштувати Cmdr > ШІ».} other {Можливо, ваша модель вичерпала свій ліміт токенів, перш ніж відповісти. Спробуйте швидшу модель, як-от gpt-4.1-mini, у Параметрах > ШІ.}}",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {Можливо, ваша модель вичерпала свій ліміт токенів, перш ніж відповісти. Спробуйте швидшу модель, як-от gpt-4.1-mini, у Параметрах > ШІ.} linuxGnome {Можливо, ваша модель вичерпала свій ліміт токенів, перш ніж відповісти. Спробуйте швидшу модель, як-от gpt-4.1-mini, у Налаштуваннях > ШІ.} linuxKde {Можливо, ваша модель вичерпала свій ліміт токенів, перш ніж відповісти. Спробуйте швидшу модель, як-от gpt-4.1-mini, у розділі «Налаштувати Cmdr > ШІ».} other {Можливо, ваша модель вичерпала свій ліміт токенів, перш ніж відповісти. Спробуйте швидшу модель, як-от gpt-4.1-mini, у Параметрах > ШІ.}}",
   "@ai.translateError.emptyResponse.body": {
     "sourceHash": "b16ff79"
   },
@@ -311,7 +311,7 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Спробуйте ще раз або виберіть іншу модель у Налаштуваннях > ШІ.} linuxKde {Спробуйте ще раз або виберіть іншу модель у розділі «Налаштувати Cmdr > ШІ».} other {Спробуйте ще раз або виберіть іншу модель у Параметрах > ШІ.}}",
+  "ai.translateError.parseError.body": "{platform, select, windows {Спробуйте ще раз або виберіть іншу модель у Параметрах > ШІ.} linuxGnome {Спробуйте ще раз або виберіть іншу модель у Налаштуваннях > ШІ.} linuxKde {Спробуйте ще раз або виберіть іншу модель у розділі «Налаштувати Cmdr > ШІ».} other {Спробуйте ще раз або виберіть іншу модель у Параметрах > ШІ.}}",
   "@ai.translateError.parseError.body": {
     "sourceHash": "6082b7e"
   },
@@ -319,7 +319,7 @@
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Виберіть постачальника в Налаштуваннях > ШІ.} linuxKde {Виберіть постачальника в розділі «Налаштувати Cmdr > ШІ».} other {Виберіть постачальника в Параметрах > ШІ.}}",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {Виберіть постачальника в Параметрах > ШІ.} linuxGnome {Виберіть постачальника в Налаштуваннях > ШІ.} linuxKde {Виберіть постачальника в розділі «Налаштувати Cmdr > ШІ».} other {Виберіть постачальника в Параметрах > ШІ.}}",
   "@ai.translateError.unknownProvider.body": {
     "sourceHash": "c45eba0"
   },

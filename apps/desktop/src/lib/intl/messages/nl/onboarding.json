@@ -309,7 +309,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {Cloud-AI blijft uit tot je die toestaat. Dat kan later ook bij Voorkeuren > AI.} linuxKde {Cloud-AI blijft uit tot je die toestaat. Dat kan later ook bij ‘Cmdr configureren’ > AI.} other {Cloud-AI blijft uit tot je die toestaat. Dat kan later ook bij Instellingen > AI.}}",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {Cloud-AI blijft uit tot je die toestaat. Dat kan later ook bij Instellingen > AI.} linuxGnome {Cloud-AI blijft uit tot je die toestaat. Dat kan later ook bij Voorkeuren > AI.} linuxKde {Cloud-AI blijft uit tot je die toestaat. Dat kan later ook bij ‘Cmdr configureren’ > AI.} other {Cloud-AI blijft uit tot je die toestaat. Dat kan later ook bij Instellingen > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "6e0eb09"
   },
@@ -317,7 +317,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr werkt volledig zonder AI. Je kunt het later aanzetten in Voorkeuren.} linuxKde {Cmdr werkt volledig zonder AI. Je kunt het later aanzetten in ‘Cmdr configureren’.} other {Cmdr werkt volledig zonder AI. Je kunt het later aanzetten in Instellingen.}}",
+  "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr werkt volledig zonder AI. Je kunt het later aanzetten in Instellingen.} linuxGnome {Cmdr werkt volledig zonder AI. Je kunt het later aanzetten in Voorkeuren.} linuxKde {Cmdr werkt volledig zonder AI. Je kunt het later aanzetten in ‘Cmdr configureren’.} other {Cmdr werkt volledig zonder AI. Je kunt het later aanzetten in Instellingen.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "b20cf1d"
   },
@@ -393,7 +393,7 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Let op: dit staat standaard AAN om mensen aan te moedigen me gegevens te sturen tijdens de bèta.\nJe kunt dit op elk moment wijzigen in Voorkeuren.} linuxKde {Let op: dit staat standaard AAN om mensen aan te moedigen me gegevens te sturen tijdens de bèta.\nJe kunt dit op elk moment wijzigen in ‘Cmdr configureren’.} other {Let op: dit staat standaard AAN om mensen aan te moedigen me gegevens te sturen tijdens de bèta.\nJe kunt dit op elk moment wijzigen in Instellingen.}}",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Let op: dit staat standaard AAN om mensen aan te moedigen me gegevens te sturen tijdens de bèta.\nJe kunt dit op elk moment wijzigen in Instellingen.} linuxGnome {Let op: dit staat standaard AAN om mensen aan te moedigen me gegevens te sturen tijdens de bèta.\nJe kunt dit op elk moment wijzigen in Voorkeuren.} linuxKde {Let op: dit staat standaard AAN om mensen aan te moedigen me gegevens te sturen tijdens de bèta.\nJe kunt dit op elk moment wijzigen in ‘Cmdr configureren’.} other {Let op: dit staat standaard AAN om mensen aan te moedigen me gegevens te sturen tijdens de bèta.\nJe kunt dit op elk moment wijzigen in Instellingen.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "47a7511"
   },
@@ -469,7 +469,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {Je kunt dit op elk moment wijzigen in Voorkeuren.} linuxKde {Je kunt dit op elk moment wijzigen in ‘Cmdr configureren’.} other {Je kunt dit op elk moment wijzigen in Instellingen.}}",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Je kunt dit op elk moment wijzigen in Instellingen.} linuxGnome {Je kunt dit op elk moment wijzigen in Voorkeuren.} linuxKde {Je kunt dit op elk moment wijzigen in ‘Cmdr configureren’.} other {Je kunt dit op elk moment wijzigen in Instellingen.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "320f582"
   },

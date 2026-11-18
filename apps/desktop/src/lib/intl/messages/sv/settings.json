@@ -2515,11 +2515,11 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr använder AI-leverantören och nyckeln du har ställt in i Inställningar › AI ({provider}).} linuxKde {Cmdr använder AI-leverantören och nyckeln du har ställt in i ”Anpassa Cmdr” › AI ({provider}).} other {Cmdr använder AI-leverantören och nyckeln du har ställt in i Inställningar › AI ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr använder AI-leverantören och nyckeln du har ställt in i Inställningar › AI ({provider}).} linuxGnome {Cmdr använder AI-leverantören och nyckeln du har ställt in i Inställningar › AI ({provider}).} linuxKde {Cmdr använder AI-leverantören och nyckeln du har ställt in i ”Anpassa Cmdr” › AI ({provider}).} other {Cmdr använder AI-leverantören och nyckeln du har ställt in i Inställningar › AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
     "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Aktivera en AI-leverantör i Inställningar › AI för att börja chatta.} linuxKde {Aktivera en AI-leverantör i ”Anpassa Cmdr” › AI för att börja chatta.} other {Aktivera en AI-leverantör i Inställningar › AI för att börja chatta.}}",
+  "settings.askCmdr.provider.off": "{platform, select, windows {Aktivera en AI-leverantör i Inställningar › AI för att börja chatta.} linuxGnome {Aktivera en AI-leverantör i Inställningar › AI för att börja chatta.} linuxKde {Aktivera en AI-leverantör i ”Anpassa Cmdr” › AI för att börja chatta.} other {Aktivera en AI-leverantör i Inställningar › AI för att börja chatta.}}",
   "@settings.askCmdr.provider.off": {
     "sourceHash": "0196a5c"
   },
@@ -2966,7 +2966,7 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Inställningssektioner} other {Inställningssektioner}}",
+  "settings.sidebar.sections": "{platform, select, windows {Inställningssektioner} linuxGnome {Inställningssektioner} other {Inställningssektioner}}",
   "@settings.sidebar.sections": {
     "sourceHash": "4fa3c2e"
   },
@@ -3437,7 +3437,7 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Inställningar} linuxKde {Anpassa – Cmdr} other {Inställningar}}",
+  "settings.window.title": "{platform, select, windows {Inställningar} linuxGnome {Inställningar} linuxKde {Anpassa – Cmdr} other {Inställningar}}",
   "@settings.window.title": {
     "sourceHash": "80cee55"
   },

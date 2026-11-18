@@ -3,11 +3,11 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "{platform, select, linuxGnome {Statistiky využití a zprávy o havárii zůstanou vypnuté, dokud je znovu nezapnete v Předvolbách > Aktualizace a soukromí.} linuxKde {Statistiky využití a zprávy o havárii zůstanou vypnuté, dokud je znovu nezapnete v okně Nastavit Cmdr > Aktualizace a soukromí.} other {Statistiky využití a zprávy o havárii zůstanou vypnuté, dokud je znovu nezapnete v Nastavení > Aktualizace a soukromí.}}",
+  "stateRecovery.settings.body": "{platform, select, windows {Statistiky využití a zprávy o havárii zůstanou vypnuté, dokud je znovu nezapnete v Nastavení > Aktualizace a soukromí.} linuxGnome {Statistiky využití a zprávy o havárii zůstanou vypnuté, dokud je znovu nezapnete v Předvolbách > Aktualizace a soukromí.} linuxKde {Statistiky využití a zprávy o havárii zůstanou vypnuté, dokud je znovu nezapnete v okně Nastavit Cmdr > Aktualizace a soukromí.} other {Statistiky využití a zprávy o havárii zůstanou vypnuté, dokud je znovu nezapnete v Nastavení > Aktualizace a soukromí.}}",
   "@stateRecovery.settings.body": {
     "sourceHash": "8e4debd"
   },
-  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
+  "stateRecovery.settings.openSettings": "{platform, select, windows {Otevřít Nastavení} linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@stateRecovery.settings.openSettings": {
     "sourceHash": "f970930"
   },
@@ -19,11 +19,11 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "{platform, select, linuxGnome {Pokud se teď Cmdr ukazuje jako nelicencovaný, zadejte znovu licenční klíč v Předvolbách > Licence.} linuxKde {Pokud se teď Cmdr ukazuje jako nelicencovaný, zadejte znovu licenční klíč v okně Nastavit Cmdr > Licence.} other {Pokud se teď Cmdr ukazuje jako nelicencovaný, zadejte znovu licenční klíč v Nastavení > Licence.}}",
+  "stateRecovery.license.body": "{platform, select, windows {Pokud se teď Cmdr ukazuje jako nelicencovaný, zadejte znovu licenční klíč v Nastavení > Licence.} linuxGnome {Pokud se teď Cmdr ukazuje jako nelicencovaný, zadejte znovu licenční klíč v Předvolbách > Licence.} linuxKde {Pokud se teď Cmdr ukazuje jako nelicencovaný, zadejte znovu licenční klíč v okně Nastavit Cmdr > Licence.} other {Pokud se teď Cmdr ukazuje jako nelicencovaný, zadejte znovu licenční klíč v Nastavení > Licence.}}",
   "@stateRecovery.license.body": {
     "sourceHash": "158e224"
   },
-  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
+  "stateRecovery.license.openSettings": "{platform, select, windows {Otevřít Nastavení} linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@stateRecovery.license.openSettings": {
     "sourceHash": "f970930"
   },

@@ -3,7 +3,7 @@
   "@servers.hub.addServer": {
     "sourceHash": "a4578b9"
   },
-  "servers.hub.discoveryOffLink": "{platform, select, linuxGnome {Actívala en Preferencias} linuxKde {Actívala en Configurar Cmdr} other {Actívala en Configuración}}",
+  "servers.hub.discoveryOffLink": "{platform, select, windows {Actívala en Configuración} linuxGnome {Actívala en Preferencias} linuxKde {Actívala en Configurar Cmdr} other {Actívala en Configuración}}",
   "@servers.hub.discoveryOffLink": {
     "sourceHash": "6e3075e"
   },

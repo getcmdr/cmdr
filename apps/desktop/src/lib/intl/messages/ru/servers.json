@@ -123,7 +123,7 @@
   "@servers.hub.discoveryOff": {
     "sourceHash": "cadcceb"
   },
-  "servers.hub.discoveryOffLink": "{platform, select, linuxGnome {Включить в параметрах} linuxKde {Включить в окне «Настроить Cmdr»} other {Включить в настройках}}",
+  "servers.hub.discoveryOffLink": "{platform, select, windows {Включить в настройках} linuxGnome {Включить в параметрах} linuxKde {Включить в окне «Настроить Cmdr»} other {Включить в настройках}}",
   "@servers.hub.discoveryOffLink": {
     "sourceHash": "65a3d5a"
   },

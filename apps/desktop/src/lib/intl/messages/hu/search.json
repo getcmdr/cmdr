@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Beállításokban, hogy rá tudj keresni a fotóiban lévő szövegre.} linuxKde {Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Cmdr beállításaiban, hogy rá tudj keresni a fotóiban lévő szövegre.} other {Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Beállításokban, hogy rá tudj keresni a fotóiban lévő szövegre.}}",
+  "search.imageResults.networkOff": "{platform, select, windows {Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Beállításokban, hogy rá tudj keresni a fotóiban lévő szövegre.} linuxGnome {Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Beállításokban, hogy rá tudj keresni a fotóiban lévő szövegre.} linuxKde {Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Cmdr beállításaiban, hogy rá tudj keresni a fotóiban lévő szövegre.} other {Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Beállításokban, hogy rá tudj keresni a fotóiban lévő szövegre.}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "30b2455"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.} linuxKde {A meghajtó indexelése ki van kapcsolva a Cmdr beállításaiban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.} other {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.}}",
+  "search.coverage.toast.indexingOff": "{platform, select, windows {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.} linuxGnome {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.} linuxKde {A meghajtó indexelése ki van kapcsolva a Cmdr beállításaiban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.} other {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "7c4ff62"
   },

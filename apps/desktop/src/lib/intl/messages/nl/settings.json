@@ -2516,11 +2516,11 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Voorkeuren › AI ({provider}).} linuxKde {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in ‘Cmdr configureren’ › AI ({provider}).} other {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Instellingen › AI ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Instellingen › AI ({provider}).} linuxGnome {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Voorkeuren › AI ({provider}).} linuxKde {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in ‘Cmdr configureren’ › AI ({provider}).} other {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Instellingen › AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
     "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Zet een AI-aanbieder aan in Voorkeuren › AI om te beginnen met chatten.} linuxKde {Zet een AI-aanbieder aan in ‘Cmdr configureren’ › AI om te beginnen met chatten.} other {Zet een AI-aanbieder aan in Instellingen › AI om te beginnen met chatten.}}",
+  "settings.askCmdr.provider.off": "{platform, select, windows {Zet een AI-aanbieder aan in Instellingen › AI om te beginnen met chatten.} linuxGnome {Zet een AI-aanbieder aan in Voorkeuren › AI om te beginnen met chatten.} linuxKde {Zet een AI-aanbieder aan in ‘Cmdr configureren’ › AI om te beginnen met chatten.} other {Zet een AI-aanbieder aan in Instellingen › AI om te beginnen met chatten.}}",
   "@settings.askCmdr.provider.off": {
     "sourceHash": "0196a5c"
   },
@@ -2969,7 +2969,7 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Voorkeurenonderdelen} other {Instellingenonderdelen}}",
+  "settings.sidebar.sections": "{platform, select, windows {Instellingenonderdelen} linuxGnome {Voorkeurenonderdelen} other {Instellingenonderdelen}}",
   "@settings.sidebar.sections": {
     "sourceHash": "4fa3c2e"
   },
@@ -3443,7 +3443,7 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Voorkeuren} linuxKde {Configureren – Cmdr} other {Instellingen}}",
+  "settings.window.title": "{platform, select, windows {Instellingen} linuxGnome {Voorkeuren} linuxKde {Configureren – Cmdr} other {Instellingen}}",
   "@settings.window.title": {
     "sourceHash": "80cee55"
   },

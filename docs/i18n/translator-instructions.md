@@ -73,6 +73,11 @@ style guide disagree, the style guide's general rule wins unless the ruling says
     "Dolphin" and "KWalletManager" as names, and translates "KDE Wallet" in its own catalogs). The TBX has no "This PC"
     or "user folder", and its "home folder" is a different sense (a folder an admin assigns on a server); where the pile
     lacks the OS's word, choose by the evidence you have and record it `tentative`.
+  - **Cmdr's settings window has a `windows` branch in every key that names it** (its title, the menu row, the command,
+    and every "in Settings" or "Settings > AI" pointer), even where its English equals the macOS one: name the window
+    with Windows' own word for an app's settings in {{LANGUAGE}} (Microsoft's, which can differ from Apple's: French
+    `Paramètres` beside `Réglages`), the same word in the title (`settings.window.title`) and every pointer. Where both
+    vendors use one word, the branch keeps it. Each key's `@key.identicalBranches` records why the English repeats.
   - **Two registers on Windows**, which the English branch already picks: Trash is "Delete" as an action's name (a
     button, menu row, or command) and "the Recycle Bin" in a sentence; Quit is "Exit" as an action and "close" when Cmdr
     is the subject ("Cmdr closes"). Use {{LANGUAGE}} Windows' own word for each, in the same register.

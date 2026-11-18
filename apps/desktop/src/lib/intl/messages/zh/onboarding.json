@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {在你允许之前，云端 AI 会一直保持关闭。之后可以在“首选项 > AI”中允许。} linuxKde {在你允许之前，云端 AI 会一直保持关闭。之后可以在“配置 Cmdr > AI”中允许。} other {在你允许之前，云端 AI 会一直保持关闭。之后可以在“设置 > AI”中允许。}}",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {在你允许之前，云端 AI 会一直保持关闭。之后可以在“设置 > AI”中允许。} linuxGnome {在你允许之前，云端 AI 会一直保持关闭。之后可以在“首选项 > AI”中允许。} linuxKde {在你允许之前，云端 AI 会一直保持关闭。之后可以在“配置 Cmdr > AI”中允许。} other {在你允许之前，云端 AI 会一直保持关闭。之后可以在“设置 > AI”中允许。}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "6e0eb09"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr 不用 AI 也能完整运行。你以后可以在“首选项”中开启它。} linuxKde {Cmdr 不用 AI 也能完整运行。你以后可以在“配置 Cmdr”中开启它。} other {Cmdr 不用 AI 也能完整运行。你以后可以在“设置”中开启它。}}",
+  "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr 不用 AI 也能完整运行。你以后可以在“设置”中开启它。} linuxGnome {Cmdr 不用 AI 也能完整运行。你以后可以在“首选项”中开启它。} linuxKde {Cmdr 不用 AI 也能完整运行。你以后可以在“配置 Cmdr”中开启它。} other {Cmdr 不用 AI 也能完整运行。你以后可以在“设置”中开启它。}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "b20cf1d"
   },
@@ -391,7 +391,7 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {请注意，它默认是开启的，以鼓励大家在测试期间给我发送数据。\n你随时可以在“首选项”中更改这一项。} linuxKde {请注意，它默认是开启的，以鼓励大家在测试期间给我发送数据。\n你随时可以在“配置 Cmdr”中更改这一项。} other {请注意，它默认是开启的，以鼓励大家在测试期间给我发送数据。\n你随时可以在“设置”中更改这一项。}}",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {请注意，它默认是开启的，以鼓励大家在测试期间给我发送数据。\n你随时可以在“设置”中更改这一项。} linuxGnome {请注意，它默认是开启的，以鼓励大家在测试期间给我发送数据。\n你随时可以在“首选项”中更改这一项。} linuxKde {请注意，它默认是开启的，以鼓励大家在测试期间给我发送数据。\n你随时可以在“配置 Cmdr”中更改这一项。} other {请注意，它默认是开启的，以鼓励大家在测试期间给我发送数据。\n你随时可以在“设置”中更改这一项。}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "47a7511"
   },
@@ -468,7 +468,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {你随时可以在“首选项”中更改这一项。} linuxKde {你随时可以在“配置 Cmdr”中更改这一项。} other {你随时可以在“设置”中更改这一项。}}",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {你随时可以在“设置”中更改这一项。} linuxGnome {你随时可以在“首选项”中更改这一项。} linuxKde {你随时可以在“配置 Cmdr”中更改这一项。} other {你随时可以在“设置”中更改这一项。}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "320f582"
   },

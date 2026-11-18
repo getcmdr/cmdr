@@ -1496,9 +1496,12 @@
   "@aboutThis.verdict.hint.dismiss": {
     "description": "Screen-reader label of the small × button at the end of the AI hint line on the \"Tell me about this\" card (aboutThis.verdict.aiOffHint and its siblings). Pressing it hides the line for good on every card."
   },
-  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Hide this hint. You can bring it back in Preferences > Advanced.} linuxKde {Hide this hint. You can bring it back in Configure Cmdr > Advanced.} other {Hide this hint. You can bring it back in Settings > Advanced.}}",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Hide this hint. You can bring it back in Settings > Advanced.} linuxGnome {Hide this hint. You can bring it back in Preferences > Advanced.} linuxKde {Hide this hint. You can bring it back in Configure Cmdr > Advanced.} other {Hide this hint. You can bring it back in Settings > Advanced.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "description": "Tooltip of the small × button at the end of the AI hint line on the \"Tell me about this\" card. \"Settings > Advanced\" names the Settings page whose \"Hints and warnings\" group has the switch that brings the line back; use the page names the app uses in this language. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
+    "description": "Tooltip of the small × button at the end of the AI hint line on the \"Tell me about this\" card. \"Settings > Advanced\" names the Settings page whose \"Hints and warnings\" group has the switch that brings the line back; use the page names the app uses in this language. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    }
   },
   "aboutThis.action.continueInAskCmdr": "Continue in Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {

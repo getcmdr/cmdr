@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {Activez l’indexation des images pour ce disque réseau dans les Préférences pour rechercher le texte à l’intérieur de ses photos.} linuxKde {Activez l’indexation des images pour ce disque réseau dans « Configurer Cmdr » pour rechercher le texte à l’intérieur de ses photos.} other {Activez l’indexation des images pour ce disque réseau dans les Réglages pour rechercher le texte à l’intérieur de ses photos.}}",
+  "search.imageResults.networkOff": "{platform, select, windows {Activez l’indexation des images pour ce disque réseau dans les Réglages pour rechercher le texte à l’intérieur de ses photos.} linuxGnome {Activez l’indexation des images pour ce disque réseau dans les Préférences pour rechercher le texte à l’intérieur de ses photos.} linuxKde {Activez l’indexation des images pour ce disque réseau dans « Configurer Cmdr » pour rechercher le texte à l’intérieur de ses photos.} other {Activez l’indexation des images pour ce disque réseau dans les Réglages pour rechercher le texte à l’intérieur de ses photos.}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "30b2455"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {L’indexation est désactivée dans les Préférences, donc rien n’est indexé. Activez-la dans Indexation > Indexation du disque.} linuxKde {L’indexation est désactivée dans « Configurer Cmdr », donc rien n’est indexé. Activez-la dans Indexation > Indexation du disque.} other {L’indexation est désactivée dans les Réglages, donc rien n’est indexé. Activez-la dans Indexation > Indexation du disque.}}",
+  "search.coverage.toast.indexingOff": "{platform, select, windows {L’indexation est désactivée dans les Réglages, donc rien n’est indexé. Activez-la dans Indexation > Indexation du disque.} linuxGnome {L’indexation est désactivée dans les Préférences, donc rien n’est indexé. Activez-la dans Indexation > Indexation du disque.} linuxKde {L’indexation est désactivée dans « Configurer Cmdr », donc rien n’est indexé. Activez-la dans Indexation > Indexation du disque.} other {L’indexation est désactivée dans les Réglages, donc rien n’est indexé. Activez-la dans Indexation > Indexation du disque.}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "7c4ff62"
   },

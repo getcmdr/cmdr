@@ -770,11 +770,11 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Filen öppnades i {app}. Vill du ha en annan redigerare nästa gång? Välj den i Inställningar.} linuxKde {Filen öppnades i {app}. Vill du ha en annan redigerare nästa gång? Välj den i ”Anpassa Cmdr”.} other {Filen öppnades i {app}. Vill du ha en annan redigerare nästa gång? Välj den i Inställningar.}}",
+  "fileExplorer.edit.hint": "{platform, select, windows {Filen öppnades i {app}. Vill du ha en annan redigerare nästa gång? Välj den i Inställningar.} linuxGnome {Filen öppnades i {app}. Vill du ha en annan redigerare nästa gång? Välj den i Inställningar.} linuxKde {Filen öppnades i {app}. Vill du ha en annan redigerare nästa gång? Välj den i ”Anpassa Cmdr”.} other {Filen öppnades i {app}. Vill du ha en annan redigerare nästa gång? Välj den i Inställningar.}}",
   "@fileExplorer.edit.hint": {
     "sourceHash": "1ec59c2"
   },
-  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Filen öppnades i din standardredigerare. Vill du ha en annan nästa gång? Välj den i Inställningar.} linuxKde {Filen öppnades i din standardredigerare. Vill du ha en annan nästa gång? Välj den i ”Anpassa Cmdr”.} other {Filen öppnades i din standardredigerare. Vill du ha en annan nästa gång? Välj den i Inställningar.}}",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, windows {Filen öppnades i din standardredigerare. Vill du ha en annan nästa gång? Välj den i Inställningar.} linuxGnome {Filen öppnades i din standardredigerare. Vill du ha en annan nästa gång? Välj den i Inställningar.} linuxKde {Filen öppnades i din standardredigerare. Vill du ha en annan nästa gång? Välj den i ”Anpassa Cmdr”.} other {Filen öppnades i din standardredigerare. Vill du ha en annan nästa gång? Välj den i Inställningar.}}",
   "@fileExplorer.edit.hintUnnamed": {
     "sourceHash": "00354cc"
   },
@@ -782,7 +782,7 @@
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
+  "fileExplorer.edit.openSettings": "{platform, select, windows {Öppna inställningar} linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
   "@fileExplorer.edit.openSettings": {
     "sourceHash": "e535825"
   },
@@ -838,7 +838,7 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Inställningar} linuxKde {Anpassa Cmdr} other {Inställningar}}",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {Inställningar} linuxGnome {Inställningar} linuxKde {Anpassa Cmdr} other {Inställningar}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
     "sourceHash": "02ce4ce"
   },
@@ -1837,11 +1837,11 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Åtkomst till telefoner och kameror via MTP är avstängd i Inställningar.} linuxKde {Åtkomst till telefoner och kameror via MTP är avstängd i ”Anpassa Cmdr”.} other {Åtkomst till telefoner och kameror via MTP är avstängd i Inställningar.}}",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {Åtkomst till telefoner och kameror via MTP är avstängd i Inställningar.} linuxGnome {Åtkomst till telefoner och kameror via MTP är avstängd i Inställningar.} linuxKde {Åtkomst till telefoner och kameror via MTP är avstängd i ”Anpassa Cmdr”.} other {Åtkomst till telefoner och kameror via MTP är avstängd i Inställningar.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
     "sourceHash": "064a270"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Åtkomst till Android-telefoner är avstängd i Inställningar.} linuxKde {Åtkomst till Android-telefoner är avstängd i ”Anpassa Cmdr”.} other {Åtkomst till Android-telefoner är avstängd i Inställningar.}}",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {Åtkomst till Android-telefoner är avstängd i Inställningar.} linuxGnome {Åtkomst till Android-telefoner är avstängd i Inställningar.} linuxKde {Åtkomst till Android-telefoner är avstängd i ”Anpassa Cmdr”.} other {Åtkomst till Android-telefoner är avstängd i Inställningar.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
     "sourceHash": "bc261dc"
   },
@@ -1853,7 +1853,7 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {Öppna inställningar} linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
     "sourceHash": "e535825"
   },
@@ -2216,7 +2216,7 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Enhetsindexering är avstängd i Inställningar, så {name} indexeras inte. Slå på den under ”Indexering > Enhetsindexering”.} linuxKde {Enhetsindexering är avstängd i ”Anpassa Cmdr”, så {name} indexeras inte. Slå på den under ”Indexering > Enhetsindexering”.} other {Enhetsindexering är avstängd i Inställningar, så {name} indexeras inte. Slå på den under ”Indexering > Enhetsindexering”.}}",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {Enhetsindexering är avstängd i Inställningar, så {name} indexeras inte. Slå på den under ”Indexering > Enhetsindexering”.} linuxGnome {Enhetsindexering är avstängd i Inställningar, så {name} indexeras inte. Slå på den under ”Indexering > Enhetsindexering”.} linuxKde {Enhetsindexering är avstängd i ”Anpassa Cmdr”, så {name} indexeras inte. Slå på den under ”Indexering > Enhetsindexering”.} other {Enhetsindexering är avstängd i Inställningar, så {name} indexeras inte. Slå på den under ”Indexering > Enhetsindexering”.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
     "sourceHash": "f7b3cad"
   },
@@ -2224,11 +2224,11 @@
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Enhetsindexering är avstängd i Inställningar, så ingen enhet indexeras just nu.} linuxKde {Enhetsindexering är avstängd i ”Anpassa Cmdr”, så ingen enhet indexeras just nu.} other {Enhetsindexering är avstängd i Inställningar, så ingen enhet indexeras just nu.}}",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {Enhetsindexering är avstängd i Inställningar, så ingen enhet indexeras just nu.} linuxGnome {Enhetsindexering är avstängd i Inställningar, så ingen enhet indexeras just nu.} linuxKde {Enhetsindexering är avstängd i ”Anpassa Cmdr”, så ingen enhet indexeras just nu.} other {Enhetsindexering är avstängd i Inställningar, så ingen enhet indexeras just nu.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
     "sourceHash": "4c4d376"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Enhetsindexering är avstängd i Inställningar. Slå på den under ”Indexering > Enhetsindexering”, så fortsätter den här enheten där den slutade.} linuxKde {Enhetsindexering är avstängd i ”Anpassa Cmdr”. Slå på den under ”Indexering > Enhetsindexering”, så fortsätter den här enheten där den slutade.} other {Enhetsindexering är avstängd i Inställningar. Slå på den under ”Indexering > Enhetsindexering”, så fortsätter den här enheten där den slutade.}}",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {Enhetsindexering är avstängd i Inställningar. Slå på den under ”Indexering > Enhetsindexering”, så fortsätter den här enheten där den slutade.} linuxGnome {Enhetsindexering är avstängd i Inställningar. Slå på den under ”Indexering > Enhetsindexering”, så fortsätter den här enheten där den slutade.} linuxKde {Enhetsindexering är avstängd i ”Anpassa Cmdr”. Slå på den under ”Indexering > Enhetsindexering”, så fortsätter den här enheten där den slutade.} other {Enhetsindexering är avstängd i Inställningar. Slå på den under ”Indexering > Enhetsindexering”, så fortsätter den här enheten där den slutade.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
     "sourceHash": "453d08d"
   },
@@ -2336,7 +2336,7 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Vill du hellre flytta markören till ett matchande namn utan att gömma något? Byt till ”Hoppa”, här eller i Inställningar.} linuxKde {Vill du hellre flytta markören till ett matchande namn utan att gömma något? Byt till ”Hoppa”, här eller i ”Anpassa Cmdr”.} other {Vill du hellre flytta markören till ett matchande namn utan att gömma något? Byt till ”Hoppa”, här eller i Inställningar.}}",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {Vill du hellre flytta markören till ett matchande namn utan att gömma något? Byt till ”Hoppa”, här eller i Inställningar.} linuxGnome {Vill du hellre flytta markören till ett matchande namn utan att gömma något? Byt till ”Hoppa”, här eller i Inställningar.} linuxKde {Vill du hellre flytta markören till ett matchande namn utan att gömma något? Byt till ”Hoppa”, här eller i ”Anpassa Cmdr”.} other {Vill du hellre flytta markören till ett matchande namn utan att gömma något? Byt till ”Hoppa”, här eller i Inställningar.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "ed0bb5f"
   },
@@ -2404,7 +2404,7 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr kommer ihåg ditt svar för de här två servrarna. Du kan glömma det i Inställningar, under Servrar.} linuxKde {Cmdr kommer ihåg ditt svar för de här två servrarna. Du kan glömma det i ”Anpassa Cmdr”, under Servrar.} other {Cmdr kommer ihåg ditt svar för de här två servrarna. Du kan glömma det i Inställningar, under Servrar.}}",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr kommer ihåg ditt svar för de här två servrarna. Du kan glömma det i Inställningar, under Servrar.} linuxGnome {Cmdr kommer ihåg ditt svar för de här två servrarna. Du kan glömma det i Inställningar, under Servrar.} linuxKde {Cmdr kommer ihåg ditt svar för de här två servrarna. Du kan glömma det i ”Anpassa Cmdr”, under Servrar.} other {Cmdr kommer ihåg ditt svar för de här två servrarna. Du kan glömma det i Inställningar, under Servrar.}}",
   "@fileExplorer.smbLinkConsent.note": {
     "sourceHash": "d32b664"
   },

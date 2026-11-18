@@ -71,7 +71,7 @@
   "@crashReporter.sentToast.message.report": {
     "sourceHash": "a676ed5"
   },
-  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {Změnit v Předvolbách} linuxKde {Změnit v okně Nastavit Cmdr} other {Změnit v Nastavení}}",
+  "crashReporter.sentToast.changeSettings": "{platform, select, windows {Změnit v Nastavení} linuxGnome {Změnit v Předvolbách} linuxKde {Změnit v okně Nastavit Cmdr} other {Změnit v Nastavení}}",
   "@crashReporter.sentToast.changeSettings": {
     "sourceHash": "c3fff1a"
   },

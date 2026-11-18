@@ -3,11 +3,11 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "{platform, select, linuxGnome {使用統計和當機報告會保持關閉，直到你在「偏好設定 › 更新與隱私」重新開啟。} linuxKde {使用統計和當機報告會保持關閉，直到你在「設定 Cmdr › 更新與隱私」重新開啟。} other {使用統計和當機報告會保持關閉，直到你在「設定 › 更新與隱私」重新開啟。}}",
+  "stateRecovery.settings.body": "{platform, select, windows {使用統計和當機報告會保持關閉，直到你在「設定 › 更新與隱私」重新開啟。} linuxGnome {使用統計和當機報告會保持關閉，直到你在「偏好設定 › 更新與隱私」重新開啟。} linuxKde {使用統計和當機報告會保持關閉，直到你在「設定 Cmdr › 更新與隱私」重新開啟。} other {使用統計和當機報告會保持關閉，直到你在「設定 › 更新與隱私」重新開啟。}}",
   "@stateRecovery.settings.body": {
     "sourceHash": "8e4debd"
   },
-  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
+  "stateRecovery.settings.openSettings": "{platform, select, windows {開啟設定} linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
   "@stateRecovery.settings.openSettings": {
     "sourceHash": "f970930"
   },
@@ -19,11 +19,11 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "{platform, select, linuxGnome {如果 Cmdr 現在顯示為未授權，請到「偏好設定 › 授權」重新輸入授權碼。} linuxKde {如果 Cmdr 現在顯示為未授權，請到「設定 Cmdr › 授權」重新輸入授權碼。} other {如果 Cmdr 現在顯示為未授權，請到「設定 › 授權」重新輸入授權碼。}}",
+  "stateRecovery.license.body": "{platform, select, windows {如果 Cmdr 現在顯示為未授權，請到「設定 › 授權」重新輸入授權碼。} linuxGnome {如果 Cmdr 現在顯示為未授權，請到「偏好設定 › 授權」重新輸入授權碼。} linuxKde {如果 Cmdr 現在顯示為未授權，請到「設定 Cmdr › 授權」重新輸入授權碼。} other {如果 Cmdr 現在顯示為未授權，請到「設定 › 授權」重新輸入授權碼。}}",
   "@stateRecovery.license.body": {
     "sourceHash": "158e224"
   },
-  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
+  "stateRecovery.license.openSettings": "{platform, select, windows {開啟設定} linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
   "@stateRecovery.license.openSettings": {
     "sourceHash": "f970930"
   },

@@ -3,7 +3,7 @@
   "@adb.connect.adbNotInstalled": {
     "sourceHash": "748b1e7"
   },
-  "adb.connect.openSettings": "{platform, select, linuxGnome {Abrir Preferencias} linuxKde {Configurar Cmdr} other {Abrir Configuración}}",
+  "adb.connect.openSettings": "{platform, select, windows {Abrir Configuración} linuxGnome {Abrir Preferencias} linuxKde {Configurar Cmdr} other {Abrir Configuración}}",
   "@adb.connect.openSettings": {
     "sourceHash": "d90615c"
   },

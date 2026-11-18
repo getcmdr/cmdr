@@ -80,7 +80,7 @@
   "@queryUi.empty.keysTip": {
     "sourceHash": "cbc047b"
   },
-  "queryUi.ai.cloudOff.body": "{platform, select, linuxGnome {云端 AI 已关闭。在“首选项 > AI”中允许使用后，即可使用 AI 模式。} linuxKde {云端 AI 已关闭。在“配置 Cmdr > AI”中允许使用后，即可使用 AI 模式。} other {云端 AI 已关闭。在“设置 > AI”中允许使用后，即可使用 AI 模式。}}",
+  "queryUi.ai.cloudOff.body": "{platform, select, windows {云端 AI 已关闭。在“设置 > AI”中允许使用后，即可使用 AI 模式。} linuxGnome {云端 AI 已关闭。在“首选项 > AI”中允许使用后，即可使用 AI 模式。} linuxKde {云端 AI 已关闭。在“配置 Cmdr > AI”中允许使用后，即可使用 AI 模式。} other {云端 AI 已关闭。在“设置 > AI”中允许使用后，即可使用 AI 模式。}}",
   "@queryUi.ai.cloudOff.body": {
     "sourceHash": "1f64983"
   },

@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Beállítások > AI.} linuxKde {A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Cmdr beállítása > AI.} other {A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Beállítások > AI.}}",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Beállítások > AI.} linuxGnome {A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Beállítások > AI.} linuxKde {A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Cmdr beállítása > AI.} other {A felhő-AI kikapcsolva marad, amíg nem engedélyezed. Ezt később is megteheted itt: Beállítások > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "6e0eb09"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Beállításokban.} linuxKde {A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Cmdr beállításaiban.} other {A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Beállításokban.}}",
+  "onboarding.stepAi.off.help": "{platform, select, windows {A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Beállításokban.} linuxGnome {A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Beállításokban.} linuxKde {A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Cmdr beállításaiban.} other {A Cmdr AI nélkül is teljesen működik. Később bekapcsolhatod a Beállításokban.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "b20cf1d"
   },
@@ -391,7 +391,7 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Beállításokban.} linuxKde {Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Cmdr beállításaiban.} other {Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Beállításokban.}}",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Beállításokban.} linuxGnome {Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Beállításokban.} linuxKde {Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Cmdr beállításaiban.} other {Vedd figyelembe, hogy alapból BE van kapcsolva, hogy a béta alatt ösztönözzem az adatküldést.\nEzt bármikor módosíthatod a Beállításokban.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "47a7511"
   },
@@ -467,7 +467,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {Ezt bármikor módosíthatod a Beállításokban.} linuxKde {Ezt bármikor módosíthatod a Cmdr beállításaiban.} other {Ezt bármikor módosíthatod a Beállításokban.}}",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Ezt bármikor módosíthatod a Beállításokban.} linuxGnome {Ezt bármikor módosíthatod a Beállításokban.} linuxKde {Ezt bármikor módosíthatod a Cmdr beállításaiban.} other {Ezt bármikor módosíthatod a Beállításokban.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "320f582"
   },

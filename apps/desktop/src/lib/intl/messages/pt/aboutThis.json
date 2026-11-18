@@ -1229,7 +1229,7 @@
   "@aboutThis.verdict.hint.dismiss": {
     "sourceHash": "f18aa5e"
   },
-  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, linuxGnome {Ocultar esta dica. Você pode trazê-la de volta em Preferências > Avançado.} linuxKde {Ocultar esta dica. Você pode trazê-la de volta em Configurar Cmdr > Avançado.} other {Ocultar esta dica. Você pode trazê-la de volta em Ajustes > Avançado.}}",
+  "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Ocultar esta dica. Você pode trazê-la de volta em Ajustes > Avançado.} linuxGnome {Ocultar esta dica. Você pode trazê-la de volta em Preferências > Avançado.} linuxKde {Ocultar esta dica. Você pode trazê-la de volta em Configurar Cmdr > Avançado.} other {Ocultar esta dica. Você pode trazê-la de volta em Ajustes > Avançado.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
     "sourceHash": "22d9d84"
   },

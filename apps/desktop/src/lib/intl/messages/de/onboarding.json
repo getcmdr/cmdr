@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.} linuxKde {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter „Cmdr einrichten“ > KI.} other {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.}}",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.} linuxGnome {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.} linuxKde {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter „Cmdr einrichten“ > KI.} other {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "6e0eb09"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.} linuxKde {Cmdr funktioniert vollständig ohne KI. Du kannst sie später unter „Cmdr einrichten“ aktivieren.} other {Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.}}",
+  "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.} linuxGnome {Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.} linuxKde {Cmdr funktioniert vollständig ohne KI. Du kannst sie später unter „Cmdr einrichten“ aktivieren.} other {Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "b20cf1d"
   },
@@ -391,7 +391,7 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.} linuxKde {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit unter „Cmdr einrichten“ ändern.} other {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.}}",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.} linuxGnome {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.} linuxKde {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit unter „Cmdr einrichten“ ändern.} other {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "47a7511"
   },
@@ -467,7 +467,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {Du kannst das jederzeit in den Einstellungen ändern.} linuxKde {Du kannst das jederzeit unter „Cmdr einrichten“ ändern.} other {Du kannst das jederzeit in den Einstellungen ändern.}}",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Du kannst das jederzeit in den Einstellungen ändern.} linuxGnome {Du kannst das jederzeit in den Einstellungen ändern.} linuxKde {Du kannst das jederzeit unter „Cmdr einrichten“ ändern.} other {Du kannst das jederzeit in den Einstellungen ändern.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "320f582"
   },

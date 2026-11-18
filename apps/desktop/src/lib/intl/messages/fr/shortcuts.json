@@ -332,7 +332,7 @@
   "@shortcuts.window.hideEmpty": {
     "sourceHash": "d3cb18e"
   },
-  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Modifier les raccourcis dans Préférences} linuxKde {Modifier les raccourcis dans « Configurer Cmdr »} other {Modifier les raccourcis dans Réglages}}",
+  "shortcuts.window.editInSettings": "{platform, select, windows {Modifier les raccourcis dans Réglages} linuxGnome {Modifier les raccourcis dans Préférences} linuxKde {Modifier les raccourcis dans « Configurer Cmdr »} other {Modifier les raccourcis dans Réglages}}",
   "@shortcuts.window.editInSettings": {
     "sourceHash": "875f6b7"
   }

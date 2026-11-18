@@ -15,7 +15,7 @@
   "@operationLog.dialog.empty": {
     "sourceHash": "2dea414"
   },
-  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {A műveletnapló most nem rögzít, ezért az új másolások, áthelyezések, átnevezések és törlések nem jelennek meg itt, és nem vonhatók vissza. Kapcsold vissza a Beállításokban, hogy újra rögzítse őket.} linuxKde {A műveletnapló most nem rögzít, ezért az új másolások, áthelyezések, átnevezések és törlések nem jelennek meg itt, és nem vonhatók vissza. Kapcsold vissza a Cmdr beállításaiban, hogy újra rögzítse őket.} other {A műveletnapló most nem rögzít, ezért az új másolások, áthelyezések, átnevezések és törlések nem jelennek meg itt, és nem vonhatók vissza. Kapcsold vissza a Beállításokban, hogy újra rögzítse őket.}}",
+  "operationLog.dialog.recordingOff": "{platform, select, windows {A műveletnapló most nem rögzít, ezért az új másolások, áthelyezések, átnevezések és törlések nem jelennek meg itt, és nem vonhatók vissza. Kapcsold vissza a Beállításokban, hogy újra rögzítse őket.} linuxGnome {A műveletnapló most nem rögzít, ezért az új másolások, áthelyezések, átnevezések és törlések nem jelennek meg itt, és nem vonhatók vissza. Kapcsold vissza a Beállításokban, hogy újra rögzítse őket.} linuxKde {A műveletnapló most nem rögzít, ezért az új másolások, áthelyezések, átnevezések és törlések nem jelennek meg itt, és nem vonhatók vissza. Kapcsold vissza a Cmdr beállításaiban, hogy újra rögzítse őket.} other {A műveletnapló most nem rögzít, ezért az új másolások, áthelyezések, átnevezések és törlések nem jelennek meg itt, és nem vonhatók vissza. Kapcsold vissza a Beállításokban, hogy újra rögzítse őket.}}",
   "@operationLog.dialog.recordingOff": {
     "sourceHash": "3204ad8"
   },

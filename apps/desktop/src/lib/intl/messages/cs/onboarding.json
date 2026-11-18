@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v Předvolbách > AI.} linuxKde {Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v okně Nastavit Cmdr > AI.} other {Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v Nastavení > AI.}}",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v Nastavení > AI.} linuxGnome {Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v Předvolbách > AI.} linuxKde {Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v okně Nastavit Cmdr > AI.} other {Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v Nastavení > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "6e0eb09"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr bez AI plně funguje. Zapnout ji můžete později v Předvolbách.} linuxKde {Cmdr bez AI plně funguje. Zapnout ji můžete později v okně Nastavit Cmdr.} other {Cmdr bez AI plně funguje. Zapnout ji můžete později v Nastavení.}}",
+  "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr bez AI plně funguje. Zapnout ji můžete později v Nastavení.} linuxGnome {Cmdr bez AI plně funguje. Zapnout ji můžete později v Předvolbách.} linuxKde {Cmdr bez AI plně funguje. Zapnout ji můžete později v okně Nastavit Cmdr.} other {Cmdr bez AI plně funguje. Zapnout ji můžete později v Nastavení.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "b20cf1d"
   },
@@ -391,7 +391,7 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v Předvolbách.} linuxKde {Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v okně Nastavit Cmdr.} other {Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v Nastavení.}}",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v Nastavení.} linuxGnome {Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v Předvolbách.} linuxKde {Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v okně Nastavit Cmdr.} other {Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v Nastavení.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "47a7511"
   },
@@ -467,7 +467,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {Kdykoli to můžete změnit v Předvolbách.} linuxKde {Kdykoli to můžete změnit v okně Nastavit Cmdr.} other {Kdykoli to můžete změnit v Nastavení.}}",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Kdykoli to můžete změnit v Nastavení.} linuxGnome {Kdykoli to můžete změnit v Předvolbách.} linuxKde {Kdykoli to můžete změnit v okně Nastavit Cmdr.} other {Kdykoli to můžete změnit v Nastavení.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "320f582"
   },

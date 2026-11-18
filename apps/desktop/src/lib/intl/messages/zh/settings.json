@@ -2507,11 +2507,11 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr 使用你在“首选项 › AI”中设置好的 AI 提供方和密钥（{provider}）。} linuxKde {Cmdr 使用你在“配置 Cmdr › AI”中设置好的 AI 提供方和密钥（{provider}）。} other {Cmdr 使用你在“设置 › AI”中设置好的 AI 提供方和密钥（{provider}）。}}",
+  "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr 使用你在“设置 › AI”中设置好的 AI 提供方和密钥（{provider}）。} linuxGnome {Cmdr 使用你在“首选项 › AI”中设置好的 AI 提供方和密钥（{provider}）。} linuxKde {Cmdr 使用你在“配置 Cmdr › AI”中设置好的 AI 提供方和密钥（{provider}）。} other {Cmdr 使用你在“设置 › AI”中设置好的 AI 提供方和密钥（{provider}）。}}",
   "@settings.askCmdr.provider.shared": {
     "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {在“首选项 › AI”中开启一个 AI 提供方，即可开始聊天。} linuxKde {在“配置 Cmdr › AI”中开启一个 AI 提供方，即可开始聊天。} other {在“设置 › AI”中开启一个 AI 提供方，即可开始聊天。}}",
+  "settings.askCmdr.provider.off": "{platform, select, windows {在“设置 › AI”中开启一个 AI 提供方，即可开始聊天。} linuxGnome {在“首选项 › AI”中开启一个 AI 提供方，即可开始聊天。} linuxKde {在“配置 Cmdr › AI”中开启一个 AI 提供方，即可开始聊天。} other {在“设置 › AI”中开启一个 AI 提供方，即可开始聊天。}}",
   "@settings.askCmdr.provider.off": {
     "sourceHash": "0196a5c"
   },
@@ -2957,7 +2957,7 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {首选项部分} other {设置部分}}",
+  "settings.sidebar.sections": "{platform, select, windows {设置部分} linuxGnome {首选项部分} other {设置部分}}",
   "@settings.sidebar.sections": {
     "sourceHash": "4fa3c2e"
   },
@@ -3429,7 +3429,7 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {首选项} linuxKde {配置 – Cmdr} other {设置}}",
+  "settings.window.title": "{platform, select, windows {设置} linuxGnome {首选项} linuxKde {配置 – Cmdr} other {设置}}",
   "@settings.window.title": {
     "sourceHash": "80cee55"
   },

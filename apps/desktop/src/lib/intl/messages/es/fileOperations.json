@@ -428,7 +428,7 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Preferencias. Si sobrescribe archivos, verás un aviso antes.} linuxKde {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Configurar Cmdr. Si sobrescribe archivos, verás un aviso antes.} other {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Ajustes. Si sobrescribe archivos, verás un aviso antes.}}",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Ajustes. Si sobrescribe archivos, verás un aviso antes.} linuxGnome {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Preferencias. Si sobrescribe archivos, verás un aviso antes.} linuxKde {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Configurar Cmdr. Si sobrescribe archivos, verás un aviso antes.} other {La próxima vez, Cmdr empieza con esta opción, y puedes cambiarla en Ajustes. Si sobrescribe archivos, verás un aviso antes.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
     "sourceHash": "d75e9f6"
   },

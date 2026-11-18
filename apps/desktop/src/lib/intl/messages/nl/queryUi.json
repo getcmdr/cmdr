@@ -81,7 +81,7 @@
   "@queryUi.empty.keysTip": {
     "sourceHash": "cbc047b"
   },
-  "queryUi.ai.cloudOff.body": "{platform, select, linuxGnome {Cloud-AI staat uit. Sta cloud-AI toe bij Voorkeuren > AI om dit te gebruiken.} linuxKde {Cloud-AI staat uit. Sta cloud-AI toe bij ‘Cmdr configureren’ > AI om dit te gebruiken.} other {Cloud-AI staat uit. Sta cloud-AI toe bij Instellingen > AI om dit te gebruiken.}}",
+  "queryUi.ai.cloudOff.body": "{platform, select, windows {Cloud-AI staat uit. Sta cloud-AI toe bij Instellingen > AI om dit te gebruiken.} linuxGnome {Cloud-AI staat uit. Sta cloud-AI toe bij Voorkeuren > AI om dit te gebruiken.} linuxKde {Cloud-AI staat uit. Sta cloud-AI toe bij ‘Cmdr configureren’ > AI om dit te gebruiken.} other {Cloud-AI staat uit. Sta cloud-AI toe bij Instellingen > AI om dit te gebruiken.}}",
   "@queryUi.ai.cloudOff.body": {
     "sourceHash": "1f64983"
   },

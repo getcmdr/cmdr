@@ -55,7 +55,7 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "{platform, select, linuxGnome {Schakel een aanbieder in bij Voorkeuren > AI om AI-zoeken te gebruiken.} linuxKde {Schakel een aanbieder in bij ‘Cmdr configureren’ > AI om AI-zoeken te gebruiken.} other {Schakel een aanbieder in bij Instellingen > AI om AI-zoeken te gebruiken.}}",
+  "ai.translateError.off.body": "{platform, select, windows {Schakel een aanbieder in bij Instellingen > AI om AI-zoeken te gebruiken.} linuxGnome {Schakel een aanbieder in bij Voorkeuren > AI om AI-zoeken te gebruiken.} linuxKde {Schakel een aanbieder in bij ‘Cmdr configureren’ > AI om AI-zoeken te gebruiken.} other {Schakel een aanbieder in bij Instellingen > AI om AI-zoeken te gebruiken.}}",
   "@ai.translateError.off.body": {
     "sourceHash": "5e5f8d2"
   },
@@ -247,7 +247,7 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Rond de instelling van je aanbieder af bij Voorkeuren > AI en probeer het opnieuw.} linuxKde {Rond de instelling van je aanbieder af bij ‘Cmdr configureren’ > AI en probeer het opnieuw.} other {Rond de instelling van je aanbieder af bij Instellingen > AI en probeer het opnieuw.}}",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {Rond de instelling van je aanbieder af bij Instellingen > AI en probeer het opnieuw.} linuxGnome {Rond de instelling van je aanbieder af bij Voorkeuren > AI en probeer het opnieuw.} linuxKde {Rond de instelling van je aanbieder af bij ‘Cmdr configureren’ > AI en probeer het opnieuw.} other {Rond de instelling van je aanbieder af bij Instellingen > AI en probeer het opnieuw.}}",
   "@ai.translateError.notConfigured.body": {
     "sourceHash": "bf48aec"
   },
@@ -255,7 +255,7 @@
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Sta cloud-AI toe bij Voorkeuren > AI en probeer het opnieuw.} linuxKde {Sta cloud-AI toe bij ‘Cmdr configureren’ > AI en probeer het opnieuw.} other {Sta cloud-AI toe bij Instellingen > AI en probeer het opnieuw.}}",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {Sta cloud-AI toe bij Instellingen > AI en probeer het opnieuw.} linuxGnome {Sta cloud-AI toe bij Voorkeuren > AI en probeer het opnieuw.} linuxKde {Sta cloud-AI toe bij ‘Cmdr configureren’ > AI en probeer het opnieuw.} other {Sta cloud-AI toe bij Instellingen > AI en probeer het opnieuw.}}",
   "@ai.translateError.noCloudConsent.body": {
     "sourceHash": "4485cc1"
   },
@@ -263,7 +263,7 @@
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Controleer je sleutel bij Voorkeuren > AI - hij is mogelijk onjuist of ingetrokken.} linuxKde {Controleer je sleutel bij ‘Cmdr configureren’ > AI - hij is mogelijk onjuist of ingetrokken.} other {Controleer je sleutel bij Instellingen > AI - hij is mogelijk onjuist of ingetrokken.}}",
+  "ai.translateError.authFailed.body": "{platform, select, windows {Controleer je sleutel bij Instellingen > AI - hij is mogelijk onjuist of ingetrokken.} linuxGnome {Controleer je sleutel bij Voorkeuren > AI - hij is mogelijk onjuist of ingetrokken.} linuxKde {Controleer je sleutel bij ‘Cmdr configureren’ > AI - hij is mogelijk onjuist of ingetrokken.} other {Controleer je sleutel bij Instellingen > AI - hij is mogelijk onjuist of ingetrokken.}}",
   "@ai.translateError.authFailed.body": {
     "sourceHash": "4fd6281"
   },
@@ -295,7 +295,7 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Je model heeft misschien zijn tokenlimiet opgebruikt voordat het antwoordde. Probeer een sneller model zoals gpt-4.1-mini bij Voorkeuren > AI.} linuxKde {Je model heeft misschien zijn tokenlimiet opgebruikt voordat het antwoordde. Probeer een sneller model zoals gpt-4.1-mini bij ‘Cmdr configureren’ > AI.} other {Je model heeft misschien zijn tokenlimiet opgebruikt voordat het antwoordde. Probeer een sneller model zoals gpt-4.1-mini bij Instellingen > AI.}}",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {Je model heeft misschien zijn tokenlimiet opgebruikt voordat het antwoordde. Probeer een sneller model zoals gpt-4.1-mini bij Instellingen > AI.} linuxGnome {Je model heeft misschien zijn tokenlimiet opgebruikt voordat het antwoordde. Probeer een sneller model zoals gpt-4.1-mini bij Voorkeuren > AI.} linuxKde {Je model heeft misschien zijn tokenlimiet opgebruikt voordat het antwoordde. Probeer een sneller model zoals gpt-4.1-mini bij ‘Cmdr configureren’ > AI.} other {Je model heeft misschien zijn tokenlimiet opgebruikt voordat het antwoordde. Probeer een sneller model zoals gpt-4.1-mini bij Instellingen > AI.}}",
   "@ai.translateError.emptyResponse.body": {
     "sourceHash": "b16ff79"
   },
@@ -311,7 +311,7 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Probeer het opnieuw, of kies een ander model bij Voorkeuren > AI.} linuxKde {Probeer het opnieuw, of kies een ander model bij ‘Cmdr configureren’ > AI.} other {Probeer het opnieuw, of kies een ander model bij Instellingen > AI.}}",
+  "ai.translateError.parseError.body": "{platform, select, windows {Probeer het opnieuw, of kies een ander model bij Instellingen > AI.} linuxGnome {Probeer het opnieuw, of kies een ander model bij Voorkeuren > AI.} linuxKde {Probeer het opnieuw, of kies een ander model bij ‘Cmdr configureren’ > AI.} other {Probeer het opnieuw, of kies een ander model bij Instellingen > AI.}}",
   "@ai.translateError.parseError.body": {
     "sourceHash": "6082b7e"
   },
@@ -319,7 +319,7 @@
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Kies een aanbieder bij Voorkeuren > AI.} linuxKde {Kies een aanbieder bij ‘Cmdr configureren’ > AI.} other {Kies een aanbieder bij Instellingen > AI.}}",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {Kies een aanbieder bij Instellingen > AI.} linuxGnome {Kies een aanbieder bij Voorkeuren > AI.} linuxKde {Kies een aanbieder bij ‘Cmdr configureren’ > AI.} other {Kies een aanbieder bij Instellingen > AI.}}",
   "@ai.translateError.unknownProvider.body": {
     "sourceHash": "c45eba0"
   },

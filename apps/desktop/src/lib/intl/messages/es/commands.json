@@ -35,7 +35,7 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir los ajustes}}",
+  "commands.appSettings.label": "{platform, select, windows {Abrir los ajustes} linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir los ajustes}}",
   "@commands.appSettings.label": {
     "sourceHash": "e535825"
   },
@@ -1264,7 +1264,7 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Preferencias, en “Navegación y operaciones de archivos”.} linuxKde {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configurar Cmdr, en “Navegación y operaciones de archivos”.} other {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Ajustes, en “Navegación y operaciones de archivos”.}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, windows {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Ajustes, en “Navegación y operaciones de archivos”.} linuxGnome {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Preferencias, en “Navegación y operaciones de archivos”.} linuxKde {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Configurar Cmdr, en “Navegación y operaciones de archivos”.} other {Carpeta abierta en tu app de terminal. ¿Quieres que Cmdr abra otra app la próxima vez? Elígela en Ajustes, en “Navegación y operaciones de archivos”.}}",
   "@commands.handler.openTerminalHere.hint": {
     "sourceHash": "b73c1db"
   },
@@ -1272,7 +1272,7 @@
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir los ajustes}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Abrir los ajustes} linuxGnome {Abrir las preferencias} linuxKde {Configurar Cmdr} other {Abrir los ajustes}}",
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "e535825"
   },
@@ -1344,7 +1344,7 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Preferencias > Avanzado y reinicia Cmdr para ver el registro de depuración.} linuxKde {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configurar Cmdr > Avanzado y reinicia Cmdr para ver el registro de depuración.} other {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Ajustes > Avanzado y reinicia Cmdr para ver el registro de depuración.}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, windows {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Ajustes > Avanzado y reinicia Cmdr para ver el registro de depuración.} linuxGnome {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Preferencias > Avanzado y reinicia Cmdr para ver el registro de depuración.} linuxKde {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Configurar Cmdr > Avanzado y reinicia Cmdr para ver el registro de depuración.} other {El almacenamiento de registros está desactivado. Pon un límite de espacio en disco mayor que 0 en Ajustes > Avanzado y reinicia Cmdr para ver el registro de depuración.}}",
   "@commands.handler.viewDebugLog.disabled": {
     "sourceHash": "bda730a"
   },

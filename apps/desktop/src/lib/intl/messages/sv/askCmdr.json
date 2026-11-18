@@ -705,11 +705,11 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, linuxGnome {Lägg till din API-nyckel i inställningarna för att börja chatta.} other {Lägg till din API-nyckel i inställningarna för att börja chatta.}}",
+  "askCmdr.error.noKey": "{platform, select, windows {Lägg till din API-nyckel i inställningarna för att börja chatta.} linuxGnome {Lägg till din API-nyckel i inställningarna för att börja chatta.} other {Lägg till din API-nyckel i inställningarna för att börja chatta.}}",
   "@askCmdr.error.noKey": {
     "sourceHash": "124df6a"
   },
-  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {Chatten behöver en AI-leverantör. Aktivera en i inställningarna.} other {Chatten behöver en AI-leverantör. Aktivera en i inställningarna.}}",
+  "askCmdr.error.notConfigured": "{platform, select, windows {Chatten behöver en AI-leverantör. Aktivera en i inställningarna.} linuxGnome {Chatten behöver en AI-leverantör. Aktivera en i inställningarna.} other {Chatten behöver en AI-leverantör. Aktivera en i inställningarna.}}",
   "@askCmdr.error.notConfigured": {
     "sourceHash": "54fb846"
   },
@@ -717,7 +717,7 @@
   "@askCmdr.error.askCmdrOff": {
     "sourceHash": "6599ee1"
   },
-  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {Moln-AI är avstängt. Tillåt det i Inställningar > AI.} linuxKde {Moln-AI är avstängt. Tillåt det i ”Anpassa Cmdr” > AI.} other {Moln-AI är avstängt. Tillåt det i Inställningar > AI.}}",
+  "askCmdr.error.noCloudConsent": "{platform, select, windows {Moln-AI är avstängt. Tillåt det i Inställningar > AI.} linuxGnome {Moln-AI är avstängt. Tillåt det i Inställningar > AI.} linuxKde {Moln-AI är avstängt. Tillåt det i ”Anpassa Cmdr” > AI.} other {Moln-AI är avstängt. Tillåt det i Inställningar > AI.}}",
   "@askCmdr.error.noCloudConsent": {
     "sourceHash": "6490317"
   },
@@ -737,7 +737,7 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, linuxGnome {Leverantören accepterade inte din API-nyckel. Kontrollera den i inställningarna.} other {Leverantören accepterade inte din API-nyckel. Kontrollera den i inställningarna.}}",
+  "askCmdr.error.authFailed": "{platform, select, windows {Leverantören accepterade inte din API-nyckel. Kontrollera den i inställningarna.} linuxGnome {Leverantören accepterade inte din API-nyckel. Kontrollera den i inställningarna.} other {Leverantören accepterade inte din API-nyckel. Kontrollera den i inställningarna.}}",
   "@askCmdr.error.authFailed": {
     "sourceHash": "9e02aad"
   },
@@ -745,19 +745,19 @@
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {Din plan hos {provider} innehåller inte den här modellen. Välj en annan modell i Inställningar eller uppgradera din plan.} other {Din plan hos {provider} innehåller inte den här modellen. Välj en annan modell i Inställningar eller uppgradera din plan.}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Din plan hos {provider} innehåller inte den här modellen. Välj en annan modell i Inställningar eller uppgradera din plan.} linuxGnome {Din plan hos {provider} innehåller inte den här modellen. Välj en annan modell i Inställningar eller uppgradera din plan.} other {Din plan hos {provider} innehåller inte den här modellen. Välj en annan modell i Inställningar eller uppgradera din plan.}}",
   "@askCmdr.error.modelNotInPlan.named": {
     "sourceHash": "efbf38b"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {Din plan hos den här AI-leverantören innehåller inte den här modellen. Välj en annan modell i Inställningar eller uppgradera din plan.} other {Din plan hos den här AI-leverantören innehåller inte den här modellen. Välj en annan modell i Inställningar eller uppgradera din plan.}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Din plan hos den här AI-leverantören innehåller inte den här modellen. Välj en annan modell i Inställningar eller uppgradera din plan.} linuxGnome {Din plan hos den här AI-leverantören innehåller inte den här modellen. Välj en annan modell i Inställningar eller uppgradera din plan.} other {Din plan hos den här AI-leverantören innehåller inte den här modellen. Välj en annan modell i Inställningar eller uppgradera din plan.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
     "sourceHash": "6808950"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {{provider} avvisade det här: gränsen i din plan är lägre än en enda förfrågan från Cmdr, eftersom varje förfrågan alltid innehåller Cmdrs instruktioner. Ett kortare meddelande hjälper inte. Byt till en större plan hos {provider} eller välj en annan leverantör i Inställningar.} other {{provider} avvisade det här: gränsen i din plan är lägre än en enda förfrågan från Cmdr, eftersom varje förfrågan alltid innehåller Cmdrs instruktioner. Ett kortare meddelande hjälper inte. Byt till en större plan hos {provider} eller välj en annan leverantör i Inställningar.}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} avvisade det här: gränsen i din plan är lägre än en enda förfrågan från Cmdr, eftersom varje förfrågan alltid innehåller Cmdrs instruktioner. Ett kortare meddelande hjälper inte. Byt till en större plan hos {provider} eller välj en annan leverantör i Inställningar.} linuxGnome {{provider} avvisade det här: gränsen i din plan är lägre än en enda förfrågan från Cmdr, eftersom varje förfrågan alltid innehåller Cmdrs instruktioner. Ett kortare meddelande hjälper inte. Byt till en större plan hos {provider} eller välj en annan leverantör i Inställningar.} other {{provider} avvisade det här: gränsen i din plan är lägre än en enda förfrågan från Cmdr, eftersom varje förfrågan alltid innehåller Cmdrs instruktioner. Ett kortare meddelande hjälper inte. Byt till en större plan hos {provider} eller välj en annan leverantör i Inställningar.}}",
   "@askCmdr.error.requestTooLarge.named": {
     "sourceHash": "b1850b3"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {Din AI-leverantör avvisade det här: gränsen i din plan är lägre än en enda förfrågan från Cmdr, eftersom varje förfrågan alltid innehåller Cmdrs instruktioner. Ett kortare meddelande hjälper inte. Byt till en större plan eller välj en annan leverantör i Inställningar.} other {Din AI-leverantör avvisade det här: gränsen i din plan är lägre än en enda förfrågan från Cmdr, eftersom varje förfrågan alltid innehåller Cmdrs instruktioner. Ett kortare meddelande hjälper inte. Byt till en större plan eller välj en annan leverantör i Inställningar.}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Din AI-leverantör avvisade det här: gränsen i din plan är lägre än en enda förfrågan från Cmdr, eftersom varje förfrågan alltid innehåller Cmdrs instruktioner. Ett kortare meddelande hjälper inte. Byt till en större plan eller välj en annan leverantör i Inställningar.} linuxGnome {Din AI-leverantör avvisade det här: gränsen i din plan är lägre än en enda förfrågan från Cmdr, eftersom varje förfrågan alltid innehåller Cmdrs instruktioner. Ett kortare meddelande hjälper inte. Byt till en större plan eller välj en annan leverantör i Inställningar.} other {Din AI-leverantör avvisade det här: gränsen i din plan är lägre än en enda förfrågan från Cmdr, eftersom varje förfrågan alltid innehåller Cmdrs instruktioner. Ett kortare meddelande hjälper inte. Byt till en större plan eller välj en annan leverantör i Inställningar.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
     "sourceHash": "455449e"
   },
@@ -977,15 +977,15 @@
   "@askCmdr.composer.sendNeedsProvider": {
     "sourceHash": "9e6aba3"
   },
-  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {Ask Cmdr behöver en AI-leverantör för att chatta. Välj en i Inställningar.} linuxKde {Ask Cmdr behöver en AI-leverantör för att chatta. Välj en i ”Anpassa Cmdr”.} other {Ask Cmdr behöver en AI-leverantör för att chatta. Välj en i Inställningar.}}",
+  "askCmdr.providerNotice.off": "{platform, select, windows {Ask Cmdr behöver en AI-leverantör för att chatta. Välj en i Inställningar.} linuxGnome {Ask Cmdr behöver en AI-leverantör för att chatta. Välj en i Inställningar.} linuxKde {Ask Cmdr behöver en AI-leverantör för att chatta. Välj en i ”Anpassa Cmdr”.} other {Ask Cmdr behöver en AI-leverantör för att chatta. Välj en i Inställningar.}}",
   "@askCmdr.providerNotice.off": {
     "sourceHash": "6e9f73c"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {Din moln-AI-leverantör behöver en API-nyckel innan Ask Cmdr kan chatta. Lägg till den i Inställningar.} linuxKde {Din moln-AI-leverantör behöver en API-nyckel innan Ask Cmdr kan chatta. Lägg till den i ”Anpassa Cmdr”.} other {Din moln-AI-leverantör behöver en API-nyckel innan Ask Cmdr kan chatta. Lägg till den i Inställningar.}}",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, windows {Din moln-AI-leverantör behöver en API-nyckel innan Ask Cmdr kan chatta. Lägg till den i Inställningar.} linuxGnome {Din moln-AI-leverantör behöver en API-nyckel innan Ask Cmdr kan chatta. Lägg till den i Inställningar.} linuxKde {Din moln-AI-leverantör behöver en API-nyckel innan Ask Cmdr kan chatta. Lägg till den i ”Anpassa Cmdr”.} other {Din moln-AI-leverantör behöver en API-nyckel innan Ask Cmdr kan chatta. Lägg till den i Inställningar.}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
     "sourceHash": "16dc8a0"
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {Din moln-AI-leverantör behöver en adress innan Ask Cmdr kan chatta. Lägg till den i Inställningar.} linuxKde {Din moln-AI-leverantör behöver en adress innan Ask Cmdr kan chatta. Lägg till den i ”Anpassa Cmdr”.} other {Din moln-AI-leverantör behöver en adress innan Ask Cmdr kan chatta. Lägg till den i Inställningar.}}",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, windows {Din moln-AI-leverantör behöver en adress innan Ask Cmdr kan chatta. Lägg till den i Inställningar.} linuxGnome {Din moln-AI-leverantör behöver en adress innan Ask Cmdr kan chatta. Lägg till den i Inställningar.} linuxKde {Din moln-AI-leverantör behöver en adress innan Ask Cmdr kan chatta. Lägg till den i ”Anpassa Cmdr”.} other {Din moln-AI-leverantör behöver en adress innan Ask Cmdr kan chatta. Lägg till den i Inställningar.}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "1ae5e35"
   },
@@ -1021,7 +1021,7 @@
   "@askCmdr.gate.cloudOff.title": {
     "sourceHash": "2e56781"
   },
-  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {Ask Cmdr pratar med moln-AI-tjänsten du har ställt in. Tillåt moln-AI i Inställningar först, så är du redo att chatta.} linuxKde {Ask Cmdr pratar med moln-AI-tjänsten du har ställt in. Tillåt moln-AI i ”Anpassa Cmdr” först, så är du redo att chatta.} other {Ask Cmdr pratar med moln-AI-tjänsten du har ställt in. Tillåt moln-AI i Inställningar först, så är du redo att chatta.}}",
+  "askCmdr.gate.cloudOff.body": "{platform, select, windows {Ask Cmdr pratar med moln-AI-tjänsten du har ställt in. Tillåt moln-AI i Inställningar först, så är du redo att chatta.} linuxGnome {Ask Cmdr pratar med moln-AI-tjänsten du har ställt in. Tillåt moln-AI i Inställningar först, så är du redo att chatta.} linuxKde {Ask Cmdr pratar med moln-AI-tjänsten du har ställt in. Tillåt moln-AI i ”Anpassa Cmdr” först, så är du redo att chatta.} other {Ask Cmdr pratar med moln-AI-tjänsten du har ställt in. Tillåt moln-AI i Inställningar först, så är du redo att chatta.}}",
   "@askCmdr.gate.cloudOff.body": {
     "sourceHash": "076c788"
   },
@@ -1412,7 +1412,7 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {AI-funktioner är på, men de behöver en leverantör för att fungera. Klicka för att ställa in en i inställningarna.} other {AI-funktioner är på, men de behöver en leverantör för att fungera. Klicka för att ställa in en i inställningarna.}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {AI-funktioner är på, men de behöver en leverantör för att fungera. Klicka för att ställa in en i inställningarna.} linuxGnome {AI-funktioner är på, men de behöver en leverantör för att fungera. Klicka för att ställa in en i inställningarna.} other {AI-funktioner är på, men de behöver en leverantör för att fungera. Klicka för att ställa in en i inställningarna.}}",
   "@askCmdr.wake.needsApiKey": {
     "sourceHash": "2f1b3e9"
   },

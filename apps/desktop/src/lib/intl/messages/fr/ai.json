@@ -55,7 +55,7 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "{platform, select, linuxGnome {Activez un fournisseur dans Préférences > IA pour utiliser la recherche par IA.} linuxKde {Activez un fournisseur dans « Configurer Cmdr » > IA pour utiliser la recherche par IA.} other {Activez un fournisseur dans Réglages > IA pour utiliser la recherche par IA.}}",
+  "ai.translateError.off.body": "{platform, select, windows {Activez un fournisseur dans Réglages > IA pour utiliser la recherche par IA.} linuxGnome {Activez un fournisseur dans Préférences > IA pour utiliser la recherche par IA.} linuxKde {Activez un fournisseur dans « Configurer Cmdr » > IA pour utiliser la recherche par IA.} other {Activez un fournisseur dans Réglages > IA pour utiliser la recherche par IA.}}",
   "@ai.translateError.off.body": {
     "sourceHash": "5e5f8d2"
   },
@@ -247,7 +247,7 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Terminez la configuration de votre fournisseur dans Préférences > IA, puis réessayez.} linuxKde {Terminez la configuration de votre fournisseur dans « Configurer Cmdr » > IA, puis réessayez.} other {Terminez la configuration de votre fournisseur dans Réglages > IA, puis réessayez.}}",
+  "ai.translateError.notConfigured.body": "{platform, select, windows {Terminez la configuration de votre fournisseur dans Réglages > IA, puis réessayez.} linuxGnome {Terminez la configuration de votre fournisseur dans Préférences > IA, puis réessayez.} linuxKde {Terminez la configuration de votre fournisseur dans « Configurer Cmdr » > IA, puis réessayez.} other {Terminez la configuration de votre fournisseur dans Réglages > IA, puis réessayez.}}",
   "@ai.translateError.notConfigured.body": {
     "sourceHash": "bf48aec"
   },
@@ -255,7 +255,7 @@
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Autorisez-la dans Préférences > IA, puis réessayez.} linuxKde {Autorisez-la dans « Configurer Cmdr » > IA, puis réessayez.} other {Autorisez-la dans Réglages > IA, puis réessayez.}}",
+  "ai.translateError.noCloudConsent.body": "{platform, select, windows {Autorisez-la dans Réglages > IA, puis réessayez.} linuxGnome {Autorisez-la dans Préférences > IA, puis réessayez.} linuxKde {Autorisez-la dans « Configurer Cmdr » > IA, puis réessayez.} other {Autorisez-la dans Réglages > IA, puis réessayez.}}",
   "@ai.translateError.noCloudConsent.body": {
     "sourceHash": "4485cc1"
   },
@@ -263,7 +263,7 @@
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Vérifiez votre clé dans Préférences > IA - elle est peut-être incorrecte ou révoquée.} linuxKde {Vérifiez votre clé dans « Configurer Cmdr » > IA - elle est peut-être incorrecte ou révoquée.} other {Vérifiez votre clé dans Réglages > IA - elle est peut-être incorrecte ou révoquée.}}",
+  "ai.translateError.authFailed.body": "{platform, select, windows {Vérifiez votre clé dans Réglages > IA - elle est peut-être incorrecte ou révoquée.} linuxGnome {Vérifiez votre clé dans Préférences > IA - elle est peut-être incorrecte ou révoquée.} linuxKde {Vérifiez votre clé dans « Configurer Cmdr » > IA - elle est peut-être incorrecte ou révoquée.} other {Vérifiez votre clé dans Réglages > IA - elle est peut-être incorrecte ou révoquée.}}",
   "@ai.translateError.authFailed.body": {
     "sourceHash": "4fd6281"
   },
@@ -295,7 +295,7 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Votre modèle a peut-être épuisé son budget de jetons avant de répondre. Essayez un modèle plus rapide comme gpt-4.1-mini dans Préférences > IA.} linuxKde {Votre modèle a peut-être épuisé son budget de jetons avant de répondre. Essayez un modèle plus rapide comme gpt-4.1-mini dans « Configurer Cmdr » > IA.} other {Votre modèle a peut-être épuisé son budget de jetons avant de répondre. Essayez un modèle plus rapide comme gpt-4.1-mini dans Réglages > IA.}}",
+  "ai.translateError.emptyResponse.body": "{platform, select, windows {Votre modèle a peut-être épuisé son budget de jetons avant de répondre. Essayez un modèle plus rapide comme gpt-4.1-mini dans Réglages > IA.} linuxGnome {Votre modèle a peut-être épuisé son budget de jetons avant de répondre. Essayez un modèle plus rapide comme gpt-4.1-mini dans Préférences > IA.} linuxKde {Votre modèle a peut-être épuisé son budget de jetons avant de répondre. Essayez un modèle plus rapide comme gpt-4.1-mini dans « Configurer Cmdr » > IA.} other {Votre modèle a peut-être épuisé son budget de jetons avant de répondre. Essayez un modèle plus rapide comme gpt-4.1-mini dans Réglages > IA.}}",
   "@ai.translateError.emptyResponse.body": {
     "sourceHash": "b16ff79"
   },
@@ -311,7 +311,7 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Réessayez, ou choisissez un autre modèle dans Préférences > IA.} linuxKde {Réessayez, ou choisissez un autre modèle dans « Configurer Cmdr » > IA.} other {Réessayez, ou choisissez un autre modèle dans Réglages > IA.}}",
+  "ai.translateError.parseError.body": "{platform, select, windows {Réessayez, ou choisissez un autre modèle dans Réglages > IA.} linuxGnome {Réessayez, ou choisissez un autre modèle dans Préférences > IA.} linuxKde {Réessayez, ou choisissez un autre modèle dans « Configurer Cmdr » > IA.} other {Réessayez, ou choisissez un autre modèle dans Réglages > IA.}}",
   "@ai.translateError.parseError.body": {
     "sourceHash": "6082b7e"
   },
@@ -319,7 +319,7 @@
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Choisissez un fournisseur dans Préférences > IA.} linuxKde {Choisissez un fournisseur dans « Configurer Cmdr » > IA.} other {Choisissez un fournisseur dans Réglages > IA.}}",
+  "ai.translateError.unknownProvider.body": "{platform, select, windows {Choisissez un fournisseur dans Réglages > IA.} linuxGnome {Choisissez un fournisseur dans Préférences > IA.} linuxKde {Choisissez un fournisseur dans « Configurer Cmdr » > IA.} other {Choisissez un fournisseur dans Réglages > IA.}}",
   "@ai.translateError.unknownProvider.body": {
     "sourceHash": "c45eba0"
   },

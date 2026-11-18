@@ -769,11 +769,11 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Відкрито в програмі {app}. Хочете наступного разу інший редактор? Виберіть його в Налаштуваннях.} linuxKde {Відкрито в програмі {app}. Хочете наступного разу інший редактор? Виберіть його у вікні «Налаштувати Cmdr».} other {Відкрито в програмі {app}. Хочете наступного разу інший редактор? Виберіть його в Параметрах.}}",
+  "fileExplorer.edit.hint": "{platform, select, windows {Відкрито в програмі {app}. Хочете наступного разу інший редактор? Виберіть його в Параметрах.} linuxGnome {Відкрито в програмі {app}. Хочете наступного разу інший редактор? Виберіть його в Налаштуваннях.} linuxKde {Відкрито в програмі {app}. Хочете наступного разу інший редактор? Виберіть його у вікні «Налаштувати Cmdr».} other {Відкрито в програмі {app}. Хочете наступного разу інший редактор? Виберіть його в Параметрах.}}",
   "@fileExplorer.edit.hint": {
     "sourceHash": "1ec59c2"
   },
-  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Відкрито у вашому типовому текстовому редакторі. Хочете наступного разу інший? Виберіть його в Налаштуваннях.} linuxKde {Відкрито у вашому типовому текстовому редакторі. Хочете наступного разу інший? Виберіть його у вікні «Налаштувати Cmdr».} other {Відкрито у вашому типовому текстовому редакторі. Хочете наступного разу інший? Виберіть його в Параметрах.}}",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, windows {Відкрито у вашому типовому текстовому редакторі. Хочете наступного разу інший? Виберіть його в Параметрах.} linuxGnome {Відкрито у вашому типовому текстовому редакторі. Хочете наступного разу інший? Виберіть його в Налаштуваннях.} linuxKde {Відкрито у вашому типовому текстовому редакторі. Хочете наступного разу інший? Виберіть його у вікні «Налаштувати Cmdr».} other {Відкрито у вашому типовому текстовому редакторі. Хочете наступного разу інший? Виберіть його в Параметрах.}}",
   "@fileExplorer.edit.hintUnnamed": {
     "sourceHash": "00354cc"
   },
@@ -781,7 +781,7 @@
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Відкрити налаштування} linuxKde {Налаштувати Cmdr} other {Відкрити параметри}}",
+  "fileExplorer.edit.openSettings": "{platform, select, windows {Відкрити параметри} linuxGnome {Відкрити налаштування} linuxKde {Налаштувати Cmdr} other {Відкрити параметри}}",
   "@fileExplorer.edit.openSettings": {
     "sourceHash": "e535825"
   },
@@ -837,7 +837,7 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Налаштування} linuxKde {Налаштувати Cmdr} other {Параметри}}",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {Параметри} linuxGnome {Налаштування} linuxKde {Налаштувати Cmdr} other {Параметри}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
     "sourceHash": "02ce4ce"
   },
@@ -1836,11 +1836,11 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Доступ до телефонів і камер через MTP вимкнено в Налаштуваннях.} linuxKde {Доступ до телефонів і камер через MTP вимкнено у вікні «Налаштувати Cmdr».} other {Доступ до телефонів і камер через MTP вимкнено в Параметрах.}}",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {Доступ до телефонів і камер через MTP вимкнено в Параметрах.} linuxGnome {Доступ до телефонів і камер через MTP вимкнено в Налаштуваннях.} linuxKde {Доступ до телефонів і камер через MTP вимкнено у вікні «Налаштувати Cmdr».} other {Доступ до телефонів і камер через MTP вимкнено в Параметрах.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
     "sourceHash": "064a270"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Доступ до телефонів Android вимкнено в Налаштуваннях.} linuxKde {Доступ до телефонів Android вимкнено у вікні «Налаштувати Cmdr».} other {Доступ до телефонів Android вимкнено в Параметрах.}}",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {Доступ до телефонів Android вимкнено в Параметрах.} linuxGnome {Доступ до телефонів Android вимкнено в Налаштуваннях.} linuxKde {Доступ до телефонів Android вимкнено у вікні «Налаштувати Cmdr».} other {Доступ до телефонів Android вимкнено в Параметрах.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
     "sourceHash": "bc261dc"
   },
@@ -1852,7 +1852,7 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Відкрити налаштування} linuxKde {Налаштувати Cmdr} other {Відкрити параметри}}",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {Відкрити параметри} linuxGnome {Відкрити налаштування} linuxKde {Налаштувати Cmdr} other {Відкрити параметри}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
     "sourceHash": "e535825"
   },
@@ -2212,7 +2212,7 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Індексування дисків вимкнено в Налаштуваннях, тому «{name}» не індексується. Увімкніть його в розділі «Індексування > Індексування дисків».} linuxKde {Індексування дисків вимкнено у вікні «Налаштувати Cmdr», тому «{name}» не індексується. Увімкніть його в розділі «Індексування > Індексування дисків».} other {Індексування дисків вимкнено в Параметрах, тому «{name}» не індексується. Увімкніть його в розділі «Індексування > Індексування дисків».}}",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {Індексування дисків вимкнено в Параметрах, тому «{name}» не індексується. Увімкніть його в розділі «Індексування > Індексування дисків».} linuxGnome {Індексування дисків вимкнено в Налаштуваннях, тому «{name}» не індексується. Увімкніть його в розділі «Індексування > Індексування дисків».} linuxKde {Індексування дисків вимкнено у вікні «Налаштувати Cmdr», тому «{name}» не індексується. Увімкніть його в розділі «Індексування > Індексування дисків».} other {Індексування дисків вимкнено в Параметрах, тому «{name}» не індексується. Увімкніть його в розділі «Індексування > Індексування дисків».}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
     "sourceHash": "f7b3cad"
   },
@@ -2220,11 +2220,11 @@
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Індексування дисків вимкнено в Налаштуваннях, тому зараз жоден диск не індексується.} linuxKde {Індексування дисків вимкнено у вікні «Налаштувати Cmdr», тому зараз жоден диск не індексується.} other {Індексування дисків вимкнено в Параметрах, тому зараз жоден диск не індексується.}}",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {Індексування дисків вимкнено в Параметрах, тому зараз жоден диск не індексується.} linuxGnome {Індексування дисків вимкнено в Налаштуваннях, тому зараз жоден диск не індексується.} linuxKde {Індексування дисків вимкнено у вікні «Налаштувати Cmdr», тому зараз жоден диск не індексується.} other {Індексування дисків вимкнено в Параметрах, тому зараз жоден диск не індексується.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
     "sourceHash": "4c4d376"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Індексування дисків вимкнено в Налаштуваннях. Увімкніть його в розділі «Індексування > Індексування дисків», і цей диск продовжить із того місця, де зупинився.} linuxKde {Індексування дисків вимкнено у вікні «Налаштувати Cmdr». Увімкніть його в розділі «Індексування > Індексування дисків», і цей диск продовжить із того місця, де зупинився.} other {Індексування дисків вимкнено в Параметрах. Увімкніть його в розділі «Індексування > Індексування дисків», і цей диск продовжить із того місця, де зупинився.}}",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {Індексування дисків вимкнено в Параметрах. Увімкніть його в розділі «Індексування > Індексування дисків», і цей диск продовжить із того місця, де зупинився.} linuxGnome {Індексування дисків вимкнено в Налаштуваннях. Увімкніть його в розділі «Індексування > Індексування дисків», і цей диск продовжить із того місця, де зупинився.} linuxKde {Індексування дисків вимкнено у вікні «Налаштувати Cmdr». Увімкніть його в розділі «Індексування > Індексування дисків», і цей диск продовжить із того місця, де зупинився.} other {Індексування дисків вимкнено в Параметрах. Увімкніть його в розділі «Індексування > Індексування дисків», і цей диск продовжить із того місця, де зупинився.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
     "sourceHash": "453d08d"
   },
@@ -2332,7 +2332,7 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Хочете переводити курсор на відповідну назву, нічого не приховуючи? Увімкніть «Перехід» тут або в Налаштуваннях.} linuxKde {Хочете переводити курсор на відповідну назву, нічого не приховуючи? Увімкніть «Перехід» тут або у вікні «Налаштувати Cmdr».} other {Хочете переводити курсор на відповідну назву, нічого не приховуючи? Увімкніть «Перехід» тут або в Параметрах.}}",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {Хочете переводити курсор на відповідну назву, нічого не приховуючи? Увімкніть «Перехід» тут або в Параметрах.} linuxGnome {Хочете переводити курсор на відповідну назву, нічого не приховуючи? Увімкніть «Перехід» тут або в Налаштуваннях.} linuxKde {Хочете переводити курсор на відповідну назву, нічого не приховуючи? Увімкніть «Перехід» тут або у вікні «Налаштувати Cmdr».} other {Хочете переводити курсор на відповідну назву, нічого не приховуючи? Увімкніть «Перехід» тут або в Параметрах.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "ed0bb5f"
   },
@@ -2400,7 +2400,7 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr запамʼятовує вашу відповідь для цих двох серверів. Забути її можна в Налаштуваннях, у розділі «Сервери».} linuxKde {Cmdr запамʼятовує вашу відповідь для цих двох серверів. Забути її можна у вікні «Налаштувати Cmdr», у розділі «Сервери».} other {Cmdr запамʼятовує вашу відповідь для цих двох серверів. Забути її можна в Параметрах, у розділі «Сервери».}}",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr запамʼятовує вашу відповідь для цих двох серверів. Забути її можна в Параметрах, у розділі «Сервери».} linuxGnome {Cmdr запамʼятовує вашу відповідь для цих двох серверів. Забути її можна в Налаштуваннях, у розділі «Сервери».} linuxKde {Cmdr запамʼятовує вашу відповідь для цих двох серверів. Забути її можна у вікні «Налаштувати Cmdr», у розділі «Сервери».} other {Cmdr запамʼятовує вашу відповідь для цих двох серверів. Забути її можна в Параметрах, у розділі «Сервери».}}",
   "@fileExplorer.smbLinkConsent.note": {
     "sourceHash": "d32b664"
   },

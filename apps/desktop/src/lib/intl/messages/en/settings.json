@@ -2967,18 +2967,24 @@
     "description": "Heading of the provider/model group in Ask Cmdr settings. Sentence case.",
     "screenshot": "settings-ai-ask-cmdr.png"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr uses the AI provider and key you set up in Settings › AI ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr uses the AI provider and key you set up in Settings › AI ({provider}).} linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr uses the AI provider and key you set up in Settings › AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "description": "Line telling the user this section shares the provider configured in the AI settings section. provider is the current provider's name (Off, Cloud AI, or Local LLM). The › is a right-pointing angle separating the settings path. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
+    "description": "Line telling the user this section shares the provider configured in the AI settings section. provider is the current provider's name (Off, Cloud AI, or Local LLM). The › is a right-pointing angle separating the settings path. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "placeholders": {
       "provider": "The current AI provider label: Off, Cloud AI, or Local LLM."
     },
     "screenshot": "settings-ai-ask-cmdr.png",
     "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Turn on an AI provider in Settings › AI to start chatting.}}",
+  "settings.askCmdr.provider.off": "{platform, select, windows {Turn on an AI provider in Settings › AI to start chatting.} linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Turn on an AI provider in Settings › AI to start chatting.}}",
   "@settings.askCmdr.provider.off": {
-    "description": "Hint shown in Ask Cmdr settings when no AI provider is enabled, pointing the user to the AI settings section. The › is a right-pointing angle separating the settings path. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
+    "description": "Hint shown in Ask Cmdr settings when no AI provider is enabled, pointing the user to the AI settings section. The › is a right-pointing angle separating the settings path. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "settings-ai-ask-cmdr.png"
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr model",
@@ -3563,9 +3569,12 @@
   "@settings.sidebar.clearSearch": {
     "description": "aria-label for the button that clears the settings-sidebar search box."
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {Settings sections}}",
+  "settings.sidebar.sections": "{platform, select, windows {Settings sections} linuxGnome {Preferences sections} other {Settings sections}}",
   "@settings.sidebar.sections": {
-    "description": "aria-label for the settings-sidebar navigation region listing all sections (screen-reader only). The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
+    "description": "aria-label for the settings-sidebar navigation region listing all sections (screen-reader only). The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "settings-appearance.png"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {No settings match} one {{countText} section matches} other {{countText} sections match}}",
@@ -4161,9 +4170,12 @@
       "folder": "the folder's absolute path, like /Users/test_user_10/Photos"
     }
   },
-  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Settings}}",
+  "settings.window.title": "{platform, select, windows {Settings} linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Settings}}",
   "@settings.window.title": {
-    "description": "Name of Cmdr's own Settings window: the operating-system window title (shown in the window list and the Window menu) and the window's screen-reader-only page heading. A NOUN, the name of the window. This is the word the rest of the app uses whenever it points the user at Cmdr's preferences (\"Edit shortcuts in Settings\"), so match whatever an app's own preferences window is called in your language. It is NOT the operating system's own settings app (System Settings on macOS, Settings on Windows), which has its own localized name. The `linuxGnome` branch is GNOME’s name for an app’s preferences window (“Preferences”, as GNOME Files titles its own); the `linuxKde` branch follows KDE apps, whose settings window is titled “Configure” plus the app’s name (Dolphin’s dialog), here with Cmdr’s own “–” separator. Every key that points the user here follows these branches, and the menu row (menu.app.settings) starts with the same word.",
+    "description": "Name of Cmdr's own Settings window: the operating-system window title (shown in the window list and the Window menu) and the window's screen-reader-only page heading. A NOUN, the name of the window. This is the word the rest of the app uses whenever it points the user at Cmdr's preferences (\"Edit shortcuts in Settings\"), so match whatever an app's own preferences window is called in your language. It is NOT the operating system's own settings app (System Settings on macOS, Settings on Windows), which has its own localized name. The `linuxGnome` branch is GNOME’s name for an app’s preferences window (“Preferences”, as GNOME Files titles its own); the `linuxKde` branch follows KDE apps, whose settings window is titled “Configure” plus the app’s name (Dolphin’s dialog), here with Cmdr’s own “–” separator. Every key that points the user here follows these branches, and the menu row (menu.app.settings) starts with the same word. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
     "screenshot": "settings-appearance.png"
   },
   "settings.window.loading": "Loading settings…",

@@ -3,11 +3,11 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "{platform, select, linuxGnome {Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans Préférences › Mises à jour et confidentialité.} linuxKde {Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans « Configurer Cmdr » › Mises à jour et confidentialité.} other {Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans Réglages › Mises à jour et confidentialité.}}",
+  "stateRecovery.settings.body": "{platform, select, windows {Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans Réglages › Mises à jour et confidentialité.} linuxGnome {Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans Préférences › Mises à jour et confidentialité.} linuxKde {Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans « Configurer Cmdr » › Mises à jour et confidentialité.} other {Les statistiques d’usage et les rapports d’incident restent désactivés jusqu’à ce que vous les réactiviez dans Réglages › Mises à jour et confidentialité.}}",
   "@stateRecovery.settings.body": {
     "sourceHash": "8e4debd"
   },
-  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Ouvrir les préférences} linuxKde {Configurer Cmdr} other {Ouvrir les réglages}}",
+  "stateRecovery.settings.openSettings": "{platform, select, windows {Ouvrir les réglages} linuxGnome {Ouvrir les préférences} linuxKde {Configurer Cmdr} other {Ouvrir les réglages}}",
   "@stateRecovery.settings.openSettings": {
     "sourceHash": "f970930"
   },
@@ -19,11 +19,11 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "{platform, select, linuxGnome {Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans Préférences › Licence.} linuxKde {Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans « Configurer Cmdr » › Licence.} other {Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans Réglages › Licence.}}",
+  "stateRecovery.license.body": "{platform, select, windows {Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans Réglages › Licence.} linuxGnome {Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans Préférences › Licence.} linuxKde {Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans « Configurer Cmdr » › Licence.} other {Si Cmdr s’affiche maintenant sans licence, saisissez de nouveau votre clé de licence dans Réglages › Licence.}}",
   "@stateRecovery.license.body": {
     "sourceHash": "158e224"
   },
-  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Ouvrir les préférences} linuxKde {Configurer Cmdr} other {Ouvrir les réglages}}",
+  "stateRecovery.license.openSettings": "{platform, select, windows {Ouvrir les réglages} linuxGnome {Ouvrir les préférences} linuxKde {Configurer Cmdr} other {Ouvrir les réglages}}",
   "@stateRecovery.license.openSettings": {
     "sourceHash": "f970930"
   },

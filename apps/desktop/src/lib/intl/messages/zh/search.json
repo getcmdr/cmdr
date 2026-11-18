@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "{platform, select, linuxGnome {在“首选项”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。} linuxKde {在“配置 Cmdr”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。} other {在“设置”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。}}",
+  "search.imageResults.networkOff": "{platform, select, windows {在“设置”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。} linuxGnome {在“首选项”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。} linuxKde {在“配置 Cmdr”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。} other {在“设置”中为此网络驱动器开启图像索引，即可搜索其照片中的文字。}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "30b2455"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {驱动器索引已在首选项中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。} linuxKde {驱动器索引已在“配置 Cmdr”中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。} other {驱动器索引已在设置中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。}}",
+  "search.coverage.toast.indexingOff": "{platform, select, windows {驱动器索引已在设置中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。} linuxGnome {驱动器索引已在首选项中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。} linuxKde {驱动器索引已在“配置 Cmdr”中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。} other {驱动器索引已在设置中关闭，因此不会建立任何索引。可在“索引 > 驱动器索引”中开启。}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "7c4ff62"
   },

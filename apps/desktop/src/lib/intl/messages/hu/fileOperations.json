@@ -429,7 +429,7 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {A Cmdr legközelebb ezzel a választással indul, és a Beállításokban módosíthatod. Ha ez a választás felülír fájlokat, előbb figyelmeztetést látsz.} linuxKde {A Cmdr legközelebb ezzel a választással indul, és a Cmdr beállításaiban módosíthatod. Ha ez a választás felülír fájlokat, előbb figyelmeztetést látsz.} other {A Cmdr legközelebb ezzel a választással indul, és a Beállításokban módosíthatod. Ha ez a választás felülír fájlokat, előbb figyelmeztetést látsz.}}",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {A Cmdr legközelebb ezzel a választással indul, és a Beállításokban módosíthatod. Ha ez a választás felülír fájlokat, előbb figyelmeztetést látsz.} linuxGnome {A Cmdr legközelebb ezzel a választással indul, és a Beállításokban módosíthatod. Ha ez a választás felülír fájlokat, előbb figyelmeztetést látsz.} linuxKde {A Cmdr legközelebb ezzel a választással indul, és a Cmdr beállításaiban módosíthatod. Ha ez a választás felülír fájlokat, előbb figyelmeztetést látsz.} other {A Cmdr legközelebb ezzel a választással indul, és a Beállításokban módosíthatod. Ha ez a választás felülír fájlokat, előbb figyelmeztetést látsz.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
     "sourceHash": "d75e9f6"
   },

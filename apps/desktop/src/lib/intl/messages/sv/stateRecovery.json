@@ -3,11 +3,11 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "{platform, select, linuxGnome {Användningsstatistik och kraschrapporter förblir avstängda tills du slår på dem igen i Inställningar › Uppdateringar och integritet.} linuxKde {Användningsstatistik och kraschrapporter förblir avstängda tills du slår på dem igen i ”Anpassa Cmdr” › Uppdateringar och integritet.} other {Användningsstatistik och kraschrapporter förblir avstängda tills du slår på dem igen i Inställningar › Uppdateringar och integritet.}}",
+  "stateRecovery.settings.body": "{platform, select, windows {Användningsstatistik och kraschrapporter förblir avstängda tills du slår på dem igen i Inställningar › Uppdateringar och integritet.} linuxGnome {Användningsstatistik och kraschrapporter förblir avstängda tills du slår på dem igen i Inställningar › Uppdateringar och integritet.} linuxKde {Användningsstatistik och kraschrapporter förblir avstängda tills du slår på dem igen i ”Anpassa Cmdr” › Uppdateringar och integritet.} other {Användningsstatistik och kraschrapporter förblir avstängda tills du slår på dem igen i Inställningar › Uppdateringar och integritet.}}",
   "@stateRecovery.settings.body": {
     "sourceHash": "8e4debd"
   },
-  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
+  "stateRecovery.settings.openSettings": "{platform, select, windows {Öppna inställningar} linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
   "@stateRecovery.settings.openSettings": {
     "sourceHash": "f970930"
   },
@@ -19,11 +19,11 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "{platform, select, linuxGnome {Om Cmdr nu säger att du inte har någon licens, ange din licensnyckel igen i Inställningar › Licens.} linuxKde {Om Cmdr nu säger att du inte har någon licens, ange din licensnyckel igen i ”Anpassa Cmdr” › Licens.} other {Om Cmdr nu säger att du inte har någon licens, ange din licensnyckel igen i Inställningar › Licens.}}",
+  "stateRecovery.license.body": "{platform, select, windows {Om Cmdr nu säger att du inte har någon licens, ange din licensnyckel igen i Inställningar › Licens.} linuxGnome {Om Cmdr nu säger att du inte har någon licens, ange din licensnyckel igen i Inställningar › Licens.} linuxKde {Om Cmdr nu säger att du inte har någon licens, ange din licensnyckel igen i ”Anpassa Cmdr” › Licens.} other {Om Cmdr nu säger att du inte har någon licens, ange din licensnyckel igen i Inställningar › Licens.}}",
   "@stateRecovery.license.body": {
     "sourceHash": "158e224"
   },
-  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
+  "stateRecovery.license.openSettings": "{platform, select, windows {Öppna inställningar} linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
   "@stateRecovery.license.openSettings": {
     "sourceHash": "f970930"
   },

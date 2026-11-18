@@ -770,11 +770,11 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Tùy thích.} linuxKde {Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cấu hình Cmdr.} other {Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.}}",
+  "fileExplorer.edit.hint": "{platform, select, windows {Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.} linuxGnome {Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Tùy thích.} linuxKde {Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cấu hình Cmdr.} other {Đã mở tệp trong {app}. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.}}",
   "@fileExplorer.edit.hint": {
     "sourceHash": "1ec59c2"
   },
-  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Tùy thích.} linuxKde {Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cấu hình Cmdr.} other {Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.}}",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, windows {Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.} linuxGnome {Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Tùy thích.} linuxKde {Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cấu hình Cmdr.} other {Đã mở tệp trong trình soạn thảo văn bản mặc định của bạn. Bạn muốn dùng trình soạn thảo khác vào lần sau? Hãy chọn trong Cài đặt.}}",
   "@fileExplorer.edit.hintUnnamed": {
     "sourceHash": "00354cc"
   },
@@ -782,7 +782,7 @@
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
+  "fileExplorer.edit.openSettings": "{platform, select, windows {Mở cài đặt} linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
   "@fileExplorer.edit.openSettings": {
     "sourceHash": "e535825"
   },
@@ -838,7 +838,7 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Tùy thích} linuxKde {Cấu hình Cmdr} other {Cài đặt}}",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {Cài đặt} linuxGnome {Tùy thích} linuxKde {Cấu hình Cmdr} other {Cài đặt}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
     "sourceHash": "02ce4ce"
   },
@@ -1840,11 +1840,11 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Tùy thích.} linuxKde {Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Cấu hình Cmdr.} other {Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Cài đặt.}}",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Cài đặt.} linuxGnome {Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Tùy thích.} linuxKde {Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Cấu hình Cmdr.} other {Tính năng truy cập điện thoại và máy ảnh qua MTP đang tắt trong Cài đặt.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
     "sourceHash": "064a270"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Tính năng truy cập điện thoại Android đang tắt trong Tùy thích.} linuxKde {Tính năng truy cập điện thoại Android đang tắt trong Cấu hình Cmdr.} other {Tính năng truy cập điện thoại Android đang tắt trong Cài đặt.}}",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {Tính năng truy cập điện thoại Android đang tắt trong Cài đặt.} linuxGnome {Tính năng truy cập điện thoại Android đang tắt trong Tùy thích.} linuxKde {Tính năng truy cập điện thoại Android đang tắt trong Cấu hình Cmdr.} other {Tính năng truy cập điện thoại Android đang tắt trong Cài đặt.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
     "sourceHash": "bc261dc"
   },
@@ -1856,7 +1856,7 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {Mở cài đặt} linuxGnome {Mở Tùy thích} linuxKde {Cấu hình Cmdr} other {Mở cài đặt}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
     "sourceHash": "e535825"
   },
@@ -2216,7 +2216,7 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Lập chỉ mục ổ đĩa đang tắt trong Tùy thích, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.} linuxKde {Lập chỉ mục ổ đĩa đang tắt trong Cấu hình Cmdr, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.}}",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.} linuxGnome {Lập chỉ mục ổ đĩa đang tắt trong Tùy thích, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.} linuxKde {Lập chỉ mục ổ đĩa đang tắt trong Cấu hình Cmdr, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên {name} vẫn chưa được lập chỉ mục. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
     "sourceHash": "f7b3cad"
   },
@@ -2224,11 +2224,11 @@
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Lập chỉ mục ổ đĩa đang tắt trong Tùy thích, nên hiện không có ổ đĩa nào được lập chỉ mục.} linuxKde {Lập chỉ mục ổ đĩa đang tắt trong Cấu hình Cmdr, nên hiện không có ổ đĩa nào được lập chỉ mục.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên hiện không có ổ đĩa nào được lập chỉ mục.}}",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên hiện không có ổ đĩa nào được lập chỉ mục.} linuxGnome {Lập chỉ mục ổ đĩa đang tắt trong Tùy thích, nên hiện không có ổ đĩa nào được lập chỉ mục.} linuxKde {Lập chỉ mục ổ đĩa đang tắt trong Cấu hình Cmdr, nên hiện không có ổ đĩa nào được lập chỉ mục.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên hiện không có ổ đĩa nào được lập chỉ mục.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
     "sourceHash": "4c4d376"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Lập chỉ mục ổ đĩa đang tắt trong Tùy thích. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.} linuxKde {Lập chỉ mục ổ đĩa đang tắt trong Cấu hình Cmdr. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.}}",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.} linuxGnome {Lập chỉ mục ổ đĩa đang tắt trong Tùy thích. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.} linuxKde {Lập chỉ mục ổ đĩa đang tắt trong Cấu hình Cmdr. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt. Hãy bật trong “Lập chỉ mục > Lập chỉ mục ổ đĩa”, và ổ đĩa này sẽ tiếp tục từ chỗ đã dừng.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
     "sourceHash": "453d08d"
   },
@@ -2336,7 +2336,7 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Tùy thích.} linuxKde {Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Cấu hình Cmdr.} other {Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Cài đặt.}}",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Cài đặt.} linuxGnome {Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Tùy thích.} linuxKde {Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Cấu hình Cmdr.} other {Bạn muốn đưa con trỏ tới tên khớp mà không ẩn gì? Hãy chuyển sang “Nhảy tới”, ngay tại đây hoặc trong Cài đặt.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "ed0bb5f"
   },
@@ -2404,7 +2404,7 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Tùy thích, mục Máy chủ.} linuxKde {Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Cấu hình Cmdr, mục Máy chủ.} other {Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Cài đặt, mục Máy chủ.}}",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Cài đặt, mục Máy chủ.} linuxGnome {Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Tùy thích, mục Máy chủ.} linuxKde {Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Cấu hình Cmdr, mục Máy chủ.} other {Cmdr ghi nhớ câu trả lời của bạn cho hai máy chủ này. Bạn có thể quên nó trong Cài đặt, mục Máy chủ.}}",
   "@fileExplorer.smbLinkConsent.note": {
     "sourceHash": "d32b664"
   },
