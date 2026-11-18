@@ -1,6 +1,8 @@
 //! The live read's three layers: the gate over real temp dirs (links included),
 //! and the bounded run with injected reads that are slow, stuck, or stoppable.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use std::os::unix::fs::symlink;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;

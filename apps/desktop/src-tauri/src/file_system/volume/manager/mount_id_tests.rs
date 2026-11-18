@@ -6,6 +6,8 @@
 //! The two shipping routed backends have their own cells beside their routes
 //! (`archive_routing.rs`, `git_routing.rs`); what lives here is the rule itself.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use super::VolumeManager;
 use std::sync::Arc;
 

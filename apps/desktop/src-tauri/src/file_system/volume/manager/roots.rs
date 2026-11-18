@@ -367,6 +367,7 @@ pub fn is_stale_mount(class: OsErrorClass) -> bool {
 }
 
 #[cfg(test)]
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, `libc`, or `std::os::unix` (windows-port plan).
 mod tests {
     use super::super::get_volume_manager;
     use super::*;

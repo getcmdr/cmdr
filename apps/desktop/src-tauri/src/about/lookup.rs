@@ -212,6 +212,7 @@ mod tests {
 
     /// A row whose job never comes back by the deadline is named, never dropped
     /// and never waited on for good.
+    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test]
     async fn a_row_still_out_at_the_deadline_is_named() {
         crate::file_system::volume::manager::get_volume_manager().register_if_absent(

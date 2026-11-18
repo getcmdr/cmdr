@@ -769,6 +769,7 @@ fn a_refused_add_says_whether_it_was_the_address_or_the_server() {
 /// With no mount to compare against, the two look the same, so the Add sheet only
 /// HINTS at the permission, and only where it can apply: the kernel refusing the
 /// route to a private-range address.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_route_refused_to_a_lan_address_hints_at_the_local_network_permission() {
     use std::net::SocketAddr;
@@ -899,6 +900,7 @@ fn signing_in_as_an_account_makes_it_the_hosts_preference() {
 // -- a file that doesn't read is never saved over --
 
 /// The one set-aside copy of `path`, read back whatever its mode.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 fn the_copy(path: &Path) -> Vec<u8> {
     use std::os::unix::fs::PermissionsExt;
     let kept = crate::state_recovery::testing::kept_copies(path);
@@ -909,6 +911,7 @@ fn the_copy(path: &Path) -> Vec<u8> {
 
 /// A store that's there but can't be read (mode 000) is set aside before the next add writes a
 /// one-server list over it.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn an_unreadable_store_survives_the_next_add() {
     use std::os::unix::fs::PermissionsExt;
@@ -929,6 +932,7 @@ fn an_unreadable_store_survives_the_next_add() {
 }
 
 /// One server entry from a newer build costs that entry only, and the whole file is kept.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn one_entry_that_doesnt_read_keeps_the_rest_and_a_copy() {
     let _notices = crate::state_recovery::testing::capture_recoveries();

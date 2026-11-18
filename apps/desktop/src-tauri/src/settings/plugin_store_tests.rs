@@ -5,6 +5,7 @@
 //! moment the patch stops applying.
 
 use std::fs;
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::Path;
 use std::sync::Arc;
@@ -40,6 +41,7 @@ fn names_in(dir: &Path) -> Vec<String> {
 
 /// A rename swaps in a new file (a new inode) and leaves nothing beside it; a truncate-then-write
 /// keeps the inode, which is exactly the window where a crash leaves a half-written file.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_save_renames_a_finished_file_over_the_old_one() {
     let dir = TestDir::new("plugin_store_rename");
@@ -66,6 +68,7 @@ fn a_save_renames_a_finished_file_over_the_old_one() {
 
 /// The rename swaps in a new file, so it has to carry the old one's mode: a store someone locked
 /// down to 0600 stays 0600.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_save_keeps_the_store_files_permissions() {
     let dir = TestDir::new("plugin_store_mode");
@@ -88,6 +91,7 @@ fn a_save_keeps_the_store_files_permissions() {
 
 /// A save that can't finish (here a read-only folder, the same shape as a full disk) reports
 /// itself to the caller and leaves the old file byte for byte.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_save_that_cant_finish_leaves_the_old_file_and_says_so() {
     // Root ignores the folder's permissions (the Linux Docker lane runs as root).
@@ -131,6 +135,7 @@ fn a_save_whose_rename_fails_removes_its_temp_file() {
     assert_eq!(names_in(&dir), vec!["settings.json".to_string()]);
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 fn running_as_root() -> bool {
     // SAFETY: (test) `geteuid` takes no arguments, shares no memory, and can't fail — it just
     // returns the caller's effective uid. We compare the returned integer to 0 to detect root.
@@ -140,6 +145,7 @@ fn running_as_root() -> bool {
 /// A store file that's there but can't be read (owned by root after a `sudo` run, a restore that
 /// reset its mode) loads as an empty store. Every save of that store refuses, the exit save
 /// included (it calls the same `Store::save`), so the empty store never lands over the real one.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn an_unreadable_store_file_is_never_saved_over() {
     // Root reads a mode-000 file anyway (the Linux Docker lane runs as root).

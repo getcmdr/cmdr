@@ -7,6 +7,8 @@
 //! under ids of its own. The engine's half of each question, on fakes, lives
 //! beside the code it pins.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;

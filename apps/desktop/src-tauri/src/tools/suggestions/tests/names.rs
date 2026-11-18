@@ -171,6 +171,7 @@ fn two_files_landing_as_one_name_refuse_even_by_case_or_unicode_form() {
 /// route that keys each landing on a file's own name (both ends on a local path), named apart
 /// or not. The proposal asks the engine's own rule and refuses the whole call there; a route
 /// that keys landings on the source path takes them.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn two_files_sharing_a_name_refuse_where_the_route_cant_tell_them_apart() {
     use std::sync::Arc;

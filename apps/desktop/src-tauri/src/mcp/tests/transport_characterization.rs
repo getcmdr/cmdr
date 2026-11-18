@@ -12,6 +12,7 @@
 //! this event is what raises the toast.
 
 use std::net::SocketAddr;
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::Path;
 
@@ -162,6 +163,7 @@ fn free_port() -> u16 {
         .port()
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 fn mode_of(path: &Path) -> u32 {
     std::fs::metadata(path)
         .expect("the file should exist")
@@ -230,6 +232,7 @@ async fn every_bind_mode_listens_on_loopback_only() {
     }
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn startup_binds_ephemeral_when_the_port_is_zero_and_writes_owner_only_files() {
     let data_dir = isolate_secrets();
@@ -262,6 +265,7 @@ fn startup_binds_ephemeral_when_the_port_is_zero_and_writes_owner_only_files() {
     });
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn the_discovery_files_are_replaced_atomically_and_never_inherit_a_loose_mode() {
     let data_dir = isolate_secrets();
@@ -427,6 +431,7 @@ fn an_interactive_rebind_binds_the_new_port_before_it_retires_the_old_server() {
     });
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn the_token_env_var_pins_the_token_across_restarts() {
     let data_dir = isolate_secrets();

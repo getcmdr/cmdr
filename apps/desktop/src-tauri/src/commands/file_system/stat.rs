@@ -173,6 +173,7 @@ mod tests {
     /// and the kind has to come from the volume that serves it. Without this the
     /// portal's rows report an unknown kind, which is what an archive-only
     /// recovery branch left them with.
+    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test]
     async fn a_path_in_a_repos_history_recovers_its_kind_from_the_portal() {
         use crate::file_system::volume::manager::get_volume_manager;

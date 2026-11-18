@@ -2,6 +2,8 @@
 //! backend's reader, and the foreground hold reaching `priority::foreground`.
 //! The engine's own cells, over fakes, are `crates/cmdr-listing/src/streaming_test.rs`.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;

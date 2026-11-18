@@ -4,6 +4,8 @@
 //! `crates/cmdr-listing/src/host/overlays_test.rs`; the walker-exposure consequences in
 //! `walker_exposure_tests.rs`.
 
+#![cfg(unix)]
+// POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
 #![cfg(test)]
 
 use std::path::{Path, PathBuf};

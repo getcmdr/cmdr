@@ -436,6 +436,7 @@ async fn the_agent_reads_the_logs_through_use_tool() {
 
 /// "What is this folder?": the agent reaches the deferred `about_item` either way, through a real turn,
 /// and reads the card's facts with where each one comes from.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 async fn the_agent_looks_up_what_a_folder_is_either_way() {
     crate::file_system::volume::manager::get_volume_manager().register_if_absent(

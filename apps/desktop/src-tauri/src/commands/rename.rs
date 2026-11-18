@@ -246,6 +246,7 @@ mod tests {
     /// Registers a real local-FS "root" volume so `rename_file` with
     /// `volume_id = None` (→ "root") exercises the managed path's local branch,
     /// the same one production hits. Idempotent via `register_if_absent`.
+    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     fn ensure_root_volume() {
         use crate::file_system::volume::manager::get_volume_manager;
         use cmdr_local::LocalPosixVolume;
@@ -520,6 +521,7 @@ mod tests {
     // Rename file (an in-time answer is the reply itself)
     // ========================================================================
 
+    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test]
     async fn test_rename_file_success() {
         ensure_root_volume();
@@ -542,6 +544,7 @@ mod tests {
         assert_eq!(fs::read_to_string(&new).unwrap(), "content");
     }
 
+    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test]
     async fn test_rename_file_conflict_no_force() {
         ensure_root_volume();
@@ -566,6 +569,7 @@ mod tests {
         assert!(new.exists());
     }
 
+    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test]
     async fn test_rename_file_force_overwrites() {
         ensure_root_volume();
