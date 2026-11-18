@@ -1,3 +1,5 @@
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use cmdr_fs::volume::Volume;
@@ -40,7 +42,10 @@ fn a_home_makes_the_volume_stand_in_for_the_own_disk() {
 }
 
 async fn list(volume: &dyn Volume, path: &str) -> Vec<cmdr_fs::entry::FileEntry> {
-    let mut entries = volume.list_directory(Path::new(path), None).await.expect("lists");
+    let mut entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new(path)), None)
+        .await
+        .expect("lists");
     entries.sort_by(|a, b| a.name.cmp(&b.name));
     entries
 }
@@ -127,7 +132,7 @@ fn photo_tree() -> DemoTree {
 #[tokio::test]
 async fn a_file_reads_as_many_bytes_as_its_listing_says() {
     let volume = photo_tree().into_volume().expect("a valid tree");
-    let mut stream = volume.open_read_stream(Path::new("/photo.jpg")).await.expect("opens");
+    let mut stream = volume.open_read_stream(app_path!("/photo.jpg")).await.expect("opens");
     let mut read = 0;
     while let Some(chunk) = stream.next_chunk().await {
         read += chunk.expect("reads").len();
@@ -137,11 +142,11 @@ async fn a_file_reads_as_many_bytes_as_its_listing_says() {
     // The same tree generates the same bytes.
     let again = photo_tree().into_volume().expect("a valid tree");
     let first = volume
-        .read_range(Path::new("/photo.jpg"), 1_000, 64)
+        .read_range(app_path!("/photo.jpg"), 1_000, 64)
         .await
         .expect("reads");
     let second = again
-        .read_range(Path::new("/photo.jpg"), 1_000, 64)
+        .read_range(app_path!("/photo.jpg"), 1_000, 64)
         .await
         .expect("reads");
     assert_eq!(first, second);
