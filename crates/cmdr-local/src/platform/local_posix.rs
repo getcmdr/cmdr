@@ -35,6 +35,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
+#[cfg(any(test, feature = "testing"))]
 use std::time::Duration;
 // An ambient `spawn_blocking`, not the host's runtime: a `Volume` method runs on its
 // caller's. `DETAILS.md` § "Decisions".
