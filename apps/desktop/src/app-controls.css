@@ -1,0 +1,267 @@
+/* Control look tokens: the `lib/ui` primitives (buttons, text fields, checkboxes, switches,
+   radio buttons, sliders, progress bars, the select and combobox, tooltips, dialogs, focus
+   rings, and scrollbars), task 60 of `docs/specs/windows-port-plan.md`. Imported by app.css;
+   not loaded on its own. Same shape as `app-menu.css`, whose flyout tokens the select, the
+   combobox list, and the tooltip reuse on Windows (one flyout material).
+
+   One token set, keyed on the look, so every primitive stays one implementation:
+   - `:root` (this file): the house look, value for value what each primitive wrote before it
+     read these, so macOS and Linux don't change (`app-controls.test.ts` snapshots it).
+   - `:root[data-look='windows']` (`app-controls-windows.css`): Windows 11's look (WinUI 3),
+     light and dark, on Windows 10 and 11 alike (D5). `data-look` follows `getCopyPlatform()`
+     (`#lib/platform`), so `CMDR_MOCK_CONVENTIONS=windows pnpm dev` shows it on a Mac.
+   - `forced-colors: active` (`app-controls-windows-contrast.css`): WinUI's `HighContrast`
+     dictionaries as CSS system colors.
+
+   Each Windows value cites its WinUI resource key; the sources, the elevation shadows, and
+   what CSS can't express: `docs/notes/windows-port/control-look-tokens.md`.
+
+   The accent: WinUI fills with `SystemAccentColorDark1` (light) / `Light2` (dark) and writes
+   fixed white / black on it. The backend hands the frontend one accent and no shade ramp yet,
+   so the Windows tokens fill with `--color-accent` and write `--color-accent-fg` (picked for
+   contrast), at WinUI's own 90% / 80% opacity steps for hover and press. */
+
+:root {
+  /* Focus ring (WinUI: `UseSystemFocusVisuals`, a two-ring rectangle) */
+  --color-focus-ring: var(--color-accent);
+  --shadow-focus-ring-button: var(--shadow-focus-contrast);
+  --shadow-focus-ring-control: var(--shadow-focus);
+  --spacing-focus-ring-control-offset: 2px;
+  --shadow-focus-ring-select: none;
+  /* `forced-color-adjust` for a control that paints its own contrast-theme colors */
+  --color-forced-adjust: auto;
+
+  /* Button */
+  --radius-button: var(--radius-full);
+  --spacing-button-padding: 7px 20px;
+  --color-button-primary-bg: var(--color-accent);
+  --color-button-primary-bg-hover: var(--color-accent-hover);
+  --color-button-primary-bg-pressed: var(--color-accent-hover);
+  --color-button-primary-bg-disabled: var(--color-accent);
+  --color-button-primary-fg: var(--color-accent-fg);
+  --color-button-primary-fg-hover: var(--color-accent-fg);
+  --color-button-primary-fg-pressed: var(--color-accent-fg);
+  --color-button-primary-fg-disabled: var(--color-accent-fg);
+  --color-button-primary-border: transparent;
+  --color-button-primary-border-top: transparent;
+  --color-button-primary-border-bottom: transparent;
+  --color-button-primary-border-hover: transparent;
+  --color-button-primary-border-pressed: transparent;
+  --color-button-primary-border-disabled: transparent;
+  --color-button-secondary-bg: transparent;
+  --color-button-secondary-bg-hover: var(--color-bg-tertiary);
+  --color-button-secondary-bg-pressed: var(--color-bg-tertiary);
+  --color-button-secondary-bg-disabled: transparent;
+  --color-button-secondary-fg: var(--color-text-secondary);
+  --color-button-secondary-fg-hover: var(--color-text-primary);
+  --color-button-secondary-fg-pressed: var(--color-text-primary);
+  --color-button-secondary-fg-disabled: var(--color-text-secondary);
+  --color-button-secondary-border: var(--color-border);
+  --color-button-secondary-border-top: var(--color-border);
+  --color-button-secondary-border-bottom: var(--color-border);
+  --color-button-secondary-border-hover: var(--color-border);
+  --color-button-secondary-border-pressed: var(--color-border);
+  --color-button-secondary-border-disabled: var(--color-border);
+  --color-button-danger-bg: transparent;
+  /* The house hover fill, as `Button.svelte` wrote it inline */
+  --color-button-danger-bg-hover: color-mix(in srgb, var(--color-error), transparent 90%);
+  --color-button-danger-bg-pressed: color-mix(in srgb, var(--color-error), transparent 90%);
+  --color-button-danger-fg: var(--color-error-text);
+  --color-button-danger-fg-pressed: var(--color-error-text);
+  --color-button-danger-border: var(--color-error);
+  --color-button-danger-border-top: var(--color-error);
+  --color-button-danger-border-bottom: var(--color-error);
+  --color-button-danger-border-hover: var(--color-error);
+  --color-button-danger-border-pressed: var(--color-error);
+  --color-button-danger-bg-disabled: transparent;
+  --color-button-danger-fg-disabled: var(--color-error-text);
+  --color-button-danger-border-disabled: var(--color-error);
+
+  /* Text field (`.text-field` in app-field.css, and the `Combobox` / `NumberInput` frames) */
+  --color-field-bg: var(--color-bg-primary);
+  --color-field-bg-hover: var(--color-bg-primary);
+  --color-field-bg-focus: var(--color-bg-primary);
+  --color-field-border-bottom: var(--color-field-border);
+  --color-field-border-focus: var(--color-accent);
+  --color-field-border-bottom-focus: var(--color-accent);
+  --shadow-field-focus: var(--shadow-focus-solid);
+  --spacing-field-padding: var(--spacing-input);
+  --spacing-field-min-height: auto;
+  --color-field-placeholder: var(--color-text-tertiary);
+  --color-field-bg-disabled: var(--color-bg-primary);
+  --color-field-border-disabled: var(--color-field-border);
+  --color-field-fg-disabled: var(--color-text-primary);
+  /* The `radius` prop's corners (`TextInput`; `compact` takes `md`) */
+  --radius-field-sm: var(--radius-sm);
+  --radius-field-md: var(--radius-md);
+  --radius-field-lg: var(--radius-lg);
+  --radius-field-full: var(--radius-full);
+
+  /* Checkbox. Each `-disabled` twin is what a disabled control's state rule paints (the
+     component re-points the state tokens at them), so the house twins equal the live ones. */
+  --spacing-checkbox-size: 16px;
+  --radius-checkbox: var(--radius-xs);
+  --color-checkbox-bg: var(--color-bg-tertiary);
+  --color-checkbox-bg-hover: var(--color-bg-tertiary);
+  --color-checkbox-bg-pressed: var(--color-bg-tertiary);
+  --color-checkbox-bg-disabled: var(--color-bg-tertiary);
+  --color-checkbox-border: var(--color-control-border);
+  --color-checkbox-border-hover: var(--color-text-secondary);
+  --color-checkbox-border-pressed: var(--color-text-secondary);
+  --color-checkbox-border-disabled: var(--color-control-border);
+  --color-checkbox-border-disabled-hover: var(--color-text-secondary);
+  --color-checkbox-checked-bg: var(--color-accent);
+  --color-checkbox-checked-bg-hover: var(--color-accent-hover);
+  --color-checkbox-checked-bg-pressed: var(--color-accent-hover);
+  --color-checkbox-checked-bg-disabled: var(--color-accent);
+  --color-checkbox-checked-bg-disabled-hover: var(--color-accent-hover);
+  --color-checkbox-glyph: var(--color-accent-fg);
+  --color-checkbox-glyph-disabled: var(--color-accent-fg);
+  /* A disabled control's label (checkbox, switch, radio): the house look leaves it alone */
+  --color-control-label-disabled: currentColor;
+
+  /* Switch */
+  --spacing-switch-width: 36px;
+  --spacing-switch-padding: var(--spacing-xxs);
+  --spacing-switch-thumb-size: 16px;
+  --spacing-switch-travel: 16px;
+  --color-switch-track: var(--color-bg-tertiary);
+  --color-switch-track-hover: var(--color-bg-tertiary);
+  --color-switch-track-disabled: var(--color-bg-tertiary);
+  /* The track's edge as a whole `border` shorthand: the house track has none */
+  --color-switch-border: none;
+  --color-switch-border-hover: none;
+  --color-switch-border-disabled: none;
+  --color-switch-track-on: var(--color-accent);
+  --color-switch-track-on-hover: var(--color-accent-hover);
+  --color-switch-track-on-disabled: var(--color-accent);
+  --color-switch-track-on-disabled-hover: var(--color-accent-hover);
+  --color-switch-border-on: none;
+  --color-switch-border-on-hover: none;
+  --color-switch-border-on-disabled: none;
+  --color-switch-thumb: white;
+  --color-switch-thumb-hover: white;
+  --color-switch-thumb-disabled: white;
+  --color-switch-thumb-on: white;
+  --color-switch-thumb-on-hover: white;
+  --color-switch-thumb-on-disabled: white;
+  --shadow-switch-thumb: var(--shadow-sm);
+
+  /* Radio button */
+  --spacing-radio-size: 16px;
+  --spacing-radio-border: 2px;
+  --font-radio-label-size: var(--font-size-sm);
+  --color-radio-label: var(--color-text-primary);
+  --color-radio-label-disabled: var(--color-text-primary);
+  --color-radio-bg: var(--color-bg-primary);
+  --color-radio-bg-hover: var(--color-bg-primary);
+  --color-radio-bg-disabled: var(--color-bg-primary);
+  --color-radio-border: var(--color-border-strong);
+  --color-radio-border-hover: var(--color-border-strong);
+  --color-radio-border-disabled: var(--color-border-strong);
+  --color-radio-checked-border: var(--color-accent);
+  --color-radio-checked-border-hover: var(--color-accent-hover);
+  --color-radio-checked-border-disabled: var(--color-accent);
+  --color-radio-checked-border-disabled-hover: var(--color-accent-hover);
+  /* The checked dot: the fill, and an inset ring of the color around it */
+  --color-radio-checked-bg: var(--color-accent);
+  --color-radio-checked-bg-hover: var(--color-accent-hover);
+  --color-radio-checked-bg-disabled: var(--color-accent);
+  --color-radio-checked-bg-disabled-hover: var(--color-accent-hover);
+  --shadow-radio-checked: inset 0 0 0 3px var(--color-bg-primary);
+  --shadow-radio-checked-hover: inset 0 0 0 3px var(--color-bg-primary);
+  --shadow-radio-checked-disabled: inset 0 0 0 3px var(--color-bg-primary);
+
+  /* Slider */
+  --color-slider-track: var(--color-bg-tertiary);
+  --color-slider-track-disabled: var(--color-bg-tertiary);
+  --color-slider-range: var(--color-accent);
+  --color-slider-range-disabled: var(--color-accent);
+  --spacing-slider-thumb-size: 16px;
+  --spacing-slider-thumb-border: 2px;
+  --color-slider-thumb-bg: white;
+  --color-slider-thumb-bg-hover: white;
+  --color-slider-thumb-bg-disabled: white;
+  --color-slider-thumb-border: var(--color-accent);
+  --color-slider-thumb-border-bottom: var(--color-accent);
+  --color-slider-thumb-border-hover: var(--color-accent-hover);
+  --shadow-slider-thumb: var(--shadow-sm);
+  --shadow-slider-thumb-hover: var(--shadow-sm);
+  --shadow-slider-thumb-pressed: var(--shadow-sm);
+  --shadow-slider-thumb-disabled-hover: var(--shadow-sm);
+  --shadow-slider-thumb-focus: var(--shadow-focus);
+
+  /* Progress bar */
+  --color-progress-track: var(--color-bg-tertiary);
+  --color-progress-fill: var(--color-accent);
+  --spacing-progress-height-sm: 4px;
+  --spacing-progress-height-md: 8px;
+  --radius-progress-sm: var(--radius-xs);
+  --radius-progress-md: var(--radius-sm);
+
+  /* Select (the trigger and its list) */
+  --spacing-select-trigger-padding: 3px 3px 3px var(--spacing-sm);
+  --spacing-select-trigger-min-height: auto;
+  --radius-select-trigger: var(--radius-md);
+  --font-select-trigger-size: var(--font-size-sm);
+  --color-select-trigger-fg: var(--color-text-primary);
+  --color-select-trigger-bg: transparent;
+  --color-select-trigger-bg-hover: var(--color-bg-tertiary);
+  --color-select-trigger-bg-open: var(--color-bg-tertiary);
+  /* The trigger's edge, drawn as inset shadows so it takes no layout */
+  --shadow-select-trigger: none;
+  --shadow-select-trigger-hover: none;
+  --color-select-indicator-bg: var(--color-bg-tertiary);
+  --color-select-indicator-fg: var(--color-text-primary);
+  --spacing-select-content-padding: var(--spacing-xs);
+  --spacing-select-item-margin: 0;
+  --spacing-select-item-padding: 3px var(--spacing-sm);
+  --radius-select-item: var(--radius-sm);
+  --font-select-item-size: var(--font-size-sm);
+  --color-select-item-bg-highlighted: var(--color-accent);
+  --color-select-item-bg-highlighted-hover: var(--color-accent-hover);
+  --color-select-item-fg-highlighted: var(--color-accent-fg);
+  --color-select-item-description-highlighted: var(--color-accent-fg);
+  --color-select-item-bg-checked: transparent;
+  /* WinUI marks the chosen row with a pill on its leading edge; a background layer here.
+     These four are the CSS initial values, so the house rows paint nothing. */
+  --color-select-item-checked-mark: none;
+  --spacing-select-item-checked-mark-position: 0% 0%;
+  --spacing-select-item-checked-mark-size: auto;
+  --spacing-select-item-checked-mark-repeat: repeat;
+  --color-select-check: var(--color-accent-text);
+  --color-select-check-highlighted: var(--color-accent-fg);
+
+  /* Combobox (its frame reads the text field tokens above; these are its list) */
+  --color-combobox-content-bg: var(--color-bg-primary);
+  --glass-combobox-content-backdrop: none;
+  --color-combobox-content-border: var(--color-border);
+  --spacing-combobox-content-border: 1px;
+  --radius-combobox-content: var(--radius-sm);
+  --shadow-combobox-content: var(--shadow-md);
+  --spacing-combobox-item-margin: 0;
+  --spacing-combobox-item-padding: var(--spacing-xs) var(--spacing-sm);
+  --radius-combobox-item: 0;
+  --font-combobox-item-size: var(--font-size-sm);
+  --color-combobox-item-bg-highlighted: var(--color-accent);
+  --color-combobox-item-bg-highlighted-hover: var(--color-accent-hover);
+  --color-combobox-item-fg-highlighted: var(--color-accent-fg);
+
+  /* Tooltip */
+  --color-tooltip-bg: var(--color-bg-tooltip);
+  --glass-tooltip-backdrop: var(--glass-backdrop);
+  --color-tooltip-border: var(--color-border-glass);
+  --spacing-tooltip-border: 0.5px;
+  --spacing-tooltip-padding: 3px var(--spacing-sm);
+  --color-tooltip-fg: var(--color-text-primary);
+  --shadow-tooltip-surface: var(--shadow-tooltip);
+
+  /* Dialog (`ModalDialog`; its surface reads the `--*-dialog` tokens in app.css, which the
+     Windows block below redefines) */
+  --color-dialog-scrim: var(--color-overlay-light);
+  --font-dialog-title-size: var(--font-size-lg);
+  --color-dialog-footer-bg: transparent;
+  --shadow-dialog-footer: none;
+  --radius-dialog-footer: 0;
+  --spacing-dialog-actions-gap: var(--spacing-md);
+}

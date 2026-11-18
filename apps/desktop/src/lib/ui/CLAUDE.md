@@ -35,6 +35,7 @@ Reusable components (Ark UI backs the complex ones).
   (splits words). DETAILS § ModalDialog.
 - **Dialogs follow `convention()`, ❌ never the OS**: macOS-order footer, one button per child. Return presses
   `isDefault`; an Enter handler MUST `preventDefault()`. DETAILS § Platform conventions.
+- **Looks are tokens** (`app-controls*.css`, by `data-look`): `src/DETAILS.md` § Control look tokens.
 - **Dialog scrollers reserve their gutter**, minus `--spacing-scrollbar-width` (#889). DETAILS § Scrollbar gutters.
 - **A button's key is `Button`'s `keyHint`**, ❌ never a chip in its content (`cmdr/key-hint-via-button-prop`).
 - **Don't restyle `.btn-*` colors from a scoped feature component** (`scripts/check-btn-restyle`; one-offs need

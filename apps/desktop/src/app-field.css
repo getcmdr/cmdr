@@ -34,9 +34,13 @@ textarea::selection {
   align-items: center;
   gap: var(--spacing-sm);
   width: 100%;
-  padding: var(--spacing-input);
-  background: var(--color-bg-primary);
+  min-height: var(--spacing-field-min-height);
+  padding: var(--spacing-field-padding);
+  background: var(--color-field-bg);
+  /* Windows' edge is darker along the bottom (WinUI's elevation border); the house look
+     gives the bottom the same color (`app-controls.css`). */
   border: 1px solid var(--color-field-border);
+  border-bottom-color: var(--color-field-border-bottom);
   border-radius: var(--radius-input);
   color: var(--color-text-primary);
   transition:
@@ -44,11 +48,30 @@ textarea::selection {
     box-shadow var(--transition-base);
 }
 
+/* Windows lightens a resting field under the pointer; the house look keeps its fill. A
+   read-only, chromeless, or disabled field keeps its own fill. */
+.text-field:hover:not(.text-field-readonly, .text-field-chromeless, .text-field-disabled) {
+  background: var(--color-field-bg-hover);
+}
+
 /* `:focus-within`, not `:focus-visible`: the ring must show for mouse focus too
    (see `docs/design-system.md` § Focus indicators). */
 .text-field:focus-within {
-  border-color: var(--color-accent);
-  box-shadow: var(--shadow-focus-solid);
+  border-color: var(--color-field-border-focus);
+  border-bottom-color: var(--color-field-border-bottom-focus);
+  box-shadow: var(--shadow-field-focus);
+}
+
+.text-field:focus-within:not(.text-field-readonly, .text-field-chromeless) {
+  background: var(--color-field-bg-focus);
+}
+
+/* WinUI's disabled colors (the house twins equal the resting field, which dims with
+   opacity instead, below). Before the warning and invalid rules, so those still win. */
+.text-field-disabled {
+  background: var(--color-field-bg-disabled);
+  border-color: var(--color-field-border-disabled);
+  color: var(--color-field-fg-disabled);
 }
 
 /* "This will do something surprising but legal" (the transfer dialog's
@@ -72,26 +95,29 @@ textarea::selection {
   box-shadow: 0 0 0 2px var(--color-error);
 }
 
-.text-field-disabled {
+/* The house look dims a disabled field; Windows paints WinUI's disabled colors instead.
+   Keyed on the look in the selector because stylelint's `opacity` allowlist takes no
+   `var()`; `:where()` keeps the rule's specificity. */
+:where(:root:not([data-look='windows'])) .text-field-disabled {
   opacity: 0.5;
 }
 
 /* Radius variants. `full` also widens the horizontal padding so the text clears
    the curve, which is what makes the search pill read right. */
 .text-field-radius-sm {
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-field-sm);
 }
 
 .text-field-radius-md {
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-field-md);
 }
 
 .text-field-radius-lg {
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-field-lg);
 }
 
 .text-field-radius-full {
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-field-full);
   padding-inline: var(--spacing-md);
 }
 
@@ -100,8 +126,9 @@ textarea::selection {
    tall as the label beside it. Doubled class so it wins over the radius
    variants, which carry their own corner. */
 .text-field.text-field-compact {
+  min-height: auto;
   padding: var(--spacing-xxs) var(--spacing-sm);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-field-md);
 }
 
 .text-field-compact .text-field-control {
@@ -116,6 +143,7 @@ textarea::selection {
    dense inline editor share one primitive. */
 .text-field-chromeless,
 .text-field-chromeless:focus-within {
+  min-height: auto;
   padding: 0;
   background: transparent;
   border-color: transparent;
@@ -171,7 +199,7 @@ textarea.text-field-control {
 }
 
 .text-field-control::placeholder {
-  color: var(--color-text-tertiary);
+  color: var(--color-field-placeholder);
   font-family: var(--font-system), sans-serif;
 }
 

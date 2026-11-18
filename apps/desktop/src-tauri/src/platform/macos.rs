@@ -68,6 +68,10 @@ pub(crate) fn macos_at_least(major: i64, minor: i64) -> bool {
     (running_major, running_minor) >= (major, minor)
 }
 
+/// Nothing to set: a bare WKWebView has no browser keys of its own (reload, find, and print are a
+/// host app's menu items, and Cmdr's menus bind what it wants).
+pub(crate) fn prepare_webview(_webview: &tauri::Webview<tauri::Wry>) {}
+
 #[cfg(test)]
 mod tests {
     use super::*;

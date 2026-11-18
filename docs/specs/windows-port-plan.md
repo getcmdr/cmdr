@@ -806,6 +806,10 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     - Done when: #1115's list (`F5`, `Ctrl+R`, `Ctrl+F`, `Ctrl+P`, `Ctrl+Shift+P`, `Ctrl+J`, `Ctrl+G`, `Shift+F5`,
       `Ctrl+F5`, `Alt+←/→`, `F7`) does only what Cmdr binds, and nothing where it binds nothing, in the main window,
       Settings, and the viewer. Needs the app running on Windows (done).
+    - **Built** (2026-11-18): `platform::prepare_webview`, called from the `cmdr-platform` plugin's `on_webview_ready`,
+      turns the switch off in every webview (`apps/desktop/src-tauri/DETAILS.md` § Every webview's native setup).
+      Clippy-clean for `x86_64-pc-windows-gnu` (the Mac cross-check). Not yet run on a signed-in Windows desktop: the
+      done-when keys, the first page of each window, and `F6` stay on task 55's keyboard list.
 
 ### Phase 7: native feel
 
@@ -848,6 +852,14 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
     shape and the source rule this task follows: WinUI's own theme resources (`microsoft/microsoft-ui-xaml`,
     `controls/dev/CommonStyles/*_themeresources.xaml`), matched precisely, one look on Windows 10 and 11 (D5). David
     reviews the design. Linux: its own neutral theme, same token set. Needs 59.
+    - **Built** (2026-11-18), awaiting David's design review: the control look tokens in `app-controls*.css`
+      (`apps/desktop/src/DETAILS.md` § Control look tokens), covering buttons, text fields, checkboxes, switches, radio
+      buttons, sliders, progress bars, the select and combobox, tooltips, `ModalDialog`'s chrome, focus rings, and
+      scrollbars, light, dark, and contrast themes. macOS and Linux keep the house look, proven unchanged by a
+      catalog-wide computed-style diff. Sources, the gaps CSS can't close (the accent shade ramp, the select's chevron,
+      WinUI's control animations, overlay scrollbars), and what stays house-styled:
+      `docs/notes/windows-port/control-look-tokens.md`. Left for later: Linux's neutral theme (Linux keeps the house
+      look until then), and the accent's `Dark1` / `Light2` shades once task 40 reads `UISettings`.
 61. [S] Windows. **Done**. Dialog conventions, read from task 59's conventions inside `ModalDialog`, ❌ never the OS
     (`apps/desktop/src/lib/ui/DETAILS.md` § Platform conventions, with the per-dialog Return table). Button order: the
     footer is written in macOS order and Windows and KDE show it reversed, with Tab following through the focus trap's

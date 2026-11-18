@@ -8,6 +8,9 @@
 
 @import './app-palette.css';
 @import './app-menu.css';
+@import './app-controls.css';
+@import './app-controls-windows.css';
+@import './app-controls-windows-contrast.css';
 @import './app-reset.css';
 
 :root {
