@@ -2,6 +2,7 @@
 //! (`apps/desktop/test/nfs-servers/README.md`). Every cell is `#[ignore]`d;
 //! the integration lane runs them with `--run-ignored only`.
 
+use cmdr_fs::app_path::AppPath;
 use std::time::Instant;
 
 use cmdr_fs::volume::{EntryKind, StreamLength, Volume, VolumeError};
@@ -16,7 +17,10 @@ const SOURCE_DATE_SECS: u64 = 1_611_909_015;
 #[ignore = "needs the NFS fixture stack: nfs-servers/start.sh (nfs-fixture)"]
 async fn the_seeded_root_lists_byte_exact_with_owners_dates_and_links() {
     let volume = connect_insecure().await;
-    let entries = volume.list_directory(&app_path(&volume, "/"), None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&app_path(&volume, "/")), None)
+        .await
+        .unwrap();
     // Other cells' scratch folders live at this root too, from this run or any
     // worktree's (`SCRATCH_PREFIX`): working space, not the seeded tree.
     let mut names: Vec<&str> = entries
@@ -57,7 +61,7 @@ async fn the_seeded_root_lists_byte_exact_with_owners_dates_and_links() {
     assert!(by_name("link-inside").is_symlink && by_name("link-outside").is_symlink);
 
     let odd = volume
-        .list_directory(&app_path(&volume, "/oddnames"), None)
+        .list_directory(&AppPath::legacy_unchecked(&app_path(&volume, "/oddnames")), None)
         .await
         .unwrap();
     assert_eq!(
@@ -65,13 +69,16 @@ async fn the_seeded_root_lists_byte_exact_with_owners_dates_and_links() {
         vec!["fine.txt"]
     );
     let deep = volume
-        .list_directory(&app_path(&volume, "/nested/deep/deeper"), None)
+        .list_directory(
+            &AppPath::legacy_unchecked(&app_path(&volume, "/nested/deep/deeper")),
+            None,
+        )
         .await
         .unwrap();
     assert_eq!(deep.len(), 1);
     assert!(
         volume
-            .list_directory(&app_path(&volume, "/empty-dir"), None)
+            .list_directory(&AppPath::legacy_unchecked(&app_path(&volume, "/empty-dir")), None)
             .await
             .unwrap()
             .is_empty()
@@ -84,7 +91,7 @@ async fn the_large_file_streams_byte_exact_through_the_window() {
     let volume = connect_insecure().await;
     let started = Instant::now();
     let mut stream = volume
-        .open_read_stream(&app_path(&volume, FIXTURE_LARGE_FILE))
+        .open_read_stream(&AppPath::legacy_unchecked(&app_path(&volume, FIXTURE_LARGE_FILE)))
         .await
         .unwrap();
     assert_eq!(stream.total_size(), StreamLength::Known(FIXTURE_LARGE_LEN));
@@ -119,7 +126,10 @@ async fn read_range_answers_exactly_at_three_offsets() {
         (123_456_789, 3_000_000),
         (FIXTURE_LARGE_LEN - 100, 1000),
     ] {
-        let read = volume.read_range(&path, offset, len).await.unwrap();
+        let read = volume
+            .read_range(&AppPath::legacy_unchecked(&path), offset, len)
+            .await
+            .unwrap();
         let expect_len = len.min((FIXTURE_LARGE_LEN - offset) as usize);
         assert_eq!(read.len(), expect_len, "read_range({offset}, {len})");
         assert!(
@@ -134,12 +144,30 @@ async fn read_range_answers_exactly_at_three_offsets() {
 async fn links_resolve_inside_the_export_and_stop_at_its_edge() {
     let volume = connect_insecure().await;
     let inside = app_path(&volume, "/link-inside");
-    assert_eq!(volume.read_range(&inside, 0, 100).await.unwrap(), b"sun\n");
-    assert_eq!(volume.entry_kind(&inside).await.unwrap(), EntryKind::Symlink);
+    assert_eq!(
+        volume
+            .read_range(&AppPath::legacy_unchecked(&inside), 0, 100)
+            .await
+            .unwrap(),
+        b"sun\n"
+    );
+    assert_eq!(
+        volume.entry_kind(&AppPath::legacy_unchecked(&inside)).await.unwrap(),
+        EntryKind::Symlink
+    );
     let outside = app_path(&volume, "/link-outside");
-    assert!(volume.get_metadata(&outside).await.unwrap().is_symlink);
+    assert!(
+        volume
+            .get_metadata(&AppPath::legacy_unchecked(&outside))
+            .await
+            .unwrap()
+            .is_symlink
+    );
     assert!(matches!(
-        volume.open_read_stream(&outside).await.err(),
+        volume
+            .open_read_stream(&AppPath::legacy_unchecked(&outside))
+            .await
+            .err(),
         Some(VolumeError::NotSupported)
     ));
 }
@@ -185,11 +213,14 @@ async fn the_secure_export_lists_through_a_reserved_port_on_the_direct_path() {
     };
     let params = crate::params::NfsConnectionParams::new(server, FIXTURE_SECURE_EXPORT, FIXTURE_IDENTITY);
     let volume = connect(params).await.expect("/secure mounts from a reserved port");
-    let entries = volume.list_directory(&app_path(&volume, "/"), None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&app_path(&volume, "/")), None)
+        .await
+        .unwrap();
     assert!(entries.iter().any(|entry| entry.name == "hello.txt"));
     assert_eq!(
         volume
-            .read_range(&app_path(&volume, "/ten-bytes.txt"), 0, 64)
+            .read_range(&AppPath::legacy_unchecked(&app_path(&volume, "/ten-bytes.txt")), 0, 64)
             .await
             .unwrap(),
         b"0123456789",
@@ -222,7 +253,10 @@ async fn the_server_lists_both_exports_and_guesses_the_files_owner() {
 async fn a_file_readable_only_through_another_group_opens_once_the_place_lists_that_group() {
     let path = "/group-only/secret.txt";
     let outside = connect_insecure().await;
-    let refused = outside.read_range(&app_path(&outside, path), 0, 64).await.err();
+    let refused = outside
+        .read_range(&AppPath::legacy_unchecked(&app_path(&outside, path)), 0, 64)
+        .await
+        .err();
     assert!(
         matches!(refused, Some(VolumeError::PermissionDenied { .. })),
         "{refused:?}"
@@ -232,7 +266,10 @@ async fn a_file_readable_only_through_another_group_opens_once_the_place_lists_t
     params.identity.other_gids = vec![2001];
     let member = connect(params).await.unwrap();
     assert_eq!(
-        member.read_range(&app_path(&member, path), 0, 64).await.unwrap(),
+        member
+            .read_range(&AppPath::legacy_unchecked(&app_path(&member, path)), 0, 64)
+            .await
+            .unwrap(),
         b"through a group\n"
     );
 }
@@ -250,7 +287,9 @@ async fn space_and_write_access_come_from_the_server() {
         other => panic!("FSSTAT has a total: {other:?}"),
     }
     assert_eq!(
-        volume.write_access_at(&app_path(&volume, "/")).await,
+        volume
+            .write_access_at(&AppPath::legacy_unchecked(&app_path(&volume, "/")))
+            .await,
         cmdr_fs::volume::WriteAccess::Writable
     );
 }
@@ -265,13 +304,19 @@ async fn a_read_resumes_on_its_named_file_and_refuses_a_rewritten_one() {
     let dir = scratch_dir(&volume, "resume").await;
     let path = dir.join("resume.bin");
     let bytes: Vec<u8> = (0..300_000u32).map(|i| (i % 251) as u8).collect();
-    volume.create_file(&path, &bytes).await.unwrap();
+    volume
+        .create_file(&AppPath::legacy_unchecked(&path), &bytes)
+        .await
+        .unwrap();
 
-    let first = volume.open_read_stream(&path).await.unwrap();
+    let first = volume
+        .open_read_stream(&AppPath::legacy_unchecked(&path))
+        .await
+        .unwrap();
     let version = first.source_version().expect("a lookup names the file's version");
     drop(first);
     let mut rest = volume
-        .resume_read_stream(&path, &version, 100_000)
+        .resume_read_stream(&AppPath::legacy_unchecked(&path), &version, 100_000)
         .await
         .expect("the same file resumes");
     assert_eq!(
@@ -285,9 +330,15 @@ async fn a_read_resumes_on_its_named_file_and_refuses_a_rewritten_one() {
     }
     assert!(read == bytes[100_000..], "exactly the bytes from the offset");
 
-    volume.delete(&path).await.unwrap();
-    volume.create_file(&path, &bytes).await.unwrap();
-    match volume.resume_read_stream(&path, &version, 100_000).await {
+    volume.delete(&AppPath::legacy_unchecked(&path)).await.unwrap();
+    volume
+        .create_file(&AppPath::legacy_unchecked(&path), &bytes)
+        .await
+        .unwrap();
+    match volume
+        .resume_read_stream(&AppPath::legacy_unchecked(&path), &version, 100_000)
+        .await
+    {
         Err(VolumeError::SourceChanged(_)) => {}
         Err(other) => panic!("expected SourceChanged, got {other:?}"),
         Ok(_) => panic!("expected SourceChanged, got a stream"),

@@ -3,6 +3,7 @@
 //! tick and nothing else, nothing at all with no pane open or while the volume
 //! is down, and nothing for a directory no pane shows any more.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -44,13 +45,16 @@ fn seeded() -> FakeNfs {
 
 /// `remote` as a pane addresses it on `volume`.
 fn at(volume: &NfsVolume, remote: &str) -> PathBuf {
-    PathBuf::from(format!("{}{remote}", volume.root().display()))
+    PathBuf::from(format!("{}{remote}", volume.root().as_std_legacy().display()))
 }
 
 /// A pane opens on `remote`: the volume lists it, and the store files it.
 async fn open_pane(volume: &NfsVolume, panes: &RecordingListings, remote: &str) -> PathBuf {
     let path = at(volume, remote);
-    volume.list_directory(&path, None).await.expect("the folder lists");
+    volume
+        .list_directory(&AppPath::legacy_unchecked(&path), None)
+        .await
+        .expect("the folder lists");
     panes.open_path(volume.volume_id(), &path);
     path
 }
@@ -122,7 +126,7 @@ async fn with_no_pane_open_nothing_is_sent_and_the_poller_stops() {
     let volume = shown_through(&fake, &panes).await;
     // A scan or a copy lists without a pane: the store shows nothing.
     volume
-        .list_directory(&at(&volume, "/photos"), None)
+        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photos")), None)
         .await
         .expect("the folder lists");
     let before = fake.total_calls();
@@ -180,7 +184,9 @@ async fn nothing_is_sent_while_the_volume_is_down() {
     assert_eq!(volume.connection_state(), Some(ConnectionState::Disconnected));
     assert!(
         matches!(
-            volume.list_directory(&at(&volume, "/photos"), None).await,
+            volume
+                .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photos")), None)
+                .await,
             Err(VolumeError::DeviceDisconnected(_))
         ),
         "down means down"

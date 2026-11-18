@@ -2,6 +2,8 @@
 //! handle cache's two rules, the read window under reordering and short
 //! answers, links, and a silent server on a paused clock.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use std::sync::Mutex;
@@ -61,7 +63,7 @@ fn numbered(len: usize) -> Vec<u8> {
 /// `remote` as the app addresses it on `volume`: a bare `/photos` is refused,
 /// the way a pane never sends one.
 fn at(volume: &NfsVolume, remote: &str) -> std::path::PathBuf {
-    std::path::PathBuf::from(format!("{}{remote}", volume.root().display()))
+    std::path::PathBuf::from(format!("{}{remote}", volume.root().as_std_legacy().display()))
 }
 
 fn names(entries: &[cmdr_fs::entry::FileEntry]) -> Vec<String> {
@@ -87,7 +89,7 @@ fn seeded() -> FakeNfs {
 
 async fn read_all(volume: &NfsVolume, path: &str) -> Vec<u8> {
     let mut stream = volume
-        .open_read_stream(&at(volume, path))
+        .open_read_stream(&AppPath::legacy_unchecked(&at(volume, path)))
         .await
         .expect("the file opens");
     let mut out = Vec::new();
@@ -117,7 +119,7 @@ async fn a_listing_spans_pages_reports_each_batch_and_leaves_out_what_it_cant_na
     let on_progress = |progress: ListingProgress| reports.lock().unwrap().push(progress);
 
     let entries = volume
-        .list_directory(Path::new("/"), Some(&on_progress))
+        .list_directory(app_path!("/"), Some(&on_progress))
         .await
         .expect("the root lists");
 
@@ -149,7 +151,10 @@ async fn a_server_without_readdirplus_lists_the_same_through_readdir_and_lookup(
     fake.refuse_readdirplus(true);
     let volume = over_tcp(&fake).await;
 
-    let entries = volume.list_directory(&at(&volume, "/photos"), None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photos")), None)
+        .await
+        .unwrap();
 
     assert_eq!(names(&entries), vec!["2024"]);
     assert!(fake.calls(proc::READDIR) >= 1);
@@ -160,11 +165,20 @@ async fn a_server_without_readdirplus_lists_the_same_through_readdir_and_lookup(
 async fn a_deep_folder_costs_no_lookup_once_its_parent_was_listed() {
     let fake = FakeNfs::start_with(seeded()).await;
     let volume = over_tcp(&fake).await;
-    volume.list_directory(&at(&volume, "/photos"), None).await.unwrap();
+    volume
+        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photos")), None)
+        .await
+        .unwrap();
     let lookups = fake.calls(proc::LOOKUP);
 
-    volume.list_directory(&at(&volume, "/photos/2024"), None).await.unwrap();
-    volume.list_directory(&at(&volume, "/photos/2024"), None).await.unwrap();
+    volume
+        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photos/2024")), None)
+        .await
+        .unwrap();
+    volume
+        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photos/2024")), None)
+        .await
+        .unwrap();
 
     assert_eq!(fake.calls(proc::LOOKUP), lookups, "both levels came from the cache");
 }
@@ -173,11 +187,17 @@ async fn a_deep_folder_costs_no_lookup_once_its_parent_was_listed() {
 async fn a_stale_cached_handle_is_looked_up_once_more_and_the_listing_lands() {
     let fake = FakeNfs::start_with(seeded()).await;
     let volume = over_tcp(&fake).await;
-    volume.list_directory(&at(&volume, "/photos/2024"), None).await.unwrap();
+    volume
+        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photos/2024")), None)
+        .await
+        .unwrap();
     let lookups = fake.calls(proc::LOOKUP);
 
     fake.make_stale("/photos/2024");
-    let entries = volume.list_directory(&at(&volume, "/photos/2024"), None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photos/2024")), None)
+        .await
+        .unwrap();
 
     assert_eq!(names(&entries), vec!["beach.txt"]);
     assert_eq!(
@@ -215,7 +235,7 @@ async fn a_stream_declares_its_length_date_and_mode_before_the_first_byte() {
     let fake = FakeNfs::start_with(seeded()).await;
     let volume = over_tcp(&fake).await;
     let stream = volume
-        .open_read_stream(&at(&volume, "/photos/2024/beach.txt"))
+        .open_read_stream(&AppPath::legacy_unchecked(&at(&volume, "/photos/2024/beach.txt")))
         .await
         .unwrap();
     assert_eq!(stream.total_size(), cmdr_fs::volume::StreamLength::Known(4));
@@ -227,7 +247,7 @@ async fn a_stream_declares_its_length_date_and_mode_before_the_first_byte() {
     let volume = over_tcp(&empty).await;
     assert_eq!(read_all(&volume, "/zero").await, Vec::<u8>::new());
     assert!(matches!(
-        volume.open_read_stream(Path::new("/")).await.err(),
+        volume.open_read_stream(app_path!("/")).await.err(),
         Some(VolumeError::IsADirectory(_))
     ));
 }
@@ -243,7 +263,7 @@ async fn read_range_answers_exactly_the_window_and_short_only_at_the_end() {
 
     for (offset, len) in [(0usize, 100usize), (65_531, 70_000), (199_990, 100)] {
         let read = volume
-            .read_range(&at(&volume, "/big.bin"), offset as u64, len)
+            .read_range(&AppPath::legacy_unchecked(&at(&volume, "/big.bin")), offset as u64, len)
             .await
             .unwrap();
         let end = (offset + len).min(data.len());
@@ -251,7 +271,7 @@ async fn read_range_answers_exactly_the_window_and_short_only_at_the_end() {
     }
     assert!(
         volume
-            .read_range(&at(&volume, "/big.bin"), 300_000, 10)
+            .read_range(&AppPath::legacy_unchecked(&at(&volume, "/big.bin")), 300_000, 10)
             .await
             .unwrap()
             .is_empty()
@@ -264,14 +284,17 @@ async fn a_link_inside_the_export_is_followed_and_one_outside_it_is_only_a_link(
     let volume = over_tcp(&fake).await;
 
     assert_eq!(read_all(&volume, "/link-inside").await, b"sand");
-    let inside = volume.get_metadata(&at(&volume, "/link-inside")).await.unwrap();
+    let inside = volume
+        .get_metadata(&AppPath::legacy_unchecked(&at(&volume, "/link-inside")))
+        .await
+        .unwrap();
     assert_eq!(
         inside.size,
         Some(4),
         "`get_metadata` reads through the link, like `stat`"
     );
     let through = volume
-        .list_directory(&at(&volume, "/photo-dir/2024"), None)
+        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photo-dir/2024")), None)
         .await
         .unwrap();
     assert_eq!(
@@ -280,18 +303,30 @@ async fn a_link_inside_the_export_is_followed_and_one_outside_it_is_only_a_link(
         "a folder link in the middle of a path"
     );
 
-    let outside = volume.get_metadata(&at(&volume, "/link-outside")).await.unwrap();
+    let outside = volume
+        .get_metadata(&AppPath::legacy_unchecked(&at(&volume, "/link-outside")))
+        .await
+        .unwrap();
     assert!(outside.is_symlink, "a link we may not follow answers as itself");
     assert!(matches!(
-        volume.open_read_stream(&at(&volume, "/link-outside")).await.err(),
+        volume
+            .open_read_stream(&AppPath::legacy_unchecked(&at(&volume, "/link-outside")))
+            .await
+            .err(),
         Some(VolumeError::NotSupported)
     ));
     assert_eq!(
-        volume.entry_kind(&at(&volume, "/photo-dir")).await.unwrap(),
+        volume
+            .entry_kind(&AppPath::legacy_unchecked(&at(&volume, "/photo-dir")))
+            .await
+            .unwrap(),
         EntryKind::Symlink
     );
     assert_eq!(
-        volume.entry_kind(&at(&volume, "/photos")).await.unwrap(),
+        volume
+            .entry_kind(&AppPath::legacy_unchecked(&at(&volume, "/photos")))
+            .await
+            .unwrap(),
         EntryKind::Directory
     );
 }
@@ -300,12 +335,19 @@ async fn a_link_inside_the_export_is_followed_and_one_outside_it_is_only_a_link(
 async fn a_missing_path_is_not_found_and_carries_the_path() {
     let fake = FakeNfs::start_with(seeded()).await;
     let volume = over_tcp(&fake).await;
-    match volume.get_metadata(&at(&volume, "/photos/nope.txt")).await {
+    match volume
+        .get_metadata(&AppPath::legacy_unchecked(&at(&volume, "/photos/nope.txt")))
+        .await
+    {
         Err(VolumeError::NotFound(path)) => assert_eq!(path, "/photos/nope.txt"),
         other => panic!("expected NotFound, got {other:?}"),
     }
-    assert!(!volume.exists(&at(&volume, "/nope")).await);
-    assert!(volume.exists(&at(&volume, "/link-outside")).await);
+    assert!(!volume.exists(&AppPath::legacy_unchecked(&at(&volume, "/nope"))).await);
+    assert!(
+        volume
+            .exists(&AppPath::legacy_unchecked(&at(&volume, "/link-outside")))
+            .await
+    );
 }
 
 #[tokio::test]
@@ -321,7 +363,9 @@ async fn space_comes_from_fsstat_and_write_access_from_access() {
         }
     );
     assert_eq!(
-        volume.write_access_at(&at(&volume, "/photos")).await,
+        volume
+            .write_access_at(&AppPath::legacy_unchecked(&at(&volume, "/photos")))
+            .await,
         WriteAccess::Writable
     );
 }
@@ -346,7 +390,7 @@ async fn a_typed_path_under_the_export_resolves_to_the_export_and_a_start_folder
     assert_eq!(params.export(), FAKE_EXPORT);
     assert_eq!(params.start_folder.as_deref(), Some("/photos/2024"));
     assert_eq!(volume.volume_id(), params.volume_id());
-    assert_eq!(volume.root(), Path::new(&params.app_root()));
+    assert_eq!(*volume.root().as_std_legacy(), Path::new(&params.app_root()));
     assert_eq!(volume.sign_in_prompt(), SignInShape::Nothing);
 }
 
@@ -364,14 +408,17 @@ async fn a_dropped_connection_comes_back_unattended_with_nothing_to_offer() {
         volume.connection_state(),
         Some(cmdr_fs::volume::ConnectionState::Direct)
     );
-    volume.list_directory(&at(&volume, "/photos"), None).await.unwrap();
+    volume
+        .list_directory(&AppPath::legacy_unchecked(&at(&volume, "/photos")), None)
+        .await
+        .unwrap();
 }
 
 #[tokio::test(start_paused = true)]
 async fn a_silent_server_is_disconnected_inside_the_ladder_and_every_waiting_call_answers() {
     let fake = seeded();
     let volume = over_pipe(&fake).await;
-    volume.list_directory(Path::new("/"), None).await.unwrap();
+    volume.list_directory(app_path!("/"), None).await.unwrap();
     // Long enough for any watch the warm-up started to see nothing waiting and
     // end, so the ladder below is the one the SESSION starts.
     // allowed-test-sleep: virtual time on a paused clock, so the warm-up's watch ends.
@@ -380,7 +427,10 @@ async fn a_silent_server_is_disconnected_inside_the_ladder_and_every_waiting_cal
     fake.go_silent(true);
     let started = tokio::time::Instant::now();
     let (photos, beach) = (at(&volume, "/photos"), at(&volume, "/photos/2024/beach.txt"));
-    let (listing, stat) = tokio::join!(volume.list_directory(&photos, None), volume.get_metadata(&beach),);
+    let (listing, stat) = tokio::join!(
+        volume.list_directory(&AppPath::legacy_unchecked(&photos), None),
+        volume.get_metadata(&AppPath::legacy_unchecked(&beach)),
+    );
 
     assert!(
         matches!(listing, Err(VolumeError::DeviceDisconnected(_))),
