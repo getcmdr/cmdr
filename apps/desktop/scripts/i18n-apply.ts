@@ -24,8 +24,6 @@ import { parseArgs } from 'node:util'
 import { BASE_LOCALE, loadCatalog } from './i18n-catalog-lib.ts'
 import { changedKeys } from './i18n-brief-select.ts'
 import { EXIT_CLEAN, EXIT_ERROR, EXIT_ISSUES } from './i18n-locale-check-lib.ts'
-import { BASELINE_RELATIVE_PATH, desktopPath } from './i18n-macos-copy-baseline-lib.ts'
-import type { MacosCopyBaseline } from './i18n-macos-copy-baseline-lib.ts'
 import { englishAt, latestWorkDir, readListFile } from './i18n-repo-lib.ts'
 import { parseValuesFile, planApply, uncoveredKeys, writePlan } from './i18n-apply-lib.ts'
 import type { ApplyPlan } from './i18n-apply-lib.ts'
@@ -91,12 +89,6 @@ function expectedKeys(args: ApplyArgs, valuesPath: string): string[] | undefined
   return [...new Set([...listed, ...changed])]
 }
 
-/** The frozen macOS copy, read only against the shipped catalogs (a fixture root has none). */
-function loadBaseline(messagesRoot: string | undefined): MacosCopyBaseline | undefined {
-  if (messagesRoot !== undefined) return undefined
-  return JSON.parse(readFileSync(desktopPath(BASELINE_RELATIVE_PATH), 'utf8')) as MacosCopyBaseline
-}
-
 function report(
   plan: ApplyPlan,
   args: ApplyArgs,
@@ -115,24 +107,12 @@ function report(
     )
   }
   for (const note of plan.notes) console.log(`  · ${note}`)
-  reportAccepted(plan, args.dryRun)
   if (expected !== undefined) reportCoverage(expected, valuesPath)
   if (plan.refused.length === 0 && !args.dryRun && plan.writes.length > 0) {
     const keysFile = join(dirname(valuesPath), 'keys.txt')
     const scope = existsSync(keysFile) ? ` --keys-file ${keysFile}` : ''
     console.log(`Next: pnpm i18n:check-locale ${plan.tag}${scope}`)
   }
-}
-
-/** The accepted macOS-text changes a clean plan records (or drops). */
-function reportAccepted(plan: ApplyPlan, dryRun: boolean): void {
-  if (plan.refused.length > 0 || plan.accepted.size === 0) return
-  const kept = [...plan.accepted].map(([key, entry]) =>
-    entry === null ? `${key} (dropped: back to the frozen text)` : key,
-  )
-  console.log(
-    `${dryRun ? 'Would record' : 'Recorded'} the macOS text changes in ${plan.acceptedPath ?? ''}: ${kept.join(', ')}`,
-  )
 }
 
 /** The expected keys the values file gives no value for. */
@@ -168,7 +148,6 @@ function main(): number {
     tag: args.lang,
     values,
     messagesRoot: args.messagesRoot,
-    baseline: loadBaseline(args.messagesRoot),
   })
   if (plan.refused.length === 0 && !args.dryRun) writePlan(plan, args.messagesRoot)
   report(plan, args, { valuesPath, expected: expectedKeys(args, valuesPath) })

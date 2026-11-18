@@ -608,7 +608,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Vérifiez que le trousseau de votre système est disponible, puis réessayez. Si le problème persiste, redémarrez l’application.} windows {Vérifiez que le Gestionnaire d’identification est disponible, puis réessayez. Si le problème continue, redémarrez Cmdr.} other {Vérifiez que le trousseau de votre système est disponible, puis réessayez. Si le problème persiste, redémarrez l’application.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Vérifiez que votre trousseau est disponible, puis réessayez. Si le problème persiste, redémarrez l’application.} windows {Vérifiez que le Gestionnaire d’identification est disponible, puis réessayez. Si le problème continue, redémarrez Cmdr.} other {Vérifiez que le trousseau de votre système est disponible, puis réessayez. Si le problème persiste, redémarrez l’application.}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },

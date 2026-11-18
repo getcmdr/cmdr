@@ -1,19 +1,20 @@
 # Accepted macOS copy changes: the review list
 
 Every macOS text that moved on purpose while `macos-copy-unchanged.test.ts` froze the macOS copy (Windows port task 28,
-`docs/specs/windows-port-plan.md`). David reviews this list before the guard and its baseline go; the deletion steps are
-in that task's entry. Generated 2026-11-18 from `apps/desktop/src/lib/intl/__fixtures__/macos-copy-accepted/*.json` (the
-new text and reason) and `apps/desktop/src/lib/intl/__fixtures__/macos-copy-baseline.json` (the old text a Mac reader
-saw). An entry added after that date is in those files and not here.
+`docs/specs/windows-port-plan.md`). **Approved by David on 2026-11-18**, all 18 entries; the guard, its baseline, and
+its accepted-changes store were then deleted, so this note is the record of what moved. It was generated on 2026-11-18
+from those deleted files (`apps/desktop/src/lib/intl/__fixtures__/macos-copy-accepted/*.json` for the new text and
+reason, `__fixtures__/macos-copy-baseline.json` for the old text a Mac reader saw); git holds them.
 
 - **Translation changes**: 14 entries in 10 catalogs. Eight are one English rewording carried into each language
   (`shortcuts.conflict.systemShortcut`, a pronoun aimed at `{combo}`), three are the Spanish and Vietnamese follow-ups
   of two other English rewordings, and three are plain slips (a Hungarian article in two keys, a Ukrainian missing
   space).
-- **English changes**: four entries in `ACCEPTED_ENGLISH_CHANGES`
-  (`apps/desktop/scripts/i18n-macos-copy-baseline-lib.ts`). The first two are David's (`copy-decisions.md`), the other
+- **English changes**: four entries in `ACCEPTED_ENGLISH_CHANGES` (in the deleted
+  `apps/desktop/scripts/i18n-macos-copy-baseline-lib.ts`). The first two are David's (`copy-decisions.md`), the other
   two translator-reported fixes (`docs/i18n/source-queue.md`).
-- Out of scope here: the 16 `RETIRED_KEYS` (keys David deleted on purpose, each with its reason, in that same file).
+- Out of scope here: the 16 `RETIRED_KEYS` (keys David deleted on purpose, each with its reason, in that same deleted
+  file).
 
 ## Translation changes, per catalog
 
@@ -159,14 +160,11 @@ saw). An entry added after that date is in those files and not here.
   - New: {combo} is usually taken by macOS ({label}), so the shortcut may never reach Cmdr. You can free it up in System
     Settings > Keyboard.
 
-## Not yet followed in every language (found 2026-11-18)
+## Followed after the guard went (2026-11-18)
 
-- **`ai.secretError.genericBody`**: the English macOS text now names the Keychain, but 12 catalogs still read the old
-  "system keyring" wording on macOS (`cs`, `de`, `es`, `fr`, `hu`, `nl`, `pt`, `ru`, `sv`, `uk`, `zh`, `zh-Hant`;
-  `es-419` inherits `es`). Only `vi` followed it (above). Each locale's `terms.json` `keychain` ruling names the macOS
-  word.
+- **`ai.secretError.genericBody`**: the English macOS text names the Keychain, and 12 catalogs read the old "system
+  keyring" wording on macOS (`cs`, `de`, `es`, `fr`, `hu`, `nl`, `pt`, `ru`, `sv`, `uk`, `zh`, `zh-Hant`; `es-419`
+  inherits `es`). Each now uses its `terms.json` `keychain` ruling, as a plain translation edit.
 - **`main.quit.countdown`** in `es` (and `es-419`, which inherits it): the block has no `macos` branch, so macOS and
-  Linux both read `other`, and the Spanish `other` says "al reiniciar el Mac", which is wrong on Linux. The English
-  `other` names no OS ("a restart or logout").
-- While the guard stands, fixing either adds entries to the accepted files (and so to this list); after it goes, each is
-  a plain translation edit.
+  Linux both read `other`, and the Spanish `other` said "al reiniciar el Mac", wrong on Linux. It now names no OS, like
+  the English `other` ("a restart or logout").

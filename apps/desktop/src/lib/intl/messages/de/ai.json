@@ -611,7 +611,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Prüfe, ob dein System-Schlüsselbund verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.} windows {Prüfe, ob die Anmeldeinformationsverwaltung verfügbar ist, und versuche es erneut. Wenn es weiterhin passiert, starte Cmdr neu.} other {Prüfe, ob dein System-Schlüsselbund verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Prüfe, ob dein Schlüsselbund verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.} windows {Prüfe, ob die Anmeldeinformationsverwaltung verfügbar ist, und versuche es erneut. Wenn es weiterhin passiert, starte Cmdr neu.} other {Prüfe, ob dein System-Schlüsselbund verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },

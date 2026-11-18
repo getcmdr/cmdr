@@ -454,8 +454,8 @@ volume id's scheme (`smb-…` is a share), and the share keys (`fileExplorer.nav
 siblings, `menu.volume.detachShare`, `fileExplorer.pane.detachShareFailedToast`) say macOS "Eject" (Finder's word for a
 server too), Windows "Disconnect", Linux "Unmount". A drive says "Eject" everywhere. ❗ The id, ❌ never
 `connectionState` or `category`: a macOS share is an `attached_volume` on `os_mount` or `direct`, a Linux GVFS share a
-`network` row with no state. The native menus read the same scheme (`DetachWord::Share`). The frozen macOS copy pins
-each share key's macOS branch to its drive key's (`SPLIT_KEYS` in `scripts/i18n-macos-copy-baseline-lib.ts`).
+`network` row with no state. The native menus read the same scheme (`DetachWord::Share`). Each share key's `macos`
+branch carries its drive key's translation, so a Mac reads the same "Eject" for both.
 
 An eject runs `detach-volume.ts`, which calls `ejectVolume(id)`; the backend dispatches: SMB → `diskutil unmount`, MTP →
 connection manager disconnect, physical / DMG → `diskutil eject`. A `'disconnect-place'` goes to `disconnectServerPlace`

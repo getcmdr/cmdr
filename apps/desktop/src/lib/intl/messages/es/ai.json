@@ -609,7 +609,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Comprueba que el llavero del sistema esté disponible y vuelve a intentarlo. Si continúa, reinicia la app.} windows {Comprueba que el Administrador de credenciales esté disponible y vuelve a intentarlo. Si sigue pasando, reinicia Cmdr.} other {Comprueba que el llavero del sistema esté disponible y vuelve a intentarlo. Si continúa, reinicia la app.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Comprueba que el Llavero esté disponible y vuelve a intentarlo. Si continúa, reinicia la app.} windows {Comprueba que el Administrador de credenciales esté disponible y vuelve a intentarlo. Si sigue pasando, reinicia Cmdr.} other {Comprueba que el llavero del sistema esté disponible y vuelve a intentarlo. Si continúa, reinicia la app.}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },

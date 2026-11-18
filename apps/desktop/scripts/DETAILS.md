@@ -176,11 +176,9 @@ output: `docs/i18n/termbase.md` § Tooling; the translator-facing rules: `docs/i
 - **`i18n-apply.ts`** (+ `-lib.ts`, `pnpm i18n:apply`): writes a values file into one locale's catalogs and stamps each
   key from its source's current English. It plans the whole batch first and writes nothing when one value fails, judging
   each with the ERROR-class checks' own pure functions (`parityDetail`, `icuError`, `platformSelectIssues`,
-  `platformPluralDetail`) plus `frozenMacosIssue` from the macOS baseline lib, so it can't disagree with
-  `i18n:check-locale`. Files are written in the shape `sync-locale-keys.ts` writes (`JSON.stringify`, two spaces),
-  through a temp file and a rename. A changed frozen macOS text lands only with a `macosChangeReason`, which it writes
-  into that catalog's own accepted-changes file (`src/lib/intl/__fixtures__/macos-copy-accepted/<tag>.json`), so
-  parallel translators never share one; `{ "keep": true }` restamps an unchanged translation without a retype.
+  `platformPluralDetail`), so it can't disagree with `i18n:check-locale`. Files are written in the shape
+  `sync-locale-keys.ts` writes (`JSON.stringify`, two spaces), through a temp file and a rename. `{ "keep": true }`
+  restamps an unchanged translation without a retype.
 - **`i18n-apply-terms.ts`** (+ `-lib.ts`, `pnpm i18n:apply-terms`): patches `terms.json`, `concepts.json`, or a
   `concepts-proposed.json` and validates the result with `i18n-check-termbase.ts`'s own validators, refusing only the
   problems the patch adds. Writes through `JSON.stringify` then oxfmt, which reproduces an oxfmt-formatted termbase byte
@@ -201,8 +199,8 @@ output: `docs/i18n/termbase.md` § Tooling; the translator-facing rules: `docs/i
 
 Decision: one locale per `i18n:apply` call. **Why:** a fan-out runs one translator per language at once, and a call that
 can only touch its own `messages/<tag>/` can't race another. Decision: a per-OS entry may omit branches, which keep what
-that OS reads now. **Why:** the `macos` branch must stay byte for byte (`macos-copy-unchanged.test.ts`), and the
-homemade scripts each retyped it, or rebuilt it from helpers, to change the other two.
+that OS reads now. **Why:** the `macos` branch stays as it is unless it's wrong (`docs/i18n/translator-instructions.md`,
+Per-OS values), and the homemade scripts each retyped it, or rebuilt it from helpers, to change the other two.
 
 ## Key decisions
 

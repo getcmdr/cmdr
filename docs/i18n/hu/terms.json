@@ -3614,9 +3614,9 @@
     "confidence": "high",
     "sources": "macOS (Billentyűparancsok)",
     "exceptions": {
-      "shortcuts.conflict.systemShortcut": "The {combo}: colon frame names the key itself, and the genderless ezt points back at it unambiguously; the macOS text is frozen, and its siblings keep the same frame.",
-      "shortcuts.conflict.takenByWindows": "Same {combo}: ezt … frame as the frozen shortcuts.conflict.systemShortcut and reservedByMacOs; Hungarian ezt carries no gender, so no noun is needed.",
-      "shortcuts.conflict.takenByLinuxDesktops": "Same {combo}: ezt … frame as the frozen shortcuts.conflict.systemShortcut and reservedByMacOs; Hungarian ezt carries no gender, so no noun is needed."
+      "shortcuts.conflict.systemShortcut": "The {combo}: colon frame names the key itself, and the genderless ezt points back at it unambiguously; the macOS text keeps it, and so do its siblings.",
+      "shortcuts.conflict.takenByWindows": "Same {combo}: ezt … frame as shortcuts.conflict.systemShortcut and reservedByMacOs; Hungarian ezt carries no gender, so no noun is needed.",
+      "shortcuts.conflict.takenByLinuxDesktops": "Same {combo}: ezt … frame as shortcuts.conflict.systemShortcut and reservedByMacOs; Hungarian ezt carries no gender, so no noun is needed."
     }
   },
   "show": {

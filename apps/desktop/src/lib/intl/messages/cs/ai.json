@@ -611,7 +611,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Zkontrolujte, že je systémová klíčenka dostupná, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.} windows {Zkontrolujte, že je Správce přihlašovacích údajů dostupný, a zkuste to znovu. Pokud se to bude opakovat, restartujte Cmdr.} other {Zkontrolujte, že je systémová klíčenka dostupná, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Zkontrolujte, že je svazek klíčů dostupný, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.} windows {Zkontrolujte, že je Správce přihlašovacích údajů dostupný, a zkuste to znovu. Pokud se to bude opakovat, restartujte Cmdr.} other {Zkontrolujte, že je systémová klíčenka dostupná, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },

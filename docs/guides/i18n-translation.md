@@ -83,7 +83,8 @@ branch takes its own OS's term. The rule and the branch-to-OS map are canonical 
    `../i18n/translation-learnings.md` § "Quoting a macOS UI label".
 2. **Each branch takes its own OS's term; a plain value takes the macOS one where the OSes split.** Per branch:
    - `macos` mines `<tag>/macOS/`, and the Finder term wins: pt-BR delete = "Apagar" (Finder), German move = "Bewegen"
-     (Finder). This branch is already translated almost everywhere: leave it as it is.
+     (Finder). This branch is already translated almost everywhere: leave it as it is unless it's wrong
+     (translator-instructions, Per-OS values).
    - `windows` mines `<tag>/microsoft-terminology/` and `<tag>/microsoft-style-guides/`, and the Microsoft term wins:
      pt-BR "Excluir" is right THERE. Mirror the English branch's register (Trash: "Delete" as a label, "the Recycle Bin"
      in a sentence; Quit: "Exit" as an action, "close" in narration; `docs/style-guide.md` § "Platform vocabulary").
@@ -371,12 +372,12 @@ The routine maintenance loop, run for every change that adds or edits user-facin
 one branch's English leaves every branch translated but the key stale; the brief's word diff against the previous
 English shows which branch moved, and only that one is redone. Work it branch by branch under
 `docs/i18n/translator-instructions.md` (Per-OS values): translate only the English branches, each in its own OS's words,
-and leave the `macos` branch alone (`macos-copy-unchanged.test.ts` holds it; a WRONG macOS text has one reviewed way
-out, an accepted change `pnpm i18n:apply` records from a `macosChangeReason`, under that same Per-OS values rule). The
-stale hash is whole-value, so a key is stamped only once EVERY branch is in the language; a half-translated key stays on
-the worklist (`pnpm i18n:apply` writes it and leaves the stamp, naming the branches still English). A collapsed
-`.mac`/`.other` pair is the same: its survivor key's `macos` branch is the old `.mac` translation. The brief's per-key
-"Per-OS value" note names each branch's OS and pile folders.
+and leave the `macos` branch alone unless it's wrong (no test holds it; a fix there is an ordinary translation edit with
+the reason in the commit message, under that same Per-OS values rule). The stale hash is whole-value, so a key is
+stamped only once EVERY branch is in the language; a half-translated key stays on the worklist (`pnpm i18n:apply` writes
+it and leaves the stamp, naming the branches still English). A collapsed `.mac`/`.other` pair is the same: its survivor
+key's `macos` branch is the old `.mac` translation. The brief's per-key "Per-OS value" note names each branch's OS and
+pile folders.
 
 ### Write placeholder strings to be restructurable
 

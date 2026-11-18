@@ -1,6 +1,7 @@
 # Platform-variant copy: decisions (task 27)
 
 David's answers to the open questions in `copy-survey.md` (2026-11-11). Where this file and `copy-proposal.json`
+(deleted with the macOS-copy guard; `git log --diff-filter=D -- docs/notes/windows-port/copy-proposal.json` finds it)
 disagree, this file wins. The governing principle is `docs/design-principles.md` § "Platform-native, not generic":
 Windows, Linux, and macOS are each first-class, and a few extra lines of per-OS text beat one watered-down string.
 
@@ -72,8 +73,8 @@ Windows, Linux, and macOS are each first-class, and a few extra lines of per-OS 
   Windows), read the code; if the code doesn't settle it, keep the macOS text for that platform and list the row as open
   here.
 - **Key glyphs in prose** (the values with literal ⌘/⌥/⌃/⇧) became new keys taking the live key as a `{combo}`
-  placeholder, with a keyless twin where the user can remove the key (#1102); the old keys are in the macOS-copy guard's
-  `RETIRED_KEYS`. The three "macOS" strings (`shortcuts.conflict.reservedByMacOs`, `shortcuts.section.macOsTooltip`,
+  placeholder, with a keyless twin where the user can remove the key (#1102); the old keys were deleted from every
+  catalog. The three "macOS" strings (`shortcuts.conflict.reservedByMacOs`, `shortcuts.section.macOsTooltip`,
   `shortcuts.section.macOsBadge`) render only where an app menu owns the key, so only on macOS.
 
 ## Open rows

@@ -1,7 +1,7 @@
 /**
- * The brief's notes about where a run's files live: each language's pile folders (`pilePaths`), its run directory and its
- * batch-scoped check (`workDirLines`, in the header), and the frozen macOS text a key carries (`frozenMacosNote`, on the
- * key). Pure; `i18n-brief-lib.ts` assembles them, and the CLI makes the directories and reads the baseline.
+ * The brief's notes about where a run's files live: each language's pile folders (`pilePaths`), and its run directory
+ * and its batch-scoped check (`workDirLines`, in the header). Pure; `i18n-brief-lib.ts` assembles them, and the CLI
+ * makes the directories.
  */
 
 import { join } from 'node:path'
@@ -25,20 +25,6 @@ export function workDirLines(
       `- ${who}Check: \`pnpm i18n:check-locale ${tag} --keys-file ${join(dir, 'keys.txt')}\` (in apps/desktop); \`stale\` judges only this batch.`,
     ]
   })
-}
-
-/**
- * The note on a key whose macOS text a Mac already reads (the frozen copy baseline): which targets hold it, that the
- * text stays, and the one reviewed way to fix a wrong one. Per-OS keys get it too, beside their per-OS note.
- * @param compact the short form for every frozen key after a brief's first: still on every key (translators
- *   missed a rule stated once), minus the how-to the first key's note already gave
- */
-export function frozenMacosNote(tags: readonly string[], perOs: boolean, compact = false): string | undefined {
-  if (tags.length === 0) return undefined
-  const what = perOs ? 'the branch macOS reads' : 'this whole value (macOS reads it)'
-  if (compact)
-    return `Frozen macOS text (${tags.join(', ')}): keep ${what} byte for byte, or change it the way the first frozen key's note says.`
-  return `Frozen macOS text (${tags.join(', ')}): keep ${what} byte for byte. If it's wrong (a mistranslation, an outdated term) or its English was reworded so it no longer fits, give the new value with \`"@<key>": { "macosChangeReason": "…" }\` in your values file, and \`pnpm i18n:apply\` records it for this catalog (an overlay such as es-419 records its own); without the reason it refuses the change. If the text still fits, \`{ "keep": true }\` stamps it unchanged.`
 }
 
 /** A language's pile folders as the header names them: `<root>/pt-BR/`, or several joined. */

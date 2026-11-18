@@ -609,7 +609,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {确认你的系统密钥环可用，然后重试。如果问题仍然存在，请重新启动应用。} windows {确认凭据管理器可用，然后重试。如果问题一直出现，请重新启动 Cmdr。} other {确认你的系统密钥环可用，然后重试。如果问题仍然存在，请重新启动应用。}}",
+  "ai.secretError.genericBody": "{platform, select, macos {确认你的钥匙串可用，然后重试。如果问题仍然存在，请重新启动应用。} windows {确认凭据管理器可用，然后重试。如果问题一直出现，请重新启动 Cmdr。} other {确认你的系统密钥环可用，然后重试。如果问题仍然存在，请重新启动应用。}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },

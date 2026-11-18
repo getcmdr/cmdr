@@ -47,8 +47,8 @@ what it says is per OS, through platform blocks in `mtp.ptpcameradDialog.explana
   it, close it" so a Windows user never reads about a macOS daemon.
 
 The command box renders only for a non-empty `getPtpcameradWorkaroundCommand()`, which the backend answers with `''` off
-macOS. The dialog asks no platform question. The component and key names keep "ptpcamerad" because the frozen macOS copy
-is keyed by them (`../intl/DETAILS.md` § "The frozen macOS copy").
+macOS. The dialog asks no platform question. The component and key names keep "ptpcamerad": a rename would delete every
+locale's translation of these keys (`../intl/DETAILS.md` § "Changing a per-OS string").
 
 ## udev rules (Linux)
 

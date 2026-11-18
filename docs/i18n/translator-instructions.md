@@ -23,15 +23,15 @@ style guide disagree, the style guide's general rule wins unless the ruling says
 - **Where to write**: put your values in that `values.json` (key → value) and write them with
   `pnpm i18n:apply --lang {{TAG}}` in apps/desktop, which reads it and checks it against `keys.txt`. It writes each
   value into its catalog file, stamps the key as translated from the current English, and refuses the whole batch
-  (changing nothing) when a value breaks a placeholder, a tag, ICU, the per-OS block shape, the plural set, or the macOS
-  text a Mac already reads; fix what it names and run it again. A per-OS key can be given as
-  `{ "windows": "…", "other": "…" }`: each branch you leave out keeps the text that OS reads now, which is how the
-  `macos` branch stays untouched. A translation that still fits a reworded English takes `{ "keep": true }`: it's
-  stamped as it is, never retyped (say so per key; a branch still in English can't be kept). A deliberate identical
-  value takes `"@<key>": { "sameAsSourceJustification": "…" }` in the same file. Invisible characters print as JSON
-  escapes in the brief and the tools' output (`\u00a0` a no-break space, `\u202f` a narrow one); write them the same way
-  in `values.json`, which keeps the exact character. `--dry-run` checks without writing, and it lists the batch keys
-  your file missed. A key the catalog doesn't have yet is refused with the `sync-locale-keys.ts` call that adds it.
+  (changing nothing) when a value breaks a placeholder, a tag, ICU, the per-OS block shape, or the plural set; fix what
+  it names and run it again. A per-OS key can be given as `{ "windows": "…", "other": "…" }`: each branch you leave out
+  keeps the text that OS reads now, which is how the `macos` branch stays untouched. A translation that still fits a
+  reworded English takes `{ "keep": true }`: it's stamped as it is, never retyped (say so per key; a branch still in
+  English can't be kept). A deliberate identical value takes `"@<key>": { "sameAsSourceJustification": "…" }` in the
+  same file. Invisible characters print as JSON escapes in the brief and the tools' output (`\u00a0` a no-break space,
+  `\u202f` a narrow one); write them the same way in `values.json`, which keeps the exact character. `--dry-run` checks
+  without writing, and it lists the batch keys your file missed. A key the catalog doesn't have yet is refused with the
+  `sync-locale-keys.ts` call that adds it.
 - **Tools, not scripts**: the tools below cover writing and looking up. ❌ Never write your own script that writes a
   catalog or a termbase file, and never hand-edit one: the tools validate and keep the formatting, and a homemade writer
   does neither. When a tool can't do what you need, do the smallest manual step and say so under Process feedback
@@ -54,17 +54,16 @@ style guide disagree, the style guide's general rule wins unless the ruling says
   `windows` is Windows, `other` is Linux, plus whichever of the two has no branch of its own. Keep the frame and the
   branch names exactly. **In a platform select, each branch uses that OS's own localized term (Windows' own word for the
   Recycle Bin, File Explorer, Settings), sourced from that OS's localization, never the macOS term carried over.**
-  - **The branch macOS reads, once in {{LANGUAGE}}, stays byte for byte**: that's `macos`, or `other` in a block with no
-    `macos` branch (each key's note in the brief says which). A key that became per-OS kept its translation there, and
-    `macos-copy-unchanged.test.ts` fails on any change. Your work is every branch still in English (all of them, for a
-    new key); any other branch already in {{LANGUAGE}} whose English didn't change stays too.
+  - **The branch macOS reads, once in {{LANGUAGE}}, is left alone unless it's wrong**: that's `macos`, or `other` in a
+    block with no `macos` branch (each key's note in the brief says which). A Mac user already reads it, so ❌ never
+    retouch it to restyle it or to match a new sibling branch. Your work is every branch still in English (all of them,
+    for a new key); any other branch already in {{LANGUAGE}} whose English didn't change stays too. No test holds it:
+    this rule is the whole guard.
   - **A macOS text that's wrong** (a mistranslation, an outdated term, macOS vocabulary where the English is neutral,
-    like `menu.window.minimize` as "Im Dock ablegen", or English reworded so the old text no longer fits) is the one
-    exception: give the new value with `"@<key>": { "macosChangeReason": "…" }` beside it in your values file, one line
-    saying what was wrong. `i18n:apply` records it as an accepted change in this catalog's own file (an overlay such as
-    es-419 keeps its own, so it needs its own reason), and that entry is what review reads. ❌ Never hand-edit those
-    files. ❌ Never edit or regenerate the baseline, and ❌ never fix a macOS text just to restyle it: a Mac user
-    already reads it.
+    like `menu.window.minimize` as "Im Dock ablegen", or English reworded so the old text no longer fits) is an ordinary
+    translation edit: give the new `macos` branch in your values file like any other branch, and list each such key with
+    one line saying what was wrong under a "macOS text fixed" heading in your report, so the commit message carries the
+    reason. An overlay such as es-419 follows its base catalog's fix unless it forks that key.
   - **Where each OS's word lives** in the pile: `macos` mines `macOS/`; `windows` mines `microsoft-terminology/` (the
     TBX) and `microsoft-style-guides/`; `other` mines `gnome-nautilus/`, `kde-dolphin/`, and `xfce-thunar/`, taking the
     word they share, or the desktop-neutral one where they split (GNOME- or KDE-only words wait for per-desktop text).
@@ -132,7 +131,9 @@ style guide disagree, the style guide's general rule wins unless the ruling says
   every line is a ✓. It's the one check you need: `pnpm check --fast` runs most of the same checks across every locale
   but skips the termbase.
 - **Report**: your output may ship without human review, so translate only what you're confident in and flag every
-  string where the context was insufficient. End with two sections, each "none" when it's empty:
+  string where the context was insufficient. When you changed text macOS already read, open with a "macOS text fixed"
+  section: each key and one line on what was wrong, which the lead copies into the commit message. End with two
+  sections, each "none" when it's empty:
   - **Source feedback**: `@key` descriptions that were insufficient, screenshots that were missing or unhelpful, English
     that was ambiguous or inconsistent, and proposed cross-language rules. Log each in docs/i18n/source-queue.md too.
   - **Process feedback**: every script you wrote (even a one-off lookup) and why, every workaround (a command a guard

@@ -312,46 +312,25 @@ in its `macos` branch.
   values only. `en-GB` / `en-AU` are English: spell their new branches by the overlay's glossary and restamp them with
   `node scripts/sync-locale-keys.ts en-GB en-AU --restamp <key>`, ❌ never a bare `--restamp <key>`, which restamps
   every full locale too and wipes the translators' worklist. An overlay never adds a branch its source folded away.
-- **A key split** into an OS-specific twin, or two keys merged into one block, keeps the macOS text the old key showed:
-  see `SPLIT_KEYS` and `COLLAPSED_PAIRS` below.
+- **A message whose SHAPE changes** (new placeholders or tags, as when a literal key glyph becomes a `{combo}`): ❌
+  never edit the old key's shape under translations written for it (`i18n-parity` and `i18n-platform-select` fail every
+  translated locale). Add a NEW key with the new shape and a full `@key` description, and delete the old key from every
+  catalog; the translator pass picks the new key up (until then it falls back to English). The one shape edit made in
+  place: a key placeholder becoming an empty key-cap tag (`{combo}` → `<key></key>`, `../shortcuts/DETAILS.md` §
+  Shortcuts as text). Make the same edit in every locale, wording untouched, so parity holds, and leave the stale hash
+  for a translator to review and restamp.
+- **A `macos` branch's translation stays unless it's wrong**: a fix there is an ordinary translation edit, with the
+  reason in the commit message (`docs/i18n/translator-instructions.md`, Per-OS values). Per-area English goldens
+  (`*i18n-parity.test.ts`, `*.parity.test.ts`) run under `withPlatform('macos')`, so an `en` edit that moves what a Mac
+  shows fails there.
 
 The record of the per-OS copy pass sits in `docs/notes/windows-port/`: `copy-final.json` (the English settled per OS,
 one row per key, as David reviewed it on 2026-11-12; a record, never read by code, and the catalogs win wherever they
 differ), `copy-decisions.md` (David's answers, and § Open rows: what each OS still reads in macOS words and why),
 `copy-glossary-evidence.md` (the words, checked against the reference pile),
-`docs/notes/windows-port/copy-row-verdicts.md` (rows settled by reading the code), and the original `copy-survey.md`
-with its `copy-proposal.json`, which the frozen macOS copy below still reads for its key list.
-
-### The frozen macOS copy
-
-`macos-copy-unchanged.test.ts` holds every locale's macOS text for the platform-copy keys (the rows of
-`docs/notes/windows-port/copy-proposal.json` plus the generator's `KEYS_BEYOND_PROPOSAL`, the keys the copy pass turned
-into blocks beyond the proposal's list, about 8,650 values) to `__fixtures__/macos-copy-baseline.json`: the RESOLVED
-value a Mac reader saw (locale, its inheritable ancestors, then `en`), read from disk for all 17 catalogs. ICU values
-compare ASTs, raw ones text. The comparison is `macosCopyDrift` in `scripts/i18n-macos-copy-baseline-lib.ts`. The only
-allowed moves are `ACCEPTED_ENGLISH_CHANGES` (English only) and `COLLAPSED_PAIRS` there (a survivor's macOS branch must
-equal the old `.mac` value). `SPLIT_KEYS` holds the reverse: a new key split off a frozen one for one case it used to
-word (a mounted share's eject words) must render the old key's frozen macOS text, in every locale, so a split carries
-each locale's translation into the new key's `macos` branch (its other branches start as English, pending translation).
-`RETIRED_KEYS` lists a frozen key deleted on purpose, which must then be gone from every catalog. That's also the route
-for a message whose SHAPE changes (new placeholders or tags, as when a literal key glyph becomes a `{combo}`): ❌ never
-edit the old key's shape under translations written for it (`i18n-parity` and `i18n-platform-select` fail every
-translated locale). Add a NEW key with the new shape and a full `@key` description, delete the old key from every
-catalog, and retire it here; the translator pass picks the new key up (until then it falls back to English). The one
-shape edit made in place: a key placeholder becoming an empty key-cap tag (`{combo}` → `<key></key>`,
-`../shortcuts/DETAILS.md` § Shortcuts as text). Make the same edit in every locale, wording untouched, so parity holds,
-and leave the stale hash for a translator to review and restamp. `ACCEPTED_TRANSLATION_CHANGES` is the one way a
-non-English Mac text moves: a translator's reviewed fix of a wrong frozen translation, one entry per (catalog, key) with
-the new macOS text and a reason, stored one file per catalog in `__fixtures__/macos-copy-accepted/<tag>.json` so
-parallel translators never write one file, and written by `pnpm i18n:apply` from a values file's `macosChangeReason`. It
-covers every locale resolving that key from that catalog (an inheriting overlay too), and it's a requirement, not an
-allowance: the catalog must read the entry's text, so an entry never applied is drift as well. The rule translators
-follow is `docs/i18n/translator-instructions.md` (Per-OS values). `apps/desktop/scripts/i18n-macos-copy-baseline.ts`
-writes it: the first write refuses an existing file, and `--add-missing` freezes a newly named key from today's catalogs
-while leaving every existing entry byte-identical. Add a key that way only BEFORE its catalog values change, or the
-baseline freezes the edit. ❌ Never edit or regenerate the baseline to get green: a red means a catalog edit changed
-what a Mac shows. Per-area English goldens (`*i18n-parity.test.ts`, `*.parity.test.ts`) run under
-`withPlatform('macos')` for the same reason.
+`docs/notes/windows-port/copy-row-verdicts.md` (rows settled by reading the code), and the original `copy-survey.md`.
+`macos-copy-accepted-review.md` there lists every macOS text that moved on purpose during the pass, which David approved
+on 2026-11-18.
 
 ## The locale-aware formatting layer
 

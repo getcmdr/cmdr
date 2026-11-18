@@ -149,7 +149,7 @@ that other command, so no hint names it):
 
 **A message naming a key has a keyless sibling**, picked when `commandHasShortcut` is false or `shortcutAsText` returns
 `undefined`. ❌ Never fall back to the default key: a default the user removed runs nothing. So no text shows an empty
-chip or names a dead key (`../intl/DETAILS.md` § "The frozen macOS copy" has the new-key route).
+chip or names a dead key (`../intl/DETAILS.md` § "Changing a per-OS string" has the new-key route).
 
 Decision: a chip in a toast is LIVE, too. The toasts used to snapshot the binding at creation so a rebind wouldn't
 rewrite a visible one, but a chip is a claim about what pressing it does now, and a snapshot names a dead key after a

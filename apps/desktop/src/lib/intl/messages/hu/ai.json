@@ -609,7 +609,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Ellenőrizd, hogy a rendszer kulcstartója elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.} windows {Ellenőrizd, hogy a Hitelesítőadat-kezelő elérhető-e, majd próbáld újra. Ha továbbra is előfordul, indítsd újra a Cmdrt.} other {Ellenőrizd, hogy a rendszer kulcstartója elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Ellenőrizd, hogy a kulcskarikád elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.} windows {Ellenőrizd, hogy a Hitelesítőadat-kezelő elérhető-e, majd próbáld újra. Ha továbbra is előfordul, indítsd újra a Cmdrt.} other {Ellenőrizd, hogy a rendszer kulcstartója elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },
