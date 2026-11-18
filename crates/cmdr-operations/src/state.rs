@@ -87,6 +87,10 @@ pub struct WriteOperationState {
     /// by the first such answer (`refused_name.rs`). Its own latch, apart from
     /// the clash one: a refused name is no clash.
     pub(crate) refused_names: RefusedNames,
+    /// Which names this transfer's destination refuses, resolved once as it
+    /// starts (`name_rules.rs::DestinationNames`), so the engine refuses one
+    /// before any write instead of letting the driver strip or rewrite it.
+    pub(crate) destination_names: crate::name_rules::DestinationNames,
     /// The question a queued operation asks when sources left while it waited:
     /// armed by `queued_sources.rs`, answered by `continue_without_gone_sources`,
     /// and abandoned by a cancel exactly like [`conflict_slot`](Self::conflict_slot).
@@ -340,6 +344,7 @@ impl WriteOperationState {
             conflict_slot: ConflictSlot::new(Arc::clone(&human_wait)),
             conflict_dispatch_lock: tokio::sync::Mutex::new(()),
             refused_names: RefusedNames::default(),
+            destination_names: crate::name_rules::DestinationNames::default(),
             sources_gone: SourcesGoneSlot::default(),
             locked_sources: LockedSourcesSlot::new(Arc::clone(&human_wait)),
             waited_in_queue: AtomicBool::new(false),

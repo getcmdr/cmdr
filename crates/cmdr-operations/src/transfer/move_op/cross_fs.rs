@@ -111,6 +111,11 @@ pub(super) fn move_with_staging(
     // creating the staging dir or writing a byte. No-op for filesystems with no
     // known limit. (Same-FS moves rename in place and never reach here.)
     validate_file_sizes_for_filesystem(destination, &scan_result.files)?;
+    // The staged copy lands under the destination's own filesystem, so its
+    // rules hold every item before its write (`copy_single_item`).
+    state
+        .destination_names
+        .resolve(|| crate::name_rules::local_rules_at(destination));
 
     // Asked before the first byte is staged: Phase 4 has to delete every
     // original, and Locked ones refuse, so the person decides now whether to

@@ -12,13 +12,15 @@
 //! phone and every other backend refuse only what no filesystem takes, and
 //! leave the rest, path length included, to the device or server.
 
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 use cmdr_fs::filesystem_kind::FilesystemKind;
 use cmdr_fs::validation::{
     HOST_PATH_LIMIT, LengthLimit, NameRules, PortabilityWarning, ValidationError, validate_filename,
 };
-use cmdr_fs::volume::BackendKind;
+use cmdr_fs::volume::{BackendKind, Volume};
 
 use super::host::EngineHost;
 use super::mutation_error::MutationError;
@@ -48,6 +50,17 @@ fn probe_for(host: &EngineHost, volume_id: &str, dir: &Path) -> Probe {
             BackendKind::Local if volume.local_path().is_some() => Probe::LocalPath(dir.to_path_buf()),
             _ => Probe::Known(FilesystemKind::Other),
         },
+    }
+}
+
+/// Which question answers for `dir` on `volume`, for a caller holding the volume
+/// itself (a transfer's destination) rather than its id. No I/O.
+fn probe_for_volume(volume: &dyn Volume, dir: &Path) -> Probe {
+    match volume.backend_kind() {
+        BackendKind::Smb => Probe::Known(FilesystemKind::Smb),
+        BackendKind::Mtp => Probe::Known(FilesystemKind::Mtp),
+        BackendKind::Local if volume.local_path().is_some() => Probe::LocalPath(dir.to_path_buf()),
+        _ => Probe::Known(FilesystemKind::Other),
     }
 }
 
@@ -98,6 +111,82 @@ pub(crate) async fn name_rules_at(host: &EngineHost, volume_id: &str, dir: &Path
                     .for_host_local_disk()
                     .with_path_limit(Some(HOST_PATH_LIMIT))
             }),
+    }
+}
+
+/// The name rules of a local `dir`, as a local probe finds them: the local
+/// engine's door. ❗ Blocks for one mount probe.
+pub(crate) fn local_rules_at(dir: &Path) -> NameRules {
+    probe_local(dir)
+}
+
+/// The name rules of `dir` on `volume`, [`name_rules_at`] for a caller holding
+/// the volume. ❗ Blocks for one local mount probe: an async caller runs it on
+/// the blocking pool.
+pub(crate) fn name_rules_on(volume: &dyn Volume, dir: &Path) -> NameRules {
+    match probe_for_volume(volume, dir) {
+        Probe::Known(kind) => backend_rules(kind),
+        Probe::LocalPath(path) => probe_local(&path),
+    }
+}
+
+/// The names a transfer's destination REFUSES, resolved once per operation
+/// (the destination folder and everything under it sit on one filesystem).
+///
+/// A transfer keeps its sources' names, so only a Windows class the
+/// destination's tier refuses is held against them here: a character, a device
+/// name, a trailing space or period. Those are the names a driver strips or
+/// rewrites without an error (Linux's vfat turns `dup.` into `dup`, onto a
+/// sibling, `docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`), so the
+/// engine must refuse them before any write, ❌ never leave them to the landing.
+/// Length and the rest stay the destination's to answer, as before.
+/// Unresolved (a test, an operation that never set it) refuses nothing.
+#[derive(Default)]
+pub(crate) struct DestinationNames(OnceLock<NameRules>);
+
+impl DestinationNames {
+    /// Resolves the rules once; a second call (or a test's preset) keeps the first.
+    pub(crate) fn resolve(&self, rules: impl FnOnce() -> NameRules) {
+        let _ = self.0.get_or_init(rules);
+    }
+
+    /// [`Self::resolve`] for a destination volume, its local probe on the
+    /// blocking pool. A probe that can't finish refuses nothing more than POSIX
+    /// (the floor a local disk gets on its host still applies).
+    pub(crate) async fn resolve_on(&self, host: &EngineHost, volume: &std::sync::Arc<dyn Volume>, dir: &Path) {
+        if self.0.get().is_some() {
+            return;
+        }
+        let volume = std::sync::Arc::clone(volume);
+        let dir = dir.to_path_buf();
+        let rules = host
+            .runtime()
+            .spawn_blocking(move || name_rules_on(volume.as_ref(), &dir))
+            .await
+            .unwrap_or_else(|_| NameRules::POSIX.for_host_local_disk());
+        self.resolve(|| rules);
+    }
+
+    /// Whether the destination refuses `name` (one path segment).
+    pub(crate) fn refuses(&self, name: &OsStr) -> bool {
+        let Some(rules) = self.0.get() else {
+            return false;
+        };
+        // A name that isn't UTF-8 has no Windows class to check.
+        let Some(name) = name.to_str() else {
+            return false;
+        };
+        matches!(
+            validate_filename(name, *rules),
+            Err(ValidationError::DisallowedCharacter { .. }
+                | ValidationError::ReservedName { .. }
+                | ValidationError::EndsWithSpaceOrPeriod)
+        )
+    }
+
+    /// The first segment of `relative` the destination refuses, if any.
+    pub(crate) fn first_refused<'p>(&self, relative: &'p Path) -> Option<&'p OsStr> {
+        relative.iter().find(|segment| self.refuses(segment))
     }
 }
 

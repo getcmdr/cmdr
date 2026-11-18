@@ -123,6 +123,13 @@ async fn name_at_destination(
     dest: &Path,
     new_name: NewName,
 ) -> Result<NameAtDest, WriteOperationError> {
+    // A name the destination refuses never reaches the conflict flow: no probe
+    // (it'd find the sibling a stripping driver lands it on), no resolver, so
+    // nothing is set aside or replaced for it. `copy_single_path` refuses it
+    // before any write, and the driver asks about it there.
+    if destination_refuses(state, dest) {
+        return Ok(NameAtDest::Free(dest.to_path_buf()));
+    }
     // Pathed, so a share that stays gone is worded as the lost connection it is.
     let landing = through_outages(state, &[dest_volume], || async move {
         probe_one_name(dest_volume, dest, new_name).await.at_destination(dest)
@@ -135,6 +142,13 @@ async fn name_at_destination(
             size: entry.size.unwrap_or(0),
         }),
     }
+}
+
+/// Whether the destination refuses `dest`'s own name
+/// (`crate::name_rules::DestinationNames`, resolved as the transfer starts).
+pub(super) fn destination_refuses(state: &WriteOperationState, dest: &Path) -> bool {
+    dest.file_name()
+        .is_some_and(|name| state.destination_names.refuses(name))
 }
 
 /// One look at what the destination holds at `dest`, for [`name_at_destination`].

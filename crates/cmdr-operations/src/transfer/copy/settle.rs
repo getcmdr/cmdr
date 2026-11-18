@@ -119,6 +119,51 @@ pub(super) fn skip_if_refused(
     }
 }
 
+/// A FOLDER on the way to `source`'s destination whose name the destination
+/// refuses (`crate::name_rules::DestinationNames`): asks once, as a folder. A
+/// Skip leaves the folder out whole (`skipped_subtrees` carries it, so the rest
+/// of its files skip without asking) and counts this file as skipped; anything
+/// else is the refusal. Nothing of the folder exists yet: the check runs before
+/// any of its levels is made.
+#[allow(
+    clippy::too_many_arguments,
+    reason = "The refused folder, the file that reached it, and the per-file accounting a skip updates."
+)]
+pub(super) fn skip_folder_if_refused(
+    error: WriteOperationError,
+    source_folder: &Path,
+    dest_folder: &Path,
+    source: &Path,
+    write_weight: u64,
+    ctx: &PerFileCtx<'_>,
+    files_done: &mut usize,
+    bytes_done: &mut u64,
+    skipped_subtrees: &mut std::collections::HashSet<PathBuf>,
+) -> Result<FileVerdict, WriteOperationError> {
+    let Some(reason) = refusal_reason(&error) else {
+        return Err(error);
+    };
+    let item = RefusedItem {
+        operation_id: ctx.operation_id,
+        source_path: source_folder,
+        dest_path: dest_folder,
+        source_size: None,
+        source_is_directory: true,
+        reason,
+    };
+    match ask_blocking(ctx.state, ctx.events, &item) {
+        RefusedNameAnswer::Skip => {
+            skipped_subtrees.insert(dest_folder.to_path_buf());
+            record_file_done(ctx, source, write_weight, files_done, bytes_done, FileVerdict::Skipped);
+            Ok(FileVerdict::Skipped)
+        }
+        RefusedNameAnswer::Stop => Err(error),
+        RefusedNameAnswer::Cancelled => Err(WriteOperationError::Cancelled {
+            message: "Operation cancelled by user".into(),
+        }),
+    }
+}
+
 /// Where a landed file should be RECORDED when the write goes somewhere else
 /// first.
 ///
