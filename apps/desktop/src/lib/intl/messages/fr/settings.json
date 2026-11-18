@@ -1343,51 +1343,6 @@
   "@settings.network.shareCacheDuration.keywords": {
     "sourceHash": "df14578"
   },
-  "settings.network.timeoutMode.label": "Mode de délai d’attente réseau",
-  "@settings.network.timeoutMode.label": {
-    "sourceHash": "5d1c989"
-  },
-  "settings.network.timeoutMode.description": "Combien de temps attendre lors de la connexion aux partages réseau.",
-  "@settings.network.timeoutMode.description": {
-    "sourceHash": "9f6de9d"
-  },
-  "settings.network.timeoutMode.opt.normal": "Normal",
-  "@settings.network.timeoutMode.opt.normal": {
-    "sourceHash": "a7248ee",
-    "sameAsSourceJustification": "'Normal' is the same word in French (macOS and Microsoft terminology FRA both use 'Normal'); kept as the radio label, alongside the translated siblings 'Réseau lent' and 'Personnalisé'."
-  },
-  "settings.network.timeoutMode.optDesc.normal": "Pour les réseaux locaux typiques (délai de 15 s)",
-  "@settings.network.timeoutMode.optDesc.normal": {
-    "sourceHash": "e20eca1"
-  },
-  "settings.network.timeoutMode.opt.slow": "Réseau lent",
-  "@settings.network.timeoutMode.opt.slow": {
-    "sourceHash": "3f940f4"
-  },
-  "settings.network.timeoutMode.optDesc.slow": "Pour les VPN ou les connexions à latence élevée (délai de 45 s)",
-  "@settings.network.timeoutMode.optDesc.slow": {
-    "sourceHash": "f8ebf3c"
-  },
-  "settings.network.timeoutMode.opt.custom": "Personnalisé",
-  "@settings.network.timeoutMode.opt.custom": {
-    "sourceHash": "494ca78"
-  },
-  "settings.network.timeoutMode.keywords": "délai, délai d’attente, expiration, réseau, lent, lenteur, connexion, latence",
-  "@settings.network.timeoutMode.keywords": {
-    "sourceHash": "a00bb47"
-  },
-  "settings.network.customTimeout.label": "Délai d’attente personnalisé",
-  "@settings.network.customTimeout.label": {
-    "sourceHash": "ea49e01"
-  },
-  "settings.network.customTimeout.description": "Délai d’attente personnalisé en secondes pour les opérations réseau.",
-  "@settings.network.customTimeout.description": {
-    "sourceHash": "28a8d46"
-  },
-  "settings.network.customTimeout.keywords": "délai, délai d’attente, expiration, personnalisé, secondes",
-  "@settings.network.customTimeout.keywords": {
-    "sourceHash": "cf816c7"
-  },
   "settings.network.smbConcurrency.label": "Opérations simultanées par connexion SMB",
   "@settings.network.smbConcurrency.label": {
     "sourceHash": "339933f"
@@ -3192,8 +3147,8 @@
   "@settings.network.permissionWithout": {
     "sourceHash": "a563afd"
   },
-  "settings.network.customTimeoutUnit": "secondes",
-  "@settings.network.customTimeoutUnit": {
+  "settings.network.timeoutUnit": "secondes",
+  "@settings.network.timeoutUnit": {
     "sourceHash": "59f006d"
   },
   "settings.updates.emailPlaceholder": "vous@example.com",

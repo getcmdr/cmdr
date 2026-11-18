@@ -419,11 +419,6 @@ export const REPRESENTATIVE_SCREENSHOTS: RepresentativeMapping[] = [
     note: 'Settings > Appearance > Listing, pictured here. Your string is one of the choices for how wide columns in the Brief view may grow.',
   },
   {
-    prefix: 'settings.network.timeoutMode.',
-    screenshot: 'settings-file-systems-smb.png',
-    note: 'Settings > File systems > SMB, pictured here. Your string is one of the network timeout choices, or the line under one of them.',
-  },
-  {
     prefix: 'settings.askCmdr.',
     screenshot: 'settings-ai-ask-cmdr.png',
     note:

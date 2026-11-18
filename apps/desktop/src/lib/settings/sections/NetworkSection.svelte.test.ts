@@ -21,8 +21,7 @@ vi.mock('#lib/settings/settings-store.js', () => ({
     if (key === 'network.enabled') return true
     if (key === 'network.directSmbConnection') return true
     if (key === 'network.shareCacheDuration') return 30000
-    if (key === 'network.timeoutMode') return 'normal'
-    if (key === 'network.customTimeout') return 15
+    if (key === 'network.timeout') return 15000
     return undefined
   }),
   setSetting: vi.fn(() => Promise.resolve()),
@@ -63,6 +62,16 @@ describe('NetworkSection card groups', () => {
     expect(labelFors).not.toContain('network.smbConcurrency')
     // The Performance card still holds its own rows.
     expect(labelFors).toContain('network.shareCacheDuration')
+    target.remove()
+  })
+
+  it('renders the network timeout as one stepper in seconds, with no preset radios', async () => {
+    const target = await mountSection()
+    const row = target.querySelector('[id="setting-network.timeout"]')
+    expect(row).not.toBeNull()
+    expect(row?.querySelector('[role="radiogroup"]')).toBeNull()
+    const input = row?.querySelector<HTMLInputElement>('input[role="spinbutton"]')
+    expect(input?.value).toBe('15')
     target.remove()
   })
 

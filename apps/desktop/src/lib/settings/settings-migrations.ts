@@ -3,7 +3,7 @@
 
 import type { Store } from '@tauri-apps/plugin-store'
 import type { SettingId } from './types'
-import { getDefaultValue } from './settings-registry'
+import { getDefaultValue, getSettingDefinition } from './settings-registry'
 import { getAppLogger } from '#lib/logging/logger.js'
 import { pluralize } from '#lib/utils/pluralize.js'
 import { ARCHIVE_ENTER_FORMATS, isEnterAction } from '#lib/file-explorer/pane/archive-enter-policy.js'
@@ -27,6 +27,7 @@ const MIGRATIONS: { to: number; run: (store: Store) => Promise<boolean> }[] = [
   // TODO(2027-01-14): delete `dropLeftoverOpenaiApiKey`, keeping this slot as `run: () => Promise.resolve(false)`.
   { to: 8, run: dropLeftoverOpenaiApiKey },
   { to: 9, run: turnOffImageIndexingWithoutAnEngine },
+  { to: 10, run: foldNetworkTimeoutModeIntoOneTimeout },
 ]
 
 /** The schema version `settings.json` is at once every migration has run. */
@@ -103,6 +104,48 @@ async function turnOffImageIndexingWithoutAnEngine(store: Store): Promise<boolea
   if (hasCapability('imageIndexing')) return false
   if ((await store.get<boolean>('mediaIndex.enabled')) !== true) return false
   await store.delete('mediaIndex.enabled')
+  return true
+}
+
+/**
+ * Migration 10: the network timeout's Normal / Slow network / Custom radios (`network.timeoutMode`)
+ * plus the Custom field (`network.customTimeout`, seconds) fold into one stepper,
+ * `network.timeout` (a duration in ms). Everyone keeps the timeout they ran with: Normal was
+ * 15 seconds, which is the new default and so writes nothing; Slow network was 45; Custom was
+ * its own number, clamped into the stepper's range (the registry's `minMs` / `maxMs`). A custom number under Normal
+ * or Slow network was ignored then, so it's ignored here too.
+ *
+ * Idempotent: it only acts while a legacy key is present, and deletes both, which the sparse save
+ * can't prune on its own (they're no longer in the registry). It never overwrites a
+ * `network.timeout` that's already on disk.
+ */
+const LEGACY_NETWORK_TIMEOUT_MODE_KEY = 'network.timeoutMode'
+const LEGACY_NETWORK_CUSTOM_TIMEOUT_KEY = 'network.customTimeout'
+const NETWORK_TIMEOUT_SECONDS_BY_MODE: Record<string, number> = { normal: 15, slow: 45 }
+
+async function foldNetworkTimeoutModeIntoOneTimeout(store: Store): Promise<boolean> {
+  const mode = await store.get<unknown>(LEGACY_NETWORK_TIMEOUT_MODE_KEY)
+  const custom = await store.get<unknown>(LEGACY_NETWORK_CUSTOM_TIMEOUT_KEY)
+  if (mode === undefined && custom === undefined) return false
+
+  const defaultMs = getDefaultValue('network.timeout')
+  const constraints = getSettingDefinition('network.timeout')?.constraints
+  const minMs = constraints?.minMs ?? defaultMs
+  const maxMs = constraints?.maxMs ?? defaultMs
+  const timeoutMs =
+    mode === 'custom'
+      ? typeof custom === 'number' && Number.isFinite(custom)
+        ? Math.min(maxMs, Math.max(minMs, Math.round(custom) * 1000))
+        : defaultMs
+      : (NETWORK_TIMEOUT_SECONDS_BY_MODE[typeof mode === 'string' ? mode : 'normal'] ?? defaultMs / 1000) * 1000
+  const seconds = timeoutMs / 1000
+
+  if (timeoutMs !== defaultMs && (await store.get<unknown>('network.timeout')) === undefined) {
+    await store.set('network.timeout', timeoutMs)
+  }
+  await store.delete(LEGACY_NETWORK_TIMEOUT_MODE_KEY)
+  await store.delete(LEGACY_NETWORK_CUSTOM_TIMEOUT_KEY)
+  log.info('Migration 10: folded the network timeout mode into one {seconds}-second timeout', { seconds })
   return true
 }
 

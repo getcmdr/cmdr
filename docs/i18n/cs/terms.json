@@ -372,7 +372,6 @@
     "exceptions": {
       "settings.appearance.language.opt.system": "System default rendered Podle systému: gender-free across jazyk/formát and matches the theme option Podle systému",
       "settings.appearance.language.opt.systemWithLanguage": "System default rendered Podle systému: gender-free across jazyk/formát and matches the theme option Podle systému",
-      "settings.appearance.language.description": "System default rendered Podle systému: gender-free across jazyk/formát and matches the theme option Podle systému",
       "settings.appearance.dateTimeFormat.opt.system": "System default rendered Podle systému: gender-free across jazyk/formát and matches the theme option Podle systému",
       "settings.behavior.textEditorApp.systemDefault": "System default rendered Podle systému like settings.appearance.language.opt.systemWithLanguage: same English, same translation",
       "settings.behavior.textEditorApp.systemDefaultUnnamed": "System default rendered Podle systému like settings.appearance.language.opt.system: same English, same translation",
@@ -720,7 +719,6 @@
       "commands.handler.viewDebugLog.disabled": "disk space limit is the size cap for log files (settings.advanced.maxLogStorageMb.label), not free space: limit místa na disku",
       "settings.mediaIndex.reclaim.deletedSpaceLater": "disk space is the space the deleted entries used, which Cmdr reclaims later, not the drive's free space",
       "settings.advanced.maxLogStorageMb.label": "disk space here is the size cap for log files, not free space: místo na disku",
-      "settings.advanced.maxLogStorageMb.description": "disk space here is the size cap for log files, not free space: místo na disku",
       "settings.operationLog.intro": "disk space the log may USE (místo na disku), not unused capacity",
       "settings.operationLog.maxSize.description": "disk space the log may USE (Maximální místo na disku), matching settings.advanced.maxLogStorageMb.label"
     }
@@ -2281,7 +2279,7 @@
     "sources": "standard Czech; macOS SystemSettings durations",
     "exceptions": {
       "errors.listing.temporarilyUnavailable.explanation": "the string names seconds (během několika sekund), not hours",
-      "settings.network.customTimeoutUnit": "unit suffix after a number input; the abbreviation s stays correct for any count, where sekund/sekundy would need the number"
+      "settings.network.timeoutUnit": "unit suffix after a number input; the abbreviation s stays correct for any count, where sekund/sekundy would need the number"
     },
     "note": "the concept also matches minutes and seconds"
   },

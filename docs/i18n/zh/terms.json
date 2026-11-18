@@ -2141,10 +2141,7 @@
     "confidence": "high",
     "forms": "a network share (Finder-evidenced) 装载 (已装载的共享); FUSE, force-unmount, and remount error copy 挂载 / 卸载",
     "note": "Pick by surface: user-facing share copy 装载, low-level error copy 挂载.",
-    "sources": "MS terminology; macOS Finder",
-    "exceptions": {
-      "settings.network.enabled.description": "Windows branch: Windows doesn't mount shares, it connects them (File Explorer's mapped network drive), so already-mounted shares → 已连接的共享."
-    }
+    "sources": "MS terminology; macOS Finder"
   },
   "move": {
     "accept": ["移到", "移出", "移入", "移过", "移回", "移走", "放回"],

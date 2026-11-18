@@ -797,9 +797,6 @@
     "sources": "catalog crashReporter.dialog.showDetails, askCmdr.tool.readResource.doing, ai.cloudConsent.askCmdr.item.mediaFields"
   },
   "direct-connection": {
-    "exceptions": {
-      "settings.network.directSmbConnection.description": "Verb form with the subject between: ansluter Cmdr direkt."
-    },
     "accept": [
       "anslut direkt",
       "ansluta direkt",

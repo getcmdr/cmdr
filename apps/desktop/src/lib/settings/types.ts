@@ -337,7 +337,6 @@ export type FileSizeFormat = 'binary' | 'si'
 /** How file sizes are displayed: `dynamic` picks the friendliest unit per file; the others force a fixed unit; `bytes` shows raw byte triads. */
 export type FileSizeUnit = 'dynamic' | 'bytes' | 'kB' | 'MB' | 'GB'
 export type DateTimeFormat = 'system' | 'iso' | 'short' | 'custom'
-export type NetworkTimeoutMode = 'normal' | 'slow' | 'custom'
 export type ThemeMode = 'light' | 'dark' | 'system'
 /**
  * The user's answer to the Full Disk Access step: `allow` if they clicked "Open System
@@ -612,8 +611,8 @@ export interface SettingsValues {
   'network.directSmbConnection': boolean
   'network.requireSmbEncryption': boolean
   'network.shareCacheDuration': number
-  'network.timeoutMode': NetworkTimeoutMode
-  'network.customTimeout': number
+  /** Milliseconds; edited in seconds. */
+  'network.timeout': number
   'network.smbConcurrency': number
 
   // Theme

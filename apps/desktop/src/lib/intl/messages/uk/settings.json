@@ -1336,50 +1336,6 @@
   "@settings.network.shareCacheDuration.keywords": {
     "sourceHash": "df14578"
   },
-  "settings.network.timeoutMode.label": "Режим часу очікування мережі",
-  "@settings.network.timeoutMode.label": {
-    "sourceHash": "5d1c989"
-  },
-  "settings.network.timeoutMode.description": "Як довго чекати під час підʼєднання до спільних папок у мережі.",
-  "@settings.network.timeoutMode.description": {
-    "sourceHash": "9f6de9d"
-  },
-  "settings.network.timeoutMode.opt.normal": "Звичайний",
-  "@settings.network.timeoutMode.opt.normal": {
-    "sourceHash": "a7248ee"
-  },
-  "settings.network.timeoutMode.optDesc.normal": "Для звичайних локальних мереж (час очікування 15 с)",
-  "@settings.network.timeoutMode.optDesc.normal": {
-    "sourceHash": "e20eca1"
-  },
-  "settings.network.timeoutMode.opt.slow": "Повільна мережа",
-  "@settings.network.timeoutMode.opt.slow": {
-    "sourceHash": "3f940f4"
-  },
-  "settings.network.timeoutMode.optDesc.slow": "Для VPN або підʼєднань із великою затримкою (час очікування 45 с)",
-  "@settings.network.timeoutMode.optDesc.slow": {
-    "sourceHash": "f8ebf3c"
-  },
-  "settings.network.timeoutMode.opt.custom": "Власний",
-  "@settings.network.timeoutMode.opt.custom": {
-    "sourceHash": "494ca78"
-  },
-  "settings.network.timeoutMode.keywords": "тайм-аут, затримка, повільно, чекати, мережа, пінг",
-  "@settings.network.timeoutMode.keywords": {
-    "sourceHash": "a00bb47"
-  },
-  "settings.network.customTimeout.label": "Власний час очікування",
-  "@settings.network.customTimeout.label": {
-    "sourceHash": "ea49e01"
-  },
-  "settings.network.customTimeout.description": "Власний час очікування для мережевих операцій, у секундах.",
-  "@settings.network.customTimeout.description": {
-    "sourceHash": "28a8d46"
-  },
-  "settings.network.customTimeout.keywords": "тайм-аут, секунди, власне значення, чекати",
-  "@settings.network.customTimeout.keywords": {
-    "sourceHash": "cf816c7"
-  },
   "settings.network.smbConcurrency.label": "Одночасні операції на одне підʼєднання SMB",
   "@settings.network.smbConcurrency.label": {
     "sourceHash": "339933f"
@@ -3175,8 +3131,8 @@
   "@settings.network.permissionWithout": {
     "sourceHash": "a563afd"
   },
-  "settings.network.customTimeoutUnit": "с",
-  "@settings.network.customTimeoutUnit": {
+  "settings.network.timeoutUnit": "с",
+  "@settings.network.timeoutUnit": {
     "sourceHash": "59f006d"
   },
   "settings.updates.emailPlaceholder": "name@example.com",

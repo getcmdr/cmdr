@@ -913,7 +913,12 @@ gave for an unreadable blob); v6 renames `onboarding.fullDiskAccessChoice`'s ope
 `unanswered`; v7 drops a stored `advanced.updateCheckInterval` of exactly one hour, the old default that pre-sparse
 files pinned, so the three-hour default applies (it also resets someone who picked one hour on purpose, which can't be
 told apart and costs them one settings visit); v8 deletes a leftover plaintext `ai.openaiApiKey` (from releases before
-AI keys moved to the OS secret store) without reading it, and is due to become a no-op on or after 2027-01-14.
+AI keys moved to the OS secret store) without reading it, and is due to become a no-op on or after 2027-01-14; v9 drops
+a stored `mediaIndex.enabled: true` where there's no image engine (#1001); v10 folds `network.timeoutMode` (Normal /
+Slow network / Custom) and `network.customTimeout` (seconds) into the one `network.timeout` stepper (ms), keeping the
+timeout each person ran with (Normal 15 s writes nothing as it's the default, Slow network 45 s, Custom its own number
+clamped to the stepper's range) and deleting both legacy keys. Only the frontend reads the timeout (it rides each
+network IPC call), so v10 needs no Rust-side rule.
 
 A migration that changes a BACKEND-read setting also needs the same rule applied Rust-side (v3:
 `media_index::gate::scope_from_settings`), because the backend reads `settings.json` at startup and would otherwise see

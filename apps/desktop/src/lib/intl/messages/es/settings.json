@@ -1339,51 +1339,6 @@
   "@settings.network.shareCacheDuration.keywords": {
     "sourceHash": "df14578"
   },
-  "settings.network.timeoutMode.label": "Modo de tiempo de espera de red",
-  "@settings.network.timeoutMode.label": {
-    "sourceHash": "5d1c989"
-  },
-  "settings.network.timeoutMode.description": "Cuánto esperar al conectar con recursos compartidos de red.",
-  "@settings.network.timeoutMode.description": {
-    "sourceHash": "9f6de9d"
-  },
-  "settings.network.timeoutMode.opt.normal": "Normal",
-  "@settings.network.timeoutMode.opt.normal": {
-    "sourceHash": "a7248ee",
-    "sameAsSourceJustification": "'Normal' is a real Spanish word and the right label here; macOS es uses 'Normal'/'normal', and the catalog's sibling optDesc.normal already reads naturally with it. Identical by cognate."
-  },
-  "settings.network.timeoutMode.optDesc.normal": "Para redes locales típicas (15s de espera)",
-  "@settings.network.timeoutMode.optDesc.normal": {
-    "sourceHash": "e20eca1"
-  },
-  "settings.network.timeoutMode.opt.slow": "Red lenta",
-  "@settings.network.timeoutMode.opt.slow": {
-    "sourceHash": "3f940f4"
-  },
-  "settings.network.timeoutMode.optDesc.slow": "Para VPN o conexiones de alta latencia (45s de espera)",
-  "@settings.network.timeoutMode.optDesc.slow": {
-    "sourceHash": "f8ebf3c"
-  },
-  "settings.network.timeoutMode.opt.custom": "Personalizado",
-  "@settings.network.timeoutMode.opt.custom": {
-    "sourceHash": "494ca78"
-  },
-  "settings.network.timeoutMode.keywords": "tiempo de espera, tiempo límite, red, lento, conexión, latencia",
-  "@settings.network.timeoutMode.keywords": {
-    "sourceHash": "a00bb47"
-  },
-  "settings.network.customTimeout.label": "Tiempo de espera personalizado",
-  "@settings.network.customTimeout.label": {
-    "sourceHash": "ea49e01"
-  },
-  "settings.network.customTimeout.description": "Tiempo de espera personalizado en segundos para las operaciones de red.",
-  "@settings.network.customTimeout.description": {
-    "sourceHash": "28a8d46"
-  },
-  "settings.network.customTimeout.keywords": "tiempo de espera, tiempo límite, personalizado, segundos",
-  "@settings.network.customTimeout.keywords": {
-    "sourceHash": "cf816c7"
-  },
   "settings.network.smbConcurrency.label": "Operaciones simultáneas por conexión SMB",
   "@settings.network.smbConcurrency.label": {
     "sourceHash": "339933f"
@@ -3180,8 +3135,8 @@
   "@settings.network.permissionWithout": {
     "sourceHash": "a563afd"
   },
-  "settings.network.customTimeoutUnit": "segundos",
-  "@settings.network.customTimeoutUnit": {
+  "settings.network.timeoutUnit": "segundos",
+  "@settings.network.timeoutUnit": {
     "sourceHash": "59f006d"
   },
   "settings.updates.emailPlaceholder": "tu@example.com",

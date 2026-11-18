@@ -2512,7 +2512,6 @@
       "errors.write.cancelled.message.trash": "The nominalized verb (Das Kopieren wurde abgebrochen.) is the natural German for the copy operation.",
       "settings.advanced.card.fileOperations": "a Settings card TITLE keeps the Dateioperationen heritage",
       "settings.navigationAndFileOps.card.fileOperations": "a Settings card TITLE keeps the Dateioperationen heritage",
-      "settings.network.customTimeout.description": "the protocol-level request on the wire: Netzwerkoperationen",
       "settings.network.smbConcurrency.label": "the protocol-level request on the wire: Operationen pro SMB-Verbindung"
     },
     "forms": "masculine: diesen Vorgang, er/ihn; queue-row aria Diesen Vorgang anhalten / fortsetzen / abbrechen / auswählen / ausblenden; compounds Vorgangswarteschlange, Vorgangsprotokoll",

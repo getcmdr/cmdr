@@ -1617,63 +1617,17 @@
   "@settings.network.shareCacheDuration.keywords": {
     "description": "Search keywords for the “Share cache duration” setting (settings.network.shareCacheDuration.label) in Settings > File systems > SMB/Network shares. What it does: sets how long Cmdr remembers a server’s list of shares before asking again. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
-  "settings.network.timeoutMode.label": "Network timeout mode",
-  "@settings.network.timeoutMode.label": {
-    "description": "Label for the network-timeout preset picker. In Settings > File systems > SMB/Network shares.",
-    "screenshot": "settings-file-systems-smb.png"
+  "settings.network.timeout.label": "Network timeout",
+  "@settings.network.timeout.label": {
+    "description": "Label for a number field, in seconds: how long Cmdr waits for a network share to answer before giving up. In Settings > File systems > SMB/Network shares, card “Performance and timeouts”."
   },
-  "settings.network.timeoutMode.description": "How long to wait when connecting to network shares.",
-  "@settings.network.timeoutMode.description": {
-    "description": "Help text for the network-timeout-mode setting.",
-    "screenshot": "settings-file-systems-smb.png"
+  "settings.network.timeout.description": "How long Cmdr waits for a network share before giving up. 15 seconds suits typical local networks; try 45 for VPNs or high-latency connections.",
+  "@settings.network.timeout.description": {
+    "description": "Help text behind the ⓘ next to the “Network timeout” field. The two numbers are recommended values in seconds; keep them as they are. “VPN” = virtual private network (keep the abbreviation or use your language’s standard form). “Cmdr” is the product name; keep it."
   },
-  "settings.network.timeoutMode.opt.normal": "Normal",
-  "@settings.network.timeoutMode.opt.normal": {
-    "description": "Network-timeout option: standard timeout for typical local networks. Radio-button label.",
-    "screenshot": "settings-file-systems-smb.png",
-    "screenshotNote": "Settings > File systems > SMB, pictured here. Your string is one of the network timeout choices, or the line under one of them."
-  },
-  "settings.network.timeoutMode.optDesc.normal": "For typical local networks (15-second timeout)",
-  "@settings.network.timeoutMode.optDesc.normal": {
-    "description": "Sub-text under the Normal timeout option. \"15-second\" is a literal value; keep the number.",
-    "screenshot": "settings-file-systems-smb.png",
-    "screenshotNote": "Settings > File systems > SMB, pictured here. Your string is one of the network timeout choices, or the line under one of them."
-  },
-  "settings.network.timeoutMode.opt.slow": "Slow network",
-  "@settings.network.timeoutMode.opt.slow": {
-    "description": "Network-timeout option: longer timeout for slow or high-latency networks. Radio-button label.",
-    "screenshot": "settings-file-systems-smb.png",
-    "screenshotNote": "Settings > File systems > SMB, pictured here. Your string is one of the network timeout choices, or the line under one of them."
-  },
-  "settings.network.timeoutMode.optDesc.slow": "For VPNs or high-latency connections (45-second timeout)",
-  "@settings.network.timeoutMode.optDesc.slow": {
-    "description": "Sub-text under the Slow network timeout option. \"VPN\" = virtual private network (keep the abbreviation or use the locale’s standard form). \"45-second\" is a literal value; keep the number.",
-    "screenshot": "settings-file-systems-smb.png",
-    "screenshotNote": "Settings > File systems > SMB, pictured here. Your string is one of the network timeout choices, or the line under one of them."
-  },
-  "settings.network.timeoutMode.opt.custom": "Custom",
-  "@settings.network.timeoutMode.opt.custom": {
-    "description": "Network-timeout option: user-defined timeout (reveals the custom-timeout field). Radio-button label.",
-    "screenshot": "settings-file-systems-smb.png",
-    "screenshotNote": "Settings > File systems > SMB, pictured here. Your string is one of the network timeout choices, or the line under one of them."
-  },
-  "settings.network.timeoutMode.keywords": "timeout, network, slow, connection, latency",
-  "@settings.network.timeoutMode.keywords": {
-    "description": "Search keywords for the “Network timeout mode” setting (settings.network.timeoutMode.label) in Settings > File systems > SMB/Network shares. What it does: picks how long Cmdr waits for a slow network share before giving up. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance.",
-    "screenshot": "settings-file-systems-smb.png",
-    "screenshotNote": "Settings > File systems > SMB, pictured here. Your string is one of the network timeout choices, or the line under one of them."
-  },
-  "settings.network.customTimeout.label": "Custom timeout",
-  "@settings.network.customTimeout.label": {
-    "description": "Label for the number input setting a custom network timeout in seconds. Shown when timeout mode is Custom."
-  },
-  "settings.network.customTimeout.description": "Custom timeout in seconds for network operations.",
-  "@settings.network.customTimeout.description": {
-    "description": "Help text for the custom-timeout field."
-  },
-  "settings.network.customTimeout.keywords": "timeout, custom, seconds",
-  "@settings.network.customTimeout.keywords": {
-    "description": "Search keywords for the “Custom timeout” setting (settings.network.customTimeout.label) in Settings > File systems > SMB/Network shares. What it does: the custom wait, in seconds, before a network operation gives up. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+  "settings.network.timeout.keywords": "timeout, wait, slow, seconds, connection, latency, vpn",
+  "@settings.network.timeout.keywords": {
+    "description": "Search keywords for the “Network timeout” setting (settings.network.timeout.label) in Settings > File systems > SMB/Network shares. What it does: sets how many seconds Cmdr waits for a slow network share before giving up. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
   "settings.network.smbConcurrency.label": "Concurrent operations per SMB connection",
   "@settings.network.smbConcurrency.label": {
@@ -3952,9 +3906,9 @@
     "description": "Explains what still works without the Local Network permission. \"Cmdr\" is the product name; keep it. \"mounted\" = a share already attached to the system; \"shares\" = network folders.",
     "screenshot": "settings-file-systems-smb.png"
   },
-  "settings.network.customTimeoutUnit": "seconds",
-  "@settings.network.customTimeoutUnit": {
-    "description": "Unit suffix shown after the custom-timeout number input (the value is in seconds). It follows a number the user types freely, so use the form that reads after any number (or a plural-neutral one)."
+  "settings.network.timeoutUnit": "seconds",
+  "@settings.network.timeoutUnit": {
+    "description": "Unit suffix shown after the “Network timeout” number input (the value is in seconds). It follows a number the user types freely, so use the form that reads after any number (or a plural-neutral one)."
   },
   "settings.updates.emailPlaceholder": "you@example.com",
   "@settings.updates.emailPlaceholder": {

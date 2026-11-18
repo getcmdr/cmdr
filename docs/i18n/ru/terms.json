@@ -1613,8 +1613,7 @@
     ],
     "exceptions": {
       "onboarding.stepAi.bannerBody.denied": "Enabling full disk access is granting it → «предоставлять полный доступ к диску».",
-      "onboarding.stepAi.bannerBody.stuck": "Enabling full disk access is granting it → «предоставить полный доступ к диску».",
-      "settings.network.directSmbConnection.description": "The description states what the on setting does; «When enabled» is implied."
+      "onboarding.stepAi.bannerBody.stuck": "Enabling full disk access is granting it → «предоставить полный доступ к диску»."
     },
     "confidence": "high",
     "sources": "macOS Finder NE100 (Enable → Включить); MS (enable / turn on → включить); macOS live (On → Включено, Вкл.)"
@@ -1823,7 +1822,6 @@
       "errors.git.blobTooLarge.message": "Git blob is named «объект git», the actual object type; it is not an ordinary file operation.",
       "errors.write.readOnlyDevice.source.suggestion": "The original files are expressed as «Оригиналы» after the copy instruction.",
       "fileOperations.transferDialog.hardlinkNote": "The file group is expressed by «Источник»; this note describes aggregate bytes and hardlinks.",
-      "settings.advanced.maxLogStorageMb.description": "Logs are named directly; their file representation is implicit.",
       "settings.advanced.maxLogStorageMb.label": "The setting names logs directly, rather than generic files.",
       "settings.developer.verboseLogging.description": "The saved log is named «Журнал на диске»; the file representation is implicit.",
       "settings.mediaIndex.showFileStatusIcons.label": "The setting targets images specifically, so the image type replaces generic file.",
@@ -4626,10 +4624,7 @@
     ],
     "confidence": "high",
     "sources": "Finder LocalizableMerged: Send → Отправить, Sending… → Отправка…; MS: send → отправить / отправлять",
-    "proseAccept": ["направ", "присыл"],
-    "exceptions": {
-      "settings.advanced.maxLogStorageMb.description": "Says reports are «недоступны» without logs; the sending is implicit."
-    }
+    "proseAccept": ["направ", "присыл"]
   },
   "server": {
     "chosen": "сервер",
@@ -4779,8 +4774,6 @@
     "note": "A setting that stays on reads in the imperfective («Показывать …»), a one-off command in the perfective («Показать …»), as TC and Finder's settings do.",
     "proseAccept": ["покаж", "появ", "отображ", "уведомл"],
     "exceptions": {
-      "settings.appearance.tintLocal.description": "Panes showing a drive are «панели с …»; English's participle names no Show action.",
-      "settings.appearance.tintSmb.description": "Panes showing a drive are «панели с …»; English's participle names no Show action.",
       "settings.appearance.tintMtp.description": "Panes showing a drive are «панели с …»; English's participle names no Show action.",
       "settings.fileOperations.adbEnabled.description": "MTP can't show you → «недоступной через MTP»; no Show action.",
       "settings.fileExplorer.git.showStatusColumn.description": "A column showing status → «колонку состояния»; no Show action.",

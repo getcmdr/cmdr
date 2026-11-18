@@ -1338,50 +1338,6 @@
   "@settings.network.shareCacheDuration.keywords": {
     "sourceHash": "df14578"
   },
-  "settings.network.timeoutMode.label": "网络超时模式",
-  "@settings.network.timeoutMode.label": {
-    "sourceHash": "5d1c989"
-  },
-  "settings.network.timeoutMode.description": "连接网络共享时等待多久。",
-  "@settings.network.timeoutMode.description": {
-    "sourceHash": "9f6de9d"
-  },
-  "settings.network.timeoutMode.opt.normal": "正常",
-  "@settings.network.timeoutMode.opt.normal": {
-    "sourceHash": "a7248ee"
-  },
-  "settings.network.timeoutMode.optDesc.normal": "适用于一般的本地网络（15s 超时）",
-  "@settings.network.timeoutMode.optDesc.normal": {
-    "sourceHash": "e20eca1"
-  },
-  "settings.network.timeoutMode.opt.slow": "慢速网络",
-  "@settings.network.timeoutMode.opt.slow": {
-    "sourceHash": "3f940f4"
-  },
-  "settings.network.timeoutMode.optDesc.slow": "适用于 VPN 或高延迟连接（45s 超时）",
-  "@settings.network.timeoutMode.optDesc.slow": {
-    "sourceHash": "f8ebf3c"
-  },
-  "settings.network.timeoutMode.opt.custom": "自定义",
-  "@settings.network.timeoutMode.opt.custom": {
-    "sourceHash": "494ca78"
-  },
-  "settings.network.timeoutMode.keywords": "超时、网络、慢、缓慢、连接、延迟",
-  "@settings.network.timeoutMode.keywords": {
-    "sourceHash": "a00bb47"
-  },
-  "settings.network.customTimeout.label": "自定义超时",
-  "@settings.network.customTimeout.label": {
-    "sourceHash": "ea49e01"
-  },
-  "settings.network.customTimeout.description": "网络操作的自定义超时（以秒为单位）。",
-  "@settings.network.customTimeout.description": {
-    "sourceHash": "28a8d46"
-  },
-  "settings.network.customTimeout.keywords": "超时、自定义、秒",
-  "@settings.network.customTimeout.keywords": {
-    "sourceHash": "cf816c7"
-  },
   "settings.network.smbConcurrency.label": "每个 SMB 连接的并发操作数",
   "@settings.network.smbConcurrency.label": {
     "sourceHash": "339933f"
@@ -3178,8 +3134,8 @@
   "@settings.network.permissionWithout": {
     "sourceHash": "a563afd"
   },
-  "settings.network.customTimeoutUnit": "秒",
-  "@settings.network.customTimeoutUnit": {
+  "settings.network.timeoutUnit": "秒",
+  "@settings.network.timeoutUnit": {
     "sourceHash": "59f006d"
   },
   "settings.updates.emailPlaceholder": "you@example.com",

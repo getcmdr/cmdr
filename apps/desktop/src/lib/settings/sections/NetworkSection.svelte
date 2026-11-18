@@ -3,7 +3,6 @@
     import SettingRow from '../components/SettingRow.svelte'
     import SettingSwitch from '../components/SettingSwitch.svelte'
     import SettingSelect from '../components/SettingSelect.svelte'
-    import SettingRadioGroup from '../components/SettingRadioGroup.svelte'
     import SettingNumberInput from '../components/SettingNumberInput.svelte'
     import SectionCard from '#lib/ui/SectionCard.svelte'
     import { getSettingDefinition } from '#lib/settings/index.js'
@@ -29,7 +28,7 @@
     const directSmbDef = getSettingDefinition('network.directSmbConnection') ?? defaultDef
     const requireEncryptionDef = getSettingDefinition('network.requireSmbEncryption') ?? defaultDef
     const cacheDurationDef = getSettingDefinition('network.shareCacheDuration') ?? defaultDef
-    const timeoutModeDef = getSettingDefinition('network.timeoutMode') ?? defaultDef
+    const timeoutDef = getSettingDefinition('network.timeout') ?? defaultDef
 
     function handlePrivacyLinkClick(event: MouseEvent) {
         event.preventDefault()
@@ -103,7 +102,7 @@
         </SectionCard>
     {/if}
 
-    {#if anyVisible(shouldShow, 'network.shareCacheDuration', 'network.timeoutMode')}
+    {#if anyVisible(shouldShow, 'network.shareCacheDuration', 'network.timeout')}
         <SectionCard label={tString('settings.network.card.performanceAndTimeouts')}>
             {#if shouldShow('network.shareCacheDuration')}
                 <SettingRow
@@ -116,28 +115,14 @@
                 </SettingRow>
             {/if}
 
-            {#if shouldShow('network.timeoutMode')}
+            {#if shouldShow('network.timeout')}
                 <SettingRow
-                    id="network.timeoutMode"
-                    label={timeoutModeDef.label}
-                    description={timeoutModeDef.description}
+                    id="network.timeout"
+                    label={timeoutDef.label}
+                    description={timeoutDef.description}
                     {searchQuery}
                 >
-                    <div class="timeout-setting">
-                        <SettingRadioGroup id="network.timeoutMode">
-                            {#snippet customContent(value)}
-                                {#if value === 'custom'}
-                                    <div class="custom-timeout">
-                                        <SettingNumberInput
-                                            id="network.customTimeout"
-                                            size="compact"
-                                            unit={tString('settings.network.customTimeoutUnit')}
-                                        />
-                                    </div>
-                                {/if}
-                            {/snippet}
-                        </SettingRadioGroup>
-                    </div>
+                    <SettingNumberInput id="network.timeout" unit={tString('settings.network.timeoutUnit')} />
                 </SettingRow>
             {/if}
         </SectionCard>
@@ -145,15 +130,6 @@
 </SettingsSection>
 
 <style>
-    .timeout-setting {
-        width: 100%;
-        min-width: 0;
-    }
-
-    .custom-timeout {
-        margin-top: var(--spacing-xs);
-    }
-
     .local-network-info {
         padding: var(--spacing-sm) var(--spacing-md);
         margin: var(--spacing-xs) 0 var(--spacing-md);
