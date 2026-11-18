@@ -12,16 +12,21 @@ description: >-
 # `libacl1-dev` (Kani, Shuttle, fuzz) use this action too: one warm cache covers them all, and
 # installing the extra libraries from local files costs seconds. Hence, in order:
 # - The ~64 MB of downloaded `.deb`s are cached, keyed on the runner image version (its
-#   preinstalled package versions decide what apt fetches) and the package list. An edit to this
-#   file changes the key, so the restore falls back to any entry for the same image: otherwise
-#   an edit landing mid-outage would start every branch cold. The step then saves what it used
-#   under the new key.
+#   preinstalled package versions decide what apt fetches) and the package list. A miss falls
+#   back first to any entry for the same image (an edit to this file changes the key, and an
+#   edit landing mid-outage mustn't start every branch cold), then to any entry for the same OS.
+#   GitHub runs several image versions at once (four `ubuntu26` ones on 2026-11-18), so a PR
+#   often lands on one `main` never saved for; on 2026-11-18 that sent three landings to a
+#   crawling mirror. An older image's packages are safe to try: the offline install below either
+#   resolves a consistent set or refuses before `dpkg` runs (a downgrade or a gap), and the
+#   mirror path takes over. The step then saves what it used under this image's key.
 # - With cached packages, apt installs those files by path, with no `apt-get update` and its
 #   sources hidden. Naming the files pins their versions, so the runner's package lists (which
 #   disagree with the cached packages) never get a say, and the step needs no network at all.
 # - With no cache, or if the cached set doesn't cover the list, the mirror path runs: the
-#   download is time-boxed, and the second attempt drops the Azure mirror for
-#   `archive.ubuntu.com`. Only the download: stopping `dpkg` mid-install would leave a broken
+#   download is time-boxed, and the second attempt drops the runner's regional mirror (whatever
+#   `apt-mirrors.txt` lists: Azure's, or `us-east-2.ec2.archive.ubuntu.com` on 2026-11-18) for
+#   Canonical's `archive.ubuntu.com`. Only the download: stopping `dpkg` mid-install would leave a broken
 #   package state, and installing from local files is fast anyway.
 # - apt itself gives up on a dead connection after 30 s (`Acquire::http::Timeout`).
 runs:
@@ -34,9 +39,15 @@ runs:
       env:
         ACTION_HASH: ${{ hashFiles('.github/actions/tauri-linux-deps/action.yml') }}
       run: |
-        prefix="tauri-apt-${ImageOS:-unknown}-${ImageVersion:-unknown}-"
-        echo "prefix=$prefix" >>"$GITHUB_OUTPUT"
-        echo "key=$prefix$ACTION_HASH" >>"$GITHUB_OUTPUT"
+        os_prefix="tauri-apt-${ImageOS:-unknown}-"
+        prefix="$os_prefix${ImageVersion:-unknown}-"
+        {
+          echo "key=$prefix$ACTION_HASH"
+          echo "restore-keys<<RESTORE_KEYS"
+          echo "$prefix"
+          echo "$os_prefix"
+          echo "RESTORE_KEYS"
+        } >>"$GITHUB_OUTPUT"
 
     - name: Restore the downloaded packages
       id: restore
@@ -44,7 +55,7 @@ runs:
       with:
         path: ${{ runner.temp }}/apt-archives
         key: ${{ steps.key.outputs.key }}
-        restore-keys: ${{ steps.key.outputs.prefix }}
+        restore-keys: ${{ steps.key.outputs.restore-keys }}
 
     - name: Install Tauri dependencies (Linux)
       shell: bash
@@ -88,12 +99,24 @@ runs:
         for attempt in 1 2; do
           if [[ $attempt == 2 ]]; then
             echo "::warning::apt attempt 1 failed or timed out; retrying on archive.ubuntu.com."
-            sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt || true
+            # Keep only Canonical's own hosts. The guard stops an unexpected format from leaving
+            # apt with an empty mirror list.
+            mirrors=/etc/apt/apt-mirrors.txt
+            canonical='^https?://(archive|security)\.ubuntu\.com/'
+            if [[ -f $mirrors ]] && grep -qE "$canonical" "$mirrors"; then
+              echo "Mirror list before the switch: $(tr '\n' ' ' <"$mirrors")"
+              sudo sed -i -E "\#$canonical#!d" "$mirrors"
+            else
+              echo "::warning::$mirrors lists no Canonical host; retrying on the same mirrors."
+            fi
           fi
           if timeout 120 sudo apt-get "${apt_opts[@]}" update &&
             timeout "${download_timeouts[attempt - 1]}" \
               sudo apt-get "${apt_opts[@]}" install -y --download-only "${packages[@]}"; then
             sudo apt-get "${apt_opts[@]}" install -y --no-download "${packages[@]}"
+            # Drop the leftovers an older image's entry brought (versions the mirrors no longer
+            # list), so the entry saved below holds only this image's set.
+            sudo apt-get "${apt_opts[@]}" autoclean
             # The cache save runs as the runner user, and apt leaves a root-only `partial/`.
             sudo rm -rf "$ARCHIVES/partial" "$ARCHIVES/lock"
             sudo chown -R "$(id -u):$(id -g)" "$ARCHIVES"

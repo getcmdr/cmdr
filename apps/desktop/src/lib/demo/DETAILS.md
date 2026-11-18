@@ -358,6 +358,12 @@ origin) from framing `localhost`; serve the parent page from a real loopback ser
 7. Plugin commands (`plugin:<name>|<command>`) go in `plugins.ts`, or in `webview.ts`'s `windowAnswer` when they're
    about the calling window.
 
+Gotcha: a new value command on the pane's boot path breaks the demo QUIETLY when the app's wrapper turns a rejection
+into a fallback. `liveVolumePath` maps any failure to `notReady`, so before the demo answered `live_volume_path`, every
+restored tab opened as "Couldn't reach ~ … didn't respond in time", with no page error and only the debug-level
+`no answer` line to show for it. Only the full demo suite (`apps/website/e2e/demo.spec.ts`, nightly and on release)
+catches it, so after adding a command the pane boot calls, build the demo and run `pnpm check website-demo-e2e`.
+
 Answer as a fresh, personal-use Cmdr on a Mac with nothing extra would: no index (folder sizes are real anyway, from the
 engine's fold: `crates/cmdr-listing-wasm/DETAILS.md` § Folder sizes), no AI, no network hosts, no updater
 (`getManagedPolicy` says updates are disabled), no tags or custom folder icons. Icons: macOS draws the live ones and the

@@ -67,6 +67,10 @@ export const volumeAnswers: AnswerTable = {
   getDefaultVolumeId: () => DEMO_VOLUME_ID,
   getE2eStartPath: () => null,
   resolvePathVolume: () => ({ volume: mainVolume, timedOut: false }),
+  // The pane boot asks this for every restored tab. The one demo volume never moves and its
+  // "registry" is complete from the start, so the tab stays put. Unanswered, the call rejects, the
+  // app reads that as the startup sweep still running, and every tab opens unreachable.
+  liveVolumePath: () => ({ kind: 'keep' }),
   // Every path is on the one volume, as `resolvePathVolume` says: the navigation edges (a search
   // result's Go to file, ⌘G) route through this.
   resolveLocation: (p) => ({
