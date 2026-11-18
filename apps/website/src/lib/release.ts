@@ -1,5 +1,5 @@
 import latestRelease from '../../public/latest.json'
-import { macDmgFile, macDmgSizes, type UpdateManifest } from './release-downloads'
+import { macDmgFile, macDmgSizes, releaseShipsOs, type UpdateManifest } from './release-downloads'
 
 // The release pipeline writes this file (`docs/guides/releasing.md` § The release asset manifest),
 // so its shape is trusted, not validated.
@@ -29,6 +29,12 @@ export const dmgUrls = {
   x86_64: dmgUrl('x86_64'),
   universal: dmgUrl('universal'),
 }
+
+/**
+ * Whether the published release has a Windows download. Pages hold Windows-only copy back until it
+ * does (`/trust#windows`), so a deploy from `main` can't describe a Windows app nobody can get.
+ */
+export const releaseShipsWindows = releaseShipsOs(manifest, 'windows')
 
 /** Formatted download sizes (for example, "15 MB"), null if not yet populated by CI */
 export const dmgSizes = macDmgSizes(manifest)

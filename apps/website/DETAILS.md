@@ -233,6 +233,12 @@ was deleted.)
   default mime table knows neither). The page's key list renders from `managedPreferenceKeys` in `src/lib/trust-mdm.ts`.
   A Rust test guards all three key sets against the app's (`apps/desktop/src-tauri/src/managed_policy/DETAILS.md` § The
   public mirror), so a key edit here needs the app's key list to match.
+- **Copy for an OS that hasn't shipped**: `/trust#windows` (body in `src/components/TrustWindows.astro`) renders in
+  `pnpm dev` and, in the built site, only once the published release's `latest.json` lists a Windows download
+  (`releaseShipsWindows` in `src/lib/release.ts`, from `releaseShipsOs` in `release-downloads.ts`). So it goes live with
+  the deploy of the first Windows release, whose trust review checks it. The Windows registry policy path is
+  `windowsPolicyKey` in `src/lib/trust-mdm.ts`, the one place the page names it; it mirrors `POLICY_KEY` in the app's
+  `managed_policy/platform/windows/mod.rs` by hand.
 
 ## Icons
 

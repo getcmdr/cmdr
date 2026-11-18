@@ -37,6 +37,11 @@ export function releaseDownloads(manifest: UpdateManifest): ReleaseDownload[] {
   }))
 }
 
+/** Whether the release carries any download for `os` (`macos`, `windows`, `linux`). */
+export function releaseShipsOs(manifest: UpdateManifest, os: string): boolean {
+  return releaseDownloads(manifest).some((d) => d.os === os)
+}
+
 /** One OS's downloads of one kind, by arch. */
 export function downloadsByArch(manifest: UpdateManifest, os: string, kind: string): Map<string, ReleaseDownload> {
   return new Map(

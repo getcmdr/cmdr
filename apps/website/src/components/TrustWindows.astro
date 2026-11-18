@@ -1,0 +1,132 @@
+---
+// The body of `/trust#windows`. Its `<h2>` and DevTodo stay in `src/pages/trust.astro`, where the
+// trust review finds the anchor, and the page renders this only in `pnpm dev` or once the published
+// release has a Windows download. Same truth rule as the rest of the page, for that release.
+import { windowsPolicyKey } from '../lib/trust-mdm'
+
+const machinePolicyKey = `HKLM\\${windowsPolicyKey}`
+const userPolicyKey = `HKCU\\${windowsPolicyKey}`
+---
+
+<h3 id="windows-secrets">Passwords and API keys</h3>
+<p>
+    Passwords and API keys (for SMB, SFTP, WebDAV, S3, and cloud AI) and the license key are stored in Windows
+    Credential Manager, never in Cmdr's files. Each one is its own generic credential, named <code>Cmdr:</code> and
+    what it's for, like <code>Cmdr:license.key</code>. They're saved for this PC only, so they never roam with a domain
+    profile. If Credential Manager can't be reached, Cmdr doesn't save the secret anywhere else.
+</p>
+
+<h3 id="windows-policy">Central management (Group Policy)</h3>
+<p>
+    IT can set the same policies as on a Mac, as registry values under <code>{machinePolicyKey}</code> for the whole
+    computer or <code>{userPolicyKey}</code> for one user, with Group Policy or any tool that writes the registry. Each
+    value is named after a key in the <a href="#mdm-keys">list of keys</a> and does the same thing there. When both set
+    the same value, the computer's wins. Only administrators and Group Policy can write under these keys, so Cmdr treats
+    every value there as managed, and Settings shows it locked.
+</p>
+<ul>
+    <li>
+        <strong>Values</strong>: an on/off key takes a <code>REG_DWORD</code>, where 0 is off and anything else is on.
+        <code>MaxUpdateVersion</code> takes a <code>REG_SZ</code> string like <code>0.52</code>.
+        <code>AllowedCloudAIHosts</code> takes a <code>REG_MULTI_SZ</code>, or a subkey of string values named
+        <code>1</code>, <code>2</code>, and so on. Names are compared without regard to case, as Windows does. A value
+        Cmdr can't read counts as the strictest setting of that key.
+    </li>
+    <li>
+        <strong>Changes apply while Cmdr runs</strong>: Cmdr watches these keys, and reads them again before each send.
+    </li>
+    <li>
+        <strong>To check a PC</strong>, run <code>reg query "{machinePolicyKey}"</code> and
+        <code>reg query "{userPolicyKey}"</code>.
+    </li>
+</ul>
+
+<h3 id="windows-updates">Installing, signing, and updates</h3>
+<ul>
+    <li>
+        <strong>From the Microsoft Store</strong>: Microsoft signs the package (MSIX), so Windows runs it without a
+        warning. The Store delivers updates, and Cmdr's own updater never runs in a Store install.
+    </li>
+    <li>
+        <strong>From getcmdr.com</strong>: the installer isn't code-signed yet, so Windows SmartScreen stops it the
+        first time. Click "More info", then "Run anyway". It installs Cmdr for the current user only, in their own
+        AppData folder, with no administrator rights.
+    </li>
+    <li>
+        <strong>Updates to a getcmdr.com install</strong> follow the same schedule, hosts, and settings as on a Mac.
+        Cmdr downloads the new installer from <code>download.getcmdr.com</code> and checks its Ed25519 (minisign)
+        signature against the two public keys built into the app before it uses it. The signature also names the
+        version, and Cmdr refuses an installer signed for any other version, so an older genuine installer can't pass
+        as a new one, and it only installs a version newer than the one running. When an update fixes a security issue,
+        the restart notice says so. On Restart, Cmdr closes, the installer runs, and Cmdr opens again.
+    </li>
+    <li>
+        <strong>No second signature check yet</strong>: on a Mac, Cmdr also checks the new app's Apple Developer ID
+        signature. A Windows update has no code signature to check, so its minisign signature is what makes it genuine.
+    </li>
+    <li>
+        <strong>Turning updates off</strong> works as on a Mac: in Settings, or for everyone with the update policies
+        (<a href="#windows-policy">Group Policy</a>).
+    </li>
+</ul>
+
+<h3 id="windows-ai">What Ask Cmdr can't read on Windows</h3>
+<p>
+    As on a Mac (<a href="#ai">AI features and your files</a>), some contents never reach the AI provider, whatever
+    anyone asks. On Windows, that's:
+</p>
+<ul>
+    <li>
+        <strong>Credentials</strong>: SSH keys, cloud and tool credentials (like AWS, Azure, Google Cloud, the GitHub
+        CLI, GnuPG, Docker, and Kubernetes), the files behind Windows Credential Manager and its vaults, Windows' data
+        protection keys, and Bitwarden and 1Password data.
+    </li>
+    <li>
+        <strong>Browsers</strong>: Chrome, Edge, Firefox, Brave, Chromium, Vivaldi, Opera, Arc, Zen, and LibreWolf.
+    </li>
+    <li>
+        <strong>Mail</strong>: Outlook (classic and new, plus Outlook data files in Documents), the Windows Mail app,
+        and Thunderbird.
+    </li>
+    <li><strong>Chat apps</strong>: Teams, Slack, Discord, Signal, WhatsApp, Telegram, and Element.</li>
+    <li><strong>Cmdr's own data</strong>, and any file holding a private key.</li>
+</ul>
+<p>
+    Cmdr finds these in <code>AppData\Roaming</code> and <code>AppData\Local</code> even when IT redirects those folders
+    to a file server, and in a copy of a Windows profile on another drive or a NAS. Their names can still reach the
+    provider.
+</p>
+
+<h3 id="windows-storage">What is stored on the PC</h3>
+<p>
+    A getcmdr.com install keeps its data (settings, histories, AI chats, the log of file operations, and the security
+    event log) in <code>%APPDATA%\com.veszelovszki.cmdr</code>, and its drive index, logs, and other caches in
+    <code>%LOCALAPPDATA%\com.veszelovszki.cmdr</code>. Both are in the user's own profile. With a roaming profile,
+    Windows copies the first folder to the profile server along with the rest of <code>AppData\Roaming</code>; the
+    drive index and logs stay on the PC. With BitLocker on, Windows encrypts both at rest along with the rest of the
+    drive. Cmdr adds no second layer of its own.
+</p>
+<p>
+    <strong>Removing Cmdr and all its data</strong>: in Cmdr, open Settings › Updates &amp; privacy and click
+    <strong>Delete all Cmdr data</strong>. It removes both folders and every <code>Cmdr:</code> credential from
+    Credential Manager, then quits, and leaves your own files alone. Then uninstall Cmdr in Windows Settings › Apps.
+    Already uninstalled it? Delete the two folders by hand, then open Credential Manager › Windows Credentials and
+    remove the generic credentials whose names start with <code>Cmdr:</code>.
+</p>
+
+<h3 id="windows-privacy">Usage stats, crash reports, and license checks</h3>
+<ul>
+    <li>
+        <strong>Usage stats, error reports, and feedback</strong> work as described <a href="#network">above</a>, with
+        the Windows version where a Mac sends its macOS version.
+    </li>
+    <li>
+        <strong>Crash reports</strong> cover a crash that Cmdr's Rust code detects as it happens (a panic). Unlike on a
+        Mac, a crash in native code, inside Windows or a system library, isn't reported yet. A report never sends more
+        than the list above.
+    </li>
+    <li>
+        <strong>License checks</strong> send a one-way hash (SHA-256) of the <code>MachineGuid</code> that Windows Setup
+        writes, where a Mac hashes its hardware UUID. Reinstalling Windows makes it a new device.
+    </li>
+</ul>
