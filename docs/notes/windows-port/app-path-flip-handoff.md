@@ -134,7 +134,11 @@ From the plan; each agent owns whole crates, on its own branch off the tier befo
   feature gates without `cmdr-fs/testing` (`cmdr-operations`'s `golden`) compiled only because `--all-targets` unifies
   `testing` in; tier 3 added the codemod's lib phase (README § "Lib phase"), which bridges those, and the seven golden
   sites tier 2 fixed by hand are its output now (`-cargo-args "--features golden"`).
-- Tier 3: (G) `cmdr-multi-rename`, then `cmdr-listing-wasm`.
+- Tier 3: (G) `cmdr-multi-rename`, then `cmdr-listing-wasm`. Done: `cmdr-multi-rename` needed no edit (its volumes reach
+  only `cmdr-operations`' std APIs); `cmdr-listing-wasm` took two codemod passes, one residue site, and 11 bridge calls
+  over six files. Both: no-op re-runs (default, `testing`/`--all-features`), Windows and Linux (zig), wasm32 (`--lib`,
+  plus `--tests` for `cmdr-listing-wasm`), clippy clean, nextest 143 and 114 passed. New codemod rules: the lib phase
+  and the typed-first assert argument.
 - Tier 4: (H) the app, `cmdr` (33 impls, 629 test call sites), one agent with subagents by directory.
 
 ## The worked example, in numbers
