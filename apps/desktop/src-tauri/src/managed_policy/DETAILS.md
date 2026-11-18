@@ -35,8 +35,26 @@ The canonical key catalog for Cmdr's MDM support. `/trust` and the sample profil
   both with the user's own layer; `CFPreferencesAppValueIsForced` tells the managed layer apart. `CfPrefsSource` asks
   `IsForced` first and only then copies the value.
 - Each read pass starts with `CFPreferencesAppSynchronize`, or a profile installed while Cmdr runs stays invisible.
-- Linux and other platforms: `NoManagedPrefs`, "no restriction". A future Linux source (for example
-  `/etc/cmdr/policy.json`) slots in behind `ManagedPrefsSource`.
+- Each OS's source and refresh trigger sit behind `platform/` (`system_source()`, `start_refresh_triggers()`).
+- Linux: `NoManagedPrefs`, "no restriction". A future Linux source (for example `/etc/cmdr/policy.json`) slots in
+  behind `ManagedPrefsSource` in `platform/linux.rs`.
+
+## The Windows registry keys
+
+- `HKLM\SOFTWARE\Policies\Cmdr` (computer policy) and `HKCU\SOFTWARE\Policies\Cmdr` (user policy), read through the
+  64-bit view. Same key names as macOS, compared case-insensitively as the registry does. Per name, the machine's value
+  wins over the user's (Group Policy's rule; Chrome and Edge read theirs the same way). Only administrators and Group
+  Policy can write under either `Policies` key, so every value there counts as forced, the equivalent of macOS's
+  `IsForced`.
+- Types (`platform/registry_values.rs`, tested on every OS): `REG_DWORD` / `REG_QWORD` → integer (a bool key reads `0`
+  as false, anything else true; `MaxUpdateVersion` reads it as a major); `REG_SZ` / `REG_EXPAND_SZ` → string, not
+  expanded; `REG_MULTI_SZ`, or a subkey of string values named `1`, `2`, … (what an ADMX `<list>` element writes) →
+  array, for `AllowedCloudAIHosts`, ordered numerically. Within one hive a plain value outranks a list subkey of the
+  same name. Anything else (`REG_BINARY`, a bad length, broken UTF-16) → data, so that key restricts (rule 4).
+- A hive we can't read at all is logged and read as empty, like a CFPreferences read that fails on macOS.
+- ❗ The key path is a public contract once Windows ships: admins' GPOs and any ADMX template name it. No ADMX template
+  exists yet, and `/trust` and the sample files are macOS-only so far (`public_docs_test.rs` checks the keys, not the
+  path).
 
 ## Key catalog
 
@@ -135,6 +153,10 @@ download, and the user-initiated feedback and beta signup.
   first profile creates it; activation catches that one). Activation alone misses an MDM push while Cmdr stays
   frontmost through a long Ask Cmdr turn or a model download. Chromium watches the same path and also reloads
   periodically, calling it "undocumented and therefore fragile".
+- **Windows registry watch** (`platform/windows/watch.rs`): `RegNotifyChangeKeyValue` on `SOFTWARE\Policies` in both
+  hives, subtree included (the parent, since `Policies\Cmdr` doesn't exist until the first policy creates it), on one
+  thread that re-arms the one-shot notifications each round and re-reads 250 ms after a change so a GPO refresh's
+  burst of writes is one read. If the watch stops, it logs, and egress reads and the next launch still apply a change.
 - **Every egress**: `for_egress().await`, coalesced to one read per second, behind a lock so racing callers make one
   trip.
 - A change calls `apply_change` (cache.rs): it logs, notes the change in the security event log (key names only, never
@@ -184,8 +206,10 @@ download, and the user-initiated feedback and beta signup.
   `current()` and `for_egress()` answer that policy on the test's own thread (a `#[tokio::test]` runs its tasks there),
   so parallel tests never see each other's policy.
 - `public_docs_test.rs` is the drift guard (§ The public mirror).
-- Unit tests run over `FakeSource`. `source.rs` has a scratch-domain CF test (`com.getcmdr.policytest.<tag>`) proving a
-  value in the user's own layer isn't reported, and a `PlistFileSource` round trip. `view.rs` tests
+- Unit tests run over `FakeSource`. `platform/macos/mod.rs` has a scratch-domain CF test (`com.getcmdr.policytest.<tag>`)
+  proving a value in the user's own layer isn't reported; `source.rs` a `PlistFileSource` round trip. On Windows,
+  `platform/windows/` reads two scratch keys under `HKCU\Software\CmdrTest` as the machine and user hives through the
+  real registry calls, and its watch test wakes on a nested write there; ❌ no test writes under `Policies`. `view.rs` tests
   `get_managed_policy` end to end through `CMDR_MANAGED_PREFS_FILE`.
 - Dev and E2E: `CMDR_MANAGED_PREFS_FILE=/path/to/policy.plist pnpm dev` (debug and `playwright-e2e` builds only). The
   file is a plain plist dictionary of keys; every key in it counts as forced. `override_watch.rs` watches the file's

@@ -19,10 +19,14 @@ pub(crate) use frontend::init_script as frontend_init_script;
 
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
 #[cfg_attr(target_os = "linux", path = "linux/mod.rs")]
-#[cfg_attr(target_os = "windows", path = "windows.rs")]
+#[cfg_attr(target_os = "windows", path = "windows/mod.rs")]
 mod imp;
 
 pub(crate) mod startup;
+
+// Pure text, so its tests run on every OS.
+#[cfg(any(target_os = "windows", test))]
+mod windows_version;
 
 const _: fn() -> String = os_version;
 const _: fn(i64, i64) -> bool = macos_at_least;
@@ -57,6 +61,10 @@ pub(crate) use imp::conventions;
 /// code reaches it.
 #[cfg(target_os = "linux")]
 pub(crate) use imp::distro::LinuxDistro;
+
+/// Registry reads in the 64-bit view, for the Windows arms of other seams (managed policy).
+#[cfg(target_os = "windows")]
+pub(crate) use imp::registry;
 
 #[cfg(test)]
 mod tests {

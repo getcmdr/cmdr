@@ -22,6 +22,8 @@
 //! app's live file (#812). So nothing here logs during the claim. A refusal goes to stderr and the
 //! alert; every other outcome comes back as a [`Claim`] that `lib.rs` logs once the logger is up.
 
+mod platform;
+
 use cmdr_fs::log_private::LogPrivate;
 use std::fmt;
 use std::fs::{File, OpenOptions};
@@ -75,11 +77,9 @@ const ALERT_BODY_KEY: &str = "main.instanceLock.alertBody";
 /// Long enough that someone who launched Cmdr and glanced away still gets to read it; short enough
 /// that a dialog nobody comes back to doesn't sit on screen (with a refused process behind it) for
 /// the rest of the session. There's no decision to make in it, only an "OK" to acknowledge.
-#[cfg(target_os = "macos")]
 const ALERT_TIMEOUT: Duration = Duration::from_secs(60);
 
 /// Extra slack the watchdog gives the alert to return on its own before ending the process anyway.
-#[cfg(target_os = "macos")]
 const ALERT_WATCHDOG_GRACE: Duration = Duration::from_secs(10);
 
 /// Which of the app's dirs a lock guards.
@@ -416,80 +416,36 @@ fn write_refusal(out: &mut impl Write, refusal: &Refusal) {
     let _ = writeln!(out, "{refusal}");
 }
 
-/// Native "already running" alert, shown without ever pumping our own run loop.
+/// Native "already running" alert, shown without ever pumping our own run loop, then back to the
+/// caller, which exits.
 ///
-/// A signed `.app` has no visible stderr, so the dialog is the only thing the user actually sees.
+/// A signed `.app` or a GUI-subsystem `.exe` has no visible stderr, so the dialog is the only thing
+/// the user actually sees. Each OS draws it its own way (`platform::show_alert`).
 ///
-/// `CFUserNotificationDisplayAlert` is the API that fits: the dialog is drawn by the system's
-/// `UserNotificationCenter` agent, so our call is a plain blocking wait on this thread, and it
-/// carries its own timeout.
-///
-/// ❌ Don't swap in `NSAlert::runModal` or `tauri-plugin-dialog` here. `runModal` pumps OUR main run
-/// loop, so a refused process kept booting behind the unanswered alert: webview and frontend up,
-/// updater check fired, files written into the data dir the other instance owns, then an abort when
-/// the frontend called a menu command while `setup` was still parked in the modal. And
-/// `tauri-plugin-dialog`'s `blocking_show` must not run on the main thread (it hands the dialog to
-/// `run_on_main_thread` and waits), which is exactly where `setup` lives, so it would deadlock.
-#[cfg(target_os = "macos")]
+/// ❌ Don't swap in `tauri-plugin-dialog` here, on any OS: its `blocking_show` must not run on the
+/// main thread (it hands the dialog to `run_on_main_thread` and waits), which is exactly where
+/// `setup` lives, so it would deadlock. Pumping the main thread's own loop is out too: a refused
+/// process kept booting behind the unanswered alert (macOS `runModal`, `platform/macos.rs`).
 fn show_already_running_alert() {
-    use objc2_core_foundation::{CFOptionFlags, CFString, CFUserNotification, kCFUserNotificationCautionAlertLevel};
-
     spawn_exit_watchdog(ALERT_TIMEOUT + ALERT_WATCHDOG_GRACE);
-
     // The catalog lookup is safe here: it reads a compiled-in table plus the OS
     // preference, with no Tauri app, no webview, and no settings store needed.
-    let header = CFString::from_str(&crate::intl::menu_t(ALERT_TITLE_KEY));
-    let message = CFString::from_str(&crate::intl::menu_t(ALERT_BODY_KEY));
-    let mut response: CFOptionFlags = 0;
-    // SAFETY: every pointer argument is either `None` (the icon, sound, localization, and button
-    // titles are documented as nullable, meaning "system defaults", which is the single "OK" button
-    // we want) or a live `CFString` we own for the whole call, and `response_flags` points at a
-    // stack local that outlives the call. The call blocks this thread, so both borrows stay valid.
-    let err = unsafe {
-        CFUserNotification::display_alert(
-            ALERT_TIMEOUT.as_secs_f64(),
-            kCFUserNotificationCautionAlertLevel,
-            None,
-            None,
-            None,
-            Some(&header),
-            Some(&message),
-            None,
-            None,
-            None,
-            &mut response,
-        )
-    };
-    if err != 0 {
-        to_stderr(format_args!(
-            "Couldn't show the already-running alert (CFUserNotification error {err})."
-        ));
-    }
+    let title = crate::intl::menu_t(ALERT_TITLE_KEY);
+    let body = crate::intl::menu_t(ALERT_BODY_KEY);
+    platform::show_alert(&title, &body, ALERT_TIMEOUT);
 }
 
 /// Ends the process after `after`, whatever the alert is doing.
 ///
-/// `CFUserNotificationDisplayAlert` honors its own timeout, but it depends on a separate system
-/// agent; if that agent wedges, the call could outlive it. A process that has been refused the data
-/// dir must never be able to linger, so this thread ends it unconditionally.
-#[cfg(target_os = "macos")]
+/// An alert can outlive its own timeout (macOS's depends on a separate system agent that could
+/// wedge; Windows' message box has none). A process that has been refused the data dir must never
+/// be able to linger, so this thread ends it unconditionally.
 fn spawn_exit_watchdog(after: Duration) {
     std::thread::spawn(move || {
         std::thread::sleep(after);
         to_stderr("The already-running alert never returned; exiting anyway.");
         std::process::exit(1);
     });
-}
-
-/// Non-macOS: no native alert surface we can rely on at this point in startup, so the stderr lines
-/// and the non-zero exit are the whole story.
-#[cfg(not(target_os = "macos"))]
-fn show_already_running_alert() {
-    to_stderr(format_args!(
-        "{}. {}",
-        crate::intl::menu_t(ALERT_TITLE_KEY),
-        crate::intl::menu_t(ALERT_BODY_KEY)
-    ));
 }
 
 #[cfg(test)]

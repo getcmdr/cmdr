@@ -53,7 +53,7 @@ the Keychain on macOS (service `Cmdr`), Secret Service or the encrypted file on 
   probe, so a Personal install still never touches the Keychain outside a recovery. The recovery notice keeps its
   conditional "If Cmdr shows as unlicensed now" copy, since the probe can come back empty.
 - **Can that probe prompt on a fresh install? No, for a shipped build** (reasoned, not run: read
-  `security-framework` 3.7.0 `passwords.rs` and `secrets/keychain_macos.rs`, macOS 26 headless box with no Keychain
+  `security-framework` 3.7.0 `passwords.rs` and `secrets/platform/macos/keychain.rs`, macOS 26 headless box with no Keychain
   to test against, 2026-10-20). `set_generic_password` is a plain `SecItemAdd` with no `kSecUseDataProtectionKeychain`
   and no `kSecAttrAccess`, so the item lands in the login keychain with the default ACL: the creating app, by its
   designated requirement (bundle id plus Developer ID team), is trusted to read it. A reinstall or update of the

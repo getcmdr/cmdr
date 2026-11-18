@@ -34,7 +34,7 @@ use env_logger as _;
 use smb2 as _;
 
 //noinspection ALL
-// keyring-core + the zbus secret-service backend are used in secrets/keyring_linux.rs
+// keyring-core + the zbus secret-service backend are used in secrets/platform/linux/keyring.rs
 // for credential storage (Linux only).
 #[cfg(target_os = "linux")]
 use keyring_core as _;

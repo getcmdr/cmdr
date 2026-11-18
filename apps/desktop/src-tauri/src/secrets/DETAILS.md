@@ -11,6 +11,9 @@ notes.
   write-read-delete probe. A consequence: credentials saved to Secret Service won't be found if the service later
   becomes unavailable (for example switching from a full desktop environment to headless mid-session). Acceptable
   because Linux SMB is alpha and the scenario is rare.
+- **`EncryptedFileStore` and `PlainFileStore` have separate `Mutex` statics** (compiled on different platforms).
+- **The Linux probe** (`KeyringStore::is_available()`, a full write-read-delete once at startup) catches locked keyrings
+  that silently accept writes without persisting.
 - **The test backend refuses to guess a directory**: `init_store()` returns `TestStore` under `cfg(test)`, and
   `TestStore` resolves `CMDR_DATA_DIR` fresh on every operation rather than sampling it once, so a test's
   `crate::test_support::isolate_secrets()` lands whatever order the process-global `LazyLock` initialized in. When that
@@ -45,6 +48,40 @@ notes.
   crate became a sample/example crate and the cross-platform API moved to `keyring-core` with each backend shipping
   separately. We picked the zbus-based backend (`zbus-secret-service-keyring-store` with `rt-tokio-crypto-rust`) since
   we already use zbus + tokio + RustCrypto, so no system libdbus is needed.
+
+## Windows (Credential Manager)
+
+- **Crate**: `windows-native-keyring-store` 1.1 on `keyring-core` 1, the Windows backend from the keyring-rs maintainers
+  (open-source-cooperative), so the Linux and Windows arms share one API (checked 2026-11-18: 4.5M downloads, last
+  commit 2026-11-04, not archived; 1.1.0 released 2026-05-24; `cargo deny` clean). The store is built per operation
+  (`Store::new()` is an `Arc` and a timestamp), never installed as `keyring-core`'s process-wide default, so it can't
+  collide with anything else that sets one.
+- **One generic credential per key**, target `<service>:<key>` through the crate's explicit `target` modifier
+  (`Cmdr:license.key`, `Cmdr:smb://nas/share`), so Credential Manager lists them readably and `keys()` finds them with
+  one anchored prefix pattern. The listing reads target names only, never a secret.
+- **`CRED_PERSIST_LOCAL_MACHINE`**, not the crate's default `Enterprise`: a secret stays on this PC and never roams with
+  a domain profile, like the macOS login Keychain item and the device-bound license.
+- **Serialized process-wide** (`SERIAL`): the crate warns that Credential Manager doesn't reliably order operations on
+  one target from different threads.
+- **Errors**: `ERROR_NOT_FOUND` → `NotFound`, `ERROR_NO_SUCH_LOGON_SESSION` (no profile loaded, so no vault) →
+  `AccessDenied`, the rest → `Other`. The crate's Win32 error type is private, so `ERROR_ACCESS_DENIED` can only be
+  `Other`.
+- **No probe, no fallback.** Credential Manager doesn't accept a write it then drops (the reason Linux probes), and every
+  interactive session has a vault, so the arm always answers `CredentialManagerStore` and `is_file_backed()` stays
+  false. A vault that's out of reach fails each operation; ❌ secrets never move into a file instead.
+- ❗ **2,560 bytes a secret** (`CRED_MAX_CREDENTIAL_BLOB_SIZE`); past it `set` refuses whole with `Other`. Today's
+  secrets (SMB `user\0password`, API keys, the license JSON) fit; a new, larger secret type would need splitting.
+- **Plaintext left by earlier Windows dev builds**: before this arm, any Windows build fell back to `PlainFileStore`
+  (`secrets.json` in the data dir). No Windows build ever shipped, so only developer machines can hold one. It's not
+  imported: a dev build launched through `tauri-wrapper.ts` still uses it on purpose (`CMDR_SECRET_STORE=file`), and a
+  release build ignores it, so a stale file sits unread until its data dir goes ("Delete all Cmdr data" removes the data
+  dir). Re-enter those secrets once.
+- ❗ **A logon without credentials has no vault.** Over key-based OpenSSH (and in other network or S4U logons) every
+  call answers `ERROR_NO_SUCH_LOGON_SESSION`, so `AccessDenied` (verified on Windows 10 22H2 build 19045, the builder,
+  2026-11-18). An interactive desktop session, a CI runner, and SYSTEM have one.
+- **Tested on the builder** against the real Credential Manager under a `CmdrTest-<tag>-<pid>` service whose
+  credentials each test deletes on drop (`credential_manager.rs` tests). Over SSH they fail for the reason above; run
+  the test binary from a scheduled task as SYSTEM instead (all five passed that way, none left behind, 2026-11-18).
 
 ## `system_keychain_smb.rs` mechanics (macOS)
 

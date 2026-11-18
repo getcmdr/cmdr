@@ -2,7 +2,7 @@
 //! Secret Service store. Replaced the legacy `keyring = "3"` crate during the v4
 //! ecosystem split (see `Cargo.toml` for context).
 
-use super::{SecretStore, SecretStoreError};
+use crate::secrets::{SecretStore, SecretStoreError};
 use cmdr_fs::log_private::LogPrivate;
 use log::{debug, warn};
 use std::sync::Once;

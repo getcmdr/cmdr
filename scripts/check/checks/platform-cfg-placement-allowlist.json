@@ -186,10 +186,6 @@
       "negated": 1,
       "outsideSeam": 2
     },
-    "apps/desktop/src-tauri/src/instance_lock.rs": {
-      "negated": 1,
-      "outsideSeam": 5
-    },
     "apps/desktop/src-tauri/src/intl/format_locale.rs": {
       "negated": 1,
       "outsideSeam": 7
@@ -217,17 +213,6 @@
     },
     "apps/desktop/src-tauri/src/logging/mod.rs": {
       "outsideSeam": 1
-    },
-    "apps/desktop/src-tauri/src/managed_policy/cache.rs": {
-      "negated": 1,
-      "outsideSeam": 3
-    },
-    "apps/desktop/src-tauri/src/managed_policy/mod.rs": {
-      "outsideSeam": 1
-    },
-    "apps/desktop/src-tauri/src/managed_policy/source.rs": {
-      "negated": 2,
-      "outsideSeam": 6
     },
     "apps/desktop/src-tauri/src/mcp/port_file.rs": {
       "outsideSeam": 1
@@ -322,8 +307,7 @@
       "outsideSeam": 7
     },
     "apps/desktop/src-tauri/src/secrets/mod.rs": {
-      "negated": 2,
-      "outsideSeam": 9
+      "outsideSeam": 2
     },
     "apps/desktop/src-tauri/src/secrets/plain_file.rs": {
       "outsideSeam": 1

@@ -26,9 +26,10 @@ spike before M2 starts.
   write"; decision 12 below is what branches on it.
 - **Elevation today**: only the updater, which runs `rsync` through `do shell script ... with administrator privileges`
   (`apps/desktop/src-tauri/src/updater/platform/macos/installer.rs`).
-- **An out-of-process native alert**: `apps/desktop/src-tauri/src/instance_lock.rs` (`show_already_running_alert`) uses
+- **An out-of-process native alert**: `apps/desktop/src-tauri/src/instance_lock/platform/macos.rs` (`show_alert`) uses
   `CFUserNotificationDisplayAlert`, drawn by macOS's own UserNotificationCenter agent and localized through
-  `crate::intl::menu_t`. Its doc comment explains why `NSAlert::runModal` and `tauri-plugin-dialog` don't fit.
+  `crate::intl::menu_t`. Its docs and `show_already_running_alert` explain why `NSAlert::runModal` and
+  `tauri-plugin-dialog` don't fit.
 - **Parking on a person**: the write-operations engine already parks a running operation on a human answer for name
   clashes (`crates/cmdr-operations/src/conflict_slot.rs`, `crates/cmdr-operations/src/human_wait.rs`). The elevation
   question parks the same way.

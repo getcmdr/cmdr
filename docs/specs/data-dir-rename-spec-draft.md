@@ -63,8 +63,8 @@ question: `docs/notes/self-move-to-applications-2026-08-25.md`.)
 3. **Migration for existing installs.** Rename-on-startup (same volume, near-atomic), with partial-failure handling, and
    possibly a transitional symlink old → new kept for a release or two for external readers. Edge cases to design for: a
    crash mid-migration, and Time Machine restores of the old path. **A concurrent second instance is not one of them**:
-   `apps/desktop/src-tauri/src/instance_lock.rs` holds an advisory whole-file lock on `<data dir>/.instance.lock`, so
-   exactly one process owns a data dir. Two consequences for the migration: it runs after the lock is taken, and the
+   `apps/desktop/src-tauri/src/instance_lock/mod.rs` holds an advisory whole-file lock on `<data dir>/.instance.lock`,
+   so exactly one process owns a data dir. Two consequences for the migration: it runs after the lock is taken, and the
    lock file itself sits INSIDE the directory being moved, so the ordering (acquire, migrate, or migrate, acquire) is a
    real design decision rather than a detail.
 4. **Every external reader of the paths.** Verified present, so complete this list by grepping rather than rebuilding

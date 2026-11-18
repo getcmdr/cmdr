@@ -17,7 +17,7 @@ const platformDir = path.resolve(here, '../../../src-tauri/src/platform')
 
 const ARM_FILES: Record<Platform, string> = {
   macos: 'macos.rs',
-  windows: 'windows.rs',
+  windows: 'windows/mod.rs',
   linux: 'linux/mod.rs',
 }
 

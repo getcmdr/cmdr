@@ -2,23 +2,20 @@
 //!
 //! Backend selection happens once at first access via `store()`:
 //! - `CMDR_SECRET_STORE=file` or `CMDR_E2E_MODE=1` forces plain file, in dev and E2E builds only
-//! - macOS: Keychain via `security-framework`
-//! - Linux: Secret Service via `keyring`, falling back to encrypted file via `cocoon`
-//! - Other platforms: plain file fallback
+//! - otherwise this OS's system store, behind the `platform/` seam: the Keychain on macOS, the
+//!   Secret Service on Linux (else an encrypted file), Credential Manager on Windows
+//!
+//! ❌ No OS falls back to the plaintext file: it's only ever chosen on purpose, above.
 
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::LazyLock;
 
-#[cfg(target_os = "macos")]
-mod keychain_macos;
+mod platform;
 
 #[cfg(target_os = "macos")]
 pub mod system_keychain_smb;
-
-#[cfg(target_os = "linux")]
-mod keyring_linux;
 
 // Also compiled for tests on any Unix, so its recovery cells run on a Mac too.
 #[cfg(any(target_os = "linux", all(test, unix)))]
@@ -61,17 +58,17 @@ pub trait SecretStore: Send + Sync {
     fn keys(&self) -> Result<Vec<String>, SecretStoreError>;
 }
 
-/// What the person sees the store's items under: the Keychain item name on macOS (instance
-/// suffixed off prod), else the plain product name. For pointing at leftovers in plain words.
+/// What the person sees the store's items under, for pointing at leftovers in plain words
+/// (`platform::item_name`).
 pub fn item_name() -> String {
-    #[cfg(target_os = "macos")]
-    {
-        keychain_macos::item_name().to_string()
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        "Cmdr".to_string()
-    }
+    platform::item_name()
+}
+
+/// The store an OS arm picked, and whether it had to fall back to a file for lack of a system
+/// keyring (which the person is told once, `is_file_backed`).
+pub(crate) struct SystemStore {
+    pub(crate) store: Box<dyn SecretStore>,
+    pub(crate) fell_back_to_file: bool,
 }
 
 /// Set during `init_store()` when the store FELL BACK to a file for lack of a system
@@ -141,31 +138,9 @@ fn init_store() -> Box<dyn SecretStore> {
         None => {}
     }
 
-    #[cfg(target_os = "macos")]
-    {
-        info!("Secret store: KeychainStore (macOS)");
-        Box::new(keychain_macos::KeychainStore)
-    }
-
-    #[cfg(target_os = "linux")]
-    {
-        if keyring_linux::KeyringStore::is_available() {
-            info!("Secret store: KeyringStore (Linux Secret Service)");
-            return Box::new(keyring_linux::KeyringStore);
-        }
-        let dir = secret_store_dir();
-        info!("Secret store: EncryptedFileStore (Linux fallback, no secret service)");
-        FILE_BACKED.store(true, std::sync::atomic::Ordering::Relaxed);
-        Box::new(encrypted_file::EncryptedFileStore::new(dir))
-    }
-
-    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-    {
-        let dir = secret_store_dir();
-        info!("Secret store: PlainFileStore (unsupported platform fallback)");
-        FILE_BACKED.store(true, std::sync::atomic::Ordering::Relaxed);
-        Box::new(plain_file::PlainFileStore::new(dir))
-    }
+    let chosen = platform::system_store();
+    FILE_BACKED.store(chosen.fell_back_to_file, std::sync::atomic::Ordering::Relaxed);
+    chosen.store
 }
 
 /// Whether this build honors the plaintext-store overrides (`CMDR_SECRET_STORE=file`, `CMDR_E2E_MODE=1`).

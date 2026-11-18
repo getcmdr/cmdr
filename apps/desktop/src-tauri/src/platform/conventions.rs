@@ -5,7 +5,7 @@
 //! § Conventions; the guideline sources are `docs/notes/windows-port/platform-conventions.md`.
 
 /// Every platform convention a UI primitive asks, for the desktop this window lives on. Each OS arm
-/// picks its row of [`conventions_on`] (`macos.rs`, `linux/mod.rs`, `windows.rs`), and
+/// picks its row of [`conventions_on`] (`macos.rs`, `linux/mod.rs`, `windows/mod.rs`), and
 /// `frontend.rs` hands it to every webview beside the capabilities.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
