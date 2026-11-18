@@ -37,6 +37,44 @@ export const behaviorSettings: SettingDefinitionSource[] = [
     component: 'switch',
   },
   {
+    // What typing a letter in a pane does. `filter` is Total Commander's quick
+    // filter (`file-explorer/pane/quick-filter-controller.svelte.ts`).
+    id: 'fileExplorer.typeToJump.mode',
+    section: ['Behavior', 'Navigation & file ops'],
+    cardKey: 'settings.navigationAndFileOps.card.navigation',
+    labelKey: 'settings.fileExplorer.typeToJump.mode.label',
+    descriptionKey: 'settings.fileExplorer.typeToJump.mode.description',
+    descriptionInTip: true,
+    keywordsKey: 'settings.fileExplorer.typeToJump.mode.keywords',
+    terms: ['total commander'],
+    type: 'enum',
+    // Filter, Total Commander's habit; the first filtered pane explains it once
+    // and offers Jump (`file-explorer/pane/quick-filter-intro.ts`).
+    default: 'filter',
+    component: 'toggle-group',
+    constraints: {
+      options: [
+        { value: 'jump', labelKey: 'settings.fileExplorer.typeToJump.mode.opt.jump' },
+        { value: 'filter', labelKey: 'settings.fileExplorer.typeToJump.mode.opt.filter' },
+      ],
+    },
+  },
+  {
+    // Total Commander's "Calculate space occupied by subdirectories when selecting
+    // with the space bar". `file-explorer/pane/folder-size-count.ts` owns it.
+    id: 'listing.spaceCalculatesFolderSize',
+    section: ['Behavior', 'Navigation & file ops'],
+    cardKey: 'settings.navigationAndFileOps.card.navigation',
+    labelKey: 'settings.listing.spaceCalculatesFolderSize.label',
+    descriptionKey: 'settings.listing.spaceCalculatesFolderSize.description',
+    descriptionInTip: true,
+    keywordsKey: 'settings.listing.spaceCalculatesFolderSize.keywords',
+    terms: ['total commander'],
+    type: 'boolean',
+    default: true,
+    component: 'switch',
+  },
+  {
     // Internal (FE-owned): whether the volume switcher's favorites section was
     // last left open. Driven entirely by the section's own row; ONE value for
     // both panes, so the two switchers never disagree about it.

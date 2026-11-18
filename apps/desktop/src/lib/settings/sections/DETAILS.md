@@ -15,15 +15,18 @@ sections compose).
 - **`AppearanceSection.svelte`**: `Appearance > Colors and formats`: language, theme mode, app color, size/date
   palettes, date/time format, striped rows. The language row passes `onPicked` so a hand pick reports `language_changed`
   (`src-tauri/src/analytics/DETAILS.md`); the onboarding wizard's picker is the other caller
-- **`AppearanceZoomSection.svelte`**: `Appearance > Zoom and density`: text size slider and UI density
+- **`AppearanceZoomSection.svelte`**: `Appearance > Zoom and density`: text size slider, UI density, and the function
+  key bar (it spends a row of the window's height)
 - **`AppearanceSizesSection.svelte`**: `Appearance > File and folder sizes`: size display, size unit (binary/SI drives
   `kB`↔`KiB`, `MB`↔`MiB`, `GB`↔`GiB` label overrides), file size format, size mismatch warning
-- **`ListingSection.svelte`**: `Appearance > Listing`: document icons, directory sort, brief column width. The width row
-  is one control, not two: the `listing.briefColumnWidthMode` radio group carries the `briefColumnWidthMaxPx` number
-  field on its "Limit to" option's own line (`SettingRadioGroup`'s `itemTrailing`), greyed out while the other option is
-  picked, so the row reads as the sentence the option label was written for ("Limit to [400 px]")
+- **`ListingSection.svelte`**: `Appearance > Listing`: a Names and icons card (hidden files, extensions, tags, app
+  icons), a Sorting card (folders first, how folders sort), and Brief mode's column width. The width row is one control,
+  not two: the `listing.briefColumnWidthMode` radio group carries the `briefColumnWidthMaxPx` number field on its "Limit
+  to" option's own line (`SettingRadioGroup`'s `itemTrailing`), greyed out while the other option is picked, so the row
+  reads as the sentence the option label was written for ("Limit to [400 px]")
 - **`NavigationAndFileOpsSection.svelte`**: `Behavior > Navigation & file ops`: labeled `SectionCard`s — Navigation (the
-  `behavior.doubleClickPaneNavigatesToParent` switch), File operations (the extension-change confirmation row
+  `behavior.doubleClickPaneNavigatesToParent` switch, the `fileExplorer.typeToJump.mode` jump-or-filter toggle, and the
+  `listing.spaceCalculatesFolderSize` switch), File operations (the extension-change confirmation row
   `allowFileExtensionChanges` + the `pasteClipboardAsFile` toggle group + the `skipConfirmation` switch + the
   `defaultConflictPolicy` select, the copy dialog's starting "files already exist" choice, which the dialog's "Remember
   this choice" box also sets: `lib/file-operations/transfer/DETAILS.md` § "The remembered conflict policy"), Text editor

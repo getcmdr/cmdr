@@ -4869,6 +4869,7 @@ export type MessageKey =
   | 'settings.appearance.card.listColoring'
   | 'settings.appearance.card.namesAndIcons'
   | 'settings.appearance.card.paneTints'
+  | 'settings.appearance.card.sorting'
   | 'settings.appearance.card.theme'
   | 'settings.appearance.customDateTimeFormat.description'
   | 'settings.appearance.customDateTimeFormat.keywords'

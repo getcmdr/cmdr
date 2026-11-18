@@ -24,7 +24,6 @@ vi.mock('#lib/settings/settings-store.js', () => ({
     if (key === 'listing.foldersFirst') return stubs.foldersFirst
     if (key === 'listing.showHiddenFiles') return true
     if (key === 'appearance.useAppIconsForDocuments') return true
-    if (key === 'appearance.showFunctionKeyBar') return true
     if (key === 'listing.directorySortMode') return 'likeFiles'
     if (key === 'listing.briefColumnWidthMode') return 'paneWidth'
     if (key === 'listing.briefColumnWidthMaxPx') return 400
@@ -48,6 +47,33 @@ async function mountSection(searchQuery = ''): Promise<HTMLDivElement> {
 function rowLabels(target: HTMLElement): string[] {
   return Array.from(target.querySelectorAll('.setting-label')).map((el) => el.textContent.trim())
 }
+
+describe('ListingSection: cards', () => {
+  function cards(target: HTMLElement): Record<string, string[]> {
+    const byTitle: Record<string, string[]> = {}
+    for (const card of target.querySelectorAll('section.section-card-wrap')) {
+      const title = card.querySelector('.section-card-label')?.textContent.trim() ?? ''
+      byTitle[title] = rowLabels(card as HTMLElement)
+    }
+    return byTitle
+  }
+
+  it('groups what each name shows apart from how the list sorts', async () => {
+    const target = await mountSection()
+    const byTitle = cards(target)
+    expect(byTitle['Names and icons']).toEqual(
+      expect.arrayContaining(['Show hidden files', 'Use app icons for documents']),
+    )
+    expect(byTitle['Sorting']).toEqual(['Show folders first', 'Sort folders'])
+    // These moved out: the function key bar to Zoom and density, the typing and Space rows
+    // to Behavior > Navigation & file ops.
+    const all = rowLabels(target)
+    expect(all).not.toContain('Show function key bar')
+    expect(all).not.toContain('When you type in a pane')
+    expect(all).not.toContain('Calculate folder size with Space')
+    target.remove()
+  })
+})
 
 describe('ListingSection: show hidden files', () => {
   it('renders the row first in the card, above "Sort folders"', async () => {

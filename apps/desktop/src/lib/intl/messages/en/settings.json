@@ -377,7 +377,7 @@
   },
   "settings.appearance.showFunctionKeyBar.label": "Show function key bar",
   "@settings.appearance.showFunctionKeyBar.label": {
-    "description": "Label for the toggle that shows the row of F-key command buttons at the bottom of the window. In Settings > Appearance > Listing.",
+    "description": "Label for the toggle that shows the row of F-key command buttons at the bottom of the window. In Settings > Appearance > Zoom and density.",
     "screenshot": "settings-appearance-listing.png"
   },
   "settings.appearance.showFunctionKeyBar.description": "Show the row of F-key command buttons (Rename, View, Copy, and so on) at the bottom of the window.",
@@ -387,7 +387,7 @@
   },
   "settings.appearance.showFunctionKeyBar.keywords": "function, key, bar, shortcut, buttons, bottom, toolbar",
   "@settings.appearance.showFunctionKeyBar.keywords": {
-    "description": "Search keywords for the “Show function key bar” setting (settings.appearance.showFunctionKeyBar.label) in Settings > Appearance > Listing. What it does: shows or hides the row of F-key buttons (Rename, View, Copy…) at the bottom of the window. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+    "description": "Search keywords for the “Show function key bar” setting (settings.appearance.showFunctionKeyBar.label) in Settings > Appearance > Zoom and density. What it does: shows or hides the row of F-key buttons (Rename, View, Copy…) at the bottom of the window. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
   "settings.listing.showHiddenFiles.label": "Show hidden files",
   "@settings.listing.showHiddenFiles.label": {
@@ -442,7 +442,7 @@
   },
   "settings.listing.spaceCalculatesFolderSize.label": "Calculate folder size with Space",
   "@settings.listing.spaceCalculatesFolderSize.label": {
-    "description": "Settings > Appearance > Listing switch: pressing the Space key to select a folder also calculates the folder's total size, like Total Commander. \"Space\" is the key name.",
+    "description": "Settings > Behavior > Navigation & file ops switch: pressing the Space key to select a folder also calculates the folder's total size, like Total Commander. \"Space\" is the key name.",
     "screenshot": "settings-appearance-listing.png"
   },
   "settings.listing.spaceCalculatesFolderSize.description": "When Space selects a folder whose size isn’t known yet, Cmdr adds up its contents and shows the total. Esc stops the calculation.",
@@ -452,7 +452,7 @@
   },
   "settings.listing.spaceCalculatesFolderSize.keywords": "space, size, folder, folders, directory, calculate, count, select",
   "@settings.listing.spaceCalculatesFolderSize.keywords": {
-    "description": "Search keywords for the “Calculate folder size with Space” setting (settings.listing.spaceCalculatesFolderSize.label) in Settings > Appearance > Listing. What it does: makes Space work out a folder’s total size when it selects the folder. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+    "description": "Search keywords for the “Calculate folder size with Space” setting (settings.listing.spaceCalculatesFolderSize.label) in Settings > Behavior > Navigation & file ops. What it does: makes Space work out a folder’s total size when it selects the folder. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
   "settings.listing.directorySortMode.label": "Sort folders",
   "@settings.listing.directorySortMode.label": {
@@ -2234,7 +2234,7 @@
   },
   "settings.fileExplorer.typeToJump.mode.label": "When you type in a pane",
   "@settings.fileExplorer.typeToJump.mode.label": {
-    "description": "Settings > Appearance > Listing label for the choice of what typing letters in a file pane does: jump the cursor to a matching file, or filter the list down to matching files.",
+    "description": "Settings > Behavior > Navigation & file ops label for the choice of what typing letters in a file pane does: jump the cursor to a matching file, or filter the list down to matching files.",
     "screenshot": "settings-appearance-listing.png"
   },
   "settings.fileExplorer.typeToJump.mode.description": "{platform, select, macos {Jump moves the cursor to the best match. Filter shows only the files and folders whose names contain what you type, like Total Commander’s quick filter; Delete (⌫) edits it and Esc clears it.} other {Jump moves the cursor to the best match. Filter shows only the files and folders whose names contain what you type, like Total Commander’s quick filter; Backspace edits it and Esc clears it.}}",
@@ -2254,7 +2254,7 @@
   },
   "settings.fileExplorer.typeToJump.mode.keywords": "type, jump, filter, quick filter, quick search, narrow, keystroke",
   "@settings.fileExplorer.typeToJump.mode.keywords": {
-    "description": "Search keywords for the “When you type in a pane” setting (settings.fileExplorer.typeToJump.mode.label) in Settings > Appearance > Listing. What it does: picks what typing in the file list does: jump to the matching name, or show only matching files (a quick filter). Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+    "description": "Search keywords for the “When you type in a pane” setting (settings.fileExplorer.typeToJump.mode.label) in Settings > Behavior > Navigation & file ops. What it does: picks what typing in the file list does: jump to the matching name, or show only matching files (a quick filter). Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
   "settings.fileOperations.maxConflictsToShow.label": "Maximum conflicts to show",
   "@settings.fileOperations.maxConflictsToShow.label": {
@@ -3771,8 +3771,12 @@
   },
   "settings.appearance.card.namesAndIcons": "Names and icons",
   "@settings.appearance.card.namesAndIcons": {
-    "description": "Heading of the names-and-icons card (document icons, extensions, directory sort, function key bar) in Settings > Appearance > Listing.",
+    "description": "Heading of the names-and-icons card (hidden files, file extensions, tags, and app icons for documents) in Settings > Appearance > Listing.",
     "screenshot": "settings-appearance-listing.png"
+  },
+  "settings.appearance.card.sorting": "Sorting",
+  "@settings.appearance.card.sorting": {
+    "description": "Heading of the sorting card (whether folders come before files, and how those folders sort) in Settings > Appearance > Listing. A noun, as in the order things are listed in, not a verb."
   },
   "settings.appearance.card.briefMode": "Brief mode",
   "@settings.appearance.card.briefMode": {

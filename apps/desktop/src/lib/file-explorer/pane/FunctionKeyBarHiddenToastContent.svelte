@@ -16,7 +16,7 @@
         try {
             await openSettingsWindow(
                 'function-key-bar-toast',
-                ['Appearance', 'Listing'],
+                ['Appearance', 'Zoom and density'],
                 settingAnchorId('appearance.showFunctionKeyBar'),
             )
         } catch (err) {

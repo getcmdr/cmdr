@@ -342,6 +342,19 @@ export const appearanceSettings: SettingDefinitionSource[] = [
       ],
     },
   },
+  {
+    id: 'appearance.showFunctionKeyBar',
+    mcpAskFree: true,
+    section: ['Appearance', 'Zoom and density'],
+    labelKey: 'settings.appearance.showFunctionKeyBar.label',
+    descriptionKey: 'settings.appearance.showFunctionKeyBar.description',
+    descriptionInTip: true,
+    keywordsKey: 'settings.appearance.showFunctionKeyBar.keywords',
+    terms: ['f-key', 'fkey'],
+    type: 'boolean',
+    default: true,
+    component: 'switch',
+  },
 
   // ========================================================================
   // Appearance › File and folder sizes
@@ -439,20 +452,6 @@ export const appearanceSettings: SettingDefinitionSource[] = [
     component: 'switch',
   },
   {
-    id: 'appearance.showFunctionKeyBar',
-    mcpAskFree: true,
-    section: ['Appearance', 'Listing'],
-    labelKey: 'settings.appearance.showFunctionKeyBar.label',
-    descriptionKey: 'settings.appearance.showFunctionKeyBar.description',
-    descriptionInTip: true,
-    cardKey: 'settings.appearance.card.namesAndIcons',
-    keywordsKey: 'settings.appearance.showFunctionKeyBar.keywords',
-    terms: ['f-key', 'fkey'],
-    type: 'boolean',
-    default: true,
-    component: 'switch',
-  },
-  {
     id: 'listing.showExtensionInName',
     mcpAskFree: true,
     section: ['Appearance', 'Listing'],
@@ -502,23 +501,8 @@ export const appearanceSettings: SettingDefinitionSource[] = [
     mcpAskFree: true,
     section: ['Appearance', 'Listing'],
     labelKey: 'settings.listing.foldersFirst.label',
-    cardKey: 'settings.appearance.card.namesAndIcons',
+    cardKey: 'settings.appearance.card.sorting',
     keywordsKey: 'settings.listing.foldersFirst.keywords',
-    type: 'boolean',
-    default: true,
-    component: 'switch',
-  },
-  {
-    // Total Commander's "Calculate space occupied by subdirectories when selecting
-    // with the space bar". `file-explorer/pane/folder-size-count.ts` owns it.
-    id: 'listing.spaceCalculatesFolderSize',
-    section: ['Appearance', 'Listing'],
-    labelKey: 'settings.listing.spaceCalculatesFolderSize.label',
-    descriptionKey: 'settings.listing.spaceCalculatesFolderSize.description',
-    descriptionInTip: true,
-    cardKey: 'settings.appearance.card.namesAndIcons',
-    keywordsKey: 'settings.listing.spaceCalculatesFolderSize.keywords',
-    terms: ['total commander'],
     type: 'boolean',
     default: true,
     component: 'switch',
@@ -528,7 +512,7 @@ export const appearanceSettings: SettingDefinitionSource[] = [
     mcpAskFree: true,
     section: ['Appearance', 'Listing'],
     labelKey: 'settings.listing.directorySortMode.label',
-    cardKey: 'settings.appearance.card.namesAndIcons',
+    cardKey: 'settings.appearance.card.sorting',
     keywordsKey: 'settings.listing.directorySortMode.keywords',
     type: 'enum',
     default: 'likeFiles',
@@ -537,29 +521,6 @@ export const appearanceSettings: SettingDefinitionSource[] = [
       options: [
         { value: 'likeFiles', labelKey: 'settings.listing.directorySortMode.opt.likeFiles' },
         { value: 'alwaysByName', labelKey: 'settings.listing.directorySortMode.opt.alwaysByName' },
-      ],
-    },
-  },
-  {
-    // What typing a letter in a pane does. `filter` is Total Commander's quick
-    // filter (`file-explorer/pane/quick-filter-controller.svelte.ts`).
-    id: 'fileExplorer.typeToJump.mode',
-    section: ['Appearance', 'Listing'],
-    cardKey: 'settings.appearance.card.namesAndIcons',
-    labelKey: 'settings.fileExplorer.typeToJump.mode.label',
-    descriptionKey: 'settings.fileExplorer.typeToJump.mode.description',
-    descriptionInTip: true,
-    keywordsKey: 'settings.fileExplorer.typeToJump.mode.keywords',
-    terms: ['total commander'],
-    type: 'enum',
-    // Filter, Total Commander's habit; the first filtered pane explains it once
-    // and offers Jump (`file-explorer/pane/quick-filter-intro.ts`).
-    default: 'filter',
-    component: 'toggle-group',
-    constraints: {
-      options: [
-        { value: 'jump', labelKey: 'settings.fileExplorer.typeToJump.mode.opt.jump' },
-        { value: 'filter', labelKey: 'settings.fileExplorer.typeToJump.mode.opt.filter' },
       ],
     },
   },

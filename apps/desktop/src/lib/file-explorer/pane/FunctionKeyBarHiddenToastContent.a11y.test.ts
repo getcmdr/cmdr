@@ -50,7 +50,7 @@ describe('FunctionKeyBarHiddenToastContent', () => {
     settingsButton.click()
     expect(openSettingsWindow).toHaveBeenCalledWith(
       'function-key-bar-toast',
-      ['Appearance', 'Listing'],
+      ['Appearance', 'Zoom and density'],
       settingAnchorId('appearance.showFunctionKeyBar'),
     )
   })
