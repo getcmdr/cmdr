@@ -11,7 +11,8 @@ import (
 )
 
 // mirroredAssets picks, from a release's asset names, the files the EU mirror serves, from the
-// release asset manifest (`scripts/release-assets/manifest`): every update payload and its
+// release asset manifest (`scripts/release-assets/manifest`): every signed file (the update
+// payloads, and the advisory list `latest.json` points Windows and Linux installs at) and its
 // signature, every download (an optional one, like the pkg, when the release has it), and
 // `checksums.txt` last, so it never names a file the mirror doesn't hold yet. The SBOMs, the
 // provenance bundle, and `latest.json` stay on GitHub only (the website serves the manifest).
@@ -31,11 +32,13 @@ func mirroredAssets(names []string, version string) ([]string, error) {
 			missing = append(missing, name)
 		}
 	}
-	for _, f := range r.Updates() {
+	for _, f := range r.Signed() {
 		need(f.Signature(), false)
 	}
-	for _, f := range r.Binaries() {
-		need(f.Name, f.Optional)
+	for _, f := range r.Files {
+		if f.Binary() || f.Download() || f.Signed() {
+			need(f.Name, f.Optional)
+		}
 	}
 	slices.Sort(want)
 	slices.Sort(missing)
@@ -72,6 +75,12 @@ func contentType(name string) string {
 		return "application/gzip"
 	case strings.HasSuffix(name, ".sig"), strings.HasSuffix(name, ".txt"):
 		return "text/plain; charset=utf-8"
+	case strings.HasSuffix(name, ".json"):
+		return "application/json"
+	case strings.HasSuffix(name, ".zip"):
+		return "application/zip"
+	case strings.HasSuffix(name, ".msix"):
+		return "application/msix"
 	default:
 		return "application/octet-stream"
 	}
@@ -106,6 +115,9 @@ func checkManifest(body []byte, version, host string) error {
 		Platforms map[string]struct {
 			URL string `json:"url"`
 		} `json:"platforms"`
+		SecurityAdvisories *struct {
+			URL string `json:"url"`
+		} `json:"securityAdvisories"`
 	}
 	if err := json.Unmarshal(body, &m); err != nil {
 		return fmt.Errorf("latest.json isn't JSON: %w", err)
@@ -113,7 +125,13 @@ func checkManifest(body []byte, version, host string) error {
 	if m.Version != version {
 		return fmt.Errorf("latest.json says version %q, not %q", m.Version, version)
 	}
-	for _, f := range manifest.For(version).Updates() {
+	r := manifest.For(version)
+	if list, ok := r.AdvisoryList(); ok {
+		if want := publicURL(host, version, list.Name); m.SecurityAdvisories == nil || m.SecurityAdvisories.URL != want {
+			return fmt.Errorf("latest.json's securityAdvisories doesn't point at %s", want)
+		}
+	}
+	for _, f := range r.Updates() {
 		p, ok := m.Platforms[f.UpdaterKey]
 		if !ok {
 			return fmt.Errorf("latest.json has no %s platform", f.UpdaterKey)

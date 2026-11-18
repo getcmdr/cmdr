@@ -13,6 +13,8 @@ ADMLs in `en-US/`.
   (`managed_policy/DETAILS.md` § The Windows registry keys). Display names and explain texts can change freely.
 - **Raise `groupPolicy.revision`** in `policies.json` when a policy is added or changed, so the central store and Intune
   see a newer template.
-- **Nothing publishes it yet.** It ships with the first Windows release (task 53 of `docs/specs/windows-port-plan.md`).
+- **A Windows release ships it as `cmdr-group-policy-<version>.zip`** (`./scripts/windows-package.sh group-policy`: the
+  ADMX files plus `en-US/`, never the docs), a release-manifest row with its checksum. Windows releases are off until
+  David turns them on (`docs/guides/releasing.md` § Windows releases).
 
 Schema, namespaces, what each kind writes, how it was validated, and where it ships: `DETAILS.md`.

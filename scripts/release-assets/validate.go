@@ -83,6 +83,11 @@ func validateLatest(raw []byte, r latestRules) error {
 				memberChecks[key](v, r, add)
 			}
 		}
+		if list, ships := r.release.AdvisoryList(); ships {
+			if _, present := top["securityAdvisories"]; !present {
+				add("it has no \"securityAdvisories\", though the release ships %s, so Windows and Linux installs would hear of no advisory", list.Name)
+			}
+		}
 	}
 	return joinProblems(problems)
 }
@@ -272,15 +277,7 @@ func checkPlatformEntry(raw json.RawMessage, key string, f manifest.File, size i
 	if size <= 0 {
 		add("platforms.%s names %s, which the release doesn't carry (or carries empty)", key, f.Name)
 	}
-	if r.sigDir != "" {
-		sig, err := os.ReadFile(filepath.Join(r.sigDir, f.Signature()))
-		switch {
-		case err != nil:
-			add("platforms.%s: no %s to compare with: %v", key, f.Signature(), err)
-		case strings.TrimRight(string(sig), "\n") != *e.Signature:
-			add("platforms.%s.signature isn't the release's %s", key, f.Signature())
-		}
-	}
+	checkReleaseSignature(*e.Signature, "platforms."+key, f, r, add)
 	checkSignature(*e.Signature, "platforms."+key, r, add)
 	if f.SignsVersion() && !signatureNamesVersion(*e.Signature, r.release.Version) {
 		add("%s's signature doesn't name version %s (`tauri signer sign --app-version`), so every Windows and Linux install would refuse it", f.Name, r.release.Version)
@@ -301,7 +298,27 @@ func checkAdvisoryEntry(raw json.RawMessage, r latestRules, add problemFunc) {
 	if size, ok := assetSizes(r.assets)[name]; !ok || size <= 0 {
 		add("securityAdvisories names %s, which the release doesn't carry (or carries empty)", name)
 	}
+	if list, ships := r.release.AdvisoryList(); ships {
+		if name != list.Name {
+			add("securityAdvisories names %s, but the release's advisory list is %s", name, list.Name)
+		}
+		checkReleaseSignature(*e.Signature, "securityAdvisories", list, r, add)
+	}
 	checkSignature(*e.Signature, "securityAdvisories", r, add)
+}
+
+// checkReleaseSignature holds an entry's signature to the release's own `.sig` of f, byte for byte.
+func checkReleaseSignature(sig, at string, f manifest.File, r latestRules, add problemFunc) {
+	if r.sigDir == "" {
+		return
+	}
+	want, err := os.ReadFile(filepath.Join(r.sigDir, f.Signature()))
+	switch {
+	case err != nil:
+		add("%s: no %s to compare with: %v", at, f.Signature(), err)
+	case strings.TrimRight(string(want), "\n") != sig:
+		add("%s.signature isn't the release's %s", at, f.Signature())
+	}
 }
 
 // decodeEntry reads a `{ signature, url }` entry, with an absolute `https` URL and both present.

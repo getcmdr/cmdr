@@ -1002,8 +1002,10 @@ Not from it: the `compile` and `sign` matrices and `sign`'s upload names (the bu
 Design and the dry run: `scripts/release-assets/DETAILS.md`.
 
 ❗ A Windows or Linux update payload must be signed with `tauri signer sign --app-version <version>`, keyed
-`windows-x86_64` / `linux-x86_64`, or every off-macOS install refuses the release; `latest.json` may also carry a signed
-`securityAdvisories: { url, signature }`. `scripts/release-assets/DETAILS.md` § Update payloads off macOS.
+`windows-x86_64` / `linux-x86_64`, or every off-macOS install refuses the release; such a release also ships the signed
+advisory list and `latest.json`'s `securityAdvisories: { url, signature }`. `scripts/release-assets/DETAILS.md` § Update
+payloads off macOS. The manifest's `ShippedOSes` picks which platforms a release builds; Windows is wired and off (§
+Windows releases).
 
 ## What a release publishes
 
@@ -1286,6 +1288,88 @@ Full Disk Access profile.
 6. Delete the previous certificate (and its private key) from the login keychain, and let it expire. The portal has no
    Revoke button for Developer ID certificates (verified 2026-10-08): revoking one invalidates everything it ever
    signed, so only Apple Developer Support does it. Ask them only if its private key may have leaked.
+
+## Windows releases
+
+Wired end to end and **off**: no release builds or publishes anything for Windows until `ShippedOSes` in
+`scripts/release-assets/manifest/manifest.go` names `Windows` (today `[]OS{MacOS}`). That one line is the switch: every
+tool reads it through `manifest.For`, `guard`'s plan turns it into `ships-windows`, and the Windows jobs and steps run
+only on `true`. While it's off, the plan still holds `vet-update-archives` and `attest` to the Windows rows, and the dry
+run walks the skipped steps, so the wiring can't rot. D3 (`docs/specs/windows-port-plan.md`): the Store's MSIX first,
+plus an unsigned "Run anyway" NSIS installer on the website; no code-signing certificate.
+
+What a Windows release adds (rows in the manifest):
+
+- `Cmdr_<version>_x64-setup.exe` plus its `.sig`: the per-user NSIS installer, the website's download and the Windows
+  updater's payload (`windows-x86_64`). Unsigned (no Authenticode) until D3 step 3; its minisign signature names the
+  version (`--app-version`), which the updater requires.
+- `Cmdr_<version>_x64.msix`: the Store package, unsigned (the Store signs it). Its updater is off, the Store updates it
+  (`apps/desktop/packaging/msix/DETAILS.md`).
+- `cmdr-group-policy-<version>.zip`: the ADMX and en-US ADML files (`apps/desktop/packaging/group-policy/`), for admins.
+- `Cmdr_<version>_windows_x64.rust.cdx.json`: the Rust SBOM of the Windows build, attested against the installer and the
+  MSIX.
+- `Cmdr_<version>_security-advisories.json` plus its `.sig`: the signed advisory list, named in `latest.json`'s
+  `securityAdvisories`, since a Windows install can't read the list inside its update before running it. It ships with
+  the first Windows (or Linux) release; a macOS-only release stays byte-identical.
+
+How it runs, beside the macOS jobs:
+
+1. **`windows-build`** (`windows-2025`, no secrets): compiles once (`tauri build --no-bundle`), keeps that unbundled
+   `Cmdr.exe` for the MSIX, bundles the NSIS installer (`tauri.windows.conf.json` makes no updater artifact: the
+   bundler's signature can't name the version), packs the MSIX (`./scripts/windows-package.sh msix`, Microsoft's winapp
+   CLI, pinned with its SHA-256), zips the policy template, copies the advisory list, vets the installer
+   (`release-assets.sh vet-nsis`), and hands exactly the planned files on as an artifact.
+2. **`windows-publish`** (`release` environment, after macOS's `sign` so the release exists): in `ci` mode signs the
+   installer (`tauri signer sign --app-version <v>`) and the advisory list with the updater key, then uploads every file
+   with a digest check (`scripts/release-upload.sh`). In `local` mode it uploads no `.sig`: `release-finish.sh` signs
+   `guard`'s `signed-files`, these included.
+3. `vet-update-archives` re-vets the installer as published, `publish` needs every signed file's `.sig` and writes the
+   Windows `platforms` entry, `downloads`, and `securityAdvisories`, and `attest` attests the Windows SBOM.
+
+A Windows release can't be a prerelease: an MSIX version is `X.Y.Z.0`.
+
+### What turning it on waits on (David)
+
+Each step is David's, in order. Nothing here needs a certificate or a secret beyond the updater key the `release`
+environment already holds.
+
+1. **Open the Partner Center account** as Rymdskottkärra AB, a company account (free, per D3):
+   <https://partner.microsoft.com/dashboard/registration>. Microsoft verifies the company, which can take days.
+2. **Reserve the app name** "Cmdr" in Partner Center › Apps and games › New product › MSIX or PWA app.
+3. **Copy the product identity** from that product's Product management › Product identity into
+   `apps/desktop/packaging/msix/identity.json`'s `release` block: `Package/Identity/Name` into `name`,
+   `Package/Identity/Publisher` (the `CN=…` string) into `publisher`, and `Package/Properties/PublisherDisplayName` into
+   `publisherDisplayName`. These are public values, not secrets: commit them. Until then the `PLACEHOLDER_` values make
+   `windows-package msix` fail with a pointer here, so a Windows release can't ship a made-up identity.
+4. **Review the copy**: the MSIX's display name and description (`apps/desktop/packaging/msix/Package.appxmanifest`),
+   and the NSIS installer's publisher, copyright, and short description
+   (`apps/desktop/src-tauri/tauri.windows.conf.json`).
+5. **Try a local build first** (§ Building the Windows packages locally) and install both on a Windows machine.
+6. **Turn it on**: add `Windows` to `ShippedOSes` and update `TestWindowsShipsOnlyOnceTurnedOn` in the same commit. The
+   next tag builds and publishes the Windows files; watch `windows-build` and `windows-publish` in that run, then
+   `vet-update-archives`, `publish`, and `attest`.
+7. **Submit the MSIX** to the Store by hand from Partner Center (upload `Cmdr_<version>_x64.msix` from the release)
+   until task 57 automates the submission. Store certification takes hours to days.
+
+Turning it on also wants, though nothing breaks without them: the website's Windows download (task 58) and the
+`/download/:version/:os/:arch` route (task 31).
+
+### Building the Windows packages locally
+
+On a Windows machine with the repo's toolchain (the builder: `ssh mami`, `docs/tooling/ci.md` § Windows lane), plus the
+winapp CLI on `PATH` (the release zip, unpacked: no installer needed):
+
+```bash
+cd apps/desktop && pnpm tauri build --no-bundle            # once
+cp ../../target/release/Cmdr.exe /tmp/Cmdr.exe              # the unbundled exe, for the MSIX
+pnpm exec tauri bundle --bundles nsis                       # target/release/bundle/nsis/Cmdr_<v>_x64-setup.exe
+cd ../.. && ./scripts/windows-package.sh msix -version <v> -exe /tmp/Cmdr.exe -out Cmdr_<v>_x64.msix -identity dev
+./scripts/release-assets.sh vet-nsis -version <v> target/release/bundle/nsis/Cmdr_<v>_x64-setup.exe
+```
+
+Run the dev MSIX unpacked in Developer Mode (no certificate; the steps are in `apps/desktop/packaging/msix/DETAILS.md` §
+The two identities), and the installer with `Cmdr_<v>_x64-setup.exe /S` (uninstall:
+`%LOCALAPPDATA%\Cmdr\uninstall.exe /S`). The last verified run: `docs/notes/windows-port/build-progress.md`.
 
 ## How updates work
 

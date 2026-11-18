@@ -45,6 +45,8 @@ subject-path:
   release-assets/Cmdr_0.61.0_x64.app.tar.gz
   release-assets/Cmdr_0.61.0_x64.dmg
 
+## Attest the Windows Rust SBOM: skipped
+
 ## Attest the frontend SBOM: attest
 sbom-path:
   sbom/Cmdr_0.61.0_frontend.cdx.json

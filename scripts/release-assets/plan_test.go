@@ -23,7 +23,7 @@ func outputsOf(t *testing.T, outs []output) map[string]string {
 }
 
 func TestPlanForToday(t *testing.T) {
-	outs, err := plan(planInput{release: manifest.For("0.62.0"), vetted: []manifest.OS{manifest.MacOS}, attested: attestedToday, subjectDir: "release-assets"})
+	outs, err := plan(planInput{release: manifest.For("0.62.0"), wiring: manifest.All("0.62.0"), vetted: vettedAll, attested: attestedAll, subjectDir: "release-assets"})
 	must(t, err)
 	got := outputsOf(t, outs)
 	want := map[string]string{
@@ -49,27 +49,86 @@ func TestPlanForToday(t *testing.T) {
 	}
 }
 
-func TestPlanRefusesAnUnvettedOS(t *testing.T) {
-	r := manifest.Resolve("0.70.0", append(slices.Clone(manifest.Assets), windowsRows...))
-	_, err := plan(planInput{release: r, vetted: []manifest.OS{manifest.MacOS}, attested: append(slices.Clone(attestedToday), "windows-x86_64")})
-	if err == nil || !strings.Contains(err.Error(), "windows update payloads") {
-		t.Fatalf("an unvetted Windows payload passed the plan: %v", err)
+// The wiring the pipeline has: every OS with update rows vetted, every SBOM row attested.
+var (
+	vettedAll   = []manifest.OS{manifest.MacOS, manifest.Windows}
+	attestedAll = append(slices.Clone(attestedToday), "windows-x86_64")
+)
+
+func windowsPlanInput(version string) planInput {
+	return planInput{
+		release: manifest.ForOSes(version, manifest.MacOS, manifest.Windows), wiring: manifest.All(version),
+		vetted: vettedAll, attested: attestedAll, subjectDir: "release-assets",
 	}
-	outs, err := plan(planInput{release: r, vetted: []manifest.OS{manifest.MacOS, manifest.Windows}, attested: append(slices.Clone(attestedToday), "windows-x86_64")})
+}
+
+// Windows' jobs are wired before Windows ships: the plan holds the vetting and attest steps to
+// every row, and tells the Windows jobs to sit out.
+func TestPlanTodayWiresWindowsAndSkipsIt(t *testing.T) {
+	outs, err := plan(planInput{release: manifest.For("0.62.0"), wiring: manifest.All("0.62.0"), vetted: vettedAll, attested: attestedAll, subjectDir: "release-assets"})
 	must(t, err)
-	if got := outputsOf(t, outs)["update-archives-windows"]; got != "Cmdr_0.70.0_x64-setup.exe" {
-		t.Fatalf("update-archives-windows = %q", got)
+	got := outputsOf(t, outs)
+	for k, want := range map[string]string{"ships-windows": "false", "ships-linux": "false", "advisory-list": "", "signed-files": got["update-archives"]} {
+		if got[k] != want {
+			t.Errorf("%s = %q, want %q", k, got[k], want)
+		}
+	}
+	if got["signs-version"] != "" {
+		t.Errorf("signs-version = %q for a macOS-only release", got["signs-version"])
+	}
+	for _, k := range []string{"update-archives-windows", "uploads-windows", "sbom-windows-x86_64"} {
+		if _, ok := got[k]; ok {
+			t.Errorf("a macOS-only release plans %s", k)
+		}
+	}
+}
+
+func TestPlanForAWindowsRelease(t *testing.T) {
+	outs, err := plan(windowsPlanInput("0.70.0"))
+	must(t, err)
+	got := outputsOf(t, outs)
+	want := map[string]string{
+		"ships-windows":                "true",
+		"signs-version":                "Cmdr_0.70.0_x64-setup.exe",
+		"uploads-windows":              "Cmdr_0.70.0_x64-setup.exe Cmdr_0.70.0_x64.msix cmdr-group-policy-0.70.0.zip",
+		"update-archives-windows":      "Cmdr_0.70.0_x64-setup.exe",
+		"advisory-list":                "Cmdr_0.70.0_security-advisories.json",
+		"signed-files":                 got["update-archives"] + " Cmdr_0.70.0_security-advisories.json",
+		"sbom-windows-x86_64":          "Cmdr_0.70.0_windows_x64.rust.cdx.json",
+		"sbom-windows-x86_64-subjects": "release-assets/Cmdr_0.70.0_x64-setup.exe\nrelease-assets/Cmdr_0.70.0_x64.msix",
+	}
+	for k, v := range want {
+		if got[k] != v {
+			t.Errorf("%s =\n%s\nwant\n%s", k, got[k], v)
+		}
+	}
+	if !strings.Contains(got["rust-sboms"], "x86_64-pc-windows-msvc Cmdr_0.70.0_windows_x64.rust.cdx.json") {
+		t.Errorf("rust-sboms = %s", got["rust-sboms"])
+	}
+	if strings.Contains(got["binaries"], "group-policy") || !strings.Contains(got["binaries"], "Cmdr_0.70.0_x64.msix") {
+		t.Errorf("binaries = %s (the builds, not the policy template)", got["binaries"])
+	}
+}
+
+func TestPlanRefusesAnUnvettedOS(t *testing.T) {
+	in := windowsPlanInput("0.70.0")
+	for _, release := range []manifest.Release{in.release, manifest.For("0.70.0")} {
+		in.release, in.vetted = release, []manifest.OS{manifest.MacOS}
+		if _, err := plan(in); err == nil || !strings.Contains(err.Error(), "windows update payloads") {
+			t.Fatalf("Windows rows nobody vets passed the plan (shipped: %v): %v", release.Ships(manifest.Windows), err)
+		}
 	}
 }
 
 func TestPlanRefusesAnSBOMWithoutItsAttestStep(t *testing.T) {
-	r := manifest.Resolve("0.70.0", append(slices.Clone(manifest.Assets), windowsRows...))
-	_, err := plan(planInput{release: r, vetted: []manifest.OS{manifest.MacOS, manifest.Windows}, attested: attestedToday})
-	if err == nil || !strings.Contains(err.Error(), "missing: [windows-x86_64]") {
+	in := windowsPlanInput("0.70.0")
+	in.release = manifest.For("0.70.0") // unshipped rows count too
+	in.attested = attestedToday
+	if _, err := plan(in); err == nil || !strings.Contains(err.Error(), "missing: [windows-x86_64]") {
 		t.Fatalf("an SBOM nobody attests passed the plan: %v", err)
 	}
-	_, err = plan(planInput{release: manifest.For("0.62.0"), vetted: []manifest.OS{manifest.MacOS}, attested: append(slices.Clone(attestedToday), "linux-x86_64")})
-	if err == nil || !strings.Contains(err.Error(), "no longer in the manifest: [linux-x86_64]") {
+	in.attested = append(slices.Clone(attestedAll), "linux-x86_64")
+	if _, err := plan(in); err == nil || !strings.Contains(err.Error(), "no longer in the manifest: [linux-x86_64]") {
 		t.Fatalf("an attest step for no SBOM passed the plan: %v", err)
 	}
 }

@@ -91,6 +91,8 @@ func (in latestInput) rules() latestRules {
 //     the website.
 //   - `dmgSizes`: the macOS DMG sizes by arch, which website builds from before `downloads` read.
 //     It stays for one more release (`docs/guides/releasing.md` § What a release publishes).
+//   - `securityAdvisories`: the signed advisory list's URL and signature, when the release ships
+//     one (`manifest.AdvisoryList`: only with a Windows or Linux update payload).
 //
 // The members before `downloads` are in the order, and print in the bytes, of every manifest up to
 // v0.61.0 (`pipeline_test.go` holds this to v0.61.0's published file). It answers only a manifest
@@ -118,18 +120,11 @@ func buildLatest(in latestInput) (string, error) {
 
 	platforms := object{}
 	for _, f := range in.release.Updates() {
-		if _, ok := sizes[f.Name]; !ok {
-			return "", fmt.Errorf("latest.json would point at %s, which is not on the release", f.Name)
-		}
-		sig, err := os.ReadFile(filepath.Join(in.sigDir, f.Signature()))
+		entry, err := signedEntry(in, f, sizes)
 		if err != nil {
-			return "", fmt.Errorf("no signature for %s: %w", f.Name, err)
+			return "", err
 		}
-		platforms = append(platforms, member{f.UpdaterKey, object{
-			// Trailing newlines dropped, as the shell's `$(cat …)` that read them before did.
-			{"signature", strings.TrimRight(string(sig), "\n")},
-			{"url", in.baseURL + "/" + f.Name},
-		}})
+		platforms = append(platforms, member{f.UpdaterKey, entry})
 	}
 
 	var list []any
@@ -151,6 +146,13 @@ func buildLatest(in latestInput) (string, error) {
 		{"platforms", platforms},
 		{"downloads", list},
 	}
+	if advisories, ok := in.release.AdvisoryList(); ok {
+		entry, err := signedEntry(in, advisories, sizes)
+		if err != nil {
+			return "", err
+		}
+		doc = append(doc, member{"securityAdvisories", entry})
+	}
 	var b strings.Builder
 	if err := writeJSON(&b, doc, 0); err != nil {
 		return "", err
@@ -162,4 +164,21 @@ func buildLatest(in latestInput) (string, error) {
 		return "", err
 	}
 	return b.String(), nil
+}
+
+// signedEntry is a signed file's `{ signature, url }`, the shape of a `platforms` entry and of
+// `securityAdvisories`: the release's own `.sig` and the file's URL on the mirror.
+func signedEntry(in latestInput, f manifest.File, sizes map[string]int64) (object, error) {
+	if _, ok := sizes[f.Name]; !ok {
+		return nil, fmt.Errorf("latest.json would point at %s, which is not on the release", f.Name)
+	}
+	sig, err := os.ReadFile(filepath.Join(in.sigDir, f.Signature()))
+	if err != nil {
+		return nil, fmt.Errorf("no signature for %s: %w", f.Name, err)
+	}
+	return object{
+		// Trailing newlines dropped, as the shell's `$(cat …)` that read them before did.
+		{"signature", strings.TrimRight(string(sig), "\n")},
+		{"url", in.baseURL + "/" + f.Name},
+	}, nil
 }

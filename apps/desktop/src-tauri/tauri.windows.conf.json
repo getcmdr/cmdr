@@ -7,12 +7,17 @@
   },
   "bundle": {
     "targets": ["nsis"],
+    "createUpdaterArtifacts": false,
+    "publisher": "Rymdskottkärra AB",
+    "copyright": "© 2026 Rymdskottkärra AB",
+    "shortDescription": "The AI-native file manager",
     "windows": {
       "webviewInstallMode": {
         "type": "embedBootstrapper"
       },
       "nsis": {
-        "installMode": "currentUser"
+        "installMode": "currentUser",
+        "displayLanguageSelector": false
       }
     }
   }

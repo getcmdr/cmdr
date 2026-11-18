@@ -53,7 +53,7 @@ func TestNextFinishAction(t *testing.T) {
 
 func TestUpdateArchiveNames(t *testing.T) {
 	// In the manifest's update-row order, which is `latest.json`'s platform order.
-	got := updateArchiveNames("0.51.0")
+	got := signedNames("0.51.0")
 	want := []string{"Cmdr_0.51.0_universal.app.tar.gz", "Cmdr_0.51.0_aarch64.app.tar.gz", "Cmdr_0.51.0_x64.app.tar.gz"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("got %v, want %v", got, want)
@@ -62,7 +62,7 @@ func TestUpdateArchiveNames(t *testing.T) {
 
 func TestMissingAssets(t *testing.T) {
 	rel := releaseInfo{Assets: []releaseAsset{{Name: "Cmdr_0.51.0_aarch64.app.tar.gz"}, {Name: "Cmdr_0.51.0_aarch64.dmg"}}}
-	got := rel.missing(updateArchiveNames("0.51.0"))
+	got := rel.missing(signedNames("0.51.0"))
 	want := []string{"Cmdr_0.51.0_universal.app.tar.gz", "Cmdr_0.51.0_x64.app.tar.gz"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("got %v, want %v", got, want)

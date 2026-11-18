@@ -129,6 +129,21 @@ mod tests {
         }
     }
 
+    /// The NSIS installer's updater signature has to name its version (`--app-version`), which
+    /// the bundler's own signing never writes, so the release signs it in a step of its own and
+    /// the Windows bundle makes no updater artifact (a key-less local `tauri build` then bundles
+    /// too). macOS keeps the bundler's archive and signature.
+    #[test]
+    fn windows_leaves_updater_signing_to_the_release() {
+        assert_eq!(parse(SHARED)["bundle"]["createUpdaterArtifacts"], Value::Bool(true));
+        assert_eq!(parse(WINDOWS)["bundle"]["createUpdaterArtifacts"], Value::Bool(false));
+        assert_eq!(
+            parse(WINDOWS)["bundle"]["publisher"],
+            Value::from("Rymdskottkärra AB"),
+            "the installer and Apps & features name the company, not the identifier's second part"
+        );
+    }
+
     /// tauri-build fails the build when the `tauri` dependency's features disagree with the
     /// effective config's (`tauri-build` `manifest::check`), and Cargo.toml turns
     /// `macos-private-api` on for every target. So the key stays shared.

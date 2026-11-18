@@ -36,10 +36,13 @@ func expectedAssets(version string, withPkg bool) map[string]int64 {
 			continue
 		case f.SBOM():
 			want[f.Name] = minSBOMBytes
+		case !f.Binary():
+			// The Group Policy zip and the advisory list are small files, not builds.
+			want[f.Name] = 1
 		default:
 			want[f.Name] = minBundleBytes
 		}
-		if f.Update() {
+		if f.Signed() {
 			want[f.Signature()] = 1
 		}
 	}

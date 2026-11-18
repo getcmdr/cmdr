@@ -1,5 +1,7 @@
 //! Windows: a per-user NSIS install updates itself (the plugin runs the staged installer as Cmdr
-//! exits). An MSI never checks: Cmdr ships no MSI updater artifact.
+//! exits). An MSI never checks: Cmdr ships no MSI updater artifact. Nor does the Store's MSIX: it
+//! carries the exe from before the bundler stamped it, which reads as `None` here, and the Store
+//! updates it (`apps/desktop/packaging/msix/DETAILS.md` § Decision/Why: the unstamped exe).
 
 use std::path::{Path, PathBuf};
 
