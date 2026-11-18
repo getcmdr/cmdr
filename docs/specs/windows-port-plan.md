@@ -145,9 +145,25 @@ Settled:
     for its company (valid 2025-09-26 to 2028-09-25, read from `tcmd115801x64.exe`), costs more for the same trust as
     Azure. Since 2024, EV no longer buys instant SmartScreen reputation either.
 
+- **D7. Volume ids on Windows** (David, 2026-11-18, option (d) of `docs/notes/windows-port/volume-id-options.md`):
+  Windows runs the rule macOS and Linux already run. A volume's id is the disk's identity; its root is only its address.
+  Task 34.
+  - A local drive or folder mount keys on its volume GUID (`\\?\Volume{…}\`, through `local_volume_id`, `vol-`); the
+    system drive keeps `"root"`. A mapped drive (`Z:`), the same share by its UNC path, and Cmdr's own SMB connection to
+    it are ONE `smb-` volume keyed on `(server, port, share)`, with `Z:/` as its canonical root and the UNC spelling as
+    an alias root. A `subst` drive, which has no GUID, keys on its path (`path-`). macOS and Linux don't change.
+  - Plus a saved last root per volume, so a restored tab or an undo after a drive-letter swap finds the disk it meant
+    instead of whatever now sits on that letter.
+  - Why: identity-keyed state (the drive index, favorites, `lastUsedPaths`, the operation log's volume) follows the
+    disk, a share gets the answer macOS already gives an OS mount plus the direct backend, and tasks 35 (the mount table
+    falls out of the GUID sweep), 39 (an arrival names the GUID), and 45 (a mapped share is the `smb-` id) get simpler.
+  - ❌ Rejected: (a) the root path as the id: a letter swap hands one disk's index, favorites, and rollbacks to the
+    other, and one share gets three volumes. (b) the GUID with the letter as display only: fights D1 (the letter is in
+    every app path) and has no answer for UNC shares. (c) path ids with a GUID keying only the index: fixes the cheapest
+    store and leaves every store holding user intent on the letter, with a Windows-only second identity in shared code.
+
 Open, waiting on David (each task entry has the detail):
 
-- **The drive and UNC volume id scheme** (task 34).
 - **The menu model** on Windows and per Linux desktop (task 63): D5 stays provisional until David tries the menu spike.
 - **macOS hand checks** from the keymap work (task 26).
 
