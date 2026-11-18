@@ -21,9 +21,34 @@ const appPathModuleDir = "crates/cmdr-fs/src/app_path/"
 // one way back out for `std::path` arithmetic (`.as_std_legacy()`).
 var appPathStdBridgePattern = gateRegexp(regexp.MustCompile(`\b(legacy_unchecked|as_std_legacy)\s*\(`))
 
+// appTextToPathPatterns match app TEXT becoming a `std::path` value: a `FileEntry.path` or
+// `.name` (or any app path's `.as_str()`) handed to `Path::new`, `PathBuf::from`,
+// `OsStr::new`, or `OsString::from`, or a listed `.name` handed to `ChildName::new` (a
+// `std::path`-world name). Today that's the identity. Once a name holds an escape it isn't:
+// the `Path` carries the escape's own UTF-8 bytes, so `std::fs` opens a file literally named
+// with it, and the bridge reads it back as literal text. A measured proxy, not a proof: each
+// crate's conversion still audits its own values.
+var appTextToPathPatterns = gateRegexps(
+	regexp.MustCompile(`\b(Path::new|PathBuf::from|OsStr::new|OsString::from)\s*\(\s*&?[\w.\[\]]*\.(path|name)(\.clone\(\)|\.as_str\(\)|\.to_string\(\))?\s*\)`),
+	regexp.MustCompile(`\b(Path::new|PathBuf::from|OsStr::new|OsString::from)\s*\([^()]*\.as_str\(\)\s*\)`),
+	regexp.MustCompile(`\bChildName::new\s*\(\s*&?[\w.\[\]]*\.name\b`),
+)
+
+// escapeProducerPattern matches production code that turns native names into app spelling,
+// the code that makes an escape exist for a name that isn't valid Unicode text.
+var escapeProducerPattern = gateRegexp(regexp.MustCompile(`\b(AppPathBuf|AppNameBuf)::from_native\w*\s*\(|\bapp_path::escape_(bytes|units)\s*\(`))
+
 type appPathStdBridgeAllowlist struct {
 	Comment string         `json:"$comment"`
 	Files   map[string]int `json:"files"`
+	// AppTextToPath is the per-file budget of app text turned into a `std::path` value.
+	AppTextToPath map[string]int `json:"appTextToPath"`
+}
+
+type appPathScan struct {
+	bridge     []appPathStdBridgeSite
+	textToPath []appPathStdBridgeSite
+	producers  []appPathStdBridgeSite
 }
 
 type appPathStdBridgeSite struct {
@@ -42,23 +67,26 @@ func RunAppPathStdBridge(ctx *CheckContext) (CheckResult, error) {
 	if err != nil {
 		return CheckResult{}, err
 	}
-	var sites []appPathStdBridgeSite
+	var scan appPathScan
 	scanned := 0
 	for _, root := range roots {
-		rootSites, rootScanned, scanErr := scanForAppPathStdBridge(ctx.RootDir, root)
+		rootScan, rootScanned, scanErr := scanForAppPathStdBridge(ctx.RootDir, root)
 		if scanErr != nil {
 			return CheckResult{}, fmt.Errorf("failed to scan Rust files: %w", scanErr)
 		}
-		sites = append(sites, rootSites...)
+		scan.bridge = append(scan.bridge, rootScan.bridge...)
+		scan.textToPath = append(scan.textToPath, rootScan.textToPath...)
+		scan.producers = append(scan.producers, rootScan.producers...)
 		scanned += rootScanned
 	}
+	sites := scan.bridge
 
 	allowlist := loadAppPathStdBridgeAllowlist(ctx.RootDir)
-	counts := map[string]int{}
-	for _, s := range sites {
-		counts[s.relPath]++
-	}
+	counts := siteCounts(sites)
+	textCounts := siteCounts(scan.textToPath)
 	staleChanges := shrinkwrapCountAllowlist(allowlist.Files, counts, "no bridge calls left")
+	staleChanges = append(staleChanges,
+		shrinkwrapCountAllowlist(allowlist.AppTextToPath, textCounts, "no app text turned into a std path left")...)
 	if len(staleChanges) > 0 && !ctx.CI {
 		if err := writeJSONAllowlist(filepath.Join(ctx.RootDir, appPathStdBridgeAllowlistRelPath), allowlist); err != nil {
 			return CheckResult{}, err
@@ -67,45 +95,99 @@ func RunAppPathStdBridge(ctx *CheckContext) (CheckResult, error) {
 	}
 	staleMsg := formatLockPoisonStaleness(staleChanges, ctx.CI)
 
-	var over []appPathStdBridgeSite
-	for _, s := range sites {
-		if counts[s.relPath] > allowlist.Files[s.relPath] {
-			over = append(over, s)
-		}
-	}
-	if len(over) > 0 {
-		sort.Slice(over, func(i, j int) bool {
-			if over[i].relPath == over[j].relPath {
-				return over[i].line < over[j].line
-			}
-			return over[i].relPath < over[j].relPath
-		})
-		var sb strings.Builder
-		for _, s := range over {
-			sb.WriteString(fmt.Sprintf("  %s:%d: %s\n", s.relPath, s.line, s.text))
-		}
-		msg := fmt.Sprintf(
+	var failures []string
+	if over := overBudget(sites, counts, allowlist.Files); len(over) > 0 {
+		failures = append(failures, fmt.Sprintf(
 			"found %d app-path bridge %s over the file's budget in %s (speak `AppPath` arithmetic instead: "+
 				"`join`, `parent`, `strip_prefix`, and the native crossings `to_native` / `from_native`; "+
 				"the bridge only shrinks, crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
-			len(over), Pluralize(len(over), "call", "calls"), appPathStdBridgeAllowlistRelPath,
-			strings.TrimRight(sb.String(), "\n"),
-		)
-		return CheckResult{}, fmt.Errorf("%s", strings.Join(appendNonEmpty([]string{msg}, staleMsg), "\n"))
+			len(over), Pluralize(len(over), "call", "calls"), appPathStdBridgeAllowlistRelPath, formatSites(over)))
+	}
+	if over := overBudget(scan.textToPath, textCounts, allowlist.AppTextToPath); len(over) > 0 {
+		failures = append(failures, fmt.Sprintf(
+			"found %d %s turning app text into a std path, over the file's budget in %s (a `FileEntry.path` "+
+				"or `.name` is app text: build an `AppPath` with `AppPath::from_normalized`, a name with "+
+				"`AppName::new`, and cross with `to_native`; crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
+			len(over), Pluralize(len(over), "site", "sites"), appPathStdBridgeAllowlistRelPath, formatSites(over)))
+	}
+	textTotal := 0
+	for _, n := range allowlist.AppTextToPath {
+		textTotal += n
+	}
+	if len(scan.producers) > 0 && textTotal > 0 {
+		failures = append(failures, fmt.Sprintf(
+			"%d escape-producing %s in production code while %d app-text-to-std-path %s remain: an escape "+
+				"would reach code that opens a file literally named with it. The escape producers land only "+
+				"once that count is zero (docs/specs/app-path-plan.md, the escape gate):\n%s",
+			len(scan.producers), Pluralize(len(scan.producers), "call", "calls"),
+			textTotal, Pluralize(textTotal, "site", "sites"), formatSites(scan.producers)))
+	}
+	if len(failures) > 0 {
+		return CheckResult{}, fmt.Errorf("%s", strings.Join(appendNonEmpty(failures, staleMsg), "\n"))
 	}
 
 	total := 0
 	for _, n := range allowlist.Files {
 		total += n
 	}
-	okMsg := fmt.Sprintf("%d Rust %s scanned, %d app-path bridge %s left in %d %s",
+	okMsg := fmt.Sprintf("%d Rust %s scanned, %d app-path bridge %s left in %d %s, %d app-text-to-std-path %s left",
 		scanned, Pluralize(scanned, "file", "files"),
 		total, Pluralize(total, "call", "calls"),
-		len(allowlist.Files), Pluralize(len(allowlist.Files), "file", "files"))
+		len(allowlist.Files), Pluralize(len(allowlist.Files), "file", "files"),
+		textTotal, Pluralize(textTotal, "site", "sites"))
 	if staleMsg != "" {
 		return SuccessWithChanges(okMsg + "; " + staleMsg), nil
 	}
 	return Success(okMsg), nil
+}
+
+// classify files one line under each of the scan's three lists it belongs to.
+func (scan *appPathScan) classify(line string, site appPathStdBridgeSite, testFile bool) {
+	if appPathStdBridgePattern.MatchString(line) {
+		scan.bridge = append(scan.bridge, site)
+	}
+	for _, pattern := range appTextToPathPatterns {
+		if pattern.MatchString(line) {
+			scan.textToPath = append(scan.textToPath, site)
+			break
+		}
+	}
+	if !testFile && escapeProducerPattern.MatchString(line) {
+		scan.producers = append(scan.producers, site)
+	}
+}
+
+func siteCounts(sites []appPathStdBridgeSite) map[string]int {
+	counts := map[string]int{}
+	for _, s := range sites {
+		counts[s.relPath]++
+	}
+	return counts
+}
+
+// overBudget returns every site in a file holding more sites than its budget allows.
+func overBudget(sites []appPathStdBridgeSite, counts, budget map[string]int) []appPathStdBridgeSite {
+	var over []appPathStdBridgeSite
+	for _, s := range sites {
+		if counts[s.relPath] > budget[s.relPath] {
+			over = append(over, s)
+		}
+	}
+	return over
+}
+
+func formatSites(sites []appPathStdBridgeSite) string {
+	sort.Slice(sites, func(i, j int) bool {
+		if sites[i].relPath == sites[j].relPath {
+			return sites[i].line < sites[j].line
+		}
+		return sites[i].relPath < sites[j].relPath
+	})
+	var sb strings.Builder
+	for _, s := range sites {
+		sb.WriteString(fmt.Sprintf("  %s:%d: %s\n", s.relPath, s.line, s.text))
+	}
+	return strings.TrimRight(sb.String(), "\n")
 }
 
 // shrinkwrapCountAllowlist drops entries whose file has no sites left and ratchets the
@@ -130,21 +212,28 @@ func shrinkwrapCountAllowlist(files map[string]int, counts map[string]int, goneR
 // loadAppPathStdBridgeAllowlist reads the budget. A missing or unparsable file yields an
 // empty one, so every call gets reported.
 func loadAppPathStdBridgeAllowlist(rootDir string) appPathStdBridgeAllowlist {
-	list := appPathStdBridgeAllowlist{Files: map[string]int{}}
+	list := appPathStdBridgeAllowlist{Files: map[string]int{}, AppTextToPath: map[string]int{}}
 	data, err := os.ReadFile(filepath.Join(rootDir, appPathStdBridgeAllowlistRelPath))
 	if err != nil {
 		return list
 	}
-	if err := json.Unmarshal(data, &list); err != nil || list.Files == nil {
-		return appPathStdBridgeAllowlist{Comment: list.Comment, Files: map[string]int{}}
+	if err := json.Unmarshal(data, &list); err != nil {
+		return appPathStdBridgeAllowlist{Files: map[string]int{}, AppTextToPath: map[string]int{}}
+	}
+	if list.Files == nil {
+		list.Files = map[string]int{}
+	}
+	if list.AppTextToPath == nil {
+		list.AppTextToPath = map[string]int{}
 	}
 	return list
 }
 
-// scanForAppPathStdBridge returns every bridge call under srcDir, tests included (a test
-// that bridges is a test the conversion still has to visit), outside the app-path module.
-func scanForAppPathStdBridge(rootDir, srcDir string) ([]appPathStdBridgeSite, int, error) {
-	var sites []appPathStdBridgeSite
+// scanForAppPathStdBridge returns, under srcDir and outside the app-path module, every bridge
+// call and every app-text-to-std-path site (tests included: a test doing either is a test the
+// conversion still has to visit), and every escape producer in production code.
+func scanForAppPathStdBridge(rootDir, srcDir string) (appPathScan, int, error) {
+	var scan appPathScan
 	scanned := 0
 	err := corpus.WalkDir(srcDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -166,16 +255,14 @@ func scanForAppPathStdBridge(rootDir, srcDir string) ([]appPathStdBridgeSite, in
 		if readErr != nil {
 			return readErr
 		}
+		testFile := isRustTestFile(relPath) || strings.Contains(relPath, "/testing/") || strings.Contains(relPath, "test_support")
 		for idx, line := range lines {
-			if !appPathStdBridgePattern.MatchString(line) {
-				continue
-			}
 			if strings.HasPrefix(strings.TrimLeft(line, " \t"), "//") {
 				continue
 			}
-			sites = append(sites, appPathStdBridgeSite{relPath: relPath, line: idx + 1, text: strings.TrimSpace(line)})
+			scan.classify(line, appPathStdBridgeSite{relPath: relPath, line: idx + 1, text: strings.TrimSpace(line)}, testFile)
 		}
 		return nil
 	})
-	return sites, scanned, err
+	return scan, scanned, err
 }

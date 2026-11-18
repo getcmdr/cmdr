@@ -12,6 +12,16 @@ import (
 // `src/`) plus an optional allowlist into a temp repo and runs the check, as a local run.
 func runAppPathStdBridgeOn(t *testing.T, files map[string]string, allowed map[string]int) (CheckResult, string, error) {
 	t.Helper()
+	var list *appPathStdBridgeAllowlist
+	if allowed != nil {
+		list = &appPathStdBridgeAllowlist{Comment: "test", Files: allowed}
+	}
+	return runAppPathStdBridgeWith(t, files, list)
+}
+
+// runAppPathStdBridgeWith is [runAppPathStdBridgeOn] with a whole allowlist (both budgets).
+func runAppPathStdBridgeWith(t *testing.T, files map[string]string, list *appPathStdBridgeAllowlist) (CheckResult, string, error) {
+	t.Helper()
 	root := t.TempDir()
 	seedAppFixtureWorkspace(t, root)
 	srcDir := filepath.Join(root, "apps", "desktop", "src-tauri", "src")
@@ -28,11 +38,11 @@ func runAppPathStdBridgeOn(t *testing.T, files map[string]string, allowed map[st
 		}
 	}
 	allowlistPath := filepath.Join(root, appPathStdBridgeAllowlistRelPath)
-	if allowed != nil {
+	if list != nil {
 		if err := os.MkdirAll(filepath.Dir(allowlistPath), 0o755); err != nil {
 			t.Fatalf("mkdir: %v", err)
 		}
-		data, _ := json.Marshal(appPathStdBridgeAllowlist{Comment: "test", Files: allowed})
+		data, _ := json.Marshal(list)
 		if err := os.WriteFile(allowlistPath, data, 0o644); err != nil {
 			t.Fatalf("write allowlist: %v", err)
 		}
@@ -85,5 +95,46 @@ func TestAppPathStdBridge_ABudgetPassesAndShrinksToTheCount(t *testing.T) {
 	}
 	if _, ok := list.Files["apps/desktop/src-tauri/src/volume/gone.rs"]; ok {
 		t.Error("a file with no calls left drops off")
+	}
+}
+
+func TestAppPathStdBridge_FlagsAppTextTurnedIntoAStdPath(t *testing.T) {
+	for name, body := range map[string]string{
+		"path":       "fn f(entry: &FileEntry) { let p = Path::new(&entry.path); }\n",
+		"name":       "fn f(e: &FileEntry) { let p = PathBuf::from(e.name.clone()); }\n",
+		"as_str":     "fn f(p: &AppPath) { let q = Path::new(p.as_str()); }\n",
+		"child_name": "fn f(entry: &FileEntry) { let n = ChildName::new(&entry.name)?; }\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, _, err := runAppPathStdBridgeOn(t, map[string]string{"volume/x.rs": body}, nil)
+			if err == nil || !strings.Contains(err.Error(), "turning app text into a std path") {
+				t.Fatalf("expected the site flagged, got %v", err)
+			}
+		})
+	}
+}
+
+func TestAppPathStdBridge_AnEscapeProducerWaitsForTheTextSitesToBeGone(t *testing.T) {
+	files := map[string]string{
+		"volume/reader.rs": "fn f(p: &Path) { let a = AppPathBuf::from_native(p)?; }\n",
+		"volume/x.rs":      "fn g(entry: &FileEntry) { let p = Path::new(&entry.path); }\n",
+	}
+	budget := map[string]int{"apps/desktop/src-tauri/src/volume/x.rs": 1}
+	_, _, err := runAppPathStdBridgeWith(t, files, &appPathStdBridgeAllowlist{Files: map[string]int{}, AppTextToPath: budget})
+	if err == nil || !strings.Contains(err.Error(), "escape-producing") {
+		t.Fatalf("a producer must fail while app text still becomes a std path, got %v", err)
+	}
+	delete(files, "volume/x.rs")
+	res, _, err := runAppPathStdBridgeWith(t, files, &appPathStdBridgeAllowlist{Files: map[string]int{}, AppTextToPath: map[string]int{}})
+	if err != nil || res.Code != ResultSuccess {
+		t.Fatalf("with no text sites left a producer passes, got %v / %+v", err, res)
+	}
+	// A test file's producer (a scratch dir's app path) isn't the gate's business.
+	testOnly := map[string]string{
+		"volume/reader_test.rs": "fn t(p: &Path) { let a = AppPathBuf::from_native(p).unwrap(); }\n",
+		"volume/x.rs":           "fn g(entry: &FileEntry) { let p = Path::new(&entry.path); }\n",
+	}
+	if _, _, err := runAppPathStdBridgeWith(t, testOnly, &appPathStdBridgeAllowlist{Files: map[string]int{}, AppTextToPath: budget}); err != nil {
+		t.Fatalf("a test-only producer passes, got %v", err)
 	}
 }
