@@ -1734,7 +1734,6 @@ dependencies = [
  "cmdr-listing",
  "cmdr-sort",
  "futures-util",
- "libc",
  "log",
  "nucleo-matcher",
  "serde",
