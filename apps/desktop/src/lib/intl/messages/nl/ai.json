@@ -607,7 +607,7 @@
   "@ai.secretError.title": {
     "sourceHash": "6daa595"
   },
-  "ai.secretError.body": "{platform, select, macos {{op, select, save {Open Sleutelhangertoegang en controleer het onderdeel ‘Cmdr’, of verwijder het en bewaar opnieuw.} other {Open Sleutelhangertoegang, zoek het onderdeel ‘Cmdr’, verleen toegang, of verwijder het en voer je sleutel opnieuw in.}}} windows {{op, select, save {Open Referentiebeheer en controleer de referentie ‘Cmdr’ onder Windows-referenties, of verwijder die en bewaar opnieuw.} other {Open Referentiebeheer, zoek de referentie ‘Cmdr’ onder Windows-referenties, of verwijder die en voer je sleutel opnieuw in.}}} linuxGnome {Ontgrendel je sleutelhanger in Wachtwoorden en sleutels en probeer het opnieuw.} linuxKde {Ontgrendel je portefeuille in KWalletManager en probeer het opnieuw.} other {Ontgrendel je sleutelhanger (de app Wachtwoorden / Sleutelhangers) en probeer het opnieuw.}}",
+  "ai.secretError.body": "{platform, select, macos {{op, select, save {Open Sleutelhangertoegang en controleer het onderdeel ‘Cmdr’, of verwijder het en bewaar opnieuw.} other {Open Sleutelhangertoegang, zoek het onderdeel ‘Cmdr’, verleen toegang, of verwijder het en voer je sleutel opnieuw in.}}} windows {{op, select, save {Open Referentiebeheer en controleer de referentie ‘Cmdr’ onder Windows-referenties, of verwijder die en bewaar opnieuw.} other {Open Referentiebeheer, zoek de referentie ‘Cmdr’ onder Windows-referenties, of verwijder die en voer je sleutel opnieuw in.}}} linuxGnome {Ontgrendel je sleutelbos in Wachtwoorden en sleutels en probeer het opnieuw.} linuxKde {Ontgrendel je portefeuille in KWalletManager en probeer het opnieuw.} other {Ontgrendel je sleutelhanger (de app Wachtwoorden / Sleutelhangers) en probeer het opnieuw.}}",
   "@ai.secretError.body": {
     "sourceHash": "8a5496f"
   },
@@ -623,7 +623,7 @@
   "@ai.secretError.removeTitle": {
     "sourceHash": "5986628"
   },
-  "ai.secretError.removeBody": "{platform, select, macos {Open Sleutelhangertoegang, zoek het onderdeel ‘Cmdr’ en verwijder het daar.} windows {Open Referentiebeheer, zoek de referentie ‘Cmdr’ onder Windows-referenties en verwijder die daar.} linuxGnome {Ontgrendel je sleutelhanger in Wachtwoorden en sleutels en probeer het opnieuw.} linuxKde {Ontgrendel je portefeuille in KWalletManager en probeer het opnieuw.} other {Ontgrendel je sleutelhanger (de app Wachtwoorden / Sleutelhangers) en probeer het opnieuw.}}",
+  "ai.secretError.removeBody": "{platform, select, macos {Open Sleutelhangertoegang, zoek het onderdeel ‘Cmdr’ en verwijder het daar.} windows {Open Referentiebeheer, zoek de referentie ‘Cmdr’ onder Windows-referenties en verwijder die daar.} linuxGnome {Ontgrendel je sleutelbos in Wachtwoorden en sleutels en probeer het opnieuw.} linuxKde {Ontgrendel je portefeuille in KWalletManager en probeer het opnieuw.} other {Ontgrendel je sleutelhanger (de app Wachtwoorden / Sleutelhangers) en probeer het opnieuw.}}",
   "@ai.secretError.removeBody": {
     "sourceHash": "ab0d2ec"
   },

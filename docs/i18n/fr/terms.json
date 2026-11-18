@@ -1945,7 +1945,7 @@
     "decision": "Le hub des serveurs : la table",
     "forms": "the store → le trousseau (Mémoriser dans le trousseau); the app Keychain Access → Trousseaux d’accès (Apple’s plural); ai.secretError says Trousseau macOS",
     "sources": "Keychain Access.app InfoPlist.loctable CFBundleDisplayName (macOS 26.6.2 build 25G83, 2026-09-06)",
-    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Mémoriser dans KWallet; a wallet → portefeuille, tentative: KDE's own catalog isn't in the pile); GNOME's Passwords and Keys (Seahorse) → Mots de passe et clés (tentative, not in the pile)."
+    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Mémoriser dans KWallet), and KDE French calls a wallet portefeuille (kwalletmanager.po: Wallet → Portefeuille); GNOME's Passwords and Keys (Seahorse) → Mots de passe et clés, its keyring → trousseau (seahorse.po). Verified read-only on l10n.gnome.org seahorse.main fr.po and websvn.kde.org trunk/l10n-kf6 fr, 2026-11-18."
   },
   "keyword": {
     "accept": ["mots-clés"],
@@ -3174,7 +3174,7 @@
     "decision": "Réglages : sections et présentation",
     "exceptions": {
       "servers.sheet.s3GcsKeyHelp": "Third-party UI: Google Cloud’s French console names Cloud Storage’s settings page Paramètres, so the hint quotes the vendor’s word (tentative).",
-      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome and linuxKde branches quote the desktop's own settings app: GNOME Paramètres (gnome-control-center fr, tentative: not in the pile) and KDE Configuration du système (tentative), never Cmdr's Réglages."
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome and linuxKde branches quote the desktop's own settings app, never Cmdr's Réglages: GNOME Paramètres > Clavier > Voir et personnaliser les raccourcis (gnome-control-center.po fr) and KDE Configuration du système > Clavier > Raccourcis (systemsettings.po fr, kcm_keyboard and kcm_keys metadata). Verified read-only, 2026-11-18."
     },
     "forms": "Cmdr’s own window → les Réglages (Ouvrir les réglages, Activez-la dans les Réglages); breadcrumbs Réglages > IA, Réglages › Mises à jour et confidentialité (mirror EN’s separator); Apple’s app is Réglages Système",
     "sources": "macOS (Réglages Système CFBundleName)",
@@ -3513,7 +3513,7 @@
     "exceptions": {
       "settings.appearance.themeColorSwatchAria": "The Linux branch names no app: les réglages de votre système is a common noun, never Apple’s Réglages Système.",
       "servers.refusal.clockSkewed": "other (Linux) branch names the desktop’s own settings generically (les réglages de votre système), not Apple’s Réglages Système",
-      "shortcuts.conflict.takenByLinuxDesktops": "The linuxKde branch names KDE Plasma's System Settings, which KDE French calls Configuration du système (tentative: not in the pile), not Apple's Réglages Système."
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxKde branch names KDE Plasma's System Settings, which KDE French calls Configuration du système (systemsettings.po fr, websvn.kde.org trunk/l10n-kf6, 2026-11-18), not Apple's Réglages Système."
     }
   },
   "system-settings-pane": {

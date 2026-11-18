@@ -1967,7 +1967,11 @@
     "confidence": "high",
     "forms": "the store → Sleutelhanger (Onthoud in Sleutelhanger); the app → Sleutelhangertoegang; another system's keyring → sleutelhanger, Passwords / Keyrings app → Wachtwoorden / Sleutelhangers",
     "sources": "macOS Dutch; Keychain Access.app InfoPlist.loctable (CFBundleName Sleutelhangertoegang); MS (Windows Sleutelhanger)",
-    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Onthoud in KWallet; a wallet → portefeuille, tentative: KDE's own catalog isn't in the pile); GNOME's Passwords and Keys (Seahorse) → Wachtwoorden en sleutels (tentative, not in the pile)."
+    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Onthoud in KWallet), and KDE Dutch calls a wallet portefeuille (kwalletmanager.po: Wallet → Portefeuille); GNOME's Passwords and Keys (Seahorse) → Wachtwoorden en sleutels, and GNOME's keyring is a sleutelbos, not macOS's sleutelhanger (seahorse.po: Password keyring → Wachtwoordsleutelbos), so the linuxGnome branch of ai.secretError.body says Ontgrendel je sleutelbos. Verified read-only on l10n.gnome.org seahorse.main nl.po and websvn.kde.org trunk/l10n-kf6 nl, 2026-11-18.",
+    "exceptions": {
+      "ai.secretError.body": "The linuxGnome branch names GNOME's keyring the way GNOME Dutch does, sleutelbos (seahorse.po: Password keyring → Wachtwoordsleutelbos, verified 2026-11-18); the macos and other branches keep sleutelhanger.",
+      "ai.secretError.removeBody": "Same linuxGnome branch as ai.secretError.body: GNOME Dutch's keyring is a sleutelbos (seahorse.po, verified 2026-11-18)."
+    }
   },
   "kind": {
     "accept": ["soort"],

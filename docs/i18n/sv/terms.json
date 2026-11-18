@@ -1936,7 +1936,7 @@
     "decision": "Apple translates Quick Look and Keychain",
     "forms": "the store nyckelringen (Kom ihåg i nyckelringen); the app Keychain Access → Nyckelhanterare",
     "sources": "macOS Keychain Access.app InfoPlist.loctable (CFBundleDisplayName = Nyckelhanterare), Localizable (nyckelring)",
-    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Kom ihåg i KWallet; a wallet → plånbok, tentative: KDE's own catalog isn't in the pile); GNOME's Passwords and Keys (Seahorse) → Lösenord och nycklar (tentative, not in the pile)."
+    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Kom ihåg i KWallet), and KDE Swedish calls a wallet plånbok (kwalletmanager.po: Wallet → Plånbok); GNOME's Passwords and Keys (Seahorse) → Lösenord och nycklar, its keyring → nyckelring (seahorse.po). GNOME's keyboard path is Inställningar > Tangentbord > Visa och anpassa kortkommandon (gnome-control-center.po: _View and Customize Shortcuts → _Visa och anpassa kortkommandon), KDE's Systeminställningar > Tangentbord > Genvägar. Verified read-only on l10n.gnome.org and websvn.kde.org trunk/l10n-kf6 sv, 2026-11-18."
   },
   "kind": {
     "chosen": "typ",

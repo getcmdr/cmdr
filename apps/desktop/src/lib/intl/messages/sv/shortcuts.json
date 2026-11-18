@@ -117,7 +117,7 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {I {desktops} brukar skrivbordsmiljön ta {combo} för egen del, så genvägen når kanske aldrig fram till Cmdr. Du kan frigöra den i Inställningar > Tangentbord > Visa och anpassa tangentbordsgenvägar.} linuxKde {I {desktops} brukar skrivbordsmiljön ta {combo} för egen del, så genvägen når kanske aldrig fram till Cmdr. Du kan frigöra den i Systeminställningar > Tangentbord > Genvägar.} other {I {desktops} brukar skrivbordsmiljön ta {combo} för egen del, så genvägen når kanske aldrig fram till Cmdr. Du kan frigöra den i tangentbordsinställningarna för din skrivbordsmiljö.}}",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {I {desktops} brukar skrivbordsmiljön ta {combo} för egen del, så genvägen når kanske aldrig fram till Cmdr. Du kan frigöra den i Inställningar > Tangentbord > Visa och anpassa kortkommandon.} linuxKde {I {desktops} brukar skrivbordsmiljön ta {combo} för egen del, så genvägen når kanske aldrig fram till Cmdr. Du kan frigöra den i Systeminställningar > Tangentbord > Genvägar.} other {I {desktops} brukar skrivbordsmiljön ta {combo} för egen del, så genvägen når kanske aldrig fram till Cmdr. Du kan frigöra den i tangentbordsinställningarna för din skrivbordsmiljö.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "8aefc0b"
   },

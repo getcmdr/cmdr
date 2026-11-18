@@ -603,7 +603,7 @@
   "@ai.secretError.title": {
     "sourceHash": "6daa595"
   },
-  "ai.secretError.body": "{platform, select, macos {{op, select, save {Öffne die Schlüsselbundverwaltung und prüfe den Eintrag „Cmdr“, oder lösche ihn und speichere noch einmal.} other {Öffne die Schlüsselbundverwaltung, suche den Eintrag „Cmdr“ und gewähre den Zugriff, oder lösche ihn und gib deinen Schlüssel neu ein.}}} windows {{op, select, save {Öffne die Anmeldeinformationsverwaltung und prüfe den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“, oder entferne ihn und speichere noch einmal.} other {Öffne die Anmeldeinformationsverwaltung, suche den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“, oder entferne ihn und gib deinen Schlüssel noch einmal ein.}}} linuxGnome {Entsperre deinen Schlüsselbund in „Passwörter und Verschlüsselung“ und versuche es erneut.} linuxKde {Entsperre deine Brieftasche in KWalletManager und versuche es erneut.} other {Entsperre deinen Schlüsselbund (App „Passwörter“ / „Schlüsselbunde“) und versuche es erneut.}}",
+  "ai.secretError.body": "{platform, select, macos {{op, select, save {Öffne die Schlüsselbundverwaltung und prüfe den Eintrag „Cmdr“, oder lösche ihn und speichere noch einmal.} other {Öffne die Schlüsselbundverwaltung, suche den Eintrag „Cmdr“ und gewähre den Zugriff, oder lösche ihn und gib deinen Schlüssel neu ein.}}} windows {{op, select, save {Öffne die Anmeldeinformationsverwaltung und prüfe den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“, oder entferne ihn und speichere noch einmal.} other {Öffne die Anmeldeinformationsverwaltung, suche den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“, oder entferne ihn und gib deinen Schlüssel noch einmal ein.}}} linuxGnome {Entsperre deinen Schlüsselbund in „Passwörter und Verschlüsselung“ und versuche es erneut.} linuxKde {Entsperre deinen Passwortspeicher in KWalletManager und versuche es erneut.} other {Entsperre deinen Schlüsselbund (App „Passwörter“ / „Schlüsselbunde“) und versuche es erneut.}}",
   "@ai.secretError.body": {
     "sourceHash": "8a5496f"
   },
@@ -619,7 +619,7 @@
   "@ai.secretError.removeTitle": {
     "sourceHash": "5986628"
   },
-  "ai.secretError.removeBody": "{platform, select, macos {Öffne die Schlüsselbundverwaltung, suche den Eintrag „Cmdr“ und lösche ihn dort.} windows {Öffne die Anmeldeinformationsverwaltung, suche den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“ und entferne ihn dort.} linuxGnome {Entsperre deinen Schlüsselbund in „Passwörter und Verschlüsselung“ und versuche es erneut.} linuxKde {Entsperre deine Brieftasche in KWalletManager und versuche es erneut.} other {Entsperre deinen Schlüsselbund (App „Passwörter“ / „Schlüsselbunde“) und versuche es erneut.}}",
+  "ai.secretError.removeBody": "{platform, select, macos {Öffne die Schlüsselbundverwaltung, suche den Eintrag „Cmdr“ und lösche ihn dort.} windows {Öffne die Anmeldeinformationsverwaltung, suche den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“ und entferne ihn dort.} linuxGnome {Entsperre deinen Schlüsselbund in „Passwörter und Verschlüsselung“ und versuche es erneut.} linuxKde {Entsperre deinen Passwortspeicher in KWalletManager und versuche es erneut.} other {Entsperre deinen Schlüsselbund (App „Passwörter“ / „Schlüsselbunde“) und versuche es erneut.}}",
   "@ai.secretError.removeBody": {
     "sourceHash": "ab0d2ec"
   },

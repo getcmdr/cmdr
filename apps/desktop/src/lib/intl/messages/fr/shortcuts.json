@@ -116,7 +116,7 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {Sur {desktops}, l’environnement de bureau prend généralement {combo} pour lui, donc ce raccourci pourrait ne jamais atteindre Cmdr. Vous pouvez le libérer dans Paramètres > Clavier > Afficher et personnaliser les raccourcis.} linuxKde {Sur {desktops}, l’environnement de bureau prend généralement {combo} pour lui, donc ce raccourci pourrait ne jamais atteindre Cmdr. Vous pouvez le libérer dans Configuration du système > Clavier > Raccourcis.} other {Sur {desktops}, l’environnement de bureau prend généralement {combo} pour lui, donc ce raccourci pourrait ne jamais atteindre Cmdr. Vous pouvez le libérer dans les paramètres du clavier de votre environnement de bureau.}}",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {Sur {desktops}, l’environnement de bureau prend généralement {combo} pour lui, donc ce raccourci pourrait ne jamais atteindre Cmdr. Vous pouvez le libérer dans Paramètres > Clavier > Voir et personnaliser les raccourcis.} linuxKde {Sur {desktops}, l’environnement de bureau prend généralement {combo} pour lui, donc ce raccourci pourrait ne jamais atteindre Cmdr. Vous pouvez le libérer dans Configuration du système > Clavier > Raccourcis.} other {Sur {desktops}, l’environnement de bureau prend généralement {combo} pour lui, donc ce raccourci pourrait ne jamais atteindre Cmdr. Vous pouvez le libérer dans les paramètres du clavier de votre environnement de bureau.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "8aefc0b"
   },

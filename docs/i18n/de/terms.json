@@ -2063,7 +2063,7 @@
     "chosen": "Schlüsselbund",
     "confidence": "high",
     "forms": "the store → Schlüsselbund; the Keychain Access app → Schlüsselbundverwaltung; the generic OS keyring fallback → System-Schlüsselbund; checkbox Im Schlüsselbund merken",
-    "note": "A localized Apple feature name, like Quick Look, so it isn't a verbatim brand. Linux desktop branches: KDE keeps KWallet and KWalletManager as names (In KWallet merken; a wallet → Brieftasche); GNOME's Passwords and Keys (Seahorse) app → „Passwörter und Verschlüsselung“ (tentative: Seahorse isn't in the pile, from GNOME de memory).",
+    "note": "A localized Apple feature name, like Quick Look, so it isn't a verbatim brand. Linux desktop branches: KDE keeps KWallet and KWalletManager as names (In KWallet merken), and KDE German calls a wallet Passwortspeicher (kwalletmanager.po: Wallet → Passwortspeicher), so Entsperre deinen Passwortspeicher in KWalletManager; GNOME's Passwords and Keys (Seahorse) app → „Passwörter und Verschlüsselung“, its keyring → Schlüsselbund (seahorse.po: Password keyring → Passwort-Schlüsselbund). Verified read-only on l10n.gnome.org seahorse.main de.po and websvn.kde.org trunk/l10n-kf6 de, 2026-11-18.",
     "sources": "macOS de; Keychain Access.app InfoPlist.loctable CFBundleDisplayName (macOS 26.6.2, 2026-09-06); NetAuthAgent 600268.title"
   },
   "kind": {
@@ -4631,6 +4631,6 @@
     "chosen": "Einstellungen",
     "confidence": "high",
     "sources": "macOS AppKit MenuCommands Preferences → Einstellungen; de/gnome-nautilus/nautilus.po _Preferences → _Einstellungen; de/xfce-thunar/thunar.po Pr_eferences... → _Einstellungen …",
-    "note": "GNOME's app-menu row (the linuxGnome branch of menu.app.settings) is Einstellungen with no ellipsis; KDE's Configure Cmdr… is Cmdr einrichten … (KDE's standard Configure %1… action, from memory: not in the pile, tentative)."
+    "note": "GNOME's app-menu row (the linuxGnome branch of menu.app.settings) is Einstellungen with no ellipsis; KDE's Configure Cmdr… is Cmdr einrichten … (KDE's standard Configure %1… action: kconfigwidgets6.po de &Configure %1… → %1 ein&richten …, websvn.kde.org trunk/l10n-kf6, 2026-11-18)."
   }
 }

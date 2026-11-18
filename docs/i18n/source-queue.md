@@ -293,3 +293,11 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   coverage output: a brief selector for "everything stale or missing for this locale" would save that. One read-only
   `node` lookup listed per-OS branches still in English. The guard refused `for` loops and any command whose text
   contained a URL or `$?`. (es, pt, vi, zh, zh-Hant)
+- Second translator to write the same catalog-fetch `curl` script (seahorse, gnome-control-center, kconfigwidgets,
+  kwalletmanager, systemsettings, kcm_keys/kcm_keyboard metadata), and it found two wrong GNOME paths and two wrong
+  wallet/keyring words that the pile couldn't have caught: the pile should carry these catalogs, or `i18n:pile` should
+  fetch them. Working URLs: `l10n.gnome.org/POT/<module>.main/<module>.main.<tag>.po` and
+  `websvn.kde.org/trunk/l10n-kf6/<tag>/messages/<repo>/<catalog>.po?view=co`; KCM names live in the `kcm_*.json`
+  metadata on invent.kde.org, not in a `.po`. KDE's `Configure %1…` lives in `kconfigwidgets6.po`, not `kxmlgui6.po`
+  (obsolete there). A `--lang` list on `i18n:brief` (one brief per language in one call) would have avoided 13 separate
+  commands, since the guard refuses a loop. (de, nl, sv, fr)
