@@ -251,13 +251,13 @@
   "@servers.refusal.saveUnconfirmed": {
     "sourceHash": "3fb55a6"
   },
-  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr 沒辦法把這個密碼存進鑰匙圈。請再試一次，或關閉「記住在鑰匙圈中」，不儲存密碼直接登入。} windows {Cmdr 沒辦法儲存這個密碼。請再試一次，或關閉「記住密碼」，不儲存密碼直接登入。} linuxKde {Cmdr couldn’t store this password in KWallet. Try again, or turn off “Remember in KWallet” to sign in without storing it.} other {Cmdr 沒辦法把這個密碼存進鑰匙圈。請再試一次，或關閉「記住在鑰匙圈中」，不儲存密碼直接登入。}}",
+  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr 沒辦法把這個密碼存進鑰匙圈。請再試一次，或關閉「記住在鑰匙圈中」，不儲存密碼直接登入。} windows {Cmdr 沒辦法儲存這個密碼。請再試一次，或關閉「記住密碼」，不儲存密碼直接登入。} linuxKde {Cmdr 沒辦法把這個密碼存進 KWallet。請再試一次，或關閉「記住在 KWallet 中」，不儲存密碼直接登入。} other {Cmdr 沒辦法把這個密碼存進鑰匙圈。請再試一次，或關閉「記住在鑰匙圈中」，不儲存密碼直接登入。}}",
   "@servers.refusal.secretNotStored": {
-    "sourceHash": "8b29064"
+    "sourceHash": "19deece"
   },
-  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Cmdr 已儲存你的變更，但沒辦法更新鑰匙圈中的密碼。再儲存一次即可重試。} windows {Cmdr 已儲存你的變更，但沒辦法更新已儲存的密碼。再儲存一次即可重試。} linuxKde {Cmdr saved your changes but couldn’t update the password in KWallet. Save again to try once more.} other {Cmdr 已儲存你的變更，但沒辦法更新鑰匙圈中的密碼。再儲存一次即可重試。}}",
+  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Cmdr 已儲存你的變更，但沒辦法更新鑰匙圈中的密碼。再儲存一次即可重試。} windows {Cmdr 已儲存你的變更，但沒辦法更新已儲存的密碼。再儲存一次即可重試。} linuxKde {Cmdr 已儲存你的變更，但沒辦法更新 KWallet 中的密碼。再儲存一次即可重試。} other {Cmdr 已儲存你的變更，但沒辦法更新鑰匙圈中的密碼。再儲存一次即可重試。}}",
   "@servers.refusal.savedSecretNotUpdated": {
-    "sourceHash": "03fbb15"
+    "sourceHash": "d9b6621"
   },
   "servers.refusal.s3AuthenticationRejected": "那組私密存取金鑰不管用。",
   "@servers.refusal.s3AuthenticationRejected": {
@@ -271,13 +271,13 @@
   "@servers.refusal.s3SecretMissing": {
     "sourceHash": "f1f32f2"
   },
-  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr 沒辦法把這組私密存取金鑰存進鑰匙圈。請再試一次，或關閉「記住在鑰匙圈中」，不儲存金鑰直接登入。} windows {Cmdr 沒辦法儲存這組私密存取金鑰。請再試一次，或關閉「記住密碼」，不儲存金鑰直接登入。} linuxKde {Cmdr couldn’t store this secret access key in KWallet. Try again, or turn off “Remember in KWallet” to sign in without storing it.} other {Cmdr 沒辦法把這組私密存取金鑰存進鑰匙圈。請再試一次，或關閉「記住在鑰匙圈中」，不儲存金鑰直接登入。}}",
+  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr 沒辦法把這組私密存取金鑰存進鑰匙圈。請再試一次，或關閉「記住在鑰匙圈中」，不儲存金鑰直接登入。} windows {Cmdr 沒辦法儲存這組私密存取金鑰。請再試一次，或關閉「記住密碼」，不儲存金鑰直接登入。} linuxKde {Cmdr 沒辦法把這組私密存取金鑰存進 KWallet。請再試一次，或關閉「記住在 KWallet 中」，不儲存金鑰直接登入。} other {Cmdr 沒辦法把這組私密存取金鑰存進鑰匙圈。請再試一次，或關閉「記住在鑰匙圈中」，不儲存金鑰直接登入。}}",
   "@servers.refusal.s3SecretNotStored": {
-    "sourceHash": "6b787ad"
+    "sourceHash": "9aa6628"
   },
-  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Cmdr 已儲存你的變更，但沒辦法更新鑰匙圈中的私密存取金鑰。再儲存一次即可重試。} windows {Cmdr 已儲存你的變更，但沒辦法更新已儲存的私密存取金鑰。再儲存一次即可重試。} linuxKde {Cmdr saved your changes but couldn’t update the secret access key in KWallet. Save again to try once more.} other {Cmdr 已儲存你的變更，但沒辦法更新鑰匙圈中的私密存取金鑰。再儲存一次即可重試。}}",
+  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Cmdr 已儲存你的變更，但沒辦法更新鑰匙圈中的私密存取金鑰。再儲存一次即可重試。} windows {Cmdr 已儲存你的變更，但沒辦法更新已儲存的私密存取金鑰。再儲存一次即可重試。} linuxKde {Cmdr 已儲存你的變更，但沒辦法更新 KWallet 中的私密存取金鑰。再儲存一次即可重試。} other {Cmdr 已儲存你的變更，但沒辦法更新鑰匙圈中的私密存取金鑰。再儲存一次即可重試。}}",
   "@servers.refusal.s3SavedSecretNotUpdated": {
-    "sourceHash": "5697774"
+    "sourceHash": "8c62f24"
   },
   "servers.refusal.accessDenied": "這組金鑰無法存取這個儲存貯體。請確認儲存貯體名稱和私密存取金鑰，以及這組金鑰有權限讀取這個儲存貯體。",
   "@servers.refusal.accessDenied": {
@@ -335,13 +335,13 @@
   "@servers.refusal.addressTaken": {
     "sourceHash": "5a14a92"
   },
-  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr 沒辦法把已儲存的密碼帶到新位址，所以什麼都沒變。請確認鑰匙圈已經解鎖，再儲存一次。} windows {Cmdr 沒辦法把已儲存的密碼帶到新位址，所以什麼都沒變。再儲存一次即可重試。} linuxKde {Cmdr couldn’t take the saved password along to the new address, so nothing changed. Check that KWallet is open, then save again.} other {Cmdr 沒辦法把已儲存的密碼帶到新位址，所以什麼都沒變。請確認鑰匙圈已經解鎖，再儲存一次。}}",
+  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr 沒辦法把已儲存的密碼帶到新位址，所以什麼都沒變。請確認鑰匙圈已經解鎖，再儲存一次。} windows {Cmdr 沒辦法把已儲存的密碼帶到新位址，所以什麼都沒變。再儲存一次即可重試。} linuxKde {Cmdr 沒辦法把已儲存的密碼帶到新位址，所以什麼都沒變。請確認 KWallet 已經開啟，再儲存一次。} other {Cmdr 沒辦法把已儲存的密碼帶到新位址，所以什麼都沒變。請確認鑰匙圈已經解鎖，再儲存一次。}}",
   "@servers.refusal.secretNotMoved": {
-    "sourceHash": "3a8f01c"
+    "sourceHash": "a59f35e"
   },
-  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr 沒辦法把已儲存的私密存取金鑰帶到新端點，所以什麼都沒變。請確認鑰匙圈已經解鎖，再儲存一次。} windows {Cmdr 沒辦法把已儲存的私密存取金鑰帶到新端點，所以什麼都沒變。再儲存一次即可重試。} linuxKde {Cmdr couldn’t take the saved secret access key along to the new endpoint, so nothing changed. Check that KWallet is open, then save again.} other {Cmdr 沒辦法把已儲存的私密存取金鑰帶到新端點，所以什麼都沒變。請確認鑰匙圈已經解鎖，再儲存一次。}}",
+  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr 沒辦法把已儲存的私密存取金鑰帶到新端點，所以什麼都沒變。請確認鑰匙圈已經解鎖，再儲存一次。} windows {Cmdr 沒辦法把已儲存的私密存取金鑰帶到新端點，所以什麼都沒變。再儲存一次即可重試。} linuxKde {Cmdr 沒辦法把已儲存的私密存取金鑰帶到新端點，所以什麼都沒變。請確認 KWallet 已經開啟，再儲存一次。} other {Cmdr 沒辦法把已儲存的私密存取金鑰帶到新端點，所以什麼都沒變。請確認鑰匙圈已經解鎖，再儲存一次。}}",
   "@servers.refusal.s3SecretNotMoved": {
-    "sourceHash": "d08a1d2"
+    "sourceHash": "a990f83"
   },
   "servers.refusal.accountChanged": "不同的帳號就是不同的伺服器，所以什麼都沒儲存。請把它加入成新的伺服器。",
   "@servers.refusal.accountChanged": {
@@ -579,9 +579,9 @@
   "@servers.sheet.password": {
     "sourceHash": "e7cf3ef"
   },
-  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {已儲存在鑰匙圈中。留空就維持不變。} windows {已儲存。留空就維持不變。} linuxKde {Saved in KWallet. Leave empty to keep it.} other {已儲存在你的鑰匙圈中。留空就維持不變。}}",
+  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {已儲存在鑰匙圈中。留空就維持不變。} windows {已儲存。留空就維持不變。} linuxKde {已儲存在 KWallet 中。留空就維持不變。} other {已儲存在你的鑰匙圈中。留空就維持不變。}}",
   "@servers.sheet.secretKeptPlaceholder": {
-    "sourceHash": "9297a2d"
+    "sourceHash": "eedbd26"
   },
   "servers.sheet.smbUsernamePlaceholder": "選填",
   "@servers.sheet.smbUsernamePlaceholder": {
@@ -595,9 +595,9 @@
   "@servers.sheet.passphrase": {
     "sourceHash": "2510031"
   },
-  "servers.sheet.remember": "{platform, select, macos {記住在鑰匙圈中} windows {記住密碼} linuxKde {Remember in KWallet} other {記住在鑰匙圈中}}",
+  "servers.sheet.remember": "{platform, select, macos {記住在鑰匙圈中} windows {記住密碼} linuxKde {記住在 KWallet 中} other {記住在鑰匙圈中}}",
   "@servers.sheet.remember": {
-    "sourceHash": "42237e1"
+    "sourceHash": "8f125e3"
   },
   "servers.sheet.connectionModeLegend": "連線方式",
   "@servers.sheet.connectionModeLegend": {
@@ -784,9 +784,9 @@
   "@servers.sheet.autoReconnectInfoLabel": {
     "sourceHash": "edb9b82"
   },
-  "servers.sheet.needsStoredSecret": "{platform, select, macos {要自動重新連線，得先記住密碼。請開啟「記住在鑰匙圈中」，然後登入一次。} windows {要自動重新連線，得先儲存密碼。請開啟「記住密碼」，然後登入一次。} linuxKde {Reconnecting on its own needs a remembered password. Turn on “Remember in KWallet” and sign in once.} other {要自動重新連線，得先記住密碼。請開啟「記住在鑰匙圈中」，然後登入一次。}}",
+  "servers.sheet.needsStoredSecret": "{platform, select, macos {要自動重新連線，得先記住密碼。請開啟「記住在鑰匙圈中」，然後登入一次。} windows {要自動重新連線，得先儲存密碼。請開啟「記住密碼」，然後登入一次。} linuxKde {要自動重新連線，得先記住密碼。請開啟「記住在 KWallet 中」，然後登入一次。} other {要自動重新連線，得先記住密碼。請開啟「記住在鑰匙圈中」，然後登入一次。}}",
   "@servers.sheet.needsStoredSecret": {
-    "sourceHash": "ad8e162"
+    "sourceHash": "29e22ae"
   },
   "servers.sheet.tryNextcloudAddress": "試試 Nextcloud 位址",
   "@servers.sheet.tryNextcloudAddress": {

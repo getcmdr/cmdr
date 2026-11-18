@@ -2196,7 +2196,12 @@
     "confidence": "confirmed",
     "decision": "Keychain and keyring",
     "forms": "the app → 「鑰匙圈存取」; Remember in Keychain → 記住在鑰匙圈中; a Linux system keyring is also 鑰匙圈",
-    "sources": "AP-TW = AP-HK (Keychain Access CFBundleName 鑰匙圈存取, MainMenu 825.title); GNOME gnome-keyring / gcr zh_TW 鑰匙圈"
+    "sources": "AP-TW = AP-HK (Keychain Access CFBundleName 鑰匙圈存取, MainMenu 825.title); GNOME gnome-keyring / gcr zh_TW 鑰匙圈",
+    "other": {
+      "chosen": "鑰匙圈",
+      "accept": ["KWallet", "錢包"],
+      "note": "Linux branches: the keyring is 鑰匙圈, which GNOME’s 密碼及加密金鑰 also says (seahorse zh_TW.po: 鑰匙圈已鎖定); KDE keeps KWallet and KWalletManager as names, with a wallet → 錢包 (kwalletmanager zh_TW.po)"
+    }
   },
   "kind": {
     "chosen": "種類",
@@ -2621,7 +2626,7 @@
     "accept": ["檔名", "名字", "同名", "原名", "重名"],
     "chosen": "名稱",
     "confidence": "high",
-    "forms": "filename → 檔名 (41/41) or 檔案名稱",
+    "forms": "filename → 檔名, the one form in labels and prose alike (`fileOperations.mkfile.nameAria`, `queryUi.mode.filename.label`); folder name → 資料夾名稱",
     "sources": "AP-TW = AP-HK Finder N220"
   },
   "nas": {

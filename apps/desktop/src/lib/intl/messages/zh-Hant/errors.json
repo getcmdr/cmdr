@@ -1551,7 +1551,7 @@
   },
   "errors.write.nameTooLong.message": "對目標位置來說，這個檔名太長了。",
   "@errors.write.nameTooLong.message": {
-    "sourceHash": "03258f0"
+    "sourceHash": "91a01a0"
   },
   "errors.write.nameTooLong.suggestion": "試著把檔案改成短一點的名稱。",
   "@errors.write.nameTooLong.suggestion": {
@@ -1631,7 +1631,7 @@
   },
   "errors.write.invalidName.title": "檔名不合用",
   "@errors.write.invalidName.title": {
-    "sourceHash": "1fb1e45"
+    "sourceHash": "0af3e69"
   },
   "errors.write.invalidName.message": "{path} 的名稱是目標位置存不下的。",
   "@errors.write.invalidName.message": {

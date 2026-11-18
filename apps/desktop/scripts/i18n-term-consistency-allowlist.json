@@ -592,6 +592,10 @@
       {
         "source": "Skip",
         "reason": "`略過` answers ONE clash (`fileOperations.transferProgress.conflictSkip`); the Settings option `settings.fileOperations.defaultConflictPolicy.opt.skip` is a standing policy and reuses the copy dialog radio `fileOperations.transferDialog.policySkip`, whose Chinese has no one-clash form, so both say `全部略過`."
+      },
+      {
+        "source": "Preferences",
+        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the literal macOS Library folder name, kept as the system names it on disk, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own menu row, `偏好設定` (Nautilus zh-TW `偏好設定(_P)`)."
       }
     ],
     "ru": [

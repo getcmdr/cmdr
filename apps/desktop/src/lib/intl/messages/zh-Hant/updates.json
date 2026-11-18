@@ -23,9 +23,9 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "{platform, select, macos {現在重新啟動，或是等你下次開啟 Cmdr 時自動生效。} windows {Cmdr 會關閉以安裝更新，然後重新開啟。} other {Cmdr quits to install it, then opens again.}}",
+  "updates.toast.readyDetail": "{platform, select, macos {現在重新啟動，或是等你下次開啟 Cmdr 時自動生效。} windows {Cmdr 會關閉以安裝更新，然後重新開啟。} other {Cmdr 會結束以安裝更新，然後重新開啟。}}",
   "@updates.toast.readyDetail": {
-    "sourceHash": "4abee27"
+    "sourceHash": "12ced25"
   },
   "updates.toast.securityFix": "這次更新修正了 {count, plural, other {# 個安全性問題}}。",
   "@updates.toast.securityFix": {
@@ -107,6 +107,10 @@
   "updates.status.installing": "正在安裝 v{next}（目前：v{prev}）⋯",
   "@updates.status.installing": {
     "sourceHash": "214ef12"
+  },
+  "updates.status.noBuildForThisPlatform": "這個版本的 Cmdr 目前無法檢查更新項目。請稍後再試一次。",
+  "@updates.status.noBuildForThisPlatform": {
+    "sourceHash": "e64ebc5"
   },
   "updates.status.managedOff": "Cmdr 的更新由你的組織管理。",
   "@updates.status.managedOff": {

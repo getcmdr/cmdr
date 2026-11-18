@@ -116,9 +116,9 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {在 {desktops} 上，桌面環境通常會自己佔用 {combo}，所以可能永遠傳不到 Cmdr。你可以在桌面環境的鍵盤設定裡把它空出來。}}",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {在 {desktops} 上，桌面環境通常會自己佔用 {combo}，所以可能永遠傳不到 Cmdr。你可以在「設定 > 鍵盤 > 檢視與自訂快捷鍵」裡把它空出來。} linuxKde {在 {desktops} 上，桌面環境通常會自己佔用 {combo}，所以可能永遠傳不到 Cmdr。你可以在「系統設定 > 鍵盤 > 快捷鍵」裡把它空出來。} other {在 {desktops} 上，桌面環境通常會自己佔用 {combo}，所以可能永遠傳不到 Cmdr。你可以在桌面環境的鍵盤設定裡把它空出來。}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
-    "sourceHash": "610146a"
+    "sourceHash": "8aefc0b"
   },
   "shortcuts.conflict.opensMenuBarMenu": "{combo} 會開啟 Cmdr 選單列中的「{menu}」選單，所以除非有對話方塊開著，否則傳不到這個指令。",
   "@shortcuts.conflict.opensMenuBarMenu": {

@@ -243,6 +243,14 @@
   "@multiRename.status.reservedDeviceName": {
     "sourceHash": "8bf464a"
   },
+  "multiRename.status.notPortable": "{alsoLinux, select, yes {在 Windows 或 Linux 上無法使用} other {在 Windows 上無法使用}}",
+  "@multiRename.status.notPortable": {
+    "sourceHash": "cc3ed09"
+  },
+  "multiRename.notPortableSummary": "{count, plural, other {{alsoLinux, select, yes {有 {countText} 個新名稱在 Windows 或 Linux 上無法使用，但仍會照常重新命名。} other {有 {countText} 個新名稱在 Windows 上無法使用，但仍會照常重新命名。}}}}",
+  "@multiRename.notPortableSummary": {
+    "sourceHash": "4eb996d"
+  },
   "multiRename.error.unclosed": "有個預留位置缺少結尾的「]」",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -626,15 +634,15 @@
   },
   "multiRename.reason.tooLong": "新名稱太長，不能當作檔名。",
   "@multiRename.reason.tooLong": {
-    "sourceHash": "b709218"
+    "sourceHash": "c49d459"
   },
   "multiRename.reason.reserved": "「.」和「..」不能當作檔名。",
   "@multiRename.reason.reserved": {
-    "sourceHash": "dcca507"
+    "sourceHash": "b0c0c33"
   },
   "multiRename.reason.disallowedCharacter": "檔名不能包含「{character}」。",
   "@multiRename.reason.disallowedCharacter": {
-    "sourceHash": "66a09f6"
+    "sourceHash": "2d58251"
   },
   "multiRename.reason.reservedDeviceName": "「{name}」是 Windows 的保留名稱，所以這個磁碟機不能使用這個名稱。",
   "@multiRename.reason.reservedDeviceName": {
