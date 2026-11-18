@@ -380,6 +380,33 @@ fn a_wrong_request_id_is_not_this_requests_answer() {
     assert!(parse_setting_description(r#"{"requestId":"other","ok":true}"#, "mine").is_none());
 }
 
+/// ❗ **A dialog names the volume the way the person knows it.** A volume the
+/// switcher's snapshot doesn't carry (any drive but `root` on Linux, a listing
+/// that timed out) still has a name in the registry; the "Turn indexing on?"
+/// dialog once showed its raw `vol-…` id instead.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_registered_volume_outside_the_listing_is_asked_about_by_name() {
+    use crate::file_system::volume::InMemoryVolume;
+    use crate::file_system::volume::manager::get_volume_manager;
+    let id = "vol-test-ask-name-0001";
+    get_volume_manager().register(id, std::sync::Arc::new(InMemoryVolume::new("Test drive 1")));
+
+    let name = volume_name(id).await;
+    get_volume_manager().unregister(id);
+
+    assert_eq!(name, "Test drive 1");
+}
+
+/// A volume nobody knows still gets asked about, by its id: asking without a
+/// name beats not asking.
+#[tokio::test(flavor = "multi_thread")]
+async fn an_unknown_volume_is_asked_about_by_its_id() {
+    assert_eq!(
+        volume_name("vol-test-nobody-knows-0002").await,
+        "vol-test-nobody-knows-0002"
+    );
+}
+
 #[test]
 fn a_failed_description_is_an_error_never_no_setting() {
     assert!(matches!(
