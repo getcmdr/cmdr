@@ -8,9 +8,9 @@ in the section or registry, not here. Parent: `../CLAUDE.md` (registry, store, s
 - Window chrome, not registry-driven: `SettingsSidebar` (nav + search; declares `TOP_LEVEL_ORDER`, keep in sync with
   `settings.spec.ts`), `SettingsContent` (routes `selectedSection` to a `sections/*.svelte` or `SectionSummary`),
   `SettingsSection` (h2 + slot), `SectionSummary` (card grid into subsections).
-- Registry-driven rows: `SettingRow` (label + description, inline or behind an ⓘ per the registry's `descriptionInTip`
-  and `description-placement.ts`, + control + reset pip + restart badge) wrapping `SettingSwitch` / `Checkbox` /
-  `Select` / `ToggleGroup` / `RadioGroup` / `Slider` / `NumberInput` / `TextInput` / `PasswordInput` /
+- Registry-driven rows: `SettingRow` (label + description, under the label or behind an ⓘ per the registry's
+  `descriptionInTip` and `description-placement.ts`, + control + reset pip + restart badge) wrapping `SettingSwitch` /
+  `Checkbox` / `Select` / `ToggleGroup` / `RadioGroup` / `Slider` / `NumberInput` / `TextInput` / `PasswordInput` /
   `ColorSwatchPicker`. Which one to reach for: DETAILS § Picking a control. `SettingSwitch` and `SettingCheckbox` share
   their state via `boolean-setting.svelte.ts` (`useBooleanSetting(id)`).
 - Every `.svelte` here is axe-audited (tier 3) from one directory-level file, `setting-components.a11y.test.ts`. Adding

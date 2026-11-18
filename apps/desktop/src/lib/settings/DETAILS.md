@@ -98,20 +98,20 @@ the setting, and the registry keeps keyless text for search and agents.
 `descriptionInTip` on the source picks one of four shapes:
 
 - No `descriptionKey` (or `descriptionWithKey`): no description. The row renders no empty paragraph.
-- `descriptionKey` alone: inline under the whole row (the default).
+- `descriptionKey` alone: under the label, in the label column (the default; in a `split` row that's the left cell).
 - `descriptionKey` + `descriptionInTip: true`: an ⓘ `InfoTip` after the label carries it, nothing inline.
-- `descriptionKey` + `descriptionInTip: { summaryKey }`: a short line under the label (in the label column, also in a
-  `split` row) and the ⓘ holding the detail.
+- `descriptionKey` + `descriptionInTip: { summaryKey }`: a short line under the label and the ⓘ holding the detail.
 
 The resolved definition keeps `description` as the FULL text whatever the placement, so search, the MCP bridge, and
 agents read the same thing, and adds `descriptionPlacement` (`'inline' | 'tip'`) and `summary` (`''` when none). Search
 indexes the summary too. While Settings search has a query, a tip's text shows under the label and the ⓘ steps aside:
 search matches description text (in translated locales too), so a hit on hidden words would read as a wrong result. Both
 renderers (`SettingRow` and `AdvancedSection`'s auto-rendered rows) take that rule from one pure helper,
-`components/description-placement.ts`. A section's rich `descriptionContent` snippet always stays inline. The ⓘ's
-accessible name is `settings.control.moreAbout`. No control points `aria-describedby` at the description today, so the
-tip's text is reached through the ⓘ button (focus opens it). `settings-resolve.ts` holds `resolveDefinition`, split out
-of the registry so its tests can feed it authored sources directly.
+`components/description-placement.ts`. A section's rich `descriptionContent` snippet always shows under the label too.
+Only `disabledNote` renders under the whole row, outside the label column, so the disabled row's dimming doesn't reach
+it. The ⓘ's accessible name is `settings.control.moreAbout`. No control points `aria-describedby` at the description
+today, so the tip's text is reached through the ⓘ button (focus opens it). `settings-resolve.ts` holds
+`resolveDefinition`, split out of the registry so its tests can feed it authored sources directly.
 
 **Why `section` stays English.** The `section: string[]` array is a STRUCTURAL identity used for routing
 (`SettingsContent`), the section tree (`buildSectionTree`), section matching (`getSettingsInSection`), and search's

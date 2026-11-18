@@ -5,12 +5,11 @@ const DETAIL = 'The long explanation.'
 const SUMMARY = 'The short version.'
 
 describe('placeDescription', () => {
-  it('keeps an inline description under the row, searching or not', () => {
+  it('puts an inline description under the label, searching or not', () => {
     for (const searchQuery of ['', 'dark']) {
       expect(placeDescription({ placement: 'inline', description: DETAIL, summary: '', searchQuery })).toEqual({
         tip: '',
-        underLabel: [],
-        inline: DETAIL,
+        underLabel: [DETAIL],
       })
     }
   })
@@ -19,7 +18,6 @@ describe('placeDescription', () => {
     expect(placeDescription({ placement: 'tip', description: DETAIL, summary: SUMMARY, searchQuery: '' })).toEqual({
       tip: DETAIL,
       underLabel: [SUMMARY],
-      inline: '',
     })
   })
 
@@ -27,7 +25,6 @@ describe('placeDescription', () => {
     expect(placeDescription({ placement: 'tip', description: DETAIL, summary: SUMMARY, searchQuery: 'x' })).toEqual({
       tip: '',
       underLabel: [SUMMARY, DETAIL],
-      inline: '',
     })
   })
 
@@ -36,7 +33,13 @@ describe('placeDescription', () => {
   })
 
   it('shows nothing for a setting with no description', () => {
-    expect(placeDescription({ placement: 'inline', description: '', summary: '', searchQuery: '' }).inline).toBe('')
-    expect(placeDescription({ placement: 'tip', description: '', summary: '', searchQuery: '' }).tip).toBe('')
+    expect(placeDescription({ placement: 'inline', description: '', summary: '', searchQuery: '' })).toEqual({
+      tip: '',
+      underLabel: [],
+    })
+    expect(placeDescription({ placement: 'tip', description: '', summary: '', searchQuery: '' })).toEqual({
+      tip: '',
+      underLabel: [],
+    })
   })
 })

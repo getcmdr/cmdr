@@ -23,16 +23,17 @@
         label: string
         /**
          * The full description. Renders where the registry's `descriptionPlacement` says: under
-         * the row (`inline`), or behind an ⓘ after the label (`tip`, with the registry's
+         * the label (`inline`), or behind an ⓘ after the label (`tip`, with the registry's
          * `summary` under the label when it has one). `''` renders nothing.
          */
         description: string
         disabled?: boolean
         disabledReason?: string
         /**
-         * A sentence explaining why the row is disabled and how to enable it, shown under the
-         * description (with an info glyph) only while `disabled`. Stays at full contrast while the
-         * rest of the row greys out. Point the control's `aria-describedby` at `disabledNoteId(id)`.
+         * A sentence explaining why the row is disabled and how to enable it, shown under the whole
+         * row (with an info glyph) only while `disabled`. It stays outside the label column so it
+         * keeps full contrast while the rest of the row greys out. Point the control's
+         * `aria-describedby` at `disabledNoteId(id)`.
          */
         disabledNote?: string
         requiresRestart?: boolean
@@ -40,7 +41,10 @@
         split?: boolean
         searchQuery?: string
         children: Snippet
-        /** A rich inline description (links, say). Always renders under the row, whatever the placement. */
+        /**
+         * A rich inline description (links, say), in place of `description`. Always renders under
+         * the label, whatever the registry's placement.
+         */
         descriptionContent?: Snippet
         /**
          * Rendered right after the label, inside the label wrapper, ahead of the reset pip
@@ -77,12 +81,12 @@
 
     // Where the description goes is the registry's call (`descriptionInTip`), so a row opts in
     // without its section changing. Absent from the registry (a test stub, say) reads as inline.
-    // A rich `descriptionContent` always stays inline.
+    // A rich `descriptionContent` always stays inline, and stands in for the plain text.
     const definition = $derived(getSettingDefinition(id))
     const placed = $derived(
         placeDescription({
             placement: descriptionContent ? 'inline' : (definition?.descriptionPlacement ?? 'inline'),
-            description,
+            description: descriptionContent ? '' : description,
             summary: definition?.summary ?? '',
             searchQuery,
         }),
@@ -146,18 +150,16 @@
                 {/if}
             </div>
             {#each placed.underLabel as line, i (i)}
-                <p class="setting-summary">{line}</p>
+                <p class="setting-description">{line}</p>
             {/each}
+            {#if descriptionContent}
+                <p class="setting-description">{@render descriptionContent()}</p>
+            {/if}
         </div>
         <div class="setting-control">
             {@render children()}
         </div>
     </div>
-    {#if descriptionContent}
-        <p class="setting-description">{@render descriptionContent()}</p>
-    {:else if placed.inline}
-        <p class="setting-description">{placed.inline}</p>
-    {/if}
     {#if disabled && disabledNote}
         <p class="setting-disabled-note" id={disabledNoteId(id)}>
             <span class="disabled-note-icon"><Icon name="info" size={14} aria-hidden="true" /></span>
@@ -196,15 +198,16 @@
         gap: var(--spacing-md);
     }
 
-    /* The label line plus, for a tip setting, its summary under it. In a split row this is the
-       left grid cell, so the summary stays beside the label instead of under the whole row. */
+    /* The label line plus every description line under it (a summary, an inline description, or
+       a rich one). In a split row this is the left grid cell, so the text stays beside the label
+       and the control instead of running under the whole row. */
     .setting-label-column {
         display: flex;
         flex-direction: column;
         min-width: 0;
     }
 
-    .setting-summary {
+    .setting-description {
         margin: var(--spacing-xxs) 0 0;
         color: var(--color-text-secondary);
         font-size: var(--font-size-sm);
@@ -267,12 +270,6 @@
         /* Let controls stretch to fill the right column */
         min-width: 0;
         width: 100%;
-    }
-
-    .setting-description {
-        margin: var(--spacing-xs) 0 0;
-        color: var(--color-text-secondary);
-        font-size: var(--font-size-sm);
     }
 
     .setting-disabled-note {

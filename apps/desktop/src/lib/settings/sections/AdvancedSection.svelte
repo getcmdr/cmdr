@@ -232,9 +232,8 @@ Timestamp: ${info.timestamp}
                             />
                         {/if}
                     </div>
-                    <!-- `SettingRow`'s placement rule; here the name column is the whole row, so
-                         the under-label lines and the inline one stack in the same place. -->
-                    {#each [...placed.underLabel, placed.inline].filter(Boolean) as line, i (i)}
+                    <!-- `SettingRow`'s placement rule: every visible line sits under the name. -->
+                    {#each placed.underLabel as line, i (i)}
                         <div class="setting-description">{line}</div>
                     {/each}
                     <div class="setting-default">

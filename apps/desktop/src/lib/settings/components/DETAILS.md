@@ -5,18 +5,19 @@ Depth and rationale for the setting-row primitives. `CLAUDE.md` holds the must-k
 ## Picking a control
 
 Every row is a `SettingRow` (label + description + control + reset pip + restart-required badge; it also carries `split`
-and `searchQuery`; an inline description spans the full width regardless of `split`). The registry decides whether the
-description sits inline, behind an ⓘ after the label, or as a summary under the label plus the ⓘ (`../DETAILS.md` §
-"Where the description shows"; the rule lives in `description-placement.ts`), so a section only passes `description`.
-Two snippets escape the plain shape: `descriptionContent` replaces the description text with markup (always inline), and
-`labelTrailing` lands right after the label, ahead of the pip and the badges, for a small adornment belonging to the
-label rather than the control (onboarding's step 4 hangs its own `<InfoTip>` there). A disabled row says why in one of
-two ways: `disabledReason`, a short badge beside the label, or `disabledNote`, a full sentence with an info glyph under
-the description that also says how to enable the row ("Sort folders" uses it). The note is a visible line, not a
-tooltip, because a disabled control can't take focus, so a tooltip on it is out of reach for keyboard and screen-reader
-users. A disabled row dims its children rather than itself, which keeps the note at full AA contrast; point the
-control's `aria-describedby` at `disabledNoteId(id)` (`settings-window.ts`, beside `settingAnchorId`) while it's
-disabled. Pick the inner control by shape:
+and `searchQuery`). Every description line sits in the label column under the label, so a `split` row keeps it in the
+left cell beside the control. The registry decides whether the description shows under the label, behind an ⓘ after the
+label, or as a summary under the label plus the ⓘ (`../DETAILS.md` § "Where the description shows"; the rule lives in
+`description-placement.ts`), so a section only passes `description`. Two snippets escape the plain shape:
+`descriptionContent` replaces the description text with markup (always under the label), and `labelTrailing` lands right
+after the label, ahead of the pip and the badges, for a small adornment belonging to the label rather than the control
+(onboarding's step 4 hangs its own `<InfoTip>` there). A disabled row says why in one of two ways: `disabledReason`, a
+short badge beside the label, or `disabledNote`, a full sentence with an info glyph under the whole row (outside the
+label column, so the row's dimming doesn't reach it) that also says how to enable the row ("Sort folders" uses it). The
+note is a visible line, not a tooltip, because a disabled control can't take focus, so a tooltip on it is out of reach
+for keyboard and screen-reader users. A disabled row dims its children rather than itself, which keeps the note at full
+AA contrast; point the control's `aria-describedby` at `disabledNoteId(id)` (`settings-window.ts`, beside
+`settingAnchorId`) while it's disabled. Pick the inner control by shape:
 
 - `SettingSwitch`: the primary boolean, wrapping `lib/ui/Switch`.
 - `SettingCheckbox`: a secondary boolean, for one hanging off a switch or in a denser layout.
