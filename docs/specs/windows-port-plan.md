@@ -486,22 +486,19 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     and an attest step, which the plan enforces. A dry run of those jobs against v0.61.0 as published
     (`scripts/release-assets/pipeline_test.go`) holds every output to golden files, `latest.json` to v0.61.0's bytes
     with `downloads` appended (`scripts/release-assets/DETAILS.md`).
-31. [M] Win. **Done in code, waiting on its deploy.** Downloads and analytics for N platforms:
-    `/download/:version/:os/:arch` (`?kind=` for an OS's other file; `/download/:version/:arch` stays the macOS DMG
-    alias), every non-DMG filename read from the release's own `latest.json` `downloads`, and an OS served only once
-    `PUBLIC_DOWNLOAD_OSES` (`apps/api-server/wrangler.toml`, `macos` today) lists it. UA classification judges a hit
-    against the file's OS (`classifyUaFamily(ua, os)`). The app sends `os` (`crate::platform::os_name()`) on the
-    heartbeat, feedback, crash reports, and error reports, and the api-server stores it leniently (`parseClientOs`;
-    older rows read from `os_version`). Migration `0033_client_os.sql` adds `downloads.os` / `kind`, `os` in the
-    `downloads_daily_unique` key, and `os` on the four report tables. The dashboard splits downloads (table and day pie)
-    and daily actives (tooltip) by OS; the funnel gains `downloadsByOs`, active installs `byOs`.
-    `apps/api-server/src/telemetry/DETAILS.md` §§ The OS field, Download tracking.
-    - **David's step**: landing the branch runs `deploy-api-server.yml`, which applies `0033` to production D1
-      (`wrangler d1 migrations apply TELEMETRY_DB --remote`) and then deploys the Worker, so the migration goes out with
-      the landing. To look first:
-      `pnpm --filter @cmdr/api-server exec wrangler d1 migrations list TELEMETRY_DB --remote` lists it as the one
-      pending migration. Landing also deploys the dashboard and the website (the privacy policy's download lines name
-      the OS and file type now).
+31. [M] Win. **Done, deployed** (migration `0033` applied to production D1 and verified on 2026-11-18). Downloads and
+    analytics for N platforms: `/download/:version/:os/:arch` (`?kind=` for an OS's other file;
+    `/download/:version/:arch` stays the macOS DMG alias), every non-DMG filename read from the release's own
+    `latest.json` `downloads`, and an OS served only once `PUBLIC_DOWNLOAD_OSES` (`apps/api-server/wrangler.toml`,
+    `macos` today) lists it. UA classification judges a hit against the file's OS (`classifyUaFamily(ua, os)`). The app
+    sends `os` (`crate::platform::os_name()`) on the heartbeat, feedback, crash reports, and error reports, and the
+    api-server stores it leniently (`parseClientOs`; older rows read from `os_version`). Migration `0033_client_os.sql`
+    adds `downloads.os` / `kind`, `os` in the `downloads_daily_unique` key, and `os` on the four report tables. The
+    dashboard splits downloads (table and day pie) and daily actives (tooltip) by OS; the funnel gains `downloadsByOs`,
+    active installs `byOs`. `apps/api-server/src/telemetry/DETAILS.md` §§ The OS field, Download tracking.
+    - **Deploy**: `deploy-api-server.yml` applied `0033` to production D1 before deploying the Worker (verified
+      2026-11-18), and the same landing deployed the dashboard and the website (the privacy policy's download lines name
+      the OS and file type).
     - **Making Windows downloads public** (after task 52 ships the files): add `windows` to `PUBLIC_DOWNLOAD_OSES` and
       deploy, then task 32 links `/download/latest/windows/x86_64`. Not in this task: the website's
       `getcmdr.com/download/latest/<os>/<arch>` nginx redirect (task 32), an OS on `install_summary` (new installs and
@@ -794,13 +791,17 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
 58. [XS] Windows. The website's "Run anyway" download (D3 step 2): the unsigned NSIS installer on the download page with
     a short explainer of SmartScreen's "More info → Run anyway" step, next to the Store link. David reviews the copy.
     Needs 32, 52.
-59. [XS] Windows. WebView2's browser keys off in every window (#1115, David's decision of 2026-11-12; numbered last
-    because it was added after the list). Not in the tree yet (checked 2026-11-18: nothing in `apps/desktop/src-tauri/`
-    sets `AreBrowserAcceleratorKeysEnabled`, and Tauri 2.12.5 doesn't expose it; tauri-apps/tauri#16397, which adds
-    `browserAcceleratorKeys`, is still open). The menu spike showed the cost: `Ctrl+Shift+P`, which the spike's page
-    didn't claim, opened WebView2's Print dialog. In the main window the page's `preventDefault` on a bound key wins
-    (the spike measured that for `F5`, `Ctrl+R`, and `Alt+←`), so the exposure is any window or state that doesn't claim
-    a key: Settings, the viewer, a text field, a gated command.
+
+Added after the list was numbered, so it carries the next free number (a separate list, so a Markdown formatter keeps
+its start number):
+
+67. [XS] Windows. WebView2's browser keys off in every window (#1115, David's decision of 2026-11-12). Not in the tree
+    yet (checked 2026-11-18: nothing in `apps/desktop/src-tauri/` sets `AreBrowserAcceleratorKeysEnabled`, and Tauri
+    2.12.5 doesn't expose it; tauri-apps/tauri#16397, which adds `browserAcceleratorKeys`, is still open). The menu
+    spike showed the cost: `Ctrl+Shift+P`, which the spike's page didn't claim, opened WebView2's Print dialog. In the
+    main window the page's `preventDefault` on a bound key wins (the spike measured that for `F5`, `Ctrl+R`, and
+    `Alt+←`), so the exposure is any window or state that doesn't claim a key: Settings, the viewer, a text field, a
+    gated command.
     - Scope: a new `on_webview_ready` hook on the `cmdr-platform` plugin (`platform_plugin` in
       `apps/desktop/src-tauri/src/tauri_builder.rs`, which reaches every webview, the JS-created ones too) runs a
       `#[cfg(windows)]` `with_webview` that casts the core's settings to `ICoreWebView2Settings3` and calls
