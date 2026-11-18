@@ -208,13 +208,15 @@ func TestATypedOperandTakesTheOtherSidesShape(t *testing.T) {
 		{"root", "BridgedPath", "PathBuf", "*root.as_path()"},
 		{"found", "Option<AppPathBuf>", "Option<PathBuf>", "found.as_ref().map(|p| p.as_std_legacy().into_owned())"},
 		{"paths", "&Vec<AppPathBuf>", "&Vec<PathBuf>", "&paths.iter().map(|p| p.as_std_legacy().into_owned()).collect::<Vec<_>>()"},
+		// A borrowed option's twin borrows the bridge's `Cow`s, which live through the assert.
+		{"home", "Option<&AppPath>", "Option<&Path>", "home.map(AppPath::as_std_legacy).as_deref()"},
 	} {
 		if got, ok := stdOperand(c.expr, c.typ, c.other); !ok || got != c.want {
 			t.Errorf("stdOperand(%q, %q, %q) = %q, %v; want %q", c.expr, c.typ, c.other, got, ok, c.want)
 		}
 	}
-	if _, ok := stdOperand("x", "Option<&AppPath>", "Option<&Path>"); ok {
-		t.Error("a borrowed option has no owned twin to compare: residue")
+	if _, ok := stdOperand("x", "Option<&AppPath>", "Option<PathBuf>"); ok {
+		t.Error("a borrowed option against owned paths has no one-call twin: residue")
 	}
 }
 

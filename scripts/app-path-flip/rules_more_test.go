@@ -115,6 +115,21 @@ func TestNormalizeType(t *testing.T) {
 	}
 }
 
+func TestAnAssertWhoseTypedOperandCameFirstDropsItToStd(t *testing.T) {
+	text := "fn t() {\n    assert_eq!(volume.stands_in_for_own_disk(), Some(Path::new(\"/Users/you\")));\n}\n"
+	got := run(t, text, diag("E0308", "mismatched types",
+		spanOf(t, text, "Some(Path::new(\"/Users/you\"))", "", "expected `Option<&AppPath>`, found `Option<&Path>`", true)))
+	want := "assert_eq!(volume.stands_in_for_own_disk().map(AppPath::as_std_legacy).as_deref(), Some(Path::new(\"/Users/you\")));"
+	if !strings.Contains(got, want) {
+		t.Fatalf("typed operand not dropped, or the expected value touched:\n%s", got)
+	}
+	call := "fn t() {\n    check(volume.stands_in_for_own_disk(), Some(Path::new(\"/u\")));\n}\n"
+	if got := run(t, call, diag("E0308", "mismatched types",
+		spanOf(t, call, "Some(Path::new(\"/u\"))", "", "expected `Option<&AppPath>`, found `Option<&Path>`", true))); got != call {
+		t.Fatalf("an argument of a plain call is no comparison:\n%s", got)
+	}
+}
+
 // squash collapses every whitespace run to one space: rustfmt owns the layout.
 func squash(s string) string {
 	return strings.Join(strings.Fields(s), " ")

@@ -116,8 +116,11 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   `required for `&A`to implement`PartialEq<&B>`` note, since its message names the pair with the shared `&`s peeled)
   (`&*path.as_std_legacy()` against a `&PathBuf`, `*path.as_std_legacy()` against a `PathBuf`; `Cow<Path>` compares with
   neither), a `BridgedPath` through `.as_path()`, and an `Option`/`Vec` of typed paths against one of `PathBuf`s to the
-  same container of owned std paths. An operand an earlier pass left as `….as_std_legacy()` gets reshaped the same way.
-  The expected value is untouched; any other shape (`Option<&AppPath>`) is residue.
+  same container of owned std paths, an `Option<&AppPath>` against an `Option<&Path>` through
+  `.map(AppPath::as_std_legacy).as_deref()`. An operand an earlier pass left as `….as_std_legacy()` gets reshaped the
+  same way. When the typed operand comes first, rustc infers the pair from it and reports the EXPECTED argument as an
+  E0308 (`rules_assert_arg.go`); the typed operand drops the same way. The expected value is untouched; any other shape
+  is residue.
 - **Imports**: a name a rule introduced (`AppPath`, `AppPathBuf`, `BridgedPath`, `app_path!`, `Path`, `PathBuf`) is
   imported at rustc's suggested point, or at the head of the innermost module when rustc suggests none (it doesn't for
   another crate's items). Never twice in one module, and ❌ never between an item and its outer attributes or doc

@@ -200,6 +200,9 @@ func stdOperand(expr, typ, other string) (string, bool) {
 	switch {
 	case base == "Option<AppPathBuf>" && otherBase == "Option<PathBuf>":
 		return refs + postfix(expr) + ".as_ref().map(|p| p.as_std_legacy().into_owned())", true
+	case base == "Option<&AppPath>" && otherBase == "Option<&Path>":
+		// `Option<Cow<Path>>::as_deref` is the `Option<&Path>` the other side is.
+		return refs + postfix(expr) + ".map(AppPath::as_std_legacy).as_deref()", true
 	case (base == "Vec<AppPathBuf>" || base == "[AppPathBuf]") && (otherBase == "Vec<PathBuf>" || otherBase == "[PathBuf]"):
 		return refs + postfix(expr) + ".iter().map(|p| p.as_std_legacy().into_owned()).collect::<Vec<_>>()", true
 	}

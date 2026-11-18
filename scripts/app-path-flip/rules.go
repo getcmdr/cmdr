@@ -79,6 +79,9 @@ func (r *rewriter) mismatchEditsFor(d *diagnostic, src *source, p *diagSpan) []e
 	if e := fromRefEdits(d, src, p); len(e) > 0 {
 		return e
 	}
+	if e := assertArgEdits(src, p); len(e) > 0 {
+		return e
+	}
 	var edits []edit
 	for _, s := range mismatchSpans(d, p.FileName) {
 		edits = append(edits, r.valueEdits(src, s)...)
