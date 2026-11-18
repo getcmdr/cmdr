@@ -489,6 +489,21 @@ mod bridge_arithmetic_unix {
             let std_parent = std_path.parent().map(|p| AppPath::legacy_unchecked(p).into_owned());
             prop_assert_eq!(parent, std_parent, "parent of {:?}", a);
             prop_assert_eq!(typed.file_name(), std_path.file_name().and_then(|n| n.to_str()), "file name of {:?}", a);
+            prop_assert_eq!(typed.extension(), std_path.extension().and_then(|n| n.to_str()), "extension of {:?}", a);
+            prop_assert_eq!(typed.file_stem(), std_path.file_stem().and_then(|n| n.to_str()), "stem of {:?}", a);
+            // `with_file_name` names `Path`'s place, or refuses where that place climbs.
+            let name = AppName::from_app_spelling("z").expect("a name");
+            let std_renamed = std_path.with_file_name("z");
+            match typed.with_file_name(name) {
+                Ok(renamed) => {
+                    prop_assert!(!std_renamed.components().any(|c| c == std::path::Component::ParentDir), "{:?} renamed through `..`", a);
+                    prop_assert_eq!(renamed, AppPath::legacy_unchecked(&std_renamed).into_owned(), "{:?} renamed", a);
+                }
+                Err(refusal) => {
+                    prop_assert_eq!(refusal, NotAnAppPath::DotName, "{:?}", a);
+                    prop_assert!(std_renamed.components().any(|c| c == std::path::Component::ParentDir), "{:?} refused though `Path` names a plain place", a);
+                }
+            }
             // `..` is the one place they part: by text it can name another file, so the type
             // places a `..`-holding value under nothing.
             if !a.split('/').any(|n| n == "..") && !b.split('/').any(|n| n == "..") {

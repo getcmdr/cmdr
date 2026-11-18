@@ -70,8 +70,12 @@ milestone (the trait flip) starts from a known state.
 - **A full `//server/share/x` on macOS and Linux** still reads as UNC in arithmetic while `Eq` reads it as std does
   (`/server/share/x`): canonical UNC values exist there only in tests (`parse(_, Windows)`, how Linux CI runs the
   Windows arm), and the text can't say which it is. No std join makes a bridge value of that shape; a sloppy
-  `format!("{dir}/{name}")` with `dir == "/"` makes `//name`, which has no share and reads as std does
-  (`lenient::is_canonical` documents it; the property excludes the shape).
+  `format!("{dir}/{name}")` with `dir == "/"` makes `//name`, which reads as std does with one or two names and as UNC
+  with three or more (review 3's 1b: every divergent answer is a refusal or a `None`, no producer found;
+  `lenient::is_canonical` documents it; the property excludes the shape).
+- **Review 3's 1a**: `with_file_name` on a bridge value ending in `..` refuses `DotName` (it built `/a/b/z` where `Path`
+  names `/a/b/../z`), with the class pinned against `Path` by property (`file_name`, `extension`, `file_stem`,
+  `with_file_name`).
 
 ## Checks
 

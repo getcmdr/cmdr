@@ -225,8 +225,13 @@ impl AppPath {
     ///
     /// # Errors
     ///
-    /// As [`Self::join`].
+    /// As [`Self::join`], plus [`NotAnAppPath::DotName`] for a bridge value ending in `..`.
     pub fn with_file_name(&self, name: &AppName) -> Result<AppPathBuf, NotAnAppPath> {
+        // A bridge value ending in `..` has no last name to replace: `Path` would build
+        // `/a/b/../z` (which opens `/a/z`), the lenient parent `/a/b/z`, another folder.
+        if !self.is_root() && self.file_name().is_none() {
+            return Err(NotAnAppPath::DotName);
+        }
         self.parent().unwrap_or(self).join(name)
     }
 

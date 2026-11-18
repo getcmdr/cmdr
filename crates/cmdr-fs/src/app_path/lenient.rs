@@ -169,8 +169,10 @@ pub(super) fn is_canonical(text: &str) -> bool {
     // ❗ Flavor-free, so on macOS and Linux a full `//server/share/x` text reads as UNC here
     // while `Eq` reads it as std does (`/server/share/x`): canonical UNC values exist there
     // only in tests (`parse(_, Windows)`, which Linux CI runs the Windows arm with), and the
-    // text can't say which it is. No std join makes a bridge value of that shape; a
-    // `format!("{dir}/{name}")` with `dir == "/"` makes `//name`, which has no share and so
-    // reads leniently, as std does.
+    // text can't say which it is. No std join makes a bridge value of that shape. A
+    // `format!("{dir}/{name}")` with `dir == "/"` makes `//name`: with one or two names
+    // (`//Users/x`) it has no share and reads leniently, as std does; with three or more
+    // (`//Users/x/Documents`) it reads as UNC. Every divergent answer is then a refusal or a
+    // `None` (review 3's 1b, no producer found), never a different file.
     parse::validate_canonical_any(text).is_ok()
 }

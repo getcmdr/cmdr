@@ -57,6 +57,12 @@ fn a_posix_bridge_value_answers_what_path_answers() {
     let climbing = bridge("/a/x/../b");
     assert!(!climbing.starts_with(&posix("/a")));
     assert_eq!(climbing.join(name("c")), Err(NotAnAppPath::DotName));
+    // Review 3's 1a: a value ending in `..` has no last name to replace. `Path` answers
+    // `/a/b/../z` (which opens `/a/z`); the lenient parent `/a/b` would have built `/a/b/z`.
+    let up = bridge("/a/b/..");
+    assert_eq!(up.with_file_name(name("z")), Err(NotAnAppPath::DotName));
+    assert_eq!((up.file_name(), up.extension(), up.file_stem()), (None, None, None));
+    assert_eq!(up.join(name("z")), Err(NotAnAppPath::DotName));
     assert_eq!(bridge("rel/x").to_canonical().err(), Some(NotAnAppPath::Relative));
     // Review 2's L-a: a bridge ARGUMENT reads the same way, so the exact and the volume-root
     // matches agree on it.
