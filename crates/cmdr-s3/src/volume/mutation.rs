@@ -89,7 +89,7 @@ impl S3Volume {
     pub(super) async fn create_directory_all_impl(&self, path: &Path) -> Result<DirectoryCreation, VolumeError> {
         let made = mkdir_all::create_directory_all(self, path).await?;
         if let Some(created) = made.shallowest_created {
-            patch_created(self, &created).await;
+            patch_created(self, &created.as_std_legacy()).await;
         }
         Ok(made.leaf)
     }
