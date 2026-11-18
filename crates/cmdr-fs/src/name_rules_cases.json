@@ -12,6 +12,17 @@
     { "name": "LPT", "all": "ok" },
     { "name": "", "all": "empty" },
     { "name": "   ", "all": "empty" },
+    { "name": "\t\n\r", "all": "empty" },
+    {
+      "name": " 　 ",
+      "all": "empty",
+      "why": "no-break, ideographic, and line-separator spaces are Unicode White_Space"
+    },
+    { "name": "\u0085", "all": "empty", "why": "NEL is Unicode White_Space, though JS trim() keeps it" },
+    { "name": "﻿", "all": "ok", "why": "a byte-order mark isn't Unicode White_Space, though JS trim() strips it" },
+    { "name": "​", "all": "ok", "why": "zero-width space isn't Unicode White_Space" },
+    { "name": "​‌‍⁠", "all": "ok" },
+    { "name": "᠎", "all": "ok", "why": "the Mongolian vowel separator left White_Space in Unicode 6.3" },
     { "name": "foo/bar", "all": "disallowedCharacter", "character": "/" },
     { "name": "foo\u0000bar", "all": "disallowedCharacter", "character": "NUL" },
     { "name": "a", "repeat": 255, "all": "ok", "why": "255 bytes is the limit, not past it" },
