@@ -7,6 +7,10 @@
 //! Component-wise, ❌ never bytewise: the root sorts below any name, then names compare
 //! as bytes one at a time, so `/a/b` sorts before `/a b` (as strings, space sorts below
 //! `/`), and a trailing `/`, a `.` name, or a doubled `/` disappears.
+//!
+//! Unix only: on Windows `std::path` compares by Windows rules, the bug #1225 removes.
+
+#![cfg(unix)]
 
 use std::collections::{BTreeSet, HashSet};
 use std::path::PathBuf;
@@ -14,7 +18,6 @@ use std::path::PathBuf;
 const PATHS: [&str; 9] = ["/a/b", "/a-b", "/a.b", "/a b", "/a", "/a/b/c", "/é", "/z", "sftp://h/x"];
 
 #[test]
-#[cfg(unix)]
 fn a_path_set_iterates_component_wise() {
     let set: BTreeSet<PathBuf> = PATHS.iter().map(PathBuf::from).collect();
     let order: Vec<&str> = set.iter().map(|p| p.to_str().expect("UTF-8")).collect();
@@ -38,7 +41,6 @@ fn the_same_paths_as_strings_sort_bytewise() {
 }
 
 #[test]
-#[cfg(unix)]
 fn a_path_set_holds_every_spelling_of_one_path_once() {
     let set: HashSet<PathBuf> = ["/a", "/a/", "/a//", "/./a", "//a", "/a/."]
         .into_iter()
@@ -55,7 +57,6 @@ fn a_path_set_holds_every_spelling_of_one_path_once() {
 
 /// Equality and order agree on those spellings: `/a/` neither sorts before nor after `/a`.
 #[test]
-#[cfg(unix)]
 fn a_trailing_slash_compares_equal_and_sorts_equal() {
     let plain = PathBuf::from("/a");
     for spelling in ["/a/", "/a//", "/a/.", "/./a"] {

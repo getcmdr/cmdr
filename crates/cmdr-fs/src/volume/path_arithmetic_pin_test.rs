@@ -14,6 +14,7 @@
 //!   (`path_grammar`) already gives it for the local roots, on every OS, so those rows
 //!   are asserted against it here; the scheme rows wait for the type.
 
+#[cfg(unix)]
 use std::path::{Component, Path};
 
 use serde_json::Value;
@@ -32,6 +33,8 @@ struct Row {
     #[serde(default)]
     target: Value,
     refused: Option<String>,
+    // Today's `std::path` answer; read on Unix only (see the module doc).
+    #[cfg(unix)]
     std: Value,
 }
 
@@ -44,6 +47,7 @@ fn rows() -> Vec<Row> {
     table.arithmetic
 }
 
+#[cfg(unix)]
 fn text(path: &Path) -> Value {
     Value::from(path.to_str().expect("the table's paths are UTF-8"))
 }
@@ -53,6 +57,7 @@ fn arg(row: &Row) -> &str {
 }
 
 /// What `std::path` answers for `row` on this OS.
+#[cfg(unix)]
 fn std_answer(row: &Row) -> Value {
     let base = Path::new(&row.base);
     match row.op.as_str() {
