@@ -28,6 +28,13 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
   `operation-log-dump` are green, `cmdr-git` is down to one #1225 case (ignored), and the network and device backends
   fail by the dozen on #1225 (counts in that issue). Plain `cargo test` also fails `cmdr-search`'s arena memory budget,
   whose counter is process-wide: run nextest there.
-- **Next blockers**: `cmdr-local` (46 errors: `LocalPosixVolume` is POSIX through and through, task 35's decision)
-  blocks `cmdr-operations`, `cmdr-multi-rename`, `cmdr-restic`, `cmdr-listing-wasm`, and the app; `numkong` (`usearch`'s
-  SIMD build script) blocks `cmdr-index` and `index-query` in the zig cross-check, unconfirmed under MSVC.
+- **2026-11-18, after the fixture fixes** (`56ce685e42`, nextest on the builder): `cmdr-fs`, `cmdr-git`, and
+  `cmdr-search` are green (1,622 of 1,624 with `cmdr-listing`). `cmdr-listing` keeps two failures: `foreign_path_test`
+  (#1225) and `a_read_that_never_answers_reports_the_listing_stalled_within_the_deadline`, which attributes the stall to
+  `Unknown` where macOS and Linux say `Drive` (not yet diagnosed).
+- **Next blockers**: `cmdr-local` (46 errors: `LocalPosixVolume` is POSIX through and through; whether it grows Windows
+  arms or gets a `LocalWindowsVolume` sibling is task 35's call) blocks `cmdr-operations`, `cmdr-multi-rename`,
+  `cmdr-restic`, `cmdr-listing-wasm`, and the app. `numkong` and `usearch` build fine under MSVC; `cmdr-index` (and so
+  `index-query`) fails in its own code with 11 errors, mostly its SMB and MTP index transports, gated to macOS and Linux
+  while `indexing/handle/mod.rs` calls them unconditionally, plus the `platform_case` collation's missing Windows arm
+  and `scanner/refusal.rs` comparing `libc::EPERM`.
