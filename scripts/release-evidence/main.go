@@ -218,7 +218,7 @@ func verifyRelease(cfg config) error {
 	if rel.IsDraft {
 		return fmt.Errorf("%s is still a draft. In `local` mode, `release-finish.sh` publishes it", cfg.tag)
 	}
-	expected, err := checkAssetsOf(rel.Assets, manifest.For(cfg.version), cfg.withPkg)
+	expected, err := checkAssets(rel.Assets, manifest.For(cfg.version), cfg.withPkg)
 	if err != nil {
 		return err
 	}

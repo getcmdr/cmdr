@@ -254,7 +254,9 @@ func (h *harness) writeRelease(fixture, base string) {
 		path := filepath.Join(h.releaseDir, name)
 		h.windowsAsset(path)
 		info, err := os.Stat(path)
-		must(t, err)
+		if err != nil {
+			t.Fatal(err)
+		}
 		rel.Assets = append(rel.Assets, fixtureAsset{Name: name, Size: info.Size()})
 	}
 	for i := range rel.Assets {
@@ -270,7 +272,9 @@ func (h *harness) writeRelease(fixture, base string) {
 	for _, name := range sc.damage {
 		path := filepath.Join(h.releaseDir, name)
 		b, err := os.ReadFile(path)
-		must(t, err)
+		if err != nil {
+			t.Fatal(err)
+		}
 		must(t, os.WriteFile(path, b[:len(b)/2], 0o644))
 	}
 	out, err := json.Marshal(rel)

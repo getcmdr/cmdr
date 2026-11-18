@@ -21,15 +21,11 @@ const (
 )
 
 // expectedAssets is every file a release carries (`docs/guides/releasing.md` § What a release
-// publishes), each with the size below which it can't be real: the release asset manifest's files
-// (`scripts/release-assets/manifest`), the update payloads' signatures, and the three files every
-// release adds around them. withPkg asks for the optional files too (the pkg is the only one).
-func expectedAssets(version string, withPkg bool) map[string]int64 {
-	return expectedAssetsOf(manifest.For(version), withPkg)
-}
-
-// expectedAssetsOf is `expectedAssets` for r, the release as it carries its legs.
-func expectedAssetsOf(r manifest.Release, withPkg bool) map[string]int64 {
+// publishes), each with the size below which it can't be real: the files of r (the release asset
+// manifest, `scripts/release-assets/manifest`, as the release carries its legs), the signed files'
+// signatures, and the three files every release adds around them. withPkg asks for the optional
+// files too (the pkg is the only one).
+func expectedAssets(r manifest.Release, withPkg bool) map[string]int64 {
 	want := map[string]int64{
 		"latest.json":                         1,
 		"checksums.txt":                       1,
@@ -54,16 +50,11 @@ func expectedAssetsOf(r manifest.Release, withPkg bool) map[string]int64 {
 	return want
 }
 
-// checkAssets lists every expected asset that's missing or too small to be real.
-func checkAssets(assets []releaseAsset, version string, withPkg bool) error {
-	_, err := checkAssetsOf(assets, manifest.For(version), withPkg)
-	return err
-}
-
-// checkAssetsOf is `checkAssets` for r, answering how many assets it expected. A leg
+// checkAssets lists every expected asset of r that's missing or too small to be real, answering how
+// many it expected. A leg
 // (`manifest/legs.go`) the release carries whole is expected in full; one it shipped without
 // isn't, but part of one is a problem: a release carries a leg whole or not at all.
-func checkAssetsOf(assets []releaseAsset, r manifest.Release, withPkg bool) (int, error) {
+func checkAssets(assets []releaseAsset, r manifest.Release, withPkg bool) (int, error) {
 	have := map[string]int64{}
 	names := make([]string, 0, len(assets))
 	for _, a := range assets {
@@ -77,7 +68,7 @@ func checkAssetsOf(assets []releaseAsset, r manifest.Release, withPkg bool) (int
 			problems = append(problems, fmt.Sprintf("the %s files are there only in part (missing %s)", os, strings.Join(missing, ", ")))
 		}
 	}
-	want := expectedAssetsOf(r.Carrying(complete...), withPkg)
+	want := expectedAssets(r.Carrying(complete...), withPkg)
 	for name, min := range want {
 		size, ok := have[name]
 		switch {

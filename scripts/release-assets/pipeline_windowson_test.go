@@ -179,9 +179,20 @@ func dryRunSignature(t *testing.T, comment string) string {
 	}
 	must(t, json.Unmarshal(raw, &conf))
 	text, err := base64.StdEncoding.DecodeString(conf.Plugins.Updater.Pubkey)
-	must(t, err)
-	key, err := base64.StdEncoding.DecodeString(strings.Split(strings.TrimSpace(string(text)), "\n")[1])
-	must(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(string(text)), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("the app's updater pubkey has %d lines, want 2", len(lines))
+	}
+	key, err := base64.StdEncoding.DecodeString(lines[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(key) < 10 {
+		t.Fatalf("the app's updater pubkey is %d bytes, too short to hold a key ID", len(key))
+	}
 	body := base64.StdEncoding.EncodeToString(append(append([]byte("ED"), key[2:10]...), make([]byte, 64)...))
 	sig := "untrusted comment: signature from tauri secret key\n" + body + "\ntrusted comment: " + comment + "\n" +
 		base64.StdEncoding.EncodeToString(make([]byte, 64)) + "\n"
