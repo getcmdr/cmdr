@@ -3,13 +3,13 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "{platform, select, linuxGnome {Usage stats and crash reports stay off until you turn them back on in Preferences › Updates & privacy.} linuxKde {Usage stats and crash reports stay off until you turn them back on in Configure Cmdr › Updates & privacy.} other {使用統計和當機報告會保持關閉，直到你在「設定 › 更新與隱私」重新開啟。}}",
+  "stateRecovery.settings.body": "{platform, select, linuxGnome {使用統計和當機報告會保持關閉，直到你在「偏好設定 › 更新與隱私」重新開啟。} linuxKde {使用統計和當機報告會保持關閉，直到你在「設定 Cmdr › 更新與隱私」重新開啟。} other {使用統計和當機報告會保持關閉，直到你在「設定 › 更新與隱私」重新開啟。}}",
   "@stateRecovery.settings.body": {
-    "sourceHash": "20439e1"
+    "sourceHash": "8e4debd"
   },
-  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {開啟設定}}",
+  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
   "@stateRecovery.settings.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "f970930"
   },
   "stateRecovery.shortcuts.title": "Cmdr 無法讀取你的鍵盤快速鍵，所以快速鍵已回到預設值",
   "@stateRecovery.shortcuts.title": {
@@ -19,13 +19,13 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "{platform, select, linuxGnome {If Cmdr shows as unlicensed now, enter your license key again in Preferences › License.} linuxKde {If Cmdr shows as unlicensed now, enter your license key again in Configure Cmdr › License.} other {如果 Cmdr 現在顯示為未授權，請到「設定 › 授權」重新輸入授權碼。}}",
+  "stateRecovery.license.body": "{platform, select, linuxGnome {如果 Cmdr 現在顯示為未授權，請到「偏好設定 › 授權」重新輸入授權碼。} linuxKde {如果 Cmdr 現在顯示為未授權，請到「設定 Cmdr › 授權」重新輸入授權碼。} other {如果 Cmdr 現在顯示為未授權，請到「設定 › 授權」重新輸入授權碼。}}",
   "@stateRecovery.license.body": {
-    "sourceHash": "ea51589"
+    "sourceHash": "158e224"
   },
-  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {開啟設定}}",
+  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
   "@stateRecovery.license.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "f970930"
   },
   "stateRecovery.appStatus.title": "{platform, select, windows {Cmdr 無法讀取窗格之前開啟的資料夾，所以窗格改從你的使用者資料夾開始} other {Cmdr 無法讀取窗格之前開啟的資料夾，所以窗格改從你的個人專屬資料夾開始}}",
   "@stateRecovery.appStatus.title": {

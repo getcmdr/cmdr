@@ -192,6 +192,32 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   now that GNOME has its own branch; the `other` branch could name the keyring desktop-neutrally. (all)
 - GNOME vi's own catalog misspells Keyboard as `Bàm phím` (gnome-control-center vi.po); vi's
   `shortcuts.conflict.takenByLinuxDesktops` writes `Bàn phím`. Worth an upstream GNOME fix. (vi)
+- Settings window pointers with a `linuxGnome` branch but no `linuxKde` one: `askCmdr.error.noKey`, `.notConfigured`,
+  `.authFailed`, `.modelNotInPlan.named` / `.unnamed`, `.requestTooLarge.named` / `.unnamed`,
+  `askCmdr.wake.needsApiKey`, `settings.sidebar.sections`, and `mtp.connectedToast.body`. KDE reads `other`'s "settings"
+  there while its window is titled "Configure – Cmdr", yet each description says both Linux branches name the window per
+  desktop. Add `linuxKde` branches or narrow the descriptions. The same keys write "in preferences" / "in settings"
+  lowercase; where the GNOME word is also an everyday word (vi `tùy thích`, "as you like"), the lowercase reading
+  misleads, so vi capitalizes it. Proposed cross-language rule: a pointer that names the settings window is capitalized
+  as a name. (es, pt, vi, zh, zh-Hant)
+- Windows shares the `other` branch with macOS in `settings.window.title` and most pointers, so a language whose Windows
+  word differs from its macOS one (Microsoft: es `Configuración`, pt `Configurações`; Apple: `Ajustes`) can't give
+  Windows its own word, and Windows reads the macOS one. It's consistent everywhere, which is fine for Cmdr's own
+  window; if Windows should read Microsoft's word, the English needs a `windows` branch in those keys. Needs David. (es,
+  pt)
+- `fileExplorer.functionKeyBar.hiddenToast`: the `windows` branch says "Turn it back on", every other branch
+  "Re-enable"; `whatsNew.optOutToast` splits the same way. Align the English or say why. (zh)
+- KDE's "Configure Cmdr" in `commands.appSettings.label` and the "Open settings" buttons has no ellipsis, while
+  `menu.app.settings` says "Configure Cmdr…". Confirm the command and the menu row differ on purpose. (zh-Hant)
+- zh and zh-Hant now quote KDE's localized wallet manager launcher name (zh `KWalletManager 密码库管理器`, zh-Hant
+  `KDE 錢包管理員`, from `kwalletmanager._desktop_.po`) in `fileExplorer.restic.forgetPassword.keychainKeptIt`, which
+  answers the older KWalletManager entry above for those two; the descriptions still say "KWalletManager (an app name,
+  kept as is)". Let them allow the catalog's launcher name. (zh, zh-Hant)
+- Overlay forks whose English gained per-OS branches kept those branches in English, overriding the base language's
+  translation: es-419 had English `windows` / `other` text in `onboarding.stepBeta.crashReportsNote`,
+  `.crashReportsNoteAlone`, `.signup.unreachable`, and `mtp.connectedToast.body` (fixed now). Coverage didn't flag them
+  (stale only said the fork was stale); a check that flags an overlay fork with a non-empty branch byte-identical to
+  English would. (es-419)
 
 ## Process feedback
 
@@ -301,3 +327,20 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   metadata on invent.kde.org, not in a `.po`. KDE's `Configure %1…` lives in `kconfigwidgets6.po`, not `kxmlgui6.po`
   (obsolete there). A `--lang` list on `i18n:brief` (one brief per language in one call) would have avoided 13 separate
   commands, since the guard refuses a loop. (de, nl, sv, fr)
+- Third wave fetching KDE's wallet catalogs by hand (`kwalletd6.po`, `kwalletmanager.po`, `kwallet._desktop_.po`,
+  `kwalletmanager._desktop_.po`, `kconfigwidgets6.po`): `i18n:pile --term "KDE Wallet"` has no hit in any language. The
+  worktree guard refuses a websvn `*checkout*` URL (it reads "checkout" as git) and a `curl -o` into a path containing
+  "git"; `?view=co` works, and zh / zh-Hant fell back to a Firecrawl scrape. Put these in the pile. (es, pt, vi, zh,
+  zh-Hant)
+- An 89-key brief is 290–325 KB (~83k tokens), mostly per-key notes repeated across the batch; zh wrote a read-only
+  `dump.ts` printing each key's en and zh values, and es-419 needed a read-only `node` one-liner to dump the overlay's
+  current values, because `i18n:brief` refuses an overlay. A compact values-only brief mode, and an overlay brief (base
+  value, fork value, English), would cover both. (es-419, zh)
+- `decisions.md` budgets sit at the files' current size, so a parallel translator can't record a decision without
+  editing the shared `i18n-termbase-baseline.json`; vi and zh-Hant reverted theirs and kept the evidence in `terms.json`
+  notes. (vi, zh-Hant)
+- A ruling's `windows` / `other` form REPLACES the base `accept` for those branches instead of merging it, so adding one
+  to `settings` raised drift on three unrelated keys until the base accept was repeated in each form. Document it, or
+  inherit. (vi)
+- A deliberately empty English branch (`mtp.connectedToast.body`'s `windows {}`) counts as "still English" and needs a
+  `sameAsSourceJustification` in every locale; an empty source branch could be exempt. (es, pt, vi, zh, zh-Hant)

@@ -1630,7 +1630,7 @@
   },
   "settings.analytics.enabled.description": "{platform, select, windows {請開啟這一項，幫助我們在公開測試期間了解哪些功能重要。\n統計不會關聯到你的姓名或電子郵件，而是關聯到一個隨機識別碼。\nCmdr 絕不會傳送檔名、路徑、搜尋字詞或提示詞。\n關閉後，Cmdr 不會傳送任何統計。} other {請開啟這一項，幫助我們在公開測試期間了解哪些功能重要。\n統計不會關聯到你的姓名或電子郵件，而是關聯到一個隨機識別碼。\nCmdr 絕不會傳送檔名、路徑、搜尋字詞或提示詞。\n關閉後，Cmdr 不會傳送任何統計。}}",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
+    "sourceHash": "dbbd8c8"
   },
   "settings.analytics.enabled.keywords": "分析, 使用情況, 使用統計, 統計, 隱私, 遙測, 測試版, 追蹤, 停用",
   "@settings.analytics.enabled.keywords": {
@@ -1654,7 +1654,7 @@
   },
   "settings.updates.crashReports.description": "{platform, select, macos {當 Cmdr 當機或在背景遇到問題時，自動傳送一份報告。內含 App 版本、macOS 版本，以及程式碼中出問題的位置。絕不含檔名或個人資料。} windows {當 Cmdr 當機或在背景遇到問題時，自動傳送一份報告。內含 App 版本、Windows 版本，以及程式碼中出問題的位置。絕不含檔名或個人資料。} other {當 Cmdr 當機或在背景遇到問題時，自動傳送一份報告。內含 App 版本、Linux 發行版和版本，以及程式碼中出問題的位置。絕不含檔名或個人資料。}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "3042746"
   },
   "settings.updates.crashReports.keywords": "當機, 崩潰, 閃退, 報告, 隱私, 遙測, 錯誤, 臭蟲, 問題",
   "@settings.updates.crashReports.keywords": {
@@ -1994,7 +1994,7 @@
   },
   "settings.advanced.logLlmCalls.description": "{platform, select, macos {為了方便除錯，把每次 AI 請求和回應存到本機資料夾（llm-logs）中。這些檔案會留在你的 Mac 上，其中包含 Cmdr 傳送給你的提供者的檔名和路徑。} windows {為了方便除錯，把每次 AI 請求和回應存到本機資料夾（llm-logs）中。這些檔案會留在你的電腦上，其中包含 Cmdr 傳送給你的提供者的檔名和路徑。} other {為了方便除錯，把每次 AI 請求和回應存到本機資料夾（llm-logs）中。這些檔案會留在你的電腦上，其中包含 Cmdr 傳送給你的提供者的檔名和路徑。}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "427e138"
   },
   "settings.advanced.logLlmCalls.keywords": "人工智慧, 記錄, 日誌, 偵錯, 請求, 要求, 回應, 提示詞",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2507,13 +2507,13 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr 使用你在「設定 › AI」中設定好的 AI 提供者和金鑰（{provider}）。}}",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr 使用你在「偏好設定 › AI」中設定好的 AI 提供者和金鑰（{provider}）。} linuxKde {Cmdr 使用你在「設定 Cmdr › AI」中設定好的 AI 提供者和金鑰（{provider}）。} other {Cmdr 使用你在「設定 › AI」中設定好的 AI 提供者和金鑰（{provider}）。}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
+    "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {在「設定 › AI」中開啟一個 AI 提供者，就能開始聊天。}}",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {在「偏好設定 › AI」中開啟一個 AI 提供者，就能開始聊天。} linuxKde {在「設定 Cmdr › AI」中開啟一個 AI 提供者，就能開始聊天。} other {在「設定 › AI」中開啟一個 AI 提供者，就能開始聊天。}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
+    "sourceHash": "0196a5c"
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr 模型",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2957,9 +2957,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {設定的各個部分}}",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {偏好設定的各個部分} other {設定的各個部分}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "4fa3c2e"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {沒有相符的設定} other {有 {countText} 個區段相符}}",
   "@settings.sidebar.matchCount": {
@@ -3213,7 +3213,7 @@
   },
   "settings.securityLog.enabled.description": "{platform, select, macos {在這部 Mac 上保留一個小檔案，記下與安全性相關的變更和拒絕，例如雲端 AI 的同意、安裝的更新，或被 MCP 伺服器拒絕的 App。這個檔案不含檔名、內容或密碼，也絕不會離開你的 Mac。} windows {在這台電腦上保留一個小檔案，記下與安全性相關的變更和拒絕，例如雲端 AI 的同意、安裝的更新，或被 MCP 伺服器拒絕的 App。這個檔案不含檔名、內容或密碼，也絕不會離開你的電腦。} other {在這台電腦上保留一個小檔案，記下與安全性相關的變更和拒絕，例如雲端 AI 的同意、安裝的更新，或被 MCP 伺服器拒絕的 App。這個檔案不含檔名、內容或密碼，也絕不會離開你的電腦。}}",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
+    "sourceHash": "7086b00"
   },
   "settings.securityLog.enabled.keywords": "安全性, 安全, 記錄, 日誌, 稽核, 事件, 存取, 隱私",
   "@settings.securityLog.enabled.keywords": {
@@ -3429,9 +3429,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {設定}}",
+  "settings.window.title": "{platform, select, linuxGnome {偏好設定} linuxKde {設定 – Cmdr} other {設定}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "80cee55"
   },
   "settings.window.loading": "正在載入設定⋯",
   "@settings.window.loading": {
@@ -3677,13 +3677,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {「鑰匙圈存取」中名為「{itemName}」的 {countText} 個項目}}} windows {{count, plural, other {「認證管理員」中名為「{itemName}」的 {countText} 個項目}}} linuxKde {{count, plural, other {KWallet 中名為「{itemName}」的 {countText} 個項目}}} other {{count, plural, other {你的鑰匙圈中名為「{itemName}」的 {countText} 個項目}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {「鑰匙圈存取」中名為「{itemName}」的 {countText} 個項目}}} windows {{count, plural, other {「認證管理員」中名為「{itemName}」的 {countText} 個項目}}} linuxKde {{count, plural, other {KDE 錢包中名為「{itemName}」的 {countText} 個項目}}} other {{count, plural, other {你的鑰匙圈中名為「{itemName}」的 {countText} 個項目}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {「鑰匙圈存取」中任何名為「{itemName}」的項目} windows {「認證管理員」中任何名為「{itemName}」的項目} linuxKde {KWallet 中任何名為「{itemName}」的項目} other {你的鑰匙圈中任何名為「{itemName}」的項目}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {「鑰匙圈存取」中任何名為「{itemName}」的項目} windows {「認證管理員」中任何名為「{itemName}」的項目} linuxKde {KDE 錢包中任何名為「{itemName}」的項目} other {你的鑰匙圈中任何名為「{itemName}」的項目}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {結束 Cmdr} other {結束 Cmdr}}",
   "@settings.dataWipe.quit": {

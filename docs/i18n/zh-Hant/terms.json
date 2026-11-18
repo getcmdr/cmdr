@@ -2199,8 +2199,14 @@
     "sources": "AP-TW = AP-HK (Keychain Access CFBundleName 鑰匙圈存取, MainMenu 825.title); GNOME gnome-keyring / gcr zh_TW 鑰匙圈",
     "other": {
       "chosen": "鑰匙圈",
-      "accept": ["KWallet", "錢包"],
-      "note": "Linux branches: the keyring is 鑰匙圈, which GNOME’s 密碼及加密金鑰 also says (seahorse zh_TW.po: 鑰匙圈已鎖定); KDE keeps KWallet and KWalletManager as names, with a wallet → 錢包 (kwalletmanager zh_TW.po)"
+      "accept": ["KDE 錢包", "錢包"],
+      "avoid": [
+        {
+          "form": "KWallet",
+          "why": "English names the KDE store “KDE Wallet”, which KDE's zh_TW catalog translates KDE 錢包 (kwalletd6.po: KDE Wallet Service → KDE 錢包服務, The KDE Wallet System → KDE 錢包系統; kwalletmanager._desktop_.po: KDE Wallet → KDE 錢包)"
+        }
+      ],
+      "note": "Linux branches: the keyring is 鑰匙圈, which GNOME’s 密碼及加密金鑰 also says (seahorse zh_TW.po: 鑰匙圈已鎖定). KDE (linuxKde): the store KDE Wallet → KDE 錢包 and its app KWalletManager → 「KDE 錢包管理員」 (kwalletmanager._desktop_.po Name, websvn l10n-kf6 zh_TW r1749399, fetched 2026-11-18); Remember in KDE Wallet → 記住在 KDE 錢包中."
     }
   },
   "kind": {
@@ -3648,7 +3654,12 @@
     "chosen": "設定",
     "confidence": "confirmed",
     "forms": "Cmdr's own Settings in prose → 「設定」; a path → 「設定 › AI」",
-    "sources": "AP-TW (160), AP-HK (160), MS"
+    "sources": "AP-TW (160), AP-HK (160), MS",
+    "other": {
+      "chosen": "設定",
+      "accept": ["偏好設定", "設定 Cmdr", "設定 – Cmdr"],
+      "note": "Cmdr's settings window per Linux desktop: GNOME (linuxGnome) → 偏好設定 (nautilus.po _Preferences → 偏好設定(_P), Show Preferences → 顯示偏好設定), so “Open preferences” → 開啟偏好設定 and a path → 「偏好設定 > AI」; KDE (linuxKde) → 設定 Cmdr, as KDE titles an app's settings: dolphin.po @title:window Configure → 設定 and Configure Dolphin → 「設定 Dolphin」, so the window title “Configure – Cmdr” → 設定 – Cmdr, the button “Configure Cmdr” → 設定 Cmdr, a prose pointer → 「設定 Cmdr」, a path → 「設定 Cmdr > AI」. Other Linux desktops keep 設定. settings.window.title, commands.appSettings.label, and menu.app.settings (設定 Cmdr⋯) start with the same word on every branch, as settings-window-name.test.ts pins in English. macOS (Settings… → 設定⋯) and Windows (MS settings → 設定) both say 設定."
+    }
   },
   "share-link": {
     "chosen": "分享連結",

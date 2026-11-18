@@ -35,9 +35,9 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {開啟設定}}",
+  "commands.appSettings.label": "{platform, select, linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
   "@commands.appSettings.label": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "commands.appCheckForUpdates.label": "檢查更新⋯",
   "@commands.appCheckForUpdates.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {從鑰匙圈中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份} windows {從認證管理員中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份} linuxKde {從 KWallet 中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份} other {從你的鑰匙圈中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {從鑰匙圈中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份} windows {從認證管理員中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份} linuxKde {從 KDE 錢包中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份} other {從你的鑰匙圈中移除你所在的 restic 備份已儲存的密碼，並再次鎖定這個備份}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "5b48a77"
+    "sourceHash": "e7106da"
   },
   "commands.fileCopyShareLink.label": "複製分享連結（7 天）",
   "@commands.fileCopyShareLink.label": {
@@ -1264,17 +1264,17 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Preferences, under Navigation & file ops.} linuxKde {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Configure Cmdr, under Navigation & file ops.} other {已在你的終端機 App 中開啟這個資料夾。想讓 Cmdr 下次開啟別的 App？在「設定」的「導覽與檔案操作」裡選一個。}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {已在你的終端機 App 中開啟這個資料夾。想讓 Cmdr 下次開啟別的 App？在「偏好設定」的「導覽與檔案操作」裡選一個。} linuxKde {已在你的終端機 App 中開啟這個資料夾。想讓 Cmdr 下次開啟別的 App？在「設定 Cmdr」的「導覽與檔案操作」裡選一個。} other {已在你的終端機 App 中開啟這個資料夾。想讓 Cmdr 下次開啟別的 App？在「設定」的「導覽與檔案操作」裡選一個。}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b29b744"
+    "sourceHash": "b73c1db"
   },
   "commands.handler.openTerminalHere.dismiss": "關閉",
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {開啟設定}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {開啟偏好設定} linuxKde {設定 Cmdr} other {開啟設定}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} 已經解除安裝了，所以這次在「終端機」裡開啟。",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1344,9 +1344,9 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Log storage is off. Set a disk space limit above 0 in Preferences > Advanced, then restart Cmdr to view the debug log.} linuxKde {Log storage is off. Set a disk space limit above 0 in Configure Cmdr > Advanced, then restart Cmdr to view the debug log.} other {記錄檔儲存已停用。在「設定 > 進階」中把磁碟空間上限設為大於 0，然後重新啟動 Cmdr 來檢視除錯記錄檔。}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {記錄檔儲存已停用。在「偏好設定 > 進階」中把磁碟空間上限設為大於 0，然後重新啟動 Cmdr 來檢視除錯記錄檔。} linuxKde {記錄檔儲存已停用。在「設定 Cmdr > 進階」中把磁碟空間上限設為大於 0，然後重新啟動 Cmdr 來檢視除錯記錄檔。} other {記錄檔儲存已停用。在「設定 > 進階」中把磁碟空間上限設為大於 0，然後重新啟動 Cmdr 來檢視除錯記錄檔。}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "96f16fc"
+    "sourceHash": "bda730a"
   },
   "commands.handler.viewDebugLog.unavailable": "無法開啟除錯記錄檔。再試一次。",
   "@commands.handler.viewDebugLog.unavailable": {

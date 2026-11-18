@@ -21,7 +21,7 @@
   },
   "crashReporter.dialog.privacyNote": "{platform, select, macos {內含 App 版本、macOS 版本，以及程式碼中遇到問題的部分。不含檔名或個人資料。} windows {內含 App 版本、Windows 版本，以及程式碼中遇到問題的部分。不含檔名或個人資料。} other {內含 App 版本、Linux 發行版和版本，以及程式碼中遇到問題的部分。不含檔名或個人資料。}}",
   "@crashReporter.dialog.privacyNote": {
-    "sourceHash": "ebe2d23"
+    "sourceHash": "6f58653"
   },
   "crashReporter.dialog.reportIdLabel": "報告 ID：",
   "@crashReporter.dialog.reportIdLabel": {
@@ -71,9 +71,9 @@
   "@crashReporter.sentToast.message.report": {
     "sourceHash": "a676ed5"
   },
-  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {Change in Preferences} linuxKde {Change in Configure Cmdr} other {在「設定」中更改}}",
+  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {在「偏好設定」中更改} linuxKde {在「設定 Cmdr」中更改} other {在「設定」中更改}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "144d0bd"
+    "sourceHash": "c3fff1a"
   },
   "crashReporter.sentToast.sendLog": "附上記錄檔",
   "@crashReporter.sentToast.sendLog": {
