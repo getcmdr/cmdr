@@ -1157,6 +1157,17 @@ jobs:
             [ -s "$DIR/$name.sig" ] || { echo "::error::No signature for $name."; exit 1; }
           done
 
+      # Each new signature must verify against a key the app ships (the main or the offline backup
+      # one) with the app's own minisign check, `version:` field included, before it goes up: the
+      # check `release-finish.sh` runs on the laptop's signatures and `publish` runs on a dispatch's.
+      # After the signing step, so the key is already out of every environment; `release-finish`'s
+      # one module outside the repo is `golang.org/x/crypto`.
+      - name: Verify the new signatures against the app's trusted keys
+        if: needs.guard.outputs.update-signing == 'ci'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: ./scripts/release-finish.sh -verify-dir "$RUNNER_TEMP/windows-x86_64" -leg windows "${TAG#v}"
+
       # The staged names and, in `ci` mode, their signatures: nothing else, so `--clobber` (which
       # replaces a half-saved asset on a retry) only ever touches this job's own files.
       - name: Upload the Windows packages to the release

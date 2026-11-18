@@ -33,8 +33,10 @@
 //	./scripts/release-finish.sh 0.51.0
 //	./scripts/release-finish.sh -dry-run -out /tmp/sigs 0.51.0
 //
-// `-verify-dir DIR` only verifies the archives and `.sig` files in DIR against the app's trusted keys,
-// with no gh or sops; the `publish` job gates a dispatch on it.
+// `-verify-dir DIR` only verifies the archives and `.sig` files in DIR against the app's trusted keys
+// (and that a Windows installer's signature names the version), with no gh or sops; the `publish`
+// job gates a dispatch on it. `-leg windows` with it verifies the Windows leg alone, the check
+// `windows-publish` runs on the signatures it just made.
 //
 // `-ci-gate` only checks the release's CI and CodeQL gate, once: the `ci-gate` job in
 // `release-pipeline.yml` runs it before anything ships. With `-wait` it waits instead, failing on
@@ -287,7 +289,10 @@ func checkAndSign(cfg config, pubkeys []string, dir string, names []string, comm
 	if err := sign(cfg, dir, names); err != nil {
 		return err
 	}
-	return verifySignatures(pubkeys, dir, names)
+	if err := verifySignatures(pubkeys, dir, names); err != nil {
+		return err
+	}
+	return requireVersionFields(manifest.For(cfg.version), dir, names)
 }
 
 // verifyOnly is `-verify-dir`: the `publish` job runs it before publishing a draft, so a
@@ -300,14 +305,16 @@ func verifyOnly(cfg config, dir string) error {
 		return err
 	}
 	release := manifest.For(cfg.version)
+	names := verifyNames(release, dir)
 	if cfg.leg != "" {
-		names := legSigned(release, manifest.OS(cfg.leg))
-		if len(names) == 0 {
+		if names = legSigned(release, manifest.OS(cfg.leg)); len(names) == 0 {
 			return fmt.Errorf("release %s has no %s leg to verify", cfg.version, cfg.leg)
 		}
-		return verifySignatures(pubkeys, dir, names)
 	}
-	return verifySignatures(pubkeys, dir, verifyNames(release, dir))
+	if err := verifySignatures(pubkeys, dir, names); err != nil {
+		return err
+	}
+	return requireVersionFields(release, dir, names)
 }
 
 // waitUntilSignable reports a release that's already published (signing is behind it), and

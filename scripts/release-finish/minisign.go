@@ -161,6 +161,18 @@ func verifyTauriSignature(pubkeysB64 []string, sigB64 string, data io.Reader) (s
 		publicKey{keyID: sig.keyID}.id(), strings.Join(trusted, ", "))
 }
 
+// namesVersion reports whether a Tauri signature's trusted comment carries `version:<version>`,
+// the field `--app-version` writes and the updater off macOS binds the install's version to. The
+// trusted comment is under the global signature, so once `verifyTauriSignature` passes, the field
+// is the signer's.
+func namesVersion(sigB64, version string) bool {
+	sig, err := parseSignature(sigB64)
+	if err != nil {
+		return false
+	}
+	return slices.Contains(strings.Split(sig.trustedComment, "\t"), "version:"+version)
+}
+
 // id is the key ID the way minisign prints it: little-endian hex, `A2601F36BB168C0A` for Cmdr's main key.
 func (pk publicKey) id() string {
 	id := pk.keyID

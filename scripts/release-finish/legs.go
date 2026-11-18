@@ -59,6 +59,25 @@ func verifyNames(release manifest.Release, dir string) []string {
 	return names
 }
 
+// requireVersionFields refuses a signature that should name the release's version and doesn't
+// (`manifest.File.SignsVersion`: a Windows installer), which every Windows install would refuse.
+func requireVersionFields(release manifest.Release, dir string, names []string) error {
+	for _, f := range release.Updates() {
+		if !f.SignsVersion() || !slices.Contains(names, f.Name) {
+			continue
+		}
+		sig, err := os.ReadFile(filepath.Join(dir, f.Signature()))
+		if err != nil {
+			return err
+		}
+		if !namesVersion(string(sig), release.Version) {
+			return fmt.Errorf("%s's signature doesn't name version %s (`tauri signer sign --app-version`), so every Windows install would refuse it", f.Name, release.Version)
+		}
+		fmt.Printf("    %s names version %s\n", f.Signature(), release.Version)
+	}
+	return nil
+}
+
 // legJobNames are the display names of the Windows leg's jobs in `release-pipeline.yml`
 // (`legs_test.go` holds them to it). The laptop doesn't wait for them: the build run is signable
 // once every other job is done.
