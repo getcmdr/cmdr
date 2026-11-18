@@ -7,9 +7,9 @@ map: `README.md`.
 
 The pile is language-first: `_ignored/i18n/<tag>/<source>/…`, 207 locale folders. Inside each `<tag>` the sources are
 subdirs (`macOS/`, `microsoft-terminology/`, `microsoft-style-guides/`, `gnome-nautilus/`, `xfce-thunar/`,
-`total-commander/`, `double-commander/`, `kde-dolphin/`, `git/`), present only where that source has the language. A few
-folders exist for a single source only: `ksh`/Kölsch (Total Commander), and `se`, `csb`, `hne`, `hsb`, `sr-Latn-ije`
-(KDE Dolphin).
+`total-commander/`, `double-commander/`, `kde-dolphin/`, `git/`, and for Cmdr's 13 languages `gnome-desktop/` and
+`kde-desktop/`), present only where that source has the language. A few folders exist for a single source only:
+`ksh`/Kölsch (Total Commander), and `se`, `csb`, `hne`, `hsb`, `sr-Latn-ije` (KDE Dolphin).
 
 `<tag>` is a BCP-47 locale, derived losslessly from each source's native code — punctuation and script-modifier
 normalization only, never region↔script remapping:
@@ -133,6 +133,23 @@ them after a pile rebuild:
 - **Provenance**: `po/<lang>/dolphin.po` from the GitHub mirror `https://github.com/KDE/dolphin` (`master`, raw fetch
   2026-06-21). The mirror carries a populated `po/` dir (KDE's scripty l10n sync), so no SVN or per-language l10n clone
   is needed — re-fetch `po/` to refresh.
+
+### gnome-desktop and kde-desktop (Tier 3, Linux desktop domain)
+
+- **What**: the GNOME and KDE apps beyond the file managers that Cmdr's `linuxGnome` / `linuxKde` branches name. GNOME:
+  `seahorse.po` (Passwords and Keys), `gnome-keyring.po` (the keyring), `gnome-control-center.po` (Settings > Keyboard >
+  View and Customize Shortcuts). KDE: `kconfigwidgets6.po` (KStandardAction's `&Configure %1…`, `@action:inmenu`),
+  `kxmlgui6.po`, `kwalletd6.po` (the "KDE Wallet" product name), `kwallet._desktop_.po`, `kwalletmanager.po` and
+  `kwalletmanager._desktop_.po` (KWalletManager's launcher name, localized in zh and zh-TW), `systemsettings.po`,
+  `kcm_keyboard.po`, `kcm_keys.po`, and `plasma-desktop._json_.po` (KCM names such as Keyboard and Shortcuts, which live
+  in the KCM metadata, not a KCM's own catalog).
+- **Layout**: `<tag>/gnome-desktop/<module>.po`, `<tag>/kde-desktop/<catalog>.po`, read by `pnpm i18n:pile` as `linux`.
+- **Coverage**: Cmdr's 13 full translations only (`pt` in `pt-BR/`, `zh` in `zh-CN/` with `zh/` symlinks, `zh-Hant` in
+  `zh-TW/`), ~15 MB.
+- **License**: GPL/LGPL (reference use; don't copy strings verbatim).
+- **Provenance**: l10n.gnome.org's POT export of each module's `main` branch and websvn.kde.org's `trunk/l10n-kf6`
+  (`?view=co`; the `*checkout*` URL form 404s), fetched 2026-11-18 by `pnpm i18n:pile-fetch` (in `apps/desktop`, tracked
+  in the repo). Re-run it to refresh, or with `--lang` for one language.
 
 ### total-commander (Tier 3, file-manager domain)
 
