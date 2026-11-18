@@ -417,9 +417,11 @@ impl Volume for ResticVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        Box::pin(self.metadata(path))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.metadata(path).await
+        })
     }
 
     /// The target the backup recorded, raw bytes included. A folder of the view
