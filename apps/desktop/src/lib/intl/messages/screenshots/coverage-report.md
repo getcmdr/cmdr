@@ -16,7 +16,7 @@ Per catalog area, each renderable key is one of three:
 
 Coverage is PARTIAL by design. Uncoupled keys are expected, not bugs.
 
-**Total: 4063 / 6160 keys have a screenshot (66%):** 2187 direct (36%) and 1876 representative (30%). 1902 remain
+**Total: 4057 / 6160 keys have a screenshot (66%):** 2184 direct (35%) and 1873 representative (30%). 1908 remain
 uncoupled, and 195 are native surfaces a webview capture cannot reach.
 
 | Area            | Direct | Representative | Uncoupled | Native | Total | Any % |
@@ -37,7 +37,7 @@ uncoupled, and 195 are native surfaces a webview capture cannot reach.
 | fileOperations  |    144 |             93 |       128 |      0 |   365 |   65% |
 | goToPath        |      5 |              6 |         2 |      0 |    13 |   85% |
 | indexing        |     34 |             18 |        18 |      0 |    70 |   74% |
-| licensing       |     49 |             35 |        26 |      0 |   110 |   76% |
+| licensing       |     49 |             35 |        32 |      0 |   116 |   72% |
 | lowDiskSpace    |      0 |              0 |         5 |      0 |     5 |    0% |
 | main            |      7 |              0 |        57 |      2 |    66 |   11% |
 | menu            |      5 |              0 |         0 |    193 |   198 |    3% |
@@ -52,7 +52,7 @@ uncoupled, and 195 are native surfaces a webview capture cannot reach.
 | securityNotices |      0 |              0 |        16 |      0 |    16 |    0% |
 | selection       |     14 |              0 |         1 |      0 |    15 |   93% |
 | servers         |     95 |             83 |        57 |      0 |   235 |   76% |
-| settings        |    471 |             48 |       416 |      0 |   935 |   56% |
+| settings        |    468 |             45 |       416 |      0 |   929 |   55% |
 | shortcuts       |     38 |             45 |         0 |      0 |    83 |  100% |
 | stateRecovery   |      0 |              0 |        33 |      0 |    33 |    0% |
 | suggestedOps    |     86 |              0 |        26 |      0 |   112 |   77% |

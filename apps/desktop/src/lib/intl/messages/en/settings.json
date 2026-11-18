@@ -2918,7 +2918,8 @@
   "settings.askCmdr.provider.none": "Turn on an AI provider in <providerLink>AI › Provider</providerLink> to start chatting.",
   "@settings.askCmdr.provider.none": {
     "description": "Hint shown in Settings > AI > Ask Cmdr when no AI provider is on. <providerLink> wraps a link that opens Settings > AI > Provider. The › is a right-pointing angle separating the settings path.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr.png",
+    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr model",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2941,11 +2942,14 @@
     "placeholders": {
       "model": "The model id Cmdr’s AI uses, for example claude-opus-5-5."
     },
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr.png",
+    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
   "settings.askCmdr.interactiveModel.localNote": "Local AI runs one model, so the chat uses that one.",
   "@settings.askCmdr.interactiveModel.localNote": {
-    "description": "Note under the disabled Ask Cmdr model dropdown while the AI provider is Local LLM: the on-device AI has a single model, so there is nothing to pick. Friendly; avoids the words error and failed."
+    "description": "Note under the disabled Ask Cmdr model dropdown while the AI provider is Local LLM: the on-device AI has a single model, so there is nothing to pick. Friendly; avoids the words error and failed.",
+    "screenshot": "settings-ai-ask-cmdr.png",
+    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
   "settings.askCmdr.interactiveModel.keywords": "ai, chat, assistant, model, override, different model",
   "@settings.askCmdr.interactiveModel.keywords": {
