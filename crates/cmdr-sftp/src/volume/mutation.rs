@@ -119,7 +119,7 @@ impl SftpVolume {
         debug!("SftpVolume::create_directory_all: {}", LogPrivate::dir_path(path));
         let made = mkdir_all::create_directory_all(self, path).await?;
         if let Some(created) = made.shallowest_created {
-            patch_created(self, &created).await;
+            patch_created(self, &created.as_std_legacy()).await;
         }
         Ok(made.leaf)
     }

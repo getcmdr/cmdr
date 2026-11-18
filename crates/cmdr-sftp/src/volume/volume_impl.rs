@@ -6,6 +6,8 @@
 //! and `max_concurrent_ops`) are the difference between a stale pane and a
 //! serialized transfer.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::metadata::{CarriedMetadata, ClassOutcome, MetadataReport};
 use cmdr_fs::volume::Presence;
@@ -98,8 +100,8 @@ impl Volume for SftpVolume {
         &self.name
     }
 
-    fn root(&self) -> &Path {
-        self.root.app_root()
+    fn root(&self) -> &AppPath {
+        self.root.app_root().app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -125,25 +127,31 @@ impl Volume for SftpVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.list_directory_impl(path, on_progress, None)))
     }
 
     fn list_directory_with_cancel<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.list_directory_impl(path, on_progress, cancel)))
     }
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.get_metadata_impl(path)))
     }
 
@@ -151,21 +159,29 @@ impl Volume for SftpVolume {
     /// `Volume::get_metadata`, which is `noting`-wrapped, so a bare existence
     /// probe on a dropped link would report a connection transition and drive a
     /// reconnect. An existence question stays a question.
-    fn presence<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
-        Box::pin(self.presence_impl(path))
+    fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.presence_impl(path).await
+        })
     }
 
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.entry_kind_impl(path)))
     }
 
     fn read_link_target<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Option<PathBuf>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.read_link_target_impl(path)))
     }
 
@@ -175,9 +191,11 @@ impl Volume for SftpVolume {
 
     fn create_symlink<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         target: &'a Path,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.create_symlink_impl(path, target)))
     }
 
@@ -214,9 +232,11 @@ impl Volume for SftpVolume {
     )]
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, READ_WINDOW_DEPTH).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -230,11 +250,13 @@ impl Volume for SftpVolume {
     )]
     fn resume_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         version: &'a cmdr_fs::volume::SourceVersion,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let stream = self.resume_read_stream_impl(path, version, offset).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -249,10 +271,12 @@ impl Volume for SftpVolume {
     )]
     fn open_read_stream_for_scan<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         _size_hint: Option<u64>,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, SCAN_WINDOW_DEPTH).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -265,10 +289,12 @@ impl Volume for SftpVolume {
     )]
     fn read_range<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.read_range_impl(path, offset, len)))
     }
 
@@ -284,16 +310,20 @@ impl Volume for SftpVolume {
     /// says what a stat-then-write would cost.
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.create_file_impl(path, content)))
     }
 
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.create_directory_impl(path)))
     }
 
@@ -302,8 +332,10 @@ impl Volume for SftpVolume {
     /// cost of a deep destination.
     fn create_directory_all<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.create_directory_all_impl(path)))
     }
 
@@ -328,11 +360,13 @@ impl Volume for SftpVolume {
     /// mode isn't carried yet (`DETAILS.md`). The rest is `NotApplicable`.
     fn apply_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         carried: &'a CarriedMetadata,
         modified: Option<std::time::SystemTime>,
     ) -> Pin<Box<dyn Future<Output = MetadataReport> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let mut report = MetadataReport::none_applicable(carried, modified);
             if let Some(modified) = modified {
                 report.modified = match self.noting(self.set_modified_impl(path, modified)).await {
@@ -351,7 +385,9 @@ impl Volume for SftpVolume {
         })
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.delete_impl(path)))
     }
 
@@ -359,10 +395,14 @@ impl Volume for SftpVolume {
     /// DEFINED to replace the destination. `mutation.rs` § the two renames.
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let to_std = to.as_std_legacy();
+        let to: &Path = &to_std;
+        let from_std = from.as_std_legacy();
+        let from: &Path = &from_std;
         Box::pin(self.noting(self.rename_impl(from, to, force)))
     }
 
@@ -371,13 +411,15 @@ impl Volume for SftpVolume {
     /// and a partial never wears the user's filename.
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let dest_std = dest.as_std_legacy();
+            let dest: &Path = &dest_std;
             self.noting(self.write_from_stream_impl(dest, mode, length, stream, on_progress))
                 .await
         })
@@ -392,9 +434,11 @@ impl Volume for SftpVolume {
     fn notify_mutation<'a>(
         &'a self,
         _volume_id: &'a str,
-        parent_path: &'a Path,
+        parent_path: &'a AppPath,
         mutation: MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
+        let parent_path_std = parent_path.as_std_legacy();
+        let parent_path: &Path = &parent_path_std;
         Box::pin(patching::patch_mutation(self, parent_path, mutation))
     }
 
@@ -405,8 +449,10 @@ impl Volume for SftpVolume {
     /// listing cache is off limits here.
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(scan_walk::scan_one(self, path)))
     }
 
@@ -415,9 +461,11 @@ impl Volume for SftpVolume {
     /// the scan watchdog unable to tell a slow walk from a stopped server.
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
+        let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+        let paths: &[PathBuf] = &paths_std;
         Box::pin(self.noting(scan_walk::scan_trees(self, paths, boundary)))
     }
 
@@ -425,8 +473,10 @@ impl Volume for SftpVolume {
     fn scan_for_conflicts<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
-        dest_path: &'a Path,
+        dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
+        let dest_path_std = dest_path.as_std_legacy();
+        let dest_path: &Path = &dest_path_std;
         Box::pin(self.noting(scan_walk::scan_conflicts(self, source_items, dest_path)))
     }
 
@@ -437,10 +487,14 @@ impl Volume for SftpVolume {
     /// which is the caller's signal to stream it the ordinary way.
     fn copy_within<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         on_progress: &'a (dyn Fn(u64, u64) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<u64, VolumeError>> + Send + 'a>> {
+        let to_std = to.as_std_legacy();
+        let to: &Path = &to_std;
+        let from_std = from.as_std_legacy();
+        let from: &Path = &from_std;
         Box::pin(self.noting(self.copy_within_impl(from, to, on_progress)))
     }
 
@@ -567,7 +621,7 @@ impl Volume for SftpVolume {
         false
     }
 
-    fn local_path(&self) -> Option<PathBuf> {
+    fn local_path(&self) -> Option<AppPathBuf> {
         None
     }
 
@@ -585,7 +639,7 @@ impl Volume for SftpVolume {
         false
     }
 
-    fn listing_watch_coverage(&self, _path: &Path) -> WatchCoverage {
+    fn listing_watch_coverage(&self, _path: &AppPath) -> WatchCoverage {
         WatchCoverage::None
     }
 
@@ -599,8 +653,10 @@ impl Volume for SftpVolume {
     /// several mounts isn't the root's.
     fn get_space_info_at<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.space_info_impl(path)))
     }
 
