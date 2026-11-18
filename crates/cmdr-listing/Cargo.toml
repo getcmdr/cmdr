@@ -5,10 +5,6 @@ edition = "2024"
 license = "LicenseRef-BSL-1.1"
 publish = false
 
-[package.metadata.cmdr]
-# Not on Windows yet; see `docs/tooling/ci.md` § Windows lane.
-platforms = ["linux", "macos"]
-
 # The house lint set lives in the workspace root's `[workspace.lints]`, so this
 # crate can't quietly become a lint-free zone. `unused_crate_dependencies` is the
 # one lint that stays at the crate root instead (it's judged per compilation unit).
@@ -79,5 +75,3 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "test-util"] }
 uuid = { version = "1.29.2", features = ["v4"] }
 # The stall probe's symlink cells need a real directory to resolve through.
 tempfile = "3"
-# The `errno`s a stalled network read fails with (`ENOTCONN`, `ETIMEDOUT`).
-libc = "0.2"

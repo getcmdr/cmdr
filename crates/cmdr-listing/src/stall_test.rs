@@ -23,6 +23,7 @@ use crate::stalled_on::StalledOn;
 use crate::testing::{FakeMountTable, StreamingListingState, TestEngine, TestListingGuard, request};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
+use cmdr_fs::os_error::OsErrorClass;
 use cmdr_fs::testing::unique_test_id;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{ListingPhase, ListingProgress, Volume, VolumeError};
@@ -139,11 +140,11 @@ impl Volume for SilentServerVolume {
                 Answer::Entries(n) => Ok((0..n).map(entry).collect()),
                 Answer::NotConnected => Err(VolumeError::IoError {
                     message: "Socket is not connected".into(),
-                    raw_os_error: Some(libc::ENOTCONN),
+                    raw_os_error: OsErrorClass::NotConnected.host_code(),
                 }),
                 Answer::TimedOut => Err(VolumeError::IoError {
                     message: "Operation timed out".into(),
-                    raw_os_error: Some(libc::ETIMEDOUT),
+                    raw_os_error: OsErrorClass::TimedOut.host_code(),
                 }),
                 Answer::NotFound => Err(VolumeError::NotFound("/".to_string())),
             }

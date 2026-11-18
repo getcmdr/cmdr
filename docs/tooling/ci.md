@@ -623,15 +623,17 @@ on any build script that needs MSVC's `cl.exe`.
   from Linux: `cmdr-collation`, `cmdr-http`, `cmdr-menu`, `cmdr-platform-cfg`, `cmdr-recents`, `cmdr-sort`,
   `cmdr-update-trust`. The list only grows: a member joins by dropping its restriction, and leaving needs an allowlist
   entry, which `workspace-member-coverage` enforces (`scripts/check/checks/DETAILS.md` § "The Windows ratchet").
+  `cmdr-fs` and 16 members above it joined on 2026-11-18 after `cargo clippy --all-targets -D warnings` passed for them
+  on the Windows 10 22H2 builder (MSVC); the members still pending, their blockers, and the builder's test runs:
+  `docs/notes/windows-port/build-progress.md`.
 - **The break report (never red)**: `desktop-rust-windows-breaks` runs one `cargo check --keep-going --all-targets` over
   every other member that builds on Linux, and classifies each: compiles (ready to join), fails (its error count and
   first errors), or blocked (the failing crates in its dependency closure, ours or third-party, a failed build script
   included). It lands in the job summary and in the `windows-break-report` artifact (`summary.md`, plus `errors.md` with
   every error rendered). It runs even when clippy went red. A Phase-6 agent reads the artifact, not the log. On another
   host, `CMDR_WINDOWS_BREAKS_TARGET=x86_64-pc-windows-gnu pnpm check windows-breaks` gives the same report from a mingw
-  cross-check (`apt-get install mingw-w64`, `rustup target add x86_64-pc-windows-gnu`); the 2026-11-11 seed run had
-  `cmdr-fs` failing with 66 errors and blocking all 24 others, `usearch`'s build script and the app's unconditional
-  `xattr` failing too.
+  cross-check (`apt-get install mingw-w64`, `rustup target add x86_64-pc-windows-gnu`). On a Mac, zig stands in for
+  mingw's C compiler and `AWS_LC_SYS_PREBUILT_NASM=1` for NASM; that recipe's in the progress log above.
 - **When it runs**: after a push to `main` that touches what its checks read (its `push.paths`, held to their
   fingerprints by `ci-coverage` rule 9), and on demand on any branch: `gh workflow run windows-lane.yml --ref <branch>`,
   which is how a Windows task checks its branch before landing. Never on a PR run: it would add a Windows job, about as
