@@ -444,7 +444,11 @@ async fn a_selected_folder_link_with_a_cold_preview_goes_as_a_link() {
             batch.aggregate.file_count,
             batch.aggregate.total_bytes,
             batch.aggregate.dedup_bytes,
-            batch.per_path,
+            batch
+                .per_path
+                .into_iter()
+                .map(|(path, scan)| (path.as_std_legacy().into_owned(), scan))
+                .collect(),
         ),
     );
 

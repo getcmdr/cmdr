@@ -468,7 +468,11 @@ async fn a_top_level_dir_link_is_not_merged_when_a_preview_scanned_it_as_a_folde
             batch.aggregate.file_count,
             batch.aggregate.total_bytes,
             batch.aggregate.dedup_bytes,
-            batch.per_path,
+            batch
+                .per_path
+                .into_iter()
+                .map(|(path, scan)| (path.as_std_legacy().into_owned(), scan))
+                .collect(),
         ),
     );
 

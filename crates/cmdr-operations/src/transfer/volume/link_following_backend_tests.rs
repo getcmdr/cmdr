@@ -134,13 +134,14 @@ impl Volume for LinkFollowingVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        let paths_app = paths;
-        let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-        let paths: &[PathBuf] = &paths_std;
         if self.shared_scan_walk {
-            scan_walk::scan_trees(self, paths, boundary)
+            Box::pin(async move {
+                let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+                let paths: &[PathBuf] = &paths_std;
+                scan_walk::scan_trees(self, paths, boundary).await
+            })
         } else {
-            self.inner.scan_for_copy_batch_with_boundary(paths_app, boundary)
+            self.inner.scan_for_copy_batch_with_boundary(paths, boundary)
         }
     }
     fn open_read_stream<'a>(
