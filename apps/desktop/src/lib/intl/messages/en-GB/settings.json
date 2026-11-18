@@ -23,9 +23,9 @@
   "@settings.appearance.sizeColors.label": {
     "sourceHash": "7598e9a"
   },
-  "settings.appearance.sizeColors.description": "Colour file sizes in the file list by tier. Rainbow uses green/yellow/orange/red/purple. App uses shades of the app colour.",
+  "settings.appearance.sizeColors.description": "Colour file sizes in the file list by tier. Rainbow uses green, yellow, orange, red, and purple. App uses shades of the app colour.",
   "@settings.appearance.sizeColors.description": {
-    "sourceHash": "ecb064a"
+    "sourceHash": "e790d53"
   },
   "settings.appearance.sizeColors.keywords": "size, color, colour, tier, rainbow, app color, app colour, accent, shades, highlight",
   "@settings.appearance.sizeColors.keywords": {
@@ -78,10 +78,6 @@
   "settings.behavior.fileSystemWatching.lowDiskSpaceThresholdPercent.keywords": "disk, space, threshold, percent, per cent, low, free, warning",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceThresholdPercent.keywords": {
     "sourceHash": "7a0df93"
-  },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "{platform, select, macos {Cmdr pauses drive indexing when free space on your startup disk drops below this per cent, so the index doesn’t take the room your own files need. Indexing picks up where it left off once free space climbs one point above it. This works whether the “Low disk space warning” is on or off.} windows {Cmdr pauses drive indexing when free space on your system drive drops below this per cent, so the index doesn’t take the room your own files need. Indexing picks up where it left off once free space climbs one point above it. This works whether the “Low disk space warning” is on or off.} other {Cmdr pauses drive indexing when free space on your system disk drops below this per cent, so the index doesn’t take the room your own files need. Indexing picks up where it left off once free space climbs one point above it. This works whether the “Low disk space warning” is on or off.}}",
-  "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "bb41d41"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "disk, space, full, free, index, indexing, pause, storage, threshold, percent, per cent, low",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -175,9 +171,9 @@
   "@settings.fileOperations.skipConfirmation.label": {
     "sourceHash": "f1b1b39"
   },
-  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {Copy and Move go into the other pane right away, and Delete moves to the Recycle Bin without asking. A bit risky, since one keypress acts at once. Deleting permanently always asks first.} other {Copy and Move go into the other pane right away, and Delete moves to the Bin without asking. A bit risky, since one keypress acts at once. Deleting permanently always asks first.}}",
+  "settings.fileOperations.skipConfirmation.explanation": "{platform, select, windows {Copy and Move go into the other pane right away, and Delete moves to the Recycle Bin without asking.} other {Copy and Move go into the other pane right away, and Delete moves to the Bin without asking.}}",
   "@settings.fileOperations.skipConfirmation.explanation": {
-    "sourceHash": "564f000"
+    "sourceHash": "9c53630"
   },
   "settings.fileOperations.skipConfirmation.keywords": "{platform, select, windows {confirm, confirmation, dialog, ask, copy, move, recycle bin, delete, skip, clicks} other {confirm, confirmation, dialog, ask, copy, move, trash, bin, delete, skip, clicks}}",
   "@settings.fileOperations.skipConfirmation.keywords": {

@@ -3,6 +3,7 @@
     import { tString } from '#lib/intl/messages.svelte.js'
     import SettingRow from '../components/SettingRow.svelte'
     import SettingSlider from '../components/SettingSlider.svelte'
+    import SettingSwitch from '../components/SettingSwitch.svelte'
     import SettingToggleGroup from '../components/SettingToggleGroup.svelte'
     import SectionCard from '#lib/ui/SectionCard.svelte'
     import { getSettingDefinition } from '#lib/settings/index.js'
@@ -18,17 +19,17 @@
 
     const textSizeDef = getSettingDefinition('appearance.textSize') ?? { label: '', description: '' }
     const uiDensityDef = getSettingDefinition('appearance.uiDensity') ?? { label: '', description: '' }
+    const fnKeyBarDef = getSettingDefinition('appearance.showFunctionKeyBar') ?? { label: '', description: '' }
 </script>
 
 <SettingsSection title={tString('settings.section.zoomAndDensity')}>
-    {#if anyVisible(shouldShow, 'appearance.textSize', 'appearance.uiDensity')}
+    {#if anyVisible(shouldShow, 'appearance.textSize', 'appearance.uiDensity', 'appearance.showFunctionKeyBar')}
         <SectionCard>
             {#if shouldShow('appearance.textSize')}
                 <SettingRow
                     id="appearance.textSize"
                     label={textSizeDef.label}
                     description={textSizeDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingSlider id="appearance.textSize" unit="%" />
@@ -43,6 +44,19 @@
                     {searchQuery}
                 >
                     <SettingToggleGroup id="appearance.uiDensity" />
+                </SettingRow>
+            {/if}
+
+            <!-- The bar spends a row of the window's height, so it sits with the other
+                 "how much fits on screen" choices. -->
+            {#if shouldShow('appearance.showFunctionKeyBar')}
+                <SettingRow
+                    id="appearance.showFunctionKeyBar"
+                    label={fnKeyBarDef.label}
+                    description={fnKeyBarDef.description}
+                    {searchQuery}
+                >
+                    <SettingSwitch id="appearance.showFunctionKeyBar" />
                 </SettingRow>
             {/if}
         </SectionCard>

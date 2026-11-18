@@ -64,13 +64,11 @@ describe('other scripts', () => {
   })
 
   it('allows no typo in a CJK query', () => {
-    // The macOS description is the translated one; off macOS it reads English until translated.
-    onTestFinished(withPlatform('macos'))
     clearSearchIndex()
     void setLocale('zh')
-    // The zh description says `选择 Cmdr 使用的语言`; one character off is a different phrase.
-    expect(ids('使用的语言')).toContain('appearance.language')
-    expect(ids('使用的语文')).toEqual([])
+    // The zh description says `方便逐行查看`; one character off is a different phrase.
+    expect(ids('方便逐行查看')).toContain('listing.stripedRows')
+    expect(ids('方便逐列查看')).toEqual([])
   })
 })
 
@@ -133,7 +131,6 @@ describe('keywords from the catalog, terms from TS', () => {
   /** Theme mode in Hungarian, so an English word in its text can only come from the keywords. */
   const huThemeMode = {
     'settings.theme.mode.label': 'Témamód',
-    'settings.theme.mode.description': 'Válassz a világos, sötét vagy rendszer szerinti téma közül.',
   }
 
   it('finds a row by a keyword the UI language wrote for it', () => {

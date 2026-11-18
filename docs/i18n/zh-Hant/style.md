@@ -396,8 +396,8 @@ CLDR category: **`other` only** (verified with `new Intl.PluralRules('zh-Hant').
   A visible "preset" is `預設組`, macOS's own word (print dialog `儲存目前設定為預設組⋯`), in Multi-rename's
   `multiRename.presets`, `.savePreset`, `.presetName`, …; bare `預設` stays _default_. ❌ Don't shorten `預設組` to
   `預設`.
-- **Menu names in running text get corner brackets, not a path.** Write `請從「說明」選單傳送新的報告。` in prose, and
-  reserve the bold `Cmdr > 引導設定⋯` path shape for step-by-step onboarding instructions. Menu names must match the
+- **Menu names in running text get corner brackets, not a path.** Write `請從「輔助說明」選單傳送新的報告。` in prose,
+  and reserve the bold `Cmdr > 引導設定⋯` path shape for step-by-step onboarding instructions. Menu names must match the
   `menu.*` keys exactly, so a copy edit can't drift the two apart.
 - **Toast strings that follow a colon carry the wrapper's verb, so don't repeat it.** Several error values are dropped
   into a wrapper key and read as the sentence AFTER the colon; write them to continue that sentence and pick a different

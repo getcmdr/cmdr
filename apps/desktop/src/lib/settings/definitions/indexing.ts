@@ -23,6 +23,7 @@ export const indexingSettings: SettingDefinitionSource[] = [
     section: ['Indexing', 'Drive indexing'],
     labelKey: 'settings.indexing.enabled.label',
     descriptionKey: 'settings.indexing.enabled.description',
+    descriptionInTip: true,
     // The Drive-indexing card has no dedicated `card*` key; it reuses this row-label key
     // as its title (DriveIndexingSection.svelte), and so do the card's searchable rows
     // (`DriveIndexingSection.rows.ts`).
@@ -38,6 +39,7 @@ export const indexingSettings: SettingDefinitionSource[] = [
     section: ['Indexing', 'Drive indexing'],
     labelKey: 'settings.indexing.askForEachDrive.label',
     descriptionKey: 'settings.indexing.askForEachDrive.description',
+    descriptionInTip: true,
     cardKey: 'settings.indexing.enabled.label',
     keywordsKey: 'settings.indexing.askForEachDrive.keywords',
     terms: ['smb', 'usb'],
@@ -52,6 +54,7 @@ export const indexingSettings: SettingDefinitionSource[] = [
     section: ['Indexing', 'Drive indexing'],
     labelKey: 'settings.indexing.staleNotify.label',
     descriptionKey: 'settings.indexing.staleNotify.description',
+    descriptionInTip: true,
     cardKey: 'settings.indexing.enabled.label',
     keywordsKey: 'settings.indexing.staleNotify.keywords',
     terms: ['smb'],
@@ -97,6 +100,7 @@ export const indexingSettings: SettingDefinitionSource[] = [
     needsCapability: 'imageIndexing',
     labelKey: 'settings.mediaIndex.enabled.label',
     descriptionKey: 'settings.mediaIndex.enabled.description',
+    descriptionInTip: { summaryKey: 'settings.mediaIndex.enabled.summary' },
     cardKey: 'settings.mediaIndex.cards.enable',
     keywordsKey: 'settings.mediaIndex.enabled.keywords',
     terms: ['ocr'],
@@ -114,6 +118,7 @@ export const indexingSettings: SettingDefinitionSource[] = [
     needsCapability: 'imageIndexing',
     labelKey: 'settings.mediaIndex.showFileStatusIcons.label',
     descriptionKey: 'settings.mediaIndex.showFileStatusIcons.description',
+    descriptionInTip: true,
     cardKey: 'settings.mediaIndex.cards.enable',
     keywordsKey: 'settings.mediaIndex.showFileStatusIcons.keywords',
     type: 'boolean',
@@ -134,6 +139,7 @@ export const indexingSettings: SettingDefinitionSource[] = [
     needsCapability: 'imageIndexing',
     labelKey: 'settings.mediaIndex.showInSearch.label',
     descriptionKey: 'settings.mediaIndex.showInSearch.description',
+    descriptionInTip: true,
     cardKey: 'settings.mediaIndex.cards.enable',
     keywordsKey: 'settings.mediaIndex.showInSearch.keywords',
     terms: ['ocr'],

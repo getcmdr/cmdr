@@ -165,7 +165,10 @@
     ],
     "confidence": "tentative",
     "sources": "descriptive; the construction reuses the catalog's progress-noun and done-participle conventions",
-    "note": "eszköz is also the device word; context separates them, but never coin platformeszközök for Android tools."
+    "note": "eszköz is also the device word; context separates them, but never coin platformeszközök for Android tools.",
+    "exceptions": {
+      "settings.fileOperations.adbEnabled.summary": "The English \"the adb tool\" is a command-line program, not an AI tool; style.md renders it az adb parancs."
+    }
   },
   "allow": {
     "chosen": "Engedélyezés",
@@ -4576,6 +4579,48 @@
     "sources": "GNOME nautilus.po (_Preferences → _Beállítások); macOS AppKit MenuCommands (Preferences → Beállítások); Thunar (Beállítások)",
     "accept": ["beállítás", "Beállítás"],
     "note": "GNOME's name for Cmdr's settings window in the linuxGnome branch. Hungarian has one word for Preferences and Settings (nautilus.po _Preferences → _Beállítások), so a linuxGnome branch reads like the other branch (Beállítási szakaszok included). Android's label is the usb-preferences concept."
+  },
+  "detect": {
+    "chosen": "felismerés",
+    "confidence": "high",
+    "accept": ["felismer", "észlel"],
+    "sources": "gnome-nautilus (_Detect Media → A_dathordozó felismerése); double-commander (Detect archive type by content → Archívum típus felismerése a tartalom alapján); catalog settings.summary.mtp",
+    "exceptions": {
+      "fileExplorer.network.share.credentialsStoredLocally": "\"no system keyring detected\" reads naturally as nem található (not found); felismer would be stilted for a missing store."
+    }
+  },
+  "personal-data": {
+    "chosen": "személyes adatok",
+    "confidence": "high",
+    "accept": ["személyes adat", "magánjellegű adat"],
+    "sources": "catalog crashReporter.dialog.privacyNote and settings.updates.crashReports.* (6 hits); ms TBX personal data → személyi adatok / személyhez köthető adatok (formal; the catalog's everyday form wins)"
+  },
+  "open-beta": {
+    "chosen": "nyílt béta",
+    "confidence": "high",
+    "accept": ["nyílt bétá", "béta"],
+    "sources": "catalog licensing.about.version, onboarding.stepBeta.openBeta, onboarding.stepBeta.analyticsLede; no pile hits"
+  },
+  "bug": {
+    "chosen": "hiba",
+    "confidence": "high",
+    "accept": ["programhiba", "hibá"],
+    "sources": "ms TBX bug → hiba; kde-dolphin bug reports → hibajelentések; catalog onboarding.stepBeta.openBeta (kijavítsam a hibákat)",
+    "note": "A defect the developer fixes is hiba; the voice rule against a bare hiba label covers problems shown to the user, not bugs."
+  },
+  "prompt": {
+    "chosen": "prompt",
+    "confidence": "tentative",
+    "accept": ["utasítás", "kér", "kérdez"],
+    "sources": "catalog settings.advanced.logLlmCalls.keywords (prompt, utasítás); ms TBX prompt (generative AI) → parancs, a system prompt → kér / kérdés",
+    "note": "The AI sense keeps the loanword (AI-promptokat); a system prompt asking the user is kérés / rákérdezés."
+  },
+  "speed": {
+    "chosen": "sebesség",
+    "confidence": "high",
+    "accept": ["gyors", "sebess"],
+    "sources": "double-commander Speed (MB/s) → Sebesség (MB/s); catalog 6× sebesség",
+    "note": "faster → gyorsabb(an) in prose."
   },
   "usb-preferences": {
     "chosen": "USB-beállítások",

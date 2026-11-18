@@ -113,7 +113,10 @@
         box-sizing: content-box;
     }
 
-    .info-tip:hover {
+    /* The resting tertiary keeps the glyph quiet next to the label it explains; pointing at it
+       or tabbing to it brings it to full contrast, so the focused one is never the faint one. */
+    .info-tip:hover,
+    .info-tip:focus-visible {
         color: var(--color-text-primary);
     }
 

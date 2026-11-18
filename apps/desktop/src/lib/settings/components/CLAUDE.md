@@ -8,10 +8,12 @@ in the section or registry, not here. Parent: `../CLAUDE.md` (registry, store, s
 - Window chrome, not registry-driven: `SettingsSidebar` (nav + search; declares `TOP_LEVEL_ORDER`, keep in sync with
   `settings.spec.ts`), `SettingsContent` (routes `selectedSection` to a `sections/*.svelte` or `SectionSummary`),
   `SettingsSection` (h2 + slot), `SectionSummary` (card grid into subsections).
-- Registry-driven rows: `SettingRow` (label + description + control + reset pip + restart badge) wrapping
-  `SettingSwitch` / `Checkbox` / `Select` / `ToggleGroup` / `RadioGroup` / `Slider` / `NumberInput` / `TextInput` /
-  `PasswordInput` / `ColorSwatchPicker`. Which one to reach for: DETAILS § Picking a control. `SettingSwitch` and
-  `SettingCheckbox` share their state via `boolean-setting.svelte.ts` (`useBooleanSetting(id)`).
+- Registry-driven rows: `SettingRow` (label + description, under the label or behind an ⓘ per the registry's
+  `descriptionInTip` and `description-placement.ts`, + control + reset pip + restart badge) wrapping `SettingSwitch` /
+  `Checkbox` / `Select` / `ToggleGroup` / `RadioGroup` / `Slider` / `NumberInput` / `TextInput` / `PasswordInput` /
+  `ColorSwatchPicker`. Which one to reach for: DETAILS § Picking a control. `SettingSwitch` and `SettingCheckbox` share
+  their state via `boolean-setting.svelte.ts` (`useBooleanSetting(id)`). `SettingSwitchRow`: a plain on/off row, guard
+  included.
 - Every `.svelte` here is axe-audited (tier 3) from one directory-level file, `setting-components.a11y.test.ts`. Adding
   a primitive means adding a `describe` block there, not a new file; `a11y-coverage` fails if it can't see the import.
 
@@ -23,8 +25,9 @@ in the section or registry, not here. Parent: `../CLAUDE.md` (registry, store, s
 - **`SettingRow` stamps `settingAnchorId(id)` on every row**, which is what
   `openSettingsWindow(surface, section, anchor)` scrolls to. Deep-link to a setting by passing that id, never by
   inventing an anchor or reusing the `SettingId` (the row's `<label for>` already spends that on the control).
-- **`SettingRow.split`** enforces a 50-50 grid so control left-edges align across rows. Use it for select / text /
-  password / slider / number / radio / combobox rows, not for switches, toggle groups, or full-width custom layouts.
+- **Every `SettingRow` control sits flush right** (System Settings style); there's no layout prop to pass. Text fields
+  and sliders take one shared width, a radio list top-aligns its label to its first option, and the rest keep their
+  natural size. DETAILS § Row layout.
 - **A managed (MDM-locked) setting renders itself.** `SettingRow` and every primitive read `useSettingLock(id)`:
   disabled, the managed note winning over any section-passed one, no reset pip. ❌ Don't pass the lock from a section.
   DETAILS § Managed rows.

@@ -91,6 +91,10 @@
   "@licensing.section.enterKey": {
     "sourceHash": "d8f5129"
   },
+  "licensing.section.includedFeatures": "Todas las funciones del administrador de archivos",
+  "@licensing.section.includedFeatures": {
+    "sourceHash": "59fe7eb"
+  },
   "licensing.section.statusExpiredOn": "Venció el {date}",
   "@licensing.section.statusExpiredOn": {
     "sourceHash": "0d214a6"

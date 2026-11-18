@@ -416,6 +416,30 @@
   "@licensing.section.getLicense": {
     "sourceHash": "fab19d3"
   },
+  "licensing.section.includedTitle": "Що входить",
+  "@licensing.section.includedTitle": {
+    "sourceHash": "a441e05"
+  },
+  "licensing.section.includedFeatures": "Усі функції файлового менеджера",
+  "@licensing.section.includedFeatures": {
+    "sourceHash": "0a54a41"
+  },
+  "licensing.section.includedMacs": "Усі ваші власні Mac для особистого користування",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "d0968e4"
+  },
+  "licensing.section.includedUpdates": "Автоматичні оновлення",
+  "@licensing.section.includedUpdates": {
+    "sourceHash": "147b1b6"
+  },
+  "licensing.section.includedAi": "Cmdr AI, безкоштовно під час бета-тестування, з вашим власним ключем або на пристрої",
+  "@licensing.section.includedAi": {
+    "sourceHash": "1fec548"
+  },
+  "licensing.section.commercialNeeded": "Щоб користуватися Cmdr для роботи, зокрема за наймом, за контрактом чи у власному бізнесі, потрібна комерційна ліцензія. Спершу його можна до 14 днів спробувати на роботі.",
+  "@licensing.section.commercialNeeded": {
+    "sourceHash": "a3d7314"
+  },
   "licensing.section.typePersonal": "Особиста (безкоштовна)",
   "@licensing.section.typePersonal": {
     "sourceHash": "4af5ca9"

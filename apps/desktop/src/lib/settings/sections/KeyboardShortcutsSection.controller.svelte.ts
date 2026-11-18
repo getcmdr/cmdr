@@ -434,26 +434,19 @@ export function createKeyboardShortcutsController(getSearchQuery: () => string) 
     keySearchQuery = capturedKeyCombo(event)
   }
 
+  /**
+   * Releasing a modifier only touches a modifiers-only value (the live "held keys" preview). A
+   * captured combo stays until the user clears it or presses another: with ⌘⇧G, letting go of ⇧
+   * while ⌘ is still down must not shrink the value to `⌘` (which the final release then cleared).
+   */
   function handleKeyFilterKeyUp(event: KeyboardEvent) {
-    // If we only have modifiers showing (no complete combo), check if all modifiers released
-    if (isModifierKey(event.key)) {
-      // Check if any modifier is still held
-      const stillHasModifier = event.metaKey || event.ctrlKey || event.altKey || event.shiftKey
-      if (!stillHasModifier) {
-        // All modifiers released - check if current value looks like only modifiers
-        const currentValue = keySearchQuery
-        // If the value is only modifiers (no regular key), clear it
-        const isOnlyModifiers = isMacOS()
-          ? /^[⌘⌃⌥⇧]*$/.test(currentValue)
-          : /^(Ctrl\+?|Alt\+?|Shift\+?|Super\+?)*$/.test(currentValue)
-        if (isOnlyModifiers) {
-          keySearchQuery = ''
-        }
-      } else {
-        // Still have some modifiers held - update the display
-        keySearchQuery = formatModifiers(event)
-      }
-    }
+    if (!isModifierKey(event.key)) return
+    const isOnlyModifiers = isMacOS()
+      ? /^[⌘⌃⌥⇧]*$/.test(keySearchQuery)
+      : /^(Ctrl\+?|Alt\+?|Shift\+?|Super\+?)*$/.test(keySearchQuery)
+    if (!isOnlyModifiers) return
+    // Empty once every modifier is up; otherwise the ones still held.
+    keySearchQuery = formatModifiers(event)
   }
 
   /** Reset all filters (name search, key filter, and the modified/conflicts chip). */

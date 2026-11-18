@@ -34,7 +34,7 @@ pub(super) const TRIAGE_SETTING_KEYS: &[&str] = &[
     "network.enabled",
     "network.directSmbConnection",
     "network.requireSmbEncryption",
-    "network.timeoutMode",
+    "network.timeout",
     "network.smbConcurrency",
     "operationLog.enabled",
     "mediaIndex.enabled",

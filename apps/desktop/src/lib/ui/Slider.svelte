@@ -238,9 +238,11 @@
     }
 
     /* `min-width` keeps the track from twitching as the readout's width changes
-       ("75%" → "100%"), and the text stays left-aligned so it reads as a label. */
+       ("75%" → "100%"). The text aligns to the end, so a short readout ("4") still ends on
+       the slider's right edge, which in a settings row is the card's. */
     .sl-value {
         min-width: 4ch;
+        text-align: end;
         color: var(--color-text-secondary);
         font-size: var(--font-size-sm);
         font-variant-numeric: tabular-nums;

@@ -417,6 +417,30 @@
   "@licensing.section.getLicense": {
     "sourceHash": "fab19d3"
   },
+  "licensing.section.includedTitle": "O que está incluído",
+  "@licensing.section.includedTitle": {
+    "sourceHash": "a441e05"
+  },
+  "licensing.section.includedFeatures": "Todos os recursos do gerenciador de arquivos",
+  "@licensing.section.includedFeatures": {
+    "sourceHash": "0a54a41"
+  },
+  "licensing.section.includedMacs": "Todos os seus Macs, para uso pessoal",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "d0968e4"
+  },
+  "licensing.section.includedUpdates": "Atualizações automáticas",
+  "@licensing.section.includedUpdates": {
+    "sourceHash": "147b1b6"
+  },
+  "licensing.section.includedAi": "Cmdr AI, grátis durante o beta, com a sua própria chave ou no dispositivo",
+  "@licensing.section.includedAi": {
+    "sourceHash": "1fec548"
+  },
+  "licensing.section.commercialNeeded": "Usar o Cmdr para trabalhar, incluindo em um emprego, em trabalhos por contrato ou no seu próprio negócio, exige uma licença comercial. Antes, você pode experimentar o Cmdr no trabalho por até 14 dias.",
+  "@licensing.section.commercialNeeded": {
+    "sourceHash": "a3d7314"
+  },
   "licensing.section.typePersonal": "Pessoal (grátis)",
   "@licensing.section.typePersonal": {
     "sourceHash": "4af5ca9"

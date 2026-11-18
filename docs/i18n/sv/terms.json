@@ -794,9 +794,6 @@
     "sources": "catalog crashReporter.dialog.showDetails, askCmdr.tool.readResource.doing, ai.cloudConsent.askCmdr.item.mediaFields"
   },
   "direct-connection": {
-    "exceptions": {
-      "settings.network.directSmbConnection.description": "Verb form with the subject between: ansluter Cmdr direkt."
-    },
     "accept": [
       "anslut direkt",
       "ansluta direkt",
@@ -2297,7 +2294,10 @@
     "confidence": "high",
     "decision": "Amending a sent error report",
     "forms": "a note on a report → notering; Ask Cmdr's notes about you → anteckningar",
-    "sources": "catalog (Lägg till en notering)"
+    "sources": "catalog (Lägg till en notering)",
+    "exceptions": {
+      "settings.securityLog.enabled.description": "English 'It notes …' is the verb record, not a written note; Swedish says registrerar"
+    }
   },
   "notification": {
     "avoid": [
@@ -4185,6 +4185,29 @@
     "sources": "macOS AppKit MenuCommands (Preferences → Inställningar); sv/gnome-nautilus/nautilus.po _Preferences → _Inställningar; sv/xfce-thunar/thunar.po Inställninga_r...",
     "note": "GNOME titles Cmdr's settings window Inställningar too (sv/gnome-nautilus/nautilus.po _Preferences → _Inställningar), so the linuxGnome branches read like macOS and Windows, and the app-menu row (menu.app.settings) has no ellipsis. KDE's window is Anpassa – Cmdr (see configure).",
     "accept": ["inställnings"]
+  },
+  "bug": {
+    "chosen": "bugg",
+    "accept": ["buggar", "buggarna"],
+    "confidence": "high",
+    "forms": "en bugg, buggar; fix bugs → fixa buggar",
+    "sources": "MS terminology (bug, an error in coding or logic → bugg); catalog (onboarding.stepBeta.openBeta fixa buggar, settings.updates.*.keywords bugg)",
+    "avoid": [
+      {
+        "form": "fel (for a bug)",
+        "why": "style.md bans fel as a bare label, and MS's fel is the work-item sense"
+      }
+    ],
+    "exceptions": {
+      "errors.listing.tccRestricted.explanation": "not a bug in Cmdr → inte ett fel i Cmdr: a reassuring contrast in an explanation, where the everyday fel reads calmer than bugg"
+    }
+  },
+  "help-menu": {
+    "chosen": "Hjälp-menyn",
+    "confidence": "high",
+    "forms": "always definite in prose: från Hjälp-menyn",
+    "sources": "catalog (menu.bar.help Hjälp, from macOS's localized menu bar); style.md compounds rule (Hjälp-menyn)",
+    "accept": ["Hjälp"]
   },
   "usb-preferences": {
     "chosen": "USB-inställningar",

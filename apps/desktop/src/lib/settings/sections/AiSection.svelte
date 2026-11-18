@@ -158,7 +158,7 @@
                 <SettingRow
                     id="ai.provider"
                     label={tString('settings.ai.provider.label')}
-                    description={tString('settings.ai.provider.description')}
+                    description=""
                     {searchQuery}
                 >
                     <div

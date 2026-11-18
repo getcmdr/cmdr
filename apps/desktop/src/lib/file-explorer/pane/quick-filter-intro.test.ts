@@ -61,7 +61,7 @@ describe('the first quick filter toast', () => {
 
     expect(mocks.openSettingsWindow).toHaveBeenCalledWith(
       'quick-filter-toast',
-      ['Appearance', 'Listing'],
+      ['Behavior', 'Navigation & file ops'],
       'anchor-fileExplorer.typeToJump.mode',
     )
   })

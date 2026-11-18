@@ -1,32 +1,48 @@
 <script lang="ts">
     import type { Snippet } from 'svelte'
-    import { isModified, resetSetting, onSpecificSettingChange, type SettingId } from '#lib/settings/index.js'
+    import {
+        getSettingDefinition,
+        isModified,
+        resetSetting,
+        onSpecificSettingChange,
+        type SettingId,
+    } from '#lib/settings/index.js'
     import { getMatchIndicesForLabel, highlightMatches } from '#lib/settings/settings-search.js'
     import { disabledNoteId, settingAnchorId } from '#lib/settings/settings-window.js'
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import Icon from '#lib/ui/Icon.svelte'
+    import InfoTip from '#lib/ui/InfoTip.svelte'
     import { onMount } from 'svelte'
     import { tString } from '#lib/intl/messages.svelte.js'
     import { isSettingLocked } from '#lib/managed-policy/managed-policy.svelte.js'
     import { registerSectionRow } from './section-rows.svelte'
+    import { placeDescription } from './description-placement'
 
     interface Props {
         id: SettingId
         label: string
+        /**
+         * The full description. Renders where the registry's `descriptionPlacement` says: under
+         * the label (`inline`), or behind an ⓘ after the label (`tip`, with the registry's
+         * `summary` under the label when it has one). `''` renders nothing.
+         */
         description: string
         disabled?: boolean
         disabledReason?: string
         /**
-         * A sentence explaining why the row is disabled and how to enable it, shown under the
-         * description (with an info glyph) only while `disabled`. Stays at full contrast while the
-         * rest of the row greys out. Point the control's `aria-describedby` at `disabledNoteId(id)`.
+         * A sentence explaining why the row is disabled and how to enable it, shown under the whole
+         * row (with an info glyph) only while `disabled`. It stays outside the label column so it
+         * keeps full contrast while the rest of the row greys out. Point the control's
+         * `aria-describedby` at `disabledNoteId(id)`.
          */
         disabledNote?: string
         requiresRestart?: boolean
-        /** When true, label and control each take 50% width for consistent vertical alignment across rows. */
-        split?: boolean
         searchQuery?: string
         children: Snippet
+        /**
+         * A rich inline description (links, say), in place of `description`. Always renders under
+         * the label, whatever the registry's placement.
+         */
         descriptionContent?: Snippet
         /**
          * Rendered right after the label, inside the label wrapper, ahead of the reset pip
@@ -44,7 +60,6 @@
         disabledReason: sectionDisabledReason,
         disabledNote: sectionDisabledNote,
         requiresRestart = false,
-        split = false,
         searchQuery = '',
         children,
         descriptionContent,
@@ -60,6 +75,19 @@
     const disabledNote = $derived(locked ? tString('settings.managed.rowNote') : sectionDisabledNote)
 
     registerSectionRow(id)
+
+    // Where the description goes is the registry's call (`descriptionInTip`), so a row opts in
+    // without its section changing. Absent from the registry (a test stub, say) reads as inline.
+    // A rich `descriptionContent` always stays inline, and stands in for the plain text.
+    const definition = $derived(getSettingDefinition(id))
+    const placed = $derived(
+        placeDescription({
+            placement: descriptionContent ? 'inline' : (definition?.descriptionPlacement ?? 'inline'),
+            description: descriptionContent ? '' : description,
+            summary: definition?.summary ?? '',
+            searchQuery,
+        }),
+    )
 
     // Get highlighted label segments based on search query
     const labelSegments = $derived.by(() => {
@@ -89,40 +117,46 @@
      the user straight to one setting. `settingAnchorId` is the one definition of the
      convention; the `<label for>` above keeps naming the control, not this row. -->
 <div class="setting-row" id={settingAnchorId(id)} class:disabled>
-    <div class="setting-header" class:split>
-        <div class="setting-label-wrapper">
-            <label class="setting-label" for={id}
-                >{#each labelSegments as segment, i (i)}{#if segment.matched}<mark class="search-highlight"
-                            >{segment.text}</mark
-                        >{:else}{segment.text}{/if}{/each}</label
-            >
-            {#if labelTrailing}{@render labelTrailing()}{/if}
-            {#if modified && !locked}
-                <button
-                    class="reset-button"
-                    use:tooltip={tString('settings.control.resetToDefault')}
-                    onclick={handleReset}
-                    aria-label={tString('settings.control.resetToDefault')}
+    <div class="setting-header">
+        <div class="setting-label-column">
+            <div class="setting-label-wrapper">
+                <label class="setting-label" for={id}
+                    >{#each labelSegments as segment, i (i)}{#if segment.matched}<mark class="search-highlight"
+                                >{segment.text}</mark
+                            >{:else}{segment.text}{/if}{/each}</label
                 >
-                    <Icon name="rotate-ccw" size={14} aria-hidden="true" />
-                </button>
-            {/if}
-            {#if disabled && disabledReason}
-                <span class="disabled-badge">{disabledReason}</span>
-            {/if}
-            {#if requiresRestart}
-                <span class="restart-badge">{tString('settings.control.restartRequired')}</span>
+                {#if placed.tip}
+                    <InfoTip label={tString('settings.control.moreAbout', { setting: label })} text={placed.tip} size={12} />
+                {/if}
+                {#if labelTrailing}{@render labelTrailing()}{/if}
+                {#if modified && !locked}
+                    <button
+                        class="reset-button"
+                        use:tooltip={tString('settings.control.resetToDefault')}
+                        onclick={handleReset}
+                        aria-label={tString('settings.control.resetToDefault')}
+                    >
+                        <Icon name="rotate-ccw" size={14} aria-hidden="true" />
+                    </button>
+                {/if}
+                {#if disabled && disabledReason}
+                    <span class="disabled-badge">{disabledReason}</span>
+                {/if}
+                {#if requiresRestart}
+                    <span class="restart-badge">{tString('settings.control.restartRequired')}</span>
+                {/if}
+            </div>
+            {#each placed.underLabel as line, i (i)}
+                <p class="setting-description">{line}</p>
+            {/each}
+            {#if descriptionContent}
+                <p class="setting-description">{@render descriptionContent()}</p>
             {/if}
         </div>
         <div class="setting-control">
             {@render children()}
         </div>
     </div>
-    {#if descriptionContent}
-        <p class="setting-description">{@render descriptionContent()}</p>
-    {:else}
-        <p class="setting-description">{description}</p>
-    {/if}
     {#if disabled && disabledNote}
         <p class="setting-disabled-note" id={disabledNoteId(id)}>
             <span class="disabled-note-icon"><Icon name="info" size={14} aria-hidden="true" /></span>
@@ -147,18 +181,43 @@
         opacity: 0.6;
     }
 
+    /* Label column left, control flush right (System Settings style). A one-line control centers
+       on the label column, so a short control beside a multi-line description sits in its middle. */
     .setting-header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: var(--spacing-md);
     }
 
-    .setting-header.split {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        align-items: center;
-        gap: var(--spacing-md);
+    /* A radio list is taller than its label, and centering would float the label between two
+       options. Top-align instead, and give the label line the height of one radio option's line
+       (`RadioGroup`'s item padding around its `--font-size-sm` label), so the label centers on
+       the FIRST option. The role is Ark's ARIA contract, not a class of `RadioGroup`'s. */
+    .setting-header:has(> .setting-control :global([role='radiogroup'])) {
+        align-items: flex-start;
+    }
+
+    .setting-header:has(> .setting-control :global([role='radiogroup'])) .setting-label-wrapper {
+        min-height: calc(2 * var(--spacing-xs) + var(--font-size-sm) * var(--font-line-height-normal));
+    }
+
+    /* The label line plus every description line under it (a summary, an inline description, or
+       a rich one), so the text stays beside the label and the control instead of running under
+       the whole row. */
+    /* Basis 0, not auto: the column takes what the control leaves. With `auto` a long
+       description claimed its full one-line width first and squeezed a shrinkable control (a
+       slider or a text field) far under its shared width. */
+    .setting-label-column {
+        display: flex;
+        flex: 1 1 0;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .setting-description {
+        margin: var(--spacing-xxs) 0 0;
+        color: var(--color-text-secondary);
+        font-size: var(--font-size-sm);
     }
 
     .setting-label-wrapper {
@@ -211,19 +270,51 @@
     }
 
     .setting-control {
-        flex-shrink: 0;
+        flex: 0 0 auto;
+        margin-left: auto;
     }
 
-    .split .setting-control {
-        /* Let controls stretch to fill the right column */
+    /* A text field or a slider has no natural width (both fill their container), so it takes one
+       shared width; every other control keeps its own size. A radio list carrying a field on one
+       option's line (the custom date format) sizes by its options instead. */
+    .setting-control:has(:global(.text-field), :global([role='slider'])):not(:has(:global([role='radiogroup']))) {
+        flex-shrink: 1;
+        width: 15rem;
         min-width: 0;
-        width: 100%;
     }
 
-    .setting-description {
-        margin: var(--spacing-xs) 0 0;
-        color: var(--color-text-secondary);
-        font-size: var(--font-size-sm);
+    /* Toggle groups share one width per card, the widest one's, so their left edges line up too.
+       A card holding one turns into a two-track grid: every child spans both tracks, and only the
+       rows carrying a shared-width control join it as subgrids, putting that control in the
+       `auto` track. Spanning items cross the `1fr` track, so they never size the `auto` one: it's
+       exactly as wide as the widest shared-width control, and nothing else in the card moves.
+       Per card only: a rule on the page would make one wide group stretch every other. */
+    :global(.section-card:has(> .setting-row [data-shared-width])) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: var(--spacing-md);
+    }
+
+    :global(.section-card:has(> .setting-row [data-shared-width]) > *) {
+        grid-column: 1 / -1;
+    }
+
+    .setting-row:has(> .setting-header > .setting-control > :global([data-shared-width])) {
+        display: grid;
+        grid-template-columns: subgrid;
+    }
+
+    .setting-row:has(> .setting-header > .setting-control > :global([data-shared-width])) > * {
+        grid-column: 1 / -1;
+    }
+
+    .setting-row:has(> .setting-header > .setting-control > :global([data-shared-width])) .setting-header {
+        display: grid;
+        grid-template-columns: subgrid;
+    }
+
+    .setting-row:has(> .setting-header > .setting-control > :global([data-shared-width])) .setting-control {
+        margin-left: 0;
     }
 
     .setting-disabled-note {

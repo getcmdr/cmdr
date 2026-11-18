@@ -14,47 +14,9 @@ describe('getNetworkTimeoutMs', () => {
     vi.resetAllMocks()
   })
 
-  it('returns 15000 ms for normal mode', () => {
-    mockGetSetting.mockImplementation((key: string) => {
-      if (key === 'network.timeoutMode') return 'normal'
-      return ''
-    })
-    expect(getNetworkTimeoutMs()).toBe(15_000)
-  })
-
-  it('returns 45000 ms for slow mode', () => {
-    mockGetSetting.mockImplementation((key: string) => {
-      if (key === 'network.timeoutMode') return 'slow'
-      return ''
-    })
+  it('returns the stored timeout, which is already in milliseconds', () => {
+    mockGetSetting.mockImplementation((key: string) => (key === 'network.timeout' ? 45_000 : ''))
     expect(getNetworkTimeoutMs()).toBe(45_000)
-  })
-
-  it('returns custom timeout converted from seconds to ms', () => {
-    mockGetSetting.mockImplementation((key: string) => {
-      if (key === 'network.timeoutMode') return 'custom'
-      if (key === 'network.customTimeout') return 30
-      return ''
-    })
-    expect(getNetworkTimeoutMs()).toBe(30_000)
-  })
-
-  it('handles fractional custom timeout', () => {
-    mockGetSetting.mockImplementation((key: string) => {
-      if (key === 'network.timeoutMode') return 'custom'
-      if (key === 'network.customTimeout') return 0.5
-      return ''
-    })
-    expect(getNetworkTimeoutMs()).toBe(500)
-  })
-
-  it('handles zero custom timeout', () => {
-    mockGetSetting.mockImplementation((key: string) => {
-      if (key === 'network.timeoutMode') return 'custom'
-      if (key === 'network.customTimeout') return 0
-      return ''
-    })
-    expect(getNetworkTimeoutMs()).toBe(0)
   })
 })
 

@@ -274,7 +274,6 @@
                     id={LOW_DISK_SPACE_THRESHOLD_SETTING_KEY}
                     label={lowDiskSpaceThresholdDef.label}
                     description={lowDiskSpaceThresholdDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingNumberInput

@@ -2336,6 +2336,12 @@ Props:
 | `ariaLabel` | `string`                  | Accessible name for the tablist / toggle-group root                        |
 | `disabled`  | `boolean?`                | Default `false`. Short-circuits all clicks and disables every option       |
 | `fullWidth` | `boolean?`                | Default `false`. Spans the container with equal-width cells                |
+| `stretch`   | `boolean?`                | Default `false`. Fills the container; cells grow from their natural widths |
+
+`stretch` adds `.is-stretch`: `display: flex; width: 100%` and `flex: 1 1 auto` on every cell, so each keeps its label's
+width plus an equal share of the extra, at the normal height. In a container that hugs its content it renders at its
+natural size. Settings' `SettingToggleGroup` turns it on so a card can size its groups to the widest one
+(`lib/settings/components/DETAILS.md` § Toggle groups share a width).
 
 `fullWidth` adds `.is-full-width` to the root: `display: flex; width: 100%` plus `flex: 1 1 0` on every cell, so cells
 share the width evenly regardless of label length, and `padding-block: 0.5em` so a standalone row reads lighter than an
@@ -2493,8 +2499,14 @@ dragged; a setting that wants an exact typed number uses `NumberInput` instead (
 ## NumberInput
 
 Framed numeric field over Ark's `NumberInput`: −/+ steppers around a centered input, with an optional quiet `unit` label
-after it. One shape, no variants. Props: `value` / `onChange` (numbers, not Ark's strings), `min` / `max` / `step` /
-`disabled`, `ariaLabel`, `unit`.
+after it. Props: `value` / `onChange` (numbers, not Ark's strings), `min` / `max` / `step` / `disabled`, `ariaLabel`,
+`unit`, `size`.
+
+`size: 'compact'` (default `regular`, a text field's height) shrinks the input and steppers to a `--font-size-sm` line
+plus a hairline of padding, about 21px against a radio option's 25px row, with a `--radius-md` corner. Use it wherever
+the stepper sits inline with a radio option or label text, where the full field towers over the words beside it; every
+Settings stepper does (`SettingNumberInput` defaults to it). `TextInput`'s `size: 'compact'` is the same box, so a field
+and a stepper on neighboring rows match. Frame, focus ring, and stepper behavior stay the same.
 
 The component owns two behaviors so no caller has to: it clamps every emitted value into `[min, max]`, and it SWALLOWS
 an emptied field (`NaN`) instead of committing it, leaving Ark's `clampValueOnBlur` to restore a real value when focus

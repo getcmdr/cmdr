@@ -67,12 +67,18 @@
     }
 </script>
 
-<ToggleGroup
-    semantics="toggles"
-    {value}
-    {options}
-    onChange={handleChange}
-    ariaLabel={label}
-    ariaDescribedBy={lock.describedBy(ariaDescribedBy)}
-    disabled={disabled || lock.locked}
-/>
+<!-- `data-shared-width` tells `SettingRow` this control shares one width with the other
+     toggle groups in its card (`DETAILS.md` § Toggle groups share a width). `stretch` lets
+     the group fill that width; on its own it renders at its natural size. -->
+<div data-shared-width>
+    <ToggleGroup
+        semantics="toggles"
+        stretch
+        {value}
+        {options}
+        onChange={handleChange}
+        ariaLabel={label}
+        ariaDescribedBy={lock.describedBy(ariaDescribedBy)}
+        disabled={disabled || lock.locked}
+    />
+</div>

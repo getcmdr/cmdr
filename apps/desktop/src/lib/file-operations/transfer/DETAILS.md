@@ -1267,9 +1267,18 @@ skip it, since each is already a way out. The copy says what happened to the fil
 **Teardown stops nothing.** A close is a detach: `ModalDialog`'s `onclose` (× and MCP close) goes to `detach()`, which
 hands a still-running operation to the queue window (exactly as the Queue button does) and otherwise just stops
 watching. An unmount does neither — the operation lives in the backend registry, and the corner chip and the queue
-window keep showing it. The one teardown-adjacent flag that still means "stop" is `cancelRequestedBeforeId`: an explicit
-Cancel pressed while the start command was in flight, which birth honours through `cancel_operation` (the MANAGER-level
-cancel, because an operation admitted behind a busy lane has no write op to cancel yet).
+window keep showing it.
+
+**A Cancel that beats the id is the same Cancel.** Pressed while the start command is still in flight (or in the
+sub-frame before the binder acquires), it sets `cancelRequestedBeforeSession`, and an effect sends it through the
+session's `cancel` (the MANAGER-level `cancel_operation`, because an operation admitted behind a busy lane has no write
+op to cancel yet) the moment a session exists. From there it is the ordinary cancel: the dialog waits out
+`write-settled` and shows the acknowledgement. Why: birth used to close the dialog the moment the id landed, before the
+backend had stopped and with no alert, so a new op could dispatch against a volume still tearing down, and a busy main
+thread at launch made that the path `mtp-cancel-volume-settled.spec.ts` hit (2026-11-18). Two edges follow: an
+early-cancelled op that was still `queued` is dropped without ever spawning, so it sends no terminal event and leaving
+the registry closes the view (safe only because the last row said `queued`); and while a cancel is on its way the
+auto-queue stands down, so a cancelled op never shows up waiting in the queue.
 
 Two shapes of that rule are worth stating, because each is one condition standing between a keystroke and the wrong
 answer:

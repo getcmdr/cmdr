@@ -2187,7 +2187,10 @@
     "chosen": "ghi chú",
     "confidence": "high",
     "forms": "a feedback message → lời nhắn; sample filename ghi-chu.txt (ASCII-folded)",
-    "sources": "MS terminology"
+    "sources": "MS terminology",
+    "exceptions": {
+      "settings.securityLog.enabled.description": "English \"It notes security-relevant changes\" is the verb (records), not a written note; vi says ghi nhận, as the aboutThis family does for recorded."
+    }
   },
   "notification": {
     "chosen": "thông báo",
@@ -4017,6 +4020,33 @@
       "chosen": "Tùy thích",
       "note": "GNOME's name for an app's preferences window: Nautilus vi _Preferences → Tù_y thích, Show Preferences → Hiển thị Tùy thích; Thunar Tùy thích. linuxGnome branches: window title (`settings.window.title`) and menu row (`menu.app.settings`) Tùy thích, the command and buttons Mở Tùy thích, pointers trong Tùy thích > AI. Always capitalized as the window's name, since lowercase tùy thích reads as the adverb (as you like). KDE's row is Cấu hình Cmdr… (see configure)"
     }
+  },
+  "bug": {
+    "chosen": "lỗi",
+    "confidence": "high",
+    "forms": "fix bugs → sửa lỗi (catalog, errorReports); a bug report → báo cáo lỗi",
+    "sources": "git vi (lỗi đã được sửa chữa, báo cáo lỗi); KDE Dolphin vi (báo lỗi); catalog sửa lỗi"
+  },
+  "help-menu": {
+    "chosen": "menu Trợ giúp",
+    "confidence": "high",
+    "forms": "from the Help menu → từ menu Trợ giúp",
+    "sources": "catalog menu.bar.help (Trợ giúp, macOS Finder vi); style.md § menu <Tên>",
+    "accept": ["Trợ giúp"]
+  },
+  "prompt": {
+    "chosen": "lời nhắc",
+    "confidence": "tentative",
+    "forms": "AI prompts → lời nhắc gửi cho AI; a prompt asking the user → lời nhắc (settings.indexing.*); a question waiting for the user's answer → câu hỏi (queue.row.awaitingAnswerTooltip)",
+    "sources": "MS TBX (prompt → lời nhắc; yêu cầu for generative AI); catalog (settings.indexing.reEnableNotifications.*, logLlmCalls.keywords)",
+    "accept": ["câu hỏi"]
+  },
+  "speed": {
+    "chosen": "tốc độ",
+    "confidence": "high",
+    "accept": ["nhanh hơn", "tăng tốc"],
+    "forms": "faster → nhanh hơn (thao tác tệp nhanh hơn, sửa lỗi nhanh hơn); speed up → tăng tốc",
+    "sources": "MS TBX (clock speed → tốc độ đồng hồ); Nautilus vi (Thỏa hiệp tốc độ); git vi (nâng cao tốc độ)"
   },
   "usb-preferences": {
     "chosen": "Lựa chọn ưu tiên về USB",

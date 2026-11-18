@@ -4,7 +4,10 @@
      *
      * Cards, in page order:
      *   1. **Navigation** — the `behavior.doubleClickPaneNavigatesToParent` switch
-     *      (double-click the empty pane background to go up one folder).
+     *      (double-click the empty pane background to go up one folder), what typing
+     *      in a pane does (`fileExplorer.typeToJump.mode`: jump or filter), and
+     *      whether Space works out a folder's size as it selects it
+     *      (`listing.spaceCalculatesFolderSize`).
      *   2. **File operations** — the file-extension-change confirmation radio, what
      *      ⌘V does with non-file clipboard content, whether to skip Mac-only hidden
      *      files (`fileOperations.macOnlyFiles`, what the copy, move, and compress
@@ -62,6 +65,8 @@
 
     const defaultDef = { label: '', description: '', disabled: false, disabledReason: '' }
     const doubleClickDef = getSettingDefinition('behavior.doubleClickPaneNavigatesToParent') ?? defaultDef
+    const typeModeDef = getSettingDefinition('fileExplorer.typeToJump.mode') ?? defaultDef
+    const spaceSizeDef = getSettingDefinition('listing.spaceCalculatesFolderSize') ?? defaultDef
     const extensionChangesDef = getSettingDefinition('fileOperations.allowFileExtensionChanges') ?? defaultDef
     const pasteAsFileDef = getSettingDefinition('fileOperations.pasteClipboardAsFile') ?? defaultDef
     const macOnlyFilesDef = getSettingDefinition('fileOperations.macOnlyFiles') ?? defaultDef
@@ -76,7 +81,7 @@
 </script>
 
 <SettingsSection title={tString('settings.section.navigationAndFileOps')}>
-    {#if anyVisible(shouldShow, 'behavior.doubleClickPaneNavigatesToParent')}
+    {#if anyVisible(shouldShow, 'behavior.doubleClickPaneNavigatesToParent', 'fileExplorer.typeToJump.mode', 'listing.spaceCalculatesFolderSize')}
         <SectionCard label={tString('settings.navigationAndFileOps.card.navigation')}>
             {#if shouldShow('behavior.doubleClickPaneNavigatesToParent')}
                 <SettingRow
@@ -86,6 +91,26 @@
                     {searchQuery}
                 >
                     <SettingSwitch id="behavior.doubleClickPaneNavigatesToParent" />
+                </SettingRow>
+            {/if}
+            {#if shouldShow('fileExplorer.typeToJump.mode')}
+                <SettingRow
+                    id="fileExplorer.typeToJump.mode"
+                    label={typeModeDef.label}
+                    description={typeModeDef.description}
+                    {searchQuery}
+                >
+                    <SettingToggleGroup id="fileExplorer.typeToJump.mode" />
+                </SettingRow>
+            {/if}
+            {#if shouldShow('listing.spaceCalculatesFolderSize')}
+                <SettingRow
+                    id="listing.spaceCalculatesFolderSize"
+                    label={spaceSizeDef.label}
+                    description={spaceSizeDef.description}
+                    {searchQuery}
+                >
+                    <SettingSwitch id="listing.spaceCalculatesFolderSize" />
                 </SettingRow>
             {/if}
         </SectionCard>
@@ -146,7 +171,6 @@
                     id="fileOperations.defaultConflictPolicy"
                     label={conflictPolicyDef.label}
                     description={conflictPolicyDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingSelect id="fileOperations.defaultConflictPolicy" />
@@ -172,7 +196,6 @@
                     id="behavior.textEditorApp"
                     label={textEditorAppDef.label}
                     description={textEditorAppDef.description}
-                    split
                     {searchQuery}
                 >
                     <TextEditorSelect ariaLabel={textEditorAppDef.label} />
@@ -188,7 +211,6 @@
                     id="behavior.openTerminalHereApp"
                     label={openTerminalHereAppDef.label}
                     description={openTerminalHereAppDef.description}
-                    split
                     {searchQuery}
                 >
                     <TerminalAppSelect ariaLabel={openTerminalHereAppDef.label} />
@@ -222,7 +244,6 @@
                     id="operationLog.maxAge"
                     label={operationLogMaxAgeDef.label}
                     description={operationLogMaxAgeDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingSelect id="operationLog.maxAge" />
@@ -234,7 +255,6 @@
                     id="operationLog.maxSize"
                     label={operationLogMaxSizeDef.label}
                     description={operationLogMaxSizeDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingSelect id="operationLog.maxSize" />

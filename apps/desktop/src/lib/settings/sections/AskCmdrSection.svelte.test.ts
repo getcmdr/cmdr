@@ -16,6 +16,8 @@ const settings: Record<string, unknown> = {
   'askCmdr.enabled': true,
   'askCmdr.interactiveModel': '',
   'askCmdr.chatMemorySize': 'auto',
+  'ai.cloudProvider': 'anthropic',
+  'ai.cloudProviderConfigs': '{}',
 }
 
 vi.mock('#lib/settings/settings-store.js', () => ({
@@ -61,8 +63,45 @@ vi.mock('#lib/tauri-commands/index.js', async (importOriginal) => ({
   notifyDialogClosed: vi.fn(() => Promise.resolve()),
 }))
 
+// The provider's readiness, as the backend's slot status answers it.
+const { slot } = vi.hoisted(() => ({ slot: { readiness: 'ready' } }))
+vi.mock('#lib/ask-cmdr/ask-cmdr-slot-status.svelte.js', () => ({
+  slotStatusState: {
+    get status() {
+      return { readiness: slot.readiness, nextCall: null, baseline: null }
+    },
+  },
+  providerGap: (status: { readiness: string } | null) =>
+    !status || status.readiness === 'ready' ? null : status.readiness,
+  watchSlotStatus: () => () => undefined,
+}))
+
+// The model list comes from the shared provider-setup controller; this stands in for its cache.
+const { providerModels } = vi.hoisted(() => ({
+  providerModels: { list: [] as string[], pointedAt: [] as string[] },
+}))
+vi.mock('#lib/ai-provider-setup/provider-setup.svelte.js', () => ({
+  ProviderSetupController: class {
+    providerId = ''
+    get models(): string[] {
+      return providerModels.list
+    }
+    setProvider(id: string): void {
+      this.providerId = id
+      providerModels.pointedAt.push(id)
+    }
+    destroy(): void {}
+  },
+}))
+
+vi.mock('#lib/settings/settings-window.js', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  openSettingsWindow: vi.fn(() => Promise.resolve()),
+}))
+
 import AskCmdrSection from './AskCmdrSection.svelte'
 import { openCloudConsentSettings } from '#lib/ai/cloud-consent.svelte.js'
+import { openSettingsWindow } from '#lib/settings/settings-window.js'
 import { askCmdrForgetMemory } from '#lib/tauri-commands/index.js'
 
 /** Lets a click's awaited IPC settle and the section re-render. */
@@ -228,6 +267,98 @@ describe('AskCmdrSection when the store says no', () => {
       'Cmdr couldn’t delete every note. Open the memory folder to remove the rest.',
     )
     expect(target.querySelector('.memory-forgotten')).toBeNull()
+    target.remove()
+  })
+})
+
+describe('AskCmdrSection model picker', () => {
+  beforeEach(() => {
+    settings['ai.provider'] = 'cloud'
+    settings['ai.cloudProvider'] = 'anthropic'
+    settings['ai.cloudProviderConfigs'] = '{}'
+    settings['askCmdr.interactiveModel'] = ''
+    cloudConsent.accepted = true
+    slot.readiness = 'ready'
+    providerModels.list = ['claude-opus-5-5', 'claude-sonnet-5-5']
+    providerModels.pointedAt = []
+    vi.mocked(openSettingsWindow).mockClear()
+  })
+
+  function trigger(target: HTMLElement): HTMLButtonElement {
+    const el = target.querySelector<HTMLButtonElement>('[id="setting-askCmdr.interactiveModel"] .select-trigger')
+    if (!el) throw new Error('no model picker')
+    return el
+  }
+
+  function isDisabled(el: HTMLElement): boolean {
+    return el.hasAttribute('disabled') || el.hasAttribute('data-disabled')
+  }
+
+  function hintText(target: HTMLElement): string {
+    return Array.from(target.querySelectorAll('.provider-hint'))
+      .map((el) => el.textContent.trim())
+      .join(' | ')
+  }
+
+  it('reads as "Same as Cmdr’s AI" naming the shared model, and loads the provider’s models', async () => {
+    const target = await mountSection()
+    expect(trigger(target).textContent).toContain('Same as Cmdr’s AI (claude-sonnet-5-5)')
+    expect(isDisabled(trigger(target))).toBe(false)
+    expect(providerModels.pointedAt).toEqual(['anthropic'])
+    target.remove()
+  })
+
+  it('names the model saved in AI › Provider over the preset’s default', async () => {
+    settings['ai.cloudProviderConfigs'] = JSON.stringify({ anthropic: { model: 'claude-opus-5-5' } })
+    const target = await mountSection()
+    expect(trigger(target).textContent).toContain('Same as Cmdr’s AI (claude-opus-5-5)')
+    target.remove()
+  })
+
+  it('keeps showing a model typed in before it was a dropdown, even one the provider doesn’t list', async () => {
+    settings['askCmdr.interactiveModel'] = 'my-own-model'
+    const target = await mountSection()
+    expect(trigger(target).textContent).toContain('my-own-model')
+    target.remove()
+  })
+
+  it('names the provider and links to AI › Provider to change it', async () => {
+    const target = await mountSection()
+    expect(hintText(target)).toContain('Ask Cmdr uses Anthropic, the same AI as the rest of Cmdr.')
+    const link = Array.from(target.querySelectorAll<HTMLButtonElement>('.provider-hint button')).find((b) =>
+      b.textContent.includes('Change it in AI › Provider'),
+    )
+    expect(link).toBeDefined()
+    link?.click()
+    expect(openSettingsWindow).toHaveBeenCalledWith('ask-cmdr-settings-provider', ['AI', 'Provider'])
+    target.remove()
+  })
+
+  it('is disabled with no AI provider, and the line under the title links to set one up', async () => {
+    settings['ai.provider'] = 'off'
+    slot.readiness = 'off'
+    const target = await mountSection()
+    expect(isDisabled(trigger(target))).toBe(true)
+    expect(providerModels.pointedAt).toEqual([])
+    expect(hintText(target)).toContain('Turn on an AI provider in AI › Provider to start chatting.')
+    target.querySelector<HTMLButtonElement>('.provider-hint button')?.click()
+    expect(openSettingsWindow).toHaveBeenCalledWith('ask-cmdr-settings-provider', ['AI', 'Provider'])
+    target.remove()
+  })
+
+  it('is disabled, and asks nothing of the provider, while the cloud provider lacks a key', async () => {
+    slot.readiness = 'cloudNeedsKey'
+    const target = await mountSection()
+    expect(isDisabled(trigger(target))).toBe(true)
+    expect(providerModels.pointedAt).toEqual([])
+    target.remove()
+  })
+
+  it('is disabled on Local, saying why, since the local AI has one model', async () => {
+    settings['ai.provider'] = 'local'
+    const target = await mountSection()
+    expect(isDisabled(trigger(target))).toBe(true)
+    expect(target.textContent).toContain('Local AI runs one model, so the chat uses that one.')
     target.remove()
   })
 })

@@ -222,8 +222,11 @@ the main window's dispatch → dialog → session sequence can beat it), a fan-o
 
 The **miss case** is a real path, not a defensive branch: a terminal operation leaves the snapshot entirely (retained
 failures are the one exception), so an operation that finished between the click and the mount seeds nothing. That
-resolves to `outcome: { kind: 'gone' }` rather than hanging empty. Settle detection otherwise comes from the terminal
-events only, for the same reason absence carries no information.
+resolves to `outcome: { kind: 'gone' }` rather than hanging empty, but only after `SEED_MISS_GRACE_MS` (1 s) with
+nothing delivered: `list_operations()` answers on the command channel and the terminal events travel on the event
+channel, so a miss can overtake the `write-cancelled` the backend sent before it dropped the record, and an outcome is
+write-once. A Cancel pressed the moment an operation started is exactly that race. Settle detection otherwise comes from
+the terminal events only, for the same reason absence carries no information.
 
 A seed that throws leaves the session live and event-driven, which is the safe direction: a running operation still
 reports itself.

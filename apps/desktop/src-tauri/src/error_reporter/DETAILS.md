@@ -60,7 +60,7 @@ Manifest fields (`BundleManifest`):
   (`ResolvedSettings::effective`, through `managed_policy::overlay`), so `aiProvider`,
   `errorReportsEnabled`, and `crashReportsEnabled` say what Cmdr ran with, as the heartbeat's config shape does.
 - `triageSettings`: about 20 hand-picked settings that change what Cmdr does (type-to-jump mode, conflict policy,
-  extension-change policy, SMB direct connection and encryption, network timeout mode, MTP/ADB, operation log, media
+  extension-change policy, SMB direct connection and encryption, network timeout, MTP/ADB, operation log, media
   index, plus language and theme), keyed by setting id, at their effective values: stored value under the
   organization's locks, else the FE-pushed registry default, else left out. Booleans, numbers, and enum tokens only
   (`is_shippable`). Decision/Why: a short list, not the heartbeat's whole config shape, because the same rich snapshot

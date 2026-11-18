@@ -90,3 +90,6 @@ wording into `terms.json` (and `decisions.md` when the reason is worth keeping).
 - **Tell me about this** (`aboutThis.*`): `Háblame de esto` as the command name, `comentario de la IA` for the AI take,
   `ticket de notarización` (no Apple term in the pile), and `Firmado por` as a fixed label (agrees with an implied
   `programa`) want a native read.
+- **License page copy** (`licensing.section.included*`, `licensing.section.commercialNeeded`): `Todos tus Mac`
+  (invariable plural, as Apple es writes it), `trabajos por encargo` for contract work, and `hasta 14 días` for the
+  evaluation want a native read, since the last line carries a licensing meaning.

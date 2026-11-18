@@ -15,7 +15,8 @@
     "chosen": "Zugriff",
     "confidence": "high",
     "exceptions": {
-      "errors.write.permissionDenied.title": "Couldn’t access this location → Dieser Ort ließ sich nicht öffnen, the settled title pattern"
+      "errors.write.permissionDenied.title": "Couldn’t access this location → Dieser Ort ließ sich nicht öffnen, the settled title pattern",
+      "settings.network.enabled.description": "Local Network access names the macOS permission; the catalog quotes it as die Berechtigung „Lokales Netzwerk“ (onboarding.stepOptional.networking.summary), and the ruling avoids Zugriff auf das lokale Netzwerk."
     },
     "forms": "exclusive access → exklusiver Zugriff; file access in prose → Zugriff auf Dateien, as a switch label → Dateizugriff (settings.fileOperations.adbEnabled.label)",
     "sources": "macOS TCC ( … möchte Zugriff auf Dateien auf einem Wechselmedium); MS terminology"
@@ -131,7 +132,9 @@
     "chosen": "Werkzeug",
     "confidence": "tentative",
     "exceptions": {
-      "ai.cloudConsent.askCmdr.protectedContents": "cloud and tool credentials means developer tooling (the concept’s own carve-out), so the generic Tools."
+      "ai.cloudConsent.askCmdr.protectedContents": "cloud and tool credentials means developer tooling (the concept’s own carve-out), so the generic Tools.",
+      "settings.developer.mcpPort.description": "another tool means an outside program that connects to the MCP server, not an AI tool, so the generic Programm.",
+      "settings.fileOperations.adbEnabled.summary": "the adb tool is a developer command (the concept’s own carve-out), named as der Befehl „adb“ like settings.adb.pickerTitle."
     },
     "decision": "Ask Cmdr (`askCmdr.*`, `settings.askCmdr.*`, `settings.advanced.logLlmCalls.*`, `commands.askCmdrToggle.*`)",
     "forms": "tool-call status lines: doing → passive present ({Objekt} wird/werden {Partizip}), done → the same minus wird/werden; the subject stays nominative so the pair stays parallel (Ein Ordner wird aufgelistet / Ein Ordner aufgelistet)",
@@ -1314,7 +1317,7 @@
     "sources": "MS terminology (Codierung)"
   },
   "encrypted": {
-    "accept": ["Verschlüsselung"],
+    "accept": ["Verschlüsselung", "verschlüssel"],
     "chosen": "verschlüsselt",
     "confidence": "high",
     "sources": "macOS, MS terminology"
@@ -2446,7 +2449,8 @@
       "feedback.dialog.description": "the feedback dialog calls the user’s text a Nachricht, consistently across its surface",
       "feedback.dialog.invalid": "the feedback dialog calls the user’s text a Nachricht, consistently across its surface",
       "feedback.sentToast": "the feedback dialog calls the user’s text a Nachricht, consistently across its surface",
-      "feedback.sentWithoutLogsToast": "the feedback dialog calls the user’s text a Nachricht, consistently across its surface"
+      "feedback.sentWithoutLogsToast": "the feedback dialog calls the user’s text a Nachricht, consistently across its surface",
+      "settings.securityLog.enabled.description": "English notes is the verb (the record writes something down), so festhalten; Notiz is the user-written noun."
     },
     "sources": "MS terminology (note → Notiz); catalog (errorReporter.dialog.noteLabel)"
   },
@@ -2512,7 +2516,6 @@
       "errors.write.cancelled.message.trash": "The nominalized verb (Das Kopieren wurde abgebrochen.) is the natural German for the copy operation.",
       "settings.advanced.card.fileOperations": "a Settings card TITLE keeps the Dateioperationen heritage",
       "settings.navigationAndFileOps.card.fileOperations": "a Settings card TITLE keeps the Dateioperationen heritage",
-      "settings.network.customTimeout.description": "the protocol-level request on the wire: Netzwerkoperationen",
       "settings.network.smbConcurrency.label": "the protocol-level request on the wire: Operationen pro SMB-Verbindung"
     },
     "forms": "masculine: diesen Vorgang, er/ihn; queue-row aria Diesen Vorgang anhalten / fortsetzen / abbrechen / auswählen / ausblenden; compounds Vorgangswarteschlange, Vorgangsprotokoll",
@@ -4638,6 +4641,18 @@
     "sources": "macOS AppKit MenuCommands Preferences → Einstellungen; de/gnome-nautilus/nautilus.po _Preferences → _Einstellungen; de/xfce-thunar/thunar.po Pr_eferences... → _Einstellungen …",
     "note": "Cmdr's settings window per desktop: GNOME titles it Einstellungen (de/gnome-nautilus/nautilus.po _Preferences → _Einstellungen), so the linuxGnome branches read like macOS and Windows, and the app-menu row (menu.app.settings) has no ellipsis. KDE titles it Einrichten – Cmdr (de/kde-dolphin/dolphin.po @title:window Configure → Einrichten); its menu row Configure Cmdr… is Cmdr einrichten … (kconfigwidgets6.po de &Configure %1… → %1 ein&richten …, websvn.kde.org trunk/l10n-kf6, 2026-11-18), and a pointer quotes it: unter „Cmdr einrichten“ > KI, unter „Cmdr einrichten“ ändern; the button is Cmdr einrichten.",
     "accept": ["Einstellung"]
+  },
+  "bug": {
+    "chosen": "Fehler",
+    "confidence": "high",
+    "forms": "fix bugs → Fehler beheben (a compound or object, never a failure label); keywords may add Bug",
+    "sources": "MS TBX bug (coding error) → Fehler; MS File a bug → Fehler melden; git.po Fehler wurde behoben; catalog settings.updates.errorReports.description (old) Fehler schneller zu beheben"
+  },
+  "help-menu": {
+    "chosen": "Hilfe",
+    "confidence": "high",
+    "forms": "the menu bar title → Hilfe (menu.bar.help); named in prose → das Menü „Hilfe“ (über das Menü „Hilfe“, im Menü „Hilfe“), never das Hilfe-Menü",
+    "sources": "macOS de Finder BN43 (im Menü „Ablage“ die Option „Informationen“); catalog menu.bar.help Hilfe"
   },
   "usb-preferences": {
     "chosen": "USB-Einstellungen",

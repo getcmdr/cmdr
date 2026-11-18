@@ -45,6 +45,10 @@ wording into `terms.json` (and `decisions.md` when the reason is worth keeping).
 - **NFS export → `partage`** (tentative, `servers.sheet.nfsExport` and the `nfsExports*` / `export*` family): follows
   the NAS apps’ `dossier partagé`; French sysadmin docs also say `un export NFS`. Is `partage` clear enough beside the
   SMB `partage`, or should the field say `Export`?
+- **AI prompt → `prompt`** (tentative, `settings.analytics.enabled.description`): the loanword keeps it apart from
+  `requête` (an API request), which MS offers for this sense; confirm it reads natural, or prefer `instructions`.
+- **security record → `registre`** (`settings.securityLog.enabled.*`): `journal` is the log file's word; confirm
+  `registre` reads as a small local file, not an official register.
 
 ## Phrasing
 

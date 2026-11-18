@@ -4,6 +4,7 @@
     import { tString } from '#lib/intl/messages.svelte.js'
     import Icon from '#lib/ui/Icon.svelte'
     import TextInput from '#lib/ui/TextInput.svelte'
+    import type { TextFieldSize } from '#lib/ui/text-field-types'
     import { onMount } from 'svelte'
     import { useSettingLock } from './setting-lock.svelte'
 
@@ -16,10 +17,16 @@
         value?: string
         /** Called when the value changes. When provided, the component uses this instead of the settings store. */
         onchange?: (value: string) => void
+        /**
+         * `compact` (the default) is one text line tall, like every Settings field. `regular`
+         * is for a stacked form (the provider setup steps, shared with onboarding).
+         */
+        size?: TextFieldSize
     }
 
     const {
         id,
+        size = 'compact',
         placeholder = '',
         ariaLabel,
         disabled: ownDisabled = false,
@@ -80,6 +87,7 @@
 
 <TextInput
     type={inputType}
+    {size}
     value={displayValue}
     oninput={handleInput}
     onfocus={() => (focused = true)}
@@ -95,13 +103,14 @@
     {#snippet trailing()}
         <button
             class="reveal-toggle hit-target"
+            class:compact={size === 'compact'}
             type="button"
             onclick={toggleReveal}
             {disabled}
             aria-label={toggleTooltip}
             use:tooltip={toggleTooltip}
         >
-            <Icon name={revealed ? 'eye-off' : 'eye'} size={14} aria-hidden="true" />
+            <Icon name={revealed ? 'eye-off' : 'eye'} size={size === 'compact' ? 12 : 14} aria-hidden="true" />
         </button>
     {/snippet}
 </TextInput>
@@ -119,6 +128,12 @@
         border-radius: var(--radius-sm);
         background: transparent;
         color: var(--color-text-tertiary);
+    }
+
+    /* In a compact field the text line is `--font-size-sm`, so the toggle shrinks with it. */
+    .reveal-toggle.compact {
+        width: 16px;
+        height: 16px;
     }
 
     .reveal-toggle:hover:not(:disabled) {

@@ -10,7 +10,9 @@ Add an entry to `settings-registry.ts`. Name the id after the UI vocabulary (`wh
 `changelog.popupEnabled`):
 
 - `id`, `section` (the sidebar path, for example `['Updates & privacy']` or `['Appearance', 'Listing']`)
-- `label`, `description`: sentence case, friendly, per the style guide
+- `label`, `description`: sentence case, friendly, per the style guide. A long description can go behind an ⓘ after the
+  label (`descriptionInTip`, optionally with a short `summaryKey` line under the label):
+  `apps/desktop/src/lib/settings/DETAILS.md` § "Where the description shows"
 - `keywordsKey`: extra search words so the setting is findable, as a catalog message `settings.<id>.keywords` in
   `en/settings.json` (comma-separated, for example `"changelog, release notes, what’s new"`). Give it a `@key`
   description like its siblings': each language writes its own list, synonyms welcome, not a 1:1 translation. Then

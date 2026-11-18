@@ -116,6 +116,12 @@ wording into `terms.json` (and `decisions.md` when the reason is worth keeping).
   dialog's own English says "selected"; AI-förslag uses `bocka för`); the counter is a colon form `Markerade: 3 av 12`
   to dodge agreement; statuses `Raderad`, `Flyttad tillbaka`, `Namnet återställt`, `Taggar återställda`. Confirm they
   read naturally side by side.
+- **License terms in Settings > License** (`licensing.section.commercialNeeded`, `.includedAi`, `.includedMacs`): a
+  legal qualifier in plain words. "including a job, contract work, or your own business" is
+  `inklusive på ett jobb, i uppdragsarbete eller i ditt eget företag`; "free during the beta" is `gratis under betan`;
+  Macs are `Mac-datorer`. Confirm the scope reads exactly as the English, neither wider nor narrower.
+- **Network timeout unit** (`settings.network.timeoutUnit`): `sek` after a freely typed number, so `1 sek` and `15 sek`
+  both read right; confirm it over `s` or `sekunder`.
 
 ## Layout (overflow-check against the pseudolocale)
 

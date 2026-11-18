@@ -174,5 +174,9 @@
   "licensing.section.getLicense": "Get a licence",
   "@licensing.section.getLicense": {
     "sourceHash": "fab19d3"
+  },
+  "licensing.section.commercialNeeded": "Using Cmdr for work, including a job, contract work, or your own business, needs a commercial licence. You can try it at work for up to 14 days first.",
+  "@licensing.section.commercialNeeded": {
+    "sourceHash": "a3d7314"
   }
 }

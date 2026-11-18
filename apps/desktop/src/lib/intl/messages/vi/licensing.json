@@ -417,6 +417,30 @@
   "@licensing.section.getLicense": {
     "sourceHash": "fab19d3"
   },
+  "licensing.section.includedTitle": "Những gì được bao gồm",
+  "@licensing.section.includedTitle": {
+    "sourceHash": "a441e05"
+  },
+  "licensing.section.includedFeatures": "Mọi tính năng của trình quản lý tệp",
+  "@licensing.section.includedFeatures": {
+    "sourceHash": "0a54a41"
+  },
+  "licensing.section.includedMacs": "Tất cả máy Mac của riêng bạn, để dùng cá nhân",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "d0968e4"
+  },
+  "licensing.section.includedUpdates": "Cập nhật tự động",
+  "@licensing.section.includedUpdates": {
+    "sourceHash": "147b1b6"
+  },
+  "licensing.section.includedAi": "Cmdr AI, miễn phí trong giai đoạn beta, dùng khóa API của riêng bạn hoặc chạy trên thiết bị",
+  "@licensing.section.includedAi": {
+    "sourceHash": "1fec548"
+  },
+  "licensing.section.commercialNeeded": "Nếu bạn dùng Cmdr cho công việc, dù là đi làm, nhận việc theo hợp đồng hay kinh doanh riêng, bạn cần giấy phép thương mại. Bạn có thể dùng thử ở chỗ làm tối đa 14 ngày trước.",
+  "@licensing.section.commercialNeeded": {
+    "sourceHash": "a3d7314"
+  },
   "licensing.section.typePersonal": "Cá nhân (miễn phí)",
   "@licensing.section.typePersonal": {
     "sourceHash": "4af5ca9"

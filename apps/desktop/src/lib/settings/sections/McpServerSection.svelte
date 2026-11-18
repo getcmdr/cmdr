@@ -214,7 +214,6 @@
                     id="developer.mcpPort"
                     label={mcpPortDef.label}
                     description={mcpPortDef.description}
-                    split
                     {searchQuery}
                 >
                     <div class="port-setting">
@@ -277,6 +276,11 @@
         display: flex;
         align-items: center;
         gap: var(--spacing-sm);
+    }
+
+    /* The status line belongs to the Port row above it, so no rule between them. */
+    :global(.setting-row):has(+ .port-status) {
+        border-bottom: none;
     }
 
     .port-status {

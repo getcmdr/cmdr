@@ -222,14 +222,20 @@ describe('createTransferProgressState: birth', () => {
     expect(state.filesDone).toBe(7)
   })
 
-  it('cancels through the manager when Cancel is pressed before the id arrives', async () => {
-    // Was: "cancels and reports the op when the dialog is torn down mid-dispatch",
-    // asserting `cancelWriteOperation(id, true)`. Two things changed. A TEARDOWN
-    // no longer implies a cancel (see the disposal suite); only an explicit
-    // Cancel does, and that is what this drives. And the cancel goes through the
-    // MANAGER, because an operation admitted behind a busy lane hasn't spawned a
-    // write op yet, so `cancelWriteOperation` could not drop it and the transfer
-    // would have run on regardless of the press.
+  /**
+   * ❗ A Cancel that beats the operation's id is the same Cancel as one a moment
+   * later: it waits out `write-settled` and is acknowledged. It used to close the
+   * dialog the moment the id landed, before the backend had stopped, and with no
+   * "you canceled this" alert: a new op could then dispatch against a volume
+   * still tearing down, which is what the settle gate exists to prevent. A busy
+   * main thread at launch made the press win the race
+   * (`mtp-cancel-volume-settled.spec.ts` found no alert, 2026-11-18).
+   *
+   * It goes through the MANAGER (the session's `cancel`), because an operation
+   * admitted behind a busy lane hasn't spawned a write op yet, so
+   * `cancelWriteOperation` could not drop it.
+   */
+  it('waits for the settle and acknowledges a Cancel pressed before the id arrives', async () => {
     let resolveDispatch: (r: WriteOperationStartResult) => void = () => {}
     vi.mocked(copyBetweenVolumes).mockImplementationOnce(
       () => new Promise<WriteOperationStartResult>((res) => (resolveDispatch = res)),
@@ -245,9 +251,60 @@ describe('createTransferProgressState: birth', () => {
 
     resolveDispatch({ operationId: 'op-1', operationType: 'copy' })
     await settle()
-    expect(cancelOperation).toHaveBeenCalledWith('op-1')
+    expect(cancelOperation).toHaveBeenCalledExactlyOnceWith('op-1')
+    expect(state.isCancelling).toBe(true)
     vi.advanceTimersByTime(450)
-    expect(config.onCancelled).toHaveBeenCalledWith(0)
+    expect(config.onCancelled, 'nothing closes before the backend has stopped').not.toHaveBeenCalled()
+
+    if (!listeners.cancelled || !listeners.settled) throw new Error('cancel/settle subscribers never registered')
+    listeners.cancelled({
+      operationId: 'op-1',
+      operationType: 'copy',
+      filesProcessed: 0,
+      rollback: {
+        outcome: 'notRolledBack',
+        reversed: 0,
+        skips: [],
+        stagedLeftovers: [],
+        originalsStillInPlace: null,
+        recovered: [],
+      },
+    })
+    listeners.settled({ operationId: 'op-1', operationType: 'copy' })
+    flushSync()
+
+    expect(state.cancelAcknowledgement).toEqual({ operationType: 'copy' })
+    expect(config.onCancelled).not.toHaveBeenCalled()
+    state.acknowledgeCancel()
+    expect(config.onCancelled).toHaveBeenCalledExactlyOnceWith(0)
+  })
+
+  it('closes, without backgrounding it, a queued operation that an early Cancel dropped', async () => {
+    // A queued op dropped by the manager never spawned, so it sends no terminal
+    // event at all: leaving the registry is the only word its end gets.
+    let resolveDispatch: (r: WriteOperationStartResult) => void = () => {}
+    vi.mocked(copyBetweenVolumes).mockImplementationOnce(
+      () => new Promise<WriteOperationStartResult>((res) => (resolveDispatch = res)),
+    )
+    const config = makeConfig()
+    const state = makeState(config)
+    state.start()
+    await settle()
+    void state.handleCancel(false)
+    await settle()
+    resolveDispatch({ operationId: 'op-1', operationType: 'copy' })
+    await settle()
+    if (!listeners.opsChanged) throw new Error('operations-changed subscriber never registered')
+    listeners.opsChanged({ operations: [snapshot('busy', 'running'), snapshot('op-1', 'queued')] })
+    flushSync()
+    expect(config.onQueue, 'a cancelled op is not sent to the queue').not.toHaveBeenCalled()
+
+    listeners.opsChanged({ operations: [snapshot('busy', 'running')] })
+    flushSync()
+    vi.advanceTimersByTime(450)
+
+    expect(config.onCancelled).toHaveBeenCalledExactlyOnceWith(0)
+    expect(addToast).not.toHaveBeenCalled()
   })
 
   it('backgrounds instead when the modal is CLOSED before the id arrives', async () => {

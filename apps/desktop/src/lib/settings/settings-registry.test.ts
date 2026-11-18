@@ -319,13 +319,13 @@ describe('search.recentSearches.maxCount', () => {
 })
 
 describe('appearance.showFunctionKeyBar', () => {
-  it('registers a boolean switch in Appearance > Listing, defaulting to on (current behavior)', () => {
+  it('registers a boolean switch in Appearance > Zoom and density, defaulting to on (current behavior)', () => {
     const def = getSettingDefinition('appearance.showFunctionKeyBar')
     expect(def).toBeDefined()
     expect(def?.type).toBe('boolean')
     expect(def?.component).toBe('switch')
     expect(getDefaultValue('appearance.showFunctionKeyBar')).toBe(true)
-    expect(def?.section).toEqual(['Appearance', 'Listing'])
+    expect(def?.section).toEqual(['Appearance', 'Zoom and density'])
   })
 
   it('is reachable via natural lookup keywords', () => {

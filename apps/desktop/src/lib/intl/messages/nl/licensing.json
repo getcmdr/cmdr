@@ -418,6 +418,30 @@
   "@licensing.section.getLicense": {
     "sourceHash": "fab19d3"
   },
+  "licensing.section.includedTitle": "Wat is inbegrepen",
+  "@licensing.section.includedTitle": {
+    "sourceHash": "a441e05"
+  },
+  "licensing.section.includedFeatures": "Alle functies van de bestandsbeheerder",
+  "@licensing.section.includedFeatures": {
+    "sourceHash": "0a54a41"
+  },
+  "licensing.section.includedMacs": "Al je eigen Macs, voor persoonlijk gebruik",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "d0968e4"
+  },
+  "licensing.section.includedUpdates": "Automatische updates",
+  "@licensing.section.includedUpdates": {
+    "sourceHash": "147b1b6"
+  },
+  "licensing.section.includedAi": "Cmdr AI, gratis tijdens de bèta, met je eigen API-sleutel of lokaal",
+  "@licensing.section.includedAi": {
+    "sourceHash": "1fec548"
+  },
+  "licensing.section.commercialNeeded": "Gebruik je Cmdr voor werk, ook voor een baan, opdrachtwerk of je eigen bedrijf? Dan heb je een commerciële licentie nodig. Je kunt het eerst tot 14 dagen op je werk uitproberen.",
+  "@licensing.section.commercialNeeded": {
+    "sourceHash": "a3d7314"
+  },
   "licensing.section.typePersonal": "Personal (gratis)",
   "@licensing.section.typePersonal": {
     "sourceHash": "4af5ca9"

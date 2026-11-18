@@ -23,8 +23,16 @@
         onValueChange?: (value: string) => void
     }
 
-    const { id, onValueChange, ariaLabel, disabled, 'aria-describedby': ownDescribedBy, ...inputProps }: Props =
-        $props()
+    // `size` defaults to `compact`: a Settings field is one text line tall, level with its label.
+    const {
+        id,
+        onValueChange,
+        ariaLabel,
+        disabled,
+        size = 'compact',
+        'aria-describedby': ownDescribedBy,
+        ...inputProps
+    }: Props = $props()
     const lock = useSettingLock(id)
 
     const label = getSettingDefinition(id)?.label ?? id
@@ -48,6 +56,7 @@
 <TextInput
     {...inputProps}
     {value}
+    {size}
     oninput={handleInput}
     ariaLabel={ariaLabel ?? label}
     disabled={Boolean(disabled) || lock.locked}
