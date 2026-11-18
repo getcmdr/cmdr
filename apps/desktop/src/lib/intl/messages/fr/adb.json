@@ -3,9 +3,9 @@
   "@adb.connect.adbNotInstalled": {
     "sourceHash": "a842454"
   },
-  "adb.connect.openSettings": "{platform, select, windows {Ouvrir les réglages} linuxGnome {Ouvrir les préférences} linuxKde {Configurer Cmdr} other {Ouvrir les réglages}}",
+  "adb.connect.openSettings": "{platform, select, windows {Ouvrir les paramètres} linuxGnome {Ouvrir les préférences} linuxKde {Configurer Cmdr} other {Ouvrir les réglages}}",
   "@adb.connect.openSettings": {
-    "sourceHash": "f970930"
+    "sourceHash": "cd63cf5"
   },
   "adb.connect.serverUnreachable": "{platform, select, macos {Les outils Android de ce Mac n’ont pas répondu.} windows {Les outils Android de ce PC n’ont pas répondu.} other {Les outils Android de cet ordinateur n’ont pas répondu.}}",
   "@adb.connect.serverUnreachable": {
