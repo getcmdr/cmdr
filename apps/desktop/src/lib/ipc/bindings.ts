@@ -2862,6 +2862,11 @@ export const commands = {
       threadCount: number
       appVersion: string
       osVersion: string
+      /**
+       *  `macos` / `windows` / `linux` ([`crate::platform::os_name`]). A crash file written before
+       *  this field reads as this machine's OS, which is the OS it crashed on.
+       */
+      os?: string
       arch: string
       uptimeSecs: number
       activeSettings: ActiveSettings
@@ -9238,6 +9243,11 @@ export type CrashReport = {
   threadCount: number
   appVersion: string
   osVersion: string
+  /**
+   *  `macos` / `windows` / `linux` ([`crate::platform::os_name`]). A crash file written before
+   *  this field reads as this machine's OS, which is the OS it crashed on.
+   */
+  os?: string
   arch: string
   uptimeSecs: number
   activeSettings: ActiveSettings

@@ -162,13 +162,14 @@ async function queryDownloadsByReferer(
 }
 
 /**
- * Per-day server downloads, split by install-plausibility family. Rows carry the family recorded at
- * write time (`ua_family`, migration 0013); `assembleFunnel` falls back to `classifyUaFamily` on the
- * raw UA for rows written before that column existed. Keeping the fallback out of SQL keeps the
- * classifier a single pure, unit-tested function and the only place the macOS-only logic lives.
+ * Per-day server downloads, split by install-plausibility family and the file's OS. Rows carry the
+ * family recorded at write time (`ua_family`, migration 0013); `assembleFunnel` falls back to
+ * `classifyUaFamily` on the raw UA, against the row's `os`, for rows written before that column existed.
+ * Keeping the fallback out of SQL keeps the classifier a single pure, unit-tested function and the only
+ * place the per-OS rules live. The same rows give `FunnelDay.downloadsByOs`.
  *
- * Grouping on both columns keeps cardinality low (one row per distinct UA per day over a few hundred
- * downloads) and collapses to one row per family per day and country once the sweep has cleared the
+ * Grouping on these columns keeps cardinality low (one row per distinct UA per day over a few hundred
+ * downloads) and collapses to one row per family, OS, day, and country once the sweep has cleared the
  * raw UAs.
  */
 async function queryDownloadsByUa(
@@ -178,10 +179,10 @@ async function queryDownloadsByUa(
 ): Promise<DownloadByUaRow[]> {
   const { results } = await db
     .prepare(
-      `SELECT date(created_at) AS date, ua_family AS uaFamily, user_agent AS userAgent, country, COUNT(*) AS count
+      `SELECT date(created_at) AS date, ua_family AS uaFamily, user_agent AS userAgent, os, country, COUNT(*) AS count
          FROM downloads
          WHERE date(created_at) >= ?1 AND (?2 IS NULL OR country = ?2)
-         GROUP BY date, ua_family, user_agent, country`,
+         GROUP BY date, ua_family, user_agent, os, country`,
     )
     .bind(sinceDate, country)
     .all<DownloadByUaRow>()

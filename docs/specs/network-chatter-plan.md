@@ -33,6 +33,8 @@ clients (hourly, no events) keep working for as long as they exist:
 - `uptimeSeconds`: integer ≥ 0. App runtime this beat accounts for, not yet reported by an earlier successful beat.
   Unreported uptime is persisted (updated every few minutes), so a short session that ended before its beat still counts
   on the next one. Server clamps to a sane max (7 days) and stores it.
+- `os`: `"macos" | "windows" | "linux"`, from `std::env::consts::OS`. The server stores an unrecognized value, or none,
+  as NULL and reads such a beat's OS from `osVersion` (`apps/api-server/src/client-os.ts`).
 - `installChannel`: `"homebrew" | "direct" | null`. How the app was installed (app side:
   `apps/desktop/src-tauri/src/analytics/install_channel.rs`). The server stores an unrecognized value as NULL, and the
   install's channel is the first non-NULL one it reports (`apps/api-server/src/admin/DETAILS.md` § Install summary).

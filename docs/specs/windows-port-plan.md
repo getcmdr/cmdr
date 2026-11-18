@@ -486,9 +486,26 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     and an attest step, which the plan enforces. A dry run of those jobs against v0.61.0 as published
     (`scripts/release-assets/pipeline_test.go`) holds every output to golden files, `latest.json` to v0.61.0's bytes
     with `downloads` appended (`scripts/release-assets/DETAILS.md`).
-31. [M] Win. Downloads and analytics for N platforms: `/download/:version/:os/:arch` (old route stays as the macOS
-    alias), artifact-aware UA classification in the api-server and dashboard funnel, an explicit `os` field through
-    heartbeat, feedback, and reports (a Cloudflare D1 migration), the dashboard split by OS. Needs 30.
+31. [M] Win. **Done in code, waiting on its deploy.** Downloads and analytics for N platforms:
+    `/download/:version/:os/:arch` (`?kind=` for an OS's other file; `/download/:version/:arch` stays the macOS DMG
+    alias), every non-DMG filename read from the release's own `latest.json` `downloads`, and an OS served only once
+    `PUBLIC_DOWNLOAD_OSES` (`apps/api-server/wrangler.toml`, `macos` today) lists it. UA classification judges a hit
+    against the file's OS (`classifyUaFamily(ua, os)`). The app sends `os` (`crate::platform::os_name()`) on the
+    heartbeat, feedback, crash reports, and error reports, and the api-server stores it leniently (`parseClientOs`;
+    older rows read from `os_version`). Migration `0033_client_os.sql` adds `downloads.os` / `kind`, `os` in the
+    `downloads_daily_unique` key, and `os` on the four report tables. The dashboard splits downloads (table and day pie)
+    and daily actives (tooltip) by OS; the funnel gains `downloadsByOs`, active installs `byOs`.
+    `apps/api-server/src/telemetry/DETAILS.md` §§ The OS field, Download tracking.
+    - **David's step**: landing the branch runs `deploy-api-server.yml`, which applies `0033` to production D1
+      (`wrangler d1 migrations apply TELEMETRY_DB --remote`) and then deploys the Worker, so the migration goes out with
+      the landing. To look first:
+      `pnpm --filter @cmdr/api-server exec wrangler d1 migrations list TELEMETRY_DB --remote` lists it as the one
+      pending migration. Landing also deploys the dashboard and the website (the privacy policy's download lines name
+      the OS and file type now).
+    - **Making Windows downloads public** (after task 52 ships the files): add `windows` to `PUBLIC_DOWNLOAD_OSES` and
+      deploy, then task 32 links `/download/latest/windows/x86_64`. Not in this task: the website's
+      `getcmdr.com/download/latest/<os>/<arch>` nginx redirect (task 32), an OS on `install_summary` (new installs and
+      retention by OS), and per-OS wording in the privacy policy (it still says "macOS version"). Needs 30.
 32. [S] Win. Website download page for three OSes (the Linux plan's Part 3, built once). David reviews copy and design.
     Needs 30.
 33. [S] Win (Linux too). Updater trust parity off macOS: the Rust-side check, advisory list, and managed-install logic

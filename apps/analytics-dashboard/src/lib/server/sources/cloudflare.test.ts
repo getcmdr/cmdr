@@ -35,11 +35,21 @@ const sampleUpdateActivityResponse = [
 ]
 
 describe('parseDownloadRows', () => {
+  it("keeps the Worker's os, and reads a row from a Worker older than the field as macOS", () => {
+    const [windows, legacy] = parseDownloadRows([
+      { ...sampleDownloadsResponse[0], os: 'windows' },
+      sampleDownloadsResponse[1],
+    ])
+    expect(windows.os).toBe('windows')
+    expect(legacy.os).toBe('macos')
+  })
+
   it('maps worker response to DownloadRow format', () => {
     const rows = parseDownloadRows(sampleDownloadsResponse)
     expect(rows).toHaveLength(3)
     expect(rows[0]).toEqual({
       version: '1.2.0',
+      os: 'macos',
       arch: 'aarch64',
       country: 'US',
       source: 'website',
@@ -49,6 +59,7 @@ describe('parseDownloadRows', () => {
     })
     expect(rows[2]).toEqual({
       version: '1.1.0',
+      os: 'macos',
       arch: 'aarch64',
       country: 'GB',
       source: 'other',

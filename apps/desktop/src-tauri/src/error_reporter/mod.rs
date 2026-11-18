@@ -343,6 +343,10 @@ pub struct BundleManifest {
     pub build_mode: BuildMode,
     pub app_version: String,
     pub os_version: String,
+    /// `macos` / `windows` / `linux` ([`crate::platform::os_name`]). A manifest from before this
+    /// field reads as this machine's OS.
+    #[serde(default = "crate::platform::os_name")]
+    pub os: String,
     pub arch: String,
     pub active_settings: ResolvedSettings,
     /// The hand-picked settings that change what Cmdr does (type-to-jump mode, conflict policy,

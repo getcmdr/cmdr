@@ -18,6 +18,8 @@ export interface ActiveInstallsDay {
   mau: number
   /** Installs by the highest version they ran this day; sums to `dau`. */
   byVersion: Record<string, number>
+  /** Installs by OS (`macos`, `windows`, `linux`); sums to `dau`. Absent from a Worker older than the field. */
+  byOs?: Record<string, number>
 }
 
 /** Mirrors `VersionWindow` in `apps/api-server/src/admin/active-installs.ts`. */

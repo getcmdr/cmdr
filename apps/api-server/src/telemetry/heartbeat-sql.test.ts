@@ -25,7 +25,19 @@ interface BeatFacts {
 /** Store one beat the way the route does: the beat row, then the summary upsert, same timestamp. */
 function beat(db: DatabaseSync, id: string, facts: BeatFacts): void {
   const { at, country = null, channel = null } = facts
-  db.prepare(insertHeartbeatSql).run(id, '1.2.3', 'macOS 26.0', 'aarch64', 'release', null, null, country, channel, at)
+  db.prepare(insertHeartbeatSql).run(
+    id,
+    '1.2.3',
+    'macOS 26.0',
+    'aarch64',
+    'release',
+    null,
+    null,
+    country,
+    channel,
+    at,
+    'macos',
+  )
   db.prepare(upsertInstallSummarySql).run(id, at, country, channel)
 }
 
@@ -40,7 +52,7 @@ function summary(db: DatabaseSync, id: string): Record<string, unknown> {
 }
 
 describe('the heartbeat INSERTs against real SQLite', () => {
-  it('stores the beat with its uptime, country, channel, and our timestamp', () => {
+  it('stores the beat with its uptime, country, channel, OS, and our timestamp', () => {
     const db = openDb()
     db.prepare(insertHeartbeatSql).run(
       analId,
@@ -53,10 +65,11 @@ describe('the heartbeat INSERTs against real SQLite', () => {
       'SE',
       'homebrew',
       '2026-11-10 12:00:00',
+      'windows',
     )
     expect({
       ...db
-        .prepare(`SELECT anal_id, uptime_seconds, config_json, country, install_channel, created_at FROM heartbeat`)
+        .prepare(`SELECT anal_id, uptime_seconds, config_json, country, install_channel, created_at, os FROM heartbeat`)
         .get(),
     }).toEqual({
       anal_id: analId,
@@ -65,6 +78,7 @@ describe('the heartbeat INSERTs against real SQLite', () => {
       country: 'SE',
       install_channel: 'homebrew',
       created_at: '2026-11-10 12:00:00',
+      os: 'windows',
     })
     db.close()
   })

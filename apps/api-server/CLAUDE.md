@@ -16,7 +16,7 @@ Five areas own their code, tests, and `C+D.md`; read an area's docs before worki
 
 Root holds the assembly and the shared leaves (`index.ts`, `types.ts`, `admin-auth.ts`, `email/`, `ops-events.ts`, the
 `report-*.ts` + `github-issues.ts` + `morning-brief.ts` board, `project-board.ts`, `scheduled.ts`, `cron-health.ts`,
-`ci-*.ts`, `user-agent.ts`; DETAILS § Root files). ❌ Areas depend on root leaves, never each other.
+`ci-*.ts`, `user-agent.ts`, `client-os.ts`; DETAILS § Root files). ❌ Areas depend on root leaves, never each other.
 
 `email/` is one module per audience: `send.ts` (the SMTP2Go door), `layout.ts` (HTML chrome), then `crash.ts`,
 `feedback.ts`, `error-report.ts`, `ops-alerts.ts`, `license.ts`, `sale.ts`. Import the specific one; no barrel.

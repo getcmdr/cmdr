@@ -56,10 +56,13 @@ fixture both sides share.
   asset list.
 - **The website** reads `latest.json`'s `downloads` (`apps/website/src/lib/release-downloads.ts`), falling back to
   `dmgSizes` for manifests from before it.
+- **The api-server's `/download/:version/:os/:arch`** reads the same `downloads` (the release's own `latest.json`) for
+  every filename but a macOS DMG's (`apps/api-server/src/telemetry/download.ts`), so a new OS's files need no api-server
+  change, only its OS in `PUBLIC_DOWNLOAD_OSES` once it goes public.
 
 Not driven by it: the `compile` and `sign` matrices and the `sign` job's staging (bundler output paths are bundler
 knowledge; `publish`'s "every URL is an asset" check and `attest`'s presence check catch a drifted name), `bump-tap`
-(Homebrew wants the universal DMG), and the api-server's `/download` route (Windows port plan task 31).
+(Homebrew wants the universal DMG), and the api-server's kind list per OS (`kindsByOs`, which mirrors `downloadKinds`).
 
 ## `latest.json`
 

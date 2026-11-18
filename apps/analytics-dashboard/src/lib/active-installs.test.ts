@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { reachByDay, splitActives } from './active-installs.js'
+import { installsByOs, reachByDay, splitActives } from './active-installs.js'
 import type { UpdateActivityRow } from './server/sources/cloudflare.js'
 
 function updates(rows: Array<[string, string, number]>): UpdateActivityRow[] {
@@ -32,5 +32,19 @@ describe('splitActives', () => {
 
   it('never draws a negative returning count when a swept install leaves more new than active', () => {
     expect(splitActives([{ dau: 2, newInstalls: 3 }]).returning).toEqual([0])
+  })
+})
+
+describe('installsByOs', () => {
+  it('names each OS the way people write it, largest first', () => {
+    expect(installsByOs({ windows: 2, macos: 40, linux: 2 })).toEqual([
+      { label: 'macOS', count: 40 },
+      { label: 'Linux', count: 2 },
+      { label: 'Windows', count: 2 },
+    ])
+  })
+
+  it('lists nothing for a day from a Worker older than the split', () => {
+    expect(installsByOs(undefined)).toEqual([])
   })
 })

@@ -1,12 +1,12 @@
 <!--
   Acquisition § Download: real new installs by source (stacked bars), per-version mini-timelines,
-  by-architecture and by-country tables, a per-day pie-chart hover tooltip (architecture + country),
+  by-OS, by-architecture, and by-country tables, a per-day pie-chart hover tooltip (architecture + country),
   and GitHub release download counts. Owns the timeline zoom window (scroll to zoom) and the day-hover
   tooltip state; the country breakdown lives in CountryTable and shares the zoom window.
 -->
 <script lang="ts">
     import type { SourceResult, DashboardSelection } from '#lib/server/types.js'
-    import type { CloudflareData } from '#lib/server/sources/cloudflare.js'
+    import type { CloudflareData, DownloadRow } from '#lib/server/sources/cloudflare.js'
     import type { GitHubData } from '#lib/server/sources/github.js'
     import {
         aggregateBy,
@@ -16,7 +16,7 @@
         getDayAxis,
         maxDailyAcrossGroups,
     } from '#lib/chart-helpers.js'
-    import { formatNumber, formatCountry } from '#lib/format.js'
+    import { formatNumber, formatCountry, formatOs } from '#lib/format.js'
     import { COLOR_GOLD } from '#lib/colors.js'
     import MiniTimeline from '#lib/components/MiniTimeline.svelte'
     import PieChart from '#lib/components/PieChart.svelte'
@@ -40,6 +40,11 @@
     } = $props()
 
     const downloadSyncKey = 'dl-timelines'
+
+    /** Downloads per OS, named the way people write it (`macOS`), largest first. */
+    function byOs(rows: DownloadRow[]): Array<{ x: string; y: number }> {
+        return aggregateBy(rows, 'os', 'downloads').map((o) => ({ ...o, x: formatOs(o.x) }))
+    }
 
     let zoomXMin: number | null = $state(null)
     let zoomXMax: number | null = $state(null)
@@ -120,7 +125,7 @@
                         <h3 class="mb-2 text-sm font-medium text-text-secondary">New installs per day, by source</h3>
                         <StackedBarChart days={allDays} series={sourceSeries} unitLabel="new installs" />
                         <Methodology
-                            text={'Counts downloads of the macOS DMG through getcmdr.com (download endpoint), deduplicated to distinct ' +
+                            text={'Counts downloads of every OS build (only the macOS DMG is public today) through getcmdr.com (download endpoint), deduplicated to distinct ' +
                                 'people per day via a daily-rotating hashed IP, with bot and link-preview hits dropped by user agent. ' +
                                 'Website = the getcmdr.com download button, Homebrew = `brew install --cask cmdr`, Direct / other = links ' +
                                 'shared elsewhere. In-app auto-updates never count here (they fetch from GitHub, not this endpoint). ' +
@@ -166,7 +171,9 @@
                             <p class="text-xs text-text-tertiary">Scroll to zoom timeline</p>
                         </div>
                         <div>
-                            <h3 class="mb-2 text-sm font-medium text-text-secondary">By architecture</h3>
+                            <h3 class="mb-2 text-sm font-medium text-text-secondary">By operating system</h3>
+                            <MetricTable items={byOs(cf.downloads)} colLabel="Operating system" colValue="Downloads" />
+                            <h3 class="mt-4 mb-2 text-sm font-medium text-text-secondary">By architecture</h3>
                             <MetricTable
                                 items={aggregateBy(cf.downloads, 'arch', 'downloads').slice(0, 8)}
                                 colLabel="Architecture"
@@ -194,6 +201,10 @@
                                     <span class="ml-2 text-text-secondary tabular-nums">{formatNumber(dayTotal)} downloads</span>
                                 </p>
                                 <div class="flex items-start gap-5">
+                                    <div>
+                                        <p class="mb-1 text-xs font-medium text-text-tertiary">Operating system</p>
+                                        <PieChart slices={byOs(dayRows).map((o) => ({ label: o.x, value: o.y }))} />
+                                    </div>
                                     <div>
                                         <p class="mb-1 text-xs font-medium text-text-tertiary">Architecture</p>
                                         <PieChart
@@ -229,7 +240,9 @@
                             />
                         </div>
                         <div>
-                            <h3 class="mb-2 text-sm font-medium text-text-secondary">By architecture</h3>
+                            <h3 class="mb-2 text-sm font-medium text-text-secondary">By operating system</h3>
+                            <MetricTable items={byOs(cf.downloads)} colLabel="Operating system" colValue="Downloads" />
+                            <h3 class="mt-4 mb-2 text-sm font-medium text-text-secondary">By architecture</h3>
                             <MetricTable
                                 items={aggregateBy(cf.downloads, 'arch', 'downloads').slice(0, 8)}
                                 colLabel="Architecture"

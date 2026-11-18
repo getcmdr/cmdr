@@ -1,11 +1,11 @@
 import { Hono } from 'hono'
+import { parseClientOs } from '../client-os'
 import { callerIp, emailShapePattern, enforceIpRateLimit, hashCallerIp, type Bindings } from '../types'
-import { classifyUaFamily } from '../user-agent'
 
 const telemetry = new Hono<{ Bindings: Bindings }>()
 
 /** The current UTC day as `YYYY-MM-DD`. This is the salt telemetry passes to `hashCallerIp`. */
-function todayUtc(): string {
+export function todayUtc(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
@@ -84,6 +84,11 @@ interface CrashReport {
    */
   osFrames?: string[]
   backtraceFrames?: string[]
+  /**
+   * Optional. `macos` / `windows` / `linux`. Read through `parseClientOs`, so an absent or unknown value
+   * is stored as NULL rather than costing the report a 400. See migration `0033`.
+   */
+  os?: unknown
   [key: string]: unknown
 }
 
@@ -299,8 +304,8 @@ interface CrashReportDerived {
 function writeCrashReportToD1(db: D1Database, report: CrashReport, derived: CrashReportDerived): Promise<unknown> {
   return db
     .prepare(
-      `INSERT INTO crash_reports (hashed_ip, app_version, os_version, arch, signal, top_function, backtrace, build_mode, short_id, diag_id, email, panic_message, app_fate, image_base, os_exception, os_frames)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO crash_reports (hashed_ip, app_version, os_version, arch, signal, top_function, backtrace, build_mode, short_id, diag_id, email, panic_message, app_fate, image_base, os_exception, os_frames, os)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       '',
@@ -319,6 +324,7 @@ function writeCrashReportToD1(db: D1Database, report: CrashReport, derived: Cras
       report.imageBase ?? null,
       capPanicMessage(report.osException),
       derived.osFramesTruncated,
+      parseClientOs(report.os),
     )
     .run()
     .catch(() => {}) // Don't let D1 failure block the response
@@ -372,256 +378,6 @@ telemetry.get('/update-check/:version', async (c) => {
   }
 
   return c.redirect('https://getcmdr.com/latest.json', 302)
-})
-
-// Download redirect: tracks version, arch, country, and source, then redirects to GitHub Releases.
-const validArchitectures = new Set(['aarch64', 'x86_64', 'universal'])
-
-// Link-unfurl bots and crawlers fetch the download URL to build a preview (Discord, Slack, etc.) or
-// to index it, which inflates the count with hits that aren't real installs. We still serve them the
-// 302 (no point breaking a preview), but we skip the D1 row so they never reach the dashboard. The
-// match is on the User-Agent, so it's a heuristic lower bound, not a guarantee; a spoofed UA slips
-// through, but the common unfurlers below all send these identifiable strings.
-const botUserAgentPattern =
-  /bot|crawl|spider|slurp|preview|unfurl|facebookexternalhit|embedly|whatsapp|telegram|discord|slack|twitter|linkedin|pinterest|curl|wget|python-requests|go-http-client|headlesschrome|monitor|uptime|pingdom/i
-
-function isBotUserAgent(userAgent: string | undefined): boolean {
-  if (!userAgent) return true // No UA at all is bot-like; real browsers and Homebrew always send one.
-  // Homebrew downloads via curl, so it'd match the `curl` rule below, but it's a real install path.
-  if (/homebrew/i.test(userAgent)) return false
-  return botUserAgentPattern.test(userAgent)
-}
-
-/**
- * Where a download came from, for the dashboard's "new installs by source" breakdown.
- * - `homebrew`: the Homebrew cask, which fetches via curl with a `Homebrew/x.y.z` User-Agent.
- * - `website`: the getcmdr.com download button, which appends `?src=website`.
- * - `other`: everything else (direct links shared in chats, the README, etc.).
- */
-function classifyDownloadSource(userAgent: string | undefined, srcParam: string | undefined): string {
-  if (userAgent && /homebrew/i.test(userAgent)) return 'homebrew'
-  if (srcParam === 'website') return 'website'
-  return 'other'
-}
-
-const maxRefLength = 120
-const disallowedRefChars = /[^a-z0-9._:-]/g
-
-/**
- * Sanitize the `?ref` first-touch channel value for storage. The website computes it client-side
- * (a UTM source/campaign, a referrer hostname, or `direct`) and appends it to the download URL, but
- * we never trust client input: lowercase, drop anything outside `[a-z0-9._:-]`, and cap at 120 chars.
- * Returns `null` when absent or when nothing survives sanitizing, so the column stays NULL rather
- * than holding an empty string. Mirrors the website's normalization so both ends agree.
- */
-function sanitizeRef(refParam: string | undefined): string | null {
-  if (!refParam) return null
-  const cleaned = refParam.toLowerCase().replace(disallowedRefChars, '').slice(0, maxRefLength)
-  return cleaned.length > 0 ? cleaned : null
-}
-
-const disallowedHostChars = /[^a-z0-9.-]/g
-
-/**
- * Sanitize the HTTP `Referer` header down to a storable host. A direct hit to `/download` (a link shared
- * on AlternativeTo, a directory, GitHub, Reddit, a forum) carries no `?ref` but does carry a `Referer`,
- * so its host is the first-party signal for where that download came from. We keep the HOST only (never
- * the path or query, so a referring page's own query string can't leak in), lowercase it, strip a leading
- * `www.`, drop anything outside `[a-z0-9.-]`, and cap at 120 chars. Returns `null` when the header is
- * absent, unparseable, or sanitizes to empty, so the column stays NULL (the `(none)` bucket).
- */
-function sanitizeRefererHost(refererHeader: string | undefined): string | null {
-  if (!refererHeader) return null
-  let host: string
-  try {
-    host = new URL(refererHeader).hostname
-  } catch {
-    return null
-  }
-  const cleaned = host
-    .toLowerCase()
-    .replace(/^www\./, '')
-    .replace(disallowedHostChars, '')
-    .slice(0, maxRefLength)
-  return cleaned.length > 0 ? cleaned : null
-}
-
-const maxUserAgentLength = 400
-
-/** Cap the stored User-Agent so a hostile client can't bloat a row; `null` when absent. */
-function cappedUserAgent(userAgent: string | undefined): string | null {
-  if (!userAgent) return null
-  return userAgent.slice(0, maxUserAgentLength)
-}
-
-const latestManifestUrl = 'https://getcmdr.com/latest.json'
-const githubLatestReleaseUrl = 'https://api.github.com/repos/getcmdr/cmdr/releases/latest'
-const releasesPageUrl = 'https://github.com/getcmdr/cmdr/releases/latest'
-
-/** Five minutes of edge caching: a download burst costs one origin fetch, and a release goes live fast. */
-const latestVersionCacheSeconds = 300
-
-/**
- * Resolve the `latest` version token to a concrete version number, or `null` when both sources fail.
- *
- * Primary is our own release manifest, the same file the in-app updater reads, so `latest` can never
- * name a version the updater doesn't know. GitHub's release API is the fallback for the window where
- * the website is down or mid-deploy; it's rate-limited unauthenticated, which is fine for a fallback.
- * Both answers are validated against `versionPattern` before use: this string goes into a redirect URL
- * and a D1 row.
- */
-async function resolveLatestVersion(): Promise<string | null> {
-  try {
-    const res = await fetch(latestManifestUrl, {
-      cf: { cacheTtl: latestVersionCacheSeconds, cacheEverything: true },
-    })
-    if (res.ok) {
-      const manifest = await res.json<{ version?: unknown }>()
-      if (typeof manifest.version === 'string' && versionPattern.test(manifest.version)) {
-        return manifest.version
-      }
-    }
-  } catch {
-    // Website unreachable; fall through to GitHub.
-  }
-
-  try {
-    const res = await fetch(githubLatestReleaseUrl, {
-      // GitHub 403s an API request without a User-Agent.
-      headers: { 'user-agent': 'cmdr-api-server', accept: 'application/vnd.github+json' },
-      cf: { cacheTtl: latestVersionCacheSeconds, cacheEverything: true },
-    })
-    if (res.ok) {
-      const release = await res.json<{ tag_name?: unknown }>()
-      if (typeof release.tag_name === 'string') {
-        const tagged = release.tag_name.replace(/^v/, '')
-        if (versionPattern.test(tagged)) return tagged
-      }
-    }
-  } catch {
-    // Both sources down.
-  }
-
-  return null
-}
-
-// The SHA-256 list for a release's DMGs, so someone who downloaded from the website can check what
-// they got. Registered BEFORE `/:version/:arch` so the static `checksums` segment wins over the
-// param; `checksums` is deliberately NOT an entry in `validArchitectures`, which answers a different
-// question and is read by the D1 breakdown.
-//
-// ❌ Writes no `downloads` row. A checksum fetch is not an app download, and counting one would
-// inflate the per-version numbers with people who never took a DMG. That's also why the website
-// links it without the `data-download-link` attribution hook.
-telemetry.get('/download/:version/checksums', async (c) => {
-  const requestedVersion = c.req.param('version')
-  const wantsLatest = requestedVersion === 'latest'
-
-  if (!wantsLatest && !versionPattern.test(requestedVersion)) {
-    return c.json({ error: 'Invalid version' }, 400)
-  }
-
-  const version = wantsLatest ? await resolveLatestVersion() : requestedVersion
-  if (!version) {
-    // Same fallback as the DMG redirect: the releases page lists every asset, `checksums.txt`
-    // included, so the visitor can still get there by hand.
-    return c.redirect(releasesPageUrl, 302)
-  }
-
-  return c.redirect(releaseFileUrl(version, 'checksums.txt'), 302)
-})
-
-/**
- * The first release the EU mirror holds (backfilled on 2026-11-05; the release pipeline's `publish`
- * job mirrors every later one before it goes Latest). GitHub Releases keeps every version.
- */
-const firstMirroredVersion = [0, 59, 0] as const
-
-/** `version` is a validated `X.Y.Z` (`versionPattern`), so a plain numeric compare is exact. */
-function isMirrored(version: string): boolean {
-  const parts = version.split('.').map(Number)
-  for (let i = 0; i < firstMirroredVersion.length; i++) {
-    if (parts[i] !== firstMirroredVersion[i]) return parts[i] > firstMirroredVersion[i]
-  }
-  return true
-}
-
-/**
- * Where a release file downloads from: the EU R2 mirror behind `download.getcmdr.com` for every
- * version it holds, else the GitHub release. `docs/guides/releasing.md` § Where downloads are served from.
- */
-function releaseFileUrl(version: string, file: string): string {
-  return isMirrored(version)
-    ? `https://download.getcmdr.com/v${version}/${file}`
-    : `https://github.com/getcmdr/cmdr/releases/download/v${version}/${file}`
-}
-
-telemetry.get('/download/:version/:arch', async (c) => {
-  const { version: requestedVersion, arch } = c.req.param()
-  const wantsLatest = requestedVersion === 'latest'
-
-  if ((!wantsLatest && !versionPattern.test(requestedVersion)) || !validArchitectures.has(arch)) {
-    return c.json({ error: 'Invalid version or architecture' }, 400)
-  }
-
-  // `latest` keeps published links (app directories, the README, blog posts, anything we can't edit
-  // per release) pointing at the current DMG. It resolves to a concrete version here, so the redirect
-  // names a real asset and D1 keeps its per-version breakdown instead of a `latest` bucket.
-  const version = wantsLatest ? await resolveLatestVersion() : requestedVersion
-  if (!version) {
-    // Neither release source answered. Send the visitor to the releases page, where they can pick a
-    // build by hand, rather than to a URL we know is dead. Nothing to log: there's no version to
-    // attribute the download to, and a guessed one would corrupt the per-version counts.
-    return c.redirect(releasesPageUrl, 302)
-  }
-
-  // tauri-action names the Intel DMG `_x64.dmg`, not `_x86_64.dmg`. Map at the boundary;
-  // we keep `x86_64` everywhere else (uname, Rust target triple, D1, telemetry, website).
-  const fileArch = arch === 'x86_64' ? 'x64' : arch
-  const redirectUrl = releaseFileUrl(version, `Cmdr_${version}_${fileArch}.dmg`)
-
-  // Drop bot/unfurler hits before they reach D1, but still serve the file.
-  const userAgent = c.req.header('user-agent')
-  if (isBotUserAgent(userAgent)) {
-    return c.redirect(redirectUrl, 302)
-  }
-
-  const cf = c.req.raw.cf as { country?: string; continent?: string } | undefined
-  const country = cf?.country ?? 'unknown'
-  const continent = cf?.continent ?? 'unknown'
-  const source = classifyDownloadSource(userAgent, c.req.query('src'))
-  // First-touch channel the website captured on the visitor's first page view and forwarded here.
-  const ref = sanitizeRef(c.req.query('ref'))
-  // The hit's own `Referer` host + User-Agent: the only first-party signal for a direct `/download`
-  // link (no `?ref`), so the dashboard can attribute the otherwise-unknown downloads. See migration 0010.
-  const referer = sanitizeRefererHost(c.req.header('referer'))
-  const storedUserAgent = cappedUserAgent(userAgent)
-  // Classify at WRITE time as well as read time, so the install-plausibility signal outlives the raw
-  // UA that the retention sweep clears after `DOWNLOAD_IDENTIFIER_RETENTION_DAYS`. Legacy rows have a
-  // NULL family and fall back to classifying their stored UA (`funnel.ts`).
-  const uaFamily = classifyUaFamily(userAgent)
-
-  // Peppered, daily-salted IP hash: lets the dashboard count distinct same-day downloaders
-  // (`COUNT(DISTINCT hashed_ip)`) without storing a recoverable address or anything linkable across
-  // days. Same scheme as `/update-check` above; see `hashCallerIp` for why both parts matter.
-  const hashedIp = await hashCallerIp(callerIp(c.req), todayUtc(), c.env.IP_HASH_PEPPER)
-
-  // Write to D1 (fire-and-forget). One row per request: the raw count stays `COUNT(*)`.
-  const dbWrite = c.env.TELEMETRY_DB.prepare(
-    `INSERT INTO downloads (app_version, arch, country, continent, hashed_ip, source, ref, referer, user_agent, ua_family) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  )
-    .bind(version, arch, country, continent, hashedIp, source, ref, referer, storedUserAgent, uaFamily)
-    .run()
-    .catch(() => {})
-
-  try {
-    c.executionCtx.waitUntil(dbWrite)
-  } catch {
-    // executionCtx unavailable (for example, in tests); await inline as fallback
-    await dbWrite
-  }
-
-  return c.redirect(redirectUrl, 302)
 })
 
 export { telemetry }

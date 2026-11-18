@@ -7,6 +7,7 @@ import { funnelCountries } from './admin/funnel-countries'
 import { featureUsage } from './admin/feature-usage'
 import { activeInstalls } from './admin/active-installs'
 import { telemetry } from './telemetry/telemetry'
+import { download } from './telemetry/download'
 import { heartbeat } from './telemetry/heartbeat'
 import { errorReport } from './telemetry/error-report'
 import { errorReportAmend } from './telemetry/error-report-amend'
@@ -53,6 +54,7 @@ app.route('/', funnelCountries)
 app.route('/', featureUsage)
 app.route('/', activeInstalls)
 app.route('/', telemetry)
+app.route('/', download)
 app.route('/', heartbeat)
 app.route('/', likes)
 app.route('/', errorReport)

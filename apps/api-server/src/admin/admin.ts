@@ -124,22 +124,24 @@ admin.get('/admin/downloads', async (c) => {
   // retention-proof union as `/admin/update-activity`, one grouping so a distinct count is never
   // summed across groups.
   const { results } = await c.env.TELEMETRY_DB.prepare(
-    `SELECT live.date, live.version, live.arch, live.country, live.source, live.count,
+    `SELECT live.date, live.version, live.os, live.arch, live.country, live.source, live.count,
                 COALESCE(rollup.unique_downloaders, live.uniqueCount) AS uniqueCount
          FROM (
-             SELECT date(created_at) AS date, app_version AS version, arch, country,
+             SELECT date(created_at) AS date, app_version AS version, os, arch, country,
                     COALESCE(source, 'other') AS source,
                     COUNT(*) AS count, COUNT(DISTINCT hashed_ip) AS uniqueCount
              FROM downloads ${whereClause}
-             GROUP BY date, version, arch, country, source
+             GROUP BY date, version, os, arch, country, source
          ) AS live
          LEFT JOIN downloads_daily_unique AS rollup
-             ON rollup.date = live.date AND rollup.app_version = live.version
+             ON rollup.date = live.date AND rollup.app_version = live.version AND rollup.os = live.os
              AND rollup.arch = live.arch AND rollup.country = live.country AND rollup.source = live.source
          ORDER BY live.date ASC`,
   ).all<{
     date: string
     version: string
+    /** The file's OS (`macos`, `windows`, `linux`); every row before migration 0033 is `macos`. */
+    os: string
     arch: string
     country: string
     source: string

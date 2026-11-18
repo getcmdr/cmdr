@@ -5,6 +5,8 @@ import { fetchWorkerEndpoint } from './worker-endpoint.js'
 
 export interface DownloadRow {
   version: string
+  /** The file's OS: `macos`, `windows`, or `linux`. `macos` for every row from a Worker older than the field. */
+  os: string
   arch: string
   country: string
   /** 'website' | 'homebrew' | 'other'. See the `/download` handler in the api-server. */
@@ -53,6 +55,8 @@ export function sinceDay(range: TimeRange, now: Date): string {
 interface WorkerDownloadRow {
   date: string
   version: string
+  /** Absent from a Worker older than migration 0033, which only ever served the macOS DMG. */
+  os?: string
   arch: string
   country: string
   source: string
@@ -69,6 +73,7 @@ interface WorkerUpdateActivityRow {
 export function parseDownloadRows(raw: WorkerDownloadRow[]): DownloadRow[] {
   return raw.map((row) => ({
     version: row.version,
+    os: row.os ?? 'macos',
     arch: row.arch,
     country: row.country,
     source: row.source,

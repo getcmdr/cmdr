@@ -586,7 +586,7 @@ describe('POST /heartbeat: country and install channel', () => {
     const { db, batched } = createMockD1()
     const res = await postHeartbeat({ ...validBeat, installChannel: 'homebrew' }, createBindings({ TELEMETRY_DB: db }))
     expect(res.status).toBe(204)
-    expect(heartbeatArgs(batched).slice(8)).toEqual(['homebrew', '2026-11-10 12:00:00'])
+    expect(heartbeatArgs(batched).slice(8)).toEqual(['homebrew', '2026-11-10 12:00:00', null])
     // The summary's first beat is the very timestamp the beat row got.
     expect(summaryArgs(batched)).toEqual([validBeat.analId, '2026-11-10 12:00:00', null, 'homebrew'])
   })
@@ -606,5 +606,23 @@ describe('POST /heartbeat: country and install channel', () => {
     const res = await postHeartbeat({ ...validBeat, installChannel: 'mas' }, createBindings({ TELEMETRY_DB: db }))
     expect(res.status).toBe(204)
     expect(heartbeatArgs(batched)[8]).toBeNull()
+  })
+
+  it('stores the OS the app names', async () => {
+    const { db, batched } = createMockD1()
+    const res = await postHeartbeat({ ...validBeat, os: 'windows' }, createBindings({ TELEMETRY_DB: db }))
+    expect(res.status).toBe(204)
+    expect(heartbeatArgs(batched)[10]).toBe('windows')
+  })
+
+  it.each([
+    ['absent (an older client)', {}],
+    ['null', { os: null }],
+    ['a value this server does not know', { os: 'freebsd' }],
+  ])('stores NULL os rather than failing the beat when %s', async (_label, extra) => {
+    const { db, batched } = createMockD1()
+    const res = await postHeartbeat({ ...validBeat, ...extra }, createBindings({ TELEMETRY_DB: db }))
+    expect(res.status).toBe(204)
+    expect(heartbeatArgs(batched)[10]).toBeNull()
   })
 })

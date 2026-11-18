@@ -73,6 +73,8 @@ export type Bindings = {
   SUPPORT_EMAIL: string
   // "sandbox" (default) or "live": controls which Paddle API to use for /validate
   PADDLE_ENVIRONMENT?: string
+  // Comma-separated OSes `/download` serves (`macos,windows`); absent means macOS only. `telemetry/download.ts`.
+  PUBLIC_DOWNLOAD_OSES?: string
   // Price IDs for license type mapping
   PRICE_ID_COMMERCIAL_SUBSCRIPTION?: string
   PRICE_ID_COMMERCIAL_PERPETUAL?: string
