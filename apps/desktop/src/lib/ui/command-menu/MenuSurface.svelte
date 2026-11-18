@@ -148,6 +148,7 @@
                 class="command-menu-row"
                 class:is-highlighted={highlighted}
                 class:by-keyboard={highlighted && surface.highlightBy === 'keyboard'}
+                class:has-focus={isActive && highlighted && surface.highlightBy === 'keyboard'}
                 class:is-open={isOpenSubmenuRow(index)}
                 class:is-disabled={!live}
                 role={roleOf(row)}
@@ -286,6 +287,11 @@
         width: var(--spacing-menu-glyph-column);
     }
 
+    /* The header line starts where the labels do, glyph column or not. */
+    [data-has-glyphs] .command-menu-header {
+        padding-inline-start: calc(var(--spacing-menu-row-padding-start) + var(--spacing-menu-glyph-column));
+    }
+
     .command-menu-glyph-box {
         display: inline-flex;
         align-items: center;
@@ -353,7 +359,7 @@
         margin: var(--spacing-menu-row-margin-block) var(--spacing-menu-row-margin-inline);
         padding: var(--spacing-menu-row-padding-top) var(--spacing-menu-row-padding-end)
             var(--spacing-menu-row-padding-bottom)
-            calc(var(--spacing-menu-row-padding-start) + var(--spacing-menu-glyph-column));
+            calc(var(--spacing-menu-row-padding-start) + var(--spacing-menu-glyph-column-empty));
         overflow: hidden;
         color: var(--color-menu-header-fg);
         font-size: var(--font-menu-header-size);
@@ -401,7 +407,7 @@
 
     /* Windows' system focus visual: a 2 px outer ring and a 1 px inner one, drawn only on the
        row that holds focus (zero-width in the house look). */
-    .command-menu-row.by-keyboard:focus {
+    .command-menu-row.has-focus {
         box-shadow:
             inset 0 0 0 var(--spacing-menu-focus-outer) var(--color-menu-focus-outer),
             inset 0 0 0 calc(var(--spacing-menu-focus-outer) + var(--spacing-menu-focus-inner))

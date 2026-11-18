@@ -90,8 +90,8 @@
   /* Keyboard focus ring (none today: the highlighted row is the cursor) */
   --color-menu-focus-outer: transparent;
   --color-menu-focus-inner: transparent;
-  --spacing-menu-focus-outer: 0;
-  --spacing-menu-focus-inner: 0;
+  --spacing-menu-focus-outer: 0px;
+  --spacing-menu-focus-inner: 0px;
 
   /* Menu bar */
   --color-menu-bar-bg: var(--color-bg-glass);
@@ -195,7 +195,7 @@
      menu without one (the placeholder states apply only when one is present). */
   --spacing-menu-glyph-size: 12px;
   --spacing-menu-glyph-column: 28px;
-  --spacing-menu-glyph-column-empty: 0;
+  --spacing-menu-glyph-column-empty: 0px; /* a length, since `calc()` refuses a bare 0 */
 
   /* WinUI's menus have no header line; Cmdr's context menus lead with one, drawn as caption
      text (CaptionTextBlockFontSize 12) in TextFillColorSecondary, the accelerator text's color. */
