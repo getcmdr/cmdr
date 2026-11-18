@@ -123,17 +123,8 @@ func flipCrate(repo, crate string, cargoArgs []string, maxRounds int, format boo
 		libRules := func(diags []diagnostic) ([]edit, error) {
 			return libPhaseRoundEdits(repo, crate, rustFiles, workspaceFiles, diags)
 		}
-		before := report.Rounds
-		libLast, libChecked, err := fixpoint(repo, crate, "check-lib", cargoArgs, keep, maxRounds, &report, libRules)
-		if err != nil {
+		if last, checked, err = libPhase(repo, crate, cargoArgs, keep, maxRounds, &report, libRules, rules); err != nil {
 			return report, err
-		}
-		if !libChecked || hasErrors(libLast) {
-			last, checked = libLast, libChecked
-		} else if report.Rounds-before > 1 {
-			if last, checked, err = fixpoint(repo, crate, "check", cargoArgs, keep, maxRounds, &report, rules); err != nil {
-				return report, err
-			}
 		}
 	}
 	// The rewrites can make code clippy flags (a `vec!` now only iterated, a `to_path_buf()`
@@ -153,6 +144,18 @@ func flipCrate(repo, crate string, cargoArgs []string, maxRounds int, format boo
 		}
 	}
 	return report, nil
+}
+
+// libPhase runs the lib phase's fixpoint, then the all-targets one again when it edited,
+// answering the last build's diagnostics and whether it succeeded.
+func libPhase(repo, crate string, cargoArgs []string, keep func(string) bool, maxRounds int, report *crateReport,
+	libRules, rules func([]diagnostic) ([]edit, error)) ([]diagnostic, bool, error) {
+	before := report.Rounds
+	last, checked, err := fixpoint(repo, crate, "check-lib", cargoArgs, keep, maxRounds, report, libRules)
+	if err != nil || !checked || hasErrors(last) || report.Rounds-before == 1 {
+		return last, checked, err
+	}
+	return fixpoint(repo, crate, "check", cargoArgs, keep, maxRounds, report, rules)
 }
 
 // fixpoint runs `cargo <tool>` and applies what `rules` makes of its diagnostics until a
