@@ -164,7 +164,15 @@
         user-select: none;
         -webkit-user-select: none;
         cursor: default;
-        forced-color-adjust: none;
+    }
+
+    /* Contrast themes: on the Windows look the tokens already speak system colors, so the browser
+       mustn't force them again (`app-menu.css` § Windows contrast themes). The guard is the Safari
+       15.4 floor's (`scripts/vite-webkit-css-floor.ts`). */
+    @supports (forced-color-adjust: none) {
+        .menu-bar {
+            forced-color-adjust: var(--color-menu-forced-adjust);
+        }
     }
 
     .menu-bar-title {

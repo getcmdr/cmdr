@@ -112,6 +112,9 @@
   --spacing-menu-bar-item-border: 0;
   --color-menu-bar-item-border: transparent;
   --color-menu-bar-item-border-hover: transparent;
+  /* `forced-color-adjust` on the bar and the surfaces: the browser forces the house look's colors in
+     a contrast theme as it does any element's (only the Windows look speaks system colors itself) */
+  --color-menu-forced-adjust: auto;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -268,6 +271,8 @@
   --spacing-menu-bar-item-border: 0;
   --color-menu-bar-item-border: transparent;
   --color-menu-bar-item-border-hover: transparent;
+  /* Outside contrast themes the menus are styled as any element is */
+  --color-menu-forced-adjust: auto;
 }
 
 /* === Windows 11, dark (WinUI's `Default` dictionaries, which are the dark theme) === */
@@ -317,17 +322,15 @@
 }
 
 /* === Windows with transparency effects off ===
-   Acrylic falls back to its FallbackColor: #F9F9F9 light, #2C2C2C dark, opaque, no blur.
-   Kept out of forced colors, whose block below must win over it. */
-@media (forced-colors: none) {
-  :root[data-look='windows'].reduce-transparency {
-    --color-menu-surface-bg: #f9f9f9;
-    --color-menu-surface-tint: transparent;
-    --glass-menu-backdrop: none;
-  }
+   Acrylic falls back to its FallbackColor: #F9F9F9 light, #2C2C2C dark, opaque, no blur. A
+   contrast theme below wins over it: its selector list names this one too, later in the file. */
+:root[data-look='windows'].reduce-transparency {
+  --color-menu-surface-bg: #f9f9f9;
+  --color-menu-surface-tint: transparent;
+  --glass-menu-backdrop: none;
 }
 
-@media (forced-colors: none) and (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: dark) {
   :root[data-look='windows'].reduce-transparency {
     --color-menu-surface-bg: #2c2c2c;
   }
@@ -337,72 +340,80 @@
    WinUI's `HighContrast` dictionaries, each `SystemColor…Color` as its CSS system color:
    Window → Canvas, WindowText → CanvasText, ButtonFace → ButtonFace, ButtonText →
    ButtonText, Highlight → Highlight, HighlightText → HighlightText, GrayText → GrayText.
-   No backdrop, tint, or shadow. The component sets `forced-color-adjust: none` on its
-   surface so the browser keeps these exact pairs (a highlighted row's Highlight fill). */
-@media (forced-colors: active) {
-  :root[data-look='windows'] {
-    /* AcrylicBackgroundFillColorDefaultBrush and MenuFlyoutPresenterBackground (HighContrast) → SystemColorWindowColor */
-    --color-menu-surface-bg: Canvas;
-    --color-menu-surface-tint: transparent;
-    --glass-menu-backdrop: none;
-    /* MenuFlyoutPresenterBorderBrush → SystemColorWindowTextColor, thickness 2 */
-    --color-menu-surface-border: CanvasText;
-    --spacing-menu-surface-border: 2px;
-    --shadow-menu-surface: none;
-    /* MenuFlyoutItemForeground → SystemColorButtonTextColor */
-    --color-menu-row-fg: ButtonText;
-    /* MenuFlyoutItemForegroundPointerOver / …Pressed → SystemColorHighlightTextColor */
-    --color-menu-row-fg-hover: HighlightText;
-    /* No fill under the focused row, so it keeps the rest color */
-    --color-menu-row-fg-focus: ButtonText;
-    /* MenuFlyoutSubItemForegroundSubMenuOpened → SystemColorHighlightColor */
-    --color-menu-row-fg-open: Highlight;
-    /* MenuFlyoutItemForegroundDisabled → SystemColorGrayTextColor */
-    --color-menu-row-fg-disabled: GrayText;
-    /* MenuFlyoutItemBackgroundPointerOver / …Pressed → SystemColorHighlightColor */
-    --color-menu-row-bg-hover: Highlight;
-    /* Focus is the two rings (FocusStrokeColor* below), never a fill, here too */
-    --color-menu-row-bg-focus: transparent;
-    --color-menu-row-bg-pressed: Highlight;
-    /* MenuFlyoutSubItemBackgroundSubMenuOpened → SystemControlTransparentBrush (the label
+   No backdrop, tint, or shadow. `--color-menu-forced-adjust: none` tells the components to set
+   `forced-color-adjust: none`, so the browser keeps these exact pairs (a highlighted row's
+   Highlight fill).
+   The `@supports` guard is what the Safari 15.4 floor accepts (`scripts/vite-webkit-css-floor.ts`):
+   every engine with contrast themes (Chromium, so WebView2, and Firefox) reads
+   `forced-color-adjust`, and WebKit has no contrast themes to follow. */
+@supports (forced-color-adjust: none) {
+  @media (forced-colors: active) {
+    :root[data-look='windows'],
+    :root[data-look='windows'].reduce-transparency {
+      --color-menu-forced-adjust: none;
+      /* AcrylicBackgroundFillColorDefaultBrush and MenuFlyoutPresenterBackground (HighContrast) → SystemColorWindowColor */
+      --color-menu-surface-bg: Canvas;
+      --color-menu-surface-tint: transparent;
+      --glass-menu-backdrop: none;
+      /* MenuFlyoutPresenterBorderBrush → SystemColorWindowTextColor, thickness 2 */
+      --color-menu-surface-border: CanvasText;
+      --spacing-menu-surface-border: 2px;
+      --shadow-menu-surface: none;
+      /* MenuFlyoutItemForeground → SystemColorButtonTextColor */
+      --color-menu-row-fg: ButtonText;
+      /* MenuFlyoutItemForegroundPointerOver / …Pressed → SystemColorHighlightTextColor */
+      --color-menu-row-fg-hover: HighlightText;
+      /* No fill under the focused row, so it keeps the rest color */
+      --color-menu-row-fg-focus: ButtonText;
+      /* MenuFlyoutSubItemForegroundSubMenuOpened → SystemColorHighlightColor */
+      --color-menu-row-fg-open: Highlight;
+      /* MenuFlyoutItemForegroundDisabled → SystemColorGrayTextColor */
+      --color-menu-row-fg-disabled: GrayText;
+      /* MenuFlyoutItemBackgroundPointerOver / …Pressed → SystemColorHighlightColor */
+      --color-menu-row-bg-hover: Highlight;
+      /* Focus is the two rings (FocusStrokeColor* below), never a fill, here too */
+      --color-menu-row-bg-focus: transparent;
+      --color-menu-row-bg-pressed: Highlight;
+      /* MenuFlyoutSubItemBackgroundSubMenuOpened → SystemControlTransparentBrush (the label
        turns Highlight instead: MenuFlyoutSubItemForegroundSubMenuOpened) */
-    --color-menu-row-bg-open: transparent;
-    /* MenuFlyoutItemKeyboardAcceleratorTextForeground → SystemColorWindowTextColor;
+      --color-menu-row-bg-open: transparent;
+      /* MenuFlyoutItemKeyboardAcceleratorTextForeground → SystemColorWindowTextColor;
        …PointerOver → SystemColorHighlightTextColor; …Disabled → SystemColorGrayTextColor */
-    --color-menu-shortcut-fg: CanvasText;
-    --color-menu-shortcut-fg-hover: HighlightText;
-    --color-menu-shortcut-fg-focus: CanvasText;
-    --color-menu-shortcut-fg-disabled: GrayText;
-    /* MenuFlyoutSubItemChevron → SystemColorButtonTextColor; …Pressed → SystemColorHighlightTextColor */
-    --color-menu-check-fg: ButtonText;
-    --color-menu-chevron-fg: ButtonText;
-    /* MenuFlyoutSubItemChevronPointerOver → SystemColorHighlightTextColor */
-    --color-menu-chevron-fg-hover: HighlightText;
-    --color-menu-chevron-fg-focus: ButtonText;
-    --color-menu-chevron-fg-pressed: HighlightText;
-    /* The header line is accelerator-like text: SystemColorWindowTextColor */
-    --color-menu-header-fg: CanvasText;
-    /* MenuFlyoutSeparatorBackground → SystemColorWindowTextColor */
-    --color-menu-separator: CanvasText;
-    /* FocusStrokeColorOuter → SystemColorWindowTextColor, FocusStrokeColorInner → SystemColorWindowColor */
-    --color-menu-focus-outer: CanvasText;
-    --color-menu-focus-inner: Canvas;
-    /* MenuBarBackground / MenuBarItemBackground → SystemControlTransparentBrush */
-    --color-menu-bar-bg: transparent;
-    /* MenuBarItemForeground → SystemColorButtonTextColor */
-    --color-menu-bar-item-fg: ButtonText;
-    /* MenuBarItemBackgroundPointerOver → SystemControlBackgroundListLowBrush; …Pressed and
+      --color-menu-shortcut-fg: CanvasText;
+      --color-menu-shortcut-fg-hover: HighlightText;
+      --color-menu-shortcut-fg-focus: CanvasText;
+      --color-menu-shortcut-fg-disabled: GrayText;
+      /* MenuFlyoutSubItemChevron → SystemColorButtonTextColor; …Pressed → SystemColorHighlightTextColor */
+      --color-menu-check-fg: ButtonText;
+      --color-menu-chevron-fg: ButtonText;
+      /* MenuFlyoutSubItemChevronPointerOver → SystemColorHighlightTextColor */
+      --color-menu-chevron-fg-hover: HighlightText;
+      --color-menu-chevron-fg-focus: ButtonText;
+      --color-menu-chevron-fg-pressed: HighlightText;
+      /* The header line is accelerator-like text: SystemColorWindowTextColor */
+      --color-menu-header-fg: CanvasText;
+      /* MenuFlyoutSeparatorBackground → SystemColorWindowTextColor */
+      --color-menu-separator: CanvasText;
+      /* FocusStrokeColorOuter → SystemColorWindowTextColor, FocusStrokeColorInner → SystemColorWindowColor */
+      --color-menu-focus-outer: CanvasText;
+      --color-menu-focus-inner: Canvas;
+      /* MenuBarBackground / MenuBarItemBackground → SystemControlTransparentBrush */
+      --color-menu-bar-bg: transparent;
+      /* MenuBarItemForeground → SystemColorButtonTextColor */
+      --color-menu-bar-item-fg: ButtonText;
+      /* MenuBarItemBackgroundPointerOver → SystemControlBackgroundListLowBrush; …Pressed and
        …Selected → SystemControlBackgroundListMediumBrush: both SystemColorButtonFaceColor
        (generic.xaml) */
-    --color-menu-bar-item-bg-hover: ButtonFace;
-    --color-menu-bar-item-bg-focus: transparent;
-    --color-menu-bar-item-bg-pressed: ButtonFace;
-    --color-menu-bar-item-bg-open: ButtonFace;
-    /* MenuBarItemBorderThickness 2; MenuBarItemBorderBrush → SystemControlForegroundBaseMediumLowBrush
+      --color-menu-bar-item-bg-hover: ButtonFace;
+      --color-menu-bar-item-bg-focus: transparent;
+      --color-menu-bar-item-bg-pressed: ButtonFace;
+      --color-menu-bar-item-bg-open: ButtonFace;
+      /* MenuBarItemBorderThickness 2; MenuBarItemBorderBrush → SystemControlForegroundBaseMediumLowBrush
        → SystemColorButtonTextColor; …PointerOver / …Pressed / …Selected →
        SystemControlHighlightBaseMedium(Low)Brush → SystemColorHighlightColor */
-    --spacing-menu-bar-item-border: 2px;
-    --color-menu-bar-item-border: ButtonText;
-    --color-menu-bar-item-border-hover: Highlight;
+      --spacing-menu-bar-item-border: 2px;
+      --color-menu-bar-item-border: ButtonText;
+      --color-menu-bar-item-border-hover: Highlight;
+    }
   }
 }

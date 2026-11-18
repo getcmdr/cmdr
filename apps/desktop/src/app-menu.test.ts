@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { contrastRatio, parseHex, toHex } from '#lib/utils/srgb-mix.js'
+import { findCssBeyondSafari15 } from '../scripts/vite-webkit-css-floor.ts'
 
 // Read from disk: Vitest hands a `.css?raw` import back empty (it skips CSS by default).
 const menuCss = readFileSync(path.join(import.meta.dirname, 'app-menu.css'), 'utf8')
@@ -29,7 +30,7 @@ function parseBlocks(css: string): Block[] {
   while (cursor < source.length) {
     const ch = source[cursor]
     if (ch === '{') {
-      const prelude = pending.trim()
+      const prelude = pending.trim().replace(/\s+/g, ' ')
       pending = ''
       if (prelude.startsWith('@')) {
         stack.push(prelude)
@@ -64,12 +65,15 @@ function block(selector: string, atRules: string[] = []): Map<string, string> {
 
 const WINDOWS = ":root[data-look='windows']"
 const DARK = '@media (prefers-color-scheme: dark)'
+/** Contrast themes, behind the guard the Safari 15.4 floor accepts (`scripts/vite-webkit-css-floor.ts`). */
+const FORCED_GUARD = '@supports (forced-color-adjust: none)'
 const FORCED = '@media (forced-colors: active)'
+const REDUCED = `${WINDOWS}.reduce-transparency`
 
 const house = block(':root')
 const light = block(WINDOWS)
 const dark = block(WINDOWS, [DARK])
-const forced = block(WINDOWS, [FORCED])
+const forced = block(`${WINDOWS}, ${REDUCED}`, [FORCED_GUARD, FORCED])
 
 /** A token whose value changes with the theme: a color, a shadow, or the backdrop. */
 function isThemed(name: string): boolean {
@@ -117,14 +121,26 @@ describe('menu look tokens', () => {
     expect(forced.get('--shadow-menu-surface')).toBe('none')
   })
 
-  it('drops the blur and goes opaque without transparency effects, outside contrast themes', () => {
-    const reduced = block(`${WINDOWS}.reduce-transparency`, ['@media (forced-colors: none)'])
+  it('drops the blur and goes opaque without transparency effects', () => {
+    const reduced = block(REDUCED)
     expect(reduced.get('--glass-menu-backdrop')).toBe('none')
     expect(reduced.get('--color-menu-surface-bg')).toBe('#f9f9f9')
-    const reducedDark = block(`${WINDOWS}.reduce-transparency`, [
-      '@media (forced-colors: none) and (prefers-color-scheme: dark)',
-    ])
-    expect(reducedDark.get('--color-menu-surface-bg')).toBe('#2c2c2c')
+    expect(block(REDUCED, [DARK]).get('--color-menu-surface-bg')).toBe('#2c2c2c')
+  })
+
+  it('lets a contrast theme win over reduced transparency: same selector weight, later in the file', () => {
+    const indexOf = (selector: string, atRules: string[]) =>
+      blocks.findIndex((b) => b.selector === selector && b.atRules.join('|') === atRules.join('|'))
+    expect(indexOf(`${WINDOWS}, ${REDUCED}`, [FORCED_GUARD, FORCED])).toBeGreaterThan(indexOf(REDUCED, [DARK]))
+  })
+
+  it('keeps the browser forcing colors on every look but Windows', () => {
+    expect(house.get('--color-menu-forced-adjust')).toBe('auto')
+    expect(forced.get('--color-menu-forced-adjust')).toBe('none')
+  })
+
+  it('uses only CSS that Safari 15.4 reads, or guards it (the build fails otherwise)', () => {
+    expect(findCssBeyondSafari15(menuCss)).toEqual([])
   })
 })
 

@@ -1548,11 +1548,13 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
 - **Dismissal**: a click elsewhere, the window losing focus, a resize (context menus), a scroll of what the context menu
   was opened on (`anchorElement`), and a dialog opening close it without moving focus. The bar goes `inert` under a
   modal surface, as Win32 disables an owner window's bar.
-- **Look**: `forced-color-adjust: none` on the surfaces and the bar, since the tokens already speak system colors under
-  `forced-colors: active`. A pointer row shows the hover fill; a keyboard row `--color-menu-row-bg-focus` plus WinUI's
-  system focus visual (2 px outer ring, 1 px inner, only on the focused row): on Windows no fill, from
-  `MenuFlyoutItem_Partial.cpp`'s `Focused` state (`docs/notes/windows-port/menu-look-tokens.md`). ❗ Unchecked against
-  Notepad: David's look check decides it. No motion: WinUI switches states instantly.
+- **Look**: `forced-color-adjust: var(--color-menu-forced-adjust)` on the surfaces and the bar, inside the floor's
+  `@supports` guard: `none` on the Windows look under `forced-colors: active`, whose tokens already speak system colors
+  (`../../DETAILS.md` § Menu look tokens). A pointer row shows the hover fill; a keyboard row
+  `--color-menu-row-bg-focus` plus WinUI's system focus visual (2 px outer ring, 1 px inner, only on the focused row):
+  on Windows no fill, from `MenuFlyoutItem_Partial.cpp`'s `Focused` state
+  (`docs/notes/windows-port/menu-look-tokens.md`). ❗ Unchecked against Notepad: David's look check decides it. No
+  motion: WinUI switches states instantly.
 - **The demo** puts `DEMO_MENU_CLASS` on its bar and menus and sets the tokens to macOS 27's there
   (`../demo/menu-bar-style.ts`), so the shared surfaces draw the Mac menus the demo always had.
 - Decision/Why: a component of its own, ❌ not `Menu.svelte` extended. The house `Menu` is a picker over SECTIONS (rich

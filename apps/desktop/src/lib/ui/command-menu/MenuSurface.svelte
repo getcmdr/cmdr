@@ -255,9 +255,15 @@
         -webkit-user-select: none;
         cursor: default;
         outline: none;
-        /* Contrast themes: the tokens already speak system colors, so the browser mustn't force
-           them again (it would drop a highlighted row's Highlight fill back to Canvas). */
-        forced-color-adjust: none;
+    }
+
+    /* Contrast themes: on the Windows look the tokens already speak system colors, so the browser
+       mustn't force them again (it would drop a highlighted row's Highlight fill back to Canvas).
+       The guard is the Safari 15.4 floor's (`scripts/vite-webkit-css-floor.ts`). */
+    @supports (forced-color-adjust: none) {
+        .command-menu-surface {
+            forced-color-adjust: var(--color-menu-forced-adjust);
+        }
     }
 
     .command-menu-row {

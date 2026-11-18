@@ -84,9 +84,13 @@ component stays one implementation and reads only these.
 - **Reduced transparency** (the `reduce-transparency` class, which task 40 fills from Windows' transparency effects):
   acrylic's own opaque fallback color and no blur.
 - **`forced-colors: active`** (Windows contrast themes): WinUI's `HighContrast` mapping as CSS system colors, no
-  backdrop or shadow. The reduced-transparency block sits in `@media (forced-colors: none)`, since its selector outranks
-  this one. A component painting these must set `forced-color-adjust: none` on the surface, or Chromium forces the
-  highlighted row's `Highlight` back to `Canvas`.
+  backdrop or shadow. Its selector list names the reduced-transparency selector too and comes later, so it wins over
+  that block at equal weight. It sets `--color-menu-forced-adjust: none`, which the bar and the surfaces read into
+  `forced-color-adjust`, or Chromium forces the highlighted row's `Highlight` back to `Canvas`; every other look keeps
+  `auto`, so the browser forces the house look as it does any element.
+- **Gotcha: the Safari 15.4 floor fails the build on `(forced-colors)` and `forced-color-adjust`**
+  (`scripts/vite-webkit-css-floor.ts`), so both sit inside `@supports (forced-color-adjust: none)`. Every engine with
+  contrast themes (Chromium, so WebView2, and Firefox) passes that guard; WebKit has no contrast themes to follow.
 - **Gotcha: no `color-mix()` in the house defaults.** They're spelled out as `rgba()` of `--color-text-primary`, with a
   dark twin, because old WebKit drops a `color-mix()` value (`lib/utils/CLAUDE.md`).
 - **Decision/Why: a file of its own, with hex allowed.** `app.css` is past its length budget, and the Windows values are
