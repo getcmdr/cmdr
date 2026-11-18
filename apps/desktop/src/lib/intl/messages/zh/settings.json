@@ -1630,7 +1630,7 @@
   },
   "settings.analytics.enabled.description": "{platform, select, windows {请打开这一项，帮助我们在公开测试期间了解哪些功能更重要。\n统计不会关联到你的姓名或邮箱，而是关联到一个随机标识符。\nCmdr 绝不会发送文件名、路径、搜索词或提示词。\n关闭后，Cmdr 不会发送任何统计。} other {请打开这一项，帮助我们在公开测试期间了解哪些功能更重要。\n统计不会关联到你的姓名或邮箱，而是关联到一个随机标识符。\nCmdr 绝不会发送文件名、路径、搜索词或提示词。\n关闭后，Cmdr 不会发送任何统计。}}",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
+    "sourceHash": "dbbd8c8"
   },
   "settings.analytics.enabled.keywords": "分析、使用情况、统计、使用统计、隐私、遥测、测试版、公测、跟踪、追踪、退出",
   "@settings.analytics.enabled.keywords": {
@@ -1654,7 +1654,7 @@
   },
   "settings.updates.crashReports.description": "{platform, select, macos {当 Cmdr 意外退出或在后台出现问题时，自动发送一份报告。包含应用版本、macOS 版本，以及代码中出现问题的部分。绝不包含文件名或个人数据。} windows {当 Cmdr 意外退出或在后台出现问题时，自动发送一份报告。包含应用版本、Windows 版本，以及代码中出现问题的部分。绝不包含文件名或个人数据。} other {当 Cmdr 意外退出或在后台出现问题时，自动发送一份报告。包含应用版本、Linux 发行版及其版本，以及代码中出现问题的部分。绝不包含文件名或个人数据。}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "3042746"
   },
   "settings.updates.crashReports.keywords": "崩溃、闪退、报告、崩溃报告、隐私、遥测、问题、错误报告",
   "@settings.updates.crashReports.keywords": {
@@ -1994,7 +1994,7 @@
   },
   "settings.advanced.logLlmCalls.description": "{platform, select, macos {为方便调试，把每次 AI 请求和响应保存到本地文件夹（llm-logs）中。这些文件保留在你的 Mac 上，其中包含 Cmdr 发送给你的提供方的文件名和路径。} windows {为方便调试，把每次 AI 请求和响应保存到本地文件夹（llm-logs）中。这些文件保留在你的电脑上，其中包含 Cmdr 发送给你的提供方的文件名和路径。} other {为方便调试，把每次 AI 请求和响应保存到本地文件夹（llm-logs）中。这些文件保留在你的电脑上，其中包含 Cmdr 发送给你的提供方的文件名和路径。}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "427e138"
   },
   "settings.advanced.logLlmCalls.keywords": "人工智能、日志、调试、请求、响应、回复、提示词、模型",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2507,13 +2507,13 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr 使用你在“设置 › AI”中设置好的 AI 提供方和密钥（{provider}）。}}",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr 使用你在“首选项 › AI”中设置好的 AI 提供方和密钥（{provider}）。} linuxKde {Cmdr 使用你在“配置 Cmdr › AI”中设置好的 AI 提供方和密钥（{provider}）。} other {Cmdr 使用你在“设置 › AI”中设置好的 AI 提供方和密钥（{provider}）。}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
+    "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {在“设置 › AI”中开启一个 AI 提供方，即可开始聊天。}}",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {在“首选项 › AI”中开启一个 AI 提供方，即可开始聊天。} linuxKde {在“配置 Cmdr › AI”中开启一个 AI 提供方，即可开始聊天。} other {在“设置 › AI”中开启一个 AI 提供方，即可开始聊天。}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
+    "sourceHash": "0196a5c"
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr 模型",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2957,9 +2957,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {设置部分}}",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {首选项部分} other {设置部分}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "4fa3c2e"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {没有匹配的设置} other {{countText} 个部分匹配}}",
   "@settings.sidebar.matchCount": {
@@ -3213,7 +3213,7 @@
   },
   "settings.securityLog.enabled.description": "{platform, select, macos {在这台 Mac 上保留一个小文件，记下与安全相关的更改和拒绝，比如对云端 AI 的同意、安装的更新，或被 MCP 服务器拒绝的 App。这个文件不含文件名、文件内容或密码，也绝不会离开你的 Mac。} windows {在这台电脑上保留一个小文件，记下与安全相关的更改和拒绝，比如对云端 AI 的同意、安装的更新，或被 MCP 服务器拒绝的 App。这个文件不含文件名、文件内容或密码，也绝不会离开你的电脑。} other {在这台电脑上保留一个小文件，记下与安全相关的更改和拒绝，比如对云端 AI 的同意、安装的更新，或被 MCP 服务器拒绝的 App。这个文件不含文件名、文件内容或密码，也绝不会离开你的电脑。}}",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
+    "sourceHash": "7086b00"
   },
   "settings.securityLog.enabled.keywords": "安全、日志、审计、记录、事件、访问、隐私",
   "@settings.securityLog.enabled.keywords": {
@@ -3429,9 +3429,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {设置}}",
+  "settings.window.title": "{platform, select, linuxGnome {首选项} linuxKde {配置 – Cmdr} other {设置}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "80cee55"
   },
   "settings.window.loading": "正在加载设置…",
   "@settings.window.loading": {
@@ -3677,13 +3677,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {“钥匙串访问”中名为“{itemName}”的 {countText} 个项目}}} windows {{count, plural, other {“凭据管理器”中名为“{itemName}”的 {countText} 个项目}}} linuxKde {{count, plural, other {KWallet 中名为“{itemName}”的 {countText} 个项目}}} other {{count, plural, other {你的密钥环中名为“{itemName}”的 {countText} 个项目}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {“钥匙串访问”中名为“{itemName}”的 {countText} 个项目}}} windows {{count, plural, other {“凭据管理器”中名为“{itemName}”的 {countText} 个项目}}} linuxKde {{count, plural, other {KDE 密码库中名为“{itemName}”的 {countText} 个项目}}} other {{count, plural, other {你的密钥环中名为“{itemName}”的 {countText} 个项目}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {“钥匙串访问”中名为“{itemName}”的项目，如果有的话} windows {“凭据管理器”中名为“{itemName}”的项目，如果有的话} linuxKde {KWallet 中名为“{itemName}”的项目，如果有的话} other {你的密钥环中名为“{itemName}”的项目，如果有的话}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {“钥匙串访问”中名为“{itemName}”的项目，如果有的话} windows {“凭据管理器”中名为“{itemName}”的项目，如果有的话} linuxKde {KDE 密码库中名为“{itemName}”的项目，如果有的话} other {你的密钥环中名为“{itemName}”的项目，如果有的话}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {退出 Cmdr} other {退出 Cmdr}}",
   "@settings.dataWipe.quit": {

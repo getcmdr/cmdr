@@ -3,9 +3,9 @@
   "@mtp.connectedToast.title": {
     "sourceHash": "562319d"
   },
-  "mtp.connectedToast.body": "{platform, select, macos {Cmdr 已暂停 macOS 相机守护进程（ptpcamerad），以便访问这个设备。要在其他应用中使用它，请在设置中关闭 MTP 支持。} windows {} linuxGnome {To use this device in another app, disable MTP support in preferences.} other {要在其他应用中使用这个设备，请在设置中关闭 MTP 支持。}}",
+  "mtp.connectedToast.body": "{platform, select, macos {Cmdr 已暂停 macOS 相机守护进程（ptpcamerad），以便访问这个设备。要在其他应用中使用它，请在设置中关闭 MTP 支持。} windows {} linuxGnome {要在其他应用中使用这个设备，请在首选项中关闭 MTP 支持。} other {要在其他应用中使用这个设备，请在设置中关闭 MTP 支持。}}",
   "@mtp.connectedToast.body": {
-    "sourceHash": "74349d8",
+    "sourceHash": "d1c6175",
     "sameAsSourceJustification": "The Windows branch is empty on purpose (Windows shares the device with File Explorer, so the toast has no body line)."
   },
   "mtp.connectedToast.dontShowAgain": "不再显示",

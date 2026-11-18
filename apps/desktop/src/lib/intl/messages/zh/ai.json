@@ -55,9 +55,9 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "{platform, select, linuxGnome {Turn on a provider in Preferences > AI to use AI search.} linuxKde {Turn on a provider in Configure Cmdr > AI to use AI search.} other {在“设置 > AI”中开启一个提供方，即可使用 AI 搜索。}}",
+  "ai.translateError.off.body": "{platform, select, linuxGnome {在“首选项 > AI”中开启一个提供方，即可使用 AI 搜索。} linuxKde {在“配置 Cmdr > AI”中开启一个提供方，即可使用 AI 搜索。} other {在“设置 > AI”中开启一个提供方，即可使用 AI 搜索。}}",
   "@ai.translateError.off.body": {
-    "sourceHash": "d8d6368"
+    "sourceHash": "5e5f8d2"
   },
   "ai.cloudConsent.label": "允许使用云端 AI",
   "@ai.cloudConsent.label": {
@@ -247,25 +247,25 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Finish your provider setup in Preferences > AI, then try again.} linuxKde {Finish your provider setup in Configure Cmdr > AI, then try again.} other {在“设置 > AI”中完成提供方设置，然后重试。}}",
+  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {在“首选项 > AI”中完成提供方设置，然后重试。} linuxKde {在“配置 Cmdr > AI”中完成提供方设置，然后重试。} other {在“设置 > AI”中完成提供方设置，然后重试。}}",
   "@ai.translateError.notConfigured.body": {
-    "sourceHash": "65133a8"
+    "sourceHash": "bf48aec"
   },
   "ai.translateError.noCloudConsent.title": "云端 AI 已关闭",
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Allow it in Preferences > AI, then try again.} linuxKde {Allow it in Configure Cmdr > AI, then try again.} other {请到“设置 > AI”中允许使用，然后重试。}}",
+  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {请到“首选项 > AI”中允许使用，然后重试。} linuxKde {请到“配置 Cmdr > AI”中允许使用，然后重试。} other {请到“设置 > AI”中允许使用，然后重试。}}",
   "@ai.translateError.noCloudConsent.body": {
-    "sourceHash": "fde3eb5"
+    "sourceHash": "4485cc1"
   },
   "ai.translateError.authFailed.title": "那个 API 密钥被拒绝了",
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Check your key in Preferences > AI - it might be wrong or revoked.} linuxKde {Check your key in Configure Cmdr > AI - it might be wrong or revoked.} other {在“设置 > AI”中检查你的密钥，它可能不对或已被吊销。}}",
+  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {在“首选项 > AI”中检查你的密钥，它可能不对或已被吊销。} linuxKde {在“配置 Cmdr > AI”中检查你的密钥，它可能不对或已被吊销。} other {在“设置 > AI”中检查你的密钥，它可能不对或已被吊销。}}",
   "@ai.translateError.authFailed.body": {
-    "sourceHash": "2159d5e"
+    "sourceHash": "4fd6281"
   },
   "ai.translateError.rateLimited.title": "你的 AI 提供方没有余量了",
   "@ai.translateError.rateLimited.title": {
@@ -295,9 +295,9 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Preferences > AI.} linuxKde {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Configure Cmdr > AI.} other {你的模型可能还没回答就用完了 token 预算。试试在“设置 > AI”中换一个更快的模型，比如 gpt-4.1-mini。}}",
+  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {你的模型可能还没回答就用完了 token 预算。试试在“首选项 > AI”中换一个更快的模型，比如 gpt-4.1-mini。} linuxKde {你的模型可能还没回答就用完了 token 预算。试试在“配置 Cmdr > AI”中换一个更快的模型，比如 gpt-4.1-mini。} other {你的模型可能还没回答就用完了 token 预算。试试在“设置 > AI”中换一个更快的模型，比如 gpt-4.1-mini。}}",
   "@ai.translateError.emptyResponse.body": {
-    "sourceHash": "d74db0d"
+    "sourceHash": "b16ff79"
   },
   "ai.translateError.serverError.title": "你的 AI 提供方遇到了问题",
   "@ai.translateError.serverError.title": {
@@ -311,17 +311,17 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Try again, or pick a different model in Preferences > AI.} linuxKde {Try again, or pick a different model in Configure Cmdr > AI.} other {请重试，或者在“设置 > AI”中选择另一个模型。}}",
+  "ai.translateError.parseError.body": "{platform, select, linuxGnome {请重试，或者在“首选项 > AI”中选择另一个模型。} linuxKde {请重试，或者在“配置 Cmdr > AI”中选择另一个模型。} other {请重试，或者在“设置 > AI”中选择另一个模型。}}",
   "@ai.translateError.parseError.body": {
-    "sourceHash": "c299ec6"
+    "sourceHash": "6082b7e"
   },
   "ai.translateError.unknownProvider.title": "无法识别那个 AI 提供方",
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Pick a provider in Preferences > AI.} linuxKde {Pick a provider in Configure Cmdr > AI.} other {请在“设置 > AI”中选择一个提供方。}}",
+  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {请在“首选项 > AI”中选择一个提供方。} linuxKde {请在“配置 Cmdr > AI”中选择一个提供方。} other {请在“设置 > AI”中选择一个提供方。}}",
   "@ai.translateError.unknownProvider.body": {
-    "sourceHash": "7042a75"
+    "sourceHash": "c45eba0"
   },
   "ai.translateError.managed.title": "Cmdr 中的 AI 由你的组织管理",
   "@ai.translateError.managed.title": {
@@ -597,9 +597,9 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {无法保存你的 API 密钥：macOS 钥匙串拒绝了访问} other {无法读取你保存的 API 密钥：macOS 钥匙串拒绝了访问}}} windows {{op, select, save {无法保存你的 API 密钥：凭据管理器拒绝了访问} other {无法读取你保存的 API 密钥：凭据管理器拒绝了访问}}} linuxKde {{op, select, save {无法保存你的 API 密钥：KWallet 拒绝了访问} other {无法读取你保存的 API 密钥：KWallet 拒绝了访问}}} other {{op, select, save {无法保存你的 API 密钥：系统密钥环拒绝了访问} other {无法读取你保存的 API 密钥：系统密钥环拒绝了访问}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {无法保存你的 API 密钥：macOS 钥匙串拒绝了访问} other {无法读取你保存的 API 密钥：macOS 钥匙串拒绝了访问}}} windows {{op, select, save {无法保存你的 API 密钥：凭据管理器拒绝了访问} other {无法读取你保存的 API 密钥：凭据管理器拒绝了访问}}} linuxKde {{op, select, save {无法保存你的 API 密钥：KDE 密码库拒绝了访问} other {无法读取你保存的 API 密钥：KDE 密码库拒绝了访问}}} other {{op, select, save {无法保存你的 API 密钥：系统密钥环拒绝了访问} other {无法读取你保存的 API 密钥：系统密钥环拒绝了访问}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "6daa595"
+    "sourceHash": "4612cfb"
   },
   "ai.secretError.body": "{platform, select, macos {{op, select, save {打开“钥匙串访问”，检查“Cmdr”这一项，或将它删除后重新保存。} other {打开“钥匙串访问”，找到“Cmdr”这一项并授予访问权限，或将它删除后重新输入密钥。}}} windows {{op, select, save {打开“凭据管理器”，在“Windows 凭据”下检查“Cmdr”这一项，或将它移除后重新保存。} other {打开“凭据管理器”，在“Windows 凭据”下找到“Cmdr”这一项，或将它移除后重新输入密钥。}}} linuxGnome {在“密码和密钥”中解锁你的密钥环，然后重试。} linuxKde {在 KWalletManager 中解锁你的密码库，然后重试。} other {解锁你的密钥环（“密码”/“密钥环”应用），然后重试。}}",
   "@ai.secretError.body": {
@@ -609,9 +609,9 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {确认你的钥匙串可用，然后重试。如果问题仍然存在，请重新启动应用。} windows {确认凭据管理器可用，然后重试。如果问题一直出现，请重新启动 Cmdr。} linuxKde {确认 KWallet 可用，然后重试。如果问题仍然存在，请重新启动应用。} other {确认你的系统密钥环可用，然后重试。如果问题仍然存在，请重新启动应用。}}",
+  "ai.secretError.genericBody": "{platform, select, macos {确认你的钥匙串可用，然后重试。如果问题仍然存在，请重新启动应用。} windows {确认凭据管理器可用，然后重试。如果问题一直出现，请重新启动 Cmdr。} linuxKde {确认 KDE 密码库可用，然后重试。如果问题仍然存在，请重新启动应用。} other {确认你的系统密钥环可用，然后重试。如果问题仍然存在，请重新启动应用。}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "cb879fa"
+    "sourceHash": "1c198ff"
   },
   "ai.secretError.removeTitle": "无法移除你保存的 API 密钥。",
   "@ai.secretError.removeTitle": {
