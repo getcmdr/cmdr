@@ -5,11 +5,15 @@
  */
 import {
   CAPABILITIES_GLOBAL,
+  CONVENTIONS_GLOBAL,
+  CONVENTIONS_ON,
   NO_CAPABILITIES,
   PLATFORM_GLOBAL,
   type Capability,
+  type ConventionsDesktop,
   type Platform,
   type PlatformCapabilities,
+  type PlatformConventions,
 } from './index.js'
 
 /** Sets one global and returns the undo, which restores what was there (or its absence). */
@@ -111,4 +115,16 @@ export function withCapabilitiesPossibleOn(platform: Platform): () => void {
  */
 export function withEveryCapability(): () => void {
   return withCapabilities(...(Object.keys(NO_CAPABILITIES) as Capability[]))
+}
+
+/**
+ * Makes this window follow `desktop`'s conventions (the backend's own row, `CONVENTIONS_ON`) and
+ * returns the undo; the same forms as {@link withPlatform}, which it doesn't move. `overrides`
+ * changes single fields, for a test of one convention whatever the desktop:
+ * `withConventions('kde', { enterActivates: 'defaultButton' })`. Before the imports:
+ * `vi.hoisted(() => vi.stubGlobal('__CMDR_CONVENTIONS__', { dialogButtonOrder: 'affirmativeFirst' }))`
+ * (an absent field reads the fallback's).
+ */
+export function withConventions(desktop: ConventionsDesktop, overrides: Partial<PlatformConventions> = {}): () => void {
+  return setGlobal(CONVENTIONS_GLOBAL, { ...CONVENTIONS_ON[desktop], ...overrides })
 }

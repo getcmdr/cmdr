@@ -87,9 +87,9 @@ string") and drop the entry here.
     (`cmdr-fs` `metadata/platform/windows.rs`, a stub) say which class a Windows copy reports there.
   - `settings.listing.showHiddenFiles.description`, Windows: "dotfiles (like .zshrc)" stays until the Windows listing
     backend decides its hidden-file rule (the hidden attribute, dotfiles, or both).
-- **Waits on task 59** (the Linux `desktop` value): GNOME and KDE wording (KDE Wallet Manager, the Plasma shortcut path,
-  GNOME's "Preferences"). Until then every Linux branch speaks desktop-neutral words ("your keyring", "your file
-  manager").
+- **Waits on a catalog select on the Linux desktop** (task 59 shipped the value, `linuxDesktop`; the catalog selects
+  only on the platform): GNOME and KDE wording (KDE Wallet Manager, the Plasma shortcut path, GNOME's "Preferences").
+  Until then every Linux branch speaks desktop-neutral words ("your keyring", "your file manager").
 - **Waits on no scheduled work**:
   - `settings.advanced.oldMacosNoticeShown.label`, Windows and Linux: the hidden one-shot flag's label ("Old macOS
     notice shown") still lists in the MCP `cmdr://settings` resource. No capability states "this OS has a

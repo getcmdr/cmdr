@@ -164,6 +164,9 @@ every window. The demo keeps that shape, so secondary windows share its state, a
     window's top left corner (§ Traffic lights), and a page keeps its title line under them only with this capability.
     Without it, a Windows or Linux visitor's queue started its toolbar under the lights, which took the clicks meant for
     "Pause all" (the website suite's queue cell caught it, 2026-11-13).
+- Conventions follow the platform too (`visitorConventions`): the desktop's own row for the visitor's OS, the
+  desktop-neutral Linux row for a Linux visitor (a page can't tell GNOME from KDE), and `menuModel: 'systemMenuBar'` for
+  everyone, for the same reason as `appMenu`. That one follows the visitor once the demo's chrome does (task 63).
 - The website's full demo suite runs once per visitor OS (`apps/website/playwright.config.ts`: `demo` is a Windows
   visitor, `demo-mac` a Mac one), since keys and copy differ between them.
 

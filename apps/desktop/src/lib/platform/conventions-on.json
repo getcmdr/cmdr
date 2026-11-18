@@ -1,0 +1,47 @@
+{
+  "macos": {
+    "dialogButtonOrder": "cancelFirst",
+    "enterActivates": "defaultButton",
+    "cancelKeys": "escapeOrCommandPeriod",
+    "accessKeys": "none",
+    "menuModel": "systemMenuBar",
+    "screenReaders": ["voiceOver"],
+    "linuxDesktop": null
+  },
+  "windows": {
+    "dialogButtonOrder": "affirmativeFirst",
+    "enterActivates": "focusedButton",
+    "cancelKeys": "escape",
+    "accessKeys": "alt",
+    "menuModel": "windowMenuBar",
+    "screenReaders": ["jaws", "nvda", "narrator"],
+    "linuxDesktop": null
+  },
+  "gnome": {
+    "dialogButtonOrder": "cancelFirst",
+    "enterActivates": "focusedButton",
+    "cancelKeys": "escape",
+    "accessKeys": "alt",
+    "menuModel": "windowMenuBar",
+    "screenReaders": ["orca"],
+    "linuxDesktop": "gnome"
+  },
+  "kde": {
+    "dialogButtonOrder": "affirmativeFirst",
+    "enterActivates": "focusedButton",
+    "cancelKeys": "escape",
+    "accessKeys": "alt",
+    "menuModel": "windowMenuBar",
+    "screenReaders": ["orca"],
+    "linuxDesktop": "kde"
+  },
+  "otherLinux": {
+    "dialogButtonOrder": "cancelFirst",
+    "enterActivates": "focusedButton",
+    "cancelKeys": "escape",
+    "accessKeys": "alt",
+    "menuModel": "windowMenuBar",
+    "screenReaders": ["orca"],
+    "linuxDesktop": "other"
+  }
+}

@@ -6,10 +6,13 @@
  */
 import {
   CAPABILITIES_GLOBAL,
+  CONVENTIONS_GLOBAL,
+  CONVENTIONS_ON,
   NO_CAPABILITIES,
   PLATFORM_GLOBAL,
   type Platform,
   type PlatformCapabilities,
+  type PlatformConventions,
 } from '#lib/platform/index.js'
 
 /** The visitor's OS, from the one signal a page has. Exported for its test. */
@@ -74,9 +77,31 @@ export function visitorCapabilities(platform: Platform): Readonly<PlatformCapabi
   return platform === 'macos' ? MAC_VISITOR_CAPABILITIES : OTHER_VISITOR_CAPABILITIES
 }
 
-/** Defines the platform and its capabilities in `frame` before any app module reads them, read-only as on desktop. */
+/**
+ * The demo's conventions for a visitor on `platform`: the desktop app's own row for their OS
+ * (desktop-neutral on Linux: a page can't tell GNOME from KDE), with the macOS menu model for
+ * everyone, since the demo always draws the macOS bar (the reason `appMenu` is on above). Exported
+ * for its test.
+ */
+export function visitorConventions(platform: Platform): Readonly<PlatformConventions> {
+  return VISITOR_CONVENTIONS[platform]
+}
+
+function demoConventions(row: Readonly<PlatformConventions>): Readonly<PlatformConventions> {
+  return Object.freeze({ ...row, menuModel: CONVENTIONS_ON.macos.menuModel })
+}
+
+/** One frozen object per platform, so every frame of the page reads the same one. */
+const VISITOR_CONVENTIONS: Readonly<Record<Platform, Readonly<PlatformConventions>>> = {
+  macos: demoConventions(CONVENTIONS_ON.macos),
+  windows: demoConventions(CONVENTIONS_ON.windows),
+  linux: demoConventions(CONVENTIONS_ON.otherLinux),
+}
+
+/** Defines the platform, its capabilities, and its conventions in `frame` before any app module reads them, read-only as on desktop. */
 export function installPlatform(frame: Window): void {
   const platform = visitorPlatform(frame.navigator.userAgent)
   Object.defineProperty(frame, PLATFORM_GLOBAL, { value: platform })
   Object.defineProperty(frame, CAPABILITIES_GLOBAL, { value: visitorCapabilities(platform) })
+  Object.defineProperty(frame, CONVENTIONS_GLOBAL, { value: visitorConventions(platform) })
 }

@@ -1,6 +1,13 @@
 //! The macOS arm of the platform-identity seam.
 
 use super::PlatformCapabilities;
+use super::PlatformConventions;
+use super::conventions::{Desktop, conventions_on};
+
+/// The macOS row: Apple's alert layout and keys, the system menu bar, VoiceOver.
+pub(crate) fn conventions() -> PlatformConventions {
+    conventions_on(Desktop::Macos)
+}
 
 /// Everything: each surface was built on a macOS API (Quick Look, `NSWorkspace`, File Provider,
 /// TCC, the Finder Sync extension, LaunchServices, the overlay title bar of

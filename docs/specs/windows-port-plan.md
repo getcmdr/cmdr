@@ -466,22 +466,30 @@ nothing), but native controls, native conventions, native words and keys, and ev
 None of it blocks a first Windows alpha; all of it is expected before Windows is called done.
 
 Linux rides along as a decision, not as leftover: each task below states what Linux does for that aspect (follows macOS,
-follows Windows, splits by desktop, or its own way), so the Linux version can grow into it without rework. The starting
-assumptions, each to be verified against the GNOME and KDE guidelines in task 59 before anything builds on it
-(unverified, from memory, 2026-11-11):
+follows Windows, splits by desktop, or its own way), so the Linux version can grow into it without rework. The Linux
+choices, checked against the GNOME and KDE guidelines in task 59 (2026-11-18; sources, dates, and what stayed
+unverified: `docs/notes/windows-port/platform-conventions.md`):
 
-- **Shortcuts**: Windows (Ctrl-based), minus what GNOME and KDE reserve.
+- **Shortcuts**: Windows (Ctrl-based), minus what GNOME and KDE reserve (task 26's per-desktop survey). GNOME's HIG also
+  keeps Alt+letter for access keys, which task 61 settles.
 - **Window chrome**: Windows (native decorations, already decided).
 - **Paths, Trash, permissions**: macOS (POSIX).
-- **Dialog button order**: splits by desktop, GNOME like macOS and KDE like Windows.
+- **Dialog button order**: splits by desktop, GNOME like macOS (its HIG) and KDE like Windows (Qt's `KdeLayout`; the KDE
+  HIG is silent). Other desktops follow GNOME, since most are GTK-based.
 - **Control styling**: its own, one neutral theme following the system accent and dark mode.
 - **Words**: its own, desktop-specific where GNOME and KDE differ.
-- **Screen reader**: its own (Orca), on the same ARIA groundwork.
+- **Screen reader**: its own (Orca, which the KDE HIG names), on the same ARIA groundwork.
+- **Menu model**: today's in-window bar on every desktop, though GNOME's HIG has no menu bar (task 63).
 
-59. [S] Win. Platform conventions as data: a typed set beside the capabilities (dialog button order, default and cancel
-    keys, access-key support, menu model, which screen readers to expect), plus the Linux desktop (GNOME, KDE, other) as
-    a backend value. UI primitives ask a convention, ❌ never "is this Windows", so Linux picks per desktop. Starts by
-    verifying the table above against each platform's own guidelines and recording the sources. Needs 25.
+59. [S] Win. **Done**. Platform conventions as data: `PlatformConventions` (dialog button order, which button Enter
+    presses, the cancel keys, access keys, the menu model, the screen readers to expect, and `linuxDesktop`: GNOME, KDE,
+    or other from `XDG_CURRENT_DESKTOP`), one typed enum per question in `bindings.ts`, arrives beside the capabilities
+    in the same init script. One cross-target table answers all five desktops and each OS arm picks its row, so a Rust
+    test pins the frontend's `conventions-on.json` (the demo's and the test helpers' copy) on any machine. Primitives
+    ask `convention('dialogButtonOrder')`, ❌ never the platform (`apps/desktop/src/lib/platform/DETAILS.md` §
+    Conventions); nothing asks yet. The guidelines confirmed the table above, with KDE's order from Qt since its HIG is
+    silent, and corrected task 64: Windows' leading screen reader is JAWS. The menu model carries today's bar until
+    task 63. Evidence: `docs/notes/windows-port/platform-conventions.md`. Needs 25.
 60. [M] Windows. A Windows theme for the `lib/ui` primitives, following Fluent 2: buttons, dropdowns, checkboxes,
     switches, text fields, scrollbars, focus visuals, tooltips, and context menus, as tokens keyed on the platform so
     components stay one implementation. David reviews the design. Linux: its own neutral theme, same token set.
@@ -495,10 +503,10 @@ assumptions, each to be verified against the GNOME and KDE guidelines in task 59
 63. [S] Windows. The menu model: decide between an in-window menu bar (as Total Commander has), a command bar, or
     neither, then build it with Alt and F10 focus and native-feeling context menus. David decides the model. Linux:
     in-window menu bar today; revisit per desktop. Needs 26.
-64. [M] Windows. Screen reader parity: a Narrator and NVDA pass over the main flows (panes, dialogs, Settings, the
-    viewer, operations in progress), fixing what the ARIA work for VoiceOver doesn't carry through WebView2 and UI
-    Automation, plus the Windows contrast themes (`forced-colors`). The findings become part of task 55's checklist.
-    Linux: the same pass with Orca, later.
+64. [M] Windows. Screen reader parity: a JAWS, NVDA, and Narrator pass (task 59's `screenReaders`) over the main flows
+    (panes, dialogs, Settings, the viewer, operations in progress), fixing what the ARIA work for VoiceOver doesn't
+    carry through WebView2 and UI Automation, plus the Windows contrast themes (`forced-colors`). The findings become
+    part of task 55's checklist. Linux: the same pass with Orca, later.
 65. [S] Windows. System surfaces: native file pickers, toast notifications under Cmdr's app identity, a dark title bar
     in dark mode, and Mica or another system backdrop on Windows 11. Linux: portals for pickers and notifications. Needs
     52 for the app identity.
