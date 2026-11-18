@@ -841,9 +841,9 @@
       "folder": { "description": "Which folder, already worded, for example \"Your Downloads folder\"." }
     }
   },
-  "aboutThis.standardFolder.home": "Your home folder",
+  "aboutThis.standardFolder.home": "{platform, select, windows {Your user folder} other {Your home folder}}",
   "@aboutThis.standardFolder.home": {
-    "description": "One of the folders the operating system creates, as the \"Tell me about this\" card names it: the person's home folder. Starts a sentence and is followed by a comma, as in \"Your Downloads folder, set up by the system\". Use the name Finder shows for this folder in your language."
+    "description": "One of the folders the operating system creates, as the \"Tell me about this\" card names it: the person's home folder. Starts a sentence and is followed by a comma, as in \"Your Downloads folder, set up by the system\". Use the name Finder shows for this folder in your language. Windows calls it the user folder, in File Explorer’s words."
   },
   "aboutThis.standardFolder.desktop": "Your Desktop folder",
   "@aboutThis.standardFolder.desktop": {
@@ -1156,9 +1156,9 @@
   "@aboutThis.ownerPlace.sandboxHome": {
     "description": "The Library folder an app's data sits in, shown muted beside it in the \"Its data in your Library\" list of the \"Tell me about this\" card. A sandboxed Linux app's own home folder (~/.var/app or ~/snap)."
   },
-  "aboutThis.removal.standardFolder.home": "It’s your home folder: everything of yours on this computer is inside it, and the system and every app expect it.",
+  "aboutThis.removal.standardFolder.home": "{platform, select, windows {It’s your user folder: everything of yours on this PC is inside it, and the system and every app expect it.} other {It’s your home folder: everything of yours on this computer is inside it, and the system and every app expect it.}}",
   "@aboutThis.removal.standardFolder.home": {
-    "description": "One consequence under \"What removing it means\" on the \"Tell me about this\" card, for the person's home folder, a folder the operating system creates and expects. Never reassuring: it says what the folder holds and what expects it."
+    "description": "One consequence under \"What removing it means\" on the \"Tell me about this\" card, for the person's home folder, a folder the operating system creates and expects. Never reassuring: it says what the folder holds and what expects it. Windows calls it the user folder and the machine “this PC”."
   },
   "aboutThis.removal.standardFolder.personal": "It’s one of your standard folders: the system and your apps expect to find it, and everything inside it goes with it.",
   "@aboutThis.removal.standardFolder.personal": {

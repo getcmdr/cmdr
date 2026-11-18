@@ -50,7 +50,7 @@ fn answer_with(
 }
 
 fn owner_of(path: &str) -> Fact<OwnerClaim> {
-    answer(&OwnerQuestion::of(path, HOME))
+    answer(&OwnerQuestion::of(path, HOME, DiskLayout::Mac))
 }
 
 /// Where the test apps sit.
@@ -110,7 +110,7 @@ fn each_library_folder_names_its_owner_by_id() {
     ];
     for (relative, place) in cases {
         assert_eq!(
-            OwnerQuestion::of(&format!("{HOME}/{relative}"), HOME),
+            OwnerQuestion::of(&format!("{HOME}/{relative}"), HOME, DiskLayout::Mac),
             OwnerQuestion::BundleId {
                 id: "com.eltima.cmd1".to_string(),
                 place
@@ -130,7 +130,13 @@ fn anything_deeper_in_an_apps_folder_belongs_to_the_same_app() {
 
 #[test]
 fn group_containers_are_named_by_a_team_or_a_group_prefix() {
-    let group = |name: &str| OwnerQuestion::of(&format!("{HOME}/Library/Group Containers/{name}"), HOME);
+    let group = |name: &str| {
+        OwnerQuestion::of(
+            &format!("{HOME}/Library/Group Containers/{name}"),
+            HOME,
+            DiskLayout::Mac,
+        )
+    };
     let id = |id: &str| OwnerQuestion::BundleId {
         id: id.to_string(),
         place: OwnerPlace::GroupContainers,
@@ -146,7 +152,7 @@ fn group_containers_are_named_by_a_team_or_a_group_prefix() {
 /// app, 2026-11-14).
 #[test]
 fn the_folders_the_os_sets_up_are_its_own() {
-    let standard = |path: &str| match OwnerQuestion::of(path, HOME) {
+    let standard = |path: &str| match OwnerQuestion::of(path, HOME, DiskLayout::Mac) {
         OwnerQuestion::Answered(OwnerClaim::StandardFolder { folder }) => Some(folder),
         _ => None,
     };
@@ -173,7 +179,7 @@ fn the_folders_the_os_sets_up_are_its_own() {
     }
     // Whatever home is: a fixture home's Downloads is that home's.
     assert_eq!(
-        OwnerQuestion::of("/tmp/fixture-home/Downloads", "/tmp/fixture-home"),
+        OwnerQuestion::of("/tmp/fixture-home/Downloads", "/tmp/fixture-home", DiskLayout::Mac),
         OwnerQuestion::Answered(OwnerClaim::StandardFolder {
             folder: StandardFolder::Downloads
         })
@@ -196,7 +202,7 @@ fn the_folders_the_os_sets_up_are_its_own() {
     }
     // `/Library` itself is the OS's; a folder in it still asks the receipts.
     assert_eq!(
-        OwnerQuestion::of("/Library/Application Support/Vendor", HOME),
+        OwnerQuestion::of("/Library/Application Support/Vendor", HOME, DiskLayout::Mac),
         OwnerQuestion::Receipt
     );
 }
@@ -215,7 +221,7 @@ fn a_library_folder_itself_or_a_plain_name_outside_application_support_claims_no
         ".cargo/bin/rg",
     ] {
         assert_eq!(
-            OwnerQuestion::of(&format!("{HOME}/{relative}"), HOME),
+            OwnerQuestion::of(&format!("{HOME}/{relative}"), HOME, DiskLayout::Mac),
             OwnerQuestion::Nothing,
             "{relative}"
         );
@@ -225,7 +231,11 @@ fn a_library_folder_itself_or_a_plain_name_outside_application_support_claims_no
 #[test]
 fn an_application_support_folder_with_a_plain_name_is_asked_by_name() {
     assert_eq!(
-        OwnerQuestion::of(&format!("{HOME}/Library/Application Support/Slack/Cache"), HOME),
+        OwnerQuestion::of(
+            &format!("{HOME}/Library/Application Support/Slack/Cache"),
+            HOME,
+            DiskLayout::Mac
+        ),
         OwnerQuestion::Name {
             name: "Slack".to_string(),
             place: OwnerPlace::ApplicationSupport,
@@ -241,10 +251,18 @@ fn outside_the_home_folder_installers_receipts_answer() {
         "/usr/local/bin/tool",
         "/opt/thing",
     ] {
-        assert_eq!(OwnerQuestion::of(path, HOME), OwnerQuestion::Receipt, "{path}");
+        assert_eq!(
+            OwnerQuestion::of(path, HOME, DiskLayout::Mac),
+            OwnerQuestion::Receipt,
+            "{path}"
+        );
     }
     for path in ["/Users/Shared/x", "/Volumes/Naspolya/x", "/tmp/x", "/Libraryish/x"] {
-        assert_eq!(OwnerQuestion::of(path, HOME), OwnerQuestion::Nothing, "{path}");
+        assert_eq!(
+            OwnerQuestion::of(path, HOME, DiskLayout::Mac),
+            OwnerQuestion::Nothing,
+            "{path}"
+        );
     }
 }
 
@@ -265,7 +283,10 @@ fn a_homebrew_cellar_or_caskroom_answers_by_its_path() {
         })
     );
     // The cellar itself is no one formula's, so the receipts are asked.
-    assert_eq!(OwnerQuestion::of("/opt/homebrew/Cellar", HOME), OwnerQuestion::Receipt);
+    assert_eq!(
+        OwnerQuestion::of("/opt/homebrew/Cellar", HOME, DiskLayout::Mac),
+        OwnerQuestion::Receipt
+    );
 }
 
 #[test]
@@ -285,16 +306,52 @@ fn anything_inside_an_app_bundle_is_that_apps_and_the_bundle_itself_isnt_inside(
         })
     );
     assert_eq!(
-        OwnerQuestion::of("/Applications/Slack.app", HOME),
+        OwnerQuestion::of("/Applications/Slack.app", HOME, DiskLayout::Mac),
         OwnerQuestion::Nothing
     );
+}
+
+/// Off a Mac's own disk, the Mac's folders are ordinary ones: a Linux `~/Applications`
+/// of AppImages isn't "your own Applications folder", and `/System` isn't macOS. The
+/// home folder, the children every desktop shares with the Mac, and the disk's top
+/// still are the OS's.
+#[test]
+fn off_a_mac_only_the_shared_folders_are_the_oss() {
+    let home = "/home/jane";
+    let standard = |path: &str| match OwnerQuestion::of(path, home, DiskLayout::Other) {
+        OwnerQuestion::Answered(OwnerClaim::StandardFolder { folder }) => Some(folder),
+        _ => None,
+    };
+    for (path, folder) in [
+        (home.to_string(), StandardFolder::Home),
+        (format!("{home}/Desktop"), StandardFolder::Desktop),
+        (format!("{home}/Documents"), StandardFolder::Documents),
+        (format!("{home}/Downloads"), StandardFolder::Downloads),
+        (format!("{home}/Music"), StandardFolder::Music),
+        (format!("{home}/Pictures"), StandardFolder::Pictures),
+        (format!("{home}/Public"), StandardFolder::Public),
+        ("/".to_string(), StandardFolder::StartupDisk),
+    ] {
+        assert_eq!(standard(&path), Some(folder), "{path}");
+    }
+    for path in [
+        format!("{home}/Movies"),
+        format!("{home}/Library"),
+        format!("{home}/Applications"),
+        "/Applications".to_string(),
+        "/Library".to_string(),
+        "/System".to_string(),
+        "/Users".to_string(),
+    ] {
+        assert_eq!(standard(&path), None, "{path}");
+    }
 }
 
 #[test]
 fn linux_names_its_app_folders_by_name_and_its_sandboxes_by_id() {
     let home = "/home/jane";
     assert_eq!(
-        OwnerQuestion::of("/home/jane/.config/google-chrome/Default", home),
+        OwnerQuestion::of("/home/jane/.config/google-chrome/Default", home, DiskLayout::Other),
         OwnerQuestion::Name {
             name: "google-chrome".to_string(),
             place: OwnerPlace::Preferences,
@@ -302,7 +359,7 @@ fn linux_names_its_app_folders_by_name_and_its_sandboxes_by_id() {
         }
     );
     assert_eq!(
-        OwnerQuestion::of("/home/jane/.local/share/Steam", home),
+        OwnerQuestion::of("/home/jane/.local/share/Steam", home, DiskLayout::Other),
         OwnerQuestion::Name {
             name: "Steam".to_string(),
             place: OwnerPlace::ApplicationSupport,
@@ -310,14 +367,14 @@ fn linux_names_its_app_folders_by_name_and_its_sandboxes_by_id() {
         }
     );
     assert_eq!(
-        OwnerQuestion::of("/home/jane/.var/app/org.mozilla.firefox/cache", home),
+        OwnerQuestion::of("/home/jane/.var/app/org.mozilla.firefox/cache", home, DiskLayout::Other),
         OwnerQuestion::BundleId {
             id: "org.mozilla.firefox".to_string(),
             place: OwnerPlace::SandboxHome
         }
     );
     assert_eq!(
-        OwnerQuestion::of("/home/jane/snap/firefox/common", home),
+        OwnerQuestion::of("/home/jane/snap/firefox/common", home, DiskLayout::Other),
         OwnerQuestion::BundleId {
             id: "firefox".to_string(),
             place: OwnerPlace::SandboxHome
@@ -382,7 +439,11 @@ fn an_app_installed_outside_the_app_folders_is_installed() {
     };
     assert_eq!(
         answer_with(
-            &OwnerQuestion::of(&format!("{HOME}/Library/Containers/com.adobe.acc.helper"), HOME),
+            &OwnerQuestion::of(
+                &format!("{HOME}/Library/Containers/com.adobe.acc.helper"),
+                HOME,
+                DiskLayout::Mac
+            ),
             &helper,
             &no_receipts
         ),
@@ -442,7 +503,11 @@ fn a_vendors_name_is_ambiguous_with_several_of_its_apps_and_probable_with_one() 
         Fact::unknown(UnknownWhy::Ambiguous)
     );
     let one_google = |_: &str| None;
-    let question = OwnerQuestion::of(&format!("{HOME}/Library/Application Support/Google"), HOME);
+    let question = OwnerQuestion::of(
+        &format!("{HOME}/Library/Application Support/Google"),
+        HOME,
+        DiskLayout::Mac,
+    );
     let only_chrome = || vec![app("Google Chrome", "com.google.Chrome")];
     assert_eq!(
         question.answer(&OwnerLookups {
@@ -505,7 +570,7 @@ fn a_path_answered_alone_asks_no_lookup() {
     let never = || -> Vec<KnownApp> { panic!("no app scan for a Homebrew path") };
     let never_id = |_: &str| -> Option<KnownApp> { panic!("no id lookup for a Homebrew path") };
     let never_receipts = || -> Result<Vec<String>, UnknownWhy> { panic!("no receipts for a Homebrew path") };
-    let question = OwnerQuestion::of("/opt/homebrew/Cellar/ripgrep", HOME);
+    let question = OwnerQuestion::of("/opt/homebrew/Cellar/ripgrep", HOME, DiskLayout::Mac);
     let fact = question.answer(&OwnerLookups {
         installed_apps: &never,
         app_with_id: &never_id,

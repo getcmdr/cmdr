@@ -690,10 +690,6 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "Ваша папка пользователя",
-  "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
-  },
   "aboutThis.standardFolder.desktop": "Ваша папка «Рабочий стол»",
   "@aboutThis.standardFolder.desktop": {
     "sourceHash": "9b1dabb"
@@ -938,10 +934,6 @@
   "aboutThis.ownerPlace.sandboxHome": "Папка приложения",
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
-  },
-  "aboutThis.removal.standardFolder.home": "Это ваша папка пользователя: в ней находятся все ваши данные на этом компьютере, и ее ожидают система и все приложения.",
-  "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
   },
   "aboutThis.removal.standardFolder.personal": "Это одна из ваших стандартных папок: система и приложения ожидают ее найти, а вместе с ней пропадет то, что в ней лежит.",
   "@aboutThis.removal.standardFolder.personal": {

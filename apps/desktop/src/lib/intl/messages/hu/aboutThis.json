@@ -691,10 +691,6 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "A saját mappád",
-  "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
-  },
   "aboutThis.standardFolder.desktop": "Az Íróasztal mappád",
   "@aboutThis.standardFolder.desktop": {
     "sourceHash": "9b1dabb"
@@ -939,10 +935,6 @@
   "aboutThis.ownerPlace.sandboxHome": "Az app saját mappája",
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
-  },
-  "aboutThis.removal.standardFolder.home": "Ez a saját mappád: minden, ami a tiéd ezen a számítógépen, benne van, és a rendszer meg minden app számít rá.",
-  "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
   },
   "aboutThis.removal.standardFolder.personal": "Ez az egyik szabványos mappád: a rendszer és az appjaid számítanak rá, hogy megtalálják, és ami benne van, az is vele megy.",
   "@aboutThis.removal.standardFolder.personal": {

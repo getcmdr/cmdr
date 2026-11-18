@@ -851,7 +851,11 @@ fn in_a_fixture_home(path: &std::path::Path, home: &std::path::Path) -> Gathered
         ItemText::new("Macintosh HD"),
         macos(),
         Sources {
-            owner: cmdr_about::owner::OwnerQuestion::of(&path, &home.to_string_lossy()),
+            owner: cmdr_about::owner::OwnerQuestion::of(
+                &path,
+                &home.to_string_lossy(),
+                cmdr_about::owner::DiskLayout::Mac,
+            ),
             apps: super::owner::AppSource {
                 installed: fake_installed_apps,
                 with_id: |_| None,

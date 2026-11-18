@@ -692,10 +692,6 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "Sua pasta pessoal",
-  "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
-  },
   "aboutThis.standardFolder.desktop": "Sua pasta Mesa",
   "@aboutThis.standardFolder.desktop": {
     "sourceHash": "9b1dabb"
@@ -940,10 +936,6 @@
   "aboutThis.ownerPlace.sandboxHome": "Pasta pessoal do app",
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
-  },
-  "aboutThis.removal.standardFolder.home": "É a sua pasta pessoal: tudo o que é seu neste computador está dentro dela, e o sistema e todos os apps contam com ela.",
-  "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
   },
   "aboutThis.removal.standardFolder.personal": "É uma das suas pastas padrão: o sistema e seus apps esperam encontrá-la, e tudo o que está dentro dela vai junto.",
   "@aboutThis.removal.standardFolder.personal": {

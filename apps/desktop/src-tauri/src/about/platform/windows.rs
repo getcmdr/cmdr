@@ -3,11 +3,13 @@
 
 use cmdr_about::card::OsCaps;
 use cmdr_about::fact::{AboutTarget, Fact, NotApplicableWhy, UnknownWhy};
-use cmdr_about::owner::KnownApp;
+use cmdr_about::owner::{DiskLayout, KnownApp};
 use cmdr_about::payload::{AppRef, Signature, Usage};
 use cmdr_about::provenance::Download;
 
 use super::StatExtras;
+
+pub(crate) const DISK_LAYOUT: DiskLayout = DiskLayout::Other;
 
 pub(crate) fn os_caps() -> OsCaps {
     OsCaps {

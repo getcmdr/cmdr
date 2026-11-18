@@ -75,10 +75,6 @@
   "@aboutThis.folderClass.dependencies": {
     "sourceHash": "48c0f24"
   },
-  "aboutThis.removal.standardFolder.home": "Es tu carpeta de inicio: dentro está todo lo tuyo en esta computadora, y el sistema y todas las apps cuentan con ella.",
-  "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "10aef6c"
-  },
   "aboutThis.removal.standardFolder.homeLibrary": "Guarda la configuración y los datos que tus apps conservan para ti, y sin ella pueden dejar de funcionar o empezar de cero.",
   "@aboutThis.removal.standardFolder.homeLibrary": {
     "sourceHash": "6048346"
