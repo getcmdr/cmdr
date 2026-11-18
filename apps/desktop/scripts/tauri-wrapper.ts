@@ -21,6 +21,7 @@
 import { spawn, execFileSync } from 'child_process'
 import { mkdtempSync, writeFileSync, rmSync } from 'fs'
 import { tmpdir, homedir } from 'os'
+import { createRequire } from 'module'
 import { join } from 'path'
 import {
   extractWorktreeFlag,
@@ -281,7 +282,11 @@ if (isBuild && isMacOS && !forwardedArgs.includes('--target') && !forwardedArgs.
   forwardedArgs.push('--target', 'universal-apple-darwin')
 }
 
-const tauriProcess = spawn('pnpm', ['exec', 'tauri', ...forwardedArgs], {
+// The Tauri CLI's own entry, run by this Node: what `pnpm exec tauri` runs, minus the spawn of
+// `pnpm`, which on Windows is a `.cmd` shim that Node won't spawn without a shell (ENOENT, or
+// EINVAL since the 2024 batch-file fix), and a shell would re-quote every forwarded argument.
+const tauriCli = createRequire(import.meta.url).resolve('@tauri-apps/cli/tauri.js')
+const tauriProcess = spawn(process.execPath, [tauriCli, ...forwardedArgs], {
   stdio: 'inherit',
   env,
 })
