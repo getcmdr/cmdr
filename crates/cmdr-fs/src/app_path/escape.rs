@@ -111,7 +111,7 @@ pub(super) fn push_literal(text: &str, namer: Namer, out: &mut String) {
 /// `text` with every escape-range code point spelled as literal text (see [`push_literal`]),
 /// borrowed when it holds none.
 pub(super) fn literal(text: &str, namer: Namer) -> Cow<'_, str> {
-    if !text.chars().any(is_escape) {
+    if !has_escape(text) {
         return Cow::Borrowed(text);
     }
     let mut out = String::with_capacity(text.len() + 8);
@@ -174,7 +174,7 @@ pub enum EscapeRefusal {
 /// The native bytes `text` spells: each byte escape as its byte, other text as UTF-8.
 /// Borrowed when `text` holds no escape.
 pub fn unescape_bytes(text: &str) -> Result<Cow<'_, [u8]>, EscapeRefusal> {
-    if !text.chars().any(is_escape) {
+    if !has_escape(text) {
         return Ok(Cow::Borrowed(text.as_bytes()));
     }
     let mut out = Vec::with_capacity(text.len());
@@ -248,7 +248,7 @@ pub fn canonical_name(text: &str) -> Result<Cow<'_, str>, EscapeRefusal> {
 /// spelling always showed. Any text, since a plane-16 escape never means anything in prose.
 /// Borrowed when there's none.
 pub fn shown_name(text: &str) -> Cow<'_, str> {
-    if !text.chars().any(is_escape) {
+    if !has_escape(text) {
         return Cow::Borrowed(text);
     }
     Cow::Owned(

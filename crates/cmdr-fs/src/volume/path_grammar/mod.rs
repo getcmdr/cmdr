@@ -14,7 +14,7 @@
 //! do slash arithmetic on one.
 //!
 //! ❗ These helpers resolve `.` and `..` LEXICALLY, clamped at the root, as they always
-//! have; the shared case table pins it. The typed path, [`crate::app_path`], refuses a `..`
+//! have; the shared case table pins it. The typed path, [`mod@crate::app_path`], refuses a `..`
 //! instead (by text it can name a different file across a symlink), and new code speaks the
 //! typed path. Each helper here keeps its answer until its callers convert.
 //!

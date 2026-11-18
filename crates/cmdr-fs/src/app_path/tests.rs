@@ -779,10 +779,15 @@ fn the_wire_is_a_plain_string() {
     let path = posix("/Users/test_user_1/caf\u{e9} \"x\".txt");
     let json = serde_json::to_string(&path).expect("serializes");
     assert_eq!(json, serde_json::to_string(path.as_str()).expect("serializes"));
-    let back: AppPathBuf = serde_json::from_str(&json).expect("deserializes on this host");
-    if PathFlavor::HOST == PathFlavor::Posix {
+    // Deserializing reads with the host's flavor, so a POSIX path never enters on Windows.
+    let back = serde_json::from_str::<AppPathBuf>(&json);
+    assert_eq!(back.is_ok(), PathFlavor::HOST == PathFlavor::Posix, "{back:?}");
+    if let Ok(back) = back {
         assert_eq!(back, path);
     }
+    let sftp = posix("sftp://h:22/srv/x");
+    let back: AppPathBuf = serde_json::from_str(&serde_json::to_string(&sftp).expect("serializes")).expect("any host");
+    assert_eq!(back, sftp);
     assert!(serde_json::from_str::<AppPathBuf>("\"relative\"").is_err());
 }
 

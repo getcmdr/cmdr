@@ -72,7 +72,10 @@ fn a_listed_entry_costs_one_allocation_where_it_cost_three() {
         today, 3,
         "today's row: PathBuf::join (copy, then grow), then the String"
     );
-    assert_eq!(wire, path.as_str());
+    // On Windows today's join writes a `\` into the app path (#1225), the bug the type removes.
+    if std::path::MAIN_SEPARATOR == '/' {
+        assert_eq!(wire, path.as_str());
+    }
 }
 
 #[test]
