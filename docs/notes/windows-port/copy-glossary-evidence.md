@@ -290,12 +290,12 @@ The words the `linuxGnome` / `linuxKde` branches use (#1231), each checked on 20
   "System Settings > Keyboard > Shortcuts": the module is "Shortcuts" (verified on web,
   https://docs.kde.org/stable_kf6/en/plasma-desktop/kcontrol/keys/index.html, read); its place under Keyboard in Plasma
   6's sidebar is third-party (§ `system-settings` above), medium.
-- **Password store**: KDE "KWallet" (the decision; see § Contradicts a decision for "KDE Wallet"), its manager
-  "KWalletManager" (verified on web, https://apps.kde.org/kwalletmanager5/, search summary, the app's own title). Cmdr's
-  secrets go through the Secret Service API (`zbus-secret-service-keyring-store`), which KWallet serves on Plasma
-  (memory, unverified on a KDE page). GNOME keeps "keyring" (GNOME Keyring's own word) and names its app "Passwords and
-  Keys" (verified on web, https://flathub.org/en/apps/org.gnome.seahorse.Application, search summary: "Passwords and
-  Keys is a GNOME application…").
+- **Password store**: KDE "KDE Wallet" (David switched from "KWallet" on 2026-11-18, following the evidence under §
+  `keychain` above), its manager "KWalletManager" (verified on web, https://apps.kde.org/kwalletmanager5/, search
+  summary, the app's own title). Cmdr's secrets go through the Secret Service API (`zbus-secret-service-keyring-store`),
+  which KWallet serves on Plasma (memory, unverified on a KDE page). GNOME keeps "keyring" (GNOME Keyring's own word)
+  and names its app "Passwords and Keys" (verified on web, https://flathub.org/en/apps/org.gnome.seahorse.Application,
+  search summary: "Passwords and Keys is a GNOME application…").
 
 ## Contradicts a decision
 
@@ -304,9 +304,6 @@ The words the `linuxGnome` / `linuxKde` branches use (#1231), each checked on 20
   ("Exit Cmdr", File > Exit, Alt+F4). So the decision's "Exit Cmdr?", "Exit now", "Delete all and exit", and "Exit while
   an operation is running?" are the decision's call, not Microsoft's usage. Microsoft would write "Close Cmdr?" and
   "Close now", which is what the proposal had.
-- **KDE "KWallet"**: KDE's user-facing name is "KDE Wallet", and the manager is "KDE Wallet Manager" (web summaries
-  only, medium). The `linuxKde` branches follow the decision and say "KWallet" (#1231); David's call whether to switch
-  them to "KDE Wallet".
 - **"PC" vs "computer" on Windows**: the Writing Style Guide prefers "computer", but Windows UI ("This PC") and the
   en-GB Microsoft voice guide say "PC". The evidence leans toward the decision, so this is only a caveat: never mix the
   two in one string.

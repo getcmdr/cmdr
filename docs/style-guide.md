@@ -74,9 +74,9 @@ itself; `other` stays desktop-neutral for every other desktop. Today's desktop w
 - **GNOME**: the file manager is **Files** ("Show in Files"); the password store is **your keyring**, managed in
   **Passwords and Keys**; an app's settings row is **Preferences**; shortcuts live in **Settings > Keyboard > View and
   Customize Shortcuts**.
-- **KDE Plasma**: the file manager is **Dolphin** ("Show in Dolphin"); the password store is **KWallet** ("Remember in
-  KWallet"), managed in **KWalletManager**; an app's settings row is **Configure Cmdr…**; shortcuts live in **System
-  Settings > Keyboard > Shortcuts**.
+- **KDE Plasma**: the file manager is **Dolphin** ("Show in Dolphin"); the password store is **KDE Wallet** ("Remember
+  in KDE Wallet"; KDE's own user-facing name, so never "KWallet"), managed in **KWalletManager**; an app's settings row
+  is **Configure Cmdr…**; shortcuts live in **System Settings > Keyboard > Shortcuts**.
 
 - The machine
   - **This Mac, your Mac** / **this PC, your PC** / **this computer, your computer**. On Windows, never "PC" and

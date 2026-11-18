@@ -395,7 +395,7 @@ Ask Cmdr is the widest of these, so the rest of this section is its detail. Ask 
   prompt-injected filename can't get them read. Blocked: SSH, GPG, and password-store folders at any depth (a NAS backup
   of a home folder counts), cloud and tool credentials (AWS, Azure, Kubernetes, gcloud, `gh`, Docker, `.netrc`,
   `.npmrc`, `.pypirc`, `.git-credentials`, `.git/config`, `.env*`, `.pgpass`, Vault, Cargo, Claude, `rclone.conf`, sops
-  age keys), each OS's credential store (the macOS keychains, GNOME Keyring and KWallet, Windows Credential Manager's
+  age keys), each OS's credential store (the macOS keychains, GNOME Keyring and KDE Wallet, Windows Credential Manager's
   files and the DPAPI keys that open them), password managers (Bitwarden, 1Password), browser profile data and caches
   (Chrome, Chromium, Edge, Firefox, Brave, Vivaldi, Opera, Arc, Safari), mail, messages, and notes (Apple Mail,
   Messages, and Notes, Thunderbird, Outlook, Evolution, Geary, KMail), Cmdr's own data dir (tokens, databases, raw logs;

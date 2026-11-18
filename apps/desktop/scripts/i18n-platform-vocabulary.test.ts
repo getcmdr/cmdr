@@ -19,7 +19,8 @@
  * the moment the user rebinds. A sentence that names the glyphs themselves keeps
  * them in a `macos` branch.
  *
- * A few words are one spelling on every OS ("filename", never "file name"), so
+ * A few words are one spelling on every OS ("filename", never "file name"; "KDE
+ * Wallet", never "KWallet"), so
  * `everyOsWrongWords` reads every branch, macOS included, and the `@key` metadata.
  */
 
@@ -65,6 +66,10 @@ const LINUX_WRONG_WORDS: readonly WordRule[] = [
  */
 const EVERY_OS_WRONG_WORDS: readonly WordRule[] = [
   { rule: '“file name”: Cmdr writes “filename”, one word, on every OS', pattern: /\bfile names?\b/i },
+  {
+    rule: '“KWallet”: KDE’s user-facing name is “KDE Wallet” (“KWalletManager” names the app)',
+    pattern: /\bKWallet\b/,
+  },
 ]
 
 /** Every every-OS wrong word in `key`'s value (any branch, macOS too) or its `@key` metadata. */
@@ -165,6 +170,15 @@ describe('everyOsWrongWords', () => {
   it('leaves “filename” and a verb “file names” sitting across words alone', () => {
     expect(everyOsWrongWords('a.b', 'Copy filename', { description: 'The filenames column.' })).toEqual([])
     expect(everyOsWrongWords('a.b', 'Profile name', undefined)).toEqual([])
+  })
+
+  it('flags “KWallet” but not the KWalletManager app', () => {
+    const value =
+      '{platform, select, macos {Remember in Keychain} linuxKde {Remember in KWallet} other {Remember in keyring}}'
+    expect(everyOsWrongWords('a.b', value, undefined)).toEqual([
+      'a.b: “KWallet”: KDE’s user-facing name is “KDE Wallet” (“KWalletManager” names the app)',
+    ])
+    expect(everyOsWrongWords('a.b', 'Unlock it in KWalletManager.', undefined)).toEqual([])
   })
 })
 

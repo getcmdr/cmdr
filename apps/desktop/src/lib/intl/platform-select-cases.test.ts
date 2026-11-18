@@ -80,7 +80,7 @@ describe('platform-select-cases.json', () => {
     }
     expect(on('gnome')).toEqual({ remember: 'Remember in keyring', reveal: 'Show in Files', settings: 'Preferences' })
     expect(on('kde')).toEqual({
-      remember: 'Remember in KWallet',
+      remember: 'Remember in KDE Wallet',
       reveal: 'Show in Dolphin',
       settings: 'Configure Cmdr…',
     })

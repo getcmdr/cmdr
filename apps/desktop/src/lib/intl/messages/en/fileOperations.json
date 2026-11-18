@@ -2057,9 +2057,9 @@
     "description": "Accessible label for the masked password input in the backup-password dialog (there is no visible label next to the field). Short.",
     "screenshot": "archive-password-repo-first-attempt.png"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Remember in Keychain} windows {Remember password} linuxKde {Remember in KWallet} other {Remember in keyring}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Remember in Keychain} windows {Remember password} linuxKde {Remember in KDE Wallet} other {Remember in keyring}}",
   "@fileOperations.resticPassword.remember": {
-    "description": "Checkbox label in the backup-password dialog, checked by default. When checked, Cmdr saves the password in the system’s password store so it doesn’t ask again next time. Each branch uses that OS’s own words in your language: the Keychain on macOS, \"Remember password\" on Windows (its checkboxes don’t name Credential Manager), the keyring on Linux. The screenshot shows the macOS wording. The `linuxKde` branch names KDE’s password store, KWallet: a name, which KDE keeps as is in every language.",
+    "description": "Checkbox label in the backup-password dialog, checked by default. When checked, Cmdr saves the password in the system’s password store so it doesn’t ask again next time. Each branch uses that OS’s own words in your language: the Keychain on macOS, \"Remember password\" on Windows (its checkboxes don’t name Credential Manager), the keyring on Linux. The screenshot shows the macOS wording. The `linuxKde` branch names KDE’s password store, KDE Wallet: use the name KDE’s own translation gives it in your language.",
     "screenshot": "archive-password-repo-first-attempt.png"
   },
   "fileOperations.resticPassword.checking": "Checking the password…",
