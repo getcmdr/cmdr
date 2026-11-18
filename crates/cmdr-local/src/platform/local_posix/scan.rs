@@ -9,6 +9,7 @@
 //! lives here.
 
 use super::LocalPosixVolume;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::apple_double::SidecarRule;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::file_identity::{device_of, first_sighting};
@@ -168,7 +169,7 @@ impl LocalPosixVolume {
         let abs_dir = self.resolve(path);
         let sidecars = SidecarRule::with_probe(self.sidecar_probe);
         Box::pin(async move {
-            let entries = self.list_directory(path, None).await?;
+            let entries = self.list_directory(&AppPath::legacy_unchecked(path), None).await?;
             if !entries.iter().any(|entry| entry.name.starts_with("._")) {
                 return Ok(entries);
             }
