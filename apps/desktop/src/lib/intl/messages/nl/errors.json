@@ -1551,7 +1551,7 @@
   },
   "errors.write.nameTooLong.message": "De bestandsnaam is te lang voor de bestemming.",
   "@errors.write.nameTooLong.message": {
-    "sourceHash": "03258f0"
+    "sourceHash": "91a01a0"
   },
   "errors.write.nameTooLong.suggestion": "Probeer het bestand een kortere naam te geven.",
   "@errors.write.nameTooLong.suggestion": {
@@ -1631,7 +1631,7 @@
   },
   "errors.write.invalidName.title": "Ongeldige bestandsnaam",
   "@errors.write.invalidName.title": {
-    "sourceHash": "1fb1e45"
+    "sourceHash": "0af3e69"
   },
   "errors.write.invalidName.message": "{path} heeft een naam die de bestemming niet kan opslaan.",
   "@errors.write.invalidName.message": {

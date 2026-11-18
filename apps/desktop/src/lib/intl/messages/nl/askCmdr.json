@@ -1199,6 +1199,23 @@
   "@askCmdr.renameReview.sourceMissingTooltip": {
     "sourceHash": "acd6306"
   },
+  "askCmdr.renameReview.nameNotAllowedBadge": "(hier niet toegestaan)",
+  "@askCmdr.renameReview.nameNotAllowedBadge": {
+    "sourceHash": "b699ad0"
+  },
+  "askCmdr.renameReview.nameNotAllowedTooltip": "Deze schijf kan deze naam niet opslaan. Pas de naam aan om de naam van dit bestand te wijzigen.",
+  "@askCmdr.renameReview.nameNotAllowedTooltip": {
+    "sourceHash": "8cb209e"
+  },
+  "askCmdr.renameReview.notPortableBadge": "(Windows)",
+  "@askCmdr.renameReview.notPortableBadge": {
+    "sourceHash": "dc44dab",
+    "sameAsSourceJustification": "OS name in parentheses; Windows is a product name Microsoft keeps in Dutch (DUTCH.tbx)."
+  },
+  "askCmdr.renameReview.notPortableTooltip": "Deze naam werkt niet op Windows. Cmdr wijzigt de naam van het bestand toch.",
+  "@askCmdr.renameReview.notPortableTooltip": {
+    "sourceHash": "f7ffcc2"
+  },
   "askCmdr.renameReview.extensionBadge": "(extensie)",
   "@askCmdr.renameReview.extensionBadge": {
     "sourceHash": "bcc0b2c"

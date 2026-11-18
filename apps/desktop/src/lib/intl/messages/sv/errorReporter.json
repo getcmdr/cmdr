@@ -173,9 +173,9 @@
   "@errorReporter.bundleSavedToast.dismiss": {
     "sourceHash": "48845bf"
   },
-  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Visa i Finder} windows {Visa i Utforskaren} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Visa i filhanteraren}}",
+  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Visa i Finder} windows {Visa i Utforskaren} linuxGnome {Visa i Filer} linuxKde {Visa i Dolphin} other {Visa i filhanteraren}}",
   "@errorReporter.bundleSavedToast.reveal": {
-    "sourceHash": "4d7fe91"
+    "sourceHash": "c3b4773"
   },
   "errorReporter.autoSentToast.title": "Felrapporten har skickats",
   "@errorReporter.autoSentToast.title": {

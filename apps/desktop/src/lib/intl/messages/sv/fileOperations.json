@@ -154,7 +154,7 @@
   },
   "fileOperations.mkfile.nameAria": "Filnamn",
   "@fileOperations.mkfile.nameAria": {
-    "sourceHash": "3efed3d"
+    "sourceHash": "971b974"
   },
   "fileOperations.mkfile.placeholder": "Exempel: anteckningar.txt",
   "@fileOperations.mkfile.placeholder": {
@@ -1305,9 +1305,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Kom ihåg i nyckelringen} windows {Kom ihåg lösenord} linuxKde {Remember in KWallet} other {Kom ihåg i nyckelringen}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Kom ihåg i nyckelringen} windows {Kom ihåg lösenord} linuxKde {Kom ihåg i KWallet} other {Kom ihåg i nyckelringen}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "42237e1"
+    "sourceHash": "8f125e3"
   },
   "fileOperations.resticPassword.checking": "Kontrollerar lösenordet…",
   "@fileOperations.resticPassword.checking": {
@@ -1332,6 +1332,30 @@
   "fileOperations.validation.empty": "{kind, select, folder {Mappnamn får inte vara tomt} other {Filnamn får inte vara tomt}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
+  },
+  "fileOperations.validation.dotName": "{kind, select, folder {Mappnamn kan inte vara ”.” eller ”..”} other {Filnamn kan inte vara ”.” eller ”..”}}",
+  "@fileOperations.validation.dotName": {
+    "sourceHash": "bfa0ccb"
+  },
+  "fileOperations.validation.nameLength": "{kind, select, folder {Mappnamnet är för långt ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {byte}}} other {{max, plural, one {tecken} other {tecken}}}})} other {Filnamnet är för långt ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {byte}}} other {{max, plural, one {tecken} other {tecken}}}})}}",
+  "@fileOperations.validation.nameLength": {
+    "sourceHash": "acef623"
+  },
+  "fileOperations.validation.pathLength": "Den fullständiga sökvägen är för lång ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {byte}}} other {{max, plural, one {tecken} other {tecken}}}})",
+  "@fileOperations.validation.pathLength": {
+    "sourceHash": "1791bc2"
+  },
+  "fileOperations.validation.notPortable.windowsCharacter": "{format, select, smbShare {Namn med ”{character}” fungerar inte i Windows} other {Namn med ”{character}” fungerar inte i Windows eller Linux}}",
+  "@fileOperations.validation.notPortable.windowsCharacter": {
+    "sourceHash": "66201fa"
+  },
+  "fileOperations.validation.notPortable.reservedName": "{format, select, smbShare {”{name}” är reserverat av Windows, så det här namnet fungerar inte där, och den delade mappen kan visa objektet under ett annat namn} other {”{name}” är reserverat av Windows, så det här namnet fungerar inte där}}",
+  "@fileOperations.validation.notPortable.reservedName": {
+    "sourceHash": "b46ff0c"
+  },
+  "fileOperations.validation.notPortable.endsWithSpaceOrPeriod": "{format, select, smbShare {Namn som slutar med ett blanksteg eller en punkt fungerar inte i Windows} other {Namn som slutar med ett blanksteg eller en punkt fungerar inte i Windows eller Linux}}",
+  "@fileOperations.validation.notPortable.endsWithSpaceOrPeriod": {
+    "sourceHash": "86ce7a7"
   },
   "fileOperations.validation.extensionChangeBlocked": "Det går inte att ändra filtillägget (var ”{oldExt}”)",
   "@fileOperations.validation.extensionChangeBlocked": {
@@ -1360,6 +1384,18 @@
   "fileOperations.validation.pathNullChar": "Sökvägen innehåller ett nolltecken",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
+  },
+  "fileOperations.validation.typedPathLength": "Sökvägen är för lång ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {byte}}} other {{max, plural, one {tecken} other {tecken}}}})",
+  "@fileOperations.validation.typedPathLength": {
+    "sourceHash": "f953ea2"
+  },
+  "fileOperations.validation.typedSegmentLength": "Ett mappnamn i sökvägen är för långt ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {byte}}} other {{max, plural, one {tecken} other {tecken}}}})",
+  "@fileOperations.validation.typedSegmentLength": {
+    "sourceHash": "50ce47b"
+  },
+  "fileOperations.transferDialog.namePortability": "{count, plural, one {{alsoLinux, select, yes {{countText} namn här fungerar inte i Windows eller Linux: ”{example}”} other {{countText} namn här fungerar inte i Windows: ”{example}”}}} other {{alsoLinux, select, yes {{countText} namn här fungerar inte i Windows eller Linux, till exempel ”{example}”} other {{countText} namn här fungerar inte i Windows, till exempel ”{example}”}}}}",
+  "@fileOperations.transferDialog.namePortability": {
+    "sourceHash": "e8c7d0f"
   },
   "fileOperations.transferTree.treeLabel": "Filer i den här överföringen",
   "@fileOperations.transferTree.treeLabel": {

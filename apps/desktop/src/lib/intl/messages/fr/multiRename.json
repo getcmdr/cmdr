@@ -244,6 +244,14 @@
   "@multiRename.status.reservedDeviceName": {
     "sourceHash": "8bf464a"
   },
+  "multiRename.status.notPortable": "{alsoLinux, select, yes {Ne fonctionnera pas sous Windows ni sous Linux} other {Ne fonctionnera pas sous Windows}}",
+  "@multiRename.status.notPortable": {
+    "sourceHash": "cc3ed09"
+  },
+  "multiRename.notPortableSummary": "{count, plural, one {{alsoLinux, select, yes {{countText} nouveau nom ne fonctionnera pas sous Windows ni sous Linux. L’élément est quand même renommé.} other {{countText} nouveau nom ne fonctionnera pas sous Windows. L’élément est quand même renommé.}}} many {{alsoLinux, select, yes {{countText} nouveaux noms ne fonctionneront pas sous Windows ni sous Linux. Les éléments sont quand même renommés.} other {{countText} nouveaux noms ne fonctionneront pas sous Windows. Les éléments sont quand même renommés.}}} other {{alsoLinux, select, yes {{countText} nouveaux noms ne fonctionneront pas sous Windows ni sous Linux. Les éléments sont quand même renommés.} other {{countText} nouveaux noms ne fonctionneront pas sous Windows. Les éléments sont quand même renommés.}}}}",
+  "@multiRename.notPortableSummary": {
+    "sourceHash": "4eb996d"
+  },
   "multiRename.error.unclosed": "Il manque le « ] » fermant d’un marqueur",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -633,15 +641,15 @@
   },
   "multiRename.reason.tooLong": "Le nouveau nom est trop long pour un nom de fichier.",
   "@multiRename.reason.tooLong": {
-    "sourceHash": "b709218"
+    "sourceHash": "c49d459"
   },
   "multiRename.reason.reserved": "« . » et « .. » ne peuvent pas être des noms de fichiers.",
   "@multiRename.reason.reserved": {
-    "sourceHash": "dcca507"
+    "sourceHash": "b0c0c33"
   },
   "multiRename.reason.disallowedCharacter": "Les noms de fichiers ne peuvent pas contenir le caractère {character}.",
   "@multiRename.reason.disallowedCharacter": {
-    "sourceHash": "66a09f6"
+    "sourceHash": "2d58251"
   },
   "multiRename.reason.reservedDeviceName": "Le nom « {name} » est réservé par Windows, ce disque ne peut donc pas l’utiliser.",
   "@multiRename.reason.reservedDeviceName": {

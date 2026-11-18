@@ -3234,9 +3234,9 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Toon in Finder} windows {Toon in Verkenner} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Toon in bestandsbeheer}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Toon in Finder} windows {Toon in Verkenner} linuxGnome {Toon in Bestanden} linuxKde {Toon in Dolphin} other {Toon in bestandsbeheer}}",
   "@settings.securityLog.showInFinder": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "settings.updates.showSecurityLog.keywords": "beveiliging, log, logboek, audit, gebeurtenissen, bestand, openen, tonen, laten zien, map, locatie",
   "@settings.updates.showSecurityLog.keywords": {
@@ -3692,13 +3692,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Eén onderdeel in Sleutelhangertoegang met de naam ‘{itemName}’} other {{countText} onderdelen in Sleutelhangertoegang met de naam ‘{itemName}’}}} windows {{count, plural, one {Eén referentie in Referentiebeheer met de naam ‘{itemName}’} other {{countText} referenties in Referentiebeheer met de naam ‘{itemName}’}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, one {Eén onderdeel in je sleutelhanger met de naam ‘{itemName}’} other {{countText} onderdelen in je sleutelhanger met de naam ‘{itemName}’}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Eén onderdeel in Sleutelhangertoegang met de naam ‘{itemName}’} other {{countText} onderdelen in Sleutelhangertoegang met de naam ‘{itemName}’}}} windows {{count, plural, one {Eén referentie in Referentiebeheer met de naam ‘{itemName}’} other {{countText} referenties in Referentiebeheer met de naam ‘{itemName}’}}} linuxKde {{count, plural, one {Eén onderdeel in KWallet met de naam ‘{itemName}’} other {{countText} onderdelen in KWallet met de naam ‘{itemName}’}}} other {{count, plural, one {Eén onderdeel in je sleutelhanger met de naam ‘{itemName}’} other {{countText} onderdelen in je sleutelhanger met de naam ‘{itemName}’}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "6cf1e9c"
+    "sourceHash": "ba023b8"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Eventuele onderdelen in Sleutelhangertoegang met de naam ‘{itemName}’} windows {Eventuele referenties in Referentiebeheer met de naam ‘{itemName}’} linuxKde {Any items in KWallet named “{itemName}”} other {Eventuele onderdelen in je sleutelhanger met de naam ‘{itemName}’}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Eventuele onderdelen in Sleutelhangertoegang met de naam ‘{itemName}’} windows {Eventuele referenties in Referentiebeheer met de naam ‘{itemName}’} linuxKde {Eventuele onderdelen in KWallet met de naam ‘{itemName}’} other {Eventuele onderdelen in je sleutelhanger met de naam ‘{itemName}’}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "0e9e95b"
+    "sourceHash": "de668e2"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Sluit Cmdr af} other {Stop Cmdr}}",
   "@settings.dataWipe.quit": {

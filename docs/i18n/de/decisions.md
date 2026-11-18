@@ -275,7 +275,7 @@ or `terms.json` aren't repeated here.
 
 ## Der zugängliche Name muss die sichtbare Beschriftung enthalten (WCAG 2.5.3, `fileOperations.transferProgress.pause`, `queue.row.pause`, `queryUi.scope.toggle.caseSensitiveAria`)
 
-- `Anhalten` sits inside `Diesen Vorgang anhalten`, which is why the button isn't `Pause`; `/` counts for containment.
+- `Anhalten` sits inside `Diesen Vorgang anhalten`, so the button isn’t `Pause`; `/` counts for containment.
 - `Groß-/Kleinschreibung beachten` (the positive of macOS „… ignorieren“), wrapped as
   `Beim Abgleich Groß-/Kleinschreibung beachten`.
 

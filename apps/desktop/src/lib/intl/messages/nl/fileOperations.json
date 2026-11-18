@@ -154,7 +154,7 @@
   },
   "fileOperations.mkfile.nameAria": "Bestandsnaam",
   "@fileOperations.mkfile.nameAria": {
-    "sourceHash": "3efed3d"
+    "sourceHash": "971b974"
   },
   "fileOperations.mkfile.placeholder": "Voorbeeld: notities.txt",
   "@fileOperations.mkfile.placeholder": {
@@ -1306,9 +1306,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Onthoud in Sleutelhanger} windows {Onthoud wachtwoord} linuxKde {Remember in KWallet} other {Onthoud in sleutelhanger}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Onthoud in Sleutelhanger} windows {Onthoud wachtwoord} linuxKde {Onthoud in KWallet} other {Onthoud in sleutelhanger}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "42237e1"
+    "sourceHash": "8f125e3"
   },
   "fileOperations.resticPassword.checking": "Wachtwoord controleren…",
   "@fileOperations.resticPassword.checking": {
@@ -1333,6 +1333,30 @@
   "fileOperations.validation.empty": "{kind, select, folder {Een mapnaam mag niet leeg zijn} other {Een bestandsnaam mag niet leeg zijn}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
+  },
+  "fileOperations.validation.dotName": "{kind, select, folder {Mapnamen kunnen niet ‘.’ of ‘..’ zijn} other {Bestandsnamen kunnen niet ‘.’ of ‘..’ zijn}}",
+  "@fileOperations.validation.dotName": {
+    "sourceHash": "bfa0ccb"
+  },
+  "fileOperations.validation.nameLength": "{kind, select, folder {Mapnaam is te lang ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {bytes}}} other {{max, plural, one {teken} other {tekens}}}})} other {Bestandsnaam is te lang ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {bytes}}} other {{max, plural, one {teken} other {tekens}}}})}}",
+  "@fileOperations.validation.nameLength": {
+    "sourceHash": "acef623"
+  },
+  "fileOperations.validation.pathLength": "Volledig pad is te lang ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {bytes}}} other {{max, plural, one {teken} other {tekens}}}})",
+  "@fileOperations.validation.pathLength": {
+    "sourceHash": "1791bc2"
+  },
+  "fileOperations.validation.notPortable.windowsCharacter": "{format, select, smbShare {Namen met ‘{character}’ werken niet op Windows} other {Namen met ‘{character}’ werken niet op Windows of Linux}}",
+  "@fileOperations.validation.notPortable.windowsCharacter": {
+    "sourceHash": "66201fa"
+  },
+  "fileOperations.validation.notPortable.reservedName": "{format, select, smbShare {‘{name}’ is gereserveerd door Windows, dus deze naam werkt daar niet, en de gedeelde map toont dit onderdeel mogelijk onder een andere naam} other {‘{name}’ is gereserveerd door Windows, dus deze naam werkt daar niet}}",
+  "@fileOperations.validation.notPortable.reservedName": {
+    "sourceHash": "b46ff0c"
+  },
+  "fileOperations.validation.notPortable.endsWithSpaceOrPeriod": "{format, select, smbShare {Namen die eindigen op een spatie of een punt werken niet op Windows} other {Namen die eindigen op een spatie of een punt werken niet op Windows of Linux}}",
+  "@fileOperations.validation.notPortable.endsWithSpaceOrPeriod": {
+    "sourceHash": "86ce7a7"
   },
   "fileOperations.validation.extensionChangeBlocked": "De bestandsextensie wijzigen is niet toegestaan (was ‘{oldExt}’)",
   "@fileOperations.validation.extensionChangeBlocked": {
@@ -1361,6 +1385,18 @@
   "fileOperations.validation.pathNullChar": "Het pad bevat een null-teken",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
+  },
+  "fileOperations.validation.typedPathLength": "Pad is te lang ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {bytes}}} other {{max, plural, one {teken} other {tekens}}}})",
+  "@fileOperations.validation.typedPathLength": {
+    "sourceHash": "f953ea2"
+  },
+  "fileOperations.validation.typedSegmentLength": "Een mapnaam in het pad is te lang ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {bytes}}} other {{max, plural, one {teken} other {tekens}}}})",
+  "@fileOperations.validation.typedSegmentLength": {
+    "sourceHash": "50ce47b"
+  },
+  "fileOperations.transferDialog.namePortability": "{count, plural, one {{alsoLinux, select, yes {{countText} naam werkt hier niet op Windows of Linux: ‘{example}’} other {{countText} naam werkt hier niet op Windows: ‘{example}’}}} other {{alsoLinux, select, yes {{countText} namen werken hier niet op Windows of Linux, zoals ‘{example}’} other {{countText} namen werken hier niet op Windows, zoals ‘{example}’}}}}",
+  "@fileOperations.transferDialog.namePortability": {
+    "sourceHash": "e8c7d0f"
   },
   "fileOperations.transferTree.treeLabel": "Bestanden in deze bewerking",
   "@fileOperations.transferTree.treeLabel": {

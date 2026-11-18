@@ -16,9 +16,9 @@
   "@aboutThis.action.openTooltip": {
     "sourceHash": "4bbaa35"
   },
-  "aboutThis.action.showInFileManager": "{platform, select, macos {Toon in Finder} windows {Toon in Verkenner} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Toon in bestandsbeheer}}",
+  "aboutThis.action.showInFileManager": "{platform, select, macos {Toon in Finder} windows {Toon in Verkenner} linuxGnome {Toon in Bestanden} linuxKde {Toon in Dolphin} other {Toon in bestandsbeheer}}",
   "@aboutThis.action.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "aboutThis.action.downloadPage": "Downloadpagina",
   "@aboutThis.action.downloadPage": {
@@ -329,9 +329,9 @@
   "@aboutThis.download.unrecognized": {
     "sourceHash": "5e9fa42"
   },
-  "aboutThis.download.noSource": "{platform, select, macos {macOS heeft dit geregistreerd als gedownload{hasApp, select, yes { met {app}} other {}}{hasDate, select, yes { op <date></date>} other {}}, zonder te zeggen waarvandaan.} windows {Windows recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} other {This carries a record of being downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.}}",
+  "aboutThis.download.noSource": "{platform, select, macos {macOS heeft dit geregistreerd als gedownload{hasApp, select, yes { met {app}} other {}}{hasDate, select, yes { op <date></date>} other {}}, zonder te zeggen waarvandaan.} windows {Windows heeft dit geregistreerd als gedownload{hasApp, select, yes { met {app}} other {}}{hasDate, select, yes { op <date></date>} other {}}, zonder te zeggen waarvandaan.} other {Dit onderdeel is gemarkeerd als gedownload{hasApp, select, yes { met {app}} other {}}{hasDate, select, yes { op <date></date>} other {}}, zonder te zeggen waarvandaan.}}",
   "@aboutThis.download.noSource": {
-    "sourceHash": "7edb92b"
+    "sourceHash": "83ec9b3"
   },
   "aboutThis.cmdrOperation.noRecord": "Geen kopiëren of verplaatsen door Cmdr geregistreerd",
   "@aboutThis.cmdrOperation.noRecord": {
@@ -752,9 +752,9 @@
   "@aboutThis.standardFolder.users": {
     "sourceHash": "955c56c"
   },
-  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {De hoofdmap van de opstartschijf} windows {The top of the system drive} other {The top of the system disk}}",
+  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {De hoofdmap van de opstartschijf} windows {De hoofdmap van het systeemstation} other {De hoofdmap van de systeemschijf}}",
   "@aboutThis.standardFolder.startupDisk": {
-    "sourceHash": "6e69278"
+    "sourceHash": "d7764f1"
   },
   "aboutThis.owner.insideApp": "Deel van {app}",
   "@aboutThis.owner.insideApp": {
@@ -978,9 +978,9 @@
   "@aboutThis.removal.standardFolder.users": {
     "sourceHash": "b72c1fe"
   },
-  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {Hierin staat alles op de opstartschijf, macOS inbegrepen.} windows {It holds everything on the system drive, Windows included.} other {It holds everything on the system disk, the operating system included.}}",
+  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {Hierin staat alles op de opstartschijf, macOS inbegrepen.} windows {Hierin staat alles op het systeemstation, Windows inbegrepen.} other {Hierin staat alles op de systeemschijf, het besturingssysteem inbegrepen.}}",
   "@aboutThis.removal.standardFolder.startupDisk": {
-    "sourceHash": "3f6c151"
+    "sourceHash": "a50aa6f"
   },
   "aboutThis.removal.uncommittedWork": "Het heeft wijzigingen die in geen enkele commit staan, dus git kan die niet terughalen.",
   "@aboutThis.removal.uncommittedWork": {

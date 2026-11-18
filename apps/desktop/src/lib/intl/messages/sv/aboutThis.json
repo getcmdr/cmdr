@@ -15,9 +15,9 @@
   "@aboutThis.action.openTooltip": {
     "sourceHash": "4bbaa35"
   },
-  "aboutThis.action.showInFileManager": "{platform, select, macos {Visa i Finder} windows {Visa i Utforskaren} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Visa i filhanteraren}}",
+  "aboutThis.action.showInFileManager": "{platform, select, macos {Visa i Finder} windows {Visa i Utforskaren} linuxGnome {Visa i Filer} linuxKde {Visa i Dolphin} other {Visa i filhanteraren}}",
   "@aboutThis.action.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "aboutThis.action.downloadPage": "Hämtningssida",
   "@aboutThis.action.downloadPage": {
@@ -328,9 +328,9 @@
   "@aboutThis.download.unrecognized": {
     "sourceHash": "5e9fa42"
   },
-  "aboutThis.download.noSource": "{platform, select, macos {macOS noterade att det här hämtades{hasApp, select, yes { med {app}} other {}}{hasDate, select, yes { den <date></date>} other {}}, utan att säga varifrån.} windows {Windows recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} other {This carries a record of being downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.}}",
+  "aboutThis.download.noSource": "{platform, select, macos {macOS noterade att det här hämtades{hasApp, select, yes { med {app}} other {}}{hasDate, select, yes { den <date></date>} other {}}, utan att säga varifrån.} windows {Windows noterade att det här hämtades{hasApp, select, yes { med {app}} other {}}{hasDate, select, yes { den <date></date>} other {}}, utan att säga varifrån.} other {Det här objektet har en notering om att det hämtades{hasApp, select, yes { med {app}} other {}}{hasDate, select, yes { den <date></date>} other {}}, utan att säga varifrån.}}",
   "@aboutThis.download.noSource": {
-    "sourceHash": "7edb92b"
+    "sourceHash": "83ec9b3"
   },
   "aboutThis.cmdrOperation.noRecord": "Ingen kopiering eller flytt av Cmdr noterad",
   "@aboutThis.cmdrOperation.noRecord": {
@@ -750,9 +750,9 @@
   "@aboutThis.standardFolder.users": {
     "sourceHash": "955c56c"
   },
-  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {Startskivans översta nivå} windows {The top of the system drive} other {The top of the system disk}}",
+  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {Startskivans översta nivå} windows {Systemenhetens översta nivå} other {Systemdiskens översta nivå}}",
   "@aboutThis.standardFolder.startupDisk": {
-    "sourceHash": "6e69278"
+    "sourceHash": "d7764f1"
   },
   "aboutThis.owner.insideApp": "En del av {app}",
   "@aboutThis.owner.insideApp": {
@@ -975,9 +975,9 @@
   "@aboutThis.removal.standardFolder.users": {
     "sourceHash": "b72c1fe"
   },
-  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {Den innehåller allt på startskivan, macOS inräknat.} windows {It holds everything on the system drive, Windows included.} other {It holds everything on the system disk, the operating system included.}}",
+  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {Den innehåller allt på startskivan, macOS inräknat.} windows {Den innehåller allt på systemenheten, Windows inräknat.} other {Den innehåller allt på systemdisken, operativsystemet inräknat.}}",
   "@aboutThis.removal.standardFolder.startupDisk": {
-    "sourceHash": "3f6c151"
+    "sourceHash": "a50aa6f"
   },
   "aboutThis.removal.uncommittedWork": "Det har ändringar som ingen incheckning har, så git kan inte få tillbaka dem.",
   "@aboutThis.removal.uncommittedWork": {

@@ -729,7 +729,11 @@
     "chosen": "Configureer",
     "confidence": "high",
     "forms": "button Configureer…; configuration profile → configuratieprofiel; Configure it below → Stel het hieronder in",
-    "sources": "macOS Finder (Configure Time Machine… → Configureer Time Machine…), System Settings (Configuratieprofiel)"
+    "sources": "macOS Finder (Configure Time Machine… → Configureer Time Machine…), System Settings (Configuratieprofiel)",
+    "exceptions": {
+      "menu.app.settings": "linuxKde branch quotes KDE's standard Configure %1… action, which KDE Dutch writes with the infinitive configureren (nl/kde-dolphin/dolphin.po Configure… → Configureren…): Cmdr configureren…",
+      "fileExplorer.quickFilter.intro.openSettings": "linuxKde branch quotes the same KDE menu row as menu.app.settings: Cmdr configureren…"
+    }
   },
   "confirm": {
     "accept": ["bevestig", "bevestiging"],
@@ -1962,7 +1966,8 @@
     "chosen": "Sleutelhanger",
     "confidence": "high",
     "forms": "the store → Sleutelhanger (Onthoud in Sleutelhanger); the app → Sleutelhangertoegang; another system's keyring → sleutelhanger, Passwords / Keyrings app → Wachtwoorden / Sleutelhangers",
-    "sources": "macOS Dutch; Keychain Access.app InfoPlist.loctable (CFBundleName Sleutelhangertoegang); MS (Windows Sleutelhanger)"
+    "sources": "macOS Dutch; Keychain Access.app InfoPlist.loctable (CFBundleName Sleutelhangertoegang); MS (Windows Sleutelhanger)",
+    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Onthoud in KWallet; a wallet → portefeuille, tentative: KDE's own catalog isn't in the pile); GNOME's Passwords and Keys (Seahorse) → Wachtwoorden en sleutels (tentative, not in the pile)."
   },
   "kind": {
     "accept": ["soort"],
@@ -2039,7 +2044,10 @@
     "chosen": "lijst",
     "confidence": "high",
     "forms": "the Servers list → de lijst Servers (the hub's name after the noun); server list → serverlijst; stops listing it → haalt … uit de lijst; the verb list (apps, shares, names) → tonen, opsommen, noemen in prose",
-    "sources": "catalog (servers.pinHint.body, settings.servers intro: in de lijst Servers), Microsoft Terminology (list → lijst)"
+    "sources": "catalog (servers.pinHint.body, settings.servers intro: in de lijst Servers), Microsoft Terminology (list → lijst)",
+    "exceptions": {
+      "fileOperations.validation.notPortable.reservedName": "\"list\" is the verb here (a share lists the item under another name): toont, not the noun lijst."
+    }
   },
   "listing": {
     "accept": [
@@ -2756,7 +2764,10 @@
     "confidence": "high",
     "decision": "Stoppen terwijl er werk loopt",
     "forms": "button and menu Stop (Stop Cmdr, Stop nu); in a sentence stoppen; quit unexpectedly → onverwachts gestopt",
-    "sources": "macOS Finder (Stop Finder; A17 De Finder kan niet worden gestopt), AppKit (Quit Anyway → Stop toch)"
+    "sources": "macOS Finder (Stop Finder; A17 De Finder kan niet worden gestopt), AppKit (Quit Anyway → Stop toch)",
+    "exceptions": {
+      "updates.toast.readyDetail": "Linux (other) branch narrates the app ending as closing, as Linux desktops do (GNOME Nautilus shortcuts dialog Quit → Sluiten, nl/gnome-nautilus/nautilus.po): Cmdr wordt gesloten, matching the Windows branch's sluit af."
+    }
   },
   "quota": {
     "chosen": "quotum",
@@ -4313,7 +4324,8 @@
     "accept": ["bestandsbeheer", "bestandsbeheerders"],
     "confidence": "high",
     "forms": "in prose je bestandsbeheerder; a short label keeps the catalog's bestandsbeheer (Toon in bestandsbeheer)",
-    "sources": "KDE Dolphin File Manager → Bestandsbeheerder; MS terminology file manager → bestandsbeheer; catalog errors.write.permissionDenied.suggestion.delete"
+    "sources": "KDE Dolphin File Manager → Bestandsbeheerder; MS terminology file manager → bestandsbeheer; catalog errors.write.permissionDenied.suggestion.delete",
+    "note": "Desktop branches name the app: GNOME Files → Bestanden (nl/gnome-nautilus/nautilus.po Files → Bestanden): Toon in Bestanden; KDE → Toon in Dolphin."
   },
   "empty-trash": {
     "chosen": "Leeg prullenmand",
@@ -4389,5 +4401,14 @@
     "accept": ["Linux-distributie", "distributies"],
     "forms": "Linux-distributie en de versie daarvan",
     "sources": "MS terminology distribution → distributie; catalog already ships distributie (errors, crash-report keys)"
+  },
+  "preferences": {
+    "chosen": "Instellingen",
+    "confidence": "high",
+    "sources": "macOS AppKit (Preferences → Instellingen); nl/gnome-nautilus/nautilus.po _Preferences → _Voorkeuren",
+    "other": {
+      "chosen": "Voorkeuren",
+      "note": "GNOME's app-menu row is Voorkeuren with no ellipsis (nl/gnome-nautilus/nautilus.po _Preferences; nl/xfce-thunar/thunar.po Voork_euren...): the linuxGnome branch of menu.app.settings."
+    }
   }
 }

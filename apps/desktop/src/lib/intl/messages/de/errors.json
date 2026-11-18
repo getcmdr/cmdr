@@ -1551,7 +1551,7 @@
   },
   "errors.write.nameTooLong.message": "Der Dateiname ist für das Ziel zu lang.",
   "@errors.write.nameTooLong.message": {
-    "sourceHash": "03258f0"
+    "sourceHash": "91a01a0"
   },
   "errors.write.nameTooLong.suggestion": "Versuche, die Datei mit einem kürzeren Namen umzubenennen.",
   "@errors.write.nameTooLong.suggestion": {
@@ -1631,7 +1631,7 @@
   },
   "errors.write.invalidName.title": "Ungültiger Dateiname",
   "@errors.write.invalidName.title": {
-    "sourceHash": "1fb1e45"
+    "sourceHash": "0af3e69"
   },
   "errors.write.invalidName.message": "{path} hat einen Namen, den das Ziel nicht speichern kann.",
   "@errors.write.invalidName.message": {

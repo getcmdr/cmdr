@@ -245,6 +245,14 @@
   "@multiRename.status.reservedDeviceName": {
     "sourceHash": "8bf464a"
   },
+  "multiRename.status.notPortable": "{alsoLinux, select, yes {Fungerar inte i Windows eller Linux} other {Fungerar inte i Windows}}",
+  "@multiRename.status.notPortable": {
+    "sourceHash": "cc3ed09"
+  },
+  "multiRename.notPortableSummary": "{count, plural, one {{alsoLinux, select, yes {{countText} nytt namn fungerar inte i Windows eller Linux. Objektet byter ändå namn.} other {{countText} nytt namn fungerar inte i Windows. Objektet byter ändå namn.}}} other {{alsoLinux, select, yes {{countText} nya namn fungerar inte i Windows eller Linux. Cmdr byter namn ändå.} other {{countText} nya namn fungerar inte i Windows. Cmdr byter namn ändå.}}}}",
+  "@multiRename.notPortableSummary": {
+    "sourceHash": "4eb996d"
+  },
   "multiRename.error.unclosed": "En platshållare saknar avslutande ”]”",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -632,15 +640,15 @@
   },
   "multiRename.reason.tooLong": "Det nya namnet är för långt för ett filnamn.",
   "@multiRename.reason.tooLong": {
-    "sourceHash": "b709218"
+    "sourceHash": "c49d459"
   },
   "multiRename.reason.reserved": "”.” och ”..” kan inte vara filnamn.",
   "@multiRename.reason.reserved": {
-    "sourceHash": "dcca507"
+    "sourceHash": "b0c0c33"
   },
   "multiRename.reason.disallowedCharacter": "Filnamn får inte innehålla {character}.",
   "@multiRename.reason.disallowedCharacter": {
-    "sourceHash": "66a09f6"
+    "sourceHash": "2d58251"
   },
   "multiRename.reason.reservedDeviceName": "Namnet ”{name}” är reserverat av Windows, så den här enheten kan inte använda det.",
   "@multiRename.reason.reservedDeviceName": {

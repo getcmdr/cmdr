@@ -1195,6 +1195,23 @@
   "@askCmdr.renameReview.sourceMissingTooltip": {
     "sourceHash": "acd6306"
   },
+  "askCmdr.renameReview.nameNotAllowedBadge": "(non autorisé ici)",
+  "@askCmdr.renameReview.nameNotAllowedBadge": {
+    "sourceHash": "b699ad0"
+  },
+  "askCmdr.renameReview.nameNotAllowedTooltip": "Ce disque ne peut pas stocker ce nom. Modifiez le nom pour renommer ce fichier.",
+  "@askCmdr.renameReview.nameNotAllowedTooltip": {
+    "sourceHash": "8cb209e"
+  },
+  "askCmdr.renameReview.notPortableBadge": "(Windows)",
+  "@askCmdr.renameReview.notPortableBadge": {
+    "sourceHash": "dc44dab",
+    "sameAsSourceJustification": "OS name in parentheses; Windows is a product name Microsoft keeps in French (FRENCH.tbx)."
+  },
+  "askCmdr.renameReview.notPortableTooltip": "Ce nom ne fonctionnera pas sous Windows. Cmdr renomme quand même le fichier.",
+  "@askCmdr.renameReview.notPortableTooltip": {
+    "sourceHash": "f7ffcc2"
+  },
   "askCmdr.renameReview.extensionBadge": "(extension)",
   "@askCmdr.renameReview.extensionBadge": {
     "sourceHash": "bcc0b2c",

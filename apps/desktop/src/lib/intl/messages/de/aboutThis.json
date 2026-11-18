@@ -15,9 +15,9 @@
   "@aboutThis.action.openTooltip": {
     "sourceHash": "4bbaa35"
   },
-  "aboutThis.action.showInFileManager": "{platform, select, macos {Im Finder anzeigen} windows {Im Datei-Explorer anzeigen} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Im Dateimanager anzeigen}}",
+  "aboutThis.action.showInFileManager": "{platform, select, macos {Im Finder anzeigen} windows {Im Datei-Explorer anzeigen} linuxGnome {In „Dateien“ anzeigen} linuxKde {In Dolphin anzeigen} other {Im Dateimanager anzeigen}}",
   "@aboutThis.action.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "aboutThis.action.downloadPage": "Download-Seite",
   "@aboutThis.action.downloadPage": {
@@ -329,9 +329,9 @@
   "@aboutThis.download.unrecognized": {
     "sourceHash": "5e9fa42"
   },
-  "aboutThis.download.noSource": "{platform, select, macos {macOS hat vermerkt: heruntergeladen{hasApp, select, yes {, mit {app}} other {}}{hasDate, select, yes {, am <date></date>} other {}}, aber nicht, von wo.} windows {Windows recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} other {This carries a record of being downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.}}",
+  "aboutThis.download.noSource": "{platform, select, macos {macOS hat vermerkt: heruntergeladen{hasApp, select, yes {, mit {app}} other {}}{hasDate, select, yes {, am <date></date>} other {}}, aber nicht, von wo.} windows {Windows hat vermerkt: heruntergeladen{hasApp, select, yes {, mit {app}} other {}}{hasDate, select, yes {, am <date></date>} other {}}, aber nicht, von wo.} other {Das Objekt trägt den Vermerk: heruntergeladen{hasApp, select, yes {, mit {app}} other {}}{hasDate, select, yes {, am <date></date>} other {}}, aber nicht, von wo.}}",
   "@aboutThis.download.noSource": {
-    "sourceHash": "7edb92b"
+    "sourceHash": "83ec9b3"
   },
   "aboutThis.cmdrOperation.noRecord": "Kein Kopieren oder Bewegen durch Cmdr vermerkt",
   "@aboutThis.cmdrOperation.noRecord": {
@@ -750,9 +750,9 @@
   "@aboutThis.standardFolder.users": {
     "sourceHash": "955c56c"
   },
-  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {Der oberste Ordner des Startvolumes} windows {The top of the system drive} other {The top of the system disk}}",
+  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {Der oberste Ordner des Startvolumes} windows {Der oberste Ordner des Systemlaufwerks} other {Der oberste Ordner des Systemlaufwerks}}",
   "@aboutThis.standardFolder.startupDisk": {
-    "sourceHash": "6e69278"
+    "sourceHash": "d7764f1"
   },
   "aboutThis.owner.insideApp": "Teil von {app}",
   "@aboutThis.owner.insideApp": {
@@ -976,9 +976,9 @@
   "@aboutThis.removal.standardFolder.users": {
     "sourceHash": "b72c1fe"
   },
-  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {Der Ordner enthält alles auf dem Startvolume, auch macOS.} windows {It holds everything on the system drive, Windows included.} other {It holds everything on the system disk, the operating system included.}}",
+  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {Der Ordner enthält alles auf dem Startvolume, auch macOS.} windows {Der Ordner enthält alles auf dem Systemlaufwerk, auch Windows.} other {Der Ordner enthält alles auf dem Systemlaufwerk, auch das Betriebssystem.}}",
   "@aboutThis.removal.standardFolder.startupDisk": {
-    "sourceHash": "3f6c151"
+    "sourceHash": "a50aa6f"
   },
   "aboutThis.removal.uncommittedWork": "Das Objekt hat Änderungen, die in keinem Commit stehen, deshalb kann git sie nicht zurückholen.",
   "@aboutThis.removal.uncommittedWork": {

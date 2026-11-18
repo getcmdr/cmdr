@@ -6,6 +6,10 @@
         "reason": "Two senses: the menu-bar File menu (`menu.bar.file`) is Apple's name `Ablage` (Finder's own German menu bar), while the Tell me about this card's item kind (`aboutThis.what.file`) is the noun `Datei` (ruling `file`). A file kind can't read `Ablage`, which means a filing tray."
       },
       {
+        "source": "Preferences",
+        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the real on-disk name of the macOS `~/Library/Preferences` folder, kept verbatim, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's settings menu row, which GNOME German calls `Einstellungen` (de/gnome-nautilus/nautilus.po `_Preferences`)."
+      },
+      {
         "source": "Browse",
         "reason": "Two senses of one English word, split into the `browse-file-picker` and `browse` rulings in `docs/i18n/de/terms.json`. `Durchsuchen…` is the button that opens the system file picker (`servers.sheet.browse`, `settings.adb.browse`), taken from Finder's own `ConnectToWindow.strings` `48.title`. `Durchsehen` is the archives segmented cell (`settings.archives.opt.browse`), which means step INTO the archive and list it like a folder (KDE Dolphin, \"Archive durchsehen\"). The archive sense cannot take `Durchsuchen`: that is the settled scan/search verb (\"Laufwerk wird durchsucht …\"), so merging them would tell the reader the app is searching the archive."
       },
@@ -91,6 +95,10 @@
       }
     ],
     "fr": [
+      {
+        "source": "Preferences",
+        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the real on-disk name of the macOS `~/Library/Preferences` folder, kept verbatim, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's settings menu row, which GNOME French calls `Préférences` (fr/gnome-nautilus/nautilus.po `_Preferences`)."
+      },
       {
         "source": "Unknown",
         "reason": "The adjective agrees with the value it stands for: `ai.local.modelUnknown` is a model (`Inconnu`); `suggestedOps.factUnknown` fills a size or date cell (la taille, la date: `Inconnue`), like `fileOperations.transferProgress.sizeUnknown` (`(inconnue)`)."
@@ -203,6 +211,10 @@
       }
     ],
     "nl": [
+      {
+        "source": "Preferences",
+        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the real on-disk name of the macOS `~/Library/Preferences` folder, kept verbatim, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's settings menu row, which GNOME Dutch calls `Voorkeuren` (nl/gnome-nautilus/nautilus.po `_Preferences`)."
+      },
       {
         "source": "File",
         "reason": "Two senses: the menu-bar File menu (`menu.bar.file`) is Apple's name `Archief` (Finder's own Dutch menu bar), while the Tell me about this card's item kind (`aboutThis.what.file`) is the noun `Bestand` (ruling `file`). A file kind can't read `Archief`, which means an archive."
@@ -359,6 +371,10 @@
       }
     ],
     "sv": [
+      {
+        "source": "Preferences",
+        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the real on-disk name of the macOS `~/Library/Preferences` folder, kept verbatim, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's settings menu row, which GNOME Swedish calls `Inställningar` (sv/gnome-nautilus/nautilus.po `_Preferences`)."
+      },
       {
         "source": "Checking",
         "reason": "`Kontrollerar` verifies something you already have (an API key, a license); `Söker` looks for something that may exist (`updates.status.checking`), matching the update family's `Sök efter uppdateringar`. See `docs/i18n/sv/terms.json` `check`."

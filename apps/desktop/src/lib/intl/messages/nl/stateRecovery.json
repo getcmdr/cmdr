@@ -119,9 +119,9 @@
   "@stateRecovery.keptCopy": {
     "sourceHash": "634e87d"
   },
-  "stateRecovery.showInFinder": "{platform, select, macos {Toon in Finder} windows {Toon in Verkenner} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Toon in bestandsbeheer}}",
+  "stateRecovery.showInFinder": "{platform, select, macos {Toon in Finder} windows {Toon in Verkenner} linuxGnome {Toon in Bestanden} linuxKde {Toon in Dolphin} other {Toon in bestandsbeheer}}",
   "@stateRecovery.showInFinder": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "stateRecovery.dismiss": "Sluit",
   "@stateRecovery.dismiss": {

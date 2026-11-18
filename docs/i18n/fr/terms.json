@@ -1944,7 +1944,8 @@
     "confidence": "high",
     "decision": "Le hub des serveurs : la table",
     "forms": "the store → le trousseau (Mémoriser dans le trousseau); the app Keychain Access → Trousseaux d’accès (Apple’s plural); ai.secretError says Trousseau macOS",
-    "sources": "Keychain Access.app InfoPlist.loctable CFBundleDisplayName (macOS 26.6.2 build 25G83, 2026-09-06)"
+    "sources": "Keychain Access.app InfoPlist.loctable CFBundleDisplayName (macOS 26.6.2 build 25G83, 2026-09-06)",
+    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Mémoriser dans KWallet; a wallet → portefeuille, tentative: KDE's own catalog isn't in the pile); GNOME's Passwords and Keys (Seahorse) → Mots de passe et clés (tentative, not in the pile)."
   },
   "keyword": {
     "accept": ["mots-clés"],
@@ -2016,7 +2017,10 @@
     "chosen": "liste",
     "confidence": "high",
     "forms": "the Servers list → la liste Serveurs (row name unquoted, as shipped); stops listing it → n’affiche plus",
-    "sources": "MS terminology FRA (list → liste); catalog (la liste, 33 uses)"
+    "sources": "MS terminology FRA (list → liste); catalog (la liste, 33 uses)",
+    "exceptions": {
+      "fileOperations.validation.notPortable.reservedName": "\"list\" is the verb here (a share lists the item under another name): afficher, as the ruling's stops listing it → n’affiche plus."
+    }
   },
   "listing": {
     "accept": ["consultation", "consulté", "consulter"],
@@ -2199,7 +2203,7 @@
     "chosen": "nom",
     "confidence": "high",
     "decision": "Renommage et création",
-    "forms": "Name column → Nom; Ext → Ext",
+    "forms": "Name column → Nom; Ext → Ext; filename as a label or a generic rule → nom de fichier (Nom de fichier, the queryUi mode label and fileOperations.mkfile.nameAria; Un nom de fichier ne peut pas être…); one file's own name in a sentence → le nom du fichier (Le nom du fichier est trop long)",
     "sources": "macOS; catalog"
   },
   "nas": {
@@ -3169,7 +3173,8 @@
     "confidence": "high",
     "decision": "Réglages : sections et présentation",
     "exceptions": {
-      "servers.sheet.s3GcsKeyHelp": "Third-party UI: Google Cloud’s French console names Cloud Storage’s settings page Paramètres, so the hint quotes the vendor’s word (tentative)."
+      "servers.sheet.s3GcsKeyHelp": "Third-party UI: Google Cloud’s French console names Cloud Storage’s settings page Paramètres, so the hint quotes the vendor’s word (tentative).",
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome and linuxKde branches quote the desktop's own settings app: GNOME Paramètres (gnome-control-center fr, tentative: not in the pile) and KDE Configuration du système (tentative), never Cmdr's Réglages."
     },
     "forms": "Cmdr’s own window → les Réglages (Ouvrir les réglages, Activez-la dans les Réglages); breadcrumbs Réglages > IA, Réglages › Mises à jour et confidentialité (mirror EN’s separator); Apple’s app is Réglages Système",
     "sources": "macOS (Réglages Système CFBundleName)",
@@ -3373,7 +3378,15 @@
   "startup-disk": {
     "chosen": "disque de démarrage",
     "confidence": "high",
-    "sources": "macOS Finder (Startup Disk… → Disque de démarrage…)"
+    "sources": "macOS Finder (Startup Disk… → Disque de démarrage…)",
+    "windows": {
+      "chosen": "lecteur système",
+      "note": "Windows names a drive lecteur (the fr drive ruling's Windows form); MS TBX system drive."
+    },
+    "other": {
+      "chosen": "disque système",
+      "note": "The English Linux branch says system disk; disque is the fr drive ruling."
+    }
   },
   "status": {
     "accept": ["statut"],
@@ -3499,7 +3512,8 @@
     "sources": "macOS SystemSettings CFBundleName",
     "exceptions": {
       "settings.appearance.themeColorSwatchAria": "The Linux branch names no app: les réglages de votre système is a common noun, never Apple’s Réglages Système.",
-      "servers.refusal.clockSkewed": "other (Linux) branch names the desktop’s own settings generically (les réglages de votre système), not Apple’s Réglages Système"
+      "servers.refusal.clockSkewed": "other (Linux) branch names the desktop’s own settings generically (les réglages de votre système), not Apple’s Réglages Système",
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxKde branch names KDE Plasma's System Settings, which KDE French calls Configuration du système (tentative: not in the pile), not Apple's Réglages Système."
     }
   },
   "system-settings-pane": {
@@ -4226,7 +4240,8 @@
     "chosen": "gestionnaire de fichiers",
     "confidence": "high",
     "forms": "masculine (votre gestionnaire de fichiers)",
-    "sources": "MS terminology file manager → gestionnaire de fichiers; Thunar and Dolphin File Manager → Gestionnaire de fichiers"
+    "sources": "MS terminology file manager → gestionnaire de fichiers; Thunar and Dolphin File Manager → Gestionnaire de fichiers",
+    "note": "Desktop branches name the app: GNOME Files → Fichiers (fr/gnome-nautilus/nautilus.po Files → Fichiers): Afficher dans Fichiers; KDE → Afficher dans Dolphin."
   },
   "user-folder": {
     "chosen": "dossier utilisateur",
@@ -4381,5 +4396,11 @@
     "confidence": "high",
     "forms": "kept English, no article: Dans PowerShell, lancez …",
     "sources": "ms TBX fr (PowerShell → PowerShell); the catalog's Windows branches already write Dans PowerShell"
+  },
+  "preferences": {
+    "chosen": "Préférences",
+    "confidence": "high",
+    "sources": "macOS AppKit MenuCommands (Preferences → Préférences); fr/gnome-nautilus/nautilus.po _Preferences → _Préférences; fr/xfce-thunar/thunar.po Préfé_rences…",
+    "note": "GNOME's app-menu row (the linuxGnome branch of menu.app.settings) is Préférences with no ellipsis; KDE's Configure Cmdr… → Configurer Cmdr… (fr/kde-dolphin/dolphin.po Configure… → Configurer...)."
   }
 }

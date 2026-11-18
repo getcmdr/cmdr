@@ -1551,7 +1551,7 @@
   },
   "errors.write.nameTooLong.message": "Filnamnet är för långt för målet.",
   "@errors.write.nameTooLong.message": {
-    "sourceHash": "03258f0"
+    "sourceHash": "91a01a0"
   },
   "errors.write.nameTooLong.suggestion": "Prova att byta namn på filen till ett kortare namn.",
   "@errors.write.nameTooLong.suggestion": {
@@ -1631,7 +1631,7 @@
   },
   "errors.write.invalidName.title": "Ogiltigt filnamn",
   "@errors.write.invalidName.title": {
-    "sourceHash": "1fb1e45"
+    "sourceHash": "0af3e69"
   },
   "errors.write.invalidName.message": "{path} har ett namn som målet inte kan lagra.",
   "@errors.write.invalidName.message": {
