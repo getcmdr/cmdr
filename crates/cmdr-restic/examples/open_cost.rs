@@ -40,7 +40,6 @@
 use bytes::Bytes;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{ListingPhase, ListingProgress, MountClass, Volume, VolumeError, VolumeRandomReader};
-use cmdr_local::LocalPosixVolume;
 use cmdr_restic::{ResticRepos, ResticVolume, VIRTUAL_ENTRY_NAME};
 use cmdr_smb::volume::{MountAnchor, SmbConnectionParams, connect_smb_volume};
 use rustic_core::repofile::{Node, NodeType};
@@ -303,7 +302,11 @@ fn env_or(name: &str, default: usize) -> usize {
 fn build_parent(via: &str, rt: &Runtime, host: VolumeHost, repo: &str) -> (Arc<dyn Volume>, PathBuf) {
     match via {
         "mount" => {
-            let volume = LocalPosixVolume::on_mount("probe", "/", MountClass::SmbShare, host);
+            // The host's own local volume over the OS mount.
+            #[cfg(unix)]
+            let volume = cmdr_local::LocalPosixVolume::on_mount("probe", "/", MountClass::SmbShare, host);
+            #[cfg(target_os = "windows")]
+            let volume = cmdr_local::LocalWindowsVolume::on_mount("probe", "/", MountClass::SmbShare, host);
             (Arc::new(volume), PathBuf::from(repo))
         }
         "smb" => {
