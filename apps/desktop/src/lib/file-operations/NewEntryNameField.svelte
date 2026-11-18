@@ -42,11 +42,13 @@
             nameAria: 'fileOperations.mkdir.nameAria',
             placeholder: 'fileOperations.mkdir.placeholder',
             errorId: 'new-folder-error',
+            warningId: 'new-folder-warning',
         },
         file: {
             nameAria: 'fileOperations.mkfile.nameAria',
             placeholder: 'fileOperations.mkfile.placeholder',
             errorId: 'new-file-error',
+            warningId: 'new-file-warning',
         },
     } as const
 
@@ -98,7 +100,7 @@
         bind:value
         invalid={!!check.errorMessage}
         ariaLabel={tString(copy.nameAria)}
-        aria-describedby={check.errorMessage ? copy.errorId : undefined}
+        aria-describedby={check.errorMessage ? copy.errorId : check.warningMessage ? copy.warningId : undefined}
         spellcheck={false}
         autocomplete="off"
         placeholder={tString(copy.placeholder)}
@@ -109,6 +111,9 @@
     />
     {#if check.errorMessage}
         <p id={copy.errorId} class="error-message" role="alert">{check.errorMessage}</p>
+    {:else if check.warningMessage}
+        <!-- Not an error: OK still creates it. A status, so it's read without interrupting. -->
+        <p id={copy.warningId} class="warning-message" role="status">{check.warningMessage}</p>
     {/if}
     {#if check.refusal}
         <div class="refusal-report"><ReportOffer incident={check.refusal} size="mini" /></div>
@@ -137,9 +142,15 @@
         margin-bottom: var(--spacing-lg);
     }
 
-    .error-message {
+    .error-message,
+    .warning-message {
         margin: var(--spacing-sm) 0 0;
         font-size: var(--font-size-sm);
         color: var(--color-error);
+    }
+
+    /* The darker warning text, which holds contrast on the dialog's background. */
+    .warning-message {
+        color: var(--color-warning-text);
     }
 </style>

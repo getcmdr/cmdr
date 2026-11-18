@@ -679,7 +679,9 @@ pub(super) fn validate_destination_name(name: &str) -> Result<(), ToolError> {
         ));
     }
     // A shape check of the model's params, so POSIX's rules: what a share or an
-    // exFAT stick refuses on top is the destination's to say, at the rename.
-    validate_filename(name, NameRules::Posix)
+    // exFAT stick refuses on top is the destination's to say, at the review's
+    // preflight (`preflight.rs`, `NameNotAllowed`) and again at the rename.
+    validate_filename(name, NameRules::POSIX)
+        .map(|_portable_or_not| ())
         .map_err(|_| ToolError::invalid_params("Each destinationName must be a valid filename."))
 }

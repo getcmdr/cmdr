@@ -10,7 +10,7 @@ use super::plan::{
 };
 use super::transform::{CaseChange, SEARCH_BUILDS};
 use cmdr_fs::entry::FileEntry;
-use cmdr_fs::validation::NameRules;
+use cmdr_fs::validation::{NameRules, NameTier, PortabilityWarning};
 use cmdr_media_meta::{MediaFacts, MediaField};
 
 const DIR: &str = "/Users/me/Photos/Holiday 2026";
@@ -51,7 +51,7 @@ fn run(spec: &MultiRenameSpec, folder: &[FileEntry], batch: &[&str]) -> Vec<(Str
     preview(
         &compiled,
         Path::new(DIR),
-        NameRules::Posix,
+        NameRules::POSIX,
         &rows,
         folder,
         &NameEdits::default(),
@@ -75,7 +75,7 @@ fn previewing_by_name_marks_a_gone_file_missing_in_place() {
     let rows = preview_names(
         &compiled,
         Path::new(DIR),
-        NameRules::Posix,
+        NameRules::POSIX,
         &names,
         &folder,
         &NameEdits::default(),
@@ -202,15 +202,16 @@ fn invalid_names_say_why() {
     );
 }
 
-/// A row is judged by the folder's filesystem: `12:30` is a fine name on APFS
-/// and one an exFAT stick can't store, and `nul` is reserved on a share.
+/// A row is judged by the folder's filesystem: `12:30` is a fine name on APFS,
+/// one a Mac's exFAT stick or a share takes with a warning (Windows reads a
+/// stand-in), and one a driver that refuses `:` can't store.
 #[test]
 fn a_new_name_is_judged_by_the_destination_rules() {
     let folder = [file("a.txt")];
-    let compiled = Compiled::new(&spec("12:30")).expect("a valid spec");
     let rows = [(0, &folder[0])];
-    let status = |rules| {
-        preview(
+    let row = |mask: &str, rules| {
+        let compiled = Compiled::new(&spec(mask)).expect("a valid spec");
+        let row = preview(
             &compiled,
             Path::new(DIR),
             rules,
@@ -218,39 +219,66 @@ fn a_new_name_is_judged_by_the_destination_rules() {
             &folder,
             &NameEdits::default(),
             &NoMedia,
-        )[0]
-        .status
-        .clone()
+        )
+        .remove(0);
+        (row.status, row.warning)
     };
-    assert_eq!(status(NameRules::Posix), RowStatus::Ready);
-    assert_eq!(status(NameRules::SmbShare), RowStatus::Ready);
+    let colon = Some(PortabilityWarning::WindowsCharacter {
+        character: ":".to_string(),
+    });
+    let warning_stick = NameRules {
+        windows_characters: NameTier::Warn,
+        reserved_names: NameTier::Warn,
+        ..NameRules::windows_format()
+    };
+    let refusing_stick = NameRules {
+        windows_characters: NameTier::Refuse,
+        ..warning_stick
+    };
+    assert_eq!(row("12:30", NameRules::POSIX), (RowStatus::Ready, None));
+    assert_eq!(row("12:30", NameRules::smb_share()), (RowStatus::Ready, colon.clone()));
+    assert_eq!(row("12:30", warning_stick), (RowStatus::Ready, colon));
     assert_eq!(
-        status(NameRules::Windows),
-        RowStatus::InvalidName {
-            reason: InvalidNameReason::DisallowedCharacter {
-                character: ":".to_string()
-            }
-        }
+        row("12:30", refusing_stick),
+        (
+            RowStatus::InvalidName {
+                reason: InvalidNameReason::DisallowedCharacter {
+                    character: ":".to_string()
+                }
+            },
+            None
+        )
     );
+    assert_eq!(
+        row("nul", NameRules::smb_share()),
+        (
+            RowStatus::Ready,
+            Some(PortabilityWarning::ReservedName {
+                name: "nul".to_string()
+            })
+        )
+    );
+}
 
-    let compiled = Compiled::new(&spec("nul")).expect("a valid spec");
-    let row = preview(
+/// A row that won't rename has nothing to warn about, even when its new name
+/// would: a duplicate's `:` isn't the person's next problem.
+#[test]
+fn a_blocked_row_carries_no_warning() {
+    let folder = [file("a.txt"), file("b.txt")];
+    let compiled = Compiled::new(&spec("x:y")).expect("a valid spec");
+    let rows = [(0, &folder[0]), (1, &folder[1])];
+    let preview = preview(
         &compiled,
         Path::new(DIR),
-        NameRules::SmbShare,
+        NameRules::smb_share(),
         &rows,
         &folder,
         &NameEdits::default(),
         &NoMedia,
     );
-    assert_eq!(
-        row[0].status,
-        RowStatus::InvalidName {
-            reason: InvalidNameReason::ReservedDeviceName {
-                name: "nul".to_string()
-            }
-        }
-    );
+    for row in preview {
+        assert_eq!((row.status, row.warning), (RowStatus::Duplicate, None));
+    }
 }
 
 #[test]
@@ -349,7 +377,7 @@ fn a_row_carries_its_file_icon_and_whether_it_is_a_folder() {
     let out = preview(
         &compiled,
         Path::new(DIR),
-        NameRules::Posix,
+        NameRules::POSIX,
         &rows,
         &folder,
         &NameEdits::default(),
@@ -486,7 +514,7 @@ fn run_media(spec: &MultiRenameSpec, folder: &[FileEntry], media: &MediaByName<'
     preview(
         &compiled,
         Path::new(DIR),
-        NameRules::Posix,
+        NameRules::POSIX,
         &rows,
         folder,
         &NameEdits::default(),
@@ -633,7 +661,7 @@ fn run_edited(spec: &MultiRenameSpec, folder: &[FileEntry], edits: &[(&str, &str
     preview(
         &compiled,
         Path::new(DIR),
-        NameRules::Posix,
+        NameRules::POSIX,
         &rows,
         folder,
         &NameEdits::new(edits),

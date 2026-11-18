@@ -514,7 +514,7 @@ describe('getUserFriendlyMessage', () => {
       }
       const result = getUserFriendlyMessage(error)
 
-      expect(result.title).toBe('Invalid file name')
+      expect(result.title).toBe('Invalid filename')
       // The message's job is naming the file to rename, so the path has to reach it.
       expect(result.message).toContain('/path/bad:name')
     })

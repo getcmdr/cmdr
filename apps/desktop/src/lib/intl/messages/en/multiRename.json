@@ -300,6 +300,22 @@
   "@multiRename.status.reservedDeviceName": {
     "description": "Preview note: the new name is one Windows keeps for devices (CON, NUL, AUX, COM1, and the like), which this folder's network share or Windows-formatted drive can't use. Keep \"Windows\" as is."
   },
+  "multiRename.status.notPortable": "{alsoLinux, select, yes {Won’t work on Windows or Linux} other {Won’t work on Windows}}",
+  "@multiRename.status.notPortable": {
+    "description": "Accessible name of the small warning symbol on a preview row whose new name the folder takes but Windows can’t read as typed (a \":\" in it, a name ending in a period, a name Windows keeps for devices like CON). The row still gets renamed. Keep \"Windows\" and \"Linux\" as is. Keep it short: it names a symbol.",
+    "placeholders": {
+      "alsoLinux": "\"yes\" when Linux can’t read it either (a Windows-formatted USB drive), anything else when only Windows"
+    }
+  },
+  "multiRename.notPortableSummary": "{count, plural, one {{alsoLinux, select, yes {{countText} new name won’t work on Windows or Linux. It still gets renamed.} other {{countText} new name won’t work on Windows. It still gets renamed.}}} other {{alsoLinux, select, yes {{countText} new names won’t work on Windows or Linux. They still get renamed.} other {{countText} new names won’t work on Windows. They still get renamed.}}}}",
+  "@multiRename.notPortableSummary": {
+    "description": "Warning line under the Multi-rename preview list, when the folder is on a network share or a Windows-formatted drive and some new names have characters Windows can’t use (like \":\"), end in a period, or are names Windows keeps for devices (like CON). Those files are still renamed; the rows carry a warning symbol whose tooltip says why. Keep \"Windows\" and \"Linux\" as is.",
+    "placeholders": {
+      "count": "how many new names are affected, as a number; drives the plural",
+      "countText": "the same count, formatted (e.g. 1,204)",
+      "alsoLinux": "\"yes\" when Linux can’t read some of them either (a Windows-formatted USB drive), anything else when only Windows"
+    }
+  },
   "multiRename.error.unclosed": "A placeholder is missing its closing “]”",
   "@multiRename.error.unclosed": {
     "description": "Shown when a mask has a [ without a matching ]."
@@ -731,15 +747,15 @@
   "@multiRename.reason.empty": {
     "description": "Tooltip on the preview's \"not a valid name\" symbol when the masks produce an empty name."
   },
-  "multiRename.reason.tooLong": "The new name is too long for a file name.",
+  "multiRename.reason.tooLong": "The new name is too long for a filename.",
   "@multiRename.reason.tooLong": {
     "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name is longer than a file name may be."
   },
-  "multiRename.reason.reserved": "“.” and “..” can’t be file names.",
+  "multiRename.reason.reserved": "“.” and “..” can’t be filenames.",
   "@multiRename.reason.reserved": {
     "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name is \".\" or \"..\", which name a folder itself and its parent. Keep both dot names exactly as they are."
   },
-  "multiRename.reason.disallowedCharacter": "File names can’t contain {character}.",
+  "multiRename.reason.disallowedCharacter": "Filenames can’t contain {character}.",
   "@multiRename.reason.disallowedCharacter": {
     "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name holds a character file names can't have, such as a slash. {character} is that character."
   },

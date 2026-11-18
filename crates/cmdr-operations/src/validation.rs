@@ -389,25 +389,24 @@ pub(crate) fn is_real_directory(path: &Path) -> bool {
 // Path length validation
 // ============================================================================
 
-/// Maximum file name length in bytes (APFS/HFS+ limit)
-const MAX_NAME_BYTES: usize = 255;
-/// Maximum path length in bytes (macOS PATH_MAX)
-const MAX_PATH_BYTES: usize = 1024;
-
-/// Validates that a destination path doesn't exceed filesystem name/path length limits.
+/// Validates that a LOCAL destination path fits the host's path API
+/// (`cmdr_fs::validation::HOST_PATH_LIMIT`, in its unit), and that its name
+/// isn't past every filesystem's limit. A name only some destinations refuse
+/// (`é` × 200 is 400 bytes but 200 UTF-16 units: APFS and exFAT take it, ext4
+/// doesn't) is the destination's own answer, which comes back typed
+/// (`ENAMETOOLONG` → `NameTooLong`) and asks per item like any refused name.
 pub(crate) fn validate_path_length(dest_path: &Path) -> Result<(), WriteOperationError> {
-    // Check total path length
-    let path_str = dest_path.as_os_str();
-    if path_str.len() > MAX_PATH_BYTES {
+    let limit = cmdr_fs::validation::HOST_PATH_LIMIT;
+    let path_str = dest_path.to_string_lossy();
+    if limit.length_of(&path_str) > limit.max {
         return Err(WriteOperationError::IoError {
             path: dest_path.display().to_string(),
-            message: format!("Path exceeds maximum length of {} bytes", MAX_PATH_BYTES).into(),
+            message: format!("Path exceeds maximum length of {} {:?}", limit.max, limit.unit).into(),
         });
     }
 
-    // Check file name component length
     if let Some(name) = dest_path.file_name()
-        && name.len() > MAX_NAME_BYTES
+        && cmdr_fs::validation::over_every_name_limit(&name.to_string_lossy())
     {
         return Err(WriteOperationError::NameTooLong {
             path: dest_path.display().to_string(),

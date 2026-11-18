@@ -1,20 +1,41 @@
 /** Client-side filename validation for instant keystroke feedback. */
 
 import { tString } from '#lib/intl/messages.svelte.js'
+import { formatInteger } from '#lib/intl/number-format.js'
 import { fromUserInput, isLocalPath, joinPath, parsePath } from '#lib/path/grammar.js'
 import { fileExtension, kindOfRenamedName, type NameKind } from './file-extension'
-import type { NameRules, ValidationError } from '#lib/ipc/bindings.js'
+import type {
+  LengthLimit,
+  LengthUnit,
+  NameFormat,
+  NameRules,
+  PathLimits,
+  PortabilityWarning,
+  ValidationError,
+} from '#lib/ipc/bindings.js'
 
-/** Defaults match macOS. Call initPathLimits() at startup to get platform-specific values from the backend. */
-let maxNameBytes = 255
-let maxPathBytes = 1024
+/**
+ * The host's own limits, for a path typed before any destination answers. Defaults match
+ * macOS; `initPathLimits()` asks the backend at startup. A folder's own limits come with its
+ * rules (`getNameRules`).
+ */
+let hostLimits: PathLimits = { name: { max: 255, unit: 'utf16Units' }, path: { max: 1023, unit: 'bytes' } }
 
-/** Fetches platform-specific limits from the backend. Call once at app startup. */
+/** Fetches this OS's limits from the backend. Call once at app startup. */
 export async function initPathLimits(): Promise<void> {
   const { getPathLimits } = await import('#lib/tauri-commands/index.js')
-  const limits = await getPathLimits()
-  maxNameBytes = limits.maxNameBytes
-  maxPathBytes = limits.maxPathBytes
+  hostLimits = await getPathLimits()
+}
+
+/** How long `text` is in `unit`: UTF-8 bytes, or UTF-16 code units (JS's own `length`). */
+export function lengthIn(text: string, unit: LengthUnit): number {
+  return unit === 'bytes' ? new TextEncoder().encode(text).length : text.length
+}
+
+/** `text`'s length when it's past `limit`, or `null` when it fits. */
+function exceededBy(text: string, limit: LengthLimit): number | null {
+  const length = lengthIn(text, limit.unit)
+  return length > limit.max ? length : null
 }
 
 export type ValidationSeverity = 'error' | 'warning' | 'ok'
@@ -41,14 +62,48 @@ const WINDOWS_RESERVED_NAMES = new Set([
 /** The printable characters a FAT32, exFAT, or NTFS name can't hold. */
 const WINDOWS_FORBIDDEN_CHARACTERS = new Set(['"', '*', ':', '<', '>', '?', '\\', '|'])
 
-/** How a refused character reads in the message: itself, `NUL`, or its `U+` code. */
-function disallowedCharacter(ch: string, rules: NameRules): string | null {
-  if (ch === '/') return '/'
-  if (ch === '\0') return 'NUL'
-  if (rules !== 'windows') return null
+/** How a character Windows can't use reads: itself, or its `U+` code when it's a control character. */
+function windowsCharacter(ch: string): string | null {
   const code = ch.codePointAt(0) ?? 0
   if (code >= 0x01 && code <= 0x1f) return `U+${code.toString(16).toUpperCase().padStart(4, '0')}`
   return WINDOWS_FORBIDDEN_CHARACTERS.has(ch) ? ch : null
+}
+
+/**
+ * Whether `ch` shows nothing on its own: the mirror of `cmdr_fs::validation::renders_blank`
+ * (Unicode `White_Space`, the invisible format characters, and the other blank-rendering ones).
+ * The shared case file pins the two lists together.
+ */
+function rendersBlank(ch: string): boolean {
+  if (/^\p{White_Space}$/u.test(ch)) return true
+  const c = ch.codePointAt(0) ?? 0
+  const within = (lo: number, hi: number) => c >= lo && c <= hi
+  return (
+    within(0x202a, 0x202e) ||
+    within(0x2066, 0x2069) ||
+    c === 0x200e ||
+    c === 0x200f ||
+    c === 0x061c ||
+    within(0x200b, 0x200d) ||
+    c === 0x2060 ||
+    c === 0xfeff ||
+    c === 0x00ad ||
+    c === 0x034f ||
+    c === 0x115f ||
+    c === 0x1160 ||
+    c === 0x3164 ||
+    c === 0xffa0 ||
+    c === 0x17b4 ||
+    c === 0x17b5 ||
+    within(0x180b, 0x180f) ||
+    within(0x2061, 0x2064) ||
+    within(0x206a, 0x206f) ||
+    within(0xfe00, 0xfe0f) ||
+    within(0x1bca0, 0x1bca3) ||
+    within(0x1d173, 0x1d17a) ||
+    within(0xe0000, 0xe0fff) ||
+    c === 0x2800
+  )
 }
 
 /** The part of `name` that makes it a Windows device name, as typed, or `null`. */
@@ -60,33 +115,74 @@ function reservedDeviceName(name: string): string | null {
 }
 
 /**
- * Whether `name` is empty or only whitespace, by the Rust side's rule (`str::trim`, Unicode `White_Space`). ❌ Not
- * `String.prototype.trim`: it strips a byte-order mark, which Rust keeps, and keeps NEL (U+0085), which Rust strips.
+ * Whether `name` renders as nothing: only whitespace and invisible characters, by the Rust side's rule
+ * (`renders_blank`). ❌ Not `String.prototype.trim`: it keeps NEL (U+0085), which Rust counts as blank.
  */
 function isBlank(name: string): boolean {
-  return /^\p{White_Space}*$/u.test(name)
+  return [...name].every(rendersBlank)
 }
 
+/** What a destination does with a name: refuses it, takes it with a portability warning, or takes it. */
+export type NameVerdict =
+  | { kind: 'ok' }
+  | { kind: 'refused'; error: ValidationError }
+  | { kind: 'warned'; warning: PortabilityWarning }
+
 /**
- * Why a destination following `rules` refuses `name`, or `null` when it takes it: the
- * keystroke mirror of `cmdr_fs::validation::validate_filename`. Both run the cases in
+ * What a destination following `rules` does with `name`: the keystroke mirror of
+ * `cmdr_fs::validation::validate_filename`. Both run the cases in
  * `crates/cmdr-fs/src/name_rules_cases.json`, so the two can't drift. `rules` is the
- * folder's (`getNameRules`), ❌ never a guess from the host OS.
+ * folder's (`getNameRules`), ❌ never a guess from the host OS. A refusal anywhere in the
+ * name beats a warning; among warnings, the first is named.
  */
-export function nameRefusal(name: string, rules: NameRules): ValidationError | null {
-  if (isBlank(name)) return { kind: 'empty' }
+export function nameVerdict(name: string, rules: NameRules): NameVerdict {
+  const refused = (error: ValidationError): NameVerdict => ({ kind: 'refused', error })
+  if (isBlank(name)) return refused({ kind: 'empty' })
   for (const ch of name) {
-    const character = disallowedCharacter(ch, rules)
-    if (character !== null) return { kind: 'disallowedCharacter', character }
+    if (ch === '/') return refused({ kind: 'disallowedCharacter', character: '/' })
+    if (ch === '\0') return refused({ kind: 'disallowedCharacter', character: 'NUL' })
   }
-  const bytes = new TextEncoder().encode(name).length
-  if (bytes > maxNameBytes) return { kind: 'nameTooLong', bytes, max: maxNameBytes }
-  if (rules !== 'posix') {
-    const reserved = reservedDeviceName(name)
-    if (reserved !== null) return { kind: 'reservedName', name: reserved }
+  if (name === '.' || name === '..') return refused({ kind: 'dotName' })
+  const length = exceededBy(name, rules.nameLimit)
+  if (length !== null) {
+    return refused({ kind: 'nameTooLong', length, max: rules.nameLimit.max, unit: rules.nameLimit.unit })
   }
-  if (rules === 'windows' && /[ .]$/.test(name)) return { kind: 'endsWithSpaceOrPeriod' }
-  return null
+
+  let warning: PortabilityWarning | null = null
+  const classes: { tier: NameRules['windowsCharacters']; error: ValidationError; warn: PortabilityWarning }[] = []
+  const character = [...name].map(windowsCharacter).find((c) => c !== null)
+  if (character !== undefined && character !== null) {
+    classes.push({
+      tier: rules.windowsCharacters,
+      error: { kind: 'disallowedCharacter', character },
+      warn: { kind: 'windowsCharacter', character },
+    })
+  }
+  const reserved = reservedDeviceName(name)
+  if (reserved !== null) {
+    classes.push({
+      tier: rules.reservedNames,
+      error: { kind: 'reservedName', name: reserved },
+      warn: { kind: 'reservedName', name: reserved },
+    })
+  }
+  if (/[ .]$/.test(name)) {
+    classes.push({
+      tier: rules.windowsCharacters,
+      error: { kind: 'endsWithSpaceOrPeriod' },
+      warn: { kind: 'endsWithSpaceOrPeriod' },
+    })
+  }
+  for (const { tier, error, warn } of classes) {
+    if (tier === 'refuse') return refused(error)
+    if (tier === 'warn') warning ??= warn
+  }
+  return warning === null ? { kind: 'ok' } : { kind: 'warned', warning }
+}
+
+/** ICU `select` value for a limit's unit: `bytes`, or `characters` for UTF-16 units. */
+function unitWord(unit: LengthUnit): 'bytes' | 'characters' {
+  return unit === 'bytes' ? 'bytes' : 'characters'
 }
 
 /** The words for a name refusal, the live check's and the backend's alike, so the two read the same. */
@@ -95,20 +191,24 @@ export function validationMessage(error: ValidationError, isDir: boolean): strin
   switch (error.kind) {
     case 'empty':
       return tString('fileOperations.validation.empty', { kind })
+    case 'dotName':
+      return tString('fileOperations.validation.dotName', { kind })
     case 'disallowedCharacter':
       return tString('fileOperations.validation.disallowedCharacter', { kind, character: error.character })
     case 'nameTooLong':
-      return tString('fileOperations.validation.nameTooLong', {
+      return tString('fileOperations.validation.nameLength', {
         kind,
-        byteCount: String(error.bytes),
-        maxBytes: String(error.max),
+        length: formatInteger(error.length),
+        maxLength: formatInteger(error.max),
         max: error.max,
+        unit: unitWord(error.unit),
       })
     case 'pathTooLong':
-      return tString('fileOperations.validation.pathTooLong', {
-        byteCount: String(error.bytes),
-        maxBytes: String(error.max),
+      return tString('fileOperations.validation.pathLength', {
+        length: formatInteger(error.length),
+        maxLength: formatInteger(error.max),
         max: error.max,
+        unit: unitWord(error.unit),
       })
     case 'reservedName':
       return tString('fileOperations.validation.reservedName', { kind, name: error.name })
@@ -117,10 +217,46 @@ export function validationMessage(error: ValidationError, isDir: boolean): strin
   }
 }
 
-/** Validates a (trimmed) file or folder name for a destination following `rules`. */
+/**
+ * Whether a portability warning reaches Linux too: a stand-in on a Windows-format stick shows as
+ * something else on Linux (verified on kernel 7.2.12, `docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`).
+ * A reserved name is only Windows' trouble, and a share's stand-ins map back for Linux's clients.
+ * The mirror of `PortabilityWarning::reaches_linux`; `format` is the destination's.
+ */
+export function warningReachesLinux(warning: PortabilityWarning, format: NameFormat): boolean {
+  return format === 'windows' && warning.kind !== 'reservedName'
+}
+
+/** The words for a name the destination takes but won't keep portable. */
+export function portabilityMessage(warning: PortabilityWarning, rules: NameRules): string {
+  const format = rules.format === 'smbShare' ? 'smbShare' : 'drive'
+  switch (warning.kind) {
+    case 'windowsCharacter':
+      return tString('fileOperations.validation.notPortable.windowsCharacter', {
+        format,
+        character: warning.character,
+      })
+    case 'reservedName':
+      return tString('fileOperations.validation.notPortable.reservedName', { format, name: warning.name })
+    case 'endsWithSpaceOrPeriod':
+      return tString('fileOperations.validation.notPortable.endsWithSpaceOrPeriod', { format })
+  }
+}
+
+/**
+ * Validates a (trimmed) file or folder name for a destination following `rules`: an error for
+ * a refusal, a warning for a name it takes but won't keep portable (the operation goes ahead).
+ */
 export function validateName(name: string, isDir: boolean, rules: NameRules): ValidationResult {
-  const refusal = nameRefusal(name, rules)
-  return refusal === null ? OK_RESULT : { severity: 'error', message: validationMessage(refusal, isDir) }
+  const verdict = nameVerdict(name, rules)
+  switch (verdict.kind) {
+    case 'ok':
+      return OK_RESULT
+    case 'refused':
+      return { severity: 'error', message: validationMessage(verdict.error, isDir) }
+    case 'warned':
+      return { severity: 'warning', message: portabilityMessage(verdict.warning, rules) }
+  }
 }
 
 /** Validates that a file or dir name is not empty after trimming. */
@@ -131,21 +267,18 @@ export function validateNotEmpty(name: string, isDir = false): ValidationResult 
   return OK_RESULT
 }
 
-/** Validates full path byte length (max 1024 bytes). */
-export function validatePathLength(parentPath: string, name: string): ValidationResult {
-  const fullPath = joinPath(parentPath, name.trim())
-  const byteLength = new TextEncoder().encode(fullPath).length
-  if (byteLength >= maxPathBytes) {
-    return {
-      severity: 'error',
-      message: tString('fileOperations.validation.pathTooLong', {
-        byteCount: String(byteLength),
-        maxBytes: String(maxPathBytes),
-        max: maxPathBytes,
-      }),
-    }
+/** Validates the full path's length against the folder's own path limit, in its unit (none: the backend answers). */
+export function validatePathLength(parentPath: string, name: string, rules: NameRules): ValidationResult {
+  if (rules.pathLimit === null) return OK_RESULT
+  const length = exceededBy(joinPath(parentPath, name.trim()), rules.pathLimit)
+  if (length === null) return OK_RESULT
+  return {
+    severity: 'error',
+    message: validationMessage(
+      { kind: 'pathTooLong', length, max: rules.pathLimit.max, unit: rules.pathLimit.unit },
+      false,
+    ),
   }
-  return OK_RESULT
 }
 
 /**
@@ -263,8 +396,24 @@ export function validateShareNamed(path: string): ValidationResult {
   return OK_RESULT
 }
 
-/** Validates a full directory path (not a filename). Checks structure only, not existence. */
-export function validateDirectoryPath(path: string): ValidationResult {
+/** The limits a typed path is held to: the host's, or the destination's once its rules answer. */
+export interface TypedPathLimits {
+  name: LengthLimit
+  /** `null`: the destination's backend answers for itself. */
+  path: LengthLimit | null
+}
+
+/** A folder's rules as the limits a typed path in it is held to. */
+export function limitsOf(rules: NameRules): TypedPathLimits {
+  return { name: rules.nameLimit, path: rules.pathLimit }
+}
+
+/**
+ * Validates a full directory path (not a filename). Checks structure only, not existence.
+ * `limits` default to the host's; a caller that knows the destination's rules passes those
+ * (`limitsOf`), so a deep share path isn't held to this Mac's `PATH_MAX`.
+ */
+export function validateDirectoryPath(path: string, limits: TypedPathLimits = hostLimits): ValidationResult {
   const trimmed = path.trim()
 
   if (trimmed.length === 0) {
@@ -290,29 +439,30 @@ export function validateDirectoryPath(path: string): ValidationResult {
     return { severity: 'error', message: tString('fileOperations.validation.pathNullChar') }
   }
 
-  const encoder = new TextEncoder()
-  const totalBytes = encoder.encode(trimmed).length
-  if (totalBytes >= maxPathBytes) {
+  const totalLength = limits.path === null ? null : exceededBy(trimmed, limits.path)
+  if (limits.path !== null && totalLength !== null) {
     return {
       severity: 'error',
-      message: tString('fileOperations.validation.pathTotalTooLong', {
-        byteCount: String(totalBytes),
-        maxBytes: String(maxPathBytes),
-        max: maxPathBytes,
+      message: tString('fileOperations.validation.typedPathLength', {
+        length: formatInteger(totalLength),
+        maxLength: formatInteger(limits.path.max),
+        max: limits.path.max,
+        unit: unitWord(limits.path.unit),
       }),
     }
   }
 
   const segments = wire.split('/').filter((s) => s.length > 0)
   for (const segment of segments) {
-    const segmentBytes = encoder.encode(segment).length
-    if (segmentBytes > maxNameBytes) {
+    const segmentLength = exceededBy(segment, limits.name)
+    if (segmentLength !== null) {
       return {
         severity: 'error',
-        message: tString('fileOperations.validation.pathSegmentTooLong', {
-          byteCount: String(segmentBytes),
-          maxBytes: String(maxNameBytes),
-          max: maxNameBytes,
+        message: tString('fileOperations.validation.typedSegmentLength', {
+          length: formatInteger(segmentLength),
+          maxLength: formatInteger(limits.name.max),
+          max: limits.name.max,
+          unit: unitWord(limits.name.unit),
         }),
       }
     }
@@ -340,15 +490,16 @@ export function validateFilename(
   const nameCheck = validateName(newName.trim(), isDir, rules)
   if (nameCheck.severity === 'error') return nameCheck
 
-  const pathLen = validatePathLength(parentPath, newName)
+  const pathLen = validatePathLength(parentPath, newName, rules)
   if (pathLen.severity === 'error') return pathLen
 
   const extCheck = validateExtensionChange(originalName, newName, allowExtensionChanges, kind)
   if (extCheck.severity === 'error') return extCheck
 
-  // Warning checks
+  // Warning checks: a clash first, since it's about this folder; then a name that
+  // won't keep portable (the rename goes ahead either way).
   const conflict = validateConflict(newName, siblingNames, originalName)
   if (conflict.severity === 'warning') return conflict
 
-  return OK_RESULT
+  return nameCheck
 }

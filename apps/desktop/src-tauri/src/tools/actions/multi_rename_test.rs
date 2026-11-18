@@ -21,7 +21,7 @@ fn preview_of(params: Value, folder: &[FileEntry], batch: &[&str]) -> Vec<Previe
     preview_names(
         &compiled,
         Path::new(DIR),
-        NameRules::Posix,
+        NameRules::POSIX,
         &names,
         folder,
         &NameEdits::default(),
@@ -376,7 +376,7 @@ mod media {
             let ours = preview(
                 &compiled,
                 &dir,
-                NameRules::Posix,
+                NameRules::POSIX,
                 &names(&entries),
                 &entries,
                 Some(&media),
@@ -391,7 +391,7 @@ mod media {
         let rows = preview(
             &compiled,
             &dir,
-            NameRules::Posix,
+            NameRules::POSIX,
             &names(&entries),
             &entries,
             Some(&media),
@@ -439,7 +439,7 @@ mod media {
             preview(
                 &compiled,
                 &dir,
-                NameRules::Posix,
+                NameRules::POSIX,
                 &names(&entries),
                 &entries,
                 Some(&media)
@@ -524,7 +524,7 @@ mod media {
         let rows = preview(
             &title_mask(),
             &dir,
-            NameRules::Posix,
+            NameRules::POSIX,
             &names(&entries),
             &entries,
             Some(&media),
@@ -562,7 +562,7 @@ mod media {
         let rows = preview(
             &title_mask(),
             &dir,
-            NameRules::Posix,
+            NameRules::POSIX,
             &names(&entries),
             &entries,
             Some(&media),
@@ -621,7 +621,7 @@ mod media {
         let rows = preview(
             &title_mask(),
             &folder,
-            NameRules::Posix,
+            NameRules::POSIX,
             &names(&entries),
             &entries,
             Some(&media),
@@ -687,7 +687,7 @@ mod media {
         let rows = preview(
             &title_mask(),
             &folder,
-            NameRules::Posix,
+            NameRules::POSIX,
             &names(&entries),
             &entries,
             Some(&media),

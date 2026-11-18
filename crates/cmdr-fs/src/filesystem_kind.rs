@@ -20,7 +20,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::validation::NameRules;
+use crate::validation::{LengthLimit, NameRules};
 
 /// FAT32's hard per-file ceiling: 4 GiB minus one byte, the largest value a
 /// 32-bit byte-count field can hold. A file of exactly 4 GiB does not fit.
@@ -136,19 +136,23 @@ impl FilesystemKind {
         !matches!(self, Self::Fat32 | Self::ExFat)
     }
 
-    /// Which names this filesystem takes: the single source for every name check
-    /// (rename, create, Multi-Rename). The format decides, ❌ never the host OS.
+    /// Which names this filesystem takes, warns about, and how long they run:
+    /// the single source for every name check (rename, create, Multi-Rename).
+    /// The format decides which names Windows can't use; for a Windows-format
+    /// disk, the host's own driver decides whether one is refused or taken with
+    /// a warning ([`NameRules::windows_format`]). The path limit is the caller's
+    /// to add: it's the path API's, not the format's.
     ///
-    /// `Mtp` and `Other` answer [`NameRules::Posix`]: Cmdr can't see what's
+    /// `Mtp` and `Other` answer [`NameRules::POSIX`]: Cmdr can't see what's
     /// behind them, so it refuses only what no filesystem takes and leaves the
     /// rest to the device or server, which answers for itself.
     pub fn name_rules(self) -> NameRules {
         match self {
-            Self::Fat32 | Self::ExFat | Self::Ntfs => NameRules::Windows,
-            Self::Smb => NameRules::SmbShare,
-            Self::Apfs | Self::HfsPlus | Self::Ext4 | Self::Btrfs | Self::Xfs | Self::Zfs | Self::Mtp | Self::Other => {
-                NameRules::Posix
-            }
+            Self::Fat32 | Self::ExFat | Self::Ntfs => NameRules::windows_format(),
+            Self::Smb => NameRules::smb_share(),
+            Self::Apfs | Self::HfsPlus => NameRules::posix(LengthLimit::UTF16_255),
+            Self::Ext4 | Self::Btrfs | Self::Xfs | Self::Zfs => NameRules::posix(LengthLimit::BYTES_255),
+            Self::Mtp | Self::Other => NameRules::POSIX,
         }
     }
 }
@@ -374,13 +378,16 @@ mod tests {
     /// gets the same answer it would on Windows.
     #[test]
     fn name_rules_follow_the_format() {
+        use crate::validation::NameFormat;
         for kind in [FilesystemKind::Fat32, FilesystemKind::ExFat, FilesystemKind::Ntfs] {
-            assert_eq!(kind.name_rules(), NameRules::Windows, "{kind:?}");
+            assert_eq!(kind.name_rules(), NameRules::windows_format(), "{kind:?}");
+            assert_eq!(kind.name_rules().name_limit, LengthLimit::UTF16_255, "{kind:?}");
         }
-        assert_eq!(FilesystemKind::Smb.name_rules(), NameRules::SmbShare);
+        assert_eq!(FilesystemKind::Smb.name_rules().format, NameFormat::SmbShare);
+        for kind in [FilesystemKind::Apfs, FilesystemKind::HfsPlus] {
+            assert_eq!(kind.name_rules(), NameRules::posix(LengthLimit::UTF16_255), "{kind:?}");
+        }
         for kind in [
-            FilesystemKind::Apfs,
-            FilesystemKind::HfsPlus,
             FilesystemKind::Ext4,
             FilesystemKind::Btrfs,
             FilesystemKind::Xfs,
@@ -388,7 +395,7 @@ mod tests {
             FilesystemKind::Mtp,
             FilesystemKind::Other,
         ] {
-            assert_eq!(kind.name_rules(), NameRules::Posix, "{kind:?}");
+            assert_eq!(kind.name_rules(), NameRules::POSIX, "{kind:?}");
         }
     }
 

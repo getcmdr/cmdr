@@ -208,6 +208,10 @@ struct RowOut {
     status: RowStatus,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     is_directory: bool,
+    /// A ready row the folder takes but won't keep portable: it renames, and
+    /// Windows won't read it as typed (`PreviewRow::warning`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    warning: Option<cmdr_fs::validation::PortabilityWarning>,
 }
 
 /// A dry run's answer: the counts over every row, and the page asked for.
@@ -250,6 +254,7 @@ fn dry_run_page(folder: &Path, rows: &[PreviewRow], start: usize, limit: usize, 
             new_name: row.new_name.clone(),
             status: row.status.clone(),
             is_directory: row.is_directory,
+            warning: row.warning.clone(),
         })
         .collect();
     let fitted = fit_to_result_budget(page);
@@ -554,9 +559,9 @@ pub async fn execute_multi_rename<R: Runtime>(app: &AppHandle<R>, ctx: &ToolCtx,
             let (engine, volume_id, folder) = (engine.clone(), volume_id.clone(), folder.clone());
             tokio::task::spawn_blocking(move || engine.name_rules_at(&volume_id, &folder))
                 .await
-                .unwrap_or(NameRules::Posix)
+                .unwrap_or(NameRules::POSIX)
         }
-        Err(_) => NameRules::Posix,
+        Err(_) => NameRules::POSIX,
     };
     // A mask and a regex per row: off the async worker for a big folder.
     let (rows, siblings) = tokio::task::spawn_blocking({

@@ -8,7 +8,7 @@ use tokio::time::Duration;
 
 use crate::file_system::volume::manager::get_volume_manager;
 use cmdr_fs::deadline::{TimedOut, blocking_with_timeout, timeout_detached_typed};
-use cmdr_fs::validation::{MAX_NAME_BYTES, MAX_PATH_BYTES, NameRules};
+use cmdr_fs::validation::{HOST_NAME_LIMIT, HOST_PATH_LIMIT, LengthLimit, NameRules};
 use cmdr_fs::volume::Presence;
 use cmdr_operations::held_in_another_spelling;
 
@@ -16,37 +16,53 @@ use super::expand_tilde;
 
 const PATH_EXISTS_TIMEOUT: Duration = Duration::from_secs(2);
 
+/// The host's own limits, each in its unit, for a path typed before any
+/// destination answers (`cmdr_fs::validation::HOST_NAME_LIMIT`, `HOST_PATH_LIMIT`).
+/// A folder's own limits come with its rules (`get_name_rules`).
 #[derive(serde::Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PathLimits {
-    pub max_name_bytes: usize,
-    pub max_path_bytes: usize,
+    pub name: LengthLimit,
+    pub path: LengthLimit,
 }
 
 #[tauri::command]
 #[specta::specta]
 pub fn get_path_limits() -> PathLimits {
     PathLimits {
-        max_name_bytes: MAX_NAME_BYTES,
-        max_path_bytes: MAX_PATH_BYTES,
+        name: HOST_NAME_LIMIT,
+        path: HOST_PATH_LIMIT,
     }
 }
 
 /// Which names the filesystem holding `dir` on `volume_id` takes
 /// (`cmdr_operations::Operations::name_rules_at`), for the rename editor's and the
-/// New folder dialog's keystroke checks, asked once per editor. The create or
-/// rename itself checks again, so a slow answer (2 s, a hung mount's `statfs`) or
-/// an engine that isn't up yet reads as `Posix` and costs only early feedback.
+/// New folder dialog's keystroke checks (asked once per editor), and the transfer
+/// dialog's destination (asked as the typed path settles). The create, rename, or
+/// transfer itself meets the destination's refusals again, so a slow answer (2 s, a
+/// hung mount's `statfs`) or an engine that isn't up yet reads as `POSIX` and costs
+/// only early feedback. A transfer dialog's path is volume-relative on a mounted
+/// drive, so it's anchored on its volume first (`resolve_dest_path`, idempotent for
+/// a path already under the root).
 #[tauri::command]
 #[specta::specta]
 pub async fn get_name_rules(volume_id: Option<String>, dir: String) -> NameRules {
     let Ok(engine) = crate::operations_host::operations() else {
-        return NameRules::Posix;
+        return NameRules::POSIX;
     };
     let volume_id = volume_id.unwrap_or_else(|| crate::volumes::local_volume_id_for_path(&dir));
-    let dir = if volume_id == "root" { expand_tilde(&dir) } else { dir };
+    let dir = if volume_id == "root" {
+        expand_tilde(&dir)
+    } else {
+        match get_volume_manager().get(&volume_id) {
+            Some(volume) if volume.local_path().is_some() => cmdr_operations::resolve_dest_path(&volume, dir)
+                .to_string_lossy()
+                .into_owned(),
+            _ => dir,
+        }
+    };
     let engine = engine.clone();
-    blocking_with_timeout(NAME_RULES_TIMEOUT, NameRules::Posix, move || {
+    blocking_with_timeout(NAME_RULES_TIMEOUT, NameRules::POSIX, move || {
         engine.name_rules_at(&volume_id, Path::new(&dir))
     })
     .await

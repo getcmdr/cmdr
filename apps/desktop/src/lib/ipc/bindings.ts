@@ -1489,6 +1489,8 @@ export const commands = {
        *  missed the complete event. `None` for non-compress or remote scans.
        */
       estimatedCompressedBytes?: CompressedSizeEstimate | null
+      // Mirrors `ScanPreviewCompleteEvent::name_portability`.
+      namePortability?: NamePortabilityTally | null
     } | null>('check_scan_preview_status', { previewId }),
   /**
    *  In Stop mode, the operation pauses on conflict and waits for this call to
@@ -8000,6 +8002,11 @@ export type BulkRenameBlockReason =
   | 'sourceChanged'
   | 'targetExists'
   | 'volumeUnavailable'
+  /**
+   *  The folder's filesystem refuses the new name (`cmdr_fs::validation::NameRules`): too
+   *  long for it, or a name its driver refuses or would strip.
+   */
+  | 'nameNotAllowed'
 
 // How far one proposal's running check has got.
 export type BulkRenameCheckProgress = {
@@ -8102,7 +8109,14 @@ export type BulkRenameStarted = {
   swapsLeftOut: number
 }
 
-export type BulkRenameWarning = 'extensionChanged' | 'cycle'
+export type BulkRenameWarning =
+  | 'extensionChanged'
+  | 'cycle'
+  /**
+   *  The folder takes the new name but won't keep it portable: Windows shows or opens it as
+   *  something else (`cmdr_fs::validation::PortabilityWarning`).
+   */
+  | 'notPortable'
 
 /**
  *  What a bundle's `Info.plist` says about it. Every string is the bundle's own
@@ -10970,7 +10984,10 @@ export type FilesystemKind =
   | 'xfs'
   // ZFS.
   | 'zfs'
-  // NTFS, including the `ntfs3` and `ufsd_ntfs` drivers.
+  /**
+   *  NTFS, including the `ntfs3`, `ufsd_ntfs`, and ntfs-3g drivers (ntfs-3g only when it
+   *  reports its own type; a bare `fuseblk` mount stays [`FilesystemKind::Other`]).
+   */
   | 'ntfs'
   // exFAT: the common big-USB format, and NOT size-capped (unlike FAT32).
   | 'ex_fat'
@@ -12926,6 +12943,24 @@ export type LegacyAskCmdrOptIn =
   | 'notRecorded'
   // The store couldn't be read: write nothing, and ask again next launch.
   | 'storeUnavailable'
+
+// A length limit, inclusive, in its filesystem's own unit.
+export type LengthLimit = {
+  // The longest a name or path may be, inclusive.
+  max: number
+  // What [`max`](Self::max) counts.
+  unit: LengthUnit
+}
+
+// What a length limit counts.
+export type LengthUnit =
+  // UTF-8 bytes: ext4, Btrfs, XFS, ZFS, and Samba over them.
+  | 'bytes'
+  /**
+   *  UTF-16 code units: APFS, HFS+, exFAT, FAT32, NTFS, and Windows' own paths.
+   *  An emoji outside the Basic Multilingual Plane is two.
+   */
+  | 'utf16Units'
 
 // One of an app's folders in the Library.
 export type LibraryFolder = {
@@ -15377,6 +15412,8 @@ export type MultiRenamePreset = {
 export type MultiRenamePreview = {
   previewId: number
   counts: PreviewCounts
+  // What the folder is (`NameRules::format`), for the words a row's warning uses.
+  nameFormat: NameFormat
   // Rows `0..FIRST_PAGE`; the rest come from `get_multi_rename_preview_rows`.
   rows: PreviewRow[]
 }
@@ -15600,6 +15637,13 @@ export type MutationSettledOutcome =
       error: MutationError
     }
 
+// One class of [`NamePortabilityTally`]: how many entries, and the first few names.
+export type NameClassTally = {
+  count: number
+  // At most `NAME_TALLY_EXAMPLES` names, in the order the walk met them.
+  examples: string[]
+}
+
 /**
  *  Where the pane's cursor and selection land after a quick-filter change, in
  *  the new row space.
@@ -15638,38 +15682,77 @@ export type NameFilterResult = {
 }
 
 /**
- *  Which names a destination filesystem takes, keyed on its
- *  [`FilesystemKind`](crate::filesystem_kind::FilesystemKind)
- *  ([`FilesystemKind::name_rules`](crate::filesystem_kind::FilesystemKind::name_rules)),
- *  ❌ never on the host OS: a Mac writing to an SMB share meets the share's
- *  rules, and Windows writing over MTP meets none of its own.
- *
- *  What each format does with a name its rules refuse, read on a Mac:
- *  `docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`.
+ *  What a destination is, for which names Windows can't use there, and for the
+ *  words a warning uses.
  */
-export type NameRules =
+export type NameFormat =
   /**
-   *  Only `/` and NUL are refused: APFS, HFS+, ext4, Btrfs, XFS, ZFS, MTP, and
-   *  any filesystem Cmdr can't see through, which answers for itself.
+   *  APFS, HFS+, ext4, Btrfs, XFS, ZFS, MTP, and any filesystem Cmdr can't
+   *  see through: only `/` and NUL are refused.
    */
   | 'posix'
-  /**
-   *  An SMB share: [`Posix`](Self::Posix), plus the device names Windows
-   *  reserves (`CON`, `NUL`, `COM1`, `con.txt`, …), which Samba stores but
-   *  lists back to every client under a mangled 8.3 name (`CON` reads
-   *  `CR23RR~9`). The characters Windows forbids are fine here: smb2 and
-   *  macOS smbfs both carry them in the private-use area, both ways.
-   */
+  // An SMB share, which Windows computers read too.
   | 'smbShare'
-  /**
-   *  FAT32, exFAT, and NTFS: [`SmbShare`](Self::SmbShare), plus the characters
-   *  the format can't store (`"`, `*`, `:`, `<`, `>`, `?`, `\`, `|`, and the
-   *  control characters) and a name that ends in a space or a period. Windows
-   *  refuses each one; macOS's drivers write them as private-use stand-ins
-   *  that any other reader shows as something else, so the name that would
-   *  land isn't the name the person typed.
-   */
+  // FAT32, exFAT, and NTFS.
   | 'windows'
+
+/**
+ *  The names a transfer's scan found that Windows can't use as they are, per
+ *  class, whatever the destination: the dialog asks the destination's
+ *  `NameRules` which classes it warns about, and says so before anything is
+ *  copied. Counts every entry; keeps only a few examples, so a million names
+ *  cost a counter each, ❌ never a list.
+ */
+export type NamePortabilityTally = {
+  // Names with a character Windows can't use (`" * : < > ? \ |`, a control character).
+  windowsCharacters: NameClassTally
+  // Device names Windows reserves (`CON`, `nul.txt`).
+  reservedNames: NameClassTally
+  // Names ending in a space or a period.
+  endsWithSpaceOrPeriod: NameClassTally
+}
+
+/**
+ *  Which names a destination filesystem takes, and which it takes but won't
+ *  keep portable, keyed on its
+ *  [`FilesystemKind`](crate::filesystem_kind::FilesystemKind)
+ *  ([`FilesystemKind::name_rules`](crate::filesystem_kind::FilesystemKind::name_rules))
+ *  plus how THIS host's driver writes a Windows-format disk.
+ *
+ *  What each format does with a Windows-unfriendly name, read on a Mac and on
+ *  Linux: `docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`.
+ */
+export type NameRules = {
+  // What the destination is.
+  format: NameFormat
+  /**
+   *  The characters Windows can't use (`" * : < > ? \ |`, control
+   *  characters) and a trailing space or period.
+   */
+  windowsCharacters: NameTier
+  // The device names Windows reserves (`CON`, `NUL`, `COM1`, `con.txt`, …).
+  reservedNames: NameTier
+  // The longest name, in the filesystem's unit.
+  nameLimit: LengthLimit
+  // The longest full path, or `None` when the backend answers for itself.
+  pathLimit: LengthLimit | null
+}
+
+// What a destination does with one class of name Windows can't use.
+export type NameTier =
+  // Nothing to say: a POSIX destination.
+  | 'allow'
+  /**
+   *  The destination takes it, under a stand-in or a mangled listing:
+   *  [`PortabilityWarning`].
+   */
+  | 'warn'
+  /**
+   *  The destination refuses it, or would lose data taking it (a stripped
+   *  trailing period opening a sibling, `CON` opening the console):
+   *  [`ValidationError`].
+   */
+  | 'refuse'
 
 /**
  *  Why a transfer that names its items one by one refused to start, for
@@ -16854,9 +16937,14 @@ export type PastedClipboardFile = {
  */
 export type PastedKind = 'text' | 'image' | 'pdf'
 
+/**
+ *  The host's own limits, each in its unit, for a path typed before any
+ *  destination answers (`cmdr_fs::validation::HOST_NAME_LIMIT`, `HOST_PATH_LIMIT`).
+ *  A folder's own limits come with its rules (`get_name_rules`).
+ */
 export type PathLimits = {
-  maxNameBytes: number
-  maxPathBytes: number
+  name: LengthLimit
+  path: LengthLimit
 }
 
 /**
@@ -17134,6 +17222,26 @@ export type PlatformConventions = {
   linuxDesktop: LinuxDesktop | null
 }
 
+/**
+ *  A name the destination TAKES but won't keep portable: Windows (and, for a
+ *  stand-in on a stick, Linux) shows or opens it as something else. The
+ *  operation goes ahead; the person is told. ❗ Never a stand-in for a
+ *  [`ValidationError`]: a refusal protects data, a warning only informs.
+ */
+export type PortabilityWarning =
+  /**
+   *  A character Windows can't use in a name (`" * : < > ? \ |` or a control
+   *  character), which the destination stores as a private-use stand-in.
+   */
+  | { kind: 'windowsCharacter'; character: string }
+  /**
+   *  A device name Windows reserves (`CON`, `nul.txt`): Windows can't open
+   *  it, and a Samba share lists it under a mangled 8.3 name.
+   */
+  | { kind: 'reservedName'; name: string }
+  // A trailing space or period, which the destination stores as a stand-in.
+  | { kind: 'endsWithSpaceOrPeriod' }
+
 export type PrepareResult = {
   ready: boolean
   entryCount: number
@@ -17175,6 +17283,13 @@ export type PreviewCounts = {
   problems: number
   // Rows whose media fields are still being read: neither ready nor a problem yet.
   reading: number
+  /**
+   *  Ready rows whose new name the folder takes but won't keep portable
+   *  (`PreviewRow::warning`): they rename, and the sheet says Windows won't read them.
+   */
+  notPortable: number
+  // Of those, the ones Linux misreads too (`PortabilityWarning::reaches_linux`).
+  notPortableOnLinux: number
 }
 
 /**
@@ -17202,6 +17317,12 @@ export type PreviewRow = {
   isDirectory: boolean
   // The new name is one the user typed in Results, not the settings' (`names_file.rs`).
   edited: boolean
+  /**
+   *  A ready row's new name the folder takes but won't keep portable (a `:` on an
+   *  exFAT stick, `CON` on a share). The row still renames; the sheet says why
+   *  Windows won't read it as typed. `None` on every row that isn't ready.
+   */
+  warning: PortabilityWarning | null
 }
 
 /**
@@ -19237,6 +19358,12 @@ export type ScanPreviewCompleteEvent = {
    *  confirmation waiting to know whether it's a trash or a delete.
    */
   onlineOnlyFound?: boolean
+  /**
+   *  A transfer's names that Windows can't use as they are, counted from the
+   *  walk, for the dialog to warn about before anything is copied. `None`
+   *  for a delete's or a compress's walk.
+   */
+  namePortability?: NamePortabilityTally | null
 }
 
 // Error event for scan preview.
@@ -19354,6 +19481,8 @@ export type ScanPreviewTotals = {
    *  missed the complete event. `None` for non-compress or remote scans.
    */
   estimatedCompressedBytes?: CompressedSizeEstimate | null
+  // Mirrors `ScanPreviewCompleteEvent::name_portability`.
+  namePortability?: NamePortabilityTally | null
 }
 
 // Progress event during scanning phase (emitted in dry-run mode).
@@ -23604,24 +23733,36 @@ export type UsbSpeed =
   // USB 3.2 Gen 2 / formerly USB 3.1 Gen 2 (10 Gbit/s).
   | 'super_plus'
 
-// Validation error types for filename and path checks.
+/**
+ *  Validation error types for filename and path checks: what a destination
+ *  REFUSES. A name it takes but won't keep portable is a
+ *  [`PortabilityWarning`] instead.
+ */
 export type ValidationError =
-  // Name is empty or whitespace-only after trimming.
+  /**
+   *  Name is empty, or renders as nothing: only whitespace and invisible
+   *  characters ([`renders_blank`]).
+   */
   | { kind: 'empty' }
+  // Name is `.` or `..`, which name a folder, not an entry in one.
+  | { kind: 'dotName' }
   // Name contains a disallowed character.
   | { kind: 'disallowedCharacter'; character: string }
-  // Name exceeds the maximum byte length for a single filename component.
-  | { kind: 'nameTooLong'; bytes: number; max: number }
-  // Full path exceeds the maximum byte length.
-  | { kind: 'pathTooLong'; bytes: number; max: number }
+  /**
+   *  Name is longer than the destination's [`NameRules::name_limit`], counted
+   *  in its unit.
+   */
+  | { kind: 'nameTooLong'; length: number; max: number; unit: LengthUnit }
+  // Full path is longer than the destination's [`NameRules::path_limit`].
+  | { kind: 'pathTooLong'; length: number; max: number; unit: LengthUnit }
   /**
    *  Name is a device name Windows reserves (`CON`, `NUL`, `COM1`, …), on a
-   *  destination that refuses one ([`NameRules::SmbShare`], [`NameRules::Windows`]).
+   *  destination that refuses one (Windows' own disks).
    */
   | { kind: 'reservedName'; name: string }
   /**
-   *  Name ends in a space or a period, on a FAT32, exFAT, or NTFS destination
-   *  ([`NameRules::Windows`]).
+   *  Name ends in a space or a period, on a Windows-format destination whose
+   *  driver refuses or strips one.
    */
   | { kind: 'endsWithSpaceOrPeriod' }
 

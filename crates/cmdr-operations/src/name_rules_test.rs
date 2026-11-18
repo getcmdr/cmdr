@@ -5,7 +5,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use cmdr_fs::testing::TestDir;
-use cmdr_fs::validation::NameRules;
+use cmdr_fs::validation::{HOST_PATH_LIMIT, LengthLimit, NameFormat, NameRules};
 use cmdr_fs::volume::{BackendKind, InMemoryVolume, Volume};
 
 use super::name_rules_at;
@@ -20,11 +20,15 @@ fn register(engine: &TestOperations, id: &str, backend: BackendKind) {
 async fn a_backend_that_serves_its_own_io_answers_by_its_kind() {
     let engine = TestOperations::new();
     for (id, backend, rules) in [
-        ("share", BackendKind::Smb, NameRules::SmbShare),
-        ("phone", BackendKind::Mtp, NameRules::Posix),
-        ("server", BackendKind::Sftp, NameRules::Posix),
-        ("bucket", BackendKind::S3, NameRules::Posix),
-        ("zip", BackendKind::Archive, NameRules::Posix),
+        (
+            "share",
+            BackendKind::Smb,
+            NameRules::smb_share().with_path_limit(Some(LengthLimit::SMB_PATH)),
+        ),
+        ("phone", BackendKind::Mtp, NameRules::POSIX),
+        ("server", BackendKind::Sftp, NameRules::POSIX),
+        ("bucket", BackendKind::S3, NameRules::POSIX),
+        ("zip", BackendKind::Archive, NameRules::POSIX),
     ] {
         register(&engine, id, backend);
         assert_eq!(
@@ -40,7 +44,25 @@ async fn an_unregistered_volume_takes_posix_names() {
     let engine = TestOperations::new();
     assert_eq!(
         name_rules_at(engine.host(), "gone", Path::new("/x")).await,
-        NameRules::Posix
+        NameRules::POSIX
+    );
+}
+
+/// #1228: a backend that serves its own I/O isn't held to the host's
+/// `PATH_MAX`. Only the path API that reaches a path limits it.
+#[tokio::test]
+async fn only_the_host_path_api_holds_paths_to_the_host_limit() {
+    let engine = TestOperations::new();
+    register(&engine, "phone", BackendKind::Mtp);
+    assert_eq!(
+        name_rules_at(engine.host(), "phone", Path::new("/x")).await.path_limit,
+        None
+    );
+    engine.register_local_root();
+    let dir = TestDir::new("name_rules_path_limit");
+    assert_eq!(
+        name_rules_at(engine.host(), "root", &dir).await.path_limit,
+        Some(HOST_PATH_LIMIT)
     );
 }
 
@@ -54,5 +76,6 @@ async fn the_local_disk_answers_for_the_folder_it_holds() {
     let engine = TestOperations::new();
     engine.register_local_root();
     let dir = TestDir::new("name_rules_local");
-    assert_eq!(name_rules_at(engine.host(), "root", &dir).await, NameRules::Posix);
+    let rules = name_rules_at(engine.host(), "root", &dir).await;
+    assert_eq!(rules.format, NameFormat::Posix);
 }

@@ -646,14 +646,10 @@ fn leaf_bytes(path: &Path) -> usize {
 }
 
 /// Whether `path`'s last component is longer than any filesystem Cmdr writes
-/// to can store: APFS and ext4 count 255 UTF-8 bytes, NTFS, exFAT, and HFS+
-/// 255 UTF-16 units, so only a name over both is too long everywhere.
+/// to can store (`cmdr_fs::validation::over_every_name_limit`).
 fn over_every_name_limit(path: &Path) -> bool {
-    let max = cmdr_fs::validation::MAX_NAME_BYTES;
-    leaf_bytes(path) > max
-        && path
-            .file_name()
-            .is_some_and(|name| name.to_string_lossy().encode_utf16().count() > max)
+    path.file_name()
+        .is_some_and(|name| cmdr_fs::validation::over_every_name_limit(&name.to_string_lossy()))
 }
 
 /// What tier 2 reports when it ends a wait.

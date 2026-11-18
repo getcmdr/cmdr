@@ -20,6 +20,7 @@ use super::super::types::{
     MountedVolumeAction, ScanPreviewCancelledEvent, ScanPreviewCompleteEvent, ScanPreviewProgressEvent,
     ScanPreviewPurpose, WriteOperationError,
 };
+use super::name_tally::NameTally;
 use super::settle_failed_preview;
 use cmdr_fs::volume::CopyScanResult;
 
@@ -275,6 +276,14 @@ pub(crate) fn run_scan_preview(
                 }
                 tree
             });
+            // One string scan per name over what the walk already holds, after
+            // it: the walk itself pays nothing (`name_tally.rs`).
+            let name_portability = (purpose == ScanPreviewPurpose::Transfer).then(|| {
+                let tally = NameTally::forwarding_to(None);
+                files.iter().for_each(|file| tally.note_path(&file.path));
+                dirs.iter().for_each(|dir| tally.note_path(dir));
+                tally.finish()
+            });
             let file_count = files.len();
             let dirs_count = dirs.len();
             // The walk's own totals, not the watchdog's tick counters: a preview
@@ -299,6 +308,7 @@ pub(crate) fn run_scan_preview(
                         estimate.clone(),
                     )
                     .with_tree(tree)
+                    .with_name_portability(name_portability.clone())
                     .leaving_out(state.mac_only),
                 ),
             );
@@ -312,6 +322,7 @@ pub(crate) fn run_scan_preview(
                 dedup_bytes_total: dedup_bytes,
                 estimated_compressed_bytes: estimate,
                 online_only_found: online_only_seen.load(Ordering::Relaxed),
+                name_portability,
             });
         }
         Err(error) => settle_failed_preview(previews, &*events, &watchdog, preview_id, error),

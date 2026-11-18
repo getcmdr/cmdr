@@ -33,7 +33,9 @@ use cmdr_operation_log::types::{ExecutionStatus, Initiator, OpKind, OperationId}
 mod by_move;
 mod plan;
 mod recorder;
+mod refused;
 use recorder::BulkRenameRecorder;
+use refused::{refused_rows, split_refused};
 
 pub use by_move::RenamesStarted;
 
@@ -216,8 +218,17 @@ impl crate::Operations {
                 );
 
                 let recorder = BulkRenameRecorder::new(state_for_task.shared_scope(), volume_id_for_task.clone());
-                let run = if uses_local_paths {
-                    let rows = rows_for_task.clone();
+                // The folder's name rules, the same every other rename meets (`refused.rs`).
+                let refused = refused_rows(ops.host(), &volume_id_for_task, &rows_for_task).await;
+                let (kept, refused_rows) = split_refused(&rows_for_task, &refused);
+                recorder.record_unmoved(&refused_rows, &vec![BulkRenameOutcome::Failed; refused_rows.len()]);
+                let run = if kept.is_empty() {
+                    BulkRenameRun {
+                        outcomes: Vec::new(),
+                        cancelled: false,
+                    }
+                } else if uses_local_paths {
+                    let rows = kept.clone();
                     let intent = state_for_task.intent().clone();
                     let renaming = ops
                         .host()
@@ -225,18 +236,19 @@ impl crate::Operations {
                         .spawn_blocking(move || bulk_rename_local(&rows, &intent, &recorder));
                     match renaming.await {
                         Ok(result) => result,
-                        Err(join_error) => BulkRenameRun::failed(rows_for_task.len(), join_error.to_string()),
+                        Err(join_error) => BulkRenameRun::failed(kept.len(), join_error.to_string()),
                     }
                 } else {
                     bulk_rename_remote(
                         ops.host(),
-                        &rows_for_task,
+                        &kept,
                         &volume_id_for_task,
                         state_for_task.intent(),
                         &recorder,
                     )
                     .await
                 };
+                let run = run.with_refused(&refused);
 
                 if uses_local_paths {
                     for (row, outcome) in rows_for_task.iter().zip(run.outcomes.iter()) {

@@ -29,7 +29,8 @@
     import { tString } from '#lib/intl/messages.svelte.js'
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import type { PreviewRow, RowMove } from '#lib/tauri-commands/index.js'
-    import { rowStatusView, statusWords, type StatusMessage } from './row-status'
+    import type { NameFormat } from '#lib/ipc/bindings.js'
+    import { rowStatusView, statusWords, warnedRowView, type StatusMessage } from './row-status'
 
     interface Props {
         rows: ColumnListWindowedSource<PreviewRow>
@@ -40,9 +41,11 @@
         onCursorChange: (index: number) => void
         /** Moves the cursor row in the rename order: its new index, or `null` when it didn't move. */
         onMoveRow: (direction: RowMove) => Promise<number | null>
+        /** What the folder is, for the words a row's portability warning uses. */
+        nameFormat?: NameFormat
     }
 
-    const { rows, stale = false, cursorIndex, onCursorChange, onMoveRow }: Props = $props()
+    const { rows, stale = false, cursorIndex, onCursorChange, onMoveRow, nameFormat = 'posix' }: Props = $props()
 
     let list = $state<ColumnListApi>()
     let announcer: { announce: (message: string) => void } | undefined = $state()
@@ -187,12 +190,13 @@
     {/if}
 {/snippet}
 
-<!-- A problem shows its glyph, named by its label and explained by its tooltip; a ready or
-     unchanged row stays quiet and says what it is to screen readers alone. -->
+<!-- A problem shows its glyph, named by its label and explained by its tooltip; so does a ready
+     row whose new name won't work on Windows (it still renames). A ready or unchanged row
+     otherwise stays quiet and says what it is to screen readers alone. -->
 {#snippet statusCell({ row }: ColumnListCellContext<PreviewRow>)}
-    {@const view = rowStatusView(row.status)}
+    {@const view = row.warning ? warnedRowView(row.warning, nameFormat) : rowStatusView(row.status)}
     {#if view.glyph}
-        <span class="problem-glyph">
+        <span class="problem-glyph" class:is-warning={!view.isProblem}>
             <StatusGlyph
                 name={view.glyph}
                 label={words(view.label)}
@@ -272,5 +276,10 @@
         display: flex;
         align-items: center;
         color: var(--color-error-text);
+    }
+
+    /* A warning, not a problem: the row still renames. The darker text variant holds contrast. */
+    .problem-glyph.is-warning {
+        color: var(--color-warning-text);
     }
 </style>

@@ -64,6 +64,7 @@ import {
   type RangeSample,
   type RowMove,
 } from '#lib/tauri-commands/index.js'
+import type { NameFormat } from '#lib/ipc/bindings.js'
 import type { ColumnListWindowedSource } from '#lib/ui/column-list-types.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { SvelteMap } from 'svelte/reactivity'
@@ -82,7 +83,14 @@ const PAGE_LIMIT = 1000
 /** Rows held past this many are dropped when they're far from the window. */
 const HELD_ROWS = 3000
 
-const NO_COUNTS: PreviewCounts = { ready: 0, unchanged: 0, problems: 0, reading: 0 }
+const NO_COUNTS: PreviewCounts = {
+  ready: 0,
+  unchanged: 0,
+  problems: 0,
+  reading: 0,
+  notPortable: 0,
+  notPortableOnLinux: 0,
+}
 
 /** How the backend tells two preset names apart (`presets.rs`'s `name_key`). */
 const nameKey = (name: string): string => name.trim().toLowerCase()
@@ -115,6 +123,8 @@ export interface SampleRows {
 export interface MultiRenameState {
   readonly spec: MultiRenameSpec
   readonly counts: PreviewCounts
+  /** What the folder is, for the words a row's portability warning uses. */
+  readonly nameFormat: NameFormat
   /** How many rows the list shows: the preview's, or its problem rows' with `problemsOnly`. */
   readonly total: number
   /** The list shows the problem rows alone. */
@@ -221,6 +231,7 @@ export function createMultiRenameState(sessionId: string): MultiRenameState {
   let spec = $state<MultiRenameSpec>({ ...DEFAULT_SPEC })
   let previewId = $state<number | null>(null)
   let counts = $state.raw<PreviewCounts>(NO_COUNTS)
+  let nameFormat = $state<NameFormat>('posix')
   let problemsOnly = $state(false)
   // Keyed by place in the list (every row, or the problem rows alone). Replaced with
   // each preview and each switch of the list; pages land in it as they arrive.
@@ -319,6 +330,7 @@ export function createMultiRenameState(sessionId: string): MultiRenameState {
       keepCursorRow()
       previewId = answer.value.previewId
       counts = answer.value.counts
+      nameFormat = answer.value.nameFormat
       // With no problems left there's nothing to list alone: every row again.
       if (counts.problems === 0 && problemsOnly) {
         problemsOnly = false
@@ -546,6 +558,9 @@ export function createMultiRenameState(sessionId: string): MultiRenameState {
     },
     get counts() {
       return counts
+    },
+    get nameFormat() {
+      return nameFormat
     },
     get total() {
       return listed()

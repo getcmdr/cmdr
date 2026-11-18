@@ -22,7 +22,7 @@ use unicode_normalization::UnicodeNormalization;
 
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::rt::{self, Instant, Runtime};
-use cmdr_fs::validation::NameRules;
+use cmdr_fs::validation::{NameFormat, NameRules};
 use cmdr_listing::{ListingId, ListingLookupError, Listings};
 
 use crate::error::MultiRenameError;
@@ -61,33 +61,8 @@ pub struct MultiRenameOpened {
     pub results_available: bool,
 }
 
-/// How a preview's rows add up, for the footer and the Rename button.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct PreviewCounts {
-    pub ready: usize,
-    pub unchanged: usize,
-    /// Every other row: a bad or taken name, a duplicate, a file that's gone, a
-    /// media field the file doesn't have.
-    pub problems: usize,
-    /// Rows whose media fields are still being read: neither ready nor a problem yet.
-    pub reading: usize,
-}
-
-impl PreviewCounts {
-    fn of(rows: &[PreviewRow]) -> Self {
-        let mut counts = Self::default();
-        for row in rows {
-            match row.status {
-                RowStatus::Ready => counts.ready += 1,
-                RowStatus::Unchanged => counts.unchanged += 1,
-                RowStatus::Reading => counts.reading += 1,
-                _ => counts.problems += 1,
-            }
-        }
-        counts
-    }
-}
+mod counts;
+pub use counts::PreviewCounts;
 
 /// Which rows a page counts through: all of them, or only the problems
 /// (`RowStatus::is_problem`), so the sheet can list those alone without holding
@@ -105,6 +80,8 @@ pub enum PreviewFilter {
 pub struct MultiRenamePreview {
     pub preview_id: u64,
     pub counts: PreviewCounts,
+    /// What the folder is (`NameRules::format`), for the words a row's warning uses.
+    pub name_format: NameFormat,
     /// Rows `0..FIRST_PAGE`; the rest come from `get_multi_rename_preview_rows`.
     pub rows: Vec<PreviewRow>,
 }
@@ -254,7 +231,7 @@ impl MultiRename {
         let name_rules = self
             .host()
             .operations()
-            .map_or(NameRules::Posix, |engine| engine.name_rules_at(&volume_id, &dir));
+            .map_or(NameRules::POSIX, |engine| engine.name_rules_at(&volume_id, &dir));
         let mut sessions = self.inner.sessions.lock_ignore_poison();
         evict_to(&mut sessions, rt::now(), self.inner.max_sessions);
         sessions.insert(
@@ -400,7 +377,8 @@ impl MultiRename {
         let rows = self.compute(&inputs, &compiled, &inputs.edits)?;
         let answer = MultiRenamePreview {
             preview_id,
-            counts: PreviewCounts::of(&rows),
+            counts: PreviewCounts::of(&rows, inputs.name_rules),
+            name_format: inputs.name_rules.format,
             rows: rows.iter().take(FIRST_PAGE).cloned().collect(),
         };
         self.with_session(session_id, |s| {
@@ -718,7 +696,7 @@ mod tests {
             listing_id: String::new(),
             volume_id: "root".to_string(),
             dir: PathBuf::new(),
-            name_rules: NameRules::Posix,
+            name_rules: NameRules::POSIX,
             names: Vec::new().into(),
             edits: Arc::default(),
             written: None,
@@ -738,6 +716,7 @@ mod tests {
             icon_id: None,
             is_directory: false,
             edited: false,
+            warning: None,
         }
     }
 
@@ -755,12 +734,14 @@ mod tests {
         ];
 
         assert_eq!(
-            PreviewCounts::of(&rows),
+            PreviewCounts::of(&rows, NameRules::POSIX),
             PreviewCounts {
                 ready: 1,
                 unchanged: 1,
                 problems: 3,
                 reading: 2,
+                not_portable: 0,
+                not_portable_on_linux: 0,
             }
         );
     }

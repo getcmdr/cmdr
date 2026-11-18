@@ -657,18 +657,28 @@ fn test_validate_path_length_name_too_long() {
 fn test_validate_path_length_path_too_long() {
     use super::validate_path_length;
 
-    // Build a path longer than 1024 bytes
+    // Build a path past the host's path API limit
     let mut path = PathBuf::from("/tmp");
-    while path.as_os_str().len() < 1025 {
+    while path.as_os_str().len() <= cmdr_fs::validation::HOST_PATH_LIMIT.max {
         path = path.join("a_long_segment_name_here");
     }
 
     let result = validate_path_length(&path);
     assert!(
         matches!(result, Err(WriteOperationError::IoError { ref message, .. }) if message.to_string().contains("Path exceeds")),
-        "Should reject paths exceeding 1024 bytes, got: {:?}",
+        "Should reject paths past the host's limit, got: {:?}",
         result
     );
+}
+
+/// #1228: a name only byte-counting filesystems refuse (400 bytes, 200 UTF-16
+/// units) is the destination's to answer. APFS and exFAT take it.
+#[test]
+fn test_validate_path_length_takes_a_long_name_in_utf16_units() {
+    use super::validate_path_length;
+
+    let path = PathBuf::from("/tmp").join("é".repeat(200));
+    assert!(validate_path_length(&path).is_ok());
 }
 
 #[test]

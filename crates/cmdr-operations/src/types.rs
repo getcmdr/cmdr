@@ -736,6 +736,45 @@ pub struct ScanPreviewTotals {
     /// missed the complete event. `None` for non-compress or remote scans.
     #[serde(default)]
     pub estimated_compressed_bytes: Option<CompressedSizeEstimate>,
+    /// Mirrors `ScanPreviewCompleteEvent::name_portability`.
+    #[serde(default)]
+    pub name_portability: Option<NamePortabilityTally>,
+}
+
+/// The names a transfer's scan found that Windows can't use as they are, per
+/// class, whatever the destination: the dialog asks the destination's
+/// `NameRules` which classes it warns about, and says so before anything is
+/// copied. Counts every entry; keeps only a few examples, so a million names
+/// cost a counter each, ❌ never a list.
+// DEFAULT-OK: the zero value is a tally that hasn't met a name yet, which is
+// what a walk starts from; a finished walk's tally is only ever read whole.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+#[allow(
+    missing_docs,
+    reason = "a wire type: every `///` here reaches `bindings.ts` as JSDoc, so its fields and variants stay as they ship"
+)]
+pub struct NamePortabilityTally {
+    /// Names with a character Windows can't use (`" * : < > ? \ |`, a control character).
+    pub windows_characters: NameClassTally,
+    /// Device names Windows reserves (`CON`, `nul.txt`).
+    pub reserved_names: NameClassTally,
+    /// Names ending in a space or a period.
+    pub ends_with_space_or_period: NameClassTally,
+}
+
+/// One class of [`NamePortabilityTally`]: how many entries, and the first few names.
+// DEFAULT-OK: the zero value is "none of this class counted yet", the walk's start.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+#[allow(
+    missing_docs,
+    reason = "a wire type: every `///` here reaches `bindings.ts` as JSDoc, so its fields and variants stay as they ship"
+)]
+pub struct NameClassTally {
+    pub count: u64,
+    /// At most `NAME_TALLY_EXAMPLES` names, in the order the walk met them.
+    pub examples: Vec<String>,
 }
 
 // ============================================================================

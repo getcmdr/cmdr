@@ -5,7 +5,7 @@ import type { NameRules } from '#lib/ipc/bindings.js'
 import { withCapabilities, withPlatform } from '#lib/platform/test-platform.js'
 import { _setLocaleForTests } from '#lib/intl/locale.js'
 import {
-  nameRefusal,
+  nameVerdict,
   validateName,
   validateNotEmpty,
   validatePathLength,
@@ -16,6 +16,7 @@ import {
   extensionsDifferMeaningfully,
   extensionChangeNeedsConfirmation,
 } from './filename-validation'
+import { POSIX_RULES } from './name-rules'
 
 // Validation messages resolve through the i18n catalog (`tString`); pin the base
 // locale so the asserted en copy is deterministic.
@@ -27,61 +28,101 @@ afterAll(() => {
 })
 
 interface NameRulesSpec {
-  cases: {
+  rules: Record<string, NameRules>
+  cases: ({
     name: string
     repeat?: number
     all?: string
-    posix?: string
-    smbShare?: string
-    windows?: string
     character?: string
     reserved?: string
-  }[]
+  } & Record<string, string | number | undefined>)[]
 }
 
 const nameRulesSpec = JSON.parse(
   readFileSync(resolve(process.cwd(), '../../crates/cmdr-fs/src/name_rules_cases.json'), 'utf8'),
 ) as NameRulesSpec
+const RULES = nameRulesSpec.rules
+const STICK_ON_MAC = RULES.stickOnMac
+const SHARE = RULES.share
+const STICK_ON_LINUX = RULES.stickOnLinux
 
 /** The mirror of `cmdr_fs::validation::validate_filename`: both suites run the shared cases. */
-describe('nameRefusal ↔ the backend`s `validate_filename`', () => {
-  const rulesSets: NameRules[] = ['posix', 'smbShare', 'windows']
+describe('nameVerdict ↔ the backend`s `validate_filename`', () => {
   it.each(nameRulesSpec.cases)('$name', (testCase) => {
     const name = testCase.name.repeat(testCase.repeat ?? 1)
-    for (const rules of rulesSets) {
-      const expected = testCase[rules] ?? testCase.all
-      const refusal = nameRefusal(name, rules)
-      expect(refusal?.kind ?? 'ok', `${JSON.stringify(testCase.name)} under ${rules}`).toBe(expected)
-      if (refusal?.kind === 'disallowedCharacter') expect(refusal.character).toBe(testCase.character)
-      if (refusal?.kind === 'reservedName') expect(refusal.name).toBe(testCase.reserved)
+    for (const [rulesName, rules] of Object.entries(RULES)) {
+      const expected = testCase[rulesName] ?? testCase.all
+      const verdict = nameVerdict(name, rules)
+      const context = `${JSON.stringify(testCase.name)} under ${rulesName}`
+      switch (verdict.kind) {
+        case 'ok':
+          expect('ok', context).toBe(expected)
+          break
+        case 'refused': {
+          const error = verdict.error
+          expect(error.kind, context).toBe(expected)
+          if (error.kind === 'disallowedCharacter') expect(error.character, context).toBe(testCase.character)
+          if (error.kind === 'reservedName') expect(error.name, context).toBe(testCase.reserved)
+          break
+        }
+        case 'warned': {
+          const warning = verdict.warning
+          expect(`warn:${warning.kind}`, context).toBe(expected)
+          if (warning.kind === 'windowsCharacter') expect(warning.character, context).toBe(testCase.character)
+          if (warning.kind === 'reservedName') expect(warning.name, context).toBe(testCase.reserved)
+          break
+        }
+      }
     }
   })
 })
 
 describe('validateName', () => {
   it('allows normal filenames', () => {
-    expect(validateName('hello.txt', false, 'posix')).toEqual({ severity: 'ok', message: '' })
+    expect(validateName('hello.txt', false, POSIX_RULES)).toEqual({ severity: 'ok', message: '' })
   })
 
   it('names the refused character, per file or folder', () => {
-    expect(validateName('foo/bar', true, 'posix').message).toBe('Folder names here can’t contain “/”')
-    expect(validateName('12:30', false, 'windows').message).toBe('Filenames here can’t contain “:”')
+    expect(validateName('foo/bar', true, POSIX_RULES).message).toBe('Folder names here can’t contain “/”')
+    expect(validateName('12:30', false, STICK_ON_LINUX).message).toBe('Filenames here can’t contain “:”')
   })
 
-  it('says a reserved device name is Windows`s', () => {
-    expect(validateName('con.txt', false, 'smbShare').message).toBe(
-      '“con” is reserved by Windows, so it can’t be a filename here',
+  it('refuses “.” and “..” on every destination (#1229)', () => {
+    expect(validateName('..', true, POSIX_RULES)).toEqual({
+      severity: 'error',
+      message: 'Folder names can’t be “.” or “..”',
+    })
+    expect(validateName('.', false, SHARE).message).toBe('Filenames can’t be “.” or “..”')
+  })
+
+  it('refuses a name that renders as nothing', () => {
+    expect(validateName('​﻿', false, POSIX_RULES).message).toBe('Filename can’t be empty')
+  })
+
+  it('warns, without refusing, where the destination takes a name Windows won’t read as typed', () => {
+    expect(validateName('12:30', false, STICK_ON_MAC)).toEqual({
+      severity: 'warning',
+      message: 'Names with “:” won’t work on Windows or Linux',
+    })
+    expect(validateName('12:30', false, SHARE).message).toBe('Names with “:” won’t work on Windows')
+    expect(validateName('con.txt', false, SHARE).message).toBe(
+      '“con” is reserved by Windows, so this name won’t work there, and the share may list it under another name',
+    )
+    expect(validateName('notes.', true, STICK_ON_MAC).message).toBe(
+      'Names ending in a space or a period won’t work on Windows or Linux',
     )
   })
 
-  it('says a Windows drive refuses a trailing space or period', () => {
-    expect(validateName('notes.', true, 'windows').message).toBe('Folder names here can’t end with a space or a period')
-  })
-
-  it('takes a 255-byte name and refuses a 256-byte one, counting bytes', () => {
-    expect(validateName('a'.repeat(255), false, 'posix').severity).toBe('ok')
-    // Each emoji is 4 bytes in UTF-8
-    expect(validateName('\u{1F600}'.repeat(64), false, 'posix').severity).toBe('error')
+  it('counts a name in its destination’s own unit (#1228)', () => {
+    const accented = 'é'.repeat(200) // 400 bytes, 200 UTF-16 units
+    expect(validateName(accented, false, RULES.apfs).severity).toBe('ok')
+    expect(validateName(accented, false, POSIX_RULES)).toEqual({
+      severity: 'error',
+      message: 'Filename is too long (400/255 bytes)',
+    })
+    expect(validateName('\u{1F600}'.repeat(128), true, RULES.apfs).message).toBe(
+      'Folder name is too long (256/255 characters)',
+    )
   })
 })
 
@@ -106,16 +147,24 @@ describe('validateNotEmpty', () => {
 
 describe('validatePathLength', () => {
   it('allows short paths', () => {
-    expect(validatePathLength('/Users/test', 'file.txt').severity).toBe('ok')
+    expect(validatePathLength('/Users/test', 'file.txt', RULES.apfs).severity).toBe('ok')
   })
 
-  it('rejects paths at 1024 bytes', () => {
+  it('refuses a path past the folder’s own limit, inclusive', () => {
     const parent = '/a'.repeat(500) // 1000 bytes
-    expect(validatePathLength(parent, 'a'.repeat(30)).severity).toBe('error')
+    expect(validatePathLength(parent, 'a'.repeat(22), RULES.apfs).severity).toBe('ok') // 1023
+    expect(validatePathLength(parent, 'a'.repeat(23), RULES.apfs)).toEqual({
+      severity: 'error',
+      message: 'Full path is too long (1,024/1,023 bytes)',
+    })
+  })
+
+  it('holds a backend that answers for itself to no client-side limit (#1228)', () => {
+    expect(validatePathLength('/a'.repeat(5000), 'x', POSIX_RULES).severity).toBe('ok')
   })
 
   it('handles trailing slash in parent', () => {
-    expect(validatePathLength('/Users/test/', 'file.txt').severity).toBe('ok')
+    expect(validatePathLength('/Users/test/', 'file.txt', RULES.apfs).severity).toBe('ok')
   })
 })
 
@@ -254,8 +303,8 @@ describe('validateDirectoryPath', () => {
   })
 
   it('counts multi-byte characters correctly', () => {
-    // Each emoji is 4 bytes
-    const emojiDir = '\u{1F600}'.repeat(64) // 256 bytes
+    // Each emoji is two UTF-16 units, as APFS (the host's default) counts them
+    const emojiDir = '\u{1F600}'.repeat(128) // 256 units
     const result = validateDirectoryPath(`/Users/${emojiDir}`)
     expect(result.severity).toBe('error')
     expect(result.message).toMatch(/A folder name in the path is too long/)
@@ -479,38 +528,45 @@ describe('validateFilename', () => {
   const siblings: string[] = []
 
   it('returns ok for valid rename', () => {
-    const result = validateFilename('newname.txt', 'old.txt', parentPath, siblings, 'yes', 'posix')
+    const result = validateFilename('newname.txt', 'old.txt', parentPath, siblings, 'yes', POSIX_RULES)
     expect(result.severity).toBe('ok')
   })
 
   it('returns error for empty name', () => {
-    const result = validateFilename('', 'old.txt', parentPath, siblings, 'yes', 'posix')
+    const result = validateFilename('', 'old.txt', parentPath, siblings, 'yes', POSIX_RULES)
     expect(result.severity).toBe('error')
   })
 
   it('returns error for disallowed chars', () => {
-    const result = validateFilename('bad/name', 'old.txt', parentPath, siblings, 'yes', 'posix')
+    const result = validateFilename('bad/name', 'old.txt', parentPath, siblings, 'yes', POSIX_RULES)
     expect(result.severity).toBe('error')
   })
 
   it('returns warning for conflict', () => {
-    const result = validateFilename('conflict.txt', 'old.txt', parentPath, ['conflict.txt'], 'yes', 'posix')
+    const result = validateFilename('conflict.txt', 'old.txt', parentPath, ['conflict.txt'], 'yes', POSIX_RULES)
     expect(result.severity).toBe('warning')
   })
 
   it('returns first error before warnings', () => {
     // Empty AND conflicting: error takes precedence
-    const result = validateFilename('', 'old.txt', parentPath, [''], 'yes', 'posix')
+    const result = validateFilename('', 'old.txt', parentPath, [''], 'yes', POSIX_RULES)
     expect(result.severity).toBe('error')
   })
 
   it('applies the folder`s name rules', () => {
-    expect(validateFilename('12:30.txt', 'old.txt', parentPath, siblings, 'yes', 'posix').severity).toBe('ok')
-    expect(validateFilename('12:30.txt', 'old.txt', parentPath, siblings, 'yes', 'windows').severity).toBe('error')
+    expect(validateFilename('12:30.txt', 'old.txt', parentPath, siblings, 'yes', POSIX_RULES).severity).toBe('ok')
+    expect(validateFilename('12:30.txt', 'old.txt', parentPath, siblings, 'yes', STICK_ON_LINUX).severity).toBe('error')
+  })
+
+  it('warns about a name that won’t work on Windows, after a clash', () => {
+    expect(validateFilename('12:30.txt', 'old.txt', parentPath, siblings, 'yes', STICK_ON_MAC).severity).toBe('warning')
+    expect(validateFilename('12:30.txt', 'old.txt', parentPath, ['12:30.txt'], 'yes', STICK_ON_MAC).message).toBe(
+      '“12:30.txt” already exists in this folder',
+    )
   })
 
   it('validates extension change with no setting', () => {
-    const result = validateFilename('file.json', 'file.txt', parentPath, siblings, 'no', 'posix')
+    const result = validateFilename('file.json', 'file.txt', parentPath, siblings, 'no', POSIX_RULES)
     expect(result.severity).toBe('error')
   })
 })

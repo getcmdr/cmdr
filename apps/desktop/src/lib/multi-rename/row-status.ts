@@ -6,8 +6,9 @@
  */
 
 import type { MessageKey } from '#lib/intl/keys.gen.js'
-import type { MediaField, RowStatus } from '#lib/ipc/bindings.js'
+import type { MediaField, NameFormat, PortabilityWarning, RowStatus } from '#lib/ipc/bindings.js'
 import type { IconName } from '#lib/ui/icons/icon-map.js'
+import { warningReachesLinux } from '#lib/utils/filename-validation.js'
 import { MEDIA_FIELD_LABELS } from './media-fields'
 import { MEDIA_FIELDS } from './media-token'
 
@@ -48,6 +49,31 @@ const INVALID_REASONS = {
   reserved: 'multiRename.reason.reserved',
   endsWithSpaceOrPeriod: 'multiRename.reason.endsWithSpaceOrPeriod',
 } as const satisfies Record<string, MessageKey>
+
+/**
+ * A ready row whose new name the folder takes but won't keep portable: not a problem (it
+ * renames), but it shows a warning glyph, its label says where the name won't work, and
+ * its tooltip says why. `format` is the folder's (`MultiRenamePreview.nameFormat`).
+ */
+export function warnedRowView(warning: PortabilityWarning, format: NameFormat): RowStatusView {
+  const alsoLinux = warningReachesLinux(warning, format) ? 'yes' : 'no'
+  const place = format === 'smbShare' ? 'smbShare' : 'drive'
+  const reason: StatusMessage =
+    warning.kind === 'windowsCharacter'
+      ? {
+          key: 'fileOperations.validation.notPortable.windowsCharacter',
+          params: { format: place, character: warning.character },
+        }
+      : warning.kind === 'reservedName'
+        ? { key: 'fileOperations.validation.notPortable.reservedName', params: { format: place, name: warning.name } }
+        : { key: 'fileOperations.validation.notPortable.endsWithSpaceOrPeriod', params: { format: place } }
+  return {
+    isProblem: false,
+    glyph: 'triangle-alert',
+    label: { key: 'multiRename.status.notPortable', params: { alsoLinux } },
+    reason,
+  }
+}
 
 export function rowStatusView(status: RowStatus): RowStatusView {
   const problem = (glyph: IconName, label: StatusMessage, reason: StatusMessage): RowStatusView => ({

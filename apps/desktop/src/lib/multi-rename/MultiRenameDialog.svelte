@@ -502,7 +502,18 @@
             cursorIndex={tool.cursorIndex}
             onCursorChange={tool.setCursor}
             onMoveRow={tool.moveCursorRow}
+            nameFormat={tool.nameFormat}
         />
+        {#if tool.counts.notPortable > 0}
+            <!-- Under the list, over every row (not only the ones in view): these still rename. -->
+            <p class="portability-note" class:is-unavailable={previewStale} role="status">
+                {tString('multiRename.notPortableSummary', {
+                    count: tool.counts.notPortable,
+                    countText: formatInteger(tool.counts.notPortable),
+                    alsoLinux: tool.counts.notPortableOnLinux > 0 ? 'yes' : 'no',
+                })}
+            </p>
+        {/if}
 
         <!-- Inside the dialog, so it portals into the modal's layer (above the scrim, inside its focus trap). -->
         <Menu menu={fieldHistory.menu} ariaLabel={tString('multiRename.history')} minWidth={240} />
@@ -740,8 +751,16 @@
     }
 
     /* Dims with the stale preview it summarizes (`PreviewList`'s `.is-unavailable`). */
-    .counts.is-unavailable {
+    .counts.is-unavailable,
+    .portability-note.is-unavailable {
         opacity: 0.5;
+    }
+
+    /* The rows' warning glyph's tone: these still rename, so it's a warning, not an error. */
+    .portability-note {
+        margin: 0;
+        font-size: var(--font-size-sm);
+        color: var(--color-warning-text);
     }
 
     @media (prefers-reduced-motion: no-preference) {

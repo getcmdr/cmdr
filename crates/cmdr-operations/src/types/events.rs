@@ -1021,6 +1021,11 @@ pub struct ScanPreviewCompleteEvent {
     /// confirmation waiting to know whether it's a trash or a delete.
     #[serde(default)]
     pub online_only_found: bool,
+    /// A transfer's names that Windows can't use as they are, counted from the
+    /// walk, for the dialog to warn about before anything is copied. `None`
+    /// for a delete's or a compress's walk.
+    #[serde(default)]
+    pub name_portability: Option<super::NamePortabilityTally>,
 }
 
 /// Error event for scan preview.

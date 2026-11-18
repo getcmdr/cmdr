@@ -1336,14 +1336,6 @@
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
   },
-  "fileOperations.validation.nameTooLong": "{kind, select, folder {Der Ordnername ist zu lang ({byteCount}/{maxBytes} {max, plural, one {Byte} other {Bytes}})} other {Der Dateiname ist zu lang ({byteCount}/{maxBytes} {max, plural, one {Byte} other {Bytes}})}}",
-  "@fileOperations.validation.nameTooLong": {
-    "sourceHash": "4978a6f"
-  },
-  "fileOperations.validation.pathTooLong": "Der vollständige Pfad ist zu lang ({byteCount}/{maxBytes} {max, plural, one {Byte} other {Bytes}})",
-  "@fileOperations.validation.pathTooLong": {
-    "sourceHash": "9aa3b43"
-  },
   "fileOperations.validation.extensionChangeBlocked": "Das Ändern der Dateiendung ist nicht erlaubt (war „{oldExt}“)",
   "@fileOperations.validation.extensionChangeBlocked": {
     "sourceHash": "e81362d"
@@ -1371,14 +1363,6 @@
   "fileOperations.validation.pathNullChar": "Der Pfad enthält ein Nullzeichen",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
-  },
-  "fileOperations.validation.pathTotalTooLong": "Der Pfad ist zu lang ({byteCount}/{maxBytes} {max, plural, one {Byte} other {Bytes}})",
-  "@fileOperations.validation.pathTotalTooLong": {
-    "sourceHash": "dd75780"
-  },
-  "fileOperations.validation.pathSegmentTooLong": "Ein Ordnername im Pfad ist zu lang ({byteCount}/{maxBytes} {max, plural, one {Byte} other {Bytes}})",
-  "@fileOperations.validation.pathSegmentTooLong": {
-    "sourceHash": "c0773d3"
   },
   "fileOperations.transferTree.treeLabel": "Dateien in dieser Übertragung",
   "@fileOperations.transferTree.treeLabel": {

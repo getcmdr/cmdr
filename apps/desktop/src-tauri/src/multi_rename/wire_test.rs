@@ -58,6 +58,7 @@ fn row(status: RowStatus) -> PreviewRow {
         icon_id: Some("ext:jpg".to_string()),
         is_directory: false,
         edited: true,
+        warning: None,
     }
 }
 
@@ -83,14 +84,25 @@ fn a_preview_and_its_row() {
             unchanged: 2,
             problems: 3,
             reading: 4,
+            not_portable: 5,
+            not_portable_on_linux: 6,
         },
+        name_format: cmdr_fs::validation::NameFormat::SmbShare,
         rows: vec![row(RowStatus::Ready)],
     };
     assert_eq!(
         wire(preview),
         json!({
             "previewId": 7,
-            "counts": { "ready": 1, "unchanged": 2, "problems": 3, "reading": 4 },
+            "counts": {
+                "ready": 1,
+                "unchanged": 2,
+                "problems": 3,
+                "reading": 4,
+                "notPortable": 5,
+                "notPortableOnLinux": 6,
+            },
+            "nameFormat": "smbShare",
             "rows": [{
                 "row": 3,
                 "oldName": "a.jpg",
@@ -99,8 +111,19 @@ fn a_preview_and_its_row() {
                 "iconId": "ext:jpg",
                 "isDirectory": false,
                 "edited": true,
+                "warning": null,
             }],
         })
+    );
+    let warned = PreviewRow {
+        warning: Some(cmdr_fs::validation::PortabilityWarning::WindowsCharacter {
+            character: ":".to_string(),
+        }),
+        ..row(RowStatus::Ready)
+    };
+    assert_eq!(
+        wire(warned)["warning"],
+        json!({ "kind": "windowsCharacter", "character": ":" })
     );
     let gone = PreviewRow {
         icon_id: None,

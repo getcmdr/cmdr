@@ -165,11 +165,12 @@ async fn create_directory_invalid_chars() {
     }
 }
 
-/// An SMB share refuses a Windows device name before any I/O: Samba would store
-/// `CON` and list it back as `CR23RR~9` (`docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`).
-/// A `:` is fine there, since smb2 carries it in the private-use area.
+/// An SMB share TAKES a Windows device name and a `:` (the editors warn that
+/// Windows won't read them as typed: Samba lists `CON` back as `CR23RR~9`,
+/// `docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`), but refuses,
+/// before any I/O, what it can't store: a name past its 255 bytes, `.`, `..`.
 #[tokio::test]
-async fn create_on_a_share_refuses_a_reserved_device_name() {
+async fn create_on_a_share_takes_a_reserved_name_and_refuses_what_it_cant_store() {
     let engine = TestOperations::new();
     let share = InMemoryVolume::new("Share").with_backend_kind(BackendKind::Smb);
     share.create_directory(Path::new("/docs")).await.expect("seed dir");
@@ -180,20 +181,34 @@ async fn create_on_a_share_refuses_a_reserved_device_name() {
 
     for name in ["CON", "nul.txt"] {
         let result = create_file_core_on(engine.host(), Some("smb-share".into()), "/docs", name).await;
-        assert!(
-            matches!(
-                result,
-                Err(MutationError::NameNotAllowed {
-                    reason: ValidationError::ReservedName { .. }
-                })
-            ),
-            "{name:?}: {result:?}"
-        );
-        assert!(!share.exists(&Path::new("/docs").join(name)).await, "{name:?} landed");
+        assert!(result.is_ok(), "{name:?}: {result:?}");
     }
-
     let made = create_directory_core_on(engine.host(), Some("smb-share".into()), "/docs", "12:30").await;
     assert!(made.is_ok(), "{made:?}");
+
+    let long = "é".repeat(128);
+    for (name, refusal) in [
+        (".", ValidationError::DotName),
+        ("..", ValidationError::DotName),
+        (
+            long.as_str(),
+            ValidationError::NameTooLong {
+                length: 256,
+                max: 255,
+                unit: cmdr_fs::validation::LengthUnit::Bytes,
+            },
+        ),
+    ] {
+        let result = create_directory_core_on(engine.host(), Some("smb-share".into()), "/docs", name).await;
+        assert!(
+            matches!(&result, Err(MutationError::NameNotAllowed { reason }) if *reason == refusal),
+            "{name:?}: {result:?}"
+        );
+    }
+    assert!(
+        !share.exists(&Path::new("/docs").join(&long)).await,
+        "the long name landed"
+    );
 }
 
 /// A backend Cmdr can't see behind (SFTP here) takes what POSIX takes:

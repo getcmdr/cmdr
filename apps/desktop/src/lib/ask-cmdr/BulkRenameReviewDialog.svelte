@@ -467,8 +467,10 @@
         {@const hasBadges =
             row.warnings.includes('extensionChanged') ||
             row.warnings.includes('cycle') ||
+            row.warnings.includes('notPortable') ||
             row.blockedReason === 'targetExists' ||
-            row.blockedReason === 'sourceMissing'}
+            row.blockedReason === 'sourceMissing' ||
+            row.blockedReason === 'nameNotAllowed'}
         {@const provenance = nameProvenance(row)}
         {@const keptName = provenance === 'nameKept'}
         {@const provenanceLabel = keptName
@@ -537,6 +539,26 @@
                             aria-label={tString('askCmdr.renameReview.cycleTooltip')}
                             use:tooltip={tString('askCmdr.renameReview.cycleTooltip')}
                             >{tString('askCmdr.renameReview.cycleBadge')}</span
+                        >
+                    {/if}
+                    {#if row.warnings.includes('notPortable')}
+                        <span
+                            class="warning-badge"
+                            data-rename-warning="notPortable"
+                            tabindex="0"
+                            aria-label={tString('askCmdr.renameReview.notPortableTooltip')}
+                            use:tooltip={tString('askCmdr.renameReview.notPortableTooltip')}
+                            >{tString('askCmdr.renameReview.notPortableBadge')}</span
+                        >
+                    {/if}
+                    {#if row.blockedReason === 'nameNotAllowed'}
+                        <span
+                            class="danger-badge"
+                            data-warning="name-not-allowed"
+                            tabindex="0"
+                            aria-label={tString('askCmdr.renameReview.nameNotAllowedTooltip')}
+                            use:tooltip={tString('askCmdr.renameReview.nameNotAllowedTooltip')}
+                            >{tString('askCmdr.renameReview.nameNotAllowedBadge')}</span
                         >
                     {/if}
                     {#if row.blockedReason === 'targetExists'}

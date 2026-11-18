@@ -524,6 +524,7 @@ impl ScanPreviews {
             bytes_total: cached.total_bytes,
             dedup_bytes_total: cached.dedup_bytes,
             estimated_compressed_bytes: cached.estimated_compressed_bytes.clone(),
+            name_portability: cached.name_portability().cloned(),
         })
     }
 
@@ -555,6 +556,7 @@ impl ScanPreviews {
             scanned_files: None,
             tree: None,
             mac_only: MacOnlyFiles::Include,
+            name_portability: None,
         };
         self.write().insert(
             preview_id,
