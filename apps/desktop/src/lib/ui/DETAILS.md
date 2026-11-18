@@ -410,9 +410,12 @@ the Mac markup and keys, so a convention change can't move them unnoticed.
 - Gotcha: Alt plus a numpad key never names an access key (`accessKeyLettersOf`): Windows types a character by its code
   that way (Alt, 0, 2, 3, 3 for é), one Alt keydown per digit, and a label like "Delete 3 items" can hold the digit `3`
   as its key once its letters are taken. Without the guard, typing é in a dialog field could press it.
-- Decision/Why: Windows keeps keytips (Windows 11's own apps, WinUI), not Win32's underlines.
-- Gotcha: Windows' native menu bar takes a lone Alt press (Alt, release, focuses the bar), which may hide keytips there;
-  task 63 settles the menu model (unverified on Windows).
+- Decision/Why: Windows moves to underlines (D5 in `docs/specs/windows-port-plan.md`, David, 2026-11-18, reversing the
+  earlier keytips): they match the in-page menu bar's, and Windows' "Underline access keys" setting governs them. The
+  Windows row still answers `keytips` until task 63's step 1 flips it, and its step 4 adds Win32's keyboard-cue rule
+  (hidden until Alt or other keyboard use).
+- Gotcha: Windows' native menu bar takes a lone Alt press (Alt, release, focuses the bar) until task 63 replaces it with
+  the in-page bar (unverified on Windows for dialogs).
 
 ### Scrim clicks
 

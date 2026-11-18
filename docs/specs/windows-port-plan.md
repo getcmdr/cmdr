@@ -111,27 +111,28 @@ Settled:
   deploy, so it can't move. Nothing shipped on Windows before it, so there's no older path to read or migrate.
   Canonical: `apps/desktop/src-tauri/src/managed_policy/DETAILS.md` § The Windows registry keys.
 
-- **D5. The menu model** (PROVISIONAL, 2026-11-18; recommended by the lead's research, pending David's spikes on two
-  real Windows laptops): off macOS, Cmdr draws its menus in the page from `cmdr-menu`'s data. Windows, KDE, and other
-  Linux desktops get an in-window menu bar (`windowMenuBar`), GNOME a "Main menu" button opened by F10 (`primaryMenu`,
-  new), and a "Show menu bar" setting flips between the two. muda keeps macOS's bar and every right-click menu. Task 63;
-  evidence and rejected options: `docs/notes/windows-port/menu-model.md`.
-  - **Why provisional**: David prefers native menus if they're little work, and expects Tauri to close gaps over time.
-    The recommendation rests on evidence nobody ran on our stack, so no custom-menu build starts before the spike.
-  - **What the spike must answer** (`tools/menu-spike/`, test script and results in
-    `docs/notes/windows-port/menu-spike.md`), on Windows 10 and Windows 11:
-    1. With focus in the page, do a lone Alt, F10, and Alt+letter reach muda's native bar (highlight it, open the right
-       menu), and does Escape give focus back to the page?
-    2. Do the bar's accelerators fire while the page has focus, and does any key fire twice (page and menu)?
-    3. Does the native bar and its menus follow dark and light mode, and high contrast, well enough?
-    4. Do AltGr combos on a second layout type their character, not open a menu?
-    5. Does Narrator read each mode's bar as a menu bar?
-  - **First measurement** (the agent's selftest on mami, Windows 10, 2026-11-18): on today's muda bar a lone Alt and F10
-    work, Alt+letter and the bar's accelerators don't; a ~40-line WebView2 key bridge fixes Alt+letter; native popups
-    stayed light with only the window forced dark. Details: the spike note.
-  - **Decision rule**: the native bar if 1–3 are acceptable (with a small key bridge if that's what it takes); the
-    hybrid (an in-page title strip opening native popups) if only the bar strip fails; the in-page bar only if both
-    fail.
+- **D5. The menu model** (David, 2026-11-18, after running the menu spike on Windows 11): off macOS, Cmdr draws its
+  menus in the page from `cmdr-menu`'s data. Windows, KDE, and other Linux desktops get an in-window menu bar
+  (`windowMenuBar`), GNOME a "Main menu" button opened by F10 (`primaryMenu`, new), and a "Show menu bar" setting flips
+  between the two. muda keeps macOS's bar and the right-click menus on macOS and Linux. Task 63; evidence and rejected
+  options: `docs/notes/windows-port/menu-model.md`; the spike's results: `docs/notes/windows-port/menu-spike.md` §
+  Decision.
+  1. **One style on Windows 10 and 11**: Windows 11's Fluent look, matched precisely. The exact tokens come from WinUI's
+     open-source theme resources (`microsoft/microsoft-ui-xaml`: `MenuFlyoutPresenter`, `MenuFlyoutItem`, `MenuBar`
+     padding, item height, corner radii, border stroke, shadow, the Segoe UI Variable type ramp, the accelerator text
+     color). Acrylic through `backdrop-filter` blur plus a tint.
+  2. **The right-click menus go in-page on Windows too**, sharing one menu component with the bar (today they're native
+     Win32 popups).
+  3. **Access keys are underlines**, no WinUI keytips, on the bar, in menus, and in dialogs. They show only after Alt or
+     other keyboard use, as in Win32, and always when Windows' "Underline access keys" is on (`SPI_GETKEYBOARDCUES`).
+  4. **ARIA done properly**: `menubar` / `menu` / `menuitem` (plus `menuitemcheckbox` and `menuitemradio`),
+     `aria-haspopup`, `aria-expanded`, `aria-disabled`, roving focus, and `aria-keyshortcuts`. `forced-colors: active`
+     styles go in with the build; David tests high contrast and Narrator himself later.
+  5. **Accepted limit**: an in-page menu can't extend past the window's edge, so near an edge it flips or scrolls.
+  - Why: the native modes (muda's bar, and an in-page strip opening native popups) work but felt Win32-like. Windows
+    11's own look (Notepad, Explorer) is WinUI 3 XAML, and hosting that from Rust through XAML Islands isn't worth it:
+    no `windows-rs` WinUI 3 bindings, it needs the Windows App SDK runtime, and it adds a third input owner beside
+    WebView2 and the host window. VS Code, Slack, and the new Teams draw in-page menus on Windows too.
 
 - **D3. Code signing and distribution** (David, 2026-11-04): Store first, a paid certificate only once Windows pays for
   it.
@@ -169,7 +170,6 @@ Settled:
 
 Open, waiting on David (each task entry has the detail):
 
-- **The menu model** on Windows and per Linux desktop (task 63): D5 stays provisional until David tries the menu spike.
 - **macOS hand checks** from the keymap work (task 26).
 
 ## Bugs the audits found on the way
@@ -674,8 +674,9 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       - What WebView2 reports for AltGr (`AltGraph`, `ctrlKey`, `altKey`) on German and Hungarian layouts, for
         LeftCtrl+LeftAlt+E, and for right Alt with empty modifiers (Multi-rename's `Alt+<letter>` would then need the
         left Alt).
-      - The browser keys WebView2 keeps until #1115 lands: `Shift+F5`, `Ctrl+F5`, `F5`, `F3`, `F7`, `Ctrl+R`, `Ctrl+J`,
-        `Ctrl+G`, `Ctrl+Shift+G`, `Ctrl+Shift+C`, `Ctrl+0` / `Ctrl++` / `Ctrl+-`, and `Alt+←/→` reach Cmdr.
+      - The browser keys WebView2 keeps until task 67 (#1115) lands: `Shift+F5`, `Ctrl+F5`, `F5`, `F3`, `F7`, `Ctrl+R`,
+        `Ctrl+J`, `Ctrl+G`, `Ctrl+Shift+G`, `Ctrl+Shift+C`, `Ctrl+Shift+P` (the menu spike's page opened WebView2's
+        Print dialog on it), `Ctrl+0` / `Ctrl++` / `Ctrl+-`, and `Alt+←/→` reach Cmdr.
       - `F6` and `Shift+F6` (Move, Rename), `Ctrl+M`, and `Ctrl+Shift+M` in windowed hosting: if `F6` moves focus out,
         #1115 needs a per-key `IsBrowserAcceleratorKeyEnabled(FALSE)` for it. Also `Ctrl+PageUp/PageDown` and
         `Ctrl+Shift+PageUp/PageDown` (Chromium's tab keys).
@@ -687,19 +688,19 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
         machine with two layouts.
       - The global go-to-latest hotkey `Ctrl+Alt+Win+J` registers and isn't one of Windows' own; try `Win+Alt+J` as a
         simpler default there.
-      - The menu bar (task 63; if D5's in-page bar holds after the spike, no Win32 accelerator is in play): a lone Alt
-        tap and F10 reach the page and focus the bar, without Windows' menu loop stalling IPC (`SC_KEYMENU`; a click on
-        the panes still answers within a second); Alt+Space still opens the system menu; with the search dialog or
-        Multi-rename open, `Alt+F` / `Alt+S` / `Alt+V` and `Alt+F` / `Alt+E` / `Alt+G` stay the dialog's and the bar
-        doesn't open; with "Show menu bar" off, Alt and F10 show it until focus leaves.
+      - The menu bar (task 63; D5's bar is in-page, so no Win32 accelerator is in play): a lone Alt tap and F10 reach
+        the page and focus the bar, without Windows' menu loop stalling IPC (`SC_KEYMENU`; a click on the panes still
+        answers within a second); Alt+Space still opens the system menu; with the search dialog or Multi-rename open,
+        `Alt+F` / `Alt+S` / `Alt+V` and `Alt+F` / `Alt+E` / `Alt+G` stay the dialog's and the bar doesn't open; with
+        "Show menu bar" off, Alt and F10 show it until focus leaves.
       - The download toast's hotkey animation: its PC key caps read `Ctrl`, `Fn`, `Win`, and `Alt` where a Windows
         laptop has them.
       - With a text field focused, a menu CLICK on a file-moving command (File > Delete, Edit > Move here) runs, and the
         same command's key still doesn't (`routes/(main)/text-field-gate.ts`): task 63's in-page bar knows a click from
-        a key (its step 6).
+        a key (its step 9).
       - The browser demo for a Windows or Linux visitor: the search dialog's new query keeps `Ctrl+N`, which Chromium
         keeps from the page, because a fixed-key command can't be seeded (`lib/demo/browser-shortcuts.ts`). Task 63
-        gives the demo the visitor's own bar (its step 8), which picks the demo-only key.
+        gives the demo the visitor's own bar (its step 11), which picks the demo-only key.
     - **Taskbar progress (from task 49; `apps/desktop/src-tauri/src/shell_progress/DETAILS.md` has the rules and a QA
       recipe)**:
       - A large copy shows a green bar on the main window's taskbar button, filling in whole percents, and the scan
@@ -767,6 +768,27 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
 58. [XS] Windows. The website's "Run anyway" download (D3 step 2): the unsigned NSIS installer on the download page with
     a short explainer of SmartScreen's "More info → Run anyway" step, next to the Store link. David reviews the copy.
     Needs 32, 52.
+59. [XS] Windows. WebView2's browser keys off in every window (#1115, David's decision of 2026-11-12; numbered last
+    because it was added after the list). Not in the tree yet (checked 2026-11-18: nothing in `apps/desktop/src-tauri/`
+    sets `AreBrowserAcceleratorKeysEnabled`, and Tauri 2.12.5 doesn't expose it; tauri-apps/tauri#16397, which adds
+    `browserAcceleratorKeys`, is still open). The menu spike showed the cost: `Ctrl+Shift+P`, which the spike's page
+    didn't claim, opened WebView2's Print dialog. In the main window the page's `preventDefault` on a bound key wins
+    (the spike measured that for `F5`, `Ctrl+R`, and `Alt+←`), so the exposure is any window or state that doesn't claim
+    a key: Settings, the viewer, a text field, a gated command.
+    - Scope: a new `on_webview_ready` hook on the `cmdr-platform` plugin (`platform_plugin` in
+      `apps/desktop/src-tauri/src/tauri_builder.rs`, which reaches every webview, the JS-created ones too) runs a
+      `#[cfg(windows)]` `with_webview` that casts the core's settings to `ICoreWebView2Settings3` and calls
+      `SetAreBrowserAcceleratorKeysEnabled(false)`, as `tools/menu-spike/src/win.rs`'s `set_browser_keys` does. Use
+      #16397's config field instead if it has shipped.
+    - Landmines: the setting applies from the next navigation, so the first page of each window must be covered (set it
+      before the first load, or check that it holds on the first page); `F6`, `Shift+F6`, `Ctrl+M`, and `Ctrl+Shift+M`
+      may sit outside the global switch (#1115's comment), which then needs the per-key
+      `IsBrowserAcceleratorKeyEnabled(FALSE)` in an `AcceleratorKeyPressed` handler (the spike's `install` shows the
+      handler's wiring).
+    - Tests: a Rust test can't reach WebView2; the check is the real machine (mami or a laptop).
+    - Done when: #1115's list (`F5`, `Ctrl+R`, `Ctrl+F`, `Ctrl+P`, `Ctrl+Shift+P`, `Ctrl+J`, `Ctrl+G`, `Shift+F5`,
+      `Ctrl+F5`, `Alt+←/→`, `F7`) does only what Cmdr binds, and nothing where it binds nothing, in the main window,
+      Settings, and the viewer. Needs the app running on Windows (done).
 
 ### Phase 7: native feel
 
@@ -804,9 +826,11 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
     JAWS. The menu model carries today's bar until task 63. Evidence: `docs/notes/windows-port/platform-conventions.md`.
     Needs 25.
 60. [M] Windows. A Windows theme for the `lib/ui` primitives, following Fluent 2: buttons, dropdowns, checkboxes,
-    switches, text fields, scrollbars, focus visuals, tooltips, and context menus, as tokens keyed on the platform so
-    components stay one implementation. David reviews the design. Linux: its own neutral theme, same token set.
-    Needs 59.
+    switches, text fields, scrollbars, focus visuals, and tooltips, as tokens keyed on the platform so components stay
+    one implementation. Menus (the bar, its flyouts, and the context menus) are task 63's step 3, which sets the token
+    shape and the source rule this task follows: WinUI's own theme resources (`microsoft/microsoft-ui-xaml`,
+    `controls/dev/CommonStyles/*_themeresources.xaml`), matched precisely, one look on Windows 10 and 11 (D5). David
+    reviews the design. Linux: its own neutral theme, same token set. Needs 59.
 61. [S] Windows. **Done**. Dialog conventions, read from task 59's conventions inside `ModalDialog`, ❌ never the OS
     (`apps/desktop/src/lib/ui/DETAILS.md` § Platform conventions, with the per-dialog Return table). Button order: the
     footer is written in macOS order and Windows and KDE show it reversed, with Tab following through the focus trap's
@@ -817,57 +841,190 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
     a reflex Enter was safe (quit, tool question, rollback, data wipe) follow Apple's HIG: no default button, the
     destructive one styled as such, the safe answer focused only off the Mac. Access keys on Windows and every Linux
     desktop: Alt plus the letter presses or focuses the control, letters allocated from the rendered labels by the Linux
-    menu bar's rule (no catalog marker, so no translator work and no new strings). How holding Alt shows them (David's
-    decision, 2026-11-18): Windows 11's keytips on Windows, underlined letters on every Linux desktop as GTK and Qt draw
-    them, and a label without its letter (Chinese, Japanese) carries it as "保存 (B)". Of task 59's 14 `Alt+<letter>`
-    keys, the 12 inside dialogs (multi-rename's 11 options, About this's Stop) stay the commands they are and count as
-    their dialog's access keys (`keyScope` keeps their letters off every other control); they can't become label-derived
-    letters because the keymap is per OS, not per language. The viewer's two (Alt+R, Alt+C) aren't in a dialog and stay
-    as they are: the viewer has no other access keys to clash with. All five desktop rows are pinned by
-    `ModalDialog.conventions.svelte.test.ts`, a11y included; `CMDR_MOCK_CONVENTIONS=windows pnpm dev` (or `kde`,
-    `gnome`, `otherLinux`) shows another desktop's row. Linux: per desktop. Needs 59.
+    menu bar's rule (no catalog marker, so no translator work and no new strings). How they show (David's decision,
+    2026-11-18, revised by D5 the same day): underlined letters on Windows and every Linux desktop, as Win32, GTK, and
+    Qt draw them, and a label without its letter (Chinese, Japanese) carries it as "保存 (B)". Shipped, Windows still
+    draws WinUI keytips on held Alt; task 63's step 1 flips its row to underlines and its step 4 adds Win32's
+    keyboard-cue rule. Of task 59's 14 `Alt+<letter>` keys, the 12 inside dialogs (multi-rename's 11 options, About
+    this's Stop) stay the commands they are and count as their dialog's access keys (`keyScope` keeps their letters off
+    every other control); they can't become label-derived letters because the keymap is per OS, not per language. The
+    viewer's two (Alt+R, Alt+C) aren't in a dialog and stay as they are: the viewer has no other access keys to clash
+    with. All five desktop rows are pinned by `ModalDialog.conventions.svelte.test.ts`, a11y included;
+    `CMDR_MOCK_CONVENTIONS=windows pnpm dev` (or `kde`, `gnome`, `otherLinux`) shows another desktop's row. Linux: per
+    desktop. Needs 59.
 62. [S] Windows. Typography and motion: Segoe UI Variable through the system font stack, the Windows type ramp, Windows
     animation curves and durations, and the system's animation setting. Linux: follows the desktop's font and
     reduced-motion settings. Needs 40.
-63. [L] Windows and Linux. The menu model. **Provisional** (D5): blocked on the menu spike (`tools/menu-spike/`,
-    `docs/notes/windows-port/menu-spike.md`), which David runs on a Windows 10 and a Windows 11 laptop before any
-    custom-menu build; the plan below is the in-page outcome, kept as researched. Recommended by the lead (2026-11-18):
-    off macOS, Cmdr draws its menus in the page from `cmdr-menu`'s data, and muda keeps only macOS's bar and every
-    right-click menu. Windows, KDE, and other Linux show an in-window menu bar (`menuModel: 'windowMenuBar'`), Fluent on
-    Windows and the neutral theme on Linux; a tap of Alt or F10 focuses it, Alt plus a title's letter opens a menu,
-    letters and keytips come from the dialogs' `access-keys.ts`, and a modal surface makes it inert. GNOME shows a "Main
-    menu" button instead (`'primaryMenu'`, new): the bar's menus as submenus plus the HIG's standard group, F10 opens
-    it. A "Show menu bar" setting swaps the two everywhere off macOS (on Windows a hidden bar shows on Alt or F10, on
-    KDE a hamburger button stands in; no default key, since KDE's `Ctrl+M` is Multi-rename). The palette stays the way
-    to every command. Evidence, per-desktop walk-throughs, and rejected options (muda's Win32 bar, a command bar,
-    palette only, a bar on GNOME): `docs/notes/windows-port/menu-model.md`. Steps:
-    1. [XS] `MenuModel::PrimaryMenu`, the GNOME row, `bindings.ts`, `conventions-on.json`, and the conventions docs
-       (`platform-conventions.md`'s `menuModel` line points to the menu-model note).
-    2. [S] A desktop command answering the bar for a window the way `cmdr-listing-wasm`'s `DemoMenuBar` does (rows,
-       resolved labels, shown keys, enabled and checked state, live labels), plus a change event, all from `cmdr-menu`
-       and `MenuItemInputs`, ❌ no host-side rule.
-    3. [M] A shared `lib/ui` menu bar, promoted from `lib/demo/menu-bar.svelte.ts` onto `Menu.svelte`: ARIA `menubar`,
-       Alt tap and F10 focus, Alt+letter, arrow walking, Esc returning focus, letters from `access-keys.ts` (reserving a
-       scope's own Alt keys, as the viewer's `Alt+R` / `Alt+C`), per-platform look tokens (task 60), `forced-colors`,
-       and inert under the menu-dialog gate. The viewer window gets its own bar from `menu_structure.rs`'s rows.
-    4. [S] The main-menu button (GNOME's default, and the KDE and Windows stand-in when the bar is hidden), plus the
-       "Show menu bar" setting and View row.
-    5. [S] Hosts: `menu_bar_builder.rs` builds the bar on macOS only; Windows answers a zero-`lParam` `SC_KEYMENU`
-       itself so a lone Alt or F10 doesn't start the system menu loop; `bar_parity_test.rs` narrows its registered-key
-       checks to macOS and keeps the shown-key ones.
-    6. [XS] The text-field gate lets a bar CLICK on a file-moving command run (task 55's entry).
-    7. [S] Linux cleanup: delete `menu/mnemonic_mask/` and its IPC, `menu-mnemonics-capture.svelte.ts`,
-       `get_menu_bar_title_mnemonics` and Settings' title-mnemonic warning, and `menu-mnemonic-mask.spec.ts`; the Linux
-       E2E lane gets a bar spec in their place. Update `menu/` and `cmdr-menu`'s C+D.md and `lib/ui/DETAILS.md`'s
-       Windows-bar gotcha.
-    8. [S] The demo draws the visitor's own model with the shared bar (macOS bar, Windows bar, or the Linux bar) and
-       picks the demo-only key for the search dialog's new query (task 55's entry). Reused unchanged: the bar data, ids,
-       labels, enabled fold, sort checks, every context menu, and the snapshots. QA: task 55 (keys), task 64 (Narrator,
-       NVDA, JAWS, and Orca read the bar as a menu bar). Needs 26, 59, 61.
+63. [L] Windows and Linux. The menu model (D5, final). Off macOS, Cmdr draws its menus in the page from `cmdr-menu`'s
+    data. Windows, KDE, and other Linux show an in-window menu bar (`menuModel: 'windowMenuBar'`): Windows 11's Fluent
+    look, matched precisely, on Windows 10 and 11 alike, and the neutral theme on Linux. A tap of Alt or F10 focuses it,
+    Alt plus a title's letter opens a menu, letters come from the dialogs' `access-keys.ts` and show as underlines, and
+    a modal surface makes it inert. GNOME shows a "Main menu" button instead (`'primaryMenu'`, new): the bar's menus as
+    submenus plus the HIG's standard group, F10 opens it. A "Show menu bar" setting swaps the two everywhere off macOS
+    (on Windows a hidden bar shows on Alt or F10, on KDE a hamburger button stands in; no default key, since KDE's
+    `Ctrl+M` is Multi-rename). On Windows the right-click menus move in-page too, onto the same menu component; macOS
+    and Linux keep muda's native popups. The palette stays the way to every command. Evidence, per-desktop
+    walk-throughs, and rejected options: `docs/notes/windows-port/menu-model.md`; the spike that decided it:
+    `docs/notes/windows-port/menu-spike.md`. Needs 26, 59, 61.
+    - **Order and parallel lanes**: wave 1 runs steps 1, 2, 3, and 5 side by side (conventions data, a backend command,
+      CSS tokens, a backend setting: no shared files), plus step 7's backend half. Wave 2 is step 4, alone (it touches
+      `Menu.svelte`, `access-keys.ts`, and `ModalDialog.svelte`, which step 1's test edits also touch, so it starts once
+      step 1 lands). Wave 3 runs steps 6, 7's frontend half, and 11 in parallel. Wave 4 runs steps 8, 9, and 10 in
+      parallel. Step 12 goes last. Reference shots for the look: Notepad's menu bar and a File Explorer context menu on
+      Windows 11, light and dark, taken on David's laptop.
+    - **Worth keeping from `tools/menu-spike/` before step 12 deletes it**: `src/win.rs` `subclass` (the window subclass
+      that swallows a `SC_KEYMENU` and lets Alt+Space's `lParam` 0x20 through: step 6's guard); `set_browser_keys` and
+      `install`'s `AcceleratorKeyPressed` wiring (task 67's global switch and its per-key fallback); the `--selftest`
+      harness (`SendInput` key script plus a BMP screen capture per step, which runs in mami's console session with the
+      lid closed: the cheapest way for an agent to see step 6 and 7 on real Windows before David does). From
+      `ui/app.js`: the lone-Alt tracking (`altAlone`, AltGr excluded) and `rememberFocus` / `restoreFocus`, as a
+      cross-check for step 4. Not worth keeping: mode A's key bridge (`on_webview_key`), mode B's `popup_with_arrows`
+      and its `WH_MSGFILTER` hook, `src/model.rs` (step 2's command replaces it), and `ui/style.css`.
+    1. [XS] **Conventions data.**
+       - Scope: `MenuModel::PrimaryMenu` and the GNOME row; Windows' `accessKeys` row flips from `keytips` to
+         `underlines` (`apps/desktop/src-tauri/src/platform/conventions.rs`, its test, `bindings.ts`,
+         `conventions-on.json`); a new `contextMenus` convention (`native` on macOS and every Linux desktop, `inPage` on
+         Windows), so step 7 asks the convention, ❌ never the platform. With no row left on it, the `Keytips`
+         convention value goes; `access-keys.ts` keeps its keytip renderer only as the fallback where the Highlight API
+         is missing (WebKitGTK). Docs: `apps/desktop/src/lib/platform/DETAILS.md` § Conventions,
+         `apps/desktop/src/lib/ui/DETAILS.md` § Platform conventions, and `platform-conventions.md`'s values list.
+       - Landmines: `ModalDialog.conventions.svelte.test.ts`'s Windows block pins keytips and must flip with the row;
+         the cross-target table test pins `conventions-on.json`, so regenerate it rather than hand-editing.
+       - Tests: the conventions Rust tests (`cargo nextest run conventions`), `pnpm check svelte-tests-related`.
+       - Done when: `CMDR_MOCK_CONVENTIONS=windows pnpm dev` shows underlines in a dialog on held Alt, and GNOME's row
+         answers `primaryMenu`.
+    2. [S] **The bar's answer, from the backend.**
+       - Scope: a desktop command answering the bar for a window the way `cmdr-listing-wasm`'s `DemoMenuBar` does (rows,
+         resolved labels, shown keys, `aria-keyshortcuts` spelling, enabled and checked state, check-versus-radio kind,
+         live labels), plus a change event, all from `cmdr-menu` and `MenuItemInputs`, ❌ no host-side rule. A pick
+         comes back as an id and dispatches on the `menu` road, as a native bar click does today.
+       - Landmines: the viewer has its own rows (`menu_structure.rs`); live labels (like "Select all of the same kind")
+         must come from the same live source the context menu uses, ❌ never a debounced copy; keep the payload small
+         (it's sent on every change), so diff or debounce on the Rust side.
+       - Tests: Rust tests that the answer equals `DemoMenuBar`'s for the same inputs, per platform; a snapshot of the
+         Windows bar.
+       - Done when: the frontend can draw every row the native bar has today, with live state, and no row is decided
+         outside `cmdr-menu`.
+    3. [S] **The Windows 11 look**, as tokens (task 60 follows its shape).
+       - Scope: menu tokens keyed on the platform, read from WinUI's theme resources on `microsoft/microsoft-ui-xaml`'s
+         `main` (`controls/dev/CommonStyles/MenuFlyout_themeresources.xaml`,
+         `controls/dev/MenuBar/ MenuBar_themeresources.xaml`,
+         `controls/dev/CommonStyles/CornerRadius_themeresources.xaml`, `Common_themeresources_any.xaml`,
+         `controls/dev/Materials/Acrylic/AcrylicBrush_themeresources.xaml`): flyout padding
+         (`MenuFlyoutPresenterThemePadding`), item margin and padding (`MenuFlyoutItemMargin`,
+         `MenuFlyoutItemThemePadding`), minimum height, `OverlayCornerRadius` for the flyout and `ControlCornerRadius`
+         for a row, the border stroke (`SurfaceStrokeColorFlyoutBrush`), the flyout shadow, the Segoe UI Variable type
+         ramp (body for rows), and the accelerator text color (`TextFillColorSecondaryBrush`). Light and dark. Acrylic
+         as `backdrop-filter` blur plus the acrylic tint and luminosity; a solid fallback under the
+         `reduce-transparency` class (`DisplayAccessibility.reduceTransparency`, which task 40 fills from Windows'
+         transparency effects). `forced-colors: active` styles from the same files' `HighContrast` dictionaries
+         (`Canvas`, `CanvasText`, `Highlight`, `HighlightText`, `GrayText`), with no backdrop. Each token cites its
+         resource key in a comment.
+       - Landmines: the files hold both a current and a `_perf2026` variant, and several values are `ThemeResource`
+         chains: resolve each to its final value and name the file it came from; the WinUI flyout is a separate window
+         blurring the desktop, ours blurs the app beneath it (accepted); Segoe UI Variable isn't on Windows 10 by
+         default, so the stack falls back to Segoe UI there (task 62 owns the stack).
+       - Tests: a Vitest check that every Windows menu token is defined in light, dark, and forced-colors; David
+         compares the bar and a flyout side by side with Notepad (design review, his call).
+       - Done when: David signs off the look against the reference shots.
+    4. [M] **One menu component** for the bar, its flyouts, and the context menus, in `lib/ui`, promoted from
+       `lib/demo/menu-bar.svelte.ts` onto `Menu.svelte`.
+       - Scope: ARIA `menubar`, `menu`, `menuitem`, `menuitemcheckbox`, `menuitemradio`, `aria-haspopup`,
+         `aria-expanded`, `aria-disabled`, `aria-keyshortcuts`; roving focus (`tabindex` -1/0) on the bar and in each
+         menu; Alt tap and F10 focus the bar, Alt+letter opens a menu, arrows walk (Left and Right cross to neighbor
+         menus, entering and leaving submenus), Home and End, type-ahead by access letter, Enter or Space picks, Escape
+         closes one level and then leaves the bar with focus back where it was (the Win32 two-Escape walk the spike's
+         mode C showed). Letters from `access-keys.ts` (reserving a scope's own Alt keys, as the viewer's `Alt+R` /
+         `Alt+C`). The keyboard-cue rule, for menus and dialogs alike: on Windows, underlines show once Alt or another
+         key has been used in that surface (opened by Alt, F10, or Alt+letter: shown; opened by a click: hidden until a
+         key is pressed), and always while step 5's setting is on; Linux keeps today's hold-Alt rule. Placement: a
+         flyout flips to the other side or scrolls when it would pass the window's edge (D5's accepted limit), and a
+         context menu opens at the pointer or at the row's anchor (`context-menu-anchor.ts`). Inert under the
+         menu-dialog gate. The look comes from step 3's tokens.
+       - Landmines: a lone Alt must not count when another key came between press and release, and AltGr (Ctrl+Alt on
+         Windows) is never a menu key; Alt+Space, Alt+F4, and Shift+F10 stay theirs; focus must return to the exact
+         element (a pane row, a text field) after Escape or a pick; WebView2 sends no `keyup` for Alt if the window lost
+         focus mid-press, so blur resets the Alt state; a menu must close on window blur, a scroll of its anchor, and a
+         dialog opening.
+       - Tests: Vitest component tests for the keyboard walk, roles and states (axe-core), the cue rule, and edge
+         placement at each window corner; `CMDR_MOCK_CONVENTIONS=windows pnpm dev` for a look on the Mac.
+       - Done when: the demo's bar runs on the shared component with identical behavior, and the tests pin every key
+         above.
+    5. [XS] **Windows' "Underline access keys" setting.**
+       - Scope: `SPI_GETKEYBOARDCUES` read in `system_look/platform/windows.rs` into `DisplayAccessibility` (a new
+         field, false elsewhere), live on `WM_SETTINGCHANGE` through task 40's observer (or a one-setting arm of
+         `observe_changes` if task 40 hasn't landed, which task 40 then extends).
+       - Landmines: the setting is per user and changes without a restart; `SPI_GETKEYBOARDCUES` and
+         `SPI_GETMENUUNDERLINES` are the same value, so read one; every `unsafe` needs its `SAFETY` line.
+       - Tests: a Rust unit test of the mapping; the toggle itself on a real machine (Settings › Accessibility ›
+         Keyboard › Underline access keys).
+       - Done when: flipping the Windows setting shows or hides underlines without a restart.
+    6. [S] **The bar in the windows, and the hosts.**
+       - Scope: the main window and the viewer draw the bar (step 4) from step 2's answer on Windows, KDE, and other
+         Linux; `menu_bar_builder.rs` builds the native bar on macOS only; Windows answers a zero-`lParam` `SC_KEYMENU`
+         itself (ported from the spike's `subclass`) so a lone Alt or F10 doesn't start the system menu loop, letting
+         Alt+Space through; `bar_parity_test.rs` narrows its registered-key checks to macOS and keeps the shown-key
+         ones.
+       - Landmines: a lone Alt release that WebView2 leaves unhandled reaches `DefWindowProc` as `SC_KEYMENU` 0, which
+         the guard swallows: the page must still see the keyup and focus the bar; F10 must be `preventDefault`ed by the
+         page or Windows sees it too; the bar takes vertical space, so the pane height math and the E2E screenshots
+         shift.
+       - Tests: the Linux E2E lane gets a bar spec (Alt, F10, Alt+letter, Escape back to the pane); on Windows, the
+         spike's selftest pattern on mami, then task 55's menu entry.
+       - Done when: the Windows build shows the in-page bar, no native bar, and task 55's menu-bar checks pass.
+    7. [S] **In-page context menus on Windows.**
+       - Scope: each of the nine popup commands (`show_file_context_menu`, `show_tab_context_menu`,
+         `show_breadcrumb_context_menu`, `show_date_sort_menu`, `show_function_key_bar_context_menu`,
+         `show_network_host_context_menu`, `show_parent_row_context_menu`, `show_queue_row_context_menu`,
+         `show_viewer_context_menu`) gains an answer-the-rows path where `contextMenus` is `inPage`, mirroring
+         `cmdr-listing-wasm/src/context_menu.rs`'s `popup` and `contextClick`; a pick goes back through the same handler
+         a native pick reaches today (same `MenuState` context, same `contextMenu` road), ❌ never a parallel one. The
+         frontend opens them with step 4's component. The backend half can start in wave 1.
+       - Landmines: `show_file_context_menu` is a sync command on the main thread and stores the target in
+         `MenuState.context` before the popup: the in-page path must set the same context before the rows go out, and a
+         pick must name the menu it came from so a stale context can't act on another row; the "same kind" label is
+         computed live by the caller, keep it so; Shift+F10 and the Menu key open the file menu at the cursor row's
+         anchor; WebView2's own context menu stays suppressed (`context-menu-ownership.ts`); text fields keep today's
+         edit menu (out of scope, David's call later).
+       - Tests: Rust tests that each in-page answer matches the native menu's rows; Vitest for opening, picking, and
+         dismissal; the demo's context-menu tests keep passing.
+       - Done when: every right-click and Shift+F10 menu on the Windows build is in-page, Fluent-styled, and runs the
+         same commands as before.
+    8. [S] **The main-menu button and "Show menu bar".**
+       - Scope: the main-menu button (GNOME's default, and the KDE and Windows stand-in when the bar is hidden), the
+         "Show menu bar" setting and its View row; on Windows a hidden bar shows on Alt or F10 until focus leaves.
+       - Landmines: new strings go to the catalog in English with `@key` descriptions (no translations); GNOME's File
+         submenu drops Quit.
+       - Tests: Vitest for the setting's three layouts; the Linux E2E bar spec gains the hidden case.
+       - Done when: each desktop's default matches `menu-model.md` and the setting flips it live.
+    9. [XS] **The text-field gate** lets a bar CLICK on a file-moving command run, and the same command's key still
+       doesn't (task 55's entry; `routes/(main)/text-field-gate.ts`). Tests: a Vitest case per road. Done when: both
+       cases are pinned.
+    10. [S] **Linux cleanup.**
+        - Scope: delete `menu/mnemonic_mask/` and its IPC, `menu-mnemonics-capture.svelte.ts`,
+          `get_menu_bar_title_mnemonics` and Settings' title-mnemonic warning, and `menu-mnemonic-mask.spec.ts`; update
+          `menu/` and `cmdr-menu`'s C+D.md and `lib/ui/DETAILS.md`'s Windows-bar gotcha.
+        - Landmines: knip and the IPC binding checks catch leftovers; the Settings warning has strings in every catalog,
+          which go with it.
+        - Tests: the Linux E2E lane (step 6's spec replaces the deleted one).
+        - Done when: nothing in the tree references the mask.
+    11. [S] **The demo** draws the visitor's own model with the shared component (macOS bar, Windows bar, or the Linux
+        bar, and on Windows the in-page context menus) and picks the demo-only key for the search dialog's new query
+        (task 55's entry). Landmines: the demo has no backend, so it keeps `DemoMenuBar`'s wasm answer, which step 2's
+        tests hold equal to the desktop's. Tests: the demo's menu tests and `smoke.mjs`. Done when: a Windows visitor
+        sees the Windows bar.
+    12. [XS] **Delete `tools/menu-spike/`** once steps 6 and 7 and task 67 have taken what they need (list above): the
+        folder, its line in `AGENTS.md`'s `tools/` list, and the README pointer in `menu-spike.md` (the note stays as
+        the decision's record). Done when: no doc links the folder.
+    - Reused unchanged: the bar data, ids, labels, enabled fold, sort checks, every context menu's rows, and the
+      snapshots. QA: task 55 (keys), task 64 and David (Narrator, NVDA, JAWS, and Orca read the bar and the menus as
+      menus; high contrast).
 64. [M] Windows. Screen reader parity: a JAWS, NVDA, and Narrator pass (task 59's `screenReaders`) over the main flows
     (panes, dialogs, Settings, the viewer, operations in progress), fixing what the ARIA work for VoiceOver doesn't
-    carry through WebView2 and UI Automation, plus the Windows contrast themes (`forced-colors`). The findings become
-    part of task 55's checklist. Linux: the same pass with Orca, later.
+    carry through WebView2 and UI Automation, plus the Windows contrast themes (`forced-colors`). The menus arrive with
+    their roles and `forced-colors` styles from task 63 (its steps 3 and 4); this pass checks them with each reader
+    rather than building them, and David runs the high-contrast and Narrator part himself. The findings become part of
+    task 55's checklist. Linux: the same pass with Orca, later.
 65. [S] Windows. System surfaces: native file pickers, toast notifications under Cmdr's app identity, a dark title bar
     in dark mode, and Mica or another system backdrop on Windows 11. Linux: portals for pickers and notifications. Needs
     52 for the app identity.

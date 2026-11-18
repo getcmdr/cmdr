@@ -1,7 +1,7 @@
 # The Windows menu spike
 
-What decides D5 (`docs/specs/windows-port-plan.md`): David runs `tools/menu-spike/` on a Windows 10 and a Windows 11
-laptop and fills the results table below. The research recommendation it tests is in
+What decided D5 (`docs/specs/windows-port-plan.md`): David ran `tools/menu-spike/` on a Windows 11 laptop on 2026-11-18
+and filled the results table below; the outcome is in "Decision". The research recommendation it tested is in
 `docs/notes/windows-port/menu-model.md`; this note rechecks that note's Windows facts against upstream first.
 
 ## The three modes
@@ -146,24 +146,60 @@ unless a step says otherwise. For each mode, A (also with the key bridge on), B,
 
 One row per mode and laptop. Use ok, no, or a few words.
 
-| Laptop | Mode     | Alt tap | F10 | Alt+letter | Arrows between menus | Esc back to list | F5 / Ctrl+R / Alt+Left | Ctrl+Shift+C fires twice? | AltGr types | Dark | High contrast | Narrator | Looks native enough? |
-| ------ | -------- | ------- | --- | ---------- | -------------------- | ---------------- | ---------------------- | ------------------------- | ----------- | ---- | ------------- | -------- | -------------------- |
-| Win 10 | A        |         |     |            |                      |                  |                        |                           |             |      |               |          |                      |
-| Win 10 | A+bridge |         |     |            |                      |                  |                        |                           |             |      |               |          |                      |
-| Win 10 | B        |         |     |            |                      |                  |                        |                           |             |      |               |          |                      |
-| Win 10 | C        |         |     |            |                      |                  |                        |                           |             |      |               |          |                      |
-| Win 11 | A        |         |     |            |                      |                  |                        |                           |             |      |               |          |                      |
-| Win 11 | A+bridge |         |     |            |                      |                  |                        |                           |             |      |               |          |                      |
-| Win 11 | B        |         |     |            |                      |                  |                        |                           |             |      |               |          |                      |
-| Win 11 | C        |         |     |            |                      |                  |                        |                           |             |      |               |          |                      |
+| Laptop | Mode     | Alt tap         | F10         | Alt+letter | Arrows between menus | Esc back to list | F5 / Ctrl+R / Alt+Left                                   | Ctrl+Shift+C fires twice?  | AltGr types | Dark                                                    | High contrast | Narrator | Looks native enough? |
+| ------ | -------- | --------------- | ----------- | ---------- | -------------------- | ---------------- | -------------------------------------------------------- | -------------------------- | ----------- | ------------------------------------------------------- | ------------- | -------- | -------------------- |
+| Win 10 | A        |                 |             |            |                      |                  |                                                          |                            |             |                                                         |               |          |                      |
+| Win 10 | A+bridge |                 |             |            |                      |                  |                                                          |                            |             |                                                         |               |          |                      |
+| Win 10 | B        |                 |             |            |                      |                  |                                                          |                            |             |                                                         |               |          |                      |
+| Win 10 | C        |                 |             |            |                      |                  |                                                          |                            |             |                                                         |               |          |                      |
+| Win 11 | A        | works, logs too | same as Alt | NO         | ok                   | dbl esc          | All good. Ctrl+Shift+P triggered a WebView2 Print dialog | I think it fired only once | ok          | sys dark themelight: menu bar light, menu content dark! |               |          | no                   |
+| Win 11 | A+bridge | same as A       | same as Alt | ok         | ok                   | same as A        | same                                                     | same                       | ok          | same                                                    |               |          | no                   |
+| Win 11 | B        | works, no log   | same as Alt | ok         | ok                   | single esc       | same                                                     | same                       | ok          | same                                                    |               |          | no                   |
+| Win 11 | C        | works. no log   | same as Alt | ok         | ok                   | dbl esc          | same                                                     | same                       | ok          | follows in-app setting                                  |               |          | no                   |
+
+What the agent reads from the rows:
+
+- **The keys work in every mode** (Alt+letter on the stock bar aside, as on mami), and AltGr types its character in all
+  four. "dbl esc" in A and C is the Win32 and WinUI behavior: the first Escape closes the menu and leaves its title
+  highlighted, the second leaves the bar. B's single Escape skipped that step.
+- **"Looks native enough?" is no for all four**, the native modes included: muda's bar and its popups read as Win32, not
+  as Windows 11. That's what flipped the decision rule's premise (below).
+- **The theme finding is moot**: mode A with Windows dark and the app light gave a light bar and dark popups, a mismatch
+  only the native modes have. The in-page menus follow the app's theme, as C's row shows.
+- **Ctrl+Shift+P opened WebView2's Print dialog** in mode A (and, by "same", in every mode): the page doesn't claim that
+  key in the spike, and WebView2's browser keys were on. The real app's answer is task 67 of the plan (#1115).
+- High contrast, Narrator, and the Windows 10 rows weren't run; the in-page build covers them (task 63's ARIA and
+  `forced-colors` milestones, David's own pass, and task 64).
 
 ## Decision rule
 
-1. **Native bar (A)** if Alt, F10, Alt+letter, and Escape work (with the bridge if needed: it.s about 40 lines), no key
+1. **Native bar (A)** if Alt, F10, Alt+letter, and Escape work (with the bridge if needed: it's about 40 lines), no key
    fires twice once the bar's accelerators are display-only, and the dark and contrast looks are acceptable. D5 then
    flips to muda's bar on Windows; Linux and GNOME are decided separately.
 2. **Hybrid (B)** if the native bar strip is the only problem (the keys or its look) but native popups are fine.
 3. **In-page (C)** only if both fail: D5 stands as researched.
+
+## Decision
+
+David, 2026-11-18, after the Windows 11 run: **Windows gets in-page menus (mode C), styled to match Windows 11
+precisely.** D5 in the plan is final; task 63 builds it.
+
+- **Why**: A and B work but feel Win32. Windows 11's own look (Notepad, Explorer) is WinUI 3 XAML, and hosting that from
+  Rust through XAML Islands isn't worth it: `windows-rs` has no WinUI 3 bindings, it needs the Windows App SDK runtime,
+  and it adds a third input owner beside WebView2 and the host window. VS Code, Slack, and the new Teams draw in-page
+  menus on Windows too.
+- **One style on Windows 10 and 11**: the Windows 11 Fluent look, matched precisely. The exact tokens come from WinUI's
+  open-source theme resources (`microsoft/microsoft-ui-xaml`: `MenuFlyoutPresenter`, `MenuFlyoutItem`, `MenuBar`
+  padding, item height, corner radii, border stroke, shadow, the Segoe UI Variable type ramp, and the accelerator text
+  color). Acrylic through `backdrop-filter` blur plus a tint.
+- **The right-click menus go in-page too**, sharing one menu component with the bar. Today every mode, the app included,
+  opens them as native Win32 popups.
+- **Access keys are underlines**, not WinUI's keytips. They show only after Alt or other keyboard use, as in Win32, and
+  always when Windows' "Underline access keys" setting is on (`SPI_GETKEYBOARDCUES`).
+- **ARIA done properly**: `menubar`, `menu`, and `menuitem` (plus the checkbox and radio variants), `aria-haspopup`,
+  `aria-expanded`, `aria-disabled`, roving focus, and `aria-keyshortcuts`. `forced-colors: active` styles go in with the
+  build; David tests high contrast and Narrator himself later.
+- **Accepted limit**: an in-page menu can't extend past the window's edge, so near an edge it flips or scrolls.
 
 ## Seeing mami's screen
 
