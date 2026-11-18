@@ -99,14 +99,6 @@ const (
 	winX64   = "x86_64-pc-windows-msvc"
 )
 
-// ShippedOSes are the platforms a release builds and publishes: the one switch for a new
-// platform. Every tool reads it through `For` (the pipeline's plan, `latest.json`, the checksums,
-// the mirror, `release-finish`, `release-evidence`), so they can't disagree about what a release
-// holds. Windows' rows and jobs are wired and tested, and off until David turns them on
-// (`docs/guides/releasing.md` § Windows releases lists what that waits on); ❌ don't add it here
-// without his go.
-var ShippedOSes = []OS{MacOS}
-
 // Assets is the manifest, every platform's rows whether it ships yet or not. Order matters only
 // for readability and output order: `latest.json` lists its platforms in update-row order
 // (universal first, as every release has, so a new OS's rows go after macOS's).
@@ -216,9 +208,16 @@ type Release struct {
 	Files   []File
 }
 
-// For resolves what a release of this version publishes: the rows of `ShippedOSes`.
+// For resolves what a release of this version publishes: the rows of the OSes `ShippedOSes`
+// ships at that version.
 func For(version string) Release {
-	return ForOSes(version, ShippedOSes...)
+	return ForShipping(version, ShippedOSes)
+}
+
+// ForShipping is `For` with another shipping list (tests, and the Windows-on dry run's).
+func ForShipping(version string, shipping []Shipping) Release {
+	oses, _ := shippedFor(version, shipping)
+	return ForOSes(version, oses...)
 }
 
 // ForOSes resolves what a release would publish with oses shipped (`For` with `ShippedOSes`;

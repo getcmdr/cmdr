@@ -69,6 +69,14 @@ func run(args []string) error {
 
 	switch args[0] {
 	case "plan":
+		if problems := manifest.ShippingProblems(manifest.ShippedOSes); len(problems) > 0 {
+			return fmt.Errorf("`ShippedOSes` is inconsistent: %s", strings.Join(problems, "; "))
+		}
+		// A platform this version leaves out (before its `Since`, or a prerelease) gets a line in the
+		// run's summary, so a skipped Windows leg is never a silent one.
+		for _, line := range manifest.Skipped(*version) {
+			fmt.Fprintf(os.Stderr, "::notice::%s\n", line)
+		}
 		outs, err := plan(planInput{
 			release: release, wiring: manifest.All(*version), subjectDir: *subjectDir,
 			vetted: osList(*vetted), attested: strings.Fields(*attested),

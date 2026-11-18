@@ -86,7 +86,7 @@ func TestPresentKeepsOptionalFilesOnlyWhenThere(t *testing.T) {
 // Windows' rows are wired and off: a release publishes macOS's files and nothing new, the
 // advisory list included, until David adds Windows to `ShippedOSes`.
 func TestWindowsShipsOnlyOnceTurnedOn(t *testing.T) {
-	if !slices.Equal(ShippedOSes, []OS{MacOS}) {
+	if !slices.Equal(ShippedOSes, []Shipping{{OS: MacOS, Prereleases: true}}) {
 		t.Fatalf("ShippedOSes = %v: turning Windows on is David's call (docs/guides/releasing.md § Windows releases); update this test with it", ShippedOSes)
 	}
 	r := For("0.70.0")
