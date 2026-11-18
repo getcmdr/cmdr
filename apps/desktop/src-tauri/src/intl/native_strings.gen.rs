@@ -921,7 +921,7 @@ pub(crate) const NATIVE_STRINGS: &[LocaleStrings] = &[
             ("menu.app.onboarding", All("Prise en main…")),
             ("menu.app.quit", All("Quitter Cmdr")),
             ("menu.app.services", All("Services")),
-            ("menu.app.settings", PerOs { macos: "Réglages…", windows: "Réglages", linux_gnome: "Préférences", linux_kde: "Configurer Cmdr…", other: "Réglages…" }),
+            ("menu.app.settings", PerOs { macos: "Réglages…", windows: "Paramètres", linux_gnome: "Préférences", linux_kde: "Configurer Cmdr…", other: "Réglages…" }),
             ("menu.app.showAll", All("Tout afficher")),
             ("menu.bar.edit", All("Édition")),
             ("menu.bar.file", All("Fichier")),
