@@ -14,6 +14,10 @@ Read this before adding, wiping, or reorganizing a spec.
 
 ## The specs
 
+- `app-path-plan.md`: **App paths travel through Rust as `std::path::Path`, so on Windows every remote and virtual path
+  gains `\` and no local copy lands.** A typed `AppPath`/`AppPathBuf` the `Volume` trait takes, with native paths only
+  at named crossings: pins first, a neutral `LocalVolume`, one trait flip, then crate-by-crate conversions in parallel.
+  Issues: [#1225](https://github.com/getcmdr/cmdr/issues/1225), [#1232](https://github.com/getcmdr/cmdr/issues/1232).
 - `oplog-tree-plan.md`: **The Operation log shows a flat, capped list and can only undo a whole operation.** A
   master–detail dialog over a backend-owned, windowed item tree with checkboxes, partial rollback through the real
   engine, full keyboard, and a writer-maintained summary so two 2M-item operations stay fast. Issue:

@@ -101,6 +101,9 @@ Settled:
   - Hard floor: Windows 7/8/8.1 are out. WebView2 stopped updating there in 2023-01, and Rust's tier-1
     `x86_64-pc-windows-msvc` has required Windows 10 since 2024 (the Win7 target is tier 3, no prebuilt std). Total
     Commander reaches Windows 95 only because it's a native Win32 app with no browser engine.
+- **D5. App paths are a type** (David, 2026-11-18, #1225 option a): the `Volume` trait takes a typed `AppPath`, so a
+  native path can't go where an app path belongs, and a consumer that means "this machine's local disk" names
+  `cmdr_local::LocalVolume` (the lead, on David's delegation). Plan: `docs/specs/app-path-plan.md`.
 
 - **D3. Code signing and distribution** (David, 2026-11-04): Store first, a paid certificate only once Windows pays for
   it.
@@ -121,8 +124,6 @@ Settled:
 
 Open, waiting on David (each task entry has the detail):
 
-- **How a consumer names the host's local volume** (task 35/36): about 150 sites, mostly `cmdr-operations` tests, name
-  `LocalPosixVolume`, which doesn't exist on Windows (`docs/notes/windows-port/build-progress.md`, last entry).
 - **The drive and UNC volume id scheme** (task 34).
 - **Dialog keys** (task 61): (a) Enter and ⌘. per the macOS row, (b) keytips versus underlined letters.
 - **The menu model** on Windows and per Linux desktop (task 63).
@@ -510,8 +511,9 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     index's `ROOT_VOLUME_ID`, the boot-volume priority roots, the MCP volumes resource's non-macOS row). The app's root
     volume now comes from `volumes::root_volume` (a `volumes/platform/` pin beside `local_volume_on_mount` and
     `is_local_volume`, so `file_system/mod.rs` and `smb_mount_gate` name no concrete local volume); Windows' arm is the
-    stub in § "Windows build state". Open: whether "the system drive under `root`" survives the id scheme, and how
-    consumers name the host's local volume (~150 sites name `LocalPosixVolume`, mostly tests).
+    stub in § "Windows build state". Open: whether "the system drive under `root`" survives the id scheme. Decided
+    (2026-11-18): consumers name the host's local volume `cmdr_local::LocalVolume`, and app paths become a typed
+    `AppPath` the `Volume` trait takes (#1225); both are milestones of `docs/specs/app-path-plan.md`.
 35. [L] Windows. `LocalWindowsVolume` in `cmdr-local`, a sibling of `LocalPosixVolume`: `FindFirstFileExW` reader,
     space, no-replace and atomic-replace rename (❗ `std::fs::rename` replaces on Windows), streams, file vs dir
     symlinks, junctions, reparse tags, ADS-backed xattrs, write-access probe, metadata caps, the conformance suite
@@ -526,7 +528,8 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     resume, durability via `FlushFileBuffers`), metadata (dates, attributes, caps, `apply_metadata`), symlink creation
     (file vs dir) and reparse tags, ADS-backed xattrs, the write-access probe, the copy scan, the mount table and
     filesystem type, the `FindFirstFileExW` lister, and registering a volume per drive (with 34). The ignored
-    conformance cells in `local_windows_conformance_test.rs` are the checklist.
+    conformance cells in `local_windows_conformance_test.rs` are the checklist. App paths in and out of both local
+    volumes (one crossing per OS through `AppPath::to_native`): `docs/specs/app-path-plan.md`.
 36. [M] Windows. `cmdr-operations` arms: `CopyFileExW` strategy (with ReFS/Dev Drive block clone), Recycle Bin via
     `trash` with identity, read-only as "locked" in `clear_blockers`, sharing violations as a typed refusal. Needs 35.
     Plus the honest `Unknown`-identity rule (`cmdr_fs::file_identity` module docs): a move onto a taken name with
@@ -550,11 +553,11 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     **Started** (2026-11-18): `cmdr-operations` builds and passes clippy on the Windows builder. Real: the write probe
     (`local_disk/platform/windows.rs`, tested on NTFS), free space, the folder volume, and file and directory syncs that
     open the way `FlushFileBuffers` needs (`cmdr_fs::durable::{open_to_sync, open_dir_to_sync}`). A copy takes the
-    chunked loop. Left, in data-safety order: the local engine taking app paths at `rename_local_exclusive` (blocked on
-    #1225's call: today every local copy and move refuses at its landing), a Windows file id and mount table so a folder
-    delete or move isn't refused as a mount (`file_identity`, task 35's mount arm), the `Unknown`-identity rule above,
-    the `CopyFileExW` arm, the Recycle Bin, read-only as Locked, and sharing violations as a typed refusal. Stubs: §
-    "Windows build state".
+    chunked loop. Left, in data-safety order: the local engine taking app paths at `rename_local_exclusive` (#1225,
+    planned in `docs/specs/app-path-plan.md`: today every local copy and move refuses at its landing), a Windows file id
+    and mount table so a folder delete or move isn't refused as a mount (`file_identity`, task 35's mount arm), the
+    `Unknown`-identity rule above, the `CopyFileExW` arm, the Recycle Bin, read-only as Locked, and sharing violations
+    as a typed refusal. Stubs: § "Windows build state".
 
 37. [S] Windows. Cloud Files placeholders (OneDrive and friends: sync badges, cloud trash) and Mark of the Web on
     extract (`cmdr-operations` + `cmdr-archive`). Needs 36.
