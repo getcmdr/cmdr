@@ -106,7 +106,9 @@ fn cached_roots() -> Vec<PathBuf> {
         .map(|inputs| rank_roots(&inputs, &is_on_another_volume))
         .unwrap_or_default()
         .into_iter()
-        .map(app_spelled)
+        // On Windows the ranking joins names onto the native home; the root index holds app
+        // paths (plan D1).
+        .map(cmdr_fs::volume::path_grammar::host_app_path)
         .collect();
     *cached = Some((Instant::now(), roots.clone()));
     roots
@@ -142,20 +144,6 @@ fn local_favorite_path(favorite: crate::favorites::store::Favorite) -> Option<Pa
         None => Path::new(&favorite.path).is_absolute(),
     };
     on_an_os_path.then(|| PathBuf::from(favorite.path))
-}
-
-/// A root as the index's path space spells it. On Windows the ranking joins names onto the
-/// native home (`C:\Users\test_user_1\Downloads`), and the root index holds app paths
-/// (`C:/Users/test_user_1/Downloads`, plan D1), so it goes through the one grammar; on macOS and
-/// Linux the path passes through untouched.
-fn app_spelled(path: PathBuf) -> PathBuf {
-    use cmdr_fs::volume::path_grammar::{PathFlavor, app_spelling};
-
-    if PathFlavor::HOST == PathFlavor::Windows {
-        PathBuf::from(app_spelling(&path.to_string_lossy(), PathFlavor::Windows))
-    } else {
-        path
-    }
 }
 
 /// Whether some mount other than the boot volume covers `path`. An in-memory registry

@@ -379,18 +379,12 @@ fn translate_notify_event(
 }
 
 /// An event's path as the index's path space spells it. On Windows `notify` reports the
-/// native form (`C:\Windows\x`, or the watched `C:/` joined with `\` names), and the index
-/// holds app paths (`C:/Windows/x`, plan D1), so it goes through the one grammar; on Linux
-/// the path passes through byte for byte.
+/// native form (the watched `C:/` joined with `\` names), and the index holds app paths
+/// (`C:/Windows/x`, plan D1); on Linux the path passes through byte for byte.
 fn event_path(path: &Path) -> String {
-    use cmdr_fs::volume::path_grammar::{PathFlavor, app_spelling};
-
-    let native = path.to_string_lossy();
-    if PathFlavor::HOST == PathFlavor::Windows {
-        app_spelling(&native, PathFlavor::Windows)
-    } else {
-        native.into_owned()
-    }
+    cmdr_fs::volume::path_grammar::host_app_path(path.to_path_buf())
+        .to_string_lossy()
+        .into_owned()
 }
 
 /// Classify the first path in the list as file, dir, or symlink.
