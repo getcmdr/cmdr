@@ -34,7 +34,7 @@ fn local_volume(bytes: &[u8], file_name: &str, format: ArchiveFormat) -> (TestDi
 
 async fn stream_xattrs(volume: &ArchiveVolume, inner: &str, wanted: MetadataClasses) -> Vec<String> {
     let stream = volume
-        .open_read_stream(Path::new(inner))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(inner)))
         .await
         .expect("the entry opens");
     names(&stream.metadata(wanted))
@@ -44,7 +44,10 @@ async fn stream_xattrs(volume: &ArchiveVolume, inner: &str, wanted: MetadataClas
 async fn a_finder_made_zip_carries_tags_on_files_and_folders() {
     let (_dir, volume) = local_volume(APPLE_DOUBLE_DITTO_ZIP, "tagged.zip", ArchiveFormat::Zip);
 
-    let root = volume.list_directory(Path::new(""), None).await.expect("lists");
+    let root = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .expect("lists");
     let listed: Vec<&str> = root.iter().map(|entry| entry.name.as_str()).collect();
     assert_eq!(listed, vec!["tagged-dir", "plain.txt", "tagged.txt"]);
 
@@ -65,12 +68,18 @@ async fn a_finder_made_zip_carries_tags_on_files_and_folders() {
     );
 
     let folder = volume
-        .folder_metadata(Path::new("tagged-dir"), MetadataClasses::ALL)
+        .folder_metadata(
+            &AppPath::legacy_unchecked(Path::new("tagged-dir")),
+            MetadataClasses::ALL,
+        )
         .await;
     assert_eq!(names(&folder), vec![TAGS]);
     assert!(
         volume
-            .folder_metadata(Path::new("tagged-dir"), MetadataClasses::MODE)
+            .folder_metadata(
+                &AppPath::legacy_unchecked(Path::new("tagged-dir")),
+                MetadataClasses::MODE
+            )
             .await
             .is_empty()
     );
@@ -78,7 +87,7 @@ async fn a_finder_made_zip_carries_tags_on_files_and_folders() {
     // The sidecars themselves never open as entries of their own.
     assert!(
         volume
-            .open_read_stream(Path::new("__MACOSX/._tagged.txt"))
+            .open_read_stream(&AppPath::legacy_unchecked(Path::new("__MACOSX/._tagged.txt")))
             .await
             .is_err()
     );
@@ -89,7 +98,7 @@ async fn a_remote_zip_reads_its_sidecars_through_the_parent() {
     let parent = Arc::new(InMemoryVolume::new("remote"));
     let archive_path = PathBuf::from("/remote/tagged.zip");
     parent
-        .create_file(&archive_path, APPLE_DOUBLE_DITTO_ZIP)
+        .create_file(&AppPath::legacy_unchecked(&archive_path), APPLE_DOUBLE_DITTO_ZIP)
         .await
         .expect("load the zip into the parent");
     let volume = ArchiveVolume::new(
@@ -105,7 +114,10 @@ async fn a_remote_zip_reads_its_sidecars_through_the_parent() {
     assert_eq!(
         names(
             &volume
-                .folder_metadata(Path::new("tagged-dir"), MetadataClasses::ALL)
+                .folder_metadata(
+                    &AppPath::legacy_unchecked(Path::new("tagged-dir")),
+                    MetadataClasses::ALL
+                )
                 .await
         ),
         vec![TAGS]
@@ -120,21 +132,29 @@ async fn a_macos_tar_carries_tags_through_the_one_pass_extract_and_on_folders() 
         ArchiveFormat::Tar(TarCodec::Gzip),
     );
     let mut extract = volume
-        .open_sequential_extract(Path::new(""))
+        .open_sequential_extract(&AppPath::legacy_unchecked(Path::new("")))
         .await
         .expect("the extract opens");
     let mut tagged = Vec::new();
     while let Some(file) = extract.next_file().await.expect("next member") {
         let carried = extract.current_stream().metadata(MetadataClasses::ALL);
         if !carried.xattrs.is_empty() {
-            tagged.push(file.source_path.file_name().map(|n| n.to_string_lossy().into_owned()));
+            tagged.push(
+                file.source_path
+                    .as_std_legacy()
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned()),
+            );
         }
     }
     assert_eq!(tagged, vec![Some("tagged.txt".to_string())]);
     assert_eq!(
         names(
             &volume
-                .folder_metadata(Path::new("tagged-dir"), MetadataClasses::ALL)
+                .folder_metadata(
+                    &AppPath::legacy_unchecked(Path::new("tagged-dir")),
+                    MetadataClasses::ALL
+                )
                 .await
         ),
         vec![TAGS]

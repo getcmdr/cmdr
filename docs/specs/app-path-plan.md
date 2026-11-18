@@ -1204,6 +1204,33 @@ included; the hidden couplings it found are why waves B and C differ from round 
   flips either way is a finding).
 - **DONE**: no `Volume` method names `Path` except link targets; every impl compiles on all three OSes; bridge counts
   recorded per file; the audit reproduces and `residue.patch` is read and empty of logic.
+- **Tier 0 done** (2026-11-18, branch `worktree-agent-a6403541e656ed355`): artifact 1 (`cmdr-fs`), artifact 2
+  (`scripts/app-path-flip/`), and `cmdr-archive` as the worked example; the tier agents' runbook is
+  `docs/notes/windows-port/app-path-flip-handoff.md`. Where the code differed from this plan:
+  - `local_path` flips to `Option<AppPathBuf>` (it's the volume's root, an app path); `read_link_target`'s answer and
+    `create_symlink`'s `target` stay `Path`. "`CopyScanResult`'s `source_path`" is `ExtractedFile.source_path`.
+  - The helpers beside the trait (`fold_batch`, `tally_by_listing`, `ScanBoundary::subtree`, `root_echo`,
+    `ResolvedVolume::passthrough`, `create_directory_all`, the `ScanSource`/`PatchSource`/`MakesDirectories` traits)
+    keep `std::path` signatures and bridge inside, so no backend call to them changes. `RemoteRoot::app_root` answers a
+    `BridgedPath`, per the borrowed-return rule.
+  - The codemod needed rules beyond the four listed: a typed param handed back (`path_app`, so a delegating test double
+    returns the typed param, not a temporary), an `async fn` helper's call moved into its future (E0515), `assert_eq!`
+    operands dropped to std (rustc points inside the std macro, so the call site is lifted out of the expansion),
+    imports, and a clippy phase applying clippy's own fix for the lints a rewrite causes. Body errors are skipped while
+    their method's E0053 is pending (rustc checked them against the old signature).
+  - **No typed twin compiles by accident** (decided by the lead after tier 0, 2026-11-18): the methods `AppPath` shares
+    with `Path` (`parent`, `file_name`, `extension`, `file_stem`, `with_file_name`, `join`, `starts_with`,
+    `strip_prefix`, `relative_to`, `rebase`) moved off the inherent impl onto `cmdr_fs::app_path::PathArithmetic`, so
+    `x.file_name().is_some()` on a typed `x` is E0599 (the codemod's receiver rule then drops `x` to `as_std_legacy()`)
+    instead of silently answering the typed way. Only `cmdr-fs`'s app path module and its pins import the trait. Each
+    crate's own conversion milestone (5–10e) imports it where it adopts the typed methods on purpose, and flips its pins
+    in the same commit; ❌ no import before that. Chosen over clippy `disallowed-methods`: seven crates lift that lint
+    for their whole test build (`#![cfg_attr(test, allow(clippy::disallowed_methods))]`, for the clock and spawn bans),
+    so tests would have escaped it, and a type-level gate needs no lint run. Pinned by `cmdr-archive`'s
+    `a_typed_root_has_no_path_shaped_arithmetic_in_reach`.
+  - The work comes in passes: a crate that dev-depends on itself builds its tests only once its lib checks, so the
+    commits alternate codemod output and residue (two codemod passes and one residue commit for `cmdr-archive`); the
+    audit replays them in order rather than one `residue.patch`.
 
 ### 5. `cmdr-fs` internals
 

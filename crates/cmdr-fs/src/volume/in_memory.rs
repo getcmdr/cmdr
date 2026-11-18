@@ -14,6 +14,7 @@ use super::{
     BackendKind, ConnectionState, IndexWalk, LandedModified, NodeIdentity, SpaceInfo, StreamWritten, SupportedDates,
     VolumeError,
 };
+use crate::app_path::BridgedPath;
 use crate::entry::FileEntry;
 use crate::ignore_poison::IgnorePoison;
 use crate::ignore_poison::RwLockIgnorePoison;
@@ -95,7 +96,7 @@ impl InMemoryEntry {
 /// - Stress testing with large file counts
 pub struct InMemoryVolume {
     name: String,
-    root: PathBuf,
+    root: BridgedPath,
     entries: RwLock<HashMap<PathBuf, InMemoryEntry>>,
     /// Configurable space info for testing. None means get_space_info returns NotSupported.
     space_info: Option<SpaceInfo>,
@@ -158,7 +159,7 @@ pub struct InMemoryVolume {
     bandwidth: Option<Arc<Bandwidth>>,
     /// The home folder when this volume stands in for the computer's own disk
     /// (`Volume::stands_in_for_own_disk`). Set via [`Self::standing_in_for_own_disk`].
-    own_disk_home: Option<PathBuf>,
+    own_disk_home: Option<BridgedPath>,
     /// Hands the caller's thread back every slice, like a device waiting on I/O.
     /// `None` (the default) never yields. Set via [`Self::with_yielding`].
     yielder: Option<Arc<Yielder>>,
@@ -274,7 +275,7 @@ impl InMemoryVolume {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
-            root: PathBuf::from("/"),
+            root: BridgedPath::new(PathBuf::from("/")),
             entries: RwLock::new(HashMap::new()),
             space_info: None,
             space_info_under: Vec::new(),
@@ -449,7 +450,7 @@ impl InMemoryVolume {
     /// mounted at a real-looking path (`/Volumes/X`, `/media/X`) in a test that
     /// exercises mount-root resolution.
     pub fn with_root(mut self, root: impl Into<PathBuf>) -> Self {
-        self.root = root.into();
+        self.root = BridgedPath::new(root.into());
         self
     }
 

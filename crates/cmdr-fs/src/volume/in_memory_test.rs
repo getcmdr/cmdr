@@ -3,6 +3,7 @@
 //! the test-only fault knobs are `in_memory_stream_test.rs`.
 
 use super::*;
+use crate::app_path;
 use crate::entry::FileEntry;
 use std::path::Path;
 
@@ -10,9 +11,12 @@ use std::path::Path;
 async fn test_new_creates_empty_volume() {
     let volume = InMemoryVolume::new("Test");
     assert_eq!(volume.name(), "Test");
-    assert_eq!(volume.root(), Path::new("/"));
+    assert_eq!(volume.root().as_std_legacy(), Path::new("/"));
 
-    let entries = volume.list_directory(Path::new(""), None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert!(entries.is_empty());
 }
 
@@ -39,7 +43,10 @@ async fn test_with_entries_populates_volume() {
     ];
 
     let volume = InMemoryVolume::with_entries("Test", entries);
-    let result = volume.list_directory(Path::new(""), None).await.unwrap();
+    let result = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
 
     assert_eq!(result.len(), 2);
     // Directories should be first (sorted)
@@ -52,7 +59,10 @@ async fn test_with_entries_populates_volume() {
 #[tokio::test]
 async fn test_with_file_count_creates_correct_number() {
     let volume = InMemoryVolume::with_file_count("Test", 100);
-    let entries = volume.list_directory(Path::new(""), None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
 
     assert_eq!(entries.len(), 100);
     assert!(entries[0].name.starts_with("file_"));
@@ -62,7 +72,10 @@ async fn test_with_file_count_creates_correct_number() {
 async fn test_with_file_count_stress_test() {
     // Verify we can handle large file counts for stress testing
     let volume = InMemoryVolume::with_file_count("Test", 50_000);
-    let entries = volume.list_directory(Path::new(""), None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
 
     assert_eq!(entries.len(), 50_000);
 }
@@ -79,23 +92,23 @@ async fn test_exists_returns_true_for_existing() {
 
     let volume = InMemoryVolume::with_entries("Test", entries);
 
-    assert!(volume.exists(Path::new("/test.txt")).await);
-    assert!(volume.exists(Path::new("test.txt")).await); // Relative path
+    assert!(volume.exists(app_path!("/test.txt")).await);
+    assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("test.txt"))).await); // Relative path
 }
 
 /// Regression anchor: the root has no stored entry, and `exists` once answered
 /// "gone" for it, so the deleted-folder poll walked a demo pane on `/` home.
 #[tokio::test]
 async fn test_exists_answers_the_root_with_no_entries() {
-    assert!(InMemoryVolume::new("Test").exists(Path::new("/")).await);
+    assert!(InMemoryVolume::new("Test").exists(app_path!("/")).await);
     let rooted = InMemoryVolume::new("Phone").with_root(PathBuf::from("mtp://phone/1"));
-    assert!(rooted.exists(Path::new("mtp://phone/1")).await);
+    assert!(rooted.exists(app_path!("mtp://phone/1")).await);
 }
 
 #[tokio::test]
 async fn test_exists_returns_false_for_nonexistent() {
     let volume = InMemoryVolume::new("Test");
-    assert!(!volume.exists(Path::new("/nonexistent.txt")).await);
+    assert!(!volume.exists(app_path!("/nonexistent.txt")).await);
 }
 
 #[tokio::test]
@@ -110,7 +123,7 @@ async fn test_get_metadata_returns_correct_entry() {
     }];
 
     let volume = InMemoryVolume::with_entries("Test", entries);
-    let result = volume.get_metadata(Path::new("/test.txt")).await.unwrap();
+    let result = volume.get_metadata(app_path!("/test.txt")).await.unwrap();
 
     assert_eq!(result.name, "test.txt");
     assert_eq!(result.size, Some(1024));
@@ -119,7 +132,7 @@ async fn test_get_metadata_returns_correct_entry() {
 #[tokio::test]
 async fn test_get_metadata_nonexistent_returns_error() {
     let volume = InMemoryVolume::new("Test");
-    let result = volume.get_metadata(Path::new("/nonexistent.txt")).await;
+    let result = volume.get_metadata(app_path!("/nonexistent.txt")).await;
 
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), VolumeError::NotFound(_)));
@@ -130,13 +143,13 @@ async fn test_create_file_then_exists() {
     let volume = InMemoryVolume::new("Test");
 
     volume
-        .create_file(Path::new("/test.txt"), b"Hello, World!")
+        .create_file(app_path!("/test.txt"), b"Hello, World!")
         .await
         .unwrap();
 
-    assert!(volume.exists(Path::new("/test.txt")).await);
+    assert!(volume.exists(app_path!("/test.txt")).await);
 
-    let metadata = volume.get_metadata(Path::new("/test.txt")).await.unwrap();
+    let metadata = volume.get_metadata(app_path!("/test.txt")).await.unwrap();
     assert_eq!(metadata.name, "test.txt");
     assert_eq!(metadata.size, Some(13)); // "Hello, World!" is 13 bytes
     assert!(!metadata.is_directory);
@@ -150,18 +163,18 @@ async fn test_create_file_does_not_clobber_existing() {
     let volume = InMemoryVolume::new("Test");
 
     volume
-        .create_file(Path::new("/notes.txt"), b"important user data")
+        .create_file(app_path!("/notes.txt"), b"important user data")
         .await
         .unwrap();
 
-    let result = volume.create_file(Path::new("/notes.txt"), b"").await;
+    let result = volume.create_file(app_path!("/notes.txt"), b"").await;
 
     assert!(
         matches!(result, Err(VolumeError::AlreadyExists(_))),
         "expected AlreadyExists, got {:?}",
         result
     );
-    let metadata = volume.get_metadata(Path::new("/notes.txt")).await.unwrap();
+    let metadata = volume.get_metadata(app_path!("/notes.txt")).await.unwrap();
     assert_eq!(metadata.size, Some(19), "original file bytes must survive");
 }
 
@@ -169,11 +182,11 @@ async fn test_create_file_does_not_clobber_existing() {
 async fn test_create_directory_then_exists() {
     let volume = InMemoryVolume::new("Test");
 
-    volume.create_directory(Path::new("/mydir")).await.unwrap();
+    volume.create_directory(app_path!("/mydir")).await.unwrap();
 
-    assert!(volume.exists(Path::new("/mydir")).await);
+    assert!(volume.exists(app_path!("/mydir")).await);
 
-    let metadata = volume.get_metadata(Path::new("/mydir")).await.unwrap();
+    let metadata = volume.get_metadata(app_path!("/mydir")).await.unwrap();
     assert_eq!(metadata.name, "mydir");
     assert!(metadata.is_directory);
 }
@@ -182,11 +195,11 @@ async fn test_create_directory_then_exists() {
 async fn test_delete_removes_entry() {
     let volume = InMemoryVolume::new("Test");
 
-    volume.create_file(Path::new("/test.txt"), b"content").await.unwrap();
-    assert!(volume.exists(Path::new("/test.txt")).await);
+    volume.create_file(app_path!("/test.txt"), b"content").await.unwrap();
+    assert!(volume.exists(app_path!("/test.txt")).await);
 
-    volume.delete(Path::new("/test.txt")).await.unwrap();
-    assert!(!volume.exists(Path::new("/test.txt")).await);
+    volume.delete(app_path!("/test.txt")).await.unwrap();
+    assert!(!volume.exists(app_path!("/test.txt")).await);
 }
 
 /// The shared `Volume::delete` non-recursion assertion, over the test double
@@ -197,9 +210,9 @@ async fn test_delete_removes_entry() {
 #[tokio::test]
 async fn delete_honors_the_shared_non_recursion_contract() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/album")).await.unwrap();
+    volume.create_directory(app_path!("/album")).await.unwrap();
     volume
-        .create_file(Path::new("/album/keep.txt"), b"content")
+        .create_file(app_path!("/album/keep.txt"), b"content")
         .await
         .unwrap();
 
@@ -211,10 +224,10 @@ async fn delete_honors_the_shared_non_recursion_contract() {
 #[tokio::test]
 async fn delete_files_honors_the_shared_batch_contract() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/level")).await.unwrap();
+    volume.create_directory(app_path!("/level")).await.unwrap();
     for name in ["a.txt", "b.txt", "kept.txt"] {
         volume
-            .create_file(&Path::new("/level").join(name), b"bytes")
+            .create_file(&AppPath::legacy_unchecked(&Path::new("/level").join(name)), b"bytes")
             .await
             .unwrap();
     }
@@ -234,9 +247,9 @@ async fn delete_files_honors_the_shared_batch_contract() {
 #[tokio::test]
 async fn rename_honors_the_shared_no_clobber_contract() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_file(Path::new("/source.txt"), b"source").await.unwrap();
+    volume.create_file(app_path!("/source.txt"), b"source").await.unwrap();
     volume
-        .create_file(Path::new("/target.txt"), b"the user's target file")
+        .create_file(app_path!("/target.txt"), b"the user's target file")
         .await
         .unwrap();
 
@@ -254,27 +267,27 @@ async fn rename_honors_the_shared_no_clobber_contract() {
 #[tokio::test]
 async fn node_identity_follows_the_entry_not_the_name() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/Invoices")).await.unwrap();
-    let original = volume.node_identity(Path::new("/Invoices")).await.unwrap();
+    volume.create_directory(app_path!("/Invoices")).await.unwrap();
+    let original = volume.node_identity(app_path!("/Invoices")).await.unwrap();
     assert!(original.is_some());
 
     volume
-        .rename(Path::new("/Invoices"), Path::new("/.Trash/Invoices"), false)
+        .rename(app_path!("/Invoices"), app_path!("/.Trash/Invoices"), false)
         .await
         .unwrap();
     assert_eq!(
-        volume.node_identity(Path::new("/.Trash/Invoices")).await.unwrap(),
+        volume.node_identity(app_path!("/.Trash/Invoices")).await.unwrap(),
         original
     );
 
-    volume.delete(Path::new("/.Trash/Invoices")).await.unwrap();
-    volume.create_directory(Path::new("/.Trash/Invoices")).await.unwrap();
+    volume.delete(app_path!("/.Trash/Invoices")).await.unwrap();
+    volume.create_directory(app_path!("/.Trash/Invoices")).await.unwrap();
     assert_ne!(
-        volume.node_identity(Path::new("/.Trash/Invoices")).await.unwrap(),
+        volume.node_identity(app_path!("/.Trash/Invoices")).await.unwrap(),
         original
     );
     assert!(matches!(
-        volume.node_identity(Path::new("/Invoices")).await,
+        volume.node_identity(app_path!("/Invoices")).await,
         Err(VolumeError::NotFound(_))
     ));
 }
@@ -284,11 +297,11 @@ async fn node_identity_follows_the_entry_not_the_name() {
 #[tokio::test]
 async fn forced_rename_honors_the_shared_non_empty_folder_contract() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_file(Path::new("/source.txt"), b"source").await.unwrap();
-    volume.create_directory(Path::new("/source-dir")).await.unwrap();
-    volume.create_directory(Path::new("/album")).await.unwrap();
+    volume.create_file(app_path!("/source.txt"), b"source").await.unwrap();
+    volume.create_directory(app_path!("/source-dir")).await.unwrap();
+    volume.create_directory(app_path!("/album")).await.unwrap();
     volume
-        .create_file(Path::new("/album/source.txt"), b"the user's photo")
+        .create_file(app_path!("/album/source.txt"), b"the user's photo")
         .await
         .unwrap();
 
@@ -301,7 +314,7 @@ async fn forced_rename_honors_the_shared_non_empty_folder_contract() {
 async fn create_file_honors_the_shared_no_clobber_contract() {
     let volume = InMemoryVolume::new("Test");
     volume
-        .create_file(Path::new("/notes.txt"), b"the user's notes")
+        .create_file(app_path!("/notes.txt"), b"the user's notes")
         .await
         .unwrap();
 
@@ -311,7 +324,7 @@ async fn create_file_honors_the_shared_no_clobber_contract() {
 #[tokio::test]
 async fn write_from_stream_create_new_honors_the_shared_no_clobber_contract() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_file(Path::new("/notes.txt"), b"original").await.unwrap();
+    volume.create_file(app_path!("/notes.txt"), b"original").await.unwrap();
 
     conformance::assert_write_from_stream_create_new_refuses_to_clobber(
         &volume,
@@ -422,7 +435,7 @@ async fn the_double_keeps_xattrs_on_the_write_and_flags_after_it() {
     use crate::metadata::{CarriedMetadata, MetadataClasses, UserFlags, Xattr};
     let source = InMemoryVolume::new("Source");
     source
-        .create_file(Path::new("/tagged.txt"), b"tagged")
+        .create_file(app_path!("/tagged.txt"), b"tagged")
         .await
         .expect("seed");
     let tag = Xattr {
@@ -438,12 +451,12 @@ async fn the_double_keeps_xattrs_on_the_write_and_flags_after_it() {
         },
     );
     let dest = InMemoryVolume::new("Dest");
-    let stream = source.open_read_stream(Path::new("/tagged.txt")).await.expect("open");
+    let stream = source.open_read_stream(app_path!("/tagged.txt")).await.expect("open");
     let after_landing = stream
         .metadata(MetadataClasses::ALL)
         .after_landing(InMemoryVolume::REFERENCE_CAPS.staged_flags);
     dest.write_from_stream(
-        Path::new("/tagged.txt"),
+        app_path!("/tagged.txt"),
         WriteMode::CreateNew,
         StreamLength::Known(6),
         stream,
@@ -456,7 +469,7 @@ async fn the_double_keeps_xattrs_on_the_write_and_flags_after_it() {
     assert_eq!(landed.xattrs, vec![tag]);
     assert_eq!(landed.flags, UserFlags::NONE, "flags wait for the landing");
 
-    dest.apply_metadata(Path::new("/tagged.txt"), &after_landing, None)
+    dest.apply_metadata(app_path!("/tagged.txt"), &after_landing, None)
         .await;
     let landed = dest.carried_metadata(Path::new("/tagged.txt")).expect("landed");
     assert_eq!(landed.flags, UserFlags::LOCKED);
@@ -466,7 +479,7 @@ async fn the_double_keeps_xattrs_on_the_write_and_flags_after_it() {
 async fn unknown_write_honors_the_shared_early_refusal_contract() {
     let volume = InMemoryVolume::new("Test");
     let original = b"the user's original bytes";
-    volume.create_file(Path::new("/notes.txt"), original).await.unwrap();
+    volume.create_file(app_path!("/notes.txt"), original).await.unwrap();
 
     conformance::assert_unknown_write_is_refused_before_io(&volume, Path::new("/notes.txt"), original).await;
 }
@@ -474,7 +487,7 @@ async fn unknown_write_honors_the_shared_early_refusal_contract() {
 #[tokio::test]
 async fn create_directory_all_honors_the_shared_honesty_contract() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/album")).await.unwrap();
+    volume.create_directory(app_path!("/album")).await.unwrap();
 
     conformance::assert_create_directory_all_reports_an_existing_dir_honestly(&volume, Path::new("/album")).await;
 }
@@ -485,9 +498,9 @@ async fn create_directory_all_honors_the_shared_honesty_contract() {
 #[tokio::test]
 async fn create_directory_all_honors_the_shared_file_in_the_way_contract() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/album")).await.unwrap();
+    volume.create_directory(app_path!("/album")).await.unwrap();
     volume
-        .create_file(Path::new("/album/notes"), b"the user's notes")
+        .create_file(app_path!("/album/notes"), b"the user's notes")
         .await
         .unwrap();
 
@@ -500,7 +513,7 @@ async fn create_directory_all_honors_the_shared_file_in_the_way_contract() {
 async fn export_honors_the_shared_handshake_contract() {
     let volume = InMemoryVolume::new("Test");
     let content = b"the bytes a copy would move";
-    volume.create_file(Path::new("/exported.txt"), content).await.unwrap();
+    volume.create_file(app_path!("/exported.txt"), content).await.unwrap();
 
     conformance::assert_export_matches_the_bytes_offered(&volume, Path::new("/exported.txt"), content).await;
 }
@@ -510,7 +523,7 @@ async fn export_honors_the_shared_handshake_contract() {
 #[tokio::test]
 async fn copy_within_honors_the_shared_handshake_contract() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_file(Path::new("/original.txt"), b"bytes").await.unwrap();
+    volume.create_file(app_path!("/original.txt"), b"bytes").await.unwrap();
 
     conformance::assert_copy_within_matches_what_is_offered(
         &volume,
@@ -550,9 +563,9 @@ async fn conflict_scan_honors_the_shared_missing_destination_contract() {
 #[tokio::test]
 async fn a_batch_scan_stops_when_it_is_told_to() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/album")).await.unwrap();
+    volume.create_directory(app_path!("/album")).await.unwrap();
     volume
-        .create_file(Path::new("/album/keep.txt"), b"content")
+        .create_file(app_path!("/album/keep.txt"), b"content")
         .await
         .unwrap();
 
@@ -563,7 +576,7 @@ async fn a_batch_scan_stops_when_it_is_told_to() {
 async fn test_delete_nonexistent_returns_error() {
     let volume = InMemoryVolume::new("Test");
 
-    let result = volume.delete(Path::new("/nonexistent.txt")).await;
+    let result = volume.delete(app_path!("/nonexistent.txt")).await;
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), VolumeError::NotFound(_)));
 }
@@ -600,7 +613,10 @@ async fn test_list_directory_sorts_correctly() {
     ];
 
     let volume = InMemoryVolume::with_entries("Test", entries);
-    let result = volume.list_directory(Path::new(""), None).await.unwrap();
+    let result = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
 
     // Expected order: directories first (alpha, beta), then files (apple.txt, zebra.txt)
     assert_eq!(result[0].name, "alpha");
@@ -646,11 +662,14 @@ async fn test_list_subdirectory() {
     let volume = InMemoryVolume::with_entries("Test", entries);
 
     // List root - should only show subdir and root_file.txt
-    let root_entries = volume.list_directory(Path::new(""), None).await.unwrap();
+    let root_entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert_eq!(root_entries.len(), 2);
 
     // List subdir - should only show file_in_subdir.txt
-    let subdir_entries = volume.list_directory(Path::new("/subdir"), None).await.unwrap();
+    let subdir_entries = volume.list_directory(app_path!("/subdir"), None).await.unwrap();
     assert_eq!(subdir_entries.len(), 1);
     assert_eq!(subdir_entries[0].name, "file_in_subdir.txt");
 }
@@ -668,14 +687,14 @@ fn test_can_watch_listings_returns_false() {
 #[tokio::test]
 async fn test_rename_success() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_file(Path::new("/old.txt"), b"content").await.unwrap();
+    volume.create_file(app_path!("/old.txt"), b"content").await.unwrap();
 
-    let result = volume.rename(Path::new("/old.txt"), Path::new("/new.txt"), false).await;
+    let result = volume.rename(app_path!("/old.txt"), app_path!("/new.txt"), false).await;
     assert!(result.is_ok());
-    assert!(!volume.exists(Path::new("/old.txt")).await);
-    assert!(volume.exists(Path::new("/new.txt")).await);
+    assert!(!volume.exists(app_path!("/old.txt")).await);
+    assert!(volume.exists(app_path!("/new.txt")).await);
 
-    let metadata = volume.get_metadata(Path::new("/new.txt")).await.unwrap();
+    let metadata = volume.get_metadata(app_path!("/new.txt")).await.unwrap();
     assert_eq!(metadata.name, "new.txt");
     assert_eq!(metadata.path, "/new.txt");
 }
@@ -683,32 +702,32 @@ async fn test_rename_success() {
 #[tokio::test]
 async fn test_rename_conflict_no_force() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_file(Path::new("/source.txt"), b"source").await.unwrap();
-    volume.create_file(Path::new("/target.txt"), b"target").await.unwrap();
+    volume.create_file(app_path!("/source.txt"), b"source").await.unwrap();
+    volume.create_file(app_path!("/target.txt"), b"target").await.unwrap();
 
     let result = volume
-        .rename(Path::new("/source.txt"), Path::new("/target.txt"), false)
+        .rename(app_path!("/source.txt"), app_path!("/target.txt"), false)
         .await;
     assert!(matches!(result, Err(VolumeError::AlreadyExists(_))));
     // Both entries still exist
-    assert!(volume.exists(Path::new("/source.txt")).await);
-    assert!(volume.exists(Path::new("/target.txt")).await);
+    assert!(volume.exists(app_path!("/source.txt")).await);
+    assert!(volume.exists(app_path!("/target.txt")).await);
 }
 
 #[tokio::test]
 async fn test_rename_force_overwrites() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_file(Path::new("/source.txt"), b"new").await.unwrap();
-    volume.create_file(Path::new("/target.txt"), b"old").await.unwrap();
+    volume.create_file(app_path!("/source.txt"), b"new").await.unwrap();
+    volume.create_file(app_path!("/target.txt"), b"old").await.unwrap();
 
     let result = volume
-        .rename(Path::new("/source.txt"), Path::new("/target.txt"), true)
+        .rename(app_path!("/source.txt"), app_path!("/target.txt"), true)
         .await;
     assert!(result.is_ok());
-    assert!(!volume.exists(Path::new("/source.txt")).await);
-    assert!(volume.exists(Path::new("/target.txt")).await);
+    assert!(!volume.exists(app_path!("/source.txt")).await);
+    assert!(volume.exists(app_path!("/target.txt")).await);
 
-    let metadata = volume.get_metadata(Path::new("/target.txt")).await.unwrap();
+    let metadata = volume.get_metadata(app_path!("/target.txt")).await.unwrap();
     assert_eq!(metadata.name, "target.txt");
 }
 
@@ -716,7 +735,7 @@ async fn test_rename_force_overwrites() {
 async fn test_rename_nonexistent_source() {
     let volume = InMemoryVolume::new("Test");
     let result = volume
-        .rename(Path::new("/missing.txt"), Path::new("/new.txt"), false)
+        .rename(app_path!("/missing.txt"), app_path!("/new.txt"), false)
         .await;
     assert!(matches!(result, Err(VolumeError::NotFound(_))));
 }
@@ -743,9 +762,11 @@ async fn test_concurrent_reads() {
         let vol = Arc::clone(&volume);
         handles.push(tokio::spawn(async move {
             for _ in 0..25 {
-                let _ = vol.list_directory(Path::new(""), None).await;
-                let _ = vol.exists(Path::new("/file_000001.txt")).await;
-                let _ = vol.get_metadata(Path::new("/file_000010.txt")).await;
+                let _ = vol
+                    .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+                    .await;
+                let _ = vol.exists(app_path!("/file_000001.txt")).await;
+                let _ = vol.get_metadata(app_path!("/file_000010.txt")).await;
             }
         }));
     }
@@ -755,7 +776,14 @@ async fn test_concurrent_reads() {
     }
 
     // Volume should still be intact
-    assert_eq!(volume.list_directory(Path::new(""), None).await.unwrap().len(), 1000);
+    assert_eq!(
+        volume
+            .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+            .await
+            .unwrap()
+            .len(),
+        1000
+    );
 }
 
 #[tokio::test]
@@ -771,7 +799,9 @@ async fn test_concurrent_writes() {
         handles.push(tokio::spawn(async move {
             for j in 0..10 {
                 let path = format!("/file_{}_{}.txt", i, j);
-                vol.create_file(Path::new(&path), b"content").await.unwrap();
+                vol.create_file(&AppPath::legacy_unchecked(Path::new(&path)), b"content")
+                    .await
+                    .unwrap();
             }
         }));
     }
@@ -781,7 +811,10 @@ async fn test_concurrent_writes() {
     }
 
     // Should have all 100 files
-    let entries = volume.list_directory(Path::new(""), None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await
+        .unwrap();
     assert_eq!(entries.len(), 100);
 }
 
@@ -791,7 +824,7 @@ async fn test_concurrent_create_delete() {
 
     let volume = Arc::new(InMemoryVolume::new("Test"));
     // Create a permanent file
-    volume.create_file(Path::new("/permanent.txt"), b"keep").await.unwrap();
+    volume.create_file(app_path!("/permanent.txt"), b"keep").await.unwrap();
 
     let mut handles = vec![];
 
@@ -800,8 +833,10 @@ async fn test_concurrent_create_delete() {
         let vol = Arc::clone(&volume);
         handles.push(tokio::spawn(async move {
             for _ in 0..50 {
-                let _ = vol.list_directory(Path::new(""), None).await;
-                let _ = vol.exists(Path::new("/permanent.txt")).await;
+                let _ = vol
+                    .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+                    .await;
+                let _ = vol.exists(app_path!("/permanent.txt")).await;
                 tokio::task::yield_now().await;
             }
         }));
@@ -814,9 +849,9 @@ async fn test_concurrent_create_delete() {
             for j in 0..10 {
                 let path = format!("/temp_{}_{}.txt", i, j);
                 let p = Path::new(&path);
-                vol.create_file(p, b"temp").await.unwrap();
+                vol.create_file(&AppPath::legacy_unchecked(p), b"temp").await.unwrap();
                 tokio::task::yield_now().await;
-                let _ = vol.delete(p).await; // May fail if another task already deleted
+                let _ = vol.delete(&AppPath::legacy_unchecked(p)).await; // May fail if another task already deleted
             }
         }));
     }
@@ -826,7 +861,7 @@ async fn test_concurrent_create_delete() {
     }
 
     // Permanent file should still exist
-    assert!(volume.exists(Path::new("/permanent.txt")).await);
+    assert!(volume.exists(app_path!("/permanent.txt")).await);
 }
 
 /// A volume that keeps what `InMemoryVolume` keeps under its caps, and claims a
@@ -838,7 +873,7 @@ impl Volume for ClaimsCreationDates {
     fn name(&self) -> &str {
         self.0.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.0.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -846,29 +881,29 @@ impl Volume for ClaimsCreationDates {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.0.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.0.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.0.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.0.is_directory(path)
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -887,7 +922,7 @@ impl Volume for ClaimsCreationDates {
 #[tokio::test]
 async fn a_link_lands_verbatim_on_a_store_that_holds_links() {
     let volume = InMemoryVolume::new("Links").with_links();
-    volume.create_directory(Path::new("/dir")).await.unwrap();
+    volume.create_directory(app_path!("/dir")).await.unwrap();
     conformance::assert_a_link_lands_verbatim(&volume, Path::new("/dir")).await;
 }
 
@@ -896,7 +931,7 @@ async fn a_store_with_no_links_refuses_to_make_one() {
     let volume = InMemoryVolume::new("No links");
     assert!(!volume.can_hold_links());
     assert!(matches!(
-        volume.create_symlink(Path::new("/link"), Path::new("t")).await,
+        volume.create_symlink(app_path!("/link"), Path::new("t")).await,
         Err(VolumeError::NotSupported)
     ));
 }
@@ -904,7 +939,7 @@ async fn a_store_with_no_links_refuses_to_make_one() {
 #[tokio::test]
 async fn xattrs_keep_the_shared_contract() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_file(Path::new("/plain.txt"), b"x").await.unwrap();
+    volume.create_file(app_path!("/plain.txt"), b"x").await.unwrap();
     conformance::assert_xattrs_keep_their_promises(&volume, Path::new("/plain.txt"), Path::new("/gone.txt")).await;
 }
 
@@ -917,23 +952,23 @@ async fn held_folders_only_lists_a_missing_folder_or_a_file_the_way_a_disk_does(
     let volume = InMemoryVolume::with_entries("Test", entries).with_held_folders_only();
 
     assert_eq!(
-        volume.list_directory(Path::new("/"), None).await.expect("root").len(),
+        volume.list_directory(app_path!("/"), None).await.expect("root").len(),
         1
     );
     assert_eq!(
         volume
-            .list_directory(Path::new("/docs"), None)
+            .list_directory(app_path!("/docs"), None)
             .await
             .expect("docs")
             .len(),
         1
     );
     assert!(matches!(
-        volume.list_directory(Path::new("/nope"), None).await,
+        volume.list_directory(app_path!("/nope"), None).await,
         Err(VolumeError::NotFound(_))
     ));
     assert!(matches!(
-        volume.list_directory(Path::new("/docs/a.txt"), None).await,
+        volume.list_directory(app_path!("/docs/a.txt"), None).await,
         Err(VolumeError::NotADirectory(_))
     ));
 }
@@ -941,7 +976,7 @@ async fn held_folders_only_lists_a_missing_folder_or_a_file_the_way_a_disk_does(
 #[tokio::test]
 async fn by_default_a_missing_folder_lists_empty() {
     let volume = InMemoryVolume::new("Test");
-    let listed = volume.list_directory(Path::new("/nope"), None).await.expect("lists");
+    let listed = volume.list_directory(app_path!("/nope"), None).await.expect("lists");
     assert!(listed.is_empty());
 }
 
