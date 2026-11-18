@@ -15,9 +15,9 @@
   "@aboutThis.action.openTooltip": {
     "sourceHash": "4bbaa35"
   },
-  "aboutThis.action.showInFileManager": "{platform, select, macos {Megjelenítés a Finderben} windows {Megjelenítés a Fájlkezelőben} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Megjelenítés a fájlkezelőben}}",
+  "aboutThis.action.showInFileManager": "{platform, select, macos {Megjelenítés a Finderben} windows {Megjelenítés a Fájlkezelőben} linuxGnome {Megjelenítés a Fájlokban} linuxKde {Megjelenítés a Dolphinban} other {Megjelenítés a fájlkezelőben}}",
   "@aboutThis.action.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "aboutThis.action.downloadPage": "Letöltési oldal",
   "@aboutThis.action.downloadPage": {
@@ -328,9 +328,9 @@
   "@aboutThis.download.unrecognized": {
     "sourceHash": "5e9fa42"
   },
-  "aboutThis.download.noSource": "{platform, select, macos {A macOS feljegyezte, hogy ezt letöltötték{hasApp, select, yes {, ezzel az appal: {app}} other {}}{hasDate, select, yes {, ekkor: <date></date>} other {}}, de azt nem, hogy honnan.} windows {Windows recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} other {This carries a record of being downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.}}",
+  "aboutThis.download.noSource": "{platform, select, macos {A macOS feljegyezte, hogy ezt letöltötték{hasApp, select, yes {, ezzel az appal: {app}} other {}}{hasDate, select, yes {, ekkor: <date></date>} other {}}, de azt nem, hogy honnan.} windows {A Windows feljegyezte, hogy ezt letöltötték{hasApp, select, yes {, ezzel az appal: {app}} other {}}{hasDate, select, yes {, ekkor: <date></date>} other {}}, de azt nem, hogy honnan.} other {Ehhez tartozik egy feljegyzés arról, hogy letöltötték{hasApp, select, yes {, ezzel az appal: {app}} other {}}{hasDate, select, yes {, ekkor: <date></date>} other {}}, de az nem, hogy honnan.}}",
   "@aboutThis.download.noSource": {
-    "sourceHash": "7edb92b"
+    "sourceHash": "83ec9b3"
   },
   "aboutThis.cmdrOperation.noRecord": "A Cmdr nem jegyzett fel ide másolást vagy áthelyezést",
   "@aboutThis.cmdrOperation.noRecord": {
@@ -747,9 +747,9 @@
   "@aboutThis.standardFolder.users": {
     "sourceHash": "955c56c"
   },
-  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {Az indítólemez legfelső szintje} windows {The top of the system drive} other {The top of the system disk}}",
+  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {Az indítólemez legfelső szintje} windows {A rendszermeghajtó legfelső szintje} other {A rendszerlemez legfelső szintje}}",
   "@aboutThis.standardFolder.startupDisk": {
-    "sourceHash": "6e69278"
+    "sourceHash": "d7764f1"
   },
   "aboutThis.owner.insideApp": "{app} része",
   "@aboutThis.owner.insideApp": {
@@ -972,9 +972,9 @@
   "@aboutThis.removal.standardFolder.users": {
     "sourceHash": "b72c1fe"
   },
-  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {Ebben van minden, ami az indítólemezen van, a macOS-t is beleértve.} windows {It holds everything on the system drive, Windows included.} other {It holds everything on the system disk, the operating system included.}}",
+  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {Ebben van minden, ami az indítólemezen van, a macOS-t is beleértve.} windows {Ebben van minden, ami a rendszermeghajtón van, a Windowst is beleértve.} other {Ebben van minden, ami a rendszerlemezen van, az operációs rendszert is beleértve.}}",
   "@aboutThis.removal.standardFolder.startupDisk": {
-    "sourceHash": "3f6c151"
+    "sourceHash": "a50aa6f"
   },
   "aboutThis.removal.uncommittedWork": "Olyan változásai vannak, amelyek egyik commitban sincsenek benne, így ezeket a git nem tudja visszahozni.",
   "@aboutThis.removal.uncommittedWork": {

@@ -146,6 +146,10 @@
     ],
     "hu": [
       {
+        "source": "Preferences",
+        "reason": "`aboutThis.ownerPlace.preferences` is the real name of the macOS `~/Library/Preferences` folder, kept as the system names it; the GNOME branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own app-menu word, Beállítások (hu nautilus.po `_Preferences`)."
+      },
+      {
         "source": "Not connected yet",
         "reason": "Two surfaces with two verbs, per the `connect` ruling in `docs/i18n/hu/terms.json`. The servers hub status cell (`servers.hub.status.notConnectedYet`) sits in one column with `Kapcsolódva` (AppKit SavePanel's `Nem kapcsolódik` stem), so it reads `Még nincs kapcsolódva`. The error titles (`errors.listing.notConnected.title`, `errors.write.notConnected.title`) cover a phone as well as a server, where the attach verb `csatlakoztat` fits, so they keep `Még nincs csatlakoztatva`."
       },

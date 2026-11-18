@@ -243,6 +243,14 @@
   "@multiRename.status.reservedDeviceName": {
     "sourceHash": "8bf464a"
   },
+  "multiRename.status.notPortable": "{alsoLinux, select, yes {Nem működik Windowson és Linuxon} other {Nem működik Windowson}}",
+  "@multiRename.status.notPortable": {
+    "sourceHash": "cc3ed09"
+  },
+  "multiRename.notPortableSummary": "{count, plural, one {{alsoLinux, select, yes {{countText} új név nem fog működni Windowson és Linuxon. Az átnevezés ettől még megtörténik.} other {{countText} új név nem fog működni Windowson. Az átnevezés ettől még megtörténik.}}} other {{alsoLinux, select, yes {{countText} új név nem fog működni Windowson és Linuxon. Az átnevezés ettől még megtörténik.} other {{countText} új név nem fog működni Windowson. Az átnevezés ettől még megtörténik.}}}}",
+  "@multiRename.notPortableSummary": {
+    "sourceHash": "4eb996d"
+  },
   "multiRename.error.unclosed": "Egy helyőrzőből hiányzik a záró „]”",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -627,15 +635,15 @@
   },
   "multiRename.reason.tooLong": "Az új név túl hosszú fájlnévnek.",
   "@multiRename.reason.tooLong": {
-    "sourceHash": "b709218"
+    "sourceHash": "c49d459"
   },
   "multiRename.reason.reserved": "„.” és „..” nem lehet fájlnév.",
   "@multiRename.reason.reserved": {
-    "sourceHash": "dcca507"
+    "sourceHash": "b0c0c33"
   },
   "multiRename.reason.disallowedCharacter": "A fájlnév nem tartalmazhat ilyen karaktert: {character}.",
   "@multiRename.reason.disallowedCharacter": {
-    "sourceHash": "66a09f6"
+    "sourceHash": "2d58251"
   },
   "multiRename.reason.reservedDeviceName": "„{name}” a Windows által fenntartott név, ezért ez a meghajtó nem tudja névként használni.",
   "@multiRename.reason.reservedDeviceName": {

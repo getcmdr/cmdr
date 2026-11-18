@@ -521,9 +521,9 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {A hitelesítő adatok helyben tárolódnak (a Hitelesítőadat-kezelő nem érhető el)} linuxKde {Credentials stored locally (KWallet not available)} other {A hitelesítő adatok helyben tárolódnak (nem található rendszerszintű kulcstartó)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {A hitelesítő adatok helyben tárolódnak (a Hitelesítőadat-kezelő nem érhető el)} linuxKde {A hitelesítő adatok helyben tárolódnak (a KWallet nem érhető el)} other {A hitelesítő adatok helyben tárolódnak (nem található rendszerszintű kulcstartó)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
-    "sourceHash": "e14f91d"
+    "sourceHash": "d279dc9"
   },
   "fileExplorer.network.share.notFound": "Nem található „{shareName}” nevű megosztás itt: {hostName}",
   "@fileExplorer.network.share.notFound": {
@@ -557,9 +557,9 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Mentett jelszó eltávolítása a kulcskarikából} windows {Mentett jelszó eltávolítása a Hitelesítőadat-kezelőből} linuxKde {Remove saved password from KWallet} other {Mentett jelszó eltávolítása a kulcstartódból}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Mentett jelszó eltávolítása a kulcskarikából} windows {Mentett jelszó eltávolítása a Hitelesítőadat-kezelőből} linuxKde {Mentett jelszó eltávolítása a KWalletből} other {Mentett jelszó eltávolítása a kulcstartódból}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "4ae6a02"
+    "sourceHash": "3d21c85"
   },
   "fileExplorer.network.share.useGuest": "Böngészés vendégként",
   "@fileExplorer.network.share.useGuest": {
@@ -949,9 +949,9 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {A Cmdr egyelőre lezárta ezt a biztonsági mentést: {name}, de a mentett jelszó a kulcskarikában maradt. Ha végleg el akarod távolítani, töröld a Kulcskarika-elérés appban.} windows {A Cmdr egyelőre lezárta ezt a biztonsági mentést: {name}, de a mentett jelszó a Hitelesítőadat-kezelőben maradt. Ha végleg el akarod távolítani, töröld a Hitelesítőadat-kezelőben.} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {A Cmdr egyelőre lezárta ezt a biztonsági mentést: {name}, de a mentett jelszó a kulcstartódban maradt. Ha végleg el akarod távolítani, töröld a kulcstartódat kezelő appban.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {A Cmdr egyelőre lezárta ezt a biztonsági mentést: {name}, de a mentett jelszó a kulcskarikában maradt. Ha végleg el akarod távolítani, töröld a Kulcskarika-elérés appban.} windows {A Cmdr egyelőre lezárta ezt a biztonsági mentést: {name}, de a mentett jelszó a Hitelesítőadat-kezelőben maradt. Ha végleg el akarod távolítani, töröld a Hitelesítőadat-kezelőben.} linuxGnome {A Cmdr egyelőre lezárta ezt a biztonsági mentést: {name}, de a mentett jelszó a kulcstartódban maradt. Ha végleg el akarod távolítani, töröld a Jelszavak és kulcsok appban.} linuxKde {A Cmdr egyelőre lezárta ezt a biztonsági mentést: {name}, de a mentett jelszó a KWalletben maradt. Ha végleg el akarod távolítani, töröld a KWalletManager appban.} other {A Cmdr egyelőre lezárta ezt a biztonsági mentést: {name}, de a mentett jelszó a kulcstartódban maradt. Ha végleg el akarod távolítani, töröld a kulcstartódat kezelő appban.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
-    "sourceHash": "20277f3"
+    "sourceHash": "366f06a"
   },
   "fileExplorer.restic.forgetPassword.unreachable": "A Cmdr most nem érte el ezt: {name}, így a jelszó mentve marad. Próbáld újra egy pillanat múlva.",
   "@fileExplorer.restic.forgetPassword.unreachable": {
@@ -2341,9 +2341,9 @@
   "@fileExplorer.quickFilter.intro.switchToJump": {
     "sourceHash": "38642f9"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Beállítások} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Beállítások…}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Beállítások} linuxGnome {Beállítások} linuxKde {Cmdr beállítása…} other {Beállítások…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
-    "sourceHash": "7af8e23"
+    "sourceHash": "4b21626"
   },
   "fileExplorer.quickFilter.intro.gotIt": "Értem",
   "@fileExplorer.quickFilter.intro.gotIt": {

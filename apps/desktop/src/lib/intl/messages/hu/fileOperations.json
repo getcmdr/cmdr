@@ -154,7 +154,7 @@
   },
   "fileOperations.mkfile.nameAria": "Fájlnév",
   "@fileOperations.mkfile.nameAria": {
-    "sourceHash": "3efed3d"
+    "sourceHash": "971b974"
   },
   "fileOperations.mkfile.placeholder": "Példa: jegyzetek.txt",
   "@fileOperations.mkfile.placeholder": {
@@ -1305,9 +1305,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Megjegyzés a kulcskarikában} windows {Jelszó megjegyzése} linuxKde {Remember in KWallet} other {Megjegyzés a kulcstartóban}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Megjegyzés a kulcskarikában} windows {Jelszó megjegyzése} linuxKde {Megjegyzés a KWalletben} other {Megjegyzés a kulcstartóban}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "42237e1"
+    "sourceHash": "8f125e3"
   },
   "fileOperations.resticPassword.checking": "Jelszó ellenőrzése…",
   "@fileOperations.resticPassword.checking": {
@@ -1332,6 +1332,30 @@
   "fileOperations.validation.empty": "{kind, select, folder {A mappa neve nem lehet üres} other {A fájlnév nem lehet üres}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
+  },
+  "fileOperations.validation.dotName": "{kind, select, folder {A mappa neve nem lehet „.” vagy „..”} other {A fájlnév nem lehet „.” vagy „..”}}",
+  "@fileOperations.validation.dotName": {
+    "sourceHash": "bfa0ccb"
+  },
+  "fileOperations.validation.nameLength": "{kind, select, folder {A mappa neve túl hosszú ({length}/{maxLength} {unit, select, bytes {{max, plural, one {bájt} other {bájt}}} other {{max, plural, one {karakter} other {karakter}}}})} other {A fájlnév túl hosszú ({length}/{maxLength} {unit, select, bytes {{max, plural, one {bájt} other {bájt}}} other {{max, plural, one {karakter} other {karakter}}}})}}",
+  "@fileOperations.validation.nameLength": {
+    "sourceHash": "acef623"
+  },
+  "fileOperations.validation.pathLength": "A teljes útvonal túl hosszú ({length}/{maxLength} {unit, select, bytes {{max, plural, one {bájt} other {bájt}}} other {{max, plural, one {karakter} other {karakter}}}})",
+  "@fileOperations.validation.pathLength": {
+    "sourceHash": "1791bc2"
+  },
+  "fileOperations.validation.notPortable.windowsCharacter": "{format, select, smbShare {Az ilyen karaktert tartalmazó nevek nem működnek Windowson: „{character}”} other {Az ilyen karaktert tartalmazó nevek nem működnek Windowson és Linuxon: „{character}”}}",
+  "@fileOperations.validation.notPortable.windowsCharacter": {
+    "sourceHash": "66201fa"
+  },
+  "fileOperations.validation.notPortable.reservedName": "{format, select, smbShare {„{name}” a Windows által fenntartott név, ezért ez a név ott nem fog működni, és a megosztás más néven is listázhatja} other {„{name}” a Windows által fenntartott név, ezért ez a név ott nem fog működni}}",
+  "@fileOperations.validation.notPortable.reservedName": {
+    "sourceHash": "b46ff0c"
+  },
+  "fileOperations.validation.notPortable.endsWithSpaceOrPeriod": "{format, select, smbShare {A szóközre vagy pontra végződő nevek nem működnek Windowson} other {A szóközre vagy pontra végződő nevek nem működnek Windowson és Linuxon}}",
+  "@fileOperations.validation.notPortable.endsWithSpaceOrPeriod": {
+    "sourceHash": "86ce7a7"
   },
   "fileOperations.validation.extensionChangeBlocked": "A fájlkiterjesztés módosítása nem engedélyezett (eredeti: „{oldExt}”)",
   "@fileOperations.validation.extensionChangeBlocked": {
@@ -1360,6 +1384,18 @@
   "fileOperations.validation.pathNullChar": "Az útvonal null karaktert tartalmaz",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
+  },
+  "fileOperations.validation.typedPathLength": "Az útvonal túl hosszú ({length}/{maxLength} {unit, select, bytes {{max, plural, one {bájt} other {bájt}}} other {{max, plural, one {karakter} other {karakter}}}})",
+  "@fileOperations.validation.typedPathLength": {
+    "sourceHash": "f953ea2"
+  },
+  "fileOperations.validation.typedSegmentLength": "Az útvonal egyik mappaneve túl hosszú ({length}/{maxLength} {unit, select, bytes {{max, plural, one {bájt} other {bájt}}} other {{max, plural, one {karakter} other {karakter}}}})",
+  "@fileOperations.validation.typedSegmentLength": {
+    "sourceHash": "50ce47b"
+  },
+  "fileOperations.transferDialog.namePortability": "{count, plural, one {{alsoLinux, select, yes {{countText} név itt nem fog működni Windowson és Linuxon: „{example}”} other {{countText} név itt nem fog működni Windowson: „{example}”}}} other {{alsoLinux, select, yes {{countText} név itt nem fog működni Windowson és Linuxon, például: „{example}”} other {{countText} név itt nem fog működni Windowson, például: „{example}”}}}}",
+  "@fileOperations.transferDialog.namePortability": {
+    "sourceHash": "e8c7d0f"
   },
   "fileOperations.transferTree.treeLabel": "Fájlok ebben az átvitelben",
   "@fileOperations.transferTree.treeLabel": {

@@ -107,9 +107,9 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {A webhely, ahonnan a feljegyzés szerint letöltötték (csak a webhely fő címe, például github.com, soha nem egy aldomain vagy a teljes link), hogy mikor, és az app, amely letöltötte. Mail-mellékletnél vagy AirDropnál csak annyi, hogy az volt, soha nem az, hogy ki küldte} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {A webhely, ahonnan a feljegyzés szerint letöltötték (csak a webhely fő címe, például github.com, soha nem egy aldomain vagy a teljes link), hogy mikor, és az app, amely letöltötte. Mail-mellékletnél vagy AirDropnál csak annyi, hogy az volt, soha nem az, hogy ki küldte} other {A webhely, ahonnan a feljegyzés szerint letöltötték (csak a webhely fő címe, például github.com, soha nem egy aldomain vagy a teljes link), hogy mikor, és az app, amely letöltötte}}",
   "@ai.cloudConsent.aboutThis.item.download": {
-    "sourceHash": "40d185c"
+    "sourceHash": "6594500"
   },
   "ai.cloudConsent.aboutThis.item.appAndSigner": "Egy appnál vagy programnál a neve, azonosítója és verziója. Ennél vagy egy lemezképnél annak a neve és csapatazonosítója, aki aláírta, hogy a kódja egyezik-e még az aláírással, és hogy csatolva van-e az Apple hitelesítési jegye",
   "@ai.cloudConsent.aboutThis.item.appAndSigner": {
@@ -597,29 +597,29 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a macOS kulcskarika megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a macOS kulcskarika megtagadta a hozzáférést}}} windows {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a Hitelesítőadat-kezelő megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a Hitelesítőadat-kezelő megtagadta a hozzáférést}}} linuxKde {{op, select, save {Couldn’t save your API key: KWallet denied access} other {Couldn’t read your saved API key: KWallet denied access}}} other {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a rendszer kulcstartója megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a rendszer kulcstartója megtagadta a hozzáférést}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a macOS kulcskarika megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a macOS kulcskarika megtagadta a hozzáférést}}} windows {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a Hitelesítőadat-kezelő megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a Hitelesítőadat-kezelő megtagadta a hozzáférést}}} linuxKde {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a KWallet megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a KWallet megtagadta a hozzáférést}}} other {{op, select, save {Nem sikerült elmenteni az API-kulcsodat: a rendszer kulcstartója megtagadta a hozzáférést} other {Nem sikerült beolvasni a mentett API-kulcsodat: a rendszer kulcstartója megtagadta a hozzáférést}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "25b34c4"
+    "sourceHash": "6daa595"
   },
-  "ai.secretError.body": "{platform, select, macos {{op, select, save {Nyisd meg a Kulcskarika-elérés appot, és nézd meg a „Cmdr” bejegyzést, vagy töröld, majd próbáld újra a mentést.} other {Nyisd meg a Kulcskarika-elérés appot, keresd meg a „Cmdr” bejegyzést, és adj hozzáférést, vagy töröld, majd add meg újra a kulcsodat.}}} windows {{op, select, save {Nyisd meg a Hitelesítőadat-kezelőt, és nézd meg a „Cmdr” bejegyzést a „Windows hitelesítő adatok” szakaszban, vagy távolítsd el, majd próbáld újra a mentést.} other {Nyisd meg a Hitelesítőadat-kezelőt, keresd meg a „Cmdr” bejegyzést a „Windows hitelesítő adatok” szakaszban, vagy távolítsd el, majd add meg újra a kulcsodat.}}} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Oldd fel a kulcstartódat (Jelszavak / Kulcstartók alkalmazás), majd próbáld újra.}}",
+  "ai.secretError.body": "{platform, select, macos {{op, select, save {Nyisd meg a Kulcskarika-elérés appot, és nézd meg a „Cmdr” bejegyzést, vagy töröld, majd próbáld újra a mentést.} other {Nyisd meg a Kulcskarika-elérés appot, keresd meg a „Cmdr” bejegyzést, és adj hozzáférést, vagy töröld, majd add meg újra a kulcsodat.}}} windows {{op, select, save {Nyisd meg a Hitelesítőadat-kezelőt, és nézd meg a „Cmdr” bejegyzést a „Windows hitelesítő adatok” szakaszban, vagy távolítsd el, majd próbáld újra a mentést.} other {Nyisd meg a Hitelesítőadat-kezelőt, keresd meg a „Cmdr” bejegyzést a „Windows hitelesítő adatok” szakaszban, vagy távolítsd el, majd add meg újra a kulcsodat.}}} linuxGnome {Oldd fel a kulcstartódat a Jelszavak és kulcsok appban, majd próbáld újra.} linuxKde {Oldd fel a KWalletet a KWalletManager appban, majd próbáld újra.} other {Oldd fel a kulcstartódat (Jelszavak / Kulcstartók alkalmazás), majd próbáld újra.}}",
   "@ai.secretError.body": {
-    "sourceHash": "d65c5e3"
+    "sourceHash": "8a5496f"
   },
   "ai.secretError.genericTitle": "{op, select, save {Nem sikerült elmenteni az API-kulcsodat.} other {Nem sikerült beolvasni a mentett API-kulcsodat.}}",
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Ellenőrizd, hogy a kulcskarikád elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.} windows {Ellenőrizd, hogy a Hitelesítőadat-kezelő elérhető-e, majd próbáld újra. Ha továbbra is előfordul, indítsd újra a Cmdrt.} linuxKde {Check that KWallet is available, then try again. If it persists, restart the app.} other {Ellenőrizd, hogy a rendszer kulcstartója elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Ellenőrizd, hogy a kulcskarikád elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.} windows {Ellenőrizd, hogy a Hitelesítőadat-kezelő elérhető-e, majd próbáld újra. Ha továbbra is előfordul, indítsd újra a Cmdrt.} linuxKde {Ellenőrizd, hogy a KWallet elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.} other {Ellenőrizd, hogy a rendszer kulcstartója elérhető-e, majd próbáld újra. Ha továbbra is fennáll, indítsd újra az appot.}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "9fc0702"
+    "sourceHash": "cb879fa"
   },
   "ai.secretError.removeTitle": "Nem sikerült eltávolítani a mentett API-kulcsodat.",
   "@ai.secretError.removeTitle": {
     "sourceHash": "5986628"
   },
-  "ai.secretError.removeBody": "{platform, select, macos {Nyisd meg a Kulcskarika-elérés appot, keresd meg a „Cmdr” bejegyzést, és ott töröld.} windows {Nyisd meg a Hitelesítőadat-kezelőt, keresd meg a „Cmdr” bejegyzést a „Windows hitelesítő adatok” szakaszban, és ott távolítsd el.} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Oldd fel a kulcstartódat (Jelszavak / Kulcstartók alkalmazás), majd próbáld újra.}}",
+  "ai.secretError.removeBody": "{platform, select, macos {Nyisd meg a Kulcskarika-elérés appot, keresd meg a „Cmdr” bejegyzést, és ott töröld.} windows {Nyisd meg a Hitelesítőadat-kezelőt, keresd meg a „Cmdr” bejegyzést a „Windows hitelesítő adatok” szakaszban, és ott távolítsd el.} linuxGnome {Oldd fel a kulcstartódat a Jelszavak és kulcsok appban, majd próbáld újra.} linuxKde {Oldd fel a KWalletet a KWalletManager appban, majd próbáld újra.} other {Oldd fel a kulcstartódat (Jelszavak / Kulcstartók alkalmazás), majd próbáld újra.}}",
   "@ai.secretError.removeBody": {
-    "sourceHash": "3a85511"
+    "sourceHash": "ab0d2ec"
   },
   "ai.managed.aiOff": "A szervezeted kikapcsolta az AI-t a Cmdrben.",
   "@ai.managed.aiOff": {

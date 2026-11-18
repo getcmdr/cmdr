@@ -71,9 +71,9 @@
   "@menu.app.cliCommandHomebrew": {
     "sourceHash": "cc4c0fd"
   },
-  "menu.app.settings": "{platform, select, windows {Beállítások} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Beállítások…}}",
+  "menu.app.settings": "{platform, select, windows {Beállítások} linuxGnome {Beállítások} linuxKde {Cmdr beállítása…} other {Beállítások…}}",
   "@menu.app.settings": {
-    "sourceHash": "7af8e23"
+    "sourceHash": "4b21626"
   },
   "menu.app.services": "Szolgáltatások",
   "@menu.app.services": {
@@ -147,9 +147,9 @@
   "@menu.context.showInFolder": {
     "sourceHash": "da47876"
   },
-  "menu.file.showInFileManager": "{platform, select, macos {Megjelenítés a Finderben} windows {Megjelenítés a Fájlkezelőben} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Megjelenítés a fájlkezelőben}}",
+  "menu.file.showInFileManager": "{platform, select, macos {Megjelenítés a Finderben} windows {Megjelenítés a Fájlkezelőben} linuxGnome {Megjelenítés a Fájlokban} linuxKde {Megjelenítés a Dolphinban} other {Megjelenítés a fájlkezelőben}}",
   "@menu.file.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "menu.file.openTerminalHere": "Terminál megnyitása itt",
   "@menu.file.openTerminalHere": {
