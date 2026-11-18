@@ -29,6 +29,7 @@
 //! OCR worker thread — so a hung transport can never stall OCR of other (local)
 //! volumes.
 
+use cmdr_fs::app_path::AppPath;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -217,7 +218,7 @@ async fn read_via_volume(
     size_hint: Option<u64>,
 ) -> Result<Vec<u8>, FetchError> {
     let mut stream = volume
-        .open_read_stream_for_scan(path, size_hint)
+        .open_read_stream_for_scan(&AppPath::legacy_unchecked(path), size_hint)
         .await
         .map_err(classify_volume_error)?;
     // Pre-size from the hint (capped), so a typical photo lands in one allocation.

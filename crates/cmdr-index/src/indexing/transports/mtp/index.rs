@@ -41,7 +41,7 @@ pub(crate) fn start_indexing_for_mtp(volume_id: String) -> Result<(), String> {
     // The MTP volume must be registered (device connected) to resolve its root
     // and list it. A missing registration means the device isn't connected.
     let volume_root = match crate::indexing::host::volumes::current().get(&volume_id) {
-        Some(v) => v.root().to_path_buf(),
+        Some(v) => v.root().as_std_legacy().to_path_buf(),
         None => {
             return Err(format!(
                 "MTP volume '{volume_id}' isn't connected; plug in the device before indexing it"

@@ -467,7 +467,7 @@ impl VolumeProvider for FakeVolumeProvider {
             .read_ignore_poison()
             .iter()
             .filter(|(_, volume)| Path::new(path).starts_with(volume.root()))
-            .max_by_key(|(_, volume)| volume.root().as_os_str().len())
+            .max_by_key(|(_, volume)| volume.root().as_std_legacy().as_os_str().len())
             .map(|(id, _)| id.clone())
     }
 
