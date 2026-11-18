@@ -168,7 +168,8 @@ allows:
 - **`VolumeHost::runtime` hands out `rt::Runtime`**, so a backend and an engine spawn on the same executor on either
   target. The fallback is `cmdr-fs`'s multi-threaded runtime natively and the page's event loop in the browser
   (`volume/host/runtime.rs`).
-- **Enforced per engine crate**: its `clippy.toml` `disallowed-methods` refuses every direct clock read, timer, and
+- **Enforced per engine crate** (`cmdr-listing`, `cmdr-operations`, and `cmdr-archive`, which links into the demo
+  through `cmdr-operations`): its `clippy.toml` `disallowed-methods` refuses every direct clock read, timer, and
   ambient-runtime lookup (`Instant::now` / `elapsed` on both clocks, `SystemTime::now`,
   `tokio::time::{sleep, sleep_until, timeout, interval}`, `Handle::current`), and `rt/` opts out with one `#[allow]`.
   Method bans, not `disallowed-types`: natively `rt::Instant` and `rt::Runtime` ARE the `std` and tokio types, so a type
@@ -1275,8 +1276,8 @@ models something a real backend genuinely does:
   (`OverwriteOlder`).
 - **`with_sibling_duplicates_allowed()`** — `create_directory_errors_on_existing_dir()` reports `false`, modeling MTP,
   which can't signal a same-name collision at all.
-- **`with_read_range_unsupported()`** — positioned reads return `NotSupported`, modeling a remote backend without the
-  primitive.
+- **`with_read_range_failing(err)`** — positioned reads fail with `err`: `NotSupported` models a remote backend without
+  the primitive, any other error a transient fault mid-read.
 - **`with_read_chunk_delay(d)`** — each read chunk takes `d` to arrive. Not a fault so much as the passage of time: an
   in-memory read otherwise completes without ever yielding, so a whole file lands inside one poll and a test that has to
   CATCH a transfer mid-file (a cancel that must leave no partial, a pause that must park mid-stream) is racing something

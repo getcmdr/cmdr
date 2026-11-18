@@ -33,8 +33,8 @@ the `Volume` trait, capability flags, and any write path.
   (in `../boundary.rs`).** Longest-suffix wins: `.tar.gz` is a gzip tar, a bare `.gz` is not an archive.
 - **We drive rc-zip's sans-IO fsm directly, NOT `rc-zip-tokio`** (which borrows its handle and decompresses on the
   executor).
-- **Decompression runs on `spawn_blocking`; reads are chunked, never whole-entry buffered** — don't add a whole-entry
-  `Vec` to the read path.
+- **Decompression runs on the passed `Runtime`'s blocking pool**, ❌ never an ambient `spawn_blocking`; reads are
+  chunked, never whole-entry buffered.
 - **Compressed tar and 7z are SEQUENTIAL-access**; plain `.tar` and zip are random. `ArchiveFormat::is_sequential`
   declares the class (the volume layer surfaces it via `Volume::extraction_is_sequential`).
 - **Encryption: browsing usually works; extraction decrypts with a per-archive password.** Zip (ZipCrypto and WinZip

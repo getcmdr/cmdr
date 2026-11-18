@@ -15,8 +15,8 @@ use super::routing::ArchiveRoot;
 use crate::file_system::volume::{ResolvedVolume, RoutedKind};
 use crate::ignore_poison::IgnorePoison;
 use cmdr_archive::{
-    ARCHIVE_MAGIC_PREFIX_LEN, ArchiveFormat, ArchiveVolume, bytes_match_archive_magic, confirm_archive_boundary,
-    format_for_path,
+    ArchiveFormat, ArchiveVolume, confirm_archive_boundary, confirm_archive_boundary_on_parent,
+    confirm_remote_archive_boundary, format_for_path,
 };
 use cmdr_fs::archive_format::{archive_boundary_candidate, archive_boundary_candidates};
 use std::path::{Path, PathBuf};
@@ -62,13 +62,10 @@ impl VolumeManager {
     /// ALWAYS the input path — `ArchiveVolume` maps it to its inner namespace
     /// itself (see [`ResolvedVolume`]).
     ///
-    /// Confirmation is parent-aware. A LOCAL parent (`supports_local_fs_access`)
-    /// confirms with a cheap `std::fs` stat + magic read — byte-identical to the
-    /// pre-remote path. A REMOTE parent (direct SMB / MTP) can't be `std::fs`'d,
-    /// so it confirms through the parent's own `get_metadata` (is-it-a-file) + a
-    /// four-byte `read_range` (the zip magic). That's why this is `async`. See
-    /// [`confirm_remote_archive_boundary`].
-    ///
+    /// Confirmation is parent-aware, which is why this is `async`: a local
+    /// parent confirms with a `std::fs` stat and sniff, a remote one (direct SMB /
+    /// MTP) through its own I/O. `cmdr-archive` owns both halves
+    /// ([`confirm_archive_boundary_on_parent`]).
     pub(super) async fn resolve_archive(&self, volume_id: &str, path: &Path) -> ResolvedVolume {
         // Pure string pre-filter: no archive-extension component ⇒ zero I/O on
         // the hot listing path (neither disk nor network is touched here).
@@ -82,14 +79,10 @@ impl VolumeManager {
             return ResolvedVolume::passthrough(None, path);
         };
 
-        let confirmed = if parent.supports_local_fs_access() {
-            // Local: the existing std::fs stat + magic sniff, unchanged.
-            confirm_archive_boundary(path).is_some()
-        } else {
-            // Remote: confirm through the parent volume's own I/O.
-            confirm_remote_archive_boundary(parent.as_ref(), &zip_path).await
-        };
-        if !confirmed {
+        if confirm_archive_boundary_on_parent(parent.as_ref(), path)
+            .await
+            .is_none()
+        {
             return ResolvedVolume::passthrough(Some(parent), path);
         }
 
@@ -152,9 +145,8 @@ impl VolumeManager {
     /// remote archive-inner write reaches the managed edit driver instead of
     /// falling through to a confusing parent-volume write. The sync free function
     /// is `std::fs`-only, so it silently returns false for `smb://` / `mtp://`
-    /// paths — the bug this closes. Confirmation mirrors [`resolve`](Self::resolve):
-    /// a local parent uses the zero-network `std::fs` stat + magic sniff; a remote
-    /// parent confirms through its own `get_metadata` + four-byte `read_range`.
+    /// paths — the bug this closes. Confirmation is [`resolve`](Self::resolve)'s,
+    /// [`confirm_archive_boundary_on_parent`].
     pub async fn path_is_inside_archive(&self, volume_id: &str, path: &Path) -> bool {
         self.confirm_boundary_on_parent(volume_id, path)
             .await
@@ -173,20 +165,15 @@ impl VolumeManager {
         self.confirm_boundary_on_parent(volume_id, path).await.is_some()
     }
 
-    /// Shared confirm behind the two async boundary predicates above: returns the
+    /// Shared confirm behind the two async boundary predicates above: the
     /// `(zip_path, inner_path)` split when `path` crosses into a CONFIRMED archive
     /// on `volume_id`'s volume, else `None` (not an archive path, or the volume
-    /// isn't registered). Local parents confirm with `std::fs`; remote parents
-    /// (direct SMB / MTP) through the parent's own I/O, which is why it's `async`.
+    /// isn't registered).
     async fn confirm_boundary_on_parent(&self, volume_id: &str, path: &Path) -> Option<(PathBuf, PathBuf)> {
-        let (zip_path, inner) = archive_boundary_candidate(path)?;
+        // The pure string check first, so a plain path never takes the registry lock.
+        archive_boundary_candidate(path)?;
         let parent = self.get(volume_id)?;
-        let confirmed = if parent.supports_local_fs_access() {
-            confirm_archive_boundary(path).is_some()
-        } else {
-            confirm_remote_archive_boundary(parent.as_ref(), &zip_path).await
-        };
-        confirmed.then_some((zip_path, inner))
+        confirm_archive_boundary_on_parent(parent.as_ref(), path).await
     }
 
     /// Registers (or reuses) the [`ArchiveVolume`] for a confirmed `.zip` under
@@ -273,44 +260,6 @@ impl VolumeManager {
     }
 }
 
-/// Confirms a `.zip` candidate on a REMOTE parent (direct SMB / MTP) is a real,
-/// browsable archive, using the parent volume's own I/O instead of `std::fs`
-/// (the `.zip` isn't reachable through the local filesystem).
-///
-/// Mirrors the local [`confirm_archive_boundary`] check: the component must be a
-/// FILE (a directory named `foo.zip` loses to normal navigation) whose first
-/// bytes carry the format's magic. It reuses the SAME magic predicate
-/// ([`bytes_match_archive_magic`]) so local and remote agree on "is a `<format>`",
-/// reading one tar block ([`ARCHIVE_MAGIC_PREFIX_LEN`]) to cover a plain tar's
-/// ustar magic at offset 257.
-///
-/// **Refuse-typed on an unavailable primitive.** If the parent can't do a
-/// positioned read yet (`SmbVolume::read_range` before its smb2 primitive lands
-/// → `NotSupported`), or the sniff hits a transient remote fault, we can't rule
-/// the file out — so we route it anyway. The archive layer then re-attempts the
-/// read while parsing and surfaces a clean typed "unreadable archive" rather than
-/// mis-listing the file as a plain one. When the SMB primitive lands, the same
-/// path simply starts sniffing real magic and browsing for real — no code change.
-/// Only a *successful* read whose bytes DON'T match (a genuinely mislabeled remote
-/// file) declines the route.
-async fn confirm_remote_archive_boundary(parent: &dyn Volume, zip_path: &Path) -> bool {
-    match parent.get_metadata(zip_path).await {
-        Ok(meta) if !meta.is_directory => {}
-        // Not a file (a real remote dir named `foo.zip`), missing, or a metadata
-        // fault: don't route.
-        _ => return false,
-    }
-    let Some(format) = format_for_path(zip_path) else {
-        return false;
-    };
-    match parent.read_range(zip_path, 0, ARCHIVE_MAGIC_PREFIX_LEN).await {
-        Ok(bytes) => bytes_match_archive_magic(format, &bytes),
-        // Can't sniff (positioned reads unsupported, or a transient fault): route
-        // and let the archive layer refuse typed if it's truly unreadable.
-        Err(_) => true,
-    }
-}
-
 /// The registry id for the `ArchiveVolume` over `zip_path`:
 /// `archive-{hash(canonical zip path)}`. Canonicalized so two spellings of the
 /// same file share one registration. This id is backend-internal only — it never
@@ -340,6 +289,11 @@ fn archive_in_snapshot_volume_id(view: &Arc<dyn Volume>, zip_path: &Path) -> Str
 
 #[cfg(test)]
 mod tests {
+    //! The registry half: routing, reuse, the LRU, and the two predicates' wiring.
+    //! The confirm itself (folders named `foo.zip`, mislabeled files, the sniff's
+    //! refuse-typed routing, the local-or-remote fork) is `cmdr-archive`'s,
+    //! tested in its `boundary_on_parent_test.rs`.
+
     use super::*;
     use crate::file_system::volume::InMemoryVolume;
 
@@ -405,58 +359,6 @@ mod tests {
         assert!(resolved.is_routed(), "a remote zip must route to an ArchiveVolume");
         assert_eq!(resolved.path, inner);
         assert_eq!(resolved.volume.expect("archive volume").root(), zip);
-    }
-
-    #[tokio::test]
-    async fn resolve_declines_a_remote_directory_named_like_an_archive() {
-        // A real remote directory named `foo.zip` must lose to normal navigation.
-        let zip_dir = PathBuf::from("/device/folder.zip");
-        let parent = InMemoryVolume::new("Remote");
-        parent.create_directory(&zip_dir).await.expect("seed remote dir");
-        let manager = VolumeManager::new();
-        manager.register("root", Arc::new(parent));
-
-        let resolved = manager.resolve("root", &zip_dir.join("sub")).await;
-        assert!(!resolved.is_routed(), "a remote dir named foo.zip is not an archive");
-    }
-
-    #[tokio::test]
-    async fn resolve_declines_a_mislabeled_remote_file() {
-        // A remote file with an archive extension but non-zip bytes is a plain file.
-        let mislabeled = PathBuf::from("/device/notreally.zip");
-        let parent = InMemoryVolume::new("Remote");
-        parent
-            .create_file(&mislabeled, b"plain text, definitely not a zip")
-            .await
-            .expect("seed remote file");
-        let manager = VolumeManager::new();
-        manager.register("root", Arc::new(parent));
-
-        let resolved = manager.resolve("root", &mislabeled.join("inner")).await;
-        assert!(!resolved.is_routed(), "a mislabeled remote file is not an archive");
-    }
-
-    #[tokio::test]
-    async fn resolve_routes_a_remote_zip_even_when_ranged_reads_are_unsupported() {
-        // Models SMB before its positioned-read primitive lands: `get_metadata`
-        // confirms the file, but `read_range` is `NotSupported`. We still route so
-        // the archive layer surfaces a clean typed "unreadable" rather than
-        // mis-listing the `.zip` as a plain file — and it lights up unchanged once
-        // the primitive lands.
-        let zip = PathBuf::from("/share/bundle.zip");
-        let parent = InMemoryVolume::new("Remote").with_read_range_unsupported();
-        parent
-            .create_file(&zip, b"PK\x03\x04body")
-            .await
-            .expect("seed remote zip");
-        let manager = VolumeManager::new();
-        manager.register("root", Arc::new(parent));
-
-        let resolved = manager.resolve("root", &zip.join("inner")).await;
-        assert!(
-            resolved.is_routed(),
-            "route on an unavailable positioned-read primitive so the archive layer refuses typed"
-        );
     }
 
     #[tokio::test]
@@ -622,39 +524,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn path_is_inside_archive_routes_a_remote_zip_even_without_ranged_reads() {
-        // SMB before its positioned-read primitive lands: `get_metadata` confirms
-        // the file but `read_range` is `NotSupported`. We still detect it as
-        // archive-inner so the edit driver refuses typed rather than the write
-        // silently landing on the parent volume.
-        let zip = PathBuf::from("/share/bundle.zip");
-        let parent = InMemoryVolume::new("Remote").with_read_range_unsupported();
-        parent
-            .create_file(&zip, b"PK\x03\x04body")
-            .await
-            .expect("seed remote zip");
+    async fn the_boundary_predicates_answer_false_for_an_unregistered_volume() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let zip = dir.path().join("bundle.zip");
+        write_zip_magic(&zip);
         let manager = VolumeManager::new();
-        manager.register("root", Arc::new(parent));
 
-        assert!(manager.path_is_inside_archive("root", &zip.join("inner")).await);
-    }
-
-    #[tokio::test]
-    async fn path_is_inside_archive_declines_a_mislabeled_remote_file() {
-        let mislabeled = PathBuf::from("/device/notreally.zip");
-        let parent = InMemoryVolume::new("Remote");
-        parent
-            .create_file(&mislabeled, b"plain text, definitely not a zip")
-            .await
-            .expect("seed remote file");
-        let manager = VolumeManager::new();
-        manager.register("root", Arc::new(parent));
-
-        assert!(!manager.path_is_inside_archive("root", &mislabeled.join("inner")).await);
-        assert!(
-            !manager
-                .path_crosses_archive_boundary("root", &mislabeled.join("inner"))
-                .await
-        );
+        assert!(!manager.path_crosses_archive_boundary("nobody", &zip).await);
+        assert!(!manager.path_is_inside_archive("nobody", &zip.join("inner")).await);
     }
 }

@@ -10,7 +10,7 @@ browses, extracts, and **writes**; tar (every codec), 7z, and OOXML are **read-o
 ## Module map
 
 - `src/volume.rs` (+ `src/volume_streams.rs`, `src/volume_scan.rs`): the only `Volume`-trait code.
-- `src/boundary.rs`: the SHARED boundary detector + per-format magic, called by host routing and volume commands.
+- `src/boundary.rs` (+ `src/boundary_on_parent.rs`): the SHARED boundary detector, magic, and local-or-remote confirm.
 - `src/apple_double.rs`: the AppleDouble sidecar codec (`__MACOSX/._x`), read on extract and written on compress.
 - `src/read/CLAUDE.md` (the reading engine: Zip Slip, DoS caps, sans-IO fsm, codecs), `src/mutation/CLAUDE.md` (the
   zip-only temp+rename write side), `src/watch/CLAUDE.md` (the live content watch).
@@ -21,9 +21,9 @@ browses, extracts, and **writes**; tar (every codec), 7z, and OOXML are **read-o
 - **`cargo check -p cmdr-archive` is the whole verification loop**, and nothing here may name the app:
   `index-crate-isolation` keeps `tauri` / `cmdr` out and caps the public surface, so ❌ don't reach for `pub` as a
   compile fix. `#![deny(missing_docs)]` holds too.
-- **Everything the app answers arrives through the `VolumeHost` given to `ArchiveVolume::new`** (today only the watch,
-  via `host.runtime()` and `host.listings()`). ❌ Never `tokio::spawn`, and never a static of your own.
-  `crates/cmdr-fs/src/volume/host/CLAUDE.md` is the seam list.
+- **Everything the app answers arrives through the `VolumeHost` given to `ArchiveVolume::new`**: `host.listings()` for
+  the watch, `host.runtime()` for every spawn. ❌ No ambient runtime, clock, or timer (`clippy.toml` bans them), and
+  never a static of your own. `crates/cmdr-fs/src/volume/host/CLAUDE.md`.
 - **❌ Never gate behavior on `cfg(test)`; use `any(test, feature = "testing")`.** `cfg(test)` is set only while THIS
   crate builds its own test target, so a consumer's test build silently gets the production arm. Bitten three times.
 

@@ -24,6 +24,7 @@ use std::ops::ControlFlow;
 use std::sync::Arc;
 
 use cmdr_fs::metadata::Xattr;
+use cmdr_fs::rt::Runtime;
 
 use super::error::ArchiveError;
 use super::extract::{SubtreeMember, SubtreeTx};
@@ -69,6 +70,7 @@ impl TarStore {
         inner: &str,
         total: u64,
         source: Arc<dyn ArchiveByteSource>,
+        runtime: &Runtime,
     ) -> Result<ArchiveEntryReader, ArchiveError> {
         let member = self
             .members
@@ -78,14 +80,14 @@ impl TarStore {
         match self.codec {
             TarCodec::Plain => {
                 let offset = member.data_offset;
-                Ok(ArchiveEntryReader::spawn_with(total, move |tx| {
+                Ok(ArchiveEntryReader::spawn_with(runtime, total, move |tx| {
                     let range = SourceRangeReader::new(source, offset, total);
                     pump_read(range, &tx, Some(total), ArchiveError::from);
                 }))
             }
             codec => {
                 let target = inner.to_string();
-                Ok(ArchiveEntryReader::spawn_with(total, move |tx| {
+                Ok(ArchiveEntryReader::spawn_with(runtime, total, move |tx| {
                     stream_compressed_member(source, codec, &target, total, &tx);
                 }))
             }

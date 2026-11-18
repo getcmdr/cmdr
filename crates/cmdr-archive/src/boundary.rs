@@ -18,6 +18,8 @@
 //!   named `foo.zip` must lose to normal directory navigation) and that its
 //!   first bytes are a zip signature (a mislabeled file isn't routed). This runs
 //!   once per navigation, only when a component carries an archive extension.
+//!   It's `std::fs`-only; the parent-aware confirm a host routes with (local or
+//!   through a remote parent's own I/O) is `crate::boundary_on_parent`'s.
 
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -27,7 +29,7 @@ use super::read::{ArchiveFormat, TarCodec, format_for_name, format_for_path};
 /// Longest header prefix any format's magic check needs. A plain `.tar`'s ustar
 /// magic sits at offset 257, so one 512-byte tar block covers every format
 /// (zip/gzip/bzip2/xz/zstd/7z magics all live at offset 0).
-pub const ARCHIVE_MAGIC_PREFIX_LEN: usize = 512;
+pub(crate) const ARCHIVE_MAGIC_PREFIX_LEN: usize = 512;
 
 // The extension predicate and the extension-only split live in
 // `cmdr_fs::archive_format` alongside `format_for_name`, the suffix table both
@@ -41,9 +43,9 @@ pub use cmdr_fs::archive_format::has_supported_archive_extension;
 /// Whether `header` (a file's first bytes, ideally [`ARCHIVE_MAGIC_PREFIX_LEN`]
 /// long) carries the magic signature for `format`. Short slices simply fail to
 /// match (never panic), so a truncated read declines the route rather than
-/// mis-detecting. Shared by the local sniff and the REMOTE confirm in
-/// `VolumeManager`, so both agree on what "is a `<format>`" means.
-pub fn bytes_match_archive_magic(format: ArchiveFormat, header: &[u8]) -> bool {
+/// mis-detecting. Shared by the local sniff and the REMOTE confirm
+/// (`crate::boundary_on_parent`), so both agree on what "is a `<format>`" means.
+pub(crate) fn bytes_match_archive_magic(format: ArchiveFormat, header: &[u8]) -> bool {
     match format {
         // A document container carries the same `PK\x03\x04` header, so the
         // magic confirm is the zip one; only writability differs.
@@ -71,9 +73,9 @@ pub fn bytes_match_archive_magic(format: ArchiveFormat, header: &[u8]) -> bool {
 /// Blocking (a local stat + a few-byte read). Callers on the async executor
 /// accept it because it runs once per navigation and only when a path component
 /// carries an archive extension (the pure candidate check gates the I/O).
-/// This is `std::fs`-only, so it answers for a LOCAL parent alone; a remote
-/// parent confirms through its own volume I/O (`confirm_remote_archive_boundary`
-/// in the host's `archive_routing.rs`, sharing this module's magic predicate).
+/// This is `std::fs`-only, so it answers for a LOCAL parent alone; a host asks
+/// `confirm_archive_boundary_on_parent`, which forks to a remote parent's own
+/// I/O (sharing this module's magic predicate).
 pub fn confirm_archive_boundary(path: &Path) -> Option<(PathBuf, PathBuf)> {
     let (archive_path, inner_path) = archive_boundary_candidate(path)?;
     let metadata = std::fs::metadata(&archive_path).ok()?;
@@ -153,11 +155,9 @@ fn file_matches_archive_magic(path: &Path, format: ArchiveFormat) -> bool {
 /// archive's end-of-central-directory (`PK\x05\x06`), or the spanned-archive
 /// marker (`PK\x07\x08`). Fewer than four bytes isn't a zip.
 ///
-/// The single magic-byte predicate shared by the local sniff
-/// ([`file_matches_archive_magic`]) and a host's REMOTE confirm (which reads the
-/// first four bytes over the parent volume's `read_range`), so local and remote
-/// agree on what "is a zip" means.
-pub fn bytes_start_with_zip_signature(bytes: &[u8]) -> bool {
+/// The zip arm of [`bytes_match_archive_magic`], which both the local sniff and
+/// the remote confirm go through.
+fn bytes_start_with_zip_signature(bytes: &[u8]) -> bool {
     matches!(
         bytes.get(..4),
         Some(b"PK\x03\x04") | Some(b"PK\x05\x06") | Some(b"PK\x07\x08")

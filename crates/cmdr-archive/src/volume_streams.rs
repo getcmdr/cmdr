@@ -15,6 +15,7 @@ use super::to_volume_error;
 use crate::{ArchiveByteSource, ArchiveEntryReader, SubtreeExtractReader};
 use cmdr_fs::error_detail::ErrorDetail;
 use cmdr_fs::metadata::{CarriedMetadata, MetadataClasses, Xattr};
+use cmdr_fs::rt::Runtime;
 use cmdr_fs::volume::{ExtractedFile, SequentialExtract, Volume, VolumeError, VolumeReadStream};
 
 /// Wraps an [`ArchiveEntryReader`] as a [`VolumeReadStream`], mapping the core's
@@ -226,10 +227,11 @@ impl VolumeReadStream for MemberStream {
 ///
 /// The core's `read_at` is **blocking** (the parse and decompress run on
 /// `spawn_blocking`), but a `Volume`'s [`read_range`](Volume::read_range) is
-/// async. This bridges the two: it captures the tokio runtime handle at
-/// construction (on the async executor, in
-/// [`open_remote_source`](super::ArchiveVolume::open_remote_source)) and `block_on`s
-/// the parent's `read_range` from inside the blocking read. That's sound because
+/// async. This bridges the two: it holds the host's runtime (handed down from
+/// the `VolumeHost` in
+/// [`open_remote_source`](super::ArchiveVolume::open_remote_source), never an
+/// ambient lookup) and `block_on`s the parent's `read_range` from inside the
+/// blocking read. That's sound because
 /// `read_at` only ever runs on a `spawn_blocking` thread — never a runtime worker
 /// — so `block_on` doesn't reenter the executor (the same bridge the viewer's
 /// archive extractor uses). Shared as `Arc` across concurrent reads; `read_at`
@@ -241,16 +243,16 @@ pub(super) struct VolumeByteSource {
     /// The archive's size, from the parent's metadata at construction. A read at
     /// or past it returns EOF, matching a local `pread`.
     size: u64,
-    handle: tokio::runtime::Handle,
+    runtime: Runtime,
 }
 
 impl VolumeByteSource {
-    pub(super) fn new(parent: Arc<dyn Volume>, path: PathBuf, size: u64) -> Self {
+    pub(super) fn new(parent: Arc<dyn Volume>, path: PathBuf, size: u64, runtime: Runtime) -> Self {
         Self {
             parent,
             path,
             size,
-            handle: tokio::runtime::Handle::current(),
+            runtime,
         }
     }
 }
@@ -270,13 +272,27 @@ impl ArchiveByteSource for VolumeByteSource {
         let want = buf.len().min((self.size - offset) as usize);
         let parent = Arc::clone(&self.parent);
         let path = self.path.clone();
-        let data = self
-            .handle
-            .block_on(async move { parent.read_range(&path, offset, want).await })
-            // Typed, so the archive error it becomes still marks the parent's path.
-            .map_err(|err| std::io::Error::other(ErrorDetail::of(err)))?;
+        let data = block_on(
+            &self.runtime,
+            async move { parent.read_range(&path, offset, want).await },
+        )
+        // Typed, so the archive error it becomes still marks the parent's path.
+        .map_err(|err| std::io::Error::other(ErrorDetail::of(err)))?;
         let n = data.len().min(buf.len());
         buf[..n].copy_from_slice(&data[..n]);
         Ok(n)
     }
+}
+
+/// Runs `future` to completion on `runtime`, blocking this (blocking-pool) thread.
+#[cfg(not(target_family = "wasm"))]
+fn block_on<T>(runtime: &Runtime, future: impl Future<Output = Result<T, VolumeError>>) -> Result<T, VolumeError> {
+    runtime.block_on(future)
+}
+
+/// A page can't block on a remote read, so a remote-backed archive answers
+/// `NotSupported` in the browser build.
+#[cfg(target_family = "wasm")]
+fn block_on<T>(_runtime: &Runtime, _future: impl Future<Output = Result<T, VolumeError>>) -> Result<T, VolumeError> {
+    Err(VolumeError::NotSupported)
 }

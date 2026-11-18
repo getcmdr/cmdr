@@ -146,7 +146,7 @@ async fn a_partial_read_is_one_ranged_read_of_exactly_that_window() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn a_partial_read_falls_back_to_a_whole_file_read_without_ranged_reads() {
-    let parent = layout_volume(InMemoryVolume::new("parent").with_read_range_unsupported()).await;
+    let parent = layout_volume(InMemoryVolume::new("parent").with_read_range_failing(VolumeError::NotSupported)).await;
     let be = backend(&parent);
     let bytes = blocking(move || {
         be.read_partial(FileType::Pack, &id(PACK_A), false, 95, 5)

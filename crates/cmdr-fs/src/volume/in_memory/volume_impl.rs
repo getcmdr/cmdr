@@ -778,8 +778,8 @@ impl Volume for InMemoryVolume {
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            if self.read_range_unsupported {
-                return Err(VolumeError::NotSupported);
+            if let Some(failure) = &self.read_range_failure {
+                return Err(failure.clone());
             }
             let normalized = self.normalize(path);
             self.record_read_range(offset, len);

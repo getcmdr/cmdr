@@ -14,6 +14,15 @@
     unused_imports,
     reason = "facade re-exports the reading core's full surface; some names are consumed only within a submodule or in tests"
 )]
+// `clippy.toml` refuses an ambient spawn, clock read, or timer in the archive; a
+// test drives it from threads and tasks of its own, as a host does.
+#![cfg_attr(
+    test,
+    allow(
+        clippy::disallowed_methods,
+        reason = "tests drive the archive from their own threads and tasks, as a host would"
+    )
+)]
 
 //! The archive backend: presents a zip / tar / 7z file as a browsable, read-only
 //! folder (zip is also writable).
@@ -38,8 +47,9 @@
 //!   methods (which stay `NotSupported`).
 //!
 //! Around them: [`boundary`] (the routing detector a host uses to decide when to
-//! mint an `ArchiveVolume`) and [`watch`] (the live content watch on the backing
-//! file).
+//! mint an `ArchiveVolume`, with its parent-aware confirm,
+//! [`confirm_archive_boundary_on_parent`]) and [`watch`] (the live
+//! content watch on the backing file).
 //!
 //! See `CLAUDE.md` for the must-knows and `DETAILS.md` for the `ArchiveVolume`
 //! layer, routing, and remote-backed archives; each submodule folder carries its
@@ -63,6 +73,7 @@ pub mod volume;
 pub mod watch;
 
 mod apple_double;
+mod boundary_on_parent;
 mod mutation;
 
 /// Fixture builders for archive tests: clean zips, hostile byte-patched variants,
@@ -78,9 +89,10 @@ pub mod test_fixtures;
 pub use mutation::mutator;
 
 pub use boundary::{
-    ARCHIVE_MAGIC_PREFIX_LEN, bytes_match_archive_magic, bytes_start_with_zip_signature, confirm_archive_boundary,
-    has_supported_archive_extension, path_crosses_archive_boundary, path_is_inside_archive, path_targets_archive_file,
+    confirm_archive_boundary, has_supported_archive_extension, path_crosses_archive_boundary, path_is_inside_archive,
+    path_targets_archive_file,
 };
+pub use boundary_on_parent::{confirm_archive_boundary_on_parent, confirm_remote_archive_boundary};
 pub use read::{
     ArchiveByteSource, ArchiveEntryReader, ArchiveError, ArchiveFormat, ArchiveIndex, ArchiveIndexCache, ArchiveNode,
     BytesSource, DEFAULT_TAIL_CACHE_LEN, LocalFileSource, QuarantineReason, SanitizedName, SubtreeExtractReader,

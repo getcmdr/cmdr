@@ -23,6 +23,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use cmdr_fs::rt::Runtime;
 use sevenz_rust2::{ArchiveReader, EncoderMethod, Password};
 
 use super::error::ArchiveError;
@@ -53,13 +54,14 @@ impl SevenZStore {
         total: u64,
         source: Arc<dyn ArchiveByteSource>,
         password: Option<&str>,
+        runtime: &Runtime,
     ) -> Result<ArchiveEntryReader, ArchiveError> {
         if !self.members.contains_key(inner) {
             return Err(ArchiveError::NotFound(inner.to_string()));
         }
         let target = inner.to_string();
         let password = password.map(str::to_owned);
-        Ok(ArchiveEntryReader::spawn_with(total, move |tx| {
+        Ok(ArchiveEntryReader::spawn_with(runtime, total, move |tx| {
             stream_entry(source, &target, password.as_deref(), &tx);
         }))
     }

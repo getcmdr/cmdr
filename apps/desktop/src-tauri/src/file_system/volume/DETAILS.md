@@ -119,8 +119,9 @@ and each is capped by an LRU of its own; `ResolvedVolume.routed` says which one 
   the drive and `route_serving` (every write gate behind it) refuses, ❌ never writing a real `Browse snapshots/` into
   what may be a repo. `apps/desktop/src-tauri/src/file_system/restic/DETAILS.md`.
 - **`RoutedKind::Archive`** (`manager/archive_routing.rs`), when the path crosses a `.zip` boundary. Confirming a
-  boundary on a remote parent (direct SMB / MTP) costs a `get_metadata` plus a four-byte `read_range` over the
-  network, where a local parent confirms with a zero-network `std::fs` stat and magic sniff.
+  boundary on a remote parent (direct SMB / MTP) costs a `get_metadata` plus a 512-byte `read_range` over the
+  network, where a local parent confirms with a zero-network `std::fs` stat and magic sniff. The confirm is
+  `cmdr-archive`'s (`confirm_archive_boundary_on_parent`); the manager keeps the registration, the LRU, and the watch.
 
 - **The leftmost CONFIRMED boundary wins.** The routes nest both ways (a `.zip` or a `.git/branches` inside a restic
   snapshot, a restic repo inside a git snapshot), so `resolve` collects every lexical boundary, tries them left to

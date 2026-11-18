@@ -43,7 +43,7 @@ fn carried_names(path: &Path, inner: &str) -> Vec<String> {
         .build()
         .expect("a runtime");
     runtime
-        .block_on(index.item_xattrs(inner, source, None))
+        .block_on(index.item_xattrs(inner, source, None, runtime.handle()))
         .into_iter()
         .map(|xattr| xattr.name.to_string_lossy().into_owned())
         .collect()

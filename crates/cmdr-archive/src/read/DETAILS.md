@@ -205,7 +205,9 @@ Mirrors the SMB backend's channel-backed read (see `apps/desktop/src-tauri/src/f
 B"):
 
 - A `spawn_blocking` producer owns the `Arc<dyn ArchiveByteSource>` and the entry handle, seeks to the entry's local
-  header offset, and drives `EntryFsm` (read compressed bytes → decompress) entirely off the executor.
+  header offset, and drives `EntryFsm` (read compressed bytes → decompress) entirely off the executor. It spawns on the
+  `cmdr_fs::rt::Runtime` the caller passes to `open_read` / `open_subtree_extract` / `item_xattrs` (the volume layer
+  hands down `host.runtime()`), so the core never asks for an ambient one; `crates/cmdr-archive/clippy.toml` bans that.
 - It sends decompressed chunks (≤ 128 KiB each) through a bounded channel (capacity 4). Peak in-flight memory is
   `capacity × chunk` (~512 KiB) regardless of the entry's uncompressed size — never the whole entry (principle 5, the
   trait's "must stream" rule). The `streams_large_entry_in_bounded_chunks` test pins the per-chunk bound.

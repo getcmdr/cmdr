@@ -7,6 +7,7 @@ use std::ffi::OsString;
 use std::sync::Arc;
 
 use cmdr_fs::metadata::Xattr;
+use cmdr_fs::rt::Runtime;
 
 use super::*;
 use crate::apple_double;
@@ -31,7 +32,7 @@ fn listed(index: &ArchiveIndex, dir: &str) -> Vec<String> {
 
 async fn xattr_names(index: &ArchiveIndex, inner: &str, source: &Arc<dyn ArchiveByteSource>) -> Vec<String> {
     index
-        .item_xattrs(inner, Arc::clone(source), None)
+        .item_xattrs(inner, Arc::clone(source), None, &Runtime::current())
         .await
         .into_iter()
         .map(|xattr| xattr.name.to_string_lossy().into_owned())
@@ -77,7 +78,7 @@ async fn a_macos_tar_hides_its_dot_underscore_siblings_and_hands_each_item_its_t
 #[tokio::test]
 async fn the_one_pass_extract_hands_each_tar_member_its_xattrs() {
     let (index, source) = parse(APPLE_DOUBLE_BSDTAR_TAR_GZ, ArchiveFormat::Tar(TarCodec::Gzip));
-    let mut reader = index.open_subtree_extract("", source, None);
+    let mut reader = index.open_subtree_extract("", source, None, &Runtime::current());
     let mut seen = Vec::new();
     while let Some(member) = reader.next_member().await.expect("next member") {
         let names: Vec<String> = member
