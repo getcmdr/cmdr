@@ -163,6 +163,16 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `updates.toast.readyDetail`'s `other` branch serves Windows and Linux, but most locales' `app-closes` ruling is
   Windows-only (Linux says "quit"), so Linux reads the Windows verb. Split a `windows` branch if Linux should differ.
   (all)
+- `aboutThis.ownerPlace.preferences` ("Preferences", the macOS Library folder name kept verbatim) shares its English
+  with the new `linuxGnome` branch of `menu.app.settings` / `fileExplorer.quickFilter.intro.openSettings`, so
+  `i18n-terms` flags every locale that translates GNOME's row; de, nl, sv, and fr each carry an allowlist entry. A
+  `notMatch` on the `preferences` concept, or a term-consistency rule that skips a key carrying a
+  `sameAsSourceJustification`, would fix it once. (de, nl, sv, fr)
+- The `linuxGnome` / `linuxKde` branches name apps and paths the pile doesn't carry: GNOME's Passwords and Keys
+  (Seahorse), GNOME Settings > Keyboard > View and Customize Shortcuts, KDE System Settings > Keyboard > Shortcuts,
+  KDE's standard `Configure %1…` (kxmlgui), and KDE's word for a wallet. de, nl, sv, and fr record them `tentative`,
+  from memory; adding `seahorse.po`, `gnome-control-center.po`, `kxmlgui6.po`, `kwalletmanager.po`, and
+  `systemsettings.po` to the pile would let a translator cite them. (de, nl, sv, fr)
 
 ## Process feedback
 
@@ -244,3 +254,10 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
 - A 7-key batch for 13 locales: the worktree guard refused a `for` loop of `pnpm i18n:brief` calls, so each brief was
   its own call; a `--lang all --out-dir` mode writing one brief per locale would save it. The termbase check also failed
   on `decisions.md` budgets (de, es, nl, pt, zh: 2–10 bytes over) that this batch didn't touch. (Windows port batch)
+- `pnpm i18n:brief --missing` only finds keys ABSENT from the catalog, so after `sync-locale-keys.ts` adds the English
+  skeletons it selects nothing, and a second locale's brief needed the first one's `keys.txt` passed by hand
+  (`--keys-file`). `i18n:apply` also refuses absent keys until a sync, so the brief can't come first. A `--untranslated`
+  selector (coverage's definition) would cover both. (de, nl, sv, fr)
+- A `windows` / `other` form on a ruling (`quit` in nl) also judges every PLAIN value, so a Linux-only verb made 20
+  plain `quit` keys drift; a single key's exception was the only way out. Scoping per-OS forms to block branches would
+  let them carry Linux words. (nl)

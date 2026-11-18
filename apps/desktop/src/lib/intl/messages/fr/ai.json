@@ -107,9 +107,9 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {Le site web d’où provient le téléchargement noté (uniquement l’adresse principale du site, comme github.com, jamais un sous-domaine ni le lien complet), sa date et l’app qui a téléchargé l’élément. Pour une pièce jointe de Mail ou un envoi AirDrop, uniquement ce fait, jamais qui l’a envoyé} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {Le site web d’où provient le téléchargement noté (uniquement l’adresse principale du site, comme github.com, jamais un sous-domaine ni le lien complet), sa date et l’app qui a téléchargé l’élément. Pour une pièce jointe de Mail ou un envoi AirDrop, uniquement ce fait, jamais qui l’a envoyé} other {Le site web d’où provient le téléchargement noté (uniquement l’adresse principale du site, comme github.com, jamais un sous-domaine ni le lien complet), sa date et l’app qui a téléchargé l’élément}}",
   "@ai.cloudConsent.aboutThis.item.download": {
-    "sourceHash": "40d185c"
+    "sourceHash": "6594500"
   },
   "ai.cloudConsent.aboutThis.item.appAndSigner": "Pour une app ou un programme, son nom, son identifiant et sa version. Pour ceux-ci ou une image disque, le nom et l’identifiant d’équipe du signataire, si son code correspond toujours à cette signature et si le ticket de notarisation d’Apple y est joint",
   "@ai.cloudConsent.aboutThis.item.appAndSigner": {
@@ -596,29 +596,29 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Impossible d’enregistrer votre clé d’API : le Trousseau macOS a refusé l’accès} other {Impossible de lire votre clé d’API enregistrée : le Trousseau macOS a refusé l’accès}}} windows {{op, select, save {Impossible d’enregistrer votre clé d’API : le Gestionnaire d’identification a refusé l’accès} other {Impossible de lire votre clé d’API enregistrée : le Gestionnaire d’identification a refusé l’accès}}} linuxKde {{op, select, save {Couldn’t save your API key: KWallet denied access} other {Couldn’t read your saved API key: KWallet denied access}}} other {{op, select, save {Impossible d’enregistrer votre clé d’API : le trousseau du système a refusé l’accès} other {Impossible de lire votre clé d’API enregistrée : le trousseau du système a refusé l’accès}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Impossible d’enregistrer votre clé d’API : le Trousseau macOS a refusé l’accès} other {Impossible de lire votre clé d’API enregistrée : le Trousseau macOS a refusé l’accès}}} windows {{op, select, save {Impossible d’enregistrer votre clé d’API : le Gestionnaire d’identification a refusé l’accès} other {Impossible de lire votre clé d’API enregistrée : le Gestionnaire d’identification a refusé l’accès}}} linuxKde {{op, select, save {Impossible d’enregistrer votre clé d’API : KWallet a refusé l’accès} other {Impossible de lire votre clé d’API enregistrée : KWallet a refusé l’accès}}} other {{op, select, save {Impossible d’enregistrer votre clé d’API : le trousseau du système a refusé l’accès} other {Impossible de lire votre clé d’API enregistrée : le trousseau du système a refusé l’accès}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "25b34c4"
+    "sourceHash": "6daa595"
   },
-  "ai.secretError.body": "{platform, select, macos {{op, select, save {Ouvrez Trousseaux d’accès et vérifiez l’entrée « Cmdr », ou supprimez-la puis réessayez d’enregistrer.} other {Ouvrez Trousseaux d’accès, trouvez l’entrée « Cmdr », autorisez l’accès, ou supprimez-la puis saisissez de nouveau votre clé.}}} windows {{op, select, save {Ouvrez le Gestionnaire d’identification, vérifiez l’entrée « Cmdr » sous Informations d’identification Windows, ou supprimez-la puis réessayez d’enregistrer.} other {Ouvrez le Gestionnaire d’identification, trouvez l’entrée « Cmdr » sous Informations d’identification Windows, ou supprimez-la puis saisissez de nouveau votre clé.}}} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Déverrouillez votre trousseau (application Mots de passe ou Trousseaux) puis réessayez.}}",
+  "ai.secretError.body": "{platform, select, macos {{op, select, save {Ouvrez Trousseaux d’accès et vérifiez l’entrée « Cmdr », ou supprimez-la puis réessayez d’enregistrer.} other {Ouvrez Trousseaux d’accès, trouvez l’entrée « Cmdr », autorisez l’accès, ou supprimez-la puis saisissez de nouveau votre clé.}}} windows {{op, select, save {Ouvrez le Gestionnaire d’identification, vérifiez l’entrée « Cmdr » sous Informations d’identification Windows, ou supprimez-la puis réessayez d’enregistrer.} other {Ouvrez le Gestionnaire d’identification, trouvez l’entrée « Cmdr » sous Informations d’identification Windows, ou supprimez-la puis saisissez de nouveau votre clé.}}} linuxGnome {Déverrouillez votre trousseau dans Mots de passe et clés, puis réessayez.} linuxKde {Déverrouillez votre portefeuille dans KWalletManager, puis réessayez.} other {Déverrouillez votre trousseau (application Mots de passe ou Trousseaux) puis réessayez.}}",
   "@ai.secretError.body": {
-    "sourceHash": "d65c5e3"
+    "sourceHash": "8a5496f"
   },
   "ai.secretError.genericTitle": "{op, select, save {Impossible d’enregistrer votre clé d’API.} other {Impossible de lire votre clé d’API enregistrée.}}",
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Vérifiez que votre trousseau est disponible, puis réessayez. Si le problème persiste, redémarrez l’application.} windows {Vérifiez que le Gestionnaire d’identification est disponible, puis réessayez. Si le problème continue, redémarrez Cmdr.} linuxKde {Check that KWallet is available, then try again. If it persists, restart the app.} other {Vérifiez que le trousseau de votre système est disponible, puis réessayez. Si le problème persiste, redémarrez l’application.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Vérifiez que votre trousseau est disponible, puis réessayez. Si le problème persiste, redémarrez l’application.} windows {Vérifiez que le Gestionnaire d’identification est disponible, puis réessayez. Si le problème continue, redémarrez Cmdr.} linuxKde {Vérifiez que KWallet est disponible, puis réessayez. Si le problème persiste, redémarrez l’application.} other {Vérifiez que le trousseau de votre système est disponible, puis réessayez. Si le problème persiste, redémarrez l’application.}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "9fc0702"
+    "sourceHash": "cb879fa"
   },
   "ai.secretError.removeTitle": "Impossible de retirer votre clé d’API enregistrée.",
   "@ai.secretError.removeTitle": {
     "sourceHash": "5986628"
   },
-  "ai.secretError.removeBody": "{platform, select, macos {Ouvrez Trousseaux d’accès, trouvez l’entrée « Cmdr » et supprimez-la.} windows {Ouvrez le Gestionnaire d’identification, trouvez l’entrée « Cmdr » sous Informations d’identification Windows et supprimez-la.} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Déverrouillez votre trousseau (application Mots de passe ou Trousseaux) puis réessayez.}}",
+  "ai.secretError.removeBody": "{platform, select, macos {Ouvrez Trousseaux d’accès, trouvez l’entrée « Cmdr » et supprimez-la.} windows {Ouvrez le Gestionnaire d’identification, trouvez l’entrée « Cmdr » sous Informations d’identification Windows et supprimez-la.} linuxGnome {Déverrouillez votre trousseau dans Mots de passe et clés, puis réessayez.} linuxKde {Déverrouillez votre portefeuille dans KWalletManager, puis réessayez.} other {Déverrouillez votre trousseau (application Mots de passe ou Trousseaux) puis réessayez.}}",
   "@ai.secretError.removeBody": {
-    "sourceHash": "3a85511"
+    "sourceHash": "ab0d2ec"
   },
   "ai.managed.aiOff": "Votre organisation a désactivé l’IA dans Cmdr.",
   "@ai.managed.aiOff": {
