@@ -314,6 +314,10 @@ destination takes").
   period. **Decision/Why**: macOS's drivers accept these and write private-use stand-ins (U+F020…U+F029), so nothing
   fails on the Mac, but the stick then reads differently everywhere else, and Windows refuses each one outright. The
   name that lands has to be the name the person typed.
+- **Linux spellings**: `ntfs3`, `ntfs-3g`, `fuse.ntfs-3g`, and `lowntfs-3g` are NTFS, `smb3` is a share. **Known gap**:
+  ntfs-3g usually reports a bare `fuseblk`, which exfat-fuse reports too, so it stays `Other` (POSIX rules). Calling it
+  NTFS would also claim stable inodes for exfat-fuse, whose inodes are derived (`has_stable_inodes`). Closing it means
+  reading the partition's real format (udev's `ID_FS_TYPE`, or the superblock), not the mount table.
 - **Length is 255 bytes, inclusive, for every rules set** (`MAX_NAME_BYTES`; a 255-byte name is fine). The UTF-16
   formats take some longer non-ASCII names; 255 bytes is the floor the byte-counting ones (ext4, ZFS, Samba over them)
   set.
