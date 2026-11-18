@@ -92,8 +92,9 @@ fn sits_on(image: &AttachedImage, targets: &[u64], device_of: &impl Fn(&Path) ->
 #[cfg(target_os = "macos")]
 pub(super) use macos::attached;
 
-/// Linux attaches no disk images, and its holder walk names nobody to ask about.
-#[cfg(not(target_os = "macos"))]
+/// Linux and Windows attach no disk images Cmdr reads, and their holder walk names nobody to ask
+/// about.
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub(super) fn attached() -> Option<Vec<AttachedImage>> {
     None
 }

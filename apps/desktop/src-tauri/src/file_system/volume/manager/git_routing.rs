@@ -112,6 +112,7 @@ fn git_portal_volume_id(repo_root: &Path) -> String {
 }
 
 #[cfg(test)]
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, `libc`, or `std::os::unix` (windows-port plan).
 mod tests {
     use super::*;
     use cmdr_git::test_fixtures::{Fixture, cleanup, temp_dir};

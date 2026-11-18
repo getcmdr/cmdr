@@ -167,6 +167,7 @@ async fn cancellation_during_pending_resolution_completes_the_ui_without_droppin
     assert!(listing.entries()[0].recursive_size.is_none(), "no late walk starts");
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 async fn unreadable_and_quickly_cancelled_retries_preserve_a_manual_partial() {
     let dir = crate::test_support::TestDir::new("count-manual-unreadable");

@@ -8,6 +8,21 @@
 // platform-specific cfg mismatches, and the `use foo as _;` markers it needs
 // live in `crate_deps.rs`.
 #![warn(unused_crate_dependencies)]
+// Windows, while its port is in progress: code that only the macOS and Linux arms call today, and
+// a Windows arm will once it lands, is dead there. Exactly three features, each a stub in
+// `docs/specs/windows-port-plan.md` § "Windows build state": the mount watcher's unmount handling
+// (`VolumeManager::remove_root`, `os_mount_notice::forget_unmounted_volume`; the drives task),
+// stored favorites in the switcher (`favorites::target::{on_disk, FavoriteTarget::discovered}`),
+// and the native-crash report's conversion (`next_launch::to_iso8601`, `symbolicate`; the
+// minidumps task). `expect`, so the build says when it can go.
+#![cfg_attr(
+    target_os = "windows",
+    expect(
+        dead_code,
+        unused_imports,
+        reason = "Windows arms still missing: the unmount watcher, stored favorites, native-crash reports"
+    )
+)]
 
 // An unknown target is one outside macOS, Linux, and Windows (`cmdr_host`, set by `build.rs`
 // through `cmdr-platform-cfg`). Windows is known: it fails, if it fails, at each platform seam
@@ -437,7 +452,6 @@ pub fn run() {
             // `volumes-ejecting-changed`, the twin of the write engine's
             // `volumes-busy-changed`: which Eject controls show an eject still
             // running. Before the frontend can ask for one.
-            #[cfg(any(target_os = "macos", target_os = "linux"))]
             file_system::volume::eject::init_ejecting_volume_emitter(app.handle());
 
             // The status-corner indicator subscribes to this rather than polling `main.db`.

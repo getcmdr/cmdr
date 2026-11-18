@@ -15,6 +15,11 @@ launches (the plugin has no bound-port accessor, so external readers learn the p
 `CMDR_DATA_DIR` and `CMDR_SECRET_STORE=file` for non-prod. Production leaves `CMDR_INSTANCE_ID` unset and runs
 byte-identical to before instance isolation existed.
 
+It runs the Tauri CLI as `node <@tauri-apps/cli/tauri.js>` with its own Node (`process.execPath`), ❌ never by spawning
+`pnpm exec tauri`: on Windows `pnpm` is a `.cmd` shim that Node won't spawn without a shell (`spawn pnpm ENOENT`,
+verified on the Windows 10 22H2 builder, `pnpm tauri build --debug`, 2026-11-18), and a shell would re-quote every
+forwarded argument.
+
 ### Dev forces the MCP server on (`CMDR_MCP_ENABLED=1`)
 
 For `pnpm dev` launches the wrapper exports `CMDR_MCP_ENABLED=1` unless the env var is already set. Without it, MCP is

@@ -1,6 +1,8 @@
 //! Tests for the archive kind: the `.zip` itself, a directory inside it, a file inside it
 //! (read through the bounded temp), encryption and cap refusals, and connected remote files.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;

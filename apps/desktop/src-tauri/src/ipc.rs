@@ -323,8 +323,6 @@ macro_rules! ipc_command_manifest {
                     crate::commands::sync_status::get_sync_status,
                     crate::commands::smb_diagnostics::list_smb_volumes,
                     crate::commands::smb_diagnostics::get_smb_diagnostics,
-                    // `eject_volume` is macOS + Linux only, but the busy set behind it is plain
-                    // `crate::file_system`, so this one answers everywhere the invoke handler does.
                     crate::commands::eject::get_busy_volume_ids,
                     crate::volume_broadcast::refresh_volumes,
                     crate::space_poller::watch_volume_space,
@@ -675,9 +673,9 @@ macro_rules! ipc_command_manifest {
                 ]
                 dispatch_only: []
             }
-            // Eject: the volumes seam's, macOS and Linux for now. Between the network halves only
-            // so `bindings.ts` keeps its order.
-            cfg(any(target_os = "macos", target_os = "linux")) {
+            // Eject, on every OS (`file_system/volume/eject/platform/` holds what differs). Between
+            // the network halves only so `bindings.ts` keeps its order.
+            cfg(all()) {
                 typed: [
                     crate::commands::eject::eject_volume,
                     crate::commands::eject::eject_all_on_disk,

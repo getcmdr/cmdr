@@ -1,6 +1,8 @@
 //! Where a proposal may point: every place resolves onto a live volume, or onto a proven,
 //! signed-in sibling of the one named, or the whole call refuses in the read tools' miss shape.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use cmdr_fs::volume::ConnectionState;
 use rusqlite::Connection;
 use serde_json::{Value, json};

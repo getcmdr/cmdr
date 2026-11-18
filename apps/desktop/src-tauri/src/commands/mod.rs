@@ -12,7 +12,6 @@ pub mod data_wipe;
 #[cfg(target_os = "macos")]
 pub mod dock;
 pub mod e2e;
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod eject;
 pub mod error_reporter;
 pub mod favorites;

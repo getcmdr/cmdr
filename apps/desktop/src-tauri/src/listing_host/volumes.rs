@@ -15,7 +15,6 @@ use cmdr_listing::host::{ListingVolumes, Unregistered};
 /// and reports the volume missing. It reads the mount table and one NSURL
 /// resource, which is sub-millisecond locally and can hang on a wedged mount, so
 /// it's bounded like every other mount-touching read (`commands/CLAUDE.md`).
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 const ADOPT_MOUNT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(2);
 
 /// Answers from the app's `VolumeManager`, resolved per call.
@@ -68,18 +67,10 @@ impl ListingVolumes for AppVolumes {
 /// Registers the live mount serving `path` when it derives exactly `volume_id`,
 /// off the async thread and under [`ADOPT_MOUNT_TIMEOUT`].
 async fn adopt_mount(volume_id: &str, path: &Path) -> Option<Arc<dyn Volume>> {
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    {
-        let volume_id = volume_id.to_string();
-        let path = path.to_path_buf();
-        cmdr_fs::deadline::blocking_with_timeout(ADOPT_MOUNT_TIMEOUT, None, move || {
-            crate::file_system::volume::mount_registration::adopt_mount_serving(&volume_id, &path)
-        })
-        .await
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-    {
-        let _ = (volume_id, path);
-        None
-    }
+    let volume_id = volume_id.to_string();
+    let path = path.to_path_buf();
+    cmdr_fs::deadline::blocking_with_timeout(ADOPT_MOUNT_TIMEOUT, None, move || {
+        crate::file_system::volume::mount_registration::adopt_mount_serving(&volume_id, &path)
+    })
+    .await
 }

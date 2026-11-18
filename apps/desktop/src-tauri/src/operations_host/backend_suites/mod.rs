@@ -129,7 +129,11 @@ mod smb_transfer_safety_test;
 mod smb_transfer_semantics_test;
 // Measurement harnesses for the volume copy over SMB, `#[ignore]`d and run by
 // hand: a NAS baseline and a concurrency-window sweep.
+#[cfg(all(test, unix))]
+// POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 mod copy_bench;
+#[cfg(all(test, unix))]
+// POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 mod copy_concurrency_bench;
 
 // NFS: gated on the knfsd fixture and named for the `nfs_integration_` lane.

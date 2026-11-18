@@ -158,6 +158,7 @@ async fn an_offset_past_the_cap_is_refused_before_anything_is_read() {
     assert!(problem.message.contains("subfolder"), "the refusal names the next move");
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 async fn a_live_read_lists_a_real_folder_through_its_volume() {
     let dir = TestDir::new("live-real-read");
@@ -206,6 +207,7 @@ async fn a_live_read_lists_a_real_folder_through_its_volume() {
     );
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 async fn a_missing_folder_read_live_is_a_typed_miss_not_an_empty_listing() {
     let dir = TestDir::new("live-real-missing");

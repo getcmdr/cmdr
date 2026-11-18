@@ -643,6 +643,7 @@ fn a_moved_per_user_dir_is_protected_where_the_host_keeps_it() {
 }
 
 /// The host's dir may itself be a link, and so may the path asked for.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn the_gate_follows_links_into_and_out_of_a_moved_dir() {
     let dir = TestDir::new("gate-moved-dir");
@@ -671,6 +672,7 @@ fn the_gate_follows_links_into_and_out_of_a_moved_dir() {
     assert_eq!(gate_on(token.to_str().unwrap(), None, &[]), Ok(()));
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_symlink_into_a_mail_or_browser_folder_is_refused_by_the_gate() {
     let dir = TestDir::new("gate-symlink-mail");

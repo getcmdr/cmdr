@@ -1,12 +1,16 @@
 //! Stable, hashed device identifier for fair-use license tracking.
 //!
 //! Generates a one-way hash of the platform id (`IOPlatformUUID` on macOS, `/etc/machine-id`
-//! on Linux), prefixed with a version tag.
+//! on Linux, `MachineGuid` on Windows; read in `platform/`), prefixed with a version tag.
 //! The hash is salted with `"cmdr:"` so it can't be correlated across products.
 //! Result format: `v1:<64-char hex SHA-256>`.
 
 use sha2::{Digest, Sha256};
 use std::sync::OnceLock;
+
+mod platform;
+
+use platform::read_platform_uuid;
 
 /// Cached device ID (computed once per session).
 static DEVICE_ID: OnceLock<Option<String>> = OnceLock::new();
@@ -30,75 +34,6 @@ fn hash_platform_uuid(uuid: &str) -> String {
     // so format the bytes by hand.
     let hex: String = hash.iter().map(|b| format!("{b:02x}")).collect();
     format!("v1:{hex}")
-}
-
-/// Read `IOPlatformUUID` from the IOKit registry via FFI.
-#[cfg(target_os = "macos")]
-fn read_platform_uuid() -> Option<String> {
-    use core_foundation::base::TCFType;
-    use core_foundation::string::{CFString, CFStringRef};
-    use std::ffi::c_void;
-
-    #[link(name = "IOKit", kind = "framework")]
-    unsafe extern "C" {
-        fn IOServiceGetMatchingService(main_port: u32, matching: *const c_void) -> u32;
-        fn IOServiceMatching(name: *const std::ffi::c_char) -> *const c_void;
-        fn IORegistryEntryCreateCFProperty(
-            entry: u32,
-            key: CFStringRef,
-            allocator: *const c_void,
-            options: u32,
-        ) -> *const c_void;
-        fn IOObjectRelease(object: u32) -> i32;
-    }
-
-    // SAFETY: `c"IOPlatformExpertDevice"` is a valid NUL-terminated C string. The matching dict
-    // from `IOServiceMatching` is consumed by `IOServiceGetMatchingService` (it takes ownership),
-    // so we must NOT release it ourselves. The returned `service` registry-entry handle is balanced
-    // by `IOObjectRelease`. `IORegistryEntryCreateCFProperty` returns the value under the Create
-    // rule, null-checked, then handed to `wrap_under_create_rule`, which takes that single ownership
-    // and releases it once on drop. `key` is a live CFString for the call.
-    unsafe {
-        let matching = IOServiceMatching(c"IOPlatformExpertDevice".as_ptr());
-        if matching.is_null() {
-            log::warn!("IOServiceMatching returned null");
-            return None;
-        }
-
-        // kIOMasterPortDefault / kIOMainPortDefault = 0
-        let service = IOServiceGetMatchingService(0, matching);
-        // IOServiceMatching result is consumed by IOServiceGetMatchingService: don't CFRelease it.
-        if service == 0 {
-            log::warn!("IOServiceGetMatchingService found no platform expert");
-            return None;
-        }
-
-        let key = CFString::new("IOPlatformUUID");
-        let cf_value = IORegistryEntryCreateCFProperty(service, key.as_concrete_TypeRef(), std::ptr::null(), 0);
-        IOObjectRelease(service);
-
-        if cf_value.is_null() {
-            log::warn!("IORegistryEntryCreateCFProperty returned null for IOPlatformUUID");
-            return None;
-        }
-
-        let cf_string = CFString::wrap_under_create_rule(cf_value as CFStringRef);
-        Some(cf_string.to_string())
-    }
-}
-
-/// Read the systemd machine id, falling back to the D-Bus copy on systems without systemd.
-///
-/// It changes on reinstall and is shared by cloned VMs, so those count as new or the same
-/// device respectively. Accepted (David, 2026-11-05, #980).
-#[cfg(target_os = "linux")]
-fn read_platform_uuid() -> Option<String> {
-    use std::path::Path;
-    let id = read_machine_id(&[Path::new("/etc/machine-id"), Path::new("/var/lib/dbus/machine-id")]);
-    if id.is_none() {
-        log::warn!("No usable machine-id found; license checks will carry no device id");
-    }
-    id
 }
 
 /// Returns the first usable machine id among `paths`, in order. Unreadable files are skipped.

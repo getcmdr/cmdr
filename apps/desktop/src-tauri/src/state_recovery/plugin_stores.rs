@@ -308,6 +308,7 @@ mod tests {
     /// A file that's there but can't be read (mode 000, as after a `sudo` run or a restore) is set
     /// aside like a damaged one, so its bytes stay and the plugin starts from no file. A recovered
     /// `settings.json` still comes back with both consents off.
+    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[test]
     fn an_unreadable_store_file_is_kept_and_starts_from_no_file() {
         use std::os::unix::fs::PermissionsExt;

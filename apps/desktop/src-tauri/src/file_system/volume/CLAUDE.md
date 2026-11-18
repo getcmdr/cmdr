@@ -8,7 +8,7 @@ App-side backend, registry, and eject wiring. Every operation goes through a `Vo
 - `manager.rs` (+ `manager/`: `routing.rs`'s three routes, the mount-root set): the registry behind
   `get_volume_manager()`.
 - `mount_registration.rs`: the one way a MOUNT becomes a registered volume (startup sweep, mount watcher, adoption).
-- `backends/` (own `CLAUDE.md`), `eject/` (teardown by kind, macOS+Linux), `drive_release/` (the index stop/start
+- `backends/` (own `CLAUDE.md`), `eject/` (teardown by kind), `drive_release/` (the index stop/start
   gate), `friendly_error/` (in `cmdr-fs`).
 
 ## Must-knows

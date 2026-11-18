@@ -67,17 +67,29 @@ fn main() {
 ///
 /// Read only for a Windows target, so no other build watches the file or reads it. tauri-build
 /// itself reads `WindowsAttributes` only for a Windows target, so elsewhere this is its default.
+///
+/// ❗ Under MSVC the linker embeds it in EVERY binary it links (`/MANIFEST:EMBED`), test harnesses
+/// included, and tauri-build embeds none. tauri-build's resource reaches the app's binaries only,
+/// so a test binary ran without the Common Controls v6 dependency and Windows refused to load it:
+/// `STATUS_ENTRYPOINT_NOT_FOUND` (0xc0000139) before `main`, as `cargo nextest run -p cmdr` showed on
+/// the Windows 10 22H2 builder (2026-11-18). The GNU target keeps tauri-build's resource.
 fn windows_attributes() -> tauri_build::WindowsAttributes {
     const APP_MANIFEST: &str = "windows/app.manifest";
 
-    let attributes = tauri_build::WindowsAttributes::new();
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
-        return attributes;
+        return tauri_build::WindowsAttributes::new();
     }
     println!("cargo:rerun-if-changed={APP_MANIFEST}");
+    if std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("msvc") {
+        let dir = std::env::var("CARGO_MANIFEST_DIR").expect("cargo sets CARGO_MANIFEST_DIR for build scripts");
+        let path = std::path::Path::new(&dir).join(APP_MANIFEST);
+        println!("cargo:rustc-link-arg=/MANIFEST:EMBED");
+        println!("cargo:rustc-link-arg=/MANIFESTINPUT:{}", path.display());
+        return tauri_build::WindowsAttributes::new_without_app_manifest();
+    }
     let manifest =
         std::fs::read_to_string(APP_MANIFEST).unwrap_or_else(|error| panic!("couldn't read {APP_MANIFEST}: {error}"));
-    attributes.app_manifest(manifest)
+    tauri_build::WindowsAttributes::new().app_manifest(manifest)
 }
 
 /// Compiles the frontend's authoritative command-id tuple into a Rust slice.

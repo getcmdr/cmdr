@@ -2,6 +2,8 @@
 //! `find` with pages), the three `textUnavailable` reasons, the pure page-loop shapers
 //! under their caps, the private-key pre-scan, a PDF inside a zip, params, and the text-only walk.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};

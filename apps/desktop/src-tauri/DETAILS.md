@@ -152,8 +152,12 @@ the `[dependencies]` entry, or else every `[target.*]` entry, against the one ta
 match in the same way. Both are inert anyway: the feature has been a no-op since Tauri 2.12.1 (`tauri` 2.12.5 crate
 docs; `tauri-runtime`'s feature is empty, and wry 0.57 uses the private API unconditionally).
 
-**The Windows app manifest** is `windows/app.manifest`. `build.rs` hands it to tauri-build as
-`WindowsAttributes::app_manifest` and reads it only for a Windows target; tauri-build embeds it only there either way.
+**The Windows app manifest** is `windows/app.manifest`, read only for a Windows target. Under MSVC, `build.rs` has the
+linker embed it in every binary (`/MANIFEST:EMBED`, `/MANIFESTINPUT`) and gives tauri-build
+`WindowsAttributes::new_without_app_manifest()`: tauri-build's resource reaches the app's bins only, and a test binary
+without the Common Controls v6 dependency fails to load (`STATUS_ENTRYPOINT_NOT_FOUND`, verified on the Windows 10
+22H2 builder, `cargo nextest run -p cmdr`, 2026-11-18). The GNU target hands it to tauri-build as
+`WindowsAttributes::app_manifest`.
 It replaces tauri-build's default, so it repeats that default's Common Controls v6 dependency (the native dialogs need
 it) and adds `longPathAware` (paths past 260 characters, once the machine's `LongPathsEnabled` policy is on too) and
 per-monitor-v2 DPI awareness (`dpiAwareness` `PerMonitorV2`, with `dpiAware` `true/pm` for an OS that predates it).

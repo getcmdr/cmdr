@@ -1,6 +1,8 @@
 //! Calculating folder sizes on demand: which folders a count walks, what the
 //! pane hears while it walks, and how it ends.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use std::sync::{Arc, Mutex};
 
 use cmdr_fs::volume::InMemoryVolume;

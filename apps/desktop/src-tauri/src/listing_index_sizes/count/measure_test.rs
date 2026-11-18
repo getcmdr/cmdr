@@ -1,6 +1,7 @@
 //! The local walk: running totals, the stop, and an unreadable subfolder skipped
 //! rather than ending the count.
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 use std::os::unix::fs::PermissionsExt;
 use std::sync::Arc;
 use tokio::time::Instant;
@@ -39,6 +40,7 @@ fn the_walk_counts_files_folders_and_bytes() {
     jobs::cancel("measure-count");
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn an_unreadable_subfolder_is_skipped_and_the_rest_still_counted() {
     // Root bypasses chmod restrictions (including in the Linux test container).

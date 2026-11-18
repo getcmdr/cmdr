@@ -284,6 +284,7 @@ fn a_report_selects_every_open_virtual_listing_for_the_repo() {
 /// matched no listing at all, and a `git branch` never reached the open
 /// `branches/` pane (caught by `git-portal.spec.ts`, 2026-09-05). A symlink to
 /// the fixture reproduces it wherever the suite runs.
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_listing_reached_through_a_symlink_is_still_the_repos() {
     use crate::file_system::volume::DEFAULT_VOLUME_ID;

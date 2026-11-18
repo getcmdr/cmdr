@@ -532,9 +532,9 @@ mod platform {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod platform {
-    //! Linux has no holder walk, so nothing ever reaches these. They exist so the rules
+    //! Linux and Windows have no holder walk, so nothing ever reaches these. They exist so the rules
     //! above have ONE shape on every platform: a fact nobody could gather reads as
     //! "couldn't tell", which is what the kinds already mean.
 

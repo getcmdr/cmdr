@@ -15,6 +15,7 @@
 use serde_json::{Value, json};
 
 use super::{ToolError, ToolResult};
+use crate::file_system::volume::eject::{EjectError, EjectScope};
 
 pub async fn execute_eject(params: &Value) -> ToolResult {
     let volume_id = params
@@ -22,60 +23,49 @@ pub async fn execute_eject(params: &Value) -> ToolResult {
         .and_then(|v| v.as_str())
         .ok_or_else(|| ToolError::invalid_params("Missing 'volumeId' parameter"))?;
 
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    {
-        use crate::file_system::volume::eject::{EjectError, EjectScope};
-
-        let scope = match params.get("scope").and_then(|v| v.as_str()) {
-            None | Some("volume") => EjectScope::Volume,
-            Some("disk") => EjectScope::Disk,
-            Some(other) => {
-                return Err(ToolError::invalid_params(format!(
-                    "Unknown scope '{other}': use 'volume' or 'disk'"
-                )));
-            }
-        };
-        match crate::file_system::volume::eject::eject_scoped(volume_id, scope).await {
-            Ok(outcome) => Ok(json!({
-                "outcome": outcome_tag(outcome),
-                "volumeId": volume_id,
-                "message": success_message(outcome, volume_id),
-            })),
-            Err(error) => {
-                let mut data = json!({ "outcome": refusal_tag(&error), "volumeId": volume_id });
-                // ❗ An absent key is "we couldn't tell you", ❌ never an empty answer,
-                // which is why a failed conversion omits it rather than writing a null.
-                // The holders carry that same distinction in their own tag.
-                match &error {
-                    EjectError::UnmountRefused { holders, .. } | EjectError::HeldBeforeEject { holders } => {
-                        if let Ok(holders) = serde_json::to_value(holders) {
-                            data["holders"] = holders;
-                        }
-                    }
-                    EjectError::DeviceDisconnectRefused { provider, .. } => data["provider"] = json!(provider),
-                    // Which step stalled decides whether a retry is worth anything.
-                    EjectError::NotResponding { step } => {
-                        if let Ok(step) = serde_json::to_value(step) {
-                            data["step"] = step;
-                        }
-                    }
-                    _ => {}
-                }
-                Err(ToolError::internal(format!("Couldn't detach {volume_id}: {error}")).with_data(data))
-            }
+    let scope = match params.get("scope").and_then(|v| v.as_str()) {
+        None | Some("volume") => EjectScope::Volume,
+        Some("disk") => EjectScope::Disk,
+        Some(other) => {
+            return Err(ToolError::invalid_params(format!(
+                "Unknown scope '{other}': use 'volume' or 'disk'"
+            )));
         }
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-    {
-        let _ = volume_id;
-        Err(ToolError::internal("Eject isn't supported on this platform"))
+    };
+    match crate::file_system::volume::eject::eject_scoped(volume_id, scope).await {
+        Ok(outcome) => Ok(json!({
+            "outcome": outcome_tag(outcome),
+            "volumeId": volume_id,
+            "message": success_message(outcome, volume_id),
+        })),
+        Err(error) => {
+            let mut data = json!({ "outcome": refusal_tag(&error), "volumeId": volume_id });
+            // ❗ An absent key is "we couldn't tell you", ❌ never an empty answer,
+            // which is why a failed conversion omits it rather than writing a null.
+            // The holders carry that same distinction in their own tag.
+            match &error {
+                EjectError::UnmountRefused { holders, .. } | EjectError::HeldBeforeEject { holders } => {
+                    if let Ok(holders) = serde_json::to_value(holders) {
+                        data["holders"] = holders;
+                    }
+                }
+                EjectError::DeviceDisconnectRefused { provider, .. } => data["provider"] = json!(provider),
+                // Which step stalled decides whether a retry is worth anything.
+                EjectError::NotResponding { step } => {
+                    if let Ok(step) = serde_json::to_value(step) {
+                        data["step"] = step;
+                    }
+                }
+                _ => {}
+            }
+            Err(ToolError::internal(format!("Couldn't detach {volume_id}: {error}")).with_data(data))
+        }
     }
 }
 
 /// What a teardown did, as the tag an agent branches on.
 ///
 /// Exhaustive on purpose: a new outcome doesn't compile until it answers.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn outcome_tag(outcome: crate::file_system::volume::eject::EjectOutcome) -> &'static str {
     use crate::file_system::volume::eject::EjectOutcome;
 
@@ -90,7 +80,6 @@ fn outcome_tag(outcome: crate::file_system::volume::eject::EjectOutcome) -> &'st
 }
 
 /// The human half of a successful answer, for someone reading the transcript.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn success_message(outcome: crate::file_system::volume::eject::EjectOutcome, volume_id: &str) -> String {
     use crate::file_system::volume::eject::EjectOutcome;
 
@@ -113,10 +102,7 @@ fn success_message(outcome: crate::file_system::volume::eject::EjectOutcome, vol
 /// The tags match `EjectError`'s own serde names, so this side and the wire type
 /// stay one vocabulary. Exhaustive on purpose: a new refusal doesn't compile
 /// until it answers.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
-fn refusal_tag(error: &crate::file_system::volume::eject::EjectError) -> &'static str {
-    use crate::file_system::volume::eject::EjectError;
-
+fn refusal_tag(error: &EjectError) -> &'static str {
     match error {
         EjectError::Busy => "busy",
         EjectError::VolumeNotFound { .. } => "volumeNotFound",
@@ -132,6 +118,6 @@ fn refusal_tag(error: &crate::file_system::volume::eject::EjectError) -> &'stati
     }
 }
 
-#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+#[cfg(test)]
 #[path = "eject_test.rs"]
 mod eject_test;

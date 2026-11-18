@@ -3,6 +3,8 @@
 //! ETIMEDOUT (pCloud's `pcloudfs`, cmdr-reports#4) otherwise reads as deleted, and
 //! the pane's walk-up leaves the drive for the boot disk's home folder.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use std::future::Future;
 use std::io;
 use std::os::unix::fs::PermissionsExt;

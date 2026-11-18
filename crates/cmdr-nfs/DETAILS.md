@@ -127,8 +127,10 @@ a redial needs, the resolved split, the root, `FsInfo`); `connect_nfs` dials NFS
 The volume redials through the whole `mount` (§ "The volume").
 
 - **Who asks**: `dial/platform/` answers the machine name and the uid and gid `AUTH_SYS` carries for `EXPORT`
-  (`gethostname`, `getuid`, `getgid` on both Unixes). Windows has no uid, so it asks as `nobody` (65534), what a server
-  maps an unknown caller to anyway, with `COMPUTERNAME` as the machine name.
+  (`gethostname`, `getuid`, `getgid` on both Unixes), and the supplementary groups `NfsIdentity::of_this_process` offers
+  the app (`getgroups`). Windows has no uid, so it asks as `nobody` (65534), what a server maps an unknown caller to
+  anyway, with no groups and the DNS host name (`GetComputerNameExW`) as the machine name; a place that needs another
+  identity sets its own uid and gid.
 
 - **The split**: the longest listed export the typed path is at or under; a listing with none that fits is
   `ExportNotFound`. Only when `EXPORT` is refused does `MNT` walk ever-shorter prefixes, and a refusal on the walk moves

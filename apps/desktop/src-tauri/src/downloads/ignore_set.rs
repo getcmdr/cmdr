@@ -169,6 +169,7 @@ fn expire(s: &mut State, now: Instant) {
 }
 
 #[cfg(test)]
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, `libc`, or `std::os::unix` (windows-port plan).
 mod tests {
     use super::*;
 

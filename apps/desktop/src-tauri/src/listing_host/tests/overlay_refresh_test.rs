@@ -11,6 +11,8 @@
 //! `file_system/git/overlay_tests.rs`. That a diff patch keeps the contributed
 //! count is the engine's own cell (`crates/cmdr-listing/src/overlay_read_paths_test.rs`).
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use std::path::PathBuf;
 use std::sync::Arc;
 

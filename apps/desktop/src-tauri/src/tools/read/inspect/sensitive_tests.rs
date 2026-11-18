@@ -128,6 +128,7 @@ async fn a_private_key_in_a_plain_folder_is_logged_with_its_reason() {
     );
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_symlink_into_a_protected_folder_is_refused_with_no_read() {
     let dir = TestDir::new("inspect-symlink");
@@ -163,6 +164,7 @@ fn an_archive_path_is_refused_before_it_materializes() {
     assert_refused(&row, Protected::Credentials);
 }
 
+#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_key_inside_an_archive_entry_refuses_the_entry() {
     let dir = TestDir::new("inspect-archive-key");

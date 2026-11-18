@@ -1525,6 +1525,7 @@ dependencies = [
  "uuid",
  "walkdir",
  "webkit2gtk",
+ "windows-sys 0.61.2",
  "wiremock",
  "xattr",
  "zbus",
@@ -1868,6 +1869,7 @@ dependencies = [
  "log",
  "tokio",
  "tokio-util",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

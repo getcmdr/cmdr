@@ -634,6 +634,7 @@ mod media {
         );
     }
 
+    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn a_symlink_to_a_protected_file_reads_nothing() {
         let (dir, _, _listing) = folder("mcp-rename-gate-link", &[]);
@@ -706,6 +707,7 @@ mod media {
     }
 
     /// A folder's worth of refusals is no sign the volume is dying: the rest still read.
+    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn refused_rows_do_not_make_the_loader_give_up_on_the_volume() {
         let (dir, _, _listing) = folder("mcp-rename-gate-many", &["photo.jpg"]);

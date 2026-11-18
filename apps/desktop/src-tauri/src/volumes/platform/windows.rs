@@ -1,11 +1,13 @@
-//! Windows: no volume discovery yet. Lists the root and three home folders, the answer the
-//! pre-seam stub gave; everything that reads a mount table answers "nothing here", and the
-//! watcher has nothing to watch.
+//! Windows: no volume discovery yet. Lists the system drive as the root and three home folders;
+//! everything that reads a mount table answers "nothing here", and the watcher has nothing to
+//! watch. The local volume is `LocalWindowsVolume`.
 
 use std::path::Path;
+use std::sync::Arc;
 
 use crate::volumes::{DEFAULT_VOLUME_ID, LocationCategory, LocationInfo, NetworkMount, SmbMountInfo, VolumeInfo};
-use cmdr_fs::volume::SpaceInfo;
+use cmdr_fs::volume::{MountClass, SpaceInfo, Volume};
+use cmdr_local::LocalWindowsVolume;
 
 /// What the synthetic `network` volume reports as its `fs_type`: the SMB name the other arms
 /// report, since this one mounts no shares.
@@ -31,11 +33,48 @@ pub(crate) fn list_locations() -> Vec<LocationInfo> {
     locations.push(row(
         DEFAULT_VOLUME_ID,
         "Root",
-        Path::new("/"),
+        Path::new(&system_drive_root()),
         LocationCategory::MainVolume,
     ));
     locations.push(row("home", "Home", &home, LocationCategory::Favorite));
     locations
+}
+
+/// ❗ A stub: the system drive alone, under the root volume's id, so the default pane opens on a
+/// real disk. Every other drive and UNC share waits on the multi-root task's open decision
+/// (which drives register, and their volume ids; `docs/specs/windows-port-plan.md`).
+pub(crate) fn root_volume() -> Arc<dyn Volume> {
+    Arc::new(LocalWindowsVolume::local_folder(
+        "Root",
+        system_drive_root(),
+        crate::volume_host::host(),
+    ))
+}
+
+pub(crate) fn local_volume_on_mount(name: &str, root: &Path, mount: MountClass) -> Arc<dyn Volume> {
+    Arc::new(LocalWindowsVolume::on_mount(
+        name,
+        root,
+        mount,
+        crate::volume_host::host(),
+    ))
+}
+
+pub(crate) fn is_local_volume(volume: &dyn Volume) -> bool {
+    volume.as_any().is::<LocalWindowsVolume>()
+}
+
+/// The system drive's root as an app path (`C:/`, plan D1): `%SystemDrive%`, which Windows sets
+/// for every process, uppercased, else `C:/`.
+fn system_drive_root() -> String {
+    system_drive_root_from(std::env::var("SystemDrive").ok().as_deref())
+}
+
+fn system_drive_root_from(system_drive: Option<&str>) -> String {
+    match system_drive.map(str::as_bytes) {
+        Some([letter, b':']) if letter.is_ascii_alphabetic() => format!("{}:/", letter.to_ascii_uppercase() as char),
+        _ => "C:/".to_string(),
+    }
 }
 
 fn row(id: &str, name: &str, path: &Path, category: LocationCategory) -> LocationInfo {
@@ -136,4 +175,30 @@ pub(crate) mod watcher {
     pub(crate) fn start_volume_watcher(_app: &AppHandle) {}
 
     pub(crate) fn stop_volume_watcher() {}
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_system_drive_is_an_uppercase_drive_root() {
+        assert_eq!(system_drive_root_from(Some("C:")), "C:/");
+        assert_eq!(system_drive_root_from(Some("d:")), "D:/");
+    }
+
+    #[test]
+    fn anything_else_falls_back_to_c() {
+        assert_eq!(system_drive_root_from(None), "C:/");
+        assert_eq!(system_drive_root_from(Some("")), "C:/");
+        assert_eq!(system_drive_root_from(Some("C:\\")), "C:/");
+        assert_eq!(system_drive_root_from(Some("1:")), "C:/");
+    }
+
+    #[test]
+    fn the_root_volume_lists_the_system_drive() {
+        let root = root_volume();
+        assert_eq!(root.root(), Path::new(&system_drive_root()));
+        assert!(is_local_volume(root.as_ref()));
+    }
 }

@@ -3,6 +3,8 @@
 //! file in a git snapshot does (`git_snapshot_tests.rs`). No new kind of
 //! content leaves: a text window, as for any text file.
 
+#![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan, task 35 and #1225).
+
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
