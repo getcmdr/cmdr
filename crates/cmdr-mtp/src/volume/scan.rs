@@ -241,7 +241,11 @@ impl MtpVolume {
 
             let per_path = paths
                 .iter()
-                .filter_map(|p| per_path_results.remove(p).map(|r| (p.clone(), r)))
+                .filter_map(|p| {
+                    per_path_results
+                        .remove(p)
+                        .map(|r| (AppPath::legacy_unchecked(p).into_owned(), r))
+                })
                 .collect();
 
             Ok(BatchScanResult {
