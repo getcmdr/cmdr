@@ -230,7 +230,7 @@ fn every_escape_row_holds() {
 #[test]
 fn every_escaped_user_input_row_holds() {
     for case in table().escaped_user_input {
-        let typed = AppPathBuf::from_user_input(&case.text, PathFlavor::from(case.flavor), Namer::from(case.namer));
+        let typed = AppPathBuf::from_external_text(&case.text, PathFlavor::from(case.flavor), Namer::from(case.namer));
         assert_eq!(typed.map(AppPathBuf::into_string), Ok(case.wire.clone()), "{case:?}");
     }
 }
@@ -814,33 +814,63 @@ fn from_native_windows_takes_every_spelling_to_one_app_path() {
     assert_eq!(plain.map(AppPathBuf::into_string).as_deref(), Ok("C:/b"));
 }
 
-/// A plain Windows path names what Win32 makes of it, so a trailing dot or space goes, as
-/// Explorer's address bar reads it; a verbatim one and a listed name keep every character,
-/// and such a name has no plain form.
+/// A path the OS REPORTED names its file literally, trailing dots and spaces included: a
+/// `read_dir` under a plain root joins the stored name verbatim (`C:\x` + `dup.`), so
+/// stripping there would name `dup` beside `dup.` (review 2's N1). Only text a person typed
+/// reads as Explorer's address bar reads it.
 #[test]
-fn a_plain_windows_path_drops_trailing_dots_and_spaces_as_win32_does() {
-    for plain in [r"C:\x\dup.", r"C:\x\dup ", r"C:\x\dup. . ", "C:/x/dup."] {
-        let path = AppPathBuf::from_native_windows(&wide(plain), PathFlavor::Windows).expect(plain);
-        assert_eq!(path.as_str(), "C:/x/dup", "{plain}");
-        let typed = AppPathBuf::from_user_input(plain, PathFlavor::Windows, Namer::Units).expect(plain);
-        assert_eq!(typed.as_str(), "C:/x/dup", "{plain}");
+fn a_reported_windows_path_keeps_trailing_dots_and_spaces() {
+    for (native, app) in [
+        (r"C:\x\dup.", "C:/x/dup."),
+        (r"C:\x\dup ", "C:/x/dup "),
+        (r"C:\x\a. .\f", "C:/x/a. ./f"),
+        (r"C:\x\...", "C:/x/..."),
+        (r"C:\x\ ", "C:/x/ "),
+        (r"\\srv\sh\dup.", "//srv/sh/dup."),
+        ("C:/x/dup.", "C:/x/dup."),
+        (r"\\?\C:\x\dup.", "C:/x/dup."),
+    ] {
+        let path = AppPathBuf::from_native_windows(&wide(native), PathFlavor::Windows).expect(native);
+        assert_eq!(path.as_str(), app, "{native}");
+        // The verbatim form opens exactly that file; the plain one would open another.
+        assert_eq!(
+            path.to_native_windows_plain(),
+            Err(NativeRefusal::NotPlainSafe(NotPlainSafe::TrailingDotOrSpace)),
+            "{native}"
+        );
     }
-    let verbatim = AppPathBuf::from_native_windows(&wide(r"\\?\C:\x\dup."), PathFlavor::Windows).expect("verbatim");
-    assert_eq!(verbatim.as_str(), "C:/x/dup.");
-    assert_eq!(verbatim.to_native_windows(), Ok(wide(r"\\?\C:\x\dup.")));
-    assert_eq!(
-        verbatim.to_native_windows_plain(),
-        Err(NativeRefusal::NotPlainSafe(NotPlainSafe::TrailingDotOrSpace))
-    );
+}
+
+/// Text from a machine (an MCP tool, a deep link, a CLI argument, a stored value) names what
+/// it says, like a reported path. ❗ An agent that listed `C:\x\dup.` and asks to delete it
+/// must get `dup.` (review 2's N8).
+#[test]
+fn external_text_keeps_trailing_dots_and_spaces() {
+    for text in [r"C:\x\dup.", "C:/x/dup."] {
+        let path = AppPathBuf::from_external_text(text, PathFlavor::Windows, Namer::Units).expect(text);
+        assert_eq!(path.as_str(), "C:/x/dup.", "{text}");
+    }
+    let dots = AppPathBuf::from_external_text(r"C:\x\...", PathFlavor::Windows, Namer::Units);
+    assert_eq!(dots.map(AppPathBuf::into_string).as_deref(), Ok("C:/x/..."));
+}
+
+/// Text a person TYPED into the address bar or a go-to dialog reads as Explorer reads it: a
+/// trailing dot or space goes, and a name of only dots and spaces is refused.
+#[test]
+fn person_typed_windows_text_drops_trailing_dots_and_spaces_as_explorer_does() {
+    for typed in [r"C:\x\dup.", r"C:\x\dup ", r"C:\x\dup. . ", "C:/x/dup."] {
+        let path = AppPathBuf::from_person_typed(typed, PathFlavor::Windows, Namer::Units).expect(typed);
+        assert_eq!(path.as_str(), "C:/x/dup", "{typed}");
+    }
     for blank in [r"C:\x\...", r"C:\x\. ."] {
         assert_eq!(
-            AppPathBuf::from_user_input(blank, PathFlavor::Windows, Namer::Units),
+            AppPathBuf::from_person_typed(blank, PathFlavor::Windows, Namer::Units),
             Err(NotAnAppPath::BlankName),
             "{blank}"
         );
     }
     // On POSIX a trailing dot is an ordinary character.
-    let posix_typed = AppPathBuf::from_user_input("/x/dup.", PathFlavor::Posix, Namer::Bytes);
+    let posix_typed = AppPathBuf::from_person_typed("/x/dup.", PathFlavor::Posix, Namer::Bytes);
     assert_eq!(posix_typed.map(AppPathBuf::into_string).as_deref(), Ok("/x/dup."));
 }
 

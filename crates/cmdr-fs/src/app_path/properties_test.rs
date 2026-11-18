@@ -248,13 +248,31 @@ proptest! {
         }
     }
 
+    /// A plain Windows path the OS reported (a `read_dir` child under a plain root) keeps
+    /// every name exactly, trailing dots and spaces included: what the reader joined is the
+    /// file it names. Only a whole `.` or `..` name resolves.
+    #[test]
+    fn a_reported_plain_windows_path_keeps_every_name(names in prop::collection::vec(
+        prop::collection::vec(prop_oneof![Just('a'), Just('.'), Just(' '), Just('\u{e9}')], 1..5)
+            .prop_map(|chars| chars.into_iter().collect::<String>())
+            .prop_filter("no dot names", |n| n != "." && n != ".."),
+        1..4,
+    ), unc in any::<bool>()) {
+        let (native_root, app_root) = if unc { (r"\\srv\sh\", "//srv/sh/") } else { (r"C:\", "C:/") };
+        let native = format!("{native_root}{}", names.join(r"\"));
+        let units: Vec<u16> = native.encode_utf16().collect();
+        let path = AppPathBuf::from_native_windows(&units, PathFlavor::Windows).expect("a plain path");
+        prop_assert_eq!(path.as_str(), format!("{app_root}{}", names.join("/")));
+        prop_assert_eq!(path.names().collect::<Vec<_>>(), names.iter().map(String::as_str).collect::<Vec<_>>());
+    }
+
     /// Typed text never carries a live escape: an escape-range code point is the literal
     /// character, so the OS gets the bytes the person typed.
     #[test]
     fn typed_text_means_what_it_says(typed in name()) {
         let text = format!("/d/{typed}");
         let names: Vec<&str> = text.split('/').filter(|n| !n.is_empty() && *n != ".").collect();
-        match AppPathBuf::from_user_input(&text, PathFlavor::Posix, Namer::Bytes) {
+        match AppPathBuf::from_person_typed(&text, PathFlavor::Posix, Namer::Bytes) {
             Ok(path) => {
                 let typed_bytes = format!("/{}", names.join("/"));
                 let native = path.to_native_posix().expect("local");

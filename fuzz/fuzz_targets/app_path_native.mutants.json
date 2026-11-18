@@ -35,6 +35,15 @@
       "replace": "\"\" => continue,",
       "input": "fuzz/seeds/app_path_native/3-posix-dot-name.bin",
       "expect": "from_native_posix built a non-canonical path"
+    },
+    {
+      "property": "fuzz:app_path_native",
+      "why": "a reported plain path loses its last name's trailing dot, so a walk names `dup` beside the listed `dup.`",
+      "file": "crates/cmdr-fs/src/app_path/native.rs",
+      "find": "let slashed = text.replace('\\\\', \"/\");",
+      "replace": "let slashed = text.replace('\\\\', \"/\").trim_end_matches('.').to_string();",
+      "input": "fuzz/seeds/app_path_native/8-plain-trailing-dot.bin",
+      "expect": "from_native_windows respelled its last name"
     }
   ]
 }

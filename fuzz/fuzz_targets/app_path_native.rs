@@ -33,10 +33,24 @@ libfuzzer_sys::fuzz_target!(|data: &[u8]| {
             AppPath::from_normalized_as(path.as_str(), PathFlavor::Windows).is_ok(),
             "from_native_windows built a non-canonical path: {path:?}"
         );
-        if let Ok(native) = path.to_native_windows() {
+        // A reported path names its file literally: its last name, as the OS stored it
+        // (trailing dots and spaces included), is the app path's last name.
+        let last = units.rsplit(|&u| u == u16::from(b'\\') || u == u16::from(b'/')).next().unwrap_or(&[]);
+        let plain_name = !last.is_empty() && last != [u16::from(b'.')] && last != [u16::from(b'.'); 2];
+        if plain_name && !path.is_root() {
             assert_eq!(
-                AppPathBuf::from_native_windows(&native, PathFlavor::Windows).as_ref(),
-                Ok(&path),
+                path.file_name(),
+                Some(escape_units(last).as_ref()),
+                "from_native_windows respelled its last name: {path:?}"
+            );
+        }
+        if let Ok(native) = path.to_native_windows() {
+            // Text, not `Eq`: a round trip that respells without changing components moved too.
+            assert_eq!(
+                AppPathBuf::from_native_windows(&native, PathFlavor::Windows)
+                    .as_ref()
+                    .map(|back| back.as_str()),
+                Ok(path.as_str()),
                 "the native round trip moved {path:?}"
             );
         }
@@ -49,8 +63,10 @@ libfuzzer_sys::fuzz_target!(|data: &[u8]| {
         );
         if let Ok(native) = path.to_native_posix() {
             assert_eq!(
-                AppPathBuf::from_native_posix(&native, PathFlavor::Posix).as_ref(),
-                Ok(&path),
+                AppPathBuf::from_native_posix(&native, PathFlavor::Posix)
+                    .as_ref()
+                    .map(|back| back.as_str()),
+                Ok(path.as_str()),
                 "the native round trip moved {path:?}"
             );
         }

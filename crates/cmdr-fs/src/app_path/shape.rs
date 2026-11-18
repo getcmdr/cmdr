@@ -9,7 +9,7 @@ use super::PathKind;
 
 /// Whether `text` starts with `<scheme>://`, the scheme being RFC 3986's shape and at least
 /// two characters long. ❗ A one-letter "scheme" is a drive: `C://x` is `C:/x` with a doubled
-/// separator on Windows (what `from_user_input` makes of a typed `C:\\x`), and no backend
+/// separator on Windows (what `from_person_typed` makes of a typed `C:\\x`), and no backend
 /// mints a one-letter scheme.
 pub fn is_scheme_url(text: &str) -> bool {
     let Some((scheme, _)) = text.split_once("://") else {

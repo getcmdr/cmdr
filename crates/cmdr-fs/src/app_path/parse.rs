@@ -233,21 +233,38 @@ impl AppPathBuf {
         Self::parse(text, PathFlavor::HOST)
     }
 
-    /// Typed or pasted text, read as the person means it: `.` names drop, and every
-    /// escape-range code point is LITERAL text, escaped through `namer`'s units (the namer of
-    /// the volume the path lands on: a Unix disk's bytes, SMB's UTF-16), so a person can't
-    /// type a live escape. On Windows, for a drive or UNC path, both `\` and `/` separate and
-    /// each name's trailing dots and spaces go, as Explorer's address bar and every plain
-    /// Win32 path read them (`C:\x\dup.` opens `dup`).
+    /// Text a PERSON typed or pasted into the address bar or a go-to dialog, read as they mean
+    /// it, and ❗ nothing else: on Windows, for a drive or UNC path, both `\` and `/` separate
+    /// and each name's trailing dots and spaces go, as Explorer's address bar reads them
+    /// (`C:\x\dup.` opens `dup`). Otherwise [`Self::from_external_text`]. ❌ Never for text a
+    /// machine handed over (an MCP tool, a deep link, a CLI argument, a store, a listing):
+    /// that names what it says, and stripping would name `dup` beside a listed `dup.`.
     ///
     /// # Errors
     ///
-    /// As [`Self::parse`], plus [`NotAnAppPath::BlankName`] for a Windows name of only dots
-    /// and spaces. A `..` is refused here too: what it means is a volume's answer, which the
-    /// app's typed-path resolver asks before it calls this on each resolved prefix.
-    pub fn from_user_input(text: &str, flavor: PathFlavor, namer: Namer) -> Result<AppPathBuf, NotAnAppPath> {
+    /// As [`Self::from_external_text`], plus [`NotAnAppPath::BlankName`] for a Windows name of
+    /// only dots and spaces.
+    pub fn from_person_typed(text: &str, flavor: PathFlavor, namer: Namer) -> Result<AppPathBuf, NotAnAppPath> {
+        if flavor == PathFlavor::Windows && !is_scheme_url(text) {
+            let trimmed = explorer_trimmed(&text.replace('\\', "/"))?;
+            return Self::from_external_text(&trimmed, flavor, namer);
+        }
+        Self::from_external_text(text, flavor, namer)
+    }
+
+    /// Path text from outside the app that a machine handed over (an MCP tool's argument, a
+    /// deep link, a CLI argument), every name LITERAL: `.` names drop, on Windows `\` and `/`
+    /// both separate, and every escape-range code point is literal text, escaped through
+    /// `namer`'s units (the namer of the volume the path lands on), so outside text can't
+    /// carry a live escape. Trailing dots and spaces stay (`C:\x\dup.` is `dup.`).
+    ///
+    /// # Errors
+    ///
+    /// As [`Self::parse`]. A `..` is refused here too: what it means is a volume's answer,
+    /// which the app's typed-path resolver asks before it calls this on each resolved prefix.
+    pub fn from_external_text(text: &str, flavor: PathFlavor, namer: Namer) -> Result<AppPathBuf, NotAnAppPath> {
         let separated: Cow<'_, str> = if flavor == PathFlavor::Windows && !is_scheme_url(text) {
-            Cow::Owned(win32_trimmed(&text.replace('\\', "/"))?)
+            Cow::Owned(text.replace('\\', "/"))
         } else {
             Cow::Borrowed(text)
         };
@@ -255,10 +272,11 @@ impl AppPathBuf {
     }
 }
 
-/// `/`-separated Windows text with each name's trailing dots and spaces stripped, as Win32
-/// reads a plain path (`GetFullPathNameW`). A drive token, the UNC server and share, and the
-/// `.` and `..` names stay as they are.
-pub(super) fn win32_trimmed(text: &str) -> Result<String, NotAnAppPath> {
+/// `/`-separated Windows text with each name's trailing dots and spaces stripped, as
+/// Explorer's address bar (and `GetFullPathNameW`) reads typed text. A drive token, the UNC
+/// server and share, and the `.` and `..` names stay as they are. Only
+/// [`AppPathBuf::from_person_typed`] calls it.
+fn explorer_trimmed(text: &str) -> Result<String, NotAnAppPath> {
     let unc = text.starts_with("//");
     let mut out = String::with_capacity(text.len());
     for (i, name) in text.split('/').enumerate() {

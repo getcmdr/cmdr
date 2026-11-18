@@ -332,11 +332,11 @@ today isn't a safe baseline). Ranges settled and the canonical form added in rev
     for arbitrary strings; `from_native` then `to_native` is the identity on arbitrary bytes and arbitrary `u16`s; two
     names differing only in invalid bytes get different spellings; a name holding a literal escape code point
     round-trips.
-- **Text a person types never holds an escape.** `from_user_input` and `ChildName::from_typed` (rename, new file, new
-  folder, the transfer's destination name) escape any escape-range code point as LITERAL text (its own UTF-8 bytes as
-  byte escapes), so typed text always means what it says, and the escape syntax can't be typed or pasted into an
-  address. Round one's "accepted edge" (typed escape code points read as raw bytes) is reversed. Only backend-spelled
-  text (`from_wire`, `from_normalized`) carries live escapes.
+- **Text a person types never holds an escape.** `from_person_typed`, `from_external_text`, and `AppNameBuf::from_typed`
+  (rename, new file, new folder, the transfer's destination name) escape any escape-range code point as LITERAL text
+  (its own UTF-8 bytes as byte escapes), so typed text always means what it says, and the escape syntax can't be typed
+  or pasted into an address. Round one's "accepted edge" (typed escape code points read as raw bytes) is reversed. Only
+  backend-spelled text (`from_wire`, `from_normalized`) carries live escapes.
 - **Cross-namer copies**: a name holding escapes of an alphabet the destination can't store (byte escapes to NTFS, SMB,
   WebDAV, or S3; unit escapes to a Unix disk, SFTP, or NFS; any escape to a UTF-8-only protocol) is a typed per-item
   refusal at the destination (`NativeRefusal::ForeignEscape` locally, `NotRepresentable` from a backend), counted and
@@ -417,13 +417,14 @@ separate live bug, reported to the lead in review round 2); it runs on shown tex
 normalizes to `é`), written as JSON `􏻃`-style surrogate-pair escapes so the file stays ASCII.
 
 **Input.** Typed text never carries an escape (§ "Names that aren't UTF-8"): go-to-path, rename, new file and folder,
-the transfer destination, and the CLI go through `from_user_input` / `ChildName::from_typed`. Paste and drop of FILES
-arrive as native paths or file URLs and cross at `from_native` (escaping). Deep links arrive as text: `from_user_input`.
-Rename's "unchanged" check compares the edited text with `shownName(originalName)`, ❌ never `originalName` (an escaped
-original never equals its prefill, so Enter would rename `caf\xe9.txt` to `caf\u{FFFD}.txt`); a real edit lands the
-typed text, U+FFFD included, which is the honest outcome of renaming what the person saw (and the usual way to fix such
-a name). `validateFilename`'s 255-byte rule measures the escaped name by its NATIVE length (one byte per byte escape),
-❌ never `TextEncoder` over the escape (four bytes each): a `nativeNameLength` helper next to `shownName`.
+the transfer destination, and the CLI go through `from_person_typed` (go-to-path), `from_external_text` (the CLI), or
+`AppNameBuf::from_typed` (one name). Paste and drop of FILES arrive as native paths or file URLs and cross at
+`from_native` (escaping). Deep links arrive as text: `from_external_text`. Rename's "unchanged" check compares the
+edited text with `shownName(originalName)`, ❌ never `originalName` (an escaped original never equals its prefill, so
+Enter would rename `caf\xe9.txt` to `caf\u{FFFD}.txt`); a real edit lands the typed text, U+FFFD included, which is the
+honest outcome of renaming what the person saw (and the usual way to fix such a name). `validateFilename`'s 255-byte
+rule measures the escaped name by its NATIVE length (one byte per byte escape), ❌ never `TextEncoder` over the escape
+(four bytes each): a `nativeNameLength` helper next to `shownName`.
 
 **Agent surfaces** (the MCP server's tool outputs, Ask Cmdr's context). A model can't be trusted to echo a plane-16 code
 point back intact, and a mangled echo of `caf<escape>.txt` as `caf\u{FFFD}.txt` would hit the sibling. So:
@@ -457,13 +458,16 @@ deliberately toward the safe answer with a pin:
 - **Unicode form**: never touched. `café` in NFC and NFD are two values; on APFS and HFS+ both open one file, on ext4
   two. Equality is exact, so a typed NFC path and a listed NFD path compare unequal, as `PathBuf`s do today; a folded or
   normalization-insensitive compare is the volume's `NameRules` business.
-- **Trailing dots and spaces on Windows** (decided in the type's review, 2026-11-18): a STORED name is always literal
-  and lossless. A listed name, a verbatim `\\?\` path, and everything the app holds keep every dot and space, so `dup`
-  and `dup.` stay two files, and such a name has no plain form (`to_native_plain` refuses it `NotPlainSafe`; it goes
-  through the verbatim one). A PLAIN path from outside (`from_native_windows` without `\\?\`: a CLI argument, a drop of
-  text, an OS answer) and typed input (`from_user_input` with the Windows flavor) read as Win32 and Explorer's address
-  bar read them: each name's trailing dots and spaces go (`C:\x\dup.` opens `dup`), and a name of only dots and spaces
-  is refused `BlankName`. The UNC server and share, the drive, and the `.` and `..` names aren't trimmed.
+- **Trailing dots and spaces on Windows** (decided by the lead after the type's second review, 2026-11-18): every path
+  is LITERAL except text a person typed. A listed name, a verbatim or PLAIN path the OS reports (`from_native`: a
+  `read_dir` child under a plain root joins `dup.` verbatim, and so do watchers, dialogs, `%TEMP%`, and a drop), an MCP
+  tool's argument, a deep link, a CLI argument, and every persisted value keep every dot and space, so `dup` and `dup.`
+  stay two files, and such a name has no plain form (`to_native_plain` refuses it `NotPlainSafe`; it goes through the
+  verbatim one). Only text typed into the address bar or a go-to dialog reads as Explorer's address bar reads it,
+  through its own constructor, `from_person_typed`: each name's trailing dots and spaces go (`C:\x\dup.` opens `dup`),
+  and a name of only dots and spaces is refused `BlankName`. The UNC server and share, the drive, and the `.` and `..`
+  names aren't trimmed. Review round one's M5 stripped in `from_native` too; review two (N1, N8) showed that names `dup`
+  beside a listed `dup.` (a walk under a plain root, an agent echoing a listed path), so it's undone.
 - **Case**: never folded, except the drive letter, uppercased (Windows reads `c:` and `C:` as one drive and the OS
   reports either). A UNC server and share keep their case as typed or reported (decided by the lead, 2026-11-18,
   question 6): `Eq` and `Hash` stay exact, and every ROOT match (the resolver picking a volume for a path, `starts_with`
@@ -491,9 +495,9 @@ the volume holding the path means", answered by the volume at the input boundary
 
 - **One resolver**: `resolve_typed(text, base: Option<&AppPath>) -> Result<AppPathBuf, TypedPathRefusal>` in the app's
   input layer (go-to-path's module), called by go-to-path, the CLI's path arguments, deep links, and the MCP tools' path
-  inputs. It expands `~`, parses with `from_user_input`'s flavor rules but KEEPS `.`/`..` names as tokens, picks the
-  volume for the path (the resolver, `resolve_path_to_volume`), then walks the names left to right holding a normalized
-  prefix.
+  inputs. It expands `~`, parses with `from_external_text`'s flavor rules (`from_person_typed`'s for the address bar and
+  go-to dialogs) but KEEPS `.`/`..` names as tokens, picks the volume for the path (the resolver,
+  `resolve_path_to_volume`), then walks the names left to right holding a normalized prefix.
 - **A relative input's leading `..`s** (`../foo`, `../../x`) step up from the pane's folder the way the pane's own `..`
   row and Backspace do (`parentInVolume` on the pane path, lexical: "up from where I am", which is also what a shell's
   `cd ..` does). Clamped at the volume root, as the `..` row is.
@@ -580,12 +584,13 @@ caller turns into "not found"):
 - **Escaped names**: decoded back to raw bytes (Unix) or surrogate units (Windows).
 - **`from_native` refuses**, typed: a relative path, a drive-relative `C:foo` AND a bare `C:` (both mean that drive's
   CURRENT directory to Win32: `GetFullPathNameW("D:foo")` answered `D:\foo` only because `D:`'s cwd was its root; ran,
-  review round 3; `parse` and `from_user_input` keep reading a typed `C:` as `C:/`, which is what a person means),
-  `\\.\` device paths, `\\?\Volume{…}` and `\\?\GLOBALROOT\…`, a UNC server of `?` or `.`, and a `.`, `..`, or empty
-  name inside a verbatim path. Win32 doesn't treat those as literal names: NTFS refuses them (`\\?\D:\x\.\y` is
-  `ERROR_PATH_NOT_FOUND`, `\\?\D:\x\\y` and a verbatim `..` `ERROR_INVALID_NAME`, a verbatim `..` over UNC
-  `ERROR_BAD_PATHNAME`, `\\?\D:` without its `\` `ERROR_INVALID_PARAMETER`; ran, review round 3), so the refusal only
-  types what the OS would say. Today's grammar answers `None` for most of these; the conversion only types the reason.
+  review round 3; `parse`, `from_external_text`, and `from_person_typed` keep reading a typed `C:` as `C:/`, which is
+  what a person means), `\\.\` device paths, `\\?\Volume{…}` and `\\?\GLOBALROOT\…`, a UNC server of `?` or `.`, and a
+  `.`, `..`, or empty name inside a verbatim path. Win32 doesn't treat those as literal names: NTFS refuses them
+  (`\\?\D:\x\.\y` is `ERROR_PATH_NOT_FOUND`, `\\?\D:\x\\y` and a verbatim `..` `ERROR_INVALID_NAME`, a verbatim `..`
+  over UNC `ERROR_BAD_PATHNAME`, `\\?\D:` without its `\` `ERROR_INVALID_PARAMETER`; ran, review round 3), so the
+  refusal only types what the OS would say. Today's grammar answers `None` for most of these; the conversion only types
+  the reason.
 - **8.3 short names are aliases** (ran on `C:`, where 8.3 creation is on, as it is by default on a Windows 10 system
   drive; the builder's `D:` has it off; review round 3). `from_native` is pure, so it can't tell `C:/x/LONGFO~1` from
   `C:/x/Long Folder Name`: `read_dir` through the short spelling returns children under it (a second app path for every
@@ -638,12 +643,15 @@ caller turns into "not found"):
 - `AppPathBuf::parse(text: &str, flavor: PathFlavor) -> Result<AppPathBuf, NotAnAppPath>`: normalizes per §
   "Normalization" (a `..` name is refused, not resolved).
 - `AppPathBuf::from_wire(text: &str)`: `parse` with `PathFlavor::HOST`, for IPC arguments and stored strings.
-- `AppPathBuf::from_user_input(text: &str, flavor, namer: Namer)`: typed or pasted text with NO `..` left (separators
-  turned on Windows, `.` dropped, escape-range code points escaped as literal text through `namer`, the VOLUME's namer,
-  which `resolve_typed` knows); a `..` is refused here, since resolving it needs a volume: the app's `resolve_typed` (§
-  "Typed and pasted `..`") tokenizes first and calls this on each resolved prefix. `AppNameBuf::from_typed(text, namer)`
-  is the same rule for one name. On Windows, for a drive or UNC path, each name's trailing dots and spaces go, as
-  Explorer's address bar reads them (§ "Normalization").
+- `AppPathBuf::from_external_text(text: &str, flavor, namer: Namer)`: outside text a machine handed over (an MCP
+  argument, a deep link, a CLI argument) with NO `..` left (separators turned on Windows, `.` dropped, escape-range code
+  points escaped as literal text through `namer`, the VOLUME's namer, which `resolve_typed` knows), every name literal;
+  a `..` is refused here, since resolving it needs a volume: the app's `resolve_typed` (§ "Typed and pasted `..`")
+  tokenizes first and calls this on each resolved prefix. `AppNameBuf::from_typed(text, namer)` is the same rule for one
+  name.
+- `AppPathBuf::from_person_typed(text: &str, flavor, namer: Namer)`: the same, plus, on Windows, for a drive or UNC
+  path, each name's trailing dots and spaces go, as Explorer's address bar reads them (§ "Normalization"). ONLY the
+  address bar and the go-to dialogs call it; `resolve_typed` takes which of the two its caller is.
 - `AppPath::from_normalized(text: &str) -> Result<&AppPath, NotAnAppPath>`: zero-copy validation for a string that is
   already canonical for THIS host (a `FileEntry.path` a backend built); `FileEntry::app_path()` uses it. On macOS and
   Linux a drive or UNC shape is refused (`//a/b/x` there is a sloppily joined POSIX path, never a share); on Windows the
@@ -846,7 +854,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
   slashes**: on Linux and macOS, a `stat`, a listing, and a delete of `/x/link/` (a symlink to a folder, with the
   trailing `/`) through each IPC entry point that takes a wire path (`commands/file_system`, the MCP tools, go-to-path),
   pinned as today's answer; and `/x/link/../y` and `../y` (from a pane inside `/x/link`) through the same entry points
-  and through `from_user_input`. (h) **Unicode form**: on macOS (APFS) and Linux, a file created as NFD `café` and
+  and through `from_external_text`. (h) **Unicode form**: on macOS (APFS) and Linux, a file created as NFD `café` and
   addressed as NFC: pin today's stat and listing answers. (i) **The Windows baseline**: the builder's full
   `cargo nextest run --workspace` with per-test outcomes, saved as `docs/notes/windows-port/app-path-baseline.md` (the
   failing test names grouped by crate and cluster, nothing else). Every later milestone diffs against it, so "turned
@@ -975,8 +983,8 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `from_native` then `to_native` is the identity on arbitrary bytes (Unix) and arbitrary `u16` units (Windows, tested as
   data on every OS), two names differing only in invalid bytes get different spellings, a name holding a literal escape
   code point round-trips, `to_native(canon(s)) == to_native(s)` and `from_native(to_native(s)) == canon(s)` on arbitrary
-  strings, `from_user_input` of text holding an escape-range code point names that LITERAL character, and a byte escape
-  is `ForeignEscape` under `to_native` for Windows (a unit escape under POSIX). `to_native` refusal rows: `/x` on
+  strings, `from_external_text` of text holding an escape-range code point names that LITERAL character, and a byte
+  escape is `ForeignEscape` under `to_native` for Windows (a unit escape under POSIX). `to_native` refusal rows: `/x` on
   Windows, `C:/x/a:b`, `C:/x/a*b`, NUL, a 33,000-unit path, `//host:445/share/x` (`NoPortOnUnc`), and acceptance rows
   for `C:/x/CON`, `C:/x/a.`, and `//[::1]/D$/x` (the server's `:` is no name character). `to_native_plain` refusal rows
   (`NotPlainSafe`): `C:/x/a.`, `C:/x/a `, `C:/x/con.txt`, `C:/x/lpt1 .x`, `C:/x/CONIN$`, a 260-unit path; acceptance
@@ -999,7 +1007,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
     table pins them), so "delegates" means: its old struct folded away and its callers (`tilde`,
     `local_windows/paths.rs`, the Windows volume arm, a conformance helper) moved to the text helpers, which changes no
     behavior on any OS. The typed `to_native`'s refusals reach the local Windows volume in milestone 9, as planned.
-  - The typed path reads a one-letter scheme as a drive (`C://x` is `C:/x`, what `from_user_input` makes of a typed
+  - The typed path reads a one-letter scheme as a drive (`C://x` is `C:/x`, what `from_person_typed` makes of a typed
     `C:\\x`); the text helpers keep the old reading.
   - Comparison follows the host's `Path::components` (§ "The type", `Eq`), a scheme root as one component. A typed
     `strip_prefix` never matches across roots.

@@ -146,7 +146,8 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
 - **The types**: `AppPath` (borrowed, unsized, like `Path`) and `AppPathBuf`; `RelativeAppPath`, a validated tail;
   `AppName` / `AppNameBuf`, one plain name in APP spelling, the only thing `join` takes. ❌ No `From`, `AsRef`, or
   `Deref` to or from `std::path`, ever: "unrepresentable" would stop being true the day one landed. Construction is
-  named and greppable: `parse(text, flavor)`, `from_wire` (the host's flavor), `from_user_input(text, flavor, namer)`,
+  named and greppable: `parse(text, flavor)`, `from_wire` (the host's flavor), `from_external_text(text, flavor, namer)`
+  (machine-handed text, literal) and `from_person_typed` (the address bar: Windows trailing dots and spaces go),
   `from_normalized` (zero-copy, this host's shapes; `from_normalized_as` for a test of the other), `from_native` (this
   host; `from_native_as`), and `app_path!` in tests. Arithmetic: `join`, `join_relative`, `parent`, `file_name`,
   `extension`, `file_stem`, `with_file_name`, `names`, `root`, `starts_with` / `strip_prefix` (exact, never across
@@ -184,8 +185,8 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
 - **One spelling per native name**, so `to_native` is injective over canonical text: a code point of either alphabet a
   name holds as valid text is escaped through its own units, escapes that decode to valid text aren't canonical (the
   bytes of `é` spell `é`), and a name mixing the alphabets is refused. Typed text never carries a live escape
-  (`from_user_input`, `AppNameBuf::from_typed`). Everything a person sees shows an escape as U+FFFD (`shown`,
-  `shown_name`; the frontend's `shownName` and `displayPath`).
+  (`from_external_text`, `from_person_typed`, `AppNameBuf::from_typed`). Everything a person sees shows an escape as
+  U+FFFD (`shown`, `shown_name`; the frontend's `shownName` and `displayPath`).
 - **The native boundary**, typed both ways (❌ never an `Option` a caller turns into "not found"):
   - `to_native` is the POSIX bytes on macOS and Linux, the verbatim `\\?\` form on Windows. `NativeRefusal`: `NotLocal`
     (a scheme path), `WrongFlavor`, `ForbiddenCharacter` (❗ `:` in a Windows name writes an alternate data stream

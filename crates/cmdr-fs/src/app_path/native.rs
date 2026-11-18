@@ -322,9 +322,11 @@ fn windows_from_native(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
         }
         return Err(NotAnAppPath::DevicePath);
     }
-    // A plain path names what Win32 makes of it: each name's trailing dots and spaces go
-    // (`C:\x\dup.` opens `dup`), and `.` and `..` resolve by text.
-    let slashed = super::parse::win32_trimmed(&text.replace('\\', "/"))?;
+    // A plain path the OS reported holds each name as stored: a `read_dir` under a plain root
+    // joins `dup.` verbatim, so every trailing dot and space stays (❌ never Win32's strip of a
+    // path PASSED IN, which would name `dup` beside `dup.`). Only `.` and `..` resolve by text,
+    // which no stored name is.
+    let slashed = text.replace('\\', "/");
     if slashed.starts_with("//./") || slashed.starts_with("//?/") {
         return Err(NotAnAppPath::DevicePath);
     }
