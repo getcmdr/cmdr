@@ -228,6 +228,28 @@ func TestAnAssertAgainstABorrowedPathBufCompiles(t *testing.T) {
 	}
 }
 
+func TestABorrowedTypedOperandTakesItsDepthFromRustcsNote(t *testing.T) {
+	text := "fn t() {\n    assert_eq!(volume.root(), Path::new(&params.app_root()));\n}\n"
+	start, end := strings.Index(text, "assert_eq!"), strings.Index(text, ";\n}")
+	d := diag("E0277", "can't compare `app_path::AppPath` with `std::path::Path`",
+		diagSpan{FileName: fixtureFile, ByteStart: start, ByteEnd: end, IsPrimary: true, Macro: "assert_eq"})
+	d.Children = []diagnostic{
+		{Message: "the trait `PartialEq<std::path::Path>` is not implemented for `app_path::AppPath`"},
+		{Message: "required for `&cmdr_fs::app_path::AppPath` to implement `PartialEq<&std::path::Path>`"},
+	}
+	if got := run(t, text, d); !strings.Contains(got, "assert_eq!(&*volume.root().as_std_legacy(), Path::new(&params.app_root()));") {
+		t.Fatalf("depth not read from the note:\n%s", got)
+	}
+	// The line an earlier pass left (`Path == &Path`) mends the same way.
+	broken := "fn t() {\n    assert_eq!(*volume.root().as_std_legacy(), Path::new(&params.app_root()));\n}\n"
+	start, end = strings.Index(broken, "assert_eq!"), strings.Index(broken, ";\n}")
+	d = diag("E0277", "can't compare `std::path::Path` with `&std::path::Path`",
+		diagSpan{FileName: fixtureFile, ByteStart: start, ByteEnd: end, IsPrimary: true, Macro: "assert_eq"})
+	if got := run(t, broken, d); !strings.Contains(got, "assert_eq!(&*volume.root().as_std_legacy(), Path::new(&params.app_root()));") {
+		t.Fatalf("earlier pass's operand not mended:\n%s", got)
+	}
+}
+
 func TestATestDirIntoATypedSlotCrossesTheBridge(t *testing.T) {
 	for _, c := range []struct{ expr, found, want string }{
 		{"dir", "&cmdr_fs::testing::TestDir", "volume.list_directory(&AppPath::legacy_unchecked(dir), None)"},

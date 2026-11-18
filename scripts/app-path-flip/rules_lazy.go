@@ -9,7 +9,13 @@ import (
 // borrowedFutureEdits answers an E0515, a returned future borrowing something local: a
 // bridge round trip's temporary, or a prelude a lazy helper's future borrows.
 func (r *rewriter) borrowedFutureEdits(d *diagnostic, src *source, p *diagSpan) []edit {
+	if d.code() == "E0716" {
+		return hoistEdits(src, p)
+	}
 	if e := roundTripEdits(d, src, p); len(e) > 0 {
+		return e
+	}
+	if e := splitRoundTripEdits(d, src, p); len(e) > 0 {
 		return e
 	}
 	return r.asyncHelperEdits(d, src, p)

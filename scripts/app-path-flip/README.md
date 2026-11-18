@@ -60,7 +60,13 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   `&paths.iter().map(|p| AppPath::legacy_unchecked(&p.as_std_legacy()).into_owned()).collect::<Vec<_>>()`) collapses it
   to `path` (`paths`) when that's a param of the enclosing fn typed `&AppPath` (`&[AppPathBuf]`): the identity. The
   codemod no longer makes these (a stale body error is now skipped in ANY fn whose signature is being retyped,
-  `macro_rules!` bodies included); the rule mends trees flipped before that.
+  `macro_rules!` bodies included); the rule mends trees flipped before that. Its split twin (`rules_hoist.go`): an
+  earlier pass's `&AppPath::legacy_unchecked(path)` after a later pass's prelude shadowed the typed `path` gets the
+  param back (the prelude goes when nothing else reads it, else the param is kept as `path_app`, as below).
+- **E0716 hoist** (`rules_hoist.go`): `AppPath::legacy_unchecked(&dir)` inside a statement whose result outlives it (a
+  future held in a `let`, a `tokio::join!` arm) moves to `let dir_app = AppPath::legacy_unchecked(&dir);` just before
+  the statement. Only a plain argument moves (nothing in the statement runs in another order); a name the fn already
+  uses stays residue.
 - **E0308 by type pair** (`valueRules`): a std path into a `&AppPath` slot becomes `app_path!("…")` for a canonical
   literal (`isCanonicalLiteral`: a POSIX path of plain names, or `scheme://authority/names`), else
   `&AppPath::legacy_unchecked(…)`; a batch maps each through the bridge; an owned `PathBuf` into an `AppPathBuf` slot is
@@ -78,11 +84,12 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   (`.as_ref().map(BridgedPath::app)`). A literal root becomes `AppPath::from_normalized("/").expect(…)`. A `self.x()`
   accessor is no field: residue.
 - **Comparison**: `assert_eq!`/`assert_ne!` (and an in-file `==` that rustc labels) comparing a typed value with a std
-  one drops the typed operand to `Path` behind as many `&` as the other side has (`&*path.as_std_legacy()` against a
-  `&PathBuf`, `*path.as_std_legacy()` against a `PathBuf`; `Cow<Path>` compares with neither), a `BridgedPath` through
-  `.as_path()`, and an `Option`/`Vec` of typed paths against one of `PathBuf`s to the same container of owned std paths.
-  An operand an earlier pass left as `….as_std_legacy()` gets reshaped the same way. The expected value is untouched;
-  any other shape (`Option<&AppPath>`) is residue.
+  one drops the typed operand to `Path` behind as many `&` as the other side has (read from rustc's
+  `required for `&A`to implement`PartialEq<&B>`` note, since its message names the pair with the shared `&`s peeled)
+  (`&*path.as_std_legacy()` against a `&PathBuf`, `*path.as_std_legacy()` against a `PathBuf`; `Cow<Path>` compares with
+  neither), a `BridgedPath` through `.as_path()`, and an `Option`/`Vec` of typed paths against one of `PathBuf`s to the
+  same container of owned std paths. An operand an earlier pass left as `….as_std_legacy()` gets reshaped the same way.
+  The expected value is untouched; any other shape (`Option<&AppPath>`) is residue.
 - **Imports**: a name a rule introduced (`AppPath`, `AppPathBuf`, `BridgedPath`, `app_path!`, `Path`, `PathBuf`) is
   imported at rustc's suggested point, or at the head of the innermost module when rustc suggests none (it doesn't for
   another crate's items). Never twice in one module, and ❌ never between an item and its outer attributes or doc
