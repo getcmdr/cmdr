@@ -211,6 +211,12 @@ can only touch its own `messages/<tag>/` can't race another. Decision: a per-OS 
 that OS reads now. **Why:** the `macos` branch stays as it is unless it's wrong (`docs/i18n/translator-instructions.md`,
 Per-OS values), and the homemade scripts each retyped it, or rebuilt it from helpers, to change the other two.
 
+Two i18n checks read a reasoned allowlist JSON beside them: `i18n-term-consistency-allowlist.json` (accepted splits) and
+`i18n-quoted-labels-allowlist.json` (a quote naming another app's control on one OS branch,
+`docs/guides/i18n-translation.md` § "A quote must copy the label it names, unless it names another app's"). Decision: an
+entry exempts one finding by key, OS branch, and quoted label, never a whole key. **Why:** the same key's other branches
+still quote Cmdr's own labels, and a key-wide mute would hide a later real mismatch there.
+
 ## Key decisions
 
 - **Pure helpers in `instance-id.ts`, side effects in `tauri-wrapper.ts`.** The sanitizer, identifier composer,

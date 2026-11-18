@@ -6,7 +6,13 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { quotedLabelPairs, mismatchedQuotes, runQuotedLabelsCheck } from './i18n-check-quoted-labels.ts'
+import {
+  quotedLabelPairs,
+  mismatchedQuotes,
+  quoteMismatches,
+  applyQuoteExemptions,
+  runQuotedLabelsCheck,
+} from './i18n-check-quoted-labels.ts'
 import { EXIT_CLEAN, EXIT_ISSUES } from './i18n-locale-check-lib.ts'
 
 const en = {
@@ -81,6 +87,56 @@ describe('platform blocks, compared per rendered OS', () => {
   })
 })
 
+describe('applyQuoteExemptions: a quote naming another app’s own label, on one OS', () => {
+  const enOs = {
+    'c.readOnly': 'Read-only',
+    'c.fix':
+      '{platform, select, macos {Unlock it in Finder.} windows {Clear “Read-only” in File Explorer.} other {Check its permissions.}}',
+  }
+  const cs = {
+    'c.readOnly': 'Jen ke čtení',
+    'c.fix':
+      '{platform, select, macos {Odemkněte ho ve Finderu.} windows {V Průzkumníku zrušte „Jen pro čtení“.} other {Zkontrolujte oprávnění.}}',
+  }
+  const mismatches = quoteMismatches(quotedLabelPairs(enOs), cs, enOs)
+  const entry = {
+    key: 'c.fix',
+    platform: 'windows',
+    label: 'Read-only',
+    reason: 'File Explorer’s own checkbox, „Jen pro čtení“ (Microsoft termbase).',
+  }
+
+  it('silences the one mismatch an entry names, with nothing stale', () => {
+    expect(mismatches.map(({ key, platform }) => [key, platform])).toEqual([['c.fix', 'windows']])
+    expect(applyQuoteExemptions(mismatches, [entry])).toEqual({ issues: [], stale: [] })
+  })
+
+  it('doesn’t count an entry with a blank reason: the reason is the point', () => {
+    const blank = { ...entry, reason: '  ' }
+    const { issues, stale } = applyQuoteExemptions(mismatches, [blank])
+    expect(issues.map(({ key }) => key)).toEqual(['c.fix', 'c.fix'])
+    expect(issues[1].detail).toMatch(/exemption for “Read-only” on windows has no reason/)
+    expect(stale).toEqual([])
+  })
+
+  it('doesn’t reach another OS branch or another quoted label', () => {
+    const elsewhere = [
+      { ...entry, platform: 'linux' },
+      { ...entry, label: 'Hidden' },
+    ]
+    const { issues, stale } = applyQuoteExemptions(mismatches, elsewhere)
+    expect(issues).toHaveLength(1)
+    expect(stale).toEqual(elsewhere)
+  })
+
+  it('flags an entry whose quote no longer mismatches, so the allowlist shrinks', () => {
+    const fixed = { ...cs, 'c.fix': cs['c.fix'].replace('„Jen pro čtení“', '„Jen ke čtení“') }
+    const { issues, stale } = applyQuoteExemptions(quoteMismatches(quotedLabelPairs(enOs), fixed, enOs), [entry])
+    expect(issues).toEqual([])
+    expect(stale).toEqual([entry])
+  })
+})
+
 describe('runQuotedLabelsCheck (fixture tree)', () => {
   let root: string
   const write = (path: string, data: unknown) => {
@@ -117,6 +173,21 @@ describe('runQuotedLabelsCheck (fixture tree)', () => {
     const code = runQuotedLabelsCheck({ messagesRoot: root, write: (line) => void lines.push(line), only: ['en-XA'] })
     expect(code).toBe(EXIT_CLEAN)
     expect(lines.join('\n')).toMatch(/en-XA: skipped/)
+  })
+
+  it('reads the allowlist: a reasoned entry silences its finding, and a stale one is a finding', () => {
+    const allowlistPath = join(root, 'allowlist.json')
+    const exempt = (key: string) => ({
+      otherAppLabels: { 'es-419': [{ key, platform: 'linux', label: 'Don’t show again', reason: 'Test reason.' }] },
+    })
+    // The fixture's English is plain, so its pairs carry no platform: an entry can only name an OS branch.
+    write(allowlistPath, exempt('a.hint'))
+    const lines: string[] = []
+    expect(runQuotedLabelsCheck({ messagesRoot: root, allowlistPath, write: (line) => void lines.push(line) })).toBe(
+      EXIT_ISSUES,
+    )
+    expect(lines.join('\n')).toMatch(/a\.hint → stale exemption: “Don’t show again” on linux no longer mismatches/)
+    expect(lines.join('\n')).toMatch(/a\.hint → quotes “Don’t show again”/)
   })
 
   it('is clean once the overlay forks the quoting text too', () => {

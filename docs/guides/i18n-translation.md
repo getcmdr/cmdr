@@ -215,6 +215,22 @@ the `note` of the term's `terms.json` entry, naming both keys.
 contains `foo`, so there's nothing to allowlist: if it fires, the translation genuinely broke it. It's warn-only while
 `de`, `es`, `pt`, and `zh` still carry known breaks.
 
+## A quote must copy the label it names, unless it names another app's
+
+Text that quotes a button or setting ("Click “Don’t show again”") must carry that label exactly as your catalog writes
+it, or the reader hunts for a control that doesn't exist. `desktop-i18n-quoted-labels` (`pnpm check i18n-quoted-labels`,
+warn-only) pairs the quote with every key whose whole English value is the quoted text, and checks each OS branch.
+
+That pairing has one false positive: a quote naming ANOTHER app's own control on one OS, whose English happens to match
+a Cmdr key. The `windows` branch of `errors.write.fileLocked.suggestion` quotes File Explorer's “Read-only” checkbox, so
+Czech writes Microsoft's „Jen pro čtení“, while Cmdr's own `errors.listing.readOnly.title` is Apple's `Jen ke čtení`.
+Copying Cmdr's label there would send the reader after a checkbox Windows doesn't have. Record such a quote in
+`apps/desktop/scripts/i18n-quoted-labels-allowlist.json`, under `otherAppLabels.<tag>`, as one entry naming the `key`,
+the `platform` branch (`macos`, `windows`, `linuxGnome`, `linuxKde`, or `linux`), the quoted English `label`, and a
+`reason` citing where the other app's word comes from. A blank reason doesn't count, and an entry that silences nothing
+is itself a finding ("stale exemption … drop it"), so delete it when the quote changes. A quote of a Cmdr label never
+qualifies: fix the quote instead.
+
 ## Deliberately-identical strings (the `sameAsSourceJustification` field)
 
 Some keys are CORRECTLY identical to English in your language and must never be force-translated: a brand name

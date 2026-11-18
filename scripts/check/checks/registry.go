@@ -966,7 +966,7 @@ var AllChecks = []CheckDefinition{
 		NotInCI:   "warn-only metric; it can never fail, so a CI step would be noise",
 		DependsOn: nil,
 		IsFast:    true,
-		Inputs:    inputs([]string{"apps/desktop/src/lib/intl/messages/**", "apps/desktop/scripts/i18n-*.ts"}),
+		Inputs:    inputs([]string{"apps/desktop/src/lib/intl/messages/**", "apps/desktop/scripts/i18n-*.ts", "apps/desktop/scripts/i18n-quoted-labels-allowlist.json"}),
 		Run:       RunDesktopI18nQuotedLabels,
 	},
 	{

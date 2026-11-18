@@ -1183,7 +1183,10 @@ Policy by staleness class:
   small/hardcoded).
 - **Satisfied entries with a reason** (coverage now ≥ threshold+5% margin; exempt component that has a valid a11y test;
   allowlisted E2E test now under 1.5 s): reported for an agent to judge — the reason may say "tested elsewhere", and the
-  margin band stays silently allowlisted to avoid removal/re-add churn.
+  margin band stays silently allowlisted to avoid removal/re-add churn. The i18n reason-lists
+  (`i18n-term-consistency-allowlist.json`, `i18n-quoted-labels-allowlist.json`, both beside their TypeScript checks in
+  `apps/desktop/scripts/`, and both named in their lane's `Inputs`) report an entry that silences nothing as a finding,
+  and an agent deletes it by hand.
 - **Numeric slack** (file-length, the website bundle-size baseline): auto-ratcheted; the entries carry no reason text,
   so the rewrite loses nothing. `invariant-density` and the two jscpd lanes ratchet the same way but carry no buffer —
   their numbers only move when somebody writes a rule or duplicates a block, so there's no drift to absorb.

@@ -25,9 +25,19 @@
  * Warn-only: a paraphrase is a quality slip, and the label is sometimes bent to
  * fit the sentence on purpose (a case ending); a reviewer judges.
  *
+ * One false positive has an explicit way out: a quote that names ANOTHER app's
+ * own control on one OS (File Explorer's “Read-only” checkbox) pairs with any
+ * Cmdr key sharing that English, though the other app's word may differ. An
+ * entry in `i18n-quoted-labels-allowlist.json` (`otherAppLabels.<locale>`: key,
+ * platform branch, quoted English label, and a required reason) silences that one
+ * finding. A blank reason doesn't count, and an entry that silences nothing is a
+ * finding itself, so the list only shrinks.
+ *
  * Run: `pnpm i18n:check-quoted-labels` (desktop). `--messages-root <dir>` points at a fixture.
  */
 
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { pickPlatformBranch } from '../src/lib/intl/platform-select.ts'
 import {
   BASE_LOCALE,
@@ -105,6 +115,38 @@ export function quotedLabelPairs(english: Record<string, string>): QuotedLabelPa
   })
 }
 
+/** Where the accepted other-app quotes live. */
+const ALLOWLIST_PATH: string = join(import.meta.dirname, 'i18n-quoted-labels-allowlist.json')
+
+/** One accepted quote of another app's own label: which key, on which OS branch, quoting which English label, and WHY. */
+export interface QuoteExemption {
+  key: string
+  platform: string
+  label: string
+  reason: string
+}
+
+/** The allowlist file's shape: per locale, its accepted other-app quotes. */
+interface QuoteAllowlist {
+  otherAppLabels: Record<string, QuoteExemption[]>
+}
+
+/** Reads the allowlist, tolerating a missing file (everything is then strict). */
+function loadQuoteAllowlist(path: string = ALLOWLIST_PATH): QuoteAllowlist {
+  try {
+    const parsed = JSON.parse(readFileSync(path, 'utf8')) as Partial<QuoteAllowlist>
+    return { otherAppLabels: parsed.otherAppLabels ?? {} }
+  } catch {
+    return { otherAppLabels: {} }
+  }
+}
+
+/** One mismatched quote, with what an exemption matches on: the quoted English label and the OS (unset for a pair that renders alike everywhere). */
+export interface QuoteMismatch extends Issue {
+  label: string
+  platform?: RenderedPlatform
+}
+
 /**
  * The pairs whose quoting text, in `messages`, contains none of its sources'
  * labels, judged on each OS the pair renders on. With `source` (the English a
@@ -120,7 +162,43 @@ export function mismatchedQuotes(
   messages: Record<string, string>,
   source?: Record<string, string>,
 ): Issue[] {
-  const issues: Issue[] = []
+  return quoteMismatches(pairs, messages, source).map(({ key, detail }) => ({ key, detail }))
+}
+
+/**
+ * Drops the mismatches a reasoned exemption names (same key, OS, and quoted
+ * label), and returns the exemptions that matched nothing as `stale`. An entry
+ * with a blank reason exempts nothing and adds an issue saying so.
+ * @param mismatches from `quoteMismatches`
+ * @param entries the locale's `otherAppLabels`
+ */
+export function applyQuoteExemptions(
+  mismatches: readonly QuoteMismatch[],
+  entries: readonly QuoteExemption[],
+): { issues: Issue[]; stale: QuoteExemption[] } {
+  const reasoned = entries.filter((entry) => entry.reason.trim().length > 0)
+  const matches = (entry: QuoteExemption, m: QuoteMismatch) =>
+    entry.key === m.key && entry.platform === m.platform && entry.label === m.label
+  const issues: Issue[] = mismatches
+    .filter((m) => !reasoned.some((entry) => matches(entry, m)))
+    .map(({ key, detail }) => ({ key, detail }))
+  for (const entry of entries.filter((e) => !reasoned.includes(e))) {
+    issues.push({
+      key: entry.key,
+      detail: `exemption for “${entry.label}” on ${entry.platform} has no reason, so it doesn’t count`,
+    })
+  }
+  const stale = reasoned.filter((entry) => !mismatches.some((m) => matches(entry, m)))
+  return { issues, stale }
+}
+
+/** `mismatchedQuotes`, keeping each finding's quoted label and OS for `applyQuoteExemptions`. */
+export function quoteMismatches(
+  pairs: readonly QuotedLabelPair[],
+  messages: Record<string, string>,
+  source?: Record<string, string>,
+): QuoteMismatch[] {
+  const issues: QuoteMismatch[] = []
   const pending = (key: string, platform: RenderedPlatform) =>
     source !== undefined && key in source && carriesSourceOn(source[key], messages[key], platform)
   for (const { key, label, sources, platforms } of pairs) {
@@ -137,7 +215,12 @@ export function mismatchedQuotes(
         .replace(/''/g, "'")
         .replace(/[…⋯]$/, '')
       const on = platforms === undefined ? '' : ` on ${platform}`
-      issues.push({ key, detail: `quotes “${label}”, but not its label here: “${shown}” (${first})${on}` })
+      issues.push({
+        key,
+        label,
+        ...(platforms === undefined ? {} : { platform }),
+        detail: `quotes “${label}”, but not its label here: “${shown}” (${first})${on}`,
+      })
       // A pair that renders alike everywhere breaks alike everywhere: report it once.
       if (platforms === undefined) break
     }
@@ -150,10 +233,12 @@ export function mismatchedQuotes(
  * @param opts.messagesRoot override the `messages/` root (for tests)
  * @param opts.write output sink, one line at a time (for tests)
  * @param opts.only only these locales (a generated one is skipped even when named)
+ * @param opts.allowlistPath override the other-app quote allowlist (for tests)
  */
-export function runQuotedLabelsCheck(opts: LocaleCheckOptions = {}): number {
+export function runQuotedLabelsCheck(opts: LocaleCheckOptions & { allowlistPath?: string } = {}): number {
   const base = loadCatalog(BASE_LOCALE, opts.messagesRoot).messages
   const pairs = quotedLabelPairs(base)
+  const { otherAppLabels } = loadQuoteAllowlist(opts.allowlistPath)
   const write =
     opts.write ??
     ((line: string) => {
@@ -173,7 +258,17 @@ export function runQuotedLabelsCheck(opts: LocaleCheckOptions = {}): number {
         : pairs
       const effective = isOverlay ? { ...source.messages, ...catalog.messages } : catalog.messages
       const english = pendingTranslationOf(locale, base)
-      for (const { key, detail } of mismatchedQuotes(held, effective, english)) findings.add(key, detail)
+      const { issues, stale } = applyQuoteExemptions(
+        quoteMismatches(held, effective, english),
+        otherAppLabels[locale] ?? [],
+      )
+      for (const { key, detail } of issues) findings.add(key, detail)
+      for (const { key, label, platform } of stale) {
+        findings.add(
+          key,
+          `stale exemption: “${label}” on ${platform} no longer mismatches; drop it from i18n-quoted-labels-allowlist.json`,
+        )
+      }
     },
   })
 }

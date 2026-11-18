@@ -1,0 +1,18 @@
+{
+  "otherAppLabels": {
+    "cs": [
+      {
+        "key": "errors.write.permissionDenied.suggestion.delete",
+        "platform": "windows",
+        "label": "Read-only",
+        "reason": "The quote is File Explorer's own \"Read-only\" checkbox in the file's Properties, which Czech Windows labels „Jen pro čtení“ (Microsoft termbase: read-only → jen pro čtení). Cmdr's `errors.listing.readOnly.title` is Apple's `Jen ke čtení`, a different app's word."
+      },
+      {
+        "key": "errors.write.fileLocked.suggestion",
+        "platform": "windows",
+        "label": "Read-only",
+        "reason": "The quote is File Explorer's own \"Read-only\" checkbox in the file's Properties, which Czech Windows labels „Jen pro čtení“ (Microsoft termbase: read-only → jen pro čtení). Cmdr's `errors.listing.readOnly.title` is Apple's `Jen ke čtení`, a different app's word."
+      }
+    ]
+  }
+}
