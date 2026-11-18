@@ -20,9 +20,10 @@
 //!   becomes an app path only through a named, searchable constructor. The one transition
 //!   bridge ([`AppPath::legacy_unchecked`], [`AppPath::as_std_legacy`]) is counted by the
 //!   `app-path-std-bridge` check and goes away once every crate speaks this type.
-//! - `Eq`, `Hash`, and `Ord` are component-wise, as `PathBuf`'s are on POSIX, so a sorted
-//!   or hashed collection keyed on app paths behaves exactly as one keyed on `PathBuf`
-//!   (`shape.rs` says where the two differ, and why).
+//! - `Eq`, `Hash`, and `Ord` are component-wise: text the host's OS opens reads as its
+//!   `PathBuf` does, everything else with the app's own grammar, so a sorted or hashed
+//!   collection keyed on app paths behaves as one keyed on `PathBuf` for every value the
+//!   host's `std` meets (`shape::components` says where they differ, and why).
 //!
 //! Pure: builds for the browser too, and every conversion runs on every OS as data.
 //! `crates/cmdr-fs/DETAILS.md` § "App paths" holds the design and its decisions.

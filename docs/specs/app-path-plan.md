@@ -623,20 +623,28 @@ caller turns into "not found"):
 - `to_native` and `from_native`: § "The native boundary" (today's `path_grammar` bodies, moved, with typed refusals).
 - `Display`: the wire spelling (for logs, wrapped in `LogPrivate` as today). `shown()`: what a person reads, the ONE
   formatter (Windows `\`, picks taken out through `twin_path::shown`), the twin of the frontend's `shownPath`.
-- `Eq`, `Hash`, `Ord`: **component-wise, defined as `Path::components` over the text with the HOST's rules** (amended in
-  the type's review, 2026-11-18: round one said POSIX rules everywhere, which broke Windows dedup): on macOS and Linux
-  POSIX components (the root first, `/` as `RootDir`, which sorts below any name, so `/x` < `sftp://…` as `PathBuf` has
-  it; a leading `//` is a plain root, as std reads it); on Windows std's Windows components (both separators, the drive
-  and UNC and verbatim prefixes as `Prefix`, ordered as std orders them), so a bridge value `C:\x` equals `C:/x` and
-  `C:\x\` there, as `PathBuf` does. Empty and `.` names skipped, `..` kept. A scheme root is ONE component on every host
-  (as std components `sftp:///x` would equal `sftp://x/`). On a normalized value `Eq` is the same as comparing bytes; on
-  a bridge value made from an unnormalized `PathBuf` (`/a/`, `/a/./b`) it still equals what `PathBuf` equals on that
-  host, so a `HashSet` keyed on the typed path dedups exactly as today (survey; property-tested against `PathBuf` on
-  macOS, Linux, and the Windows builder). The cost, accepted: a UNC value on a POSIX host (made only by
-  `parse(_, Windows)`, so test-only there) compares as the POSIX path with its text. Within a name, bytes compare as
-  `OsStr` bytes do. The one known divergence: an escaped non-UTF-8 name (§ "Names that aren't UTF-8") sorts by its
-  escape code point, above every raw byte, where `PathBuf` sorted the raw byte; it's a consistent total order, and no
-  path order is persisted (the `BTree*`s are in-memory), so it's accepted.
+- `Eq`, `Hash`, `Ord`: **component-wise, the HYBRID reading** (decided by the lead after the type's second review,
+  2026-11-18; round one said POSIX rules everywhere, which broke Windows dedup, and the first review's fix said the
+  host's rules everywhere, which on Windows made `/d/a\b == /d/a/b` and so hid the "`\` joined into an in-memory path"
+  class this plan exists to fix). Host rules apply only to text that host's OS really opens; everything else reads with
+  the app's own grammar (`/` the only separator): on macOS and Linux every non-scheme text is the OS's, so POSIX
+  components (the root first, `/` as `RootDir`, which sorts below any name, so `/x` < `sftp://…` as `PathBuf` has it; a
+  leading `//` is a plain root, as std reads it, so a sloppy `//Users` bridge value equals `/Users`); on Windows std's
+  Windows components (both separators, the drive and UNC and verbatim prefixes as `Prefix`, ordered as std orders them)
+  for drive, UNC, verbatim, device, `\`-led, and relative text, so a bridge value `C:\x` equals `C:/x` and `C:\x\`
+  there, as `PathBuf` does, but a POSIX-kind `/x` (the in-memory volume's and the fixtures') reads with the app's
+  grammar, so `/d/a\b != /d/a/b` there. Empty and `.` names skipped, `..` kept. A scheme root is ONE component on every
+  host (as std components `sftp:///x` would equal `sftp://x/`). Still one function of the text, so `Eq` is an
+  equivalence, `Hash` agrees, and `Ord` is total and `Equal` exactly when `Eq` holds (property-tested under both hosts'
+  rules on every OS, `properties_test.rs` § `hybrid_comparison`, plus the `PathBuf` property on the Windows builder for
+  the text Win32 opens). On a normalized value `Eq` is the same as comparing bytes; on a bridge value made from an
+  unnormalized `PathBuf` (`/a/`, `/a/./b`) it still equals what `PathBuf` equals on that host, so a `HashSet` keyed on
+  the typed path dedups exactly as today (survey; property-tested against `PathBuf` on macOS, Linux, and the Windows
+  builder). The cost, accepted: a UNC value on a POSIX host (made only by `parse(_, Windows)`, so test-only there)
+  compares as the POSIX path with its text. Within a name, bytes compare as `OsStr` bytes do. The one known divergence:
+  an escaped non-UTF-8 name (§ "Names that aren't UTF-8") sorts by its escape code point, above every raw byte, where
+  `PathBuf` sorted the raw byte; it's a consistent total order, and no path order is persisted (the `BTree*`s are
+  in-memory), so it's accepted.
 
 **Construction**, each named and greppable, ❌ no `From` impls:
 

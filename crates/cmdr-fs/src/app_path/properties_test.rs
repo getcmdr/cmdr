@@ -354,8 +354,14 @@ mod comparison_windows {
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(4_000))]
 
+        /// Every text Win32 opens compares as `PathBuf` does here. A POSIX-kind `/x` is the
+        /// app's own (the hybrid, `shape::components`), so it's left to the all-host
+        /// properties.
         #[test]
-        fn comparison_matches_pathbuf_on_windows_text(a in windows_text(), b in windows_text()) {
+        fn comparison_matches_pathbuf_on_windows_text(
+            a in windows_text().prop_filter("not POSIX-kind", |t| !super::posix_kind(t)),
+            b in windows_text().prop_filter("not POSIX-kind", |t| !super::posix_kind(t)),
+        ) {
             let (typed_a, typed_b) = (AppPath::legacy_unchecked(Path::new(&a)), AppPath::legacy_unchecked(Path::new(&b)));
             let (std_a, std_b) = (PathBuf::from(&a), PathBuf::from(&b));
             prop_assert_eq!(typed_a == typed_b, std_a == std_b, "{:?} {:?}", a, b);
@@ -452,5 +458,123 @@ mod bridge_windows {
             let units: Vec<u16> = bridged.as_std_legacy().as_os_str().encode_wide().collect();
             assert_eq!(units, text.encode_utf16().collect::<Vec<u16>>(), "{text:?}");
         }
+    }
+}
+
+/// Whether `text` is POSIX-kind (`shape::components`' test): one `/`, then no second
+/// separator.
+fn posix_kind(text: &str) -> bool {
+    text.starts_with('/') && !text[1..].starts_with(['/', '\\'])
+}
+
+/// The hybrid comparison, read as either host reads it, on every OS: it stays an equivalence
+/// with a total order and an agreeing hash, whatever mix of shapes it meets (canonical
+/// values, bridge text with `\`, `//`, `.`, verbatim prefixes, schemes).
+mod hybrid_comparison {
+    use std::cmp::Ordering;
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    use proptest::prelude::*;
+
+    use super::super::super::shape::{Component, components_for};
+    use super::super::super::*;
+
+    fn mixed_text() -> impl Strategy<Value = String> {
+        let prefix = prop_oneof![
+            Just(String::new()),
+            Just("/".to_string()),
+            Just("//".to_string()),
+            Just("C:".to_string()),
+            Just(r"\\srv\share".to_string()),
+            Just("//srv/share".to_string()),
+            Just(r"\\?\C:".to_string()),
+            Just("sftp://h".to_string()),
+            Just("sftp://".to_string()),
+        ];
+        let segment = prop_oneof![
+            3 => prop::collection::vec(prop_oneof![Just('a'), Just('b'), Just('\\'), Just('.'), Just(':')], 1..4)
+                .prop_map(|chars| chars.into_iter().collect::<String>()),
+            1 => Just(String::new()),
+            1 => Just(".".to_string()),
+            1 => Just("..".to_string()),
+        ];
+        let sep = prop_oneof![Just('/'), Just('\\')];
+        (prefix, prop::collection::vec((sep, segment), 0..4)).prop_map(|(prefix, parts)| {
+            let mut text = prefix;
+            for (sep, segment) in parts {
+                text.push(sep);
+                text.push_str(&segment);
+            }
+            text
+        })
+    }
+
+    fn seq(text: &str, host: PathFlavor) -> Vec<Component<'_>> {
+        components_for(text, host).collect()
+    }
+
+    fn hash_seq(text: &str, host: PathFlavor) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        for component in components_for(text, host) {
+            component.hash(&mut hasher);
+        }
+        hasher.finish()
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(2_000))]
+
+        #[test]
+        fn eq_hash_and_ord_agree_under_either_host(a in mixed_text(), b in mixed_text(), c in mixed_text(), windows in any::<bool>()) {
+            let host = if windows { PathFlavor::Windows } else { PathFlavor::Posix };
+            let (sa, sb, sc) = (seq(&a, host), seq(&b, host), seq(&c, host));
+            let ab = sa.cmp(&sb);
+            prop_assert_eq!(ab == Ordering::Equal, sa == sb);
+            prop_assert_eq!(ab, sb.cmp(&sa).reverse());
+            if sa == sb {
+                prop_assert_eq!(hash_seq(&a, host), hash_seq(&b, host));
+            }
+            let mut sorted = [sa, sb, sc];
+            sorted.sort();
+            prop_assert!(sorted[0] <= sorted[1] && sorted[1] <= sorted[2] && sorted[0] <= sorted[2]);
+        }
+
+        /// The real type, on this host: `Eq` holds exactly when `Ord` says `Equal`, and equal
+        /// values hash alike.
+        #[test]
+        fn the_types_comparison_is_consistent_on_this_host(a in mixed_text(), b in mixed_text()) {
+            let (pa, pb) = (
+                AppPath::legacy_unchecked(std::path::Path::new(&a)),
+                AppPath::legacy_unchecked(std::path::Path::new(&b)),
+            );
+            prop_assert_eq!(pa == pb, pa.cmp(&pb) == Ordering::Equal);
+            if pa == pb {
+                prop_assert_eq!(super::hash_of(&pa), super::hash_of(&pb));
+            }
+        }
+
+        /// Under Windows' rules a POSIX-kind path reads with the app's grammar, which is
+        /// POSIX's: a `\` is a name character there.
+        #[test]
+        fn a_posix_kind_path_reads_as_posix_under_windows_rules(a in mixed_text().prop_filter("POSIX-kind", |t| super::posix_kind(t))) {
+            prop_assert_eq!(seq(&a, PathFlavor::Windows), seq(&a, PathFlavor::Posix));
+        }
+    }
+
+    /// Review 2's N4 inputs, on every OS.
+    #[test]
+    fn a_backslash_in_an_in_memory_path_never_merges_with_a_slash() {
+        let windows = PathFlavor::Windows;
+        assert_ne!(seq(r"/d/a\b", windows), seq("/d/a/b", windows));
+        assert_ne!(seq(r"/d\", windows), seq("/d", windows));
+        assert_ne!(seq(r"/d/a\b", PathFlavor::Posix), seq("/d/a/b", PathFlavor::Posix));
+        // What Win32 opens still compares as `PathBuf` does there.
+        assert_eq!(seq(r"C:\x", windows), seq("C:/x", windows));
+        assert_eq!(seq(r"C:\x\", windows), seq("C:/x", windows));
+        assert_eq!(seq(r"\\srv\sh\x", windows), seq("//srv/sh/x", windows));
+        assert_eq!(seq("/a/./b/", windows), seq("/a/b", windows));
+        // On POSIX a sloppy `//` join is the path std opens.
+        assert_eq!(seq("//Users", PathFlavor::Posix), seq("/Users", PathFlavor::Posix));
     }
 }

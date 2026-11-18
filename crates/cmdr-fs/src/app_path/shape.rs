@@ -84,21 +84,42 @@ pub(super) enum Component<'a> {
     Normal(&'a str),
 }
 
-/// The components `Eq`, `Hash`, and `Ord` compare: `Path::components` over the text, with
-/// THIS host's rules, so a set keyed on app paths dedups and sorts as one keyed on `PathBuf`
-/// did on the same host (unnormalized bridge values included: `/a/`, `/a/./b`, and on
-/// Windows `C:\x` beside `C:/x`). One deliberate difference: a scheme root is ONE token,
-/// since as std components `sftp:///x` would equal `sftp://x/`.
+/// The components `Eq`, `Hash`, and `Ord` compare. The HYBRID reading (decided by the lead
+/// after the type's second review, 2026-11-18): a text this host's OS really opens reads
+/// with this host's `Path::components` rules, so a set keyed on app paths dedups and sorts
+/// as one keyed on `PathBuf` did (unnormalized bridge values included: `/a/`, `/a/./b`, and
+/// on Windows `C:\x` beside `C:/x`); every other text reads with the app's own grammar, `/`
+/// the only separator:
 ///
-/// On macOS and Linux a leading `//` is a plain root, as std reads it, so a UNC value (made
-/// only by `parse(_, Windows)`, test-only there) compares as the POSIX path with its text.
+/// - A scheme path, on every host: its root is ONE token (as std components `sftp:///x`
+///   would equal `sftp://x/`), then its `/`-separated names.
+/// - On Windows, a POSIX-kind path (`/x`, the in-memory volume's and the fixtures'): Win32
+///   never opens one as the app means it, so a `\` in it is a name character, and
+///   `/d/a\b` is never `/d/a/b` (review 2's N4: the Windows reading hid exactly the "`\`
+///   joined into an in-memory path" bugs the type exists to catch). Drive, UNC, verbatim,
+///   device, `\`-led, and relative text read as std reads it there.
+/// - On macOS and Linux every non-scheme text is one the OS opens, so all of it reads as
+///   std does: a leading `//` is a plain root, so a UNC value (made only by
+///   `parse(_, Windows)`, test-only there) compares as the POSIX path with its text, while
+///   a sloppily joined `//Users` bridge value equals `/Users`, as `PathBuf` has it.
+///
+/// Still ONE function of the text, so `Eq` is an equivalence, `Hash` agrees with it, and
+/// `Ord` is total and `Equal` exactly when `Eq` holds (property-tested).
 pub(super) fn components(text: &str) -> Components<'_> {
     components_for(text, super::PathFlavor::HOST)
 }
 
-/// [`components`] read with `flavor`'s rules, whatever the host.
-pub(super) fn components_for(text: &str, flavor: super::PathFlavor) -> Components<'_> {
-    let windows = flavor == super::PathFlavor::Windows;
+/// Whether `text` is POSIX-kind: one `/`, then anything but a second separator. On Windows
+/// that text is the app's own, never the OS's.
+fn is_posix_kind(text: &str) -> bool {
+    let bytes = text.as_bytes();
+    bytes.first() == Some(&b'/') && !matches!(bytes.get(1), Some(b'/' | b'\\'))
+}
+
+/// [`components`] read as `host`'s comparison reads it, whatever this build's host is (so
+/// every OS tests both).
+pub(super) fn components_for(text: &str, host: super::PathFlavor) -> Components<'_> {
+    let windows = host == super::PathFlavor::Windows && !is_posix_kind(text);
     if is_scheme_url(text) {
         let (_, root_len) = root_of(text);
         let token = text[..root_len].strip_suffix('/').unwrap_or(&text[..root_len]);

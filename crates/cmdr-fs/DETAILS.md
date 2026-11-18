@@ -201,22 +201,31 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
     what Win32 does.
   - The conversions are pure (`to_native_posix`, `to_native_windows`, `from_native_posix`, `from_native_windows`), so
     Linux CI tests the Windows arm as data; only `platform/` touches `OsStr`.
-- **`Eq`, `Hash`, `Ord` are component-wise, with the HOST's `Path::components`** (`shape.rs`): POSIX components on macOS
-  and Linux (a leading `//` is a plain root, as std reads it), Windows components on Windows (both separators, drive,
-  UNC, and verbatim prefixes ordered as std's `Prefix`), so a `BTreeSet` or `HashSet` keyed on app paths sorts and
-  dedups exactly as one keyed on `PathBuf` on that host, unnormalized bridge text included (property-tested against
-  `PathBuf` on each). Two deliberate differences: a scheme root is ONE component (else `sftp:///x` would equal
-  `sftp://x/`), and an escaped name sorts at its escape code point, above every raw byte. A UNC value on a POSIX host
-  (only `parse(_, Windows)` makes one, test-only there) compares as the POSIX path with its text. Rejected: bytewise,
-  which reorders the in-memory sorted maps and splits `/a` from `/a/` while bridge values are unnormalized; and one
-  flavor-free reading, which made `//Users` and `/Users` unequal on macOS and `C:\x` and `C:/x` unequal on Windows.
+- **`Eq`, `Hash`, `Ord` are component-wise, the HYBRID reading** (`shape::components`, Decision/Why): text the host's OS
+  really opens reads with the host's `Path::components` rules, everything else with the app's own grammar. So POSIX
+  components for every non-scheme text on macOS and Linux (a leading `//` is a plain root, as std reads it), and on
+  Windows std's Windows components (both separators, drive, UNC, and verbatim prefixes ordered as std's `Prefix`) for
+  drive, UNC, verbatim, device, `\`-led, and relative text, but the app's `/`-only reading for a POSIX-kind `/x`, which
+  Win32 never opens as the app means it. A `BTreeSet` or `HashSet` keyed on app paths then sorts and dedups as one keyed
+  on `PathBuf` did for every value the host's `std` meets, unnormalized bridge text included (property-tested against
+  `PathBuf` on each host), while `/d/a\b` never equals `/d/a/b` on Windows (review 2's N4: the all-host reading hid
+  exactly the "`\` joined into an in-memory path" bugs). Still one function of the text, so the three stay mutually
+  consistent and total (`properties_test.rs` § `hybrid_comparison`, both hosts' rules on every OS). Two more deliberate
+  differences: a scheme root is ONE component (else `sftp:///x` would equal `sftp://x/`), and an escaped name sorts at
+  its escape code point, above every raw byte. A UNC value on a POSIX host (only `parse(_, Windows)` makes one,
+  test-only there) compares as the POSIX path with its text, the price of `//Users == /Users` for the bridge values the
+  OS does open. Rejected: bytewise, which reorders the in-memory sorted maps and splits `/a` from `/a/` while bridge
+  values are unnormalized; one flavor-free reading, which made `//Users` and `/Users` unequal on macOS and `C:\x` and
+  `C:/x` unequal on Windows; and the host's rules for everything (N4).
 - **Volume-root matches fold a UNC root**: `same_root`, `strip_volume_prefix`, and `is_on_volume` compare the UNC server
   with ASCII case (DNS, NetBIOS) and the share with Unicode simple case folding (the Kelvin sign is `k`; `İ` isn't `i`),
   the names below the root exactly, and a scheme root exactly. `Eq` and `starts_with` stay exact.
-- **Trailing dots and spaces on Windows**: a stored or verbatim name keeps every dot and space (`dup` and `dup.` are two
-  files) and has no plain form (`to_native_plain` refuses `NotPlainSafe`). A PLAIN Windows path from outside and typed
-  input read as Win32 and Explorer's address bar do: each name's trailing dots and spaces go (`C:\x\dup.` is
-  `C:/x/dup`), and a name of only dots and spaces is `BlankName`.
+- **Trailing dots and spaces on Windows**: every path is literal (`dup` and `dup.` are two files) except text a person
+  typed: a listed name, a verbatim or plain path the OS reports (`from_native`: a `read_dir` under a plain root joins
+  `dup.` verbatim), machine-handed text (`from_external_text`: MCP, deep links, the CLI), and every stored value. Such a
+  name has no plain form (`to_native_plain` refuses `NotPlainSafe`). Only `from_person_typed` (the address bar, the
+  go-to dialogs) reads as Explorer does: each name's trailing dots and spaces go (`C:\x\dup.` is `C:/x/dup`), and a name
+  of only dots and spaces is `BlankName`.
 - **The transition bridge** (`legacy_unchecked`, `as_std_legacy`) lets the `Volume` trait take app paths while bodies
   still do `std::path` arithmetic. It never validates or normalizes, and it's lossless: a property test holds
   `legacy_unchecked(p).as_std_legacy()` to `p`'s exact `OsStr` bytes or units, ❌ never `Path ==`, which ignores a
