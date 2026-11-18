@@ -147,10 +147,11 @@ test.describe('Backgrounding a transfer that is still counting', () => {
       )
       .toBeGreaterThan(0)
 
+    // `~=`: off macOS the dialog's access key joins the list (`F2 Alt+B`), so match F2 as one token.
     const backgroundButton = await main.evaluate<boolean>(`(function() {
       var dialog = document.querySelector(${JSON.stringify(PROGRESS_DIALOG)});
       if (!dialog) return false;
-      return !!dialog.querySelector('button[aria-keyshortcuts="F2"]');
+      return !!dialog.querySelector('button[aria-keyshortcuts~="F2"]');
     })()`)
     expect(backgroundButton, 'a scanning transfer must offer Background').toBe(true)
 
@@ -165,7 +166,7 @@ test.describe('Backgrounding a transfer that is still counting', () => {
     // Background it. The modal unmounts; the operation keeps going.
     await main.evaluate(`(function() {
       var dialog = document.querySelector(${JSON.stringify(PROGRESS_DIALOG)});
-      var btn = dialog.querySelector('button[aria-keyshortcuts="F2"]');
+      var btn = dialog.querySelector('button[aria-keyshortcuts~="F2"]');
       btn.click();
     })()`)
 

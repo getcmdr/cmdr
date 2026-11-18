@@ -446,9 +446,10 @@ test.describe('Operation queue window', () => {
 
     // The progress modal appears with the background control. This is the first
     // operation, so the queue behind it is empty and the button reads
-    // "Background", not "Queue". The button carries F2 whichever word it shows.
+    // "Background", not "Queue". The button carries F2 whichever word it shows. `~=`: off macOS the
+    // dialog's access key joins the list (`F2 Alt+B`), so the attribute is a set, never just `F2`.
     await main.waitForSelector(PROGRESS_DIALOG, 5000)
-    const BACKGROUND_BUTTON = `${PROGRESS_DIALOG} button[aria-keyshortcuts="F2"]`
+    const BACKGROUND_BUTTON = `${PROGRESS_DIALOG} button[aria-keyshortcuts~="F2"]`
     await main.waitForSelector(BACKGROUND_BUTTON, 5000)
 
     // Click it → the modal unmounts and the queue window opens, the op still
@@ -601,7 +602,7 @@ test.describe('Operation queue window', () => {
 
     // Background it again: the dialog goes, the operation doesn't.
     await main.evaluate(`(function() {
-      var btn = document.querySelector('[data-dialog-id="transfer-progress"] button[aria-keyshortcuts="F2"]');
+      var btn = document.querySelector('[data-dialog-id="transfer-progress"] button[aria-keyshortcuts~="F2"]');
       if (!btn) throw new Error('the adopted dialog offers no Background button');
       btn.click();
     })()`)
