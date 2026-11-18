@@ -269,7 +269,11 @@ sections compose).
   block + action buttons live in one unlabeled `SectionCard`; the personal / commercial / expired / loading states are
   presentational variants of that one block, all inside the one card (no `anyVisible` gate — it's not registry
   search-driven). `.license-info` dropped its own background / border / radius so the wrapping card is the only frame
-  (no card-in-card)
+  (no card-in-card). Unlicensed, the card adds a "What's included" list for Personal and one line on when work needs a
+  commercial license, right above the mini Enter key / Get a license buttons, so they read as the next step; a licensed
+  install sees only its facts and "Manage license key". ⚠️ That copy restates `docs/business/pricing.md` § The live
+  tiers and `licensing.md` § Additional Use Grants (the 14-day evaluation): change them together, keep the AI line's
+  "free during the beta", and never quote a price here (`pricing.md` lists every place one is hardcoded)
 - **`AdvancedSection.svelte`**: `Advanced`: auto-generated rows for every `section: ['Advanced']` registry entry (via
   `getAdvancedSettings()`), grouped into `SectionCard`s by `cardKey` via the pure `advanced-grouping.ts`
   (`groupAdvancedByCard`). No custom UI per row. Row visibility rides the SAME global `shouldShow`/`anyVisible` pipeline

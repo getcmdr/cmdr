@@ -11,6 +11,7 @@
     } from '#lib/tauri-commands/index.js'
     import Button from '#lib/ui/Button.svelte'
     import SectionCard from '#lib/ui/SectionCard.svelte'
+    import Icon from '#lib/ui/Icon.svelte'
     import { tString } from '#lib/intl/messages.svelte.js'
     import { getLicenseTypeLabel, getStatusText } from './license-section-utils'
     import { closeSelfWindow } from '#lib/child-window-close.js'
@@ -33,6 +34,17 @@
     })
 
     const hasLicense = $derived(licenseInfo !== null)
+
+    // What the free Personal license covers, so the two buttons below read as the next step for
+    // someone who needs more. Facts from `docs/business/pricing.md` § The live tiers and
+    // `licensing.md` § Additional Use Grants: keep these in step with them, and keep the AI line's
+    // "free during the beta" qualifier (pricing.md says why).
+    const personalIncludes = $derived([
+        tString('licensing.section.includedFeatures'),
+        tString('licensing.section.includedMacs'),
+        tString('licensing.section.includedUpdates'),
+        tString('licensing.section.includedAi'),
+    ])
     const statusText = $derived(getStatusText(licenseStatus))
 
     async function handleManageLicense() {
@@ -84,16 +96,31 @@
                 {/if}
             </div>
 
+            {#if !hasLicense}
+                <div class="included">
+                    <h3 class="included-title">{tString('licensing.section.includedTitle')}</h3>
+                    <ul class="included-list">
+                        {#each personalIncludes as item (item)}
+                            <li>
+                                <span class="included-glyph"><Icon name="check" size={14} aria-hidden="true" /></span>
+                                <span>{item}</span>
+                            </li>
+                        {/each}
+                    </ul>
+                    <p class="commercial-line">{tString('licensing.section.commercialNeeded')}</p>
+                </div>
+            {/if}
+
             <div class="actions">
                 {#if hasLicense}
-                    <Button variant="secondary" onclick={handleManageLicense}
+                    <Button variant="secondary" size="mini" onclick={handleManageLicense}
                         >{tString('licensing.section.manageKey')}</Button
                     >
                 {:else}
-                    <Button variant="secondary" onclick={handleManageLicense}
+                    <Button variant="secondary" size="mini" onclick={handleManageLicense}
                         >{tString('licensing.section.enterKey')}</Button
                     >
-                    <Button variant="secondary" onclick={handleBuyLicense}
+                    <Button variant="secondary" size="mini" onclick={handleBuyLicense}
                         >{tString('licensing.section.getLicense')}</Button
                     >
                 {/if}
@@ -112,7 +139,7 @@
     /* No background/border/radius of its own: the wrapping SectionCard owns the
        card frame, so this is just the rows-plus-separator block inside it. */
     .license-info {
-        margin-bottom: var(--spacing-lg);
+        margin-bottom: var(--spacing-md);
     }
 
     .info-row {
@@ -153,8 +180,49 @@
         color: var(--color-toast-success-stripe);
     }
 
+    .included {
+        margin-bottom: var(--spacing-md);
+    }
+
+    .included-title {
+        margin: 0 0 var(--spacing-xs);
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .included-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-xxs);
+        margin: 0 0 var(--spacing-sm);
+        padding: 0;
+        list-style: none;
+        font-size: var(--font-size-sm);
+        color: var(--color-text-primary);
+    }
+
+    .included-list li {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+    }
+
+    .included-glyph {
+        display: inline-flex;
+        flex: none;
+        color: var(--color-allow);
+    }
+
+    .commercial-line {
+        margin: 0;
+        font-size: var(--font-size-sm);
+        color: var(--color-text-secondary);
+    }
+
     .actions {
         display: flex;
-        gap: var(--spacing-md);
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
     }
 </style>
