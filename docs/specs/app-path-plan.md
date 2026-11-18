@@ -897,6 +897,37 @@ included; the hidden couplings it found are why waves B and C differ from round 
   unequal values. Windows builder: `cargo nextest run -p cmdr-fs` green with the new module.
 - **DONE**: the module is complete, documented, and unused outside tests, `path_grammar` delegates to it, and the
   frontend's grammar suite still passes the shared table.
+- **Done** (2026-11-18, branch `worktree-agent-afa89bb10a0f54613`, on milestone 2's branch): `cmdr_fs::app_path` with
+  `AppPath`/`AppPathBuf`, `RelativeAppPath`, `AppName`/`AppNameBuf`, the escape, the pure native conversions plus the
+  host `to_native`/`to_native_plain`/`from_native` behind a `platform/` seam, the bridge, serde/specta, `app_path!`,
+  `testing::AppTestDir` (+ `TestDir::new_in`), `app-path-std-bridge` (empty allowlist), the frontend's
+  `lib/path/escape.ts`, the `escapes`/`escapedUserInput` table sections, and the docs (`crates/cmdr-fs/DETAILS.md` §
+  "App paths"). Where the code differed from this plan, deliberately:
+  - `join` takes an `AppName` (a canonical name type), and is fallible: a drive or UNC path refuses a name holding `\`
+    (`NotAnAppPath::Backslash`), the source-listing-from-another-OS case. `ChildName` (over `&OsStr`, used by the
+    transfer engine) stays as is, with `under_app` beside `under`; folding it into `AppName` is 10a's.
+  - `path_grammar`'s text helpers keep their exact answers (lexical `..`, the frontend twin's semantics; the shared
+    table pins them), so "delegates" means: its old struct folded away and its callers (`tilde`,
+    `local_windows/paths.rs`, the Windows volume arm, a conformance helper) moved to the text helpers, which changes no
+    behavior on any OS. The typed `to_native`'s refusals reach the local Windows volume in milestone 9, as planned.
+  - The typed path reads a one-letter scheme as a drive (`C://x` is `C:/x`, what `from_user_input` makes of a typed
+    `C:\\x`); the text helpers keep the old reading.
+  - Component order makes a UNC root and a scheme root ONE component: as plain POSIX components, `//srv/share/x` would
+    equal `/srv/share/x` and `sftp:///x` would equal `sftp://x/`. So "equal to `PathBuf`" holds on POSIX-shaped text
+    that doesn't start with exactly `//` + a server (the property test's domain).
+  - A typed escape-range code point is escaped through the namer of the path it lands in (unit escapes on a Windows
+    drive or UNC path, byte escapes elsewhere), not always byte escapes: NTFS can hold the literal scalar, and byte
+    escapes there would be `ForeignEscape`.
+  - No `starts_with_folded`/`eq_folded`: `NameRules` carries no case fold today (case sensitivity is
+    `LocationInfo.case_sensitive`), so the folded twins wait for a consumer. `same_root` (the UNC root fold) is here.
+  - No fuzz target (none asked); the property tests cover the parsers with 2,000–4,000 cases each. Verified:
+    `cargo nextest run -p cmdr-fs` on macOS (1,054 tests), the allocation cells (`join` one allocation, today's row path
+    three, arithmetic and bridge zero), `clippy`, the zig cross-check
+    `cargo check --all-targets --target x86_64-pc-windows-gnu` for `cmdr-fs` (with `testing`) and `cmdr-local`, the wasm
+    build of `cmdr-fs`, every Desktop (Rust) and Desktop (Svelte) lane check with `--ci --fresh`, `clippy-linux`,
+    `rust-tests-linux`, and on the Windows builder (`7eba6045c3`) `cargo nextest run -p cmdr-fs --features testing` 858
+    of 858 (26 skipped: the `#1225` ignores milestone 5 lifts) and
+    `cargo clippy -p cmdr-fs -p cmdr-local --all-targets -D warnings` clean.
 
 ### 4. Flip the trait
 

@@ -199,3 +199,16 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
   `link-cplusplus`), a fresh `CARGO_TARGET_DIR` (a cloned `target/` carried stale Windows artifacts, E0461), and zig's
   binary named by path, since mise's `zig` shim has no version outside a pinned project; `cargo clippy` there still
   fails on host and target artifacts mixing (E0461), so Windows clippy runs on the builder.
+- **2026-11-18, the typed app path** (app-path plan milestone 3): `cmdr_fs::app_path` exists and nothing adopts it, so
+  no Windows outcome moves outside `cmdr-fs`'s own new cells. Its native conversions are pure (bytes and UTF-16 units as
+  data), so the Windows arm's refusals (`:`, `NoPortOnUnc`, `NotPlainSafe`, the verbatim `.`/`..`/empty names, `C:` and
+  `C:foo`) run on every OS; only the `OsStr` crossing sits behind `app_path/platform/`. The Mac's zig cross-check
+  `cargo check --all-targets --target x86_64-pc-windows-gnu` is clean for `cmdr-fs` (with `testing`) and `cmdr-local`,
+  and the wasm build of `cmdr-fs` too. On the builder, `cargo nextest run -p cmdr-fs --features testing` in a fresh
+  checkout (`D:\src\cmdr-m3`, `CARGO_TARGET_DIR=D:\target-m3`, `7eba6045c3`): 858 of 858 passed, 26 skipped (the `#1225`
+  ignores), and `cargo clippy -p cmdr-fs -p cmdr-local --all-targets -D warnings` clean. The first run's two reds were
+  the cells, not the type: deserializing a POSIX path is refused on a Windows host (the `from_wire` fence), and the
+  allocation cell's comparison caught today's `PathBuf::join` writing a `\` into an app path (#1225's bug, by
+  construction). Cmd-shell recipe that works there:
+  `cmd /c "cd /d <dir> && set "CARGO_TARGET_DIR=<dir>" && cargo nextest run ... > <log> 2>&1"` (an unquoted
+  `set X=Y && …` keeps the trailing space in the value).
