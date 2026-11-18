@@ -354,6 +354,12 @@ today isn't a safe baseline). Ranges settled and the canonical form added in rev
   backend; NFS skips today and may keep doing so).
 - macOS never produces an escape for its own disks (APFS and HFS+ refuse non-UTF-8, `EILSEQ`); Linux, Windows (unpaired
   surrogates from WSL or old tools), and remote servers do.
+- **Windows, ran on NTFS** (review round 3): `a<D800>b` and `a<D801>b` create side by side; `std::fs::read_dir` and
+  `FindFirstFileW` both hand back the exact units, and both names' `to_string_lossy` is `a\u{FFFD}b`, so #1236's
+  collision is live on Windows today too (the reader's `child_path` is lossy). A plain path reaches them as well as a
+  verbatim one; renaming one to `a<DC00>` and deleting both touched only the named file, and `canonicalize` keeps the
+  lone unit. A name that is the literal scalar U+10E800 (the first unit-escape code point) creates and lists back as
+  that scalar, so the "literal escape" canonical rule above is a real Windows case, not a theoretical one.
 
 ### The escape on the wire and in the frontend
 
@@ -457,7 +463,11 @@ deliberately toward the safe answer with a pin:
   against a volume root, `RemoteRoot`-style prefix checks, `same_root`, and the frontend's `isPathOnVolume` for a
   `//server/share/` root) compares the server and share components with Unicode simple case folding, since both are
   case-insensitive on the wire (DNS and NetBIOS names; SMB share names). Below the root, case is the volume's
-  `NameRules`, as everywhere.
+  `NameRules`, as everywhere. Ran (review round 3): `\\?\UNC\LOCALHOST\d$\x` opens `\\localhost\D$\x`, and a lowercase
+  letter in `\\?\d:\x` opens the drive. ❗ Not run, and not volume-wide: Windows 10 1803+ lets a FOLDER be
+  case-sensitive (`fsutil file setCaseSensitiveInfo`, what WSL sets on folders it creates), so one NTFS volume can hold
+  `A` and `a` side by side in that folder. The builder refused the switch (no WSL feature installed). A per-volume
+  `NameRules` folds the two together there, and the drive index's lowercase key collides; open question 13.
 
 ### Typed and pasted `..`
 
@@ -481,8 +491,13 @@ the volume holding the path means", answered by the volume at the input boundary
   (`lstat`, or SFTP `LSTAT`), resolve that ONE link (`read_link_target`, relative to its folder, through `from_native` /
   the server's spelling) and take the target's parent; otherwise the lexical parent. Windows' local volume keeps the
   default on purpose: Win32 resolves `..` lexically before the filesystem sees it (`GetFullPathNameW`), so lexical IS
-  what Windows means. SMB keeps it too (the protocol has no `..`; Windows servers resolve paths lexically). S3, MTP,
-  ADB, archives, and the virtual volumes have no links, so lexical is exact.
+  what Windows means. Ran (review round 3): through a junction AND a directory symlink, the plain `lk\j\..\marker` and
+  `lk/j/../marker` opened `lk\marker`, never the target's sibling, and `del lk\j\..\victim` removed `lk\victim` and left
+  `real\victim`; Explorer and `cmd` read it the same way, so lexical is also the safe answer for a delete or a move
+  there. It has to happen in the app: the verbatim form `to_native` emits refuses `..` outright (`ERROR_INVALID_NAME` on
+  a drive, `ERROR_BAD_PATHNAME` over UNC; ran). SMB keeps it too (the protocol has no `..`; a Windows client resolves
+  paths lexically before sending, whatever the server). S3, MTP, ADB, archives, and the virtual volumes have no links,
+  so lexical is exact.
 - **Faithful by default**: only a `..` that crosses a symlink changes the text; every other part stays as typed. That's
   why go-to-path refused `canonicalize` (`apps/desktop/src-tauri/src/go_to_path/CLAUDE.md`: it needs the whole path to
   exist, and rewrites every link in the shown path); this resolves one link only where `..` makes it matter, and a
@@ -505,22 +520,75 @@ caller turns into "not found"):
 
 - **Scheme path**: `NativeRefusal::NotLocal`.
 - **Wrong flavor**: a POSIX-shaped path on a Windows host is `WrongFlavor`, ❗ never `\x`: Windows reads a rooted path
-  with no drive as the CURRENT drive's root, so `/Users/x` would open whatever drive the process cwd is on. A drive or
-  UNC path on a POSIX host is `WrongFlavor` too.
-- **Characters NTFS and Win32 can't hold** (drive and UNC paths): `:`, `*`, `?`, `"`, `<`, `>`, `|`, control characters,
-  and NUL are `ForbiddenCharacter`. ❗ `:` above all: through `\\?\`, `C:/x/a:b` opens the alternate data stream `b` of
-  file `a`, so a write would land INSIDE another file. NUL is refused on POSIX too (an MTP pick never reaches
-  `to_native`).
-- **Trailing dots and spaces, and reserved device names** (`CON`, `NUL`, `COM1`): NOT refused here. Through `\\?\` they
-  reach the exact file, the only way to open or delete one that WSL or a Linux tool made. Creating one is refused
-  earlier, by `NameRules` (Windows plan task 14). Pinned both ways: `to_native` of `C:/x/CON` and `C:/x/a.` is the
-  verbatim path, and create and rename refuse those names.
-- **Length**: more than 32,767 UTF-16 units including the `\\?\` prefix is `TooLong`; on POSIX the OS answers
-  `ENAMETOOLONG` as today.
+  with no drive as the CURRENT drive's root, so `/Users/x` would open whatever drive the process cwd is on
+  (`GetFullPathNameW("/x")` answered `C:\x`; ran, review round 3). A drive or UNC path on a POSIX host is `WrongFlavor`
+  too.
+- **Characters NTFS and Win32 can't hold** (in the NAMES of drive and UNC paths): `:`, `*`, `?`, `"`, `<`, `>`, `|`,
+  control characters, and NUL are `ForbiddenCharacter`. ❗ `:` above all: through `\\?\` AND through a plain path,
+  `C:/x/a:b` writes the alternate data stream `b` of file `a`, so a write lands INSIDE another file and no listing shows
+  it; if `a` doesn't exist, the write creates an empty `a` to hold the stream; folders take streams too, and a trailing
+  `a:` is `ERROR_INVALID_NAME` (ran, review round 3). NUL is refused on POSIX too (an MTP pick never reaches
+  `to_native`). ❗ The check covers names only, never the UNC server: `//[::1]/share/x` is a valid root, and both
+  `\\[::1]\D$\x` and `\\?\UNC\[::1]\D$\x` open the share (ran, review round 3).
+- **A UNC server with a port** (`//host:445/share`, `//host@445/share`) is `NativeRefusal::NoPortOnUnc`: the Windows 10
+  SMB client takes no port in a path (both spellings answer `ERROR_BAD_NETPATH`, ran, review round 3), so that text
+  belongs to the app's own SMB backend (`smb://host:445/share`), and the resolver routes it there.
+- **Trailing dots and spaces, and reserved device names** (`CON`, `NUL`, `COM1`, `con.txt`, `lpt1 .x`, `CONIN$`): NOT
+  refused here. Through `\\?\` they reach the exact file, the only way to open or delete one that WSL or a Linux tool
+  made. Creating one is refused earlier, by `NameRules` (Windows plan task 14). Pinned both ways: `to_native` of
+  `C:/x/CON` and `C:/x/a.` is the verbatim path, and create and rename refuse those names. Ran on NTFS (review round 3):
+  each of those six names creates, lists, reads, and deletes through `\\?\`.
+- **❗ The plain form names a DIFFERENT file** (ran, review round 3), which is why `to_native` is verbatim-only and why
+  a second, refusing form exists (next bullet). With `dup` and `dup.` side by side, a plain `D:\x\dup.` READ `dup` and a
+  plain `remove_file` DELETED `dup`, leaving `dup.`; a plain `x\dot.` with no `dot` beside it is `NotFound`; a plain
+  write to `x\nul.txt` succeeded and wrote nothing anywhere (the `NUL` device: silent data loss); a plain `con.txt` is
+  `\\.\con`; and moving `rb.` to the Recycle Bin by its plain path (.NET's `FileSystem.DeleteFile`, over
+  `SHFileOperation`) recycled `rb`.
+- **`to_native_plain(&self) -> Result<PathBuf, NativeRefusal>`** (new, Windows only; on POSIX it's `to_native`): the
+  drive or UNC path WITHOUT `\\?\`, for the APIs that can't take a verbatim path: the shell (the Recycle Bin through the
+  `trash` crate, `ShellExecuteExW` for open and open with, `SHOpenFolderAndSelectItems`, drag-out's `CF_HDROP`), a child
+  process's working directory and arguments (a terminal, an editor, "open with"), and any third-party crate that opens
+  plain paths. It refuses typed (`NotPlainSafe`) every path whose plain form wouldn't name the same file: a name ending
+  in `.` or space, a reserved device name with or without an extension, and a total past 259 units (a child's working
+  directory past 260 is `ERROR_DIRECTORY`, ran; shell APIs don't take the long-path opt-in, documented). A refusal is a
+  typed per-item answer ("Cmdr can't hand this name to Windows"), ❌ never a fallback to stripping `\\?\` by hand
+  (`dunce::simplified` and the like), which is exactly the wrong-file hazard above. UNC working directories are another
+  limit: `cmd.exe` started in `\\localhost\D$\x` falls back to `C:\Windows` with a warning (ran), so "open a terminal
+  here" on a UNC path needs `pushd` or a terminal that takes UNC. Its call sites join `app-path-native-crossing`'s
+  allowlist (milestone 11).
+- **Length**: a pure fence at 32,767 UTF-16 units including the `\\?\` prefix is `TooLong`, but NTFS stops earlier: a
+  `create_dir` at 32,750 units answered `ERROR_FILENAME_EXCED_RANGE` (206, `InvalidFilename`) where 32,649 worked (ran,
+  review round 3, 100-unit steps). So the OS's 206 maps to the typed `NameTooLong` too, ❌ never a hard-coded exact
+  limit. On POSIX the OS answers `ENAMETOOLONG` as today. ❗ The builder has `LongPathsEnabled` on (its setup script),
+  user machines default it off: a plain path past 260 that a third-party crate opens works on the builder and fails for
+  users (an exe without the opt-in got `ERROR_PATH_NOT_FOUND` from `GetFileAttributesW` on a 300-unit plain path, while
+  `std::fs` added `\\?\` itself and succeeded; ran). Cmdr's `windows/app.manifest` declares `longPathAware`, which helps
+  only with the registry switch on.
 - **Escaped names**: decoded back to raw bytes (Unix) or surrogate units (Windows).
-- **`from_native` refuses**, typed: a relative path, a drive-relative `C:foo`, `\\.\` device paths, `\\?\Volume{…}` and
-  `\\?\GLOBALROOT\…`, a UNC server of `?` or `.`, and a `..` name inside a verbatim path (Win32 passes it through as a
-  literal name there). Today's grammar answers `None` for most of these; the conversion only types the reason.
+- **`from_native` refuses**, typed: a relative path, a drive-relative `C:foo` AND a bare `C:` (both mean that drive's
+  CURRENT directory to Win32: `GetFullPathNameW("D:foo")` answered `D:\foo` only because `D:`'s cwd was its root; ran,
+  review round 3; `parse` and `from_user_input` keep reading a typed `C:` as `C:/`, which is what a person means),
+  `\\.\` device paths, `\\?\Volume{…}` and `\\?\GLOBALROOT\…`, a UNC server of `?` or `.`, and a `.`, `..`, or empty
+  name inside a verbatim path. Win32 doesn't treat those as literal names: NTFS refuses them (`\\?\D:\x\.\y` is
+  `ERROR_PATH_NOT_FOUND`, `\\?\D:\x\\y` and a verbatim `..` `ERROR_INVALID_NAME`, a verbatim `..` over UNC
+  `ERROR_BAD_PATHNAME`, `\\?\D:` without its `\` `ERROR_INVALID_PARAMETER`; ran, review round 3), so the refusal only
+  types what the OS would say. Today's grammar answers `None` for most of these; the conversion only types the reason.
+- **8.3 short names are aliases** (ran on `C:`, where 8.3 creation is on, as it is by default on a Windows 10 system
+  drive; the builder's `D:` has it off; review round 3). `from_native` is pure, so it can't tell `C:/x/LONGFO~1` from
+  `C:/x/Long Folder Name`: `read_dir` through the short spelling returns children under it (a second app path for every
+  file inside), and `canonicalize` gives back the long one. The listing never shows a short name, so a row never holds
+  one; the inbound crossings that didn't come from a listing can (an OS-reported path like `%TEMP%` for an account name
+  past eight characters, a drop from a legacy app, a CLI argument, a deep link, a typed or pasted path). Two rules:
+  - The Windows local volume's inbound native crossings (`from_native` callers outside a listing walk) expand short
+    names with `GetLongPathNameW` on the longest existing prefix first, so an OS-reported path lands on the spelling the
+    listing shows.
+  - ❗ A destination NAME can alias a different file: through `LONGFI~1.TXT`, a `create_new` answered `AlreadyExists`, a
+    truncating write REPLACED `Long File Name.txt`'s bytes, and a rename renamed it (ran). A source literally named
+    `LONGFI~1.TXT` (from SFTP, a zip, a Linux disk) copied into that folder passes a name-folded conflict check
+    (`NameRules` folding doesn't relate the two) and lands on the person's file. So on Windows the destination conflict
+    scan and the landing's collision answer read the STORED name (`find_stored_spelling`, `cFileName` from
+    `FindFirstFileW`), and a stored name that differs from the destination name beyond the volume's folding is a
+    conflict on the stored name, ❌ never an overwrite through the alias. Milestone 10a, with a Windows-only cell.
 
 **Operations** (all on `&AppPath`, none allocate unless they return an owned path):
 
@@ -578,6 +646,26 @@ caller turns into "not found"):
 case table. The current `path_grammar::AppPath` struct (`AppRoot` plus `Vec<String>`) folds into the new type;
 `AppRoot`, `PathFlavor`, and `PathKind` stay. `ChildName::under(&AppPath) -> AppPathBuf` replaces today's
 `under(&Path)`.
+
+### One file, several app paths (Windows)
+
+Review round 3, ran on the builder. One folder on `D:` opened under all of: `D:/x`, `//localhost/D$/x`,
+`//LOCALHOST/d$/x`, `//127.0.0.1/D$/x`, `//[::1]/D$/x`, `//0--1.ipv6-literal.net/D$/x`, a `subst` drive `Q:/`, a
+junction and a directory symlink pointing at it, and (on `C:`) an 8.3 short spelling. App path `Eq` keeps them apart on
+purpose (loud rule 8: equality is exact; the root fold only picks a volume), and no store needs them equal. What must
+never decide "same file" or "inside" by app path:
+
+- **Destination inside source** (`validation.rs::validate_destination_not_inside_source`) compares native `canonicalize`
+  results today, which on Windows folds `subst`, junctions, symlinks, and 8.3 into the drive path (ran), but leaves a
+  loopback or mapped share as `\\?\UNC\localhost\D$\x` (ran). So copying `D:/x` into `//localhost/D$/x/sub` passes the
+  guard and recurses until the disk fills. 10a keeps the guard on canonical NATIVE paths on both sides (`to_native`,
+  then `canonicalize`), ❌ never one canonical native path against an app path, and the UNC-alias gap goes to task 35's
+  `file_identity` (volume serial plus 128-bit file id, an ancestor walk by identity). Until then `file_identity`'s
+  Windows arm answers `None`, and `may_be_same_file` fails closed.
+- **Move as a rename** asks `same_device`, which also answers "can't tell" on Windows today (copy then delete, safe).
+- **Dedup of a selection or a batch** by app path keeps two aliases as two items; both name one file, so the second op
+  meets an already-moved or already-deleted source (`already_gone.rs`'s answer), never a different file.
+- DFS (`//domain/root/x` beside its target share) is the same shape; not run (no DFS namespace on the builder).
 
 ### Design decisions and what each rejected
 
@@ -771,10 +859,12 @@ included; the hidden couplings it found are why waves B and C differ from round 
   code point round-trips, `to_native(canon(s)) == to_native(s)` and `from_native(to_native(s)) == canon(s)` on arbitrary
   strings, `from_user_input` of text holding an escape-range code point names that LITERAL character, and a byte escape
   is `ForeignEscape` under `to_native` for Windows (a unit escape under POSIX). `to_native` refusal rows: `/x` on
-  Windows, `C:/x/a:b`, `C:/x/a*b`, NUL, a 33,000-unit path, and acceptance rows for `C:/x/CON` and `C:/x/a.`.
-  `from_native` refusal rows: `C:foo`, `foo`, `\\.\PhysicalDrive0`, `\\?\Volume{…}\x`, `\\?\GLOBALROOT\x`,
-  `\\?\C:\x\..\y`. Unicode: NFC and NFD `café` are unequal values. Windows builder: `cargo nextest run -p cmdr-fs` green
-  with the new module.
+  Windows, `C:/x/a:b`, `C:/x/a*b`, NUL, a 33,000-unit path, `//host:445/share/x` (`NoPortOnUnc`), and acceptance rows
+  for `C:/x/CON`, `C:/x/a.`, and `//[::1]/D$/x` (the server's `:` is no name character). `to_native_plain` refusal rows
+  (`NotPlainSafe`): `C:/x/a.`, `C:/x/a `, `C:/x/con.txt`, `C:/x/lpt1 .x`, `C:/x/CONIN$`, a 260-unit path; acceptance
+  rows `C:/x/a.b` and `C:/x/console`. `from_native` refusal rows: `C:foo`, a bare `C:`, `foo`, `\\.\PhysicalDrive0`,
+  `\\?\Volume{…}\x`, `\\?\GLOBALROOT\x`, `\\?\C:\x\..\y`, `\\?\C:\x\.\y`, `\\?\C:\x\\y`. Unicode: NFC and NFD `café` are
+  unequal values. Windows builder: `cargo nextest run -p cmdr-fs` green with the new module.
 - **DONE**: the module is complete, documented, and unused outside tests, `path_grammar` delegates to it, and the
   frontend's grammar suite still passes the shared table.
 
@@ -969,8 +1059,19 @@ included; the hidden couplings it found are why waves B and C differ from round 
   (an unpaired surrogate escapes too). `scan_for_conflicts_impl` builds the destination from the source PATH's
   `file_name()`, ❌ never the lossy `item.name`. Watch events from the OS go through `from_native`, which escapes, so an
   event for a non-UTF-8 name patches the row it listed. The two listers stay field-for-field identical. Run the alloc
-  ceilings and benches (§ "Cost").
-- **Test plan**: Windows: `cmdr-local` 30 of 30 plus the conformance cells that only waited on paths. macOS/Linux:
+  ceilings and benches (§ "Cost"). ❗ The constructors' `root` (`local_folder`, `on_mount`) is documented as an app path
+  but typed `impl Into<PathBuf>`, and every test hands it `tempfile`'s NATIVE `C:\Users\…\Temp\.tmpXYZ`, which
+  `paths::native` refuses as "not an absolute Windows app path" (review round 3, read in code; likely the bulk of the
+  app run's 65 panics with that message, which milestone 1's baseline confirms by name). So the typed constructor takes
+  an `AppPathBuf` (beside the old one, per the wave-B rule), and `cmdr_fs::testing` gains one helper that makes a
+  tempdir and returns it with its app path (`from_native` after `GetLongPathNameW`, since a `TEMP` under an account name
+  past eight characters is an 8.3 spelling). Tests switch to it in their crate's milestone, which is why those panics
+  turn green in 10a, 10c, and 10d rather than here.
+- **Test plan**: Windows: `cmdr-local` 30 of 30 plus the conformance cells that only waited on paths, plus new NTFS
+  cells (each reproduced by hand in review round 3): `dup` and `dup.` side by side, a delete of the row `dup.` removes
+  `dup.` and leaves `dup`; `con.txt`, `NUL`, and `a ` list, stat, rename, and delete as files; a row path holding `:`
+  never reaches the OS (`ForbiddenCharacter`, and no stream appears on the base file); `a<D800>b` and `a<D801>b` list as
+  two rows with distinct escaped paths, and rename and delete each touch only its own file. macOS/Linux:
   `reading_parity_test`, the conformance suite, alloc ceilings lowered. Linux: milestone 1's non-UTF-8 pins (f) flip
   from "misses the file" to "acts on exactly that file": stat, open, rename, and delete the row path reach
   `caf\xe9.txt`, the `caf\u{FFFD}.txt` sibling is untouched, and two names differing only in invalid bytes list with
@@ -1005,9 +1106,17 @@ included; the hidden couplings it found are why waves B and C differ from round 
     which carries the escape after milestone 9; that fixes today's bug where a pane open on the folder made the scan
     record a lossy, nonexistent path. Its `is_left_out` check takes the path's `file_name()`, not `entry.name`.
   - The move sweep's ledger stays the safety net: it deletes only what landed, so a child the copy missed stays.
+  - Windows aliases (§ "One file, several app paths"): `validate_destination_not_inside_source` canonicalizes both sides
+    natively after `to_native`; the destination conflict scan and the landing's collision read the stored name, so a
+    source named `LONGFI~1.TXT` meets `Long File Name.txt` as a conflict on that name (§ "The native boundary", 8.3).
+  - The Recycle Bin, once Windows has one (today `move_to_trash_sync` refuses `TrashNotSupported` there), goes through
+    `to_native_plain`, so a name that can't survive the plain form is refused per item, never recycled as its neighbor.
 - **Test plan**: Windows: the 289 failures' path clusters (the finalize's native `C:\…` refusal is the largest; the
-  in-memory and remote-fixture ones next). Not in scope: the `MountedVolumeInside` refusals (task 35's mount table and
-  file id) and the in-flight ledger lock (#1226's family). macOS/Linux: full suite, `transfer_benchmarks` before/after.
+  in-memory and remote-fixture ones next), plus a Windows-only cell in a tempdir on the system drive (the builder's
+  `TEMP` is on `C:`, where 8.3 is on; the cell skips, saying so, when `GetShortPathNameW` returns no short name): a copy
+  of a file named `LONGFI~1.TXT` into a folder holding `Long File Name.txt` reports a conflict and leaves its bytes
+  alone. Not in scope: the `MountedVolumeInside` refusals (task 35's mount table and file id) and the in-flight ledger
+  lock (#1226's family). macOS/Linux: full suite, `transfer_benchmarks` before/after.
 - **DONE**: bridge count zero in `cmdr-operations`; a local copy and move land on the builder's NTFS.
 
 ### 10b. `cmdr-index`
@@ -1188,17 +1297,25 @@ Round one's four, decided by the lead (2026-11-18) and written in by review roun
    round two found). The trailing-`/` case (a wire path `/x/link/` stats and walks the link's target) has no issue: the
    frontend never sends one (rows are built by `join`), so only an MCP input can, and 10d fixes it.
 
-Open for the lead (review round 2):
+Round two's three, decided by the lead (2026-11-18) and written in by review round 3:
 
-10. **The trailing-`/` MCP case**: an agent passing `/x/link/` to a delete tool today walks the link's TARGET (round
-    one, verified in code; not run). It's a live data-safety hazard reachable from MCP only. Its own issue now, or ride
-    10d?
-11. **Cross-namer copies**: refusing an item whose name the destination can't store (a Linux non-UTF-8 name copied to
-    NTFS, WebDAV, or S3) is the safe default; offering "land it as `caf\u{FFFD}.txt`" as a person's choice is a
-    follow-up. Agree it stays out of this plan?
-12. **Typed `..` semantics**: a relative input's leading `..` follows the pane (lexical, like the `..` row and `cd`);
-    every other `..` follows the volume's OS (physical on POSIX and SFTP, lexical on Windows and SMB). Agree, or should
-    a leading `..` be physical too (what `ls ..` does)?
+10. **The trailing-`/` MCP case: decided, it rides milestone 10d**, with no separate issue.
+11. **Cross-namer copies: decided, refusal only.** Offering a fallback name ("land it as `caf\u{FFFD}.txt`") stays out
+    of this plan.
+12. **Typed `..`: decided, a leading `..` follows the pane** (lexical, like the `..` row and `cd`); every other `..`
+    follows the volume's OS. Review round 3 ran the Windows half: lexical is what Win32 does through junctions and
+    directory symlinks (§ "Typed and pasted `..`").
+
+Open for the lead (review round 3):
+
+13. **Per-folder case sensitivity on Windows.** A folder WSL made (or one switched with `fsutil`) can hold `A` and `a`;
+    a volume-wide `NameRules` and the drive index's lowercase key merge them (documented, not run: the builder lacks
+    WSL). This plan doesn't make it worse (paths stay exact), but the index and the conflict scan would. Proposed: not
+    this plan; a Windows plan task (14's `NameRules` or 35's lister) reads `FileCaseSensitiveInformation` per folder,
+    and until then the drive index skips (counted) a folder whose folded names collide. Agree, and which task?
+14. **`to_native_plain`'s scope.** Proposed here: the type gains it in milestone 3, and every caller is a Windows plan
+    task's (trash, reveal, open with, drag-out, terminal), since none has a Windows arm yet. Agree, or should this plan
+    also own the refusal message key so those tasks share one string?
 
 ## Invariants
 
@@ -1218,6 +1335,10 @@ Open for the lead (review round 2):
 - `AppPath`'s `Eq`, `Hash`, and `Ord` equal `PathBuf`'s component semantics on POSIX-shaped UTF-8 paths.
 - `from_wire` never resolves `..`; `to_native` never yields a drive-relative or rooted-without-drive Windows path, nor a
   name holding `:`.
+- No path reaches a Windows API without `\\?\` unless `to_native_plain` made it, and that form never names a different
+  file than the verbatim one (trailing dot or space, reserved names, and length refused).
+- Nothing decides "same file" or "inside" by app path equality; on Windows those are canonical native paths or file
+  identity.
 - The operation log reconstructs every root shape it interned.
 - A link target is never an app path.
 - Every listed entry costs at most the allocations milestone 1 pinned.
@@ -1256,3 +1377,32 @@ Open for the lead (review round 2):
   window; milestone 1 gained pins (f)(7)–(8) and the Windows baseline list (i); new § "Test strategy" (nets, gaps, every
   Windows cluster mapped to its milestone); questions 6–9 answered, 10–12 opened. Filed #1236 for the live non-UTF-8
   bugs.
+- **Round 3, Windows-native correctness on the real machine** (2026-11-18). A std-only Rust probe (`rustc`, no cargo)
+  plus PowerShell on the builder, Windows 10 Pro 22H2 build 19045, NTFS (`D:` 8.3 off, `C:` 8.3 on), in a scratch
+  folder, all removed after (shares, `subst`, and folders checked gone). Each claim, ran or not:
+  - Ran: drive forms (`C:`, `C:foo`, `/x` → current drive, `\\?\D:` without `\`, lowercase drive, `/`, `.`, and `\\`
+    inside a verbatim path); the long-path ceiling (206 at 32,750 units) and plain-past-260 failing without
+    `LongPathsEnabled`'s help; trailing dots and spaces and six reserved names through `\\?\`, and the plain form
+    hitting the WRONG file (`dup.` read and deleted `dup`, `nul.txt` written to the void, `rb.` recycled `rb`);
+    alternate data streams with and without `\\?\`, on files and folders; 8.3 aliases (listing children under a short
+    spelling, `canonicalize` lengthening it, a truncating write and a rename through a short name hitting the long-named
+    file); unpaired surrogates (create, list via `std` and `FindFirstFileW`, lossy collision, rename, delete, a literal
+    U+10E800 name); `..` through a junction and a directory symlink, plain, slashed, verbatim, and a `del` through one;
+    UNC loopback, `C$`-style admin shares, server and share case, IPv4, IPv6 `[::1]` and `ipv6-literal.net`, a port
+    (refused), a `$` share (works), a trailing-space share (Windows refuses to create one), `canonicalize` of a loopback
+    share and a `subst` drive; a child process's working directory as verbatim, past 260, and UNC.
+  - Not run: per-folder case sensitivity (`setCaseSensitiveInfo` refused, no WSL feature), DFS (no namespace), Samba
+    share names with a trailing space, `SHFileOperation`/`IFileOperation` given `\\?\` directly (the .NET wrapper
+    refused it first), and the failing-test sample: the builder ran another agent's 25-minute clippy and nextest for the
+    whole 30-minute wait, so the logs (`D:\logs\w4-nextest2.log`, `D:\tmp\ops-nextest.log`) weren't read. The 65-panic
+    cluster's cause is read from code (milestone 9's constructor landmine) and stays a hypothesis until milestone 1's
+    baseline names the tests.
+  - Changed: `:` refusal scoped to names (the IPv6 server keeps its `:`); `NoPortOnUnc`; the plain-form hazard and a new
+    `to_native_plain` with `NotPlainSafe` for every API that can't take `\\?\` (open question 14); `from_native` refuses
+    a bare `C:` and the verbatim `.`/`..`/empty names, with the corrected reason (NTFS refuses them, not a literal
+    name); the length rule maps the OS's 206 instead of trusting 32,767; 8.3 aliases expanded at inbound crossings, and
+    a stored-name conflict rule so a short-name-shaped destination never overwrites the long-named file (milestone 10a
+    cell); new § "One file, several app paths" (the into-itself guard stays native and canonical, the loopback-UNC gap
+    goes to task 35's identity); the Windows lexical `..` confirmed, with the verbatim reason it must happen in the app;
+    NTFS cells for milestone 9; the constructor-root landmine and test-tempdir helper in milestone 9; two invariants.
+    Questions 10–12 written in as the lead decided them; 13 (per-folder case) and 14 opened.
