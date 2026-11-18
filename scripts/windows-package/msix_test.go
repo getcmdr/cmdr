@@ -56,15 +56,8 @@ func zipPack(stage, manifest, out string) error {
 		return err
 	}
 	zw := zip.NewWriter(f)
-	err = filepath.WalkDir(stage, func(path string, d os.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return err
-		}
-		rel, _ := filepath.Rel(stage, path)
-		if path == manifest {
-			rel = "AppxManifest.xml"
-		}
-		w, err := zw.Create(filepath.ToSlash(rel))
+	add := func(path, name string) error {
+		w, err := zw.Create(name)
 		if err != nil {
 			return err
 		}
@@ -75,8 +68,18 @@ func zipPack(stage, manifest, out string) error {
 		defer func() { _ = src.Close() }()
 		_, err = io.Copy(w, src)
 		return err
+	}
+	err = filepath.WalkDir(stage, func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		rel, _ := filepath.Rel(stage, path)
+		return add(path, filepath.ToSlash(rel))
 	})
 	if err != nil {
+		return err
+	}
+	if err := add(manifest, "AppxManifest.xml"); err != nil {
 		return err
 	}
 	if err := zw.Close(); err != nil {
@@ -139,19 +142,23 @@ func TestVerifyMSIXCatchesAWrongPackage(t *testing.T) {
 	exe := fakeExe(t, string(unstampedMarker))
 	cases := []struct {
 		name   string
-		tamper func(stage string)
+		tamper func(stage, manifest string)
 		want   string
 	}{
-		{"a registry hive", func(stage string) { must(t, os.WriteFile(filepath.Join(stage, "Registry.dat"), nil, 0o644)) }, "registry keys"},
-		{"another version", func(stage string) {
-			p := filepath.Join(stage, "Package.appxmanifest")
-			raw, _ := os.ReadFile(p)
-			must(t, os.WriteFile(p, []byte(strings.Replace(string(raw), `Version="0.70.0.0"`, `Version="0.69.0.0"`, 1)), 0o644))
+		{"a registry hive", func(stage, _ string) { must(t, os.WriteFile(filepath.Join(stage, "Registry.dat"), nil, 0o644)) }, "registry keys"},
+		{"another version", func(_, manifest string) {
+			raw, _ := os.ReadFile(manifest)
+			must(t, os.WriteFile(manifest, []byte(strings.Replace(string(raw), `Version="0.70.0.0"`, `Version="0.69.0.0"`, 1)), 0o644))
 		}, `its version is "0.69.0.0"`},
+		// winapp packs every file in its folder, which once shipped the template beside the real
+		// manifest (seen on the builder, 2026-11-18).
+		{"the template inside the package", func(stage, manifest string) {
+			must(t, copyFile(manifest, filepath.Join(stage, "Package.appxmanifest")))
+		}, "manifest template"},
 	}
 	for _, c := range cases {
 		pack := func(stage, manifest, out string) error {
-			c.tamper(stage)
+			c.tamper(stage, manifest)
 			return zipPack(stage, manifest, out)
 		}
 		err := buildMSIX(msixInput{root: root, exe: exe, out: filepath.Join(t.TempDir(), "x.msix"), identity: id, version: "0.70.0.0", pack: pack})

@@ -1367,8 +1367,8 @@ cd ../.. && ./scripts/windows-package.sh msix -version <v> -exe /tmp/Cmdr.exe -o
 ./scripts/release-assets.sh vet-nsis -version <v> target/release/bundle/nsis/Cmdr_<v>_x64-setup.exe
 ```
 
-Install the dev MSIX with `Add-AppxPackage -AllowUnsigned .\Cmdr_<v>_x64.msix` (remove it with
-`Get-AppxPackage Rymd.Cmdr.Dev | Remove-AppxPackage`), and the installer with `Cmdr_<v>_x64-setup.exe /S` (uninstall:
+Run the dev MSIX unpacked in Developer Mode (no certificate; the steps are in `apps/desktop/packaging/msix/DETAILS.md` §
+The two identities), and the installer with `Cmdr_<v>_x64-setup.exe /S` (uninstall:
 `%LOCALAPPDATA%\Cmdr\uninstall.exe /S`). The last verified run: `docs/notes/windows-port/build-progress.md`.
 
 ## How updates work

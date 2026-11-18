@@ -14,8 +14,8 @@
 // a different app than the one the Store should get, packs it with Microsoft's winapp CLI (on
 // `PATH`, unsigned: the Store signs it), and verifies the result. `-identity release` (the
 // default) takes the Partner Center identity from `identity.json` and fails loudly while it's
-// still a placeholder; `dev` takes a local test identity with the unsigned-package marker, which
-// `Add-AppxPackage -AllowUnsigned` installs without a certificate. `verify-msix` re-runs the
+// still a placeholder; `dev` takes a local test identity, which runs unpacked in Developer Mode
+// (`apps/desktop/packaging/msix/DETAILS.md` § The two identities). `verify-msix` re-runs the
 // checks on a built package. `group-policy` zips the committed ADMX and ADML files.
 package main
 

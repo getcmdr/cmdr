@@ -285,3 +285,28 @@ things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX
   called; the Mac's zig cross-check, `--all-targets` over `cmdr-fs`, `cmdr-operation-log`, `cmdr-operations`, and
   `cmdr-local`, then agreed) and a property whose `prop_filter` rejected most cases, which timed out at 8 s on the
   2-core box and now builds its input.
+- **2026-11-18, task 52: the release packages** (`3224901455` plus the task's tooling, a release
+  `pnpm tauri build --no-bundle` in a cold `D:\targets\t52`, about two hours on the 2-core builder, most of it the
+  `cmdr` crate): one compile, three packages, each installed and started on the desktop (screenshots in David's
+  `~/Downloads/cmdr-windows-release/`).
+  - **NSIS**: `tauri bundle --bundles nsis` made `Cmdr_0.61.0_x64-setup.exe` (36.90 MiB) with no signing step
+    (`createUpdaterArtifacts` off on Windows), and `release-assets.sh vet-nsis` passed it (version resource 0.61.0, no
+    Authenticode). `/S` installed it per user into `%LOCALAPPDATA%\Cmdr` (`Cmdr.exe`, `resources\`, `uninstall.exe`)
+    with an HKCU uninstall entry naming "Rymdskottkärra AB" and 0.61.0; the installed exe carries the NSS stamp, and its
+    updater ran a real check ("No update available", so the NSIS install path reads as updatable). Started from
+    `run-on-desktop.sh`, it listed `C:\Windows` and `D:\` (`1-nsis-installed-running.png`), closed with Alt+F4, and
+    `uninstall.exe /S` removed the folder, the uninstall entry, and the shortcuts, leaving the data dir.
+  - **Bundler stamp**: tauri-cli 2.12 stamps the copy it installs and leaves `target\release\Cmdr.exe` byte-identical
+    (same SHA-256 before and after, still `…_UNK`), so copying the exe first is insurance, not a must, today.
+  - **MSIX**: `windows-package msix -identity dev` (winapp 0.8.0, unpacked from its release zip; it fetched
+    `Microsoft.Windows.SDK.BuildTools` 10.0.28000.2957 on first use) made `Cmdr_0.61.0_x64.msix` (55 MB) and
+    `verify-msix` passed it; the release identity failed on its placeholder as intended. Windows 10's Appx module has no
+    `-AllowUnsigned`, and Developer Mode registration refused the unsigned-marker publisher (0x80073D2D), so the dev
+    identity is plain `CN=Cmdr Dev`; with Developer Mode on (and off again after), the unpacked package registered,
+    started from `shell:AppsFolder\Rymd.Cmdr.Dev_v99ez5794820m!Cmdr`, listed both drives
+    (`2-msix-registered-running.png`), closed, and unregistered. The first pack also shipped the manifest template
+    beside `AppxManifest.xml`, since winapp packs its whole input folder; the template now stages outside it and
+    `verify-msix` refuses a stray one. The packaged run logged into the existing
+    `%LOCALAPPDATA%\com.veszelovszki.cmdr\logs\cmdr.log` and logged no update check within three minutes (task 57).
+  - **Group Policy zip**: `cmdr-group-policy-0.61.0.zip` (4.7 kB) holds `cmdr.admx`, `rymd.admx`, and `en-US/` only.
+  - `go test` for `scripts/windows-package` and `scripts/release-assets/{nsis,manifest}` passed on the builder too.

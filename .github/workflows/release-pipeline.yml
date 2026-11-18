@@ -952,9 +952,10 @@ jobs:
     # Pinned to the image like macOS's `runs-on`: the image carries the MSVC toolset and the
     # Windows SDK the binary links against, which `windows-latest` would move unannounced.
     runs-on: windows-2025
-    # A cold Tauri compile on a hosted runner; the 2-core Windows 10 builder takes ~25 min warm-less
-    # for `cmdr` alone (`docs/notes/windows-port/build-progress.md`).
-    timeout-minutes: 120
+    # A cold release compile: the 2-core Windows 10 builder took about two hours for the first one
+    # (`docs/notes/windows-port/build-progress.md`); a hosted runner has twice the cores, and the
+    # first real run sets this properly.
+    timeout-minutes: 150
     permissions:
       contents: read
     defaults:
@@ -1001,10 +1002,11 @@ jobs:
         run: pnpm tauri build --no-bundle --target x86_64-pc-windows-msvc
         working-directory: ./apps/desktop
 
-      # `tauri bundle` patches its bundle-type stamp into the exe it packages, and an NSIS-stamped
-      # exe would run the NSIS updater inside the Store's package. So the MSIX gets this copy,
-      # from before the bundler ran: unstamped, its updater stays off and the Store updates it
-      # (D3). `windows-package msix` refuses a stamped one.
+      # `tauri bundle` stamps its bundle type into the exe it installs, and an NSIS-stamped exe would
+      # run the NSIS updater inside the Store's package. So the MSIX gets this copy, from before the
+      # bundler ran: unstamped, its updater stays off and the Store updates it (D3). tauri-cli 2.12
+      # stamps a copy and leaves this file alone, but nothing promises that; `windows-package msix`
+      # refuses a stamped exe either way.
       - name: Keep the unbundled exe for the Store package
         run: |
           mkdir -p "$RUNNER_TEMP/unbundled"

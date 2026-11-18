@@ -100,11 +100,14 @@ func buildMSIX(in msixInput) error {
 	if err := requireUnstamped(in.exe); err != nil {
 		return err
 	}
-	stage, err := os.MkdirTemp("", "cmdr-msix-")
+	work, err := os.MkdirTemp("", "cmdr-msix-")
 	if err != nil {
 		return err
 	}
-	defer func() { _ = os.RemoveAll(stage) }()
+	defer func() { _ = os.RemoveAll(work) }()
+	// The package's files in `package/`, the manifest beside it: winapp packs every file in the
+	// folder it's given, so a manifest inside would ship as a stray `Package.appxmanifest`.
+	stage := filepath.Join(work, "package")
 
 	if err := copyFile(in.exe, filepath.Join(stage, exeName)); err != nil {
 		return err
@@ -121,7 +124,7 @@ func buildMSIX(in msixInput) error {
 	if err != nil {
 		return err
 	}
-	manifestPath := filepath.Join(stage, "Package.appxmanifest")
+	manifestPath := filepath.Join(work, "Package.appxmanifest")
 	if err := os.WriteFile(manifestPath, manifest, 0o644); err != nil {
 		return err
 	}
@@ -341,6 +344,9 @@ func contentProblems(pkg msixPackage) []string {
 		if _, ok := pkg.files[strings.ToLower("Assets/"+logo)]; !ok {
 			problems = append(problems, "it has no Assets/"+logo)
 		}
+	}
+	if _, ok := pkg.files["package.appxmanifest"]; ok {
+		problems = append(problems, "it carries the manifest template as Package.appxmanifest, beside the real AppxManifest.xml")
 	}
 	if !slices.ContainsFunc(slices.Collect(maps.Keys(pkg.files)), func(n string) bool { return strings.HasPrefix(n, "resources/") }) {
 		problems = append(problems, "it has none of the bundle's resources/")
