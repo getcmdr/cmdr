@@ -111,10 +111,6 @@
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "6594500"
   },
-  "ai.cloudConsent.aboutThis.item.appAndSigner": "Với một ứng dụng hoặc chương trình: tên, ID và phiên bản. Với ứng dụng, chương trình hoặc ảnh đĩa: tên và ID nhóm của bên đã ký, mã có còn khớp với chữ ký đó không và có đính kèm phiếu công chứng của Apple không",
-  "@ai.cloudConsent.aboutThis.item.appAndSigner": {
-    "sourceHash": "471891d"
-  },
   "ai.cloudConsent.aboutThis.item.use": "Lần cuối bạn mở mục đó, số lần mở và ứng dụng nào mở mục đó",
   "@ai.cloudConsent.aboutThis.item.use": {
     "sourceHash": "9664a6e"

@@ -111,10 +111,6 @@
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "6594500"
   },
-  "ai.cloudConsent.aboutThis.item.appAndSigner": "U aplikace nebo programu název, ID a verze. U nich i u obrazu disku název a ID týmu toho, kdo je podepsal, jestli kód pořád odpovídá podpisu a jestli je přiložený doklad Applu o notarizaci",
-  "@ai.cloudConsent.aboutThis.item.appAndSigner": {
-    "sourceHash": "471891d"
-  },
   "ai.cloudConsent.aboutThis.item.use": "Kdy jste položku naposledy otevřeli, kolikrát a která aplikace ji otevírá",
   "@ai.cloudConsent.aboutThis.item.use": {
     "sourceHash": "9664a6e"

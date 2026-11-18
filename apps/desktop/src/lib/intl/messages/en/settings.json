@@ -3344,6 +3344,15 @@
     "description": "One-line summary shown on the Indexing section's Image indexing card. The feature reads the text inside images (OCR) so it can be searched; it runs on-device. The machine is “your Mac” on macOS, “your PC” on Windows, and “your computer” on Linux.",
     "screenshot": "settings-summary-indexing.png"
   },
+  "settings.summary.fallback": "Settings for {section}.",
+  "@settings.summary.fallback": {
+    "description": "One-line summary on a subsection card of a Settings section page (like the Indexing page's cards) when that subsection has no summary of its own yet. {section} is the subsection's title exactly as the Settings sidebar shows it, already translated, and starts with a capital letter, so the sentence must read naturally with it in that form.",
+    "placeholders": {
+      "section": {
+        "description": "The subsection's title as the sidebar shows it, like “Image indexing”."
+      }
+    }
+  },
   "settings.summary.noSubsections": "This section has no subsections.",
   "@settings.summary.noSubsections": {
     "description": "Placeholder text shown when a settings section has no subsections to list."

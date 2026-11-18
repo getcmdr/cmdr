@@ -111,10 +111,6 @@
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "6594500"
   },
-  "ai.cloudConsent.aboutThis.item.appAndSigner": "对于 App 或程序，它的名称、ID 和版本。对于它或磁盘映像，签名者的名称和团队 ID、它的代码是否仍与这个签名一致，以及是否附加了 Apple 的公证票据",
-  "@ai.cloudConsent.aboutThis.item.appAndSigner": {
-    "sourceHash": "471891d"
-  },
   "ai.cloudConsent.aboutThis.item.use": "你上次打开它的时间、打开过几次，以及用哪个 App 打开它",
   "@ai.cloudConsent.aboutThis.item.use": {
     "sourceHash": "9664a6e"

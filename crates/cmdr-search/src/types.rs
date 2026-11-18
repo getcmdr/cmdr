@@ -41,7 +41,7 @@ pub struct SearchQuery {
     #[serde(default = "default_limit")]
     pub limit: u32,
     /// Per-query case sensitivity override.
-    /// `None` = platform default (false on macOS, true on Linux).
+    /// `None` = platform default (false on macOS and Windows, true on Linux).
     #[serde(default)]
     pub case_sensitive: Option<bool>,
     /// How to order the results. `None` / `Relevance` is the ranked default;

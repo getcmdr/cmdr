@@ -19792,7 +19792,7 @@ export type SearchQuery = {
   limit?: number
   /**
    *  Per-query case sensitivity override.
-   *  `None` = platform default (false on macOS, true on Linux).
+   *  `None` = platform default (false on macOS and Windows, true on Linux).
    */
   caseSensitive?: boolean | null
   /**
