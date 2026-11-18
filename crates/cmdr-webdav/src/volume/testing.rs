@@ -9,6 +9,7 @@
 //! that costs and which cells opt out: the fixture README's "Against a server
 //! of your own".
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -358,13 +359,13 @@ pub async fn scratch_dir(volume: &WebdavVolume) -> PathBuf {
     // ❗ Under the volume's APP root, prefix and all, because that is what a pane
     // holds and what every app site hands the volume. A bare `/cmdr-test-…` is
     // refused now, on purpose (`cmdr_fs::volume::remote_paths`).
-    let path = volume.root().join(format!(
+    let path = volume.root().as_std_legacy().join(format!(
         "{SCRATCH_PREFIX}{}-{}",
         run_token(),
         NEXT.fetch_add(1, Ordering::Relaxed)
     ));
     volume
-        .create_directory(&path)
+        .create_directory(&AppPath::legacy_unchecked(&path))
         .await
         .unwrap_or_else(|e| panic!("creating the scratch dir {}: {e:?}", path.display()));
     path
@@ -414,7 +415,7 @@ pub async fn sweep_stale_scratch_dirs(volume: &WebdavVolume) {
             Some(modified) if modified < cutoff => {}
             _ => continue,
         }
-        remove_recursively(volume, &volume.root().join(&entry.name)).await;
+        remove_recursively(volume, &volume.root().as_std_legacy().join(&entry.name)).await;
     }
 }
 
@@ -430,11 +431,11 @@ pub fn remove_recursively<'a>(
     path: &'a Path,
 ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
     Box::pin(async move {
-        if let Ok(entries) = volume.list_directory(path, None).await {
+        if let Ok(entries) = volume.list_directory(&AppPath::legacy_unchecked(path), None).await {
             for entry in entries {
                 remove_recursively(volume, &path.join(&entry.name)).await;
             }
         }
-        let _ = volume.delete(path).await;
+        let _ = volume.delete(&AppPath::legacy_unchecked(path)).await;
     })
 }
