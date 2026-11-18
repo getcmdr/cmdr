@@ -62,6 +62,21 @@ func TestABridgeTemporaryAHeldFutureOutlivesIsHoisted(t *testing.T) {
 	}
 }
 
+func TestABridgeTemporaryInASelectArmIsHoistedBeforeTheSelect(t *testing.T) {
+	text := "async fn t() {\n    let opened = tokio::select! {\n        biased;\n        () = abort.cancelled() => {\n            return Err(gone(path));\n        }\n        opened = v.open(&AppPath::legacy_unchecked(path), size) => opened,\n    };\n}\n"
+	got := run(t, text, diag("E0716", "temporary value dropped while borrowed", spanOf(t, text, "AppPath::legacy_unchecked(path)", "", "", true)))
+	want := "async fn t() { let path_app = AppPath::legacy_unchecked(path); let opened = tokio::select! { biased; () = abort.cancelled() => { return Err(gone(path)); } opened = v.open(&path_app, size) => opened, }; }"
+	if !strings.Contains(squash(got), want) {
+		t.Fatalf("not hoisted before the select:\n%s", got)
+	}
+	// Inside an arm's own block, the statement is the arm's.
+	arm := "async fn t() {\n    tokio::select! {\n        () = a() => {\n            let d = make();\n            let fut = v.list(&AppPath::legacy_unchecked(&d));\n            fut.await;\n        }\n    };\n}\n"
+	got = run(t, arm, diag("E0716", "temporary value dropped while borrowed", spanOf(t, arm, "AppPath::legacy_unchecked(&d)", "", "", true)))
+	if !strings.Contains(squash(got), "let d = make(); let d_app = AppPath::legacy_unchecked(&d); let fut = v.list(&d_app);") {
+		t.Fatalf("arm-local hoist left its block:\n%s", got)
+	}
+}
+
 func TestAHoistThatWouldReorderOrShadowStaysResidue(t *testing.T) {
 	for _, text := range []string{
 		"async fn t() {\n    let fut = volume.list_directory(&AppPath::legacy_unchecked(&next_dir()), None);\n    fut.await;\n}\n",

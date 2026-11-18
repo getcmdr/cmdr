@@ -81,8 +81,9 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   param back (the prelude goes when nothing else reads it, else the param is kept as `path_app`, as below).
 - **E0716 hoist** (`rules_hoist.go`): `AppPath::legacy_unchecked(&dir)` inside a statement whose result outlives it (a
   future held in a `let`, a `tokio::join!` arm) moves to `let dir_app = AppPath::legacy_unchecked(&dir);` just before
-  the statement. Only a plain argument moves (nothing in the statement runs in another order); a name the fn already
-  uses stays residue.
+  the statement. Inside a macro's token tree (a `tokio::select!` branch) the statement is the whole invocation's, so the
+  `let` goes before `let x = tokio::select! { … };`, unless an arm's own `=> { … }` block holds it. Only a plain
+  argument moves (nothing in the statement runs in another order); a name the fn already uses stays residue.
 - **E0308 by type pair** (`valueRules`): a std path into a `&AppPath` slot becomes `app_path!("…")` for a canonical
   literal (`isCanonicalLiteral`: a POSIX path of plain names, or `scheme://authority/names`), else
   `&AppPath::legacy_unchecked(…)`; a batch maps each through the bridge; an owned `PathBuf` into an `AppPathBuf` slot is

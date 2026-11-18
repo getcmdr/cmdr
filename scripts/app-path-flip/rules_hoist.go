@@ -149,8 +149,11 @@ func hoistEdits(src *source, p *diagSpan) []edit {
 
 // statementStart walks back from offset to just past the `;`, `{`, or `}` that ends the
 // previous statement at offset's own block level (enclosing parens and brackets are crossed,
-// closed blocks skipped), never before floor.
+// closed blocks skipped), never before floor. Inside a macro's token tree (`tokio::select! {
+// biased; … }`, whose `;` and arm blocks are no statement ends) it starts from the outermost
+// enclosing macro invocation instead.
 func statementStart(masked []byte, offset, floor int) int {
+	offset = outsideMacros(masked, offset, floor)
 	braces, parens := 0, 0
 	for k := offset - 1; k >= floor; k-- {
 		switch masked[k] {
@@ -177,6 +180,35 @@ func statementStart(masked []byte, offset, floor int) int {
 		}
 	}
 	return floor
+}
+
+// outsideMacros returns the offset of the outermost macro invocation (its `!`) whose
+// delimited token tree encloses offset, or offset itself when none does, never before floor.
+func outsideMacros(masked []byte, offset, floor int) int {
+	depth, out := 0, offset
+	for k := offset - 1; k >= floor; k-- {
+		switch masked[k] {
+		case ')', ']', '}':
+			depth++
+		case '(', '[', '{':
+			if depth > 0 {
+				depth--
+				continue
+			}
+			j := k - 1
+			for j >= floor && (masked[j] == ' ' || masked[j] == '\t' || masked[j] == '\n' || masked[j] == '\r') {
+				j--
+			}
+			if j > floor && masked[j] == '!' && isIdentByte(masked[j-1]) {
+				out = j
+			} else if masked[k] == '{' {
+				// A real block (a fn body, a closure, a `select!` arm's `=> { … }`): the
+				// statement lives in it, so no macro further out is ours.
+				return out
+			}
+		}
+	}
+	return out
 }
 
 // isStatementEnd answers whether the `}` at k closes a block statement (followed by a new
