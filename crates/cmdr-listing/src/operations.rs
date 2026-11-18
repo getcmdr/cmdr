@@ -3,6 +3,7 @@
 //! This is the synchronous, frontend-facing API. Low-level disk I/O is in reading.rs,
 //! async streaming is in streaming.rs.
 
+#[cfg(test)]
 use cmdr_fs::app_path::AppPath;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
