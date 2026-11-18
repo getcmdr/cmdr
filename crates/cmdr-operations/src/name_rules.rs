@@ -141,6 +141,8 @@ pub(crate) fn name_rules_on(volume: &dyn Volume, dir: &Path) -> NameRules {
 /// engine must refuse them before any write, ❌ never leave them to the landing.
 /// Length and the rest stay the destination's to answer, as before.
 /// Unresolved (a test, an operation that never set it) refuses nothing.
+// DEFAULT-OK: the zero value is an unresolved cell, which claims no rules about the disk; it
+// refuses nothing more than before this check existed, and the landing still answers for itself.
 #[derive(Default)]
 pub(crate) struct DestinationNames(OnceLock<NameRules>);
 

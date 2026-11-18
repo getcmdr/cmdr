@@ -5,7 +5,7 @@
 //! 22000 and later opens it as a file). Every class is refused: each one would
 //! write somewhere other than the name typed.
 
-use super::super::{LengthLimit, LengthUnit, WindowsFormatTiers};
+use super::super::{LengthLimit, LengthUnit, NameTier, WindowsFormatTiers};
 
 pub(crate) const HOST_PATH_LIMIT: LengthLimit = LengthLimit {
     max: 32_767,
@@ -14,9 +14,12 @@ pub(crate) const HOST_PATH_LIMIT: LengthLimit = LengthLimit {
 
 pub(crate) const HOST_NAME_LIMIT: LengthLimit = LengthLimit::UTF16_255;
 
-pub(crate) const WINDOWS_FORMAT: WindowsFormatTiers = super::super::WIN32_REFUSALS;
+pub(crate) const WINDOWS_FORMAT: WindowsFormatTiers = WindowsFormatTiers {
+    characters: NameTier::Refuse,
+    reserved_names: NameTier::Refuse,
+};
 
 /// Win32 refuses these on every local volume, whatever its filesystem: a `\\?\` path
 /// skips Win32's name rules, so taking one would write an NTFS stream (`a:b`), a name
 /// Explorer can't open (`con`, `dup.`), or into a subfolder (`x\y`).
-pub(crate) const LOCAL_FLOOR: WindowsFormatTiers = super::super::WIN32_REFUSALS;
+pub(crate) const LOCAL_FLOOR: WindowsFormatTiers = WINDOWS_FORMAT;

@@ -68,14 +68,6 @@ pub fn probe_mount_for_path(path: &std::path::Path) -> MountProbe {
 /// [`is_network`]); no source string, since Windows has no mount device to name.
 #[cfg(target_os = "windows")]
 pub fn probe_mount_for_path(path: &std::path::Path) -> MountProbe {
-    MountProbe {
-        info: FilesystemInfo::from_raw_type(windows_volume::local_filesystem_name(path)),
-        source: None,
-    }
-}
-
-#[cfg(target_os = "windows")]
-mod windows_volume {
     use std::os::windows::ffi::OsStrExt;
     use std::path::Path;
 
@@ -88,7 +80,7 @@ mod windows_volume {
 
     /// The filesystem name of the local volume holding `path`, `None` for a network or
     /// optical drive, or when Windows can't say.
-    pub(super) fn local_filesystem_name(path: &Path) -> Option<String> {
+    fn local_filesystem_name(path: &Path) -> Option<String> {
         let wide: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
         // The volume root is never longer than the path itself (plus its trailing `\`).
         let mut root = vec![0u16; wide.len().max(261) + 1];
@@ -123,6 +115,11 @@ mod windows_volume {
         }
         let len = name.iter().position(|&unit| unit == 0).unwrap_or(name.len());
         Some(String::from_utf16_lossy(&name[..len]))
+    }
+
+    MountProbe {
+        info: FilesystemInfo::from_raw_type(local_filesystem_name(path)),
+        source: None,
     }
 }
 

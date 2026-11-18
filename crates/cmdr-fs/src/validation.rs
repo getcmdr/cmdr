@@ -327,21 +327,6 @@ impl NameRules {
     }
 }
 
-/// What Win32 does with every class of name Windows can't use: refuse it. Windows' own
-/// Windows-format tiers and its local-disk floor.
-#[cfg(any(target_os = "windows", test))]
-pub(crate) const WIN32_REFUSALS: WindowsFormatTiers = WindowsFormatTiers {
-    characters: NameTier::Refuse,
-    reserved_names: NameTier::Refuse,
-};
-
-/// No floor: the filesystem kind's tiers stand.
-#[cfg(not(target_os = "windows"))]
-pub(crate) const NO_FLOOR: WindowsFormatTiers = WindowsFormatTiers {
-    characters: NameTier::Allow,
-    reserved_names: NameTier::Allow,
-};
-
 /// How one host's driver writes a Windows-format disk, per class of name.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct WindowsFormatTiers {
