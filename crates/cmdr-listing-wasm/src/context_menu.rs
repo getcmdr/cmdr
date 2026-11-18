@@ -30,7 +30,7 @@ use cmdr_menu::page::context::page_rows;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::menu::{Click, DemoMenu, PLATFORM, Row, parse};
+use crate::menu::{Click, DemoMenu, Row, parse};
 
 /// Every popup command [`DemoMenu::popup`] answers, by its Tauri name.
 pub const POPUP_COMMANDS: &[&str] = &[
@@ -212,7 +212,7 @@ impl DemoMenu {
                     },
                     same_kind: a.same_kind.as_ref(),
                 };
-                let rows = file_menu(&facts, PLATFORM);
+                let rows = file_menu(&facts, self.platform);
                 c.path = a.path;
                 (rows, a.shortcuts, a.anchor)
             }
@@ -254,7 +254,7 @@ impl DemoMenu {
             "show_function_key_bar_context_menu" => (function_key_bar_menu(), shortcutless, None),
             "show_viewer_context_menu" => {
                 let a: ViewerArgs = parse(command, args)?;
-                (viewer_text_menu(a.has_selection, PLATFORM), shortcutless, None)
+                (viewer_text_menu(a.has_selection, self.platform), shortcutless, None)
             }
             "show_queue_row_context_menu" => {
                 let a: QueueRowArgs = parse(command, args)?;
@@ -277,7 +277,7 @@ impl DemoMenu {
         };
         c.window = window.to_string();
         c.live.clear();
-        let rows = page_rows(&rows, &shortcuts, PLATFORM, &mut c.live);
+        let rows = page_rows(&rows, &shortcuts, self.platform, &mut c.live);
         Ok(Popup { rows, anchor })
     }
 

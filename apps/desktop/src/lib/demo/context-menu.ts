@@ -3,12 +3,14 @@
  * app sends a `show_*_context_menu` command, the backend asks the engine for the menu's rows
  * (`crates/cmdr-listing-wasm/src/context_menu.rs`, over `crates/cmdr-menu`'s `context`) and this
  * draws them with the app's own in-page context menu (`#lib/ui/ContextMenu.svelte`, the one
- * Windows draws), macOS 27 style, in the top frame (so a menu can reach past a panel's edge, as a
- * native one passes a window's). A pick sends what the native item sends (`menu-click.ts`). No
- * menu logic here: rows, words, shortcuts, enabled state, and what a pick does are the engine's.
+ * Windows draws), in the visitor's OS's rows and look (macOS 27's for a Mac visitor, Windows 11's
+ * for a Windows one), in the top frame (so a menu can reach past a panel's edge, as a native one
+ * passes a window's). A pick sends what the native item sends (`menu-click.ts`). No menu logic
+ * here: rows, words, shortcuts, enabled state, and what a pick does are the engine's.
  *
  * Keys are the component's: ↑/↓ walk the enabled rows, Home/End jump, → opens a submenu, ← or Esc
- * closes it, Esc closes the menu, Enter / Space pick, Tab closes. A menu opened from the keyboard
+ * closes it, Esc closes the menu, Enter / Space pick, Tab closes; off the Mac a row's underlined
+ * letter picks it too. A menu opened from the keyboard
  * (the app sends an anchor) starts on its first enabled row. Every key goes to the open menu,
  * never the app behind it.
  */
@@ -17,7 +19,8 @@ import ContextMenu from '#lib/ui/ContextMenu.svelte'
 import { createContextMenu } from '#lib/ui/command-menu/context-menu.svelte.js'
 import type { ContextPopup, MenuEngineHandle } from './menu-engine.js'
 import { type MenuClickDeps, performMenuClick } from './menu-click.js'
-import { DEMO_MENU_CLASS, ensureMenuStyle } from './menu-bar-style.js'
+import { demoMenuClass, ensureMenuStyle } from './menu-bar-style.js'
+import { convention } from '#lib/platform/conventions.js'
 
 export interface ContextMenuDeps extends MenuClickDeps {
   menu: Pick<MenuEngineHandle, 'contextClick'>
@@ -41,13 +44,13 @@ export function createContextMenuHost(deps: ContextMenuDeps): ContextMenuHost {
     onPick: (menuId) => {
       performMenuClick(deps.menu.contextClick(menuId), deps)
     },
-    // A Mac context menu for every visitor, as the bar (task 63 step 11 follows the visitor's OS).
-    flavor: () => 'mac',
+    // The visitor's OS's, as the bar's: a Mac menu for a Mac visitor, Windows' in-page one elsewhere.
+    flavor: () => (convention('menuModel') === 'systemMenuBar' ? 'mac' : 'desktop'),
   })
   const host = document.createElement('div')
   host.style.display = 'contents'
   document.body.append(host)
-  const component = mount(ContextMenu, { target: host, props: { menu, class: DEMO_MENU_CLASS } })
+  const component = mount(ContextMenu, { target: host, props: { menu, class: demoMenuClass() } })
 
   return {
     open(popup, at, fromKeyboard) {

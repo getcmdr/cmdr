@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { withConventions, withPlatform } from '#lib/platform/test-platform.js'
 import { tick } from 'svelte'
 import { createContextMenuHost, type ContextMenuHost } from './context-menu.js'
 import type { ContextPopup, MenuClick } from './menu-engine.js'
@@ -96,6 +97,16 @@ async function key(name: string): Promise<KeyboardEvent> {
   return event
 }
 
+/** Plays a visitor on `os`: its platform and its desktop's conventions. Returns the undo. */
+function visitor(os: 'macos' | 'windows'): () => void {
+  const undoPlatform = withPlatform(os)
+  const undoConventions = withConventions(os)
+  return () => {
+    undoConventions()
+    undoPlatform()
+  }
+}
+
 const menus = () => [...document.querySelectorAll<HTMLElement>('[data-command-menu="context"]')]
 const rows = () => [...document.querySelectorAll<HTMLElement>('.command-menu-row')]
 
@@ -106,6 +117,15 @@ afterEach(() => {
 })
 
 describe('demo context menu', () => {
+  // A Mac visitor: macOS 27's menus.
+  let undoVisitor: (() => void) | undefined
+  beforeEach(() => {
+    undoVisitor = visitor('macos')
+  })
+  afterEach(() => {
+    undoVisitor?.()
+  })
+
   it('draws the rows as a macOS menu named by its header, at the point it was asked for', async () => {
     setup()
     await open(false, { x: 40, y: 60 })
@@ -187,5 +207,25 @@ describe('demo context menu', () => {
     await open(false)
     rows()[0].click()
     expect(invoke).toHaveBeenCalledWith('add_favorite', { path: '/a', name: null })
+  })
+})
+
+// Task 63 step 11: on Windows the right-click menus are in-page too, in Windows 11's look.
+describe('demo context menu for a Windows visitor', () => {
+  let undoVisitor: (() => void) | undefined
+  beforeEach(() => {
+    undoVisitor = visitor('windows')
+  })
+  afterEach(() => {
+    undoVisitor?.()
+  })
+
+  it('draws a Windows menu, not a Mac one', async () => {
+    setup()
+    await open(false, { x: 40, y: 60 })
+    const [menu] = menus()
+    expect(menu.getAttribute('role')).toBe('menu')
+    expect(menu.classList.contains('cmdr-demo-macos-menu')).toBe(false)
+    expect(menu.classList.contains('mac')).toBe(false)
   })
 })

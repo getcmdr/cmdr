@@ -1,5 +1,5 @@
 //! The menu bar's host in the browser: the desktop's menu-state commands, answered by storing what
-//! they push, and the macOS bar drawn from `cmdr-menu` over that state.
+//! they push, and the visitor's own OS's bar drawn from `cmdr-menu` over that state.
 //!
 //! The desktop's `commands/menu_state.rs` (and `settings.rs`'s `update_menu_accelerator`) store
 //! each push in `MenuState` and recompute the native items; [`DemoMenu`] stores the same pushes,
@@ -19,9 +19,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 pub use cmdr_menu::page::{BarMenuView, Row, RowLabel};
-
-/// The bar the demo draws: macOS's, since the demo plays a Mac.
-pub(crate) const PLATFORM: Platform = Platform::MacOs;
 
 /// Every command [`DemoMenu::invoke`] answers, by its Tauri name.
 pub const MENU_COMMANDS: &[&str] = &[
@@ -74,6 +71,8 @@ pub enum Click {
 
 /// The page's menu bar state.
 pub struct DemoMenu {
+    /// Whose bar and menus: the visitor's own OS (`lib/demo/platform.ts` reads it off the user agent).
+    pub(crate) platform: Platform,
     model: Mutex<BarInputs>,
     /// What the last right-click menu went up over (`context_menu.rs`).
     pub(crate) context: Mutex<crate::context_menu::ContextModel>,
@@ -86,10 +85,16 @@ impl Default for DemoMenu {
 }
 
 impl DemoMenu {
-    /// A bar as a fresh app builds it.
+    /// A Mac's bar as a fresh app builds it.
     pub fn new() -> Self {
+        Self::for_platform(Platform::MacOs)
+    }
+
+    /// `platform`'s bar (and right-click menus) as a fresh app builds it.
+    pub fn for_platform(platform: Platform) -> Self {
         Self {
-            model: Mutex::new(BarInputs::fresh(PLATFORM)),
+            platform,
+            model: Mutex::new(BarInputs::fresh(platform)),
             context: Mutex::new(crate::context_menu::ContextModel::default()),
         }
     }
@@ -126,7 +131,7 @@ impl DemoMenu {
             }
             "update_menu_accelerator" => {
                 let a: AcceleratorArgs = parse(command, args)?;
-                m.rebind(&a.command_id, &a.shortcut, PLATFORM);
+                m.rebind(&a.command_id, &a.shortcut, self.platform);
             }
             "update_sort_menu" => m.requested_sort = parse::<SortArgs>(command, args)?.sort,
             "update_view_mode_menu" => {
@@ -158,20 +163,20 @@ impl DemoMenu {
         Ok(Value::Null)
     }
 
-    /// The macOS bar as it stands: every menu and row, with its words, shortcut, and state, drawn
+    /// The bar as it stands: every menu and row, with its words, shortcut, and state, drawn
     /// by `cmdr_menu::page` as the desktop's in-window bar is.
     pub fn bar(&self) -> Vec<BarMenuView> {
-        bar_view(&self.model.lock_ignore_poison(), PLATFORM)
+        bar_view(&self.model.lock_ignore_poison(), self.platform)
     }
 
     /// What a click on `menu_id` asks for, applying what the click itself changes (a check item's
     /// own state), as `handle_menu_event` does.
     pub fn click(&self, menu_id: &str) -> Click {
         let mut m = self.model.lock_ignore_poison();
-        let enabled = cmdr_menu::bar::spec_entry(menu_id, PLATFORM)
+        let enabled = cmdr_menu::bar::spec_entry(menu_id, self.platform)
             .and_then(|entry| entry_enabled(entry, &m.item_inputs()))
             .unwrap_or(false);
-        let Some(click) = bar_click(menu_id, PLATFORM).filter(|_| enabled) else {
+        let Some(click) = bar_click(menu_id, self.platform).filter(|_| enabled) else {
             return Click::Nothing;
         };
         let emit = |event: &str, payload: Value| Click::Emit {

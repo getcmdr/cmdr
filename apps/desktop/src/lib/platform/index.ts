@@ -48,8 +48,8 @@ export function getPlatform(): Platform {
 export const COPY_PLATFORM_GLOBAL = '__CMDR_COPY_PLATFORM__'
 
 /**
- * The OS whose catalog branch this window's copy reads, and whose look the window wears unless a
- * host pins one ({@link getLook}): {@link getPlatform}, unless a dev run mocks another desktop's conventions. For
+ * The OS whose catalog branch this window's copy reads, and whose look the window wears
+ * ({@link getLook}): {@link getPlatform}, unless a dev run mocks another desktop's conventions. For
  * the message runtime and `data-look` alone; ❌ never for a capability, a key, or a habit.
  */
 export function getCopyPlatform(): Platform {
@@ -57,17 +57,9 @@ export function getCopyPlatform(): Platform {
   return isPlatform(mocked) ? mocked : getPlatform()
 }
 
-/**
- * The global a host adds to pin the window's look (`data-look`: the menus' and the controls'
- * tokens) apart from {@link getCopyPlatform}: the browser demo pins `macos`, since it draws the
- * macOS bar and chrome for every visitor (`#lib/demo/platform.ts`).
- */
-export const LOOK_GLOBAL = '__CMDR_LOOK__'
-
-/** Whose OS look the menus and controls wear (`app-menu.css`, `app-controls*.css`): a host's pin, else {@link getCopyPlatform}. */
+/** Whose OS look the menus and controls wear (`app-menu.css`, `app-controls*.css`): {@link getCopyPlatform}'s. */
 export function getLook(): Platform {
-  const pinned = (globalThis as Record<string, unknown>)[LOOK_GLOBAL]
-  return isPlatform(pinned) ? pinned : getCopyPlatform()
+  return getCopyPlatform()
 }
 
 export function isMacOS(): boolean {

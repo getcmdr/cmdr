@@ -155,45 +155,46 @@ every window. The demo keeps that shape, so secondary windows share its state, a
   visitor's hands; ⌘ on a PC keyboard is the Windows key, which the browser and the OS keep. The demo is the one place
   that reads the user agent for this: a page has no other signal, and app code never does.
 - Capabilities follow the platform (`visitorCapabilities`): a Mac visitor gets the Mac app's, everyone else none, except
-  the two the demo's own macOS chrome stands behind. Both flip to `false` off macOS once the demo's chrome follows the
-  visitor's OS (task 63 of `docs/specs/windows-port-plan.md`).
-  - Decision: every visitor gets `appMenu: true`. Why: the demo always draws the macOS bar, whose app menu owns Quit,
-    Hide, Hide others, and Show all as OS rows, so a Windows or Linux visitor would otherwise get a Quit palette command
-    whose `quit_app` has no backend.
-  - Decision: every visitor gets `overlayTitleBar: true`. Why: the demo always draws the traffic lights over each
-    window's top left corner (§ Traffic lights), and a page keeps its title line under them only with this capability.
-    Without it, a Windows or Linux visitor's queue started its toolbar under the lights, which took the clicks meant for
-    "Pause all" (the website suite's queue cell caught it, 2026-11-13).
-- Conventions follow the platform too (`visitorConventions`): the desktop's own row for the visitor's OS, the
-  desktop-neutral Linux row for a Linux visitor (a page can't tell GNOME from KDE), and `menuModel: 'systemMenuBar'` for
-  everyone, for the same reason as `appMenu`. That one follows the visitor once the demo's chrome does (task 63).
-- The look is pinned to macOS for everyone too (`LOOK_GLOBAL`, read by `getLook()` into `data-look`), which keys the
-  menu tokens (`app-menu.css`) and the control tokens (`app-controls*.css`). Why: `data-look` otherwise follows the copy
-  platform, and a Windows visitor's menus wore Windows 11's tokens under the macOS bar: a 40 px bar (the window offset
-  `--cmdr-demo-window-top` still said 30, so the status corner and toasts sat 10 px under it), Segoe type, and WinUI
-  surfaces; the control tokens would put WinUI buttons, fields, and dialogs in the Mac chrome. It follows the visitor
-  with the bar (task 63 step 11).
+  `overlayTitleBar`. No `appMenu` off macOS: their bar is their own OS's, whose File menu ends with Quit, so Quit is a
+  palette command too, as on their desktop (`quit_app` is in `notInDemo`: a page can't quit its tab).
+  - Decision: every visitor gets `overlayTitleBar: true`. Why: the demo draws the macOS traffic lights over each
+    window's top left corner for every visitor (§ Traffic lights), and a page keeps its title line under them only with
+    this capability. Without it, a Windows or Linux visitor's queue started its toolbar under the lights, which took the
+    clicks meant for "Pause all" (the website suite's queue cell caught it, 2026-11-13). It goes off macOS once the demo
+    draws each OS's own window buttons.
+- Conventions follow the platform too (`visitorConventions`): the desktop's own row for the visitor's OS, menu model
+  included (task 63 step 11 of `docs/specs/windows-port-plan.md`), and the desktop-neutral Linux row for a Linux visitor
+  (a page can't tell GNOME from KDE). So a Mac visitor gets `systemMenuBar` (the macOS bar), a Windows or Linux one
+  `windowMenuBar` (D5's in-window bar), and a Windows one `contextMenus: 'inPage'`, which the demo's right-click menus
+  are for everyone anyway.
+- The look follows the platform with no pin: `getLook()` is the copy platform, the visitor's OS, so `data-look` keys the
+  menu tokens (`app-menu.css`) and the control tokens (`app-controls*.css`) to it. A Windows visitor's bar, menus,
+  buttons, fields, and dialogs wear Windows 11's (the 40 px bar included: `--cmdr-demo-window-top` reads the look's own
+  `--spacing-menu-bar-height`, so the window, the status corner, and the toasts start under whichever bar is there).
 - The website's full demo suite runs once per visitor OS (`apps/website/playwright.config.ts`: `demo` is a Windows
   visitor, `demo-mac` a Mac one), since keys and copy differ between them.
 
 ## The menu bar
 
 - **What**: a strip at the top of the page (`menu-bar.svelte.ts`, first in `<body>`, so the app's flex column starts
-  under it) that draws the macOS menu bar the desktop builds and sends what its items send. It's the app's own in-page
-  bar (`#lib/ui/MenuBar.svelte`, the one Windows and Linux draw; `lib/ui/DETAILS.md` § Command menus) on its `mac`
-  flavor, mounted with `DEMO_MENU_CLASS`, so the demo holds no menu drawing or key handling of its own. It sets
-  `--cmdr-demo-window-top` on `:root` to its height, for the demo chrome that sits on the main window. The app's status
-  corner and top toast stack sit against the page's top edge (the window's, on the desktop), so `menu-bar-style.ts`
-  moves both down by it; without that the bar covers the copy's progress chip and eats its click (the website spec's
-  queue cell caught it).
+  under it) that draws the visitor's own OS's menu bar, as the desktop builds it there, and sends what its items send:
+  the macOS bar for a Mac visitor, D5's in-window bar for a Windows or Linux one. It's the app's own in-page bar
+  (`#lib/ui/MenuBar.svelte`, the one Windows and Linux draw; `lib/ui/DETAILS.md` § Command menus) in the flavor the
+  visitor's `menuModel` picks (`mac` or `desktop`), mounted with `DEMO_MENU_CLASS` for a Mac visitor only
+  (`demoMenuClass()`), so the demo holds no menu drawing or key handling of its own. It sets `--cmdr-demo-window-top` on
+  `:root` to `var(--spacing-menu-bar-height)` (30 px on the Mac look, 40 on Windows'), for the demo chrome that sits on
+  the main window. The app's status corner and top toast stack sit against the page's top edge (the window's, on the
+  desktop), so `menu-bar-style.ts` moves both down by it; without that the bar covers the copy's progress chip and eats
+  its click (the website spec's queue cell caught it).
 - **Decision**: the bar is the desktop's own, through WASM. `crates/cmdr-menu` holds the bar as data and the enabled
   fold; `cmdr-listing-wasm`'s `DemoMenuBar` stores the menu-state pushes the app already sends the native menu
   (`activate_window_menu`, `set_commands_refused_over_dialog`, `update_menu_accelerator`, `update_sort_menu`,
-  `update_view_mode_menu`, `sync_menu_show_hidden`, the live labels) and answers the bar and a click from them
-  (`crates/cmdr-listing-wasm/DETAILS.md` § The JS API). **Why**: a TS copy of the bar would drift on the first new item,
-  and a click that sent anything other than the native event would need its own handler in the app.
+  `update_view_mode_menu`, `sync_menu_show_hidden`, the live labels) and answers the bar and a click from them, built
+  for the visitor's OS (`new DemoMenuBar(platform)`, `crates/cmdr-listing-wasm/DETAILS.md` § The JS API). **Why**: a TS
+  copy of the bar would drift on the first new item, and a click that sent anything other than the native event would
+  need its own handler in the app.
 - **Words**: each row's catalog key through `getMessage`, its `{token}`s replaced literally, as the desktop's
-  `menu_t_with` does. The app menu's title is the literal `Cmdr`.
+  `menu_t_with` does. The Mac app menu's title is the literal `Cmdr`.
 - **Live**: the engine calls `onChange` after every push and bar click (`menu-engine.ts`), the demo's
   `menu-bar-changed`, and the bar re-reads `bar()` into its `$state` (the file is `.svelte.ts` for it); an open menu
   redraws in place.
@@ -202,17 +203,21 @@ every window. The demo keeps that shape, so secondary windows share its state, a
   in step. Decision: not on the `set_ui_language` push the desktop's menu rebuilds on. Why: Rust reads its own catalog
   synchronously, but the push reaches the demo before the webview's new catalog chunk loads, so a redraw on it would
   draw the old words.
-- **Shortcuts**: the spec's accelerators in a Mac's glyphs, or the pushed rebind, so the browser-safe map
-  (`browser-shortcuts.ts`) shows: Tab > New tab reads ⌃T.
+- **Shortcuts**: the spec's accelerators in the visitor's OS's spelling (a Mac's glyphs, `Ctrl+T` elsewhere), or the
+  pushed rebind, so the browser-safe map (`browser-shortcuts.ts`) shows: a Mac visitor's Tab > New tab reads ⌃T, and a
+  Windows visitor's New tab shows no key, since Chromium keeps `Ctrl+T`.
 - **Clicks**: `execute-command`, `settings-changed`, `view-mode-changed`, and `menu-sort` go to the main window, as
   `handle_menu_event`'s `emit_to("main")`. With a panel in front, Close tab closes it and an edit goes to its frame
   (`document.execCommand`, best effort: browsers refuse a scripted paste).
-- **Keys**: the component's `mac` flavor. ⌃F2 focuses the bar (macOS's own shortcut for it); ←/→, ↑/↓, Enter, Space,
-  Home/End, and Esc walk it as a Mac menu does; every key the bar or an open menu has is kept from the app. A greyed row
-  never picks. OS rows (Services, Hide, Quit, Undo, Minimize) draw greyed.
-- **Look**: `app-menu.css`'s menu tokens set to macOS 27's values on `DEMO_MENU_CLASS` (`menu-bar-style.ts`), from the
-  app's glass tokens (`app.css` § Frosted-glass material), sized against macOS 27's bar and an open menu, plus the bold
-  app title and the bar's own hairline and stacking. A draft David reviews.
+- **Keys**: the component's, in the visitor's flavor. On a Mac, ⌃F2 focuses the bar (macOS's own shortcut for it), the
+  bar stays usable while a dialog is up, as macOS's does, and OS rows (Services, Hide, Quit, Undo, Minimize) draw
+  greyed. Elsewhere a lone Alt or F10 focuses it, Alt plus a title's underlined letter opens a menu, and a modal surface
+  makes it inert, as Windows' in-window bar is. Then ←/→, ↑/↓, Enter, Space, Home/End, and Esc walk it; every key the
+  bar or an open menu has is kept from the app. A greyed row never picks.
+- **Look**: a Windows visitor's is `app-menu.css`'s Windows 11 tokens as they are (`data-look`, § Platform); a Linux
+  visitor's the neutral `:root` one. A Mac visitor's is those tokens set to macOS 27's values on `DEMO_MENU_CLASS`
+  (`menu-bar-style.ts`), from the app's glass tokens (`app.css` § Frosted-glass material), sized against macOS 27's bar
+  and an open menu, plus the bold app title and the bar's own hairline and stacking. A draft David reviews.
 - Verified in headless Chromium against `pnpm build:demo` (2026-11-04): View > Show hidden files lists `.zshrc` and the
   check follows; View > Command palette opens it; Go > Home runs; View > Sort by > Size checks Size once the sort lands;
   Tab > New tab adds a tab and reads ⌃T; Cmdr > Settings opens its panel, File's items grey while it's in front, and Tab
@@ -221,10 +226,11 @@ every window. The demo keeps that shape, so secondary windows share its state, a
 ## Right-click menus
 
 - **What**: the native popups the app opens (`show_file_context_menu`, the breadcrumb's, a tab's, the date header's Sort
-  by, the function key bar's, the viewer's text, a queue row's, a servers hub host's), drawn as macOS 27 menus
-  (`context-menu.ts`) on the app's own in-page context menu (`#lib/ui/ContextMenu.svelte`, `mac` flavor) with the bar's
-  look and keys. The app already cancels the browser's own menu (`#lib/context-menu-ownership.ts`), so a right-click
-  reaches the same `show_*` command it does on desktop.
+  by, the function key bar's, the viewer's text, a queue row's, a servers hub host's), drawn in the visitor's OS's rows
+  and look (`context-menu.ts`: macOS 27's for a Mac visitor, Windows 11's in-page ones for a Windows visitor, as D5 has
+  them there) on the app's own in-page context menu (`#lib/ui/ContextMenu.svelte`, the flavor the bar has) with the
+  bar's look and keys. The app already cancels the browser's own menu (`#lib/context-menu-ownership.ts`), so a
+  right-click reaches the same `show_*` command it does on desktop.
 - **Decision**: the rows are the desktop's own, through WASM. `crates/cmdr-menu`'s `context` holds every popup's rows
   and what a pick asks for; `cmdr-listing-wasm`'s `context_menu.rs` answers each `show_*` command with them and stashes
   what the menu went up over, as `commands/menu.rs` stashes it in `MenuState` (`crates/cmdr-listing-wasm/DETAILS.md` §
@@ -241,9 +247,10 @@ every window. The demo keeps that shape, so secondary windows share its state, a
   didn't offer enabled does nothing, in the engine as in the page.
 - **Left out**: every OS-filled group (Open with, Share, the tag colors, the provider's actions, Services): a browser
   has no OS to ask. The image-search group stays hidden (no media index).
-- **Keys**: ↑/↓, Home/End, → into a submenu, ← or Esc out, Esc closes, Enter / Space pick, Tab closes; every key is kept
-  from the app while the menu is up. The header line is `aria-hidden`, never a stop, and names the menu for a screen
-  reader (`aria-label`). A click outside, the page losing focus, or a resize closes it.
+- **Keys**: ↑/↓, Home/End, → into a submenu, ← or Esc out, Esc closes, Enter / Space pick, Tab closes (off the Mac, a
+  row's underlined letter picks it too); every key is kept from the app while the menu is up. The header line is
+  `aria-hidden`, never a stop, and names the menu for a screen reader (`aria-label`). A click outside, the page losing
+  focus, or a resize closes it.
 - **Shared with the bar**: the component, `menu-click.ts` (performing a pick), and `menu-bar-style.ts`'s look, injected
   once per document.
 - Verified in headless Chromium against `pnpm build:demo` (2026-11-04): right-clicking `Documents` draws the folder menu

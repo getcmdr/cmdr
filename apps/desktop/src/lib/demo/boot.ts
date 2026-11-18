@@ -40,8 +40,8 @@ export function installDemoBackend(): void {
   ;(window as unknown as DemoHost).__cmdrDemoBackend = backend
   exposeUnanswered()
   installWebview(backend, 'main')
-  // The macOS menu bar a page doesn't have, over the top frame's main window only: a secondary
-  // window shares the one bar, as on a Mac.
+  // The visitor's menu bar, over the top frame's main window only: a secondary window shares the
+  // one bar, as on a Mac (a Windows viewer's own bar comes with task 63 step 6).
   installMenuBar({
     menu: backend.menu,
     emit: (event, payload, target) => {

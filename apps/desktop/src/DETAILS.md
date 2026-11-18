@@ -79,7 +79,7 @@ component stays one implementation and reads only these.
 - **`:root`** holds the house look (`lib/ui/Menu.svelte`'s row and surface, the demo bar's strip), the Linux in-page
   bar's until task 60 gives Linux its own neutral theme.
 - **`:root[data-look='windows']`** is Windows 11's look, light and dark, on Windows 10 and 11 alike (D5). `data-look` is
-  `getLook()` (a host's pin, the demo's `macos`, else `getCopyPlatform()`), written by `applyPlatformAttributes()`
+  `getLook()` (`getCopyPlatform()`; the browser demo's is its visitor's OS), written by `applyPlatformAttributes()`
   beside `data-platform`, so `CMDR_MOCK_CONVENTIONS=windows pnpm dev` shows it on a Mac (without Segoe UI, which a Mac
   lacks).
 - **Reduced transparency** (the `reduce-transparency` class, which task 40 fills from Windows' transparency effects):
@@ -121,7 +121,7 @@ tooltips, `ModalDialog`'s chrome, focus rings, and scrollbars. Same shape as the
   scrollbar rule (`:where()`-wrapped so a scroller that styles its own bar still wins). It also redefines the `app.css`
   tokens `ModalDialog` already reads (`--color-bg-dialog`, `--radius-dialog`, `--spacing-dialog`, `--shadow-dialog`, the
   dialog borders) and the field's `--radius-input` / `--color-field-border`. `data-look` is the menus' (`getLook()`), so
-  the browser demo's `macos` pin keeps these out of every visitor's demo too.
+  a Windows visitor's browser demo wears these too.
 - **`app-controls-windows-contrast.css`**: `forced-colors: active`, WinUI's `HighContrast` pairs as system colors. A
   primitive that paints them sets `forced-color-adjust: var(--color-forced-adjust)` (`none` only there), inside
   `@supports (forced-color-adjust: none)`, as the block itself is: the Safari 15.4 floor's guard (§ Menu look tokens).

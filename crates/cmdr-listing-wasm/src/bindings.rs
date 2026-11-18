@@ -4,6 +4,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use cmdr_menu::spec::Platform;
 use serde_json::Value;
 use wasm_bindgen::prelude::*;
 
@@ -240,10 +241,19 @@ pub struct DemoMenuBar {
 
 #[wasm_bindgen]
 impl DemoMenuBar {
-    /// A bar as a fresh app builds it.
+    /// `platform`'s bar (`"macos"`, `"windows"`, or `"linux"`: the visitor's own OS) as a fresh
+    /// app builds it, with its right-click menus. Throws on any other name.
     #[wasm_bindgen(constructor)]
-    pub fn new() -> DemoMenuBar {
-        DemoMenuBar { menu: DemoMenu::new() }
+    pub fn new(platform: &str) -> Result<DemoMenuBar, JsError> {
+        let platform = match platform {
+            "macos" => Platform::MacOs,
+            "windows" => Platform::Windows,
+            "linux" => Platform::Linux,
+            other => return Err(JsError::new(&format!("no menu bar for platform `{other}`"))),
+        };
+        Ok(DemoMenuBar {
+            menu: DemoMenu::for_platform(platform),
+        })
     }
 
     /// Whether [`invoke`](Self::invoke) answers `command`.
@@ -293,12 +303,6 @@ impl DemoMenuBar {
     #[wasm_bindgen(js_name = contextClick)]
     pub fn context_click(&self, menu_id: &str) -> JsValue {
         serde_json::to_value(self.menu.context_click(menu_id)).map_or(JsValue::NULL, |click| to_js(&click))
-    }
-}
-
-impl Default for DemoMenuBar {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

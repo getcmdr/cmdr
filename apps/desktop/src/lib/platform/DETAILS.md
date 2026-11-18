@@ -119,10 +119,10 @@ dialog buttons like macOS, KDE like Windows.
   `getCopyPlatform()` and so the message runtime's branch pick follow, so the window speaks that desktop's words too
   (`CMDR_MOCK_CONVENTIONS=gnome` on a Mac shows "Preferences"). The same value is `data-look` on `<html>` (`getLook()`),
   which keys the menu and control look tokens (`apps/desktop/src/DETAILS.md` § Menu look tokens and § Control look
-  tokens), so the mock shows that desktop's menus and controls too, unless a host pins the look in `__CMDR_LOOK__` (the
-  browser demo pins `macos`, `lib/demo/DETAILS.md` § Platform). **Decision/Why**: copy and conventions disagreeing in
-  dev hid every desktop branch from a Mac; moving the platform itself would also move keymaps and capabilities. The
-  native menu bar doesn't follow (`apps/desktop/src-tauri/src/intl/DETAILS.md`).
+  tokens), so the mock shows that desktop's menus and controls too (the browser demo's look follows its visitor the same
+  way, `lib/demo/DETAILS.md` § Platform). **Decision/Why**: copy and conventions disagreeing in dev hid every desktop
+  branch from a Mac; moving the platform itself would also move keymaps and capabilities. The native menu bar doesn't
+  follow (`apps/desktop/src-tauri/src/intl/DETAILS.md`).
 
 ## The fallback
 

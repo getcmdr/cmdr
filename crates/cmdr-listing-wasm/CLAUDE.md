@@ -7,12 +7,12 @@ The engine's second host, beside `apps/desktop/src-tauri/src/listing_host/`. Not
 
 - `tree.rs`: the page's JSON tree into an `InMemoryVolume`. `events.rs`: engine facts into Tauri-named events.
   `commands.rs`: `Demo`, the listing commands by their Tauri names, plus Brief widths and font metrics
-  (`cmdr-brief-columns`, memory only). `menu.rs`: `DemoMenu`, the menu-state pushes stored and the macOS bar drawn
-  through `cmdr_menu::page`, as the desktop's in-page bar is; `context_menu.rs`: its right-click popups, the `show_*`
-  commands answered with rows. `folder_sizes.rs`: the drive index's stand-in, a fold over the volume behind both
-  engines' index seams (DETAILS § Folder sizes). `viewer.rs`: the file viewer's commands (`cmdr-viewer`, same volume).
-  `multi_rename.rs`: ⌃M (`cmdr-multi-rename`, same panes and write engine; no media reads, no Results; DETAILS §
-  Multi-Rename). `search.rs`: ⌘F (`cmdr-search` over the same volume, sized by the fold; DETAILS § Search).
+  (`cmdr-brief-columns`, memory only). `menu.rs`: `DemoMenu`, the menu-state pushes stored and the visitor OS's bar
+  drawn through `cmdr_menu::page`, as the desktop's in-page bar is; `context_menu.rs`: its right-click popups, the
+  `show_*` commands answered with rows. `folder_sizes.rs`: the drive index's stand-in, a fold over the volume behind
+  both engines' index seams (DETAILS § Folder sizes). `viewer.rs`: the file viewer's commands (`cmdr-viewer`, same
+  volume). `multi_rename.rs`: ⌃M (`cmdr-multi-rename`, same panes and write engine; no media reads, no Results; DETAILS
+  § Multi-Rename). `search.rs`: ⌘F (`cmdr-search` over the same volume, sized by the fold; DETAILS § Search).
   `imports.rs`: files dropped in from the computer, staged under `/.drops/` within a 10 MB per-visit budget (DETAILS §
   Files dropped in from the computer). `invoke.rs`: the args/answer JSON helpers every command family shares, a leaf so
   no family imports `commands.rs`. `bindings.rs` (wasm only): the `wasm-bindgen` API.

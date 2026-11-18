@@ -3,8 +3,8 @@ import {
   CAPABILITIES_GLOBAL,
   CONVENTIONS_GLOBAL,
   CONVENTIONS_ON,
+  getLook,
   getPlatform,
-  LOOK_GLOBAL,
   NO_CAPABILITIES,
   PLATFORM_GLOBAL,
   platformCapabilities,
@@ -44,15 +44,12 @@ describe('installPlatform', () => {
     expect(platformCapabilities()).toEqual(visitorCapabilities(getPlatform()))
   })
 
-  it.each(['Macintosh; Intel Mac OS X 10_15_7', 'Windows NT 10.0; Win64; x64', 'X11; Linux x86_64'])(
-    'pins the macOS look (menus and controls) for a %s visitor, under the macOS bar every visitor gets',
-    (os) => {
-      const frame = { navigator: { userAgent: `Mozilla/5.0 (${os})` } } as unknown as Window
-      installPlatform(frame)
-      expect((frame as unknown as Record<string, unknown>)[LOOK_GLOBAL]).toBe('macos')
-      expect(Object.getOwnPropertyDescriptor(frame, LOOK_GLOBAL)?.writable).toBe(false)
-    },
-  )
+  // Task 63 step 11: the look (`data-look`: the menus' and the controls' tokens) is the visitor's own
+  // OS's, as their bar is, so nothing pins it.
+  it('wears the visitor’s own look', () => {
+    installPlatform(window)
+    expect(getLook()).toBe(visitorPlatform(navigator.userAgent))
+  })
 
   it('hands the capabilities over read-only too', () => {
     const frame = { navigator: { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)' } } as unknown as Window
@@ -72,10 +69,11 @@ describe('installPlatform', () => {
 })
 
 describe('visitorConventions', () => {
-  it('gives each visitor their desktop app’s row, with the macOS bar the demo always draws', () => {
+  it('gives each visitor their desktop app’s row, menu model included', () => {
     expect(visitorConventions('macos')).toEqual(CONVENTIONS_ON.macos)
-    expect(visitorConventions('windows')).toEqual({ ...CONVENTIONS_ON.windows, menuModel: 'systemMenuBar' })
-    expect(visitorConventions('linux')).toEqual({ ...CONVENTIONS_ON.otherLinux, menuModel: 'systemMenuBar' })
+    expect(visitorConventions('windows')).toEqual(CONVENTIONS_ON.windows)
+    expect(visitorConventions('windows').menuModel).toBe('windowMenuBar')
+    expect(visitorConventions('linux')).toEqual(CONVENTIONS_ON.otherLinux)
   })
 })
 
@@ -86,12 +84,11 @@ describe('visitorCapabilities', () => {
       expect(mac[capability], capability).toBe(true)
   })
 
-  // With `appMenu`, Quit and the Hide trio are the bar's app-menu rows, so no visitor gets a
-  // Quit palette row whose IPC has no backend (`command-registry.test.ts` pins that consequence).
+  // No `appMenu`: their bar is their own OS's, with Quit at the end of File (task 63 step 11).
   // With `overlayTitleBar`, each page keeps its title line under the traffic lights the demo draws
   // on every window, so the lights never cover a page's own controls (the queue's "Pause all").
-  it('shows everyone else no OS-backed surface but the two the demo’s macOS chrome draws', () => {
-    const chrome = { ...NO_CAPABILITIES, appMenu: true, overlayTitleBar: true }
+  it('shows everyone else no OS-backed surface but the title line the demo’s traffic lights sit on', () => {
+    const chrome = { ...NO_CAPABILITIES, overlayTitleBar: true }
     expect(visitorCapabilities('windows')).toEqual(chrome)
     expect(visitorCapabilities('linux')).toEqual(chrome)
   })
