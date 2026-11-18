@@ -1,14 +1,18 @@
 # The trait flip: handoff to the tier agents
 
-Tier 0 of #1225's milestone 4 (`docs/specs/app-path-plan.md` § "4. Flip the trait") is done: the `Volume` trait takes
-and returns app paths, `cmdr-fs` and `cmdr-archive` check, pass clippy and their tests, and the codemod that converts
-the rest is `scripts/app-path-flip/README.md` (read it first: usage, rules, residue shapes). This note is what a tier
-agent needs on top of it.
+Tiers 0 and 1 of #1225's milestone 4 (`docs/specs/app-path-plan.md` § "4. Flip the trait") are done: the `Volume` trait
+takes and returns app paths, `cmdr-fs`, `cmdr-archive`, and the 18 tier-1 crates check, pass clippy and their tests, and
+the codemod that converts the rest is `scripts/app-path-flip/README.md` (read it first: usage, rules, residue shapes).
+This note is what a tier agent needs on top of it.
 
 ## The base
 
-- **Branch**: `worktree-agent-a6403541e656ed355` (tier 0). Every tier-1 agent branches from its tip; the lead merges a
-  tier before the next one starts, and later tiers branch from that merge.
+- **Branch**: `worktree-agent-a4073ece33b857976` (tier 1 merged onto tier 0, plus the codemod's eager-helper and
+  `from_ref` rules). Every tier-2 agent branches from its tip; the lead merges a tier before the next one starts, and
+  later tiers branch from that merge.
+- **Your own scratchpad subfolder** for everything you build or write outside the tree: the codemod binary, its
+  `-report` JSON, `zigcc.sh`, and the cross-check `CARGO_TARGET_DIR`s. ❌ Never `/tmp` or a path another agent might
+  pick: parallel agents overwrite each other's reports and target dirs.
 - **Expected state**: the workspace doesn't compile as a whole until every tier is done. Build only your crates (`-p`),
   ❌ never the workspace: other agents share the disk and CPU. A crate outside your set failing is expected.
 - On it: artifact 1 (`refactor(cmdr-fs): the Volume trait takes and returns app paths…`), artifact 2
@@ -19,7 +23,7 @@ agent needs on top of it.
 
 Flip your crates in dependency order (a crate after every crate it depends on, dev-deps included). Foreground only.
 
-1. `go -C scripts/app-path-flip run . -p <crate> -report /tmp/<crate>-pass1.json` (build it once with
+1. `go -C scripts/app-path-flip run . -p <crate> -report <scratch>/<crate>-pass1.json` (build it once with
    `go -C scripts/app-path-flip build -o <scratch>/flip .` and run the binary if you'll call it often). Commit all it
    changed: `refactor(<crate>): flip to app-path volume calls (codemod pass 1) (refs #1225)`, the body giving the rule
    counts from its summary. ❌ No hand edit in this commit: the audit re-runs the codemod and diffs.
@@ -30,7 +34,9 @@ Flip your crates in dependency order (a crate after every crate it depends on, d
    run usually converts the tests: that's pass 2, back to step 1. Stop when a run reports `checks: true` and edits
    nothing.
 4. Run it once more per feature set CI builds the crate with (`-cargo-args "--features testing"`,
-   `-cargo-args "--all-features"`); any edits are another pass.
+   `-cargo-args "--all-features"`); any edits are another pass. ❗ `-cargo-args` is ONE quoted string, and never repeat
+   `--all-targets` in it (the codemod already passes it): cargo then fails before rustc runs, and the run reads
+   `0 diagnostics, 0 edits` with `checks: false`, which looks like a clean no-op. Only `checks: true` is green.
 5. Cross-check the `cfg` code this Mac never compiles, and fix what it finds as residue (README § residue, last bullet).
    The Mac recipe: a `zigcc.sh` in your scratchpad that drops cc-rs's `--target=…` argument and runs
    `~/.local/share/mise/installs/zig/0.16.0/bin/zig cc -target ${ZIGTARGET:-x86_64-windows-gnu} "$@"`, then:
@@ -39,7 +45,10 @@ Flip your crates in dependency order (a crate after every crate it depends on, d
    - A crate that builds for the browser (`cmdr-fs`, `cmdr-archive`, the listing crates):
      `cargo check -p <crate> --lib --target wasm32-unknown-unknown`.
    - More crates than `cmdr-fs` pull C dependencies; `docs/notes/windows-port/build-progress.md` lists what else the
-     Windows cross-check needs (`CXX_…`, `AR_…`, `numkong`).
+     Windows cross-check needs (`CXX_…`, `AR_…`, `numkong`). What tier 1's merge ran on every crate: `CC_`, `CXX_`
+     (`zig c++`), and `AR_` (`zig ar`) for the target triple, `NK_TARGET_<ISA>=0` for numkong's 11 x86 ISAs (`ALDER`,
+     `DIAMOND`, `GENOA`, `GRANITEAMX`, `HASWELL`, `ICELAKE`, `SAPPHIRE`, `SAPPHIREAMX`, `SIERRA`, `SKYLAKE`, `TURIN`),
+     and `AWS_LC_SYS_PREBUILT_NASM=1`.
 6. Verify: `cargo clippy -p <crate> --all-targets -- -D warnings` (and per feature set), `cargo nextest run -p <crate>`
    with the pins unchanged (a pin that goes red is a stop-and-tell-the-lead, ❌ never an edit to it), and
    `pnpm check app-path-std-bridge file-length`.
@@ -68,13 +77,19 @@ Flip your crates in dependency order (a crate after every crate it depends on, d
   `cmdr-archive`'s `a_typed_root_has_no_path_shaped_arithmetic_in_reach` fails to compile if the trait is imported or
   the methods go back on the inherent impl.
 - **Line numbers in the residue list** are from before the final `cargo fmt`; `cargo check` gives the current ones.
-- **A helper that does work before its future starts** (`fn … -> Pin<Box<…>>` with a statement before its `Box::pin`)
-  stays residue: moving its call into an `async move` would delay that work to the first poll. A lazy one (an
-  `async fn`, or a body that is only `Box::pin(async move { … })`), nested or in another crate, is the codemod's (README
-  § "Lazy helper"). Of the reported sites: `cmdr-smb`'s five (`scan_for_copy_impl`, `scan_for_copy_batch_impl`,
-  `scan_for_conflicts_impl`, `write_from_stream_impl`, `continue_write_from_stream_impl`) and `cmdr-sftp`'s
-  `noting`/`scan_walk`/`patch_mutation` trees are lazy; of `cmdr-local`'s nine only
-  `scan_for_copy_batch_with_boundary_impl` is (the rest call `self.resolve(path)` first, or `stream_into`, which does).
+- **Helpers a trait method tail-calls**: a lazy one (an `async fn`, or a body that is only
+  `Box::pin(async move { … })`), nested or in another crate, gets the call moved into the future (README § "Lazy
+  helper"); an eager one (a statement before its `Box::pin`), in this crate, takes the typed path and the prelude
+  itself, down a forwarding chain (README § "Eager helper"). Moving an eager call into an `async move` would delay its
+  work to the first poll, so that never happens. A helper whose future borrows the param stays residue.
+- **Tier 2's `cmdr-operations`, by shape** (counted on the tier-1 merge, 567 files, 305 of them tests): 109
+  `impl Volume` and 2 `ScanSource`/`PatchSource` impls; of the non-impl helpers taking a `&Path`/`&[PathBuf]`, 208 are
+  `async fn` and 7 are body-only `Box::pin(async move { … })` (lazy), and none is eager, so the eager rule is mainly for
+  the app; 182 `slice::from_ref(&x)` (most feed the engine's own `&[PathBuf]` APIs, which stay std, so the `from_ref`
+  row fires only where a slot is a `Volume` batch); 381 `TestDir` uses, 2,219 `Path::new("…")` and 820
+  `PathBuf::from("…")` literals, 535 `assert_eq!`/`assert_ne!` lines naming a path-ish local, 53 borrowed-return methods
+  (`root`, `stands_in_for_own_disk`, `local_backing_file`), 175 OS `cfg` lines (cross-check!), 6 `join!`s (E0716 hoist),
+  6 `macro_rules!`, 3 `AsRef<Path>` generics (residue).
 - **Trees flipped before the import fix**: run `go -C scripts/app-path-flip run . -audit-imports <crate dir>` and lift
   any hit that took an item's `#[cfg]` (README § "Imports").
 - **`app_path!` takes only canonical literals**: relative literals (`Path::new("dir/file.txt")`, an archive's inner
@@ -97,9 +112,17 @@ Flip your crates in dependency order (a crate after every crate it depends on, d
 From the plan; each agent owns whole crates, on its own branch off the tier before.
 
 - Tier 0, the lead: `cmdr-fs` (done, with `cmdr-archive` as the worked example).
-- Tier 1, four in parallel: (A) `cmdr-local`, `cmdr-git`, `cmdr-viewer`, `cmdr-media-meta`, `cmdr-search`
-  (`cmdr-archive` is done); (B) `cmdr-smb`, `cmdr-sftp`, `cmdr-webdav`, `cmdr-s3`, `cmdr-nfs`, `cmdr-adb`, `cmdr-mtp`;
-  (C) `cmdr-index`, `index-query`; (D) `cmdr-listing`, `cmdr-brief-columns`, `cmdr-operation-log`, `operation-log-dump`.
+- Tier 1, four in parallel (done, merged in `worktree-agent-a4073ece33b857976`): (A) `cmdr-local`, `cmdr-git`,
+  `cmdr-viewer`, `cmdr-media-meta`, `cmdr-search`; (B) `cmdr-smb`, `cmdr-sftp`, `cmdr-webdav`, `cmdr-s3`, `cmdr-nfs`,
+  `cmdr-adb`, `cmdr-mtp`; (C) `cmdr-index`, `index-query`; (D) `cmdr-listing`, `cmdr-brief-columns`,
+  `cmdr-operation-log`, `operation-log-dump`. On the merge, every crate re-ran the codemod (default, `testing`,
+  `--all-features`) as a no-op, is clippy-clean (default and all features), checks for Windows and Linux (zig) and, for
+  `cmdr-listing`, `cmdr-viewer`, and `cmdr-brief-columns`, wasm32, and passes `-audit-imports` (its six hits are
+  deliberate `cfg`-gated imports). Nextest, passed of run (skipped are the Docker integration suites): `cmdr-local` 150
+  (2 skipped), `cmdr-git` 131 (9), `cmdr-viewer` 396 (1), `cmdr-media-meta` 92, `cmdr-search` 315, `cmdr-smb` 239 (188),
+  `cmdr-sftp` 129 (101), `cmdr-webdav` 118 (64), `cmdr-s3` 400 (102), `cmdr-nfs` 167 (47), `cmdr-adb` 167, `cmdr-mtp`
+  198 (1), `cmdr-index` 1,999 (44), `cmdr-listing` 384, `cmdr-brief-columns` 31, `cmdr-operation-log` 173 (2);
+  `index-query` and `operation-log-dump` have no tests.
 - Tier 2: (E) `cmdr-operations` (108 impls; its tests in subagent batches by directory, sequential on one branch) and
   (F) `cmdr-restic`, in parallel.
 - Tier 3: (G) `cmdr-multi-rename`, then `cmdr-listing-wasm`.
