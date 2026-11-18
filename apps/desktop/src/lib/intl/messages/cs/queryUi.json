@@ -83,7 +83,7 @@
   },
   "queryUi.ai.cloudOff.body": "{platform, select, windows {Cloudová AI je vypnutá. Pro tento režim ji povolte v Nastavení > AI.} linuxGnome {Cloudová AI je vypnutá. Pro tento režim ji povolte v Předvolbách > AI.} linuxKde {Cloudová AI je vypnutá. Pro tento režim ji povolte v okně Nastavit Cmdr > AI.} other {Cloudová AI je vypnutá. Pro tento režim ji povolte v Nastavení > AI.}}",
   "@queryUi.ai.cloudOff.body": {
-    "sourceHash": "1f64983"
+    "sourceHash": "ce5230d"
   },
   "queryUi.ai.openSettings": "Otevřít nastavení AI",
   "@queryUi.ai.openSettings": {

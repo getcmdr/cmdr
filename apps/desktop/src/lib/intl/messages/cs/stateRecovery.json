@@ -5,11 +5,11 @@
   },
   "stateRecovery.settings.body": "{platform, select, windows {Statistiky využití a zprávy o havárii zůstanou vypnuté, dokud je znovu nezapnete v Nastavení > Aktualizace a soukromí.} linuxGnome {Statistiky využití a zprávy o havárii zůstanou vypnuté, dokud je znovu nezapnete v Předvolbách > Aktualizace a soukromí.} linuxKde {Statistiky využití a zprávy o havárii zůstanou vypnuté, dokud je znovu nezapnete v okně Nastavit Cmdr > Aktualizace a soukromí.} other {Statistiky využití a zprávy o havárii zůstanou vypnuté, dokud je znovu nezapnete v Nastavení > Aktualizace a soukromí.}}",
   "@stateRecovery.settings.body": {
-    "sourceHash": "8e4debd"
+    "sourceHash": "253a6ed"
   },
   "stateRecovery.settings.openSettings": "{platform, select, windows {Otevřít Nastavení} linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@stateRecovery.settings.openSettings": {
-    "sourceHash": "f970930"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.shortcuts.title": "Cmdr nemohl přečíst vaše klávesové zkratky, takže jsou zase výchozí",
   "@stateRecovery.shortcuts.title": {
@@ -21,11 +21,11 @@
   },
   "stateRecovery.license.body": "{platform, select, windows {Pokud se teď Cmdr ukazuje jako nelicencovaný, zadejte znovu licenční klíč v Nastavení > Licence.} linuxGnome {Pokud se teď Cmdr ukazuje jako nelicencovaný, zadejte znovu licenční klíč v Předvolbách > Licence.} linuxKde {Pokud se teď Cmdr ukazuje jako nelicencovaný, zadejte znovu licenční klíč v okně Nastavit Cmdr > Licence.} other {Pokud se teď Cmdr ukazuje jako nelicencovaný, zadejte znovu licenční klíč v Nastavení > Licence.}}",
   "@stateRecovery.license.body": {
-    "sourceHash": "158e224"
+    "sourceHash": "e4d10c4"
   },
   "stateRecovery.license.openSettings": "{platform, select, windows {Otevřít Nastavení} linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@stateRecovery.license.openSettings": {
-    "sourceHash": "f970930"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.appStatus.title": "{platform, select, windows {Cmdr nemohl přečíst, které složky měly panely otevřené, takže začínají v uživatelské složce} other {Cmdr nemohl přečíst, které složky měly panely otevřené, takže začínají v domovské složce}}",
   "@stateRecovery.appStatus.title": {

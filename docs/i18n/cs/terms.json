@@ -1320,11 +1320,12 @@
     "sources": "macOS SystemSettings (Fotky, the Photos app and photos in prose); MS (fotky, Fotografie)"
   },
   "preferences": {
-    "chosen": "předvolby",
-    "accept": ["předvol"],
-    "forms": "f. pl. only: v předvolbách; Android USB Preferences → Předvolby USB (quote what the phone shows)",
+    "chosen": "Předvolby",
+    "accept": ["Předvolb", "předvol"],
+    "forms": "f. pl. only: title Předvolby; in Preferences → v Předvolbách (> AI); button Otevřít Předvolby; sections → Sekce předvoleb",
     "confidence": "high",
-    "sources": "macOS AppKit (Preferences… → Předvolby…), Finder (Předvolby…); MS (Předvolby)"
+    "sources": "GNOME nautilus.po (_Preferences → _Předvolby); macOS AppKit (Preferences… → Předvolby…)",
+    "note": "GNOME's name for Cmdr's settings window in the linuxGnome branch; Android's label is the usb-preferences concept."
   },
   "preview": {
     "chosen": "náhled",
@@ -1626,6 +1627,11 @@
       "chosen": "Nastavení",
       "accept": ["nastaven", "Předvolb", "předvoleb", "Nastavit Cmdr", "Nastavit – Cmdr"],
       "note": "Linux desktop branches name the window the way that desktop does: GNOME → Předvolby (nautilus.po _Preferences → _Předvolby; macOS AppKit also says Předvolby), so v Předvolbách > AI, button Otevřít Předvolby; KDE → window title Nastavit – Cmdr (dolphin.po Configure @title:window → Nastavit), menu Nastavit Cmdr…, pointers v okně Nastavit Cmdr > AI (the head noun okně keeps the verb-shaped name from reading as an instruction), button Nastavit Cmdr. Other Linux desktops keep Nastavení."
+    },
+    "windows": {
+      "chosen": "Nastavení",
+      "accept": ["nastaven"],
+      "note": "Windows names an app's settings Nastavení, the same word as macOS (MS TBX Settings, “The feature in an app that allows users to change its properties or behavior” → Nastavení; the Windows Settings app is Nastavení too), so the windows branch reads like the macOS one: title Nastavení, v Nastavení > AI, button Otevřít Nastavení."
     }
   },
   "shortcut": {
@@ -4802,5 +4808,12 @@
     "forms": "n., indeclinable head oddělení: your IT team's policy → zásady vašeho IT oddělení",
     "confidence": "tentative",
     "sources": "No pile hit (IT team: none in macOS, MS, Linux, orthodox); IT oddělení is the everyday Czech name for the people who run an employer's or school's computers"
+  },
+  "usb-preferences": {
+    "chosen": "Předvolby USB",
+    "accept": ["Předvolby USB"],
+    "confidence": "tentative",
+    "sources": "no Android source in the pile; follows the preferences ruling (Předvolby) as settings.fileOperations.mtpEnabled.description quotes it",
+    "note": "Quote the label the user's phone shows; Czech Android may say Předvolby USB or Nastavení USB."
   }
 }

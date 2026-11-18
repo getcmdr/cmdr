@@ -57,7 +57,7 @@
   },
   "ai.translateError.off.body": "{platform, select, windows {Pokud chcete hledat pomocí AI, zapněte poskytovatele v Nastavení > AI.} linuxGnome {Pokud chcete hledat pomocí AI, zapněte poskytovatele v Předvolbách > AI.} linuxKde {Pokud chcete hledat pomocí AI, zapněte poskytovatele v okně Nastavit Cmdr > AI.} other {Pokud chcete hledat pomocí AI, zapněte poskytovatele v Nastavení > AI.}}",
   "@ai.translateError.off.body": {
-    "sourceHash": "5e5f8d2"
+    "sourceHash": "c9c11e2"
   },
   "ai.cloudConsent.label": "Povolit cloudovou AI",
   "@ai.cloudConsent.label": {
@@ -249,7 +249,7 @@
   },
   "ai.translateError.notConfigured.body": "{platform, select, windows {Dokončete nastavení poskytovatele v Nastavení > AI a zkuste to znovu.} linuxGnome {Dokončete nastavení poskytovatele v Předvolbách > AI a zkuste to znovu.} linuxKde {Dokončete nastavení poskytovatele v okně Nastavit Cmdr > AI a zkuste to znovu.} other {Dokončete nastavení poskytovatele v Nastavení > AI a zkuste to znovu.}}",
   "@ai.translateError.notConfigured.body": {
-    "sourceHash": "bf48aec"
+    "sourceHash": "cdb4ab5"
   },
   "ai.translateError.noCloudConsent.title": "Cloudová AI je vypnutá",
   "@ai.translateError.noCloudConsent.title": {
@@ -257,7 +257,7 @@
   },
   "ai.translateError.noCloudConsent.body": "{platform, select, windows {Povolte ji v Nastavení > AI a zkuste to znovu.} linuxGnome {Povolte ji v Předvolbách > AI a zkuste to znovu.} linuxKde {Povolte ji v okně Nastavit Cmdr > AI a zkuste to znovu.} other {Povolte ji v Nastavení > AI a zkuste to znovu.}}",
   "@ai.translateError.noCloudConsent.body": {
-    "sourceHash": "4485cc1"
+    "sourceHash": "f54d181"
   },
   "ai.translateError.authFailed.title": "Tenhle klíč API byl odmítnut",
   "@ai.translateError.authFailed.title": {
@@ -265,7 +265,7 @@
   },
   "ai.translateError.authFailed.body": "{platform, select, windows {Zkontrolujte klíč v Nastavení > AI – může být chybný nebo odvolaný.} linuxGnome {Zkontrolujte klíč v Předvolbách > AI – může být chybný nebo odvolaný.} linuxKde {Zkontrolujte klíč v okně Nastavit Cmdr > AI – může být chybný nebo odvolaný.} other {Zkontrolujte klíč v Nastavení > AI – může být chybný nebo odvolaný.}}",
   "@ai.translateError.authFailed.body": {
-    "sourceHash": "4fd6281"
+    "sourceHash": "efd14fb"
   },
   "ai.translateError.rateLimited.title": "Vašemu poskytovateli AI došla kapacita",
   "@ai.translateError.rateLimited.title": {
@@ -297,7 +297,7 @@
   },
   "ai.translateError.emptyResponse.body": "{platform, select, windows {Váš model možná vyčerpal limit tokenů dřív, než odpověděl. Zkuste rychlejší model, třeba gpt-4.1-mini, v Nastavení > AI.} linuxGnome {Váš model možná vyčerpal limit tokenů dřív, než odpověděl. Zkuste rychlejší model, třeba gpt-4.1-mini, v Předvolbách > AI.} linuxKde {Váš model možná vyčerpal limit tokenů dřív, než odpověděl. Zkuste rychlejší model, třeba gpt-4.1-mini, v okně Nastavit Cmdr > AI.} other {Váš model možná vyčerpal limit tokenů dřív, než odpověděl. Zkuste rychlejší model, třeba gpt-4.1-mini, v Nastavení > AI.}}",
   "@ai.translateError.emptyResponse.body": {
-    "sourceHash": "b16ff79"
+    "sourceHash": "9068319"
   },
   "ai.translateError.serverError.title": "Váš poskytovatel AI narazil na problém",
   "@ai.translateError.serverError.title": {
@@ -313,7 +313,7 @@
   },
   "ai.translateError.parseError.body": "{platform, select, windows {Zkuste to znovu, nebo vyberte jiný model v Nastavení > AI.} linuxGnome {Zkuste to znovu, nebo vyberte jiný model v Předvolbách > AI.} linuxKde {Zkuste to znovu, nebo vyberte jiný model v okně Nastavit Cmdr > AI.} other {Zkuste to znovu, nebo vyberte jiný model v Nastavení > AI.}}",
   "@ai.translateError.parseError.body": {
-    "sourceHash": "6082b7e"
+    "sourceHash": "5ebf991"
   },
   "ai.translateError.unknownProvider.title": "Tohoto poskytovatele AI Cmdr nezná",
   "@ai.translateError.unknownProvider.title": {
@@ -321,7 +321,7 @@
   },
   "ai.translateError.unknownProvider.body": "{platform, select, windows {Vyberte poskytovatele v Nastavení > AI.} linuxGnome {Vyberte poskytovatele v Předvolbách > AI.} linuxKde {Vyberte poskytovatele v okně Nastavit Cmdr > AI.} other {Vyberte poskytovatele v Nastavení > AI.}}",
   "@ai.translateError.unknownProvider.body": {
-    "sourceHash": "c45eba0"
+    "sourceHash": "a3988aa"
   },
   "ai.translateError.managed.title": "AI v Cmdru spravuje vaše organizace",
   "@ai.translateError.managed.title": {

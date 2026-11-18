@@ -37,7 +37,7 @@
   },
   "commands.appSettings.label": "{platform, select, windows {Otevřít Nastavení} linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@commands.appSettings.label": {
-    "sourceHash": "e535825"
+    "sourceHash": "a28ffff"
   },
   "commands.appCheckForUpdates.label": "Vyhledat aktualizace…",
   "@commands.appCheckForUpdates.label": {
@@ -1266,7 +1266,7 @@
   },
   "commands.handler.openTerminalHere.hint": "{platform, select, windows {Tato složka se otevřela ve vaší terminálové aplikaci. Chcete, aby Cmdr příště otevřel jinou aplikaci? Vyberte ji v Nastavení v části Navigace a operace se soubory.} linuxGnome {Tato složka se otevřela ve vaší terminálové aplikaci. Chcete, aby Cmdr příště otevřel jinou aplikaci? Vyberte ji v Předvolbách v části Navigace a operace se soubory.} linuxKde {Tato složka se otevřela ve vaší terminálové aplikaci. Chcete, aby Cmdr příště otevřel jinou aplikaci? Vyberte ji v okně Nastavit Cmdr v části Navigace a operace se soubory.} other {Tato složka se otevřela ve vaší terminálové aplikaci. Chcete, aby Cmdr příště otevřel jinou aplikaci? Vyberte ji v Nastavení v části Navigace a operace se soubory.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b73c1db"
+    "sourceHash": "5d6063c"
   },
   "commands.handler.openTerminalHere.dismiss": "Zavřít",
   "@commands.handler.openTerminalHere.dismiss": {
@@ -1274,7 +1274,7 @@
   },
   "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Otevřít Nastavení} linuxGnome {Otevřít Předvolby} linuxKde {Nastavit Cmdr} other {Otevřít Nastavení}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "e535825"
+    "sourceHash": "a28ffff"
   },
   "commands.handler.openTerminalHere.appMissing": "Aplikace {app} už není nainstalovaná, proto se složka otevřela v Terminálu.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1346,7 +1346,7 @@
   },
   "commands.handler.viewDebugLog.disabled": "{platform, select, windows {Ukládání protokolů je vypnuté. Chcete-li zobrazit ladicí protokol, nastavte v Nastavení > Pokročilé limit místa na disku větší než 0 a restartujte Cmdr.} linuxGnome {Ukládání protokolů je vypnuté. Chcete-li zobrazit ladicí protokol, nastavte v Předvolbách > Pokročilé limit místa na disku větší než 0 a restartujte Cmdr.} linuxKde {Ukládání protokolů je vypnuté. Chcete-li zobrazit ladicí protokol, nastavte v okně Nastavit Cmdr > Pokročilé limit místa na disku větší než 0 a restartujte Cmdr.} other {Ukládání protokolů je vypnuté. Chcete-li zobrazit ladicí protokol, nastavte v Nastavení > Pokročilé limit místa na disku větší než 0 a restartujte Cmdr.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "bda730a"
+    "sourceHash": "1fb0c6a"
   },
   "commands.handler.viewDebugLog.unavailable": "Ladicí protokol se nepodařilo otevřít. Zkuste to znovu.",
   "@commands.handler.viewDebugLog.unavailable": {

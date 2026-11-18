@@ -2647,7 +2647,7 @@
   },
   "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, windows {Co můžete zkusit:\n- Přihlaste se pomocí účtu: připojení jako host zašifrovat nejde\n- Zapněte šifrování SMB na serveru\n- Pokud volbu „Vždy vyžadovat šifrování SMB“ nepotřebujete, vypněte ji v Nastavení} linuxGnome {Co můžete zkusit:\n- Přihlaste se pomocí účtu: připojení jako host zašifrovat nejde\n- Zapněte šifrování SMB na serveru\n- Pokud volbu „Vždy vyžadovat šifrování SMB“ nepotřebujete, vypněte ji v Předvolbách} linuxKde {Co můžete zkusit:\n- Přihlaste se pomocí účtu: připojení jako host zašifrovat nejde\n- Zapněte šifrování SMB na serveru\n- Pokud volbu „Vždy vyžadovat šifrování SMB“ nepotřebujete, vypněte ji v okně Nastavit Cmdr} other {Co můžete zkusit:\n- Přihlaste se pomocí účtu: připojení jako host zašifrovat nejde\n- Zapněte šifrování SMB na serveru\n- Pokud volbu „Vždy vyžadovat šifrování SMB“ nepotřebujete, vypněte ji v Nastavení}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
-    "sourceHash": "5d8e637"
+    "sourceHash": "c91f084"
   },
   "errors.volume.encryptionRequired": "Připojení k této sdílené složce zašifrovat nejde a v Cmdru je zapnutá volba „Vždy vyžadovat šifrování SMB“.",
   "@errors.volume.encryptionRequired": {
@@ -2671,7 +2671,7 @@
   },
   "errors.write.smbEncryptionRequired.suggestion": "{platform, select, windows {Přihlaste se pomocí účtu místo připojení jako host, nebo zapněte šifrování SMB na serveru. Volbu „Vždy vyžadovat šifrování SMB“ můžete také vypnout v Nastavení.} linuxGnome {Přihlaste se pomocí účtu místo připojení jako host, nebo zapněte šifrování SMB na serveru. Volbu „Vždy vyžadovat šifrování SMB“ můžete také vypnout v Předvolbách.} linuxKde {Přihlaste se pomocí účtu místo připojení jako host, nebo zapněte šifrování SMB na serveru. Volbu „Vždy vyžadovat šifrování SMB“ můžete také vypnout v okně Nastavit Cmdr.} other {Přihlaste se pomocí účtu místo připojení jako host, nebo zapněte šifrování SMB na serveru. Volbu „Vždy vyžadovat šifrování SMB“ můžete také vypnout v Nastavení.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
-    "sourceHash": "bab81dc"
+    "sourceHash": "a7fe1d2"
   },
   "errors.listing.smbNegotiationInvalid.title": "Server toto připojení nepotvrdil",
   "@errors.listing.smbNegotiationInvalid.title": {

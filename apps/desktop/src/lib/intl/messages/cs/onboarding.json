@@ -309,7 +309,7 @@
   },
   "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v Nastavení > AI.} linuxGnome {Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v Předvolbách > AI.} linuxKde {Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v okně Nastavit Cmdr > AI.} other {Cloudová AI zůstane vypnutá, dokud ji nepovolíte. Můžete to udělat později v Nastavení > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
-    "sourceHash": "6e0eb09"
+    "sourceHash": "6075ac0"
   },
   "onboarding.stepAi.off.label": "Díky, ale ne, AI nechci",
   "@onboarding.stepAi.off.label": {
@@ -317,7 +317,7 @@
   },
   "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr bez AI plně funguje. Zapnout ji můžete později v Nastavení.} linuxGnome {Cmdr bez AI plně funguje. Zapnout ji můžete později v Předvolbách.} linuxKde {Cmdr bez AI plně funguje. Zapnout ji můžete později v okně Nastavit Cmdr.} other {Cmdr bez AI plně funguje. Zapnout ji můžete později v Nastavení.}}",
   "@onboarding.stepAi.off.help": {
-    "sourceHash": "b20cf1d"
+    "sourceHash": "f4c9871"
   },
   "onboarding.localDownloadFailed.title": "Stahování místního modelu AI se nepodařilo dokončit",
   "@onboarding.localDownloadFailed.title": {
@@ -393,7 +393,7 @@
   },
   "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v Nastavení.} linuxGnome {Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v Předvolbách.} linuxKde {Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v okně Nastavit Cmdr.} other {Všimněte si, že během bety je to ve výchozím stavu ZAPNUTÉ, aby mi lidé data opravdu posílali.\nKdykoli to můžete změnit v Nastavení.}}",
   "@onboarding.stepBeta.analyticsCaption": {
-    "sourceHash": "47a7511"
+    "sourceHash": "9dc83f9"
   },
   "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Zprávy o haváriích jsou taky zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši verzi macOS a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nObojí můžete v Nastavení vypnout, kdykoli budete chtít.} windows {Zprávy o haváriích jsou taky zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši verzi Windows a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nObojí můžete v Nastavení vypnout, kdykoli budete chtít.} linuxGnome {Zprávy o haváriích jsou taky zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši distribuci a verzi Linuxu a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nObojí můžete v Předvolbách vypnout, kdykoli budete chtít.} linuxKde {Zprávy o haváriích jsou taky zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši distribuci a verzi Linuxu a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nObojí můžete v okně Nastavit Cmdr vypnout, kdykoli budete chtít.} other {Zprávy o haváriích jsou taky zapnuté: když Cmdr spadne, odešle verzi aplikace, vaši distribuci a verzi Linuxu a místo, kde se kód zastavil.\nNikdy ne vaše soubory.\nObojí můžete v Nastavení vypnout, kdykoli budete chtít.}}",
   "@onboarding.stepBeta.crashReportsNote": {
@@ -469,7 +469,7 @@
   },
   "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Kdykoli to můžete změnit v Nastavení.} linuxGnome {Kdykoli to můžete změnit v Předvolbách.} linuxKde {Kdykoli to můžete změnit v okně Nastavit Cmdr.} other {Kdykoli to můžete změnit v Nastavení.}}",
   "@onboarding.stepOptional.changeAnytime": {
-    "sourceHash": "320f582"
+    "sourceHash": "ff84784"
   },
   "onboarding.stepOptional.networking.title": "Síťové funkce",
   "@onboarding.stepOptional.networking.title": {
