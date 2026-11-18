@@ -335,11 +335,18 @@ silent** (a warning, not a red job):
   the cache, because `apt-get update` ran first (#1098). Every job that apt-installs a build dependency uses the action,
   including the ones that need only `libacl1-dev` (Kani, Shuttle, fuzz): one warm cache covers them all. The action, in
   order:
-  - A cache of the ~64 MB of downloaded `.deb`s (`tauri-apt-<ImageOS>-<ImageVersion>-<hash of the action>`). A new
-    runner image misses once and re-saves. An edit to the action changes the hash, so the restore falls back to any
-    entry for the same image (`restore-keys`) and re-saves it under the new key: an edit that lands during an outage
-    doesn't start every branch cold. `warm-rust-cache` runs the action on every `main` push, even on a Rust cache hit,
-    because a PR reads only its own and `main`'s caches.
+  - A cache of the ~64 MB of downloaded `.deb`s (`tauri-apt-<ImageOS>-<ImageVersion>-<hash of the action>`). A new exact
+    miss falls back (`restore-keys`) to the newest entry for the same image, then the newest for the same OS, and the
+    step re-saves what it used under the exact key. The OS-level fallback matters: GitHub runs several image versions at
+    once (four `ubuntu26` ones on 2026-11-18), so a PR often lands on a version `main` never saved for, and on
+    2026-11-18 three landings went cold to a mirror crawling at ~100 KB/s and failed. `warm-rust-cache` runs the action
+    on every `main` push, even on a Rust cache hit, because a PR reads only its own and `main`'s caches.
+  - Invalidation, so a cache never serves stale packages silently: the key changes with the runner image version and
+    with any edit to the action (the package list lives there). A fallback entry from another image is only a candidate:
+    the offline install below takes it only if apt resolves a complete, consistent set from those files against what the
+    image has installed; a downgrade or a missing dependency fails resolution before `dpkg` runs, and the mirror path
+    takes over. After a mirror install, `apt-get autoclean` drops the leftover versions the mirrors no longer list, so
+    the re-saved entry holds this image's set.
   - With cached packages, `apt-get install` of the files by path with apt's sources hidden for that call: no
     `apt-get update`, no mirror, no network. Naming the files pins their versions, so it doesn't matter that the
     runner's package lists disagree with the cached packages (they did on `libsoup-3.0`, 2026-11-11). `--no-download`
@@ -347,8 +354,10 @@ silent** (a warning, not a red job):
     2026-11-11, run 43052969593). A `dpkg-query` check then confirms every listed package is installed, which catches a
     fallback entry from before a package joined the list.
   - With no cache, or if the cached set doesn't cover the list (a warning annotation says so): `apt-get update` plus a
-    time-boxed download (4 min, then 8), with the second attempt dropping `azure.archive.ubuntu.com` for
-    `archive.ubuntu.com`, under a 20-min step cap.
+    time-boxed download (4 min, then 8), with the second attempt cutting `/etc/apt/apt-mirrors.txt` down to Canonical's
+    `archive.ubuntu.com` and `security.ubuntu.com`, under a 20-min step cap. The regional mirror it drops is whatever
+    the image lists first: Azure's earlier, `us-east-2.ec2.archive.ubuntu.com` on the `20261116` images (2026-11-18, run
+    44403488859, where an Azure-only match left the second attempt on the same crawling mirror).
   - apt's own 30-s connection timeout and retries.
 - **`slow-checks` dependency-checks**: rust-cache for cargo-udeps's nightly `target/`, plus the same "Free disk space"
   step. Kept alive by the 6-day cron (below).

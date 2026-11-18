@@ -48,6 +48,12 @@ describe('volume answers', () => {
     expect((ask('resolvePathVolume', { path: '/' }) as { volume: { id: string } }).volume.id).toBe(DEMO_VOLUME_ID)
   })
 
+  // Regression: unanswered, `live_volume_path` rejected, `liveVolumePath` read that as `notReady`,
+  // and every restored tab opened as "Couldn't reach ~ … didn't respond in time", unlisted.
+  it('keeps a restored tab where it was: the demo volume never moves', () => {
+    expect(ask('liveVolumePath', { volumeId: DEMO_VOLUME_ID, path: '~' })).toEqual({ kind: 'keep' })
+  })
+
   // Regression: unanswered, a search result's Go to file toasted "Couldn't reach that location's drive".
   it('resolves a navigation edge to the main volume, `~` expanded', () => {
     expect(ask('resolveLocation', { path: '~/Documents/' })).toEqual({
