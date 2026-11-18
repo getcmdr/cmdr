@@ -79,8 +79,9 @@ component stays one implementation and reads only these.
 - **`:root`** holds the house look (`lib/ui/Menu.svelte`'s row and surface, the demo bar's strip), the Linux in-page
   bar's until task 60 gives Linux its own neutral theme.
 - **`:root[data-look='windows']`** is Windows 11's look, light and dark, on Windows 10 and 11 alike (D5). `data-look` is
-  `getCopyPlatform()`, written by `applyPlatformAttributes()` beside `data-platform`, so
-  `CMDR_MOCK_CONVENTIONS=windows pnpm dev` shows it on a Mac (without Segoe UI, which a Mac lacks).
+  `getMenuLook()` (a host's pin, the demo's `macos`, else `getCopyPlatform()`), written by `applyPlatformAttributes()`
+  beside `data-platform`, so `CMDR_MOCK_CONVENTIONS=windows pnpm dev` shows it on a Mac (without Segoe UI, which a Mac
+  lacks).
 - **Reduced transparency** (the `reduce-transparency` class, which task 40 fills from Windows' transparency effects):
   acrylic's own opaque fallback color and no blur.
 - **`forced-colors: active`** (Windows contrast themes): WinUI's `HighContrast` mapping as CSS system colors, no

@@ -57,6 +57,19 @@ export function getCopyPlatform(): Platform {
   return isPlatform(mocked) ? mocked : getPlatform()
 }
 
+/**
+ * The global a host adds to pin the menus' look (`data-look`) apart from {@link getCopyPlatform}:
+ * the browser demo pins `macos`, since it draws the macOS bar for every visitor
+ * (`#lib/demo/platform.ts`).
+ */
+export const MENU_LOOK_GLOBAL = '__CMDR_MENU_LOOK__'
+
+/** Whose OS look the menus wear (`app-menu.css`): a host's pin, else {@link getCopyPlatform}. */
+export function getMenuLook(): Platform {
+  const pinned = (globalThis as Record<string, unknown>)[MENU_LOOK_GLOBAL]
+  return isPlatform(pinned) ? pinned : getCopyPlatform()
+}
+
 export function isMacOS(): boolean {
   return getPlatform() === 'macos'
 }
@@ -119,14 +132,14 @@ export function hasCapability(capability: Capability): boolean {
 }
 
 /**
- * Writes `data-platform` on `<html>`, `data-look` (whose OS look the menus wear, `app-menu.css`),
+ * Writes `data-platform` on `<html>`, `data-look` ({@link getMenuLook}),
  * and `data-overlay-title-bar` where the page draws the title bar, so CSS can follow them
  * (`app.css` § Window chrome). Called once per window, before the first route renders
  * (`hooks.client.ts`).
  */
 export function applyPlatformAttributes(root: HTMLElement = document.documentElement): void {
   root.dataset.platform = getPlatform()
-  root.dataset.look = getCopyPlatform()
+  root.dataset.look = getMenuLook()
   if (hasCapability('overlayTitleBar')) root.dataset.overlayTitleBar = ''
   else delete root.dataset.overlayTitleBar
 }

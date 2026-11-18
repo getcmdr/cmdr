@@ -3,6 +3,7 @@ import {
   applyPlatformAttributes,
   CAPABILITIES_GLOBAL,
   COPY_PLATFORM_GLOBAL,
+  MENU_LOOK_GLOBAL,
   FALLBACK_PLATFORM,
   getCopyPlatform,
   getPlatform,
@@ -164,6 +165,18 @@ describe('applyPlatformAttributes', () => {
     applyPlatformAttributes(root)
     expect(root.getAttribute('data-platform')).toBe('macos')
     expect(root.getAttribute('data-look')).toBe('windows')
+  })
+
+  it('wears a pinned menu look over the copy platform (the browser demo pins macOS)', () => {
+    onTestFinished(withPlatform('windows'))
+    host[MENU_LOOK_GLOBAL] = 'macos'
+    onTestFinished(() => {
+      Reflect.deleteProperty(host, MENU_LOOK_GLOBAL)
+    })
+    const root = document.createElement('html')
+    applyPlatformAttributes(root)
+    expect(root.getAttribute('data-platform')).toBe('windows')
+    expect(root.getAttribute('data-look')).toBe('macos')
   })
 
   it('marks an overlay title bar only where the OS offers one', () => {

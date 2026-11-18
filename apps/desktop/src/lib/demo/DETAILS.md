@@ -167,6 +167,10 @@ every window. The demo keeps that shape, so secondary windows share its state, a
 - Conventions follow the platform too (`visitorConventions`): the desktop's own row for the visitor's OS, the
   desktop-neutral Linux row for a Linux visitor (a page can't tell GNOME from KDE), and `menuModel: 'systemMenuBar'` for
   everyone, for the same reason as `appMenu`. That one follows the visitor once the demo's chrome does (task 63).
+- The menus' look is pinned to macOS for everyone too (`MENU_LOOK_GLOBAL`, read by `getMenuLook()` into `data-look`).
+  Why: `data-look` otherwise follows the copy platform, and a Windows visitor's menus wore Windows 11's tokens under the
+  macOS bar: a 40 px bar (the window offset `--cmdr-demo-window-top` still said 30, so the status corner and toasts sat
+  10 px under it), Segoe type, and WinUI surfaces. It follows the visitor with the bar (task 63 step 11).
 - The website's full demo suite runs once per visitor OS (`apps/website/playwright.config.ts`: `demo` is a Windows
   visitor, `demo-mac` a Mac one), since keys and copy differ between them.
 

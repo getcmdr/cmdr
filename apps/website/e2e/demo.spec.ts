@@ -33,6 +33,25 @@ test.describe('Browser demo', () => {
     expect(errors.map((error) => error.message)).toEqual([])
   })
 
+  // Every visitor gets the macOS bar and its look until the demo follows the visitor's OS (task 63
+  // step 11 of `docs/specs/windows-port-plan.md`): a Windows visitor's menus once wore Windows 11's
+  // tokens under it, a 40 px bar the window's 30 px offset didn't know about (`lib/demo/DETAILS.md` § Platform).
+  test('draws the macOS menu bar and menus, with the status corner under the bar', async ({ page }) => {
+    await page.goto('/demo/')
+    await expect(page.locator('.file-pane').first().locator('.file-entry').nth(1)).toBeVisible({ timeout: 30_000 })
+    await expect(page.locator('html')).toHaveAttribute('data-look', 'macos')
+    const bar = page.getByRole('menubar')
+    const barBox = await bar.boundingBox()
+    expect(barBox?.height).toBe(30)
+    const corner = await page.locator('.status-corner').boundingBox()
+    if (corner && barBox) expect(corner.y).toBeGreaterThanOrEqual(barBox.y + barBox.height)
+
+    await bar.getByRole('menuitem').nth(1).click()
+    const menu = page.getByRole('menu')
+    await expect(menu).toBeVisible()
+    expect(await menu.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe('12px')
+  })
+
   // File operations run through the real write engine in the WASM module (crates/cmdr-listing-wasm,
   // `operations_host/`), on the in-memory volume both panes list, so each lands in the other pane.
   test.describe('file operations', () => {
