@@ -44,6 +44,10 @@ pub enum NotAnAppPath {
     /// A typed Windows name of only dots and spaces (`...`, `. `): Windows strips a name's
     /// trailing dots and spaces, which leaves none.
     BlankName,
+    /// A native name that needs an escape (it isn't valid Unicode text, or it holds an
+    /// escape-range code point), refused by [`AppPathBuf::from_native_unicode`], the crossing
+    /// that makes no escape. The caller keeps that child native and counts it, ❌ never drops it.
+    NotUnicode,
     /// Text [`AppPath::from_normalized`] was given that isn't in canonical form: a trailing
     /// `/`, a repeated `/`, a `.` name, a lowercase drive letter, or non-canonical escapes.
     NotCanonical,
@@ -66,6 +70,7 @@ impl fmt::Display for NotAnAppPath {
             NotAnAppPath::MixedEscape => "a name mixing two escape alphabets",
             NotAnAppPath::BadServer => "a UNC server name that names no server",
             NotAnAppPath::BlankName => "a name of only dots and spaces",
+            NotAnAppPath::NotUnicode => "a native name that isn't plain Unicode text",
             NotAnAppPath::NotCanonical => "a path not in canonical form",
         })
     }

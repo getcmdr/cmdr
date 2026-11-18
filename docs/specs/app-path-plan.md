@@ -666,15 +666,15 @@ caller turns into "not found"):
   POSIX `/` root stays valid. `from_normalized_as(text, flavor)` is the other host's, for tests.
 - `AppPathBuf::from_native(&Path)` (this host's flavor; `from_native_as(&Path, flavor)` for a test of the other
   grammar), `RemoteRoot::to_app_path(...)`, `Volume::root()`, and the derivations above.
-- **Names**: `AppName` (borrowed) / `AppNameBuf` hold one name in APP spelling: `AppName::new(&str)` takes a
-  backend-spelled name (a `FileEntry.name`, escapes live), `AppNameBuf::from_native_os(&OsStr)` (and
+- **Names**: `AppName` (borrowed) / `AppNameBuf` hold one name in APP spelling: `AppName::from_app_spelling(&str)` takes
+  a backend-spelled name (a `FileEntry.name`, escapes live), `AppNameBuf::from_native_os(&OsStr)` (and
   `from_native_bytes`, `from_native_units`) a name a native API holds (escapes made, a literal escape code point escaped
   as literal), `from_typed` a typed one. `AppPath::join` takes only `&AppName`. `ChildName` (over `&OsStr`) is the
   `std::path` world's name and has NO app-path join (decided in the type's review, 2026-11-18): reading its text either
   way would be a guess, and guessing "app spelling" respells a live escape as a literal one once escapes exist (a copy
   of `caf\xE9.txt` would land as a file literally named with U+10FEE9). Its one door is
   `AppNameBuf::from_native_os(child.as_os_str())`, explicitly native; 10a replaces `ChildName::new(&entry.name)` with
-  `AppName::new(&entry.name)`.
+  `AppName::from_app_spelling(&entry.name)`.
 - **Typed arithmetic on a bridge value is right in release builds too** (decided by the lead after the type's second
   review, 2026-11-18; the first review's fix was a `debug_assert!`, which left `C:\x\y` with no parent and under no
   `C:\x` in release, N6). `is_canonical()` picks the path: a canonical value reads its text directly; a bridge value
@@ -790,16 +790,41 @@ The listing hot path builds one path per entry. Today that's two allocations (`P
 - **`app-path-std-bridge`** (new check, milestone 3, Go check runner): counts `legacy_unchecked` and `as_std_legacy` per
   file in a shrink-wrapping allowlist. It's the progress meter during the conversion; at zero, milestone 11 deletes both
   functions, and the check stays as a ban on `Path::new(<x>.as_str())` and `OsStr::new(<x>.as_str())`.
-- **The escape gate** (added in the type's review, 2026-11-18): the same check counts, per file, app TEXT turned into a
-  `std::path` value (`Path::new(&entry.path)`, `PathBuf::from(e.name)`, `OsStr::new(p.as_str())`,
-  `ChildName::new(&entry.name)`; budget `appTextToPath`, seeded with the 101 sites the tree had when the type landed).
-  Each is the identity only while no name holds an escape: a `Path` built from text holding one carries the escape's own
-  UTF-8 bytes, so `std::fs` opens a file literally named with it, and `legacy_unchecked` reads it back as literal text
-  (`/d/caf\u{10FEE9}` becomes four byte escapes, a "not found", or a write under a mangled name). So the check FAILS
-  while any production file outside `cmdr-fs`'s `app_path/` calls an escape producer (`AppPathBuf::from_native*`,
-  `AppNameBuf::from_native*`, `app_path::escape_*`) and `appTextToPath` isn't empty. The escape-producing commits
-  therefore all land in one milestone after the consumers convert (10f, below). A measured proxy, not a proof: each
-  crate's conversion audits its own values too.
+- **The escape gate** (added in the type's review, 2026-11-18; rebuilt after its second review, the lead's decision 2).
+  The hazard: app TEXT holding a live escape turned into a `std::path` value carries the escape's own UTF-8 bytes, so
+  `std::fs` opens a file literally named with it (`/d/caf\u{10FEE9}` becomes four byte escapes, a "not found", or a
+  write under a mangled name). For a non-UTF-8 name that's no worse than today's lossy text (which names the U+FFFD
+  sibling), but for a valid-UTF-8 name holding a plane-16 code point it's a regression, so escapes must not exist until
+  no app text can reach a `std::path` constructor.
+  - **❗ A text scan can't be that gate, and doesn't pretend to be.** Review 2 (N2) found the first scan's 101 sites a
+    fraction: no lexical rule sees app text arrive through a `let`, a closure, `.into()`, an `impl AsRef<Path>`
+    parameter, or a `format!` join. So `app-path-std-bridge`'s text budgets are a TRIPWIRE and a meter: `appTextToPath`
+    (a `FileEntry.path`/`.name` or an `.as_str()` handed to `Path::new`, `PathBuf::from`, `OsStr::new`,
+    `OsString::from`, or `ChildName::new`; 101 when seeded) and `pathFromBareText` (a bare path- or name-shaped
+    identifier, `PathBuf::from(&path)`, `Path::new(&dest_dir)`, or `.map(PathBuf::from)`; 973 when seeded in the second
+    review, many native). While either is above zero the check refuses a production escape producer, whatever its
+    spelling: a call, a function pointer (`.map(AppPathBuf::from_native)`), or a bare `escape_bytes(` after a `use`. It
+    also refuses outright (production and tests) OS text handed to an app-spelling door on one line
+    (`AppName::from_app_spelling(os.to_str()?)`, `from_normalized(&p.to_string_lossy())`; N5).
+  - **The sound gate is the type's**, in two halves. (1) **No conversion**: no app-path type implements `AsRef<Path>`,
+    `AsRef<OsStr>`, `AsRef<str>`, `Borrow<str>`, `Deref<Target = str>`, `Into<PathBuf>`, `Into<OsString>`, or
+    `Into<String>`, held at compile time (`app_path/tests.rs`, `no_app_path_type_converts_to_std_path_or_its_text`), so
+    `Path::new(&p)`, `PathBuf::from(p)`, `.into()`, and an `impl AsRef<Path>` parameter fed a TYPED value don't compile.
+    That's sound for every carrier that is typed, so 10a–10e make every carrier of app text typed: `FileEntry.path` and
+    `.name` (10f's first commit, before any producer), every IPC parameter (`from_wire` at the command edge, 10c), and
+    every store read. (2) **The exits, banned by type**: the only ways back to text are `as_str`, `into_string`, and
+    `Display`. 10f's second commit adds them to `clippy.toml`'s `disallowed-methods` (type-resolved, so a function
+    pointer or a `let` hop can't hide one) and replaces `Display` with a `wire()` view under the same ban, with a
+    per-site `#[expect(clippy::disallowed_methods, reason = "…")]` only at the IPC serializer, the store writers, and
+    `LogPrivate`. With both halves on, an escape can reach a `std::path` constructor only through a reviewed `expect`.
+  - **Until then, the non-escaping crossing**: `AppPathBuf::from_native_unicode` and
+    `AppNameBuf::from_native_os_unicode` are `from_native` for a name that is plain Unicode text, and a typed refusal
+    (`NotAnAppPath::NotUnicode`) for one that would need an escape. They make no escape, so they aren't producers.
+    Milestones 9, 10a, and 10b cross with them; on `NotUnicode` the caller keeps that child native (its `PathBuf`, or a
+    bridge value) and counts it, ❌ never drops it. 10f swaps each for `from_native`.
+  - `legacy_unchecked` escapes a non-UTF-8 path too, so the bridge stays lossless, and it isn't counted as a producer:
+    its escapes go back to the OS through `as_std_legacy`, the transition's only exit for a bridge value, and its text
+    exits fall under (2). Counting it would block milestone 4, the flip, which is all bridge calls.
 - **`app-path-native-crossing`** (new check, milestone 11): `to_native` and `from_native` only in allowlisted files (the
   native boundaries above), shrink-wrapping.
 
@@ -835,9 +860,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `file_system/`, `commands/`, and `go_to_path/`, whose helpers 10d's `tools/` and `operations_host/` call, and 10c's
   `resolve_typed` is what 10d's MCP inputs use. 10d may start on a branch off 10c's first green push.
 - **Then 10f** (the escape lands; added in the type's review, 2026-11-18): every escape producer, which used to ride 6,
-  7, and 9, waits for `appTextToPath` to reach zero (the escape gate, § "Keeping it that way"), so 6, 7, and 9 convert
-  their bodies WITHOUT producing escapes (SFTP and NFS keep today's answer for a non-UTF-8 name, the local readers their
-  lossy row), and 10a–10e drive the text-to-path sites to zero.
+  7, and 9, waits for the type-level escape gate and for the text budgets to reach zero (§ "Keeping it that way"), so 6,
+  7, and 9 convert their bodies WITHOUT producing escapes (SFTP and NFS keep today's answer for a non-UTF-8 name, the
+  local readers their lossy row), and 10a–10e drive the text-to-path sites to zero.
 - **Then 11** (close).
 
 ### 1. Pin today's behavior, and the Windows targets
@@ -1224,18 +1249,20 @@ included; the hidden couplings it found are why waves B and C differ from round 
 
 - **❗ The escape moved to 10f** (the type's review, 2026-11-18): this milestone converts the bodies and the one
   crossing per OS, but its readers don't produce escapes yet; the non-UTF-8 row stays lossy, as today, until the
-  consumers stop turning app text into `std::path` values. The escape gate in `app-path-std-bridge` enforces it. Read
-  every "escaped" below as 10f's.
+  consumers stop turning app text into `std::path` values (§ "Keeping it that way", the escape gate). Every typed
+  crossing here is `from_native_unicode` / `from_native_os_unicode` (watch events included), never `from_native`: on
+  `NotUnicode` the reader keeps today's native handling for that child, counted. Read every "escaped" and every
+  "`from_native`, which escapes" below as 10f's.
 
 - **Size**: M (review round 2 added the frontend wiring and the Linux E2E).
 - **Scope**: both volumes take `&AppPath` natively: `resolve` and `local_windows/paths.rs` collapse into
   `AppPath::to_native` (the Windows `resolve_under` goes, since callers no longer pass relative paths); `reading.rs`
   builds `FileEntry.path` with one `AppPath::join` and `FileEntry.name` from the same escaped name;
   `rename_local_exclusive` gains a `&AppPath` form beside the `&Path` one (the wave-B rule; 10a switches its callers).
-  Watch events coming back from the OS go through `from_native`. Frontend, same land: every name sink renders through
-  `shownName` (the listing's Full and Brief name cells, the rename prefill and its "unchanged" check, search results,
-  the selection summary, drag images), the backend's menu labels and Brief text widths through `shown_name`, and
-  `validateFilename` measures with `nativeNameLength`.
+  Watch events coming back from the OS go through `from_native_unicode` (10f: `from_native`). Frontend, same land: every
+  name sink renders through `shownName` (the listing's Full and Brief name cells, the rename prefill and its "unchanged"
+  check, search results, the selection summary, drag images), the backend's menu labels and Brief text widths through
+  `shown_name`, and `validateFilename` measures with `nativeNameLength`.
 - **Intentions**: the one local crossing per OS, and the listing hot path at one allocation per entry.
 - **Landmines**: a non-UTF-8 name on Linux: stat through the raw `OsStr` (fix `fdfa5b58cb`) as today, and the row's
   `path` and `name` become the ESCAPED spelling (§ "Names that aren't UTF-8"), `name == path.file_name()`. That's loud
@@ -1289,10 +1316,11 @@ included; the hidden couplings it found are why waves B and C differ from round 
   app paths into the operation log (pinned). Big enough to split by subagent (transfer, delete and trash, archive edit,
   rename and create, scans), sequential on one branch. Non-UTF-8 safety (milestone 1's pins (f)):
   - The native walks (`scan_walker.rs`, `delete/walker.rs`, the move sweep, `scan_dry_run.rs`, `reversal.rs`) stay
-    native inside, and any path they hand to a typed API goes through `from_native`, which escapes. ❌ A walk never
-    drops a child it can't type: there's no such child, by construction; if a backend's walk does skip one, the skip is
-    counted and reported on the op, never silent, because a copy that reports success while missing a file is the data
-    loss a person can't see.
+    native inside, and any path they hand to a typed API goes through `from_native_unicode` until 10f (§ "Keeping it
+    that way"): a child it refuses (`NotUnicode`) goes on as a bridge value (`legacy_unchecked`, lossless), counted, and
+    10f turns each crossing into `from_native`, which escapes. ❌ A walk never drops a child it can't type: there's no
+    such child, by construction; if a backend's walk does skip one, the skip is counted and reported on the op, never
+    silent, because a copy that reports success while missing a file is the data loss a person can't see.
   - `walk_cached_entries` (the listing-oracle short-circuit) builds each child from `entry.path` via `from_normalized`,
     which carries the escape after milestone 9; that fixes today's bug where a pane open on the folder made the scan
     record a lossy, nonexistent path. Its `is_left_out` check takes the path's `file_name()`, not `entry.name`.
@@ -1319,9 +1347,10 @@ included; the hidden couplings it found are why waves B and C differ from round 
 ### 10b. `cmdr-index`
 
 - **Size**: M.
-- **Scope**: the local scanner, reconciler, and watcher ingest native paths through `from_native` at the walk and event
-  edges and hold app paths after; `store/paths.rs` resolves `&AppPath` by names; the exclusion policy's `/`-prefixed
-  rules become app-path rules; media and importance stores keep their `TEXT` columns.
+- **Scope**: the local scanner, reconciler, and watcher ingest native paths through `from_native_unicode` at the walk
+  and event edges (a `NotUnicode` child keeps today's lossy row, counted; 10f swaps in `from_native`, which escapes) and
+  hold app paths after; `store/paths.rs` resolves `&AppPath` by names; the exclusion policy's `/`-prefixed rules become
+  app-path rules; media and importance stores keep their `TEXT` columns.
 - **Landmines**: the drive index's key decision stands (lowercase, Unicode form untouched). The cold-drive fixture roots
   a tempdir; on Windows that's a drive app path, so the index root is that path, not `/`. Some of that may need task
   34's drive volumes: if so, say which tests and stop there. The walker's `RawDirEntry.path` is raw today and the index
@@ -1404,14 +1433,19 @@ included; the hidden couplings it found are why waves B and C differ from round 
 - **Size**: M. Added in the type's review (2026-11-18): the escape producers used to ride 6, 7, and 9, which land before
   the consumers stop turning app text into `std::path` values; an escape reaching one of those sites opens a file
   literally named with the escape code point (§ "Keeping it that way", the escape gate).
-- **Scope**: every escape producer, each in its own commit: `cmdr-local`'s readers and walks spell a non-UTF-8 name
+- **First, the type-level gate** (§ "Keeping it that way"), two commits before any producer: `FileEntry.path` and
+  `.name` become typed (the last untyped carriers; IPC parameters went typed in 10c), then `as_str`, `into_string`, and
+  the `Display` replacement go into `clippy.toml`'s `disallowed-methods` with a reasoned `expect` at each IPC, store,
+  and log exit.
+- **Scope**: every escape producer, each in its own commit: every `from_native_unicode` / `from_native_os_unicode` that
+  9, 10a, and 10b left becomes `from_native` / `from_native_os`; `cmdr-local`'s readers and walks spell a non-UTF-8 name
   (Linux bytes, Windows unpaired surrogates) losslessly, `FileEntry.name == path.file_name()`, with the frontend's name
   sinks (`shownName`, `nativeNameLength`) and the Linux DOM catch-all, which is loud rule 1's first exception (milestone
   9's text on it moves here, its pins (f) flip here); SFTP's byte escapes (6); SMB's unit escapes if `smb2` hands up a
-  lone surrogate (7); NFS's choice (6). 9 keeps the typed `from_native` crossings it needs for valid Unicode names and
-  the lossy row for the rest until this milestone.
-- **Gate**: `app-path-std-bridge`'s `appTextToPath` budget is empty (the check refuses a production escape producer
-  otherwise), and 10a–10e are landed.
+  lone surrogate (7); NFS's choice (6).
+- **Gate**: the type-level gate's two commits are in and clippy is green with them; `app-path-std-bridge`'s
+  `appTextToPath` and `pathFromBareText` budgets are empty (the tripwire refuses a production escape producer
+  otherwise); and 10a–10e are landed.
 - **DONE**: #1236 closes; the escape gate's budget stays empty for good (the check keeps refusing a new site).
 
 ### 11. Close

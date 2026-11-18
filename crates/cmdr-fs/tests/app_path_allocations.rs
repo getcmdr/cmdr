@@ -59,7 +59,7 @@ const NAME: &str = "a-file-with-a-typical-name.ts";
 #[test]
 fn a_listed_entry_costs_one_allocation_where_it_cost_three() {
     let folder = AppPath::from_normalized(FOLDER).expect("canonical");
-    let name = AppName::new(NAME).expect("a plain name");
+    let name = AppName::from_app_spelling(NAME).expect("a plain name");
     let (typed, path) = allocations(|| folder.join(name).expect("joins"));
     assert_eq!(typed, 1, "AppPath::join: one String, sized exactly");
     assert_eq!(path.as_str().len(), FOLDER.len() + 1 + NAME.len());

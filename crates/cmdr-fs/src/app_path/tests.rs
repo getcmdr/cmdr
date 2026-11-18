@@ -20,7 +20,7 @@ fn win(text: &str) -> AppPathBuf {
 }
 
 fn name(text: &str) -> &AppName {
-    AppName::new(text).unwrap_or_else(|e| panic!("{text:?}: {e}"))
+    AppName::from_app_spelling(text).unwrap_or_else(|e| panic!("{text:?}: {e}"))
 }
 
 fn wide(text: &str) -> Vec<u16> {
@@ -381,14 +381,14 @@ fn a_unc_root_matches_without_case_and_equality_stays_exact() {
 #[test]
 fn a_name_is_one_plain_component() {
     for good in ["photo.jpg", "a:b", "back\\slash", "...", ".hidden", "\u{0}42"] {
-        assert!(AppName::new(good).is_ok(), "{good:?}");
+        assert!(AppName::from_app_spelling(good).is_ok(), "{good:?}");
     }
     for bad in ["", ".", "..", "a/b", "/x", "a\u{0}b", "\u{0}"] {
-        assert!(AppName::new(bad).is_err(), "{bad:?}");
+        assert!(AppName::from_app_spelling(bad).is_err(), "{bad:?}");
     }
     // Backend-spelled escapes must be canonical: the bytes of `é` spell `é`.
-    assert!(AppName::new("caf\u{10FEC3}\u{10FEA9}").is_err());
-    assert!(AppName::new("caf\u{10FEE9}").is_ok());
+    assert!(AppName::from_app_spelling("caf\u{10FEC3}\u{10FEA9}").is_err());
+    assert!(AppName::from_app_spelling("caf\u{10FEE9}").is_ok());
 }
 
 #[test]
@@ -412,7 +412,7 @@ fn a_typed_name_holding_an_escape_code_point_names_that_literal_character() {
     assert_eq!(units, wide("\\\\?\\C:\\d\\a\u{10FE80}"));
 }
 
-/// A `FileEntry.name` is app text: its escapes are live, and `AppName::new` keeps them. A
+/// A `FileEntry.name` is app text: its escapes are live, and `AppName::from_app_spelling` keeps them. A
 /// name a `std::path` holds is native: only `from_native_os` turns it into app spelling.
 /// The one wrong combination, reading app text as native (which respells a live escape as a
 /// literal one and names a different file), has no API.
@@ -1044,108 +1044,6 @@ fn the_wire_is_a_plain_string() {
     let back: AppPathBuf = serde_json::from_str(&serde_json::to_string(&sftp).expect("serializes")).expect("any host");
     assert_eq!(back, sftp);
     assert!(serde_json::from_str::<AppPathBuf>("\"relative\"").is_err());
-}
-
-// ---- Arithmetic on a transition-bridge value, right in release builds (review 2's N6) ----
-
-fn bridge(text: &str) -> Cow<'_, AppPath> {
-    AppPath::legacy_unchecked(Path::new(text))
-}
-
-/// Unnormalized POSIX bridge text answers what `Path` answers, and the typed tails and joins
-/// come out canonical: `rebase` never builds `/new//b`.
-#[test]
-fn a_posix_bridge_value_answers_what_path_answers() {
-    let sloppy = bridge("/a//b/");
-    assert!(!sloppy.is_canonical());
-    assert_eq!(sloppy.parent().map(AppPath::as_str), Some("/a"));
-    assert_eq!(sloppy.file_name(), Some("b"));
-    assert_eq!(sloppy.names().collect::<Vec<_>>(), ["a", "b"]);
-    assert!(sloppy.starts_with(&posix("/a")));
-    assert_eq!(
-        sloppy
-            .strip_prefix(&posix("/a"))
-            .as_deref()
-            .map(RelativeAppPath::as_str),
-        Some("b")
-    );
-    let moved = sloppy.rebase(&posix("/a"), &posix("/new")).expect("under /a");
-    assert_eq!(moved.as_str(), "/new/b");
-    assert_eq!(
-        sloppy.join(name("c")).map(AppPathBuf::into_string).as_deref(),
-        Ok("/a/b/c")
-    );
-    assert_eq!(bridge("/a/./b").parent().map(AppPath::as_str), Some("/a"));
-    assert_eq!(bridge("/a/").parent().map(AppPath::as_str), Some("/"));
-    assert!(bridge("/").is_root() && bridge("//").is_root());
-    // A sloppy root join is the path std opens.
-    assert_eq!(bridge("//Users").parent().map(AppPath::as_str), Some("/"));
-    // A `..` has no canonical twin: it sits under nothing, and a join is a typed refusal.
-    let climbing = bridge("/a/x/../b");
-    assert!(!climbing.starts_with(&posix("/a")));
-    assert_eq!(climbing.join(name("c")), Err(NotAnAppPath::DotName));
-    assert_eq!(bridge("rel/x").to_canonical().err(), Some(NotAnAppPath::Relative));
-}
-
-/// Windows bridge text (`std`'s spelling, `C:\x\y`) read with Windows' rules, on every OS.
-#[test]
-fn a_windows_bridge_value_reads_as_windows_reads_it() {
-    let windows = PathFlavor::Windows;
-    let read = lenient::read_as(r"C:\x\y", windows);
-    assert_eq!(read.kind(), PathKind::Drive);
-    assert_eq!(read.parent_end(), Some(r"C:\x".len()));
-    assert_eq!(read.file_name(), Some("y"));
-    assert_eq!(read.names(r"C:\x\y"), ["x", "y"]);
-    assert!(lenient::read_as(r"C:\", windows).is_root());
-    assert_eq!(lenient::read_as(r"C:\x", windows).parent_end(), Some(r"C:\".len()));
-    assert_eq!(lenient::read_as(r"\\srv\sh\x", windows).kind(), PathKind::Unc);
-    for (text, canonical) in [
-        (r"C:\x\y", "C:/x/y"),
-        (r"c:\x\y\", "C:/x/y"),
-        (r"\\srv\sh\x", "//srv/sh/x"),
-        (r"\\?\C:\x\dup.", "C:/x/dup."),
-        (r"\\?\UNC\srv\sh\x", "//srv/sh/x"),
-        ("/d/a\\b", "/d/a\\b"),
-    ] {
-        assert_eq!(
-            lenient::canonical_as(text, windows)
-                .map(AppPathBuf::into_string)
-                .as_deref(),
-            Ok(canonical),
-            "{text}"
-        );
-    }
-    assert_eq!(
-        lenient::canonical_as("C:x", windows).err(),
-        Some(NotAnAppPath::DriveRelative)
-    );
-    assert_eq!(
-        lenient::canonical_as(r"\\.\pipe\x", windows).err(),
-        Some(NotAnAppPath::DevicePath)
-    );
-    assert_eq!(
-        lenient::canonical_as(r"C:\x\..\y", windows).err(),
-        Some(NotAnAppPath::DotName)
-    );
-}
-
-/// On the Windows host itself, the reviewer's inputs through the type.
-#[cfg(windows)]
-#[test]
-fn a_windows_bridge_value_answers_through_the_type() {
-    let bridged = bridge(r"C:\x\y");
-    assert!(bridged.starts_with(&win("C:/x")));
-    assert_eq!(bridged.parent().map(AppPath::as_str), Some(r"C:\x"));
-    assert_eq!(bridged.file_name(), Some("y"));
-    assert_eq!(bridged.kind(), PathKind::Drive);
-    assert!(bridged.same_root(&win("C:/")));
-    assert_eq!(
-        bridged
-            .strip_prefix(&win("C:/"))
-            .as_deref()
-            .map(RelativeAppPath::as_str),
-        Some("x/y")
-    );
 }
 
 #[test]

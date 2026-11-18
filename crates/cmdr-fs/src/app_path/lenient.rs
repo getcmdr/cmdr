@@ -166,5 +166,11 @@ pub(super) fn canonical_as(text: &str, host: PathFlavor) -> Result<AppPathBuf, N
 
 /// Whether `text` is in canonical form, the shape typed arithmetic reads directly.
 pub(super) fn is_canonical(text: &str) -> bool {
+    // ❗ Flavor-free, so on macOS and Linux a full `//server/share/x` text reads as UNC here
+    // while `Eq` reads it as std does (`/server/share/x`): canonical UNC values exist there
+    // only in tests (`parse(_, Windows)`, which Linux CI runs the Windows arm with), and the
+    // text can't say which it is. No std join makes a bridge value of that shape; a
+    // `format!("{dir}/{name}")` with `dir == "/"` makes `//name`, which has no share and so
+    // reads leniently, as std does.
     parse::validate_canonical_any(text).is_ok()
 }

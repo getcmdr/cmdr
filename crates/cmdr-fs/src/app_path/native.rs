@@ -275,6 +275,43 @@ impl AppPathBuf {
     }
 }
 
+#[cfg(cmdr_host)]
+impl AppPathBuf {
+    /// [`Self::from_native`] for a path whose every name is plain Unicode text: the crossing
+    /// that makes NO escape, for milestones 9, 10a, and 10b, which need typed crossings before
+    /// milestone 10f lets escapes exist (docs/specs/app-path-plan.md § "Keeping it that way").
+    /// At 10f each call becomes `from_native`.
+    ///
+    /// # Errors
+    ///
+    /// [`NotAnAppPath::NotUnicode`] for a name that isn't valid Unicode text or holds an
+    /// escape-range code point: the caller keeps that child native (a `PathBuf`, or a bridge
+    /// value) and counts it, ❌ never drops it. Otherwise as [`Self::from_native`].
+    pub fn from_native_unicode(path: &std::path::Path) -> Result<AppPathBuf, NotAnAppPath> {
+        let app = Self::from_native(path)?;
+        if escape::has_escape(app.as_str()) {
+            return Err(NotAnAppPath::NotUnicode);
+        }
+        Ok(app)
+    }
+}
+
+impl super::AppNameBuf {
+    /// [`Self::from_native_os`] for a name that is plain Unicode text, the crossing that makes
+    /// no escape ([`AppPathBuf::from_native_unicode`]'s twin).
+    ///
+    /// # Errors
+    ///
+    /// [`super::NotAChildName`] for a name that needs an escape, and as [`Self::from_native_os`].
+    pub fn from_native_os_unicode(name: &std::ffi::OsStr) -> Result<super::AppNameBuf, super::NotAChildName> {
+        let app = Self::from_native_os(name)?;
+        if escape::has_escape(app.as_str()) {
+            return Err(super::NotAChildName(escape::shown_name(app.as_str()).into_owned()));
+        }
+        Ok(app)
+    }
+}
+
 /// The grammar half of `from_native`, over text whose names are already escaped. An escape
 /// is a plane-16 code point, never a separator, so reading the escaped text is safe.
 fn from_escaped(text: &str, flavor: PathFlavor) -> Result<AppPathBuf, NotAnAppPath> {

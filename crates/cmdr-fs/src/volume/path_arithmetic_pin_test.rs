@@ -99,7 +99,7 @@ fn type_answer(row: &Row) -> Result<Value, String> {
         "fileName" => base.file_name().map_or(Value::Null, Value::from),
         "names" => Value::from(base.names().collect::<Vec<_>>()),
         "join" => {
-            let name = AppName::new(arg(row)).map_err(|_| "NotAChildName".to_string())?;
+            let name = AppName::from_app_spelling(arg(row)).map_err(|_| "NotAChildName".to_string())?;
             Value::from(base.join(name).map_err(|refusal| format!("{refusal:?}"))?.as_str())
         }
         "startsWith" => Value::from(base.starts_with(&parse(arg(row))?)),

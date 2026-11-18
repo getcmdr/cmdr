@@ -2471,7 +2471,9 @@ Checks by app and tech:
   is always installed before SQLite initializes), error-string-match, lock-poison (two lanes: an error-level one for an
   acquisition that records no poison-handling choice, and a warn-only one for a failure that's silently discarded, on a
   per-file ratchet), app-path-std-bridge (the app path's transition-bridge calls, `legacy_unchecked` and
-  `as_std_legacy`, counted per file on a ratchet that only shrinks: the conversion's progress meter;
+  `as_std_legacy`, counted per file on a ratchet that only shrinks: the conversion's progress meter; plus two text
+  budgets, `appTextToPath` and `pathFromBareText`, a tripwire that refuses a production escape producer while either is
+  above zero, ❗ not a sound gate, and a zero-tolerance refusal of OS text handed to an app-spelling door;
   `crates/cmdr-fs/DETAILS.md` § "App paths"), platform-cfg-placement (negated OS cfgs, and OS cfgs outside a `platform/`
   seam, on a per-file ratchet; § "Platform cfg placement"), log-private-values (an unmarked path, name, or identity in a
   log macro, strict with no allowlist, and a marked value made into a `String`; § "The log-private-values check"),

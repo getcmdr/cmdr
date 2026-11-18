@@ -26,29 +26,60 @@ var appPathStdBridgePattern = gateRegexp(regexp.MustCompile(`\b(legacy_unchecked
 // `OsStr::new`, or `OsString::from`, or a listed `.name` handed to `ChildName::new` (a
 // `std::path`-world name). Today that's the identity. Once a name holds an escape it isn't:
 // the `Path` carries the escape's own UTF-8 bytes, so `std::fs` opens a file literally named
-// with it, and the bridge reads it back as literal text. A measured proxy, not a proof: each
-// crate's conversion still audits its own values.
+// with it, and the bridge reads it back as literal text.
+//
+// ❗ A TRIPWIRE, not a gate: no text scan can see app text arrive through a `let`, a closure,
+// `.into()`, an `impl AsRef<Path>` parameter, or a `format!` join, so a zero here doesn't prove
+// none is left. The sound mechanism is the type's (docs/specs/app-path-plan.md § "Keeping it
+// that way": typed carriers with no conversion to `std::path`, compile-asserted, and a
+// type-resolved ban on the text exits before milestone 10f). These two budgets are the meter.
 var appTextToPathPatterns = gateRegexps(
 	regexp.MustCompile(`\b(Path::new|PathBuf::from|OsStr::new|OsString::from)\s*\(\s*&?[\w.\[\]]*\.(path|name)(\.clone\(\)|\.as_str\(\)|\.to_string\(\))?\s*\)`),
 	regexp.MustCompile(`\b(Path::new|PathBuf::from|OsStr::new|OsString::from)\s*\([^()]*\.as_str\(\)\s*\)`),
 	regexp.MustCompile(`\bChildName::new\s*\(\s*&?[\w.\[\]]*\.name\b`),
 )
 
-// escapeProducerPattern matches production code that turns native names into app spelling,
-// the code that makes an escape exist for a name that isn't valid Unicode text.
-var escapeProducerPattern = gateRegexp(regexp.MustCompile(`\b(AppPathBuf|AppNameBuf)::from_native\w*\s*\(|\bapp_path::escape_(bytes|units)\s*\(`))
+// bareTextToPathPatterns widen the tripwire to the shapes review 2 found it missing (N2): a
+// bare path- or name-shaped identifier handed to a `std::path` constructor (`PathBuf::from(&path)`,
+// `Path::new(&dest_dir)`, the dominant IPC shape) and a whole collection mapped through one
+// (`paths.into_iter().map(PathBuf::from)`). Many such sites are native, so this budget is a
+// coarse floor of its own (`pathFromBareText`), seeded from the tree.
+var bareTextToPathPatterns = gateRegexps(
+	regexp.MustCompile(`\b(Path::new|PathBuf::from|OsStr::new|OsString::from)\s*\(\s*&?(path|paths|name|dir|root|\w+_(path|paths|name|dir|root))\s*\)`),
+	regexp.MustCompile(`\.map\(\s*(PathBuf::from|Path::new|OsStr::new|OsString::from)\s*\)`),
+)
+
+// osTextIntoAppDoorPattern matches review 2's N5, the reverse trap: OS text (`to_str()`,
+// `to_string_lossy()`, `.display()`) handed on one line to a door that takes APP spelling, so
+// a literal escape code point a native name holds as text turns live. Zero tolerance,
+// production and tests alike: the native doors (`from_native_os`, `from_native`) exist.
+var osTextIntoAppDoorPattern = gateRegexp(regexp.MustCompile(
+	`\b(AppName::from_app_spelling|AppPath::from_normalized(_as)?|AppPathBuf::from_wire|AppPathBuf::parse|RelativeAppPath::new)\s*\(.*\.(to_str|to_string_lossy|display)\(\)`))
+
+// escapeProducerPattern matches production code that turns NATIVE names into app spelling,
+// the code that makes an escape exist for a name that isn't valid Unicode text: a call, a
+// function pointer (`.map(AppPathBuf::from_native)`), or a bare `escape_bytes(` after a `use`.
+// `from_native_unicode` (and `from_native_os_unicode`) aren't producers: they refuse, typed,
+// any name that would need an escape, which is what milestones 9, 10a, and 10b cross with.
+var escapeProducerPattern = gateRegexp(regexp.MustCompile(
+	`\b(AppPathBuf|AppNameBuf)::from_native(_as|_posix|_windows|_os|_bytes|_units)?\b|(^|[^\w.])(app_path::)?escape_(bytes|units)\s*\(`))
 
 type appPathStdBridgeAllowlist struct {
 	Comment string         `json:"$comment"`
 	Files   map[string]int `json:"files"`
 	// AppTextToPath is the per-file budget of app text turned into a `std::path` value.
 	AppTextToPath map[string]int `json:"appTextToPath"`
+	// PathFromBareText is the per-file budget of a bare path- or name-shaped identifier (or a
+	// collection mapped) handed to a `std::path` constructor: the coarse floor beside `AppTextToPath`.
+	PathFromBareText map[string]int `json:"pathFromBareText"`
 }
 
 type appPathScan struct {
 	bridge     []appPathStdBridgeSite
 	textToPath []appPathStdBridgeSite
+	bareText   []appPathStdBridgeSite
 	producers  []appPathStdBridgeSite
+	osTextHops []appPathStdBridgeSite
 }
 
 type appPathStdBridgeSite struct {
@@ -76,7 +107,9 @@ func RunAppPathStdBridge(ctx *CheckContext) (CheckResult, error) {
 		}
 		scan.bridge = append(scan.bridge, rootScan.bridge...)
 		scan.textToPath = append(scan.textToPath, rootScan.textToPath...)
+		scan.bareText = append(scan.bareText, rootScan.bareText...)
 		scan.producers = append(scan.producers, rootScan.producers...)
+		scan.osTextHops = append(scan.osTextHops, rootScan.osTextHops...)
 		scanned += rootScanned
 	}
 	sites := scan.bridge
@@ -84,9 +117,12 @@ func RunAppPathStdBridge(ctx *CheckContext) (CheckResult, error) {
 	allowlist := loadAppPathStdBridgeAllowlist(ctx.RootDir)
 	counts := siteCounts(sites)
 	textCounts := siteCounts(scan.textToPath)
+	bareCounts := siteCounts(scan.bareText)
 	staleChanges := shrinkwrapCountAllowlist(allowlist.Files, counts, "no bridge calls left")
 	staleChanges = append(staleChanges,
 		shrinkwrapCountAllowlist(allowlist.AppTextToPath, textCounts, "no app text turned into a std path left")...)
+	staleChanges = append(staleChanges,
+		shrinkwrapCountAllowlist(allowlist.PathFromBareText, bareCounts, "no bare path text turned into a std path left")...)
 	if len(staleChanges) > 0 && !ctx.CI {
 		if err := writeJSONAllowlist(filepath.Join(ctx.RootDir, appPathStdBridgeAllowlistRelPath), allowlist); err != nil {
 			return CheckResult{}, err
@@ -107,20 +143,40 @@ func RunAppPathStdBridge(ctx *CheckContext) (CheckResult, error) {
 		failures = append(failures, fmt.Sprintf(
 			"found %d %s turning app text into a std path, over the file's budget in %s (a `FileEntry.path` "+
 				"or `.name` is app text: build an `AppPath` with `AppPath::from_normalized`, a name with "+
-				"`AppName::new`, and cross with `to_native`; crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
+				"`AppName::from_app_spelling`, and cross with `to_native`; crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
+			len(over), Pluralize(len(over), "site", "sites"), appPathStdBridgeAllowlistRelPath, formatSites(over)))
+	}
+	if over := overBudget(scan.bareText, bareCounts, allowlist.PathFromBareText); len(over) > 0 {
+		failures = append(failures, fmt.Sprintf(
+			"found %d %s handing path text to a std path constructor, over the file's budget in %s (if it's "+
+				"app text, take it as an `AppPathBuf` with `from_wire` at the edge and cross with `to_native`; "+
+				"if it's a native path, keep it a `PathBuf` from where the OS handed it over; "+
+				"crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
 			len(over), Pluralize(len(over), "site", "sites"), appPathStdBridgeAllowlistRelPath, formatSites(over)))
 	}
 	textTotal := 0
 	for _, n := range allowlist.AppTextToPath {
 		textTotal += n
 	}
+	for _, n := range allowlist.PathFromBareText {
+		textTotal += n
+	}
 	if len(scan.producers) > 0 && textTotal > 0 {
 		failures = append(failures, fmt.Sprintf(
-			"%d escape-producing %s in production code while %d app-text-to-std-path %s remain: an escape "+
-				"would reach code that opens a file literally named with it. The escape producers land only "+
-				"once that count is zero (docs/specs/app-path-plan.md, the escape gate):\n%s",
+			"%d escape-producing %s in production code while %d text-to-std-path %s remain: an escape "+
+				"would reach code that opens a file literally named with it. Until milestone 10f, cross with "+
+				"`from_native_unicode` (a typed refusal where an escape would be needed); the producers land "+
+				"after the type-level ban on the text exits (docs/specs/app-path-plan.md § \"Keeping it that way\"):\n%s",
 			len(scan.producers), Pluralize(len(scan.producers), "call", "calls"),
 			textTotal, Pluralize(textTotal, "site", "sites"), formatSites(scan.producers)))
+	}
+	if len(scan.osTextHops) > 0 {
+		failures = append(failures, fmt.Sprintf(
+			"%d %s hand OS text (`to_str()`, `to_string_lossy()`, `.display()`) to a door that takes APP spelling: "+
+				"a native name holding an escape-range code point as text would cross `to_native` as a different "+
+				"file. Cross a native name with `AppNameBuf::from_native_os` and a native path with "+
+				"`AppPathBuf::from_native` (crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
+			len(scan.osTextHops), Pluralize(len(scan.osTextHops), "site", "sites"), formatSites(scan.osTextHops)))
 	}
 	if len(failures) > 0 {
 		return CheckResult{}, fmt.Errorf("%s", strings.Join(appendNonEmpty(failures, staleMsg), "\n"))
@@ -146,11 +202,24 @@ func (scan *appPathScan) classify(line string, site appPathStdBridgeSite, testFi
 	if appPathStdBridgePattern.MatchString(line) {
 		scan.bridge = append(scan.bridge, site)
 	}
+	member := false
 	for _, pattern := range appTextToPathPatterns {
 		if pattern.MatchString(line) {
 			scan.textToPath = append(scan.textToPath, site)
+			member = true
 			break
 		}
+	}
+	if !member {
+		for _, pattern := range bareTextToPathPatterns {
+			if pattern.MatchString(line) {
+				scan.bareText = append(scan.bareText, site)
+				break
+			}
+		}
+	}
+	if osTextIntoAppDoorPattern.MatchString(line) {
+		scan.osTextHops = append(scan.osTextHops, site)
 	}
 	if !testFile && escapeProducerPattern.MatchString(line) {
 		scan.producers = append(scan.producers, site)
@@ -212,19 +281,22 @@ func shrinkwrapCountAllowlist(files map[string]int, counts map[string]int, goneR
 // loadAppPathStdBridgeAllowlist reads the budget. A missing or unparsable file yields an
 // empty one, so every call gets reported.
 func loadAppPathStdBridgeAllowlist(rootDir string) appPathStdBridgeAllowlist {
-	list := appPathStdBridgeAllowlist{Files: map[string]int{}, AppTextToPath: map[string]int{}}
+	list := appPathStdBridgeAllowlist{Files: map[string]int{}, AppTextToPath: map[string]int{}, PathFromBareText: map[string]int{}}
 	data, err := os.ReadFile(filepath.Join(rootDir, appPathStdBridgeAllowlistRelPath))
 	if err != nil {
 		return list
 	}
 	if err := json.Unmarshal(data, &list); err != nil {
-		return appPathStdBridgeAllowlist{Files: map[string]int{}, AppTextToPath: map[string]int{}}
+		return appPathStdBridgeAllowlist{Files: map[string]int{}, AppTextToPath: map[string]int{}, PathFromBareText: map[string]int{}}
 	}
 	if list.Files == nil {
 		list.Files = map[string]int{}
 	}
 	if list.AppTextToPath == nil {
 		list.AppTextToPath = map[string]int{}
+	}
+	if list.PathFromBareText == nil {
+		list.PathFromBareText = map[string]int{}
 	}
 	return list
 }

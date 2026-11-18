@@ -156,7 +156,7 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   `app_path/lenient.rs` answers slices as `Path` would, and reads `join`, `strip_prefix`, and the volume-root matches
   through the canonical twin (`to_canonical`), so typed output is canonical; a value with none (a `..`, no root) joins
   with a typed refusal and sits under nothing. `strip_prefix` answers a `Cow`: borrowed for canonical values.
-- **Two name worlds, one door each** (Decision/Why): `AppName::new(&str)` takes a BACKEND-spelled name (a
+- **Two name worlds, one door each** (Decision/Why): `AppName::from_app_spelling(&str)` takes a BACKEND-spelled name (a
   `FileEntry.name`, its escapes live); `AppNameBuf::from_native_os(&OsStr)` (and `from_native_bytes` /
   `from_native_units`) takes a name a native API holds, escaping what isn't valid text and a literal escape code point
   as literal; `from_typed(text, namer)` takes typed text. `volume::ChildName` (over `&OsStr`) is the `std::path` world's
@@ -179,12 +179,17 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   Every escape is a scalar value (a `String`, JSON, SQLite `TEXT`, and a JS string all carry it), and private use has no
   case mapping or decomposition, so folding can't merge one. Rejected: PEP 383's lone surrogates (not scalar values),
   WTF-8 (not UTF-8), and the BMP private-use area (Nerd Fonts and Apple's SFM live there).
-- **❗ The escape gate**: app TEXT turned into a `std::path` value (`Path::new(&entry.path)`, `OsStr::new(p.as_str())`,
-  `ChildName::new(&entry.name)`) is the identity only while no name holds an escape; with one, the `Path` carries the
-  escape's own UTF-8 bytes and `std::fs` opens a file literally named with it. `app-path-std-bridge` counts those sites
-  per file (`appTextToPath`, shrinking) and fails while any production code outside this module calls an escape producer
-  (`from_native*`) with the count above zero. So the escape producers land last (`docs/specs/app-path-plan.md`,
-  milestone 10f).
+- **❗ The escape gate**: app TEXT turned into a `std::path` value (`Path::new(&entry.path)`, `PathBuf::from(&path)`,
+  `OsStr::new(p.as_str())`) is the identity only while no name holds an escape; with one, the `Path` carries the
+  escape's own UTF-8 bytes and `std::fs` opens a file literally named with it. The sound half is the type's: no app-path
+  type converts to `std::path` or to the text one is built from (`AsRef`, `Borrow<str>`, `Deref<Target = str>`, `Into`;
+  compile-asserted in `app_path/tests.rs`), so a typed carrier can't reach a `Path` constructor except through `as_str`
+  / `into_string` / `Display`, which milestone 10f bans by type (`clippy.toml`). `app-path-std-bridge`'s two text
+  budgets (`appTextToPath`, `pathFromBareText`) are a tripwire and a meter, ❌ not a proof (no scan sees a `let`,
+  `.into()`, or an `impl AsRef<Path>` parameter): while either is above zero it refuses a production escape producer in
+  any spelling, and it always refuses OS text (`to_str()`, `to_string_lossy()`) handed to an app-spelling door. Before
+  10f a typed crossing is `from_native_unicode` / `from_native_os_unicode`: no escape, a typed `NotUnicode` for a name
+  that would need one. `docs/specs/app-path-plan.md` § "Keeping it that way" holds the whole design.
 - **One spelling per native name**, so `to_native` is injective over canonical text: a code point of either alphabet a
   name holds as valid text is escaped through its own units, escapes that decode to valid text aren't canonical (the
   bytes of `é` spell `é`), and a name mixing the alphabets is refused. Typed text never carries a live escape

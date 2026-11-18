@@ -193,11 +193,11 @@ proptest! {
         let flavor = if windows { PathFlavor::Windows } else { PathFlavor::Posix };
         let Ok(path) = AppPathBuf::parse(&text, flavor) else { return Ok(()) };
         if let (Some(parent), Some(file)) = (path.parent(), path.file_name()) {
-            prop_assert_eq!(parent.join(AppName::new(file).expect("a canonical name")).expect("it was there"), path.clone());
+            prop_assert_eq!(parent.join(AppName::from_app_spelling(file).expect("a canonical name")).expect("it was there"), path.clone());
         } else {
             prop_assert!(path.is_root());
         }
-        if let Ok(child) = AppName::new(&child)
+        if let Ok(child) = AppName::from_app_spelling(&child)
             && let Ok(joined) = path.join(child) {
                 prop_assert_eq!(joined.parent(), Some(path.as_app_path()));
                 prop_assert_eq!(joined.file_name(), Some(child.as_str()));
@@ -473,9 +473,17 @@ mod bridge_arithmetic_unix {
     use super::super::super::*;
     use super::posix_text;
 
+    fn full_unc(text: &str) -> bool {
+        text.starts_with("//") && AppPath::legacy_unchecked(Path::new(text)).is_canonical()
+    }
+
     proptest! {
         #[test]
-        fn a_bridge_values_arithmetic_is_paths(a in posix_text(), b in posix_text()) {
+        fn a_bridge_values_arithmetic_is_paths(
+            // A full `//server/share/x` reads as UNC here (`lenient::is_canonical` says why).
+            a in posix_text().prop_filter("not UNC-shaped", |t| !full_unc(t)),
+            b in posix_text().prop_filter("not UNC-shaped", |t| !full_unc(t)),
+        ) {
             let (typed, std_path) = (AppPath::legacy_unchecked(Path::new(&a)), Path::new(&a));
             let parent = typed.parent().map(|p| AppPath::legacy_unchecked(Path::new(p.as_str())).into_owned());
             let std_parent = std_path.parent().map(|p| AppPath::legacy_unchecked(p).into_owned());

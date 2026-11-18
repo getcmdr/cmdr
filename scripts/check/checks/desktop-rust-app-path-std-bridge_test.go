@@ -138,3 +138,58 @@ func TestAppPathStdBridge_AnEscapeProducerWaitsForTheTextSitesToBeGone(t *testin
 		t.Fatalf("a test-only producer passes, got %v", err)
 	}
 }
+
+// Review 2's N2: the dominant IPC shapes count too, on their own coarse budget.
+func TestAppPathStdBridge_FlagsBarePathTextTurnedIntoAStdPath(t *testing.T) {
+	for name, body := range map[string]string{
+		"pathbuf_from": "fn rename(path: String) { let p = PathBuf::from(&path); }\n",
+		"path_new":     "fn f(dest_dir: &str) { let p = Path::new(&dest_dir); }\n",
+		"map":          "fn f(paths: Vec<String>) { let v: Vec<_> = paths.into_iter().map(PathBuf::from).collect(); }\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, _, err := runAppPathStdBridgeOn(t, map[string]string{"commands/x.rs": body}, nil)
+			if err == nil || !strings.Contains(err.Error(), "handing path text to a std path constructor") {
+				t.Fatalf("expected the site flagged, got %v", err)
+			}
+		})
+	}
+}
+
+// Review 2's N2: a producer is a producer however it's spelled; the non-escaping crossing isn't one.
+func TestAppPathStdBridge_SeesEveryProducerSpellingAndNotTheUnicodeCrossing(t *testing.T) {
+	budget := &appPathStdBridgeAllowlist{Files: map[string]int{}, PathFromBareText: map[string]int{"apps/desktop/src-tauri/src/volume/x.rs": 1}}
+	text := "fn g(path: String) { let p = PathBuf::from(&path); }\n"
+	for name, body := range map[string]string{
+		"fn_pointer": "fn f(v: Vec<PathBuf>) { v.iter().map(|p| p.as_path()).map(AppPathBuf::from_native); }\n",
+		"bare_use":   "use cmdr_fs::app_path::escape_bytes;\nfn f(b: &[u8]) { let s = escape_bytes(b); }\n",
+		"name":       "fn f(n: &OsStr) { let a = AppNameBuf::from_native_os(n); }\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, _, err := runAppPathStdBridgeWith(t, map[string]string{"volume/reader.rs": body, "volume/x.rs": text}, budget)
+			if err == nil || !strings.Contains(err.Error(), "escape-producing") {
+				t.Fatalf("expected the producer flagged, got %v", err)
+			}
+		})
+	}
+	unicode := "fn f(p: &Path) { let a = AppPathBuf::from_native_unicode(p)?; let n = AppNameBuf::from_native_os_unicode(o)?; }\n"
+	if _, _, err := runAppPathStdBridgeWith(t, map[string]string{"volume/reader.rs": unicode, "volume/x.rs": text}, budget); err != nil {
+		t.Fatalf("the non-escaping crossing passes, got %v", err)
+	}
+}
+
+// Review 2's N5: OS text into an app-spelling door is refused outright.
+func TestAppPathStdBridge_RefusesOsTextIntoAnAppSpellingDoor(t *testing.T) {
+	for name, body := range map[string]string{
+		"name":   "fn f(n: &OsStr) { let a = AppName::from_app_spelling(n.to_str()?)?; }\n",
+		"path":   "fn f(p: &Path) { let a = AppPath::from_normalized(&p.to_string_lossy())?; }\n",
+		"wire":   "fn f(p: &Path) { let a = AppPathBuf::from_wire(&p.display().to_string())?; }\n",
+		"a_test": "fn t(p: &Path) { AppPathBuf::parse(p.to_str().unwrap(), PathFlavor::HOST).unwrap(); }\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, _, err := runAppPathStdBridgeOn(t, map[string]string{"volume/x_test.rs": body}, nil)
+			if err == nil || !strings.Contains(err.Error(), "hand OS text") {
+				t.Fatalf("expected the hop refused, got %v", err)
+			}
+		})
+	}
+}
