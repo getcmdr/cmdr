@@ -43,7 +43,8 @@ func TestLaneCheckInputsFlagAMissingLaneStepInput(t *testing.T) {
 		t.Fatal("the website filter's pnpm-workspace.yaml line moved; update this test")
 	}
 	got := strings.Join(validateLaneCheckInputs(root, broken), "\n")
-	if !strings.Contains(got, "`website` runs `website-lane.yml`, whose filters miss `pnpm-workspace.yaml` (read by the lane's own steps)") {
+	// A check reading the file too joins the parenthetical (`..., website-docker-install-context`).
+	if !strings.Contains(got, "`website` runs `website-lane.yml`, whose filters miss `pnpm-workspace.yaml` (read by the lane's own steps") {
 		t.Errorf("want the website lane flagged for pnpm-workspace.yaml, got:\n%s", got)
 	}
 }
