@@ -6,6 +6,7 @@
 //! to "a name on the way is already taken", and a backend that gets one wrong
 //! usually got it wrong by not asking what took the name.
 
+use crate::app_path::AppPath;
 use std::path::Path;
 
 use crate::volume::{DirectoryCreation, EntryKind, Volume, VolumeError};
@@ -26,12 +27,12 @@ use crate::volume::{DirectoryCreation, EntryKind, Volume, VolumeError};
 /// slower, which is why the trait says "when in doubt, answer `AlreadyExisted`".
 pub async fn assert_create_directory_all_reports_an_existing_dir_honestly(volume: &dyn Volume, dir: &Path) {
     assert!(
-        volume.exists(dir).await,
+        volume.exists(&AppPath::legacy_unchecked(dir)).await,
         "fixture precondition: {} must already exist",
         dir.display()
     );
 
-    let outcome = volume.create_directory_all(dir).await;
+    let outcome = volume.create_directory_all(&AppPath::legacy_unchecked(dir)).await;
     assert!(
         matches!(outcome, Ok(DirectoryCreation::AlreadyExisted)),
         "create_directory_all over the existing {} must answer AlreadyExisted; \
@@ -60,7 +61,7 @@ pub async fn assert_create_directory_all_reports_an_existing_dir_honestly(volume
 /// makes), so there is no shared mechanism to trust, only a shared promise.
 pub async fn assert_create_directory_all_refuses_a_file_in_the_way(volume: &dyn Volume, file: &Path) {
     let before = volume
-        .get_metadata(file)
+        .get_metadata(&AppPath::legacy_unchecked(file))
         .await
         .unwrap_or_else(|e| panic!("fixture precondition: {} must exist, got {e:?}", file.display()));
     assert!(
@@ -75,7 +76,7 @@ pub async fn assert_create_directory_all_refuses_a_file_in_the_way(volume: &dyn 
     let below = file.join("inside");
     let deeper = below.join("deeper");
     for asked in [file, below.as_path(), deeper.as_path()] {
-        let outcome = volume.create_directory_all(asked).await;
+        let outcome = volume.create_directory_all(&AppPath::legacy_unchecked(asked)).await;
         let Err(VolumeError::NotADirectory(carried)) = outcome else {
             panic!(
                 "create_directory_all({}) on {} must refuse with NotADirectory, because the FILE {} is in the way; \
@@ -96,12 +97,15 @@ pub async fn assert_create_directory_all_refuses_a_file_in_the_way(volume: &dyn 
         );
     }
 
-    let after = volume.get_metadata(file).await.unwrap_or_else(|e| {
-        panic!(
-            "a refused create_directory_all must leave {} in place, got {e:?}",
-            file.display()
-        )
-    });
+    let after = volume
+        .get_metadata(&AppPath::legacy_unchecked(file))
+        .await
+        .unwrap_or_else(|e| {
+            panic!(
+                "a refused create_directory_all must leave {} in place, got {e:?}",
+                file.display()
+            )
+        });
     assert!(
         !after.is_directory && after.size == before.size,
         "a refused create_directory_all must not touch the file in the way, but {} went from {:?} bytes to {:?} \
@@ -140,7 +144,7 @@ pub async fn assert_create_directory_all_goes_through_a_link_to_a_folder(
     target: &Path,
 ) {
     let kind = volume
-        .entry_kind(link)
+        .entry_kind(&AppPath::legacy_unchecked(link))
         .await
         .unwrap_or_else(|e| panic!("fixture precondition: {} must exist, got {e:?}", link.display()));
     assert_eq!(
@@ -150,7 +154,7 @@ pub async fn assert_create_directory_all_goes_through_a_link_to_a_folder(
         link.display()
     );
 
-    let outcome = volume.create_directory_all(link).await;
+    let outcome = volume.create_directory_all(&AppPath::legacy_unchecked(link)).await;
     assert!(
         matches!(outcome, Ok(DirectoryCreation::AlreadyExisted)),
         "create_directory_all({}) on {} must answer AlreadyExisted: the link leads to the folder {}. Got {outcome:?}",
@@ -160,7 +164,7 @@ pub async fn assert_create_directory_all_goes_through_a_link_to_a_folder(
     );
 
     let asked = link.join("made-through-the-link").join("deeper");
-    let outcome = volume.create_directory_all(&asked).await;
+    let outcome = volume.create_directory_all(&AppPath::legacy_unchecked(&asked)).await;
     assert!(
         matches!(outcome, Ok(DirectoryCreation::Created)),
         "create_directory_all({}) on {} must create the folder through the link. Got {outcome:?}",
@@ -169,7 +173,7 @@ pub async fn assert_create_directory_all_goes_through_a_link_to_a_folder(
     );
     let landed = target.join("made-through-the-link").join("deeper");
     assert!(
-        matches!(volume.is_directory(&landed).await, Ok(true)),
+        matches!(volume.is_directory(&AppPath::legacy_unchecked(&landed)).await, Ok(true)),
         "the folder asked for through the link must exist inside its target, at {}",
         landed.display(),
     );

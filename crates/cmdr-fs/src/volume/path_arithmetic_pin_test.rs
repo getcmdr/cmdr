@@ -20,7 +20,7 @@ use serde_json::Value;
 
 #[cfg(unix)]
 use super::app_paths;
-use crate::app_path::{AppName, AppPathBuf, PathFlavor};
+use crate::app_path::{AppName, AppPathBuf, PathArithmetic, PathFlavor};
 
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

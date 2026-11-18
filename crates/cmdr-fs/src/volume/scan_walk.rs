@@ -36,6 +36,7 @@
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 
+use crate::app_path::AppPath;
 use crate::entry::FileEntry;
 use crate::volume::VolumeError;
 use crate::volume::{BatchScanResult, CopyScanResult, ScanBoundary, ScanConflict, ScannedFile, SourceItemInfo};
@@ -229,7 +230,10 @@ pub fn fold_batch(per_path: Vec<(PathBuf, CopyScanResult)>) -> BatchScanResult {
     }
     BatchScanResult {
         aggregate,
-        per_path,
+        per_path: per_path
+            .into_iter()
+            .map(|(path, scan)| (AppPath::legacy_unchecked(&path).into_owned(), scan))
+            .collect(),
         files: None,
     }
 }

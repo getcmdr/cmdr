@@ -1,3 +1,5 @@
+use crate::app_path;
+use crate::app_path::AppPath;
 use std::path::Path;
 
 use super::super::InMemoryVolume;
@@ -18,13 +20,13 @@ fn store() -> InMemoryVolume {
 
 async fn read_all(volume: &InMemoryVolume, path: &str) -> Vec<u8> {
     let size = volume
-        .get_metadata(Path::new(path))
+        .get_metadata(&AppPath::legacy_unchecked(Path::new(path)))
         .await
         .expect("held")
         .size
         .unwrap_or(0);
     volume
-        .read_range(Path::new(path), 0, size as usize)
+        .read_range(&AppPath::legacy_unchecked(Path::new(path)), 0, size as usize)
         .await
         .expect("readable")
 }
@@ -37,7 +39,7 @@ async fn an_imported_file_holds_its_real_bytes_beside_the_synthetic_ones() {
         .await
         .expect("imports");
 
-    let entry = volume.get_metadata(Path::new("/home/hello.txt")).await.expect("listed");
+    let entry = volume.get_metadata(app_path!("/home/hello.txt")).await.expect("listed");
     assert_eq!(entry.size, Some(5));
     assert_eq!(entry.modified_at, Some(1_700_000_000));
     assert!(!entry.is_directory);
@@ -63,7 +65,7 @@ async fn an_imported_folder_keeps_its_structure() {
         .expect("file");
 
     let listed = volume
-        .list_directory(Path::new("/home/trip"), None)
+        .list_directory(app_path!("/home/trip"), None)
         .await
         .expect("lists");
     assert_eq!(listed.len(), 1);
@@ -105,7 +107,7 @@ async fn an_import_the_disk_has_no_room_for_stores_nothing() {
     let volume = store().with_capacity(104);
     let refused = volume.import_file(Path::new("/home/big.bin"), vec![0; 5], None).await;
     assert!(matches!(refused, Err(VolumeError::StorageFull { .. })), "{refused:?}");
-    assert!(volume.get_metadata(Path::new("/home/big.bin")).await.is_err());
+    assert!(volume.get_metadata(app_path!("/home/big.bin")).await.is_err());
     volume
         .import_file(Path::new("/home/small.bin"), vec![0; 4], None)
         .await

@@ -3,6 +3,7 @@
 //! The fixture is two names in one writable folder: one a file with no attributes
 //! yet, the other nothing at all.
 
+use crate::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use super::modification_date::DatedSource;
@@ -24,7 +25,14 @@ pub async fn assert_xattrs_keep_their_promises(volume: &dyn Volume, file: &Path,
     let read_one = async |path: &Path, mode| {
         let paths = [path.to_path_buf()];
         volume
-            .read_xattr_many(&paths, NAME, mode)
+            .read_xattr_many(
+                &paths
+                    .iter()
+                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                    .collect::<Vec<_>>(),
+                NAME,
+                mode,
+            )
             .await
             .pop()
             .expect("one result per path")
@@ -55,7 +63,10 @@ pub async fn assert_xattrs_keep_their_promises(volume: &dyn Volume, file: &Path,
     );
 
     // A write lands byte for byte, and a shorter one leaves nothing of the longer.
-    volume.write_xattr(file, NAME, b"a longer value").await.expect("write");
+    volume
+        .write_xattr(&AppPath::legacy_unchecked(file), NAME, b"a longer value")
+        .await
+        .expect("write");
     assert_eq!(
         read_one(file, XattrReadMode::Verified)
             .await
@@ -63,7 +74,10 @@ pub async fn assert_xattrs_keep_their_promises(volume: &dyn Volume, file: &Path,
             .as_deref(),
         Some(&b"a longer value"[..])
     );
-    volume.write_xattr(file, NAME, b"short").await.expect("overwrite");
+    volume
+        .write_xattr(&AppPath::legacy_unchecked(file), NAME, b"short")
+        .await
+        .expect("overwrite");
     assert_eq!(
         read_one(file, XattrReadMode::AssumePathsExist)
             .await
@@ -74,7 +88,16 @@ pub async fn assert_xattrs_keep_their_promises(volume: &dyn Volume, file: &Path,
 
     // A batch answers per path, in order, each on its own.
     let batch: Vec<PathBuf> = vec![missing.to_path_buf(), file.to_path_buf(), missing.to_path_buf()];
-    let answers = volume.read_xattr_many(&batch, NAME, XattrReadMode::Verified).await;
+    let answers = volume
+        .read_xattr_many(
+            &batch
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+            NAME,
+            XattrReadMode::Verified,
+        )
+        .await;
     assert_eq!(answers.len(), 3, "one result per path");
     assert!(matches!(answers[0], Err(VolumeError::NotFound(_))));
     assert_eq!(answers[1].as_ref().expect("the file").as_deref(), Some(&b"short"[..]));
@@ -83,25 +106,36 @@ pub async fn assert_xattrs_keep_their_promises(volume: &dyn Volume, file: &Path,
     // Writing never creates the file, and removing asks for a file too.
     assert!(
         matches!(
-            volume.write_xattr(missing, NAME, b"x").await,
+            volume
+                .write_xattr(&AppPath::legacy_unchecked(missing), NAME, b"x")
+                .await,
             Err(VolumeError::NotFound(_))
         ),
         "a write to a missing file is NotFound"
     );
-    assert!(!volume.exists(missing).await, "a refused write creates nothing");
     assert!(
-        matches!(volume.remove_xattr(missing, NAME).await, Err(VolumeError::NotFound(_))),
+        !volume.exists(&AppPath::legacy_unchecked(missing)).await,
+        "a refused write creates nothing"
+    );
+    assert!(
+        matches!(
+            volume.remove_xattr(&AppPath::legacy_unchecked(missing), NAME).await,
+            Err(VolumeError::NotFound(_))
+        ),
         "a removal on a missing file is NotFound"
     );
 
     // Removal, and removing what's already gone.
-    volume.remove_xattr(file, NAME).await.expect("remove");
+    volume
+        .remove_xattr(&AppPath::legacy_unchecked(file), NAME)
+        .await
+        .expect("remove");
     assert_eq!(
         read_one(file, XattrReadMode::Verified).await.expect("after removal"),
         None
     );
     volume
-        .remove_xattr(file, NAME)
+        .remove_xattr(&AppPath::legacy_unchecked(file), NAME)
         .await
         .expect("removing what's gone succeeds");
 }
@@ -144,7 +178,11 @@ async fn assert_reads_back(volume: &dyn Volume, path: &Path, expected: &[Xattr])
     for xattr in expected {
         let name = xattr.name.to_str().expect("a UTF-8 name");
         let read = volume
-            .read_xattr_many(&[path.to_path_buf()], name, XattrReadMode::Verified)
+            .read_xattr_many(
+                &[AppPath::legacy_unchecked(path).into_owned()],
+                name,
+                XattrReadMode::Verified,
+            )
             .await
             .pop()
             .expect("one result per path");
@@ -179,12 +217,12 @@ pub async fn assert_a_copy_keeps_xattrs(volume: &dyn Volume, dir: &Path) {
         "this contract is for a backend that claims to keep a copy's xattrs"
     );
     assert!(
-        !volume.exists(dir).await,
+        !volume.exists(&AppPath::legacy_unchecked(dir)).await,
         "fixture precondition: {} must not exist yet",
         dir.display()
     );
     volume
-        .create_directory(dir)
+        .create_directory(&AppPath::legacy_unchecked(dir))
         .await
         .unwrap_or_else(|e| panic!("{} must be creatable, got {e:?}", dir.display()));
     let expected = copied_xattrs();
@@ -205,7 +243,7 @@ pub async fn assert_a_copy_keeps_xattrs(volume: &dyn Volume, dir: &Path) {
         let path = dir.join(name);
         let written = volume
             .write_from_stream(
-                &path,
+                &AppPath::legacy_unchecked(&path),
                 WriteMode::CreateNew,
                 StreamLength::Known(size as u64),
                 Box::new(DatedSource::new(vec![b'x'; size]).carrying(carried.clone())),
@@ -222,7 +260,7 @@ pub async fn assert_a_copy_keeps_xattrs(volume: &dyn Volume, dir: &Path) {
 
         if caps.reports.contains(MetadataClasses::XATTRS) {
             let stream = volume
-                .open_read_stream_for_copy(&path, Some(size as u64), values)
+                .open_read_stream_for_copy(&AppPath::legacy_unchecked(&path), Some(size as u64), values)
                 .await
                 .unwrap_or_else(|e| panic!("{} must be readable, got {e:?}", path.display()));
             assert_eq!(
@@ -232,7 +270,7 @@ pub async fn assert_a_copy_keeps_xattrs(volume: &dyn Volume, dir: &Path) {
                 path.display()
             );
             let stream = volume
-                .open_read_stream_for_copy(&path, Some(size as u64), outline)
+                .open_read_stream_for_copy(&AppPath::legacy_unchecked(&path), Some(size as u64), outline)
                 .await
                 .unwrap_or_else(|e| panic!("{} must be readable, got {e:?}", path.display()));
             assert!(
@@ -264,7 +302,7 @@ pub async fn assert_a_copy_keeps_xattrs(volume: &dyn Volume, dir: &Path) {
     let plain = dir.join("plain.txt");
     volume
         .write_from_stream(
-            &plain,
+            &AppPath::legacy_unchecked(&plain),
             WriteMode::CreateNew,
             StreamLength::Known(5),
             Box::new(DatedSource::new(b"plain".to_vec())),
@@ -274,7 +312,7 @@ pub async fn assert_a_copy_keeps_xattrs(volume: &dyn Volume, dir: &Path) {
         .unwrap_or_else(|e| panic!("the write onto {} must land, got {e:?}", plain.display()));
     if caps.reports.contains(MetadataClasses::XATTRS) {
         let stream = volume
-            .open_read_stream_for_copy(&plain, Some(5), values)
+            .open_read_stream_for_copy(&AppPath::legacy_unchecked(&plain), Some(5), values)
             .await
             .unwrap_or_else(|e| panic!("{} must be readable, got {e:?}", plain.display()));
         assert!(
@@ -286,15 +324,22 @@ pub async fn assert_a_copy_keeps_xattrs(volume: &dyn Volume, dir: &Path) {
     if caps.folder_stores.contains(MetadataClasses::XATTRS) {
         let folder = dir.join("folder");
         volume
-            .create_directory(&folder)
+            .create_directory(&AppPath::legacy_unchecked(&folder))
             .await
             .unwrap_or_else(|e| panic!("{} must be creatable, got {e:?}", folder.display()));
-        let report = volume.apply_metadata(&folder, &carried, None).await;
+        let report = volume
+            .apply_metadata(&AppPath::legacy_unchecked(&folder), &carried, None)
+            .await;
         assert_eq!(report.xattrs, ClassOutcome::Kept, "the folder's xattrs; got {report:?}");
         assert_reads_back(volume, &folder, &expected).await;
         if caps.reports.contains(MetadataClasses::XATTRS) {
             assert_eq!(
-                sorted(volume.folder_metadata(&folder, MetadataClasses::XATTRS).await.xattrs),
+                sorted(
+                    volume
+                        .folder_metadata(&AppPath::legacy_unchecked(&folder), MetadataClasses::XATTRS)
+                        .await
+                        .xattrs
+                ),
                 expected,
                 "a copy off {} must report the folder's xattrs",
                 folder.display()
