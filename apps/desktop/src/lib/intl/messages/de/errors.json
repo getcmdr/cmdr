@@ -2645,9 +2645,9 @@
   "@errors.listing.smbEncryptionRequired.explanation": {
     "sourceHash": "5eeef51"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Preferences, if you don’t need it} linuxKde {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Configure Cmdr, if you don’t need it} other {Das kannst du versuchen:\n- Melde dich mit einem Konto an: Gastverbindungen lassen sich nicht verschlüsseln\n- Schalte die SMB-Verschlüsselung auf dem Server ein\n- Schalte „SMB-Verschlüsselung immer verlangen“ in den Einstellungen aus, wenn du die Option nicht brauchst}}",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Das kannst du versuchen:\n- Melde dich mit einem Konto an: Gastverbindungen lassen sich nicht verschlüsseln\n- Schalte die SMB-Verschlüsselung auf dem Server ein\n- Schalte „SMB-Verschlüsselung immer verlangen“ in den Einstellungen aus, wenn du die Option nicht brauchst} linuxKde {Das kannst du versuchen:\n- Melde dich mit einem Konto an: Gastverbindungen lassen sich nicht verschlüsseln\n- Schalte die SMB-Verschlüsselung auf dem Server ein\n- Schalte „SMB-Verschlüsselung immer verlangen“ unter „Cmdr einrichten“ aus, wenn du die Option nicht brauchst} other {Das kannst du versuchen:\n- Melde dich mit einem Konto an: Gastverbindungen lassen sich nicht verschlüsseln\n- Schalte die SMB-Verschlüsselung auf dem Server ein\n- Schalte „SMB-Verschlüsselung immer verlangen“ in den Einstellungen aus, wenn du die Option nicht brauchst}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
-    "sourceHash": "f16274b"
+    "sourceHash": "5d8e637"
   },
   "errors.volume.encryptionRequired": "Die Verbindung zu dieser Freigabe lässt sich nicht verschlüsseln und in Cmdr ist „SMB-Verschlüsselung immer verlangen“ eingeschaltet.",
   "@errors.volume.encryptionRequired": {
@@ -2669,9 +2669,9 @@
   "@errors.write.smbEncryptionRequired.message": {
     "sourceHash": "ec53744"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Preferences.} linuxKde {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Configure Cmdr.} other {Melde dich mit einem Konto statt als Gast an oder schalte die SMB-Verschlüsselung auf dem Server ein. Du kannst „SMB-Verschlüsselung immer verlangen“ auch in den Einstellungen ausschalten.}}",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Melde dich mit einem Konto statt als Gast an oder schalte die SMB-Verschlüsselung auf dem Server ein. Du kannst „SMB-Verschlüsselung immer verlangen“ auch in den Einstellungen ausschalten.} linuxKde {Melde dich mit einem Konto statt als Gast an oder schalte die SMB-Verschlüsselung auf dem Server ein. Du kannst „SMB-Verschlüsselung immer verlangen“ auch unter „Cmdr einrichten“ ausschalten.} other {Melde dich mit einem Konto statt als Gast an oder schalte die SMB-Verschlüsselung auf dem Server ein. Du kannst „SMB-Verschlüsselung immer verlangen“ auch in den Einstellungen ausschalten.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
-    "sourceHash": "20a90d4"
+    "sourceHash": "bab81dc"
   },
   "errors.listing.smbNegotiationInvalid.title": "Der Server hat diese Verbindung nicht bestätigt",
   "@errors.listing.smbNegotiationInvalid.title": {

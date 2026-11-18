@@ -21,7 +21,7 @@
   },
   "crashReporter.dialog.privacyNote": "{platform, select, macos {Er enthält die App-Version, die macOS-Version und welcher Teil des Codes auf das Problem gestoßen ist. Keine Dateinamen, keine persönlichen Daten.} windows {Er enthält die App-Version, die Windows-Version und welcher Teil des Codes auf das Problem gestoßen ist. Keine Dateinamen, keine persönlichen Daten.} other {Er enthält die App-Version, die Linux-Distribution samt Version und welcher Teil des Codes auf das Problem gestoßen ist. Keine Dateinamen, keine persönlichen Daten.}}",
   "@crashReporter.dialog.privacyNote": {
-    "sourceHash": "ebe2d23"
+    "sourceHash": "6f58653"
   },
   "crashReporter.dialog.reportIdLabel": "Berichts-ID:",
   "@crashReporter.dialog.reportIdLabel": {
@@ -71,9 +71,9 @@
   "@crashReporter.sentToast.message.report": {
     "sourceHash": "a676ed5"
   },
-  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {Change in Preferences} linuxKde {Change in Configure Cmdr} other {In den Einstellungen ändern}}",
+  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {In den Einstellungen ändern} linuxKde {Unter „Cmdr einrichten“ ändern} other {In den Einstellungen ändern}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "144d0bd"
+    "sourceHash": "c3fff1a"
   },
   "crashReporter.sentToast.sendLog": "Protokoll anhängen",
   "@crashReporter.sentToast.sendLog": {

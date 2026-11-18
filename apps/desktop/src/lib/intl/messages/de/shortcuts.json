@@ -333,8 +333,8 @@
   "@shortcuts.window.hideEmpty": {
     "sourceHash": "d3cb18e"
   },
-  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Edit shortcuts in Preferences} linuxKde {Edit shortcuts in Configure Cmdr} other {Kurzbefehle in den Einstellungen bearbeiten}}",
+  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Kurzbefehle in den Einstellungen bearbeiten} linuxKde {Kurzbefehle unter „Cmdr einrichten“ bearbeiten} other {Kurzbefehle in den Einstellungen bearbeiten}}",
   "@shortcuts.window.editInSettings": {
-    "sourceHash": "847b526"
+    "sourceHash": "875f6b7"
   }
 }

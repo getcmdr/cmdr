@@ -3,9 +3,9 @@
   "@mtp.connectedToast.title": {
     "sourceHash": "562319d"
   },
-  "mtp.connectedToast.body": "{platform, select, macos {Cmdr hat den macOS-Kameradienst (ptpcamerad) angehalten, um auf dieses Gerät zuzugreifen. Um es in einer anderen App zu nutzen, deaktiviere die MTP-Unterstützung in den Einstellungen.} windows {} linuxGnome {To use this device in another app, disable MTP support in preferences.} other {Um dieses Gerät in einer anderen App zu nutzen, deaktiviere die MTP-Unterstützung in den Einstellungen.}}",
+  "mtp.connectedToast.body": "{platform, select, macos {Cmdr hat den macOS-Kameradienst (ptpcamerad) angehalten, um auf dieses Gerät zuzugreifen. Um es in einer anderen App zu nutzen, deaktiviere die MTP-Unterstützung in den Einstellungen.} windows {} linuxGnome {Um dieses Gerät in einer anderen App zu nutzen, deaktiviere die MTP-Unterstützung in den Einstellungen.} other {Um dieses Gerät in einer anderen App zu nutzen, deaktiviere die MTP-Unterstützung in den Einstellungen.}}",
   "@mtp.connectedToast.body": {
-    "sourceHash": "74349d8",
+    "sourceHash": "d1c6175",
     "sameAsSourceJustification": "The windows branch is empty on purpose (the toast has no body line on Windows), per the key's description."
   },
   "mtp.connectedToast.dontShowAgain": "Nicht mehr anzeigen",
