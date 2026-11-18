@@ -1,6 +1,7 @@
 //! A tag write's inverse: put each file's prior Finder-tags value back (`DETAILS.md` § "A
 //! tag write restores the exact prior value").
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FINDER_TAGS_XATTR;
 use cmdr_fs::volume::{VolumeError, XattrReadMode};
 
@@ -31,7 +32,14 @@ pub(super) async fn restore_tags(
     let path = unit.source_path.as_path();
     let paths = [path.to_path_buf()];
     let answer = volume
-        .read_xattr_many(&paths, FINDER_TAGS_XATTR, XattrReadMode::Verified)
+        .read_xattr_many(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+            FINDER_TAGS_XATTR,
+            XattrReadMode::Verified,
+        )
         .await
         .into_iter()
         .next();
