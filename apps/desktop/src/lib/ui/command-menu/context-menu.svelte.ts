@@ -59,10 +59,10 @@ export interface ContextMenuController {
 }
 
 /** `node` and everything above it, the document included: what a scroll of would carry it. */
-function holdersOf(node: Node | undefined): Set<Node> | null {
+function holdersOf(node: Node | undefined): readonly Node[] | null {
   if (!node) return null
-  const holders = new Set<Node>()
-  for (let at: Node | null = node; at; at = at.parentNode) holders.add(at)
+  const holders: Node[] = []
+  for (let at: Node | null = node; at; at = at.parentNode) holders.push(at)
   return holders
 }
 
@@ -78,7 +78,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
    * then, ❗ not at the scroll: a virtual list may re-render the row while the menu is up, and a
    * detached row has no ancestors left.
    */
-  let anchorHolders: Set<Node> | null = null
+  let anchorHolders: readonly Node[] | null = null
 
   const stack = createMenuStack({
     flavor,
@@ -159,7 +159,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     return stack.typeAhead(event.key.toLowerCase())
   }
 
-  const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'AltGraph'])
+  const MODIFIERS: readonly string[] = ['Shift', 'Control', 'Alt', 'Meta', 'AltGraph']
 
   /**
    * Every key while the menu is up is the menu's, as an open native menu swallows them. Where a
@@ -172,7 +172,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     if (handled) {
       event.preventDefault()
       cues?.reveal()
-    } else if (stack.focusHolder && !MODIFIERS.has(event.key)) {
+    } else if (stack.focusHolder && !MODIFIERS.includes(event.key)) {
       event.preventDefault()
     }
     event.stopPropagation()
@@ -192,7 +192,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
 
   function onScroll(event: Event): void {
     const scrolled = event.target
-    if (scrolled instanceof Node && anchorHolders?.has(scrolled)) close(false)
+    if (scrolled instanceof Node && anchorHolders?.includes(scrolled)) close(false)
   }
 
   function onBlur(): void {
