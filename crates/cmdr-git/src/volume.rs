@@ -271,9 +271,11 @@ impl Volume for GitPortalVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        scan_walk::scan_one(self, path)
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            scan_walk::scan_one(self, path).await
+        })
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
@@ -281,9 +283,11 @@ impl Volume for GitPortalVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-        let paths: &[PathBuf] = &paths_std;
-        scan_walk::scan_trees(self, paths, boundary)
+        Box::pin(async move {
+            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+            let paths: &[PathBuf] = &paths_std;
+            scan_walk::scan_trees(self, paths, boundary).await
+        })
     }
 
     // ---- Capability flags: answered explicitly, never inherited ------------
