@@ -151,6 +151,25 @@ Menu bar:
   in contrast themes, where the border is `SystemColorButtonTextColor` at rest and `SystemColorHighlightColor` on hover,
   press, and open.
 
+Added with the component (task 63 step 4), from the same sources:
+
+- `--color-menu-row-bg-focus`, `--color-menu-row-fg-focus`, `--color-menu-shortcut-fg-focus`,
+  `--color-menu-chevron-fg-focus`, `--color-menu-bar-item-bg-focus`: the keyboard's row and title. WinUI's `Focused`
+  state sets no fill and keeps the rest colors (`MenuFlyoutItem_Partial.cpp`, § The sources), so Windows has
+  `transparent` and the rest values, contrast `transparent` and `ButtonText` / `CanvasText`; the system focus visual
+  (above) marks the row.
+- `--color-menu-row-fg-open`: `MenuFlyoutSubItemForegroundSubMenuOpened` → `TextFillColorPrimary`, contrast
+  `SystemColorHighlightColor` → `Highlight`.
+- `--color-menu-chevron-fg-hover`: `MenuFlyoutSubItemChevronPointerOver` → `TextFillColorSecondary`, contrast
+  `HighlightText`.
+- `--spacing-menu-row-padding-start` / `-end` (the old `-inline` split, so a caller's look can differ by side, as the
+  demo's macOS menus do), `--spacing-menu-row-min-height` (WinUI sets none: 0).
+- `--spacing-menu-glyph-size` (12, the check and bullet glyph) and `--spacing-menu-glyph-column-empty` (0: WinUI's
+  placeholder states apply only when a row holds a check, radio, or icon).
+- `--font-menu-header-size`, `--color-menu-header-fg`, `--spacing-menu-header-min-height`: WinUI's menus have no header
+  line; Cmdr's context menus lead with one, drawn as caption text (`CaptionTextBlockFontSize` 12) in
+  `TextFillColorSecondary`, contrast `CanvasText`. Cmdr's own choice, for the look check.
+
 ## What CSS can't carry, and what the tokens do instead
 
 - **The luminosity blend.** Acrylic blurs the backdrop, then a luminosity blend takes the luminosity from the tint color
@@ -179,6 +198,11 @@ Menu bar:
 
 ## Open questions for the design review
 
-- Keyboard focus in a flyout: the source says a focused row gets the two-ring focus visual and no fill. Compare an
-  arrowed-to row in Notepad's File menu with the reference shots before step 4 commits to it.
+- Keyboard focus in a flyout: the source says a focused row gets the two-ring focus visual and no fill, and step 4 built
+  exactly that (the `-focus` tokens above). Compare an arrowed-to row in Notepad's File menu with the reference shots;
+  if Notepad fills it, `--color-menu-row-bg-focus` takes the hover fill and the rings stay or go.
+- Where a flyout and a submenu sit: the flyout at the title's bottom-left on the bar's bottom edge, a submenu 5 px above
+  its row with no overlap (`MenuSurface.svelte`'s `SUBMENU_OFFSET`, `menu-bar.svelte.ts`'s `FLYOUT_NUDGE`), from WinUI's
+  paddings, not measured against Notepad.
+- The submenu hover delay: 400 ms, Win32's default `MenuShowDelay`; WinUI's own delay is unverified.
 - The font names WebView2 resolves for Segoe UI Variable (above).

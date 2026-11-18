@@ -8,8 +8,9 @@ Reusable components (Ark UI backs the complex ones).
   `dialog-registry.ts`, `AlertDialog.svelte`, `focus-restore.ts` (❌ never restore focus bare),
   `started-elsewhere-guard.ts` (what opened by itself arms first: DETAILS § The started-elsewhere guard),
   `boundary/DialogBoundary.svelte`.
-- The house menu: `Menu.svelte` + `createMenu` (`menu-controller.svelte.ts`), over `menu-navigation.ts` /
-  `menu-reorder.ts`. ❗ A `.svelte.ts` may never case-collide with a component. DETAILS § Menu.
+- Pickers: `Menu.svelte` + `createMenu`. ❗ No `.svelte.ts` may case-collide with a component. DETAILS § Menu.
+- `cmdr-menu`'s rows in the page (the bar, Windows' context menus, the demo's): `MenuBar.svelte`, `ContextMenu.svelte`
+  over `command-menu/`; `keyboard-cues.ts` says when underlines show. DETAILS § Command menus.
 - The primitives (`Icon`, `Spinner`, `Button`, `ColumnList`, form controls, `Select`, `Combobox`, text fields,
   `ShortcutChip`, `InfoTip`, `CloseButton`, `CopyButton`, `StatusGlyph` (❌ never focusable), `toast/`) are catalogued
   in DETAILS § Key files. `ToggleGroup` is segmented, ≠ `RadioGroup`; Tooltip is the sibling `../tooltip/tooltip.ts`.
@@ -44,14 +45,12 @@ Reusable components (Ark UI backs the complex ones).
     (`cmdr/no-title-attribute`): it skips keyboard focus. Keep any `aria-label`.
   - `ColumnList`: demands read row DATA, ❌ never DOM text (it'd oscillate).
   - `ShortcutChip`: import `openShortcutCustomization` dynamically: a static import drags
-    `@tauri-apps/api/webviewWindow` into the capability-restricted viewer. Set exactly one of `commandId` / `key` (a
-    command's key is always `commandId`).
+    `@tauri-apps/api/webviewWindow` into the capability-restricted viewer. Set exactly one of `commandId` / `key`.
   - `Select`: `.select-*` classes and their accent tokens are a contract. `--z-dropdown` on `.select-content`, ❌ never
     the positioner. Trapping modals call `providePortalTarget`.
   - `Combobox`: drive its text off `inputValue`, never `value` / `items` (blanks on an empty list).
-  - Text fields: chrome lives in `app.css` § "Text fields", so ONE edit restyles all five (keep `Combobox` /
-    `NumberInput` in sync). `.text-field` / `.text-field-control` are a selector contract, and `TextInput` is one-way
-    `value` + `oninput`, never an internal `bind:value`.
+  - Text fields: chrome is `app.css` § "Text fields" (one edit restyles all five); `.text-field` / `.text-field-control`
+    are a selector contract; `TextInput` is one-way `value` + `oninput`.
   - Toasts: level by feedback kind; a full persistent stack drops new ones; pane-local transients need
     `addToastForPane(pane, …)`. ❌ Frames: no live region, no `tabindex`.
 

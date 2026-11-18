@@ -86,10 +86,12 @@ dialog buttons like macOS, KDE like Windows.
 
 - **Source of truth**: `PlatformConventions` in `apps/desktop/src-tauri/src/platform/conventions.rs`, one typed enum per
   question: `dialogButtonOrder` (`cancelFirst` | `affirmativeFirst`), `enterActivates` (`defaultButton` |
-  `focusedButton`), `cancelKeys` (`escape` | `escapeOrCommandPeriod`), `accessKeys` (`none` | `underlines`), `menuModel`
-  (`systemMenuBar` | `windowMenuBar` | `primaryMenu`), `contextMenus` (`native` | `inPage`), `screenReaders` (most used
-  first), and `linuxDesktop` (`gnome` | `kde` | `other`, `null` off Linux). Each value and its guideline, with dates and
-  what stayed unverified: `docs/notes/windows-port/platform-conventions.md`.
+  `focusedButton`), `cancelKeys` (`escape` | `escapeOrCommandPeriod`), `accessKeys` (`none` |
+  `underlinesAfterKeyboardUse` | `underlinesWhileAltHeld`: when the underlines show, Win32's keyboard-cue rule or GTK's
+  and Qt's held Alt, `lib/ui/keyboard-cues.ts`), `menuModel` (`systemMenuBar` | `windowMenuBar` | `primaryMenu`),
+  `contextMenus` (`native` | `inPage`), `screenReaders` (most used first), and `linuxDesktop` (`gnome` | `kde` |
+  `other`, `null` off Linux). Each value and its guideline, with dates and what stayed unverified:
+  `docs/notes/windows-port/platform-conventions.md`.
 - **One table, five rows**: `conventions_on(Desktop)` answers macOS, Windows, and each Linux desktop in one `match`,
   compiled on every target; each OS arm (`macos.rs`, `windows.rs`, `linux/mod.rs`) only picks its row, Linux by the
   session's desktop (`apps/desktop/src-tauri/src/platform/linux/desktop.rs`, `XDG_CURRENT_DESKTOP` read once).

@@ -512,7 +512,9 @@ describe.each(['windows', 'gnome', 'kde', 'otherLinux'] as const)(
       const registry = stubHighlights()
       withConventions(desktop)
       document.documentElement.classList.add('underline-access-keys')
-      teardowns.push(() => document.documentElement.classList.remove('underline-access-keys'))
+      teardowns.push(() => {
+        document.documentElement.classList.remove('underline-access-keys')
+      })
       openedByClick()
       await open()
       await new Promise((resolve) => requestAnimationFrame(resolve))

@@ -91,34 +91,45 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     deps.onClose?.()
   }
 
+  const keys: Partial<Record<string, () => void>> = {
+    ArrowDown: () => {
+      stack.walk(1)
+    },
+    ArrowUp: () => {
+      stack.walk(-1)
+    },
+    ArrowRight: () => {
+      stack.enterSubmenu()
+    },
+    ArrowLeft: () => {
+      stack.backOut()
+    },
+    Home: () => {
+      stack.edge(true)
+    },
+    End: () => {
+      stack.edge(false)
+    },
+    Enter: () => {
+      stack.pickHighlighted()
+    },
+    ' ': () => {
+      stack.pickHighlighted()
+    },
+    Escape: () => {
+      if (!stack.backOut()) close(true)
+    },
+    Tab: () => {
+      close(true)
+    },
+  }
+
+  /** One key while the menu is up. True when the menu acted on it. */
   function handleKey(event: KeyboardEvent): boolean {
-    switch (event.key) {
-      case 'ArrowDown':
-        stack.walk(1)
-        return true
-      case 'ArrowUp':
-        stack.walk(-1)
-        return true
-      case 'ArrowRight':
-        stack.enterSubmenu()
-        return true
-      case 'ArrowLeft':
-        stack.backOut()
-        return true
-      case 'Home':
-      case 'End':
-        stack.edge(event.key === 'Home')
-        return true
-      case 'Enter':
-      case ' ':
-        stack.pickHighlighted()
-        return true
-      case 'Escape':
-        if (!stack.backOut()) close(true)
-        return true
-      case 'Tab':
-        close(true)
-        return true
+    const action = keys[event.key]
+    if (action) {
+      action()
+      return true
     }
     if (!hasLetters() || event.ctrlKey || event.metaKey || Array.from(event.key).length !== 1) return false
     return stack.typeAhead(event.key.toLowerCase())
@@ -142,7 +153,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
   function onPointerDown(event: PointerEvent): void {
     cues?.pointerdown()
     const target = event.target as Element | null
-    if (target?.closest?.('[data-command-menu="context"]')) return
+    if (target?.closest('[data-command-menu="context"]')) return
     // A click elsewhere closes the menu and goes where it went.
     close(false)
   }

@@ -37,7 +37,7 @@ const ROWS: Row[] = [
   { kind: 'item', id: 'delete', label: { text: 'Delete' }, shortcut: 'F8', ariaKeyshortcuts: 'F8', enabled: true },
 ]
 
-let teardowns: (() => void)[] = []
+const teardowns: (() => void)[] = []
 
 beforeEach(() => {
   withConventions('windows')
@@ -78,7 +78,7 @@ async function press(key: string, init: KeyboardEventInit = {}): Promise<Keyboar
 
 const surfaces = () => [...document.querySelectorAll<HTMLElement>('[data-command-menu="context"]')]
 const rows = (depth = 0) => [...(surfaces()[depth]?.querySelectorAll<HTMLElement>('.command-menu-row') ?? [])]
-const focusedText = () => document.activeElement?.textContent?.trim()
+const focusedText = () => document.activeElement?.textContent.trim()
 
 describe('ContextMenu', () => {
   it('opens at the point, named by its header line, and passes axe', async () => {

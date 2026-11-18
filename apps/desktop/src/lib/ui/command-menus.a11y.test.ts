@@ -62,7 +62,7 @@ const MENUS: BarMenuView[] = [
   { id: 'menu_view', title: { text: 'View' }, rows: ROWS.slice(0, 1) },
 ]
 
-let teardowns: (() => void)[] = []
+const teardowns: (() => void)[] = []
 
 afterEach(() => {
   for (const teardown of teardowns.splice(0)) teardown()

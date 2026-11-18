@@ -207,54 +207,71 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
     return -1
   }
 
-  /** The keys while the bar has the keyboard. True when the key was the bar's to act on. */
-  function handleActiveKey(event: KeyboardEvent): boolean {
-    const isOpen = openIndex !== null
-    switch (event.key) {
-      case 'ArrowDown':
-        if (isOpen) stack.walk(1)
-        else openMenu(focusIndex, true)
-        return true
-      case 'ArrowUp':
-        if (isOpen) stack.walk(-1)
-        // Windows opens a menu from ↑ on its last row; the Mac on its first, as ↓ does.
-        else openMenu(focusIndex, true, deps.flavor() === 'desktop')
-        return true
-      case 'ArrowRight':
-        if (isOpen && stack.enterSubmenu()) return true
-        if (isOpen) openMenu((openIndex ?? 0) + 1, true)
-        else focusTitle(focusIndex + 1)
-        return true
-      case 'ArrowLeft':
-        if (isOpen && stack.backOut()) return true
-        if (isOpen) openMenu((openIndex ?? 0) - 1, true)
-        else focusTitle(focusIndex - 1)
-        return true
-      case 'Home':
-      case 'End':
-        if (isOpen) stack.edge(event.key === 'Home')
-        else focusTitle(event.key === 'Home' ? 0 : count() - 1)
-        return true
-      case 'Enter':
-      case ' ':
-        if (!isOpen) openMenu(focusIndex, true)
-        else stack.pickHighlighted()
-        return true
-      case 'Escape':
-        if (stack.backOut()) return true
-        if (isOpen) closeMenuKeepingTitle()
-        else deactivate(true)
-        return true
-      case 'Tab':
-        deactivate(true)
-        return true
-    }
+  /** ← and → along the bar: the neighbor menu opens while one is open, else the neighbor title takes focus. */
+  function alongBar(step: 1 | -1): void {
+    if (openIndex === null) focusTitle(focusIndex + step)
+    else openMenu(openIndex + step, true)
+  }
+
+  /**
+   * The bar's keys while it has the keyboard, each one flat call: one switch deciding all of them
+   * ran far past the complexity cap. Each answers whether it acted.
+   */
+  const activeKeys: Partial<Record<string, () => void>> = {
+    ArrowDown: () => {
+      if (openIndex === null) openMenu(focusIndex, true)
+      else stack.walk(1)
+    },
+    ArrowUp: () => {
+      // Windows opens a menu from ↑ on its last row; the Mac on its first, as ↓ does.
+      if (openIndex === null) openMenu(focusIndex, true, deps.flavor() === 'desktop')
+      else stack.walk(-1)
+    },
+    ArrowRight: () => {
+      if (openIndex === null || !stack.enterSubmenu()) alongBar(1)
+    },
+    ArrowLeft: () => {
+      if (openIndex === null || !stack.backOut()) alongBar(-1)
+    },
+    Home: () => {
+      if (openIndex === null) focusTitle(0)
+      else stack.edge(true)
+    },
+    End: () => {
+      if (openIndex === null) focusTitle(count() - 1)
+      else stack.edge(false)
+    },
+    Enter: () => {
+      if (openIndex === null) openMenu(focusIndex, true)
+      else stack.pickHighlighted()
+    },
+    Escape: () => {
+      if (stack.backOut()) return
+      if (openIndex === null) deactivate(true)
+      else closeMenuKeepingTitle()
+    },
+    Tab: () => {
+      deactivate(true)
+    },
+  }
+  activeKeys[' '] = activeKeys.Enter
+
+  /** A letter with the bar active: the open menu's row, or the title, that it underlines. */
+  function typeAhead(event: KeyboardEvent): boolean {
     if (!hasLetters() || !noModifiers(event) || Array.from(event.key).length !== 1) return false
     const letter = event.key.toLowerCase()
-    if (isOpen) return stack.typeAhead(letter)
+    if (openIndex !== null) return stack.typeAhead(letter)
     const index = titleLetters.indexOf(letter)
     if (index >= 0) openMenu(index, true)
     return index >= 0
+  }
+
+  /** The keys while the bar has the keyboard. True when the key was the bar's to act on. */
+  function handleActiveKey(event: KeyboardEvent): boolean {
+    const action = activeKeys[event.key]
+    if (!action) return typeAhead(event)
+    action()
+    return true
   }
 
   /** Alt+a title's letter, from anywhere in the window. True when a title answered it. */

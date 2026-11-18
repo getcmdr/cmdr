@@ -143,7 +143,7 @@ keytips), and Windows' "Underline access keys" setting is honored. GNOME and KDE
   `cmdr-listing-wasm`'s `DemoMenuBar` (`apps/desktop/src/lib/demo/menu-bar.svelte.ts`, ~290 lines, plus its style), with
   keyboard walking and click lanes identical to the native events. `lib/ui/Menu.svelte` is the in-app menu primitive
   (submenus, check items, ARIA roles). `lib/ui/access-keys.ts` allocates letters from rendered labels by the Linux menu
-  bar's rule (`menu/mnemonics.rs`) and draws underlines (keytips today on Windows, until task 63's step 1).
+  bar's rule (`menu/mnemonics.rs`) and draws underlines (on Windows by Win32's keyboard-cue rule since task 63).
   `cmdr-listing-wasm/src/context_menu.rs` already answers every right-click menu's rows for the demo, the shape the
   in-page context menus on Windows follow.
 

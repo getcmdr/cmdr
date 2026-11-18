@@ -79,7 +79,9 @@ function isLoneAlt(event: KeyboardEvent): boolean {
 
 /** The keys Win32 counts as using the keyboard in a surface (`IsDialogMessage`'s set). */
 function isCueKey(event: KeyboardEvent): boolean {
-  if (event.key === 'AltGraph' || isAltGraphHeld(event) || (event.altKey && event.ctrlKey)) return false
+  // AltGr types characters: never keyboard use (Ctrl+Alt is AltGr on Windows).
+  const typesWithAltGr = isAltGraphHeld(event) || (event.altKey && event.ctrlKey)
+  if (typesWithAltGr || event.key === 'AltGraph') return false
   if (event.key === 'Alt' || event.key === 'Tab' || event.key === 'F10' || event.key.startsWith('Arrow')) return true
   return event.altKey && !event.metaKey
 }

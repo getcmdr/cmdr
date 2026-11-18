@@ -6,6 +6,7 @@
      * The look is `app-menu.css`'s tokens, ❌ never a value of its own.
      */
     import { tick } from 'svelte'
+    import { dependOn } from '#lib/utils/reactivity.js'
     import type { Row } from '#lib/ipc/bindings.js'
     import { placeAtPoint, placeBesideRow, placeOffAnchor } from '../anchored-placement'
     import type { MenuStack, StackSurface } from './menu-stack.svelte'
@@ -26,6 +27,7 @@
         element?: HTMLElement
     }
 
+    /* eslint-disable prefer-const -- $bindable() requires `let` destructuring */
     let {
         stack,
         surface,
@@ -38,6 +40,7 @@
         childId,
         element = $bindable(),
     }: Props = $props()
+    /* eslint-enable prefer-const */
 
     /** The margin a surface keeps off the window's edge. */
     const EDGE_MARGIN = 4
@@ -83,7 +86,7 @@
 
     // Placed once its rows are laid out, and again when they change (a live label can widen it).
     $effect(() => {
-        void surface.rows
+        dependOn(surface.rows)
         if (element) void place()
     })
 
@@ -140,7 +143,6 @@
             {@const highlighted = surface.highlighted === index}
             {@const parts = labelParts(rowLabelText(row.label), surface.letters[index] ?? null)}
             {@const shortcut = row.kind === 'item' || row.kind === 'check' ? row.shortcut : null}
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
             <div
                 id={rowId(index)}
                 class="command-menu-row"

@@ -37,7 +37,7 @@ const ROWS: Row[] = [
   },
 ]
 
-let teardowns: (() => void)[] = []
+const teardowns: (() => void)[] = []
 
 afterEach(() => {
   for (const teardown of teardowns.splice(0)) teardown()

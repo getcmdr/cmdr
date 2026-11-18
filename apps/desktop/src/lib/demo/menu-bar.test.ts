@@ -143,7 +143,7 @@ describe('demo menu bar', () => {
     const bar = document.querySelector('[role="menubar"]')
     expect(bar?.classList.contains('cmdr-demo-macos-menu')).toBe(true)
     expect(document.body.firstElementChild?.contains(bar ?? null)).toBe(true)
-    expect(titles().map((t) => t.textContent?.trim())).toEqual(['Cmdr', 'View'])
+    expect(titles().map((t) => t.textContent.trim())).toEqual(['Cmdr', 'View'])
     expect(titles()[0].matches(':first-child')).toBe(true)
     expect(titles().every((t) => t.getAttribute('aria-haspopup') === 'menu')).toBe(true)
     // A Mac bar has no access keys.
@@ -159,7 +159,7 @@ describe('demo menu bar', () => {
     expect(copy.getAttribute('aria-disabled')).toBe('true')
     expect(hidden.getAttribute('role')).toBe('menuitemcheckbox')
     expect(hidden.getAttribute('aria-checked')).toBe('true')
-    expect(hidden.querySelector('.command-menu-shortcut')?.textContent?.replace(/\s/g, '')).toBe('⇧⌘.')
+    expect(hidden.querySelector('.command-menu-shortcut')?.textContent.replace(/\s/g, '')).toBe('⇧⌘.')
     expect(hidden.querySelectorAll('.command-menu-shortcut-glyph')).toHaveLength(3)
     expect(sortBy.getAttribute('aria-haspopup')).toBe('menu')
     expect(home.textContent).toContain('Home')
@@ -258,10 +258,10 @@ describe('demo menu bar', () => {
     try {
       setup()
       await settle()
-      expect(titles().map((t) => t.textContent?.trim())).toEqual(['Cmdr', 'View'])
+      expect(titles().map((t) => t.textContent.trim())).toEqual(['Cmdr', 'View'])
       await setLocale('hu')
       flushSync()
-      expect(titles().map((t) => t.textContent?.trim())).toEqual(['Cmdr', 'Nézet'])
+      expect(titles().map((t) => t.textContent.trim())).toEqual(['Cmdr', 'Nézet'])
       expect(document.querySelector('[role="menubar"]')?.getAttribute('aria-label')).toBe('Menüsor')
       expect(rows()).toHaveLength(0)
     } finally {

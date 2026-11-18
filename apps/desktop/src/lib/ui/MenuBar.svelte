@@ -8,6 +8,7 @@
      * `app-menu.css`'s tokens. Mechanics: `DETAILS.md` § Command menus.
      */
     import { untrack } from 'svelte'
+    import { dependOn } from '#lib/utils/reactivity.js'
     import type { BarMenuView } from '#lib/ipc/bindings.js'
     import type { CommandScope } from '#lib/commands/types.js'
     import { convention } from '#lib/platform/conventions.js'
@@ -83,7 +84,7 @@
 
     // The rows moved under an open menu (a live check, a label): redrawn in place.
     $effect(() => {
-        void menus
+        dependOn(menus)
         untrack(() => {
             bar.refresh()
         })

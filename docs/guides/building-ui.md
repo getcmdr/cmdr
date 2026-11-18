@@ -41,7 +41,10 @@ is in `../design-system.md` § Soft sheets.
 ## Building a menu
 
 Two menu systems: the OS's, through muda (`apps/desktop/src-tauri/src/menu/`), and the house `Menu`
-(`apps/desktop/src/lib/ui/Menu.svelte` plus `createMenu`). **Native for a right-click on a backend object; the house
+(`apps/desktop/src/lib/ui/Menu.svelte` plus `createMenu`). Where the platform draws its menus in the page (the
+`menuModel` and `contextMenus` conventions: Windows' bar and right-click menus, Linux's bar), the OS's rows are drawn by
+the command menus (`MenuBar.svelte`, `ContextMenu.svelte`; `apps/desktop/src/lib/ui/DETAILS.md` § Command menus) from
+the same `cmdr-menu` data, so the choice below doesn't change. **Native for a right-click on a backend object; the house
 `Menu` when the content is more than plain rows, or when the menu hangs off our own chrome.** A native popup's rows are
 data in `crates/cmdr-menu/src/context/` (the desktop builds them, the browser demo draws them), so a new one starts
 there. Apply in order:

@@ -83,7 +83,7 @@ const MENUS: BarMenuView[] = [
   { id: 'menu_run', title: { text: 'Run' }, rows: [item('run_now', 'Now')] },
 ]
 
-let teardowns: (() => void)[] = []
+const teardowns: (() => void)[] = []
 
 afterEach(() => {
   for (const teardown of teardowns.splice(0)) teardown()
@@ -155,13 +155,13 @@ async function tapAlt(): Promise<void> {
 const titles = () => [...document.querySelectorAll<HTMLElement>('.menu-bar-title')]
 const surfaces = () => [...document.querySelectorAll<HTMLElement>('[data-command-menu="bar"]')]
 const rows = (depth = 0) => [...(surfaces()[depth]?.querySelectorAll<HTMLElement>('.command-menu-row') ?? [])]
-const focusedText = () => document.activeElement?.textContent?.trim()
+const focusedText = () => document.activeElement?.textContent.trim()
 
 describe('MenuBar roles and states', () => {
   it('is a menubar of menuitem titles that each pop up a menu, and passes axe', async () => {
     const { bar } = await setup()
     expect(bar?.getAttribute('aria-label')).toBe('Menu bar')
-    expect(titles().map((t) => t.textContent?.trim())).toEqual(['File', 'View', 'Run'])
+    expect(titles().map((t) => t.textContent.trim())).toEqual(['File', 'View', 'Run'])
     for (const title of titles()) {
       expect(title.getAttribute('role')).toBe('menuitem')
       expect(title.getAttribute('aria-haspopup')).toBe('menu')
@@ -182,7 +182,7 @@ describe('MenuBar roles and states', () => {
     expect(hidden.getAttribute('role')).toBe('menuitemcheckbox')
     expect(hidden.getAttribute('aria-checked')).toBe('true')
     expect(hidden.getAttribute('aria-keyshortcuts')).toBe('Control+Shift+.')
-    expect(hidden.querySelector('.command-menu-shortcut')?.textContent?.trim()).toBe('Ctrl+Shift+.')
+    expect(hidden.querySelector('.command-menu-shortcut')?.textContent.trim()).toBe('Ctrl+Shift+.')
     expect(sortBy.getAttribute('aria-haspopup')).toBe('menu')
     expect(sortBy.getAttribute('aria-expanded')).toBe('false')
     await expectNoA11yViolations(document.body)
@@ -452,7 +452,7 @@ describe('MenuBar keys on Windows', () => {
     titles()[2].dispatchEvent(new PointerEvent('pointerenter'))
     await settle()
     expect(titles()[2].getAttribute('aria-expanded')).toBe('true')
-    expect(rows().map((r) => r.textContent?.trim())).toEqual(['Now'])
+    expect(rows().map((r) => r.textContent.trim())).toEqual(['Now'])
   })
 })
 

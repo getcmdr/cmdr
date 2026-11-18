@@ -73,9 +73,11 @@ context menus (task 63 of `docs/specs/windows-port-plan.md`): `--color-menu-*`, 
 `--font-menu-*`, `--shadow-menu-surface`, and `--glass-menu-backdrop`. One token set keyed on the look, so the menu
 component stays one implementation and reads only these.
 
-- **`:root`** holds the house look every menu has today (`lib/ui/Menu.svelte`, the demo bar in
-  `lib/demo/menu-bar-style.ts`), so macOS and Linux keep it when the component moves onto the tokens. Linux's own
-  neutral theme is task 60's.
+- **Who reads them**: the command menus (`lib/ui/MenuBar.svelte`, `ContextMenu.svelte`, `lib/ui/command-menu/`; their
+  DETAILS § Command menus), and only those. A caller with a look of its own sets the tokens on a class it hands the
+  component: the browser demo's macOS 27 bar and menus (`lib/demo/menu-bar-style.ts`'s `DEMO_MENU_CLASS`).
+- **`:root`** holds the house look (`lib/ui/Menu.svelte`'s row and surface, the demo bar's strip), the Linux in-page
+  bar's until task 60 gives Linux its own neutral theme.
 - **`:root[data-look='windows']`** is Windows 11's look, light and dark, on Windows 10 and 11 alike (D5). `data-look` is
   `getCopyPlatform()`, written by `applyPlatformAttributes()` beside `data-platform`, so
   `CMDR_MOCK_CONVENTIONS=windows pnpm dev` shows it on a Mac (without Segoe UI, which a Mac lacks).
@@ -90,6 +92,10 @@ component stays one implementation and reads only these.
 - **Decision/Why: a file of its own, with hex allowed.** `app.css` is past its length budget, and the Windows values are
   WinUI's ARGB copied byte for byte, so `.stylelintrc.mjs` treats `app-menu.css` as a token file like `app.css`. Every
   selector carries its own specificity, so its import position doesn't matter.
+- **The keyboard row** has tokens of its own (`--color-menu-row-bg-focus` / `-fg-focus`, the shortcut's and chevron's
+  `-fg-focus`, `--color-menu-bar-item-bg-focus`): the house look fills it like the hover row, Windows gives it no fill
+  and WinUI's two focus rings (`--color-menu-focus-*`), per `MenuFlyoutItem_Partial.cpp`; David's look check against
+  Notepad confirms or reverses that.
 - `app-menu.test.ts` pins the shape: every house token has a Windows value, every themed one a dark and a contrast value
   (system colors only), and the Windows text tokens clear AA on the fallback and on acrylic over black and white.
 

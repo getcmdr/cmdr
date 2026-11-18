@@ -155,7 +155,7 @@
             <MenuBar
                 menus={FIXTURE}
                 ariaLabel="Fixture menu bar"
-                onPick={(id) => {
+                onPick={(id: string) => {
                     lastPick = `Fixture bar: ${id}`
                 }}
             />
@@ -172,7 +172,7 @@
                 menus={liveMenus}
                 ariaLabel="Live menu bar"
                 takesWindowKeys={false}
-                onPick={(id) => void pickMenuBarItem(id)}
+                onPick={(id: string) => void pickMenuBarItem(id)}
             />
         </div>
     </div>
@@ -186,7 +186,7 @@
             {#each VIEWER_TOGGLES as toggle (toggle.key)}
                 <Checkbox
                     checked={viewerInputs[toggle.key]}
-                    onCheckedChange={(checked) => {
+                    onCheckedChange={(checked: boolean) => {
                         viewerInputs[toggle.key] = checked
                     }}>{toggle.label}</Checkbox
                 >
@@ -198,7 +198,7 @@
                 ariaLabel="Viewer menu bar"
                 keyScope="Viewer window"
                 takesWindowKeys={false}
-                onPick={(id) => {
+                onPick={(id: string) => {
                     lastPick = `Viewer bar: ${id}`
                 }}
             />
@@ -211,7 +211,7 @@
         </p>
         <div class="anchors">
             <DemoAnchor
-                onclick={(event) => {
+                onclick={(event: MouseEvent) => {
                     fixtureMenu.open({
                         rows: CONTEXT_FIXTURE,
                         at: { x: event.clientX, y: event.clientY },
@@ -220,7 +220,7 @@
                 }}>Open a context menu</DemoAnchor
             >
             <DemoAnchor
-                onclick={(event) => {
+                onclick={(event: MouseEvent) => {
                     void openLiveContextMenu(event)
                 }}>Open the function key bar's menu</DemoAnchor
             >

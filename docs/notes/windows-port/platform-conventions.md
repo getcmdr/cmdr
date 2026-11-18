@@ -108,14 +108,14 @@ secondary sources, not confirmed on a primary page.
   and Qt's `autoDefault` makes a focused dialog button the default (unverified on a primary page).
 - `cancelKeys`: macOS `escapeOrCommandPeriod` (verified, Apple HIG Alerts); Windows and Linux `escape` (verified: Win32
   UX guide, WinUI `ContentDialog`, GNOME HIG; KDE via Qt's `QDialog`, unverified on a primary page).
-- `accessKeys`: macOS `none` (no mnemonics on the Mac, unverified on an Apple page). Windows `underlines` (David's
-  decision in D5, 2026-11-18, which reversed task 61's keytips: Microsoft's access keys guide shows WinUI's keytips on
-  Alt, verified, but Cmdr draws Win32's underlines, hidden until Alt or other keyboard use and always shown with
-  Windows' "Underline access keys" on, `SPI_GETKEYBOARDCUES`). GNOME, KDE, and other Linux `underlines` (verified for
-  GNOME: underlined letter "displayed when Alt is held down"; KDE's underline-on-Alt is Breeze's default with a setting
-  to always show them, unverified on a primary page). A CJK label's mnemonic as "保存(_S)", the letter in parentheses
-  after the label, is GTK and Qt translators' practice (unverified on a primary page); Cmdr appends " (S)" itself, since
-  its letters are picked from rendered labels.
+- `accessKeys`: macOS `none` (no mnemonics on the Mac, unverified on an Apple page). Windows
+  `underlinesAfterKeyboardUse` (David's decision in D5, 2026-11-18, which reversed task 61's keytips: Microsoft's access
+  keys guide shows WinUI's keytips on Alt, verified, but Cmdr draws Win32's underlines, hidden until Alt or other
+  keyboard use and always shown with Windows' "Underline access keys" on, `SPI_GETKEYBOARDCUES`). GNOME, KDE, and other
+  Linux `underlinesWhileAltHeld` (verified for GNOME: underlined letter "displayed when Alt is held down"; KDE's
+  underline-on-Alt is Breeze's default with a setting to always show them, unverified on a primary page). A CJK label's
+  mnemonic as "保存(_S)", the letter in parentheses after the label, is GTK and Qt translators' practice (unverified on
+  a primary page); Cmdr appends " (S)" itself, since its letters are picked from rendered labels.
 - How task 61 applied `enterActivates` on the Mac: the HIG's "no default button" for a confirmation people should read
   (the quit prompt, the tool question, the rollback question, the data wipe), and Return keeps confirming a deliberately
   chosen destructive action (permanent delete, Delete AI model, Forget memory), as the Empty Trash passage allows. One

@@ -843,15 +843,16 @@ unverified: `docs/notes/windows-port/platform-conventions.md`):
     desktop: Alt plus the letter presses or focuses the control, letters allocated from the rendered labels by the Linux
     menu bar's rule (no catalog marker, so no translator work and no new strings). How they show (David's decision,
     2026-11-18, revised by D5 the same day): underlined letters on Windows and every Linux desktop, as Win32, GTK, and
-    Qt draw them, and a label without its letter (Chinese, Japanese) carries it as "保存 (B)". Shipped, Windows still
-    draws WinUI keytips on held Alt; task 63's step 1 flips its row to underlines and its step 4 adds Win32's
-    keyboard-cue rule. Of task 59's 14 `Alt+<letter>` keys, the 12 inside dialogs (multi-rename's 11 options, About
-    this's Stop) stay the commands they are and count as their dialog's access keys (`keyScope` keeps their letters off
-    every other control); they can't become label-derived letters because the keymap is per OS, not per language. The
-    viewer's two (Alt+R, Alt+C) aren't in a dialog and stay as they are: the viewer has no other access keys to clash
-    with. All five desktop rows are pinned by `ModalDialog.conventions.svelte.test.ts`, a11y included;
-    `CMDR_MOCK_CONVENTIONS=windows pnpm dev` (or `kde`, `gnome`, `otherLinux`) shows another desktop's row. Linux: per
-    desktop. Needs 59.
+    Qt draw them, and a label without its letter (Chinese, Japanese) carries it as "保存 (B)". Shipped: Windows draws
+    underlines with Win32's keyboard-cue rule (`underlinesAfterKeyboardUse`: shown once the keyboard is in use in that
+    dialog, always under Windows' "Underline access keys"), every Linux desktop while Alt is held
+    (`underlinesWhileAltHeld`); `apps/desktop/src/lib/ui/keyboard-cues.ts` (task 63 steps 1, 4, and 5). Of task 59's 14
+    `Alt+<letter>` keys, the 12 inside dialogs (multi-rename's 11 options, About this's Stop) stay the commands they are
+    and count as their dialog's access keys (`keyScope` keeps their letters off every other control); they can't become
+    label-derived letters because the keymap is per OS, not per language. The viewer's two (Alt+R, Alt+C) aren't in a
+    dialog and stay as they are: the viewer has no other access keys to clash with. All five desktop rows are pinned by
+    `ModalDialog.conventions.svelte.test.ts`, a11y included; `CMDR_MOCK_CONVENTIONS=windows pnpm dev` (or `kde`,
+    `gnome`, `otherLinux`) shows another desktop's row. Linux: per desktop. Needs 59.
 62. [S] Windows. Typography and motion: Segoe UI Variable through the system font stack, the Windows type ramp, Windows
     animation curves and durations, and the system's animation setting. Linux: follows the desktop's font and
     reduced-motion settings. Needs 40.
