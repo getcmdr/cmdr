@@ -1,4 +1,4 @@
-use cmdr_about::owner::{InstalledApp, OwnerPlace};
+use cmdr_about::owner::{DiskLayout, InstalledApp, OwnerPlace};
 use cmdr_about::text::ItemText;
 
 use super::*;
@@ -42,7 +42,7 @@ fn fake_source() -> AppSource {
 
 fn owner_of(relative: &str) -> Fact<OwnerClaim> {
     let path = format!("{HOME}/{relative}");
-    owner_fact(&OwnerQuestion::of(&path, HOME), &path, fake_source())
+    owner_fact(&OwnerQuestion::of(&path, HOME, DiskLayout::Mac), &path, fake_source())
 }
 
 #[test]
@@ -87,7 +87,11 @@ fn a_receipt_question_asks_the_receipts_for_the_items_own_path() {
         ..fake_source()
     };
     assert_eq!(
-        owner_fact(&OwnerQuestion::of("/Library/Fonts", HOME), "/Library/Fonts", source),
+        owner_fact(
+            &OwnerQuestion::of("/Library/Fonts", HOME, DiskLayout::Mac),
+            "/Library/Fonts",
+            source
+        ),
         Fact::Known(OwnerClaim::InstalledBy {
             pkg_id: ItemText::new("com.apple.files.data-template"),
             part_of_os: true,

@@ -7,10 +7,16 @@
  * from disk, so it guards any hand edit of an `en` block, the way a per-OS string
  * changes (`src/lib/intl/DETAILS.md` § Platform variants).
  *
- * Only blocks are read for words: a plain value shows the same text on every OS,
- * and the ones still in macOS words are `docs/notes/windows-port/copy-decisions.md`
- * § Open rows. A branch that keeps a macOS word on purpose goes in `EXCEPTIONS`,
- * with the reason.
+ * A branch that keeps a macOS word on purpose goes in `EXCEPTIONS`, with the reason.
+ *
+ * A plain value shows the same text on every OS, so one that names a macOS thing
+ * (`macWordsInPlainValue`: Finder, Mac, Full Disk Access, iCloud, Trash, Terminal, a
+ * `{system_settings}`-style token, …) reads wrong on Windows and Linux unless only a
+ * Mac ever shows it. Each such key, or a key prefix ending in `.`, sits in
+ * `MAC_ONLY_PLAIN_VALUES` with the reason no other OS reaches it (usually the
+ * capability that hides its surface); any other hit wants a `{platform, select}`
+ * block. The rows still waiting on Windows code are `docs/notes/windows-port/copy-decisions.md`
+ * § Open rows.
  *
  * Key glyphs are stricter: ⌘, ⌥, ⌃, and ⇧ also never appear in a plain value
  * (`macKeyGlyphsInPlainValue`). A key in a sentence is a `ShortcutChip` tag or a
@@ -108,6 +114,139 @@ function wrongOsWords(key: string, value: string): string[] {
   return hits
 }
 
+/**
+ * macOS things a plain value can't name, since it shows them on every OS: the branch rules'
+ * macOS words (minus the key glyphs, `macKeyGlyphsInPlainValue`'s), the places and permissions
+ * only macOS has, and the two words Windows says differently (style guide § "Platform vocabulary").
+ */
+const PLAIN_VALUE_MAC_WORDS: readonly WordRule[] = [
+  ...MACOS_WORDS.filter(({ pattern }) => pattern !== MAC_KEY_GLYPH),
+  { rule: 'macOS word “System Settings”', pattern: /\bSystem Settings\b/ },
+  { rule: 'macOS word “Full Disk Access”', pattern: /\bFull Disk Access\b/i },
+  { rule: 'macOS word “iCloud”', pattern: /\biCloud\b/ },
+  { rule: 'macOS word “AirDrop”', pattern: /\bAirDrop\b/ },
+  { rule: 'macOS word “Time Machine”', pattern: /\bTime Machine\b/ },
+  { rule: 'macOS word “Apple silicon”', pattern: /\bApple silicon\b/i },
+  { rule: 'macOS word “Applications folder”', pattern: /\bApplications folder\b/i },
+  ...WINDOWS_WRONG_WORDS.filter(({ rule }) => !rule.startsWith('“Quit”')),
+]
+
+/** Every macOS word or token a plain (block-less) `value` shows to every OS, as `<key>: <rule>`. */
+function macWordsInPlainValue(key: string, value: string): string[] {
+  if (platformBranches(value).some(({ name }) => name !== null)) return []
+  const visible = visibleText(key, value)
+  return [
+    ...PLAIN_VALUE_MAC_WORDS.filter(({ pattern }) => pattern.test(visible)).map(({ rule }) => rule),
+    ...SYSTEM_TOKENS.filter((token) => value.includes(token)).map((token) => `macOS-only token ${token}`),
+  ].map((rule) => `${key}: ${rule}`)
+}
+
+/**
+ * Plain values that name a macOS thing and stay plain, because only a Mac ever shows them: a key,
+ * or a key prefix ending in `.` or `*` (`macOnlyEntryFor`), → why no other OS reaches it. Most name the capability
+ * (`apps/desktop/src-tauri/src/platform/capabilities.rs`) that hides the surface off macOS. A
+ * value that a Windows or Linux user can see doesn't belong here: give it a `{platform, select}`
+ * block (`src/lib/intl/DETAILS.md` § Platform variants).
+ */
+const MAC_ONLY_PLAIN_VALUES: Readonly<Record<string, string>> = {
+  'aboutThis.':
+    'states what macOS recorded (where-from, quarantine, receipts) or what a Mac file carries (Mach-O, Apple signatures), worded as recorded',
+  'ai.local.notInstalled': '`localAi`: the bundled model runtime is the macOS ARM64 build only',
+  'settings.ai.tooltipLocal': '`localAi`: the bundled model runtime is the macOS ARM64 build only',
+  'settings.ai.tooltipLocalDisabled': '`localAi`: the bundled model runtime is the macOS ARM64 build only',
+  'onboarding.stepAi.localTooltip': '`localAi`: the bundled model runtime is the macOS ARM64 build only',
+  'askCmdr.tool.outcome.miss.needsDiskAccess': 'a macOS privacy gate (TCC) is the only source of this miss',
+  'askCmdr.tool.tag.': '`colorTags`: the tag tool refuses off macOS',
+  'commands.tagsToggle*': '`colorTags`: the tag commands exist only on macOS',
+  'fileExplorer.tags.skipped': '`colorTags`: only macOS tags files',
+  'settings.listing.showTags.description': '`colorTags`: the setting needs the capability',
+  'commands.handler.openTerminalHere.': '`openTerminalHere`: the command exists only on macOS',
+  'fileExplorer.functionKeyBar.terminalLabel': '`openTerminalHere`: the F9 slot exists only with the capability',
+  'settings.behavior.openTerminalHereApp.description': '`openTerminalHere`: the setting needs the capability',
+  'settings.navigationAndFileOps.card.terminal': '`openTerminalHere`: the card needs the capability',
+  'commands.handler.getInfo.': '`getInfo`: Finder’s Get Info, macOS only',
+  'settings.behavior.textEditorApp.description': '`textEditorChoice`: the setting needs the capability',
+  'downloads.fda.': '`fullDiskAccess`: the Full Disk Access prompt is macOS only',
+  'onboarding.fdaBadge.': '`fullDiskAccess`: the badge needs the capability',
+  'onboarding.stepFda.': '`fullDiskAccess`: Linux and Windows skip the step',
+  'onboarding.stepAi.banner*': '`fullDiskAccess`: the FDA-outcome banner is hidden without the capability',
+  'askCmdr.wake.needsFullDiskAccess': 'set only while the macOS Full Disk Access question is open (`fda_gate`)',
+  'search.coverage.deniedFullDiskAccess':
+    '`fullDiskAccess`: shown only with the grant offer, which needs the capability',
+  'search.coverage.setUpFullDiskAccess':
+    '`fullDiskAccess`: shown only with the grant offer, which needs the capability',
+  'settings.onboarding.fullDiskAccessChoice.label': '`fullDiskAccess`: the hidden setting needs the capability',
+  'errors.write.trashRefused.suggestion.noFullDiskAccess': '`fullDiskAccess`: picked only where the capability is on',
+  'errors.listing.tccRestricted.': 'a macOS privacy gate (TCC) is the only source of this reason',
+  'errors.listing.emptyRootICloud.': 'iCloud Drive is found only under `~/Library/Mobile Documents`',
+  'errors.provider.iCloud.': 'iCloud Drive is found only under `~/Library/Mobile Documents`',
+  'errors.provider.macFuse.': 'found only by the macOS `statfs` fs type',
+  'errors.provider.pCloudFuse.': 'found only under `/Volumes/pCloudDrive` or by the macOS `statfs` fs type',
+  'errors.write.trashRefused.message.locked': 'the Locked flag (`uchg`) is read only by the macOS metadata body',
+  'errors.write.trashRefused.suggestion.locked': 'the Locked flag (`uchg`) is read only by the macOS metadata body',
+  'errors.mutation.fileLocked': 'the Locked flag (`uchg`) is read only by the macOS metadata body',
+  'errors.mutation.sipProtected': 'System Integrity Protection is macOS',
+  'transfer.systemLockedKept': '`schg` is read only by the macOS metadata body',
+  'errors.mount.signInHelperStuck': '`NetAuthSysAgent` stalls only the macOS kernel mount',
+  'servers.refusal.signInHelperStuck': '`NetAuthSysAgent` stalls only the macOS kernel mount',
+  'fileExplorer.pane.directConnectionBlockedAfterUpdateToast': '`localNetworkPermission`: macOS only',
+  'settings.network.permissionIntroSuffix': '`localNetworkPermission`: macOS only',
+  'fileExplorer.navigation.useSavedPasswordMessage': 'offered only when the macOS Keychain holds a saved password',
+  'fileExplorer.quickLookHint.': '`quickLook`: the hint shows only where Quick Look exists',
+  'settings.fileExplorer.suppressQuickLookHint.': '`quickLook`: the setting needs the capability',
+  'viewer.binaryWarning.bodyWithKeys': '`quickLook`: picked only while `file.quickLook` has a key',
+  'viewer.binaryWarning.bodyWithQuickLookKey': '`quickLook`: picked only while `file.quickLook` has a key',
+  'menu.file.quickLook': '`quickLook`: a macOS-only row in the bar and the right-click menu',
+  'settings.fileViewer.suppressBinaryWarning.keywords': 'search keywords, never shown; “Quick Look” only adds a match',
+  'fileOperations.transferDialog.macOnlyFiles.toggle':
+    'names the files Macs leave behind (.DS_Store, ._*), true on every OS',
+  'settings.fileOperations.macOnlyFiles.label': 'names the files Macs leave behind (.DS_Store, ._*), true on every OS',
+  'main.dockPinNudge.': '`dockPin`: macOS only',
+  'settings.behavior.dockPinNudgeOfferedAt.': '`dockPin`: the hidden setting needs the capability',
+  'main.revealNudge.': '`revealHandler`: macOS only',
+  'main.revealActivation.': '`revealHandler`: macOS only',
+  'settings.revealHandler.': '`revealHandler`: the card needs the capability',
+  'settings.navigationAndFileOps.card.showInFinder': '`revealHandler`: the card needs the capability',
+  'settings.behavior.revealNudgeOfferedAt.': '`revealHandler`: the hidden setting needs the capability',
+  'settings.behavior.revealActivationNoticeSeen.': '`revealHandler`: the setting needs the capability',
+  'main.finderExtensionNudge.': '`finderExtension`: macOS only',
+  'settings.finderExtension.': '`finderExtension`: the card needs the capability',
+  'settings.behavior.finderExtensionNudgeOfferedAt.': '`finderExtension`: the hidden setting needs the capability',
+  'main.oldMacos.': 'the old-macOS notice runs only on macOS (`startup-gates.ts`)',
+  'settings.advanced.oldMacosNoticeShown.':
+    'the old-macOS notice’s flag; the label is an open row in `docs/notes/windows-port/copy-decisions.md`',
+  'main.cliCommand.': '`cliCommand`: macOS only',
+  'notifications.permissionDenied': 'only macOS reports notifications as denied (`notifications.rs`)',
+  'settings.mediaIndex.privacyNote':
+    '`imageIndexing`: names the macOS engine (Vision); rewrite it with the Windows engine (#942)',
+  'settings.mediaIndex.clip.notSupported':
+    '`imageIndexing`: names the macOS engine’s hardware; rewrite it with the Windows engine (#942)',
+  'settings.mediaIndex.parallelism.description':
+    '`imageIndexing`: names the macOS engine’s hardware; rewrite it with the Windows engine (#942)',
+  'settings.advanced.showSafeSaveFiles.description': '`safeSaveFiles`: the setting needs the capability',
+  'shortcuts.conflict.reservedByMacOs': 'only an app-menu command (`appMenu`, macOS) is reserved this way',
+  'shortcuts.section.macOs*': 'the badge marks app-menu commands (`appMenu`, macOS)',
+  'shortcuts.conflict.systemShortcut': 'the macOS row of `system-reserved-keys.ts`; Windows and Linux have their own',
+  'shortcuts.system.spotlight': 'the macOS row of `system-reserved-keys.ts`; Windows and Linux have their own',
+  'shortcuts.system.finderSearch': 'the macOS row of `system-reserved-keys.ts`; Windows and Linux have their own',
+  'updates.unwritable.': 'only the macOS installer reports an unwritable bundle',
+  'updates.status.unwritableStandard': 'only the macOS installer reports an unwritable bundle',
+  'updates.moveToApplicationsDialog.': 'only the macOS installer reports a translocated bundle',
+}
+
+/**
+ * The `MAC_ONLY_PLAIN_VALUES` entry that covers `key`: the key itself, a prefix of it ending in
+ * `.`, or one ending in `*` (the prefix before the star, for a family that shares no dot segment).
+ */
+function macOnlyEntryFor(key: string, entries: Readonly<Record<string, string>>): string | undefined {
+  return Object.keys(entries).find(
+    (entry) =>
+      entry === key ||
+      (entry.endsWith('.') && key.startsWith(entry)) ||
+      (entry.endsWith('*') && key.startsWith(entry.slice(0, -1))),
+  )
+}
+
 /** `[key]` when a plain (block-less) `value` shows a macOS key glyph to every OS, else `[]`. */
 function macKeyGlyphsInPlainValue(key: string, value: string): string[] {
   return platformBranches(value).some(({ name, text }) => name === null && MAC_KEY_GLYPH.test(visibleText(key, text)))
@@ -126,6 +265,42 @@ describe('macKeyGlyphsInPlainValue', () => {
     expect(macKeyGlyphsInPlainValue('a.b', 'Copy files first with {combo}.')).toEqual([])
     const block = '{platform, select, macos {Add a modifier (⌘ or ⇧)} other {Add a modifier (Ctrl or Shift)}}'
     expect(macKeyGlyphsInPlainValue('a.b', block)).toEqual([])
+  })
+})
+
+describe('macWordsInPlainValue', () => {
+  it('flags a macOS word, place, or token in a plain value', () => {
+    expect(macWordsInPlainValue('a.b', 'It never leaves your Mac.')).toEqual(['a.b: macOS word “Mac”'])
+    expect(macWordsInPlainValue('a.b', 'Requires Full Disk Access.')).toEqual(['a.b: macOS word “Full Disk Access”'])
+    expect(macWordsInPlainValue('a.b', 'Moved to Trash')).toEqual([
+      'a.b: “Trash” on Windows: “Delete” in a label, “the Recycle Bin” in a sentence',
+    ])
+    expect(macWordsInPlainValue('errors.x.suggestion', 'Open {system_settings}.')).toEqual([
+      'errors.x.suggestion: macOS-only token {system_settings}',
+    ])
+  })
+
+  it('leaves a platform block, a word inside a longer one, and a placeholder name alone', () => {
+    const block = '{platform, select, macos {It never leaves your Mac.} other {It never leaves your computer.}}'
+    expect(macWordsInPlainValue('a.b', block)).toEqual([])
+    expect(macWordsInPlainValue('a.b', 'Machine learning runs on macOSX-free hardware')).toEqual([])
+    expect(macWordsInPlainValue('a.b', 'Command palette…')).toEqual([])
+    expect(macWordsInPlainValue('a.b', 'Opened {macName}')).toEqual([])
+  })
+})
+
+describe('macOnlyEntryFor', () => {
+  const entries = { 'main.dockPinNudge.': 'r', 'commands.tagsToggle*': 'r', 'notifications.permissionDenied': 'r' }
+
+  it('matches a key, a dot prefix, and a star prefix', () => {
+    expect(macOnlyEntryFor('notifications.permissionDenied', entries)).toBe('notifications.permissionDenied')
+    expect(macOnlyEntryFor('main.dockPinNudge.title', entries)).toBe('main.dockPinNudge.')
+    expect(macOnlyEntryFor('commands.tagsToggleRed.description', entries)).toBe('commands.tagsToggle*')
+  })
+
+  it('reads a key without a trailing dot or star as exact', () => {
+    expect(macOnlyEntryFor('notifications.permissionDeniedAgain', entries)).toBeUndefined()
+    expect(macOnlyEntryFor('main.dockPinNudgeOfferedAt', entries)).toBeUndefined()
   })
 })
 
@@ -199,6 +374,25 @@ describe('the en catalog', () => {
   it('types no macOS key glyph into a plain value', () => {
     const { messages } = loadCatalog('en')
     expect(Object.entries(messages).flatMap(([key, value]) => macKeyGlyphsInPlainValue(key, value))).toEqual([])
+  })
+
+  it('names no macOS thing in a plain value that Windows or Linux shows', () => {
+    const { messages } = loadCatalog('en')
+    const hits = Object.entries(messages)
+      .filter(([key]) => macOnlyEntryFor(key, MAC_ONLY_PLAIN_VALUES) === undefined)
+      .flatMap(([key, value]) => macWordsInPlainValue(key, value))
+    expect(hits).toEqual([])
+  })
+
+  it('names only live keys in its Mac-only plain values, each with a reason', () => {
+    const { messages } = loadCatalog('en')
+    const covering = new Set(
+      Object.entries(messages)
+        .filter(([key, value]) => macWordsInPlainValue(key, value).length > 0)
+        .map(([key]) => macOnlyEntryFor(key, MAC_ONLY_PLAIN_VALUES)),
+    )
+    expect(Object.keys(MAC_ONLY_PLAIN_VALUES).filter((entry) => !covering.has(entry))).toEqual([])
+    expect(Object.entries(MAC_ONLY_PLAIN_VALUES).filter(([, reason]) => reason.trim().length < 10)).toEqual([])
   })
 
   it('names only live branches in its exceptions', () => {

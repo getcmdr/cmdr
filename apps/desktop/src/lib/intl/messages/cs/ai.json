@@ -111,9 +111,9 @@
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "6594500"
   },
-  "ai.cloudConsent.aboutThis.item.appAndSigner": "U aplikace nebo programu název, ID a verze. U nich i u obrazu disku název a ID týmu toho, kdo je podepsal, jestli kód pořád odpovídá podpisu a jestli je přiložený doklad Applu o notarizaci",
+  "ai.cloudConsent.aboutThis.item.appAndSigner": "{platform, select, macos {U aplikace nebo programu název, ID a verze. U nich i u obrazu disku název a ID týmu toho, kdo je podepsal, jestli kód pořád odpovídá podpisu a jestli je přiložený doklad Applu o notarizaci} windows {Žádné podrobnosti o aplikacích ani podpisy kódu: Cmdr je na tomto počítači nečte} other {Žádné podrobnosti o aplikacích ani podpisy kódu: Cmdr je na tomto počítači nečte}}",
   "@ai.cloudConsent.aboutThis.item.appAndSigner": {
-    "sourceHash": "471891d"
+    "sourceHash": "d597a97"
   },
   "ai.cloudConsent.aboutThis.item.use": "Kdy jste položku naposledy otevřeli, kolikrát a která aplikace ji otevírá",
   "@ai.cloudConsent.aboutThis.item.use": {

@@ -740,9 +740,9 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "讓你能搜尋影像中的文字。這些文字絕不會離開你的 Mac。",
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {讓你能搜尋影像中的文字。這些文字絕不會離開你的 Mac。} windows {讓你能搜尋影像中的文字。這些文字絕不會離開你的電腦。} other {讓你能搜尋影像中的文字。這些文字絕不會離開你的電腦。}}",
   "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
+    "sourceHash": "2a55989"
   },
   "settings.mediaIndex.enabled.keywords": "影像, 圖片, 照片, 文字, 文字辨識, 辨識, 搜尋, 索引, 截圖, 內容",
   "@settings.mediaIndex.enabled.keywords": {
@@ -816,9 +816,9 @@
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
   },
-  "settings.mediaIndex.networkVolumes.optInHelp": "Cmdr 會讀取這些照片中的文字，方便你搜尋。整個過程都在你的 Mac 上執行，照片不會離開你的網路。",
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {Cmdr 會讀取這些照片中的文字，方便你搜尋。整個過程都在你的 Mac 上執行，照片不會離開你的網路。} windows {Cmdr 會讀取這些照片中的文字，方便你搜尋。整個過程都在你的電腦上執行，照片不會離開你的網路。} other {Cmdr 會讀取這些照片中的文字，方便你搜尋。整個過程都在你的電腦上執行，照片不會離開你的網路。}}",
   "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
+    "sourceHash": "c81e602"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "總是為這部磁碟機建立索引",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -924,9 +924,9 @@
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
   },
-  "settings.mediaIndex.progress.local": "這部 Mac",
+  "settings.mediaIndex.progress.local": "{platform, select, macos {這部 Mac} windows {這台電腦} other {這台電腦}}",
   "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
+    "sourceHash": "80e7006"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, other {{totalText} 張影像中已有 {enrichedText} 張建立索引}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1077,9 +1077,9 @@
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
   },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "用全域快速鍵，從任何 App 跳至你最近的下載項目。需要「完全取用磁碟」權限。",
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {用全域快速鍵，從任何 App 跳至你最近的下載項目。需要「完全取用磁碟」權限。} other {用全域快速鍵，從任何 App 跳至你最近的下載項目。}}",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
+    "sourceHash": "9748f9b"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "快速鍵, 熱鍵, 全域, 下載, 下載項目, 跳轉, 跳到, 前往, 最新",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2807,9 +2807,13 @@
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
   },
-  "settings.summary.imageIndexing": "搜尋影像中的文字。在你的 Mac 上執行，什麼都不會外傳。",
+  "settings.summary.imageIndexing": "{platform, select, macos {搜尋影像中的文字。在你的 Mac 上執行，什麼都不會外傳。} windows {搜尋影像中的文字。在你的電腦上執行，什麼都不會外傳。} other {搜尋影像中的文字。在你的電腦上執行，什麼都不會外傳。}}",
   "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
+    "sourceHash": "287c7fc"
+  },
+  "settings.summary.fallback": "{section}的設定。",
+  "@settings.summary.fallback": {
+    "sourceHash": "83b4a28"
   },
   "settings.summary.noSubsections": "這個部分沒有子部分。",
   "@settings.summary.noSubsections": {

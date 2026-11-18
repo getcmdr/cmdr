@@ -424,9 +424,9 @@
   "@licensing.section.includedFeatures": {
     "sourceHash": "0a54a41"
   },
-  "licensing.section.includedMacs": "Bármennyi saját Mac, személyes használatra",
+  "licensing.section.includedMacs": "{platform, select, macos {Bármennyi saját Mac, személyes használatra} windows {Bármennyi saját gép, személyes használatra} other {Bármennyi saját számítógép, személyes használatra}}",
   "@licensing.section.includedMacs": {
-    "sourceHash": "d0968e4"
+    "sourceHash": "109bfe5"
   },
   "licensing.section.includedUpdates": "Automatikus frissítések",
   "@licensing.section.includedUpdates": {

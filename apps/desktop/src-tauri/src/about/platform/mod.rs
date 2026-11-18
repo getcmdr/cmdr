@@ -50,6 +50,10 @@ const _: fn(&str) -> Result<Vec<String>, UnknownWhy> = receipts;
 /// What this OS keeps about any item, for the plan.
 pub(crate) use imp::os_caps;
 
+/// Whose folder layout this computer's own disk follows, for the owner row's standard
+/// folders: a Mac's only on macOS.
+pub(crate) use imp::DISK_LAYOUT;
+
 /// The `stat` fields that differ per OS.
 pub(crate) use imp::stat_extras;
 

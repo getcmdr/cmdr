@@ -738,9 +738,9 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "Дає змогу шукати текст на ваших зображеннях. Цей текст ніколи не залишає ваш Mac.",
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {Дає змогу шукати текст на ваших зображеннях. Цей текст ніколи не залишає ваш Mac.} windows {Дає змогу шукати текст на ваших зображеннях. Цей текст ніколи не залишає ваш ПК.} other {Дає змогу шукати текст на ваших зображеннях. Цей текст ніколи не залишає ваш компʼютер.}}",
   "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
+    "sourceHash": "2a55989"
   },
   "settings.mediaIndex.enabled.keywords": "розпізнавання тексту, напис, картинка, знімок екрана, скріншот, світлина, вміст",
   "@settings.mediaIndex.enabled.keywords": {
@@ -814,9 +814,9 @@
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
   },
-  "settings.mediaIndex.networkVolumes.optInHelp": "Cmdr читає текст на цих фото, щоб його можна було шукати. Усе працює на вашому Mac, і фото ніколи не залишають вашу мережу.",
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {Cmdr читає текст на цих фото, щоб його можна було шукати. Усе працює на вашому Mac, і фото ніколи не залишають вашу мережу.} windows {Cmdr читає текст на цих фото, щоб його можна було шукати. Усе працює на вашому ПК, і фото ніколи не залишають вашу мережу.} other {Cmdr читає текст на цих фото, щоб його можна було шукати. Усе працює на вашому компʼютері, і фото ніколи не залишають вашу мережу.}}",
   "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
+    "sourceHash": "c81e602"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Завжди індексувати цей диск",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -922,9 +922,9 @@
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
   },
-  "settings.mediaIndex.progress.local": "Цей Mac",
+  "settings.mediaIndex.progress.local": "{platform, select, macos {Цей Mac} windows {Цей ПК} other {Цей компʼютер}}",
   "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
+    "sourceHash": "80e7006"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {Проіндексовано {enrichedText} з {totalText} зображення} few {Проіндексовано {enrichedText} з {totalText} зображень} many {Проіндексовано {enrichedText} з {totalText} зображень} other {Проіндексовано {enrichedText} з {totalText} зображення}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1075,9 +1075,9 @@
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
   },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Перехід до останнього викачаного файлу з будь-якої програми глобальним скороченням. Потрібен «Повний доступ до диска».",
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {Перехід до останнього викачаного файлу з будь-якої програми глобальним скороченням. Потрібен «Повний доступ до диска».} other {Перехід до останнього викачаного файлу з будь-якої програми глобальним скороченням.}}",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
+    "sourceHash": "9748f9b"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "скорочення, гаряча клавіша, глобальний, завантаження, завантажене, перейти, стрибнути",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2805,9 +2805,13 @@
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
   },
-  "settings.summary.imageIndexing": "Пошук тексту на ваших зображеннях. Працює на вашому Mac, і ніщо не виходить за його межі.",
+  "settings.summary.imageIndexing": "{platform, select, macos {Пошук тексту на ваших зображеннях. Працює на вашому Mac, і ніщо не виходить за його межі.} windows {Пошук тексту на ваших зображеннях. Працює на вашому ПК, і ніщо не виходить за його межі.} other {Пошук тексту на ваших зображеннях. Працює на вашому компʼютері, і ніщо не виходить за його межі.}}",
   "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
+    "sourceHash": "287c7fc"
+  },
+  "settings.summary.fallback": "Параметри розділу «{section}».",
+  "@settings.summary.fallback": {
+    "sourceHash": "83b4a28"
   },
   "settings.summary.noSubsections": "У цьому розділі немає підрозділів.",
   "@settings.summary.noSubsections": {

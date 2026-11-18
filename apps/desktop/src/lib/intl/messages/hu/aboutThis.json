@@ -691,9 +691,9 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "A saját mappád",
+  "aboutThis.standardFolder.home": "{platform, select, windows {A felhasználói mappád} other {A saját mappád}}",
   "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
+    "sourceHash": "d93508f"
   },
   "aboutThis.standardFolder.desktop": "Az Íróasztal mappád",
   "@aboutThis.standardFolder.desktop": {
@@ -940,9 +940,9 @@
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
   },
-  "aboutThis.removal.standardFolder.home": "Ez a saját mappád: minden, ami a tiéd ezen a számítógépen, benne van, és a rendszer meg minden app számít rá.",
+  "aboutThis.removal.standardFolder.home": "{platform, select, windows {Ez a felhasználói mappád: minden, ami a tiéd ezen a gépen, benne van, és a rendszer meg minden app számít rá.} other {Ez a saját mappád: minden, ami a tiéd ezen a számítógépen, benne van, és a rendszer meg minden app számít rá.}}",
   "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
+    "sourceHash": "f01131f"
   },
   "aboutThis.removal.standardFolder.personal": "Ez az egyik szabványos mappád: a rendszer és az appjaid számítanak rá, hogy megtalálják, és ami benne van, az is vele megy.",
   "@aboutThis.removal.standardFolder.personal": {

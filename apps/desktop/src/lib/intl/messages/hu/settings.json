@@ -740,9 +740,9 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "Kereshetővé teszi a képeidben lévő szöveget, amely soha nem hagyja el a Macet.",
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {Kereshetővé teszi a képeidben lévő szöveget, amely soha nem hagyja el a Macet.} windows {Kereshetővé teszi a képeidben lévő szöveget, amely soha nem hagyja el a gépedet.} other {Kereshetővé teszi a képeidben lévő szöveget, amely soha nem hagyja el a számítógépedet.}}",
   "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
+    "sourceHash": "2a55989"
   },
   "settings.mediaIndex.enabled.keywords": "kép, fotó, szöveg, szövegfelismerés, keresés, index, indexelés, képernyőfotó, tartalom",
   "@settings.mediaIndex.enabled.keywords": {
@@ -816,9 +816,9 @@
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
   },
-  "settings.mediaIndex.networkVolumes.optInHelp": "A Cmdr beolvassa a fotókban lévő szöveget, hogy rá tudj keresni. A Macen fut, és a fotók soha nem hagyják el a hálózatodat.",
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {A Cmdr beolvassa a fotókban lévő szöveget, hogy rá tudj keresni. A Macen fut, és a fotók soha nem hagyják el a hálózatodat.} windows {A Cmdr beolvassa a fotókban lévő szöveget, hogy rá tudj keresni. A gépeden fut, és a fotók soha nem hagyják el a hálózatodat.} other {A Cmdr beolvassa a fotókban lévő szöveget, hogy rá tudj keresni. A számítógépeden fut, és a fotók soha nem hagyják el a hálózatodat.}}",
   "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
+    "sourceHash": "c81e602"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Ez a meghajtó mindig legyen indexelve",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -924,9 +924,9 @@
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
   },
-  "settings.mediaIndex.progress.local": "Ez a Mac",
+  "settings.mediaIndex.progress.local": "{platform, select, macos {Ez a Mac} windows {Ez a gép} other {Ez a számítógép}}",
   "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
+    "sourceHash": "80e7006"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {{enrichedText} / {totalText} kép indexelve} other {{enrichedText} / {totalText} kép indexelve}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1077,9 +1077,9 @@
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
   },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Ugorj a legutóbbi letöltésedhez bármelyik appból egy rendszerszintű billentyűparanccsal. Teljes lemezhozzáférést igényel.",
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {Ugorj a legutóbbi letöltésedhez bármelyik appból egy rendszerszintű billentyűparanccsal. Teljes lemezhozzáférést igényel.} other {Ugorj a legutóbbi letöltésedhez bármelyik appból egy rendszerszintű billentyűparanccsal.}}",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
+    "sourceHash": "9748f9b"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "billentyűparancs, gyorsbillentyű, globális, letöltés, letöltések, legutóbbi, ugrás",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2809,9 +2809,13 @@
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
   },
-  "settings.summary.imageIndexing": "Keress a képeidben lévő szövegben. A Macen fut, és semmi sem hagyja el.",
+  "settings.summary.imageIndexing": "{platform, select, macos {Keress a képeidben lévő szövegben. A Macen fut, és semmi sem hagyja el.} windows {Keress a képeidben lévő szövegben. A gépeden fut, és semmi sem hagyja el.} other {Keress a képeidben lévő szövegben. A számítógépeden fut, és semmi sem hagyja el.}}",
   "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
+    "sourceHash": "287c7fc"
+  },
+  "settings.summary.fallback": "Beállítások ehhez: {section}.",
+  "@settings.summary.fallback": {
+    "sourceHash": "83b4a28"
   },
   "settings.summary.noSubsections": "Ennek a szakasznak nincsenek alszakaszai.",
   "@settings.summary.noSubsections": {

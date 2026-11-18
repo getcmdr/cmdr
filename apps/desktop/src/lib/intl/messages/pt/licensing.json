@@ -425,9 +425,9 @@
   "@licensing.section.includedFeatures": {
     "sourceHash": "0a54a41"
   },
-  "licensing.section.includedMacs": "Todos os seus Macs, para uso pessoal",
+  "licensing.section.includedMacs": "{platform, select, macos {Todos os seus Macs, para uso pessoal} windows {Todos os seus PCs, para uso pessoal} other {Todos os seus computadores, para uso pessoal}}",
   "@licensing.section.includedMacs": {
-    "sourceHash": "d0968e4"
+    "sourceHash": "109bfe5"
   },
   "licensing.section.includedUpdates": "Atualizações automáticas",
   "@licensing.section.includedUpdates": {

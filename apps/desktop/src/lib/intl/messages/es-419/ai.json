@@ -3,6 +3,10 @@
   "@ai.translateError.off.body": {
     "sourceHash": "2212693"
   },
+  "ai.cloudConsent.aboutThis.item.appAndSigner": "{platform, select, macos {En una app o un programa, su nombre, su ID y su versión. En ellos o en una imagen de disco, el nombre y el ID de equipo de quien los firmó, si su código aún coincide con esa firma y si lleva adjunto el ticket de notarización de Apple} windows {Ni datos de apps ni firmas de código: Cmdr no los lee en este PC} other {Ni datos de apps ni firmas de código: Cmdr no los lee en esta computadora}}",
+  "@ai.cloudConsent.aboutThis.item.appAndSigner": {
+    "sourceHash": "d86a26f"
+  },
   "ai.cloudConsent.askCmdr.contentsRule": "Cmdr nunca envía archivos completos, fotos ni miniaturas. Cuando necesita saber más sobre un archivo, puede leer una parte limitada de su contenido: algunas líneas de texto, unas pocas páginas de un PDF junto con su título y su autor, la lista de archivos que contiene un archivo comprimido o los datos de la cámara de una foto, incluido el lugar donde se tomó. La búsqueda de fotos funciona igual: el texto que Cmdr reconoció dentro de las fotos coincidentes y sus etiquetas se envían a tu proveedor para que pueda encontrarlas.",
   "@ai.cloudConsent.askCmdr.contentsRule": {
     "sourceHash": "10bc377"

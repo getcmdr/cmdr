@@ -740,9 +740,9 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "让图像中的文字可以搜索。这些文字绝不会离开你的 Mac。",
+  "settings.mediaIndex.enabled.summary": "{platform, select, macos {让图像中的文字可以搜索。这些文字绝不会离开你的 Mac。} windows {让图像中的文字可以搜索。这些文字绝不会离开你的电脑。} other {让图像中的文字可以搜索。这些文字绝不会离开你的电脑。}}",
   "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
+    "sourceHash": "2a55989"
   },
   "settings.mediaIndex.enabled.keywords": "图像、图片、照片、文字、文本、文字识别、搜索、索引、截图、内容",
   "@settings.mediaIndex.enabled.keywords": {
@@ -816,9 +816,9 @@
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
   },
-  "settings.mediaIndex.networkVolumes.optInHelp": "Cmdr 会读取这些照片中的文字，方便你搜索。整个过程都在你的 Mac 上运行，照片不会离开你的网络。",
+  "settings.mediaIndex.networkVolumes.optInHelp": "{platform, select, macos {Cmdr 会读取这些照片中的文字，方便你搜索。整个过程都在你的 Mac 上运行，照片不会离开你的网络。} windows {Cmdr 会读取这些照片中的文字，方便你搜索。整个过程都在你的电脑上运行，照片不会离开你的网络。} other {Cmdr 会读取这些照片中的文字，方便你搜索。整个过程都在你的电脑上运行，照片不会离开你的网络。}}",
   "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
+    "sourceHash": "c81e602"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "始终索引此驱动器",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -924,9 +924,9 @@
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
   },
-  "settings.mediaIndex.progress.local": "此 Mac",
+  "settings.mediaIndex.progress.local": "{platform, select, macos {此 Mac} windows {此电脑} other {此电脑}}",
   "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
+    "sourceHash": "80e7006"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {{totalText} 张图像中的 {enrichedText} 张已索引} other {{totalText} 张图像中的 {enrichedText} 张已索引}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1077,9 +1077,9 @@
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
   },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "用系统级快捷键从任意应用跳转到你最近的下载内容。需要完全磁盘访问权限。",
+  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "{platform, select, macos {用系统级快捷键从任意应用跳转到你最近的下载内容。需要完全磁盘访问权限。} other {用系统级快捷键从任意应用跳转到你最近的下载内容。}}",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
+    "sourceHash": "9748f9b"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "快捷键、热键、全局、下载、最新、跳转、前往",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2807,9 +2807,13 @@
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
   },
-  "settings.summary.imageIndexing": "搜索图像中的文字。在你的 Mac 上运行，绝不外传。",
+  "settings.summary.imageIndexing": "{platform, select, macos {搜索图像中的文字。在你的 Mac 上运行，绝不外传。} windows {搜索图像中的文字。在你的电脑上运行，绝不外传。} other {搜索图像中的文字。在你的电脑上运行，绝不外传。}}",
   "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
+    "sourceHash": "287c7fc"
+  },
+  "settings.summary.fallback": "{section}的设置。",
+  "@settings.summary.fallback": {
+    "sourceHash": "83b4a28"
   },
   "settings.summary.noSubsections": "这个部分没有子部分。",
   "@settings.summary.noSubsections": {

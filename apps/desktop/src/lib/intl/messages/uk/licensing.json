@@ -424,9 +424,9 @@
   "@licensing.section.includedFeatures": {
     "sourceHash": "0a54a41"
   },
-  "licensing.section.includedMacs": "Усі ваші власні Mac для особистого користування",
+  "licensing.section.includedMacs": "{platform, select, macos {Усі ваші власні Mac для особистого користування} windows {Усі ваші власні ПК для особистого користування} other {Усі ваші власні компʼютери для особистого користування}}",
   "@licensing.section.includedMacs": {
-    "sourceHash": "d0968e4"
+    "sourceHash": "109bfe5"
   },
   "licensing.section.includedUpdates": "Автоматичні оновлення",
   "@licensing.section.includedUpdates": {

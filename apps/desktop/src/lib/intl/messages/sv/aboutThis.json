@@ -694,9 +694,9 @@
   "@aboutThis.owner.standardFolder": {
     "sourceHash": "378b403"
   },
-  "aboutThis.standardFolder.home": "Din hemmapp",
+  "aboutThis.standardFolder.home": "{platform, select, windows {Din användarmapp} other {Din hemmapp}}",
   "@aboutThis.standardFolder.home": {
-    "sourceHash": "a0111e9"
+    "sourceHash": "d93508f"
   },
   "aboutThis.standardFolder.desktop": "Mappen Skrivbord",
   "@aboutThis.standardFolder.desktop": {
@@ -943,9 +943,9 @@
   "@aboutThis.ownerPlace.sandboxHome": {
     "sourceHash": "0548eba"
   },
-  "aboutThis.removal.standardFolder.home": "Det är din hemmapp: allt ditt på den här datorn finns i den, och både systemet och alla appar räknar med den.",
+  "aboutThis.removal.standardFolder.home": "{platform, select, windows {Det är din användarmapp: allt ditt på den här datorn finns i den, och både systemet och alla appar räknar med den.} other {Det är din hemmapp: allt ditt på den här datorn finns i den, och både systemet och alla appar räknar med den.}}",
   "@aboutThis.removal.standardFolder.home": {
-    "sourceHash": "214ceb7"
+    "sourceHash": "f01131f"
   },
   "aboutThis.removal.standardFolder.personal": "Det är en av dina standardmappar: systemet och dina appar räknar med att hitta den, och allt i den försvinner med den.",
   "@aboutThis.removal.standardFolder.personal": {

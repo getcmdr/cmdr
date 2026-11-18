@@ -95,6 +95,10 @@
   "@licensing.section.includedFeatures": {
     "sourceHash": "59fe7eb"
   },
+  "licensing.section.includedMacs": "{platform, select, macos {Todos tus Mac, para tu uso personal} windows {Todos tus PC, para tu uso personal} other {Todas tus computadoras, para tu uso personal}}",
+  "@licensing.section.includedMacs": {
+    "sourceHash": "1a259c5"
+  },
   "licensing.section.statusExpiredOn": "Venció el {date}",
   "@licensing.section.statusExpiredOn": {
     "sourceHash": "0d214a6"
