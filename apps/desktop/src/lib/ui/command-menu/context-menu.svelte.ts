@@ -91,6 +91,10 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
 
   function close(restore: boolean, picked = false): void {
     if (!stack.isOpen) return
+    // Where an element held focus throughout, there's nothing to give back, and a restore would
+    // do harm: a field inside the window's focus home (the rename editor in the explorer) would
+    // be sent to the home's list, ending the edit.
+    const focusStayed = stack.focusHolder !== null
     stack.close()
     window.removeEventListener('keydown', onKey, true)
     window.removeEventListener('keyup', onKeyup, true)
@@ -107,7 +111,7 @@ export function createContextMenu(deps: ContextMenuDeps): ContextMenuController 
     anchorHolders = null
     const target = origin
     origin = null
-    if (restore) restoreFocus(target)
+    if (restore && !focusStayed) restoreFocus(target)
     deps.onClose?.({ picked })
   }
 

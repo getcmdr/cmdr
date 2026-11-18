@@ -18,14 +18,47 @@ pub(crate) fn init_script() -> String {
 }
 
 /// This desktop's conventions, or in a debug build the row `CMDR_MOCK_CONVENTIONS` names, plus
-/// the platform a mocked row's copy reads (`None` when nothing is mocked).
+/// the platform a mocked row's copy reads (`None` when nothing is mocked). An E2E build may also
+/// move `contextMenus` alone ([`with_e2e_context_menus`]).
 fn frontend_conventions() -> (Option<&'static str>, PlatformConventions) {
     #[cfg(debug_assertions)]
     if let Some((desktop, mocked)) = conventions::mock_conventions() {
         log::info!(target: "platform", "CMDR_MOCK_CONVENTIONS: the frontend follows another desktop's conventions and copy");
-        return (Some(desktop.copy_platform()), mocked);
+        return (Some(desktop.copy_platform()), with_e2e_context_menus(mocked));
     }
-    (None, conventions())
+    (None, with_e2e_context_menus(conventions()))
+}
+
+/// The env var an E2E run sets to `inPage` so the in-page right-click menus run on a lane whose OS
+/// keeps native ones (Linux): `in-page-context-menus.spec.ts`, on the Linux lane's second launch.
+#[cfg(any(feature = "playwright-e2e", test))]
+const E2E_CONTEXT_MENUS_ENV: &str = "CMDR_E2E_CONTEXT_MENUS";
+
+/// `conventions` with `contextMenus` from [`E2E_CONTEXT_MENUS_ENV`], in a `playwright-e2e` build
+/// only: every other convention, the copy, and the keymaps stay this OS's. ❗ Compiled out of every
+/// other build (release builds compile default features, which don't hold `playwright-e2e`), so
+/// the variable means nothing to a shipped app; `the_e2e_context_menus_override_is_absent_here`
+/// pins that.
+fn with_e2e_context_menus(conventions: PlatformConventions) -> PlatformConventions {
+    #[cfg(feature = "playwright-e2e")]
+    if let Some(context_menus) = e2e_context_menus(std::env::var(E2E_CONTEXT_MENUS_ENV).ok().as_deref()) {
+        log::info!(target: "platform", "{E2E_CONTEXT_MENUS_ENV}: the right-click menus follow the E2E run's pick");
+        return PlatformConventions {
+            context_menus,
+            ..conventions
+        };
+    }
+    conventions
+}
+
+/// The value of [`E2E_CONTEXT_MENUS_ENV`] as a convention: `inPage` or `native`, anything else none.
+#[cfg(any(feature = "playwright-e2e", test))]
+fn e2e_context_menus(value: Option<&str>) -> Option<conventions::ContextMenus> {
+    match value {
+        Some("inPage") => Some(conventions::ContextMenus::InPage),
+        Some("native") => Some(conventions::ContextMenus::Native),
+        _ => None,
+    }
 }
 
 /// The init script. A mocked desktop also defines `window.__CMDR_COPY_PLATFORM__`, which only the
@@ -55,6 +88,34 @@ fn script_for(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_the_e2e_context_menus_value_strictly() {
+        use super::conventions::ContextMenus;
+        assert_eq!(e2e_context_menus(Some("inPage")), Some(ContextMenus::InPage));
+        assert_eq!(e2e_context_menus(Some("native")), Some(ContextMenus::Native));
+        assert_eq!(e2e_context_menus(Some("in-page")), None);
+        assert_eq!(e2e_context_menus(Some("")), None);
+        assert_eq!(e2e_context_menus(None), None);
+    }
+
+    /// A build without `playwright-e2e` (every release build) never reads the variable: an app
+    /// launched with it answers this OS's own conventions.
+    #[cfg(not(feature = "playwright-e2e"))]
+    #[test]
+    fn the_e2e_context_menus_override_is_absent_here() {
+        let own = conventions();
+        let flipped = match own.context_menus {
+            conventions::ContextMenus::Native => "inPage",
+            conventions::ContextMenus::InPage => "native",
+        };
+        // SAFETY: a test-local env var nothing else in this test binary reads or writes.
+        unsafe { std::env::set_var(E2E_CONTEXT_MENUS_ENV, flipped) };
+        let answered = with_e2e_context_menus(conventions());
+        // SAFETY: as above.
+        unsafe { std::env::remove_var(E2E_CONTEXT_MENUS_ENV) };
+        assert_eq!(answered.context_menus, own.context_menus);
+    }
 
     #[test]
     fn names_the_running_os() {

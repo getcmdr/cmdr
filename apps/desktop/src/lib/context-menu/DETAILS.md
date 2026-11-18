@@ -95,5 +95,15 @@ engine's own edit menu.
 - `execCommand('cut')` / `'copy'` under WebView2 from a pick: Chromium allows both with user activation.
 - Whether `queryCommandEnabled('undo')` reads a field's undo stack in WebView2; a throw reads as enabled.
 
-E2E: no lane draws in-page menus today (macOS and Linux are `native`, and the conventions global can't be flipped in a
-running app), so the coverage is `InPageContextMenus.svelte.test.ts` until a Windows lane runs (task 55).
+## Running them off Windows
+
+- **By hand**: `CMDR_MOCK_CONVENTIONS=windows pnpm dev` draws every in-page menu on a Mac (a debug build only; it moves
+  every convention and the copy too).
+- **E2E**: `test/e2e-playwright/in-page-context-menus.spec.ts` (`@in-page-menus`) drives them end to end: a right-click
+  and a pick through the backend, Shift+F10 and the Menu key, Escape with focus back on the list, and the rename
+  editor's edit menu. Its tests skip on an app whose `contextMenus` isn't `inPage`. The Linux lane relaunches the app
+  with `CMDR_E2E_CONTEXT_MENUS=inPage` after the suite and runs that group (`scripts/e2e-linux.sh`, shard 1 only).
+- The override moves `contextMenus` alone, and only a `playwright-e2e` build reads it
+  (`src-tauri/src/platform/frontend.rs`). Release builds compile default features, which don't hold that feature, so a
+  shipped app ignores the variable; `the_e2e_context_menus_override_is_absent_here` pins that.
+- That lane is WebKitGTK, not WebView2, so the unverified list above stays open until a Windows lane runs (task 55).

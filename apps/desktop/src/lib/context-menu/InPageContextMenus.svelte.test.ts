@@ -30,6 +30,7 @@ import InPageContextMenus from './InPageContextMenus.svelte'
 import InlineRenameEditor from '#lib/file-explorer/rename/InlineRenameEditor.svelte'
 import Menu from '#lib/ui/Menu.svelte'
 import { createMenu } from '#lib/ui/menu-controller.svelte.js'
+import { registerFocusHome } from '#lib/ui/focus-restore.js'
 
 const TAB_ROWS: Row[] = [
   { kind: 'item', id: 'tab_pin', label: { text: 'Pin tab' }, shortcut: null, ariaKeyshortcuts: null, enabled: true },
@@ -465,6 +466,39 @@ describe('the in-page menu at its edges', () => {
     input.focus()
     return input
   }
+
+  // Regression anchor (the Linux in-page E2E group): the rename field sits inside the explorer,
+  // the window's focus home, so "restoring" focus after a pick sent it to the pane's list and
+  // cancelled the rename. Focus never left the field, so nothing restores it.
+  it('leaves focus in a field inside the focus home after a pick and after Escape', async () => {
+    await setup()
+    const explorer = document.createElement('div')
+    const list = document.createElement('div')
+    list.tabIndex = 0
+    explorer.append(list)
+    document.body.append(explorer)
+    teardowns.push(
+      registerFocusHome({
+        root: () => explorer,
+        refocus: () => {
+          list.focus()
+        },
+      }),
+    )
+    const input = document.createElement('input')
+    input.setAttribute('aria-label', 'Rename')
+    input.value = 'report.md'
+    explorer.append(input)
+    input.focus()
+    rightClick(input)
+    await settle()
+    await clickLikeABrowser(rowNamed('Select all'))
+    expect(document.activeElement).toBe(input)
+    rightClick(input)
+    await settle()
+    await press('Escape')
+    expect(document.activeElement).toBe(input)
+  })
 
   it('drops an answer that lands after a later right-click asked', async () => {
     await setup()
