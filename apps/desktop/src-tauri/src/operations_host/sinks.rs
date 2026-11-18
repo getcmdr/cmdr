@@ -17,6 +17,14 @@ use cmdr_operations::{
     WriteSettledEvent, WriteSourceItemDoneEvent, WriteSourcesGoneEvent,
 };
 
+/// Logs a terminal event that didn't go out: the frontend's view then waits for an ending that
+/// never comes and closes as cancelled, so the reason has to be in the log.
+fn warn_if_lost(event: &str, operation_id: &str, sent: tauri::Result<()>) {
+    if let Err(e) = sent {
+        log::warn!(target: "op_manager", "couldn't emit {event} for op={operation_id}: {e}");
+    }
+}
+
 /// Tauri-backed event sink: calls `app.emit()` for each event.
 pub struct TauriEventSink {
     app: AppHandle,
@@ -43,17 +51,28 @@ impl OperationEventSink for TauriEventSink {
     fn emit_complete(&self, event: WriteCompleteEvent) {
         crate::shell_progress::note_completed(&self.app, &event.operation_id);
         terminal_effects::complete(&self.effects(), event, |event| {
-            let _ = wire::WriteComplete(event).emit(&self.app);
+            let operation_id = event.operation_id.clone();
+            warn_if_lost(
+                "write-complete",
+                &operation_id,
+                wire::WriteComplete(event).emit(&self.app),
+            );
         });
     }
     fn emit_cancelled(&self, event: WriteCancelledEvent) {
         terminal_effects::cancelled(&self.effects(), event, |event| {
-            let _ = wire::WriteCancelled(event).emit(&self.app);
+            let operation_id = event.operation_id.clone();
+            warn_if_lost(
+                "write-cancelled",
+                &operation_id,
+                wire::WriteCancelled(event).emit(&self.app),
+            );
         });
     }
     fn emit_error(&self, event: WriteErrorEvent) {
         terminal_effects::error(&self.effects(), event, |event| {
-            let _ = wire::WriteError(event).emit(&self.app);
+            let operation_id = event.operation_id.clone();
+            warn_if_lost("write-error", &operation_id, wire::WriteError(event).emit(&self.app));
         });
     }
     fn emit_conflict(&self, event: ArmedConflict) {
