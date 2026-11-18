@@ -378,14 +378,10 @@ fn listing_for(
 /// out to another volume work at all.
 impl ScanSource for GitPortalVolume {
     fn scan_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        self.get_metadata(&AppPath::legacy_unchecked(path))
+        self.get_metadata(path)
     }
 
     fn scan_list<'a>(&'a self, path: &'a AppPath) -> Walking<'a, Vec<FileEntry>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        self.list_directory(&AppPath::legacy_unchecked(path), None)
+        self.list_directory(path, None)
     }
 }
