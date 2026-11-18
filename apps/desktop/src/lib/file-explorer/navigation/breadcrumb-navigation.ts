@@ -92,18 +92,25 @@ function targetFor(segments: PathSegment[], index: number, ctx: BreadcrumbNavCon
 
   const first = segments[0]?.text
   let base: string
+  // What the first segment itself leads to: `/`, home, or a Windows drive or share root.
+  let rootTarget: string
   if (first === '~') {
     // Can't expand `~` until the home dir resolves.
     if (!ctx.userHomePath) return null
     base = ctx.userHomePath
+    rootTarget = base
   } else if (ctx.volumePath && ctx.volumePath !== '/') {
+    // A Windows drive or share shows its root as the first segment (`C:`), the way
+    // `breadcrumb-bar.ts` reads it; clicking that root lands on `C:/`.
     base = volumePrefix(ctx.volumePath)
+    rootTarget = ctx.volumePath
   } else {
     base = ''
+    rootTarget = '/'
   }
 
   const tail = innerPath(segments, index)
-  return tail ? `${base}/${tail}` : base || '/'
+  return tail ? `${base}/${tail}` : rootTarget
 }
 
 /**

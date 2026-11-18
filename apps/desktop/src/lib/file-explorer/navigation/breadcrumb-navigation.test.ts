@@ -149,14 +149,23 @@ describe('a Windows drive volume', () => {
 
   it('navigates each segment to its real path under the drive root', () => {
     onTestFinished(withPlatform('windows'))
-    const segs = enrich('/Users/test_user_1/Documents', driveCtx('C:/Users/test_user_1/Documents'))
-    expect(segs.map((s) => s.target)).toEqual([null, 'C:/Users', 'C:/Users/test_user_1', null])
+    const segs = enrich('C:/Users/test_user_1/Documents', driveCtx('C:/Users/test_user_1/Documents'))
+    expect(segs.map((s) => s.target)).toEqual(['C:/', 'C:/Users', 'C:/Users/test_user_1', null])
   })
 
   it('shows the tooltip path with backslashes', () => {
     onTestFinished(withPlatform('windows'))
-    const segs = enrich('/Users/test_user_1/Documents', driveCtx('C:/Users/test_user_1/Documents'))
-    expect(segs[2].displayPath).toBe('\\Users\\test_user_1')
+    const segs = enrich('C:/Users/test_user_1/Documents', driveCtx('C:/Users/test_user_1/Documents'))
+    expect(segs[2].displayPath).toBe('C:\\Users\\test_user_1')
+  })
+
+  it('reads a drive root as one unclickable segment, and a share root as the first one', () => {
+    onTestFinished(withPlatform('windows'))
+    expect(enrich('C:\\', driveCtx('C:/')).map((s) => [s.text, s.target])).toEqual([['C:\\', null]])
+    const share: BreadcrumbNavContext = { ...driveCtx('//nas/media/x/y'), volumePath: '//nas/media/' }
+    const segs = enrich('\\\\nas\\media/x/y', share)
+    expect(segs.map((s) => s.target)).toEqual(['//nas/media/', '//nas/media/x', null])
+    expect(segs[2].displayPath).toBe('\\\\nas\\media\\x\\y')
   })
 
   it('keeps slashes in the tooltip off Windows', () => {
