@@ -47,11 +47,14 @@ the next section.
   `io::ErrorKind`); `app_paths.rs` (whether an app path sits under a volume root, segment-wise, and rebasing it onto a
   moved root); `remote_paths.rs` (a server tree's `<scheme>://user@host:port` app spelling, and the ONE translation);
   `path_grammar/` (the app-path grammar every OS shares: the `/`, `C:/`, and `//server/share/` roots, the `AppPath`
-  newtype, and the one conversion to Windows' `\\?\` native form; its module doc is canonical); `friendly_error/`
-  (typed, word-free classification); `usb_speed.rs` (❗ its doc comment reaches `bindings.ts`); `in_memory.rs` (the
-  store and its knobs; `in_memory/volume_impl.rs` is its `impl Volume`; `src/volume/in_memory/imports.rs` its door for
-  outside bytes, the browser demo's dropped files, stored as real bytes beside the synthetic ones, no clobber);
-  `conformance.rs` (+ `conformance/directory_creation.rs`, the three `create_directory_all` promises, and
+  newtype, and the one conversion to Windows' `\\?\` native form; its module doc is canonical); the path pins beside it
+  (`path_arithmetic_pin_test.rs` over the case table's `arithmetic` rows, `path_helper_pin_test.rs`,
+  `path_order_pin_test.rs`, and `list_alloc_ceiling_test.rs`) hold today's macOS and Linux answers for the typed app
+  path conversion (#1225), ❌ never edited to green one; `friendly_error/` (typed, word-free classification);
+  `usb_speed.rs` (❗ its doc comment reaches `bindings.ts`); `in_memory.rs` (the store and its knobs;
+  `in_memory/volume_impl.rs` is its `impl Volume`; `src/volume/in_memory/imports.rs` its door for outside bytes, the
+  browser demo's dropped files, stored as real bytes beside the synthetic ones, no clobber); `conformance.rs` (+
+  `conformance/directory_creation.rs`, the three `create_directory_all` promises, and
   `conformance/modification_date.rs`, the two date ones, `src/volume/conformance/xattrs.rs`, the xattr one, and
   `src/volume/conformance/link_landing.rs`, what `can_hold_links` promises); and `host/` (what a backend needs from the
   app, as named traits; read `src/volume/host/CLAUDE.md` before writing a backend).
@@ -118,7 +121,8 @@ the next section.
 - `mapped_file_faults/`: the SIGBUS recovery that turns a read of a mapped file whose disk went away into zeros, and the
   generation a reader checks to distrust what it read meanwhile. § "Mapped-file faults".
 - `testing/`: behind the `testing` feature. `TestDir`, the two waits, and `unique_test_id` (a pid-and-counter key for a
-  test-owned entry in a global map) in `mod.rs`; `platform/` (the OS half of the fixtures: `symlink`, `is_root`,
+  test-owned entry in a global map) in `mod.rs`; `alloc_count.rs` (a counting global allocator a test binary installs,
+  for the allocation-ceiling cells); `platform/` (the OS half of the fixtures: `symlink`, `is_root`,
   `can_create_symlinks`, and Unix's `make_fifo`, so a test asks a capability rather than an OS and no test calls
   `std::os::unix::fs::symlink` or `geteuid` itself); `tcp_proxy.rs` (`TcpProxy`, a loopback proxy a network backend's
   test puts in front of a shared Docker fixture to cut the connection, refused or silent, without touching a container
