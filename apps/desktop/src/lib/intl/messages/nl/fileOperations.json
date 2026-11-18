@@ -1318,6 +1318,18 @@
   "@fileOperations.resticPassword.unreachable": {
     "sourceHash": "cc4542d"
   },
+  "fileOperations.validation.disallowedCharacter": "{kind, select, folder {Mapnamen mogen hier geen ‘{character}’ bevatten} other {Bestandsnamen mogen hier geen ‘{character}’ bevatten}}",
+  "@fileOperations.validation.disallowedCharacter": {
+    "sourceHash": "7bae6c0"
+  },
+  "fileOperations.validation.reservedName": "{kind, select, folder {‘{name}’ is gereserveerd door Windows en kan hier geen mapnaam zijn} other {‘{name}’ is gereserveerd door Windows en kan hier geen bestandsnaam zijn}}",
+  "@fileOperations.validation.reservedName": {
+    "sourceHash": "72cfc4d"
+  },
+  "fileOperations.validation.endsWithSpaceOrPeriod": "{kind, select, folder {Mapnamen mogen hier niet eindigen op een spatie of een punt} other {Bestandsnamen mogen hier niet eindigen op een spatie of een punt}}",
+  "@fileOperations.validation.endsWithSpaceOrPeriod": {
+    "sourceHash": "da6de8e"
+  },
   "fileOperations.validation.empty": "{kind, select, folder {Een mapnaam mag niet leeg zijn} other {Een bestandsnaam mag niet leeg zijn}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"

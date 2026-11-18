@@ -23,9 +23,9 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "{platform, select, macos {Можно перезапустить сейчас, а можно ничего не делать: обновление включится при следующем запуске Cmdr.} other {Cmdr closes to install it, then opens again.}}",
+  "updates.toast.readyDetail": "{platform, select, macos {Можно перезапустить сейчас, а можно ничего не делать: обновление включится при следующем запуске Cmdr.} other {Cmdr закроется, чтобы установить обновление, а затем откроется снова.}}",
   "@updates.toast.readyDetail": {
-    "sourceHash": "42ce099"
+    "sourceHash": "4abee27"
   },
   "updates.toast.securityFix": "Это обновление устраняет {count, plural, =1 {проблему безопасности} one {# проблему безопасности} few {# проблемы безопасности} many {# проблем безопасности} other {# проблемы безопасности}}.",
   "@updates.toast.securityFix": {

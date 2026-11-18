@@ -239,6 +239,10 @@
   "@multiRename.status.disallowedCharacter": {
     "sourceHash": "2f21c26"
   },
+  "multiRename.status.reservedDeviceName": "Windows által fenntartott név",
+  "@multiRename.status.reservedDeviceName": {
+    "sourceHash": "8bf464a"
+  },
   "multiRename.error.unclosed": "Egy helyőrzőből hiányzik a záró „]”",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -632,6 +636,14 @@
   "multiRename.reason.disallowedCharacter": "A fájlnév nem tartalmazhat ilyen karaktert: {character}.",
   "@multiRename.reason.disallowedCharacter": {
     "sourceHash": "66a09f6"
+  },
+  "multiRename.reason.reservedDeviceName": "„{name}” a Windows által fenntartott név, ezért ez a meghajtó nem tudja névként használni.",
+  "@multiRename.reason.reservedDeviceName": {
+    "sourceHash": "bb181fa"
+  },
+  "multiRename.reason.endsWithSpaceOrPeriod": "Ez a meghajtó nem tud olyan nevet tárolni, amely szóközre vagy pontra végződik.",
+  "@multiRename.reason.endsWithSpaceOrPeriod": {
+    "sourceHash": "8c033d3"
   },
   "multiRename.selectionChanged": "A mappa megváltozott a Csoportos átnevezés megnyitása közben. Ellenőrizd a kijelölést, aztán próbáld újra.",
   "@multiRename.selectionChanged": {

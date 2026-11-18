@@ -1316,6 +1316,18 @@
   "@fileOperations.resticPassword.unreachable": {
     "sourceHash": "cc4542d"
   },
+  "fileOperations.validation.disallowedCharacter": "{kind, select, folder {Тут назва папки не може містити символ «{character}»} other {Тут назва файлу не може містити символ «{character}»}}",
+  "@fileOperations.validation.disallowedCharacter": {
+    "sourceHash": "7bae6c0"
+  },
+  "fileOperations.validation.reservedName": "{kind, select, folder {Назву «{name}» зарезервовано системою Windows, тому тут її не можна дати папці} other {Назву «{name}» зарезервовано системою Windows, тому тут її не можна дати файлу}}",
+  "@fileOperations.validation.reservedName": {
+    "sourceHash": "72cfc4d"
+  },
+  "fileOperations.validation.endsWithSpaceOrPeriod": "{kind, select, folder {Тут назва папки не може закінчуватися пробілом або крапкою} other {Тут назва файлу не може закінчуватися пробілом або крапкою}}",
+  "@fileOperations.validation.endsWithSpaceOrPeriod": {
+    "sourceHash": "da6de8e"
+  },
   "fileOperations.validation.empty": "{kind, select, folder {Назва папки не може бути порожньою} other {Назва файлу не може бути порожньою}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"

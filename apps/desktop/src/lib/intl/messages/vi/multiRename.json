@@ -239,6 +239,10 @@
   "@multiRename.status.disallowedCharacter": {
     "sourceHash": "2f21c26"
   },
+  "multiRename.status.reservedDeviceName": "Tên dành riêng của Windows",
+  "@multiRename.status.reservedDeviceName": {
+    "sourceHash": "8bf464a"
+  },
   "multiRename.error.unclosed": "Một phần giữ chỗ thiếu dấu “]” đóng",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -632,6 +636,14 @@
   "multiRename.reason.disallowedCharacter": "Tên tệp không được chứa {character}.",
   "@multiRename.reason.disallowedCharacter": {
     "sourceHash": "66a09f6"
+  },
+  "multiRename.reason.reservedDeviceName": "“{name}” là tên dành riêng của Windows, nên ổ đĩa này không thể dùng tên đó.",
+  "@multiRename.reason.reservedDeviceName": {
+    "sourceHash": "bb181fa"
+  },
+  "multiRename.reason.endsWithSpaceOrPeriod": "Ổ đĩa này không thể lưu tên kết thúc bằng dấu cách hoặc dấu chấm.",
+  "@multiRename.reason.endsWithSpaceOrPeriod": {
+    "sourceHash": "8c033d3"
   },
   "multiRename.selectionChanged": "Thư mục đã thay đổi trong lúc đang mở “Đổi tên hàng loạt”. Hãy xem lại các mục đã chọn rồi thử lại.",
   "@multiRename.selectionChanged": {

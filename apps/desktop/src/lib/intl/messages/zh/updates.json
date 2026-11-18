@@ -23,9 +23,9 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "{platform, select, macos {现在重新启动，或者下次打开 Cmdr 时自动生效。} other {Cmdr closes to install it, then opens again.}}",
+  "updates.toast.readyDetail": "{platform, select, macos {现在重新启动，或者下次打开 Cmdr 时自动生效。} other {Cmdr 会关闭以安装更新，然后重新打开。}}",
   "@updates.toast.readyDetail": {
-    "sourceHash": "42ce099"
+    "sourceHash": "4abee27"
   },
   "updates.toast.securityFix": "这次更新修复了 {count, plural, other {# 个安全问题}}。",
   "@updates.toast.securityFix": {

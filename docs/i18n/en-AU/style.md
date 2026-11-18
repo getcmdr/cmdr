@@ -60,6 +60,8 @@ All verified in the pile, all absent from Cmdr's catalog. Fork them if the copy 
   `Upper case`, `To Do` → `To-Do`: AU hyphenates and splits compounds that GB fuses.
 - `Macs` → `Mac computers` (`Finder/LocalizableMerged.json:MR20`, `:MR8.2`, `:MR8.3`).
 - `checkbox` → `tick box` (two words; `en-GB` writes `tickbox`, one word). `Finder/LocalizableMerged.json:BN43`.
+- `period` (the character) → `full stop`, same as `en-GB` (`AppKit/SavePanel.json`, `begins with a full stop “.”`):
+  `fileOperations.validation.endsWithSpaceOrPeriod` and `multiRename.reason.endsWithSpaceOrPeriod`.
 - `popover` stays `popover` (`en-GB` writes `pop-over`). Cmdr forks neither; see `docs/i18n/en-GB/style.md` § The fork
   test.
 - The cancelled-rollback toast (`fileOperations.cancelRollback.*`) forks nothing here either; its vocabulary is

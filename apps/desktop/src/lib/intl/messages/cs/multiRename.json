@@ -239,6 +239,10 @@
   "@multiRename.status.disallowedCharacter": {
     "sourceHash": "2f21c26"
   },
+  "multiRename.status.reservedDeviceName": "Vyhrazeno systémem Windows",
+  "@multiRename.status.reservedDeviceName": {
+    "sourceHash": "8bf464a"
+  },
   "multiRename.error.unclosed": "Zástupnému symbolu chybí uzavírací „]“",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -632,6 +636,14 @@
   "multiRename.reason.disallowedCharacter": "Názvy souborů nesmí obsahovat znak {character}.",
   "@multiRename.reason.disallowedCharacter": {
     "sourceHash": "66a09f6"
+  },
+  "multiRename.reason.reservedDeviceName": "Název „{name}“ je vyhrazený systémem Windows, takže ho tento disk nemůže použít.",
+  "@multiRename.reason.reservedDeviceName": {
+    "sourceHash": "bb181fa"
+  },
+  "multiRename.reason.endsWithSpaceOrPeriod": "Tento disk nedokáže uložit název, který končí mezerou nebo tečkou.",
+  "@multiRename.reason.endsWithSpaceOrPeriod": {
+    "sourceHash": "8c033d3"
   },
   "multiRename.selectionChanged": "Složka se změnila, zatímco se Hromadné přejmenování otevíralo. Zkontrolujte výběr a zkuste to znovu.",
   "@multiRename.selectionChanged": {

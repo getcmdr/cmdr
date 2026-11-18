@@ -239,6 +239,10 @@
   "@multiRename.status.disallowedCharacter": {
     "sourceHash": "2f21c26"
   },
+  "multiRename.status.reservedDeviceName": "Windows 保留名稱",
+  "@multiRename.status.reservedDeviceName": {
+    "sourceHash": "8bf464a"
+  },
   "multiRename.error.unclosed": "有個預留位置缺少結尾的「]」",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -631,6 +635,14 @@
   "multiRename.reason.disallowedCharacter": "檔名不能包含「{character}」。",
   "@multiRename.reason.disallowedCharacter": {
     "sourceHash": "66a09f6"
+  },
+  "multiRename.reason.reservedDeviceName": "「{name}」是 Windows 的保留名稱，所以這個磁碟機不能使用這個名稱。",
+  "@multiRename.reason.reservedDeviceName": {
+    "sourceHash": "bb181fa"
+  },
+  "multiRename.reason.endsWithSpaceOrPeriod": "這個磁碟機存不下以空格或句點結尾的名稱。",
+  "@multiRename.reason.endsWithSpaceOrPeriod": {
+    "sourceHash": "8c033d3"
   },
   "multiRename.selectionChanged": "開啟「多檔重新命名」時，資料夾有了更動。請確認選取的檔案，再試一次。",
   "@multiRename.selectionChanged": {

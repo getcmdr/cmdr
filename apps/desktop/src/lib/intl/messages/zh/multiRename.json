@@ -239,6 +239,10 @@
   "@multiRename.status.disallowedCharacter": {
     "sourceHash": "2f21c26"
   },
+  "multiRename.status.reservedDeviceName": "已被 Windows 保留",
+  "@multiRename.status.reservedDeviceName": {
+    "sourceHash": "8bf464a"
+  },
   "multiRename.error.unclosed": "有个占位符缺少结尾的“]”",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -631,6 +635,14 @@
   "multiRename.reason.disallowedCharacter": "文件名不能包含“{character}”。",
   "@multiRename.reason.disallowedCharacter": {
     "sourceHash": "66a09f6"
+  },
+  "multiRename.reason.reservedDeviceName": "“{name}”是 Windows 保留的名称，所以这个驱动器无法使用这个名称。",
+  "@multiRename.reason.reservedDeviceName": {
+    "sourceHash": "bb181fa"
+  },
+  "multiRename.reason.endsWithSpaceOrPeriod": "这个驱动器无法存储以空格或句点结尾的名称。",
+  "@multiRename.reason.endsWithSpaceOrPeriod": {
+    "sourceHash": "8c033d3"
   },
   "multiRename.selectionChanged": "打开“批量重命名”时文件夹有了改动。请确认选中的文件，然后再试一次。",
   "@multiRename.selectionChanged": {

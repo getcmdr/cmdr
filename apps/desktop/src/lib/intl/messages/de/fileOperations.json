@@ -1320,6 +1320,18 @@
   "@fileOperations.resticPassword.unreachable": {
     "sourceHash": "cc4542d"
   },
+  "fileOperations.validation.disallowedCharacter": "{kind, select, folder {Ordnernamen dürfen hier das Zeichen „{character}“ nicht enthalten} other {Dateinamen dürfen hier das Zeichen „{character}“ nicht enthalten}}",
+  "@fileOperations.validation.disallowedCharacter": {
+    "sourceHash": "7bae6c0"
+  },
+  "fileOperations.validation.reservedName": "{kind, select, folder {„{name}“ ist von Windows reserviert und kann hier kein Ordnername sein} other {„{name}“ ist von Windows reserviert und kann hier kein Dateiname sein}}",
+  "@fileOperations.validation.reservedName": {
+    "sourceHash": "72cfc4d"
+  },
+  "fileOperations.validation.endsWithSpaceOrPeriod": "{kind, select, folder {Ordnernamen dürfen hier nicht mit einem Leerzeichen oder Punkt enden} other {Dateinamen dürfen hier nicht mit einem Leerzeichen oder Punkt enden}}",
+  "@fileOperations.validation.endsWithSpaceOrPeriod": {
+    "sourceHash": "da6de8e"
+  },
   "fileOperations.validation.empty": "{kind, select, folder {Der Ordnername darf nicht leer sein} other {Der Dateiname darf nicht leer sein}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"

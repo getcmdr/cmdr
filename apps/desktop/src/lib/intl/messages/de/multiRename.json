@@ -240,6 +240,10 @@
   "@multiRename.status.disallowedCharacter": {
     "sourceHash": "2f21c26"
   },
+  "multiRename.status.reservedDeviceName": "Von Windows reserviert",
+  "@multiRename.status.reservedDeviceName": {
+    "sourceHash": "8bf464a"
+  },
   "multiRename.error.unclosed": "Bei einem Platzhalter fehlt das schließende „]“",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -635,6 +639,14 @@
   "multiRename.reason.disallowedCharacter": "Dateinamen dürfen das Zeichen {character} nicht enthalten.",
   "@multiRename.reason.disallowedCharacter": {
     "sourceHash": "66a09f6"
+  },
+  "multiRename.reason.reservedDeviceName": "„{name}“ ist von Windows reserviert und lässt sich auf diesem Laufwerk nicht als Name verwenden.",
+  "@multiRename.reason.reservedDeviceName": {
+    "sourceHash": "bb181fa"
+  },
+  "multiRename.reason.endsWithSpaceOrPeriod": "Dieses Laufwerk kann keinen Namen speichern, der mit einem Leerzeichen oder Punkt endet.",
+  "@multiRename.reason.endsWithSpaceOrPeriod": {
+    "sourceHash": "8c033d3"
   },
   "multiRename.selectionChanged": "Der Ordner hat sich geändert, während „Mehrfach umbenennen“ geöffnet wurde. Prüfe deine Auswahl und versuche es dann erneut.",
   "@multiRename.selectionChanged": {

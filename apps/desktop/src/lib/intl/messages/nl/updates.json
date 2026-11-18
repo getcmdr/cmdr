@@ -23,9 +23,9 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "{platform, select, macos {Herstart nu, of je krijgt hem de volgende keer dat je Cmdr opent.} other {Cmdr closes to install it, then opens again.}}",
+  "updates.toast.readyDetail": "{platform, select, macos {Herstart nu, of je krijgt hem de volgende keer dat je Cmdr opent.} other {Cmdr sluit af om de update te installeren en wordt daarna weer geopend.}}",
   "@updates.toast.readyDetail": {
-    "sourceHash": "42ce099"
+    "sourceHash": "4abee27"
   },
   "updates.toast.securityFix": "Deze update lost {count, plural, one {een beveiligingsprobleem} other {# beveiligingsproblemen}} op.",
   "@updates.toast.securityFix": {
