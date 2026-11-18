@@ -511,6 +511,16 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       rename's fallback, ~131; the write-access probe, ~947), `local_posix/links.rs` (~33), `reading/bulk.rs` (~164);
       `cmdr-fs` `durable.rs` (~18); the app's `network/smb_connect_failure.rs` (~219, its log detail); and `cmdr-smb`
       `volume/mapping.rs` (`local_errno`).
+
+    **Started** (2026-11-18): `cmdr-operations` builds and passes clippy on the Windows builder. Real: the write probe
+    (`local_disk/platform/windows.rs`, tested on NTFS), free space, the folder volume, and file and directory syncs that
+    open the way `FlushFileBuffers` needs (`cmdr_fs::durable::{open_to_sync, open_dir_to_sync}`). A copy takes the
+    chunked loop. Left, in data-safety order: the local engine taking app paths at `rename_local_exclusive` (blocked on
+    #1225's call: today every local copy and move refuses at its landing), a Windows file id and mount table so a folder
+    delete or move isn't refused as a mount (`file_identity`, task 35's mount arm), the `Unknown`-identity rule above,
+    the `CopyFileExW` arm, the Recycle Bin, read-only as Locked, and sharing violations as a typed refusal. Stubs: §
+    "Windows build state".
+
 37. [S] Windows. Cloud Files placeholders (OneDrive and friends: sync badges, cloud trash) and Mark of the Web on
     extract (`cmdr-operations` + `cmdr-archive`). Needs 36.
 38. [S] Windows. Identity and system bundle: secrets via `windows-native-keyring-store` (❗ a blocker: off macOS and

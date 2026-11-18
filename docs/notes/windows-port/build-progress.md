@@ -67,3 +67,45 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
   `volume_tests.rs`) plus its `open_cost` example naming `LocalPosixVolume`. About 150 sites across the consumers name
   `LocalPosixVolume` (mostly `cmdr-operations` tests), which waits on David's call on how a consumer names the host's
   local volume.
+- **2026-11-18, `cmdr-operations` compiles** (leg 3, `a0d5994472` and `85aa3ec973`): off the pending list (4 left).
+  `local_disk/` became a `platform/` seam with a Windows arm; free space and the destination pre-flights go through it,
+  so `free_space.rs`, `validation.rs`, and most of `copy_strategy.rs` lost their OS cfgs. Real on Windows: the write
+  probe (a `FILE_WRITE_DATA` open with backup semantics, which runs the DACL and read-only checks and writes nothing),
+  free space, and the folder volume. A Windows copy takes the chunked loop where it took `std::fs::copy`. Directory and
+  file syncs now open through `cmdr_fs::durable::{open_dir_to_sync, open_to_sync}`: `File::open` refuses a folder on
+  Windows and `FlushFileBuffers` refuses a read-only handle, so every Windows copy's closing flush failed before. Clippy
+  on Windows needed two boxes (`PathedVolumeError::aftermath`, `merge::LeafEnd::Refused`): a `PathBuf` is 32 bytes
+  there, which took the transfer error past `result_large_err`'s 128. 65 POSIX-only test files are `#![cfg(unix)]`. On
+  the builder: `cargo clippy -p cmdr-operations -p cmdr-fs --all-targets -D warnings` clean in 1m 27s warm;
+  `cargo nextest run -p cmdr-operations` 1,445 of 1,734 pass, the five write-probe cells on real NTFS among them (a
+  fresh folder and file, a read-only file refused with `ERROR_ACCESS_DENIED` and its bytes intact, a missing path, a
+  file another handle holds unshared as `Unknown`, a folder past 300 characters). The 289 failures cluster: the local
+  engine's finalize hands `cmdr_local::rename_local_exclusive` a native `C:\…` path, which it refuses as not an app path
+  (#1225, the largest cluster: no local copy or move lands on Windows yet); a folder delete or move refuses as
+  `MountedVolumeInside`, the cautious answer while `file_identity` has no device and `cmdr-local` no mount table on
+  Windows (task 35); the in-flight-temps test ledger can't be cleared while a connection holds it (#1226's family); and
+  the rest are app paths in remote-volume fixtures. Full log: the builder's `D:\tmp\ops-nextest.log`.
+- **2026-11-18, `cmdr-multi-rename`, `cmdr-restic`, and `cmdr-listing-wasm` compile** (leg 3, `0ea49128c7`): off the
+  pending list (only the app left). The first and last needed nothing past `cmdr-operations`; `cmdr-restic` gated two
+  non-UTF-8 name cells and a fixture's executable bit to `cfg(unix)`, and its `open_cost` example opens
+  `LocalWindowsVolume` on Windows. On the builder: clippy `--all-targets -D warnings` clean for all three in 2m 4s
+  (vendored `rustic_core` warns once about an unused variable in a Windows-only arm). `cargo nextest run` over the
+  three: 322 of 393 pass, 61 fail and 10 time out, nearly all `cmdr-restic` and `cmdr-listing-wasm` cells whose fixtures
+  root at `/Volumes/…` or `/` (#1225).
+- **Next blocker: the app `cmdr`** (Mac cross-check, `cargo check -p cmdr --lib`): 25 errors, past its build script once
+  a stand-in `x86_64-w64-mingw32-windres` on `PATH` writes an empty object for each `.rc` (nothing links in a check; the
+  MSVC builder needs no stand-in). Leg 3 un-gated `mount_registration`, `upgrade_existing_smb_mounts` and its two
+  helpers (each asks `volumes::platform`, which has Windows arms), and gave `smb_mount_gate::probe` Windows the Linux
+  answer (never proven encrypted, so refused): 21 left. Each cause, with what it waits on:
+  - `cmdr_local::LocalPosixVolume` named in `file_system/mod.rs` (the root volume at `/` and macOS's cloud drives) and
+    `network/smb_mount_gate.rs` (wraps the concrete type and downcasts to it): David's call on how a consumer names the
+    host's local volume, then task 34 for what the root volume is on Windows.
+  - `file_system::volume::eject` and `commands::eject` are `any(macos, linux)`, while `ipc.rs`, `server_move_smb.rs`,
+    and `commands/network.rs` reach them on every OS. Inside, `not(target_os = "macos")` arms mean Linux (`umount`), so
+    un-gating would hand Windows Linux's eject; it needs a `platform/` seam with a Windows arm (task 39).
+  - `licensing/device_id.rs`: no `read_platform_uuid` Windows arm (task 38, `MachineGuid`).
+  - `saved_servers/nfs_places.rs`: `getuid`, `getgid`, and `getgroups` with no Windows arm (an NFS identity there is the
+    export's, or a configured one).
+  - The rest (seven unused imports) cascade from the above. Every fix lands in a file the placement allowlist already
+    counts, so each Windows arm goes behind a `platform/` seam or un-gates code; a new OS cfg outside a seam needs
+    David's OK.

@@ -25,9 +25,8 @@ pub(crate) mod drive_release;
 pub mod eject;
 pub(crate) mod manager;
 // The one way a mount becomes a registered volume, shared by the startup sweep,
-// the mount watcher, and the listing's last-chance adoption. macOS and Linux
-// only: both reach their platform mount table through it.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
+// the mount watcher, and the listing's last-chance adoption, on every OS: each
+// reaches its mount table through `volumes::platform`.
 pub(crate) mod mount_registration;
 pub mod reconnect_error;
 

@@ -243,7 +243,6 @@ fn register_discovered_volumes() {
 ///   `test_mode::may_adopt_preexisting_network_mounts`),
 /// - direct-SMB is disabled (`network.directSmbConnection`),
 /// - or the mount table lists no SMB share left to upgrade (no scan cost, no prompt).
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub fn upgrade_existing_smb_mounts() {
     use crate::network::smb_upgrade::UpgradePass;
 
@@ -349,7 +348,6 @@ pub fn upgrade_existing_smb_mounts() {
 /// already has a session, and a `Disconnected` one owns its own recovery through
 /// `attempt_reconnect` rather than through a replacement. An unreadable table
 /// reads as nothing to do: the next pass asks again.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn os_mounted_smb_shares() -> Vec<(String, crate::volumes::SmbMountInfo)> {
     use crate::volumes::smb_mounts;
 
@@ -370,7 +368,6 @@ fn os_mounted_smb_shares() -> Vec<(String, crate::volumes::SmbMountInfo)> {
 /// Polls every 500ms for up to 15 seconds. If discovery never reaches Active,
 /// proceeds anyway: the upgrade will try without hostname resolution and may
 /// fall back to guest access.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 async fn wait_for_mdns_ready() {
     use crate::network::{DiscoveryState, get_discovery_state_value};
 

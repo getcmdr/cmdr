@@ -295,8 +295,9 @@ async fn probe(root: PathBuf) -> MountEncryption {
 }
 
 /// GVFS doesn't say whether its SMB session is encrypted, so a Linux kernel mount
-/// never proves it, and the requirement keeps it refused.
-#[cfg(target_os = "linux")]
+/// never proves it, and the requirement keeps it refused. Windows has no probe yet
+/// (task 21), so a mapped drive is refused the same way.
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 async fn probe(_root: PathBuf) -> MountEncryption {
     MountEncryption::Unknown
 }

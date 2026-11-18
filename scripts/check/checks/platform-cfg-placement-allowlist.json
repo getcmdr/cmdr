@@ -115,7 +115,7 @@
     },
     "apps/desktop/src-tauri/src/file_system/mod.rs": {
       "negated": 2,
-      "outsideSeam": 15
+      "outsideSeam": 12
     },
     "apps/desktop/src-tauri/src/file_system/open_with.rs": {
       "negated": 4,
@@ -173,7 +173,7 @@
       "outsideSeam": 3
     },
     "apps/desktop/src-tauri/src/file_system/volume/mod.rs": {
-      "outsideSeam": 2
+      "outsideSeam": 1
     },
     "apps/desktop/src-tauri/src/file_system/watcher.rs": {
       "negated": 3,
