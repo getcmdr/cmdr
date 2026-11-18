@@ -124,7 +124,15 @@ From the plan; each agent owns whole crates, on its own branch off the tier befo
   198 (1), `cmdr-index` 1,999 (44), `cmdr-listing` 384, `cmdr-brief-columns` 31, `cmdr-operation-log` 173 (2);
   `index-query` and `operation-log-dump` have no tests.
 - Tier 2: (E) `cmdr-operations` (108 impls; its tests in subagent batches by directory, sequential on one branch) and
-  (F) `cmdr-restic`, in parallel.
+  (F) `cmdr-restic`, in parallel. (E) is done on `worktree-agent-a6eb35c648eaa8989`: four codemod passes (the fourth for
+  the Linux target, `non_utf8_name_tests.rs`), residue 16 + 3 + 7 (the golden scenarios for wasm) sites, no-op re-runs
+  for default, `testing`, `golden`, and `--all-features`, Windows and Linux (zig) checks with `--all-features`, wasm32
+  `--lib --features golden`, clippy clean (default and all features), nextest 2,594 passed (30 skipped), 981 bridge
+  calls over 205 files. New codemod rules on that branch: the `select!` and match-arm hoist, the closure hoist, fully
+  qualified macro signatures, the nested prelude, and the unused prelude. ❗ The literal rule emits `app_path!` in code
+  a feature gates without `cmdr-fs/testing` (`cmdr-operations`'s `golden`, which the browser demo's wasm test build
+  turns on): the host's `--all-targets` build unifies `testing` in, so it compiles there and breaks only
+  `cargo check --lib --features golden --target wasm32-unknown-unknown`.
 - Tier 3: (G) `cmdr-multi-rename`, then `cmdr-listing-wasm`.
 - Tier 4: (H) the app, `cmdr` (33 impls, 629 test call sites), one agent with subagents by directory.
 
