@@ -1,0 +1,24 @@
+{
+  "version": "0.7.1",
+  "dmgSizes": {
+    "aarch64": 29801204,
+    "x86_64": 32330303,
+    "universal": 45208225
+  },
+  "notes": "### Fixed\n\n- Fix scan overlay stuck at 100% after directory size aggregation ([2842e92](https://github.com/vdavid/cmdr/commit/2842e92))\n",
+  "pub_date": "2026-03-12T10:05:25Z",
+  "platforms": {
+    "darwin-universal": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRS2pCYTdOaDlnb3VVWW0yUXhqbVFkSW12ek9QemtQQVBZZ3A5bU1mVFVQdy9UY2I3K3hGWURmUEVqbDFBc3Q0WHZPM3R3QlJVeWhmaWxWODhRSzFmNGVCS3hBTXJKMVFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczMzA0NDk1CWZpbGU6Q21kci5hcHAudGFyLmd6CmJXV3NlUjdIS214MUc1NE1wYWhOL0tienNUQ3NKc0NZVXdaSGc5T1ZwdDl6Y2VMYXZnSVdtSGx4blNHVGpBQXFOTEIxT0U1UENLYlM5UmlCYjB4ZUJnPT0K",
+      "url": "https://github.com/vdavid/cmdr/releases/download/v0.7.1/Cmdr_universal.app.tar.gz"
+    },
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRS2pCYTdOaDlnb2wrZkdqN21jVFgvSGpnU0dHTEJVazgwSWduZ1BWdkdxNjN1Y3NlQ1B2OXpRcjNJS3lUSlJ1Y1d1Wmhyb2hQR1YxcksvZDc0M1BUcWUvNnBHTGM4RXdNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczMzAzOTUwCWZpbGU6Q21kci5hcHAudGFyLmd6CndtSW5MWk90N3NCc1Zrem1QWkhERjA5MjlzOHYvY0dpV3ZGSDFjZWtqWGRodUlTdE00YlMvcHVxS0JPNW1UZWpxS1JLUS9sZ0tEVG4wUWlkUk1LNERBPT0K",
+      "url": "https://github.com/vdavid/cmdr/releases/download/v0.7.1/Cmdr_aarch64.app.tar.gz"
+    },
+    "darwin-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRS2pCYTdOaDlnb2hTV2wzeGpocy9ZOHpjVUpsQ2Rwdm14NWN1V3pIaHIvQWR4K2N1bVNrQ0lEVEtvVkhrN2dobnZRS0xnM04xNWExTk5pRVRicEdoMmdPSkprWVhHZ3dBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczMzAzOTU0CWZpbGU6Q21kci5hcHAudGFyLmd6CjhBVU9mc212VXE3K1diUXZLKzhWc1gzdXpIZWZpR2k4RDBDQlFleWZCU3lVeGJ5NVFtQlVBQXR4MFdHYW82VWNxUWJuWWZDTHRkSHF4YlBlUW4wTUNBPT0K",
+      "url": "https://github.com/vdavid/cmdr/releases/download/v0.7.1/Cmdr_x64.app.tar.gz"
+    }
+  }
+}

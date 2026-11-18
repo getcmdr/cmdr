@@ -694,6 +694,23 @@ var surfaceGuardedCrates = []struct {
 		},
 	},
 	{
+		// Measured 2026-11-18, at the extraction (#942), and set to exactly what the
+		// crate exposes, with no headroom. Argued in
+		// `crates/cmdr-update-manifest/DETAILS.md` § "The public surface".
+		//
+		// Eight root promises: the reader (`parse`, `check_manifest`, `UpdateManifest`,
+		// `PlatformEntry`, `UpdateInfo`, `ManifestRefusal`, `MAX_MANIFEST_BYTES`) and the
+		// `history` module, whose six items (`Reader`, `Reading`, `read`, `gate`, and
+		// `Reader`'s `ALL` and `label`) the release gate binary and the app's plugin
+		// mirror test call.
+		Name: "cmdr-update-manifest",
+		Ceilings: surfaceCeilings{
+			RootPromises:   8,
+			PublicModules:  1,
+			SubsystemItems: 6,
+		},
+	},
+	{
 		// Measured 2026-11-04, at the extraction (#302), and set to exactly what the
 		// crate exposes, with no headroom.
 		//

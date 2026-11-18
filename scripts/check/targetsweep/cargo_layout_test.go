@@ -25,10 +25,10 @@ import (
 //  3. after a generation change (a version bump), that same sweep deletes the old
 //     generation and the rebuild is still fully fresh.
 //
-// A toolchain bump that changes cargo's layout (`-Z build-dir-new-layout`, once it
-// stabilizes) fails it here instead of turning a sweep into a cold build. Skipped when
-// the pinned toolchain isn't installed (CI's light lane), since installing one costs a
-// minute; the machines that hold a Linux target volume always have it.
+// A toolchain bump that changes cargo's layout fails it here instead of turning a sweep into
+// a cold build (cargo 1.100 moved every unit to `build/<package>/<16 hex>/`, #1227). Skipped
+// when the pinned toolchain isn't installed (CI's light lane), since installing one costs a
+// minute; the Rust lane, which has it, runs it with `CMDR_REQUIRE_LAYOUT_PIN=1`.
 func TestCargoLayoutMatchesTheSweepsAssumptions(t *testing.T) {
 	channel := pinnedChannel(t)
 	ws := tinyWorkspace(t, channel)
@@ -76,7 +76,7 @@ func TestCargoLayoutMatchesTheSweepsAssumptions(t *testing.T) {
 
 	p = sweepAsIfLongAfter(t, target)
 	if p.DeletedUnits < 10 {
-		t.Errorf("expected the old generation's units to go, the sweep deleted only %d: %v", p.DeletedUnits, p.Delete)
+		t.Errorf("expected the old generation's units to go, the sweep deleted only %d (units skipped: %q): %v", p.DeletedUnits, p.UnitsSkipped, p.Delete)
 	}
 	executeForTest(t, target, p)
 	expectFresh(t, ws, "build", "--all-targets")
@@ -120,10 +120,16 @@ func executeForTest(t *testing.T, target string, p Plan) {
 // `FingerprintWindow` exists.
 func isDocFingerprint(t *testing.T, target, rel string) bool {
 	t.Helper()
-	if !strings.HasPrefix(rel, "debug/.fingerprint/") {
+	dir := filepath.Join(target, filepath.FromSlash(rel))
+	switch {
+	case strings.HasPrefix(rel, "debug/.fingerprint/"):
+	case strings.HasPrefix(rel, "debug/build/"):
+		// The build-dir layout: the unit's fingerprint files sit in its `fingerprint/`.
+		dir = filepath.Join(dir, "fingerprint")
+	default:
 		return false
 	}
-	entries, err := os.ReadDir(filepath.Join(target, filepath.FromSlash(rel)))
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,9 +203,14 @@ const noAutoInstall = "RUSTUP_AUTO_INSTALL=0"
 // pinnedChannel reads the repo's toolchain channel, skipping unless rustup has it installed
 // WHOLE: `rustup toolchain list` names a toolchain from the moment its dir exists, so the
 // test reads the installed components instead, which rustup records only when an install
-// commits.
+// commits. With `CMDR_REQUIRE_LAYOUT_PIN=1` (the Rust lane's step, which installs the pinned
+// toolchain) a missing toolchain fails instead, so CI can't pass by skipping.
 func pinnedChannel(t *testing.T) string {
 	t.Helper()
+	skip := t.Skipf
+	if os.Getenv("CMDR_REQUIRE_LAYOUT_PIN") == "1" {
+		skip = t.Fatalf
+	}
 	data, err := os.ReadFile(filepath.Join("..", "..", "..", "rust-toolchain.toml"))
 	if err != nil {
 		t.Fatal(err)
@@ -213,12 +224,12 @@ func pinnedChannel(t *testing.T) string {
 	list.Env = append(os.Environ(), noAutoInstall)
 	out, err := list.Output()
 	if err != nil {
-		t.Skipf("the pinned toolchain %s isn't installed here (%v); the layout pin needs it", channel, err)
+		skip("the pinned toolchain %s isn't installed here (%v); the layout pin needs it", channel, err)
 	}
 	if hasComponents(string(out), "rustc", "cargo", "rust-std") {
 		return channel
 	}
-	t.Skipf("the pinned toolchain %s isn't installed here; the layout pin needs it", channel)
+	skip("the pinned toolchain %s isn't installed here; the layout pin needs it", channel)
 	return ""
 }
 

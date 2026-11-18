@@ -4,11 +4,14 @@
 // # Usage
 //
 //	./scripts/release-assets.sh plan -version X.Y.Z -vetted macos -attested "macos-aarch64 macos-x86_64 frontend" -subject-dir release-assets
-//	./scripts/release-assets.sh latest-json -version X.Y.Z -assets release.json -sigs DIR -notes notes.txt -base-url URL -pub-date DATE -out latest.json
+//	./scripts/release-assets.sh latest-json -version X.Y.Z -assets release.json -sigs DIR -notes notes.txt -base-url URL -pub-date DATE [-newer-than X.Y.Z] -out latest.json
+//	./scripts/release-assets.sh validate-latest -version X.Y.Z -assets release.json -sigs DIR -base-url URL [-newer-than X.Y.Z] -file latest.json
 //	./scripts/release-assets.sh checksum-files -version X.Y.Z -assets release.json
 //
 // `plan` appends the pipeline's step outputs to `$GITHUB_OUTPUT` (or prints them when it's unset);
-// `latest-json` writes the update manifest; `checksum-files` prints the downloads to hash into
+// `latest-json` writes the update manifest, only once `validateLatest` passes it;
+// `validate-latest` runs the same validator on a manifest as published (the read-back);
+// `checksum-files` prints the downloads to hash into
 // `checksums.txt`, one per line. `-assets` is `gh api repos/<repo>/releases/tags/<tag>` or
 // `gh release view <tag> --json assets` saved to a file. The pipeline's use of each:
 // `docs/guides/releasing.md` § The release asset manifest.
@@ -36,7 +39,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("name a command: plan, latest-json, or checksum-files")
+		return errors.New("name a command: plan, latest-json, validate-latest, or checksum-files")
 	}
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	version := fs.String("version", "", "the release's version, without the leading v")
@@ -49,6 +52,8 @@ func run(args []string) error {
 	baseURL := fs.String("base-url", "", "latest-json: where the update payloads are served")
 	pubDate := fs.String("pub-date", "", "latest-json: the publication time, RFC 3339 UTC")
 	out := fs.String("out", "", "latest-json: where to write the manifest")
+	file := fs.String("file", "", "validate-latest: the manifest to check")
+	newerThan := fs.String("newer-than", "", "latest-json, validate-latest: the live manifest's version, which this one must move past (empty: unknown, or a deliberate republish)")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
 	}
@@ -67,23 +72,23 @@ func run(args []string) error {
 			return err
 		}
 		return appendOutputs(formatOutputs(outs))
-	case "latest-json":
+	case "latest-json", "validate-latest":
 		have, err := readReleaseAssets(*assets)
 		if err != nil {
 			return err
 		}
-		body, err := os.ReadFile(*notes)
+		keys, err := trustedKeyIDs(os.Getenv("RELEASE_ASSETS_ROOT"))
 		if err != nil {
-			return err
+			return fmt.Errorf("reading the updater keys the app trusts (run this through scripts/release-assets.sh): %w", err)
 		}
-		doc, err := buildLatest(latestInput{
-			release: release, assets: have, sigDir: *sigs, notes: string(body),
-			pubDate: *pubDate, baseURL: strings.TrimSuffix(*baseURL, "/"),
-		})
-		if err != nil {
-			return err
+		in := latestInput{
+			release: release, assets: have, sigDir: *sigs, pubDate: *pubDate,
+			baseURL: strings.TrimSuffix(*baseURL, "/"), trustedKeyIDs: keys, newerThan: *newerThan,
 		}
-		return os.WriteFile(*out, []byte(doc), 0o644)
+		if args[0] == "validate-latest" {
+			return validateFile(*file, in.rules())
+		}
+		return writeLatest(in, *notes, *out)
 	case "checksum-files":
 		have, err := readReleaseAssets(*assets)
 		if err != nil {
@@ -98,7 +103,31 @@ func run(args []string) error {
 		}
 		return nil
 	}
-	return fmt.Errorf("unknown command %q: plan, latest-json, or checksum-files", args[0])
+	return fmt.Errorf("unknown command %q: plan, latest-json, validate-latest, or checksum-files", args[0])
+}
+
+// validateFile runs the validator on a manifest as published.
+func validateFile(path string, r latestRules) error {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	return validateLatest(raw, r)
+}
+
+// writeLatest builds the manifest with the release notes at notesPath and writes it to out,
+// only once it validates.
+func writeLatest(in latestInput, notesPath, out string) error {
+	body, err := os.ReadFile(notesPath)
+	if err != nil {
+		return err
+	}
+	in.notes = string(body)
+	doc, err := buildLatest(in)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(out, []byte(doc), 0o644)
 }
 
 func osList(s string) []manifest.OS {

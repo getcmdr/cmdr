@@ -56,11 +56,16 @@ var skipped = map[string]bool{
 	"Upload the provenance bundle to the release":    true,
 }
 
+// gateArtifact is `manifest-readers`' binary, which the dry run stands in for with
+// `testdata/fakebin/manifest-gate` (the Rust readers' own tests read the writer's output,
+// `testdata/v0.61.0/latest.built.json`).
+var gateArtifact = map[string]string{"manifest-gate": "manifest-gate"}
+
 var scenarios = []scenario{
-	{name: "publish-ci", job: "publish", event: "push", mode: "ci"},
-	{name: "publish-dispatch", job: "publish", event: "workflow_dispatch", mode: "local"},
-	{name: "publish-no-pkg", job: "publish", event: "push", mode: "ci", drop: []string{"Cmdr_0.61.0_universal.pkg"}},
-	{name: "publish-missing-sig", job: "publish", event: "push", mode: "ci", drop: []string{"Cmdr_0.61.0_x64.app.tar.gz.sig"}},
+	{name: "publish-ci", job: "publish", event: "push", mode: "ci", artifacts: gateArtifact},
+	{name: "publish-dispatch", job: "publish", event: "workflow_dispatch", mode: "local", artifacts: gateArtifact},
+	{name: "publish-no-pkg", job: "publish", event: "push", mode: "ci", drop: []string{"Cmdr_0.61.0_universal.pkg"}, artifacts: gateArtifact},
+	{name: "publish-missing-sig", job: "publish", event: "push", mode: "ci", drop: []string{"Cmdr_0.61.0_x64.app.tar.gz.sig"}, artifacts: gateArtifact},
 	{name: "vet", job: "vet-update-archives", event: "push", mode: "ci"},
 	{name: "vet-missing-archive", job: "vet-update-archives", event: "push", mode: "ci", drop: []string{"Cmdr_0.61.0_universal.app.tar.gz"}},
 	{name: "sbom", job: "sbom", event: "push", mode: "ci"},
@@ -165,6 +170,13 @@ func newHarness(t *testing.T, sc scenario) *harness {
 	}
 	fixture := filepath.Join(root, "scripts/release-assets/testdata/v0.61.0")
 	copyFile(t, filepath.Join(fixture, "CHANGELOG.md"), filepath.Join(h.ws, "CHANGELOG.md"), 0o644)
+	if _, ok := sc.artifacts["manifest-gate"]; ok {
+		copyFile(t, filepath.Join(fake, "manifest-gate"), filepath.Join(h.ws, "manifest-gate", "cmdr-check-update-manifest"), 0o755)
+	}
+	// The updater keys the app trusts, which `latest-json` checks every signature's key against.
+	for _, f := range []string{"apps/desktop/src-tauri/tauri.conf.json", "apps/desktop/src-tauri/updater-backup.pub"} {
+		copyFile(t, filepath.Join(root, f), filepath.Join(h.ws, f), 0o644)
+	}
 
 	// The release: every asset v0.61.0 carries, minus the scenario's drops. The signatures,
 	// `latest.json`, and `checksums.txt` are the real ones; every other file is a short stand-in,
@@ -260,6 +272,9 @@ func (h *harness) needs(parts []string) (string, error) {
 		return "success", nil
 	case len(parts) == 4 && parts[2] == "outputs" && parts[1] == "guard" && parts[3] == "update-signing":
 		return h.sc.mode, nil
+	case len(parts) == 4 && parts[2] == "outputs" && parts[1] == "guard" && parts[3] == "live-version":
+		// The step that reads the live manifest is `skipped`; v0.60.0 was live when v0.61.0 shipped.
+		return "0.60.0", nil
 	case len(parts) == 4 && parts[2] == "outputs":
 		if v, ok := h.jobOutputs[parts[1]][parts[3]]; ok {
 			return v, nil
@@ -566,6 +581,7 @@ func copyFile(t *testing.T, src, dst string, mode os.FileMode) {
 	t.Helper()
 	b, err := os.ReadFile(src)
 	must(t, err)
+	must(t, os.MkdirAll(filepath.Dir(dst), 0o755))
 	must(t, os.WriteFile(dst, b, mode))
 }
 

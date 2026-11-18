@@ -176,9 +176,9 @@ list itself, what gets an entry, and the link allowlist: `../security_advisories
   level), and `advisories::fetch_signed_list` reads it at the stage step. The signature is what the bundle's code
   signature is on macOS; the manifest naming it isn't signed, so it can leave the entry out (hiding a notice, as it
   could withhold the update itself) but can't invent one, and `notice_from` keeps `fixedIn <= staged`, so a later
-  release's list can't speak for fixes this update lacks. Missing, malformed (`manifest::lenient_advisory_entry`: the entry alone drops, never the
-  whole `latest.json`, which would stop every install on every OS updating), unreachable (15 s bound), or unsigned reads
-  as no notice plus a warn, never a failed update or check. The What's new popup still covers it after the restart from the new
+  release's list can't speak for fixes this update lacks. Missing, malformed (`cmdr_update_manifest::parse` drops the
+  entry alone, never the whole `latest.json`, which would stop every install on every OS updating), unreachable (15 s
+  bound), over 256 KiB, or unsigned reads as no notice plus a warn, never a failed update or check. The What's new popup still covers it after the restart from the new
   build's embedded copy.
 
 ## Two updater keys
@@ -333,10 +333,54 @@ policy are the macOS code, unchanged. What differs lives in `handoff.rs`, `insta
   `tauri-plugin-updater` 2.14.1's source, and the Rust tests cover everything before them. Verify end to end on the
   Windows lane once the app runs there, with a pipeline-signed release.
 
+## Remote data audit
+
+Every remotely fetched control file the updater and licensing read, each field, and what a hostile or broken server
+gets (audited 2026-11-18, #942, against this code and `crates/cmdr-update-manifest`'s tests). Required data that's bad
+fails closed for the install and surfaces as `ServerRequestError::BadResponse`, which the frontend words calmly
+(`updates.failure.check` with `errors.serverRequest.refused`: "Cmdr couldn't check for updates. Cmdr's server turned
+this down. If it keeps happening, get the latest Cmdr from getcmdr.com.") and logs at error; the app keeps working.
+Optional data that's bad is dropped with a warn and never blocks an update.
+
+- **Every body, transport level** (`server_request::read_capped`): a non-2xx is `Refused` with its status before any
+  parse; a body over its cap is `BadResponse` the moment the `Content-Length` or the stream passes it; a drop or stall
+  mid-body is `Unreachable` / `TimedOut`, never "malformed". Caps and time: manifest 1 MiB in 30 s overall (10 s
+  connect), advisory list 256 KiB in 15 s, update payload 1 GiB with a 30 s read stall bound (no overall bound: a slow
+  link may take minutes), licensing answers 64 KiB in 10 s, other api-server JSON 1 MiB.
+- **`latest.json` as a whole** (`cmdr_update_manifest::parse`): not UTF-8, opening with `<` (an HTML page with a 200),
+  truncated, empty, not an object, or a member named twice: `BadResponse`. Extra members: ignored.
+- **`version`** (required): missing, null, a number, or not semver (a leading `v` included): `BadResponse`. Before
+  this audit a non-semver version read as "up to date".
+- **`platforms`** (required): missing, null, or not an object: `BadResponse`. Each entry is read alone: one that isn't
+  `{ url, signature }` of strings, whose URL isn't absolute `https`, or whose signature is empty is dropped with a warn
+  for every other install, and is `BadResponse` (`ManifestRefusal::BadEntry`) for the install it belongs to. Before,
+  one bad entry for any platform failed every install's parse. Unknown platform keys: ignored. No entry for this
+  install: "up to date" plus a warn (the release gate makes it unshippable for a platform the release builds).
+- **`securityAdvisories`** (optional): any shape that isn't a readable entry is dropped with a warn; the update goes on.
+- **`notes`, `pub_date`, `dmgSizes`, `downloads`**: not read by this build, so any value passes (the 0.7 plugin reads
+  `notes` and `pub_date`, which the writer's gate holds to their types).
+- **The update payload**: the bytes must verify against a trusted key (`SignatureMismatch` otherwise), then name the
+  offered version (Windows, Linux) or carry it in `Info.plist` with Cmdr's code signature (macOS). An HTML page, a
+  truncated file, or a different release all fail there, and the install never starts.
+- **The signed advisory list** (Windows, Linux, `advisories::fetch_signed_list`): unsigned, not UTF-8, or not JSON reads
+  as no notice. Inside it (`security_advisories::parse`, the staged bundle's copy on macOS too): not an object or no
+  `advisories` array is no notice; an entry with an unknown severity, a non-semver `fixedIn`, a missing field, or the
+  wrong shape is dropped alone; unknown members are ignored. Before, `deny_unknown_fields` and an all-or-nothing collect
+  meant a field or severity a later release added hid every notice from an older running app.
+- **License `/validate`**: a non-2xx, an unreadable or oversized body, or a missing `signedAnswer` is `NetworkError` /
+  `Unverified`, which keeps the cached status (`licensing/CLAUDE.md`). Inside the signed answer, an unknown status or
+  type fails `serde` and reads as `BadPayload`, `Unverified`. **`/activate`**: a non-2xx is "code not found" whatever
+  its body (before, a non-JSON 404 page read as a server error), an unreadable 2xx body or one with no key is
+  `ServerError`.
+- **Not fixed, by design**: a manifest that leaves out this install's platform reads as "up to date" in the UI (a warn in
+  the log). An honest "there's no build for this computer yet" needs a new outcome and copy; the release gate already
+  refuses such a manifest for any platform the release builds.
+
 ## Dependencies
 
 - `reqwest`: HTTP client for manifest + tarball download, through `server_request::send` (`Egress::UpdateCheck`,
   `Egress::UpdateDownload`).
+- `cmdr-update-manifest`: the `latest.json` reader, shared with the release gate.
 - `platform/macos/installer.rs`'s `running_bundle()` is crate-visible: `dock/`, `cli/`, and `install_location` ask it
   where the running bundle is.
 - `minisign-verify`: signature verification.

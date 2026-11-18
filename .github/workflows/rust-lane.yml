@@ -91,6 +91,15 @@ jobs:
         run: go build -o check .
         working-directory: ./scripts/check
 
+      # The Linux target sweep's layout pin needs the pinned toolchain, which only this lane
+      # has (the light lane's `scripts-go-tests` skips it), and this lane is what a toolchain
+      # bump reruns. Linux is also where the sweep runs. `scripts/check/checks/DETAILS.md`
+      # § "The target volume sweeps itself".
+      - name: Check the target sweep against this toolchain's cargo layout
+        run:
+          CMDR_REQUIRE_LAYOUT_PIN=1 go test ./targetsweep/ -run '^TestCargoLayoutMatchesTheSweepsAssumptions$' -count=1
+        working-directory: ./scripts/check
+
       # Pull requests only: the suite runs just the crates the PR can affect plus their
       # dependents (`scripts/check/checks/DETAILS.md` § "The Rust test scope"). A push, a
       # dispatch, and `run_all` never set it, so they test everything.

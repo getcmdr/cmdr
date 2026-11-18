@@ -1,0 +1,8 @@
+#!/bin/bash
+# Stands in for `cmdr-check-update-manifest` (the `manifest-readers` job's build) in the release
+# pipeline dry run (`pipeline_test.go`): logs the call and requires a JSON file there. The real
+# readers run over the writer's output in `crates/cmdr-update-manifest`'s tests.
+set -euo pipefail
+
+printf 'cmdr-check-update-manifest %s\n' "$(basename "$1")" >> "$FIXTURE_LOG"
+jq empty "$1"

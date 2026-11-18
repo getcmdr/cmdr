@@ -140,6 +140,7 @@ var rustMemberTrees = []rustMemberTree{
 	{Pkg: "cmdr-sftp", Kind: KindApp, Glob: "crates/cmdr-sftp/**"},
 	{Pkg: "cmdr-smb", Kind: KindApp, Glob: "crates/cmdr-smb/**"},
 	{Pkg: "cmdr-sort", Kind: KindApp, Glob: "crates/cmdr-sort/**"},
+	{Pkg: "cmdr-update-manifest", Kind: KindApp, Glob: "crates/cmdr-update-manifest/**"},
 	{Pkg: "cmdr-update-trust", Kind: KindApp, Glob: "crates/cmdr-update-trust/**"},
 	{Pkg: "cmdr-viewer", Kind: KindApp, Glob: "crates/cmdr-viewer/**"},
 	{Pkg: "cmdr-webdav", Kind: KindApp, Glob: "crates/cmdr-webdav/**"},
@@ -228,8 +229,10 @@ var rustEmbeddedInputs = []string{
 	"apps/desktop/src-tauri/Info.plist",
 	"apps/website/public/mdm/**",
 	"apps/website/src/lib/trust-mdm.ts",
-	// `updater/manifest.rs` reads the release writer's own output, so the two sides share one fixture.
+	// `cmdr-update-manifest`'s tests and `updater/manifest.rs` read the release writer's own output
+	// (as published, and as `latest-json` builds it today), so the two sides share one fixture.
 	"scripts/release-assets/testdata/v0.61.0/latest.json",
+	"scripts/release-assets/testdata/v0.61.0/latest.built.json",
 	"crates/cmdr-menu/src/bar.rs",
 	"crates/cmdr-menu/src/ids.rs",
 	// `cmdr-menu`'s `bar.rs` embeds the keys the bar leaves to the page, which the frontend writes.

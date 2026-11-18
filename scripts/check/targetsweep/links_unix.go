@@ -14,3 +14,11 @@ func linkCount(info fs.FileInfo) uint64 {
 	}
 	return 1
 }
+
+// fileID is a file's device and inode, which two hard links share.
+func fileID(info fs.FileInfo) (fileIdentity, bool) {
+	if st, ok := info.Sys().(*syscall.Stat_t); ok {
+		return fileIdentity{dev: uint64(st.Dev), ino: st.Ino}, true
+	}
+	return fileIdentity{}, false
+}

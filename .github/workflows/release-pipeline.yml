@@ -58,6 +58,9 @@ jobs:
       sbom-macos-x86_64-subjects: ${{ steps.assets.outputs.sbom-macos-x86_64-subjects }}
       sbom-frontend: ${{ steps.assets.outputs.sbom-frontend }}
       sbom-frontend-subjects: ${{ steps.assets.outputs.sbom-frontend-subjects }}
+      # The live manifest's version, which `publish`'s validator holds the new one above; empty
+      # for the deliberate republish `RELEASE_REPUBLISH_TAG` names.
+      live-version: ${{ steps.live-manifest.outputs.live-version }}
 
     steps:
       - name: Checkout code
@@ -94,6 +97,7 @@ jobs:
             verify-tag "$GITHUB_REF_NAME"
 
       - name: Refuse to move the update manifest backwards
+        id: live-manifest
         env:
           # Repository variable, deliberately out-of-band from git: no combination of tag pushes
           # can satisfy it by accident, which matters because a tag push IS the mistake class.
@@ -125,6 +129,7 @@ jobs:
           fi
 
           echo "$TAG moves the manifest $CURRENT -> $VERSION. Proceeding."
+          echo "live-version=$CURRENT" >> "$GITHUB_OUTPUT"
 
       # `publish` copies the release into the EU bucket behind `download.getcmdr.com` before it
       # goes Latest, and `latest.json` names that host. A token that can't write the bucket would
@@ -1217,6 +1222,44 @@ jobs:
             exit 1
           fi
 
+  # `latest.json`'s second gate (the first is `scripts/release-assets`' validator, which `publish`
+  # runs): the app's own reader and every reader that ever shipped (`crates/cmdr-update-manifest`,
+  # the Tauri plugin of Cmdr 0.7 and earlier included), built here so `publish` only runs the
+  # binary. Its own job, read-only and with no persisted credentials: the cargo build runs
+  # third-party build scripts, which must never share a job with `publish`'s write token.
+  manifest-readers:
+    name: Build the update manifest's readers
+    needs: [guard]
+    if: >-
+      !cancelled() && needs.guard.result == 'success' && (
+        github.event_name == 'workflow_dispatch' || needs.guard.outputs.update-signing == 'ci')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # The runner image's rustup syncs the toolchain `rust-toolchain.toml` pins on the first call.
+      - name: Build the readers' gate
+        run: |
+          set -euo pipefail
+          cargo build --quiet --release --locked -p cmdr-update-manifest --bin cmdr-check-update-manifest
+          mkdir -p manifest-gate
+          cp target/release/cmdr-check-update-manifest manifest-gate/
+
+      - name: Hand the gate to the publish job
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: manifest-gate
+          path: manifest-gate/
+          if-no-files-found: error
+          retention-days: 7
+
   # Builds `latest.json` from the `.sig` assets and ships it. In `ci` mode it follows the builds;
   # in `local` mode it's the dispatch that `scripts/release-finish.sh` starts once its signatures
   # are on the draft, and its first act is publishing that draft. Same steps either way, so the
@@ -1226,10 +1269,11 @@ jobs:
     # `ci-gate` (a green full CI run and CodeQL on the tagged commit), `vet-update-archives`, and
     # `demo` (the attested browser demo image the website deploy below ships) are hard
     # requirements. `sign` puts the pkg (if any) on the release before the checksums are taken.
-    needs: [guard, ci-gate, sign, vet-update-archives, demo]
+    needs: [guard, ci-gate, sign, vet-update-archives, demo, manifest-readers]
     if: >-
       !cancelled() && needs.guard.result == 'success' && needs.ci-gate.result == 'success' &&
-      needs.vet-update-archives.result == 'success' && needs.demo.result == 'success' && (
+      needs.vet-update-archives.result == 'success' && needs.demo.result == 'success' && needs.manifest-readers.result
+      == 'success' && (
         github.event_name == 'workflow_dispatch' ||
         (needs.guard.outputs.update-signing == 'ci' && needs.sign.result == 'success'))
     runs-on: ubuntu-latest
@@ -1306,6 +1350,7 @@ jobs:
       - name: Generate latest.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LIVE_VERSION: ${{ needs.guard.outputs.live-version }}
         run: |
           set -euo pipefail
           VERSION="${{ github.ref_name }}"
@@ -1325,18 +1370,30 @@ jobs:
           # size) for the website, and `dmgSizes`, which website builds from before `downloads`
           # still read. ❌ Don't drop `dmgSizes` before the release after the one that adds
           # `downloads`. `docs/guides/releasing.md` § The release asset manifest.
+          #
+          # It writes nothing its validator refuses (`scripts/release-assets/validate.go`): every
+          # member typed, every URL an asset of this release, every signature the release's own
+          # and by a key the app trusts, sizes that match, the tag's version and newer than the live
+          # one. Every installed copy fetches these URLs verbatim and has no fallback, so this is
+          # where a drifted name fails, while nothing has shipped.
           ./scripts/release-assets.sh latest-json -version "$VERSION" -assets /tmp/release.json \
             -sigs /tmp/signatures -notes /tmp/notes.txt -base-url "$BASE_URL" \
-            -pub-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" -out /tmp/latest.json
+            -pub-date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" -newer-than "$LIVE_VERSION" -out /tmp/latest.json
 
-          # Every installed copy of Cmdr fetches these URLs verbatim and has no fallback, so a name
-          # that drifts from what the `sign` job uploaded would strand the whole install base. Fail
-          # the release here instead, while nothing has shipped. (The mirror step checks the same
-          # URLs answer with the release's bytes.)
-          for asset in $(jq -r '.platforms[].url | split("/") | last' /tmp/latest.json | sort -u); do
-              echo "$RELEASE_JSON" | jq -e --arg name "$asset" 'any(.assets[]; .name == $name)' > /dev/null \
-                  || { echo "latest.json points at \"$asset\", which is not an asset on release $TAG"; exit 1; }
-          done
+      - name: Download the update manifest's readers
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: manifest-gate
+          path: manifest-gate
+
+      # Every reader that ever shipped reads it and finds an update for each install it serves
+      # (`crates/cmdr-update-manifest`, built by `manifest-readers`), so no installed Cmdr, old or
+      # new, fails its check on this file.
+      - name: Check every shipped Cmdr can read latest.json
+        run: |
+          set -euo pipefail
+          chmod +x manifest-gate/cmdr-check-update-manifest
+          manifest-gate/cmdr-check-update-manifest /tmp/latest.json
 
       - name: Upload latest.json to the release
         env:
@@ -1344,6 +1401,25 @@ jobs:
         run: |
           TAG="${{ github.ref_name }}"
           gh release upload "$TAG" /tmp/latest.json --clobber
+
+      # The read-back: what the release serves now must be the bytes that passed, and pass again
+      # (the same validator, on the downloaded copy). Before the mirror and the Latest mark, so a
+      # bad upload never goes live: the site and every install read only the Latest release's.
+      - name: Read latest.json back from the release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LIVE_VERSION: ${{ needs.guard.outputs.live-version }}
+        run: |
+          set -euo pipefail
+          TAG="${{ github.ref_name }}"
+          rm -rf /tmp/readback && mkdir -p /tmp/readback
+          gh release download "$TAG" -p latest.json -D /tmp/readback
+          cmp /tmp/latest.json /tmp/readback/latest.json \
+              || { echo "::error::The release serves a latest.json that differs from the one that passed the gate."; exit 1; }
+          ./scripts/release-assets.sh validate-latest -version "${TAG#v}" -assets /tmp/release.json \
+            -sigs /tmp/signatures -base-url "https://download.getcmdr.com/$TAG" \
+            -newer-than "$LIVE_VERSION" -file /tmp/readback/latest.json
+          manifest-gate/cmdr-check-update-manifest /tmp/readback/latest.json
 
       # The only way someone who clicks Download on the website can check what they got. The
       # Homebrew cask carries a `sha256` and the updater verifies a minisign signature, but a

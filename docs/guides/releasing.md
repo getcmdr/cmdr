@@ -110,6 +110,16 @@ be the release's.
   build is split).
 - **By hand**: `cargo run --release -p cmdr-update-trust --bin cmdr-vet-update -- --version X.Y.Z <archives>`.
 
+`latest.json` has a gate of its own: no manifest goes out that a shipped Cmdr couldn't read or that disagrees with the
+release. `publish` builds it only through `validateLatest` (every member typed, every URL an asset of this release,
+every signature the release's own and by a trusted key, sizes that match, the tag's version, newer than the live one),
+runs every reader that ever shipped over it (`cmdr-check-update-manifest`, built by the read-only `manifest-readers`
+job), uploads it, then reads it back from the release and runs both again on those bytes, all before the mirror and the
+Latest mark. By hand:
+`./scripts/release-assets.sh validate-latest -version X.Y.Z -assets release.json -sigs DIR -base-url URL -file latest.json`
+and `cargo run -p cmdr-update-manifest --bin cmdr-check-update-manifest -- latest.json`.
+`scripts/release-assets/DETAILS.md` § The `latest.json` gate.
+
 ## Testing the pipeline without releasing
 
 Two levels, cheapest first:
@@ -974,8 +984,8 @@ that handles release files derives from it, so adding a platform is rows plus th
   macOS ones to vet, the required builds, the Rust SBOMs to generate, and each SBOM's attestation subjects. The plan
   fails when the manifest has an update payload for an OS `vet-update-archives` doesn't vet, or an SBOM `attest` has no
   step for (its `-vetted` and `-attested` flags name what those jobs do).
-- **`publish`** writes `latest.json` (`release-assets.sh latest-json`) and picks the files `checksums.txt` covers
-  (`checksum-files`).
+- **`publish`** writes `latest.json` (`release-assets.sh latest-json`, which validates what it writes), checks the
+  uploaded copy (`validate-latest`), and picks the files `checksums.txt` covers (`checksum-files`).
 - **`release-finish`, `release-mirror`, and `release-evidence`** import the package for what they sign, mirror, and
   expect.
 - **The website** reads `latest.json`'s `downloads` (below).
@@ -1039,9 +1049,9 @@ Two naming details are load-bearing:
 downloads are served from; releases up to 0.59.0 name `https://github.com/<repo>/releases/download/<tag>/<file>`). The
 updater does a plain `reqwest` GET of that URL (`download_update` in `apps/desktop/src-tauri/src/updater/mod.rs`), so ❌
 never GitHub API asset URLs (`api.github.com/repos/.../releases/assets/<id>`), which hand back JSON to a caller that
-doesn't send `Accept: application/octet-stream`. Before uploading the manifest, the job asserts that every URL in it
-names an asset actually on the release, and before marking the release Latest, the mirror step proves each URL serves
-that asset's bytes: a name that drifts from what `sign` uploaded would strand every install in the field, with no
+doesn't send `Accept: application/octet-stream`. The validator refuses a manifest whose URLs don't each name an asset
+actually on the release (§ The release gate), and before marking the release Latest, the mirror step proves each URL
+serves that asset's bytes: a name that drifts from what `sign` uploaded would strand every install in the field, with no
 fallback in the app to recover.
 
 ## Where downloads are served from

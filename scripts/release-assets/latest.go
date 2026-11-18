@@ -70,6 +70,17 @@ type latestInput struct {
 	notes   string
 	pubDate string
 	baseURL string // where the update payloads are served, without a trailing slash
+	// trustedKeyIDs and newerThan go to the validator (`latestRules`).
+	trustedKeyIDs []string
+	newerThan     string
+}
+
+// rules is what the manifest built from `in` must agree with.
+func (in latestInput) rules() latestRules {
+	return latestRules{
+		release: in.release, assets: in.assets, sigDir: in.sigDir, baseURL: in.baseURL,
+		trustedKeyIDs: in.trustedKeyIDs, newerThan: in.newerThan,
+	}
 }
 
 // buildLatest writes `latest.json`, the update manifest every installed copy polls.
@@ -82,7 +93,8 @@ type latestInput struct {
 //     It stays for one more release (`docs/guides/releasing.md` § What a release publishes).
 //
 // The members before `downloads` are in the order, and print in the bytes, of every manifest up to
-// v0.61.0 (`pipeline_test.go` holds this to v0.61.0's published file).
+// v0.61.0 (`pipeline_test.go` holds this to v0.61.0's published file). It answers only a manifest
+// `validateLatest` passes.
 func buildLatest(in latestInput) (string, error) {
 	sizes := map[string]int64{}
 	for _, a := range in.assets {
@@ -112,9 +124,6 @@ func buildLatest(in latestInput) (string, error) {
 		sig, err := os.ReadFile(filepath.Join(in.sigDir, f.Signature()))
 		if err != nil {
 			return "", fmt.Errorf("no signature for %s: %w", f.Name, err)
-		}
-		if f.SignsVersion() && !signatureNamesVersion(string(sig), in.release.Version) {
-			return "", fmt.Errorf("%s's signature doesn't name version %s (`tauri signer sign --app-version`), so every Windows and Linux install would refuse it", f.Name, in.release.Version)
 		}
 		platforms = append(platforms, member{f.UpdaterKey, object{
 			// Trailing newlines dropped, as the shell's `$(cat …)` that read them before did.
@@ -147,5 +156,10 @@ func buildLatest(in latestInput) (string, error) {
 		return "", err
 	}
 	b.WriteString("\n")
+	// The gate: nothing leaves here that the validator refuses, the same one `validate-latest`
+	// runs on the uploaded copy.
+	if err := validateLatest([]byte(b.String()), in.rules()); err != nil {
+		return "", err
+	}
 	return b.String(), nil
 }

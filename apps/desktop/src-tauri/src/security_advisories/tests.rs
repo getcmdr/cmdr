@@ -41,21 +41,43 @@ fn an_empty_list_parses_to_nothing() {
 #[test]
 fn malformed_input_is_no_list() {
     for (label, json) in [
-        ("not json", "not json at all".to_string()),
-        ("wrong shape", r#"[]"#.to_string()),
-        (
-            "unknown severity",
-            list_json(&[advisory_json("GHSA-x", "0.52.0", "catastrophic")]),
-        ),
-        ("not semver", list_json(&[advisory_json("GHSA-x", "0.52", "high")])),
-        (
-            "unknown field",
-            r#"{"advisories":[{"id":"a","fixedIn":"0.52.0","severity":"low","url":"https://getcmdr.com/changelog","summary":"x"}]}"#
-                .to_string(),
-        ),
+        ("not json", "not json at all"),
+        ("wrong shape", r#"[]"#),
+        ("no advisories", r#"{}"#),
+        ("advisories as an object", r#"{"advisories":{}}"#),
+        ("a truncated list", r#"{"advisories":[{"id":"a""#),
     ] {
-        assert_eq!(parse(&json, "test"), None, "{label} must parse to no list");
+        assert_eq!(parse(json, "test"), None, "{label} must parse to no list");
     }
+}
+
+/// One entry this build can't read costs that entry alone: the running app reads the NEXT
+/// release's list, so a severity or a field added later must not hide the notices it can read.
+#[test]
+fn an_entry_this_build_cant_read_is_dropped_and_the_rest_still_count() {
+    let good = advisory_json("GHSA-good", "0.52.0", "critical");
+    for (label, bad) in [
+        ("unknown severity", advisory_json("GHSA-x", "0.52.0", "catastrophic")),
+        ("not semver", advisory_json("GHSA-x", "0.52", "high")),
+        (
+            "no url",
+            r#"{"id":"GHSA-x","fixedIn":"0.52.0","severity":"low"}"#.to_string(),
+        ),
+        ("a string", r#""GHSA-x""#.to_string()),
+        ("null", "null".to_string()),
+    ] {
+        let advisories = parse(&list_json(&[bad, good.clone()]), "test").unwrap_or_else(|| panic!("{label}: a list"));
+        assert_eq!(advisories.len(), 1, "{label}");
+        assert_eq!(advisories[0].id, "GHSA-good", "{label}");
+    }
+}
+
+/// A field a later release adds is ignored, at the top and in an entry.
+#[test]
+fn an_unknown_field_is_ignored() {
+    let json = r#"{"schema":2,"advisories":[{"id":"a","fixedIn":"0.52.0","severity":"low","url":"https://getcmdr.com/changelog","summary":"x"}]}"#;
+    let advisories = parse(json, "test").expect("a list");
+    assert_eq!(advisories.len(), 1);
 }
 
 #[test]

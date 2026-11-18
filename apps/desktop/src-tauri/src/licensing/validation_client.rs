@@ -15,6 +15,10 @@ const LICENSE_SERVER_URL: &str = "http://localhost:8787";
 #[cfg(not(debug_assertions))]
 const LICENSE_SERVER_URL: &str = "https://api.getcmdr.com";
 
+/// The most a `/validate` or `/activate` answer may weigh (a few hundred bytes today), so a
+/// misbehaving server or proxy can't fill memory within the 10 s budget.
+const MAX_ANSWER_BYTES: usize = 64 << 10;
+
 /// Response from the /validate endpoint. The plain `status` / `type` / ... fields beside
 /// `signedAnswer` serve older app versions; this one reads only what's signed.
 #[derive(Debug, Clone, Deserialize)]
@@ -148,15 +152,16 @@ pub async fn activate_short_code(code: &str) -> Result<String, LicenseActivation
         .await
         .map_err(|e| LicenseActivationError::NetworkError { detail: e.to_string() })?;
 
-    let status = response.status();
-    let body: ActivateResponse = response
-        .json()
-        .await
-        .map_err(|e| LicenseActivationError::ServerError { detail: e.to_string() })?;
-
-    if !status.is_success() {
+    // The status first: a 404 is "no such code" whatever its body says, even when a proxy answers
+    // it with an HTML page that isn't JSON.
+    if !response.status().is_success() {
         return Err(LicenseActivationError::ShortCodeNotFound);
     }
+    let raw = crate::server_request::read_capped(response, MAX_ANSWER_BYTES)
+        .await
+        .map_err(|e| LicenseActivationError::ServerError { detail: e.to_string() })?;
+    let body: ActivateResponse =
+        serde_json::from_slice(&raw).map_err(|e| LicenseActivationError::ServerError { detail: e.to_string() })?;
 
     body.license_key.ok_or_else(|| LicenseActivationError::ServerError {
         detail: "No license key in response".to_string(),
@@ -229,7 +234,11 @@ pub async fn validate_with_server(transaction_id: &str) -> ValidationOutcome {
         return ValidationOutcome::NetworkError;
     }
 
-    let parsed = match response.json::<ValidationResponse>().await {
+    let parsed = match crate::server_request::read_capped(response, MAX_ANSWER_BYTES)
+        .await
+        .map_err(|e| e.to_string())
+        .and_then(|raw| serde_json::from_slice::<ValidationResponse>(&raw).map_err(|e| e.to_string()))
+    {
         Ok(resp) => resp,
         Err(e) => {
             log::warn!("License validation response parse error: {}", e);

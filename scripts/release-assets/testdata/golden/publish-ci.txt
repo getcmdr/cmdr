@@ -10,8 +10,14 @@
 
 ## Generate latest.json: ok
 
+## Check every shipped Cmdr can read latest.json: ok
+cmdr-check-update-manifest latest.json
+
 ## Upload latest.json to the release: ok
 gh release upload latest.json
+
+## Read latest.json back from the release: ok
+cmdr-check-update-manifest latest.json
 
 ## Publish SHA-256 checksums for the downloads: ok
 gh release upload checksums.txt

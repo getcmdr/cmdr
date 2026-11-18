@@ -438,12 +438,13 @@ All under `crates/`, alongside the four apps. `cmdr-fs`, `cmdr-index`, `cmdr-arc
 `cmdr-webdav`, `cmdr-s3`, `cmdr-nfs`, `cmdr-adb`, `cmdr-mtp`, `cmdr-git`, `cmdr-restic`, `cmdr-http`, `cmdr-listing`,
 `cmdr-collation`, `cmdr-sort`, `cmdr-brief-columns`, `cmdr-local`, `cmdr-media-meta`, `cmdr-menu`, `cmdr-operation-log`,
 `cmdr-operations`, `cmdr-recents`, `cmdr-search`, `cmdr-viewer`, `cmdr-multi-rename`, `cmdr-platform-cfg`, `cmdr-about`,
-and `cmdr-update-trust` carry no `tauri` dependency and no reach into the app, and neither do `cmdr-listing-wasm` and
-the two dev CLIs; `index-crate-isolation` enforces that against the `cargo metadata` graph, and caps the public surface
-of `cmdr-index`, `cmdr-archive`, `cmdr-smb`, `cmdr-sftp`, `cmdr-webdav`, `cmdr-s3`, `cmdr-nfs`, `cmdr-mtp`, `cmdr-git`,
-`cmdr-restic`, `cmdr-listing`, `cmdr-collation`, `cmdr-sort`, `cmdr-brief-columns`, `cmdr-local`, `cmdr-operation-log`,
-`cmdr-operations`, `cmdr-recents`, `cmdr-search`, `cmdr-multi-rename`, `cmdr-platform-cfg`, and `cmdr-about` at the
-numbers their audits landed on. The vendored fork is an ordinary member.
+`cmdr-update-trust`, and `cmdr-update-manifest` carry no `tauri` dependency and no reach into the app, and neither do
+`cmdr-listing-wasm` and the two dev CLIs; `index-crate-isolation` enforces that against the `cargo metadata` graph, and
+caps the public surface of `cmdr-index`, `cmdr-archive`, `cmdr-smb`, `cmdr-sftp`, `cmdr-webdav`, `cmdr-s3`, `cmdr-nfs`,
+`cmdr-mtp`, `cmdr-git`, `cmdr-restic`, `cmdr-listing`, `cmdr-collation`, `cmdr-sort`, `cmdr-brief-columns`,
+`cmdr-local`, `cmdr-operation-log`, `cmdr-operations`, `cmdr-recents`, `cmdr-search`, `cmdr-multi-rename`,
+`cmdr-platform-cfg`, `cmdr-about`, and `cmdr-update-manifest` at the numbers their audits landed on. The vendored fork
+is an ordinary member.
 
 - `crates/cmdr-fs/`: the filesystem vocabulary and host primitives every layer speaks in — the `Volume` trait and its
   data types, `FileEntry`, typed error classification (`ListingError` / `ListingErrorReason` / `ErrorCategory`, errno →
@@ -547,6 +548,8 @@ numbers their audits landed on. The vendored fork is an ordinary member.
 - `crates/cmdr-update-trust/`: what makes a macOS update archive a Cmdr release (the installer's extraction plus Cmdr's
   Developer ID code signature), shared by the updater and the release gate binary `cmdr-vet-update`. See
   `crates/cmdr-update-trust/CLAUDE.md`
+- `crates/cmdr-update-manifest/`: `latest.json`'s reader and every reader that ever shipped, shared by the updater and
+  the release gate binary `cmdr-check-update-manifest`. See `crates/cmdr-update-manifest/CLAUDE.md`
 - `crates/cmdr-archive/`: the archive backend — a `Volume` over a zip / tar / 7z file that physically lives on another
   volume. Browse + extract for every format, plus temp+rename WRITES for zip, over a decoupled `Volume`-free reading
   core (central-directory parse, synthetic tree, streaming decompress, Zip Slip defense) and the shared boundary

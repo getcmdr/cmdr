@@ -59,6 +59,8 @@ func TestParseStreamCollectsEveryUnitHash(t *testing.T) {
 		`{"reason":"compiler-artifact","filenames":["/cargo-target/debug/deps/cmdr_lib-2222222222222222"],"executable":"/cargo-target/debug/deps/cmdr_lib-2222222222222222","fresh":false}`,
 		`{"reason":"compiler-artifact","filenames":["/cargo-target/debug/build/ring-3333333333333333/build-script-build"],"executable":null,"fresh":true}`,
 		`{"reason":"build-script-executed","package_id":"x","out_dir":"/cargo-target/debug/build/ring-4444444444444444/out"}`,
+		// Cargo 1.100's build-dir layout names a unit by a bare hash dir.
+		`{"reason":"build-script-executed","package_id":"x","out_dir":"/cargo-target/debug/build/ring/5555555555555555/out"}`,
 		// An uplifted bin names no hash; the hard-link rule covers it.
 		`{"reason":"compiler-artifact","filenames":["/cargo-target/debug/cmdr"],"executable":"/cargo-target/debug/cmdr","fresh":true}`,
 		`{"reason":"compiler-message","message":{"rendered":"warning: x"}}`,
@@ -70,7 +72,7 @@ func TestParseStreamCollectsEveryUnitHash(t *testing.T) {
 	if !got.complete || got.malformed != 0 || got.artifacts != 4 {
 		t.Fatalf("complete=%v malformed=%d artifacts=%d, want true/0/4", got.complete, got.malformed, got.artifacts)
 	}
-	want := []string{"1111111111111111", "2222222222222222", "3333333333333333", "4444444444444444"}
+	want := []string{"1111111111111111", "2222222222222222", "3333333333333333", "4444444444444444", "5555555555555555"}
 	if keys := sortedKeys(got.hashes); strings.Join(keys, ",") != strings.Join(want, ",") {
 		t.Errorf("hashes = %v, want %v", keys, want)
 	}

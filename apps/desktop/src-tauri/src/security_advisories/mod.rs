@@ -34,16 +34,17 @@ pub enum Severity {
     Critical,
 }
 
-/// The file's shape. `deny_unknown_fields` so a typo'd key reads as a malformed list rather than
-/// as an advisory silently missing its link.
+/// The file's shape, read entry by entry. Unknown members are ignored, at the top and in an entry:
+/// the running app reads the NEXT release's list (the staged bundle's, or the signed asset), so a
+/// field a later release adds must not cost an older reader every notice. The strictness (a
+/// typo'd key) lives in the `desktop-security-advisories` check, which vets the committed list.
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
 struct AdvisoryFile {
-    advisories: Vec<RawAdvisory>,
+    advisories: Vec<serde_json::Value>,
 }
 
 #[derive(Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 struct RawAdvisory {
     id: String,
     fixed_in: String,
@@ -74,8 +75,10 @@ pub struct SecurityAdvisory {
     pub url: Option<String>,
 }
 
-/// Parses a list, or answers `None` (logged at warn) when it doesn't parse. `source` names which
-/// copy, for the log.
+/// Parses a list, or answers `None` (logged at warn) when it isn't one at all. An entry that
+/// doesn't read (a severity this build doesn't know, a `fixedIn` that isn't semver, a missing
+/// field) is dropped with a warn and the rest still count, so one bad entry can't hide a critical
+/// fix's notice. `source` names which copy, for the log.
 pub fn parse(json: &str, source: &str) -> Option<Vec<Advisory>> {
     let file: AdvisoryFile = match serde_json::from_str(json) {
         Ok(file) => file,
@@ -85,22 +88,34 @@ pub fn parse(json: &str, source: &str) -> Option<Vec<Advisory>> {
             return None;
         }
     };
-    file.advisories
+    let advisories = file
+        .advisories
         .into_iter()
-        .map(|raw| match Version::parse(&raw.fixed_in) {
-            Ok(fixed_in) => Some(Advisory {
-                id: raw.id,
-                fixed_in,
-                severity: raw.severity,
-                url: raw.url,
-            }),
-            Err(e) => {
-                // allowed-log-private: `source` is a fixed label for where the list came from
-                log::warn!(target: "security_advisories", "The {source} security advisory list names {} as fixed in {:?}, which isn't semver ({e}), so it names no advisory", raw.id, raw.fixed_in);
-                None
+        .filter_map(|value| {
+            let raw: RawAdvisory = match serde_json::from_value(value) {
+                Ok(raw) => raw,
+                Err(e) => {
+                    // allowed-log-private: `source` is a fixed label for where the list came from
+                    log::warn!(target: "security_advisories", "The {source} security advisory list has an entry this build can't read, so it skips it: {e}");
+                    return None;
+                }
+            };
+            match Version::parse(&raw.fixed_in) {
+                Ok(fixed_in) => Some(Advisory {
+                    id: raw.id,
+                    fixed_in,
+                    severity: raw.severity,
+                    url: raw.url,
+                }),
+                Err(e) => {
+                    // allowed-log-private: `source` is a fixed label for where the list came from
+                    log::warn!(target: "security_advisories", "The {source} security advisory list names {} as fixed in {:?}, which isn't semver ({e}), so it skips it", raw.id, raw.fixed_in);
+                    None
+                }
             }
         })
-        .collect()
+        .collect();
+    Some(advisories)
 }
 
 /// The advisories fixed in `after < fixedIn <= upto`, most severe first (then newest, then by id,

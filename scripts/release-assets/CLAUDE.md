@@ -8,7 +8,8 @@ targets), and the CLI the release pipeline's shell steps call (`../release-asset
 
 - `manifest/manifest.go`: the rows, `Validate`, and the derived lists (updates, downloads, binaries, SBOMs, subjects).
   `release-finish`, `release-mirror`, and `release-evidence` import it (`replace` in their `go.mod`).
-- `plan.go` (the `guard` job's step outputs), `latest.go` + `jsonout.go` (`latest.json`), `main.go` (the CLI).
+- `plan.go` (the `guard` job's step outputs), `latest.go` + `jsonout.go` (`latest.json`), `validate.go` (the one
+  `latest.json` validator), `main.go` (the CLI).
 - `pipeline_test.go` + `workflow_test.go`: the dry run of `release-pipeline.yml` against v0.61.0 (`testdata/`).
 
 ## Must-knows
@@ -16,7 +17,11 @@ targets), and the CLI the release pipeline's shell steps call (`../release-asset
 - **A new platform is rows, plus the jobs that build, vet, and attest it.** `plan` fails until `vet-update-archives`
   vets the OS (`-vetted`) and `attest` has a step per SBOM (`-attested`); `Validate` fails a build with no Rust SBOM.
 - **`latest.json` stays byte-stable**: `jsonout.go` prints what `jq --indent 2` printed, and the update rows run
-  universal first, the platform order of every manifest so far. Tests hold it to v0.61.0's published bytes.
+  universal first, the platform order of every manifest so far. Tests hold it to v0.61.0's published bytes, and
+  `testdata/v0.61.0/latest.built.json` (the Rust readers' fixture) to today's output.
+- **No `latest.json` leaves without `validateLatest`**: `latest-json` runs it on what it built, `validate-latest` on the
+  copy read back from the release, and `publish` runs every shipped reader (`crates/cmdr-update-manifest`) on both. A
+  new member is added to `topLevelKeys` on purpose, with a history fixture there. DETAILS § The `latest.json` gate.
 - **A Windows or Linux update payload signs its version** (`File.SignsVersion()`: `--app-version`), or the app refuses
   it. DETAILS § Update payloads off macOS.
 - **An optional file is a glob in `actions/attest`'s `subject-path`** (`subjectPattern`): the action fails on a literal
