@@ -343,32 +343,37 @@ the Mac markup and keys, so a convention change can't move them unnoticed.
   again as a synthetic Escape from where it landed, so whatever answers Escape (a popover in the body, an `ownsKeyboard`
   dialog, `escapeAction`) answers ⌘. too.
 - **Return and the default button** (`enterActivates`; `dialog-keys.ts`). A dialog marks its default button with
-  `Button`'s `isDefault` (`data-dialog-default`, `'destructive'` on a `danger` button), at most one, and none where
-  people should read first. Plain Return goes to the dialog's `onkeydown` first; a dialog that acts on it calls
-  `preventDefault()` (❌ forgetting it presses the default button too, a double confirm). Unclaimed, `ModalDialog`
-  presses the enabled default button. Per row:
+  `Button`'s `isDefault` (`data-dialog-default`), at most one, and none where people should read first. Plain Return
+  goes to the dialog's `onkeydown` first; a dialog that acts on it calls `preventDefault()` (❌ forgetting it presses
+  the default button too, a double confirm). Unclaimed, `ModalDialog` presses the enabled default button. Per row:
   - `focusedButton` (Windows, Linux): a focused button takes Return as its own press, as today.
-  - `defaultButton` (macOS): Return on a FOOTER button (the dialog's answers) presses the default one, never the focused
-    one; Space presses the focused one. A button in the body (a recent path's row, a suggestion chip, Copy) keeps its
-    own press, since it stands for the list row or token that Return commits on a Mac.
+  - `defaultButton` (macOS, Apple's HIG): Return presses the default button only. On the default button it presses it;
+    on any other FOOTER button (the dialog's answers) it does nothing at all: no press, no `onkeydown`, no fall-through
+    to the default. Space presses the focused one. A button in the body (a recent path's row, a suggestion chip, Copy)
+    keeps its own press, since it stands for the list row or token that Return commits on a Mac.
   - Everywhere: a control that owns Return keeps it (`ownsReturn`: a textarea, contenteditable, a combobox or `Select`
     trigger, a list, grid, tree, or menu, a link, a disclosure), so Return in a note is a new line.
-  - Data safety, Mac only: while the default button is destructive, Return on any other footer button does nothing at
-    all (no `onkeydown`, no press). Why: someone who Tabbed to Cancel and pressed Return meant to cancel; Apple would
-    press Delete there, and "no dialog gets easier to destroy with by reflex" beats the convention.
+  - Decision/Why (David, from Apple's HIG): someone who Tabbed to Cancel and pressed Return meant to cancel. A Mac
+    Return on Cancel that pressed the default started a Move with "overwrite all" and moved files to the trash; that
+    held in every dialog, not only where the default is `danger`, so the rule has no destructive special case.
+  - Safety baseline: the app before the Windows port, where Return on a focused button pressed that button only. No
+    keyboard path may confirm a data-changing action that baseline wouldn't have. Pinned per dialog class through
+    `test-return-safety.ts`: `TransferDialog.return-safety.test.ts` (copy, move),
+    `DeleteDialog.return-safety.svelte.test.ts` (trash, permanent), `rename-dialogs.test.ts` (the rename clash, the
+    extension change), `questions.return-safety.svelte.test.ts` (rollback, locked sources), and
+    `TransferProgressDialog.conflict.test.ts` (the decision prompt).
   - A11y: `isDefault` adds `Enter` to the button's `aria-keyshortcuts` (VoiceOver has no other "default button" cue on
     the web); the access key joins it (`Enter Alt+S`).
   - Decision/Why: the dialog owns WHICH button is default, the convention owns what Return does with it, so one marker
     serves all five rows. Decision prompts (`../file-operations/decision-keys.ts`) keep their own Enter (the safe
-    answer), asked through the same `returnPressesTarget`.
+    answer), which never comes from a focused button (`isButtonLike`).
 - **The per-dialog Return table** (each decided on purpose; "focus" is `autoFocus={enterPressesFocusedButton()}`, so the
   safe answer takes focus only where Return presses the focused button):
   - No default, safe answer takes focus off the Mac (Apple's HIG: no default button where people should read first, ❌
     not even Cancel): the quit prompt (Keep working), the tool question (Decline), the rollback question (Cancel), the
     data wipe's question (Cancel). On the Mac Return does nothing there; Escape and ⌘. take the safe way out.
-  - Default, and the destructive guard applies (`danger`): permanent delete, Delete AI model, Forget memory, the rename
-    clash's "Overwrite" when the volume has no trash. Their Return confirmed before and still does; only Return on
-    another footer button changed, to nothing.
+  - Default, `danger`: permanent delete, Delete AI model, Forget memory, the rename clash's "Overwrite" when the volume
+    has no trash. Return from the body confirms, as before; on another footer button the Mac rule above applies.
   - Default, focus off the Mac only: the data wipe's done Quit, Sources gone's Continue, the stale drive's Close, the
     viewer's Copy and "Save as file", the finished transfer's Close. Same Return as before.
   - Default, marking the button their Return already pressed: the alert's OK, trash, copy and move, new file, new
@@ -379,8 +384,8 @@ the Mac markup and keys, so a convention change can't move them unnoticed.
     suggested-ops dialogs (Return pressed nothing there before either), multi-rename and the bulk-rename review (Return
     in a field starts; their own rules), the query dialogs (`ownsKeyboard`), the error report and feedback (⌘↩ sends).
   - Decision prompts (`letterKeysAnswer`: the transfer conflict, the operation conflict, the transfer error): Enter is
-    their safe answer (Skip, Close), now from a Mac footer button too. The onboarding wizard is no `ModalDialog` and
-    keeps its own keys.
+    their safe answer (Skip, Close) from anywhere but a button; on a Mac footer button it does nothing. The onboarding
+    wizard is no `ModalDialog` and keeps its own keys.
 - **Access keys** (`accessKeys` is `keytips` on Windows, `underlines` on every Linux desktop, `none` on the Mac;
   `access-keys.ts`): Alt plus a control's letter presses it (a button, a checkbox) or focuses it (a text field, via its
   `<label>`). Letters come from the labels as rendered, by the Linux menu bar's rule (`mnemonics.rs`: word initials

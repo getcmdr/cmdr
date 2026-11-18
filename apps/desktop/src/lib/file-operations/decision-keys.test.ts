@@ -4,7 +4,8 @@
  * arming delay are pinned beside each dialog.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
+import { withConventions } from '#lib/platform/test-platform.js'
 import { answerDecisionKey, decisionKeyOf, type DecisionChoice } from './decision-keys'
 
 /** Dispatches a keydown on `target` and hands back the event, with its real target set. */
@@ -43,6 +44,15 @@ describe('decisionKeyOf', () => {
   it('names Enter, but not on a focused button, which Enter activates instead', () => {
     expect(decisionKeyOf(keydown({ key: 'Enter', code: 'Enter' }))).toBe('Enter')
     expect(decisionKeyOf(keydown({ key: 'Enter', code: 'Enter' }, element('button')))).toBeNull()
+  })
+
+  it("never reads Return on a Mac footer button as the prompt's answer", () => {
+    onTestFinished(withConventions('macos'))
+    const footer = element('div')
+    footer.className = 'modal-footer'
+    const button = document.createElement('button')
+    footer.appendChild(button)
+    expect(decisionKeyOf(keydown({ key: 'Enter', code: 'Enter' }, button))).toBeNull()
   })
 
   it('lets a letter answer while a button has focus', () => {

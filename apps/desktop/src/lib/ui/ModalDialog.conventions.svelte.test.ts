@@ -32,7 +32,8 @@ const footer = footerWith()
 
 /**
  * The same footer, with Save marked as the dialog's default button the way `Button`'s `isDefault`
- * marks it (`data-dialog-default`, `'destructive'` on a danger one, and `Enter` announced).
+ * marks it (`data-dialog-default`, and `Enter` announced). `'destructive'` stands for a danger
+ * default, which Return treats the same way.
  */
 function footerWith(defaultSave?: 'default' | 'destructive') {
   return createRawSnippet(() => ({
@@ -42,7 +43,7 @@ function footerWith(defaultSave?: 'default' | 'destructive') {
       save.id = 'save'
       save.textContent = 'Save'
       if (defaultSave) {
-        save.setAttribute('data-dialog-default', defaultSave === 'destructive' ? 'destructive' : '')
+        save.setAttribute('data-dialog-default', '')
         save.setAttribute('aria-keyshortcuts', 'Enter')
       }
       node.after(save)
@@ -148,7 +149,7 @@ describe('ModalDialog on macOS (characterization: what every Mac user has today)
     expect(tabWalk(overlay, 4)).toEqual(['name-field', 'options', 'cancel', 'save', 'name-field'])
   })
 
-  it('Escape and ⌘. close; Return never presses the focused button, it reaches the dialog from anywhere', async () => {
+  it('Escape and ⌘. close; Return never presses the focused button, it reaches the dialog from a field', async () => {
     withConventions('macos')
     const { overlay, onclose, onkeydown } = await open()
     press(byId(overlay, 'name-field'), { key: 'Escape' })
@@ -156,11 +157,12 @@ describe('ModalDialog on macOS (characterization: what every Mac user has today)
     const period = press(byId(overlay, 'name-field'), { key: '.', code: 'Period', metaKey: true })
     expect(onclose).toHaveBeenCalledTimes(2)
     expect(period.defaultPrevented).toBe(true)
+    // Return on a footer button that isn't the default does nothing, not even reach the dialog.
     const onCancel = press(byId(overlay, 'cancel'), { key: 'Enter' })
-    expect(onkeydown).toHaveBeenCalledTimes(1)
+    expect(onkeydown).not.toHaveBeenCalled()
     expect(onCancel.defaultPrevented).toBe(true)
     press(byId(overlay, 'name-field'), { key: 'Enter' })
-    expect(onkeydown).toHaveBeenCalledTimes(2)
+    expect(onkeydown).toHaveBeenCalledTimes(1)
   })
 
   it('lets a body button (a list row, a chip) take Return as its own press', async () => {
@@ -339,18 +341,32 @@ describe.each(ALL_DESKTOPS)('ModalDialog Return and the default button on %s', (
   it(
     pressesFocused
       ? 'lets a focused button take Return as its own press'
-      : 'presses the default button, never the focused one, on Return',
+      : 'does nothing on Return from a footer button that isn’t the default',
     async () => {
       withConventions(desktop)
-      const { overlay } = await open({ footer: footerWith('default') })
+      const { overlay, onkeydown } = await open({ footer: footerWith('default') })
       const saved = vi.fn()
       byId(overlay, 'save').addEventListener('click', saved)
       const enter = press(byId(overlay, 'cancel'), { key: 'Enter' })
-      // A browser presses the focused button unless the keydown was prevented.
+      // A browser presses the focused button unless the keydown was prevented. On the Mac
+      // (Apple's HIG) Return presses only the default button: never the focused Cancel, and never
+      // the default from Cancel either (someone who moved to Cancel meant to cancel).
       expect(enter.defaultPrevented).toBe(!pressesFocused)
-      expect(saved).toHaveBeenCalledTimes(pressesFocused ? 0 : 1)
+      expect(saved).not.toHaveBeenCalled()
+      expect(onkeydown).not.toHaveBeenCalled()
     },
   )
+
+  it('presses the default button on Return when it has focus itself, once', async () => {
+    withConventions(desktop)
+    const { overlay } = await open({ footer: footerWith('default') })
+    const saved = vi.fn()
+    byId(overlay, 'save').addEventListener('click', saved)
+    const enter = press(byId(overlay, 'save'), { key: 'Enter' })
+    // Windows and Linux: the browser presses the focused default. The Mac: the dialog does.
+    expect(saved).toHaveBeenCalledTimes(pressesFocused ? 0 : 1)
+    expect(enter.defaultPrevented).toBe(!pressesFocused)
+  })
 
   it('never moves a destructive default onto Return pressed on another button', async () => {
     withConventions(desktop)

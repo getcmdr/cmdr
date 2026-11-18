@@ -7,12 +7,11 @@
     import type { CommandScope } from '#lib/commands/types.js'
     import { createAccessKeys, type AccessKeyTip } from './access-keys'
     import {
-        DEFAULT_BUTTON_ATTRIBUTE,
         commandPeriodCancels,
         defaultButtonIn,
         isButtonLike,
         isCommandPeriod,
-        isDestructiveDefault,
+        isDefaultButton,
         isPlainEnter,
         ownsReturn,
         returnPressesTarget,
@@ -599,14 +598,13 @@
      * Return, per `enterActivates` (DETAILS § Platform conventions). The dialog's `onkeydown` hears
      * it first and claims it with `preventDefault()`; unclaimed, it presses the default button
      * (`Button`'s `isDefault`). On a `focusedButton` desktop a focused button takes Return as its
-     * own press; on the Mac Return on a footer button presses the default one (Space presses the
-     * focused one), and while the default button is destructive, Return on any other footer button
-     * does nothing at all: someone who moved to Cancel and pressed Return meant to cancel, and
-     * mustn't delete instead.
+     * own press. On the Mac Return presses only the default button (Apple's HIG): on any other
+     * footer button it does nothing at all (no `onkeydown`, no press; Space presses the focused
+     * one). Someone who moved to Cancel and pressed Return meant to cancel, and mustn't start a
+     * Move or a Trash instead.
      */
     function handleReturn(event: KeyboardEvent) {
         const target = event.target
-        const onButton = isButtonLike(target)
         // A focused button (Windows, Linux), or on the Mac a widget's own button or a body
         // button (a recent path's row, a suggestion chip): the browser presses it.
         if (returnPressesTarget(target)) return
@@ -615,15 +613,14 @@
             onkeydown?.(event)
             return
         }
-        const marked = dialogElement?.querySelector<HTMLElement>(`[${DEFAULT_BUTTON_ATTRIBUTE}]`)
-        if (onButton && marked && target !== marked && isDestructiveDefault(marked)) {
+        // A Mac footer button that isn't the default: Return does nothing, not even fall through
+        // to the default. Prevented, as the browser would press the focused button otherwise.
+        if (isButtonLike(target) && !isDefaultButton(target)) {
             event.preventDefault()
             return
         }
         onkeydown?.(event)
         if (event.defaultPrevented) return
-        // Return never presses the focused button here (macOS); only the default one does.
-        if (onButton) event.preventDefault()
         const defaultButton = defaultButtonIn(dialogElement)
         if (defaultButton) {
             event.preventDefault()

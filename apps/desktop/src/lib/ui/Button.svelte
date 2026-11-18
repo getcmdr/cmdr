@@ -91,8 +91,8 @@
         children,
     }: Props = $props()
 
-    /** `data-dialog-default` (`dialog-keys.ts`): `'destructive'` on a danger default, so Return guards it. */
-    const defaultMark = $derived(isDefault ? (variant === 'danger' ? 'destructive' : '') : undefined)
+    /** `data-dialog-default` (`dialog-keys.ts`), where Return finds the default button. */
+    const defaultMark = $derived(isDefault ? '' : undefined)
     /** The default button's Return, beside any key the caller names. */
     const keyshortcuts = $derived(
         isDefault ? (ariaKeyshortcuts ? `${ariaKeyshortcuts} Enter` : 'Enter') : ariaKeyshortcuts,

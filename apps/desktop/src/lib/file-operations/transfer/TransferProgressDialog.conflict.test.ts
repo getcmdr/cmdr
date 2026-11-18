@@ -16,7 +16,9 @@
  * dialog component directly and asserts on the DOM.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 'vitest'
+import { withConventions } from '#lib/platform/test-platform.js'
+import { ALL_CONVENTION_DESKTOPS } from '#lib/ui/test-return-safety.js'
 import { mount, tick, unmount } from 'svelte'
 import type { OperationSnapshot, WriteConflictEvent } from '#lib/tauri-commands/index.js'
 import { expectNoA11yViolations } from '#lib/test-a11y.js'
@@ -583,6 +585,25 @@ describe('TransferProgressDialog conflict answered from the keyboard', () => {
     pressAtFocus({ key: 'b', code: 'KeyB' })
     await tick()
     expect(target.querySelector('#rollback-confirmation-body'), 'the question is up').not.toBeNull()
+    expect(cancelWriteOperation).not.toHaveBeenCalled()
+  })
+  // Return on a focused button presses that button at most (the browser's doing, which happy-dom
+  // never simulates), as it did before the Windows port; it never falls through to an answer.
+  it.each(ALL_CONVENTION_DESKTOPS)('on %s, Return on a focused button answers nothing by itself', async (desktop) => {
+    onTestFinished(withConventions(desktop))
+    const target = await mountDialogWithoutConflict()
+    await raiseArmedClash(target)
+    vi.mocked(cancelOperation).mockClear()
+
+    const buttons = [...target.querySelectorAll<HTMLButtonElement>('.modal-overlay button')].filter((b) => !b.disabled)
+    expect(buttons.length).toBeGreaterThan(1)
+    for (const button of buttons) {
+      button.focus()
+      button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+    }
+    await flushMicrotasks()
+    expect(resolveWriteConflict).not.toHaveBeenCalled()
+    expect(cancelOperation).not.toHaveBeenCalled()
     expect(cancelWriteOperation).not.toHaveBeenCalled()
   })
 })

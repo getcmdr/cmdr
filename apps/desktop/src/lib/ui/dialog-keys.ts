@@ -7,7 +7,7 @@
 
 import { convention } from '#lib/platform/index.js'
 
-/** The attribute `Button`'s `isDefault` writes: `''`, or `'destructive'` on a danger button. */
+/** The attribute `Button`'s `isDefault` writes (`''`), marking the dialog's default button. */
 export const DEFAULT_BUTTON_ATTRIBUTE = 'data-dialog-default'
 
 /**
@@ -81,8 +81,9 @@ const DIALOG_FOOTER_CLASS = 'modal-footer'
  * Whether Return pressed on `target` presses `target` itself, as a browser does: any focused
  * button where Return presses the focused button (Windows, Linux); on the Mac, a widget's own
  * button (a `Select` trigger, a disclosure) and a button in the body (a recent path's row, a
- * suggestion chip, Copy), which stands for a list row or token. On the Mac a footer button, one of
- * the dialog's answers, hands Return to the default button instead.
+ * suggestion chip, Copy), which stands for a list row or token. On the Mac Return on a footer
+ * button, one of the dialog's answers, presses it only when it's the default one, and on any other
+ * footer button does nothing (`ModalDialog`'s `handleReturn`).
  */
 export function returnPressesTarget(target: EventTarget | null): boolean {
   if (!isButtonLike(target)) return false
@@ -96,7 +97,7 @@ export function defaultButtonIn(panel: HTMLElement | undefined): HTMLElement | n
   return button
 }
 
-/** Whether the default button performs a destructive action (a danger button). */
-export function isDestructiveDefault(button: HTMLElement): boolean {
-  return button.getAttribute(DEFAULT_BUTTON_ATTRIBUTE) === 'destructive'
+/** Whether `target` is the dialog's default button (`Button`'s `isDefault`). */
+export function isDefaultButton(target: HTMLElement): boolean {
+  return target.hasAttribute(DEFAULT_BUTTON_ATTRIBUTE)
 }

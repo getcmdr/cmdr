@@ -17,7 +17,7 @@
 
 import { claimKey } from '#lib/shortcuts/claim-key.js'
 import { isTextInputTarget } from '#lib/utils/text-input-focus.js'
-import { returnPressesTarget } from '#lib/ui/dialog-keys.js'
+import { isButtonLike } from '#lib/ui/dialog-keys.js'
 
 /**
  * How long a prompt has to be on screen before a key answers it. A clash or an
@@ -81,16 +81,16 @@ export interface DecisionChoice {
  * - Any modifier means another combo (`⌘C` is copy, not Cancel), Shift included.
  * - A held key repeats, and a repeat must not answer the NEXT prompt too.
  * - An IME composition, or focus in a text field, means the person is typing.
- * - Enter on a focused button belongs to that button where Return presses it
- *   (`returnPressesTarget`: any button on Windows and Linux, a body button on the
- *   Mac), so it isn't the prompt's default answer there. On a Mac footer button
- *   Return is the default answer, as it is anywhere else in the prompt.
+ * - Enter on a focused button is never the prompt's default answer: where Return
+ *   presses the focused button (Windows, Linux, a body button on the Mac) it
+ *   belongs to that button, and on a Mac footer button Return does nothing
+ *   (`ModalDialog`'s `handleReturn`), so it can't fall through to an answer.
  */
 export function decisionKeyOf(event: KeyboardEvent): string | null {
   if (event.repeat || event.isComposing) return null
   if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return null
   if (isTextInputTarget(event.target)) return null
-  if (event.key === 'Enter') return returnPressesTarget(event.target) ? null : 'Enter'
+  if (event.key === 'Enter') return isButtonLike(event.target) ? null : 'Enter'
   if (event.key === 'Escape') return 'Escape'
   return letterOf(event)
 }
