@@ -251,13 +251,13 @@
   "@servers.refusal.saveUnconfirmed": {
     "sourceHash": "3fb55a6"
   },
-  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr не удалось сохранить пароль в Связке ключей. Повторите попытку или выключите «Запомнить в Связке ключей», чтобы войти без сохранения пароля.} windows {Cmdr не удалось сохранить пароль. Повторите попытку или выключите «Запомнить пароль», чтобы войти без сохранения пароля.} linuxKde {Cmdr couldn’t store this password in KWallet. Try again, or turn off “Remember in KWallet” to sign in without storing it.} other {Cmdr не удалось сохранить пароль в хранилище ключей. Повторите попытку или выключите «Запомнить в хранилище ключей», чтобы войти без сохранения пароля.}}",
+  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr не удалось сохранить пароль в Связке ключей. Повторите попытку или выключите «Запомнить в Связке ключей», чтобы войти без сохранения пароля.} windows {Cmdr не удалось сохранить пароль. Повторите попытку или выключите «Запомнить пароль», чтобы войти без сохранения пароля.} linuxKde {Cmdr не удалось сохранить пароль в KWallet. Повторите попытку или выключите «Запомнить в KWallet», чтобы войти без сохранения пароля.} other {Cmdr не удалось сохранить пароль в хранилище ключей. Повторите попытку или выключите «Запомнить в хранилище ключей», чтобы войти без сохранения пароля.}}",
   "@servers.refusal.secretNotStored": {
-    "sourceHash": "8b29064"
+    "sourceHash": "19deece"
   },
-  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Изменения сохранены, но Cmdr не удалось обновить пароль в Связке ключей. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} windows {Изменения сохранены, но Cmdr не удалось обновить сохраненный пароль. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} linuxKde {Cmdr saved your changes but couldn’t update the password in KWallet. Save again to try once more.} other {Изменения сохранены, но Cmdr не удалось обновить пароль в хранилище ключей. Нажмите «Сохранить» еще раз, чтобы повторить попытку.}}",
+  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Изменения сохранены, но Cmdr не удалось обновить пароль в Связке ключей. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} windows {Изменения сохранены, но Cmdr не удалось обновить сохраненный пароль. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} linuxKde {Изменения сохранены, но Cmdr не удалось обновить пароль в KWallet. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} other {Изменения сохранены, но Cmdr не удалось обновить пароль в хранилище ключей. Нажмите «Сохранить» еще раз, чтобы повторить попытку.}}",
   "@servers.refusal.savedSecretNotUpdated": {
-    "sourceHash": "03fbb15"
+    "sourceHash": "d9b6621"
   },
   "servers.refusal.s3AuthenticationRejected": "Этот секретный ключ доступа не подошел.",
   "@servers.refusal.s3AuthenticationRejected": {
@@ -271,13 +271,13 @@
   "@servers.refusal.s3SecretMissing": {
     "sourceHash": "f1f32f2"
   },
-  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr не удалось сохранить секретный ключ доступа в Связке ключей. Повторите попытку или выключите «Запомнить в Связке ключей», чтобы войти без сохранения ключа.} windows {Cmdr не удалось сохранить секретный ключ доступа. Повторите попытку или выключите «Запомнить пароль», чтобы войти без сохранения ключа.} linuxKde {Cmdr couldn’t store this secret access key in KWallet. Try again, or turn off “Remember in KWallet” to sign in without storing it.} other {Cmdr не удалось сохранить секретный ключ доступа в хранилище ключей. Повторите попытку или выключите «Запомнить в хранилище ключей», чтобы войти без сохранения ключа.}}",
+  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr не удалось сохранить секретный ключ доступа в Связке ключей. Повторите попытку или выключите «Запомнить в Связке ключей», чтобы войти без сохранения ключа.} windows {Cmdr не удалось сохранить секретный ключ доступа. Повторите попытку или выключите «Запомнить пароль», чтобы войти без сохранения ключа.} linuxKde {Cmdr не удалось сохранить секретный ключ доступа в KWallet. Повторите попытку или выключите «Запомнить в KWallet», чтобы войти без сохранения ключа.} other {Cmdr не удалось сохранить секретный ключ доступа в хранилище ключей. Повторите попытку или выключите «Запомнить в хранилище ключей», чтобы войти без сохранения ключа.}}",
   "@servers.refusal.s3SecretNotStored": {
-    "sourceHash": "6b787ad"
+    "sourceHash": "9aa6628"
   },
-  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Изменения сохранены, но Cmdr не удалось обновить секретный ключ доступа в Связке ключей. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} windows {Изменения сохранены, но Cmdr не удалось обновить сохраненный секретный ключ доступа. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} linuxKde {Cmdr saved your changes but couldn’t update the secret access key in KWallet. Save again to try once more.} other {Изменения сохранены, но Cmdr не удалось обновить секретный ключ доступа в хранилище ключей. Нажмите «Сохранить» еще раз, чтобы повторить попытку.}}",
+  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Изменения сохранены, но Cmdr не удалось обновить секретный ключ доступа в Связке ключей. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} windows {Изменения сохранены, но Cmdr не удалось обновить сохраненный секретный ключ доступа. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} linuxKde {Изменения сохранены, но Cmdr не удалось обновить секретный ключ доступа в KWallet. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} other {Изменения сохранены, но Cmdr не удалось обновить секретный ключ доступа в хранилище ключей. Нажмите «Сохранить» еще раз, чтобы повторить попытку.}}",
   "@servers.refusal.s3SavedSecretNotUpdated": {
-    "sourceHash": "5697774"
+    "sourceHash": "8c62f24"
   },
   "servers.refusal.accessDenied": "Этот ключ не дает доступа к бакету. Проверьте имя бакета и секретный ключ доступа, а также есть ли у ключа право читать бакет.",
   "@servers.refusal.accessDenied": {
@@ -335,13 +335,13 @@
   "@servers.refusal.addressTaken": {
     "sourceHash": "5a14a92"
   },
-  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr не удалось перенести сохраненный пароль на новый адрес, поэтому ничего не изменилось. Проверьте, что Связка ключей разблокирована, и нажмите «Сохранить» еще раз.} windows {Cmdr не удалось перенести сохраненный пароль на новый адрес, поэтому ничего не изменилось. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} linuxKde {Cmdr couldn’t take the saved password along to the new address, so nothing changed. Check that KWallet is open, then save again.} other {Cmdr не удалось перенести сохраненный пароль на новый адрес, поэтому ничего не изменилось. Проверьте, что хранилище ключей разблокировано, и нажмите «Сохранить» еще раз.}}",
+  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr не удалось перенести сохраненный пароль на новый адрес, поэтому ничего не изменилось. Проверьте, что Связка ключей разблокирована, и нажмите «Сохранить» еще раз.} windows {Cmdr не удалось перенести сохраненный пароль на новый адрес, поэтому ничего не изменилось. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} linuxKde {Cmdr не удалось перенести сохраненный пароль на новый адрес, поэтому ничего не изменилось. Проверьте, что KWallet открыт, и нажмите «Сохранить» еще раз.} other {Cmdr не удалось перенести сохраненный пароль на новый адрес, поэтому ничего не изменилось. Проверьте, что хранилище ключей разблокировано, и нажмите «Сохранить» еще раз.}}",
   "@servers.refusal.secretNotMoved": {
-    "sourceHash": "3a8f01c"
+    "sourceHash": "a59f35e"
   },
-  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr не удалось перенести сохраненный секретный ключ доступа на новый URL сервиса, поэтому ничего не изменилось. Проверьте, что Связка ключей разблокирована, и нажмите «Сохранить» еще раз.} windows {Cmdr не удалось перенести сохраненный секретный ключ доступа на новый URL сервиса, поэтому ничего не изменилось. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} linuxKde {Cmdr couldn’t take the saved secret access key along to the new endpoint, so nothing changed. Check that KWallet is open, then save again.} other {Cmdr не удалось перенести сохраненный секретный ключ доступа на новый URL сервиса, поэтому ничего не изменилось. Проверьте, что хранилище ключей разблокировано, и нажмите «Сохранить» еще раз.}}",
+  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr не удалось перенести сохраненный секретный ключ доступа на новый URL сервиса, поэтому ничего не изменилось. Проверьте, что Связка ключей разблокирована, и нажмите «Сохранить» еще раз.} windows {Cmdr не удалось перенести сохраненный секретный ключ доступа на новый URL сервиса, поэтому ничего не изменилось. Нажмите «Сохранить» еще раз, чтобы повторить попытку.} linuxKde {Cmdr не удалось перенести сохраненный секретный ключ доступа на новый URL сервиса, поэтому ничего не изменилось. Проверьте, что KWallet открыт, и нажмите «Сохранить» еще раз.} other {Cmdr не удалось перенести сохраненный секретный ключ доступа на новый URL сервиса, поэтому ничего не изменилось. Проверьте, что хранилище ключей разблокировано, и нажмите «Сохранить» еще раз.}}",
   "@servers.refusal.s3SecretNotMoved": {
-    "sourceHash": "d08a1d2"
+    "sourceHash": "a990f83"
   },
   "servers.refusal.accountChanged": "Другая учетная запись — это другой сервер, поэтому ничего не сохранено. Добавьте ее как новый сервер.",
   "@servers.refusal.accountChanged": {
@@ -579,9 +579,9 @@
   "@servers.sheet.password": {
     "sourceHash": "e7cf3ef"
   },
-  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {Сохранен в Связке ключей. Оставьте пустым, чтобы не менять.} windows {Сохранен. Оставьте пустым, чтобы не менять.} linuxKde {Saved in KWallet. Leave empty to keep it.} other {Сохранен в хранилище ключей. Оставьте пустым, чтобы не менять.}}",
+  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {Сохранен в Связке ключей. Оставьте пустым, чтобы не менять.} windows {Сохранен. Оставьте пустым, чтобы не менять.} linuxKde {Сохранен в KWallet. Оставьте пустым, чтобы не менять.} other {Сохранен в хранилище ключей. Оставьте пустым, чтобы не менять.}}",
   "@servers.sheet.secretKeptPlaceholder": {
-    "sourceHash": "9297a2d"
+    "sourceHash": "eedbd26"
   },
   "servers.sheet.smbUsernamePlaceholder": "Необязательно",
   "@servers.sheet.smbUsernamePlaceholder": {
@@ -595,9 +595,9 @@
   "@servers.sheet.passphrase": {
     "sourceHash": "2510031"
   },
-  "servers.sheet.remember": "{platform, select, macos {Запомнить в Связке ключей} windows {Запомнить пароль} linuxKde {Remember in KWallet} other {Запомнить в хранилище ключей}}",
+  "servers.sheet.remember": "{platform, select, macos {Запомнить в Связке ключей} windows {Запомнить пароль} linuxKde {Запомнить в KWallet} other {Запомнить в хранилище ключей}}",
   "@servers.sheet.remember": {
-    "sourceHash": "42237e1"
+    "sourceHash": "8f125e3"
   },
   "servers.sheet.connectionModeLegend": "Способ подключения",
   "@servers.sheet.connectionModeLegend": {
@@ -784,9 +784,9 @@
   "@servers.sheet.autoReconnectInfoLabel": {
     "sourceHash": "edb9b82"
   },
-  "servers.sheet.needsStoredSecret": "{platform, select, macos {Для автоматического переподключения нужен сохраненный пароль. Включите «Запомнить в Связке ключей» и войдите один раз.} windows {Для автоматического переподключения нужен сохраненный пароль. Включите «Запомнить пароль» и войдите один раз.} linuxKde {Reconnecting on its own needs a remembered password. Turn on “Remember in KWallet” and sign in once.} other {Для автоматического переподключения нужен сохраненный пароль. Включите «Запомнить в хранилище ключей» и войдите один раз.}}",
+  "servers.sheet.needsStoredSecret": "{platform, select, macos {Для автоматического переподключения нужен сохраненный пароль. Включите «Запомнить в Связке ключей» и войдите один раз.} windows {Для автоматического переподключения нужен сохраненный пароль. Включите «Запомнить пароль» и войдите один раз.} linuxKde {Для автоматического переподключения нужен сохраненный пароль. Включите «Запомнить в KWallet» и войдите один раз.} other {Для автоматического переподключения нужен сохраненный пароль. Включите «Запомнить в хранилище ключей» и войдите один раз.}}",
   "@servers.sheet.needsStoredSecret": {
-    "sourceHash": "ad8e162"
+    "sourceHash": "29e22ae"
   },
   "servers.sheet.tryNextcloudAddress": "Попробовать адрес Nextcloud",
   "@servers.sheet.tryNextcloudAddress": {

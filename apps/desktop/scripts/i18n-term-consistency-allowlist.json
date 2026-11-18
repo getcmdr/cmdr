@@ -580,6 +580,10 @@
     ],
     "ru": [
       {
+        "source": "Preferences",
+        "reason": "`aboutThis.ownerPlace.preferences` is the real name of the macOS `~/Library/Preferences` folder, kept as the system names it; the GNOME branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own app-menu word, Параметры (ru nautilus.po `_Preferences`)."
+      },
+      {
         "source": "System",
         "reason": "`settings.theme.mode.opt.system` is the theme that follows the system (Системная, agreeing with тема); the notification options `settings.behavior.fileSystemWatching.*Notifications.opt.macos` (Linux branch) name where the notice shows, next to their siblings `В приложении` and `Оба варианта` (В системе)."
       },

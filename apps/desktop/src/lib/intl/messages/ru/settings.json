@@ -3216,9 +3216,9 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Показать в Finder} windows {Показать в Проводнике} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показать в файловом менеджере}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Показать в Finder} windows {Показать в Проводнике} linuxGnome {Показать в приложении «Файлы»} linuxKde {Показать в Dolphin} other {Показать в файловом менеджере}}",
   "@settings.securityLog.showInFinder": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "settings.updates.showSecurityLog.keywords": "безопасность, журнал, аудит, события, файл, открыть, показать, папка, расположение, где находится",
   "@settings.updates.showSecurityLog.keywords": {
@@ -3673,13 +3673,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, =1 {Одна запись с именем «{itemName}» в приложении «Связка ключей»} one {{countText} запись с именем «{itemName}» в приложении «Связка ключей»} few {{countText} записи с именем «{itemName}» в приложении «Связка ключей»} many {{countText} записей с именем «{itemName}» в приложении «Связка ключей»} other {{countText} записи с именем «{itemName}» в приложении «Связка ключей»}}} windows {{count, plural, =1 {Одна запись с именем «{itemName}» в Диспетчере учетных данных} one {{countText} запись с именем «{itemName}» в Диспетчере учетных данных} few {{countText} записи с именем «{itemName}» в Диспетчере учетных данных} many {{countText} записей с именем «{itemName}» в Диспетчере учетных данных} other {{countText} записи с именем «{itemName}» в Диспетчере учетных данных}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, =1 {Одна запись с именем «{itemName}» в хранилище ключей} one {{countText} запись с именем «{itemName}» в хранилище ключей} few {{countText} записи с именем «{itemName}» в хранилище ключей} many {{countText} записей с именем «{itemName}» в хранилище ключей} other {{countText} записи с именем «{itemName}» в хранилище ключей}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, =1 {Одна запись с именем «{itemName}» в приложении «Связка ключей»} one {{countText} запись с именем «{itemName}» в приложении «Связка ключей»} few {{countText} записи с именем «{itemName}» в приложении «Связка ключей»} many {{countText} записей с именем «{itemName}» в приложении «Связка ключей»} other {{countText} записи с именем «{itemName}» в приложении «Связка ключей»}}} windows {{count, plural, =1 {Одна запись с именем «{itemName}» в Диспетчере учетных данных} one {{countText} запись с именем «{itemName}» в Диспетчере учетных данных} few {{countText} записи с именем «{itemName}» в Диспетчере учетных данных} many {{countText} записей с именем «{itemName}» в Диспетчере учетных данных} other {{countText} записи с именем «{itemName}» в Диспетчере учетных данных}}} linuxKde {{count, plural, =1 {Одна запись с именем «{itemName}» в KWallet} one {{countText} запись с именем «{itemName}» в KWallet} few {{countText} записи с именем «{itemName}» в KWallet} many {{countText} записей с именем «{itemName}» в KWallet} other {{countText} записи с именем «{itemName}» в KWallet}}} other {{count, plural, =1 {Одна запись с именем «{itemName}» в хранилище ключей} one {{countText} запись с именем «{itemName}» в хранилище ключей} few {{countText} записи с именем «{itemName}» в хранилище ключей} many {{countText} записей с именем «{itemName}» в хранилище ключей} other {{countText} записи с именем «{itemName}» в хранилище ключей}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "6cf1e9c"
+    "sourceHash": "ba023b8"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Все записи с именем «{itemName}» в приложении «Связка ключей», если они есть} windows {Все записи с именем «{itemName}» в Диспетчере учетных данных, если они есть} linuxKde {Any items in KWallet named “{itemName}”} other {Все записи с именем «{itemName}» в хранилище ключей, если они есть}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Все записи с именем «{itemName}» в приложении «Связка ключей», если они есть} windows {Все записи с именем «{itemName}» в Диспетчере учетных данных, если они есть} linuxKde {Все записи с именем «{itemName}» в KWallet, если они есть} other {Все записи с именем «{itemName}» в хранилище ключей, если они есть}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "0e9e95b"
+    "sourceHash": "de668e2"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Выйти из Cmdr} other {Завершить Cmdr}}",
   "@settings.dataWipe.quit": {
