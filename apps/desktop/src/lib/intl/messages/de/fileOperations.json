@@ -154,7 +154,7 @@
   },
   "fileOperations.mkfile.nameAria": "Dateiname",
   "@fileOperations.mkfile.nameAria": {
-    "sourceHash": "3efed3d"
+    "sourceHash": "971b974"
   },
   "fileOperations.mkfile.placeholder": "Beispiel: notizen.txt",
   "@fileOperations.mkfile.placeholder": {
@@ -1308,9 +1308,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Im Schlüsselbund merken} windows {Passwort merken} linuxKde {Remember in KWallet} other {Im Schlüsselbund merken}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Im Schlüsselbund merken} windows {Passwort merken} linuxKde {In KWallet merken} other {Im Schlüsselbund merken}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "42237e1"
+    "sourceHash": "8f125e3"
   },
   "fileOperations.resticPassword.checking": "Passwort wird geprüft …",
   "@fileOperations.resticPassword.checking": {
@@ -1335,6 +1335,30 @@
   "fileOperations.validation.empty": "{kind, select, folder {Der Ordnername darf nicht leer sein} other {Der Dateiname darf nicht leer sein}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
+  },
+  "fileOperations.validation.dotName": "{kind, select, folder {Ordnernamen dürfen nicht „.“ oder „..“ sein} other {Dateinamen dürfen nicht „.“ oder „..“ sein}}",
+  "@fileOperations.validation.dotName": {
+    "sourceHash": "bfa0ccb"
+  },
+  "fileOperations.validation.nameLength": "{kind, select, folder {Der Ordnername ist zu lang ({length}/{maxLength} {unit, select, bytes {{max, plural, one {Byte} other {Bytes}}} other {{max, plural, one {Zeichen} other {Zeichen}}}})} other {Der Dateiname ist zu lang ({length}/{maxLength} {unit, select, bytes {{max, plural, one {Byte} other {Bytes}}} other {{max, plural, one {Zeichen} other {Zeichen}}}})}}",
+  "@fileOperations.validation.nameLength": {
+    "sourceHash": "acef623"
+  },
+  "fileOperations.validation.pathLength": "Der vollständige Pfad ist zu lang ({length}/{maxLength} {unit, select, bytes {{max, plural, one {Byte} other {Bytes}}} other {{max, plural, one {Zeichen} other {Zeichen}}}})",
+  "@fileOperations.validation.pathLength": {
+    "sourceHash": "1791bc2"
+  },
+  "fileOperations.validation.notPortable.windowsCharacter": "{format, select, smbShare {Namen mit „{character}“ funktionieren unter Windows nicht} other {Namen mit „{character}“ funktionieren weder unter Windows noch unter Linux}}",
+  "@fileOperations.validation.notPortable.windowsCharacter": {
+    "sourceHash": "66201fa"
+  },
+  "fileOperations.validation.notPortable.reservedName": "{format, select, smbShare {„{name}“ ist von Windows reserviert, deshalb funktioniert dieser Name unter Windows nicht, und die Freigabe zeigt ihn womöglich unter einem anderen Namen an} other {„{name}“ ist von Windows reserviert, deshalb funktioniert dieser Name unter Windows nicht}}",
+  "@fileOperations.validation.notPortable.reservedName": {
+    "sourceHash": "b46ff0c"
+  },
+  "fileOperations.validation.notPortable.endsWithSpaceOrPeriod": "{format, select, smbShare {Namen, die auf ein Leerzeichen oder einen Punkt enden, funktionieren unter Windows nicht} other {Namen, die auf ein Leerzeichen oder einen Punkt enden, funktionieren weder unter Windows noch unter Linux}}",
+  "@fileOperations.validation.notPortable.endsWithSpaceOrPeriod": {
+    "sourceHash": "86ce7a7"
   },
   "fileOperations.validation.extensionChangeBlocked": "Das Ändern der Dateiendung ist nicht erlaubt (war „{oldExt}“)",
   "@fileOperations.validation.extensionChangeBlocked": {
@@ -1363,6 +1387,18 @@
   "fileOperations.validation.pathNullChar": "Der Pfad enthält ein Nullzeichen",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
+  },
+  "fileOperations.validation.typedPathLength": "Der Pfad ist zu lang ({length}/{maxLength} {unit, select, bytes {{max, plural, one {Byte} other {Bytes}}} other {{max, plural, one {Zeichen} other {Zeichen}}}})",
+  "@fileOperations.validation.typedPathLength": {
+    "sourceHash": "f953ea2"
+  },
+  "fileOperations.validation.typedSegmentLength": "Ein Ordnername im Pfad ist zu lang ({length}/{maxLength} {unit, select, bytes {{max, plural, one {Byte} other {Bytes}}} other {{max, plural, one {Zeichen} other {Zeichen}}}})",
+  "@fileOperations.validation.typedSegmentLength": {
+    "sourceHash": "50ce47b"
+  },
+  "fileOperations.transferDialog.namePortability": "{count, plural, one {{alsoLinux, select, yes {{countText} Name am Ziel funktioniert weder unter Windows noch unter Linux: „{example}“} other {{countText} Name am Ziel funktioniert unter Windows nicht: „{example}“}}} other {{alsoLinux, select, yes {{countText} Namen am Ziel funktionieren weder unter Windows noch unter Linux, etwa „{example}“} other {{countText} Namen am Ziel funktionieren unter Windows nicht, etwa „{example}“}}}}",
+  "@fileOperations.transferDialog.namePortability": {
+    "sourceHash": "e8c7d0f"
   },
   "fileOperations.transferTree.treeLabel": "Dateien in dieser Übertragung",
   "@fileOperations.transferTree.treeLabel": {

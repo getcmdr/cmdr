@@ -2063,7 +2063,7 @@
     "chosen": "Schlüsselbund",
     "confidence": "high",
     "forms": "the store → Schlüsselbund; the Keychain Access app → Schlüsselbundverwaltung; the generic OS keyring fallback → System-Schlüsselbund; checkbox Im Schlüsselbund merken",
-    "note": "A localized Apple feature name, like Quick Look, so it isn't a verbatim brand.",
+    "note": "A localized Apple feature name, like Quick Look, so it isn't a verbatim brand. Linux desktop branches: KDE keeps KWallet and KWalletManager as names (In KWallet merken; a wallet → Brieftasche); GNOME's Passwords and Keys (Seahorse) app → „Passwörter und Verschlüsselung“ (tentative: Seahorse isn't in the pile, from GNOME de memory).",
     "sources": "macOS de; Keychain Access.app InfoPlist.loctable CFBundleDisplayName (macOS 26.6.2, 2026-09-06); NetAuthAgent 600268.title"
   },
   "kind": {
@@ -4235,7 +4235,10 @@
     "confidence": "high",
     "forms": "the Servers list in prose → die Liste „Server“ (like a menu, never Server-Liste)",
     "decision": "Server fixieren und lösen, die vertrauten Hostschlüssel und die ADB-Seite",
-    "sources": "macOS AppKit (Liste „Farbauswahl“); catalog (servers.pinHint.body, settings.servers.trustedHostKeys.description)"
+    "sources": "macOS AppKit (Liste „Farbauswahl“); catalog (servers.pinHint.body, settings.servers.trustedHostKeys.description)",
+    "exceptions": {
+      "fileOperations.validation.notPortable.reservedName": "\"list\" is the verb here (a share lists the item under another name): anzeigen, not the noun Liste."
+    }
   },
   "byte": {
     "accept": ["Bytes"],
@@ -4513,7 +4516,7 @@
     "chosen": "Dateimanager",
     "confidence": "high",
     "forms": "your file manager → dein Dateimanager, in deinem Dateimanager",
-    "note": "Thunar and Dolphin title themselves Dateiverwaltung, but the catalog already ships Dateimanager (menu.file.showInFileManager, onboarding.stepFda.firstAsk.explain), and the catalog outranks the pile.",
+    "note": "Thunar and Dolphin title themselves Dateiverwaltung, but the catalog already ships Dateimanager (menu.file.showInFileManager, onboarding.stepFda.firstAsk.explain), and the catalog outranks the pile. Desktop branches name the app: GNOME Files → „Dateien“ (de/gnome-nautilus/nautilus.po Files → Dateien, quoted as nautilus.po itself quotes »Dateien«): In „Dateien“ anzeigen; KDE → In Dolphin anzeigen.",
     "sources": "catalog (Im Dateimanager anzeigen, 6 hits); pile: Thunar and Dolphin Dateiverwaltung, MS TBX Datei-Manager"
   },
   "properties": {
@@ -4623,5 +4626,11 @@
       "settings.appearance.themeColorSwatchAria": "accent color is the system color (Akzentfarbe), not a diacritic",
       "settings.appearance.appColorHintPrefix": "accent color is the system color (Akzentfarbe), not a diacritic"
     }
+  },
+  "preferences": {
+    "chosen": "Einstellungen",
+    "confidence": "high",
+    "sources": "macOS AppKit MenuCommands Preferences → Einstellungen; de/gnome-nautilus/nautilus.po _Preferences → _Einstellungen; de/xfce-thunar/thunar.po Pr_eferences... → _Einstellungen …",
+    "note": "GNOME's app-menu row (the linuxGnome branch of menu.app.settings) is Einstellungen with no ellipsis; KDE's Configure Cmdr… is Cmdr einrichten … (KDE's standard Configure %1… action, from memory: not in the pile, tentative)."
   }
 }

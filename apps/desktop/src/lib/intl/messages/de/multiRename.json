@@ -244,6 +244,14 @@
   "@multiRename.status.reservedDeviceName": {
     "sourceHash": "8bf464a"
   },
+  "multiRename.status.notPortable": "{alsoLinux, select, yes {Funktioniert weder unter Windows noch unter Linux} other {Funktioniert unter Windows nicht}}",
+  "@multiRename.status.notPortable": {
+    "sourceHash": "cc3ed09"
+  },
+  "multiRename.notPortableSummary": "{count, plural, one {{alsoLinux, select, yes {{countText} neuer Name funktioniert weder unter Windows noch unter Linux. Das Objekt wird trotzdem umbenannt.} other {{countText} neuer Name funktioniert unter Windows nicht. Das Objekt wird trotzdem umbenannt.}}} other {{alsoLinux, select, yes {{countText} neue Namen funktionieren weder unter Windows noch unter Linux. Die Objekte werden trotzdem umbenannt.} other {{countText} neue Namen funktionieren unter Windows nicht. Die Objekte werden trotzdem umbenannt.}}}}",
+  "@multiRename.notPortableSummary": {
+    "sourceHash": "4eb996d"
+  },
   "multiRename.error.unclosed": "Bei einem Platzhalter fehlt das schließende „]“",
   "@multiRename.error.unclosed": {
     "sourceHash": "aa4efba"
@@ -630,15 +638,15 @@
   },
   "multiRename.reason.tooLong": "Der neue Name ist zu lang für einen Dateinamen.",
   "@multiRename.reason.tooLong": {
-    "sourceHash": "b709218"
+    "sourceHash": "c49d459"
   },
   "multiRename.reason.reserved": "„.“ und „..“ können keine Dateinamen sein.",
   "@multiRename.reason.reserved": {
-    "sourceHash": "dcca507"
+    "sourceHash": "b0c0c33"
   },
   "multiRename.reason.disallowedCharacter": "Dateinamen dürfen das Zeichen {character} nicht enthalten.",
   "@multiRename.reason.disallowedCharacter": {
-    "sourceHash": "66a09f6"
+    "sourceHash": "2d58251"
   },
   "multiRename.reason.reservedDeviceName": "„{name}“ ist von Windows reserviert und lässt sich auf diesem Laufwerk nicht als Name verwenden.",
   "@multiRename.reason.reservedDeviceName": {

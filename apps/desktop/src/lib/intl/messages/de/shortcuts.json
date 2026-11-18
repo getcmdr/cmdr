@@ -117,9 +117,9 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {Unter {desktops} belegt die Arbeitsumgebung {combo} meist selbst, daher erreicht der Kurzbefehl Cmdr womöglich nie. Du kannst ihn in den Tastatureinstellungen deiner Arbeitsumgebung freigeben.}}",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {Unter {desktops} belegt die Arbeitsumgebung {combo} meist selbst, daher erreicht der Kurzbefehl Cmdr womöglich nie. Du kannst ihn unter „Einstellungen > Tastatur > Tastenkürzel anzeigen und anpassen“ freigeben.} linuxKde {Unter {desktops} belegt die Arbeitsumgebung {combo} meist selbst, daher erreicht der Kurzbefehl Cmdr womöglich nie. Du kannst ihn unter „Systemeinstellungen > Tastatur > Kurzbefehle“ freigeben.} other {Unter {desktops} belegt die Arbeitsumgebung {combo} meist selbst, daher erreicht der Kurzbefehl Cmdr womöglich nie. Du kannst ihn in den Tastatureinstellungen deiner Arbeitsumgebung freigeben.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
-    "sourceHash": "610146a"
+    "sourceHash": "8aefc0b"
   },
   "shortcuts.conflict.opensMenuBarMenu": "{combo} öffnet das Menü „{menu}“ in der Menüleiste von Cmdr, daher erreicht der Kurzbefehl diesen Befehl nur, wenn ein Dialog geöffnet ist.",
   "@shortcuts.conflict.opensMenuBarMenu": {
