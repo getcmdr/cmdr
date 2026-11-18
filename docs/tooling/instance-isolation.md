@@ -138,18 +138,16 @@ Authoritative files: `apps/desktop/scripts/tauri-wrapper.ts`, `apps/desktop/vite
 
 ### Updater endpoint
 
-Two separate mechanisms, because two updaters ship.
+One updater ships on every OS, and it builds `https://api.getcmdr.com/update-check/{version}` in Rust. The Tauri updater
+plugin's `endpoints` in the generated config are never fetched (off macOS the plugin only runs a staged installer);
+non-prod still gets `https://localhost.invalid/no-updater` there, a harmless leftover that keeps the list non-empty.
 
-Off macOS, the Tauri updater plugin reads its endpoint from the generated config, and non-prod gets
-`https://localhost.invalid/no-updater` there so dev or E2E never phones home accidentally.
-
-On macOS the custom updater builds `https://api.getcmdr.com/update-check/{version}` in Rust and never consults that
-config, so the config trick can't reach it. It gates in code instead (`updater::skip_reason`): the exe must sit inside a
-`.app` bundle, and none of `prod_instance::NON_PROD_ENV_VARS` may be set. Both conditions matter, and the env one is the
-load-bearing half now that a check is not free: `/update-check` writes an `update_checks` row before it redirects, and
-that table is the CEILING of the dashboard's bounded active-install figure. The bundle condition alone happens to cover
-every launcher today (they all run the bare `target/<triple>/release/Cmdr`), which is exactly why it shouldn't be the
-only one.
+The updater gates in code instead (`updater::skip_reason`): `install_kind::current` must find an install (a `.app`
+bundle on macOS, an NSIS install on Windows, a running AppImage on Linux), and none of
+`prod_instance::NON_PROD_ENV_VARS` may be set. Both conditions matter, and the env one is the load-bearing half now that
+a check is not free: `/update-check` writes an `update_checks` row before it redirects, and that table is the CEILING of
+the dashboard's bounded active-install figure. The bundle condition alone happens to cover every launcher today (they
+all run the bare `target/<triple>/release/Cmdr`), which is exactly why it shouldn't be the only one.
 
 Authoritative files: `apps/desktop/scripts/instance-id.ts`, `apps/desktop/src-tauri/src/updater/mod.rs`.
 

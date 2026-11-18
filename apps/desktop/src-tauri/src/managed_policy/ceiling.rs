@@ -50,8 +50,7 @@ impl UpdateCeiling {
 
     /// Whether `version` is at or below the ceiling. Compares the release core only
     /// (`major.minor.patch`): in semver `0.53.0-rc.1 < 0.53.0`, so a full compare would let a 0.53
-    /// prerelease through a `"0.52"` ceiling. Only the macOS updater asks, so it exists only there.
-    #[cfg(any(target_os = "macos", test))]
+    /// prerelease through a `"0.52"` ceiling. The updater asks on every OS.
     pub fn allows(&self, version: &semver::Version) -> bool {
         let core = (version.major, version.minor, version.patch);
         // Comparing only the parts the admin wrote is the "up to the last x.y.*" reading.

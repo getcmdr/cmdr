@@ -53,16 +53,30 @@ Read this before any non-trivial work here: editing, planning, reorganizing, or 
 
 ## Who may check
 
-`skip_reason` allows a check only from a real user's production install. Two conditions: the exe must sit inside a
-`.app` bundle (`installer::is_running_from_app_bundle`), and none of `crate::prod_instance::NON_PROD_ENV_VARS` may be
-set. Outside a bundle the updater can't work and would spam noisy errors into the auto error reporter; a tooling
-instance that slips through writes an `update_checks` row the dashboard counts as an active install. Don't loosen
-either. `crate::prod_instance` is the one definition of the env-var list, shared with the analytics gate so the two
-can't disagree about what a real install is.
+`skip_reason` allows a check only from a real user's production install. Two conditions: `install_kind::current` must
+find an `InstallKind`, and none of `crate::prod_instance::NON_PROD_ENV_VARS` may be set. A dev build can't install
+anything and would spam noisy errors into the auto error reporter; a tooling instance that slips through writes an
+`update_checks` row the dashboard counts as an active install. Don't loosen either. `crate::prod_instance` is the one
+definition of the env-var list, shared with the analytics gate so the two can't disagree about what a real install is.
+
+What counts as an install (`platform::current_install`, each arm's pure `kind_from_bundle` tested on its own OS):
+
+- **macOS**: the exe sits inside a `.app` bundle (`installer::is_running_from_app_bundle`).
+- **Windows**: the binary carries the bundler's NSIS marker (`tauri::utils::platform::bundle_type`). An MSI is
+  `UnsupportedBundle`: Cmdr ships no MSI updater artifact.
+- **Linux**: the AppImage marker AND `APPIMAGE` set (the file the plugin replaces). A `.deb` or `.rpm` is
+  `PackageManagerInstall` and never checks: its files belong to the package manager, and updating them ourselves would
+  take a `pkexec` admin prompt, which the updater never asks for.
 
 The manifest URL (`https://api.getcmdr.com/update-check/{version}?arch={arch}`) is built at runtime from the
 compile-time version and arch; the API server logs the check to D1 for active-user counting, then 302-redirects to
-`https://getcmdr.com/latest.json`.
+`https://getcmdr.com/latest.json`. macOS sends the bare arch (`aarch64`, as always); Windows and Linux prefix their OS
+(`windows-x86_64`), so they never land in a macOS arch's count until the check carries an explicit `os` (task 31 of the
+Windows port, `docs/specs/windows-port-plan.md`).
+
+The manifest entry each kind reads (`InstallKind::platform_keys`): macOS `darwin-{arch}`; Windows
+`windows-{arch}-nsis`, then `windows-{arch}`; Linux `linux-{arch}-appimage`, then `linux-{arch}`. The off-macOS order is
+the Tauri plugin's own, so a manifest the plugin can read, this reads too.
 
 **The archive URL is whatever the manifest names, on any HTTPS host.** No host allowlist, here or in any shipped
 version: trust rests on the minisign signature and the Developer ID check, so the manifest can move downloads (to
@@ -101,12 +115,17 @@ The organization's `DisableUpdates`, `DisableAutomaticUpdateChecks`, and `MaxUpd
 - **Already synced.** A build `install_update` already wrote into the bundle (frontend `ready`) applies at the next
   restart whatever the policy says later: the sync is the install.
 - The ceiling compares the release core only (`UpdateCeiling::allows`), so `0.53.0-rc.1` doesn't pass `"0.52"`.
-- Out of scope: the Linux Tauri-plugin path (the frontend calls `@tauri-apps/plugin-updater` directly), since the policy
-  source is macOS-only.
+- Every OS runs these steps; off macOS `install_update` is the stage (§ Windows and Linux), so the fresh read there is
+  what keeps a Restart from installing a version a later profile refuses. The policy SOURCE is macOS-only today
+  (`managed_policy/`), so off macOS it answers "no policy" until a Windows source exists.
 - **No install, no notice.** Under `DisableUpdates` or a held version nothing is staged, so no bundle can say a fix
   exists. Advisories for managed fleets go out through the channels `docs/security-incident-procedure.md` lists.
 
 ## Code signature
+
+macOS only. Windows has no equivalent yet: an Authenticode check with a pinned signer is task 50 of the Windows port
+(`docs/specs/windows-port-plan.md`), and Linux has no platform code signature to check, so off macOS minisign plus the
+signed version (§ Windows and Linux) is the whole trust check.
 
 Before anything is written into the running bundle, `installer::vet_staged_bundle` asks
 `cmdr_update_trust::verify_release_bundle` whether the extracted `Cmdr.app` carries a valid Apple code signature from
@@ -146,7 +165,14 @@ list itself, what gets an entry, and the link allowlist: `../security_advisories
   highest severity, the count, and the most severe advisory's vetted link (`None` when the allowlist refuses it).
 - **Superseded staging replaces it.** A newer staged build answers its own notice, and the frontend replaces the old
   one rather than merging (`apps/desktop/src/lib/updates/DETAILS.md` § The security variant).
-- Out of scope: the Linux plugin path, which reads no list (it follows the unsigned `notes`), until Linux leaves alpha.
+- **Windows and Linux read the release's signed list.** An installer can't be opened before it runs, so `latest.json`
+  names the list as a release asset with its own minisign signature (`securityAdvisories: { url, signature }`, top
+  level), and `advisories::fetch_signed_list` reads it at the stage step. The signature is what the bundle's code
+  signature is on macOS; the manifest naming it isn't signed, so it can leave the entry out (hiding a notice, as it
+  could withhold the update itself) but can't invent one, and `notice_from` keeps `fixedIn <= staged`, so a later
+  release's list can't speak for fixes this update lacks. Missing, unreachable (15 s bound), or unsigned reads as no
+  notice plus a warn, never a failed update. The What's new popup still covers it after the restart from the new
+  build's embedded copy.
 
 ## Two updater keys
 
@@ -164,8 +190,9 @@ list itself, what gets an entry, and the link allowlist: `../security_advisories
   costs one real check.
 - **Every verifier must trust the same set**, or a backup-signed release is refused before it ships:
   `release-finish.sh` (the laptop's check after signing, and `-verify-dir`, the `publish` job's gate) reads both through
-  `readTrustedPubkeys`. The Tauri updater plugin (non-macOS builds) trusts only the `tauri.conf.json` key, and
-  `latest.json` publishes no Linux build today.
+  `readTrustedPubkeys`. Off macOS the Tauri plugin re-verifies at the hand-off, but with the key that verified the
+  download (`VerifiedSignature::pubkey`, passed through `UpdaterBuilder::pubkey`), so a backup-signed release
+  installs there too.
 - The rotation runbook (what the rotation release changes, how it signs without the backup key entering sops):
   `docs/guides/releasing.md` § Rotating to the backup updater key.
 
@@ -253,10 +280,51 @@ The restart that runs is the OLD version's code, so the fix shows from the updat
 Anyone already showing two tiles needs nothing: the first relaunch without `-n`, or any quit and reopen, lights the
 pinned tile again.
 
+## Windows and Linux
+
+The check, the offer, the download, the minisign check against both keys, the not-genuine memory, and the managed
+policy are the macOS code, unchanged. What differs lives in `handoff.rs`, `install_kind.rs`, and the `platform/` seam
+(`plugin.rs` is the one place that drives the plugin):
+
+- **The version is bound by the signature.** An NSIS installer or an AppImage can't be opened before it runs, so there's
+  no `Info.plist` to read. The Tauri signer's `--app-version` writes `version:<v>` into the minisign trusted comment,
+  which the global signature covers; `bind_signed_version` refuses a download whose signature names another version, or
+  none, as a `SignatureMismatch` (so a not-genuine version for the session, plus the security event). That's what stops
+  an unsigned manifest pairing "0.54.0" with a genuine 0.52.0 installer. `tauri build` sets it; a hand signature (the
+  release pipeline's) must pass `--app-version` for these artifacts, or every Windows and Linux install refuses the
+  release.
+- **"Install" stages.** `install_update` re-asks the policy on a fresh read, reads the signed advisory list (§ Security
+  notices), and keeps the verified file as `UpdateSlots::staged_installer`. The download file names its version
+  (`Cmdr-0.54.0-setup.exe`), so a newer download can't overwrite a staged installer before its own stage succeeds; a
+  newer stage deletes the one it supersedes. The frontend reaches `ready` exactly as on macOS.
+- **Restart hands off.** The toast's Restart calls `relaunch_app` as on macOS. `quit::relaunch` sees `is_staged`, arms
+  the hand-off, and exits through the quit gate like ⌘Q, so a transfer in flight still asks, and "Keep working" disarms
+  it (`relaunch::disarm`) so a later plain quit installs nothing. In `RunEvent::Exit`, `before_flush` records
+  `UpdateInstalled` in the security log (the last moment it can still write), and `relaunch::on_exit`, last of all,
+  runs `run_at_exit`, which hands a `HandoffPlan` to `platform::hand_off` (`platform/plugin.rs`):
+  `updater_builder().target(<the manifest key>).pubkey(<the verifying key>)`, then
+  `restore_update` on a one-platform manifest of exactly the verified offer, then `Update::install(bytes)`. The plugin
+  re-verifies the bytes under that key and re-checks the signed version (`restore_update` always requires it). Windows:
+  it starts the NSIS installer in passive mode with `/UPDATE` and the restart args, then `process::exit(0)`; the
+  installer reopens Cmdr. Linux: it replaces the AppImage file, and Cmdr restarts itself. A hand-off that fails logs at
+  error and still restarts Cmdr on the old version.
+- **The plugin does nothing else.** It's registered off macOS in every build (it makes no request of its own), and the
+  webview holds no `updater:` permission, so nothing can call its check or `downloadAndInstall`. Its `endpoints` in
+  `tauri.conf.json` are unused but must stay non-empty: `UpdaterBuilder::build` refuses an empty list.
+- **A quit without Restart installs nothing.** The staged installer lives for the session; the next launch checks,
+  downloads, and prompts again. Installing on every quit would put an installer window in front of a person who only
+  closed the app, and Windows can end a session (logoff, shutdown) mid-install.
+- No pre-flight write check: a per-user NSIS install writes `%LOCALAPPDATA%`, and an AppImage the plugin can't replace
+  fails the hand-off (logged, Cmdr restarts as it was). `update_write_blocker` answers `None` off macOS.
+- **Not verified on a real Windows or Linux machine yet** (2026-11-18): the plugin's install arms are read from
+  `tauri-plugin-updater` 2.14.1's source, and the Rust tests cover everything before them. Verify end to end on the
+  Windows lane once the app runs there, with a pipeline-signed release.
+
 ## Dependencies
 
 - `reqwest`: HTTP client for manifest + tarball download.
 - `minisign-verify`: signature verification.
+- `tauri-plugin-updater` (off macOS): the installer hand-off only.
 - `cmdr-update-trust`: tarball extraction, the bundle's version, and the Apple code-signature check.
 - `filetime`: touches the bundle after install to trigger a LaunchServices refresh.
 - `base64`: decodes the double-encoded minisign key and signatures.

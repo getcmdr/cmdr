@@ -1,32 +1,35 @@
-//! Custom macOS updater that preserves TCC/Full Disk Access permissions across updates.
+//! Cmdr's updater, on every OS: the check, the managed policy, the minisign verification, and the
+//! advisory list are all Cmdr's own. Only the last step differs (`install_kind.rs`, `platform/`):
 //!
-//! Instead of replacing the entire `.app` bundle (which changes its inode and causes macOS
-//! to lose track of FDA grants), this updater syncs files *into* the existing bundle,
-//! preserving the directory inode and `com.apple.macl` xattr.
+//! - macOS syncs files *into* the running `.app` bundle (`platform/macos/installer.rs`), preserving
+//!   the bundle's `com.apple.macl` xattr and giving each file the fresh inode the code-signing cache
+//!   needs.
+//! - Windows and Linux stage the verified installer and hand it to the Tauri updater plugin as Cmdr
+//!   quits to restart (`handoff.rs`).
 //!
-//! Three Tauri commands:
+//! Three Tauri commands carry the flow:
 //! - `check_for_update`: fetches `latest.json`, compares versions
-//! - `download_update`: downloads tarball, verifies minisign signature
-//! - `install_update`: extracts and syncs into the running `.app` bundle
+//! - `download_update`: downloads the artifact, verifies its minisign signature
+//! - `install_update`: macOS syncs it into the bundle; elsewhere it's staged for Restart
 
 mod advisories;
-mod bundle_location;
-// Crate-visible for `installer::running_bundle`, which `dock/` needs to decide whether a Dock tile
-// could point at this copy. Nothing else outside `updater` reaches in.
-pub(crate) mod installer;
-// `lib.rs::setup` calls it on the first launch after an update (#1019).
-pub(crate) mod local_network_refresh;
+pub(crate) mod handoff;
+mod install_kind;
 mod manifest;
+// Crate-visible for macOS's own pieces (`platform::installer`, `platform::local_network_refresh`).
+pub(crate) mod platform;
 mod security_events;
 mod signature;
+mod write_blocker;
 
 pub use advisories::SecurityNotice;
-pub use bundle_location::BundleWriteBlocker;
+use install_kind::{Arch, InstallKind, NotUpdatable};
 use manifest::UpdateInfo;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::State;
+pub use write_blocker::BundleWriteBlocker;
 
 // Per-call timeouts for the manifest fetch. The default `reqwest::get` client has no
 // overall timeout. A stuck TCP handshake against the redirect target can hang for
@@ -62,6 +65,8 @@ pub struct UpdateState {
 struct UpdateSlots {
     offered: Option<UpdateInfo>,
     downloaded: Option<DownloadedUpdate>,
+    /// Windows and Linux: the verified installer `install_update` staged for Restart.
+    staged_installer: Option<handoff::StagedInstaller>,
     /// Versions refused this session because they didn't carry Cmdr's signature (minisign on
     /// the archive, or the Developer ID on the bundle). ❗ Never fetched again until Cmdr
     /// restarts, so the background loop can't re-download a fake every run; a newer version
@@ -69,11 +74,13 @@ struct UpdateSlots {
     not_genuine: std::collections::HashSet<semver::Version>,
 }
 
-/// A verified tarball waiting for `install_update`, and the version the check said it holds.
+/// A verified download waiting for `install_update`: the offer it answers, where its bytes are,
+/// and the trusted key that verified them.
 #[derive(Debug)]
 struct DownloadedUpdate {
-    version: semver::Version,
-    tarball: PathBuf,
+    offer: UpdateInfo,
+    file: PathBuf,
+    pubkey: &'static str,
 }
 
 impl UpdateState {
@@ -141,8 +148,9 @@ pub enum UpdateCheckOutcome {
 /// the log names the exact condition that fired.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SkipReason {
-    /// The executable isn't inside a `.app` bundle, so the install can't possibly succeed.
-    NotAnAppBundle,
+    /// Nothing here an update could reach (`install_kind::current`): a dev build, or an install
+    /// the updater doesn't own.
+    NotUpdatable(NotUpdatable),
     /// One of [`crate::prod_instance::NON_PROD_ENV_VARS`] is set in this process's environment.
     NonProdEnv(&'static str),
 }
@@ -150,36 +158,46 @@ enum SkipReason {
 impl std::fmt::Display for SkipReason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::NotAnAppBundle => f.write_str("not running from a .app bundle"),
+            Self::NotUpdatable(reason) => reason.fmt(f),
             Self::NonProdEnv(name) => write!(f, "{name} is set"),
         }
     }
 }
 
-/// Pure core of the gate, with `in_app_bundle` and `env_is_set` injected so the matrix is
+/// Pure core of the gate, with the install kind and `env_is_set` injected so the matrix is
 /// unit-testable without mutating the process environment or faking a bundle on disk.
 ///
-/// The bundle condition is checked first: it's the one that makes an update impossible rather
+/// The install condition is checked first: it's the one that makes an update impossible rather
 /// than merely unwanted, so it's the more useful thing to see in a log.
-fn skip_reason_for(in_app_bundle: bool, env_is_set: &dyn Fn(&str) -> bool) -> Option<SkipReason> {
-    if !in_app_bundle {
-        return Some(SkipReason::NotAnAppBundle);
+fn skip_reason_for(
+    install: Result<InstallKind, NotUpdatable>,
+    env_is_set: &dyn Fn(&str) -> bool,
+) -> Option<SkipReason> {
+    if let Err(reason) = install {
+        return Some(SkipReason::NotUpdatable(reason));
     }
     crate::prod_instance::non_prod_env_var_in(env_is_set).map(SkipReason::NonProdEnv)
 }
 
-/// The gate against this process's real environment and executable location.
-fn skip_reason() -> Option<SkipReason> {
-    skip_reason_for(installer::is_running_from_app_bundle(), &|name| {
-        std::env::var_os(name).is_some()
-    })
+/// The gate against this process's real environment and install.
+fn skip_reason(install: Result<InstallKind, NotUpdatable>) -> Option<SkipReason> {
+    skip_reason_for(install, &|name| std::env::var_os(name).is_some())
+}
+
+/// The update-check URL: the api-server counts the check as an active install by version and
+/// `arch` (`InstallKind::check_arch_label`), then redirects to `latest.json`.
+fn update_check_url(current_version: &str, kind: InstallKind, arch: Arch) -> String {
+    format!(
+        "https://api.getcmdr.com/update-check/{current_version}?arch={}",
+        kind.check_arch_label(arch)
+    )
 }
 
 /// Fetches `latest.json` (via the update check proxy for analytics) and says what it found, with
 /// the organization's policy applied. An `Available` release is remembered for `download_update`.
 ///
-/// Answers `UpToDate` when this isn't a real user's production install ([`skip_reason`]): the
-/// executable isn't inside a `.app` bundle (dev builds: install can't possibly succeed), or one of
+/// Answers `UpToDate` when this isn't a real user's production install ([`skip_reason`]): nothing
+/// an update could reach (`install_kind::current`: a dev build, a `.deb`), or one of
 /// [`crate::prod_instance::NON_PROD_ENV_VARS`] is set. Every check reaches
 /// `api.getcmdr.com/update-check`, which writes an `update_checks` row that the dashboard counts as
 /// an active install, so Cmdr's own runs must never call it. Also `UpToDate` when the remote version
@@ -191,12 +209,22 @@ pub async fn check_for_update(
     state: State<'_, UpdateState>,
 ) -> Result<UpdateCheckOutcome, crate::server_request::ServerRequestError> {
     let current_version = env!("CARGO_PKG_VERSION");
-    run_check(trigger, &state, skip_reason(), current_version, || async move {
-        log::info!("Checking for updates (current version: {current_version})");
-        let arch = manifest::platform_key().strip_prefix("darwin-").unwrap_or("unknown");
-        let url = format!("https://api.getcmdr.com/update-check/{current_version}?arch={arch}");
-        fetch_manifest(&url).await
-    })
+    let install = install_kind::current();
+    let arch = Arch::current();
+    let platform_keys = install.map(|kind| kind.platform_keys(arch)).unwrap_or_default();
+    run_check(
+        trigger,
+        &state,
+        skip_reason(install),
+        current_version,
+        &platform_keys,
+        || async move {
+            log::info!("Checking for updates (current version: {current_version})");
+            // `skip_reason` stops every `Err` before the fetch, so this always has a kind.
+            let kind = install.map_err(crate::server_request::ServerRequestError::unexpected)?;
+            fetch_manifest(&update_check_url(current_version, kind, arch)).await
+        },
+    )
     .await
 }
 
@@ -210,6 +238,7 @@ async fn run_check<F, Fut>(
     state: &UpdateState,
     skip: Option<SkipReason>,
     current_version: &str,
+    platform_keys: &[String],
     fetch: F,
 ) -> Result<UpdateCheckOutcome, crate::server_request::ServerRequestError>
 where
@@ -242,7 +271,7 @@ where
     }
 
     let manifest = fetch().await?;
-    let Some(update) = manifest::check_manifest(&manifest, current_version) else {
+    let Some(update) = manifest::check_manifest(&manifest, current_version, platform_keys) else {
         return Ok(UpdateCheckOutcome::UpToDate);
     };
     let version = update.version.to_string();
@@ -298,33 +327,25 @@ async fn fetch_manifest(url: &str) -> Result<manifest::UpdateManifest, crate::se
 ///
 /// Returns `None` outside a `.app` bundle too: there's no bundle to classify, and the check gate
 /// (`skip_reason`) has already stopped that process from getting here. A classification that
-/// doesn't finish in [`CLASSIFY_TIMEOUT`] (a stalled mount under the bundle) answers `None` as
+/// doesn't finish in `CLASSIFY_TIMEOUT` (a stalled mount under the bundle) answers `None` as
 /// well: the installer runs the same check again before writing anything.
+///
+/// Off macOS there's no bundle to classify, so it answers `None`: the NSIS installer writes a
+/// per-user install, and an AppImage the plugin can't replace fails the hand-off at exit.
 #[tauri::command]
 #[specta::specta]
 pub async fn update_write_blocker() -> Result<Option<BundleWriteBlocker>, String> {
-    let Ok(bundle) = installer::running_bundle() else {
-        return Ok(None);
-    };
-    let probe = bundle.clone();
-    let blocker =
-        cmdr_fs::deadline::blocking_with_timeout(CLASSIFY_TIMEOUT, None, move || bundle_location::classify(&probe))
-            .await;
-    if let Some(reason) = blocker {
-        log::warn!("Can't install updates into {}: {reason}", LogPrivate::dir_path(&bundle));
-    }
-    Ok(blocker)
+    Ok(cmdr_fs::deadline::blocking_with_timeout(CLASSIFY_TIMEOUT, None, platform::write_blocker).await)
 }
 
 /// The running bundle's path, for the notice that asks someone to replace it ("`/Applications/Cmdr.app`
-/// belongs to another account"), so it names the real folder and app name. `None` outside a bundle.
-/// No filesystem access: it walks up from the executable's own path.
+/// belongs to another account"), so it names the real folder and app name. `None` outside a bundle,
+/// and off macOS, where no notice asks for it. No filesystem access: it walks up from the
+/// executable's own path.
 #[tauri::command]
 #[specta::specta]
 pub fn update_bundle_path() -> Option<String> {
-    installer::running_bundle()
-        .ok()
-        .map(|bundle| bundle.to_string_lossy().into_owned())
+    platform::bundle_path().map(|bundle| bundle.to_string_lossy().into_owned())
 }
 
 /// Why a tarball download didn't leave a verified file behind. The frontend picks the log level
@@ -360,13 +381,18 @@ impl From<crate::server_request::ServerRequestError> for UpdateDownloadError {
     }
 }
 
-/// Downloads the tarball at `url` and verifies it against `signature`. Split from the command so a
-/// test can point it at a mock server.
+/// Downloads the artifact at `url` and verifies it against `signature`. Split from the command so a
+/// test can point it at a mock server. `bind_to` is the version the signature must name when the
+/// install kind binds it there (Windows, Linux: [`bind_signed_version`]).
 ///
 /// The status is checked before the bytes are trusted (`server_request::send`), so a 5xx
-/// maintenance page reads as the host's bad moment rather than as a tarball that fails its
+/// maintenance page reads as the host's bad moment rather than as an artifact that fails its
 /// signature.
-async fn fetch_verified_tarball(url: &str, signature: &str) -> Result<Vec<u8>, UpdateDownloadError> {
+async fn fetch_verified(
+    url: &str,
+    signature: &str,
+    bind_to: Option<&semver::Version>,
+) -> Result<(Vec<u8>, signature::VerifiedSignature), UpdateDownloadError> {
     let client = cmdr_http::client_builder()
         .connect_timeout(DOWNLOAD_CONNECT_TIMEOUT)
         .read_timeout(DOWNLOAD_READ_TIMEOUT)
@@ -385,44 +411,76 @@ async fn fetch_verified_tarball(url: &str, signature: &str) -> Result<Vec<u8>, U
         .map_err(|e| crate::server_request::ServerRequestError::from_transport(&e))?;
 
     log::info!("Downloaded {} bytes, verifying signature", bytes.len());
-    signature::verify(&bytes, signature).map_err(|detail| UpdateDownloadError::SignatureMismatch { detail })?;
+    let verified =
+        signature::verify(&bytes, signature).map_err(|detail| UpdateDownloadError::SignatureMismatch { detail })?;
+    if let Some(offered) = bind_to {
+        bind_signed_version(&verified, offered).map_err(|detail| UpdateDownloadError::SignatureMismatch { detail })?;
+    }
     log::info!("Signature verified");
     // Zero-copy when the buffer is uniquely owned, which a freshly read body is.
-    Ok(Vec::from(bytes))
+    Ok((Vec::from(bytes), verified))
+}
+
+/// Refuses a signature that doesn't name the offered version. Windows and Linux can't open an
+/// installer before it runs, so the signature's trusted comment (`--app-version`, covered by the
+/// signature) is the one signed statement of which release the bytes are. Without it, an unsigned
+/// manifest could pair a newer version number with an older genuine installer and roll the install
+/// back. macOS reads the extracted bundle's `Info.plist` instead (`installer::refuse_unless_newer`).
+///
+/// A signature with no version is refused too: every Windows and Linux artifact is signed with one.
+fn bind_signed_version(verified: &signature::VerifiedSignature, offered: &semver::Version) -> Result<(), String> {
+    let Some(signed) = verified.signed_version.as_deref() else {
+        return Err(format!(
+            "the signature names no version, so it can't vouch for {offered}"
+        ));
+    };
+    match semver::Version::parse(signed.trim_start_matches('v')) {
+        Ok(signed) if &signed == offered => Ok(()),
+        _ => Err(format!(
+            "the signature is for version {signed}, not the offered {offered}"
+        )),
+    }
 }
 
 /// Downloads the update the last check offered and verifies its minisign signature. Takes no URL:
 /// the backend fetches only what it offered, so a bypassed frontend can't stage anything else.
 ///
-/// On success, records the tarball and its version in `UpdateState` for `install_update`.
+/// On success, records the file and its offer in `UpdateState` for `install_update`.
 #[tauri::command]
 #[specta::specta]
 pub async fn download_update(state: State<'_, UpdateState>) -> Result<(), UpdateDownloadError> {
-    let (offer, bytes) = download_verified(&state).await?;
+    // `check_for_update` never offers to an install it skips, so there's nothing to download.
+    let kind = install_kind::current().map_err(|_| UpdateDownloadError::NothingOffered)?;
+    let (offer, bytes, verified) = download_verified(&state, kind).await?;
 
     let temp_dir = std::env::temp_dir().join("cmdr-update");
     std::fs::create_dir_all(&temp_dir).map_err(|e| UpdateDownloadError::Disk {
         detail: format!("couldn't create temp dir: {e}"),
     })?;
 
-    let tarball_path = temp_dir.join("Cmdr.app.tar.gz");
-    std::fs::write(&tarball_path, &bytes).map_err(|e| UpdateDownloadError::Disk {
-        detail: format!("couldn't write tarball: {e}"),
+    let file = temp_dir.join(kind.download_file_name(&offer.version));
+    std::fs::write(&file, &bytes).map_err(|e| UpdateDownloadError::Disk {
+        detail: format!("couldn't write the update: {e}"),
     })?;
 
     state.slots().downloaded = Some(DownloadedUpdate {
-        version: offer.version,
-        tarball: tarball_path,
+        offer,
+        file,
+        pubkey: verified.pubkey,
     });
     Ok(())
 }
 
-/// Fetches the offered tarball and verifies it. A signature that doesn't hold reaches the security
+/// Fetches the offered artifact and verifies it. A signature that doesn't hold reaches the security
 /// log (and so the person's notice) and marks the version as not genuine for the session.
-async fn download_verified(state: &UpdateState) -> Result<(UpdateInfo, Vec<u8>), UpdateDownloadError> {
+async fn download_verified(
+    state: &UpdateState,
+    kind: InstallKind,
+) -> Result<(UpdateInfo, Vec<u8>, signature::VerifiedSignature), UpdateDownloadError> {
     let offer = offer_to_download(state).await?;
     log::info!("Downloading update {} from {}", offer.version, offer.url); // allowed-log-private: our own release URL
-    let bytes = fetch_verified_tarball(&offer.url, &offer.signature)
+    let bind_to = kind.binds_version_in_signature().then_some(&offer.version);
+    let (bytes, verified) = fetch_verified(&offer.url, &offer.signature, bind_to)
         .await
         .inspect_err(|e| {
             security_events::on_download_error(&offer.version, e);
@@ -430,7 +488,7 @@ async fn download_verified(state: &UpdateState) -> Result<(UpdateInfo, Vec<u8>),
                 state.slots().not_genuine.insert(offer.version.clone());
             }
         })?;
-    Ok((offer, bytes))
+    Ok((offer, bytes, verified))
 }
 
 /// The offered update, if the policy, read fresh, still allows its version and it hasn't
@@ -470,11 +528,20 @@ pub enum UpdateInstallError {
     NothingStaged,
     /// The staged bundle's Apple code signature isn't a valid Cmdr Developer ID signature, though
     /// its archive passed minisign. Nothing was written. Means the updater key signed something
-    /// that isn't a Cmdr release (or the release itself is broken): log it at error.
+    /// that isn't a Cmdr release (or the release itself is broken): log it at error. macOS only.
+    #[allow(
+        dead_code,
+        reason = "only the macOS install (`platform::install_bundle`) checks a code signature"
+    )]
     UntrustedCodeSignature { detail: String },
     /// This install can't write its own bundle (`BundleWriteBlocker`), caught by the installer's own
     /// pre-flight check or by a write the sync was refused. The same answer `update_write_blocker`
     /// gives, so the frontend raises the same notice. Not a failure: ❌ never log it at error.
+    /// macOS only.
+    #[allow(
+        dead_code,
+        reason = "only the macOS install (`platform::install_bundle`) classifies its bundle"
+    )]
     Unwritable { blocker: BundleWriteBlocker },
     /// The install ran and didn't finish.
     Failed { detail: String },
@@ -490,30 +557,72 @@ impl From<String> for UpdateInstallError {
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateInstalled {
-    /// The security fixes this update carries, from the staged bundle's own signed advisory list
-    /// (never from `latest.json`), or `None` when it carries none the running build lacks.
+    /// The security fixes this update carries, from a signed advisory list (the staged bundle's on
+    /// macOS, the release's signed asset elsewhere; never from `latest.json` itself), or `None`
+    /// when it carries none the running build lacks.
     pub security_notice: Option<SecurityNotice>,
 }
 
-/// Installs a previously downloaded update by syncing files into the running `.app` bundle.
+/// Makes a previously downloaded update ready for the restart: macOS syncs it into the running
+/// `.app` bundle; Windows and Linux stage the verified installer, which Restart hands off
+/// (`handoff.rs`).
 ///
 /// Takes the download `download_update` recorded, and refuses it when the CURRENT policy doesn't
 /// allow its version: a download staged before a profile arrived must not install.
 #[tauri::command]
 #[specta::specta]
 pub async fn install_update(state: State<'_, UpdateState>) -> Result<UpdateInstalled, UpdateInstallError> {
-    let (staged, policy) = staged_to_install(&state).await?;
+    match install_kind::current() {
+        Ok(InstallKind::MacAppBundle) => install_into_bundle(&state).await,
+        Ok(InstallKind::WindowsNsis | InstallKind::LinuxAppImage) => {
+            handoff::stage(&state, env!("CARGO_PKG_VERSION"), |entry| async move {
+                advisories::fetch_signed_list(&entry).await
+            })
+            .await
+        }
+        // `check_for_update` never offers to an install it skips, so nothing can be downloaded.
+        Err(_) => Err(UpdateInstallError::NothingStaged),
+    }
+}
+
+/// What a staged bundle that passed every check holds: the version its own `Info.plist` names (the
+/// one the policy was asked about, and so the one that gets installed) and the security notice its
+/// own advisory list names. macOS only (`platform::install_bundle`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VettedBundle {
+    pub version: semver::Version,
+    pub security_notice: Option<SecurityNotice>,
+}
+
+/// What the Windows and Linux hand-off gives the plugin: the release exactly as Cmdr verified it.
+#[derive(Debug, Clone)]
+#[allow(
+    dead_code,
+    reason = "read by the Windows and Linux arm (`platform/plugin.rs`); macOS never hands off"
+)]
+pub struct HandoffPlan {
+    /// The `latest.json` key the release came from, which the plugin asks for by name.
+    pub platform_key: String,
+    /// The trusted key that verified the download; the plugin re-verifies with it.
+    pub pubkey: &'static str,
+    /// A one-platform manifest of exactly the verified offer (`handoff::restore_manifest`).
+    pub manifest: serde_json::Value,
+}
+
+/// The macOS install: extracts the tarball and syncs it into the running bundle.
+async fn install_into_bundle(state: &UpdateState) -> Result<UpdateInstalled, UpdateInstallError> {
+    let (staged, policy) = staged_to_install(state).await?;
     log::info!(
         "Installing update {} from {}",
-        staged.version,
-        LogPrivate::file_path(&staged.tarball)
+        staged.offer.version,
+        LogPrivate::file_path(&staged.file)
     );
 
     // The archive's own `Info.plist` is what binds its version (the manifest isn't signed), so the
     // installer asks the policy again about THAT version once it has extracted it.
-    let offered = staged.version.clone();
+    let offered = staged.offer.version.clone();
     let result = tokio::task::spawn_blocking(move || {
-        installer::install(&staged.tarball, &|version| {
+        platform::install_bundle(&staged.file, &|version| {
             policy
                 .update_to(version)
                 .inspect_err(|refusal| security_events::on_policy_refusal(version, *refusal))
@@ -527,7 +636,7 @@ pub async fn install_update(state: State<'_, UpdateState>) -> Result<UpdateInsta
     .and_then(|installed| installed);
     security_events::on_install_result(&offered, result.as_ref().map(|vetted| &vetted.version));
     if let Err(error) = &result {
-        note_install_refusal(&state, &offered, error);
+        note_install_refusal(state, &offered, error);
     }
     let security_notice = result?.security_notice;
     if let Some(notice) = &security_notice {
@@ -557,9 +666,10 @@ async fn staged_to_install(
         .take()
         .ok_or(UpdateInstallError::NothingStaged)?;
     let policy = crate::managed_policy::for_egress().await;
-    if let Err(refusal) = policy.update_to(&staged.version) {
-        log::info!(target: "managed_policy", "Not installing update {}: the organization's policy refuses it ({refusal:?})", staged.version);
-        security_events::on_policy_refusal(&staged.version, refusal);
+    let version = &staged.offer.version;
+    if let Err(refusal) = policy.update_to(version) {
+        log::info!(target: "managed_policy", "Not installing update {version}: the organization's policy refuses it ({refusal:?})");
+        security_events::on_policy_refusal(version, refusal);
         return Err(UpdateInstallError::BlockedByPolicy);
     }
     Ok((staged, policy))

@@ -2,7 +2,7 @@
 //!
 //! - macOS's Local Network permission can stay pinned to the binary an update replaced, so the
 //!   first launch after an in-place update re-announces the bundle to LaunchServices
-//!   (`updater::local_network_refresh`, #1019).
+//!   (`updater::platform::local_network_refresh`, #1019).
 //! - The share notices (`network::os_mount_notice`) speak up about a dial this Mac blocked on that
 //!   launch, even from the quiet launch sweep: right after an update, that block is almost always
 //!   the stuck permission, and the person needs the switch to fix it.

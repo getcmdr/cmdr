@@ -3,12 +3,23 @@
 use super::*;
 use std::collections::HashSet;
 
-/// Asks the gate about a process running from `in_app_bundle` whose environment holds exactly
-/// `vars` and nothing else.
+/// Asks the gate about a process running from a macOS bundle (`in_app_bundle`) or a dev binary,
+/// whose environment holds exactly `vars` and nothing else.
 fn skip(in_app_bundle: bool, vars: &[&str]) -> Option<SkipReason> {
-    let set: HashSet<&str> = vars.iter().copied().collect();
-    skip_reason_for(in_app_bundle, &|name| set.contains(name))
+    let install = if in_app_bundle {
+        Ok(InstallKind::MacAppBundle)
+    } else {
+        Err(NotUpdatable::NotAnAppBundle)
+    };
+    skip_with(install, vars)
 }
+
+fn skip_with(install: Result<InstallKind, NotUpdatable>, vars: &[&str]) -> Option<SkipReason> {
+    let set: HashSet<&str> = vars.iter().copied().collect();
+    skip_reason_for(install, &|name| set.contains(name))
+}
+
+const NOT_A_BUNDLE: SkipReason = SkipReason::NotUpdatable(NotUpdatable::NotAnAppBundle);
 
 #[test]
 fn a_bundled_release_with_clean_env_may_check() {
@@ -17,7 +28,36 @@ fn a_bundled_release_with_clean_env_may_check() {
 
 #[test]
 fn an_unbundled_build_never_checks() {
-    assert_eq!(skip(false, &[]), Some(SkipReason::NotAnAppBundle));
+    assert_eq!(skip(false, &[]), Some(NOT_A_BUNDLE));
+}
+
+/// Windows and Linux share the gate: an installed NSIS build or AppImage checks, a dev binary or
+/// a package-manager install never does, and every tooling env var still suppresses.
+#[test]
+fn windows_and_linux_installs_pass_the_same_gate() {
+    for kind in [InstallKind::WindowsNsis, InstallKind::LinuxAppImage] {
+        assert_eq!(skip_with(Ok(kind), &[]), None, "{kind:?}");
+        assert_eq!(
+            skip_with(Ok(kind), &["CMDR_E2E_MODE"]),
+            Some(SkipReason::NonProdEnv("CMDR_E2E_MODE"))
+        );
+    }
+    for reason in [NotUpdatable::NotAnInstalledBuild, NotUpdatable::PackageManagerInstall] {
+        assert_eq!(skip_with(Err(reason), &[]), Some(SkipReason::NotUpdatable(reason)));
+    }
+}
+
+/// The URL every macOS install has always sent; the dashboard's arch split depends on it.
+#[test]
+fn the_check_url_keeps_its_macos_shape_and_names_other_oses() {
+    assert_eq!(
+        update_check_url("0.51.0", InstallKind::MacAppBundle, Arch::Aarch64),
+        "https://api.getcmdr.com/update-check/0.51.0?arch=aarch64"
+    );
+    assert_eq!(
+        update_check_url("0.51.0", InstallKind::WindowsNsis, Arch::X86_64),
+        "https://api.getcmdr.com/update-check/0.51.0?arch=windows-x86_64"
+    );
 }
 
 /// Every non-prod signal suppresses on its own, even from a properly bundled app. A bundled
@@ -63,13 +103,13 @@ fn every_tooling_launcher_is_suppressed_even_when_bundled() {
 /// rather than one that merely makes it unwanted.
 #[test]
 fn the_bundle_condition_is_reported_first() {
-    assert_eq!(skip(false, &["CMDR_E2E_MODE"]), Some(SkipReason::NotAnAppBundle));
+    assert_eq!(skip(false, &["CMDR_E2E_MODE"]), Some(NOT_A_BUNDLE));
 }
 
 /// The log has to name the condition, or the next pollution incident is undiagnosable.
 #[test]
 fn reasons_name_the_condition() {
-    assert_eq!(SkipReason::NotAnAppBundle.to_string(), "not running from a .app bundle");
+    assert_eq!(NOT_A_BUNDLE.to_string(), "not running from a .app bundle");
     assert_eq!(
         SkipReason::NonProdEnv("CMDR_DATA_DIR").to_string(),
         "CMDR_DATA_DIR is set"
@@ -82,18 +122,24 @@ use crate::managed_policy::testing::{
 use std::cell::Cell;
 
 const RUNNING: &str = "0.51.0";
+const TEST_KEY: &str = "darwin-aarch64";
+
+fn test_keys() -> Vec<String> {
+    vec![TEST_KEY.to_string()]
+}
 
 fn manifest_offering(version: &str) -> manifest::UpdateManifest {
     manifest::UpdateManifest {
         version: version.to_string(),
         platforms: [(
-            manifest::platform_key().to_string(),
+            TEST_KEY.to_string(),
             manifest::PlatformEntry {
                 url: "https://example.invalid/Cmdr.app.tar.gz".to_string(),
                 signature: "sig".to_string(),
             },
         )]
         .into(),
+        security_advisories: None,
     }
 }
 
@@ -105,7 +151,7 @@ fn ceiling(text: &str) -> crate::managed_policy::ManagedPolicy {
 /// times the check reached for the network.
 async fn check(trigger: UpdateCheckTrigger, state: &UpdateState, offered: &str) -> (UpdateCheckOutcome, usize) {
     let fetches = Cell::new(0);
-    let outcome = run_check(trigger, state, None, RUNNING, || async {
+    let outcome = run_check(trigger, state, None, RUNNING, &test_keys(), || async {
         fetches.set(fetches.get() + 1);
         Ok(manifest_offering(offered))
     })
@@ -254,8 +300,9 @@ async fn a_dev_build_answers_the_policy_and_otherwise_never_fetches() {
     let outcome = run_check(
         UpdateCheckTrigger::Poll,
         &state,
-        Some(SkipReason::NotAnAppBundle),
+        Some(NOT_A_BUNDLE),
         RUNNING,
+        &[],
         fetch,
     )
     .await
@@ -266,8 +313,9 @@ async fn a_dev_build_answers_the_policy_and_otherwise_never_fetches() {
     let outcome = run_check(
         UpdateCheckTrigger::Poll,
         &state,
-        Some(SkipReason::NotAnAppBundle),
+        Some(NOT_A_BUNDLE),
         RUNNING,
+        &[],
         fetch,
     )
     .await
@@ -290,10 +338,21 @@ async fn a_policy_that_arrives_after_the_check_blocks_the_download() {
     }
 }
 
+fn test_offer(version: &str, url: &str) -> UpdateInfo {
+    UpdateInfo {
+        version: semver::Version::parse(version).expect("a valid test version"),
+        platform_key: TEST_KEY.to_string(),
+        url: url.to_string(),
+        signature: "not-a-signature".to_string(),
+        security_advisories: None,
+    }
+}
+
 fn staged(state: &UpdateState, version: &str) {
     state.slots().downloaded = Some(DownloadedUpdate {
-        version: semver::Version::parse(version).expect("a valid test version"),
-        tarball: PathBuf::from("/nonexistent/Cmdr.app.tar.gz"),
+        offer: test_offer(version, "https://example.invalid/Cmdr.app.tar.gz"),
+        file: PathBuf::from("/nonexistent/Cmdr.app.tar.gz"),
+        pubkey: "key",
     });
 }
 
@@ -332,7 +391,7 @@ async fn a_staged_version_the_policy_allows_installs() {
     let state = UpdateState::new();
     staged(&state, "0.53.0");
     let (update, _) = staged_to_install(&state).await.expect("allowed");
-    assert_eq!(update.version, semver::Version::new(0, 53, 0));
+    assert_eq!(update.offer.version, semver::Version::new(0, 53, 0));
 }
 
 use crate::server_request::ServerRequestError;
@@ -380,7 +439,7 @@ async fn a_2xx_that_isnt_a_manifest_is_a_bad_response() {
 #[tokio::test]
 async fn a_tarball_host_answering_503_is_a_request_failure_not_a_bad_signature() {
     let (_server, url) = manifest_at(ResponseTemplate::new(503).set_body_string("<html>maintenance</html>")).await;
-    let err = fetch_verified_tarball(&url, "sig")
+    let err = fetch_verified(&url, "sig", None)
         .await
         .expect_err("a 503 brings no tarball");
     assert!(
@@ -398,7 +457,7 @@ async fn a_tarball_host_answering_503_is_a_request_failure_not_a_bad_signature()
 #[tokio::test]
 async fn a_tarball_that_fails_its_signature_is_a_signature_mismatch() {
     let (_server, url) = manifest_at(ResponseTemplate::new(200).set_body_bytes(b"not the real tarball".to_vec())).await;
-    let err = fetch_verified_tarball(&url, "not-a-signature")
+    let err = fetch_verified(&url, "not-a-signature", None)
         .await
         .expect_err("garbage doesn't verify");
     assert!(
@@ -410,7 +469,7 @@ async fn a_tarball_that_fails_its_signature_is_a_signature_mismatch() {
 #[tokio::test]
 async fn an_unreachable_tarball_host_is_a_request_failure() {
     // Port 9 (discard) on loopback refuses the connection.
-    let err = fetch_verified_tarball("http://127.0.0.1:9/Cmdr.app.tar.gz", "sig")
+    let err = fetch_verified("http://127.0.0.1:9/Cmdr.app.tar.gz", "sig", None)
         .await
         .expect_err("nothing listens there");
     assert!(
@@ -436,11 +495,7 @@ async fn a_5xx_maintenance_page_is_refused_not_malformed() {
 }
 
 fn offer(state: &UpdateState, version: &str, url: &str) {
-    state.slots().offered = Some(UpdateInfo {
-        version: semver::Version::parse(version).expect("a valid test version"),
-        url: url.to_string(),
-        signature: "not-a-signature".to_string(),
-    });
+    state.slots().offered = Some(test_offer(version, url));
 }
 
 /// An offered version that didn't carry Cmdr's signature is fetched once a session: the
@@ -459,7 +514,9 @@ async fn a_version_that_failed_its_signature_is_not_fetched_again_this_session()
     let capture = crate::security_log::testing::capture_events();
 
     offer(&state, "0.53.0", &url);
-    let first = download_verified(&state).await.expect_err("garbage doesn't verify");
+    let first = download_verified(&state, InstallKind::MacAppBundle)
+        .await
+        .expect_err("garbage doesn't verify");
     assert!(
         matches!(first, UpdateDownloadError::SignatureMismatch { .. }),
         "{first:?}"
@@ -467,7 +524,9 @@ async fn a_version_that_failed_its_signature_is_not_fetched_again_this_session()
 
     offer(&state, "0.53.0", &url);
     assert_eq!(
-        download_verified(&state).await.expect_err("refused before fetching"),
+        download_verified(&state, InstallKind::MacAppBundle)
+            .await
+            .expect_err("refused before fetching"),
         UpdateDownloadError::NotGenuineEarlier
     );
     assert_eq!(
@@ -514,5 +573,52 @@ async fn a_version_refused_for_its_code_signature_is_not_fetched_again_this_sess
     assert!(
         offer_to_download(&state).await.is_ok(),
         "a broken install isn't a fake one"
+    );
+}
+
+fn verified_for(signed_version: Option<&str>) -> signature::VerifiedSignature {
+    signature::VerifiedSignature {
+        pubkey: "key",
+        signed_version: signed_version.map(str::to_string),
+    }
+}
+
+/// Windows and Linux: the signature has to name the offered version, since nothing else signed
+/// does. Hostile: an unsigned manifest offering "0.54.0" in front of a genuine 0.52.0 installer is
+/// a rollback, and a signature with no version can't vouch for anything.
+#[test]
+fn a_signature_for_another_version_or_none_is_refused_off_macos() {
+    let offered = semver::Version::new(0, 54, 0);
+    assert_eq!(bind_signed_version(&verified_for(Some("0.54.0")), &offered), Ok(()));
+    assert_eq!(bind_signed_version(&verified_for(Some("v0.54.0")), &offered), Ok(()));
+    for signed in [Some("0.52.0"), Some("0.54.0-rc.1"), Some("not-a-version"), None] {
+        assert!(
+            bind_signed_version(&verified_for(signed), &offered).is_err(),
+            "{signed:?} must not vouch for 0.54.0"
+        );
+    }
+}
+
+/// Hostile: a tampered Windows installer is refused like a tampered macOS tarball, and its version
+/// isn't fetched again this session.
+#[tokio::test]
+async fn a_tampered_installer_is_refused_and_not_fetched_again() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .respond_with(ResponseTemplate::new(200).set_body_bytes(b"not the real installer".to_vec()))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let url = format!("{}/Cmdr_0.53.0_x64-setup.exe", server.uri());
+    let state = UpdateState::new();
+    offer(&state, "0.53.0", &url);
+    let err = download_verified(&state, InstallKind::WindowsNsis)
+        .await
+        .expect_err("garbage doesn't verify");
+    assert!(matches!(err, UpdateDownloadError::SignatureMismatch { .. }), "{err:?}");
+    offer(&state, "0.53.0", &url);
+    assert_eq!(
+        offer_to_download(&state).await.expect_err("remembered"),
+        UpdateDownloadError::NotGenuineEarlier
     );
 }

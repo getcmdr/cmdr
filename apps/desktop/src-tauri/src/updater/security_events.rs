@@ -27,6 +27,15 @@ pub(super) fn on_policy_refusal(version: &semver::Version, refusal: UpdateRefusa
     });
 }
 
+/// Windows and Linux: the staged installer goes to the plugin as Cmdr exits. Recorded as the
+/// install, since it's the last moment the log can write (`handoff::note_handoff`).
+pub(super) fn on_handoff(version: &semver::Version) {
+    security_log::record(SecurityEvent::UpdateInstalled {
+        from_version: env!("CARGO_PKG_VERSION").to_string(),
+        to_version: version.to_string(),
+    });
+}
+
 /// The install's outcome: `offered` is the version the check offered, `result` the version the
 /// bundle itself named once installed.
 pub(super) fn on_install_result(offered: &semver::Version, result: Result<&semver::Version, &UpdateInstallError>) {

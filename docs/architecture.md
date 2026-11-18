@@ -394,8 +394,8 @@ All under `apps/desktop/src-tauri/src/`.
   a raw `NSMenu` from an `applicationDockMenu:` we add to tao's app delegate. Runs inside an AppKit callback, so it may
   neither panic nor block. See `apps/desktop/src-tauri/src/dock/menu/CLAUDE.md`
 - `install_location.rs`: macOS-only. Whether the running copy of Cmdr sits in an Applications folder, the one question
-  the Dock pin and the reveal handler must not answer differently. Distinct from `updater/bundle_location.rs` (can an
-  update be written into the bundle)
+  the Dock pin and the reveal handler must not answer differently. Distinct from
+  `updater/platform/macos/bundle_location.rs` (can an update be written into the bundle)
 - `quick_look/`: macOS-only `QLPreviewPanel` integration (Shift+Space)
 - `drag_image_detection.rs`: macOS method swizzle for drag image size detection
 - `drag_image_swap.rs`: Rich/transparent drag image swap for self-drags
@@ -407,11 +407,14 @@ All under `apps/desktop/src-tauri/src/`.
   auto-dispatcher, and the amend path that adds a note to a report that already went out
 - `events/`: App-side Tauri payloads for subsystems that emit typed values instead of wire formats (the drive index,
   media index, importance). See `events/CLAUDE.md`
-- `updater/`: macOS custom updater: syncs files into the running `.app` in place (per-file atomic renames, the bundle's
-  `com.apple.macl` kept). Other platforms use stock Tauri
+- `updater/`: Cmdr's own updater on every OS (check, policy, minisign, advisory list). macOS syncs files into the
+  running `.app` in place (per-file atomic renames, the bundle's `com.apple.macl` kept); Windows and Linux stage the
+  verified installer and hand it to the Tauri updater plugin on Restart. See
+  `apps/desktop/src-tauri/src/updater/CLAUDE.md`
 - `security_advisories/`: The committed list of fixed vulnerabilities (`resources/security-advisories.json`), read from
-  a vetted staged bundle by `updater/` for the restart toast's security variant and from this build's embedded copy by
-  the What's new popup. See `apps/desktop/src-tauri/src/security_advisories/CLAUDE.md`
+  a vetted staged bundle (or, off macOS, the release's signed copy) by `updater/` for the restart toast's security
+  variant and from this build's embedded copy by the What's new popup. See
+  `apps/desktop/src-tauri/src/security_advisories/CLAUDE.md`
 - `managed_policy/`: What an organization's MDM profile restricts (telemetry, updates, AI), read from the forced layer
   of the app's preferences domain, cached, refreshed at egress, and shown as one `ManagedPolicyView`. Holds the
   canonical key catalog. See `apps/desktop/src-tauri/src/managed_policy/CLAUDE.md`; the frontend half (the settings

@@ -141,7 +141,7 @@ pub fn pin_cmdr() -> Result<(), DockPinFailure> {
 
 /// The running app's bundle, if it's somewhere we're willing to pin from.
 fn installed_bundle() -> Result<PathBuf, DockPinBlocker> {
-    let bundle_path = crate::updater::installer::running_bundle().map_err(|_| DockPinBlocker::NotABundle)?;
+    let bundle_path = crate::updater::platform::installer::running_bundle().map_err(|_| DockPinBlocker::NotABundle)?;
 
     if crate::install_location::in_an_applications_folder(&bundle_path, dirs::home_dir().as_deref()) {
         Ok(bundle_path)

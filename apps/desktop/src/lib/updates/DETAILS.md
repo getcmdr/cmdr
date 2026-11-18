@@ -58,15 +58,15 @@ backend's `notGenuineEarlier` for a version it won't fetch again this session) s
 worded like the security notice the backend raises for it (`#lib/security-notices`), ❌ never "try again later". The
 repeat logs at info: the first refusal already logged at error.
 
-The macOS path runs `download_update` and `install_update` as two commands (distinct `downloading` / `installing`
-phases). `download_update` takes no URL: the backend fetches the build its own last check offered, so nothing the
-frontend holds picks what gets installed. The non-macOS path uses the plugin's fused `downloadAndInstall()` (stays in
-`downloading`, and the plugin is dynamically imported so the bundle doesn't carry it on macOS). The Rust backend at
-`src-tauri/src/updater/` syncs files into the existing `.app` bundle, preserving the inode and TCC/Full Disk Access
-permissions, and isn't compiled off macOS.
-
-The branch is `isMacOS()` from `#lib/platform`, ❌ never `navigator.platform`, which is deprecated and lies under
-WKWebView. Both UIs treat `downloading` and `installing` identically, so the split costs the frontend nothing.
+Every OS runs the same flow (`runUpdateFlow`): `check_for_update`, then `download_update` and `install_update` as two
+commands (distinct `downloading` / `installing` phases). `download_update` takes no URL: the backend fetches the build
+its own last check offered, so nothing the frontend holds picks what gets installed. What "install" means is the
+backend's: macOS syncs files into the existing `.app` bundle (the next launch runs it), Windows and Linux stage the
+verified installer, which the restart toast's Restart hands to the installer as Cmdr quits
+(`src-tauri/src/updater/DETAILS.md` § Windows and Linux). The frontend doesn't branch on the OS at all; only the toast's
+second line does, through the catalog's platform select (§ Why the toast names the fallback). Both UIs treat
+`downloading` and `installing` identically. `updater.test.ts` runs as Linux (Vitest's default) and so proves the shared
+flow; `updater.mac-flow.test.ts` pins the macOS bundle gate.
 
 ## Re-checking while staged
 
@@ -117,6 +117,12 @@ anything. Without that stated, "Later" reads as "skip this update" and the user 
 have; the 24 h re-nudge above exists because installs really did sit stale. Keep the line honest about the fallback
 rather than shortening it into a bare "Restart to update".
 
+Windows and Linux have no such fallback: their update is a verified installer staged for Restart, which runs only when
+Cmdr quits through Restart (`src-tauri/src/updater/DETAILS.md` § Windows and Linux). So the line is a per-OS
+`{platform, select}` value: macOS keeps the fallback sentence byte for byte, and the `other` branch says what Restart
+does there ("Cmdr closes to install it, then opens again."), the "app quits to install" moment. The security variant's
+"Restart Cmdr to finish installing it." is true on every OS, so it stays one value.
+
 The version row is data, not prose, which is why it's a separate key rather than two placeholders inside a sentence:
 `v{prev} → v{next}` has no translatable words, so every locale ships it byte-identical with a recorded
 `sameAsSourceJustification`, and no locale has to reorder a version number inside a clause. It renders only when both
@@ -126,13 +132,13 @@ version 0.28.3 to version 0.29.0" instead of the arrow's symbol name in whatever
 ## The security variant
 
 When the staged update fixes a vulnerability, the restart toast says so and says what to do. The notice is the backend's
-answer: `installUpdate()` returns `UpdateInstalled { securityNotice }`, read from the staged bundle's own signed
-advisory list once the bundle is trusted (`src-tauri/src/updater/DETAILS.md` § Security notices). ❌ Nothing on this
-side derives it, least of all from the manifest.
+answer: `installUpdate()` returns `UpdateInstalled { securityNotice }`, read from a signed advisory list (the staged
+bundle's on macOS, the release's signed asset on Windows and Linux; `src-tauri/src/updater/DETAILS.md` § Security
+notices). ❌ Nothing on this side derives it, least of all from the manifest.
 
 - **State.** `finishCheckWithStagedUpdate` sets `updateState.securityNotice` from the install's answer, replacing (never
   merging) the previous one when a newer build supersedes the staged one: that bundle's list is cumulative, so its
-  answer is the whole truth. The plugin path (Linux) passes `null`; it reads no list.
+  answer is the whole truth.
 - **Toast.** With a notice, `UpdateToastContent.svelte` swaps its first two lines for `updates.toast.securityFix` ("This
   update fixes a security issue.", or the count) and `updates.toast.securityFixDetail` ("Restart Cmdr to finish
   installing it."), adds a "Read the advisory" link (`updates.toast.readAdvisory`) to the most severe advisory when its
@@ -197,7 +203,7 @@ how the backend tells a background check from a person asking.
   `finishDownloadInstallRefusedByPolicy`: quiet, back to `idle` (or `ready` on a staged build); the next check gets the
   organization's answer. Read off the typed `UpdateDownloadFailure` / `UpdateInstallFailure`, ❌ never the message.
 - A managed answer still calls `recordUpdateCheck(true)`, so the schedule asks once per interval instead of every wake.
-- The Linux plugin path is out of scope: the policy source is macOS-only.
+- Every OS gets the same outcomes; the policy SOURCE is macOS-only today, so elsewhere the answer is "no policy".
 
 ## When the bundle can't be written
 
@@ -312,13 +318,13 @@ When a gate opens, the helper re-attempts the toast; if the download finished du
   gets an answer, so an offline laptop writes one line, not one per tick, and a broken manifest can't auto-report every
   hour. `updater.check-failure.test.ts` pins both. Settings and the toast read the failure from `updateState.failure`.
   The convention itself is documented in `src-tauri/src/error_reporter/DETAILS.md` § convention.
-- **A failed download or install follows the same rule where it's typed.** The macOS download throws an
+- **A failed download or install follows the same rule where it's typed.** The download throws an
   `UpdateDownloadFailure` (`update-download-failure.ts`, outside the `#lib/tauri-commands` barrel so tests that mock the
   barrel still get the real class). Its `request` variant goes through `serverRequestLogLevel`, so a download the
   network or the host's 5xx stopped stays at `warn`; a 404 for the tarball, a signature mismatch, a disk failure, any
-  install failure (`untrustedCodeSignature` included), and the plugin's untyped `downloadAndInstall` failures stay at
-  `error`, since they mean something is wrong with the release or this machine. `downloadInstallLogLevel` holds the
-  rule; `updater.check-failure.test.ts` pins it.
+  install failure (`untrustedCodeSignature` included), and untyped failures stay at `error`, since they mean something
+  is wrong with the release or this machine. `downloadInstallLogLevel` holds the rule; `updater.check-failure.test.ts`
+  pins it.
 - `_resetUpdaterStateForTest` / `_setUpdateStatusForTest` exist for `updater.test.ts` and the toast tests. Don't reach
   for them from app code: they write the singleton without going through the state machine.
 - `startUpdateChecker()` returns a teardown fn that `+layout.svelte` must call in `onDestroy`, or the poll loop leaks
@@ -326,8 +332,8 @@ When a gate opens, the helper re-attempts the toast; if the download finished du
 
 ## Dependencies
 
-- `@tauri-apps/api/core` `invoke()` (macOS custom commands).
-- `@tauri-apps/plugin-updater` `check()` / `downloadAndInstall()` (non-macOS, dynamically imported).
+- The typed `#lib/tauri-commands` wrappers for the update commands, on every OS. ❌ No `@tauri-apps/plugin-updater`: the
+  webview holds no `updater:` permission, and the backend alone talks to the plugin.
 - `relaunchApp()` from `#lib/tauri-commands` (Restart); `@tauri-apps/api/app` `getVersion()`.
 - `#lib/settings/settings-store` (`getSetting`, `setSetting`, `forceSave`, `onSpecificSettingChange`; `forceSave` is
   what makes the `onboarding.completed` write survive an immediate quit); `#lib/logging/logger` (`getAppLogger`).

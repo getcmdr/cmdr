@@ -20,6 +20,7 @@ extension that calls the macOS service the app already declares (`src-tauri/Info
 - **Startup disk only.** ❌ Don't add volumes to `directoryURLs`: each one then shows Cmdr's icon in Finder's sidebar.
 - **Release bundles only.** A dev build carries no extension, so a worktree build can't register one. The Settings row
   is `src/lib/settings/sections/FinderExtensionCard.svelte`, its backend `src-tauri/src/reveal/finder_extension.rs`.
-- **The updater copies `PlugIns` before `MacOS`** (`src-tauri/src/updater/installer.rs`), keeping the main binary last.
+- **The updater copies `PlugIns` before `MacOS`** (`src-tauri/src/updater/platform/macos/installer.rs`), keeping the
+  main binary last.
 
 Why this shape, what it costs, and how it's released: `DETAILS.md`.

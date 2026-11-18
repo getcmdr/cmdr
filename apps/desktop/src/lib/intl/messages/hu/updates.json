@@ -23,7 +23,7 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "Indítsd újra most, vagy megkapod, amikor legközelebb megnyitod a Cmdrt.",
+  "updates.toast.readyDetail": "{platform, select, macos {Indítsd újra most, vagy megkapod, amikor legközelebb megnyitod a Cmdrt.} other {Cmdr closes to install it, then opens again.}}",
   "@updates.toast.readyDetail": {
     "sourceHash": "42ce099"
   },

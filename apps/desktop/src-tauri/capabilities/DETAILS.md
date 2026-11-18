@@ -6,9 +6,11 @@ rationale.
 ## Why one file per window
 
 Each window type has a different trust level, and the capability system is the boundary controlling which PLUGIN and
-`core:` APIs a webview reaches. The main window needs filesystem access, drag-and-drop, clipboard, and the updater. The
-settings window only needs event dispatch and theme control. The viewer only needs window management. Splitting by
-window means a compromised viewer webview can't reach the `fs` plugin, the store, or the updater.
+`core:` APIs a webview reaches. The main window needs filesystem access, drag-and-drop, and clipboard. The settings
+window only needs event dispatch and theme control. The viewer only needs window management. Splitting by window means
+a compromised viewer webview can't reach the `fs` plugin or the store. No window holds `updater:`: the updater plugin
+only runs the installer the backend verified (`src/updater/DETAILS.md` § Windows and Linux), so a webview that could
+call its `check` / `downloadAndInstall` would be a way around the backend's checks.
 
 **It does NOT cover our own commands.** Tauri ACL-checks an app-defined command only when the app ships an ACL manifest
 (`src-tauri/permissions/`, which we don't have) or the call comes from a remote origin, so everything in

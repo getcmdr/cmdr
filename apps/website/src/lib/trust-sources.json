@@ -250,7 +250,7 @@
         "apps/desktop/src/lib/settings/definitions/ai.ts",
         "apps/desktop/src-tauri/src/tauri_builder.rs",
         "apps/desktop/src-tauri/src/network/mdns_discovery.rs",
-        "apps/desktop/src-tauri/src/updater/local_network_refresh.rs",
+        "apps/desktop/src-tauri/src/updater/platform/macos/local_network_refresh.rs",
         "apps/desktop/src-tauri/src/after_update.rs",
         "crates/cmdr-adb/src/server.rs"
       ]

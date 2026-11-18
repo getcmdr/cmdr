@@ -56,7 +56,6 @@
                 }
             ]
         },
-        "updater:default",
         "process:allow-exit",
         "dialog:allow-ask",
         "dialog:allow-open",

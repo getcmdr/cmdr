@@ -38,9 +38,9 @@
     "screenshot": "settings-updates.png",
     "screenshotNote": "App-update messaging. The status line renders in the Settings > Updates & privacy panel pictured here, and the update toasts appear while that check runs. Version numbers are substituted, not translated."
   },
-  "updates.toast.readyDetail": "Restart now, or you’ll get it the next time you open Cmdr.",
+  "updates.toast.readyDetail": "{platform, select, macos {Restart now, or you’ll get it the next time you open Cmdr.} other {Cmdr closes to install it, then opens again.}}",
   "@updates.toast.readyDetail": {
-    "description": "Second line of the update-ready toast, under the headline. Reassures the user that doing nothing still gets them the new version: the update is already written to disk and only needs a fresh launch to take effect. Conversational, and the point it has to land is that no action is required.",
+    "description": "Second line of the update-ready toast, under the headline, paired with \"Restart now\" and \"Later\" buttons. On macOS it reassures the user that doing nothing still gets them the new version: the update is already written into the app and only needs a fresh launch to take effect, so the point it has to land is that no action is required. On Windows and Linux (the `other` branch) the update installs when the user restarts: pressing \"Restart now\" closes Cmdr, the installer runs (on Windows its progress window shows briefly), and Cmdr opens again on the new version; \"it\" is the update. Conversational. \"Cmdr\" is the product name (do not translate).",
     "screenshot": "settings-updates.png",
     "screenshotNote": "App-update messaging. The status line renders in the Settings > Updates & privacy panel pictured here, and the update toasts appear while that check runs. Version numbers are substituted, not translated."
   },

@@ -1,7 +1,7 @@
 //! macOS: the system-look observers, the mouse's back and forward gestures, the Services menu,
-//! the volume watcher and unmount approver, and the custom updater's state.
+//! and the volume watcher and unmount approver.
 
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 /// Starts every macOS installer. A step whose position matters says so in its own comment (the
 /// Services menu goes in before the menu bar is built).
@@ -38,7 +38,4 @@ pub(crate) fn install(app: &AppHandle) {
     // Before the menu bar is built: AppKit decides what the Services submenu may contain from
     // the send types the app has registered.
     crate::services_menu::install(app);
-
-    // Initialize custom updater state (shared between download and install commands).
-    app.manage(crate::updater::UpdateState::new());
 }

@@ -11,9 +11,28 @@ use std::path::{Path, PathBuf};
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_update_trust::{CodeSignatureRefusal, extract_tarball};
 
-use super::UpdateInstallError;
-use super::advisories::{self, SecurityNotice};
 use super::bundle_location::{self, BundleWriteBlocker};
+use crate::updater::advisories;
+use crate::updater::{UpdateInstallError, VettedBundle};
+
+/// Where the advisory list sits inside a bundle (`tauri.macos.conf.json` → `bundle.macOS.files`).
+const BUNDLE_ADVISORIES_PATH: &str = "Contents/Resources/security-advisories.json";
+
+/// Reads the staged bundle's advisory list, or `None` (logged at warn) when it can't: an install
+/// never waits on, or fails over, its advisory list.
+fn read_bundle_list(staged_app: &Path) -> Option<String> {
+    let path = staged_app.join(BUNDLE_ADVISORIES_PATH);
+    match fs::read_to_string(&path) {
+        Ok(json) => Some(json),
+        Err(e) => {
+            log::warn!(
+                "Couldn't read the update's security advisory list at {}, so it names no advisory: {e}",
+                LogPrivate::file_path(&path)
+            );
+            None
+        }
+    }
+}
 
 /// Error type for the sync pipeline (`sync_bundle` + its inner helpers).
 ///
@@ -127,7 +146,7 @@ pub fn install(
         env!("CARGO_PKG_VERSION"),
         may_install,
         &cmdr_update_trust::verify_release_bundle,
-        &advisories::read_bundle_list,
+        &read_bundle_list,
     )?;
 
     log::info!("Installing update into bundle: {}", LogPrivate::dir_path(&bundle_path));
@@ -152,15 +171,6 @@ pub fn install(
 
     log::info!("Update installed successfully");
     Ok(vetted)
-}
-
-/// What a staged bundle that passed every check holds: the version its own `Info.plist` names (the
-/// one the policy was asked about, and so the one that gets installed) and the security notice its
-/// own advisory list names.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct VettedBundle {
-    pub version: semver::Version,
-    pub security_notice: Option<SecurityNotice>,
 }
 
 /// Refuses a staged bundle that isn't code-signed by Cmdr's Developer ID (`cmdr_update_trust`), whose

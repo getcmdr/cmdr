@@ -193,10 +193,10 @@ commands, and notable non-obvious placements.
   `addRecentPath`, `removeRecentPath`).
 - **`tags.ts`**: macOS Finder color tags: `toggleTags` (toggle a color across paths) and `enrichTags` (patch fresh tag
   data into a cached listing).
-- **`updates.ts`**: macOS custom updater: `checkForUpdate(trigger)` (a typed `UpdateCheckOutcome`, managed policy
+- **`updates.ts`**: the updater, on every OS: `checkForUpdate(trigger)` (a typed `UpdateCheckOutcome`, managed policy
   applied) / `updateWriteBlocker` / `updateBundlePath` (the running bundle, for the unwritable-bundle notice) /
   `downloadUpdate()` (no URL: the backend fetches what it offered) / `installUpdate` (throws `UpdateInstallFailure`)
-  (see `#lib/updates/updater.svelte.ts` for the full flow and the non-macOS Tauri-plugin fallback).
+  (see `#lib/updates/updater.svelte.ts` for the full flow).
 - **`debug.ts`**: dev/benchmark IPC: `benchmarkLog` (join a frontend timing into the Rust benchmark timeline).
 - **`usage.ts`**: `getLaunchDayCount`, the gate for usage-gated hints ("you've used Cmdr for a few days now"). Reads the
   on-device launch-day ledger Rust appends at startup; answers 0 when it can't, so a hint stays silent rather than

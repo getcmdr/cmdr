@@ -75,7 +75,6 @@
     "@tauri-apps/plugin-fs": "^2.7.1",
     "@tauri-apps/plugin-opener": "^2.7.3",
     "@tauri-apps/plugin-store": "^2.5.1",
-    "@tauri-apps/plugin-updater": "^2.14.1",
     "intl-messageformat": "^12.1.5",
     "snarkdown": "2.0.0"
   },

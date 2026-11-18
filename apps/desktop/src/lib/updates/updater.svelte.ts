@@ -27,7 +27,6 @@ import {
   readWriteBlocker,
 } from './blocker-notices'
 import { addToast, dismissToast } from '#lib/ui/toast/index.js'
-import { isMacOS } from '#lib/platform/index.js'
 // `updateState` lives in its own module to avoid an import cycle: toast components read it directly,
 // and this module also imports those toast components. Re-exported here so existing consumers
 // (Settings section, command-dispatch, tests) keep using the old import path.
@@ -225,23 +224,17 @@ export async function checkForUpdates(trigger: UpdateCheckTrigger): Promise<void
   }
 
   log.debug('Checking for updates (current: v{version})...', { version: currentVersion })
-
-  // Platform branches diverge significantly: macOS runs three custom commands (split download +
-  // install phases, preserves TCC), non-macOS uses the Tauri plugin's fused `downloadAndInstall`.
-  // Both hand their failures to `finishCheckWithFailure`, which picks the log level per phase.
-  if (isMacOS()) {
-    await runMacUpdateFlow(trigger, currentVersion, staged)
-  } else {
-    await runPluginUpdateFlow(trigger, currentVersion, staged)
-  }
+  await runUpdateFlow(trigger, currentVersion, staged)
 }
 
 /**
- * macOS path: custom updater that preserves TCC/Full Disk Access permissions by syncing files
- * into the existing `.app` bundle. Three Tauri commands; download and install are distinct
- * phases so the UI can show separate `downloading` and `installing` states.
+ * The one flow every OS runs: three backend commands, with the check, the policy, the signature,
+ * and the advisory list all the backend's. Download and install are distinct phases so the UI can
+ * show separate `downloading` and `installing` states. "Install" makes the update ready for the
+ * restart: macOS syncs it into the `.app` bundle, Windows and Linux stage the verified installer,
+ * which the restart toast's Restart hands off (`src-tauri/src/updater/handoff.rs`).
  */
-async function runMacUpdateFlow(
+async function runUpdateFlow(
   trigger: UpdateCheckTrigger,
   currentVersion: string,
   staged: string | null,
@@ -384,53 +377,6 @@ function finishDownloadInstallRefusedByPolicy(trigger: UpdateCheckTrigger, stage
 }
 
 /**
- * Non-macOS path: Tauri updater plugin. `downloadAndInstall()` is fused so we stay in
- * `downloading` throughout the second phase (no separate `installing` state).
- */
-async function runPluginUpdateFlow(
-  trigger: UpdateCheckTrigger,
-  currentVersion: string,
-  staged: string | null,
-): Promise<void> {
-  let update: Awaited<ReturnType<typeof import('@tauri-apps/plugin-updater').check>>
-  try {
-    const { check } = await import('@tauri-apps/plugin-updater')
-    update = await check()
-  } catch (error) {
-    void recordUpdateCheck(false)
-    finishCheckWithFailure(trigger, error, 'check', staged)
-    return
-  }
-  void recordUpdateCheck(true)
-  // The check got an answer, so the next breakage speaks.
-  checkFailureLog.clear()
-
-  if (!update) {
-    finishCheckWithNoUpdate(trigger, currentVersion, staged)
-    return
-  }
-
-  if (!supersedesStagedUpdate(update.version, staged)) {
-    keepStagedUpdate(trigger, update.version)
-    return
-  }
-
-  log.info('Update available: v{current} -> v{next}', { current: currentVersion, next: update.version })
-  updateState.nextVersion = update.version
-  updateState.status = 'downloading'
-
-  try {
-    await update.downloadAndInstall()
-  } catch (error) {
-    finishCheckWithFailure(trigger, error, 'download-install', staged)
-    return
-  }
-
-  // The plugin's fused flow reads no advisory list (Linux is out of scope until it leaves alpha).
-  finishCheckWithStagedUpdate(trigger, { version: update.version }, null)
-}
-
-/**
  * An update exists, but this install can't write it into its own bundle. Downloading ~63 MB it could never apply, once
  * an hour, forever, is the thing to avoid, so the flow stops here and says what the person CAN do: move Cmdr to
  * Applications (translocated, or on a read-only volume), or replace it or have it replaced (a bundle this user can't
@@ -513,15 +459,15 @@ function finishCheckWithNoUpdate(trigger: UpdateCheckTrigger, currentVersion: st
 /**
  * Reset state and log the failure at the right level for the phase.
  *
- * - `'check'` failures log once per condition until a check gets an answer (`checkFailureLog`). The macOS check is
- *   typed, and its level follows `serverRequestLogLevel`: no network, a timeout, or a server having a bad moment stay at
- *   warn, so a background tick on a flaky network doesn't trip the auto error reporter, and only a manifest Cmdr's own
- *   server refused or served unreadable logs at error. The plugin's check elsewhere isn't typed, and its failures are
- *   the network's as often as not, so it stays at warn.
- * - `'download-install'` failures follow the same rule where they're typed (`downloadInstallLogLevel`): a macOS
- *   download that the network or the host's bad moment stopped logs at warn. A signature mismatch, a disk failure, a
- *   404 for the tarball, an install that broke, and the plugin's untyped failures log at error, so they DO trip
- *   auto-report: they mean something is wrong with the release or this machine.
+ * - `'check'` failures log once per condition until a check gets an answer (`checkFailureLog`). The check is typed,
+ *   and its level follows `serverRequestLogLevel`: no network, a timeout, or a server having a bad moment stay at warn,
+ *   so a background tick on a flaky network doesn't trip the auto error reporter, and only a manifest Cmdr's own server
+ *   refused or served unreadable logs at error. A failure that isn't typed (the IPC call itself breaking) stays at
+ *   warn.
+ * - `'download-install'` failures follow the same rule where they're typed (`downloadInstallLogLevel`): a download
+ *   that the network or the host's bad moment stopped logs at warn. A signature mismatch, a disk failure, a 404 for
+ *   the archive, an install that broke, and untyped failures log at error, so they DO trip auto-report: they mean
+ *   something is wrong with the release or this machine.
  *
  * Both reach the UI as `updateState.failure`, a typed value the toast and Settings word from the catalog. See
  * `apps/desktop/src-tauri/src/error_reporter/CLAUDE.md` § convention.
@@ -539,8 +485,8 @@ function finishCheckWithFailure(
   staged: string | null,
 ): void {
   const message = error instanceof Error ? error.message : String(error)
-  // Read the phase off the state machine BEFORE moving it. macOS runs the download and the install
-  // in one try block, and `status` is the typed record of which one was in flight; the message
+  // Read the phase off the state machine BEFORE moving it. The flow runs the download and the
+  // install in one try block, and `status` is the typed record of which one was in flight; the message
   // that came back is never asked, here or anywhere.
   const failure: UpdateCheckFailure =
     phase === 'check' ? 'check' : updateState.status === 'installing' ? 'install' : 'download'
@@ -578,8 +524,8 @@ function finishCheckWithFailure(
 /**
  * A download the network or the tarball host's bad moment stopped follows the check's rule (`serverRequestLogLevel`).
  * A version the backend wouldn't fetch again (it wasn't genuine earlier this session) is info: the first refusal
- * already logged at error. Everything else stays at error: a signature mismatch, a disk failure, an install, and the
- * plugin's untyped failures.
+ * already logged at error. Everything else stays at error: a signature mismatch, a disk failure, an install, and
+ * untyped failures.
  */
 function downloadInstallLogLevel(error: unknown): 'info' | 'warn' | 'error' {
   const download = failureOf(UpdateDownloadFailure, error)

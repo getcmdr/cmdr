@@ -208,11 +208,11 @@
       "outsideSeam": 10
     },
     "apps/desktop/src-tauri/src/ipc.rs": {
-      "outsideSeam": 10
+      "outsideSeam": 9
     },
     "apps/desktop/src-tauri/src/lib.rs": {
       "negated": 1,
-      "outsideSeam": 17
+      "outsideSeam": 16
     },
     "apps/desktop/src-tauri/src/licensing/device_id.rs": {
       "outsideSeam": 4
@@ -235,15 +235,8 @@
       "negated": 1,
       "outsideSeam": 3
     },
-    "apps/desktop/src-tauri/src/managed_policy/ceiling.rs": {
-      "outsideSeam": 1
-    },
-    "apps/desktop/src-tauri/src/managed_policy/egress.rs": {
-      "negated": 2,
-      "outsideSeam": 2
-    },
     "apps/desktop/src-tauri/src/managed_policy/mod.rs": {
-      "outsideSeam": 3
+      "outsideSeam": 1
     },
     "apps/desktop/src-tauri/src/managed_policy/source.rs": {
       "negated": 2,
@@ -333,8 +326,7 @@
       "outsideSeam": 3
     },
     "apps/desktop/src-tauri/src/quit/relaunch.rs": {
-      "negated": 1,
-      "outsideSeam": 19
+      "outsideSeam": 18
     },
     "apps/desktop/src-tauri/src/restricted_paths/mod.rs": {
       "outsideSeam": 3
@@ -347,9 +339,6 @@
       "outsideSeam": 9
     },
     "apps/desktop/src-tauri/src/secrets/plain_file.rs": {
-      "outsideSeam": 1
-    },
-    "apps/desktop/src-tauri/src/security_log/mod.rs": {
       "outsideSeam": 1
     },
     "apps/desktop/src-tauri/src/spotlight.rs": {

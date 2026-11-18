@@ -25,7 +25,7 @@ spike before M2 starts.
   `WriteOperationError::permission_denied`. See `crates/cmdr-operations/DETAILS.md` § "Naming the folder that refused a
   write"; decision 12 below is what branches on it.
 - **Elevation today**: only the updater, which runs `rsync` through `do shell script ... with administrator privileges`
-  (`apps/desktop/src-tauri/src/updater/installer.rs`).
+  (`apps/desktop/src-tauri/src/updater/platform/macos/installer.rs`).
 - **An out-of-process native alert**: `apps/desktop/src-tauri/src/instance_lock.rs` (`show_already_running_alert`) uses
   `CFUserNotificationDisplayAlert`, drawn by macOS's own UserNotificationCenter agent and localized through
   `crate::intl::menu_t`. Its doc comment explains why `NSAlert::runModal` and `tauri-plugin-dialog` don't fit.

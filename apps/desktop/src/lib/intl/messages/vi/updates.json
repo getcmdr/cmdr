@@ -23,7 +23,7 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "Khởi động lại ngay, hoặc bản mới sẽ tự chạy trong lần mở Cmdr tiếp theo.",
+  "updates.toast.readyDetail": "{platform, select, macos {Khởi động lại ngay, hoặc bản mới sẽ tự chạy trong lần mở Cmdr tiếp theo.} other {Cmdr closes to install it, then opens again.}}",
   "@updates.toast.readyDetail": {
     "sourceHash": "42ce099"
   },

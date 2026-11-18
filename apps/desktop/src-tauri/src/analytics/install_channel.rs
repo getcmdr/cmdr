@@ -48,7 +48,7 @@ pub(super) async fn get() -> Option<InstallChannel> {
 /// The `.app` bundle the running binary sits in. The updater owns that lookup, and it's macOS-only.
 #[cfg(target_os = "macos")]
 fn running_bundle() -> Option<PathBuf> {
-    crate::updater::installer::running_bundle().ok()
+    crate::updater::platform::installer::running_bundle().ok()
 }
 
 /// No `.app` bundles off macOS, so the channel is unknown there (`get` short-circuits before this anyway).

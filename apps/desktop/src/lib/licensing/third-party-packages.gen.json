@@ -4794,12 +4794,6 @@
       "url": "https://github.com/tauri-apps/plugins-workspace#readme"
     },
     {
-      "name": "@tauri-apps/plugin-updater",
-      "version": "2.14.1",
-      "license": "MIT OR Apache-2.0",
-      "url": "https://github.com/tauri-apps/plugins-workspace#readme"
-    },
-    {
       "name": "@types/estree",
       "version": "1.0.10",
       "license": "MIT",
