@@ -301,6 +301,10 @@ gate and before the handler, only when `admit` answers Ask, so direct mode never
   characters, since `cod\u{202E}fdp.command` would read as a PDF and a zero-width mark makes one name look like another,
   and bounded by dropping the middle, since a name's end says what it does. The facts reach the person's dialog and the
   re-check's comparison, never a model.
+- **A volume in a question goes by the name a person knows** (`ask_plans::volume_name`): its switcher row's name from
+  `snapshot_volumes`, else the registered `Volume::name()` (a row the snapshot doesn't carry: a Linux drive past
+  `root`, a listing that timed out), and only then its id. The "Turn indexing on?" dialog once showed a raw `vol-…` id
+  on Windows, whose snapshot listed `root` alone.
   `OpenFile.path` is the one exact string, kept for comparing; `shownPath` is what a person reads.
 - **Answers**: `declined`, `expired` (five minutes), `cancelled` (the turn's Stop, or the client going away), and
   `noWindow`, each in `data.refusal`; another dialog in the way is `data.blockingDialog`. One question at a time, in
