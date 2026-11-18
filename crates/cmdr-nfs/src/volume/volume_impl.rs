@@ -2,9 +2,12 @@
 //! the modules that do the work. Every answer here is deliberate: a default this
 //! backend accepts silently is a promise it may not be able to keep.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::volume::Presence;
 use std::ops::ControlFlow;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::time::Duration;
 
@@ -36,8 +39,8 @@ impl Volume for NfsVolume {
         &self.name
     }
 
-    fn root(&self) -> &Path {
-        self.root.app_root()
+    fn root(&self) -> &AppPath {
+        self.root.app_root().app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -57,25 +60,31 @@ impl Volume for NfsVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.list_for_pane(path, on_progress, None)))
     }
 
     fn list_directory_with_cancel<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.list_for_pane(path, on_progress, cancel)))
     }
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.get_metadata_impl(path)))
     }
 
@@ -83,16 +92,22 @@ impl Volume for NfsVolume {
     /// `noting`-wrapped `get_metadata`: a bare existence probe on a dropped link
     /// would report a connection transition. An existence question stays a
     /// question.
-    fn presence<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
-        Box::pin(self.presence_impl(path))
+    fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.presence_impl(path).await
+        })
     }
 
     /// LOOKUP's own attributes, which don't follow a link: a link to a folder
     /// is a `Symlink`, ❌ never the folder.
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.entry_kind_impl(path)))
     }
 
@@ -113,9 +128,11 @@ impl Volume for NfsVolume {
     )]
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, 0).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -127,10 +144,12 @@ impl Volume for NfsVolume {
     )]
     fn open_read_stream_at_offset<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(self.noting(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let stream = self.open_read_stream_impl(path, offset).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         }))
@@ -142,10 +161,12 @@ impl Volume for NfsVolume {
     )]
     fn read_range<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.read_range_impl(path, offset, len)))
     }
 
@@ -158,24 +179,30 @@ impl Volume for NfsVolume {
     /// ❗ `CREATE GUARDED`'s refusal, ❌ never a check of ours.
     fn create_file<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         content: &'a [u8],
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.create_file_impl(path, content)))
     }
 
     fn create_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.create_directory_impl(path)))
     }
 
     /// ❗ Overridden: the trait default spends one `exists()` per ancestor.
     fn create_directory_all<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.create_directory_all_impl(path)))
     }
 
@@ -192,16 +219,22 @@ impl Volume for NfsVolume {
         true
     }
 
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(self.delete_impl(path)))
     }
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let to_std = to.as_std_legacy();
+        let to: &Path = &to_std;
+        let from_std = from.as_std_legacy();
+        let from: &Path = &from_std;
         Box::pin(self.noting(self.rename_impl(from, to, force)))
     }
 
@@ -215,12 +248,14 @@ impl Volume for NfsVolume {
     /// wears the user's filename.
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
+        let dest_std = dest.as_std_legacy();
+        let dest: &Path = &dest_std;
         // ❗ Refused before anything opens: this backend hasn't opted into
         // unknown-length writes.
         if length.known().is_none() {
@@ -235,19 +270,25 @@ impl Volume for NfsVolume {
 
     fn apply_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         carried: &'a CarriedMetadata,
         modified: Option<std::time::SystemTime>,
     ) -> Pin<Box<dyn Future<Output = MetadataReport> + Send + 'a>> {
-        Box::pin(self.apply_metadata_impl(path, carried, modified))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.apply_metadata_impl(path, carried, modified).await
+        })
     }
 
     fn notify_mutation<'a>(
         &'a self,
         _volume_id: &'a str,
-        parent_path: &'a Path,
+        parent_path: &'a AppPath,
         mutation: MutationEvent,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
+        let parent_path_std = parent_path.as_std_legacy();
+        let parent_path: &Path = &parent_path_std;
         Box::pin(patching::patch_mutation(self, parent_path, mutation))
     }
 
@@ -255,24 +296,30 @@ impl Volume for NfsVolume {
 
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.noting(scan_walk::scan_one(self, path)))
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
+        let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+        let paths: &[PathBuf] = &paths_std;
         Box::pin(self.noting(scan_walk::scan_trees(self, paths, boundary)))
     }
 
     fn scan_for_conflicts<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
-        dest_path: &'a Path,
+        dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
+        let dest_path_std = dest_path.as_std_legacy();
+        let dest_path: &Path = &dest_path_std;
         Box::pin(self.noting(scan_walk::scan_conflicts(self, source_items, dest_path)))
     }
 
@@ -329,7 +376,7 @@ impl Volume for NfsVolume {
         false
     }
 
-    fn local_path(&self) -> Option<PathBuf> {
+    fn local_path(&self) -> Option<AppPathBuf> {
         None
     }
 
@@ -343,7 +390,7 @@ impl Volume for NfsVolume {
         false
     }
 
-    fn listing_watch_coverage(&self, _path: &Path) -> WatchCoverage {
+    fn listing_watch_coverage(&self, _path: &AppPath) -> WatchCoverage {
         WatchCoverage::None
     }
 
@@ -357,7 +404,11 @@ impl Volume for NfsVolume {
     }
 
     /// The server's own `ACCESS` answer for this identity.
-    fn write_access_at<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = WriteAccess> + Send + 'a>> {
-        Box::pin(self.write_access_impl(path))
+    fn write_access_at<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = WriteAccess> + Send + 'a>> {
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.write_access_impl(path).await
+        })
     }
 }
