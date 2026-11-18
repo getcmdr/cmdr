@@ -742,10 +742,6 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "Macht den Text in deinen Bildern durchsuchbar. Er verlässt deinen Mac nie.",
-  "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
-  },
   "settings.mediaIndex.enabled.keywords": "Bild, Foto, Text, Texterkennung, Suche, suchen, Index, indizieren, Bildschirmfoto, Screenshot, Inhalt",
   "@settings.mediaIndex.enabled.keywords": {
     "sourceHash": "a451d8e"
@@ -817,10 +813,6 @@
   "settings.mediaIndex.networkVolumes.optInLabel": "Fotos auf {name} indizieren",
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
-  },
-  "settings.mediaIndex.networkVolumes.optInHelp": "Cmdr liest den Text in diesen Fotos, damit du danach suchen kannst. Das läuft auf deinem Mac, und die Fotos verlassen dein Netzwerk nie.",
-  "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Dieses Laufwerk immer indizieren",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -925,10 +917,6 @@
   "settings.mediaIndex.importanceThreshold.keywords": "Bild, Foto, Index, indizieren, Wichtigkeit, Ordner, Abdeckung, Umfang, Tiefe",
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
-  },
-  "settings.mediaIndex.progress.local": "Dieser Mac",
-  "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {{enrichedText} von {totalText} Bild indiziert} other {{enrichedText} von {totalText} Bildern indiziert}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1078,10 +1066,6 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": "Zum neuesten Download gehen",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
-  },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Spring mit einem systemweiten Kurzbefehl aus jeder App zu deinem neuesten Download. Erfordert „Festplattenvollzugriff“.",
-  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "Kurzbefehl, Tastenkombination, Tastaturkurzbefehl, global, Download, Downloads, springen, gehe zu, neuester",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2814,10 +2798,6 @@
   "settings.summary.driveIndexing": "Laufwerksindizierung im Hintergrund, damit die Suche deine Dateien schnell findet.",
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
-  },
-  "settings.summary.imageIndexing": "Durchsuche den Text in deinen Bildern. Läuft auf deinem Mac, und nichts verlässt ihn.",
-  "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
   },
   "settings.summary.noSubsections": "Dieser Abschnitt hat keine Unterabschnitte.",
   "@settings.summary.noSubsections": {

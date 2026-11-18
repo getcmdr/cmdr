@@ -424,10 +424,6 @@
   "@licensing.section.includedFeatures": {
     "sourceHash": "0a54a41"
   },
-  "licensing.section.includedMacs": "Všechny vaše vlastní Macy pro osobní použití",
-  "@licensing.section.includedMacs": {
-    "sourceHash": "d0968e4"
-  },
   "licensing.section.includedUpdates": "Automatické aktualizace",
   "@licensing.section.includedUpdates": {
     "sourceHash": "147b1b6"

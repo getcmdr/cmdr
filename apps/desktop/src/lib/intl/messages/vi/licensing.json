@@ -425,10 +425,6 @@
   "@licensing.section.includedFeatures": {
     "sourceHash": "0a54a41"
   },
-  "licensing.section.includedMacs": "Tất cả máy Mac của riêng bạn, để dùng cá nhân",
-  "@licensing.section.includedMacs": {
-    "sourceHash": "d0968e4"
-  },
   "licensing.section.includedUpdates": "Cập nhật tự động",
   "@licensing.section.includedUpdates": {
     "sourceHash": "147b1b6"

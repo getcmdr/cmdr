@@ -425,10 +425,6 @@
   "@licensing.section.includedFeatures": {
     "sourceHash": "0a54a41"
   },
-  "licensing.section.includedMacs": "Alla dina egna Mac-datorer, för ditt personliga bruk",
-  "@licensing.section.includedMacs": {
-    "sourceHash": "d0968e4"
-  },
   "licensing.section.includedUpdates": "Automatiska uppdateringar",
   "@licensing.section.includedUpdates": {
     "sourceHash": "147b1b6"

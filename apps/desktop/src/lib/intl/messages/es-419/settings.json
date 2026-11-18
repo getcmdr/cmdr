@@ -547,10 +547,6 @@
   "@settings.fileOperations.skipConfirmation.explanation": {
     "sourceHash": "ae040d3"
   },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Salta a tu descarga más reciente desde cualquier app con un atajo global. Requiere acceso completo al disco.",
-  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "18ebd0f"
-  },
   "settings.fileExplorer.suppressQuickLookHint.descriptionWithKey": "Cmdr usa Espacio para activar o desactivar la selección de archivos y {combo} para Vista rápida (el Finder usa Espacio a secas para Vista rápida). Cada vez que presionas Espacio en la lista de archivos, Cmdr muestra un recordatorio de un párrafo sobre esta diferencia. Activa esto (o haz clic en “No volver a mostrar” en el aviso) para ocultar el recordatorio definitivamente.",
   "@settings.fileExplorer.suppressQuickLookHint.descriptionWithKey": {
     "sourceHash": "b814369"

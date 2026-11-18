@@ -740,10 +740,6 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "Kereshetővé teszi a képeidben lévő szöveget, amely soha nem hagyja el a Macet.",
-  "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
-  },
   "settings.mediaIndex.enabled.keywords": "kép, fotó, szöveg, szövegfelismerés, keresés, index, indexelés, képernyőfotó, tartalom",
   "@settings.mediaIndex.enabled.keywords": {
     "sourceHash": "a451d8e"
@@ -815,10 +811,6 @@
   "settings.mediaIndex.networkVolumes.optInLabel": "{name} fotóinak indexelése",
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
-  },
-  "settings.mediaIndex.networkVolumes.optInHelp": "A Cmdr beolvassa a fotókban lévő szöveget, hogy rá tudj keresni. A Macen fut, és a fotók soha nem hagyják el a hálózatodat.",
-  "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Ez a meghajtó mindig legyen indexelve",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -923,10 +915,6 @@
   "settings.mediaIndex.importanceThreshold.keywords": "kép, fotó, index, fontosság, mappa, mappák, lefedettség, mélység, mennyit",
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
-  },
-  "settings.mediaIndex.progress.local": "Ez a Mac",
-  "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {{enrichedText} / {totalText} kép indexelve} other {{enrichedText} / {totalText} kép indexelve}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1076,10 +1064,6 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": "Ugrás a legutóbbi letöltéshez",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
-  },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Ugorj a legutóbbi letöltésedhez bármelyik appból egy rendszerszintű billentyűparanccsal. Teljes lemezhozzáférést igényel.",
-  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "billentyűparancs, gyorsbillentyű, globális, letöltés, letöltések, legutóbbi, ugrás",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2808,10 +2792,6 @@
   "settings.summary.driveIndexing": "Meghajtó indexelése a háttérben, hogy a keresés gyorsan megtalálja a fájljaidat.",
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
-  },
-  "settings.summary.imageIndexing": "Keress a képeidben lévő szövegben. A Macen fut, és semmi sem hagyja el.",
-  "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
   },
   "settings.summary.noSubsections": "Ennek a szakasznak nincsenek alszakaszai.",
   "@settings.summary.noSubsections": {

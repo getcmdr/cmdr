@@ -738,10 +738,6 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "Giúp bạn tìm kiếm được văn bản trong hình ảnh. Văn bản không bao giờ rời khỏi máy Mac của bạn.",
-  "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
-  },
   "settings.mediaIndex.enabled.keywords": "hình ảnh, ảnh, văn bản, chữ, tìm kiếm, chỉ mục, lập chỉ mục, ảnh chụp màn hình, nội dung",
   "@settings.mediaIndex.enabled.keywords": {
     "sourceHash": "a451d8e"
@@ -813,10 +809,6 @@
   "settings.mediaIndex.networkVolumes.optInLabel": "Lập chỉ mục ảnh trên {name}",
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
-  },
-  "settings.mediaIndex.networkVolumes.optInHelp": "Cmdr đọc văn bản bên trong những ảnh này để bạn có thể tìm kiếm nó. Việc này chạy trên máy Mac của bạn, và ảnh không bao giờ rời khỏi mạng của bạn.",
-  "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Luôn lập chỉ mục ổ đĩa này",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -921,10 +913,6 @@
   "settings.mediaIndex.importanceThreshold.keywords": "hình ảnh, ảnh, chỉ mục, mức độ quan trọng, quan trọng, thư mục, phạm vi, độ sâu, bao nhiêu",
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
-  },
-  "settings.mediaIndex.progress.local": "Máy Mac này",
-  "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, other {Đã lập chỉ mục {enrichedText} trên {totalText} ảnh}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1074,10 +1062,6 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": "Đi tới bản tải về mới nhất",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
-  },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Nhảy đến mục tải về gần đây nhất của bạn từ bất kỳ ứng dụng nào bằng một phím tắt toàn hệ thống. Cần quyền truy cập đầy đủ vào ổ đĩa.",
-  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "phím tắt, tổ hợp phím, toàn cục, tải về, bản tải về, nhảy tới, đi tới, mới nhất",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2806,10 +2790,6 @@
   "settings.summary.driveIndexing": "Lập chỉ mục ổ đĩa ở chế độ nền để tìm kiếm nhanh chóng tìm thấy tệp của bạn.",
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
-  },
-  "settings.summary.imageIndexing": "Tìm kiếm văn bản bên trong hình ảnh của bạn. Chạy trên máy Mac của bạn và không có gì rời khỏi đó.",
-  "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
   },
   "settings.summary.noSubsections": "Mục này không có tiểu mục.",
   "@settings.summary.noSubsections": {

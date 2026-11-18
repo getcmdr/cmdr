@@ -738,10 +738,6 @@
   "@settings.mediaIndex.enabled.description": {
     "sourceHash": "517a7c9"
   },
-  "settings.mediaIndex.enabled.summary": "Umožní prohledávat text ve vašich obrázcích. Text nikdy neopustí váš Mac.",
-  "@settings.mediaIndex.enabled.summary": {
-    "sourceHash": "31aa708"
-  },
   "settings.mediaIndex.enabled.keywords": "obrázek, fotka, fotografie, text, hledání, index, snímek obrazovky, obsah, OCR",
   "@settings.mediaIndex.enabled.keywords": {
     "sourceHash": "a451d8e"
@@ -813,10 +809,6 @@
   "settings.mediaIndex.networkVolumes.optInLabel": "Indexovat fotky na disku {name}",
   "@settings.mediaIndex.networkVolumes.optInLabel": {
     "sourceHash": "0a536c8"
-  },
-  "settings.mediaIndex.networkVolumes.optInHelp": "Cmdr čte text v těchto fotkách, takže v něm můžete hledat. Běží to na vašem Macu a fotky nikdy neopustí vaši síť.",
-  "@settings.mediaIndex.networkVolumes.optInHelp": {
-    "sourceHash": "a2da6d4"
   },
   "settings.mediaIndex.networkVolumes.alwaysLabel": "Vždy indexovat tento disk",
   "@settings.mediaIndex.networkVolumes.alwaysLabel": {
@@ -921,10 +913,6 @@
   "settings.mediaIndex.importanceThreshold.keywords": "obrázek, fotka, index, důležitost, složky, pokrytí, hloubka, rozsah",
   "@settings.mediaIndex.importanceThreshold.keywords": {
     "sourceHash": "419756c"
-  },
-  "settings.mediaIndex.progress.local": "Tento Mac",
-  "@settings.mediaIndex.progress.local": {
-    "sourceHash": "79a4aef"
   },
   "settings.mediaIndex.progress.ofTotal": "{total, plural, one {Zaindexováno {enrichedText} z {totalText} obrázku} few {Zaindexováno {enrichedText} z {totalText} obrázků} many {Zaindexováno {enrichedText} z {totalText} obrázku} other {Zaindexováno {enrichedText} z {totalText} obrázků}}",
   "@settings.mediaIndex.progress.ofTotal": {
@@ -1074,10 +1062,6 @@
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": "Přejít na poslední stažený soubor",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.label": {
     "sourceHash": "492d0b6"
-  },
-  "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": "Přejděte na naposledy stažený soubor z jakékoli aplikace pomocí globální klávesové zkratky. Vyžaduje plný přístup k disku.",
-  "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.summary": {
-    "sourceHash": "88e2e48"
   },
   "settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": "zkratka, klávesová zkratka, globální, stahování, stažené soubory, skok, přejít, otevřít",
   "@settings.behavior.fileSystemWatching.globalGoToLatestShortcut.enabled.keywords": {
@@ -2806,10 +2790,6 @@
   "settings.summary.driveIndexing": "Indexování disků na pozadí, aby hledání rychle našlo vaše soubory.",
   "@settings.summary.driveIndexing": {
     "sourceHash": "ef8be32"
-  },
-  "settings.summary.imageIndexing": "Hledání textu ve vašich obrázcích. Běží na vašem Macu a nic z něj neodchází.",
-  "@settings.summary.imageIndexing": {
-    "sourceHash": "cbeb785"
   },
   "settings.summary.noSubsections": "Tato sekce nemá žádné podsekce.",
   "@settings.summary.noSubsections": {
