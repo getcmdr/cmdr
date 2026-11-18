@@ -1,5 +1,5 @@
-//! The local disk's `Volume`, one sibling per OS family: [`LocalPosixVolume`] on macOS and
-//! Linux, [`LocalWindowsVolume`] on Windows.
+//! The local disk's `Volume`, one sibling per OS family: `LocalPosixVolume` on macOS and
+//! Linux, `LocalWindowsVolume` on Windows.
 //!
 //! Siblings, not one type with Windows arms (windows-port plan, task 35): a POSIX volume is
 //! `lstat`, `renamex_np`/`renameat2`, modes, and xattrs through and through, and a Windows one

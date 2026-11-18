@@ -57,3 +57,13 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
   is `AlreadyExists` and the forced one is refused with both files whole; a forced rename onto a read-only file is
   all-or-nothing; a 300-plus-character path creates, lists (app paths), stats, renames, and deletes; deleting a junction
   keeps its target.
+- **Next blockers after leg 2** (Mac cross-check, `cargo check --all-targets --keep-going`): `cmdr-operations` fails its
+  own compile with 15 errors, and blocks `cmdr-multi-rename`, `cmdr-listing-wasm`, `cmdr-restic`, and the app. Each is a
+  POSIX-only function with no Windows arm, task 36's stubs:
+  `validation::{validate_destination_writable, refusing_folder}` and `local_disk`'s `write_probe` (an `access(W_OK)`
+  pre-flight), `free_space::available_space`, `delete/cloud_trash::metadata_is_online_only` (also asked by
+  `scan_preview/local.rs`), `transfer/volume/extract_quarantine::archive_quarantine`, and `local_disk/mod.rs` naming
+  `LocalPosixVolume`. `cmdr-restic`'s own breaks are test-only (`std::os::unix` in `tree_tests.rs` and
+  `volume_tests.rs`) plus its `open_cost` example naming `LocalPosixVolume`. About 150 sites across the consumers name
+  `LocalPosixVolume` (mostly `cmdr-operations` tests), which waits on David's call on how a consumer names the host's
+  local volume.
