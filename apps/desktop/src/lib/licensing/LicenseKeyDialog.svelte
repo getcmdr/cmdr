@@ -140,6 +140,11 @@
                     error: tString('licensing.error.server'),
                     hint: tString('licensing.error.serverHint'),
                 }
+            case 'serverBusy':
+                return {
+                    error: tString('licensing.error.serverBusy'),
+                    hint: tString('licensing.error.serverHint'),
+                }
             default:
                 return {
                     error: tString('licensing.error.generic'),

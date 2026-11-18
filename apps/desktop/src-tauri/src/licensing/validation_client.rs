@@ -152,10 +152,9 @@ pub async fn activate_short_code(code: &str) -> Result<String, LicenseActivation
         .await
         .map_err(|e| LicenseActivationError::NetworkError { detail: e.to_string() })?;
 
-    // The status first: a 404 is "no such code" whatever its body says, even when a proxy answers
-    // it with an HTML page that isn't JSON.
+    // The status first, whatever the body says: a proxy answers with an HTML page that isn't JSON.
     if !response.status().is_success() {
-        return Err(LicenseActivationError::ShortCodeNotFound);
+        return Err(activation_refusal(response.status().as_u16()));
     }
     let raw = crate::server_request::read_capped(response, MAX_ANSWER_BYTES)
         .await
@@ -166,6 +165,20 @@ pub async fn activate_short_code(code: &str) -> Result<String, LicenseActivation
     body.license_key.ok_or_else(|| LicenseActivationError::ServerError {
         detail: "No license key in response".to_string(),
     })
+}
+
+/// What a non-2xx `/activate` answer means, by its status alone. Only a 404 is "no such code";
+/// a 429 (the limiter) or a 5xx (the worker or the proxy in front of it) is a server that can't
+/// answer right now, which a retry later fixes.
+fn activation_refusal(status: u16) -> LicenseActivationError {
+    match status {
+        404 => LicenseActivationError::ShortCodeNotFound,
+        400 => LicenseActivationError::InvalidFormat,
+        429 | 500..=599 => LicenseActivationError::ServerBusy { status },
+        _ => LicenseActivationError::ServerError {
+            detail: format!("HTTP {status}"),
+        },
+    }
 }
 
 /// Validate a license with the server.
@@ -258,6 +271,29 @@ pub async fn validate_with_server(transaction_id: &str) -> ValidationOutcome {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The API answers 404 for a code it doesn't know, 400 for one it can't read, and 429 from
+    /// its limiter; a proxy in front answers 502, 503, or a 52x when the worker is down. Only a
+    /// 404 means "no such code": a paying person who hits a busy or briefly-down server must be
+    /// told to try again, ❌ never that their code doesn't exist.
+    #[test]
+    fn an_activation_refusal_reads_its_status() {
+        assert!(matches!(
+            activation_refusal(404),
+            LicenseActivationError::ShortCodeNotFound
+        ));
+        assert!(matches!(activation_refusal(400), LicenseActivationError::InvalidFormat));
+        for busy in [429, 500, 502, 503, 504, 520, 522, 524] {
+            assert!(
+                matches!(activation_refusal(busy), LicenseActivationError::ServerBusy { status } if status == busy),
+                "{busy}"
+            );
+        }
+        assert!(matches!(
+            activation_refusal(403),
+            LicenseActivationError::ServerError { .. }
+        ));
+    }
 
     #[test]
     fn test_validation_request_serialization() {

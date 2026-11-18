@@ -3362,6 +3362,7 @@ export type MessageKey =
   | 'licensing.error.network'
   | 'licensing.error.networkHint'
   | 'licensing.error.server'
+  | 'licensing.error.serverBusy'
   | 'licensing.error.serverHint'
   | 'licensing.error.shortCodeNotFound'
   | 'licensing.error.shortCodeNotFoundHint'

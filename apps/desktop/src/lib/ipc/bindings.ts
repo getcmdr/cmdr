@@ -13015,6 +13015,11 @@ export type LicenseActivationError =
   // License server returned an unexpected response.
   | { code: 'serverError'; detail: string }
   /**
+   *  The license server can't answer right now (its limiter's 429, or a 5xx from it or the
+   *  proxy in front of it). Nothing is wrong with the code; trying again later is the fix.
+   */
+  | { code: 'serverBusy'; status: number }
+  /**
    *  Couldn't store the key (the Keychain refused the write, or `license.json` didn't open).
    *  Nothing was stored, so trying again is safe.
    */
@@ -15754,7 +15759,10 @@ export type NameRules = {
   pathLimit: LengthLimit | null
 }
 
-// What a destination does with one class of name Windows can't use.
+/**
+ *  What a destination does with one class of name Windows can't use.
+ *  Ordered from the weakest to the strictest, so a floor can raise a tier ([`NameRules::at_least`]).
+ */
 export type NameTier =
   // Nothing to say: a POSIX destination.
   | 'allow'

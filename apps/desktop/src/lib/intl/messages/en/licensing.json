@@ -535,6 +535,10 @@
   "@licensing.error.server": {
     "description": "Activation-error message when the license server returns an unexpected response. Casual and apologetic ('Hmm'). Paired with its help hint."
   },
+  "licensing.error.serverBusy": "The license server is busy right now, so it couldn’t look up your code.",
+  "@licensing.error.serverBusy": {
+    "description": "Activation message when the license server is temporarily busy or briefly down (it asked us to slow down, or answered with a server-side hiccup). Nothing is wrong with the person's code. Calm and reassuring, no apology needed. Paired with licensing.error.serverHint (\"Please try again later.\")."
+  },
   "licensing.error.serverHint": "Please try again later.",
   "@licensing.error.serverHint": {
     "description": "Help hint paired with the server activation error, suggesting a later retry."
