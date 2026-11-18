@@ -172,8 +172,8 @@ pub struct Fixture {
 
 impl Fixture {
     /// Initialize an empty gix repo at `dir`. Equivalent to `git init
-    /// -b main`. gix's default branch is already `main` (deviation
-    /// from upstream git), so no `init.defaultBranch` ceremony.
+    /// -b main`: HEAD is pinned to `main` whatever `init.defaultBranch` the
+    /// machine sets.
     ///
     /// We also write `user.name` / `user.email` into the repo's local
     /// `.git/config` AND re-open the repo so the cached config snapshot
@@ -189,6 +189,10 @@ impl Fixture {
     /// fallback worked there; Docker images don't, which surfaced the bug.
     pub fn init(dir: PathBuf) -> Self {
         let _initial = gix::init(&dir).expect("gix::init");
+        // gix honors `init.defaultBranch` from the system config, which Git for Windows'
+        // installer writes (`master` on the Windows builder, 2026-11-18), so HEAD is pinned
+        // to `main` while the repo has no refs yet.
+        std::fs::write(dir.join(".git").join("HEAD"), "ref: refs/heads/main\n").expect("pin HEAD to main");
         Self::seed_committer_config(&dir);
         let repo = gix::open(&dir).expect("gix::open (post-config)");
         Self {

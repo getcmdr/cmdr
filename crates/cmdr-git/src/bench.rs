@@ -119,7 +119,17 @@ fn fixture_dir_is_in_this_workspaces_target() {
         workspace_root.join("Cargo.lock").is_file(),
         "{workspace_root:?} isn't the workspace root"
     );
-    assert_eq!(fixture_dir(), workspace_root.join("target/test-fixtures/git/synth-50k"));
+    // By components and through `canonicalize` on both sides: Windows canonicalizes to the
+    // `\\?\` form, which the fixture's plain path never compares equal to.
+    let fixture = fixture_dir();
+    assert!(fixture.ends_with("target/test-fixtures/git/synth-50k"), "{fixture:?}");
+    let root = fixture
+        .ancestors()
+        .nth(4)
+        .expect("four levels up")
+        .canonicalize()
+        .unwrap();
+    assert_eq!(root, workspace_root);
 }
 
 #[test]
