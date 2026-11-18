@@ -119,7 +119,7 @@ impl Inner {
         removed
     }
 
-    /// Removes the entry whose file name equals `name` from a listing, returning the
+    /// Removes the entry whose filename equals `name` from a listing, returning the
     /// row the pane showed it on and the entry.
     ///
     /// A cached listing is exactly one directory, so entry names are unique, and

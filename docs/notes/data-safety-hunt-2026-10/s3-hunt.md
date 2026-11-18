@@ -92,7 +92,7 @@ high, two medium, two low.
   ever had keys this operation saw. Or record a shadowed file in `beside_folders` too (so the folder row is `Folder`)
   and give `delete` the walker's kind.
 
-### s3-2. A PUT cut off by a real network drop can leave a truncated object under the user's file name
+### s3-2. A PUT cut off by a real network drop can leave a truncated object under the user's filename
 
 - **Severity:** medium
 - **Confidence:** plausible (the S3 side is traced; the engine's terminal reporting of the refused retry is read, not
@@ -139,7 +139,7 @@ high, two medium, two low.
   `ShortStream::OnePart` covers overwrites only. The upload ledger covers multipart only, so nothing remembers a one-PUT
   token. The engine's `remove_unstaged_partial` only runs when `writing_at_the_final_name` is set by a `NotSupported`
   landing, which isn't the case here.
-- **Impact:** A byte-incomplete object sits under the real file name at the destination, and the file is reported as
+- **Impact:** A byte-incomplete object sits under the real filename at the destination, and the file is reported as
   "already exists". The user may Skip and keep a corrupt copy. The source survives (the move doesn't delete it), so this
   is corruption, not loss.
 - **Suggested fix:** Persist the pending PUT's token (like the multipart ledger) and settle it after reconnect. Or have

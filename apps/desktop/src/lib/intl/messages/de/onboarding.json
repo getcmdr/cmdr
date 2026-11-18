@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {Cloud AI stays off until you allow it. You can do that later in Preferences > AI.} linuxKde {Cloud AI stays off until you allow it. You can do that later in Configure Cmdr > AI.} other {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "82d27b6"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.",
+  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr works fully without AI. You can turn it on later in Preferences.} linuxKde {Cmdr works fully without AI. You can turn it on later in Configure Cmdr.} other {Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "3f261be"
   },
@@ -391,11 +391,11 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Preferences.} linuxKde {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Configure Cmdr.} other {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "06ce4eb"
   },
-  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine macOS-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.} windows {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Windows-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.} other {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.}}",
+  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine macOS-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.} windows {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Windows-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.} linuxGnome {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Preferences whenever you like.} linuxKde {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Configure Cmdr whenever you like.} other {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.}}",
   "@onboarding.stepBeta.crashReportsNote": {
     "sourceHash": "55b9634"
   },
@@ -403,7 +403,7 @@
   "@onboarding.stepBeta.analyticsManaged": {
     "sourceHash": "49484ee"
   },
-  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine macOS-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.} windows {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Windows-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.} other {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.}}",
+  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine macOS-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.} windows {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Windows-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.} linuxGnome {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Preferences whenever you like.} linuxKde {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Configure Cmdr whenever you like.} other {Absturzberichte sind aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nDie Absturzberichte kannst du jederzeit in den Einstellungen ausschalten.}}",
   "@onboarding.stepBeta.crashReportsNoteAlone": {
     "sourceHash": "27d4b1b"
   },
@@ -427,7 +427,7 @@
   "@onboarding.stepBeta.signup.rejected": {
     "sourceHash": "5a1bca7"
   },
-  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem Mac gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.} windows {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem PC gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.} other {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem Computer gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.}}",
+  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem Mac gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.} windows {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem PC gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.} linuxGnome {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Preferences › Updates & privacy.} linuxKde {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Configure Cmdr › Updates & privacy.} other {Der Anmeldeserver war gerade nicht erreichbar, du stehst also noch nicht auf der Liste. Deine Adresse ist auf diesem Computer gesichert: Klicke in einer Minute noch einmal auf „Sichern“, oder jederzeit unter Einstellungen › Updates & Datenschutz.}}",
   "@onboarding.stepBeta.signup.unreachable": {
     "sourceHash": "6032194"
   },
@@ -467,7 +467,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "Du kannst das jederzeit in den Einstellungen ändern.",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {You can change this any time in Preferences.} linuxKde {You can change this any time in Configure Cmdr.} other {Du kannst das jederzeit in den Einstellungen ändern.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "895d675"
   },

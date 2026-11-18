@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "Aktiviere in den Einstellungen die Bildindizierung für dieses Netzlaufwerk, um den Text in seinen Fotos zu durchsuchen.",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Aktiviere in den Einstellungen die Bildindizierung für dieses Netzlaufwerk, um den Text in seinen Fotos zu durchsuchen.}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "ccf901b"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird nichts indiziert. Schalte sie unter Indizierung > Laufwerksindizierung ein.",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {Die Laufwerksindizierung ist in den Einstellungen aus, deshalb wird nichts indiziert. Schalte sie unter Indizierung > Laufwerksindizierung ein.}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "abfe24b"
   },

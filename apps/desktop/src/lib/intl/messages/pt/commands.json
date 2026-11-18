@@ -35,7 +35,7 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "Abrir ajustes",
+  "commands.appSettings.label": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Abrir ajustes}}",
   "@commands.appSettings.label": {
     "sourceHash": "ca381c1"
   },
@@ -1264,7 +1264,7 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "Pasta aberta no seu app de terminal. Quer que o Cmdr abra outro app da próxima vez? Escolha um em Ajustes, em “Navegação e operações de arquivo”.",
+  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Preferences, under Navigation & file ops.} linuxKde {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Configure Cmdr, under Navigation & file ops.} other {Pasta aberta no seu app de terminal. Quer que o Cmdr abra outro app da próxima vez? Escolha um em Ajustes, em “Navegação e operações de arquivo”.}}",
   "@commands.handler.openTerminalHere.hint": {
     "sourceHash": "b29b744"
   },
@@ -1272,7 +1272,7 @@
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "Abrir ajustes",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Abrir ajustes}}",
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "ca381c1"
   },
@@ -1344,7 +1344,7 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "O armazenamento de registros está desativado. Defina um limite de espaço em disco maior que 0 em Ajustes > Avançado e reinicie o Cmdr para visualizar o registro de depuração.",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Log storage is off. Set a disk space limit above 0 in Preferences > Advanced, then restart Cmdr to view the debug log.} linuxKde {Log storage is off. Set a disk space limit above 0 in Configure Cmdr > Advanced, then restart Cmdr to view the debug log.} other {O armazenamento de registros está desativado. Defina um limite de espaço em disco maior que 0 em Ajustes > Avançado e reinicie o Cmdr para visualizar o registro de depuração.}}",
   "@commands.handler.viewDebugLog.disabled": {
     "sourceHash": "96f16fc"
   },

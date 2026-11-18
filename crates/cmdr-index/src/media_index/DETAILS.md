@@ -208,12 +208,12 @@ Live enrichment). None may run the whole-store `gc_targets` outside a completed 
 One more removal sits outside GC altogether, and never runs on macOS: a shipped build with no image engine
 (`scheduler/lifecycle.rs::retire_media_without_an_engine`) deletes every volume's `media-*.db` at launch, through
 `volume_files::remove_every_media_store`. Before #943 the test fake was that platform's backend, so every row there is
-text made up from file names, and no engine can ever enrich it honestly (#1001). It's PLATFORM-derived, not
+text made up from filenames, and no engine can ever enrich it honestly (#1001). It's PLATFORM-derived, not
 settings-derived, and it takes nothing a real engine wrote.
 
 ## The image-qualification predicate (`predicate.rs`)
 
-Pure over a directory's file names (sibling-aware): images enrich (JPEG/PNG/HEIC/…); videos skip (out of scope, also a
+Pure over a directory's filenames (sibling-aware): images enrich (JPEG/PNG/HEIC/…); videos skip (out of scope, also a
 Live Photo's motion `.mov`); an image with a same-stem `.mov` is tagged `LivePhotoStill`; `.aae` edit sidecars skip; a
 RAW beside a same-stem JPEG defers to the JPEG (cheaper decode), a lone RAW enriches. Classification is typed
 (`Qualification`/`MediaKind`/`SkipReason`), never a substring branch. The scheduler groups the index walk by parent

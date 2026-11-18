@@ -51,7 +51,7 @@ class MessageCatalog private constructor(private val messages: Map<String, Messa
 }
 
 /**
- * The `catalogGlob` config value, split into the directory to read and the file names to take from it.
+ * The `catalogGlob` config value, split into the directory to read and the filenames to take from it.
  *
  * One `*` wildcard in the file part is all the config ever needs (every JSON file in `messages/en`), and keeping it
  * that small is what lets the directory double as the VFS invalidation scope.

@@ -33,7 +33,7 @@ type planInput struct {
 //   - `update-archives-<os>`: one OS's update payloads, for that OS's vetting.
 //   - `binaries`: every required build of the app, which `attest` refuses to go without.
 //   - `rust-sboms`: one `<target> <file>` line per Rust SBOM, for `sbom` to generate.
-//   - `frontend-sbom`: the frontend SBOM's file name.
+//   - `frontend-sbom`: the frontend SBOM's filename.
 //   - `sbom-<slug>` and `sbom-<slug>-subjects`: each SBOM's file and the builds it's attested
 //     against, one path per line.
 func plan(in planInput) ([]output, error) {

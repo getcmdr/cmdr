@@ -275,7 +275,7 @@ gone, the keymap is three lists per command, and the tests run on all three OSes
   on Windows or `osslsigncode verify` on Linux), checksums, SBOM, provenance attestation, and a winget manifest bump as
   the `bump-tap` twin.
 - The elegant move, shared with the Linux plan's Part 1 and Part 5: generate one release asset manifest (os, arch, kind,
-  file name, updater key) early in the pipeline, and have `publish`, `release-finish`, `vet-update-archives`, checksums,
+  filename, updater key) early in the pipeline, and have `publish`, `release-finish`, `vet-update-archives`, checksums,
   and SBOM all iterate it. Then adding Linux or Windows is a matrix entry plus manifest rows, and the "latest.json names
   an asset that doesn't exist" guard (line ~1155) keeps working unchanged.
 

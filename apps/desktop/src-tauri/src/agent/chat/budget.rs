@@ -53,7 +53,7 @@ pub const DEFAULT_PROMPT_TOKEN_BUDGET: usize = 16_000;
 
 /// The share of what's left of a window, after the reply's room, that the prompt leaves
 /// unclaimed, in percent: the margin for [`CHARS_PER_TOKEN_ESTIMATE`]'s error. `chars/4` is
-/// close for English prose, but the agent's prompts are mostly JSON, paths, and file names,
+/// close for English prose, but the agent's prompts are mostly JSON, paths, and filenames,
 /// which real tokenizers split finer (about 3.5 characters a token), so a prompt the estimate
 /// puts right at the window would be over it. Overrunning is a hard provider rejection
 /// mid-turn; erring here costs a sliver of a large window.

@@ -258,7 +258,7 @@ fn instant_props(fact: InstantMutationFact) -> Value {
 /// were never looked at), and how it ended. A cancel wins; otherwise the state the
 /// original op landed in decides, and a run that wasn't stopped yet left the op as it
 /// was is `failed` (the journal couldn't hand over its rows). Reads only the report's
-/// counts and states, ❌ never its skips' example file names.
+/// counts and states, ❌ never its skips' example filenames.
 fn rollback_props(initiator: Initiator, narrowed: bool, report: &RollbackReport) -> Value {
     let outcome = if report.canceled {
         "cancelled"

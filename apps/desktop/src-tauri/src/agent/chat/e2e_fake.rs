@@ -218,7 +218,7 @@ fn every_tool_round(folder: &str) -> crate::agent::llm::fake::ScriptedTurn {
 }
 
 /// A plan renaming the E2E fixture tree's two files in `folder`, which has to be what the focused
-/// pane shows or the tool refuses it. Names come from the file names (`filename` evidence), so no
+/// pane shows or the tool refuses it. Names come from the filenames (`filename` evidence), so no
 /// content claim needs backing.
 fn rename_plan_call(folder: &str) -> crate::agent::llm::fake::ScriptedTurn {
     use crate::agent::llm::fake::ScriptedTurn;

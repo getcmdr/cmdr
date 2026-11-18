@@ -94,7 +94,7 @@ async function jumpToLatest(explorer: ExplorerAPI): Promise<DownloadJumpOutcome>
 }
 
 /**
- * Go to a SPECIFIC downloaded file (parent dir + file name), bypassing the
+ * Go to a SPECIFIC downloaded file (parent dir + filename), bypassing the
  * latest-in-ring lookup. Reuses a pane that already shows the dir
  * (`revealFileInBestPane`) rather than duplicating the view.
  *

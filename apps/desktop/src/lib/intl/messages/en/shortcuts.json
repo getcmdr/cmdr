@@ -563,9 +563,9 @@
     "screenshot": "shortcuts.png"
   },
 
-  "shortcuts.window.editInSettings": "Edit shortcuts in Settings",
+  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Edit shortcuts in Preferences} linuxKde {Edit shortcuts in Configure Cmdr} other {Edit shortcuts in Settings}}",
   "@shortcuts.window.editInSettings": {
-    "description": "Link at the very bottom of the Keyboard shortcuts window, under the end of the list. Does the same as the header link (shortcuts.window.edit), spelled out with its destination for someone who scrolled all the way down. An imperative VERB phrase. \"Settings\" is Cmdr's own Settings window, so use the word the rest of the app uses for it (settings.window.title), not the macOS System Settings term.",
+    "description": "Link at the very bottom of the Keyboard shortcuts window, under the end of the list. Does the same as the header link (shortcuts.window.edit), spelled out with its destination for someone who scrolled all the way down. An imperative VERB phrase. \"Settings\" is Cmdr's own Settings window, so use the word the rest of the app uses for it (settings.window.title), not the macOS System Settings term. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "shortcuts.png"
   }
 }

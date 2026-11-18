@@ -80,7 +80,7 @@ way — both already speak `dyn ArchiveByteSource`.
 renders transparently (the FE splits on `/`). `inner_path()` maps a volume-namespace path back to the index key: it
 strips the archive-path prefix (the FE sends full absolute paths), accepts an already-inner relative path, and treats an
 empty path / `.` as the root `""`. `node_to_entry` builds each `FileEntry`'s full path as `archive_path/inner`; the root
-node (`""`) carries the archive's own file name and path. `ArchiveNode::modified` is Unix seconds, matching `FileEntry`
+node (`""`) carries the archive's own filename and path. `ArchiveNode::modified` is Unix seconds, matching `FileEntry`
 (a negative timestamp is dropped), and it's the only date a member carries (`supported_dates` keeps the trait's
 Modified-only default). `FileEntry` has no `encrypted` field, so `index()` is `pub`: a host caller that must name
 encryption (the Ask Cmdr `inspect_file` tool) queries the same cached `ArchiveIndex` the listing maps from (`get` /

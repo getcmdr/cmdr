@@ -215,7 +215,7 @@ store `main.db`, so reading one needs no MCP and no running app:
   off), under `{app data dir}/llm-logs/thread-<conversation id>/`. Format:
   `apps/desktop/src-tauri/src/ai/llm_log/CLAUDE.md`.
 - `content_blocks` can hold the provider's opaque reasoning blob: fine to read locally, ❌ never paste it into an issue
-  or a public file, and the same goes for the user's paths and file names (this repo is public).
+  or a public file, and the same goes for the user's paths and filenames (this repo is public).
 
 ## Log format
 

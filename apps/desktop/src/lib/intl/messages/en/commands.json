@@ -44,9 +44,9 @@
     "description": "Command name that opens the command palette (the searchable list of all commands). \"Command palette\" is the established name of this UI; match the term used elsewhere in the app.",
     "screenshot": "settings-keyboard-shortcuts.png"
   },
-  "commands.appSettings.label": "Open settings",
+  "commands.appSettings.label": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Open settings}}",
   "@commands.appSettings.label": {
-    "description": "Command name that opens the Settings window. Appears in the command palette and the macOS app menu.",
+    "description": "Command name that opens the Settings window. Appears in the command palette and the macOS app menu. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "settings-keyboard-shortcuts.png"
   },
   "commands.appCheckForUpdates.label": "Check for updates…",
@@ -293,7 +293,7 @@
   },
   "commands.sortByName.label": "Sort by name",
   "@commands.sortByName.label": {
-    "description": "Command name that sorts the file list by file name. Appears in the command palette.",
+    "description": "Command name that sorts the file list by filename. Appears in the command palette.",
     "screenshot": "main-window.png"
   },
   "commands.sortByExtension.label": "Sort by extension",
@@ -1139,9 +1139,9 @@
     "description": "Command name that removes a restic backup’s saved password from the system’s password store (the Keychain on macOS, Credential Manager on Windows, the keyring on Linux) and locks the backup again, so opening it asks for the password. Acts on the backup the user is browsing, or whose snapshots folder is under the cursor. \"backup\" = a restic backup repository, a folder of encrypted backups. VERB phrase, imperative. Appears in the command palette.",
     "screenshot": "settings-keyboard-shortcuts.png"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Removes the saved password of the restic backup you’re in from Keychain, and locks the backup again} windows {Removes the saved password of the restic backup you’re in from Credential Manager, and locks the backup again} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {Removes the saved password of the restic backup you’re in from your keyring, and locks the backup again}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Removes the saved password of the restic backup you’re in from Keychain, and locks the backup again} windows {Removes the saved password of the restic backup you’re in from Credential Manager, and locks the backup again} linuxKde {Removes the saved password of the restic backup you’re in from KDE Wallet, and locks the backup again} other {Removes the saved password of the restic backup you’re in from your keyring, and locks the backup again}}",
   "@commands.resticForgetPassword.description": {
-    "description": "Longer help text for the \"Forget backup password\" command, shown as a secondary line in the command palette. Each branch names its own OS's password store: the Keychain in the macOS branch (in the name Apple gives it in your language), Credential Manager in the Windows branch (Microsoft's name for it), and the keyring in the Linux branch. Keep \"restic\" as is: it’s the name of the backup tool. The `linuxKde` branch names KDE’s password store, KWallet: a name, which KDE keeps as is in every language."
+    "description": "Longer help text for the \"Forget backup password\" command, shown as a secondary line in the command palette. Each branch names its own OS's password store: the Keychain in the macOS branch (in the name Apple gives it in your language), Credential Manager in the Windows branch (Microsoft's name for it), and the keyring in the Linux branch. Keep \"restic\" as is: it’s the name of the backup tool. The `linuxKde` branch names KDE’s password store, KDE Wallet: use the name KDE’s own translation gives it in your language."
   },
   "commands.fileCopyShareLink.label": "Copy share link (seven days)",
   "@commands.fileCopyShareLink.label": {
@@ -1539,17 +1539,17 @@
     "screenshot": "toast-transfer-complete.png",
     "screenshotNote": "This shows a different toast in the same corner of the window; your string is what Copy share link says there, for a file in an S3 bucket."
   },
-  "commands.handler.openTerminalHere.hint": "Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Settings, under Navigation & file ops.",
+  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Preferences, under Navigation & file ops.} linuxKde {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Configure Cmdr, under Navigation & file ops.} other {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Settings, under Navigation & file ops.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "description": "The one-time toast that appears the first time \"Open terminal here\" runs on a Mac with more than one terminal app installed. First sentence: what just happened (\"this folder\" is the folder the pane was showing). The rest points at the settings row that picks the terminal app; the button beside the toast opens exactly that row. \"Navigation & file ops\" is a settings section title, so use the same wording as settings.section.navigationAndFileOps."
+    "description": "The one-time toast that appears the first time \"Open terminal here\" runs on a Mac with more than one terminal app installed. First sentence: what just happened (\"this folder\" is the folder the pane was showing). The rest points at the settings row that picks the terminal app; the button beside the toast opens exactly that row. \"Navigation & file ops\" is a settings section title, so use the same wording as settings.section.navigationAndFileOps. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   },
   "commands.handler.openTerminalHere.dismiss": "Dismiss",
   "@commands.handler.openTerminalHere.dismiss": {
     "description": "VERB (imperative). Button on the one-time \"Open terminal here\" toast that closes it and changes nothing. The user is happy with the app Cmdr picked."
   },
-  "commands.handler.openTerminalHere.openSettings": "Open settings",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Open settings}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "description": "VERB phrase (imperative). Button on both \"Open terminal here\" toasts. Opens the Settings window scrolled to the row that picks the terminal app. Same wording as the commands.appSettings.label command."
+    "description": "VERB phrase (imperative). Button on both \"Open terminal here\" toasts. Opens the Settings window scrolled to the row that picks the terminal app. Same wording as the commands.appSettings.label command. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   },
   "commands.handler.openTerminalHere.appMissing": "{app} isn’t installed anymore, so this opened in Terminal.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1649,9 +1649,9 @@
   "@commands.helpViewDebugLog.description": {
     "description": "Secondary help line beneath View debug log in the command palette. Starts with a verb. The viewer opens at the end of the log and keeps scrolling as new lines arrive, which is what live means here. The log contains diagnostic records from the running application, not the user’s file-operation history. Cmdr is the brand name; keep it recognizable."
   },
-  "commands.handler.viewDebugLog.disabled": "Log storage is off. Set a disk space limit above 0 in Settings > Advanced, then restart Cmdr to view the debug log.",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Log storage is off. Set a disk space limit above 0 in Preferences > Advanced, then restart Cmdr to view the debug log.} linuxKde {Log storage is off. Set a disk space limit above 0 in Configure Cmdr > Advanced, then restart Cmdr to view the debug log.} other {Log storage is off. Set a disk space limit above 0 in Settings > Advanced, then restart Cmdr to view the debug log.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "description": "Informational toast after selecting View debug log when log storage is off. The control is a number field, not a switch: settings.advanced.maxLogStorageMb.label (Maximum disk space for log files (MB)), where 0 means off. So the instruction is to set that limit above 0, then restart the app. Settings > Advanced is a navigation path; use this language's names for the Settings window and its Advanced section. Cmdr is the brand name."
+    "description": "Informational toast after selecting View debug log when log storage is off. The control is a number field, not a switch: settings.advanced.maxLogStorageMb.label (Maximum disk space for log files (MB)), where 0 means off. So the instruction is to set that limit above 0, then restart the app. Settings > Advanced is a navigation path; use this language's names for the Settings window and its Advanced section. Cmdr is the brand name. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   },
   "commands.handler.viewDebugLog.unavailable": "Couldn’t open the debug log. Try again.",
   "@commands.handler.viewDebugLog.unavailable": {

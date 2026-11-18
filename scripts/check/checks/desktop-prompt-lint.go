@@ -142,7 +142,7 @@ func parsePromptFrontmatter(file, header string) (map[string]string, []string) {
 	}
 	stem := strings.TrimSuffix(file, ".md")
 	if name, present := values["name"]; present && name != stem {
-		problems = append(problems, fmt.Sprintf("%s: frontmatter name %q must match the file name %q", file, name, stem))
+		problems = append(problems, fmt.Sprintf("%s: frontmatter name %q must match the filename %q", file, name, stem))
 	}
 	return values, problems
 }

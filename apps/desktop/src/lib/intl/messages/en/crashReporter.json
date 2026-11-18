@@ -24,7 +24,7 @@
     "description": "Main explanation in the crash-report dialog, shown on the next launch for a report from an older version of Cmdr that did not record whether the app kept running afterwards. It has to read true whether Cmdr quit or carried on, so it must NOT say either. Reassuring and matter-of-fact. \"Cmdr\" is the product name (do not translate).",
     "screenshot": "crash-report-signal-no-report-id.png"
   },
-  "crashReporter.dialog.privacyNote": "{platform, select, macos {It includes the app version, macOS version, and which part of the code ran into the problem. No file names or personal data.} windows {It includes the app version, Windows version, and which part of the code ran into the problem. No file names or personal data.} other {It includes the app version, Linux distribution and version, and which part of the code ran into the problem. No file names or personal data.}}",
+  "crashReporter.dialog.privacyNote": "{platform, select, macos {It includes the app version, macOS version, and which part of the code ran into the problem. No filenames or personal data.} windows {It includes the app version, Windows version, and which part of the code ran into the problem. No filenames or personal data.} other {It includes the app version, Linux distribution and version, and which part of the code ran into the problem. No filenames or personal data.}}",
   "@crashReporter.dialog.privacyNote": {
     "description": "Privacy reassurance in the crash-report dialog, listing what the report contains and confirming it has no personal data. One string for all three cases of the dialog, so it says the code \"ran into the problem\" rather than \"crashed\": that stays true whether Cmdr went down or carried on. Don't reintroduce a crash word. \"macOS\" and \"Windows\" are OS names (do not translate); the Linux branch names the distribution and its version. The screenshot shows the macOS wording.",
     "screenshot": "crash-report-panic.png"
@@ -98,9 +98,9 @@
     "screenshot": "error-report.png",
     "screenshotNote": "The crash-report dialog (shown on the next launch after Cmdr hit a problem) uses the same report-form layout as the error-report dialog pictured here: an intro, a privacy note, a copyable report ID, and Send/Cancel buttons."
   },
-  "crashReporter.sentToast.changeSettings": "Change in Settings",
+  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {Change in Preferences} linuxKde {Change in Configure Cmdr} other {Change in Settings}}",
   "@crashReporter.sentToast.changeSettings": {
-    "description": "Button on the sent-confirmation toast that opens the app's Settings at the Updates & privacy section, where crash reports are turned on or off. \"Settings\" is the name of the app's settings window; use the same word as elsewhere in the app.",
+    "description": "Button on the sent-confirmation toast that opens the app's Settings at the Updates & privacy section, where crash reports are turned on or off. \"Settings\" is the name of the app's settings window; use the same word as elsewhere in the app. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "error-report.png",
     "screenshotNote": "The crash-report dialog (shown on the next launch after Cmdr hit a problem) uses the same report-form layout as the error-report dialog pictured here: an intro, a privacy note, a copyable report ID, and Send/Cancel buttons."
   },

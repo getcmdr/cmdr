@@ -705,11 +705,11 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "Add meg az API-kulcsodat a beállításokban, hogy elkezdhess csevegni.",
+  "askCmdr.error.noKey": "{platform, select, linuxGnome {Add your API key in preferences to start chatting.} other {Add meg az API-kulcsodat a beállításokban, hogy elkezdhess csevegni.}}",
   "@askCmdr.error.noKey": {
     "sourceHash": "0a78f37"
   },
-  "askCmdr.error.notConfigured": "A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a beállításokban.",
+  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {Chatting needs an AI provider. Turn one on in preferences.} other {A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a beállításokban.}}",
   "@askCmdr.error.notConfigured": {
     "sourceHash": "2d55d2c"
   },
@@ -717,7 +717,7 @@
   "@askCmdr.error.askCmdrOff": {
     "sourceHash": "6599ee1"
   },
-  "askCmdr.error.noCloudConsent": "A felhő-AI ki van kapcsolva. Engedélyezd itt: Beállítások > AI.",
+  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {Cloud AI is off. Allow it in Preferences > AI.} linuxKde {Cloud AI is off. Allow it in Configure Cmdr > AI.} other {A felhő-AI ki van kapcsolva. Engedélyezd itt: Beállítások > AI.}}",
   "@askCmdr.error.noCloudConsent": {
     "sourceHash": "cd2af1d"
   },
@@ -737,7 +737,7 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a beállításokban.",
+  "askCmdr.error.authFailed": "{platform, select, linuxGnome {The provider didn’t accept your API key. Check it in preferences.} other {A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a beállításokban.}}",
   "@askCmdr.error.authFailed": {
     "sourceHash": "a2302ca"
   },
@@ -745,19 +745,19 @@
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {Your {provider} plan doesn’t include this model. Pick another model in preferences, or upgrade your plan.} other {A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.}}",
   "@askCmdr.error.modelNotInPlan.named": {
     "sourceHash": "9f2c237"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {Your plan with this AI provider doesn’t include this model. Pick another model in preferences, or upgrade your plan.} other {A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
     "sourceHash": "b90bf30"
   },
-  "askCmdr.error.requestTooLarge.named": "{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a beállításokban.",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in preferences.} other {{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a beállításokban.}}",
   "@askCmdr.error.requestTooLarge.named": {
     "sourceHash": "f878555"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a beállításokban.",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in preferences.} other {Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a beállításokban.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
     "sourceHash": "b81536f"
   },
@@ -977,15 +977,15 @@
   "@askCmdr.composer.sendNeedsProvider": {
     "sourceHash": "9e6aba3"
   },
-  "askCmdr.providerNotice.off": "Az Ask Cmdrnek AI-szolgáltató kell a csevegéshez. Válassz egyet a Beállításokban.",
+  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {Ask Cmdr needs an AI provider to chat. Pick one in Preferences.} linuxKde {Ask Cmdr needs an AI provider to chat. Pick one in Configure Cmdr.} other {Az Ask Cmdrnek AI-szolgáltató kell a csevegéshez. Válassz egyet a Beállításokban.}}",
   "@askCmdr.providerNotice.off": {
     "sourceHash": "8696c99"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "A felhő-AI-szolgáltatódnak API-kulcs kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Beállításokban.",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Preferences.} linuxKde {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Configure Cmdr.} other {A felhő-AI-szolgáltatódnak API-kulcs kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Beállításokban.}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
     "sourceHash": "dccf257"
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "A felhő-AI-szolgáltatódnak cím kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Beállításokban.",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Preferences.} linuxKde {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Configure Cmdr.} other {A felhő-AI-szolgáltatódnak cím kell, mielőtt az Ask Cmdr cseveghetne. Add meg a Beállításokban.}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "1b1682b"
   },
@@ -1021,7 +1021,7 @@
   "@askCmdr.gate.cloudOff.title": {
     "sourceHash": "2e56781"
   },
-  "askCmdr.gate.cloudOff.body": "Az Ask Cmdr a beállított felhő-AI-szolgáltatással beszélget. Előbb engedélyezd a felhő-AI-t a Beállításokban, és máris cseveghetsz.",
+  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Preferences first, and you’re ready to chat.} linuxKde {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Configure Cmdr first, and you’re ready to chat.} other {Az Ask Cmdr a beállított felhő-AI-szolgáltatással beszélget. Előbb engedélyezd a felhő-AI-t a Beállításokban, és máris cseveghetsz.}}",
   "@askCmdr.gate.cloudOff.body": {
     "sourceHash": "d3d3252"
   },
@@ -1411,7 +1411,7 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a beállításokban.",
+  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {AI features are on, but they need a provider to work. Click to set one up in preferences.} other {Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a beállításokban.}}",
   "@askCmdr.wake.needsApiKey": {
     "sourceHash": "0f71f75"
   },

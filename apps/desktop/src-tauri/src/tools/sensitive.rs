@@ -1,6 +1,6 @@
 //! The one gate for every path that yields file contents or image-derived text, for both
 //! callers: `inspect_file`, `image_facts`, `search_photos`, and `multi_rename`'s media
-//! fields. It blocks CONTENTS only: file names in these folders may still reach a provider.
+//! fields. It blocks CONTENTS only: filenames in these folders may still reach a provider.
 //!
 //! - [`classify`] is pure: path components against the rules. It's the whole check
 //!   for a path with no realpath (a phone, a routed path, a stored index path).

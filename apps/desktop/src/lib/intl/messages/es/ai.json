@@ -55,7 +55,7 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "Activa un proveedor en Ajustes > IA para usar la búsqueda con IA.",
+  "ai.translateError.off.body": "{platform, select, linuxGnome {Turn on a provider in Preferences > AI to use AI search.} linuxKde {Turn on a provider in Configure Cmdr > AI to use AI search.} other {Activa un proveedor en Ajustes > IA para usar la búsqueda con IA.}}",
   "@ai.translateError.off.body": {
     "sourceHash": "d8d6368"
   },
@@ -247,7 +247,7 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "Termina de configurar tu proveedor en Ajustes > IA y vuelve a intentarlo.",
+  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Finish your provider setup in Preferences > AI, then try again.} linuxKde {Finish your provider setup in Configure Cmdr > AI, then try again.} other {Termina de configurar tu proveedor en Ajustes > IA y vuelve a intentarlo.}}",
   "@ai.translateError.notConfigured.body": {
     "sourceHash": "65133a8"
   },
@@ -255,7 +255,7 @@
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "Permítela en Ajustes > IA y vuelve a intentarlo.",
+  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Allow it in Preferences > AI, then try again.} linuxKde {Allow it in Configure Cmdr > AI, then try again.} other {Permítela en Ajustes > IA y vuelve a intentarlo.}}",
   "@ai.translateError.noCloudConsent.body": {
     "sourceHash": "fde3eb5"
   },
@@ -263,7 +263,7 @@
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "Revisa tu clave en Ajustes > IA: puede estar mal o revocada.",
+  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Check your key in Preferences > AI - it might be wrong or revoked.} linuxKde {Check your key in Configure Cmdr > AI - it might be wrong or revoked.} other {Revisa tu clave en Ajustes > IA: puede estar mal o revocada.}}",
   "@ai.translateError.authFailed.body": {
     "sourceHash": "2159d5e"
   },
@@ -295,7 +295,7 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "Puede que tu modelo haya agotado su presupuesto de tokens antes de responder. Prueba un modelo más rápido como gpt-4.1-mini en Ajustes > IA.",
+  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Preferences > AI.} linuxKde {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Configure Cmdr > AI.} other {Puede que tu modelo haya agotado su presupuesto de tokens antes de responder. Prueba un modelo más rápido como gpt-4.1-mini en Ajustes > IA.}}",
   "@ai.translateError.emptyResponse.body": {
     "sourceHash": "d74db0d"
   },
@@ -311,7 +311,7 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "Inténtalo de nuevo o elige otro modelo en Ajustes > IA.",
+  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Try again, or pick a different model in Preferences > AI.} linuxKde {Try again, or pick a different model in Configure Cmdr > AI.} other {Inténtalo de nuevo o elige otro modelo en Ajustes > IA.}}",
   "@ai.translateError.parseError.body": {
     "sourceHash": "c299ec6"
   },
@@ -319,7 +319,7 @@
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "Elige un proveedor en Ajustes > IA.",
+  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Pick a provider in Preferences > AI.} linuxKde {Pick a provider in Configure Cmdr > AI.} other {Elige un proveedor en Ajustes > IA.}}",
   "@ai.translateError.unknownProvider.body": {
     "sourceHash": "7042a75"
   },

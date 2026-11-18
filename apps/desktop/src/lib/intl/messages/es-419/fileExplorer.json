@@ -71,7 +71,7 @@
   "@fileExplorer.pane.detachShareFailedToast": {
     "sourceHash": "739ebe1"
   },
-  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {La barra de teclas de función ahora está oculta. Puedes volver a activarla cuando quieras en <settingsLink>Configuración</settingsLink>.} other {La barra de teclas de función ahora está oculta. Puedes volver a activarla cuando quieras en <settingsLink>Configuración</settingsLink>.}}",
+  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {Function key bar is now hidden. Turn it back on any time later in <settingsLink>Settings</settingsLink>.} linuxGnome {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Preferences</settingsLink>.} linuxKde {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Configure Cmdr</settingsLink>.} other {La barra de teclas de función ahora está oculta. Puedes volver a activarla cuando quieras en <settingsLink>Configuración</settingsLink>.}}",
   "@fileExplorer.functionKeyBar.hiddenToast": {
     "sourceHash": "ae34eb7"
   },
@@ -167,15 +167,15 @@
   "@fileExplorer.compareDirectories.couldNotFinish": {
     "sourceHash": "40e603a"
   },
-  "fileExplorer.edit.hint": "Archivo abierto en {app}. ¿Quieres otro editor la próxima vez? Elígelo en Configuración.",
+  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Opened in {app}. Want a different editor next time? Pick one in Preferences.} linuxKde {Opened in {app}. Want a different editor next time? Pick one in Configure Cmdr.} other {Archivo abierto en {app}. ¿Quieres otro editor la próxima vez? Elígelo en Configuración.}}",
   "@fileExplorer.edit.hint": {
     "sourceHash": "f48751c"
   },
-  "fileExplorer.edit.hintUnnamed": "Archivo abierto en tu editor de texto predeterminado. ¿Quieres otro la próxima vez? Elígelo en Configuración.",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Opened in your default text editor. Want a different one next time? Pick one in Preferences.} linuxKde {Opened in your default text editor. Want a different one next time? Pick one in Configure Cmdr.} other {Archivo abierto en tu editor de texto predeterminado. ¿Quieres otro la próxima vez? Elígelo en Configuración.}}",
   "@fileExplorer.edit.hintUnnamed": {
     "sourceHash": "d224ab0"
   },
-  "fileExplorer.edit.openSettings": "Abrir la configuración",
+  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Abrir la configuración}}",
   "@fileExplorer.edit.openSettings": {
     "sourceHash": "3e708b0"
   },
@@ -199,7 +199,7 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "8b6ffb6"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "Configuración",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Preferences} linuxKde {Configure Cmdr} other {Configuración}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
     "sourceHash": "4f2debb"
   },
@@ -307,15 +307,15 @@
   "@fileExplorer.navigation.favoriteShortcutSaveFailed": {
     "sourceHash": "4ce4c6b"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "El acceso a teléfonos y cámaras por MTP está desactivado en Configuración.",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Phone and camera access over MTP is turned off in Preferences.} linuxKde {Phone and camera access over MTP is turned off in Configure Cmdr.} other {El acceso a teléfonos y cámaras por MTP está desactivado en Configuración.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
     "sourceHash": "fe6f725"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "El acceso a teléfonos Android está desactivado en Configuración.",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Android phone access is turned off in Preferences.} linuxKde {Android phone access is turned off in Configure Cmdr.} other {El acceso a teléfonos Android está desactivado en Configuración.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
     "sourceHash": "24fe719"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "Abrir la configuración",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Abrir la configuración}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
     "sourceHash": "3e708b0"
   },
@@ -407,7 +407,7 @@
   "@fileExplorer.navigation.driveIndex.queuedBehindScan": {
     "sourceHash": "f6cd615"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "La indexación de unidades está desactivada en Configuración, así que {name} sigue sin indexar. Actívala en “Indexación > Indexación de unidades”.",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} linuxKde {Drive indexing is off in Configure Cmdr, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} other {La indexación de unidades está desactivada en Configuración, así que {name} sigue sin indexar. Actívala en “Indexación > Indexación de unidades”.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
     "sourceHash": "4fbe8e9"
   },
@@ -415,11 +415,11 @@
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "9bb86e9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "La indexación de unidades está desactivada en Configuración, así que ahora mismo no se indexa ninguna unidad.",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so no drive is indexed right now.} linuxKde {Drive indexing is off in Configure Cmdr, so no drive is indexed right now.} other {La indexación de unidades está desactivada en Configuración, así que ahora mismo no se indexa ninguna unidad.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
     "sourceHash": "b388385"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "La indexación de unidades está desactivada en Configuración. Actívala en “Indexación > Indexación de unidades”, y esta unidad continuará donde lo dejó.",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Drive indexing is off in Preferences. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} linuxKde {Drive indexing is off in Configure Cmdr. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} other {La indexación de unidades está desactivada en Configuración. Actívala en “Indexación > Indexación de unidades”, y esta unidad continuará donde lo dejó.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
     "sourceHash": "ed4b144"
   },
@@ -455,7 +455,7 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "db65860"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "¿Prefieres mover el cursor a un nombre que coincida sin ocultar nada? Cambia a “Saltar”, aquí o en Configuración.",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Preferences.} linuxKde {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Configure Cmdr.} other {¿Prefieres mover el cursor a un nombre que coincida sin ocultar nada? Cambia a “Saltar”, aquí o en Configuración.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "0d1e2b4"
   },
@@ -499,7 +499,7 @@
   "@fileExplorer.pane.ejectAllHeldToast": {
     "sourceHash": "3011356"
   },
-  "fileExplorer.smbLinkConsent.note": "Cmdr recuerda tu respuesta para estos dos servidores. Puedes olvidarla en Configuración, en Servidores.",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr remembers your answer for these two servers. You can forget it in Preferences, under Servers.} linuxKde {Cmdr remembers your answer for these two servers. You can forget it in Configure Cmdr, under Servers.} other {Cmdr recuerda tu respuesta para estos dos servidores. Puedes olvidarla en Configuración, en Servidores.}}",
   "@fileExplorer.smbLinkConsent.note": {
     "sourceHash": "7e85e0c"
   },

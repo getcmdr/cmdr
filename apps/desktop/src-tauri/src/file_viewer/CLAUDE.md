@@ -9,7 +9,7 @@ The app's host for the viewer, whose core is `crates/cmdr-viewer` (read its `CLA
   events for the core's facts. `mod.rs` re-exports the core.
 - `media_protocol.rs`: the `cmdr-media://` scheme, over the core's `media_serve.rs`. `materialize.rs`: pulling a file
   the OS can't open into a bounded temp, reused by "Open with" (`open_with_extract.rs`). `markdown_image_fetch.rs`: a
-  document's pictures. `analytics.rs`: `viewer_opened`; ❌ never a file name or extension.
+  document's pictures. `analytics.rs`: `viewer_opened`; ❌ never a filename or extension.
 
 ## Must-knows
 

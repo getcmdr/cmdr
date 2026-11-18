@@ -13,7 +13,7 @@ words), `ToolAskDialog.svelte` (presentational, also the gallery's), `ToolAskHos
   and `dialog close` go through `ModalDialog`'s `onclose` to a decline; an error boundary answers `gone`.
 - **Always guarded** (`startedByWhenGuarded(startedBy, true)`): whoever asked isn't at the keyboard, and direct mode
   never gets here.
-- **What fills a sentence's blanks is untrusted**: a file name or a model's chosen value. It arrives plain and bounded
+- **What fills a sentence's blanks is untrusted**: a filename or a model's chosen value. It arrives plain and bounded
   from `fact_text`, renders as text nodes, and scrolls inside the body. ❌ No markup, ❌ no `<Trans>` with these.
 
 Rationale: `DETAILS.md`.

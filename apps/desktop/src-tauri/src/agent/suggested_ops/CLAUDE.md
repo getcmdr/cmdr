@@ -24,7 +24,7 @@ the lifecycle machine, and the claim transaction are `../store/proposals/CLAUDE.
   fork is how a selector and the search box would disagree about the same `*.dmg`.
 - **A refusal is not an empty list.** `SelectorRefusal::NotIndexed` says "I can't see that drive", a different answer
   from "nothing matched". Branch on the variant.
-- **Analytics carry a verb and a bucketed count**, ❌ never a path, file name, rationale, or selector pattern: those
+- **Analytics carry a verb and a bucketed count**, ❌ never a path, filename, rationale, or selector pattern: those
   are the user's own data, and they stay local.
 - **The bridge builds an ORDINARY executor call**, through the same routed entry points a click uses, with the default
   config. Its bookkeeping never reaches the filesystem.

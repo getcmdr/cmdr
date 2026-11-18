@@ -332,7 +332,7 @@
   "@shortcuts.window.hideEmpty": {
     "sourceHash": "d3cb18e"
   },
-  "shortcuts.window.editInSettings": "Изменить сочетания клавиш в настройках",
+  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Edit shortcuts in Preferences} linuxKde {Edit shortcuts in Configure Cmdr} other {Изменить сочетания клавиш в настройках}}",
   "@shortcuts.window.editInSettings": {
     "sourceHash": "847b526"
   }

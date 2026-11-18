@@ -1240,7 +1240,7 @@
     "chosen": "extensão",
     "accept": ["extensões"],
     "confidence": "confirmed",
-    "sources": "MS terminology pt-BR (file name extension → extensão)"
+    "sources": "MS terminology pt-BR (filename extension → extensão)"
   },
   "extract": {
     "chosen": "Extrair",
@@ -2860,7 +2860,7 @@
     "confidence": "confirmed",
     "sources": "macOS Finder pt-BR MenuBar (172 Selecionar Tudo)",
     "exceptions": {
-      "viewer.saveAs.defaultName": "A default file name: selecao without the cedilla, safe on any file system."
+      "viewer.saveAs.defaultName": "A default filename: selecao without the cedilla, safe on any file system."
     }
   },
   "send": {

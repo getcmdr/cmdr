@@ -11,7 +11,7 @@ and `cfg!(target_os)`. As a crate: (1) desktop tests the core over an in-memory 
 are a compiler-enforced boundary, and the platform name rules are a value (macOS rules testable on Linux CI); (2) the
 browser demo runs the real search over its in-memory tree (`crates/cmdr-listing-wasm/DETAILS.md` § Search).
 
-- **The name**: it's the drive search (file names over a volume). Media and OCR search stay in `cmdr-index`'s
+- **The name**: it's the drive search (filenames over a volume). Media and OCR search stay in `cmdr-index`'s
   `media_index` read API, which this crate doesn't touch.
 - **Decision: the index-backed source stays in the app** (`apps/desktop/src-tauri/src/search/index_source.rs`, the
   `listing_host/` pattern): it's SQL, threads, and the app's arena lifecycle, and the demo's rows come from its own

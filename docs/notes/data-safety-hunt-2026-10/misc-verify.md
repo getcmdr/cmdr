@@ -59,7 +59,6 @@
   - Wider than reported: because the attacker owns the directory, they can also unlink the victim's file and put their
     own in its place, and `read_names` (`session.rs` `read_names`, `std::fs::read_to_string(&path)`) reads it back, so
     the attacker chooses new names for the victim's selected rows (still bounded by the session's own rows and every
-    status check, so no rename outside the selection). They can also read the victim's file names. `Drop`'s
-    `remove_file` and the data wipe's `FilesWithPrefix` (`data_wipe/plan.rs:91`) only unlink entries, so they don't
-    follow links.
+    status check, so no rename outside the selection). They can also read the victim's filenames. `Drop`'s `remove_file`
+    and the data wipe's `FilesWithPrefix` (`data_wipe/plan.rs:91`) only unlink entries, so they don't follow links.
   - Suggested fix stands: per-user dir (app cache dir, or `tempfile` 0700 dir) plus `create_new(true)`.

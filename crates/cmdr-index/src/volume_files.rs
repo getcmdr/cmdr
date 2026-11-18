@@ -45,7 +45,7 @@ pub(crate) enum VolumeStore {
     Media,
 }
 
-/// The CLIP vector space's file-name suffix, as in `media-{id}.clip.usearch`.
+/// The CLIP vector space's filename suffix, as in `media-{id}.clip.usearch`.
 pub(crate) const ANN_SPACE_CLIP: &str = "clip";
 
 /// Every ANN space a media store can keep a vector index for.
@@ -159,7 +159,7 @@ impl VolumeStore {
         VolumeStore::Media,
     ];
 
-    /// What this store's file names start with, before the volume id.
+    /// What this store's filenames start with, before the volume id.
     fn prefix(self) -> &'static str {
         match self {
             VolumeStore::Index => "index-",
@@ -175,7 +175,7 @@ impl VolumeStore {
         dir.join(format!("{}{volume_id}.db", self.prefix()))
     }
 
-    /// The volume id a database file name belongs to, or `None` for anything that
+    /// The volume id a database filename belongs to, or `None` for anything that
     /// isn't this store's database (a sidecar, another store's file, an unrelated
     /// one). A volume id may itself contain `-` and `.`, so this strips the fixed
     /// prefix and suffix and never splits.

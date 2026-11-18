@@ -83,7 +83,7 @@ impl std::fmt::Display for AddFavoriteError {
 impl std::error::Error for AddFavoriteError {}
 
 /// Adds a favorite for `path`, on the volume the add gate names. When `name` is omitted, the label
-/// defaults to the path's file name. A re-add of the same folder on the same volume moves the
+/// defaults to the path's filename. A re-add of the same folder on the same volume moves the
 /// existing favorite rather than adding a second.
 ///
 /// Refuses a path a favorite can't point at ([`favorite_volume_for`]). The frontend greys its add

@@ -33,7 +33,7 @@ use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Runtime};
 
-/// Lock file name inside each claimed dir.
+/// Lock filename inside each claimed dir.
 const LOCK_FILE_NAME: &str = ".instance.lock";
 
 /// How long we keep retrying before declaring a dir taken. One budget for all three dirs, not

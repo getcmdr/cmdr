@@ -231,7 +231,7 @@ fn value_fact(
 }
 
 /// The app a stored app-picker value names, the way Finder shows it. A bundle id resolves through
-/// LaunchServices; a "Choose an app…" path reads its bundle, or its file name once it's gone.
+/// LaunchServices; a "Choose an app…" path reads its bundle, or its filename once it's gone.
 /// `None` when nothing on this Mac answers to it: the question then shows the raw id alone.
 #[cfg(target_os = "macos")]
 fn app_display_name(choice: &str) -> Option<String> {

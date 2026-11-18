@@ -3,7 +3,7 @@
   "@servers.hub.addServer": {
     "sourceHash": "a4578b9"
   },
-  "servers.hub.discoveryOffLink": "Actívala en Configuración",
+  "servers.hub.discoveryOffLink": "{platform, select, linuxGnome {Turn it on in Preferences} linuxKde {Turn it on in Configure Cmdr} other {Actívala en Configuración}}",
   "@servers.hub.discoveryOffLink": {
     "sourceHash": "6e46321"
   },

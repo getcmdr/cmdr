@@ -30,7 +30,7 @@
 
     type Props = {
         sessionId: string
-        /** File name, the document region's accessible name. */
+        /** Filename, the document region's accessible name. */
         fileName: string
         /** Where the document opens once rendered; read once per render. `null` is the top. */
         landing: MarkdownLanding | null

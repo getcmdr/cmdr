@@ -2645,7 +2645,7 @@
   "@errors.listing.smbEncryptionRequired.explanation": {
     "sourceHash": "5eeef51"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "Що можна спробувати:\n- Увійдіть з обліковим записом: гостьові підʼєднання не можна зашифрувати\n- Увімкніть шифрування SMB на сервері\n- Вимкніть «Завжди вимагати шифрування SMB» в Параметрах, якщо вам це не потрібно",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Preferences, if you don’t need it} linuxKde {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Configure Cmdr, if you don’t need it} other {Що можна спробувати:\n- Увійдіть з обліковим записом: гостьові підʼєднання не можна зашифрувати\n- Увімкніть шифрування SMB на сервері\n- Вимкніть «Завжди вимагати шифрування SMB» в Параметрах, якщо вам це не потрібно}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
     "sourceHash": "f16274b"
   },
@@ -2669,7 +2669,7 @@
   "@errors.write.smbEncryptionRequired.message": {
     "sourceHash": "ec53744"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "Увійдіть з обліковим записом, а не як гість, або ввімкніть шифрування SMB на сервері. Також можна вимкнути «Завжди вимагати шифрування SMB» в Параметрах.",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Preferences.} linuxKde {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Configure Cmdr.} other {Увійдіть з обліковим записом, а не як гість, або ввімкніть шифрування SMB на сервері. Також можна вимкнути «Завжди вимагати шифрування SMB» в Параметрах.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
     "sourceHash": "20a90d4"
   },

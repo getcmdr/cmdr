@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Cài đặt để tìm kiếm văn bản bên trong ảnh của nó.",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Bật lập chỉ mục hình ảnh cho ổ đĩa mạng này trong Cài đặt để tìm kiếm văn bản bên trong ảnh của nó.}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "ccf901b"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {Lập chỉ mục ổ đĩa đang tắt trong Cài đặt, nên không có gì được lập chỉ mục. Hãy bật trong Lập chỉ mục > Lập chỉ mục ổ đĩa.}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "abfe24b"
   },

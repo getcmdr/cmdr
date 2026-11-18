@@ -15,7 +15,7 @@
   "@operationLog.dialog.empty": {
     "sourceHash": "2dea414"
   },
-  "operationLog.dialog.recordingOff": "操作日志目前没有在记录，因此新的拷贝、移动、重命名和删除不会显示在这里，也无法撤销。在“设置”中重新开启，就能再次记录。",
+  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Preferences to record them again.} linuxKde {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Configure Cmdr to record them again.} other {操作日志目前没有在记录，因此新的拷贝、移动、重命名和删除不会显示在这里，也无法撤销。在“设置”中重新开启，就能再次记录。}}",
   "@operationLog.dialog.recordingOff": {
     "sourceHash": "0519736"
   },

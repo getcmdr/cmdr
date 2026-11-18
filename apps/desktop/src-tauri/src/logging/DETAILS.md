@@ -121,7 +121,7 @@ recent lines in-process at crash time, and a flood-then-crash (the worst case fo
 lines that matter. Coalescing keeps the synchronous path and only removes redundant duplicate writes, so the crash tail
 and error-report completeness are preserved while the CPU-burn lever is closed.
 
-**The key is the EXACT line, so a variable payload defeats coalescing entirely.** `attempt=27`, a file name, or a
+**The key is the EXACT line, so a variable payload defeats coalescing entirely.** `attempt=27`, a filename, or a
 count makes every occurrence a distinct key, and the flood passes through untouched. The safety net catches identical
 lines only; a per-event line with a varying payload has to be fixed where it's logged. Two shapes that work, both in
 the tree today:

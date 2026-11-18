@@ -615,7 +615,7 @@ The entry and its key are `crates/cmdr-search/DETAILS.md` § Recent searches; th
 file (persistence to `{app_data_dir}/search-history.json`, quarantine, locking) is `crate::recents`
 (`apps/desktop/src-tauri/src/recents/DETAILS.md`). What lives here:
 
-- **`RECENT_SEARCHES`**, the `RecentsFile<HistoryEntry>` static, and the entry's `RecentEntry` impl (file name, log
+- **`RECENT_SEARCHES`**, the `RecentsFile<HistoryEntry>` static, and the entry's `RecentEntry` impl (filename, log
   target, schema version), plus the on-disk compatibility test.
 - **Cap**: `search.recentSearches.maxCount` (`DEFAULT_MAX_COUNT` = 1000, the crate's), resolved per call in
   `commands/search.rs`. `apply_max_count` trims in-memory on live-apply; `0` clears and short-circuits future adds.

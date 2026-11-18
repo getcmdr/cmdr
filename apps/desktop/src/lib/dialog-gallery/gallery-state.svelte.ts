@@ -31,7 +31,7 @@ export interface GalleryDiskFixture {
   destinationDir: string
   /** A folder name directly inside `root`, for the mkdir conflict state. */
   existingFolderName: string
-  /** A file name directly inside `root`, for the mkfile conflict state. */
+  /** A filename directly inside `root`, for the mkfile conflict state. */
   existingFileName: string
   /** A deep path inside `root`, for the "Go to path" preview. */
   nestedPath: string

@@ -100,7 +100,7 @@ fn validate_per_source_leaves(
     landing_clash(&items, destination, identity).map_err(|clash| match clash {
         LandingClash::NotPlain { leaf, refusal } => WriteOperationError::InvalidName {
             path: destination.join(leaf).display().to_string(),
-            message: format!("Not a plain file name: {refusal:?}").into(),
+            message: format!("Not a plain filename: {refusal:?}").into(),
         },
         LandingClash::SameName { landing } => refused(&landing, NamedLeavesRefusal::SameName),
         LandingClash::OntoASource { landing } => refused(&landing, NamedLeavesRefusal::OntoASource),

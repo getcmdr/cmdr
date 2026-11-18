@@ -13,8 +13,8 @@ Each `manifest.Asset` is one published file. Its roles come from two places:
   build whose `Targets` share it, so the universal macOS build and the pkg carry both macOS SBOMs. The frontend SBOM is
   bound to every build.
 
-File names are data (`File` with `{version}`), never derived from os and arch: Tauri's bundler spells the Intel arch
-`x64` in file names while the rest of the repo says `x86_64`, and SBOM names for a new OS must not collide with macOS's.
+Filenames are data (`File` with `{version}`), never derived from os and arch: Tauri's bundler spells the Intel arch
+`x64` in filenames while the rest of the repo says `x86_64`, and SBOM names for a new OS must not collide with macOS's.
 
 Decision: one flat row per file, not a build with nested files. Why: every consumer asks a per-file question (sign it?
 hash it? mirror it? attest it against what?), and a Windows row is then data alone. `Validate` catches the mistakes a

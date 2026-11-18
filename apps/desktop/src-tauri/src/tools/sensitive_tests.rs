@@ -128,7 +128,7 @@ fn ordinary_paths_with_alarming_names_stay_readable() {
         "/Users/someone/project/.git/HEAD",
         "/Users/someone/.config/fish/config.fish",
         "/Users/someone/mail/inbox.txt",
-        // A `.env` folder is a Python venv: only the file name protects.
+        // A `.env` folder is a Python venv: only the filename protects.
         "/Users/someone/project/.env/lib/site.py",
         "/Users/someone/mysshkeys.txt",
     ] {

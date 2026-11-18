@@ -81,7 +81,7 @@
   "@queryUi.empty.keysTip": {
     "sourceHash": "cbc047b"
   },
-  "queryUi.ai.cloudOff.body": "Cloudová AI je vypnutá. Pro tento režim ji povolte v Nastavení > AI.",
+  "queryUi.ai.cloudOff.body": "{platform, select, linuxGnome {Cloud AI is off. Allow it in Preferences > AI to use this.} linuxKde {Cloud AI is off. Allow it in Configure Cmdr > AI to use this.} other {Cloudová AI je vypnutá. Pro tento režim ji povolte v Nastavení > AI.}}",
   "@queryUi.ai.cloudOff.body": {
     "sourceHash": "9b76c6f"
   },

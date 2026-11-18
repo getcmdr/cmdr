@@ -3,11 +3,11 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "5ea0d62"
   },
-  "stateRecovery.settings.body": "Las estadísticas de uso y los reportes de fallos siguen desactivados hasta que vuelvas a activarlos en Configuración › Actualizaciones y privacidad.",
+  "stateRecovery.settings.body": "{platform, select, linuxGnome {Usage stats and crash reports stay off until you turn them back on in Preferences › Updates & privacy.} linuxKde {Usage stats and crash reports stay off until you turn them back on in Configure Cmdr › Updates & privacy.} other {Las estadísticas de uso y los reportes de fallos siguen desactivados hasta que vuelvas a activarlos en Configuración › Actualizaciones y privacidad.}}",
   "@stateRecovery.settings.body": {
     "sourceHash": "e21d9fd"
   },
-  "stateRecovery.settings.openSettings": "Abrir Configuración",
+  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Abrir Configuración}}",
   "@stateRecovery.settings.openSettings": {
     "sourceHash": "eabd4e6"
   },
@@ -19,11 +19,11 @@
   "@stateRecovery.license.title": {
     "sourceHash": "6352870"
   },
-  "stateRecovery.license.body": "Si ahora Cmdr aparece sin licencia, vuelve a ingresar tu clave de licencia en Configuración › Licencia.",
+  "stateRecovery.license.body": "{platform, select, linuxGnome {If Cmdr shows as unlicensed now, enter your license key again in Preferences › License.} linuxKde {If Cmdr shows as unlicensed now, enter your license key again in Configure Cmdr › License.} other {Si ahora Cmdr aparece sin licencia, vuelve a ingresar tu clave de licencia en Configuración › Licencia.}}",
   "@stateRecovery.license.body": {
     "sourceHash": "b3d5fb8"
   },
-  "stateRecovery.license.openSettings": "Abrir Configuración",
+  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Abrir Configuración}}",
   "@stateRecovery.license.openSettings": {
     "sourceHash": "eabd4e6"
   },

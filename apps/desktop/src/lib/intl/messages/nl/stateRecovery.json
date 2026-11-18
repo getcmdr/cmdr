@@ -3,11 +3,11 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "Gebruiksstatistieken en crashrapporten blijven uit tot je ze weer aanzet in Instellingen › Updates en privacy.",
+  "stateRecovery.settings.body": "{platform, select, linuxGnome {Usage stats and crash reports stay off until you turn them back on in Preferences › Updates & privacy.} linuxKde {Usage stats and crash reports stay off until you turn them back on in Configure Cmdr › Updates & privacy.} other {Gebruiksstatistieken en crashrapporten blijven uit tot je ze weer aanzet in Instellingen › Updates en privacy.}}",
   "@stateRecovery.settings.body": {
     "sourceHash": "20439e1"
   },
-  "stateRecovery.settings.openSettings": "Open Instellingen",
+  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Open Instellingen}}",
   "@stateRecovery.settings.openSettings": {
     "sourceHash": "3f94010"
   },
@@ -19,11 +19,11 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "Heeft Cmdr nu geen licentie meer, voer je licentiesleutel dan opnieuw in via Instellingen › Licentie.",
+  "stateRecovery.license.body": "{platform, select, linuxGnome {If Cmdr shows as unlicensed now, enter your license key again in Preferences › License.} linuxKde {If Cmdr shows as unlicensed now, enter your license key again in Configure Cmdr › License.} other {Heeft Cmdr nu geen licentie meer, voer je licentiesleutel dan opnieuw in via Instellingen › Licentie.}}",
   "@stateRecovery.license.body": {
     "sourceHash": "ea51589"
   },
-  "stateRecovery.license.openSettings": "Open Instellingen",
+  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Open Instellingen}}",
   "@stateRecovery.license.openSettings": {
     "sourceHash": "3f94010"
   },

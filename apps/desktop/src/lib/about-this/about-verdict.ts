@@ -4,7 +4,7 @@
  * Pure: no runes, no IPC. `applyAboutEvent` hands every verdict event here, so the live card and the gallery's
  * fixtures build the same thing.
  *
- * ❗ The verdict is untrusted text: a hostile file name can steer it. It's kept here as a plain string and rendered as
+ * ❗ The verdict is untrusted text: a hostile filename can steer it. It's kept here as a plain string and rendered as
  * a text node, and ❌ nothing else on the card reads it: the rows, the removal line, the actions, and focus are the
  * same with and without it.
  */

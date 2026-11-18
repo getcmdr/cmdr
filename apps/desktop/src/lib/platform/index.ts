@@ -41,6 +41,22 @@ export function getPlatform(): Platform {
   return isPlatform(injected) ? injected : FALLBACK_PLATFORM
 }
 
+/**
+ * The global a `CMDR_MOCK_CONVENTIONS` dev run adds: the mocked desktop's OS, which only the copy
+ * reader follows, so the window speaks the words of the desktop whose conventions it shows.
+ */
+export const COPY_PLATFORM_GLOBAL = '__CMDR_COPY_PLATFORM__'
+
+/**
+ * The OS whose catalog branch this window's copy reads: {@link getPlatform}, unless a dev run
+ * mocks another desktop's conventions. For the message runtime alone; ❌ never for a capability,
+ * a key, or a habit.
+ */
+export function getCopyPlatform(): Platform {
+  const mocked = (globalThis as Record<string, unknown>)[COPY_PLATFORM_GLOBAL]
+  return isPlatform(mocked) ? mocked : getPlatform()
+}
+
 export function isMacOS(): boolean {
   return getPlatform() === 'macos'
 }

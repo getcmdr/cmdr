@@ -449,7 +449,7 @@
   },
   "settings.listing.showTags.label": "Show tags",
   "@settings.listing.showTags.label": {
-    "description": "Label for the toggle that shows colored macOS Finder tag dots next to file names. In Settings > Appearance > Listing.",
+    "description": "Label for the toggle that shows colored macOS Finder tag dots next to filenames. In Settings > Appearance > Listing.",
     "screenshot": "settings-appearance-listing.png"
   },
   "settings.listing.showTags.description": "Show colored dots next to names for files and folders that carry macOS Finder tags.",
@@ -459,7 +459,7 @@
   },
   "settings.listing.showTags.keywords": "tag, tags, label, labels, color, colour, dot, dots",
   "@settings.listing.showTags.keywords": {
-    "description": "Search keywords for the “Show tags” setting (settings.listing.showTags.label) in Settings > Appearance > Listing. What it does: shows colored dots for Finder tags next to file names. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+    "description": "Search keywords for the “Show tags” setting (settings.listing.showTags.label) in Settings > Appearance > Listing. What it does: shows colored dots for Finder tags next to filenames. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
   "settings.listing.foldersFirst.label": "Show folders first",
   "@settings.listing.foldersFirst.label": {
@@ -541,7 +541,7 @@
   },
   "settings.listing.briefColumnWidthMode.keywords": "brief, column, width, max, maximum, limit, pane, shrink-wrap",
   "@settings.listing.briefColumnWidthMode.keywords": {
-    "description": "Search keywords for the “Maximum column width in Brief mode” setting (settings.listing.briefColumnWidthMode.label) in Settings > Appearance > Listing. What it does: caps how wide columns in Brief mode (the multi-column view of names) can grow to fit long file names; below the cap, each column is as wide as its content (“shrink-wrap”). Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance.",
+    "description": "Search keywords for the “Maximum column width in Brief mode” setting (settings.listing.briefColumnWidthMode.label) in Settings > Appearance > Listing. What it does: caps how wide columns in Brief mode (the multi-column view of names) can grow to fit long filenames; below the cap, each column is as wide as its content (“shrink-wrap”). Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance.",
     "screenshot": "settings-appearance-listing.png",
     "screenshotNote": "Settings > Appearance > Listing, pictured here. Your string is one of the choices for how wide columns in the Brief view may grow."
   },
@@ -625,7 +625,7 @@
   },
   "settings.fileOperations.macOnlyFiles.description": "Skips .DS_Store and ._* files when copying, moving, or compressing.",
   "@settings.fileOperations.macOnlyFiles.description": {
-    "description": "Help text under the 'Skip Mac-only hidden files' setting. Keep \".DS_Store\" and \"._*\" exactly as written: they are file names. The three operations (copy, move, compress) are alternatives: the setting applies to each.",
+    "description": "Help text under the 'Skip Mac-only hidden files' setting. Keep \".DS_Store\" and \"._*\" exactly as written: they are filenames. The three operations (copy, move, compress) are alternatives: the setting applies to each.",
     "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
   "settings.fileOperations.macOnlyFiles.opt.include": "Include",
@@ -1928,7 +1928,7 @@
     "description": "Label for the usage-stats opt-in toggle. In Settings > Updates & privacy. \"stats\" = statistics.",
     "screenshot": "settings-updates.png"
   },
-  "settings.analytics.enabled.description": "{platform, select, windows {Please turn this on to help us see which features matter during the open beta.\nIt’s not tied to your name or email but a random id.\nCmdr never sends file names, paths, search terms, or prompts.\nWhen off, Cmdr doesn’t send any stats.} other {Please enable this to help us see which features matter during the open beta.\nIt’s not tied to your name or email but a random id.\nCmdr never sends file names, paths, search terms, or prompts.\nWhen off, Cmdr doesn’t send any stats.}}",
+  "settings.analytics.enabled.description": "{platform, select, windows {Please turn this on to help us see which features matter during the open beta.\nIt’s not tied to your name or email but a random id.\nCmdr never sends filenames, paths, search terms, or prompts.\nWhen off, Cmdr doesn’t send any stats.} other {Please enable this to help us see which features matter during the open beta.\nIt’s not tied to your name or email but a random id.\nCmdr never sends filenames, paths, search terms, or prompts.\nWhen off, Cmdr doesn’t send any stats.}}",
   "@settings.analytics.enabled.description": {
     "description": "Help text for the usage-stats toggle, written in a reassuring privacy-first voice. It asks the user to leave the toggle on, then says what the stats are tied to and what is never sent. \"open beta\" = the public testing phase. \"random id\" = a randomly generated identifier stored on the user's computer, not linked to their identity; keep it plain rather than reaching for a technical term like \"pseudonymous\". \"Cmdr\" is the product name; keep it. \"prompts\" = AI prompts. The screenshot shows the macOS wording.",
     "screenshot": "settings-updates.png"
@@ -1956,7 +1956,7 @@
     "description": "Label for the crash-report opt-in toggle. In Settings > Updates & privacy.",
     "screenshot": "settings-updates.png"
   },
-  "settings.updates.crashReports.description": "{platform, select, macos {Automatically send a report when Cmdr crashes or runs into a problem in the background. Includes app version, macOS version, and where in the code the problem happened. Never file names or personal data.} windows {Automatically send a report when Cmdr crashes or runs into a problem in the background. Includes app version, Windows version, and where in the code the problem happened. Never file names or personal data.} other {Automatically send a report when Cmdr crashes or runs into a problem in the background. Includes app version, Linux distribution and version, and where in the code the problem happened. Never file names or personal data.}}",
+  "settings.updates.crashReports.description": "{platform, select, macos {Automatically send a report when Cmdr crashes or runs into a problem in the background. Includes app version, macOS version, and where in the code the problem happened. Never filenames or personal data.} windows {Automatically send a report when Cmdr crashes or runs into a problem in the background. Includes app version, Windows version, and where in the code the problem happened. Never filenames or personal data.} other {Automatically send a report when Cmdr crashes or runs into a problem in the background. Includes app version, Linux distribution and version, and where in the code the problem happened. Never filenames or personal data.}}",
   "@settings.updates.crashReports.description": {
     "description": "Help text for the crash-reports toggle, in a privacy-reassuring voice. The setting covers BOTH cases that send a report: Cmdr going down with a crash, and a problem in a background task the app kept running through. So the first sentence must not scope it to the app quitting, the same split as crashReporter.dialog.body.ended vs .keptRunning. \"a report\" rather than \"a crash report\" for the same reason. \"Cmdr\" is the product name, and \"macOS\" and \"Windows\" are brand names; keep them. The Linux branch names the distribution and its version. The screenshot shows the macOS wording.",
     "screenshot": "settings-updates.png"
@@ -2358,7 +2358,7 @@
     "description": "Advanced-section label for the toggle that writes every AI model request and response to a local folder for debugging. \"AI model\" refers to the LLM (large language model) the user's AI features talk to.",
     "screenshot": "settings-advanced.png"
   },
-  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Save every AI request and response to a local folder (llm-logs) for debugging. These files stay on your Mac and include the file names and paths Cmdr sends to your provider.} windows {Save every AI request and response to a local folder (llm-logs) for debugging. These files stay on your PC and include the file names and paths Cmdr sends to your provider.} other {Save every AI request and response to a local folder (llm-logs) for debugging. These files stay on your computer and include the file names and paths Cmdr sends to your provider.}}",
+  "settings.advanced.logLlmCalls.description": "{platform, select, macos {Save every AI request and response to a local folder (llm-logs) for debugging. These files stay on your Mac and include the filenames and paths Cmdr sends to your provider.} windows {Save every AI request and response to a local folder (llm-logs) for debugging. These files stay on your PC and include the filenames and paths Cmdr sends to your provider.} other {Save every AI request and response to a local folder (llm-logs) for debugging. These files stay on your computer and include the filenames and paths Cmdr sends to your provider.}}",
   "@settings.advanced.logLlmCalls.description": {
     "description": "Help text for the log-AI-model-calls toggle (advanced). \"llm-logs\" is a literal folder name, keep it exactly. \"Cmdr\" is the app name, keep it. \"provider\" = the AI provider the user chose (OpenAI, Anthropic, etc.). The point is that logging is local-only and never transmitted. The screenshot shows the macOS wording.",
     "screenshot": "settings-advanced.png"
@@ -2967,18 +2967,18 @@
     "description": "Heading of the provider/model group in Ask Cmdr settings. Sentence case.",
     "screenshot": "settings-ai-ask-cmdr.png"
   },
-  "settings.askCmdr.provider.shared": "Cmdr uses the AI provider and key you set up in Settings › AI ({provider}).",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr uses the AI provider and key you set up in Settings › AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "description": "Line telling the user this section shares the provider configured in the AI settings section. provider is the current provider's name (Off, Cloud AI, or Local LLM). The › is a right-pointing angle separating the settings path.",
+    "description": "Line telling the user this section shares the provider configured in the AI settings section. provider is the current provider's name (Off, Cloud AI, or Local LLM). The › is a right-pointing angle separating the settings path. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "placeholders": {
       "provider": "The current AI provider label: Off, Cloud AI, or Local LLM."
     },
     "screenshot": "settings-ai-ask-cmdr.png",
     "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
-  "settings.askCmdr.provider.off": "Turn on an AI provider in Settings › AI to start chatting.",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Turn on an AI provider in Settings › AI to start chatting.}}",
   "@settings.askCmdr.provider.off": {
-    "description": "Hint shown in Ask Cmdr settings when no AI provider is enabled, pointing the user to the AI settings section. The › is a right-pointing angle separating the settings path.",
+    "description": "Hint shown in Ask Cmdr settings when no AI provider is enabled, pointing the user to the AI settings section. The › is a right-pointing angle separating the settings path. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "settings-ai-ask-cmdr.png"
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr model",
@@ -3563,9 +3563,9 @@
   "@settings.sidebar.clearSearch": {
     "description": "aria-label for the button that clears the settings-sidebar search box."
   },
-  "settings.sidebar.sections": "Settings sections",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {Settings sections}}",
   "@settings.sidebar.sections": {
-    "description": "aria-label for the settings-sidebar navigation region listing all sections (screen-reader only).",
+    "description": "aria-label for the settings-sidebar navigation region listing all sections (screen-reader only). The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "settings-appearance.png"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {No settings match} one {{countText} section matches} other {{countText} sections match}}",
@@ -3878,7 +3878,7 @@
     "description": "Label for the switch that turns the local security event log on or off. The log is a small file on the person's computer listing security-relevant changes and refusals. In Settings > Updates & privacy.",
     "screenshot": "settings-updates.png"
   },
-  "settings.securityLog.enabled.description": "{platform, select, macos {Keep a small file on this Mac that notes security-relevant changes and refusals, like cloud AI consent, an installed update, or an app turned away from the MCP server. It holds no file names, contents, or passwords, and it never leaves your Mac.} windows {Keep a small file on this PC that notes security-relevant changes and refusals, like cloud AI consent, an installed update, or an app turned away from the MCP server. It holds no file names, contents, or passwords, and it never leaves your PC.} other {Keep a small file on this computer that notes security-relevant changes and refusals, like cloud AI consent, an installed update, or an app turned away from the MCP server. It holds no file names, contents, or passwords, and it never leaves your computer.}}",
+  "settings.securityLog.enabled.description": "{platform, select, macos {Keep a small file on this Mac that notes security-relevant changes and refusals, like cloud AI consent, an installed update, or an app turned away from the MCP server. It holds no filenames, contents, or passwords, and it never leaves your Mac.} windows {Keep a small file on this PC that notes security-relevant changes and refusals, like cloud AI consent, an installed update, or an app turned away from the MCP server. It holds no filenames, contents, or passwords, and it never leaves your PC.} other {Keep a small file on this computer that notes security-relevant changes and refusals, like cloud AI consent, an installed update, or an app turned away from the MCP server. It holds no filenames, contents, or passwords, and it never leaves your computer.}}",
   "@settings.securityLog.enabled.description": {
     "description": "Help text under the 'Record security events' switch. 'MCP server' is a technical feature name (Model Context Protocol): keep it untranslated. 'turned away' = refused access. Reassures that the file stays local and holds nothing private. The screenshot shows the macOS wording.",
     "screenshot": "settings-updates.png"
@@ -4161,9 +4161,9 @@
       "folder": "the folder's absolute path, like /Users/test_user_10/Photos"
     }
   },
-  "settings.window.title": "Settings",
+  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Settings}}",
   "@settings.window.title": {
-    "description": "Name of Cmdr's own Settings window: the operating-system window title (shown in the window list and the Window menu) and the window's screen-reader-only page heading. A NOUN, the name of the window. This is the word the rest of the app uses whenever it points the user at Cmdr's preferences (\"Edit shortcuts in Settings\"), so match whatever an app's own preferences window is called in your language. It is NOT the operating system's own settings app (System Settings on macOS, Settings on Windows), which has its own localized name.",
+    "description": "Name of Cmdr's own Settings window: the operating-system window title (shown in the window list and the Window menu) and the window's screen-reader-only page heading. A NOUN, the name of the window. This is the word the rest of the app uses whenever it points the user at Cmdr's preferences (\"Edit shortcuts in Settings\"), so match whatever an app's own preferences window is called in your language. It is NOT the operating system's own settings app (System Settings on macOS, Settings on Windows), which has its own localized name. The `linuxGnome` branch is GNOME’s name for an app’s preferences window (“Preferences”, as GNOME Files titles its own); the `linuxKde` branch follows KDE apps, whose settings window is titled “Configure” plus the app’s name (Dolphin’s dialog), here with Cmdr’s own “–” separator. Every key that points the user here follows these branches, and the menu row (menu.app.settings) starts with the same word.",
     "screenshot": "settings-appearance.png"
   },
   "settings.window.loading": "Loading settings…",
@@ -4434,18 +4434,18 @@
   "@settings.dataWipe.partialMessage": {
     "description": "Line introducing the list of what's left: folder and file paths the user can delete in their file manager, or saved passwords in the system's password store (the Keychain on macOS)."
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {One item in Keychain Access named “{itemName}”} other {{countText} items in Keychain Access named “{itemName}”}}} windows {{count, plural, one {One item in Credential Manager named “{itemName}”} other {{countText} items in Credential Manager named “{itemName}”}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, one {One item in your keyring named “{itemName}”} other {{countText} items in your keyring named “{itemName}”}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {One item in Keychain Access named “{itemName}”} other {{countText} items in Keychain Access named “{itemName}”}}} windows {{count, plural, one {One item in Credential Manager named “{itemName}”} other {{countText} items in Credential Manager named “{itemName}”}}} linuxKde {{count, plural, one {One item in KDE Wallet named “{itemName}”} other {{countText} items in KDE Wallet named “{itemName}”}}} other {{count, plural, one {One item in your keyring named “{itemName}”} other {{countText} items in your keyring named “{itemName}”}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "description": "Item in the list of what's left: saved passwords or keys in the system's password store that couldn't be deleted. Each branch names its OS's store: Keychain Access on macOS (its name in your language's macOS), Credential Manager on Windows (Windows' name in your language), and the keyring on Linux. \"Item\" here is one saved entry, not a file: use the word that store uses for one entry in your language (Keychain Access calls it a \"keychain item\"). The `linuxKde` branch names KDE’s password store, KWallet: a name, which KDE keeps as is in every language.",
+    "description": "Item in the list of what's left: saved passwords or keys in the system's password store that couldn't be deleted. Each branch names its OS's store: Keychain Access on macOS (its name in your language's macOS), Credential Manager on Windows (Windows' name in your language), and the keyring on Linux. \"Item\" here is one saved entry, not a file: use the word that store uses for one entry in your language (Keychain Access calls it a \"keychain item\"). The `linuxKde` branch names KDE’s password store, KDE Wallet: use the name KDE’s own translation gives it in your language.",
     "placeholders": {
       "count": "how many items are left, a number used only to choose the plural form",
       "countText": "the same number, already formatted for the locale",
       "itemName": "the name the items appear under in Keychain Access (for example “Cmdr”); never translated"
     }
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Any items in Keychain Access named “{itemName}”} windows {Any items in Credential Manager named “{itemName}”} linuxKde {Any items in KWallet named “{itemName}”} other {Any items in your keyring named “{itemName}”}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Any items in Keychain Access named “{itemName}”} windows {Any items in Credential Manager named “{itemName}”} linuxKde {Any items in KDE Wallet named “{itemName}”} other {Any items in your keyring named “{itemName}”}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "description": "Item in the list of what's left when Cmdr couldn't check its keychain items: the user should look for them in the system's password store. Each branch names its OS's store: Keychain Access on macOS (its name in your language's macOS), Credential Manager on Windows (Windows' name in your language), and the keyring on Linux. \"Items\" are saved entries, not files: use the word that store uses for one entry in your language (Keychain Access calls it a \"keychain item\"). The `linuxKde` branch names KDE’s password store, KWallet: a name, which KDE keeps as is in every language.",
+    "description": "Item in the list of what's left when Cmdr couldn't check its keychain items: the user should look for them in the system's password store. Each branch names its OS's store: Keychain Access on macOS (its name in your language's macOS), Credential Manager on Windows (Windows' name in your language), and the keyring on Linux. \"Items\" are saved entries, not files: use the word that store uses for one entry in your language (Keychain Access calls it a \"keychain item\"). The `linuxKde` branch names KDE’s password store, KDE Wallet: use the name KDE’s own translation gives it in your language.",
     "placeholders": {
       "itemName": "the name the items appear under in Keychain Access (for example “Cmdr”); never translated"
     }

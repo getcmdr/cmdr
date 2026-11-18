@@ -15,7 +15,7 @@
   "@operationLog.dialog.empty": {
     "sourceHash": "2dea414"
   },
-  "operationLog.dialog.recordingOff": "L’historique des opérations n’enregistre rien en ce moment : les copies, déplacements, renommages et suppressions effectués depuis n’apparaissent pas ici et ne peuvent pas être annulés. Réactivez-le dans les Réglages pour les enregistrer à nouveau.",
+  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Preferences to record them again.} linuxKde {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Configure Cmdr to record them again.} other {L’historique des opérations n’enregistre rien en ce moment : les copies, déplacements, renommages et suppressions effectués depuis n’apparaissent pas ici et ne peuvent pas être annulés. Réactivez-le dans les Réglages pour les enregistrer à nouveau.}}",
   "@operationLog.dialog.recordingOff": {
     "sourceHash": "0519736"
   },

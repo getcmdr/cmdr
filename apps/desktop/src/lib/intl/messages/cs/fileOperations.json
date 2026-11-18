@@ -429,7 +429,7 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "Příště Cmdr začne s touto volbou a v Nastavení ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Cmdr starts on this choice next time, and you can change it in Preferences. If it overwrites files, you’ll see a warning first.} linuxKde {Cmdr starts on this choice next time, and you can change it in Configure Cmdr. If it overwrites files, you’ll see a warning first.} other {Příště Cmdr začne s touto volbou a v Nastavení ji můžete změnit. Pokud přepisuje soubory, nejdřív uvidíte upozornění.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
     "sourceHash": "c26d762"
   },

@@ -546,7 +546,7 @@ pub(super) fn should_emit_synthetic_diff(host: &EngineHost, volume_id: Option<&s
 /// already holds the path (the watcher got there first) gets the fresher stat as
 /// an upsert, tags carried forward.
 ///
-/// `new_path`'s own file name, never the name the user typed: the paste retry
+/// `new_path`'s own filename, never the name the user typed: the paste retry
 /// loop may have picked `pasted (N)`. `None` is the local filesystem (`root`);
 /// this only runs for local-FS volumes (`should_emit_synthetic_diff`).
 ///
@@ -559,7 +559,7 @@ pub(super) fn patch_listings_after_create(
     parent_path: &Path,
 ) {
     let Some(name) = new_path.file_name() else {
-        log::warn!("Created entry has no file name: {}", LogPrivate::path(new_path));
+        log::warn!("Created entry has no filename: {}", LogPrivate::path(new_path));
         return;
     };
     crate::local_disk::patch_listings_after(

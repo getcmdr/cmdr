@@ -45,7 +45,7 @@ const RECORD_NAME: &str = ".cmdr-open-with-pull.json";
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 struct PullRecord {
-    /// The copy's file name inside the folder.
+    /// The copy's filename inside the folder.
     file_name: String,
     size: u64,
     modified: FileTime,
@@ -84,7 +84,7 @@ impl FileTime {
 pub(super) fn record_pull(copy: &Path) {
     let result = (|| -> Result<(), String> {
         let folder = copy.parent().ok_or("no launch folder")?;
-        let file_name = copy.file_name().ok_or("no file name")?.to_string_lossy().into_owned();
+        let file_name = copy.file_name().ok_or("no filename")?.to_string_lossy().into_owned();
         if file_name == RECORD_NAME {
             return Err("the pulled file has the record's own name".to_string());
         }

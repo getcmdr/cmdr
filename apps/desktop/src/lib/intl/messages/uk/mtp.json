@@ -3,7 +3,7 @@
   "@mtp.connectedToast.title": {
     "sourceHash": "562319d"
   },
-  "mtp.connectedToast.body": "{platform, select, macos {Cmdr призупинив системний демон камери macOS (ptpcamerad), щоб отримати доступ до цього пристрою. Щоб використовувати пристрій в іншій програмі, вимкніть підтримку MTP у Параметрах.} windows {} other {Щоб використовувати цей пристрій в іншій програмі, вимкніть підтримку MTP у Параметрах.}}",
+  "mtp.connectedToast.body": "{platform, select, macos {Cmdr призупинив системний демон камери macOS (ptpcamerad), щоб отримати доступ до цього пристрою. Щоб використовувати пристрій в іншій програмі, вимкніть підтримку MTP у Параметрах.} windows {} linuxGnome {To use this device in another app, disable MTP support in preferences.} other {Щоб використовувати цей пристрій в іншій програмі, вимкніть підтримку MTP у Параметрах.}}",
   "@mtp.connectedToast.body": {
     "sourceHash": "74349d8",
     "sameAsSourceJustification": "Empty on purpose: Windows shares the device with File Explorer, so the toast has no body line there."

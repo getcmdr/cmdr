@@ -601,7 +601,7 @@ fn zip_entry_times_fall_back_outside_the_dos_range() {
     assert_eq!(in_range.second(), 28);
 }
 
-/// The saved bundle's file name is the UTC time to the second.
+/// The saved bundle's filename is the UTC time to the second.
 #[test]
 fn a_saved_bundle_is_named_after_the_utc_second() {
     let at = Timestamp::new(1_800_000_000, 999_000_000).expect("in range");

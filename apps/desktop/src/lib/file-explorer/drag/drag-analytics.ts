@@ -6,7 +6,7 @@
  * `file_transfer_completed` can't say, because by the time an operation settles,
  * nothing remembers how it was started.
  *
- * PII-free by construction: nothing here can see a path or a file name
+ * PII-free by construction: nothing here can see a path or a filename
  * (`apps/desktop/src-tauri/src/analytics/CLAUDE.md`).
  */
 

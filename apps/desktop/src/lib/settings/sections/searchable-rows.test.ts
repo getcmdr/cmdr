@@ -42,7 +42,7 @@ const settingIdsAreRowFree: NoRowPrefixedSettingId = true
 /** Vitest's root is `apps/desktop` (see `vitest.config.ts`). */
 const SECTIONS_DIR = resolve(process.cwd(), 'src/lib/settings/sections')
 
-/** Every `*.rows.ts` beside a section or card component, keyed by its file name. */
+/** Every `*.rows.ts` beside a section or card component, keyed by its filename. */
 const rowModules = import.meta.glob<Record<string, unknown>>('./*.rows.ts', { eager: true })
 
 /** `{ file: 'DriveIndexingSection', rows: [...] }` for each declaration file. */

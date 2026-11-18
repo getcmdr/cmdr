@@ -55,7 +55,7 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "Aktiviere unter Einstellungen > KI einen Anbieter, um die KI-Suche zu nutzen.",
+  "ai.translateError.off.body": "{platform, select, linuxGnome {Turn on a provider in Preferences > AI to use AI search.} linuxKde {Turn on a provider in Configure Cmdr > AI to use AI search.} other {Aktiviere unter Einstellungen > KI einen Anbieter, um die KI-Suche zu nutzen.}}",
   "@ai.translateError.off.body": {
     "sourceHash": "d8d6368"
   },
@@ -247,7 +247,7 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "Schließe die Einrichtung deines Anbieters unter Einstellungen > KI ab und versuche es dann erneut.",
+  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Finish your provider setup in Preferences > AI, then try again.} linuxKde {Finish your provider setup in Configure Cmdr > AI, then try again.} other {Schließe die Einrichtung deines Anbieters unter Einstellungen > KI ab und versuche es dann erneut.}}",
   "@ai.translateError.notConfigured.body": {
     "sourceHash": "65133a8"
   },
@@ -255,7 +255,7 @@
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "Erlaube sie unter Einstellungen > KI und versuche es dann erneut.",
+  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Allow it in Preferences > AI, then try again.} linuxKde {Allow it in Configure Cmdr > AI, then try again.} other {Erlaube sie unter Einstellungen > KI und versuche es dann erneut.}}",
   "@ai.translateError.noCloudConsent.body": {
     "sourceHash": "fde3eb5"
   },
@@ -263,7 +263,7 @@
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "Prüfe deinen Schlüssel unter Einstellungen > KI – er ist möglicherweise falsch oder widerrufen.",
+  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Check your key in Preferences > AI - it might be wrong or revoked.} linuxKde {Check your key in Configure Cmdr > AI - it might be wrong or revoked.} other {Prüfe deinen Schlüssel unter Einstellungen > KI – er ist möglicherweise falsch oder widerrufen.}}",
   "@ai.translateError.authFailed.body": {
     "sourceHash": "2159d5e"
   },
@@ -295,7 +295,7 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "Dein Modell hat sein Token-Budget möglicherweise aufgebraucht, bevor es geantwortet hat. Probiere unter Einstellungen > KI ein schnelleres Modell wie gpt-4.1-mini.",
+  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Preferences > AI.} linuxKde {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Configure Cmdr > AI.} other {Dein Modell hat sein Token-Budget möglicherweise aufgebraucht, bevor es geantwortet hat. Probiere unter Einstellungen > KI ein schnelleres Modell wie gpt-4.1-mini.}}",
   "@ai.translateError.emptyResponse.body": {
     "sourceHash": "d74db0d"
   },
@@ -311,7 +311,7 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "Versuche es erneut oder wähle unter Einstellungen > KI ein anderes Modell.",
+  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Try again, or pick a different model in Preferences > AI.} linuxKde {Try again, or pick a different model in Configure Cmdr > AI.} other {Versuche es erneut oder wähle unter Einstellungen > KI ein anderes Modell.}}",
   "@ai.translateError.parseError.body": {
     "sourceHash": "c299ec6"
   },
@@ -319,7 +319,7 @@
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "Wähle unter Einstellungen > KI einen Anbieter.",
+  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Pick a provider in Preferences > AI.} linuxKde {Pick a provider in Configure Cmdr > AI.} other {Wähle unter Einstellungen > KI einen Anbieter.}}",
   "@ai.translateError.unknownProvider.body": {
     "sourceHash": "7042a75"
   },

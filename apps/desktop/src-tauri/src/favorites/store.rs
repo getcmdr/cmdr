@@ -53,7 +53,7 @@ pub struct Favorite {
     pub id: String,
     /// Absolute filesystem path the favorite points at.
     pub path: String,
-    /// Display label. Defaults to the path's file name on add; the user can override via rename.
+    /// Display label. Defaults to the path's filename on add; the user can override via rename.
     pub name: String,
     /// Optional unmodified A–Z key that opens this favorite while its menu is visible.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -573,7 +573,7 @@ pub fn list_cached() -> Option<Vec<Favorite>> {
 
 /// Adds a favorite for `path` on `volume` (the add gate's answer), deduping by the same folder on
 /// the same volume (a re-add moves the existing entry to the end). When `name` is `None`, the label
-/// defaults to the path's file name.
+/// defaults to the path's filename.
 pub fn add(path: &str, name: Option<String>, volume: FavoriteVolume) {
     mutate_and_persist(StoreChange::Gesture(FavoriteAction::Added), |store| {
         // allowed-discarded-outcome: nobody consumes the new id; both callers answer with `()`.

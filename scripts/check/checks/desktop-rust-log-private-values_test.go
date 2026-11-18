@@ -333,7 +333,7 @@ pub struct WriteFailure {
 }
 `
 
-// The shape that shipped a file name holding ", " (cmdr-reports#103): a derived
+// The shape that shipped a filename holding ", " (cmdr-reports#103): a derived
 // `{:?}` of a `WriteOperationError` field, declared in another file.
 func TestLogPrivateValues_FlagsAPathCarryingErrorPrintedPlainly(t *testing.T) {
 	_, err := runLogPrivateOn(t, map[string]string{

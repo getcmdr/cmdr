@@ -64,7 +64,7 @@ that matters:
    `link.md` is a lexically perfect relative path, so nothing above this catches it.
 4. **`canonicalize` of the PARENT, then a containment re-check.** ⚠️ The parent, never the file: `canonicalize` fails on
    a path that doesn't exist yet, so canonicalizing the target would refuse every first write. The parent is created
-   (only after step 3 clears it), canonicalized, and checked to sit under the canonicalized root; the file name is a
+   (only after step 3 clears it), canonicalized, and checked to sit under the canonicalized root; the filename is a
    single validated `Normal` component joined onto the result.
 
 Every escape attempt has a test in `tests.rs`, and each asserts both the typed refusal AND that nothing landed outside.
@@ -114,7 +114,7 @@ whole of what it once knew.
 ## The injection surface
 
 The write path is reachable from text the agent read. `image_facts` returns the full stored OCR of the user's images
-(the widest derived-content egress the agent has), and file names come off disk. So a crafted filename or a picture of a
+(the widest derived-content egress the agent has), and filenames come off disk. So a crafted filename or a picture of a
 sentence can get the agent to write a line into `AGENTS.md`, and that line then reaches every later thread, including
 turns that call `propose_suggestions`. It survives restarts and thread deletion.
 

@@ -1,4 +1,4 @@
-//! Greek to Latin, for file names: ELOT 743 (the Greek standard, close to
+//! Greek to Latin, for filenames: ELOT 743 (the Greek standard, close to
 //! ISO 843 type 2), the transliteration Greek passports and road signs use.
 //!
 //! Letter by letter with the few digraphs that read differently together:

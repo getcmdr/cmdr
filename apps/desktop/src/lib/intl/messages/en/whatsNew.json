@@ -55,8 +55,8 @@
     "description": "Button that closes the What's new dialog.",
     "screenshot": "whats-new.png"
   },
-  "whatsNew.optOutToast": "{platform, select, windows {Got it, no more update notes. Turn them back on anytime in Settings > Updates & privacy.} other {Got it, no more update notes. Re-enable them anytime in Settings > Updates & privacy.}}",
+  "whatsNew.optOutToast": "{platform, select, windows {Got it, no more update notes. Turn them back on anytime in Settings > Updates & privacy.} linuxGnome {Got it, no more update notes. Re-enable them anytime in Preferences > Updates & privacy.} linuxKde {Got it, no more update notes. Re-enable them anytime in Configure Cmdr > Updates & privacy.} other {Got it, no more update notes. Re-enable them anytime in Settings > Updates & privacy.}}",
   "@whatsNew.optOutToast": {
-    "description": "Confirmation toast after the user opts out of the post-update changelog popup, noting where to turn it back on. Settings > Updates & privacy is a navigation path; keep the menu/section names as shown."
+    "description": "Confirmation toast after the user opts out of the post-update changelog popup, noting where to turn it back on. Settings > Updates & privacy is a navigation path; keep the menu/section names as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   }
 }

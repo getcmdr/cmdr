@@ -38,7 +38,7 @@ use super::types::{
     RowRole, SearchCoverage, SearchCoverageReason, SkipReason,
 };
 
-/// The durable journal's file name in the app data dir. Single (not per-volume):
+/// The durable journal's filename in the app data dir. Single (not per-volume):
 /// a cross-volume operation is one operation with one identity.
 pub(crate) const OPERATION_LOG_DB_FILE: &str = "operation-log.db";
 

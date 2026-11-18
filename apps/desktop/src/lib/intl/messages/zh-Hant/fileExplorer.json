@@ -339,7 +339,7 @@
   "@fileExplorer.functionKeyBar.terminalLabel": {
     "sourceHash": "e0926fd"
   },
-  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {功能鍵列現已隱藏，可隨時在<settingsLink>設定</settingsLink>中重新開啟。} other {功能鍵列現已隱藏，可隨時在<settingsLink>設定</settingsLink>中重新開啟。}}",
+  "fileExplorer.functionKeyBar.hiddenToast": "{platform, select, windows {功能鍵列現已隱藏，可隨時在<settingsLink>設定</settingsLink>中重新開啟。} linuxGnome {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Preferences</settingsLink>.} linuxKde {Function key bar is now hidden. Re-enable it any time later in <settingsLink>Configure Cmdr</settingsLink>.} other {功能鍵列現已隱藏，可隨時在<settingsLink>設定</settingsLink>中重新開啟。}}",
   "@fileExplorer.functionKeyBar.hiddenToast": {
     "sourceHash": "cb00b6d"
   },
@@ -767,11 +767,11 @@
   "@fileExplorer.edit.notOnThisMacWithoutKey": {
     "sourceHash": "4572115"
   },
-  "fileExplorer.edit.hint": "已在 {app} 裡開啟這個檔案。想下次換個編輯器？在「設定」裡選一個。",
+  "fileExplorer.edit.hint": "{platform, select, linuxGnome {Opened in {app}. Want a different editor next time? Pick one in Preferences.} linuxKde {Opened in {app}. Want a different editor next time? Pick one in Configure Cmdr.} other {已在 {app} 裡開啟這個檔案。想下次換個編輯器？在「設定」裡選一個。}}",
   "@fileExplorer.edit.hint": {
     "sourceHash": "3632f06"
   },
-  "fileExplorer.edit.hintUnnamed": "已在你的預設文字編輯器裡開啟這個檔案。想下次換一個？在「設定」裡選一個。",
+  "fileExplorer.edit.hintUnnamed": "{platform, select, linuxGnome {Opened in your default text editor. Want a different one next time? Pick one in Preferences.} linuxKde {Opened in your default text editor. Want a different one next time? Pick one in Configure Cmdr.} other {已在你的預設文字編輯器裡開啟這個檔案。想下次換一個？在「設定」裡選一個。}}",
   "@fileExplorer.edit.hintUnnamed": {
     "sourceHash": "6216471"
   },
@@ -779,7 +779,7 @@
   "@fileExplorer.edit.dismiss": {
     "sourceHash": "48845bf"
   },
-  "fileExplorer.edit.openSettings": "開啟設定",
+  "fileExplorer.edit.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {開啟設定}}",
   "@fileExplorer.edit.openSettings": {
     "sourceHash": "ca381c1"
   },
@@ -835,7 +835,7 @@
   "@fileExplorer.clipboard.pastedAsFile": {
     "sourceHash": "d61d4b5"
   },
-  "fileExplorer.clipboard.pastedAsFileSettings": "設定",
+  "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, linuxGnome {Preferences} linuxKde {Configure Cmdr} other {設定}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
     "sourceHash": "74a883a"
   },
@@ -1833,11 +1833,11 @@
   "@fileExplorer.navigation.favoriteUnreachable.driveUnplugged": {
     "sourceHash": "4b44a30"
   },
-  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "透過 MTP 存取手機和相機的功能已在「設定」裡關閉。",
+  "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, linuxGnome {Phone and camera access over MTP is turned off in Preferences.} linuxKde {Phone and camera access over MTP is turned off in Configure Cmdr.} other {透過 MTP 存取手機和相機的功能已在「設定」裡關閉。}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
     "sourceHash": "53be5f6"
   },
-  "fileExplorer.navigation.favoriteUnreachable.adbOff": "存取 Android 手機的功能已在「設定」裡關閉。",
+  "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, linuxGnome {Android phone access is turned off in Preferences.} linuxKde {Android phone access is turned off in Configure Cmdr.} other {存取 Android 手機的功能已在「設定」裡關閉。}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
     "sourceHash": "4fba610"
   },
@@ -1849,7 +1849,7 @@
   "@fileExplorer.navigation.favoriteUnreachable.notFound": {
     "sourceHash": "0fd2e21"
   },
-  "fileExplorer.navigation.favoriteUnreachable.openSettings": "開啟設定",
+  "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {開啟設定}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
     "sourceHash": "ca381c1"
   },
@@ -2209,7 +2209,7 @@
   "@fileExplorer.navigation.driveIndex.refusedNotIndexable": {
     "sourceHash": "4ef8487"
   },
-  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "磁碟機索引已在設定中關閉，所以 {name} 仍然沒有建立索引。可以在「索引 > 磁碟機索引」中開啟。",
+  "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} linuxKde {Drive indexing is off in Configure Cmdr, so {name} stays unindexed. Turn it on under “Indexing > Drive indexing”.} other {磁碟機索引已在設定中關閉，所以 {name} 仍然沒有建立索引。可以在「索引 > 磁碟機索引」中開啟。}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
     "sourceHash": "0253edd"
   },
@@ -2217,11 +2217,11 @@
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
     "sourceHash": "99f19f9"
   },
-  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "磁碟機索引已在設定中關閉，所以目前沒有任何磁碟機在建立索引。",
+  "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so no drive is indexed right now.} linuxKde {Drive indexing is off in Configure Cmdr, so no drive is indexed right now.} other {磁碟機索引已在設定中關閉，所以目前沒有任何磁碟機在建立索引。}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
     "sourceHash": "6ebf6f4"
   },
-  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "磁碟機索引已在設定中關閉。可以在「索引 > 磁碟機索引」中開啟，這個磁碟機會從上次的進度繼續。",
+  "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, linuxGnome {Drive indexing is off in Preferences. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} linuxKde {Drive indexing is off in Configure Cmdr. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} other {磁碟機索引已在設定中關閉。可以在「索引 > 磁碟機索引」中開啟，這個磁碟機會從上次的進度繼續。}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
     "sourceHash": "26e250c"
   },
@@ -2329,7 +2329,7 @@
   "@fileExplorer.quickFilter.intro.escape": {
     "sourceHash": "af749ad"
   },
-  "fileExplorer.quickFilter.intro.jumpNote": "想把游標移到符合的名稱上，又不隱藏任何東西嗎？可以在這裡或「設定」中切換到「跳至」。",
+  "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, linuxGnome {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Preferences.} linuxKde {Prefer moving the cursor to a matching name without hiding anything? Switch to Jump, here or in Configure Cmdr.} other {想把游標移到符合的名稱上，又不隱藏任何東西嗎？可以在這裡或「設定」中切換到「跳至」。}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
     "sourceHash": "ac6d3c8"
   },
@@ -2397,7 +2397,7 @@
   "@fileExplorer.smbLinkConsent.warning": {
     "sourceHash": "295e81e"
   },
-  "fileExplorer.smbLinkConsent.note": "Cmdr 會記住你對這兩個伺服器的回答。你可以在「設定」的「伺服器」中忘記它。",
+  "fileExplorer.smbLinkConsent.note": "{platform, select, linuxGnome {Cmdr remembers your answer for these two servers. You can forget it in Preferences, under Servers.} linuxKde {Cmdr remembers your answer for these two servers. You can forget it in Configure Cmdr, under Servers.} other {Cmdr 會記住你對這兩個伺服器的回答。你可以在「設定」的「伺服器」中忘記它。}}",
   "@fileExplorer.smbLinkConsent.note": {
     "sourceHash": "3f9615a"
   },

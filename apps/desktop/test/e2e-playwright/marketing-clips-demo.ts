@@ -31,7 +31,7 @@ import { fileURLToPath } from 'node:url'
 export const DEMO_ROOT = process.env.CMDR_CLIPS_DEMO_ROOT ?? '/Users/Shared/Studio'
 
 /** Proves a tree at `DEMO_ROOT` is ours to delete. Hidden, so no listing shows it. */
-export const MARKER = '.cmdr-clips-demo' // allowed-stale-selector: a file name, not a selector
+export const MARKER = '.cmdr-clips-demo' // allowed-stale-selector: a filename, not a selector
 
 /** The folders the clips reach for by name. */
 export const DEMO = {

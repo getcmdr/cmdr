@@ -47,7 +47,7 @@ The must-know rules; the rest of this file elaborates them.
     never `位置` (file-system only).
   - archive (zip) → `压缩文件`; a chat's archive → `存档`; guest → `客人`; native (macOS's own) → `内建`.
 - **Typography** (`mechanics.json`): quotes `“…”`, nested `‘…’` (macOS zh-CN quotes with `“…”` only; `「…」` is
-  Traditional); no apostrophe. Quote UI names, file names, and runtime names in prose with `“…”`, hugging the Han text.
+  Traditional); no apostrophe. Quote UI names, filenames, and runtime names in prose with `“…”`, hugging the Han text.
   Full-width `，。：；？！（）` in Chinese text, never the ASCII ones; one ellipsis form, `…` (U+2026); paired verbs hug
   their slash (`固定/取消固定服务器`), while a spaced `/` is only for numeric fractions. A settings path in a sentence
   is quoted whole, separator mirroring the English: `在“设置 > 更新与隐私”中重新开启`. A menu in prose: `“帮助”菜单`.

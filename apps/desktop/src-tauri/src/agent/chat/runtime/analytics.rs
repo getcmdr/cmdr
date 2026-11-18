@@ -8,7 +8,7 @@
 //!
 //! ❌ Every property is categorical: an origin token, an outcome token, a typed failure
 //! kind, the provider tag and preset id, a public model id or `other`, coarse count buckets,
-//! and a bool. Never a prompt, a path, a file name, a model reply, or anything a tool read.
+//! and a bool. Never a prompt, a path, a filename, a model reply, or anything a tool read.
 
 use serde_json::{Value, json};
 

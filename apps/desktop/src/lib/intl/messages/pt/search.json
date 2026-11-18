@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "Ative a indexação de imagens para este disco de rede nos Ajustes para buscar o texto dentro das fotos dele.",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Ative a indexação de imagens para este disco de rede nos Ajustes para buscar o texto dentro das fotos dele.}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "ccf901b"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "A indexação de disco está desativada nos Ajustes, então nada é indexado. Ative-a em Indexação > Indexação de disco.",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {A indexação de disco está desativada nos Ajustes, então nada é indexado. Ative-a em Indexação > Indexação de disco.}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "abfe24b"
   },

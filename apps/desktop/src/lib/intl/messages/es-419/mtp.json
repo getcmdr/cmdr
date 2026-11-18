@@ -1,5 +1,5 @@
 {
-  "mtp.connectedToast.body": "{platform, select, macos {Cmdr pausó el daemon de cámara de macOS (ptpcamerad) para acceder a este dispositivo. Para usarlo en otra app, desactiva la compatibilidad con MTP en la configuración.} windows {} other {Para usar este dispositivo en otra app, desactiva la compatibilidad con MTP en la configuración.}}",
+  "mtp.connectedToast.body": "{platform, select, macos {Cmdr pausó el daemon de cámara de macOS (ptpcamerad) para acceder a este dispositivo. Para usarlo en otra app, desactiva la compatibilidad con MTP en la configuración.} windows {} linuxGnome {To use this device in another app, disable MTP support in preferences.} other {To use this device in another app, disable MTP support in settings.}}",
   "@mtp.connectedToast.body": {
     "sourceHash": "c130247"
   },

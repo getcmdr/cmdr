@@ -1,7 +1,7 @@
 //! The image-qualification predicate: decide, per index entry, whether it is an
 //! image `media_index` should enrich — and if not, WHY it's skipped.
 //!
-//! Pure over a directory's file names (no I/O, no index), so it's directly
+//! Pure over a directory's filenames (no I/O, no index), so it's directly
 //! unit-testable. The scheduler groups the walked index by parent directory and
 //! runs [`qualify_dir`] per group, because two of the decisions are sibling-aware:
 //!
@@ -101,7 +101,7 @@ const RAW_EXTS: &[&str] = &["cr2", "cr3", "nef", "arw", "dng", "raf", "orf", "rw
 /// `.mov`).
 const VIDEO_EXTS: &[&str] = &["mov", "mp4", "m4v", "avi", "mkv", "webm", "hevc"];
 
-/// The lowercased extension of a file name, or `None` when it has none.
+/// The lowercased extension of a filename, or `None` when it has none.
 fn ext_of(name: &str) -> Option<String> {
     std::path::Path::new(name)
         .extension()

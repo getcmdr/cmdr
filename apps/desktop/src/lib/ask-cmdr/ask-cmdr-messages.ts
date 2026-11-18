@@ -160,7 +160,7 @@ export type RenameUndoState =
        * folding it into `skipped` would understate what was missed. */
       refusedBatches: number
       /** WHICH reason left which file alone, merged across the job's batches: one group
-       * per reason, with its complete count and one example file name. Lets the line
+       * per reason, with its complete count and one example filename. Lets the line
        * name a file rather than a reason class. Empty when the backend recorded no
        * reasons, and then the line falls back to naming the class — the count is
        * reported either way. */

@@ -319,7 +319,7 @@ below therefore rest on corroboration.
 
 ### Metadata
 
-- File name plus all file info limited to 7,000 bytes of encoded header in most cases; 2,048 bytes of file info for
+- Filename plus all file info limited to 7,000 bytes of encoded header in most cases; 2,048 bytes of file info for
   SSE-C-enabled buckets (the excerpt's qualifier was cut). Source:
   https://www.backblaze.com/docs/cloud-storage-file-information
 

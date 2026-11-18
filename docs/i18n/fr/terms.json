@@ -1412,7 +1412,7 @@
     "chosen": "récupérer",
     "confidence": "high",
     "decision": "La visionneuse récupère d'abord le fichier",
-    "forms": "status noun Récupération…; title follows Finder’s progress moule (Préparation de la copie de « ^1 »), with the file name in « »",
+    "forms": "status noun Récupération…; title follows Finder’s progress moule (Préparation de la copie de « ^1 »), with the filename in « »",
     "sources": "macOS Réglages Système Localizable.json (Fetching… → Récupération…)"
   },
   "history": {

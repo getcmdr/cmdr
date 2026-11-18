@@ -15,7 +15,7 @@
   "@operationLog.dialog.empty": {
     "sourceHash": "2dea414"
   },
-  "operationLog.dialog.recordingOff": "Das Vorgangsprotokoll zeichnet gerade nicht auf. Was du jetzt kopierst, bewegst, umbenennst oder löschst, erscheint deshalb nicht hier und lässt sich nicht rückgängig machen. Schalte es in den Einstellungen wieder ein, damit es wieder aufgezeichnet wird.",
+  "operationLog.dialog.recordingOff": "{platform, select, linuxGnome {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Preferences to record them again.} linuxKde {The operation log isn’t recording, so new copies, moves, renames, and deletes don’t show up here and can’t be undone. Turn it back on in Configure Cmdr to record them again.} other {Das Vorgangsprotokoll zeichnet gerade nicht auf. Was du jetzt kopierst, bewegst, umbenennst oder löschst, erscheint deshalb nicht hier und lässt sich nicht rückgängig machen. Schalte es in den Einstellungen wieder ein, damit es wieder aufgezeichnet wird.}}",
   "@operationLog.dialog.recordingOff": {
     "sourceHash": "0519736"
   },

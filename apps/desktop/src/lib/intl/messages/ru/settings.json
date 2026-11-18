@@ -2504,11 +2504,11 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "Cmdr использует поставщика ИИ и ключ, настроенные в разделе «Настройки › ИИ» ({provider}).",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr использует поставщика ИИ и ключ, настроенные в разделе «Настройки › ИИ» ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
     "sourceHash": "9442b09"
   },
-  "settings.askCmdr.provider.off": "Включите поставщика ИИ в разделе «Настройки › ИИ», чтобы начать общение.",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Включите поставщика ИИ в разделе «Настройки › ИИ», чтобы начать общение.}}",
   "@settings.askCmdr.provider.off": {
     "sourceHash": "5cc1481"
   },
@@ -2954,7 +2954,7 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "Разделы настроек",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {Разделы настроек}}",
   "@settings.sidebar.sections": {
     "sourceHash": "e26d51d"
   },
@@ -3425,7 +3425,7 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "Настройки",
+  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Настройки}}",
   "@settings.window.title": {
     "sourceHash": "74a883a"
   },

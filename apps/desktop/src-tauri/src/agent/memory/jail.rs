@@ -1,7 +1,7 @@
 //! The jail: the one function both memory tools call before either touches the disk.
 //!
 //! The agent picks the path, and the agent's idea of a good path can come from text it read —
-//! a file name, or a sentence photographed in one of the user's images. So this is the place
+//! a filename, or a sentence photographed in one of the user's images. So this is the place
 //! that assumes the caller is hostile, and every rule here has its own test in `tests.rs`.
 
 use std::path::{Component, Path, PathBuf};
@@ -22,7 +22,7 @@ pub const MEMORY_EXTENSION: &str = "md";
 /// ⚠️ **The parent, never the file.** `canonicalize` fails on a path that doesn't exist yet,
 /// so canonicalizing the target would refuse every first write. The parent is created (inside
 /// the jail, only after the symlink walk clears it), canonicalized, and re-checked for
-/// containment; the file name is a single validated `Normal` component joined onto it.
+/// containment; the filename is a single validated `Normal` component joined onto it.
 pub(super) fn resolve(root: &Path, requested: &str) -> Result<PathBuf, MemoryRefusal> {
     let relative = lexical_markdown(requested)?;
 

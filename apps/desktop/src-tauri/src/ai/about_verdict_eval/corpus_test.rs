@@ -2,7 +2,7 @@
 //! types and derivations (`plan`, `download_fact`, `real_type`, `FolderDigest::of`,
 //! `AppData::of`), so the projection the model reads is the one a person's card sends.
 //!
-//! ❌ No real file names, hosts, or tokens from anyone's disk: every name, host, team
+//! ❌ No real filenames, hosts, or tokens from anyone's disk: every name, host, team
 //! id, and person here is made up, and the home folder is `/Users/jane`.
 //!
 //! The cards themselves live in `cards_*_test.rs`, one file per group; this file holds

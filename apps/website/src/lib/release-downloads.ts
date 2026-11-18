@@ -1,7 +1,7 @@
 /**
  * The release's downloads, read from the update manifest (`public/latest.json`). The release pipeline writes a
  * `downloads` list into it from the release asset manifest (`scripts/release-assets/manifest/manifest.go`): one entry
- * per file people download, with its OS, arch, kind, file name, and size. Manifests from before that list carry only
+ * per file people download, with its OS, arch, kind, filename, and size. Manifests from before that list carry only
  * `dmgSizes`, so this falls back to the three macOS DMGs those always named.
  *
  * No `import.meta.env` here: `src/plugins/download-dropdown.ts` runs in Astro's config loader, which doesn't have the
@@ -68,7 +68,7 @@ export function macDmgSizes(manifest: UpdateManifest): { aarch64: string; x86_64
   }
 }
 
-/** The macOS DMG's file name for an arch (`aarch64`, `x86_64`, `universal`). */
+/** The macOS DMG's filename for an arch (`aarch64`, `x86_64`, `universal`). */
 export function macDmgFile(manifest: UpdateManifest, arch: string): string {
   const fromManifest = downloadsByArch(manifest, 'macos', 'dmg').get(arch)?.file
   return fromManifest ?? `Cmdr_${manifest.version}_${arch === 'x86_64' ? 'x64' : arch}.dmg`

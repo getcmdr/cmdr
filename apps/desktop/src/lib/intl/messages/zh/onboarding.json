@@ -307,7 +307,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "在你允许之前，云端 AI 会一直保持关闭。之后可以在“设置 > AI”中允许。",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {Cloud AI stays off until you allow it. You can do that later in Preferences > AI.} linuxKde {Cloud AI stays off until you allow it. You can do that later in Configure Cmdr > AI.} other {在你允许之前，云端 AI 会一直保持关闭。之后可以在“设置 > AI”中允许。}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "82d27b6"
   },
@@ -315,7 +315,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "Cmdr 不用 AI 也能完整运行。你以后可以在“设置”中开启它。",
+  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr works fully without AI. You can turn it on later in Preferences.} linuxKde {Cmdr works fully without AI. You can turn it on later in Configure Cmdr.} other {Cmdr 不用 AI 也能完整运行。你以后可以在“设置”中开启它。}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "3f261be"
   },
@@ -391,11 +391,11 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "请注意，它默认是开启的，以鼓励大家在测试期间给我发送数据。\n你随时可以在“设置”中更改这一项。",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Preferences.} linuxKde {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Configure Cmdr.} other {请注意，它默认是开启的，以鼓励大家在测试期间给我发送数据。\n你随时可以在“设置”中更改这一项。}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "06ce4eb"
   },
-  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {崩溃报告同样已开启：如果 Cmdr 意外退出，它会发送应用版本、你的 macOS 版本，以及代码停下的位置。\n绝不包含你的文件。\n这两项你随时可以在设置中关闭。} windows {崩溃报告同样已开启：如果 Cmdr 意外退出，它会发送应用版本、你的 Windows 版本，以及代码停下的位置。\n绝不包含你的文件。\n这两项你随时可以在设置中关闭。} other {崩溃报告同样已开启：如果 Cmdr 意外退出，它会发送应用版本、你的 Linux 发行版及其版本，以及代码停下的位置。\n绝不包含你的文件。\n这两项你随时可以在设置中关闭。}}",
+  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {崩溃报告同样已开启：如果 Cmdr 意外退出，它会发送应用版本、你的 macOS 版本，以及代码停下的位置。\n绝不包含你的文件。\n这两项你随时可以在设置中关闭。} windows {崩溃报告同样已开启：如果 Cmdr 意外退出，它会发送应用版本、你的 Windows 版本，以及代码停下的位置。\n绝不包含你的文件。\n这两项你随时可以在设置中关闭。} linuxGnome {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Preferences whenever you like.} linuxKde {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Configure Cmdr whenever you like.} other {崩溃报告同样已开启：如果 Cmdr 意外退出，它会发送应用版本、你的 Linux 发行版及其版本，以及代码停下的位置。\n绝不包含你的文件。\n这两项你随时可以在设置中关闭。}}",
   "@onboarding.stepBeta.crashReportsNote": {
     "sourceHash": "55b9634"
   },
@@ -403,7 +403,7 @@
   "@onboarding.stepBeta.analyticsManaged": {
     "sourceHash": "49484ee"
   },
-  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {崩溃报告已开启：如果 Cmdr 意外退出，它会发送应用版本、你的 macOS 版本，以及代码停下的位置。\n绝不包含你的文件。\n这一项你随时可以在设置中关闭。} windows {崩溃报告已开启：如果 Cmdr 意外退出，它会发送应用版本、你的 Windows 版本，以及代码停下的位置。\n绝不包含你的文件。\n这一项你随时可以在设置中关闭。} other {崩溃报告已开启：如果 Cmdr 意外退出，它会发送应用版本、你的 Linux 发行版及其版本，以及代码停下的位置。\n绝不包含你的文件。\n这一项你随时可以在设置中关闭。}}",
+  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {崩溃报告已开启：如果 Cmdr 意外退出，它会发送应用版本、你的 macOS 版本，以及代码停下的位置。\n绝不包含你的文件。\n这一项你随时可以在设置中关闭。} windows {崩溃报告已开启：如果 Cmdr 意外退出，它会发送应用版本、你的 Windows 版本，以及代码停下的位置。\n绝不包含你的文件。\n这一项你随时可以在设置中关闭。} linuxGnome {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Preferences whenever you like.} linuxKde {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Configure Cmdr whenever you like.} other {崩溃报告已开启：如果 Cmdr 意外退出，它会发送应用版本、你的 Linux 发行版及其版本，以及代码停下的位置。\n绝不包含你的文件。\n这一项你随时可以在设置中关闭。}}",
   "@onboarding.stepBeta.crashReportsNoteAlone": {
     "sourceHash": "27d4b1b"
   },
@@ -428,7 +428,7 @@
   "@onboarding.stepBeta.signup.rejected": {
     "sourceHash": "5a1bca7"
   },
-  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {刚才连不上注册服务器，所以你还没进到列表里。你的地址已经保存在这台 Mac 上：过一会儿再点一次“保存”，也可以随时在“设置 › 更新与隐私”中再试。} windows {刚才连不上注册服务器，所以你还没进到列表里。你的地址已经保存在这台电脑上：过一会儿再点一次“保存”，也可以随时在“设置 › 更新与隐私”中再试。} other {刚才连不上注册服务器，所以你还没进到列表里。你的地址已经保存在这台电脑上：过一会儿再点一次“保存”，也可以随时在“设置 › 更新与隐私”中再试。}}",
+  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {刚才连不上注册服务器，所以你还没进到列表里。你的地址已经保存在这台 Mac 上：过一会儿再点一次“保存”，也可以随时在“设置 › 更新与隐私”中再试。} windows {刚才连不上注册服务器，所以你还没进到列表里。你的地址已经保存在这台电脑上：过一会儿再点一次“保存”，也可以随时在“设置 › 更新与隐私”中再试。} linuxGnome {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Preferences › Updates & privacy.} linuxKde {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Configure Cmdr › Updates & privacy.} other {刚才连不上注册服务器，所以你还没进到列表里。你的地址已经保存在这台电脑上：过一会儿再点一次“保存”，也可以随时在“设置 › 更新与隐私”中再试。}}",
   "@onboarding.stepBeta.signup.unreachable": {
     "sourceHash": "6032194"
   },
@@ -468,7 +468,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "你随时可以在“设置”中更改这一项。",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {You can change this any time in Preferences.} linuxKde {You can change this any time in Configure Cmdr.} other {你随时可以在“设置”中更改这一项。}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "895d675"
   },

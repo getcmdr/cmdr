@@ -33,7 +33,7 @@ Favorites used to be a hardcoded `Vec<LocationInfo>` of four folders, computed f
   `LocationInfo.id = "fav-<id>"`.
 - `path`: the folder as an app path, spelled the way it was when last seen live: an OS path for a
   mounted volume, a `scheme://` path for a server or a phone.
-- `name`: the display label. Defaults to the path's file name on add; the user can override via
+- `name`: the display label. Defaults to the path's filename on add; the user can override via
   rename.
 - `shortcut`: an optional uppercase ASCII letter. Omitted for unassigned and older entries.
 - `volume`: which volume the folder lives on (`FavoriteVolume { id, root, name }`), as it was when
@@ -92,7 +92,7 @@ All in `store.rs`, unit-tested without disk or an `AppHandle`:
   `/Volumes/testshare-1` is one favorite, and a legacy entry meets its own re-add. A re-add moves the
   existing entry to the end, keeps its id (applying a `name` override if given), and takes the add's
   `path` and `volume` (the root and name may have moved). A fresh add appends with a UUID id and a
-  label defaulting to the path's file name. Move-to-end (not move-to-top) because favorites are a
+  label defaulting to the path's filename. Move-to-end (not move-to-top) because favorites are a
   curated, ordered list, not a recency stack: a re-add shouldn't reshuffle the user's deliberate
   ordering more than necessary.
 - `claim_volumes(claims)`: fills the `volume` of each named entry ❗ only where it's still `None`

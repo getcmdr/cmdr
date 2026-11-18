@@ -47,7 +47,13 @@ const MAX_PATHS: usize = 200;
 const MAX_TEXT_CHARS: usize = 2_000;
 
 /// Honest note when image indexing is off entirely.
-const OFF_NOTE: &str = "Image indexing is off, so there's nothing stored about these images. The user can turn it on under Settings › AI › Image search.";
+/// Names the settings window the way this system titles it (`crate::intl::settings_window_name_en`).
+fn off_note() -> String {
+    format!(
+        "Image indexing is off, so there's nothing stored about these images. The user can turn it on under {} › AI › Image search.",
+        crate::intl::settings_window_name_en()
+    )
+}
 
 // ── Result DTOs ─────────────────────────────────────────────────────────────
 
@@ -255,9 +261,7 @@ pub async fn execute_image_facts<R: Runtime>(app: &AppHandle<R>, params: &Value)
     // Feature off ⇒ nothing is stored. Voice it honestly rather than a wall of
     // "not indexed" rows the model would read as "these images are empty".
     if !cmdr_index::media_index::gate::is_enabled() {
-        return shape(&ImageFactsResult::ImageIndexingOff {
-            note: OFF_NOTE.to_string(),
-        });
+        return shape(&ImageFactsResult::ImageIndexingOff { note: off_note() });
     }
 
     let data_dir = crate::config::resolved_app_data_dir(app).map_err(ToolError::internal)?;

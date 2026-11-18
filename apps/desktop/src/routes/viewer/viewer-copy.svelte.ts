@@ -187,7 +187,7 @@ type ViewerCopy = ReturnType<typeof createViewerCopy>
 interface CopyOrchestratorDeps {
   /** The lower-level read/write copy composable (`createViewerCopy`). */
   copy: ViewerCopy
-  /** The open file's name, used to build the "save as" default file name. */
+  /** The open file's name, used to build the "save as" default filename. */
   getFileName: () => string
 }
 

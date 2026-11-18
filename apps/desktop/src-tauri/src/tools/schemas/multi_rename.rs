@@ -16,7 +16,7 @@ pub fn multi_rename_schema() -> Value {
             "names": {
                 "type": "array",
                 "items": { "type": "string" },
-                "description": "File names in the pane's folder, in rename order (what [C] counts by). Defaults to the selection, else the cursor item."
+                "description": "Filenames in the pane's folder, in rename order (what [C] counts by). Defaults to the selection, else the cursor item."
             },
             "nameMask": {
                 "type": "string",

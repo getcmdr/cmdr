@@ -22,7 +22,7 @@
     import { shortcutAsText } from '#lib/shortcuts/reactive-shortcuts.svelte.js'
 
     interface Props {
-        /** File name shown in the flexible middle of the bar. */
+        /** Filename shown in the flexible middle of the bar. */
         fileName: string
         /** Full path of the open file. The title ellipsizes, so hovering it spells this out. */
         filePath: string

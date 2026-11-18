@@ -2645,7 +2645,7 @@
   "@errors.listing.smbEncryptionRequired.explanation": {
     "sourceHash": "5eeef51"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "Bạn có thể thử:\n- Đăng nhập bằng một tài khoản: kết nối với tư cách khách không mã hóa được\n- Bật mã hóa SMB trên máy chủ\n- Tắt “Luôn yêu cầu mã hóa SMB” trong Cài đặt, nếu bạn không cần",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Preferences, if you don’t need it} linuxKde {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Configure Cmdr, if you don’t need it} other {Bạn có thể thử:\n- Đăng nhập bằng một tài khoản: kết nối với tư cách khách không mã hóa được\n- Bật mã hóa SMB trên máy chủ\n- Tắt “Luôn yêu cầu mã hóa SMB” trong Cài đặt, nếu bạn không cần}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
     "sourceHash": "f16274b"
   },
@@ -2669,7 +2669,7 @@
   "@errors.write.smbEncryptionRequired.message": {
     "sourceHash": "ec53744"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "Hãy đăng nhập bằng một tài khoản thay vì với tư cách khách, hoặc bật mã hóa SMB trên máy chủ. Bạn cũng có thể tắt “Luôn yêu cầu mã hóa SMB” trong Cài đặt.",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Preferences.} linuxKde {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Configure Cmdr.} other {Hãy đăng nhập bằng một tài khoản thay vì với tư cách khách, hoặc bật mã hóa SMB trên máy chủ. Bạn cũng có thể tắt “Luôn yêu cầu mã hóa SMB” trong Cài đặt.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
     "sourceHash": "20a90d4"
   },

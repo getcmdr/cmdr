@@ -1,4 +1,4 @@
-//! The drive search: Cmdr's ⌘F over one volume's file names.
+//! The drive search: Cmdr's ⌘F over one volume's filenames.
 //!
 //! The query model, the one matcher and exclusion set, ranking, and the in-memory
 //! arena a search scans, fed through a narrow seam ([`seam`]): a host hands over a

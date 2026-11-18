@@ -192,7 +192,7 @@ and the reader that later drops those children (`index.rs`):
 - **Guard ruled out:** No encoding check before the rewrite; `non_utf8_name_is_decoded_best_effort`
   (`read/archive_test.rs:412`) only covers browsing. The Info-ZIP Unicode Path extra field (`0x7075`) rides along when
   present, but archives from these tools usually don't carry one.
-- **Impact:** Every non-ASCII file name in the archive is corrupted. The bytes are recoverable in principle (CP437 is a
+- **Impact:** Every non-ASCII filename in the archive is corrupted. The bytes are recoverable in principle (CP437 is a
   byte bijection, so mojibake → CP437 → original code page works), but only with a hand-written script.
 - **Suggested fix:** Plan and write by RAW name bytes (`file.name_raw()`, and a raw-bytes rename through
   `raw_copy_file_rename_internal`'s equivalent or `raw_copy_file` for unchanged entries), and match deletes/renames

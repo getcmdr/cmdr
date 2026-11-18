@@ -1,5 +1,5 @@
 // Package manifest is the release asset manifest: one row per file a release publishes, naming
-// its OS, arch, kind, file name, and (for an update payload) its `latest.json` platform key.
+// its OS, arch, kind, filename, and (for an update payload) its `latest.json` platform key.
 // Everything that handles release files derives from it: the release pipeline's plan (`guard`),
 // `latest.json`, the checksums, the update-archive vetting, the SBOMs and their attestations
 // (`release-pipeline.yml`, through `scripts/release-assets.sh`), and the Go release tools
@@ -23,7 +23,7 @@ const (
 )
 
 // Arch is the CPU a file runs on, in the repo's spelling (`x86_64`, never Tauri's `x64`, which
-// only file names use). `universal` is a macOS fat binary holding both.
+// only filenames use). `universal` is a macOS fat binary holding both.
 type Arch string
 
 const (
@@ -70,7 +70,7 @@ type Asset struct {
 	Arch Arch
 	Kind Kind
 	// File is the published name with `{version}` for the app version. Tauri's bundler spells the
-	// Intel arch `x64` in file names, so these do too.
+	// Intel arch `x64` in filenames, so these do too.
 	File string
 	// UpdaterKey is the file's `latest.json` platform key (`darwin-aarch64`, later
 	// `windows-x86_64` and `linux-x86_64`): set only on an update payload, which then carries a

@@ -5,7 +5,7 @@
 //! prose). That wraps the value between its kind's opener and [`CLOSER`], so the error reporter
 //! hashes exactly that span instead of guessing where a name ends. The markers are Unicode
 //! noncharacters from [`RESERVED`]: invisible in most viewers, never typed by a person, and still
-//! valid scalar values, so a real file name CAN hold one. The reader of a marked line (the app's
+//! valid scalar values, so a real filename CAN hold one. The reader of a marked line (the app's
 //! `redact` module) treats every char of the range as structure and fails closed on anything it
 //! can't pair. The table here and [`markers`] are the single source of truth both sides read;
 //! nothing else lists the code points.
@@ -66,7 +66,7 @@ impl<'a> LogPrivate<'a> {
         Self::new(LogKind::Name, value)
     }
 
-    /// A file name.
+    /// A filename.
     pub fn file_name<V: AsRef<OsStr> + ?Sized>(value: &'a V) -> Self {
         Self::new(LogKind::FileName, value)
     }
@@ -195,7 +195,7 @@ pub enum LogKind {
     DirPath,
     /// A file or folder name the site doesn't know the kind of.
     Name,
-    /// A file name.
+    /// A filename.
     FileName,
     /// A folder name.
     DirName,

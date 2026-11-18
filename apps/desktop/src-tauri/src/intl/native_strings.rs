@@ -89,7 +89,7 @@ pub(crate) enum NativeOs {
 }
 
 /// `text` as `os` reads it. Pure, so one test covers every system on any host.
-fn pick(text: NativeText, os: NativeOs) -> &'static str {
+pub(super) fn pick(text: NativeText, os: NativeOs) -> &'static str {
     match text {
         NativeText::All(value) => value,
         NativeText::PerOs {
@@ -224,7 +224,7 @@ fn lookup(locale: &str, key: &str) -> Option<&'static str> {
 }
 
 /// The whole value for `key` in `locale`'s table, every OS's text, or `None`.
-fn lookup_text(locale: &str, key: &str) -> Option<NativeText> {
+pub(super) fn lookup_text(locale: &str, key: &str) -> Option<NativeText> {
     let entries = NATIVE_STRINGS
         .iter()
         .find(|candidate| candidate.tag.eq_ignore_ascii_case(locale))?
@@ -296,7 +296,7 @@ pub(crate) fn lock_active_locale_for_tests() -> std::sync::MutexGuard<'static, (
 
 #[cfg(test)]
 #[path = "native_strings_per_os_test.rs"]
-mod per_os_test;
+pub(super) mod per_os_test;
 
 #[cfg(test)]
 mod tests {

@@ -2645,7 +2645,7 @@
   "@errors.listing.smbEncryptionRequired.explanation": {
     "sourceHash": "5eeef51"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "Dit kun je proberen:\n- Log in met een account: gastverbindingen kunnen niet worden versleuteld\n- Zet SMB-versleuteling aan op de server\n- Zet ‘Altijd SMB-versleuteling vereisen’ uit in Instellingen, als je het niet nodig hebt",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Preferences, if you don’t need it} linuxKde {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Configure Cmdr, if you don’t need it} other {Dit kun je proberen:\n- Log in met een account: gastverbindingen kunnen niet worden versleuteld\n- Zet SMB-versleuteling aan op de server\n- Zet ‘Altijd SMB-versleuteling vereisen’ uit in Instellingen, als je het niet nodig hebt}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
     "sourceHash": "f16274b"
   },
@@ -2669,7 +2669,7 @@
   "@errors.write.smbEncryptionRequired.message": {
     "sourceHash": "ec53744"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "Log in met een account in plaats van als gast, of zet SMB-versleuteling aan op de server. Je kunt ‘Altijd SMB-versleuteling vereisen’ ook uitzetten in Instellingen.",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Preferences.} linuxKde {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Configure Cmdr.} other {Log in met een account in plaats van als gast, of zet SMB-versleuteling aan op de server. Je kunt ‘Altijd SMB-versleuteling vereisen’ ook uitzetten in Instellingen.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
     "sourceHash": "20a90d4"
   },

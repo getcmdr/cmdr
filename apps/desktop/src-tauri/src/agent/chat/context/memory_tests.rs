@@ -2,7 +2,7 @@
 //!
 //! ⚠️ The second half is the security suite of the whole memory feature. The agent writes these
 //! files itself, and its write path is reachable from text it read: `image_facts` hands it the
-//! full stored OCR of the user's pictures, and file names come off disk. So a crafted filename
+//! full stored OCR of the user's pictures, and filenames come off disk. So a crafted filename
 //! or a photographed sentence is a route to putting words in front of every later thread,
 //! including turns that call `propose_suggestions`, surviving restarts and thread deletion.
 

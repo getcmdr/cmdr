@@ -13,7 +13,7 @@ use tauri::ipc::Channel;
 use crate::ai::llm_log::LlmLogContext;
 use cmdr_listing::ListingId;
 
-/// Maximum number of file names to include in the prompt context.
+/// Maximum number of filenames to include in the prompt context.
 const MAX_CONTEXT_ENTRIES: usize = 100;
 /// Maximum number of suggestions to return.
 const MAX_SUGGESTIONS: usize = 5;
@@ -21,7 +21,7 @@ const MAX_SUGGESTIONS: usize = 5;
 /// System prompt for the suggestion stream.
 const SUGGESTION_SYSTEM_PROMPT: &str = "You are a pattern-matching assistant. Carefully observe the style, language, and formatting of existing items, then generate new items that match exactly. Output only what is requested, no formatting or explanation.";
 
-/// Gets file names from the listing cache (up to MAX_CONTEXT_ENTRIES).
+/// Gets filenames from the listing cache (up to MAX_CONTEXT_ENTRIES).
 fn get_file_names(listing_id: &str, include_hidden: bool) -> Vec<String> {
     let mut names = Vec::new();
     let listings = crate::listing_host::listings();

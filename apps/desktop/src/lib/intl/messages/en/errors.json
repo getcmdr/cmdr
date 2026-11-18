@@ -1036,7 +1036,7 @@
   "errors.listing.invalidName.explanation": "`{path}` has a name the destination can’t store, so it refused the name without looking for the file.",
   "errors.listing.invalidName.suggestion": "Here’s what to try:\n- Rename the item to something shorter and plainer\n- Some destinations refuse reserved names like `CON`, `NUL`, or `LPT1`\n- A very long name can go over the destination’s own limit, even when every character in it is fine",
   "@errors.listing.invalidName.title": {
-    "description": "Title of the listing error panel when the destination (a local disk, a phone, or a network server) rejects a file name outright and never looks the file up. Plain text.",
+    "description": "Title of the listing error panel when the destination (a local disk, a phone, or a network server) rejects a filename outright and never looks the file up. Plain text.",
     "screenshot": "error-message-example.png",
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
@@ -2074,12 +2074,12 @@
   "errors.write.serverConnectionLost.message.dropped.archiveEdit": "The connection to {volumeName} dropped while Cmdr was updating {fileName}.",
   "errors.write.serverConnectionLost.suggestion.archiveEdit": "Check that the server is on and your network is up, then try again.",
   "@errors.write.serverConnectionLost.message.gaveUp.compress": {
-    "description": "Body of the compress error dialog when Cmdr waited a while for a dropped network server to come back, then stopped creating a ZIP archive on it. Plain text. The literals {duration} (an already-formatted length of time, like \"15m\"), {volumeName} (the server's name), and {fileName} (the archive's file name, like \"photos.zip\") are do-not-translate placeholders. The connection is the cause; the archive is only context.",
+    "description": "Body of the compress error dialog when Cmdr waited a while for a dropped network server to come back, then stopped creating a ZIP archive on it. Plain text. The literals {duration} (an already-formatted length of time, like \"15m\"), {volumeName} (the server's name), and {fileName} (the archive's filename, like \"photos.zip\") are do-not-translate placeholders. The connection is the cause; the archive is only context.",
     "screenshot": "error-message-example.png",
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
   "@errors.write.serverConnectionLost.message.dropped.compress": {
-    "description": "Body of the compress error dialog when the connection to a network server dropped while Cmdr was creating a ZIP archive on it, and Cmdr couldn't wait for it this time (the server needs a sign-in, or the connection kept dropping). Plain text. The literals {volumeName} (the server's name) and {fileName} (the archive's file name) are do-not-translate placeholders.",
+    "description": "Body of the compress error dialog when the connection to a network server dropped while Cmdr was creating a ZIP archive on it, and Cmdr couldn't wait for it this time (the server needs a sign-in, or the connection kept dropping). Plain text. The literals {volumeName} (the server's name) and {fileName} (the archive's filename) are do-not-translate placeholders.",
     "screenshot": "error-message-example.png",
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
@@ -2089,12 +2089,12 @@
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
   "@errors.write.serverConnectionLost.message.gaveUp.archiveEdit": {
-    "description": "Body of the error dialog when Cmdr waited a while for a dropped network server to come back, then stopped changing a ZIP archive stored on it (adding, removing, or renaming files inside it). Plain text. The literals {duration} (an already-formatted length of time, like \"15m\"), {volumeName} (the server's name), and {fileName} (the archive's file name, like \"photos.zip\") are do-not-translate placeholders. \"Updating\" means changing what's inside the archive.",
+    "description": "Body of the error dialog when Cmdr waited a while for a dropped network server to come back, then stopped changing a ZIP archive stored on it (adding, removing, or renaming files inside it). Plain text. The literals {duration} (an already-formatted length of time, like \"15m\"), {volumeName} (the server's name), and {fileName} (the archive's filename, like \"photos.zip\") are do-not-translate placeholders. \"Updating\" means changing what's inside the archive.",
     "screenshot": "error-message-example.png",
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
   "@errors.write.serverConnectionLost.message.dropped.archiveEdit": {
-    "description": "Body of the error dialog when the connection to a network server dropped while Cmdr was changing a ZIP archive stored on it, and Cmdr couldn't wait for it this time (the server needs a sign-in, or the connection kept dropping). Plain text. The literals {volumeName} (the server's name) and {fileName} (the archive's file name) are do-not-translate placeholders.",
+    "description": "Body of the error dialog when the connection to a network server dropped while Cmdr was changing a ZIP archive stored on it, and Cmdr couldn't wait for it this time (the server needs a sign-in, or the connection kept dropping). Plain text. The literals {volumeName} (the server's name) and {fileName} (the archive's filename) are do-not-translate placeholders.",
     "screenshot": "error-message-example.png",
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
@@ -2235,15 +2235,15 @@
   "errors.write.nameTooLong.message": "The filename is too long for the destination.",
   "errors.write.nameTooLong.suggestion": "Try renaming the file to use a shorter name.",
   "@errors.write.nameTooLong.title": {
-    "description": "Title of the copy/move error dialog when the file name exceeds the destination's length limit. Plain text.",
+    "description": "Title of the copy/move error dialog when the filename exceeds the destination's length limit. Plain text.",
     "screenshot": "transfer-error-name_too_long.png"
   },
   "@errors.write.nameTooLong.message": {
-    "description": "Body of the copy/move error dialog when the file name is too long for the destination. Plain text.",
+    "description": "Body of the copy/move error dialog when the filename is too long for the destination. Plain text.",
     "screenshot": "transfer-error-name_too_long.png"
   },
   "@errors.write.nameTooLong.suggestion": {
-    "description": "Recovery suggestion when the file name is too long for the destination. Plain text.",
+    "description": "Recovery suggestion when the filename is too long for the destination. Plain text.",
     "screenshot": "transfer-error-name_too_long.png"
   },
   "errors.write.archiveEntryNameRefused.title": "This name can’t go in a zip",
@@ -2414,7 +2414,7 @@
     "screenshot": "transfer-error-invalid_name.png"
   },
   "@errors.write.invalidName.suggestion": {
-    "description": "Recovery suggestion when the destination can't store the file's name. Plain text. \"Some destinations\" covers disks, phones, servers, and cloud storage alike: cloud storage such as Google Cloud Storage or Backblaze B2 refuses tabs and line breaks inside a file name. CON, NUL, and LPT1 are reserved Windows device names; keep them as-is, do NOT translate them.",
+    "description": "Recovery suggestion when the destination can't store the file's name. Plain text. \"Some destinations\" covers disks, phones, servers, and cloud storage alike: cloud storage such as Google Cloud Storage or Backblaze B2 refuses tabs and line breaks inside a filename. CON, NUL, and LPT1 are reserved Windows device names; keep them as-is, do NOT translate them.",
     "screenshot": "transfer-error-invalid_name.png"
   },
   "errors.write.trashRefused.title": "{platform, select, windows {Couldn’t move to the Recycle Bin} other {Couldn’t move to trash}}",
@@ -4153,9 +4153,9 @@
     "screenshot": "error-message-example.png",
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Settings, if you don’t need it",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Preferences, if you don’t need it} linuxKde {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Configure Cmdr, if you don’t need it} other {Here’s what to try:\n- Sign in with an account: guest connections can’t be encrypted\n- Turn on SMB encryption on the server\n- Turn off “Always require SMB encryption” in Settings, if you don’t need it}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
-    "description": "Recovery suggestion for that case. Markdown bullet list. A guest connection (no account) has no keys to encrypt with; the server's own settings can turn encryption on; the last bullet names Cmdr's setting, which an \"Open SMB settings\" button (fileExplorer.errorPane.openSmbEncryptionSetting) right below opens. \"SMB\" is a name; keep it.",
+    "description": "Recovery suggestion for that case. Markdown bullet list. A guest connection (no account) has no keys to encrypt with; the server's own settings can turn encryption on; the last bullet names Cmdr's setting, which an \"Open SMB settings\" button (fileExplorer.errorPane.openSmbEncryptionSetting) right below opens. \"SMB\" is a name; keep it. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "error-message-example.png",
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
@@ -4187,9 +4187,9 @@
     "description": "Body of the copy/move error dialog for that case. One sentence, plain text. \"Always require SMB encryption\" names the setting (settings.network.requireSmbEncryption.label). \"SMB\" is a name; keep it.",
     "screenshot": "transfer-error-smb_encryption_required.png"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Settings.",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, linuxGnome {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Preferences.} linuxKde {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Configure Cmdr.} other {Sign in with an account rather than as a guest, or turn on SMB encryption on the server. You can also turn off “Always require SMB encryption” in Settings.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
-    "description": "What to do, under that body: a guest connection (no account) can't be encrypted, the server's own settings can turn encryption on, and Cmdr's setting (settings.network.requireSmbEncryption.label, in Settings > File systems > SMB/Network shares) can be turned off. Plain text. \"SMB\" is a name; keep it.",
+    "description": "What to do, under that body: a guest connection (no account) can't be encrypted, the server's own settings can turn encryption on, and Cmdr's setting (settings.network.requireSmbEncryption.label, in Settings > File systems > SMB/Network shares) can be turned off. Plain text. \"SMB\" is a name; keep it. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "transfer-error-smb_encryption_required.png"
   },
   "errors.listing.smbNegotiationInvalid.title": "The server didn’t confirm this connection",

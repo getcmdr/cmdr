@@ -97,7 +97,7 @@ structural check can prove a handler stays in the jail, so a human puts each nam
 keeps an outside client out of it off direct mode.
 
 ⚠️ It's also an injection surface, because the write path is reachable from text the agent read
-(`image_facts` OCR, file names off disk) and what it writes reaches every later thread. The defences are in
+(`image_facts` OCR, filenames off disk) and what it writes reaches every later thread. The defences are in
 `memory/DETAILS.md` § The injection surface; don't weaken the fence in `chat/context/memory_notes.rs` or move memory
 into the system string without reading it.
 
@@ -109,7 +109,7 @@ follow-up gets a typed `refusedInBackground`
 (`admit`), reading the turn's own origin, never the opener's shape. Second, a hand-authored allowlist
 (`EXPECTED_SESSION_TOOL_NAMES`), for the reason the other two have one. Third, what a `Session` tool may dial: a SAVED
 place, by volume id, with STORED credentials only. It can't add a host, type a password, or approve a key, which is
-exactly what an injected file name would want. `connect_volume` and `upgrade_smb_to_direct` are on the allowlist
+exactly what an injected filename would want. `connect_volume` and `upgrade_smb_to_direct` are on the allowlist
 (`../tools/DETAILS.md` § Connecting a saved place). No egress moves, so consent doesn't either (invariant 8).
 
 **Where a proposal LIVES.** `store/proposals/`, the durable spine in `main.db`, for every verb including rename. Its

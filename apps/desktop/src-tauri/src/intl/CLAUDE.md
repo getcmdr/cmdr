@@ -11,8 +11,7 @@ Rust draws.
 - `macos_fallback_test.rs`: pins our English answers against CFBundle's. macOS-only.
 - `format_locale.rs`: `resolved_format_locale()`, composing `<language>[-Script]-REGION` from `NSLocale`.
 - `live_locale.rs`: `observe_os_locale_changes`, following both answers and emitting `os-locales-changed`. macOS only.
-- `native_strings.rs`: `menu_t` / `menu_t_with` and the active-locale cache the native surfaces read.
-- `shipped_locales.gen.rs` / `native_strings.gen.rs`: the tables. Generated, never hand-edited.
+- `native_strings.rs`: `menu_t` / `menu_t_with` and the active-locale cache the native surfaces read.- `shipped_locales.gen.rs` / `native_strings.gen.rs`: the tables. Generated, never hand-edited.
 
 ## Must-knows
 

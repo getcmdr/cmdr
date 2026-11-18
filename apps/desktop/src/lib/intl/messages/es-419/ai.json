@@ -1,5 +1,5 @@
 {
-  "ai.translateError.off.body": "Activa un proveedor en Configuración > IA para usar la búsqueda con IA.",
+  "ai.translateError.off.body": "{platform, select, linuxGnome {Turn on a provider in Preferences > AI to use AI search.} linuxKde {Turn on a provider in Configure Cmdr > AI to use AI search.} other {Activa un proveedor en Configuración > IA para usar la búsqueda con IA.}}",
   "@ai.translateError.off.body": {
     "sourceHash": "f566ad2"
   },
@@ -27,11 +27,11 @@
   "@ai.cloudConsent.notSaved": {
     "sourceHash": "ba70ae3"
   },
-  "ai.translateError.notConfigured.body": "Termina de configurar tu proveedor en Configuración > IA y vuelve a intentarlo.",
+  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Finish your provider setup in Preferences > AI, then try again.} linuxKde {Finish your provider setup in Configure Cmdr > AI, then try again.} other {Termina de configurar tu proveedor en Configuración > IA y vuelve a intentarlo.}}",
   "@ai.translateError.notConfigured.body": {
     "sourceHash": "4fdbfed"
   },
-  "ai.translateError.noCloudConsent.body": "Permítela en Configuración > IA y vuelve a intentarlo.",
+  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Allow it in Preferences > AI, then try again.} linuxKde {Allow it in Configure Cmdr > AI, then try again.} other {Permítela en Configuración > IA y vuelve a intentarlo.}}",
   "@ai.translateError.noCloudConsent.body": {
     "sourceHash": "2dc432d"
   },
@@ -39,7 +39,7 @@
   "@ai.translateError.authFailed.title": {
     "sourceHash": "a536b77"
   },
-  "ai.translateError.authFailed.body": "Revisa tu clave en Configuración > IA: puede estar mal o revocada.",
+  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Check your key in Preferences > AI - it might be wrong or revoked.} linuxKde {Check your key in Configure Cmdr > AI - it might be wrong or revoked.} other {Revisa tu clave en Configuración > IA: puede estar mal o revocada.}}",
   "@ai.translateError.authFailed.body": {
     "sourceHash": "745aa36"
   },
@@ -59,7 +59,7 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "0a7dd7e"
   },
-  "ai.translateError.emptyResponse.body": "Puede que tu modelo haya agotado su presupuesto de tokens antes de responder. Prueba un modelo más rápido como gpt-4.1-mini en Configuración > IA.",
+  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Preferences > AI.} linuxKde {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Configure Cmdr > AI.} other {Puede que tu modelo haya agotado su presupuesto de tokens antes de responder. Prueba un modelo más rápido como gpt-4.1-mini en Configuración > IA.}}",
   "@ai.translateError.emptyResponse.body": {
     "sourceHash": "811dc44"
   },
@@ -71,11 +71,11 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "a481e2c"
   },
-  "ai.translateError.parseError.body": "Inténtalo de nuevo o elige otro modelo en Configuración > IA.",
+  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Try again, or pick a different model in Preferences > AI.} linuxKde {Try again, or pick a different model in Configure Cmdr > AI.} other {Inténtalo de nuevo o elige otro modelo en Configuración > IA.}}",
   "@ai.translateError.parseError.body": {
     "sourceHash": "ca8bb33"
   },
-  "ai.translateError.unknownProvider.body": "Elige un proveedor en Configuración > IA.",
+  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Pick a provider in Preferences > AI.} linuxKde {Pick a provider in Configure Cmdr > AI.} other {Elige un proveedor en Configuración > IA.}}",
   "@ai.translateError.unknownProvider.body": {
     "sourceHash": "288f27c"
   },

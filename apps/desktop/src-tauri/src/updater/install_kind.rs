@@ -90,7 +90,7 @@ impl InstallKind {
         }
     }
 
-    /// The file name the verified download of `version` is written to in the temp dir. Off macOS
+    /// The filename the verified download of `version` is written to in the temp dir. Off macOS
     /// it names the version: a staged installer waits for Restart, and a newer download must not
     /// overwrite it before the newer one is staged in its place (a refused stage keeps the old).
     pub fn download_file_name(self, version: &semver::Version) -> String {

@@ -223,7 +223,7 @@ fn in_flight_temp(name: &str, operation: &Arc<()>) -> StagingTemp {
 fn short_name(temp: &StagingTemp) -> String {
     temp.path()
         .file_name()
-        .expect("a minted temp always has a file name")
+        .expect("a minted temp always has a filename")
         .to_string_lossy()
         .into_owned()
 }

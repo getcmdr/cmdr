@@ -20,7 +20,7 @@ Must-knows: `CLAUDE.md`.
   routed file".
 - `markdown_image_fetch.rs`: `VolumeImage` and `RemoteImage`, how a rendered document's pictures are reached.
 - `open_with_extract.rs`, `open_with_copies.rs`: "Open with" on a routed file. § "Open with on a routed file".
-- `analytics.rs`: `viewer_opened`, ❌ never a file name or extension.
+- `analytics.rs`: `viewer_opened`, ❌ never a filename or extension.
 - Tests here need the app (its volume manager, routes, log markers, scheme): `snapshot_open_test.rs`,
   `smb_open_test.rs`, `log_view_test.rs`, `markdown_session_test.rs`, `media_volume_test.rs`, and the rest beside
   their files.
@@ -146,7 +146,7 @@ the reasons; the shape:
 - **A changed copy goes to the Trash, ❌ never away** (`open_with_copies.rs`). Gotcha/Why: `0o444` guards the file,
   not its folder, so an atomic save (vim `:w!`, BBEdit's safe save) replaces the copy and "Save a copy" lands beside it;
   the reaper used to remove those with the rest, content that existed nowhere else. Each pull writes a
-  `.cmdr-open-with-pull.json` record (file name, size, mtime, inode) after `make_read_only` (a mode change moves ctime
+  `.cmdr-open-with-pull.json` record (filename, size, mtime, inode) after `make_read_only` (a mode change moves ctime
   only). The inode catches a save that keeps the size and restores the mtime. At startup, a folder holding exactly that
   file and record, with all three unchanged, is removed; any other
   folder (an edit, a second file, no record) has every entry but the record moved to the Trash under its own name

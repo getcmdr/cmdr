@@ -3,7 +3,7 @@
   "@queryUi.bar.runHint": {
     "sourceHash": "e8a44b1"
   },
-  "queryUi.ai.cloudOff.body": "La IA en la nube está desactivada. Permítela en Configuración > IA para usar esto.",
+  "queryUi.ai.cloudOff.body": "{platform, select, linuxGnome {Cloud AI is off. Allow it in Preferences > AI to use this.} linuxKde {Cloud AI is off. Allow it in Configure Cmdr > AI to use this.} other {La IA en la nube está desactivada. Permítela en Configuración > IA para usar esto.}}",
   "@queryUi.ai.cloudOff.body": {
     "sourceHash": "d32a9e0"
   },

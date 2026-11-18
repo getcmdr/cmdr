@@ -99,7 +99,7 @@ pub(super) fn mtime_secs(meta: &Metadata) -> Option<i64> {
 
 /// Split a local absolute path into (parent dir string, leaf name) for the
 /// journal. The parent path is stored verbatim (interning walks it); a path with
-/// no file name yields empty strings.
+/// no filename yields empty strings.
 fn local_split(path: &Path) -> (String, String) {
     let name = path
         .file_name()

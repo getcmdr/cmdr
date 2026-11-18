@@ -44,7 +44,7 @@ struct Seeded {
     /// Every source file, and whether it lands (its name, and every folder
     /// above it, fit the share).
     files: Vec<(PathBuf, bool)>,
-    /// How many names the share refuses, each one prompt: every long file name
+    /// How many names the share refuses, each one prompt: every long filename
     /// outside a refused folder, plus the refused folder itself.
     refusals: usize,
 }

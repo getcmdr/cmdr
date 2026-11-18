@@ -138,7 +138,7 @@ pub struct RollbackReport {
     /// attempted. Any keeps the op `partially_rolled_back`.
     pub left_out: u64,
     /// Which reason left which file alone: one group per [`SkipReason`], with the
-    /// complete count and one example file name. The counts sum to `skipped`, so a
+    /// complete count and one example filename. The counts sum to `skipped`, so a
     /// report can name a file instead of a reason class without understating the rest.
     pub skips: Vec<SkipBreakdown>,
     /// The run stopped early because it was canceled.

@@ -48,7 +48,7 @@ pub enum SettingValueName {
 }
 
 /// What a question is about. Each arm is one sentence in `tool-ask-sentence.ts`, and every string in
-/// here passes through [`fact_text`], since a file name or a setting value can be anything.
+/// here passes through [`fact_text`], since a filename or a setting value can be anything.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum AskFacts {

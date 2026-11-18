@@ -287,7 +287,7 @@ Faking that would fake the very numbers the design displays, so they run against
 
 **The tree.** `src-tauri/src/dev_fixtures.rs` (a `#[cfg(debug_assertions)]` module) creates
 `<app data dir>/dialog-gallery-fixtures/`: 34 files across nested folders, sizes from 412 bytes to 486 MB, including a
-195-character filename, non-ASCII folder and file names, and an empty folder. Everything above the first line of content
+195-character filename, non-ASCII folder and filenames, and an empty folder. Everything above the first line of content
 is sparse (`set_len`), so the tree reports hundreds of megabytes to a scan while costing kilobytes of disk. It's
 idempotent by construction (a file is written only when missing or the wrong length) and never deletes, so a folder the
 reviewer created inside it survives the next trigger. Its Rust tests pin all three properties.

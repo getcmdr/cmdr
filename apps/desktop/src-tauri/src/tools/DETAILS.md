@@ -642,7 +642,7 @@ serializes a fact.
 
 ## Connecting a saved place (`connect_volume`)
 
-Turns "the NAS isn't connected" from a dead end into one call, without any power an injected file name would want: the
+Turns "the NAS isn't connected" from a dead end into one call, without any power an injected filename would want: the
 schema is `{ volumeId }` and nothing else, so it can't add a host, take a password, or approve a key. The gate admits
 it for the agent only on a turn the user started (§ The dispatch gate), and an outside client counts as one; the promise is agent invariant 7 in `../agent/DETAILS.md`.
 
@@ -870,11 +870,11 @@ walks the serialized result and requires every leaf to be a string, a number, or
 ## The sensitive-content gate
 
 `sensitive.rs` is the one gate for every path that yields file contents or image-derived text, for every caller. A
-prompt-injected file name could otherwise get `~/.ssh/id_rsa` or Cmdr's `mcp.token` read and sent to the provider. It
+prompt-injected filename could otherwise get `~/.ssh/id_rsa` or Cmdr's `mcp.token` read and sent to the provider. It
 blocks contents only: names in these folders may still flow. A new tool that yields contents goes through it.
 
 **The rules** live in `sensitive/rules.rs` (`RULES` and `CREDENTIAL_FILE_NAMES`): case-folded, NFC-normalized component
-runs at any depth, so a NAS backup of a home folder counts. File names match the last component alone, since a `.env`
+runs at any depth, so a NAS backup of a home folder counts. Filenames match the last component alone, since a `.env`
 FOLDER is a Python venv. `com.veszelovszki.cmdr*` matches every instance's data dir, so a dev build can't read the prod
 `mcp.token`. What they cover, per OS, with the evidence: § The protected locations.
 
@@ -968,7 +968,7 @@ a home folder unless they start with `%`. Checked on 2026-11-12 and 2026-11-18 (
 
 - **SSH keys, and cloud and tool credentials** (`Credentials`), all OSes: `.ssh`, `.gnupg`, `.password-store`, `.aws`,
   `.azure`, `.kube`, `.docker/config.json`, `.git/config`, `.cargo/credentials(.toml)`, `.claude/.credentials.json`,
-  `sops/age/keys.txt`, and the file names `.netrc`, `_netrc`, `.npmrc`, `.pypirc`, `.git-credentials`, `.pgpass`,
+  `sops/age/keys.txt`, and the filenames `.netrc`, `_netrc`, `.npmrc`, `.pypirc`, `.git-credentials`, `.pgpass`,
   `pgpass.conf`, `.vault-token`, `rclone.conf`, `.s3cfg`, `credentials.tfrc.json`, `.env*`. `_netrc` is the Windows
   spelling (LabKey "Create a netrc file"), and `%APPDATA%\postgresql\pgpass.conf` the Windows `.pgpass` (PostgreSQL
   docs § "The Password File"). `.s3cfg` is s3cmd's keys (s3tools kb item 14); `credentials.tfrc.json` is where

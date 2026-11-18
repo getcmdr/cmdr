@@ -2507,11 +2507,11 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "Cmdr 使用你在「設定 › AI」中設定好的 AI 提供者和金鑰（{provider}）。",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr 使用你在「設定 › AI」中設定好的 AI 提供者和金鑰（{provider}）。}}",
   "@settings.askCmdr.provider.shared": {
     "sourceHash": "9442b09"
   },
-  "settings.askCmdr.provider.off": "在「設定 › AI」中開啟一個 AI 提供者，就能開始聊天。",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {在「設定 › AI」中開啟一個 AI 提供者，就能開始聊天。}}",
   "@settings.askCmdr.provider.off": {
     "sourceHash": "5cc1481"
   },
@@ -2957,7 +2957,7 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "設定的各個部分",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {設定的各個部分}}",
   "@settings.sidebar.sections": {
     "sourceHash": "e26d51d"
   },
@@ -3429,7 +3429,7 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "設定",
+  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {設定}}",
   "@settings.window.title": {
     "sourceHash": "74a883a"
   },

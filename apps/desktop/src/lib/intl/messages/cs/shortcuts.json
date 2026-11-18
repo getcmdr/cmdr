@@ -331,7 +331,7 @@
   "@shortcuts.window.hideEmpty": {
     "sourceHash": "d3cb18e"
   },
-  "shortcuts.window.editInSettings": "Upravit zkratky v Nastavení",
+  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Edit shortcuts in Preferences} linuxKde {Edit shortcuts in Configure Cmdr} other {Upravit zkratky v Nastavení}}",
   "@shortcuts.window.editInSettings": {
     "sourceHash": "847b526"
   }

@@ -1181,14 +1181,14 @@
     "screenshot": "ask-cmdr-tools.png",
     "screenshotNote": "The quiet stats line at the end of an Ask Cmdr reply, pictured here. Your string is another form of it."
   },
-  "askCmdr.error.noKey": "Add your API key in settings to start chatting.",
+  "askCmdr.error.noKey": "{platform, select, linuxGnome {Add your API key in preferences to start chatting.} other {Add your API key in settings to start chatting.}}",
   "@askCmdr.error.noKey": {
-    "description": "Shown when the chosen AI provider has no API key. Friendly and actionable; avoids the words error and failed.",
+    "description": "Shown when the chosen AI provider has no API key. Friendly and actionable; avoids the words error and failed. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "ask-cmdr-errors.png"
   },
-  "askCmdr.error.notConfigured": "Chatting needs an AI provider. Turn one on in settings.",
+  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {Chatting needs an AI provider. Turn one on in preferences.} other {Chatting needs an AI provider. Turn one on in settings.}}",
   "@askCmdr.error.notConfigured": {
-    "description": "Shown when no AI provider is set up. Friendly and actionable; avoids the words error and failed.",
+    "description": "Shown when no AI provider is set up. Friendly and actionable; avoids the words error and failed. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "ask-cmdr-errors.png"
   },
   "askCmdr.error.askCmdrOff": "Ask Cmdr is off.",
@@ -1197,9 +1197,9 @@
     "screenshot": "ask-cmdr-chat.png",
     "screenshotNote": "A line in the Ask Cmdr thread, under a message like the one pictured here, saying why the assistant couldn’t answer. This screenshot doesn’t show that line."
   },
-  "askCmdr.error.noCloudConsent": "Cloud AI is off. Allow it in Settings > AI.",
+  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {Cloud AI is off. Allow it in Preferences > AI.} linuxKde {Cloud AI is off. Allow it in Configure Cmdr > AI.} other {Cloud AI is off. Allow it in Settings > AI.}}",
   "@askCmdr.error.noCloudConsent": {
-    "description": "Shown in the Ask Cmdr side panel in the rare case a message was sent while the Allow cloud AI switch was off, so nothing was sent. \"it\" is cloud AI; Settings > AI is a navigation path, keep it as shown.",
+    "description": "Shown in the Ask Cmdr side panel in the rare case a message was sent while the Allow cloud AI switch was off, so nothing was sent. \"it\" is cloud AI; Settings > AI is a navigation path, keep it as shown. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "ask-cmdr-chat.png",
     "screenshotNote": "A line in the Ask Cmdr thread, under a message like the one pictured here, saying why the assistant couldn’t answer. This screenshot doesn’t show that line."
   },
@@ -1225,9 +1225,9 @@
     "description": "Shown when the AI request timed out. Friendly; avoids the words error and failed.",
     "screenshot": "ask-cmdr-errors.png"
   },
-  "askCmdr.error.authFailed": "The provider didn’t accept your API key. Check it in settings.",
+  "askCmdr.error.authFailed": "{platform, select, linuxGnome {The provider didn’t accept your API key. Check it in preferences.} other {The provider didn’t accept your API key. Check it in settings.}}",
   "@askCmdr.error.authFailed": {
-    "description": "Shown when the provider rejected the API key. Friendly and actionable; avoids the words error and failed. The apostrophe is U+2019.",
+    "description": "Shown when the provider rejected the API key. Friendly and actionable; avoids the words error and failed. The apostrophe is U+2019. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "ask-cmdr-errors.png"
   },
   "askCmdr.error.rateLimited": "The provider is busy or you’re out of quota. Try again in a bit.",
@@ -1235,33 +1235,33 @@
     "description": "Shown when the provider is rate-limiting or the account is out of quota. Friendly; avoids the words error and failed. The apostrophe is U+2019.",
     "screenshot": "ask-cmdr-errors.png"
   },
-  "askCmdr.error.modelNotInPlan.named": "Your {provider} plan doesn’t include this model. Pick another model in settings, or upgrade your plan.",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {Your {provider} plan doesn’t include this model. Pick another model in preferences, or upgrade your plan.} other {Your {provider} plan doesn’t include this model. Pick another model in settings, or upgrade your plan.}}",
   "@askCmdr.error.modelNotInPlan.named": {
-    "description": "Shown in the Ask Cmdr chat when the AI provider refused the request because the person's plan doesn't include the chosen model at all (for example, a free Mistral plan and a model only paid plans get). Every message gets the same answer, so waiting won't help; it says what does. Different from askCmdr.error.rateLimited, which is about the provider being busy. The provider's own explanation shows on a line under this one. Friendly and actionable; avoids the words error and failed. The apostrophe is U+2019. Sentence case.",
+    "description": "Shown in the Ask Cmdr chat when the AI provider refused the request because the person's plan doesn't include the chosen model at all (for example, a free Mistral plan and a model only paid plans get). Every message gets the same answer, so waiting won't help; it says what does. Different from askCmdr.error.rateLimited, which is about the provider being busy. The provider's own explanation shows on a line under this one. Friendly and actionable; avoids the words error and failed. The apostrophe is U+2019. Sentence case. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "placeholders": {
       "provider": "The AI provider's brand name, never translated (for example Mistral AI)."
     },
     "screenshot": "ask-cmdr-chat.png",
     "screenshotNote": "A line in the Ask Cmdr thread, under a message like the one pictured here, saying why the assistant couldn’t answer. This screenshot doesn’t show that line."
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "Your plan with this AI provider doesn’t include this model. Pick another model in settings, or upgrade your plan.",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {Your plan with this AI provider doesn’t include this model. Pick another model in preferences, or upgrade your plan.} other {Your plan with this AI provider doesn’t include this model. Pick another model in settings, or upgrade your plan.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
-    "description": "The same message as askCmdr.error.modelNotInPlan.named, for a provider Cmdr has no name for (a custom endpoint). Shown in the Ask Cmdr chat when the person's plan doesn't include the chosen model at all, so every message gets the same answer and waiting won't help. Friendly and actionable; avoids the words error and failed. The apostrophe is U+2019. Sentence case.",
+    "description": "The same message as askCmdr.error.modelNotInPlan.named, for a provider Cmdr has no name for (a custom endpoint). Shown in the Ask Cmdr chat when the person's plan doesn't include the chosen model at all, so every message gets the same answer and waiting won't help. Friendly and actionable; avoids the words error and failed. The apostrophe is U+2019. Sentence case. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "ask-cmdr-chat.png",
     "screenshotNote": "A line in the Ask Cmdr thread, under a message like the one pictured here, saying why the assistant couldn’t answer. This screenshot doesn’t show that line."
   },
-  "askCmdr.error.requestTooLarge.named": "{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in settings.",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in preferences.} other {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in settings.}}",
   "@askCmdr.error.requestTooLarge.named": {
-    "description": "Shown in the Ask Cmdr chat when the AI provider refused the request as too large for the person's plan. This happens on plans with a small per-minute limit (Groq's free tier, for example): every request Cmdr sends includes its own instructions to the model, which alone are over that limit, so every message is refused no matter how short. Makes clear the limit is the provider's, not Cmdr's, and says what helps. The provider's own explanation shows on a line under this one. Friendly and actionable; avoids the words error and failed. The apostrophes are U+2019. Sentence case.",
+    "description": "Shown in the Ask Cmdr chat when the AI provider refused the request as too large for the person's plan. This happens on plans with a small per-minute limit (Groq's free tier, for example): every request Cmdr sends includes its own instructions to the model, which alone are over that limit, so every message is refused no matter how short. Makes clear the limit is the provider's, not Cmdr's, and says what helps. The provider's own explanation shows on a line under this one. Friendly and actionable; avoids the words error and failed. The apostrophes are U+2019. Sentence case. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "placeholders": {
       "provider": "The AI provider's brand name, never translated (for example Groq)."
     },
     "screenshot": "ask-cmdr-chat.png",
     "screenshotNote": "A line in the Ask Cmdr thread, under a message like the one pictured here, saying why the assistant couldn’t answer. This screenshot doesn’t show that line."
   },
-  "askCmdr.error.requestTooLarge.unnamed": "Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in settings.",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in preferences.} other {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in settings.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
-    "description": "The same message as askCmdr.error.requestTooLarge.named, for a provider Cmdr has no name for (a custom endpoint or a local server). Shown in the Ask Cmdr chat when the AI provider refused the request as too large for the person's plan: every request Cmdr sends includes its own instructions to the model, which alone are over the plan's limit, so every message is refused no matter how short. Makes clear the limit is the provider's, not Cmdr's, and says what helps. Friendly and actionable; avoids the words error and failed. The apostrophes are U+2019. Sentence case.",
+    "description": "The same message as askCmdr.error.requestTooLarge.named, for a provider Cmdr has no name for (a custom endpoint or a local server). Shown in the Ask Cmdr chat when the AI provider refused the request as too large for the person's plan: every request Cmdr sends includes its own instructions to the model, which alone are over the plan's limit, so every message is refused no matter how short. Makes clear the limit is the provider's, not Cmdr's, and says what helps. Friendly and actionable; avoids the words error and failed. The apostrophes are U+2019. Sentence case. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "ask-cmdr-chat.png",
     "screenshotNote": "A line in the Ask Cmdr thread, under a message like the one pictured here, saying why the assistant couldn’t answer. This screenshot doesn’t show that line."
   },
@@ -1568,20 +1568,20 @@
     "description": "Tooltip on the Ask Cmdr Send button while it's disabled because no AI provider is ready (none picked, a missing API key, or local AI not set up). A yellow notice at the top of the panel says which and links to settings. Sentence case, no period.",
     "screenshot": "ask-cmdr-provider-off.png"
   },
-  "askCmdr.providerNotice.off": "Ask Cmdr needs an AI provider to chat. Pick one in Settings.",
+  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {Ask Cmdr needs an AI provider to chat. Pick one in Preferences.} linuxKde {Ask Cmdr needs an AI provider to chat. Pick one in Configure Cmdr.} other {Ask Cmdr needs an AI provider to chat. Pick one in Settings.}}",
   "@askCmdr.providerNotice.off": {
-    "description": "Yellow notice at the top of the Ask Cmdr side panel when the AI provider is set to off (the default), so nothing can be sent. A link that opens Settings > AI > Provider follows. Friendly and actionable; avoids the words error and failed.",
+    "description": "Yellow notice at the top of the Ask Cmdr side panel when the AI provider is set to off (the default), so nothing can be sent. A link that opens Settings > AI > Provider follows. Friendly and actionable; avoids the words error and failed. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "ask-cmdr-provider-off.png"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Settings.",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Preferences.} linuxKde {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Configure Cmdr.} other {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Settings.}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
-    "description": "Yellow notice at the top of the Ask Cmdr side panel when cloud AI is picked but its provider has no API key saved yet. A link that opens Settings > AI > Provider follows. Friendly and actionable; avoids the words error and failed.",
+    "description": "Yellow notice at the top of the Ask Cmdr side panel when cloud AI is picked but its provider has no API key saved yet. A link that opens Settings > AI > Provider follows. Friendly and actionable; avoids the words error and failed. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "ask-cmdr-empty.png",
     "screenshotNote": "A yellow notice at the top of the Ask Cmdr panel pictured here, shown while no AI provider is ready, with a link to the settings. This screenshot doesn’t show it."
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Settings.",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Preferences.} linuxKde {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Configure Cmdr.} other {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Settings.}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
-    "description": "Yellow notice at the top of the Ask Cmdr side panel when cloud AI is picked with a custom provider whose server address (URL) is blank. A link that opens Settings > AI > Provider follows. Friendly and actionable; avoids the words error and failed.",
+    "description": "Yellow notice at the top of the Ask Cmdr side panel when cloud AI is picked with a custom provider whose server address (URL) is blank. A link that opens Settings > AI > Provider follows. Friendly and actionable; avoids the words error and failed. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "ask-cmdr-empty.png",
     "screenshotNote": "A yellow notice at the top of the Ask Cmdr panel pictured here, shown while no AI provider is ready, with a link to the settings. This screenshot doesn’t show it."
   },
@@ -1625,9 +1625,9 @@
   "@askCmdr.gate.cloudOff.title": {
     "description": "Heading in the Ask Cmdr side panel when the assistant is on and the AI mode is Cloud, but the Allow cloud AI switch in Settings > AI is off, so nothing can be sent yet. Sentence case, no period."
   },
-  "askCmdr.gate.cloudOff.body": "Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Settings first, and you’re ready to chat.",
+  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Preferences first, and you’re ready to chat.} linuxKde {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Configure Cmdr first, and you’re ready to chat.} other {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Settings first, and you’re ready to chat.}}",
   "@askCmdr.gate.cloudOff.body": {
-    "description": "Line under askCmdr.gate.cloudOff.title in the Ask Cmdr side panel. \"Allow cloud AI\" is the switch label (ai.cloudConsent.label); translate it the same way. A button that opens the AI settings follows. The apostrophe is U+2019."
+    "description": "Line under askCmdr.gate.cloudOff.title in the Ask Cmdr side panel. \"Allow cloud AI\" is the switch label (ai.cloudConsent.label); translate it the same way. A button that opens the AI settings follows. The apostrophe is U+2019. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   },
   "askCmdr.gate.cloudOff.openSettings": "Go to AI settings",
   "@askCmdr.gate.cloudOff.openSettings": {
@@ -1713,12 +1713,12 @@
   },
   "askCmdr.renameReview.originalName": "Current name",
   "@askCmdr.renameReview.originalName": {
-    "description": "Column heading for the original file name in the bulk rename review table.",
+    "description": "Column heading for the original filename in the bulk rename review table.",
     "screenshot": "ask-cmdr-rename-undo.png"
   },
   "askCmdr.renameReview.newName": "New name",
   "@askCmdr.renameReview.newName": {
-    "description": "Column heading for the proposed file name in the bulk rename review table.",
+    "description": "Column heading for the proposed filename in the bulk rename review table.",
     "screenshot": "ask-cmdr-rename-undo.png"
   },
   "askCmdr.renameReview.whyThisName": "Why this name",
@@ -2256,9 +2256,9 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "description": "Tooltip and spoken label on the status-corner indicator shown when the user turned AI features on but macOS Full Disk Access is still outstanding, so the agent can only see part of the disk. Pressing it opens the system privacy settings, which is what the second sentence promises. Only ever shown to somebody who opted in, so it reads as a step left to finish, never as a warning. The second sentence names Apple's own setting: use the same wording as `search.coverage.setUpFullDiskAccess` so the two surfaces agree. Sentence case."
   },
-  "askCmdr.wake.needsApiKey": "AI features are on, but they need a provider to work. Click to set one up in settings.",
+  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {AI features are on, but they need a provider to work. Click to set one up in preferences.} other {AI features are on, but they need a provider to work. Click to set one up in settings.}}",
   "@askCmdr.wake.needsApiKey": {
-    "description": "Tooltip and spoken label on the status-corner indicator shown when the user turned AI features on but no AI provider is configured, so nothing can be sent anywhere. Pressing it opens Cmdr's AI settings, where the provider is picked, which is what the second sentence promises. \"provider\" means the LLM service the user brings their own key for. Sentence case."
+    "description": "Tooltip and spoken label on the status-corner indicator shown when the user turned AI features on but no AI provider is configured, so nothing can be sent anywhere. Pressing it opens Cmdr's AI settings, where the provider is picked, which is what the second sentence promises. \"provider\" means the LLM service the user brings their own key for. Sentence case. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE."
   },
   "askCmdr.wakeDigest.summary": "What changed in {foldersText} {folders, plural, one {folder} other {folders}}",
   "@askCmdr.wakeDigest.summary": {

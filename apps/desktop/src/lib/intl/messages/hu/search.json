@@ -67,7 +67,7 @@
   "@search.imageResults.empty": {
     "sourceHash": "edb6672"
   },
-  "search.imageResults.networkOff": "Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Beállításokban, hogy rá tudj keresni a fotóiban lévő szövegre.",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Kapcsold be a képek indexelését ehhez a hálózati meghajtóhoz a Beállításokban, hogy rá tudj keresni a fotóiban lévő szövegre.}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "ccf901b"
   },
@@ -219,7 +219,7 @@
   "@search.coverage.toast.started": {
     "sourceHash": "fb6978e"
   },
-  "search.coverage.toast.indexingOff": "A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {A meghajtó indexelése ki van kapcsolva a Beállításokban, ezért semmi sem indexelődik. Kapcsold be itt: Indexelés > Meghajtó indexelése.}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "abfe24b"
   },

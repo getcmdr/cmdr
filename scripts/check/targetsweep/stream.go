@@ -89,7 +89,7 @@ func parseStream(data []byte) streamSummary {
 var bareHashRE = regexp.MustCompile(`^[0-9a-f]{16}$`)
 
 // addPathHashes adds every unit hash a path names: `build/ring-<h>/out` names one in a
-// directory, `deps/libserde-<h>.rlib` one in the file name, and the build-dir layout's
+// directory, `deps/libserde-<h>.rlib` one in the filename, and the build-dir layout's
 // `build/ring/<h>/out` one as a bare segment. A bare 16-hex segment anywhere counts: an extra
 // hash only ever keeps more.
 func addPathHashes(into map[string]bool, path string) {

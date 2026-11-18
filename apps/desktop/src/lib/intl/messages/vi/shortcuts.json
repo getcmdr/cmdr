@@ -332,7 +332,7 @@
   "@shortcuts.window.hideEmpty": {
     "sourceHash": "d3cb18e"
   },
-  "shortcuts.window.editInSettings": "Sửa phím tắt trong Cài đặt",
+  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Edit shortcuts in Preferences} linuxKde {Edit shortcuts in Configure Cmdr} other {Sửa phím tắt trong Cài đặt}}",
   "@shortcuts.window.editInSettings": {
     "sourceHash": "847b526"
   }

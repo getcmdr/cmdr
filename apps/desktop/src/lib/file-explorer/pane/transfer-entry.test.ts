@@ -150,7 +150,7 @@ describe('checkTransferDestinationGuard', () => {
     expect(result.ok).toBe(true)
   })
 
-  it('allows a writable local destination even when the path merely contains a zip file name', () => {
+  it('allows a writable local destination even when the path merely contains a zip filename', () => {
     // The pane is AT `/Users/me` (which contains `foo.zip` as a row), not inside it.
     const result = checkTransferDestinationGuard('root', [ROOT], '/Users/me')
     expect(result.ok).toBe(true)

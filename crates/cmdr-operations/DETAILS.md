@@ -1025,7 +1025,7 @@ reply.
 `paste_clipboard_as_file` follows the same contract with the created file riding along: `PasteClipboardReply` /
 `clipboard-paste-settled`, built on `reply_or_hand_off` (the value-carrying core `reply_within` wraps), awaited by
 `awaitClipboardPaste`. The frontend shows a "still pasting" toast past the deadline, and a late landing only toasts the
-file name: no cursor land, no auto-rename, since the person may have moved on.
+filename: no cursor land, no auto-rename, since the person may have moved on.
 
 **Why not `TimedOut`.** The deadline never bounded the work, only the reply: on a busy NAS a new folder took 7–12 s, the
 dialog said it timed out, and the folder appeared anyway, sometimes (ERR-AREUV, 2026-10). An answer the user sees

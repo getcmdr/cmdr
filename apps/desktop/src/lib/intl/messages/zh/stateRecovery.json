@@ -3,11 +3,11 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "使用统计和崩溃报告会保持关闭，直到你在“设置 › 更新与隐私”中重新开启。",
+  "stateRecovery.settings.body": "{platform, select, linuxGnome {Usage stats and crash reports stay off until you turn them back on in Preferences › Updates & privacy.} linuxKde {Usage stats and crash reports stay off until you turn them back on in Configure Cmdr › Updates & privacy.} other {使用统计和崩溃报告会保持关闭，直到你在“设置 › 更新与隐私”中重新开启。}}",
   "@stateRecovery.settings.body": {
     "sourceHash": "20439e1"
   },
-  "stateRecovery.settings.openSettings": "打开设置",
+  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {打开设置}}",
   "@stateRecovery.settings.openSettings": {
     "sourceHash": "3f94010"
   },
@@ -19,11 +19,11 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "如果 Cmdr 现在显示为无许可证，请在“设置 › 许可证”中重新输入你的许可证密钥。",
+  "stateRecovery.license.body": "{platform, select, linuxGnome {If Cmdr shows as unlicensed now, enter your license key again in Preferences › License.} linuxKde {If Cmdr shows as unlicensed now, enter your license key again in Configure Cmdr › License.} other {如果 Cmdr 现在显示为无许可证，请在“设置 › 许可证”中重新输入你的许可证密钥。}}",
   "@stateRecovery.license.body": {
     "sourceHash": "ea51589"
   },
-  "stateRecovery.license.openSettings": "打开设置",
+  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {打开设置}}",
   "@stateRecovery.license.openSettings": {
     "sourceHash": "3f94010"
   },

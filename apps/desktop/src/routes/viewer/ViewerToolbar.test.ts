@@ -83,7 +83,7 @@ function mountToolbar(opts: MountOpts = {}) {
 }
 
 describe('ViewerToolbar', () => {
-  it('renders the file name, pickers, and tail toggle', async () => {
+  it('renders the filename, pickers, and tail toggle', async () => {
     const { target, instance } = mountToolbar({ fileName: 'notes.md' })
     await tick()
 

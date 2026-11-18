@@ -222,7 +222,7 @@ them.
   response to the same issue.
 - **The filename problem (see below)**: `try_get_string` in `src/buf.rs:22-26` is
   `Ok(String::from_utf8_lossy(&bytes).into())`, with the strict version commented out directly above it. Open issue #42
-  ("Support non-utf8 file names") since 2024-07-11, 12 comments, and the maintainer has rejected both proposed fixes
+  ("Support non-utf8 filenames") since 2024-07-11, 12 comments, and the maintainer has rejected both proposed fixes
   (`OsString` and `Vec<u8>`) on API-ergonomics and cross-platform-serialization grounds.
 - **Other gaps**: no `posix-rename` (`rename()` is plain `SSH_FXP_RENAME`, which OpenSSH refuses when the destination
   exists, so safe-overwrite would need `RawSftpSession::extended()` by hand); `Features` is `pub(crate)` so the

@@ -85,7 +85,7 @@ mcp_tools! {
     // ── Cursor ──────────────────────────────────────────────────────────────
     "move_cursor" => {
         id: MoveCursor,
-        brief: "Move a pane's cursor to a row, by index or file name.",
+        brief: "Move a pane's cursor to a row, by index or filename.",
         desc: "Focus a pane and move its cursor to a row, by zero-based index or by filename (give one). Flushes pane state, so a following copy / move / delete / rename acts on this row. A missing filename or out-of-range index is an honest error, never a silent no-op.",
         schema: schemas::move_cursor_schema(),
         subject: SubjectSpec::Pane,

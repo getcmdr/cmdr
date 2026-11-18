@@ -125,7 +125,7 @@ use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
 use log_writer::LogWriter;
 
-/// The persisted log's file name inside the app data dir.
+/// The persisted log's filename inside the app data dir.
 const STORE_FILENAME: &str = "in-flight-temps.log";
 
 /// How long the quit teardown waits for queued records to reach the kernel. A

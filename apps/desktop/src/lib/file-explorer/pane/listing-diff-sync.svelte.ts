@@ -248,7 +248,7 @@ export function initListingDiffSync(deps: ListingDiffSyncDeps): void {
   // is still pending, so the operation has no name here yet) waits for it.
   //
   // A ⌘A snapshot (`'all'`) deselects the same way: each finished source finds its own
-  // row by file name, so the snapshot's names are never needed, only its presence. The
+  // row by filename, so the snapshot's names are never needed, only its presence. The
   // selection itself is always an explicit index set, so leaving "all" is one O(1) delete.
   let unnamed: WriteSourceItemDoneEvent[] = []
 

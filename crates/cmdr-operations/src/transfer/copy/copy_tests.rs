@@ -943,7 +943,7 @@ fn a_local_copy_settles_every_row_the_way_its_file_ended() {
 /// A local copy STARTS its files in tree order, the order the progress tree
 /// shows: each folder's subfolders first, then its files, by name, depth first,
 /// and the top-level sources the same way whatever order they came in. A flat
-/// sort on the file name alone would copy `b/aaa.txt` before `a/zzz.txt`, and
+/// sort on the filename alone would copy `b/aaa.txt` before `a/zzz.txt`, and
 /// the folders would interleave.
 #[test]
 fn a_local_copy_starts_its_files_in_tree_order() {

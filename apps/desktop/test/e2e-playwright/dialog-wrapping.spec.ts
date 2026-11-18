@@ -6,7 +6,7 @@
  * every flex item inside it a one-character minimum: a squeezed row broke "You"
  * into "Yo / u" at 125 % zoom (#700). The body now uses `break-word`, which
  * keeps every word whole unless it ALONE outgrows the line. The price is that a
- * long unbreakable string (a path, a file name) in a row that isn't set up to
+ * long unbreakable string (a path, a filename) in a row that isn't set up to
  * shrink (`min-width: 0` plus an ellipsis or the middle truncation) widens the
  * row past the panel edge. So this checks both halves, on every state of every
  * dialog in the gallery (`DIALOG_GALLERY_ENTRIES`), long-path states included:
@@ -201,7 +201,7 @@ function readWrapping(page: TauriPage, dialogId: string): Promise<WrapResult> {
                 var tokenRects = rectOf(node, tokenStart, tokenEnd)
                 for (var i = 0; i < tokenRects.length; i++) tokenWidth += tokenRects[i].width
                 if (tokenWidth > lineWidth - 1) continue
-                // A path, a file name, or code isn't a word: breaking one that alone
+                // A path, a filename, or code isn't a word: breaking one that alone
                 // outgrows its own line (a half-width card, a table cell) is
                 // \`break-word\` doing its job.
                 var ownLine = lineOf(parent)

@@ -309,7 +309,7 @@
   "@onboarding.stepAi.missingKeyWarning": {
     "sourceHash": "2856a6e"
   },
-  "onboarding.stepAi.cloudConsentOffNote": "Cloud-AI blijft uit tot je die toestaat. Dat kan later ook bij Instellingen > AI.",
+  "onboarding.stepAi.cloudConsentOffNote": "{platform, select, linuxGnome {Cloud AI stays off until you allow it. You can do that later in Preferences > AI.} linuxKde {Cloud AI stays off until you allow it. You can do that later in Configure Cmdr > AI.} other {Cloud-AI blijft uit tot je die toestaat. Dat kan later ook bij Instellingen > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
     "sourceHash": "82d27b6"
   },
@@ -317,7 +317,7 @@
   "@onboarding.stepAi.off.label": {
     "sourceHash": "c2a8322"
   },
-  "onboarding.stepAi.off.help": "Cmdr werkt volledig zonder AI. Je kunt het later aanzetten in Instellingen.",
+  "onboarding.stepAi.off.help": "{platform, select, linuxGnome {Cmdr works fully without AI. You can turn it on later in Preferences.} linuxKde {Cmdr works fully without AI. You can turn it on later in Configure Cmdr.} other {Cmdr werkt volledig zonder AI. Je kunt het later aanzetten in Instellingen.}}",
   "@onboarding.stepAi.off.help": {
     "sourceHash": "3f261be"
   },
@@ -393,11 +393,11 @@
   "@onboarding.stepBeta.analyticsTitle": {
     "sourceHash": "89b309e"
   },
-  "onboarding.stepBeta.analyticsCaption": "Let op: dit staat standaard AAN om mensen aan te moedigen me gegevens te sturen tijdens de bèta.\nJe kunt dit op elk moment wijzigen in Instellingen.",
+  "onboarding.stepBeta.analyticsCaption": "{platform, select, linuxGnome {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Preferences.} linuxKde {Note that it’s ON by default to encourage people to send me data during the Beta.\nYou can change this any time in Configure Cmdr.} other {Let op: dit staat standaard AAN om mensen aan te moedigen me gegevens te sturen tijdens de bèta.\nJe kunt dit op elk moment wijzigen in Instellingen.}}",
   "@onboarding.stepBeta.analyticsCaption": {
     "sourceHash": "06ce4eb"
   },
-  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Crashrapporten staan ook aan: als Cmdr onderuitgaat, stuurt het de appversie, je macOS-versie en de plek in de code waar het stopte.\nNooit je bestanden.\nJe kunt allebei uitzetten in de instellingen wanneer je wilt.} windows {Crashrapporten staan ook aan: als Cmdr onderuitgaat, stuurt het de appversie, je Windows-versie en de plek in de code waar het stopte.\nNooit je bestanden.\nJe kunt allebei uitzetten in de instellingen wanneer je wilt.} other {Crashrapporten staan ook aan: als Cmdr onderuitgaat, stuurt het de appversie, je Linux-distributie en de versie daarvan, en de plek in de code waar het stopte.\nNooit je bestanden.\nJe kunt allebei uitzetten in de instellingen wanneer je wilt.}}",
+  "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Crashrapporten staan ook aan: als Cmdr onderuitgaat, stuurt het de appversie, je macOS-versie en de plek in de code waar het stopte.\nNooit je bestanden.\nJe kunt allebei uitzetten in de instellingen wanneer je wilt.} windows {Crashrapporten staan ook aan: als Cmdr onderuitgaat, stuurt het de appversie, je Windows-versie en de plek in de code waar het stopte.\nNooit je bestanden.\nJe kunt allebei uitzetten in de instellingen wanneer je wilt.} linuxGnome {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Preferences whenever you like.} linuxKde {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Configure Cmdr whenever you like.} other {Crashrapporten staan ook aan: als Cmdr onderuitgaat, stuurt het de appversie, je Linux-distributie en de versie daarvan, en de plek in de code waar het stopte.\nNooit je bestanden.\nJe kunt allebei uitzetten in de instellingen wanneer je wilt.}}",
   "@onboarding.stepBeta.crashReportsNote": {
     "sourceHash": "55b9634"
   },
@@ -405,7 +405,7 @@
   "@onboarding.stepBeta.analyticsManaged": {
     "sourceHash": "49484ee"
   },
-  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Crashrapporten staan aan: als Cmdr onderuitgaat, stuurt het de appversie, je macOS-versie en de plek in de code waar het stopte.\nNooit je bestanden.\nJe kunt ze uitzetten in de instellingen wanneer je wilt.} windows {Crashrapporten staan aan: als Cmdr onderuitgaat, stuurt het de appversie, je Windows-versie en de plek in de code waar het stopte.\nNooit je bestanden.\nJe kunt ze uitzetten in de instellingen wanneer je wilt.} other {Crashrapporten staan aan: als Cmdr onderuitgaat, stuurt het de appversie, je Linux-distributie en de versie daarvan, en de plek in de code waar het stopte.\nNooit je bestanden.\nJe kunt ze uitzetten in de instellingen wanneer je wilt.}}",
+  "onboarding.stepBeta.crashReportsNoteAlone": "{platform, select, macos {Crashrapporten staan aan: als Cmdr onderuitgaat, stuurt het de appversie, je macOS-versie en de plek in de code waar het stopte.\nNooit je bestanden.\nJe kunt ze uitzetten in de instellingen wanneer je wilt.} windows {Crashrapporten staan aan: als Cmdr onderuitgaat, stuurt het de appversie, je Windows-versie en de plek in de code waar het stopte.\nNooit je bestanden.\nJe kunt ze uitzetten in de instellingen wanneer je wilt.} linuxGnome {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Preferences whenever you like.} linuxKde {Crash reports are on: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn them off in Configure Cmdr whenever you like.} other {Crashrapporten staan aan: als Cmdr onderuitgaat, stuurt het de appversie, je Linux-distributie en de versie daarvan, en de plek in de code waar het stopte.\nNooit je bestanden.\nJe kunt ze uitzetten in de instellingen wanneer je wilt.}}",
   "@onboarding.stepBeta.crashReportsNoteAlone": {
     "sourceHash": "27d4b1b"
   },
@@ -429,7 +429,7 @@
   "@onboarding.stepBeta.signup.rejected": {
     "sourceHash": "5a1bca7"
   },
-  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {De inschrijfserver was net niet bereikbaar, dus je staat nog niet op de lijst. Je adres is op deze Mac bewaard: klik over een minuutje opnieuw op ‘Bewaar’, of wanneer je maar wilt via Instellingen › Updates en privacy.} windows {De inschrijfserver was net niet bereikbaar, dus je staat nog niet op de lijst. Je adres is op deze pc bewaard: klik over een minuutje opnieuw op ‘Bewaar’, of wanneer je maar wilt via Instellingen › Updates en privacy.} other {De inschrijfserver was net niet bereikbaar, dus je staat nog niet op de lijst. Je adres is op deze computer bewaard: klik over een minuutje opnieuw op ‘Bewaar’, of wanneer je maar wilt via Instellingen › Updates en privacy.}}",
+  "onboarding.stepBeta.signup.unreachable": "{platform, select, macos {De inschrijfserver was net niet bereikbaar, dus je staat nog niet op de lijst. Je adres is op deze Mac bewaard: klik over een minuutje opnieuw op ‘Bewaar’, of wanneer je maar wilt via Instellingen › Updates en privacy.} windows {De inschrijfserver was net niet bereikbaar, dus je staat nog niet op de lijst. Je adres is op deze pc bewaard: klik over een minuutje opnieuw op ‘Bewaar’, of wanneer je maar wilt via Instellingen › Updates en privacy.} linuxGnome {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Preferences › Updates & privacy.} linuxKde {Couldn’t reach the signup server just now, so you’re not on the list yet. Your address is saved on this computer: hit Save again in a minute, or any time from Configure Cmdr › Updates & privacy.} other {De inschrijfserver was net niet bereikbaar, dus je staat nog niet op de lijst. Je adres is op deze computer bewaard: klik over een minuutje opnieuw op ‘Bewaar’, of wanneer je maar wilt via Instellingen › Updates en privacy.}}",
   "@onboarding.stepBeta.signup.unreachable": {
     "sourceHash": "6032194"
   },
@@ -469,7 +469,7 @@
   "@onboarding.stepOptional.recommendedOn": {
     "sourceHash": "d91a6df"
   },
-  "onboarding.stepOptional.changeAnytime": "Je kunt dit op elk moment wijzigen in Instellingen.",
+  "onboarding.stepOptional.changeAnytime": "{platform, select, linuxGnome {You can change this any time in Preferences.} linuxKde {You can change this any time in Configure Cmdr.} other {Je kunt dit op elk moment wijzigen in Instellingen.}}",
   "@onboarding.stepOptional.changeAnytime": {
     "sourceHash": "895d675"
   },

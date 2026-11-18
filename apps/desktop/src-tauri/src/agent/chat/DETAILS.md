@@ -142,7 +142,7 @@ Three properties make the block safe to feed at all, all tested in `context/memo
 - **The content cannot close the fence.** `render` defangs any `MEMORY_END` / `MEMORY_BEGIN` in a file's text, so
   exactly one line in the block can close it. A fence whose text can forge its own terminator is not a fence.
 - **It never shares a field with `CMDR.md`.** `CMDR.md` is what the USER tells the agent (system string, after the
-  rules); memory is what the AGENT wrote and can be steered by a file name or a photographed sentence. Merging them
+  rules); memory is what the AGENT wrote and can be steered by a filename or a photographed sentence. Merging them
   would launder the second into the first's voice. `PrefixInputs` has no memory field at all, so memory can't reach the
   prefix by construction.
 

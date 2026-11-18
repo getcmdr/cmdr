@@ -704,11 +704,11 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "在設定裡加上你的 API 金鑰，就可以開始聊了。",
+  "askCmdr.error.noKey": "{platform, select, linuxGnome {Add your API key in preferences to start chatting.} other {在設定裡加上你的 API 金鑰，就可以開始聊了。}}",
   "@askCmdr.error.noKey": {
     "sourceHash": "0a78f37"
   },
-  "askCmdr.error.notConfigured": "聊天需要一個 AI 提供者。請在設定裡開啟一個。",
+  "askCmdr.error.notConfigured": "{platform, select, linuxGnome {Chatting needs an AI provider. Turn one on in preferences.} other {聊天需要一個 AI 提供者。請在設定裡開啟一個。}}",
   "@askCmdr.error.notConfigured": {
     "sourceHash": "2d55d2c"
   },
@@ -716,7 +716,7 @@
   "@askCmdr.error.askCmdrOff": {
     "sourceHash": "6599ee1"
   },
-  "askCmdr.error.noCloudConsent": "雲端 AI 已關閉。請到「設定 > AI」允許使用。",
+  "askCmdr.error.noCloudConsent": "{platform, select, linuxGnome {Cloud AI is off. Allow it in Preferences > AI.} linuxKde {Cloud AI is off. Allow it in Configure Cmdr > AI.} other {雲端 AI 已關閉。請到「設定 > AI」允許使用。}}",
   "@askCmdr.error.noCloudConsent": {
     "sourceHash": "cd2af1d"
   },
@@ -736,7 +736,7 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "提供者不接受你的 API 金鑰。到設定裡檢查一下。",
+  "askCmdr.error.authFailed": "{platform, select, linuxGnome {The provider didn’t accept your API key. Check it in preferences.} other {提供者不接受你的 API 金鑰。到設定裡檢查一下。}}",
   "@askCmdr.error.authFailed": {
     "sourceHash": "a2302ca"
   },
@@ -744,19 +744,19 @@
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "你的 {provider} 方案不包含這個模型。可以到「設定」換一個模型，或升級你的方案。",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, linuxGnome {Your {provider} plan doesn’t include this model. Pick another model in preferences, or upgrade your plan.} other {你的 {provider} 方案不包含這個模型。可以到「設定」換一個模型，或升級你的方案。}}",
   "@askCmdr.error.modelNotInPlan.named": {
     "sourceHash": "9f2c237"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "你在這個 AI 提供者的方案不包含這個模型。可以到「設定」換一個模型，或升級你的方案。",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, linuxGnome {Your plan with this AI provider doesn’t include this model. Pick another model in preferences, or upgrade your plan.} other {你在這個 AI 提供者的方案不包含這個模型。可以到「設定」換一個模型，或升級你的方案。}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
     "sourceHash": "b90bf30"
   },
-  "askCmdr.error.requestTooLarge.named": "{provider} 拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以在 {provider} 換一個更大的方案，或在「設定」選另一個提供者。",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, linuxGnome {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in preferences.} other {{provider} 拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以在 {provider} 換一個更大的方案，或在「設定」選另一個提供者。}}",
   "@askCmdr.error.requestTooLarge.named": {
     "sourceHash": "f878555"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "你的 AI 提供者拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以換一個更大的方案，或在「設定」選另一個提供者。",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, linuxGnome {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in preferences.} other {你的 AI 提供者拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以換一個更大的方案，或在「設定」選另一個提供者。}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
     "sourceHash": "b81536f"
   },
@@ -976,15 +976,15 @@
   "@askCmdr.composer.sendNeedsProvider": {
     "sourceHash": "9e6aba3"
   },
-  "askCmdr.providerNotice.off": "Ask Cmdr 需要一個 AI 提供者才能聊天。請到「設定」選一個。",
+  "askCmdr.providerNotice.off": "{platform, select, linuxGnome {Ask Cmdr needs an AI provider to chat. Pick one in Preferences.} linuxKde {Ask Cmdr needs an AI provider to chat. Pick one in Configure Cmdr.} other {Ask Cmdr 需要一個 AI 提供者才能聊天。請到「設定」選一個。}}",
   "@askCmdr.providerNotice.off": {
     "sourceHash": "8696c99"
   },
-  "askCmdr.providerNotice.cloudNeedsKey": "你的雲端 AI 提供者需要 API 金鑰，Ask Cmdr 才能聊天。請到「設定」加入。",
+  "askCmdr.providerNotice.cloudNeedsKey": "{platform, select, linuxGnome {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Preferences.} linuxKde {Your cloud AI provider needs an API key before Ask Cmdr can chat. Add it in Configure Cmdr.} other {你的雲端 AI 提供者需要 API 金鑰，Ask Cmdr 才能聊天。請到「設定」加入。}}",
   "@askCmdr.providerNotice.cloudNeedsKey": {
     "sourceHash": "dccf257"
   },
-  "askCmdr.providerNotice.cloudNeedsEndpoint": "你的雲端 AI 提供者需要網址，Ask Cmdr 才能聊天。請到「設定」加入。",
+  "askCmdr.providerNotice.cloudNeedsEndpoint": "{platform, select, linuxGnome {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Preferences.} linuxKde {Your cloud AI provider needs an address before Ask Cmdr can chat. Add it in Configure Cmdr.} other {你的雲端 AI 提供者需要網址，Ask Cmdr 才能聊天。請到「設定」加入。}}",
   "@askCmdr.providerNotice.cloudNeedsEndpoint": {
     "sourceHash": "1b1682b"
   },
@@ -1020,7 +1020,7 @@
   "@askCmdr.gate.cloudOff.title": {
     "sourceHash": "2e56781"
   },
-  "askCmdr.gate.cloudOff.body": "Ask Cmdr 透過你設定的雲端 AI 服務來對話。先到「設定」允許使用雲端 AI，就可以開始聊了。",
+  "askCmdr.gate.cloudOff.body": "{platform, select, linuxGnome {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Preferences first, and you’re ready to chat.} linuxKde {Ask Cmdr talks to the cloud AI service you set up. Allow cloud AI in Configure Cmdr first, and you’re ready to chat.} other {Ask Cmdr 透過你設定的雲端 AI 服務來對話。先到「設定」允許使用雲端 AI，就可以開始聊了。}}",
   "@askCmdr.gate.cloudOff.body": {
     "sourceHash": "d3d3252"
   },
@@ -1409,7 +1409,7 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "AI 功能已開啟，但還需要一個提供者才能運作。按一下就能到設定裡選一個。",
+  "askCmdr.wake.needsApiKey": "{platform, select, linuxGnome {AI features are on, but they need a provider to work. Click to set one up in preferences.} other {AI 功能已開啟，但還需要一個提供者才能運作。按一下就能到設定裡選一個。}}",
   "@askCmdr.wake.needsApiKey": {
     "sourceHash": "0f71f75"
   },

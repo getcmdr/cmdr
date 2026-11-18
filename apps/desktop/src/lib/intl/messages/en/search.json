@@ -104,9 +104,9 @@
     "screenshot": "search-dialog.png",
     "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."
   },
-  "search.imageResults.networkOff": "Turn on image indexing for this network drive in Settings to search the text inside its photos.",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Turn on image indexing for this network drive in Settings to search the text inside its photos.}}",
   "@search.imageResults.networkOff": {
-    "description": "Shown in the \"Text in images\" section when searching a network (SMB) drive that hasn’t been opted into image indexing. Points the user to the per-drive opt-in in Settings > Behavior > File system watching > Image search.",
+    "description": "Shown in the \"Text in images\" section when searching a network (SMB) drive that hasn’t been opted into image indexing. Points the user to the per-drive opt-in in Settings > Behavior > File system watching > Image search. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "search-dialog.png",
     "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."
   },
@@ -132,7 +132,7 @@
   "@search.imageResults.similarTo": {
     "description": "Heading shown above the grid when it's showing images similar to a chosen one, instead of text-match results.",
     "placeholders": {
-      "name": "the file name of the image the results are similar to, shown verbatim (for example beach.jpg)"
+      "name": "the filename of the image the results are similar to, shown verbatim (for example beach.jpg)"
     },
     "screenshot": "search-dialog.png",
     "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."
@@ -423,9 +423,9 @@
     "screenshot": "search-dialog.png",
     "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."
   },
-  "search.coverage.toast.indexingOff": "Drive indexing is off in Settings, so nothing indexes. Turn it on under Indexing > Drive indexing.",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {Drive indexing is off in Settings, so nothing indexes. Turn it on under Indexing > Drive indexing.}}",
   "@search.coverage.toast.indexingOff": {
-    "description": "Toast shown when the coverage note's Index this drive button can't act because the master drive-indexing switch is off. Points at the settings page that owns the switch. Sentence case; avoid the words 'error' and 'failed'.",
+    "description": "Toast shown when the coverage note's Index this drive button can't act because the master drive-indexing switch is off. Points at the settings page that owns the switch. Sentence case; avoid the words 'error' and 'failed'. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "placeholders": {},
     "screenshot": "search-dialog.png",
     "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."

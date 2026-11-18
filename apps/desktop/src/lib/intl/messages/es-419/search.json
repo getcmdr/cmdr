@@ -3,7 +3,7 @@
   "@search.runHint": {
     "sourceHash": "e8a44b1"
   },
-  "search.imageResults.networkOff": "Activa la indexación de imágenes para esta unidad de red en Configuración para buscar el texto dentro de sus fotos.",
+  "search.imageResults.networkOff": "{platform, select, linuxGnome {Turn on image indexing for this network drive in Preferences to search the text inside its photos.} linuxKde {Turn on image indexing for this network drive in Configure Cmdr to search the text inside its photos.} other {Activa la indexación de imágenes para esta unidad de red en Configuración para buscar el texto dentro de sus fotos.}}",
   "@search.imageResults.networkOff": {
     "sourceHash": "b5f509b"
   },
@@ -67,7 +67,7 @@
   "@search.coverage.walk.abandonedCount": {
     "sourceHash": "76750dd"
   },
-  "search.coverage.toast.indexingOff": "La indexación de unidades está desactivada en Configuración, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.",
+  "search.coverage.toast.indexingOff": "{platform, select, linuxGnome {Drive indexing is off in Preferences, so nothing indexes. Turn it on under Indexing > Drive indexing.} linuxKde {Drive indexing is off in Configure Cmdr, so nothing indexes. Turn it on under Indexing > Drive indexing.} other {La indexación de unidades está desactivada en Configuración, así que no se indexa nada. Actívala en Indexación > Indexación de unidades.}}",
   "@search.coverage.toast.indexingOff": {
     "sourceHash": "63e9d8d"
   },

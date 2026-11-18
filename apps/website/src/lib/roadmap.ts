@@ -741,7 +741,7 @@ export const roadmapSections: RoadmapSection[] = [
           {
             date: '(Oct 22)',
             title: 'Rename by EXIF and media tags',
-            description: 'Put capture dates, music artists, track #, etc. in file names.',
+            description: 'Put capture dates, music artists, track #, etc. in filenames.',
             done: true,
           },
           {
