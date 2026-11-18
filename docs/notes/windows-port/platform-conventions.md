@@ -112,5 +112,5 @@ secondary sources, not confirmed on a primary page.
 
 ## Left
 
-- Copy that splits by Linux desktop (`copy-decisions.md` § "Waits on task 59"): the value exists, but the message
-  catalog selects only on the platform.
+- Copy that splits by Linux desktop ([#1231](https://github.com/getcmdr/cmdr/issues/1231)): the value exists, but the
+  message catalog selects only on the platform.
