@@ -2,6 +2,7 @@
 //! blocking parser to the async `Volume::read_range`, and [`BlockReader`] turns
 //! any [`ByteSource`] into a seekable reader that fetches 64 KiB blocks on demand.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::VecDeque;
 use std::io::{self, Read, Seek, SeekFrom};
 use std::ops::Range;
@@ -96,7 +97,7 @@ impl ByteSource for VolumeByteSource {
                 ReadError::Io,
                 async move {
                     volume
-                        .read_range(&path, offset, want)
+                        .read_range(&AppPath::legacy_unchecked(&path), offset, want)
                         .await
                         .map_err(|error| match error {
                             VolumeError::NotSupported => ReadError::NotSupported,
