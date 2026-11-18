@@ -583,9 +583,12 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       with `ERROR_NO_SUCH_LOGON_SESSION` (key-based OpenSSH logons get no credential vault) and pass, with no `CmdrTest`
       credential left behind, when the same test binary runs as SYSTEM from a scheduled task. The other two failures are
       the pid cells below.
-    - Left for later tasks: an ADMX template and the Windows half of `/trust` (the key path is a public contract once
-      Windows ships), and the instance lock's holder pid, which reads as unknown on Windows (the two
-      `instance_lock::tests` pid cells fail there, as before this task: `LockFileEx` locks the bytes the pid sits in).
+    - The Windows half of `/trust` is drafted, hidden until a release carries a Windows download
+      (`apps/website/DETAILS.md` § Patterns, "Copy for an OS that hasn't shipped"); David reviews its copy, and the key
+      path stays his open naming decision.
+    - Left for later tasks: an ADMX template (the key path is a public contract once Windows ships), and the instance
+      lock's holder pid, which reads as unknown on Windows (the two `instance_lock::tests` pid cells fail there, as
+      before this task: `LockFileEx` locks the bytes the pid sits in).
 39. [M] Windows. Drives: drive letters and labels, the device-arrival watcher (`CM_Register_Notification`), mapped and
     UNC drives, eject. Needs 20, 34. **Eject seam in place** (2026-11-18): eject is every-OS code, and what differs sits
     in `file_system/volume/eject/platform/` (the tool, ejectability, whether an SMB disconnect unmounts). The Windows

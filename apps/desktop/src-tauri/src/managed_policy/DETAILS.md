@@ -53,8 +53,9 @@ The canonical key catalog for Cmdr's MDM support. `/trust` and the sample profil
   same name. Anything else (`REG_BINARY`, a bad length, broken UTF-16) → data, so that key restricts (rule 4).
 - A hive we can't read at all is logged and read as empty, like a CFPreferences read that fails on macOS.
 - ❗ The key path is a public contract once Windows ships: admins' GPOs and any ADMX template name it. No ADMX template
-  exists yet, and `/trust` and the sample files are macOS-only so far (`public_docs_test.rs` checks the keys, not the
-  path).
+  exists yet, and the sample files are macOS-only. `/trust#windows` names the path from `windowsPolicyKey` in
+  `apps/website/src/lib/trust-mdm.ts`, kept equal to `POLICY_KEY` by hand (`public_docs_test.rs` checks the keys, not
+  the path); that section stays hidden until a release ships Windows.
 
 ## Key catalog
 

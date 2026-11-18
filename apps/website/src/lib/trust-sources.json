@@ -161,6 +161,28 @@
     },
     {
       "page": "/trust",
+      "anchor": "windows",
+      "paths": [
+        "apps/desktop/src-tauri/src/secrets/platform/windows/**",
+        "apps/desktop/src-tauri/src/secrets/mod.rs",
+        "apps/desktop/src-tauri/src/managed_policy/platform/windows/**",
+        "apps/desktop/src-tauri/src/managed_policy/platform/registry_values.rs",
+        "apps/desktop/src-tauri/src/updater/**",
+        "apps/desktop/src-tauri/tauri.windows.conf.json",
+        "apps/desktop/src-tauri/src/tools/sensitive.rs",
+        "apps/desktop/src-tauri/src/tools/sensitive/**",
+        "apps/desktop/src-tauri/src/config.rs",
+        "apps/desktop/src-tauri/src/data_wipe/**",
+        "apps/desktop/src-tauri/src/crash_reporter/platform/windows.rs",
+        "apps/desktop/src-tauri/src/licensing/device_id/platform/windows.rs",
+        "apps/desktop/src-tauri/src/platform/windows/**",
+        "apps/website/src/lib/trust-mdm.ts",
+        "apps/website/src/lib/release.ts",
+        "scripts/release-assets/manifest/**"
+      ]
+    },
+    {
+      "page": "/trust",
       "anchor": "subprocessor-changes",
       "paths": [
         "apps/website/src/lib/trust.ts",

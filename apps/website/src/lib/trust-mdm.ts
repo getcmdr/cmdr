@@ -17,6 +17,14 @@
 export const codeRequirement =
   'identifier "com.veszelovszki.cmdr" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = "83H6YAQMNP"'
 
+/**
+ * The registry key Windows reads policies from, under both `HKLM` and `HKCU` (machine wins). The
+ * one place the page names it: `/trust#windows-policy` builds every mention from this. It mirrors
+ * `POLICY_KEY` in `managed_policy/platform/windows/mod.rs` and becomes a public contract (admins'
+ * GPOs name it) once Windows ships, so a rename changes both.
+ */
+export const windowsPolicyKey = 'SOFTWARE\\Policies\\Cmdr'
+
 export interface ManagedPreferenceKey {
   /** The key name in the `com.veszelovszki.cmdr` preference domain. */
   key: string
