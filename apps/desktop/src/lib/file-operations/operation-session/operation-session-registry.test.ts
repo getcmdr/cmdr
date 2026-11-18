@@ -168,17 +168,21 @@ describe('the session registry', () => {
 
   it('still resolves a row whose operation ended before the window opened', async () => {
     // The seed can't answer for an id it doesn't carry, so that session asks for
-    // itself and resolves as already over rather than sitting empty.
+    // itself and resolves as already over rather than sitting empty, after a
+    // beat for a terminal event still in flight (`operation-session.svelte.ts`).
+    vi.useFakeTimers()
     listOperationsMock.mockResolvedValue([snapshot('a')])
     const registry = createOperationSessionRegistry()
     await registry.init()
 
     const ghost = registry.acquire('ended-already')
     await flushSeeds()
+    vi.advanceTimersByTime(1_000)
 
     expect(ghost.outcome).toEqual({ kind: 'gone' })
     expect(listOperationsMock).toHaveBeenCalledTimes(2)
     registry.dispose()
+    vi.useRealTimers()
   })
 
   it('drops every session on window teardown', () => {

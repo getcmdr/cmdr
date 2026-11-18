@@ -57,6 +57,13 @@ export type OperationOutcome =
   | { kind: 'cancelled'; event: WriteCancelledEvent }
   | { kind: 'gone' }
 
+/** How long a seed miss waits for the operation to say anything before it
+ *  resolves as `gone`. Covers delivery lag between Tauri's command and event
+ *  channels only: the backend emits a terminal event before it drops the
+ *  record. Same reasoning and size as the progress dialog's
+ *  `SETTLED_WITHOUT_ENDING_GRACE_MS`. */
+const SEED_MISS_GRACE_MS = 1_000
+
 /** What the scanning phase says about itself. Zeroes outside a scan. */
 export interface ScanReadout {
   filesFound: number
@@ -159,6 +166,8 @@ export function createOperationSession(operationId: string, fanout: OperationEve
    *  live event. Gates the seed, which is older by the time it resolves. */
   let receivedDelivery = false
   let disposed = false
+  /** Pending `gone` after a seed miss. See {@link SEED_MISS_GRACE_MS}. */
+  let seedMissTimer: ReturnType<typeof setTimeout> | null = null
 
   /** Read through a call rather than the flag, because the attach below sets it
    *  from inside a callback and straight-line type narrowing can't see that. */
@@ -324,9 +333,19 @@ export function createOperationSession(operationId: string, fanout: OperationEve
         snapshot = row
         return
       }
-      // Nothing knows this operation: it ended before this window looked.
-      log.debug('Seeding found no record for op={operationId}; resolving it as already over', { operationId })
-      settle({ kind: 'gone' })
+      // Nothing knows this operation: it ended before this window looked, or it
+      // ended just now and its terminal events are still on their way. The
+      // registry answers on the command channel and the events travel on the
+      // event channel, so the answer can overtake the `write-cancelled` the
+      // backend sent before the removal. Give them a beat before calling it over.
+      log.debug('Seeding found no record for op={operationId}; resolving it as already over unless it speaks up', {
+        operationId,
+      })
+      seedMissTimer = setTimeout(() => {
+        seedMissTimer = null
+        if (disposed || receivedDelivery) return
+        settle({ kind: 'gone' })
+      }, SEED_MISS_GRACE_MS)
     } catch (error) {
       // A failed seed leaves the session live and event-driven, which is the
       // safe direction: a running operation still reports itself.
@@ -442,6 +461,7 @@ export function createOperationSession(operationId: string, fanout: OperationEve
 
     dispose(): void {
       disposed = true
+      if (seedMissTimer !== null) clearTimeout(seedMissTimer)
       attachment.detach()
     },
   }
