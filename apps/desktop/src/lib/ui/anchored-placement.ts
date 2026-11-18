@@ -100,3 +100,32 @@ export function placeBesideRow(input: RowPlacementInput): { left: number; top: n
   const top = clamp(row.top - gap, margin, viewport.height - size.height - margin)
   return { left, top, maxHeight: viewport.height - 2 * margin }
 }
+
+export interface PointPlacementInput {
+  /** Where the menu was asked for: the pointer, or a keyboard-opened menu's anchor. */
+  point: { x: number; y: number }
+  size: Size
+  viewport: Size
+  margin: number
+}
+
+/**
+ * A context menu at a point: its top-left corner there when it fits, flipped to end at the point
+ * on whichever axis it would pass the window's edge (Windows and macOS both flip), clamped when
+ * neither side fits across, and capped on the roomier side when it fits neither up nor down, so
+ * it scrolls inside itself. An in-page menu can't pass the window's edge (D5's accepted limit).
+ */
+export function placeAtPoint(input: PointPlacementInput): { left: number; top: number; maxHeight: number } {
+  const { point, size, viewport, margin } = input
+  const maxLeft = viewport.width - size.width - margin
+  let left = point.x
+  if (left > maxLeft) left = point.x - size.width >= margin ? point.x - size.width : maxLeft
+  left = clamp(left, margin, maxLeft)
+
+  const roomBelow = viewport.height - margin - point.y
+  const roomAbove = point.y - margin
+  if (size.height <= roomBelow) return { left, top: point.y, maxHeight: roomBelow }
+  if (size.height <= roomAbove) return { left, top: point.y - size.height, maxHeight: roomAbove }
+  if (roomBelow >= roomAbove) return { left, top: point.y, maxHeight: roomBelow }
+  return { left, top: margin, maxHeight: roomAbove }
+}

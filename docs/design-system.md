@@ -882,9 +882,10 @@ pointing to the tooltip's unique `id`. Tooltip has `role="tooltip"`.
 
 ### Menu (app)
 
-`Menu.svelte` is the house menu: a portaled, glass, keyboard-first popup built from SECTIONS of rows, and the only
-in-app menu (right-click menus stay native/muda). A consumer builds a controller with `createMenu(deps)`, hands it to
-`<Menu {menu} ariaLabel>`, and never writes a key handler, a highlight index, or a `getBoundingClientRect`.
+`Menu.svelte` is the house menu: a portaled, glass, keyboard-first popup built from SECTIONS of rows, the in-app picker
+(the command menus below draw the bar and Windows' right-click menus). A consumer builds a controller with
+`createMenu(deps)`, hands it to `<Menu {menu} ariaLabel>`, and never writes a key handler, a highlight index, or a
+`getBoundingClientRect`.
 
 **Surface:** the shared glass tokens (`--color-bg-glass` / `--glass-backdrop` / `--color-border-glass`, which follow the
 macOS Liquid Glass slider and go opaque under `html.reduce-transparency`), `--radius-menu`, `--shadow-glass` plus
@@ -909,6 +910,30 @@ cursor. A submenu takes its parent row's highlight rather than adding one.
 inset border on the row bordering the gap.
 
 Controller surface, the row snippets, and the gotchas: `apps/desktop/src/lib/ui/DETAILS.md` § Menu.
+
+### Menu bar and context menus (command menus)
+
+`MenuBar.svelte` and `ContextMenu.svelte` draw `cmdr-menu`'s rows in the page: the in-window menu bar with its flyouts
+(Windows and Linux), Windows' right-click menus, and the browser demo's macOS bar and menus. Every value is a menu token
+(`apps/desktop/src/app-menu.css`), keyed on `data-look`: the house look by default, Windows 11's WinUI look on Windows,
+light, dark, reduced transparency, and contrast themes.
+
+**Surface:** the menu tokens' fill, tint, blur, 1px stroke, 8px corners, and shadow on Windows (the glass tokens in the
+house look); 2px of block padding; a 96px floor on Windows. Fixed-positioned, kept inside the window: a flyout or
+submenu flips or scrolls at the edge, a context menu flips on either axis around the pointer.
+
+**Rows:** 4px rounded rows inset 4px (Windows), the check or radio glyph column (28px on Windows, collapsed in a menu
+without one; always reserved in the house look), the label, the shortcut 24px after it in secondary text at caption
+size, and the submenu chevron. A context menu's header line names what it acts on, in caption-size secondary text.
+
+**States:** the pointer's row takes the hover fill; the keyboard's row takes WinUI's system focus visual (a 2px outer
+and 1px inner ring) and no fill on Windows, the hover fill in the house look; a submenu row whose submenu is open keeps
+its own fill. Disabled rows and their shortcuts take the disabled text color. No motion.
+
+**Access keys:** underlined letters (Windows and Linux), shown by the platform's keyboard-cue rule; a label without its
+letter carries "(B)" after it.
+
+Behavior, the keys, and the API: `apps/desktop/src/lib/ui/DETAILS.md` § Command menus.
 
 ### Info glyph (app)
 

@@ -1,18 +1,34 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { tick } from 'svelte'
 import { createContextMenuHost, type ContextMenuHost } from './context-menu.js'
 import type { ContextPopup, MenuClick } from './menu-engine.js'
 
-// A fake popup with the engine's shapes (`menu-engine.ts`), so the test pins what this file does
-// with them: draw, walk, and send what a pick asks for.
+// A fake popup with the engine's shapes (`menu-engine.ts`, `cmdr-menu`'s page rows), so the test
+// pins what this file does with them: draw on the shared component, walk, and send what a pick asks for.
 const POPUP: ContextPopup = {
   anchor: null,
   rows: [
     { kind: 'header', label: { text: 'report.pdf · 2.1 MB' } },
     { kind: 'separator' },
-    { kind: 'item', id: 'file_view', label: { key: 'menu.file.view', args: {} }, shortcut: 'F3', enabled: true },
-    { kind: 'item', id: 'rename', label: { key: 'menu.file.rename', args: {} }, shortcut: null, enabled: false },
+    {
+      kind: 'item',
+      id: 'file_view',
+      label: { key: 'menu.file.view', args: {} },
+      shortcut: 'F3',
+      ariaKeyshortcuts: 'F3',
+      enabled: true,
+    },
+    {
+      kind: 'item',
+      id: 'rename',
+      label: { key: 'menu.file.rename', args: {} },
+      shortcut: null,
+      ariaKeyshortcuts: null,
+      enabled: false,
+    },
     {
       kind: 'submenu',
+      id: 'menu.context.selection',
       label: { key: 'menu.context.selection', args: {} },
       enabled: true,
       rows: [
@@ -21,11 +37,19 @@ const POPUP: ContextPopup = {
           id: 'toggle_selection',
           label: { key: 'menu.context.toggleSelection', args: {} },
           shortcut: 'Space',
+          ariaKeyshortcuts: 'Space',
           enabled: true,
         },
       ],
     },
-    { kind: 'item', id: 'file_copy', label: { key: 'menu.file.copy', args: {} }, shortcut: 'F5', enabled: true },
+    {
+      kind: 'item',
+      id: 'file_copy',
+      label: { key: 'menu.file.copy', args: {} },
+      shortcut: 'F5',
+      ariaKeyshortcuts: 'F5',
+      enabled: true,
+    },
   ],
 }
 
@@ -56,14 +80,24 @@ function setup(
   return { emitted, picked, invoke }
 }
 
-function key(name: string): KeyboardEvent {
+async function settle(): Promise<void> {
+  for (let i = 0; i < 4; i++) await tick()
+}
+
+async function open(fromKeyboard: boolean, at = { x: 0, y: 0 }): Promise<void> {
+  host?.open(POPUP, at, fromKeyboard)
+  await settle()
+}
+
+async function key(name: string): Promise<KeyboardEvent> {
   const event = new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true })
   ;(document.activeElement ?? document.body).dispatchEvent(event)
+  await settle()
   return event
 }
 
-const menus = () => [...document.querySelectorAll<HTMLElement>('.cmdr-demo-menu')]
-const rows = () => [...document.querySelectorAll<HTMLElement>('.cmdr-demo-menu-row')]
+const menus = () => [...document.querySelectorAll<HTMLElement>('[data-command-menu="context"]')]
+const rows = () => [...document.querySelectorAll<HTMLElement>('.command-menu-row')]
 
 afterEach(() => {
   host?.destroy()
@@ -72,34 +106,35 @@ afterEach(() => {
 })
 
 describe('demo context menu', () => {
-  it('draws the rows as a menu named by its header, at the point it was asked for', () => {
+  it('draws the rows as a macOS menu named by its header, at the point it was asked for', async () => {
     setup()
-    host?.open(POPUP, { x: 40, y: 60 }, false)
+    await open(false, { x: 40, y: 60 })
     const [menu] = menus()
     expect(menu.getAttribute('role')).toBe('menu')
+    expect(menu.classList.contains('cmdr-demo-macos-menu')).toBe(true)
     expect(menu.getAttribute('aria-label')).toBe('report.pdf · 2.1 MB')
     expect(menu.style.left).toBe('40px')
     expect(menu.style.top).toBe('60px')
-    const header = menu.querySelector('.cmdr-demo-menu-header')
+    const header = menu.querySelector('.command-menu-header')
     expect(header?.textContent).toBe('report.pdf · 2.1 MB')
-    expect(header?.getAttribute('role')).toBe('presentation')
+    expect(header?.getAttribute('aria-hidden')).toBe('true')
     expect(rows().map((row) => row.getAttribute('role'))).toEqual(['menuitem', 'menuitem', 'menuitem', 'menuitem'])
     expect(rows()[1].getAttribute('aria-disabled')).toBe('true')
     expect(rows()[0].getAttribute('aria-keyshortcuts')).toBe('F3')
   })
 
-  it('starts on the first enabled row from the keyboard, skips greyed rows, and picks with Enter', () => {
+  it('starts on the first enabled row from the keyboard, skips greyed rows, and picks with Enter', async () => {
     const { emitted, picked } = setup()
     const trigger = document.createElement('button')
     document.body.append(trigger)
     trigger.focus()
-    host?.open(POPUP, { x: 0, y: 0 }, true)
+    await open(true)
     expect(document.activeElement?.textContent).toContain('View')
-    key('ArrowDown')
+    await key('ArrowDown')
     // Rename is greyed: the walk lands on the submenu row.
     expect(document.activeElement?.getAttribute('aria-haspopup')).toBe('menu')
-    key('ArrowDown')
-    const enter = key('Enter')
+    await key('ArrowDown')
+    const enter = await key('Enter')
     expect(enter.defaultPrevented).toBe(true)
     expect(picked).toEqual(['file_copy'])
     expect(emitted).toEqual([['execute-command', { commandId: 'file_copy' }, { kind: 'label', label: 'main' }]])
@@ -108,46 +143,48 @@ describe('demo context menu', () => {
     expect(document.activeElement).toBe(trigger)
   })
 
-  it('opens a submenu with → and backs out with ← and Esc', () => {
+  it('opens a submenu with → and backs out with ← and Esc', async () => {
     setup()
-    host?.open(POPUP, { x: 0, y: 0 }, true)
-    key('ArrowDown')
-    key('ArrowRight')
+    await open(true)
+    await key('ArrowDown')
+    await key('ArrowRight')
     expect(menus()).toHaveLength(2)
     expect(document.activeElement?.textContent).toContain('Space')
-    key('ArrowLeft')
+    await key('ArrowLeft')
     expect(menus()).toHaveLength(1)
-    key('ArrowRight')
-    key('Escape')
+    await key('ArrowRight')
+    await key('Escape')
     expect(menus()).toHaveLength(1)
-    key('Escape')
+    await key('Escape')
     expect(menus()).toHaveLength(0)
   })
 
-  it('keeps every key from the app while it is up', () => {
-    setup()
+  it('keeps every key from the app while it is up, and picks no row by a letter (a Mac menu has no access keys)', async () => {
+    const { picked } = setup()
     const appKeys = vi.fn()
     window.addEventListener('keydown', appKeys)
-    host?.open(POPUP, { x: 0, y: 0 }, true)
-    key('x')
-    key('ArrowDown')
+    await open(true)
+    await key('c')
+    await key('ArrowDown')
     window.removeEventListener('keydown', appKeys)
     expect(appKeys).not.toHaveBeenCalled()
+    expect(picked).toEqual([])
   })
 
-  it('never picks a greyed row, and a click outside closes it', () => {
+  it('never picks a greyed row, and a click outside closes it', async () => {
     const { picked } = setup()
-    host?.open(POPUP, { x: 0, y: 0 }, false)
+    await open(false)
     rows()[1].click()
     expect(picked).toEqual([])
     expect(menus()).toHaveLength(1)
     document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    await settle()
     expect(menus()).toHaveLength(0)
   })
 
-  it('runs a command pick through invoke, as the desktop calls `add_favorite`', () => {
+  it('runs a command pick through invoke, as the desktop calls `add_favorite`', async () => {
     const { invoke } = setup(() => ({ kind: 'invoke', command: 'add_favorite', args: { path: '/a', name: null } }))
-    host?.open(POPUP, { x: 0, y: 0 }, false)
+    await open(false)
     rows()[0].click()
     expect(invoke).toHaveBeenCalledWith('add_favorite', { path: '/a', name: null })
   })

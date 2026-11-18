@@ -7,6 +7,7 @@
 //! over the `crate::menu` builders and `MenuState`.
 
 use crate::ignore_poison::IgnorePoison;
+use crate::menu::page_bar::{self, BarPickOutcome, MenuBarAnswer, notify_bar_changed};
 use crate::menu::{
     MenuState, RequestedSort, SELECT_SAME_KIND_ID, SameKindTarget, SettingsChanged, TrashUndoTarget, UNDO_TRASH_ID,
     ViewMode, apply_menu_item_states, cloned_handle, rebuild_view_mode_items, same_kind_menu_label, set_menu_context,
@@ -44,6 +45,8 @@ pub fn toggle_hidden_files<R: Runtime>(app: AppHandle<R>) -> Result<bool, String
     let current = check_item.is_checked().unwrap_or(false);
     let new_state = !current;
     check_item.set_checked(new_state).map_err(|e| e.to_string())?;
+    menu_state.show_hidden_checked.store(new_state, Ordering::Relaxed);
+    notify_bar_changed(&app);
 
     // Emit event to frontend with the new state
     SettingsChanged {
@@ -63,6 +66,8 @@ pub fn toggle_hidden_files<R: Runtime>(app: AppHandle<R>) -> Result<bool, String
 #[specta::specta]
 pub fn sync_menu_show_hidden<R: Runtime>(app: AppHandle<R>, checked: bool) -> Result<(), String> {
     let menu_state = app.state::<MenuState<R>>();
+    menu_state.show_hidden_checked.store(checked, Ordering::Relaxed);
+    notify_bar_changed(&app);
     let Some(check_item) = cloned_handle(&menu_state.show_hidden_files) else {
         // Menu not yet initialized (very early in startup). The next menu
         // build will pick up the persisted setting, so a no-op here is fine.
@@ -109,13 +114,13 @@ pub fn update_view_mode_menu<R: Runtime>(
     *menu_state.view_mode_left.lock_ignore_poison() = left;
     *menu_state.view_mode_right.lock_ignore_poison() = right;
 
-    if active_changed {
-        rebuild_view_mode_items(&app, &menu_state).map_err(|e| e.to_string())?;
+    let synced = if active_changed {
+        rebuild_view_mode_items(&app, &menu_state)
     } else {
-        sync_view_mode_check_states(&menu_state).map_err(|e| e.to_string())?;
-    }
-
-    Ok(())
+        sync_view_mode_check_states(&menu_state)
+    };
+    notify_bar_changed(&app);
+    synced.map_err(|e| e.to_string())
 }
 
 /// Checks View > Sort by's column and order for the sort the focused pane ASKED for, or nothing for
@@ -128,6 +133,7 @@ pub fn update_sort_menu(app: AppHandle, sort: Option<RequestedSort>) {
     let menu_state = app.state::<MenuState<tauri::Wry>>();
     *menu_state.requested_sort.lock_ignore_poison() = sort;
     sync_sort_check_states(&menu_state);
+    notify_bar_changed(&app);
 }
 
 /// Updates the File menu "Pin tab" / "Unpin tab" label based on the active tab's pin state.
@@ -135,6 +141,8 @@ pub fn update_sort_menu(app: AppHandle, sort: Option<RequestedSort>) {
 #[specta::specta]
 pub fn update_pin_tab_menu<R: Runtime>(app: AppHandle<R>, is_pinned: bool) -> Result<(), String> {
     let menu_state = app.state::<MenuState<R>>();
+    menu_state.pin_tab_pinned.store(is_pinned, Ordering::Relaxed);
+    notify_bar_changed(&app);
     let Some(item) = cloned_handle(&menu_state.pin_tab) else {
         return Err("Menu not initialized".to_string());
     };
@@ -159,7 +167,10 @@ pub fn update_select_same_kind_menu<R: Runtime>(
     target: Option<SameKindTarget>,
 ) -> Result<(), String> {
     let menu_state = app.state::<MenuState<R>>();
-    menu_state.set_item_label(SELECT_SAME_KIND_ID, same_kind_menu_label(target.as_ref()))?;
+    let label = same_kind_menu_label(target.as_ref());
+    *menu_state.same_kind_target.lock_ignore_poison() = target;
+    notify_bar_changed(&app);
+    menu_state.set_item_label(SELECT_SAME_KIND_ID, label)?;
     // `set_text` leaves a plain NSMenuItem title behind, so the dimmed `⌥⇧=` has to be redrawn or
     // it vanishes on the first cursor move.
     #[cfg(target_os = "macos")]
@@ -178,10 +189,10 @@ pub fn update_select_same_kind_menu<R: Runtime>(
 #[specta::specta]
 pub fn update_undo_trash_menu<R: Runtime>(app: AppHandle<R>, target: Option<TrashUndoTarget>) -> Result<(), String> {
     let menu_state = app.state::<MenuState<R>>();
-    menu_state
-        .undo_trash_available
-        .store(target.is_some(), Ordering::Relaxed);
-    menu_state.set_item_label(UNDO_TRASH_ID, undo_trash_menu_label(target.as_ref()))?;
+    let label = undo_trash_menu_label(target.as_ref());
+    *menu_state.undo_trash_target.lock_ignore_poison() = target;
+    notify_bar_changed(&app);
+    menu_state.set_item_label(UNDO_TRASH_ID, label)?;
     apply_menu_item_states(&menu_state);
     // `set_text` leaves a plain NSMenuItem title behind, so a rebound display-only shortcut has
     // to be redrawn (see `update_select_same_kind_menu`).
@@ -228,6 +239,7 @@ pub fn set_reopen_closed_tab_enabled<R: Runtime>(app: AppHandle<R>, enabled: boo
     let menu_state = app.state::<MenuState<R>>();
     menu_state.reopen_closed_tab_enabled.store(enabled, Ordering::Relaxed);
     apply_menu_item_states(&menu_state);
+    notify_bar_changed(&app);
     Ok(())
 }
 
@@ -288,6 +300,7 @@ pub fn set_open_terminal_here_enabled<R: Runtime>(app: AppHandle<R>, enabled: bo
     let menu_state = app.state::<MenuState<R>>();
     menu_state.open_terminal_here_enabled.store(enabled, Ordering::Relaxed);
     apply_menu_item_states(&menu_state);
+    notify_bar_changed(&app);
     Ok(())
 }
 
@@ -303,6 +316,7 @@ pub fn set_file_operations_blocked<R: Runtime>(app: AppHandle<R>, blocked: bool)
     let menu_state = app.state::<MenuState<R>>();
     menu_state.file_operations_blocked.store(blocked, Ordering::Relaxed);
     apply_menu_item_states(&menu_state);
+    notify_bar_changed(&app);
     Ok(())
 }
 
@@ -320,6 +334,7 @@ pub fn set_commands_refused_over_dialog<R: Runtime>(app: AppHandle<R>, command_i
     let menu_state = app.state::<MenuState<R>>();
     *menu_state.commands_refused_over_dialog.lock_ignore_poison() = command_ids.into_iter().collect();
     apply_menu_item_states(&menu_state);
+    notify_bar_changed(&app);
     Ok(())
 }
 
@@ -341,4 +356,30 @@ pub fn set_menu_mnemonics_suspended(window: tauri::Window, suspended: bool) {
 #[specta::specta]
 pub fn get_menu_bar_title_mnemonics() -> Vec<crate::menu::BarTitleMnemonic> {
     crate::menu::bar_title_mnemonics(cmdr_menu::spec::Platform::current())
+}
+
+/// The main menu bar for a page that draws it (off macOS, the in-window bar): every menu and row,
+/// at its revision. From the first call on, every move of the bar emits `menu-bar-changed` with
+/// the next revision and the rows that moved; `menu/DETAILS.md` § "The bar a page draws" has the
+/// ordering contract (subscribe first, then ask, then apply events past the answer's revision).
+#[tauri::command]
+#[specta::specta]
+pub fn get_menu_bar(app: AppHandle) -> MenuBarAnswer {
+    page_bar::answer(&app.state::<MenuState<tauri::Wry>>())
+}
+
+/// The viewer window's bar for a page that draws it, from the viewer's own state. No event: the
+/// viewer is the only writer of its inputs, so it asks again when one moves.
+#[tauri::command]
+#[specta::specta]
+pub fn get_viewer_menu_bar(inputs: cmdr_menu::page::viewer::ViewerBarInputs) -> Vec<cmdr_menu::page::BarMenuView> {
+    cmdr_menu::page::viewer::viewer_bar_view(inputs, cmdr_menu::spec::Platform::current())
+}
+
+/// A page's click on a bar row (the main bar's or the viewer's), by menu id: runs the handler a
+/// native click reaches, or nothing for a row that's greyed out right now.
+#[tauri::command]
+#[specta::specta]
+pub fn pick_menu_bar_item(app: AppHandle, menu_id: String) -> BarPickOutcome {
+    page_bar::pick(&app, &menu_id)
 }

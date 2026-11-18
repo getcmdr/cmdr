@@ -17,7 +17,7 @@ use std::collections::HashSet;
 
 use cmdr_fs::ignore_poison::IgnorePoison as _;
 use cmdr_listing::SortColumn;
-use cmdr_menu::accelerators::glyphs;
+use cmdr_menu::context::ContextMenuShortcuts;
 use cmdr_menu::context::click::{ContextClick, context_click};
 use cmdr_menu::context::file::{FileMenuFacts, PaneFacts, TargetFacts, file_menu};
 use cmdr_menu::context::image_index::ImageIndexMenuState;
@@ -25,12 +25,12 @@ use cmdr_menu::context::popups::{
     BreadcrumbVolume, DetachWord, NetworkHostFacts, PaneSide, QueueRowMenuEntry, breadcrumb_menu, date_sort_menu,
     function_key_bar_menu, network_host_menu, parent_row_menu, queue_row_menu, tab_menu, viewer_text_menu,
 };
-use cmdr_menu::context::{ContextLabel, ContextMenuShortcuts, ContextRow};
 use cmdr_menu::labels::SameKindTarget;
+use cmdr_menu::page::context::page_rows;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::menu::{Click, DemoMenu, PLATFORM, Row, RowLabel, parse};
+use crate::menu::{Click, DemoMenu, PLATFORM, Row, parse};
 
 /// Every popup command [`DemoMenu::popup`] answers, by its Tauri name.
 pub const POPUP_COMMANDS: &[&str] = &[
@@ -277,7 +277,7 @@ impl DemoMenu {
         };
         c.window = window.to_string();
         c.live.clear();
-        let rows = drawn(&rows, &shortcuts, &mut c.live);
+        let rows = page_rows(&rows, &shortcuts, PLATFORM, &mut c.live);
         Ok(Popup { rows, anchor })
     }
 
@@ -351,57 +351,5 @@ impl DemoMenu {
                 to_main("date-sort-menu-pick", json!({ "pane": pane, "column": column }))
             }
         }
-    }
-}
-
-/// The crate's rows as the page draws them: words as catalog keys, shortcuts in a Mac's glyphs,
-/// slots left out. Every enabled id goes into `live`.
-fn drawn(rows: &[ContextRow], shortcuts: &ContextMenuShortcuts, live: &mut HashSet<String>) -> Vec<Row> {
-    rows.iter()
-        .filter_map(|row| {
-            Some(match row {
-                ContextRow::Item(item) => {
-                    if item.enabled {
-                        live.insert(item.id.clone());
-                    }
-                    Row::Item {
-                        id: item.id.clone(),
-                        label: label(&item.label),
-                        shortcut: item.shortcut.resolve(shortcuts, PLATFORM).as_deref().map(glyphs),
-                        enabled: item.enabled,
-                    }
-                }
-                ContextRow::Check { item, checked } => {
-                    if item.enabled {
-                        live.insert(item.id.clone());
-                    }
-                    Row::Check {
-                        id: item.id.clone(),
-                        label: label(&item.label),
-                        shortcut: item.shortcut.resolve(shortcuts, PLATFORM).as_deref().map(glyphs),
-                        enabled: item.enabled,
-                        checked: *checked,
-                    }
-                }
-                ContextRow::Submenu { label: text, rows, .. } => Row::Submenu {
-                    label: label(text),
-                    enabled: true,
-                    rows: drawn(rows, shortcuts, live),
-                },
-                ContextRow::Header(text) => Row::Header {
-                    label: RowLabel::Text { text: text.clone() },
-                },
-                ContextRow::Separator => Row::Separator,
-                // The OS fills these on desktop; a browser has no OS to ask.
-                ContextRow::Slot(_) => return None,
-            })
-        })
-        .collect()
-}
-
-fn label(label: &ContextLabel) -> RowLabel {
-    match label {
-        ContextLabel::Key(text) => text.clone().into(),
-        ContextLabel::Text(text) => RowLabel::Text { text: text.clone() },
     }
 }

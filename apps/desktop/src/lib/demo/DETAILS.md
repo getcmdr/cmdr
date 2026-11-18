@@ -173,7 +173,9 @@ every window. The demo keeps that shape, so secondary windows share its state, a
 ## The menu bar
 
 - **What**: a strip at the top of the page (`menu-bar.svelte.ts`, first in `<body>`, so the app's flex column starts
-  under it) that draws the macOS menu bar the desktop builds and sends what its items send. It sets
+  under it) that draws the macOS menu bar the desktop builds and sends what its items send. It's the app's own in-page
+  bar (`#lib/ui/MenuBar.svelte`, the one Windows and Linux draw; `lib/ui/DETAILS.md` § Command menus) on its `mac`
+  flavor, mounted with `DEMO_MENU_CLASS`, so the demo holds no menu drawing or key handling of its own. It sets
   `--cmdr-demo-window-top` on `:root` to its height, for the demo chrome that sits on the main window. The app's status
   corner and top toast stack sit against the page's top edge (the window's, on the desktop), so `menu-bar-style.ts`
   moves both down by it; without that the bar covers the copy's progress chip and eats its click (the website spec's
@@ -186,21 +188,25 @@ every window. The demo keeps that shape, so secondary windows share its state, a
   and a click that sent anything other than the native event would need its own handler in the app.
 - **Words**: each row's catalog key through `getMessage`, its `{token}`s replaced literally, as the desktop's
   `menu_t_with` does. The app menu's title is the literal `Cmdr`.
-- **Language**: the closed strip redraws the moment the top frame's language lands, from a `$effect` over the catalog's
-  locale-version rune (the file is `.svelte.ts` for it), as `followWindowTitle` keeps a native title in step. Decision:
-  not on the `set_ui_language` push the desktop's menu rebuilds on. Why: Rust reads its own catalog synchronously, but
-  the push reaches the demo before the webview's new catalog chunk loads, so a redraw on it would draw the old words. An
-  open menu is left alone; its next open redraws it.
+- **Live**: the engine calls `onChange` after every push and bar click (`menu-engine.ts`), the demo's
+  `menu-bar-changed`, and the bar re-reads `bar()` into its `$state` (the file is `.svelte.ts` for it); an open menu
+  redraws in place.
+- **Language**: the strip redraws the moment the top frame's language lands: the component resolves each label through
+  `getMessage` in its markup, which reads the catalog's locale-version rune, as `followWindowTitle` keeps a native title
+  in step. Decision: not on the `set_ui_language` push the desktop's menu rebuilds on. Why: Rust reads its own catalog
+  synchronously, but the push reaches the demo before the webview's new catalog chunk loads, so a redraw on it would
+  draw the old words.
 - **Shortcuts**: the spec's accelerators in a Mac's glyphs, or the pushed rebind, so the browser-safe map
   (`browser-shortcuts.ts`) shows: Tab > New tab reads ⌃T.
 - **Clicks**: `execute-command`, `settings-changed`, `view-mode-changed`, and `menu-sort` go to the main window, as
   `handle_menu_event`'s `emit_to("main")`. With a panel in front, Close tab closes it and an edit goes to its frame
   (`document.execCommand`, best effort: browsers refuse a scripted paste).
-- **Keys**: ⌃F2 focuses the bar (macOS's own shortcut for it); ←/→, ↑/↓, Enter, Space, Home/End, and Esc walk it as a
-  Mac menu does; every key the bar or an open menu has is kept from the app (`stopPropagation` in a window capture
-  listener). A greyed row never picks. OS rows (Services, Hide, Quit, Undo, Minimize) draw greyed.
-- **Look**: the app's glass tokens (`app.css` § Frosted-glass material), sized against macOS 27's bar and an open menu
-  (`menu-bar-style.ts`). A draft David reviews.
+- **Keys**: the component's `mac` flavor. ⌃F2 focuses the bar (macOS's own shortcut for it); ←/→, ↑/↓, Enter, Space,
+  Home/End, and Esc walk it as a Mac menu does; every key the bar or an open menu has is kept from the app. A greyed row
+  never picks. OS rows (Services, Hide, Quit, Undo, Minimize) draw greyed.
+- **Look**: `app-menu.css`'s menu tokens set to macOS 27's values on `DEMO_MENU_CLASS` (`menu-bar-style.ts`), from the
+  app's glass tokens (`app.css` § Frosted-glass material), sized against macOS 27's bar and an open menu, plus the bold
+  app title and the bar's own hairline and stacking. A draft David reviews.
 - Verified in headless Chromium against `pnpm build:demo` (2026-11-04): View > Show hidden files lists `.zshrc` and the
   check follows; View > Command palette opens it; Go > Home runs; View > Sort by > Size checks Size once the sort lands;
   Tab > New tab adds a tab and reads ⌃T; Cmdr > Settings opens its panel, File's items grey while it's in front, and Tab
@@ -209,9 +215,10 @@ every window. The demo keeps that shape, so secondary windows share its state, a
 ## Right-click menus
 
 - **What**: the native popups the app opens (`show_file_context_menu`, the breadcrumb's, a tab's, the date header's Sort
-  by, the function key bar's, the viewer's text, a queue row's, a servers hub host's), drawn as HTML macOS 27 menus
-  (`context-menu.ts`) with the bar's look and keys. The app already cancels the browser's own menu
-  (`#lib/context-menu-ownership.ts`), so a right-click reaches the same `show_*` command it does on desktop.
+  by, the function key bar's, the viewer's text, a queue row's, a servers hub host's), drawn as macOS 27 menus
+  (`context-menu.ts`) on the app's own in-page context menu (`#lib/ui/ContextMenu.svelte`, `mac` flavor) with the bar's
+  look and keys. The app already cancels the browser's own menu (`#lib/context-menu-ownership.ts`), so a right-click
+  reaches the same `show_*` command it does on desktop.
 - **Decision**: the rows are the desktop's own, through WASM. `crates/cmdr-menu`'s `context` holds every popup's rows
   and what a pick asks for; `cmdr-listing-wasm`'s `context_menu.rs` answers each `show_*` command with them and stashes
   what the menu went up over, as `commands/menu.rs` stashes it in `MenuState` (`crates/cmdr-listing-wasm/DETAILS.md` §
@@ -229,10 +236,10 @@ every window. The demo keeps that shape, so secondary windows share its state, a
 - **Left out**: every OS-filled group (Open with, Share, the tag colors, the provider's actions, Services): a browser
   has no OS to ask. The image-search group stays hidden (no media index).
 - **Keys**: ↑/↓, Home/End, → into a submenu, ← or Esc out, Esc closes, Enter / Space pick, Tab closes; every key is kept
-  from the app while the menu is up. The header line is a `presentation` row, never a stop, and names the menu for a
-  screen reader (`aria-label`). A click outside, or the page losing focus, closes it.
-- **Shared with the bar**: `menu-surfaces.ts` (an open menu and its submenus: drawing, placement, highlight, the walk),
-  `menu-click.ts` (performing a pick), and `menu-bar-style.ts`'s `MENU_SURFACE_STYLE`, injected once per document.
+  from the app while the menu is up. The header line is `aria-hidden`, never a stop, and names the menu for a screen
+  reader (`aria-label`). A click outside, the page losing focus, or a resize closes it.
+- **Shared with the bar**: the component, `menu-click.ts` (performing a pick), and `menu-bar-style.ts`'s look, injected
+  once per document.
 - Verified in headless Chromium against `pnpm build:demo` (2026-11-04): right-clicking `Documents` draws the folder menu
   named by its header, with the live shortcuts (F5, ⌥⌘C) and no OS-filled group; ↓ lands on Selection, hovering it opens
   the submenu beside it, and Selection > Select all selects the whole pane; no page error.

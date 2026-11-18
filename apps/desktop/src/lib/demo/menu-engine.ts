@@ -5,27 +5,18 @@
  * draws the macOS bar from them, so this file holds no menu logic: it loads, routes, and types the
  * answers. See `DETAILS.md` § The menu bar.
  */
+import type { BarMenuView, Row } from '#lib/ipc/bindings.js'
 import type { Payload } from './answer-types.js'
 import { loadEngineModule } from './engine-module.js'
 
-/** A row's words: a `menu.*` catalog key with its `{token}` values, or a literal (`Cmdr`). */
-export type MenuRowLabel = { key: string; args: Record<string, string> } | { text: string }
-
-/** One row of a drawn menu, as `menu.rs`'s `Row` serializes. */
-export type MenuRow =
-  | { kind: 'item'; id: string; label: MenuRowLabel; shortcut: string | null; enabled: boolean }
-  | { kind: 'check'; id: string; label: MenuRowLabel; shortcut: string | null; enabled: boolean; checked: boolean }
-  | { kind: 'submenu'; label: MenuRowLabel; enabled: boolean; rows: MenuRow[] }
-  | { kind: 'system'; label: MenuRowLabel }
-  | { kind: 'header'; label: MenuRowLabel }
-  | { kind: 'separator' }
+/**
+ * One row of a drawn menu: `cmdr-menu`'s page `Row`, the one the desktop answers too
+ * (`get_menu_bar`), so the shared menu component draws both.
+ */
+export type MenuRow = Row
 
 /** One top-level menu of the drawn bar. */
-export interface BarMenu {
-  id: string
-  title: MenuRowLabel
-  rows: MenuRow[]
-}
+export type BarMenu = BarMenuView
 
 /** What a click asks the page to do, as `menu.rs`'s `Click` serializes. */
 export type MenuClick =
@@ -58,6 +49,11 @@ export interface MenuEngineHandle {
   contextClick(menuId: string): MenuClick
   /** Resolves once the engine answered, with whether it did. */
   readonly ready: Promise<boolean>
+  /**
+   * Calls `listener` after every push and bar click, the moments the drawn bar can move (the
+   * demo's `menu-bar-changed`); returns the unsubscribe.
+   */
+  onChange(listener: () => void): () => void
 }
 
 export function startMenuEngine(): MenuEngineHandle {
@@ -70,16 +66,32 @@ export function startMenuEngine(): MenuEngineHandle {
     return true
   })
 
+  const listeners = new Set<() => void>()
+  const changed = (): void => {
+    for (const listener of listeners) listener()
+  }
+
   return {
     ready,
     handles: async (cmd) => (await ready) && DemoMenuBar !== null && DemoMenuBar.handles(cmd),
     invoke: async (cmd, payload) => {
       await ready
       if (!menu) throw new Error(`[demo] the menu bar did not load, so it can't answer ${cmd}`)
-      return menu.invoke(cmd, payload)
+      const answer: unknown = menu.invoke(cmd, payload)
+      changed()
+      return answer
     },
     bar: () => (menu ? (menu.bar() as BarMenu[]) : null),
-    click: (menuId) => (menu ? (menu.click(menuId) as MenuClick) : { kind: 'nothing' }),
+    click: (menuId) => {
+      const outcome = menu ? (menu.click(menuId) as MenuClick) : ({ kind: 'nothing' } as const)
+      // A check item flips itself on a click, as the native one does.
+      changed()
+      return outcome
+    },
+    onChange: (listener) => {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
     opensPopup: async (cmd) => (await ready) && DemoMenuBar !== null && DemoMenuBar.opensPopup(cmd),
     popup: async (cmd, payload, label) => {
       await ready

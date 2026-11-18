@@ -8,11 +8,11 @@ lands in a typed answer here; the listing commands go to the real listing engine
   `webview.ts`: one frame's `__TAURI_INTERNALS__`, forwarding to the backend and holding its listeners. `windows.ts`:
   secondary windows as in-page panels (Settings, Keyboard shortcuts, the operation queue, and `viewer-*`; the rest
   refused). `menu-bar.svelte.ts`: the macOS menu bar, drawn from `menu-engine.ts` (the desktop's own bar and fold,
-  through WASM). `context-menu.ts`: right-click menus, same engine; both use `menu-surfaces.ts` and `menu-click.ts`.
-  `traffic-lights.ts`: the window buttons, at the app's `trafficLightPosition`. `drag-regions.ts`: Tauri's `drag.js`,
-  ported. `drag-session.ts`: the OS file drag, answering `start_drag_paths` with Tauri's drag-drop events (DETAILS §
-  Drag and drop). `os-drop.ts`: files dropped in from the computer. `color-scheme.ts`: `setTheme` per frame (DETAILS §
-  Light and dark).
+  through WASM). `context-menu.ts`: right-click menus, same engine; both mount `#lib/ui`'s menus in
+  `menu-bar-style.ts`'s look and use `menu-click.ts`. `traffic-lights.ts`: the window buttons, at the app's
+  `trafficLightPosition`. `drag-regions.ts`: Tauri's `drag.js`, ported. `drag-session.ts`: the OS file drag, answering
+  `start_drag_paths` with Tauri's drag-drop events (DETAILS § Drag and drop). `os-drop.ts`: files dropped in from the
+  computer. `color-scheme.ts`: `setTheme` per frame (DETAILS § Light and dark).
 - `answers.ts` (app commands), `volumes.ts`, `plugins.ts` (in-memory `plugin:store`, path, app), `opener.ts` (every
   external link opens in a new tab), `listing.ts` (routes to the WASM engine, loaded once by `engine-module.ts`, which
   answers the viewer too), `unanswered.ts` (`window.__cmdrDemo.unanswered`; an unanswered void resolves, any other

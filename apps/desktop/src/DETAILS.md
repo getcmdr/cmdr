@@ -66,15 +66,61 @@ test div with `backdrop-filter: blur(20px)` above everything left the text under
 Menu-like surfaces (`Menu`, `Select`, the breadcrumb popup) also take the macOS 26+ menu shape: `--radius-menu`,
 `--shadow-glass` plus the `--shadow-glass-rim` top highlight, and rows highlighted as inset pills.
 
+## Menu look tokens
+
+`app-menu.css` (imported by `app.css`, like the palette) holds the look of the in-page menu bar, its flyouts, and the
+context menus (task 63 of `docs/specs/windows-port-plan.md`): `--color-menu-*`, `--spacing-menu-*`, `--radius-menu-*`,
+`--font-menu-*`, `--shadow-menu-surface`, and `--glass-menu-backdrop`. One token set keyed on the look, so the menu
+component stays one implementation and reads only these.
+
+- **Who reads them**: the command menus (`lib/ui/MenuBar.svelte`, `ContextMenu.svelte`, `lib/ui/command-menu/`; their
+  DETAILS § Command menus), and only those. A caller with a look of its own sets the tokens on a class it hands the
+  component: the browser demo's macOS 27 bar and menus (`lib/demo/menu-bar-style.ts`'s `DEMO_MENU_CLASS`).
+- **`:root`** holds the house look (`lib/ui/Menu.svelte`'s row and surface, the demo bar's strip), the Linux in-page
+  bar's until task 60 gives Linux its own neutral theme.
+- **`:root[data-look='windows']`** is Windows 11's look, light and dark, on Windows 10 and 11 alike (D5). `data-look` is
+  `getCopyPlatform()`, written by `applyPlatformAttributes()` beside `data-platform`, so
+  `CMDR_MOCK_CONVENTIONS=windows pnpm dev` shows it on a Mac (without Segoe UI, which a Mac lacks).
+- **Reduced transparency** (the `reduce-transparency` class, which task 40 fills from Windows' transparency effects):
+  acrylic's own opaque fallback color and no blur.
+- **`forced-colors: active`** (Windows contrast themes): WinUI's `HighContrast` mapping as CSS system colors, no
+  backdrop or shadow. The reduced-transparency block sits in `@media (forced-colors: none)`, since its selector outranks
+  this one. A component painting these must set `forced-color-adjust: none` on the surface, or Chromium forces the
+  highlighted row's `Highlight` back to `Canvas`.
+- **Gotcha: no `color-mix()` in the house defaults.** They're spelled out as `rgba()` of `--color-text-primary`, with a
+  dark twin, because old WebKit drops a `color-mix()` value (`lib/utils/CLAUDE.md`).
+- **Decision/Why: a file of its own, with hex allowed.** `app.css` is past its length budget, and the Windows values are
+  WinUI's ARGB copied byte for byte, so `.stylelintrc.mjs` treats `app-menu.css` as a token file like `app.css`. Every
+  selector carries its own specificity, so its import position doesn't matter.
+- **The keyboard row** has tokens of its own (`--color-menu-row-bg-focus` / `-fg-focus`, the shortcut's and chevron's
+  `-fg-focus`, `--color-menu-bar-item-bg-focus`): the house look fills it like the hover row, Windows gives it no fill
+  and WinUI's two focus rings (`--color-menu-focus-*`), per `MenuFlyoutItem_Partial.cpp`; David's look check against
+  Notepad confirms or reverses that.
+- `app-menu.test.ts` pins the shape: every house token has a Windows value, every themed one a dark and a contrast value
+  (system colors only), and the Windows text tokens clear AA on the fallback and on acrylic over black and white.
+
+Each Windows value's WinUI resource key and file (at a pinned commit), and what CSS can't express (the luminosity blend,
+noise, `ThemeShadow`, the font's optical size): `docs/notes/windows-port/menu-look-tokens.md`.
+
 ## Display accessibility classes
 
 `#lib/display-accessibility` (inited per window) mirrors four macOS Accessibility > Display options onto `<html>` as
-classes: `reduce-transparency`, `increase-contrast`, `differentiate-without-color`, and `show-borders`. The backend
-reads all four from `NSWorkspace` in one typed `DisplayAccessibility` value and re-reads them on every
-`NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification`
+classes: `reduce-transparency`, `increase-contrast`, `differentiate-without-color`, and `show-borders` (plus one Windows
+setting, below). The backend reads all four from `NSWorkspace` in one typed `DisplayAccessibility` value and re-reads
+them on every `NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification`
 (`apps/desktop/src-tauri/src/system_look/platform/macos/display_accessibility.rs`), so they follow System Settings live.
 The same value carries Invert colors, which gets no class: it only changes the icons macOS draws, which
 `#lib/icon-cache` follows itself (`apps/desktop/src-tauri/src/icons/DETAILS.md` § Flushes and in-flight fetches).
+
+- **Windows' Underline access keys** → `underline-access-keys`: the one Windows field (`underlineAccessKeys`, false on
+  macOS and Linux), read with `SPI_GETKEYBOARDCUES`
+  (`apps/desktop/src-tauri/src/system_look/platform/windows/keyboard_cues.rs`). With it on, access-key letters stay
+  underlined all the time; task 63's step 4 has the menus' and dialogs' keyboard-cue rule read the class. Live: a hidden
+  top-level window on its own thread hears every `WM_SETTINGCHANGE` broadcast, re-reads, and emits
+  `display-accessibility-changed` only when a value moved
+  (`apps/desktop/src-tauri/src/system_look/platform/windows/setting_changes.rs`; ❌ never a message-only window, which
+  gets no broadcasts). Task 40's Windows readers hang off the same re-read. That Settings' toggle broadcasts is
+  unverified on a real machine (2026-11-18).
 
 - **Why classes**: WKWebView ignores `prefers-reduced-transparency` (verified, see the module doc), and CSS has no query
   for Differentiate without color or Show borders at all. `increase-contrast` is ALSO on when `prefers-contrast: more`

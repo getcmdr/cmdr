@@ -98,6 +98,7 @@ pub(crate) fn set_menu_context<R: Runtime>(app: AppHandle<R>, context: String) -
         .explorer_menu_active
         .store(context == "explorer", Ordering::Relaxed);
     apply_menu_item_states(&menu_state);
+    super::page_bar::notify_bar_changed(&app);
     Ok(())
 }
 
@@ -115,7 +116,7 @@ pub(crate) fn apply_menu_item_states<R: Runtime>(menu_state: &MenuState<R>) {
         file_operations_blocked: menu_state.file_operations_blocked.load(Ordering::Relaxed),
         open_terminal_here_enabled: menu_state.open_terminal_here_enabled.load(Ordering::Relaxed),
         reopen_closed_tab_enabled: menu_state.reopen_closed_tab_enabled.load(Ordering::Relaxed),
-        undo_trash_available: menu_state.undo_trash_available.load(Ordering::Relaxed),
+        undo_trash_available: menu_state.undo_trash_target.lock_ignore_poison().is_some(),
         refused: &refused,
     };
 

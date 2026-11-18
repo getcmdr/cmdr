@@ -43,8 +43,11 @@ viewer bar. `macos_appkit.rs`: the objc2 boundary. One line per file: DETAILS §
 - **Linux GTK takes a bar title's `Alt+<letter>` before the page**: a modal surface turns mnemonics off
   (`mnemonic_mask/`); ❌ a dialog outside the gate loses those keys. DETAILS § A modal surface.
 - **Every label comes from `menu_t("menu.…")`, ❌ never a literal** (muda's Predefined text is English), **and
-  everything is keyed by ID, never title**. A language change rebuilds the whole bar and emits `menu-bar-rebuilt`, so
-  whatever the frontend pushed must be pushed again.
+  everything is keyed by ID, never title**. A language change rebuilds the bar (`menu-bar-rebuilt`); the frontend
+  re-pushes everything.
+- **A page draws the bar off macOS** (`page_bar.rs`): every push stores its fact in `MenuState` and ends in
+  `notify_bar_changed`, ❌ or the page bar goes stale. Windows' right-click menus too (`page_context.rs`): a pick names
+  its menu's token. DETAILS § The bar a page draws.
 
 Architecture, flows, and decisions: `DETAILS.md`. Read it before any non-trivial work here: editing, planning,
 reorganizing, or advising.
