@@ -165,8 +165,9 @@ owns its real body. Remove a line when its body lands.
   (dotted and dotless I, final sigma).
 - `cmdr_fs::validation::MAX_PATH_BYTES`: Windows borrows Linux's 4,096 bytes. Task 14 kept path length on the host's
   limit for every volume, so a per-destination limit has no task yet.
-- `cmdr_fs::process_memory`, `process_cpu`, and `thread_cpu` (each `platform/windows.rs`), task 13: no footprint and no
-  CPU readings, so the watchdog, `memory_diagnostics`, and `cpu_diagnostics` are off on Windows.
+- `cmdr_fs::process_memory` and `process_cpu` (each `platform/windows.rs`), task 13: no footprint and no process CPU
+  census, so the watchdog, `memory_diagnostics`, and `cpu_diagnostics` are off on Windows. `thread_cpu` reads
+  `GetThreadTimes`, so the index writer and rescan lines carry thread CPU there.
 - `cmdr-sftp` agent (`transport/platform/windows.rs`), task 46: asks the OpenSSH agent's pipe (or `SSH_AUTH_SOCK`),
   never Pageant.
 - `cmdr_local::LocalWindowsVolume` (`platform/local_windows.rs`), task 35: no read or write streams (so no copy onto or
@@ -254,9 +255,10 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     reader, with a trip's breakdown per OS (`cmdr-index` `resources/platform/`). The CPU readers sit behind
     `thread_cpu/platform/` and `process_cpu/platform/` (Linux: the POSIX thread clock, and `/proc/self/task` with
     `schedstat` runtimes), so Linux offers `cpu_diagnostics` (its own `cpuDiagnostics` capability, apart from
-    `memoryDiagnostics`) and logs thread CPU in the index writer, rescan, and transfer stall lines. Left: the Windows
-    arms, which answer "unknown" today: `K32GetProcessMemoryInfo` for the footprint, `GetThreadTimes` and
-    `GetProcessTimes` for CPU, through the `windows-sys` dependency `cmdr-fs` now carries for its Windows arms.
+    `memoryDiagnostics`) and logs thread CPU in the index writer, rescan, and transfer stall lines. Windows' thread
+    clock is `GetThreadTimes` (`thread_cpu/platform/windows.rs`). Left: the Windows arms that answer "unknown" today:
+    `K32GetProcessMemoryInfo` for the footprint, and the `process_cpu` census (a Toolhelp thread walk with
+    `GetThreadTimes` and `GetThreadDescription` per thread, `GetProcessTimes` for the total), through `windows-sys`.
 14. [S] Win. **Done**. Name validity is keyed on the destination's `FilesystemKind` (`FilesystemKind::name_rules` →
     `NameRules`: `Posix`, `SmbShare` refusing Windows' reserved device names, `Windows` for FAT32, exFAT, and NTFS
     adding the forbidden characters, control characters, and a trailing space or period). `cmdr-operations`'

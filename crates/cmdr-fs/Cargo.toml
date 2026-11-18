@@ -150,7 +150,7 @@ exacl = "0.13"
 # The Win32 flags the Windows arms pass to `std`'s `OpenOptionsExt`
 # (`metadata/platform/windows.rs`). Already in the graph through `tokio`, `mio`, and
 # friends, at this version.
-windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem"] }
+windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem", "Win32_System_Threading"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 # A browser's randomness source (`crypto.getRandomValues`) for the scratch-name
