@@ -36,7 +36,7 @@
     const hasLicense = $derived(licenseInfo !== null)
 
     // What the free Personal license covers, so the two buttons below read as the next step for
-    // someone who needs more. Facts from `docs/business/pricing.md` § The live tiers and
+    // someone who needs more. The facts come out of `docs/business/pricing.md` § The live tiers and
     // `licensing.md` § Additional Use Grants: keep these in step with them, and keep the AI line's
     // "free during the beta" qualifier (pricing.md says why).
     const personalIncludes = $derived([
