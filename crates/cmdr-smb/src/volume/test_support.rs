@@ -67,7 +67,7 @@ fn make_test_volume_full(volume_id: &str, host: VolumeHost, share_root: &str, mo
     let transfer = transfer_session::TransferSession::new(Arc::clone(&params), volume_id.clone(), host.runtime());
     SmbVolume {
         name: "TestShare".to_string(),
-        mount_path: mount_path.clone(),
+        mount_path: BridgedPath::new(mount_path.clone()),
         share_root: share_root.clone(),
         mount_root_gone: AtomicBool::new(false),
         inner: Arc::new_cyclic(|me| SmbVolumeInner {

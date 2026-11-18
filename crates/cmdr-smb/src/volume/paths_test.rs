@@ -69,7 +69,7 @@ fn a_root_anchored_dialog_destination_reaches_the_share() {
     // mount, on purpose. Anchoring at the IPC boundary is what closes that gap:
     // a move into an SMB subfolder died in 2 ms without it (ERR-XCP5Q).
     let vol = make_test_volume();
-    let anchored = cmdr_fs::volume::root_anchored(vol.root(), Path::new("/test_photos/test footage"));
+    let anchored = cmdr_fs::volume::root_anchored(&vol.root().as_std_legacy(), Path::new("/test_photos/test footage"));
     assert_eq!(
         vol.to_smb_path(&anchored).unwrap(),
         "test_photos/test footage",

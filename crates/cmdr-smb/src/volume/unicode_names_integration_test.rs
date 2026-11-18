@@ -19,6 +19,7 @@
 
 use super::test_support::*;
 use super::*;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::DirectoryChange;
 use cmdr_fs::volume::InMemoryVolume;
 use cmdr_fs::volume::host::listings::{ListingHost, RecordingListings};
@@ -72,7 +73,9 @@ async fn listed(vol: &SmbVolume, dir: &Path, name: &str) -> FileEntry {
 async fn seed_album(vol: &SmbVolume) -> (String, PathBuf) {
     let top = test_dir_name();
     ensure_clean(vol, &top).await;
-    vol.create_directory(Path::new(&top)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&top)))
+        .await
+        .unwrap();
     seed_dir_raw(vol, &format!("{top}/{NFC_DIR}")).await;
     seed_file_raw(vol, &format!("{top}/{NFC_DIR}/{NFD_FILE}"), PAYLOAD).await;
     seed_dir_raw(vol, &format!("{top}/{NFC_DIR}/{NFD_SUBDIR}")).await;
@@ -101,7 +104,7 @@ async fn remove_album(vol: &SmbVolume, top: &str) {
 
 /// Reads a whole file through `open_read_stream`.
 async fn read_all(vol: &SmbVolume, path: &Path) -> Result<Vec<u8>, VolumeError> {
-    let mut stream = vol.open_read_stream(path).await?;
+    let mut stream = vol.open_read_stream(&AppPath::legacy_unchecked(path)).await?;
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend_from_slice(&chunk?);
@@ -137,12 +140,12 @@ async fn a_decomposed_file_in_a_composed_directory_reads() {
     let (top, album) = seed_album(&vol).await;
     let file = PathBuf::from(listed(&vol, &album, NFD_FILE).await.path);
 
-    let metadata = vol.get_metadata(&file).await;
+    let metadata = vol.get_metadata(&AppPath::legacy_unchecked(&file)).await;
     let plain = read_all(&vol, &file).await;
     // The hinted read is the copy pipeline's: one compound frame for a small file.
     let hinted = async {
         let mut stream = vol
-            .open_read_stream_with_hint(&file, Some(PAYLOAD.len() as u64))
+            .open_read_stream_with_hint(&AppPath::legacy_unchecked(&file), Some(PAYLOAD.len() as u64))
             .await?;
         let mut bytes = Vec::new();
         while let Some(chunk) = stream.next_chunk().await {
@@ -174,17 +177,17 @@ async fn a_decomposed_file_copies_off_the_share_and_within_it() {
     let file = PathBuf::from(listed(&vol, &album, NFD_FILE).await.path);
     let subdir = PathBuf::from(listed(&vol, &album, NFD_SUBDIR).await.path);
 
-    let scan = vol.scan_for_copy(&file).await;
+    let scan = vol.scan_for_copy(&AppPath::legacy_unchecked(&file)).await;
 
     // Off the share, the way a copy to a local disk streams it.
     let elsewhere = InMemoryVolume::new("Elsewhere");
     let no_progress = &|_: StreamWriteProgress| std::ops::ControlFlow::Continue(());
     let exported = async {
-        let stream = vol.open_read_stream(&file).await?;
+        let stream = vol.open_read_stream(&AppPath::legacy_unchecked(&file)).await?;
         let dest = PathBuf::from("/").join(NFD_FILE);
         elsewhere
             .write_from_stream(
-                &dest,
+                &AppPath::legacy_unchecked(&dest),
                 WriteMode::CreateOrReplace,
                 StreamLength::Known(PAYLOAD.len() as u64),
                 stream,
@@ -197,10 +200,10 @@ async fn a_decomposed_file_copies_off_the_share_and_within_it() {
 
     // Within the share, into the NFD subdirectory under the source's own name.
     let copied_within = async {
-        let stream = vol.open_read_stream(&file).await?;
+        let stream = vol.open_read_stream(&AppPath::legacy_unchecked(&file)).await?;
         let dest = subdir.join(NFD_FILE);
         vol.write_from_stream(
-            &dest,
+            &AppPath::legacy_unchecked(&dest),
             WriteMode::CreateOrReplace,
             StreamLength::Known(PAYLOAD.len() as u64),
             stream,
@@ -232,7 +235,7 @@ async fn a_decomposed_file_copies_off_the_share_and_within_it() {
 
 /// Reads a whole file off any volume.
 async fn read_all_from(volume: &dyn Volume, path: &Path) -> Result<Vec<u8>, VolumeError> {
-    let mut stream = volume.open_read_stream(path).await?;
+    let mut stream = volume.open_read_stream(&AppPath::legacy_unchecked(path)).await?;
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend_from_slice(&chunk?);
@@ -249,7 +252,13 @@ async fn a_decomposed_file_renames() {
     let (top, album) = seed_album(&vol).await;
     let file = PathBuf::from(listed(&vol, &album, NFD_FILE).await.path);
 
-    let renamed = vol.rename(&file, &album.join("renamed.jpg"), false).await;
+    let renamed = vol
+        .rename(
+            &AppPath::legacy_unchecked(&file),
+            &AppPath::legacy_unchecked(&album.join("renamed.jpg")),
+            false,
+        )
+        .await;
     let names = vol
         .list_directory_impl(&album)
         .await
@@ -270,7 +279,7 @@ async fn a_decomposed_file_deletes() {
     let (top, album) = seed_album(&vol).await;
     let file = PathBuf::from(listed(&vol, &album, NFD_FILE).await.path);
 
-    let deleted = vol.delete(&file).await;
+    let deleted = vol.delete(&AppPath::legacy_unchecked(&file)).await;
     let names = vol
         .list_directory_impl(&album)
         .await
@@ -291,7 +300,9 @@ async fn a_decomposed_directory_in_a_composed_one_opens() {
     let subdir = PathBuf::from(listed(&vol, &album, NFD_SUBDIR).await.path);
 
     let listing = vol.list_directory_impl(&subdir).await;
-    let created = vol.create_file(&subdir.join("new.txt"), b"new").await;
+    let created = vol
+        .create_file(&AppPath::legacy_unchecked(&subdir.join("new.txt")), b"new")
+        .await;
     remove_album(&vol, &top).await;
 
     assert!(listing.expect("a listed directory must open").is_empty());
@@ -388,8 +399,13 @@ fn decomposed(path: &str) -> PathBuf {
 
 /// The spelling `vol` finds for `foreign`, which must differ from what was given.
 async fn stored_spelling(vol: &SmbVolume, foreign: &Path) -> Result<PathBuf, VolumeError> {
-    let stored = vol.find_stored_spelling(foreign, None).await?;
-    Ok(stored.unwrap_or_else(|| panic!("{} must resolve to another spelling", foreign.display())))
+    let stored = vol
+        .find_stored_spelling(&AppPath::legacy_unchecked(foreign), None)
+        .await?;
+    Ok(stored
+        .unwrap_or_else(|| panic!("{} must resolve to another spelling", foreign.display()))
+        .as_std_legacy()
+        .into_owned())
 }
 
 /// Asserts a path is exactly `want`'s bytes, with a message that shows both.
@@ -409,7 +425,9 @@ async fn a_foreign_decomposed_path_reaches_a_composed_file() {
     let vol = make_docker_volume().await;
     let top = test_dir_name();
     ensure_clean(&vol, &top).await;
-    vol.create_directory(Path::new(&top)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&top)))
+        .await
+        .unwrap();
     seed_dir_raw(&vol, &format!("{top}/{NFC_DIR}")).await;
     seed_file_raw(&vol, &format!("{top}/{NFC_DIR}/{NFC_FILE}"), PAYLOAD).await;
 
@@ -493,12 +511,17 @@ async fn look_alike_twins_refuse_a_path_that_matches_neither_exactly() {
     seed_file_raw(&vol, &format!("{top}/{NFC_DIR}/{TWIN_NFD}"), b"decomposed twin").await;
 
     // One accent composed, one not: folds onto both, is neither.
-    let neither = vol.find_stored_spelling(&album.join(TWIN_MIXED), None).await;
+    let neither = vol
+        .find_stored_spelling(&AppPath::legacy_unchecked(&album.join(TWIN_MIXED)), None)
+        .await;
     // The kernel mount's spelling of the directory, with the NFD twin's own bytes
     // as the leaf: the directory needs resolving, the leaf is exact.
     let exact_twin = share_path(&format!("{top}/{NFC_DIR}/{TWIN_NFD}"));
     let one = vol
-        .find_stored_spelling(&decomposed(&album.to_string_lossy()).join(TWIN_NFD), None)
+        .find_stored_spelling(
+            &AppPath::legacy_unchecked(&decomposed(&album.to_string_lossy()).join(TWIN_NFD)),
+            None,
+        )
         .await;
     remove_album(&vol, &top).await;
 
@@ -509,7 +532,7 @@ async fn look_alike_twins_refuse_a_path_that_matches_neither_exactly() {
     let one = one
         .expect("a path naming one twin exactly must resolve")
         .expect("its directory needed resolving");
-    assert_same_bytes(&one, &exact_twin);
+    assert_same_bytes(&one.as_std_legacy(), &exact_twin);
 }
 
 /// A pane that sat in an accented directory while the share was still on the
@@ -570,19 +593,27 @@ async fn a_stale_remembered_spelling_heals() {
 
     // What a correction learned before the file was renamed would look like.
     vol.inner.spellings.remember(&parent, &foreign_leaf, "gone.jpg");
-    let stored = vol.find_stored_spelling(&album.join(&foreign_leaf), None).await;
+    let stored = vol
+        .find_stored_spelling(&AppPath::legacy_unchecked(&album.join(&foreign_leaf)), None)
+        .await;
     let remembered = vol.inner.spellings.get(&parent, &foreign_leaf);
     // And the healed correction serves the next ask.
-    let again = vol.find_stored_spelling(&album.join(&foreign_leaf), None).await;
+    let again = vol
+        .find_stored_spelling(&AppPath::legacy_unchecked(&album.join(&foreign_leaf)), None)
+        .await;
     remove_album(&vol, &top).await;
 
     let exact = share_path(&format!("{parent}/{NFD_FILE}"));
     assert_same_bytes(
-        &stored
+        &(stored
             .expect("a stale guess must fall back to the listing")
-            .expect("must resolve"),
+            .expect("must resolve"))
+        .as_std_legacy(),
         &exact,
     );
     assert_eq!(remembered.as_deref(), Some(NFD_FILE), "the stale guess is replaced");
-    assert_same_bytes(&again.expect("asks again").expect("resolves again"), &exact);
+    assert_same_bytes(
+        &again.expect("asks again").expect("resolves again").as_std_legacy(),
+        &exact,
+    );
 }

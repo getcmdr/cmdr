@@ -11,6 +11,7 @@
 //! The registry's side — that leaving it retires a volume at all — belongs to
 //! the app's `VolumeManager`.
 
+use cmdr_fs::app_path;
 use std::sync::Arc;
 
 use super::test_support::*;
@@ -74,7 +75,7 @@ fn the_flag_the_registry_writes_is_the_one_the_watcher_reads() {
 fn a_rerooted_instance_publishes_the_same_flag() {
     let volume = make_test_volume();
     let promoted = volume
-        .rerooted(Path::new("/Volumes/TestShare-1"))
+        .rerooted(app_path!("/Volumes/TestShare-1"))
         .expect("a direct SMB share re-roots");
 
     volume.retirement().expect("a flag").retire();

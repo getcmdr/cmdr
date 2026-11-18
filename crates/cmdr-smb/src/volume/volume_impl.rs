@@ -554,9 +554,11 @@ impl Volume for SmbVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        self.scan_for_copy_impl(path)
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.scan_for_copy_impl(path).await
+        })
     }
 
     /// The scan preview's entry point. Reporting as the walk goes is what keeps
@@ -569,9 +571,11 @@ impl Volume for SmbVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-        let paths: &[PathBuf] = &paths_std;
-        self.scan_for_copy_batch_impl(paths, boundary)
+        Box::pin(async move {
+            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+            let paths: &[PathBuf] = &paths_std;
+            self.scan_for_copy_batch_impl(paths, boundary).await
+        })
     }
 
     fn scan_for_conflicts<'a>(
@@ -579,9 +583,11 @@ impl Volume for SmbVolume {
         source_items: &'a [SourceItemInfo],
         dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
-        let dest_path_std = dest_path.as_std_legacy();
-        let dest_path: &Path = &dest_path_std;
-        self.scan_for_conflicts_impl(source_items, dest_path)
+        Box::pin(async move {
+            let dest_path_std = dest_path.as_std_legacy();
+            let dest_path: &Path = &dest_path_std;
+            self.scan_for_conflicts_impl(source_items, dest_path).await
+        })
     }
 
     fn supports_streaming(&self) -> bool {
@@ -835,9 +841,12 @@ impl Volume for SmbVolume {
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
-        let dest_std = dest.as_std_legacy();
-        let dest: &Path = &dest_std;
-        self.write_from_stream_impl(dest, mode, length, stream, on_progress)
+        Box::pin(async move {
+            let dest_std = dest.as_std_legacy();
+            let dest: &Path = &dest_std;
+            self.write_from_stream_impl(dest, mode, length, stream, on_progress)
+                .await
+        })
     }
 
     /// Yes: a streamed write into a staging temp takes a FLUSH checkpoint every
@@ -855,9 +864,12 @@ impl Volume for SmbVolume {
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
-        let target_std = target.as_std_legacy();
-        let target: &Path = &target_std;
-        self.continue_write_from_stream_impl(target, at, length, stream, on_progress)
+        Box::pin(async move {
+            let target_std = target.as_std_legacy();
+            let target: &Path = &target_std;
+            self.continue_write_from_stream_impl(target, at, length, stream, on_progress)
+                .await
+        })
     }
 
     fn connection_state(&self) -> Option<cmdr_fs::volume::ConnectionState> {
