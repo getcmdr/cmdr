@@ -159,13 +159,15 @@ impl Drop for Key {
 /// A `REG_SZ` value, trimmed of its terminator; `None` when missing, of another type, or empty.
 pub(crate) fn read_string(root: HKEY, subkey: &str, name: &str) -> Option<String> {
     let value = Key::open(root, subkey).ok()??.value(name)?;
-    if value.kind != REG_SZ || value.data.len() % 2 != 0 {
+    if value.kind != REG_SZ || !value.data.len().is_multiple_of(2) {
         return None;
     }
     let units: Vec<u16> = value
         .data
-        .chunks_exact(2)
-        .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| u16::from_le_bytes(*pair))
         .collect();
     let text = String::from_utf16(&units).ok()?;
     let text = text.trim_end_matches('\0').trim();
