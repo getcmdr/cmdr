@@ -13,6 +13,7 @@ mod imp;
 const _: LengthLimit = HOST_PATH_LIMIT;
 const _: LengthLimit = HOST_NAME_LIMIT;
 const _: WindowsFormatTiers = WINDOWS_FORMAT;
+const _: WindowsFormatTiers = LOCAL_FLOOR;
 
 /// The longest path this OS's path API takes, inclusive.
 pub(super) use imp::HOST_PATH_LIMIT;
@@ -23,3 +24,7 @@ pub(super) use imp::HOST_NAME_LIMIT;
 /// What this OS's drivers do with a Windows-unfriendly name on a FAT32, exFAT,
 /// or NTFS disk: store a stand-in (warn), or refuse or mangle it (refuse).
 pub(super) use imp::WINDOWS_FORMAT;
+
+/// The weakest rules a disk this OS writes through its own path API may get
+/// (`NameRules::for_host_local_disk`): Win32's refusals on Windows, none elsewhere.
+pub(super) use imp::LOCAL_FLOOR;

@@ -59,7 +59,9 @@ fn backend_rules(kind: FilesystemKind) -> NameRules {
 }
 
 /// The rules a local probe finds at `path`: `Other`'s when it can't tell, and
-/// the host's path API limit either way, since the host's path API reaches it.
+/// the host's path API limit and its own refusals either way, since the host's
+/// path API reaches it (`NameRules::for_host_local_disk`: on Windows, never
+/// weaker than Win32's refusals, whatever the kind lookup says).
 /// A folder that doesn't exist yet (a transfer's "will be created") answers for
 /// its nearest existing ancestor, the disk it'll be created on.
 /// ❗ One `statfs` (a `/proc/mounts` read on Linux) plus a `stat` per missing
@@ -72,6 +74,7 @@ fn probe_local(path: &Path) -> NameRules {
     crate::local_disk::filesystem_at(existing)
         .map_or(FilesystemKind::Other, |filesystem| filesystem.kind)
         .name_rules()
+        .for_host_local_disk()
         .with_path_limit(Some(HOST_PATH_LIMIT))
 }
 
@@ -81,8 +84,8 @@ fn probe_local(path: &Path) -> NameRules {
 ///
 /// A local probe runs on the blocking pool, never on an async worker. An
 /// unregistered volume, or a probe that can't answer, gets
-/// [`NameRules::POSIX`]'s characters: the write itself still answers for what
-/// the destination refuses.
+/// [`NameRules::POSIX`]'s characters (a local one raised to the host's own
+/// refusals): the write itself still answers for what the destination refuses.
 pub(crate) async fn name_rules_at(host: &EngineHost, volume_id: &str, dir: &Path) -> NameRules {
     match probe_for(host, volume_id, dir) {
         Probe::Known(kind) => backend_rules(kind),
@@ -90,7 +93,11 @@ pub(crate) async fn name_rules_at(host: &EngineHost, volume_id: &str, dir: &Path
             .runtime()
             .spawn_blocking(move || probe_local(&path))
             .await
-            .unwrap_or_else(|_| NameRules::POSIX.with_path_limit(Some(HOST_PATH_LIMIT))),
+            .unwrap_or_else(|_| {
+                NameRules::POSIX
+                    .for_host_local_disk()
+                    .with_path_limit(Some(HOST_PATH_LIMIT))
+            }),
     }
 }
 

@@ -324,6 +324,12 @@ about), or `Ok(None)`; `cmdr-operations`' `name_rules.rs` resolves a folder to i
   U+F020…U+F029, and a device name as itself); Linux refuses the characters (vfat and exfat answer `EINVAL`, and strip a
   trailing period onto a sibling) and warns about reserved names; Windows refuses both (Win32 refuses, strips, or opens
   a device).
+- **A local disk on Windows is never weaker than Win32** (`NameRules::for_host_local_disk`, `platform::LOCAL_FLOOR`):
+  whatever the kind lookup says (`Other` when `GetVolumeInformationW` can't tell, ReFS, a format this map doesn't know),
+  both classes are refused, since a `\\?\` path skips Win32's name rules and `a:b` would write an NTFS stream, `con` and
+  `dup.` a name Explorer can't open, and `x\y` into a subfolder. macOS and Linux have no floor (their path APIs refuse
+  nothing a filesystem doesn't). `cmdr-operations`' local probe applies it, so every local answer is safe by
+  construction. The Windows half is pinned by `cfg(windows)` tests the Windows builder runs.
 - **An SMB share warns about both, on every host**: smb2 and smbfs carry the characters as stand-ins both ways
   (`crates/cmdr-smb/DETAILS.md`), and Samba stores a device name and lists it back mangled (`CON` → `CR23RR~9`). The SMB
   specs forbid no device name (MS-FSCC § 2.1.5.2, v20251121), so a bare `CON` warns too.

@@ -20,3 +20,6 @@ pub(crate) const WINDOWS_FORMAT: WindowsFormatTiers = WindowsFormatTiers {
     characters: NameTier::Refuse,
     reserved_names: NameTier::Warn,
 };
+
+/// The kind's tiers stand: this OS's path API refuses nothing a filesystem doesn't.
+pub(crate) const LOCAL_FLOOR: WindowsFormatTiers = super::super::NO_FLOOR;

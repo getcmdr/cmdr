@@ -200,3 +200,37 @@ fn a_path_limit_counts_in_its_own_unit_inclusive() {
         Ok(())
     );
 }
+
+/// Every name Win32 refuses or rewrites: a backslash (a path separator), a colon (an NTFS
+/// alternate data stream), a control character, a device name, and a trailing space or period
+/// (stripped, so `dup.` opens `dup`).
+const WIN32_REFUSED: [&str; 7] = ["x\\y", "a:b", "tab\tname", "con", "con.txt", "dup.", "dup "];
+
+#[test]
+fn the_win32_floor_refuses_what_win32_refuses_whatever_the_kind_said() {
+    // `Other` (a probe that can't tell) is the weakest answer a kind lookup gives.
+    let floored = FilesystemKind::Other.name_rules().at_least(super::WIN32_REFUSALS);
+    for name in WIN32_REFUSED {
+        assert!(validate_filename(name, floored).is_err(), "{name:?} passed");
+    }
+    // A floor never weakens rules that were already stricter, and leaves the limits alone.
+    assert_eq!(
+        NameRules::windows_format().at_least(super::WIN32_REFUSALS).name_limit,
+        LengthLimit::UTF16_255
+    );
+    assert_eq!(floored.name_limit, FilesystemKind::Other.name_rules().name_limit);
+}
+
+/// A local disk on a Windows host is held to Win32's refusals whatever its kind; elsewhere the
+/// host adds nothing of its own (the kind's tiers stand).
+#[test]
+fn a_host_local_disk_is_held_to_this_hosts_own_refusals() {
+    let rules = NameRules::POSIX.for_host_local_disk();
+    if cfg!(target_os = "windows") {
+        for name in WIN32_REFUSED {
+            assert!(validate_filename(name, rules).is_err(), "{name:?} passed");
+        }
+    } else {
+        assert_eq!(rules, NameRules::POSIX);
+    }
+}

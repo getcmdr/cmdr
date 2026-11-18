@@ -367,6 +367,11 @@ nearly every method and hide which answers are real.
   `FILE_ATTRIBUTE_HIDDEN` as `is_hidden`. `reading/platform/` is the reader's seam on every OS now (the per-entry stat,
   the lister pick, the single-entry finish); the listing loop and the entry's shape stay shared.
 - **Space** is `GetDiskFreeSpaceExW` (`src/space/platform/windows.rs`), beside `statvfs` for macOS and Linux.
+- **The filesystem kind** is `GetVolumePathNameW` plus `GetVolumeInformationW` (`filesystem_kind.rs`,
+  `probe_mount_for_path`'s Windows arm), for a fixed or removable drive only (`GetDriveTypeW`): a mapped network drive
+  reports the server's `NTFS`, so it stays `Other` and network to `is_network`. The name rules never rest on it alone: a
+  local disk on Windows is held to Win32's refusals whatever it answers (`crates/cmdr-fs/DETAILS.md` § "Name rules").
+  Unverified on a Windows host until the builder runs `name_rules_test.rs`'s `cfg(windows)` cell.
 
 What's real and what's stubbed, by name: the windows-port plan, § "Windows build state" and task 35's entry. Every
 capability not yet real keeps the trait's conservative default (streams, copy scan, symlink creation, xattrs, metadata,

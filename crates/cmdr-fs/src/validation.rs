@@ -203,7 +203,8 @@ pub enum NameFormat {
 }
 
 /// What a destination does with one class of name Windows can't use.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+/// Ordered from the weakest to the strictest, so a floor can raise a tier ([`NameRules::at_least`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum NameTier {
     /// Nothing to say: a POSIX destination.
@@ -293,7 +294,41 @@ impl NameRules {
     pub const fn with_path_limit(self, path_limit: Option<LengthLimit>) -> Self {
         Self { path_limit, ..self }
     }
+
+    /// These rules for a disk this host writes through its own path API, never weaker than
+    /// what that API itself refuses (`platform::LOCAL_FLOOR`), whatever the filesystem kind
+    /// lookup said. On Windows that's every Win32 refusal (a backslash, a colon, a control
+    /// character, a device name, a trailing space or period), since a `\\?\` path would
+    /// otherwise write an NTFS stream, a name Explorer can't open, or into a subfolder. On
+    /// macOS and Linux the kind's tiers stand.
+    pub fn for_host_local_disk(self) -> Self {
+        self.at_least(platform::LOCAL_FLOOR)
+    }
+
+    /// These rules with each Windows tier raised to at least `floor`'s. The limits stay.
+    pub(crate) fn at_least(self, floor: WindowsFormatTiers) -> Self {
+        Self {
+            windows_characters: self.windows_characters.max(floor.characters),
+            reserved_names: self.reserved_names.max(floor.reserved_names),
+            ..self
+        }
+    }
 }
+
+/// What Win32 does with every class of name Windows can't use: refuse it. Windows' own
+/// Windows-format tiers and its local-disk floor.
+#[cfg(any(target_os = "windows", test))]
+pub(crate) const WIN32_REFUSALS: WindowsFormatTiers = WindowsFormatTiers {
+    characters: NameTier::Refuse,
+    reserved_names: NameTier::Refuse,
+};
+
+/// No floor: the filesystem kind's tiers stand.
+#[cfg(not(target_os = "windows"))]
+pub(crate) const NO_FLOOR: WindowsFormatTiers = WindowsFormatTiers {
+    characters: NameTier::Allow,
+    reserved_names: NameTier::Allow,
+};
 
 /// How one host's driver writes a Windows-format disk, per class of name.
 #[derive(Debug, Clone, Copy)]

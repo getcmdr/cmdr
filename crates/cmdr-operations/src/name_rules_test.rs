@@ -77,5 +77,29 @@ async fn the_local_disk_answers_for_the_folder_it_holds() {
     engine.register_local_root();
     let dir = TestDir::new("name_rules_local");
     let rules = name_rules_at(engine.host(), "root", &dir).await;
-    assert_eq!(rules.format, NameFormat::Posix);
+    // Windows reads the scratch disk's real format (NTFS, `GetVolumeInformationW`).
+    let expected = if cfg!(target_os = "windows") {
+        NameFormat::Windows
+    } else {
+        NameFormat::Posix
+    };
+    assert_eq!(rules.format, expected);
+}
+
+/// On a Windows host a local disk is never held to rules weaker than Win32's own
+/// refusals, whatever the kind lookup answers: `a:b` would write an NTFS stream,
+/// `con` and `dup.` names Explorer can't open, and `x\y` would move into `x`.
+#[cfg(target_os = "windows")]
+#[tokio::test]
+async fn a_windows_local_disk_refuses_what_win32_refuses() {
+    use cmdr_fs::validation::validate_filename;
+    let engine = TestOperations::new();
+    engine.register_local_root();
+    let dir = TestDir::new("name_rules_win32");
+    for probe in [dir.to_path_buf(), dir.join("missing").join("deeper")] {
+        let rules = name_rules_at(engine.host(), "root", &probe).await;
+        for name in ["a:b", "con", "con.txt", "dup.", "dup ", "x\\y", "tab\tname"] {
+            assert!(validate_filename(name, rules).is_err(), "{name:?} passed at {probe:?}");
+        }
+    }
 }
