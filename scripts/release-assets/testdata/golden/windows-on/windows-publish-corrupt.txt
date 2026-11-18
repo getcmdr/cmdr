@@ -1,0 +1,22 @@
+# job windows-publish
+
+## Install the Tauri CLI: ok
+pnpm install --frozen-lockfile --ignore-scripts --filter @cmdr/desktop
+
+## Take exactly the planned Windows files: ok
+
+## Vet the Windows installer: ok
+
+## Sign the updater payload and the advisory list: ok
+pnpm exec tauri signer sign --app-version 0.61.0 $RUNNER_TEMP/windows-x86_64/Cmdr_0.61.0_x64-setup.exe
+pnpm exec tauri signer sign $RUNNER_TEMP/windows-x86_64/Cmdr_0.61.0_security-advisories.json
+
+## Verify the new signatures against the app's trusted keys: ok
+release-finish.sh -verify-dir $RUNNER_TEMP/windows-x86_64 -leg windows 0.61.0
+  $RUNNER_TEMP/windows-x86_64: Cmdr_0.61.0_security-advisories.json Cmdr_0.61.0_security-advisories.json.sig Cmdr_0.61.0_x64-setup.exe Cmdr_0.61.0_x64-setup.exe.sig Cmdr_0.61.0_x64.msix cmdr-group-policy-0.61.0.zip 
+
+## Upload the Windows packages to the release: FAILED
+gh release upload Cmdr_0.61.0_x64-setup.exe
+gh release delete-asset Cmdr_0.61.0_x64-setup.exe
+::error::Cmdr_0.61.0_x64-setup.exe on the release has digest 'sha256:4f73d7d90177f0d36ac8fedb34e1d2f382e95a349e2362e191ce8588d670f2e1', but this job built sha256:38b0ab48f6b47ef018d56d79758e14cc5fa18be089fd50e1edc3d8aa0fb27e7b, so it's coming off the release.
+error: ::error::Cmdr_0.61.0_x64-setup.exe on the release has digest 'sha256:4f73d7d90177f0d36ac8fedb34e1d2f382e95a349e2362e191ce8588d670f2e1', but this job built sha256:38b0ab48f6b47ef018d56d79758e14cc5fa18be089fd50e1edc3d8aa0fb27e7b, so it's coming off the release.

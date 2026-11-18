@@ -59,6 +59,13 @@ var windowsScenarios = []scenario{
 	{name: "windows-publish-local", job: "windows-publish", event: "push", mode: "local", made: map[string][]string{"windows-x86_64": windowsBuild}},
 	// A build hook dropped a macOS-named file into the artifact: refused by name, nothing signed.
 	{name: "windows-publish-hostile", job: "windows-publish", event: "push", mode: "ci", made: map[string][]string{"windows-x86_64": append(slices.Clone(windowsBuild), "Cmdr_0.61.0_universal.dmg")}},
+	// GitHub saved the installer damaged: its digest doesn't match, so it comes off the release and
+	// no signature goes up.
+	{name: "windows-publish-corrupt", job: "windows-publish", event: "push", mode: "ci", corruptUpload: "Cmdr_0.61.0_x64-setup.exe", made: map[string][]string{"windows-x86_64": windowsBuild}},
+	// The whole path: `windows-publish` uploads and signs, then `publish` carries the leg.
+	{name: "publish-after-windows-publish", job: "publish", event: "push", mode: "ci", before: "windows-publish-ci", drop: noLatest, made: map[string][]string{"windows-x86_64": windowsBuild}, artifacts: gateArtifact},
+	// After the damaged upload above, `publish` ships macOS alone: a bad-digest file is never carried.
+	{name: "publish-after-corrupt-upload", job: "publish", event: "push", mode: "ci", before: "windows-publish-corrupt", drop: noLatest, corruptUpload: "Cmdr_0.61.0_x64-setup.exe", made: map[string][]string{"windows-x86_64": windowsBuild}, artifacts: gateArtifact},
 	// `publish` wrote `latest.json` first: the late leg isn't uploaded.
 	{name: "windows-publish-too-late", job: "windows-publish", event: "push", mode: "ci", made: map[string][]string{"windows-x86_64": windowsBuild}},
 	{name: "windows-attest", job: "windows-attest", event: "push", mode: "ci", before: "windows-publish-ci", drop: noLatest, made: map[string][]string{"windows-x86_64": windowsBuild}},

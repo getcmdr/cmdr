@@ -15,6 +15,14 @@ TAG="$1"
 RELEASE_ID="$2"
 shift 2
 
+# remove takes an asset this script couldn't prove off the release again, so nothing reads bytes
+# that aren't the ones its caller built (and signed): a later `publish` then sees the file missing,
+# not wrong. Best effort: if GitHub won't delete it either, the error above still fails the job.
+remove() {
+  gh release delete-asset "$TAG" "$1" -R "$GITHUB_REPOSITORY" -y \
+    || echo "::error::Couldn't remove $1 from the release; delete it by hand before re-running."
+}
+
 upload() {
   local file="$1" name attempt want got
   name=$(basename "$file")
@@ -24,6 +32,7 @@ upload() {
     fi
     if [ "$attempt" = 4 ]; then
       echo "::error::Couldn't upload $name after four tries."
+      remove "$name"
       return 1
     fi
     sleep $((attempt * 15))
@@ -39,7 +48,8 @@ upload() {
     sleep 5
   done
   if [ "$got" != "$want" ]; then
-    echo "::error::$name on the release has digest '$got', but this job built $want."
+    echo "::error::$name on the release has digest '$got', but this job built $want, so it's coming off the release."
+    remove "$name"
     return 1
   fi
   echo "Uploaded $name ($want)"

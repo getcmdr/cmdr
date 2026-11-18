@@ -53,6 +53,8 @@ type scenario struct {
 	starter []string
 	// damage cuts these assets on the release to half their bytes (a damaged upload).
 	damage []string
+	// corruptUpload names an upload the fake GitHub saves damaged (`FIXTURE_CORRUPT_UPLOAD`).
+	corruptUpload string
 	// earlierLatest replaces the release's `latest.json` with this `testdata/v0.61.0/` file: what an
 	// earlier attempt of this pipeline uploaded (`latest.built.json`, macOS-only).
 	earlierLatest string
@@ -309,6 +311,7 @@ func (h *harness) env(outputFile, envFile string) []string {
 		"FIXTURE_LOG="+h.log,
 		// `local` mode builds into a draft, which the fake `gh`'s release list reports.
 		fmt.Sprintf("FIXTURE_DRAFT=%t", h.sc.mode == "local" && h.sc.event == "push"),
+		"FIXTURE_CORRUPT_UPLOAD="+h.sc.corruptUpload,
 	)
 }
 

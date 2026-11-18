@@ -78,8 +78,29 @@ case "$1 ${2:-}" in
       cp "$f" "$FIXTURE_UPLOADS/$name"
       # The release now serves the upload, as GitHub does, so a later download reads it back.
       cp "$f" "$FIXTURE_RELEASE_DIR/$name"
+      # FIXTURE_CORRUPT_UPLOAD names an upload GitHub saves damaged (its digest then differs).
+      if [ "$name" = "${FIXTURE_CORRUPT_UPLOAD:-}" ]; then
+        printf 'damaged in transit\n' >> "$FIXTURE_RELEASE_DIR/$name"
+      fi
+      # And the `gh api` view lists it, fully saved, with its size.
+      size=$(wc -c < "$FIXTURE_RELEASE_DIR/$name" | tr -d ' ')
+      jq --arg n "$name" --argjson s "$size" \
+        '.assets |= (map(select(.name != $n)) + [{name: $n, size: $s, state: "uploaded"}])' \
+        "$FIXTURE_RELEASE_JSON" > "$FIXTURE_RELEASE_JSON.tmp"
+      mv "$FIXTURE_RELEASE_JSON.tmp" "$FIXTURE_RELEASE_JSON"
       log "gh release upload $name"
     done
+    ;;
+  "release delete-asset")
+    shift 2
+    tag="$1" name="$2"
+    [ "$tag" = "$FIXTURE_TAG" ] || die "release delete-asset: no release $tag"
+    [ "${3:-}" = -y ] || die "release delete-asset: only -y is faked"
+    [ -e "$FIXTURE_RELEASE_DIR/$name" ] || die "release delete-asset: no asset $name"
+    rm -f "$FIXTURE_RELEASE_DIR/$name" "$FIXTURE_UPLOADS/$name"
+    jq --arg n "$name" '.assets |= map(select(.name != $n))' "$FIXTURE_RELEASE_JSON" > "$FIXTURE_RELEASE_JSON.tmp"
+    mv "$FIXTURE_RELEASE_JSON.tmp" "$FIXTURE_RELEASE_JSON"
+    log "gh release delete-asset $name"
     ;;
   "release edit")
     shift 2
