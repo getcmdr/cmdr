@@ -382,7 +382,19 @@ migration, loud rule 4) and behaves as it does today, which is to point at a los
   opens today (nothing, or the `\u{FFFD}` sibling); re-adding the favorite stores the escaped path. Accepted.
 - **The drive index and media index**: caches; one remove and one add per such name, then convergence (pinned in 10b).
 - **Importance** (`visits.path`): the visit history of those few paths starts over. Accepted.
-- **The operation log**: old rows for those names stay unrollbackable, as they are today; new rows roll back.
+- **The operation log**: old rows for those names stay unrollbackable, as they are today; new rows roll back. ❗ The
+  reverse case is a data-loss one (review 2's N7, decided by the lead, 2026-11-18): an old row can hold a plane-16 code
+  point as LITERAL text, and read live `[U+10FEC3, U+10FEA9]` names `é`, a real, different file, so a rollback could
+  delete it. So the log stamps an escape mark in its `meta` (`escape_mark_last_literal_op_id`, the newest op id on
+  record, once, at the first open with `cmdr_fs::app_path::ESCAPES_LIVE` true), and rows at or below it read through
+  `AppPathBuf::from_literal_store` (`crates/cmdr-operation-log/DETAILS.md` § "The escape mark"). Shipped with the type's
+  second review; inert until 10f flips the const. Tag writes journal here, so the tags undo is covered too.
+- **Why the other stores need no mark** (each checked in the type's second review): an old value read live names a
+  different path only if it literally holds a plane-16 code point, and none of them acts on a file unseen. Tabs and
+  closed tabs, favorites, recents, and go-to-path's recent list only NAVIGATE: the pane shows what it opened, and
+  nothing is changed without a person seeing it. The drive index, media index, and importance are caches checked against
+  the disk: a wrong key is one remove and one add, then convergence. Ask Cmdr transcripts hold shown text, which never
+  re-addresses.
 - **Ask Cmdr chat transcripts**: hold whatever text the agent saw (shown form, below); nothing re-addresses from them.
 
 **Display.** Every surface renders an escape as U+FFFD; ❌ never the raw private-use glyph (a box, or nothing):

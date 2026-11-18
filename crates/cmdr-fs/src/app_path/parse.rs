@@ -257,6 +257,19 @@ impl AppPathBuf {
         Self::from_external_text(text, flavor, namer)
     }
 
+    /// A path a durable store wrote BEFORE this build's escapes went live (an operation-log
+    /// row older than its escape mark): it's app spelling, but no escape existed when it was
+    /// written, so every escape-range code point in it is LITERAL text, escaped through
+    /// `namer`'s units (the namer of the volume the path is on). So a row naming a file
+    /// literally called `caf\u{10FEE9}` still names that file, never `caf\xE9` (review 2's N7).
+    ///
+    /// # Errors
+    ///
+    /// As [`Self::from_wire`].
+    pub fn from_literal_store(text: &str, namer: Namer) -> Result<AppPathBuf, NotAnAppPath> {
+        Self::from_wire(&escape::literal(text, namer))
+    }
+
     /// Path text from outside the app that a machine handed over (an MCP tool's argument, a
     /// deep link, a CLI argument), every name LITERAL: `.` names drop, on Windows `\` and `/`
     /// both separate, and every escape-range code point is literal text, escaped through

@@ -49,6 +49,7 @@ pub(crate) fn open_write_connection(db_path: &Path) -> Result<Connection, Operat
     let conn = cmdr_fs::sqlite_util::open(db_path)?;
     apply_pragmas(&conn, false)?;
     run_migrations(&conn, MIGRATIONS)?;
+    super::escape_mark::stamp_escape_mark(&conn, cmdr_fs::app_path::ESCAPES_LIVE)?;
     Ok(conn)
 }
 

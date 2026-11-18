@@ -235,6 +235,28 @@ fn every_escaped_user_input_row_holds() {
     }
 }
 
+/// Review 2's N7: a row stored before escapes went live reads its escape-range code points as
+/// the literal characters they were, so it names the file it named. (`from_wire` is the
+/// host's flavor, so the POSIX cell runs on Unix.)
+#[cfg(unix)]
+#[test]
+fn a_pre_escape_stored_path_reads_its_escape_code_points_as_literal_text() {
+    let stored = "/d/\u{10FEC3}\u{10FEA9}.txt";
+    // Read live, those two escapes spell the bytes of `é`: another, existing file on APFS.
+    let live = AppPathBuf::parse(stored, PathFlavor::Posix).expect("parses");
+    assert_eq!(live.as_str(), "/d/\u{e9}.txt");
+    // Read as the literal text the row held, it names the file literally called that.
+    let literal = AppPathBuf::from_literal_store(stored, Namer::Bytes).expect("parses");
+    assert_eq!(literal.to_native_posix().as_deref(), Ok(stored.as_bytes()));
+    // Plain text is the same either way.
+    assert_eq!(
+        AppPathBuf::from_literal_store("/d/caf\u{e9}", Namer::Bytes)
+            .map(AppPathBuf::into_string)
+            .as_deref(),
+        Ok("/d/caf\u{e9}")
+    );
+}
+
 // ---- Arithmetic ----
 
 #[test]

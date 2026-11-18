@@ -50,6 +50,13 @@ pub use shape::is_scheme_url;
 
 use crate::volume::NotAChildName;
 
+/// Whether this build's escape producers are live, so a stored path text may hold a live
+/// escape. `false` until milestone 10f of `docs/specs/app-path-plan.md`, whose producer commit
+/// flips it. A durable store that keeps app paths (the operation log) stamps a mark at the
+/// first open with this `true` and reads every older row through
+/// [`AppPathBuf::from_literal_store`].
+pub const ESCAPES_LIVE: bool = false;
+
 /// Which roots the local backend has: `/` alone, or drives and UNC shares.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PathFlavor {

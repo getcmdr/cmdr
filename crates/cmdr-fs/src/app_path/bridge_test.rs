@@ -127,14 +127,13 @@ fn a_windows_bridge_value_answers_through_the_type() {
 /// only under the bound, shadowing a blanket trait's `false`).
 macro_rules! implements {
     ($ty:ty: $($trait:tt)+) => {{
-        // Unused where the bound holds: the inherent const answers.
-        #[allow(dead_code)]
+        #[allow(dead_code, reason = "unused where the bound holds: the inherent const answers")]
         trait Fallback {
             const IMPLS: bool = false;
         }
         impl<T: ?Sized> Fallback for T {}
         struct Probe<T: ?Sized>(std::marker::PhantomData<T>);
-        #[allow(dead_code)]
+        #[allow(dead_code, reason = "unused where the bound fails: the fallback answers")]
         impl<T: ?Sized + $($trait)+> Probe<T> {
             const IMPLS: bool = true;
         }

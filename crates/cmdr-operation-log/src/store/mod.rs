@@ -16,6 +16,7 @@
 
 mod connection;
 mod dirs;
+mod escape_mark;
 mod migrations;
 mod tree_indexes;
 
@@ -30,6 +31,7 @@ pub use connection::open_read_connection;
 pub(crate) use connection::open_write_connection;
 pub use dirs::reconstruct_dir_path;
 pub(crate) use dirs::{find_dir, intern_child_dir, intern_dir};
+pub use escape_mark::{StoredPathReading, stored_path_reading};
 pub use migrations::{MIGRATIONS, Migration, run_migrations};
 pub(crate) use tree_indexes::{build_tree_item_indexes, tree_item_indexes_exist};
 
