@@ -18,19 +18,6 @@ done
 export DISPLAY=:99
 export GDK_BACKEND=x11
 
-# Pin Playwright's host-platform tag to a 24.04 build that Playwright publishes
-# (the 26.04 base image has no Playwright chromium build yet — see Dockerfile).
-# Must be arch-aware AND carry the arch suffix: Playwright's registry keys are
-# `ubuntu24.04-x64` and `ubuntu24.04-arm64` (see playwright-core
-# registry/index.js). The bare `ubuntu24.04` (no suffix) matches no key, so
-# `playwright install chromium` fails with "does not support chromium on
-# ubuntu24.04" — that bare-amd64 value is what kept Linux CI red. arm64 is local
-# on Apple Silicon; x64 is CI on x86_64 runners.
-case "$(dpkg --print-architecture)" in
-    arm64) export PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-arm64 ;;
-    amd64) export PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64 ;;
-esac
-
 # Start dbus (required for WebKitGTK)
 echo "Starting dbus..."
 eval "$(dbus-launch --sh-syntax)"

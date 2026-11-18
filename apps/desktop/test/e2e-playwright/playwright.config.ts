@@ -109,12 +109,10 @@ export default defineConfig({
   projects: [
     {
       name: 'tauri',
+      // The mode comes from `createTauriTest({ mode: 'tauri' })` in `fixtures.ts`.
       use: {
-        // @ts-expect-error -- custom fixture option from tauri-playwright
-        mode: 'tauri',
-        // Traces and screenshots are useless in Tauri mode. They capture
-        // the blank Playwright browser page, not the real Tauri webview.
-        // Native screenshots are captured via CoreGraphics on test failure.
+        // Playwright's traces and screenshots record its own browser, which Tauri mode never
+        // opens. Native screenshots are captured via CoreGraphics on test failure.
         trace: 'off',
         screenshot: 'off',
       },

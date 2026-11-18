@@ -21,6 +21,10 @@ import, and the auto fixture carrying the post-test leak guard), `global-setup.t
 filesystem fixture tree and the window-title decoration), and `helpers.ts`, a thin re-export of the themed modules in
 `helpers/`. A spec's FILENAME picks its shard (§ Files).
 
+No Playwright browser runs or needs installing: `fixtures.ts` pins `createTauriTest({ mode: 'tauri' })`, so upstream's
+`tauriPage` doesn't depend on Playwright's `page` and no Chromium launches per worker. The `mode` option is our pnpm
+patch of tauri-playwright: `../e2e-linux/DETAILS.md` § "No Playwright browser in the image".
+
 ## Window-title decoration
 
 `fixtures.ts` wraps each test in an auto fixture that updates the main window's OS title via the standard Tauri window

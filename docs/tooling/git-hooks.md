@@ -53,6 +53,10 @@ tap bump) would break a release.
   pushes one after its PR's `CI OK`, and the `main` ruleset refuses the rest), so a fixer commit there would be one CI
   never saw, and a notices run would be a minute of `cargo-about` for nothing.
 
+  **`pnpm land` runs this hook itself, before it connects** (`git hook run pre-push`), then pushes with `--no-verify`:
+  inside `git push` the notices minute outlasted GitHub's idle timeout. A plain `git push` of a lockfile change can
+  still hit it. `scripts/land/DETAILS.md` § Gotcha: the pre-push hook runs before the connection.
+
 - **`post-commit`** repairs the index after `git commit <paths>` (see the gotchas).
 
 ## Decisions

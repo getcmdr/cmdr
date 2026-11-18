@@ -142,7 +142,7 @@ jobs:
 
   # A third of the suite each (Playwright `--shard`, by spec file), in its own container on its
   # own runner, against the build job's binary. ~3 min of tests plus ~2 min of setup (the base
-  # image pull, the in-container `pnpm install`, Chromium, the fixture stacks).
+  # image pull, the in-container `pnpm install`, the fixture stacks).
   tests:
     name: Playwright tests (${{ matrix.shard }}/3)
     needs: build

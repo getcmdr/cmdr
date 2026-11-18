@@ -276,6 +276,22 @@ always matches, so origin's branch gets overwritten whatever it holds. It clobbe
 - Tested against real bare origins in `push_test.go` (verified on git 2.56.0; removing `--force-if-includes` turns
   `TestPushToOriginRefusesAFetchedButUnintegratedTip` red, 2026-10-20).
 
+## Gotcha: the pre-push hook runs before the connection
+
+Git runs a pre-push hook with the connection to origin already open. When a push moves a lockfile, our hook regenerates
+`THIRD-PARTY-NOTICES.md` (a fresh `cargo-about` walk, about a minute), and GitHub's side of the idle connection timed
+out: `Read from remote host github.com: Operation timed out`, then `send-pack: unexpected disconnect` (three lands in a
+row, idle Mac too, 2026-11-18). So `pushBranch` runs the hook itself through `git hook run pre-push`, feeding it the
+stdin line `git push` would (`HEAD <sha> refs/heads/<branch> <remote sha or zeros>`, args `origin <url>`), once per
+head, and then pushes with `--no-verify`.
+
+- A hook that stops (exit non-zero) and moved HEAD added a commit: it runs again on that commit, once. One that stopped
+  without moving HEAD refused, and the land stops with its output.
+- A remote retry (§ Gotcha: GitHub's own failures) re-pushes without re-running the hook: HEAD didn't change.
+- `TestPushBranchRunsThePrePushHookOnceBeforePushing` pins it: origin turns the first push away, so a hook still riding
+  along with `git push` runs twice (verified red on the old code, git 2.56.1, 2026-11-18). It also shows git's own stdin
+  line matches ours.
+
 ## Decision: cheap polling that outlasts the API budget
 
 Many sessions landing at once poll one account, and on 2026-10-20 they spent its 5,000/h REST budget: `gh run list`

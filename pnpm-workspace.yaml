@@ -131,3 +131,5 @@ minimumReleaseAgeExclude:
   - hono@4.13.16
   # Renovate security update: astro@7.4.7
   - astro@7.4.7
+patchedDependencies:
+  '@srsholmes/tauri-playwright@0.4.1': patches/@srsholmes__tauri-playwright@0.4.1.patch
