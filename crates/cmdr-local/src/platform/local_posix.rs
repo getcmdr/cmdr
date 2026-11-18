@@ -812,9 +812,11 @@ impl Volume for LocalPosixVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a cmdr_fs::volume::ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::volume::BatchScanResult, VolumeError>> + Send + 'a>> {
-        let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-        let paths: &[PathBuf] = &paths_std;
-        self.scan_for_copy_batch_with_boundary_impl(paths, boundary)
+        Box::pin(async move {
+            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+            let paths: &[PathBuf] = &paths_std;
+            self.scan_for_copy_batch_with_boundary_impl(paths, boundary).await
+        })
     }
 
     fn supports_streaming(&self) -> bool {

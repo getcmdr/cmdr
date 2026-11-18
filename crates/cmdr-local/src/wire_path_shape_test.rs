@@ -12,6 +12,7 @@
 #![cfg(unix)] // POSIX symlinks and the OS's own `..` resolution through one.
 
 use super::*;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::host::VolumeHost;
@@ -46,13 +47,15 @@ impl LinkTree {
     }
 
     async fn stat(&self, rel: &str) -> Result<FileEntry, VolumeError> {
-        self.volume.get_metadata(Path::new(&self.wire(rel))).await
+        self.volume
+            .get_metadata(&AppPath::legacy_unchecked(Path::new(&self.wire(rel))))
+            .await
     }
 
     async fn listed_paths(&self, rel: &str) -> Vec<String> {
         let mut paths: Vec<String> = self
             .volume
-            .list_directory(Path::new(&self.wire(rel)), None)
+            .list_directory(&AppPath::legacy_unchecked(Path::new(&self.wire(rel))), None)
             .await
             .expect("lists")
             .into_iter()
@@ -140,7 +143,7 @@ async fn a_name_made_in_nfd_and_asked_in_nfc_follows_the_filesystem() {
     assert_eq!(names, [nfd], "the listing keeps the stored NFD bytes");
 
     let nfc_path = dir.join(nfc);
-    let asked = volume.get_metadata(&nfc_path).await;
+    let asked = volume.get_metadata(&AppPath::legacy_unchecked(&nfc_path)).await;
     #[cfg(target_os = "macos")]
     {
         let entry = asked.expect("APFS matches the NFC spelling");
@@ -149,7 +152,7 @@ async fn a_name_made_in_nfd_and_asked_in_nfc_follows_the_filesystem() {
             entry.name, nfc,
             "the stat echoes the spelling it was asked, not the stored one"
         );
-        assert!(volume.exists(&nfc_path).await);
+        assert!(volume.exists(&AppPath::legacy_unchecked(&nfc_path)).await);
     }
     #[cfg(target_os = "linux")]
     {

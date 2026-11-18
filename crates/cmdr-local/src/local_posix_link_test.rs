@@ -3,6 +3,7 @@
 #![cfg(unix)]
 
 use super::*;
+use cmdr_fs::app_path;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{Volume, VolumeError};
@@ -20,7 +21,7 @@ async fn test_scan_for_copy_counts_a_nested_link_as_one_entry_without_following_
     cmdr_fs::testing::symlink("../real", test_dir.join("tree/link")).unwrap();
     let volume = LocalPosixVolume::local_folder("Test", test_dir.to_path_buf(), VolumeHost::detached());
 
-    let scan = volume.scan_for_copy(Path::new("/tree")).await.unwrap();
+    let scan = volume.scan_for_copy(app_path!("/tree")).await.unwrap();
 
     assert_eq!(scan.file_count, 2, "the file and the link");
     assert_eq!(scan.total_bytes, 4, "the file's bytes alone");
@@ -33,11 +34,11 @@ async fn test_read_link_target_of_something_missing_is_not_found() {
     let test_dir = TestDir::new("read_link_missing");
     let volume = LocalPosixVolume::local_folder("Test", test_dir.to_path_buf(), VolumeHost::detached());
     assert!(matches!(
-        volume.read_link_target(Path::new("/nope")).await,
+        volume.read_link_target(app_path!("/nope")).await,
         Err(VolumeError::NotFound(_))
     ));
     assert!(matches!(
-        volume.create_symlink(Path::new("/nope/link"), Path::new("t")).await,
+        volume.create_symlink(app_path!("/nope/link"), Path::new("t")).await,
         Err(VolumeError::NotFound(_))
     ));
 }

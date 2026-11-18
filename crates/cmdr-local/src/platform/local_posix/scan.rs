@@ -207,7 +207,12 @@ impl LocalPosixVolume {
             for path in paths {
                 boundary.check().await?;
                 let scan = self
-                    .scan_subtree(path, boundary.stop(), boundary.recorder().cloned(), boundary.mac_only())
+                    .scan_subtree(
+                        &AppPath::legacy_unchecked(path),
+                        boundary.stop(),
+                        boundary.recorder().cloned(),
+                        boundary.mac_only(),
+                    )
                     .await?;
                 boundary.counted(&scan).await?;
                 per_path.push((path.clone(), scan));
