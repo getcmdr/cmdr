@@ -7,6 +7,8 @@ use std::io::Write;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use cmdr_fs::rt::Runtime;
+
 use super::*;
 use crate::test_fixtures::build_encrypted_7z;
 
@@ -164,7 +166,7 @@ fn set_octal(field: &mut [u8], val: u64) {
 
 /// Drains an entry reader to completion.
 async fn read_all(index: &ArchiveIndex, src: Arc<dyn ArchiveByteSource>, inner: &str) -> Result<Vec<u8>, ArchiveError> {
-    let mut reader = index.open_read(inner, src, None)?;
+    let mut reader = index.open_read(inner, src, None, &Runtime::current())?;
     let mut out = Vec::new();
     while let Some(chunk) = reader.next_chunk().await {
         out.extend_from_slice(&chunk?);
@@ -224,7 +226,7 @@ async fn tar_extract_streams_in_bounded_chunks() {
     // A large member must arrive in several ≤128 KiB chunks (never whole-buffered).
     let content: Vec<u8> = (0..400_000u32).map(|i| (i % 253) as u8).collect();
     let (index, src) = parse_tar(TarCodec::Gzip, &[TarItem::File("big.bin", &content)]);
-    let mut reader = index.open_read("big.bin", src, None).unwrap();
+    let mut reader = index.open_read("big.bin", src, None, &Runtime::current()).unwrap();
     let mut chunk_sizes = Vec::new();
     let mut data = Vec::new();
     while let Some(chunk) = reader.next_chunk().await {
@@ -366,7 +368,7 @@ async fn one_pass_subtree_extract_decodes_a_compressed_tar_once() {
 
     // The parse itself scans the whole stream once; measure only the extract.
     let baseline = zero_reads.load(Ordering::SeqCst);
-    let mut reader = index.open_subtree_extract("docs", Arc::clone(&src), None);
+    let mut reader = index.open_subtree_extract("docs", Arc::clone(&src), None, &Runtime::current());
     let got = drain_subtree(&mut reader).await;
     let extract_passes = zero_reads.load(Ordering::SeqCst) - baseline;
 
@@ -401,7 +403,7 @@ async fn one_pass_subtree_extract_skipping_a_member_still_reads_the_rest() {
             TarItem::File("docs/keep.txt", b"kept"),
         ],
     );
-    let mut reader = index.open_subtree_extract("docs", src, None);
+    let mut reader = index.open_subtree_extract("docs", src, None, &Runtime::current());
 
     // First member: take the header but DON'T drain its chunks (a skip).
     let first = reader.next_member().await.expect("next_member").expect("a member");
@@ -437,7 +439,7 @@ async fn one_pass_subtree_extract_decodes_a_solid_7z_once() {
     let index = ArchiveIndex::parse(Arc::clone(&src), ArchiveFormat::SevenZ, None).expect("parse 7z");
 
     let baseline = zero_reads.load(Ordering::SeqCst);
-    let mut reader = index.open_subtree_extract("docs", Arc::clone(&src), None);
+    let mut reader = index.open_subtree_extract("docs", Arc::clone(&src), None, &Runtime::current());
     let got = drain_subtree(&mut reader).await;
     let extract_passes = zero_reads.load(Ordering::SeqCst) - baseline;
 
@@ -488,7 +490,7 @@ async fn read_all_pw(
     inner: &str,
     password: &str,
 ) -> Result<Vec<u8>, ArchiveError> {
-    let mut reader = index.open_read(inner, src, Some(password))?;
+    let mut reader = index.open_read(inner, src, Some(password), &Runtime::current())?;
     let mut out = Vec::new();
     while let Some(chunk) = reader.next_chunk().await {
         out.extend_from_slice(&chunk?);
@@ -621,7 +623,7 @@ async fn sevenz_encrypted_solid_subtree_extract_with_password() {
     );
     let src: Arc<dyn ArchiveByteSource> = Arc::new(BytesSource::new(bytes));
     let index = ArchiveIndex::parse(Arc::clone(&src), ArchiveFormat::SevenZ, None).expect("parse");
-    let mut reader = index.open_subtree_extract("docs", src, Some("pw"));
+    let mut reader = index.open_subtree_extract("docs", src, Some("pw"), &Runtime::current());
     let got = drain_subtree(&mut reader).await;
     assert_eq!(got.get("docs/a.txt").map(Vec::as_slice), Some(b"alpha".as_ref()));
     assert_eq!(got.get("docs/b.txt").map(Vec::as_slice), Some(b"bravo".as_ref()));

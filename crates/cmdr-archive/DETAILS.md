@@ -180,10 +180,11 @@ mount — but reading it that way defeats the direct connection and can block on
 forces the read through the parent volume.
 
 **The bridge (`VolumeByteSource`, `src/volume_streams.rs`).** The core's `ArchiveByteSource::read_at` is blocking (the
-parse and every decompress run on `spawn_blocking`), but `Volume::read_range` is async. `VolumeByteSource` captures the
-tokio runtime handle at construction (on the async executor, in `open_remote_source`) and `block_on`s the parent's
-`read_range` inside the blocking read. Sound because `read_at` only ever runs on a `spawn_blocking` thread (never a
-runtime worker), so `block_on` doesn't reenter the executor — the same bridge the viewer's archive extractor uses. It
+parse and every decompress run on the host runtime's blocking pool), but `Volume::read_range` is async.
+`VolumeByteSource` holds the host's runtime (`host.runtime()`, handed in by `open_remote_source`, never an ambient
+`Handle::current()`) and `block_on`s the parent's `read_range` inside the blocking read. In the browser build, where a
+page can't block, it answers `NotSupported`. Sound because `read_at` only ever runs on a `spawn_blocking` thread (never
+a runtime worker), so `block_on` doesn't reenter the executor — the same bridge the viewer's archive extractor uses. It
 clamps requests to the known size so rc-zip's read-ahead past EOF doesn't ask the backend for absent bytes.
 
 **One tail read for the central directory (`TailCachedSource`, `src/read/source.rs`).** rc-zip's sans-IO fsm finds the

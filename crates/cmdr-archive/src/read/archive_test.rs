@@ -9,6 +9,7 @@ use crate::test_fixtures::{
     encrypted_entry, overstate_record_count, patch_equal_len, plain_entry, set_first_entry_encrypted, stored,
     zip64_stored,
 };
+use cmdr_fs::rt::Runtime;
 use cmdr_fs::testing::TestDir;
 
 fn bytes_source(bytes: Vec<u8>) -> Arc<dyn ArchiveByteSource> {
@@ -128,7 +129,9 @@ async fn cloaked_entry_lists_and_reads_under_its_central_directory_name() {
     assert_eq!(names(&index, ""), vec!["doc_report.pdf"]);
     assert!(!index.exists("cron_worker.sh"));
 
-    let mut reader = index.open_read("doc_report.pdf", bytes_source(zip), None).unwrap();
+    let mut reader = index
+        .open_read("doc_report.pdf", bytes_source(zip), None, &Runtime::current())
+        .unwrap();
     let (data, _) = read_all(&mut reader).await.unwrap();
     assert_eq!(data, b"#!/bin/sh\necho pwned\n");
 }
@@ -170,7 +173,7 @@ async fn cloaked_encrypted_entry_decrypts_under_its_central_directory_name() {
     let index = parse(&zip).unwrap();
     assert_eq!(names(&index, ""), vec!["doc_report.pdf"]);
     let mut reader = index
-        .open_read("doc_report.pdf", bytes_source(zip), Some("pw"))
+        .open_read("doc_report.pdf", bytes_source(zip), Some("pw"), &Runtime::current())
         .unwrap();
     let (data, _) = read_all(&mut reader).await.unwrap();
     assert_eq!(data, b"payload");
@@ -190,7 +193,9 @@ async fn encrypted_entry_is_detected_and_rejected() {
     // Browsing still worked (name is listed); extraction with no password is
     // rejected with the typed needs-password signal.
     let src = bytes_source(zip);
-    let err = index.open_read("secret.txt", src, None).unwrap_err();
+    let err = index
+        .open_read("secret.txt", src, None, &Runtime::current())
+        .unwrap_err();
     assert!(matches!(err, ArchiveError::Encrypted), "got {err:?}");
 }
 
@@ -205,7 +210,9 @@ async fn zipcrypto_entry_decrypts_with_correct_password() {
     assert!(index.get("secret.txt").unwrap().encrypted);
 
     let src = bytes_source(zip);
-    let mut reader = index.open_read("secret.txt", src, Some("hunter2")).unwrap();
+    let mut reader = index
+        .open_read("secret.txt", src, Some("hunter2"), &Runtime::current())
+        .unwrap();
     let (data, _) = read_all(&mut reader).await.unwrap();
     assert_eq!(data, b"classified payload", "correct password must yield the plaintext");
 }
@@ -218,7 +225,9 @@ async fn zipcrypto_wrong_password_is_typed_wrong_password() {
     // A wrong password is rejected either at open (ZipCrypto's 1-byte check) or,
     // for the ~1/256 that slip through, late at the end-of-stream CRC — both map
     // to the SAME typed WrongPassword the frontend re-prompts on.
-    let mut reader = index.open_read("secret.txt", src, Some("wrong-password")).unwrap();
+    let mut reader = index
+        .open_read("secret.txt", src, Some("wrong-password"), &Runtime::current())
+        .unwrap();
     let err = read_all(&mut reader).await.unwrap_err();
     assert!(matches!(err, ArchiveError::WrongPassword), "got {err:?}");
 }
@@ -228,7 +237,9 @@ async fn zipcrypto_no_password_is_the_encrypted_signal() {
     let zip = build_zipcrypto_zip(&[encrypted_entry("secret.txt", "x")], "hunter2");
     let index = parse(&zip).unwrap();
     let src = bytes_source(zip);
-    let err = index.open_read("secret.txt", src, None).unwrap_err();
+    let err = index
+        .open_read("secret.txt", src, None, &Runtime::current())
+        .unwrap_err();
     assert!(matches!(err, ArchiveError::Encrypted), "got {err:?}");
 }
 
@@ -259,7 +270,9 @@ async fn zip_crate_ordinals_align_with_rc_zip() {
     // The earlier twin is shadowed in the tree, so there's no path to open it by.
     for entry in entries.iter().filter(|entry| entry.content != b"earlier-twin-body") {
         let password = entry.encrypted.then_some("pw");
-        let mut reader = index.open_read(&entry.name, Arc::clone(&src), password).unwrap();
+        let mut reader = index
+            .open_read(&entry.name, Arc::clone(&src), password, &Runtime::current())
+            .unwrap();
         let (data, _) = read_all(&mut reader).await.unwrap();
         assert_eq!(
             data, entry.content,
@@ -281,11 +294,15 @@ async fn mixed_archive_plain_entries_extract_without_password() {
     let index = parse(&zip).unwrap();
     let src = bytes_source(zip);
     // The plain entry reads with no password at all.
-    let mut reader = index.open_read("open.txt", Arc::clone(&src), None).unwrap();
+    let mut reader = index
+        .open_read("open.txt", Arc::clone(&src), None, &Runtime::current())
+        .unwrap();
     let (data, _) = read_all(&mut reader).await.unwrap();
     assert_eq!(data, b"readable");
     // The encrypted sibling still needs one.
-    let err = index.open_read("locked.txt", src, None).unwrap_err();
+    let err = index
+        .open_read("locked.txt", src, None, &Runtime::current())
+        .unwrap_err();
     assert!(matches!(err, ArchiveError::Encrypted), "got {err:?}");
 }
 
@@ -304,7 +321,9 @@ async fn winzip_aes256_entry_decrypts_with_correct_password() {
     assert!(index.get("secret.txt").unwrap().encrypted);
 
     let src = bytes_source(zip);
-    let mut reader = index.open_read("secret.txt", src, Some("hunter2")).unwrap();
+    let mut reader = index
+        .open_read("secret.txt", src, Some("hunter2"), &Runtime::current())
+        .unwrap();
     let (data, _) = read_all(&mut reader).await.unwrap();
     assert_eq!(data, b"classified payload", "correct password must yield the plaintext");
 }
@@ -318,7 +337,9 @@ async fn winzip_aes128_entry_decrypts_with_correct_password() {
     );
     let index = parse(&zip).unwrap();
     let src = bytes_source(zip);
-    let mut reader = index.open_read("secret.txt", src, Some("pw")).unwrap();
+    let mut reader = index
+        .open_read("secret.txt", src, Some("pw"), &Runtime::current())
+        .unwrap();
     let (data, _) = read_all(&mut reader).await.unwrap();
     assert_eq!(data, b"aes-128 body");
 }
@@ -335,7 +356,9 @@ async fn winzip_aes_wrong_password_is_typed_wrong_password() {
     // AES carries a 2-byte password-verification value, so a wrong password is
     // caught deterministically at open (no ZipCrypto-style 1/256 false-accept) and
     // surfaces as the typed WrongPassword the frontend re-prompts on.
-    let mut reader = index.open_read("secret.txt", src, Some("wrong-password")).unwrap();
+    let mut reader = index
+        .open_read("secret.txt", src, Some("wrong-password"), &Runtime::current())
+        .unwrap();
     let err = read_all(&mut reader).await.unwrap_err();
     assert!(matches!(err, ArchiveError::WrongPassword), "got {err:?}");
 }
@@ -345,7 +368,9 @@ async fn winzip_aes_no_password_is_the_encrypted_signal() {
     let zip = build_aes_zip(&[encrypted_entry("secret.txt", "x")], "hunter2", ::zip::AesMode::Aes256);
     let index = parse(&zip).unwrap();
     let src = bytes_source(zip);
-    let err = index.open_read("secret.txt", src, None).unwrap_err();
+    let err = index
+        .open_read("secret.txt", src, None, &Runtime::current())
+        .unwrap_err();
     assert!(matches!(err, ArchiveError::Encrypted), "got {err:?}");
 }
 
@@ -367,7 +392,9 @@ async fn winzip_aes_mixed_archive_decrypts_each_entry_as_itself() {
     let src = bytes_source(zip);
     for entry in &entries {
         let password = entry.encrypted.then_some("pw");
-        let mut reader = index.open_read(&entry.name, Arc::clone(&src), password).unwrap();
+        let mut reader = index
+            .open_read(&entry.name, Arc::clone(&src), password, &Runtime::current())
+            .unwrap();
         let (data, _) = read_all(&mut reader).await.unwrap();
         assert_eq!(
             data, entry.content,
@@ -399,9 +426,11 @@ async fn opening_a_directory_or_missing_path_is_a_typed_error() {
     let index = parse(&zip).unwrap();
     let src = bytes_source(zip);
 
-    let dir_err = index.open_read("dir", Arc::clone(&src), None).unwrap_err();
+    let dir_err = index
+        .open_read("dir", Arc::clone(&src), None, &Runtime::current())
+        .unwrap_err();
     assert!(matches!(dir_err, ArchiveError::IsADirectory(_)), "got {dir_err:?}");
-    let missing_err = index.open_read("nope.txt", src, None).unwrap_err();
+    let missing_err = index.open_read("nope.txt", src, None, &Runtime::current()).unwrap_err();
     assert!(matches!(missing_err, ArchiveError::NotFound(_)), "got {missing_err:?}");
 }
 
@@ -416,7 +445,7 @@ async fn streams_large_entry_in_bounded_chunks() {
     let index = parse(&zip).unwrap();
     let src = bytes_source(zip);
 
-    let mut reader = index.open_read("big.bin", src, None).unwrap();
+    let mut reader = index.open_read("big.bin", src, None, &Runtime::current()).unwrap();
     assert_eq!(reader.total_size(), content.len() as u64);
 
     let (data, chunk_sizes) = read_all(&mut reader).await.unwrap();
@@ -436,7 +465,7 @@ async fn reads_stored_entry_bytes_exactly() {
     let index = parse(&zip).unwrap();
     let src = bytes_source(zip);
 
-    let mut reader = index.open_read("plain.txt", src, None).unwrap();
+    let mut reader = index.open_read("plain.txt", src, None, &Runtime::current()).unwrap();
     let (data, _) = read_all(&mut reader).await.unwrap();
     assert_eq!(data, content);
 }
@@ -456,7 +485,7 @@ async fn reads_zstd_compressed_entry() {
     let index = parse(&zip).unwrap();
     let src = bytes_source(zip);
 
-    let mut reader = index.open_read("data.bin", src, None).unwrap();
+    let mut reader = index.open_read("data.bin", src, None, &Runtime::current()).unwrap();
     let (data, _) = read_all(&mut reader).await.unwrap();
     assert_eq!(data, content);
 }
@@ -472,7 +501,7 @@ async fn truncated_entry_data_errors_instead_of_hanging() {
 
     let truncated = full[..full.len() / 2].to_vec();
     let src = bytes_source(truncated);
-    let mut reader = index.open_read("big.bin", src, None).unwrap();
+    let mut reader = index.open_read("big.bin", src, None, &Runtime::current()).unwrap();
 
     let result = read_all(&mut reader).await;
     assert!(matches!(result, Err(ArchiveError::Corrupt(_))), "got {result:?}");
@@ -490,8 +519,12 @@ async fn concurrent_reads_are_independent() {
     let src = bytes_source(zip);
 
     // Two readers over one shared source, driven concurrently.
-    let mut ra = index.open_read("a.bin", Arc::clone(&src), None).unwrap();
-    let mut rb = index.open_read("b.bin", Arc::clone(&src), None).unwrap();
+    let mut ra = index
+        .open_read("a.bin", Arc::clone(&src), None, &Runtime::current())
+        .unwrap();
+    let mut rb = index
+        .open_read("b.bin", Arc::clone(&src), None, &Runtime::current())
+        .unwrap();
     let (a_res, b_res) = tokio::join!(read_all(&mut ra), read_all(&mut rb));
 
     assert_eq!(a_res.unwrap().0, a_content);
@@ -563,10 +596,12 @@ async fn file_shadowing_a_directory_path_file_first_drops_the_child() {
     assert_eq!(index.is_directory("foo"), Some(false));
     assert!(index.get("foo/bar").is_none());
     // The dropped child must not be readable either (files map stays consistent).
-    let err = index.open_read("foo/bar", Arc::clone(&src), None).unwrap_err();
+    let err = index
+        .open_read("foo/bar", Arc::clone(&src), None, &Runtime::current())
+        .unwrap_err();
     assert!(matches!(err, ArchiveError::NotFound(_)), "got {err:?}");
     // The winning file still reads.
-    let mut reader = index.open_read("foo", src, None).unwrap();
+    let mut reader = index.open_read("foo", src, None, &Runtime::current()).unwrap();
     assert_eq!(read_all(&mut reader).await.unwrap().0, b"iamafile");
 }
 
@@ -580,9 +615,11 @@ async fn file_shadowing_a_directory_path_subfile_first_keeps_the_directory() {
 
     assert_eq!(index.is_directory("foo"), Some(true));
     assert_eq!(names(&index, "foo"), vec!["bar"]);
-    let err = index.open_read("foo", Arc::clone(&src), None).unwrap_err();
+    let err = index
+        .open_read("foo", Arc::clone(&src), None, &Runtime::current())
+        .unwrap_err();
     assert!(matches!(err, ArchiveError::IsADirectory(_)), "got {err:?}");
-    let mut reader = index.open_read("foo/bar", src, None).unwrap();
+    let mut reader = index.open_read("foo/bar", src, None, &Runtime::current()).unwrap();
     assert_eq!(read_all(&mut reader).await.unwrap().0, b"child");
 }
 
@@ -596,7 +633,7 @@ async fn zip64_archive_parses_and_reads() {
     assert_eq!(index.get("z.txt").unwrap().size, Some(11));
 
     let src = bytes_source(zip);
-    let mut reader = index.open_read("z.txt", src, None).unwrap();
+    let mut reader = index.open_read("z.txt", src, None, &Runtime::current()).unwrap();
     assert_eq!(read_all(&mut reader).await.unwrap().0, b"hello zip64");
 }
 

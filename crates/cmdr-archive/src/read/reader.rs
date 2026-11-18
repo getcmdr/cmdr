@@ -20,6 +20,7 @@
 
 use std::io::Read;
 
+use cmdr_fs::rt::Runtime;
 use tokio::sync::mpsc;
 
 use super::error::ArchiveError;
@@ -66,16 +67,17 @@ impl ChunkTx {
 }
 
 impl ArchiveEntryReader {
-    /// Spawns a blocking `producer` that decodes an entry of `total_size`
-    /// uncompressed bytes, sending chunks through the returned reader's channel.
-    /// The producer starts immediately and fills the channel up to capacity,
-    /// then parks on backpressure until the consumer pulls.
-    pub(super) fn spawn_with<F>(total_size: u64, producer: F) -> Self
+    /// Spawns a blocking `producer` on `runtime`'s blocking pool that decodes an
+    /// entry of `total_size` uncompressed bytes, sending chunks through the
+    /// returned reader's channel. The producer starts immediately and fills the
+    /// channel up to capacity, then parks on backpressure until the consumer pulls.
+    pub(super) fn spawn_with<F>(runtime: &Runtime, total_size: u64, producer: F) -> Self
     where
         F: FnOnce(ChunkTx) + Send + 'static,
     {
         let (tx, rx) = mpsc::channel(CHANNEL_CAPACITY);
-        tokio::task::spawn_blocking(move || producer(ChunkTx(tx)));
+        // Detached: the producer ends on its own when the reader drops (`send` fails).
+        drop(runtime.spawn_blocking(move || producer(ChunkTx(tx))));
         Self {
             rx,
             total_size,

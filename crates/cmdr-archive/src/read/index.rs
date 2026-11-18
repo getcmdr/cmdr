@@ -24,7 +24,7 @@ use std::sync::Arc;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::Xattr;
-use tokio::task::spawn_blocking;
+use cmdr_fs::rt::Runtime;
 
 use super::error::ArchiveError;
 use super::extract::{SubtreeExtractReader, SubtreeMember};
@@ -120,23 +120,24 @@ impl EntryStore {
     /// same uncompressed total for progress. `password` decrypts an encrypted zip
     /// entry (ZipCrypto or WinZip AES) or a content-encrypted 7z entry; it's
     /// ignored for a plaintext entry and for tar (never encrypted). Maps a missing
-    /// handle to `NotFound`.
+    /// handle to `NotFound`. The decode runs on `runtime`'s blocking pool.
     pub(super) fn open_read(
         &self,
         inner: &str,
         size: u64,
         source: Arc<dyn ArchiveByteSource>,
         password: Option<&str>,
+        runtime: &Runtime,
     ) -> Result<ArchiveEntryReader, ArchiveError> {
         match self {
             EntryStore::Zip(files) => {
                 let handle = files
                     .get(inner)
                     .ok_or_else(|| ArchiveError::NotFound(inner.to_string()))?;
-                super::zip::open_read(handle, source, password.map(str::as_bytes))
+                super::zip::open_read(handle, source, password.map(str::as_bytes), runtime)
             }
-            EntryStore::Tar(store) => store.open_read(inner, size, source),
-            EntryStore::SevenZ(store) => store.open_read(inner, size, source, password),
+            EntryStore::Tar(store) => store.open_read(inner, size, source, runtime),
+            EntryStore::SevenZ(store) => store.open_read(inner, size, source, password, runtime),
         }
     }
 
@@ -147,22 +148,26 @@ impl EntryStore {
     /// Only sequential formats have a producer; a random-access store (zip, plain
     /// tar) yields nothing — the copy planner never routes those here (it gates on
     /// [`Volume::extraction_is_sequential`](cmdr_fs::volume::Volume::extraction_is_sequential)),
-    /// so an empty stream is the correct defensive fallback.
+    /// so an empty stream is the correct defensive fallback. The producer runs on
+    /// `runtime`'s blocking pool, detached: it ends when the reader drops.
     fn spawn_subtree_extract(
         &self,
         source: Arc<dyn ArchiveByteSource>,
         wanted: HashMap<String, SubtreeMember>,
         password: Option<&str>,
+        runtime: &Runtime,
     ) -> SubtreeExtractReader {
         let (reader, sink) = SubtreeExtractReader::channel();
         match self {
             EntryStore::Tar(tar_store) => {
                 let codec = tar_store.codec();
-                spawn_blocking(move || super::tar::stream_subtree(source, codec, wanted, &sink));
+                drop(runtime.spawn_blocking(move || super::tar::stream_subtree(source, codec, wanted, &sink)));
             }
             EntryStore::SevenZ(_) => {
                 let password = password.map(str::to_owned);
-                spawn_blocking(move || super::sevenz::stream_subtree(source, wanted, password.as_deref(), &sink));
+                drop(runtime.spawn_blocking(move || {
+                    super::sevenz::stream_subtree(source, wanted, password.as_deref(), &sink);
+                }));
             }
             // Random-access: no one-pass producer. Dropping `sink` closes the
             // channel, so the reader yields no members.
@@ -336,13 +341,14 @@ impl ArchiveIndex {
     ///
     /// Errors: `NotFound` (no such path), `IsADirectory` (path is a directory),
     /// `Encrypted` (encrypted, no `password` supplied), `WrongPassword` (the
-    /// supplied one didn't work). Decompression runs off the async executor; see
-    /// [`ArchiveEntryReader`].
+    /// supplied one didn't work). Decompression runs off the async executor, on
+    /// `runtime`'s blocking pool (the host's); see [`ArchiveEntryReader`].
     pub fn open_read(
         &self,
         inner_path: &str,
         source: Arc<dyn ArchiveByteSource>,
         password: Option<&str>,
+        runtime: &Runtime,
     ) -> Result<ArchiveEntryReader, ArchiveError> {
         let key = normalize_lookup(inner_path);
         let node = self
@@ -354,7 +360,8 @@ impl ArchiveIndex {
         }
         // ❗ Only a node opens: a sidecar's handle sits in the store too, keyed
         // by its hidden path, and must stay as unreachable as it is unlisted.
-        self.store.open_read(key, node.size.unwrap_or(0), source, password)
+        self.store
+            .open_read(key, node.size.unwrap_or(0), source, password, runtime)
     }
 
     /// Whether the item at `inner_path` carries xattrs from a sidecar or a pax
@@ -377,11 +384,12 @@ impl ArchiveIndex {
         inner_path: &str,
         source: Arc<dyn ArchiveByteSource>,
         password: Option<&str>,
+        runtime: &Runtime,
     ) -> Vec<Xattr> {
         let key = normalize_lookup(inner_path);
         let mut xattrs = self.held_xattrs.get(key).cloned().unwrap_or_default();
         if let Some(sidecar) = self.lazy_sidecars.get(key)
-            && let Some(bytes) = self.read_sidecar(sidecar, source, password).await
+            && let Some(bytes) = self.read_sidecar(sidecar, source, password, runtime).await
         {
             for xattr in apple_double::parse(&bytes) {
                 if !xattrs.iter().any(|held| held.name == xattr.name) {
@@ -400,11 +408,15 @@ impl ArchiveIndex {
         sidecar: &LazySidecar,
         source: Arc<dyn ArchiveByteSource>,
         password: Option<&str>,
+        runtime: &Runtime,
     ) -> Option<Vec<u8>> {
         if !sidecar.claimed_size_fits() {
             return None;
         }
-        let reader = match self.store.open_read(&sidecar.key, sidecar.size, source, password) {
+        let reader = match self
+            .store
+            .open_read(&sidecar.key, sidecar.size, source, password, runtime)
+        {
             Ok(reader) => reader,
             Err(e) => {
                 log::debug!(target: "archive", "Couldn't open the sidecar {}: {e}", LogPrivate::file_path(&sidecar.key), e = LogError(&e));
@@ -437,6 +449,7 @@ impl ArchiveIndex {
         inner_path: &str,
         source: Arc<dyn ArchiveByteSource>,
         password: Option<&str>,
+        runtime: &Runtime,
     ) -> SubtreeExtractReader {
         let root = normalize_lookup(inner_path);
         let mut wanted: HashMap<String, SubtreeMember> = HashMap::new();
@@ -475,7 +488,7 @@ impl ArchiveIndex {
             }
         }
 
-        self.store.spawn_subtree_extract(source, wanted, password)
+        self.store.spawn_subtree_extract(source, wanted, password, runtime)
     }
 }
 

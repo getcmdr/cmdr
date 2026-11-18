@@ -17,6 +17,8 @@ use rc_zip::{Entry, EntryKind};
 use zip::ZipArchive;
 use zip::result::ZipError;
 
+use cmdr_fs::rt::Runtime;
+
 use super::error::ArchiveError;
 use super::raw::RawEntry;
 use super::reader::{ArchiveEntryReader, CHUNK_SIZE, ChunkTx};
@@ -211,6 +213,7 @@ pub(super) fn open_read(
     handle: &ZipHandle,
     source: Arc<dyn ArchiveByteSource>,
     password: Option<&[u8]>,
+    runtime: &Runtime,
 ) -> Result<ArchiveEntryReader, ArchiveError> {
     let total_size = handle.entry.uncompressed_size;
     if is_encrypted(&handle.entry) {
@@ -219,12 +222,12 @@ pub(super) fn open_read(
         };
         let header_offset = handle.entry.header_offset;
         let password = password.to_vec();
-        return Ok(ArchiveEntryReader::spawn_with(total_size, move |tx| {
+        return Ok(ArchiveEntryReader::spawn_with(runtime, total_size, move |tx| {
             run_decrypt_producer(source, header_offset, &password, &tx);
         }));
     }
     let entry = handle.entry.clone();
-    Ok(ArchiveEntryReader::spawn_with(total_size, move |tx| {
+    Ok(ArchiveEntryReader::spawn_with(runtime, total_size, move |tx| {
         run_producer(source, entry, tx)
     }))
 }

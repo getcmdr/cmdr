@@ -14,6 +14,15 @@
     unused_imports,
     reason = "facade re-exports the reading core's full surface; some names are consumed only within a submodule or in tests"
 )]
+// `clippy.toml` refuses an ambient spawn, clock read, or timer in the archive; a
+// test drives it from threads and tasks of its own, as a host does.
+#![cfg_attr(
+    test,
+    allow(
+        clippy::disallowed_methods,
+        reason = "tests drive the archive from their own threads and tasks, as a host would"
+    )
+)]
 
 //! The archive backend: presents a zip / tar / 7z file as a browsable, read-only
 //! folder (zip is also writable).

@@ -39,7 +39,6 @@ use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 
-use tokio::task::spawn_blocking;
 use zeroize::Zeroizing;
 
 use super::{
@@ -51,6 +50,7 @@ use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::{CarriedMetadata, MetadataClasses};
+use cmdr_fs::rt::Runtime;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{
     BatchScanResult, CopyScanResult, DirectoryCreation, LaneKey, ListingProgress, LockedContainer, PasswordLocked,
@@ -267,6 +267,7 @@ impl ArchiveVolume {
             Arc::clone(&self.parent),
             self.archive_path.clone(),
             size,
+            self.host.runtime(),
         ));
         // Cache the file's tail so the central-directory parse costs one ranged
         // read of the backend, not many small ones (entry reads mid-file fall
@@ -297,8 +298,9 @@ impl ArchiveVolume {
         // encrypted 7z fails the parse with `Encrypted` → `NeedsPassword`, the
         // browse-time prompt.
         let password = self.password_snapshot();
+        let runtime = self.host.runtime();
         if self.parent_is_local() {
-            parse_blocking(move || {
+            parse_blocking(&runtime, move || {
                 cache
                     .index_for_local(&archive_path, format, password.as_deref().map(String::as_str))
                     .map_err(to_volume_error)
@@ -306,7 +308,7 @@ impl ArchiveVolume {
             .await
         } else {
             let (size, mtime_nanos, source) = self.open_remote_source().await?;
-            parse_blocking(move || {
+            parse_blocking(&runtime, move || {
                 cache
                     .index_for_source(
                         &archive_path,
@@ -331,8 +333,10 @@ impl ArchiveVolume {
         let archive_path = self.archive_path.clone();
         let format = self.format;
         let password = self.password_snapshot();
+        let runtime = self.host.runtime();
         if self.parent_is_local() {
             parse_blocking(
+                &runtime,
                 move || -> Result<(Arc<ArchiveIndex>, Arc<dyn ArchiveByteSource>), VolumeError> {
                     let index = cache
                         .index_for_local(&archive_path, format, password.as_deref().map(String::as_str))
@@ -348,7 +352,7 @@ impl ArchiveVolume {
             let (size, mtime_nanos, source) = self.open_remote_source().await?;
             let parse_source = Arc::clone(&source);
             let path_for_parse = archive_path.clone();
-            let index = parse_blocking(move || {
+            let index = parse_blocking(&runtime, move || {
                 cache
                     .index_for_source(
                         &path_for_parse,
@@ -385,14 +389,17 @@ impl ArchiveVolume {
             // The entry's xattrs ride its stream (`VolumeReadStream::metadata`),
             // so a zip sidecar is read here, before the first byte: one more
             // entry read, and only for an entry that HAS a sidecar.
-            let xattrs = index.item_xattrs(&inner, Arc::clone(&source), password).await;
+            let runtime = self.host.runtime();
+            let xattrs = index.item_xattrs(&inner, Arc::clone(&source), password, &runtime).await;
             // `open_read` only looks the entry up and spawns the decompress
-            // producer (which itself uses `spawn_blocking`), so it's cheap here.
+            // producer (on the host runtime's blocking pool), so it's cheap here.
             // With no password an encrypted entry fails fast here (`Encrypted` →
             // `NeedsPassword`); a WRONG password surfaces later, during streaming
             // (the decrypt/verify runs inside the producer), as the same typed
             // signal — the frontend retries after `unlock_container`.
-            let reader = index.open_read(&inner, source, password).map_err(to_volume_error)?;
+            let reader = index
+                .open_read(&inner, source, password, &runtime)
+                .map_err(to_volume_error)?;
             Ok(Box::new(ArchiveVolumeReadStream {
                 reader,
                 skip_remaining: offset,
@@ -630,7 +637,12 @@ impl Volume for ArchiveVolume {
             // access zip never routes here). A content-encrypted 7z is decryptable,
             // so the per-archive password is threaded; a plaintext tar ignores it.
             let password = self.password_snapshot();
-            let reader = index.open_subtree_extract(&inner, source, password.as_deref().map(String::as_str));
+            let reader = index.open_subtree_extract(
+                &inner,
+                source,
+                password.as_deref().map(String::as_str),
+                &self.host.runtime(),
+            );
             Ok(Box::new(ArchiveSequentialExtract::new(reader, archive_path)) as Box<dyn SequentialExtract>)
         })
     }
@@ -667,7 +679,12 @@ impl Volume for ArchiveVolume {
             let password = self.password_snapshot();
             CarriedMetadata {
                 xattrs: index
-                    .item_xattrs(&inner, source, password.as_deref().map(String::as_str))
+                    .item_xattrs(
+                        &inner,
+                        source,
+                        password.as_deref().map(String::as_str),
+                        &self.host.runtime(),
+                    )
                     .await,
                 ..CarriedMetadata::default()
             }
@@ -748,9 +765,10 @@ impl Volume for ArchiveVolume {
     }
 }
 
-/// Runs a blocking archive-parse closure, mapping a `JoinError` — a PANIC inside
-/// the closure — to a typed [`VolumeError`] instead of `expect`-aborting the
-/// whole process.
+/// Runs a blocking archive-parse closure on `runtime`'s blocking pool (the
+/// host's, never an ambient one), mapping a `JoinError` — a PANIC inside the
+/// closure — to a typed [`VolumeError`] instead of `expect`-aborting the whole
+/// process.
 ///
 /// This DELIBERATELY differs from the repo's usual expect-on-join idiom
 /// (`spawn_blocking(...).await.expect("…the task is uncancelable")`): every path
@@ -758,12 +776,12 @@ impl Volume for ArchiveVolume {
 /// zip decoder. That must surface as a handled error on the one path being read,
 /// never take the app down. The closure is uncancelable, so the only `JoinError`
 /// is a panic.
-async fn parse_blocking<T, F>(closure: F) -> Result<T, VolumeError>
+async fn parse_blocking<T, F>(runtime: &Runtime, closure: F) -> Result<T, VolumeError>
 where
     F: FnOnce() -> Result<T, VolumeError> + Send + 'static,
     T: Send + 'static,
 {
-    match spawn_blocking(closure).await {
+    match runtime.spawn_blocking(closure).await {
         Ok(result) => result,
         Err(join_err) => Err(VolumeError::IoError {
             message: join_err.to_string().into(),
@@ -866,3 +884,7 @@ mod volume_test;
 #[cfg(test)]
 #[path = "volume_apple_double_test.rs"]
 mod volume_apple_double_test;
+
+#[cfg(test)]
+#[path = "volume_runtime_test.rs"]
+mod volume_runtime_test;

@@ -193,7 +193,7 @@ pub fn apply(archive_path: &Path, changeset: &Changeset, hooks: &dyn MutationHoo
         writer
             .add_directory(
                 dir.trim_matches('/'),
-                with_entry_mtime(SimpleFileOptions::default(), std::time::SystemTime::now()),
+                with_entry_mtime(SimpleFileOptions::default(), cmdr_fs::rt::wall_now()),
             )
             .map_err(MutationError::Zip)?;
         if let Some(sidecar) = changeset
@@ -201,7 +201,7 @@ pub fn apply(archive_path: &Path, changeset: &Changeset, hooks: &dyn MutationHoo
             .get(dir)
             .and_then(|source| local_folder_sidecar(source))
         {
-            write_sidecar(&mut writer, dir, &sidecar, std::time::SystemTime::now())?;
+            write_sidecar(&mut writer, dir, &sidecar, cmdr_fs::rt::wall_now())?;
         }
         progress.entries_done += 1;
         hooks.on_progress(progress);
@@ -217,7 +217,7 @@ pub fn apply(archive_path: &Path, changeset: &Changeset, hooks: &dyn MutationHoo
             )
             .map_err(MutationError::Zip)?;
         if let Some(sidecar) = stream_added_entry(&mut writer, add, hooks, &mut progress)? {
-            let modified = add_source_mtime(add).unwrap_or_else(std::time::SystemTime::now);
+            let modified = add_source_mtime(add).unwrap_or_else(cmdr_fs::rt::wall_now);
             write_sidecar(&mut writer, &add.inner_path, &sidecar, modified)?;
         }
         progress.entries_done += 1;
@@ -406,10 +406,7 @@ fn add_entry_options(add: &AddEntry, compression_level: Option<i64>) -> FullFile
     let options = SimpleFileOptions::default()
         .compression_method(CompressionMethod::Deflated)
         .compression_level(compression_level.map(|level| level.clamp(1, 9)));
-    with_entry_mtime(
-        options,
-        add_source_mtime(add).unwrap_or_else(std::time::SystemTime::now),
-    )
+    with_entry_mtime(options, add_source_mtime(add).unwrap_or_else(cmdr_fs::rt::wall_now))
 }
 
 /// A `LocalPath` add's source mtime; `None` for in-memory bytes (or a source
@@ -577,7 +574,7 @@ fn carry_archive_metadata(original: &Path, temp: &File) -> LandedMetadata {
     // size + mtime backup check (rsync's default) can't skip it. Set here, in
     // the one dates call, so a Finder-mounted SMB share keeps it too.
     let times = StagedTimes {
-        modified: Some(std::time::SystemTime::now()),
+        modified: Some(cmdr_fs::rt::wall_now()),
         accessed: meta.accessed().ok(),
     };
     let report = apply_staged(StagedItem::File(temp), &carried, times);

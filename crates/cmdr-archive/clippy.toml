@@ -1,0 +1,44 @@
+# Clippy reads the FIRST `clippy.toml` it finds walking up from this package's
+# manifest directory, and never merges, so this file replaces the workspace root's
+# for `cmdr-archive`. It carries the root's general settings below; the root's
+# `disallowed-methods` / `disallowed-types` name `tauri`, `objc2_app_kit`, and
+# `reqwest`, none of which this crate can reach (`index-crate-isolation`), so they
+# have nothing to guard here.
+
+# Complexity threshold of 15 matches ESLint's complexity rule for consistency across Rust and TypeScript
+cognitive-complexity-threshold = 15
+
+# Tests legitimately `.unwrap()` everywhere; this exempts unwraps inside `#[test]` fns. Helper fns in
+# `#[cfg(test)] mod`s aren't covered, so those use the sanctioned `.expect("…")` form.
+allow-unwrap-in-tests = true
+
+# Every spawn goes through the host's runtime (`host.runtime()`, handed down from the `VolumeHost`):
+# an ambient spawn INHERITS whatever runtime the calling thread has, and a watcher's OS thread or a
+# plain worker has none, so it panics there; on a thread that has one, it quietly lands the work on
+# a pool the host never handed over. Same list as `crates/cmdr-listing/clippy.toml` and
+# `crates/cmdr-operations/clippy.toml`. `lib.rs` lifts it under `cfg(test)`: a test drives the
+# archive from threads and tasks of its own, as a host does.
+disallowed-methods = [
+  { path = "tokio::spawn", reason = "spawn on the host's runtime (`host.runtime().spawn`): a watcher's OS thread has no ambient one" },
+  { path = "tokio::task::spawn", reason = "spawn on the host's runtime (`host.runtime().spawn`): a watcher's OS thread has no ambient one" },
+  { path = "tokio::task::spawn_blocking", reason = "use the host's blocking pool (`runtime.spawn_blocking`, the runtime from `host.runtime()`): an ambient one may not exist" },
+  { path = "std::thread::spawn", reason = "the archive owns no threads; blocking work goes to the host runtime's blocking pool" },
+  # The clock and the timers go through `cmdr_fs::rt`: `std`'s clock panics on
+  # `wasm32-unknown-unknown`, which takes tokio's timer with it, and this crate links into the
+  # browser demo through `cmdr-operations`. `crates/cmdr-fs/DETAILS.md` § "The browser build".
+  # ❗ METHOD bans, not `disallowed-types`: natively `rt::Instant` and `rt::Runtime` ARE
+  # `std::time::Instant` and `tokio::runtime::Handle`, so a type ban would fire on the seam itself.
+  { path = "std::time::Instant::now", reason = "read the clock through `cmdr_fs::rt::now()`: `std`'s panics in the browser build" },
+  { path = "std::time::Instant::elapsed", reason = "use `cmdr_fs::rt::since(start)`: `std`'s clock panics in the browser build" },
+  { path = "std::time::SystemTime::now", reason = "use `cmdr_fs::rt::wall_now()`: `std`'s wall clock panics in the browser build" },
+  { path = "tokio::time::Instant::now", reason = "read tokio's clock through `cmdr_fs::rt::time::now()`: it panics in the browser build" },
+  { path = "tokio::time::Instant::elapsed", reason = "use `cmdr_fs::rt::time::now() - start`: tokio's clock panics in the browser build" },
+  { path = "tokio::time::sleep", reason = "sleep through `cmdr_fs::rt::time::sleep`: tokio's timer panics in the browser build" },
+  { path = "tokio::time::sleep_until", reason = "sleep through `cmdr_fs::rt::time::sleep_until`: tokio's timer panics in the browser build" },
+  { path = "tokio::time::timeout", reason = "time out through `cmdr_fs::rt::time::timeout`: tokio's timer panics in the browser build" },
+  { path = "tokio::time::timeout_at", reason = "time out through `cmdr_fs::rt::time::timeout_at`: tokio's timer panics in the browser build" },
+  { path = "tokio::time::interval", reason = "tick with `cmdr_fs::rt::time::interval_delayed`: tokio's timer panics in the browser build" },
+  { path = "tokio::task::yield_now", reason = "yield through `cmdr_fs::rt::task::yield_now`: tokio's never reaches the page's event loop" },
+  { path = "tokio::runtime::Handle::current", reason = "use the host's runtime (`host.runtime()`): an ambient one may not exist" },
+  { path = "tokio::runtime::Handle::try_current", reason = "use the host's runtime (`host.runtime()`): an ambient one may not exist" },
+]

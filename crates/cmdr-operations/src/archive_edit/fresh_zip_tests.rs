@@ -492,7 +492,10 @@ async fn a_tagged_local_file_and_folder_compress_with_sidecars_ditto_reads() {
         ("tagged-dir/plain.txt", 0),
     ] {
         assert_eq!(
-            index.item_xattrs(inner, Arc::clone(&source), None).await.len(),
+            index
+                .item_xattrs(inner, Arc::clone(&source), None, &cmdr_fs::rt::Runtime::current())
+                .await
+                .len(),
             expected,
             "{inner}"
         );
