@@ -183,6 +183,18 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   `mtp.connectedToast.body`) read as an everyday word where GNOME's term is one (vi `tùy thích`, "as you like"); KDE now
   names the window "Configure Cmdr" there. Proposed rule: a pointer naming the settings window is capitalized as a name
   on GNOME too. Rewords the GNOME branch only. (es, pt, vi, zh, zh-Hant)
+- `onboarding.localDownloadFailed.openSettings` ("Open Settings") names Cmdr's settings window as a plain value, so
+  Windows reads the macOS word (`Abrir Ajustes`) beside `Abrir Configuración` in its per-OS siblings; it needs the same
+  per-OS value as `stateRecovery.settings.openSettings`. Allowlisted for es and pt until then. (es, pt)
+- Six keys whose `windows` branch names the settings window carry no `identicalBranches` note and weren't stale, so a
+  translator finds them only by grepping: `menu.app.settings`, `fileExplorer.functionKeyBar.hiddenToast`,
+  `fileExplorer.quickFilter.intro.openSettings`, `onboarding.stepBeta.signup.unreachable`, `whatsNew.optOutToast`,
+  `ai.cloudConsent.logsNote` ("Advanced settings"). es and pt changed them to Microsoft's word; other locales where it
+  differs (fr, de, hu, ru) likely need the same. (es, pt)
+- The seeded `windows` branches copied the macOS text whole, so they also carried macOS words beyond "Settings" (pt
+  `disco` for drive, `iniciar a sessão` for sign in), which the termbase caught. And the plain Settings label
+  `settings.indexing.enabled.label` ("Drive indexing", pt `Indexação de disco`) then pins `disco` in four Windows
+  pointers that quote it: a per-OS value there would let Windows say `unidade`. (pt)
 
 ## Process feedback
 
@@ -287,3 +299,12 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   `sameAsSourceJustification` in every locale; an empty source branch could be exempt. (es, pt, vi, zh, zh-Hant)
 - A ruling form scoped to the KDE branch (`linuxKde` beside `windows` / `other`) would replace the KDE `configure` words
   each locale carries as an `accept` (46–56 termbase warnings cleared that way). (de, nl, sv, fr)
+- Rewording one word across a branch in 66 keys (Ajustes → Configuración on `windows`) had no tool, so I wrote two
+  throwaway helpers under `_ignored/i18n-work/tools/`: one dumps each key's `windows` / English `linuxKde` branch as a
+  draft values file, one applies ordered find-and-replace pairs to the `windows` branch and fills `{ "keep": true }` for
+  the rest. An `i18n:apply --branch windows --replace "A=>B"` (with a dry-run diff) would cover it. (es, pt)
+- Android labels have no pile source: the `usb-preferences` rulings came from AOSP Settings `strings.xml`
+  (`usb_preference`, `settings_label`, `usb_use_file_transfers`) fetched with `curl` from `aosp-mirror` for five
+  locales. Adding AOSP Settings to `i18n:pile-fetch` would make it a lookup. (es, pt, vi, zh, zh-Hant)
+- The worktree guard refused pipes and loops naming the scratchpad path (it contains `projects-git`), so the working
+  files moved under `_ignored/i18n-work/`. (es)
