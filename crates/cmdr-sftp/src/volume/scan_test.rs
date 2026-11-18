@@ -5,6 +5,7 @@
 //! while it runs, a nested tree is counted whole, and a destination is read once
 //! rather than once per source item.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -17,21 +18,33 @@ const FIXTURE: &str = "sftp-servers/start.sh (sftp-fixture)";
 
 /// A scratch tree: two files at the top, a subdirectory holding one more.
 async fn seed_tree(volume: &super::SftpVolume, dir: &str) {
-    volume.create_directory(Path::new(dir)).await.expect(FIXTURE);
     volume
-        .create_file(Path::new(&format!("{dir}/one.txt")), b"1234567890")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
         .await
         .expect(FIXTURE);
     volume
-        .create_file(Path::new(&format!("{dir}/two.txt")), b"12345")
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/one.txt"))),
+            b"1234567890",
+        )
         .await
         .expect(FIXTURE);
     volume
-        .create_directory(Path::new(&format!("{dir}/nested")))
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/two.txt"))),
+            b"12345",
+        )
         .await
         .expect(FIXTURE);
     volume
-        .create_file(Path::new(&format!("{dir}/nested/three.txt")), b"123")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/nested"))))
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/nested/three.txt"))),
+            b"123",
+        )
         .await
         .expect(FIXTURE);
 }
@@ -47,7 +60,10 @@ async fn sftp_integration_a_copy_scan_counts_the_whole_subtree() {
     clean_scratch_deep(&volume, &dir).await;
     seed_tree(&volume, &dir).await;
 
-    let scan = volume.scan_for_copy(Path::new(&dir)).await.expect(FIXTURE);
+    let scan = volume
+        .scan_for_copy(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .expect(FIXTURE);
 
     assert_eq!(scan.file_count, 3, "two at the top and one a level down");
     assert_eq!(scan.dir_count, 2, "the directory itself and the nested one");
@@ -73,7 +89,10 @@ async fn sftp_integration_a_copy_scan_of_one_file_is_one_file() {
     let host = fixture_host(&params, Some(FIXTURE_PASSWORD));
     let volume = connect_fixture(&host, params).await;
 
-    let scan = volume.scan_for_copy(Path::new("hello.txt")).await.expect(FIXTURE);
+    let scan = volume
+        .scan_for_copy(&AppPath::legacy_unchecked(Path::new("hello.txt")))
+        .await
+        .expect(FIXTURE);
 
     assert_eq!((scan.file_count, scan.dir_count), (1, 0));
     assert!(!scan.top_level_is_directory);
@@ -99,7 +118,10 @@ async fn sftp_integration_a_batch_scan_reports_while_it_walks() {
     let record = |progress: ListingProgress| seen.lock_ignore_poison().push(progress);
     let boundary = ScanBoundary::new(Some(&record));
     let batch = volume
-        .scan_for_copy_batch_with_boundary(&[PathBuf::from(&dir)], &boundary)
+        .scan_for_copy_batch_with_boundary(
+            &[AppPath::legacy_unchecked(&PathBuf::from(&dir)).into_owned()],
+            &boundary,
+        )
         .await
         .expect(FIXTURE);
 
@@ -160,7 +182,7 @@ async fn sftp_integration_a_conflict_scan_finds_the_names_already_taken() {
     ];
 
     let conflicts = volume
-        .scan_for_conflicts(&sources, Path::new(&dir))
+        .scan_for_conflicts(&sources, &AppPath::legacy_unchecked(Path::new(&dir)))
         .await
         .expect(FIXTURE);
 
@@ -200,7 +222,7 @@ async fn sftp_integration_a_conflict_scan_of_a_destination_that_is_not_there_fin
                 modified: None,
                 is_directory: false,
             }],
-            Path::new(&scratch_dir("scan-absent")),
+            &AppPath::legacy_unchecked(Path::new(&scratch_dir("scan-absent"))),
         )
         .await
         .expect(FIXTURE);

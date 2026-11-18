@@ -4,6 +4,7 @@
 
 #![cfg(test)]
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -61,7 +62,9 @@ async fn space_at_a_path_is_the_parents_answer_for_the_repos_filesystem() {
     ));
     let volume = GitPortalVolume::new(portal, repo.clone(), Arc::new(parent));
 
-    let space = volume.get_space_info_at(&virtual_path(&repo, "branches/main")).await;
+    let space = volume
+        .get_space_info_at(&AppPath::legacy_unchecked(&virtual_path(&repo, "branches/main")))
+        .await;
     assert_eq!(space.unwrap(), SpaceInfo::bounded(500, 100));
 }
 
@@ -106,7 +109,9 @@ async fn listing_dates_honor_the_shared_claim_contract() {
         conformance::assert_listing_dates_are_claimed(&volume, &virtual_path(&dir, listed)).await;
     }
     assert_eq!(
-        volume.supported_dates(&virtual_path(&dir, "commits")).await,
+        volume
+            .supported_dates(&AppPath::legacy_unchecked(&virtual_path(&dir, "commits")))
+            .await,
         cmdr_fs::volume::SupportedDates::NONE
     );
 
@@ -158,9 +163,9 @@ async fn a_batch_scan_asks_the_boundary_inside_the_walk() {
 async fn the_root_listing_is_the_six_categories_and_no_real_entries() {
     let (dir, volume) = portal_over_a_repo("root_listing");
 
-    assert_eq!(volume.root(), dir.join(".git"));
+    assert_eq!(*volume.root().as_std_legacy(), dir.join(".git"));
     let names: Vec<String> = volume
-        .list_directory(&dir.join(".git"), None)
+        .list_directory(&AppPath::legacy_unchecked(&dir.join(".git")), None)
         .await
         .expect("the portal lists its own root")
         .into_iter()
@@ -185,9 +190,15 @@ async fn a_real_dot_git_entry_is_not_the_portals_to_serve() {
     for real in ["config", "HEAD"] {
         assert!(dir.join(".git").join(real).exists(), "{real} is on disk");
         let path = virtual_path(&dir, real);
-        assert!(!volume.exists(&path).await, "{real} is not the portal's");
         assert!(
-            matches!(volume.get_metadata(&path).await, Err(VolumeError::NotFound(_))),
+            !volume.exists(&AppPath::legacy_unchecked(&path)).await,
+            "{real} is not the portal's"
+        );
+        assert!(
+            matches!(
+                volume.get_metadata(&AppPath::legacy_unchecked(&path)).await,
+                Err(VolumeError::NotFound(_))
+            ),
             "{real} must read as not found here"
         );
     }
@@ -213,10 +224,10 @@ async fn a_dot_git_that_is_not_a_repository_answers_not_found() {
 
     let branches = virtual_path(&dir, "branches");
     assert!(matches!(
-        volume.list_directory(&branches, None).await,
+        volume.list_directory(&AppPath::legacy_unchecked(&branches), None).await,
         Err(VolumeError::NotFound(_))
     ));
-    assert!(!volume.exists(&branches).await);
+    assert!(!volume.exists(&AppPath::legacy_unchecked(&branches)).await);
 
     cleanup(&dir);
 }
@@ -229,7 +240,7 @@ async fn a_branch_lists_its_snapshot_with_modes_intact() {
     let (dir, volume) = portal_over_a_repo("branch_tree");
 
     let branches: Vec<String> = volume
-        .list_directory(&virtual_path(&dir, "branches"), None)
+        .list_directory(&AppPath::legacy_unchecked(&virtual_path(&dir, "branches")), None)
         .await
         .expect("list branches")
         .into_iter()
@@ -239,14 +250,17 @@ async fn a_branch_lists_its_snapshot_with_modes_intact() {
     assert!(branches.contains(&"feature/foo".to_string()), "{branches:?}");
 
     let run_sh = volume
-        .get_metadata(&virtual_path(&dir, "branches/main/scripts/run.sh"))
+        .get_metadata(&AppPath::legacy_unchecked(&virtual_path(
+            &dir,
+            "branches/main/scripts/run.sh",
+        )))
         .await
         .expect("stat a blob inside the snapshot");
     assert_eq!(run_sh.permissions & 0o111, 0o111, "the executable bit survives");
     assert!(!run_sh.is_directory);
     assert!(
         volume
-            .is_directory(&virtual_path(&dir, "branches/main/scripts"))
+            .is_directory(&AppPath::legacy_unchecked(&virtual_path(&dir, "branches/main/scripts")))
             .await
             .expect("stat the tree"),
     );
@@ -261,7 +275,7 @@ async fn a_snapshot_subtree_scans_for_a_copy() {
     let (dir, volume) = portal_over_a_repo("copy_scan");
 
     let scanned = volume
-        .scan_for_copy(&virtual_path(&dir, "branches/main"))
+        .scan_for_copy(&AppPath::legacy_unchecked(&virtual_path(&dir, "branches/main")))
         .await
         .expect("scan a branch tree");
 
@@ -283,25 +297,32 @@ async fn every_mutation_is_unsupported() {
     let blob = virtual_path(&dir, "branches/main/README.md");
 
     assert!(matches!(
-        volume.create_file(&blob, b"x").await,
+        volume.create_file(&AppPath::legacy_unchecked(&blob), b"x").await,
         Err(VolumeError::NotSupported)
     ));
     assert!(matches!(
-        volume.create_directory(&existing).await,
+        volume.create_directory(&AppPath::legacy_unchecked(&existing)).await,
         Err(VolumeError::NotSupported)
     ));
     assert!(
         matches!(
-            volume.create_directory_all(&existing).await,
+            volume.create_directory_all(&AppPath::legacy_unchecked(&existing)).await,
             Err(VolumeError::NotSupported)
         ),
         "the trait default would answer {:?} for a directory that exists",
         DirectoryCreation::AlreadyExisted
     );
-    assert!(matches!(volume.delete(&blob).await, Err(VolumeError::NotSupported)));
+    assert!(matches!(
+        volume.delete(&AppPath::legacy_unchecked(&blob)).await,
+        Err(VolumeError::NotSupported)
+    ));
     assert!(matches!(
         volume
-            .rename(&blob, &virtual_path(&dir, "branches/main/other.md"), false)
+            .rename(
+                &AppPath::legacy_unchecked(&blob),
+                &AppPath::legacy_unchecked(&virtual_path(&dir, "branches/main/other.md")),
+                false
+            )
             .await,
         Err(VolumeError::NotSupported)
     ));
@@ -324,7 +345,10 @@ async fn a_copy_out_of_a_snapshot_carries_the_bytes_and_the_executable_bit() {
     let dst = InMemoryVolume::new("dst");
 
     let src_path = virtual_path(&dir, "branches/main/scripts/run.sh");
-    let stream = src.open_read_stream(&src_path).await.expect("open virtual blob");
+    let stream = src
+        .open_read_stream(&AppPath::legacy_unchecked(&src_path))
+        .await
+        .expect("open virtual blob");
     let total = stream.total_size();
 
     let dest_rel = Path::new("run.sh");
@@ -334,7 +358,13 @@ async fn a_copy_out_of_a_snapshot_carries_the_bytes_and_the_executable_bit() {
         ControlFlow::Continue(())
     };
     let written = dst
-        .write_from_stream(dest_rel, WriteMode::CreateOrReplace, total, stream, &on_progress)
+        .write_from_stream(
+            &AppPath::legacy_unchecked(dest_rel),
+            WriteMode::CreateOrReplace,
+            total,
+            stream,
+            &on_progress,
+        )
         .await
         .expect("write_from_stream");
     assert_eq!(written.bytes, total.known().expect("git blobs have a known length"));
@@ -345,7 +375,10 @@ async fn a_copy_out_of_a_snapshot_carries_the_bytes_and_the_executable_bit() {
     );
 
     // What landed has to be what `git show main:scripts/run.sh` prints.
-    let mut landed = dst.open_read_stream(dest_rel).await.expect("read the copy back");
+    let mut landed = dst
+        .open_read_stream(&AppPath::legacy_unchecked(dest_rel))
+        .await
+        .expect("read the copy back");
     let mut actual = Vec::new();
     while let Some(chunk) = landed.next_chunk().await {
         actual.extend_from_slice(&chunk.expect("chunk"));
@@ -356,7 +389,10 @@ async fn a_copy_out_of_a_snapshot_carries_the_bytes_and_the_executable_bit() {
     // `write_from_stream` doesn't carry the mode itself — that's the copy
     // engine's job, layered on the `FileEntry.permissions` this volume answers
     // with. So what this owes is the DATA that engine needs.
-    let entry = src.get_metadata(&src_path).await.expect("get_metadata virtual");
+    let entry = src
+        .get_metadata(&AppPath::legacy_unchecked(&src_path))
+        .await
+        .expect("get_metadata virtual");
     assert_eq!(
         entry.permissions & 0o111,
         0o111,
@@ -383,7 +419,7 @@ async fn a_path_missing_from_a_snapshot_reads_as_not_found() {
         "tags/no-such-tag/README.md",
     ] {
         let path = virtual_path(&dir, missing);
-        let answered = volume.get_metadata(&path).await;
+        let answered = volume.get_metadata(&AppPath::legacy_unchecked(&path)).await;
         assert!(
             matches!(answered, Err(VolumeError::NotFound(ref carried)) if carried.contains("no-such")),
             "{missing}: {answered:?}",
@@ -392,13 +428,19 @@ async fn a_path_missing_from_a_snapshot_reads_as_not_found() {
 
     // Listing one is the same answer.
     let listed = volume
-        .list_directory(&virtual_path(&dir, "branches/main/no-such-dir"), None)
+        .list_directory(
+            &AppPath::legacy_unchecked(&virtual_path(&dir, "branches/main/no-such-dir")),
+            None,
+        )
         .await;
     assert!(matches!(listed, Err(VolumeError::NotFound(_))), "{listed:?}");
 
     // And so is opening one for read.
     let opened = volume
-        .open_read_stream(&virtual_path(&dir, "branches/main/no-such-file.txt"))
+        .open_read_stream(&AppPath::legacy_unchecked(&virtual_path(
+            &dir,
+            "branches/main/no-such-file.txt",
+        )))
         .await;
     assert!(
         matches!(opened, Err(VolumeError::NotFound(_))),
@@ -419,7 +461,7 @@ async fn the_capability_answers_match_a_routed_read_only_volume() {
 
     assert!(!volume.can_watch_listings());
     assert_eq!(
-        volume.listing_watch_coverage(&virtual_path(&dir, "branches")),
+        volume.listing_watch_coverage(&AppPath::legacy_unchecked(&virtual_path(&dir, "branches"))),
         cmdr_fs::volume::WatchCoverage::None
     );
     assert!(!volume.supports_local_fs_access());
@@ -458,7 +500,10 @@ async fn the_commit_listing_reports_every_commit_as_progress() {
     let on_progress = |p: cmdr_fs::volume::ListingProgress| seen.lock().unwrap().push(p.dirs);
 
     let entries = volume
-        .list_directory(&virtual_path(&dir, "commits"), Some(&on_progress))
+        .list_directory(
+            &AppPath::legacy_unchecked(&virtual_path(&dir, "commits")),
+            Some(&on_progress),
+        )
         .await
         .unwrap();
 
@@ -475,7 +520,7 @@ async fn the_commit_listing_reports_every_commit_as_progress() {
 async fn the_portal_fills_in_counts_for_commit_rows_only() {
     let (dir, portal, volume) = portal_over_history("commit_fill", 2);
     let commits = volume
-        .list_directory(&virtual_path(&dir, "commits"), None)
+        .list_directory(&AppPath::legacy_unchecked(&virtual_path(&dir, "commits")), None)
         .await
         .unwrap();
     let mut paths: Vec<PathBuf> = commits.iter().map(|e| PathBuf::from(&e.path)).collect();

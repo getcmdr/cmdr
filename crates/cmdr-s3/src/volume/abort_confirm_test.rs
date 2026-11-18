@@ -2,6 +2,7 @@
 //! that confirm it (list, abort again while a late part brings the upload back)
 //! run afterwards, ending early when the volume is gone.
 
+use cmdr_fs::app_path::AppPath;
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::ops::ControlFlow;
@@ -42,7 +43,7 @@ async fn a_failed_upload_answers_before_its_abort_is_confirmed() {
 
     let outcome = volume
         .write_from_stream(
-            &volume.root().join("raced.bin"),
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("raced.bin")),
             WriteMode::CreateNew,
             length,
             Box::new(source),

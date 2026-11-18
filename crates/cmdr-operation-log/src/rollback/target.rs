@@ -30,7 +30,10 @@ pub(super) fn removal_target(unit: &RollbackUnit) -> (String, PathBuf) {
 /// already gone. Containment is by whole path components (`Path::starts_with`), so
 /// `/share/tmp2` isn't under `/share/tmp`.
 pub(super) fn missing_item(sides: &[(&dyn Volume, &Path)]) -> ItemResult {
-    if sides.iter().all(|(volume, path)| path.starts_with(volume.root())) {
+    if sides
+        .iter()
+        .all(|(volume, path)| path.starts_with(volume.root().as_std_legacy()))
+    {
         ItemResult::Skipped(SkipReason::AlreadyGone)
     } else {
         ItemResult::Skipped(SkipReason::Failed)

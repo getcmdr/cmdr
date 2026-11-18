@@ -1,5 +1,6 @@
 //! What a confirmed replace (`rename` with `force == true`) may take away.
 
+use crate::app_path::AppPath;
 use std::path::Path;
 
 use super::super::Volume;
@@ -20,7 +21,7 @@ use super::super::Volume;
 /// inside. Either one turns a confirmed rename into a lost folder.
 pub async fn assert_forced_rename_keeps_a_non_empty_dir(volume: &dyn Volume, from: &Path, dir: &Path) {
     assert!(
-        volume.exists(from).await,
+        volume.exists(&AppPath::legacy_unchecked(from)).await,
         "fixture precondition: {} must exist",
         from.display()
     );
@@ -31,7 +32,9 @@ pub async fn assert_forced_rename_keeps_a_non_empty_dir(volume: &dyn Volume, fro
         dir.display()
     );
 
-    let outcome = volume.rename(from, dir, true).await;
+    let outcome = volume
+        .rename(&AppPath::legacy_unchecked(from), &AppPath::legacy_unchecked(dir), true)
+        .await;
     assert!(
         outcome.is_err(),
         "rename({}, {}, force = true) onto a folder that holds {before:?} must refuse; it returned Ok",
@@ -40,7 +43,7 @@ pub async fn assert_forced_rename_keeps_a_non_empty_dir(volume: &dyn Volume, fro
     );
 
     assert!(
-        volume.exists(from).await,
+        volume.exists(&AppPath::legacy_unchecked(from)).await,
         "a refused rename must leave the source in place, but {} is gone",
         from.display(),
     );
@@ -57,7 +60,7 @@ pub async fn assert_forced_rename_keeps_a_non_empty_dir(volume: &dyn Volume, fro
 /// an entry going missing and one being overwritten in place.
 async fn listing(volume: &dyn Volume, dir: &Path, what: &str) -> Vec<(String, Option<u64>)> {
     let mut entries: Vec<(String, Option<u64>)> = volume
-        .list_directory(dir, None)
+        .list_directory(&AppPath::legacy_unchecked(dir), None)
         .await
         .unwrap_or_else(|e| panic!("{what}: listing {} must work, got {e:?}", dir.display()))
         .into_iter()

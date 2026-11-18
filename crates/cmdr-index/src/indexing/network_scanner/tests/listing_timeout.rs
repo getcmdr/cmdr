@@ -18,7 +18,7 @@ impl Volume for ParkingVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -26,14 +26,14 @@ impl Volume for ParkingVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> ListFut<'a, Vec<FileEntry>> {
         self.inner.list_directory(path, on_progress)
     }
     fn list_directory_for_scan<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         _cancel: Option<&'a CancellationToken>,
         clock: &'a ScanListingClock,
     ) -> ListFut<'a, Vec<FileEntry>> {
@@ -45,13 +45,13 @@ impl Volume for ParkingVolume {
             self.inner.list_directory(path, None).await
         })
     }
-    fn get_metadata<'a>(&'a self, path: &'a Path) -> ListFut<'a, FileEntry> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> ListFut<'a, FileEntry> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
-    fn is_directory<'a>(&'a self, path: &'a Path) -> ListFut<'a, bool> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> ListFut<'a, bool> {
         self.inner.is_directory(path)
     }
 }

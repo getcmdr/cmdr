@@ -8,6 +8,7 @@
 //! `apps/desktop/test/s3-servers/live.sh all live_hostile`. Findings:
 //! `docs/notes/s3/live-hostile-2026-10.md`.
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -106,7 +107,9 @@ async fn live_hostile_names_round_trip() {
             m.check(landed.is_ok(), &format!("write {name:?}"), format!("{landed:?}"));
         }
 
-        let listed = volume.list_directory(&at(&volume, &folder), None).await;
+        let listed = volume
+            .list_directory(&AppPath::legacy_unchecked(&at(&volume, &folder)), None)
+            .await;
         let listed = listed.unwrap_or_else(|e| {
             m.check(false, "list the names folder", format!("{e:?}"));
             Vec::new()
@@ -134,13 +137,13 @@ async fn live_hostile_names_round_trip() {
 
         for name in &names {
             let path = at(&volume, &format!("{folder}/{name}"));
-            let stat = volume.get_metadata(&path).await;
+            let stat = volume.get_metadata(&AppPath::legacy_unchecked(&path)).await;
             m.check(
                 matches!(&stat, Ok(e) if e.size == Some(name.len() as u64) && !e.is_directory),
                 &format!("stat {name:?}"),
                 format!("{:?}", stat.as_ref().map(|e| e.size)),
             );
-            let back = match volume.open_read_stream(&path).await {
+            let back = match volume.open_read_stream(&AppPath::legacy_unchecked(&path)).await {
                 Ok(mut stream) => {
                     let mut bytes = Vec::new();
                     while let Some(Ok(piece)) = stream.next_chunk().await {
@@ -163,8 +166,17 @@ async fn live_hostile_names_round_trip() {
                 format!("{name}.r")
             };
             let renamed = at(&volume, &format!("{folder}/{renamed_name}"));
-            let moved = volume.rename(&path, &renamed, false).await;
-            let old_gone = matches!(volume.get_metadata(&path).await, Err(VolumeError::NotFound(_)));
+            let moved = volume
+                .rename(
+                    &AppPath::legacy_unchecked(&path),
+                    &AppPath::legacy_unchecked(&renamed),
+                    false,
+                )
+                .await;
+            let old_gone = matches!(
+                volume.get_metadata(&AppPath::legacy_unchecked(&path)).await,
+                Err(VolumeError::NotFound(_))
+            );
             let new_back = if moved.is_ok() {
                 read_back(&volume, &renamed).await
             } else {
@@ -179,8 +191,11 @@ async fn live_hostile_names_round_trip() {
                 ),
             );
             let target = if moved.is_ok() { &renamed } else { &path };
-            let deleted = volume.delete(target).await;
-            let gone = matches!(volume.get_metadata(target).await, Err(VolumeError::NotFound(_)));
+            let deleted = volume.delete(&AppPath::legacy_unchecked(target)).await;
+            let gone = matches!(
+                volume.get_metadata(&AppPath::legacy_unchecked(target)).await,
+                Err(VolumeError::NotFound(_))
+            );
             m.check(
                 deleted.is_ok() && gone,
                 &format!("delete {name:?}"),
@@ -254,7 +269,10 @@ async fn live_hostile_folders() {
         live.put(&client, &format!("{prefix}twin/child.txt"), b"the child", &[])
             .await;
         let top = at(&volume, prefix.trim_end_matches('/'));
-        let rows = volume.list_directory(&top, None).await.unwrap_or_default();
+        let rows = volume
+            .list_directory(&AppPath::legacy_unchecked(&top), None)
+            .await
+            .unwrap_or_default();
         let shown: Vec<_> = rows.iter().map(|e| (e.name.clone(), e.is_directory)).collect();
         m.check(
             shown.contains(&("twin".to_string(), true))
@@ -271,13 +289,13 @@ async fn live_hostile_folders() {
             "read `twin (file)`",
             String::from_utf8_lossy(&back),
         );
-        let folder_stat = volume.get_metadata(&folder_row).await;
+        let folder_stat = volume.get_metadata(&AppPath::legacy_unchecked(&folder_row)).await;
         m.check(
             matches!(&folder_stat, Ok(e) if e.is_directory),
             "stat `twin` is the folder",
             format!("{:?}", folder_stat.map(|e| e.is_directory)),
         );
-        let refused = volume.delete(&folder_row).await;
+        let refused = volume.delete(&AppPath::legacy_unchecked(&folder_row)).await;
         let file_kept = live.length(&client, &format!("{prefix}twin")).await == Some(8);
         m.check(
             refused.is_err() && file_kept,
@@ -285,7 +303,11 @@ async fn live_hostile_folders() {
             format!("{refused:?}, file kept: {file_kept}"),
         );
         let moved = volume
-            .rename(&file_row, &at(&volume, &format!("{prefix}twin.txt")), false)
+            .rename(
+                &AppPath::legacy_unchecked(&file_row),
+                &AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}twin.txt"))),
+                false,
+            )
             .await;
         let child_kept = live.length(&client, &format!("{prefix}twin/child.txt")).await == Some(9);
         let file_gone = live.length(&client, &format!("{prefix}twin")).await.is_none();
@@ -297,9 +319,12 @@ async fn live_hostile_folders() {
 
         // An empty folder is its marker, and survives emptying.
         let empty = at(&volume, &format!("{prefix}empty"));
-        let made = volume.create_directory(&empty).await;
-        let again = volume.create_directory(&empty).await;
-        let listed = volume.list_directory(&empty, None).await.map(|rows| rows.len());
+        let made = volume.create_directory(&AppPath::legacy_unchecked(&empty)).await;
+        let again = volume.create_directory(&AppPath::legacy_unchecked(&empty)).await;
+        let listed = volume
+            .list_directory(&AppPath::legacy_unchecked(&empty), None)
+            .await
+            .map(|rows| rows.len());
         m.check(
             made.is_ok() && matches!(again, Err(VolumeError::AlreadyExists(_))) && listed.as_ref().ok() == Some(&0),
             "make an empty folder, twice",
@@ -309,11 +334,14 @@ async fn live_hostile_folders() {
         write(&volume, &inner, WriteMode::CreateNew, b"a".to_vec())
             .await
             .expect("lands");
-        let not_empty = volume.delete(&empty).await;
-        let gone_inner = volume.delete(&inner).await;
-        let still = volume.list_directory(&empty, None).await.map(|rows| rows.len());
-        let removed = volume.delete(&empty).await;
-        let after = volume.list_directory(&empty, None).await;
+        let not_empty = volume.delete(&AppPath::legacy_unchecked(&empty)).await;
+        let gone_inner = volume.delete(&AppPath::legacy_unchecked(&inner)).await;
+        let still = volume
+            .list_directory(&AppPath::legacy_unchecked(&empty), None)
+            .await
+            .map(|rows| rows.len());
+        let removed = volume.delete(&AppPath::legacy_unchecked(&empty)).await;
+        let after = volume.list_directory(&AppPath::legacy_unchecked(&empty), None).await;
         m.check(
             not_empty.is_err()
                 && gone_inner.is_ok()
@@ -327,14 +355,19 @@ async fn live_hostile_folders() {
             ),
         );
         let under_file = volume
-            .create_directory(&at(&volume, &format!("{prefix}twin.txt/sub")))
+            .create_directory(&AppPath::legacy_unchecked(&at(
+                &volume,
+                &format!("{prefix}twin.txt/sub"),
+            )))
             .await;
         m.check(
             matches!(under_file, Err(VolumeError::NotADirectory(_))),
             "a folder under a file is refused",
             format!("{under_file:?}"),
         );
-        let over_folder = volume.create_file(&at(&volume, &format!("{prefix}twin")), b"x").await;
+        let over_folder = volume
+            .create_file(&AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}twin"))), b"x")
+            .await;
         m.check(
             matches!(over_folder, Err(VolumeError::AlreadyExists(_))),
             "New File on a folder's name is refused",
@@ -348,13 +381,19 @@ async fn live_hostile_folders() {
             .await
             .expect("lands");
         let deep_top = at(&volume, &format!("{prefix}deep"));
-        let first = volume.list_directory(&deep_top, None).await.map(|rows| {
-            rows.iter()
-                .map(|e| (e.name.clone(), e.is_directory))
-                .collect::<Vec<_>>()
-        });
+        let first = volume
+            .list_directory(&AppPath::legacy_unchecked(&deep_top), None)
+            .await
+            .map(|rows| {
+                rows.iter()
+                    .map(|e| (e.name.clone(), e.is_directory))
+                    .collect::<Vec<_>>()
+            });
         let bottom = volume
-            .list_directory(&at(&volume, &format!("{prefix}deep/{}", levels.join("/"))), None)
+            .list_directory(
+                &AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}deep/{}", levels.join("/")))),
+                None,
+            )
             .await
             .map(|rows| rows.iter().map(|e| e.name.clone()).collect::<Vec<_>>());
         m.check(
@@ -363,7 +402,9 @@ async fn live_hostile_folders() {
             "a 20-level tree lists at both ends",
             format!("{first:?}, {bottom:?}"),
         );
-        let tally = volume.tally_subtree(&deep_top, 10_000).await;
+        let tally = volume
+            .tally_subtree(&AppPath::legacy_unchecked(&deep_top), 10_000)
+            .await;
         m.check(
             matches!(&tally, Ok(t) if t.files == 1 && t.bytes == 4 && t.complete),
             "tally a 20-level tree",
@@ -372,17 +413,24 @@ async fn live_hostile_folders() {
                 tally.as_ref().map(|t| (t.files, t.bytes, t.folders, t.complete))
             ),
         );
-        let work = volume.rename_work(&deep_top).await;
+        let work = volume.rename_work(&AppPath::legacy_unchecked(&deep_top)).await;
         let refused = volume
-            .rename(&deep_top, &at(&volume, &format!("{prefix}deep2")), false)
+            .rename(
+                &AppPath::legacy_unchecked(&deep_top),
+                &AppPath::legacy_unchecked(&at(&volume, &format!("{prefix}deep2"))),
+                false,
+            )
             .await;
         m.check(
             matches!(work, Ok(RenameWork::CopyThenDelete)) && matches!(refused, Err(VolumeError::NotSupported)),
             "a folder renames by the engine, never by `rename`",
             format!("{work:?}, {refused:?}"),
         );
-        volume.delete(&at(&volume, &deep_key)).await.expect("the leaf deletes");
-        let vanished = volume.list_directory(&deep_top, None).await;
+        volume
+            .delete(&AppPath::legacy_unchecked(&at(&volume, &deep_key)))
+            .await
+            .expect("the leaf deletes");
+        let vanished = volume.list_directory(&AppPath::legacy_unchecked(&deep_top), None).await;
         m.check(
             matches!(vanished, Err(VolumeError::NotFound(_))),
             "a markerless tree vanishes with its last key",
@@ -408,7 +456,9 @@ fn big_size(live: &Live) -> u64 {
 
 /// Everything a stream at `offset` yields, and the total it names.
 async fn read_from(volume: &S3Volume, path: &Path, offset: u64) -> Result<(Vec<u8>, StreamLength), VolumeError> {
-    let mut stream = volume.open_read_stream_at_offset(path, offset).await?;
+    let mut stream = volume
+        .open_read_stream_at_offset(&AppPath::legacy_unchecked(path), offset)
+        .await?;
     let mut bytes = Vec::new();
     while let Some(piece) = stream.next_chunk().await {
         bytes.extend(piece?);
@@ -453,12 +503,19 @@ async fn live_hostile_sizes() {
                 }
                 let length = source.total_size();
                 let wrote = volume
-                    .write_from_stream(&path, WriteMode::CreateNew, length, Box::new(source), &|_| {
-                        ControlFlow::Continue(())
-                    })
+                    .write_from_stream(
+                        &AppPath::legacy_unchecked(&path),
+                        WriteMode::CreateNew,
+                        length,
+                        Box::new(source),
+                        &|_| ControlFlow::Continue(()),
+                    )
                     .await;
                 let mismatch = pattern_mismatch(&volume, &path, size, tag).await;
-                let stat = volume.get_metadata(&path).await.map(|e| e.size);
+                let stat = volume
+                    .get_metadata(&AppPath::legacy_unchecked(&path))
+                    .await
+                    .map(|e| e.size);
                 let what = format!("{size} bytes, {} length", if known { "known" } else { "unknown" }); // allowed-pluralize-noun: a test label naming a size in bytes
                 m.check(
                     wrote.as_ref().ok().map(|written| written.bytes) == Some(size)
@@ -480,7 +537,7 @@ async fn live_hostile_sizes() {
         let size = 2 * floor + 1;
         let tag = 7 * 7 + 1;
         let path = at(&volume, &format!("{prefix}{size}-true.bin"));
-        let window = volume.read_range(&path, floor - 2, 5).await;
+        let window = volume.read_range(&AppPath::legacy_unchecked(&path), floor - 2, 5).await;
         let expected: Vec<u8> = (floor - 2..floor + 3).map(|i| pattern_byte(i, tag)).collect();
         m.check(
             window.as_ref().ok() == Some(&expected),
@@ -501,7 +558,7 @@ async fn live_hostile_sizes() {
         );
 
         // A download dropped mid-way, then read again whole.
-        if let Ok(mut stream) = volume.open_read_stream(&path).await {
+        if let Ok(mut stream) = volume.open_read_stream(&AppPath::legacy_unchecked(&path)).await {
             let _ = stream.next_chunk().await;
             stream.cancel_and_release().await;
         }
@@ -520,7 +577,7 @@ async fn live_hostile_sizes() {
         let started = std::time::Instant::now();
         let wrote = volume
             .write_from_stream(
-                &path,
+                &AppPath::legacy_unchecked(&path),
                 WriteMode::CreateNew,
                 StreamLength::Known(big),
                 Box::new(PatternSource::new(big, 9)),
@@ -584,13 +641,15 @@ async fn live_hostile_scale() {
             pages.fetch_add(1, Ordering::Relaxed);
         };
         let started = std::time::Instant::now();
-        let rows = volume.list_directory(&many, Some(&on_progress)).await;
+        let rows = volume
+            .list_directory(&AppPath::legacy_unchecked(&many), Some(&on_progress))
+            .await;
         let files = rows.as_ref().map(|r| r.iter().filter(|e| !e.is_directory).count());
         let folders = rows.as_ref().map(|r| r.iter().filter(|e| e.is_directory).count());
         let sizes_right = rows.as_ref().is_ok_and(|r| {
-            r.iter()
-                .filter(|e| !e.is_directory)
-                .all(|e| e.size == Some(e.path.len() as u64 - volume.root().as_os_str().len() as u64 - 1))
+            r.iter().filter(|e| !e.is_directory).all(|e| {
+                e.size == Some(e.path.len() as u64 - volume.root().as_std_legacy().as_os_str().len() as u64 - 1)
+            })
         });
         m.check(
             files.as_ref().ok() == Some(&1150)
@@ -603,7 +662,7 @@ async fn live_hostile_scale() {
                 seconds(started)
             ),
         );
-        let tally = volume.tally_subtree(&many, 10_000).await;
+        let tally = volume.tally_subtree(&AppPath::legacy_unchecked(&many), 10_000).await;
         m.check(
             matches!(&tally, Ok(t) if t.files == 1200 && t.complete && t.folders >= 6),
             "tally 1,200 objects",
@@ -612,13 +671,13 @@ async fn live_hostile_scale() {
                 tally.as_ref().map(|t| (t.files, t.bytes, t.folders, t.complete))
             ),
         );
-        let capped = volume.tally_subtree(&many, 1000).await;
+        let capped = volume.tally_subtree(&AppPath::legacy_unchecked(&many), 1000).await;
         m.check(
             matches!(&capped, Ok(t) if !t.complete && t.files <= 1001),
             "tally capped at 1,000",
             format!("{:?}", capped.as_ref().map(|t| (t.files, t.complete))),
         );
-        let work = volume.rename_work(&many).await;
+        let work = volume.rename_work(&AppPath::legacy_unchecked(&many)).await;
         m.check(
             matches!(work, Ok(RenameWork::CopyThenDelete)),
             "rename_work on a big folder",
@@ -627,10 +686,17 @@ async fn live_hostile_scale() {
 
         let paths: Vec<PathBuf> = keys.iter().map(|key| at(&volume, key)).collect();
         let started = std::time::Instant::now();
-        let deleted = volume.delete_files(&paths).await;
+        let deleted = volume
+            .delete_files(
+                &paths
+                    .iter()
+                    .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                    .collect::<Vec<_>>(),
+            )
+            .await;
         let failures = deleted.iter().filter(|r| r.is_err()).count();
         let left = live.keys_under(&client, &prefix).await;
-        let after = volume.list_directory(&many, None).await;
+        let after = volume.list_directory(&AppPath::legacy_unchecked(&many), None).await;
         m.check(
             deleted.len() == 1200 && failures == 0 && left.is_empty() && matches!(after, Err(VolumeError::NotFound(_))),
             "delete 1,200 objects in batches",
@@ -668,7 +734,7 @@ async fn live_hostile_share_links() {
                 .await
                 .expect("lands");
             let link = volume
-                .share_link(&path, ShareLinkExpiry::OneHour)
+                .share_link(&AppPath::legacy_unchecked(&path), ShareLinkExpiry::OneHour)
                 .await
                 .expect("a link");
             let answer = http.get(link.into_url()).send().await.expect("fetches");
@@ -709,10 +775,13 @@ async fn live_hostile_share_links() {
             .await
             .expect("lands");
         let link = volume
-            .share_link(&doomed, ShareLinkExpiry::OneHour)
+            .share_link(&AppPath::legacy_unchecked(&doomed), ShareLinkExpiry::OneHour)
             .await
             .expect("a link");
-        volume.delete(&doomed).await.expect("deletes");
+        volume
+            .delete(&AppPath::legacy_unchecked(&doomed))
+            .await
+            .expect("deletes");
         let status = http.get(link.into_url()).send().await.expect("fetches").status();
         m.check(
             status == http::StatusCode::NOT_FOUND || status == http::StatusCode::FORBIDDEN,
@@ -748,7 +817,13 @@ async fn live_hostile_metadata() {
         let near_now = |t: Option<u64>| t.is_some_and(|t| t.abs_diff(now) < 3600);
         let mtime_of = |path: PathBuf| {
             let volume = &volume;
-            async move { volume.get_metadata(&path).await.ok().and_then(|e| e.modified_at) }
+            async move {
+                volume
+                    .get_metadata(&AppPath::legacy_unchecked(&path))
+                    .await
+                    .ok()
+                    .and_then(|e| e.modified_at)
+            }
         };
 
         let small = format!("{prefix}small.txt");
@@ -780,7 +855,10 @@ async fn live_hostile_metadata() {
             );
         }
         let rows = volume
-            .list_directory(&at(&volume, prefix.trim_end_matches('/')), None)
+            .list_directory(
+                &AppPath::legacy_unchecked(&at(&volume, prefix.trim_end_matches('/'))),
+                None,
+            )
             .await
             .unwrap_or_default();
         let listed = rows.iter().find(|e| e.name == "small.txt").and_then(|e| e.modified_at);
@@ -791,7 +869,13 @@ async fn live_hostile_metadata() {
         );
 
         let renamed = format!("{prefix}renamed.txt");
-        let moved = volume.rename(&at(&volume, &small), &at(&volume, &renamed), false).await;
+        let moved = volume
+            .rename(
+                &AppPath::legacy_unchecked(&at(&volume, &small)),
+                &AppPath::legacy_unchecked(&at(&volume, &renamed)),
+                false,
+            )
+            .await;
         let stat = mtime_of(at(&volume, &renamed)).await;
         m.check(
             moved.is_ok() && stat == Some(distant),
@@ -805,8 +889,8 @@ async fn live_hostile_metadata() {
             let copied = volume
                 .copy_on_server(
                     &volume,
-                    &at(&volume, from),
-                    &at(&volume, &to),
+                    &AppPath::legacy_unchecked(&at(&volume, from)),
+                    &AppPath::legacy_unchecked(&at(&volume, &to)),
                     WriteMode::CreateNew,
                     &CopyHook::new(None, None),
                 )
@@ -832,8 +916,8 @@ async fn live_hostile_metadata() {
         let copied = volume
             .copy_on_server(
                 &volume,
-                &at(&volume, &foreign),
-                &at(&volume, &to),
+                &AppPath::legacy_unchecked(&at(&volume, &foreign)),
+                &AppPath::legacy_unchecked(&at(&volume, &to)),
                 WriteMode::CreateNew,
                 &CopyHook::new(None, None),
             )
@@ -852,9 +936,13 @@ async fn live_hostile_metadata() {
             let source = BytesSource::new(b"no date".to_vec());
             let length = source.total_size();
             let replaced = volume
-                .write_from_stream(&path, WriteMode::CreateOrReplace, length, Box::new(source), &|_| {
-                    ControlFlow::Continue(())
-                })
+                .write_from_stream(
+                    &AppPath::legacy_unchecked(&path),
+                    WriteMode::CreateOrReplace,
+                    length,
+                    Box::new(source),
+                    &|_| ControlFlow::Continue(()),
+                )
                 .await;
             let stat = mtime_of(path).await;
             m.check(

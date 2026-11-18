@@ -8,6 +8,7 @@
 //! decided by identity (a node id, or exact names in a fresh listing), never by
 //! folding names.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Component, Path, PathBuf};
 
 use cmdr_fs::entry::FileEntry;
@@ -139,7 +140,10 @@ pub(super) async fn is_self_collision(
         SelfCollision::AskTheListings(twins) => twins,
     };
     for twin in &twins {
-        match volume.list_directory(&twin.parent, None).await {
+        match volume
+            .list_directory(&AppPath::legacy_unchecked(&twin.parent), None)
+            .await
+        {
             Ok(listed) if listing_confirms_twin(&listed, twin) => {}
             _ => return false,
         }

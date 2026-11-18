@@ -9,6 +9,7 @@
 //! files, so the trait side stays in `local_posix.rs` and the work lives here.
 
 use super::LocalPosixVolume;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::file_identity::FileId;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::metadata::{
@@ -169,8 +170,10 @@ impl LocalPosixVolume {
     )]
     pub(super) fn open_read_stream_impl<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_path = self.resolve(path);
         Box::pin(async move {
             spawn_blocking(move || {
@@ -205,10 +208,12 @@ impl LocalPosixVolume {
     )]
     pub(super) fn resume_read_stream_impl<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         version: &'a cmdr_fs::volume::SourceVersion,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_path = self.resolve(path);
         let expected = version.downcast_ref::<LocalVersion>().copied();
         Box::pin(async move {
@@ -239,10 +244,12 @@ impl LocalPosixVolume {
     /// One `pread` window, looped until it's full or the file ends.
     pub(super) fn read_range_impl<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let abs_path = self.resolve(path);
         Box::pin(async move {
             spawn_blocking(move || {
@@ -279,7 +286,7 @@ impl LocalPosixVolume {
     /// rename, so the caller applies them after it (`Volume::apply_metadata`).
     pub(super) fn write_from_stream_impl<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -294,7 +301,7 @@ impl LocalPosixVolume {
     /// than `at`, creating nothing.
     pub(super) fn continue_write_from_stream_impl<'a>(
         &'a self,
-        target: &'a Path,
+        target: &'a AppPath,
         at: u64,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -329,12 +336,14 @@ impl LocalPosixVolume {
 
     fn stream_into<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         opening: Opening,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Pin<Box<dyn Future<Output = Result<StreamWritten, VolumeError>> + Send + 'a>> {
+        let dest_std = dest.as_std_legacy();
+        let dest: &Path = &dest_std;
         let dest_abs = self.resolve(dest);
         Box::pin(async move {
             // Ensure parent directory exists

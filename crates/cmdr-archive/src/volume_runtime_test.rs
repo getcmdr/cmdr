@@ -80,8 +80,14 @@ fn a_local_zip_parses_and_decompresses_on_the_hosts_runtime() {
         let parent = Arc::new(InMemoryVolume::new("parent").with_local_fs_access());
         let volume = ArchiveVolume::new(parent, zip.clone(), ArchiveFormat::Zip, host);
         poll_to_completion(async {
-            let listed = volume.list_directory(&zip.join("docs"), None).await.expect("list");
-            let mut stream = volume.open_read_stream(&zip.join("docs/a.txt")).await.expect("open");
+            let listed = volume
+                .list_directory(&AppPath::legacy_unchecked(&zip.join("docs")), None)
+                .await
+                .expect("list");
+            let mut stream = volume
+                .open_read_stream(&AppPath::legacy_unchecked(&zip.join("docs/a.txt")))
+                .await
+                .expect("open");
             (listed.len(), drain(stream.as_mut()).await)
         })
     });
@@ -100,9 +106,15 @@ fn a_remote_zip_bridges_its_reads_on_the_hosts_runtime() {
     let read = on_a_thread_without_a_runtime(move |host| {
         let parent = InMemoryVolume::new("Remote");
         poll_to_completion(async {
-            parent.create_file(&zip, &bytes).await.expect("seed the remote zip");
+            parent
+                .create_file(&AppPath::legacy_unchecked(&zip), &bytes)
+                .await
+                .expect("seed the remote zip");
             let volume = ArchiveVolume::new(Arc::new(parent), zip.clone(), ArchiveFormat::Zip, host);
-            let mut stream = volume.open_read_stream(&zip.join("a.txt")).await.expect("open");
+            let mut stream = volume
+                .open_read_stream(&AppPath::legacy_unchecked(&zip.join("a.txt")))
+                .await
+                .expect("open");
             drain(stream.as_mut()).await
         })
     });
@@ -131,7 +143,7 @@ fn a_tar_gz_subtree_extract_decodes_on_the_hosts_runtime() {
         let volume = ArchiveVolume::new(parent, tgz.clone(), ArchiveFormat::Tar(crate::TarCodec::Gzip), host);
         poll_to_completion(async {
             let mut extract = volume
-                .open_sequential_extract(Path::new("docs"))
+                .open_sequential_extract(&AppPath::legacy_unchecked(Path::new("docs")))
                 .await
                 .expect("open the extract");
             extract.next_file().await.expect("next_file").expect("the one member");

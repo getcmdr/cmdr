@@ -45,6 +45,7 @@
 //! `scan_completed_at`-absent ⇒ no-Fresh / heal-to-rescan mechanism the local
 //! scanner relies on (see `lifecycle/manager.rs`).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -280,7 +281,7 @@ async fn list_one_directory(
     let listing_clock = clock.clone();
     let listing = tokio::spawn(async move {
         let result = volume
-            .list_directory_for_scan(&listing_path, Some(&cancel), &listing_clock)
+            .list_directory_for_scan(&AppPath::legacy_unchecked(&listing_path), Some(&cancel), &listing_clock)
             .await
             .map(|entries| walked_links_as_directories(volume.as_ref(), entries));
         // Drain the autoreleased ObjC objects this listing created before the
@@ -340,7 +341,7 @@ pub(crate) async fn stat_one_directory(volume: Arc<dyn Volume>, path: PathBuf) -
     let stat_path = path.clone();
     let stat = tokio::spawn(async move {
         let result = volume
-            .get_metadata(&stat_path)
+            .get_metadata(&AppPath::legacy_unchecked(&stat_path))
             .await
             .map(|entry| walked_links_as_directories(volume.as_ref(), vec![entry]).remove(0));
         drain_autorelease_pool();
@@ -395,7 +396,8 @@ fn walked_links_as_directories(
     for entry in &mut entries {
         if entry.is_directory
             && entry.is_symlink
-            && volume.index_walk(Path::new(&entry.path), true) == cmdr_fs::volume::IndexWalk::Descend
+            && volume.index_walk(&AppPath::legacy_unchecked(Path::new(&entry.path)), true)
+                == cmdr_fs::volume::IndexWalk::Descend
         {
             entry.is_symlink = false;
         }
@@ -409,7 +411,8 @@ fn walked_links_as_directories(
 ///
 /// All three walks ask this; the cover walk marks a "no" as ground it won't read.
 pub(crate) fn walk_descends(volume: &dyn Volume, dir: &Path, name: &str, is_symlink: bool) -> bool {
-    !is_recursion_excluded_dir(name) && volume.index_walk(dir, is_symlink) == cmdr_fs::volume::IndexWalk::Descend
+    !is_recursion_excluded_dir(name)
+        && volume.index_walk(&AppPath::legacy_unchecked(dir), is_symlink) == cmdr_fs::volume::IndexWalk::Descend
 }
 
 /// Whether a `VolumeError` means the whole volume went away mid-walk (terminal

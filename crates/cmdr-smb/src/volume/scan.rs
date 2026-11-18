@@ -8,6 +8,7 @@ use super::dfs_links::link_stat;
 use super::links::stat_through_link;
 use super::mapping::{filetime_to_unix_secs, map_smb_error};
 use super::session::SessionLease;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::scan_walk::{conflicts_against, fold_batch};
@@ -199,7 +200,7 @@ impl SmbVolume {
                 let scan = self.scan_recursive(&smb_path, &paths[0], boundary).await?;
                 return Ok(BatchScanResult {
                     aggregate: scan.clone(),
-                    per_path: vec![(paths[0].clone(), scan)],
+                    per_path: vec![(AppPath::legacy_unchecked(&paths[0].clone()).into_owned(), scan)],
                     files: None,
                 });
             }

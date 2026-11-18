@@ -3,6 +3,8 @@
 //! Each test reads through an engine of its own: volumes it registered,
 //! reports recorded, foreground holds counted.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::BridgedPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
@@ -213,9 +215,15 @@ async fn a_foreign_spelling_lands_the_listing_on_the_stored_path() {
     let volume_id = &format!("test-spelling-{}", uuid::Uuid::new_v4());
     let listing = TestListingGuard::adopt(&engine, unique_test_id("streaming-spelling"));
     let inner = InMemoryVolume::new("Share");
-    inner.create_directory(Path::new(stored)).await.unwrap();
     inner
-        .create_file(&Path::new(stored).join("photo.jpg"), b"jpeg")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(stored)))
+        .await
+        .unwrap();
+    inner
+        .create_file(
+            &AppPath::legacy_unchecked(&Path::new(stored).join("photo.jpg")),
+            b"jpeg",
+        )
         .await
         .unwrap();
     let volume = SpelledVolume::new(inner).resolving(foreign, Ok(Some(stored)));
@@ -250,7 +258,7 @@ async fn a_foreign_spelling_lands_the_listing_on_the_stored_path() {
 /// ran to its own cooperative end; `aborted` means it was dropped mid-listing,
 /// which on a real phone abandons a PTP transaction and wedges the device.
 struct CooperativeCancelVolume {
-    root: PathBuf,
+    root: BridgedPath,
     started: Arc<AtomicBool>,
     finished: Arc<AtomicBool>,
     aborted: Arc<AtomicBool>,
@@ -273,7 +281,7 @@ impl Drop for AbortWitness {
 impl CooperativeCancelVolume {
     fn new() -> Self {
         Self {
-            root: PathBuf::from("/"),
+            root: BridgedPath::new(PathBuf::from("/")),
             started: Arc::new(AtomicBool::new(false)),
             finished: Arc::new(AtomicBool::new(false)),
             aborted: Arc::new(AtomicBool::new(false)),
@@ -313,8 +321,8 @@ impl Volume for CooperativeCancelVolume {
         "Cooperative cancel volume"
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -323,7 +331,7 @@ impl Volume for CooperativeCancelVolume {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         // No token: this is the shape that can only be stopped by dropping the
@@ -333,7 +341,7 @@ impl Volume for CooperativeCancelVolume {
 
     fn list_directory_with_cancel<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
@@ -342,18 +350,18 @@ impl Volume for CooperativeCancelVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotFound("not implemented".to_string())) })
     }
 
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { true })
     }
 
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(true) })
     }

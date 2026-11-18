@@ -7,8 +7,8 @@
 //! keep importing `volume::VolumeError`, `volume::CopyScanResult`, etc.
 //! unchanged.
 
+use crate::app_path::AppPathBuf;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 
 use crate::entry::FileEntry;
 use crate::metadata::{CarriedMetadata, MetadataClasses, MetadataReport};
@@ -298,7 +298,7 @@ pub enum DirectoryChange {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExtractedFile {
     /// Full source path, in the source volume's namespace.
-    pub source_path: PathBuf,
+    pub source_path: AppPathBuf,
     /// Uncompressed size in bytes.
     pub size: u64,
 }
@@ -521,7 +521,7 @@ pub struct BatchScanResult {
     /// Per-input-path result, in the same order as the `paths` slice the
     /// caller passed in. Paths that failed to scan won't appear. On a
     /// per-path failure the method returns `Err` without partial data.
-    pub per_path: Vec<(PathBuf, CopyScanResult)>,
+    pub per_path: Vec<(AppPathBuf, CopyScanResult)>,
     /// Every file's size and date, kept only by a backend whose operations are
     /// billed per object (S3, through `ScanSource::keeps_files`), for a cost
     /// estimate; `None` everywhere else, and wherever any part of the scan

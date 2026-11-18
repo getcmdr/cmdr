@@ -5,6 +5,7 @@
 //! None of them touches `ArchiveVolume`'s fields; they depend only on the
 //! reading core's types and [`to_volume_error`].
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::PathBuf;
 use std::pin::Pin;
@@ -156,7 +157,8 @@ impl SequentialExtract for ArchiveSequentialExtract {
                     self.current_mode = member.mode;
                     self.current_xattrs = member.xattrs;
                     Ok(Some(ExtractedFile {
-                        source_path: self.archive_path.join(&member.inner_path),
+                        source_path: AppPath::legacy_unchecked(&self.archive_path.join(&member.inner_path))
+                            .into_owned(),
                         size: member.size,
                     }))
                 }
@@ -272,10 +274,9 @@ impl ArchiveByteSource for VolumeByteSource {
         let want = buf.len().min((self.size - offset) as usize);
         let parent = Arc::clone(&self.parent);
         let path = self.path.clone();
-        let data = block_on(
-            &self.runtime,
-            async move { parent.read_range(&path, offset, want).await },
-        )
+        let data = block_on(&self.runtime, async move {
+            parent.read_range(&AppPath::legacy_unchecked(&path), offset, want).await
+        })
         // Typed, so the archive error it becomes still marks the parent's path.
         .map_err(|err| std::io::Error::other(ErrorDetail::of(err)))?;
         let n = data.len().min(buf.len());

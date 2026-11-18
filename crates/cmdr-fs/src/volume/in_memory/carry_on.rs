@@ -9,6 +9,7 @@ use std::pin::Pin;
 
 use super::device::ContentSink;
 use super::{InMemoryContent, InMemoryEntry, InMemoryVolume};
+use crate::app_path::AppPath;
 use crate::ignore_poison::RwLockIgnorePoison;
 use crate::metadata::MetadataClasses;
 use crate::volume::{StreamLength, StreamWriteProgress, StreamWritten, VolumeError, VolumeReadStream};
@@ -56,7 +57,7 @@ impl InMemoryVolume {
     /// a target that's gone or short, and a volume that doesn't continue writes.
     pub(super) fn continue_write_impl<'a>(
         &'a self,
-        target: &'a Path,
+        target: &'a AppPath,
         at: u64,
         length: StreamLength,
         mut stream: Box<dyn VolumeReadStream>,
@@ -66,6 +67,8 @@ impl InMemoryVolume {
             return Box::pin(async { Err(VolumeError::NotSupported) });
         };
         Box::pin(async move {
+            let target_std = target.as_std_legacy();
+            let target: &Path = &target_std;
             let prefix = self
                 .entries
                 .read_ignore_poison()

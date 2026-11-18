@@ -10,6 +10,7 @@ use super::*;
 use crate::volume::SmbVolume;
 use crate::volume::state::{ConnectionState, RanOn};
 use crate::volume::test_support::*;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{StreamLength, WriteMode};
 use std::path::Path;
@@ -34,7 +35,7 @@ async fn upload(vol: &SmbVolume, path: &str, bytes: Vec<u8>) {
     let len = bytes.len() as u64;
     let written = vol
         .write_from_stream(
-            Path::new(path),
+            &AppPath::legacy_unchecked(Path::new(path)),
             WriteMode::CreateOrReplace,
             StreamLength::Known(len),
             inline_read_stream(bytes),
@@ -50,18 +51,25 @@ async fn upload(vol: &SmbVolume, path: &str, bytes: Vec<u8>) {
 async fn smb_integration_a_download_rides_the_transfer_session_and_browsing_stays_on_main() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     let file = format!("{dir}/big.bin");
     let data = payload(STREAMED);
     // Seeded through `create_file`, a mutation, which stays on the main session.
-    vol.create_file(Path::new(&file), &data).await.unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(Path::new(&file)), &data)
+        .await
+        .unwrap();
     assert!(
         vol.inner.transfer.member_for_test().is_none(),
         "nothing opens a transfer session before a transfer"
     );
 
     let main_before = main_conn(&vol).diagnostics().metrics.wire_bytes_received;
-    let stream = vol.open_read_stream(Path::new(&file)).await.unwrap();
+    let stream = vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&file)))
+        .await
+        .unwrap();
     let member = vol
         .inner
         .transfer
@@ -80,7 +88,10 @@ async fn smb_integration_a_download_rides_the_transfer_session_and_browsing_stay
     );
 
     // Browsing mid-download answers on the main session.
-    let listed = vol.list_directory(Path::new(&dir), None).await.unwrap();
+    let listed = vol
+        .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+        .await
+        .unwrap();
     assert!(listed.iter().any(|e| e.name == "big.bin"));
 
     assert_eq!(drain(stream).await, data, "the bytes come through whole");
@@ -104,7 +115,9 @@ async fn smb_integration_a_download_rides_the_transfer_session_and_browsing_stay
 async fn smb_integration_uploads_ride_the_transfer_session_streamed_and_single_frame() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let main_before = main_conn(&vol).diagnostics().metrics.wire_bytes_sent;
     let big = payload(STREAMED);
@@ -128,16 +141,19 @@ async fn smb_integration_uploads_ride_the_transfer_session_streamed_and_single_f
     );
 
     let big_back = drain(
-        vol.open_read_stream(Path::new(&format!("{dir}/big.bin")))
+        vol.open_read_stream(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/big.bin"))))
             .await
             .unwrap(),
     )
     .await;
     assert_eq!(big_back, big);
     let small_back = drain(
-        vol.open_read_stream_with_hint(Path::new(&format!("{dir}/small.bin")), Some(4096))
-            .await
-            .unwrap(),
+        vol.open_read_stream_with_hint(
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/small.bin"))),
+            Some(4096),
+        )
+        .await
+        .unwrap(),
     )
     .await;
     assert_eq!(small_back, small);
@@ -151,7 +167,9 @@ async fn smb_integration_the_transfer_session_closes_when_idle_and_reopens_on_de
     let vol = make_docker_volume().await;
     vol.inner.transfer.set_idle_for_test(Duration::from_millis(300));
     let dir = test_dir_name();
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     upload(&vol, &format!("{dir}/one.bin"), payload(STREAMED)).await;
     let first = vol.inner.transfer.member_for_test().expect("open after a transfer");
@@ -191,7 +209,9 @@ async fn smb_integration_the_transfer_session_closes_when_idle_and_reopens_on_de
 async fn smb_integration_a_lost_transfer_session_falls_back_to_main_and_reconnects() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     upload(&vol, &format!("{dir}/one.bin"), payload(4096)).await;
     let generation = vol.inner.transfer.generation_for_test().expect("open after a transfer");
     let main_generation = Volume::connection_generation(&vol);
@@ -240,7 +260,9 @@ async fn smb_integration_a_lost_transfer_session_falls_back_to_main_and_reconnec
 async fn smb_integration_a_refused_transfer_session_leaves_copies_on_main() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     // Nothing listens on port 1: the open is refused at once, as a server
     // capping sessions per user would.
     vol.inner.params.write().await.port = 1;
@@ -253,7 +275,7 @@ async fn smb_integration_a_refused_transfer_session_leaves_copies_on_main() {
     );
     assert_eq!(vol.session_state(), ConnectionState::Direct);
     let back = drain(
-        vol.open_read_stream(Path::new(&format!("{dir}/big.bin")))
+        vol.open_read_stream(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/big.bin"))))
             .await
             .unwrap(),
     )
@@ -268,16 +290,23 @@ async fn smb_integration_a_refused_transfer_session_leaves_copies_on_main() {
 async fn smb_integration_the_watchdog_reads_the_transfer_session_while_it_is_up() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     let file = format!("{dir}/big.bin");
-    vol.create_file(Path::new(&file), &payload(STREAMED)).await.unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(Path::new(&file)), &payload(STREAMED))
+        .await
+        .unwrap();
 
     assert_eq!(
         vol.connection_bytes_received(),
         Some(main_conn(&vol).inbound().bytes_received),
         "with no transfer session, the main one answers"
     );
-    let stream = vol.open_read_stream(Path::new(&file)).await.unwrap();
+    let stream = vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&file)))
+        .await
+        .unwrap();
     drain(stream).await;
     let transfer = vol.inner.transfer.live.current().expect("open after a download");
     assert_eq!(

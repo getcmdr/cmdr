@@ -21,6 +21,7 @@
 //! paths that came out of a listing, and there a miss means the directory is
 //! gone: resolving it could hand the walker a look-alike twin.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use tokio_util::sync::CancellationToken;
@@ -59,7 +60,10 @@ pub(crate) async fn list_as_stored(
     on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
     cancel: Option<&CancellationToken>,
 ) -> Result<Listed, VolumeError> {
-    let missed = match volume.list_directory_with_cancel(path, on_progress, cancel).await {
+    let missed = match volume
+        .list_directory_with_cancel(&AppPath::legacy_unchecked(path), on_progress, cancel)
+        .await
+    {
         Ok(entries) => {
             return Ok(Listed {
                 path: path.to_path_buf(),
@@ -69,16 +73,22 @@ pub(crate) async fn list_as_stored(
         Err(e @ VolumeError::NotFound(_)) => e,
         Err(e) => return Err(e),
     };
-    let Some(stored) = volume.find_stored_spelling(path, cancel).await? else {
+    let Some(stored) = volume
+        .find_stored_spelling(&AppPath::legacy_unchecked(path), cancel)
+        .await?
+    else {
         return Err(missed);
     };
     log::debug!(
         "list_as_stored: {} is stored as {}",
         LogPrivate::dir_path(path),
-        LogPrivate::dir_path(&stored)
+        LogPrivate::dir_path(&*stored.as_std_legacy())
     );
     let entries = volume.list_directory_with_cancel(&stored, on_progress, cancel).await?;
-    Ok(Listed { path: stored, entries })
+    Ok(Listed {
+        path: stored.as_std_legacy().into_owned(),
+        entries,
+    })
 }
 
 /// The entries of the folder at `path`, opened the way a pane opens a typed
@@ -119,14 +129,17 @@ pub async fn stored_spellings(volume: &dyn Volume, paths: Vec<PathBuf>) -> Vec<P
             stored.push(path);
             continue;
         }
-        match volume.find_stored_spelling(&path, None).await {
+        match volume
+            .find_stored_spelling(&AppPath::legacy_unchecked(&path), None)
+            .await
+        {
             Ok(Some(spelling)) => {
                 log::debug!(
                     "stored_spellings: {} is stored as {}",
                     LogPrivate::path(&path),
-                    LogPrivate::path(&spelling)
+                    LogPrivate::path(&*spelling.as_std_legacy())
                 );
-                stored.push(spelling);
+                stored.push(spelling.as_std_legacy().into_owned());
             }
             Ok(None) => stored.push(path),
             Err(e) => {

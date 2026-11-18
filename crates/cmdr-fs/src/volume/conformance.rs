@@ -11,6 +11,7 @@
 //! backing dir plus a rescan, SMB needs a share. What the assertion checks is
 //! identical everywhere, which is the point.
 
+use crate::app_path::AppPath;
 use std::future::Future;
 use std::path::Path;
 use std::pin::Pin;
@@ -61,7 +62,7 @@ pub use xattrs::{assert_a_copy_keeps_xattrs, assert_xattrs_keep_their_promises};
 /// back would need `open_read_stream`, and not every mutable backend exports.
 async fn size_of(volume: &dyn Volume, path: &Path, what: &str) -> Option<u64> {
     volume
-        .get_metadata(path)
+        .get_metadata(&AppPath::legacy_unchecked(path))
         .await
         .unwrap_or_else(|e| panic!("{what}: {} must be stattable, got {e:?}", path.display()))
         .size
@@ -82,7 +83,7 @@ async fn size_of(volume: &dyn Volume, path: &Path, what: &str) -> Option<u64> {
 /// both of those into deletions of data the user asked to keep.
 pub async fn assert_delete_leaves_a_non_empty_dir_intact(volume: &dyn Volume, dir: &Path, child_name: &str) {
     let before = volume
-        .list_directory(dir, None)
+        .list_directory(&AppPath::legacy_unchecked(dir), None)
         .await
         .unwrap_or_else(|e| panic!("fixture precondition: listing {} must work, got {e:?}", dir.display()));
     assert!(
@@ -92,19 +93,22 @@ pub async fn assert_delete_leaves_a_non_empty_dir_intact(volume: &dyn Volume, di
         before.iter().map(|e| &e.name).collect::<Vec<_>>()
     );
 
-    let outcome = volume.delete(dir).await;
+    let outcome = volume.delete(&AppPath::legacy_unchecked(dir)).await;
     assert!(
         outcome.is_err(),
         "delete of the non-empty directory {} must refuse; it returned Ok, so it recursed",
         dir.display()
     );
 
-    let after = volume.list_directory(dir, None).await.unwrap_or_else(|e| {
-        panic!(
-            "the refused directory {} must still be listable, got {e:?}",
-            dir.display()
-        )
-    });
+    let after = volume
+        .list_directory(&AppPath::legacy_unchecked(dir), None)
+        .await
+        .unwrap_or_else(|e| {
+            panic!(
+                "the refused directory {} must still be listable, got {e:?}",
+                dir.display()
+            )
+        });
     assert!(
         after.iter().any(|e| e.name == child_name),
         "a refused delete must destroy nothing, but {child_name} is gone from {}; found {:?}",
@@ -127,25 +131,36 @@ pub async fn assert_delete_leaves_a_non_empty_dir_intact(volume: &dyn Volume, di
 pub async fn assert_delete_files_removes_exactly_what_it_names(volume: &dyn Volume, doomed: [&Path; 2], kept: &Path) {
     for path in doomed.iter().chain([&kept]) {
         assert!(
-            volume.exists(path).await,
+            volume.exists(&AppPath::legacy_unchecked(path)).await,
             "fixture precondition: {} must exist",
             path.display()
         );
     }
     let gone = kept.with_file_name("never-there-for-the-batch.txt");
-    let paths = vec![doomed[0].to_path_buf(), gone, doomed[1].to_path_buf()];
+    let paths = [doomed[0].to_path_buf(), gone, doomed[1].to_path_buf()];
 
-    let results = volume.delete_files(&paths).await;
+    let results = volume
+        .delete_files(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+        )
+        .await;
 
     assert_eq!(results.len(), paths.len(), "one result per path, in order");
     for (path, result) in paths.iter().zip(&results) {
         assert!(result.is_ok(), "{} must answer Ok, got {result:?}", path.display());
     }
     for path in doomed {
-        assert!(!volume.exists(path).await, "{} must be deleted", path.display());
+        assert!(
+            !volume.exists(&AppPath::legacy_unchecked(path)).await,
+            "{} must be deleted",
+            path.display()
+        );
     }
     assert!(
-        volume.exists(kept).await,
+        volume.exists(&AppPath::legacy_unchecked(kept)).await,
         "a batch delete must take nothing it wasn't handed, but {} is gone",
         kept.display()
     );
@@ -178,7 +193,9 @@ pub async fn assert_rename_refuses_an_existing_destination(volume: &dyn Volume, 
         to.display(),
     );
 
-    let outcome = volume.rename(from, to, false).await;
+    let outcome = volume
+        .rename(&AppPath::legacy_unchecked(from), &AppPath::legacy_unchecked(to), false)
+        .await;
     assert!(
         matches!(outcome, Err(VolumeError::AlreadyExists(_))),
         "rename({}, {}, force = false) must refuse with AlreadyExists; got {outcome:?}",
@@ -187,7 +204,7 @@ pub async fn assert_rename_refuses_an_existing_destination(volume: &dyn Volume, 
     );
 
     assert!(
-        volume.exists(from).await,
+        volume.exists(&AppPath::legacy_unchecked(from)).await,
         "a refused rename must leave the source in place, but {} is gone",
         from.display(),
     );
@@ -222,7 +239,7 @@ pub async fn assert_create_file_refuses_to_clobber(volume: &dyn Volume, path: &P
         path.display(),
     );
 
-    let outcome = volume.create_file(path, content).await;
+    let outcome = volume.create_file(&AppPath::legacy_unchecked(path), content).await;
     assert!(
         matches!(outcome, Err(VolumeError::AlreadyExists(_))),
         "create_file over the existing {} must refuse with AlreadyExists; got {outcome:?}",
@@ -300,16 +317,16 @@ async fn write_new(volume: &dyn Volume, dest: &Path, content: &[u8]) -> Result<u
     let source = InMemoryVolume::new("conformance-source");
     let source_path = Path::new("/source.bin");
     source
-        .create_file(source_path, content)
+        .create_file(&AppPath::legacy_unchecked(source_path), content)
         .await
         .expect("seeding the in-memory source");
     let stream = source
-        .open_read_stream(source_path)
+        .open_read_stream(&AppPath::legacy_unchecked(source_path))
         .await
         .expect("opening the in-memory source");
     volume
         .write_from_stream(
-            dest,
+            &AppPath::legacy_unchecked(dest),
             WriteMode::CreateNew,
             StreamLength::Known(content.len() as u64),
             stream,
@@ -352,7 +369,7 @@ impl super::VolumeReadStream for PollCountingUnknownStream {
 
 async fn read_all(volume: &dyn Volume, path: &Path) -> Vec<u8> {
     let mut stream = volume
-        .open_read_stream(path)
+        .open_read_stream(&AppPath::legacy_unchecked(path))
         .await
         .unwrap_or_else(|e| panic!("{} must be readable, got {e:?}", path.display()));
     let mut bytes = Vec::new();
@@ -387,7 +404,7 @@ pub async fn assert_unknown_write_is_refused_before_io(volume: &dyn Volume, path
     let polls = Arc::new(AtomicUsize::new(0));
     let outcome = volume
         .write_from_stream(
-            path,
+            &AppPath::legacy_unchecked(path),
             WriteMode::CreateOrReplace,
             StreamLength::Unknown,
             Box::new(PollCountingUnknownStream {
@@ -426,12 +443,12 @@ pub async fn assert_unknown_write_is_refused_before_io(volume: &dyn Volume, path
 /// work; a stale `false` is a working volume the user can't write to.
 pub async fn assert_writability_matches_the_mutations_offered(volume: &dyn Volume, scratch_dir: &Path) {
     assert!(
-        !volume.exists(scratch_dir).await,
+        !volume.exists(&AppPath::legacy_unchecked(scratch_dir)).await,
         "fixture precondition: {} must not exist yet",
         scratch_dir.display()
     );
 
-    let outcome = volume.create_directory(scratch_dir).await;
+    let outcome = volume.create_directory(&AppPath::legacy_unchecked(scratch_dir)).await;
     if volume.is_writable() {
         assert!(
             outcome.is_ok(),
@@ -440,7 +457,7 @@ pub async fn assert_writability_matches_the_mutations_offered(volume: &dyn Volum
             scratch_dir.display(),
         );
         // Leave the volume as we found it, so a caller can reuse the fixture.
-        let _ = volume.delete(scratch_dir).await;
+        let _ = volume.delete(&AppPath::legacy_unchecked(scratch_dir)).await;
     } else {
         assert!(
             matches!(outcome, Err(VolumeError::NotSupported)),
@@ -468,7 +485,11 @@ pub async fn assert_writability_matches_the_mutations_offered(volume: &dyn Volum
 /// answering `NotSupported`.
 pub async fn assert_copy_within_matches_what_is_offered(volume: &dyn Volume, from: &Path, to: &Path) {
     let copied = volume
-        .copy_within(from, to, &|_, _| std::ops::ControlFlow::Continue(()))
+        .copy_within(
+            &AppPath::legacy_unchecked(from),
+            &AppPath::legacy_unchecked(to),
+            &|_, _| std::ops::ControlFlow::Continue(()),
+        )
         .await;
     match copied {
         Ok(_) => {
@@ -479,7 +500,7 @@ pub async fn assert_copy_within_matches_what_is_offered(volume: &dyn Volume, fro
                 from.display(),
             );
             volume
-                .delete(to)
+                .delete(&AppPath::legacy_unchecked(to))
                 .await
                 .unwrap_or_else(|e| panic!("cleanup: {} must delete the copy it made: {e:?}", volume.name()));
         }
@@ -522,7 +543,7 @@ pub async fn assert_export_matches_the_bytes_offered(volume: &dyn Volume, path: 
         content.len(),
     );
 
-    let opened = volume.open_read_stream(path).await;
+    let opened = volume.open_read_stream(&AppPath::legacy_unchecked(path)).await;
     match opened {
         Ok(mut stream) => {
             let mut read = Vec::with_capacity(content.len());
@@ -620,7 +641,7 @@ pub async fn assert_export_matches_the_bytes_offered(volume: &dyn Volume, path: 
 /// which is what used to make the wrong payload the path of least resistance.
 pub async fn assert_not_found_carries_the_path(volume: &dyn Volume, missing: &Path) {
     assert!(
-        !volume.exists(missing).await,
+        !volume.exists(&AppPath::legacy_unchecked(missing)).await,
         "fixture precondition: {} must not exist",
         missing.display()
     );
@@ -630,7 +651,7 @@ pub async fn assert_not_found_carries_the_path(volume: &dyn Volume, missing: &Pa
         .to_string_lossy()
         .into_owned();
 
-    let outcome = volume.get_metadata(missing).await;
+    let outcome = volume.get_metadata(&AppPath::legacy_unchecked(missing)).await;
     let Err(VolumeError::NotFound(carried)) = outcome else {
         panic!(
             "get_metadata({}) on {} must answer NotFound; got {outcome:?}",
@@ -669,7 +690,7 @@ pub async fn assert_not_found_carries_the_path(volume: &dyn Volume, missing: &Pa
 /// because they all seed the destination first.
 pub async fn assert_conflict_scan_reads_a_missing_destination_as_empty(volume: &dyn Volume, dest: &Path) {
     assert!(
-        !volume.exists(dest).await,
+        !volume.exists(&AppPath::legacy_unchecked(dest)).await,
         "fixture precondition: {} must not exist yet",
         dest.display()
     );
@@ -681,7 +702,9 @@ pub async fn assert_conflict_scan_reads_a_missing_destination_as_empty(volume: &
         is_directory: false,
     }];
 
-    let outcome = volume.scan_for_conflicts(&source_items, dest).await;
+    let outcome = volume
+        .scan_for_conflicts(&source_items, &AppPath::legacy_unchecked(dest))
+        .await;
     match outcome {
         Ok(conflicts) => assert!(
             conflicts.is_empty(),
@@ -713,7 +736,7 @@ pub async fn assert_conflict_scan_reads_a_missing_destination_as_empty(volume: &
 /// `dir` must already exist on `volume` and hold at least one entry.
 pub async fn assert_batch_scan_stops_when_told(volume: &dyn Volume, dir: &Path) {
     let entries = volume
-        .list_directory(dir, None)
+        .list_directory(&AppPath::legacy_unchecked(dir), None)
         .await
         .unwrap_or_else(|e| panic!("fixture precondition: listing {} must work, got {e:?}", dir.display()));
     assert!(
@@ -725,7 +748,7 @@ pub async fn assert_batch_scan_stops_when_told(volume: &dyn Volume, dir: &Path) 
     let signal = TestScanStop::already_stopping();
     let boundary = ScanBoundary::silent().stopping_at(ScanStop::new(Arc::clone(&signal) as Arc<dyn ScanStopSignal>));
     let outcome = volume
-        .scan_for_copy_batch_with_boundary(&[dir.to_path_buf()], &boundary)
+        .scan_for_copy_batch_with_boundary(&[AppPath::legacy_unchecked(dir).into_owned()], &boundary)
         .await;
 
     match outcome {
@@ -761,7 +784,7 @@ pub async fn assert_batch_scan_asks_inside_the_walk(volume: &dyn Volume, dir: &P
     let signal = TestScanStop::new();
     let boundary = ScanBoundary::silent().stopping_at(ScanStop::new(Arc::clone(&signal) as Arc<dyn ScanStopSignal>));
     let scan = volume
-        .scan_for_copy_batch_with_boundary(&[dir.to_path_buf()], &boundary)
+        .scan_for_copy_batch_with_boundary(&[AppPath::legacy_unchecked(dir).into_owned()], &boundary)
         .await
         .unwrap_or_else(|e| panic!("nothing is stopping this scan of {}, got {e:?}", dir.display()));
 

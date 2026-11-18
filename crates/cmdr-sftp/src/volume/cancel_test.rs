@@ -10,6 +10,7 @@
 //! The servers, the ports, and what each one is for:
 //! `apps/desktop/test/sftp-servers/README.md`.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
@@ -102,7 +103,10 @@ async fn a_cancel_during_the_handshake_stops_the_dial_promptly_and_registers_not
     // The server and this process both survived being walked away from nine
     // times, which is the other half of what the sweep is for.
     let volume = connect_fixture(&host, params).await;
-    assert!(volume.exists(Path::new("hello.txt")).await, "{FIXTURE}");
+    assert!(
+        volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await,
+        "{FIXTURE}"
+    );
 }
 
 /// ❗ **The hazardous one.** A cancel inside the SFTP hello has to stop the
@@ -171,7 +175,10 @@ async fn a_cancel_inside_the_hello_window_closes_the_servers_session_at_once() {
     // proof it never happened is that the server and this binary are both still
     // usable afterwards.
     let volume = connect_fixture(&host, params).await;
-    assert!(volume.exists(Path::new("hello.txt")).await, "{FIXTURE}");
+    assert!(
+        volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await,
+        "{FIXTURE}"
+    );
 }
 
 /// ❗ **The other lever: a caller that WALKS AWAY.** A cancel tells a dial to
@@ -236,7 +243,10 @@ async fn dropping_a_dial_inside_the_hello_window_closes_the_servers_session_at_o
     // proof it never happened is that the server and this binary are both still
     // usable afterwards.
     let volume = connect_fixture(&host, params).await;
-    assert!(volume.exists(Path::new("hello.txt")).await, "{FIXTURE}");
+    assert!(
+        volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await,
+        "{FIXTURE}"
+    );
 }
 
 /// ❗ **The ending nobody asked for: a hello that ends in an ERROR.** A server
@@ -295,7 +305,10 @@ async fn a_hello_that_ends_in_an_error_tears_down_without_panicking() {
     // teardown task (spawned at the refusal, done in well under a millisecond)
     // to have run.
     let volume = connect_fixture(&host, params).await;
-    assert!(volume.exists(Path::new("hello.txt")).await, "{FIXTURE}");
+    assert!(
+        volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await,
+        "{FIXTURE}"
+    );
     // ❗ The point of the cell.
     assert_eq!(
         panics.seen(),
@@ -344,7 +357,10 @@ async fn a_cancel_inside_a_real_hello_window_stops_the_engine_without_panicking_
     }
 
     let volume = connect_fixture(&host, params).await;
-    assert!(volume.exists(Path::new("hello.txt")).await, "{FIXTURE}");
+    assert!(
+        volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await,
+        "{FIXTURE}"
+    );
     assert_eq!(panics.seen(), 0, "stopping an engine mid-hello must not panic it");
 }
 

@@ -21,6 +21,7 @@
 //!   fresh connection. It runs on a paused clock, so the deadline elapses in
 //!   virtual time.
 
+use cmdr_fs::app_path::AppPath;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -88,7 +89,7 @@ async fn through_a_proxy() -> Proxied {
 /// The listed folder's names, sorted, or the error the listing answered.
 async fn names(volume: &NfsVolume) -> Result<Vec<String>, VolumeError> {
     let mut names: Vec<String> = volume
-        .list_directory(&app_path(volume, LISTED), None)
+        .list_directory(&AppPath::legacy_unchecked(&app_path(volume, LISTED)), None)
         .await?
         .into_iter()
         .map(|entry| entry.name)

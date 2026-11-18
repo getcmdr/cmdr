@@ -18,7 +18,7 @@ fn an_instance_sharing_the_connection_answers_to_its_own_name_and_root() {
     let wide = narrow.sharing_connection("test_user_1@testnas.local", Path::new("/srv/data"));
 
     assert_eq!(wide.name(), "test_user_1@testnas.local");
-    assert_eq!(wide.root(), Path::new(&format!("{PREFIX}/srv/data")));
+    assert_eq!(wide.root().as_std_legacy(), Path::new(&format!("{PREFIX}/srv/data")));
     assert_eq!(
         wide.to_remote_path(Path::new(&format!("{PREFIX}/srv/data/photos")))
             .expect("under the new root"),
@@ -26,7 +26,7 @@ fn an_instance_sharing_the_connection_answers_to_its_own_name_and_root() {
         "every translation runs against the new root"
     );
     assert_eq!(
-        narrow.root(),
+        narrow.root().as_std_legacy(),
         Path::new(&format!("{PREFIX}/srv/data/tmp")),
         "the instance it was built from keeps its own root: an in-flight holder still uses it"
     );

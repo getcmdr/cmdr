@@ -96,7 +96,7 @@ async fn classify(volume_id: &str) -> Classified {
         // report the typed `NotConnected` refusal.
         return Classified::FallThrough;
     };
-    let mount_root = volume.root().to_path_buf();
+    let mount_root = volume.root().as_std_legacy().to_path_buf();
     let backend = volume.backend_kind();
 
     let probe_root = mount_root.clone();

@@ -2,6 +2,7 @@
 //! parent's listing reports it as a link, and [`Volume::rename`] moves the link
 //! itself.
 
+use crate::app_path::AppPath;
 use std::path::Path;
 
 use crate::volume::{EntryKind, Volume, VolumeError};
@@ -34,12 +35,15 @@ pub async fn assert_a_link_to_a_folder_moves_as_the_link(
 ) {
     let parent = link.parent().unwrap_or(Path::new(""));
     let link_name = link.file_name().and_then(|n| n.to_str()).expect("the link has a name");
-    let listing = volume.list_directory(parent, None).await.unwrap_or_else(|e| {
-        panic!(
-            "fixture precondition: listing {} must work, got {e:?}",
-            parent.display()
-        )
-    });
+    let listing = volume
+        .list_directory(&AppPath::legacy_unchecked(parent), None)
+        .await
+        .unwrap_or_else(|e| {
+            panic!(
+                "fixture precondition: listing {} must work, got {e:?}",
+                parent.display()
+            )
+        });
     let listed = listing
         .iter()
         .find(|e| e.name == link_name)
@@ -52,7 +56,13 @@ pub async fn assert_a_link_to_a_folder_moves_as_the_link(
         volume.name(),
     );
 
-    let outcome = volume.rename(link, moved_to, false).await;
+    let outcome = volume
+        .rename(
+            &AppPath::legacy_unchecked(link),
+            &AppPath::legacy_unchecked(moved_to),
+            false,
+        )
+        .await;
     assert!(
         outcome.is_ok(),
         "rename({} -> {}) on {} must move the link, got {outcome:?}",
@@ -61,19 +71,22 @@ pub async fn assert_a_link_to_a_folder_moves_as_the_link(
         volume.name(),
     );
     assert!(
-        matches!(volume.entry_kind(link).await, Err(VolumeError::NotFound(_))),
+        matches!(
+            volume.entry_kind(&AppPath::legacy_unchecked(link)).await,
+            Err(VolumeError::NotFound(_))
+        ),
         "the link {} must be gone from its old place",
         link.display(),
     );
     assert_eq!(
-        volume.entry_kind(moved_to).await.ok(),
+        volume.entry_kind(&AppPath::legacy_unchecked(moved_to)).await.ok(),
         Some(EntryKind::Symlink),
         "{} on {} must be the moved LINK, never a moved folder",
         moved_to.display(),
         volume.name(),
     );
     let in_target = volume
-        .list_directory(target, None)
+        .list_directory(&AppPath::legacy_unchecked(target), None)
         .await
         .unwrap_or_else(|e| panic!("the link's target {} must still be there, got {e:?}", target.display()));
     assert!(

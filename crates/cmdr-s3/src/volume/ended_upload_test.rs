@@ -8,6 +8,7 @@
 //! come out as the name being taken, with the other writer's object kept and
 //! no upload left.
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::time::Duration;
 
@@ -28,7 +29,7 @@ async fn a_create_new_whose_upload_another_writer_ended_is_refused_as_taken() {
     let length = source.total_size();
     let outcome = volume
         .write_from_stream(
-            &volume.root().join("raced.bin"),
+            &AppPath::legacy_unchecked(&volume.root().as_std_legacy().join("raced.bin")),
             WriteMode::CreateNew,
             length,
             Box::new(source),

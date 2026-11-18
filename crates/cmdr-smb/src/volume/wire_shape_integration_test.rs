@@ -26,6 +26,7 @@
 use super::read_stream::InlineReadStream;
 use super::test_support::*;
 use super::*;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::{StreamLength, WriteMode};
 
 // ── The hinted read: one sized frame ───────────────────────────
@@ -45,15 +46,19 @@ async fn smb_integration_a_hinted_read_leaves_as_one_compound_frame() {
     let vol = make_counting_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let data: Vec<u8> = (0..=255u8).cycle().take(128 * 1024).collect();
     let path = format!("{}/hinted.bin", dir);
-    vol.create_file(Path::new(&path), &data).await.unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(Path::new(&path)), &data)
+        .await
+        .unwrap();
 
     let (requests_before, compounds_before) = request_counts(&vol).await;
     let stream = vol
-        .open_read_stream_with_hint(Path::new(&path), Some(data.len() as u64))
+        .open_read_stream_with_hint(&AppPath::legacy_unchecked(Path::new(&path)), Some(data.len() as u64))
         .await
         .unwrap();
     let got = drain(stream).await;
@@ -98,7 +103,9 @@ async fn smb_integration_the_compound_read_stops_at_one_download_chunk() {
     let vol = make_counting_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let chunk = smb2::DOWNLOAD_CHUNK_SIZE as usize;
     let TransferLease { conn, .. } = vol.transfer_lease().await.unwrap();
@@ -113,11 +120,13 @@ async fn smb_integration_the_compound_read_stops_at_one_download_chunk() {
     ] {
         let data: Vec<u8> = (0..=255u8).cycle().take(size).collect();
         let path = format!("{}/boundary-{size}.bin", dir);
-        vol.create_file(Path::new(&path), &data).await.unwrap();
+        vol.create_file(&AppPath::legacy_unchecked(Path::new(&path)), &data)
+            .await
+            .unwrap();
 
         let (requests_before, compounds_before) = request_counts(&vol).await;
         let mut stream = vol
-            .open_read_stream_with_hint(Path::new(&path), Some(size as u64))
+            .open_read_stream_with_hint(&AppPath::legacy_unchecked(Path::new(&path)), Some(size as u64))
             .await
             .unwrap();
         let mut got = Vec::new();
@@ -155,13 +164,22 @@ async fn smb_integration_a_measured_fast_link_compounds_a_multi_chunk_file() {
     let vol = make_counting_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     // Any download of two or more chunks measures the link.
     let warm_up: Vec<u8> = (0..=255u8).cycle().take(8 * 1024 * 1024).collect();
     let warm_up_path = format!("{}/warm-up.bin", dir);
-    vol.create_file(Path::new(&warm_up_path), &warm_up).await.unwrap();
-    drain(vol.open_read_stream(Path::new(&warm_up_path)).await.unwrap()).await;
+    vol.create_file(&AppPath::legacy_unchecked(Path::new(&warm_up_path)), &warm_up)
+        .await
+        .unwrap();
+    drain(
+        vol.open_read_stream(&AppPath::legacy_unchecked(Path::new(&warm_up_path)))
+            .await
+            .unwrap(),
+    )
+    .await;
 
     let size = 2 * 1024 * 1024;
     let TransferLease { conn, .. } = vol.transfer_lease().await.unwrap();
@@ -173,11 +191,13 @@ async fn smb_integration_a_measured_fast_link_compounds_a_multi_chunk_file() {
 
     let data: Vec<u8> = (0..=255u8).cycle().take(size).collect();
     let path = format!("{}/two-mib.bin", dir);
-    vol.create_file(Path::new(&path), &data).await.unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(Path::new(&path)), &data)
+        .await
+        .unwrap();
 
     let (requests_before, compounds_before) = request_counts(&vol).await;
     let stream = vol
-        .open_read_stream_with_hint(Path::new(&path), Some(size as u64))
+        .open_read_stream_with_hint(&AppPath::legacy_unchecked(Path::new(&path)), Some(size as u64))
         .await
         .unwrap();
     let got = drain(stream).await;
@@ -226,14 +246,21 @@ async fn smb_integration_a_streamed_read_ends_before_the_close_is_answered() {
     let vol = make_slow_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     // Two chunks, so it streams on this cold connection.
     let data: Vec<u8> = (0..=255u8).cycle().take(1024 * 1024).collect();
     let path = format!("{}/two-chunks.bin", dir);
-    vol.create_file(Path::new(&path), &data).await.unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(Path::new(&path)), &data)
+        .await
+        .unwrap();
 
-    let mut stream = vol.open_read_stream(Path::new(&path)).await.unwrap();
+    let mut stream = vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
+        .await
+        .unwrap();
     let mut got = Vec::new();
     let mut last_chunk_at = None;
     while let Some(chunk) = stream.next_chunk().await {
@@ -263,7 +290,9 @@ async fn smb_integration_a_single_shot_write_leaves_as_one_compound_frame() {
     let vol = make_counting_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let data = vec![0xABu8; 4096];
     let size = data.len() as u64;
@@ -276,7 +305,7 @@ async fn smb_integration_a_single_shot_write_leaves_as_one_compound_frame() {
     let (requests_before, compounds_before) = request_counts(&vol).await;
     let written = vol
         .write_from_stream(
-            Path::new(&smb_path),
+            &AppPath::legacy_unchecked(Path::new(&smb_path)),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             Box::new(InlineReadStream::new(data.clone(), None)),
@@ -302,14 +331,17 @@ async fn smb_integration_a_single_shot_write_leaves_as_one_compound_frame() {
 
     // The bytes are at the FINAL name the moment the write returns — no temp,
     // nothing to land.
-    let mut stream = vol.open_read_stream(Path::new(&smb_path)).await.unwrap();
+    let mut stream = vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&smb_path)))
+        .await
+        .unwrap();
     let mut read_back = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         read_back.extend_from_slice(&chunk);
     }
     assert_eq!(read_back, data);
     let names: Vec<String> = vol
-        .list_directory(Path::new(&dir), None)
+        .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
         .await
         .unwrap()
         .into_iter()
@@ -329,7 +361,9 @@ async fn smb_integration_a_dated_single_shot_write_adds_one_frame_for_its_date()
     let vol = make_counting_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let data = vec![0xABu8; 4096];
     let size = data.len() as u64;
@@ -338,7 +372,7 @@ async fn smb_integration_a_dated_single_shot_write_adds_one_frame_for_its_date()
     let smb_path = format!("{}/one-shot-dated.bin", dir);
     let (requests_before, compounds_before) = request_counts(&vol).await;
     vol.write_from_stream(
-        Path::new(&smb_path),
+        &AppPath::legacy_unchecked(Path::new(&smb_path)),
         WriteMode::CreateOrReplace,
         StreamLength::Known(size),
         Box::new(InlineReadStream::new(data, Some(date))),
@@ -355,7 +389,11 @@ async fn smb_integration_a_dated_single_shot_write_adds_one_frame_for_its_date()
         (3, 12),
         "a dated one-shot write must add exactly one compound frame for its date, with no other loose round trips"
     );
-    let listed = vol.get_metadata(Path::new(&smb_path)).await.unwrap().modified_at;
+    let listed = vol
+        .get_metadata(&AppPath::legacy_unchecked(Path::new(&smb_path)))
+        .await
+        .unwrap()
+        .modified_at;
     assert_eq!(
         listed,
         Some(date_secs),
@@ -417,7 +455,9 @@ async fn smb_integration_a_staged_write_over_the_quick_write_limit_streams() {
     let vol = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     let data: Vec<u8> = (0..=252u8).cycle().take(1024 * 1024).collect();
     let size = data.len() as u64;
     let TransferLease { conn, .. } = vol.transfer_lease().await.unwrap();
@@ -434,7 +474,7 @@ async fn smb_integration_a_staged_write_over_the_quick_write_limit_streams() {
     );
     let written = vol
         .write_from_stream(
-            Path::new(&temp),
+            &AppPath::legacy_unchecked(Path::new(&temp)),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             Box::new(InlineReadStream::new(data.clone(), None)),
@@ -448,7 +488,15 @@ async fn smb_integration_a_staged_write_over_the_quick_write_limit_streams() {
         conn.upload_rate_hint().is_some(),
         "the write must have streamed as two WRITEs, which leave the uplink's rate on the connection"
     );
-    assert_eq!(drain(vol.open_read_stream(Path::new(&temp)).await.unwrap()).await, data);
+    assert_eq!(
+        drain(
+            vol.open_read_stream(&AppPath::legacy_unchecked(Path::new(&temp)))
+                .await
+                .unwrap()
+        )
+        .await,
+        data
+    );
 
     ensure_clean(&vol, &dir).await;
 }
@@ -464,7 +512,9 @@ async fn smb_integration_a_warm_uplink_lifts_the_promise_and_the_promised_write_
     let vol = make_counting_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     let data: Vec<u8> = (0..=240u8).cycle().take(4 * 1024 * 1024).collect();
     let size = data.len() as u64;
@@ -484,7 +534,7 @@ async fn smb_integration_a_warm_uplink_lifts_the_promise_and_the_promised_write_
     for _ in 0..5 {
         let warm: Vec<u8> = vec![0x3C; 8 * 1024 * 1024];
         vol.write_from_stream(
-            Path::new(&temp),
+            &AppPath::legacy_unchecked(Path::new(&temp)),
             WriteMode::CreateOrReplace,
             StreamLength::Known(warm.len() as u64),
             Box::new(InlineReadStream::new(warm, None)),
@@ -503,7 +553,7 @@ async fn smb_integration_a_warm_uplink_lifts_the_promise_and_the_promised_write_
     let (requests_before, compounds_before) = request_counts(&vol).await;
     let written = vol
         .write_from_stream(
-            Path::new(&path),
+            &AppPath::legacy_unchecked(Path::new(&path)),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             Box::new(InlineReadStream::new(data.clone(), None)),
@@ -519,7 +569,15 @@ async fn smb_integration_a_warm_uplink_lifts_the_promise_and_the_promised_write_
         (2, 9),
         "the promised write must leave as ONE compound frame (plus the post-write stat)"
     );
-    assert_eq!(drain(vol.open_read_stream(Path::new(&path)).await.unwrap()).await, data);
+    assert_eq!(
+        drain(
+            vol.open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
+                .await
+                .unwrap()
+        )
+        .await,
+        data
+    );
 
     ensure_clean(&vol, &dir).await;
 }
@@ -536,10 +594,15 @@ async fn smb_integration_copy_concurrency_stays_within_the_credit_window() {
     let requested = vol.inner.host().settings().max_concurrent_operations(BACKEND);
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     // Any op clones the session, which is where the window's capacity is measured.
-    let _ = vol.list_directory(Path::new(&dir), None).await.unwrap();
+    let _ = vol
+        .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
+        .await
+        .unwrap();
 
     let slots = vol.max_concurrent_ops();
     assert!(
@@ -570,7 +633,9 @@ async fn credit_capped_volume(proxy: &credit_cap_proxy::CreditCapProxy) -> SmbVo
     .expect("connecting through the credit-cap proxy");
     // A few round trips, so the server has had a chance to decline growing the
     // window and smb2 knows its ceiling.
-    let _ = vol.list_directory(Path::new(""), None).await;
+    let _ = vol
+        .list_directory(&AppPath::legacy_unchecked(Path::new("")), None)
+        .await;
     let TransferLease { conn, .. } = vol.transfer_lease().await.unwrap();
     let ceiling = conn.credit_ceiling().expect("smb2 has seen the window stop growing");
     assert!(ceiling <= 64, "the proxy caps the window at 64, smb2 saw {ceiling}");
@@ -582,7 +647,10 @@ async fn credit_capped_volume(proxy: &credit_cap_proxy::CreditCapProxy) -> SmbVo
 async fn seed_five_mib(direct: &SmbVolume, dir: &str) -> (String, Vec<u8>) {
     let data: Vec<u8> = (0..=255u8).cycle().take(5 * 1024 * 1024).collect();
     let path = format!("{}/five-mib.bin", dir);
-    direct.create_file(Path::new(&path), &data).await.unwrap();
+    direct
+        .create_file(&AppPath::legacy_unchecked(Path::new(&path)), &data)
+        .await
+        .unwrap();
     (path, data)
 }
 
@@ -600,11 +668,19 @@ async fn smb_integration_a_hinted_read_the_credit_window_cant_fund_streams_inste
     let direct = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&direct, &dir).await;
-    direct.create_directory(Path::new(&dir)).await.unwrap();
+    direct
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     let (path, data) = seed_five_mib(&direct, &dir).await;
 
     // Warm the link, so the rate alone would say "one READ".
-    drain(vol.open_read_stream(Path::new(&path)).await.unwrap()).await;
+    drain(
+        vol.open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
+            .await
+            .unwrap(),
+    )
+    .await;
     let TransferLease { conn, .. } = vol.transfer_lease().await.unwrap();
     assert!(
         conn.quick_read_limit() < data.len() as u64,
@@ -614,7 +690,7 @@ async fn smb_integration_a_hinted_read_the_credit_window_cant_fund_streams_inste
 
     let started = std::time::Instant::now();
     let mut stream = vol
-        .open_read_stream_with_hint(Path::new(&path), Some(data.len() as u64))
+        .open_read_stream_with_hint(&AppPath::legacy_unchecked(Path::new(&path)), Some(data.len() as u64))
         .await
         .expect("an unfundable compound read must fall through to streaming");
     assert!(
@@ -655,7 +731,10 @@ async fn smb_integration_a_write_the_credit_window_cant_fund_is_staged_and_strea
     let direct = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&direct, &dir).await;
-    direct.create_directory(Path::new(&dir)).await.unwrap();
+    direct
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     let data: Vec<u8> = (0..=250u8).cycle().take(5 * 1024 * 1024).collect();
     let size = data.len() as u64;
 
@@ -680,7 +759,7 @@ async fn smb_integration_a_write_the_credit_window_cant_fund_is_staged_and_strea
     );
     let written = vol
         .write_from_stream(
-            Path::new(&temp),
+            &AppPath::legacy_unchecked(Path::new(&temp)),
             WriteMode::CreateOrReplace,
             StreamLength::Known(size),
             Box::new(InlineReadStream::new(data.clone(), None)),
@@ -690,7 +769,13 @@ async fn smb_integration_a_write_the_credit_window_cant_fund_is_staged_and_strea
         .expect("a staged write streams through a small window");
     assert_eq!(written.bytes, size);
     assert_eq!(
-        drain(direct.open_read_stream(Path::new(&temp)).await.unwrap()).await,
+        drain(
+            direct
+                .open_read_stream(&AppPath::legacy_unchecked(Path::new(&temp)))
+                .await
+                .unwrap()
+        )
+        .await,
         data
     );
 
@@ -712,7 +797,10 @@ async fn smb_integration_a_refused_frame_to_a_final_name_writes_nothing_there() 
     let direct = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&direct, &dir).await;
-    direct.create_directory(Path::new(&dir)).await.unwrap();
+    direct
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
 
     for mode in [WriteMode::CreateNew, WriteMode::CreateOrReplace] {
         let data = vec![0x5Au8; 5 * 1024 * 1024];
@@ -720,7 +808,7 @@ async fn smb_integration_a_refused_frame_to_a_final_name_writes_nothing_there() 
         let started = std::time::Instant::now();
         let result = vol
             .write_from_stream(
-                Path::new(&final_name),
+                &AppPath::legacy_unchecked(Path::new(&final_name)),
                 mode,
                 StreamLength::Known(data.len() as u64),
                 Box::new(InlineReadStream::new(data, None)),
@@ -738,7 +826,7 @@ async fn smb_integration_a_refused_frame_to_a_final_name_writes_nothing_there() 
             started.elapsed()
         );
         let names: Vec<String> = direct
-            .list_directory(Path::new(&dir), None)
+            .list_directory(&AppPath::legacy_unchecked(Path::new(&dir)), None)
             .await
             .unwrap()
             .into_iter()
@@ -765,16 +853,22 @@ async fn smb_integration_a_refused_frame_to_a_taken_final_name_leaves_the_file_t
     let direct = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&direct, &dir).await;
-    direct.create_directory(Path::new(&dir)).await.unwrap();
+    direct
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     let theirs = b"another writer's file".to_vec();
     let final_name = format!("{}/taken.bin", dir);
-    direct.create_file(Path::new(&final_name), &theirs).await.unwrap();
+    direct
+        .create_file(&AppPath::legacy_unchecked(Path::new(&final_name)), &theirs)
+        .await
+        .unwrap();
 
     for mode in [WriteMode::CreateNew, WriteMode::CreateOrReplace] {
         let data = vec![0xA5u8; 5 * 1024 * 1024];
         let result = vol
             .write_from_stream(
-                Path::new(&final_name),
+                &AppPath::legacy_unchecked(Path::new(&final_name)),
                 mode,
                 StreamLength::Known(data.len() as u64),
                 Box::new(InlineReadStream::new(data, None)),
@@ -784,7 +878,13 @@ async fn smb_integration_a_refused_frame_to_a_taken_final_name_leaves_the_file_t
 
         assert!(result.is_err(), "{mode:?}: the frame must be refused, got {result:?}");
         assert_eq!(
-            drain(direct.open_read_stream(Path::new(&final_name)).await.unwrap()).await,
+            drain(
+                direct
+                    .open_read_stream(&AppPath::legacy_unchecked(Path::new(&final_name)))
+                    .await
+                    .unwrap()
+            )
+            .await,
             theirs,
             "{mode:?}: a refused frame must leave the other writer's file untouched"
         );
@@ -805,11 +905,14 @@ async fn smb_integration_a_create_new_temp_the_window_cant_frame_streams_without
     let direct = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&direct, &dir).await;
-    direct.create_directory(Path::new(&dir)).await.unwrap();
+    direct
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     let temp_name = |tag: &str| format!("{}/five-mib.bin{}{}", dir, cmdr_fs::staging::STAGING_TEMP_MARKER, tag);
     let (taken, free) = (temp_name("taken"), temp_name("free"));
     direct
-        .create_file(Path::new(&taken), b"someone else's temp")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&taken)), b"someone else's temp")
         .await
         .unwrap();
     let data: Vec<u8> = (0..=250u8).cycle().take(5 * 1024 * 1024).collect();
@@ -841,7 +944,10 @@ async fn smb_integration_a_prefetch_the_credit_window_cant_fund_streams_on_the_m
     let direct = make_docker_volume().await;
     let dir = test_dir_name();
     ensure_clean(&direct, &dir).await;
-    direct.create_directory(Path::new(&dir)).await.unwrap();
+    direct
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     let (path, data) = seed_five_mib(&direct, &dir).await;
 
     vol.open_scan_pool().await;
@@ -871,22 +977,31 @@ async fn smb_integration_a_delete_is_one_compound_frame_for_a_file_and_a_folder(
     let vol = make_counting_volume().await;
     let dir = test_dir_name();
     ensure_clean(&vol, &dir).await;
-    vol.create_directory(Path::new(&dir)).await.unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .unwrap();
     let file = format!("{dir}/gone.txt");
     let folder = format!("{dir}/empty");
-    vol.create_file(Path::new(&file), b"bye").await.unwrap();
-    vol.create_directory(Path::new(&folder)).await.unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(Path::new(&file)), b"bye")
+        .await
+        .unwrap();
+    vol.create_directory(&AppPath::legacy_unchecked(Path::new(&folder)))
+        .await
+        .unwrap();
 
     for path in [&file, &folder] {
         let (requests_before, compounds_before) = request_counts(&vol).await;
-        vol.delete(Path::new(path)).await.unwrap();
+        vol.delete(&AppPath::legacy_unchecked(Path::new(path))).await.unwrap();
         let (requests_after, compounds_after) = request_counts(&vol).await;
         assert_eq!(
             (compounds_after - compounds_before, requests_after - requests_before),
             (1, 3),
             "deleting {path} must be ONE CREATE+SET_INFO+CLOSE frame"
         );
-        assert!(!vol.exists(Path::new(path)).await, "{path} is gone");
+        assert!(
+            !vol.exists(&AppPath::legacy_unchecked(Path::new(path))).await,
+            "{path} is gone"
+        );
     }
 
     ensure_clean(&vol, &dir).await;
