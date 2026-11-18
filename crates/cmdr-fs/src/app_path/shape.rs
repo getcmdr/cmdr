@@ -116,11 +116,14 @@ pub(super) fn components_for(text: &str, flavor: super::PathFlavor) -> Component
     };
     let is_sep = |b: u8| b == b'/' || (windows && b == b'\\');
     let after_bytes = after.as_bytes();
-    let rooted = match after_bytes.first() {
+    let physical_root = match after_bytes.first() {
         Some(&b) if verbatim => b == b'\\',
         Some(&b) => is_sep(b),
         None => false,
     };
+    // As std: a UNC or device prefix implies a root, a drive or verbatim one doesn't.
+    let implied_root = matches!(prefix, Some(Prefix::Unc(..) | Prefix::DeviceNs(_)));
+    let rooted = physical_root || implied_root;
     let second = if rooted {
         Some(Component::RootDir)
     } else if prefix.is_none()
@@ -144,46 +147,68 @@ pub(super) fn components_for(text: &str, flavor: super::PathFlavor) -> Component
 }
 
 /// The prefix at the start of `text` as a Windows path, the text after it, and whether it's
-/// a verbatim one (where only `\` separates, and `.` is a name).
+/// a verbatim one (where only `\` separates, and `.` is a name). Mirrors std's
+/// `parse_prefix` (Rust 1.100): a leading `\\` takes either separator, a verbatim `\\?\` only
+/// backslashes, `UNC` is matched exactly, and a UNC prefix needs both a server and a share.
 fn windows_prefix(text: &str) -> (Option<Prefix<'_>>, &str, bool) {
     let is_sep = |b: u8| b == b'/' || b == b'\\';
     let bytes = text.as_bytes();
-    let until = |s: &str, sep: &dyn Fn(u8) -> bool| s.bytes().position(sep).unwrap_or(s.len());
-    if let Some(rest) = text.strip_prefix(r"\\?\") {
-        if rest.get(..4).is_some_and(|head| head.eq_ignore_ascii_case(r"UNC\")) {
-            let after = &rest[4..];
-            let server_end = until(after, &|b| b == b'\\');
-            let server = &after[..server_end];
-            let after = after.get(server_end + 1..).unwrap_or("");
-            let share_end = until(after, &|b| b == b'\\');
+    // The component up to the next separator (only `\` when verbatim), and the text after
+    // that separator.
+    let next = |s: &'_ str, verbatim: bool| -> (usize, usize) {
+        let end = s
+            .bytes()
+            .position(|b| b == b'\\' || (!verbatim && b == b'/'))
+            .unwrap_or(s.len());
+        (end, (end + 1).min(s.len()))
+    };
+    if bytes.len() >= 2 && is_sep(bytes[0]) && is_sep(bytes[1]) {
+        if let Some(rest) = text.strip_prefix(r"\\?\") {
+            let unc = rest.get(..4).is_some_and(|head| head == r"UNC\" || head == "UNC/");
+            if unc {
+                let after = &rest[4..];
+                let (server_end, share_at) = next(after, true);
+                let share_and_rest = &after[share_at..];
+                let (share_end, _) = next(share_and_rest, true);
+                let server = &after[..server_end];
+                let consumed = if share_at > server_end {
+                    share_at + share_end
+                } else {
+                    server_end
+                };
+                return (
+                    Some(Prefix::VerbatimUnc(
+                        server,
+                        &share_and_rest[..share_end.min(share_and_rest.len())],
+                    )),
+                    &after[consumed.min(after.len())..],
+                    true,
+                );
+            }
+            let rb = rest.as_bytes();
+            if rb.len() >= 2 && rb[0].is_ascii_alphabetic() && rb[1] == b':' && rb.get(2).is_none_or(|&b| b == b'\\') {
+                return (Some(Prefix::VerbatimDisk(rb[0].to_ascii_uppercase())), &rest[2..], true);
+            }
+            let (end, _) = next(rest, true);
+            return (Some(Prefix::Verbatim(&rest[..end])), &rest[end..], true);
+        }
+        if bytes.len() >= 4 && bytes[2] == b'.' && is_sep(bytes[3]) {
+            let rest = &text[4..];
+            let (end, _) = next(rest, false);
+            return (Some(Prefix::DeviceNs(&rest[..end])), &rest[end..], false);
+        }
+        let after = &text[2..];
+        let (server_end, share_at) = next(after, false);
+        let share_and_rest = &after[share_at..];
+        let (share_end, _) = next(share_and_rest, false);
+        if server_end > 0 && share_at > server_end && share_end > 0 {
             return (
-                Some(Prefix::VerbatimUnc(server, &after[..share_end])),
-                &after[share_end..],
-                true,
+                Some(Prefix::Unc(&after[..server_end], &share_and_rest[..share_end])),
+                &share_and_rest[share_end..],
+                false,
             );
         }
-        let rb = rest.as_bytes();
-        if rb.len() >= 2 && rb[0].is_ascii_alphabetic() && rb[1] == b':' && rb.get(2).is_none_or(|&b| b == b'\\') {
-            return (Some(Prefix::VerbatimDisk(rb[0].to_ascii_uppercase())), &rest[2..], true);
-        }
-        let end = until(rest, &|b| b == b'\\');
-        return (Some(Prefix::Verbatim(&rest[..end])), &rest[end..], true);
-    }
-    if let Some(rest) = text.strip_prefix(r"\\.\") {
-        let end = until(rest, &is_sep);
-        return (Some(Prefix::DeviceNs(&rest[..end])), &rest[end..], false);
-    }
-    if bytes.len() > 2 && is_sep(bytes[0]) && is_sep(bytes[1]) && !is_sep(bytes[2]) {
-        let after = &text[2..];
-        let server_end = until(after, &is_sep);
-        let server = &after[..server_end];
-        let after = after.get(server_end + 1..).unwrap_or("");
-        let share_end = until(after, &is_sep);
-        return (
-            Some(Prefix::Unc(server, &after[..share_end])),
-            &after[share_end..],
-            false,
-        );
+        return (None, text, false);
     }
     if bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
         return (Some(Prefix::Disk(bytes[0].to_ascii_uppercase())), &text[2..], false);

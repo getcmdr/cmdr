@@ -420,9 +420,19 @@ fn a_listed_escaped_name_lands_on_its_own_native_name() {
         .expect("native")
         .into_owned();
     assert_eq!(native, b"/dest/caf\xe9");
-    // A literal plane-16 code point a host's `OsStr` holds as text is escaped as literal.
+    // A literal plane-16 code point a host's `OsStr` holds as text is escaped as literal, in
+    // this host's alphabet.
     let literal = AppNameBuf::from_native_os(std::ffi::OsStr::new("caf\u{10FEE9}")).expect("a name");
     assert_ne!(literal.as_app_name(), listed);
+    if Namer::HOST == Namer::Units {
+        let units = win("C:/dest")
+            .join(&literal)
+            .expect("joins")
+            .to_native_windows()
+            .expect("native");
+        assert_eq!(units, wide("\\\\?\\C:\\dest\\caf\u{10FEE9}"));
+        return;
+    }
     let back = dest
         .join(&literal)
         .expect("joins")
@@ -642,7 +652,9 @@ fn a_scheme_root_is_one_component() {
 fn equality_follows_the_hosts_path_rules() {
     let bridged = |text: &str| AppPath::legacy_unchecked(Path::new(text)).into_owned();
     let windows = PathFlavor::HOST == PathFlavor::Windows;
-    assert_eq!(bridged("//Users") == bridged("/Users"), !windows);
+    // `//Users` is no share on either host (std needs a server AND a share).
+    assert!(bridged("//Users") == bridged("/Users"));
+    assert_eq!(bridged("//Users/x") == bridged("/Users/x"), !windows);
     assert_eq!(win("//srv/share/x") == posix("/srv/share/x"), !windows);
     assert_eq!(bridged(r"C:\Users\x") == win("C:/Users/x"), windows);
     assert_eq!(bridged(r"C:\Users\x\") == bridged(r"C:\Users\x"), windows);
