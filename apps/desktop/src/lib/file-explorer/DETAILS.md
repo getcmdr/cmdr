@@ -92,7 +92,7 @@ fallback contract, and the snapshot-pane note.
 
 ### Operation lifecycle
 
-- **Snapshot**: when an operation is confirmed, FilePane snapshots selected file names into `operationSelectedNames` (or
+- **Snapshot**: when an operation is confirmed, FilePane snapshots selected filenames into `operationSelectedNames` (or
   `'all'` sentinel if all selected)
 - **Diff-driven adjustment**: synchronous row remapping plus guarded operation-name resolution. The applied-row protocol
   and async tokens live in `pane/DETAILS.md` § Compare directories.
@@ -108,7 +108,7 @@ fallback contract, and the snapshot-pane note.
   runs operations on other lanes at once, and one finishing a same-named file deselected this pane's row. An event that
   beats the start command's answer (`isForegroundClaimPending()`) waits for the name, then is kept or dropped
   (`pane/listing-diff-sync.svelte.ts`). A ⌘A operation (`'all'` sentinel) deselects the same way: each event finds its
-  own row by file name, so the snapshot only has to exist. The selection stays an explicit `SvelteSet`, so leaving "all"
+  own row by filename, so the snapshot only has to exist. The selection stays an explicit `SvelteSet`, so leaving "all"
   costs one O(1) delete per finished item.
 - **Clear on complete/error**: safety net clears all selection on the source pane
 - **Cancel behavior**: selection reflects survivors. For `'all'` sentinel: calls `selectAll()` (move/delete/trash) or
@@ -355,7 +355,7 @@ For the dialog-side wiring see `../search/CLAUDE.md`.
 "Open with" on a file inside an archive or a `.git` snapshot runs entirely in Rust (the native context menu), and it has
 to copy the file out before an app can open it. When that copy can't be made, Rust emits `open-with-copy-refused` with a
 typed reason, and this bridge (mounted in `routes/(main)/window-services.ts`) words it as a warning toast, keyed per
-file name. One message per reason (`fileExplorer.openWith.copyRefused.*`), chosen by an exhaustive switch on
+filename. One message per reason (`fileExplorer.openWith.copyRefused.*`), chosen by an exhaustive switch on
 `reason.kind`, ❌ never by the backend's message. `tooLarge` alone also reads the typed `source`: a file in a repo's
 history gets `tooLargeInRepoHistory`, since "from inside the archive" would be wrong there. When the launch goes ahead,
 `open-with-copy-launched` (first copy's name, copy count, app) becomes an info toast,

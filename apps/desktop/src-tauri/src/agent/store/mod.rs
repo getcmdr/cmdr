@@ -52,7 +52,7 @@ pub use search::{ConversationSearchHit, SnippetPart, sanitize_fts_query, search_
 pub use turns::{TurnContext, row_and_rest_of_turn, turn_context, turn_opener_at};
 pub use wake_place::WakePlace;
 
-/// The durable store's file name in the app data dir. Peer to `operation-log.db`.
+/// The durable store's filename in the app data dir. Peer to `operation-log.db`.
 pub const MAIN_DB_FILE: &str = "main.db";
 
 /// Resolve the `main.db` path inside `data_dir`.

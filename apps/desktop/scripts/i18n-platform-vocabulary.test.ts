@@ -18,6 +18,9 @@
  * rebind; a typed glyph shows a Mac key to Windows and Linux users and goes stale
  * the moment the user rebinds. A sentence that names the glyphs themselves keeps
  * them in a `macos` branch.
+ *
+ * A few words are one spelling on every OS ("filename", never "file name"), so
+ * `everyOsWrongWords` reads every branch, macOS included, and the `@key` metadata.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -54,6 +57,25 @@ const LINUX_WRONG_WORDS: readonly WordRule[] = [
   { rule: '“Recycle Bin” on Linux: “Trash”', pattern: /\brecycle bin\b/i },
   { rule: '“disconnect” on Linux: a network mount is unmounted', pattern: /\bdisconnect\b/i },
 ]
+
+/**
+ * Words Cmdr spells one way on every OS, in every branch and every `@key` description
+ * (style guide § "Platform vocabulary"). Apple writes "filename" and Microsoft "file
+ * name"; Cmdr picks the one word everywhere so docs and UI agree.
+ */
+const EVERY_OS_WRONG_WORDS: readonly WordRule[] = [
+  { rule: '“file name”: Cmdr writes “filename”, one word, on every OS', pattern: /\bfile names?\b/i },
+]
+
+/** Every every-OS wrong word in `key`'s value (any branch, macOS too) or its `@key` metadata. */
+function everyOsWrongWords(key: string, value: string, metadata: unknown): string[] {
+  const visible = visibleText(key, value)
+  const described = metadata === undefined ? '' : JSON.stringify(metadata)
+  return EVERY_OS_WRONG_WORDS.flatMap(({ rule, pattern }) => [
+    ...(pattern.test(visible) ? [`${key}: ${rule}`] : []),
+    ...(pattern.test(described) ? [`@${key}: ${rule}`] : []),
+  ])
+}
 
 /** `<key> <branch>` → why that branch keeps a word the rules flag. */
 const EXCEPTIONS: Readonly<Record<string, string>> = {
@@ -130,7 +152,28 @@ describe('wrongOsWords', () => {
   })
 })
 
+describe('everyOsWrongWords', () => {
+  it('flags “file name” in any branch and in the @key metadata', () => {
+    const value = '{platform, select, macos {No file names leave your Mac.} other {No filenames leave this computer.}}'
+    const metadata = { description: 'Shown under the File name field.' }
+    expect(everyOsWrongWords('a.b', value, metadata)).toEqual([
+      'a.b: “file name”: Cmdr writes “filename”, one word, on every OS',
+      '@a.b: “file name”: Cmdr writes “filename”, one word, on every OS',
+    ])
+  })
+
+  it('leaves “filename” and a verb “file names” sitting across words alone', () => {
+    expect(everyOsWrongWords('a.b', 'Copy filename', { description: 'The filenames column.' })).toEqual([])
+    expect(everyOsWrongWords('a.b', 'Profile name', undefined)).toEqual([])
+  })
+})
+
 describe('the en catalog', () => {
+  it('writes “filename” as one word, in values and @key descriptions', () => {
+    const { messages, metadata } = loadCatalog('en')
+    expect(Object.entries(messages).flatMap(([key, value]) => everyOsWrongWords(key, value, metadata[key]))).toEqual([])
+  })
+
   it('has no wrong-OS word in a Windows or Linux branch', () => {
     const { messages } = loadCatalog('en')
     const hits = Object.entries(messages)

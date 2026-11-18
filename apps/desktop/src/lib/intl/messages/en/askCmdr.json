@@ -1713,12 +1713,12 @@
   },
   "askCmdr.renameReview.originalName": "Current name",
   "@askCmdr.renameReview.originalName": {
-    "description": "Column heading for the original file name in the bulk rename review table.",
+    "description": "Column heading for the original filename in the bulk rename review table.",
     "screenshot": "ask-cmdr-rename-undo.png"
   },
   "askCmdr.renameReview.newName": "New name",
   "@askCmdr.renameReview.newName": {
-    "description": "Column heading for the proposed file name in the bulk rename review table.",
+    "description": "Column heading for the proposed filename in the bulk rename review table.",
     "screenshot": "ask-cmdr-rename-undo.png"
   },
   "askCmdr.renameReview.whyThisName": "Why this name",

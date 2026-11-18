@@ -115,7 +115,7 @@ async fn listing_dates_honor_the_shared_claim_contract() {
 
 /// The shared `NotFound` payload: a name that isn't in the snapshot reports the
 /// path the caller asked for, which is what the transfer layer renders as the
-/// user's own file name.
+/// user's own filename.
 #[tokio::test]
 async fn not_found_honors_the_shared_path_payload_contract() {
     let (dir, volume) = portal_over_a_repo("not_found");

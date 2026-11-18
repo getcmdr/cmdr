@@ -7,7 +7,7 @@
   },
   "viewer.window.titleSuffix": "{fileName} | Viewer",
   "@viewer.window.titleSuffix": {
-    "description": "Title bar text of the file-viewer window: the file name, then a separator and the word for this window. Keep the pipe separator. Translate \"Viewer\" to the noun for a read-only file viewer.",
+    "description": "Title bar text of the file-viewer window: the filename, then a separator and the word for this window. Keep the pipe separator. Translate \"Viewer\" to the noun for a read-only file viewer.",
     "placeholders": {
       "fileName": "name of the file being viewed (e.g. report.log)"
     },
@@ -446,7 +446,7 @@
   },
   "viewer.statusBar.ariaLabel": "File information",
   "@viewer.statusBar.ariaLabel": {
-    "description": "Accessibility label for the viewer's bottom status bar, which shows the file name, size, line count, and mode.",
+    "description": "Accessibility label for the viewer's bottom status bar, which shows the filename, size, line count, and mode.",
     "screenshot": "viewer-search.png"
   },
   "viewer.statusBar.lineCount": "{count} {count, plural, one {line} other {lines}}",
@@ -723,7 +723,7 @@
   },
   "viewer.saveAs.defaultName": "selection",
   "@viewer.saveAs.defaultName": {
-    "description": "Fallback base file name for the save panel when the open file has no usable name. Becomes e.g. \"selection.selection.txt\". Lowercase, no spaces, safe as a file name.",
+    "description": "Fallback base filename for the save panel when the open file has no usable name. Becomes e.g. \"selection.selection.txt\". Lowercase, no spaces, safe as a filename.",
     "screenshot": "viewer-search.png",
     "screenshotNote": "The file viewer window, pictured here with its find bar open. Your string is part of its chrome (title, toolbar, status bar), one of the file-kind or media labels it shows there, or one of the messages it shows in place of content when a file can’t be loaded."
   },

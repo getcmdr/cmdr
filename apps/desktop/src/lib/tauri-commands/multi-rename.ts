@@ -1,5 +1,5 @@
 // Multi-Rename Tool (⌃M): the session, its preview pages, the read of its files' EXIF and tags, apply, Results,
-// presets, the last settings, and the fields' history. The work and the file names are the backend's (`src-tauri/src/multi_rename/`); these are
+// presets, the last settings, and the fields' history. The work and the filenames are the backend's (`src-tauri/src/multi_rename/`); these are
 // pass-throughs.
 
 import { type UnlistenFn } from '@tauri-apps/api/event'

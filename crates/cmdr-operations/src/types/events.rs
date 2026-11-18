@@ -587,7 +587,7 @@ pub struct CancelRollback {
     pub outcome: CancelRollbackOutcome,
     /// Items undone, counting the ones already in the desired end state.
     pub reversed: u32,
-    /// One group per reason, with the complete count and one example file name.
+    /// One group per reason, with the complete count and one example filename.
     pub skips: Vec<SkipBreakdown>,
     /// Cmdr's own unfinished writes the cleanup couldn't take off the
     /// destination at once, one group per fate. Empty in the ordinary case,

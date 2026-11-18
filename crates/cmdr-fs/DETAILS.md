@@ -941,7 +941,7 @@ both sides read (`LogKind`, `CLOSER`, `RESERVED`, and `markers`, the lexer).
   by its `log_detail` table in a log line), so a `MutationError` detail or a `VolumeError` message that wraps one holds
   it as `ErrorDetail::of(e)`. A site logging the error itself uses `error.log_detail()`, in a `detail=` field (capped,
   keyed the way the frontend's lines are). **Why**: its derived `Debug`, flattened with `format!("{e:?}")` into a detail
-  or logged as `{:?}`, shipped most of a file name holding `, ` (cmdr-reports#103).
+  or logged as `{:?}`, shipped most of a filename holding `, ` (cmdr-reports#103).
 - **Finding the sites**: compile the workspace with a converted type's `Display` (and `Error`) removed; every error left
   is a site that formats it plainly. A log site switches to `LogError`; a site building IPC or technical-detail text
   stays plain on purpose.

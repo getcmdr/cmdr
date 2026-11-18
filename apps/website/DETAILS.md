@@ -140,7 +140,7 @@ was deleted.)
   works when the `rehypeDownloadDropdown` plugin (`src/plugins/download-dropdown.ts`) emits an inline copy into a blog
   post from the `[download](cmdr:download)` marker. That plugin must run after `rehype-external-links` (so its mirror
   links don't get `target="_blank"`) and reads `public/latest.json` directly, building `src/lib/release.ts`'s
-  no-download-base links (direct to `download.getcmdr.com`). Both take file names and sizes from
+  no-download-base links (direct to `download.getcmdr.com`). Both take filenames and sizes from
   `src/lib/release-downloads.ts`, which reads the manifest's `downloads` list (written from the release asset manifest,
   `docs/guides/releasing.md` § The release asset manifest) and falls back to `dmgSizes` for a manifest from before it.
 - **`public/latest.json` is live only in production.** The committed copy is frozen (dev and the check lanes build with
@@ -580,7 +580,7 @@ desktop app writes plain CSS and has no Tailwind.
 
 The website uses three analytics layers. The desktop app separately sends anonymous beta usage analytics: an
 `anal_`-keyed hourly heartbeat (true DAU) plus curated PII-free feature events stored in D1, all behind a tri-state
-opt-out and stripped of file names, paths, queries, and prompts by allowlist. See
+opt-out and stripped of filenames, paths, queries, and prompts by allowlist. See
 `apps/desktop/src-tauri/src/analytics/CLAUDE.md`.
 
 - **Umami** (`Layout.astro`): Cookieless page analytics (pageviews, referrers, geo, UTM). Self-hosted. Script served at

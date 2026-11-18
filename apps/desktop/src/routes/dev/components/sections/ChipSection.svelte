@@ -63,7 +63,7 @@
                 <Chip variant="recent" label="*.jpg" onActivate={() => {}} onContextMenu={() => {}}>
                     {#snippet leading()}<span class="demo-badge" data-glyph="Aa"></span>{/snippet}
                 </Chip>
-                <Chip variant="recent" label="all my very long screenshot file names from last week" onActivate={() => {}}>
+                <Chip variant="recent" label="all my very long screenshot filenames from last week" onActivate={() => {}}>
                     {#snippet leading()}<span class="demo-badge" data-glyph="AI"></span>{/snippet}
                 </Chip>
                 <Chip variant="recent" label="^temp.*\.log$" onActivate={() => {}}>

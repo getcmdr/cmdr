@@ -4,7 +4,7 @@
 //!
 //! Categories and a bucketed count only: which rule kinds the spec used (the
 //! engine's fixed tokens), how many rows the rename took, and the typed outcome.
-//! Never a mask, a search, a replacement, or a file name.
+//! Never a mask, a search, a replacement, or a filename.
 
 use serde_json::{Value, json};
 

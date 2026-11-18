@@ -112,7 +112,7 @@ wording into `terms.json` (and `decisions.md` when the reason is worth keeping).
   drive" where a volume stands beside its drive. Confirm it reads naturally.
 
 - **`ô đổi tên`** (`askCmdr.tool.rename.doing`, `ai.cloudConsent.askCmdr.actions`): English says "rename editor" for the
-  inline field on a file name; no source names it, so this is coined. Confirm it reads naturally.
+  inline field on a filename; no source names it, so this is coined. Confirm it reads naturally.
 - **`soạn tên mới`** (`askCmdr.tool.multiRename.doing`): "working out new names" has no source either; `soạn`
   ("compose") keeps the line from claiming anything got renamed. Confirm it reads naturally.
 - **`chọn từng mục một`** (`operationLog.tree.togglesCapped`, `operationLog.rollback.refusalTooManyToggles`): "select

@@ -320,7 +320,7 @@ impl PostLoopIntent {
 
 /// Builds the pre-known-conflicts bulk-skip set.
 ///
-/// Returns the subset of `sources` whose **file names** appear in
+/// Returns the subset of `sources` whose **filenames** appear in
 /// `config_pre_known_conflicts`, when `config_resolution == Skip`. Empty for
 /// any other resolution. Exposed for the driver tests so they can audit it
 /// independently of the loop (per plan's "Open questions" section).

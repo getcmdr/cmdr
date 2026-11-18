@@ -1,6 +1,6 @@
 # cmdr-collation
 
-How two file names rank: `NameCollator`, one ICU4X collator per locale, and `NameKey`, the prebuilt key a bulk sort
+How two filenames rank: `NameCollator`, one ICU4X collator per locale, and `NameKey`, the prebuilt key a bulk sort
 compares. ICU only, no `tauri`, no state. `cmdr-listing` re-exports `NameCollator`, so the panes, search results, and
 the write engine's tree order (which names it from here, handed the panes' instance) all sort one way.
 

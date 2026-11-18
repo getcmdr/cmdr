@@ -27,11 +27,11 @@ use super::config::McpConfig;
 use super::handler::CmdrMcpHandler;
 use super::port_file::{remove_port_file, write_port_file, write_secret_file};
 
-/// File name written under `<data_dir>` so external readers (CLI, E2E fixtures, agent
+/// Filename written under `<data_dir>` so external readers (CLI, E2E fixtures, agent
 /// helpers) can discover the actual bound port. See `port_file.rs` for the protocol.
 pub const PORT_FILE_NAME: &str = "mcp.port";
 
-/// File name written under `<data_dir>` holding the per-instance bearer token. Written
+/// Filename written under `<data_dir>` holding the per-instance bearer token. Written
 /// 0o600 (owner-only): an attacker who can read it already has the user's filesystem
 /// access, so the token is a real gate against local non-Cmdr processes that bind the
 /// loopback. See `mcp/CLAUDE.md` § "Why localhost only?".

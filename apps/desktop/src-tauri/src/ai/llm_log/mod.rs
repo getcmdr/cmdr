@@ -110,7 +110,7 @@ pub enum JobKind {
 }
 
 impl JobKind {
-    /// The slug prefix that leads every file name for this job.
+    /// The slug prefix that leads every filename for this job.
     fn slug_prefix(self) -> &'static str {
         match self {
             JobKind::AgentChat => "agent-chat",
@@ -178,7 +178,7 @@ pub struct RequestInfo {
     /// How faithful the logged request body is (v1: [`Fidelity::RequestStruct`]).
     pub fidelity: Fidelity,
     /// The latest user message, for the deterministic slug (never written verbatim into the
-    /// file name; sanitized to a few words).
+    /// filename; sanitized to a few words).
     pub user_message: String,
 }
 
@@ -315,7 +315,7 @@ fn file_name(seq: u32, direction: &str, slug: &str) -> String {
 
 /// A deterministic slug: the job prefix plus a few sanitized words of the latest user
 /// message. Lowercased, non-alphanumeric runs collapsed to single dashes, capped to a few
-/// words and a bounded length so it stays a tidy file-name fragment.
+/// words and a bounded length so it stays a tidy filename fragment.
 fn build_slug(job: JobKind, user_message: &str) -> String {
     const MAX_WORDS: usize = 6;
     const MAX_LEN: usize = 48;
@@ -389,7 +389,7 @@ fn scan_max_seq(session_dir: &Path) -> u32 {
     max
 }
 
-/// Parses the leading `NNN` of a log file name (`"007_request_x.json"` → `Some(7)`).
+/// Parses the leading `NNN` of a log filename (`"007_request_x.json"` → `Some(7)`).
 fn leading_seq(name: &str) -> Option<u32> {
     let digits: String = name.chars().take_while(char::is_ascii_digit).collect();
     if digits.is_empty() {

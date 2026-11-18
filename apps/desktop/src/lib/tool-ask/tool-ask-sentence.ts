@@ -1,6 +1,6 @@
 /**
  * The words of a question, from typed facts. Exhaustive, so a new kind of question doesn't compile
- * until it can be said. What goes in the blanks can be anything (a file name, a model's chosen value),
+ * until it can be said. What goes in the blanks can be anything (a filename, a model's chosen value),
  * and it's already plain and bounded by `fact_text` in `tools/ask.rs`. The dialog renders text nodes.
  */
 

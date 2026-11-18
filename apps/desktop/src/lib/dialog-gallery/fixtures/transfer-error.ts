@@ -323,7 +323,7 @@ const perVariant: Record<WriteOperationError['type'], TransferErrorFixture> = {
     error: {
       type: 'invalid_name',
       path: '/Volumes/USB-STICK (FAT32)/notes: draft?.md',
-      message: 'FAT32 file names can’t contain : or ?',
+      message: 'FAT32 filenames can’t contain : or ?',
     },
   },
   delete_pending: {

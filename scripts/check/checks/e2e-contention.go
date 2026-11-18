@@ -443,7 +443,7 @@ func playwrightRerunner(desktopDir string, pid int, baseWaitScale float64) E2ERe
 			args = append(args, "--timeout="+strconv.Itoa(timeoutMs))
 		}
 		// Playwright reads a positional arg as a regex over the test file's full path, so
-		// an anchored, escaped file name selects exactly this spec.
+		// an anchored, escaped filename selects exactly this spec.
 		args = append(args, regexp.QuoteMeta(target.file)+"$")
 
 		// Stage 1 reproduces the original run's budgets exactly, or a pass would mean

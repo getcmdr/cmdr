@@ -116,7 +116,7 @@ const NESTED_DIR: &str = "Projects/cmdr/src-tauri/src/file_system";
 /// A 195-character name. Every dialog that shows a filename gets to prove what it
 /// does when one never fits: the delete list, the transfer source line, the
 /// conflict warnings.
-const VERY_LONG_NAME: &str = "A deliberately very long file name that exists only so the dialogs get to show what they do when a name never fits on one line, including where they truncate it and where they simply overflow.txt";
+const VERY_LONG_NAME: &str = "A deliberately very long filename that exists only so the dialogs get to show what they do when a name never fits on one line, including where they truncate it and where they simply overflow.txt";
 
 /// The tree: `(path relative to the root, byte length)`. Sizes are spread over
 /// four orders of magnitude so the scan tallies, the size column, and the
@@ -135,7 +135,7 @@ const FILES: &[(&str, u64)] = &[
     ("Photos/2026-06 Testville/IMG_2204.jpg", 2_772_992),
     ("Photos/2026-06 Testville/IMG_2205.jpg", 3_106_816),
     ("Photos/2026-06 Testville/IMG_2206.jpg", 2_899_968),
-    // Non-ASCII, both in the folder name and in the file names.
+    // Non-ASCII, both in the folder name and in the filenames.
     ("Photos/2026-07 Åre skidresa/DSC00417.arw", 1_258_291),
     ("Photos/2026-07 Åre skidresa/DSC00418.arw", 1_310_720),
     ("Photos/2026-07 Åre skidresa/Färdplan för veckan.md", 3_820),

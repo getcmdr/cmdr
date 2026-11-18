@@ -257,7 +257,7 @@ pub(super) fn check_force_detach(
 /// The directory-name prefix `TestDir::new("disk_image")` gives every harness image.
 const IMAGE_DIR_PREFIX: &str = "cmdr_disk_image_";
 
-/// The file name `DiskImage::create_and_attach` gives a backing file.
+/// The filename `DiskImage::create_and_attach` gives a backing file.
 const IMAGE_FILE_NAME: &str = "image.dmg";
 
 /// Why an attached image isn't provably this harness's, so it's left alone.

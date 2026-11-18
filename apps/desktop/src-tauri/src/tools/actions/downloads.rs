@@ -20,7 +20,7 @@ use super::{ToolError, ToolResult};
 /// 1. Resolve the latest eligible download via the same code path as the
 ///    Tauri command — typed `GoToLatestError` branches map directly onto
 ///    MCP error responses with descriptive messages.
-/// 2. Hand the parent dir + file name to `go_to_in_pane` (focused pane), the shared
+/// 2. Hand the parent dir + filename to `go_to_in_pane` (focused pane), the shared
 ///    navigate-then-cursor primitive (`../nav.rs`) the OS reveal handler uses too.
 /// 3. Return the absolute path as the tool result so agents can chain on it.
 pub async fn execute_go_to_latest_download<R: Runtime>(app: &AppHandle<R>) -> ToolResult {

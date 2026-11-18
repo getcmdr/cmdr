@@ -10,7 +10,7 @@ import (
 // and one with a `log_detail()` (`WriteOperationError`, logged as `detail={:?}`).
 // Printing one plainly, through `{}` or a derived `{:?}`, hands its
 // paths to the report's regex fallback, which ends a prose path at `, ` and so
-// shipped most of a file name holding a comma (cmdr-reports#103).
+// shipped most of a filename holding a comma (cmdr-reports#103).
 //
 // The scanner has no type checker, so it sees a value's type only where the
 // source spells it: a field, a parameter, or a `let` annotation. A field access

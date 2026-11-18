@@ -84,7 +84,7 @@ bundle cap for Cmdr's own lines.
 ## The marker format (decided here, pending David's review)
 
 - **One opener per kind, one closer, all from U+FDD0–U+FDEF.** Closer `U+FDD1`. Openers: path (kind unknown), path to a
-  file, path to a dir, name (kind unknown), file name, dir name, volume label (shares the volume token domain with
+  file, path to a dir, name (kind unknown), filename, dir name, volume label (shares the volume token domain with
   `share`), host, user. Exact code points are the executor's choice, defined once per language. A single-char opener
   keeps sinks trivial (strip a char range, nothing to parse) and keeps the `{:?}`-escaped form a fixed shape. This
   deviates from the issue's `U+FDD0 <kind> value U+FDD1` sketch on purpose.

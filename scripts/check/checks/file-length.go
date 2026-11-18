@@ -100,7 +100,7 @@ func isTestFile(relPath string) bool {
 }
 
 // hasDirSegment reports whether dir is one of relPath's directory components
-// (the file name itself excluded).
+// (the filename itself excluded).
 func hasDirSegment(relPath, dir string) bool {
 	for _, seg := range strings.Split(path.Dir(relPath), "/") {
 		if seg == dir {

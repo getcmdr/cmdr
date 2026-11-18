@@ -32,7 +32,7 @@ afterAll(() => {
 describe('crash-reporter dialog copy parity (en)', () => {
   it('resolves the static dialog strings', () => {
     expect(tString('crashReporter.dialog.privacyNote')).toBe(
-      'It includes the app version, macOS version, and which part of the code ran into the problem. No file names or personal data.',
+      'It includes the app version, macOS version, and which part of the code ran into the problem. No filenames or personal data.',
     )
     expect(tString('crashReporter.dialog.reportIdLabel')).toBe('Report ID:')
     expect(tString('crashReporter.dialog.reportIdHelp')).toBe('Mention this if you reach out about the issue.')

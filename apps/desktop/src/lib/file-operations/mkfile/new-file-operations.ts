@@ -3,7 +3,7 @@ import { getCursorEntry } from '../cursor-entry'
 
 /**
  * The New file pre-fill: the cursor entry's full filename, extension kept.
- * Empty for a directory (no use as a file name hint) and for `..`.
+ * Empty for a directory (no use as a filename hint) and for `..`.
  */
 export async function getInitialFileName(paneRef: FilePaneAPI | undefined): Promise<string> {
   const entry = await getCursorEntry(paneRef)

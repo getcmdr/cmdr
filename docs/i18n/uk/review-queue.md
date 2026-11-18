@@ -59,7 +59,7 @@ record the outcome in `terms.json` or `decisions.md`).
   «Включити…» (or «Додати», «Враховувати»); «Позначте» for ticking, though позначити is on the select avoid list.
 - **Security advisory** (`updates.toast.readAdvisory`, `whatsNew.securityNotice.readAdvisory*`): «бюлетень» follows a
   tentative ruling.
-- **Cyrillic file name** (`viewer.saveAs.defaultName`): «вибране» or Latin «selection»?
+- **Cyrillic filename** (`viewer.saveAs.defaultName`): «вибране» or Latin «selection»?
 
 ## Tone and phrasing
 

@@ -340,7 +340,7 @@ struct Corpus {
     /// What the copy is handed as its top-level sources: every file for the loose
     /// shapes, the single folder for `Subtree`.
     paths: Vec<PathBuf>,
-    /// The leaf file names, which is what the verification pass and every
+    /// The leaf filenames, which is what the verification pass and every
     /// per-file number in the report are about. ❌ Not `paths.len()`: a subtree
     /// run has one source and hundreds of files.
     file_names: Vec<String>,

@@ -2193,7 +2193,7 @@
   },
   "fileExplorer.fileIcon.sync.synced": "Synced",
   "@fileExplorer.fileIcon.sync.synced": {
-    "description": "Spoken name of the small cloud-status badge on a file icon in the file list, for a file in a cloud-storage folder (iCloud Drive, Dropbox, …) whose local copy matches the cloud. Screen readers read it with the row, next to the file name, so keep it to one or two words. An adjective describing the file’s state."
+    "description": "Spoken name of the small cloud-status badge on a file icon in the file list, for a file in a cloud-storage folder (iCloud Drive, Dropbox, …) whose local copy matches the cloud. Screen readers read it with the row, next to the filename, so keep it to one or two words. An adjective describing the file’s state."
   },
   "fileExplorer.fileIcon.sync.onlineOnly": "Online-only",
   "@fileExplorer.fileIcon.sync.onlineOnly": {
@@ -2428,7 +2428,7 @@
   },
   "fileExplorer.renameConflict.yours": "{name} (yours)",
   "@fileExplorer.renameConflict.yours": {
-    "description": "Header of the card showing the file the user is renaming (the new one) in the rename-conflict comparison. {name} is the file name; \"(yours)\" marks it as the user’s incoming file.",
+    "description": "Header of the card showing the file the user is renaming (the new one) in the rename-conflict comparison. {name} is the filename; \"(yours)\" marks it as the user’s incoming file.",
     "placeholders": {
       "name": "the name of the file being renamed (the user’s file)"
     },
@@ -2436,7 +2436,7 @@
   },
   "fileExplorer.renameConflict.existing": "{name} (existing)",
   "@fileExplorer.renameConflict.existing": {
-    "description": "Header of the card showing the file already in the folder in the rename-conflict comparison. {name} is the file name; \"(existing)\" marks it as the one already there.",
+    "description": "Header of the card showing the file already in the folder in the rename-conflict comparison. {name} is the filename; \"(existing)\" marks it as the one already there.",
     "placeholders": {
       "name": "the name of the existing file already in the folder"
     },

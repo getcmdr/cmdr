@@ -406,7 +406,7 @@
             "items": {
               "type": "string"
             },
-            "description": "File names in the pane's folder, in rename order (what [C] counts by). Defaults to the selection, else the cursor item."
+            "description": "Filenames in the pane's folder, in rename order (what [C] counts by). Defaults to the selection, else the cursor item."
           },
           "nameMask": {
             "type": "string",
@@ -538,7 +538,7 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "File name: creates it directly. Omit to open the naming dialog for a person."
+            "description": "Filename: creates it directly. Omit to open the naming dialog for a person."
           },
           "pane": {
             "type": "string",
@@ -2202,7 +2202,7 @@
                     },
                     "nameGlob": {
                       "type": "string",
-                      "description": "Glob over the file name, such as *.dmg."
+                      "description": "Glob over the filename, such as *.dmg."
                     },
                     "minSizeBytes": {
                       "type": "integer"

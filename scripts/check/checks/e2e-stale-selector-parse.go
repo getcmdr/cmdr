@@ -239,7 +239,7 @@ func isE2ESelIdentByte(c byte) bool {
 
 // e2eSelTokens parses text as a CSS selector list and returns the static class names
 // and data-* attribute names it checks, or nil when the text isn't a selector or names
-// nothing checkable. Attribute values aren't checked: most are runtime data (file names,
+// nothing checkable. Attribute values aren't checked: most are runtime data (filenames,
 // operation ids), and a stale value like a dialog id can survive in a comment anyway.
 func e2eSelTokens(text string) []e2eSelToken {
 	s := strings.TrimSpace(text)
@@ -250,7 +250,7 @@ func e2eSelTokens(text string) []e2eSelToken {
 	if !p.selectorList(false) || p.i != len(p.s) || p.rejected {
 		return nil
 	}
-	// A lone `tag.word` or `${base}.word` is a dotted id (`nav.back`) or a file name
+	// A lone `tag.word` or `${base}.word` is a dotted id (`nav.back`) or a filename
 	// (`a.txt`, `${name}.png`) far more often than a selector.
 	if p.complexes == 1 && len(p.top) == 1 {
 		if shape := string(p.top[0]); shape == "tc" || shape == "ic" {

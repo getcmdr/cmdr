@@ -526,7 +526,7 @@ struct PlannedRows {
 /// is refused here rather than half-applied later.
 ///
 /// A repeated source is keyed by the fold every proposal name uses ([`destination_key`]) on the
-/// file name (the folder is one by then): on a case-insensitive disk `A.png` and `a.png` are
+/// filename (the folder is one by then): on a case-insensitive disk `A.png` and `a.png` are
 /// one file, which would otherwise reach the review as two renames of it, one bound to fail
 /// at apply. The cost, on a case-sensitive disk, is that two files differing only in case
 /// can't share a plan; refusing names the row, so the model splits it.

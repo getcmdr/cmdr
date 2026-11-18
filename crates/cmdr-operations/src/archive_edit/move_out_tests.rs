@@ -408,7 +408,7 @@ async fn move_out_dir_with_a_deep_skipped_child_keeps_that_child_in_the_archive(
 }
 
 /// A destination volume that delegates everything to an inner `InMemoryVolume`
-/// but FAILS `write_from_stream` for one target file name. Used to make exactly
+/// but FAILS `write_from_stream` for one target filename. Used to make exactly
 /// one source of a move-out error while its predecessors land durably, proving
 /// the archive delete drops ONLY the durable prefix.
 struct FailOnNameVolume {

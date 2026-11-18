@@ -290,7 +290,7 @@ pub(super) fn recovered_sibling(orig: &Path) -> PathBuf {
     let name = match (stem, orig.extension()) {
         (Some(stem), Some(ext)) => format!("{stem}{RECOVERED_SUFFIX}.{}", ext.to_string_lossy()),
         (Some(stem), None) => format!("{stem}{RECOVERED_SUFFIX}"),
-        // A path with no file name at all can't be helped; the caller's rename
+        // A path with no filename at all can't be helped; the caller's rename
         // will fail and report where the data actually is.
         (None, _) => format!("cmdr{RECOVERED_SUFFIX}"),
     };

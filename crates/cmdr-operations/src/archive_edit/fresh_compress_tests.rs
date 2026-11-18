@@ -733,7 +733,7 @@ fn assert_refused_before_producing(events: &CollectorEventSink, dest_dir: &Path)
 
 #[tokio::test]
 async fn a_name_the_archive_reader_would_hide_fails_before_compressing() {
-    // `..\evil.txt` is an ordinary macOS file name; inside a zip it reads as
+    // `..\evil.txt` is an ordinary macOS filename; inside a zip it reads as
     // `../evil.txt`, which the reader quarantines (and other tools may extract
     // outside the target folder).
     let source_dir = tempfile::tempdir().expect("tempdir");

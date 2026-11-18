@@ -977,7 +977,7 @@
         }}
     >
         <!-- Dead space standing in for the rows' icon cell, the same trick `FullList`'s
-             header uses, so "Name" starts exactly above the file names rather than
+             header uses, so "Name" starts exactly above the filenames rather than
              above their icons. -->
         <span class="header-icon" aria-hidden="true"></span>
         <SortableHeader
@@ -1207,7 +1207,7 @@
 
     /* Laid out to mirror a row: the same left inset (the scroll surface's gutter PLUS
        `.file-entry`'s own padding), an icon-width spacer, and the same `--spacing-sm`
-       gap. That puts "Name" directly above the file names; the headings after it
+       gap. That puts "Name" directly above the filenames; the headings after it
        spread across the row (see the `:global(.sortable-header)` rule below), each
        left-aligned in its share. The background still runs edge to edge. */
     .header-row {
@@ -1228,7 +1228,7 @@
     }
 
     /* Each heading takes an equal share of the row (`flex: 1`) but sits at the LEFT of
-       its share, so "Name" lands above the file names and the rest read as column
+       its share, so "Name" lands above the filenames and the rest read as column
        headings rather than floating captions. Overrides `SortableHeader`'s own
        centring-agnostic defaults from outside, hence `:global`. */
     /*noinspection CssUnusedSymbol*/

@@ -83,7 +83,7 @@ impl EffectiveSort {
 /// point: a name sorts the same way in a search-results pane as it does in a
 /// folder, because there is one comparator and no copy of it anywhere.
 pub trait SortableEntry {
-    /// The row's own file name (the last path component).
+    /// The row's own filename (the last path component).
     fn name(&self) -> &str;
     /// How this row's name ranks against another's.
     ///

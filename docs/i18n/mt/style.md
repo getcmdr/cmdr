@@ -130,7 +130,7 @@ code-switching decision point); lock each as it's used.
 | drive              | drajv                     | English loan                                                 |
 | settings           | settings                  | Microsoft often keeps English; "issettjar" is attested       |
 | destination folder | fowlder tad-destinazzjoni | note article assimilation: tad-                              |
-| file name          | isem tal-fajl             |                                                              |
+| filename           | isem tal-fajl             |                                                              |
 | name               | isem                      |                                                              |
 | view               | dehra                     | the noun                                                     |
 

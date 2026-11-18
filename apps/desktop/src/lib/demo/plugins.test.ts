@@ -13,7 +13,7 @@ function call(cmd: string, payload: Record<string, unknown> = {}): unknown {
   return handler(payload)
 }
 
-// The store map is module state, so every test loads its own file name.
+// The store map is module state, so every test loads its own filename.
 function load(path: string, defaults?: Record<string, unknown>): number {
   return call('plugin:store|load', { path, options: defaults ? { defaults } : undefined }) as number
 }

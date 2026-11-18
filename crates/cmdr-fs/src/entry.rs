@@ -116,7 +116,7 @@ pub fn get_icon_id(is_dir: bool, is_symlink: bool, name: &str, path: &str) -> St
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct FileEntry {
-    /// The entry's own file name (the last path component).
+    /// The entry's own filename (the last path component).
     pub name: String,
     /// The entry's full path, in the namespace its volume reports.
     pub path: String,

@@ -2811,7 +2811,7 @@
     "chosen": "zurücklegen",
     "confidence": "high",
     "decision": "Papierkorb-Toast: Widerrufen und Zurücklegen",
-    "forms": "trashed items to their old place → zurücklegen (ORTE); old file names back → zurücksetzen (NAMEN), the rename-undo verb",
+    "forms": "trashed items to their old place → zurücklegen (ORTE); old filenames back → zurücksetzen (NAMEN), the rename-undo verb",
     "note": "The English shares one phrase for two reversals; German keeps them apart.",
     "sources": "macOS Finder (N153.1 Put Back → Zurücklegen)"
   },

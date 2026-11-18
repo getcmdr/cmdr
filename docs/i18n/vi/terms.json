@@ -692,7 +692,7 @@
     "chosen": "phần mở rộng Finder",
     "accept": ["phần mở rộng"],
     "confidence": "high",
-    "sources": "macOS pane Mục đăng nhập & Phần mở rộng (errors.provider.pCloudFuse.needsAction); kept apart from the file name ending đuôi tệp"
+    "sources": "macOS pane Mục đăng nhập & Phần mở rộng (errors.provider.pCloudFuse.needsAction); kept apart from the filename ending đuôi tệp"
   },
   "learn-more": {
     "exceptions": {
@@ -2228,7 +2228,7 @@
     "accept": ["beta"],
     "chosen": "mở",
     "confidence": "high",
-    "forms": "entering a server row → Mở (same as menu.file.open); an app name after Mở goes bare (Mở Cmdr), a file name is quoted",
+    "forms": "entering a server row → Mở (same as menu.file.open); an app name after Mở goes bare (Mở Cmdr), a filename is quoted",
     "sources": "macOS AppKit (Mở), Dock.app (OPEN_FILENAME Mở “%@”)"
   },
   "open-beta": {
@@ -3226,10 +3226,10 @@
   },
   "text-editor": {
     "exceptions": {
-      "ai.cloudConsent.askCmdr.actions": "The editor here is the inline field on a file name, not an editor app: ô đổi tên, same as askCmdr.tool.rename.*",
-      "askCmdr.tool.rename.doing": "The rename editor is the inline field on a file name, not an editor app: ô đổi tên",
-      "askCmdr.tool.rename.done": "The rename editor is the inline field on a file name, not an editor app: ô đổi tên",
-      "askCmdr.tool.rename.tried": "The rename editor is the inline field on a file name, not an editor app: ô đổi tên"
+      "ai.cloudConsent.askCmdr.actions": "The editor here is the inline field on a filename, not an editor app: ô đổi tên, same as askCmdr.tool.rename.*",
+      "askCmdr.tool.rename.doing": "The rename editor is the inline field on a filename, not an editor app: ô đổi tên",
+      "askCmdr.tool.rename.done": "The rename editor is the inline field on a filename, not an editor app: ô đổi tên",
+      "askCmdr.tool.rename.tried": "The rename editor is the inline field on a filename, not an editor app: ô đổi tên"
     },
     "chosen": "trình soạn thảo",
     "confidence": "high",

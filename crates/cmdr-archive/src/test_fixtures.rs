@@ -201,7 +201,7 @@ pub fn overstate_record_count(bytes: &mut [u8]) {
 /// original name. `to` must be as long as the stored name, so offsets hold.
 pub fn cloak_first_central_name(bytes: &mut [u8], to: &[u8]) {
     let cd = find(bytes, &CD_HEADER_SIG).expect("central-directory header not found");
-    // File name length is a u16 LE at offset 28; the name starts at offset 46.
+    // Filename length is a u16 LE at offset 28; the name starts at offset 46.
     let name_len = usize::from(u16::from_le_bytes([bytes[cd + 28], bytes[cd + 29]]));
     assert_eq!(
         name_len,

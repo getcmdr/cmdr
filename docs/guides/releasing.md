@@ -368,7 +368,7 @@ check.
      of every feature whose status changes, and refresh any note the release made stale. Keep notes to one honest line,
      website voice (no "I"/"we"). Schema and consumers: `docs/feature-status.md`. Changing the status of a feature that
      wears an in-app badge also means updating the pinned assertions in `apps/desktop/src/lib/feature-status.test.ts`
-     and the badge tests that file names. A new feature id also needs its card in
+     and the badge tests that filenames. A new feature id also needs its card in
      `apps/website/src/lib/features-page.ts`, and a `planned` → `alpha` flip moves its card out of the `planned`
      chapter, or the page fails to build; `release.sh` lets that file (and `features.astro`) ride the release commit
      too. Present the diff for review.
@@ -984,7 +984,7 @@ https://alternativeto.net/software/cmdr/about/ with the "Note about your changes
 
 ## The release asset manifest
 
-Every file a release publishes is a row in `scripts/release-assets/manifest/manifest.go`: os, arch, kind, file name,
+Every file a release publishes is a row in `scripts/release-assets/manifest/manifest.go`: os, arch, kind, filename,
 `latest.json` updater key (update payloads only), optional (the pkg), and the Rust targets it's built from. Everything
 that handles release files derives from it, so adding a platform is rows plus the jobs that build, vet, and attest them:
 
@@ -1023,7 +1023,7 @@ arches (`aarch64`, `x64`, `universal`):
   sets that mark only after uploading the manifest, so the mark is the one pointer to the live release and nothing
   commits to `main`. The copy committed at `apps/website/public/latest.json` is a frozen one that dev and the check
   lanes build with; ❌ never read the current version from it. Besides the updater's `platforms`, it carries `downloads`
-  (one entry per download: os, arch, kind, file, size), which the website reads for its file names and sizes, and
+  (one entry per download: os, arch, kind, file, size), which the website reads for its filenames and sizes, and
   `dmgSizes` (the three DMG sizes by arch), which website builds from before `downloads` read. ❌ Keep `dmgSizes`
   through the release after the first one with `downloads`, then drop it with the website's fallback
   (`scripts/release-assets/DETAILS.md` § `latest.json`).
@@ -1047,8 +1047,8 @@ the release as `Cmdr_<version>.intoto.jsonl` (same section).
 
 Two naming details are load-bearing:
 
-- **File names say `x64`, never `x86_64`.** Tauri's CLI names the Intel bundles that way, while the rest of the repo
-  (URL paths, D1 columns, Rust target triples) says `x86_64`. The mapping happens at the file-name boundary only; see
+- **Filenames say `x64`, never `x86_64`.** Tauri's CLI names the Intel bundles that way, while the rest of the repo (URL
+  paths, D1 columns, Rust target triples) says `x86_64`. The mapping happens at the filename boundary only; see
   `apps/api-server/src/telemetry/DETAILS.md` § Gotchas.
 - **Every bundle name carries the app version, `.app.tar.gz[.sig]` included.** The bundler writes `Cmdr.app.tar.gz`, and
   the `sign` job's upload step renames it. Releases up to 0.41.0 carry unversioned `Cmdr_<arch>.app.tar.gz` instead.

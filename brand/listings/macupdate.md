@@ -224,7 +224,7 @@ none of those got a submission. MacUpdate takes `<p>` in this field too.
   <li>Open a NAS's NFS shares directly, with no system mount.</li>
   <li>Encrypted SMB connections (AES-128 and AES-256), and DFS links inside SMB shares.</li>
   <li>Copies to and from SMB shares keep Finder tags, comments, and custom icons.</li>
-  <li>Multi-rename puts a photo's capture date, a camera model, or a song's artist and track in file names.</li>
+  <li>Multi-rename puts a photo's capture date, a camera model, or a song's artist and track in filenames.</li>
   <li>Sort by date created, added, or modified.</li>
   <li>The viewer shows Markdown, and images, HEIC, and PDFs on every server and phone.</li>
   <li>Big Android folders list up to 10x faster.</li>

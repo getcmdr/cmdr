@@ -776,7 +776,7 @@ else
 
             # Every app thread stack, into the host-mounted /e2e-stacks. Never fails
             # the run: a dump is evidence, not a verdict. The argument names why it
-            # was taken and becomes the file name.
+            # was taken and becomes the filename.
             dump_app_stacks() {
                 dump_file="/e2e-stacks/app-stacks-$1.txt"
                 if kill -0 $APP_PID 2>/dev/null; then

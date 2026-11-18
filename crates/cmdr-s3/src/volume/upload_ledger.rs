@@ -46,7 +46,7 @@ use tokio::sync::Notify;
 use crate::encoding::encode_component;
 use crate::params::S3ConnectionParams;
 
-/// The log's file name inside the backend's state directory.
+/// The log's filename inside the backend's state directory.
 const LOG_NAME: &str = "unfinished-uploads";
 
 /// The account a record belongs to: the endpoint plus the key id, the identity

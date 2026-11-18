@@ -662,7 +662,7 @@ fn test_validate_path_length_name_too_long() {
     let result = validate_path_length(&path);
     assert!(
         matches!(result, Err(WriteOperationError::NameTooLong { ref path }) if path.ends_with(&long_name)),
-        "Should reject file names exceeding 255 bytes, got: {:?}",
+        "Should reject filenames exceeding 255 bytes, got: {:?}",
         result
     );
 }

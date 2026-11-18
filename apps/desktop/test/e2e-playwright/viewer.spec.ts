@@ -101,7 +101,7 @@ test.describe('File viewer', () => {
     expect(lineCount).toBeGreaterThan(0)
   })
 
-  test('shows file name in status bar', async () => {
+  test('shows filename in status bar', async () => {
     const statusText = await viewer.textContent('.status-bar')
     expect(statusText).toContain('file-a.txt')
   })

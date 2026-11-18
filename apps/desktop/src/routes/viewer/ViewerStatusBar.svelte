@@ -1,5 +1,5 @@
 <!--
-    Bottom status bar for the viewer: file name, line / byte counts, the backend
+    Bottom status bar for the viewer: filename, line / byte counts, the backend
     badge (in memory / indexed / streaming), an optional word-wrap badge, and the
     keyboard shortcut hint.
 
@@ -20,7 +20,7 @@
     import { commandHasShortcut, shortcutAsText } from '#lib/shortcuts/reactive-shortcuts.svelte.js'
 
     interface Props {
-        /** File name shown at the start of the bar. */
+        /** Filename shown at the start of the bar. */
         fileName: string
         /** Content kind. Media kinds (image / PDF) show kind + dimensions instead of line / backend info. */
         kind: ViewerContentKind
@@ -137,7 +137,7 @@
         font-size: var(--font-size-sm);
         color: var(--color-text-secondary);
         flex-shrink: 0;
-        /* Opt back in to native selection here so users can copy the file name or line
+        /* Opt back in to native selection here so users can copy the filename or line
          * count. The global reset is `user-select: none`, and `.file-content` keeps
          * that for its custom selection model; the status bar is plain chrome. */
         user-select: text;

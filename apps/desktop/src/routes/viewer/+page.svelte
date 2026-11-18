@@ -1079,7 +1079,7 @@
         // This webview has its own i18n runtime, so it needs its own language and
         // formatting sync: without it the viewer sits on the webview's tag and
         // formats sizes and dates differently from the main pane.
-        // Until the file loads, the opener's bare file name stays the title.
+        // Until the file loads, the opener's bare filename stays the title.
         unsubscribeLanguage = initWindowLanguageSync({
             title: () => (fileName ? tString('viewer.window.titleSuffix', { fileName }) : null),
         })

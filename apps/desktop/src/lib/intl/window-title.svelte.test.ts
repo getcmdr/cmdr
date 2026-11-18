@@ -77,7 +77,7 @@ describe('followWindowTitle', () => {
   })
 
   it('leaves the title alone while the getter has nothing to say', async () => {
-    // The viewer, before its file loads: the opener's bare file name stays.
+    // The viewer, before its file loads: the opener's bare filename stays.
     const write = vi.fn(() => Promise.resolve())
     const stop = followWindowTitle(() => null, write)
     await settle()

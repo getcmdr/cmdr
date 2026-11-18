@@ -87,14 +87,14 @@ struct FileRow {
     size: Option<u64>,
 }
 
-/// One qualifying image handed to a walk sink, still SPLIT into its directory and file
-/// name so a counting sink never has to build the absolute path. A sink that needs the
+/// One qualifying image handed to a walk sink, still SPLIT into its directory and
+/// filename so a counting sink never has to build the absolute path. A sink that needs the
 /// path joins it itself ([`QualifyingImage::path`]).
 pub(crate) struct QualifyingImage<'a> {
     /// The directory's absolute path, reconstructed once per parent group and reused for
     /// every qualifying image in it.
     pub(crate) dir: &'a str,
-    /// The file name within `dir`.
+    /// The filename within `dir`.
     pub(crate) name: &'a str,
     pub(crate) mtime: Option<u64>,
     pub(crate) size: Option<u64>,
@@ -302,7 +302,7 @@ impl<'a> WalkedDirs<'a> {
     }
 }
 
-/// Join a directory path and a file name into an absolute path, avoiding a double
+/// Join a directory path and a filename into an absolute path, avoiding a double
 /// slash at the root.
 fn join_path(dir: &str, name: &str) -> String {
     if dir == "/" {

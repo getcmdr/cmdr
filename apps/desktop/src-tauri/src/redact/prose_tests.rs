@@ -154,7 +154,7 @@ fn a_multi_word_first_segment_under_a_system_root_stays_whole() {
     );
 }
 
-/// `<` and `>` are legal in a macOS or Linux file name, so neither may end a path: a tail that
+/// `<` and `>` are legal in a macOS or Linux filename, so neither may end a path: a tail that
 /// stopped at one shipped the rest of the name (`Secret <draft> Plans/beach.jpg` lost only
 /// `Secret`). Unmarked prose, keyed fields, quoted and bare, and a name that starts with `<`.
 #[test]

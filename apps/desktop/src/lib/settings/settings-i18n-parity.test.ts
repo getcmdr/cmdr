@@ -134,7 +134,7 @@ describe('crash-report setting description (en), true for both app fates', () =>
   it('names the background problem the app keeps running through, not only a quit', () => {
     const description = getSettingDefinition('updates.crashReports')?.description
     expect(description).toBe(
-      'Automatically send a report when Cmdr crashes or runs into a problem in the background. Includes app version, macOS version, and where in the code the problem happened. Never file names or personal data.',
+      'Automatically send a report when Cmdr crashes or runs into a problem in the background. Includes app version, macOS version, and where in the code the problem happened. Never filenames or personal data.',
     )
     // The regression to catch: scoping the sentence back to quitting, which would
     // describe only one of the two cases that actually send a report.

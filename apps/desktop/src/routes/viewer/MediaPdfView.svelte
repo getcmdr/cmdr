@@ -18,7 +18,7 @@
   type Props = {
     /** `cmdr-media://localhost/<token>` URL for the PDF bytes. */
     src: string
-    /** File name, surfaced on the embed for assistive tech. */
+    /** Filename, surfaced on the embed for assistive tech. */
     fileName: string
     /** The bytes are still on their way from a volume, however long that takes. */
     arriving?: boolean

@@ -34,7 +34,7 @@ const FLOOR = apiFloor(SAFARI_FLOOR)
 
 /**
  * Uses a person checked by hand and found safe, each with the reason. `chunkPrefix` (the emitted
- * file name minus its hash) limits one to a single chunk. An entry here still can't hide the
+ * filename minus its hash) limits one to a single chunk. An entry here still can't hide the
  * app's OWN use of the name: the ES2022 `lib` pin fails it at type-check time.
  */
 const REVIEWED: readonly { api: string; chunkPrefix?: string; why: string }[] = [

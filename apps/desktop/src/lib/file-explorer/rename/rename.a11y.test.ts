@@ -147,7 +147,7 @@ describe('InlineRenameEditor a11y', () => {
         ariaLabel: 'Rename file',
         sessionId: 1,
         ariaInvalid: true,
-        validationMessage: 'Slashes are not allowed in file names',
+        validationMessage: 'Slashes are not allowed in filenames',
         onInput: noop,
         onSubmit: noop,
         onCancel: noop,

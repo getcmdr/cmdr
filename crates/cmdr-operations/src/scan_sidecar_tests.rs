@@ -24,7 +24,7 @@ use crate::transfer::copy::copy_files_with_progress_inner;
 use crate::types::WriteOperationConfig;
 use cmdr_fs::testing::TestDir;
 
-/// What one walk found: the file names it listed and the bytes it counted.
+/// What one walk found: the filenames it listed and the bytes it counted.
 struct Walked {
     names: Vec<String>,
     file_count: usize,

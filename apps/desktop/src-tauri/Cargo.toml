@@ -136,7 +136,7 @@ cmdr-listing = { path = "../../../crates/cmdr-listing" }
 cmdr-viewer = { path = "../../../crates/cmdr-viewer" }
 # The Multi-Rename Tool's engine; this crate hosts it (`src/multi_rename/`).
 cmdr-multi-rename = { path = "../../../crates/cmdr-multi-rename" }
-# The file-name collator the panes sort with. The write engine names it from
+# The filename collator the panes sort with. The write engine names it from
 # here rather than through `cmdr-listing`'s re-export, so it never needs the
 # listing engine for one type.
 cmdr-collation = { path = "../../../crates/cmdr-collation" }

@@ -155,7 +155,7 @@ fn open_blob(handle: &RepoHandle, cat: path::Cat, name: &str, sub: &str) -> Look
 
 /// Folds a [`Lookup`] into what a `Volume` method returns: a miss becomes
 /// `NotFound` carrying the path the caller asked for, so the transfer layer
-/// renders the user's own file name rather than a git diagnostic.
+/// renders the user's own filename rather than a git diagnostic.
 pub(crate) fn found_or_not_found<T>(found: Lookup<T>, path: &Path) -> Result<T, VolumeError> {
     match found {
         Ok(Some(value)) => Ok(value),

@@ -121,8 +121,8 @@ pub struct FolderEvent {
     pub at: u64,
 }
 
-/// How many of each kind of change a bundle saw. The whole of what a bundle carries: no file
-/// names.
+/// How many of each kind of change a bundle saw. The whole of what a bundle carries: no
+/// filenames.
 ///
 /// Names would grow memory with the event count on exactly the path that has to survive five
 /// million of them, and they'd spend digest budget on detail the agent can pull for itself with

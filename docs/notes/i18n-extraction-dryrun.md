@@ -274,7 +274,7 @@ Count: 28
 - routes/dev/components/sections/ChipSection.svelte:40 (text): Recent variant &mdash; mode badge + truncating label
 - routes/dev/components/sections/ChipSection.svelte:42 (attr:label): \*.jpg
 - routes/dev/components/sections/ChipSection.svelte:43 (text): Aa
-- routes/dev/components/sections/ChipSection.svelte:45 (attr:label): all my very long screenshot file names from last
+- routes/dev/components/sections/ChipSection.svelte:45 (attr:label): all my very long screenshot filenames from last
   week
 - routes/dev/components/sections/ChipSection.svelte:46 (text): AI
 - routes/dev/components/sections/ChipSection.svelte:48 (attr:label): ^temp.\*\.log$
@@ -597,7 +597,7 @@ Count: 28
 - lib/file-operations/mkdir/NewFolderDialog.svelte:303 (text): Cancel
 - lib/file-operations/mkdir/NewFolderDialog.svelte:304 (text): OK
 - lib/file-operations/mkfile/NewFileDialog.svelte:155 (text): Create file in
-- lib/file-operations/mkfile/NewFileDialog.svelte:164 (attr:aria-label): File name
+- lib/file-operations/mkfile/NewFileDialog.svelte:164 (attr:aria-label): Filename
 - lib/file-operations/mkfile/NewFileDialog.svelte:169 (attr:placeholder): Example: notes.txt
 - lib/file-operations/mkfile/NewFileDialog.svelte:179 (text): Cancel
 - lib/file-operations/mkfile/NewFileDialog.svelte:180 (text): OK

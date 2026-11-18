@@ -6,7 +6,7 @@ use std::path::Path;
 
 use cmdr_fs::log_private::LogPrivate;
 
-/// Log file name for llama-server output (useful for debugging startup issues).
+/// Log filename for llama-server output (useful for debugging startup issues).
 pub const SERVER_LOG_FILENAME: &str = "llama-server.log";
 
 /// Spawns the llama-server process and returns its PID.

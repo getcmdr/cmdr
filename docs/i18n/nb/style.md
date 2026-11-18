@@ -56,7 +56,7 @@ The genuinely tricky calls, with how the majors handle each, a recommended defau
   term (`rute` and `panel` both occur); pick one and lock it in the glossary.
 
 - **Særskriving (compound spacing) is the top mechanical risk.** Norwegian writes compounds as ONE word where English
-  uses two: "filnavn" (file name), "målmappe" (destination folder), "søkefelt" (search field), "hurtigtast" (keyboard
+  uses two: "filnavn" (filename), "målmappe" (destination folder), "søkefelt" (search field), "hurtigtast" (keyboard
   shortcut). Splitting them (the English-influenced error "fil navn") is the single most common and most visible
   Norwegian localization mistake, and it can change meaning. Recommendation: compound by default; when a compound gets
   unwieldy, rephrase rather than split. Confidence: high. This deserves a human review pass dedicated to it.
@@ -98,7 +98,7 @@ A few core terms confirmed against Apple Finder, GNOME Nautilus, and Microsoft t
 | volume             | volum            |                                                               |
 | settings           | innstillinger    |                                                               |
 | destination folder | målmappe         | one word (særskriving)                                        |
-| file name          | filnavn          | one word (særskriving)                                        |
+| filename           | filnavn          | one word (særskriving)                                        |
 
 ## Brand and do-not-translate
 

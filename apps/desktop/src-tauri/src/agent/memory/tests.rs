@@ -1,7 +1,7 @@
 //! The jail and the caps, against a real temp directory.
 //!
-//! Every escape attempt below is one the agent could be TALKED into by text it read: a file
-//! name, or a sentence photographed in one of the user's images. So each is a test rather than
+//! Every escape attempt below is one the agent could be TALKED into by text it read: a
+//! filename, or a sentence photographed in one of the user's images. So each is a test rather than
 //! a comment, and each asserts the typed refusal rather than an absence of damage.
 
 use super::*;

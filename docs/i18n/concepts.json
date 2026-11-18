@@ -1479,7 +1479,7 @@
     "distinct": ["extension"],
     "en": "Finder extension",
     "match": ["finder extension", "finder extensions"],
-    "sense": "Cmdr's opt-in add-on that puts its item at the top level of Finder's right-click menu: a macOS app extension, not a file name's ending."
+    "sense": "Cmdr's opt-in add-on that puts its item at the top level of Finder's right-click menu: a macOS app extension, not a filename's ending."
   },
   "fingerprint": {
     "distinct": ["host-key"],
@@ -2922,7 +2922,7 @@
     "distinct": ["undo", "rollback"],
     "en": "Put back",
     "match": ["put back", "puts back", "putting back", "put them back"],
-    "sense": "Returning trashed items, or old file names, to where they were."
+    "sense": "Returning trashed items, or old filenames, to where they were."
   },
   "query": {
     "distinct": ["search"],

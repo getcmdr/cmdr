@@ -939,7 +939,7 @@ static check flags it the day the UI changes.
   `[Content_Types].xml`), a class ending in `-` (`.cmdr-temp-`, a prefix match), and a lone `tag.word` or `${base}.word`
   (`nav.back`, `a.txt`, `${name}.png`). A lone `.word` stays a selector, so a dotfile name that isn't also a word in the
   source needs the opt-out.
-- **Attribute values aren't checked**: most are runtime data (file names, operation ids), and the one kind worth
+- **Attribute values aren't checked**: most are runtime data (filenames, operation ids), and the one kind worth
   checking, a dialog id, can outlive its dialog in a comment (`connect-to-server` did).
 - **Vocabulary**: every whole word (letters, digits, `-`, `_`) in the `.svelte`, `.ts`, `.js`, `.css`, and `.html` files
   under `apps/desktop/src`, plus `data-foo-bar` for each `dataset.fooBar`. Presence is the bar because a class arrives
@@ -3056,9 +3056,9 @@ argument) or a constant (`{STATE_FILE_PATH}`). A `format!` nested in an argument
 In-file `#[cfg(test)]` / `#[test]` items and dedicated test files are skipped.
 
 **Decision**: a path-carrying error printed plainly (`{}` or a derived `{:?}`) is one unmarked value too
-(`desktop-rust-log-private-values-errors.go`). **Why**: a `WriteOperationError` logged as `{:?}` shipped most of a file
-name holding `, ` (cmdr-reports#103): the fallback ends a prose path there, and no name rule saw `failure.error`. The
-scanner has no types, so it indexes them first, across every scanned file: a path-carrying type is one with an
+(`desktop-rust-log-private-values-errors.go`). **Why**: a `WriteOperationError` logged as `{:?}` shipped most of a
+filename holding `, ` (cmdr-reports#103): the fallback ends a prose path there, and no name rule saw `failure.error`.
+The scanner has no types, so it indexes them first, across every scanned file: a path-carrying type is one with an
 `impl ErrorLogText for X` (not the blanket `&T`) or an inherent `fn log_detail(`, and a path-carrying name is any
 `name: Type` (field, parameter, `let`) whose type, references and `Option`/`Vec`/`Box`/`Arc`/`Rc`/`Result`/`Cow` peeled,
 is one. A field access (`failure.error`) counts when ANY file declares that field name so; a bare name (`e`, `&e`,

@@ -525,7 +525,7 @@ mod tests {
             }
             assert!(
                 src.contains(records_the_request) || src.contains(publishes_the_window),
-                // allowed-pluralize-noun: `{name}` is a file name, and `takes` is its verb.
+                // allowed-pluralize-noun: `{name}` is a filename, and `takes` is its verb.
                 "{name} takes a volume's manager out of the registry without either publishing the \
                  detached window or recording what a teardown that lands in it asked for, so that \
                  request would be reported as done and then lost"

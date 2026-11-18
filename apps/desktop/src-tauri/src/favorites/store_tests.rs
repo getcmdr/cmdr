@@ -26,7 +26,7 @@ fn add_appends_new_path_with_derived_name() {
     assert_eq!(store.favorites[0].path, "/Users/x/Projects");
     assert_eq!(
         store.favorites[0].name, "Projects",
-        "name defaults to the path's file name"
+        "name defaults to the path's filename"
     );
 }
 

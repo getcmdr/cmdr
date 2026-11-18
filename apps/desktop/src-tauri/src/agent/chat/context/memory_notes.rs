@@ -10,7 +10,7 @@
 //!
 //! ⚠️ **The security-critical strings of the whole memory feature live here.** The agent's write
 //! path is reachable from text it read (`image_facts` hands it the full stored OCR of the user's
-//! pictures, and file names come off disk), so a crafted filename or a photographed sentence can
+//! pictures, and filenames come off disk), so a crafted filename or a photographed sentence can
 //! end up in this block and come back on every later thread, surviving restarts and thread
 //! deletion. Three things keep it from being an instruction channel: it sits AFTER the rules
 //! and in a user turn rather than in the system string, it sits inside a fence its content can't

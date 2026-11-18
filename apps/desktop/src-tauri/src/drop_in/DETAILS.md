@@ -54,5 +54,5 @@ QA plan, live in `apps/desktop/src/lib/file-explorer/drag/DETAILS.md` § "Drops 
 - **`readObjectsForClasses:` asks a Chrome-style provider for its content type** (verified in the probe: the item's
   data provider is called for `promised-file-content-type`). Cheap, but it's why enter classifies from the TYPE LIST
   only and the receivers are read on perform.
-- **`fileNames` is empty before the files are received** (verified in the probe), so the promised file name can't feed
+- **`fileNames` is empty before the files are received** (verified in the probe), so the promised filename can't feed
   the started event; the frontend names the files from the ready paths.

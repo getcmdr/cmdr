@@ -69,12 +69,12 @@ describe('viewer error + load states (en)', () => {
     expect(tString('viewer.pull.progressUnknownTotal', { doneText: '12 MB' })).toBe('12 MB so far')
   })
 
-  it('builds the window title with the file name', () => {
+  it('builds the window title with the filename', () => {
     expect(tString('viewer.window.titleSuffix', { fileName: 'report.log' })).toBe('report.log | Viewer')
     expect(getMessage('viewer.window.fallbackTitle')).toBe('Viewer')
   })
 
-  it('builds the content aria-label with the file name', () => {
+  it('builds the content aria-label with the filename', () => {
     expect(tString('viewer.content.ariaLabel', { fileName: 'report.log' })).toBe('File content: report.log')
     expect(tString('viewer.srHeading')).toBe('File viewer')
   })

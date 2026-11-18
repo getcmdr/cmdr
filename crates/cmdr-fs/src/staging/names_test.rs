@@ -16,7 +16,7 @@ const LIMIT: usize = 255;
 fn name_of(temp: &StagingTemp) -> String {
     temp.path()
         .file_name()
-        .expect("a minted temp always has a file name")
+        .expect("a minted temp always has a filename")
         .to_string_lossy()
         .into_owned()
 }
@@ -212,7 +212,7 @@ fn a_temp_sibling_path_stays_in_the_final_names_directory() {
 
 fn name_of_path(path: &Path) -> String {
     path.file_name()
-        .expect("a temp path has a file name")
+        .expect("a temp path has a filename")
         .to_string_lossy()
         .into_owned()
 }

@@ -68,7 +68,7 @@ are stored per-directory, pre-sorted directories-first then case-insensitive by 
 **Path collisions are first-writer-wins (order-dependent, by design).** A malformed archive can carry both a file and a
 directory at the same path. Whoever claims the path first keeps it: `foo` (file) then `foo/bar` → `foo` stays a file and
 `foo/bar` is **dropped** (a file can't hold children — it is not left as an unreachable orphan); `foo/bar` then `foo`
-(file) → the implied directory `foo` wins and the later file is dropped. Duplicate file names (two files, same path) are
+(file) → the implied directory `foo` wins and the later file is dropped. Duplicate filenames (two files, same path) are
 last-writer-wins instead — the later entry replaces the earlier node. A dropped file is also removed from the handle
 map, so it can never be read via `open_read` even though its handle was parsed. Pinned by
 `file_shadowing_a_directory_path_*` (both orders, unit and integration).

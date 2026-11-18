@@ -104,7 +104,7 @@ video, flashing, or time limits beyond toasts; native menu bar and context menus
 
 ## WCAG 2.2 Level A
 
-- **1.1.1 Non-text content**: Supports. Icon buttons are named, the viewer image uses the file name as alt text, and the
+- **1.1.1 Non-text content**: Supports. Icon buttons are named, the viewer image uses the filename as alt text, and the
   sync and symlink badges name themselves into the row's accessible name (#442). File-kind icons stay `alt=""`, and the
   row's name says the kind instead ("src (folder)", #437, 2026-10-15). `Icon` is `aria-hidden` unless given a label.
   Evidence: `lib/file-explorer/selection/FileIcon.svelte`, `views/file-row-a11y.ts` (`fileRowName`),
@@ -176,7 +176,7 @@ video, flashing, or time limits beyond toasts; native menu bar and context menus
   Evidence: `VolumeSpaceLine.svelte`, `VolumeChooserMenu.svelte`, `ViewerTextCursor.svelte`.
 - **2.4.1 Bypass blocks**: Not applicable. Applies to web pages and sets of software; Cmdr is a single app (EN 11.2.4.1
   and 508 don't apply to software).
-- **2.4.2 Page titled**: Supports. Each window has a title: main "Cmdr", the viewer the file name, plus Settings,
+- **2.4.2 Page titled**: Supports. Each window has a title: main "Cmdr", the viewer the filename, plus Settings,
   Keyboard shortcuts, Queue, Debug. Every user-facing title comes from the catalog (Settings and Keyboard shortcuts
   since #442, 2026-10-15); Debug is a dev-build-only window and stays English like the rest of it. A language switch
   while a child window is open keeps its OS title until it reopens (no `set-title` capability there). EN and 508 don't
@@ -256,7 +256,7 @@ video, flashing, or time limits beyond toasts; native menu bar and context menus
   since #442, 2026-10-15). Evidence: `ServerFormFields.svelte`, `SignInCredentialFields.svelte`,
   `AttachEmailCheckbox.svelte`, `onboarding/StepBeta.svelte`, `settings/sections/UpdatesSection.svelte`.
 - **1.4.3 Contrast (minimum)**: Partially supports. Every text token pair is gated at 4.5:1 (3:1 large) in CI in light
-  and dark mode under all nine accent variants and all pane tints; marked file names measure 4.52:1 worst case (light)
+  and dark mode under all nine accent variants and all pane tints; marked filenames measure 4.52:1 worst case (light)
   and 4.71:1 (dark). The checker also sweeps the Increase contrast tier (`html.increase-contrast` tokens, 15% / 25%
   tints); the 4.16:1 brown-tint corner it found there closed with #440 on 2026-10-15 (deeper light reds). Exception: the
   opt-in "App" date and size palettes put the raw accent on text (gold about 2.4:1). Core tokens on `#ffffff` /

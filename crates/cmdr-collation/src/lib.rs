@@ -7,7 +7,7 @@
 #![warn(unreachable_pub)]
 #![deny(missing_docs)]
 
-//! How file names rank against each other.
+//! How filenames rank against each other.
 //!
 //! One Unicode collator, shared by every list the app orders. It answers the
 //! same question two ways: [`NameCollator::compare`] for a one-off comparison,
@@ -25,7 +25,7 @@ use icu_collator::preferences::CollationNumericOrdering;
 use icu_collator::{Collator, CollatorBorrowed, CollatorPreferences};
 use icu_locale_core::Locale;
 
-/// A file name's collation weights, serialized to bytes that order the same way
+/// A filename's collation weights, serialized to bytes that order the same way
 /// the collator does.
 ///
 /// ❌ Never persist one. The bytes are ICU4X's internal encoding: a library or

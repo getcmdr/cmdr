@@ -58,7 +58,7 @@ fn fixture(service: FixtureService) -> S3Target {
 /// bytes that landed checksum to what the bucket holds.
 async fn copy_off_and_compare(label: &str, remote: Arc<dyn Volume>, source: PathBuf, expected_len: usize) {
     let source_digest = sha256(&read_all(remote.as_ref(), &source).await);
-    let name = source.file_name().expect("a file name").to_string_lossy().into_owned();
+    let name = source.file_name().expect("a filename").to_string_lossy().into_owned();
 
     let local_dir = TestDir::new(label);
     let local: Arc<dyn Volume> = Arc::new(LocalPosixVolume::local_folder(

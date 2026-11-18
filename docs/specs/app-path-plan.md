@@ -772,7 +772,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
 
 - **Size**: S.
 - **Scope**: tests only, plus test helpers. (a) Extend `path_grammar_cases.json` with arithmetic rows (join a name,
-  parent, file name, names, starts-with, strip-prefix, rebase, shown) for every root shape: `/`, `C:/`,
+  parent, filename, names, starts-with, strip-prefix, rebase, shown) for every root shape: `/`, `C:/`,
   `//server/share/`, and scheme roots for sftp (rooted at `/` and at a subfolder), webdav, s3, nfs (`%2F` export), mtp
   (with a pick segment), adb, restic, and an archive-inner path (`/x/a.zip/inner`). Rows carry the POSIX answer (pinned
   from today's `std::path` behavior on macOS and Linux) and the Windows answer (the target, asserted against the new

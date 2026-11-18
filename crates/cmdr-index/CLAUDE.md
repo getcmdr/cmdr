@@ -14,7 +14,7 @@ with no host at all.
   from `lib.rs`. Its `CLAUDE.md` routes to the twelve areas inside.
 - `media_index/`: OCR, Vision tags, and CLIP embeddings over the images the file index found, with ANN search on top.
 - `importance/`: a deterministic, cheap "which folders matter" score that expensive features consult before spending.
-- `volume_files.rs`: each volume's file names and folders; the ONE door they're removed by. `drive_index_relocation.rs`:
+- `volume_files.rs`: each volume's filenames and folders; the ONE door they're removed by. `drive_index_relocation.rs`:
   adopts an older build's drive index at `build`.
 - `benches/index_benchmarks.rs`: the enrichment, dir-stats, and roll-up hot paths, compiled as an EXTERNAL crate, so
   they reach only what a host can.

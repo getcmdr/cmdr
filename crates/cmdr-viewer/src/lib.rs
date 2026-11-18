@@ -469,7 +469,7 @@ pub trait FileViewerBackend: Send + Sync {
     /// Total lines if known (only FullLoad and completed LineIndex know this).
     fn total_lines(&self) -> Option<usize>;
 
-    /// File name (last path component).
+    /// Filename (last path component).
     fn file_name(&self) -> &str;
 }
 

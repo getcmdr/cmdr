@@ -3572,7 +3572,7 @@
   "valid": {
     "chosen": "platný",
     "accept": ["platn"],
-    "forms": "adj.: invalid file name → Neplatný název souboru",
+    "forms": "adj.: invalid filename → Neplatný název souboru",
     "confidence": "high",
     "sources": "MS (valid → platný, invalid → neplatný); macOS NetAuthAgent (neplatné uživatelské jméno nebo heslo)"
   },

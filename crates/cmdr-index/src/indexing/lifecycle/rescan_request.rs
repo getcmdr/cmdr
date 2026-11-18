@@ -169,7 +169,7 @@ mod tests {
             }
             assert!(
                 src.contains("run_if_owed("),
-                // allowed-pluralize-noun: `{name}` is a file name, and `hands` is its verb.
+                // allowed-pluralize-noun: `{name}` is a filename, and `hands` is its verb.
                 "{name} hands a whole volume's ground back but never runs the rescan that volume \
                  may be waiting for, so a queued \"Rescan now\" would wait there forever"
             );

@@ -94,7 +94,7 @@ path is exercised by `error-pane.spec.ts`.
 
 **Behaviors covered (before)**:
 
-- Render container, line elements, file name in status bar, line count, file size, backend badge, Ctrl+F opens search,
+- Render container, line elements, filename in status bar, line count, file size, backend badge, Ctrl+F opens search,
   search finds matches, Escape closes search, missing-path error.
 
 **Gaps identified**:

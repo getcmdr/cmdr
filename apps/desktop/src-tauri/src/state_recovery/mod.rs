@@ -203,7 +203,7 @@ fn identical_copy(path: &Path) -> Option<PathBuf> {
 fn kept_name(path: &Path, now: DateTime) -> std::io::Result<(PathBuf, String)> {
     let name = path
         .file_name()
-        .ok_or_else(|| std::io::Error::other("a state file path has a file name"))?
+        .ok_or_else(|| std::io::Error::other("a state file path has a filename"))?
         .to_string_lossy()
         .into_owned();
     let prefix = format!("{name}.broken-");

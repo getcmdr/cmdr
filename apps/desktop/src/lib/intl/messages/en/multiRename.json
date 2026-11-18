@@ -10,7 +10,7 @@
   },
   "multiRename.nameMask": "Name mask",
   "@multiRename.nameMask": {
-    "description": "Label of the field holding the rename mask for the file name: plain text plus placeholders in brackets such as [N] (old name) or [C] (counter).",
+    "description": "Label of the field holding the rename mask for the filename: plain text plus placeholders in brackets such as [N] (old name) or [C] (counter).",
     "screenshot": "multi-rename.png"
   },
   "multiRename.extensionMask": "Extension",
@@ -75,22 +75,22 @@
   },
   "multiRename.searchOptionHelp.setup": "Replacing <code>{search}</code> with <code>{replace}</code> in <code>{name}</code>:",
   "@multiRename.searchOptionHelp.setup": {
-    "description": "In the Multi-rename sheet, each search option (Match case, First match only, Include extension, Regular expression, Replace whole name) is a small toggle chip beside the search fields. Its tooltip names the option, shows its keyboard shortcut, and gives a tiny worked example: a replace on a made-up file name, with the result when the option is on and when it's off. This line sets up the example: what is searched for, what replaces it, and the file name it runs on. Keep the <code> tags around the three placeholders: they show in a code font.",
+    "description": "In the Multi-rename sheet, each search option (Match case, First match only, Include extension, Regular expression, Replace whole name) is a small toggle chip beside the search fields. Its tooltip names the option, shows its keyboard shortcut, and gives a tiny worked example: a replace on a made-up filename, with the result when the option is on and when it's off. This line sets up the example: what is searched for, what replaces it, and the filename it runs on. Keep the <code> tags around the three placeholders: they show in a code font.",
     "placeholders": {
       "search": "the text searched for (e.g. photo)",
       "replace": "the replacement text (e.g. pic)",
-      "name": "a made-up file name (e.g. Photo photo.jpg)"
+      "name": "a made-up filename (e.g. Photo photo.jpg)"
     },
     "screenshot": "multi-rename.png"
   },
   "multiRename.searchOptionHelp.on": "On",
   "@multiRename.searchOptionHelp.on": {
-    "description": "In the Multi-rename sheet, each search option (Match case, First match only, Include extension, Regular expression, Replace whole name) is a small toggle chip beside the search fields. Its tooltip names the option, shows its keyboard shortcut, and gives a tiny worked example: a replace on a made-up file name, with the result when the option is on and when it's off. Labels the line showing the new name with the option turned on. Keep it as short as possible.",
+    "description": "In the Multi-rename sheet, each search option (Match case, First match only, Include extension, Regular expression, Replace whole name) is a small toggle chip beside the search fields. Its tooltip names the option, shows its keyboard shortcut, and gives a tiny worked example: a replace on a made-up filename, with the result when the option is on and when it's off. Labels the line showing the new name with the option turned on. Keep it as short as possible.",
     "screenshot": "multi-rename.png"
   },
   "multiRename.searchOptionHelp.off": "Off",
   "@multiRename.searchOptionHelp.off": {
-    "description": "In the Multi-rename sheet, each search option (Match case, First match only, Include extension, Regular expression, Replace whole name) is a small toggle chip beside the search fields. Its tooltip names the option, shows its keyboard shortcut, and gives a tiny worked example: a replace on a made-up file name, with the result when the option is on and when it's off. Labels the line showing the new name with the option turned off. Keep it as short as possible.",
+    "description": "In the Multi-rename sheet, each search option (Match case, First match only, Include extension, Regular expression, Replace whole name) is a small toggle chip beside the search fields. Its tooltip names the option, shows its keyboard shortcut, and gives a tiny worked example: a replace on a made-up filename, with the result when the option is on and when it's off. Labels the line showing the new name with the option turned off. Keep it as short as possible.",
     "screenshot": "multi-rename.png"
   },
   "multiRename.case": "Letter case",
@@ -290,11 +290,11 @@
   },
   "multiRename.status.invalidName": "Not a valid name",
   "@multiRename.status.invalidName": {
-    "description": "Preview note: the new name can't be a file name (empty, too long, \".\" / \"..\", or ending with a space or a period on a Windows-formatted drive)."
+    "description": "Preview note: the new name can't be a filename (empty, too long, \".\" / \"..\", or ending with a space or a period on a Windows-formatted drive)."
   },
   "multiRename.status.disallowedCharacter": "Can’t contain {character}",
   "@multiRename.status.disallowedCharacter": {
-    "description": "Preview note: the new name contains a character file names can't have, such as a slash. {character} is that character."
+    "description": "Preview note: the new name contains a character filenames can't have, such as a slash. {character} is that character."
   },
   "multiRename.status.reservedDeviceName": "Reserved by Windows",
   "@multiRename.status.reservedDeviceName": {
@@ -535,79 +535,79 @@
   },
   "multiRename.mediaField.exifTaken": "Date taken",
   "@multiRename.mediaField.exifTaken": {
-    "description": "Name of a field Multi-rename can put in a file name: the date and time a photo or video was taken, from its EXIF or video metadata. Shown in the field picker, in reasons (“This file has no “Date taken” value”), and in the field's editor."
+    "description": "Name of a field Multi-rename can put in a filename: the date and time a photo or video was taken, from its EXIF or video metadata. Shown in the field picker, in reasons (“This file has no “Date taken” value”), and in the field's editor."
   },
   "multiRename.mediaField.exifCamera": "Camera",
   "@multiRename.mediaField.exifCamera": {
-    "description": "Name of a photo field Multi-rename can put in a file name: the camera's maker and model together, like “Apple iPhone 15 Pro”."
+    "description": "Name of a photo field Multi-rename can put in a filename: the camera's maker and model together, like “Apple iPhone 15 Pro”."
   },
   "multiRename.mediaField.exifMake": "Camera maker",
   "@multiRename.mediaField.exifMake": {
-    "description": "Name of a photo field Multi-rename can put in a file name: the company that made the camera, like “Canon”."
+    "description": "Name of a photo field Multi-rename can put in a filename: the company that made the camera, like “Canon”."
   },
   "multiRename.mediaField.exifModel": "Camera model",
   "@multiRename.mediaField.exifModel": {
-    "description": "Name of a photo field Multi-rename can put in a file name: the camera's model, like “EOS R6”."
+    "description": "Name of a photo field Multi-rename can put in a filename: the camera's model, like “EOS R6”."
   },
   "multiRename.mediaField.exifLens": "Lens",
   "@multiRename.mediaField.exifLens": {
-    "description": "Name of a photo field Multi-rename can put in a file name: the lens the photo was taken with."
+    "description": "Name of a photo field Multi-rename can put in a filename: the lens the photo was taken with."
   },
   "multiRename.mediaField.exifIso": "ISO",
   "@multiRename.mediaField.exifIso": {
-    "description": "Name of a photo field Multi-rename can put in a file name: the ISO speed (light sensitivity) setting, a number like 400. Keep “ISO” as is in most languages."
+    "description": "Name of a photo field Multi-rename can put in a filename: the ISO speed (light sensitivity) setting, a number like 400. Keep “ISO” as is in most languages."
   },
   "multiRename.mediaField.exifFocal": "Focal length (mm)",
   "@multiRename.mediaField.exifFocal": {
-    "description": "Name of a photo field Multi-rename can put in a file name: the lens's focal length in whole millimeters, like 24."
+    "description": "Name of a photo field Multi-rename can put in a filename: the lens's focal length in whole millimeters, like 24."
   },
   "multiRename.mediaField.exifWidth": "Width (pixels)",
   "@multiRename.mediaField.exifWidth": {
-    "description": "Name of a photo field Multi-rename can put in a file name: the image's width in pixels."
+    "description": "Name of a photo field Multi-rename can put in a filename: the image's width in pixels."
   },
   "multiRename.mediaField.exifHeight": "Height (pixels)",
   "@multiRename.mediaField.exifHeight": {
-    "description": "Name of a photo field Multi-rename can put in a file name: the image's height in pixels."
+    "description": "Name of a photo field Multi-rename can put in a filename: the image's height in pixels."
   },
   "multiRename.mediaField.exifOrientation": "Orientation",
   "@multiRename.mediaField.exifOrientation": {
-    "description": "Name of a photo field Multi-rename can put in a file name: the EXIF orientation, a number from 1 to 8 saying how the photo is rotated."
+    "description": "Name of a photo field Multi-rename can put in a filename: the EXIF orientation, a number from 1 to 8 saying how the photo is rotated."
   },
   "multiRename.mediaField.tagTitle": "Title",
   "@multiRename.mediaField.tagTitle": {
-    "description": "Name of a music field Multi-rename can put in a file name: the song's title, from the file's tags."
+    "description": "Name of a music field Multi-rename can put in a filename: the song's title, from the file's tags."
   },
   "multiRename.mediaField.tagArtist": "Artist",
   "@multiRename.mediaField.tagArtist": {
-    "description": "Name of a music field Multi-rename can put in a file name: the song's artist, from the file's tags."
+    "description": "Name of a music field Multi-rename can put in a filename: the song's artist, from the file's tags."
   },
   "multiRename.mediaField.tagAlbumArtist": "Album artist",
   "@multiRename.mediaField.tagAlbumArtist": {
-    "description": "Name of a music field Multi-rename can put in a file name: the album's artist (which can differ from a song's own artist on a compilation)."
+    "description": "Name of a music field Multi-rename can put in a filename: the album's artist (which can differ from a song's own artist on a compilation)."
   },
   "multiRename.mediaField.tagAlbum": "Album",
   "@multiRename.mediaField.tagAlbum": {
-    "description": "Name of a music field Multi-rename can put in a file name: the album's name."
+    "description": "Name of a music field Multi-rename can put in a filename: the album's name."
   },
   "multiRename.mediaField.tagTrack": "Track number",
   "@multiRename.mediaField.tagTrack": {
-    "description": "Name of a music field Multi-rename can put in a file name: the song's number on its album."
+    "description": "Name of a music field Multi-rename can put in a filename: the song's number on its album."
   },
   "multiRename.mediaField.tagDisc": "Disc number",
   "@multiRename.mediaField.tagDisc": {
-    "description": "Name of a music field Multi-rename can put in a file name: which disc of a multi-disc album the song is on."
+    "description": "Name of a music field Multi-rename can put in a filename: which disc of a multi-disc album the song is on."
   },
   "multiRename.mediaField.tagYear": "Year",
   "@multiRename.mediaField.tagYear": {
-    "description": "Name of a music field Multi-rename can put in a file name: the year the song or album came out."
+    "description": "Name of a music field Multi-rename can put in a filename: the year the song or album came out."
   },
   "multiRename.mediaField.tagGenre": "Genre",
   "@multiRename.mediaField.tagGenre": {
-    "description": "Name of a music field Multi-rename can put in a file name: the song's genre, like “Electronic”."
+    "description": "Name of a music field Multi-rename can put in a filename: the song's genre, like “Electronic”."
   },
   "multiRename.mediaField.tagComment": "Comment",
   "@multiRename.mediaField.tagComment": {
-    "description": "Name of a music field Multi-rename can put in a file name: the free-text comment in the file's tags."
+    "description": "Name of a music field Multi-rename can put in a filename: the free-text comment in the file's tags."
   },
   "multiRename.mediaPicker.title": "Insert a field",
   "@multiRename.mediaPicker.title": {
@@ -749,7 +749,7 @@
   },
   "multiRename.reason.tooLong": "The new name is too long for a filename.",
   "@multiRename.reason.tooLong": {
-    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name is longer than a file name may be."
+    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name is longer than a filename may be."
   },
   "multiRename.reason.reserved": "“.” and “..” can’t be filenames.",
   "@multiRename.reason.reserved": {
@@ -757,7 +757,7 @@
   },
   "multiRename.reason.disallowedCharacter": "Filenames can’t contain {character}.",
   "@multiRename.reason.disallowedCharacter": {
-    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name holds a character file names can't have, such as a slash. {character} is that character."
+    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name holds a character filenames can't have, such as a slash. {character} is that character."
   },
   "multiRename.reason.reservedDeviceName": "“{name}” is reserved by Windows, so this drive can’t use it as a name.",
   "@multiRename.reason.reservedDeviceName": {

@@ -83,7 +83,7 @@ it from reading as a vector template.
   window.
 - `closeFraming` holds the full punch-in for the whole shot at the card's settled size, so the crop happens inside the
   window. The SMB shots use a light crop to the bottom left (`zoom` 1.18) that hides the volume picker's server address
-  and keeps the file names and counts.
+  and keeps the filenames and counts.
 - The close's card turns slowly in perspective (`CLOSE`, `closeTurn`), sized so its projected corners stay on-canvas.
 - Guard: `framingProblems` checks every frame of every shot (entrance included) and the close's projected corners, and
   `buildTimeline` throws on any problem, so `pnpm timeline` and every render fail before a broken frame ships.

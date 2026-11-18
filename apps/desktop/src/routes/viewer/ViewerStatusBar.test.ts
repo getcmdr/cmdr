@@ -83,7 +83,7 @@ describe('ViewerStatusBar', () => {
 
     void unmount(instance)
   })
-  it('renders the file name, line count, and the in-memory badge', async () => {
+  it('renders the filename, line count, and the in-memory badge', async () => {
     const { target, instance } = mountStatusBar({ fileName: 'log.txt', totalLines: 3, currentMode: 'fullLoad' })
     await tick()
 

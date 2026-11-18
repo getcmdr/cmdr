@@ -381,11 +381,11 @@ pub enum WriteOperationError {
         path: String,
         message: cmdr_fs::error_detail::ErrorDetail,
     },
-    /// File name exceeds the destination filesystem's length limit.
+    /// Filename exceeds the destination filesystem's length limit.
     NameTooLong {
         path: String,
     },
-    /// File name contains characters not allowed at the destination.
+    /// Filename contains characters not allowed at the destination.
     InvalidName {
         path: String,
         message: cmdr_fs::error_detail::ErrorDetail,

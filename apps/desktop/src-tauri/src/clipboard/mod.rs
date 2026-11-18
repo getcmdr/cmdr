@@ -27,7 +27,7 @@ mod state;
 pub use state::{clear_cut_state, get_cut_state, set_cut_state};
 
 /// The kind of clipboard content pasted as a file. Drives the paste toast's
-/// noun (text / image / PDF); the file name's extension carries the finer detail
+/// noun (text / image / PDF); the filename's extension carries the finer detail
 /// (`.md` / `.txt` / `.png` / `.jpg` / `.pdf`). Ungated so the Linux command
 /// stub can name it in its signature.
 #[cfg_attr(

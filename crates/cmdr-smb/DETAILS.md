@@ -668,7 +668,7 @@ right bytes in the wrong case. The fixture's Samba stores names as sent too (ver
 container, `unicode_names_integration_test.rs`, 2026-09-23). So "SMB servers use form X" is false (ERR-VETBX). The rule,
 in three parts: **use the bytes the server gave you; a foreign path resolves once, where it enters; a name Cmdr creates
 goes out composed.** Scale on that NAS (a recursive listing of `Takeout/Google Photos`, 497,120 entries, 2026-09-22):
-all 235 directory names NFC or ASCII, 712 file names NFD across six albums, and no two names colliding modulo form and
+all 235 directory names NFC or ASCII, 712 filenames NFD across six albums, and no two names colliding modulo form and
 case, so a look-alike twin is rare but not impossible.
 
 - **Server-derived paths go out byte-for-byte.** `to_smb_path` never normalizes, and `list_directory_impl` builds each
@@ -1145,7 +1145,7 @@ does, measured by smb2: `~/projects-git/vdavid/smb2/docs/notes/named-streams-and
 - **A stream write moves the modification date on `streams_xattr` and not on a QNAP** (`qnap_macea`), which is why a tag
   writer skips a file already in the target state, and why the watcher's follow-up stat can't notice a tag.
 - **The watcher opts into the metadata bits** (`WatchOptions::metadata`). Another client's tag then arrives as a
-  `Modified` under the plain file name; `listings.row_xattrs_may_have_changed` is how a pane reads it again. Neither
+  `Modified` under the plain filename; `listings.row_xattrs_may_have_changed` is how a pane reads it again. Neither
   Samba tested sends the stream actions (6–8), which `watcher.rs::fold_stream_event` folds into `Modified` for a server
   that does.
 - Pinned by `xattrs_integration_test.rs` against `smb-consumer-fruit`: the shared contract, a batch's order, working
@@ -1487,12 +1487,12 @@ No fixture serves a junction.
 **Why**: it turns a path the frontend sent into the share-relative string that goes on the wire, and every way of
 GUESSING an answer for an out-of-root path put a real request at a real, wrong place. It compared the root as a raw
 STRING, so with root `/Volumes/testshare` a path under the sibling mount `/Volumes/testshare-1/x` stripped to `-1/x` — a
-legal file name on the share, which the server would happily create or delete. Anything that matched neither fell
-through to "strip the leading slash", so `/Users/me/notes.txt` went out as the share-relative `Users/me/notes.txt`.
-Matching whole path COMPONENTS (`Path::strip_prefix`) kills the first, and `VolumeError::NotFound` for the rest kills
-the second: a path that isn't on this volume genuinely isn't found there, and the caller surfaces that instead of acting
-elsewhere. `presence` maps the error to `Absent` (the honest answer to the question it was asked; a refusal or a session
-that won't clone is `Unknown`, `mapping.rs::stat_presence`), and the post-mutation listing-cache patches go through
+legal filename on the share, which the server would happily create or delete. Anything that matched neither fell through
+to "strip the leading slash", so `/Users/me/notes.txt` went out as the share-relative `Users/me/notes.txt`. Matching
+whole path COMPONENTS (`Path::strip_prefix`) kills the first, and `VolumeError::NotFound` for the rest kills the second:
+a path that isn't on this volume genuinely isn't found there, and the caller surfaces that instead of acting elsewhere.
+`presence` maps the error to `Absent` (the honest answer to the question it was asked; a refusal or a session that won't
+clone is `Unknown`, `mapping.rs::stat_presence`), and the post-mutation listing-cache patches go through
 `display_path_for`, which returns an `Option` so a write that already succeeded is never reported as failed because its
 parent path didn't convert. The Docker integration tests address the fixture share the same way production does, through
 `volume::testing::share_path` (and, app-side, `smb_index_scan_test::unique_base`), so a test path is either relative or

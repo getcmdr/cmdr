@@ -8,7 +8,7 @@
   a warning line from its first frame: red with an alert icon for a model known to be often wrong (with a link to
   change the model), yellow with an info icon for one nobody tested. Icon and words, so color is never the only signal.
 
-  ❗ The text is untrusted (a hostile file name can steer it): it renders as ONE text node, ❌ never Markdown, `{@html}`,
+  ❗ The text is untrusted (a hostile filename can steer it): it renders as ONE text node, ❌ never Markdown, `{@html}`,
   or a link. Nothing else on the card reads it.
 
   ❗ Nothing moves: the block reserves three lines for the text and one for the line saying what it was given, from its

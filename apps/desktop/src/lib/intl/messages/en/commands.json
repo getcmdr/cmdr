@@ -293,7 +293,7 @@
   },
   "commands.sortByName.label": "Sort by name",
   "@commands.sortByName.label": {
-    "description": "Command name that sorts the file list by file name. Appears in the command palette.",
+    "description": "Command name that sorts the file list by filename. Appears in the command palette.",
     "screenshot": "main-window.png"
   },
   "commands.sortByExtension.label": "Sort by extension",

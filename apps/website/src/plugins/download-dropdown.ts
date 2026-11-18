@@ -11,7 +11,7 @@
  * `PROD`/`SSR` (no `PUBLIC_*` vars). release.ts derives its URLs from `PUBLIC_DOWNLOAD_BASE_URL`,
  * which is therefore always undefined here, so it can't be the source of truth in this context. The
  * links below are release.ts's no-download-base branch: direct links to the EU mirror
- * (`download.getcmdr.com`), so these carry no download telemetry. File names and sizes come from
+ * (`download.getcmdr.com`), so these carry no download telemetry. Filenames and sizes come from
  * `src/lib/release-downloads.ts`, which both share.
  *
  * Register this AFTER rehype-external-links in astro.config.ts: that way external-links never sees

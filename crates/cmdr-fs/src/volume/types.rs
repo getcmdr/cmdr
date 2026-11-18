@@ -682,7 +682,7 @@ impl SpaceInfo {
 /// Information about a source item for conflict scanning.
 #[derive(Debug, Clone)]
 pub struct SourceItemInfo {
-    /// The item's own file name.
+    /// The item's own filename.
     pub name: String,
     /// In bytes.
     pub size: u64,

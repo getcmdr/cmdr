@@ -47,7 +47,7 @@ tokio = { version = "1", features = ["macros", "rt", "sync", "time"] }
 # `CancellationToken`: cancel detaches a read without aborting it. Same version
 # and feature shape as `cmdr-fs`'s, so no second copy enters the graph.
 tokio-util = { version = "0.7.18", default-features = false }
-# How file names rank (`NameCollator`, re-exported at the root so a host sorts
+# How filenames rank (`NameCollator`, re-exported at the root so a host sorts
 # the way a listing does). Its own crate, so code that only orders names (the
 # write engine's tree order) needn't depend on the listing engine.
 cmdr-collation = { path = "../cmdr-collation" }

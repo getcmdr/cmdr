@@ -1316,7 +1316,7 @@
   "@aboutThis.download.insideArchive": {
     "description": "First line of the \"Where it came from\" row on the \"Tell me about this\" card for a file inside a zip or other archive: the file has no download record of its own, so the row names the archive it sits in.",
     "placeholders": {
-      "archive": { "description": "The archive's file name, exactly as it appears in the file list (\"Photos.zip\")." }
+      "archive": { "description": "The archive's filename, exactly as it appears in the file list (\"Photos.zip\")." }
     }
   },
   "aboutThis.download.archiveRecord": "{platform, select, macos {What macOS recorded about the archive:} other {What your browser recorded about the archive:}}",
@@ -1350,7 +1350,7 @@
     "placeholders": {
       "what": { "description": "What the item is, already worded (\"Image\", \"Folder\", \"Item in an archive\")." },
       "sizeShown": { "description": "Whether a size follows: exact, atLeast, or other (no size)." },
-      "archive": { "description": "The archive's file name, exactly as it appears in the file list." }
+      "archive": { "description": "The archive's filename, exactly as it appears in the file list." }
     }
   },
   "aboutThis.headline.fromGitHistory": "{what}{sizeShown, select, exact {, <size></size>} atLeast {, at least <size></size>} other {}}, {kind, select, branch {as the branch {name} has it} tag {as the tag {name} has it} commit {as commit {name} has it} other {as stash entry {name} has it}}",

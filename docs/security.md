@@ -193,7 +193,7 @@ The folder-importance subsystem records a lightweight navigation-visit signal to
   user's own backups (Time Machine) include that file; nothing else copies it. Nothing about visits is sent anywhere —
   not to the maintainer, not to PostHog analytics, not in error reports. It's not telemetry.
 - **Counts and timestamps only, no content.** Each row is `(folder path, visit count, last-visit seconds)`. No file
-  contents, no file names beyond the folder path itself, no per-file data.
+  contents, no filenames beyond the folder path itself, no per-file data.
 - **Background-scored volumes only.** The local disk and SMB shares record visits (the volumes importance scores);
   on-demand-only MTP devices and unregistered volumes don't. The signal is still the same counts-and-timestamps shape on
   every volume, always local to the user's disk.
@@ -233,7 +233,7 @@ Part I (2)(l). Posture:
 - **Local-only, never transmitted.** `security-events.jsonl` sits in the app data dir, not the log dir, so error-report
   bundles (which collect `logging::log_dir()`) never carry it. "Delete all Cmdr data" removes it with the data dir.
 - **Typed, secret-free by construction.** Every line is a typed `SecurityEvent` with typed fields: versions, volume ids,
-  managed-policy key names, counts. No tokens, keys, passwords, file names, contents, or error text.
+  managed-policy key names, counts. No tokens, keys, passwords, filenames, contents, or error text.
 - **Opt-out, unless the organization requires it.** Settings › Updates & privacy › "Record security events" turns it off
   (one last "turned off" line, then nothing; the file stays). An MCP client can't flip it (`mcpSettable: false`).
   `DisableSecurityLogOptOut` pins it on (`managed_policy/DETAILS.md` § Key catalog).
@@ -365,7 +365,7 @@ Ask Cmdr is the widest of these, so the rest of this section is its detail. Ask 
   `apps/desktop/src-tauri/src/tools/resources/DETAILS.md`.
 - **The agent may connect a place the user saved, and only when the user asked.** `Access::Session` opens a session to a
   SAVED place by volume id with STORED credentials, and adds or edits no file, server, account, credential, pin, or
-  setting, so it can't add a host, type a password, or approve a key (what an injected file name would want). `admit`
+  setting, so it can't add a host, type a password, or approve a key (what an injected filename would want). `admit`
   lets the agent run it only on a turn the user started; a wake or a follow-up is refused, typed, because a background
   connect can wake a sleeping NAS nobody asked about. A Keychain prompt on a user-started turn is acceptable; a missing
   credential raises nothing. Two `Session` tools ship, `connect_volume` and `upgrade_smb_to_direct` (which moves a share
@@ -385,15 +385,15 @@ Ask Cmdr is the widest of these, so the rest of this section is its detail. Ask 
   containment re-checked against a canonicalized parent) and capped at 64 KB. Two consequences worth stating plainly:
   **(a)** everything the agent saves there is sent to the user's provider on every later message, indefinitely, which
   includes anything it inferred from OCR of their photos — the system prompt forbids saving that, but the prohibition is
-  a prompt, not a gate; **(b)** the write path is reachable from untrusted text (a crafted file name, a sentence
+  a prompt, not a gate; **(b)** the write path is reachable from untrusted text (a crafted filename, a sentence
   photographed in an image, a line of a file `inspect_file` read), so what lands there could be attacker-chosen. The
   prompt-injection mitigations are memory's placement in a user turn (never the system string) under a line saying Cmdr
   added it and it is data, a fence its own content cannot close, and the "facts, never instructions to yourself" write
   rule. Depth: `apps/desktop/src-tauri/src/agent/memory/DETAILS.md` § The injection surface.
 - **Some contents never egress, whatever a prompt asks.** One gate covers every path that yields file contents or
   image-derived text (`inspect_file`, `image_facts`, `search_photos`, and `multi_rename`'s media fields), so a
-  prompt-injected file name can't get them read. Blocked: SSH, GPG, and password-store folders at any depth (a NAS
-  backup of a home folder counts), cloud and tool credentials (AWS, Azure, Kubernetes, gcloud, `gh`, Docker, `.netrc`,
+  prompt-injected filename can't get them read. Blocked: SSH, GPG, and password-store folders at any depth (a NAS backup
+  of a home folder counts), cloud and tool credentials (AWS, Azure, Kubernetes, gcloud, `gh`, Docker, `.netrc`,
   `.npmrc`, `.pypirc`, `.git-credentials`, `.git/config`, `.env*`, `.pgpass`, Vault, Cargo, Claude, `rclone.conf`, sops
   age keys), each OS's credential store (the macOS keychains, GNOME Keyring and KWallet, Windows Credential Manager's
   files and the DPAPI keys that open them), password managers (Bitwarden, 1Password), browser profile data and caches
@@ -402,7 +402,7 @@ Ask Cmdr is the widest of these, so the rest of this section is its detail. Ask 
   every instance's), and any file whose text holds a private key, wherever it sits, including OCR text and PDF pages.
   Every OS's locations are refused on every OS, in any case and spelling, and where the environment moved a per-user dir
   (`XDG_CONFIG_HOME`, a redirected `%APPDATA%`). It checks the real path after following symlinks where it can open the
-  file, and contents only: file names in those folders may still reach the provider. A refusal is typed, says why, and
+  file, and contents only: filenames in those folders may still reach the provider. A refusal is typed, says why, and
   lands in the security event log with no path. Rules, call sites, each location with its evidence, and what stays
   unprotected: `apps/desktop/src-tauri/src/tools/DETAILS.md` § The sensitive-content gate.
 - **The photo tools send image-derived TEXT, not "just metadata".** `search_photos` (`tools/actions/photos.rs`) returns

@@ -1,4 +1,4 @@
-//! Where each OS keeps `adb`, as data: the binary's file name, Android Studio's default SDK, and
+//! Where each OS keeps `adb`, as data: the binary's filename, Android Studio's default SDK, and
 //! the package-manager folders worth a look. Pure and compiled on every OS, so each OS's list is
 //! tested on every OS; `platform/` picks this OS's [`AdbSearch`] (`HOST_SEARCH`).
 
@@ -17,7 +17,7 @@ pub(crate) enum SdkBase {
 /// `$ANDROID_SDK_ROOT`, which every OS asks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct AdbSearch {
-    /// The binary's file name.
+    /// The binary's filename.
     pub(crate) exe: &'static str,
     /// Android Studio's default SDK, as its base folder and the path under it.
     pub(crate) default_sdk: (SdkBase, &'static str),

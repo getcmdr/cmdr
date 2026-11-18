@@ -77,7 +77,7 @@ pub async fn write_preview<R: tauri::Runtime>(
         .map_err(|detail| ReportPreviewError::BundleUnavailable { detail })?;
     let capped = error_reporter::cap_bundle_to_mb(bundle.zip_bytes, FLOW_A_BUNDLE_CAP_MB);
     let text = bundle_as_text(&capped).map_err(|detail| ReportPreviewError::BundleUnavailable { detail })?;
-    // `bundle.id` is the vetted one (`resolve_bundle_id`), so it's safe as a file name.
+    // `bundle.id` is the vetted one (`resolve_bundle_id`), so it's safe as a filename.
     let path = write_preview_file(&dir, &bundle.id, &text)
         .map_err(|e| ReportPreviewError::NotWritten { detail: e.to_string() })?;
     Ok(ReportPreviewFile {

@@ -913,7 +913,7 @@
     "chosen": "Finder 延伸功能",
     "accept": ["延伸功能"],
     "confidence": "high",
-    "sources": "macOS pane 登入項目與延伸功能 (errors.provider.pCloudFuse.needsAction); 系統延伸功能; kept apart from the file name ending 副檔名"
+    "sources": "macOS pane 登入項目與延伸功能 (errors.provider.pCloudFuse.needsAction); 系統延伸功能; kept apart from the filename ending 副檔名"
   },
   "global": {
     "chosen": "全域",
@@ -1458,7 +1458,7 @@
     ],
     "chosen": "副檔名",
     "confidence": "high",
-    "sources": "AP-TW (38), AP-HK (40), MS (file name extension)"
+    "sources": "AP-TW (38), AP-HK (40), MS (filename extension)"
   },
   "extract": {
     "avoid": [
@@ -4714,7 +4714,7 @@
     "confidence": "high",
     "forms": "Not a valid name → 不是有效的名稱; isn't valid → 無效 (這個正規表示式無效); license validity → 有效性 / 有效期至",
     "exceptions": {
-      "errors.write.invalidName.title": "Invalid file name → 檔名不合用: a write-error title written as plain advice; not this batch's key, left for a follow-up alignment with 無效"
+      "errors.write.invalidName.title": "Invalid filename → 檔名不合用: a write-error title written as plain advice; not this batch's key, left for a follow-up alignment with 無效"
     },
     "sources": "MS terminology valid → 有效, invalid → 無效; catalog (licensing.dialog.validityActive 有效, ai.cloud.authError 無效, licensing.error.badSignature 不是有效的授權碼)"
   },

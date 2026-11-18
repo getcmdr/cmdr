@@ -434,7 +434,7 @@ fn migrate_v6_agent_inbox(tx: &Transaction<'_>) -> rusqlite::Result<()> {
         CREATE TABLE agent_inbox (
             folder        TEXT    NOT NULL,
             window_start  INTEGER NOT NULL,   -- unix secs, epoch-anchored
-            created       INTEGER NOT NULL,   -- per-kind counters; never file names
+            created       INTEGER NOT NULL,   -- per-kind counters; never filenames
             modified      INTEGER NOT NULL,
             removed       INTEGER NOT NULL,
             renamed       INTEGER NOT NULL,
@@ -464,7 +464,7 @@ fn migrate_v7_nullable_deliver_by(tx: &Transaction<'_>) -> rusqlite::Result<()> 
         CREATE TABLE agent_inbox_v7 (
             folder        TEXT    NOT NULL,
             window_start  INTEGER NOT NULL,   -- unix secs, epoch-anchored
-            created       INTEGER NOT NULL,   -- per-kind counters; never file names
+            created       INTEGER NOT NULL,   -- per-kind counters; never filenames
             modified      INTEGER NOT NULL,
             removed       INTEGER NOT NULL,
             renamed       INTEGER NOT NULL,

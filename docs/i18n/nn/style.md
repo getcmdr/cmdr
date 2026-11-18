@@ -36,7 +36,7 @@ and Xfce (Nynorsk has a strong free-software tradition) is plain and direct, so 
 - **Imperative, not infinitive, for buttons.** GNOME Nynorsk and Xfce Nynorsk use the imperative. Recommendation:
   imperative throughout. Confidence: high.
 - **Samanskriving (compound spacing).** Like Bokmål, Nynorsk writes compounds as ONE word where English uses two:
-  "filnamn" (file name), "målmappe" (destination folder), "søkefelt" (search field). Splitting them is the most common
+  "filnamn" (filename), "målmappe" (destination folder), "søkefelt" (search field). Splitting them is the most common
   and most visible Norwegian localization error. Recommendation: compound by default; rephrase rather than split when
   unwieldy. Confidence: high. Deserves a dedicated human review pass.
 - **Capitalization: sentence case, lighter than English.** Only the first word and proper nouns capitalized; days,
@@ -67,7 +67,7 @@ strings come up.
 | cancel       | avbryt            | GNOME Nynorsk                     |
 | tab          | fane              | UI tab, not the key               |
 | settings     | innstillingar     | Nynorsk `-ar` plural              |
-| file name    | filnamn           | one word (samanskriving)          |
+| filename     | filnamn           | one word (samanskriving)          |
 
 ## Brand and do-not-translate
 

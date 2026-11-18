@@ -27,8 +27,7 @@ include tests unless noted.
 1. **Sibling modules picked in `lib.rs`**: `accent_color.rs` + `accent_color_linux.rs` (`lib.rs:25-28`),
    `permissions.rs` + `permissions_linux.rs` (`lib.rs:124-127`), `volumes/` + `volumes_linux/` (`lib.rs:195-198`),
    `macos_icons.rs` + `linux_icons.rs`. The pairs share a fn set by convention only; nothing checks the signatures
-   match. `volumes/` and `volumes_linux/` even mirror file names (`cloud`, `fs_type`, `ids`, `mounts`, `smb`,
-   `watcher`).
+   match. `volumes/` and `volumes_linux/` even mirror filenames (`cloud`, `fs_type`, `ids`, `mounts`, `smb`, `watcher`).
 2. **Module alias by `cfg`**: `use crate::volumes as platform;` / `use crate::volumes_linux as platform;`
    (`commands/volumes.rs:16-18`, `file_system/volume/mount_registration.rs:33-35`), and a type alias
    `type SmbMountInfo = crate::volumes::SmbMountInfo` / `volumes_linux::SmbMountInfo` (`file_system/mod.rs:342-345`).

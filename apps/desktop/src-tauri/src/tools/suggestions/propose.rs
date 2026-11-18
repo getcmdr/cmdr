@@ -116,7 +116,7 @@ pub fn propose_suggestions_schema() -> Value {
                             "description": "Propose over a pattern instead of a list. Not for rename.",
                             "properties": {
                                 "root": location("The subtree to search."),
-                                "nameGlob": { "type": "string", "description": "Glob over the file name, such as *.dmg." },
+                                "nameGlob": { "type": "string", "description": "Glob over the filename, such as *.dmg." },
                                 "minSizeBytes": { "type": "integer" },
                                 "maxSizeBytes": { "type": "integer" },
                                 "olderThanDays": { "type": "integer", "description": "Modified more than this many days ago." },

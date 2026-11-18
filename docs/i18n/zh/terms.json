@@ -768,7 +768,7 @@
     "chosen": "Finder 扩展",
     "accept": ["扩展"],
     "confidence": "high",
-    "sources": "macOS pane 登录项与扩展 (errors.provider.pCloudFuse.needsAction); 系统扩展; kept apart from the file name ending 扩展名"
+    "sources": "macOS pane 登录项与扩展 (errors.provider.pCloudFuse.needsAction); 系统扩展; kept apart from the filename ending 扩展名"
   },
   "learn-more": {
     "chosen": "进一步了解",
@@ -3126,7 +3126,7 @@
     "confidence": "high",
     "decision": "Select/deselect dialog",
     "exceptions": {
-      "viewer.saveAs.defaultName": "A default file name base, kept as the ASCII `selection` so it stays filename-safe."
+      "viewer.saveAs.defaultName": "A default filename base, kept as the ASCII `selection` so it stays filename-safe."
     },
     "forms": "verb and menu 选择; Select all 全选; the selected set 所选 / 选中的; placeholder 请选择; Invert selection 反选",
     "note": "zh-Hant says 選取 for this sense; never convert between the scripts.",
@@ -3984,7 +3984,7 @@
         "why": "Double Commander's 掩码 is netmask jargon; Total Commander zh and the catalog's rename-pattern form both say 规则"
       }
     ],
-    "sources": "Total Commander zh-CN (WCMD.LNG 6602 Rename mask: file name → 重命名规则: 名称); Double Commander zh-CN (Mask → 掩码, rejected); catalog pattern ruling (a rename pattern 重命名规则)"
+    "sources": "Total Commander zh-CN (WCMD.LNG 6602 Rename mask: filename → 重命名规则: 名称); Double Commander zh-CN (Mask → 掩码, rejected); catalog pattern ruling (a rename pattern 重命名规则)"
   },
   "rename-counter": {
     "chosen": "计数器",

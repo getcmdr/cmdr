@@ -92,7 +92,7 @@ each member's `build.rs` calls. It declares every name for `check-cfg` and sets 
 Deliberately not named:
 
 - **`cmdr_apple`**: macOS is the only Apple OS Cmdr builds for, so it would be a second spelling of
-  `target_os = "macos"`, which is also the arm's file name.
+  `target_os = "macos"`, which is also the arm's filename.
 - **`cmdr_unix_host`**: `unix` already excludes `wasm32-unknown-unknown`, the only browser target the workspace builds.
   POSIX code asks `cfg(unix)`; code that merely needs a host OS asks `cmdr_host`.
 

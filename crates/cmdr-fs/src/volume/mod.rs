@@ -526,8 +526,8 @@ pub trait Volume: Send + Sync {
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
             // Collect the missing ancestors, walking leaf→root until we reach
-            // one that already exists (or run out). A component with no file
-            // name (the volume root `/`, an empty path, or `.`) has nothing to
+            // one that already exists (or run out). A component with no
+            // filename (the volume root `/`, an empty path, or `.`) has nothing to
             // create above it — the root always exists — so it stops the walk.
             // ❗ "Exists" has to mean "leads to a directory": a bare `exists()`
             // stops at a FILE just as happily, and the walk then answers

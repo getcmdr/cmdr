@@ -706,7 +706,7 @@ pub(super) fn calculate_dest_path(
     source_root: &Path,
     dest_root: &Path,
 ) -> Result<PathBuf, WriteOperationError> {
-    // If path is the source root itself, use the file name in dest_root
+    // If path is the source root itself, use the filename in dest_root
     if path == source_root {
         let file_name = path.file_name().ok_or_else(|| WriteOperationError::IoError {
             path: path.display().to_string(),

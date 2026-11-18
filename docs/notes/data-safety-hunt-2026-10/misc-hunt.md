@@ -164,7 +164,7 @@ pub fn path_for(session_id: &str) -> PathBuf {
   symlink `<pid>-1.txt -> /home/<victim>/somefile`; the victim opens Results (⌥⏎).
 - **Guard ruled out:** No `O_EXCL`, no `O_NOFOLLOW`, no ownership or mode check on the directory.
 - **Impact:** A file the victim owns is truncated and overwritten with the rename list; on the same box the other user
-  can also read the victim's file names.
+  can also read the victim's filenames.
 - **Suggested fix:** Put the file under the app's own data/cache dir (or a `tempfile::Builder` directory created with
   mode 0700), and create it with `create_new(true)`.
 

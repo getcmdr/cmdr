@@ -49,7 +49,7 @@ fn to_smb_path_mount_root() {
 fn to_smb_path_rejects_a_sibling_mount_that_merely_shares_a_name_prefix() {
     // macOS mounts a second copy of a share at `/Volumes/TestShare-1`. A raw
     // string prefix compare strips `/Volumes/TestShare` off that path and sends
-    // the server the share-relative `-1/Documents`, which is a real file name
+    // the server the share-relative `-1/Documents`, which is a real filename
     // on the share. Matching whole path components is the only safe compare.
     let vol = make_test_volume();
     assert!(matches!(

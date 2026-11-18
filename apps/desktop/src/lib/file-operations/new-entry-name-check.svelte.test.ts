@@ -1,5 +1,5 @@
 /**
- * The New folder / New file name check.
+ * The New folder / New filename check.
  *
  * ❗ Only the LATEST lookup's answer counts. A validate on open and another from a
  * directory diff overlapped, and the older one landing last showed "There is

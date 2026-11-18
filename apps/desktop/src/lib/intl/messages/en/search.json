@@ -132,7 +132,7 @@
   "@search.imageResults.similarTo": {
     "description": "Heading shown above the grid when it's showing images similar to a chosen one, instead of text-match results.",
     "placeholders": {
-      "name": "the file name of the image the results are similar to, shown verbatim (for example beach.jpg)"
+      "name": "the filename of the image the results are similar to, shown verbatim (for example beach.jpg)"
     },
     "screenshot": "search-dialog.png",
     "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."

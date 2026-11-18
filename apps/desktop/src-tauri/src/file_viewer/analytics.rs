@@ -3,7 +3,7 @@
 //! The viewer is the one place in Cmdr that looks INSIDE a file, so it's also the
 //! place where an event is easiest to get wrong. The rule here is absolute: the
 //! vocabulary is a four-way content class and a coarse size bucket, and nothing
-//! else. ❌ Never a file name, an extension, a path, or a byte count — an
+//! else. ❌ Never a filename, an extension, a path, or a byte count — an
 //! extension list would fingerprint a person's work from a population of a few
 //! hundred installs, and a raw size does the same for one file.
 //!

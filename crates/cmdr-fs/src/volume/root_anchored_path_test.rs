@@ -50,7 +50,7 @@ fn a_path_already_under_the_root_is_left_alone() {
 #[test]
 fn a_sibling_mount_sharing_a_name_prefix_is_not_under_the_root() {
     // macOS mounts a second copy of a share at `/Volumes/testshare-1`, and `-1` is a
-    // legal file name. A raw string compare would call this path "already under
+    // legal filename. A raw string compare would call this path "already under
     // the root" and address the wrong file; whole-component matching anchors it
     // instead. Same rule `SmbVolume::to_smb_path` follows.
     assert_eq!(

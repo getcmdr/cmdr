@@ -159,7 +159,7 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   `onboarding.stepOptional.mtp.desc`, so uk and vi each carry six exceptions. Add those as `notMatch` and drop them.
   (vi)
 - `fileOperations.validation.disallowedCharacter` / `endsWithSpaceOrPeriod` say "Filenames", while their
-  `multiRename.reason.disallowedCharacter` sibling says "File names"; pick one spelling. (all)
+  `multiRename.reason.disallowedCharacter` sibling says "Filenames"; pick one spelling. (all)
 - `updates.toast.readyDetail`'s `other` branch serves Windows and Linux, but most locales' `app-closes` ruling is
   Windows-only (Linux says "quit"), so Linux reads the Windows verb. Split a `windows` branch if Linux should differ.
   (all)

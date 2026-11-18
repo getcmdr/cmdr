@@ -49,6 +49,9 @@ Writing, code, and design styles.
     keep `Chooser` (`shortcuts.scope.volumeChooser`, `pane.leftVolumeChooser`), because those are persisted in
     everyone's shortcut settings and can't be renamed; translate the value and ignore the key. Per-locale resolutions:
     each locale's `docs/i18n/<locale>/terms.json`.
+  - **"Filename" is one word, on every OS**, in UI copy, `@key` descriptions, docs, and code comments ("filenames",
+    "Copy filename"). Apple writes "filename" and Microsoft "file name"; Cmdr picks one word everywhere so the docs and
+    the UI read the same on all three OSes. `i18n-platform-vocabulary.test.ts` guards the `en` catalog.
   - **The file list's two layouts are "Full view" and "Brief view"**, the View menu's own names, never "view modes".
   - **Folder vs directory**: We know these mean the same. We allow both. Use whichever feels better in each situation.
     Like, on the backend, listing "folders" with `readdir` feels wrong, but also, "folder" comes more natural on the

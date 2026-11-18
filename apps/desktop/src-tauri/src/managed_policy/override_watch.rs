@@ -44,7 +44,7 @@ pub(super) fn start(file: PathBuf) {
     log::debug!(target: "managed_policy", "Watching {} for policy changes", LogPrivate::file_path(&file));
 }
 
-/// Whether an event in the folder concerns the override file. Compared by file name: the folder is
+/// Whether an event in the folder concerns the override file. Compared by filename: the folder is
 /// watched non-recursively, and FSEvents may report it through a different spelling of the same
 /// folder (`/tmp` vs `/private/tmp`).
 fn names_file(paths: &[PathBuf], file: &Path) -> bool {

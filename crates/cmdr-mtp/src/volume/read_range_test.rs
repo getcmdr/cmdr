@@ -30,7 +30,7 @@ async fn connect_device_with_blob(bytes: &[u8]) -> ConnectedDevice {
     connect_device_with_blob_named(bytes, "blob.bin").await
 }
 
-/// [`connect_device_with_blob`] under a caller-chosen file name. Seeding happens
+/// [`connect_device_with_blob`] under a caller-chosen filename. Seeding happens
 /// before the connect, so the device's rescan is what hands the file a handle.
 async fn connect_device_with_blob_named(bytes: &[u8], name: &str) -> ConnectedDevice {
     let fixture = crate::virtual_device::setup_virtual_mtp_device();

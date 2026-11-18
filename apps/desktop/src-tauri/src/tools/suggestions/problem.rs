@@ -137,7 +137,7 @@ impl NameRule {
             }
             NameRule::Plain(PlainLeafRefusal::DotName) => "it's . or .., which name a folder".into(),
             NameRule::Plain(PlainLeafRefusal::TooLong { bytes }) => {
-                format!("it's longer than the 255 bytes a file name may be ({bytes})")
+                format!("it's longer than the 255 bytes a filename may be ({bytes})")
             }
             NameRule::Plain(PlainLeafRefusal::Control(ch)) => {
                 format!("it holds the control character U+{:04X}", u32::from(ch))
