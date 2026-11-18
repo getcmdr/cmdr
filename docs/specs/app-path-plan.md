@@ -838,6 +838,20 @@ included; the hidden couplings it found are why waves B and C differ from round 
   builder; no new tests.
 - **DONE**: `rg LocalPosixVolume` hits only POSIX-specific code, `cmdr-local`'s own files, and docs about the type;
   `apps/desktop/src-tauri/src/volumes/platform/` names `LocalVolume` where it can.
+- **Done** (2026-11-18, branch `worktree-agent-a6fb518d61314b3ef`, `bc690227d6`): 91 files moved to `LocalVolume` (318
+  sites), and the Windows arms of `volumes/platform/` and `local_disk/platform/` too; 56 files keep `LocalPosixVolume`
+  (modes, xattrs, inodes, errnos, symlinks, `std::os::unix`, the POSIX-only methods, plus the POSIX type's own host
+  suite and the inode-dedup cell); 100 more name it only in comments about the type or in the `#![cfg(unix)]` reason
+  lines, which stay until each crate's milestone un-gates them. The rename is a rerunnable classifier (POSIX signals in
+  a file's code, comments stripped, plus a hand-read keep and rename list), not per-site judgment. Where the code
+  differed: the survey's 262 files are 247 Rust files outside `cmdr-local` today, and the gates are item-level too (12
+  renamed files keep `#[cfg(unix)]` cells), not only file-level. Verified: workspace `cargo nextest list` identical
+  before and after on macOS (16,482 tests), the Desktop (Rust) job's 33 checks green with `--ci --fresh`, `clippy-linux`
+  and `rust-tests-linux` green, the zig cross-check `cargo check --all-targets --target x86_64-pc-windows-gnu` for
+  `cmdr-local`, `cmdr-operations`, `cmdr-restic`, and the app, and clippy `--all-targets -D warnings` for the same four
+  on the builder, whose nextest run (7,327 tests, 6,788 pass) is unchanged by construction
+  (`docs/notes/windows-port/build-progress.md`). The still-gated files whose only POSIX-ism was the name (53 file-level,
+  12 with cell gates) are listed on #1225.
 
 ### 3. The type
 
