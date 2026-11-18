@@ -126,8 +126,12 @@ branches on `viewMode`: text uses the line pipeline; binary and hex use original
 `MediaImageView` / `MediaPdfView` from `media.mediaSrc` (`cmdr-media://localhost/<token>`, built ONLY via
 `mediaUrl(token)` in `media-view.ts`, the single source for the origin form). `openViewerSession` hands the result to
 `media.setFromOpenResult(result)`. `mediaUrl` asks Tauri's `convertFileSrc(token, 'cmdr-media')` for the webview's form
-of the scheme, so the browser demo answers with a `blob:` URL over the token's bytes (`lib/demo/webview.ts`), and Vitest
-answers macOS's form (`test-setup.ts`). `no-restricted-syntax` refuses a `cmdr-media://` literal anywhere else.
+of the scheme: `cmdr-media://localhost/<token>` on macOS and Linux, `http://cmdr-media.localhost/<token>` in WebView2
+(Windows; Android too), because WebView2 can't register a custom scheme (verified on tauri 2.12.5's `scripts/core.js`
+and `protocol::origin`, source read 2026-11-18). The browser demo answers with a `blob:` URL over the token's bytes
+(`lib/demo/webview.ts`), and Vitest answers macOS's form (`test-setup.ts`; `media-view.test.ts` also pins the Windows
+form). `no-restricted-syntax` refuses a `cmdr-media://` literal anywhere else. The backend handler reads only the
+request path, so both forms carry the token (`media_protocol_test.rs`).
 
 - **Text-only paths are data-gated, not just hidden.** Every page `$effect` driving the line machinery early-returns
   unless `viewMode === 'text'`, `openViewerSession` skips the line/index/tail/encoding setup for media, and the window
@@ -262,8 +266,11 @@ selection/copy model does not interpret them.
   general surface tokens.** `--color-bg-primary` vs `--color-bg-tertiary` is ~1.2:1 (light) and ~1.5:1 (dark), too faint
   to read as a checker even when it tiles correctly. Keep the pair at roughly 1.6:1 or more per theme (Preview.app /
   Photoshop "light" checker range).
-- CSP: the `cmdr-media:` token is in `img-src` + `object-src` (`tauri.conf.json`); `viewer-media.spec.ts` locks "no
-  `cmdr-media`/`img-src`/`object-src` violation". WKWebView applies EXIF orientation by default (phone photos upright).
+- CSP: the `cmdr-media:` token is in `img-src` + `object-src` (`tauri.conf.json`), and `tauri.windows.conf.json`
+  restates the CSP with `http://cmdr-media.localhost` in its place (`tauri_config.rs` fails on drift; the macOS CSP
+  doesn't name that origin, so a page there can't reach a local port-80 server through it); `viewer-media.spec.ts` locks
+  "no `cmdr-media`/`img-src`/`object-src` violation". WKWebView applies EXIF orientation by default (phone photos
+  upright).
 
 ### Virtual scrolling: the window, the cache, and the fetch loop
 

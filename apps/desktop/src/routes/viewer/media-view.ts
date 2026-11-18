@@ -19,8 +19,9 @@ import { getMessage, tString } from '#lib/intl/messages.svelte.js'
  *
  * The one place a media URL is built: Tauri's `convertFileSrc` gives the
  * webview's form of the `cmdr-media` scheme (`cmdr-media://localhost/<token>` on
- * macOS), and a host with no scheme answers its own (the browser demo: a `blob:`
- * URL over the token's bytes).
+ * macOS and Linux, `http://cmdr-media.localhost/<token>` in WebView2), and a host
+ * with no scheme answers its own (the browser demo: a `blob:` URL over the
+ * token's bytes).
  */
 export function mediaUrl(token: string): string {
   return convertFileSrc(token, 'cmdr-media')

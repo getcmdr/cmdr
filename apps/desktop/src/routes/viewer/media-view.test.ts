@@ -1,3 +1,4 @@
+import { mockConvertFileSrc } from '@tauri-apps/api/mocks'
 import { afterEach, beforeAll, afterAll, describe, it, expect } from 'vitest'
 
 import {
@@ -31,6 +32,13 @@ describe('mediaUrl', () => {
   it('encodes a token so it can never break out of the path', () => {
     // A token is CSPRNG hex from the backend, but encode defensively anyway.
     expect(mediaUrl('a/b?c#d')).toBe('cmdr-media://localhost/a%2Fb%3Fc%23d')
+  })
+
+  it("follows WebView2's form on Windows: the scheme becomes an http .localhost host", () => {
+    // `test-setup.ts` puts the macOS form back before the next test.
+    mockConvertFileSrc('windows')
+    expect(mediaUrl('abc123')).toBe('http://cmdr-media.localhost/abc123')
+    expect(mediaUrl('a/b?c#d')).toBe('http://cmdr-media.localhost/a%2Fb%3Fc%23d')
   })
 })
 

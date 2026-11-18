@@ -22,8 +22,8 @@ Each is break-if-ignored; the named `DETAILS.md` section has the why.
 - **Text-only paths gate on `viewMode === 'text'`, ❌ never `media.isMedia`**: Binary/Hex (byte offsets, not rows) and
   media leave text fields empty, which throws. The switch resets media state BEFORE reopening; `reset()` PRESERVES
   `lastMediaKind`. (§ "Media rendering")
-- **`cmdr-media://` URLs come ONLY from `mediaUrl(token)`**, and the scheme must stay in `tauri.conf.json`'s `img-src` +
-  `object-src` CSP. `viewer-media.spec.ts` guards both. (§ "Media rendering")
+- **`cmdr-media://` URLs come ONLY from `mediaUrl(token)`** (WebView2's differ), and stay in `img-src` + `object-src` of
+  both CSPs (`tauri.conf.json`, `tauri.windows.conf.json`). (§ "Media rendering")
 - **`user-select: none` on `.file-content` is deliberate** (native selection loses its anchor on scroll-out), so Edit >
   Copy / Select all arrive as events (`viewer-menu-actions.ts`). (§ Gotchas)
 - **Point → caret is geometric and presses count off `pointerdown`**: ❌ never the browser caret API (silently wrong

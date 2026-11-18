@@ -21,6 +21,19 @@ fn parses_token_from_path() {
     assert_eq!(parse_token_from_uri("/deadbeef/ignored"), Some("deadbeef"));
 }
 
+/// macOS and Linux load `cmdr-media://localhost/<token>`, WebView2 `http://cmdr-media.localhost/<token>`
+/// (`mediaUrl` via `convertFileSrc`). The handler reads only the path, so both carry the token.
+#[test]
+fn every_webview_url_form_carries_the_token() {
+    for url in [
+        "cmdr-media://localhost/deadbeef",
+        "http://cmdr-media.localhost/deadbeef",
+    ] {
+        let uri: tauri::http::Uri = url.parse().expect("a media URL parses");
+        assert_eq!(parse_token_from_uri(uri.path()), Some("deadbeef"), "{url}");
+    }
+}
+
 #[test]
 fn empty_path_has_no_token() {
     assert_eq!(parse_token_from_uri("/"), None);

@@ -96,6 +96,39 @@ mod tests {
         }
     }
 
+    /// WebView2 serves a custom scheme as `http://<scheme>.localhost`, not `<scheme>://localhost`
+    /// (Tauri's `protocol::origin`, which `convertFileSrc` follows), so Windows restates the CSP
+    /// with that origin where the shared one names the scheme. This keeps the copy equal to the
+    /// shared CSP apart from that swap, and macOS and Linux on the shared one.
+    #[test]
+    fn the_windows_csp_is_the_shared_one_with_the_localhost_origin() {
+        let scheme = crate::file_viewer::media_protocol::SCHEME;
+        let csp = |source: &str| parse(source)["app"]["security"]["csp"].as_str().map(str::to_string);
+        let shared = csp(SHARED).expect("tauri.conf.json sets `app.security.csp`");
+        assert!(
+            shared.contains(&format!("{scheme}:")),
+            "the shared CSP allows `{scheme}:`"
+        );
+        assert_eq!(
+            csp(WINDOWS),
+            Some(shared.replace(&format!("{scheme}:"), &format!("http://{scheme}.localhost"))),
+            "tauri.windows.conf.json's CSP drifted from tauri.conf.json's"
+        );
+        for (file, source) in [("tauri.macos.conf.json", MACOS), ("tauri.linux.conf.json", LINUX)] {
+            assert!(csp(source).is_none(), "{file} must not restate the CSP");
+        }
+        // `useHttpsScheme` would move the origin to `https://`, past the CSP above.
+        for (file, source) in [("tauri.conf.json", SHARED), ("tauri.windows.conf.json", WINDOWS)] {
+            let windows = parse(source)["app"]["windows"].clone();
+            assert!(
+                windows
+                    .as_array()
+                    .is_none_or(|list| list.iter().all(|w| w.get("useHttpsScheme").is_none())),
+                "`useHttpsScheme` is on in {file}: move the Windows CSP to `https://` with it"
+            );
+        }
+    }
+
     /// tauri-build fails the build when the `tauri` dependency's features disagree with the
     /// effective config's (`tauri-build` `manifest::check`), and Cargo.toml turns
     /// `macos-private-api` on for every target. So the key stays shared.

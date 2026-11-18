@@ -3,8 +3,8 @@
  * landed on. The message runtime loads it, and speaks it, before the window's first render, so a
  * language picked against the OS shows from the first frame instead of after the setting applies.
  *
- * Every Cmdr window shares the `tauri://localhost` origin, so one window's switch informs the next
- * window and the next launch. A hint only: the `appearance.language` setting stays the truth, and
+ * Every Cmdr window shares one origin (`tauri://localhost`, or `http://tauri.localhost` in
+ * WebView2), so one window's switch informs the next window and the next launch. A hint only: the `appearance.language` setting stays the truth, and
  * a stale hint (the macOS language changed while Cmdr was closed) costs one more catalog load when
  * the setting applies.
  *

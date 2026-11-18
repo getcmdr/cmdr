@@ -40,8 +40,9 @@ use super::media_serve::{MediaAnswer, VolumeRead, finish_volume_read, serve_entr
 pub use super::media_serve::{RangeOutcome, ResolvedRange, parse_token_from_uri, resolve_range};
 use super::media_volume::{MediaLoad, MediaReadFailure, ReadProgress, ReadWatch, VolumeMedia};
 
-/// The scheme name registered with Tauri. The frontend builds URLs as
-/// `cmdr-media://localhost/<token>` (macOS/Linux origin shape).
+/// The scheme name registered with Tauri. The frontend's `mediaUrl` builds
+/// `cmdr-media://localhost/<token>` on macOS and Linux and `http://cmdr-media.localhost/<token>`
+/// in WebView2; [`handle_request`] reads only the path, so both work.
 pub const SCHEME: &str = "cmdr-media";
 
 /// Per-request read timeout. The handler answers 504 if a single media request's

@@ -1,5 +1,10 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http://cmdr-media.localhost; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src http://cmdr-media.localhost; base-uri 'self'; form-action 'self'"
+    }
+  },
   "bundle": {
     "targets": ["nsis"],
     "windows": {
