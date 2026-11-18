@@ -1,7 +1,6 @@
 //! SMB share indexing: enable (the direct-smb2 gate) plus the live
 //! `CHANGE_NOTIFY` watch that keeps a Fresh index correct under mutation.
 
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) mod index;
 pub(crate) mod watch;
 

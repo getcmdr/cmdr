@@ -7,7 +7,9 @@ use std::path::PathBuf;
 use std::sync::atomic::Ordering;
 
 use crate::indexing::reconcile::reconciler::EventReconciler;
-use crate::indexing::store::{DirStatsById, ROOT_ID};
+#[cfg(unix)]
+use crate::indexing::store::DirStatsById;
+use crate::indexing::store::ROOT_ID;
 use crate::indexing::watch::activity_monitor;
 use crate::indexing::watch::event_loop::rename_detect::detect_renames_by_inode;
 use crate::indexing::writer::IndexWriter;
@@ -275,6 +277,7 @@ fn renamed_event(path: &str, event_id: u64) -> watcher::FsChangeEvent {
 /// has an entry under the same parent at a *different* name with the
 /// dir's inode pre-populated. The pre-pass should rename the row in
 /// place, preserving its `dir_stats`.
+#[cfg(unix)] // inode-keyed: Windows file identity is unknown until task 35
 #[test]
 fn detect_renames_by_inode_same_parent_uses_move_and_preserves_stats() {
     let fs_root = rename_test_tempdir();
@@ -352,6 +355,7 @@ fn detect_renames_by_inode_same_parent_uses_move_and_preserves_stats() {
 /// DB has it under a different parent. The pre-pass should issue a
 /// `MoveEntryV2` that propagates the moved subtree's totals from the
 /// old ancestor chain to the new one.
+#[cfg(unix)] // inode-keyed: Windows file identity is unknown until task 35
 #[test]
 fn detect_renames_by_inode_cross_parent_propagates_deltas() {
     let fs_root = rename_test_tempdir();
@@ -457,6 +461,7 @@ fn detect_renames_by_inode_cross_parent_propagates_deltas() {
 /// row for `P` carries the inode the filesystem gave `P/child`, so a "rename"
 /// to `P/child` would move `P` under itself. The pre-pass must leave the event
 /// for the create path, ❌ never send that move.
+#[cfg(unix)] // inode-keyed: Windows file identity is unknown until task 35
 #[test]
 fn detect_renames_by_inode_never_moves_a_row_under_itself() {
     let fs_root = rename_test_tempdir();
@@ -557,6 +562,7 @@ fn detect_renames_by_inode_no_match_keeps_event() {
 /// value each volume kind would store for the OLD entry: with the inode STORED (a
 /// trusted volume) the same inode still detects a genuine move; with it NULLED (an
 /// untrusted volume) the reused inode finds no row, so no false `MoveEntryV2`.
+#[cfg(unix)] // inode-keyed: Windows file identity is unknown until task 35
 #[test]
 fn inode_reuse_is_never_a_false_move_when_inodes_are_nulled() {
     // One on-disk entry whose real inode we reuse to simulate cluster aliasing:
@@ -617,6 +623,7 @@ fn inode_reuse_is_never_a_false_move_when_inodes_are_nulled() {
 
 /// Events without `item_renamed` set are passed through untouched even
 /// if their inode would happen to match a DB row.
+#[cfg(unix)] // inode-keyed: Windows file identity is unknown until task 35
 #[test]
 fn detect_renames_by_inode_ignores_non_renamed_events() {
     let fs_root = rename_test_tempdir();
@@ -703,6 +710,7 @@ fn detect_renames_by_inode_keeps_old_path_event_when_path_is_gone() {
 ///
 /// This is the test the rename fix has to pass for the end-to-end
 /// "renamed dir keeps its size" property to hold.
+#[cfg(unix)] // inode-keyed: Windows file identity is unknown until task 35
 #[test]
 fn process_live_batch_rename_preserves_dir_stats_and_old_path_no_ops() {
     let fs_root = rename_test_tempdir();

@@ -88,7 +88,6 @@ fn a_poisoned_registry_still_reports_its_ready_volumes() {
     );
 }
 
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 #[test]
 fn a_poisoned_registry_still_names_a_devices_mtp_volumes() {
     use super::queries::mtp_volume_ids_on;

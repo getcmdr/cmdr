@@ -17,21 +17,12 @@ pub fn register_platform_case_collation(conn: &Connection) -> Result<(), IndexSt
     Ok(())
 }
 
-/// Compare two strings using the platform's filesystem case/normalization rules.
-///
-/// - **macOS**: NFD-normalize then case-fold (matching APFS behavior).
-/// - **Linux**: binary comparison (matching ext4/btrfs).
-#[cfg(target_os = "macos")]
+/// Compare two strings using the platform's filesystem case/normalization rules:
+/// the order of [`normalize_for_comparison`]'s keys, so the collation and the
+/// stored `name_folded` key can never disagree. macOS folds form and case
+/// (APFS), Windows case (NTFS), Linux nothing (ext4/btrfs).
 pub(super) fn platform_case_compare(a: &str, b: &str) -> std::cmp::Ordering {
-    use unicode_normalization::UnicodeNormalization;
-    let a_norm: String = a.nfd().collect::<String>().to_lowercase();
-    let b_norm: String = b.nfd().collect::<String>().to_lowercase();
-    a_norm.cmp(&b_norm)
-}
-
-#[cfg(target_os = "linux")]
-pub(super) fn platform_case_compare(a: &str, b: &str) -> std::cmp::Ordering {
-    a.cmp(b)
+    cmdr_fs::name_fold::compare_for_comparison(a, b)
 }
 
 /// The same folding as a plain function, owned by `cmdr-fs` so a crate that

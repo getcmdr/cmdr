@@ -63,7 +63,7 @@ fn rename_the_drive(drive: &ColdDrive) -> (PathBuf, PutBack) {
 }
 
 /// Create a file, and tell the scripted journal so, which is what makes it a
-/// change the index can hear about. Off macOS the watcher is the real inotify one
+/// change the index can hear about. Off macOS the watcher is the real `notify` one
 /// and needs no telling.
 fn create_a_file(drive: &ColdDrive, path: &Path) {
     std::fs::write(path, "w").expect("a change for the watcher to deliver");
@@ -71,7 +71,7 @@ fn create_a_file(drive: &ColdDrive, path: &Path) {
     if !on_a_real_watcher(drive) {
         crate::indexing::watch::watcher::fake_journal::record_created_file(path);
     }
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     let _ = drive;
 }
 
@@ -81,7 +81,7 @@ fn create_a_file(drive: &ColdDrive, path: &Path) {
 fn on_a_real_watcher(drive: &ColdDrive) -> bool {
     #[cfg(target_os = "macos")]
     return drive._journal.is_none();
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     {
         let _ = drive;
         true

@@ -517,6 +517,7 @@ mod tests {
     /// on `root`. The cloud case is the trap: a cloud drive is a registered non-root
     /// volume too, but root's index owns it (it's not under an excluded mount
     /// prefix), so routing it away would drop its recursive sizes.
+    #[cfg(any(target_os = "macos", target_os = "linux"))] // Windows has no mount prefix; its drives become volumes with task 34
     #[test]
     fn volume_id_for_local_path_routes_registered_external_mount() {
         use std::sync::Arc;

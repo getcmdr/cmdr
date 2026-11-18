@@ -168,7 +168,6 @@ pub(super) fn walkable_volume(volume_id: &str) -> Result<WalkableVolume, NoCover
     classify_external(volume_id)
 }
 
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn classify_external(volume_id: &str) -> Result<WalkableVolume, NoCoverContext> {
     use crate::indexing::transports::local_external::index::routes_to_local_external;
 
@@ -212,13 +211,6 @@ fn classify_external(volume_id: &str) -> Result<WalkableVolume, NoCoverContext> 
     })
 }
 
-#[cfg(target_os = "windows")]
-fn classify_external(_volume_id: &str) -> Result<WalkableVolume, NoCoverContext> {
-    // No external-drive transport is compiled here, so nothing registers a volume
-    // under that id and the boot disk is the only one with anywhere to run.
-    Err(NoCoverContext::NotMounted)
-}
-
 /// The mount's filesystem facts, under a hard deadline, on a thread of its own.
 ///
 /// The probe is a `statfs`: microseconds on a local mount, and minutes on a
@@ -251,10 +243,7 @@ fn probe_mount(root: &Path) -> MountFacts {
 /// How long the mount probe may take before the volume counts as unprobeable.
 /// The same deadline the enable command's classification uses, for the same
 /// reason.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 const MOUNT_PROBE_TIMEOUT: std::time::Duration = crate::indexing::transports::local_external::index::FS_PROBE_TIMEOUT;
-#[cfg(target_os = "windows")]
-const MOUNT_PROBE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(2);
 
 /// Why a frontier path can't be walked.
 ///

@@ -71,6 +71,13 @@ pub fn normalize_for_comparison(s: &str) -> String {
     platform::normalize_for_comparison(s)
 }
 
+/// `a` and `b` in the order their [`normalize_for_comparison`] keys sort, without
+/// building the keys where the OS folds nothing (Linux) or the names are ASCII
+/// (Windows). The drive index's `platform_case` SQLite collation is this.
+pub fn compare_for_comparison(a: &str, b: &str) -> std::cmp::Ordering {
+    platform::compare_for_comparison(a, b)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -109,6 +116,32 @@ mod tests {
         assert!(matches!(composed("plain.txt"), Cow::Borrowed(_)));
         assert!(matches!(composed("caf\u{e9}"), Cow::Borrowed(_)));
         assert_eq!(composed("cafe\u{301}"), "caf\u{e9}");
+    }
+
+    #[test]
+    fn comparing_orders_names_the_way_their_host_keys_sort() {
+        // The index's collation and its stored key must never disagree, or a
+        // lookup by key misses a row the collation placed.
+        let names = [
+            "a",
+            "B",
+            "b",
+            "Report.txt",
+            "report.TXT",
+            "caf\u{e9}",
+            "cafe\u{301}",
+            "\u{c9}t\u{e9}",
+            "",
+        ];
+        for a in names {
+            for b in names {
+                assert_eq!(
+                    compare_for_comparison(a, b),
+                    normalize_for_comparison(a).cmp(&normalize_for_comparison(b)),
+                    "{a:?} vs {b:?}"
+                );
+            }
+        }
     }
 
     #[test]
