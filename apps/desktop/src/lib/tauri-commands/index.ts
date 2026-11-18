@@ -237,6 +237,7 @@ export {
   refreshVolumes,
   getDefaultVolumeId,
   resolvePathVolume,
+  liveVolumePath,
   resolveLocation,
   getVolumeSpace,
   ejectAllOnDisk,

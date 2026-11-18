@@ -23,6 +23,12 @@ impl VolumeLookup for AppOperationVolumes {
     fn get(&self, volume_id: &str) -> Option<Arc<dyn Volume>> {
         get_volume_manager().get(volume_id)
     }
+
+    /// The saved-roots rebase (`location::last_roots`): an undo follows the disk to its
+    /// root now, as a restored tab does.
+    fn live_path(&self, volume_id: &str, path: &Path) -> Option<std::path::PathBuf> {
+        crate::location::last_roots::live_path(volume_id, &path.to_string_lossy()).map(std::path::PathBuf::from)
+    }
 }
 
 impl OperationVolumes for AppOperationVolumes {

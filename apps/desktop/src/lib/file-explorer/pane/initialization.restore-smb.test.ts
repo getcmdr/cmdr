@@ -24,6 +24,7 @@ const commands = vi.hoisted(() => ({
   pathExists: vi.fn(),
   getDefaultVolumeId: vi.fn(),
   resolvePathVolume: vi.fn(),
+  liveVolumePath: vi.fn(),
   getE2eStartPath: vi.fn(),
   checkFullDiskAccessQuiet: vi.fn(),
   listSavedServers: vi.fn(),

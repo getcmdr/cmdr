@@ -628,6 +628,11 @@ on any build script that needs MSVC's `cl.exe`.
   `cmdr-multi-rename`, `cmdr-restic`, and `cmdr-listing-wasm` the same day, and the app (`cmdr`) last, after
   `cargo clippy -p cmdr --all-targets -D warnings` passed on the builder: `windowsPending` is empty, so every member
   must compile. Milestones and the builder's test runs: `docs/notes/windows-port/build-progress.md`.
+- **Windows 10 on real hardware (Mami)**: `ssh mami`, and read the infra repo's mami-laptop CLAUDE.md first (the build
+  drive unlock, the toolchain on `D:`). Running Cmdr's GUI there:
+  `~/projects-git/vdavid/infra/mami-laptop/run-on-desktop.sh --unlock-d -- 'D:\src\cmdr\target\debug\cmdr.exe'` runs it
+  in Admin's desktop session and returns its logs and a screenshot (`--help` lists window screenshots, key presses, and
+  leaving the app running).
 - **The break report (never red)**: `desktop-rust-windows-breaks` runs one `cargo check --keep-going --all-targets` over
   every other member that builds on Linux, and classifies each: compiles (ready to join), fails (its error count and
   first errors), or blocked (the failing crates in its dependency closure, ours or third-party, a failed build script

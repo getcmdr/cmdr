@@ -631,6 +631,7 @@ macro_rules! ipc_command_manifest {
                 typed: [
                     crate::commands::volumes::list_volumes,
                     crate::commands::volumes::resolve_path_volume,
+                    crate::commands::volumes::live_volume_path,
                     crate::commands::volumes::resolve_location,
                     crate::commands::volumes::get_default_volume_id,
                     crate::commands::volumes::get_volume_space,

@@ -12,6 +12,7 @@ import {
   pathExists,
   getDefaultVolumeId,
   resolvePathVolume,
+  liveVolumePath,
   getE2eStartPath,
   checkFullDiskAccessQuiet,
   listSavedServers,
@@ -45,8 +46,8 @@ export interface InitializedState {
 export async function loadPersistedState(): Promise<InitializedState> {
   // Load persisted state (tabs + app status) in parallel
   const [leftPaneTabs, rightPaneTabs, status] = await Promise.all([
-    loadPaneTabs('left', pathExists),
-    loadPaneTabs('right', pathExists),
+    loadPaneTabs('left', pathExists, liveVolumePath),
+    loadPaneTabs('right', pathExists, liveVolumePath),
     loadAppStatus(pathExists),
   ])
 

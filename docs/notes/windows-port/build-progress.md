@@ -1,11 +1,11 @@
 # Windows build progress
 
 A running log of the Windows build track (#942, `docs/specs/windows-port-plan.md` § "Windows build state"), one entry
-per milestone, newest last. The machine is the Windows 10 22H2 builder (`ssh mami`, MSVC; its setup lives in the infra
-repo's mami-laptop notes); the fast loop is `cargo check --target x86_64-pc-windows-gnu` on a Mac with zig as the C
-compiler and `AWS_LC_SYS_PREBUILT_NASM=1`: `CC_x86_64_pc_windows_gnu` names a script that drops cc-rs's `--target` flag
-and runs `zig cc -target x86_64-windows-gnu`, and `AR_x86_64_pc_windows_gnu` runs `zig ar`. Two things it can't judge:
-the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig's clang refuses.
+per milestone, newest last. The machine is the Windows 10 22H2 builder (`ssh mami`, MSVC; how to reach it, build there,
+and run the GUI: `docs/tooling/ci.md` § Windows lane); the fast loop is `cargo check --target x86_64-pc-windows-gnu` on
+a Mac with zig as the C compiler and `AWS_LC_SYS_PREBUILT_NASM=1`: `CC_x86_64_pc_windows_gnu` names a script that drops
+cc-rs's `--target` flag and runs `zig cc -target x86_64-windows-gnu`, and `AR_x86_64_pc_windows_gnu` runs `zig ar`. Two
+things it can't judge: the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig's clang refuses.
 
 - **2026-11-18, baseline** (`52f7ec04ea`): the seven must-compile members (`cmdr-collation`, `cmdr-http`, `cmdr-menu`,
   `cmdr-platform-cfg`, `cmdr-recents`, `cmdr-sort`, `cmdr-update-trust`) build and pass `cargo test` on the builder, 141
