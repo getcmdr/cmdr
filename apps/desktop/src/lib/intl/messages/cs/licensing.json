@@ -364,6 +364,10 @@
   "@licensing.error.server": {
     "sourceHash": "89870f9"
   },
+  "licensing.error.serverBusy": "Licenční server je teď zaneprázdněný, takže se váš kód nepodařilo vyhledat.",
+  "@licensing.error.serverBusy": {
+    "sourceHash": "947a6e2"
+  },
   "licensing.error.serverHint": "Zkuste to prosím později.",
   "@licensing.error.serverHint": {
     "sourceHash": "386b914"

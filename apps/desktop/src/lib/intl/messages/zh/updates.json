@@ -108,9 +108,9 @@
   "@updates.status.installing": {
     "sourceHash": "214ef12"
   },
-  "updates.status.noBuildForThisPlatform": "这个版本的 Cmdr 暂时无法检查更新。请稍后再试。",
+  "updates.status.noBuildForThisPlatform": "Cmdr 有了新版本，但还没有适用于这个系统的版本。之后再来看看吧。",
   "@updates.status.noBuildForThisPlatform": {
-    "sourceHash": "e64ebc5"
+    "sourceHash": "0644008"
   },
   "updates.status.managedOff": "Cmdr 的更新由你的组织管理。",
   "@updates.status.managedOff": {

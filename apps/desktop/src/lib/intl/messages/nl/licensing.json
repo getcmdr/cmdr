@@ -365,6 +365,10 @@
   "@licensing.error.server": {
     "sourceHash": "89870f9"
   },
+  "licensing.error.serverBusy": "De licentieserver heeft het nu druk en kon je code daarom niet opzoeken.",
+  "@licensing.error.serverBusy": {
+    "sourceHash": "947a6e2"
+  },
   "licensing.error.serverHint": "Probeer het later opnieuw.",
   "@licensing.error.serverHint": {
     "sourceHash": "386b914"

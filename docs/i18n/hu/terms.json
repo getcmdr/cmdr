@@ -664,10 +664,7 @@
     ],
     "forms": "progress Ellenőrzés…; Checking for changes → Változások ellenőrzése; Checking for conflicts → Ütközések keresése; Re-check button → Újraellenőrzés; I've checked the key / the certificate → Ellenőriztem a kulcsot / Ellenőriztem a tanúsítványt",
     "confidence": "high",
-    "sources": "macOS Finder (BN9 „^0” tartalmának ellenőrzése); TextToSpeech VB_CHECK_AGAIN (Check Again = Újraellenőrzés)",
-    "exceptions": {
-      "updates.status.noBuildForThisPlatform": "The update check succeeded; the line says this build can't update yet (description), so it reads „egyelőre nem tud frissülni”, with no check verb."
-    }
+    "sources": "macOS Finder (BN9 „^0” tartalmának ellenőrzése); TextToSpeech VB_CHECK_AGAIN (Check Again = Újraellenőrzés)"
   },
   "checklist": {
     "chosen": "ellenőrzőlista",

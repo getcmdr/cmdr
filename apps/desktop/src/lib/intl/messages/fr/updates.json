@@ -108,9 +108,9 @@
   "@updates.status.installing": {
     "sourceHash": "214ef12"
   },
-  "updates.status.noBuildForThisPlatform": "Cette version de Cmdr ne peut pas rechercher de mises à jour pour le moment. Réessayez plus tard.",
+  "updates.status.noBuildForThisPlatform": "Une version plus récente de Cmdr est disponible, mais pas encore pour ce système. Vérifiez de nouveau plus tard.",
   "@updates.status.noBuildForThisPlatform": {
-    "sourceHash": "e64ebc5"
+    "sourceHash": "0644008"
   },
   "updates.status.managedOff": "Votre organisation gère les mises à jour de Cmdr.",
   "@updates.status.managedOff": {

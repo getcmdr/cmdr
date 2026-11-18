@@ -75,6 +75,10 @@
   "@licensing.error.server": {
     "sourceHash": "1cad7a8"
   },
+  "licensing.error.serverBusy": "El servidor de licencias está ocupado ahora mismo, así que no pudo consultar tu código.",
+  "@licensing.error.serverBusy": {
+    "sourceHash": "55745b7"
+  },
   "licensing.error.generic": "Algo salió mal al activar esta clave.",
   "@licensing.error.generic": {
     "sourceHash": "bb6e0f3"

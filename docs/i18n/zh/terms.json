@@ -1957,7 +1957,8 @@
       "settings.mediaIndex.reclaim.confirmBody": "\"index these images again later\" is an adverb (之后), not the Later button."
     },
     "note": "Only the button that defers a prompt; the adverb later is 之后 / 以后.",
-    "sources": "standard"
+    "sources": "standard",
+    "accept": ["之后", "以后"]
   },
   "leave-alone": {
     "accept": ["留在", "保留了"],

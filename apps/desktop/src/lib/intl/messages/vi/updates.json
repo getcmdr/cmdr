@@ -108,9 +108,9 @@
   "@updates.status.installing": {
     "sourceHash": "214ef12"
   },
-  "updates.status.noBuildForThisPlatform": "Bản Cmdr này hiện không thể kiểm tra bản cập nhật. Hãy thử lại sau.",
+  "updates.status.noBuildForThisPlatform": "Đã có phiên bản Cmdr mới hơn, nhưng chưa có cho hệ thống này. Hãy kiểm tra lại sau.",
   "@updates.status.noBuildForThisPlatform": {
-    "sourceHash": "e64ebc5"
+    "sourceHash": "0644008"
   },
   "updates.status.managedOff": "Tổ chức của bạn quản lý việc cập nhật Cmdr.",
   "@updates.status.managedOff": {

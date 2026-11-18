@@ -157,8 +157,7 @@
       "commands.appCheckForUpdates.description": "zjistit, jestli … is the natural verb for checking availability",
       "settings.updates.autoCheck.label": "update concept: Automaticky vyhledávat aktualizace, pairs with menu.app.checkForUpdates (Vyhledat aktualizace…)",
       "settings.updates.checkForUpdates": "update concept: Vyhledat aktualizace, the menu.app.checkForUpdates label without the ellipsis",
-      "updates.failure.check": "Check for updates is the update concept: Vyhledat aktualizace (menu.app.checkForUpdates), so the failure says Cmdru se nepodařilo vyhledat aktualizace.",
-      "updates.status.noBuildForThisPlatform": "The update check succeeded; the line says this build can't update yet (description), so it reads se teď nemůže aktualizovat, with no check verb."
+      "updates.failure.check": "Check for updates is the update concept: Vyhledat aktualizace (menu.app.checkForUpdates), so the failure says Cmdru se nepodařilo vyhledat aktualizace."
     }
   },
   "choose": {

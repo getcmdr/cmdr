@@ -717,10 +717,7 @@
     "confidence": "high",
     "sources": "macOS live Security authorization.buttons (Check → Перевірити), DiscRecording (Verifying → Перевірка); Finder PW22 (Verifying → Перевіряння); MS (check → перевіряти)",
     "forms": "Progress: Перевірка… (DiscRecording); Finder's Перевіряння is an older verbal-noun form.",
-    "note": "Added «звір» (b26): comparing a fingerprint against a known one is «Звірте відбиток…» (servers.hostKey.*Body, servers.certificate.*Body); «перевірте» there reads as a vaguer inspect.",
-    "exceptions": {
-      "updates.status.noBuildForThisPlatform": "The update check succeeded; the line says this build can't update yet (description), so it reads «поки що не може оновитися», with no check verb."
-    }
+    "note": "Added «звір» (b26): comparing a fingerprint against a known one is «Звірте відбиток…» (servers.hostKey.*Body, servers.certificate.*Body); «перевірте» there reads as a vaguer inspect."
   },
   "checklist": {
     "chosen": "контрольний список",

@@ -365,6 +365,10 @@
   "@licensing.error.server": {
     "sourceHash": "89870f9"
   },
+  "licensing.error.serverBusy": "Le serveur de licences est occupé pour le moment, il n’a donc pas pu vérifier votre code.",
+  "@licensing.error.serverBusy": {
+    "sourceHash": "947a6e2"
+  },
   "licensing.error.serverHint": "Réessayez plus tard.",
   "@licensing.error.serverHint": {
     "sourceHash": "386b914"

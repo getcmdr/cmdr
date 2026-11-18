@@ -108,9 +108,9 @@
   "@updates.status.installing": {
     "sourceHash": "214ef12"
   },
-  "updates.status.noBuildForThisPlatform": "A Cmdr ezen változata egyelőre nem tud frissülni. Próbáld újra később.",
+  "updates.status.noBuildForThisPlatform": "Megjelent a Cmdr újabb verziója, de erre a rendszerre még nem. Nézz vissza később.",
   "@updates.status.noBuildForThisPlatform": {
-    "sourceHash": "e64ebc5"
+    "sourceHash": "0644008"
   },
   "updates.status.managedOff": "A Cmdr frissítéseit a szervezeted kezeli.",
   "@updates.status.managedOff": {

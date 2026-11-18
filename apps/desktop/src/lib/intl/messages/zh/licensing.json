@@ -364,6 +364,10 @@
   "@licensing.error.server": {
     "sourceHash": "89870f9"
   },
+  "licensing.error.serverBusy": "许可证服务器现在很忙，所以没能查询你的许可证密钥。",
+  "@licensing.error.serverBusy": {
+    "sourceHash": "947a6e2"
+  },
   "licensing.error.serverHint": "请稍后再试。",
   "@licensing.error.serverHint": {
     "sourceHash": "386b914"

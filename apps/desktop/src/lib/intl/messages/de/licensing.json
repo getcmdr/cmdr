@@ -365,6 +365,10 @@
   "@licensing.error.server": {
     "sourceHash": "89870f9"
   },
+  "licensing.error.serverBusy": "Der Lizenzserver ist gerade ausgelastet und konnte deinen Code deshalb nicht nachschlagen.",
+  "@licensing.error.serverBusy": {
+    "sourceHash": "947a6e2"
+  },
   "licensing.error.serverHint": "Versuche es bitte später erneut.",
   "@licensing.error.serverHint": {
     "sourceHash": "386b914"

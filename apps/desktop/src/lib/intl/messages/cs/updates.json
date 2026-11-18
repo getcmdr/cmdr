@@ -108,9 +108,9 @@
   "@updates.status.installing": {
     "sourceHash": "214ef12"
   },
-  "updates.status.noBuildForThisPlatform": "Toto sestavení Cmdru se teď nemůže aktualizovat. Zkuste to později.",
+  "updates.status.noBuildForThisPlatform": "Vyšla novější verze Cmdru, zatím ale ne pro tento systém. Zkontrolujte to později znovu.",
   "@updates.status.noBuildForThisPlatform": {
-    "sourceHash": "e64ebc5"
+    "sourceHash": "0644008"
   },
   "updates.status.managedOff": "Aktualizace Cmdru spravuje vaše organizace.",
   "@updates.status.managedOff": {

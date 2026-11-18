@@ -364,6 +364,10 @@
   "@licensing.error.server": {
     "sourceHash": "89870f9"
   },
+  "licensing.error.serverBusy": "Licensservern har fullt upp just nu, så den kunde inte slå upp din kod.",
+  "@licensing.error.serverBusy": {
+    "sourceHash": "947a6e2"
+  },
   "licensing.error.serverHint": "Försök igen senare.",
   "@licensing.error.serverHint": {
     "sourceHash": "386b914"

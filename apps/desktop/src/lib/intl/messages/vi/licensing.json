@@ -365,6 +365,10 @@
   "@licensing.error.server": {
     "sourceHash": "89870f9"
   },
+  "licensing.error.serverBusy": "Máy chủ giấy phép đang bận, nên chưa tra được mã của bạn.",
+  "@licensing.error.serverBusy": {
+    "sourceHash": "947a6e2"
+  },
   "licensing.error.serverHint": "Hãy thử lại sau nhé.",
   "@licensing.error.serverHint": {
     "sourceHash": "386b914"

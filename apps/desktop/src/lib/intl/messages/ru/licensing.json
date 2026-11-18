@@ -364,6 +364,10 @@
   "@licensing.error.server": {
     "sourceHash": "89870f9"
   },
+  "licensing.error.serverBusy": "Сервер лицензий сейчас занят, поэтому не смог проверить ваш код.",
+  "@licensing.error.serverBusy": {
+    "sourceHash": "947a6e2"
+  },
   "licensing.error.serverHint": "Попробуйте позже.",
   "@licensing.error.serverHint": {
     "sourceHash": "386b914"
