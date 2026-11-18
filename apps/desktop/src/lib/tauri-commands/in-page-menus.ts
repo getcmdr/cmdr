@@ -92,7 +92,7 @@ export async function followMenuBar(onMenus: (menus: BarMenuView[]) => void): Pr
   }
 
   async function ask(): Promise<void> {
-    if (asking || stopped) return
+    if (asking) return
     asking = true
     // Everything from here on waits for the answer, which already holds anything older.
     menus = null
@@ -108,7 +108,7 @@ export async function followMenuBar(onMenus: (menus: BarMenuView[]) => void): Pr
       retryMs = FIRST_RETRY_MS
       onMenus(menus)
     } catch (error) {
-      log.warn("Couldn't get the menu bar, retrying: {error}", { error: String(error) })
+      log.warn("Couldn't get the menu bar, retrying: {error}", { error })
     } finally {
       asking = false
     }
