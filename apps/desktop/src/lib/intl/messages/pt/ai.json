@@ -608,7 +608,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Verifique se o chaveiro do sistema está disponível e tente novamente. Se continuar, reinicie o app.} windows {Verifique se o Gerenciador de Credenciais está disponível e tente novamente. Se continuar acontecendo, reinicie o Cmdr.} other {Verifique se o chaveiro do sistema está disponível e tente novamente. Se continuar, reinicie o app.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Verifique se o Acesso às Chaves está disponível e tente novamente. Se continuar, reinicie o app.} windows {Verifique se o Gerenciador de Credenciais está disponível e tente novamente. Se continuar acontecendo, reinicie o Cmdr.} other {Verifique se o chaveiro do sistema está disponível e tente novamente. Se continuar, reinicie o app.}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },

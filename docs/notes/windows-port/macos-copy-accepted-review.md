@@ -160,13 +160,11 @@ reason, `__fixtures__/macos-copy-baseline.json` for the old text a Mac reader sa
   - New: {combo} is usually taken by macOS ({label}), so the shortcut may never reach Cmdr. You can free it up in System
     Settings > Keyboard.
 
-## Not yet followed in every language (found 2026-11-18)
+## Followed after the guard went (2026-11-18)
 
-- **`ai.secretError.genericBody`**: the English macOS text now names the Keychain, but 12 catalogs still read the old
-  "system keyring" wording on macOS (`cs`, `de`, `es`, `fr`, `hu`, `nl`, `pt`, `ru`, `sv`, `uk`, `zh`, `zh-Hant`;
-  `es-419` inherits `es`). Only `vi` followed it (above). Each locale's `terms.json` `keychain` ruling names the macOS
-  word.
+- **`ai.secretError.genericBody`**: the English macOS text names the Keychain, and 12 catalogs read the old "system
+  keyring" wording on macOS (`cs`, `de`, `es`, `fr`, `hu`, `nl`, `pt`, `ru`, `sv`, `uk`, `zh`, `zh-Hant`; `es-419`
+  inherits `es`). Each now uses its `terms.json` `keychain` ruling, as a plain translation edit.
 - **`main.quit.countdown`** in `es` (and `es-419`, which inherits it): the block has no `macos` branch, so macOS and
-  Linux both read `other`, and the Spanish `other` says "al reiniciar el Mac", which is wrong on Linux. The English
-  `other` names no OS ("a restart or logout").
-- With the guard gone, each is a plain translation edit.
+  Linux both read `other`, and the Spanish `other` said "al reiniciar el Mac", wrong on Linux. It now names no OS, like
+  the English `other` ("a restart or logout").

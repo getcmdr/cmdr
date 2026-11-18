@@ -609,7 +609,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {請確認你的系統鑰匙圈可以使用，然後再試一次。如果還是這樣，請重新啟動 App。} windows {請確認認證管理員可以使用，然後再試一次。如果一直發生，請重新啟動 Cmdr。} other {請確認你的系統鑰匙圈可以使用，然後再試一次。如果還是這樣，請重新啟動 App。}}",
+  "ai.secretError.genericBody": "{platform, select, macos {請確認你的鑰匙圈可以使用，然後再試一次。如果還是這樣，請重新啟動 App。} windows {請確認認證管理員可以使用，然後再試一次。如果一直發生，請重新啟動 Cmdr。} other {請確認你的系統鑰匙圈可以使用，然後再試一次。如果還是這樣，請重新啟動 App。}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },

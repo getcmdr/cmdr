@@ -615,7 +615,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Controleer of de sleutelhanger van je systeem beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.} windows {Controleer of Referentiebeheer beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan Cmdr.} other {Controleer of de sleutelhanger van je systeem beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Controleer of Sleutelhanger beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.} windows {Controleer of Referentiebeheer beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan Cmdr.} other {Controleer of de sleutelhanger van je systeem beschikbaar is en probeer het opnieuw. Blijft het gebeuren, herstart dan de app.}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },

@@ -147,7 +147,7 @@
   "@main.quit.body": {
     "sourceHash": "79a69f9"
   },
-  "main.quit.countdown": "{platform, select, windows {{seconds, plural, one {Cmdr se cerrará en {secondsText} segundo, para no hacerte esperar al reiniciar el PC o cerrar sesión.} many {Cmdr se cerrará en {secondsText} segundos, para no hacerte esperar al reiniciar el PC o cerrar sesión.} other {Cmdr se cerrará en {secondsText} segundos, para no hacerte esperar al reiniciar el PC o cerrar sesión.}}} other {{seconds, plural, one {Cmdr se cerrará en {secondsText} segundo, para no hacerte esperar al reiniciar el Mac o cerrar sesión.} many {Cmdr se cerrará en {secondsText} segundos, para no hacerte esperar al reiniciar el Mac o cerrar sesión.} other {Cmdr se cerrará en {secondsText} segundos, para no hacerte esperar al reiniciar el Mac o cerrar sesión.}}}}",
+  "main.quit.countdown": "{platform, select, windows {{seconds, plural, one {Cmdr se cerrará en {secondsText} segundo, para no hacerte esperar al reiniciar el PC o cerrar sesión.} many {Cmdr se cerrará en {secondsText} segundos, para no hacerte esperar al reiniciar el PC o cerrar sesión.} other {Cmdr se cerrará en {secondsText} segundos, para no hacerte esperar al reiniciar el PC o cerrar sesión.}}} other {{seconds, plural, one {Cmdr se cerrará en {secondsText} segundo, para no hacerte esperar al reiniciar o cerrar sesión.} many {Cmdr se cerrará en {secondsText} segundos, para no hacerte esperar al reiniciar o cerrar sesión.} other {Cmdr se cerrará en {secondsText} segundos, para no hacerte esperar al reiniciar o cerrar sesión.}}}}",
   "@main.quit.countdown": {
     "sourceHash": "e220441"
   },
