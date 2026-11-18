@@ -93,7 +93,9 @@ fork table `apps/desktop/scripts/i18n-en-overlays.test.ts` mirrors.
   `Windows` keeps the OS name out of `window`, which still reads "close all windows". When no phrase tells the senses
   apart (the bare label `Archive` names the zip noun in one key and archiving a chat in another), an entry can be
   `{ "key": "<message key>", "why": "…" }` instead of a form: it excludes that one key, which must exist in the English
-  catalog. An `exceptions` entry for that key then turns stale, so drop it.
+  catalog. An `exceptions` entry for that key then turns stale, so drop it. The term-consistency check reads these too:
+  a key excluded this way never groups with same-English keys the concept still names, so no locale needs an allowlist
+  entry for that split.
 - `sense` (required): one sentence, what this concept means in Cmdr. Split one English word into several concepts when
   it has several senses (`browse-file-picker` vs `browse-archive`), give each a `match` as specific as possible (they
   may overlap; the brief shows both), and link them with `distinct`.

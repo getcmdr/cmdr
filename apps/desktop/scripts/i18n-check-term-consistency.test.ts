@@ -9,6 +9,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   agreementProblems,
+  conceptSenses,
   findDivergences,
   normalizeForComparison,
   isAllowed,
@@ -17,6 +18,7 @@ import {
 } from './i18n-check-term-consistency.ts'
 import type { Allowlist, DivergenceFinding, LocaleOutcome } from './i18n-check-term-consistency.ts'
 import type { Catalog } from './i18n-catalog-lib.ts'
+import type { Concepts } from './i18n-termbase-lib.ts'
 
 const cat = (messages: Record<string, string>): Catalog => ({ messages, metadata: {} })
 
@@ -80,6 +82,34 @@ describe('findDivergences: full translation', () => {
 
   it('ignores a source value that appears only once', () => {
     expect(findDivergences(cat({ 'a.b': 'Only one' }), cat({ 'a.b': 'Egy' }), false)).toEqual([])
+  })
+})
+
+describe('findDivergences: another sense, by a concept’s key-scoped notMatch', () => {
+  // The macOS Library folder "Preferences", kept as on disk, beside GNOME's "Preferences" menu row.
+  const english = cat({
+    'about.folder': 'Preferences',
+    'menu.settings': '{platform, select, windows {Settings} linuxGnome {Preferences} other {Settings…}}',
+  })
+  const de = cat({
+    'about.folder': 'Preferences',
+    'menu.settings': '{platform, select, windows {Einstellungen} linuxGnome {Einstellungen} other {Einstellungen…}}',
+  })
+
+  it('flags the pair when no concept tells the senses apart', () => {
+    expect(findDivergences(english, de, false, english.messages)).toHaveLength(1)
+  })
+
+  it('keeps a key a concept’s notMatch takes out of that concept apart from the keys it still names', () => {
+    const concepts: Concepts = {
+      'preferences-window': {
+        en: 'Preferences',
+        match: ['preferences'],
+        sense: 'GNOME’s settings window',
+        notMatch: [{ key: 'about.folder', why: 'the macOS folder name' }],
+      },
+    }
+    expect(findDivergences(english, de, false, english.messages, conceptSenses(concepts))).toEqual([])
   })
 })
 

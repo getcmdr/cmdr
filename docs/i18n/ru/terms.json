@@ -3727,10 +3727,6 @@
     "confidence": "high",
     "sources": "macOS live IntentsLocalizable Preferences → «Настройки»; MS Preferences → «Настройки»",
     "note": "Russian has one word for Preferences and Settings; the concept only exists to quote another OS's label.",
-    "exceptions": {
-      "fileExplorer.quickFilter.intro.openSettings": "The linuxGnome branch is GNOME's own app-menu word, «Параметры» (ru nautilus.po `_Preferences` → `_Параметры`), not the Android USB Preferences label this concept quotes.",
-      "menu.app.settings": "The linuxGnome branch is GNOME's own app-menu word, «Параметры» (ru nautilus.po `_Preferences` → `_Параметры`)."
-    },
     "other": {
       "chosen": "Параметры",
       "accept": ["параметр", "настройк"],
