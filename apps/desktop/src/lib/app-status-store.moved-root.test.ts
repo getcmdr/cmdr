@@ -2,11 +2,13 @@
  * What loading a stored tab does when its volume came back at another root (plan D8): a drive
  * on another letter, a disk at another mount point. The path follows the DISK, rebased before
  * the existence walk, so the walk never probes the old root, which may hold another disk now.
- * Same fake `@tauri-apps/plugin-store` rig as `app-status-store.smb-tabs.test.ts`.
+ * And while the startup sweep hasn't registered the volume, the tab keeps its stored path and
+ * id untouched. Same fake `@tauri-apps/plugin-store` rig as `app-status-store.smb-tabs.test.ts`.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { loadPaneTabs } from './app-status-store'
 import type { PersistedTab } from './file-explorer/tabs/tab-types'
+import type { RestoredTabPath } from '#lib/ipc/bindings.js'
 
 const disk = vi.hoisted(() => new Map<string, unknown>())
 
@@ -43,6 +45,8 @@ function storedTab(overrides: Partial<PersistedTab>): PersistedTab {
   }
 }
 
+const keep = (): Promise<RestoredTabPath> => Promise.resolve({ kind: 'keep' })
+
 beforeEach(() => {
   disk.clear()
 })
@@ -55,9 +59,11 @@ describe('a stored tab whose volume moved', () => {
       probed.push(p)
       return Promise.resolve(p.startsWith('/Volumes/Backup 1'))
     }
-    const livePath = vi.fn(({ volumeId, path }: { volumeId: string; path: string }) =>
+    const livePath = vi.fn(({ volumeId, path }: { volumeId: string; path: string }): Promise<RestoredTabPath> =>
       Promise.resolve(
-        volumeId === 'vol-backup-1234567890abcdef' ? path.replace('/Volumes/Backup', '/Volumes/Backup 1') : null,
+        volumeId === 'vol-backup-1234567890abcdef'
+          ? { kind: 'moved', path: path.replace('/Volumes/Backup', '/Volumes/Backup 1') }
+          : { kind: 'keep' },
       ),
     )
 
@@ -69,17 +75,36 @@ describe('a stored tab whose volume moved', () => {
     })
     expect(paneTabs.tabs[0].path).toBe('/Volumes/Backup 1/photos/2026')
     expect(probed.some((p) => p.startsWith('/Volumes/Backup/'))).toBe(false)
+    expect(paneTabs.registryPendingTabIds).toEqual([])
   })
 
   it('keeps the path when the volume’s root is where it was', async () => {
     disk.set('leftTabs', { tabs: [storedTab({ path: '/Users/test_user_1', volumeId: 'root' })], activeTabId: 'tab-1' })
 
-    const paneTabs = await loadPaneTabs(
-      'left',
-      () => Promise.resolve(true),
-      () => Promise.resolve(null),
-    )
+    const paneTabs = await loadPaneTabs('left', () => Promise.resolve(true), keep)
 
     expect(paneTabs.tabs[0]).toMatchObject({ path: '/Users/test_user_1', volumeId: 'root' })
+  })
+})
+
+describe('a stored tab whose volume the startup sweep hasn’t registered yet', () => {
+  it('keeps its stored path and id, never probes the old root, and says it’s pending', async () => {
+    disk.set('leftTabs', {
+      tabs: [storedTab({ path: 'E:/photos', volumeId: 'vol-stick-a' }), storedTab({ id: 'tab-2', path: '/Users/x' })],
+      activeTabId: 'tab-1',
+    })
+    const probed: string[] = []
+    const exists = (p: string) => {
+      probed.push(p)
+      return Promise.resolve(true)
+    }
+    const livePath = ({ volumeId }: { volumeId: string }): Promise<RestoredTabPath> =>
+      Promise.resolve(volumeId === 'vol-stick-a' ? { kind: 'notReady' } : { kind: 'keep' })
+
+    const paneTabs = await loadPaneTabs('left', exists, livePath)
+
+    expect(paneTabs.tabs[0]).toMatchObject({ path: 'E:/photos', volumeId: 'vol-stick-a' })
+    expect(probed).not.toContain('E:/photos')
+    expect(paneTabs.registryPendingTabIds).toEqual(['tab-1'])
   })
 })

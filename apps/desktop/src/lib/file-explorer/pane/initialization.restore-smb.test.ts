@@ -9,7 +9,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getActiveTab } from '../tabs/tab-state-manager.svelte'
-import type { PersistedPaneTabs } from '../tabs/tab-types'
+import type { LoadedPaneTabs } from '#lib/app-status-store.js'
 
 const appStatus = vi.hoisted(() => ({
   loadAppStatus: vi.fn(),
@@ -38,12 +38,13 @@ vi.mock('#lib/ask-cmdr/ask-cmdr-trigger.svelte.js', () => ({ hydrateRail: vi.fn(
 const shareId = 'smb-testnas-445-testshare'
 const existing = new Set(['/', '/Volumes', '~'])
 
-function paneTabs(side: 'left' | 'right', path: string, volumeId: string): PersistedPaneTabs {
+function paneTabs(side: 'left' | 'right', path: string, volumeId: string): LoadedPaneTabs {
   return {
     tabs: [
       { id: `${side}-tab`, path, volumeId, sortBy: 'name', sortOrder: 'ascending', viewMode: 'brief', pinned: false },
     ],
     activeTabId: `${side}-tab`,
+    registryPendingTabIds: [],
   }
 }
 

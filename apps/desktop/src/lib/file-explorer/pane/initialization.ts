@@ -94,8 +94,13 @@ export async function loadPersistedState(): Promise<InitializedState> {
   }
 
   const shareRoots = await unmountedShareRoots([...leftPaneTabs.tabs, ...rightPaneTabs.tabs])
+  // Tabs whose volume the startup sweep hadn't registered: kept as stored, id and path, and
+  // shown unreachable. ❌ Never re-key one by what answers at its path now: on Windows the old
+  // letter may hold another disk (`app-status-store.ts::LoadedPaneTabs`).
+  const registryPending = new Set([...leftPaneTabs.registryPendingTabIds, ...rightPaneTabs.registryPendingTabIds])
 
   async function restoreTab(tab: PersistedTab) {
+    if (registryPending.has(tab.id)) return { ...tab, unreachablePath: tab.path }
     const share = await restoreShareTab(tab, shareRoots)
     if (share.kept) return { ...tab, unreachablePath: null }
     const resolution = await resolveVolumeId(tab.volumeId, share.path, !!e2eStartPath)

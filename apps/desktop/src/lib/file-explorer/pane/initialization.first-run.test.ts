@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getActiveTab } from '../tabs/tab-state-manager.svelte'
-import type { PersistedPaneTabs } from '../tabs/tab-types'
+import type { LoadedPaneTabs } from '#lib/app-status-store.js'
 
 const appStatus = vi.hoisted(() => ({
   loadAppStatus: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock('#lib/app-mode.js', () => ({ isE2eRun }))
 vi.mock('#lib/ask-cmdr/ask-cmdr-trigger.svelte.js', () => ({ hydrateRail: vi.fn() }))
 
 /** What a never-launched install's store hands back: one home tab per pane, no marker. */
-function freshPaneTabs(side: 'left' | 'right'): PersistedPaneTabs {
+function freshPaneTabs(side: 'left' | 'right'): LoadedPaneTabs {
   return {
     tabs: [
       {
@@ -48,6 +48,7 @@ function freshPaneTabs(side: 'left' | 'right'): PersistedPaneTabs {
       },
     ],
     activeTabId: `${side}-tab`,
+    registryPendingTabIds: [],
   }
 }
 

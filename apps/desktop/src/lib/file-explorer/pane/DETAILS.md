@@ -1534,8 +1534,10 @@ rescues an `app-status.json` that already holds a snapshot path, plus the tab wh
 **A tab follows its disk when the disk moved roots.** `loadPaneTabs` asks `liveVolumePath({ volumeId, path })` (the
 backend's `location/last_roots.rs`) for each stored tab BEFORE the existence walk: a Windows drive back on another
 letter, or a Mac disk back at `/Volumes/Backup 1`, rebases the tab's path onto the volume's live root, so the walk never
-probes the old root, which may hold another disk now. A volume sitting where it did answers `null` and the tab loads as
-before.
+probes the old root, which may hold another disk now. A volume sitting where it did answers `keep` and the tab loads as
+before. A volume the startup sweep hasn't registered yet answers `notReady` (after a bounded wait): the tab keeps its
+stored path and id unprobed, `loadPaneTabs` lists it in `registryPendingTabIds`, and `initialization.ts` skips
+`resolveVolumeId` for it and shows it unreachable, so the old letter's new disk can't claim it.
 
 **Why it mattered.** `resolvePersistedPath` passes every `scheme://` path through unprobed (a server or phone path can't
 answer a probe at launch) and `initialization.ts::resolveVolumeId` exempts only `network`, so a restored snapshot tab

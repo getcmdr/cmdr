@@ -4882,14 +4882,14 @@ export const commands = {
    */
   resolvePathVolume: (path: string) => __TAURI_INVOKE<PathVolumeResolution>('resolve_path_volume', { path }),
   /**
-   *  Where `path`, recorded on volume `volume_id` (a restored tab), sits under that volume's
-   *  live root: the rebased path when the volume's root moved since (a drive back on another
-   *  letter, a disk back at another mount point), else `None` (keep the path). In-memory only
-   *  (the registry and the saved roots), so no mount can block it.
-   *  `crate::location::last_roots` has the rule.
+   *  Where a restored tab recorded on volume `volume_id` at `path` opens: as stored, on the
+   *  volume's live root when that root moved (a drive back on another letter), or "not ready"
+   *  when the startup sweep hasn't registered the volume yet, so the tab keeps its stored id.
+   *  In-memory reads plus a bounded wait for the sweep, off the IPC thread.
+   *  `crate::location::last_roots::restored_tab_path` has the rule.
    */
   liveVolumePath: (volumeId: string, path: string) =>
-    __TAURI_INVOKE<string | null>('live_volume_path', { volumeId, path }),
+    __TAURI_INVOKE<RestoredTabPath>('live_volume_path', { volumeId, path }),
   /**
    *  Resolves a path to a `Location` (`volume_id` + the path itself), the
    *  canonical path→volume resolver for navigation edges. Shares the full
@@ -18470,6 +18470,23 @@ export type ResticSnapshotMeta = {
    */
   paths: string[]
 }
+
+// What a restored tab does with its stored path ([`restored_tab_path`]).
+export type RestoredTabPath =
+  // The stored path stands on its volume as it is.
+  | { kind: 'keep' }
+  // The volume's root moved: the tab opens here instead.
+  | {
+      kind: 'moved'
+      // The stored path on the volume's live root.
+      path: string
+    }
+  /**
+   *  The registry isn't complete yet, so nothing can tell where this volume is: keep the
+   *  stored path AND id untouched, unprobed. ❌ Never re-key the tab from an incomplete
+   *  registry: the old root may now be another disk.
+   */
+  | { kind: 'notReady' }
 
 export type RestrictedPathsChangedPayload = {
   /**
