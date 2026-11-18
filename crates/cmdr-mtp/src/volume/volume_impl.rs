@@ -582,9 +582,11 @@ impl Volume for MtpVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        let path_std = path.as_std_legacy();
-        let path: &Path = &path_std;
-        self.scan_for_copy_impl(path)
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.scan_for_copy_impl(path).await
+        })
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
@@ -592,9 +594,11 @@ impl Volume for MtpVolume {
         paths: &'a [AppPathBuf],
         boundary: &'a cmdr_fs::volume::ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
-        let paths: &[PathBuf] = &paths_std;
-        self.scan_for_copy_batch_with_boundary_impl(paths, boundary)
+        Box::pin(async move {
+            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+            let paths: &[PathBuf] = &paths_std;
+            self.scan_for_copy_batch_with_boundary_impl(paths, boundary).await
+        })
     }
 
     fn scan_for_conflicts<'a>(
@@ -602,9 +606,11 @@ impl Volume for MtpVolume {
         source_items: &'a [SourceItemInfo],
         dest_path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ScanConflict>, VolumeError>> + Send + 'a>> {
-        let dest_path_std = dest_path.as_std_legacy();
-        let dest_path: &Path = &dest_path_std;
-        self.scan_for_conflicts_impl(source_items, dest_path)
+        Box::pin(async move {
+            let dest_path_std = dest_path.as_std_legacy();
+            let dest_path: &Path = &dest_path_std;
+            self.scan_for_conflicts_impl(source_items, dest_path).await
+        })
     }
 
     fn space_poll_interval(&self) -> Option<std::time::Duration> {
