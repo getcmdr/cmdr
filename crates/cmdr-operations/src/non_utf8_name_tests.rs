@@ -15,6 +15,8 @@
 
 #![cfg(target_os = "linux")]
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::os::unix::ffi::OsStrExt;
@@ -143,7 +145,11 @@ fn engine_with_a_pane_on(d: &Path) -> (TestOperations, TestListingGuard) {
     );
     let rows = tokio::runtime::Runtime::new()
         .expect("a runtime for the listing")
-        .block_on(BenchEngine::new().local_volume("/").list_directory(d, None))
+        .block_on(
+            BenchEngine::new()
+                .local_volume("/")
+                .list_directory(&AppPath::legacy_unchecked(d), None),
+        )
         .expect("the pane's listing");
     let guard = TestListing::new()
         .volume(DEFAULT_VOLUME_ID)
@@ -236,7 +242,7 @@ fn with_the_folder_open_in_a_pane_a_local_delete_reports_success_and_deletes_not
 async fn copy_to_memory(f: &Fixture) -> (Result<(), WriteOperationError>, Vec<(String, String, Option<u64>)>) {
     let engine = TestOperations::new();
     let dest = Arc::new(InMemoryVolume::new("mem"));
-    dest.create_directory(Path::new("/dst")).await.expect("/dst");
+    dest.create_directory(app_path!("/dst")).await.expect("/dst");
     let state = Arc::new(engine.new_operation_state(Duration::ZERO));
     let outcome = copy_volumes_with_progress(
         Arc::new(CollectorEventSink::new()),
@@ -254,7 +260,7 @@ async fn copy_to_memory(f: &Fixture) -> (Result<(), WriteOperationError>, Vec<(S
     .await
     .map_err(|failure| failure.error);
     let mut landed: Vec<_> = dest
-        .list_directory(Path::new("/dst/d"), None)
+        .list_directory(app_path!("/dst/d"), None)
         .await
         .unwrap_or_default()
         .into_iter()
