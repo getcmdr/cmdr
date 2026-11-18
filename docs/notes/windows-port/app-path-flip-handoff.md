@@ -34,8 +34,9 @@ Flip your crates in dependency order (a crate after every crate it depends on, d
    run usually converts the tests: that's pass 2, back to step 1. Stop when a run reports `checks: true` and edits
    nothing.
 4. Run it once more per feature set CI builds the crate with (`-cargo-args "--features testing"`,
-   `-cargo-args "--all-features"`); any edits are another pass. ❗ `-cargo-args` is ONE quoted string, and never repeat
-   `--all-targets` in it (the codemod already passes it): cargo then fails before rustc runs, and the run reads
+   `-cargo-args "--all-features"`, and alone each feature that gates code without `testing`, like `--features golden`:
+   the lib phase sees it only there); any edits are another pass. ❗ `-cargo-args` is ONE quoted string, and never
+   repeat `--all-targets` in it (the codemod already passes it): cargo then fails before rustc runs, and the run reads
    `0 diagnostics, 0 edits` with `checks: false`, which looks like a clean no-op. Only `checks: true` is green.
 5. Cross-check the `cfg` code this Mac never compiles, and fix what it finds as residue (README § residue, last bullet).
    The Mac recipe: a `zigcc.sh` in your scratchpad that drops cc-rs's `--target=…` argument and runs
@@ -129,10 +130,10 @@ From the plan; each agent owns whole crates, on its own branch off the tier befo
   for default, `testing`, `golden`, and `--all-features`, Windows and Linux (zig) checks with `--all-features`, wasm32
   `--lib --features golden`, clippy clean (default and all features), nextest 2,594 passed (30 skipped), 981 bridge
   calls over 205 files. New codemod rules on that branch: the `select!` and match-arm hoist, the closure hoist, fully
-  qualified macro signatures, the nested prelude, and the unused prelude. ❗ The literal rule emits `app_path!` in code
-  a feature gates without `cmdr-fs/testing` (`cmdr-operations`'s `golden`, which the browser demo's wasm test build
-  turns on): the host's `--all-targets` build unifies `testing` in, so it compiles there and breaks only
-  `cargo check --lib --features golden --target wasm32-unknown-unknown`.
+  qualified macro signatures, the nested prelude, and the unused prelude. The literal rule's `app_path!` in code a
+  feature gates without `cmdr-fs/testing` (`cmdr-operations`'s `golden`) compiled only because `--all-targets` unifies
+  `testing` in; tier 3 added the codemod's lib phase (README § "Lib phase"), which bridges those, and the seven golden
+  sites tier 2 fixed by hand are its output now (`-cargo-args "--features golden"`).
 - Tier 3: (G) `cmdr-multi-rename`, then `cmdr-listing-wasm`.
 - Tier 4: (H) the app, `cmdr` (33 impls, 629 test call sites), one agent with subagents by directory.
 

@@ -11,19 +11,7 @@ import (
 // of edits. Two edits over overlapping bytes keep the first (by start, then the longer); the
 // other comes back next round against the new text, so overlap only delays, never loses.
 func roundEdits(repo, crate string, crateRust, workspaceRust []string, diags []diagnostic) ([]edit, error) {
-	cache := map[string]*source{}
-	r := &rewriter{crate: crate, crateRust: crateRust, workspaceRust: workspaceRust, load: func(file string) (*source, error) {
-		if s, ok := cache[file]; ok {
-			return s, nil
-		}
-		text, err := os.ReadFile(filepath.Join(repo, file))
-		if err != nil {
-			return nil, err
-		}
-		s := newSource(file, text)
-		cache[file] = s
-		return s, nil
-	}, readRaw: func(file string) ([]byte, error) { return os.ReadFile(filepath.Join(repo, file)) }}
+	r := newRewriter(repo, crate, crateRust, workspaceRust)
 	retyping, err := methodsBeingRetyped(r, diags)
 	if err != nil {
 		return nil, err
@@ -49,6 +37,23 @@ func roundEdits(repo, crate string, crateRust, workspaceRust []string, diags []d
 		all = append(all, edits...)
 	}
 	return chooseEdits(all), nil
+}
+
+// newRewriter is a rewriter over the files on disk, each read once per round.
+func newRewriter(repo, crate string, crateRust, workspaceRust []string) *rewriter {
+	cache := map[string]*source{}
+	return &rewriter{crate: crate, crateRust: crateRust, workspaceRust: workspaceRust, load: func(file string) (*source, error) {
+		if s, ok := cache[file]; ok {
+			return s, nil
+		}
+		text, err := os.ReadFile(filepath.Join(repo, file))
+		if err != nil {
+			return nil, err
+		}
+		s := newSource(file, text)
+		cache[file] = s
+		return s, nil
+	}, readRaw: func(file string) ([]byte, error) { return os.ReadFile(filepath.Join(repo, file)) }}
 }
 
 func methodKey(file string, m *implMethod) string {

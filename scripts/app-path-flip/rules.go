@@ -455,9 +455,10 @@ func headInsertOffset(masked []byte) int {
 	return len(masked)
 }
 
-var pathImportNames = regexp.MustCompile("^unused imports?: (`(std::path::)?(Path|PathBuf|self)`(, | and )?)+$")
+var pathImportNames = regexp.MustCompile("^unused imports?: (`((std::path::)?(Path|PathBuf|self)|(cmdr_fs|crate)::app_path)`(, | and )?)+$")
 
-// unusedImportEdits drops a `Path`/`PathBuf` import the rewrites left unused, through rustc's
+// unusedImportEdits drops a `Path`/`PathBuf` import the rewrites left unused (or the
+// `app_path!` one, once the lib phase bridged its every use), through rustc's
 // machine-applicable suggestion. Nothing else: the base compiled warning-free.
 func unusedImportEdits(d *diagnostic, file string) []edit {
 	if !pathImportNames.MatchString(d.Message) {

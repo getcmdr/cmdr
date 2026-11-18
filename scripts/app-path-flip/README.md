@@ -2,10 +2,11 @@
 
 The compiler-driven codemod that moves a crate onto the `Volume` trait's app-path signatures
 (`docs/specs/app-path-plan.md` § "4. Flip the trait"). It runs `cargo check` on one crate, rewrites only the spans rustc
-points at, by error code and type pair, and repeats until the crate checks or no rule applies. Then it runs
-`cargo clippy` the same way, applying clippy's own fix for the lints a rewrite can cause, and `cargo fmt -p` on the
-crate. Every rewrite is type-preserving through the lossless, non-normalizing bridge (`AppPath::legacy_unchecked`,
-`as_std_legacy`, `BridgedPath`), so no value changes in transit and every body keeps its `std::path` arithmetic.
+points at, by error code and type pair, and repeats until the crate checks or no rule applies. Then it checks the
+crate's default targets alone (the lib phase, below) and runs `cargo clippy` the same way, applying clippy's own fix for
+the lints a rewrite can cause, and `cargo fmt -p` on the crate. Every rewrite is type-preserving through the lossless,
+non-normalizing bridge (`AppPath::legacy_unchecked`, `as_std_legacy`, `BridgedPath`), so no value changes in transit and
+every body keeps its `std::path` arithmetic.
 
 It goes when the trait flip has landed and no branch from before it is still in flight (the plan's milestone 5).
 
@@ -123,6 +124,13 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   comments (it would take the item's `#[cfg]` and ungate the item): the point lifts above them. A `Path`/`PathBuf`
   import a rewrite left unused is dropped. `-audit-imports <dir>` (repeatable) lists every codemod-style import sitting
   right under an attribute line, to check a tree flipped before that fix (clean on `cmdr-fs` and `cmdr-archive`).
+- **Lib phase** (`rules_lib.go`): once the crate checks, `cargo check -p <crate>` over its default targets (no
+  `--all-targets`, so no dev-dependency's `cmdr-fs/testing` joins in), same `-cargo-args`. An `app_path!` it can't find
+  (code a feature gates that doesn't enable `cmdr-fs/testing`: `cmdr-operations`'s `golden`, which the browser demo's
+  wasm build turns on) becomes `&AppPath::legacy_unchecked(Path::new("…"))`, the literal rule's other form, its imports
+  follow, and the `use cmdr_fs::app_path;` it empties goes. When it edits, the all-targets check runs again. Nothing
+  else rewrites there (the two builds differ only by features). So run the feature sets that gate such code WITHOUT
+  `testing` too (`--features golden`): under `--all-features` `testing` masks it.
 - **Clippy phase**: once the crate checks, the machine-applicable fix of `useless_vec`, `unnecessary_to_owned`,
   `needless_borrow`, `redundant_clone`, and a few more (`clippyFixable`) is applied: the base is clippy-clean, so those
   lints are the rewrites'.

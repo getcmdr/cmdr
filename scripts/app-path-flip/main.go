@@ -116,6 +116,26 @@ func flipCrate(repo, crate string, cargoArgs []string, maxRounds int, format boo
 	if err != nil {
 		return report, err
 	}
+	// The normal targets alone, with the same features: `app_path!` the all-targets build
+	// found only through the dev-dependencies' `cmdr-fs/testing` (rules_lib.go). When that
+	// edits, the all-targets build runs again for the imports a rewrite left unused.
+	if checked && !hasErrors(last) {
+		libRules := func(diags []diagnostic) ([]edit, error) {
+			return libPhaseRoundEdits(repo, crate, rustFiles, workspaceFiles, diags)
+		}
+		before := report.Rounds
+		libLast, libChecked, err := fixpoint(repo, crate, "check-lib", cargoArgs, keep, maxRounds, &report, libRules)
+		if err != nil {
+			return report, err
+		}
+		if !libChecked || hasErrors(libLast) {
+			last, checked = libLast, libChecked
+		} else if report.Rounds-before > 1 {
+			if last, checked, err = fixpoint(repo, crate, "check", cargoArgs, keep, maxRounds, &report, rules); err != nil {
+				return report, err
+			}
+		}
+	}
 	// The rewrites can make code clippy flags (a `vec!` now only iterated, a `to_path_buf()`
 	// the bridge borrows anyway); the base was clippy-clean, so those lints are the
 	// rewrites', and clippy's own machine-applicable fix for each is the type-preserving one.
@@ -273,8 +293,14 @@ func listRust(repo, dir string) ([]string, error) {
 	return files, err
 }
 
+// cargoRun runs `cargo <tool>` over the crate's every target, or, for "check-lib", `cargo
+// check` over its default ones (lib and bins: no dev-dependency feature joins in).
 func cargoRun(repo, tool, crate string, extra []string, keep func(string) bool) ([]diagnostic, bool, error) {
-	args := append([]string{tool, "-p", crate, "--all-targets", "--keep-going", "--message-format=json"}, extra...)
+	args := []string{tool, "-p", crate, "--all-targets"}
+	if tool == "check-lib" {
+		args = []string{"check", "-p", crate} // cargo's default targets
+	}
+	args = append(append(args, "--keep-going", "--message-format=json"), extra...)
 	cmd := exec.Command("cargo", args...)
 	cmd.Dir = repo
 	cmd.Stderr = nil
