@@ -454,8 +454,7 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     `docs/guides/i18n-translation.md` § New feature. The macOS text is guarded by a written rule, no test: a `macos`
     branch's translation stays unless it's wrong, and a fix there is an ordinary translation edit with its reason in the
     commit message (`docs/i18n/translator-instructions.md`, Per-OS values). David approved the macOS texts that moved on
-    purpose during the pass on 2026-11-18; `docs/notes/windows-port/macos-copy-accepted-review.md` is the record. Left
-    for a translator pass: `fr` and `vi` `terms.json` lack a `powershell` ruling (both catalogs write `PowerShell`).
+    purpose during the pass on 2026-11-18; `docs/notes/windows-port/macos-copy-accepted-review.md` is the record.
 29. [S] Windows, lint half is a win. **Done**. `lib/path/grammar.ts` holds the grammar (drive and UNC roots, a shared
     case table with Rust in `cmdr-fs`'s `path_grammar_cases.json`), `LocationInfo.case_sensitive` comes from the
     `volumes/` seam (macOS `false`, Linux `true`, Windows `false`; no frontend site consults it yet,
