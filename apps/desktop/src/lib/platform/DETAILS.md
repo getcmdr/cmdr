@@ -115,9 +115,11 @@ dialog buttons like macOS, KDE like Windows.
   debug builds only, `mock_conventions` in `conventions.rs`) hands every webview that row instead, which moves neither
   the platform nor the capabilities. It also defines `__CMDR_COPY_PLATFORM__` (the mocked desktop's OS), which only
   `getCopyPlatform()` and so the message runtime's branch pick follow, so the window speaks that desktop's words too
-  (`CMDR_MOCK_CONVENTIONS=gnome` on a Mac shows "Preferences"). **Decision/Why**: copy and conventions disagreeing in
-  dev hid every desktop branch from a Mac; moving the platform itself would also move keymaps and capabilities. The
-  native menu bar doesn't follow (`apps/desktop/src-tauri/src/intl/DETAILS.md`).
+  (`CMDR_MOCK_CONVENTIONS=gnome` on a Mac shows "Preferences"). The same value is `data-look` on `<html>`, which keys
+  the menu look tokens (`apps/desktop/src/DETAILS.md` § Menu look tokens), so the mock shows that desktop's menus too.
+  **Decision/Why**: copy and conventions disagreeing in dev hid every desktop branch from a Mac; moving the platform
+  itself would also move keymaps and capabilities. The native menu bar doesn't follow
+  (`apps/desktop/src-tauri/src/intl/DETAILS.md`).
 
 ## The fallback
 

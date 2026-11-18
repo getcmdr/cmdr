@@ -66,6 +66,36 @@ test div with `backdrop-filter: blur(20px)` above everything left the text under
 Menu-like surfaces (`Menu`, `Select`, the breadcrumb popup) also take the macOS 26+ menu shape: `--radius-menu`,
 `--shadow-glass` plus the `--shadow-glass-rim` top highlight, and rows highlighted as inset pills.
 
+## Menu look tokens
+
+`app-menu.css` (imported by `app.css`, like the palette) holds the look of the in-page menu bar, its flyouts, and the
+context menus (task 63 of `docs/specs/windows-port-plan.md`): `--color-menu-*`, `--spacing-menu-*`, `--radius-menu-*`,
+`--font-menu-*`, `--shadow-menu-surface`, and `--glass-menu-backdrop`. One token set keyed on the look, so the menu
+component stays one implementation and reads only these.
+
+- **`:root`** holds the house look every menu has today (`lib/ui/Menu.svelte`, the demo bar in
+  `lib/demo/menu-bar-style.ts`), so macOS and Linux keep it when the component moves onto the tokens. Linux's own
+  neutral theme is task 60's.
+- **`:root[data-look='windows']`** is Windows 11's look, light and dark, on Windows 10 and 11 alike (D5). `data-look` is
+  `getCopyPlatform()`, written by `applyPlatformAttributes()` beside `data-platform`, so
+  `CMDR_MOCK_CONVENTIONS=windows pnpm dev` shows it on a Mac (without Segoe UI, which a Mac lacks).
+- **Reduced transparency** (the `reduce-transparency` class, which task 40 fills from Windows' transparency effects):
+  acrylic's own opaque fallback color and no blur.
+- **`forced-colors: active`** (Windows contrast themes): WinUI's `HighContrast` mapping as CSS system colors, no
+  backdrop or shadow. The reduced-transparency block sits in `@media (forced-colors: none)`, since its selector outranks
+  this one. A component painting these must set `forced-color-adjust: none` on the surface, or Chromium forces the
+  highlighted row's `Highlight` back to `Canvas`.
+- **Gotcha: no `color-mix()` in the house defaults.** They're spelled out as `rgba()` of `--color-text-primary`, with a
+  dark twin, because old WebKit drops a `color-mix()` value (`lib/utils/CLAUDE.md`).
+- **Decision/Why: a file of its own, with hex allowed.** `app.css` is past its length budget, and the Windows values are
+  WinUI's ARGB copied byte for byte, so `.stylelintrc.mjs` treats `app-menu.css` as a token file like `app.css`. Every
+  selector carries its own specificity, so its import position doesn't matter.
+- `app-menu.test.ts` pins the shape: every house token has a Windows value, every themed one a dark and a contrast value
+  (system colors only), and the Windows text tokens clear AA on the fallback and on acrylic over black and white.
+
+Each Windows value's WinUI resource key and file (at a pinned commit), and what CSS can't express (the luminosity blend,
+noise, `ThemeShadow`, the font's optical size): `docs/notes/windows-port/menu-look-tokens.md`.
+
 ## Display accessibility classes
 
 `#lib/display-accessibility` (inited per window) mirrors four macOS Accessibility > Display options onto `<html>` as

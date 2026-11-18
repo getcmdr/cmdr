@@ -16,7 +16,9 @@ export default {
     // checks nothing (#1056). The `stylelint` check probes for this regression.
     { files: ['**/*.svelte'], customSyntax: 'postcss-html' },
     {
-      files: ['**/app.css'],
+      // The token files, where every color is defined. `app-menu.css` copies WinUI's
+      // ARGB values byte for byte, so it writes hex like `app.css` does.
+      files: ['**/app.css', '**/app-menu.css'],
       rules: {
         'color-no-hex': null,
         'function-disallowed-list': null,
