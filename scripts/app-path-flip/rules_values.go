@@ -140,58 +140,6 @@ func matchBackward(masked []byte, closeAt int) int {
 	return -1
 }
 
-// ---- A prelude'd body handing its bridged param to an `async fn` helper ----
-
-var (
-	returnsLocalStd = regexp.MustCompile("^cannot return value referencing local variable `(\\w+)_std`$")
-	preludeStmts    = regexp.MustCompile(`(?s)\s*let (\w+)_app = (\w+);|\s*let (\w+)_std(?:: Vec<PathBuf>)? = \w+\.[^;]*;\s*let \w+: &(?:\[PathBuf\]|Path) = &\w+_std;`)
-	boxedSelfCall   = regexp.MustCompile(`(?s)^Box::pin\((self\.(\w+)\(.*\))\)$`)
-)
-
-// asyncHelperEdits answers E0515 on `Box::pin(self.scan_subtree(path, …))`: the prelude's
-// borrow can't outlive the call that returns the future. When the helper is an `async fn`
-// (lazy: its body runs at the first poll either way), the body moves inside one
-// `async move` block with the prelude, which is the same future. A helper that does work
-// before its future starts (`fn … -> Pin<Box<…>>`) stays residue: moving it would change
-// when that work runs.
-func (r *rewriter) asyncHelperEdits(d *diagnostic, src *source, p *diagSpan) []edit {
-	if d.code() != "E0515" || !returnsLocalStd.MatchString(d.Message) {
-		return nil
-	}
-	m := src.methodAt(p.ByteStart)
-	if m == nil {
-		return nil
-	}
-	body := string(src.text[m.bodyStart:m.bodyEnd])
-	var prelude strings.Builder
-	for _, loc := range preludeStmts.FindAllStringIndex(body, -1) {
-		prelude.WriteString(strings.TrimSpace(body[loc[0]:loc[1]]) + "\n")
-	}
-	rest := strings.TrimSpace(preludeStmts.ReplaceAllString(body, ""))
-	call := boxedSelfCall.FindStringSubmatch(rest)
-	if call == nil || !r.isAsyncFn(call[2]) {
-		return nil
-	}
-	// The arguments now evaluate at the first poll: only plain values (no call) may move.
-	args := call[1][len("self."+call[2]+"(") : len(call[1])-1]
-	if strings.Contains(args, "(") {
-		return nil
-	}
-	text := "\nBox::pin(async move {\n" + prelude.String() + call[1] + ".await\n})\n"
-	return []edit{{file: src.path, start: m.bodyStart, end: m.bodyEnd, text: text, rule: ruleAsyncHelper}}
-}
-
-// isAsyncFn answers whether the crate defines `async fn name`.
-func (r *rewriter) isAsyncFn(name string) bool {
-	pattern := regexp.MustCompile(`\basync\s+fn\s+` + regexp.QuoteMeta(name) + `\b`)
-	for _, file := range r.crateRust {
-		if src, err := r.load(file); err == nil && pattern.Match(src.masked) {
-			return true
-		}
-	}
-	return false
-}
-
 // ---- A comparison between a typed and a std value ----
 
 var (

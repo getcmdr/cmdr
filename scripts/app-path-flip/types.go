@@ -24,6 +24,7 @@ const (
 	ruleTypedParam    = "typed param handed back"
 	ruleCompare       = "comparison operand to std"
 	ruleAsyncHelper   = "async helper call moved into its future"
+	ruleRoundTrip     = "bridge round trip collapsed"
 )
 
 var (
