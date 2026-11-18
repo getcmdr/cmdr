@@ -4,7 +4,23 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"cmdr/scripts/release-assets/manifest"
 )
+
+// A tripwire for the Windows and Linux release (`docs/specs/windows-port-plan.md` task 52). `sign`
+// runs `tauri signer sign` with no `--app-version`, so its signatures name no version, and the
+// app's updater refuses every off-macOS payload without one (`bind_signed_version`). Today no row
+// needs it, so nothing is wrong. The day a row with `File.SignsVersion()` ships, this fails until
+// both signing modes (`sign` here and the pipeline's `sign` job) pass `--app-version <version>`
+// for exactly those rows; then replace this test with one that checks the trusted comment.
+func TestNoUpdatePayloadNeedsAVersionSignatureYet(t *testing.T) {
+	for _, f := range manifest.For("0.99.0").Updates() {
+		if f.SignsVersion() {
+			t.Fatalf("%s must be signed with `--app-version`, which neither signing mode passes yet: wire it (task 52), then replace this tripwire", f.Name)
+		}
+	}
+}
 
 func at(minute int) time.Time {
 	return time.Date(2026, 10, 6, 12, minute, 0, 0, time.UTC)

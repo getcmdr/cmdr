@@ -11,6 +11,9 @@ import (
 	"cmdr/scripts/release-assets/manifest"
 )
 
+// The app's updater reads fixtureDir/latest.json too (`updater/manifest.rs`,
+// `every_field_the_reader_names_is_one_the_writer_writes`): every field it reads must be a key
+// written here, so a rename on either side fails a test.
 const fixtureDir = "testdata/v0.61.0"
 
 // v0.61.0's inputs, as its `publish` job had them: the signatures, the release's sizes, the notes,

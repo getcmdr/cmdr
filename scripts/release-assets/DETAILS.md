@@ -38,7 +38,10 @@ release without them:
   the update still installs.
 
 None of this is wired yet: no release carries a Windows or Linux row (Windows port plan task 52 adds the rows, the
-`--app-version` flag in both signing modes, and the advisory list).
+`--app-version` flag in both signing modes, and the advisory list). Two tests hold the gap open on purpose:
+`release-finish`'s `TestNoUpdatePayloadNeedsAVersionSignatureYet` fails the day a `SignsVersion()` row ships, and the
+app's `every_field_the_reader_names_is_one_the_writer_writes` (`updater/manifest.rs`) lists `securityAdvisories` as not
+written yet, against `testdata/v0.61.0/latest.json`, the fixture both sides share.
 
 ## Who reads it
 
