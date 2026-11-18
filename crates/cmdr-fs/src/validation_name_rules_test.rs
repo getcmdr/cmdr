@@ -6,7 +6,6 @@
 
 use std::collections::BTreeMap;
 
-#[cfg(target_os = "macos")]
 use super::NameTier;
 use super::{
     LengthLimit, LengthUnit, MAX_NAME_BYTES, NameFormat, NameRules, PortabilityWarning, ValidationError,
