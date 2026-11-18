@@ -68,13 +68,15 @@ Details worth knowing:
   refused process kept booting behind the unanswered alert: frontend up, updater check fired, files written into the
   other instance's data dir, then an abort when the frontend called a menu command while `setup` sat in the modal.
   `tauri-plugin-dialog`'s `blocking_show` isn't an option either: it must not run on the main thread, which is where
-  `setup` lives.
+  `setup` lives. On Windows it's `MessageBoxW` on a thread of its own while the main thread joins it, since a message
+  box pumps the calling thread's messages and the main thread's are Tauri's; it has no timeout, so the same watchdog
+  ends it. Linux prints the stderr line only. Each OS's alert: `instance_lock/platform/`.
 - **An I/O problem is not a refusal.** An unwritable data dir or a filesystem with no `flock` logs an error and startup
   continues unlocked (a warning, not an error), so an unrelated filesystem fault never becomes "Cmdr won't start".
 - E2E is unaffected: each macOS Playwright shard gets its own `/tmp/cmdr-e2e-data-<instance>/`, Linux Docker runs one
   app per container, and Rust tests never spawn the binary.
 
-Authoritative file: `apps/desktop/src-tauri/src/instance_lock.rs`.
+Authoritative file: `apps/desktop/src-tauri/src/instance_lock/mod.rs`.
 
 ### Data dir
 
@@ -110,11 +112,12 @@ than relying on the identifier-driven redirect. That makes it isolated per workt
 
 Authoritative file: `apps/desktop/src-tauri/src/window_state/mod.rs`.
 
-### macOS Keychain
+### macOS Keychain and Windows Credential Manager
 
-`SERVICE_NAME` becomes `Cmdr-<instance>` when the env is set; `Cmdr` otherwise. Cached once via `OnceLock`.
+The service name (the Keychain service, the Credential Manager target prefix) becomes `Cmdr-<instance>` when the env is
+set; `Cmdr` otherwise. Cached once via `OnceLock`.
 
-Authoritative file: `apps/desktop/src-tauri/src/secrets/keychain_macos.rs`.
+Authoritative file: `apps/desktop/src-tauri/src/secrets/platform/service_name.rs`.
 
 ### Secret store backend
 

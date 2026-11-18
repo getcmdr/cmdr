@@ -95,7 +95,7 @@ Shipped in #1037 (`apps/desktop/src-tauri/src/quit/relaunch.rs`, verified on the
   and then runs `open <bundle>` (no `-n`), or an equivalent `NSWorkspace.openApplication` call made from that helper.
   That's the shape Sparkle's relauncher has. The new process then is the only instance, and the Dock binds it to the
   pinned tile. It also removes the two-process overlap the instance lock's five-second `ACQUIRE_WINDOW` exists for
-  (`apps/desktop/src-tauri/src/instance_lock.rs`).
+  (`apps/desktop/src-tauri/src/instance_lock/mod.rs`).
 - Replacing the whole bundle (Sparkle-style swap) would NOT fix this on its own: the duplicate comes from the relaunch,
   not from how the files land.
 - Nothing to repair for people already affected: their stored tile is fine, and the first relaunch that doesn't use
