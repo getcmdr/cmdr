@@ -116,9 +116,9 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {Kombinaci {combo} si obvykle bere pro sebe pracovní prostředí ({desktops}), takže se tato zkratka do Cmdru možná vůbec nedostane. Uvolnit ji můžete v nastavení klávesnice svého prostředí.}}",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {Kombinaci {combo} si obvykle bere pro sebe pracovní prostředí ({desktops}), takže se tato zkratka do Cmdru možná vůbec nedostane. Uvolnit ji můžete v Nastavení > Klávesnice > Zobrazit a přizpůsobit klávesové zkratky.} linuxKde {Kombinaci {combo} si obvykle bere pro sebe pracovní prostředí ({desktops}), takže se tato zkratka do Cmdru možná vůbec nedostane. Uvolnit ji můžete v Nastavení systému > Klávesnice > Zkratky.} other {Kombinaci {combo} si obvykle bere pro sebe pracovní prostředí ({desktops}), takže se tato zkratka do Cmdru možná vůbec nedostane. Uvolnit ji můžete v nastavení klávesnice svého prostředí.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
-    "sourceHash": "610146a"
+    "sourceHash": "8aefc0b"
   },
   "shortcuts.conflict.opensMenuBarMenu": "Kombinace {combo} otevírá v řádku nabídek Cmdru nabídku {menu}, takže se tato zkratka k tomuto příkazu dostane, jen když je otevřené dialogové okno.",
   "@shortcuts.conflict.opensMenuBarMenu": {

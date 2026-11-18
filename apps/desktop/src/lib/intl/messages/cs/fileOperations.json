@@ -154,7 +154,7 @@
   },
   "fileOperations.mkfile.nameAria": "Název souboru",
   "@fileOperations.mkfile.nameAria": {
-    "sourceHash": "3efed3d"
+    "sourceHash": "971b974"
   },
   "fileOperations.mkfile.placeholder": "Příklad: poznámky.txt",
   "@fileOperations.mkfile.placeholder": {
@@ -1305,9 +1305,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Pamatovat si ve svazku klíčů} windows {Zapamatovat si heslo} linuxKde {Remember in KWallet} other {Pamatovat si v klíčence}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Pamatovat si ve svazku klíčů} windows {Zapamatovat si heslo} linuxKde {Pamatovat si v úložišti KWallet} other {Pamatovat si v klíčence}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "42237e1"
+    "sourceHash": "8f125e3"
   },
   "fileOperations.resticPassword.checking": "Kontroluje se heslo…",
   "@fileOperations.resticPassword.checking": {
@@ -1332,6 +1332,30 @@
   "fileOperations.validation.empty": "{kind, select, folder {Název složky nesmí být prázdný} other {Název souboru nesmí být prázdný}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
+  },
+  "fileOperations.validation.dotName": "{kind, select, folder {Názvy složek nesmí být „.“ ani „..“} other {Názvy souborů nesmí být „.“ ani „..“}}",
+  "@fileOperations.validation.dotName": {
+    "sourceHash": "bfa0ccb"
+  },
+  "fileOperations.validation.nameLength": "{kind, select, folder {Název složky je příliš dlouhý ({length}/{maxLength} {unit, select, bytes {{max, plural, one {bajt} few {bajty} many {bajtu} other {bajtů}}} other {{max, plural, one {znak} few {znaky} many {znaku} other {znaků}}}})} other {Název souboru je příliš dlouhý ({length}/{maxLength} {unit, select, bytes {{max, plural, one {bajt} few {bajty} many {bajtu} other {bajtů}}} other {{max, plural, one {znak} few {znaky} many {znaku} other {znaků}}}})}}",
+  "@fileOperations.validation.nameLength": {
+    "sourceHash": "acef623"
+  },
+  "fileOperations.validation.pathLength": "Celá cesta je příliš dlouhá ({length}/{maxLength} {unit, select, bytes {{max, plural, one {bajt} few {bajty} many {bajtu} other {bajtů}}} other {{max, plural, one {znak} few {znaky} many {znaku} other {znaků}}}})",
+  "@fileOperations.validation.pathLength": {
+    "sourceHash": "1791bc2"
+  },
+  "fileOperations.validation.notPortable.windowsCharacter": "{format, select, smbShare {Názvy se znakem „{character}“ nebudou ve Windows fungovat} other {Názvy se znakem „{character}“ nebudou fungovat ve Windows ani v Linuxu}}",
+  "@fileOperations.validation.notPortable.windowsCharacter": {
+    "sourceHash": "66201fa"
+  },
+  "fileOperations.validation.notPortable.reservedName": "{format, select, smbShare {Název „{name}“ je vyhrazený systémem Windows, takže tam tento název nebude fungovat a sdílená složka ho může vypsat pod jiným názvem} other {Název „{name}“ je vyhrazený systémem Windows, takže tam tento název nebude fungovat}}",
+  "@fileOperations.validation.notPortable.reservedName": {
+    "sourceHash": "b46ff0c"
+  },
+  "fileOperations.validation.notPortable.endsWithSpaceOrPeriod": "{format, select, smbShare {Názvy končící mezerou nebo tečkou nebudou ve Windows fungovat} other {Názvy končící mezerou nebo tečkou nebudou fungovat ve Windows ani v Linuxu}}",
+  "@fileOperations.validation.notPortable.endsWithSpaceOrPeriod": {
+    "sourceHash": "86ce7a7"
   },
   "fileOperations.validation.extensionChangeBlocked": "Změna přípony souboru není povolená (původně „{oldExt}“)",
   "@fileOperations.validation.extensionChangeBlocked": {
@@ -1360,6 +1384,18 @@
   "fileOperations.validation.pathNullChar": "Cesta obsahuje znak null",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
+  },
+  "fileOperations.validation.typedPathLength": "Cesta je příliš dlouhá ({length}/{maxLength} {unit, select, bytes {{max, plural, one {bajt} few {bajty} many {bajtu} other {bajtů}}} other {{max, plural, one {znak} few {znaky} many {znaku} other {znaků}}}})",
+  "@fileOperations.validation.typedPathLength": {
+    "sourceHash": "f953ea2"
+  },
+  "fileOperations.validation.typedSegmentLength": "Název složky v cestě je příliš dlouhý ({length}/{maxLength} {unit, select, bytes {{max, plural, one {bajt} few {bajty} many {bajtu} other {bajtů}}} other {{max, plural, one {znak} few {znaky} many {znaku} other {znaků}}}})",
+  "@fileOperations.validation.typedSegmentLength": {
+    "sourceHash": "50ce47b"
+  },
+  "fileOperations.transferDialog.namePortability": "{count, plural, one {{alsoLinux, select, yes {{countText} název tady nebude fungovat ve Windows ani v Linuxu: „{example}“} other {{countText} název tady nebude fungovat ve Windows: „{example}“}}} few {{alsoLinux, select, yes {{countText} názvy tady nebudou fungovat ve Windows ani v Linuxu, třeba „{example}“} other {{countText} názvy tady nebudou fungovat ve Windows, třeba „{example}“}}} many {{alsoLinux, select, yes {{countText} názvu tady nebude fungovat ve Windows ani v Linuxu, třeba „{example}“} other {{countText} názvu tady nebude fungovat ve Windows, třeba „{example}“}}} other {{alsoLinux, select, yes {{countText} názvů tady nebude fungovat ve Windows ani v Linuxu, třeba „{example}“} other {{countText} názvů tady nebude fungovat ve Windows, třeba „{example}“}}}}",
+  "@fileOperations.transferDialog.namePortability": {
+    "sourceHash": "e8c7d0f"
   },
   "fileOperations.transferTree.treeLabel": "Soubory a složky v tomto přenosu",
   "@fileOperations.transferTree.treeLabel": {

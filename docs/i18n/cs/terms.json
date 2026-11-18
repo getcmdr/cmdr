@@ -157,7 +157,8 @@
       "commands.appCheckForUpdates.description": "zjistit, jestli … is the natural verb for checking availability",
       "settings.updates.autoCheck.label": "update concept: Automaticky vyhledávat aktualizace, pairs with menu.app.checkForUpdates (Vyhledat aktualizace…)",
       "settings.updates.checkForUpdates": "update concept: Vyhledat aktualizace, the menu.app.checkForUpdates label without the ellipsis",
-      "updates.failure.check": "Check for updates is the update concept: Vyhledat aktualizace (menu.app.checkForUpdates), so the failure says Cmdru se nepodařilo vyhledat aktualizace."
+      "updates.failure.check": "Check for updates is the update concept: Vyhledat aktualizace (menu.app.checkForUpdates), so the failure says Cmdru se nepodařilo vyhledat aktualizace.",
+      "updates.status.noBuildForThisPlatform": "The update check succeeded; the line says this build can't update yet (description), so it reads se teď nemůže aktualizovat, with no check verb."
     }
   },
   "choose": {
@@ -896,7 +897,7 @@
     "confidence": "high",
     "sources": "macOS NetAuthAgent (Uložit heslo do svazku klíčů), Time Machine (záznam v systémovém svazku klíčů; Zkuste použít Klíčenku), i.e. the store is svazek klíčů and the app Klíčenka",
     "decision": "Keychain: svazek klíčů and Klíčenka",
-    "note": "on non-macOS the generic store (keyring) is systémová klíčenka (ai.secretError.title, body, removeBody, genericBody); svazek klíčů stays the macOS store"
+    "note": "on non-macOS the generic store (keyring) is systémová klíčenka (ai.secretError.title, body, removeBody, genericBody); svazek klíčů stays the macOS store. KDE's KWallet stays a name: nominative KWallet (odepřel, je otevřený), oblique cases through úložiště KWallet (v úložišti KWallet, z úložiště KWallet) so the name never declines (tentative, no pile hit)."
   },
   "kind": {
     "chosen": "druh",
@@ -940,7 +941,10 @@
     "forms": "m.: v seznamu",
     "confidence": "high",
     "sources": "macOS Finder/SystemSettings (Seznam), AppKit (Seznam…); MS (seznam)",
-    "note": "Seznam is also the Brief view mode name (TC); context keeps them apart."
+    "note": "Seznam is also the Brief view mode name (TC); context keeps them apart.",
+    "exceptions": {
+      "fileOperations.validation.notPortable.reservedName": "Verb sense: the share may list the item under another name → vypsat; not the noun seznam."
+    }
   },
   "load": {
     "chosen": "načíst",

@@ -768,6 +768,10 @@
     ],
     "cs": [
       {
+        "source": "Preferences",
+        "reason": "`aboutThis.ownerPlace.preferences` is the real name of the macOS `~/Library/Preferences` folder, kept as the system names it; the GNOME branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own app-menu word, Předvolby (cs nautilus.po `_Preferences`)."
+      },
+      {
         "source": "Disconnecting {name}",
         "reason": "`fileExplorer.navigation.detachingShareAriaLabel` names a network share (sdílené složky), `adb.disconnectingDeviceAriaLabel` an Android phone (zařízení); Czech needs the object noun, so the two can't share a form."
       },

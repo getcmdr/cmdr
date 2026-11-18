@@ -107,9 +107,9 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {Web, ze kterého byl soubor podle záznamu stažen (jen hlavní adresa webu, třeba github.com, nikdy subdoména ani celý odkaz), kdy a aplikace, která ho stáhla. U přílohy z Mailu nebo souboru z AirDropu jen to, že o ně jde, nikdy ne to, kdo ho poslal} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {Web, ze kterého byl soubor podle záznamu stažen (jen hlavní adresa webu, třeba github.com, nikdy subdoména ani celý odkaz), kdy a aplikace, která ho stáhla. U přílohy z Mailu nebo souboru z AirDropu jen to, že o ně jde, nikdy ne to, kdo ho poslal} other {Web, ze kterého byl soubor podle záznamu stažen (jen hlavní adresa webu, třeba github.com, nikdy subdoména ani celý odkaz), kdy a aplikace, která ho stáhla}}",
   "@ai.cloudConsent.aboutThis.item.download": {
-    "sourceHash": "40d185c"
+    "sourceHash": "6594500"
   },
   "ai.cloudConsent.aboutThis.item.appAndSigner": "U aplikace nebo programu název, ID a verze. U nich i u obrazu disku název a ID týmu toho, kdo je podepsal, jestli kód pořád odpovídá podpisu a jestli je přiložený doklad Applu o notarizaci",
   "@ai.cloudConsent.aboutThis.item.appAndSigner": {
@@ -599,29 +599,29 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Klíč API se nepodařilo uložit: svazek klíčů v macOS odepřel přístup} other {Uložený klíč API se nepodařilo přečíst: svazek klíčů v macOS odepřel přístup}}} windows {{op, select, save {Klíč API se nepodařilo uložit: Správce přihlašovacích údajů odepřel přístup} other {Uložený klíč API se nepodařilo přečíst: Správce přihlašovacích údajů odepřel přístup}}} linuxKde {{op, select, save {Couldn’t save your API key: KWallet denied access} other {Couldn’t read your saved API key: KWallet denied access}}} other {{op, select, save {Klíč API se nepodařilo uložit: systémová klíčenka odepřela přístup} other {Uložený klíč API se nepodařilo přečíst: systémová klíčenka odepřela přístup}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Klíč API se nepodařilo uložit: svazek klíčů v macOS odepřel přístup} other {Uložený klíč API se nepodařilo přečíst: svazek klíčů v macOS odepřel přístup}}} windows {{op, select, save {Klíč API se nepodařilo uložit: Správce přihlašovacích údajů odepřel přístup} other {Uložený klíč API se nepodařilo přečíst: Správce přihlašovacích údajů odepřel přístup}}} linuxKde {{op, select, save {Klíč API se nepodařilo uložit: KWallet odepřel přístup} other {Uložený klíč API se nepodařilo přečíst: KWallet odepřel přístup}}} other {{op, select, save {Klíč API se nepodařilo uložit: systémová klíčenka odepřela přístup} other {Uložený klíč API se nepodařilo přečíst: systémová klíčenka odepřela přístup}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "25b34c4"
+    "sourceHash": "6daa595"
   },
-  "ai.secretError.body": "{platform, select, macos {{op, select, save {Otevřete Klíčenku a zkontrolujte záznam „Cmdr“, nebo ho smažte a zkuste klíč uložit znovu.} other {Otevřete Klíčenku, najděte záznam „Cmdr“ a udělte přístup, nebo záznam smažte a zadejte klíč znovu.}}} windows {{op, select, save {Otevřete Správce přihlašovacích údajů a zkontrolujte záznam „Cmdr“ v části Přihlašovací údaje systému Windows, nebo ho odstraňte a zkuste klíč uložit znovu.} other {Otevřete Správce přihlašovacích údajů a najděte záznam „Cmdr“ v části Přihlašovací údaje systému Windows, nebo ho odstraňte a zadejte klíč znovu.}}} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Odemkněte klíčenku (v aplikaci Hesla a klíče nebo podobné) a zkuste to znovu.}}",
+  "ai.secretError.body": "{platform, select, macos {{op, select, save {Otevřete Klíčenku a zkontrolujte záznam „Cmdr“, nebo ho smažte a zkuste klíč uložit znovu.} other {Otevřete Klíčenku, najděte záznam „Cmdr“ a udělte přístup, nebo záznam smažte a zadejte klíč znovu.}}} windows {{op, select, save {Otevřete Správce přihlašovacích údajů a zkontrolujte záznam „Cmdr“ v části Přihlašovací údaje systému Windows, nebo ho odstraňte a zkuste klíč uložit znovu.} other {Otevřete Správce přihlašovacích údajů a najděte záznam „Cmdr“ v části Přihlašovací údaje systému Windows, nebo ho odstraňte a zadejte klíč znovu.}}} linuxGnome {Odemkněte klíčenku v aplikaci Hesla a klíče a zkuste to znovu.} linuxKde {Odemkněte KWallet v aplikaci KWalletManager a zkuste to znovu.} other {Odemkněte klíčenku (v aplikaci Hesla a klíče nebo podobné) a zkuste to znovu.}}",
   "@ai.secretError.body": {
-    "sourceHash": "d65c5e3"
+    "sourceHash": "8a5496f"
   },
   "ai.secretError.genericTitle": "{op, select, save {Klíč API se nepodařilo uložit.} other {Uložený klíč API se nepodařilo přečíst.}}",
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Zkontrolujte, že je svazek klíčů dostupný, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.} windows {Zkontrolujte, že je Správce přihlašovacích údajů dostupný, a zkuste to znovu. Pokud se to bude opakovat, restartujte Cmdr.} linuxKde {Check that KWallet is available, then try again. If it persists, restart the app.} other {Zkontrolujte, že je systémová klíčenka dostupná, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Zkontrolujte, že je svazek klíčů dostupný, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.} windows {Zkontrolujte, že je Správce přihlašovacích údajů dostupný, a zkuste to znovu. Pokud se to bude opakovat, restartujte Cmdr.} linuxKde {Zkontrolujte, že je KWallet dostupný, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.} other {Zkontrolujte, že je systémová klíčenka dostupná, a zkuste to znovu. Pokud problém přetrvává, restartujte aplikaci.}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "9fc0702"
+    "sourceHash": "cb879fa"
   },
   "ai.secretError.removeTitle": "Uložený klíč API se nepodařilo odstranit.",
   "@ai.secretError.removeTitle": {
     "sourceHash": "5986628"
   },
-  "ai.secretError.removeBody": "{platform, select, macos {Otevřete Klíčenku, najděte záznam „Cmdr“ a smažte ho tam.} windows {Otevřete Správce přihlašovacích údajů, v části Přihlašovací údaje systému Windows najděte záznam „Cmdr“ a odstraňte ho tam.} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Odemkněte klíčenku (v aplikaci Hesla a klíče nebo podobné) a zkuste to znovu.}}",
+  "ai.secretError.removeBody": "{platform, select, macos {Otevřete Klíčenku, najděte záznam „Cmdr“ a smažte ho tam.} windows {Otevřete Správce přihlašovacích údajů, v části Přihlašovací údaje systému Windows najděte záznam „Cmdr“ a odstraňte ho tam.} linuxGnome {Odemkněte klíčenku v aplikaci Hesla a klíče a zkuste to znovu.} linuxKde {Odemkněte KWallet v aplikaci KWalletManager a zkuste to znovu.} other {Odemkněte klíčenku (v aplikaci Hesla a klíče nebo podobné) a zkuste to znovu.}}",
   "@ai.secretError.removeBody": {
-    "sourceHash": "3a85511"
+    "sourceHash": "ab0d2ec"
   },
   "ai.managed.aiOff": "Vaše organizace vypnula AI v Cmdru.",
   "@ai.managed.aiOff": {
