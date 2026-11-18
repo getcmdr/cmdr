@@ -37,8 +37,6 @@
          */
         disabledNote?: string
         requiresRestart?: boolean
-        /** When true, label and control each take 50% width for consistent vertical alignment across rows. */
-        split?: boolean
         searchQuery?: string
         children: Snippet
         /**
@@ -62,7 +60,6 @@
         disabledReason: sectionDisabledReason,
         disabledNote: sectionDisabledNote,
         requiresRestart = false,
-        split = false,
         searchQuery = '',
         children,
         descriptionContent,
@@ -120,7 +117,7 @@
      the user straight to one setting. `settingAnchorId` is the one definition of the
      convention; the `<label for>` above keeps naming the control, not this row. -->
 <div class="setting-row" id={settingAnchorId(id)} class:disabled>
-    <div class="setting-header" class:split>
+    <div class="setting-header">
         <div class="setting-label-column">
             <div class="setting-label-wrapper">
                 <label class="setting-label" for={id}
@@ -184,25 +181,32 @@
         opacity: 0.6;
     }
 
+    /* Label column left, control flush right (System Settings style). A one-line control centers
+       on the label column, so a short control beside a multi-line description sits in its middle. */
     .setting-header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: var(--spacing-md);
     }
 
-    .setting-header.split {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        align-items: center;
-        gap: var(--spacing-md);
+    /* A radio list is taller than its label, and centering would float the label between two
+       options. Top-align instead, and give the label line the height of one radio option's line
+       (`RadioGroup`'s item padding around its `--font-size-sm` label), so the label centers on
+       the FIRST option. The role is Ark's ARIA contract, not a class of `RadioGroup`'s. */
+    .setting-header:has(> .setting-control :global([role='radiogroup'])) {
+        align-items: flex-start;
+    }
+
+    .setting-header:has(> .setting-control :global([role='radiogroup'])) .setting-label-wrapper {
+        min-height: calc(2 * var(--spacing-xs) + var(--font-size-sm) * var(--font-line-height-normal));
     }
 
     /* The label line plus every description line under it (a summary, an inline description, or
-       a rich one). In a split row this is the left grid cell, so the text stays beside the label
-       and the control instead of running under the whole row. */
+       a rich one), so the text stays beside the label and the control instead of running under
+       the whole row. */
     .setting-label-column {
         display: flex;
+        flex: 1 1 auto;
         flex-direction: column;
         min-width: 0;
     }
@@ -263,13 +267,51 @@
     }
 
     .setting-control {
-        flex-shrink: 0;
+        flex: 0 0 auto;
+        margin-left: auto;
     }
 
-    .split .setting-control {
-        /* Let controls stretch to fill the right column */
+    /* A text field or a slider has no natural width (both fill their container), so it takes one
+       shared width; every other control keeps its own size. A radio list carrying a field on one
+       option's line (the custom date format) sizes by its options instead. */
+    .setting-control:has(:global(.text-field), :global([role='slider'])):not(:has(:global([role='radiogroup']))) {
+        flex-shrink: 1;
+        width: 15rem;
         min-width: 0;
-        width: 100%;
+    }
+
+    /* Toggle groups share one width per card, the widest one's, so their left edges line up too.
+       A card holding one turns into a two-track grid: every child spans both tracks, and only the
+       rows carrying a shared-width control join it as subgrids, putting that control in the
+       `auto` track. Spanning items cross the `1fr` track, so they never size the `auto` one: it's
+       exactly as wide as the widest shared-width control, and nothing else in the card moves.
+       Per card only: a rule on the page would make one wide group stretch every other. */
+    :global(.section-card:has(> .setting-row [data-shared-width])) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: var(--spacing-md);
+    }
+
+    :global(.section-card:has(> .setting-row [data-shared-width]) > *) {
+        grid-column: 1 / -1;
+    }
+
+    .setting-row:has(> .setting-header > .setting-control > :global([data-shared-width])) {
+        display: grid;
+        grid-template-columns: subgrid;
+    }
+
+    .setting-row:has(> .setting-header > .setting-control > :global([data-shared-width])) > * {
+        grid-column: 1 / -1;
+    }
+
+    .setting-row:has(> .setting-header > .setting-control > :global([data-shared-width])) .setting-header {
+        display: grid;
+        grid-template-columns: subgrid;
+    }
+
+    .setting-row:has(> .setting-header > .setting-control > :global([data-shared-width])) .setting-control {
+        margin-left: 0;
     }
 
     .setting-disabled-note {

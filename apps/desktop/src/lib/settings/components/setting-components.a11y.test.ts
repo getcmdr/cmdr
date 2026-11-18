@@ -405,22 +405,6 @@ describe('SettingRow a11y', () => {
     await expectNoA11yViolations(target)
   })
 
-  it('split layout has no a11y violations', async () => {
-    const target = container()
-    mount(SettingRow, {
-      target,
-      props: {
-        id: 'appearance.uiDensity',
-        label: 'UI density',
-        description: 'How much vertical space each row uses.',
-        split: true,
-        children: controlSnippet,
-      },
-    })
-    await tick()
-    await expectNoA11yViolations(target)
-  })
-
   it('disabled + requires-restart has no a11y violations', async () => {
     const target = container()
     mount(SettingRow, {

@@ -202,13 +202,15 @@
 </div>
 
 <style>
+    /* Hugs the pop-up button, so the row's flush-right edge is the button's own edge. */
     .select-wrapper {
-        min-width: 180px;
-        width: 100%;
+        display: flex;
+        justify-content: flex-end;
     }
 
     .custom-input-wrapper {
         display: flex;
+        justify-content: flex-end;
         gap: var(--spacing-xs);
     }
 

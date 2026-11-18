@@ -24,8 +24,9 @@ in the section or registry, not here. Parent: `../CLAUDE.md` (registry, store, s
 - **`SettingRow` stamps `settingAnchorId(id)` on every row**, which is what
   `openSettingsWindow(surface, section, anchor)` scrolls to. Deep-link to a setting by passing that id, never by
   inventing an anchor or reusing the `SettingId` (the row's `<label for>` already spends that on the control).
-- **`SettingRow.split`** enforces a 50-50 grid so control left-edges align across rows. Use it for select / text /
-  password / slider / number / radio / combobox rows, not for switches, toggle groups, or full-width custom layouts.
+- **Every `SettingRow` control sits flush right** (System Settings style); there's no layout prop to pass. Text fields
+  and sliders take one shared width, a radio list top-aligns its label to its first option, and the rest keep their
+  natural size. DETAILS § Row layout.
 - **A managed (MDM-locked) setting renders itself.** `SettingRow` and every primitive read `useSettingLock(id)`:
   disabled, the managed note winning over any section-passed one, no reset pip. ❌ Don't pass the lock from a section.
   DETAILS § Managed rows.

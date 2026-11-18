@@ -155,7 +155,6 @@
                     id="fileOperations.adbBinaryPath"
                     label={binaryPathDef.label}
                     description={binaryPathDef.description}
-                    split
                     {searchQuery}
                 >
                     <div class="path-field">

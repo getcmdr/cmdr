@@ -2336,6 +2336,12 @@ Props:
 | `ariaLabel` | `string`                  | Accessible name for the tablist / toggle-group root                        |
 | `disabled`  | `boolean?`                | Default `false`. Short-circuits all clicks and disables every option       |
 | `fullWidth` | `boolean?`                | Default `false`. Spans the container with equal-width cells                |
+| `stretch`   | `boolean?`                | Default `false`. Fills the container; cells grow from their natural widths |
+
+`stretch` adds `.is-stretch`: `display: flex; width: 100%` and `flex: 1 1 auto` on every cell, so each keeps its label's
+width plus an equal share of the extra, at the normal height. In a container that hugs its content it renders at its
+natural size. Settings' `SettingToggleGroup` turns it on so a card can size its groups to the widest one
+(`lib/settings/components/DETAILS.md` § Toggle groups share a width).
 
 `fullWidth` adds `.is-full-width` to the root: `display: flex; width: 100%` plus `flex: 1 1 0` on every cell, so cells
 share the width evenly regardless of label length, and `padding-block: 0.5em` so a standalone row reads lighter than an

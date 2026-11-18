@@ -241,7 +241,6 @@
             id="askCmdr.interactiveModel"
             label={modelDef.label}
             description={modelDef.description}
-            split
             {searchQuery}
         >
             <SettingTextInput
@@ -260,7 +259,6 @@
             id="askCmdr.chatMemorySize"
             label={memoryDef.label}
             description={memoryDef.description}
-            split
             {searchQuery}
         >
             <SettingSelect id="askCmdr.chatMemorySize" />
@@ -275,7 +273,6 @@
             id="askCmdr.spendPause"
             label={spendPauseDef.label}
             description={spendPauseDef.description}
-            split
             {searchQuery}
         >
             <SettingSelect id="askCmdr.spendPause" />
@@ -289,7 +286,6 @@
             id="askCmdr.proactive"
             label={proactiveDef.label}
             description={proactiveDef.description}
-            split
             {searchQuery}
         >
             <SettingSwitch id="askCmdr.proactive" />
@@ -301,7 +297,6 @@
             id="askCmdr.wakeDelay"
             label={wakeDelayDef.label}
             description={wakeDelaySummary}
-            split
             {searchQuery}
         >
             <SettingSlider id="askCmdr.wakeDelay" disabled={!proactive} formatValue={wakeDuration} />
@@ -313,7 +308,6 @@
             id="askCmdr.wakeToast"
             label={wakeToastDef.label}
             description={wakeToastDef.description}
-            split
             {searchQuery}
         >
             <SettingSwitch id="askCmdr.wakeToast" disabled={!proactive} />

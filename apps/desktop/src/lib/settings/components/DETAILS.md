@@ -4,20 +4,20 @@ Depth and rationale for the setting-row primitives. `CLAUDE.md` holds the must-k
 
 ## Picking a control
 
-Every row is a `SettingRow` (label + description + control + reset pip + restart-required badge; it also carries `split`
-and `searchQuery`). Every description line sits in the label column under the label, so a `split` row keeps it in the
-left cell beside the control. The registry decides whether the description shows under the label, behind an ⓘ after the
-label, or as a summary under the label plus the ⓘ (`../DETAILS.md` § "Where the description shows"; the rule lives in
-`description-placement.ts`), so a section only passes `description`. Two snippets escape the plain shape:
-`descriptionContent` replaces the description text with markup (always under the label), and `labelTrailing` lands right
-after the label, ahead of the pip and the badges, for a small adornment belonging to the label rather than the control
-(onboarding's step 4 hangs its own `<InfoTip>` there). A disabled row says why in one of two ways: `disabledReason`, a
-short badge beside the label, or `disabledNote`, a full sentence with an info glyph under the whole row (outside the
-label column, so the row's dimming doesn't reach it) that also says how to enable the row ("Sort folders" uses it). The
-note is a visible line, not a tooltip, because a disabled control can't take focus, so a tooltip on it is out of reach
-for keyboard and screen-reader users. A disabled row dims its children rather than itself, which keeps the note at full
-AA contrast; point the control's `aria-describedby` at `disabledNoteId(id)` (`settings-window.ts`, beside
-`settingAnchorId`) while it's disabled. Pick the inner control by shape:
+Every row is a `SettingRow` (label + description + control + reset pip + restart-required badge, plus `searchQuery`).
+Every description line sits in the label column under the label, beside the control (§ Row layout). The registry decides
+whether the description shows under the label, behind an ⓘ after the label, or as a summary under the label plus the ⓘ
+(`../DETAILS.md` § "Where the description shows"; the rule lives in `description-placement.ts`), so a section only
+passes `description`. Two snippets escape the plain shape: `descriptionContent` replaces the description text with
+markup (always under the label), and `labelTrailing` lands right after the label, ahead of the pip and the badges, for a
+small adornment belonging to the label rather than the control (onboarding's step 4 hangs its own `<InfoTip>` there). A
+disabled row says why in one of two ways: `disabledReason`, a short badge beside the label, or `disabledNote`, a full
+sentence with an info glyph under the whole row (outside the label column, so the row's dimming doesn't reach it) that
+also says how to enable the row ("Sort folders" uses it). The note is a visible line, not a tooltip, because a disabled
+control can't take focus, so a tooltip on it is out of reach for keyboard and screen-reader users. A disabled row dims
+its children rather than itself, which keeps the note at full AA contrast; point the control's `aria-describedby` at
+`disabledNoteId(id)` (`settings-window.ts`, beside `settingAnchorId`) while it's disabled. Pick the inner control by
+shape:
 
 - `SettingSwitch`: the primary boolean, wrapping `lib/ui/Switch`.
 - `SettingCheckbox`: a secondary boolean, for one hanging off a switch or in a denser layout.
@@ -45,6 +45,42 @@ Every `.svelte` here ships a `*.a11y.test.ts` (axe tier-3); the swatch picker an
 One setting rendered in two UI locations follows the parent's mirror pattern (`../CLAUDE.md`). The card-group frame
 guard has a worked reference in `../sections/DETAILS.md`, under the Notifications section
 (`behavior.fileSystemWatching.*`).
+
+## Row layout
+
+`SettingRow` lays every row out the same way, macOS System Settings style: the label column takes what's left, and the
+control sits flush against the card's right edge. There's no layout prop; all of it is CSS in `SettingRow.svelte`.
+
+- **Natural size by default.** Switches, pop-up buttons (`SettingSelect`'s wrapper hugs its button), swatch pickers,
+  number inputs, and radio lists keep their own width. A radio list moves right as a block; its options stay
+  left-aligned inside it.
+- **Text fields and sliders take one shared width (`15rem`).** Both fill their container, so they have no natural width
+  of their own. The row matches them by the house `.text-field` frame class and the slider thumb's `role="slider"`. A
+  radio list carrying a field on one option's line (the custom date format) is excluded: it sizes by its options.
+- **One-line controls center** on the label column, so a short control beside a multi-line description sits in its
+  middle.
+- **A radio list top-aligns**, with the label line given one radio option's line height (`RadioGroup`'s item padding
+  around its `--font-size-sm` label), so the label centers on the FIRST option rather than floating between two. The row
+  finds it by Ark's `role="radiogroup"`, an ARIA contract rather than a `RadioGroup` class. Changing `RadioGroup`'s item
+  padding or label size means changing that `min-height` too.
+- **Decision: flush right, no midpoint grid.** A 50/50 grid lines up control left edges, but on a page mixing switches,
+  pop-ups, and lists it leaves each control's right edge somewhere different. Flush right is the platform's own pattern
+  and keeps one clean edge; toggle groups line up their left edges too (§ Toggle groups share a width).
+
+## Toggle groups share a width
+
+Every `SettingToggleGroup` in one card takes the width of the widest, so their left edges line up as well as their right
+ones; the segments share the extra space (`ui/ToggleGroup`'s `stretch`). Pure CSS in `SettingRow.svelte`, no measuring:
+
+- `SettingToggleGroup` wraps its group in a `data-shared-width` element: the marker `SettingRow` looks for.
+- A `SectionCard` holding such a row becomes a `minmax(0, 1fr) auto` grid, and every child spans both tracks. Rows with
+  a shared-width control turn into subgrids (row, then header), which puts their control in the `auto` track.
+- The grid spec keeps any item spanning a flexible track out of the content-sized tracks' sizing, so the `auto` track is
+  exactly as wide as the widest toggle group, and the other rows lay out as before.
+- A row only joins when it's a DIRECT child of the card's box. A section that wraps rows in its own element opts those
+  rows out: they keep their natural width.
+- **Decision: per card, not per page.** One long group (file size format's "SI decimal (kB, MB, GB)") would otherwise
+  stretch every short one on the page into wide, mostly empty pills.
 
 ## Managed rows
 

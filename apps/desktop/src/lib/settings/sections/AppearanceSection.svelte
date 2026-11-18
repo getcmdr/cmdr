@@ -93,7 +93,6 @@
                     id="appearance.language"
                     label={languageDef.label}
                     description={languageDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingSelect
@@ -119,7 +118,7 @@
             {/if}
 
             {#if shouldShow('appearance.appColor')}
-                <SettingRow id="appearance.appColor" label={appColorDef.label} description="" split {searchQuery}>
+                <SettingRow id="appearance.appColor" label={appColorDef.label} description="" {searchQuery}>
             {#snippet descriptionContent()}
                 {tString('settings.appearance.appColorHintPrefix')}
                 <LinkButton onclick={() => void openAppearanceSettings()}
@@ -129,7 +128,7 @@
                     })}</LinkButton
                 >.
             {/snippet}
-            <div class="app-color-options">
+            <div class="app-color-options" role="radiogroup" aria-label={appColorDef.label}>
                 <label class="app-color-option">
                     <!-- eslint-disable-next-line cmdr/prefer-ui-primitive -- Bespoke color-swatch picker: each option is a visual swatch (with the system one a click-through to System Settings), which a plain RadioGroup option list can't express; already keyboard-accessible via the labelled radios. -->
                     <input
@@ -227,7 +226,6 @@
                     id="appearance.dateTimeFormat"
                     label={dateTimeDef.label}
                     description={dateTimeDef.description}
-                    split
                     {searchQuery}
                 >
                     <div class="date-time-setting">
@@ -286,7 +284,6 @@
                     id="appearance.tintLocal"
                     label={tintLocalDef.label}
                     description={tintLocalDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingColorSwatchPicker id="appearance.tintLocal" label={tintLocalDef.label} />
@@ -297,7 +294,6 @@
                     id="appearance.tintSmb"
                     label={tintSmbDef.label}
                     description={tintSmbDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingColorSwatchPicker id="appearance.tintSmb" label={tintSmbDef.label} />
@@ -308,7 +304,6 @@
                     id="appearance.tintMtp"
                     label={tintMtpDef.label}
                     description={tintMtpDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingColorSwatchPicker id="appearance.tintMtp" label={tintMtpDef.label} />

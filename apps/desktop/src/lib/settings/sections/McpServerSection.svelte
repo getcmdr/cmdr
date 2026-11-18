@@ -214,7 +214,6 @@
                     id="developer.mcpPort"
                     label={mcpPortDef.label}
                     description={mcpPortDef.description}
-                    split
                     {searchQuery}
                 >
                     <div class="port-setting">

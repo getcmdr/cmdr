@@ -98,7 +98,7 @@ the setting, and the registry keeps keyless text for search and agents.
 `descriptionInTip` on the source picks one of four shapes:
 
 - No `descriptionKey` (or `descriptionWithKey`): no description. The row renders no empty paragraph.
-- `descriptionKey` alone: under the label, in the label column (the default; in a `split` row that's the left cell).
+- `descriptionKey` alone: under the label, in the label column (the default).
 - `descriptionKey` + `descriptionInTip: true`: an ⓘ `InfoTip` after the label carries it, nothing inline.
 - `descriptionKey` + `descriptionInTip: { summaryKey }`: a short line under the label and the ⓘ holding the detail.
 
@@ -403,8 +403,8 @@ mirror-in-multiple-sections pattern, and the AI hybrid-section split live in `se
 ### Components (`components/`)
 
 Reusable setting-row primitives (`SettingRow`, `SettingSwitch`, `SettingSelect`, `SettingSlider`, etc.) plus
-`SettingsSidebar` / `SettingsContent` / `SectionSummary`. See `components/CLAUDE.md` for the file map, the 50-50
-split-layout rule, and the `SettingPasswordInput` store-driven vs controlled modes.
+`SettingsSidebar` / `SettingsContent` / `SectionSummary`. See `components/CLAUDE.md` for the file map, the row layout
+rule, and the `SettingPasswordInput` store-driven vs controlled modes.
 
 ### Other files
 

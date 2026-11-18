@@ -110,7 +110,6 @@
                     id="network.shareCacheDuration"
                     label={cacheDurationDef.label}
                     description={cacheDurationDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingSelect id="network.shareCacheDuration" />
@@ -122,7 +121,6 @@
                     id="network.timeoutMode"
                     label={timeoutModeDef.label}
                     description={timeoutModeDef.description}
-                    split
                     {searchQuery}
                 >
                     <div class="timeout-setting">

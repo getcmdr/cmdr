@@ -279,7 +279,6 @@
             id="ai.cloudProvider"
             label={tString('settings.ai.cloudProvider.label')}
             description=""
-            split
             {searchQuery}
         >
             <Select
@@ -317,7 +316,6 @@
             id="ai.reasoningEfforts"
             label={effortLabelText}
             description={tString('settings.ai.reasoningEfforts.description')}
-            split
             {searchQuery}
         >
             <Select

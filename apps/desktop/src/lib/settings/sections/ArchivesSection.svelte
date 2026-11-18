@@ -68,7 +68,6 @@
                     id={COMPRESSION_LEVEL_ID}
                     label={compressionLevelDef.label}
                     description={compressionLevelDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingSlider

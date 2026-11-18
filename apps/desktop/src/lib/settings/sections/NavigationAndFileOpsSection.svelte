@@ -146,7 +146,6 @@
                     id="fileOperations.defaultConflictPolicy"
                     label={conflictPolicyDef.label}
                     description={conflictPolicyDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingSelect id="fileOperations.defaultConflictPolicy" />
@@ -172,7 +171,6 @@
                     id="behavior.textEditorApp"
                     label={textEditorAppDef.label}
                     description={textEditorAppDef.description}
-                    split
                     {searchQuery}
                 >
                     <TextEditorSelect ariaLabel={textEditorAppDef.label} />
@@ -188,7 +186,6 @@
                     id="behavior.openTerminalHereApp"
                     label={openTerminalHereAppDef.label}
                     description={openTerminalHereAppDef.description}
-                    split
                     {searchQuery}
                 >
                     <TerminalAppSelect ariaLabel={openTerminalHereAppDef.label} />
@@ -222,7 +219,6 @@
                     id="operationLog.maxAge"
                     label={operationLogMaxAgeDef.label}
                     description={operationLogMaxAgeDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingSelect id="operationLog.maxAge" />
@@ -234,7 +230,6 @@
                     id="operationLog.maxSize"
                     label={operationLogMaxSizeDef.label}
                     description={operationLogMaxSizeDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingSelect id="operationLog.maxSize" />

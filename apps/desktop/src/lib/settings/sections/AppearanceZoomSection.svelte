@@ -28,7 +28,6 @@
                     id="appearance.textSize"
                     label={textSizeDef.label}
                     description={textSizeDef.description}
-                    split
                     {searchQuery}
                 >
                     <SettingSlider id="appearance.textSize" unit="%" />

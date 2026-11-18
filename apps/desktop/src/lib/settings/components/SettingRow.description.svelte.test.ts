@@ -35,7 +35,7 @@ const control = createRawSnippet(() => ({ render: () => '<input id="theme.mode" 
 
 async function render(
   def: { descriptionPlacement: 'inline' | 'tip'; summary?: string },
-  props: { description?: string; searchQuery?: string; split?: boolean; descriptionContent?: Snippet } = {},
+  props: { description?: string; searchQuery?: string; descriptionContent?: Snippet } = {},
 ) {
   registry.def = { label: 'Theme mode', description: DETAIL, summary: '', ...def }
   const target = document.createElement('div')
@@ -58,10 +58,10 @@ afterEach(() => {
 
 describe('SettingRow description placement', () => {
   it('renders the description inline under the label by default, with no tip', async () => {
-    const target = await render({ descriptionPlacement: 'inline' }, { split: true })
+    const target = await render({ descriptionPlacement: 'inline' })
     const description = target.querySelector('.setting-description')
     expect(description?.textContent).toBe(DETAIL)
-    // In the label column, so a split row keeps it beside the control.
+    // In the label column, so it stays beside the control.
     expect(description?.closest('.setting-label-column')).not.toBeNull()
     expect(tipButton(target)).toBeNull()
   })
@@ -94,8 +94,8 @@ describe('SettingRow description placement', () => {
     await expectNoA11yViolations(target)
   })
 
-  it('shows a tip setting’s summary under the label, in the label column of a split row', async () => {
-    const target = await render({ descriptionPlacement: 'tip', summary: SUMMARY }, { split: true })
+  it('shows a tip setting’s summary under the label, in the label column', async () => {
+    const target = await render({ descriptionPlacement: 'tip', summary: SUMMARY })
     const summary = target.querySelector('.setting-description')
     expect(summary?.textContent).toBe(SUMMARY)
     expect(summary?.closest('.setting-label-column')).not.toBeNull()

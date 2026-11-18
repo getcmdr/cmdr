@@ -150,7 +150,6 @@
                     id="analytics.email"
                     label={emailDef.label}
                     description={emailDef.description}
-                    split
                     {searchQuery}
                 >
                     <TextInput
