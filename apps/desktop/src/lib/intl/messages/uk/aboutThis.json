@@ -1229,7 +1229,7 @@
   },
   "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Сховати цю підказку. Повернути її можна в Параметрах > Експертні.} linuxGnome {Сховати цю підказку. Повернути її можна в Налаштуваннях > Експертні.} linuxKde {Сховати цю підказку. Повернути її можна в розділі «Налаштувати Cmdr > Експертні».} other {Сховати цю підказку. Повернути її можна в Параметрах > Експертні.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "22d9d84"
+    "sourceHash": "aa27809"
   },
   "aboutThis.action.continueInAskCmdr": "Продовжити в Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {

@@ -125,7 +125,7 @@
   },
   "servers.hub.discoveryOffLink": "{platform, select, windows {Увімкнути в Параметрах} linuxGnome {Увімкнути в Налаштуваннях} linuxKde {Увімкнути у вікні «Налаштувати Cmdr»} other {Увімкнути в Параметрах}}",
   "@servers.hub.discoveryOffLink": {
-    "sourceHash": "65a3d5a"
+    "sourceHash": "cd006e8"
   },
   "servers.hub.nfsHint": "Сервери NFS не повідомляють про себе в мережі, тому їх тут не видно.",
   "@servers.hub.nfsHint": {

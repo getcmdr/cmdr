@@ -2506,11 +2506,11 @@
   },
   "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr використовує постачальника ШІ та ключ, які ви налаштували в Параметрах › ШІ ({provider}).} linuxGnome {Cmdr використовує постачальника ШІ та ключ, які ви налаштували в Налаштуваннях › ШІ ({provider}).} linuxKde {Cmdr використовує постачальника ШІ та ключ, які ви налаштували в розділі «Налаштувати Cmdr › ШІ» ({provider}).} other {Cmdr використовує постачальника ШІ та ключ, які ви налаштували в Параметрах › ШІ ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "f4ea2f0"
+    "sourceHash": "0cc24da"
   },
   "settings.askCmdr.provider.off": "{platform, select, windows {Увімкніть постачальника ШІ в Параметрах › ШІ, щоб почати чат.} linuxGnome {Увімкніть постачальника ШІ в Налаштуваннях › ШІ, щоб почати чат.} linuxKde {Увімкніть постачальника ШІ в розділі «Налаштувати Cmdr › ШІ», щоб почати чат.} other {Увімкніть постачальника ШІ в Параметрах › ШІ, щоб почати чат.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "0196a5c"
+    "sourceHash": "89d8531"
   },
   "settings.askCmdr.interactiveModel.label": "Модель для Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2954,9 +2954,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, windows {Розділи параметрів} linuxGnome {Розділи налаштувань} linuxKde {Configure Cmdr sections} other {Розділи параметрів}}",
+  "settings.sidebar.sections": "{platform, select, windows {Розділи параметрів} linuxGnome {Розділи налаштувань} linuxKde {Розділи вікна «Налаштувати Cmdr»} other {Розділи параметрів}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "4fa3c2e"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Немає параметрів, що збігаються} one {{countText} розділ має збіги} few {{countText} розділи мають збіги} many {{countText} розділів мають збіги} other {{countText} розділу мають збіги}}",
   "@settings.sidebar.matchCount": {
@@ -3427,7 +3427,7 @@
   },
   "settings.window.title": "{platform, select, windows {Параметри} linuxGnome {Налаштування} linuxKde {Налаштовування – Cmdr} other {Параметри}}",
   "@settings.window.title": {
-    "sourceHash": "80cee55"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Завантаження параметрів…",
   "@settings.window.loading": {

@@ -5,11 +5,11 @@
   },
   "stateRecovery.settings.body": "{platform, select, windows {Статистика використання та звіти про аварії залишаться вимкненими, доки ви знову не ввімкнете їх у розділі Параметри › Оновлення та приватність.} linuxGnome {Статистика використання та звіти про аварії залишаться вимкненими, доки ви знову не ввімкнете їх у розділі Налаштування › Оновлення та приватність.} linuxKde {Статистика використання та звіти про аварії залишаться вимкненими, доки ви знову не ввімкнете їх у розділі «Налаштувати Cmdr › Оновлення та приватність».} other {Статистика використання та звіти про аварії залишаться вимкненими, доки ви знову не ввімкнете їх у розділі Параметри › Оновлення та приватність.}}",
   "@stateRecovery.settings.body": {
-    "sourceHash": "8e4debd"
+    "sourceHash": "253a6ed"
   },
   "stateRecovery.settings.openSettings": "{platform, select, windows {Відкрити параметри} linuxGnome {Відкрити налаштування} linuxKde {Налаштувати Cmdr} other {Відкрити параметри}}",
   "@stateRecovery.settings.openSettings": {
-    "sourceHash": "f970930"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.shortcuts.title": "Cmdr не вдалося прочитати ваші клавіатурні скорочення, тож відновлено типові",
   "@stateRecovery.shortcuts.title": {
@@ -21,11 +21,11 @@
   },
   "stateRecovery.license.body": "{platform, select, windows {Якщо Cmdr тепер показується без ліцензії, введіть ліцензійний ключ знову в розділі Параметри › Ліцензія.} linuxGnome {Якщо Cmdr тепер показується без ліцензії, введіть ліцензійний ключ знову в розділі Налаштування › Ліцензія.} linuxKde {Якщо Cmdr тепер показується без ліцензії, введіть ліцензійний ключ знову в розділі «Налаштувати Cmdr › Ліцензія».} other {Якщо Cmdr тепер показується без ліцензії, введіть ліцензійний ключ знову в розділі Параметри › Ліцензія.}}",
   "@stateRecovery.license.body": {
-    "sourceHash": "158e224"
+    "sourceHash": "e4d10c4"
   },
   "stateRecovery.license.openSettings": "{platform, select, windows {Відкрити параметри} linuxGnome {Відкрити налаштування} linuxKde {Налаштувати Cmdr} other {Відкрити параметри}}",
   "@stateRecovery.license.openSettings": {
-    "sourceHash": "f970930"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.appStatus.title": "{platform, select, windows {Cmdr не вдалося прочитати, які папки були відкриті на ваших панелях, тож панелі відкриються в папці користувача} other {Cmdr не вдалося прочитати, які папки були відкриті на ваших панелях, тож панелі відкриються в домашній папці}}",
   "@stateRecovery.appStatus.title": {

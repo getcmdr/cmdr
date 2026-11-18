@@ -3161,11 +3161,12 @@
     "sources": "macOS live AirPort Utility (Port → Порт); MS (port → порт)"
   },
   "preferences": {
-    "chosen": "Параметри",
-    "accept": ["параметр", "налаштуван"],
-    "note": "Quote the label the user's device actually shows; Android may say «Налаштування USB».",
-    "confidence": "tentative",
-    "sources": "macOS AppKit MenuCommands (Preferences → Параметри); MS (Preferences → Параметри). No Android source in the pile"
+    "chosen": "Налаштування",
+    "accept": ["налаштуван"],
+    "note": "GNOME's name for Cmdr's settings window in the linuxGnome branch; Android's label is the usb-preferences concept.",
+    "confidence": "high",
+    "sources": "GNOME nautilus.po (_Preferences → _Налаштування)",
+    "forms": "title «Налаштування»; prose «у Налаштуваннях»; button «Відкрити налаштування»; sections «Розділи налаштувань»"
   },
   "preset": {
     "chosen": "набір параметрів",
@@ -3966,6 +3967,11 @@
       "chosen": "Параметри",
       "accept": ["параметр", "Налаштуван", "налаштуван", "Налаштувати Cmdr", "Налаштовування – Cmdr"],
       "note": "Linux desktop branches name the window the way that desktop does: GNOME → Налаштування (nautilus.po _Preferences → _Налаштування), so «в Налаштуваннях > ШІ», button «Відкрити налаштування»; KDE → window title «Налаштовування – Cmdr» (dolphin.po Configure @title:window → Налаштовування), menu «Налаштувати Cmdr…» (Configure… → Налаштувати…), pointers «у вікні «Налаштувати Cmdr»», paths «у розділі «Налаштувати Cmdr > ШІ»», button «Налаштувати Cmdr». Title and menu share the root as KDE's own Dolphin does. Other Linux desktops keep Параметри; the avoid on Налаштування holds for the macOS and Windows branches only."
+    },
+    "windows": {
+      "chosen": "Параметри",
+      "accept": ["параметр"],
+      "note": "Windows names an app's settings «Параметри», the same word as macOS (MS TBX Settings, “The feature in an app that allows users to change its properties or behavior” → Параметри), so the windows branch reads like the macOS one: title «Параметри», «у Параметрах», button «Відкрити параметри». The Windows Settings app itself is «Налаштування» (MS TBX), so a path into Windows' own Settings app quotes that."
     }
   },
   "share-link": {
@@ -5102,5 +5108,12 @@
     "confidence": "tentative",
     "sources": "shipped macOS branches of onboarding.stepOptional.networking.summary/.desc («дозвіл «Локальна мережа»»); macOS consent alerts ask to «дозволити»",
     "note": "An app's consent from the OS: Ukrainian macOS phrases it as access granted («надати доступ», «Повний доступ до диска») or a named «дозвіл». File-system rights stay привілеї (the permission concept)."
+  },
+  "usb-preferences": {
+    "chosen": "Налаштування USB",
+    "accept": ["Налаштування USB"],
+    "confidence": "tentative",
+    "sources": "no Android source in the pile; settings.fileOperations.mtpEnabled.description quotes «Налаштування USB», in line with Ukrainian Android's «Налаштування» for its Settings app",
+    "note": "Quote the label the user's phone shows."
   }
 }
