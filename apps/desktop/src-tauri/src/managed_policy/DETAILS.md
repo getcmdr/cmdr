@@ -41,8 +41,13 @@ The canonical key catalog for Cmdr's MDM support. `/trust` and the sample profil
 
 ## The Windows registry keys
 
-- `HKLM\SOFTWARE\Policies\Cmdr` (computer policy) and `HKCU\SOFTWARE\Policies\Cmdr` (user policy), read through the
-  64-bit view. Same key names as macOS, compared case-insensitively as the registry does. Per name, the machine's value
+- `HKLM\SOFTWARE\Policies\Rymd\Cmdr` (computer policy) and `HKCU\SOFTWARE\Policies\Rymd\Cmdr` (user policy), read
+  through the 64-bit view. The path is `POLICY_KEY` in `platform/registry_values.rs`.
+- **Decision/Why: the vendor level is `Rymd`** (David, 2026-11-18). Group Policy's convention is
+  `Policies\<vendor>\<product>` (`Policies\Google\Chrome`, `Policies\Mozilla\Firefox`), and the vendor is
+  Rymdskottkärra AB, shortened to `Rymd`, which will ship a second product beside Cmdr. ❗ Settled for good: once admins
+  deploy GPOs that name it, the path can't move. Nothing shipped on Windows before the decision, so there's one path
+  and no fallback read of an older one. Same key names as macOS, compared case-insensitively as the registry does. Per name, the machine's value
   wins over the user's (Group Policy's rule; Chrome and Edge read theirs the same way). Only administrators and Group
   Policy can write under either `Policies` key, so every value there counts as forced, the equivalent of macOS's
   `IsForced`.
@@ -54,8 +59,8 @@ The canonical key catalog for Cmdr's MDM support. `/trust` and the sample profil
 - A hive we can't read at all is logged and read as empty, like a CFPreferences read that fails on macOS.
 - ❗ The key path is a public contract once Windows ships: admins' GPOs and any ADMX template name it. No ADMX template
   exists yet, and the sample files are macOS-only. `/trust#windows` names the path from `windowsPolicyKey` in
-  `apps/website/src/lib/trust-mdm.ts`, kept equal to `POLICY_KEY` by hand (`public_docs_test.rs` checks the keys, not
-  the path); that section stays hidden until a release ships Windows.
+  `apps/website/src/lib/trust-mdm.ts`, which `public_docs_test.rs` pins to `POLICY_KEY`; that section stays hidden
+  until a release ships Windows.
 
 ## Key catalog
 
@@ -155,7 +160,7 @@ download, and the user-initiated feedback and beta signup.
   frontmost through a long Ask Cmdr turn or a model download. Chromium watches the same path and also reloads
   periodically, calling it "undocumented and therefore fragile".
 - **Windows registry watch** (`platform/windows/watch.rs`): `RegNotifyChangeKeyValue` on `SOFTWARE\Policies` in both
-  hives, subtree included (the parent, since `Policies\Cmdr` doesn't exist until the first policy creates it), on one
+  hives, subtree included (the parent, since `Policies\Rymd\Cmdr` doesn't exist until the first policy creates it), on one
   thread that re-arms the one-shot notifications each round and re-reads 250 ms after a change so a GPO refresh's
   burst of writes is one read. If the watch stops, it logs, and egress reads and the next launch still apply a change.
 - **Every egress**: `for_egress().await`, coalesced to one read per second, behind a lock so racing callers make one

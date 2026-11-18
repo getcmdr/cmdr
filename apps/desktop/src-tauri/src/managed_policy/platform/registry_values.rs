@@ -16,6 +16,11 @@ use std::collections::HashMap;
 
 use crate::managed_policy::source::ManagedPrefsSource;
 
+/// The policy key under `HKLM` and `HKCU`. `Rymd` is the vendor level (Rymdskottkärra AB), so a
+/// second product sits beside `Cmdr`. ❗ A public contract: admins' GPOs and the ADMX template
+/// name it, so it never moves (`DETAILS.md` § The Windows registry keys).
+pub(crate) const POLICY_KEY: &str = "SOFTWARE\\Policies\\Rymd\\Cmdr";
+
 pub(crate) const REG_SZ: u32 = 1;
 pub(crate) const REG_EXPAND_SZ: u32 = 2;
 pub(crate) const REG_BINARY: u32 = 3;

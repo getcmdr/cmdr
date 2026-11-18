@@ -1,6 +1,6 @@
 //! Managed preferences: what an organization's MDM profile or Group Policy restricts, read from the
 //! forced layer of the `com.veszelovszki.cmdr` preferences domain on macOS and from
-//! `SOFTWARE\Policies\Cmdr` in the registry on Windows. Named after the UI phrase "Managed by your
+//! `SOFTWARE\Policies\Rymd\Cmdr` in the registry on Windows. Named after the UI phrase "Managed by your
 //! organization".
 //!
 //! Everything downstream asks [`current`] (cached) or [`for_egress`] (fresh, at the point bytes

@@ -19,11 +19,11 @@ export const codeRequirement =
 
 /**
  * The registry key Windows reads policies from, under both `HKLM` and `HKCU` (machine wins). The
- * one place the page names it: `/trust#windows-policy` builds every mention from this. It mirrors
- * `POLICY_KEY` in `managed_policy/platform/windows/mod.rs` and becomes a public contract (admins'
- * GPOs name it) once Windows ships, so a rename changes both.
+ * one place the page names it: `/trust#windows-policy` builds every mention from this. A Rust test
+ * (`managed_policy/public_docs_test.rs`) pins it to `POLICY_KEY` in
+ * `managed_policy/platform/registry_values.rs`. A public contract: admins' GPOs name it.
  */
-export const windowsPolicyKey = 'SOFTWARE\\Policies\\Cmdr'
+export const windowsPolicyKey = 'SOFTWARE\\Policies\\Rymd\\Cmdr'
 
 export interface ManagedPreferenceKey {
   /** The key name in the `com.veszelovszki.cmdr` preference domain. */

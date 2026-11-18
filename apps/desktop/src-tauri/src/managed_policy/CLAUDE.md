@@ -1,8 +1,8 @@
 # Managed policy (MDM)
 
 What an organization's configuration profile or Group Policy restricts: telemetry, updates, AI, and SMB encryption.
-macOS reads the FORCED layer of the `com.veszelovszki.cmdr` preferences domain; Windows reads `SOFTWARE\Policies\Cmdr`
-in HKLM then HKCU (machine wins); Linux reads "no restriction".
+macOS reads the FORCED layer of the `com.veszelovszki.cmdr` preferences domain; Windows reads
+`SOFTWARE\Policies\Rymd\Cmdr` in HKLM then HKCU (machine wins); Linux reads "no restriction".
 
 ## Module map
 

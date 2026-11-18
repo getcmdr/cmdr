@@ -421,8 +421,8 @@ All under `apps/desktop/src-tauri/src/`.
   variant and from this build's embedded copy by the What's new popup. See
   `apps/desktop/src-tauri/src/security_advisories/CLAUDE.md`
 - `managed_policy/`: What an organization's MDM profile or Group Policy restricts (telemetry, updates, AI), read from
-  the forced layer of the app's preferences domain (macOS) or `SOFTWARE\Policies\Cmdr` (Windows), cached, refreshed at
-  egress, and shown as one `ManagedPolicyView`. Holds the canonical key catalog. See
+  the forced layer of the app's preferences domain (macOS) or `SOFTWARE\Policies\Rymd\Cmdr` (Windows), cached, refreshed
+  at egress, and shown as one `ManagedPolicyView`. Holds the canonical key catalog. See
   `apps/desktop/src-tauri/src/managed_policy/CLAUDE.md`; the frontend half (the settings overlay and the locked rows) is
   `apps/desktop/src/lib/managed-policy/CLAUDE.md`
 - `cf_plist.rs`: macOS-only. Core Foundation property lists as `plist::Value`, shared by every CFPreferences reader

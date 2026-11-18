@@ -100,3 +100,17 @@ fn the_profile_and_the_preference_file_agree_on_every_value() {
 fn the_trust_page_lists_every_key_and_nothing_else() {
     assert_eq!(trust_page_keys(), expected_keys());
 }
+
+/// `/trust#windows-policy` names the registry key the Windows arm reads, to the character.
+#[test]
+fn the_trust_page_names_the_windows_policy_key() {
+    let line = TRUST_TS
+        .lines()
+        .find(|line| line.starts_with("export const windowsPolicyKey = '"))
+        .expect("trust-mdm.ts exports windowsPolicyKey as a one-line string");
+    let quoted = line.split('\'').nth(1).expect("a quoted value");
+    assert_eq!(
+        quoted.replace("\\\\", "\\"),
+        super::platform::registry_values::POLICY_KEY
+    );
+}

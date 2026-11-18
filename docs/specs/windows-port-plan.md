@@ -105,6 +105,11 @@ Settled:
   native path can't go where an app path belongs, and a consumer that means "this machine's local disk" names
   `cmdr_local::LocalVolume` (the lead, on David's delegation). Plan: `docs/specs/app-path-plan.md`. (Numbered D6 because
   the menu model's branch already holds D5.)
+- **D7. The Group Policy key** (David, 2026-11-18): `SOFTWARE\Policies\Rymd\Cmdr`, under `HKLM` and `HKCU`, the machine
+  winning per value. `Rymd` is the vendor level (Rymdskottkärra AB, which will ship a second product), the
+  `Policies\<vendor>\<product>` shape Chrome and Firefox use. Settled for good: admins' GPOs name the path once they
+  deploy, so it can't move. Nothing shipped on Windows before it, so there's no older path to read or migrate.
+  Canonical: `apps/desktop/src-tauri/src/managed_policy/DETAILS.md` § The Windows registry keys.
 
 - **D5. The menu model** (PROVISIONAL, 2026-11-18; recommended by the lead's research, pending David's spikes on two
   real Windows laptops): off macOS, Cmdr draws its menus in the page from `cmdr-menu`'s data. Windows, KDE, and other
@@ -573,7 +578,7 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       `Windows 10 Pro 22H2 (build 19045.6466)` on the builder. Memory: `GlobalMemoryStatusEx` + `GetPerformanceInfo`
       (`system_memory/platform/windows.rs`).
     - The "already running" alert: `MessageBoxW` on its own thread (`instance_lock/platform/windows.rs`).
-    - Managed policy: `SOFTWARE\Policies\Cmdr` in HKLM then HKCU, with a live registry watch
+    - Managed policy: `SOFTWARE\Policies\Rymd\Cmdr` in HKLM then HKCU (D7), with a live registry watch
       (`managed_policy/DETAILS.md` § The Windows registry keys).
     - On the builder (Windows 10 Pro 22H2, build 19045.6466, `52047a9377`, 2026-11-18):
       `cargo clippy -p cmdr --all-targets -D warnings` clean (297 s warm); `cargo nextest run -p cmdr --lib` over
@@ -584,8 +589,7 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       credential left behind, when the same test binary runs as SYSTEM from a scheduled task. The other two failures are
       the pid cells below.
     - The Windows half of `/trust` is drafted, hidden until a release carries a Windows download
-      (`apps/website/DETAILS.md` § Patterns, "Copy for an OS that hasn't shipped"); David reviews its copy, and the key
-      path stays his open naming decision.
+      (`apps/website/DETAILS.md` § Patterns, "Copy for an OS that hasn't shipped"); David reviews its copy.
     - Left for later tasks: an ADMX template (the key path is a public contract once Windows ships), and the instance
       lock's holder pid, which reads as unknown on Windows (the two `instance_lock::tests` pid cells fail there, as
       before this task: `LockFileEx` locks the bytes the pid sits in).
