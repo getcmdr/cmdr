@@ -240,7 +240,7 @@ These are reporter gates, not release-pipeline behavior.
 
 - Full symbolicated backtrace, report-scope-redacted before preview or upload.
 - Exception type + signal, faulting address.
-- App version, macOS version, CPU architecture.
+- App version, OS name (`os`: `macos` / `windows` / `linux`) and version, CPU architecture. A crash file from before `os` reads as this machine's OS.
 - App uptime, thread count.
 - Panic message (`panicMessage`) and thread name (`threadName`). The hook stores them through `sanitize_panic_message`
   / `sanitize_thread_name` (the shared `crate::redact` pipeline, then a 2,000-char / 100-char cap; a byte-index cut

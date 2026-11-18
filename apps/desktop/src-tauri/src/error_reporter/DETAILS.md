@@ -47,7 +47,8 @@ Manifest fields (`BundleManifest`):
   `cfg!(debug_assertions)` via `BuildMode::current()`. Forwarded to the api server so the
   Discord notification embed prefixes the title with `[DEV]` for debug-build reports,
   so triage can keep dev-run reports apart from real production traffic at a glance.
-- `appVersion`, `osVersion`, `arch`: build/platform identifiers.
+- `appVersion`, `osVersion`, `os`, `arch`: build/platform identifiers. `os` is `crate::platform::os_name()` (`macos`,
+  `windows`, `linux`), the api-server's `error_reports.os`; a manifest without it reads as this machine's OS.
 - `activeSettings`: settings snapshot via the `ResolvedSettings` struct, every field
   resolved to its effective value (`null` is never shipped). Includes `indexingEnabled`,
   `aiProvider`, `mcpEnabled`, `mcpPort`, `verboseLogging`, `maxLogStorageMb`,

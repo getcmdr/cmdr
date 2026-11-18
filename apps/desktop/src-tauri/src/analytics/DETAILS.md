@@ -104,6 +104,8 @@ the app being open, never the person at the keyboard (same caveat as the session
 - `analId` (required): `anal_` + lowercase hyphenated v4 UUID, `^anal_[0-9a-f-]{36}$`.
 - `appVersion` (required): semver from `CARGO_PKG_VERSION`.
 - `osVersion` (required): from `crate::platform::os_version()`, always non-empty.
+- `os`: `"macos"` / `"windows"` / `"linux"` from `crate::platform::os_name()`. Always sent; the dashboard splits active
+  installs by it (`apps/api-server/src/admin/DETAILS.md` § Active installs).
 - `arch` (required): `std::env::consts::ARCH`.
 - `buildMode` (optional): `"release"` / `"debug"`.
 - `config` (optional): the config-shape object, verbatim. It shows EFFECTIVE values (the managed locks over the

@@ -266,8 +266,8 @@ All under `apps/desktop/src-tauri/src/`.
   `apps/desktop/src-tauri/src/usage/CLAUDE.md`
 - `prod_instance.rs`: The one definition of "this process is not a real user's production install" (the env vars every
   dev, E2E, and capture launcher sets). Read by the analytics gate and the updater's update-check gate
-- `platform/`: Which OS and version this is (`os_version()`, `macos_at_least()`, Linux's `LinuxDistro`), used by crash +
-  error reports and the heartbeat. The first platform seam: every OS split takes the shape in
+- `platform/`: Which OS and version this is (`os_name()`, `os_version()`, `macos_at_least()`, Linux's `LinuxDistro`),
+  used by crash + error reports and the heartbeat. The first platform seam: every OS split takes the shape in
   `docs/guides/platform-seams.md`. `platform/startup/` holds each OS's order-free setup-hook installers (observers, the
   volume watcher, native hooks), one `install(app)` per OS. `platform/conventions.rs` holds `PlatformConventions`, how
   each desktop's own apps behave (dialog button order, access keys, menu model), which the frontend reads through

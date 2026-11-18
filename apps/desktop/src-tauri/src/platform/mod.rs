@@ -39,6 +39,14 @@ const _: fn() -> PlatformConventions = conventions;
 /// contract requires a value).
 pub(crate) use imp::os_version;
 
+/// This build's OS as Rust names it: `macos`, `windows`, or `linux`. The `os` field the heartbeat,
+/// feedback, crash reports, and error reports send, spelled the way the release manifest and the
+/// api-server spell it (`apps/api-server/src/client-os.ts`), so the dashboard splits by OS without
+/// reading the free-text [`os_version`].
+pub(crate) fn os_name() -> String {
+    std::env::consts::OS.to_string()
+}
+
 /// True when the running macOS is at least `major.minor`; always false off macOS.
 ///
 /// This is the runtime half of the deployment-floor story. `objc2` carries no availability
@@ -69,6 +77,13 @@ pub(crate) use imp::registry;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The api-server knows exactly these three (`apps/api-server/src/client-os.ts`); any other
+    /// value it stores as unknown.
+    #[test]
+    fn os_name_is_one_the_api_server_knows() {
+        assert!(["macos", "windows", "linux"].contains(&os_name().as_str()));
+    }
 
     #[test]
     fn os_version_is_never_empty() {

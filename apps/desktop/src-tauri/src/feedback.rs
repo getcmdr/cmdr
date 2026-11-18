@@ -77,6 +77,8 @@ pub struct FeedbackPayload {
     pub email: Option<String>,
     pub app_version: String,
     pub os_version: String,
+    /// `macos` / `windows` / `linux` ([`crate::platform::os_name`]).
+    pub os: String,
     pub build_mode: String,
     /// The `ERR-XXXXX` the logs will be uploaded under, when the user asked to include them.
     pub error_report_id: Option<String>,
@@ -106,6 +108,7 @@ pub fn build_payload(feedback: String, email: Option<String>, error_report_id: O
         email,
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         os_version: crate::platform::os_version(),
+        os: crate::platform::os_name(),
         build_mode: if cfg!(debug_assertions) { "debug" } else { "release" }.to_string(),
         error_report_id,
     }
@@ -295,6 +298,7 @@ mod tests {
         assert!(value["errorReportId"].is_null());
         assert_eq!(value["appVersion"], env!("CARGO_PKG_VERSION"));
         assert!(value["osVersion"].as_str().is_some_and(|v| !v.is_empty()));
+        assert_eq!(value["os"], std::env::consts::OS);
         assert_eq!(
             value["buildMode"],
             if cfg!(debug_assertions) { "debug" } else { "release" }
