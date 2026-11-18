@@ -597,7 +597,7 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     one the app reads (`windows-x86_64[-nsis]`, `linux-x86_64[-appimage]`). Also publish the advisory list as a release
     asset with its own `.sig` and write the optional top-level `securityAdvisories: { url, signature }` into
     `latest.json` (`latest.go`); without it Windows and Linux show no security notice (the update still installs). Once
-    it's written, drop `securityAdvisories` from `NOT_WRITTEN_YET` in `updater/manifest.rs`
+    it's written, drop `securityAdvisories` from `NOT_WRITTEN_YET` in `crates/cmdr-update-manifest/src/tests.rs`
     (`scripts/release-assets/DETAILS.md` § Update payloads off macOS). Needs 6, 30.
 53. [S] Windows. Release vetting and distribution: `deny.toml` triple, third-party notices and SBOM, checksums for both
     packages, and a winget manifest for the NSIS installer. Needs 52.

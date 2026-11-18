@@ -846,7 +846,7 @@
   "@commands.dialogConfirm.label": {
     "sourceHash": "fef0684"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {Toon in Finder} windows {Toon in Verkenner} other {Toon in bestandsbeheer}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {Toon in Finder} windows {Toon in Verkenner} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Toon in bestandsbeheer}}",
   "@commands.fileShowInFileManager.label": {
     "sourceHash": "21f1ff1"
   },
@@ -942,7 +942,7 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit Sleutelhanger, en vergrendelt de back-up weer} windows {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit Referentiebeheer, en vergrendelt de back-up weer} other {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit je sleutelhanger, en vergrendelt de back-up weer}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit Sleutelhanger, en vergrendelt de back-up weer} windows {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit Referentiebeheer, en vergrendelt de back-up weer} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit je sleutelhanger, en vergrendelt de back-up weer}}",
   "@commands.resticForgetPassword.description": {
     "sourceHash": "0f616ca"
   },

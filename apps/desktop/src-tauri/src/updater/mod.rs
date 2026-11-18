@@ -140,6 +140,11 @@ pub enum UpdateCheckOutcome {
     UpToDate,
     /// A newer release this Mac may install. `download_update` fetches exactly this one.
     Available { version: String },
+    /// `latest.json` names a newer release but carries no build for this install's platform, so
+    /// this build can't update for now. Its own state, ❌ never `UpToDate`: telling this install
+    /// it's current would be false. The release's version stays in the backend's log; the frontend
+    /// shows none, since this install can't take it.
+    NoBuildForThisPlatform,
     /// A newer release is out, but `MaxUpdateVersion` holds this Mac at `ceiling` or earlier.
     /// `staged_withdrawn`: see [`UpdateCheckOutcome::UpdatesDisabledByPolicy`].
     HeldByPolicy {
@@ -216,7 +221,7 @@ fn update_check_url(current_version: &str, kind: InstallKind, arch: Arch) -> Str
 /// [`crate::prod_instance::NON_PROD_ENV_VARS`] is set. Every check reaches
 /// `api.getcmdr.com/update-check`, which writes an `update_checks` row that the dashboard counts as
 /// an active install, so Cmdr's own runs must never call it. Also `UpToDate` when the remote version
-/// isn't newer, or the manifest has no entry for this platform.
+/// isn't newer; `NoBuildForThisPlatform` when it is but the manifest has no entry for this platform.
 #[tauri::command]
 #[specta::specta]
 pub async fn check_for_update(
@@ -290,13 +295,18 @@ where
     let manifest = fetch().await?;
     // A refusal here is required data gone wrong (this install's entry doesn't read): the same
     // "couldn't read the server's answer" a manifest that doesn't parse gets, never "up to date".
-    let offered = manifest::check_manifest(&manifest, current_version, platform_keys).map_err(|refusal| {
+    let answer = manifest::check_manifest(&manifest, current_version, platform_keys).map_err(|refusal| {
         crate::server_request::ServerRequestError::BadResponse {
             detail: refusal.to_string(),
         }
     })?;
-    let Some(update) = offered else {
-        return Ok(UpdateCheckOutcome::UpToDate);
+    let update = match answer {
+        manifest::ManifestAnswer::Update(update) => update,
+        manifest::ManifestAnswer::UpToDate => return Ok(UpdateCheckOutcome::UpToDate),
+        // `check_manifest` warned with the version and the keys the manifest does offer.
+        manifest::ManifestAnswer::NoBuildForThisPlatform => {
+            return Ok(UpdateCheckOutcome::NoBuildForThisPlatform);
+        }
     };
     let version = update.version.to_string();
     match policy.update_to(&update.version) {

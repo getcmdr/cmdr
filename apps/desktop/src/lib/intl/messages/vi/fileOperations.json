@@ -1304,7 +1304,7 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Ghi nhớ trong chuỗi khóa} windows {Ghi nhớ mật khẩu} other {Ghi nhớ trong kho khóa}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Ghi nhớ trong chuỗi khóa} windows {Ghi nhớ mật khẩu} linuxKde {Remember in KWallet} other {Ghi nhớ trong kho khóa}}",
   "@fileOperations.resticPassword.remember": {
     "sourceHash": "42237e1"
   },

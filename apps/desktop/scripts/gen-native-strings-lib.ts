@@ -21,14 +21,17 @@
  * an OS `cfg`.
  */
 
-import { parsePlatformSelect, PLATFORM_SELECT_PREFIX } from '../src/lib/intl/platform-select.ts'
+import { parsePlatformSelect, pickFromBranches, PLATFORM_SELECT_PREFIX } from '../src/lib/intl/platform-select.ts'
 
 /**
  * One native value, mirroring Rust's `NativeText`: the same text on every OS
- * (`All`), or one text per OS (`PerOs`), with a branch the block omits already
- * resolved to `other`, so Rust never has to know the folding rule.
+ * (`All`), or one text per system (`PerOs`: each OS, and Linux on GNOME and on
+ * KDE), with a branch the block omits already resolved to `other`, so Rust never
+ * has to know the folding rule.
  */
-export type NativeText = { all: string } | { macos: string; windows: string; other: string }
+export type NativeText =
+  | { all: string }
+  | { macos: string; windows: string; linuxGnome: string; linuxKde: string; other: string }
 
 /** One shipped locale's native strings, mirroring Rust's `LocaleStrings`. */
 export interface LocaleNativeStrings {
@@ -51,8 +54,13 @@ export function nativeTextOf(key: string, value: string): NativeText {
     }
     return { all: value }
   }
-  const { other } = branches
-  return { macos: branches.macos ?? other, windows: branches.windows ?? other, other }
+  return {
+    macos: pickFromBranches(branches, 'macos'),
+    windows: pickFromBranches(branches, 'windows'),
+    linuxGnome: pickFromBranches(branches, 'linuxGnome'),
+    linuxKde: pickFromBranches(branches, 'linuxKde'),
+    other: pickFromBranches(branches, 'linux'),
+  }
 }
 
 /**
@@ -209,8 +217,14 @@ export function rustStringLiteral(value: string): string {
 /** Renders one value as a `NativeText` literal (the variants are imported bare). */
 function emitNativeText(text: NativeText): string {
   if ('all' in text) return `All(${rustStringLiteral(text.all)})`
-  const { macos, windows, other } = text
-  return `PerOs { macos: ${rustStringLiteral(macos)}, windows: ${rustStringLiteral(windows)}, other: ${rustStringLiteral(other)} }`
+  const fields = [
+    ['macos', text.macos],
+    ['windows', text.windows],
+    ['linux_gnome', text.linuxGnome],
+    ['linux_kde', text.linuxKde],
+    ['other', text.other],
+  ]
+  return `PerOs { ${fields.map(([name, value]) => `${name}: ${rustStringLiteral(value)}`).join(', ')} }`
 }
 
 /**

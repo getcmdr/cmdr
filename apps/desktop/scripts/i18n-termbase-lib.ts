@@ -17,6 +17,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { isRawKey, platformBranches, visibleLiterals } from './i18n-catalog-lib.ts'
+import type { PlatformSelectBranch } from '../src/lib/intl/platform-select.ts'
 
 /** One recurring English concept, shared by every locale. */
 export interface Concept {
@@ -117,13 +118,16 @@ export function osFormsSummaries(term: Term): string[] {
 
 /**
  * The forms one branch is judged against: its OS's forms when the ruling has
- * them, else the base ruling. A plain value and a `macos` branch read the base.
+ * them, else the base ruling. A plain value and a `macos` branch read the base; a
+ * `linuxGnome` or `linuxKde` branch is Linux, judged by the `other` forms (a desktop's
+ * own word that the Linux ruling doesn't accept goes in that ruling's `accept`).
  * @param term the locale's ruling
  * @param branch the platform branch name, or `null` for a plain value
  */
-export function formsForBranch(term: Term, branch: 'macos' | 'windows' | 'other' | null): OsForms {
-  if (branch === 'windows' || branch === 'other') {
-    const forms = term[branch]
+export function formsForBranch(term: Term, branch: PlatformSelectBranch | null): OsForms {
+  const osBranch = branch === 'linuxGnome' || branch === 'linuxKde' ? 'other' : branch
+  if (osBranch === 'windows' || osBranch === 'other') {
+    const forms = term[osBranch]
     if (forms !== undefined) return forms
   }
   return term

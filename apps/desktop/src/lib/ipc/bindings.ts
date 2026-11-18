@@ -6209,7 +6209,7 @@ export const commands = {
    *  [`crate::prod_instance::NON_PROD_ENV_VARS`] is set. Every check reaches
    *  `api.getcmdr.com/update-check`, which writes an `update_checks` row that the dashboard counts as
    *  an active install, so Cmdr's own runs must never call it. Also `UpToDate` when the remote version
-   *  isn't newer, or the manifest has no entry for this platform.
+   *  isn't newer; `NoBuildForThisPlatform` when it is but the manifest has no entry for this platform.
    */
   checkForUpdate: (trigger: UpdateCheckTrigger) =>
     typedError<UpdateCheckOutcome, ServerRequestError>(__TAURI_INVOKE('check_for_update', { trigger })),
@@ -23484,6 +23484,13 @@ export type UpdateCheckOutcome =
   | { kind: 'upToDate' }
   // A newer release this Mac may install. `download_update` fetches exactly this one.
   | { kind: 'available'; version: string }
+  /**
+   *  `latest.json` names a newer release but carries no build for this install's platform, so
+   *  this build can't update for now. Its own state, ❌ never `UpToDate`: telling this install
+   *  it's current would be false. The release's version stays in the backend's log; the frontend
+   *  shows none, since this install can't take it.
+   */
+  | { kind: 'noBuildForThisPlatform' }
   /**
    *  A newer release is out, but `MaxUpdateVersion` holds this Mac at `ceiling` or earlier.
    *  `staged_withdrawn`: see [`UpdateCheckOutcome::UpdatesDisabledByPolicy`].

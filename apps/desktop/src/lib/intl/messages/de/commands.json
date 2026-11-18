@@ -844,7 +844,7 @@
   "@commands.dialogConfirm.label": {
     "sourceHash": "fef0684"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {Im Finder anzeigen} windows {Im Datei-Explorer anzeigen} other {Im Dateimanager anzeigen}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {Im Finder anzeigen} windows {Im Datei-Explorer anzeigen} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Im Dateimanager anzeigen}}",
   "@commands.fileShowInFileManager.label": {
     "sourceHash": "21f1ff1"
   },
@@ -940,7 +940,7 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus dem Schlüsselbund und sperrt das Backup wieder} windows {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus der Anmeldeinformationsverwaltung und sperrt das Backup wieder} other {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus deinem Schlüsselbund und sperrt das Backup wieder}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus dem Schlüsselbund und sperrt das Backup wieder} windows {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus der Anmeldeinformationsverwaltung und sperrt das Backup wieder} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {Entfernt das gespeicherte Passwort des restic-Backups, in dem du gerade bist, aus deinem Schlüsselbund und sperrt das Backup wieder}}",
   "@commands.resticForgetPassword.description": {
     "sourceHash": "0f616ca"
   },

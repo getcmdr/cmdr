@@ -1,7 +1,10 @@
 /**
  * The one splitter for platform-variant catalog values: a WHOLE value shaped
- * `{platform, select, macos {…} windows {…} other {…}}` (canonical spelling and
- * order; `other` is Linux and every context without a backend).
+ * `{platform, select, macos {…} windows {…} linuxGnome {…} linuxKde {…} other {…}}`
+ * (canonical spelling and order; `other` is every other Linux desktop and every
+ * context without a backend). A running system reads the most specific branch the
+ * block has for it, else `other` (`selectReaderFor`, `pickPlatformBranch`); the
+ * TypeScript, Rust, and boot-guard resolvers all pass `platform-select-cases.json`.
  *
  * ICU values never come through here at render time: `t()` injects `platform`
  * and the ICU engine does the select. This exists for the families that have no
@@ -13,19 +16,63 @@
  */
 
 /** The branch names a block may carry. */
-export type PlatformSelectBranch = 'macos' | 'windows' | 'other'
+export type PlatformSelectBranch = 'macos' | 'windows' | 'linuxGnome' | 'linuxKde' | 'other'
+
+/** Every branch name, in the order a block spells them. Every reader that walks branches goes by this list. */
+export const PLATFORM_SELECT_BRANCHES: readonly PlatformSelectBranch[] = Object.freeze([
+  'macos',
+  'windows',
+  'linuxGnome',
+  'linuxKde',
+  'other',
+])
 
 /** A block's branches, by name: the source text of each, unformatted. */
 export interface PlatformSelectBranches {
   macos?: string
   windows?: string
+  linuxGnome?: string
+  linuxKde?: string
   other: string
+}
+
+/**
+ * A running system a block resolves for: macOS, Windows, Linux on GNOME or on KDE,
+ * or `linux` (any other desktop, and every context without a backend), which reads
+ * `other`.
+ */
+export type PlatformSelectReader = 'macos' | 'windows' | 'linuxGnome' | 'linuxKde' | 'linux'
+
+/** Every reader, for a check that compares what two KEYS show side by side on each system. */
+export const PLATFORM_SELECT_READERS: readonly PlatformSelectReader[] = Object.freeze([
+  'macos',
+  'windows',
+  'linuxGnome',
+  'linuxKde',
+  'linux',
+])
+
+/**
+ * The reader this system is: the platform, narrowed on Linux by its desktop
+ * (`convention('linuxDesktop')`). macOS and Windows ignore the desktop, so a stray
+ * desktop value can't move them.
+ * @param platform the OS (`getPlatform()`)
+ * @param linuxDesktop the Linux desktop, `null` off Linux
+ */
+export function selectReaderFor(
+  platform: 'macos' | 'windows' | 'linux',
+  linuxDesktop: 'gnome' | 'kde' | 'other' | null,
+): PlatformSelectReader {
+  if (platform !== 'linux') return platform
+  if (linuxDesktop === 'gnome') return 'linuxGnome'
+  if (linuxDesktop === 'kde') return 'linuxKde'
+  return 'linux'
 }
 
 /** Every block starts with exactly this. The shape check enforces the spelling, so a prefix test is sound. */
 export const PLATFORM_SELECT_PREFIX = '{platform, select, '
 
-const BRANCH_NAMES: readonly string[] = ['macos', 'windows', 'other']
+const BRANCH_NAMES: readonly string[] = PLATFORM_SELECT_BRANCHES
 
 /**
  * Characters after a lone `'` that start an ICU quoted run (`intl-messageformat`'s
@@ -102,7 +149,7 @@ export function parsePlatformSelect(value: string): PlatformSelectBranches | nul
   for (;;) {
     i = skipSpaces(value, i)
     if (i === value.length - 1) break
-    const name = /^[a-z]+/.exec(value.slice(i))?.[0]
+    const name = /^[a-zA-Z]+/.exec(value.slice(i))?.[0]
     if (name === undefined || !BRANCH_NAMES.includes(name)) return null
     const branch = name as PlatformSelectBranch
     if (branches[branch] !== undefined) return null
@@ -120,13 +167,20 @@ export function parsePlatformSelect(value: string): PlatformSelectBranches | nul
 }
 
 /**
- * The source text `platform` reads from `value`: its branch, or `other` when the
- * block has none for it (Linux always reads `other`). A value that isn't a block
- * comes back unchanged.
+ * The branch `reader` reads from a block's branches: its own, or `other` when the
+ * block has none for it (`linux`, any other desktop, always reads `other`).
  */
-export function pickPlatformBranch(value: string, platform: 'macos' | 'windows' | 'linux'): string {
+export function pickFromBranches(branches: PlatformSelectBranches, reader: PlatformSelectReader): string {
+  if (reader === 'linux') return branches.other
+  return branches[reader] ?? branches.other
+}
+
+/**
+ * The source text `reader` reads from `value`: its branch, or `other` when the
+ * block has none for it. A value that isn't a block comes back unchanged.
+ */
+export function pickPlatformBranch(value: string, reader: PlatformSelectReader): string {
   const branches = parsePlatformSelect(value)
   if (branches === null) return value
-  if (platform === 'linux') return branches.other
-  return branches[platform] ?? branches.other
+  return pickFromBranches(branches, reader)
 }

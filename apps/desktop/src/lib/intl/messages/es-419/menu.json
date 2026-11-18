@@ -3,11 +3,11 @@
   "@menu.app.licenseEnter": {
     "sourceHash": "e5dac0a"
   },
-  "menu.app.settings": "{platform, select, windows {Configuración} other {Configuración…}}",
+  "menu.app.settings": "{platform, select, windows {Configuración} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Configuración…}}",
   "@menu.app.settings": {
     "sourceHash": "802a5bb"
   },
-  "menu.file.showInFileManager": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} other {Mostrar en el administrador de archivos}}",
+  "menu.file.showInFileManager": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar en el administrador de archivos}}",
   "@menu.file.showInFileManager": {
     "sourceHash": "a11bd4b"
   },

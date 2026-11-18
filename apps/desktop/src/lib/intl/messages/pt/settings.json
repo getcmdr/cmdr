@@ -3222,7 +3222,7 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Mostrar no Finder} windows {Mostrar no Explorador de Arquivos} other {Mostrar no gerenciador de arquivos}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Mostrar no Finder} windows {Mostrar no Explorador de Arquivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar no gerenciador de arquivos}}",
   "@settings.securityLog.showInFinder": {
     "sourceHash": "21f1ff1"
   },
@@ -3680,11 +3680,11 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Um item chamado “{itemName}” no Acesso às Chaves} many {{countText} itens chamados “{itemName}” no Acesso às Chaves} other {{countText} itens chamados “{itemName}” no Acesso às Chaves}}} windows {{count, plural, one {Uma credencial chamada “{itemName}” no Gerenciador de Credenciais} many {{countText} credenciais chamadas “{itemName}” no Gerenciador de Credenciais} other {{countText} credenciais chamadas “{itemName}” no Gerenciador de Credenciais}}} other {{count, plural, one {Um item chamado “{itemName}” no seu chaveiro} many {{countText} itens chamados “{itemName}” no seu chaveiro} other {{countText} itens chamados “{itemName}” no seu chaveiro}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Um item chamado “{itemName}” no Acesso às Chaves} many {{countText} itens chamados “{itemName}” no Acesso às Chaves} other {{countText} itens chamados “{itemName}” no Acesso às Chaves}}} windows {{count, plural, one {Uma credencial chamada “{itemName}” no Gerenciador de Credenciais} many {{countText} credenciais chamadas “{itemName}” no Gerenciador de Credenciais} other {{countText} credenciais chamadas “{itemName}” no Gerenciador de Credenciais}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, one {Um item chamado “{itemName}” no seu chaveiro} many {{countText} itens chamados “{itemName}” no seu chaveiro} other {{countText} itens chamados “{itemName}” no seu chaveiro}}}}",
   "@settings.dataWipe.leftover.secretItems": {
     "sourceHash": "6cf1e9c"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Qualquer item chamado “{itemName}” no Acesso às Chaves} windows {Qualquer credencial chamada “{itemName}” no Gerenciador de Credenciais} other {Qualquer item chamado “{itemName}” no seu chaveiro}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Qualquer item chamado “{itemName}” no Acesso às Chaves} windows {Qualquer credencial chamada “{itemName}” no Gerenciador de Credenciais} linuxKde {Any items in KWallet named “{itemName}”} other {Qualquer item chamado “{itemName}” no seu chaveiro}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
     "sourceHash": "0e9e95b"
   },

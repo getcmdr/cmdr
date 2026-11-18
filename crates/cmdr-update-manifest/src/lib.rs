@@ -166,28 +166,42 @@ fn read_entry(value: serde_json::Value) -> Result<PlatformEntry, String> {
     Ok(entry)
 }
 
+/// What a readable manifest says to this install. "Couldn't read it" is the other half,
+/// [`ManifestRefusal`]: each meaning has exactly one home.
+#[derive(Debug, Clone)]
+pub enum ManifestAnswer {
+    /// A newer release with a build for this install.
+    Update(UpdateInfo),
+    /// Nothing newer (or this build's own version can't be compared, warned).
+    UpToDate,
+    /// A newer release is out, but the manifest carries no entry under any of this install's
+    /// keys, so it can't update. Its own answer, ❌ never "up to date": that would tell the person
+    /// they're current while the install sits on an old version.
+    NoBuildForThisPlatform,
+}
+
 /// Checks whether the manifest offers this install an update: a version newer than
 /// `current_version`, with an entry under the first of `platform_keys` the manifest carries.
 ///
-/// `Ok(None)` is "up to date", which also covers a manifest with no entry for this install (logged
-/// at warn: a release that left this platform out is otherwise invisible from both ends). An
-/// entry for this install that doesn't read is `Err`: the release meant to offer it and can't.
+/// A newer release with no entry for this install is [`ManifestAnswer::NoBuildForThisPlatform`]
+/// (logged at warn: a release that left this platform out is otherwise invisible from both ends).
+/// An entry for this install that doesn't read is `Err`: the release meant to offer it and can't.
 pub fn check_manifest(
     manifest: &UpdateManifest,
     current_version: &str,
     platform_keys: &[String],
-) -> Result<Option<UpdateInfo>, ManifestRefusal> {
+) -> Result<ManifestAnswer, ManifestRefusal> {
     let current = match semver::Version::parse(current_version) {
         Ok(v) => v,
         Err(e) => {
             log::warn!("Can't compare versions: this build's own version {current_version} isn't semver: {e}");
-            return Ok(None);
+            return Ok(ManifestAnswer::UpToDate);
         }
     };
     let latest = &manifest.version;
     if *latest <= current {
         log::debug!("No update available (current={current}, remote={latest})");
-        return Ok(None);
+        return Ok(ManifestAnswer::UpToDate);
     }
 
     let Some((platform, entry)) = platform_keys
@@ -201,7 +215,7 @@ pub fn check_manifest(
             platform_keys.join(" or "), // allowed-log-private: our own manifest keys
             offered.join(", ")
         );
-        return Ok(None);
+        return Ok(ManifestAnswer::NoBuildForThisPlatform);
     };
     let entry = entry.as_ref().map_err(|detail| ManifestRefusal::BadEntry {
         key: platform.clone(),
@@ -209,7 +223,7 @@ pub fn check_manifest(
     })?;
 
     log::info!("Update available: {current} -> {latest} (platform={platform})");
-    Ok(Some(UpdateInfo {
+    Ok(ManifestAnswer::Update(UpdateInfo {
         version: latest.clone(),
         platform_key: platform.clone(),
         url: entry.url.clone(),

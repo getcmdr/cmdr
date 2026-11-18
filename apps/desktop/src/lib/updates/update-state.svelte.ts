@@ -66,6 +66,12 @@ export interface UpdateState {
    * starts.
    */
   unwritable: UnwritableUpdate | null
+  /**
+   * The last check found a newer release with no build for this platform in `latest.json`, so this build can't update
+   * for now. A terminal phase like `managed`, ❌ not a failure and ❌ never "up to date": Settings and the check toast say
+   * this build can't check right now. Cleared when a check starts.
+   */
+  noBuild: boolean
   /** Version the user is currently running. Set when `checking` starts. */
   previousVersion: string | null
   /** Version we're moving to. Set when an update is found. Cleared on `idle`. */
@@ -84,6 +90,7 @@ export const updateState = $state<UpdateState>({
   failure: null,
   managed: null,
   unwritable: null,
+  noBuild: false,
   previousVersion: null,
   nextVersion: null,
   securityNotice: null,

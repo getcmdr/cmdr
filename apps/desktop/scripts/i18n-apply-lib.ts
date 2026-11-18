@@ -32,7 +32,7 @@
 
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { parsePlatformSelect, pickPlatformBranch } from '../src/lib/intl/platform-select.ts'
+import { PLATFORM_SELECT_BRANCHES, parsePlatformSelect, pickPlatformBranch } from '../src/lib/intl/platform-select.ts'
 import type { PlatformSelectBranch } from '../src/lib/intl/platform-select.ts'
 import {
   BASE_LOCALE,
@@ -54,7 +54,7 @@ import { platformSelectIssues } from './i18n-check-platform-select.ts'
 import { platformPluralDetail } from './i18n-check-plural.ts'
 import { restampMeta } from './sync-locale-keys.ts'
 
-const BRANCH_NAMES: readonly PlatformSelectBranch[] = ['macos', 'windows', 'other']
+const BRANCH_NAMES: readonly PlatformSelectBranch[] = PLATFORM_SELECT_BRANCHES
 
 /** A per-OS value given branch by branch; a branch left out keeps what that OS reads now. */
 export type BranchValues = Partial<Record<PlatformSelectBranch, string>>
@@ -121,7 +121,7 @@ export function parseValuesFile(raw: unknown): ValuesFile {
 
 const NOTE_SHAPE = 'a "@key" entry takes "sameAsSourceJustification", a non-empty string, and nothing else'
 const VALUE_SHAPE =
-  'the value must be a string, null, { "keep": true }, or a per-OS entry mapping "macos", "windows", or "other" to a string'
+  'the value must be a string, null, { "keep": true }, or a per-OS entry mapping "macos", "windows", "linuxGnome", "linuxKde", or "other" to a string'
 
 /** A `@key` entry's notes, or `undefined` when the entry has any other shape. */
 function notesOf(entry: unknown): Partial<Record<(typeof NOTE_FIELDS)[number], string>> | undefined {

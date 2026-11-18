@@ -613,6 +613,8 @@ var AllChecks = []CheckDefinition{
 			"apps/desktop/src/lib/intl/messages/**",
 			"apps/desktop/scripts/gen-shipped-locales*.ts",
 			"apps/desktop/src-tauri/src/intl/**",
+			// `native_strings_per_os_test.rs`, under `intl/`, embeds the shared resolution table.
+			"apps/desktop/src/lib/intl/platform-select-cases.json",
 		}),
 		Run: RunDesktopShippedLocalesFresh,
 	},
@@ -629,6 +631,9 @@ var AllChecks = []CheckDefinition{
 		Inputs: inputs([]string{
 			"apps/desktop/src/lib/intl/messages/**",
 			"apps/desktop/scripts/gen-native-strings*.ts",
+			// The generator splits blocks with the runtime's splitter; the per-OS test embeds the shared table.
+			"apps/desktop/src/lib/intl/platform-select.ts",
+			"apps/desktop/src/lib/intl/platform-select-cases.json",
 			"apps/desktop/src-tauri/src/intl/**",
 			"apps/desktop/src-tauri/Info.plist",
 			"apps/desktop/finder-extension/lproj/**",

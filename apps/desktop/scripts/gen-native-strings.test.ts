@@ -22,6 +22,7 @@ import {
   PSEUDO_LOCALE,
   rustStringLiteral,
 } from './gen-native-strings-lib.ts'
+import platformSelectCases from '../src/lib/intl/platform-select-cases.json' with { type: 'json' }
 
 describe('isNativeKey', () => {
   it('takes the menu family and the two pre-webview strings', () => {
@@ -66,6 +67,8 @@ describe('nativeTextOf', () => {
     expect(nativeTextOf('menu.file.show', value)).toEqual({
       macos: 'Show in Finder',
       windows: 'Show in File Explorer',
+      linuxGnome: 'Show in file manager',
+      linuxKde: 'Show in file manager',
       other: 'Show in file manager',
     })
   })
@@ -74,6 +77,8 @@ describe('nativeTextOf', () => {
     expect(nativeTextOf('menu.x', '{platform, select, windows {Exit} other {Quit}}')).toEqual({
       macos: 'Quit',
       windows: 'Exit',
+      linuxGnome: 'Quit',
+      linuxKde: 'Quit',
       other: 'Quit',
     })
   })
@@ -82,6 +87,8 @@ describe('nativeTextOf', () => {
     expect(nativeTextOf('menu.x', '{platform, select, macos {Get Info} other {Properties}}')).toEqual({
       macos: 'Get Info',
       windows: 'Properties',
+      linuxGnome: 'Properties',
+      linuxKde: 'Properties',
       other: 'Properties',
     })
   })
@@ -90,6 +97,8 @@ describe('nativeTextOf', () => {
     expect(nativeTextOf('menu.x', '{platform, select, macos {Trash} windows {Trash} other {Bin}}')).toEqual({
       macos: 'Trash',
       windows: 'Trash',
+      linuxGnome: 'Bin',
+      linuxKde: 'Bin',
       other: 'Bin',
     })
   })
@@ -98,8 +107,19 @@ describe('nativeTextOf', () => {
     expect(nativeTextOf('menu.x', "{platform, select, macos {Eject ({name})} other {Unmount ({name}) it's}}")).toEqual({
       macos: 'Eject ({name})',
       windows: "Unmount ({name}) it's",
+      linuxGnome: "Unmount ({name}) it's",
+      linuxKde: "Unmount ({name}) it's",
       other: "Unmount ({name}) it's",
     })
+  })
+
+  it.each(platformSelectCases.blocks)('agrees with the shared resolution table: $name', ({ value, reads }) => {
+    const text = nativeTextOf('menu.x', value)
+    const { macos, windows, linuxGnome, linuxKde, other } =
+      'all' in text
+        ? { macos: text.all, windows: text.all, linuxGnome: text.all, linuxKde: text.all, other: text.all }
+        : text
+    expect({ macos, windows, linuxGnome, linuxKde, linux: other }).toEqual(reads)
   })
 
   it('refuses a value that starts like a block but is not one, naming the key', () => {
@@ -162,7 +182,7 @@ describe('emitRustModule', () => {
       }),
     )
     expect(rust).toContain(
-      '("menu.file.show", PerOs { macos: "Show in \\"Finder\\"", windows: "Show in file manager", other: "Show in file manager" }),',
+      '("menu.file.show", PerOs { macos: "Show in \\"Finder\\"", windows: "Show in file manager", linux_gnome: "Show in file manager", linux_kde: "Show in file manager", other: "Show in file manager" }),',
     )
     // The OS answer comes from the `intl/platform/` seam; a cfg here would sit outside it.
     expect(rust).not.toMatch(/cfg/)

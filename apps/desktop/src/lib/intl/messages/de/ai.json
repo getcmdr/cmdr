@@ -599,11 +599,11 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Der macOS-Schlüsselbund hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Der macOS-Schlüsselbund hat den Zugriff verweigert}}} windows {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Die Anmeldeinformationsverwaltung hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Die Anmeldeinformationsverwaltung hat den Zugriff verweigert}}} other {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Dein System-Schlüsselbund hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Dein System-Schlüsselbund hat den Zugriff verweigert}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Der macOS-Schlüsselbund hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Der macOS-Schlüsselbund hat den Zugriff verweigert}}} windows {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Die Anmeldeinformationsverwaltung hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Die Anmeldeinformationsverwaltung hat den Zugriff verweigert}}} linuxKde {{op, select, save {Couldn’t save your API key: KWallet denied access} other {Couldn’t read your saved API key: KWallet denied access}}} other {{op, select, save {Dein API-Schlüssel ließ sich nicht speichern: Dein System-Schlüsselbund hat den Zugriff verweigert} other {Dein gespeicherter API-Schlüssel ließ sich nicht lesen: Dein System-Schlüsselbund hat den Zugriff verweigert}}}}",
   "@ai.secretError.title": {
     "sourceHash": "25b34c4"
   },
-  "ai.secretError.body": "{platform, select, macos {{op, select, save {Öffne die Schlüsselbundverwaltung und prüfe den Eintrag „Cmdr“, oder lösche ihn und speichere noch einmal.} other {Öffne die Schlüsselbundverwaltung, suche den Eintrag „Cmdr“ und gewähre den Zugriff, oder lösche ihn und gib deinen Schlüssel neu ein.}}} windows {{op, select, save {Öffne die Anmeldeinformationsverwaltung und prüfe den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“, oder entferne ihn und speichere noch einmal.} other {Öffne die Anmeldeinformationsverwaltung, suche den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“, oder entferne ihn und gib deinen Schlüssel noch einmal ein.}}} other {Entsperre deinen Schlüsselbund (App „Passwörter“ / „Schlüsselbunde“) und versuche es erneut.}}",
+  "ai.secretError.body": "{platform, select, macos {{op, select, save {Öffne die Schlüsselbundverwaltung und prüfe den Eintrag „Cmdr“, oder lösche ihn und speichere noch einmal.} other {Öffne die Schlüsselbundverwaltung, suche den Eintrag „Cmdr“ und gewähre den Zugriff, oder lösche ihn und gib deinen Schlüssel neu ein.}}} windows {{op, select, save {Öffne die Anmeldeinformationsverwaltung und prüfe den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“, oder entferne ihn und speichere noch einmal.} other {Öffne die Anmeldeinformationsverwaltung, suche den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“, oder entferne ihn und gib deinen Schlüssel noch einmal ein.}}} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Entsperre deinen Schlüsselbund (App „Passwörter“ / „Schlüsselbunde“) und versuche es erneut.}}",
   "@ai.secretError.body": {
     "sourceHash": "d65c5e3"
   },
@@ -611,7 +611,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Prüfe, ob dein Schlüsselbund verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.} windows {Prüfe, ob die Anmeldeinformationsverwaltung verfügbar ist, und versuche es erneut. Wenn es weiterhin passiert, starte Cmdr neu.} other {Prüfe, ob dein System-Schlüsselbund verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Prüfe, ob dein Schlüsselbund verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.} windows {Prüfe, ob die Anmeldeinformationsverwaltung verfügbar ist, und versuche es erneut. Wenn es weiterhin passiert, starte Cmdr neu.} linuxKde {Check that KWallet is available, then try again. If it persists, restart the app.} other {Prüfe, ob dein System-Schlüsselbund verfügbar ist, und versuche es erneut. Wenn es weiterhin auftritt, starte die App neu.}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },
@@ -619,7 +619,7 @@
   "@ai.secretError.removeTitle": {
     "sourceHash": "5986628"
   },
-  "ai.secretError.removeBody": "{platform, select, macos {Öffne die Schlüsselbundverwaltung, suche den Eintrag „Cmdr“ und lösche ihn dort.} windows {Öffne die Anmeldeinformationsverwaltung, suche den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“ und entferne ihn dort.} other {Entsperre deinen Schlüsselbund (App „Passwörter“ / „Schlüsselbunde“) und versuche es erneut.}}",
+  "ai.secretError.removeBody": "{platform, select, macos {Öffne die Schlüsselbundverwaltung, suche den Eintrag „Cmdr“ und lösche ihn dort.} windows {Öffne die Anmeldeinformationsverwaltung, suche den Eintrag „Cmdr“ unter „Windows-Anmeldeinformationen“ und entferne ihn dort.} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Entsperre deinen Schlüsselbund (App „Passwörter“ / „Schlüsselbunde“) und versuche es erneut.}}",
   "@ai.secretError.removeBody": {
     "sourceHash": "3a85511"
   },

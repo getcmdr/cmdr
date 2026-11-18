@@ -117,7 +117,7 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "En {desktops}, el escritorio suele reservarse {combo}, así que puede que el atajo nunca llegue a Cmdr. Puedes liberarlo en los ajustes de teclado de tu escritorio.",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {En {desktops}, el escritorio suele reservarse {combo}, así que puede que el atajo nunca llegue a Cmdr. Puedes liberarlo en los ajustes de teclado de tu escritorio.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "610146a"
   },

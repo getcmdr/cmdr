@@ -51,11 +51,11 @@
   "@servers.refusal.saveUnconfirmed": {
     "sourceHash": "ec80872"
   },
-  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr no pudo guardar esta contraseña en el Llavero. Inténtalo de nuevo o desactiva “Recordar en el Llavero” para iniciar sesión sin guardarla.} windows {Cmdr no pudo guardar esta contraseña. Inténtalo de nuevo o desactiva “Recordar contraseña” para iniciar sesión sin guardarla.} other {Cmdr no pudo guardar esta contraseña en el llavero. Inténtalo de nuevo o desactiva “Recordar en el llavero” para iniciar sesión sin guardarla.}}",
+  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr no pudo guardar esta contraseña en el Llavero. Inténtalo de nuevo o desactiva “Recordar en el Llavero” para iniciar sesión sin guardarla.} windows {Cmdr no pudo guardar esta contraseña. Inténtalo de nuevo o desactiva “Recordar contraseña” para iniciar sesión sin guardarla.} linuxKde {Cmdr couldn’t store this password in KWallet. Try again, or turn off “Remember in KWallet” to sign in without storing it.} other {Cmdr no pudo guardar esta contraseña en el llavero. Inténtalo de nuevo o desactiva “Recordar en el llavero” para iniciar sesión sin guardarla.}}",
   "@servers.refusal.secretNotStored": {
     "sourceHash": "a82f67c"
   },
-  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Cmdr guardó tus cambios, pero no pudo actualizar la contraseña en el Llavero. Vuelve a guardar para intentarlo otra vez.} windows {Cmdr guardó tus cambios, pero no pudo actualizar la contraseña guardada. Vuelve a guardar para intentarlo otra vez.} other {Cmdr guardó tus cambios, pero no pudo actualizar la contraseña en el llavero. Vuelve a guardar para intentarlo otra vez.}}",
+  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Cmdr guardó tus cambios, pero no pudo actualizar la contraseña en el Llavero. Vuelve a guardar para intentarlo otra vez.} windows {Cmdr guardó tus cambios, pero no pudo actualizar la contraseña guardada. Vuelve a guardar para intentarlo otra vez.} linuxKde {Cmdr saved your changes but couldn’t update the password in KWallet. Save again to try once more.} other {Cmdr guardó tus cambios, pero no pudo actualizar la contraseña en el llavero. Vuelve a guardar para intentarlo otra vez.}}",
   "@servers.refusal.savedSecretNotUpdated": {
     "sourceHash": "2b4a58e"
   },
@@ -67,11 +67,11 @@
   "@servers.refusal.s3SecretMissing": {
     "sourceHash": "74b9cd7"
   },
-  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr no pudo guardar esta clave de acceso secreta en el Llavero. Inténtalo de nuevo o desactiva “Recordar en el Llavero” para iniciar sesión sin guardarla.} windows {Cmdr no pudo guardar esta clave de acceso secreta. Inténtalo de nuevo o desactiva “Recordar contraseña” para iniciar sesión sin guardarla.} other {Cmdr no pudo guardar esta clave de acceso secreta en el llavero. Inténtalo de nuevo o desactiva “Recordar en el llavero” para iniciar sesión sin guardarla.}}",
+  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr no pudo guardar esta clave de acceso secreta en el Llavero. Inténtalo de nuevo o desactiva “Recordar en el Llavero” para iniciar sesión sin guardarla.} windows {Cmdr no pudo guardar esta clave de acceso secreta. Inténtalo de nuevo o desactiva “Recordar contraseña” para iniciar sesión sin guardarla.} linuxKde {Cmdr couldn’t store this secret access key in KWallet. Try again, or turn off “Remember in KWallet” to sign in without storing it.} other {Cmdr no pudo guardar esta clave de acceso secreta en el llavero. Inténtalo de nuevo o desactiva “Recordar en el llavero” para iniciar sesión sin guardarla.}}",
   "@servers.refusal.s3SecretNotStored": {
     "sourceHash": "522e524"
   },
-  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Cmdr guardó tus cambios, pero no pudo actualizar la clave de acceso secreta en el Llavero. Vuelve a guardar para intentarlo otra vez.} windows {Cmdr guardó tus cambios, pero no pudo actualizar la clave de acceso secreta guardada. Vuelve a guardar para intentarlo otra vez.} other {Cmdr guardó tus cambios, pero no pudo actualizar la clave de acceso secreta en el llavero. Vuelve a guardar para intentarlo otra vez.}}",
+  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Cmdr guardó tus cambios, pero no pudo actualizar la clave de acceso secreta en el Llavero. Vuelve a guardar para intentarlo otra vez.} windows {Cmdr guardó tus cambios, pero no pudo actualizar la clave de acceso secreta guardada. Vuelve a guardar para intentarlo otra vez.} linuxKde {Cmdr saved your changes but couldn’t update the secret access key in KWallet. Save again to try once more.} other {Cmdr guardó tus cambios, pero no pudo actualizar la clave de acceso secreta en el llavero. Vuelve a guardar para intentarlo otra vez.}}",
   "@servers.refusal.s3SavedSecretNotUpdated": {
     "sourceHash": "726eb50"
   },
@@ -127,11 +127,11 @@
   "@servers.refusal.addressTaken": {
     "sourceHash": "560f7ce"
   },
-  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr no pudo llevar la contraseña guardada a la nueva dirección, así que no cambió nada. Comprueba que el Llavero esté desbloqueado y vuelve a guardar.} windows {Cmdr no pudo llevar la contraseña guardada a la nueva dirección, así que no cambió nada. Vuelve a guardar para intentarlo otra vez.} other {Cmdr no pudo llevar la contraseña guardada a la nueva dirección, así que no cambió nada. Comprueba que el llavero esté desbloqueado y vuelve a guardar.}}",
+  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr no pudo llevar la contraseña guardada a la nueva dirección, así que no cambió nada. Comprueba que el Llavero esté desbloqueado y vuelve a guardar.} windows {Cmdr no pudo llevar la contraseña guardada a la nueva dirección, así que no cambió nada. Vuelve a guardar para intentarlo otra vez.} linuxKde {Cmdr couldn’t take the saved password along to the new address, so nothing changed. Check that KWallet is open, then save again.} other {Cmdr no pudo llevar la contraseña guardada a la nueva dirección, así que no cambió nada. Comprueba que el llavero esté desbloqueado y vuelve a guardar.}}",
   "@servers.refusal.secretNotMoved": {
     "sourceHash": "3c545d1"
   },
-  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr no pudo llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no cambió nada. Comprueba que el Llavero esté desbloqueado y vuelve a guardar.} windows {Cmdr no pudo llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no cambió nada. Vuelve a guardar para intentarlo otra vez.} other {Cmdr no pudo llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no cambió nada. Comprueba que el llavero esté desbloqueado y vuelve a guardar.}}",
+  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr no pudo llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no cambió nada. Comprueba que el Llavero esté desbloqueado y vuelve a guardar.} windows {Cmdr no pudo llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no cambió nada. Vuelve a guardar para intentarlo otra vez.} linuxKde {Cmdr couldn’t take the saved secret access key along to the new endpoint, so nothing changed. Check that KWallet is open, then save again.} other {Cmdr no pudo llevar la clave de acceso secreta guardada al nuevo punto de conexión, así que no cambió nada. Comprueba que el llavero esté desbloqueado y vuelve a guardar.}}",
   "@servers.refusal.s3SecretNotMoved": {
     "sourceHash": "a0ff92f"
   },

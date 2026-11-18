@@ -211,11 +211,13 @@ function readOn(value: string, os: RenderedPlatform): { branch: PlatformSelectBr
 
 /**
  * The branch an OS reads before falling back to `other`, by name: the OS vocabulary (`RenderedPlatform`) and the
- * catalog's branch names (`PlatformSelectBranch`) differ, and Linux has no branch of its own, it reads `other`.
+ * catalog's branch names (`PlatformSelectBranch`) differ, and plain Linux has no branch of its own, it reads `other`.
  */
 const OWN_BRANCH: Readonly<Record<RenderedPlatform, PlatformSelectBranch | undefined>> = {
   macos: 'macos',
   windows: 'windows',
+  linuxGnome: 'linuxGnome',
+  linuxKde: 'linuxKde',
   linux: undefined,
 }
 
@@ -242,6 +244,11 @@ function groupBySourceValue(source: Catalog): Map<string, { text: string; os: Re
       if (bucket) bucket.members.push(member)
       else groups.set(groupKey, { text: normalized, os, members: [member] })
     }
+  }
+  // A Linux desktop group where no member reads a branch of that desktop's own is plain Linux's group again.
+  for (const [groupKey, { os, members }] of groups) {
+    if ((os === 'linuxGnome' || os === 'linuxKde') && !members.some(({ branch }) => branch === os))
+      groups.delete(groupKey)
   }
   return groups
 }

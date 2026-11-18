@@ -16,6 +16,8 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { BOOT_GUARD_MARKER } from './gen-boot-guard-lib.ts'
 import { WEBKIT_FLOOR_CAPABILITIES } from '../src/lib/utils/webkit-compat.ts'
+import { parsePlatformSelect } from '../src/lib/intl/platform-select.ts'
+import platformSelectCases from '../src/lib/intl/platform-select-cases.json' with { type: 'json' }
 
 const SHELL = join(import.meta.dirname, '..', 'src', 'app.html')
 
@@ -68,6 +70,20 @@ interface RunOptions {
   invoke?: (cmd: string, args: unknown) => Promise<unknown>
   /** What `window.__CMDR_PLATFORM__` holds; absent when omitted. */
   platform?: unknown
+  /** What `window.__CMDR_CONVENTIONS__` holds; absent when omitted. */
+  conventions?: unknown
+  /** Strings to bake in place of the default payload's. */
+  strings?: Record<string, unknown>
+}
+
+/** The `window` the guard sees: the IPC stand-in, and the platform and conventions globals when the test sets them. */
+function fakeWindowFor(options: RunOptions): Record<string, unknown> {
+  const fakeWindow: Record<string, unknown> = {
+    __TAURI_INTERNALS__: options.invoke ? { invoke: options.invoke } : undefined,
+  }
+  if ('platform' in options) fakeWindow.__CMDR_PLATFORM__ = options.platform
+  if ('conventions' in options) fakeWindow.__CMDR_CONVENTIONS__ = options.conventions
+  return fakeWindow
 }
 
 /**
@@ -90,13 +106,13 @@ function runGuard(options: RunOptions = {}): { blocked: boolean; lang: string; t
 
   const fakeCrypto = capabilities.randomUUID ? { randomUUID: () => 'x' } : {}
   const fakeCss = { supports: (query: string) => (query.includes('selector(') ? capabilities.hasSelector : true) }
-  const fakeWindow: Record<string, unknown> = {
-    __TAURI_INTERNALS__: options.invoke ? { invoke: options.invoke } : undefined,
-  }
-  if ('platform' in options) fakeWindow.__CMDR_PLATFORM__ = options.platform
+  const fakeWindow = fakeWindowFor(options)
   const fakeNavigator = { languages: options.languages ?? ['en-US'], language: (options.languages ?? ['en-US'])[0] }
 
-  const source = guardSource().replace(BOOT_GUARD_MARKER, JSON.stringify({ ...PAYLOAD, force: options.force === true }))
+  const source = guardSource().replace(
+    BOOT_GUARD_MARKER,
+    JSON.stringify({ ...PAYLOAD, strings: options.strings ?? PAYLOAD.strings, force: options.force === true }),
+  )
   // The guard IS a string of ES5 that ships inside an HTML file, so evaluating it
   // is the only way to test what actually runs. Parameters shadow the globals, so
   // a fake WebKit stays inside this call.
@@ -239,6 +255,23 @@ describe('below the floor', () => {
         expect(result.title).toBe(title)
         expect(result.quit).toBe(quit)
       })
+    }
+  })
+
+  describe('agrees with the shared resolution table (`platform-select-cases.json`)', () => {
+    for (const block of platformSelectCases.blocks) {
+      for (const system of platformSelectCases.systems) {
+        it(`${block.name}: ${system.platform} on ${String(system.linuxDesktop)}`, () => {
+          const title = parsePlatformSelect(block.value) ?? block.value
+          const result = runGuard({
+            capabilities: { hasOwn: false },
+            strings: { en: { title, body: 'Body', quit: 'Quit' } },
+            platform: system.platform,
+            conventions: { linuxDesktop: system.linuxDesktop },
+          })
+          expect(result.title).toBe(block.reads[system.reader as keyof typeof block.reads])
+        })
+      }
     }
   })
 

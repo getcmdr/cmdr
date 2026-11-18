@@ -119,7 +119,7 @@
   "@stateRecovery.nfsPlaces.title": {
     "sourceHash": "06d14d3"
   },
-  "stateRecovery.showInFinder": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} other {Mostrar en el administrador de archivos}}",
+  "stateRecovery.showInFinder": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar en el administrador de archivos}}",
   "@stateRecovery.showInFinder": {
     "sourceHash": "a11bd4b"
   },

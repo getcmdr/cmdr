@@ -596,11 +596,11 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Не вдалося зберегти ключ API: Вʼязка ключів macOS не надала доступу} other {Не вдалося прочитати збережений ключ API: Вʼязка ключів macOS не надала доступу}}} windows {{op, select, save {Не вдалося зберегти ключ API: Диспетчер облікових даних не надав доступу} other {Не вдалося прочитати збережений ключ API: Диспетчер облікових даних не надав доступу}}} other {{op, select, save {Не вдалося зберегти ключ API: системна вʼязка ключів не надала доступу} other {Не вдалося прочитати збережений ключ API: системна вʼязка ключів не надала доступу}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Не вдалося зберегти ключ API: Вʼязка ключів macOS не надала доступу} other {Не вдалося прочитати збережений ключ API: Вʼязка ключів macOS не надала доступу}}} windows {{op, select, save {Не вдалося зберегти ключ API: Диспетчер облікових даних не надав доступу} other {Не вдалося прочитати збережений ключ API: Диспетчер облікових даних не надав доступу}}} linuxKde {{op, select, save {Couldn’t save your API key: KWallet denied access} other {Couldn’t read your saved API key: KWallet denied access}}} other {{op, select, save {Не вдалося зберегти ключ API: системна вʼязка ключів не надала доступу} other {Не вдалося прочитати збережений ключ API: системна вʼязка ключів не надала доступу}}}}",
   "@ai.secretError.title": {
     "sourceHash": "25b34c4"
   },
-  "ai.secretError.body": "{platform, select, macos {{op, select, save {Відкрийте програму «Ключар» і перевірте запис «Cmdr» або видаліть цей запис і спробуйте зберегти ще раз.} other {Відкрийте програму «Ключар», знайдіть запис «Cmdr» і надайте доступ або видаліть цей запис і введіть ключ знову.}}} windows {{op, select, save {Відкрийте Диспетчер облікових даних і перевірте запис «Cmdr» у розділі «Облікові дані Windows» або вилучіть цей запис і спробуйте зберегти ще раз.} other {Відкрийте Диспетчер облікових даних, знайдіть запис «Cmdr» у розділі «Облікові дані Windows» або вилучіть цей запис і введіть ключ знову.}}} other {Відімкніть вʼязку ключів (у програмі «Паролі та ключі» чи подібній) і спробуйте ще раз.}}",
+  "ai.secretError.body": "{platform, select, macos {{op, select, save {Відкрийте програму «Ключар» і перевірте запис «Cmdr» або видаліть цей запис і спробуйте зберегти ще раз.} other {Відкрийте програму «Ключар», знайдіть запис «Cmdr» і надайте доступ або видаліть цей запис і введіть ключ знову.}}} windows {{op, select, save {Відкрийте Диспетчер облікових даних і перевірте запис «Cmdr» у розділі «Облікові дані Windows» або вилучіть цей запис і спробуйте зберегти ще раз.} other {Відкрийте Диспетчер облікових даних, знайдіть запис «Cmdr» у розділі «Облікові дані Windows» або вилучіть цей запис і введіть ключ знову.}}} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Відімкніть вʼязку ключів (у програмі «Паролі та ключі» чи подібній) і спробуйте ще раз.}}",
   "@ai.secretError.body": {
     "sourceHash": "d65c5e3"
   },
@@ -608,7 +608,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Перевірте, чи доступна Вʼязка ключів, і спробуйте ще раз. Якщо проблема не зникне, перезапустіть програму.} windows {Перевірте, чи доступний Диспетчер облікових даних, і спробуйте ще раз. Якщо це повторюється, перезапустіть Cmdr.} other {Перевірте, чи доступна системна вʼязка ключів, і спробуйте ще раз. Якщо проблема не зникне, перезапустіть програму.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Перевірте, чи доступна Вʼязка ключів, і спробуйте ще раз. Якщо проблема не зникне, перезапустіть програму.} windows {Перевірте, чи доступний Диспетчер облікових даних, і спробуйте ще раз. Якщо це повторюється, перезапустіть Cmdr.} linuxKde {Check that KWallet is available, then try again. If it persists, restart the app.} other {Перевірте, чи доступна системна вʼязка ключів, і спробуйте ще раз. Якщо проблема не зникне, перезапустіть програму.}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },
@@ -616,7 +616,7 @@
   "@ai.secretError.removeTitle": {
     "sourceHash": "5986628"
   },
-  "ai.secretError.removeBody": "{platform, select, macos {Відкрийте програму «Ключар», знайдіть запис «Cmdr» і видаліть його там.} windows {Відкрийте Диспетчер облікових даних, знайдіть запис «Cmdr» у розділі «Облікові дані Windows» і вилучіть його там.} other {Відімкніть вʼязку ключів (у програмі «Паролі та ключі» чи подібній) і спробуйте ще раз.}}",
+  "ai.secretError.removeBody": "{platform, select, macos {Відкрийте програму «Ключар», знайдіть запис «Cmdr» і видаліть його там.} windows {Відкрийте Диспетчер облікових даних, знайдіть запис «Cmdr» у розділі «Облікові дані Windows» і вилучіть його там.} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Відімкніть вʼязку ключів (у програмі «Паролі та ключі» чи подібній) і спробуйте ще раз.}}",
   "@ai.secretError.removeBody": {
     "sourceHash": "3a85511"
   },

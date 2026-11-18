@@ -119,7 +119,7 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "Op {desktops} wordt {combo} meestal door de werkomgeving zelf gebruikt, dus bereikt de sneltoets Cmdr mogelijk nooit. Je kunt hem vrijmaken in de toetsenbordinstellingen van je werkomgeving.",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {Op {desktops} wordt {combo} meestal door de werkomgeving zelf gebruikt, dus bereikt de sneltoets Cmdr mogelijk nooit. Je kunt hem vrijmaken in de toetsenbordinstellingen van je werkomgeving.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
     "sourceHash": "610146a"
   },

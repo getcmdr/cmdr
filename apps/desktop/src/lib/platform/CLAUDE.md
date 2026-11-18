@@ -4,8 +4,8 @@ Which OS this window runs on (`'macos' | 'linux' | 'windows'`), what that OS let
 behave, as the backend says, read synchronously.
 
 - `index.ts`: `getPlatform()`, `isMacOS()`, `hasCapability()`, `platformCapabilities()`, `applyPlatformAttributes()`.
-- `conventions.ts`: `convention()`, `platformConventions()`, and `CONVENTIONS_ON` (`conventions-on.json`, every
-  desktop's row, pinned by a Rust test).
+- `conventions.ts`: `convention()`, `platformConventions()`, `linuxDesktop()` (the one field, cheap, for the message
+  runtime), and `CONVENTIONS_ON` (`conventions-on.json`, every desktop's row, pinned by a Rust test).
 - `test-platform.ts`: `withPlatform()`, `withCapabilities()`, `capabilitiesWith()`, `withCapabilitiesPossibleOn()`,
   `withConventions()`, the test helpers. A per-OS test (what a user on that OS gets) uses
   `withCapabilitiesPossibleOn(os)`, ❌ never `withEveryCapability()`; `capabilities-possible-on.test.ts` pins it to the
@@ -30,9 +30,9 @@ behave, as the backend says, read synchronously.
   browser), so no OS-backed surface shows by accident. The browser demo answers for the visitor's computer
   (`apps/desktop/src/lib/demo/platform.ts`).
 - **The three move independently in tests.** `withPlatform()` moves the platform (key formatting follows),
-  `withCapabilities('fullDiskAccess')` what the OS offers, `withConventions('kde')` how it behaves; ❌ never mock
-  `isMacOS` / `hasCapability` or stub the user agent. Module-load reads need `vi.hoisted`; the forms are in
-  `test-platform.ts`.
+  `withCapabilities('fullDiskAccess')` what the OS offers, `withConventions('kde')` how it behaves, and
+  `withPlatform('linux', 'kde')` both, so a catalog block reads its `linuxKde` branch; ❌ never mock `isMacOS` /
+  `hasCapability` or stub the user agent. Module-load reads need `vi.hoisted`; the forms are in `test-platform.ts`.
 - **CSS follows `data-overlay-title-bar`** (and `data-platform`), set by `hooks.client.ts` before the first route
   renders. `--titlebar-height` is 0 without an overlay title bar (`app.css` § Window chrome).
 

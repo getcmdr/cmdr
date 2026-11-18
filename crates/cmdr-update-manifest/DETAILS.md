@@ -10,7 +10,9 @@
   a duplicate member), a `version` that isn't semver.
 - **Read entry by entry**: each `platforms` value becomes `Ok(PlatformEntry)` or `Err(why)` (not `{ url, signature }` of
   strings, the URL not absolute `https`, an empty signature), with a warn. `check_manifest` fails only when THIS
-  install's first matching key holds an `Err` (`ManifestRefusal::BadEntry`): the release meant to offer it something.
+  install's first matching key holds an `Err` (`ManifestRefusal::BadEntry`): the release meant to offer it something. A
+  readable manifest answers a `ManifestAnswer`: `Update`, `UpToDate`, or `NoBuildForThisPlatform` (a newer release with
+  no entry under any of this install's keys, ❌ never read as up to date).
 - **Dropped**: a `securityAdvisories` entry that doesn't read (the list only ever adds a notice; a strict read once
   failed every install on every OS), and every member the reader doesn't name.
 - **Not an update, with a warn**: a newer version with no entry for any of this install's keys. The gate makes this
@@ -51,9 +53,9 @@ validator's: `scripts/release-assets/DETAILS.md` § The `latest.json` gate.
 
 ## The public surface
 
-Eight root items (the reader and `history`), and six in `history` (`Reader` with `ALL` and `label`, `Reading`, `read`,
-`gate`), capped in `index-crate-isolation-ceilings.go`. `history` is public because the gate binary and the app's plugin
-mirror test call it; nothing in the app's runtime does.
+Nine root items (the reader, its `ManifestAnswer`, and `history`), and six in `history` (`Reader` with `ALL` and
+`label`, `Reading`, `read`, `gate`), capped in `index-crate-isolation-ceilings.go`. `history` is public because the gate
+binary and the app's plugin mirror test call it; nothing in the app's runtime does.
 
 ## Tests
 

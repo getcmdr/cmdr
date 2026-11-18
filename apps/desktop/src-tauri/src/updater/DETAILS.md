@@ -76,7 +76,10 @@ Windows port, `docs/specs/windows-port-plan.md`).
 
 The manifest entry each kind reads (`InstallKind::platform_keys`): macOS `darwin-{arch}`; Windows
 `windows-{arch}-nsis`, then `windows-{arch}`; Linux `linux-{arch}-appimage`, then `linux-{arch}`. The off-macOS order is
-the Tauri plugin's own, so a manifest the plugin can read, this reads too.
+the Tauri plugin's own, so a manifest the plugin can read, this reads too. A newer release with none of
+these keys answers `UpdateCheckOutcome::NoBuildForThisPlatform` (`manifest::ManifestAnswer`), with a warn naming the keys the
+manifest does offer, ❌ never `UpToDate`: that told a stranded install it was current. The frontend says this build
+can't check for updates right now (`apps/desktop/src/lib/updates/DETAILS.md` § No build for this platform).
 
 **The archive URL is whatever the manifest names, on any HTTPS host.** No host allowlist, here or in any shipped
 version: trust rests on the minisign signature and the Developer ID check, so the manifest can move downloads (to
@@ -355,7 +358,8 @@ Optional data that's bad is dropped with a warn and never blocks an update.
   `{ url, signature }` of strings, whose URL isn't absolute `https`, or whose signature is empty is dropped with a warn
   for every other install, and is `BadResponse` (`ManifestRefusal::BadEntry`) for the install it belongs to. Before,
   one bad entry for any platform failed every install's parse. Unknown platform keys: ignored. No entry for this
-  install: "up to date" plus a warn (the release gate makes it unshippable for a platform the release builds).
+  install under a newer version: `NoBuildForThisPlatform` plus a warn, its own state in the UI (the release gate makes
+  it unshippable for a platform the release builds).
 - **`securityAdvisories`** (optional): any shape that isn't a readable entry is dropped with a warn; the update goes on.
 - **`notes`, `pub_date`, `dmgSizes`, `downloads`**: not read by this build, so any value passes (the 0.7 plugin reads
   `notes` and `pub_date`, which the writer's gate holds to their types).
@@ -372,9 +376,6 @@ Optional data that's bad is dropped with a warn and never blocks an update.
   type fails `serde` and reads as `BadPayload`, `Unverified`. **`/activate`**: a non-2xx is "code not found" whatever
   its body (before, a non-JSON 404 page read as a server error), an unreadable 2xx body or one with no key is
   `ServerError`.
-- **Not fixed, by design**: a manifest that leaves out this install's platform reads as "up to date" in the UI (a warn in
-  the log). An honest "there's no build for this computer yet" needs a new outcome and copy; the release gate already
-  refuses such a manifest for any platform the release builds.
 
 ## Dependencies
 

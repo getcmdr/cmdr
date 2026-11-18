@@ -221,6 +221,7 @@ export async function checkForUpdates(trigger: UpdateCheckTrigger): Promise<void
     updateState.failure = null
     updateState.managed = null
     updateState.unwritable = null
+    updateState.noBuild = false
   }
 
   log.debug('Checking for updates (current: v{version})...', { version: currentVersion })
@@ -263,6 +264,9 @@ async function runUpdateFlow(
       return
     case 'automaticChecksDisabledByPolicy':
       finishRefusedAutomaticCheck(trigger, staged)
+      return
+    case 'noBuildForThisPlatform':
+      finishCheckWithNoBuild(trigger, staged)
       return
     case 'available':
       break
@@ -463,6 +467,23 @@ function finishCheckWithNoUpdate(trigger: UpdateCheckTrigger, currentVersion: st
   reportUpdateCheck({ trigger, outcome: 'up_to_date' })
   updateState.status = 'idle'
   updateState.nextVersion = null
+}
+
+/**
+ * A newer release is out, but `latest.json` has no build for this platform, so this build can't update for now. A
+ * terminal phase like a managed answer: no failure, no report link, nothing above info (the backend warned once, with
+ * the keys the manifest offers), and no version, since this install can't take it. A staged build stays staged.
+ */
+function finishCheckWithNoBuild(trigger: UpdateCheckTrigger, staged: string | null): void {
+  log.info('A newer release has no build for this platform yet')
+  reportUpdateCheck({ trigger, outcome: 'no_build_for_platform', stagedVersion: staged })
+  if (staged !== null) {
+    renudgeRestartIfDue()
+    return
+  }
+  updateState.status = 'idle'
+  updateState.nextVersion = null
+  updateState.noBuild = true
 }
 
 /**
@@ -707,6 +728,7 @@ export function _resetUpdaterStateForTest(): void {
   updateState.failure = null
   updateState.managed = null
   updateState.unwritable = null
+  updateState.noBuild = false
   updateState.previousVersion = null
   updateState.nextVersion = null
   updateState.securityNotice = null

@@ -368,6 +368,7 @@ jobs:
               - 'apps/desktop/src/lib/units/drive-figure-cases.json'
               - 'apps/desktop/src/lib/units/free-percent-cases.json'
               - 'apps/desktop/src/lib/intl/messages/**'
+              - 'apps/desktop/src/lib/intl/platform-select-cases.json'
               - 'apps/desktop/src/lib/ask-cmdr/ask-cmdr-tool-label-keys.ts'
               - 'apps/desktop/test/fixtures/encodings/**'
               - 'apps/desktop/scripts/download-llama-server.go'

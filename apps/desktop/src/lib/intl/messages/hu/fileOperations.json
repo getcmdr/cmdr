@@ -1305,7 +1305,7 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Megjegyzés a kulcskarikában} windows {Jelszó megjegyzése} other {Megjegyzés a kulcstartóban}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Megjegyzés a kulcskarikában} windows {Jelszó megjegyzése} linuxKde {Remember in KWallet} other {Megjegyzés a kulcstartóban}}",
   "@fileOperations.resticPassword.remember": {
     "sourceHash": "42237e1"
   },

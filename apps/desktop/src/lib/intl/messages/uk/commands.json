@@ -844,7 +844,7 @@
   "@commands.dialogConfirm.label": {
     "sourceHash": "fef0684"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} other {Показати у файловому менеджері}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показати у файловому менеджері}}",
   "@commands.fileShowInFileManager.label": {
     "sourceHash": "21f1ff1"
   },
@@ -940,7 +940,7 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Вилучає збережений пароль резервної копії restic, у якій ви зараз перебуваєте, із Вʼязки ключів, і резервна копія знову стає замкненою} windows {Вилучає збережений пароль резервної копії restic, у якій ви зараз перебуваєте, із Диспетчера облікових даних, і резервна копія знову стає замкненою} other {Вилучає збережений пароль резервної копії restic, у якій ви зараз перебуваєте, із вашої вʼязки ключів, і резервна копія знову стає замкненою}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Вилучає збережений пароль резервної копії restic, у якій ви зараз перебуваєте, із Вʼязки ключів, і резервна копія знову стає замкненою} windows {Вилучає збережений пароль резервної копії restic, у якій ви зараз перебуваєте, із Диспетчера облікових даних, і резервна копія знову стає замкненою} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {Вилучає збережений пароль резервної копії restic, у якій ви зараз перебуваєте, із вашої вʼязки ключів, і резервна копія знову стає замкненою}}",
   "@commands.resticForgetPassword.description": {
     "sourceHash": "0f616ca"
   },

@@ -15,7 +15,7 @@
   "@aboutThis.action.openTooltip": {
     "sourceHash": "4bbaa35"
   },
-  "aboutThis.action.showInFileManager": "{platform, select, macos {在 Finder 中顯示} windows {在檔案總管中顯示} other {在檔案管理程式中顯示}}",
+  "aboutThis.action.showInFileManager": "{platform, select, macos {在 Finder 中顯示} windows {在檔案總管中顯示} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {在檔案管理程式中顯示}}",
   "@aboutThis.action.showInFileManager": {
     "sourceHash": "21f1ff1"
   },

@@ -3219,7 +3219,7 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {在 Finder 中顯示} windows {在檔案總管中顯示} other {在檔案管理程式中顯示}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {在 Finder 中顯示} windows {在檔案總管中顯示} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {在檔案管理程式中顯示}}",
   "@settings.securityLog.showInFinder": {
     "sourceHash": "21f1ff1"
   },
@@ -3677,11 +3677,11 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {「鑰匙圈存取」中名為「{itemName}」的 {countText} 個項目}}} windows {{count, plural, other {「認證管理員」中名為「{itemName}」的 {countText} 個項目}}} other {{count, plural, other {你的鑰匙圈中名為「{itemName}」的 {countText} 個項目}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {「鑰匙圈存取」中名為「{itemName}」的 {countText} 個項目}}} windows {{count, plural, other {「認證管理員」中名為「{itemName}」的 {countText} 個項目}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, other {你的鑰匙圈中名為「{itemName}」的 {countText} 個項目}}}}",
   "@settings.dataWipe.leftover.secretItems": {
     "sourceHash": "6cf1e9c"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {「鑰匙圈存取」中任何名為「{itemName}」的項目} windows {「認證管理員」中任何名為「{itemName}」的項目} other {你的鑰匙圈中任何名為「{itemName}」的項目}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {「鑰匙圈存取」中任何名為「{itemName}」的項目} windows {「認證管理員」中任何名為「{itemName}」的項目} linuxKde {Any items in KWallet named “{itemName}”} other {你的鑰匙圈中任何名為「{itemName}」的項目}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
     "sourceHash": "0e9e95b"
   },

@@ -33,9 +33,14 @@ import { inheritableAncestors } from './locale-inheritance'
 import { setDocumentLanguage } from './document-language'
 import { rememberedStartupCatalog, rememberStartupCatalog } from './startup-catalog'
 import type { MessageKey } from './keys.gen'
-import { PLATFORM_SELECT_PREFIX, pickPlatformBranch } from './platform-select'
+import {
+  PLATFORM_SELECT_PREFIX,
+  pickPlatformBranch,
+  selectReaderFor,
+  type PlatformSelectReader,
+} from './platform-select'
 import { displayPath } from '#lib/utils/display-path.js'
-import { getPlatform, type Platform } from '#lib/platform/index.js'
+import { getPlatform, linuxDesktop } from '#lib/platform/index.js'
 import { shownPath } from '#lib/path/grammar.js'
 import enCatalog from 'virtual:cmdr-catalog/en'
 import { loaders, manifestMessages, shippedLocales } from 'virtual:cmdr-locale-manifest'
@@ -390,7 +395,7 @@ export function _resetCaptureForTests(): void {
 
 /**
  * The raw catalog value for `key` (RAW string, no ICU parsing), via the
- * fallback chain, with a platform block cut down to this OS's branch
+ * fallback chain, with a platform block cut down to this system's branch
  * (`platform-select.ts`). Reads the version rune first so it's reactive in markup.
  */
 export function getMessage(key: MessageKey): string {
@@ -400,7 +405,16 @@ export function getMessage(key: MessageKey): string {
   if (__CMDR_E2E_BUILD__ && captureActive) recordCapturedKey(key)
   const locale = getUiLocale()
   const value = resolveRaw(locale, key)
-  return value.startsWith(PLATFORM_SELECT_PREFIX) ? pickPlatformBranch(value, getPlatform()) : value
+  return value.startsWith(PLATFORM_SELECT_PREFIX) ? pickPlatformBranch(value, selectReader()) : value
+}
+
+/**
+ * Which branch of a platform block this system reads: the platform, narrowed on Linux by its
+ * desktop. Asks the desktop only on Linux, so macOS and Windows resolve exactly as the platform says.
+ */
+function selectReader(): PlatformSelectReader {
+  const platform = getPlatform()
+  return selectReaderFor(platform, platform === 'linux' ? linuxDesktop() : null)
 }
 
 const SHOWN_PATH: unique symbol = Symbol('shown path')
@@ -473,22 +487,27 @@ export function t(key: MessageKey, params?: TranslationParams): TranslationResul
   return format(getCompiled(locale, key), params)
 }
 
-/** One frozen `{ platform }` per platform, for the no-params call: `t()` runs per visible row in some lists. */
-const BARE_PLATFORM_PARAMS: Readonly<Record<Platform, Readonly<{ platform: Platform }>>> = Object.freeze({
-  macos: Object.freeze({ platform: 'macos' }),
-  windows: Object.freeze({ platform: 'windows' }),
-  linux: Object.freeze({ platform: 'linux' }),
-})
+/** One frozen `{ platform }` per reader, for the no-params call: `t()` runs per visible row in some lists. */
+const BARE_PLATFORM_PARAMS: Readonly<Record<PlatformSelectReader, Readonly<{ platform: PlatformSelectReader }>>> =
+  Object.freeze({
+    macos: Object.freeze({ platform: 'macos' }),
+    windows: Object.freeze({ platform: 'windows' }),
+    linuxGnome: Object.freeze({ platform: 'linuxGnome' }),
+    linuxKde: Object.freeze({ platform: 'linuxKde' }),
+    linux: Object.freeze({ platform: 'linux' }),
+  })
 
 /**
- * The ONE format call, behind `t()` and `tStringIn()`. It injects `platform`, so a
- * `{platform, select, …}` block renders this OS's branch (Linux reads `other`): last in
+ * The ONE format call, behind `t()` and `tStringIn()`. It injects `platform` as this
+ * system's reader (`selectReader`), so a `{platform, select, …}` block renders its most
+ * specific branch: `linuxGnome` / `linuxKde` where the block has one, else `other` (ICU's
+ * own fallback for a value no branch names, so plain Linux's `linux` reads `other`). Last in
  * the spread, so even an untyped caller can't override it, and a format ARG, not part of
  * the compiled cache's key, so a cached message serves every platform. And it spells each
  * param that IS a local path the way this OS shows it ({@link withShownPaths}).
  */
 function format(compiled: IntlMessageFormat, params: TranslationParams | undefined): TranslationResult {
-  const platform = getPlatform()
+  const platform = selectReader()
   if (params === undefined) return asShown(compiled.format(BARE_PLATFORM_PARAMS[platform]))
   return asShown(compiled.format({ ...withShownPaths(params), platform }))
 }

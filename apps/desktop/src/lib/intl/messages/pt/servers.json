@@ -252,11 +252,11 @@
   "@servers.refusal.saveUnconfirmed": {
     "sourceHash": "3fb55a6"
   },
-  "servers.refusal.secretNotStored": "{platform, select, macos {O Cmdr não conseguiu salvar esta senha no Acesso às Chaves. Tente novamente ou desative “Lembrar no Acesso às Chaves” para iniciar a sessão sem salvá-la.} windows {O Cmdr não conseguiu salvar esta senha. Tente novamente ou desative “Lembrar senha” para entrar sem salvá-la.} other {O Cmdr não conseguiu salvar esta senha no seu chaveiro. Tente novamente ou desative “Lembrar no chaveiro” para iniciar a sessão sem salvá-la.}}",
+  "servers.refusal.secretNotStored": "{platform, select, macos {O Cmdr não conseguiu salvar esta senha no Acesso às Chaves. Tente novamente ou desative “Lembrar no Acesso às Chaves” para iniciar a sessão sem salvá-la.} windows {O Cmdr não conseguiu salvar esta senha. Tente novamente ou desative “Lembrar senha” para entrar sem salvá-la.} linuxKde {Cmdr couldn’t store this password in KWallet. Try again, or turn off “Remember in KWallet” to sign in without storing it.} other {O Cmdr não conseguiu salvar esta senha no seu chaveiro. Tente novamente ou desative “Lembrar no chaveiro” para iniciar a sessão sem salvá-la.}}",
   "@servers.refusal.secretNotStored": {
     "sourceHash": "8b29064"
   },
-  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {O Cmdr salvou suas alterações, mas não conseguiu atualizar a senha no Acesso às Chaves. Salve novamente para tentar outra vez.} windows {O Cmdr salvou suas alterações, mas não conseguiu atualizar a senha salva. Salve novamente para tentar outra vez.} other {O Cmdr salvou suas alterações, mas não conseguiu atualizar a senha no seu chaveiro. Salve novamente para tentar outra vez.}}",
+  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {O Cmdr salvou suas alterações, mas não conseguiu atualizar a senha no Acesso às Chaves. Salve novamente para tentar outra vez.} windows {O Cmdr salvou suas alterações, mas não conseguiu atualizar a senha salva. Salve novamente para tentar outra vez.} linuxKde {Cmdr saved your changes but couldn’t update the password in KWallet. Save again to try once more.} other {O Cmdr salvou suas alterações, mas não conseguiu atualizar a senha no seu chaveiro. Salve novamente para tentar outra vez.}}",
   "@servers.refusal.savedSecretNotUpdated": {
     "sourceHash": "03fbb15"
   },
@@ -272,11 +272,11 @@
   "@servers.refusal.s3SecretMissing": {
     "sourceHash": "f1f32f2"
   },
-  "servers.refusal.s3SecretNotStored": "{platform, select, macos {O Cmdr não conseguiu salvar esta chave de acesso secreta no Acesso às Chaves. Tente novamente ou desative “Lembrar no Acesso às Chaves” para iniciar a sessão sem salvá-la.} windows {O Cmdr não conseguiu salvar esta chave de acesso secreta. Tente novamente ou desative “Lembrar senha” para entrar sem salvá-la.} other {O Cmdr não conseguiu salvar esta chave de acesso secreta no seu chaveiro. Tente novamente ou desative “Lembrar no chaveiro” para iniciar a sessão sem salvá-la.}}",
+  "servers.refusal.s3SecretNotStored": "{platform, select, macos {O Cmdr não conseguiu salvar esta chave de acesso secreta no Acesso às Chaves. Tente novamente ou desative “Lembrar no Acesso às Chaves” para iniciar a sessão sem salvá-la.} windows {O Cmdr não conseguiu salvar esta chave de acesso secreta. Tente novamente ou desative “Lembrar senha” para entrar sem salvá-la.} linuxKde {Cmdr couldn’t store this secret access key in KWallet. Try again, or turn off “Remember in KWallet” to sign in without storing it.} other {O Cmdr não conseguiu salvar esta chave de acesso secreta no seu chaveiro. Tente novamente ou desative “Lembrar no chaveiro” para iniciar a sessão sem salvá-la.}}",
   "@servers.refusal.s3SecretNotStored": {
     "sourceHash": "6b787ad"
   },
-  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {O Cmdr salvou suas alterações, mas não conseguiu atualizar a chave de acesso secreta no Acesso às Chaves. Salve novamente para tentar outra vez.} windows {O Cmdr salvou suas alterações, mas não conseguiu atualizar a chave de acesso secreta salva. Salve novamente para tentar outra vez.} other {O Cmdr salvou suas alterações, mas não conseguiu atualizar a chave de acesso secreta no seu chaveiro. Salve novamente para tentar outra vez.}}",
+  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {O Cmdr salvou suas alterações, mas não conseguiu atualizar a chave de acesso secreta no Acesso às Chaves. Salve novamente para tentar outra vez.} windows {O Cmdr salvou suas alterações, mas não conseguiu atualizar a chave de acesso secreta salva. Salve novamente para tentar outra vez.} linuxKde {Cmdr saved your changes but couldn’t update the secret access key in KWallet. Save again to try once more.} other {O Cmdr salvou suas alterações, mas não conseguiu atualizar a chave de acesso secreta no seu chaveiro. Salve novamente para tentar outra vez.}}",
   "@servers.refusal.s3SavedSecretNotUpdated": {
     "sourceHash": "5697774"
   },
@@ -336,11 +336,11 @@
   "@servers.refusal.addressTaken": {
     "sourceHash": "5a14a92"
   },
-  "servers.refusal.secretNotMoved": "{platform, select, macos {O Cmdr não conseguiu levar a senha salva para o novo endereço, então nada mudou. Confira se o Acesso às Chaves está desbloqueado e salve novamente.} windows {O Cmdr não conseguiu levar a senha salva para o novo endereço, então nada mudou. Salve novamente para tentar outra vez.} other {O Cmdr não conseguiu levar a senha salva para o novo endereço, então nada mudou. Confira se o seu chaveiro está desbloqueado e salve novamente.}}",
+  "servers.refusal.secretNotMoved": "{platform, select, macos {O Cmdr não conseguiu levar a senha salva para o novo endereço, então nada mudou. Confira se o Acesso às Chaves está desbloqueado e salve novamente.} windows {O Cmdr não conseguiu levar a senha salva para o novo endereço, então nada mudou. Salve novamente para tentar outra vez.} linuxKde {Cmdr couldn’t take the saved password along to the new address, so nothing changed. Check that KWallet is open, then save again.} other {O Cmdr não conseguiu levar a senha salva para o novo endereço, então nada mudou. Confira se o seu chaveiro está desbloqueado e salve novamente.}}",
   "@servers.refusal.secretNotMoved": {
     "sourceHash": "3a8f01c"
   },
-  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {O Cmdr não conseguiu levar a chave de acesso secreta salva para o novo ponto de extremidade, então nada mudou. Confira se o Acesso às Chaves está desbloqueado e salve novamente.} windows {O Cmdr não conseguiu levar a chave de acesso secreta salva para o novo ponto de extremidade, então nada mudou. Salve novamente para tentar outra vez.} other {O Cmdr não conseguiu levar a chave de acesso secreta salva para o novo ponto de extremidade, então nada mudou. Confira se o seu chaveiro está desbloqueado e salve novamente.}}",
+  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {O Cmdr não conseguiu levar a chave de acesso secreta salva para o novo ponto de extremidade, então nada mudou. Confira se o Acesso às Chaves está desbloqueado e salve novamente.} windows {O Cmdr não conseguiu levar a chave de acesso secreta salva para o novo ponto de extremidade, então nada mudou. Salve novamente para tentar outra vez.} linuxKde {Cmdr couldn’t take the saved secret access key along to the new endpoint, so nothing changed. Check that KWallet is open, then save again.} other {O Cmdr não conseguiu levar a chave de acesso secreta salva para o novo ponto de extremidade, então nada mudou. Confira se o seu chaveiro está desbloqueado e salve novamente.}}",
   "@servers.refusal.s3SecretNotMoved": {
     "sourceHash": "d08a1d2"
   },
@@ -580,7 +580,7 @@
   "@servers.sheet.password": {
     "sourceHash": "e7cf3ef"
   },
-  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {Salva no Acesso às Chaves. Deixe em branco para mantê-la.} windows {Salva. Deixe em branco para mantê-la.} other {Salva no seu chaveiro. Deixe em branco para mantê-la.}}",
+  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {Salva no Acesso às Chaves. Deixe em branco para mantê-la.} windows {Salva. Deixe em branco para mantê-la.} linuxKde {Saved in KWallet. Leave empty to keep it.} other {Salva no seu chaveiro. Deixe em branco para mantê-la.}}",
   "@servers.sheet.secretKeptPlaceholder": {
     "sourceHash": "9297a2d"
   },
@@ -596,7 +596,7 @@
   "@servers.sheet.passphrase": {
     "sourceHash": "2510031"
   },
-  "servers.sheet.remember": "{platform, select, macos {Lembrar no Acesso às Chaves} windows {Lembrar senha} other {Lembrar no chaveiro}}",
+  "servers.sheet.remember": "{platform, select, macos {Lembrar no Acesso às Chaves} windows {Lembrar senha} linuxKde {Remember in KWallet} other {Lembrar no chaveiro}}",
   "@servers.sheet.remember": {
     "sourceHash": "42237e1"
   },
@@ -786,7 +786,7 @@
   "@servers.sheet.autoReconnectInfoLabel": {
     "sourceHash": "edb9b82"
   },
-  "servers.sheet.needsStoredSecret": "{platform, select, macos {Para reconectar sozinho, o Cmdr precisa de uma senha salva. Ative “Lembrar no Acesso às Chaves” e inicie a sessão uma vez.} windows {Para reconectar sozinho, o Cmdr precisa de uma senha salva. Ative “Lembrar senha” e entre uma vez.} other {Para reconectar sozinho, o Cmdr precisa de uma senha salva. Ative “Lembrar no chaveiro” e inicie a sessão uma vez.}}",
+  "servers.sheet.needsStoredSecret": "{platform, select, macos {Para reconectar sozinho, o Cmdr precisa de uma senha salva. Ative “Lembrar no Acesso às Chaves” e inicie a sessão uma vez.} windows {Para reconectar sozinho, o Cmdr precisa de uma senha salva. Ative “Lembrar senha” e entre uma vez.} linuxKde {Reconnecting on its own needs a remembered password. Turn on “Remember in KWallet” and sign in once.} other {Para reconectar sozinho, o Cmdr precisa de uma senha salva. Ative “Lembrar no chaveiro” e inicie a sessão uma vez.}}",
   "@servers.sheet.needsStoredSecret": {
     "sourceHash": "ad8e162"
   },

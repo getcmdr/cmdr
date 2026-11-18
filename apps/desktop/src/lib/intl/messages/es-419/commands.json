@@ -59,7 +59,7 @@
   "@commands.fileGoToTrash.description": {
     "sourceHash": "bcc9610"
   },
-  "commands.fileShowInFileManager.label": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} other {Mostrar en el administrador de archivos}}",
+  "commands.fileShowInFileManager.label": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar en el administrador de archivos}}",
   "@commands.fileShowInFileManager.label": {
     "sourceHash": "a11bd4b"
   },
@@ -203,7 +203,7 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "b241432"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Quita del Llavero la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} windows {Quita del Administrador de credenciales la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} other {Quita de tu llavero la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Quita del Llavero la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} windows {Quita del Administrador de credenciales la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo} linuxKde {Removes the saved password of the restic backup you’re in from KWallet, and locks the backup again} other {Quita de tu llavero la contraseña guardada del respaldo de restic en el que estás y vuelve a bloquearlo}}",
   "@commands.resticForgetPassword.description": {
     "sourceHash": "816f96b"
   },

@@ -71,7 +71,7 @@
   "@menu.app.cliCommandHomebrew": {
     "sourceHash": "cc4c0fd"
   },
-  "menu.app.settings": "{platform, select, windows {設定} other {設定⋯}}",
+  "menu.app.settings": "{platform, select, windows {設定} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {設定⋯}}",
   "@menu.app.settings": {
     "sourceHash": "7af8e23"
   },
@@ -147,7 +147,7 @@
   "@menu.context.showInFolder": {
     "sourceHash": "da47876"
   },
-  "menu.file.showInFileManager": "{platform, select, macos {在 Finder 中顯示} windows {在檔案總管中顯示} other {在檔案管理程式中顯示}}",
+  "menu.file.showInFileManager": "{platform, select, macos {在 Finder 中顯示} windows {在檔案總管中顯示} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {在檔案管理程式中顯示}}",
   "@menu.file.showInFileManager": {
     "sourceHash": "21f1ff1"
   },

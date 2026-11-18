@@ -6,7 +6,9 @@ use super::super::native_strings::NativeOs;
 use super::super::resolve_ui_locale;
 
 /// Native strings read their `macos` text here.
-pub(crate) const NATIVE_TEXT_OS: NativeOs = NativeOs::MacOs;
+pub(crate) fn native_text_os() -> NativeOs {
+    NativeOs::MacOs
+}
 
 /// The resolved preference list. macOS always answers, falling back to `en`.
 pub(crate) fn webview_ui_locale() -> Option<String> {

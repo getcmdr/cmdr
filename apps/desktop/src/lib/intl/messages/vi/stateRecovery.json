@@ -119,7 +119,7 @@
   "@stateRecovery.keptCopy": {
     "sourceHash": "634e87d"
   },
-  "stateRecovery.showInFinder": "{platform, select, macos {Hiển thị trong Finder} windows {Hiển thị trong File Explorer} other {Hiển thị trong trình quản lý tệp}}",
+  "stateRecovery.showInFinder": "{platform, select, macos {Hiển thị trong Finder} windows {Hiển thị trong File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Hiển thị trong trình quản lý tệp}}",
   "@stateRecovery.showInFinder": {
     "sourceHash": "21f1ff1"
   },

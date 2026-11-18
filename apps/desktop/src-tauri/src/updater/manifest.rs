@@ -2,7 +2,9 @@
 //! runs it (and every reader that ever shipped) over a manifest before it's published.
 //! `crates/cmdr-update-manifest/CLAUDE.md`.
 
-pub use cmdr_update_manifest::{MAX_MANIFEST_BYTES, PlatformEntry, UpdateInfo, UpdateManifest, check_manifest, parse};
+pub use cmdr_update_manifest::{
+    MAX_MANIFEST_BYTES, ManifestAnswer, PlatformEntry, UpdateInfo, UpdateManifest, check_manifest, parse,
+};
 
 #[cfg(test)]
 mod tests {

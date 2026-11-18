@@ -273,6 +273,30 @@ the proposal wrote before it; the rest are new.
   Trash"). Nautilus writes lowercase "trash" in sentences and capitalizes only the place name ("the Trash"). Pick one
   rule for the Linux branch when the rows are edited; it doesn't block shipping.
 
+## Linux desktop branches
+
+The words the `linuxGnome` / `linuxKde` branches use (#1231), each checked on 2026-11-18 unless it cites the pass above.
+
+- **Reveal**: "Show in Files" / "Show in Dolphin". GNOME's app is "Files" and KDE's "Dolphin" (verified in pile above, §
+  `file-manager`); "Show in …" is Cmdr's phrasing (neither app labels another app's reveal), tentative.
+- **Settings row**: GNOME "Preferences", no ellipsis (verified in pile above, § `settings-ellipsis`, Nautilus
+  `_Preferences`). KDE "Configure Cmdr…": KStandardAction's preferences action is `&Configure %1…` (verified on web,
+  https://codebrowser.dev/kde/kconfig/src/gui/kstandardactions_p.h.html, search summary). The Settings window keeps its
+  "Settings" title on both, which reads a little apart from the row; open for David.
+- **Shortcut path**: GNOME "Settings > Keyboard > View and Customize Shortcuts" (verified on web,
+  https://help.gnome.org/gnome-help/keyboard-shortcuts-set.html, search summary: "In the Keyboard Shortcuts section,
+  select View and Customize Shortcuts"; its en_GB catalog says "View and Customise Shortcuts", verified on web,
+  https://lists.gnome.org/archives/commits-list/2022-April/msg07073.html, so the en-GB and en-AU overlays fork it). KDE
+  "System Settings > Keyboard > Shortcuts": the module is "Shortcuts" (verified on web,
+  https://docs.kde.org/stable_kf6/en/plasma-desktop/kcontrol/keys/index.html, read); its place under Keyboard in Plasma
+  6's sidebar is third-party (§ `system-settings` above), medium.
+- **Password store**: KDE "KWallet" (the decision; see § Contradicts a decision for "KDE Wallet"), its manager
+  "KWalletManager" (verified on web, https://apps.kde.org/kwalletmanager5/, search summary, the app's own title). Cmdr's
+  secrets go through the Secret Service API (`zbus-secret-service-keyring-store`), which KWallet serves on Plasma
+  (memory, unverified on a KDE page). GNOME keeps "keyring" (GNOME Keyring's own word) and names its app "Passwords and
+  Keys" (verified on web, https://flathub.org/en/apps/org.gnome.seahorse.Application, search summary: "Passwords and
+  Keys is a GNOME application…").
+
 ## Contradicts a decision
 
 - **Windows "Exit" in dialogs and buttons**: Microsoft's Writing Style Guide says don't use "exit" (or "quit") for
@@ -281,7 +305,8 @@ the proposal wrote before it; the rest are new.
   an operation is running?" are the decision's call, not Microsoft's usage. Microsoft would write "Close Cmdr?" and
   "Close now", which is what the proposal had.
 - **KDE "KWallet"**: KDE's user-facing name is "KDE Wallet", and the manager is "KDE Wallet Manager" (web summaries
-  only, medium). The decision says "KWallet" once the desktop value exists; worth a second look then.
+  only, medium). The `linuxKde` branches follow the decision and say "KWallet" (#1231); David's call whether to switch
+  them to "KDE Wallet".
 - **"PC" vs "computer" on Windows**: the Writing Style Guide prefers "computer", but Windows UI ("This PC") and the
   en-GB Microsoft voice guide say "PC". The evidence leans toward the decision, so this is only a caveat: never mix the
   two in one string.
@@ -293,9 +318,8 @@ the proposal wrote before it; the rest are new.
   "Windows Credentials" tab; "Undo Delete" in File Explorer; Terminal's default PowerShell profile; "Settings" with no
   ellipsis in inbox apps; `certmgr` in `servers.refusal.certificateUntrusted` (the UI name is likely "Manage user
   certificates", and the trust-store question is open in `copy-decisions.md` anyway).
-- GNOME: "Passwords and Keys" still being the shipped name; Settings panel names (Network, Wi-Fi, Appearance, Keyboard,
-  System > Date & Time); System Monitor (some distros now ship other apps); Disks' "Check Filesystem"; the default
-  terminal per distro.
+- GNOME: Settings panel names (Network, Wi-Fi, Appearance, Keyboard, System > Date & Time); System Monitor (some distros
+  now ship other apps); Disks' "Check Filesystem"; the default terminal per distro.
 - KDE: Dolphin's eject, unmount, Quit, and "Configure Cmdr…" ellipsis (KIO/KXmlGui catalogs aren't in the pile); System
   Monitor; KDE Partition Manager.
 - Total Commander's exit wording: id 5914 is a false friend (`sv` "Avbryt" = Cancel, `hu` "Bezárás" = Close, `de`

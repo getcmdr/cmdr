@@ -3221,7 +3221,7 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Megjelenítés a Finderben} windows {Megjelenítés a Fájlkezelőben} other {Megjelenítés a fájlkezelőben}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Megjelenítés a Finderben} windows {Megjelenítés a Fájlkezelőben} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Megjelenítés a fájlkezelőben}}",
   "@settings.securityLog.showInFinder": {
     "sourceHash": "21f1ff1"
   },
@@ -3678,11 +3678,11 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Egy „{itemName}” nevű elem a Kulcskarika-elérés appban} other {{countText} „{itemName}” nevű elem a Kulcskarika-elérés appban}}} windows {{count, plural, one {Egy „{itemName}” nevű elem a Hitelesítőadat-kezelőben} other {{countText} „{itemName}” nevű elem a Hitelesítőadat-kezelőben}}} other {{count, plural, one {Egy „{itemName}” nevű elem a kulcstartódban} other {{countText} „{itemName}” nevű elem a kulcstartódban}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Egy „{itemName}” nevű elem a Kulcskarika-elérés appban} other {{countText} „{itemName}” nevű elem a Kulcskarika-elérés appban}}} windows {{count, plural, one {Egy „{itemName}” nevű elem a Hitelesítőadat-kezelőben} other {{countText} „{itemName}” nevű elem a Hitelesítőadat-kezelőben}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, one {Egy „{itemName}” nevű elem a kulcstartódban} other {{countText} „{itemName}” nevű elem a kulcstartódban}}}}",
   "@settings.dataWipe.leftover.secretItems": {
     "sourceHash": "6cf1e9c"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Az esetleges „{itemName}” nevű elemek a Kulcskarika-elérés appban} windows {Az esetleges „{itemName}” nevű elemek a Hitelesítőadat-kezelőben} other {Az esetleges „{itemName}” nevű elemek a kulcstartódban}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Az esetleges „{itemName}” nevű elemek a Kulcskarika-elérés appban} windows {Az esetleges „{itemName}” nevű elemek a Hitelesítőadat-kezelőben} linuxKde {Any items in KWallet named “{itemName}”} other {Az esetleges „{itemName}” nevű elemek a kulcstartódban}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
     "sourceHash": "0e9e95b"
   },

@@ -310,6 +310,8 @@ var rustTestScopeRules = []rustScopeRule{
 		Why: "the space poller's band tests embed the shared free-percent cases (`space_poller/readout.rs`)"},
 	{Glob: "apps/desktop/src/lib/intl/messages/**", Effect: scopeReaders, Readers: []string{"cmdr"},
 		Why: "the native-string resolver's tests read the message catalogs (`intl/resolve.rs`)"},
+	{Glob: "apps/desktop/src/lib/intl/platform-select-cases.json", Effect: scopeReaders, Readers: []string{"cmdr"},
+		Why: "the native-strings test embeds the shared platform-select resolution table (`intl/native_strings.rs`)"},
 	{Glob: "apps/desktop/src/lib/ask-cmdr/ask-cmdr-tool-label-keys.ts", Effect: scopeReaders, Readers: []string{"cmdr"},
 		Why: "the agent view tests read the tool-label key list (`tools/tests/agent_view_tests.rs`)"},
 	{Glob: "apps/desktop/test/fixtures/encodings/**", Effect: scopeReaders, Readers: []string{"cmdr"},

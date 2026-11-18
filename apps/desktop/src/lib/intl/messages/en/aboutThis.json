@@ -17,9 +17,9 @@
     "description": "Tooltip on the \"Open\" button of the \"Tell me about this\" card: which app opens the item, and that it's the same as pressing Enter on it in the file list.",
     "placeholders": { "app": { "description": "The app's name, for example \"Preview\"." } }
   },
-  "aboutThis.action.showInFileManager": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} other {Show in file manager}}",
+  "aboutThis.action.showInFileManager": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Show in file manager}}",
   "@aboutThis.action.showInFileManager": {
-    "description": "Button in the footer of the \"Tell me about this\" card. Closes the card and shows the item in the system's file manager. Each branch names its own: \"Finder\" is the macOS app name and stays verbatim; the Windows branch names File Explorer, in the name Microsoft gives it in your language; the Linux branch says file manager, generically. Use the same words as commands.fileShowInFileManager.label. Short control label."
+    "description": "Button in the footer of the \"Tell me about this\" card. Closes the card and shows the item in the system's file manager. Each branch names its own: \"Finder\" is the macOS app name and stays verbatim; the Windows branch names File Explorer, in the name Microsoft gives it in your language; the Linux branch says file manager, generically. Use the same words as commands.fileShowInFileManager.label. Short control label. The `linuxGnome` branch names GNOME’s file manager, Files, and the `linuxKde` branch KDE’s, Dolphin: use the names those desktops give them in your language (GNOME translates “Files”, KDE keeps “Dolphin”)."
   },
   "aboutThis.action.downloadPage": "Download page",
   "@aboutThis.action.downloadPage": {

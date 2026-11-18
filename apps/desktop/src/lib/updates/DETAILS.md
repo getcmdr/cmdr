@@ -49,9 +49,9 @@ idle ──invoke──► checking ──update found──► downloading ─�
 
 `updateState` carries `status`, `failure` (a typed `UpdateFailure` for the check, download, or install that didn't
 finish, cleared when a check starts), `previousVersion` (snapshot of `getVersion()` taken when entering `checking`),
-`nextVersion` (set when an update is found), and `securityNotice` (what the staged update fixes, § The security
-variant). Settings > Updates and `UpdateCheckToastContent.svelte` both read the singleton and format via
-`formatUpdateStatus()`, or `describeUpdateFailure()` while a failure stands.
+`nextVersion` (set when an update is found), `noBuild` (§ No build for this platform), and `securityNotice` (what the
+staged update fixes, § The security variant). Settings > Updates and `UpdateCheckToastContent.svelte` both read the
+singleton and format via `formatUpdateStatus()`, or `describeUpdateFailure()` while a failure stands.
 
 An update refused for its signature (a minisign `signatureMismatch`, an `untrustedCodeSignature` bundle, or the
 backend's `notGenuineEarlier` for a version it won't fetch again this session) stands as `{ phase: 'notGenuine' }`,
@@ -161,6 +161,7 @@ prop vocabulary and why each value exists) is `src-tauri/src/analytics/DETAILS.m
 here is where each one is raised:
 
 - `finishCheckWithNoUpdate` → `up_to_date`
+- `finishCheckWithNoBuild` → `no_build_for_platform`
 - `keepStagedUpdate` → `already_staged`, carrying the version sitting in the bundle
 - `finishCheckWithStagedUpdate` → `staged`, carrying the version just written
 - `finishCheckWithUnwritableBundle` → `blocked`, with the arrangement as `failure`
@@ -184,6 +185,17 @@ anywhere (`error-string-match`).
 
 The event rides the analytics consent (`analytics.enabled`, default-on), NOT the crash/error-report consent. It carries
 no URL, no bundle path, and no failure text.
+
+## No build for this platform
+
+The backend answers `noBuildForThisPlatform` when `latest.json` names a newer release with no entry for this install's
+platform (`src-tauri/src/updater/DETAILS.md` § Who may check). `finishCheckWithNoBuild` lands it like a managed answer:
+status `idle`, `updateState.noBuild` set, and `formatUpdateStatus` says `updates.status.noBuildForThisPlatform` ("This
+build of Cmdr can’t check for updates right now") in Settings and the menu check's toast. No failure, no report link,
+nothing above info (the backend warned with the keys the manifest offers), no version shown, and a staged build stays
+staged. **Decision/Why**: it used to answer `upToDate`, telling a stranded install it was current while it sat on an old
+version; "can't check right now" is the honest state the person can read. `updater.no-build.test.ts`. `noBuild` clears
+when the next check starts.
 
 ## Managed policy (MDM)
 

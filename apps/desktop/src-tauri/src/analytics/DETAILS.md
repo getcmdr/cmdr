@@ -273,7 +273,8 @@ Backend events fire at success chokepoints; frontend events ride `track_event`.
   `checkForUpdates()`): `trigger` (what set it going: `startup` / `poll` / `auto_check_on` / `command` / `settings`),
   `outcome` (`up_to_date` / `staged` / `already_staged` / `blocked` / `failed`, plus the organization's answers
   `updates_disabled_by_policy` / `held_by_policy` / `automatic_checks_disabled_by_policy` / `blocked_by_policy`, none of
-  which carries the held or ceiling version), `failure` (the
+  which carries the held or ceiling version, and `no_build_for_platform`: a newer release with no build for this
+  platform), `failure` (the
   typed kind, or `none`: `check` / `download` / `install` for a phase that didn't get there, `translocated` /
   `read_only_volume` / `not_writable_admin_user` / `not_writable_standard_user` for a bundle that can't be written), and `staged_version`, the release sitting in the bundle
   waiting for a restart (one of our own release numbers, or `none`). ❌ Never a URL, a bundle path, or the text of a

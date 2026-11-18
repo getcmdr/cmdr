@@ -31,7 +31,10 @@ fn manifest(version: &str, platforms: &[&str]) -> UpdateManifest {
 }
 
 fn offer(m: &UpdateManifest, current: &str, wanted: &[&str]) -> Option<UpdateInfo> {
-    check_manifest(m, current, &keys(wanted)).expect("no refusal")
+    match check_manifest(m, current, &keys(wanted)).expect("no refusal") {
+        ManifestAnswer::Update(info) => Some(info),
+        ManifestAnswer::UpToDate | ManifestAnswer::NoBuildForThisPlatform => None,
+    }
 }
 
 #[test]
@@ -61,18 +64,26 @@ fn the_first_key_the_manifest_carries_wins() {
 }
 
 #[test]
-fn same_or_older_version_is_not_an_update() {
+fn same_or_older_version_is_up_to_date() {
     let m = manifest("0.40.0", &["darwin-aarch64"]);
-    assert!(offer(&m, "0.40.0", &["darwin-aarch64"]).is_none());
-    assert!(offer(&m, "0.41.0", &["darwin-aarch64"]).is_none());
+    for current in ["0.40.0", "0.41.0"] {
+        assert!(matches!(
+            check_manifest(&m, current, &keys(&["darwin-aarch64"])),
+            Ok(ManifestAnswer::UpToDate)
+        ));
+    }
 }
 
-/// A manifest that lost this build's platform entry reads like "you're up to date" to the caller
-/// (the warn beside it is what makes it diagnosable). The release gate makes it impossible to ship.
+/// A manifest that lost this build's platform entry is its own answer, never "you're up to date":
+/// the install would otherwise sit on an old version with nothing said. The release gate makes it
+/// impossible to ship.
 #[test]
-fn a_newer_version_with_no_entry_for_this_platform_is_not_an_update() {
+fn a_newer_version_with_no_entry_for_this_platform_is_no_build_for_this_platform() {
     let m = manifest("0.41.0", &["darwin-aarch64", "darwin-x86_64"]);
-    assert!(offer(&m, "0.40.0", &["windows-x86_64-nsis", "windows-x86_64"]).is_none());
+    assert!(matches!(
+        check_manifest(&m, "0.40.0", &keys(&["windows-x86_64-nsis", "windows-x86_64"])),
+        Ok(ManifestAnswer::NoBuildForThisPlatform)
+    ));
 }
 
 #[test]
@@ -418,7 +429,7 @@ proptest! {
             body["platforms"][other_key.as_str()] = value;
         }
         let m = parse(body.to_string().as_bytes()).expect("still a manifest");
-        let info = check_manifest(&m, "0.60.0", &keys(&["darwin-aarch64"])).expect("no refusal");
-        prop_assert!(info.is_some());
+        let answer = check_manifest(&m, "0.60.0", &keys(&["darwin-aarch64"])).expect("no refusal");
+        prop_assert!(matches!(answer, ManifestAnswer::Update(_)));
     }
 }

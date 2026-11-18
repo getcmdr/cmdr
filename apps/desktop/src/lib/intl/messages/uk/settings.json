@@ -3216,7 +3216,7 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} other {Показати у файловому менеджері}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Показати у Finder} windows {Показати у Провіднику} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показати у файловому менеджері}}",
   "@settings.securityLog.showInFinder": {
     "sourceHash": "21f1ff1"
   },
@@ -3673,11 +3673,11 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, =1 {Один елемент вʼязки з назвою «{itemName}» у програмі «Ключар»} one {{countText} елемент вʼязки з назвою «{itemName}» у програмі «Ключар»} few {{countText} елементи вʼязки з назвою «{itemName}» у програмі «Ключар»} many {{countText} елементів вʼязки з назвою «{itemName}» у програмі «Ключар»} other {{countText} елемента вʼязки з назвою «{itemName}» у програмі «Ключар»}}} windows {{count, plural, =1 {Один елемент з назвою «{itemName}» у Диспетчері облікових даних} one {{countText} елемент з назвою «{itemName}» у Диспетчері облікових даних} few {{countText} елементи з назвою «{itemName}» у Диспетчері облікових даних} many {{countText} елементів з назвою «{itemName}» у Диспетчері облікових даних} other {{countText} елемента з назвою «{itemName}» у Диспетчері облікових даних}}} other {{count, plural, =1 {Один елемент з назвою «{itemName}» у вашій вʼязці ключів} one {{countText} елемент з назвою «{itemName}» у вашій вʼязці ключів} few {{countText} елементи з назвою «{itemName}» у вашій вʼязці ключів} many {{countText} елементів з назвою «{itemName}» у вашій вʼязці ключів} other {{countText} елемента з назвою «{itemName}» у вашій вʼязці ключів}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, =1 {Один елемент вʼязки з назвою «{itemName}» у програмі «Ключар»} one {{countText} елемент вʼязки з назвою «{itemName}» у програмі «Ключар»} few {{countText} елементи вʼязки з назвою «{itemName}» у програмі «Ключар»} many {{countText} елементів вʼязки з назвою «{itemName}» у програмі «Ключар»} other {{countText} елемента вʼязки з назвою «{itemName}» у програмі «Ключар»}}} windows {{count, plural, =1 {Один елемент з назвою «{itemName}» у Диспетчері облікових даних} one {{countText} елемент з назвою «{itemName}» у Диспетчері облікових даних} few {{countText} елементи з назвою «{itemName}» у Диспетчері облікових даних} many {{countText} елементів з назвою «{itemName}» у Диспетчері облікових даних} other {{countText} елемента з назвою «{itemName}» у Диспетчері облікових даних}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, =1 {Один елемент з назвою «{itemName}» у вашій вʼязці ключів} one {{countText} елемент з назвою «{itemName}» у вашій вʼязці ключів} few {{countText} елементи з назвою «{itemName}» у вашій вʼязці ключів} many {{countText} елементів з назвою «{itemName}» у вашій вʼязці ключів} other {{countText} елемента з назвою «{itemName}» у вашій вʼязці ключів}}}}",
   "@settings.dataWipe.leftover.secretItems": {
     "sourceHash": "6cf1e9c"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Будь-які елементи вʼязки з назвою «{itemName}» у програмі «Ключар»} windows {Будь-які елементи з назвою «{itemName}» у Диспетчері облікових даних} other {Будь-які елементи з назвою «{itemName}» у вашій вʼязці ключів}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Будь-які елементи вʼязки з назвою «{itemName}» у програмі «Ключар»} windows {Будь-які елементи з назвою «{itemName}» у Диспетчері облікових даних} linuxKde {Any items in KWallet named “{itemName}”} other {Будь-які елементи з назвою «{itemName}» у вашій вʼязці ключів}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
     "sourceHash": "0e9e95b"
   },

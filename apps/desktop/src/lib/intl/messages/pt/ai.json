@@ -596,11 +596,11 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Não foi possível salvar sua chave de API: o Acesso às Chaves do macOS negou o acesso} other {Não foi possível ler sua chave de API salva: o Acesso às Chaves do macOS negou o acesso}}} windows {{op, select, save {Não foi possível salvar sua chave de API: o Gerenciador de Credenciais negou o acesso} other {Não foi possível ler sua chave de API salva: o Gerenciador de Credenciais negou o acesso}}} other {{op, select, save {Não foi possível salvar sua chave de API: o chaveiro do sistema negou o acesso} other {Não foi possível ler sua chave de API salva: o chaveiro do sistema negou o acesso}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Não foi possível salvar sua chave de API: o Acesso às Chaves do macOS negou o acesso} other {Não foi possível ler sua chave de API salva: o Acesso às Chaves do macOS negou o acesso}}} windows {{op, select, save {Não foi possível salvar sua chave de API: o Gerenciador de Credenciais negou o acesso} other {Não foi possível ler sua chave de API salva: o Gerenciador de Credenciais negou o acesso}}} linuxKde {{op, select, save {Couldn’t save your API key: KWallet denied access} other {Couldn’t read your saved API key: KWallet denied access}}} other {{op, select, save {Não foi possível salvar sua chave de API: o chaveiro do sistema negou o acesso} other {Não foi possível ler sua chave de API salva: o chaveiro do sistema negou o acesso}}}}",
   "@ai.secretError.title": {
     "sourceHash": "25b34c4"
   },
-  "ai.secretError.body": "{platform, select, macos {{op, select, save {Abra o Acesso às Chaves e verifique o item “Cmdr”, ou apague-o e tente salvar de novo.} other {Abra o Acesso às Chaves, encontre o item “Cmdr”, conceda acesso, ou apague-o e digite sua chave outra vez.}}} windows {{op, select, save {Abra o Gerenciador de Credenciais, verifique o item “Cmdr” em Credenciais do Windows, ou remova-o e tente salvar de novo.} other {Abra o Gerenciador de Credenciais, encontre o item “Cmdr” em Credenciais do Windows, ou remova-o e digite sua chave outra vez.}}} other {Desbloqueie seu chaveiro (app Senhas / Chaveiros) e tente novamente.}}",
+  "ai.secretError.body": "{platform, select, macos {{op, select, save {Abra o Acesso às Chaves e verifique o item “Cmdr”, ou apague-o e tente salvar de novo.} other {Abra o Acesso às Chaves, encontre o item “Cmdr”, conceda acesso, ou apague-o e digite sua chave outra vez.}}} windows {{op, select, save {Abra o Gerenciador de Credenciais, verifique o item “Cmdr” em Credenciais do Windows, ou remova-o e tente salvar de novo.} other {Abra o Gerenciador de Credenciais, encontre o item “Cmdr” em Credenciais do Windows, ou remova-o e digite sua chave outra vez.}}} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Desbloqueie seu chaveiro (app Senhas / Chaveiros) e tente novamente.}}",
   "@ai.secretError.body": {
     "sourceHash": "d65c5e3"
   },
@@ -608,7 +608,7 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Verifique se o Acesso às Chaves está disponível e tente novamente. Se continuar, reinicie o app.} windows {Verifique se o Gerenciador de Credenciais está disponível e tente novamente. Se continuar acontecendo, reinicie o Cmdr.} other {Verifique se o chaveiro do sistema está disponível e tente novamente. Se continuar, reinicie o app.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Verifique se o Acesso às Chaves está disponível e tente novamente. Se continuar, reinicie o app.} windows {Verifique se o Gerenciador de Credenciais está disponível e tente novamente. Se continuar acontecendo, reinicie o Cmdr.} linuxKde {Check that KWallet is available, then try again. If it persists, restart the app.} other {Verifique se o chaveiro do sistema está disponível e tente novamente. Se continuar, reinicie o app.}}",
   "@ai.secretError.genericBody": {
     "sourceHash": "9fc0702"
   },
@@ -616,7 +616,7 @@
   "@ai.secretError.removeTitle": {
     "sourceHash": "5986628"
   },
-  "ai.secretError.removeBody": "{platform, select, macos {Abra o Acesso às Chaves, encontre o item “Cmdr” e apague-o lá.} windows {Abra o Gerenciador de Credenciais, encontre o item “Cmdr” em Credenciais do Windows e remova-o lá.} other {Desbloqueie seu chaveiro (app Senhas / Chaveiros) e tente novamente.}}",
+  "ai.secretError.removeBody": "{platform, select, macos {Abra o Acesso às Chaves, encontre o item “Cmdr” e apague-o lá.} windows {Abra o Gerenciador de Credenciais, encontre o item “Cmdr” em Credenciais do Windows e remova-o lá.} linuxGnome {Unlock your keyring in Passwords and Keys and try again.} linuxKde {Unlock your wallet in KWalletManager and try again.} other {Desbloqueie seu chaveiro (app Senhas / Chaveiros) e tente novamente.}}",
   "@ai.secretError.removeBody": {
     "sourceHash": "3a85511"
   },

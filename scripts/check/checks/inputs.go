@@ -213,6 +213,7 @@ var rustEmbeddedInputs = []string{
 	"apps/desktop/src/lib/ask-cmdr/ask-cmdr-tool-label-keys.ts",
 	"apps/desktop/src/lib/commands/command-ids.ts",
 	"apps/desktop/src/lib/intl/messages/**",
+	"apps/desktop/src/lib/intl/platform-select-cases.json",
 	"apps/desktop/src/lib/ipc/bindings.ts",
 	"apps/desktop/src/lib/logging/bridge-redaction-cases.json",
 	"apps/desktop/src/lib/logging/log-markers.json",

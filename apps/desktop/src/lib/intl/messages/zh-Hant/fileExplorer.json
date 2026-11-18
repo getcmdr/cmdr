@@ -519,7 +519,7 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {登入資訊已儲存在本機（無法使用認證管理員）} other {登入資訊已儲存在本機（沒有偵測到系統鑰匙圈）}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {登入資訊已儲存在本機（無法使用認證管理員）} linuxKde {Credentials stored locally (KWallet not available)} other {登入資訊已儲存在本機（沒有偵測到系統鑰匙圈）}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "e14f91d"
   },
@@ -555,7 +555,7 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {從鑰匙圈中移除已儲存的密碼} windows {從認證管理員中移除已儲存的密碼} other {從你的鑰匙圈中移除已儲存的密碼}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {從鑰匙圈中移除已儲存的密碼} windows {從認證管理員中移除已儲存的密碼} linuxKde {Remove saved password from KWallet} other {從你的鑰匙圈中移除已儲存的密碼}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
     "sourceHash": "4ae6a02"
   },
@@ -947,7 +947,7 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr 暫時鎖定了 {name}，但鑰匙圈裡還留著已儲存的密碼。要徹底移除，請到「鑰匙圈存取」裡把它刪掉。} windows {Cmdr 暫時鎖定了 {name}，但認證管理員裡還留著已儲存的密碼。要徹底移除，請到「認證管理員」裡把它刪掉。} other {Cmdr 暫時鎖定了 {name}，但你的鑰匙圈裡還留著已儲存的密碼。要徹底移除，請到你的鑰匙圈 App 裡把它刪掉。}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr 暫時鎖定了 {name}，但鑰匙圈裡還留著已儲存的密碼。要徹底移除，請到「鑰匙圈存取」裡把它刪掉。} windows {Cmdr 暫時鎖定了 {name}，但認證管理員裡還留著已儲存的密碼。要徹底移除，請到「認證管理員」裡把它刪掉。} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {Cmdr 暫時鎖定了 {name}，但你的鑰匙圈裡還留著已儲存的密碼。要徹底移除，請到你的鑰匙圈 App 裡把它刪掉。}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
     "sourceHash": "20277f3"
   },
@@ -2337,7 +2337,7 @@
   "@fileExplorer.quickFilter.intro.switchToJump": {
     "sourceHash": "38642f9"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {設定} other {設定⋯}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {設定} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {設定⋯}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
     "sourceHash": "7af8e23"
   },

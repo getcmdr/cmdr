@@ -278,10 +278,12 @@ Simplified. Details: `apps/desktop/scripts/gen-boot-guard-lib.ts`.
 
 **A per-OS value is picked at runtime, by the guard.** A boot-guard key holding a `{platform, select, …}` block
 (`../intl/DETAILS.md` § Platform variants) is split by `platform-select.ts` and baked as its formatted branches; the
-guard's `pickText()` reads `window.__CMDR_PLATFORM__`'s branch, `other` when the global is missing, says `linux`, or
-names no branch. Why not pick by build target (`TAURI_ENV_PLATFORM`): plain `vite build` and the forced screen
-(`VITE_CMDR_FORCE_OLD_WEBKIT`) have no target, and the global is the answer the rest of the app reads. The guard never
-fires on Windows (WebView2 is evergreen), so these blocks fold Windows into `other`.
+guard's `pickText()` reads `window.__CMDR_PLATFORM__`'s branch (on Linux, the `linuxGnome` or `linuxKde` branch that
+`__CMDR_CONVENTIONS__.linuxDesktop` names), and `other` when the global is missing, names another desktop, or names no
+branch. `app-boot-guard.test.ts` runs it over `../intl/platform-select-cases.json`. Why not pick by build target
+(`TAURI_ENV_PLATFORM`): plain `vite build` and the forced screen (`VITE_CMDR_FORCE_OLD_WEBKIT`) have no target, and the
+global is the answer the rest of the app reads. The guard never fires on Windows (WebView2 is evergreen), so these
+blocks fold Windows into `other`.
 
 **Gotcha**: because `appTemplate` is the generated path, `pnpm dev` does NOT hot-reload an edit to `src/app.html`.
 Restart the dev server after touching the shell.

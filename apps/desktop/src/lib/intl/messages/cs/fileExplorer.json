@@ -521,7 +521,7 @@
   "@fileExplorer.network.browser.disconnectFailed": {
     "sourceHash": "e394098"
   },
-  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Přihlašovací údaje jsou uložené místně (Správce přihlašovacích údajů není dostupný)} other {Přihlašovací údaje jsou uložené místně (systémový svazek klíčů nebyl nalezen)}}",
+  "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Přihlašovací údaje jsou uložené místně (Správce přihlašovacích údajů není dostupný)} linuxKde {Credentials stored locally (KWallet not available)} other {Přihlašovací údaje jsou uložené místně (systémový svazek klíčů nebyl nalezen)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "e14f91d"
   },
@@ -557,7 +557,7 @@
   "@fileExplorer.network.share.backArrow": {
     "sourceHash": "76900f1"
   },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Odstranit uložené heslo ze svazku klíčů} windows {Odstranit uložené heslo ze Správce přihlašovacích údajů} other {Odstranit uložené heslo ze systémové klíčenky}}",
+  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Odstranit uložené heslo ze svazku klíčů} windows {Odstranit uložené heslo ze Správce přihlašovacích údajů} linuxKde {Remove saved password from KWallet} other {Odstranit uložené heslo ze systémové klíčenky}}",
   "@fileExplorer.network.share.forgetPasswordTooltip": {
     "sourceHash": "4ae6a02"
   },
@@ -949,7 +949,7 @@
   "@fileExplorer.restic.forgetPassword.forgotten": {
     "sourceHash": "bd4ac8e"
   },
-  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr zálohu {name} zatím zamkl, ale svazek klíčů si uložené heslo ponechal. Pokud ho chcete odstranit natrvalo, smažte ho v Klíčence.} windows {Cmdr zálohu {name} zatím zamkl, ale Správce přihlašovacích údajů si uložené heslo ponechal. Pokud ho chcete odstranit natrvalo, smažte ho ve Správci přihlašovacích údajů.} other {Cmdr zálohu {name} zatím zamkl, ale systémová klíčenka si uložené heslo ponechala. Pokud ho chcete odstranit natrvalo, smažte ho v aplikaci, která klíčenku spravuje.}}",
+  "fileExplorer.restic.forgetPassword.keychainKeptIt": "{platform, select, macos {Cmdr zálohu {name} zatím zamkl, ale svazek klíčů si uložené heslo ponechal. Pokud ho chcete odstranit natrvalo, smažte ho v Klíčence.} windows {Cmdr zálohu {name} zatím zamkl, ale Správce přihlašovacích údajů si uložené heslo ponechal. Pokud ho chcete odstranit natrvalo, smažte ho ve Správci přihlašovacích údajů.} linuxGnome {Cmdr locked {name} for now, but your keyring kept its saved password. To remove it for good, delete it in Passwords and Keys.} linuxKde {Cmdr locked {name} for now, but KWallet kept its saved password. To remove it for good, delete it in KWalletManager.} other {Cmdr zálohu {name} zatím zamkl, ale systémová klíčenka si uložené heslo ponechala. Pokud ho chcete odstranit natrvalo, smažte ho v aplikaci, která klíčenku spravuje.}}",
   "@fileExplorer.restic.forgetPassword.keychainKeptIt": {
     "sourceHash": "20277f3"
   },
@@ -2345,7 +2345,7 @@
   "@fileExplorer.quickFilter.intro.switchToJump": {
     "sourceHash": "38642f9"
   },
-  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Nastavení} other {Nastavení…}}",
+  "fileExplorer.quickFilter.intro.openSettings": "{platform, select, windows {Nastavení} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Nastavení…}}",
   "@fileExplorer.quickFilter.intro.openSettings": {
     "sourceHash": "7af8e23"
   },

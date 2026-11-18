@@ -3221,7 +3221,7 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} other {Mostrar en el gestor de archivos}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Mostrar en el gestor de archivos}}",
   "@settings.securityLog.showInFinder": {
     "sourceHash": "21f1ff1"
   },
@@ -3678,11 +3678,11 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Un elemento en Acceso a Llaveros con el nombre “{itemName}”} many {{countText} elementos en Acceso a Llaveros con el nombre “{itemName}”} other {{countText} elementos en Acceso a Llaveros con el nombre “{itemName}”}}} windows {{count, plural, one {Una credencial en el Administrador de credenciales con el nombre “{itemName}”} many {{countText} credenciales en el Administrador de credenciales con el nombre “{itemName}”} other {{countText} credenciales en el Administrador de credenciales con el nombre “{itemName}”}}} other {{count, plural, one {Un elemento en tu llavero con el nombre “{itemName}”} many {{countText} elementos en tu llavero con el nombre “{itemName}”} other {{countText} elementos en tu llavero con el nombre “{itemName}”}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Un elemento en Acceso a Llaveros con el nombre “{itemName}”} many {{countText} elementos en Acceso a Llaveros con el nombre “{itemName}”} other {{countText} elementos en Acceso a Llaveros con el nombre “{itemName}”}}} windows {{count, plural, one {Una credencial en el Administrador de credenciales con el nombre “{itemName}”} many {{countText} credenciales en el Administrador de credenciales con el nombre “{itemName}”} other {{countText} credenciales en el Administrador de credenciales con el nombre “{itemName}”}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, one {Un elemento en tu llavero con el nombre “{itemName}”} many {{countText} elementos en tu llavero con el nombre “{itemName}”} other {{countText} elementos en tu llavero con el nombre “{itemName}”}}}}",
   "@settings.dataWipe.leftover.secretItems": {
     "sourceHash": "6cf1e9c"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Los elementos que haya en Acceso a Llaveros con el nombre “{itemName}”} windows {Las credenciales que haya en el Administrador de credenciales con el nombre “{itemName}”} other {Los elementos que haya en tu llavero con el nombre “{itemName}”}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Los elementos que haya en Acceso a Llaveros con el nombre “{itemName}”} windows {Las credenciales que haya en el Administrador de credenciales con el nombre “{itemName}”} linuxKde {Any items in KWallet named “{itemName}”} other {Los elementos que haya en tu llavero con el nombre “{itemName}”}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
     "sourceHash": "0e9e95b"
   },

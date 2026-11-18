@@ -14,7 +14,7 @@ mod conventions;
 mod frontend;
 
 pub(crate) use capabilities::PlatformCapabilities;
-pub(crate) use conventions::PlatformConventions;
+pub(crate) use conventions::{LinuxDesktop, PlatformConventions};
 pub(crate) use frontend::init_script as frontend_init_script;
 
 #[cfg_attr(target_os = "macos", path = "macos.rs")]

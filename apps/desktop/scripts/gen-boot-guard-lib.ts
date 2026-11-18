@@ -32,7 +32,11 @@ import { IntlMessageFormat } from 'intl-messageformat'
 import { inheritableAncestors, likelyScript } from '../src/lib/intl/locale-inheritance.ts'
 import { BASE_LOCALE, GENERATED_LOCALES, baseLanguageOf, loadCatalog } from './i18n-catalog-lib.ts'
 import { BOOT_GUARD_KEYS } from '../src/lib/utils/boot-guard-keys.ts'
-import { parsePlatformSelect, type PlatformSelectBranches } from '../src/lib/intl/platform-select.ts'
+import {
+  PLATFORM_SELECT_BRANCHES,
+  parsePlatformSelect,
+  type PlatformSelectBranches,
+} from '../src/lib/intl/platform-select.ts'
 
 /**
  * One of the screen's texts: a plain string, or a platform block's branches, each
@@ -117,8 +121,10 @@ function formatText(value: string, tag: string): BootGuardText {
   const branches = parsePlatformSelect(value)
   if (branches === null) return format(value)
   const baked: PlatformSelectBranches = { other: format(branches.other) }
-  if (branches.macos !== undefined) baked.macos = format(branches.macos)
-  if (branches.windows !== undefined) baked.windows = format(branches.windows)
+  for (const name of PLATFORM_SELECT_BRANCHES) {
+    const branch = branches[name]
+    if (name !== 'other' && branch !== undefined) baked[name] = format(branch)
+  }
   return baked
 }
 
