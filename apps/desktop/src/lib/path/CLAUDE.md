@@ -10,6 +10,8 @@ shortcut, virtual-volume URL).
   `isVolumeRoot`, `parentInVolume` / `parentOrRoot`, `basenameInVolume` / `lastName`, `joinPath`, `pathRelativeTo`,
   `samePath`, `fromUserInput` / `typedSeparators`, and `shownPath`, the ONE display formatter (`\` for a Windows local
   path).
+- `escape.ts`: the display half of the app path's lossless escape for names that aren't valid Unicode text: `shownName`,
+  `withoutEscapes` (inside `displayPath`, so `t()` covers every param), and `nativeNameLength`.
 - `canonical.ts`: the `CanonicalPath` brand plus `toCanonical` / `parentOf` / `basenameOf`, the separate
   `isPlainFilesystemPath` outbound-path guard, and the `isPathOnVolume` membership test.
 
@@ -20,6 +22,9 @@ shortcut, virtual-volume URL).
   (`posix` or `windows`) follows the injected platform; case sensitivity follows the VOLUME
   (`VolumeInfo.caseSensitive`), ❌ never the OS. On macOS and Linux every helper answers exactly what the slash
   arithmetic did.
+- **A row's `name` and `path` may hold an escape (a plane-16 code point): it's an ADDRESS, sent back byte for byte.**
+  Show it through `shownName` / `displayPath` (U+FFFD), ❌ never respell or compare against the shown text; measure a
+  name limit with `nativeNameLength`, ❌ never `TextEncoder`. `DETAILS.md` § "The escape".
 - **❌ No raw `/` arithmetic on a path-named value** (`cmdr/no-raw-path-arithmetic`): on `C:/Users` a `lastIndexOf('/')`
   cuts the drive off. Opt out per line, with a reason, where the `/` is a protocol's.
 - **A value that may be `~` goes through `CanonicalPath`** (`parentOf` / `basenameOf`): `"~"` is a real `currentPath`

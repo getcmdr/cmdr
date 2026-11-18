@@ -146,6 +146,16 @@ describe('t() resolution', () => {
     )
   })
 
+  // A name that isn't valid Unicode text carries a plane-16 escape (`#lib/path/escape`); every
+  // param shows it as U+FFFD, a marked path and a plain name alike.
+  it('shows an escaped name in any param as U+FFFD', () => {
+    _setLocaleForTests('en-US')
+    expect(tString('fileOperations.delete.fromPath', { path: pathParam('/d/caf\u{10FEE9}') })).toBe('From: /d/caf�')
+    expect(tString('main.revealNotShown.notAnswering', { name: 'caf\u{10FEE9}' })).toBe(
+      'Couldn’t show “caf�”: the drive or server it’s on isn’t answering.',
+    )
+  })
+
   it('shows a path param with backslashes on Windows, and as is elsewhere', () => {
     _setLocaleForTests('en-US')
     onTestFinished(withPlatform('windows'))

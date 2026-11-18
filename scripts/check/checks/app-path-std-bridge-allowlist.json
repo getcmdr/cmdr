@@ -1,0 +1,4 @@
+{
+  "$comment": "Accepted count of app-path transition-bridge calls (`AppPath::legacy_unchecked`, `AppPath::as_std_legacy`) per Rust file, the progress meter while the crates move from `std::path` onto the app path. A strict ratchet: local runs lower an entry to the current count and drop a file that reaches zero. The fix for a file over its number is `AppPath` arithmetic and the named native crossings, not a bigger number (crates/cmdr-fs/DETAILS.md § \"App paths\"; scripts/check/checks/DETAILS.md § Allowlist consent).",
+  "files": {}
+}

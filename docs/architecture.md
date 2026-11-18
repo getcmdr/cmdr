@@ -156,8 +156,8 @@ All under `apps/desktop/src/lib/`.
   what runs, over the proposal spine. Windowed op paging and the disclosure rules: its `CLAUDE.md`
 - `utils/`: Filename validation, confirm dialog utilities
 - `path/`: The app-path grammar (`/`, and on Windows `C:/` and `//server/share/` roots), shared with Rust's
-  `cmdr_fs::volume::path_grammar` through one case table, plus `shownPath` (the one display formatter) and the
-  `CanonicalPath` brand. See `apps/desktop/src/lib/path/CLAUDE.md`
+  `cmdr_fs::volume::path_grammar` through one case table, plus `shownPath` (the one display formatter), the escape's
+  display half (`shownName`), and the `CanonicalPath` brand. See `apps/desktop/src/lib/path/CLAUDE.md`
 - `font-metrics/`: Character width measurement for accurate Brief mode column sizing
 - `demo/`: the browser demo's fake backend (`pnpm build:demo`, served at getcmdr.com/demo): typed answers behind
   `mockIPC`, with the listing commands routed to the WASM listing engine. See `apps/desktop/src/lib/demo/CLAUDE.md`
@@ -457,6 +457,9 @@ is an ordinary member.
   `ConnectionReporter`, and `http_session`, the HTTP backends' shared lifecycle; `crates/cmdr-fs/DETAILS.md` § "Three
   questions a remote volume gets asked"). The app re-exports all of it from the original paths. See
   `crates/cmdr-fs/CLAUDE.md`
+  - `src/app_path/`: the typed app path (`AppPath` / `AppPathBuf`), its own arithmetic on every OS, the lossless escape
+    for names that aren't valid Unicode, and the named crossings to and from native paths. See
+    `crates/cmdr-fs/DETAILS.md` § "App paths"
   - `src/volume/host/`: the seams a storage backend reaches its host through — pane listings, the runtime handle, typed
     connection events, credentials, index notification, settings, user activity, analytics. What a backend crate is
     written against; the app answers them from `apps/desktop/src-tauri/src/volume_host.rs`. See

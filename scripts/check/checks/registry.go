@@ -479,6 +479,17 @@ var AllChecks = []CheckDefinition{
 		Run:         RunProbeUnwrapJustified,
 	},
 	{
+		ID:          "desktop-rust-app-path-std-bridge",
+		Nickname:    "app-path-std-bridge",
+		DisplayName: "app-path-std-bridge",
+		App:         AppDesktop,
+		Tech:        "🦀 Rust",
+		DependsOn:   nil,
+		IsFast:      true,
+		Inputs:      inputs(rustScanInputs(KindApp, KindTool), runnerDataInputs("app-path-std-bridge-allowlist.json")),
+		Run:         RunAppPathStdBridge,
+	},
+	{
 		ID:          "desktop-rust-lock-poison",
 		Nickname:    "lock-poison",
 		DisplayName: "lock-poison",
