@@ -2645,9 +2645,9 @@
   "@errors.listing.smbEncryptionRequired.explanation": {
     "sourceHash": "5eeef51"
   },
-  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, windows {Veja o que tentar:\n- Inicie a sessão com uma conta: conexões de convidado não podem ser criptografadas\n- Ative a criptografia SMB no servidor\n- Desative “Sempre exigir criptografia SMB” nos Ajustes, se não precisar desse ajuste} linuxGnome {Veja o que tentar:\n- Inicie a sessão com uma conta: conexões de convidado não podem ser criptografadas\n- Ative a criptografia SMB no servidor\n- Desative “Sempre exigir criptografia SMB” nas Preferências, se não precisar desse ajuste} linuxKde {Veja o que tentar:\n- Inicie a sessão com uma conta: conexões de convidado não podem ser criptografadas\n- Ative a criptografia SMB no servidor\n- Desative “Sempre exigir criptografia SMB” em Configurar Cmdr, se não precisar desse ajuste} other {Veja o que tentar:\n- Inicie a sessão com uma conta: conexões de convidado não podem ser criptografadas\n- Ative a criptografia SMB no servidor\n- Desative “Sempre exigir criptografia SMB” nos Ajustes, se não precisar desse ajuste}}",
+  "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, windows {Veja o que tentar:\n- Entre com uma conta: conexões de convidado não podem ser criptografadas\n- Ative a criptografia SMB no servidor\n- Desative “Sempre exigir criptografia SMB” nas Configurações, se não precisar desse ajuste} linuxGnome {Veja o que tentar:\n- Inicie a sessão com uma conta: conexões de convidado não podem ser criptografadas\n- Ative a criptografia SMB no servidor\n- Desative “Sempre exigir criptografia SMB” nas Preferências, se não precisar desse ajuste} linuxKde {Veja o que tentar:\n- Inicie a sessão com uma conta: conexões de convidado não podem ser criptografadas\n- Ative a criptografia SMB no servidor\n- Desative “Sempre exigir criptografia SMB” em Configurar Cmdr, se não precisar desse ajuste} other {Veja o que tentar:\n- Inicie a sessão com uma conta: conexões de convidado não podem ser criptografadas\n- Ative a criptografia SMB no servidor\n- Desative “Sempre exigir criptografia SMB” nos Ajustes, se não precisar desse ajuste}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
-    "sourceHash": "5d8e637"
+    "sourceHash": "c91f084"
   },
   "errors.volume.encryptionRequired": "A conexão com este compartilhamento não pode ser criptografada, e o ajuste “Sempre exigir criptografia SMB” está ativado no Cmdr.",
   "@errors.volume.encryptionRequired": {
@@ -2669,9 +2669,9 @@
   "@errors.write.smbEncryptionRequired.message": {
     "sourceHash": "ec53744"
   },
-  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, windows {Inicie a sessão com uma conta em vez de entrar como convidado, ou ative a criptografia SMB no servidor. Você também pode desativar “Sempre exigir criptografia SMB” nos Ajustes.} linuxGnome {Inicie a sessão com uma conta em vez de entrar como convidado, ou ative a criptografia SMB no servidor. Você também pode desativar “Sempre exigir criptografia SMB” nas Preferências.} linuxKde {Inicie a sessão com uma conta em vez de entrar como convidado, ou ative a criptografia SMB no servidor. Você também pode desativar “Sempre exigir criptografia SMB” em Configurar Cmdr.} other {Inicie a sessão com uma conta em vez de entrar como convidado, ou ative a criptografia SMB no servidor. Você também pode desativar “Sempre exigir criptografia SMB” nos Ajustes.}}",
+  "errors.write.smbEncryptionRequired.suggestion": "{platform, select, windows {Entre com uma conta, não como convidado, ou ative a criptografia SMB no servidor. Você também pode desativar “Sempre exigir criptografia SMB” nas Configurações.} linuxGnome {Inicie a sessão com uma conta em vez de entrar como convidado, ou ative a criptografia SMB no servidor. Você também pode desativar “Sempre exigir criptografia SMB” nas Preferências.} linuxKde {Inicie a sessão com uma conta em vez de entrar como convidado, ou ative a criptografia SMB no servidor. Você também pode desativar “Sempre exigir criptografia SMB” em Configurar Cmdr.} other {Inicie a sessão com uma conta em vez de entrar como convidado, ou ative a criptografia SMB no servidor. Você também pode desativar “Sempre exigir criptografia SMB” nos Ajustes.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
-    "sourceHash": "bab81dc"
+    "sourceHash": "a7fe1d2"
   },
   "errors.listing.smbNegotiationInvalid.title": "O servidor não confirmou esta conexão",
   "@errors.listing.smbNegotiationInvalid.title": {

@@ -63,8 +63,9 @@ The must-know rules; the rest of this file elaborates them.
   - operation → `operação`; the queue → `Fila de operações`, beside `Registro de operações`; `transferência` only for
     one copy or move in flight.
   - rename → `Renomear` / `renomeação`, never `alterar o nome`. dismiss → `Dispensar` (`Ignorar` is Skip).
-  - Settings → `Ajustes`; sign in → `iniciar a sessão`; quit → `Encerrar`; save → `Salvar`; turn on/off → `Ativar` /
-    `Desativar` (`ligar` / `desligar` is physical power).
+  - Settings → `Ajustes` (a `windows` branch says Microsoft's `Configurações`, feminine plural: `nas Configurações`);
+    sign in → `iniciar a sessão`; quit → `Encerrar`; save → `Salvar`; turn on/off → `Ativar` / `Desativar` (`ligar` /
+    `desligar` is physical power).
   - search → the `busca` / `buscar` family, never `pesquisa` for the feature. scan: the drive index's `varredura` vs the
     pre-copy count's `Analisar`. check: `verificar` when Cmdr checks, `conferir` when the person does.
   - put back has three verbs: `colocar de volta` (out of the Trash), `restaurar` (an old name), `levar de volta` (a
