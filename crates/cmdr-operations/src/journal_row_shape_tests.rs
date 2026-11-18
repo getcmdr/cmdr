@@ -5,6 +5,7 @@
 //! to the other side shows up here first. Counts and roles alone live in
 //! `journal_capture_tests.rs` and `journal_capture_volume_tests.rs`.
 
+use cmdr_fs::app_path;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -201,11 +202,11 @@ fn a_copy_journals_no_row_for_a_file_it_skipped_or_a_folder_it_found() {
 async fn a_cross_volume_folder_move_journals_like_a_copy() {
     let (engine, log) = journaled();
     let source = Arc::new(InMemoryVolume::new("Src").with_space_info(1_000_000, 900_000));
-    source.create_directory(Path::new("/photos")).await.expect("mk");
-    source.create_directory(Path::new("/photos/sub")).await.expect("mk");
-    source.create_file(Path::new("/photos/a.txt"), b"aaa").await.expect("a");
+    source.create_directory(app_path!("/photos")).await.expect("mk");
+    source.create_directory(app_path!("/photos/sub")).await.expect("mk");
+    source.create_file(app_path!("/photos/a.txt"), b"aaa").await.expect("a");
     source
-        .create_file(Path::new("/photos/sub/b.txt"), b"bbbb")
+        .create_file(app_path!("/photos/sub/b.txt"), b"bbbb")
         .await
         .expect("b");
     let dest = Arc::new(InMemoryVolume::new("Dst").with_space_info(1_000_000, 900_000));

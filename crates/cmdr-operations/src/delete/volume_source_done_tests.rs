@@ -5,7 +5,8 @@
 //! outcomes per source (an approved AI suggestion's ops, `proposal_ops.status`) saw every file
 //! deleted and every op still `pending`.
 
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -19,16 +20,16 @@ use cmdr_fs::volume::{InMemoryVolume, Volume};
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_volume_delete_reports_each_top_level_source_once_it_is_gone() {
     let volume = Arc::new(InMemoryVolume::new("testshare"));
-    volume.create_directory(Path::new("/exports")).await.expect("dir");
+    volume.create_directory(app_path!("/exports")).await.expect("dir");
     volume
-        .create_file(Path::new("/exports/a.key"), b"aa")
+        .create_file(app_path!("/exports/a.key"), b"aa")
         .await
         .expect("file in folder");
     volume
-        .create_file(Path::new("/exports/b.key"), b"bb")
+        .create_file(app_path!("/exports/b.key"), b"bb")
         .await
         .expect("file in folder");
-    volume.create_file(Path::new("/old.iso"), b"iso").await.expect("file");
+    volume.create_file(app_path!("/old.iso"), b"iso").await.expect("file");
     let engine = TestOperations::new();
     let volume_id = format!("volume-source-done-{}", std::process::id());
     engine.volumes().register(&volume_id, volume.clone() as Arc<dyn Volume>);

@@ -2,6 +2,7 @@
 //! (`with_local_fs_access`, confirming on a real temp file) and remote ones
 //! (confirming through the store's own `get_metadata` + `read_range`).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
@@ -16,7 +17,10 @@ async fn remote_parent_with(path: &Path, bytes: &[u8]) -> InMemoryVolume {
 }
 
 async fn remote_volume_with(parent: InMemoryVolume, path: &Path, bytes: &[u8]) -> InMemoryVolume {
-    parent.create_file(path, bytes).await.expect("seed the remote file");
+    parent
+        .create_file(&AppPath::legacy_unchecked(path), bytes)
+        .await
+        .expect("seed the remote file");
     parent
 }
 
@@ -111,7 +115,10 @@ async fn a_path_with_no_archive_component_costs_the_parent_no_read() {
 async fn a_remote_folder_named_like_an_archive_declines() {
     let folder = PathBuf::from("/device/folder.zip");
     let parent = InMemoryVolume::new("Remote");
-    parent.create_directory(&folder).await.expect("seed remote folder");
+    parent
+        .create_directory(&AppPath::legacy_unchecked(&folder))
+        .await
+        .expect("seed remote folder");
 
     assert_eq!(
         confirm_archive_boundary_on_parent(&parent, &folder.join("sub")).await,
@@ -146,7 +153,7 @@ async fn a_remote_confirm_checks_the_named_formats_magic() {
     let parent = remote_parent_with(&tgz, &[0x1f, 0x8b, 0x08, 0x00]).await;
     let zip_bytes_as_tgz = PathBuf::from("/device/fake.tar.gz");
     parent
-        .create_file(&zip_bytes_as_tgz, ZIP_BYTES)
+        .create_file(&AppPath::legacy_unchecked(&zip_bytes_as_tgz), ZIP_BYTES)
         .await
         .expect("seed fake tgz");
 

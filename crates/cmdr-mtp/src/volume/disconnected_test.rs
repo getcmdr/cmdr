@@ -7,8 +7,7 @@
 //! The conflict scan reads it as "the destination doesn't exist yet, so nothing
 //! clashes" and the paste went ahead with no conflict prompt.
 
-use std::path::Path;
-
+use cmdr_fs::app_path;
 use cmdr_fs::volume::{SourceItemInfo, Volume, VolumeError};
 
 use crate::connection::MtpDisconnectReason;
@@ -34,7 +33,7 @@ async fn a_conflict_scan_on_a_disconnected_phone_fails_instead_of_finding_nothin
                 modified: None,
                 is_directory: false,
             }],
-            Path::new("/Documents"),
+            app_path!("/Documents"),
         )
         .await;
     assert!(
@@ -42,7 +41,7 @@ async fn a_conflict_scan_on_a_disconnected_phone_fails_instead_of_finding_nothin
         "a gone phone must not read as a destination with nothing in it, got {conflicts:?}"
     );
 
-    let listing = volume.list_directory(Path::new("/Documents"), None).await;
+    let listing = volume.list_directory(app_path!("/Documents"), None).await;
     assert!(
         matches!(listing, Err(VolumeError::DeviceDisconnected(_))),
         "a listing on a gone phone is a disconnect, not a missing folder, got {listing:?}"

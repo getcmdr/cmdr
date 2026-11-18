@@ -4,6 +4,8 @@
 //! call starts, or around it for a rename or a delete.
 
 use super::{Fut, OutageVolume, RenameDrop};
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::metadata::{CarriedMetadata, ClassOutcome, MetadataReport};
@@ -141,11 +143,11 @@ fn armed_for(slot: &Mutex<Option<(PathBuf, RenameDrop)>>, path: &Path) -> Option
 }
 
 impl ScanSource for OutageVolume {
-    fn scan_stat<'a>(&'a self, path: &'a Path) -> scan_walk::Walking<'a, FileEntry> {
+    fn scan_stat<'a>(&'a self, path: &'a AppPath) -> scan_walk::Walking<'a, FileEntry> {
         self.get_metadata(path)
     }
 
-    fn scan_list<'a>(&'a self, path: &'a Path) -> scan_walk::Walking<'a, Vec<FileEntry>> {
+    fn scan_list<'a>(&'a self, path: &'a AppPath) -> scan_walk::Walking<'a, Vec<FileEntry>> {
         self.list_directory(path, None)
     }
 }
@@ -154,7 +156,7 @@ impl Volume for OutageVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -214,10 +216,13 @@ impl Volume for OutageVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, VolumeError>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             self.listings.lock_ignore_poison().push(path.to_path_buf());
             let armed_here = {
                 let mut armed = self.drop_at_listing_of.lock_ignore_poison();
@@ -234,11 +239,14 @@ impl Volume for OutageVolume {
                     raw_os_error: None,
                 });
             }
-            self.inner.list_directory(path, on_progress).await
+            self.inner.list_directory(path_app, on_progress).await
         })
     }
-    fn get_metadata<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<FileEntry, VolumeError>> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<FileEntry, VolumeError>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let armed_here = {
                 let mut armed = self.drop_at_stat_of.lock_ignore_poison();
                 armed.as_deref() == Some(path) && armed.take().is_some()
@@ -247,38 +255,41 @@ impl Volume for OutageVolume {
                 self.go_away();
             }
             self.gate()?;
-            self.inner.get_metadata(path).await
+            self.inner.get_metadata(path_app).await
         })
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Fut<'a, bool> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Fut<'a, bool> {
         Box::pin(async move { self.gate().is_ok() && self.inner.exists(path).await })
     }
-    fn is_directory<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<bool, VolumeError>> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<bool, VolumeError>> {
         Box::pin(async move {
             self.gate()?;
             self.inner.is_directory(path).await
         })
     }
-    fn create_directory<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<(), VolumeError>> {
+    fn create_directory<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<(), VolumeError>> {
         Box::pin(async move {
             self.gate()?;
             self.inner.create_directory(path).await
         })
     }
-    fn create_directory_all<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<DirectoryCreation, VolumeError>> {
+    fn create_directory_all<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<DirectoryCreation, VolumeError>> {
         Box::pin(async move {
             self.gate()?;
             self.inner.create_directory_all(path).await
         })
     }
-    fn create_file<'a>(&'a self, path: &'a Path, content: &'a [u8]) -> Fut<'a, Result<(), VolumeError>> {
+    fn create_file<'a>(&'a self, path: &'a AppPath, content: &'a [u8]) -> Fut<'a, Result<(), VolumeError>> {
         Box::pin(async move {
             self.gate()?;
             self.inner.create_file(path, content).await
         })
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<(), VolumeError>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<(), VolumeError>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let refused_here = self.up.load(Ordering::SeqCst) && {
                 let mut armed = self.refuse_deletes_of.lock_ignore_poison();
                 match armed.as_mut() {
@@ -299,20 +310,26 @@ impl Volume for OutageVolume {
                 path,
                 &self.drop_at_delete_of,
                 Some(&self.stale_error_at_delete_of),
-                || self.inner.delete(path),
+                || self.inner.delete(path_app),
             )
             .await
         })
     }
-    fn rename<'a>(&'a self, from: &'a Path, to: &'a Path, force: bool) -> Fut<'a, Result<(), VolumeError>> {
+    fn rename<'a>(&'a self, from: &'a AppPath, to: &'a AppPath, force: bool) -> Fut<'a, Result<(), VolumeError>> {
         Box::pin(async move {
+            let to_app = to;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
+            let from_app = from;
+            let from_std = from.as_std_legacy();
+            let from: &Path = &from_std;
             let n = self.renames.fetch_add(1, Ordering::SeqCst);
             let armed = *self.drop_at_rename.lock_ignore_poison();
             match armed {
                 Some((at, RenameDrop::BeforeTheServerSeesIt)) if at == n => self.go_away(),
                 Some((at, RenameDrop::AfterTheServerPerformsIt)) if at == n => {
                     self.gate()?;
-                    self.inner.rename(from, to, force).await?;
+                    self.inner.rename(from_app, to_app, force).await?;
                     self.go_away();
                 }
                 _ => {}
@@ -323,7 +340,7 @@ impl Volume for OutageVolume {
             {
                 self.gate()?;
                 if side == RenameDrop::AfterTheServerPerformsIt {
-                    self.inner.rename(from, to, force).await?;
+                    self.inner.rename(from_app, to_app, force).await?;
                 }
                 self.go_away();
                 self.reconnected_elsewhere();
@@ -332,7 +349,7 @@ impl Volume for OutageVolume {
             if let Some(side) = armed_for(&self.drop_at_rename_of, from) {
                 if side == RenameDrop::AfterTheServerPerformsIt {
                     self.gate()?;
-                    self.inner.rename(from, to, force).await?;
+                    self.inner.rename(from_app, to_app, force).await?;
                 }
                 self.go_away();
                 self.gate()?;
@@ -340,14 +357,14 @@ impl Volume for OutageVolume {
             if let Some(side) = armed_for(&self.stale_error_at_rename_of, from) {
                 self.gate()?;
                 if side == RenameDrop::AfterTheServerPerformsIt {
-                    self.inner.rename(from, to, force).await?;
+                    self.inner.rename(from_app, to_app, force).await?;
                 }
                 self.go_away();
                 self.reconnected_elsewhere();
                 return Err(VolumeError::DeviceDisconnected("the session is down".to_owned().into()));
             }
             self.under_path_drops(to, &self.drop_at_rename_onto, None, || {
-                self.inner.rename(from, to, force)
+                self.inner.rename(from_app, to_app, force)
             })
             .await
         })
@@ -360,18 +377,20 @@ impl Volume for OutageVolume {
     }
     fn copy_within<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         on_progress: &'a (dyn Fn(u64, u64) -> std::ops::ControlFlow<()> + Sync),
     ) -> Fut<'a, Result<u64, VolumeError>> {
         Box::pin(async move {
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
             self.gate()?;
             self.server_copies.fetch_add(1, Ordering::SeqCst);
             let stream = self.inner.open_read_stream(from).await?;
             let size = stream.total_size().known().expect("stored files have a known length");
             self.inner
                 .write_from_stream(
-                    to,
+                    &AppPath::legacy_unchecked(to),
                     WriteMode::CreateOrReplace,
                     StreamLength::Known(size),
                     stream,
@@ -387,7 +406,7 @@ impl Volume for OutageVolume {
             self.inner.get_space_info().await
         })
     }
-    fn open_read_stream<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<Box<dyn VolumeReadStream>, VolumeError>> {
+    fn open_read_stream<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<Box<dyn VolumeReadStream>, VolumeError>> {
         Box::pin(async move {
             let n = self.opens.fetch_add(1, Ordering::SeqCst);
             if *self.drop_at_open.lock_ignore_poison() == Some(n) {
@@ -400,7 +419,7 @@ impl Volume for OutageVolume {
     }
     fn resume_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         version: &'a SourceVersion,
         offset: u64,
     ) -> Fut<'a, Result<Box<dyn VolumeReadStream>, VolumeError>> {
@@ -411,7 +430,7 @@ impl Volume for OutageVolume {
             Ok(self.watched(stream))
         })
     }
-    fn scan_for_copy<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<CopyScanResult, VolumeError>> {
+    fn scan_for_copy<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<CopyScanResult, VolumeError>> {
         Box::pin(async move {
             self.gate()?;
             self.inner.scan_for_copy(path).await
@@ -419,12 +438,14 @@ impl Volume for OutageVolume {
     }
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Fut<'a, Result<BatchScanResult, VolumeError>> {
-        // The shared walk over this volume's own stat and listing, so a drop
-        // armed at a listing lands inside the walk, as on a real share.
-        scan_walk::scan_trees(self, paths, boundary)
+        Box::pin(async move {
+            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+            let paths: &[PathBuf] = &paths_std;
+            scan_walk::scan_trees(self, paths, boundary).await
+        })
     }
     fn create_directory_errors_on_existing_dir(&self) -> bool {
         self.inner.create_directory_errors_on_existing_dir()
@@ -432,7 +453,7 @@ impl Volume for OutageVolume {
     fn scan_for_conflicts<'a>(
         &'a self,
         source_items: &'a [SourceItemInfo],
-        dest_path: &'a Path,
+        dest_path: &'a AppPath,
     ) -> Fut<'a, Result<Vec<ScanConflict>, VolumeError>> {
         Box::pin(async move {
             self.gate()?;
@@ -441,13 +462,16 @@ impl Volume for OutageVolume {
     }
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
         on_progress: &'a (dyn Fn(StreamWriteProgress) -> std::ops::ControlFlow<()> + Sync),
     ) -> Fut<'a, Result<StreamWritten, VolumeError>> {
         Box::pin(async move {
+            let dest_app = dest;
+            let dest_std = dest.as_std_legacy();
+            let dest: &Path = &dest_std;
             let n = self.writes.fetch_add(1, Ordering::SeqCst);
             self.written.lock_ignore_poison().push(dest.to_path_buf());
             if *self.drop_at_write.lock_ignore_poison() == Some(n) {
@@ -456,7 +480,7 @@ impl Volume for OutageVolume {
             self.gate()?;
             let written = self
                 .inner
-                .write_from_stream(dest, mode, length, stream, on_progress)
+                .write_from_stream(dest_app, mode, length, stream, on_progress)
                 .await?;
             if *self.drop_after_write.lock_ignore_poison() == Some(n) {
                 if self.drop_cuts_the_stamp.load(Ordering::SeqCst) {
@@ -476,11 +500,14 @@ impl Volume for OutageVolume {
     }
     fn apply_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         carried: &'a CarriedMetadata,
         modified: Option<std::time::SystemTime>,
     ) -> Fut<'a, MetadataReport> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let armed_here = {
                 let mut armed = self.drop_at_apply_metadata_of.lock_ignore_poison();
                 armed.as_deref() == Some(path) && armed.take().is_some()
@@ -492,7 +519,7 @@ impl Volume for OutageVolume {
             if self.gate().is_err() || refused_here {
                 return MetadataReport::uniform(carried, modified, ClassOutcome::Refused);
             }
-            self.inner.apply_metadata(path, carried, modified).await
+            self.inner.apply_metadata(path_app, carried, modified).await
         })
     }
 }

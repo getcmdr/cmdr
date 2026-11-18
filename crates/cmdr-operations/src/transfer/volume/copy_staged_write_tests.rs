@@ -18,6 +18,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
+use cmdr_fs::app_path;
 use cmdr_fs::testing::wait_until_async;
 use std::sync::atomic::Ordering;
 
@@ -42,7 +43,7 @@ async fn abandoned_fresh_copy_leaves_no_partial_at_the_final_name() {
         ..
     } = fixture(CHUNK as u64 * 4);
     source_inner
-        .create_file(Path::new("/notes.txt"), &vec![0xAB; CHUNK * 4])
+        .create_file(app_path!("/notes.txt"), &vec![0xAB; CHUNK * 4])
         .await
         .unwrap();
 
@@ -103,11 +104,11 @@ async fn abandoned_overwrite_leaves_the_original_intact() {
         ..
     } = fixture(CHUNK as u64 * 4);
     source_inner
-        .create_file(Path::new("/notes.txt"), &vec![0xAB; CHUNK * 4])
+        .create_file(app_path!("/notes.txt"), &vec![0xAB; CHUNK * 4])
         .await
         .unwrap();
     dest_inner
-        .create_file(Path::new("/notes.txt"), b"ORIGINAL DEST DATA")
+        .create_file(app_path!("/notes.txt"), b"ORIGINAL DEST DATA")
         .await
         .unwrap();
 
@@ -163,9 +164,9 @@ async fn abandoned_directory_child_leaves_no_partial_at_the_final_name() {
         written,
         ..
     } = fixture(CHUNK as u64 * 4);
-    source_inner.create_directory(Path::new("/folder")).await.unwrap();
+    source_inner.create_directory(app_path!("/folder")).await.unwrap();
     source_inner
-        .create_file(Path::new("/folder/notes.txt"), &vec![0xAB; CHUNK * 4])
+        .create_file(app_path!("/folder/notes.txt"), &vec![0xAB; CHUNK * 4])
         .await
         .unwrap();
 
@@ -197,7 +198,7 @@ async fn abandoned_directory_child_leaves_no_partial_at_the_final_name() {
     }
 
     let names: Vec<String> = dest_inner
-        .list_directory(Path::new("/folder"), None)
+        .list_directory(app_path!("/folder"), None)
         .await
         .unwrap()
         .into_iter()
@@ -223,7 +224,7 @@ async fn a_completed_copy_lands_at_the_final_name_with_no_temp_left() {
         ..
     } = fixture(CHUNK as u64 * 2);
     source_inner
-        .create_file(Path::new("/notes.txt"), &vec![0xAB; CHUNK * 2])
+        .create_file(app_path!("/notes.txt"), &vec![0xAB; CHUNK * 2])
         .await
         .unwrap();
     gate.add_permits(8); // enough for the whole file

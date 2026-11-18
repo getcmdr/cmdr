@@ -12,6 +12,7 @@
 //! moment a named file lands: the copy of that file is done, and the sweep
 //! hasn't started.
 
+use cmdr_fs::app_path;
 use std::collections::HashMap;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -83,12 +84,15 @@ impl Volume for EditSourceAtLanding {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            self.inner.rename(from, to, force).await?;
+            let to_app = to;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
+            self.inner.rename(from, to_app, force).await?;
             let edit = to
                 .file_name()
                 .and_then(|name| name.to_str())
@@ -111,9 +115,17 @@ fn save_over(source: &Arc<InMemoryVolume>, path: &'static str, bytes: &'static [
     Box::new(move || {
         Box::pin(async move {
             let path = Path::new(path);
-            let modified = source.get_metadata(path).await.unwrap().modified_at.unwrap();
-            source.delete(path).await.unwrap();
-            source.create_file(path, bytes).await.unwrap();
+            let modified = source
+                .get_metadata(&AppPath::legacy_unchecked(path))
+                .await
+                .unwrap()
+                .modified_at
+                .unwrap();
+            source.delete(&AppPath::legacy_unchecked(path)).await.unwrap();
+            source
+                .create_file(&AppPath::legacy_unchecked(path), bytes)
+                .await
+                .unwrap();
             source.set_modified_at(path, Some(modified + 5));
         })
     })
@@ -122,11 +134,21 @@ fn save_over(source: &Arc<InMemoryVolume>, path: &'static str, bytes: &'static [
 /// An edit that creates `path` on `source`.
 fn create_on(source: &Arc<InMemoryVolume>, path: &'static str, bytes: &'static [u8]) -> Edit {
     let source = Arc::clone(source);
-    Box::new(move || Box::pin(async move { source.create_file(Path::new(path), bytes).await.unwrap() }))
+    Box::new(move || {
+        Box::pin(async move {
+            source
+                .create_file(&AppPath::legacy_unchecked(Path::new(path)), bytes)
+                .await
+                .unwrap()
+        })
+    })
 }
 
 async fn read(volume: &dyn Volume, path: &str) -> Vec<u8> {
-    let mut stream = volume.open_read_stream(Path::new(path)).await.unwrap();
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .unwrap();
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend(chunk.unwrap());
@@ -166,13 +188,13 @@ async fn run_move(
 async fn a_folder_original_saved_over_after_its_copy_survives_the_sweep() {
     let engine = TestOperations::new();
     let source = source_volume();
-    source.create_directory(Path::new("/Work")).await.unwrap();
+    source.create_directory(app_path!("/Work")).await.unwrap();
     source
-        .create_file(Path::new("/Work/draft.txt"), b"first draft")
+        .create_file(app_path!("/Work/draft.txt"), b"first draft")
         .await
         .unwrap();
     source
-        .create_file(Path::new("/Work/report.txt"), b"final report")
+        .create_file(app_path!("/Work/report.txt"), b"final report")
         .await
         .unwrap();
     let dest = Arc::new(EditSourceAtLanding::new(vec![(
@@ -186,7 +208,7 @@ async fn a_folder_original_saved_over_after_its_copy_survives_the_sweep() {
     assert_eq!(read(&*source, "/Work/draft.txt").await, b"final draft");
     assert_eq!(read(&*dest, "/Work/draft.txt").await, b"first draft");
     assert!(
-        !source.exists(Path::new("/Work/report.txt")).await,
+        !source.exists(app_path!("/Work/report.txt")).await,
         "an original nobody touched still goes"
     );
     let complete = events.complete.lock_ignore_poison();
@@ -206,14 +228,14 @@ async fn a_folder_original_saved_over_after_its_copy_survives_the_sweep() {
 async fn items_that_appeared_while_a_folder_copied_survive_the_sweep() {
     let engine = TestOperations::new();
     let source = source_volume();
-    source.create_directory(Path::new("/Work")).await.unwrap();
-    source.create_directory(Path::new("/Work/notes")).await.unwrap();
+    source.create_directory(app_path!("/Work")).await.unwrap();
+    source.create_directory(app_path!("/Work/notes")).await.unwrap();
     source
-        .create_file(Path::new("/Work/report.txt"), b"final report")
+        .create_file(app_path!("/Work/report.txt"), b"final report")
         .await
         .unwrap();
     source
-        .create_file(Path::new("/Work/notes/todo.md"), b"todo")
+        .create_file(app_path!("/Work/notes/todo.md"), b"todo")
         .await
         .unwrap();
     let new_folder = Arc::clone(&source);
@@ -226,9 +248,9 @@ async fn items_that_appeared_while_a_folder_copied_survive_the_sweep() {
             "todo.md",
             Box::new(move || {
                 Box::pin(async move {
-                    new_folder.create_directory(Path::new("/Work/notes/new")).await.unwrap();
+                    new_folder.create_directory(app_path!("/Work/notes/new")).await.unwrap();
                     new_folder
-                        .create_file(Path::new("/Work/notes/new/a.txt"), b"a")
+                        .create_file(app_path!("/Work/notes/new/a.txt"), b"a")
                         .await
                         .unwrap();
                 })
@@ -240,8 +262,8 @@ async fn items_that_appeared_while_a_folder_copied_survive_the_sweep() {
 
     assert_eq!(read(&*source, "/Work/download.zip").await, b"arrived mid-move");
     assert_eq!(read(&*source, "/Work/notes/new/a.txt").await, b"a");
-    assert!(!source.exists(Path::new("/Work/report.txt")).await);
-    assert!(!source.exists(Path::new("/Work/notes/todo.md")).await);
+    assert!(!source.exists(app_path!("/Work/report.txt")).await);
+    assert!(!source.exists(app_path!("/Work/notes/todo.md")).await);
     let complete = events.complete.lock_ignore_poison();
     let left = complete[0].appeared_during_move.as_ref().expect("newcomers are news");
     assert_eq!(left.item_count, 2, "a new file and a new folder, each counted once");
@@ -255,9 +277,9 @@ async fn items_that_appeared_while_a_folder_copied_survive_the_sweep() {
 async fn a_top_level_file_saved_over_after_its_copy_survives() {
     let engine = TestOperations::new();
     let source = source_volume();
-    source.create_directory(Path::new("/Documents")).await.unwrap();
+    source.create_directory(app_path!("/Documents")).await.unwrap();
     source
-        .create_file(Path::new("/Documents/budget.xlsx"), b"old numbers")
+        .create_file(app_path!("/Documents/budget.xlsx"), b"old numbers")
         .await
         .unwrap();
     let dest = Arc::new(EditSourceAtLanding::new(vec![(
@@ -290,18 +312,18 @@ async fn a_top_level_file_saved_over_after_its_copy_survives() {
 async fn a_clean_folder_move_takes_everything_and_reports_nothing() {
     let engine = TestOperations::new();
     let source = source_volume();
-    source.create_directory(Path::new("/Work")).await.unwrap();
-    source.create_directory(Path::new("/Work/empty")).await.unwrap();
+    source.create_directory(app_path!("/Work")).await.unwrap();
+    source.create_directory(app_path!("/Work/empty")).await.unwrap();
     source
-        .create_file(Path::new("/Work/report.txt"), b"final report")
+        .create_file(app_path!("/Work/report.txt"), b"final report")
         .await
         .unwrap();
     let dest = Arc::new(EditSourceAtLanding::new(Vec::new()));
 
     let events = run_move(&engine, &source, &dest, &["/Work"], "op-vol-drift-clean").await;
 
-    assert!(!source.exists(Path::new("/Work")).await, "the whole folder went");
-    assert!(dest.exists(Path::new("/Work/empty")).await);
+    assert!(!source.exists(app_path!("/Work")).await, "the whole folder went");
+    assert!(dest.exists(app_path!("/Work/empty")).await);
     let complete = events.complete.lock_ignore_poison();
     assert!(complete[0].appeared_during_move.is_none());
 }
@@ -313,8 +335,8 @@ async fn a_clean_folder_move_takes_everything_and_reports_nothing() {
 async fn an_original_saved_over_while_its_sweep_is_held_survives() {
     let engine = TestOperations::new();
     let source = source_volume();
-    source.create_file(Path::new("/a.txt"), b"old a").await.unwrap();
-    source.create_file(Path::new("/b.txt"), b"b").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"old a").await.unwrap();
+    source.create_file(app_path!("/b.txt"), b"b").await.unwrap();
     let dest = Arc::new(EditSourceAtLanding::new(vec![(
         "b.txt",
         save_over(&source, "/a.txt", b"new a"),
@@ -341,7 +363,7 @@ async fn an_original_saved_over_while_its_sweep_is_held_survives() {
     assert_eq!(read(&*source, "/a.txt").await, b"new a");
     assert_eq!(read(&*dest, "/a.txt").await, b"old a");
     assert!(
-        !source.exists(Path::new("/b.txt")).await,
+        !source.exists(app_path!("/b.txt")).await,
         "an untouched original still goes"
     );
     let complete = events.complete.lock_ignore_poison();

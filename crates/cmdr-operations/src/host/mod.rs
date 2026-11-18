@@ -214,7 +214,8 @@ impl EngineHost {
         if let Some(root) = volume.local_path() {
             // The same anchoring `LocalPosixVolume::resolve` applies, so the
             // path announced is the one the write hits.
-            self.own_writes.announce(&cmdr_fs::volume::root_anchored(&root, path));
+            self.own_writes
+                .announce(&cmdr_fs::volume::root_anchored(&root.as_std_legacy(), path));
         }
         Announced::new(path)
     }

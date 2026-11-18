@@ -5,6 +5,8 @@
 //! coverage is "is this storage's session live right now", so it can only be
 //! asserted by connecting one and taking it away again.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -39,7 +41,7 @@ fn watch_coverage_is_none_for_a_device_that_was_never_connected() {
         65537,
         "Test",
     );
-    assert_eq!(volume.listing_watch_coverage(Path::new("/DCIM")), WatchCoverage::None);
+    assert_eq!(volume.listing_watch_coverage(app_path!("/DCIM")), WatchCoverage::None);
 }
 
 /// Connecting flips the gate to `EveryWriter` and disconnecting drops it again.
@@ -56,21 +58,21 @@ async fn watch_coverage_flips_with_the_connection() {
     // never attached: still nothing.
     let unconnected = MtpVolume::new(Arc::clone(test_connection_manager()), "mtp-not-here-1", 65537, "Test");
     assert_eq!(
-        unconnected.listing_watch_coverage(Path::new("/")),
+        unconnected.listing_watch_coverage(app_path!("/")),
         WatchCoverage::None,
         "a storage nothing connected has no coverage"
     );
 
     let volume = volume_for(test_connection_manager(), &device, None).await;
     assert_eq!(
-        volume.listing_watch_coverage(Path::new("/")),
+        volume.listing_watch_coverage(app_path!("/")),
         WatchCoverage::EveryWriter,
         "a connected storage is covered"
     );
 
     device.teardown(test_connection_manager()).await;
     assert_eq!(
-        volume.listing_watch_coverage(Path::new("/")),
+        volume.listing_watch_coverage(app_path!("/")),
         WatchCoverage::None,
         "and the coverage goes with the session"
     );
@@ -93,9 +95,9 @@ async fn write_access_is_what_the_device_reports_for_the_storage() {
         .expect("the virtual device reports a second, read-only storage");
     let card = MtpVolume::new(Arc::clone(test_connection_manager()), &device.id, card_id, "SD Card");
 
-    assert_eq!(internal.write_access_at(Path::new("/DCIM")).await, WriteAccess::Unknown);
+    assert_eq!(internal.write_access_at(app_path!("/DCIM")).await, WriteAccess::Unknown);
     assert_eq!(
-        card.write_access_at(Path::new("/")).await,
+        card.write_access_at(app_path!("/")).await,
         WriteAccess::Unwritable {
             reason: UnwritableReason::ReadOnlyFilesystem,
         }
@@ -114,7 +116,7 @@ async fn an_index_walk_descends_every_folder_an_mtp_phone_lists() {
     let volume = volume_for(test_connection_manager(), &device, None).await;
 
     let entries = volume
-        .list_directory_for_scan(Path::new("/"), None, &cmdr_fs::volume::ScanListingClock::start())
+        .list_directory_for_scan(app_path!("/"), None, &cmdr_fs::volume::ScanListingClock::start())
         .await
         .expect("the virtual phone lists its root");
     let folders: Vec<_> = entries.iter().filter(|entry| entry.is_directory).collect();
@@ -122,7 +124,7 @@ async fn an_index_walk_descends_every_folder_an_mtp_phone_lists() {
     for folder in folders {
         assert!(!folder.is_symlink, "{} is not a link", folder.path);
         assert_eq!(
-            volume.index_walk(Path::new(&folder.path), folder.is_symlink),
+            volume.index_walk(&AppPath::legacy_unchecked(Path::new(&folder.path)), folder.is_symlink),
             IndexWalk::Descend,
             "{} is walked",
             folder.path

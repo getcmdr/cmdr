@@ -16,6 +16,7 @@
 //!
 //! `DETAILS.md` § "Look-alike names and new-name spelling".
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -160,7 +161,7 @@ async fn probe_one_name(dest_volume: &Arc<dyn Volume>, dest: &Path, new_name: Ne
         },
         // A source with no name of its own lands on the destination folder
         // itself, which no listing of a parent describes.
-        _ => match dest_volume.get_metadata(dest).await {
+        _ => match dest_volume.get_metadata(&AppPath::legacy_unchecked(dest)).await {
             Ok(entry) => Ok(Landing::Taken {
                 path: dest.to_path_buf(),
                 entry: Box::new(entry),
@@ -220,7 +221,7 @@ pub(super) async fn where_it_lands(
         DestFolder::Unlisted => true,
     };
 
-    match dest_volume.get_metadata(&asked).await {
+    match dest_volume.get_metadata(&AppPath::legacy_unchecked(&asked)).await {
         Ok(entry) => Ok(Landing::Taken {
             path: asked,
             entry: Box::new(entry),

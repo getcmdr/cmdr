@@ -11,6 +11,8 @@
 //! metadata", invariant 7.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -95,7 +97,10 @@ fn tag() -> Xattr {
 /// so: a backend that doesn't report creation dates lists none).
 async fn seed(source: &InMemoryVolume, caps: MetadataCaps) {
     let file = Path::new("/file.bin");
-    source.create_file(file, b"bytes").await.unwrap();
+    source
+        .create_file(&AppPath::legacy_unchecked(file), b"bytes")
+        .await
+        .unwrap();
     source.set_modified_at(file, Some(MODIFIED));
     source.set_carried_metadata(
         file,
@@ -107,7 +112,10 @@ async fn seed(source: &InMemoryVolume, caps: MetadataCaps) {
         },
     );
     let album = Path::new("/album");
-    source.create_directory(album).await.unwrap();
+    source
+        .create_directory(&AppPath::legacy_unchecked(album))
+        .await
+        .unwrap();
     source.set_modified_at(album, Some(MODIFIED));
     // What the source can report about the folder beyond its date: its
     // creation date off the listing, its tags through `folder_metadata`.
@@ -197,7 +205,7 @@ async fn every_pair_keeps_or_reports_each_class_its_source_had() {
             let source = Arc::new(InMemoryVolume::new("Source").with_metadata_caps(source_caps));
             seed(&source, source_caps).await;
             let dest = Arc::new(InMemoryVolume::new("Dest").with_metadata_caps(dest_caps));
-            dest.create_directory(Path::new("/to")).await.unwrap();
+            dest.create_directory(app_path!("/to")).await.unwrap();
 
             let complete = copy(
                 &engine,
@@ -240,7 +248,10 @@ async fn a_plain_file_reports_nothing_anywhere() {
     for (dest_name, dest_caps) in destinations() {
         let source = Arc::new(InMemoryVolume::new("Source"));
         let plain = Path::new("/plain.txt");
-        source.create_file(plain, b"plain").await.unwrap();
+        source
+            .create_file(&AppPath::legacy_unchecked(plain), b"plain")
+            .await
+            .unwrap();
         source.set_modified_at(plain, Some(MODIFIED));
         source.set_carried_metadata(
             plain,
@@ -251,7 +262,7 @@ async fn a_plain_file_reports_nothing_anywhere() {
             },
         );
         let dest = Arc::new(InMemoryVolume::new("Dest").with_metadata_caps(dest_caps));
-        dest.create_directory(Path::new("/to")).await.unwrap();
+        dest.create_directory(app_path!("/to")).await.unwrap();
 
         let complete = copy(&engine, source, &[plain.to_path_buf()], dest, Path::new("/to")).await;
 
@@ -313,7 +324,10 @@ async fn a_folder_with_only_a_quarantine_reports_nothing() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source"));
     let folder = Path::new("/downloaded");
-    source.create_directory(folder).await.unwrap();
+    source
+        .create_directory(&AppPath::legacy_unchecked(folder))
+        .await
+        .unwrap();
     source.set_carried_metadata(
         folder,
         CarriedMetadata {
@@ -325,7 +339,7 @@ async fn a_folder_with_only_a_quarantine_reports_nothing() {
         },
     );
     let dest = Arc::new(InMemoryVolume::new("Dest").with_metadata_caps(cmdr_sftp::SftpVolume::METADATA_CAPS));
-    dest.create_directory(Path::new("/to")).await.unwrap();
+    dest.create_directory(app_path!("/to")).await.unwrap();
 
     let complete = copy(&engine, source, &[folder.to_path_buf()], dest, Path::new("/to")).await;
 
@@ -382,7 +396,7 @@ async fn a_class_the_destination_refuses_at_runtime_is_on_the_note() {
     // The double's own caps keep every class on every OS, so the runtime refusal
     // is the only loss (Linux's local caps would add the flags to the note).
     let dest = Arc::new(InMemoryVolume::new("NAS").with_write_refusing(MetadataClasses::CREATED));
-    dest.create_directory(Path::new("/to")).await.unwrap();
+    dest.create_directory(app_path!("/to")).await.unwrap();
 
     let complete = copy(&engine, source, &[PathBuf::from("/file.bin")], dest, Path::new("/to")).await;
 
@@ -406,7 +420,10 @@ async fn a_runtime_refusal_of_nothing_worth_keeping_is_not_on_the_note() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source"));
     let plain = Path::new("/plain.txt");
-    source.create_file(plain, b"plain").await.unwrap();
+    source
+        .create_file(&AppPath::legacy_unchecked(plain), b"plain")
+        .await
+        .unwrap();
     source.set_modified_at(plain, Some(MODIFIED));
     source.set_carried_metadata(
         plain,
@@ -416,7 +433,7 @@ async fn a_runtime_refusal_of_nothing_worth_keeping_is_not_on_the_note() {
         },
     );
     let dest = Arc::new(InMemoryVolume::new("NAS").with_write_refusing(MetadataClasses::CREATED));
-    dest.create_directory(Path::new("/to")).await.unwrap();
+    dest.create_directory(app_path!("/to")).await.unwrap();
 
     let complete = copy(&engine, source, &[plain.to_path_buf()], dest, Path::new("/to")).await;
 

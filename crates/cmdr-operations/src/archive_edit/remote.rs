@@ -37,6 +37,7 @@
 //! intact (the local temp and any partial remote temp are cleaned up). Pinned by
 //! `remote_tests` and `remote_outage_tests`.
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -259,7 +260,10 @@ async fn pull_archive(
 ) -> Result<(), StepError> {
     let local_error = |e: std::io::Error| StepError::Ended(io_op(&local_working.display().to_string(), &e.to_string()));
     let remote_error = |e: VolumeError| StepError::at(remote_path, PathRole::Source, e);
-    let mut stream = parent.open_read_stream(remote_path).await.map_err(remote_error)?;
+    let mut stream = parent
+        .open_read_stream(&AppPath::legacy_unchecked(remote_path))
+        .await
+        .map_err(remote_error)?;
     let mut file = tokio::fs::File::create(local_working).await.map_err(local_error)?;
 
     while let Some(chunk) = stream.next_chunk().await {
@@ -307,7 +311,7 @@ async fn upload_archive(
     progress_observer: Option<&RemoteProgressObserver>,
 ) -> Result<(), StepError> {
     let stream = local
-        .open_read_stream(local_working)
+        .open_read_stream(&AppPath::legacy_unchecked(local_working))
         .await
         .map_err(|e| StepError::Ended(io_op(&local_working.display().to_string(), &e.to_string())))?;
 
@@ -339,7 +343,7 @@ async fn upload_archive(
 
     let written = match parent
         .write_from_stream(
-            staged.target(),
+            &AppPath::legacy_unchecked(staged.target()),
             staged.write_mode(),
             cmdr_fs::volume::StreamLength::Known(size),
             stream,
@@ -457,7 +461,7 @@ async fn reap_remote_temps(
     // The mint's own prefix, so a temp shortened to fit is matched too.
     let prefix = temp_sibling_prefix(&file_name.to_string_lossy());
 
-    let entries = match parent.list_directory(dir, None).await {
+    let entries = match parent.list_directory(&AppPath::legacy_unchecked(dir), None).await {
         Ok(entries) => entries,
         Err(err) => {
             log::debug!(target: "archive_remote_edit", "skipping remote temp reap ({}): {err}", LogPrivate::dir_path(dir), err = LogError(&err));
@@ -481,10 +485,12 @@ async fn reap_remote_temps(
             .modified_at
             .is_some_and(|modified| now_secs.saturating_sub(modified) >= min_age_secs);
         let temp_path = dir.join(&entry.name);
-        if !old_enough || in_flight_temps::is_recorded_on(state, parent_volume_id, parent.root(), &temp_path) {
+        if !old_enough
+            || in_flight_temps::is_recorded_on(state, parent_volume_id, &parent.root().as_std_legacy(), &temp_path)
+        {
             continue;
         }
-        if let Err(err) = parent.delete(&temp_path).await {
+        if let Err(err) = parent.delete(&AppPath::legacy_unchecked(&temp_path)).await {
             log::debug!(target: "archive_remote_edit", "couldn't reap remote temp {}: {err}", LogPrivate::file_path(&temp_path), err = LogError(&err));
         }
     }

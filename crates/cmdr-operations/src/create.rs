@@ -20,6 +20,7 @@
 //! serves: it's the listing-cache half of "a new entry appeared", and keeping it
 //! next to the create keeps the command a pure pass-through.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use cmdr_operation_log::types::OperationId;
@@ -458,8 +459,8 @@ async fn create_entry_core_on(
         host.announce(&new_path);
 
         let created = match kind {
-            CreatedKind::Folder => volume.create_directory(&new_path).await,
-            CreatedKind::EmptyFile => volume.create_file(&new_path, b"").await,
+            CreatedKind::Folder => volume.create_directory(&AppPath::legacy_unchecked(&new_path)).await,
+            CreatedKind::EmptyFile => volume.create_file(&AppPath::legacy_unchecked(&new_path), b"").await,
         };
         created.map_err(|e| named_conflict_or_volume(e, name))?;
 

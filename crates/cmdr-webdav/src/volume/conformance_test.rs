@@ -11,6 +11,7 @@
 //! contracts `volume::conformance` holds every backend to. WebDAV has no
 //! in-process double, and the answers that matter are the server's.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::volume::Volume;
@@ -35,12 +36,12 @@ async fn stock_server_with_scratch() -> (WebdavVolume, PathBuf) {
 async fn clean(volume: &WebdavVolume, dir: &Path) {
     fn remove<'a>(volume: &'a WebdavVolume, path: &'a Path) -> std::pin::Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
         Box::pin(async move {
-            if let Ok(entries) = volume.list_directory(path, None).await {
+            if let Ok(entries) = volume.list_directory(&AppPath::legacy_unchecked(path), None).await {
                 for entry in entries {
                     remove(volume, &path.join(&entry.name)).await;
                 }
             }
-            let _ = volume.delete(path).await;
+            let _ = volume.delete(&AppPath::legacy_unchecked(path)).await;
         })
     }
     remove(volume, dir).await;
@@ -54,9 +55,12 @@ async fn a_forceless_rename_refuses_an_existing_destination() {
     let (volume, dir) = stock_server_with_scratch().await;
     let source = dir.join("source.txt");
     let target = dir.join("target.txt");
-    volume.create_file(&source, b"source").await.expect(FIXTURE);
     volume
-        .create_file(&target, b"the user's target file")
+        .create_file(&AppPath::legacy_unchecked(&source), b"source")
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&target), b"the user's target file")
         .await
         .expect(FIXTURE);
 
@@ -74,11 +78,23 @@ async fn a_forced_rename_keeps_a_non_empty_folder() {
     let source = dir.join("source.txt");
     let source_dir = dir.join("source-dir");
     let album = dir.join("album");
-    volume.create_file(&source, b"source").await.expect(FIXTURE);
-    volume.create_directory(&source_dir).await.expect(FIXTURE);
-    volume.create_directory(&album).await.expect(FIXTURE);
     volume
-        .create_file(&album.join("source.txt"), b"the user's photo")
+        .create_file(&AppPath::legacy_unchecked(&source), b"source")
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&source_dir))
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&album))
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_file(
+            &AppPath::legacy_unchecked(&album.join("source.txt")),
+            b"the user's photo",
+        )
         .await
         .expect(FIXTURE);
 
@@ -96,10 +112,13 @@ async fn a_forced_rename_keeps_a_non_empty_folder() {
 async fn listing_dates_honor_the_shared_claim_contract() {
     let (volume, dir) = stock_server_with_scratch().await;
     volume
-        .create_file(&dir.join("dated.txt"), b"bytes")
+        .create_file(&AppPath::legacy_unchecked(&dir.join("dated.txt")), b"bytes")
         .await
         .expect(FIXTURE);
-    volume.create_directory(&dir.join("folder")).await.expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&dir.join("folder")))
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_listing_dates_are_claimed(&volume, &dir).await;
 
@@ -113,7 +132,10 @@ async fn create_file_refuses_to_clobber() {
     // or a probe, so this is the cell that notices either going missing.
     let (volume, dir) = stock_server_with_scratch().await;
     let notes = dir.join("notes.txt");
-    volume.create_file(&notes, b"the user's notes").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&notes), b"the user's notes")
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_create_file_refuses_to_clobber(&volume, &notes, b"new").await;
 
@@ -127,7 +149,10 @@ async fn write_from_stream_create_new_refuses_to_clobber() {
     let (volume, dir) = stock_server_with_scratch().await;
     let notes = dir.join("notes.txt");
     let fresh = dir.join("fresh.txt");
-    volume.create_file(&notes, b"the user's notes").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&notes), b"the user's notes")
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_write_from_stream_create_new_refuses_to_clobber(&volume, &notes, &fresh, b"new").await;
 
@@ -140,7 +165,10 @@ async fn unknown_write_is_refused_before_io() {
     let (volume, dir) = stock_server_with_scratch().await;
     let notes = dir.join("notes.txt");
     let original = b"the user's notes";
-    volume.create_file(&notes, original).await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&notes), original)
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_unknown_write_is_refused_before_io(&volume, &notes, original).await;
 
@@ -156,7 +184,10 @@ async fn create_directory_all_reports_an_existing_directory_honestly() {
     // on the mapper reading that as "already there" rather than as a refusal.
     let (volume, dir) = stock_server_with_scratch().await;
     let album = dir.join("album");
-    volume.create_directory(&album).await.expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&album))
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_create_directory_all_reports_an_existing_dir_honestly(&volume, &album).await;
 
@@ -172,7 +203,10 @@ async fn create_directory_all_refuses_a_file_in_the_way() {
     // Cmdr to create as not found.
     let (volume, dir) = stock_server_with_scratch().await;
     let notes = dir.join("notes");
-    volume.create_file(&notes, b"the user's notes").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&notes), b"the user's notes")
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_create_directory_all_refuses_a_file_in_the_way(&volume, &notes).await;
 
@@ -186,9 +220,12 @@ async fn delete_leaves_a_non_empty_directory_intact() {
     // the only depth it accepts), so this refusal is entirely the backend's.
     let (volume, dir) = stock_server_with_scratch().await;
     let album = dir.join("album");
-    volume.create_directory(&album).await.expect(FIXTURE);
     volume
-        .create_file(&album.join("keep.txt"), b"content")
+        .create_directory(&AppPath::legacy_unchecked(&album))
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&album.join("keep.txt")), b"content")
         .await
         .expect(FIXTURE);
 
@@ -212,7 +249,11 @@ async fn a_read_stream_reports_the_listed_date() {
     }
     let volume = connect_fixture("APACHE", 13480).await;
 
-    conformance::assert_read_stream_reports_the_listed_date(&volume, &volume.root().join(FIXTURE_DATED_FILE)).await;
+    conformance::assert_read_stream_reports_the_listed_date(
+        &volume,
+        &volume.root().as_std_legacy().join(FIXTURE_DATED_FILE),
+    )
+    .await;
 }
 
 /// Apache has no `nc:creation_time`, so its connect probe says it keeps no
@@ -228,13 +269,20 @@ async fn apache_keeps_no_creation_dates_and_says_so() {
     assert_eq!(volume.metadata_caps(), cmdr_fs::metadata::MetadataCaps::NONE);
 
     let folder = dir.join("born");
-    volume.create_directory(&folder).await.expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(&folder))
+        .await
+        .expect(FIXTURE);
     let carried = cmdr_fs::metadata::CarriedMetadata {
         created: Some(std::time::UNIX_EPOCH + std::time::Duration::from_secs(conformance::BIRTH_SECS)),
         ..cmdr_fs::metadata::CarriedMetadata::default()
     };
     let report = volume
-        .apply_metadata(&folder, &carried, Some(std::time::SystemTime::now()))
+        .apply_metadata(
+            &AppPath::legacy_unchecked(&folder),
+            &carried,
+            Some(std::time::SystemTime::now()),
+        )
         .await;
     assert!(
         report.holds_none(),
@@ -258,24 +306,31 @@ async fn apache_stores_no_date_so_a_copy_onto_it_carries_its_own() {
         return;
     }
     let (volume, dir) = stock_server_with_scratch().await;
-    let seeded = volume.root().join(FIXTURE_DATED_FILE);
+    let seeded = volume.root().as_std_legacy().join(FIXTURE_DATED_FILE);
     let copy = dir.join("copy.txt");
 
-    let stream = volume.open_read_stream(&seeded).await.expect(FIXTURE);
+    let stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(&seeded))
+        .await
+        .expect(FIXTURE);
     assert!(
         stream.modified_at().is_some(),
         "the seed's stream must carry its 2021 date, or this cell proves nothing about the destination"
     );
     let length = stream.total_size();
     volume
-        .write_from_stream(&copy, cmdr_fs::volume::WriteMode::CreateNew, length, stream, &|_| {
-            std::ops::ControlFlow::Continue(())
-        })
+        .write_from_stream(
+            &AppPath::legacy_unchecked(&copy),
+            cmdr_fs::volume::WriteMode::CreateNew,
+            length,
+            stream,
+            &|_| std::ops::ControlFlow::Continue(()),
+        )
         .await
         .expect("a date the server ignores must never fail the copy");
 
     let listed = volume
-        .get_metadata(&copy)
+        .get_metadata(&AppPath::legacy_unchecked(&copy))
         .await
         .expect(FIXTURE)
         .modified_at
@@ -312,7 +367,10 @@ async fn export_matches_the_bytes_offered() {
     let (volume, dir) = stock_server_with_scratch().await;
     let file = dir.join("exported.txt");
     let content = b"the bytes a copy would move";
-    volume.create_file(&file, content).await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&file), content)
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_export_matches_the_bytes_offered(&volume, &file, content).await;
 
@@ -324,7 +382,10 @@ async fn export_matches_the_bytes_offered() {
 async fn copy_within_matches_what_is_offered() {
     let (volume, dir) = stock_server_with_scratch().await;
     let from = dir.join("original.txt");
-    volume.create_file(&from, b"copied on the server").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&from), b"copied on the server")
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_copy_within_matches_what_is_offered(&volume, &from, &dir.join("duplicate.txt")).await;
 
@@ -366,7 +427,10 @@ async fn conflict_scan_reads_a_missing_destination_as_empty() {
 #[ignore = "needs the WebDAV fixture stack: apps/desktop/test/webdav-servers/start.sh (webdav-fixture)"]
 async fn a_batch_scan_stops_when_it_is_told_to() {
     let (volume, dir) = stock_server_with_scratch().await;
-    volume.create_file(&dir.join("a.txt"), b"a").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&dir.join("a.txt")), b"a")
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_batch_scan_stops_when_told(&volume, &dir).await;
 
@@ -377,8 +441,14 @@ async fn a_batch_scan_stops_when_it_is_told_to() {
 #[ignore = "needs the WebDAV fixture stack: apps/desktop/test/webdav-servers/start.sh (webdav-fixture)"]
 async fn a_batch_scan_asks_its_boundary_inside_the_walk() {
     let (volume, dir) = stock_server_with_scratch().await;
-    volume.create_file(&dir.join("a.txt"), b"a").await.expect(FIXTURE);
-    volume.create_file(&dir.join("b.txt"), b"bb").await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&dir.join("a.txt")), b"a")
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(&dir.join("b.txt")), b"bb")
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_batch_scan_asks_inside_the_walk(&volume, &dir, 3).await;
 

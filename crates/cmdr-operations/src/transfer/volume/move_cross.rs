@@ -16,6 +16,7 @@
 //! Semantics, flows, and decisions: `../DETAILS.md` § "Volume copy + move".
 
 use crate::rt::Instant;
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -113,7 +114,7 @@ pub async fn move_volumes_with_progress(
         .resolve_on(state.scope().host(), &dest_volume, dest_path)
         .await;
     dest_volume
-        .create_directory_all(dest_path)
+        .create_directory_all(&AppPath::legacy_unchecked(dest_path))
         .await
         .map_err(|e| WriteFailure::from_volume(dest_path, PathRole::Destination, e))?;
 

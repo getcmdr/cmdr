@@ -3,6 +3,7 @@
 //! `use super::test_support::*;` (these helpers and the common types), so the test
 //! bodies read the same as when they lived in one file.
 
+use cmdr_fs::app_path::AppPath;
 use uuid::Uuid;
 
 // Common re-exports the test bodies reference by bare name (they also serve
@@ -223,10 +224,13 @@ pub(super) async fn remote_zip(
     // (see `unique_lane_id` for the isolation rationale).
     let parent = InMemoryVolume::new("Remote").with_lane_key(id.clone());
     if let Some(dir) = archive_path.parent() {
-        parent.create_directory(dir).await.expect("seed parent dir");
+        parent
+            .create_directory(&AppPath::legacy_unchecked(dir))
+            .await
+            .expect("seed parent dir");
     }
     parent
-        .create_file(archive_path, &zip_bytes(entries))
+        .create_file(&AppPath::legacy_unchecked(archive_path), &zip_bytes(entries))
         .await
         .expect("seed remote zip");
     (id, Arc::new(parent))
@@ -249,10 +253,13 @@ pub(super) async fn register_remote_source(
             for comp in parent.strip_prefix("/").unwrap_or(parent).components() {
                 acc = acc.join(comp);
                 // Ignore "already exists" for shared ancestors across files.
-                let _ = source.create_directory(&acc).await;
+                let _ = source.create_directory(&AppPath::legacy_unchecked(&acc)).await;
             }
         }
-        source.create_file(&path, bytes).await.expect("seed remote source file");
+        source
+            .create_file(&AppPath::legacy_unchecked(&path), bytes)
+            .await
+            .expect("seed remote source file");
     }
     let source = Arc::new(source);
     let id = format!("remote-source-{}", Uuid::new_v4());
@@ -269,7 +276,7 @@ pub(super) async fn assert_upload_reported_honestly(
     archive_path: &Path,
 ) {
     let uploaded_size = parent
-        .get_metadata(archive_path)
+        .get_metadata(&AppPath::legacy_unchecked(archive_path))
         .await
         .expect("stat the published archive")
         .size
@@ -297,7 +304,10 @@ pub(super) async fn assert_upload_reported_honestly(
 
 /// Streams the archive back out of a (remote) parent and returns one entry's bytes.
 pub(super) async fn read_remote_entry(parent: &dyn Volume, archive_path: &Path, name: &str) -> Option<Vec<u8>> {
-    let mut stream = parent.open_read_stream(archive_path).await.ok()?;
+    let mut stream = parent
+        .open_read_stream(&AppPath::legacy_unchecked(archive_path))
+        .await
+        .ok()?;
     let mut bytes = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         bytes.extend_from_slice(&chunk.ok()?);

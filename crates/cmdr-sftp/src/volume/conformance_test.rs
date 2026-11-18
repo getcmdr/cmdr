@@ -12,6 +12,7 @@
 //! five contracts `volume::conformance` holds every backend to. SFTP has no
 //! in-process double, and the answers that matter are the server's.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use cmdr_fs::volume::Volume;
@@ -32,7 +33,10 @@ async fn stock_server_with_scratch(what: &str) -> (SftpVolume, String) {
     let volume = connect_fixture(&host, params).await;
     let dir = scratch_dir(what);
     clean_scratch(&volume, &dir).await;
-    volume.create_directory(Path::new(&dir)).await.expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .expect(FIXTURE);
     (volume, dir)
 }
 
@@ -43,11 +47,14 @@ async fn stock_server_with_scratch(what: &str) -> (SftpVolume, String) {
 async fn listing_dates_honor_the_shared_claim_contract() {
     let (volume, dir) = stock_server_with_scratch("listed-dates").await;
     volume
-        .create_file(Path::new(&format!("{dir}/dated.txt")), b"bytes")
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{dir}/dated.txt"))),
+            b"bytes",
+        )
         .await
         .expect(FIXTURE);
     volume
-        .create_directory(Path::new(&format!("{dir}/folder")))
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/folder"))))
         .await
         .expect(FIXTURE);
 
@@ -67,9 +74,15 @@ async fn a_forceless_rename_refuses_an_existing_destination_on_a_posix_rename_se
     let (volume, dir) = stock_server_with_scratch("rename-no-clobber").await;
     let source = format!("{dir}/source.txt");
     let target = format!("{dir}/target.txt");
-    volume.create_file(Path::new(&source), b"source").await.expect(FIXTURE);
     volume
-        .create_file(Path::new(&target), b"the user's target file")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&source)), b"source")
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&target)),
+            b"the user's target file",
+        )
         .await
         .expect(FIXTURE);
 
@@ -86,7 +99,7 @@ async fn create_file_refuses_to_clobber() {
     let (volume, dir) = stock_server_with_scratch("create-file-no-clobber").await;
     let notes = format!("{dir}/notes.txt");
     volume
-        .create_file(Path::new(&notes), b"the user's notes")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&notes)), b"the user's notes")
         .await
         .expect(FIXTURE);
 
@@ -103,7 +116,7 @@ async fn write_from_stream_create_new_refuses_to_clobber() {
     let notes = format!("{dir}/notes.txt");
     let fresh = format!("{dir}/fresh.txt");
     volume
-        .create_file(Path::new(&notes), b"the user's notes")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&notes)), b"the user's notes")
         .await
         .expect(FIXTURE);
 
@@ -128,7 +141,10 @@ async fn create_directory_all_reports_an_existing_directory_honestly() {
     // probe that resolves it.
     let (volume, dir) = stock_server_with_scratch("mkdir-p-honesty").await;
     let album = format!("{dir}/album");
-    volume.create_directory(Path::new(&album)).await.expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&album)))
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_create_directory_all_reports_an_existing_dir_honestly(&volume, Path::new(&album)).await;
 
@@ -146,7 +162,7 @@ async fn create_directory_all_refuses_a_file_in_the_way() {
     let (volume, dir) = stock_server_with_scratch("mkdir-p-file-in-the-way").await;
     let notes = format!("{dir}/notes");
     volume
-        .create_file(Path::new(&notes), b"the user's notes")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&notes)), b"the user's notes")
         .await
         .expect(FIXTURE);
 
@@ -164,7 +180,10 @@ async fn create_directory_all_goes_through_a_link_to_a_folder() {
     let (volume, dir) = stock_server_with_scratch("mkdir-p-through-a-link").await;
     let real = format!("{dir}/real");
     let link = format!("{dir}/link");
-    volume.create_directory(Path::new(&real)).await.expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&real)))
+        .await
+        .expect(FIXTURE);
     let session = volume.clone_session().await.expect(FIXTURE);
     session
         .sftp()
@@ -185,7 +204,10 @@ async fn create_directory_all_goes_through_a_link_to_a_folder() {
 
     // The link first: it's a leaf to `delete`, and what was made through it
     // lives in `real`.
-    volume.delete(Path::new(&link)).await.expect(FIXTURE);
+    volume
+        .delete(&AppPath::legacy_unchecked(Path::new(&link)))
+        .await
+        .expect(FIXTURE);
     clean_scratch_deep(&volume, &dir).await;
 }
 
@@ -195,9 +217,15 @@ async fn delete_of_a_link_to_a_folder_removes_the_link_alone() {
     let (volume, dir) = stock_server_with_scratch("delete-a-link").await;
     let real = format!("{dir}/real");
     let link = format!("{dir}/link");
-    volume.create_directory(Path::new(&real)).await.expect(FIXTURE);
     volume
-        .create_file(Path::new(&format!("{real}/keep.txt")), b"keep")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&real)))
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{real}/keep.txt"))),
+            b"keep",
+        )
         .await
         .expect(FIXTURE);
     let session = volume.clone_session().await.expect(FIXTURE);
@@ -229,12 +257,21 @@ async fn a_link_to_a_folder_moves_as_the_link() {
     let real = format!("{dir}/real");
     let link = format!("{dir}/link");
     let moved = format!("{dir}/moved");
-    volume.create_directory(Path::new(&real)).await.expect(FIXTURE);
     volume
-        .create_file(Path::new(&format!("{real}/keep.txt")), b"keep")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&real)))
         .await
         .expect(FIXTURE);
-    volume.create_directory(Path::new(&moved)).await.expect(FIXTURE);
+    volume
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{real}/keep.txt"))),
+            b"keep",
+        )
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&moved)))
+        .await
+        .expect(FIXTURE);
     volume
         .create_symlink_to_app_path(Path::new(&link), Path::new(&real))
         .await
@@ -265,16 +302,24 @@ async fn a_link_lands_verbatim() {
 async fn delete_leaves_a_non_empty_directory_intact() {
     let (volume, dir) = stock_server_with_scratch("delete-non-recursive").await;
     let album = format!("{dir}/album");
-    volume.create_directory(Path::new(&album)).await.expect(FIXTURE);
     volume
-        .create_file(Path::new(&format!("{album}/keep.txt")), b"content")
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&album)))
+        .await
+        .expect(FIXTURE);
+    volume
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("{album}/keep.txt"))),
+            b"content",
+        )
         .await
         .expect(FIXTURE);
 
     conformance::assert_delete_leaves_a_non_empty_dir_intact(&volume, Path::new(&album), "keep.txt").await;
 
-    let _ = volume.delete(Path::new(&format!("{album}/keep.txt"))).await;
-    let _ = volume.delete(Path::new(&album)).await;
+    let _ = volume
+        .delete(&AppPath::legacy_unchecked(Path::new(&format!("{album}/keep.txt"))))
+        .await;
+    let _ = volume.delete(&AppPath::legacy_unchecked(Path::new(&album))).await;
     clean_scratch(&volume, &dir).await;
 }
 
@@ -304,7 +349,10 @@ async fn export_matches_the_bytes_offered() {
     let (volume, dir) = stock_server_with_scratch("export-handshake").await;
     let file = format!("{dir}/exported.txt");
     let content = b"the bytes a copy would move";
-    volume.create_file(Path::new(&file), content).await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(Path::new(&file)), content)
+        .await
+        .expect(FIXTURE);
 
     conformance::assert_export_matches_the_bytes_offered(&volume, Path::new(&file), content).await;
 
@@ -317,7 +365,7 @@ async fn copy_within_matches_what_is_offered() {
     let (volume, dir) = stock_server_with_scratch("copy-within-handshake").await;
     let from = format!("{dir}/original.txt");
     volume
-        .create_file(Path::new(&from), b"copied on the server")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&from)), b"copied on the server")
         .await
         .expect(FIXTURE);
 
@@ -416,7 +464,7 @@ async fn conflict_scan_reads_a_missing_destination_as_empty() {
 async fn a_batch_scan_stops_when_it_is_told_to() {
     let (volume, dir) = stock_server_with_scratch("scan-stop-told").await;
     volume
-        .create_file(Path::new(&format!("{dir}/a.txt")), b"a")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/a.txt"))), b"a")
         .await
         .expect("seed a file");
 
@@ -430,11 +478,11 @@ async fn a_batch_scan_stops_when_it_is_told_to() {
 async fn a_batch_scan_asks_its_boundary_inside_the_walk() {
     let (volume, dir) = stock_server_with_scratch("scan-stop-per-entry").await;
     volume
-        .create_file(Path::new(&format!("{dir}/a.txt")), b"a")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/a.txt"))), b"a")
         .await
         .expect("seed a file");
     volume
-        .create_file(Path::new(&format!("{dir}/b.txt")), b"bb")
+        .create_file(&AppPath::legacy_unchecked(Path::new(&format!("{dir}/b.txt"))), b"bb")
         .await
         .expect("seed a second file");
 

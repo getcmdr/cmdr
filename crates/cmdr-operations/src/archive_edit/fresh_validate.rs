@@ -2,6 +2,7 @@
 //! the three byte counts agree, and the archive reads back as exactly the
 //! planned tree.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::{BTreeSet, HashMap};
 use std::path::Path;
 use std::sync::Arc;
@@ -146,7 +147,7 @@ pub(super) async fn validate_stage(
     expected: &ExpectedIndex,
 ) -> Result<(), StepError> {
     let meta = volume
-        .get_metadata(path)
+        .get_metadata(&AppPath::legacy_unchecked(path))
         .await
         .map_err(|error| unreadable(path, error))?;
     let stat_bytes = meta.size.unwrap_or(u64::MAX);
@@ -165,7 +166,7 @@ pub(super) async fn validate_stage(
         .flatten()
         .map_or_else(
             || path.to_path_buf(),
-            |root| cmdr_fs::volume::root_anchored(&root, path),
+            |root| cmdr_fs::volume::root_anchored(&root.as_std_legacy(), path),
         );
     let archive = ArchiveVolume::new(
         Arc::clone(volume),

@@ -11,6 +11,7 @@
 
 use crate::ResticVolume;
 use bytes::Bytes;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::Volume;
 use rustic_core::jiff::Timestamp;
 use rustic_core::jiff::tz::TimeZone;
@@ -154,14 +155,20 @@ impl FixtureRepo {
         dirs.sort();
         dirs.dedup();
         for dir in dirs {
-            if !volume.exists(&dir).await {
-                volume.create_directory(&dir).await.expect("fixture folder");
+            if !volume.exists(&AppPath::legacy_unchecked(&dir)).await {
+                volume
+                    .create_directory(&AppPath::legacy_unchecked(&dir))
+                    .await
+                    .expect("fixture folder");
             }
         }
         for (path, bytes) in files {
             let path = root.join(path);
-            if !volume.exists(&path).await {
-                volume.create_file(&path, &bytes).await.expect("fixture file");
+            if !volume.exists(&AppPath::legacy_unchecked(&path)).await {
+                volume
+                    .create_file(&AppPath::legacy_unchecked(&path), &bytes)
+                    .await
+                    .expect("fixture file");
             }
         }
     }
@@ -185,14 +192,25 @@ impl FixtureRepo {
         let kept: Vec<PathBuf> = self.files().into_iter().map(|(path, _)| root.join(path)).collect();
         let mut dirs = vec![root.join("index")];
         let data = root.join("data");
-        for entry in volume.list_directory(&data, None).await.expect("data/ lists") {
+        for entry in volume
+            .list_directory(&AppPath::legacy_unchecked(&data), None)
+            .await
+            .expect("data/ lists")
+        {
             dirs.push(data.join(entry.name));
         }
         for dir in dirs {
-            for entry in volume.list_directory(&dir, None).await.expect("a repo folder lists") {
+            for entry in volume
+                .list_directory(&AppPath::legacy_unchecked(&dir), None)
+                .await
+                .expect("a repo folder lists")
+            {
                 let path = dir.join(&entry.name);
                 if !entry.is_directory && !kept.contains(&path) {
-                    volume.delete(&path).await.expect("a pruned file deletes");
+                    volume
+                        .delete(&AppPath::legacy_unchecked(&path))
+                        .await
+                        .expect("a pruned file deletes");
                 }
             }
         }

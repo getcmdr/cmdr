@@ -186,10 +186,10 @@ impl Viewer {
     /// The root of the volume a document lives on, which its relative references can't climb
     /// past. The local drive's `/` when the volume is gone.
     fn volume_root(&self, volume_id: &str) -> PathBuf {
-        self.host()
-            .volumes
-            .get(volume_id)
-            .map_or_else(|| PathBuf::from("/"), |volume| volume.root().to_path_buf())
+        self.host().volumes.get(volume_id).map_or_else(
+            || PathBuf::from("/"),
+            |volume| volume.root().as_std_legacy().to_path_buf(),
+        )
     }
 
     /// Lets this session's document load its web images. Until it's called, a remote

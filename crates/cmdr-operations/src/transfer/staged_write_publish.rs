@@ -14,6 +14,7 @@
 //! nothing. The caller waits for the destination and then settles
 //! ([`CutOffPublish::resume`]) or gives up ([`CutOffPublish::give_up`]).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -143,7 +144,14 @@ impl Publish {
     /// The rename that publishes the bytes.
     async fn rename(self, dest_volume: &Arc<dyn Volume>) -> Result<(), PublishError> {
         let force = matches!(self.replacing, Replacing::Atomically);
-        match dest_volume.rename(self.temp.path(), &self.final_path, force).await {
+        match dest_volume
+            .rename(
+                &AppPath::legacy_unchecked(self.temp.path()),
+                &AppPath::legacy_unchecked(&self.final_path),
+                force,
+            )
+            .await
+        {
             Ok(()) => {
                 self.published(dest_volume).await;
                 Ok(())
@@ -184,7 +192,7 @@ impl Publish {
                 .map(|kept_at| RecoveredOriginal::new(&self.final_path, &kept_at)),
             Replacing::SetAside(None) | Replacing::Atomically => None,
         };
-        match dest_volume.delete(self.temp.path()).await {
+        match dest_volume.delete(&AppPath::legacy_unchecked(self.temp.path())).await {
             Ok(()) | Err(VolumeError::NotFound(_)) => super::super::super::in_flight_temps::retire_temp(
                 &self.state,
                 home_of(self.home_volume.as_deref()),
@@ -260,7 +268,10 @@ impl CutOffPublish {
     ///   unless the original couldn't go back (then it's reported where it is).
     pub(crate) async fn resume(self, dest_volume: &Arc<dyn Volume>) -> Republished {
         let Self { publish, error } = self;
-        match dest_volume.get_metadata(publish.temp.path()).await {
+        match dest_volume
+            .get_metadata(&AppPath::legacy_unchecked(publish.temp.path()))
+            .await
+        {
             Ok(entry) if !entry.is_directory && !entry.is_symlink && entry.size == Some(publish.size) => {
                 publish.rename(dest_volume).await.into()
             }

@@ -25,6 +25,7 @@
 //! bounds concurrent TRANSFERS is `max_concurrent_ops`, which the app's settings
 //! table answers with 1 for this backend.
 
+use cmdr_fs::app_path::BridgedPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -76,7 +77,7 @@ pub struct AdbVolume {
     /// `adb://<serial>`, from `adb_app_root`: what the app addresses the device's
     /// `/` by. A plain field so `root()` stays a borrow, and spelled without a
     /// trailing slash, the way the device provider's row spells it.
-    root: PathBuf,
+    root: BridgedPath,
     /// The translation between app paths and device paths (`paths.rs`).
     paths: RemoteRoot,
     inner: Arc<AdbVolumeInner>,
@@ -262,7 +263,7 @@ pub async fn connect_adb_volume(
     let (root, paths) = app_root_for(&params.serial);
     Ok(AdbVolume {
         name,
-        root,
+        root: BridgedPath::new(root),
         paths,
         inner,
     })

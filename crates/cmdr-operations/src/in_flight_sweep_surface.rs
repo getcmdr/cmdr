@@ -2,6 +2,7 @@
 //! filesystem or at one volume's own namespace ([`Surface`]), and the answers
 //! they give. Split out of `in_flight_sweep.rs`, which holds the rules.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -76,7 +77,7 @@ impl Surface {
                     Standing::Unknown
                 }
             },
-            Self::Volume(volume) => match volume.get_metadata(path).await {
+            Self::Volume(volume) => match volume.get_metadata(&AppPath::legacy_unchecked(path)).await {
                 Ok(entry) if entry.is_directory || entry.is_symlink => Standing::Other,
                 // A backend that can't say how big a file is can't prove a
                 // replacement finished, so the aside is kept.
@@ -100,7 +101,7 @@ impl Surface {
                     Removal::Refused
                 }
             },
-            Self::Volume(volume) => match volume.delete(path).await {
+            Self::Volume(volume) => match volume.delete(&AppPath::legacy_unchecked(path)).await {
                 Ok(()) => Removal::Removed,
                 Err(VolumeError::NotFound(_)) => Removal::AlreadyGone,
                 Err(e) => {
@@ -178,7 +179,10 @@ impl Surface {
             },
             // `force = false` is the backends' no-clobber rename, the same one
             // `displaced_destination` leans on.
-            Self::Volume(volume) => match volume.rename(from, to, false).await {
+            Self::Volume(volume) => match volume
+                .rename(&AppPath::legacy_unchecked(from), &AppPath::legacy_unchecked(to), false)
+                .await
+            {
                 Ok(()) => Renaming::Renamed,
                 Err(VolumeError::AlreadyExists(_)) => Renaming::Occupied,
                 Err(e) => {

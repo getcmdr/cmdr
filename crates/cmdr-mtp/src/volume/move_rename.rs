@@ -2,6 +2,7 @@
 //! the item's OLD name: renamed where it is first, then moved, so the move never
 //! meets a name it would replace. `DETAILS.md` § "A move that also renames".
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -34,7 +35,7 @@ impl MtpVolume {
             .into_owned();
         let source_folder = cmdr_fs::twin_path::unpicked(from).parent().map(Path::to_path_buf);
         let new_name_taken_here = match &source_folder {
-            Some(folder) => self.exists(&folder.join(to_name)).await,
+            Some(folder) => self.exists(&AppPath::legacy_unchecked(&folder.join(to_name))).await,
             None => true,
         };
         let interim = if new_name_taken_here {

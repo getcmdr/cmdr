@@ -7,6 +7,7 @@ use super::*;
 use crate::conflict::apply_to_all_record;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
 use std::sync::Arc;
 
@@ -24,14 +25,14 @@ async fn resolve_file_over_folder(
 ) -> (Arc<InMemoryVolume>, Option<ResolvedConflict>) {
     let source = Arc::new(InMemoryVolume::new("source"));
     source
-        .create_file(Path::new("/notes"), b"incoming bytes")
+        .create_file(app_path!("/notes"), b"incoming bytes")
         .await
         .unwrap();
     let source_dyn: Arc<dyn Volume> = source.clone();
 
     let dest = Arc::new(InMemoryVolume::new("dest"));
-    dest.create_directory(Path::new("/notes")).await.unwrap();
-    dest.create_file(Path::new("/notes/precious.txt"), b"precious user data")
+    dest.create_directory(app_path!("/notes")).await.unwrap();
+    dest.create_file(app_path!("/notes/precious.txt"), b"precious user data")
         .await
         .unwrap();
     let dest_dyn: Arc<dyn Volume> = dest.clone();
@@ -80,11 +81,11 @@ async fn a_blanket_overwrite_never_clears_a_folder_a_file_landed_on() {
             "{policy:?} across types must resolve to Skip, got {resolved:?}"
         );
         assert!(
-            dest.exists(Path::new("/notes/precious.txt")).await,
+            dest.exists(app_path!("/notes/precious.txt")).await,
             "{policy:?} must not recursively delete the destination folder"
         );
         assert!(
-            dest.exists(Path::new("/notes")).await,
+            dest.exists(app_path!("/notes")).await,
             "{policy:?} must leave the destination folder standing"
         );
     }
@@ -99,15 +100,15 @@ async fn a_blanket_overwrite_never_deletes_a_file_a_folder_landed_on() {
         ConflictResolution::OverwriteOlder,
     ] {
         let source = Arc::new(InMemoryVolume::new("source"));
-        source.create_directory(Path::new("/thing")).await.unwrap();
+        source.create_directory(app_path!("/thing")).await.unwrap();
         source
-            .create_file(Path::new("/thing/inside.txt"), b"incoming")
+            .create_file(app_path!("/thing/inside.txt"), b"incoming")
             .await
             .unwrap();
         let source_dyn: Arc<dyn Volume> = source.clone();
 
         let dest = Arc::new(InMemoryVolume::new("dest"));
-        dest.create_file(Path::new("/thing"), b"precious user bytes")
+        dest.create_file(app_path!("/thing"), b"precious user bytes")
             .await
             .unwrap();
         let dest_dyn: Arc<dyn Volume> = dest.clone();
@@ -142,7 +143,7 @@ async fn a_blanket_overwrite_never_deletes_a_file_a_folder_landed_on() {
             "{policy:?} across types must resolve to Skip, got {resolved:?}"
         );
         assert!(
-            dest.exists(Path::new("/thing")).await,
+            dest.exists(app_path!("/thing")).await,
             "{policy:?} must not delete the destination file"
         );
     }
@@ -169,9 +170,9 @@ async fn resolve_file_over_folder_with_latch(
     configured: ConflictResolution,
 ) -> (Option<ResolvedConflict>, Arc<InMemoryVolume>) {
     let (source, dest) = file_over_folder_volumes();
-    source.create_file(Path::new("/notes"), b"incoming").await.unwrap();
-    dest.create_directory(Path::new("/notes")).await.unwrap();
-    dest.create_file(Path::new("/notes/precious.txt"), b"precious user data")
+    source.create_file(app_path!("/notes"), b"incoming").await.unwrap();
+    dest.create_directory(app_path!("/notes")).await.unwrap();
+    dest.create_file(app_path!("/notes/precious.txt"), b"precious user data")
         .await
         .unwrap();
     let source_dyn: Arc<dyn Volume> = source.clone();
@@ -229,7 +230,7 @@ async fn a_latched_cross_type_overwrite_all_replaces_the_folder_it_was_answered_
         "an answered 'Overwrite folders with files' must carry, not Skip"
     );
     assert!(
-        !dest.exists(Path::new("/notes/precious.txt")).await,
+        !dest.exists(app_path!("/notes/precious.txt")).await,
         "the folder the person consented to replace must be gone"
     );
 }
@@ -266,7 +267,7 @@ async fn a_latched_same_kind_overwrite_all_never_clears_a_folder_a_file_landed_o
         "the same-kind Overwrite must not reach this clash; the configured Skip decides it"
     );
     assert!(
-        dest.exists(Path::new("/notes/precious.txt")).await,
+        dest.exists(app_path!("/notes/precious.txt")).await,
         "a blanket Overwrite must not recursively delete the destination folder"
     );
 }

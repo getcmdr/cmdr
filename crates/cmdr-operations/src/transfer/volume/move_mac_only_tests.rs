@@ -7,33 +7,34 @@ use super::test_support::make_volumes;
 use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::mac_only_files::MacOnlyFiles;
 use std::time::Duration;
 
 async fn seed(source: &Arc<dyn Volume>) {
-    source.create_directory(Path::new("/work")).await.unwrap();
-    source.create_directory(Path::new("/work/notes")).await.unwrap();
-    source.create_directory(Path::new("/work/only-metadata")).await.unwrap();
+    source.create_directory(app_path!("/work")).await.unwrap();
+    source.create_directory(app_path!("/work/notes")).await.unwrap();
+    source.create_directory(app_path!("/work/only-metadata")).await.unwrap();
     source
-        .create_file(Path::new("/work/.DS_Store"), &[0u8; 64])
+        .create_file(app_path!("/work/.DS_Store"), &[0u8; 64])
         .await
         .unwrap();
     source
-        .create_file(Path::new("/work/._report.txt"), &[0u8; 32])
+        .create_file(app_path!("/work/._report.txt"), &[0u8; 32])
         .await
         .unwrap();
-    source.create_file(Path::new("/work/report.txt"), b"one").await.unwrap();
+    source.create_file(app_path!("/work/report.txt"), b"one").await.unwrap();
     source
-        .create_file(Path::new("/work/notes/.DS_Store"), &[0u8; 64])
-        .await
-        .unwrap();
-    source
-        .create_file(Path::new("/work/notes/todo.md"), b"two")
+        .create_file(app_path!("/work/notes/.DS_Store"), &[0u8; 64])
         .await
         .unwrap();
     source
-        .create_file(Path::new("/work/only-metadata/.DS_Store"), &[0u8; 64])
+        .create_file(app_path!("/work/notes/todo.md"), b"two")
+        .await
+        .unwrap();
+    source
+        .create_file(app_path!("/work/only-metadata/.DS_Store"), &[0u8; 64])
         .await
         .unwrap();
 }
@@ -54,10 +55,10 @@ fn skipping_config() -> VolumeCopyConfig {
 }
 
 async fn assert_lands_without_mac_only_files(dest: &Arc<dyn Volume>) {
-    assert!(dest.exists(Path::new("/work/report.txt")).await);
-    assert!(dest.exists(Path::new("/work/notes/todo.md")).await);
+    assert!(dest.exists(app_path!("/work/report.txt")).await);
+    assert!(dest.exists(app_path!("/work/notes/todo.md")).await);
     assert!(
-        dest.exists(Path::new("/work/only-metadata")).await,
+        dest.exists(app_path!("/work/only-metadata")).await,
         "the folder is the person's"
     );
     for gone in [
@@ -66,7 +67,10 @@ async fn assert_lands_without_mac_only_files(dest: &Arc<dyn Volume>) {
         "/work/notes/.DS_Store",
         "/work/only-metadata/.DS_Store",
     ] {
-        assert!(!dest.exists(Path::new(gone)).await, "{gone} reached the destination");
+        assert!(
+            !dest.exists(&AppPath::legacy_unchecked(Path::new(gone))).await,
+            "{gone} reached the destination"
+        );
     }
 }
 
@@ -94,7 +98,7 @@ async fn a_volume_copy_that_skips_mac_only_files_writes_and_counts_none_of_them(
     let bytes_processed = events.complete.lock_ignore_poison()[0].bytes_processed;
     assert_eq!(bytes_processed, 6, "the totals leave them out too");
     assert!(
-        source.exists(Path::new("/work/.DS_Store")).await,
+        source.exists(app_path!("/work/.DS_Store")).await,
         "a copy never touches the source"
     );
 }
@@ -121,7 +125,7 @@ async fn a_volume_move_that_skips_mac_only_files_leaves_no_husk_in_the_source() 
 
     assert_lands_without_mac_only_files(&dest).await;
     assert!(
-        !source.exists(Path::new("/work")).await,
+        !source.exists(app_path!("/work")).await,
         "the folders moved, so their metadata went with them"
     );
 }
@@ -134,9 +138,9 @@ async fn a_volume_move_keeps_the_metadata_of_a_folder_that_stays() {
     seed(&source).await;
     // Already at the destination, and Skip keeps the source's copy, so its
     // folder stays.
-    dest.create_directory(Path::new("/work")).await.unwrap();
-    dest.create_directory(Path::new("/work/notes")).await.unwrap();
-    dest.create_file(Path::new("/work/notes/todo.md"), b"old")
+    dest.create_directory(app_path!("/work")).await.unwrap();
+    dest.create_directory(app_path!("/work/notes")).await.unwrap();
+    dest.create_file(app_path!("/work/notes/todo.md"), b"old")
         .await
         .unwrap();
 
@@ -159,15 +163,15 @@ async fn a_volume_move_keeps_the_metadata_of_a_folder_that_stays() {
     .expect("the move");
 
     assert!(
-        source.exists(Path::new("/work/notes/todo.md")).await,
+        source.exists(app_path!("/work/notes/todo.md")).await,
         "the Skip kept it"
     );
     assert!(
-        source.exists(Path::new("/work/notes/.DS_Store")).await,
+        source.exists(app_path!("/work/notes/.DS_Store")).await,
         "so its folder keeps its metadata"
     );
     assert!(
-        !source.exists(Path::new("/work/only-metadata")).await,
+        !source.exists(app_path!("/work/only-metadata")).await,
         "a folder that went took its metadata along"
     );
 }

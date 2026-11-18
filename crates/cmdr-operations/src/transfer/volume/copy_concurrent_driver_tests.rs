@@ -33,6 +33,8 @@ use crate::ledger::{WrittenFile, WrittenIdentity};
 use crate::testing::TestOperations;
 use crate::transfer::transfer_driver::LeafProgressLedger;
 use crate::types::{ConflictResolution, WriteOperationError, WriteOperationType};
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::staging::STAGING_TEMP_MARKER;
 use cmdr_fs::volume::{InMemoryVolume, VolumeError, VolumeReadStream};
 use std::collections::HashSet;
@@ -69,8 +71,11 @@ impl Volume for FailReadForPathVolume {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         if path == self.fail_for {
             return Box::pin(async move {
                 Err(VolumeError::IoError {
@@ -79,7 +84,7 @@ impl Volume for FailReadForPathVolume {
                 })
             });
         }
-        self.inner.open_read_stream(path)
+        self.inner.open_read_stream(path_app)
     }
 }
 
@@ -106,8 +111,11 @@ impl Volume for RefuseIsDirectoryForPathVolume {
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         if path == self.fail_for {
             return Box::pin(async move {
                 Err(VolumeError::IoError {
@@ -116,7 +124,7 @@ impl Volume for RefuseIsDirectoryForPathVolume {
                 })
             });
         }
-        self.inner.is_directory(path)
+        self.inner.is_directory(path_app)
     }
 }
 
@@ -277,24 +285,27 @@ async fn merge_batch(n: usize) -> (Arc<InMemoryVolume>, Arc<dyn Volume>, Vec<Pat
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
 
-    source.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
     for i in 0..n {
         source
-            .create_file(Path::new(&format!("/album/new{i}.bin")), &vec![0u8; 20_000])
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/album/new{i}.bin"))),
+                &vec![0u8; 20_000],
+            )
             .await
             .unwrap();
     }
     source
-        .create_file(Path::new("/sib1.bin"), &vec![1u8; 20_000])
+        .create_file(app_path!("/sib1.bin"), &vec![1u8; 20_000])
         .await
         .unwrap();
     source
-        .create_file(Path::new("/sib2.bin"), &vec![2u8; 20_000])
+        .create_file(app_path!("/sib2.bin"), &vec![2u8; 20_000])
         .await
         .unwrap();
 
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(Path::new("/album/sentinel.txt"), b"precious user data")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(app_path!("/album/sentinel.txt"), b"precious user data")
         .await
         .unwrap();
 
@@ -447,9 +458,9 @@ async fn a_failed_directory_source_records_its_files_and_never_its_root() {
 async fn a_swap_whose_stream_fails_leaves_the_original_whole() {
     let engine = TestOperations::new();
     let source_inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source_inner.create_file(Path::new("/a.txt"), b"AAA").await.unwrap();
-    source_inner.create_file(Path::new("/b.txt"), b"BBB-new").await.unwrap();
-    source_inner.create_file(Path::new("/c.txt"), b"CCC").await.unwrap();
+    source_inner.create_file(app_path!("/a.txt"), b"AAA").await.unwrap();
+    source_inner.create_file(app_path!("/b.txt"), b"BBB-new").await.unwrap();
+    source_inner.create_file(app_path!("/c.txt"), b"CCC").await.unwrap();
     let source: Arc<dyn Volume> = Arc::new(FailReadForPathVolume {
         inner: source_inner,
         fail_for: PathBuf::from("/b.txt"),
@@ -458,7 +469,7 @@ async fn a_swap_whose_stream_fails_leaves_the_original_whole() {
     // `/b.txt` clashes, so an Overwrite resolves to a swap — and the stream into
     // its staged temp is the thing that fails.
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest.create_file(Path::new("/b.txt"), b"BBB-old").await.unwrap();
+    dest.create_file(app_path!("/b.txt"), b"BBB-old").await.unwrap();
 
     let sources = vec![
         PathBuf::from("/a.txt"),
@@ -474,7 +485,7 @@ async fn a_swap_whose_stream_fails_leaves_the_original_whole() {
         "the failing source must surface an error"
     );
     let leftovers: Vec<String> = dest
-        .list_directory(Path::new("/"), None)
+        .list_directory(app_path!("/"), None)
         .await
         .unwrap()
         .into_iter()
@@ -484,7 +495,7 @@ async fn a_swap_whose_stream_fails_leaves_the_original_whole() {
     assert!(leftovers.is_empty(), "the write took its own temp away: {leftovers:?}");
     // And the original the Overwrite was replacing is still whole: the temp is
     // what failed, so nothing has swapped over it.
-    let mut stream = dest.open_read_stream(Path::new("/b.txt")).await.unwrap();
+    let mut stream = dest.open_read_stream(app_path!("/b.txt")).await.unwrap();
     assert_eq!(
         stream.next_chunk().await.unwrap().unwrap(),
         b"BBB-old",
@@ -507,7 +518,7 @@ async fn a_swap_whose_stream_fails_leaves_the_original_whole() {
 async fn a_pre_skipped_source_is_dropped_without_being_counted_again() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/a.txt"), b"AAA").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"AAA").await.unwrap();
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
 
     let sources = vec![PathBuf::from("/a.txt")];
@@ -538,9 +549,9 @@ async fn a_pre_skipped_source_is_dropped_without_being_counted_again() {
 async fn a_conflict_resolved_to_skip_credits_both_progress_axes_once() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/a.txt"), b"AAA").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"AAA").await.unwrap();
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest.create_file(Path::new("/a.txt"), b"OLD").await.unwrap();
+    dest.create_file(app_path!("/a.txt"), b"OLD").await.unwrap();
 
     let sources = vec![PathBuf::from("/a.txt")];
     let source: Arc<dyn Volume> = source;
@@ -567,9 +578,9 @@ async fn a_conflict_resolved_to_skip_credits_both_progress_axes_once() {
 async fn a_file_overwrite_is_prepared_as_a_swap() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
-    source.create_file(Path::new("/a.txt"), b"NEW").await.unwrap();
+    source.create_file(app_path!("/a.txt"), b"NEW").await.unwrap();
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest.create_file(Path::new("/a.txt"), b"OLD").await.unwrap();
+    dest.create_file(app_path!("/a.txt"), b"OLD").await.unwrap();
 
     let sources = vec![PathBuf::from("/a.txt")];
     let harness = Harness::new(&engine, &sources);
@@ -605,16 +616,22 @@ async fn a_directory_source_takes_no_slot_from_the_file_window() {
     let engine = TestOperations::new();
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for dir in ["d1", "d2"] {
-        source.create_directory(Path::new(&format!("/{dir}"))).await.unwrap();
+        source
+            .create_directory(&AppPath::legacy_unchecked(Path::new(&format!("/{dir}"))))
+            .await
+            .unwrap();
         for i in 0..3 {
             source
-                .create_file(Path::new(&format!("/{dir}/leaf{i}.bin")), &vec![7u8; 10_000])
+                .create_file(
+                    &AppPath::legacy_unchecked(Path::new(&format!("/{dir}/leaf{i}.bin"))),
+                    &vec![7u8; 10_000],
+                )
                 .await
                 .unwrap();
         }
     }
     source
-        .create_file(Path::new("/f.bin"), &vec![8u8; 10_000])
+        .create_file(app_path!("/f.bin"), &vec![8u8; 10_000])
         .await
         .unwrap();
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
@@ -635,10 +652,13 @@ async fn a_directory_source_takes_no_slot_from_the_file_window() {
     for dir in ["d1", "d2"] {
         for i in 0..3 {
             let leaf = format!("/{dir}/leaf{i}.bin");
-            assert!(dest.exists(Path::new(&leaf)).await, "{leaf} never landed");
+            assert!(
+                dest.exists(&AppPath::legacy_unchecked(Path::new(&leaf))).await,
+                "{leaf} never landed"
+            );
         }
     }
-    assert!(dest.exists(Path::new("/f.bin")).await);
+    assert!(dest.exists(app_path!("/f.bin")).await);
 }
 
 // ============================================================================
@@ -665,7 +685,10 @@ async fn a_conflict_resolution_failure_comes_back_in_the_outcome() {
     let source_inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for name in ["a.txt", "b.txt", "c.txt"] {
         source_inner
-            .create_file(Path::new(&format!("/{name}")), &vec![7u8; 20_000])
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/{name}"))),
+                &vec![7u8; 20_000],
+            )
             .await
             .unwrap();
     }
@@ -724,14 +747,19 @@ impl Volume for MisbehaveOnOpenVolume {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         if self.misbehave_for.as_deref().is_some_and(|p| p != path) {
-            return self.inner.open_read_stream(path);
+            return self.inner.open_read_stream(path_app);
         }
         let panics = self.panics;
         let parked = Arc::clone(&self.parked);
         Box::pin(async move {
+            let path_std = path_app.as_std_legacy();
+            let path: &Path = &path_std;
             assert!(!panics, "simulated bug while opening {}", path.display());
             std::future::pending::<()>().await;
             drop(parked);
@@ -746,7 +774,10 @@ async fn misbehaving_batch(misbehave_for: Option<&str>, panics: bool) -> (Arc<Mi
     let inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for name in ["a.txt", "b.txt", "c.txt"] {
         inner
-            .create_file(Path::new(&format!("/{name}")), &vec![7u8; 20_000])
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/{name}"))),
+                &vec![7u8; 20_000],
+            )
             .await
             .unwrap();
     }
@@ -781,7 +812,7 @@ async fn a_task_that_panics_comes_back_as_the_operations_failure() {
     }
     for landed in run.copied_paths() {
         assert!(
-            dest.exists(&landed).await,
+            dest.exists(&AppPath::legacy_unchecked(&landed)).await,
             "the rollback ledger names only what landed: {}",
             landed.display()
         );
@@ -844,10 +875,13 @@ impl Volume for FailReadOnCueVolume {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         if path != self.fail_for {
-            return self.inner.open_read_stream(path);
+            return self.inner.open_read_stream(path_app);
         }
         Box::pin(async move {
             if let Ok(permit) = self.cue.acquire().await {
@@ -883,8 +917,8 @@ impl Volume for HeldRenameVolume {
 
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -907,7 +941,7 @@ async fn a_sibling_landing_when_another_source_fails_lands_and_is_recorded() {
     let source_inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for name in ["/fail.bin", "/lands.bin"] {
         source_inner
-            .create_file(Path::new(name), &vec![7u8; 20_000])
+            .create_file(&AppPath::legacy_unchecked(Path::new(name)), &vec![7u8; 20_000])
             .await
             .unwrap();
     }
@@ -963,9 +997,9 @@ async fn a_sibling_landing_when_another_source_fails_lands_and_is_recorded() {
         vec![PathBuf::from("/lands.bin")],
         "the sibling that landed during the drain is in the rollback ledger"
     );
-    assert!(dest_inner.exists(Path::new("/lands.bin")).await, "and it landed whole");
+    assert!(dest_inner.exists(app_path!("/lands.bin")).await, "and it landed whole");
     let leftovers: Vec<String> = dest_inner
-        .list_directory(Path::new("/"), None)
+        .list_directory(app_path!("/"), None)
         .await
         .unwrap()
         .into_iter()

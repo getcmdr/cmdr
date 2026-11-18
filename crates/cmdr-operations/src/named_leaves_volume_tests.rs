@@ -7,6 +7,7 @@
 //! admission, and undo. The native engines' half is `named_leaves_tests.rs`.
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -128,8 +129,11 @@ impl Rig {
         } else {
             PathBuf::from("/dst")
         };
-        source.create_directory_all(&src_dir).await.expect("the source folder");
-        dest.create_directory_all(&dest_dir)
+        source
+            .create_directory_all(&AppPath::legacy_unchecked(&src_dir))
+            .await
+            .expect("the source folder");
+        dest.create_directory_all(&AppPath::legacy_unchecked(&dest_dir))
             .await
             .expect("the destination folder");
         Self {
@@ -235,14 +239,20 @@ impl Rig {
 
 async fn put(volume: &Arc<dyn Volume>, path: &Path, bytes: &[u8]) -> PathBuf {
     let parent = path.parent().expect("a parent");
-    volume.create_directory_all(parent).await.expect("parents");
-    volume.create_file(path, bytes).await.expect("a fixture file");
+    volume
+        .create_directory_all(&AppPath::legacy_unchecked(parent))
+        .await
+        .expect("parents");
+    volume
+        .create_file(&AppPath::legacy_unchecked(path), bytes)
+        .await
+        .expect("a fixture file");
     path.to_path_buf()
 }
 
 async fn names_on(volume: &Arc<dyn Volume>, dir: &Path) -> Vec<String> {
     let mut names: Vec<String> = volume
-        .list_directory(dir, None)
+        .list_directory(&AppPath::legacy_unchecked(dir), None)
         .await
         .unwrap_or_else(|e| panic!("list {}: {e:?}", dir.display()))
         .into_iter()
@@ -254,7 +264,7 @@ async fn names_on(volume: &Arc<dyn Volume>, dir: &Path) -> Vec<String> {
 
 async fn read_all(volume: &Arc<dyn Volume>, path: &Path) -> Vec<u8> {
     let mut reader = volume
-        .open_read_stream(path)
+        .open_read_stream(&AppPath::legacy_unchecked(path))
         .await
         .unwrap_or_else(|e| panic!("open {}: {e:?}", path.display()));
     let mut bytes = Vec::new();
@@ -298,7 +308,7 @@ async fn sources_renamed_and_kept_land_named_on_every_volume_route() {
             let folder = rig.src_dir.join("scans");
             rig.file("scans/page.png", b"page").await;
             rig.source
-                .create_directory_all(&folder.join("empty"))
+                .create_directory_all(&AppPath::legacy_unchecked(&folder.join("empty")))
                 .await
                 .expect("an empty subfolder");
             let leaves = names(&[
@@ -330,11 +340,15 @@ async fn sources_renamed_and_kept_land_named_on_every_volume_route() {
                 "{ctx}: the empty subfolder lands named too"
             );
             assert_eq!(
-                rig.source.exists(&invoice).await,
+                rig.source.exists(&AppPath::legacy_unchecked(&invoice)).await,
                 !route.moves(),
                 "{ctx}: a move takes the original, a copy keeps it"
             );
-            assert_eq!(rig.source.exists(&folder).await, !route.moves(), "{ctx}");
+            assert_eq!(
+                rig.source.exists(&AppPath::legacy_unchecked(&folder)).await,
+                !route.moves(),
+                "{ctx}"
+            );
         }
     }
 }
@@ -449,7 +463,7 @@ async fn a_clash_at_a_renamed_leaf_meets_the_policy_at_the_renamed_path() {
                 assert_eq!(rig.read_dest("a.txt").await, b"bystander", "{ctx}");
                 assert_eq!(rig.read_dest("b.txt").await, b"b", "{ctx}: kept its name");
                 assert_eq!(
-                    rig.source.exists(&a).await,
+                    rig.source.exists(&AppPath::legacy_unchecked(&a)).await,
                     !route.moves() || kept_old,
                     "{ctx}: a skipped move keeps its source"
                 );
@@ -505,7 +519,10 @@ async fn a_source_pruned_after_admission_leaves_the_rest_landing_named() {
         );
 
         // A renamed source leaves while the transfer waits its turn.
-        rig.source.delete(&b).await.expect("b leaves");
+        rig.source
+            .delete(&AppPath::legacy_unchecked(&b))
+            .await
+            .expect("b leaves");
         let _ = release.send(());
         wait_until_async(WAIT, "the transfer to ask about its sources", || {
             rig.engine.pending_sources_gone(&op_id).is_some()
@@ -548,7 +565,11 @@ async fn refuses_on<F, Fut>(
         assert!(want(&result), "{route:?}: got {result:?}");
         assert_eq!(rig.dest_names().await, dest_before, "{route:?}: nothing landed");
         for source in &sources {
-            assert!(rig.source.exists(source).await, "{route:?}: {} stays", source.display());
+            assert!(
+                rig.source.exists(&AppPath::legacy_unchecked(source)).await,
+                "{route:?}: {} stays",
+                source.display()
+            );
         }
     }
 }
@@ -714,7 +735,11 @@ async fn undoing_a_transfer_naming_each_item_restores_every_original() {
                 "{ctx}: the folder's original name"
             );
             for source in &sources {
-                assert!(rig.source.exists(source).await, "{ctx}: {} is back", source.display());
+                assert!(
+                    rig.source.exists(&AppPath::legacy_unchecked(source)).await,
+                    "{ctx}: {} is back",
+                    source.display()
+                );
             }
         }
     }

@@ -20,6 +20,7 @@ use crate::types::{
     ConflictInfo, ConflictResolution, DryRunResult, ScanProgressEvent, WriteCancelledEvent, WriteCompleteEvent,
     WriteConflictResolvedEvent, WriteErrorEvent, WriteSettledEvent, WriteSourceItemDoneEvent,
 };
+use cmdr_fs::app_path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
@@ -73,12 +74,17 @@ impl OperationEventSink for PauseAfterTheFirstPrompt {
 async fn a_paused_cross_volume_merge_stops_walking_until_it_resumes() {
     let engine = TestOperations::new();
     let (source, dest) = make_volumes();
-    source.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_directory(Path::new("/album")).await.unwrap();
+    source.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_directory(app_path!("/album")).await.unwrap();
     for i in 0..CHILDREN {
         let name = format!("/album/c{:02}.txt", i);
-        source.create_file(Path::new(&name), b"SRC").await.unwrap();
-        dest.create_file(Path::new(&name), b"DEST").await.unwrap();
+        source
+            .create_file(&AppPath::legacy_unchecked(Path::new(&name)), b"SRC")
+            .await
+            .unwrap();
+        dest.create_file(&AppPath::legacy_unchecked(Path::new(&name)), b"DEST")
+            .await
+            .unwrap();
     }
 
     let state = make_state(&engine);
@@ -139,7 +145,7 @@ async fn a_paused_cross_volume_merge_stops_walking_until_it_resumes() {
 
     // Skip was the answer, so every destination file keeps its own bytes: the
     // pause changed nothing about the merge's outcome.
-    let mut stream = dest.open_read_stream(Path::new("/album/c39.txt")).await.unwrap();
+    let mut stream = dest.open_read_stream(app_path!("/album/c39.txt")).await.unwrap();
     let mut bytes = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         bytes.extend_from_slice(&chunk);

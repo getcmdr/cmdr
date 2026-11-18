@@ -10,6 +10,8 @@
 //! The servers, the ports, and what each one is for:
 //! `apps/desktop/test/sftp-servers/README.md`.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use cmdr_fs::volume::host::VolumeHost;
@@ -32,7 +34,10 @@ async fn a_password_from_the_store_signs_in_and_lists() {
     let host = fixture_host(&params, Some(FIXTURE_PASSWORD));
     let volume = connect_fixture(&host, params).await;
 
-    let entries = volume.list_directory(Path::new("."), None).await.expect(FIXTURE);
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new(".")), None)
+        .await
+        .expect(FIXTURE);
     assert!(
         entries.iter().any(|e| e.name == "hello.txt"),
         "the fixture's landmark file must be in the root listing, found {:?}",
@@ -52,7 +57,7 @@ async fn an_unencrypted_key_file_signs_in_where_a_password_is_refused() {
     let host = fixture_host(&params, None);
     let volume = connect_fixture(&host, params).await;
 
-    assert!(volume.exists(Path::new("hello.txt")).await);
+    assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await);
     assert_eq!(
         volume.auth_rung(),
         crate::auth::AuthRungUsed::KeyFile {
@@ -70,7 +75,7 @@ async fn a_passphrase_protected_key_unlocks_from_the_secret_store() {
     let host = fixture_host(&params, Some(FIXTURE_KEY_PASSPHRASE));
     let volume = connect_fixture(&host, params).await;
 
-    assert!(volume.exists(Path::new("hello.txt")).await);
+    assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await);
     let rung = volume.auth_rung();
     assert_eq!(
         rung,
@@ -94,7 +99,7 @@ async fn a_single_prompt_keyboard_interactive_server_signs_in() {
     let host = fixture_host(&params, Some(FIXTURE_PASSWORD));
     let volume = connect_fixture(&host, params).await;
 
-    assert!(volume.exists(Path::new("hello.txt")).await);
+    assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await);
     assert_eq!(volume.auth_rung(), crate::auth::AuthRungUsed::KeyboardInteractive);
 }
 
@@ -181,7 +186,7 @@ async fn a_server_offering_two_key_types_is_not_a_changed_key() {
     let host = fixture_host(&params, Some(FIXTURE_PASSWORD));
 
     let volume = connect_fixture(&host, params.clone()).await;
-    assert!(volume.exists(Path::new("hello.txt")).await);
+    assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await);
     drop(volume);
 
     for attempt in 0..3 {
@@ -238,22 +243,44 @@ async fn metadata_answers_the_three_questions_the_panes_ask() {
     let host = fixture_host(&params, Some(FIXTURE_PASSWORD));
     let volume = connect_fixture(&host, params).await;
 
-    let file = volume.get_metadata(Path::new("ten-bytes.txt")).await.expect(FIXTURE);
+    let file = volume
+        .get_metadata(&AppPath::legacy_unchecked(Path::new("ten-bytes.txt")))
+        .await
+        .expect(FIXTURE);
     assert_eq!(file.name, "ten-bytes.txt");
     assert_eq!(file.size, Some(10));
     assert!(!file.is_directory);
     assert!(file.modified_at.is_some(), "a pane column reads this");
 
-    let dir = volume.get_metadata(Path::new("photos")).await.expect(FIXTURE);
+    let dir = volume
+        .get_metadata(&AppPath::legacy_unchecked(Path::new("photos")))
+        .await
+        .expect(FIXTURE);
     assert!(dir.is_directory);
     assert_eq!(dir.size, None, "a directory's size is the walker's answer, not stat's");
 
-    assert!(volume.is_directory(Path::new("photos")).await.expect(FIXTURE));
-    assert!(!volume.is_directory(Path::new("hello.txt")).await.expect(FIXTURE));
-    assert!(volume.exists(Path::new("hello.txt")).await);
-    assert!(!volume.exists(Path::new("nothing-here.txt")).await);
+    assert!(
+        volume
+            .is_directory(&AppPath::legacy_unchecked(Path::new("photos")))
+            .await
+            .expect(FIXTURE)
+    );
+    assert!(
+        !volume
+            .is_directory(&AppPath::legacy_unchecked(Path::new("hello.txt")))
+            .await
+            .expect(FIXTURE)
+    );
+    assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await);
+    assert!(
+        !volume
+            .exists(&AppPath::legacy_unchecked(Path::new("nothing-here.txt")))
+            .await
+    );
 
-    let missing = volume.get_metadata(Path::new("nothing-here.txt")).await;
+    let missing = volume
+        .get_metadata(&AppPath::legacy_unchecked(Path::new("nothing-here.txt")))
+        .await;
     assert!(matches!(missing, Err(VolumeError::NotFound(_))), "got {missing:?}");
 }
 
@@ -266,9 +293,9 @@ async fn a_path_outside_the_volume_root_is_refused_by_the_backend_not_the_server
     let host = fixture_host(&params, Some(FIXTURE_PASSWORD));
     let volume = connect_fixture(&host, params).await;
 
-    let outside = volume.list_directory(Path::new("/etc"), None).await;
+    let outside = volume.list_directory(app_path!("/etc"), None).await;
     assert!(matches!(outside, Err(VolumeError::NotFound(_))), "got {outside:?}");
-    assert!(!volume.exists(Path::new("/etc/passwd")).await);
+    assert!(!volume.exists(app_path!("/etc/passwd")).await);
 }
 
 #[tokio::test]
@@ -278,14 +305,22 @@ async fn a_big_directory_and_a_deep_nest_both_come_back_whole() {
     let host = fixture_host(&params, Some(FIXTURE_PASSWORD));
     let volume = connect_fixture(&host, params).await;
 
-    let many = volume.list_directory(Path::new("many"), None).await.expect(FIXTURE);
+    let many = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("many")), None)
+        .await
+        .expect(FIXTURE);
     assert_eq!(many.len(), 5_000, "a paged readdir must not stop at the first batch");
 
     let mut deep = String::from("deep");
     for level in 0..40 {
         deep.push_str(&format!("/level-{level}"));
     }
-    assert!(volume.is_directory(Path::new(&deep)).await.expect(FIXTURE));
+    assert!(
+        volume
+            .is_directory(&AppPath::legacy_unchecked(Path::new(&deep)))
+            .await
+            .expect(FIXTURE)
+    );
 }
 
 #[tokio::test]
@@ -304,7 +339,7 @@ async fn a_listing_progress_report_lands_once_with_the_whole_tally() {
         reports.lock().expect("no panics in this closure").push(progress);
     };
     let entries = volume
-        .list_directory(Path::new("many"), Some(&record))
+        .list_directory(&AppPath::legacy_unchecked(Path::new("many")), Some(&record))
         .await
         .expect(FIXTURE);
 
@@ -332,12 +367,17 @@ async fn a_name_that_is_not_utf8_takes_the_whole_session_down() {
     let volume = connect_fixture(&host, params).await;
 
     // Names that ARE valid UTF-8, however awkward, come back intact.
-    let fine = volume.list_directory(Path::new("utf8"), None).await.expect(FIXTURE);
+    let fine = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("utf8")), None)
+        .await
+        .expect(FIXTURE);
     assert!(fine.iter().any(|e| e.name == "🦀.txt"));
     assert!(fine.iter().any(|e| e.name.starts_with("naïve")));
     assert!(fine.iter().any(|e| e.name == "a b  c.txt"));
 
-    let refused = volume.list_directory(Path::new("latin1"), None).await;
+    let refused = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("latin1")), None)
+        .await;
     assert!(
         matches!(refused, Err(VolumeError::DeviceDisconnected(_))),
         "a byte name kills the engine's read task, so the honest answer is a lost session, got {refused:?}"
@@ -345,7 +385,9 @@ async fn a_name_that_is_not_utf8_takes_the_whole_session_down() {
 
     // ❗ And it stays lost: nothing on this session works again, which is what
     // makes this a reconnect rather than a per-directory error.
-    let after = volume.list_directory(Path::new("utf8"), None).await;
+    let after = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("utf8")), None)
+        .await;
     assert!(
         matches!(after, Err(VolumeError::DeviceDisconnected(_))),
         "the session must read as gone rather than half-alive, got {after:?}"
@@ -365,7 +407,10 @@ async fn every_quirk_server_is_reachable_and_serves_its_export() {
         let params = fixture_params(service, fallback);
         let host = fixture_host(&params, Some(FIXTURE_PASSWORD));
         let volume = connect_fixture(&host, params).await;
-        let entries = volume.list_directory(Path::new("."), None).await.expect(service);
+        let entries = volume
+            .list_directory(&AppPath::legacy_unchecked(Path::new(".")), None)
+            .await
+            .expect(service);
         assert!(
             entries.iter().any(|e| e.name == "hello.txt"),
             "{service} did not serve its export"
@@ -385,13 +430,15 @@ async fn disconnecting_drops_the_session_instead_of_closing_it() {
     let params = fixture_params("OPENSSH", 12480);
     let host = fixture_host(&params, Some(FIXTURE_PASSWORD));
     let volume = connect_fixture(&host, params).await;
-    assert!(volume.exists(Path::new("hello.txt")).await);
+    assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await);
 
     tokio::time::timeout(std::time::Duration::from_secs(5), volume.disconnect())
         .await
         .expect("disconnecting must return promptly; a hang here means someone reached for close()");
 
-    let after = volume.list_directory(Path::new("."), None).await;
+    let after = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new(".")), None)
+        .await;
     assert!(
         matches!(after, Err(VolumeError::DeviceDisconnected(_))),
         "a disconnected volume fails fast rather than hanging, got {after:?}"
@@ -430,7 +477,7 @@ async fn abandoning_a_connect_does_not_panic_the_engines_task() {
     // allowed-test-sleep: waiting out the window in which an abandoned dial would panic
     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
     let volume = connect_fixture(&host, params).await;
-    assert!(volume.exists(Path::new("hello.txt")).await);
+    assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await);
     assert_eq!(
         panics.seen(),
         0,
@@ -471,7 +518,7 @@ async fn a_stream_knows_its_size_before_it_yields_a_byte() {
     let volume = connect_fixture(&host, params).await;
 
     let mut stream = volume
-        .open_read_stream(Path::new(FIXTURE_LARGE_FILE))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(FIXTURE_LARGE_FILE)))
         .await
         .expect(FIXTURE);
     let size = stream.total_size().known().expect("SFTP file size is known");
@@ -533,7 +580,7 @@ async fn dropping_a_read_stream_early_leaves_the_session_usable() {
     let volume = connect_fixture(&host, params).await;
 
     let mut stream = volume
-        .open_read_stream(Path::new(FIXTURE_LARGE_FILE))
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(FIXTURE_LARGE_FILE)))
         .await
         .expect(FIXTURE);
     let first = stream.next_chunk().await.expect(FIXTURE).expect(FIXTURE);
@@ -548,7 +595,7 @@ async fn dropping_a_read_stream_early_leaves_the_session_usable() {
     // rules out a response arena left holding the abandoned window's chunks.
     let read = read_whole(&volume, FIXTURE_LARGE_FILE).await;
     assert_same_bytes(&read, &fixture_large_bytes(read.len()), "a read after a cancelled one");
-    assert!(volume.exists(Path::new("hello.txt")).await);
+    assert!(volume.exists(&AppPath::legacy_unchecked(Path::new("hello.txt"))).await);
 }
 
 #[tokio::test]
@@ -562,7 +609,11 @@ async fn a_bounded_range_comes_back_exactly() {
 
     let expected = fixture_large_bytes(2 * 1024 * 1024);
     let range = volume
-        .read_range(Path::new(FIXTURE_LARGE_FILE), 1_000_000, 300_000)
+        .read_range(
+            &AppPath::legacy_unchecked(Path::new(FIXTURE_LARGE_FILE)),
+            1_000_000,
+            300_000,
+        )
         .await
         .expect(FIXTURE);
     assert_same_bytes(&range, &expected[1_000_000..1_300_000], "a bounded range");
@@ -570,7 +621,7 @@ async fn a_bounded_range_comes_back_exactly() {
     // Wholly past the end is an empty answer, never an error: an archive reader
     // probing for a tail it hasn't sized yet does exactly this.
     let past_end = volume
-        .read_range(Path::new(FIXTURE_LARGE_FILE), 1 << 40, 4096)
+        .read_range(&AppPath::legacy_unchecked(Path::new(FIXTURE_LARGE_FILE)), 1 << 40, 4096)
         .await
         .expect(FIXTURE);
     assert!(past_end.is_empty());
@@ -586,7 +637,11 @@ async fn a_range_read_from_a_short_reading_server_is_byte_exact_too() {
     let volume = connect_fixture(&host, params).await;
 
     let range = volume
-        .read_range(Path::new(FIXTURE_LARGE_FILE), 100_000, 200_000)
+        .read_range(
+            &AppPath::legacy_unchecked(Path::new(FIXTURE_LARGE_FILE)),
+            100_000,
+            200_000,
+        )
         .await
         .expect(FIXTURE);
 
@@ -606,7 +661,7 @@ async fn a_cancelled_listing_stops_instead_of_finishing_the_walk() {
     let cancel = CancellationToken::new();
     cancel.cancel();
     let listing = volume
-        .list_directory_with_cancel(Path::new("many"), None, Some(&cancel))
+        .list_directory_with_cancel(&AppPath::legacy_unchecked(Path::new("many")), None, Some(&cancel))
         .await;
 
     assert!(
@@ -615,7 +670,10 @@ async fn a_cancelled_listing_stops_instead_of_finishing_the_walk() {
     );
     // And the session is still the session: the token stopped a walk, not a
     // connection.
-    let entries = volume.list_directory(Path::new("."), None).await.expect(FIXTURE);
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new(".")), None)
+        .await
+        .expect(FIXTURE);
     assert!(entries.iter().any(|e| e.name == "hello.txt"));
 }
 
@@ -623,7 +681,10 @@ async fn a_cancelled_listing_stops_instead_of_finishing_the_walk() {
 
 /// Streams a whole file the way the copy path does.
 async fn read_whole(volume: &SftpVolume, path: &str) -> Vec<u8> {
-    let mut stream = volume.open_read_stream(Path::new(path)).await.expect(FIXTURE);
+    let mut stream = volume
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .expect(FIXTURE);
     let mut out = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         out.extend_from_slice(&chunk.expect(FIXTURE));
@@ -722,7 +783,7 @@ async fn a_server_with_statvfs_reports_its_free_space() {
     assert!(total > 0, "a zero total is a misread unit, not a disk");
     assert!(available <= total);
     assert!(space.used_bytes() <= total);
-    let at_root = volume.get_space_info_at(Path::new("/")).await.expect(FIXTURE);
+    let at_root = volume.get_space_info_at(app_path!("/")).await.expect(FIXTURE);
     assert_eq!(
         at_root.total_bytes(),
         Some(total),
@@ -856,14 +917,17 @@ async fn sftp_a_listings_paths_are_what_the_app_hands_back() {
 
     assert_eq!(
         Path::new(&hello.path),
-        volume.root().join("hello.txt"),
+        volume.root().as_std_legacy().join("hello.txt"),
         "a listing spells an entry the way the volume root is spelled"
     );
     // The round trip a pane makes: the listed path, anchored the way the app
     // anchors it, back into the volume.
-    let handed_back = cmdr_fs::volume::root_anchored(volume.root(), Path::new(&hello.path));
-    assert_eq!(handed_back, volume.root().join("hello.txt"));
-    assert!(volume.exists(&handed_back).await, "and it still names the same file");
+    let handed_back = cmdr_fs::volume::root_anchored(&volume.root().as_std_legacy(), Path::new(&hello.path));
+    assert_eq!(handed_back, volume.root().as_std_legacy().join("hello.txt"));
+    assert!(
+        volume.exists(&AppPath::legacy_unchecked(&handed_back)).await,
+        "and it still names the same file"
+    );
 }
 
 /// A copy that waited out a long outage carries a download on from an offset
@@ -877,16 +941,25 @@ async fn a_read_resumes_on_its_named_file_and_refuses_a_rewritten_one() {
     let host = fixture_host(&params, Some(FIXTURE_PASSWORD));
     let volume = connect_fixture(&host, params).await;
     let dir = scratch_dir("resume");
-    volume.create_directory(Path::new(&dir)).await.expect(FIXTURE);
+    volume
+        .create_directory(&AppPath::legacy_unchecked(Path::new(&dir)))
+        .await
+        .expect(FIXTURE);
     let path = format!("{dir}/resume.bin");
     let bytes = fixture_large_bytes(600_000);
-    volume.create_file(Path::new(&path), &bytes).await.expect(FIXTURE);
+    volume
+        .create_file(&AppPath::legacy_unchecked(Path::new(&path)), &bytes)
+        .await
+        .expect(FIXTURE);
 
-    let first = volume.open_read_stream(Path::new(&path)).await.expect(FIXTURE);
+    let first = volume
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
+        .await
+        .expect(FIXTURE);
     let version = first.source_version().expect("an fstat names the file's version");
     drop(first);
     let mut rest = volume
-        .resume_read_stream(Path::new(&path), &version, 250_000)
+        .resume_read_stream(&AppPath::legacy_unchecked(Path::new(&path)), &version, 250_000)
         .await
         .expect("the same file resumes");
     let mut read = Vec::new();
@@ -895,12 +968,21 @@ async fn a_read_resumes_on_its_named_file_and_refuses_a_rewritten_one() {
     }
     assert_same_bytes(&read, &bytes[250_000..], "exactly the bytes from the offset");
 
-    volume.delete(Path::new(&path)).await.expect(FIXTURE);
     volume
-        .create_file(Path::new(&path), &fixture_large_bytes(600_001))
+        .delete(&AppPath::legacy_unchecked(Path::new(&path)))
         .await
         .expect(FIXTURE);
-    match volume.resume_read_stream(Path::new(&path), &version, 250_000).await {
+    volume
+        .create_file(
+            &AppPath::legacy_unchecked(Path::new(&path)),
+            &fixture_large_bytes(600_001),
+        )
+        .await
+        .expect(FIXTURE);
+    match volume
+        .resume_read_stream(&AppPath::legacy_unchecked(Path::new(&path)), &version, 250_000)
+        .await
+    {
         Err(VolumeError::SourceChanged(_)) => {}
         Err(other) => panic!("expected SourceChanged, got {other:?}"),
         Ok(_) => panic!("expected SourceChanged, got a stream"),

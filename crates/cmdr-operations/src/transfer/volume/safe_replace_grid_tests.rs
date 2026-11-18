@@ -31,6 +31,8 @@
 //! `journal_capture_volume_tests.rs`); this grid is the one place all five sites
 //! answer the same four questions.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
@@ -177,17 +179,20 @@ async fn run(site: Site, arm: Arm) -> Ran {
 
     // The destination: the user's file, and a dest-only sibling.
     let dest_inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest_inner.create_directory(Path::new("/dest")).await.unwrap();
+    dest_inner.create_directory(app_path!("/dest")).await.unwrap();
     if matches!(site, Site::MergeChild | Site::Extract) {
-        dest_inner.create_directory(Path::new("/dest/album")).await.unwrap();
+        dest_inner.create_directory(app_path!("/dest/album")).await.unwrap();
         dest_inner
-            .create_file(Path::new("/dest/album/keep.txt"), KEEP)
+            .create_file(app_path!("/dest/album/keep.txt"), KEEP)
             .await
             .unwrap();
     } else {
-        dest_inner.create_file(Path::new("/dest/keep.txt"), KEEP).await.unwrap();
+        dest_inner.create_file(app_path!("/dest/keep.txt"), KEEP).await.unwrap();
     }
-    dest_inner.create_file(Path::new(site.orig()), OLD).await.unwrap();
+    dest_inner
+        .create_file(&AppPath::legacy_unchecked(Path::new(site.orig())), OLD)
+        .await
+        .unwrap();
     if let Arm::OrigTakesNothing = arm {
         dest_inner.set_rename_to_failing(Path::new(site.orig()));
     }
@@ -220,8 +225,8 @@ async fn run(site: Site, arm: Arm) -> Ran {
         let sources = match site {
             Site::Serial | Site::Move => vec![PathBuf::from("/notes.txt")],
             Site::Concurrent => {
-                inner.create_file(Path::new("/a.txt"), SIBLING_A).await.unwrap();
-                inner.create_file(Path::new("/z.txt"), SIBLING_Z).await.unwrap();
+                inner.create_file(app_path!("/a.txt"), SIBLING_A).await.unwrap();
+                inner.create_file(app_path!("/z.txt"), SIBLING_Z).await.unwrap();
                 vec![
                     PathBuf::from("/a.txt"),
                     PathBuf::from("/notes.txt"),
@@ -229,13 +234,16 @@ async fn run(site: Site, arm: Arm) -> Ran {
                 ]
             }
             Site::MergeChild => {
-                inner.create_directory(Path::new("/album")).await.unwrap();
-                inner.create_file(Path::new("/album/fresh.txt"), FRESH).await.unwrap();
+                inner.create_directory(app_path!("/album")).await.unwrap();
+                inner.create_file(app_path!("/album/fresh.txt"), FRESH).await.unwrap();
                 vec![PathBuf::from("/album")]
             }
             Site::Extract => unreachable!("handled above"),
         };
-        inner.create_file(Path::new(site.source_notes()), NEW).await.unwrap();
+        inner
+            .create_file(&AppPath::legacy_unchecked(Path::new(site.source_notes())), NEW)
+            .await
+            .unwrap();
         inner.set_carried_metadata(
             Path::new(site.source_notes()),
             CarriedMetadata {
@@ -347,7 +355,12 @@ impl Ran {
         let mut found = Vec::new();
         let mut dirs = vec![PathBuf::from("/dest")];
         while let Some(dir) = dirs.pop() {
-            for entry in self.dest_inner.list_directory(&dir, None).await.unwrap() {
+            for entry in self
+                .dest_inner
+                .list_directory(&AppPath::legacy_unchecked(&dir), None)
+                .await
+                .unwrap()
+            {
                 if entry.is_directory {
                     dirs.push(PathBuf::from(&entry.path));
                 } else if entry.name.contains(".cmdr-tmp-") {
@@ -441,7 +454,7 @@ impl Ran {
 }
 
 async fn read_all(volume: &dyn Volume, path: &Path) -> Option<Vec<u8>> {
-    let mut stream = volume.open_read_stream(path).await.ok()?;
+    let mut stream = volume.open_read_stream(&AppPath::legacy_unchecked(path)).await.ok()?;
     let mut buf = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         buf.extend_from_slice(&chunk.ok()?);
@@ -650,7 +663,7 @@ async fn a_name_that_takes_nothing_rescues_the_new_bytes_and_keeps_the_original_
         let dir = Path::new(site.orig()).parent().expect("a parent");
         let asides: Vec<PathBuf> = ran
             .dest_inner
-            .list_directory(dir, None)
+            .list_directory(&AppPath::legacy_unchecked(dir), None)
             .await
             .unwrap()
             .into_iter()
@@ -694,14 +707,19 @@ impl Volume for HoldsTheSwapRename {
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let to_app = to;
+        let to_std = to.as_std_legacy();
+        let to: &Path = &to_std;
         if to != self.held_onto {
-            return self.inner.rename(from, to, force);
+            return self.inner.rename(from, to_app, force);
         }
         Box::pin(async move {
+            let from_std = from.as_std_legacy();
+            let from: &Path = &from_std;
             let held = read_all(&*self.inner, from).await;
             *self.held_temp.lock_ignore_poison() = Some((from.to_path_buf(), held));
             self.reached.notify_one();
@@ -729,10 +747,13 @@ impl Volume for FailsOnceTheSwapIsHeld {
     }
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         if path != self.fails {
-            return self.inner.open_read_stream(path);
+            return self.inner.open_read_stream(path_app);
         }
         Box::pin(async move {
             self.reached.notified().await;
@@ -762,7 +783,10 @@ async fn a_concurrent_task_dropped_mid_swap_keeps_the_original_for_the_sweep_to_
     let reached = Arc::new(Notify::new());
     let source_inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     for (name, bytes) in [("/a.txt", SIBLING_A), ("/notes.txt", NEW), ("/z.txt", SIBLING_Z)] {
-        source_inner.create_file(Path::new(name), bytes).await.unwrap();
+        source_inner
+            .create_file(&AppPath::legacy_unchecked(Path::new(name)), bytes)
+            .await
+            .unwrap();
     }
     let source = Arc::new(FailsOnceTheSwapIsHeld {
         inner: Arc::clone(&source_inner),
@@ -770,8 +794,8 @@ async fn a_concurrent_task_dropped_mid_swap_keeps_the_original_for_the_sweep_to_
         reached: Arc::clone(&reached),
     });
     let dest_inner = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
-    dest_inner.create_directory(Path::new("/dest")).await.unwrap();
-    dest_inner.create_file(Path::new("/dest/notes.txt"), OLD).await.unwrap();
+    dest_inner.create_directory(app_path!("/dest")).await.unwrap();
+    dest_inner.create_file(app_path!("/dest/notes.txt"), OLD).await.unwrap();
     let dest = Arc::new(HoldsTheSwapRename {
         inner: Arc::clone(&dest_inner),
         held_onto: PathBuf::from("/dest/notes.txt"),
@@ -833,7 +857,7 @@ async fn a_concurrent_task_dropped_mid_swap_keeps_the_original_for_the_sweep_to_
         "the swap's move aside went through"
     );
     let asides: Vec<PathBuf> = dest_inner
-        .list_directory(Path::new("/dest"), None)
+        .list_directory(app_path!("/dest"), None)
         .await
         .unwrap()
         .into_iter()

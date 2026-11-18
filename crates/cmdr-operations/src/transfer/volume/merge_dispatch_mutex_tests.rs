@@ -20,6 +20,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::state::ConflictResolutionResponse;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path;
 
 use crate::types::ConflictResolution;
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeReadStream};
@@ -29,7 +30,10 @@ use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeReadStream};
 // ============================================================================
 /// Reads a whole file from a volume into a `Vec<u8>`.
 async fn read_all(vol: &Arc<dyn Volume>, path: &str) -> Vec<u8> {
-    let mut stream = vol.open_read_stream(Path::new(path)).await.unwrap();
+    let mut stream = vol
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await
+        .unwrap();
     let mut out = Vec::new();
     while let Some(Ok(chunk)) = stream.next_chunk().await {
         out.extend_from_slice(&chunk);
@@ -75,9 +79,12 @@ impl Volume for HeldReadSource {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if let Some(held) = self.held.iter().find(|held| held.path == path) {
                 let release = Arc::clone(&held.release);
                 cmdr_fs::testing::wait_until_async(Duration::from_secs(5), "the held read's release", move || {
@@ -91,7 +98,7 @@ impl Volume for HeldReadSource {
                     });
                 }
             }
-            self.inner.open_read_stream(path).await
+            self.inner.open_read_stream(path_app).await
         })
     }
 }
@@ -122,20 +129,20 @@ async fn deep_prompt_fixture() -> (Arc<InMemoryVolume>, Arc<dyn Volume>) {
     let inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
 
-    inner.create_directory(Path::new("/album")).await.unwrap();
+    inner.create_directory(app_path!("/album")).await.unwrap();
     inner
-        .create_file(Path::new("/album/clash.txt"), b"SRC-deep")
+        .create_file(app_path!("/album/clash.txt"), b"SRC-deep")
         .await
         .unwrap();
-    inner.create_file(Path::new("/sib.bin"), b"SIB").await.unwrap();
-    inner.create_file(Path::new("/top.txt"), b"SRC-top").await.unwrap();
+    inner.create_file(app_path!("/sib.bin"), b"SIB").await.unwrap();
+    inner.create_file(app_path!("/top.txt"), b"SRC-top").await.unwrap();
 
-    dest.create_directory(Path::new("/album")).await.unwrap();
-    dest.create_file(Path::new("/album/clash.txt"), b"DEST-deep")
+    dest.create_directory(app_path!("/album")).await.unwrap();
+    dest.create_file(app_path!("/album/clash.txt"), b"DEST-deep")
         .await
         .unwrap();
-    dest.create_file(Path::new("/album/keep.txt"), b"KEEP").await.unwrap();
-    dest.create_file(Path::new("/top.txt"), b"DEST-top").await.unwrap();
+    dest.create_file(app_path!("/album/keep.txt"), b"KEEP").await.unwrap();
+    dest.create_file(app_path!("/top.txt"), b"DEST-top").await.unwrap();
     (inner, dest)
 }
 
@@ -182,20 +189,34 @@ async fn concurrent_merge_with_two_deep_clashes_serializes_prompts() {
     // Two of them are merging dirs that each hide a deep file clash; the third is
     // a plain fresh file so the batch is unambiguously concurrent.
     for d in ["one", "two"] {
-        source.create_directory(Path::new(&format!("/{d}"))).await.unwrap();
         source
-            .create_file(Path::new(&format!("/{d}/clash.bin")), &vec![1u8; 50_000])
+            .create_directory(&AppPath::legacy_unchecked(Path::new(&format!("/{d}"))))
             .await
             .unwrap();
-        dest.create_directory(Path::new(&format!("/{d}"))).await.unwrap();
-        dest.create_file(Path::new(&format!("/{d}/clash.bin")), &vec![9u8; 50_000])
+        source
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/{d}/clash.bin"))),
+                &vec![1u8; 50_000],
+            )
             .await
             .unwrap();
-        dest.create_file(Path::new(&format!("/{d}/keep.txt")), b"KEEP")
+        dest.create_directory(&AppPath::legacy_unchecked(Path::new(&format!("/{d}"))))
             .await
             .unwrap();
+        dest.create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("/{d}/clash.bin"))),
+            &vec![9u8; 50_000],
+        )
+        .await
+        .unwrap();
+        dest.create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("/{d}/keep.txt"))),
+            b"KEEP",
+        )
+        .await
+        .unwrap();
     }
-    source.create_file(Path::new("/three.txt"), b"THREE").await.unwrap();
+    source.create_file(app_path!("/three.txt"), b"THREE").await.unwrap();
 
     let state = make_state(&engine);
     let events = Arc::new(ConflictResponderSink::new(&state, ConflictResolution::Overwrite, false));
@@ -231,7 +252,7 @@ async fn concurrent_merge_with_two_deep_clashes_serializes_prompts() {
         assert_eq!(read_all(&dest, &format!("/{d}/clash.bin")).await, vec![1u8; 50_000]);
         assert_eq!(read_all(&dest, &format!("/{d}/keep.txt")).await, b"KEEP");
     }
-    assert!(dest.exists(Path::new("/three.txt")).await);
+    assert!(dest.exists(app_path!("/three.txt")).await);
 }
 
 /// Top-level vs deep race: a top-level file clash and a deep file clash (inside a
@@ -244,21 +265,21 @@ async fn top_level_and_deep_clash_share_the_dispatch_mutex() {
     let (source, dest) = make_volumes();
 
     // Top-level file clash.
-    source.create_file(Path::new("/top.txt"), b"SRC-top").await.unwrap();
-    dest.create_file(Path::new("/top.txt"), b"DEST-top").await.unwrap();
+    source.create_file(app_path!("/top.txt"), b"SRC-top").await.unwrap();
+    dest.create_file(app_path!("/top.txt"), b"DEST-top").await.unwrap();
     // A merging dir with a deep file clash + dest-only file.
-    source.create_directory(Path::new("/dir")).await.unwrap();
+    source.create_directory(app_path!("/dir")).await.unwrap();
     source
-        .create_file(Path::new("/dir/clash.txt"), b"SRC-deep")
+        .create_file(app_path!("/dir/clash.txt"), b"SRC-deep")
         .await
         .unwrap();
-    dest.create_directory(Path::new("/dir")).await.unwrap();
-    dest.create_file(Path::new("/dir/clash.txt"), b"DEST-deep")
+    dest.create_directory(app_path!("/dir")).await.unwrap();
+    dest.create_file(app_path!("/dir/clash.txt"), b"DEST-deep")
         .await
         .unwrap();
-    dest.create_file(Path::new("/dir/keep.txt"), b"KEEP").await.unwrap();
+    dest.create_file(app_path!("/dir/keep.txt"), b"KEEP").await.unwrap();
     // Third source to force the concurrent path.
-    source.create_file(Path::new("/extra.txt"), b"EXTRA").await.unwrap();
+    source.create_file(app_path!("/extra.txt"), b"EXTRA").await.unwrap();
 
     let state = make_state(&engine);
     // One "…all" answer collapses any queued prompt via the latch double-check,
@@ -307,17 +328,28 @@ async fn cancel_while_queued_unblocks_both_no_hang() {
     // the concurrent path. Both deep clashes hit Stop; one task ends up parked on
     // the dispatch mutex behind the other.
     for d in ["one", "two"] {
-        source.create_directory(Path::new(&format!("/{d}"))).await.unwrap();
         source
-            .create_file(Path::new(&format!("/{d}/clash.bin")), &vec![1u8; 50_000])
+            .create_directory(&AppPath::legacy_unchecked(Path::new(&format!("/{d}"))))
             .await
             .unwrap();
-        dest.create_directory(Path::new(&format!("/{d}"))).await.unwrap();
-        dest.create_file(Path::new(&format!("/{d}/clash.bin")), &vec![9u8; 50_000])
+        source
+            .create_file(
+                &AppPath::legacy_unchecked(Path::new(&format!("/{d}/clash.bin"))),
+                &vec![1u8; 50_000],
+            )
             .await
             .unwrap();
+        dest.create_directory(&AppPath::legacy_unchecked(Path::new(&format!("/{d}"))))
+            .await
+            .unwrap();
+        dest.create_file(
+            &AppPath::legacy_unchecked(Path::new(&format!("/{d}/clash.bin"))),
+            &vec![9u8; 50_000],
+        )
+        .await
+        .unwrap();
     }
-    source.create_file(Path::new("/three.txt"), b"THREE").await.unwrap();
+    source.create_file(app_path!("/three.txt"), b"THREE").await.unwrap();
 
     let state = make_state(&engine);
     let op = engine.register_state("cancel-while-queued", Arc::clone(&state));
@@ -510,7 +542,7 @@ async fn a_task_failing_while_the_driver_is_queued_behind_a_deep_prompt_still_fr
     let state = make_state(&engine);
     let events = Arc::new(CollectorEventSink::new());
     let (inner, dest) = deep_prompt_fixture().await;
-    inner.create_file(Path::new("/fail.bin"), b"FAIL").await.unwrap();
+    inner.create_file(app_path!("/fail.bin"), b"FAIL").await.unwrap();
     let prompted = Arc::clone(&state);
     let sib_landed = Arc::clone(&events);
     let source: Arc<dyn Volume> = Arc::new(HeldReadSource {

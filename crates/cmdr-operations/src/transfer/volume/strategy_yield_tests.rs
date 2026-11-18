@@ -447,7 +447,7 @@ async fn auto_yield_cancel_while_yielding_keeps_no_partial() {
                 "cancel wins over an auto-yield: the copy ends Cancelled, got {result:?}"
             );
             assert!(
-                !dest.exists(Path::new("movie.bin")).await,
+                !dest.exists(&AppPath::legacy_unchecked(Path::new("movie.bin"))).await,
                 "a cancelled auto-yielding copy leaves no partial dest file"
             );
         })

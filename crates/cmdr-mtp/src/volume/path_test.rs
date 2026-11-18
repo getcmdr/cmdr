@@ -26,7 +26,7 @@ fn test_new_creates_volume() {
 #[test]
 fn test_root_path() {
     let vol = MtpVolume::new(Arc::clone(connection_manager()), "mtp-20-5", 65537, "Internal storage");
-    assert_eq!(vol.root().to_string_lossy(), "mtp://mtp-20-5/65537");
+    assert_eq!(vol.root().as_std_legacy().to_string_lossy(), "mtp://mtp-20-5/65537");
 }
 
 #[test]

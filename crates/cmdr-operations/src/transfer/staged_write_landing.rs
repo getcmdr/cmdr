@@ -6,6 +6,7 @@
 //! `staged_write_landing_cut_off.rs`, and a swap's aside steps in
 //! `staged_write_landing_aside.rs`.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -421,7 +422,14 @@ pub(super) async fn land(dest_volume: &Arc<dyn Volume>, mut landing: Landing) ->
         }
         return swap_through_an_aside(dest_volume, landing).await;
     }
-    let Err(first) = dest_volume.rename(landing.temp(), &landing.final_path, false).await else {
+    let Err(first) = dest_volume
+        .rename(
+            &AppPath::legacy_unchecked(landing.temp()),
+            &AppPath::legacy_unchecked(&landing.final_path),
+            false,
+        )
+        .await
+    else {
         landing.settled();
         return Ok(());
     };
@@ -458,7 +466,14 @@ pub(super) async fn land(dest_volume: &Arc<dyn Volume>, mut landing: Landing) ->
 /// and discarding (or reporting a failure) would disown the edit that's now at
 /// the name.
 async fn replace_in_one_step(dest_volume: &Arc<dyn Volume>, mut landing: Landing) -> Result<(), LandingError> {
-    match dest_volume.rename(landing.temp(), &landing.final_path, true).await {
+    match dest_volume
+        .rename(
+            &AppPath::legacy_unchecked(landing.temp()),
+            &AppPath::legacy_unchecked(&landing.final_path),
+            true,
+        )
+        .await
+    {
         Ok(()) => {
             landing.original_replaced();
             landing.settled();
@@ -491,7 +506,9 @@ async fn replace_in_one_step(dest_volume: &Arc<dyn Volume>, mut landing: Landing
 async fn temp_is_gone(dest_volume: &Arc<dyn Volume>, landing: &Landing) -> bool {
     !landing.discard_asked
         && matches!(
-            dest_volume.get_metadata(landing.temp()).await,
+            dest_volume
+                .get_metadata(&AppPath::legacy_unchecked(landing.temp()))
+                .await,
             Err(VolumeError::NotFound(_))
         )
 }
@@ -512,7 +529,10 @@ async fn clear_the_way(
     first: VolumeError,
     patience: Patience,
 ) -> Result<(), LandingError> {
-    landing.in_the_way = match dest_volume.get_metadata(&landing.final_path).await {
+    landing.in_the_way = match dest_volume
+        .get_metadata(&AppPath::legacy_unchecked(&landing.final_path))
+        .await
+    {
         Ok(entry) if NameHeld::of(&entry).is_an_empty_file() => Some(NameHeld::of(&entry)),
         // Gone already: nothing to clear, and nothing a resume could match, so
         // a resume never clears the name again.
@@ -542,7 +562,10 @@ async fn clear_the_way(
         landing.discard(dest_volume).await;
         return Err(LandingError::Failed(landing_not_recorded()));
     }
-    match dest_volume.delete(&landing.final_path).await {
+    match dest_volume
+        .delete(&AppPath::legacy_unchecked(&landing.final_path))
+        .await
+    {
         Ok(()) | Err(VolumeError::NotFound(_)) => {}
         Err(error) if patience == Patience::Waits && error.transport_fault().is_some() => {
             return Err(cut_off(landing, CutOffAt::ClearingDelete(first), error));
@@ -607,7 +630,14 @@ async fn rename_onto_cleared(
     mut landing: Landing,
     patience: Patience,
 ) -> Result<(), LandingError> {
-    match dest_volume.rename(landing.temp(), &landing.final_path, false).await {
+    match dest_volume
+        .rename(
+            &AppPath::legacy_unchecked(landing.temp()),
+            &AppPath::legacy_unchecked(&landing.final_path),
+            false,
+        )
+        .await
+    {
         Ok(()) => {
             landing.settled();
             Ok(())
@@ -653,7 +683,7 @@ async fn rescue(dest_volume: &Arc<dyn Volume>, mut landing: Landing, error: Volu
 /// Whether `final_path` holds a file of exactly `size` bytes.
 pub(super) async fn holds_our_size(dest_volume: &Arc<dyn Volume>, final_path: &Path, size: u64) -> bool {
     matches!(
-        dest_volume.get_metadata(final_path).await,
+        dest_volume.get_metadata(&AppPath::legacy_unchecked(final_path)).await,
         Ok(entry) if !entry.is_directory && !entry.is_symlink && entry.size == Some(size)
     )
 }

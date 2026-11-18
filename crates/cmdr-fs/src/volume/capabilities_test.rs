@@ -4,6 +4,8 @@
 //! and the published surface follows, with no second table to keep in step.
 
 use super::{InMemoryVolume, Volume, VolumeCapabilities};
+use crate::app_path;
+use crate::app_path::AppPath;
 use crate::entry::FileEntry;
 use std::future::Future;
 use std::path::Path;
@@ -18,8 +20,8 @@ impl Volume for BareVolume {
         "Bare"
     }
 
-    fn root(&self) -> &Path {
-        Path::new("/")
+    fn root(&self) -> &AppPath {
+        AppPath::from_normalized("/").expect("a canonical literal")
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -28,7 +30,7 @@ impl Volume for BareVolume {
 
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(super::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, super::VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(Vec::new()) })
@@ -36,18 +38,18 @@ impl Volume for BareVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, super::VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(super::VolumeError::NotSupported) })
     }
 
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { false })
     }
 
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, super::VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(super::VolumeError::NotSupported) })
     }
@@ -62,7 +64,7 @@ impl Volume for WritableExportingVolume {
         self.0.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.0.root()
     }
 
@@ -72,7 +74,7 @@ impl Volume for WritableExportingVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(super::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, super::VolumeError>> + Send + 'a>> {
         self.0.list_directory(path, on_progress)
@@ -80,18 +82,18 @@ impl Volume for WritableExportingVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, super::VolumeError>> + Send + 'a>> {
         self.0.get_metadata(path)
     }
 
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.0.exists(path)
     }
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, super::VolumeError>> + Send + 'a>> {
         self.0.is_directory(path)
     }
@@ -237,7 +239,7 @@ async fn a_backend_declining_writability_has_to_refuse_mutations() {
 
 #[test]
 fn an_undeclared_backend_mints_no_share_link() {
-    let outcome = block_on(BareVolume.share_link(Path::new("/a.txt"), super::ShareLinkExpiry::SevenDays));
+    let outcome = block_on(BareVolume.share_link(app_path!("/a.txt"), super::ShareLinkExpiry::SevenDays));
     assert!(matches!(outcome, Err(super::VolumeError::NotSupported)), "{outcome:?}");
 }
 

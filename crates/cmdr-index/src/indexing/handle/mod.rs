@@ -421,7 +421,7 @@ impl Index {
         let Some(volume) = crate::indexing::host::volumes::current().get(volume_id) else {
             return false;
         };
-        state::follow_the_move(volume_id, volume.root().to_path_buf())
+        state::follow_the_move(volume_id, volume.root().as_std_legacy().to_path_buf())
     }
 
     /// Apply the master drive-indexing switch. Off stops every volume that's

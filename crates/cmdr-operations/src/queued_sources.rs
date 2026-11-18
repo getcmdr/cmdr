@@ -28,6 +28,7 @@
 //! (`source_binding::retain_bound_sources*`), for an operation with no binding:
 //! a bound one already drops a changed source on its own terms.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use tokio::sync::oneshot;
@@ -246,7 +247,10 @@ pub(super) fn local_source_is_gone(source: &Path) -> bool {
 /// [`local_source_is_gone`] asked of a volume. ❌ Not `Volume::exists`, which
 /// answers `false` for an unreachable source too.
 pub(super) async fn volume_source_is_gone(volume: &dyn Volume, source: &Path) -> bool {
-    matches!(volume.get_metadata(source).await, Err(VolumeError::NotFound(_)))
+    matches!(
+        volume.get_metadata(&AppPath::legacy_unchecked(source)).await,
+        Err(VolumeError::NotFound(_))
+    )
 }
 
 #[cfg(test)]

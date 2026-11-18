@@ -8,6 +8,7 @@
 //! the way it would with nothing journaled: reading the node never fails or
 //! redirects an operation.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -116,7 +117,7 @@ async fn a_one_pass_extract_out_of_a_compressed_tar_records_each_landed_node() {
     std::fs::create_dir_all(&out).expect("mk out");
     let source = archive_at(&archive, ArchiveFormat::Tar(TarCodec::Gzip));
     assert!(
-        source.extraction_is_sequential(&archive.join("docs")),
+        source.extraction_is_sequential(&AppPath::legacy_unchecked(&archive.join("docs"))),
         "the cell walks the one-pass body"
     );
 
@@ -331,9 +332,13 @@ impl Volume for NodeReadFails {
 
     fn node_identity<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> std::pin::Pin<Box<dyn Future<Output = Result<Option<NodeIdentity>, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { Err(VolumeError::NotFound(path.display().to_string())) })
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            Err(VolumeError::NotFound(path.display().to_string()))
+        })
     }
 }
 

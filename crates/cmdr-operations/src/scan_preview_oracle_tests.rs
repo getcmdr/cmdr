@@ -5,8 +5,11 @@
 //! Tauri `AppHandle` plumbing keeps the tests focused on the
 //! oracle-hit-vs-miss-vs-mid-walk decisions.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
@@ -52,7 +55,7 @@ impl Volume for CountingWatchedVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -61,7 +64,7 @@ impl Volume for CountingWatchedVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.list_dir_calls.fetch_add(1, Ordering::Relaxed);
@@ -70,23 +73,23 @@ impl Volume for CountingWatchedVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
 
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
 
-    fn listing_watch_coverage(&self, _path: &Path) -> WatchCoverage {
+    fn listing_watch_coverage(&self, _path: &AppPath) -> WatchCoverage {
         if self.watched.load(Ordering::Relaxed) {
             WatchCoverage::EveryWriter
         } else {
@@ -96,14 +99,14 @@ impl Volume for CountingWatchedVolume {
 
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a cmdr_fs::volume::ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
         // Reuse the default trait implementation by calling through self.inner.
@@ -242,9 +245,9 @@ async fn scan_preview_uses_authoritative_listing_for_top_level_files() {
     assert_eq!(result.aggregate.total_bytes, 6000);
     assert_eq!(result.per_path.len(), 3);
     // Order matches the caller's `sources` order, per BatchScanResult contract.
-    assert_eq!(result.per_path[0].0, PathBuf::from("/dcim/a.jpg"));
-    assert_eq!(result.per_path[1].0, PathBuf::from("/dcim/b.jpg"));
-    assert_eq!(result.per_path[2].0, PathBuf::from("/dcim/c.jpg"));
+    assert_eq!(*result.per_path[0].0.as_std_legacy(), PathBuf::from("/dcim/a.jpg"));
+    assert_eq!(*result.per_path[1].0.as_std_legacy(), PathBuf::from("/dcim/b.jpg"));
+    assert_eq!(*result.per_path[2].0.as_std_legacy(), PathBuf::from("/dcim/c.jpg"));
 }
 
 /// Test 2: when `listing_watch_coverage` returns false (watcher dead), the oracle
@@ -260,7 +263,7 @@ async fn scan_preview_falls_through_when_watcher_dead() {
     let vol = Arc::new(CountingWatchedVolume::new("dead-watcher-vol", false));
     // Seed the backend so the cold-path scan can answer correctly.
     vol.inner
-        .create_file(Path::new("/cold/a.jpg"), b"hello-12byte")
+        .create_file(app_path!("/cold/a.jpg"), b"hello-12byte")
         .await
         .unwrap();
     panes.show_volume(&vid, vol.clone() as Arc<dyn Volume>);
@@ -465,7 +468,7 @@ async fn scan_preview_handles_listing_closed_mid_walk() {
     // Seed the backing volume with what /a/sub really contains, so the
     // fallthrough path produces sensible results.
     vol.inner
-        .create_file(Path::new("/a/sub/real.bin"), b"abcdef")
+        .create_file(app_path!("/a/sub/real.bin"), b"abcdef")
         .await
         .unwrap();
     panes.show_volume(&vid, vol.clone() as Arc<dyn Volume>);

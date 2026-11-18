@@ -6,6 +6,7 @@
 
 use super::*;
 use crate::volume::test_support::*;
+use cmdr_fs::app_path;
 use cmdr_fs::volume::SignInShape;
 use cmdr_fs::volume::host::VolumeHost;
 use std::sync::Arc;
@@ -25,7 +26,7 @@ fn name_returns_share_name() {
 #[test]
 fn root_returns_mount_path() {
     let vol = make_test_volume();
-    assert_eq!(vol.root(), Path::new("/Volumes/TestShare"));
+    assert_eq!(vol.root().as_std_legacy(), Path::new("/Volumes/TestShare"));
 }
 
 /// macOS mounts one share at several roots (`/Volumes/testshare` AND
@@ -39,13 +40,13 @@ fn rerooting_addresses_the_new_mount_over_the_same_session() {
     let vol = make_test_volume();
 
     let promoted = vol
-        .rerooted(Path::new("/Volumes/TestShare-1"))
+        .rerooted(app_path!("/Volumes/TestShare-1"))
         .expect("a direct SMB share re-roots: its session doesn't ride the OS mount");
 
-    assert_eq!(promoted.root(), Path::new("/Volumes/TestShare-1"));
+    assert_eq!(promoted.root().as_std_legacy(), Path::new("/Volumes/TestShare-1"));
     assert_eq!(promoted.name(), "TestShare", "the display name survives a promotion");
     assert_eq!(
-        vol.root(),
+        vol.root().as_std_legacy(),
         Path::new("/Volumes/TestShare"),
         "the replaced instance keeps serving in-flight work at the root it was handed"
     );
@@ -75,7 +76,7 @@ fn rerooting_addresses_the_new_mount_over_the_same_session() {
 fn a_rerooted_share_translates_paths_under_its_new_mount() {
     let vol = make_test_volume();
     let promoted = vol
-        .rerooted(Path::new("/Volumes/TestShare-1"))
+        .rerooted(app_path!("/Volumes/TestShare-1"))
         .expect("a direct SMB share re-roots");
     let promoted_smb = promoted
         .as_any()
@@ -186,7 +187,7 @@ fn a_reroot_onto_a_live_mount_is_os_visible_again() {
     vol.note_root_mount_gone();
 
     let promoted = vol
-        .rerooted(Path::new("/Volumes/TestShare-1"))
+        .rerooted(app_path!("/Volumes/TestShare-1"))
         .expect("a direct SMB share re-roots");
 
     assert!(
@@ -352,7 +353,7 @@ fn a_promotion_uses_the_anchor_recorded_for_the_target_root() {
     let vol = make_test_volume_anchored("example.com", "/Volumes/SYSVOL/example.com");
     vol.note_mount_root(MountAnchor::at_share_root("/Volumes/SYSVOL"));
 
-    let promoted = vol.rerooted(Path::new("/Volumes/SYSVOL")).expect("a recorded root");
+    let promoted = vol.rerooted(app_path!("/Volumes/SYSVOL")).expect("a recorded root");
     let promoted = promoted
         .as_any()
         .downcast_ref::<SmbVolume>()
@@ -374,7 +375,7 @@ fn a_promotion_uses_the_anchor_recorded_for_the_target_root() {
 #[test]
 fn an_anchored_share_refuses_to_promote_to_an_unrecorded_root() {
     let vol = make_test_volume_anchored("example.com", "/Volumes/SYSVOL/example.com");
-    assert!(vol.rerooted(Path::new("/Volumes/SomewhereElse")).is_none());
+    assert!(vol.rerooted(app_path!("/Volumes/SomewhereElse")).is_none());
 }
 
 /// The ordinary share keeps promoting to any root the registry hands it. Roots
@@ -384,7 +385,7 @@ fn an_anchored_share_refuses_to_promote_to_an_unrecorded_root() {
 fn an_unanchored_share_still_promotes_to_an_unrecorded_root() {
     let vol = make_test_volume();
     let promoted = vol
-        .rerooted(Path::new("/Volumes/TestShare-1"))
+        .rerooted(app_path!("/Volumes/TestShare-1"))
         .expect("an unanchored share re-roots to any root");
     assert_eq!(
         promoted
@@ -406,13 +407,13 @@ fn a_successor_inherits_the_mount_roots_its_predecessor_knew() {
 
     let successor = make_test_volume_anchored("example.com", "/Volumes/SYSVOL/example.com");
     assert!(
-        successor.rerooted(Path::new("/Volumes/SYSVOL")).is_none(),
+        successor.rerooted(app_path!("/Volumes/SYSVOL")).is_none(),
         "nothing told the successor about that root yet"
     );
 
     successor.exchange_mount_roots_with(&predecessor);
 
-    let promoted = successor.rerooted(Path::new("/Volumes/SYSVOL")).expect("now recorded");
+    let promoted = successor.rerooted(app_path!("/Volumes/SYSVOL")).expect("now recorded");
     assert_eq!(
         promoted
             .as_any()
@@ -431,14 +432,14 @@ fn the_incumbent_learns_where_the_newcomer_sits_inside_the_share() {
     let incumbent = make_test_volume_anchored("example.com", "/Volumes/SYSVOL/example.com");
     let newcomer = make_test_volume_anchored("example.com", "/Volumes/SYSVOL-1/example.com");
     assert!(
-        incumbent.rerooted(Path::new("/Volumes/SYSVOL-1/example.com")).is_none(),
+        incumbent.rerooted(app_path!("/Volumes/SYSVOL-1/example.com")).is_none(),
         "nothing told the incumbent about the second mount yet"
     );
 
     newcomer.exchange_mount_roots_with(&incumbent);
 
     let promoted = incumbent
-        .rerooted(Path::new("/Volumes/SYSVOL-1/example.com"))
+        .rerooted(app_path!("/Volumes/SYSVOL-1/example.com"))
         .expect("the newcomer's own root reached the incumbent");
     assert_eq!(
         promoted

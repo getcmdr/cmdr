@@ -7,6 +7,7 @@
 //! [`stream_pipe_file`] is a step runner: this file holds the runner and its one
 //! fault decision ([`FileRun::on_fault`]), `stream_pipe_steps.rs` the steps.
 
+use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::path::Path;
 use std::sync::Arc;
@@ -266,7 +267,13 @@ pub(super) async fn land_link(
             role: PathRole::Destination,
             ..
         }) if (run.attempt > 1 || run.outages > 0)
-            && dest_volume.read_link_target(dest_path).await.ok().flatten().as_deref() == Some(target) =>
+            && dest_volume
+                .read_link_target(&AppPath::legacy_unchecked(dest_path))
+                .await
+                .ok()
+                .flatten()
+                .as_deref()
+                == Some(target) =>
         {
             Ok(())
         }
@@ -685,7 +692,7 @@ async fn remove_unstaged_partial(writing_at_the_final_name: bool, dest_volume: &
     if !writing_at_the_final_name {
         return;
     }
-    if let Err(e) = dest_volume.delete(dest_path).await {
+    if let Err(e) = dest_volume.delete(&AppPath::legacy_unchecked(dest_path)).await {
         log::debug!(
             target: "copy",
             "stream_pipe_file: couldn't remove the unstaged partial {}: {e}",

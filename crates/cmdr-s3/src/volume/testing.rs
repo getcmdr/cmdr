@@ -9,6 +9,7 @@
 //! this crate's own request builders and transport rather than the volume, so a
 //! cell about the volume's write path never seeds through the code it tests.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::pin::Pin;
 use std::sync::{Arc, OnceLock};
@@ -348,7 +349,7 @@ impl VolumeReadStream for BytesSource {
 /// Everything at `path`, read back through the volume.
 pub async fn read_back(volume: &S3Volume, path: &Path) -> Vec<u8> {
     let mut stream = volume
-        .open_read_stream(path)
+        .open_read_stream(&AppPath::legacy_unchecked(path))
         .await
         .unwrap_or_else(|e| panic!("reading {} back: {e:?}", path.display()));
     let mut bytes = Vec::new();

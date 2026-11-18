@@ -15,6 +15,7 @@
 //! trash runs exactly as it always did. The binding is an input a caller may supply,
 //! ❌ never a policy the engine applies to some callers and not others.
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -125,7 +126,7 @@ impl SourceFingerprint {
     /// Reads a remote source's identity now, through the volume that owns it.
     /// `None` when the backend can't stat it.
     pub async fn capture_remote(volume: &dyn Volume, path: &Path) -> Option<Self> {
-        let metadata = volume.get_metadata(path).await.ok()?;
+        let metadata = volume.get_metadata(&AppPath::legacy_unchecked(path)).await.ok()?;
         let content = if metadata.is_directory {
             RemoteContent::Directory
         } else {
@@ -307,7 +308,7 @@ impl ExpectedSources {
                 // One extra round trip, and only for a source that already
                 // mismatched: the difference between "changed" and "gone" is what
                 // decides whether every stale search snapshot may drop its row.
-                let gone = !volume.exists(source).await;
+                let gone = !volume.exists(&AppPath::legacy_unchecked(source)).await;
                 announce_skip(events, operation_id, source, gone);
             }
         }

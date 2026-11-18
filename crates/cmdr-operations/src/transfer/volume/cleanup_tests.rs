@@ -15,6 +15,7 @@ use crate::outage_slot::{CleanupPolicy, OutagePolicy};
 use crate::testing::TestOperations;
 use crate::transfer::outage_volume_test_support::OutageVolume;
 use crate::types::{CancelRollback, CancelRollbackOutcome, StagedLeftoverFate, StagedLeftovers};
+use cmdr_fs::app_path;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::InMemoryVolume;
 
@@ -94,7 +95,12 @@ async fn roll_back(
 ) -> CancelRollback {
     let mut ledger: Vec<WrittenFile> = Vec::new();
     for path in copied_paths {
-        let size = volume.get_metadata(path).await.ok().and_then(|e| e.size).unwrap_or(0);
+        let size = volume
+            .get_metadata(&AppPath::legacy_unchecked(path))
+            .await
+            .ok()
+            .and_then(|e| e.size)
+            .unwrap_or(0);
         ledger.push(WrittenFile::volume(path.clone(), size));
     }
     let events = CollectorEventSink::new();
@@ -121,8 +127,8 @@ async fn roll_back(
 async fn rollback_leaves_a_directory_in_copied_paths_alone() {
     let engine = TestOperations::new();
     let vol = Arc::new(InMemoryVolume::new("Dest"));
-    vol.create_directory(Path::new("/album")).await.unwrap();
-    vol.create_file(Path::new("/album/keep-me.jpg"), b"the user's own file")
+    vol.create_directory(app_path!("/album")).await.unwrap();
+    vol.create_file(app_path!("/album/keep-me.jpg"), b"the user's own file")
         .await
         .unwrap();
     let volume: Arc<dyn Volume> = vol.clone();
@@ -135,7 +141,7 @@ async fn rollback_leaves_a_directory_in_copied_paths_alone() {
         "rollback runs to the end even when a path refuses, and says so"
     );
     assert!(
-        vol.exists(Path::new("/album/keep-me.jpg")).await,
+        vol.exists(app_path!("/album/keep-me.jpg")).await,
         "rollback must delete the files this op wrote, never a directory's contents"
     );
 }
@@ -146,11 +152,11 @@ async fn rollback_leaves_a_directory_in_copied_paths_alone() {
 async fn rollback_removes_the_files_the_copy_wrote() {
     let engine = TestOperations::new();
     let vol = Arc::new(InMemoryVolume::new("Dest"));
-    vol.create_directory(Path::new("/album")).await.unwrap();
-    vol.create_file(Path::new("/album/ours.jpg"), b"we wrote this")
+    vol.create_directory(app_path!("/album")).await.unwrap();
+    vol.create_file(app_path!("/album/ours.jpg"), b"we wrote this")
         .await
         .unwrap();
-    vol.create_file(Path::new("/album/keep-me.jpg"), b"the user's own file")
+    vol.create_file(app_path!("/album/keep-me.jpg"), b"the user's own file")
         .await
         .unwrap();
     let volume: Arc<dyn Volume> = vol.clone();
@@ -166,8 +172,8 @@ async fn rollback_removes_the_files_the_copy_wrote() {
     )
     .await;
 
-    assert!(!vol.exists(Path::new("/album/ours.jpg")).await);
-    assert!(vol.exists(Path::new("/album/keep-me.jpg")).await);
+    assert!(!vol.exists(app_path!("/album/ours.jpg")).await);
+    assert!(vol.exists(app_path!("/album/keep-me.jpg")).await);
 }
 
 /// A destination the backend now reports at a different size is left where it
@@ -180,11 +186,11 @@ async fn rollback_removes_the_files_the_copy_wrote() {
 async fn rollback_leaves_a_file_the_backend_now_reports_at_another_size() {
     let engine = TestOperations::new();
     let vol = Arc::new(InMemoryVolume::new("Dest"));
-    vol.create_directory(Path::new("/album")).await.unwrap();
-    vol.create_file(Path::new("/album/ours.jpg"), b"we wrote this")
+    vol.create_directory(app_path!("/album")).await.unwrap();
+    vol.create_file(app_path!("/album/ours.jpg"), b"we wrote this")
         .await
         .unwrap();
-    vol.create_file(Path::new("/album/theirs.jpg"), b"we wrote this too")
+    vol.create_file(app_path!("/album/theirs.jpg"), b"we wrote this too")
         .await
         .unwrap();
     let volume: Arc<dyn Volume> = vol.clone();
@@ -193,7 +199,12 @@ async fn rollback_leaves_a_file_the_backend_now_reports_at_another_size() {
     let mut ledger = Vec::new();
     for name in ["ours.jpg", "theirs.jpg"] {
         let path = PathBuf::from(format!("/album/{name}"));
-        let size = volume.get_metadata(&path).await.unwrap().size.unwrap();
+        let size = volume
+            .get_metadata(&AppPath::legacy_unchecked(&path))
+            .await
+            .unwrap()
+            .size
+            .unwrap();
         ledger.push(WrittenFile::volume(path, size));
     }
     // Something else changes one of them while the copy was running.
@@ -217,11 +228,11 @@ async fn rollback_leaves_a_file_the_backend_now_reports_at_another_size() {
     .into_cancel_rollback();
 
     assert!(
-        vol.exists(Path::new("/album/theirs.jpg")).await,
+        vol.exists(app_path!("/album/theirs.jpg")).await,
         "a file the backend reports differently must survive the reversal"
     );
     assert!(
-        !vol.exists(Path::new("/album/ours.jpg")).await,
+        !vol.exists(app_path!("/album/ours.jpg")).await,
         "one changed file must not stop the reversal removing its neighbours"
     );
     assert_eq!(report.outcome, CancelRollbackOutcome::PartiallyRolledBack);
@@ -247,9 +258,9 @@ async fn created_dir_prune_checks_emptiness_itself_even_on_a_recursive_backend()
     let engine = TestOperations::new();
 
     let inner = Arc::new(InMemoryVolume::new("Dest"));
-    inner.create_directory(Path::new("/album")).await.unwrap();
+    inner.create_directory(app_path!("/album")).await.unwrap();
     inner
-        .create_file(Path::new("/album/keep-me.jpg"), b"the user's own file")
+        .create_file(app_path!("/album/keep-me.jpg"), b"the user's own file")
         .await
         .unwrap();
     let volume: Arc<dyn Volume> = RecursiveDeleteVolume::wrapping(Arc::clone(&inner));
@@ -257,7 +268,7 @@ async fn created_dir_prune_checks_emptiness_itself_even_on_a_recursive_backend()
     roll_back(&engine, &volume, &[], &[PathBuf::from("/album")]).await;
 
     assert!(
-        inner.exists(Path::new("/album/keep-me.jpg")).await,
+        inner.exists(app_path!("/album/keep-me.jpg")).await,
         "the prune must list the directory before deleting it, not trust the backend to refuse"
     );
 }
@@ -271,8 +282,8 @@ async fn created_dir_prune_still_removes_an_empty_directory() {
     let engine = TestOperations::new();
 
     let inner = Arc::new(InMemoryVolume::new("Dest"));
-    inner.create_directory(Path::new("/album")).await.unwrap();
-    inner.create_directory(Path::new("/album/raw")).await.unwrap();
+    inner.create_directory(app_path!("/album")).await.unwrap();
+    inner.create_directory(app_path!("/album/raw")).await.unwrap();
     let volume: Arc<dyn Volume> = RecursiveDeleteVolume::wrapping(Arc::clone(&inner));
 
     // Creation order is shallowest-first; the prune walks it in reverse, so the
@@ -285,8 +296,8 @@ async fn created_dir_prune_still_removes_an_empty_directory() {
     )
     .await;
 
-    assert!(!inner.exists(Path::new("/album/raw")).await);
-    assert!(!inner.exists(Path::new("/album")).await);
+    assert!(!inner.exists(app_path!("/album/raw")).await);
+    assert!(!inner.exists(app_path!("/album")).await);
 }
 
 // ── A stopped reversal ─────────────────────────────────────────────────────
@@ -297,11 +308,13 @@ async fn created_dir_prune_still_removes_an_empty_directory() {
 async fn a_stopped_volume_reversal_leaves_the_ledger_claiming_what_is_still_there() {
     let engine = TestOperations::new();
     let vol = Arc::new(InMemoryVolume::new("Dest"));
-    vol.create_directory(Path::new("/album")).await.unwrap();
+    vol.create_directory(app_path!("/album")).await.unwrap();
     let mut ledger = Vec::new();
     for i in 0..4 {
         let path = PathBuf::from(format!("/album/file{i}.bin"));
-        vol.create_file(&path, b"payload").await.unwrap();
+        vol.create_file(&AppPath::legacy_unchecked(&path), b"payload")
+            .await
+            .unwrap();
         ledger.push(WrittenFile::volume(path, 7));
     }
     let volume: Arc<dyn Volume> = vol.clone();
@@ -335,7 +348,7 @@ async fn a_stopped_volume_reversal_leaves_the_ledger_claiming_what_is_still_ther
     assert_eq!(ledger.len(), 4, "nothing was reversed, so nothing left the ledger");
     for entry in &ledger {
         assert!(
-            vol.exists(&entry.path).await,
+            vol.exists(&AppPath::legacy_unchecked(&entry.path)).await,
             "{} is still claimed, so it must still be on the volume",
             entry.path.display()
         );
@@ -353,11 +366,11 @@ async fn a_stopped_volume_reversal_leaves_the_ledger_claiming_what_is_still_ther
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn remove_tree_removes_nonempty_directory() {
     let vol = Arc::new(InMemoryVolume::new("V"));
-    vol.create_directory(Path::new("/photos")).await.unwrap();
-    vol.create_file(Path::new("/photos/a.jpg"), b"a").await.unwrap();
-    vol.create_file(Path::new("/photos/b.jpg"), b"b").await.unwrap();
-    vol.create_directory(Path::new("/photos/sub")).await.unwrap();
-    vol.create_file(Path::new("/photos/sub/c.jpg"), b"c").await.unwrap();
+    vol.create_directory(app_path!("/photos")).await.unwrap();
+    vol.create_file(app_path!("/photos/a.jpg"), b"a").await.unwrap();
+    vol.create_file(app_path!("/photos/b.jpg"), b"b").await.unwrap();
+    vol.create_directory(app_path!("/photos/sub")).await.unwrap();
+    vol.create_file(app_path!("/photos/sub/c.jpg"), b"c").await.unwrap();
 
     let result: Arc<dyn Volume> = vol.clone();
     remove_tree(
@@ -368,15 +381,15 @@ async fn remove_tree_removes_nonempty_directory() {
     .await
     .unwrap();
 
-    assert!(!vol.exists(Path::new("/photos")).await);
-    assert!(!vol.exists(Path::new("/photos/a.jpg")).await);
-    assert!(!vol.exists(Path::new("/photos/sub/c.jpg")).await);
+    assert!(!vol.exists(app_path!("/photos")).await);
+    assert!(!vol.exists(app_path!("/photos/a.jpg")).await);
+    assert!(!vol.exists(app_path!("/photos/sub/c.jpg")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn remove_tree_removes_single_file() {
     let vol = Arc::new(InMemoryVolume::new("V"));
-    vol.create_file(Path::new("/file.txt"), b"hi").await.unwrap();
+    vol.create_file(app_path!("/file.txt"), b"hi").await.unwrap();
 
     let result: Arc<dyn Volume> = vol.clone();
     remove_tree(
@@ -387,7 +400,7 @@ async fn remove_tree_removes_single_file() {
     .await
     .unwrap();
 
-    assert!(!vol.exists(Path::new("/file.txt")).await);
+    assert!(!vol.exists(app_path!("/file.txt")).await);
 }
 
 /// The whole tree can't come down because ONE leaf refuses. What comes back is
@@ -405,11 +418,11 @@ async fn remove_tree_reports_the_leaf_that_refused() {
         },
     );
     let volume: Arc<dyn Volume> = Arc::clone(&vol) as Arc<dyn Volume>;
-    volume.create_directory(Path::new("/tree")).await.unwrap();
-    volume.create_directory(Path::new("/tree/nested")).await.unwrap();
-    volume.create_file(Path::new("/tree/fine.txt"), b"fine").await.unwrap();
+    volume.create_directory(app_path!("/tree")).await.unwrap();
+    volume.create_directory(app_path!("/tree/nested")).await.unwrap();
+    volume.create_file(app_path!("/tree/fine.txt"), b"fine").await.unwrap();
     volume
-        .create_file(Path::new("/tree/nested/doomed.txt"), b"doomed")
+        .create_file(app_path!("/tree/nested/doomed.txt"), b"doomed")
         .await
         .unwrap();
 
@@ -423,8 +436,8 @@ async fn remove_tree_reports_the_leaf_that_refused() {
     );
 
     // Best-effort still applies: everything that COULD go, went.
-    assert!(!volume.exists(Path::new("/tree/fine.txt")).await);
-    assert!(volume.exists(Path::new("/tree/nested/doomed.txt")).await);
+    assert!(!volume.exists(app_path!("/tree/fine.txt")).await);
+    assert!(volume.exists(app_path!("/tree/nested/doomed.txt")).await);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -488,9 +501,11 @@ async fn a_staged_partial_the_destination_keeps_comes_back_from_the_sweep() {
 async fn a_sweep_that_cleared_the_destination_reports_no_leftovers() {
     let engine = TestOperations::new();
     let vol = Arc::new(InMemoryVolume::new("Dest"));
-    vol.create_directory(Path::new("/album")).await.unwrap();
+    vol.create_directory(app_path!("/album")).await.unwrap();
     let present = PathBuf::from("/album/holiday.jpg.cmdr-tmp-4d1f9c");
-    vol.create_file(&present, b"half a photo").await.unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(&present), b"half a photo")
+        .await
+        .unwrap();
     let volume: Arc<dyn Volume> = vol.clone();
     let state = make_state(&engine);
     state.in_flight_temps.lock_ignore_poison().extend([
@@ -501,7 +516,10 @@ async fn a_sweep_that_cleared_the_destination_reports_no_leftovers() {
     let leftovers = clean_abandoned_staged_writes(&volume, &state, None).await;
 
     assert!(leftovers.is_empty(), "nothing was left, so there is nothing to report");
-    assert!(!vol.exists(&present).await, "the staged partial itself still goes");
+    assert!(
+        !vol.exists(&AppPath::legacy_unchecked(&present)).await,
+        "the staged partial itself still goes"
+    );
 }
 
 /// ❗ **A stop never waits on a share that's out** (the lead's decision: a
@@ -514,7 +532,10 @@ async fn a_stop_with_the_destination_out_reports_at_once_and_the_temp_goes_once_
     let ledger = Ledger::for_test();
     let (inner, nas, volume) = nas("cleanup-test-out-at-stop");
     let temp = PathBuf::from("/holiday.jpg.cmdr-tmp-5d2e");
-    inner.create_file(&temp, b"half a photo").await.unwrap();
+    inner
+        .create_file(&AppPath::legacy_unchecked(&temp), b"half a photo")
+        .await
+        .unwrap();
     let state = stopped_with_a_temp_on(&engine, &ledger, "cleanup-test-nas-out", &temp);
     nas.go_away();
     nas.hang_reconnects();
@@ -538,13 +559,16 @@ async fn a_stop_with_the_destination_out_reports_at_once_and_the_temp_goes_once_
         nas.reconnect_attempts() >= 1
     })
     .await;
-    assert!(inner.exists(&temp).await, "nothing is deleted while the share is out");
+    assert!(
+        inner.exists(&AppPath::legacy_unchecked(&temp)).await,
+        "nothing is deleted while the share is out"
+    );
 
     nas.reconnected_elsewhere();
     engine.leftover_cleanups_settled().await;
 
     assert!(
-        !inner.exists(&temp).await,
+        !inner.exists(&AppPath::legacy_unchecked(&temp)).await,
         "the pass removes the temp once the share is back"
     );
     assert!(!ledger.live_paths().contains(&temp), "and retires its record");
@@ -560,7 +584,9 @@ async fn a_temp_the_destination_still_refuses_waits_in_the_ledger_for_its_next_r
     let ledger = Ledger::for_test();
     let vol = Arc::new(InMemoryVolume::new("Testnas").with_delete_failing());
     let temp = PathBuf::from("/holiday.jpg.cmdr-tmp-6e3f");
-    vol.create_file(&temp, b"half a photo").await.unwrap();
+    vol.create_file(&AppPath::legacy_unchecked(&temp), b"half a photo")
+        .await
+        .unwrap();
     let volume: Arc<dyn Volume> = vol.clone();
     let state = stopped_with_a_temp_on(&engine, &ledger, "cleanup-test-nas-refuses", &temp);
 
@@ -575,7 +601,10 @@ async fn a_temp_the_destination_still_refuses_waits_in_the_ledger_for_its_next_r
             "Testnas"
         )]
     );
-    assert!(vol.exists(&temp).await, "a refused temp stays where it is");
+    assert!(
+        vol.exists(&AppPath::legacy_unchecked(&temp)).await,
+        "a refused temp stays where it is"
+    );
     assert_eq!(
         ledger.pending_paths(),
         vec![temp],
@@ -593,7 +622,10 @@ async fn a_temp_refused_once_goes_on_the_background_retry() {
     let ledger = Ledger::for_test();
     let inner = Arc::new(InMemoryVolume::new("Testnas"));
     let temp = PathBuf::from("/holiday.jpg.cmdr-tmp-7f40");
-    inner.create_file(&temp, b"half a photo").await.unwrap();
+    inner
+        .create_file(&AppPath::legacy_unchecked(&temp), b"half a photo")
+        .await
+        .unwrap();
     let faulty = FaultyVolume::wrapping(Arc::clone(&inner))
         .failing_call(
             FaultyOp::Delete,
@@ -612,7 +644,10 @@ async fn a_temp_refused_once_goes_on_the_background_retry() {
 
     assert!(faulty.fault_fired(FaultyOp::Delete), "the first delete was refused");
     assert_eq!(leftovers.len(), 1, "reported as refused at the stop: {leftovers:?}");
-    assert!(!inner.exists(&temp).await, "and gone after the retry");
+    assert!(
+        !inner.exists(&AppPath::legacy_unchecked(&temp)).await,
+        "and gone after the retry"
+    );
     assert!(!ledger.live_paths().contains(&temp), "its record retired");
 }
 
@@ -625,7 +660,10 @@ async fn tier_two_during_the_background_pass_leaves_the_record_for_the_startup_s
     let ledger = Ledger::for_test();
     let (inner, nas, volume) = nas("cleanup-test-tier-two");
     let temp = PathBuf::from("/holiday.jpg.cmdr-tmp-8a51");
-    inner.create_file(&temp, b"half a photo").await.unwrap();
+    inner
+        .create_file(&AppPath::legacy_unchecked(&temp), b"half a photo")
+        .await
+        .unwrap();
     let state = stopped_with_a_temp_on(&engine, &ledger, "cleanup-test-nas-tier-two", &temp);
     nas.go_away();
     nas.hang_reconnects();
@@ -638,7 +676,10 @@ async fn tier_two_during_the_background_pass_leaves_the_record_for_the_startup_s
     engine.abort_all_write_operations();
     engine.leftover_cleanups_settled().await;
 
-    assert!(inner.exists(&temp).await, "nothing is deleted after tier 2");
+    assert!(
+        inner.exists(&AppPath::legacy_unchecked(&temp)).await,
+        "nothing is deleted after tier 2"
+    );
     assert!(
         ledger.live_paths().contains(&temp),
         "the record stays for the startup sweep"
@@ -732,7 +773,10 @@ async fn the_stale_temp_reap_skips_what_the_ledger_records_however_old_it_looks(
     let landing = PathBuf::from("/landing.mov.cmdr-tmp-2222");
     let orphan = PathBuf::from("/orphan.mov.cmdr-tmp-3333");
     for temp in [&streaming, &landing, &orphan] {
-        volume.create_file(temp, b"bytes").await.unwrap();
+        volume
+            .create_file(&AppPath::legacy_unchecked(temp), b"bytes")
+            .await
+            .unwrap();
         // A year before the reap runs, the way a source's stamped date reads.
         volume.set_modified_at(temp, Some(1));
     }
@@ -754,15 +798,15 @@ async fn the_stale_temp_reap_skips_what_the_ledger_records_however_old_it_looks(
         .expect("the listing answers");
 
     assert!(
-        volume.exists(&streaming).await,
+        volume.exists(&AppPath::legacy_unchecked(&streaming)).await,
         "a recorded temp is a live write, ❌ never reaped"
     );
     assert!(
-        volume.exists(&landing).await,
+        volume.exists(&AppPath::legacy_unchecked(&landing)).await,
         "a recorded landing may be the only copy, ❌ never reaped"
     );
     assert!(
-        !volume.exists(&orphan).await,
+        !volume.exists(&AppPath::legacy_unchecked(&orphan)).await,
         "an unrecorded temp that old is still a leftover, and goes"
     );
     let names: Vec<&str> = listing.iter().map(|entry| entry.name.as_str()).collect();

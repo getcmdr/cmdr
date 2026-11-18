@@ -12,8 +12,9 @@
 //! A single-file fixture stays with its tests: the `ColdDrive` in
 //! `cold_drive_tests.rs`.
 
+use cmdr_fs::app_path::AppPath;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -321,7 +322,7 @@ impl Volume for Instrumented {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -337,10 +338,13 @@ impl Volume for Instrumented {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, VolumeError>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let now = self.in_flight.fetch_add(1, Ordering::SeqCst) + 1;
             self.max_in_flight.fetch_max(now, Ordering::SeqCst);
             // Let sibling listings launched in the same batch coexist before any
@@ -351,18 +355,18 @@ impl Volume for Instrumented {
                 self.gate_reached.store(true, Ordering::SeqCst);
                 self.gate_released.notified().await;
             }
-            let result = self.inner.list_directory(path, on_progress).await;
+            let result = self.inner.list_directory(path_app, on_progress).await;
             self.in_flight.fetch_sub(1, Ordering::SeqCst);
             result
         })
     }
-    fn get_metadata<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<FileEntry, VolumeError>> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<FileEntry, VolumeError>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Fut<'a, bool> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Fut<'a, bool> {
         self.inner.exists(path)
     }
-    fn is_directory<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<bool, VolumeError>> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<bool, VolumeError>> {
         self.inner.is_directory(path)
     }
 }
@@ -379,7 +383,7 @@ impl Volume for SameNameSiblings {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -387,24 +391,27 @@ impl Volume for SameNameSiblings {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, VolumeError>> {
         Box::pin(async move {
-            let entries = self.inner.list_directory(path, on_progress).await?;
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            let entries = self.inner.list_directory(path_app, on_progress).await?;
             if path != self.doubled {
                 return Ok(entries);
             }
             Ok([entries.clone(), entries].concat())
         })
     }
-    fn get_metadata<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<FileEntry, VolumeError>> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<FileEntry, VolumeError>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Fut<'a, bool> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Fut<'a, bool> {
         self.inner.exists(path)
     }
-    fn is_directory<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<bool, VolumeError>> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<bool, VolumeError>> {
         self.inner.is_directory(path)
     }
 }
@@ -456,7 +463,7 @@ impl Volume for RefusesToList {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -464,9 +471,12 @@ impl Volume for RefusesToList {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, VolumeError>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         if self.refused.lock_ignore_poison().iter().any(|refused| refused == path) {
             return Box::pin(async {
                 Err(VolumeError::PermissionDenied {
@@ -481,16 +491,16 @@ impl Volume for RefusesToList {
                 self.gate_reached.store(true, Ordering::SeqCst);
                 self.gate_released.notified().await;
             }
-            self.inner.list_directory(path, on_progress).await
+            self.inner.list_directory(path_app, on_progress).await
         })
     }
-    fn get_metadata<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<FileEntry, VolumeError>> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<FileEntry, VolumeError>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Fut<'a, bool> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Fut<'a, bool> {
         self.inner.exists(path)
     }
-    fn is_directory<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<bool, VolumeError>> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<bool, VolumeError>> {
         self.inner.is_directory(path)
     }
 }
@@ -566,7 +576,7 @@ impl Volume for GoesAway {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -574,7 +584,7 @@ impl Volume for GoesAway {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, VolumeError>> {
         if self.answers_left.fetch_sub(1, Ordering::SeqCst) <= 0 {
@@ -587,13 +597,13 @@ impl Volume for GoesAway {
         }
         self.inner.list_directory(path, on_progress)
     }
-    fn get_metadata<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<FileEntry, VolumeError>> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<FileEntry, VolumeError>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Fut<'a, bool> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Fut<'a, bool> {
         self.inner.exists(path)
     }
-    fn is_directory<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<bool, VolumeError>> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<bool, VolumeError>> {
         self.inner.is_directory(path)
     }
 }
@@ -680,7 +690,7 @@ impl Volume for StopsAnswering {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -688,9 +698,12 @@ impl Volume for StopsAnswering {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Fut<'a, Result<Vec<FileEntry>, VolumeError>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         self.listed.lock_ignore_poison().push(path.to_path_buf());
         if let Some(how) = *self.gone.lock_ignore_poison()
             && self.answers_left.fetch_sub(1, Ordering::SeqCst) <= 0
@@ -700,15 +713,15 @@ impl Volume for StopsAnswering {
         if self.wedged.lock_ignore_poison().iter().any(|wedged| wedged == path) {
             return Box::pin(async { Err(VolumeError::ConnectionTimeout("test: no answer".into())) });
         }
-        self.inner.list_directory(path, on_progress)
+        self.inner.list_directory(path_app, on_progress)
     }
-    fn get_metadata<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<FileEntry, VolumeError>> {
+    fn get_metadata<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<FileEntry, VolumeError>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Fut<'a, bool> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Fut<'a, bool> {
         self.inner.exists(path)
     }
-    fn is_directory<'a>(&'a self, path: &'a Path) -> Fut<'a, Result<bool, VolumeError>> {
+    fn is_directory<'a>(&'a self, path: &'a AppPath) -> Fut<'a, Result<bool, VolumeError>> {
         self.inner.is_directory(path)
     }
 }

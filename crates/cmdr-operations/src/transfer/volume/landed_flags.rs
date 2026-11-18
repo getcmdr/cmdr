@@ -16,6 +16,7 @@
 //! swap over the original included, and puts the set on right after, at the
 //! file's final name.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -43,7 +44,7 @@ pub(super) async fn put_on(dest: &Arc<dyn Volume>, landed: &Path, set: &CarriedM
     if set.is_empty() {
         return;
     }
-    let report = dest.apply_metadata(landed, set, None).await;
+    let report = dest.apply_metadata(&AppPath::legacy_unchecked(landed), set, None).await;
     if report.flags == ClassOutcome::Refused {
         log::warn!(
             target: "transfer",

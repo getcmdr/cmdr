@@ -5,6 +5,8 @@
 //! permanent delete of that row stopped with `SourceNotFound` and auto-sent an
 //! error report. The file was gone, which is what the person wanted.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::fs;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -153,7 +155,7 @@ async fn a_delete_with_nothing_gone_carries_no_already_gone_note() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_volume_delete_of_an_item_that_is_already_gone_completes() {
     let volume = Arc::new(InMemoryVolume::new("testshare"));
-    volume.create_file(Path::new("/here.txt"), b"here").await.expect("file");
+    volume.create_file(app_path!("/here.txt"), b"here").await.expect("file");
     let engine = TestOperations::new();
     let volume_id = format!("already-gone-volume-{}", std::process::id());
     engine.volumes().register(&volume_id, volume.clone() as Arc<dyn Volume>);
@@ -173,7 +175,7 @@ async fn a_volume_delete_of_an_item_that_is_already_gone_completes() {
 
     let complete = settled_completion(&events).await;
     assert!(
-        !volume.exists(Path::new("/here.txt")).await,
+        !volume.exists(app_path!("/here.txt")).await,
         "the item that was there is deleted"
     );
     assert_eq!(
@@ -308,7 +310,7 @@ impl Volume for ProbeCountingVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -316,36 +318,45 @@ impl Volume for ProbeCountingVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         self.count(path);
-        self.inner.get_metadata(path)
+        self.inner.get_metadata(path_app)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         self.count(path);
-        self.inner.is_directory(path)
+        self.inner.is_directory(path_app)
     }
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         self.count(path);
-        self.inner.entry_kind(path)
+        self.inner.entry_kind(path_app)
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         self.inner.delete(path)
     }
 }
@@ -364,17 +375,17 @@ async fn a_volume_delete_probes_each_selected_item_once() {
     });
     volume
         .inner
-        .create_file(Path::new("/file.txt"), b"x")
+        .create_file(app_path!("/file.txt"), b"x")
         .await
         .expect("file");
     volume
         .inner
-        .create_directory(Path::new("/folder"))
+        .create_directory(app_path!("/folder"))
         .await
         .expect("folder");
     volume
         .inner
-        .create_file(Path::new("/folder/child.txt"), b"y")
+        .create_file(app_path!("/folder/child.txt"), b"y")
         .await
         .expect("child");
     let engine = TestOperations::new();
@@ -397,11 +408,11 @@ async fn a_volume_delete_probes_each_selected_item_once() {
     let complete = settled_completion(&events).await;
     assert_eq!(complete.already_gone, None);
     assert!(
-        !volume.inner.exists(Path::new("/file.txt")).await,
+        !volume.inner.exists(app_path!("/file.txt")).await,
         "the file is deleted"
     );
     assert!(
-        !volume.inner.exists(Path::new("/folder")).await,
+        !volume.inner.exists(app_path!("/folder")).await,
         "the folder is deleted"
     );
     assert_eq!(
@@ -567,7 +578,7 @@ impl Volume for RacingVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -575,46 +586,59 @@ impl Volume for RacingVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let listing = self.inner.list_directory(path, on_progress).await;
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            let listing = self.inner.list_directory(path_app, on_progress).await;
             if let Some(vanishes) = &self.vanishes_after_listing
                 && vanishes.parent() == Some(path)
-                && self.inner.exists(vanishes).await
+                && self.inner.exists(&AppPath::legacy_unchecked(vanishes)).await
             {
-                self.inner.delete(vanishes).await.expect("another app takes it");
+                self.inner
+                    .delete(&AppPath::legacy_unchecked(vanishes))
+                    .await
+                    .expect("another app takes it");
             }
             listing
         })
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.inner.exists(path)
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         self.inner.is_directory(path)
     }
     fn entry_kind<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
         self.inner.entry_kind(path)
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+        let path_app = path;
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         if self.delete_answers_not_found.as_deref() == Some(path) {
-            return Box::pin(async move { Err(VolumeError::NotFound(path.display().to_string())) });
+            return Box::pin(async move {
+                let path_std = path_app.as_std_legacy();
+                let path: &Path = &path_std;
+                Err(VolumeError::NotFound(path.display().to_string()))
+            });
         }
-        self.inner.delete(path)
+        self.inner.delete(path_app)
     }
 }
 
@@ -626,11 +650,15 @@ async fn racing_folder(vanishes: Option<&str>, answers_not_found: Option<&str>) 
     });
     volume
         .inner
-        .create_directory(Path::new("/folder"))
+        .create_directory(app_path!("/folder"))
         .await
         .expect("folder");
     for name in ["/folder/a.txt", "/folder/b.txt"] {
-        volume.inner.create_file(Path::new(name), b"x").await.expect("file");
+        volume
+            .inner
+            .create_file(&AppPath::legacy_unchecked(Path::new(name)), b"x")
+            .await
+            .expect("file");
     }
     volume
 }
@@ -672,7 +700,7 @@ async fn a_volume_delete_carries_on_past_a_file_that_vanished_after_the_walk() {
     let complete = settled_completion(&events).await;
     assert_eq!(complete.files_processed, 2, "the vanished file counts as done");
     assert!(
-        !volume.inner.exists(Path::new("/folder")).await,
+        !volume.inner.exists(app_path!("/folder")).await,
         "the folder is deleted"
     );
     let sources = events.source_items_done.lock_ignore_poison();
@@ -702,5 +730,5 @@ async fn a_volume_delete_answering_not_found_for_an_entry_still_there_fails() {
             errors[0].error
         );
     }
-    assert!(volume.inner.exists(Path::new("/folder/b.txt")).await, "it stays");
+    assert!(volume.inner.exists(app_path!("/folder/b.txt")).await, "it stays");
 }

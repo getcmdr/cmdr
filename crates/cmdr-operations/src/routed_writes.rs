@@ -65,7 +65,7 @@ pub(crate) async fn first_routed<'a>(
 /// touched it, as the copy and move routes word a `.git` refusal.
 pub(crate) fn routed_transfer_refusal(routed: &Arc<dyn Volume>, side: ReadOnlySide) -> WriteOperationError {
     WriteOperationError::ReadOnlyDevice {
-        path: routed.root().display().to_string(),
+        path: routed.root().as_std_legacy().display().to_string(),
         device_name: Some(routed.name().to_string()),
         side,
     }

@@ -3,6 +3,8 @@
 //! the end-to-end busy-marking of a non-root volume during the mutation.
 
 use super::*;
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::BridgedPath;
 use std::fs;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -172,7 +174,7 @@ async fn rename_managed_local_force_overwrites() {
 /// a test can observe the busy set mid-mutation. Everything else is a stub.
 struct BlockingVolume {
     name: String,
-    root: PathBuf,
+    root: BridgedPath,
     started: Arc<tokio::sync::Notify>,
     release: Arc<tokio::sync::Notify>,
 }
@@ -181,31 +183,31 @@ impl Volume for BlockingVolume {
     fn name(&self) -> &str {
         &self.name
     }
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
     fn list_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async { Ok(vec![]) })
     }
     fn get_metadata<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
-    fn exists<'a>(&'a self, _path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, _path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async { false })
     }
     fn is_directory<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async { Err(VolumeError::NotSupported) })
     }
@@ -214,8 +216,8 @@ impl Volume for BlockingVolume {
     }
     fn rename<'a>(
         &'a self,
-        _from: &'a Path,
-        _to: &'a Path,
+        _from: &'a AppPath,
+        _to: &'a AppPath,
         _force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -233,7 +235,7 @@ async fn rename_managed_marks_nonroot_volume_busy_during_op() {
     let release = Arc::new(tokio::sync::Notify::new());
     let volume = Arc::new(BlockingVolume {
         name: volume_id.clone(),
-        root: PathBuf::from("/"),
+        root: BridgedPath::new(PathBuf::from("/")),
         started: Arc::clone(&started),
         release: Arc::clone(&release),
     });
@@ -335,11 +337,14 @@ async fn copying_store(
             .with_renames_by_copy()
             .with_space_info(10_000_000, 10_000_000),
     );
-    volume.create_directory(Path::new("/a")).await.unwrap();
-    volume.create_directory(Path::new("/a/foo")).await.unwrap();
+    volume.create_directory(app_path!("/a")).await.unwrap();
+    volume.create_directory(app_path!("/a/foo")).await.unwrap();
     for n in 0..files {
         volume
-            .create_file(&PathBuf::from(format!("/a/foo/f{n:03}.txt")), b"xy")
+            .create_file(
+                &AppPath::legacy_unchecked(&PathBuf::from(format!("/a/foo/f{n:03}.txt"))),
+                b"xy",
+            )
             .await
             .unwrap();
     }
@@ -371,7 +376,7 @@ async fn a_rename_that_copies_starts_a_move_instead_of_calling_rename() {
         matches!(result, Err(MutationError::Unexpected { .. })),
         "routed to the move starter, never to `rename`: {result:?}"
     );
-    assert!(volume.exists(Path::new("/a/foo/f000.txt")).await, "nothing moved");
+    assert!(volume.exists(app_path!("/a/foo/f000.txt")).await, "nothing moved");
 }
 
 /// F2 hears what a copying rename carries, and whether to confirm it first.
@@ -404,7 +409,7 @@ async fn the_validity_check_reports_the_move_a_copying_rename_runs_as() {
 
     let plain_id = unique("plain-validity");
     let plain = Arc::new(cmdr_fs::volume::InMemoryVolume::new(&plain_id));
-    plain.create_directory(Path::new("/a/foo")).await.unwrap();
+    plain.create_directory(app_path!("/a/foo")).await.unwrap();
     engine.volumes().register(&plain_id, plain as Arc<dyn Volume>);
     let one_call = engine
         .check_rename_validity_impl("/a".into(), "foo".into(), "bar".into(), plain_id)
@@ -463,7 +468,7 @@ async fn a_batch_where_a_rename_copies_runs_as_one_move() {
 
     let engine = TestOperations::new();
     let (volume_id, volume) = copying_store(&engine, "copy-batch", 2).await;
-    volume.create_file(Path::new("/a/note.txt"), b"n").await.unwrap();
+    volume.create_file(app_path!("/a/note.txt"), b"n").await.unwrap();
     let mut rows = Vec::new();
     for (id, from, to) in [("1", "/a/foo", "/a/bar"), ("2", "/a/note.txt", "/a/memo.txt")] {
         rows.push(BulkRenameRow {
@@ -497,10 +502,10 @@ async fn a_batch_where_a_rename_copies_runs_as_one_move() {
         "{:?}",
         events.errors.lock_ignore_poison()
     );
-    assert!(volume.exists(Path::new("/a/bar/f001.txt")).await);
-    assert!(volume.exists(Path::new("/a/memo.txt")).await);
-    assert!(!volume.exists(Path::new("/a/foo")).await);
-    assert!(!volume.exists(Path::new("/a/note.txt")).await);
+    assert!(volume.exists(app_path!("/a/bar/f001.txt")).await);
+    assert!(volume.exists(app_path!("/a/memo.txt")).await);
+    assert!(!volume.exists(app_path!("/a/foo")).await);
+    assert!(!volume.exists(app_path!("/a/note.txt")).await);
 }
 
 /// A swap in a batch that runs as a move stays where it is, and the start
@@ -511,8 +516,8 @@ async fn a_batch_as_a_move_reports_the_swaps_it_left_out() {
 
     let engine = TestOperations::new();
     let (volume_id, volume) = copying_store(&engine, "copy-batch-swap", 1).await;
-    volume.create_directory(Path::new("/a/bar")).await.unwrap();
-    volume.create_file(Path::new("/a/note.txt"), b"n").await.unwrap();
+    volume.create_directory(app_path!("/a/bar")).await.unwrap();
+    volume.create_file(app_path!("/a/note.txt"), b"n").await.unwrap();
     let mut rows = Vec::new();
     for (id, from, to) in [
         ("1", "/a/foo", "/a/bar"),
@@ -584,7 +589,7 @@ impl Volume for CaseFoldingVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -592,20 +597,23 @@ impl Volume for CaseFoldingVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let (Some(dir), Some(asked)) = (path.parent(), path.file_name().and_then(|n| n.to_str())) else {
-                return self.inner.get_metadata(path).await;
+                return self.inner.get_metadata(path_app).await;
             };
-            let entries = self.inner.list_directory(dir, None).await?;
+            let entries = self.inner.list_directory(&AppPath::legacy_unchecked(dir), None).await?;
             let found = entries
                 .into_iter()
                 .find(|entry| entry.name.eq_ignore_ascii_case(asked))
@@ -630,8 +638,8 @@ impl Volume for CaseFoldingVolume {
 async fn a_case_only_rename_on_a_case_insensitive_volume_is_not_a_conflict() {
     let volume_id = unique("case-folding");
     let inner = cmdr_fs::volume::InMemoryVolume::new(&volume_id);
-    inner.create_directory(Path::new("/share")).await.unwrap();
-    inner.create_file(Path::new("/share/c.txt"), b"abcd").await.unwrap();
+    inner.create_directory(app_path!("/share")).await.unwrap();
+    inner.create_file(app_path!("/share/c.txt"), b"abcd").await.unwrap();
     let engine = TestOperations::new();
     engine
         .volumes()
@@ -655,9 +663,9 @@ async fn a_case_only_rename_on_a_case_insensitive_volume_is_not_a_conflict() {
 async fn a_case_only_rename_onto_a_real_sibling_is_still_a_conflict() {
     let volume_id = unique("case-sensitive");
     let volume = Arc::new(cmdr_fs::volume::InMemoryVolume::new(&volume_id));
-    volume.create_directory(Path::new("/share")).await.unwrap();
-    volume.create_file(Path::new("/share/c.txt"), b"abcd").await.unwrap();
-    volume.create_file(Path::new("/share/C.txt"), b"other!").await.unwrap();
+    volume.create_directory(app_path!("/share")).await.unwrap();
+    volume.create_file(app_path!("/share/c.txt"), b"abcd").await.unwrap();
+    volume.create_file(app_path!("/share/C.txt"), b"other!").await.unwrap();
     let engine = TestOperations::new();
     engine.volumes().register(&volume_id, volume as Arc<dyn Volume>);
 
@@ -683,8 +691,8 @@ async fn the_rename_itself_applies_the_shares_rules() {
     let engine = TestOperations::new();
     let volume_id = unique("reserved-rename");
     let volume = Arc::new(InMemoryVolume::new(&volume_id).with_backend_kind(BackendKind::Smb));
-    volume.create_directory(Path::new("/docs")).await.unwrap();
-    volume.create_file(Path::new("/docs/notes.txt"), b"hi").await.unwrap();
+    volume.create_directory(app_path!("/docs")).await.unwrap();
+    volume.create_file(app_path!("/docs/notes.txt"), b"hi").await.unwrap();
     engine
         .volumes()
         .register(&volume_id, Arc::clone(&volume) as Arc<dyn Volume>);
@@ -707,7 +715,7 @@ async fn the_rename_itself_applies_the_shares_rules() {
         ),
         "{refused:?}"
     );
-    assert!(volume.exists(Path::new("/docs/notes.txt")).await, "the file stayed put");
+    assert!(volume.exists(app_path!("/docs/notes.txt")).await, "the file stayed put");
 
     let taken = engine
         .rename_managed(
@@ -719,7 +727,7 @@ async fn the_rename_itself_applies_the_shares_rules() {
         )
         .await;
     assert!(taken.is_ok(), "{taken:?}");
-    assert!(volume.exists(Path::new("/docs/CON")).await, "the rename landed");
+    assert!(volume.exists(app_path!("/docs/CON")).await, "the rename landed");
 }
 
 /// F2 on an SMB share takes a Windows device name (the editor warns), and
@@ -733,8 +741,8 @@ async fn the_validity_check_takes_a_reserved_name_and_refuses_dot_names() {
     for backend in [BackendKind::Smb, BackendKind::Sftp] {
         let volume_id = unique("reserved-name");
         let volume = InMemoryVolume::new(&volume_id).with_backend_kind(backend);
-        volume.create_directory(Path::new("/docs")).await.unwrap();
-        volume.create_file(Path::new("/docs/notes.txt"), b"hi").await.unwrap();
+        volume.create_directory(app_path!("/docs")).await.unwrap();
+        volume.create_file(app_path!("/docs/notes.txt"), b"hi").await.unwrap();
         engine
             .volumes()
             .register(&volume_id, Arc::new(volume) as Arc<dyn Volume>);

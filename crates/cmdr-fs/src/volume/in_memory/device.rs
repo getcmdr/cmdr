@@ -336,13 +336,8 @@ impl super::InMemoryVolume {
     /// Stands in for the computer's own disk, `home` its home folder, so path
     /// labels read as the desktop's (`Volume::stands_in_for_own_disk`).
     pub fn standing_in_for_own_disk(mut self, home: impl Into<std::path::PathBuf>) -> Self {
-        self.own_disk_home = Some(home.into());
+        self.own_disk_home = Some(crate::app_path::BridgedPath::new(home.into()));
         self
-    }
-
-    /// The home folder [`Self::standing_in_for_own_disk`] set.
-    pub(super) fn own_disk_home(&self) -> Option<&Path> {
-        self.own_disk_home.as_deref()
     }
 
     /// Streams every read at `bytes_per_sec`, shared by all of this volume's

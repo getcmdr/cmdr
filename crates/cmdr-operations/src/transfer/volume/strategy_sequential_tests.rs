@@ -14,6 +14,7 @@ use super::super::transfer_error::PathedVolumeError;
 use super::test_support::make_state;
 use super::*;
 use crate::transfer::transfer_driver::LeafProgressLedger;
+use cmdr_fs::app_path;
 use std::future::Future;
 use std::io::Write;
 use std::ops::ControlFlow;
@@ -141,7 +142,9 @@ impl TarGzFixture {
 }
 
 async fn read_dest(dest: &Arc<dyn Volume>, path: &str) -> Result<Vec<u8>, VolumeError> {
-    let mut stream = dest.open_read_stream(Path::new(path)).await?;
+    let mut stream = dest
+        .open_read_stream(&AppPath::legacy_unchecked(Path::new(path)))
+        .await?;
     let mut out = Vec::new();
     while let Some(chunk) = stream.next_chunk().await {
         out.extend_from_slice(&chunk?);
@@ -245,7 +248,9 @@ async fn sequential_extract_materializes_a_nested_subtree() {
     assert_eq!(read_dest(&dest, "/out/sub/b.txt").await.unwrap(), b"bravo");
     assert_eq!(read_dest(&dest, "/out/sub/deep/c.bin").await.unwrap(), big);
     assert!(
-        !dest.exists(Path::new("/out/../other/x.txt")).await,
+        !dest
+            .exists(&AppPath::legacy_unchecked(Path::new("/out/../other/x.txt")))
+            .await,
         "files outside the subtree are never extracted"
     );
 }
@@ -266,7 +271,10 @@ async fn sequential_extract_keeps_the_folders_dates() {
     let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("dest"));
     let state = make_state(&engine);
     // The top-level folder's date arrives the way a copy's does: from the scan.
-    let scan = source.scan_for_copy(&fixture.inner("docs")).await.expect("scan");
+    let scan = source
+        .scan_for_copy(&AppPath::legacy_unchecked(&fixture.inner("docs")))
+        .await
+        .expect("scan");
 
     copy_single_path(
         &source,
@@ -291,7 +299,11 @@ async fn sequential_extract_keeps_the_folders_dates() {
     .expect("sequential extract");
 
     for folder in ["/out", "/out/sub"] {
-        let listed = dest.get_metadata(Path::new(folder)).await.unwrap().modified_at;
+        let listed = dest
+            .get_metadata(&AppPath::legacy_unchecked(Path::new(folder)))
+            .await
+            .unwrap()
+            .modified_at;
         assert_eq!(
             listed,
             Some(1_700_000_000),
@@ -307,7 +319,9 @@ async fn compressed_tar_is_sequential_but_zip_is_random() {
     // is; a zip (and a plain tar) is not, so those keep the per-entry walk.
     let targz = TarGzFixture::new(&[("d/a.txt", b"x")]);
     assert!(
-        targz.volume().extraction_is_sequential(&targz.inner("d")),
+        targz
+            .volume()
+            .extraction_is_sequential(&AppPath::legacy_unchecked(&targz.inner("d"))),
         "a .tar.gz must take the one-pass path"
     );
 
@@ -320,7 +334,7 @@ async fn compressed_tar_is_sequential_but_zip_is_random() {
         VolumeHost::detached(),
     );
     assert!(
-        !zip_vol.extraction_is_sequential(Path::new("/tmp/whatever.zip/d")),
+        !zip_vol.extraction_is_sequential(app_path!("/tmp/whatever.zip/d")),
         "a zip must keep the random-access per-entry path"
     );
 }
@@ -363,7 +377,7 @@ async fn sequential_extract_lands_empty_dirs_and_symlinks() {
 
     assert_eq!(read_dest(&dest, "/out/sub/b.txt").await.unwrap(), b"bravo");
     assert!(
-        dest.is_directory(Path::new("/out/empty")).await.unwrap_or(false),
+        dest.is_directory(app_path!("/out/empty")).await.unwrap_or(false),
         "the empty explicit directory lands even with no file members"
     );
     // A symlink entry extracts to an empty file, never a symlink out of the root.
@@ -404,7 +418,7 @@ impl Volume for StopAfterFirstWrite {
 
     fn write_from_stream<'a>(
         &'a self,
-        dest: &'a Path,
+        dest: &'a AppPath,
         mode: WriteMode,
         length: StreamLength,
         stream: Box<dyn VolumeReadStream>,
@@ -480,8 +494,8 @@ async fn sequential_extract_cancels_between_members() {
         b"alpha",
         "first file landed"
     );
-    assert!(!dest.exists(Path::new("/out/b.txt")).await, "second file never started");
-    assert!(!dest.exists(Path::new("/out/c.txt")).await, "third file never started");
+    assert!(!dest.exists(app_path!("/out/b.txt")).await, "second file never started");
+    assert!(!dest.exists(app_path!("/out/c.txt")).await, "third file never started");
 }
 
 /// The same boundary honors Pause, and resuming finishes the extract.
@@ -548,7 +562,7 @@ async fn sequential_extract_pauses_between_members_and_resumes() {
         "a paused extract holds at the member boundary"
     );
     assert!(
-        !dest.exists(Path::new("/out/b.txt")).await,
+        !dest.exists(app_path!("/out/b.txt")).await,
         "the second member hasn't been written"
     );
 

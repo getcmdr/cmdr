@@ -19,6 +19,7 @@
 //! takes it away again. The two instruments that read the backend are
 //! `volume::testing`, and they stay two numbers.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -136,7 +137,7 @@ pub async fn volume_for(
     let volume = MtpVolume::new(Arc::clone(manager), &device.id, device.storage_id, "Test");
     if let Some(path) = primed {
         volume
-            .list_directory(Path::new(path), None)
+            .list_directory(&AppPath::legacy_unchecked(Path::new(path)), None)
             .await
             .unwrap_or_else(|error| panic!("priming the {path} listing: {error:?}"));
     }

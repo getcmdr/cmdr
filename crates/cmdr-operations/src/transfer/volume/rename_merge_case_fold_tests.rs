@@ -15,6 +15,7 @@ use super::move_same::move_within_same_volume_with_progress;
 use super::rename_merge_test_support::{make_state, read, write_file};
 use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, VolumeCopyConfig};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{Volume, VolumeError};
 use cmdr_local::LocalVolume;
@@ -46,7 +47,11 @@ impl CaseInsensitiveVolume {
             Some(n) => n.to_lowercase(),
             None => return path.to_path_buf(),
         };
-        if let Ok(entries) = self.inner.list_directory(parent, None).await {
+        if let Ok(entries) = self
+            .inner
+            .list_directory(&AppPath::legacy_unchecked(parent), None)
+            .await
+        {
             for e in entries {
                 if e.name.to_lowercase() == name {
                     return parent.join(&e.name);
@@ -61,7 +66,7 @@ impl Volume for CaseInsensitiveVolume {
     fn name(&self) -> &str {
         self.inner.name()
     }
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
     fn as_any(&self) -> &dyn std::any::Any {
@@ -69,62 +74,80 @@ impl Volume for CaseInsensitiveVolume {
     }
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
     }
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let folded = self.fold(path).await;
-            self.inner.get_metadata(&folded).await
+            self.inner.get_metadata(&AppPath::legacy_unchecked(&folded)).await
         })
     }
-    fn exists<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
+    fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let folded = self.fold(path).await;
-            self.inner.exists(&folded).await
+            self.inner.exists(&AppPath::legacy_unchecked(&folded)).await
         })
     }
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let folded = self.fold(path).await;
-            self.inner.is_directory(&folded).await
+            self.inner.is_directory(&AppPath::legacy_unchecked(&folded)).await
         })
     }
-    fn delete<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
+    fn delete<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let folded = self.fold(path).await;
-            self.inner.delete(&folded).await
+            self.inner.delete(&AppPath::legacy_unchecked(&folded)).await
         })
     }
     fn rename<'a>(
         &'a self,
-        from: &'a Path,
-        to: &'a Path,
+        from: &'a AppPath,
+        to: &'a AppPath,
         force: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let from_std = from.as_std_legacy();
+            let from: &Path = &from_std;
+            let to_std = to.as_std_legacy();
+            let to: &Path = &to_std;
             // Case-insensitive collision: if a case-folded sibling already holds
             // the target name (different exact spelling), reject with
             // AlreadyExists like SMB / APFS would.
             let folded_to = self.fold(to).await;
-            if !force && folded_to != *to && self.inner.exists(&folded_to).await {
+            if !force && folded_to != *to && self.inner.exists(&AppPath::legacy_unchecked(&folded_to)).await {
                 return Err(VolumeError::AlreadyExists(to.display().to_string()));
             }
             let folded_from = self.fold(from).await;
-            self.inner.rename(&folded_from, to, force).await
+            self.inner
+                .rename(
+                    &AppPath::legacy_unchecked(&folded_from),
+                    &AppPath::legacy_unchecked(to),
+                    force,
+                )
+                .await
         })
     }
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<cmdr_fs::volume::CopyScanResult, VolumeError>> + Send + 'a>> {
         self.inner.scan_for_copy(path)
     }
@@ -227,7 +250,10 @@ async fn case_folded_overwrite_does_not_prompt_twice() {
     );
     // The overwrite landed: exactly one file under the dest album, holding the
     // new bytes (the dest's case-folded name is replaced in place).
-    let entries = volume.list_directory(Path::new("dst/album"), None).await.unwrap();
+    let entries = volume
+        .list_directory(&AppPath::legacy_unchecked(Path::new("dst/album")), None)
+        .await
+        .unwrap();
     let jpgs: Vec<_> = entries
         .iter()
         .filter(|e| e.name.to_lowercase().ends_with(".jpg"))

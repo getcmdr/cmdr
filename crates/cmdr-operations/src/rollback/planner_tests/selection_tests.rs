@@ -6,6 +6,8 @@
 //! its own cells and brute force); these pin the engine around it, end to end
 //! through the gate and the real executor.
 
+use cmdr_fs::app_path;
+use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -214,7 +216,7 @@ async fn a_selected_item_still_goes_through_every_guard() {
         ],
     );
     rig.put_originals("op").await;
-    dst.delete(std::path::Path::new("/b.txt")).await.expect("edited since");
+    dst.delete(app_path!("/b.txt")).await.expect("edited since");
     put(&dst, "/b.txt", b"changed").await;
 
     let report = rig
@@ -451,7 +453,7 @@ async fn contents_rows_and_foreign_folders_are_normalized_away() {
 async fn a_selection_already_put_back_by_hand_counts_as_reversed() {
     // Everything selected was already gone, and nothing else awaits: done.
     let (rig, dst) = copied_tree().await;
-    dst.delete(std::path::Path::new("/tree/a.txt")).await.expect("by hand");
+    dst.delete(app_path!("/tree/a.txt")).await.expect("by hand");
     let all_files = only(vec![Folder {
         dir_id: rig.dir_id("dst", "/tree"),
         on: true,
@@ -469,7 +471,7 @@ async fn a_selection_already_put_back_by_hand_counts_as_reversed() {
 
     // Only the gone one selected, the others left out: partial.
     let (rig, dst) = copied_tree().await;
-    dst.delete(std::path::Path::new("/tree/a.txt")).await.expect("by hand");
+    dst.delete(app_path!("/tree/a.txt")).await.expect("by hand");
     let report = rig
         .rollback_selected("op", &only(vec![Item { seq: 0, on: true }]))
         .await
@@ -558,9 +560,7 @@ async fn a_folder_held_back_with_nothing_selectable_left_still_rolls_back() {
     put(&dst, "/tree/new.txt", b"mine").await;
     let held = rig.rollback("op").await;
     assert_eq!(held.final_state, RollbackState::PartiallyRolledBack, "{held:?}");
-    dst.delete(std::path::Path::new("/tree/new.txt"))
-        .await
-        .expect("by hand");
+    dst.delete(app_path!("/tree/new.txt")).await.expect("by hand");
 
     // A deselected-everything selection has nothing to take.
     assert_eq!(
@@ -765,12 +765,18 @@ impl RollbackRunner for ParkCounting {
                     ..
                 } => {
                     if let Some(parent) = to_path.parent() {
-                        from.create_directory_all(parent).await?;
+                        from.create_directory_all(&AppPath::legacy_unchecked(parent)).await?;
                     }
-                    Ok(from.rename(from_path, to_path, force).await?)
+                    Ok(from
+                        .rename(
+                            &AppPath::legacy_unchecked(from_path),
+                            &AppPath::legacy_unchecked(to_path),
+                            force,
+                        )
+                        .await?)
                 }
                 InverseAct::RemoveDir { volume, path } | InverseAct::RemoveFile { volume, path } => {
-                    Ok(volume.delete(path).await?)
+                    Ok(volume.delete(&AppPath::legacy_unchecked(path)).await?)
                 }
                 InverseAct::WriteXattr { .. } => Err(VolumeError::NotSupported.into()),
             }

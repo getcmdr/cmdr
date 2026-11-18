@@ -71,11 +71,11 @@ fn the_app_spelling_round_trips_and_the_root_has_no_trailing_slash() {
 fn a_dialog_path_anchored_at_the_root_lands_on_the_device_path() {
     let volume = detached_volume();
     let root = cmdr_fs::volume::Volume::root(&volume);
-    let anchored = root_anchored(root, Path::new("/sdcard"));
+    let anchored = root_anchored(&root.as_std_legacy(), Path::new("/sdcard"));
     assert_eq!(anchored, PathBuf::from(format!("{}/sdcard", prefix())));
     assert_eq!(volume.to_device_path(&anchored).unwrap(), "/sdcard");
     let pane = PathBuf::from(format!("{}/sdcard", prefix()));
-    assert_eq!(root_anchored(root, &pane), pane);
+    assert_eq!(root_anchored(&root.as_std_legacy(), &pane), pane);
 }
 
 #[test]
