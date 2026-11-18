@@ -5,6 +5,10 @@ use super::*;
 /// The real table of the machine the tests run on: the root is always mounted, and a fresh
 /// temp folder under it isn't a mount of its own.
 #[test]
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "task 35, mount table: the Windows arm reads no table yet (`GetLogicalDriveStringsW`)"
+)]
 fn the_table_lists_the_root_and_not_a_plain_folder() {
     let mounts = list().expect("the mount table reads");
     assert!(mounts.iter().any(|mount| mount == Path::new("/")), "{mounts:?}");

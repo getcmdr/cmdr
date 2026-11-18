@@ -271,22 +271,75 @@ async fn export_honors_the_shared_handshake_contract() {
     conformance::assert_export_matches_the_bytes_offered(&volume, Path::new("exported.txt"), content).await;
 }
 
+/// A junction to `target` at `link`, both inside `dir`. Junctions need no privilege (a
+/// symlink needs Developer Mode or an elevated token), so these cells build the link the
+/// volume can't make yet itself (`create_symlink`, task 35) with `mklink /J`.
+pub(crate) fn junction(dir: &Path, link: &str, target: &str) {
+    let status = std::process::Command::new("cmd")
+        .args(["/C", "mklink", "/J"])
+        .arg(dir.join(link))
+        .arg(dir.join(target))
+        .stdout(std::process::Stdio::null())
+        .status()
+        .expect("run mklink");
+    assert!(status.success(), "mklink /J {link} {target}");
+}
+
 #[tokio::test]
-#[ignore = "task 35, symlinks and junctions: no create_symlink or read_link_target yet"]
 async fn create_directory_all_honors_the_shared_through_a_link_contract() {
-    unimplemented!("needs the volume's own directory symlink, task 35");
+    let test_dir = TestDir::new("win_mkdir_all_through_a_link");
+    let volume = volume_at(&test_dir);
+    volume.create_directory(Path::new("real")).await.expect("mkdir");
+    junction(&test_dir, "link", "real");
+
+    conformance::assert_create_directory_all_goes_through_a_link_to_a_folder(
+        &volume,
+        Path::new("link"),
+        Path::new("real"),
+    )
+    .await;
 }
 
 #[tokio::test]
-#[ignore = "task 35, symlinks and junctions: no create_symlink yet to build the link"]
 async fn delete_of_a_link_to_a_folder_honors_the_shared_contract() {
-    unimplemented!("needs the volume's own directory symlink, task 35");
+    let test_dir = TestDir::new("win_delete_of_a_link");
+    let volume = volume_at(&test_dir);
+    volume.create_directory(Path::new("real")).await.expect("mkdir");
+    volume
+        .create_file(Path::new("real/keep.txt"), b"keep")
+        .await
+        .expect("create");
+    junction(&test_dir, "link", "real");
+
+    conformance::assert_delete_of_a_link_to_a_folder_removes_the_link_alone(
+        &volume,
+        Path::new("link"),
+        Path::new("real"),
+        "keep.txt",
+    )
+    .await;
 }
 
 #[tokio::test]
-#[ignore = "task 35, symlinks and junctions: no create_symlink yet to build the link"]
 async fn a_link_to_a_folder_moves_as_the_link_per_the_shared_contract() {
-    unimplemented!("needs the volume's own directory symlink, task 35");
+    let test_dir = TestDir::new("win_link_move");
+    let volume = volume_at(&test_dir);
+    volume.create_directory(Path::new("real")).await.expect("mkdir");
+    volume
+        .create_file(Path::new("real/keep.txt"), b"keep")
+        .await
+        .expect("create");
+    volume.create_directory(Path::new("moved")).await.expect("mkdir");
+    junction(&test_dir, "link", "real");
+
+    conformance::assert_a_link_to_a_folder_moves_as_the_link(
+        &volume,
+        Path::new("link"),
+        Path::new("moved/link"),
+        Path::new("real"),
+        "keep.txt",
+    )
+    .await;
 }
 
 #[tokio::test]

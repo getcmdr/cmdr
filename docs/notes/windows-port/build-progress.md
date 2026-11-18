@@ -47,3 +47,13 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
   probes), since zig's clang refuses its AVX-512 kernels. On the builder: clippy `--all-targets -D warnings` clean in 53
   s warm; nextest 1,753 of 1,911 passed, 111 failed, 47 timed out, nearly all app paths (#1225) and the cold-drive
   fixture's walks never settling, filed with the clusters as #1232.
+- **2026-11-18, `cmdr-local` compiles, with `LocalWindowsVolume`** (leg 2): off the pending list (5 left). The POSIX
+  volume moved to `src/platform/local_posix*` under `cfg(unix)`, the Windows sibling sits beside it, and the reader and
+  space grew `platform/` seams (`reading.rs` went from 18 OS cfgs to 6). On the builder:
+  `cargo clippy -p cmdr-local --all-targets -D warnings` clean; `cargo nextest run -p cmdr-local` 30 of 30 pass, 8
+  ignored by name (seven conformance cells waiting on task 35's streams, metadata, links, and xattrs, plus the
+  mount-table cell). The hostile rename cells pass on NTFS: an exclusive rename onto a taken file or folder answers
+  `AlreadyExists` with both intact; onto a file another handle holds open (`FILE_SHARE_READ` only), the exclusive rename
+  is `AlreadyExists` and the forced one is refused with both files whole; a forced rename onto a read-only file is
+  all-or-nothing; a 300-plus-character path creates, lists (app paths), stats, renames, and deletes; deleting a junction
+  keeps its target.
