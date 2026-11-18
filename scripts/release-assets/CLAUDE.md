@@ -6,19 +6,26 @@ targets), and the CLI the release pipeline's shell steps call (`../release-asset
 
 ## Module map
 
-- `manifest/manifest.go`: the rows, `ShippedOSes` (the platform switch), `Validate`, and the derived lists (updates,
-  signed files, downloads, binaries, SBOMs, subjects). `release-finish`, `release-mirror`, and `release-evidence` import
+- `manifest/manifest.go`: the rows, `Validate`, and the derived lists (updates, signed files, downloads, binaries,
+  SBOMs, subjects); `shipping.go`: `ShippedOSes` (the platform switch, by `Since` version); `legs.go`: core vs. the
+  per-OS legs a release carries whole or not at all. `release-finish`, `release-mirror`, and `release-evidence` import
   it (`replace` in their `go.mod`).
 - `plan.go` (the `guard` job's step outputs), `latest.go` + `jsonout.go` (`latest.json`), `validate.go` (the one
-  `latest.json` validator), `nsis/` (`vet-nsis`, the Windows installer's version check), `main.go` (the CLI).
-- `pipeline_test.go` + `workflow_test.go`: the dry run of `release-pipeline.yml` against v0.61.0 (`testdata/`).
+  `latest.json` validator), `stage.go` (`windows-publish`'s intake of the build artifact), `nsis/` (`vet-nsis`: stub,
+  packed app, uninstall entry), `main.go` (the CLI).
+- `pipeline_test.go` + `workflow_test.go`: the dry run of `release-pipeline.yml` against v0.61.0 (`testdata/`);
+  `pipeline_windowson_test.go`: the same with Windows on (`testdata/golden/windows-on/`).
 
 ## Must-knows
 
 - **A new platform is rows, plus the jobs that build, vet, and attest it, then its OS in `ShippedOSes`.** `plan` fails
   until `vet-update-archives` vets the OS (`-vetted`) and `attest` has a step per SBOM (`-attested`), for every row
   shipped or not; `Validate` fails a build with no Rust SBOM. Windows is wired and off: ❌ adding it to `ShippedOSes` is
-  David's call (`docs/guides/releasing.md` § Windows releases).
+  David's call, always with a `Since` (`docs/guides/releasing.md` § Windows releases).
+- **A leg never holds the core**: the plan's `signed-files`, `update-archives`, and `binaries` are the core's, and no
+  macOS job may need a Windows job. Every step after `publish`'s snapshot follows its `latest.json` (`-carried-by`).
+- **The trusted side derives names, never reads them from an artifact**: `stage` takes exactly the manifest's files.
+- ❌ Never build a release tool with `-tags cmdr_windows_on` (the Windows-on dry run's; a test guards it).
 - **`latest.json` stays byte-stable**: `jsonout.go` prints what `jq --indent 2` printed, and the update rows run
   universal first, the platform order of every manifest so far. Tests hold it to v0.61.0's published bytes, and
   `testdata/v0.61.0/latest.built.json` (the Rust readers' fixture) to today's output.

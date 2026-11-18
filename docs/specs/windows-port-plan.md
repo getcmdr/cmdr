@@ -650,19 +650,21 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     Microsoft's `winapp` CLI) and the unsigned NSIS installer, plus the minisign `.sig` for the NSIS updater artifact in
     both signing modes and the `windows-x86_64` manifest row. Task 33's updater refuses any off-macOS signature without
     a `version:` field, so every row whose `File.SignsVersion()` is true is signed with
-    `tauri signer sign --app-version <v>`: `release-finish` already does (`signerArgs`) and `latest-json` already
-    refuses a `.sig` without it; the CI `sign` job (`ci` mode) still needs the flag. `Validate` already holds the key to
-    one the app reads (`windows-x86_64[-nsis]`, `linux-x86_64[-appimage]`). Also publish the advisory list as a release
-    asset with its own `.sig` and write the optional top-level `securityAdvisories: { url, signature }` into
-    `latest.json` (`latest.go`); without it Windows and Linux show no security notice (the update still installs). Once
-    it's written, drop `securityAdvisories` from `NOT_WRITTEN_YET` in `crates/cmdr-update-manifest/src/tests.rs`
+    `tauri signer sign --app-version <v>`: `release-finish` does (`signerArgs`), `windows-publish` does in `ci` mode,
+    and `latest-json` refuses a `.sig` without it. `Validate` already holds the key to one the app reads
+    (`windows-x86_64[-nsis]`, `linux-x86_64[-appimage]`). Also publish the advisory list as a release asset with its own
+    `.sig` and write the optional top-level `securityAdvisories: { url, signature }` into `latest.json` (`latest.go`);
+    without it Windows and Linux show no security notice (the update still installs). Once it's written, drop
+    `securityAdvisories` from `NOT_WRITTEN_YET` in `crates/cmdr-update-manifest/src/tests.rs`
     (`scripts/release-assets/DETAILS.md` § Update payloads off macOS). Needs 6, 30.
     - **Ship no `Policies` keys inside the MSIX**: a packaged app reads the real policy hive through a merged view with
       the package's own keys, so a shipped key would mix into what admins set (Microsoft Learn's MSIX registry
       virtualization page, read 2026-11-18). Task 57 holds the read-only half.
     - **Wired, off by default** (2026-11-18): the manifest rows (NSIS as `windows-x86_64`, MSIX, the Windows Rust SBOM,
-      task 53's Group Policy zip, and the signed advisory list), `ShippedOSes = [macos]` as the one switch, the
-      `windows-build` and `windows-publish` jobs, `vet-nsis`, `securityAdvisories` in `latest.json`, and
+      task 53's Group Policy zip, and the signed advisory list), `ShippedOSes = [macos]` as the one switch (keyed by a
+      `Since` version, prereleases skipping Windows), the `windows-build`, `windows-publish`, and `windows-attest` jobs
+      as a leg that never holds or fails the macOS release (`scripts/release-assets/manifest/legs.go`), `vet-nsis`
+      (stub, packed app, and uninstall entry), `securityAdvisories` in `latest.json`, a Windows-on dry run in CI, and
       `scripts/windows-package/` (MSIX via winapp, unsigned, from the unbundled exe so its updater stays off; no
       registry keys). `docs/guides/releasing.md` § Windows releases has the flow and David's steps (Partner Center
       account, the product identity into `apps/desktop/packaging/msix/identity.json`, copy review, the switch).

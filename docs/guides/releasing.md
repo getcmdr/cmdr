@@ -191,11 +191,12 @@ the variable alone.
      of the bundler in the shape `ci` mode ships. So each `sign` job makes a throwaway key (a mismatch the bundler only
      warns about) and keeps its signatures on the runner (its upload step skips `.sig` files in `local` mode).
 3. **On the laptop, `./scripts/release-finish.sh X.Y.Z`** (step 8 of § The release procedure starts it right after
-   `release.sh`). It waits for that run and the release's full CI run to go green, failing at the first red CI job, then
-   requires the CodeQL gate. It downloads the three archives and runs `gh attestation verify` on each, pinned to
-   `release-pipeline.yml` at the tag's commit (`--signer-digest`, `--source-digest`, `--source-ref`) on a GitHub-hosted
-   runner. It refuses to sign anything that doesn't verify, or that the updater would refuse to install (§ The release
-   gate). Then it signs with `tauri signer sign`, the key and password read from sops (`CMDR_TAURI_SIGNING_PRIVATE_KEY`,
+   `release.sh`). It waits for that run (its macOS jobs: the Windows ones never hold it, § Windows releases) and the
+   release's full CI run to go green, failing at the first red CI job, then requires the CodeQL gate. It downloads the
+   three archives and runs `gh attestation verify` on each, pinned to `release-pipeline.yml` at the tag's commit
+   (`--signer-digest`, `--source-digest`, `--source-ref`) on a GitHub-hosted runner. It refuses to sign anything that
+   doesn't verify, or that the updater would refuse to install (§ The release gate). Then it signs with
+   `tauri signer sign`, the key and password read from sops (`CMDR_TAURI_SIGNING_PRIVATE_KEY`,
    `CMDR_TAURI_SIGNING_PRIVATE_KEY_PASSWORD`) into the signer's environment only, verifies each new signature against
    the pubkey in `tauri.conf.json` with its own minisign verifier (the check the app runs), uploads the `.sig` files,
    reads them back, and dispatches `release.yml` on the tag.
@@ -1292,11 +1293,13 @@ Full Disk Access profile.
 ## Windows releases
 
 Wired end to end and **off**: no release builds or publishes anything for Windows until `ShippedOSes` in
-`scripts/release-assets/manifest/manifest.go` names `Windows` (today `[]OS{MacOS}`). That one line is the switch: every
+`scripts/release-assets/manifest/shipping.go` names `Windows` (today only macOS). That one line is the switch: every
 tool reads it through `manifest.For`, `guard`'s plan turns it into `ships-windows`, and the Windows jobs and steps run
 only on `true`. While it's off, the plan still holds `vet-update-archives` and `attest` to the Windows rows, and the dry
-run walks the skipped steps, so the wiring can't rot. D3 (`docs/specs/windows-port-plan.md`): the Store's MSIX first,
-plus an unsigned "Run anyway" NSIS installer on the website; no code-signing certificate.
+run walks the skipped steps, so the wiring can't rot. `TestReleasePipelineDryRunWithWindowsOn` runs the day-one path
+with Windows on, against the v0.61.0 fixture (`scripts/release-assets/DETAILS.md` § The dry run). D3
+(`docs/specs/windows-port-plan.md`): the Store's MSIX first, plus an unsigned "Run anyway" NSIS installer on the
+website; no code-signing certificate.
 
 What a Windows release adds (rows in the manifest):
 
@@ -1310,23 +1313,50 @@ What a Windows release adds (rows in the manifest):
   MSIX.
 - `Cmdr_<version>_security-advisories.json` plus its `.sig`: the signed advisory list, named in `latest.json`'s
   `securityAdvisories`, since a Windows install can't read the list inside its update before running it. It ships with
-  the first Windows (or Linux) release; a macOS-only release stays byte-identical.
+  the Windows (or Linux) files; a macOS-only release stays byte-identical.
 
-How it runs, beside the macOS jobs:
+### Windows never holds the macOS release
+
+The Windows files are the release's Windows leg (`scripts/release-assets/manifest/legs.go`), and the leg is all or
+nothing: a release carries it only when every file and signature of it is up by the time the release's contents are
+fixed. Otherwise the release ships macOS alone, with a `::warning::` naming what the leg lacked, and Windows installs
+stay on their version until a later release carries their leg. No macOS job needs a Windows job, and the Windows jobs
+are `continue-on-error`, so a red or slow Windows build never turns the run red or delays a macOS hotfix.
+
+- **`ci` mode**: the contents are fixed by `publish`'s one look at the release ("Generate latest.json"). The read-back,
+  the checksums, and the mirror follow the `latest.json` it wrote, and a re-run keeps that file's legs (the mirror's
+  files are immutable). `windows-publish` refuses to upload once `latest.json` is up, so a late leg never sits on the
+  release unreferenced.
+- **`local` mode**: the contents are fixed when the laptop signs. `release-finish.sh` stops waiting once the build run's
+  macOS jobs are green (it doesn't wait for the Windows ones), signs the macOS archives, and signs the Windows leg only
+  if it's whole on the draft and passes provenance and vetting. To ship Windows in a `local` release whose Windows jobs
+  are still going, wait for them before running `release-finish.sh` (it's resumable).
+- **A prerelease tag** (`0.80.0-beta.1`) builds no Windows leg at all: the Store's MSIX version is `X.Y.Z.0`. The plan
+  says so in a `::notice::` and sets `ships-windows=false`.
+
+### How it runs
 
 1. **`windows-build`** (`windows-2025`, no secrets): compiles once (`tauri build --no-bundle`), keeps that unbundled
    `Cmdr.exe` for the MSIX, bundles the NSIS installer (`tauri.windows.conf.json` makes no updater artifact: the
    bundler's signature can't name the version), packs the MSIX (`./scripts/windows-package.sh msix`, Microsoft's winapp
-   CLI, pinned with its SHA-256), zips the policy template, copies the advisory list, vets the installer
-   (`release-assets.sh vet-nsis`), and hands exactly the planned files on as an artifact.
-2. **`windows-publish`** (`release` environment, after macOS's `sign` so the release exists): in `ci` mode signs the
-   installer (`tauri signer sign --app-version <v>`) and the advisory list with the updater key, then uploads every file
-   with a digest check (`scripts/release-upload.sh`). In `local` mode it uploads no `.sig`: `release-finish.sh` signs
-   `guard`'s `signed-files`, these included.
-3. `vet-update-archives` re-vets the installer as published, `publish` needs every signed file's `.sig` and writes the
-   Windows `platforms` entry, `downloads`, and `securityAdvisories`, and `attest` attests the Windows SBOM.
+   CLI, pinned with its SHA-256), zips the policy template, vets the installer (`release-assets.sh vet-nsis`), and hands
+   exactly the planned files on as an artifact.
+2. **`windows-publish`** (`release` environment, after macOS's `sign` so the release exists): takes from the artifact
+   exactly the Windows files the manifest names for this version and refuses anything else by name
+   (`release-assets.sh stage`, the trusted side's intake, as `sign` takes exactly one `Cmdr` per artifact), writes the
+   advisory list from its own checkout, vets the installer, and in `ci` mode signs only those names
+   (`tauri signer sign --app-version <v>` for the installer) and verifies each new signature against the keys the app
+   ships (`release-finish.sh -verify-dir … -leg windows`). Then it uploads those names and their `.sig` files with a
+   digest check (`scripts/release-upload.sh`). In `local` mode it uploads no `.sig`: `release-finish.sh` signs the leg.
+3. **`windows-attest`** attests the Windows files as published, so the laptop can verify them without `attest` waiting
+   for the leg.
+4. `vet-update-archives` re-vets the installer as published when it's up by then, `publish` writes the Windows
+   `platforms` entry, `downloads`, and `securityAdvisories` when it carries the leg, and `attest` attests the Windows
+   SBOM.
 
-A Windows release can't be a prerelease: an MSIX version is `X.Y.Z.0`.
+`vet-nsis` reads the installer without running it: its own version resource, the app it packs (version and publisher),
+and its uninstall entry. It names the build; provenance and the updater signature prove where it came from
+(`scripts/release-assets/nsis/nsis.go`).
 
 ### What turning it on waits on (David)
 
@@ -1343,16 +1373,26 @@ environment already holds.
    `windows-package msix` fail with a pointer here, so a Windows release can't ship a made-up identity.
 4. **Review the copy**: the MSIX's display name and description (`apps/desktop/packaging/msix/Package.appxmanifest`),
    and the NSIS installer's publisher, copyright, and short description
-   (`apps/desktop/src-tauri/tauri.windows.conf.json`).
+   (`apps/desktop/src-tauri/tauri.windows.conf.json`). A changed publisher means re-running
+   `scripts/release-assets/nsis/testdata/gen.sh` for the dry run's installer.
 5. **Try a local build first** (§ Building the Windows packages locally) and install both on a Windows machine.
-6. **Turn it on**: add `Windows` to `ShippedOSes` and update `TestWindowsShipsOnlyOnceTurnedOn` in the same commit. The
-   next tag builds and publishes the Windows files; watch `windows-build` and `windows-publish` in that run, then
-   `vet-update-archives`, `publish`, and `attest`.
+6. **Turn it on**, in one commit:
+   1. Add `{OS: Windows, Since: "<the next version>"}` to `ShippedOSes` (never an empty `Since`: older releases must
+      resolve as they were published, so the mirror, `release-evidence`, and a pending draft keep reading them right).
+   2. Update `TestWindowsShipsOnlyOnceTurnedOn`.
+   3. Drop `securityAdvisories` from `NOT_WRITTEN_YET` in `crates/cmdr-update-manifest/src/tests.rs`, with a
+      `latest.built.json` fixture that carries the member (`scripts/release-assets/DETAILS.md` § Update payloads off
+      macOS), so the readers' field-name guard covers it.
+
+   The next tag builds and publishes the Windows files; watch `windows-build`, `windows-publish`, and `windows-attest`
+   in that run, and check `publish` carried the leg (no "ships without its windows files" warning).
+
 7. **Submit the MSIX** to the Store by hand from Partner Center (upload `Cmdr_<version>_x64.msix` from the release)
    until task 57 automates the submission. Store certification takes hours to days.
 
 Turning it on also wants, though nothing breaks without them: the website's Windows download (task 58) and the
-`/download/:version/:os/:arch` route (task 31).
+`/download/:version/:os/:arch` route (task 31). In `local` mode, `windows-publish` is a second `release` environment
+approval if it arrives after you approved `sign`.
 
 ### Building the Windows packages locally
 
