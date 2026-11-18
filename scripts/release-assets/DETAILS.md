@@ -50,9 +50,10 @@ signature names is all the updater checks: the stub's version resource and Produ
 (its version and CompanyName, found by decompressing the solid LZMA payload in `scripts/release-nsis/nsis/payload.go`),
 and the uninstall entry's strings (key, `DisplayVersion`, `Publisher`). It names the build (a stale or mixed-up bundle
 fails), not its integrity: a hostile build stamps what it likes, and provenance plus the updater signature prove origin.
-It also refuses an Authenticode-signed installer until task 50 pins a signer. Fixtures:
-`scripts/release-nsis/nsis/testdata/gen.sh` (makensis, Tauri's layout); `CMDR_REAL_NSIS=<real installer>` runs it on a
-real tauri-cli build (passed on the builder's `Cmdr_0.61.0_x64-setup.exe`, 2026-11-18).
+It also refuses an Authenticode-signed installer until task 50 pins a signer. It reads one block at a time, grown as
+bytes arrive, and refuses past 2 GiB decompressed or 10 minutes (`limits`): LZMA makes gigabytes from a few bytes.
+Fixtures: `scripts/release-nsis/nsis/testdata/gen.sh` (makensis, Tauri's layout); `CMDR_REAL_NSIS=<real installer>` runs
+it on a real tauri-cli build (passed on the builder's `Cmdr_0.61.0_x64-setup.exe`, 2026-11-18).
 
 The advisory list is a row too (`AdvisoryList`, no OS, `Signed`): `shipped` adds it once some shipped update payload
 signs its version, `latest-json` writes `securityAdvisories` (after `downloads`, so everything before it prints as
@@ -89,14 +90,22 @@ which `attest` uploads later) and, once signed, every `.sig`. Decision/Why: a ma
 failed by Windows (a security hotfix behind a cold two-hour Windows build), so no macOS job needs a Windows job, and the
 release takes the leg only if it's whole when the contents are fixed:
 
-- **`ci` mode**: `publish`'s "Generate latest.json" snapshot (`CarriedWhole`, a `::warning::` per leg left out). Every
-  step after it follows that `latest.json` (`-carried-by` for the read-back and `checksum-files`, the mirror's
-  `-manifest`), and a re-run passes the `latest.json` an earlier attempt uploaded (`CarriedBy`), since the mirror's
-  `checksums.txt` is immutable. `windows-publish` refuses to upload once `latest.json` is up.
-- **`local` mode**: the laptop's signing (`release-finish`'s `legsOnDraft`, `signWholeLegs`): it stops waiting once
-  every non-Windows job is green (`coreDone`, the job names pinned to the workflow by a test), and a leg that fails
-  provenance or vetting is left out with a line. `windows-attest` attests the leg as soon as it's up, so `attest`
-  needn't wait for it.
+- **`ci` mode**: `publish`'s "Generate latest.json" snapshot (`CarriedWhole`, a `::warning::` per leg left out). An
+  asset counts only fully saved (GitHub's `state: uploaded`), non-empty, and, for a signature, downloaded
+  (`finishedAssets`), so a Windows upload still going costs the leg, never the run. Every step after it follows that
+  `latest.json` (`-carried-by` for the read-back and `checksum-files`, the mirror's `-manifest`). A re-run of a release
+  with legs keeps the legs of the `latest.json` an earlier attempt uploaded (`-previous`, since the mirror's
+  `checksums.txt` is immutable), but only a whole file that passes `validateLatest`; a damaged one gets a warning and
+  the snapshot decides. A macOS-only release reads no earlier file, so a re-run overwrites a damaged one as it always
+  did. `windows-publish` refuses to upload once `latest.json` is up.
+- **What makes a counted leg's bytes right**: `release-upload.sh` deletes an asset whose GitHub digest isn't the local
+  file's, and `windows-publish` uploads the `.sig` files last, each after every file's check passed.
+- **The leg's gates** read outputs only a job's last step sets (`windows-build`'s `built`, `windows-publish`'s
+  `published`): job-level `continue-on-error` reports a red job as `success` to its dependents.
+- **`local` mode**: the laptop's signing (`release-finish`'s `legsOnDraft`, `signWholeLegs`, fully saved files only): it
+  stops waiting once every non-Windows job is green (`coreDone`, the job names pinned to the workflow by a test), and a
+  leg that fails provenance or vetting is left out with a line. `windows-attest` attests the leg as soon as it's up, so
+  `attest` needn't wait for it.
 - `release-evidence` takes a leg whole or not at all too: part of one is a problem.
 
 The plan's `signed-files`, `update-archives`, and `binaries` are the core's; a leg's builds are attest subject patterns

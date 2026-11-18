@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/ulikunitz/xz/lzma"
 )
@@ -60,7 +61,10 @@ func readVersionInfo(f *pe.File) (versionInfo, error) {
 }
 
 // readPayload decompresses the installer's data and keeps its header and the version resources
-// of the packed files named productName. It holds one block in memory at a time.
+// of the packed files named productName. It holds one block in memory at a time, grown as its
+// bytes arrive (a hostile length allocates nothing up front), and stops with an error past
+// `limits.total` decompressed bytes or `limits.time`: LZMA turns a few bytes into gigabytes of
+// repeats, so the input's size bounds nothing.
 func readPayload(path, productName string) (payload, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -87,26 +91,63 @@ func readPayload(path, productName string) (payload, error) {
 	if err != nil {
 		return payload{}, fmt.Errorf("its LZMA stream doesn't open: %w", err)
 	}
+	bounded := &boundedReader{r: stream, left: limits.total, deadline: time.Now().Add(limits.time)}
 
 	var out payload
 	for i := 0; ; i++ {
-		block, err := nextBlock(stream)
-		if err != nil {
-			if i == 0 {
-				return payload{}, fmt.Errorf("its script header doesn't read: %w", err)
-			}
+		block, err := nextBlock(bounded)
+		switch {
+		case errors.Is(err, errTooMuch), errors.Is(err, errTooSlow):
+			return payload{}, err
+		case err != nil && i == 0:
+			return payload{}, fmt.Errorf("its script header doesn't read: %w", err)
+		case err != nil:
 			// The stream ends without a marker after the last block (and a CRC may follow it), so
 			// the first block that doesn't read whole is the end.
 			return out, nil
-		}
-		if i == 0 {
+		case i == 0:
 			out.header = block
-			continue
-		}
-		if info, ok := packedApp(block, productName); ok {
-			out.apps = append(out.apps, info)
+		default:
+			if info, ok := packedApp(block, productName); ok {
+				out.apps = append(out.apps, info)
+			}
 		}
 	}
+}
+
+// limits bound one vet's decompression (tests lower them). The real installer decompresses to
+// about 160 MiB in about 40 s on an M3, so these leave room for a much bigger app and a slower
+// runner, and still end a decompression bomb well inside `windows-publish`'s 30 minutes.
+var limits = struct {
+	total int64
+	time  time.Duration
+}{total: 2 << 30, time: 10 * time.Minute}
+
+var (
+	errTooMuch = errors.New("decompresses past the vet's limit, so it isn't an installer to trust")
+	errTooSlow = errors.New("takes longer to decompress than the vet allows, so it isn't an installer to trust")
+)
+
+// boundedReader stops a read past left bytes, or after deadline.
+type boundedReader struct {
+	r        io.Reader
+	left     int64
+	deadline time.Time
+}
+
+func (b *boundedReader) Read(p []byte) (int, error) {
+	if time.Now().After(b.deadline) {
+		return 0, errTooSlow
+	}
+	if b.left <= 0 {
+		return 0, errTooMuch
+	}
+	if int64(len(p)) > b.left {
+		p = p[:b.left]
+	}
+	n, err := b.r.Read(p)
+	b.left -= int64(n)
+	return n, err
 }
 
 func nextBlock(r io.Reader) ([]byte, error) {
@@ -117,11 +158,17 @@ func nextBlock(r io.Reader) ([]byte, error) {
 	if size > maxBlock {
 		return nil, fmt.Errorf("a block claims %d bytes", size)
 	}
-	block := make([]byte, size)
-	if _, err := io.ReadFull(r, block); err != nil {
+	var block bytes.Buffer
+	n, err := io.CopyN(&block, r, int64(size))
+	switch {
+	case errors.Is(err, errTooMuch), errors.Is(err, errTooSlow):
 		return nil, err
+	case err == nil && n == int64(size):
+		return block.Bytes(), nil
+	case err == nil || errors.Is(err, io.EOF):
+		return nil, io.ErrUnexpectedEOF
 	}
-	return block, nil
+	return nil, err
 }
 
 // packedApp reads a packed file's version resource if it's a PE named productName.
