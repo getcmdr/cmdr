@@ -126,8 +126,6 @@ Open, waiting on David (each task entry has the detail):
 - **The drive and UNC volume id scheme** (task 34).
 - **Dialog keys** (task 61): (a) Enter and ⌘. per the macOS row, (b) keytips versus underlined letters.
 - **The menu model** on Windows and per Linux desktop (task 63).
-- **The frozen-macOS copy guard's removal**, after reviewing `docs/notes/windows-port/macos-copy-accepted-review.md`
-  (task 28).
 - **macOS hand checks** from the keymap work (task 26).
 
 ## Bugs the audits found on the way
@@ -393,51 +391,18 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     English changes). David reviewed the English (2026-11-12). Left: the rows in
     `docs/notes/windows-port/copy-decisions.md` § Open rows, each naming what it waits on (#1126, task 59); the rows
     that waited on #1102 shipped with task 26.
-28. [L] Win. **Done** except the frozen-macOS guard's removal, which waits on David's review of
-    `docs/notes/windows-port/macos-copy-accepted-review.md` (14 accepted translation changes in 10 catalogs, plus the
-    four accepted English ones). Task 27's per-OS branches are translated in the 13 full locales and the `es-419` forks:
+28. [L] Win. **Done**. Task 27's per-OS branches are translated in the 13 full locales and the `es-419` forks:
     `i18n-stale` is clean in every catalog (so releases aren't blocked on it), no `windows` or `other` branch whose
     English differs from its `macos` one is still English (two `Windows` product names and German and Swedish `System`
     aside), and every full locale's `terms.json` rules the Windows concepts in `docs/i18n/concepts.json` (`es-419` has
     no `terms.json` by design and inherits `es`; its `style.md` rules the one fork question, `Papelera de reciclaje`;
     verified 2026-11-18, a branch-by-branch scan against `en`). A per-OS string that changes from here on is edited in
     `en` directly (`apps/desktop/src/lib/intl/DETAILS.md` § "Changing a per-OS string"), and the translator loop is
-    `docs/guides/i18n-translation.md` § New feature. Left for a translator pass: `fr` and `vi` `terms.json` lack a
-    `powershell` ruling (both catalogs write `PowerShell`); `ai.secretError.genericBody`'s macOS branch still says
-    "system keyring" in 12 catalogs since its English became "your Keychain" (only `vi` followed); and `es`'s
-    `main.quit.countdown` `other` branch, which macOS and Linux both read, says "el Mac" (`es-419` inherits it). Each is
-    listed in the review note's last section.
-    - **Removing the guard** is one mechanical commit after David's OK, run once no translator is mid-batch:
-      1. Delete `apps/desktop/src/lib/intl/macos-copy-unchanged.test.ts`,
-         `apps/desktop/src/lib/intl/__fixtures__/macos-copy-baseline.json`, the whole
-         `apps/desktop/src/lib/intl/__fixtures__/macos-copy-accepted/` dir,
-         `apps/desktop/scripts/i18n-macos-copy-baseline.ts`, `i18n-macos-copy-baseline-lib.ts`, and
-         `i18n-macos-copy-baseline-lib.test.ts` beside it, and `docs/notes/windows-port/copy-proposal.json` (the
-         generator is its only code reader). No `package.json` script or check-runner entry names any of them: the
-         generator runs by path.
-      2. Strip the imports of the deleted lib. `apps/desktop/scripts/i18n-apply-lib.ts`: `frozenTextIssue`, the
-         `macosReasons` map and `macosChangeReason` in `NOTE_FIELDS` (a values file still carrying one is then refused
-         as an unknown note), `ApplyPlan.accepted` / `acceptedPath`, `ApplyOptions.baseline` / `acceptedDir`,
-         `writeAcceptedChanges`, and the module comment's frozen-text line. `i18n-apply.ts`: `loadBaseline` and
-         `reportAccepted`. `i18n-brief.ts`: `frozenMacosFor` and the `frozenMacos` option; `i18n-brief-lib.ts`: the
-         `frozenMacos` option and its note; `i18n-brief-run.ts`: `frozenMacosNote`. Tests: the `macosChangeReason` cases
-         in `i18n-apply.test.ts` and the frozen-note cases in `i18n-brief.test.ts`.
-      3. Repoint the docs. `apps/desktop/src/lib/intl/DETAILS.md`: delete § "The frozen macOS copy", but move its
-         shape-change route (a new key with the new shape, the old key deleted everywhere) and the per-area English
-         goldens' `withPlatform('macos')` line into § "Changing a per-OS string", drop that section's "A key split"
-         bullet (`SPLIT_KEYS`, `COLLAPSED_PAIRS`), and drop `copy-proposal.json` from the record paragraph.
-         `docs/i18n/translator-instructions.md` (Per-OS values) keeps "leave the `macos` branch's translation unless
-         it's wrong" as a plain rule with no test or `macosChangeReason`; likewise `docs/guides/i18n-translation.md`
-         (the `macos` branch line in § New feature), `docs/guides/i18n.md` (the "While `macos-copy-unchanged.test.ts`
-         exists" sentence), `docs/i18n/termbase.md` (the frozen-text note and the `macosChangeReason` route),
-         `apps/desktop/scripts/DETAILS.md` (`i18n:apply`'s accepted-changes file and the "byte for byte" why), and the
-         one-line mentions in `lib/file-explorer/navigation/DETAILS.md` (`SPLIT_KEYS`), `lib/mtp/DETAILS.md` (why the
-         key names keep "ptpcamerad"), and `lib/shortcuts/DETAILS.md` (the new-key route, now in § "Changing a per-OS
-         string"). The notes that cite `copy-proposal.json` as evidence (`copy-survey.md`, `copy-decisions.md`,
-         `copy-glossary-evidence.md`, `copy-row-verdicts.md` in `docs/notes/windows-port/`) name it as deleted, with the
-         removal commit to find it in git. The "frozen" wording in `docs/i18n/fr/review-queue.md`,
-         `docs/i18n/cs/review-queue.md`, and the `cs` and `pt` `terms.json` notes becomes plain macOS text.
-      4. Mark this task **Done**, and keep the review note as the record.
+    `docs/guides/i18n-translation.md` § New feature. The macOS text is guarded by a written rule, no test: a `macos`
+    branch's translation stays unless it's wrong, and a fix there is an ordinary translation edit with its reason in the
+    commit message (`docs/i18n/translator-instructions.md`, Per-OS values). David approved the macOS texts that moved on
+    purpose during the pass on 2026-11-18; `docs/notes/windows-port/macos-copy-accepted-review.md` is the record. Left
+    for a translator pass: `fr` and `vi` `terms.json` lack a `powershell` ruling (both catalogs write `PowerShell`).
 29. [S] Windows, lint half is a win. **Done**. `lib/path/grammar.ts` holds the grammar (drive and UNC roots, a shared
     case table with Rust in `cmdr-fs`'s `path_grammar_cases.json`), `LocationInfo.case_sensitive` comes from the
     `volumes/` seam (macOS `false`, Linux `true`, Windows `false`; no frontend site consults it yet,
