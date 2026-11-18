@@ -1,0 +1,99 @@
+# app-path-flip
+
+The compiler-driven codemod that moves a crate onto the `Volume` trait's app-path signatures
+(`docs/specs/app-path-plan.md` § "4. Flip the trait"). It runs `cargo check` on one crate, rewrites only the spans rustc
+points at, by error code and type pair, and repeats until the crate checks or no rule applies. Then it runs
+`cargo clippy` the same way, applying clippy's own fix for the lints a rewrite can cause, and `cargo fmt -p` on the
+crate. Every rewrite is type-preserving through the lossless, non-normalizing bridge (`AppPath::legacy_unchecked`,
+`as_std_legacy`, `BridgedPath`), so no value changes in transit and every body keeps its `std::path` arithmetic.
+
+It goes when the trait flip has landed and no branch from before it is still in flight (the plan's milestone 5).
+
+## Running it
+
+From the repo root, one crate at a time, foreground:
+
+```sh
+go -C scripts/app-path-flip run . -p <crate> [-cargo-args "--features testing"] [-report /tmp/report.json]
+```
+
+- `-p` repeats; crates flip in the order given. Flip a crate only after every crate it depends on (dev-deps included).
+- `-cargo-args` is passed to every `cargo check` and `cargo clippy` (space-separated). Run once with the default
+  features, then again with every feature combination CI builds for the crate (`--features testing`, `--all-features`),
+  since code behind a feature is invisible otherwise. A re-run over a converted tree is a no-op.
+- `-report` writes the rule counts, per-file edit counts, and the residue as JSON. Stdout has the same summary.
+- `-no-fmt` skips the final `cargo fmt -p`. `-max-rounds` (default 40) caps each phase.
+- It touches only the crate's own files (diagnostics elsewhere are ignored) and only code rustc complains about.
+
+**Deterministic**: the rules read only rustc's diagnostics and the files, edits apply in one fixed order, and rustfmt
+formats the result, so a re-run on the same base gives the same tree. The audit re-runs it and diffs.
+
+## The rules
+
+Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a small fixture.
+
+- **E0053 signature**: a `Volume` impl method's param or return type rustc says is incompatible with the trait is
+  retyped (`&Path` → `&AppPath`, `&[PathBuf]` → `&[AppPathBuf]`, `PathBuf` → `AppPathBuf`). A reverse mismatch (a link
+  target the trait keeps as `Path`) is left alone. While a method's signature is being retyped, errors in its body are
+  skipped for that round: they're stale (rustc checked the body against the old signature).
+- **Body prelude**: an error inside a flipped method's body that names a typed param gives the body
+  `let path_std = path.as_std_legacy(); let path: &Path = &path_std;` (a `Vec<PathBuf>` twin for a batch). It goes
+  inside the `async move` block(s) when every use is there (a future must own what it borrows), else at the top of the
+  body. A body that only hands the param on to a typed slot (`self.inner.get_metadata(path)`) compiles as is and gets no
+  prelude.
+- **Typed param handed back**: a prelude'd body handing its param to a typed slot gets the original back, kept as
+  `let path_app = path;` before the prelude (a bridge round trip there would return a future borrowing a temporary).
+- **Async helper**: E0515 on `Box::pin(self.helper(path, …))` with `helper` an `async fn` of the crate and plain
+  arguments: the call moves into `Box::pin(async move { prelude; self.helper(path, …).await })`, the same future.
+- **E0308 by type pair** (`valueRules`): a std path into a `&AppPath` slot becomes `app_path!("…")` for a canonical
+  literal (`isCanonicalLiteral`: a POSIX path of plain names, or `scheme://authority/names`), else
+  `&AppPath::legacy_unchecked(…)`; a batch maps each through the bridge; an owned `PathBuf` into an `AppPathBuf` slot is
+  `AppPath::legacy_unchecked(&…).into_owned()`; a typed value into a `&Path` or `PathBuf` slot is `.as_std_legacy()`
+  (`.into_owned()`); the `BridgedPath` rows wrap (`BridgedPath::new`), unwrap (`.into_path_buf()`), or read (`.app()`).
+  A struct literal's shorthand field (`Foo { path }`) is spelled out.
+- **Receiver**: a typed receiver calling a `Path` method (E0599: the typed twins of `Path`'s methods sit on the
+  `PathArithmetic` trait, which nothing outside `cmdr-fs`'s app path module and pins imports during the flip, so
+  `x.file_name()` on a typed `x` never compiles silently), or a same-named `AppPath` method fed a `std::path` argument
+  where the trait IS imported, drops the RECEIVER to `.as_std_legacy()`, ❌ never the argument to `legacy_unchecked`:
+  the typed twin answers otherwise on bridge values (`crates/cmdr-fs/src/app_path/flip_shapes_test.rs`).
+- **Borrowed return** (`root`, `stands_in_for_own_disk`, `local_backing_file`): the field the method returns is retyped
+  to `BridgedPath` (`Option<BridgedPath>`) in its struct, and the method returns `self.field.app()`
+  (`.as_ref().map(BridgedPath::app)`). A literal root becomes `AppPath::from_normalized("/").expect(…)`. A `self.x()`
+  accessor is no field: residue.
+- **Comparison**: `assert_eq!`/`assert_ne!` (and an in-file `==` that rustc labels) comparing a typed value with a std
+  one drops the typed operand to `.as_std_legacy()` (a `BridgedPath` to `.as_path()`); the expected value is untouched.
+- **Imports**: a name a rule introduced (`AppPath`, `AppPathBuf`, `BridgedPath`, `app_path!`, `Path`, `PathBuf`) is
+  imported at rustc's suggested point, or at the head of the innermost module when rustc suggests none (it doesn't for
+  another crate's items). Never twice in one module. A `Path`/`PathBuf` import a rewrite left unused is dropped.
+- **Clippy phase**: once the crate checks, the machine-applicable fix of `useless_vec`, `unnecessary_to_owned`,
+  `needless_borrow`, `redundant_clone`, and a few more (`clippyFixable`) is applied: the base is clippy-clean, so those
+  lints are the rewrites'.
+
+## Passes, residue, and commits
+
+A crate that dev-depends on itself (most do, for its `testing` feature) builds its tests only once its lib checks, so
+the work comes in passes. Each pass is its own commit, so the audit can replay them in order:
+
+1. Run the codemod. Commit everything it changed: `refactor(<crate>): flip to app-path volume calls (codemod pass N)`.
+2. Fix what it lists as residue, by hand, in the bridge's terms (no logic change). Commit it:
+   `refactor(<crate>): app-path flip residue (pass N)`, the body saying what each fix is and why the codemod couldn't.
+3. Run the codemod again. If it edits anything (it usually does once the lib checks and the tests compile), that's pass
+   N+1: back to step 1. Stop when a run reports `checks: true` with no edits.
+
+What it leaves as residue, by shape (each seen on `cmdr-fs` or `cmdr-archive`):
+
+- **A future borrowing the prelude from a sync helper** (E0515 `path_std` on `self.open_stream(path, 0)`, a private
+  `fn … -> Pin<Box<…>>` that does work before its future starts): retype the helper's param to `&'a AppPath` and give
+  the helper the prelude, then pass the typed param straight through (drop the caller's prelude).
+- **A comparison with no labeled operands** (`**path != self.root` against a `BridgedPath` field): `*self.root`.
+- **A borrowed return through an accessor** (`self.own_disk_home()`): retype the field it reads and return `.app()`.
+- **An in-process type built in a helper** (`Vec<(AppPathBuf, …)>` handed to a `Vec<(PathBuf, …)>` parameter): bridge
+  the element (`path.as_std_legacy().into_owned()`).
+- Generic `P: AsRef<Path>` helpers forwarding to a volume, closures whose parameter types are inferred, macros, and
+  non-canonical literals the rules route to the bridge but rustc still rejects.
+- ❗ **Code behind a `cfg` this host doesn't build** (`#[cfg(target_os = "linux")]`, `#[cfg(windows)]`): rustc never
+  sees it here. Cross-check (`cargo check --all-targets --target x86_64-pc-windows-gnu` and `x86_64-unknown-linux-gnu`,
+  zig as the C compiler: `docs/notes/windows-port/app-path-flip-handoff.md`) and fix what it finds as residue.
+
+The residue's own audit: it touches no `assert*!` line and no expected value, and no line outside a function that names
+a `Volume` method or a bridge.

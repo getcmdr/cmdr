@@ -3,8 +3,7 @@
 //! `PathBuf::join` then `to_string_lossy` build two) may lower it, ❌ never raise it.
 //! The local disk's twin is `cmdr-local`'s `list_alloc_ceiling_test.rs`.
 
-use std::path::Path;
-
+use crate::app_path;
 use crate::entry::FileEntry;
 use crate::testing::alloc_count::{CountingAllocator, allocations_during, allocations_for_one_entry};
 use crate::volume::{InMemoryVolume, Volume};
@@ -28,7 +27,7 @@ fn an_in_memory_listing_costs_at_most_its_pinned_allocations_per_entry() {
             .collect();
         let volume = InMemoryVolume::with_entries("Mem", files);
         let (listed, allocations) =
-            allocations_during(|| runtime.block_on(volume.list_directory(Path::new("/dir"), None)));
+            allocations_during(|| runtime.block_on(volume.list_directory(app_path!("/dir"), None)));
         assert_eq!(listed.expect("lists").len() as u64, count);
         allocations
     });

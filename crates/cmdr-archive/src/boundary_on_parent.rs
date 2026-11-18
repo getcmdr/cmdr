@@ -9,6 +9,7 @@
 //! ([`bytes_match_archive_magic`]), so local and remote agree on what "is a
 //! `<format>`" means. One detector, never forked.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::archive_format::archive_boundary_candidate;
@@ -51,7 +52,7 @@ pub async fn confirm_archive_boundary_on_parent(parent: &dyn Volume, path: &Path
 /// code change, once the read works. Only a SUCCESSFUL read whose bytes don't
 /// match (a genuinely mislabeled file) declines.
 pub async fn confirm_remote_archive_boundary(parent: &dyn Volume, archive_path: &Path) -> bool {
-    match parent.get_metadata(archive_path).await {
+    match parent.get_metadata(&AppPath::legacy_unchecked(archive_path)).await {
         Ok(meta) if !meta.is_directory => {}
         // A real remote folder named `foo.zip`, a missing file, or a metadata
         // fault: don't route.
@@ -60,7 +61,10 @@ pub async fn confirm_remote_archive_boundary(parent: &dyn Volume, archive_path: 
     let Some(format) = format_for_path(archive_path) else {
         return false;
     };
-    match parent.read_range(archive_path, 0, ARCHIVE_MAGIC_PREFIX_LEN).await {
+    match parent
+        .read_range(&AppPath::legacy_unchecked(archive_path), 0, ARCHIVE_MAGIC_PREFIX_LEN)
+        .await
+    {
         Ok(bytes) => bytes_match_archive_magic(format, &bytes),
         // Can't sniff: route, and let the archive layer refuse typed.
         Err(_) => true,

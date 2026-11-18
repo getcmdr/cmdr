@@ -1,6 +1,7 @@
 //! What [`Volume::delete`] and [`Volume::entry_kind`] promise about a symbolic
 //! link to a folder: it's a leaf, and deleting it removes the link alone.
 
+use crate::app_path::AppPath;
 use std::path::Path;
 
 use crate::volume::{EntryKind, Volume, VolumeError};
@@ -28,7 +29,7 @@ pub async fn assert_delete_of_a_link_to_a_folder_removes_the_link_alone(
     child_name: &str,
 ) {
     let kind = volume
-        .entry_kind(link)
+        .entry_kind(&AppPath::legacy_unchecked(link))
         .await
         .unwrap_or_else(|e| panic!("entry_kind({}) must answer for a link, got {e:?}", link.display()));
     assert_eq!(
@@ -38,19 +39,22 @@ pub async fn assert_delete_of_a_link_to_a_folder_removes_the_link_alone(
         link.display(),
         volume.name(),
     );
-    let before = volume.list_directory(target, None).await.unwrap_or_else(|e| {
-        panic!(
-            "fixture precondition: listing {} must work, got {e:?}",
-            target.display()
-        )
-    });
+    let before = volume
+        .list_directory(&AppPath::legacy_unchecked(target), None)
+        .await
+        .unwrap_or_else(|e| {
+            panic!(
+                "fixture precondition: listing {} must work, got {e:?}",
+                target.display()
+            )
+        });
     assert!(
         before.iter().any(|e| e.name == child_name),
         "fixture precondition: {} must hold {child_name}",
         target.display(),
     );
 
-    let outcome = volume.delete(link).await;
+    let outcome = volume.delete(&AppPath::legacy_unchecked(link)).await;
     assert!(
         outcome.is_ok(),
         "delete({}) on {} must remove the link itself, got {outcome:?}",
@@ -58,12 +62,15 @@ pub async fn assert_delete_of_a_link_to_a_folder_removes_the_link_alone(
         volume.name(),
     );
     assert!(
-        matches!(volume.entry_kind(link).await, Err(VolumeError::NotFound(_))),
+        matches!(
+            volume.entry_kind(&AppPath::legacy_unchecked(link)).await,
+            Err(VolumeError::NotFound(_))
+        ),
         "the link {} must be gone after its delete",
         link.display(),
     );
     let after = volume
-        .list_directory(target, None)
+        .list_directory(&AppPath::legacy_unchecked(target), None)
         .await
         .unwrap_or_else(|e| panic!("the link's target {} must still be there, got {e:?}", target.display()));
     assert!(

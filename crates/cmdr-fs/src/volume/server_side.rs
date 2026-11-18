@@ -9,6 +9,7 @@
 //! [`RenameWork::CopyThenDelete`] sends the entry through the transfer engine as
 //! a move, with progress, pause, cancel, and journaling.
 
+use crate::app_path::AppPath;
 use std::future::Future;
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
@@ -73,7 +74,7 @@ pub async fn tally_by_listing<V: Volume + ?Sized>(
     path: &Path,
     cap: u64,
 ) -> Result<SubtreeTally, VolumeError> {
-    let entry = volume.get_metadata(path).await?;
+    let entry = volume.get_metadata(&AppPath::legacy_unchecked(path)).await?;
     if !entry.is_directory {
         let file = scanned(&entry);
         return Ok(SubtreeTally {
@@ -94,7 +95,7 @@ pub async fn tally_by_listing<V: Volume + ?Sized>(
     let mut pending: Vec<PathBuf> = vec![path.to_path_buf()];
     while let Some(dir) = pending.pop() {
         tally.folders += 1;
-        for child in volume.list_directory(&dir, None).await? {
+        for child in volume.list_directory(&AppPath::legacy_unchecked(&dir), None).await? {
             // A link is counted as the one entry it is, ❌ never walked: a
             // rename moves it as itself.
             if child.is_directory && !child.is_symlink {
