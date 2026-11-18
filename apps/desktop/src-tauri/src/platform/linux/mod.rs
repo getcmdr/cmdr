@@ -1,8 +1,16 @@
 //! The Linux arm of the platform-identity seam.
 
+mod desktop;
 pub(crate) mod distro;
 
 use super::PlatformCapabilities;
+use super::PlatformConventions;
+use super::conventions::{Desktop, conventions_on};
+
+/// This session's desktop's row: GNOME and KDE split dialog button order; the rest is shared.
+pub(crate) fn conventions() -> PlatformConventions {
+    conventions_on(Desktop::Linux(desktop::linux_desktop()))
+}
 
 /// None of the macOS-built surfaces has a Linux backend yet, and the OS draws the title bar. Global
 /// shortcuts work on an X11 session only (`x11_session`). Image indexing runs only in the

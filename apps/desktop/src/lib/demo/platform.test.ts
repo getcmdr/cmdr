@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
   CAPABILITIES_GLOBAL,
+  CONVENTIONS_GLOBAL,
+  CONVENTIONS_ON,
   getPlatform,
   NO_CAPABILITIES,
   PLATFORM_GLOBAL,
   platformCapabilities,
+  platformConventions,
   type Capability,
 } from '#lib/platform/index.js'
-import { installPlatform, visitorCapabilities, visitorPlatform } from './platform.js'
+import { installPlatform, visitorCapabilities, visitorConventions, visitorPlatform } from './platform.js'
 
 describe('visitorPlatform', () => {
   it.each([
@@ -45,6 +48,23 @@ describe('installPlatform', () => {
     installPlatform(frame)
     expect(Object.getOwnPropertyDescriptor(frame, CAPABILITIES_GLOBAL)?.writable).toBe(false)
     expect(Object.isFrozen((frame as unknown as Record<string, unknown>)[CAPABILITIES_GLOBAL])).toBe(true)
+  })
+
+  it('hands the conventions over read-only too, as the app reads them', () => {
+    const frame = { navigator: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } } as unknown as Window
+    installPlatform(frame)
+    expect(Object.getOwnPropertyDescriptor(frame, CONVENTIONS_GLOBAL)?.writable).toBe(false)
+    expect(Object.isFrozen((frame as unknown as Record<string, unknown>)[CONVENTIONS_GLOBAL])).toBe(true)
+    installPlatform(window)
+    expect(platformConventions()).toEqual(visitorConventions(getPlatform()))
+  })
+})
+
+describe('visitorConventions', () => {
+  it('gives each visitor their desktop app’s row, with the macOS bar the demo always draws', () => {
+    expect(visitorConventions('macos')).toEqual(CONVENTIONS_ON.macos)
+    expect(visitorConventions('windows')).toEqual({ ...CONVENTIONS_ON.windows, menuModel: 'systemMenuBar' })
+    expect(visitorConventions('linux')).toEqual({ ...CONVENTIONS_ON.otherLinux, menuModel: 'systemMenuBar' })
   })
 })
 

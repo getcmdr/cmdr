@@ -2,6 +2,13 @@
 //! real version (`RtlGetVersion`, or the registry's `ProductName` and `DisplayVersion`).
 
 use super::PlatformCapabilities;
+use super::PlatformConventions;
+use super::conventions::{Desktop, conventions_on};
+
+/// The Windows row: Microsoft's commit-button order, Alt access keys, today's in-window menu bar.
+pub(crate) fn conventions() -> PlatformConventions {
+    conventions_on(Desktop::Windows)
+}
 
 /// Nothing yet: every surface waits for its Windows backend, and the title bar stays native, so
 /// Snap Layouts keep working. Image indexing doesn't ship on Windows.

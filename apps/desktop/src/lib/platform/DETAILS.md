@@ -4,11 +4,11 @@
 
 - `src-tauri/src/tauri_builder.rs` registers a tiny plugin (`cmdr-platform`) whose only job is a `js_init_script`, built
   by `apps/desktop/src-tauri/src/platform/frontend.rs`:
-  `Object.defineProperty(window, '__CMDR_PLATFORM__', { value: '<os>' })` and
-  `Object.defineProperty(window, '__CMDR_CAPABILITIES__', { value: Object.freeze({…}) })`. Tauri runs a plugin's init
-  script in every webview the app creates, before the page's own scripts: the config's main window and each window the
-  frontend opens later (viewer, Settings, the queue, the help and debug windows). So no window can render, or evaluate a
-  module, without them.
+  `Object.defineProperty(window, '__CMDR_PLATFORM__', { value: '<os>' })`, and the same with `Object.freeze({…})` for
+  `__CMDR_CAPABILITIES__` and `__CMDR_CONVENTIONS__` (§ Conventions). Tauri runs a plugin's init script in every webview
+  the app creates, before the page's own scripts: the config's main window and each window the frontend opens later
+  (viewer, Settings, the queue, the help and debug windows). So no window can render, or evaluate a module, without
+  them.
 - Both properties are read-only (`defineProperty` without `writable`, the capabilities frozen too), so nothing in the
   page can change its mind later.
 - `getPlatform()` reads its global on every call and checks it names one of the three platforms. A missing or unknown
@@ -77,9 +77,40 @@ Decision: booleans, not a list of names or an OS-file-manager name. Why: a flag 
 languages (a missing answer is a compile error in Rust and a type error in the demo's table), and the per-platform names
 belong to copy, which an ICU `select` on the platform answers.
 
+## Conventions
+
+Capabilities say what exists; conventions say how the platform's own apps behave, so a `lib/ui` primitive can follow
+them without asking which OS it's on. A "Windows" check would leave Linux on one guess, and Linux splits: GNOME orders
+dialog buttons like macOS, KDE like Windows.
+
+- **Source of truth**: `PlatformConventions` in `apps/desktop/src-tauri/src/platform/conventions.rs`, one typed enum per
+  question: `dialogButtonOrder` (`cancelFirst` | `affirmativeFirst`), `enterActivates` (`defaultButton` |
+  `focusedButton`), `cancelKeys` (`escape` | `escapeOrCommandPeriod`), `accessKeys` (`none` | `alt`), `menuModel`
+  (`systemMenuBar` | `windowMenuBar`), `screenReaders` (most used first), and `linuxDesktop` (`gnome` | `kde` | `other`,
+  `null` off Linux). Each value and its guideline, with dates and what stayed unverified:
+  `docs/notes/windows-port/platform-conventions.md`.
+- **One table, five rows**: `conventions_on(Desktop)` answers macOS, Windows, and each Linux desktop in one `match`,
+  compiled on every target; each OS arm (`macos.rs`, `windows.rs`, `linux/mod.rs`) only picks its row, Linux by the
+  session's desktop (`apps/desktop/src-tauri/src/platform/linux/desktop.rs`, `XDG_CURRENT_DESKTOP` read once).
+  `linuxDesktop` comes out of the row, so a desktop off Linux, or a GNOME row without GNOME, can't be built.
+- Decision/Why: one cross-target table, unlike capabilities' answers inside each arm. Why: the browser demo and the test
+  helpers need every desktop's row in TS, and a table compiled everywhere lets one Rust test pin `conventions-on.json`
+  to it on any machine (it prints the JSON to write when they differ), where capabilities need a text-parsing test per
+  arm file. Each target constructs only its own `Desktop`, hence the `dead_code` allows there.
+- **Product decisions carry today's behavior**: Windows and every Linux desktop say `windowMenuBar` (today's bar),
+  though GNOME's HIG has no menu bar; task 63 of `docs/specs/windows-port-plan.md` decides the model.
+- **Reading it**: `convention('dialogButtonOrder')` or `platformConventions()`. Each field reads the injected value only
+  where it names a known member (the `every<…>()` lists in `conventions.ts` fail to compile when a Rust variant is added
+  and not listed), else the fallback's, so a primitive never meets a value it has no branch for.
+- **Tests**: `withConventions('kde')` sets a desktop's real row, `withConventions('gnome', { accessKeys: 'none' })` one
+  field on top. It moves neither the platform nor the capabilities, the same split as `withPlatform()`.
+- **What asks**: nothing yet. Dialogs (task 61), the Windows theme (60), the menu model (63), and the screen reader pass
+  (64) read it.
+
 ## The fallback
 
-Contexts with no backend get `'linux'` and `NO_CAPABILITIES`:
+Contexts with no backend get `'linux'`, `NO_CAPABILITIES`, and `FALLBACK_CONVENTIONS` (the desktop-neutral Linux row, so
+the two fallbacks agree):
 
 - **Vitest**: the default test world is "not macOS, nothing offered". A test that needs another platform or a capability
   says so with `withPlatform()` / `withCapabilities()`.

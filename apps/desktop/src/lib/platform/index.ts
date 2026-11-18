@@ -1,15 +1,26 @@
 /**
- * Which OS this window runs on, and what that OS lets Cmdr offer, as the backend says, read
- * synchronously.
+ * Which OS this window runs on, what that OS lets Cmdr offer, and how its own apps behave
+ * (`conventions.ts`), as the backend says, read synchronously.
  *
- * The backend injects both into every webview before any script runs (the Rust `platform`
+ * The backend injects all three into every webview before any script runs (the Rust `platform`
  * module's `frontend.rs`), so a module may read them at load time. A context with no backend to
- * ask (a plain browser, Vitest) gets {@link FALLBACK_PLATFORM} and {@link NO_CAPABILITIES}.
+ * ask (a plain browser, Vitest) gets {@link FALLBACK_PLATFORM}, {@link NO_CAPABILITIES}, and the
+ * fallback platform's conventions.
  * Mechanics and the browser demo's answer: `DETAILS.md`.
  */
 import type { PlatformCapabilities } from '#lib/ipc/bindings.js'
 
 export type { PlatformCapabilities }
+
+export {
+  CONVENTIONS_GLOBAL,
+  CONVENTIONS_ON,
+  convention,
+  FALLBACK_CONVENTIONS,
+  platformConventions,
+  type ConventionsDesktop,
+  type PlatformConventions,
+} from './conventions.js'
 
 export type Platform = 'macos' | 'linux' | 'windows'
 

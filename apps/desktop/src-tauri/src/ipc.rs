@@ -1023,6 +1023,7 @@ pub fn builder() -> Builder<tauri::Wry> {
         // Reaches the frontend through the platform init script, not a command
         // (`platform/frontend.rs`); exported so `#lib/platform` types what it reads.
         .typ::<crate::platform::PlatformCapabilities>()
+        .typ::<crate::platform::PlatformConventions>()
         // What `about_start` streams over its channel, which specta can't describe from the
         // command: exported so the card's state slice types every event.
         .typ::<crate::about::AboutEvent>()

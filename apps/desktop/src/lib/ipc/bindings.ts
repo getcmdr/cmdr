@@ -6796,6 +6796,13 @@ export type AccentColorChanged = {
   hex: string
 }
 
+// Whether labeled controls carry access keys (an underlined letter pressed with Alt).
+export type AccessKeys =
+  // The platform has no access keys.
+  | 'none'
+  // Alt plus the marked letter presses the control, and holding Alt reveals the marks.
+  | 'alt'
+
 /**
  *  Something turned away that the person hears about. Carries its source, so it's also the
  *  gate's key, and ❌ never anything the person shouldn't see in a toast (no origin, no path).
@@ -8143,6 +8150,13 @@ export type ByteShare = {
    */
   atLeast: boolean
 }
+
+// The keys that cancel a dialog.
+export type CancelKeys =
+  // Esc.
+  | 'escape'
+  // Esc, or ⌘. (Command-period).
+  | 'escapeOrCommandPeriod'
 
 /**
  *  What a Stop reached, so the rail waits for exactly the terminals still coming
@@ -9514,6 +9528,13 @@ export type DfsCacheEntryDto = {
   expires_in_ms: number | null
 }
 
+// Where the affirmative ("do it") button sits relative to Cancel.
+export type DialogButtonOrder =
+  // Cancel first, the affirmative button last (on the trailing side): macOS, GNOME.
+  | 'cancelFirst'
+  // The affirmative button first, Cancel after it: Windows, KDE.
+  | 'affirmativeFirst'
+
 /**
  *  Where the gallery's disk-backed dialogs point, and the landmarks inside it
  *  they need by name. Returned rather than guessed on the frontend: the side
@@ -10296,6 +10317,13 @@ export type EncryptionInfoDto = {
   active: boolean
   cipher: string | null
 }
+
+// Which button Enter presses while a dialog has focus.
+export type EnterActivates =
+  // Always the dialog's default button, wherever focus is; Space presses the focused one.
+  | 'defaultButton'
+  // The focused button when a button has focus, else the default button.
+  | 'focusedButton'
 
 // One status entry, surfaced to the frontend as `{ path, code }`.
 export type EntryStatus = {
@@ -13045,6 +13073,13 @@ export type LinkSignIn = {
   target: string
 }
 
+// The Linux desktop a window lives on, from `XDG_CURRENT_DESKTOP` (`linux/desktop.rs`).
+export type LinuxDesktop =
+  | 'gnome'
+  | 'kde'
+  // Any other desktop (Xfce, Cinnamon, MATE, COSMIC, …), or none named.
+  | 'other'
+
 // Cancelled event payload
 export type ListingCancelledEvent = {
   listingId: string
@@ -14489,6 +14524,13 @@ export type MenuAnchor = {
  *  Rare (a language change), so re-pushing everything beats tracking what moved.
  */
 export type MenuBarRebuilt = Record<string, never>
+
+// Where the app's menus live.
+export type MenuModel =
+  // One menu bar at the top of the screen, owned by the OS, that follows the focused app.
+  | 'systemMenuBar'
+  // A menu bar inside each window, under its title bar.
+  | 'windowMenuBar'
 
 /**
  *  `menu-sort`: a Sort-by menu item (column or order) clicked. `action` is
@@ -17053,6 +17095,34 @@ export type PlatformCapabilities = {
   processDiagnostics: boolean
 }
 
+/**
+ *  Every platform convention a UI primitive asks, for the desktop this window lives on. Each OS arm
+ *  picks its row of [`conventions_on`] (`macos.rs`, `linux/mod.rs`, `windows.rs`), and
+ *  `frontend.rs` hands it to every webview beside the capabilities.
+ */
+export type PlatformConventions = {
+  // The order of a dialog's commit buttons.
+  dialogButtonOrder: DialogButtonOrder
+  // Which button Enter (Return) presses in a dialog.
+  enterActivates: EnterActivates
+  // The keys that press a dialog's Cancel (or Close) button.
+  cancelKeys: CancelKeys
+  // Whether controls carry access keys (mnemonics) and how the user reaches them.
+  accessKeys: AccessKeys
+  // Where the app's menus live.
+  menuModel: MenuModel
+  /**
+   *  The screen readers this platform's users run, most used first: the ones a screen reader
+   *  pass tests with and any hint names.
+   */
+  screenReaders: ScreenReader[]
+  /**
+   *  The Linux desktop this window lives on; `None` off Linux. Only the Linux arm can set it,
+   *  because [`conventions_on`] derives it from the desktop it answers for.
+   */
+  linuxDesktop: LinuxDesktop | null
+}
+
 export type PrepareResult = {
   ready: boolean
   entryCount: number
@@ -19314,6 +19384,9 @@ export type ScanRunKind =
    *  (stale) for the whole run. Far slower per entry, far kinder to look at.
    */
   | 'change_check'
+
+// A screen reader a platform's users run.
+export type ScreenReader = 'voiceOver' | 'jaws' | 'nvda' | 'narrator' | 'orca'
 
 /**
  *  Somebody stopped the run. Its results stay on screen: everything already
