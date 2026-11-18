@@ -11,9 +11,14 @@ mod imp;
 
 const _: fn() -> String = machine_name;
 const _: fn() -> (u32, u32) = process_ids;
+const _: fn() -> Vec<u32> = process_groups;
 
 /// This machine's host name, or empty when the OS won't say.
 pub(super) use imp::machine_name;
 
 /// The uid and gid this process runs as, which is who `EXPORT` asks as.
 pub(super) use imp::process_ids;
+
+/// This process's supplementary groups, as the OS lists them; empty when it won't say or has
+/// none to give.
+pub(super) use imp::process_groups;

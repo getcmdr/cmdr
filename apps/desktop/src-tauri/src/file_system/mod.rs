@@ -42,11 +42,8 @@ pub mod text_editor;
 pub mod volume;
 pub(crate) mod watcher;
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use cmdr_fs::log_private::LogPrivate;
-use cmdr_local::LocalPosixVolume;
 use volume::manager::get_volume_manager;
 
 // Re-export volume types (some not used externally yet)
@@ -107,23 +104,13 @@ pub fn smb_concurrency() -> usize {
 ///
 /// This should be called during app startup (after init_watcher_manager).
 /// Registers:
-/// - "root" volume pointing to "/" (the entire filesystem)
+/// - "root": the host's local volume (`volumes::root_volume`: the entire filesystem at "/", or
+///   the system drive on Windows)
 /// - Attached volumes (external drives, USB, etc.)
 /// - Cloud drives (Dropbox, iCloud, Google Drive, etc.)
 pub fn init_volume_manager() {
-    // Register root volume
-    #[cfg(target_os = "macos")]
-    let root_name = "Macintosh HD";
-    #[cfg(not(target_os = "macos"))]
-    let root_name = "Root";
-
-    let root_volume = Arc::new(LocalPosixVolume::local_folder(
-        root_name,
-        "/",
-        crate::volume_host::host(),
-    ));
     let manager = get_volume_manager();
-    manager.register("root", root_volume);
+    manager.register("root", crate::volumes::root_volume());
     manager.set_default("root");
 
     // Attached volumes and cloud drives are discovered and registered OFF the main
@@ -158,6 +145,8 @@ fn register_discovered_volumes() {
     // Register attached volumes and cloud drives (macOS)
     #[cfg(target_os = "macos")]
     {
+        use cmdr_fs::log_private::LogPrivate;
+
         // The switcher's rows go in with their PRETTY names and their
         // discovery-derived IDs, over the sweep's path-derived names. Same IDs
         // (one funnel), so this replaces nothing: it renames.
@@ -181,11 +170,11 @@ fn register_discovered_volumes() {
         let cloud = crate::volumes::get_cloud_drives();
         log::debug!("Registering {} cloud drive(s)", cloud.len());
         for location in cloud {
-            let volume = Arc::new(LocalPosixVolume::local_folder(
+            let volume = crate::volumes::local_volume_on_mount(
                 &location.name,
-                &location.path,
-                crate::volume_host::host(),
-            ));
+                std::path::Path::new(&location.path),
+                cmdr_fs::volume::MountClass::LocalDisk,
+            );
             get_volume_manager().register(&location.id, volume);
             log::debug!(
                 "  Registered cloud drive: {} -> {}",
@@ -198,6 +187,8 @@ fn register_discovered_volumes() {
     // Register mounted volumes, cloud drives, and network mounts (Linux)
     #[cfg(target_os = "linux")]
     {
+        use cmdr_fs::log_private::LogPrivate;
+
         let locations = crate::volumes::list_locations();
         let non_fav: Vec<_> = locations
             .iter()

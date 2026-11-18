@@ -104,6 +104,20 @@ pub(crate) fn credential_for(identity: &NfsIdentity) -> Credential {
     })
 }
 
+impl NfsIdentity {
+    /// Who this process is to the OS: its uid, gid, and supplementary groups as listed, each
+    /// unfiltered. On Windows, which has no uid, that's `nobody` with no other groups. What a
+    /// place defaults to when nothing better is known; the caller picks which groups to offer.
+    pub fn of_this_process() -> Self {
+        let (uid, gid) = platform::process_ids();
+        Self {
+            uid,
+            gid,
+            other_gids: platform::process_groups(),
+        }
+    }
+}
+
 /// The uid and gid this process runs as: who `EXPORT` asks as.
 fn this_process() -> NfsIdentity {
     let (uid, gid) = platform::process_ids();

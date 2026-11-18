@@ -36,6 +36,13 @@ pub(crate) use smb::{enrich_from_volume_registry, get_smb_mount_info, parse_gvfs
 // `/proc/mounts` and a GVFS folder name are both the table, so one reader answers both questions.
 pub(crate) use smb::get_smb_mount_info as smb_mount_info_at;
 
+pub(crate) use super::unix::{is_local_volume, local_volume_on_mount};
+
+/// The whole filesystem at `/`, named as this OS names its startup disk.
+pub(crate) fn root_volume() -> std::sync::Arc<dyn cmdr_fs::volume::Volume> {
+    super::unix::root_volume_named("Root")
+}
+
 use cmdr_fs::volume::published_locations::dedupe_locations;
 use cmdr_local::linux_mounts::{self, MountEntry};
 use fs_type::supports_trash_for_mount;

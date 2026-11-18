@@ -357,6 +357,11 @@ gtk = "0.18"
 # `PlatformWebview::inner()` returns a different type.
 webkit2gtk = "2.0"
 
+[target.'cfg(target_os = "windows")'.dependencies]
+# Win32 calls behind the app's `platform/` seams: the registry for the licensing device id
+# (`licensing/device_id/platform/windows.rs`). Already in the lockfile through the workspace crates.
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Registry"] }
+
 [target.'cfg(target_os = "macos")'.dependencies]
 # The custom updater's trust check: unpacking the release tarball and requiring Cmdr's Developer
 # ID code signature on the bundle inside, shared with the release gate (`cmdr-vet-update`) so the

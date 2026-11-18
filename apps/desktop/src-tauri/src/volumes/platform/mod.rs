@@ -3,11 +3,15 @@
 //! (`docs/guides/platform-seams.md`).
 
 use std::path::Path;
+use std::sync::Arc;
 
-use cmdr_fs::volume::SpaceInfo;
+use cmdr_fs::volume::{MountClass, SpaceInfo, Volume};
 use tauri::AppHandle;
 
 use crate::volumes::{LocationInfo, NetworkMount, SmbMountInfo, VolumeInfo};
+
+#[cfg(unix)]
+mod unix;
 
 #[cfg_attr(target_os = "macos", path = "macos/mod.rs")]
 #[cfg_attr(target_os = "linux", path = "linux/mod.rs")]
@@ -39,8 +43,26 @@ const _: fn(&Path) -> Option<(String, String)> = mount_type_and_source_for;
 const _: fn(&str) -> Option<SpaceInfo> = live_volume_space;
 const _: fn(&AppHandle) = start_volume_watcher;
 const _: fn() = stop_volume_watcher;
+const _: fn() -> Arc<dyn Volume> = root_volume;
+const _: fn(&str, &Path, MountClass) -> Arc<dyn Volume> = local_volume_on_mount;
+const _: fn(&dyn Volume) -> bool = is_local_volume;
 const _: &str = NETWORK_FS_TYPE;
 const _: bool = LOCAL_DISK_CASE_SENSITIVE;
+
+/// The host's local volume the registry serves as `DEFAULT_VOLUME_ID` ("root"), the default
+/// pane's volume: the whole filesystem at `/` on macOS and Linux. On Windows, where each drive is
+/// its own volume (plan D1), it's the system drive alone for now (a stub: which drives register,
+/// and under which ids, is the multi-root task's open decision).
+pub(crate) use imp::root_volume;
+
+/// A volume over a folder on this host's own filesystem at `root`, with the mount class its
+/// registration found. ❗ An SMB kernel mount goes through `network::smb_mount_gate`, ❌ never
+/// here directly with `MountClass::SmbShare`.
+pub(crate) use imp::local_volume_on_mount;
+
+/// Whether `volume` is this host's plain local volume ([`local_volume_on_mount`]'s kind), as
+/// opposed to a gate, a remote backend, or a device.
+pub(crate) use imp::is_local_volume;
 
 /// Every location the switcher lists, deduplicated: favorites, the main volume, attached and
 /// network mounts, and cloud drives. Blocking: run it off the async thread

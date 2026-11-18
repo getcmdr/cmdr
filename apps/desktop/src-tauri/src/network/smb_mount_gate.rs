@@ -8,7 +8,7 @@
 //! So under the requirement every SMB kernel mount registers as an
 //! [`UnverifiedSmbMount`], which refuses with `VolumeError::EncryptionRequired` until
 //! the mount proves encrypted (`smbutil statshares`), at which point the plain
-//! `LocalPosixVolume` takes its place. The direct, encrypted session replacing it
+//! local volume (`volumes::local_volume_on_mount`) takes its place. The direct, encrypted session replacing it
 //! (the usual way out) goes through `smb_upgrade` as for any kernel mount.
 //!
 //! Why refuse instead of browsing through the mount with a warning: the setting's
@@ -27,7 +27,6 @@ use std::sync::Arc;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::MountClass;
-use cmdr_local::LocalPosixVolume;
 use tokio::sync::OnceCell;
 
 use crate::file_system::volume::{ListingProgress, Volume, VolumeError};
@@ -55,9 +54,9 @@ pub(crate) enum MountEncryption {
 /// mount watcher, and `smb_upgrade::return_to_os_mount`), or the requirement has a
 /// hole the size of that site.
 pub(crate) fn os_mount_volume(name: &str, root: &Path) -> Arc<dyn Volume> {
-    let mount = LocalPosixVolume::on_mount(name, root, MountClass::SmbShare, crate::volume_host::host());
+    let mount = crate::volumes::local_volume_on_mount(name, root, MountClass::SmbShare);
     if !cmdr_smb::SmbEncryption::is_required() {
-        return Arc::new(mount);
+        return mount;
     }
     let gate = Arc::new(UnverifiedSmbMount::new(mount));
     // Verify in the background, and hand the share to the plain mount once it proves
@@ -73,12 +72,7 @@ pub(crate) fn os_mount_volume(name: &str, root: &Path) -> Arc<dyn Volume> {
 pub(crate) fn mount_volume(name: &str, root: &Path, mount: MountClass) -> Arc<dyn Volume> {
     match mount {
         MountClass::SmbShare => os_mount_volume(name, root),
-        MountClass::LocalDisk | MountClass::OtherNetwork => Arc::new(LocalPosixVolume::on_mount(
-            name,
-            root,
-            mount,
-            crate::volume_host::host(),
-        )),
+        MountClass::LocalDisk | MountClass::OtherNetwork => crate::volumes::local_volume_on_mount(name, root, mount),
     }
 }
 
@@ -95,7 +89,7 @@ pub(crate) async fn follow_requirement() {
     for (volume_id, volume) in manager.list_volumes_with_handles() {
         let is_gate = volume.as_any().is::<UnverifiedSmbMount>();
         let is_plain_smb_mount =
-            volume.as_any().is::<LocalPosixVolume>() && volume.mount_class() == Some(MountClass::SmbShare);
+            crate::volumes::is_local_volume(volume.as_ref()) && volume.mount_class() == Some(MountClass::SmbShare);
         if (required && is_plain_smb_mount) || (!required && is_gate) {
             log::debug!(
                 target: "network::smb_encryption",
@@ -132,7 +126,8 @@ pub(crate) async fn refuses(volume_id: &str) -> bool {
 /// requirement both hand calls to it, which is what lets a pane opened in the
 /// probe's few milliseconds, or after the switch went off, list normally.
 pub(crate) struct UnverifiedSmbMount {
-    mount: LocalPosixVolume,
+    /// The plain local volume over the mount (`volumes::local_volume_on_mount`).
+    mount: Arc<dyn Volume>,
     verdict: Arc<OnceCell<MountEncryption>>,
 }
 
@@ -142,7 +137,7 @@ pub(crate) struct UnverifiedSmbMount {
 const STATSHARES_LIMIT: std::time::Duration = std::time::Duration::from_secs(5);
 
 impl UnverifiedSmbMount {
-    fn new(mount: LocalPosixVolume) -> Self {
+    fn new(mount: Arc<dyn Volume>) -> Self {
         Self {
             mount,
             verdict: Arc::new(OnceCell::new()),
@@ -179,12 +174,8 @@ impl UnverifiedSmbMount {
             .downcast_ref::<Self>()
             .is_some_and(|gate| std::ptr::eq(gate, self.as_ref()));
         if still_this_gate {
-            let plain: Arc<dyn Volume> = Arc::new(LocalPosixVolume::on_mount(
-                self.mount.name(),
-                self.mount.root(),
-                MountClass::SmbShare,
-                crate::volume_host::host(),
-            ));
+            let plain =
+                crate::volumes::local_volume_on_mount(self.mount.name(), self.mount.root(), MountClass::SmbShare);
             crate::network::smb_upgrade::register_replacing_predecessor(&volume_id, plain).await;
         }
     }

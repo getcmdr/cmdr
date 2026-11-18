@@ -14,10 +14,7 @@ use crate::timestamps;
 use jiff::Timestamp;
 use std::path::Path;
 
-use super::{
-    AppFate, CACHED_SETTINGS, CRASH_FILE_VERSION, CRASH_LOOP_THRESHOLD_SECS, CRASH_SHORT_ID_PREFIX, CrashReport,
-    current_build_mode, read_crash_report, write_crash_report,
-};
+use super::{AppFate, CRASH_LOOP_THRESHOLD_SECS, CrashReport, read_crash_report, write_crash_report};
 
 /// Turn whatever the previous session left behind into a report the frontend can offer.
 ///
@@ -95,7 +92,9 @@ fn finish_panic_report(crash_json_path: &Path, report: &mut CrashReport) {
 /// Read the async-signal-safe handler's raw file and write a real report in its place.
 #[cfg(unix)]
 fn convert_raw_signal_crash(crash_json_path: &Path, raw_crash_path: &Path) {
-    use super::{signal_handler, symbolicate};
+    use super::{
+        CACHED_SETTINGS, CRASH_FILE_VERSION, CRASH_SHORT_ID_PREFIX, current_build_mode, signal_handler, symbolicate,
+    };
 
     // The raw file is written BY THE HANDLER, mid-crash, so its mtime is when the app actually
     // died. Read it before anything else touches the file. Everything downstream wants that moment

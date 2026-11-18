@@ -45,6 +45,7 @@ mod disk_target;
 mod escalate;
 pub mod holders;
 mod in_flight;
+mod platform;
 #[cfg(target_os = "macos")]
 mod pre_check;
 mod unmount_tool;
@@ -108,7 +109,7 @@ pub async fn eject_scoped(volume_id: &str, scope: EjectScope) -> Result<EjectOut
 
 /// The eject itself. [`eject`] runs at most one of these per volume at a time.
 async fn eject_now(volume_id: String, scope: EjectScope) -> Result<EjectOutcome, EjectError> {
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     let _ = scope;
     use crate::file_system::volume::manager::get_volume_manager;
 
@@ -240,7 +241,9 @@ async fn eject_now(volume_id: String, scope: EjectScope) -> Result<EjectOutcome,
                 }),
             }
         }
-        #[cfg(not(target_os = "macos"))]
+        // No per-disk flight here: the volume alone, as for a mount no disk backs. Windows never
+        // gets here (nothing reads as ejectable there yet).
+        #[cfg(any(target_os = "linux", target_os = "windows"))]
         EjectAction::DiskutilEject => {
             eject_one_volume(volume_id, &mount_path, UnmountVerb::Eject).await?;
             Ok(EjectOutcome::Unmounted)
@@ -283,12 +286,7 @@ async fn disconnect_remote_session(volume_id: &str) -> Result<(), EjectError> {
 /// Stops one volume's index and tears down that volume alone: an SMB share, a mount
 /// no physical disk backs, and every Linux eject.
 async fn eject_one_volume(volume_id: &str, mount_path: &str, verb: UnmountVerb) -> Result<(), EjectError> {
-    let teardown = Teardown::Tool {
-        verb,
-        mount_path,
-        #[cfg(target_os = "macos")]
-        disk: None,
-    };
+    let teardown = Teardown::volume_tool(verb, mount_path);
     stop_index_then_unmount(
         volume_id,
         stop_index_blocking(volume_id.to_string(), stop_removable_index),
@@ -313,6 +311,18 @@ enum Teardown<'a> {
         #[cfg(target_os = "macos")]
         disk: Option<&'a disk_flight::DiskTeardown>,
     },
+}
+
+impl<'a> Teardown<'a> {
+    /// The tool against one mount root alone, ❌ never a whole disk.
+    fn volume_tool(verb: UnmountVerb, mount_path: &'a str) -> Self {
+        Self::Tool {
+            verb,
+            mount_path,
+            #[cfg(target_os = "macos")]
+            disk: None,
+        }
+    }
 }
 
 /// Runs one teardown and reports how it went. A refused unmount is retried first,
@@ -611,10 +621,10 @@ async fn stop_indexes_blocking(
 /// watcher task, and drops the smb2 session, then a `volumes-changed` event
 /// flows to the frontend.
 ///
-/// On other platforms the OS-level unmount isn't wired up yet (mirrors
-/// `network::os_mount::unmount_smb_shares_from_host`), so it drops the smb2 session
-/// directly via `Volume::on_unmount`; the OS mount stays alive for the user to
-/// eject from the file manager.
+/// Where the OS-level unmount isn't wired up yet (Linux and Windows,
+/// `platform::SMB_DISCONNECT_UNMOUNTS`), it drops the smb2 session directly via
+/// `Volume::on_unmount`; the OS mount stays alive for the user to eject from the
+/// file manager.
 ///
 /// Unlike [`eject`], this has no busy gate: the Disconnect affordance targets a
 /// reconnecting or unreachable volume, so there's nothing actively transferring.
@@ -638,20 +648,11 @@ pub async fn disconnect_smb(volume_id: &str) -> Result<(), EjectError> {
         });
     }
 
-    #[cfg(target_os = "macos")]
-    {
+    if platform::SMB_DISCONNECT_UNMOUNTS {
         let mount_path = volume.root().to_string_lossy().to_string();
-        let teardown = Teardown::Tool {
-            verb: UnmountVerb::Unmount,
-            mount_path: &mount_path,
-            disk: None,
-        };
-        run_teardown(volume_id, teardown).await?;
-        // FSEvents will fire shortly and trigger on_unmount + volume-manager removal.
-    }
-
-    #[cfg(not(target_os = "macos"))]
-    {
+        run_teardown(volume_id, Teardown::volume_tool(UnmountVerb::Unmount, &mount_path)).await?;
+        // The unmount notification will fire shortly and trigger on_unmount + volume-manager removal.
+    } else {
         volume.on_unmount();
         log::info!(
             target: "eject",
@@ -663,35 +664,14 @@ pub async fn disconnect_smb(volume_id: &str) -> Result<(), EjectError> {
     Ok(())
 }
 
-/// Looks up `is_ejectable` for the volume at `mount_path` via the per-path
-/// statfs/NSURL fast resolver. Avoids the full volume enumeration. Blocks without
-/// limit on a hung backing store, so its caller puts it under
-/// [`deadlines::EJECTABILITY_CHECK_DEADLINE`].
+/// Looks up `is_ejectable` for the volume at `mount_path` from the per-path
+/// reads the OS has (`platform::is_ejectable`), avoiding a full volume
+/// enumeration where it can. Blocks without limit on a hung backing store, so its
+/// caller puts it under [`deadlines::EJECTABILITY_CHECK_DEADLINE`].
 async fn resolve_is_ejectable(mount_path: String) -> bool {
-    #[cfg(target_os = "macos")]
-    {
-        let path = mount_path;
-        tokio::task::spawn_blocking(move || {
-            crate::volumes::resolve_path_volume_fast(&path)
-                .map(|v| v.is_ejectable)
-                .unwrap_or(false)
-        })
+    tokio::task::spawn_blocking(move || platform::is_ejectable(&mount_path))
         .await
         .unwrap_or(false)
-    }
-    #[cfg(target_os = "linux")]
-    {
-        let path = mount_path;
-        tokio::task::spawn_blocking(move || {
-            crate::volumes::list_locations()
-                .into_iter()
-                .find(|v| v.path == path)
-                .map(|v| v.is_ejectable)
-                .unwrap_or(false)
-        })
-        .await
-        .unwrap_or(false)
-    }
 }
 
 #[cfg(test)]

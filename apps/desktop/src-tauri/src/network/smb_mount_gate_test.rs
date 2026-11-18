@@ -68,11 +68,10 @@ fn a_table_without_the_row_proves_nothing() {
 }
 
 fn gate_over(dir: &TestDir) -> UnverifiedSmbMount {
-    UnverifiedSmbMount::new(LocalPosixVolume::on_mount(
+    UnverifiedSmbMount::new(crate::volumes::local_volume_on_mount(
         "share",
         dir.as_ref(),
         MountClass::SmbShare,
-        crate::volume_host::host(),
     ))
 }
 
@@ -139,22 +138,14 @@ async fn a_flip_moves_every_smb_mount_behind_the_gate_and_back() {
         "the share is behind the gate"
     );
     assert!(refuses(share_id).await, "a scratch folder never proves encrypted");
-    assert!(
-        manager
-            .get(disk_id)
-            .expect("registered")
-            .as_any()
-            .is::<LocalPosixVolume>()
-    );
+    assert!(crate::volumes::is_local_volume(
+        manager.get(disk_id).expect("registered").as_ref()
+    ));
 
     cmdr_smb::SmbEncryption::set_required(false);
     follow_requirement().await;
     assert!(
-        manager
-            .get(share_id)
-            .expect("registered")
-            .as_any()
-            .is::<LocalPosixVolume>(),
+        crate::volumes::is_local_volume(manager.get(share_id).expect("registered").as_ref()),
         "the requirement lifted hands the share back to the plain mount"
     );
     assert!(!refuses(share_id).await);
@@ -169,21 +160,17 @@ async fn a_flip_moves_every_smb_mount_behind_the_gate_and_back() {
 async fn the_gate_stands_only_for_an_smb_mount_under_the_requirement() {
     let dir = TestDir::new("smb-gate-choice");
     cmdr_smb::SmbEncryption::set_required(false);
-    assert!(
-        mount_volume("share", &dir, MountClass::SmbShare)
-            .as_any()
-            .is::<LocalPosixVolume>()
-    );
+    assert!(crate::volumes::is_local_volume(
+        mount_volume("share", &dir, MountClass::SmbShare).as_ref()
+    ));
     cmdr_smb::SmbEncryption::set_required(true);
     assert!(
         mount_volume("share", &dir, MountClass::SmbShare)
             .as_any()
             .is::<UnverifiedSmbMount>()
     );
-    assert!(
-        mount_volume("disk", &dir, MountClass::OtherNetwork)
-            .as_any()
-            .is::<LocalPosixVolume>()
-    );
+    assert!(crate::volumes::is_local_volume(
+        mount_volume("disk", &dir, MountClass::OtherNetwork).as_ref()
+    ));
     cmdr_smb::SmbEncryption::set_required(false);
 }
