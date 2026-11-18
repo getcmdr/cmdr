@@ -307,7 +307,7 @@
   "@settings.sidebar.searchPlaceholder": {
     "sourceHash": "cd34ad0"
   },
-  "settings.sidebar.sections": "{platform, select, windows {Secciones de configuración} linuxGnome {Secciones de preferencias} other {Secciones de configuración}}",
+  "settings.sidebar.sections": "{platform, select, windows {Secciones de configuración} linuxGnome {Secciones de preferencias} linuxKde {Configure Cmdr sections} other {Secciones de configuración}}",
   "@settings.sidebar.sections": {
     "sourceHash": "47e4916"
   },

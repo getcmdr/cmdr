@@ -705,11 +705,11 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, windows {Adicione sua chave de API nos ajustes para começar a conversar.} linuxGnome {Adicione sua chave de API nas preferências para começar a conversar.} other {Adicione sua chave de API nos ajustes para começar a conversar.}}",
+  "askCmdr.error.noKey": "{platform, select, windows {Adicione sua chave de API nos ajustes para começar a conversar.} linuxGnome {Adicione sua chave de API nas preferências para começar a conversar.} linuxKde {Add your API key in Configure Cmdr to start chatting.} other {Adicione sua chave de API nos ajustes para começar a conversar.}}",
   "@askCmdr.error.noKey": {
     "sourceHash": "124df6a"
   },
-  "askCmdr.error.notConfigured": "{platform, select, windows {O chat precisa de um provedor de IA. Ative um nos ajustes.} linuxGnome {O chat precisa de um provedor de IA. Ative um nas preferências.} other {O chat precisa de um provedor de IA. Ative um nos ajustes.}}",
+  "askCmdr.error.notConfigured": "{platform, select, windows {O chat precisa de um provedor de IA. Ative um nos ajustes.} linuxGnome {O chat precisa de um provedor de IA. Ative um nas preferências.} linuxKde {Chatting needs an AI provider. Turn one on in Configure Cmdr.} other {O chat precisa de um provedor de IA. Ative um nos ajustes.}}",
   "@askCmdr.error.notConfigured": {
     "sourceHash": "54fb846"
   },
@@ -737,7 +737,7 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, windows {O provedor não aceitou sua chave de API. Verifique-a nos ajustes.} linuxGnome {O provedor não aceitou sua chave de API. Verifique-a nas preferências.} other {O provedor não aceitou sua chave de API. Verifique-a nos ajustes.}}",
+  "askCmdr.error.authFailed": "{platform, select, windows {O provedor não aceitou sua chave de API. Verifique-a nos ajustes.} linuxGnome {O provedor não aceitou sua chave de API. Verifique-a nas preferências.} linuxKde {The provider didn’t accept your API key. Check it in Configure Cmdr.} other {O provedor não aceitou sua chave de API. Verifique-a nos ajustes.}}",
   "@askCmdr.error.authFailed": {
     "sourceHash": "9e02aad"
   },
@@ -745,19 +745,19 @@
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Seu plano em {provider} não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.} linuxGnome {Seu plano em {provider} não inclui este modelo. Escolha outro modelo nas preferências ou faça upgrade do seu plano.} other {Seu plano em {provider} não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Seu plano em {provider} não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.} linuxGnome {Seu plano em {provider} não inclui este modelo. Escolha outro modelo nas preferências ou faça upgrade do seu plano.} linuxKde {Your {provider} plan doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {Seu plano em {provider} não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.}}",
   "@askCmdr.error.modelNotInPlan.named": {
     "sourceHash": "efbf38b"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Seu plano com este provedor de IA não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.} linuxGnome {Seu plano com este provedor de IA não inclui este modelo. Escolha outro modelo nas preferências ou faça upgrade do seu plano.} other {Seu plano com este provedor de IA não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Seu plano com este provedor de IA não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.} linuxGnome {Seu plano com este provedor de IA não inclui este modelo. Escolha outro modelo nas preferências ou faça upgrade do seu plano.} linuxKde {Your plan with this AI provider doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {Seu plano com este provedor de IA não inclui este modelo. Escolha outro modelo nos Ajustes ou faça upgrade do seu plano.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
     "sourceHash": "6808950"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {O provedor {provider} recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior em {provider} ou escolha outro provedor nos Ajustes.} linuxGnome {O provedor {provider} recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior em {provider} ou escolha outro provedor nas preferências.} other {O provedor {provider} recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior em {provider} ou escolha outro provedor nos Ajustes.}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {O provedor {provider} recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior em {provider} ou escolha outro provedor nos Ajustes.} linuxGnome {O provedor {provider} recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior em {provider} ou escolha outro provedor nas preferências.} linuxKde {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in Configure Cmdr.} other {O provedor {provider} recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior em {provider} ou escolha outro provedor nos Ajustes.}}",
   "@askCmdr.error.requestTooLarge.named": {
     "sourceHash": "b1850b3"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Seu provedor de IA recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior ou escolha outro provedor nos Ajustes.} linuxGnome {Seu provedor de IA recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior ou escolha outro provedor nas preferências.} other {Seu provedor de IA recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior ou escolha outro provedor nos Ajustes.}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Seu provedor de IA recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior ou escolha outro provedor nos Ajustes.} linuxGnome {Seu provedor de IA recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior ou escolha outro provedor nas preferências.} linuxKde {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in Configure Cmdr.} other {Seu provedor de IA recusou esta solicitação: o limite do seu plano é menor que uma única solicitação do Cmdr, porque toda solicitação sempre leva as instruções do Cmdr. Uma mensagem mais curta não vai ajudar. Tente um plano maior ou escolha outro provedor nos Ajustes.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
     "sourceHash": "455449e"
   },
@@ -1414,7 +1414,7 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, windows {Os recursos de IA estão ativados, mas precisam de um provedor para funcionar. Clique para configurar um nos ajustes.} linuxGnome {Os recursos de IA estão ativados, mas precisam de um provedor para funcionar. Clique para configurar um nas preferências.} other {Os recursos de IA estão ativados, mas precisam de um provedor para funcionar. Clique para configurar um nos ajustes.}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {Os recursos de IA estão ativados, mas precisam de um provedor para funcionar. Clique para configurar um nos ajustes.} linuxGnome {Os recursos de IA estão ativados, mas precisam de um provedor para funcionar. Clique para configurar um nas preferências.} linuxKde {AI features are on, but they need a provider to work. Click to set one up in Configure Cmdr.} other {Os recursos de IA estão ativados, mas precisam de um provedor para funcionar. Clique para configurar um nos ajustes.}}",
   "@askCmdr.wake.needsApiKey": {
     "sourceHash": "2f1b3e9"
   },

@@ -704,11 +704,11 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, windows {在設定裡加上你的 API 金鑰，就可以開始聊了。} linuxGnome {在偏好設定裡加上你的 API 金鑰，就可以開始聊了。} other {在設定裡加上你的 API 金鑰，就可以開始聊了。}}",
+  "askCmdr.error.noKey": "{platform, select, windows {在設定裡加上你的 API 金鑰，就可以開始聊了。} linuxGnome {在偏好設定裡加上你的 API 金鑰，就可以開始聊了。} linuxKde {Add your API key in Configure Cmdr to start chatting.} other {在設定裡加上你的 API 金鑰，就可以開始聊了。}}",
   "@askCmdr.error.noKey": {
     "sourceHash": "124df6a"
   },
-  "askCmdr.error.notConfigured": "{platform, select, windows {聊天需要一個 AI 提供者。請在設定裡開啟一個。} linuxGnome {聊天需要一個 AI 提供者。請在偏好設定裡開啟一個。} other {聊天需要一個 AI 提供者。請在設定裡開啟一個。}}",
+  "askCmdr.error.notConfigured": "{platform, select, windows {聊天需要一個 AI 提供者。請在設定裡開啟一個。} linuxGnome {聊天需要一個 AI 提供者。請在偏好設定裡開啟一個。} linuxKde {Chatting needs an AI provider. Turn one on in Configure Cmdr.} other {聊天需要一個 AI 提供者。請在設定裡開啟一個。}}",
   "@askCmdr.error.notConfigured": {
     "sourceHash": "54fb846"
   },
@@ -736,7 +736,7 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, windows {提供者不接受你的 API 金鑰。到設定裡檢查一下。} linuxGnome {提供者不接受你的 API 金鑰。到偏好設定裡檢查一下。} other {提供者不接受你的 API 金鑰。到設定裡檢查一下。}}",
+  "askCmdr.error.authFailed": "{platform, select, windows {提供者不接受你的 API 金鑰。到設定裡檢查一下。} linuxGnome {提供者不接受你的 API 金鑰。到偏好設定裡檢查一下。} linuxKde {The provider didn’t accept your API key. Check it in Configure Cmdr.} other {提供者不接受你的 API 金鑰。到設定裡檢查一下。}}",
   "@askCmdr.error.authFailed": {
     "sourceHash": "9e02aad"
   },
@@ -744,19 +744,19 @@
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {你的 {provider} 方案不包含這個模型。可以到「設定」換一個模型，或升級你的方案。} linuxGnome {你的 {provider} 方案不包含這個模型。可以到「偏好設定」換一個模型，或升級你的方案。} other {你的 {provider} 方案不包含這個模型。可以到「設定」換一個模型，或升級你的方案。}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {你的 {provider} 方案不包含這個模型。可以到「設定」換一個模型，或升級你的方案。} linuxGnome {你的 {provider} 方案不包含這個模型。可以到「偏好設定」換一個模型，或升級你的方案。} linuxKde {Your {provider} plan doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {你的 {provider} 方案不包含這個模型。可以到「設定」換一個模型，或升級你的方案。}}",
   "@askCmdr.error.modelNotInPlan.named": {
     "sourceHash": "efbf38b"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {你在這個 AI 提供者的方案不包含這個模型。可以到「設定」換一個模型，或升級你的方案。} linuxGnome {你在這個 AI 提供者的方案不包含這個模型。可以到「偏好設定」換一個模型，或升級你的方案。} other {你在這個 AI 提供者的方案不包含這個模型。可以到「設定」換一個模型，或升級你的方案。}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {你在這個 AI 提供者的方案不包含這個模型。可以到「設定」換一個模型，或升級你的方案。} linuxGnome {你在這個 AI 提供者的方案不包含這個模型。可以到「偏好設定」換一個模型，或升級你的方案。} linuxKde {Your plan with this AI provider doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {你在這個 AI 提供者的方案不包含這個模型。可以到「設定」換一個模型，或升級你的方案。}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
     "sourceHash": "6808950"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} 拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以在 {provider} 換一個更大的方案，或在「設定」選另一個提供者。} linuxGnome {{provider} 拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以在 {provider} 換一個更大的方案，或在「偏好設定」選另一個提供者。} other {{provider} 拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以在 {provider} 換一個更大的方案，或在「設定」選另一個提供者。}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} 拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以在 {provider} 換一個更大的方案，或在「設定」選另一個提供者。} linuxGnome {{provider} 拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以在 {provider} 換一個更大的方案，或在「偏好設定」選另一個提供者。} linuxKde {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in Configure Cmdr.} other {{provider} 拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以在 {provider} 換一個更大的方案，或在「設定」選另一個提供者。}}",
   "@askCmdr.error.requestTooLarge.named": {
     "sourceHash": "b1850b3"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {你的 AI 提供者拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以換一個更大的方案，或在「設定」選另一個提供者。} linuxGnome {你的 AI 提供者拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以換一個更大的方案，或在「偏好設定」選另一個提供者。} other {你的 AI 提供者拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以換一個更大的方案，或在「設定」選另一個提供者。}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {你的 AI 提供者拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以換一個更大的方案，或在「設定」選另一個提供者。} linuxGnome {你的 AI 提供者拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以換一個更大的方案，或在「偏好設定」選另一個提供者。} linuxKde {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in Configure Cmdr.} other {你的 AI 提供者拒絕了這個請求：你的方案上限比 Cmdr 的一個請求還小，因為每個請求都會帶上 Cmdr 的指示。把訊息寫短也沒用。可以換一個更大的方案，或在「設定」選另一個提供者。}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
     "sourceHash": "455449e"
   },
@@ -1409,7 +1409,7 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, windows {AI 功能已開啟，但還需要一個提供者才能運作。按一下就能到設定裡選一個。} linuxGnome {AI 功能已開啟，但還需要一個提供者才能運作。按一下就能到偏好設定裡選一個。} other {AI 功能已開啟，但還需要一個提供者才能運作。按一下就能到設定裡選一個。}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {AI 功能已開啟，但還需要一個提供者才能運作。按一下就能到設定裡選一個。} linuxGnome {AI 功能已開啟，但還需要一個提供者才能運作。按一下就能到偏好設定裡選一個。} linuxKde {AI features are on, but they need a provider to work. Click to set one up in Configure Cmdr.} other {AI 功能已開啟，但還需要一個提供者才能運作。按一下就能到設定裡選一個。}}",
   "@askCmdr.wake.needsApiKey": {
     "sourceHash": "2f1b3e9"
   },

@@ -705,11 +705,11 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, windows {Додайте свій ключ API в Параметрах, щоб почати чат.} linuxGnome {Додайте свій ключ API в Налаштуваннях, щоб почати чат.} other {Додайте свій ключ API в Параметрах, щоб почати чат.}}",
+  "askCmdr.error.noKey": "{platform, select, windows {Додайте свій ключ API в Параметрах, щоб почати чат.} linuxGnome {Додайте свій ключ API в Налаштуваннях, щоб почати чат.} linuxKde {Add your API key in Configure Cmdr to start chatting.} other {Додайте свій ключ API в Параметрах, щоб почати чат.}}",
   "@askCmdr.error.noKey": {
     "sourceHash": "124df6a"
   },
-  "askCmdr.error.notConfigured": "{platform, select, windows {Для чату потрібен постачальник ШІ. Увімкніть його в Параметрах.} linuxGnome {Для чату потрібен постачальник ШІ. Увімкніть його в Налаштуваннях.} other {Для чату потрібен постачальник ШІ. Увімкніть його в Параметрах.}}",
+  "askCmdr.error.notConfigured": "{platform, select, windows {Для чату потрібен постачальник ШІ. Увімкніть його в Параметрах.} linuxGnome {Для чату потрібен постачальник ШІ. Увімкніть його в Налаштуваннях.} linuxKde {Chatting needs an AI provider. Turn one on in Configure Cmdr.} other {Для чату потрібен постачальник ШІ. Увімкніть його в Параметрах.}}",
   "@askCmdr.error.notConfigured": {
     "sourceHash": "54fb846"
   },
@@ -737,7 +737,7 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, windows {Постачальник не прийняв ваш ключ API. Перевірте його в Параметрах.} linuxGnome {Постачальник не прийняв ваш ключ API. Перевірте його в Налаштуваннях.} other {Постачальник не прийняв ваш ключ API. Перевірте його в Параметрах.}}",
+  "askCmdr.error.authFailed": "{platform, select, windows {Постачальник не прийняв ваш ключ API. Перевірте його в Параметрах.} linuxGnome {Постачальник не прийняв ваш ключ API. Перевірте його в Налаштуваннях.} linuxKde {The provider didn’t accept your API key. Check it in Configure Cmdr.} other {Постачальник не прийняв ваш ключ API. Перевірте його в Параметрах.}}",
   "@askCmdr.error.authFailed": {
     "sourceHash": "9e02aad"
   },
@@ -745,19 +745,19 @@
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Ваш тариф у постачальника {provider} не включає цю модель. Виберіть іншу модель у Параметрах або перейдіть на вищий тариф.} linuxGnome {Ваш тариф у постачальника {provider} не включає цю модель. Виберіть іншу модель у Налаштуваннях або перейдіть на вищий тариф.} other {Ваш тариф у постачальника {provider} не включає цю модель. Виберіть іншу модель у Параметрах або перейдіть на вищий тариф.}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Ваш тариф у постачальника {provider} не включає цю модель. Виберіть іншу модель у Параметрах або перейдіть на вищий тариф.} linuxGnome {Ваш тариф у постачальника {provider} не включає цю модель. Виберіть іншу модель у Налаштуваннях або перейдіть на вищий тариф.} linuxKde {Your {provider} plan doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {Ваш тариф у постачальника {provider} не включає цю модель. Виберіть іншу модель у Параметрах або перейдіть на вищий тариф.}}",
   "@askCmdr.error.modelNotInPlan.named": {
     "sourceHash": "efbf38b"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Ваш тариф у цього постачальника ШІ не включає цю модель. Виберіть іншу модель у Параметрах або перейдіть на вищий тариф.} linuxGnome {Ваш тариф у цього постачальника ШІ не включає цю модель. Виберіть іншу модель у Налаштуваннях або перейдіть на вищий тариф.} other {Ваш тариф у цього постачальника ШІ не включає цю модель. Виберіть іншу модель у Параметрах або перейдіть на вищий тариф.}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Ваш тариф у цього постачальника ШІ не включає цю модель. Виберіть іншу модель у Параметрах або перейдіть на вищий тариф.} linuxGnome {Ваш тариф у цього постачальника ШІ не включає цю модель. Виберіть іншу модель у Налаштуваннях або перейдіть на вищий тариф.} linuxKde {Your plan with this AI provider doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {Ваш тариф у цього постачальника ШІ не включає цю модель. Виберіть іншу модель у Параметрах або перейдіть на вищий тариф.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
     "sourceHash": "6808950"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {Постачальник {provider} відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф у постачальника {provider} або виберіть іншого постачальника в Параметрах.} linuxGnome {Постачальник {provider} відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф у постачальника {provider} або виберіть іншого постачальника в Налаштуваннях.} other {Постачальник {provider} відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф у постачальника {provider} або виберіть іншого постачальника в Параметрах.}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {Постачальник {provider} відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф у постачальника {provider} або виберіть іншого постачальника в Параметрах.} linuxGnome {Постачальник {provider} відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф у постачальника {provider} або виберіть іншого постачальника в Налаштуваннях.} linuxKde {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in Configure Cmdr.} other {Постачальник {provider} відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф у постачальника {provider} або виберіть іншого постачальника в Параметрах.}}",
   "@askCmdr.error.requestTooLarge.named": {
     "sourceHash": "b1850b3"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Ваш постачальник ШІ відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф або виберіть іншого постачальника в Параметрах.} linuxGnome {Ваш постачальник ШІ відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф або виберіть іншого постачальника в Налаштуваннях.} other {Ваш постачальник ШІ відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф або виберіть іншого постачальника в Параметрах.}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Ваш постачальник ШІ відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф або виберіть іншого постачальника в Параметрах.} linuxGnome {Ваш постачальник ШІ відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф або виберіть іншого постачальника в Налаштуваннях.} linuxKde {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in Configure Cmdr.} other {Ваш постачальник ШІ відхилив запит: ліміт вашого тарифу менший, ніж один запит від Cmdr, адже кожен запит завжди містить інструкції Cmdr. Коротше повідомлення не допоможе. Перейдіть на більший тариф або виберіть іншого постачальника в Параметрах.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
     "sourceHash": "455449e"
   },
@@ -1410,7 +1410,7 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, windows {Функції ШІ увімкнено, але для роботи їм потрібен постачальник. Клацніть, щоб налаштувати його в Параметрах.} linuxGnome {Функції ШІ увімкнено, але для роботи їм потрібен постачальник. Клацніть, щоб вибрати його в Налаштуваннях.} other {Функції ШІ увімкнено, але для роботи їм потрібен постачальник. Клацніть, щоб налаштувати його в Параметрах.}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {Функції ШІ увімкнено, але для роботи їм потрібен постачальник. Клацніть, щоб налаштувати його в Параметрах.} linuxGnome {Функції ШІ увімкнено, але для роботи їм потрібен постачальник. Клацніть, щоб вибрати його в Налаштуваннях.} linuxKde {AI features are on, but they need a provider to work. Click to set one up in Configure Cmdr.} other {Функції ШІ увімкнено, але для роботи їм потрібен постачальник. Клацніть, щоб налаштувати його в Параметрах.}}",
   "@askCmdr.wake.needsApiKey": {
     "sourceHash": "2f1b3e9"
   },

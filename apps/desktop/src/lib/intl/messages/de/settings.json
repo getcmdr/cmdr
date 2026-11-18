@@ -2966,7 +2966,7 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, windows {Einstellungsabschnitte} linuxGnome {Einstellungsabschnitte} other {Einstellungsabschnitte}}",
+  "settings.sidebar.sections": "{platform, select, windows {Einstellungsabschnitte} linuxGnome {Einstellungsabschnitte} linuxKde {Configure Cmdr sections} other {Einstellungsabschnitte}}",
   "@settings.sidebar.sections": {
     "sourceHash": "4fa3c2e"
   },

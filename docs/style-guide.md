@@ -77,8 +77,9 @@ itself; `other` stays desktop-neutral for every other desktop. Today's desktop w
 - **KDE Plasma**: the file manager is **Dolphin** ("Show in Dolphin"); the password store is **KDE Wallet** ("Remember
   in KDE Wallet"; KDE's own user-facing name, so never "KWallet"), managed in **KWalletManager**; an app's settings row
   is **Configure Cmdr…**, its window is titled "Configure – Cmdr", and copy points there as **Configure Cmdr** ("in
-  Configure Cmdr", "Configure Cmdr > AI", and a button that only opens it reads "Configure Cmdr"); a lowercase generic
-  "settings" stays, since KDE's own menu is "Settings"; shortcuts live in **System Settings > Keyboard > Shortcuts**.
+  Configure Cmdr", "Configure Cmdr > AI", and a button that only opens it reads "Configure Cmdr"), also where the other
+  systems write a lowercase "in settings" ("Add your API key in Configure Cmdr"), since KDE has no generic word that
+  names the window; shortcuts live in **System Settings > Keyboard > Shortcuts**.
 
 - The machine
   - **This Mac, your Mac** / **this PC, your PC** / **this computer, your computer**. On Windows, never "PC" and

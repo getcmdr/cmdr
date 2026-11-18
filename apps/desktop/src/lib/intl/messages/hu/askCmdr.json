@@ -705,11 +705,11 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, windows {Add meg az API-kulcsodat a beállításokban, hogy elkezdhess csevegni.} linuxGnome {Add meg az API-kulcsodat a beállításokban, hogy elkezdhess csevegni.} other {Add meg az API-kulcsodat a beállításokban, hogy elkezdhess csevegni.}}",
+  "askCmdr.error.noKey": "{platform, select, windows {Add meg az API-kulcsodat a beállításokban, hogy elkezdhess csevegni.} linuxGnome {Add meg az API-kulcsodat a beállításokban, hogy elkezdhess csevegni.} linuxKde {Add your API key in Configure Cmdr to start chatting.} other {Add meg az API-kulcsodat a beállításokban, hogy elkezdhess csevegni.}}",
   "@askCmdr.error.noKey": {
     "sourceHash": "124df6a"
   },
-  "askCmdr.error.notConfigured": "{platform, select, windows {A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a beállításokban.} linuxGnome {A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a beállításokban.} other {A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a beállításokban.}}",
+  "askCmdr.error.notConfigured": "{platform, select, windows {A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a beállításokban.} linuxGnome {A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a beállításokban.} linuxKde {Chatting needs an AI provider. Turn one on in Configure Cmdr.} other {A csevegéshez AI-szolgáltató kell. Kapcsolj be egyet a beállításokban.}}",
   "@askCmdr.error.notConfigured": {
     "sourceHash": "54fb846"
   },
@@ -737,7 +737,7 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, windows {A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a beállításokban.} linuxGnome {A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a beállításokban.} other {A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a beállításokban.}}",
+  "askCmdr.error.authFailed": "{platform, select, windows {A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a beállításokban.} linuxGnome {A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a beállításokban.} linuxKde {The provider didn’t accept your API key. Check it in Configure Cmdr.} other {A szolgáltató nem fogadta el az API-kulcsodat. Ellenőrizd a beállításokban.}}",
   "@askCmdr.error.authFailed": {
     "sourceHash": "9e02aad"
   },
@@ -745,19 +745,19 @@
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.} linuxGnome {A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.} other {A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.} linuxGnome {A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.} linuxKde {Your {provider} plan doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {A csomagod a szolgáltatónál ({provider}) nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.}}",
   "@askCmdr.error.modelNotInPlan.named": {
     "sourceHash": "efbf38b"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.} linuxGnome {A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.} other {A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.} linuxGnome {A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.} linuxKde {Your plan with this AI provider doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {A csomagod ennél az AI-szolgáltatónál nem tartalmazza ezt a modellt. Válassz másik modellt a beállításokban, vagy bővítsd a csomagodat.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
     "sourceHash": "6808950"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a beállításokban.} linuxGnome {{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a beállításokban.} other {{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a beállításokban.}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a beállításokban.} linuxGnome {{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a beállításokban.} linuxKde {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in Configure Cmdr.} other {{provider} ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra a szolgáltatónál ({provider}), vagy válassz másik szolgáltatót a beállításokban.}}",
   "@askCmdr.error.requestTooLarge.named": {
     "sourceHash": "b1850b3"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a beállításokban.} linuxGnome {Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a beállításokban.} other {Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a beállításokban.}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a beállításokban.} linuxGnome {Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a beállításokban.} linuxKde {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in Configure Cmdr.} other {Az AI-szolgáltatód ezt elutasította: a csomagod korlátja kisebb, mint a Cmdr egyetlen kérése, mert az mindig tartalmazza a Cmdr utasításait. Egy rövidebb üzenet nem segít. Válts nagyobb csomagra, vagy válassz másik szolgáltatót a beállításokban.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
     "sourceHash": "455449e"
   },
@@ -1411,7 +1411,7 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, windows {Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a beállításokban.} linuxGnome {Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a beállításokban.} other {Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a beállításokban.}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a beállításokban.} linuxGnome {Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a beállításokban.} linuxKde {AI features are on, but they need a provider to work. Click to set one up in Configure Cmdr.} other {Az AI-funkciók be vannak kapcsolva, de szolgáltató kell hozzájuk. Kattints, és állíts be egyet a beállításokban.}}",
   "@askCmdr.wake.needsApiKey": {
     "sourceHash": "2f1b3e9"
   },

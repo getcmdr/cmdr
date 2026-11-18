@@ -3,7 +3,7 @@
   "@mtp.connectedToast.title": {
     "sourceHash": "562319d"
   },
-  "mtp.connectedToast.body": "{platform, select, macos {Cmdr ha pausado el daemon de cámara de macOS (ptpcamerad) para acceder a este dispositivo. Para usarlo en otra app, desactiva la compatibilidad con MTP en los ajustes.} windows {} linuxGnome {Para usar este dispositivo en otra app, desactiva la compatibilidad con MTP en las preferencias.} other {Para usar este dispositivo en otra app, desactiva la compatibilidad con MTP en los ajustes.}}",
+  "mtp.connectedToast.body": "{platform, select, macos {Cmdr ha pausado el daemon de cámara de macOS (ptpcamerad) para acceder a este dispositivo. Para usarlo en otra app, desactiva la compatibilidad con MTP en los ajustes.} windows {} linuxGnome {Para usar este dispositivo en otra app, desactiva la compatibilidad con MTP en las preferencias.} linuxKde {To use this device in another app, disable MTP support in Configure Cmdr.} other {Para usar este dispositivo en otra app, desactiva la compatibilidad con MTP en los ajustes.}}",
   "@mtp.connectedToast.body": {
     "sourceHash": "d1c6175",
     "sameAsSourceJustification": "The windows branch is empty on purpose, as in English: on Windows the toast has no body line."

@@ -707,11 +707,11 @@
   "@askCmdr.turnStats.stopped": {
     "sourceHash": "0f6ea99"
   },
-  "askCmdr.error.noKey": "{platform, select, windows {Ajoutez votre clé d’API dans les réglages pour commencer à discuter.} linuxGnome {Ajoutez votre clé d’API dans les préférences pour commencer à discuter.} other {Ajoutez votre clé d’API dans les réglages pour commencer à discuter.}}",
+  "askCmdr.error.noKey": "{platform, select, windows {Ajoutez votre clé d’API dans les réglages pour commencer à discuter.} linuxGnome {Ajoutez votre clé d’API dans les préférences pour commencer à discuter.} linuxKde {Add your API key in Configure Cmdr to start chatting.} other {Ajoutez votre clé d’API dans les réglages pour commencer à discuter.}}",
   "@askCmdr.error.noKey": {
     "sourceHash": "124df6a"
   },
-  "askCmdr.error.notConfigured": "{platform, select, windows {Pour discuter, il faut un fournisseur d’IA. Activez-en un dans les réglages.} linuxGnome {Pour discuter, il faut un fournisseur d’IA. Activez-en un dans les préférences.} other {Pour discuter, il faut un fournisseur d’IA. Activez-en un dans les réglages.}}",
+  "askCmdr.error.notConfigured": "{platform, select, windows {Pour discuter, il faut un fournisseur d’IA. Activez-en un dans les réglages.} linuxGnome {Pour discuter, il faut un fournisseur d’IA. Activez-en un dans les préférences.} linuxKde {Chatting needs an AI provider. Turn one on in Configure Cmdr.} other {Pour discuter, il faut un fournisseur d’IA. Activez-en un dans les réglages.}}",
   "@askCmdr.error.notConfigured": {
     "sourceHash": "54fb846"
   },
@@ -739,7 +739,7 @@
   "@askCmdr.error.timeout": {
     "sourceHash": "22cd775"
   },
-  "askCmdr.error.authFailed": "{platform, select, windows {Le fournisseur n’a pas accepté votre clé d’API. Vérifiez-la dans les réglages.} linuxGnome {Le fournisseur n’a pas accepté votre clé d’API. Vérifiez-la dans les préférences.} other {Le fournisseur n’a pas accepté votre clé d’API. Vérifiez-la dans les réglages.}}",
+  "askCmdr.error.authFailed": "{platform, select, windows {Le fournisseur n’a pas accepté votre clé d’API. Vérifiez-la dans les réglages.} linuxGnome {Le fournisseur n’a pas accepté votre clé d’API. Vérifiez-la dans les préférences.} linuxKde {The provider didn’t accept your API key. Check it in Configure Cmdr.} other {Le fournisseur n’a pas accepté votre clé d’API. Vérifiez-la dans les réglages.}}",
   "@askCmdr.error.authFailed": {
     "sourceHash": "9e02aad"
   },
@@ -747,19 +747,19 @@
   "@askCmdr.error.rateLimited": {
     "sourceHash": "7b441e9"
   },
-  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Votre forfait chez {provider} n’inclut pas ce modèle. Choisissez un autre modèle dans les Réglages, ou passez à un forfait supérieur.} linuxGnome {Votre forfait chez {provider} n’inclut pas ce modèle. Choisissez un autre modèle dans les Préférences, ou passez à un forfait supérieur.} other {Votre forfait chez {provider} n’inclut pas ce modèle. Choisissez un autre modèle dans les Réglages, ou passez à un forfait supérieur.}}",
+  "askCmdr.error.modelNotInPlan.named": "{platform, select, windows {Votre forfait chez {provider} n’inclut pas ce modèle. Choisissez un autre modèle dans les Réglages, ou passez à un forfait supérieur.} linuxGnome {Votre forfait chez {provider} n’inclut pas ce modèle. Choisissez un autre modèle dans les Préférences, ou passez à un forfait supérieur.} linuxKde {Your {provider} plan doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {Votre forfait chez {provider} n’inclut pas ce modèle. Choisissez un autre modèle dans les Réglages, ou passez à un forfait supérieur.}}",
   "@askCmdr.error.modelNotInPlan.named": {
     "sourceHash": "efbf38b"
   },
-  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Votre forfait chez ce fournisseur d’IA n’inclut pas ce modèle. Choisissez un autre modèle dans les Réglages, ou passez à un forfait supérieur.} linuxGnome {Votre forfait chez ce fournisseur d’IA n’inclut pas ce modèle. Choisissez un autre modèle dans les Préférences, ou passez à un forfait supérieur.} other {Votre forfait chez ce fournisseur d’IA n’inclut pas ce modèle. Choisissez un autre modèle dans les Réglages, ou passez à un forfait supérieur.}}",
+  "askCmdr.error.modelNotInPlan.unnamed": "{platform, select, windows {Votre forfait chez ce fournisseur d’IA n’inclut pas ce modèle. Choisissez un autre modèle dans les Réglages, ou passez à un forfait supérieur.} linuxGnome {Votre forfait chez ce fournisseur d’IA n’inclut pas ce modèle. Choisissez un autre modèle dans les Préférences, ou passez à un forfait supérieur.} linuxKde {Your plan with this AI provider doesn’t include this model. Pick another model in Configure Cmdr, or upgrade your plan.} other {Votre forfait chez ce fournisseur d’IA n’inclut pas ce modèle. Choisissez un autre modèle dans les Réglages, ou passez à un forfait supérieur.}}",
   "@askCmdr.error.modelNotInPlan.unnamed": {
     "sourceHash": "6808950"
   },
-  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} a refusé cette requête : la limite de votre forfait est inférieure à une seule requête de Cmdr, car chacune contient toujours les instructions de Cmdr. Un message plus court n’y changera rien. Passez à un forfait supérieur chez {provider} ou choisissez un autre fournisseur dans les Réglages.} linuxGnome {{provider} a refusé cette requête : la limite de votre forfait est inférieure à une seule requête de Cmdr, car chacune contient toujours les instructions de Cmdr. Un message plus court n’y changera rien. Passez à un forfait supérieur chez {provider} ou choisissez un autre fournisseur dans les Préférences.} other {{provider} a refusé cette requête : la limite de votre forfait est inférieure à une seule requête de Cmdr, car chacune contient toujours les instructions de Cmdr. Un message plus court n’y changera rien. Passez à un forfait supérieur chez {provider} ou choisissez un autre fournisseur dans les Réglages.}}",
+  "askCmdr.error.requestTooLarge.named": "{platform, select, windows {{provider} a refusé cette requête : la limite de votre forfait est inférieure à une seule requête de Cmdr, car chacune contient toujours les instructions de Cmdr. Un message plus court n’y changera rien. Passez à un forfait supérieur chez {provider} ou choisissez un autre fournisseur dans les Réglages.} linuxGnome {{provider} a refusé cette requête : la limite de votre forfait est inférieure à une seule requête de Cmdr, car chacune contient toujours les instructions de Cmdr. Un message plus court n’y changera rien. Passez à un forfait supérieur chez {provider} ou choisissez un autre fournisseur dans les Préférences.} linuxKde {{provider} turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan with {provider}, or pick another provider in Configure Cmdr.} other {{provider} a refusé cette requête : la limite de votre forfait est inférieure à une seule requête de Cmdr, car chacune contient toujours les instructions de Cmdr. Un message plus court n’y changera rien. Passez à un forfait supérieur chez {provider} ou choisissez un autre fournisseur dans les Réglages.}}",
   "@askCmdr.error.requestTooLarge.named": {
     "sourceHash": "b1850b3"
   },
-  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Votre fournisseur d’IA a refusé cette requête : la limite de votre forfait est inférieure à une seule requête de Cmdr, car chacune contient toujours les instructions de Cmdr. Un message plus court n’y changera rien. Passez à un forfait supérieur ou choisissez un autre fournisseur dans les Réglages.} linuxGnome {Votre fournisseur d’IA a refusé cette requête : la limite de votre forfait est inférieure à une seule requête de Cmdr, car chacune contient toujours les instructions de Cmdr. Un message plus court n’y changera rien. Passez à un forfait supérieur ou choisissez un autre fournisseur dans les Préférences.} other {Votre fournisseur d’IA a refusé cette requête : la limite de votre forfait est inférieure à une seule requête de Cmdr, car chacune contient toujours les instructions de Cmdr. Un message plus court n’y changera rien. Passez à un forfait supérieur ou choisissez un autre fournisseur dans les Réglages.}}",
+  "askCmdr.error.requestTooLarge.unnamed": "{platform, select, windows {Votre fournisseur d’IA a refusé cette requête : la limite de votre forfait est inférieure à une seule requête de Cmdr, car chacune contient toujours les instructions de Cmdr. Un message plus court n’y changera rien. Passez à un forfait supérieur ou choisissez un autre fournisseur dans les Réglages.} linuxGnome {Votre fournisseur d’IA a refusé cette requête : la limite de votre forfait est inférieure à une seule requête de Cmdr, car chacune contient toujours les instructions de Cmdr. Un message plus court n’y changera rien. Passez à un forfait supérieur ou choisissez un autre fournisseur dans les Préférences.} linuxKde {Your AI provider turned this down: your plan’s limit is smaller than one request from Cmdr, which always carries its instructions. A shorter message won’t help. Try a bigger plan, or pick another provider in Configure Cmdr.} other {Votre fournisseur d’IA a refusé cette requête : la limite de votre forfait est inférieure à une seule requête de Cmdr, car chacune contient toujours les instructions de Cmdr. Un message plus court n’y changera rien. Passez à un forfait supérieur ou choisissez un autre fournisseur dans les Réglages.}}",
   "@askCmdr.error.requestTooLarge.unnamed": {
     "sourceHash": "455449e"
   },
@@ -1414,7 +1414,7 @@
   "@askCmdr.wake.needsFullDiskAccess": {
     "sourceHash": "ae245b9"
   },
-  "askCmdr.wake.needsApiKey": "{platform, select, windows {Les fonctionnalités d’IA sont activées, mais il leur faut un fournisseur pour fonctionner. Cliquez pour en configurer un dans les réglages.} linuxGnome {Les fonctionnalités d’IA sont activées, mais il leur faut un fournisseur pour fonctionner. Cliquez pour en configurer un dans les préférences.} other {Les fonctionnalités d’IA sont activées, mais il leur faut un fournisseur pour fonctionner. Cliquez pour en configurer un dans les réglages.}}",
+  "askCmdr.wake.needsApiKey": "{platform, select, windows {Les fonctionnalités d’IA sont activées, mais il leur faut un fournisseur pour fonctionner. Cliquez pour en configurer un dans les réglages.} linuxGnome {Les fonctionnalités d’IA sont activées, mais il leur faut un fournisseur pour fonctionner. Cliquez pour en configurer un dans les préférences.} linuxKde {AI features are on, but they need a provider to work. Click to set one up in Configure Cmdr.} other {Les fonctionnalités d’IA sont activées, mais il leur faut un fournisseur pour fonctionner. Cliquez pour en configurer un dans les réglages.}}",
   "@askCmdr.wake.needsApiKey": {
     "sourceHash": "2f1b3e9"
   },

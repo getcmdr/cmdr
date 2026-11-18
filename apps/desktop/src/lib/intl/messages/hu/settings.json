@@ -2959,7 +2959,7 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, windows {Beállítási szakaszok} linuxGnome {Beállítási szakaszok} other {Beállítási szakaszok}}",
+  "settings.sidebar.sections": "{platform, select, windows {Beállítási szakaszok} linuxGnome {Beállítási szakaszok} linuxKde {Configure Cmdr sections} other {Beállítási szakaszok}}",
   "@settings.sidebar.sections": {
     "sourceHash": "4fa3c2e"
   },
