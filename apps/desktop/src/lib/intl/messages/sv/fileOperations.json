@@ -431,7 +431,7 @@
   },
   "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Cmdr börjar med det här valet nästa gång, och du kan ändra det i Inställningar. Om valet skriver över filer ser du en varning först.} linuxGnome {Cmdr börjar med det här valet nästa gång, och du kan ändra det i Inställningar. Om valet skriver över filer ser du en varning först.} linuxKde {Cmdr börjar med det här valet nästa gång, och du kan ändra det i ”Anpassa Cmdr”. Om valet skriver över filer ser du en varning först.} other {Cmdr börjar med det här valet nästa gång, och du kan ändra det i Inställningar. Om valet skriver över filer ser du en varning först.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "d75e9f6"
+    "sourceHash": "b23a78a"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "Vissa konflikter blandar en fil och en mapp med samma namn. Att skriva över ersätter objekt av en annan typ, inklusive hela innehållet i en mapp.",
   "@fileOperations.transferDialog.typeMismatchWarning": {

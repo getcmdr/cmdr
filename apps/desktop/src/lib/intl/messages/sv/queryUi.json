@@ -83,7 +83,7 @@
   },
   "queryUi.ai.cloudOff.body": "{platform, select, windows {Moln-AI är avstängt. Tillåt det i Inställningar > AI för att använda AI-läget.} linuxGnome {Moln-AI är avstängt. Tillåt det i Inställningar > AI för att använda AI-läget.} linuxKde {Moln-AI är avstängt. Tillåt det i ”Anpassa Cmdr” > AI för att använda AI-läget.} other {Moln-AI är avstängt. Tillåt det i Inställningar > AI för att använda AI-läget.}}",
   "@queryUi.ai.cloudOff.body": {
-    "sourceHash": "1f64983"
+    "sourceHash": "ce5230d"
   },
   "queryUi.ai.openSettings": "Gå till AI-inställningar",
   "@queryUi.ai.openSettings": {

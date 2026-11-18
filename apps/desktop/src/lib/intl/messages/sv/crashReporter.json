@@ -73,7 +73,7 @@
   },
   "crashReporter.sentToast.changeSettings": "{platform, select, windows {Ändra i Inställningar} linuxGnome {Ändra i Inställningar} linuxKde {Ändra i ”Anpassa Cmdr”} other {Ändra i Inställningar}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "c3fff1a"
+    "sourceHash": "9972084"
   },
   "crashReporter.sentToast.sendLog": "Bifoga logg",
   "@crashReporter.sentToast.sendLog": {
