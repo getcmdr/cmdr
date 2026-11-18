@@ -20,7 +20,8 @@ its children rather than itself, which keeps the note at full AA contrast; point
 shape:
 
 - `SettingSwitch`: the primary boolean, wrapping `lib/ui/Switch`.
-- `SettingCheckbox`: a secondary boolean, for one hanging off a switch or in a denser layout.
+- `SettingCheckbox`: a boolean inside a denser layout that isn't a settings row. Settings rows don't use it: every
+  on/off row is a switch, a secondary one included, so the right edge stays one kind of control.
 - `SettingSelect`: enum dropdown, wrapping `lib/ui/Select`. It owns the `allowCustom` inline-number flow and its
   `__custom__` sentinel, which `ui/Select` never sees. The optional `onPicked(value)` fires on a COMMITTED pick (click,
   or Enter on a row) and not on the highlight preview `handleHighlightChange` applies while the user moves through the
@@ -28,8 +29,14 @@ shape:
   (`src-tauri/src/analytics/DETAILS.md` § The language events).
 - `SettingToggleGroup`: segmented control for a short enum list.
 - `SettingRadioGroup`: vertical radio for a longer list, an option needing a `customContent` snippet, or an option
-  carrying a control on its own line (`itemTrailing`, as Brief mode's "Limit to" does). A stepper there passes
-  `size="compact"` so it matches the option line.
+  carrying a control on its own line (`itemTrailing`, as Brief mode's "Limit to" does). Keep the list wrapper-free: a
+  section's own wrapper with a `width` or `min-width` widens the list past its options and leaves its right edge short
+  of the card's.
+- **Every field in Settings is one text line tall.** `SettingNumberInput`, `SettingTextInput`, and
+  `SettingPasswordInput` default to `size: 'compact'` (`ui/NumberInput`'s and `ui/TextInput`'s `--font-size-sm` box), so
+  a field sits level with its label or radio option; a raw `TextInput` on a settings row passes `size="compact"` itself
+  (the beta email, `SettingSelect`'s custom value). `regular` is for a stacked form: the provider setup steps, shared
+  with onboarding, pass it to keep onboarding's full-height fields.
 - `SettingSlider` vs `SettingNumberInput`: see the next section, and § Index-mapped stops for the discrete mode. A
   `duration` setting on the number input edits in `constraints.unit` while the store stays in ms (`durationValueToMs` /
   `msToDurationValue`).
@@ -55,9 +62,12 @@ control sits flush against the card's right edge. There's no layout prop; all of
 - **Natural size by default.** Switches, pop-up buttons (`SettingSelect`'s wrapper hugs its button), swatch pickers,
   number inputs, and radio lists keep their own width. A radio list moves right as a block; its options stay
   left-aligned inside it.
+- **The label column takes what the control leaves** (`flex: 1 1 0`). With an `auto` basis a long description claimed
+  its full one-line width first and squeezed a slider or text field far under its shared width.
 - **Text fields and sliders take one shared width (`15rem`).** Both fill their container, so they have no natural width
-  of their own. The row matches them by the house `.text-field` frame class and the slider thumb's `role="slider"`. A
-  radio list carrying a field on one option's line (the custom date format) is excluded: it sizes by its options.
+  of their own. A slider's readout aligns to its end, so a short value still ends on the card's edge. The row matches
+  them by the house `.text-field` frame class and the slider thumb's `role="slider"`. A radio list carrying a field on
+  one option's line (the custom date format) is excluded: it sizes by its options.
 - **One-line controls center** on the label column, so a short control beside a multi-line description sits in its
   middle.
 - **A radio list top-aligns**, with the label line given one radio option's line height (`RadioGroup`'s item padding

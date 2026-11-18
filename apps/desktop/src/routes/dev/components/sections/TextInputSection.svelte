@@ -89,6 +89,11 @@
         </div>
 
         <div class="cell">
+            <p class="caption"><code>size="compact"</code> (every Settings field): one small text line tall</p>
+            <TextInput value="/opt/homebrew/bin/adb" size="compact" mono ariaLabel="Compact field" />
+        </div>
+
+        <div class="cell">
             <p class="caption">
                 Radius scale: <code>sm</code> / <code>md</code> / <code>lg</code> / <code>full</code>
             </p>

@@ -228,7 +228,6 @@
                     description={dateTimeDef.description}
                     {searchQuery}
                 >
-                    <div class="date-time-setting">
                 <SettingRadioGroup id="appearance.dateTimeFormat">
                     {#snippet customContent(value)}
                         {#if value === 'custom'}
@@ -267,8 +266,7 @@
                             </div>
                         {/if}
                     {/snippet}
-                        </SettingRadioGroup>
-                    </div>
+                </SettingRadioGroup>
                 </SettingRow>
             {/if}
         </SectionCard>
@@ -374,12 +372,6 @@
 
     .app-color-label {
         font-size: var(--font-size-sm);
-    }
-
-    .date-time-setting {
-        /* Fill the split column; min-width prevents collapse */
-        width: 100%;
-        min-width: 200px;
     }
 
     .custom-format {

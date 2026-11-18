@@ -144,6 +144,7 @@
                     <span class="step-label">{tString('onboarding.cloudSetup.step.pasteKey')}</span>
                     <SettingPasswordInput
                         id="ai.cloudProviderConfigs"
+                        size="regular"
                         placeholder={apiKeyPlaceholder}
                         ariaLabel={tString('onboarding.cloudSetup.apiKeyAria')}
                         value={controller.apiKey}

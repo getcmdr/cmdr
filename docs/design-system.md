@@ -719,10 +719,11 @@ submit logic, so the caller keeps its own state and reaches the element through 
 
 **`TextInput`** props: `value` (bindable, or one-way alongside `oninput` for a controlled field), `type` (`text` |
 `password` | `email` | `search` | `url` | `tel` | `number`), `radius` (`sm` | `md` | `lg` (default) | `full`), `variant`
-(`default` | `chromeless`), `invalid`, `warning`, `mono`, `leadingIcon` (an `IconName`, decorative), a `trailing`
-snippet (clear buttons, reveal toggles), `ariaLabel`, `containerStyle` (one-off layout sizing only), and `inputElement`.
-Everything else (`id`, `placeholder`, `disabled`, `readonly`, `autocomplete`, `spellcheck`, `maxlength`, every `on*` and
-`aria-*`) passes straight through to the `<input>`.
+(`default` | `chromeless`), `size` (`regular` (default) | `compact`: one `--font-size-sm` line, matching `NumberInput`'s
+`compact`, the Settings field height), `invalid`, `warning`, `mono`, `leadingIcon` (an `IconName`, decorative), a
+`trailing` snippet (clear buttons, reveal toggles), `ariaLabel`, `containerStyle` (one-off layout sizing only), and
+`inputElement`. Everything else (`id`, `placeholder`, `disabled`, `readonly`, `autocomplete`, `spellcheck`, `maxlength`,
+every `on*` and `aria-*`) passes straight through to the `<input>`.
 
 **`TextArea`** is the multi-line sibling, sharing the exact same chrome. Same props minus `type` / `leadingIcon`, plus
 `rows` and `resizable` (the vertical grip, on by default). It's a sibling rather than a `multiline` prop because the two

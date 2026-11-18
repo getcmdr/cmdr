@@ -164,6 +164,7 @@
             <TextInput
                 bind:inputElement={customInputRef}
                 type="number"
+                size="compact"
                 containerStyle="width: 100px"
                 bind:value={customValue}
                 oninput={() => { applyCustomValue(false); }}

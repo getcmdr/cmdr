@@ -24,11 +24,15 @@
             setting's own unit (`ms` / `s` / `min` / …); pass this to override or to label a
             plain `number`. */
         unit?: string
-        /** `compact` for a stepper inline with a radio option or label text; see `#lib/ui/NumberInput`. */
+        /**
+         * `compact` (the default) is one text line tall, so the stepper sits level with its
+         * row's label or radio option; `regular` is the full form-field height. See
+         * `#lib/ui/NumberInput`.
+         */
         size?: 'regular' | 'compact'
     }
 
-    const { id, disabled = false, unit = '', size = 'regular' }: Props = $props()
+    const { id, disabled = false, unit = '', size = 'compact' }: Props = $props()
     const lock = useSettingLock(id)
 
     const definition = getSettingDefinition(id)

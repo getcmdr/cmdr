@@ -148,7 +148,12 @@
 
     /* `compact`: the field shrinks to a `--font-size-sm` line plus a hairline of padding, about
        the height of the radio option or label it sits beside. Everything else (frame, focus
-       ring, steppers) stays the regular field's. */
+       ring, steppers) stays the regular field's, with the smaller corner `TextInput`'s
+       `compact` takes too (`app-field.css`). */
+    .ni-wrapper.compact :global(.ni-control) {
+        border-radius: var(--radius-md);
+    }
+
     .ni-wrapper.compact :global(.ni-btn) {
         width: 20px;
         font-size: var(--font-size-sm);

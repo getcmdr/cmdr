@@ -154,6 +154,7 @@
                 >
                     <TextInput
                         type="email"
+                        size="compact"
                         placeholder={tString('settings.updates.emailPlaceholder')}
                         value={emailSignup.email}
                         oninput={emailSignup.handleInput}

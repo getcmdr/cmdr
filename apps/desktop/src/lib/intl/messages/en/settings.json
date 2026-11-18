@@ -4243,7 +4243,7 @@
   },
   "settings.adb.status.foundAt": "Found at {path}",
   "@settings.adb.status.foundAt": {
-    "description": "The status value when the \"adb\" command was found: where on disk it lives. Short; the path can be long and wraps after it.",
+    "description": "The status value when the \"adb\" command was found: where on disk it lives. Short; the path can be long, so the line truncates it and a tooltip shows all of it.",
     "placeholders": {
       "path": "the full path of the adb command, for example /opt/homebrew/bin/adb"
     }
@@ -4272,9 +4272,9 @@
   "@settings.adb.install.intro": {
     "description": "Line introducing a copyable terminal command, shown only when \"adb\" was not found. \"Re-check\" must match the button label settings.adb.recheck word for word. \"Android platform tools\" is the name of the download: where Google’s own localized docs translate it, use their wording, and where they keep it in English (most languages do), keep the English too. “choose Re-check” means clicking that button; use your language’s usual verb for clicking a button. The command itself is never translated."
   },
-  "settings.adb.pathPlaceholder": "Cmdr looks for adb the usual way",
+  "settings.adb.pathPlaceholder": "Found automatically",
   "@settings.adb.pathPlaceholder": {
-    "description": "Placeholder in the empty \"Location of adb\" field, saying what an empty field means: Cmdr searches the usual places itself. \"adb\" is a command name; keep it lowercase and as-is."
+    "description": "Placeholder in the empty \"Location of adb\" field, saying what an empty field means: Cmdr finds the adb command in the usual places itself. The field is narrow and its text small, so keep it to two or three short words."
   },
   "settings.adb.browse": "Browse…",
   "@settings.adb.browse": {

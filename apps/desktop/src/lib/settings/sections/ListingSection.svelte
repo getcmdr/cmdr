@@ -135,33 +135,21 @@
                     description={briefWidthModeDef.description}
                     {searchQuery}
                 >
-                    <div class="brief-width-control">
-                        <SettingRadioGroup id="listing.briefColumnWidthMode">
-                            {#snippet itemTrailing(optionValue: string)}
-                                <!-- The width field belongs to the "Limit to" option, so it sits on
-                                     that option's line and greys out while the other one is picked. -->
-                                {#if optionValue === 'limited'}
-                                    <SettingNumberInput
-                                        id="listing.briefColumnWidthMaxPx"
-                                        unit="px"
-                                        size="compact"
-                                        disabled={widthFieldDisabled}
-                                    />
-                                {/if}
-                            {/snippet}
-                        </SettingRadioGroup>
-                    </div>
+                    <SettingRadioGroup id="listing.briefColumnWidthMode">
+                        {#snippet itemTrailing(optionValue: string)}
+                            <!-- The width field belongs to the "Limit to" option, so it sits on
+                                 that option's line and greys out while the other one is picked. -->
+                            {#if optionValue === 'limited'}
+                                <SettingNumberInput
+                                    id="listing.briefColumnWidthMaxPx"
+                                    unit="px"
+                                    disabled={widthFieldDisabled}
+                                />
+                            {/if}
+                        {/snippet}
+                    </SettingRadioGroup>
                 </SettingRow>
             {/if}
         </SectionCard>
     {/if}
 </SettingsSection>
-
-<style>
-    .brief-width-control {
-        display: flex;
-        flex-direction: column;
-        gap: var(--spacing-sm);
-        width: 100%;
-    }
-</style>

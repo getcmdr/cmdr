@@ -183,7 +183,7 @@ export const fileSystemsSettings: SettingDefinitionSource[] = [
     terms: ['mtp', 'android'],
     type: 'boolean',
     default: true,
-    component: 'checkbox',
+    component: 'switch',
   },
 
   // ========================================================================

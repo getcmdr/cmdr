@@ -3,7 +3,6 @@
     import { tString } from '#lib/intl/messages.svelte.js'
     import SettingRow from '../components/SettingRow.svelte'
     import SettingSwitch from '../components/SettingSwitch.svelte'
-    import SettingCheckbox from '../components/SettingCheckbox.svelte'
     import SectionCard from '#lib/ui/SectionCard.svelte'
     import { getSettingDefinition } from '#lib/settings/index.js'
     import { createShouldShow, anyVisible } from '#lib/settings/settings-search.js'
@@ -36,24 +35,15 @@
             {/if}
 
             {#if shouldShow('fileOperations.mtpConnectionWarning')}
-                <div class="secondary-setting">
-                    <SettingRow
-                        id="fileOperations.mtpConnectionWarning"
-                        label={mtpWarningDef.label}
-                        description={mtpWarningDef.description}
-                        {searchQuery}
-                    >
-                        <SettingCheckbox id="fileOperations.mtpConnectionWarning" />
-                    </SettingRow>
-                </div>
+                <SettingRow
+                    id="fileOperations.mtpConnectionWarning"
+                    label={mtpWarningDef.label}
+                    description={mtpWarningDef.description}
+                    {searchQuery}
+                >
+                    <SettingSwitch id="fileOperations.mtpConnectionWarning" />
+                </SettingRow>
             {/if}
         </SectionCard>
     {/if}
 </SettingsSection>
-
-<style>
-    .secondary-setting {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-secondary);
-    }
-</style>

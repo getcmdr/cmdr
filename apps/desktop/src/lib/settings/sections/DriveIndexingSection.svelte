@@ -149,7 +149,15 @@
                 <div class="index-info">
                     <div class="index-row">
                         <span class="info-label">{tString('settings.fileSystemWatching.indexSize')}</span>
+                        <!-- The value, then the button flush right, like every row's control. -->
                         <div class="index-controls">
+                            <span class="info-value">
+                                {#if indexBytes != null}
+                                    <Size bytes={indexBytes} />
+                                {:else}
+                                    {tString('settings.fileSystemWatching.noIndex')}
+                                {/if}
+                            </span>
                             <!-- Offered whenever there's something on disk, master
                                  switch or not: what a search walked is real data
                                  the user may want back. -->
@@ -160,13 +168,6 @@
                                         : tString('settings.fileSystemWatching.clearIndex')}
                                 </Button>
                             {/if}
-                            <span class="info-value">
-                                {#if indexBytes != null}
-                                    <Size bytes={indexBytes} />
-                                {:else}
-                                    {tString('settings.fileSystemWatching.noIndex')}
-                                {/if}
-                            </span>
                         </div>
                     </div>
 
@@ -239,14 +240,16 @@
 </SettingsSection>
 
 <style>
+    /* Same rule under it as the `SettingRow`s around it. */
     .index-info {
         padding: var(--spacing-sm) 0;
+        border-bottom: 1px solid var(--color-border-subtle);
     }
 
     .index-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: var(--spacing-md);
     }
 
@@ -258,7 +261,6 @@
     .index-controls {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: var(--spacing-sm);
     }
 

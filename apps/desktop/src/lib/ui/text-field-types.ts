@@ -27,3 +27,9 @@ export type TextFieldRadius = 'sm' | 'md' | 'lg' | 'full'
  * host's type scale, while keeping the caret, selection, and placeholder contract.
  */
 export type TextFieldVariant = 'default' | 'chromeless'
+
+/**
+ * Field height. `regular` is the form-field height; `compact` is one `--font-size-sm` text line,
+ * matching `NumberInput`'s `compact`, for a field beside its label on a settings row.
+ */
+export type TextFieldSize = 'regular' | 'compact'

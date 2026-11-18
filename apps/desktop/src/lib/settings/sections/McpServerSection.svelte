@@ -278,6 +278,11 @@
         gap: var(--spacing-sm);
     }
 
+    /* The status line belongs to the Port row above it, so no rule between them. */
+    :global(.setting-row):has(+ .port-status) {
+        border-bottom: none;
+    }
+
     .port-status {
         padding: var(--spacing-xs) var(--spacing-sm);
         border-radius: var(--radius-sm);

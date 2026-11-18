@@ -204,9 +204,12 @@
     /* The label line plus every description line under it (a summary, an inline description, or
        a rich one), so the text stays beside the label and the control instead of running under
        the whole row. */
+    /* Basis 0, not auto: the column takes what the control leaves. With `auto` a long
+       description claimed its full one-line width first and squeezed a shrinkable control (a
+       slider or a text field) far under its shared width. */
     .setting-label-column {
         display: flex;
-        flex: 1 1 auto;
+        flex: 1 1 0;
         flex-direction: column;
         min-width: 0;
     }
