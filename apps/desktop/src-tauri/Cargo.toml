@@ -160,7 +160,7 @@ cmdr-menu = { path = "../../../crates/cmdr-menu" }
 # `latest.json`'s reader, shared with the release gate (`cmdr-check-update-manifest`) so a
 # manifest the app can't read never ships. `updater/manifest.rs` re-exports it.
 cmdr-update-manifest = { path = "../../../crates/cmdr-update-manifest" }
-tauri ={ version = "2", features = ["macos-private-api"] }
+tauri = { version = "2", features = ["macos-private-api"] }
 tauri-plugin-opener = "2"
 tauri-plugin-mcp-bridge = "0.13"
 tauri-plugin-store = "2"
