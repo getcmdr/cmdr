@@ -145,15 +145,23 @@ mod tests {
 
     /// Review 2's N7 input: a pre-mark row that literally held two escape code points names
     /// that file, never `é.txt`.
-    #[cfg(unix)]
     #[test]
     fn a_pre_mark_row_names_the_file_it_named() {
-        let stored = "/d/\u{10FEC3}\u{10FEA9}.txt";
+        let root = if cfg!(windows) { "C:/d" } else { "/d" };
+        let stored = format!("{root}/\u{10FEC3}\u{10FEA9}.txt");
+        let live = StoredPathReading::Live.app_path(&stored, Namer::HOST).expect("parses");
+        assert_eq!(
+            live.as_str(),
+            format!("{root}/\u{e9}.txt"),
+            "read live, it would name `é.txt`"
+        );
         let literal = StoredPathReading::Literal
-            .app_path(stored, Namer::Bytes)
+            .app_path(&stored, Namer::HOST)
             .expect("parses");
-        assert_eq!(literal.to_native_posix().as_deref(), Ok(stored.as_bytes()));
-        let live = StoredPathReading::Live.app_path(stored, Namer::Bytes).expect("parses");
-        assert_eq!(live.as_str(), "/d/\u{e9}.txt");
+        assert_ne!(literal, live);
+        // What reaches the OS is the text the row held, code point for code point.
+        let native = literal.to_native().expect("a local path");
+        let held = native.to_str().expect("valid text");
+        assert!(held.ends_with("\u{10FEC3}\u{10FEA9}.txt"), "{held:?}");
     }
 }

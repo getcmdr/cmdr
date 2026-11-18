@@ -18,6 +18,7 @@ use std::path::{Component, Path};
 
 use serde_json::Value;
 
+#[cfg(unix)]
 use super::app_paths;
 use crate::app_path::{AppName, AppPathBuf, PathFlavor};
 
