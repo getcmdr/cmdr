@@ -443,7 +443,7 @@ jobs:
               - 'crates/cmdr-multi-rename/src/**/*_token_vectors.json'
               # The backend's per-OS capability arms, which `capabilities-possible-on.test.ts` reads.
               - 'apps/desktop/src-tauri/src/platform/macos.rs'
-              - 'apps/desktop/src-tauri/src/platform/windows.rs'
+              - 'apps/desktop/src-tauri/src/platform/windows/mod.rs'
               - 'apps/desktop/src-tauri/src/platform/linux/mod.rs'
               # The menu bar's parity file and its page-owned keys, which `default-keymap.test.ts` writes and checks for staleness.
               - 'crates/cmdr-menu/src/registry_default_keys.tsv'

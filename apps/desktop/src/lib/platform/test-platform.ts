@@ -62,7 +62,7 @@ export function withCapabilities(...granted: Capability[]): () => void {
 
 /**
  * What each OS CAN offer: every field its Rust arm (`src-tauri/src/platform/macos.rs`,
- * `windows.rs`, `linux/mod.rs`) doesn't answer with a literal `false`. A runtime answer
+ * `windows/mod.rs`, `linux/mod.rs`) doesn't answer with a literal `false`. A runtime answer
  * (`cfg!(…)`, `x11_session()`) counts as possible, since some user on that OS gets it.
  * `capabilities-possible-on.test.ts` pins these lists to the arms, so an arm edit fails there
  * until the list follows.

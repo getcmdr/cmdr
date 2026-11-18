@@ -1,8 +1,8 @@
 //! System memory measurement, used by the AI RAM gauge and available for other features.
 //!
 //! Each OS reads it its own way behind the `platform/` seam (`docs/guides/platform-seams.md`):
-//! macOS from the Mach VM statistics, for accurate non-overlapping categories; the others from
-//! `sysinfo`, best effort.
+//! macOS from the Mach VM statistics and Windows from its memory counters, for accurate
+//! non-overlapping categories; Linux from `sysinfo`, best effort.
 
 mod platform;
 
@@ -34,8 +34,8 @@ pub fn get_system_memory_info_inner() -> SystemMemoryInfo {
     platform::system_memory_info()
 }
 
-/// The `sysinfo` breakdown: no wired category, everything used counted as app memory. The answer
-/// on an OS without a finer reader, and macOS's fallback when its Mach call fails.
+/// The `sysinfo` breakdown: no wired category, everything used counted as app memory. Linux's
+/// answer, and the fallback when macOS's or Windows' own reader fails.
 fn sysinfo_breakdown() -> SystemMemoryInfo {
     let (total, used) = sysinfo_memory();
     SystemMemoryInfo {

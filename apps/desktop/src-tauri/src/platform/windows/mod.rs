@@ -1,5 +1,7 @@
-//! The Windows arm of the platform-identity seam. Placeholder answers until Windows reads its
-//! real version (`RtlGetVersion`, or the registry's `ProductName` and `DisplayVersion`).
+//! The Windows arm of the platform-identity seam.
+
+pub(crate) mod registry;
+mod version;
 
 use super::PlatformCapabilities;
 use super::PlatformConventions;
@@ -51,9 +53,15 @@ pub(crate) fn capabilities() -> PlatformCapabilities {
     }
 }
 
-/// The bare OS name, `windows`, until the real version is read.
+/// For example `Windows 10 Pro 22H2 (build 19045.6456)`, read once and cached
+/// (`version::read`).
 pub(crate) fn os_version() -> String {
-    std::env::consts::OS.to_string()
+    use std::sync::OnceLock;
+
+    static DESCRIBED: OnceLock<String> = OnceLock::new();
+    DESCRIBED
+        .get_or_init(|| super::windows_version::describe(&version::read()))
+        .clone()
 }
 
 /// Not macOS, so never at least any macOS version.
