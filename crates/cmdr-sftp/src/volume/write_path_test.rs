@@ -682,8 +682,9 @@ async fn a_private_file_streams_owner_only_and_lands_with_its_mode() {
         done: false,
     };
 
+    let path_app = AppPath::legacy_unchecked(Path::new(&path));
     let write = volume.write_from_stream(
-        &AppPath::legacy_unchecked(Path::new(&path)),
+        &path_app,
         WriteMode::CreateOrReplace,
         StreamLength::Known(10),
         Box::new(gated),
