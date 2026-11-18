@@ -7,6 +7,7 @@
 //! and a destination. The contract: `crates/cmdr-operations/src/transfer/volume/DETAILS.md`
 //! § "Copies keep the source's metadata".
 
+use crate::app_path::AppPath;
 use std::future::Future;
 use std::path::Path;
 use std::pin::Pin;
@@ -49,7 +50,7 @@ const OLD_ENOUGH: Duration = Duration::from_secs(24 * 60 * 60);
 /// dated to the copy, and only S3 had ever been asked about dates.
 pub async fn assert_write_from_stream_keeps_the_source_date(volume: &dyn Volume, dest: &Path, tolerance: Duration) {
     assert!(
-        !volume.exists(dest).await,
+        !volume.exists(&AppPath::legacy_unchecked(dest)).await,
         "fixture precondition: {} must not exist yet",
         dest.display()
     );
@@ -58,7 +59,7 @@ pub async fn assert_write_from_stream_keeps_the_source_date(volume: &dyn Volume,
     let length = content.len() as u64;
     let written = volume
         .write_from_stream(
-            dest,
+            &AppPath::legacy_unchecked(dest),
             WriteMode::CreateNew,
             StreamLength::Known(length),
             Box::new(DatedSource::new(content)),
@@ -73,7 +74,7 @@ pub async fn assert_write_from_stream_keeps_the_source_date(volume: &dyn Volume,
     );
 
     let listed = volume
-        .get_metadata(dest)
+        .get_metadata(&AppPath::legacy_unchecked(dest))
         .await
         .unwrap_or_else(|e| panic!("{} must be stattable after the write, got {e:?}", dest.display()))
         .modified_at;
@@ -108,7 +109,7 @@ pub async fn assert_write_from_stream_keeps_the_source_date(volume: &dyn Volume,
 /// nothing (#651). Nothing but a test that asks both reads catches it.
 pub async fn assert_landed_time_agrees_with_get_metadata(volume: &dyn Volume, dest: &Path) {
     assert!(
-        !volume.exists(dest).await,
+        !volume.exists(&AppPath::legacy_unchecked(dest)).await,
         "fixture precondition: {} must not exist yet",
         dest.display()
     );
@@ -116,7 +117,7 @@ pub async fn assert_landed_time_agrees_with_get_metadata(volume: &dyn Volume, de
     let length = content.len() as u64;
     let written = volume
         .write_from_stream(
-            dest,
+            &AppPath::legacy_unchecked(dest),
             WriteMode::CreateNew,
             StreamLength::Known(length),
             Box::new(DatedSource::new(content)),
@@ -125,7 +126,7 @@ pub async fn assert_landed_time_agrees_with_get_metadata(volume: &dyn Volume, de
         .await
         .unwrap_or_else(|e| panic!("the dated write onto {} must land, got {e:?}", dest.display()));
     let rechecked = volume
-        .get_metadata(dest)
+        .get_metadata(&AppPath::legacy_unchecked(dest))
         .await
         .unwrap_or_else(|e| panic!("{} must be stattable after the write, got {e:?}", dest.display()))
         .modified_at;
@@ -142,7 +143,7 @@ pub async fn assert_landed_time_agrees_with_get_metadata(volume: &dyn Volume, de
                 panic!("fixture precondition: {} must name a file in a folder", dest.display());
             };
             let listed = volume
-                .list_directory(folder, None)
+                .list_directory(&AppPath::legacy_unchecked(folder), None)
                 .await
                 .unwrap_or_else(|e| panic!("{} must be listable, got {e:?}", folder.display()))
                 .into_iter()
@@ -176,7 +177,7 @@ pub async fn assert_landed_time_agrees_with_get_metadata(volume: &dyn Volume, de
 /// it carry the copy's own date, on every destination.
 pub async fn assert_read_stream_reports_the_listed_date(volume: &dyn Volume, path: &Path) {
     let listed = volume
-        .get_metadata(path)
+        .get_metadata(&AppPath::legacy_unchecked(path))
         .await
         .unwrap_or_else(|e| panic!("fixture precondition: {} must be stattable, got {e:?}", path.display()))
         .modified_at
@@ -192,7 +193,7 @@ pub async fn assert_read_stream_reports_the_listed_date(volume: &dyn Volume, pat
     );
 
     let stream = volume
-        .open_read_stream(path)
+        .open_read_stream(&AppPath::legacy_unchecked(path))
         .await
         .unwrap_or_else(|e| panic!("{} must be readable, got {e:?}", path.display()));
     let Some(reported) = stream.modified_at() else {
@@ -232,19 +233,19 @@ pub async fn assert_read_stream_reports_the_listed_date(volume: &dyn Volume, pat
 /// are all there.
 pub async fn assert_apply_metadata_dates_a_folder(volume: &dyn Volume, dir: &Path, tolerance: Duration) {
     assert!(
-        !volume.exists(dir).await,
+        !volume.exists(&AppPath::legacy_unchecked(dir)).await,
         "fixture precondition: {} must not exist yet",
         dir.display()
     );
     volume
-        .create_directory(dir)
+        .create_directory(&AppPath::legacy_unchecked(dir))
         .await
         .unwrap_or_else(|e| panic!("{} must be creatable, got {e:?}", dir.display()));
     let content = b"a file that lands before its folder is dated\n".to_vec();
     let length = content.len() as u64;
     volume
         .write_from_stream(
-            &dir.join("inside.txt"),
+            &AppPath::legacy_unchecked(&dir.join("inside.txt")),
             WriteMode::CreateNew,
             StreamLength::Known(length),
             Box::new(DatedSource::new(content)),
@@ -255,7 +256,7 @@ pub async fn assert_apply_metadata_dates_a_folder(volume: &dyn Volume, dir: &Pat
 
     let report = volume
         .apply_metadata(
-            dir,
+            &AppPath::legacy_unchecked(dir),
             &CarriedMetadata::default(),
             Some(UNIX_EPOCH + Duration::new(SOURCE_DATE_SECS, SOURCE_DATE_NANOS)),
         )
@@ -268,7 +269,7 @@ pub async fn assert_apply_metadata_dates_a_folder(volume: &dyn Volume, dir: &Pat
     );
 
     let listed = volume
-        .get_metadata(dir)
+        .get_metadata(&AppPath::legacy_unchecked(dir))
         .await
         .unwrap_or_else(|e| panic!("{} must be stattable after dating it, got {e:?}", dir.display()))
         .modified_at

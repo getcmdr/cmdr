@@ -12,7 +12,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 
-use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathFlavor};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic, PathFlavor};
 
 thread_local! {
     // `const`-initialised and `Drop`-free: reading it never allocates, so the allocator below

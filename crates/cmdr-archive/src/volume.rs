@@ -33,6 +33,9 @@
 //! land, a remote parent supplies bytes by implementing [`ArchiveByteSource`]
 //! over its ranged reads, with no change to the index/reader layer.
 
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
+use cmdr_fs::app_path::BridgedPath;
 use cmdr_fs::volume::Presence;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -84,7 +87,7 @@ pub struct ArchiveVolume {
     parent: Arc<dyn Volume>,
     /// Absolute path of the `.zip` on the parent volume. This is `root()`, and
     /// every inner entry's path joins under it.
-    archive_path: PathBuf,
+    archive_path: BridgedPath,
     /// Which archive format (zip / tar+codec / 7z) — decided from the path at
     /// resolve time and threaded into every parse. Also drives the sequential
     /// access class ([`ArchiveFormat::is_sequential`]).
@@ -134,7 +137,7 @@ impl ArchiveVolume {
             .unwrap_or_default();
         Self {
             parent,
-            archive_path,
+            archive_path: BridgedPath::new(archive_path),
             format,
             name,
             cache: Arc::new(ArchiveIndexCache::new()),
@@ -205,7 +208,7 @@ impl ArchiveVolume {
             return;
         }
         *watch = super::watch::start_watch(
-            self.archive_path.clone(),
+            self.archive_path.clone().into_path_buf(),
             parent_volume_id.to_string(),
             Arc::clone(&self.cache),
             self.host.clone(),
@@ -257,7 +260,10 @@ impl ArchiveVolume {
     /// can't be `std::fs`-stat'd). Async because it does one metadata round-trip
     /// to the backend; the returned [`VolumeByteSource`] then reads ranges lazily.
     async fn open_remote_source(&self) -> Result<(u64, Option<i128>, Arc<dyn ArchiveByteSource>), VolumeError> {
-        let meta = self.parent.get_metadata(&self.archive_path).await?;
+        let meta = self
+            .parent
+            .get_metadata(&AppPath::legacy_unchecked(&self.archive_path))
+            .await?;
         let size = meta.size.unwrap_or(0);
         // `FileEntry::modified_at` is Unix SECONDS; widen to nanos for the cache
         // key. Second granularity is enough to catch an external edit (size also
@@ -265,7 +271,7 @@ impl ArchiveVolume {
         let mtime_nanos = meta.modified_at.map(|s| i128::from(s) * 1_000_000_000);
         let raw: Arc<dyn ArchiveByteSource> = Arc::new(VolumeByteSource::new(
             Arc::clone(&self.parent),
-            self.archive_path.clone(),
+            self.archive_path.clone().into_path_buf(),
             size,
             self.host.runtime(),
         ));
@@ -378,9 +384,11 @@ impl ArchiveVolume {
     )]
     fn open_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let inner = self.inner_path(path);
         Box::pin(async move {
             let (index, source) = self.load().await?;
@@ -442,8 +450,8 @@ impl Volume for ArchiveVolume {
         cmdr_fs::volume::BackendKind::Archive
     }
 
-    fn root(&self) -> &Path {
-        &self.archive_path
+    fn root(&self) -> &AppPath {
+        self.archive_path.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -459,9 +467,11 @@ impl Volume for ArchiveVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let inner = self.inner_path(path);
         let archive_path = self.archive_path.clone();
         let volume_name = self.name.clone();
@@ -487,8 +497,10 @@ impl Volume for ArchiveVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let inner = self.inner_path(path);
         let archive_path = self.archive_path.clone();
         let volume_name = self.name.clone();
@@ -501,7 +513,9 @@ impl Volume for ArchiveVolume {
         })
     }
 
-    fn presence<'a>(&'a self, path: &'a Path) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
+    fn presence<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Presence> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let inner = self.inner_path(path);
         Box::pin(async move {
             // An archive that won't open (it needs a password, it doesn't parse,
@@ -518,8 +532,10 @@ impl Volume for ArchiveVolume {
 
     fn is_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<bool, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let inner = self.inner_path(path);
         let archive_path = self.archive_path.clone();
         Box::pin(async move {
@@ -548,7 +564,7 @@ impl Volume for ArchiveVolume {
     // `volume_test.rs::every_mutation_is_unsupported`.
     fn create_directory_all<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
         let _ = path;
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -584,37 +600,46 @@ impl Volume for ArchiveVolume {
     /// A compressed tar or 7z is sequential-access (see
     /// [`Volume::extraction_is_sequential`] and [`ArchiveFormat::is_sequential`]);
     /// a plain `.tar` and a zip are random-access.
-    fn extraction_is_sequential(&self, _path: &Path) -> bool {
+    fn extraction_is_sequential(&self, _path: &AppPath) -> bool {
         self.format.is_sequential()
     }
 
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(self.scan_subtree(path, cmdr_fs::mac_only_files::MacOnlyFiles::Include))
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            self.scan_subtree(path, cmdr_fs::mac_only_files::MacOnlyFiles::Include)
+                .await
+        })
     }
 
     /// Overridden so a transfer's tree gets every entry, not one opaque row per
     /// source (`volume_scan.rs`).
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary<'a>,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        Box::pin(self.scan_batch(paths, boundary))
+        Box::pin(async move {
+            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+            let paths: &[PathBuf] = &paths_std;
+            self.scan_batch(paths, boundary).await
+        })
     }
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.open_stream(path, 0)
     }
 
     fn open_read_stream_at_offset<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         self.open_stream(path, offset)
@@ -627,8 +652,10 @@ impl Volume for ArchiveVolume {
     /// [`ArchiveSequentialExtract`] yields the subtree's files in archive order.
     fn open_sequential_extract<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn SequentialExtract>, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let inner = self.inner_path(path);
         let archive_path = self.archive_path.clone();
         Box::pin(async move {
@@ -643,7 +670,10 @@ impl Volume for ArchiveVolume {
                 password.as_deref().map(String::as_str),
                 &self.host.runtime(),
             );
-            Ok(Box::new(ArchiveSequentialExtract::new(reader, archive_path)) as Box<dyn SequentialExtract>)
+            Ok(
+                Box::new(ArchiveSequentialExtract::new(reader, archive_path.into_path_buf()))
+                    as Box<dyn SequentialExtract>,
+            )
         })
     }
 
@@ -652,9 +682,11 @@ impl Volume for ArchiveVolume {
     /// costs no byte source and no read.
     fn folder_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         wanted: MetadataClasses,
     ) -> Pin<Box<dyn Future<Output = CarriedMetadata> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         let inner = self.inner_path(path);
         Box::pin(async move {
             if !wanted.contains(MetadataClasses::XATTRS) {
@@ -705,14 +737,14 @@ impl Volume for ArchiveVolume {
         Some(self)
     }
 
-    fn local_path(&self) -> Option<PathBuf> {
+    fn local_path(&self) -> Option<AppPathBuf> {
         None
     }
 
     /// The archive file itself, when the parent stores it locally (the same test
     /// that picks the `LocalFileSource` fast path, [`Self::parent_is_local`]).
-    fn local_backing_file(&self) -> Option<&Path> {
-        self.parent_is_local().then_some(self.archive_path.as_path())
+    fn local_backing_file(&self) -> Option<&AppPath> {
+        self.parent_is_local().then_some(self.archive_path.app())
     }
 
     /// `false`: inner paths can't be stat'd or read via `std::fs` (they live
@@ -740,9 +772,13 @@ impl Volume for ArchiveVolume {
     /// be an SD card the parent's volume-wide figure doesn't describe.
     fn get_space_info_at<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
-        Box::pin(async move { self.parent.get_space_info_at(&self.archive_path).await })
+        Box::pin(async move {
+            self.parent
+                .get_space_info_at(&AppPath::legacy_unchecked(&self.archive_path))
+                .await
+        })
     }
 
     /// Covered only while the content watch is genuinely live (established by
@@ -757,7 +793,7 @@ impl Volume for ArchiveVolume {
     /// other clients on the share) while one on local disk answers
     /// `EveryWriter`. A remote-BACKED archive never arms a watch at all, so it
     /// stays `None` by construction (`volume_test.rs`).
-    fn listing_watch_coverage(&self, _path: &Path) -> WatchCoverage {
+    fn listing_watch_coverage(&self, _path: &AppPath) -> WatchCoverage {
         self.watch
             .lock_ignore_poison()
             .as_ref()
@@ -888,3 +924,7 @@ mod volume_apple_double_test;
 #[cfg(test)]
 #[path = "volume_runtime_test.rs"]
 mod volume_runtime_test;
+
+#[cfg(test)]
+#[path = "volume_flip_guard_test.rs"]
+mod volume_flip_guard_test;

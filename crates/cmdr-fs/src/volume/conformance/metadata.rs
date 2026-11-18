@@ -11,6 +11,7 @@
 //! `crates/cmdr-operations/src/transfer/volume/DETAILS.md`
 //! § "Copies keep the source's metadata".
 
+use crate::app_path::AppPath;
 use std::path::Path;
 use std::time::{Duration, UNIX_EPOCH};
 
@@ -46,7 +47,7 @@ const FOLDER_MODE: u32 = 0o700;
 pub async fn assert_write_from_stream_keeps_metadata(volume: &dyn Volume, dest: &Path) {
     let kept = volume.metadata_caps().stores;
     assert!(
-        !volume.exists(dest).await,
+        !volume.exists(&AppPath::legacy_unchecked(dest)).await,
         "fixture precondition: {} must not exist yet",
         dest.display()
     );
@@ -54,7 +55,7 @@ pub async fn assert_write_from_stream_keeps_metadata(volume: &dyn Volume, dest: 
     let length = content.len() as u64;
     let written = volume
         .write_from_stream(
-            dest,
+            &AppPath::legacy_unchecked(dest),
             WriteMode::CreateNew,
             StreamLength::Known(length),
             Box::new(born_source(content)),
@@ -69,7 +70,7 @@ pub async fn assert_write_from_stream_keeps_metadata(volume: &dyn Volume, dest: 
     );
 
     let listed = volume
-        .get_metadata(dest)
+        .get_metadata(&AppPath::legacy_unchecked(dest))
         .await
         .unwrap_or_else(|e| panic!("{} must be stattable after the write, got {e:?}", dest.display()));
     assert_eq!(
@@ -111,19 +112,19 @@ pub async fn assert_apply_metadata_keeps(volume: &dyn Volume, dir: &Path) {
     let caps = volume.metadata_caps();
     let kept = caps.folder_stores;
     assert!(
-        !volume.exists(dir).await,
+        !volume.exists(&AppPath::legacy_unchecked(dir)).await,
         "fixture precondition: {} must not exist yet",
         dir.display()
     );
     volume
-        .create_directory(dir)
+        .create_directory(&AppPath::legacy_unchecked(dir))
         .await
         .unwrap_or_else(|e| panic!("{} must be creatable, got {e:?}", dir.display()));
     let content = b"a file that lands before its folder is dated\n".to_vec();
     let length = content.len() as u64;
     volume
         .write_from_stream(
-            &dir.join("inside.txt"),
+            &AppPath::legacy_unchecked(&dir.join("inside.txt")),
             WriteMode::CreateNew,
             StreamLength::Known(length),
             Box::new(born_source(content)),
@@ -138,10 +139,14 @@ pub async fn assert_apply_metadata_keeps(volume: &dyn Volume, dir: &Path) {
         ..CarriedMetadata::default()
     };
     let report = volume
-        .apply_metadata(dir, &carried, Some(UNIX_EPOCH + Duration::from_secs(SOURCE_DATE_SECS)))
+        .apply_metadata(
+            &AppPath::legacy_unchecked(dir),
+            &carried,
+            Some(UNIX_EPOCH + Duration::from_secs(SOURCE_DATE_SECS)),
+        )
         .await;
     let listed = volume
-        .get_metadata(dir)
+        .get_metadata(&AppPath::legacy_unchecked(dir))
         .await
         .unwrap_or_else(|e| panic!("{} must be stattable, got {e:?}", dir.display()));
     if caps.folder_dates {
@@ -183,11 +188,11 @@ pub async fn assert_apply_metadata_keeps(volume: &dyn Volume, dir: &Path) {
 pub async fn assert_read_stream_reports_the_listed_metadata(volume: &dyn Volume, path: &Path) {
     let reported = volume.metadata_caps().reports;
     let listed = volume
-        .get_metadata(path)
+        .get_metadata(&AppPath::legacy_unchecked(path))
         .await
         .unwrap_or_else(|e| panic!("fixture precondition: {} must be stattable, got {e:?}", path.display()));
     let stream = volume
-        .open_read_stream(path)
+        .open_read_stream(&AppPath::legacy_unchecked(path))
         .await
         .unwrap_or_else(|e| panic!("{} must be readable, got {e:?}", path.display()));
     let carried = stream.metadata(MetadataClasses::ALL);

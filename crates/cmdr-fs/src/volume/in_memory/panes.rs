@@ -5,6 +5,7 @@
 //! patcher (`crate::volume::patching`), the way SFTP and S3 do; without it (every
 //! test that only cares about the store) nothing is patched, as before.
 
+use crate::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -37,7 +38,7 @@ impl PatchSource for Patcher<'_> {
     }
 
     fn patch_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
-        self.volume.get_metadata(path)
+        Box::pin(async move { self.volume.get_metadata(&AppPath::legacy_unchecked(path)).await })
     }
 
     fn patch_display_path(&self, path: &Path) -> Option<PathBuf> {

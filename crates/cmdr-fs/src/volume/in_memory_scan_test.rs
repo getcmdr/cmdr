@@ -3,6 +3,7 @@
 //! `in_memory_test.rs`; streaming is `in_memory_stream_test.rs`.
 
 use super::*;
+use crate::app_path;
 use std::path::{Path, PathBuf};
 
 // ============================================================================
@@ -13,11 +14,11 @@ use std::path::{Path, PathBuf};
 async fn test_scan_for_copy_single_file() {
     let volume = InMemoryVolume::new("Test");
     volume
-        .create_file(Path::new("/report.txt"), b"Hello, World!")
+        .create_file(app_path!("/report.txt"), b"Hello, World!")
         .await
         .unwrap();
 
-    let result = volume.scan_for_copy(Path::new("/report.txt")).await.unwrap();
+    let result = volume.scan_for_copy(app_path!("/report.txt")).await.unwrap();
     assert_eq!(result.file_count, 1);
     assert_eq!(result.dir_count, 0);
     assert_eq!(result.total_bytes, 13);
@@ -26,9 +27,9 @@ async fn test_scan_for_copy_single_file() {
 #[tokio::test]
 async fn test_scan_for_copy_empty_directory() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/empty")).await.unwrap();
+    volume.create_directory(app_path!("/empty")).await.unwrap();
 
-    let result = volume.scan_for_copy(Path::new("/empty")).await.unwrap();
+    let result = volume.scan_for_copy(app_path!("/empty")).await.unwrap();
     assert_eq!(result.file_count, 0);
     assert_eq!(result.dir_count, 0);
     assert_eq!(result.total_bytes, 0);
@@ -37,17 +38,17 @@ async fn test_scan_for_copy_empty_directory() {
 #[tokio::test]
 async fn test_scan_for_copy_directory_with_files() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/docs")).await.unwrap();
+    volume.create_directory(app_path!("/docs")).await.unwrap();
     volume
-        .create_file(Path::new("/docs/readme.txt"), b"Read me")
+        .create_file(app_path!("/docs/readme.txt"), b"Read me")
         .await
         .unwrap();
     volume
-        .create_file(Path::new("/docs/notes.txt"), b"Notes here")
+        .create_file(app_path!("/docs/notes.txt"), b"Notes here")
         .await
         .unwrap();
 
-    let result = volume.scan_for_copy(Path::new("/docs")).await.unwrap();
+    let result = volume.scan_for_copy(app_path!("/docs")).await.unwrap();
     assert_eq!(result.file_count, 2);
     assert_eq!(result.dir_count, 0);
     assert_eq!(result.total_bytes, 17); // 7 + 10
@@ -56,20 +57,20 @@ async fn test_scan_for_copy_directory_with_files() {
 #[tokio::test]
 async fn test_scan_for_copy_nested_directory_tree() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/root")).await.unwrap();
-    volume.create_directory(Path::new("/root/sub")).await.unwrap();
-    volume.create_directory(Path::new("/root/sub/deep")).await.unwrap();
-    volume.create_file(Path::new("/root/file1.txt"), b"AAA").await.unwrap();
+    volume.create_directory(app_path!("/root")).await.unwrap();
+    volume.create_directory(app_path!("/root/sub")).await.unwrap();
+    volume.create_directory(app_path!("/root/sub/deep")).await.unwrap();
+    volume.create_file(app_path!("/root/file1.txt"), b"AAA").await.unwrap();
     volume
-        .create_file(Path::new("/root/sub/file2.txt"), b"BBBBB")
+        .create_file(app_path!("/root/sub/file2.txt"), b"BBBBB")
         .await
         .unwrap();
     volume
-        .create_file(Path::new("/root/sub/deep/file3.txt"), b"C")
+        .create_file(app_path!("/root/sub/deep/file3.txt"), b"C")
         .await
         .unwrap();
 
-    let result = volume.scan_for_copy(Path::new("/root")).await.unwrap();
+    let result = volume.scan_for_copy(app_path!("/root")).await.unwrap();
     assert_eq!(result.file_count, 3);
     assert_eq!(result.dir_count, 2); // sub + deep (root not counted)
     assert_eq!(result.total_bytes, 9); // 3 + 5 + 1
@@ -82,17 +83,25 @@ async fn test_scan_for_copy_nested_directory_tree() {
 #[tokio::test]
 async fn test_scan_for_copy_batch_multiple_files_same_dir() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/photos")).await.unwrap();
-    volume.create_file(Path::new("/photos/a.jpg"), &[0; 100]).await.unwrap();
-    volume.create_file(Path::new("/photos/b.jpg"), &[0; 200]).await.unwrap();
-    volume.create_file(Path::new("/photos/c.jpg"), &[0; 300]).await.unwrap();
+    volume.create_directory(app_path!("/photos")).await.unwrap();
+    volume.create_file(app_path!("/photos/a.jpg"), &[0; 100]).await.unwrap();
+    volume.create_file(app_path!("/photos/b.jpg"), &[0; 200]).await.unwrap();
+    volume.create_file(app_path!("/photos/c.jpg"), &[0; 300]).await.unwrap();
 
-    let paths = vec![
+    let paths = [
         PathBuf::from("/photos/a.jpg"),
         PathBuf::from("/photos/b.jpg"),
         PathBuf::from("/photos/c.jpg"),
     ];
-    let result = volume.scan_for_copy_batch(&paths).await.unwrap();
+    let result = volume
+        .scan_for_copy_batch(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+        )
+        .await
+        .unwrap();
     assert_eq!(result.aggregate.file_count, 3);
     assert_eq!(result.aggregate.dir_count, 0);
     assert_eq!(result.aggregate.total_bytes, 600);
@@ -102,19 +111,27 @@ async fn test_scan_for_copy_batch_multiple_files_same_dir() {
 #[tokio::test]
 async fn test_scan_for_copy_batch_mixed_files_and_dirs() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/stuff")).await.unwrap();
+    volume.create_directory(app_path!("/stuff")).await.unwrap();
     volume
-        .create_file(Path::new("/stuff/readme.txt"), b"hello")
+        .create_file(app_path!("/stuff/readme.txt"), b"hello")
         .await
         .unwrap();
-    volume.create_directory(Path::new("/stuff/subdir")).await.unwrap();
+    volume.create_directory(app_path!("/stuff/subdir")).await.unwrap();
     volume
-        .create_file(Path::new("/stuff/subdir/deep.txt"), &[0; 50])
+        .create_file(app_path!("/stuff/subdir/deep.txt"), &[0; 50])
         .await
         .unwrap();
 
-    let paths = vec![PathBuf::from("/stuff/readme.txt"), PathBuf::from("/stuff/subdir")];
-    let result = volume.scan_for_copy_batch(&paths).await.unwrap();
+    let paths = [PathBuf::from("/stuff/readme.txt"), PathBuf::from("/stuff/subdir")];
+    let result = volume
+        .scan_for_copy_batch(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+        )
+        .await
+        .unwrap();
     assert_eq!(result.aggregate.file_count, 2); // readme.txt + deep.txt
     assert_eq!(result.aggregate.dir_count, 0); // subdir's children don't include extra dirs
     assert_eq!(result.aggregate.total_bytes, 55); // 5 + 50
@@ -123,14 +140,14 @@ async fn test_scan_for_copy_batch_mixed_files_and_dirs() {
     let readme = result
         .per_path
         .iter()
-        .find(|(p, _)| p == Path::new("/stuff/readme.txt"))
+        .find(|(p, _)| p.as_std_legacy() == Path::new("/stuff/readme.txt"))
         .unwrap();
     assert!(!readme.1.top_level_is_directory);
     assert_eq!(readme.1.total_bytes, 5);
     let subdir = result
         .per_path
         .iter()
-        .find(|(p, _)| p == Path::new("/stuff/subdir"))
+        .find(|(p, _)| p.as_std_legacy() == Path::new("/stuff/subdir"))
         .unwrap();
     assert!(subdir.1.top_level_is_directory);
 }
@@ -143,23 +160,29 @@ async fn a_batch_scan_records_every_entry_under_the_callers_paths() {
     use std::sync::Arc;
 
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/stuff")).await.unwrap();
+    volume.create_directory(app_path!("/stuff")).await.unwrap();
     volume
-        .create_file(Path::new("/stuff/readme.txt"), b"hello")
+        .create_file(app_path!("/stuff/readme.txt"), b"hello")
         .await
         .unwrap();
-    volume.create_directory(Path::new("/stuff/subdir")).await.unwrap();
-    volume.create_directory(Path::new("/stuff/subdir/empty")).await.unwrap();
+    volume.create_directory(app_path!("/stuff/subdir")).await.unwrap();
+    volume.create_directory(app_path!("/stuff/subdir/empty")).await.unwrap();
     volume
-        .create_file(Path::new("/stuff/subdir/deep.txt"), &[0; 50])
+        .create_file(app_path!("/stuff/subdir/deep.txt"), &[0; 50])
         .await
         .unwrap();
     let recording = Arc::new(ScanRecording::default());
     let boundary = ScanBoundary::silent().recording_to(Arc::clone(&recording) as Arc<dyn ScanRecorder>);
 
-    let paths = vec![PathBuf::from("/stuff/readme.txt"), PathBuf::from("/stuff/subdir")];
+    let paths = [PathBuf::from("/stuff/readme.txt"), PathBuf::from("/stuff/subdir")];
     let result = volume
-        .scan_for_copy_batch_with_boundary(&paths, &boundary)
+        .scan_for_copy_batch_with_boundary(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+            &boundary,
+        )
         .await
         .unwrap();
 
@@ -188,12 +211,12 @@ async fn test_scan_for_copy_batch_empty_input() {
 #[tokio::test]
 async fn test_scan_for_copy_batch_single_item_matches_single_scan() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/docs")).await.unwrap();
-    volume.create_file(Path::new("/docs/a.txt"), b"data").await.unwrap();
+    volume.create_directory(app_path!("/docs")).await.unwrap();
+    volume.create_file(app_path!("/docs/a.txt"), b"data").await.unwrap();
 
-    let single = volume.scan_for_copy(Path::new("/docs/a.txt")).await.unwrap();
+    let single = volume.scan_for_copy(app_path!("/docs/a.txt")).await.unwrap();
     let batch = volume
-        .scan_for_copy_batch(&[PathBuf::from("/docs/a.txt")])
+        .scan_for_copy_batch(&[AppPath::legacy_unchecked(&PathBuf::from("/docs/a.txt")).into_owned()])
         .await
         .unwrap();
     assert_eq!(single.file_count, batch.aggregate.file_count);
@@ -205,13 +228,21 @@ async fn test_scan_for_copy_batch_single_item_matches_single_scan() {
 #[tokio::test]
 async fn test_scan_for_copy_batch_files_from_different_dirs() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_directory(Path::new("/a")).await.unwrap();
-    volume.create_directory(Path::new("/b")).await.unwrap();
-    volume.create_file(Path::new("/a/file1.txt"), &[0; 10]).await.unwrap();
-    volume.create_file(Path::new("/b/file2.txt"), &[0; 20]).await.unwrap();
+    volume.create_directory(app_path!("/a")).await.unwrap();
+    volume.create_directory(app_path!("/b")).await.unwrap();
+    volume.create_file(app_path!("/a/file1.txt"), &[0; 10]).await.unwrap();
+    volume.create_file(app_path!("/b/file2.txt"), &[0; 20]).await.unwrap();
 
-    let paths = vec![PathBuf::from("/a/file1.txt"), PathBuf::from("/b/file2.txt")];
-    let result = volume.scan_for_copy_batch(&paths).await.unwrap();
+    let paths = [PathBuf::from("/a/file1.txt"), PathBuf::from("/b/file2.txt")];
+    let result = volume
+        .scan_for_copy_batch(
+            &paths
+                .iter()
+                .map(|p| AppPath::legacy_unchecked(p).into_owned())
+                .collect::<Vec<_>>(),
+        )
+        .await
+        .unwrap();
     assert_eq!(result.aggregate.file_count, 2);
     assert_eq!(result.aggregate.total_bytes, 30);
     assert_eq!(result.per_path.len(), 2);
@@ -263,7 +294,7 @@ async fn storage_with_no_ceiling_reports_what_is_stored_and_nothing_else() {
 #[tokio::test]
 async fn test_scan_for_conflicts_no_conflicts() {
     let volume = InMemoryVolume::new("Test");
-    volume.create_file(Path::new("/existing.txt"), b"data").await.unwrap();
+    volume.create_file(app_path!("/existing.txt"), b"data").await.unwrap();
 
     let source_items = vec![SourceItemInfo {
         name: "other.txt".to_string(),
@@ -272,7 +303,7 @@ async fn test_scan_for_conflicts_no_conflicts() {
         is_directory: false,
     }];
 
-    let conflicts = volume.scan_for_conflicts(&source_items, Path::new("/")).await.unwrap();
+    let conflicts = volume.scan_for_conflicts(&source_items, app_path!("/")).await.unwrap();
     assert!(conflicts.is_empty());
 }
 
@@ -280,7 +311,7 @@ async fn test_scan_for_conflicts_no_conflicts() {
 async fn test_scan_for_conflicts_detects_conflict() {
     let volume = InMemoryVolume::new("Test");
     volume
-        .create_file(Path::new("/report.txt"), b"old content")
+        .create_file(app_path!("/report.txt"), b"old content")
         .await
         .unwrap();
 
@@ -291,7 +322,7 @@ async fn test_scan_for_conflicts_detects_conflict() {
         is_directory: false,
     }];
 
-    let conflicts = volume.scan_for_conflicts(&source_items, Path::new("/")).await.unwrap();
+    let conflicts = volume.scan_for_conflicts(&source_items, app_path!("/")).await.unwrap();
     assert_eq!(conflicts.len(), 1);
     assert_eq!(conflicts[0].source_path, "report.txt");
     assert_eq!(conflicts[0].source_size, 200);
@@ -305,8 +336,8 @@ async fn test_scan_for_conflicts_detects_conflict() {
 async fn test_scan_for_conflicts_populates_directory_flags() {
     let volume = InMemoryVolume::new("Test");
     // Dest holds a directory `photos` and a file `notes.txt`.
-    volume.create_directory(Path::new("/photos")).await.unwrap();
-    volume.create_file(Path::new("/notes.txt"), b"hello").await.unwrap();
+    volume.create_directory(app_path!("/photos")).await.unwrap();
+    volume.create_file(app_path!("/notes.txt"), b"hello").await.unwrap();
 
     // Source offers: a dir `photos` (→ dir-vs-dir merge), a file `notes.txt`
     // (→ file-vs-file), and a file `photos.zip` that doesn't clash.
@@ -331,7 +362,7 @@ async fn test_scan_for_conflicts_populates_directory_flags() {
         },
     ];
 
-    let conflicts = volume.scan_for_conflicts(&source_items, Path::new("/")).await.unwrap();
+    let conflicts = volume.scan_for_conflicts(&source_items, app_path!("/")).await.unwrap();
     assert_eq!(conflicts.len(), 2);
 
     let dir_conflict = conflicts.iter().find(|c| c.source_path == "photos").unwrap();
@@ -347,7 +378,7 @@ async fn test_scan_for_conflicts_populates_directory_flags() {
 async fn test_scan_for_conflicts_type_mismatch_flags() {
     let volume = InMemoryVolume::new("Test");
     // Dest `data` is a file; source `data` is a directory.
-    volume.create_file(Path::new("/data"), b"x").await.unwrap();
+    volume.create_file(app_path!("/data"), b"x").await.unwrap();
 
     let source_items = vec![SourceItemInfo {
         name: "data".to_string(),
@@ -356,7 +387,7 @@ async fn test_scan_for_conflicts_type_mismatch_flags() {
         is_directory: true,
     }];
 
-    let conflicts = volume.scan_for_conflicts(&source_items, Path::new("/")).await.unwrap();
+    let conflicts = volume.scan_for_conflicts(&source_items, app_path!("/")).await.unwrap();
     assert_eq!(conflicts.len(), 1);
     assert!(conflicts[0].source_is_directory, "source is a dir");
     assert!(!conflicts[0].dest_is_directory, "dest is a file");

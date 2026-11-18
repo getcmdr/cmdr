@@ -76,17 +76,18 @@ volume physically storing the `.zip`), the archive path, the display name, and a
 `parent.supports_local_fs_access()` (§ "Remote-backed archives (read path)"). The index and reader are unchanged either
 way — both already speak `dyn ArchiveByteSource`.
 
-**Path namespace.** `root()` is the real `.zip` path and inner entries join under it, so `/path/to/foo.zip/inner`
-renders transparently (the FE splits on `/`). `inner_path()` maps a volume-namespace path back to the index key: it
-strips the archive-path prefix (the FE sends full absolute paths), accepts an already-inner relative path, and treats an
-empty path / `.` as the root `""`. `node_to_entry` builds each `FileEntry`'s full path as `archive_path/inner`; the root
-node (`""`) carries the archive's own filename and path. `ArchiveNode::modified` is Unix seconds, matching `FileEntry`
-(a negative timestamp is dropped), and it's the only date a member carries (`supported_dates` keeps the trait's
-Modified-only default). `FileEntry` has no `encrypted` field, so `index()` is `pub`: a host caller that must name
-encryption (the Ask Cmdr `inspect_file` tool) queries the same cached `ArchiveIndex` the listing maps from (`get` /
-`list` / `has_encrypted_entries`, keyed by the inner path `archive_boundary_candidate` splits off), so the two never
-disagree. For 7z the per-entry flag is derived from the entry's block: an `AES256_SHA256` coder in its chain
-(`sevenz.rs`); an entry with no block (a directory, an empty file) is never flagged.
+**Path namespace.** `root()` is the real `.zip` path and inner entries join under it, held as a `BridgedPath` (`root()`
+and `local_backing_file()` return its app spelling, every body reads it as the `Path` it holds), so
+`/path/to/foo.zip/inner` renders transparently (the FE splits on `/`). `inner_path()` maps a volume-namespace path back
+to the index key: it strips the archive-path prefix (the FE sends full absolute paths), accepts an already-inner
+relative path, and treats an empty path / `.` as the root `""`. `node_to_entry` builds each `FileEntry`'s full path as
+`archive_path/inner`; the root node (`""`) carries the archive's own filename and path. `ArchiveNode::modified` is Unix
+seconds, matching `FileEntry` (a negative timestamp is dropped), and it's the only date a member carries
+(`supported_dates` keeps the trait's Modified-only default). `FileEntry` has no `encrypted` field, so `index()` is
+`pub`: a host caller that must name encryption (the Ask Cmdr `inspect_file` tool) queries the same cached `ArchiveIndex`
+the listing maps from (`get` / `list` / `has_encrypted_entries`, keyed by the inner path `archive_boundary_candidate`
+splits off), so the two never disagree. For 7z the per-entry flag is derived from the entry's block: an `AES256_SHA256`
+coder in its chain (`sevenz.rs`); an entry with no block (a directory, an empty file) is never flagged.
 
 **Streaming reads.** `open_read_stream` / `open_read_stream_at_offset` parse the index (cached) and open the byte source
 on `spawn_blocking`, then wrap `ArchiveEntryReader` as an `ArchiveVolumeReadStream`. A compressed entry has no random
