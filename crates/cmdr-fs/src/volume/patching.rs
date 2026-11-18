@@ -13,6 +13,7 @@
 
 use std::path::{Path, PathBuf};
 
+use crate::app_path::AppPath;
 use crate::entry::FileEntry;
 use crate::volume::host::listings::ListingHost;
 use crate::volume::scan_walk::Walking;
@@ -27,8 +28,10 @@ pub trait PatchSource: Sync {
     fn patch_listings(&self) -> &dyn ListingHost;
 
     /// One entry, freshly read. ❗ The backend's own stat, so the patch carries
-    /// what the server actually holds rather than what the caller hoped.
-    fn patch_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry>;
+    /// what the server actually holds rather than what the caller hoped. An app
+    /// path, as `Volume::get_metadata` takes, so an impl forwards it with no
+    /// bridge temporary for the returned future to borrow.
+    fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry>;
 
     /// The path the APP addresses `path` by, or `None` when `path` isn't on this
     /// volume. A refusal here is "no patch to make", never an error.
@@ -43,7 +46,10 @@ pub async fn patch_mutation(source: &dyn PatchSource, parent_path: &Path, mutati
         MutationEvent::Created(ref name) | MutationEvent::Modified(ref name) => {
             // One stat, and a failure is simply no patch: the pane re-lists
             // eventually, and the mutation itself has already succeeded.
-            let Ok(entry) = source.patch_stat(&parent_path.join(name)).await else {
+            let Ok(entry) = source
+                .patch_stat(&AppPath::legacy_unchecked(&parent_path.join(name)))
+                .await
+            else {
                 return;
             };
             let change = if matches!(mutation, MutationEvent::Created(_)) {
@@ -57,7 +63,10 @@ pub async fn patch_mutation(source: &dyn PatchSource, parent_path: &Path, mutati
             listings.directory_changed(volume_id, parent_path, DirectoryChange::Removed(name));
         }
         MutationEvent::Renamed { from, to } => {
-            let Ok(entry) = source.patch_stat(&parent_path.join(&to)).await else {
+            let Ok(entry) = source
+                .patch_stat(&AppPath::legacy_unchecked(&parent_path.join(&to)))
+                .await
+            else {
                 return;
             };
             listings.directory_changed(

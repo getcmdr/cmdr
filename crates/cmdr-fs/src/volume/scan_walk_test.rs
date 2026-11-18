@@ -90,8 +90,10 @@ impl FakeTree {
 }
 
 impl ScanSource for FakeTree {
-    fn scan_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
+    fn scan_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let key = path.to_string_lossy().into_owned();
             self.drop_if_armed(&key)?;
             let name = path
@@ -113,8 +115,10 @@ impl ScanSource for FakeTree {
         })
     }
 
-    fn scan_list<'a>(&'a self, path: &'a Path) -> Walking<'a, Vec<FileEntry>> {
+    fn scan_list<'a>(&'a self, path: &'a AppPath) -> Walking<'a, Vec<FileEntry>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let key = path.to_string_lossy().into_owned();
             self.asked.lock_ignore_poison().push(key.clone());
             self.drop_if_armed(&key)?;
@@ -795,8 +799,10 @@ struct StuckListings {
 }
 
 impl ScanSource for StuckListings {
-    fn scan_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
+    fn scan_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             Ok(FileEntry::new(
                 "top".to_string(),
                 path.display().to_string(),
@@ -806,7 +812,7 @@ impl ScanSource for StuckListings {
         })
     }
 
-    fn scan_list<'a>(&'a self, _path: &'a Path) -> Walking<'a, Vec<FileEntry>> {
+    fn scan_list<'a>(&'a self, _path: &'a AppPath) -> Walking<'a, Vec<FileEntry>> {
         Box::pin(async move {
             self.signal.stop();
             std::future::pending().await

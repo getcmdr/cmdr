@@ -1210,9 +1210,11 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - `local_path` flips to `Option<AppPathBuf>` (it's the volume's root, an app path); `read_link_target`'s answer and
     `create_symlink`'s `target` stay `Path`. "`CopyScanResult`'s `source_path`" is `ExtractedFile.source_path`.
   - The helpers beside the trait (`fold_batch`, `tally_by_listing`, `ScanBoundary::subtree`, `root_echo`,
-    `ResolvedVolume::passthrough`, `create_directory_all`, the `ScanSource`/`PatchSource`/`MakesDirectories` traits)
-    keep `std::path` signatures and bridge inside, so no backend call to them changes. `RemoteRoot::app_root` answers a
-    `BridgedPath`, per the borrowed-return rule.
+    `ResolvedVolume::passthrough`, `create_directory_all`, `MakesDirectories`, `PatchSource::patch_display_path`) keep
+    `std::path` signatures and bridge inside, so no backend call to them changes. `ScanSource::scan_stat`/`scan_list`
+    and `PatchSource::patch_stat` DID flip, in tier 1: their impls forward to a typed `Volume` read, and a bridged
+    argument there is a temporary the returned future borrows (the handoff note says why no `async move` could fix it).
+    `RemoteRoot::app_root` answers a `BridgedPath`, per the borrowed-return rule.
   - The codemod needed rules beyond the four listed: a typed param handed back (`path_app`, so a delegating test double
     returns the typed param, not a temporary), an `async fn` helper's call moved into its future (E0515), `assert_eq!`
     operands dropped to std (rustc points inside the std macro, so the call site is lifted out of the expansion),

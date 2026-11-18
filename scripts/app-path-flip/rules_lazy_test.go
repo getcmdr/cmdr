@@ -198,6 +198,50 @@ func TestAnImportNeverLandsUnderAnItemsAttribute(t *testing.T) {
 	}
 }
 
+func TestATypedOperandTakesTheOtherSidesShape(t *testing.T) {
+	for _, c := range []struct{ expr, typ, other, want string }{
+		{"path", "&AppPathBuf", "&PathBuf", "&*path.as_std_legacy()"},
+		{"path", "AppPathBuf", "PathBuf", "*path.as_std_legacy()"},
+		{"path", "&AppPath", "&&Path", "&&*path.as_std_legacy()"},
+		{"path.as_std_legacy()", "Cow<Path>", "&PathBuf", "&*path.as_std_legacy()"},
+		{"root", "&BridgedPath", "&Path", "root.as_path()"},
+		{"root", "BridgedPath", "PathBuf", "*root.as_path()"},
+		{"found", "Option<AppPathBuf>", "Option<PathBuf>", "found.as_ref().map(|p| p.as_std_legacy().into_owned())"},
+		{"paths", "&Vec<AppPathBuf>", "&Vec<PathBuf>", "&paths.iter().map(|p| p.as_std_legacy().into_owned()).collect::<Vec<_>>()"},
+	} {
+		if got, ok := stdOperand(c.expr, c.typ, c.other); !ok || got != c.want {
+			t.Errorf("stdOperand(%q, %q, %q) = %q, %v; want %q", c.expr, c.typ, c.other, got, ok, c.want)
+		}
+	}
+	if _, ok := stdOperand("x", "Option<&AppPath>", "Option<&Path>"); ok {
+		t.Error("a borrowed option has no owned twin to compare: residue")
+	}
+}
+
+func TestAnAssertAgainstABorrowedPathBufCompiles(t *testing.T) {
+	text := "fn t() {\n    assert_eq!(path, &paths[i]);\n}\n"
+	start, end := strings.Index(text, "assert_eq!"), strings.Index(text, ";\n}")
+	d := diag("E0277", "can't compare `&app_path::AppPathBuf` with `&std::path::PathBuf`",
+		diagSpan{FileName: fixtureFile, ByteStart: start, ByteEnd: end, IsPrimary: true, Macro: "assert_eq"})
+	if got := run(t, text, d); !strings.Contains(got, "assert_eq!(&*path.as_std_legacy(), &paths[i]);") {
+		t.Fatalf("not reshaped:\n%s", got)
+	}
+}
+
+func TestATestDirIntoATypedSlotCrossesTheBridge(t *testing.T) {
+	for _, c := range []struct{ expr, found, want string }{
+		{"dir", "&cmdr_fs::testing::TestDir", "volume.list_directory(&AppPath::legacy_unchecked(dir), None)"},
+		{"&dir", "&TestDir", "volume.list_directory(&AppPath::legacy_unchecked(&dir), None)"},
+		{"&fixture", "&&MetadataFixture", "volume.list_directory(&AppPath::legacy_unchecked(fixture), None)"},
+	} {
+		text := "fn t() {\n    volume.list_directory(" + c.expr + ", None);\n}\n"
+		got := run(t, text, diag("E0308", "mismatched types", spanOf(t, text, c.expr, "list_directory(", "expected `&AppPath`, found `"+c.found+"`", true)))
+		if !strings.Contains(got, c.want) {
+			t.Errorf("%s: got\n%s", c.found, got)
+		}
+	}
+}
+
 func TestTheAuditFindsAnImportUnderAnAttribute(t *testing.T) {
 	imports := map[string]bool{"use cmdr_fs::app_path::BridgedPath;": true}
 	hits := importsUnderAttributes("#[cfg(test)]\nuse cmdr_fs::app_path::BridgedPath;\npub use a::b;\n#![allow(x)]\nuse cmdr_fs::app_path::BridgedPath;\n", imports)

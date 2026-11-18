@@ -65,10 +65,17 @@ func mismatch(label string) (expected, found string, ok bool) {
 	return normalizeType(m[1]), normalizeType(m[2]), true
 }
 
-// The std-path reference types a typed slot can receive through the bridge.
+// The std-path reference types a typed slot can receive through the bridge. `TestDir` and
+// `MetadataFixture` (`cmdr_fs::testing`) deref to `Path`, so `&dir` coerced into a `&Path`
+// slot and coerces into `legacy_unchecked`'s the same way (the workspace's only other
+// `Deref<Target = Path>` is `BridgedPath`, which has rows of its own).
 func isStdPathRef(t string) bool {
-	switch strings.TrimLeft(t, "&") {
-	case "Path", "PathBuf", "Cow<Path>", "Cow<'_,Path>", "Box<Path>", "Arc<Path>":
+	inner := strings.TrimLeft(t, "&")
+	if i := strings.LastIndex(inner, "::"); i >= 0 && !strings.Contains(inner, "<") {
+		inner = inner[i+2:]
+	}
+	switch inner {
+	case "Path", "PathBuf", "Cow<Path>", "Cow<'_,Path>", "Box<Path>", "Arc<Path>", "TestDir", "MetadataFixture":
 		return strings.HasPrefix(t, "&")
 	}
 	return false
