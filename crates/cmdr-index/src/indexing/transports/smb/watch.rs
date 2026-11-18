@@ -49,7 +49,6 @@
 //!   cheap, DOES stat-verify; SMB intentionally doesn't.)
 
 use std::collections::HashMap;
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 use std::path::Path;
 use std::sync::{LazyLock, Mutex};
 
@@ -59,7 +58,6 @@ use crate::indexing::store::{self, IndexStore};
 use crate::indexing::writer::{IndexWriter, WriteMessage};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::DirectoryChange;
 
@@ -246,7 +244,6 @@ impl ResolvedWrite {
 /// composer (the app's `listing_host::directory_changed`). No-op (cheap early return) when the volume isn't a
 /// live non-`root` index, so wiring this in costs one `Arc`-clone check for
 /// non-indexed shares and for every `root` (local-disk) change.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) fn apply_smb_change(volume_id: &str, parent_path: &Path, change: &DirectoryChange) {
     // `root` (local disk) feeds its index from FSEvents, not from this listing
     // hook; never double-index it here.
@@ -274,7 +271,6 @@ pub(crate) fn apply_smb_change(volume_id: &str, parent_path: &Path, change: &Dir
 /// Stash a change that arrived during a full scan for post-scan replay. Bounded:
 /// past `MAX_BUFFERED_CHANGES` we stop stashing and flag overflow (replay then
 /// forces Stale).
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn buffer_change_during_scan(volume_id: &str, parent_path: &Path, change: &DirectoryChange) {
     let mut buf = SCAN_CHANGE_BUFFER.lock_ignore_poison();
     let entry = buf.entry(volume_id.to_string()).or_default();
@@ -298,7 +294,6 @@ fn buffer_change_during_scan(volume_id: &str, parent_path: &Path, change: &Direc
 /// index may have drifted, so we signal `OverflowUnrecoverable` ⇒ Stale rather
 /// than claim Fresh — the honest outcome. Returns whether the volume should be
 /// considered Fresh (true) or was forced Stale by overflow (false).
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) fn replay_buffered_changes(volume_id: &str) -> bool {
     let buffered = {
         let mut buf = SCAN_CHANGE_BUFFER.lock_ignore_poison();
@@ -336,7 +331,6 @@ pub(crate) fn replay_buffered_changes(volume_id: &str) -> bool {
 /// non-buffering path: used live (not scanning) and during replay. The writer
 /// resolves its ids when it gets to it (`send_change`), so nothing here takes
 /// the registry lock or a connection.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn apply_one_change(volume_id: &str, writer: &IndexWriter, parent_path: &Path, change: &DirectoryChange) {
     let Some(volume) = crate::indexing::host::volumes::current().get(volume_id) else {
         return; // share unmounted; the freshness layer will flip it Stale
@@ -380,7 +374,6 @@ fn apply_one_change(volume_id: &str, writer: &IndexWriter, parent_path: &Path, c
 /// earlier change still holds in the writer's uncommitted batch, so a rename
 /// right behind its create (every write to a phone, which stages and renames)
 /// upserted the final name and left the staging row behind for good.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn send_change(writer: &IndexWriter, parent_rel: String, change: DirectoryChange) {
     let resolve = move |conn: &rusqlite::Connection| {
         resolve_change(conn, &parent_rel, &change).map_or_else(Vec::new, ResolvedWrite::into_messages)
@@ -416,7 +409,6 @@ pub fn resolve_and_send_for_test(
 /// Discard any buffered mid-scan changes for a volume without replaying them.
 /// Called when a scan is interrupted/discarded (D-interrupted): the partial index
 /// is reset to gray, so its buffered changes are meaningless.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) fn discard_buffered_changes(volume_id: &str) {
     SCAN_CHANGE_BUFFER.lock_ignore_poison().remove(volume_id);
 }

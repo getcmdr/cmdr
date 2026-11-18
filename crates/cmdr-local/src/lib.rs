@@ -7,7 +7,8 @@
 #![warn(unreachable_pub)]
 #![deny(missing_docs)]
 
-//! The local disk: [`LocalPosixVolume`], the `Volume` over a `std::fs` root, and
+//! The local disk: `LocalPosixVolume` on macOS and Linux and its sibling
+//! `LocalWindowsVolume` on Windows (`platform/`), the `Volume` over a `std::fs` root, and
 //! the OS probes it and the app read local disks through.
 //!
 //! A storage backend as its own crate, like every other one. Everything it can't
@@ -39,7 +40,7 @@
 use cmdr_local as _;
 //noinspection RsUnusedImport
 // Read by one space cell, which only the macOS test build compiles.
-#[cfg(all(test, target_os = "linux"))]
+#[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
 use dirs as _;
 
 /// Whether this build takes the test fast paths: space from `statvfs` rather than
@@ -70,9 +71,13 @@ pub mod space;
 #[cfg(target_os = "macos")]
 pub mod statfs;
 
-mod local_posix;
+mod platform;
+mod rename;
 
-pub use local_posix::{LocalPosixVolume, rename_local_exclusive, rename_volume_error};
+// This OS's local volume (`LocalPosixVolume` or `LocalWindowsVolume`) and the no-replace
+// rename; `platform/mod.rs` picks them.
+pub use platform::*;
+pub use rename::rename_volume_error;
 
 #[cfg(test)]
 mod local_posix_conformance_test;
@@ -84,6 +89,10 @@ mod local_posix_link_test;
 mod local_posix_resume_test;
 #[cfg(test)]
 mod local_posix_test;
+#[cfg(test)]
+mod local_windows_conformance_test;
+#[cfg(test)]
+mod local_windows_test;
 #[cfg(test)]
 mod reading_parity_test;
 #[cfg(test)]

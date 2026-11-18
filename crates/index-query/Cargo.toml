@@ -19,8 +19,6 @@ rusqlite = { version = "0.42", features = ["bundled", "collation"] }
 # the first in its own process (so the shared-page-cache factory has nothing to
 # protect here). The check runner reads this key.
 kind = "tool"
-# Not on Windows yet; see `docs/tooling/ci.md` § Windows lane.
-platforms = ["linux", "macos"]
 
 # Deliberately NOT `workspace = true` (the house set denies `print_stdout`, and
 # stdout is this tool's output). The empty table says so to cargo, which warns

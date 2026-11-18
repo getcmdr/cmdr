@@ -1,5 +1,7 @@
 //! Tests for LocalPosixVolume.
 
+#![cfg(unix)]
+
 use super::*;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::testing::TestDir;

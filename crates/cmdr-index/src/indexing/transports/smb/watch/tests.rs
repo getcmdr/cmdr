@@ -384,7 +384,6 @@ fn a_renamed_folder_keeps_its_children() {
 /// `adb_index_test::a_cmdr_copy_onto_a_phone_and_a_delete_on_it_patch_its_index`).
 /// The explicit transaction holds the create uncommitted, which is the window a
 /// busy writer leaves open at random.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 #[test]
 fn a_rename_right_behind_its_create_moves_the_row_the_create_made() {
     let (conn, dir) = seed_index();
@@ -490,7 +489,6 @@ fn join_rel_normalizes_the_separator() {
 
 // ── Mid-scan buffer mechanics (the pre-arm-before-snapshot buffer) ─────
 
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 #[test]
 fn buffer_accumulates_then_discard_clears_it() {
     let vid = "smb-buffer-discard-test";
@@ -514,7 +512,6 @@ fn buffer_accumulates_then_discard_clears_it() {
     );
 }
 
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 #[test]
 fn buffer_overflow_sets_the_flag_and_stops_growing() {
     let vid = "smb-buffer-overflow-test";

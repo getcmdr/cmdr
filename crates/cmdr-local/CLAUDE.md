@@ -1,14 +1,15 @@
 # cmdr-local
 
-The local disk: `LocalPosixVolume` (the `Volume` over a `std::fs` root), the local reader, the one no-replace rename,
-local volume space, and the mount probes. Tauri-free; the app builds every local volume with its `VolumeHost`.
+The local disk: `LocalPosixVolume` (the `Volume` over a `std::fs` root) and its Windows sibling `LocalWindowsVolume`,
+the local reader, the one no-replace rename, local volume space, and the mount probes. Tauri-free; the app builds every
+local volume with its `VolumeHost`.
 
 ## Module map
 
-- **local_posix.rs** (the struct, the rename primitive, the query and mutation half of `impl Volume`), with
-  **local_posix/scan.rs** (the copy-scan family), **local_posix/streams.rs** (bytes in and out), and
-  **local_posix/links.rs** (reading and landing a symlink, `DETAILS.md` § "Landing a link"). A trait impl can't span
-  files, so a moved method stays a one-line delegation to a `pub(super)` inherent body.
+- **platform/** picks the volume per OS family: **local_posix.rs** (macOS, Linux; the struct, the rename primitive, the
+  query and mutation half of `impl Volume`) with **local_posix/** (`scan`, `streams`, `links`; a trait impl can't span
+  files, so a moved method stays a one-line delegation), and **local_windows.rs** (Windows) with **local_windows/**
+  (`paths`, the one app-path to `\\?\` crossing, and `rename`). DETAILS § "The Windows sibling".
 - **reading.rs** (the local reader the watcher and `tags.rs` read through too; `read_dir` + `lstat`) with
   **reading/bulk.rs** (macOS: the `getattrlistbulk` lister APFS and HFS+ take), **mutation.rs** (the listing patch a
   local mutation sends), **space.rs** + **live_space.rs**, and the OS probes: **filesystem_kind.rs**,
@@ -20,6 +21,8 @@ local volume space, and the mount probes. Tauri-free; the app builds every local
 - **It reaches the app only through its `VolumeHost`** (`host.listings()`: pane patches, watch coverage, name order), a
   required constructor argument. ❌ Never default it to `VolumeHost::detached()` in production: the scan oracle's fast
   path turns off and panes go stale after every local copy. ❌ Never depend on `cmdr-listing` or the app.
+- **❗ On Windows, `std::fs::rename` REPLACES**: forced path only. Paths there are app paths (`C:/x`), reaching the OS
+  only via `local_windows/paths.rs`; ❌ no `root_anchored` or `Path::join` on them (#1225).
 - **`rename_local_exclusive` is the ONE no-replace rename**, and it degrades on a filesystem with no kernel flag (smbfs
   answers `ENOTSUP`). ❌ Never write a second `renamex_np` call: while `overwrite::rename_no_replace` was a separate
   copy, only it degraded, and every rename on a mounted SMB share failed (ERR-8RFN4). DETAILS § "Local renames are

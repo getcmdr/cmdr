@@ -48,29 +48,24 @@ pub(super) enum NetworkScanMode {
 /// dispatching to the right per-backend buffer (SMB `CHANGE_NOTIFY` vs. MTP PTP
 /// events). Returns whether the volume stays Fresh (false ⇒ overflow forced
 /// Stale). `Local` never reaches here (the guarded-walker path), so it's a trivially-Fresh
-/// no-op. The buffers are macOS/Linux-only (the only `Volume`-trait backends).
+/// no-op.
 fn replay_buffered_changes_for_kind(kind: IndexVolumeKind, volume_id: &str) -> bool {
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
     match kind {
         // ADB has no watcher, but Cmdr's own writes to a phone arrive through the
         // same directory-change translation SMB's watcher feeds, so a write that
         // lands mid-scan waits in the same buffer.
         IndexVolumeKind::Smb | IndexVolumeKind::Adb => {
-            return crate::indexing::transports::smb::watch::replay_buffered_changes(volume_id);
+            crate::indexing::transports::smb::watch::replay_buffered_changes(volume_id)
         }
-        IndexVolumeKind::Mtp => return crate::indexing::transports::mtp::watch::replay_buffered_mtp_changes(volume_id),
+        IndexVolumeKind::Mtp => crate::indexing::transports::mtp::watch::replay_buffered_mtp_changes(volume_id),
         // Local-scanner kinds take the guarded-walker path and never buffer network changes.
-        IndexVolumeKind::Local | IndexVolumeKind::LocalExternal => {}
+        IndexVolumeKind::Local | IndexVolumeKind::LocalExternal => true,
     }
-    #[cfg(target_os = "windows")]
-    let _ = (kind, volume_id);
-    true
 }
 
 /// Discard the live-watcher buffer for an interrupted scan (D-interrupted),
 /// dispatching by backend. Mirrors `replay_buffered_changes_for_kind`.
 fn discard_buffered_changes_for_kind(kind: IndexVolumeKind, volume_id: &str) {
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
     match kind {
         IndexVolumeKind::Smb | IndexVolumeKind::Adb => {
             crate::indexing::transports::smb::watch::discard_buffered_changes(volume_id);
@@ -79,8 +74,6 @@ fn discard_buffered_changes_for_kind(kind: IndexVolumeKind, volume_id: &str) {
         // Local-scanner kinds take the guarded-walker path and never buffer network changes.
         IndexVolumeKind::Local | IndexVolumeKind::LocalExternal => {}
     }
-    #[cfg(target_os = "windows")]
-    let _ = (kind, volume_id);
 }
 
 impl IndexManager {

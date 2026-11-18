@@ -11,6 +11,8 @@
 //! Every cell runs once per [`Lister`], so a second lister is proven by adding it
 //! to [`LISTERS`], with no cell edited.
 
+#![cfg(unix)]
+
 use cmdr_fs::testing::symlink;
 use std::collections::HashSet;
 use std::ffi::CString;

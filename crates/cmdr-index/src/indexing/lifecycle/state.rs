@@ -62,7 +62,6 @@ mod walk_database;
 
 pub use auto_start::{should_auto_start, should_auto_start_indexing};
 pub(crate) use freshness_bridge::{apply_freshness_event, bump_current_epoch_for, get_freshness};
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) use queries::registered_mtp_volume_ids_for_device;
 pub(crate) use queries::{
     all_registered_volume_ids, awaits_its_first_scan, index_failure, is_active_and_staying, is_being_torn_down,
@@ -85,7 +84,6 @@ pub(crate) use startup::record_drive_index_enabled;
 pub use startup::start_indexing;
 pub(in crate::indexing::lifecycle) use startup::start_indexing_for;
 pub(crate) use startup::{Activation, StartRequest};
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) use startup::{
     start_indexing_for_adb_inner, start_indexing_for_local_external_inner, start_indexing_for_mtp_inner,
     start_indexing_for_smb_inner,
