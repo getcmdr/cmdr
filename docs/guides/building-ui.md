@@ -25,6 +25,9 @@ don't add a focus trap yourself: the primitive already does all of it.
 - Add it to the dialog gallery: Debug > Soft dialogs lists every registered soft dialog and opens it with fixture data,
   which is how the dialogs get design-reviewed. A new dialog needs a row (enforced by the `dialog-gallery-coverage`
   check); see `apps/desktop/src/lib/dialog-gallery/CLAUDE.md`.
+- Decide what Return does, on purpose: mark the default button with `Button`'s `isDefault` (none where people should
+  read first), and ❌ never focus a safe answer just so Enter is safe. The platform conventions decide the rest:
+  `apps/desktop/src/lib/ui/DETAILS.md` § Platform conventions, with the per-dialog table to add yours to.
 - Details and gotchas: `apps/desktop/src/lib/ui/CLAUDE.md` and its `DETAILS.md`.
 
 **Asking for a credential? Use the one sign-in sheet**, `apps/desktop/src/lib/servers/SignInSheet.svelte`, opened

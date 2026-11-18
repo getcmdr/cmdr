@@ -86,9 +86,9 @@ dialog buttons like macOS, KDE like Windows.
 
 - **Source of truth**: `PlatformConventions` in `apps/desktop/src-tauri/src/platform/conventions.rs`, one typed enum per
   question: `dialogButtonOrder` (`cancelFirst` | `affirmativeFirst`), `enterActivates` (`defaultButton` |
-  `focusedButton`), `cancelKeys` (`escape` | `escapeOrCommandPeriod`), `accessKeys` (`none` | `alt`), `menuModel`
-  (`systemMenuBar` | `windowMenuBar`), `screenReaders` (most used first), and `linuxDesktop` (`gnome` | `kde` | `other`,
-  `null` off Linux). Each value and its guideline, with dates and what stayed unverified:
+  `focusedButton`), `cancelKeys` (`escape` | `escapeOrCommandPeriod`), `accessKeys` (`none` | `keytips` | `underlines`),
+  `menuModel` (`systemMenuBar` | `windowMenuBar`), `screenReaders` (most used first), and `linuxDesktop` (`gnome` |
+  `kde` | `other`, `null` off Linux). Each value and its guideline, with dates and what stayed unverified:
   `docs/notes/windows-port/platform-conventions.md`.
 - **One table, five rows**: `conventions_on(Desktop)` answers macOS, Windows, and each Linux desktop in one `match`,
   compiled on every target; each OS arm (`macos.rs`, `windows.rs`, `linux/mod.rs`) only picks its row, Linux by the
@@ -105,9 +105,10 @@ dialog buttons like macOS, KDE like Windows.
   and not listed), else the fallback's, so a primitive never meets a value it has no branch for.
 - **Tests**: `withConventions('kde')` sets a desktop's real row, `withConventions('gnome', { accessKeys: 'none' })` one
   field on top. It moves neither the platform nor the capabilities, the same split as `withPlatform()`.
-- **What asks**: `ModalDialog` reads `dialogButtonOrder` and `accessKeys` (`../ui/DETAILS.md` § Platform conventions);
-  `enterActivates` and `cancelKeys` wait on a decision there, since the macOS row differs from today's Mac behavior. The
-  Windows theme (task 60), the menu model (63), and the screen reader pass (64) will read the rest.
+- **What asks**: `ModalDialog` reads `dialogButtonOrder`, `enterActivates`, `cancelKeys`, and `accessKeys`
+  (`../ui/DETAILS.md` § Platform conventions, through `../ui/dialog-keys.ts`), and so do the dialogs whose safe answer
+  takes focus only where Return presses the focused button. The Windows theme (task 60), the menu model (63), and the
+  screen reader pass (64) will read the rest.
 - **Seeing another desktop's row**: `CMDR_MOCK_CONVENTIONS=windows pnpm dev` (or `gnome`, `kde`, `otherLinux`, `macos`;
   debug builds only, `mock_conventions` in `conventions.rs`) hands every webview that row instead, which moves neither
   the platform nor the capabilities.
