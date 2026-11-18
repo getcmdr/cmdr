@@ -6,7 +6,9 @@
 //! join the identifier onto `dirs::data_dir()`, and [`super::app_cache_dir`] onto
 //! `dirs::cache_dir()`. So the table runs against [`model`], a model of what `dirs` reads on
 //! each OS, and [`the_model_is_what_dirs_answers_on_this_host`] pins the model to the real
-//! `dirs` on whatever OS runs the tests (macOS locally, Linux and Windows in CI).
+//! `dirs` on whatever OS runs the tests: macOS locally, macOS and Linux in CI. Nothing runs the
+//! Rust tests on Windows yet (the Windows lane only compiles), so the Windows rows are held to
+//! the model alone until one does.
 
 use std::collections::HashMap;
 
