@@ -278,7 +278,7 @@
         <SettingRow
             id="ai.cloudProvider"
             label={tString('settings.ai.cloudProvider.label')}
-            description={tString('settings.ai.cloudProvider.description')}
+            description=""
             split
             {searchQuery}
         >

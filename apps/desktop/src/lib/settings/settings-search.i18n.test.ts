@@ -64,13 +64,11 @@ describe('other scripts', () => {
   })
 
   it('allows no typo in a CJK query', () => {
-    // The macOS description is the translated one; off macOS it reads English until translated.
-    onTestFinished(withPlatform('macos'))
     clearSearchIndex()
     void setLocale('zh')
-    // The zh description says `选择 Cmdr 使用的语言`; one character off is a different phrase.
-    expect(ids('使用的语言')).toContain('appearance.language')
-    expect(ids('使用的语文')).toEqual([])
+    // The zh description says `方便逐行查看`; one character off is a different phrase.
+    expect(ids('方便逐行查看')).toContain('listing.stripedRows')
+    expect(ids('方便逐列查看')).toEqual([])
   })
 })
 

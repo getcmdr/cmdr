@@ -14,7 +14,6 @@ export const viewerSettings: SettingDefinitionSource[] = [
     mcpAskFree: true,
     section: ['Viewer'],
     labelKey: 'settings.viewer.wordWrap.label',
-    descriptionKey: 'settings.viewer.wordWrap.description',
     keywordsKey: 'settings.viewer.wordWrap.keywords',
     type: 'boolean',
     default: false,
@@ -26,6 +25,7 @@ export const viewerSettings: SettingDefinitionSource[] = [
     section: ['Viewer'],
     labelKey: 'settings.viewer.showTextCursor.label',
     descriptionKey: 'settings.viewer.showTextCursor.description',
+    descriptionInTip: true,
     keywordsKey: 'settings.viewer.showTextCursor.keywords',
     type: 'boolean',
     // Off by design: the viewer is for looking at a file, not editing one, so a

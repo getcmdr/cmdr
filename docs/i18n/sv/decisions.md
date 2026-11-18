@@ -71,7 +71,7 @@ bundle), Microsoft, file managers, the catalog.
   pronoun-free form (`finns inte som verktyg`); a folder insert takes its noun
   (`hur viktig mappen <place>…</place> är`); stopped answer → `Stoppat` (agrees with `svaret`).
 
-## Ask Cmdr names only the chat panel (`askCmdr.wake.needsFullDiskAccess`, `settings.ai.tooltipOff`, `settings.ai.provider.description`, `settings.askCmdr.proactive.description`, `ai.cloudConsent.askCmdr.proactive`)
+## Ask Cmdr names only the chat panel (`askCmdr.wake.needsFullDiskAccess`, `settings.ai.tooltipOff`, `settings.askCmdr.proactive.description`, `ai.cloudConsent.askCmdr.proactive`)
 
 - `Ask Cmdr` only where the key's current English keeps it; else `Cmdr` / `AI:n`. `chatt` / `samtal` follow each key's
   chat / conversation. `needsFullDiskAccess` copies `search.coverage.setUpFullDiskAccess`, as `@key` requires.

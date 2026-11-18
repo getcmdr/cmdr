@@ -3,10 +3,6 @@
   "@settings.appearance.language.label": {
     "sourceHash": "a4fe652"
   },
-  "settings.appearance.language.description": "{platform, select, macos {Elige el idioma que usa Cmdr. “Por omisión del sistema” sigue el idioma de tu Mac.} windows {Elige el idioma que usa Cmdr. “Por omisión del sistema” sigue el idioma de visualización de Windows.} other {Elige el idioma que usa Cmdr. “Por omisión del sistema” sigue el idioma de tu sistema.}}",
-  "@settings.appearance.language.description": {
-    "sourceHash": "7ca0276"
-  },
   "settings.appearance.language.opt.system": "Por omisión del sistema",
   "@settings.appearance.language.opt.system": {
     "sourceHash": "b045921"
@@ -172,10 +168,6 @@
   "@settings.appearance.tintLocal.label": {
     "sourceHash": "d907724"
   },
-  "settings.appearance.tintLocal.description": "Tinte de fondo aplicado a los paneles que muestran una unidad local.",
-  "@settings.appearance.tintLocal.description": {
-    "sourceHash": "3c86b48"
-  },
   "settings.appearance.tintLocal.keywords": "tinte, teñir, panel, color, volumen, local, disco, fondo, resaltar",
   "@settings.appearance.tintLocal.keywords": {
     "sourceHash": "955fcd6"
@@ -183,10 +175,6 @@
   "settings.appearance.tintSmb.label": "Teñir paneles de servidor (SMB, SFTP, WebDAV, S3)",
   "@settings.appearance.tintSmb.label": {
     "sourceHash": "d912bcf"
-  },
-  "settings.appearance.tintSmb.description": "Tinte de fondo aplicado a los paneles que muestran un recurso compartido SMB, un servidor SFTP, un servidor WebDAV o almacenamiento S3.",
-  "@settings.appearance.tintSmb.description": {
-    "sourceHash": "bddee40"
   },
   "settings.appearance.tintSmb.keywords": "tinte, teñir, panel, color, volumen, servidor, red, remoto, fondo, resaltar",
   "@settings.appearance.tintSmb.keywords": {
@@ -219,10 +207,6 @@
   "settings.appearance.uiDensity.label": "Densidad de la interfaz",
   "@settings.appearance.uiDensity.label": {
     "sourceHash": "81344d8"
-  },
-  "settings.appearance.uiDensity.description": "Controla el espaciado y el tamaño de los elementos de la interfaz en toda la app.",
-  "@settings.appearance.uiDensity.description": {
-    "sourceHash": "e7ead7a"
   },
   "settings.appearance.uiDensity.opt.compact": "Compacta",
   "@settings.appearance.uiDensity.opt.compact": {
@@ -381,10 +365,6 @@
   "@settings.listing.foldersFirst.label": {
     "sourceHash": "a61d73e"
   },
-  "settings.listing.foldersFirst.description": "Muestra las carpetas encima de los archivos en la lista. Si lo desactivas, carpetas y archivos se mezclan.",
-  "@settings.listing.foldersFirst.description": {
-    "sourceHash": "8505ff3"
-  },
   "settings.listing.foldersFirst.keywords": "ordenar, orden, directorio, directorios, carpeta, carpetas, primero, arriba, mezclado, lista, listado",
   "@settings.listing.foldersFirst.keywords": {
     "sourceHash": "c4f9de2"
@@ -404,10 +384,6 @@
   "settings.listing.directorySortMode.label": "Ordenar carpetas",
   "@settings.listing.directorySortMode.label": {
     "sourceHash": "7d0b088"
-  },
-  "settings.listing.directorySortMode.description": "Cómo se ordenan las carpetas al cambiar la columna de ordenación.",
-  "@settings.listing.directorySortMode.description": {
-    "sourceHash": "797d93b"
   },
   "settings.listing.directorySortMode.disabledReason": "Desactivado por ahora, porque las carpetas se mezclan con los archivos. Activa “Mostrar carpetas primero” para usar este ajuste.",
   "@settings.listing.directorySortMode.disabledReason": {
@@ -1150,10 +1126,6 @@
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label": {
     "sourceHash": "911b74b"
   },
-  "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": "{platform, select, macos {Cómo avisarte cuando a tu disco de arranque le queda poco espacio libre.} windows {Cómo avisarte cuando a tu unidad de sistema le queda poco espacio libre.} other {Cómo avisarte cuando a tu disco del sistema le queda poco espacio libre.}}",
-  "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": {
-    "sourceHash": "07714d7"
-  },
   "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": "En la app",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": {
     "sourceHash": "a2de156"
@@ -1199,10 +1171,6 @@
   "@settings.ai.provider.label": {
     "sourceHash": "472590a"
   },
-  "settings.ai.provider.description": "Elige cómo se impulsan las funciones de IA.",
-  "@settings.ai.provider.description": {
-    "sourceHash": "f8c0f5d"
-  },
   "settings.ai.provider.opt.off": "Desactivado",
   "@settings.ai.provider.opt.off": {
     "sourceHash": "ca7981b"
@@ -1238,10 +1206,6 @@
   "settings.ai.cloudConsent.keywords": "consentimiento, privacidad, permitir, enviar, datos, nube, IA",
   "@settings.ai.cloudConsent.keywords": {
     "sourceHash": "c0a0566"
-  },
-  "settings.ai.cloudProvider.description": "Qué servicio de IA en la nube usar.",
-  "@settings.ai.cloudProvider.description": {
-    "sourceHash": "3300ce9"
   },
   "settings.ai.cloudProvider.keywords": "nube, proveedor, servicio, personalizado",
   "@settings.ai.cloudProvider.keywords": {
@@ -1302,10 +1266,6 @@
   "settings.network.enabled.label": "{platform, select, windows {Activar la red} other {Activar la red}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
-  },
-  "settings.network.enabled.description": "{platform, select, macos {Descubre servidores SMB en tu red local y conéctate a ellos. Cuando está desactivado, Cmdr puede seguir leyendo y escribiendo archivos en recursos compartidos ya montados, pero no le pedirá a macOS acceso a la red local.} windows {Descubre servidores SMB en tu red local y conéctate a ellos. Cuando está desactivado, Cmdr puede seguir leyendo y escribiendo archivos en recursos compartidos ya montados, y Windows no te pedirá que dejes pasar a Cmdr por el firewall.} other {Descubre servidores SMB en tu red local y conéctate a ellos. Cuando está desactivado, Cmdr puede seguir leyendo y escribiendo archivos en recursos compartidos ya montados.}}",
-  "@settings.network.enabled.description": {
-    "sourceHash": "6994272"
   },
   "settings.network.enabled.keywords": "red, activar, activado, habilitar, descubrimiento, detección, local, permiso",
   "@settings.network.enabled.keywords": {
@@ -1452,10 +1412,6 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
-  "settings.fileOperations.adbEnabled.description": "{platform, select, macos {Accede a todo el sistema de archivos de un teléfono Android que tenga activada la depuración por USB, algo que MTP no puede mostrarte. Necesita las herramientas de plataforma de Android (el comando “adb”) en este Mac. Dejar esto activado no cuesta nada si no tienes herramientas de Android instaladas.} windows {Accede a todo el sistema de archivos de un teléfono Android que tenga activada la depuración por USB, algo que MTP no puede mostrarte. Necesita las herramientas de plataforma de Android (el comando “adb”) en este PC. Dejar esto activado no cuesta nada si no tienes herramientas de Android instaladas.} other {Accede a todo el sistema de archivos de un teléfono Android que tenga activada la depuración por USB, algo que MTP no puede mostrarte. Necesita las herramientas de plataforma de Android (el comando “adb”) en este ordenador. Dejar esto activado no cuesta nada si no tienes herramientas de Android instaladas.}}",
-  "@settings.fileOperations.adbEnabled.description": {
-    "sourceHash": "4c92b52"
-  },
   "settings.fileOperations.adbEnabled.keywords": "depuración por USB, opciones para desarrolladores, opciones de desarrollo, teléfono, móvil, dispositivo",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1524,10 +1480,6 @@
   "@settings.viewer.wordWrap.label": {
     "sourceHash": "9e210f3"
   },
-  "settings.viewer.wordWrap.description": "Ajusta las líneas largas al borde de la ventana en el visor de archivos en lugar de desplazarte horizontalmente.",
-  "@settings.viewer.wordWrap.description": {
-    "sourceHash": "8a87bd2"
-  },
   "settings.viewer.wordWrap.keywords": "visor, ajuste de línea, ajustar, palabra, línea, horizontal, desplazamiento, desplazar",
   "@settings.viewer.wordWrap.keywords": {
     "sourceHash": "5d0a24b"
@@ -1584,10 +1536,6 @@
   "@settings.updates.autoCheck.label": {
     "sourceHash": "409e6a1"
   },
-  "settings.updates.autoCheck.description": "Busca nuevas versiones periódicamente en segundo plano.",
-  "@settings.updates.autoCheck.description": {
-    "sourceHash": "1ff0b1a"
-  },
   "settings.updates.autoCheck.keywords": "actualización, actualizar, automático, comprobar, buscar, versión, segundo plano",
   "@settings.updates.autoCheck.keywords": {
     "sourceHash": "091ca30"
@@ -1624,10 +1572,6 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
-  "settings.analytics.enabled.description": "{platform, select, windows {Actívalo para ayudarnos a ver qué funciones importan durante la beta abierta.\nLas estadísticas no se vinculan a tu nombre ni a tu correo, sino a un identificador aleatorio.\nCmdr nunca envía nombres de archivo, rutas, términos de búsqueda ni prompts.\nSi está desactivado, Cmdr no envía ninguna estadística.} other {Actívalo para ayudarnos a ver qué funciones importan durante la beta abierta.\nLas estadísticas no se vinculan a tu nombre ni a tu correo, sino a un identificador aleatorio.\nCmdr nunca envía nombres de archivo, rutas, términos de búsqueda ni prompts.\nSi está desactivado, Cmdr no envía ninguna estadística.}}",
-  "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
-  },
   "settings.analytics.enabled.keywords": "estadísticas, analíticas, uso, privacidad, telemetría, beta, seguimiento, rastreo, desactivar",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1635,10 +1579,6 @@
   "settings.analytics.email.label": "Correo de contacto de la beta",
   "@settings.analytics.email.label": {
     "sourceHash": "71e5c9a"
-  },
-  "settings.analytics.email.description": "Ejemplo: you@example.com",
-  "@settings.analytics.email.description": {
-    "sourceHash": "03574f9"
   },
   "settings.analytics.email.keywords": "correo, correo electrónico, email, beta, contacto, boletín, novedades, encuesta",
   "@settings.analytics.email.keywords": {
@@ -1743,10 +1683,6 @@
   "settings.advanced.indexPauseFreeSpacePercent.label": "Pausar la indexación si el espacio libre baja del (%)",
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
-  },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "{platform, select, macos {Cmdr pausa la indexación de unidades cuando el espacio libre de tu disco de arranque baja de este porcentaje, para que el índice no ocupe el espacio que necesitan tus propios archivos. La indexación sigue donde se quedó en cuanto el espacio libre sube un punto por encima. Funciona tanto si el “Aviso de poco espacio en disco” está activado como si no.} windows {Cmdr pausa la indexación de unidades cuando el espacio libre de tu unidad de sistema baja de este porcentaje, para que el índice no ocupe el espacio que necesitan tus propios archivos. La indexación sigue donde se quedó en cuanto el espacio libre sube un punto por encima. Funciona tanto si el “Aviso de poco espacio en disco” está activado como si no.} other {Cmdr pausa la indexación de unidades cuando el espacio libre de tu disco del sistema baja de este porcentaje, para que el índice no ocupe el espacio que necesitan tus propios archivos. La indexación sigue donde se quedó en cuanto el espacio libre sube un punto por encima. Funciona tanto si el “Aviso de poco espacio en disco” está activado como si no.}}",
-  "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "bb41d41"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "disco, espacio, lleno, libre, índice, indexación, pausa, almacenamiento, umbral, porcentaje, por ciento, poco espacio",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -1952,10 +1888,6 @@
   "@settings.advanced.mountTimeout.label": {
     "sourceHash": "b5bce4f"
   },
-  "settings.advanced.mountTimeout.description": "Tiempo de espera para montar recursos compartidos de red.",
-  "@settings.advanced.mountTimeout.description": {
-    "sourceHash": "3da30e1"
-  },
   "settings.advanced.mountTimeout.keywords": "montar, montaje, tiempo de espera, red, recurso compartido",
   "@settings.advanced.mountTimeout.keywords": {
     "sourceHash": "3327884"
@@ -2075,10 +2007,6 @@
   "settings.advanced.updateCheckInterval.label": "Intervalo de búsqueda de actualizaciones",
   "@settings.advanced.updateCheckInterval.label": {
     "sourceHash": "91912bc"
-  },
-  "settings.advanced.updateCheckInterval.description": "Con qué frecuencia se buscan actualizaciones en segundo plano.",
-  "@settings.advanced.updateCheckInterval.description": {
-    "sourceHash": "2bdd38a"
   },
   "settings.advanced.updateCheckInterval.keywords": "actualización, actualizar, intervalo, frecuencia, segundo plano, comprobar",
   "@settings.advanced.updateCheckInterval.keywords": {
@@ -2697,10 +2625,6 @@
   "@settings.operationLog.maxAge.label": {
     "sourceHash": "ca05015"
   },
-  "settings.operationLog.maxAge.description": "Cuánto tiempo conserva Cmdr las operaciones registradas antes de eliminar automáticamente las más antiguas.",
-  "@settings.operationLog.maxAge.description": {
-    "sourceHash": "7d35887"
-  },
   "settings.operationLog.maxAge.opt.forever": "Para siempre",
   "@settings.operationLog.maxAge.opt.forever": {
     "sourceHash": "55f980c"
@@ -3210,10 +3134,6 @@
   "settings.securityLog.enabled.label": "Registrar eventos de seguridad",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
-  },
-  "settings.securityLog.enabled.description": "{platform, select, macos {Guarda en este Mac un pequeño archivo que anota los cambios y rechazos relacionados con la seguridad, como el consentimiento para la IA en la nube, una actualización instalada o una app rechazada por el servidor MCP. No contiene nombres de archivo, contenidos ni contraseñas, y nunca sale de tu Mac.} windows {Guarda en este PC un pequeño archivo que anota los cambios y rechazos relacionados con la seguridad, como el consentimiento para la IA en la nube, una actualización instalada o una app rechazada por el servidor MCP. No contiene nombres de archivo, contenidos ni contraseñas, y nunca sale de tu PC.} other {Guarda en este ordenador un pequeño archivo que anota los cambios y rechazos relacionados con la seguridad, como el consentimiento para la IA en la nube, una actualización instalada o una app rechazada por el servidor MCP. No contiene nombres de archivo, contenidos ni contraseñas, y nunca sale de tu ordenador.}}",
-  "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
   },
   "settings.securityLog.enabled.keywords": "seguridad, registro, auditoría, grabar, eventos, acceso, privacidad",
   "@settings.securityLog.enabled.keywords": {

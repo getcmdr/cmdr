@@ -3,10 +3,6 @@
   "@settings.appearance.language.label": {
     "sourceHash": "a4fe652"
   },
-  "settings.appearance.language.description": "{platform, select, macos {Kies de taal die Cmdr gebruikt. ‘Systeemstandaard’ volgt de taal van je Mac.} windows {Kies de taal die Cmdr gebruikt. ‘Systeemstandaard’ volgt je Windows-weergavetaal.} other {Kies de taal die Cmdr gebruikt. ‘Systeemstandaard’ volgt de taal van je systeem.}}",
-  "@settings.appearance.language.description": {
-    "sourceHash": "7ca0276"
-  },
   "settings.appearance.language.opt.system": "Systeemstandaard",
   "@settings.appearance.language.opt.system": {
     "sourceHash": "b045921"
@@ -172,10 +168,6 @@
   "@settings.appearance.tintLocal.label": {
     "sourceHash": "d907724"
   },
-  "settings.appearance.tintLocal.description": "Achtergrondtint voor panelen die een lokale schijf tonen.",
-  "@settings.appearance.tintLocal.description": {
-    "sourceHash": "3c86b48"
-  },
   "settings.appearance.tintLocal.keywords": "tint, kleur, paneel, panelen, volume, lokaal, schijf, achtergrond, markeren",
   "@settings.appearance.tintLocal.keywords": {
     "sourceHash": "955fcd6"
@@ -183,10 +175,6 @@
   "settings.appearance.tintSmb.label": "Serverpanelen tinten (SMB, SFTP, WebDAV, S3)",
   "@settings.appearance.tintSmb.label": {
     "sourceHash": "d912bcf"
-  },
-  "settings.appearance.tintSmb.description": "Achtergrondtint voor panelen die een SMB-share, een SFTP-server, een WebDAV-server of S3-opslag tonen.",
-  "@settings.appearance.tintSmb.description": {
-    "sourceHash": "bddee40"
   },
   "settings.appearance.tintSmb.keywords": "tint, kleur, paneel, panelen, volume, server, netwerk, share, achtergrond, markeren",
   "@settings.appearance.tintSmb.keywords": {
@@ -219,10 +207,6 @@
   "settings.appearance.uiDensity.label": "Interfacedichtheid",
   "@settings.appearance.uiDensity.label": {
     "sourceHash": "81344d8"
-  },
-  "settings.appearance.uiDensity.description": "Bepaalt de tussenruimte en grootte van interface-elementen in de hele app.",
-  "@settings.appearance.uiDensity.description": {
-    "sourceHash": "e7ead7a"
   },
   "settings.appearance.uiDensity.opt.compact": "Compact",
   "@settings.appearance.uiDensity.opt.compact": {
@@ -382,10 +366,6 @@
   "@settings.listing.foldersFirst.label": {
     "sourceHash": "a61d73e"
   },
-  "settings.listing.foldersFirst.description": "Toon mappen boven bestanden in de lijst. Zet dit uit om mappen en bestanden door elkaar te tonen.",
-  "@settings.listing.foldersFirst.description": {
-    "sourceHash": "8505ff3"
-  },
   "settings.listing.foldersFirst.keywords": "sorteren, sortering, map, mappen, eerst, bovenaan, gemengd, volgorde, lijst",
   "@settings.listing.foldersFirst.keywords": {
     "sourceHash": "c4f9de2"
@@ -405,10 +385,6 @@
   "settings.listing.directorySortMode.label": "Mappen sorteren",
   "@settings.listing.directorySortMode.label": {
     "sourceHash": "7d0b088"
-  },
-  "settings.listing.directorySortMode.description": "Hoe mappen worden gesorteerd bij het wisselen van sorteerkolom.",
-  "@settings.listing.directorySortMode.description": {
-    "sourceHash": "797d93b"
   },
   "settings.listing.directorySortMode.disabledReason": "Nu uitgeschakeld, omdat mappen en bestanden door elkaar staan. Zet ‘Mappen eerst tonen’ aan om deze instelling in te schakelen.",
   "@settings.listing.directorySortMode.disabledReason": {
@@ -1152,10 +1128,6 @@
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label": {
     "sourceHash": "911b74b"
   },
-  "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": "{platform, select, macos {Hoe je wordt gewaarschuwd wanneer je opstartschijf weinig vrije ruimte heeft.} windows {Hoe je wordt gewaarschuwd wanneer je systeemstation weinig vrije ruimte heeft.} other {Hoe je wordt gewaarschuwd wanneer je systeemschijf weinig vrije ruimte heeft.}}",
-  "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": {
-    "sourceHash": "07714d7"
-  },
   "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": "In de app",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": {
     "sourceHash": "a2de156"
@@ -1201,10 +1173,6 @@
   "@settings.ai.provider.label": {
     "sourceHash": "472590a"
   },
-  "settings.ai.provider.description": "Kies hoe AI-functies worden aangedreven.",
-  "@settings.ai.provider.description": {
-    "sourceHash": "f8c0f5d"
-  },
   "settings.ai.provider.opt.off": "Uit",
   "@settings.ai.provider.opt.off": {
     "sourceHash": "ca7981b"
@@ -1241,10 +1209,6 @@
   "settings.ai.cloudConsent.keywords": "toestemming, privacy, toestaan, versturen, gegevens, data, cloud, ai",
   "@settings.ai.cloudConsent.keywords": {
     "sourceHash": "c0a0566"
-  },
-  "settings.ai.cloudProvider.description": "Welke cloud-AI-service Cmdr gebruikt.",
-  "@settings.ai.cloudProvider.description": {
-    "sourceHash": "3300ce9"
   },
   "settings.ai.cloudProvider.keywords": "cloud, aanbieder, service, dienst, aangepast",
   "@settings.ai.cloudProvider.keywords": {
@@ -1305,10 +1269,6 @@
   "settings.network.enabled.label": "{platform, select, windows {Netwerk inschakelen} other {Netwerk inschakelen}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
-  },
-  "settings.network.enabled.description": "{platform, select, macos {Ontdek SMB-servers in je lokale netwerk en maak er verbinding mee. Wanneer dit uit staat, kan Cmdr nog steeds bestanden lezen en schrijven op al aangekoppelde shares, maar vraagt het macOS niet om toegang tot Lokaal netwerk.} windows {Ontdek SMB-servers in je lokale netwerk en maak er verbinding mee. Wanneer dit uit staat, kan Cmdr nog steeds bestanden lezen en schrijven op al aangekoppelde shares, en vraagt Windows niet of Cmdr door de firewall mag.} other {Ontdek SMB-servers in je lokale netwerk en maak er verbinding mee. Wanneer dit uit staat, kan Cmdr nog steeds bestanden lezen en schrijven op al aangekoppelde shares.}}",
-  "@settings.network.enabled.description": {
-    "sourceHash": "6994272"
   },
   "settings.network.enabled.keywords": "netwerk, inschakelen, ingeschakeld, detectie, lokaal netwerk, toestemming, bevoegdheid",
   "@settings.network.enabled.keywords": {
@@ -1454,10 +1414,6 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
-  "settings.fileOperations.adbEnabled.description": "{platform, select, macos {Krijg toegang tot het hele bestandssysteem van een Android-telefoon waarop USB-foutopsporing is ingeschakeld, iets wat MTP je niet kan laten zien. Hiervoor heb je de Android platform tools (de opdracht ‘adb’) op deze Mac nodig. Het kost niets om dit ingeschakeld te laten als je geen Android-tools hebt geïnstalleerd.} windows {Krijg toegang tot het hele bestandssysteem van een Android-telefoon waarop USB-foutopsporing is ingeschakeld, iets wat MTP je niet kan laten zien. Hiervoor heb je de Android platform tools (de opdracht ‘adb’) op deze pc nodig. Het kost niets om dit ingeschakeld te laten als je geen Android-tools hebt geïnstalleerd.} other {Krijg toegang tot het hele bestandssysteem van een Android-telefoon waarop USB-foutopsporing is ingeschakeld, iets wat MTP je niet kan laten zien. Hiervoor heb je de Android platform tools (de opdracht ‘adb’) op deze computer nodig. Het kost niets om dit ingeschakeld te laten als je geen Android-tools hebt geïnstalleerd.}}",
-  "@settings.fileOperations.adbEnabled.description": {
-    "sourceHash": "4c92b52"
-  },
   "settings.fileOperations.adbEnabled.keywords": "usb-foutopsporing, foutopsporing, ontwikkelaarsopties, ontwikkelaar, telefoon, apparaat",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1526,10 +1482,6 @@
   "@settings.viewer.wordWrap.label": {
     "sourceHash": "9e210f3"
   },
-  "settings.viewer.wordWrap.description": "Laat lange regels teruglopen aan de vensterrand in het weergavevenster in plaats van horizontaal te scrollen.",
-  "@settings.viewer.wordWrap.description": {
-    "sourceHash": "8a87bd2"
-  },
   "settings.viewer.wordWrap.keywords": "weergavevenster, tekstterugloop, terugloop, regel, regels, afbreken, woord, horizontaal, scrollen",
   "@settings.viewer.wordWrap.keywords": {
     "sourceHash": "5d0a24b"
@@ -1586,10 +1538,6 @@
   "@settings.updates.autoCheck.label": {
     "sourceHash": "409e6a1"
   },
-  "settings.updates.autoCheck.description": "Controleer periodiek op de achtergrond op nieuwe versies.",
-  "@settings.updates.autoCheck.description": {
-    "sourceHash": "1ff0b1a"
-  },
   "settings.updates.autoCheck.keywords": "update, updates, bijwerken, automatisch, controleren, versie, achtergrond",
   "@settings.updates.autoCheck.keywords": {
     "sourceHash": "091ca30"
@@ -1626,10 +1574,6 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
-  "settings.analytics.enabled.description": "{platform, select, windows {Zet dit aan om ons te helpen zien welke functies ertoe doen tijdens de open bèta.\nDe statistieken zijn niet gekoppeld aan je naam of e-mailadres, maar aan een willekeurige id.\nCmdr stuurt nooit bestandsnamen, paden, zoektermen of prompts.\nStaat het uit, dan stuurt Cmdr helemaal geen statistieken.} other {Zet dit aan om ons te helpen zien welke functies ertoe doen tijdens de open bèta.\nDe statistieken zijn niet gekoppeld aan je naam of e-mailadres, maar aan een willekeurige id.\nCmdr stuurt nooit bestandsnamen, paden, zoektermen of prompts.\nStaat het uit, dan stuurt Cmdr helemaal geen statistieken.}}",
-  "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
-  },
   "settings.analytics.enabled.keywords": "analyse, gebruik, gebruiksstatistieken, statistieken, privacy, telemetrie, bèta, volgen, tracking, afmelden",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1637,10 +1581,6 @@
   "settings.analytics.email.label": "Contact-e-mail voor de bèta",
   "@settings.analytics.email.label": {
     "sourceHash": "71e5c9a"
-  },
-  "settings.analytics.email.description": "Voorbeeld: jij@voorbeeld.com",
-  "@settings.analytics.email.description": {
-    "sourceHash": "03574f9"
   },
   "settings.analytics.email.keywords": "e-mail, e-mailadres, mail, bèta, contact, nieuwsbrief, updates, enquête",
   "@settings.analytics.email.keywords": {
@@ -1745,10 +1685,6 @@
   "settings.advanced.indexPauseFreeSpacePercent.label": "Indexeren pauzeren bij vrije ruimte onder (%)",
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
-  },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "{platform, select, macos {Cmdr pauzeert het indexeren van schijven wanneer de vrije ruimte op je opstartschijf onder dit percentage zakt, zodat de index niet de ruimte inneemt die je eigen bestanden nodig hebben. Het indexeren gaat verder waar het gebleven was zodra de vrije ruimte één procentpunt hoger ligt. Dit werkt of de ‘Waarschuwing bij weinig schijfruimte’ nu aan of uit staat.} windows {Cmdr pauzeert het indexeren van schijven wanneer de vrije ruimte op je systeemstation onder dit percentage zakt, zodat de index niet de ruimte inneemt die je eigen bestanden nodig hebben. Het indexeren gaat verder waar het gebleven was zodra de vrije ruimte één procentpunt hoger ligt. Dit werkt of de ‘Waarschuwing bij weinig schijfruimte’ nu aan of uit staat.} other {Cmdr pauzeert het indexeren van schijven wanneer de vrije ruimte op je systeemschijf onder dit percentage zakt, zodat de index niet de ruimte inneemt die je eigen bestanden nodig hebben. Het indexeren gaat verder waar het gebleven was zodra de vrije ruimte één procentpunt hoger ligt. Dit werkt of de ‘Waarschuwing bij weinig schijfruimte’ nu aan of uit staat.}}",
-  "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "bb41d41"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "schijf, ruimte, schijfruimte, vol, vrij, index, indexeren, pauze, opslag, drempel, procent, percentage, weinig",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -1955,10 +1891,6 @@
   "@settings.advanced.mountTimeout.label": {
     "sourceHash": "b5bce4f"
   },
-  "settings.advanced.mountTimeout.description": "Time-out voor het aankoppelen van netwerkshares.",
-  "@settings.advanced.mountTimeout.description": {
-    "sourceHash": "3da30e1"
-  },
   "settings.advanced.mountTimeout.keywords": "aankoppelen, koppelen, time-out, netwerk, share, gedeelde map",
   "@settings.advanced.mountTimeout.keywords": {
     "sourceHash": "3327884"
@@ -2078,10 +2010,6 @@
   "settings.advanced.updateCheckInterval.label": "Interval voor updatecontrole",
   "@settings.advanced.updateCheckInterval.label": {
     "sourceHash": "91912bc"
-  },
-  "settings.advanced.updateCheckInterval.description": "Hoe vaak er op de achtergrond op updates wordt gecontroleerd.",
-  "@settings.advanced.updateCheckInterval.description": {
-    "sourceHash": "2bdd38a"
   },
   "settings.advanced.updateCheckInterval.keywords": "update, updates, interval, achtergrond, controleren, hoe vaak",
   "@settings.advanced.updateCheckInterval.keywords": {
@@ -2705,10 +2633,6 @@
   "@settings.operationLog.maxAge.label": {
     "sourceHash": "ca05015"
   },
-  "settings.operationLog.maxAge.description": "Hoe lang Cmdr geregistreerde bewerkingen bewaart voordat de oudste automatisch worden verwijderd.",
-  "@settings.operationLog.maxAge.description": {
-    "sourceHash": "7d35887"
-  },
   "settings.operationLog.maxAge.opt.forever": "Voor altijd",
   "@settings.operationLog.maxAge.opt.forever": {
     "sourceHash": "55f980c"
@@ -3223,10 +3147,6 @@
   "settings.securityLog.enabled.label": "Beveiligingsgebeurtenissen bijhouden",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
-  },
-  "settings.securityLog.enabled.description": "{platform, select, macos {Houd op deze Mac een klein bestand bij met beveiligingsrelevante wijzigingen en weigeringen, zoals toestemming voor cloud-AI, een geïnstalleerde update of een app die de MCP-server heeft geweigerd. Het bestand bevat geen bestandsnamen, inhoud of wachtwoorden en verlaat je Mac nooit.} windows {Houd op deze pc een klein bestand bij met beveiligingsrelevante wijzigingen en weigeringen, zoals toestemming voor cloud-AI, een geïnstalleerde update of een app die de MCP-server heeft geweigerd. Het bestand bevat geen bestandsnamen, inhoud of wachtwoorden en verlaat je pc nooit.} other {Houd op deze computer een klein bestand bij met beveiligingsrelevante wijzigingen en weigeringen, zoals toestemming voor cloud-AI, een geïnstalleerde update of een app die de MCP-server heeft geweigerd. Het bestand bevat geen bestandsnamen, inhoud of wachtwoorden en verlaat je computer nooit.}}",
-  "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
   },
   "settings.securityLog.enabled.keywords": "beveiliging, log, logboek, audit, controle, bijhouden, vastleggen, gebeurtenissen, toegang, privacy",
   "@settings.securityLog.enabled.keywords": {

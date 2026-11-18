@@ -1,8 +1,4 @@
 {
-  "settings.appearance.language.description": "{platform, select, macos {Elige el idioma que usa Cmdr. “Predeterminado del sistema” sigue el idioma de tu Mac.} windows {Elige el idioma que usa Cmdr. “Predeterminado del sistema” sigue el idioma de visualización de Windows.} other {Elige el idioma que usa Cmdr. “Predeterminado del sistema” sigue el idioma de tu sistema.}}",
-  "@settings.appearance.language.description": {
-    "sourceHash": "7e09ac5"
-  },
   "settings.appearance.language.opt.system": "Predeterminado del sistema",
   "@settings.appearance.language.opt.system": {
     "sourceHash": "c8aa231"
@@ -146,10 +142,6 @@
   "settings.fileOperations.mtpEnabled.description": "Detecta y conecta con dispositivos Android y otros a través de un cable USB para explorar archivos y transferirlos. Para usar esta función en un teléfono Android, conviene que uses un cable USB y luego, en el teléfono, vayas a algo como Configuración > Preferencias de USB y configures la conexión como “Transferencia de archivos”, “Android Auto” o similar. (Varía según el dispositivo).",
   "@settings.fileOperations.mtpEnabled.description": {
     "sourceHash": "9aa0651"
-  },
-  "settings.fileOperations.adbEnabled.description": "{platform, select, macos {Accede a todo el sistema de archivos de un teléfono Android que tenga activada la depuración por USB, algo que MTP no puede mostrarte. Necesita las herramientas de plataforma de Android (el comando “adb”) en este Mac. Dejar esto activado no cuesta nada si no tienes herramientas de Android instaladas.} windows {Accede a todo el sistema de archivos de un teléfono Android que tenga activada la depuración por USB, algo que MTP no puede mostrarte. Necesita las herramientas de plataforma de Android (el comando “adb”) en este PC. Dejar esto activado no cuesta nada si no tienes herramientas de Android instaladas.} other {Accede a todo el sistema de archivos de un teléfono Android que tenga activada la depuración por USB, algo que MTP no puede mostrarte. Necesita las herramientas de plataforma de Android (el comando “adb”) en esta computadora. Dejar esto activado no cuesta nada si no tienes herramientas de Android instaladas.}}",
-  "@settings.fileOperations.adbEnabled.description": {
-    "sourceHash": "c18f062"
   },
   "settings.fileOperations.adbBinaryPath.description": "{platform, select, macos {Déjalo vacío y Cmdr buscará adb en los lugares habituales, incluidos el Android SDK y Homebrew. Indica otra ruta si guardas las herramientas de plataforma en un lugar aparte.} other {Déjalo vacío y Cmdr buscará adb en los lugares habituales, incluidos el Android SDK y tu PATH. Indica otra ruta si guardas las herramientas de plataforma en un lugar aparte.}}",
   "@settings.fileOperations.adbBinaryPath.description": {
@@ -334,10 +326,6 @@
   "settings.appearance.card.namesAndIcons": "Nombres e íconos",
   "@settings.appearance.card.namesAndIcons": {
     "sourceHash": "fefdc5c"
-  },
-  "settings.securityLog.enabled.description": "{platform, select, macos {Guarda en este Mac un pequeño archivo que anota los cambios y rechazos relacionados con la seguridad, como el consentimiento para la IA en la nube, una actualización instalada o una app rechazada por el servidor MCP. No contiene nombres de archivo, contenidos ni contraseñas, y nunca sale de tu Mac.} windows {Guarda en este PC un pequeño archivo que anota los cambios y rechazos relacionados con la seguridad, como el consentimiento para la IA en la nube, una actualización instalada o una app rechazada por el servidor MCP. No contiene nombres de archivo, contenidos ni contraseñas, y nunca sale de tu PC.} other {Guarda en esta computadora un pequeño archivo que anota los cambios y rechazos relacionados con la seguridad, como el consentimiento para la IA en la nube, una actualización instalada o una app rechazada por el servidor MCP. No contiene nombres de archivo, contenidos ni contraseñas, y nunca sale de tu computadora.}}",
-  "@settings.securityLog.enabled.description": {
-    "sourceHash": "f3863d0"
   },
   "settings.securityLog.showInFinder": "{platform, select, macos {Mostrar en el Finder} windows {Mostrar en el Explorador de archivos} linuxGnome {Mostrar en Archivos} linuxKde {Mostrar en Dolphin} other {Mostrar en el administrador de archivos}}",
   "@settings.securityLog.showInFinder": {

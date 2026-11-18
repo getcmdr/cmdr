@@ -3,10 +3,6 @@
   "@settings.appearance.language.label": {
     "sourceHash": "a4fe652"
   },
-  "settings.appearance.language.description": "{platform, select, macos {Выберите язык Cmdr. «Как в системе» использует язык вашего Mac.} windows {Выберите язык Cmdr. «Как в системе» использует язык интерфейса Windows.} other {Выберите язык Cmdr. «Как в системе» использует язык вашей системы.}}",
-  "@settings.appearance.language.description": {
-    "sourceHash": "7ca0276"
-  },
   "settings.appearance.language.opt.system": "Как в системе",
   "@settings.appearance.language.opt.system": {
     "sourceHash": "b045921"
@@ -170,10 +166,6 @@
   "@settings.appearance.tintLocal.label": {
     "sourceHash": "d907724"
   },
-  "settings.appearance.tintLocal.description": "Оттенок фона панелей с локальным диском.",
-  "@settings.appearance.tintLocal.description": {
-    "sourceHash": "3c86b48"
-  },
   "settings.appearance.tintLocal.keywords": "оттенок, тонировка, панель, цвет, том, локальный, диск, фон, фоновый цвет, подсветка",
   "@settings.appearance.tintLocal.keywords": {
     "sourceHash": "955fcd6"
@@ -181,10 +173,6 @@
   "settings.appearance.tintSmb.label": "Оттенок панелей серверов (SMB, SFTP, WebDAV, S3)",
   "@settings.appearance.tintSmb.label": {
     "sourceHash": "d912bcf"
-  },
-  "settings.appearance.tintSmb.description": "Оттенок фона панелей, в которых открыта общая папка SMB, сервер SFTP, сервер WebDAV или хранилище S3.",
-  "@settings.appearance.tintSmb.description": {
-    "sourceHash": "bddee40"
   },
   "settings.appearance.tintSmb.keywords": "оттенок, тонировка, панель, цвет, том, сервер, сеть, сетевой, фон, фоновый цвет, подсветка",
   "@settings.appearance.tintSmb.keywords": {
@@ -217,10 +205,6 @@
   "settings.appearance.uiDensity.label": "Плотность интерфейса",
   "@settings.appearance.uiDensity.label": {
     "sourceHash": "81344d8"
-  },
-  "settings.appearance.uiDensity.description": "Расстояния и размеры элементов интерфейса во всем приложении.",
-  "@settings.appearance.uiDensity.description": {
-    "sourceHash": "e7ead7a"
   },
   "settings.appearance.uiDensity.opt.compact": "Компактная",
   "@settings.appearance.uiDensity.opt.compact": {
@@ -378,10 +362,6 @@
   "@settings.listing.foldersFirst.label": {
     "sourceHash": "a61d73e"
   },
-  "settings.listing.foldersFirst.description": "Показывать папки в списке выше файлов. Выключите, чтобы папки и файлы сортировались вместе.",
-  "@settings.listing.foldersFirst.description": {
-    "sourceHash": "8505ff3"
-  },
   "settings.listing.foldersFirst.keywords": "сортировка, папка, папки, каталог, каталоги, сначала, вверху, смешанно, порядок, список",
   "@settings.listing.foldersFirst.keywords": {
     "sourceHash": "c4f9de2"
@@ -401,10 +381,6 @@
   "settings.listing.directorySortMode.label": "Сортировка папок",
   "@settings.listing.directorySortMode.label": {
     "sourceHash": "7d0b088"
-  },
-  "settings.listing.directorySortMode.description": "Как сортировать папки при смене колонки сортировки.",
-  "@settings.listing.directorySortMode.description": {
-    "sourceHash": "797d93b"
   },
   "settings.listing.directorySortMode.disabledReason": "Сейчас отключено, потому что папки перемешаны с файлами. Включите «Показывать папки вверху», чтобы этот параметр заработал.",
   "@settings.listing.directorySortMode.disabledReason": {
@@ -1147,10 +1123,6 @@
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label": {
     "sourceHash": "911b74b"
   },
-  "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": "{platform, select, macos {Как предупреждать, когда на загрузочном диске остается мало места.} windows {Как предупреждать, когда на системном диске остается мало места.} other {Как предупреждать, когда на системном диске остается мало места.}}",
-  "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": {
-    "sourceHash": "07714d7"
-  },
   "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": "В приложении",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": {
     "sourceHash": "a2de156"
@@ -1196,10 +1168,6 @@
   "@settings.ai.provider.label": {
     "sourceHash": "472590a"
   },
-  "settings.ai.provider.description": "Выберите, как работают возможности ИИ.",
-  "@settings.ai.provider.description": {
-    "sourceHash": "f8c0f5d"
-  },
   "settings.ai.provider.opt.off": "Выключено",
   "@settings.ai.provider.opt.off": {
     "sourceHash": "ca7981b"
@@ -1235,10 +1203,6 @@
   "settings.ai.cloudConsent.keywords": "согласие, конфиденциальность, приватность, разрешить, отправка, данные, облако, облачный, ИИ",
   "@settings.ai.cloudConsent.keywords": {
     "sourceHash": "c0a0566"
-  },
-  "settings.ai.cloudProvider.description": "Какой облачный сервис ИИ использовать.",
-  "@settings.ai.cloudProvider.description": {
-    "sourceHash": "3300ce9"
   },
   "settings.ai.cloudProvider.keywords": "облако, облачный, поставщик, провайдер, сервис, служба, пользовательский",
   "@settings.ai.cloudProvider.keywords": {
@@ -1299,10 +1263,6 @@
   "settings.network.enabled.label": "{platform, select, windows {Включить сетевые функции} other {Включить сетевые функции}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
-  },
-  "settings.network.enabled.description": "{platform, select, macos {Находить SMB-серверы в локальной сети и подключаться к ним. Если выключено, Cmdr по-прежнему читает и записывает файлы в уже подключенных общих папках, но не запрашивает у macOS доступ к локальной сети.} windows {Находить SMB-серверы в локальной сети и подключаться к ним. Если выключено, Cmdr по-прежнему читает и записывает файлы в уже подключенных общих папках, а Windows не спрашивает, пропускать ли Cmdr через брандмауэр.} other {Находить SMB-серверы в локальной сети и подключаться к ним. Если выключено, Cmdr по-прежнему читает и записывает файлы в уже подключенных общих папках.}}",
-  "@settings.network.enabled.description": {
-    "sourceHash": "6994272"
   },
   "settings.network.enabled.keywords": "сеть, сетевой, включить, включено, обнаружение, поиск в сети, локальная сеть, разрешение",
   "@settings.network.enabled.keywords": {
@@ -1448,10 +1408,6 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
-  "settings.fileOperations.adbEnabled.description": "{platform, select, macos {Полный доступ к файловой системе телефона Android с включенной отладкой по USB, чего MTP не позволяет. Нужен пакет Android platform tools (команда «adb») на этом Mac. Если инструменты Android не установлены, параметр можно оставить включенным без всяких затрат.} windows {Полный доступ к файловой системе телефона Android с включенной отладкой по USB, чего MTP не позволяет. Нужен пакет Android platform tools (команда «adb») на этом компьютере. Если инструменты Android не установлены, параметр можно оставить включенным без всяких затрат.} other {Полный доступ к файловой системе телефона Android с включенной отладкой по USB, чего MTP не позволяет. Нужен пакет Android platform tools (команда «adb») на этом компьютере. Если инструменты Android не установлены, параметр можно оставить включенным без всяких затрат.}}",
-  "@settings.fileOperations.adbEnabled.description": {
-    "sourceHash": "4c92b52"
-  },
   "settings.fileOperations.adbEnabled.keywords": "отладка по USB, параметры разработчика, для разработчиков, телефон, смартфон, устройство",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1520,10 +1476,6 @@
   "@settings.viewer.wordWrap.label": {
     "sourceHash": "9e210f3"
   },
-  "settings.viewer.wordWrap.description": "Переносить длинные строки у края окна просмотра файлов вместо горизонтальной прокрутки.",
-  "@settings.viewer.wordWrap.description": {
-    "sourceHash": "8a87bd2"
-  },
   "settings.viewer.wordWrap.keywords": "окно просмотра, просмотр, перенос, перенос слов, перенос строк, строка, горизонтальная прокрутка, прокрутка",
   "@settings.viewer.wordWrap.keywords": {
     "sourceHash": "5d0a24b"
@@ -1580,10 +1532,6 @@
   "@settings.updates.autoCheck.label": {
     "sourceHash": "409e6a1"
   },
-  "settings.updates.autoCheck.description": "Периодически проверять наличие новых версий в фоне.",
-  "@settings.updates.autoCheck.description": {
-    "sourceHash": "1ff0b1a"
-  },
   "settings.updates.autoCheck.keywords": "обновление, обновления, автоматически, проверка, проверять, версия, в фоне",
   "@settings.updates.autoCheck.keywords": {
     "sourceHash": "091ca30"
@@ -1620,10 +1568,6 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
-  "settings.analytics.enabled.description": "{platform, select, windows {Включите, чтобы помочь нам понять, какие возможности важны во время открытого бета-тестирования.\nСтатистика связана со случайным идентификатором, а не с именем или почтой.\nCmdr никогда не отправляет имена файлов, пути, поисковые запросы или запросы к ИИ.\nЕсли выключено, Cmdr не отправляет статистику.} other {Включите, чтобы помочь нам понять, какие возможности важны во время открытого бета-тестирования.\nСтатистика связана со случайным идентификатором, а не с именем или почтой.\nCmdr никогда не отправляет имена файлов, пути, поисковые запросы или запросы к ИИ.\nЕсли выключено, Cmdr не отправляет статистику.}}",
-  "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
-  },
   "settings.analytics.enabled.keywords": "аналитика, использование, статистика, конфиденциальность, приватность, телеметрия, бета, отслеживание, отказаться",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1631,10 +1575,6 @@
   "settings.analytics.email.label": "Почта для связи в бета-тестировании",
   "@settings.analytics.email.label": {
     "sourceHash": "71e5c9a"
-  },
-  "settings.analytics.email.description": "Пример: вы@example.com",
-  "@settings.analytics.email.description": {
-    "sourceHash": "03574f9"
   },
   "settings.analytics.email.keywords": "почта, электронная почта, имейл, бета, контакт, связь, рассылка, новости, обновления, опрос",
   "@settings.analytics.email.keywords": {
@@ -1739,10 +1679,6 @@
   "settings.advanced.indexPauseFreeSpacePercent.label": "Приостанавливать индексацию, если свободного места меньше (%)",
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
-  },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "{platform, select, macos {Cmdr приостанавливает индексацию дисков, когда свободного места на загрузочном диске становится меньше этого процента, чтобы индекс не занимал место, нужное вашим собственным файлам. Индексация продолжится с того же места, как только свободного места станет на один процентный пункт больше порога. Это работает независимо от того, включен ли параметр «Предупреждать о нехватке места».} windows {Cmdr приостанавливает индексацию дисков, когда свободного места на системном диске становится меньше этого процента, чтобы индекс не занимал место, нужное вашим собственным файлам. Индексация продолжится с того же места, как только свободного места станет на один процентный пункт больше порога. Это работает независимо от того, включен ли параметр «Предупреждать о нехватке места».} other {Cmdr приостанавливает индексацию дисков, когда свободного места на системном диске становится меньше этого процента, чтобы индекс не занимал место, нужное вашим собственным файлам. Индексация продолжится с того же места, как только свободного места станет на один процентный пункт больше порога. Это работает независимо от того, включен ли параметр «Предупреждать о нехватке места».}}",
-  "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "bb41d41"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "диск, место, заполнен, свободное место, индекс, индексация, пауза, хранилище, порог, процент, мало места",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -1948,10 +1884,6 @@
   "@settings.advanced.mountTimeout.label": {
     "sourceHash": "b5bce4f"
   },
-  "settings.advanced.mountTimeout.description": "Тайм-аут подключения общих папок к системе.",
-  "@settings.advanced.mountTimeout.description": {
-    "sourceHash": "3da30e1"
-  },
   "settings.advanced.mountTimeout.keywords": "подключение, монтирование, тайм-аут, время ожидания, сеть, общая папка, сетевая папка",
   "@settings.advanced.mountTimeout.keywords": {
     "sourceHash": "3327884"
@@ -2071,10 +2003,6 @@
   "settings.advanced.updateCheckInterval.label": "Интервал проверки обновлений",
   "@settings.advanced.updateCheckInterval.label": {
     "sourceHash": "91912bc"
-  },
-  "settings.advanced.updateCheckInterval.description": "Как часто проверять обновления в фоне.",
-  "@settings.advanced.updateCheckInterval.description": {
-    "sourceHash": "2bdd38a"
   },
   "settings.advanced.updateCheckInterval.keywords": "обновление, обновления, интервал, частота, в фоне, проверка",
   "@settings.advanced.updateCheckInterval.keywords": {
@@ -2692,10 +2620,6 @@
   "@settings.operationLog.maxAge.label": {
     "sourceHash": "ca05015"
   },
-  "settings.operationLog.maxAge.description": "Как долго Cmdr хранит операции до автоматического удаления самых старых.",
-  "@settings.operationLog.maxAge.description": {
-    "sourceHash": "7d35887"
-  },
   "settings.operationLog.maxAge.opt.forever": "Бессрочно",
   "@settings.operationLog.maxAge.opt.forever": {
     "sourceHash": "55f980c"
@@ -3205,10 +3129,6 @@
   "settings.securityLog.enabled.label": "Записывать события безопасности",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
-  },
-  "settings.securityLog.enabled.description": "{platform, select, macos {Вести на этом Mac небольшой файл, где отмечаются изменения и отказы, важные для безопасности: например, согласие на облачный ИИ, установленное обновление или приложение, которому сервер MCP отказал в доступе. В файле нет имен файлов, их содержимого и паролей, и он никогда не покидает ваш Mac.} windows {Вести на этом компьютере небольшой файл, где отмечаются изменения и отказы, важные для безопасности: например, согласие на облачный ИИ, установленное обновление или приложение, которому сервер MCP отказал в доступе. В файле нет имен файлов, их содержимого и паролей, и он никогда не покидает ваш компьютер.} other {Вести на этом компьютере небольшой файл, где отмечаются изменения и отказы, важные для безопасности: например, согласие на облачный ИИ, установленное обновление или приложение, которому сервер MCP отказал в доступе. В файле нет имен файлов, их содержимого и паролей, и он никогда не покидает ваш компьютер.}}",
-  "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
   },
   "settings.securityLog.enabled.keywords": "безопасность, журнал, аудит, запись, записывать, события, доступ, конфиденциальность",
   "@settings.securityLog.enabled.keywords": {

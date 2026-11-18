@@ -454,7 +454,7 @@ describe('the Effort picker in Settings > AI > Provider', () => {
     const target = await mountSection()
 
     expect(optionLabels(target)).toEqual(['Recommended (Medium)', 'Low', 'Medium', 'High'])
-    expect(target.textContent).toContain('the thinking is billed as output')
+    expect(target.textContent).toContain('it’s slower and costs more')
   })
 
   it('names the picker in the provider’s own words', async () => {

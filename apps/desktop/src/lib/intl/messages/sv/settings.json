@@ -3,10 +3,6 @@
   "@settings.appearance.language.label": {
     "sourceHash": "a4fe652"
   },
-  "settings.appearance.language.description": "{platform, select, macos {Välj vilket språk Cmdr använder. ”Systemets standard” följer din Macs språk.} windows {Välj vilket språk Cmdr använder. ”Systemets standard” följer ditt visningsspråk i Windows.} other {Välj vilket språk Cmdr använder. ”Systemets standard” följer systemets språk.}}",
-  "@settings.appearance.language.description": {
-    "sourceHash": "7ca0276"
-  },
   "settings.appearance.language.opt.system": "Systemets standard",
   "@settings.appearance.language.opt.system": {
     "sourceHash": "b045921"
@@ -173,10 +169,6 @@
   "@settings.appearance.tintLocal.label": {
     "sourceHash": "d907724"
   },
-  "settings.appearance.tintLocal.description": "Bakgrundston som läggs på paneler som visar en lokal enhet.",
-  "@settings.appearance.tintLocal.description": {
-    "sourceHash": "3c86b48"
-  },
   "settings.appearance.tintLocal.keywords": "ton, tona, panel, färg, volym, lokal, bakgrund, markering",
   "@settings.appearance.tintLocal.keywords": {
     "sourceHash": "955fcd6"
@@ -184,10 +176,6 @@
   "settings.appearance.tintSmb.label": "Tona serverpaneler (SMB, SFTP, WebDAV, S3)",
   "@settings.appearance.tintSmb.label": {
     "sourceHash": "d912bcf"
-  },
-  "settings.appearance.tintSmb.description": "Bakgrundston som läggs på paneler som visar en delad SMB-mapp, en SFTP-server, en WebDAV-server eller S3-lagring.",
-  "@settings.appearance.tintSmb.description": {
-    "sourceHash": "bddee40"
   },
   "settings.appearance.tintSmb.keywords": "ton, tona, panel, färg, volym, server, nätverk, bakgrund, markering",
   "@settings.appearance.tintSmb.keywords": {
@@ -220,10 +208,6 @@
   "settings.appearance.uiDensity.label": "Gränssnittstäthet",
   "@settings.appearance.uiDensity.label": {
     "sourceHash": "81344d8"
-  },
-  "settings.appearance.uiDensity.description": "Styr avstånd och storlek på gränssnittselement i hela appen.",
-  "@settings.appearance.uiDensity.description": {
-    "sourceHash": "e7ead7a"
   },
   "settings.appearance.uiDensity.opt.compact": "Kompakt",
   "@settings.appearance.uiDensity.opt.compact": {
@@ -382,10 +366,6 @@
   "@settings.listing.foldersFirst.label": {
     "sourceHash": "a61d73e"
   },
-  "settings.listing.foldersFirst.description": "Listar mappar ovanför filer. Stäng av det för att blanda mappar och filer.",
-  "@settings.listing.foldersFirst.description": {
-    "sourceHash": "8505ff3"
-  },
   "settings.listing.foldersFirst.keywords": "sortera, sortering, katalog, kataloger, mapp, mappar, först, överst, blandat, ordning, lista",
   "@settings.listing.foldersFirst.keywords": {
     "sourceHash": "c4f9de2"
@@ -405,10 +385,6 @@
   "settings.listing.directorySortMode.label": "Sortera mappar",
   "@settings.listing.directorySortMode.label": {
     "sourceHash": "7d0b088"
-  },
-  "settings.listing.directorySortMode.description": "Hur mappar sorteras när du byter sorteringskolumn.",
-  "@settings.listing.directorySortMode.description": {
-    "sourceHash": "797d93b"
   },
   "settings.listing.directorySortMode.disabledReason": "Avstängd just nu eftersom mappar och filer blandas. Slå på ”Visa mappar först” för att aktivera den här inställningen.",
   "@settings.listing.directorySortMode.disabledReason": {
@@ -1151,10 +1127,6 @@
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label": {
     "sourceHash": "911b74b"
   },
-  "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": "{platform, select, macos {Hur du ska varnas när startskivan börjar få ont om ledigt utrymme.} windows {Hur du ska varnas när systemenheten börjar få ont om ledigt utrymme.} other {Hur du ska varnas när systemdisken börjar få ont om ledigt utrymme.}}",
-  "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": {
-    "sourceHash": "07714d7"
-  },
   "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": "I appen",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": {
     "sourceHash": "a2de156"
@@ -1200,10 +1172,6 @@
   "@settings.ai.provider.label": {
     "sourceHash": "472590a"
   },
-  "settings.ai.provider.description": "Välj hur AI-funktioner drivs.",
-  "@settings.ai.provider.description": {
-    "sourceHash": "f8c0f5d"
-  },
   "settings.ai.provider.opt.off": "Av",
   "@settings.ai.provider.opt.off": {
     "sourceHash": "ca7981b"
@@ -1239,10 +1207,6 @@
   "settings.ai.cloudConsent.keywords": "samtycke, integritet, tillåt, skicka, data, moln, ai",
   "@settings.ai.cloudConsent.keywords": {
     "sourceHash": "c0a0566"
-  },
-  "settings.ai.cloudProvider.description": "Vilken moln-AI-tjänst som ska användas.",
-  "@settings.ai.cloudProvider.description": {
-    "sourceHash": "3300ce9"
   },
   "settings.ai.cloudProvider.keywords": "moln, leverantör, tjänst, anpassad",
   "@settings.ai.cloudProvider.keywords": {
@@ -1303,10 +1267,6 @@
   "settings.network.enabled.label": "{platform, select, windows {Aktivera nätverk} other {Aktivera nätverk}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
-  },
-  "settings.network.enabled.description": "{platform, select, macos {Upptäck SMB-servrar i ditt lokala nätverk och anslut till dem. När det är av kan Cmdr fortfarande läsa och skriva filer i redan monterade delade mappar, men ber inte macOS om åtkomst till Lokalt nätverk.} windows {Upptäck SMB-servrar i ditt lokala nätverk och anslut till dem. När det är av kan Cmdr fortfarande läsa och skriva filer i redan monterade delade mappar, och Windows frågar inte om Cmdr ska släppas igenom brandväggen.} other {Upptäck SMB-servrar i ditt lokala nätverk och anslut till dem. När det är av kan Cmdr fortfarande läsa och skriva filer i redan monterade delade mappar.}}",
-  "@settings.network.enabled.description": {
-    "sourceHash": "6994272"
   },
   "settings.network.enabled.keywords": "nätverk, aktivera, aktiverad, nätverkssökning, upptäckt, lokal, lokalt nätverk, behörighet",
   "@settings.network.enabled.keywords": {
@@ -1452,10 +1412,6 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
-  "settings.fileOperations.adbEnabled.description": "{platform, select, macos {Nå hela filsystemet på en Android-telefon som har USB-felsökning aktiverad, något som MTP inte kan visa dig. Kräver Android platform tools (kommandot ”adb”) på den här Macen. Att låta det vara påslaget kostar ingenting om du inte har några Android-verktyg installerade.} windows {Nå hela filsystemet på en Android-telefon som har USB-felsökning aktiverad, något som MTP inte kan visa dig. Kräver Android platform tools (kommandot ”adb”) på den här datorn. Att låta det vara påslaget kostar ingenting om du inte har några Android-verktyg installerade.} other {Nå hela filsystemet på en Android-telefon som har USB-felsökning aktiverad, något som MTP inte kan visa dig. Kräver Android platform tools (kommandot ”adb”) på den här datorn. Att låta det vara påslaget kostar ingenting om du inte har några Android-verktyg installerade.}}",
-  "@settings.fileOperations.adbEnabled.description": {
-    "sourceHash": "4c92b52"
-  },
   "settings.fileOperations.adbEnabled.keywords": "usb-felsökning, utvecklaralternativ, telefon, mobil, enhet",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1524,10 +1480,6 @@
   "@settings.viewer.wordWrap.label": {
     "sourceHash": "9e210f3"
   },
-  "settings.viewer.wordWrap.description": "Bryt långa rader vid fönsterkanten i förhandsvisningen i stället för att rulla i sidled.",
-  "@settings.viewer.wordWrap.description": {
-    "sourceHash": "8a87bd2"
-  },
   "settings.viewer.wordWrap.keywords": "förhandsvisning, radbyte, automatiskt radbyte, ord, rad, vågrät, horisontell, rulla",
   "@settings.viewer.wordWrap.keywords": {
     "sourceHash": "5d0a24b"
@@ -1585,10 +1537,6 @@
   "@settings.updates.autoCheck.label": {
     "sourceHash": "409e6a1"
   },
-  "settings.updates.autoCheck.description": "Sök efter nya versioner i bakgrunden med jämna mellanrum.",
-  "@settings.updates.autoCheck.description": {
-    "sourceHash": "1ff0b1a"
-  },
   "settings.updates.autoCheck.keywords": "uppdatering, uppdateringar, automatiskt, kontrollera, sök efter, version, bakgrund",
   "@settings.updates.autoCheck.keywords": {
     "sourceHash": "091ca30"
@@ -1625,10 +1573,6 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
-  "settings.analytics.enabled.description": "{platform, select, windows {Slå på det här så hjälper du oss se vilka funktioner som spelar roll under den öppna betan.\nStatistiken är inte kopplad till ditt namn eller din e-post utan till ett slumpmässigt id.\nCmdr skickar aldrig filnamn, sökvägar, sökord eller prompter.\nNär det är avstängt skickar Cmdr ingen statistik alls.} other {Slå på det här så hjälper du oss se vilka funktioner som spelar roll under den öppna betan.\nStatistiken är inte kopplad till ditt namn eller din e-post utan till ett slumpmässigt id.\nCmdr skickar aldrig filnamn, sökvägar, sökord eller prompter.\nNär det är avstängt skickar Cmdr ingen statistik alls.}}",
-  "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
-  },
   "settings.analytics.enabled.keywords": "analys, användning, statistik, användningsstatistik, integritet, telemetri, beta, spårning, avstå",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1636,10 +1580,6 @@
   "settings.analytics.email.label": "Kontakt-e-post för beta",
   "@settings.analytics.email.label": {
     "sourceHash": "71e5c9a"
-  },
-  "settings.analytics.email.description": "Exempel: du@exempel.se",
-  "@settings.analytics.email.description": {
-    "sourceHash": "03574f9"
   },
   "settings.analytics.email.keywords": "e-post, mejl, e-postadress, beta, kontakt, nyhetsbrev, uppdateringar, enkät",
   "@settings.analytics.email.keywords": {
@@ -1744,10 +1684,6 @@
   "settings.advanced.indexPauseFreeSpacePercent.label": "Pausa indexering när ledigt utrymme är under (%)",
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
-  },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "{platform, select, macos {Cmdr pausar enhetsindexeringen när det lediga utrymmet på startskivan sjunker under den här procentandelen, så att indexet inte tar platsen som dina egna filer behöver. Indexeringen fortsätter där den slutade när det lediga utrymmet är en procentenhet över gränsen. Det fungerar oavsett om ”Varning vid lågt diskutrymme” är på eller av.} windows {Cmdr pausar enhetsindexeringen när det lediga utrymmet på systemenheten sjunker under den här procentandelen, så att indexet inte tar platsen som dina egna filer behöver. Indexeringen fortsätter där den slutade när det lediga utrymmet är en procentenhet över gränsen. Det fungerar oavsett om ”Varning vid lågt diskutrymme” är på eller av.} other {Cmdr pausar enhetsindexeringen när det lediga utrymmet på systemdisken sjunker under den här procentandelen, så att indexet inte tar platsen som dina egna filer behöver. Indexeringen fortsätter där den slutade när det lediga utrymmet är en procentenhet över gränsen. Det fungerar oavsett om ”Varning vid lågt diskutrymme” är på eller av.}}",
-  "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "bb41d41"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "disk, utrymme, diskutrymme, full, ledigt, index, indexering, paus, lagring, tröskel, gräns, procent, lite",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -1953,10 +1889,6 @@
   "@settings.advanced.mountTimeout.label": {
     "sourceHash": "b5bce4f"
   },
-  "settings.advanced.mountTimeout.description": "Tidsgräns för montering av nätverksresurser.",
-  "@settings.advanced.mountTimeout.description": {
-    "sourceHash": "3da30e1"
-  },
   "settings.advanced.mountTimeout.keywords": "montera, montering, tidsgräns, nätverk, delad mapp",
   "@settings.advanced.mountTimeout.keywords": {
     "sourceHash": "3327884"
@@ -2076,10 +2008,6 @@
   "settings.advanced.updateCheckInterval.label": "Intervall för uppdateringskontroll",
   "@settings.advanced.updateCheckInterval.label": {
     "sourceHash": "91912bc"
-  },
-  "settings.advanced.updateCheckInterval.description": "Hur ofta Cmdr söker efter uppdateringar i bakgrunden.",
-  "@settings.advanced.updateCheckInterval.description": {
-    "sourceHash": "2bdd38a"
   },
   "settings.advanced.updateCheckInterval.keywords": "uppdatering, intervall, bakgrund, kontrollera, sök efter",
   "@settings.advanced.updateCheckInterval.keywords": {
@@ -2703,10 +2631,6 @@
   "@settings.operationLog.maxAge.label": {
     "sourceHash": "ca05015"
   },
-  "settings.operationLog.maxAge.description": "Hur länge Cmdr behåller loggade åtgärder innan de äldsta tas bort automatiskt.",
-  "@settings.operationLog.maxAge.description": {
-    "sourceHash": "7d35887"
-  },
   "settings.operationLog.maxAge.opt.forever": "För alltid",
   "@settings.operationLog.maxAge.opt.forever": {
     "sourceHash": "55f980c"
@@ -3217,10 +3141,6 @@
   "settings.securityLog.enabled.label": "Logga säkerhetshändelser",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
-  },
-  "settings.securityLog.enabled.description": "{platform, select, macos {Spara en liten fil på den här Macen som noterar säkerhetsrelevanta ändringar och avvisningar, till exempel samtycke till moln-AI, en installerad uppdatering eller en app som MCP-servern har avvisat. Filen innehåller inga filnamn, innehåll eller lösenord och lämnar aldrig din Mac.} windows {Spara en liten fil på den här datorn som noterar säkerhetsrelevanta ändringar och avvisningar, till exempel samtycke till moln-AI, en installerad uppdatering eller en app som MCP-servern har avvisat. Filen innehåller inga filnamn, innehåll eller lösenord och lämnar aldrig din dator.} other {Spara en liten fil på den här datorn som noterar säkerhetsrelevanta ändringar och avvisningar, till exempel samtycke till moln-AI, en installerad uppdatering eller en app som MCP-servern har avvisat. Filen innehåller inga filnamn, innehåll eller lösenord och lämnar aldrig din dator.}}",
-  "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
   },
   "settings.securityLog.enabled.keywords": "säkerhet, logg, granskning, registrera, händelser, åtkomst, integritet",
   "@settings.securityLog.enabled.keywords": {

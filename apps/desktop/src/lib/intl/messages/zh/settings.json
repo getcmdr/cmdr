@@ -3,10 +3,6 @@
   "@settings.appearance.language.label": {
     "sourceHash": "a4fe652"
   },
-  "settings.appearance.language.description": "{platform, select, macos {选择 Cmdr 使用的语言。“跟随系统”会采用你 Mac 的语言。} windows {选择 Cmdr 使用的语言。“跟随系统”会采用你的 Windows 显示语言。} other {选择 Cmdr 使用的语言。“跟随系统”会采用你系统的语言。}}",
-  "@settings.appearance.language.description": {
-    "sourceHash": "7ca0276"
-  },
   "settings.appearance.language.opt.system": "跟随系统",
   "@settings.appearance.language.opt.system": {
     "sourceHash": "b045921"
@@ -172,10 +168,6 @@
   "@settings.appearance.tintLocal.label": {
     "sourceHash": "d907724"
   },
-  "settings.appearance.tintLocal.description": "为显示本地驱动器的窗格添加的背景着色。",
-  "@settings.appearance.tintLocal.description": {
-    "sourceHash": "3c86b48"
-  },
   "settings.appearance.tintLocal.keywords": "着色、色调、窗格、颜色、宗卷、本地、磁盘、背景、高亮、区分",
   "@settings.appearance.tintLocal.keywords": {
     "sourceHash": "955fcd6"
@@ -183,10 +175,6 @@
   "settings.appearance.tintSmb.label": "为服务器窗格着色（SMB、SFTP、WebDAV、S3）",
   "@settings.appearance.tintSmb.label": {
     "sourceHash": "d912bcf"
-  },
-  "settings.appearance.tintSmb.description": "为显示 SMB 共享、SFTP 服务器、WebDAV 服务器或 S3 存储的窗格添加的背景着色。",
-  "@settings.appearance.tintSmb.description": {
-    "sourceHash": "bddee40"
   },
   "settings.appearance.tintSmb.keywords": "着色、色调、窗格、颜色、宗卷、服务器、网络、共享、背景、高亮、区分",
   "@settings.appearance.tintSmb.keywords": {
@@ -219,10 +207,6 @@
   "settings.appearance.uiDensity.label": "界面密度",
   "@settings.appearance.uiDensity.label": {
     "sourceHash": "81344d8"
-  },
-  "settings.appearance.uiDensity.description": "控制整个 App 中界面元素的间距和大小。",
-  "@settings.appearance.uiDensity.description": {
-    "sourceHash": "e7ead7a"
   },
   "settings.appearance.uiDensity.opt.compact": "紧凑",
   "@settings.appearance.uiDensity.opt.compact": {
@@ -380,10 +364,6 @@
   "@settings.listing.foldersFirst.label": {
     "sourceHash": "a61d73e"
   },
-  "settings.listing.foldersFirst.description": "在文件上方列出文件夹。关闭后，文件夹和文件会混在一起。",
-  "@settings.listing.foldersFirst.description": {
-    "sourceHash": "8505ff3"
-  },
   "settings.listing.foldersFirst.keywords": "排序、目录、文件夹、优先、置顶、顶部、混合、顺序、列表",
   "@settings.listing.foldersFirst.keywords": {
     "sourceHash": "c4f9de2"
@@ -403,10 +383,6 @@
   "settings.listing.directorySortMode.label": "文件夹排序",
   "@settings.listing.directorySortMode.label": {
     "sourceHash": "7d0b088"
-  },
-  "settings.listing.directorySortMode.description": "更改排序列时，文件夹的排序方式。",
-  "@settings.listing.directorySortMode.description": {
-    "sourceHash": "797d93b"
   },
   "settings.listing.directorySortMode.disabledReason": "当前已停用，因为文件夹和文件混在一起。开启“优先显示文件夹”即可使用这项设置。",
   "@settings.listing.directorySortMode.disabledReason": {
@@ -1149,10 +1125,6 @@
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label": {
     "sourceHash": "911b74b"
   },
-  "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": "{platform, select, macos {当你的启动磁盘可用空间不足时，如何向你发出警告。} windows {当你的系统驱动器可用空间不足时，如何向你发出警告。} other {当你的系统盘可用空间不足时，如何向你发出警告。}}",
-  "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": {
-    "sourceHash": "07714d7"
-  },
   "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": "App 内",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": {
     "sourceHash": "a2de156"
@@ -1198,10 +1170,6 @@
   "@settings.ai.provider.label": {
     "sourceHash": "472590a"
   },
-  "settings.ai.provider.description": "选择 AI 功能的驱动方式。",
-  "@settings.ai.provider.description": {
-    "sourceHash": "f8c0f5d"
-  },
   "settings.ai.provider.opt.off": "关闭",
   "@settings.ai.provider.opt.off": {
     "sourceHash": "ca7981b"
@@ -1237,10 +1205,6 @@
   "settings.ai.cloudConsent.keywords": "同意、隐私、允许、发送、数据、云端、云、授权、人工智能",
   "@settings.ai.cloudConsent.keywords": {
     "sourceHash": "c0a0566"
-  },
-  "settings.ai.cloudProvider.description": "要使用哪个云端 AI 服务。",
-  "@settings.ai.cloudProvider.description": {
-    "sourceHash": "3300ce9"
   },
   "settings.ai.cloudProvider.keywords": "云端、云、提供方、服务、服务商、自定义",
   "@settings.ai.cloudProvider.keywords": {
@@ -1301,10 +1265,6 @@
   "settings.network.enabled.label": "{platform, select, windows {开启网络} other {启用网络}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
-  },
-  "settings.network.enabled.description": "{platform, select, macos {发现你本地网络上的 SMB 服务器并连接它们。关闭时，Cmdr 仍可在已装载的共享上读写文件，但不会向 macOS 请求本地网络访问权限。} windows {发现你本地网络上的 SMB 服务器并连接它们。关闭时，Cmdr 仍可在已连接的共享上读写文件，Windows 也不会询问是否允许 Cmdr 通过防火墙。} other {发现你本地网络上的 SMB 服务器并连接它们。关闭时，Cmdr 仍可在已装载的共享上读写文件。}}",
-  "@settings.network.enabled.description": {
-    "sourceHash": "6994272"
   },
   "settings.network.enabled.keywords": "网络、启用、开启、发现、本地、本地网络、权限",
   "@settings.network.enabled.keywords": {
@@ -1450,10 +1410,6 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
-  "settings.fileOperations.adbEnabled.description": "{platform, select, macos {只要 Android 手机开启了 USB 调试，就能访问它的整个文件系统，包括 MTP 显示不了的部分。需要在这台 Mac 上安装 Android 平台工具（也就是 adb 命令）。如果你没装任何 Android 工具，开着这一项也不会有任何开销。} windows {只要 Android 手机开启了 USB 调试，就能访问它的整个文件系统，包括 MTP 显示不了的部分。需要在这台电脑上安装 Android 平台工具（也就是 adb 命令）。如果你没装任何 Android 工具，开着这一项也不会有任何开销。} other {只要 Android 手机开启了 USB 调试，就能访问它的整个文件系统，包括 MTP 显示不了的部分。需要在这台电脑上安装 Android 平台工具（也就是 adb 命令）。如果你没装任何 Android 工具，开着这一项也不会有任何开销。}}",
-  "@settings.fileOperations.adbEnabled.description": {
-    "sourceHash": "4c92b52"
-  },
   "settings.fileOperations.adbEnabled.keywords": "USB 调试、开发者选项、手机、设备",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1522,10 +1478,6 @@
   "@settings.viewer.wordWrap.label": {
     "sourceHash": "9e210f3"
   },
-  "settings.viewer.wordWrap.description": "在文件查看器中让长行在窗口边缘换行，而不是横向滚动。",
-  "@settings.viewer.wordWrap.description": {
-    "sourceHash": "8a87bd2"
-  },
   "settings.viewer.wordWrap.keywords": "查看器、换行、自动换行、折行、单词、行、水平、横向、滚动",
   "@settings.viewer.wordWrap.keywords": {
     "sourceHash": "5d0a24b"
@@ -1582,10 +1534,6 @@
   "@settings.updates.autoCheck.label": {
     "sourceHash": "409e6a1"
   },
-  "settings.updates.autoCheck.description": "在后台定期检查有无新版本。",
-  "@settings.updates.autoCheck.description": {
-    "sourceHash": "1ff0b1a"
-  },
   "settings.updates.autoCheck.keywords": "更新、自动、检查、版本、后台、升级",
   "@settings.updates.autoCheck.keywords": {
     "sourceHash": "091ca30"
@@ -1622,10 +1570,6 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
-  "settings.analytics.enabled.description": "{platform, select, windows {请打开这一项，帮助我们在公开测试期间了解哪些功能更重要。\n统计不会关联到你的姓名或邮箱，而是关联到一个随机标识符。\nCmdr 绝不会发送文件名、路径、搜索词或提示词。\n关闭后，Cmdr 不会发送任何统计。} other {请打开这一项，帮助我们在公开测试期间了解哪些功能更重要。\n统计不会关联到你的姓名或邮箱，而是关联到一个随机标识符。\nCmdr 绝不会发送文件名、路径、搜索词或提示词。\n关闭后，Cmdr 不会发送任何统计。}}",
-  "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
-  },
   "settings.analytics.enabled.keywords": "分析、使用情况、统计、使用统计、隐私、遥测、测试版、公测、跟踪、追踪、退出",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1633,10 +1577,6 @@
   "settings.analytics.email.label": "测试联系邮箱",
   "@settings.analytics.email.label": {
     "sourceHash": "71e5c9a"
-  },
-  "settings.analytics.email.description": "示例：you@example.com",
-  "@settings.analytics.email.description": {
-    "sourceHash": "03574f9"
   },
   "settings.analytics.email.keywords": "邮箱、电子邮件、邮件、测试版、公测、联系、简报、更新、调查、问卷",
   "@settings.analytics.email.keywords": {
@@ -1741,10 +1681,6 @@
   "settings.advanced.indexPauseFreeSpacePercent.label": "暂停索引的可用空间阈值（%）",
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
-  },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "{platform, select, macos {启动磁盘的可用空间低于这个百分比时，Cmdr 会暂停驱动器索引，以免索引占用你自己的文件所需的空间。可用空间回升到比它高一个百分点后，索引会从中断的地方继续。无论“磁盘空间不足警告”是否打开，这个设置都有效。} windows {系统驱动器的可用空间低于这个百分比时，Cmdr 会暂停驱动器索引，以免索引占用你自己的文件所需的空间。可用空间回升到比它高一个百分点后，索引会从中断的地方继续。无论“磁盘空间不足警告”是否打开，这个设置都有效。} other {系统盘的可用空间低于这个百分比时，Cmdr 会暂停驱动器索引，以免索引占用你自己的文件所需的空间。可用空间回升到比它高一个百分点后，索引会从中断的地方继续。无论“磁盘空间不足警告”是否打开，这个设置都有效。}}",
-  "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "bb41d41"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "磁盘、空间、已满、剩余、可用、索引、暂停、存储空间、阈值、百分比、不足",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -1950,10 +1886,6 @@
   "@settings.advanced.mountTimeout.label": {
     "sourceHash": "b5bce4f"
   },
-  "settings.advanced.mountTimeout.description": "装载网络共享的超时。",
-  "@settings.advanced.mountTimeout.description": {
-    "sourceHash": "3da30e1"
-  },
   "settings.advanced.mountTimeout.keywords": "装载、挂载、超时、网络、共享",
   "@settings.advanced.mountTimeout.keywords": {
     "sourceHash": "3327884"
@@ -2073,10 +2005,6 @@
   "settings.advanced.updateCheckInterval.label": "更新检查间隔",
   "@settings.advanced.updateCheckInterval.label": {
     "sourceHash": "91912bc"
-  },
-  "settings.advanced.updateCheckInterval.description": "在后台检查更新的频率。",
-  "@settings.advanced.updateCheckInterval.description": {
-    "sourceHash": "2bdd38a"
   },
   "settings.advanced.updateCheckInterval.keywords": "更新、间隔、频率、后台、检查",
   "@settings.advanced.updateCheckInterval.keywords": {
@@ -2694,10 +2622,6 @@
   "@settings.operationLog.maxAge.label": {
     "sourceHash": "ca05015"
   },
-  "settings.operationLog.maxAge.description": "Cmdr 在自动移除最早的记录之前，保留已记录操作的时长。",
-  "@settings.operationLog.maxAge.description": {
-    "sourceHash": "7d35887"
-  },
   "settings.operationLog.maxAge.opt.forever": "永久",
   "@settings.operationLog.maxAge.opt.forever": {
     "sourceHash": "55f980c"
@@ -3208,10 +3132,6 @@
   "settings.securityLog.enabled.label": "记录安全事件",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
-  },
-  "settings.securityLog.enabled.description": "{platform, select, macos {在这台 Mac 上保留一个小文件，记下与安全相关的更改和拒绝，比如对云端 AI 的同意、安装的更新，或被 MCP 服务器拒绝的 App。这个文件不含文件名、文件内容或密码，也绝不会离开你的 Mac。} windows {在这台电脑上保留一个小文件，记下与安全相关的更改和拒绝，比如对云端 AI 的同意、安装的更新，或被 MCP 服务器拒绝的 App。这个文件不含文件名、文件内容或密码，也绝不会离开你的电脑。} other {在这台电脑上保留一个小文件，记下与安全相关的更改和拒绝，比如对云端 AI 的同意、安装的更新，或被 MCP 服务器拒绝的 App。这个文件不含文件名、文件内容或密码，也绝不会离开你的电脑。}}",
-  "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
   },
   "settings.securityLog.enabled.keywords": "安全、日志、审计、记录、事件、访问、隐私",
   "@settings.securityLog.enabled.keywords": {

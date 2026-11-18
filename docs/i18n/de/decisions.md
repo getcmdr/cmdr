@@ -30,7 +30,7 @@ or `terms.json` aren't repeated here.
 - Reserved-shortcut reasons are nominalized (`das Sperren des Bildschirms`) because they sit in the conflict warning's
   `(…)` aside.
 
-## Zeitangaben und Beispiel-Platzhalter (`queryUi.age.*`, `fileOperations.mkdir.placeholder`, `fileOperations.mkfile.placeholder`, `feedback.dialog.placeholder`, `settings.analytics.email.description`)
+## Zeitangaben und Beispiel-Platzhalter (`queryUi.age.*`, `fileOperations.mkdir.placeholder`, `fileOperations.mkfile.placeholder`, `feedback.dialog.placeholder`)
 
 - „{count}m ago“ → `vor {count} Min.` (tight tooltip).
 

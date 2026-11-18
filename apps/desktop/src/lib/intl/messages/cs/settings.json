@@ -3,10 +3,6 @@
   "@settings.appearance.language.label": {
     "sourceHash": "a4fe652"
   },
-  "settings.appearance.language.description": "{platform, select, macos {Vyberte jazyk, který Cmdr používá. „Podle systému“ se řídí jazykem vašeho Macu.} windows {Vyberte jazyk, který Cmdr používá. „Podle systému“ se řídí jazykem zobrazení systému Windows.} other {Vyberte jazyk, který Cmdr používá. „Podle systému“ se řídí jazykem vašeho systému.}}",
-  "@settings.appearance.language.description": {
-    "sourceHash": "7ca0276"
-  },
   "settings.appearance.language.opt.system": "Podle systému",
   "@settings.appearance.language.opt.system": {
     "sourceHash": "b045921"
@@ -170,10 +166,6 @@
   "@settings.appearance.tintLocal.label": {
     "sourceHash": "d907724"
   },
-  "settings.appearance.tintLocal.description": "Barevné tónování pozadí panelů, které zobrazují místní disk.",
-  "@settings.appearance.tintLocal.description": {
-    "sourceHash": "3c86b48"
-  },
   "settings.appearance.tintLocal.keywords": "tónování, panel, barva, svazek, místní, disk, pozadí, zvýraznění",
   "@settings.appearance.tintLocal.keywords": {
     "sourceHash": "955fcd6"
@@ -181,10 +173,6 @@
   "settings.appearance.tintSmb.label": "Tónování panelů serverů (SMB, SFTP, WebDAV, S3)",
   "@settings.appearance.tintSmb.label": {
     "sourceHash": "d912bcf"
-  },
-  "settings.appearance.tintSmb.description": "Barevné tónování pozadí panelů, které zobrazují sdílenou složku SMB, server SFTP, server WebDAV nebo úložiště S3.",
-  "@settings.appearance.tintSmb.description": {
-    "sourceHash": "bddee40"
   },
   "settings.appearance.tintSmb.keywords": "tónování, panel, barva, svazek, server, síť, síťový, cloud, pozadí, zvýraznění",
   "@settings.appearance.tintSmb.keywords": {
@@ -217,10 +205,6 @@
   "settings.appearance.uiDensity.label": "Hustota rozhraní",
   "@settings.appearance.uiDensity.label": {
     "sourceHash": "81344d8"
-  },
-  "settings.appearance.uiDensity.description": "Určuje rozestupy a velikost prvků rozhraní v celé aplikaci.",
-  "@settings.appearance.uiDensity.description": {
-    "sourceHash": "e7ead7a"
   },
   "settings.appearance.uiDensity.opt.compact": "Kompaktní",
   "@settings.appearance.uiDensity.opt.compact": {
@@ -378,10 +362,6 @@
   "@settings.listing.foldersFirst.label": {
     "sourceHash": "a61d73e"
   },
-  "settings.listing.foldersFirst.description": "Řadí složky v seznamu nad soubory. Když to vypnete, složky a soubory se promíchají.",
-  "@settings.listing.foldersFirst.description": {
-    "sourceHash": "8505ff3"
-  },
   "settings.listing.foldersFirst.keywords": "řazení, seřadit, adresář, adresáře, složka, složky, nejdřív, nahoře, smíšené, pořadí, seznam",
   "@settings.listing.foldersFirst.keywords": {
     "sourceHash": "c4f9de2"
@@ -401,10 +381,6 @@
   "settings.listing.directorySortMode.label": "Řazení složek",
   "@settings.listing.directorySortMode.label": {
     "sourceHash": "7d0b088"
-  },
-  "settings.listing.directorySortMode.description": "Jak se řadí složky, když změníte sloupec řazení.",
-  "@settings.listing.directorySortMode.description": {
-    "sourceHash": "797d93b"
   },
   "settings.listing.directorySortMode.disabledReason": "Teď vypnuto, protože se složky míchají se soubory. Zapněte „Zobrazit složky jako první“ a toto nastavení se zpřístupní.",
   "@settings.listing.directorySortMode.disabledReason": {
@@ -1147,10 +1123,6 @@
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label": {
     "sourceHash": "911b74b"
   },
-  "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": "{platform, select, macos {Jak vás upozornit, když na startovacím disku dochází volné místo.} windows {Jak vás upozornit, když na systémové jednotce dochází volné místo.} other {Jak vás upozornit, když na systémovém disku dochází volné místo.}}",
-  "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": {
-    "sourceHash": "07714d7"
-  },
   "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": "V aplikaci",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": {
     "sourceHash": "a2de156"
@@ -1196,10 +1168,6 @@
   "@settings.ai.provider.label": {
     "sourceHash": "472590a"
   },
-  "settings.ai.provider.description": "Vyberte, co pohání funkce AI.",
-  "@settings.ai.provider.description": {
-    "sourceHash": "f8c0f5d"
-  },
   "settings.ai.provider.opt.off": "Vypnuto",
   "@settings.ai.provider.opt.off": {
     "sourceHash": "ca7981b"
@@ -1235,10 +1203,6 @@
   "settings.ai.cloudConsent.keywords": "souhlas, soukromí, povolit, odeslat, data, cloud, AI",
   "@settings.ai.cloudConsent.keywords": {
     "sourceHash": "c0a0566"
-  },
-  "settings.ai.cloudProvider.description": "Kterou službu cloudové AI používat.",
-  "@settings.ai.cloudProvider.description": {
-    "sourceHash": "3300ce9"
   },
   "settings.ai.cloudProvider.keywords": "cloud, poskytovatel, služba, vlastní",
   "@settings.ai.cloudProvider.keywords": {
@@ -1299,10 +1263,6 @@
   "settings.network.enabled.label": "{platform, select, windows {Zapnout síťové funkce} other {Zapnout síťové funkce}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
-  },
-  "settings.network.enabled.description": "{platform, select, macos {Vyhledá servery SMB ve vaší místní síti a připojí se k nim. Když je volba vypnutá, Cmdr dál může číst a zapisovat soubory na už připojených sdílených složkách, ale nebude macOS žádat o přístup k místní síti.} windows {Vyhledá servery SMB ve vaší místní síti a připojí se k nim. Když je volba vypnutá, Cmdr dál může číst a zapisovat soubory na už připojených sdílených složkách a systém Windows se nebude ptát, jestli má Cmdr pustit přes bránu firewall.} other {Vyhledá servery SMB ve vaší místní síti a připojí se k nim. Když je volba vypnutá, Cmdr dál může číst a zapisovat soubory na už připojených sdílených složkách.}}",
-  "@settings.network.enabled.description": {
-    "sourceHash": "6994272"
   },
   "settings.network.enabled.keywords": "síť, zapnout, povolit, vyhledávání, místní síť, oprávnění",
   "@settings.network.enabled.keywords": {
@@ -1448,10 +1408,6 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
-  "settings.fileOperations.adbEnabled.description": "{platform, select, macos {Zpřístupní celý souborový systém telefonu s Androidem, který má zapnuté ladění přes USB, což MTP ukázat neumí. Vyžaduje na tomto Macu nástroje platformy Android (příkaz „adb“). Když to necháte zapnuté a nemáte nainstalované žádné nástroje pro Android, nic vás to nestojí.} windows {Zpřístupní celý souborový systém telefonu s Androidem, který má zapnuté ladění přes USB, což MTP ukázat neumí. Vyžaduje na tomto počítači nástroje platformy Android (příkaz „adb“). Když to necháte zapnuté a nemáte nainstalované žádné nástroje pro Android, nic vás to nestojí.} other {Zpřístupní celý souborový systém telefonu s Androidem, který má zapnuté ladění přes USB, což MTP ukázat neumí. Vyžaduje na tomto počítači nástroje platformy Android (příkaz „adb“). Když to necháte zapnuté a nemáte nainstalované žádné nástroje pro Android, nic vás to nestojí.}}",
-  "@settings.fileOperations.adbEnabled.description": {
-    "sourceHash": "4c92b52"
-  },
   "settings.fileOperations.adbEnabled.keywords": "ladění USB, možnosti pro vývojáře, telefon, zařízení, mobil",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1520,10 +1476,6 @@
   "@settings.viewer.wordWrap.label": {
     "sourceHash": "9e210f3"
   },
-  "settings.viewer.wordWrap.description": "V prohlížeči souborů zalomí dlouhé řádky na okraji okna, takže není potřeba posouvat vodorovně.",
-  "@settings.viewer.wordWrap.description": {
-    "sourceHash": "8a87bd2"
-  },
   "settings.viewer.wordWrap.keywords": "prohlížeč, zalamování, zalomení, řádek, vodorovné, posouvání",
   "@settings.viewer.wordWrap.keywords": {
     "sourceHash": "5d0a24b"
@@ -1581,10 +1533,6 @@
   "@settings.updates.autoCheck.label": {
     "sourceHash": "409e6a1"
   },
-  "settings.updates.autoCheck.description": "Pravidelně na pozadí kontroluje, jestli jsou k dispozici nové verze.",
-  "@settings.updates.autoCheck.description": {
-    "sourceHash": "1ff0b1a"
-  },
   "settings.updates.autoCheck.keywords": "aktualizace, automaticky, kontrola, verze, pozadí",
   "@settings.updates.autoCheck.keywords": {
     "sourceHash": "091ca30"
@@ -1621,10 +1569,6 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
-  "settings.analytics.enabled.description": "{platform, select, windows {Zapněte prosím tuto volbu, ať během otevřené bety vidíme, na kterých funkcích záleží.\nStatistiky nejsou spojené s vaším jménem ani e‑mailem, jen s náhodným ID.\nCmdr nikdy neodesílá názvy souborů, cesty, hledané výrazy ani dotazy pro AI.\nKdyž je volba vypnutá, Cmdr neodesílá žádné statistiky.} other {Zapněte prosím tuto volbu, ať během otevřené bety vidíme, na kterých funkcích záleží.\nStatistiky nejsou spojené s vaším jménem ani e‑mailem, jen s náhodným ID.\nCmdr nikdy neodesílá názvy souborů, cesty, hledané výrazy ani dotazy pro AI.\nKdyž je volba vypnutá, Cmdr neodesílá žádné statistiky.}}",
-  "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
-  },
   "settings.analytics.enabled.keywords": "analytika, používání, statistiky, soukromí, telemetrie, beta, sledování, odhlásit",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1632,10 +1576,6 @@
   "settings.analytics.email.label": "Kontaktní e‑mail pro betaverzi",
   "@settings.analytics.email.label": {
     "sourceHash": "71e5c9a"
-  },
-  "settings.analytics.email.description": "Příklad: jmeno@example.com",
-  "@settings.analytics.email.description": {
-    "sourceHash": "03574f9"
   },
   "settings.analytics.email.keywords": "e-mail, beta, kontakt, zpravodaj, aktualizace, průzkum",
   "@settings.analytics.email.keywords": {
@@ -1740,10 +1680,6 @@
   "settings.advanced.indexPauseFreeSpacePercent.label": "Pozastavit indexování při volném místě pod (%)",
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
-  },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "{platform, select, macos {Cmdr pozastaví indexování disků, když volné místo na startovacím disku klesne pod toto procento, aby index nezabíral místo, které potřebují vaše vlastní soubory. Indexování pokračuje tam, kde skončilo, jakmile volné místo stoupne o jeden procentní bod nad tuto hranici. Funguje to bez ohledu na to, jestli je „Varování při nedostatku volného místa na disku“ zapnuté, nebo vypnuté.} windows {Cmdr pozastaví indexování disků, když volné místo na systémové jednotce klesne pod toto procento, aby index nezabíral místo, které potřebují vaše vlastní soubory. Indexování pokračuje tam, kde skončilo, jakmile volné místo stoupne o jeden procentní bod nad tuto hranici. Funguje to bez ohledu na to, jestli je „Varování při nedostatku volného místa na disku“ zapnuté, nebo vypnuté.} other {Cmdr pozastaví indexování disků, když volné místo na systémovém disku klesne pod toto procento, aby index nezabíral místo, které potřebují vaše vlastní soubory. Indexování pokračuje tam, kde skončilo, jakmile volné místo stoupne o jeden procentní bod nad tuto hranici. Funguje to bez ohledu na to, jestli je „Varování při nedostatku volného místa na disku“ zapnuté, nebo vypnuté.}}",
-  "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "bb41d41"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "disk, místo, plný, zaplněný, volné, úložiště, práh, hranice, procenta, málo, zastavit, pauza",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -1949,10 +1885,6 @@
   "@settings.advanced.mountTimeout.label": {
     "sourceHash": "b5bce4f"
   },
-  "settings.advanced.mountTimeout.description": "Časový limit pro připojování sdílených síťových složek.",
-  "@settings.advanced.mountTimeout.description": {
-    "sourceHash": "3da30e1"
-  },
   "settings.advanced.mountTimeout.keywords": "připojení, časový limit, timeout, síť, sdílená složka",
   "@settings.advanced.mountTimeout.keywords": {
     "sourceHash": "3327884"
@@ -2072,10 +2004,6 @@
   "settings.advanced.updateCheckInterval.label": "Interval kontroly aktualizací",
   "@settings.advanced.updateCheckInterval.label": {
     "sourceHash": "91912bc"
-  },
-  "settings.advanced.updateCheckInterval.description": "Jak často na pozadí kontrolovat aktualizace.",
-  "@settings.advanced.updateCheckInterval.description": {
-    "sourceHash": "2bdd38a"
   },
   "settings.advanced.updateCheckInterval.keywords": "aktualizace, interval, pozadí, kontrola",
   "@settings.advanced.updateCheckInterval.keywords": {
@@ -2694,10 +2622,6 @@
   "@settings.operationLog.maxAge.label": {
     "sourceHash": "ca05015"
   },
-  "settings.operationLog.maxAge.description": "Jak dlouho Cmdr uchovává zaznamenané operace, než nejstarší z nich automaticky odstraní.",
-  "@settings.operationLog.maxAge.description": {
-    "sourceHash": "7d35887"
-  },
   "settings.operationLog.maxAge.opt.forever": "Navždy",
   "@settings.operationLog.maxAge.opt.forever": {
     "sourceHash": "55f980c"
@@ -3208,10 +3132,6 @@
   "settings.securityLog.enabled.label": "Zaznamenávat bezpečnostní události",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
-  },
-  "settings.securityLog.enabled.description": "{platform, select, macos {Uchovávat na tomto Macu malý soubor, který zaznamenává změny a odmítnutí důležité pro bezpečnost, třeba souhlas s cloudovou AI, nainstalovanou aktualizaci nebo aplikaci odmítnutou serverem MCP. Neobsahuje žádné názvy souborů, obsah ani hesla a nikdy neopustí váš Mac.} windows {Uchovávat na tomto počítači malý soubor, který zaznamenává změny a odmítnutí důležité pro bezpečnost, třeba souhlas s cloudovou AI, nainstalovanou aktualizaci nebo aplikaci odmítnutou serverem MCP. Neobsahuje žádné názvy souborů, obsah ani hesla a nikdy neopustí váš počítač.} other {Uchovávat na tomto počítači malý soubor, který zaznamenává změny a odmítnutí důležité pro bezpečnost, třeba souhlas s cloudovou AI, nainstalovanou aktualizaci nebo aplikaci odmítnutou serverem MCP. Neobsahuje žádné názvy souborů, obsah ani hesla a nikdy neopustí váš počítač.}}",
-  "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
   },
   "settings.securityLog.enabled.keywords": "bezpečnost, zabezpečení, protokol, log, audit, záznam, události, přístup, soukromí",
   "@settings.securityLog.enabled.keywords": {

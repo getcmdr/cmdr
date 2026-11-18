@@ -62,7 +62,7 @@ describe('settings registry label/description parity (en)', () => {
   it('preserves the MTP description with quotes and apostrophes', () => {
     const def = getSettingDefinition('fileOperations.mtpEnabled')
     expect(def?.description).toBe(
-      'Detect and connect to Android and other devices over a USB cable for file browsing and transfers. To use this feature on an Android phone, you’ll want to use a USB cable, then on your phone, go to something like Settings > USB Preferences, and set the connection to “File transfer”, “Android Auto”, or similar. (Varies by device.)',
+      'Cmdr detects Android phones, Kindles, and cameras on a USB cable so you can browse and transfer files. On Android, look somewhere like Settings > USB Preferences; “Android Auto” works too. It varies by device.',
     )
   })
 
@@ -134,7 +134,7 @@ describe('crash-report setting description (en), true for both app fates', () =>
   it('names the background problem the app keeps running through, not only a quit', () => {
     const description = getSettingDefinition('updates.crashReports')?.description
     expect(description).toBe(
-      'Automatically send a report when Cmdr crashes or runs into a problem in the background. Includes app version, macOS version, and where in the code the problem happened. Never file names or personal data.',
+      'Cmdr sends a report when it crashes or runs into a problem in the background. It includes the app version, macOS version, and where in the code the problem happened.',
     )
     // The regression to catch: scoping the sentence back to quitting, which would
     // describe only one of the two cases that actually send a report.

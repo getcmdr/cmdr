@@ -3,10 +3,6 @@
   "@settings.appearance.language.label": {
     "sourceHash": "a4fe652"
   },
-  "settings.appearance.language.description": "{platform, select, macos {選擇 Cmdr 使用的語言。「跟隨系統」會採用你 Mac 的語言。} windows {選擇 Cmdr 使用的語言。「跟隨系統」會採用你的 Windows 顯示語言。} other {選擇 Cmdr 使用的語言。「跟隨系統」會採用你系統的語言。}}",
-  "@settings.appearance.language.description": {
-    "sourceHash": "7ca0276"
-  },
   "settings.appearance.language.opt.system": "跟隨系統",
   "@settings.appearance.language.opt.system": {
     "sourceHash": "b045921"
@@ -172,10 +168,6 @@
   "@settings.appearance.tintLocal.label": {
     "sourceHash": "d907724"
   },
-  "settings.appearance.tintLocal.description": "為顯示本機磁碟機的窗格加上的背景著色。",
-  "@settings.appearance.tintLocal.description": {
-    "sourceHash": "3c86b48"
-  },
   "settings.appearance.tintLocal.keywords": "著色, 色調, 窗格, 顏色, 卷宗, 本機, 背景, 背景色, 醒目提示",
   "@settings.appearance.tintLocal.keywords": {
     "sourceHash": "955fcd6"
@@ -183,10 +175,6 @@
   "settings.appearance.tintSmb.label": "為伺服器窗格著色（SMB、SFTP、WebDAV、S3）",
   "@settings.appearance.tintSmb.label": {
     "sourceHash": "d912bcf"
-  },
-  "settings.appearance.tintSmb.description": "為顯示 SMB 共享資料夾、SFTP 伺服器、WebDAV 伺服器或 S3 儲存空間的窗格加上的背景著色。",
-  "@settings.appearance.tintSmb.description": {
-    "sourceHash": "bddee40"
   },
   "settings.appearance.tintSmb.keywords": "著色, 色調, 窗格, 顏色, 卷宗, 伺服器, 網路, 背景, 背景色, 醒目提示",
   "@settings.appearance.tintSmb.keywords": {
@@ -219,10 +207,6 @@
   "settings.appearance.uiDensity.label": "介面密度",
   "@settings.appearance.uiDensity.label": {
     "sourceHash": "81344d8"
-  },
-  "settings.appearance.uiDensity.description": "控制整個 App 中介面元素的間距和大小。",
-  "@settings.appearance.uiDensity.description": {
-    "sourceHash": "e7ead7a"
   },
   "settings.appearance.uiDensity.opt.compact": "緊湊",
   "@settings.appearance.uiDensity.opt.compact": {
@@ -380,10 +364,6 @@
   "@settings.listing.foldersFirst.label": {
     "sourceHash": "a61d73e"
   },
-  "settings.listing.foldersFirst.description": "在檔案上方列出資料夾。關閉後，資料夾和檔案會混在一起。",
-  "@settings.listing.foldersFirst.description": {
-    "sourceHash": "8505ff3"
-  },
   "settings.listing.foldersFirst.keywords": "排序, 目錄, 資料夾, 優先, 先顯示, 頂端, 最上面, 混合, 順序, 列表",
   "@settings.listing.foldersFirst.keywords": {
     "sourceHash": "c4f9de2"
@@ -403,10 +383,6 @@
   "settings.listing.directorySortMode.label": "資料夾排序",
   "@settings.listing.directorySortMode.label": {
     "sourceHash": "7d0b088"
-  },
-  "settings.listing.directorySortMode.description": "更改排序欄位時，資料夾的排序方式。",
-  "@settings.listing.directorySortMode.description": {
-    "sourceHash": "797d93b"
   },
   "settings.listing.directorySortMode.disabledReason": "目前已停用，因為資料夾和檔案混在一起。開啟「先顯示資料夾」即可使用這項設定。",
   "@settings.listing.directorySortMode.disabledReason": {
@@ -1149,10 +1125,6 @@
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label": {
     "sourceHash": "911b74b"
   },
-  "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": "{platform, select, macos {當你的啟動磁碟可用空間不足時，要如何向你發出警告。} windows {當你的系統磁碟機可用空間不足時，要如何向你發出警告。} other {當你的系統磁碟可用空間不足時，要如何向你發出警告。}}",
-  "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": {
-    "sourceHash": "07714d7"
-  },
   "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": "App 內",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": {
     "sourceHash": "a2de156"
@@ -1198,10 +1170,6 @@
   "@settings.ai.provider.label": {
     "sourceHash": "472590a"
   },
-  "settings.ai.provider.description": "選擇 AI 功能由什麼來驅動。",
-  "@settings.ai.provider.description": {
-    "sourceHash": "f8c0f5d"
-  },
   "settings.ai.provider.opt.off": "關閉",
   "@settings.ai.provider.opt.off": {
     "sourceHash": "ca7981b"
@@ -1237,10 +1205,6 @@
   "settings.ai.cloudConsent.keywords": "同意, 隱私, 允許, 傳送, 資料, 雲端, 人工智慧",
   "@settings.ai.cloudConsent.keywords": {
     "sourceHash": "c0a0566"
-  },
-  "settings.ai.cloudProvider.description": "要使用哪一個雲端 AI 服務。",
-  "@settings.ai.cloudProvider.description": {
-    "sourceHash": "3300ce9"
   },
   "settings.ai.cloudProvider.keywords": "雲端, 提供者, 供應商, 服務, 自訂",
   "@settings.ai.cloudProvider.keywords": {
@@ -1301,10 +1265,6 @@
   "settings.network.enabled.label": "{platform, select, windows {開啟網路功能} other {啟用網路功能}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
-  },
-  "settings.network.enabled.description": "{platform, select, macos {在你的區域網路上探索 SMB 伺服器並連接它們。關閉時，Cmdr 仍可在已裝載的共享上讀寫檔案，但不會向 macOS 要求區域網路的存取權。} windows {在你的區域網路上探索 SMB 伺服器並連接它們。關閉時，Cmdr 仍可在已掛接的共享上讀寫檔案，而且 Windows 不會詢問是否讓 Cmdr 通過防火牆。} other {在你的區域網路上探索 SMB 伺服器並連接它們。關閉時，Cmdr 仍可在已掛載的共享上讀寫檔案。}}",
-  "@settings.network.enabled.description": {
-    "sourceHash": "6994272"
   },
   "settings.network.enabled.keywords": "網路, 啟用, 已啟用, 探索, 區域網路, 本機, 權限",
   "@settings.network.enabled.keywords": {
@@ -1450,10 +1410,6 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
-  "settings.fileOperations.adbEnabled.description": "{platform, select, macos {只要 Android 手機開啟了「USB 偵錯」，你就能存取它的整個檔案系統，包括 MTP 無法顯示的部分。這需要在這部 Mac 上安裝 Android 平台工具（也就是 adb 指令）。就算你沒安裝任何 Android 工具，開著這一項也不會有任何代價。} windows {只要 Android 手機開啟了「USB 偵錯」，你就能存取它的整個檔案系統，包括 MTP 無法顯示的部分。這需要在這台電腦上安裝 Android 平台工具（也就是 adb 指令）。就算你沒安裝任何 Android 工具，開著這一項也不會有任何代價。} other {只要 Android 手機開啟了「USB 偵錯」，你就能存取它的整個檔案系統，包括 MTP 無法顯示的部分。這需要在這台電腦上安裝 Android 平台工具（也就是 adb 指令）。就算你沒安裝任何 Android 工具，開著這一項也不會有任何代價。}}",
-  "@settings.fileOperations.adbEnabled.description": {
-    "sourceHash": "4c92b52"
-  },
   "settings.fileOperations.adbEnabled.keywords": "USB 偵錯, 偵錯, 開發人員選項, 手機, 裝置",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1522,10 +1478,6 @@
   "@settings.viewer.wordWrap.label": {
     "sourceHash": "9e210f3"
   },
-  "settings.viewer.wordWrap.description": "在檔案檢視器中讓長行在視窗邊緣換行，而不是橫向捲動。",
-  "@settings.viewer.wordWrap.description": {
-    "sourceHash": "8a87bd2"
-  },
   "settings.viewer.wordWrap.keywords": "檢視器, 換行, 自動換行, 文字, 行, 水平, 捲動",
   "@settings.viewer.wordWrap.keywords": {
     "sourceHash": "5d0a24b"
@@ -1582,10 +1534,6 @@
   "@settings.updates.autoCheck.label": {
     "sourceHash": "409e6a1"
   },
-  "settings.updates.autoCheck.description": "在背景定期檢查有沒有新版本。",
-  "@settings.updates.autoCheck.description": {
-    "sourceHash": "1ff0b1a"
-  },
   "settings.updates.autoCheck.keywords": "更新, 自動, 檢查, 版本, 背景",
   "@settings.updates.autoCheck.keywords": {
     "sourceHash": "091ca30"
@@ -1622,10 +1570,6 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
-  "settings.analytics.enabled.description": "{platform, select, windows {請開啟這一項，幫助我們在公開測試期間了解哪些功能重要。\n統計不會關聯到你的姓名或電子郵件，而是關聯到一個隨機識別碼。\nCmdr 絕不會傳送檔名、路徑、搜尋字詞或提示詞。\n關閉後，Cmdr 不會傳送任何統計。} other {請開啟這一項，幫助我們在公開測試期間了解哪些功能重要。\n統計不會關聯到你的姓名或電子郵件，而是關聯到一個隨機識別碼。\nCmdr 絕不會傳送檔名、路徑、搜尋字詞或提示詞。\n關閉後，Cmdr 不會傳送任何統計。}}",
-  "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
-  },
   "settings.analytics.enabled.keywords": "分析, 使用情況, 使用統計, 統計, 隱私, 遙測, 測試版, 追蹤, 停用",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1633,10 +1577,6 @@
   "settings.analytics.email.label": "測試版聯絡用電子郵件",
   "@settings.analytics.email.label": {
     "sourceHash": "71e5c9a"
-  },
-  "settings.analytics.email.description": "例如：you@example.com",
-  "@settings.analytics.email.description": {
-    "sourceHash": "03574f9"
   },
   "settings.analytics.email.keywords": "電子郵件, 信箱, 測試版, 聯絡, 電子報, 更新, 問卷, 調查",
   "@settings.analytics.email.keywords": {
@@ -1741,10 +1681,6 @@
   "settings.advanced.indexPauseFreeSpacePercent.label": "暫停索引的可用空間閾值（%）",
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
-  },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "{platform, select, macos {當啟動磁碟的可用空間低於這個百分比時，Cmdr 會暫停磁碟機索引，以免索引佔用你自己的檔案需要的空間。可用空間回升到比它高一個百分點後，索引會從中斷的地方繼續。無論「磁碟空間不足警告」是否開啟，這個設定都有效。} windows {當系統磁碟機的可用空間低於這個百分比時，Cmdr 會暫停磁碟機索引，以免索引佔用你自己的檔案需要的空間。可用空間回升到比它高一個百分點後，索引會從中斷的地方繼續。無論「磁碟空間不足警告」是否開啟，這個設定都有效。} other {當系統磁碟的可用空間低於這個百分比時，Cmdr 會暫停磁碟機索引，以免索引佔用你自己的檔案需要的空間。可用空間回升到比它高一個百分點後，索引會從中斷的地方繼續。無論「磁碟空間不足警告」是否開啟，這個設定都有效。}}",
-  "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "bb41d41"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "磁碟, 空間, 已滿, 可用空間, 索引, 暫停, 儲存空間, 閾值, 門檻, 百分比, 不足",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -1950,10 +1886,6 @@
   "@settings.advanced.mountTimeout.label": {
     "sourceHash": "b5bce4f"
   },
-  "settings.advanced.mountTimeout.description": "裝載網路共享的逾時。",
-  "@settings.advanced.mountTimeout.description": {
-    "sourceHash": "3da30e1"
-  },
   "settings.advanced.mountTimeout.keywords": "裝載, 掛載, 逾時, 超時, 網路, 共享",
   "@settings.advanced.mountTimeout.keywords": {
     "sourceHash": "3327884"
@@ -2073,10 +2005,6 @@
   "settings.advanced.updateCheckInterval.label": "更新檢查間隔",
   "@settings.advanced.updateCheckInterval.label": {
     "sourceHash": "91912bc"
-  },
-  "settings.advanced.updateCheckInterval.description": "在背景檢查更新的頻率。",
-  "@settings.advanced.updateCheckInterval.description": {
-    "sourceHash": "2bdd38a"
   },
   "settings.advanced.updateCheckInterval.keywords": "更新, 間隔, 頻率, 背景, 檢查",
   "@settings.advanced.updateCheckInterval.keywords": {
@@ -2694,10 +2622,6 @@
   "@settings.operationLog.maxAge.label": {
     "sourceHash": "ca05015"
   },
-  "settings.operationLog.maxAge.description": "Cmdr 在自動移除最早的記錄之前，要保留已記錄的操作多久。",
-  "@settings.operationLog.maxAge.description": {
-    "sourceHash": "7d35887"
-  },
   "settings.operationLog.maxAge.opt.forever": "永久",
   "@settings.operationLog.maxAge.opt.forever": {
     "sourceHash": "55f980c"
@@ -3208,10 +3132,6 @@
   "settings.securityLog.enabled.label": "記錄安全性事件",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
-  },
-  "settings.securityLog.enabled.description": "{platform, select, macos {在這部 Mac 上保留一個小檔案，記下與安全性相關的變更和拒絕，例如雲端 AI 的同意、安裝的更新，或被 MCP 伺服器拒絕的 App。這個檔案不含檔名、內容或密碼，也絕不會離開你的 Mac。} windows {在這台電腦上保留一個小檔案，記下與安全性相關的變更和拒絕，例如雲端 AI 的同意、安裝的更新，或被 MCP 伺服器拒絕的 App。這個檔案不含檔名、內容或密碼，也絕不會離開你的電腦。} other {在這台電腦上保留一個小檔案，記下與安全性相關的變更和拒絕，例如雲端 AI 的同意、安裝的更新，或被 MCP 伺服器拒絕的 App。這個檔案不含檔名、內容或密碼，也絕不會離開你的電腦。}}",
-  "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
   },
   "settings.securityLog.enabled.keywords": "安全性, 安全, 記錄, 日誌, 稽核, 事件, 存取, 隱私",
   "@settings.securityLog.enabled.keywords": {

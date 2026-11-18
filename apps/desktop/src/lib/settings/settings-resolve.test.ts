@@ -41,9 +41,10 @@ describe('resolveDefinition description placement', () => {
 })
 
 describe('the registry’s tip settings', () => {
-  it('give every tip a description to show', () => {
+  // A split setting's tip may be empty on one OS (`network.enabled` has nothing to add on Linux); its summary still shows.
+  it('give every tip something to show', () => {
     const empty = settingsRegistry
-      .filter((s) => s.descriptionPlacement === 'tip' && s.description === '')
+      .filter((s) => s.descriptionPlacement === 'tip' && s.description === '' && s.summary === '')
       .map((s) => s.id)
     expect(empty).toEqual([])
   })

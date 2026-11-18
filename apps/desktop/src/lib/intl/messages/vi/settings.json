@@ -3,10 +3,6 @@
   "@settings.appearance.language.label": {
     "sourceHash": "a4fe652"
   },
-  "settings.appearance.language.description": "{platform, select, macos {Chọn ngôn ngữ Cmdr dùng. “Mặc định hệ thống” theo ngôn ngữ máy Mac của bạn.} windows {Chọn ngôn ngữ Cmdr dùng. “Mặc định hệ thống” theo ngôn ngữ hiển thị Windows của bạn.} other {Chọn ngôn ngữ Cmdr dùng. “Mặc định hệ thống” theo ngôn ngữ hệ thống của bạn.}}",
-  "@settings.appearance.language.description": {
-    "sourceHash": "7ca0276"
-  },
   "settings.appearance.language.opt.system": "Mặc định hệ thống",
   "@settings.appearance.language.opt.system": {
     "sourceHash": "b045921"
@@ -170,10 +166,6 @@
   "@settings.appearance.tintLocal.label": {
     "sourceHash": "d907724"
   },
-  "settings.appearance.tintLocal.description": "Màu nền phủ lên các khung hiển thị ổ đĩa cục bộ.",
-  "@settings.appearance.tintLocal.description": {
-    "sourceHash": "3c86b48"
-  },
   "settings.appearance.tintLocal.keywords": "phủ màu, tô màu, khung, màu, ổ đĩa, cục bộ, nền, làm nổi bật",
   "@settings.appearance.tintLocal.keywords": {
     "sourceHash": "955fcd6"
@@ -181,10 +173,6 @@
   "settings.appearance.tintSmb.label": "Phủ màu cho khung máy chủ (SMB, SFTP, WebDAV, S3)",
   "@settings.appearance.tintSmb.label": {
     "sourceHash": "d912bcf"
-  },
-  "settings.appearance.tintSmb.description": "Màu nền phủ lên các khung hiển thị mục chia sẻ SMB, máy chủ SFTP, máy chủ WebDAV, hoặc kho lưu trữ S3.",
-  "@settings.appearance.tintSmb.description": {
-    "sourceHash": "bddee40"
   },
   "settings.appearance.tintSmb.keywords": "phủ màu, tô màu, khung, màu, ổ đĩa, máy chủ, mạng, nền, làm nổi bật",
   "@settings.appearance.tintSmb.keywords": {
@@ -217,10 +205,6 @@
   "settings.appearance.uiDensity.label": "Mật độ giao diện",
   "@settings.appearance.uiDensity.label": {
     "sourceHash": "81344d8"
-  },
-  "settings.appearance.uiDensity.description": "Kiểm soát khoảng cách và kích cỡ các thành phần giao diện trên toàn ứng dụng.",
-  "@settings.appearance.uiDensity.description": {
-    "sourceHash": "e7ead7a"
   },
   "settings.appearance.uiDensity.opt.compact": "Gọn",
   "@settings.appearance.uiDensity.opt.compact": {
@@ -378,10 +362,6 @@
   "@settings.listing.foldersFirst.label": {
     "sourceHash": "a61d73e"
   },
-  "settings.listing.foldersFirst.description": "Liệt kê thư mục phía trên tệp. Tắt tùy chọn này để xếp lẫn thư mục và tệp với nhau.",
-  "@settings.listing.foldersFirst.description": {
-    "sourceHash": "8505ff3"
-  },
   "settings.listing.foldersFirst.keywords": "sắp xếp, thư mục, lên đầu, trước, trên cùng, trộn lẫn, thứ tự, danh sách",
   "@settings.listing.foldersFirst.keywords": {
     "sourceHash": "c4f9de2"
@@ -401,10 +381,6 @@
   "settings.listing.directorySortMode.label": "Sắp xếp thư mục",
   "@settings.listing.directorySortMode.label": {
     "sourceHash": "7d0b088"
-  },
-  "settings.listing.directorySortMode.description": "Cách sắp xếp thư mục khi đổi cột sắp xếp.",
-  "@settings.listing.directorySortMode.description": {
-    "sourceHash": "797d93b"
   },
   "settings.listing.directorySortMode.disabledReason": "Hiện đang tắt vì thư mục và tệp đang xếp lẫn với nhau. Hãy bật “Hiển thị thư mục lên đầu” để dùng cài đặt này.",
   "@settings.listing.directorySortMode.disabledReason": {
@@ -1147,10 +1123,6 @@
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label": {
     "sourceHash": "911b74b"
   },
-  "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": "{platform, select, macos {Cách cảnh báo khi ổ đĩa khởi động của bạn sắp hết dung lượng trống.} windows {Cách cảnh báo khi ổ đĩa hệ thống của bạn sắp hết dung lượng trống.} other {Cách cảnh báo khi ổ đĩa hệ thống của bạn sắp hết dung lượng trống.}}",
-  "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": {
-    "sourceHash": "07714d7"
-  },
   "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": "Trong ứng dụng",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": {
     "sourceHash": "a2de156"
@@ -1196,10 +1168,6 @@
   "@settings.ai.provider.label": {
     "sourceHash": "472590a"
   },
-  "settings.ai.provider.description": "Chọn cách vận hành các tính năng AI.",
-  "@settings.ai.provider.description": {
-    "sourceHash": "f8c0f5d"
-  },
   "settings.ai.provider.opt.off": "Tắt",
   "@settings.ai.provider.opt.off": {
     "sourceHash": "ca7981b"
@@ -1235,10 +1203,6 @@
   "settings.ai.cloudConsent.keywords": "đồng ý, quyền riêng tư, cho phép, gửi, dữ liệu, đám mây, trí tuệ nhân tạo",
   "@settings.ai.cloudConsent.keywords": {
     "sourceHash": "c0a0566"
-  },
-  "settings.ai.cloudProvider.description": "Dịch vụ AI đám mây nào sẽ dùng.",
-  "@settings.ai.cloudProvider.description": {
-    "sourceHash": "3300ce9"
   },
   "settings.ai.cloudProvider.keywords": "đám mây, nhà cung cấp, dịch vụ, tùy chỉnh",
   "@settings.ai.cloudProvider.keywords": {
@@ -1299,10 +1263,6 @@
   "settings.network.enabled.label": "{platform, select, windows {Bật kết nối mạng} other {Bật kết nối mạng}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
-  },
-  "settings.network.enabled.description": "{platform, select, macos {Tìm các máy chủ SMB trên mạng cục bộ của bạn và kết nối tới chúng. Khi tắt, Cmdr vẫn đọc và ghi tệp được trên các mục chia sẻ đã gắn kết, nhưng sẽ không xin quyền Mạng cục bộ từ macOS.} windows {Tìm các máy chủ SMB trên mạng cục bộ của bạn và kết nối tới chúng. Khi tắt, Cmdr vẫn đọc và ghi tệp được trên các mục chia sẻ đã gắn kết, và Windows sẽ không hỏi có cho Cmdr đi qua tường lửa hay không.} other {Tìm các máy chủ SMB trên mạng cục bộ của bạn và kết nối tới chúng. Khi tắt, Cmdr vẫn đọc và ghi tệp được trên các mục chia sẻ đã gắn kết.}}",
-  "@settings.network.enabled.description": {
-    "sourceHash": "6994272"
   },
   "settings.network.enabled.keywords": "mạng, kết nối mạng, bật, khám phá, mạng cục bộ, cục bộ, quyền",
   "@settings.network.enabled.keywords": {
@@ -1448,10 +1408,6 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
-  "settings.fileOperations.adbEnabled.description": "{platform, select, macos {Truy cập toàn bộ hệ thống tệp của một điện thoại Android đang bật gỡ lỗi qua USB, phần mà MTP không cho bạn thấy. Cần có bộ công cụ nền tảng Android (lệnh “adb”) trên máy Mac này. Cứ để bật cũng không tốn gì nếu bạn chưa cài công cụ Android nào.} windows {Truy cập toàn bộ hệ thống tệp của một điện thoại Android đang bật gỡ lỗi qua USB, phần mà MTP không cho bạn thấy. Cần có bộ công cụ nền tảng Android (lệnh “adb”) trên PC này. Cứ để bật cũng không tốn gì nếu bạn chưa cài công cụ Android nào.} other {Truy cập toàn bộ hệ thống tệp của một điện thoại Android đang bật gỡ lỗi qua USB, phần mà MTP không cho bạn thấy. Cần có bộ công cụ nền tảng Android (lệnh “adb”) trên máy tính này. Cứ để bật cũng không tốn gì nếu bạn chưa cài công cụ Android nào.}}",
-  "@settings.fileOperations.adbEnabled.description": {
-    "sourceHash": "4c92b52"
-  },
   "settings.fileOperations.adbEnabled.keywords": "gỡ lỗi qua USB, tùy chọn cho nhà phát triển, nhà phát triển, điện thoại, thiết bị",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1520,10 +1476,6 @@
   "@settings.viewer.wordWrap.label": {
     "sourceHash": "9e210f3"
   },
-  "settings.viewer.wordWrap.description": "Ngắt các dòng dài ở mép cửa sổ trong trình xem tệp thay vì cuộn ngang.",
-  "@settings.viewer.wordWrap.description": {
-    "sourceHash": "8a87bd2"
-  },
   "settings.viewer.wordWrap.keywords": "trình xem, ngắt dòng, xuống dòng, từ, dòng, ngang, cuộn",
   "@settings.viewer.wordWrap.keywords": {
     "sourceHash": "5d0a24b"
@@ -1580,10 +1532,6 @@
   "@settings.updates.autoCheck.label": {
     "sourceHash": "409e6a1"
   },
-  "settings.updates.autoCheck.description": "Định kỳ kiểm tra phiên bản mới ở chế độ nền.",
-  "@settings.updates.autoCheck.description": {
-    "sourceHash": "1ff0b1a"
-  },
   "settings.updates.autoCheck.keywords": "cập nhật, tự động, kiểm tra, phiên bản, nền",
   "@settings.updates.autoCheck.keywords": {
     "sourceHash": "091ca30"
@@ -1620,10 +1568,6 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
-  "settings.analytics.enabled.description": "{platform, select, windows {Hãy bật mục này để giúp chúng tôi thấy tính năng nào quan trọng trong giai đoạn beta công khai.\nThống kê không gắn với tên hay email của bạn, mà gắn với một mã định danh ngẫu nhiên.\nCmdr không bao giờ gửi tên tệp, đường dẫn, từ khóa tìm kiếm hay câu lệnh.\nKhi tắt, Cmdr không gửi bất kỳ thống kê nào.} other {Hãy bật mục này để giúp chúng tôi thấy tính năng nào quan trọng trong giai đoạn beta công khai.\nThống kê không gắn với tên hay email của bạn, mà gắn với một mã định danh ngẫu nhiên.\nCmdr không bao giờ gửi tên tệp, đường dẫn, từ khóa tìm kiếm hay câu lệnh.\nKhi tắt, Cmdr không gửi bất kỳ thống kê nào.}}",
-  "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
-  },
   "settings.analytics.enabled.keywords": "phân tích, sử dụng, thống kê, quyền riêng tư, đo từ xa, thử nghiệm, theo dõi, từ chối",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1631,10 +1575,6 @@
   "settings.analytics.email.label": "Email liên hệ beta",
   "@settings.analytics.email.label": {
     "sourceHash": "71e5c9a"
-  },
-  "settings.analytics.email.description": "Ví dụ: you@example.com",
-  "@settings.analytics.email.description": {
-    "sourceHash": "03574f9"
   },
   "settings.analytics.email.keywords": "email, thư điện tử, thử nghiệm, liên hệ, bản tin, cập nhật, khảo sát",
   "@settings.analytics.email.keywords": {
@@ -1739,10 +1679,6 @@
   "settings.advanced.indexPauseFreeSpacePercent.label": "Tạm dừng lập chỉ mục khi dung lượng trống dưới (%)",
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
-  },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "{platform, select, macos {Cmdr tạm dừng lập chỉ mục ổ đĩa khi dung lượng trống trên ổ đĩa khởi động tụt xuống dưới mức phần trăm này, để chỉ mục không chiếm chỗ mà tệp của bạn cần. Việc lập chỉ mục sẽ tiếp tục từ chỗ đã dừng khi dung lượng trống tăng lên cao hơn mức này một điểm phần trăm. Tính năng này hoạt động dù “Cảnh báo thiếu dung lượng đĩa” đang bật hay tắt.} windows {Cmdr tạm dừng lập chỉ mục ổ đĩa khi dung lượng trống trên ổ đĩa hệ thống tụt xuống dưới mức phần trăm này, để chỉ mục không chiếm chỗ mà tệp của bạn cần. Việc lập chỉ mục sẽ tiếp tục từ chỗ đã dừng khi dung lượng trống tăng lên cao hơn mức này một điểm phần trăm. Tính năng này hoạt động dù “Cảnh báo thiếu dung lượng đĩa” đang bật hay tắt.} other {Cmdr tạm dừng lập chỉ mục ổ đĩa khi dung lượng trống trên ổ đĩa hệ thống tụt xuống dưới mức phần trăm này, để chỉ mục không chiếm chỗ mà tệp của bạn cần. Việc lập chỉ mục sẽ tiếp tục từ chỗ đã dừng khi dung lượng trống tăng lên cao hơn mức này một điểm phần trăm. Tính năng này hoạt động dù “Cảnh báo thiếu dung lượng đĩa” đang bật hay tắt.}}",
-  "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "bb41d41"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "đĩa, ổ đĩa, dung lượng, đầy, sắp đầy, còn trống, chỉ mục, tạm dừng, lưu trữ, ngưỡng, phần trăm, thiếu",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -1948,10 +1884,6 @@
   "@settings.advanced.mountTimeout.label": {
     "sourceHash": "b5bce4f"
   },
-  "settings.advanced.mountTimeout.description": "Thời gian chờ khi gắn kết các mục chia sẻ mạng.",
-  "@settings.advanced.mountTimeout.description": {
-    "sourceHash": "3da30e1"
-  },
   "settings.advanced.mountTimeout.keywords": "gắn kết, thời gian chờ, mạng, mục chia sẻ",
   "@settings.advanced.mountTimeout.keywords": {
     "sourceHash": "3327884"
@@ -2071,10 +2003,6 @@
   "settings.advanced.updateCheckInterval.label": "Khoảng thời gian kiểm tra cập nhật",
   "@settings.advanced.updateCheckInterval.label": {
     "sourceHash": "91912bc"
-  },
-  "settings.advanced.updateCheckInterval.description": "Kiểm tra cập nhật thường xuyên đến đâu ở chế độ nền.",
-  "@settings.advanced.updateCheckInterval.description": {
-    "sourceHash": "2bdd38a"
   },
   "settings.advanced.updateCheckInterval.keywords": "cập nhật, khoảng thời gian, nền, kiểm tra, tần suất",
   "@settings.advanced.updateCheckInterval.keywords": {
@@ -2694,10 +2622,6 @@
   "@settings.operationLog.maxAge.label": {
     "sourceHash": "ca05015"
   },
-  "settings.operationLog.maxAge.description": "Cmdr giữ các thao tác đã ghi trong bao lâu trước khi tự động xóa những thao tác cũ nhất.",
-  "@settings.operationLog.maxAge.description": {
-    "sourceHash": "7d35887"
-  },
   "settings.operationLog.maxAge.opt.forever": "Mãi mãi",
   "@settings.operationLog.maxAge.opt.forever": {
     "sourceHash": "55f980c"
@@ -3208,10 +3132,6 @@
   "settings.securityLog.enabled.label": "Ghi lại sự kiện bảo mật",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
-  },
-  "settings.securityLog.enabled.description": "{platform, select, macos {Giữ một tệp nhỏ trên máy Mac này để ghi lại các thay đổi và lần từ chối liên quan đến bảo mật, như việc đồng ý dùng AI đám mây, một bản cập nhật đã cài đặt hoặc một ứng dụng bị máy chủ MCP từ chối. Tệp này không chứa tên tệp, nội dung hay mật khẩu, và không bao giờ rời khỏi máy Mac của bạn.} windows {Giữ một tệp nhỏ trên PC này để ghi lại các thay đổi và lần từ chối liên quan đến bảo mật, như việc đồng ý dùng AI đám mây, một bản cập nhật đã cài đặt hoặc một ứng dụng bị máy chủ MCP từ chối. Tệp này không chứa tên tệp, nội dung hay mật khẩu, và không bao giờ rời khỏi PC của bạn.} other {Giữ một tệp nhỏ trên máy tính này để ghi lại các thay đổi và lần từ chối liên quan đến bảo mật, như việc đồng ý dùng AI đám mây, một bản cập nhật đã cài đặt hoặc một ứng dụng bị máy chủ MCP từ chối. Tệp này không chứa tên tệp, nội dung hay mật khẩu, và không bao giờ rời khỏi máy tính của bạn.}}",
-  "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
   },
   "settings.securityLog.enabled.keywords": "bảo mật, an ninh, nhật ký, kiểm toán, ghi lại, sự kiện, truy cập, quyền riêng tư",
   "@settings.securityLog.enabled.keywords": {

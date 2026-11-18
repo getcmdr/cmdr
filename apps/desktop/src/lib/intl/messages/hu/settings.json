@@ -3,10 +3,6 @@
   "@settings.appearance.language.label": {
     "sourceHash": "a4fe652"
   },
-  "settings.appearance.language.description": "{platform, select, macos {Válaszd ki, milyen nyelvet használjon a Cmdr. A „Rendszer szerinti” a Mac nyelvét követi.} windows {Válaszd ki, milyen nyelvet használjon a Cmdr. A „Rendszer szerinti” a Windows megjelenítési nyelvét követi.} other {Válaszd ki, milyen nyelvet használjon a Cmdr. A „Rendszer szerinti” a rendszered nyelvét követi.}}",
-  "@settings.appearance.language.description": {
-    "sourceHash": "7ca0276"
-  },
   "settings.appearance.language.opt.system": "Rendszer szerinti",
   "@settings.appearance.language.opt.system": {
     "sourceHash": "b045921"
@@ -172,10 +168,6 @@
   "@settings.appearance.tintLocal.label": {
     "sourceHash": "d907724"
   },
-  "settings.appearance.tintLocal.description": "Háttérszínezés a helyi meghajtót mutató paneleken.",
-  "@settings.appearance.tintLocal.description": {
-    "sourceHash": "3c86b48"
-  },
   "settings.appearance.tintLocal.keywords": "színezés, panel, szín, kötet, helyi, lemez, háttér, kiemelés",
   "@settings.appearance.tintLocal.keywords": {
     "sourceHash": "955fcd6"
@@ -183,10 +175,6 @@
   "settings.appearance.tintSmb.label": "Szerverpanelek színezése (SMB, SFTP, WebDAV, S3)",
   "@settings.appearance.tintSmb.label": {
     "sourceHash": "d912bcf"
-  },
-  "settings.appearance.tintSmb.description": "Háttérszínezés az SMB-megosztást, SFTP- vagy WebDAV-szervert, illetve S3-tárhelyet mutató paneleken.",
-  "@settings.appearance.tintSmb.description": {
-    "sourceHash": "bddee40"
   },
   "settings.appearance.tintSmb.keywords": "színezés, panel, szín, kötet, szerver, hálózat, hálózati, háttér, kiemelés",
   "@settings.appearance.tintSmb.keywords": {
@@ -219,10 +207,6 @@
   "settings.appearance.uiDensity.label": "Felület sűrűsége",
   "@settings.appearance.uiDensity.label": {
     "sourceHash": "81344d8"
-  },
-  "settings.appearance.uiDensity.description": "Szabályozza a felületi elemek térközét és méretét az app egészében.",
-  "@settings.appearance.uiDensity.description": {
-    "sourceHash": "e7ead7a"
   },
   "settings.appearance.uiDensity.opt.compact": "Kompakt",
   "@settings.appearance.uiDensity.opt.compact": {
@@ -380,10 +364,6 @@
   "@settings.listing.foldersFirst.label": {
     "sourceHash": "a61d73e"
   },
-  "settings.listing.foldersFirst.description": "A listában a mappák a fájlok fölé kerülnek. Kapcsold ki, ha vegyesen szeretnéd látni a mappákat és a fájlokat.",
-  "@settings.listing.foldersFirst.description": {
-    "sourceHash": "8505ff3"
-  },
   "settings.listing.foldersFirst.keywords": "rendezés, könyvtár, könyvtárak, mappa, mappák, első, elöl, felül, vegyes, sorrend, lista, listázás",
   "@settings.listing.foldersFirst.keywords": {
     "sourceHash": "c4f9de2"
@@ -403,10 +383,6 @@
   "settings.listing.directorySortMode.label": "Mappák rendezése",
   "@settings.listing.directorySortMode.label": {
     "sourceHash": "7d0b088"
-  },
-  "settings.listing.directorySortMode.description": "Hogyan rendeződjenek a mappák a rendezőoszlop váltásakor.",
-  "@settings.listing.directorySortMode.description": {
-    "sourceHash": "797d93b"
   },
   "settings.listing.directorySortMode.disabledReason": "Most ki van kapcsolva, mert a mappák és a fájlok vegyesen jelennek meg. Kapcsold be a „Mappák megjelenítése felül” beállítást, hogy ezt is beállíthasd.",
   "@settings.listing.directorySortMode.disabledReason": {
@@ -1149,10 +1125,6 @@
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label": {
     "sourceHash": "911b74b"
   },
-  "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": "{platform, select, macos {Hogyan figyelmeztessen, amikor az indítólemezeden kevés a szabad hely.} windows {Hogyan figyelmeztessen, amikor a rendszermeghajtódon kevés a szabad hely.} other {Hogyan figyelmeztessen, amikor a rendszerlemezeden kevés a szabad hely.}}",
-  "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.description": {
-    "sourceHash": "07714d7"
-  },
   "settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": "Appon belül",
   "@settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.opt.inApp": {
     "sourceHash": "a2de156"
@@ -1198,10 +1170,6 @@
   "@settings.ai.provider.label": {
     "sourceHash": "472590a"
   },
-  "settings.ai.provider.description": "Válaszd ki, mi hajtsa az AI-funkciókat.",
-  "@settings.ai.provider.description": {
-    "sourceHash": "f8c0f5d"
-  },
   "settings.ai.provider.opt.off": "Ki",
   "@settings.ai.provider.opt.off": {
     "sourceHash": "ca7981b"
@@ -1237,10 +1205,6 @@
   "settings.ai.cloudConsent.keywords": "hozzájárulás, beleegyezés, adatvédelem, engedélyezés, küldés, adat, adatok, felhő, ai",
   "@settings.ai.cloudConsent.keywords": {
     "sourceHash": "c0a0566"
-  },
-  "settings.ai.cloudProvider.description": "Melyik felhő-AI-szolgáltatást használja.",
-  "@settings.ai.cloudProvider.description": {
-    "sourceHash": "3300ce9"
   },
   "settings.ai.cloudProvider.keywords": "felhő, szolgáltató, szolgáltatás, egyéni",
   "@settings.ai.cloudProvider.keywords": {
@@ -1301,10 +1265,6 @@
   "settings.network.enabled.label": "{platform, select, windows {Hálózatkezelés bekapcsolása} other {Hálózatkezelés bekapcsolása}}",
   "@settings.network.enabled.label": {
     "sourceHash": "ecb8b03"
-  },
-  "settings.network.enabled.description": "{platform, select, macos {SMB-szerverek felderítése a helyi hálózaton, és kapcsolódás hozzájuk. Ha ki van kapcsolva, a Cmdr a már csatolt megosztásokon továbbra is tud fájlokat olvasni és írni, de nem kéri a macOS-tól a Helyi hálózat hozzáférést.} windows {SMB-szerverek felderítése a helyi hálózaton, és kapcsolódás hozzájuk. Ha ki van kapcsolva, a Cmdr a már csatolt megosztásokon továbbra is tud fájlokat olvasni és írni, és a Windows nem kérdezi meg, hogy átengedje-e a Cmdrt a tűzfalon.} other {SMB-szerverek felderítése a helyi hálózaton, és kapcsolódás hozzájuk. Ha ki van kapcsolva, a Cmdr a már csatolt megosztásokon továbbra is tud fájlokat olvasni és írni.}}",
-  "@settings.network.enabled.description": {
-    "sourceHash": "6994272"
   },
   "settings.network.enabled.keywords": "hálózat, hálózatkezelés, bekapcsolás, engedélyezés, felderítés, helyi hálózat, engedély",
   "@settings.network.enabled.keywords": {
@@ -1450,10 +1410,6 @@
   "@settings.fileOperations.adbEnabled.label": {
     "sourceHash": "3651356"
   },
-  "settings.fileOperations.adbEnabled.description": "{platform, select, macos {Eléred egy olyan Android-telefon teljes fájlrendszerét, amelyen be van kapcsolva az USB-hibakeresés; az MTP ezt nem mutatja meg. Ehhez kell az Android platform tools csomag (az „adb” parancs) ezen a Macen. Ha nincs telepítve Android-fejlesztőeszköz, nem kerül semmibe, ha bekapcsolva hagyod.} windows {Eléred egy olyan Android-telefon teljes fájlrendszerét, amelyen be van kapcsolva az USB-hibakeresés; az MTP ezt nem mutatja meg. Ehhez kell az Android platform tools csomag (az „adb” parancs) ezen a gépen. Ha nincs telepítve Android-fejlesztőeszköz, nem kerül semmibe, ha bekapcsolva hagyod.} other {Eléred egy olyan Android-telefon teljes fájlrendszerét, amelyen be van kapcsolva az USB-hibakeresés; az MTP ezt nem mutatja meg. Ehhez kell az Android platform tools csomag (az „adb” parancs) ezen a számítógépen. Ha nincs telepítve Android-fejlesztőeszköz, nem kerül semmibe, ha bekapcsolva hagyod.}}",
-  "@settings.fileOperations.adbEnabled.description": {
-    "sourceHash": "4c92b52"
-  },
   "settings.fileOperations.adbEnabled.keywords": "usb-hibakeresés, hibakeresés, fejlesztői beállítások, telefon, eszköz",
   "@settings.fileOperations.adbEnabled.keywords": {
     "sourceHash": "95bcc86"
@@ -1522,10 +1478,6 @@
   "@settings.viewer.wordWrap.label": {
     "sourceHash": "9e210f3"
   },
-  "settings.viewer.wordWrap.description": "A hosszú sorokat az ablak szélénél töri a fájlmegjelenítőben, ahelyett hogy vízszintesen görgetne.",
-  "@settings.viewer.wordWrap.description": {
-    "sourceHash": "8a87bd2"
-  },
   "settings.viewer.wordWrap.keywords": "megjelenítő, sortörés, tördelés, szó, sor, vízszintes, görgetés",
   "@settings.viewer.wordWrap.keywords": {
     "sourceHash": "5d0a24b"
@@ -1583,10 +1535,6 @@
   "@settings.updates.autoCheck.label": {
     "sourceHash": "409e6a1"
   },
-  "settings.updates.autoCheck.description": "Időnként új verziókat keres a háttérben.",
-  "@settings.updates.autoCheck.description": {
-    "sourceHash": "1ff0b1a"
-  },
   "settings.updates.autoCheck.keywords": "frissítés, automatikus, ellenőrzés, keresés, verzió, háttér",
   "@settings.updates.autoCheck.keywords": {
     "sourceHash": "091ca30"
@@ -1623,10 +1571,6 @@
   "@settings.analytics.enabled.label": {
     "sourceHash": "89b309e"
   },
-  "settings.analytics.enabled.description": "{platform, select, windows {Kérlek, kapcsold be, hogy lássuk, mely funkciók számítanak a nyílt béta alatt.\nA statisztika nem a nevedhez vagy az e-mail-címedhez kötődik, hanem egy véletlenszerű azonosítóhoz.\nA Cmdr sosem küld fájlneveket, útvonalakat, keresési kifejezéseket vagy promptokat.\nKikapcsolva a Cmdr semmilyen statisztikát nem küld.} other {Kérlek, kapcsold be, hogy lássuk, mely funkciók számítanak a nyílt béta alatt.\nA statisztika nem a nevedhez vagy az e-mail-címedhez kötődik, hanem egy véletlenszerű azonosítóhoz.\nA Cmdr sosem küld fájlneveket, útvonalakat, keresési kifejezéseket vagy promptokat.\nKikapcsolva a Cmdr semmilyen statisztikát nem küld.}}",
-  "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
-  },
   "settings.analytics.enabled.keywords": "analitika, használat, használati statisztika, statisztika, adatvédelem, telemetria, béta, követés, kikapcsolás, leiratkozás",
   "@settings.analytics.enabled.keywords": {
     "sourceHash": "85d82ce"
@@ -1634,10 +1578,6 @@
   "settings.analytics.email.label": "Bétakapcsolattartási e-mail",
   "@settings.analytics.email.label": {
     "sourceHash": "71e5c9a"
-  },
-  "settings.analytics.email.description": "Példa: you@example.com",
-  "@settings.analytics.email.description": {
-    "sourceHash": "03574f9"
   },
   "settings.analytics.email.keywords": "e-mail, béta, kapcsolattartás, kapcsolat, hírlevél, frissítések, kérdőív, felmérés",
   "@settings.analytics.email.keywords": {
@@ -1742,10 +1682,6 @@
   "settings.advanced.indexPauseFreeSpacePercent.label": "Indexelés szüneteltetése ennyi szabad hely alatt (%)",
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
-  },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "{platform, select, macos {A Cmdr szünetelteti a meghajtó indexelését, ha az indítólemezeden a szabad hely e százalék alá csökken, hogy az index ne foglalja el a helyet a saját fájljaid elől. Az indexelés ott folytatódik, ahol abbamaradt, amint a szabad hely egy százalékponttal e határ fölé emelkedik. Ez attól függetlenül működik, hogy a „Kevés lemezterület figyelmeztetés” be van-e kapcsolva.} windows {A Cmdr szünetelteti a meghajtó indexelését, ha a rendszermeghajtódon a szabad hely e százalék alá csökken, hogy az index ne foglalja el a helyet a saját fájljaid elől. Az indexelés ott folytatódik, ahol abbamaradt, amint a szabad hely egy százalékponttal e határ fölé emelkedik. Ez attól függetlenül működik, hogy a „Kevés lemezterület figyelmeztetés” be van-e kapcsolva.} other {A Cmdr szünetelteti a meghajtó indexelését, ha a rendszerlemezeden a szabad hely e százalék alá csökken, hogy az index ne foglalja el a helyet a saját fájljaid elől. Az indexelés ott folytatódik, ahol abbamaradt, amint a szabad hely egy százalékponttal e határ fölé emelkedik. Ez attól függetlenül működik, hogy a „Kevés lemezterület figyelmeztetés” be van-e kapcsolva.}}",
-  "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "bb41d41"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "lemez, lemezterület, hely, tele, megtelt, szabad hely, tárhely, küszöb, százalék, kevés, szünet, leállítás",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -1951,10 +1887,6 @@
   "@settings.advanced.mountTimeout.label": {
     "sourceHash": "b5bce4f"
   },
-  "settings.advanced.mountTimeout.description": "Időtúllépés a hálózati megosztások csatolásához.",
-  "@settings.advanced.mountTimeout.description": {
-    "sourceHash": "3da30e1"
-  },
   "settings.advanced.mountTimeout.keywords": "csatolás, időtúllépés, időkorlát, hálózat, megosztás",
   "@settings.advanced.mountTimeout.keywords": {
     "sourceHash": "3327884"
@@ -2074,10 +2006,6 @@
   "settings.advanced.updateCheckInterval.label": "Frissítéskeresés gyakorisága",
   "@settings.advanced.updateCheckInterval.label": {
     "sourceHash": "91912bc"
-  },
-  "settings.advanced.updateCheckInterval.description": "Milyen gyakran keressen frissítéseket a háttérben.",
-  "@settings.advanced.updateCheckInterval.description": {
-    "sourceHash": "2bdd38a"
   },
   "settings.advanced.updateCheckInterval.keywords": "frissítés, gyakoriság, időköz, háttér, ellenőrzés, keresés",
   "@settings.advanced.updateCheckInterval.keywords": {
@@ -2696,10 +2624,6 @@
   "@settings.operationLog.maxAge.label": {
     "sourceHash": "ca05015"
   },
-  "settings.operationLog.maxAge.description": "Meddig őrzi meg a Cmdr a naplózott műveleteket, mielőtt automatikusan eltávolítja a legrégebbieket.",
-  "@settings.operationLog.maxAge.description": {
-    "sourceHash": "7d35887"
-  },
   "settings.operationLog.maxAge.opt.forever": "Örökké",
   "@settings.operationLog.maxAge.opt.forever": {
     "sourceHash": "55f980c"
@@ -3210,10 +3134,6 @@
   "settings.securityLog.enabled.label": "Biztonsági események rögzítése",
   "@settings.securityLog.enabled.label": {
     "sourceHash": "9f5e32e"
-  },
-  "settings.securityLog.enabled.description": "{platform, select, macos {Egy kis fájlban rögzíti ezen a Macen a biztonsági szempontból fontos változásokat és elutasításokat, például a felhő-AI-hoz adott hozzájárulást, egy telepített frissítést vagy egy appot, amelyet az MCP-szerver visszautasított. A fájl nem tartalmaz se fájlnevet, se tartalmat, se jelszót, és sosem kerül ki erről a Macről.} windows {Egy kis fájlban rögzíti ezen a gépen a biztonsági szempontból fontos változásokat és elutasításokat, például a felhő-AI-hoz adott hozzájárulást, egy telepített frissítést vagy egy appot, amelyet az MCP-szerver visszautasított. A fájl nem tartalmaz se fájlnevet, se tartalmat, se jelszót, és sosem kerül ki erről a gépről.} other {Egy kis fájlban rögzíti ezen a számítógépen a biztonsági szempontból fontos változásokat és elutasításokat, például a felhő-AI-hoz adott hozzájárulást, egy telepített frissítést vagy egy appot, amelyet az MCP-szerver visszautasított. A fájl nem tartalmaz se fájlnevet, se tartalmat, se jelszót, és sosem kerül ki erről a számítógépről.}}",
-  "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
   },
   "settings.securityLog.enabled.keywords": "biztonság, biztonsági, napló, ellenőrzés, audit, rögzítés, események, hozzáférés, adatvédelem",
   "@settings.securityLog.enabled.keywords": {
