@@ -13,6 +13,13 @@ export function formatCountry(code: string): string {
   }
 }
 
+const osNames: Record<string, string> = { macos: 'macOS', windows: 'Windows', linux: 'Linux' }
+
+/** An OS as the api-server spells it (`macos`) the way people write it (`macOS`); an unknown one stays as it came. */
+export function formatOs(os: string): string {
+  return osNames[os] ?? os
+}
+
 /** A number with US thousands separators. */
 export function formatNumber(n: number): string {
   return n.toLocaleString('en-US')

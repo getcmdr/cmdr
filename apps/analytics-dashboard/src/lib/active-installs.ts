@@ -16,6 +16,7 @@
  */
 
 import type { UpdateActivityRow } from './server/sources/cloudflare.js'
+import { formatOs } from './format.js'
 
 /** Distinct update-checking IPs per day, summed over the versions they checked from. */
 function reachMap(updateActivity: UpdateActivityRow[]): Map<string, number> {
@@ -46,4 +47,14 @@ export function splitActives(days: { dau: number; newInstalls: number }[]): {
     newInstalls: days.map((d) => d.newInstalls),
     returning: days.map((d) => Math.max(0, d.dau - d.newInstalls)),
   }
+}
+
+/**
+ * A day's active installs by OS, largest first, as the daily chart's tooltip lists them. Empty when the Worker
+ * predates the split, so the tooltip shows nothing rather than a made-up "all macOS".
+ */
+export function installsByOs(byOs: Record<string, number> | undefined): { label: string; count: number }[] {
+  return Object.entries(byOs ?? {})
+    .map(([os, count]) => ({ label: formatOs(os), count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
 }

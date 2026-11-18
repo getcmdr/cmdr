@@ -8,8 +8,8 @@
     import type { ActiveInstallsData } from '#lib/server/sources/active-installs.js'
     import type { CloudflareData } from '#lib/server/sources/cloudflare.js'
     import type { ViewWindow } from '#lib/time-range.js'
-    import type { TooltipRow } from '#lib/daily-chart.js'
-    import { reachByDay, splitActives } from '#lib/active-installs.js'
+    import { breakdownRows, type TooltipRow } from '#lib/daily-chart.js'
+    import { installsByOs, reachByDay, splitActives } from '#lib/active-installs.js'
     import { cell, countStatsByWindow, dailyRatios, ratioStatsByWindow, rollingComplete, viewRange } from '#lib/trend-row.js'
     import { formatAverage, formatHoursChange, formatNumber, formatRelativeChange } from '#lib/format.js'
     import { COLOR_GOLD } from '#lib/colors.js'
@@ -86,6 +86,7 @@
                         changing home address counts twice, and installs with update checks off never show.
                     </li>
                     <li>The last week can still hold a few synthetic installs the weekly sweep removes later.</li>
+                    <li>Hover a day to see its installs by operating system.</li>
                 </ul>
                 <p><span class="info-label">Source:</span> the heartbeat and the update-check log, via the api-server.</p>
             {/snippet}
@@ -100,11 +101,18 @@
                         { key: 'returning', label: 'Returning', color: colorReturning, values: split.returning },
                     ]}
                     overlay={reach ? { label: 'Update-check reach', color: colorReach, values: reach } : undefined}
-                    tooltip={(i: number): TooltipRow[] => [
-                        { label: 'Active installs', value: cell(shownDays[i].dau) },
-                        { label: 'New', value: cell(split.newInstalls[i]), color: COLOR_GOLD },
-                        { label: 'Returning', value: cell(split.returning[i]), color: colorReturning },
-                    ]}
+                    tooltip={(i: number): TooltipRow[] => {
+                        const byOs = breakdownRows(
+                            installsByOs(shownDays[i].byOs).map((o) => ({ ...o, color: COLOR_GOLD })),
+                            shownDays[i].dau,
+                        )
+                        return [
+                            { label: 'Active installs', value: cell(shownDays[i].dau) },
+                            { label: 'New', value: cell(split.newInstalls[i]), color: COLOR_GOLD },
+                            { label: 'Returning', value: cell(split.returning[i]), color: colorReturning },
+                            ...(byOs.length > 0 ? [{ label: 'By operating system', value: '', heading: true }, ...byOs] : []),
+                        ]
+                    }}
                 />
                 {#if !reach}
                     <p class="mt-1 pl-11 text-xs text-text-tertiary">The update-check reach couldn't load.</p>

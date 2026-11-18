@@ -262,9 +262,10 @@ runtime values live in the `#lib/*.ts` modules outside `server/` (`#lib/funnel.t
   `country-table.ts`, `country-geo.ts`, and `world-map-shapes.ts` (§ "The country map and table"), drawn by
   `WorldMap.svelte`.
 - The Product page's client-safe math, each with its Vitest file, all shared with the report (§ "Product page"):
-  `product-stats.ts` (the six tiles), `active-installs.ts` (the reach line, new vs returning), `rollout.ts` (latest
-  release, rollout headline, version stack, `compareVersions`), `version-colors.ts`, `money.ts`, `onboarding-funnel.ts`,
-  `settings-adoption.ts` (preferences only, top moved), `feature-usage.ts` (share and its change), `trend-row.ts`.
+  `product-stats.ts` (the six tiles), `active-installs.ts` (the reach line, new vs returning, installs by OS),
+  `rollout.ts` (latest release, rollout headline, version stack, `compareVersions`), `version-colors.ts`, `money.ts`,
+  `onboarding-funnel.ts`, `settings-adoption.ts` (preferences only, top moved), `feature-usage.ts` (share and its
+  change), `trend-row.ts`.
 - `DailyChart.svelte` (SVG day columns or rate dots + rolling line), `StatsGrid.svelte`, `TrendRow.svelte`, and
   `InfoPopover.svelte` (the (i): hover, focus, or tap; Escape closes).
 - `src/lib/link-codes.ts`: client-safe `?r=` helpers (validation mirroring the api-server, row flattening, example
@@ -285,14 +286,16 @@ Each source under `src/lib/server/sources/` exports a typed fetch returning `Sou
   `fetchUmamiDailyEventSeries`) split a long window into spans of at most `umamiMaxDaySpanDays` (`umamiDaySpans`): past
   about seven months Umami ignores `unit=day` and answers monthly buckets in the same shape, which read as a few huge
   days (210 days came back daily, 230 monthly; Umami v3, curl, 2026-11-10).
-- `cloudflare.ts` (Bearer via `LICENSE_SERVER_ADMIN_TOKEN`): downloads (by version/arch/country/source, raw +
-  same-day-deduped) and per-day update-check activity by version, from `/admin/downloads` and `/admin/update-activity`.
+- `cloudflare.ts` (Bearer via `LICENSE_SERVER_ADMIN_TOKEN`): downloads (by version/OS/arch/country/source, raw +
+  same-day-deduped; a row from a Worker older than the `os` field reads as `macos`, the only OS it served) and per-day
+  update-check activity by version, from `/admin/downloads` and `/admin/update-activity`.
 - `active-installs.ts` (Bearer via `LICENSE_SERVER_ADMIN_TOKEN`): `/admin/active-installs?days=181`, the heartbeat
-  population per UTC day (`dau`, `newInstalls`, `appHours`, `wau`, `mau`, `byVersion`) plus per-version windows of 7,
-  30, and 90 complete days (the errors-per-100 denominator). The Worker owns the definitions
-  (`apps/api-server/src/admin/DETAILS.md` § "Active installs"). Cached an hour as `active-installs-v1`, since each fetch
-  reads about 208 days of heartbeat rows. A 404 (an api-server without the endpoint) is `data: null`, "Not available
-  yet", and is never cached, so it can't outlive the Worker deploy.
+  population per UTC day (`dau`, `newInstalls`, `appHours`, `wau`, `mau`, `byVersion`, and `byOs`, which the daily
+  actives tooltip lists and an older Worker omits) plus per-version windows of 7, 30, and 90 complete days (the
+  errors-per-100 denominator). The Worker owns the definitions (`apps/api-server/src/admin/DETAILS.md` § "Active
+  installs"). Cached an hour as `active-installs-v1`, since each fetch reads about 208 days of heartbeat rows. A 404 (an
+  api-server without the endpoint) is `data: null`, "Not available yet", and is never cached, so it can't outlive the
+  Worker deploy.
 - `paddle.ts` (Bearer): every completed transaction, all time, in one fetch cached once for every range (`paddle-v3`);
   `#lib/money.ts` windows it, so revenue, purchases, and paid licenses read one list. It parses `origin` (first purchase
   or not) and `details.payout_totals` (the payout currency). Pagination follows Paddle's `next`, a full URL, and refuses

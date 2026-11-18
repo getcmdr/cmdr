@@ -405,6 +405,7 @@ export const richData: DashboardData = {
       downloads: [
         {
           version: '1.2.0',
+          os: 'macos',
           arch: 'aarch64',
           country: 'US',
           source: 'website',
@@ -414,6 +415,7 @@ export const richData: DashboardData = {
         },
         {
           version: '1.2.0',
+          os: 'macos',
           arch: 'x86_64',
           country: 'US',
           source: 'homebrew',
@@ -424,6 +426,7 @@ export const richData: DashboardData = {
         {
           // 1.10.0 sorts above 1.2.0 only under semver comparison, never lexically.
           version: '1.10.0',
+          os: 'macos',
           arch: 'aarch64',
           country: 'SE',
           source: 'website',
@@ -433,6 +436,7 @@ export const richData: DashboardData = {
         },
         {
           version: '1.10.0',
+          os: 'macos',
           arch: 'aarch64',
           country: '(unknown)',
           source: 'other',
