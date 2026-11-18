@@ -554,6 +554,8 @@ macro_rules! ipc_command_manifest {
                     crate::commands::menu_state::get_menu_bar,
                     crate::commands::menu_state::get_viewer_menu_bar,
                     crate::commands::menu_state::pick_menu_bar_item,
+                    crate::commands::menu_in_page::open_context_menu_in_page,
+                    crate::commands::menu_in_page::pick_context_menu_item,
                 ]
                 dispatch_only: [
                     // Generic over `R: tauri::Runtime`, which `collect_functions!` can't take.

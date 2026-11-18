@@ -15,6 +15,7 @@ use crate::menu::{
     ContextMenuShortcuts, DetachWord, MenuState, SameKindTarget, build_context_menu, build_popup,
     detach_word_for_volume_id,
 };
+use cmdr_menu::context::ContextRow;
 use cmdr_menu::context::file::{FileMenuFacts, PaneFacts, TargetFacts};
 use cmdr_menu::context::popups::{
     BreadcrumbVolume, NetworkHostFacts, breadcrumb_menu, date_sort_menu, function_key_bar_menu, network_host_menu,
@@ -51,7 +52,7 @@ pub fn update_menu_context<R: Runtime>(app: AppHandle<R>, path: String, filename
 ///
 /// A failure only costs the focus, so it's logged rather than propagated: the menu still
 /// opens, and the guard still logs its own refusal if the click then goes nowhere.
-fn focus_for_context_menu<R: Runtime>(window: &Window<R>) {
+pub(super) fn focus_for_context_menu<R: Runtime>(window: &Window<R>) {
     if let Err(e) = window.set_focus() {
         // allowed-log-private: a Tauri window label of our own
         log::warn!(target: "menu", "couldn't focus `{}` before its context menu: {e}", window.label());
@@ -64,7 +65,7 @@ fn focus_for_context_menu<R: Runtime>(window: &Window<R>) {
 ///
 /// Only the keyboard paths send one. A right-click passes `None` and macOS uses the
 /// mouse, which is why the pointer path is untouched by all of this.
-#[derive(Debug, Clone, Copy, serde::Deserialize, specta::Type)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct MenuAnchor {
     pub x: f64,
@@ -98,7 +99,7 @@ fn popup_context_menu<R: Runtime>(
 /// was right-clicked. Grouped because they answer one question each about the
 /// surface the click landed in, and because the frontend fills them all from the
 /// same pane read.
-#[derive(Debug, Default, serde::Deserialize)]
+#[derive(Debug, Default, serde::Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PaneContextMenuFacts {
     /// Omits Rename and New folder. `true` from the search-results virtual pane,
@@ -155,6 +156,7 @@ pub fn show_file_context_menu<R: Runtime>(
     same_kind: Option<SameKindTarget>,
 ) -> Result<(), String> {
     let app = window.app_handle();
+    crate::menu::page_context::note_native_popup(&app.state::<MenuState<R>>());
 
     // The "primary" path drives single-file actions like "Copy 'filename'", Get info,
     // Quick look. `paths` carries the full selection that "Open with" and cloud actions
@@ -189,33 +191,14 @@ pub fn show_file_context_menu<R: Runtime>(
     });
 
     // Update menu context so on_menu_event has paths + bundle map for the new items.
-    {
-        let state = app.state::<MenuState<R>>();
-        let mut context = state.context.lock_ignore_poison();
-        context.path = path.clone();
-        context.filename = filename.clone();
-        context.paths = context_paths;
-        context.listing_id = pane.listing_id;
-        #[cfg(target_os = "macos")]
-        {
-            // Both filled in below, from the facts that answered in time, and later by the
-            // live menu from the ones that didn't. Cleared first, so a click can never reach
-            // the last menu's apps or provider actions.
-            context.open_with_apps.clear();
-            context.file_provider_offer = None;
-        }
-    }
-
-    // Media-index group: shown only while image indexing is enabled, keyed on this
-    // folder's live membership (OS-path checks against the live config, no I/O).
-    let image_index_enabled = cmdr_index::media_index::gate::is_enabled();
-    let image_index = crate::menu::ImageIndexMenuState {
-        enabled: image_index_enabled,
-        excluded: image_index_enabled && cmdr_index::media_index::network::config::is_excluded(&path),
-        chosen: image_index_enabled && cmdr_index::media_index::network::config::is_chosen_folder(&path),
-        covered_by_parent: image_index_enabled
-            && cmdr_index::media_index::network::config::is_covered_by_parent_folder(&path),
-    };
+    stash_file_context(
+        &app.state::<MenuState<R>>(),
+        &path,
+        &filename,
+        context_paths,
+        &pane.listing_id,
+    );
+    let image_index = image_index_menu_state(&path);
 
     // Waits out the grace period at most, then builds with what answered. Every later
     // answer goes to the live menu, tagged with this menu's generation.
@@ -254,15 +237,7 @@ pub fn show_file_context_menu<R: Runtime>(
     let facts = FileMenuFacts {
         filename: &filename,
         is_directory,
-        pane: PaneFacts {
-            restrict_destination_actions: pane.restrict_destination_actions,
-            can_show_in_folder: pane.can_show_in_folder,
-            can_open_terminal_here: pane.can_open_terminal_here,
-            can_share: pane.can_share,
-            can_tag: pane.can_tag,
-            can_favorite: pane.can_favorite,
-            can_share_link: pane.can_share_link,
-        },
+        pane: pane_facts(&pane),
         image_index,
         target: TargetFacts {
             count: target_count,
@@ -342,6 +317,24 @@ pub fn show_breadcrumb_context_menu<R: Runtime>(
     offer_eject_all: bool,
 ) -> Result<(), String> {
     let app = window.app_handle();
+    let state = app.state::<MenuState<R>>();
+    crate::menu::page_context::note_native_popup(&state);
+    let rows = breadcrumb_rows(&state, eject_volume_id, eject_volume_name, offer_eject_all);
+    let menu = build_popup(app, &rows, &shortcuts).map_err(|e| e.to_string())?;
+    focus_for_context_menu(&window);
+    menu.popup(window).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// The breadcrumb menu's rows, with its eject target stashed so `on_menu_event` can read it back
+/// when the user picks "Eject (name)". If only one of the two args is present, there's no eject
+/// target, and the rows carry no Eject item either.
+pub(super) fn breadcrumb_rows<R: Runtime>(
+    state: &MenuState<R>,
+    eject_volume_id: Option<String>,
+    eject_volume_name: Option<String>,
+    offer_eject_all: bool,
+) -> Vec<ContextRow> {
     // Disable the eject item while a write op touches this volume or its eject is
     // still running (the picker's inline eject button is disabled the same way).
     let eject_busy = eject_volume_id.as_ref().is_some_and(|id| {
@@ -356,26 +349,16 @@ pub fn show_breadcrumb_context_menu<R: Runtime>(
         word: detach_word,
         offer_eject_all,
     });
-    let menu = build_popup(app, &breadcrumb_menu(volume), &shortcuts).map_err(|e| e.to_string())?;
-
-    // Stash eject target so on_menu_event can read it back when the user clicks
-    // the "Eject (name)" item. If only one of the two args is present, treat as no
-    // eject target — the builder also won't render the item.
-    {
-        let state = app.state::<MenuState<R>>();
-        let mut ctx = state.volume_row_context.lock_ignore_poison();
-        if let (Some(id), Some(name)) = (eject_volume_id, eject_volume_name) {
-            ctx.volume_id = id;
-            ctx.volume_name = name;
-        } else {
-            ctx.volume_id.clear();
-            ctx.volume_name.clear();
-        }
+    let rows = breadcrumb_menu(volume);
+    let mut ctx = state.volume_row_context.lock_ignore_poison();
+    if let (Some(id), Some(name)) = (eject_volume_id, eject_volume_name) {
+        ctx.volume_id = id;
+        ctx.volume_name = name;
+    } else {
+        ctx.volume_id.clear();
+        ctx.volume_name.clear();
     }
-
-    focus_for_context_menu(&window);
-    menu.popup(window).map_err(|e| e.to_string())?;
-    Ok(())
+    rows
 }
 
 /// Whether `volume_id`'s eject is still running, so a native Eject item renders disabled
@@ -407,13 +390,10 @@ pub fn show_parent_row_context_menu<R: Runtime>(
     anchor: Option<MenuAnchor>,
 ) -> Result<(), String> {
     let app = window.app_handle();
-    {
-        let state = app.state::<MenuState<R>>();
-        let mut context = state.context.lock_ignore_poison();
-        context.path = parent_path;
-        context.filename = "..".to_string();
-    }
-    let menu = build_popup(app, &parent_row_menu(), &ContextMenuShortcuts::default()).map_err(|e| e.to_string())?;
+    let state = app.state::<MenuState<R>>();
+    crate::menu::page_context::note_native_popup(&state);
+    let rows = parent_row_rows(&state, parent_path);
+    let menu = build_popup(app, &rows, &ContextMenuShortcuts::default()).map_err(|e| e.to_string())?;
     popup_context_menu(&menu, window, anchor)?;
     Ok(())
 }
@@ -433,6 +413,7 @@ pub fn show_tab_context_menu(
     has_other_unpinned_tabs: bool,
 ) -> Result<(), String> {
     let app = window.app_handle().clone();
+    crate::menu::page_context::note_native_popup(&app.state::<MenuState<tauri::Wry>>());
 
     let rows = tab_menu(is_pinned, can_close, has_other_unpinned_tabs);
     let menu = build_popup(&app, &rows, &ContextMenuShortcuts::default()).map_err(|e| e.to_string())?;
@@ -454,6 +435,7 @@ pub fn show_date_sort_menu(
     requested: Option<cmdr_listing::SortColumn>,
     anchor: Option<MenuAnchor>,
 ) -> Result<(), String> {
+    crate::menu::page_context::note_native_popup(&window.app_handle().state::<MenuState<tauri::Wry>>());
     let rows = date_sort_menu(pane, requested);
     let menu = build_popup(window.app_handle(), &rows, &ContextMenuShortcuts::default()).map_err(|e| e.to_string())?;
     popup_context_menu(&menu, window, anchor)
@@ -467,6 +449,7 @@ pub fn show_date_sort_menu(
 #[specta::specta]
 pub fn show_function_key_bar_context_menu(window: Window<tauri::Wry>) -> Result<(), String> {
     let app = window.app_handle().clone();
+    crate::menu::page_context::note_native_popup(&app.state::<MenuState<tauri::Wry>>());
     let menu =
         build_popup(&app, &function_key_bar_menu(), &ContextMenuShortcuts::default()).map_err(|e| e.to_string())?;
     focus_for_context_menu(&window);
@@ -481,6 +464,7 @@ pub fn show_function_key_bar_context_menu(window: Window<tauri::Wry>) -> Result<
 #[tauri::command]
 #[specta::specta]
 pub fn show_viewer_context_menu(window: Window<tauri::Wry>, has_selection: bool) -> Result<(), String> {
+    crate::menu::page_context::note_native_popup(&window.app_handle().state::<MenuState<tauri::Wry>>());
     let rows = viewer_text_menu(has_selection, Platform::current());
     let menu = build_popup(window.app_handle(), &rows, &ContextMenuShortcuts::default()).map_err(|e| e.to_string())?;
     popup_context_menu(&menu, window, None)
@@ -497,6 +481,7 @@ pub fn show_queue_row_context_menu(
     entries: Vec<crate::menu::QueueRowMenuEntry>,
     shortcuts: ContextMenuShortcuts,
 ) -> Result<(), String> {
+    crate::menu::page_context::note_native_popup(&window.app_handle().state::<MenuState<tauri::Wry>>());
     let menu = build_popup(window.app_handle(), &queue_row_menu(&entries), &shortcuts).map_err(|e| e.to_string())?;
     popup_context_menu(&menu, window, None)
 }
@@ -525,27 +510,11 @@ pub fn show_network_host_context_menu(
     has_credentials: bool,
     anchor: Option<MenuAnchor>,
 ) -> Result<(), String> {
-    use crate::network::server_identity::{smb_mounts_from, smb_servers_of};
-
     let app = window.app_handle().clone();
-    let has_mounts = !smb_mounts_from(&smb_servers_of(&host)).is_empty();
-    let rows = network_host_menu(NetworkHostFacts {
-        is_manual,
-        is_saved,
-        has_credentials,
-        has_mounts,
-    });
+    let state = app.state::<MenuState<tauri::Wry>>();
+    crate::menu::page_context::note_native_popup(&state);
+    let rows = network_host_rows(&state, row_id, host, is_manual, is_saved, has_credentials);
     let menu = build_popup(&app, &rows, &ContextMenuShortcuts::default()).map_err(|e| e.to_string())?;
-
-    // Store context so on_menu_event can include the row and host in the emitted event
-    {
-        let state = app.state::<MenuState<tauri::Wry>>();
-        let mut ctx = state.network_host_context.lock_ignore_poison();
-        ctx.row_id = row_id;
-        ctx.host_id = host.id;
-        ctx.host_name = host.name;
-    }
-
     popup_context_menu(&menu, window, anchor)
 }
 
@@ -565,4 +534,91 @@ pub fn viewer_forward_edit_action_to_page(app_handle: AppHandle, action: crate::
     }
     #[cfg(not(target_os = "macos"))]
     let _ = (app_handle, selector);
+}
+
+/// Stashes what a file menu was opened over, so `on_menu_event` acts on these rows: the native
+/// and the page menu alike.
+pub(super) fn stash_file_context<R: Runtime>(
+    state: &MenuState<R>,
+    path: &str,
+    filename: &str,
+    context_paths: Vec<String>,
+    listing_id: &str,
+) {
+    let mut context = state.context.lock_ignore_poison();
+    context.path = path.to_string();
+    context.filename = filename.to_string();
+    context.paths = context_paths;
+    context.listing_id = listing_id.to_string();
+    #[cfg(target_os = "macos")]
+    {
+        // The native menu fills both from the facts that answered in time, and later the live
+        // menu from the ones that didn't; a page menu never does. Cleared first, so a click can
+        // never reach the last menu's apps or provider actions.
+        context.open_with_apps.clear();
+        context.file_provider_offer = None;
+    }
+}
+
+/// The media-index group's state for the folder at `path`: shown only while image indexing is
+/// enabled, keyed on this folder's live membership (OS-path checks against the live config, no
+/// I/O).
+pub(super) fn image_index_menu_state(path: &str) -> crate::menu::ImageIndexMenuState {
+    let enabled = cmdr_index::media_index::gate::is_enabled();
+    crate::menu::ImageIndexMenuState {
+        enabled,
+        excluded: enabled && cmdr_index::media_index::network::config::is_excluded(path),
+        chosen: enabled && cmdr_index::media_index::network::config::is_chosen_folder(path),
+        covered_by_parent: enabled && cmdr_index::media_index::network::config::is_covered_by_parent_folder(path),
+    }
+}
+
+/// The pane's half of a file menu's facts.
+pub(super) fn pane_facts(pane: &PaneContextMenuFacts) -> PaneFacts {
+    PaneFacts {
+        restrict_destination_actions: pane.restrict_destination_actions,
+        can_show_in_folder: pane.can_show_in_folder,
+        can_open_terminal_here: pane.can_open_terminal_here,
+        can_share: pane.can_share,
+        can_tag: pane.can_tag,
+        can_favorite: pane.can_favorite,
+        can_share_link: pane.can_share_link,
+    }
+}
+
+/// The `..` row's menu, with the folder it points at stashed in `MenuState.context.path`, so
+/// "Add to favorites" favorites it.
+pub(super) fn parent_row_rows<R: Runtime>(state: &MenuState<R>, parent_path: String) -> Vec<ContextRow> {
+    let mut context = state.context.lock_ignore_poison();
+    context.path = parent_path;
+    context.filename = "..".to_string();
+    parent_row_menu()
+}
+
+/// A servers hub host's menu, with the row and host stashed so `on_menu_event` names them in the
+/// event it emits. Disconnect is offered only while a share from the host is mounted, which is a
+/// question about where it dials (every name, on its port): `server_identity::smb_mounts_from`
+/// over the kernel's mount table snapshot, which can't stall the menu.
+pub(super) fn network_host_rows<R: Runtime>(
+    state: &MenuState<R>,
+    row_id: String,
+    host: crate::network::NetworkHost,
+    is_manual: bool,
+    is_saved: bool,
+    has_credentials: bool,
+) -> Vec<ContextRow> {
+    use crate::network::server_identity::{smb_mounts_from, smb_servers_of};
+
+    let has_mounts = !smb_mounts_from(&smb_servers_of(&host)).is_empty();
+    let rows = network_host_menu(NetworkHostFacts {
+        is_manual,
+        is_saved,
+        has_credentials,
+        has_mounts,
+    });
+    let mut ctx = state.network_host_context.lock_ignore_poison();
+    ctx.row_id = row_id;
+    ctx.host_id = host.id;
+    ctx.host_name = host.name;
+    rows
 }

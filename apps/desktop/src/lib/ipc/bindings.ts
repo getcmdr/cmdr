@@ -4819,6 +4819,23 @@ export const commands = {
    */
   pickMenuBarItem: (menuId: string) => __TAURI_INVOKE<BarPickOutcome>('pick_menu_bar_item', { menuId }),
   /**
+   *  The in-page twin of every `show_*` popup command, where the platform's `contextMenus`
+   *  convention is `inPage` (Windows): stashes the same `MenuState` facts the native command does,
+   *  through the same helpers, and answers the rows to draw instead of popping a native menu up.
+   *  `menu/DETAILS.md` § "Right-click menus a page draws".
+   *
+   *  The file menu's OS-filled groups (Open with, Share, tags, the provider, Services) are left out,
+   *  as the browser demo leaves them out: they're macOS's, and macOS keeps native menus.
+   */
+  openContextMenuInPage: (request: InPageContextMenuRequest) =>
+    __TAURI_INVOKE<InPageContextMenu>('open_context_menu_in_page', { request }),
+  /**
+   *  A page's pick of `menu_id` from the right-click menu `open_context_menu_in_page` answered with
+   *  `token`: the handler a native pick reaches, or nothing when another menu has opened since.
+   */
+  pickContextMenuItem: (token: number, menuId: string) =>
+    __TAURI_INVOKE<ContextPickOutcome>('pick_context_menu_item', { token, menuId }),
+  /**
    *  Enables or disables MTP support at runtime.
    *
    *  When disabled: disconnects all devices, stops auto-connecting, and restores
@@ -9010,6 +9027,58 @@ export type ConnectionState =
  */
 export type ContextMenuShortcuts = { [key in string]: string }
 
+/**
+ *  What `show_file_context_menu` accepts over IPC about the right-clicked ROW(S).
+ *
+ *  Its own struct rather than a trailing argument, so there's a home for the next such
+ *  fact. It lives HERE rather than beside `PaneContextMenuFacts` in `commands/menu.rs`
+ *  (which is where the pane pair sits) because the whole rationale for the one field is
+ *  the header's, and one copy of that rationale is better than two.
+ *  ❗ Both fields are TEXT the frontend already rendered, and that is the whole design:
+ *  a locale's thousands separator, decimal separator, plural category, and size unit are
+ *  all things `crate::intl` deliberately can't do (`menu_t` is a table lookup with no ICU
+ *  and no number formatting), while the webview owns all four. Composing either half here
+ *  would mean a second, worse implementation drifting from the pane's own status bar and
+ *  size column, with both on screen at once. Rust decides the SHAPE of the label; the
+ *  frontend supplies the words and digits inside it.
+ */
+export type ContextMenuTarget = {
+  /**
+   *  How many rows the menu acts on, as the frontend words it (`3 items`,
+   *  `12,345 items`) — the count with its grouping separator and the plural form its
+   *  language needs, from `fileExplorer.contextMenu.itemCount`.
+   *
+   *  ❗ Read ONLY when the backend's own `context_paths.len()` is 2 or more: the NUMBER
+   *  of targets decides filename-vs-count, and that number is the backend's, derived
+   *  from the paths the menu will actually act on. This field is the text for the
+   *  count branch, never the reason to take it.
+   *
+   *  `None` falls back to the bare number (`cmdr_menu::context::file::header_label`).
+   */
+  countText: string | null
+  /**
+   *  The size the header shows, as the frontend rendered it (`2.1 MB`).
+   *
+   *  Two settings decide what a size looks like (`appearance.fileSizeFormat` and
+   *  `listing.sizeUnit`), and the formatter that honours them is
+   *  `src/lib/units/byte-size.ts`.
+   *
+   *  `None` means there's no size to show: a folder, a row whose size isn't known
+   *  yet, or a selection the frontend can't total honestly. ❌ Never a fabricated zero.
+   */
+  sizeText: string | null
+}
+
+// What a page's pick of a right-click row did.
+export type ContextPickOutcome =
+  // The row's handler ran.
+  | 'ran'
+  /**
+   *  Another menu opened since this one (its facts are gone from `MenuState`), or the row
+   *  wasn't offered enabled: nothing ran.
+   */
+  | 'stale'
+
 // A thread's last measured context usage, on the wire. Both figures are `chars/4` estimates.
 export type ContextUsageView = {
   estimatedTokens: number
@@ -12050,6 +12119,66 @@ export type ImportanceBand =
   | 'low'
   // Scores zero by design (a cache, build output, a hidden system folder).
   | 'floored'
+
+/**
+ *  A right-click menu as a page draws it: its rows, where it opens when the caller named a point
+ *  (`None`: at the pointer), and the token a pick from it names.
+ */
+export type InPageContextMenu = {
+  token: number
+  rows: Row[]
+  anchor: MenuAnchor | null
+}
+
+/**
+ *  One right-click menu for a page to draw: the `show_*` command it stands in for, with that
+ *  command's own arguments (`menu` names which).
+ */
+export type InPageContextMenuRequest =
+  // `show_file_context_menu`'s.
+  | {
+      menu: 'file'
+      path: string
+      filename: string
+      isDirectory: boolean
+      paths: string[]
+      pane: PaneContextMenuFacts
+      target: ContextMenuTarget
+      shortcuts: ContextMenuShortcuts
+      anchor: MenuAnchor | null
+      // The caller's live value, ❗ never the bar's debounced one (as `show_file_context_menu`).
+      sameKind: SameKindTarget | null
+    }
+  // `show_breadcrumb_context_menu`'s.
+  | {
+      menu: 'breadcrumb'
+      shortcuts: ContextMenuShortcuts
+      ejectVolumeId: string | null
+      ejectVolumeName: string | null
+      offerEjectAll: boolean
+    }
+  // `show_parent_row_context_menu`'s.
+  | { menu: 'parentRow'; parentPath: string; anchor: MenuAnchor | null }
+  // `show_tab_context_menu`'s.
+  | { menu: 'tab'; isPinned: boolean; canClose: boolean; hasOtherUnpinnedTabs: boolean }
+  // `show_date_sort_menu`'s.
+  | { menu: 'dateSort'; pane: PaneSide; requested: SortColumn | null; anchor: MenuAnchor | null }
+  // `show_function_key_bar_context_menu`'s (none).
+  | { menu: 'functionKeyBar' }
+  // `show_viewer_context_menu`'s.
+  | { menu: 'viewer'; hasSelection: boolean }
+  // `show_queue_row_context_menu`'s.
+  | { menu: 'queueRow'; entries: QueueRowMenuEntry[]; shortcuts: ContextMenuShortcuts }
+  // `show_network_host_context_menu`'s.
+  | {
+      menu: 'networkHost'
+      rowId: string
+      host: NetworkHost
+      isManual: boolean
+      isSaved: boolean
+      hasCredentials: boolean
+      anchor: MenuAnchor | null
+    }
 
 /**
  *  A full-scan aggregation pass finished and the UI can dismiss the progress
@@ -16828,6 +16957,60 @@ export type OwnerPlace =
   | 'sandboxHome'
 
 /**
+ *  What the PANE contributes to a file context menu, as opposed to the file that
+ *  was right-clicked. Grouped because they answer one question each about the
+ *  surface the click landed in, and because the frontend fills them all from the
+ *  same pane read.
+ */
+export type PaneContextMenuFacts = {
+  /**
+   *  Omits Rename and New folder. `true` from the search-results virtual pane,
+   *  whose rows aren't a real directory; see `apps/desktop/src/lib/search/capabilities.ts`.
+   */
+  restrictDestinationActions: boolean
+  /**
+   *  Whether this menu is over a search-results row that can be opened in its
+   *  containing folder. Distinct from destination restrictions: it adds an action.
+   */
+  canShowInFolder: boolean
+  /**
+   *  The pane's listing id, so a Finder-tag click can refresh that listing's
+   *  cache after writing. Empty for a virtual pane with no normal listing.
+   */
+  listingId: string
+  /**
+   *  Whether "Open terminal here" is clickable. It opens the PANE's folder, not
+   *  the right-clicked file, so only a pane on OS-visible paths offers it.
+   */
+  canOpenTerminalHere: boolean
+  /**
+   *  Whether this pane's ROWS are real OS paths, which is what a share service
+   *  needs. Not the same question as `can_open_terminal_here`: the search-results
+   *  snapshot has no folder of its own yet lists real files.
+   */
+  canShare: boolean
+  /**
+   *  Whether the seven Finder tag colors appear. A tag is an xattr written through the row's
+   *  path, so only rows that are real OS paths can hold one: a phone, an SFTP or WebDAV
+   *  server, or an archive's insides would take the click and store nothing. The same
+   *  reading of the row as `can_share`, kept apart because it gates a different item.
+   */
+  canTag: boolean
+  /**
+   *  Whether the right-clicked folder is somewhere a favorite could point back to, so the
+   *  "Add to favorites" item is offered. The affordance half of [`crate::commands::favorites`]'s
+   *  own gate; ❗ enforcement stays there, since a context menu is not the only add surface.
+   */
+  canFavorite: boolean
+  /**
+   *  Whether "Copy share link" appears: the row is a FILE on a volume that can mint
+   *  one (`Volume::supports_share_links`, S3 today), as the frontend's capability
+   *  fold reads it. ❗ The command still checks; this only spares a dead item.
+   */
+  canShareLink: boolean
+}
+
+/**
  *  Represents a file entry in a pane (simplified subset of the main FileEntry).
  *
  *  `Default` exists for tests only: its zero is a file nobody looked at, claiming
@@ -19228,6 +19411,22 @@ export type S3UnattendedReconnect =
   | 'switch_off'
   // ❗ On, and nothing is stored to redial with: the state a UI warns about.
   | 'no_stored_secret'
+
+/**
+ *  What "Select all of the same kind" would select right now, as the focused pane's cursor row
+ *  decides it (`pane/select-same-kind.ts`'s `SameKindTarget`, wire-identical).
+ *
+ *  `None` rather than a fourth variant covers the row that implies no kind at all: the `..` row,
+ *  an empty listing, a cursor entry still resolving. The item then falls back to its neutral
+ *  label, which is also what the bar is built with.
+ */
+export type SameKindTarget =
+  // The cursor is on a folder: every folder, whatever its name.
+  | { kind: 'allFolders' }
+  // The cursor is on a file with an extension: every file carrying it. Lowercased, no dot.
+  | { kind: 'sameExtension'; extension: string }
+  // The cursor is on an extension-less file: every other one.
+  | { kind: 'noExtension' }
 
 /**
  *  What a finished save wrote, so the viewer can say so when it isn't the UTF-8 text

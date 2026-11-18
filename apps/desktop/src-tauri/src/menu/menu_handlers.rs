@@ -231,7 +231,7 @@ pub fn handle_menu_event(app: &AppHandle<tauri::Wry>, event: tauri::menu::MenuEv
 }
 
 /// What a pick of menu item `id` does, from a native menu (`handle_menu_event`) or from a page
-/// that draws its menus itself (`page_bar::pick`): one handler, so the two
+/// that draws its menus itself (`page_bar::pick`, `page_context::pick`): one handler, so the two
 /// roads can't drift. A page's pick has already done what a native click does by itself (a check
 /// item's own flip).
 pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str) {

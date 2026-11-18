@@ -84,6 +84,7 @@ mod mnemonics;
 #[cfg(target_os = "macos")]
 pub mod open_with;
 pub(crate) mod page_bar;
+pub(crate) mod page_context;
 #[cfg(target_os = "macos")]
 mod provider_logos;
 mod rebuild;
@@ -472,6 +473,8 @@ pub struct MenuState<R: Runtime> {
     pub pushed_shortcuts: Mutex<HashMap<String, String>>,
     /// The page bar's feed: the last answer sent and its revision (`page_bar.rs`).
     pub page_bar: Mutex<page_bar::BarFeed>,
+    /// The right-click menu a page drew last, which a pick from it must name (`page_context.rs`).
+    pub page_context: Mutex<page_context::OpenPageMenu>,
     /// The frontend commands the main window's dialog gate refuses right now: every `BLOCKED_BY_DIALOGS`
     /// command while a dialog, an explorer overlay, or the command palette is up, and nothing once it's gone.
     /// Pushed by `set_commands_refused_over_dialog`, whose only writer is
@@ -595,6 +598,7 @@ impl<R: Runtime> Default for MenuState<R> {
             show_hidden_checked: AtomicBool::new(false),
             pushed_shortcuts: Mutex::new(HashMap::new()),
             page_bar: Mutex::new(page_bar::BarFeed::default()),
+            page_context: Mutex::new(page_context::OpenPageMenu::default()),
             commands_refused_over_dialog: Mutex::new(HashSet::new()),
             items: Mutex::new(HashMap::new()),
             untracked_items: Mutex::new(Vec::new()),

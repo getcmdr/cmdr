@@ -373,6 +373,70 @@ fn every_row_the_crate_builds_has_a_click() {
     }
 }
 
+/// Every row a native menu has, minus the OS-filled slots, in the same order and state.
+fn native_rows(rows: &[ContextRow], out: &mut Vec<String>) {
+    for row in rows {
+        match row {
+            ContextRow::Item(item) => out.push(format!("item {} {}", item.id, item.enabled)),
+            ContextRow::Check { item, checked } => out.push(format!("check {} {} {checked}", item.id, item.enabled)),
+            ContextRow::Submenu { rows, .. } => {
+                out.push("submenu".to_string());
+                native_rows(rows, out);
+            }
+            ContextRow::Header(text) => out.push(format!("header {text}")),
+            ContextRow::Separator => out.push("separator".to_string()),
+            ContextRow::Slot(_) => {}
+        }
+    }
+}
+
+fn page_drawn(rows: &[crate::page::Row], out: &mut Vec<String>) {
+    use crate::page::{Row, RowLabel};
+    for row in rows {
+        match row {
+            Row::Item { id, enabled, .. } => out.push(format!("item {id} {enabled}")),
+            Row::Check {
+                id, enabled, checked, ..
+            } => out.push(format!("check {id} {enabled} {checked}")),
+            Row::Submenu { rows, .. } => {
+                out.push("submenu".to_string());
+                page_drawn(rows, out);
+            }
+            Row::Header {
+                label: RowLabel::Text { text },
+            } => out.push(format!("header {text}")),
+            Row::Separator => out.push("separator".to_string()),
+            other => out.push(format!("unexpected {other:?}")),
+        }
+    }
+}
+
+/// A page draws each right-click menu with the native menu's rows (Windows' in-page menus, the
+/// demo): every row but the OS's slots, in order, enabled and checked alike, and exactly the
+/// enabled ids are pickable.
+#[test]
+fn a_page_draws_every_menu_with_the_native_rows() {
+    for menu in every_menu() {
+        let mut live = std::collections::HashSet::new();
+        let drawn =
+            crate::page::context::page_rows(&menu, &ContextMenuShortcuts::default(), Platform::Windows, &mut live);
+        let (mut native, mut page) = (Vec::new(), Vec::new());
+        native_rows(&menu, &mut native);
+        page_drawn(&drawn, &mut page);
+        assert_eq!(page, native);
+        let enabled: std::collections::HashSet<String> = native
+            .iter()
+            .filter_map(|line| line.strip_prefix("item ").or_else(|| line.strip_prefix("check ")))
+            .filter_map(|rest| {
+                let mut parts = rest.split(' ');
+                let id = parts.next()?;
+                (parts.next() == Some("true")).then(|| id.to_string())
+            })
+            .collect();
+        assert_eq!(live, enabled);
+    }
+}
+
 /// Every lane that isn't a command, read off its id.
 #[test]
 fn the_special_lanes_read_off_their_ids() {

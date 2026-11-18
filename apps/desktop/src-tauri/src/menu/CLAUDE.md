@@ -6,7 +6,7 @@ Native menu bars for macOS, Windows, and Linux, built from scratch in the user's
 
 The bar and every context menu as data are `crates/cmdr-menu/CLAUDE.md`; `menu_bar_builder.rs` builds the bar,
 `context_rows.rs` any popup, and `file_context_menu.rs` the file one with its macOS slots. `menu_structure.rs`: the
-viewer bar. `page_bar.rs`: the bar for a page. `macos_appkit.rs`: the objc2 boundary. One line per file: DETAILS § File layout.
+viewer bar. `macos_appkit.rs`: the objc2 boundary. One line per file: DETAILS § File layout.
 
 ## Must-knows
 
@@ -46,7 +46,8 @@ viewer bar. `page_bar.rs`: the bar for a page. `macos_appkit.rs`: the objc2 boun
   everything is keyed by ID, never title**. A language change rebuilds the bar (`menu-bar-rebuilt`); the frontend
   re-pushes everything.
 - **A page draws the bar off macOS** (`page_bar.rs`): every push stores its fact in `MenuState` and ends in
-  `notify_bar_changed`, ❌ or the page bar goes stale. DETAILS § The bar a page draws.
+  `notify_bar_changed`, ❌ or the page bar goes stale. Windows' right-click menus too (`page_context.rs`): a pick names
+  its menu's token. DETAILS § The bar a page draws.
 
 Architecture, flows, and decisions: `DETAILS.md`. Read it before any non-trivial work here: editing, planning,
 reorganizing, or advising.
