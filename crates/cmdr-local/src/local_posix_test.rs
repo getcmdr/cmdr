@@ -947,10 +947,18 @@ async fn a_local_mutation_reports_one_change_to_its_host() {
 
     std::fs::write(dir.join("landed.txt"), b"x").expect("writing the new file");
     volume
-        .notify_mutation("vol", &dir, MutationEvent::Created("landed.txt".to_string()))
+        .notify_mutation(
+            "vol",
+            &AppPath::legacy_unchecked(&dir),
+            MutationEvent::Created("landed.txt".to_string()),
+        )
         .await;
     volume
-        .notify_mutation("vol", &dir, MutationEvent::Deleted("gone.txt".to_string()))
+        .notify_mutation(
+            "vol",
+            &AppPath::legacy_unchecked(&dir),
+            MutationEvent::Deleted("gone.txt".to_string()),
+        )
         .await;
 
     let changes = listings.changes();

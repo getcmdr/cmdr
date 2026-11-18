@@ -138,7 +138,10 @@ async fn a_name_made_in_nfd_and_asked_in_nfc_follows_the_filesystem() {
     std::fs::write(dir.join(nfd), b"nfd").unwrap();
     let volume = LocalVolume::local_folder("Test", dir.to_path_buf(), VolumeHost::detached());
 
-    let listed = volume.list_directory(&dir, None).await.expect("lists");
+    let listed = volume
+        .list_directory(&AppPath::legacy_unchecked(&dir), None)
+        .await
+        .expect("lists");
     let names: Vec<&str> = listed.iter().map(|e| e.name.as_str()).collect();
     assert_eq!(names, [nfd], "the listing keeps the stored NFD bytes");
 
