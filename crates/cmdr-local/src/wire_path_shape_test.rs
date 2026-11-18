@@ -163,6 +163,6 @@ async fn a_name_made_in_nfd_and_asked_in_nfc_follows_the_filesystem() {
             matches!(asked, Err(VolumeError::NotFound(_))),
             "a byte-comparing filesystem has no NFC name: {asked:?}"
         );
-        assert!(!volume.exists(&nfc_path).await);
+        assert!(!volume.exists(&AppPath::legacy_unchecked(&nfc_path)).await);
     }
 }
