@@ -296,8 +296,9 @@ document.addEventListener('mousedown', (e) => {
 // ---- Keys ----------------------------------------------------------------------------------------
 
 let altAlone = false
+// F10 isn't here: it belongs to the menu bar, and a `preventDefault` on it keeps it from Windows.
 const ownedByPage = (e) =>
-  /^F([1-9]|1[0-2])$/.test(e.key) ||
+  /^F([1-9]|11|12)$/.test(e.key) ||
   (e.ctrlKey && e.key.toLowerCase() === 'r') ||
   (e.altKey && e.key.startsWith('Arrow'))
 

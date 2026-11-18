@@ -8,7 +8,7 @@
 //! - `--selftest`, which types a fixed key script with `SendInput` and saves screenshots.
 
 use std::sync::OnceLock;
-use std::sync::atomic::{AtomicBool, AtomicI32, AtomicIsize, Ordering};
+use std::sync::atomic::{AtomicI32, AtomicIsize, Ordering};
 use std::time::Duration;
 
 use tauri::menu::{ContextMenu, Submenu};
@@ -42,7 +42,6 @@ use crate::{Mode, Spike, log};
 
 static APP: OnceLock<AppHandle> = OnceLock::new();
 static HWND_RAW: AtomicIsize = AtomicIsize::new(0);
-static ALT_ALONE: AtomicBool = AtomicBool::new(false);
 
 const VK_MENU: u32 = 0x12;
 const VK_RMENU: i32 = 0xA5;
@@ -145,11 +144,6 @@ fn on_webview_key(app: &AppHandle, kind: COREWEBVIEW2_KEY_EVENT_KIND, vk: u32) -
         format!("{} {mods}{}", kind_name(kind), vk_name(vk)),
     );
 
-    let is_down = kind == COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN || kind == COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN;
-    if is_down {
-        ALT_ALONE.store(vk == VK_MENU, Ordering::SeqCst);
-    }
-
     let spike = app.state::<Spike>();
     let (mode, bridge) = {
         let s = spike.settings.lock().unwrap();
@@ -161,13 +155,9 @@ fn on_webview_key(app: &AppHandle, kind: COREWEBVIEW2_KEY_EVENT_KIND, vk: u32) -
     let post = |letter: isize| unsafe {
         let _ = PostMessageW(Some(hwnd()), WM_SYSCOMMAND, WPARAM(SC_KEYMENU as usize), LPARAM(letter));
     };
-    if kind == COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_UP && vk == VK_MENU {
-        if ALT_ALONE.swap(false, Ordering::SeqCst) && !altgr {
-            log(app, "bridge", "lone Alt -> SC_KEYMENU 0");
-            post(0);
-        }
-        return false;
-    }
+    // A lone Alt needs no bridge: WebView2 hands an unhandled Alt release to `DefWindowProc`, which
+    // sends `SC_KEYMENU` itself (measured on Windows 10 22H2, 2026-11-18). Forwarding it too opened
+    // the menu loop twice.
     if kind == COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN && vk == VK_F10 && !down(VK_SHIFT) {
         log(app, "bridge", "F10 -> SC_KEYMENU 0");
         post(0);
@@ -318,6 +308,8 @@ enum Step {
     Key(u16),
     Chord(&'static [u16], u16),
     AltGr(u16),
+    /// Alt+letter, a pause, then one more key (Right, to walk to the next menu).
+    AltThen(u16, u16),
 }
 
 fn key_input(vk: u16, up: bool) -> INPUT {
@@ -360,6 +352,11 @@ fn press(step: Step) -> u32 {
         }
         // Right Alt; on a layout with AltGr, Windows adds the left Ctrl itself.
         Step::AltGr(vk) => send(&[(0xA5, false), (vk, false), (vk, true), (0xA5, true)]),
+        Step::AltThen(letter, next) => {
+            let sent = press(Step::Chord(&[ALT], letter));
+            std::thread::sleep(Duration::from_millis(700));
+            sent + press(Step::Key(next))
+        }
     }
 }
 
@@ -374,6 +371,7 @@ fn script() -> Vec<(&'static str, Step)> {
         ("f10", Step::Key(0x79)),
         ("alt-f", Step::Chord(&[ALT], b'F' as u16)),
         ("alt-e", Step::Chord(&[ALT], b'E' as u16)),
+        ("alt-f-right", Step::AltThen(b'F' as u16, 0x27)),
         ("f5", Step::Key(0x74)),
         ("ctrl-r", Step::Chord(&[CTRL], b'R' as u16)),
         ("alt-left", Step::Chord(&[ALT], 0x25)),
@@ -417,7 +415,7 @@ pub fn run_selftest(app: AppHandle, spec: String) {
                 if sent == 0 {
                     log(&app, "selftest", "SendInput sent nothing (locked or no input desktop?)");
                 }
-                std::thread::sleep(Duration::from_millis(900));
+                std::thread::sleep(Duration::from_millis(1400));
                 if let Some(dir) = &shots {
                     save_screen(&dir.join(format!("{name}-{label}.bmp")));
                 }
