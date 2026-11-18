@@ -80,8 +80,9 @@ var securitySeverities = map[string]bool{"low": true, "medium": true, "high": tr
 func securityAdvisoryProblems(data []byte, appVersion string) []string {
 	var file securityAdvisoryFile
 	decoder := json.NewDecoder(bytes.NewReader(data))
-	// The app's parser has `deny_unknown_fields` at both levels, so an unknown key
-	// there means the whole list reads as "no advisory".
+	// The app's parser ignores an unknown key (so an older build still reads a newer
+	// release's list), which is exactly why a typo'd one must fail here: the app
+	// would quietly read the entry without the field the typo meant.
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&file); err != nil {
 		return []string{fmt.Sprintf("doesn't parse as `{\"advisories\": [{id, fixedIn, severity, url}, ...]}`, so the app would show no advisory at all: %v", err)}

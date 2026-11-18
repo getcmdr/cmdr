@@ -15,8 +15,9 @@ copy (Windows, Linux) through `updater/advisories.rs`.
 ## Must-knows
 
 - **Lenient by design: a list that doesn't parse is "no advisory" plus a warn, ❌ never an error.** The update carrying
-  it is the security fix itself, so nothing here may block, fail, or delay an install. The strictness lives in the
-  `desktop-security-advisories` check instead, which fails on anything this parser would refuse or quietly drop.
+  it is the security fix itself, so nothing here may block, fail, or delay an install. An entry that doesn't read drops
+  alone, and unknown members are ignored: the running app reads the NEXT release's list. The strictness lives in the
+  `desktop-security-advisories` check instead, which fails on anything this parser would refuse, drop, or ignore.
 - **Change the schema or the allowlist in three places at once**: `mod.rs`, the Go check
   (`scripts/check/checks/desktop-security-advisories.go`), and the release guide's advisory step. The canary test only
   vets the committed file against the Rust side.

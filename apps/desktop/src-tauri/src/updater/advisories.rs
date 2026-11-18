@@ -39,6 +39,9 @@ pub(super) fn notice_from(json: &str, running: &Version, staged: &Version) -> Op
 /// the update is ready either way.
 const SIGNED_LIST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
 
+/// The most the signed list may weigh before the fetch gives up on it (a few hundred bytes today).
+const MAX_SIGNED_LIST_BYTES: usize = 256 << 10;
+
 /// Fetches the release's signed advisory list (`latest.json`'s `securityAdvisories`) for an
 /// install that can't open its update before running it (Windows, Linux), or `None` (logged at
 /// warn) when there's none, it doesn't arrive, or its signature doesn't hold: an update never
@@ -62,8 +65,7 @@ pub(super) async fn fetch_signed_list(entry: &super::manifest::PlatformEntry) ->
             log::warn!("Couldn't fetch the update's security advisory list, so it names no advisory: {e:?}")
         })
         .ok()?;
-    let bytes = response
-        .bytes()
+    let bytes = crate::server_request::read_capped(response, MAX_SIGNED_LIST_BYTES)
         .await
         .inspect_err(|e| log::warn!("Couldn't read the update's security advisory list: {e}"))
         .ok()?;
@@ -127,10 +129,17 @@ mod tests {
 
     /// The update is the security fix itself, so a broken list costs the notice, never the update.
     #[test]
-    fn a_malformed_list_or_an_unknown_severity_has_no_notice() {
+    fn a_malformed_list_has_no_notice() {
         assert_eq!(notice_from("{", &version("0.50.0"), &version("0.55.0")), None);
+    }
+
+    /// A severity this build doesn't know drops that advisory alone: the others still make the
+    /// notice, worst first.
+    #[test]
+    fn an_unknown_severity_drops_only_its_advisory() {
         let unknown = LIST.replace("\"critical\"", "\"apocalyptic\"");
-        assert_eq!(notice_from(&unknown, &version("0.50.0"), &version("0.55.0")), None);
+        let notice = notice_from(&unknown, &version("0.50.0"), &version("0.55.0")).expect("two still count");
+        assert_eq!((notice.severity, notice.count), (Severity::Medium, 2));
     }
 
     #[test]
