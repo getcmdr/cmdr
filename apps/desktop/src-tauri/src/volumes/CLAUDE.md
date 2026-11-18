@@ -6,11 +6,11 @@ Linux's: `platform/linux/CLAUDE.md`.
 
 ## Module map
 
-`model.rs`: the model every OS publishes (`LocationInfo`, `SmbMountInfo`). `platform/mod.rs`: the pinned fn set.
-`platform/macos/`: `mod.rs` (orchestrators), `ids.rs`, `fs_type.rs` (non-blocking `statfs`), `nsurl.rs` (blocking
-enrichment), `mounts.rs` (`getfsstat` rows), `smb.rs`, `cloud.rs`, `disk_image.rs`, `watcher.rs` + `lifecycle.rs` (the
-`NSWorkspace` observer, its handlers), `disk_units.rs`, `unmount_approver/`. `platform/unix.rs`: the POSIX local volume.
-`platform/windows/`: the drive table and its Win32 reads (DETAILS § Windows).
+`model.rs`: the published model. `platform/mod.rs`: the pinned fn set. `platform/macos/`: `mod.rs` (orchestrators),
+`ids.rs`, `fs_type.rs` (non-blocking `statfs`), `nsurl.rs` (blocking enrichment), `mounts.rs` (`getfsstat` rows),
+`smb.rs`, `cloud.rs`, `disk_image.rs`, `watcher.rs` + `lifecycle.rs` (the `NSWorkspace` observer), `disk_units.rs`,
+`unmount_approver/`. `platform/unix.rs`: the POSIX local volume. `platform/windows/`: the drive table (DETAILS §
+Windows).
 
 ## Must-knows
 
