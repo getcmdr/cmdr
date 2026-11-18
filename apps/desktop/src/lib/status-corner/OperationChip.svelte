@@ -38,12 +38,6 @@
               : chipState.operation.row.snapshot.operationId,
     )
 
-    /** The corner's looking glass onto whatever it's previewing, following the
-     *  candidate as it changes. The chip is a minimal view: all it takes from
-     *  the session is the one smoothed ETA every other view of that operation
-     *  reads too. */
-    const session = bindOperationSession(() => candidate?.row.snapshot.operationId ?? null)
-
     /** The operation the chip has settled on. See the settle effect. */
     let settledId = $state<string | null>(null)
     /** Non-reactive mirror of "the chip is currently showing something". The
@@ -80,6 +74,17 @@
     })
 
     const visible = $derived(chipState !== null && settledId === candidateId)
+
+    /** The corner's looking glass onto whatever it's previewing, following the
+     *  candidate as it changes. The chip is a minimal view: all it takes from
+     *  the session is the one smoothed ETA every other view of that operation
+     *  reads too. Bound only once the chip has SETTLED on the operation: in the
+     *  beat before that, an operation the progress dialog is about to claim is
+     *  still a candidate, and a session held through that beat used to take the
+     *  dialog's `write-complete` with it when the chip let go
+     *  (`#lib/file-operations/operation-session/DETAILS.md` § "How an operation
+     *  ended"). */
+    const session = bindOperationSession(() => (visible ? (candidate?.row.snapshot.operationId ?? null) : null))
 
     /** The action word: "Copying", "Moving to trash". Only the running chip
      *  shows it; `chipLabel` is what any surface describing the chip leads with.
