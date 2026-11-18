@@ -963,6 +963,10 @@ jobs:
     timeout-minutes: 150
     permissions:
       contents: read
+    # `continue-on-error` makes a red run of this job report `success` to the jobs that need it, so
+    # `windows-publish` gates on this, which only the last step sets, never on the result.
+    outputs:
+      built: ${{ steps.built.outputs.built }}
     defaults:
       run:
         shell: bash
@@ -1066,6 +1070,10 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Mark the build whole
+        id: built
+        run: echo "built=true" >> "$GITHUB_OUTPUT"
+
   # Puts the Windows files on the release, and in `ci` mode signs the updater payload and the
   # advisory list first, in the `release` environment for the updater key. The build job's artifact
   # is its word only: this job takes from it exactly the files the release asset manifest names for
@@ -1081,17 +1089,19 @@ jobs:
     name: Sign and upload the Windows packages
     needs: [guard, windows-build, sign]
     continue-on-error: true # the Windows leg never fails the release (`windows-build`)
+    # `windows-build`'s `built`, never its result: `continue-on-error` reports a red run as `success`.
     if: >-
-      !cancelled() && needs.guard.result == 'success' && needs.windows-build.result == 'success' && needs.sign.result ==
-      'success'
+      !cancelled() && needs.guard.result == 'success' && needs.windows-build.outputs.built == 'true' &&
+      needs.sign.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: release
     permissions:
       contents: write # upload the Windows files to the release
     outputs:
-      # The files this job put on the release (`stage`'s names), which `windows-attest` attests.
-      files: ${{ steps.stage.outputs.files }}
+      # The files this job put on the release, set only once every upload passed its digest check,
+      # which `windows-attest` gates on and attests (this job's result can't gate: `continue-on-error`).
+      published: ${{ steps.upload.outputs.published }}
 
     steps:
       - name: Checkout code
@@ -1173,8 +1183,11 @@ jobs:
         run: ./scripts/release-finish.sh -verify-dir "$RUNNER_TEMP/windows-x86_64" -leg windows "${TAG#v}"
 
       # The staged names and, in `ci` mode, their signatures: nothing else, so `--clobber` (which
-      # replaces a half-saved asset on a retry) only ever touches this job's own files.
+      # replaces a half-saved asset on a retry) only ever touches this job's own files. The
+      # signatures go up last, each after every file's digest check passed, and `publish` takes the
+      # leg only with them, so a leg it counts is one whose bytes are the ones signed.
       - name: Upload the Windows packages to the release
+        id: upload
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
@@ -1205,6 +1218,7 @@ jobs:
             for name in $SIGNED; do paths+=("$DIR/$name.sig"); done
           fi
           ./scripts/release-upload.sh "$TAG" "$RELEASE_ID" "${paths[@]}"
+          echo "published=$FILES" >> "$GITHUB_OUTPUT"
 
   # Build provenance for the Windows files as published, as soon as they're up, so `local` mode's
   # laptop can verify them without `attest` (which no Windows job holds) waiting for the leg. In `ci`
@@ -1214,7 +1228,8 @@ jobs:
     name: Attest the Windows packages
     needs: [guard, windows-publish]
     continue-on-error: true # the Windows leg never fails the release (`windows-build`)
-    if: ${{ !cancelled() && needs.guard.result == 'success' && needs.windows-publish.result == 'success' }}
+    # `windows-publish`'s `published`, set only once every upload checked out, never its result.
+    if: ${{ !cancelled() && needs.guard.result == 'success' && needs.windows-publish.outputs.published != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -1227,7 +1242,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
-          FILES: ${{ needs.windows-publish.outputs.files }}
+          FILES: ${{ needs.windows-publish.outputs.published }}
         run: |
           set -euo pipefail
           [ -n "$FILES" ] || { echo "::error::windows-publish named no files."; exit 1; }

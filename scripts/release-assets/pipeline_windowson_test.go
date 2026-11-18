@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -93,6 +94,45 @@ func TestNoReleaseToolBuildsWithWindowsOn(t *testing.T) {
 			return err
 		})
 		must(t, err)
+	}
+}
+
+var nextJob = regexp.MustCompile(`(?m)^  \S`)
+
+// A job with job-level `continue-on-error` reports `success` to the jobs that need it even when it
+// went red, so the Windows leg's gates read an output only its last step sets, never a result.
+func TestTheWindowsGatesReadOutputsNotResults(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join(repoRoot(t), ".github/workflows/release-pipeline.yml"))
+	must(t, err)
+	src := string(raw)
+	block := func(id string) string {
+		start := strings.Index(src, "\n  "+id+":\n")
+		if start < 0 {
+			t.Fatalf("no job %s", id)
+		}
+		rest := src[start+1:]
+		// Up to the next line at the jobs' own indent (the next job or its comment).
+		if loc := nextJob.FindStringIndex(rest[1:]); loc != nil {
+			return rest[:loc[0]+1]
+		}
+		return rest
+	}
+	for job, want := range map[string]string{
+		"windows-publish": "needs.windows-build.outputs.built == 'true'",
+		"windows-attest":  "needs.windows-publish.outputs.published != ''",
+	} {
+		b := block(job)
+		if !strings.Contains(b, want) {
+			t.Errorf("%s doesn't gate on %q", job, want)
+		}
+		for _, upstream := range []string{"windows-build", "windows-publish"} {
+			if strings.Contains(b, "needs."+upstream+".result") {
+				t.Errorf("%s gates on needs.%s.result, which continue-on-error makes always success", job, upstream)
+			}
+		}
+	}
+	if !strings.Contains(block("windows-build"), `echo "built=true" >> "$GITHUB_OUTPUT"`) {
+		t.Error("windows-build's last step doesn't set built")
 	}
 }
 
