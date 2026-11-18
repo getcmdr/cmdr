@@ -860,3 +860,37 @@ async fn a_walk_that_may_not_abandon_a_listing_waits_it_out() {
 
     assert!(outcome.is_err(), "the listing was left to answer: {outcome:?}");
 }
+
+/// The walk lists a child folder at `Path::join(folder, name)`, so the folder's spelling
+/// carries down as given: a trailing `/` doesn't double, but a `.` name stays in every
+/// path below it, and a scheme folder takes the name after a `/`. A typed app path
+/// normalizes the `.` away, so converting the walk changes what this asks for: on
+/// purpose, in its own commit.
+#[tokio::test]
+#[cfg(unix)]
+async fn the_walk_lists_each_child_folder_under_the_folder_as_spelled() {
+    let tree = FakeTree::new()
+        .with_dir("/top/", &[("sub", true, 0)])
+        .with_dir("/top/sub", &[])
+        .with_dir("/dot/.", &[("sub", true, 0)])
+        .with_dir("/dot/./sub", &[])
+        .with_dir("sftp://test_user_1@nas:22/srv", &[("sub", true, 0)])
+        .with_dir("sftp://test_user_1@nas:22/srv/sub", &[]);
+
+    let boundary = ScanBoundary::silent();
+    for top in ["/top/", "/dot/.", "sftp://test_user_1@nas:22/srv"] {
+        scan_tree(&tree, Path::new(top), &boundary).await.expect(top);
+    }
+
+    assert_eq!(
+        *tree.asked.lock_ignore_poison(),
+        vec![
+            "/top/",
+            "/top/sub",
+            "/dot/.",
+            "/dot/./sub",
+            "sftp://test_user_1@nas:22/srv",
+            "sftp://test_user_1@nas:22/srv/sub",
+        ]
+    );
+}

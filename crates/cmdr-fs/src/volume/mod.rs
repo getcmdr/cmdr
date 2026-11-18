@@ -2585,6 +2585,10 @@ mod password_locked_test;
 #[cfg(test)]
 mod path_arithmetic_pin_test;
 #[cfg(test)]
+mod path_helper_pin_test;
+#[cfg(test)]
+mod path_order_pin_test;
+#[cfg(test)]
 mod read_window_test;
 #[cfg(test)]
 mod retirement_test;
