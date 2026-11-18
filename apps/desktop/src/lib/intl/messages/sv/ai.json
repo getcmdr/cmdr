@@ -55,9 +55,9 @@
   "@ai.translateError.off.title": {
     "sourceHash": "99ce709"
   },
-  "ai.translateError.off.body": "{platform, select, linuxGnome {Turn on a provider in Preferences > AI to use AI search.} linuxKde {Turn on a provider in Configure Cmdr > AI to use AI search.} other {Aktivera en leverantör i Inställningar > AI för att använda AI-sökning.}}",
+  "ai.translateError.off.body": "{platform, select, linuxGnome {Aktivera en leverantör i Inställningar > AI för att använda AI-sökning.} linuxKde {Aktivera en leverantör i ”Anpassa Cmdr” > AI för att använda AI-sökning.} other {Aktivera en leverantör i Inställningar > AI för att använda AI-sökning.}}",
   "@ai.translateError.off.body": {
-    "sourceHash": "d8d6368"
+    "sourceHash": "5e5f8d2"
   },
   "ai.cloudConsent.label": "Tillåt moln-AI",
   "@ai.cloudConsent.label": {
@@ -247,25 +247,25 @@
   "@ai.translateError.notConfigured.title": {
     "sourceHash": "bf5688a"
   },
-  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Finish your provider setup in Preferences > AI, then try again.} linuxKde {Finish your provider setup in Configure Cmdr > AI, then try again.} other {Slutför din leverantörsinställning i Inställningar > AI och försök sedan igen.}}",
+  "ai.translateError.notConfigured.body": "{platform, select, linuxGnome {Slutför din leverantörsinställning i Inställningar > AI och försök sedan igen.} linuxKde {Slutför din leverantörsinställning i ”Anpassa Cmdr” > AI och försök sedan igen.} other {Slutför din leverantörsinställning i Inställningar > AI och försök sedan igen.}}",
   "@ai.translateError.notConfigured.body": {
-    "sourceHash": "65133a8"
+    "sourceHash": "bf48aec"
   },
   "ai.translateError.noCloudConsent.title": "Moln-AI är avstängt",
   "@ai.translateError.noCloudConsent.title": {
     "sourceHash": "2e56781"
   },
-  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Allow it in Preferences > AI, then try again.} linuxKde {Allow it in Configure Cmdr > AI, then try again.} other {Tillåt det i Inställningar > AI och försök sedan igen.}}",
+  "ai.translateError.noCloudConsent.body": "{platform, select, linuxGnome {Tillåt det i Inställningar > AI och försök sedan igen.} linuxKde {Tillåt det i ”Anpassa Cmdr” > AI och försök sedan igen.} other {Tillåt det i Inställningar > AI och försök sedan igen.}}",
   "@ai.translateError.noCloudConsent.body": {
-    "sourceHash": "fde3eb5"
+    "sourceHash": "4485cc1"
   },
   "ai.translateError.authFailed.title": "Den API-nyckeln nekades",
   "@ai.translateError.authFailed.title": {
     "sourceHash": "93e6261"
   },
-  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Check your key in Preferences > AI - it might be wrong or revoked.} linuxKde {Check your key in Configure Cmdr > AI - it might be wrong or revoked.} other {Kontrollera din nyckel i Inställningar > AI – den kan vara fel eller återkallad.}}",
+  "ai.translateError.authFailed.body": "{platform, select, linuxGnome {Kontrollera din nyckel i Inställningar > AI – den kan vara fel eller återkallad.} linuxKde {Kontrollera din nyckel i ”Anpassa Cmdr” > AI – den kan vara fel eller återkallad.} other {Kontrollera din nyckel i Inställningar > AI – den kan vara fel eller återkallad.}}",
   "@ai.translateError.authFailed.body": {
-    "sourceHash": "2159d5e"
+    "sourceHash": "4fd6281"
   },
   "ai.translateError.rateLimited.title": "Din AI-leverantör är full",
   "@ai.translateError.rateLimited.title": {
@@ -295,9 +295,9 @@
   "@ai.translateError.emptyResponse.title": {
     "sourceHash": "61afc33"
   },
-  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Preferences > AI.} linuxKde {Your model may have used up its token budget before it answered. Try a faster model like gpt-4.1-mini in Configure Cmdr > AI.} other {Din modell kan ha gjort slut på sin tokenbudget innan den svarade. Prova en snabbare modell som gpt-4.1-mini i Inställningar > AI.}}",
+  "ai.translateError.emptyResponse.body": "{platform, select, linuxGnome {Din modell kan ha gjort slut på sin tokenbudget innan den svarade. Prova en snabbare modell som gpt-4.1-mini i Inställningar > AI.} linuxKde {Din modell kan ha gjort slut på sin tokenbudget innan den svarade. Prova en snabbare modell som gpt-4.1-mini i ”Anpassa Cmdr” > AI.} other {Din modell kan ha gjort slut på sin tokenbudget innan den svarade. Prova en snabbare modell som gpt-4.1-mini i Inställningar > AI.}}",
   "@ai.translateError.emptyResponse.body": {
-    "sourceHash": "d74db0d"
+    "sourceHash": "b16ff79"
   },
   "ai.translateError.serverError.title": "Din AI-leverantör stötte på problem",
   "@ai.translateError.serverError.title": {
@@ -311,17 +311,17 @@
   "@ai.translateError.parseError.title": {
     "sourceHash": "02af146"
   },
-  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Try again, or pick a different model in Preferences > AI.} linuxKde {Try again, or pick a different model in Configure Cmdr > AI.} other {Försök igen, eller välj en annan modell i Inställningar > AI.}}",
+  "ai.translateError.parseError.body": "{platform, select, linuxGnome {Försök igen, eller välj en annan modell i Inställningar > AI.} linuxKde {Försök igen, eller välj en annan modell i ”Anpassa Cmdr” > AI.} other {Försök igen, eller välj en annan modell i Inställningar > AI.}}",
   "@ai.translateError.parseError.body": {
-    "sourceHash": "c299ec6"
+    "sourceHash": "6082b7e"
   },
   "ai.translateError.unknownProvider.title": "Den AI-leverantören känns inte igen",
   "@ai.translateError.unknownProvider.title": {
     "sourceHash": "794a4c7"
   },
-  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Pick a provider in Preferences > AI.} linuxKde {Pick a provider in Configure Cmdr > AI.} other {Välj en leverantör i Inställningar > AI.}}",
+  "ai.translateError.unknownProvider.body": "{platform, select, linuxGnome {Välj en leverantör i Inställningar > AI.} linuxKde {Välj en leverantör i ”Anpassa Cmdr” > AI.} other {Välj en leverantör i Inställningar > AI.}}",
   "@ai.translateError.unknownProvider.body": {
-    "sourceHash": "7042a75"
+    "sourceHash": "c45eba0"
   },
   "ai.translateError.managed.title": "Din organisation hanterar AI i Cmdr",
   "@ai.translateError.managed.title": {
@@ -599,9 +599,9 @@
   "@ai.local.deleteButton": {
     "sourceHash": "e2d0a54"
   },
-  "ai.secretError.title": "{platform, select, macos {{op, select, save {Det gick inte att spara din API-nyckel: macOS Nyckelring nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: macOS Nyckelring nekade åtkomst}}} windows {{op, select, save {Det gick inte att spara din API-nyckel: Autentiseringshanteraren nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: Autentiseringshanteraren nekade åtkomst}}} linuxKde {{op, select, save {Det gick inte att spara din API-nyckel: KWallet nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: KWallet nekade åtkomst}}} other {{op, select, save {Det gick inte att spara din API-nyckel: systemets nyckelring nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: systemets nyckelring nekade åtkomst}}}}",
+  "ai.secretError.title": "{platform, select, macos {{op, select, save {Det gick inte att spara din API-nyckel: macOS Nyckelring nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: macOS Nyckelring nekade åtkomst}}} windows {{op, select, save {Det gick inte att spara din API-nyckel: Autentiseringshanteraren nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: Autentiseringshanteraren nekade åtkomst}}} linuxKde {{op, select, save {Det gick inte att spara din API-nyckel: KDE:s plånbok nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: KDE:s plånbok nekade åtkomst}}} other {{op, select, save {Det gick inte att spara din API-nyckel: systemets nyckelring nekade åtkomst} other {Det gick inte att läsa din sparade API-nyckel: systemets nyckelring nekade åtkomst}}}}",
   "@ai.secretError.title": {
-    "sourceHash": "6daa595"
+    "sourceHash": "4612cfb"
   },
   "ai.secretError.body": "{platform, select, macos {{op, select, save {Öppna Nyckelhanterare och kontrollera posten ”Cmdr”, eller radera den och försök spara igen.} other {Öppna Nyckelhanterare, leta upp posten ”Cmdr”, ge åtkomst, eller radera den och ange din nyckel på nytt.}}} windows {{op, select, save {Öppna Autentiseringshanteraren och kontrollera posten ”Cmdr” under Windows-autentiseringsuppgifter, eller ta bort den och försök spara igen.} other {Öppna Autentiseringshanteraren, leta upp posten ”Cmdr” under Windows-autentiseringsuppgifter, eller ta bort den och ange din nyckel igen.}}} linuxGnome {Lås upp din nyckelring i Lösenord och nycklar och försök igen.} linuxKde {Lås upp din plånbok i KWalletManager och försök igen.} other {Lås upp din nyckelring (appen Lösenord eller Nyckelringar) och försök igen.}}",
   "@ai.secretError.body": {
@@ -611,9 +611,9 @@
   "@ai.secretError.genericTitle": {
     "sourceHash": "c343e42"
   },
-  "ai.secretError.genericBody": "{platform, select, macos {Kontrollera att nyckelringen är tillgänglig och försök igen. Om det kvarstår, starta om appen.} windows {Kontrollera att Autentiseringshanteraren är tillgänglig och försök igen. Om det fortsätter att hända, starta om Cmdr.} linuxKde {Kontrollera att KWallet är tillgänglig och försök igen. Om det kvarstår, starta om appen.} other {Kontrollera att systemets nyckelring är tillgänglig och försök igen. Om det kvarstår, starta om appen.}}",
+  "ai.secretError.genericBody": "{platform, select, macos {Kontrollera att nyckelringen är tillgänglig och försök igen. Om det kvarstår, starta om appen.} windows {Kontrollera att Autentiseringshanteraren är tillgänglig och försök igen. Om det fortsätter att hända, starta om Cmdr.} linuxKde {Kontrollera att KDE:s plånbok är tillgänglig och försök igen. Om det kvarstår, starta om appen.} other {Kontrollera att systemets nyckelring är tillgänglig och försök igen. Om det kvarstår, starta om appen.}}",
   "@ai.secretError.genericBody": {
-    "sourceHash": "cb879fa"
+    "sourceHash": "1c198ff"
   },
   "ai.secretError.removeTitle": "Det gick inte att ta bort din sparade API-nyckel.",
   "@ai.secretError.removeTitle": {

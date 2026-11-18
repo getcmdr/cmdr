@@ -125,9 +125,9 @@
   "@servers.hub.discoveryOff": {
     "sourceHash": "cadcceb"
   },
-  "servers.hub.discoveryOffLink": "{platform, select, linuxGnome {Turn it on in Preferences} linuxKde {Turn it on in Configure Cmdr} other {In den Einstellungen einschalten}}",
+  "servers.hub.discoveryOffLink": "{platform, select, linuxGnome {In den Einstellungen einschalten} linuxKde {Unter „Cmdr einrichten“ einschalten} other {In den Einstellungen einschalten}}",
   "@servers.hub.discoveryOffLink": {
-    "sourceHash": "818571b"
+    "sourceHash": "65a3d5a"
   },
   "servers.hub.nfsHint": "NFS-Server kündigen sich im Netzwerk nicht an, deshalb erscheinen sie hier nicht.",
   "@servers.hub.nfsHint": {
@@ -253,13 +253,13 @@
   "@servers.refusal.saveUnconfirmed": {
     "sourceHash": "3fb55a6"
   },
-  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr konnte dieses Passwort nicht im Schlüsselbund sichern. Versuche es noch einmal oder schalte „Im Schlüsselbund merken“ aus, um dich anzumelden, ohne es zu sichern.} windows {Cmdr konnte dieses Passwort nicht sichern. Versuche es noch einmal oder schalte „Passwort merken“ aus, um dich anzumelden, ohne es zu sichern.} linuxKde {Cmdr konnte dieses Passwort nicht in KWallet sichern. Versuche es noch einmal oder schalte „In KWallet merken“ aus, um dich anzumelden, ohne es zu sichern.} other {Cmdr konnte dieses Passwort nicht in deinem Schlüsselbund sichern. Versuche es noch einmal oder schalte „Im Schlüsselbund merken“ aus, um dich anzumelden, ohne es zu sichern.}}",
+  "servers.refusal.secretNotStored": "{platform, select, macos {Cmdr konnte dieses Passwort nicht im Schlüsselbund sichern. Versuche es noch einmal oder schalte „Im Schlüsselbund merken“ aus, um dich anzumelden, ohne es zu sichern.} windows {Cmdr konnte dieses Passwort nicht sichern. Versuche es noch einmal oder schalte „Passwort merken“ aus, um dich anzumelden, ohne es zu sichern.} linuxKde {Cmdr konnte dieses Passwort nicht im KDE-Passwortspeicher sichern. Versuche es noch einmal oder schalte „Im KDE-Passwortspeicher merken“ aus, um dich anzumelden, ohne es zu sichern.} other {Cmdr konnte dieses Passwort nicht in deinem Schlüsselbund sichern. Versuche es noch einmal oder schalte „Im Schlüsselbund merken“ aus, um dich anzumelden, ohne es zu sichern.}}",
   "@servers.refusal.secretNotStored": {
-    "sourceHash": "19deece"
+    "sourceHash": "2645206"
   },
-  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Cmdr hat deine Änderungen gesichert, konnte das Passwort im Schlüsselbund aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.} windows {Cmdr hat deine Änderungen gesichert, konnte das gespeicherte Passwort aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.} linuxKde {Cmdr hat deine Änderungen gesichert, konnte das Passwort in KWallet aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.} other {Cmdr hat deine Änderungen gesichert, konnte das Passwort in deinem Schlüsselbund aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.}}",
+  "servers.refusal.savedSecretNotUpdated": "{platform, select, macos {Cmdr hat deine Änderungen gesichert, konnte das Passwort im Schlüsselbund aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.} windows {Cmdr hat deine Änderungen gesichert, konnte das gespeicherte Passwort aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.} linuxKde {Cmdr hat deine Änderungen gesichert, konnte das Passwort im KDE-Passwortspeicher aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.} other {Cmdr hat deine Änderungen gesichert, konnte das Passwort in deinem Schlüsselbund aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.}}",
   "@servers.refusal.savedSecretNotUpdated": {
-    "sourceHash": "d9b6621"
+    "sourceHash": "cdc32d0"
   },
   "servers.refusal.s3AuthenticationRejected": "Dieser geheime Zugriffsschlüssel hat nicht geklappt.",
   "@servers.refusal.s3AuthenticationRejected": {
@@ -273,13 +273,13 @@
   "@servers.refusal.s3SecretMissing": {
     "sourceHash": "f1f32f2"
   },
-  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr konnte diesen geheimen Zugriffsschlüssel nicht im Schlüsselbund sichern. Versuche es noch einmal oder schalte „Im Schlüsselbund merken“ aus, um dich anzumelden, ohne ihn zu sichern.} windows {Cmdr konnte diesen geheimen Zugriffsschlüssel nicht sichern. Versuche es noch einmal oder schalte „Passwort merken“ aus, um dich anzumelden, ohne ihn zu sichern.} linuxKde {Cmdr konnte diesen geheimen Zugriffsschlüssel nicht in KWallet sichern. Versuche es noch einmal oder schalte „In KWallet merken“ aus, um dich anzumelden, ohne ihn zu sichern.} other {Cmdr konnte diesen geheimen Zugriffsschlüssel nicht in deinem Schlüsselbund sichern. Versuche es noch einmal oder schalte „Im Schlüsselbund merken“ aus, um dich anzumelden, ohne ihn zu sichern.}}",
+  "servers.refusal.s3SecretNotStored": "{platform, select, macos {Cmdr konnte diesen geheimen Zugriffsschlüssel nicht im Schlüsselbund sichern. Versuche es noch einmal oder schalte „Im Schlüsselbund merken“ aus, um dich anzumelden, ohne ihn zu sichern.} windows {Cmdr konnte diesen geheimen Zugriffsschlüssel nicht sichern. Versuche es noch einmal oder schalte „Passwort merken“ aus, um dich anzumelden, ohne ihn zu sichern.} linuxKde {Cmdr konnte diesen geheimen Zugriffsschlüssel nicht im KDE-Passwortspeicher sichern. Versuche es noch einmal oder schalte „Im KDE-Passwortspeicher merken“ aus, um dich anzumelden, ohne ihn zu sichern.} other {Cmdr konnte diesen geheimen Zugriffsschlüssel nicht in deinem Schlüsselbund sichern. Versuche es noch einmal oder schalte „Im Schlüsselbund merken“ aus, um dich anzumelden, ohne ihn zu sichern.}}",
   "@servers.refusal.s3SecretNotStored": {
-    "sourceHash": "9aa6628"
+    "sourceHash": "313e2ae"
   },
-  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Cmdr hat deine Änderungen gesichert, konnte den geheimen Zugriffsschlüssel im Schlüsselbund aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.} windows {Cmdr hat deine Änderungen gesichert, konnte den gespeicherten geheimen Zugriffsschlüssel aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.} linuxKde {Cmdr hat deine Änderungen gesichert, konnte den geheimen Zugriffsschlüssel in KWallet aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.} other {Cmdr hat deine Änderungen gesichert, konnte den geheimen Zugriffsschlüssel in deinem Schlüsselbund aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.}}",
+  "servers.refusal.s3SavedSecretNotUpdated": "{platform, select, macos {Cmdr hat deine Änderungen gesichert, konnte den geheimen Zugriffsschlüssel im Schlüsselbund aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.} windows {Cmdr hat deine Änderungen gesichert, konnte den gespeicherten geheimen Zugriffsschlüssel aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.} linuxKde {Cmdr hat deine Änderungen gesichert, konnte den geheimen Zugriffsschlüssel im KDE-Passwortspeicher aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.} other {Cmdr hat deine Änderungen gesichert, konnte den geheimen Zugriffsschlüssel in deinem Schlüsselbund aber nicht aktualisieren. Sichere noch einmal, um es erneut zu versuchen.}}",
   "@servers.refusal.s3SavedSecretNotUpdated": {
-    "sourceHash": "8c62f24"
+    "sourceHash": "bf474d0"
   },
   "servers.refusal.accessDenied": "Mit diesem Schlüssel ist dieser Bucket nicht erreichbar. Prüfe den Bucket-Namen, den geheimen Zugriffsschlüssel und ob der Schlüssel den Bucket lesen darf.",
   "@servers.refusal.accessDenied": {
@@ -337,13 +337,13 @@
   "@servers.refusal.addressTaken": {
     "sourceHash": "5a14a92"
   },
-  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr konnte das gespeicherte Passwort nicht zur neuen Adresse mitnehmen, deshalb hat sich nichts geändert. Prüfe, ob dein Schlüsselbund entsperrt ist, und sichere dann noch einmal.} windows {Cmdr konnte das gespeicherte Passwort nicht zur neuen Adresse mitnehmen, deshalb hat sich nichts geändert. Sichere noch einmal, um es erneut zu versuchen.} linuxKde {Cmdr konnte das gespeicherte Passwort nicht zur neuen Adresse mitnehmen, deshalb hat sich nichts geändert. Prüfe, ob KWallet geöffnet ist, und sichere dann noch einmal.} other {Cmdr konnte das gespeicherte Passwort nicht zur neuen Adresse mitnehmen, deshalb hat sich nichts geändert. Prüfe, ob dein Schlüsselbund entsperrt ist, und sichere dann noch einmal.}}",
+  "servers.refusal.secretNotMoved": "{platform, select, macos {Cmdr konnte das gespeicherte Passwort nicht zur neuen Adresse mitnehmen, deshalb hat sich nichts geändert. Prüfe, ob dein Schlüsselbund entsperrt ist, und sichere dann noch einmal.} windows {Cmdr konnte das gespeicherte Passwort nicht zur neuen Adresse mitnehmen, deshalb hat sich nichts geändert. Sichere noch einmal, um es erneut zu versuchen.} linuxKde {Cmdr konnte das gespeicherte Passwort nicht zur neuen Adresse mitnehmen, deshalb hat sich nichts geändert. Prüfe, ob der KDE-Passwortspeicher geöffnet ist, und sichere dann noch einmal.} other {Cmdr konnte das gespeicherte Passwort nicht zur neuen Adresse mitnehmen, deshalb hat sich nichts geändert. Prüfe, ob dein Schlüsselbund entsperrt ist, und sichere dann noch einmal.}}",
   "@servers.refusal.secretNotMoved": {
-    "sourceHash": "a59f35e"
+    "sourceHash": "f962555"
   },
-  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr konnte den gespeicherten geheimen Zugriffsschlüssel nicht zum neuen Endpunkt mitnehmen, deshalb hat sich nichts geändert. Prüfe, ob dein Schlüsselbund entsperrt ist, und sichere dann noch einmal.} windows {Cmdr konnte den gespeicherten geheimen Zugriffsschlüssel nicht zum neuen Endpunkt mitnehmen, deshalb hat sich nichts geändert. Sichere noch einmal, um es erneut zu versuchen.} linuxKde {Cmdr konnte den gespeicherten geheimen Zugriffsschlüssel nicht zum neuen Endpunkt mitnehmen, deshalb hat sich nichts geändert. Prüfe, ob KWallet geöffnet ist, und sichere dann noch einmal.} other {Cmdr konnte den gespeicherten geheimen Zugriffsschlüssel nicht zum neuen Endpunkt mitnehmen, deshalb hat sich nichts geändert. Prüfe, ob dein Schlüsselbund entsperrt ist, und sichere dann noch einmal.}}",
+  "servers.refusal.s3SecretNotMoved": "{platform, select, macos {Cmdr konnte den gespeicherten geheimen Zugriffsschlüssel nicht zum neuen Endpunkt mitnehmen, deshalb hat sich nichts geändert. Prüfe, ob dein Schlüsselbund entsperrt ist, und sichere dann noch einmal.} windows {Cmdr konnte den gespeicherten geheimen Zugriffsschlüssel nicht zum neuen Endpunkt mitnehmen, deshalb hat sich nichts geändert. Sichere noch einmal, um es erneut zu versuchen.} linuxKde {Cmdr konnte den gespeicherten geheimen Zugriffsschlüssel nicht zum neuen Endpunkt mitnehmen, deshalb hat sich nichts geändert. Prüfe, ob der KDE-Passwortspeicher geöffnet ist, und sichere dann noch einmal.} other {Cmdr konnte den gespeicherten geheimen Zugriffsschlüssel nicht zum neuen Endpunkt mitnehmen, deshalb hat sich nichts geändert. Prüfe, ob dein Schlüsselbund entsperrt ist, und sichere dann noch einmal.}}",
   "@servers.refusal.s3SecretNotMoved": {
-    "sourceHash": "a990f83"
+    "sourceHash": "e222c5e"
   },
   "servers.refusal.accountChanged": "Ein anderes Konto ist ein anderer Server, deshalb hat Cmdr nichts gesichert. Füge es stattdessen als neuen Server hinzu.",
   "@servers.refusal.accountChanged": {
@@ -581,9 +581,9 @@
   "@servers.sheet.password": {
     "sourceHash": "e7cf3ef"
   },
-  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {Im Schlüsselbund gespeichert. Zum Behalten leer lassen.} windows {Gespeichert. Zum Behalten leer lassen.} linuxKde {In KWallet gespeichert. Zum Behalten leer lassen.} other {In deinem Schlüsselbund gespeichert. Zum Behalten leer lassen.}}",
+  "servers.sheet.secretKeptPlaceholder": "{platform, select, macos {Im Schlüsselbund gespeichert. Zum Behalten leer lassen.} windows {Gespeichert. Zum Behalten leer lassen.} linuxKde {Im KDE-Passwortspeicher gespeichert. Zum Behalten leer lassen.} other {In deinem Schlüsselbund gespeichert. Zum Behalten leer lassen.}}",
   "@servers.sheet.secretKeptPlaceholder": {
-    "sourceHash": "eedbd26"
+    "sourceHash": "d9f173a"
   },
   "servers.sheet.smbUsernamePlaceholder": "Optional",
   "@servers.sheet.smbUsernamePlaceholder": {
@@ -598,9 +598,9 @@
   "@servers.sheet.passphrase": {
     "sourceHash": "2510031"
   },
-  "servers.sheet.remember": "{platform, select, macos {Im Schlüsselbund merken} windows {Passwort merken} linuxKde {In KWallet merken} other {Im Schlüsselbund merken}}",
+  "servers.sheet.remember": "{platform, select, macos {Im Schlüsselbund merken} windows {Passwort merken} linuxKde {Im KDE-Passwortspeicher merken} other {Im Schlüsselbund merken}}",
   "@servers.sheet.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "servers.sheet.connectionModeLegend": "Verbindungsmodus",
   "@servers.sheet.connectionModeLegend": {
@@ -790,9 +790,9 @@
   "@servers.sheet.autoReconnectInfoLabel": {
     "sourceHash": "edb9b82"
   },
-  "servers.sheet.needsStoredSecret": "{platform, select, macos {Automatisch erneut verbinden geht nur mit einem gemerkten Passwort. Aktiviere „Im Schlüsselbund merken“ und melde dich einmal an.} windows {Automatisch erneut verbinden geht nur mit einem gespeicherten Passwort. Aktiviere „Passwort merken“ und melde dich einmal an.} linuxKde {Automatisch erneut verbinden geht nur mit einem gemerkten Passwort. Aktiviere „In KWallet merken“ und melde dich einmal an.} other {Automatisch erneut verbinden geht nur mit einem gemerkten Passwort. Aktiviere „Im Schlüsselbund merken“ und melde dich einmal an.}}",
+  "servers.sheet.needsStoredSecret": "{platform, select, macos {Automatisch erneut verbinden geht nur mit einem gemerkten Passwort. Aktiviere „Im Schlüsselbund merken“ und melde dich einmal an.} windows {Automatisch erneut verbinden geht nur mit einem gespeicherten Passwort. Aktiviere „Passwort merken“ und melde dich einmal an.} linuxKde {Automatisch erneut verbinden geht nur mit einem gemerkten Passwort. Aktiviere „Im KDE-Passwortspeicher merken“ und melde dich einmal an.} other {Automatisch erneut verbinden geht nur mit einem gemerkten Passwort. Aktiviere „Im Schlüsselbund merken“ und melde dich einmal an.}}",
   "@servers.sheet.needsStoredSecret": {
-    "sourceHash": "29e22ae"
+    "sourceHash": "422f1c5"
   },
   "servers.sheet.tryNextcloudAddress": "Nextcloud-Adresse ausprobieren",
   "@servers.sheet.tryNextcloudAddress": {

@@ -35,9 +35,9 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Open instellingen}}",
+  "commands.appSettings.label": "{platform, select, linuxGnome {Open voorkeuren} linuxKde {Cmdr configureren} other {Open instellingen}}",
   "@commands.appSettings.label": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "commands.appCheckForUpdates.label": "Zoek naar updates…",
   "@commands.appCheckForUpdates.label": {
@@ -942,9 +942,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit Sleutelhanger, en vergrendelt de back-up weer} windows {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit Referentiebeheer, en vergrendelt de back-up weer} linuxKde {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit KWallet, en vergrendelt de back-up weer} other {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit je sleutelhanger, en vergrendelt de back-up weer}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit Sleutelhanger, en vergrendelt de back-up weer} windows {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit Referentiebeheer, en vergrendelt de back-up weer} linuxKde {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit de KDE-portefeuille, en vergrendelt de back-up weer} other {Verwijdert het opgeslagen wachtwoord van de met restic gemaakte back-up waarin je zit uit je sleutelhanger, en vergrendelt de back-up weer}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "5b48a77"
+    "sourceHash": "e7106da"
   },
   "commands.fileCopyShareLink.label": "Kopieer deellink (zeven dagen)",
   "@commands.fileCopyShareLink.label": {
@@ -1267,17 +1267,17 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Preferences, under Navigation & file ops.} linuxKde {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Configure Cmdr, under Navigation & file ops.} other {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Instellingen, onder ‘Navigatie en bewerkingen’.}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Voorkeuren, onder ‘Navigatie en bewerkingen’.} linuxKde {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in ‘Cmdr configureren’, onder ‘Navigatie en bewerkingen’.} other {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Instellingen, onder ‘Navigatie en bewerkingen’.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b29b744"
+    "sourceHash": "b73c1db"
   },
   "commands.handler.openTerminalHere.dismiss": "Sluit",
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Open instellingen}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open voorkeuren} linuxKde {Cmdr configureren} other {Open instellingen}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} is niet meer geïnstalleerd, dus dit is geopend in Terminal.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1347,9 +1347,9 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Log storage is off. Set a disk space limit above 0 in Preferences > Advanced, then restart Cmdr to view the debug log.} linuxKde {Log storage is off. Set a disk space limit above 0 in Configure Cmdr > Advanced, then restart Cmdr to view the debug log.} other {Logopslag staat uit. Zet de schijfruimtelimiet in Instellingen > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Logopslag staat uit. Zet de schijfruimtelimiet in Voorkeuren > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.} linuxKde {Logopslag staat uit. Zet de schijfruimtelimiet in ‘Cmdr configureren’ > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.} other {Logopslag staat uit. Zet de schijfruimtelimiet in Instellingen > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "96f16fc"
+    "sourceHash": "bda730a"
   },
   "commands.handler.viewDebugLog.unavailable": "Kon het foutopsporingslogbestand niet openen. Probeer het opnieuw.",
   "@commands.handler.viewDebugLog.unavailable": {

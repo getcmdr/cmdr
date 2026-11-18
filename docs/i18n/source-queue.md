@@ -218,6 +218,11 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   `.crashReportsNoteAlone`, `.signup.unreachable`, and `mtp.connectedToast.body` (fixed now). Coverage didn't flag them
   (stale only said the fork was stale); a check that flags an overlay fork with a non-empty branch byte-identical to
   English would. (es-419)
+- `settings.window.title` and most "Settings" pointers have no `windows` branch, so Windows reads the `other` branch,
+  which macOS also reads. French Windows names its own Settings app `Paramètres` and macOS says `Réglages`, so French
+  Windows users see Apple's word for Cmdr's window (`menu.app.settings`'s `windows` branch says `Réglages` to match the
+  title). If Cmdr's window should follow each OS's word, the title and every pointer need a `windows` branch; German,
+  Dutch, and Swedish don't split there, French does (and likely others). (fr)
 
 ## Process feedback
 
@@ -344,3 +349,10 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   inherit. (vi)
 - A deliberately empty English branch (`mtp.connectedToast.body`'s `windows {}`) counts as "still English" and needs a
   `sameAsSourceJustification` in every locale; an empty source branch could be exempt. (es, pt, vi, zh, zh-Hant)
+- Third pass needing KDE's `kwallet/kwalletd6.po` (the "KDE Wallet" product name lives there, not in
+  `kwalletmanager.po`): fetched it read-only with `curl` for de, nl, sv, and fr. Wrote one read-only `node` script that
+  prints a key list's current values for one locale, because the brief's 76k-token key section was too big to read
+  whole; a compact `i18n:brief --values-only` view (key, English, current value) would replace it. The worktree guard
+  refused process substitution and a `for` loop over `jq`. Each locale's `configure` ruling needed the KDE word
+  (`configureren`, `anpassa`) as an `accept` to clear 46–56 termbase warnings at once; an `other`/`linuxKde` form on a
+  ruling scoped to the KDE branch would be more precise. (de, nl, sv, fr)

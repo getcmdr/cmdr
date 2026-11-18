@@ -21,7 +21,7 @@
   },
   "crashReporter.dialog.privacyNote": "{platform, select, macos {Il contient la version de l’app, la version de macOS et la partie du code concernée. Aucun nom de fichier ni donnée personnelle.} windows {Il contient la version de l’app, la version de Windows et la partie du code concernée. Aucun nom de fichier ni donnée personnelle.} other {Il contient la version de l’app, la distribution Linux et sa version, et la partie du code concernée. Aucun nom de fichier ni donnée personnelle.}}",
   "@crashReporter.dialog.privacyNote": {
-    "sourceHash": "ebe2d23"
+    "sourceHash": "6f58653"
   },
   "crashReporter.dialog.reportIdLabel": "Identifiant du rapport :",
   "@crashReporter.dialog.reportIdLabel": {
@@ -71,9 +71,9 @@
   "@crashReporter.sentToast.message.report": {
     "sourceHash": "a676ed5"
   },
-  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {Change in Preferences} linuxKde {Change in Configure Cmdr} other {Modifier dans les Réglages}}",
+  "crashReporter.sentToast.changeSettings": "{platform, select, linuxGnome {Modifier dans les Préférences} linuxKde {Modifier dans « Configurer Cmdr »} other {Modifier dans les Réglages}}",
   "@crashReporter.sentToast.changeSettings": {
-    "sourceHash": "144d0bd"
+    "sourceHash": "c3fff1a"
   },
   "crashReporter.sentToast.sendLog": "Joindre le journal",
   "@crashReporter.sentToast.sendLog": {

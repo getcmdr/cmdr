@@ -39,8 +39,8 @@
   "@whatsNew.dialog.close": {
     "sourceHash": "7d9eb7a"
   },
-  "whatsNew.optOutToast": "{platform, select, windows {Begrepen, geen updatenotities meer. Zet ze altijd weer aan via Instellingen > Updates en privacy.} linuxGnome {Got it, no more update notes. Re-enable them anytime in Preferences > Updates & privacy.} linuxKde {Got it, no more update notes. Re-enable them anytime in Configure Cmdr > Updates & privacy.} other {Begrepen, geen updatenotities meer. Zet ze altijd weer aan via Instellingen > Updates en privacy.}}",
+  "whatsNew.optOutToast": "{platform, select, windows {Begrepen, geen updatenotities meer. Zet ze altijd weer aan via Instellingen > Updates en privacy.} linuxGnome {Begrepen, geen updatenotities meer. Zet ze altijd weer aan via Voorkeuren > Updates en privacy.} linuxKde {Begrepen, geen updatenotities meer. Zet ze altijd weer aan via ‘Cmdr configureren’ > Updates en privacy.} other {Begrepen, geen updatenotities meer. Zet ze altijd weer aan via Instellingen > Updates en privacy.}}",
   "@whatsNew.optOutToast": {
-    "sourceHash": "e27e52a"
+    "sourceHash": "edde996"
   }
 }

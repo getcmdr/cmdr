@@ -35,9 +35,9 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Ouvrir les réglages}}",
+  "commands.appSettings.label": "{platform, select, linuxGnome {Ouvrir les préférences} linuxKde {Configurer Cmdr} other {Ouvrir les réglages}}",
   "@commands.appSettings.label": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "commands.appCheckForUpdates.label": "Rechercher les mises à jour…",
   "@commands.appCheckForUpdates.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Retire du trousseau le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde} windows {Retire du Gestionnaire d’identification le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde} linuxKde {Retire de KWallet le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde} other {Retire de votre trousseau de clés le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Retire du trousseau le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde} windows {Retire du Gestionnaire d’identification le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde} linuxKde {Retire du portefeuille KDE le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde} other {Retire de votre trousseau de clés le mot de passe enregistré de la sauvegarde restic où vous vous trouvez et verrouille de nouveau la sauvegarde}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "5b48a77"
+    "sourceHash": "e7106da"
   },
   "commands.fileCopyShareLink.label": "Copier un lien de partage (sept jours)",
   "@commands.fileCopyShareLink.label": {
@@ -1264,17 +1264,17 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Preferences, under Navigation & file ops.} linuxKde {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Configure Cmdr, under Navigation & file ops.} other {Dossier ouvert dans votre app de terminal. Vous voulez que Cmdr ouvre une autre app la prochaine fois ? Choisissez-la dans les réglages, sous « Navigation et opérations ».}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Dossier ouvert dans votre app de terminal. Vous voulez que Cmdr ouvre une autre app la prochaine fois ? Choisissez-la dans les préférences, sous « Navigation et opérations ».} linuxKde {Dossier ouvert dans votre app de terminal. Vous voulez que Cmdr ouvre une autre app la prochaine fois ? Choisissez-la dans « Configurer Cmdr », sous « Navigation et opérations ».} other {Dossier ouvert dans votre app de terminal. Vous voulez que Cmdr ouvre une autre app la prochaine fois ? Choisissez-la dans les réglages, sous « Navigation et opérations ».}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b29b744"
+    "sourceHash": "b73c1db"
   },
   "commands.handler.openTerminalHere.dismiss": "Ignorer",
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Ouvrir les réglages}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Ouvrir les préférences} linuxKde {Configurer Cmdr} other {Ouvrir les réglages}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} n’est plus installée, donc l’ouverture s’est faite dans Terminal.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1344,9 +1344,9 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Log storage is off. Set a disk space limit above 0 in Preferences > Advanced, then restart Cmdr to view the debug log.} linuxKde {Log storage is off. Set a disk space limit above 0 in Configure Cmdr > Advanced, then restart Cmdr to view the debug log.} other {Le stockage des journaux est désactivé. Réglez une limite d’espace disque supérieure à 0 dans Réglages > Avancé, puis redémarrez Cmdr pour visualiser le journal de débogage.}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Le stockage des journaux est désactivé. Réglez une limite d’espace disque supérieure à 0 dans Préférences > Avancé, puis redémarrez Cmdr pour visualiser le journal de débogage.} linuxKde {Le stockage des journaux est désactivé. Réglez une limite d’espace disque supérieure à 0 dans « Configurer Cmdr » > Avancé, puis redémarrez Cmdr pour visualiser le journal de débogage.} other {Le stockage des journaux est désactivé. Réglez une limite d’espace disque supérieure à 0 dans Réglages > Avancé, puis redémarrez Cmdr pour visualiser le journal de débogage.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "96f16fc"
+    "sourceHash": "bda730a"
   },
   "commands.handler.viewDebugLog.unavailable": "Ouverture du journal de débogage impossible. Réessayez.",
   "@commands.handler.viewDebugLog.unavailable": {

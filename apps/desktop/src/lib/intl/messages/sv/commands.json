@@ -35,9 +35,9 @@
   "@commands.appCommandPalette.label": {
     "sourceHash": "c022b19"
   },
-  "commands.appSettings.label": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Öppna inställningar}}",
+  "commands.appSettings.label": "{platform, select, linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
   "@commands.appSettings.label": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "commands.appCheckForUpdates.label": "Sök efter uppdateringar…",
   "@commands.appCheckForUpdates.label": {
@@ -940,9 +940,9 @@
   "@commands.resticForgetPassword.label": {
     "sourceHash": "8065fcb"
   },
-  "commands.resticForgetPassword.description": "{platform, select, macos {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från nyckelringen och låser säkerhetskopian igen} windows {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från Autentiseringshanteraren och låser säkerhetskopian igen} linuxKde {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från KWallet och låser säkerhetskopian igen} other {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från din nyckelring och låser säkerhetskopian igen}}",
+  "commands.resticForgetPassword.description": "{platform, select, macos {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från nyckelringen och låser säkerhetskopian igen} windows {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från Autentiseringshanteraren och låser säkerhetskopian igen} linuxKde {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från KDE:s plånbok och låser säkerhetskopian igen} other {Tar bort det sparade lösenordet för restic-säkerhetskopian du är i från din nyckelring och låser säkerhetskopian igen}}",
   "@commands.resticForgetPassword.description": {
-    "sourceHash": "5b48a77"
+    "sourceHash": "e7106da"
   },
   "commands.fileCopyShareLink.label": "Kopiera delningslänk (sju dagar)",
   "@commands.fileCopyShareLink.label": {
@@ -1264,17 +1264,17 @@
   "@commands.handler.shareLinkFailed": {
     "sourceHash": "5ff44b7"
   },
-  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Preferences, under Navigation & file ops.} linuxKde {Opened this folder in your terminal app. Want Cmdr to open a different app next time? Pick one in Configure Cmdr, under Navigation & file ops.} other {Mappen öppnades i din terminalapp. Vill du att Cmdr öppnar en annan app nästa gång? Välj den i Inställningar, under ”Navigering och filåtgärder”.}}",
+  "commands.handler.openTerminalHere.hint": "{platform, select, linuxGnome {Mappen öppnades i din terminalapp. Vill du att Cmdr öppnar en annan app nästa gång? Välj den i Inställningar, under ”Navigering och filåtgärder”.} linuxKde {Mappen öppnades i din terminalapp. Vill du att Cmdr öppnar en annan app nästa gång? Välj den i ”Anpassa Cmdr”, under ”Navigering och filåtgärder”.} other {Mappen öppnades i din terminalapp. Vill du att Cmdr öppnar en annan app nästa gång? Välj den i Inställningar, under ”Navigering och filåtgärder”.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b29b744"
+    "sourceHash": "b73c1db"
   },
   "commands.handler.openTerminalHere.dismiss": "Avfärda",
   "@commands.handler.openTerminalHere.dismiss": {
     "sourceHash": "48845bf"
   },
-  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Open preferences} linuxKde {Configure Cmdr} other {Öppna inställningar}}",
+  "commands.handler.openTerminalHere.openSettings": "{platform, select, linuxGnome {Öppna inställningar} linuxKde {Anpassa Cmdr} other {Öppna inställningar}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "ca381c1"
+    "sourceHash": "e535825"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} är inte installerad längre, så det här öppnades i Terminal.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1344,9 +1344,9 @@
   "@commands.helpViewDebugLog.description": {
     "sourceHash": "06f49ab"
   },
-  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Log storage is off. Set a disk space limit above 0 in Preferences > Advanced, then restart Cmdr to view the debug log.} linuxKde {Log storage is off. Set a disk space limit above 0 in Configure Cmdr > Advanced, then restart Cmdr to view the debug log.} other {Logglagringen är avstängd. Ställ in en diskutrymmesgräns över 0 i Inställningar > Avancerat och starta sedan om Cmdr för att visa felsökningsloggen.}}",
+  "commands.handler.viewDebugLog.disabled": "{platform, select, linuxGnome {Logglagringen är avstängd. Ställ in en diskutrymmesgräns över 0 i Inställningar > Avancerat och starta sedan om Cmdr för att visa felsökningsloggen.} linuxKde {Logglagringen är avstängd. Ställ in en diskutrymmesgräns över 0 i ”Anpassa Cmdr” > Avancerat och starta sedan om Cmdr för att visa felsökningsloggen.} other {Logglagringen är avstängd. Ställ in en diskutrymmesgräns över 0 i Inställningar > Avancerat och starta sedan om Cmdr för att visa felsökningsloggen.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "96f16fc"
+    "sourceHash": "bda730a"
   },
   "commands.handler.viewDebugLog.unavailable": "Det gick inte att öppna felsökningsloggen. Försök igen.",
   "@commands.handler.viewDebugLog.unavailable": {

@@ -3,13 +3,13 @@
   "@stateRecovery.settings.title": {
     "sourceHash": "b5b4b8e"
   },
-  "stateRecovery.settings.body": "{platform, select, linuxGnome {Usage stats and crash reports stay off until you turn them back on in Preferences › Updates & privacy.} linuxKde {Usage stats and crash reports stay off until you turn them back on in Configure Cmdr › Updates & privacy.} other {Nutzungsstatistiken und Absturzberichte bleiben aus, bis du sie unter Einstellungen › Updates & Datenschutz wieder einschaltest.}}",
+  "stateRecovery.settings.body": "{platform, select, linuxGnome {Nutzungsstatistiken und Absturzberichte bleiben aus, bis du sie unter Einstellungen › Updates & Datenschutz wieder einschaltest.} linuxKde {Nutzungsstatistiken und Absturzberichte bleiben aus, bis du sie unter „Cmdr einrichten“ › Updates & Datenschutz wieder einschaltest.} other {Nutzungsstatistiken und Absturzberichte bleiben aus, bis du sie unter Einstellungen › Updates & Datenschutz wieder einschaltest.}}",
   "@stateRecovery.settings.body": {
-    "sourceHash": "20439e1"
+    "sourceHash": "8e4debd"
   },
-  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Einstellungen öffnen}}",
+  "stateRecovery.settings.openSettings": "{platform, select, linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
   "@stateRecovery.settings.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "f970930"
   },
   "stateRecovery.shortcuts.title": "Cmdr konnte deine Tastaturkurzbefehle nicht lesen, deshalb gelten wieder die Standardkurzbefehle",
   "@stateRecovery.shortcuts.title": {
@@ -19,13 +19,13 @@
   "@stateRecovery.license.title": {
     "sourceHash": "64726c1"
   },
-  "stateRecovery.license.body": "{platform, select, linuxGnome {If Cmdr shows as unlicensed now, enter your license key again in Preferences › License.} linuxKde {If Cmdr shows as unlicensed now, enter your license key again in Configure Cmdr › License.} other {Falls Cmdr jetzt ohne Lizenz läuft, gib deinen Lizenzschlüssel unter Einstellungen › Lizenz noch einmal ein.}}",
+  "stateRecovery.license.body": "{platform, select, linuxGnome {Falls Cmdr jetzt ohne Lizenz läuft, gib deinen Lizenzschlüssel unter Einstellungen › Lizenz noch einmal ein.} linuxKde {Falls Cmdr jetzt ohne Lizenz läuft, gib deinen Lizenzschlüssel unter „Cmdr einrichten“ › Lizenz noch einmal ein.} other {Falls Cmdr jetzt ohne Lizenz läuft, gib deinen Lizenzschlüssel unter Einstellungen › Lizenz noch einmal ein.}}",
   "@stateRecovery.license.body": {
-    "sourceHash": "ea51589"
+    "sourceHash": "158e224"
   },
-  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Open Preferences} linuxKde {Configure Cmdr} other {Einstellungen öffnen}}",
+  "stateRecovery.license.openSettings": "{platform, select, linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
   "@stateRecovery.license.openSettings": {
-    "sourceHash": "3f94010"
+    "sourceHash": "f970930"
   },
   "stateRecovery.appStatus.title": "{platform, select, windows {Cmdr konnte nicht lesen, welche Ordner in deinen Bereichen geöffnet waren, deshalb starten beide Bereiche im Benutzerordner} other {Cmdr konnte nicht lesen, welche Ordner in deinen Bereichen geöffnet waren, deshalb starten beide Bereiche im persönlichen Ordner}}",
   "@stateRecovery.appStatus.title": {

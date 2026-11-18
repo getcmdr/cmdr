@@ -1634,7 +1634,7 @@
   },
   "settings.analytics.enabled.description": "{platform, select, windows {Zet dit aan om ons te helpen zien welke functies ertoe doen tijdens de open bèta.\nDe statistieken zijn niet gekoppeld aan je naam of e-mailadres, maar aan een willekeurige id.\nCmdr stuurt nooit bestandsnamen, paden, zoektermen of prompts.\nStaat het uit, dan stuurt Cmdr helemaal geen statistieken.} other {Zet dit aan om ons te helpen zien welke functies ertoe doen tijdens de open bèta.\nDe statistieken zijn niet gekoppeld aan je naam of e-mailadres, maar aan een willekeurige id.\nCmdr stuurt nooit bestandsnamen, paden, zoektermen of prompts.\nStaat het uit, dan stuurt Cmdr helemaal geen statistieken.}}",
   "@settings.analytics.enabled.description": {
-    "sourceHash": "2527a03"
+    "sourceHash": "dbbd8c8"
   },
   "settings.analytics.enabled.keywords": "analyse, gebruik, gebruiksstatistieken, statistieken, privacy, telemetrie, bèta, volgen, tracking, afmelden",
   "@settings.analytics.enabled.keywords": {
@@ -1658,7 +1658,7 @@
   },
   "settings.updates.crashReports.description": "{platform, select, macos {Verstuur automatisch een rapport wanneer Cmdr onverwachts stopt of op de achtergrond een probleem tegenkomt. Bevat de appversie, de macOS-versie en welk deel van de code het probleem tegenkwam. Nooit bestandsnamen of persoonlijke gegevens.} windows {Verstuur automatisch een rapport wanneer Cmdr onverwachts stopt of op de achtergrond een probleem tegenkomt. Bevat de appversie, de Windows-versie en welk deel van de code het probleem tegenkwam. Nooit bestandsnamen of persoonlijke gegevens.} other {Verstuur automatisch een rapport wanneer Cmdr onverwachts stopt of op de achtergrond een probleem tegenkomt. Bevat de appversie, de Linux-distributie en de versie daarvan, en welk deel van de code het probleem tegenkwam. Nooit bestandsnamen of persoonlijke gegevens.}}",
   "@settings.updates.crashReports.description": {
-    "sourceHash": "abfdc61"
+    "sourceHash": "3042746"
   },
   "settings.updates.crashReports.keywords": "crash, crashrapport, vastgelopen, rapport, privacy, telemetrie, bug, fout",
   "@settings.updates.crashReports.keywords": {
@@ -1999,7 +1999,7 @@
   },
   "settings.advanced.logLlmCalls.description": "{platform, select, macos {Bewaar elk AI-verzoek en -antwoord in een lokale map (llm-logs) om te debuggen. Deze bestanden blijven op je Mac en bevatten de bestandsnamen en paden die Cmdr naar je aanbieder stuurt.} windows {Bewaar elk AI-verzoek en -antwoord in een lokale map (llm-logs) om te debuggen. Deze bestanden blijven op je pc en bevatten de bestandsnamen en paden die Cmdr naar je aanbieder stuurt.} other {Bewaar elk AI-verzoek en -antwoord in een lokale map (llm-logs) om te debuggen. Deze bestanden blijven op je computer en bevatten de bestandsnamen en paden die Cmdr naar je aanbieder stuurt.}}",
   "@settings.advanced.logLlmCalls.description": {
-    "sourceHash": "0f9361b"
+    "sourceHash": "427e138"
   },
   "settings.advanced.logLlmCalls.keywords": "ai, log, logboek, foutopsporing, debug, verzoek, antwoord, reactie, prompt",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2516,13 +2516,13 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr uses the AI provider and key you set up in Preferences › AI ({provider}).} linuxKde {Cmdr uses the AI provider and key you set up in Configure Cmdr › AI ({provider}).} other {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Instellingen › AI ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, linuxGnome {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Voorkeuren › AI ({provider}).} linuxKde {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in ‘Cmdr configureren’ › AI ({provider}).} other {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Instellingen › AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "9442b09"
+    "sourceHash": "f4ea2f0"
   },
-  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Turn on an AI provider in Preferences › AI to start chatting.} linuxKde {Turn on an AI provider in Configure Cmdr › AI to start chatting.} other {Zet een AI-aanbieder aan in Instellingen › AI om te beginnen met chatten.}}",
+  "settings.askCmdr.provider.off": "{platform, select, linuxGnome {Zet een AI-aanbieder aan in Voorkeuren › AI om te beginnen met chatten.} linuxKde {Zet een AI-aanbieder aan in ‘Cmdr configureren’ › AI om te beginnen met chatten.} other {Zet een AI-aanbieder aan in Instellingen › AI om te beginnen met chatten.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "5cc1481"
+    "sourceHash": "0196a5c"
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr-model",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2969,9 +2969,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, linuxGnome {Preferences sections} other {Instellingenonderdelen}}",
+  "settings.sidebar.sections": "{platform, select, linuxGnome {Voorkeurenonderdelen} other {Instellingenonderdelen}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "e26d51d"
+    "sourceHash": "4fa3c2e"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Geen overeenkomende instellingen} one {{countText} onderdeel komt overeen} other {{countText} onderdelen komen overeen}}",
   "@settings.sidebar.matchCount": {
@@ -3228,7 +3228,7 @@
   },
   "settings.securityLog.enabled.description": "{platform, select, macos {Houd op deze Mac een klein bestand bij met beveiligingsrelevante wijzigingen en weigeringen, zoals toestemming voor cloud-AI, een geïnstalleerde update of een app die de MCP-server heeft geweigerd. Het bestand bevat geen bestandsnamen, inhoud of wachtwoorden en verlaat je Mac nooit.} windows {Houd op deze pc een klein bestand bij met beveiligingsrelevante wijzigingen en weigeringen, zoals toestemming voor cloud-AI, een geïnstalleerde update of een app die de MCP-server heeft geweigerd. Het bestand bevat geen bestandsnamen, inhoud of wachtwoorden en verlaat je pc nooit.} other {Houd op deze computer een klein bestand bij met beveiligingsrelevante wijzigingen en weigeringen, zoals toestemming voor cloud-AI, een geïnstalleerde update of een app die de MCP-server heeft geweigerd. Het bestand bevat geen bestandsnamen, inhoud of wachtwoorden en verlaat je computer nooit.}}",
   "@settings.securityLog.enabled.description": {
-    "sourceHash": "c0d2160"
+    "sourceHash": "7086b00"
   },
   "settings.securityLog.enabled.keywords": "beveiliging, log, logboek, audit, controle, bijhouden, vastleggen, gebeurtenissen, toegang, privacy",
   "@settings.securityLog.enabled.keywords": {
@@ -3443,9 +3443,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, linuxGnome {Preferences} linuxKde {Configure – Cmdr} other {Instellingen}}",
+  "settings.window.title": "{platform, select, linuxGnome {Voorkeuren} linuxKde {Configureren – Cmdr} other {Instellingen}}",
   "@settings.window.title": {
-    "sourceHash": "74a883a"
+    "sourceHash": "80cee55"
   },
   "settings.window.loading": "Instellingen laden…",
   "@settings.window.loading": {
@@ -3692,13 +3692,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Eén onderdeel in Sleutelhangertoegang met de naam ‘{itemName}’} other {{countText} onderdelen in Sleutelhangertoegang met de naam ‘{itemName}’}}} windows {{count, plural, one {Eén referentie in Referentiebeheer met de naam ‘{itemName}’} other {{countText} referenties in Referentiebeheer met de naam ‘{itemName}’}}} linuxKde {{count, plural, one {Eén onderdeel in KWallet met de naam ‘{itemName}’} other {{countText} onderdelen in KWallet met de naam ‘{itemName}’}}} other {{count, plural, one {Eén onderdeel in je sleutelhanger met de naam ‘{itemName}’} other {{countText} onderdelen in je sleutelhanger met de naam ‘{itemName}’}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, one {Eén onderdeel in Sleutelhangertoegang met de naam ‘{itemName}’} other {{countText} onderdelen in Sleutelhangertoegang met de naam ‘{itemName}’}}} windows {{count, plural, one {Eén referentie in Referentiebeheer met de naam ‘{itemName}’} other {{countText} referenties in Referentiebeheer met de naam ‘{itemName}’}}} linuxKde {{count, plural, one {Eén onderdeel in de KDE-portefeuille met de naam ‘{itemName}’} other {{countText} onderdelen in de KDE-portefeuille met de naam ‘{itemName}’}}} other {{count, plural, one {Eén onderdeel in je sleutelhanger met de naam ‘{itemName}’} other {{countText} onderdelen in je sleutelhanger met de naam ‘{itemName}’}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "ba023b8"
+    "sourceHash": "b88051f"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Eventuele onderdelen in Sleutelhangertoegang met de naam ‘{itemName}’} windows {Eventuele referenties in Referentiebeheer met de naam ‘{itemName}’} linuxKde {Eventuele onderdelen in KWallet met de naam ‘{itemName}’} other {Eventuele onderdelen in je sleutelhanger met de naam ‘{itemName}’}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Eventuele onderdelen in Sleutelhangertoegang met de naam ‘{itemName}’} windows {Eventuele referenties in Referentiebeheer met de naam ‘{itemName}’} linuxKde {Eventuele onderdelen in de KDE-portefeuille met de naam ‘{itemName}’} other {Eventuele onderdelen in je sleutelhanger met de naam ‘{itemName}’}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "de668e2"
+    "sourceHash": "78bb1ea"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Sluit Cmdr af} other {Stop Cmdr}}",
   "@settings.dataWipe.quit": {

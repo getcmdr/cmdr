@@ -333,8 +333,8 @@
   "@shortcuts.window.hideEmpty": {
     "sourceHash": "d3cb18e"
   },
-  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Edit shortcuts in Preferences} linuxKde {Edit shortcuts in Configure Cmdr} other {Redigera genvägar i Inställningar}}",
+  "shortcuts.window.editInSettings": "{platform, select, linuxGnome {Redigera genvägar i Inställningar} linuxKde {Redigera genvägar i ”Anpassa Cmdr”} other {Redigera genvägar i Inställningar}}",
   "@shortcuts.window.editInSettings": {
-    "sourceHash": "847b526"
+    "sourceHash": "875f6b7"
   }
 }
