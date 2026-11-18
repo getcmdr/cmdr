@@ -2518,11 +2518,11 @@
   },
   "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Instellingen › AI ({provider}).} linuxGnome {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Voorkeuren › AI ({provider}).} linuxKde {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in ‘Cmdr configureren’ › AI ({provider}).} other {Cmdr gebruikt de AI-aanbieder en -sleutel die je hebt ingesteld in Instellingen › AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "f4ea2f0"
+    "sourceHash": "0cc24da"
   },
   "settings.askCmdr.provider.off": "{platform, select, windows {Zet een AI-aanbieder aan in Instellingen › AI om te beginnen met chatten.} linuxGnome {Zet een AI-aanbieder aan in Voorkeuren › AI om te beginnen met chatten.} linuxKde {Zet een AI-aanbieder aan in ‘Cmdr configureren’ › AI om te beginnen met chatten.} other {Zet een AI-aanbieder aan in Instellingen › AI om te beginnen met chatten.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "0196a5c"
+    "sourceHash": "89d8531"
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr-model",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2969,9 +2969,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, windows {Instellingenonderdelen} linuxGnome {Voorkeurenonderdelen} linuxKde {Configure Cmdr sections} other {Instellingenonderdelen}}",
+  "settings.sidebar.sections": "{platform, select, windows {Instellingenonderdelen} linuxGnome {Voorkeurenonderdelen} linuxKde {Onderdelen van ‘Cmdr configureren’} other {Instellingenonderdelen}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "4fa3c2e"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Geen overeenkomende instellingen} one {{countText} onderdeel komt overeen} other {{countText} onderdelen komen overeen}}",
   "@settings.sidebar.matchCount": {
@@ -3445,7 +3445,7 @@
   },
   "settings.window.title": "{platform, select, windows {Instellingen} linuxGnome {Voorkeuren} linuxKde {Configureren – Cmdr} other {Instellingen}}",
   "@settings.window.title": {
-    "sourceHash": "80cee55"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Instellingen laden…",
   "@settings.window.loading": {

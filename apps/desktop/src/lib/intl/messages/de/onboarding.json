@@ -309,7 +309,7 @@
   },
   "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.} linuxGnome {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.} linuxKde {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter „Cmdr einrichten“ > KI.} other {Cloud-KI bleibt ausgeschaltet, bis du sie erlaubst. Das geht auch später unter Einstellungen > KI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
-    "sourceHash": "6e0eb09"
+    "sourceHash": "6075ac0"
   },
   "onboarding.stepAi.off.label": "Danke, aber nein, KI ist nichts für mich",
   "@onboarding.stepAi.off.label": {
@@ -317,7 +317,7 @@
   },
   "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.} linuxGnome {Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.} linuxKde {Cmdr funktioniert vollständig ohne KI. Du kannst sie später unter „Cmdr einrichten“ aktivieren.} other {Cmdr funktioniert vollständig ohne KI. Du kannst sie später in den Einstellungen aktivieren.}}",
   "@onboarding.stepAi.off.help": {
-    "sourceHash": "b20cf1d"
+    "sourceHash": "f4c9871"
   },
   "onboarding.localDownloadFailed.title": "Das lokale KI-Modell wurde nicht fertig heruntergeladen",
   "@onboarding.localDownloadFailed.title": {
@@ -393,7 +393,7 @@
   },
   "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.} linuxGnome {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.} linuxKde {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit unter „Cmdr einrichten“ ändern.} other {Beachte, dass es während der Beta standardmäßig AN ist, um Leute zu ermutigen, mir Daten zu senden.\nDu kannst das jederzeit in den Einstellungen ändern.}}",
   "@onboarding.stepBeta.analyticsCaption": {
-    "sourceHash": "47a7511"
+    "sourceHash": "9dc83f9"
   },
   "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine macOS-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.} windows {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Windows-Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.} linuxGnome {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.} linuxKde {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit unter „Cmdr einrichten“ ausschalten.} other {Absturzberichte sind ebenfalls aktiv: Wenn Cmdr abstürzt, schickt es die App-Version, deine Linux-Distribution samt Version und die Stelle im Code, an der es aufgehört hat.\nNie deine Dateien.\nBeides kannst du jederzeit in den Einstellungen ausschalten.}}",
   "@onboarding.stepBeta.crashReportsNote": {
@@ -469,7 +469,7 @@
   },
   "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Du kannst das jederzeit in den Einstellungen ändern.} linuxGnome {Du kannst das jederzeit in den Einstellungen ändern.} linuxKde {Du kannst das jederzeit unter „Cmdr einrichten“ ändern.} other {Du kannst das jederzeit in den Einstellungen ändern.}}",
   "@onboarding.stepOptional.changeAnytime": {
-    "sourceHash": "320f582"
+    "sourceHash": "ff84784"
   },
   "onboarding.stepOptional.networking.title": "Netzwerk",
   "@onboarding.stepOptional.networking.title": {

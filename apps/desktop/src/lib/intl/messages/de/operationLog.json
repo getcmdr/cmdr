@@ -17,7 +17,7 @@
   },
   "operationLog.dialog.recordingOff": "{platform, select, windows {Das Vorgangsprotokoll zeichnet gerade nicht auf. Was du jetzt kopierst, bewegst, umbenennst oder löschst, erscheint deshalb nicht hier und lässt sich nicht rückgängig machen. Schalte es in den Einstellungen wieder ein, damit es wieder aufgezeichnet wird.} linuxGnome {Das Vorgangsprotokoll zeichnet gerade nicht auf. Was du jetzt kopierst, bewegst, umbenennst oder löschst, erscheint deshalb nicht hier und lässt sich nicht rückgängig machen. Schalte es in den Einstellungen wieder ein, damit es wieder aufgezeichnet wird.} linuxKde {Das Vorgangsprotokoll zeichnet gerade nicht auf. Was du jetzt kopierst, bewegst, umbenennst oder löschst, erscheint deshalb nicht hier und lässt sich nicht rückgängig machen. Schalte es unter „Cmdr einrichten“ wieder ein, damit es wieder aufgezeichnet wird.} other {Das Vorgangsprotokoll zeichnet gerade nicht auf. Was du jetzt kopierst, bewegst, umbenennst oder löschst, erscheint deshalb nicht hier und lässt sich nicht rückgängig machen. Schalte es in den Einstellungen wieder ein, damit es wieder aufgezeichnet wird.}}",
   "@operationLog.dialog.recordingOff": {
-    "sourceHash": "3204ad8"
+    "sourceHash": "8b5c5f2"
   },
   "operationLog.dialog.noItems": "Für diesen Vorgang wurden keine Objekte erfasst.",
   "@operationLog.dialog.noItems": {

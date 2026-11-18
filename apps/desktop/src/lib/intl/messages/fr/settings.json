@@ -1222,7 +1222,7 @@
   "@settings.ai.provider.opt.local": {
     "sourceHash": "6689271"
   },
-  "settings.ai.provider.localUnavailable": "{platform, select, windows {Vos réglages demandent « LLM local », que ce PC ne peut pas exécuter, donc l’IA est désactivée.} other {Vos réglages demandent « LLM local », que cet ordinateur ne peut pas exécuter, donc l’IA est désactivée.}}",
+  "settings.ai.provider.localUnavailable": "{platform, select, windows {Vos paramètres demandent « LLM local », que ce PC ne peut pas exécuter, donc l’IA est désactivée.} other {Vos réglages demandent « LLM local », que cet ordinateur ne peut pas exécuter, donc l’IA est désactivée.}}",
   "@settings.ai.provider.localUnavailable": {
     "sourceHash": "5974157"
   },
@@ -1450,7 +1450,7 @@
   "@settings.fileOperations.mtpEnabled.label": {
     "sourceHash": "6a315a8"
   },
-  "settings.fileOperations.mtpEnabled.description": "Détecte et se connecte aux appareils Android et autres via un câble USB pour parcourir et transférer des fichiers. Pour utiliser cette fonctionnalité sur un téléphone Android, branchez un câble USB, puis sur votre téléphone, allez dans quelque chose comme Réglages > Préférences USB, et réglez la connexion sur « Transfert de fichiers », « Android Auto », ou similaire. (Varie selon l’appareil.)",
+  "settings.fileOperations.mtpEnabled.description": "Détecte et se connecte aux appareils Android et autres via un câble USB pour parcourir et transférer des fichiers. Pour utiliser cette fonctionnalité sur un téléphone Android, branchez un câble USB, puis sur votre téléphone, allez dans quelque chose comme Paramètres > Préférences USB, et réglez la connexion sur « Transfert de fichiers », « Android Auto », ou similaire. (Varie selon l’appareil.)",
   "@settings.fileOperations.mtpEnabled.description": {
     "sourceHash": "c66df04"
   },
@@ -2520,13 +2520,13 @@
   "@settings.askCmdr.provider.title": {
     "sourceHash": "b9fdc88"
   },
-  "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr utilise le fournisseur d’IA et la clé que vous avez configurés dans Réglages › IA ({provider}).} linuxGnome {Cmdr utilise le fournisseur d’IA et la clé que vous avez configurés dans Préférences › IA ({provider}).} linuxKde {Cmdr utilise le fournisseur d’IA et la clé que vous avez configurés dans « Configurer Cmdr » › IA ({provider}).} other {Cmdr utilise le fournisseur d’IA et la clé que vous avez configurés dans Réglages › IA ({provider}).}}",
+  "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr utilise le fournisseur d’IA et la clé que vous avez configurés dans Paramètres › IA ({provider}).} linuxGnome {Cmdr utilise le fournisseur d’IA et la clé que vous avez configurés dans Préférences › IA ({provider}).} linuxKde {Cmdr utilise le fournisseur d’IA et la clé que vous avez configurés dans « Configurer Cmdr » › IA ({provider}).} other {Cmdr utilise le fournisseur d’IA et la clé que vous avez configurés dans Réglages › IA ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "f4ea2f0"
+    "sourceHash": "0cc24da"
   },
-  "settings.askCmdr.provider.off": "{platform, select, windows {Activez un fournisseur d’IA dans Réglages › IA pour commencer à discuter.} linuxGnome {Activez un fournisseur d’IA dans Préférences › IA pour commencer à discuter.} linuxKde {Activez un fournisseur d’IA dans « Configurer Cmdr » › IA pour commencer à discuter.} other {Activez un fournisseur d’IA dans Réglages › IA pour commencer à discuter.}}",
+  "settings.askCmdr.provider.off": "{platform, select, windows {Activez un fournisseur d’IA dans Paramètres › IA pour commencer à discuter.} linuxGnome {Activez un fournisseur d’IA dans Préférences › IA pour commencer à discuter.} linuxKde {Activez un fournisseur d’IA dans « Configurer Cmdr » › IA pour commencer à discuter.} other {Activez un fournisseur d’IA dans Réglages › IA pour commencer à discuter.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "0196a5c"
+    "sourceHash": "89d8531"
   },
   "settings.askCmdr.interactiveModel.label": "Modèle d’Ask Cmdr",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2970,9 +2970,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, windows {Sections de réglages} linuxGnome {Sections des préférences} linuxKde {Configure Cmdr sections} other {Sections de réglages}}",
+  "settings.sidebar.sections": "{platform, select, windows {Sections de paramètres} linuxGnome {Sections des préférences} linuxKde {Sections de « Configurer Cmdr »} other {Sections de réglages}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "4fa3c2e"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Aucun réglage ne correspond} one {{countText} section correspond} many {{countText} sections correspondent} other {{countText} sections correspondent}}",
   "@settings.sidebar.matchCount": {
@@ -3442,9 +3442,9 @@
   "@settings.mediaIndex.chosenFolders.removeAria": {
     "sourceHash": "338e30a"
   },
-  "settings.window.title": "{platform, select, windows {Réglages} linuxGnome {Préférences} linuxKde {Configurer – Cmdr} other {Réglages}}",
+  "settings.window.title": "{platform, select, windows {Paramètres} linuxGnome {Préférences} linuxKde {Configurer – Cmdr} other {Réglages}}",
   "@settings.window.title": {
-    "sourceHash": "80cee55"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Chargement des réglages…",
   "@settings.window.loading": {

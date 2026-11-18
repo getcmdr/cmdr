@@ -3117,7 +3117,12 @@
     "chosen": "inställningar",
     "confidence": "high",
     "forms": "window Inställningar; paths Inställningar > AI",
-    "sources": "macOS Finder (Inställningar…)"
+    "sources": "macOS Finder (Inställningar…)",
+    "windows": {
+      "chosen": "Inställningar",
+      "accept": ["inställning", "inställningar"],
+      "note": "Microsoft names an app's settings Inställningar too (sv/microsoft-terminology/SWEDISH.tbx: Settings → Inställningar, 'the feature in an app that allows users to change its properties'), so every windows branch naming Cmdr's window (settings.window.title, commands.appSettings.label, each i inställningarna / Inställningar > AI pointer) reads like macOS."
+    }
   },
   "share-menu": {
     "accept": ["delning"],
@@ -4180,5 +4185,11 @@
     "sources": "macOS AppKit MenuCommands (Preferences → Inställningar); sv/gnome-nautilus/nautilus.po _Preferences → _Inställningar; sv/xfce-thunar/thunar.po Inställninga_r...",
     "note": "GNOME titles Cmdr's settings window Inställningar too (sv/gnome-nautilus/nautilus.po _Preferences → _Inställningar), so the linuxGnome branches read like macOS and Windows, and the app-menu row (menu.app.settings) has no ellipsis. KDE's window is Anpassa – Cmdr (see configure).",
     "accept": ["inställnings"]
+  },
+  "usb-preferences": {
+    "chosen": "USB-inställningar",
+    "confidence": "tentative",
+    "sources": "catalog (settings.fileOperations.mtpEnabled.description: Inställningar > USB-inställningar); no pile source carries Android's strings",
+    "note": "Quote the label Swedish Android shows on the phone; the path's first step is Android's Inställningar app."
   }
 }

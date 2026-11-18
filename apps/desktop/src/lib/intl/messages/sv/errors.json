@@ -2647,7 +2647,7 @@
   },
   "errors.listing.smbEncryptionRequired.suggestion": "{platform, select, windows {Så här kan du prova:\n- Logga in med ett konto: gästanslutningar kan inte krypteras\n- Slå på SMB-kryptering på servern\n- Stäng av ”Kräv alltid SMB-kryptering” i Inställningar, om du inte behöver inställningen} linuxGnome {Så här kan du prova:\n- Logga in med ett konto: gästanslutningar kan inte krypteras\n- Slå på SMB-kryptering på servern\n- Stäng av ”Kräv alltid SMB-kryptering” i Inställningar, om du inte behöver inställningen} linuxKde {Så här kan du prova:\n- Logga in med ett konto: gästanslutningar kan inte krypteras\n- Slå på SMB-kryptering på servern\n- Stäng av ”Kräv alltid SMB-kryptering” i ”Anpassa Cmdr”, om du inte behöver inställningen} other {Så här kan du prova:\n- Logga in med ett konto: gästanslutningar kan inte krypteras\n- Slå på SMB-kryptering på servern\n- Stäng av ”Kräv alltid SMB-kryptering” i Inställningar, om du inte behöver inställningen}}",
   "@errors.listing.smbEncryptionRequired.suggestion": {
-    "sourceHash": "5d8e637"
+    "sourceHash": "c91f084"
   },
   "errors.volume.encryptionRequired": "Anslutningen till den här delade mappen kan inte krypteras och inställningen ”Kräv alltid SMB-kryptering” är aktiverad i Cmdr.",
   "@errors.volume.encryptionRequired": {
@@ -2671,7 +2671,7 @@
   },
   "errors.write.smbEncryptionRequired.suggestion": "{platform, select, windows {Logga in med ett konto i stället för som gäst, eller slå på SMB-kryptering på servern. Du kan också stänga av ”Kräv alltid SMB-kryptering” i Inställningar.} linuxGnome {Logga in med ett konto i stället för som gäst, eller slå på SMB-kryptering på servern. Du kan också stänga av ”Kräv alltid SMB-kryptering” i Inställningar.} linuxKde {Logga in med ett konto i stället för som gäst, eller slå på SMB-kryptering på servern. Du kan också stänga av ”Kräv alltid SMB-kryptering” i ”Anpassa Cmdr”.} other {Logga in med ett konto i stället för som gäst, eller slå på SMB-kryptering på servern. Du kan också stänga av ”Kräv alltid SMB-kryptering” i Inställningar.}}",
   "@errors.write.smbEncryptionRequired.suggestion": {
-    "sourceHash": "bab81dc"
+    "sourceHash": "a7fe1d2"
   },
   "errors.listing.smbNegotiationInvalid.title": "Servern bekräftade inte den här anslutningen",
   "@errors.listing.smbNegotiationInvalid.title": {

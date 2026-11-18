@@ -431,7 +431,7 @@
   },
   "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Cmdr begint de volgende keer met deze keuze, en je kunt dit wijzigen in Instellingen. Als de keuze bestanden overschrijft, zie je eerst een waarschuwing.} linuxGnome {Cmdr begint de volgende keer met deze keuze, en je kunt dit wijzigen in Voorkeuren. Als de keuze bestanden overschrijft, zie je eerst een waarschuwing.} linuxKde {Cmdr begint de volgende keer met deze keuze, en je kunt dit wijzigen in ‘Cmdr configureren’. Als de keuze bestanden overschrijft, zie je eerst een waarschuwing.} other {Cmdr begint de volgende keer met deze keuze, en je kunt dit wijzigen in Instellingen. Als de keuze bestanden overschrijft, zie je eerst een waarschuwing.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "d75e9f6"
+    "sourceHash": "b23a78a"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "Bij sommige conflicten botsen een bestand en een map met dezelfde naam. Overschrijven vervangt onderdelen van een ander type, inclusief de volledige inhoud van een map.",
   "@fileOperations.transferDialog.typeMismatchWarning": {

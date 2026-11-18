@@ -774,11 +774,11 @@
   },
   "fileExplorer.edit.hint": "{platform, select, windows {Geopend in {app}. Wil je de volgende keer een andere editor? Kies er een in Instellingen.} linuxGnome {Geopend in {app}. Wil je de volgende keer een andere editor? Kies er een in Voorkeuren.} linuxKde {Geopend in {app}. Wil je de volgende keer een andere editor? Kies er een in ‘Cmdr configureren’.} other {Geopend in {app}. Wil je de volgende keer een andere editor? Kies er een in Instellingen.}}",
   "@fileExplorer.edit.hint": {
-    "sourceHash": "1ec59c2"
+    "sourceHash": "2640119"
   },
   "fileExplorer.edit.hintUnnamed": "{platform, select, windows {Geopend in je standaardeditor. Wil je de volgende keer een andere? Kies er een in Instellingen.} linuxGnome {Geopend in je standaardeditor. Wil je de volgende keer een andere? Kies er een in Voorkeuren.} linuxKde {Geopend in je standaardeditor. Wil je de volgende keer een andere? Kies er een in ‘Cmdr configureren’.} other {Geopend in je standaardeditor. Wil je de volgende keer een andere? Kies er een in Instellingen.}}",
   "@fileExplorer.edit.hintUnnamed": {
-    "sourceHash": "00354cc"
+    "sourceHash": "5b5c767"
   },
   "fileExplorer.edit.dismiss": "Sluit",
   "@fileExplorer.edit.dismiss": {
@@ -786,7 +786,7 @@
   },
   "fileExplorer.edit.openSettings": "{platform, select, windows {Open instellingen} linuxGnome {Open voorkeuren} linuxKde {Cmdr configureren} other {Open instellingen}}",
   "@fileExplorer.edit.openSettings": {
-    "sourceHash": "e535825"
+    "sourceHash": "a28ffff"
   },
   "fileExplorer.edit.appMissing": "Cmdr kan de editor die je koos niet vinden, dus dit bestand is geopend in {app}.",
   "@fileExplorer.edit.appMissing": {
@@ -842,7 +842,7 @@
   },
   "fileExplorer.clipboard.pastedAsFileSettings": "{platform, select, windows {Instellingen} linuxGnome {Voorkeuren} linuxKde {Cmdr configureren} other {Instellingen}}",
   "@fileExplorer.clipboard.pastedAsFileSettings": {
-    "sourceHash": "02ce4ce"
+    "sourceHash": "6613a01"
   },
   "fileExplorer.clipboard.copiedPath": "Pad gekopieerd, het staat nu op het klembord:",
   "@fileExplorer.clipboard.copiedPath": {
@@ -1852,11 +1852,11 @@
   },
   "fileExplorer.navigation.favoriteUnreachable.mtpOff": "{platform, select, windows {Toegang tot telefoons en camera’s via MTP staat uit in Instellingen.} linuxGnome {Toegang tot telefoons en camera’s via MTP staat uit in Voorkeuren.} linuxKde {Toegang tot telefoons en camera’s via MTP staat uit in ‘Cmdr configureren’.} other {Toegang tot telefoons en camera’s via MTP staat uit in Instellingen.}}",
   "@fileExplorer.navigation.favoriteUnreachable.mtpOff": {
-    "sourceHash": "064a270"
+    "sourceHash": "53f2cbb"
   },
   "fileExplorer.navigation.favoriteUnreachable.adbOff": "{platform, select, windows {Toegang tot Android-telefoons staat uit in Instellingen.} linuxGnome {Toegang tot Android-telefoons staat uit in Voorkeuren.} linuxKde {Toegang tot Android-telefoons staat uit in ‘Cmdr configureren’.} other {Toegang tot Android-telefoons staat uit in Instellingen.}}",
   "@fileExplorer.navigation.favoriteUnreachable.adbOff": {
-    "sourceHash": "bc261dc"
+    "sourceHash": "eb9bed4"
   },
   "fileExplorer.navigation.favoriteUnreachable.forgotten": "Cmdr weet niet meer hoe het {kind, select, share {de gedeelde map ‘{place}’} server {de server ‘{place}’} phone {de telefoon ‘{place}’} other {‘{place}’}} kan bereiken. Maak er opnieuw verbinding mee vanuit Servers, dan werkt deze favoriet weer.",
   "@fileExplorer.navigation.favoriteUnreachable.forgotten": {
@@ -1868,7 +1868,7 @@
   },
   "fileExplorer.navigation.favoriteUnreachable.openSettings": "{platform, select, windows {Open instellingen} linuxGnome {Open voorkeuren} linuxKde {Cmdr configureren} other {Open instellingen}}",
   "@fileExplorer.navigation.favoriteUnreachable.openSettings": {
-    "sourceHash": "e535825"
+    "sourceHash": "a28ffff"
   },
   "fileExplorer.navigation.favoriteUnreachable.openServers": "Toon servers",
   "@fileExplorer.navigation.favoriteUnreachable.openServers": {
@@ -2231,7 +2231,7 @@
   },
   "fileExplorer.navigation.driveIndex.refusedIndexingOff": "{platform, select, windows {Het indexeren van schijven staat uit in Instellingen, dus {name} wordt niet geïndexeerd. Zet het aan bij ‘Indexeren > Schijf indexeren’.} linuxGnome {Het indexeren van schijven staat uit in Voorkeuren, dus {name} wordt niet geïndexeerd. Zet het aan bij ‘Indexeren > Schijf indexeren’.} linuxKde {Het indexeren van schijven staat uit in ‘Cmdr configureren’, dus {name} wordt niet geïndexeerd. Zet het aan bij ‘Indexeren > Schijf indexeren’.} other {Het indexeren van schijven staat uit in Instellingen, dus {name} wordt niet geïndexeerd. Zet het aan bij ‘Indexeren > Schijf indexeren’.}}",
   "@fileExplorer.navigation.driveIndex.refusedIndexingOff": {
-    "sourceHash": "f7b3cad"
+    "sourceHash": "e91977e"
   },
   "fileExplorer.navigation.driveIndex.driveLeaving": "{name} wordt losgekoppeld, dus Cmdr heeft de index gelaten zoals die was. Als de schijf verbonden blijft, probeer het dan zo meteen opnieuw.",
   "@fileExplorer.navigation.driveIndex.driveLeaving": {
@@ -2239,11 +2239,11 @@
   },
   "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "{platform, select, windows {Het indexeren van schijven staat uit in Instellingen, dus er wordt nu geen schijf geïndexeerd.} linuxGnome {Het indexeren van schijven staat uit in Voorkeuren, dus er wordt nu geen schijf geïndexeerd.} linuxKde {Het indexeren van schijven staat uit in ‘Cmdr configureren’, dus er wordt nu geen schijf geïndexeerd.} other {Het indexeren van schijven staat uit in Instellingen, dus er wordt nu geen schijf geïndexeerd.}}",
   "@fileExplorer.navigation.driveIndex.tooltipIndexingOff": {
-    "sourceHash": "4c4d376"
+    "sourceHash": "76cf912"
   },
   "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {Het indexeren van schijven staat uit in Instellingen. Zet het aan bij ‘Indexeren > Schijf indexeren’, dan pakt deze schijf de draad weer op.} linuxGnome {Het indexeren van schijven staat uit in Voorkeuren. Zet het aan bij ‘Indexeren > Schijf indexeren’, dan pakt deze schijf de draad weer op.} linuxKde {Het indexeren van schijven staat uit in ‘Cmdr configureren’. Zet het aan bij ‘Indexeren > Schijf indexeren’, dan pakt deze schijf de draad weer op.} other {Het indexeren van schijven staat uit in Instellingen. Zet het aan bij ‘Indexeren > Schijf indexeren’, dan pakt deze schijf de draad weer op.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
-    "sourceHash": "453d08d"
+    "sourceHash": "90d82ab"
   },
   "fileExplorer.dragOut.failed": "{count, plural, =1 {Kon ‘{name}’ niet kopiëren.} one {Kon {countText} onderdeel niet kopiëren.} other {Kon {countText} onderdelen niet kopiëren.}}",
   "@fileExplorer.dragOut.failed": {
@@ -2351,7 +2351,7 @@
   },
   "fileExplorer.quickFilter.intro.jumpNote": "{platform, select, windows {Liever de cursor naar een overeenkomende naam verplaatsen zonder iets te verbergen? Schakel naar ‘Ga naar’, hier of in Instellingen.} linuxGnome {Liever de cursor naar een overeenkomende naam verplaatsen zonder iets te verbergen? Schakel naar ‘Ga naar’, hier of in Voorkeuren.} linuxKde {Liever de cursor naar een overeenkomende naam verplaatsen zonder iets te verbergen? Schakel naar ‘Ga naar’, hier of in ‘Cmdr configureren’.} other {Liever de cursor naar een overeenkomende naam verplaatsen zonder iets te verbergen? Schakel naar ‘Ga naar’, hier of in Instellingen.}}",
   "@fileExplorer.quickFilter.intro.jumpNote": {
-    "sourceHash": "ed0bb5f"
+    "sourceHash": "a9cadc8"
   },
   "fileExplorer.quickFilter.intro.switchToJump": "Schakel naar ‘Ga naar’",
   "@fileExplorer.quickFilter.intro.switchToJump": {
@@ -2419,7 +2419,7 @@
   },
   "fileExplorer.smbLinkConsent.note": "{platform, select, windows {Cmdr onthoudt je antwoord voor deze twee servers. Je kunt het vergeten in Instellingen, onder Servers.} linuxGnome {Cmdr onthoudt je antwoord voor deze twee servers. Je kunt het vergeten in Voorkeuren, onder Servers.} linuxKde {Cmdr onthoudt je antwoord voor deze twee servers. Je kunt het vergeten in ‘Cmdr configureren’, onder Servers.} other {Cmdr onthoudt je antwoord voor deze twee servers. Je kunt het vergeten in Instellingen, onder Servers.}}",
   "@fileExplorer.smbLinkConsent.note": {
-    "sourceHash": "d32b664"
+    "sourceHash": "4e49784"
   },
   "fileExplorer.smbLinkConsent.allow": "Toestaan en inloggen",
   "@fileExplorer.smbLinkConsent.allow": {

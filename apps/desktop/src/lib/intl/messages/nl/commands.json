@@ -37,7 +37,7 @@
   },
   "commands.appSettings.label": "{platform, select, windows {Open instellingen} linuxGnome {Open voorkeuren} linuxKde {Cmdr configureren} other {Open instellingen}}",
   "@commands.appSettings.label": {
-    "sourceHash": "e535825"
+    "sourceHash": "a28ffff"
   },
   "commands.appCheckForUpdates.label": "Zoek naar updates…",
   "@commands.appCheckForUpdates.label": {
@@ -1269,7 +1269,7 @@
   },
   "commands.handler.openTerminalHere.hint": "{platform, select, windows {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Instellingen, onder ‘Navigatie en bewerkingen’.} linuxGnome {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Voorkeuren, onder ‘Navigatie en bewerkingen’.} linuxKde {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in ‘Cmdr configureren’, onder ‘Navigatie en bewerkingen’.} other {Deze map is geopend in je terminal-app. Wil je dat Cmdr de volgende keer een andere app opent? Kies er een in Instellingen, onder ‘Navigatie en bewerkingen’.}}",
   "@commands.handler.openTerminalHere.hint": {
-    "sourceHash": "b73c1db"
+    "sourceHash": "5d6063c"
   },
   "commands.handler.openTerminalHere.dismiss": "Sluit",
   "@commands.handler.openTerminalHere.dismiss": {
@@ -1277,7 +1277,7 @@
   },
   "commands.handler.openTerminalHere.openSettings": "{platform, select, windows {Open instellingen} linuxGnome {Open voorkeuren} linuxKde {Cmdr configureren} other {Open instellingen}}",
   "@commands.handler.openTerminalHere.openSettings": {
-    "sourceHash": "e535825"
+    "sourceHash": "a28ffff"
   },
   "commands.handler.openTerminalHere.appMissing": "{app} is niet meer geïnstalleerd, dus dit is geopend in Terminal.",
   "@commands.handler.openTerminalHere.appMissing": {
@@ -1349,7 +1349,7 @@
   },
   "commands.handler.viewDebugLog.disabled": "{platform, select, windows {Logopslag staat uit. Zet de schijfruimtelimiet in Instellingen > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.} linuxGnome {Logopslag staat uit. Zet de schijfruimtelimiet in Voorkeuren > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.} linuxKde {Logopslag staat uit. Zet de schijfruimtelimiet in ‘Cmdr configureren’ > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.} other {Logopslag staat uit. Zet de schijfruimtelimiet in Instellingen > Geavanceerd op meer dan 0 en herstart daarna Cmdr om het foutopsporingslogbestand te bekijken.}}",
   "@commands.handler.viewDebugLog.disabled": {
-    "sourceHash": "bda730a"
+    "sourceHash": "1fb0c6a"
   },
   "commands.handler.viewDebugLog.unavailable": "Kon het foutopsporingslogbestand niet openen. Probeer het opnieuw.",
   "@commands.handler.viewDebugLog.unavailable": {

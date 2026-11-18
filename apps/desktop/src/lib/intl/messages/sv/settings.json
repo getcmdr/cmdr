@@ -2517,11 +2517,11 @@
   },
   "settings.askCmdr.provider.shared": "{platform, select, windows {Cmdr använder AI-leverantören och nyckeln du har ställt in i Inställningar › AI ({provider}).} linuxGnome {Cmdr använder AI-leverantören och nyckeln du har ställt in i Inställningar › AI ({provider}).} linuxKde {Cmdr använder AI-leverantören och nyckeln du har ställt in i ”Anpassa Cmdr” › AI ({provider}).} other {Cmdr använder AI-leverantören och nyckeln du har ställt in i Inställningar › AI ({provider}).}}",
   "@settings.askCmdr.provider.shared": {
-    "sourceHash": "f4ea2f0"
+    "sourceHash": "0cc24da"
   },
   "settings.askCmdr.provider.off": "{platform, select, windows {Aktivera en AI-leverantör i Inställningar › AI för att börja chatta.} linuxGnome {Aktivera en AI-leverantör i Inställningar › AI för att börja chatta.} linuxKde {Aktivera en AI-leverantör i ”Anpassa Cmdr” › AI för att börja chatta.} other {Aktivera en AI-leverantör i Inställningar › AI för att börja chatta.}}",
   "@settings.askCmdr.provider.off": {
-    "sourceHash": "0196a5c"
+    "sourceHash": "89d8531"
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr-modell",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2966,9 +2966,9 @@
   "@settings.sidebar.clearSearch": {
     "sourceHash": "3b7ea51"
   },
-  "settings.sidebar.sections": "{platform, select, windows {Inställningssektioner} linuxGnome {Inställningssektioner} linuxKde {Configure Cmdr sections} other {Inställningssektioner}}",
+  "settings.sidebar.sections": "{platform, select, windows {Inställningssektioner} linuxGnome {Inställningssektioner} linuxKde {Sektioner i ”Anpassa Cmdr”} other {Inställningssektioner}}",
   "@settings.sidebar.sections": {
-    "sourceHash": "4fa3c2e"
+    "sourceHash": "7de6a12"
   },
   "settings.sidebar.matchCount": "{count, plural, =0 {Inga inställningar matchar} one {{countText} sektion matchar} other {{countText} sektioner matchar}}",
   "@settings.sidebar.matchCount": {
@@ -3439,7 +3439,7 @@
   },
   "settings.window.title": "{platform, select, windows {Inställningar} linuxGnome {Inställningar} linuxKde {Anpassa – Cmdr} other {Inställningar}}",
   "@settings.window.title": {
-    "sourceHash": "80cee55"
+    "sourceHash": "394b03a"
   },
   "settings.window.loading": "Läser in inställningar…",
   "@settings.window.loading": {

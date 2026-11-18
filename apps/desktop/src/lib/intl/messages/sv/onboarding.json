@@ -309,7 +309,7 @@
   },
   "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i Inställningar > AI.} linuxGnome {Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i Inställningar > AI.} linuxKde {Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i ”Anpassa Cmdr” > AI.} other {Moln-AI förblir avstängt tills du tillåter det. Du kan göra det senare i Inställningar > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
-    "sourceHash": "6e0eb09"
+    "sourceHash": "6075ac0"
   },
   "onboarding.stepAi.off.label": "Tack men nej tack, ingen AI för mig",
   "@onboarding.stepAi.off.label": {
@@ -317,7 +317,7 @@
   },
   "onboarding.stepAi.off.help": "{platform, select, windows {Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i Inställningar.} linuxGnome {Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i Inställningar.} linuxKde {Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i ”Anpassa Cmdr”.} other {Cmdr fungerar fullt ut utan AI. Du kan slå på det senare i Inställningar.}}",
   "@onboarding.stepAi.off.help": {
-    "sourceHash": "b20cf1d"
+    "sourceHash": "f4c9871"
   },
   "onboarding.localDownloadFailed.title": "Hämtningen av den lokala AI-modellen blev inte klar",
   "@onboarding.localDownloadFailed.title": {
@@ -393,7 +393,7 @@
   },
   "onboarding.stepBeta.analyticsCaption": "{platform, select, windows {Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i Inställningar.} linuxGnome {Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i Inställningar.} linuxKde {Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i ”Anpassa Cmdr”.} other {Observera att det är PÅ som standard för att uppmuntra folk att skicka mig data under betan.\nDu kan ändra det här när som helst i Inställningar.}}",
   "@onboarding.stepBeta.analyticsCaption": {
-    "sourceHash": "47a7511"
+    "sourceHash": "9dc83f9"
   },
   "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Kraschrapporter är också på: om Cmdr går ner skickar appen appversionen, din macOS-version och stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av båda i inställningarna när du vill.} windows {Kraschrapporter är också på: om Cmdr går ner skickar appen appversionen, din Windows-version och stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av båda i inställningarna när du vill.} linuxGnome {Kraschrapporter är också på: om Cmdr går ner skickar appen appversionen, din Linux-distribution och dess version samt stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av båda i inställningarna när du vill.} linuxKde {Kraschrapporter är också på: om Cmdr går ner skickar appen appversionen, din Linux-distribution och dess version samt stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av båda i ”Anpassa Cmdr” när du vill.} other {Kraschrapporter är också på: om Cmdr går ner skickar appen appversionen, din Linux-distribution och dess version samt stället i koden där det stannade.\nAldrig dina filer.\nDu kan stänga av båda i inställningarna när du vill.}}",
   "@onboarding.stepBeta.crashReportsNote": {
@@ -469,7 +469,7 @@
   },
   "onboarding.stepOptional.changeAnytime": "{platform, select, windows {Du kan ändra det här när som helst i Inställningar.} linuxGnome {Du kan ändra det här när som helst i Inställningar.} linuxKde {Du kan ändra det här när som helst i ”Anpassa Cmdr”.} other {Du kan ändra det här när som helst i Inställningar.}}",
   "@onboarding.stepOptional.changeAnytime": {
-    "sourceHash": "320f582"
+    "sourceHash": "ff84784"
   },
   "onboarding.stepOptional.networking.title": "Nätverk",
   "@onboarding.stepOptional.networking.title": {

@@ -5,11 +5,11 @@
   },
   "stateRecovery.settings.body": "{platform, select, windows {Nutzungsstatistiken und Absturzberichte bleiben aus, bis du sie unter Einstellungen › Updates & Datenschutz wieder einschaltest.} linuxGnome {Nutzungsstatistiken und Absturzberichte bleiben aus, bis du sie unter Einstellungen › Updates & Datenschutz wieder einschaltest.} linuxKde {Nutzungsstatistiken und Absturzberichte bleiben aus, bis du sie unter „Cmdr einrichten“ › Updates & Datenschutz wieder einschaltest.} other {Nutzungsstatistiken und Absturzberichte bleiben aus, bis du sie unter Einstellungen › Updates & Datenschutz wieder einschaltest.}}",
   "@stateRecovery.settings.body": {
-    "sourceHash": "8e4debd"
+    "sourceHash": "253a6ed"
   },
   "stateRecovery.settings.openSettings": "{platform, select, windows {Einstellungen öffnen} linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
   "@stateRecovery.settings.openSettings": {
-    "sourceHash": "f970930"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.shortcuts.title": "Cmdr konnte deine Tastaturkurzbefehle nicht lesen, deshalb gelten wieder die Standardkurzbefehle",
   "@stateRecovery.shortcuts.title": {
@@ -21,11 +21,11 @@
   },
   "stateRecovery.license.body": "{platform, select, windows {Falls Cmdr jetzt ohne Lizenz läuft, gib deinen Lizenzschlüssel unter Einstellungen › Lizenz noch einmal ein.} linuxGnome {Falls Cmdr jetzt ohne Lizenz läuft, gib deinen Lizenzschlüssel unter Einstellungen › Lizenz noch einmal ein.} linuxKde {Falls Cmdr jetzt ohne Lizenz läuft, gib deinen Lizenzschlüssel unter „Cmdr einrichten“ › Lizenz noch einmal ein.} other {Falls Cmdr jetzt ohne Lizenz läuft, gib deinen Lizenzschlüssel unter Einstellungen › Lizenz noch einmal ein.}}",
   "@stateRecovery.license.body": {
-    "sourceHash": "158e224"
+    "sourceHash": "e4d10c4"
   },
   "stateRecovery.license.openSettings": "{platform, select, windows {Einstellungen öffnen} linuxGnome {Einstellungen öffnen} linuxKde {Cmdr einrichten} other {Einstellungen öffnen}}",
   "@stateRecovery.license.openSettings": {
-    "sourceHash": "f970930"
+    "sourceHash": "cd63cf5"
   },
   "stateRecovery.appStatus.title": "{platform, select, windows {Cmdr konnte nicht lesen, welche Ordner in deinen Bereichen geöffnet waren, deshalb starten beide Bereiche im Benutzerordner} other {Cmdr konnte nicht lesen, welche Ordner in deinen Bereichen geöffnet waren, deshalb starten beide Bereiche im persönlichen Ordner}}",
   "@stateRecovery.appStatus.title": {

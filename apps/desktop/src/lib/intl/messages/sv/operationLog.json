@@ -17,7 +17,7 @@
   },
   "operationLog.dialog.recordingOff": "{platform, select, windows {Åtgärdsloggen är avstängd, så nya kopieringar, flyttar, namnbyten och raderingar visas inte här och går inte att ångra. Slå på den igen i Inställningar för att logga dem igen.} linuxGnome {Åtgärdsloggen är avstängd, så nya kopieringar, flyttar, namnbyten och raderingar visas inte här och går inte att ångra. Slå på den igen i Inställningar för att logga dem igen.} linuxKde {Åtgärdsloggen är avstängd, så nya kopieringar, flyttar, namnbyten och raderingar visas inte här och går inte att ångra. Slå på den igen i ”Anpassa Cmdr” för att logga dem igen.} other {Åtgärdsloggen är avstängd, så nya kopieringar, flyttar, namnbyten och raderingar visas inte här och går inte att ångra. Slå på den igen i Inställningar för att logga dem igen.}}",
   "@operationLog.dialog.recordingOff": {
-    "sourceHash": "3204ad8"
+    "sourceHash": "8b5c5f2"
   },
   "operationLog.dialog.noItems": "Den här åtgärden har inga registrerade objekt.",
   "@operationLog.dialog.noItems": {

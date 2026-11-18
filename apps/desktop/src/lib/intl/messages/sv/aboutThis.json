@@ -1233,7 +1233,7 @@
   },
   "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Göm det här tipset. Du kan visa det igen under Inställningar > Avancerat.} linuxGnome {Göm det här tipset. Du kan visa det igen under Inställningar > Avancerat.} linuxKde {Göm det här tipset. Du kan visa det igen under ”Anpassa Cmdr” > Avancerat.} other {Göm det här tipset. Du kan visa det igen under Inställningar > Avancerat.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
-    "sourceHash": "22d9d84"
+    "sourceHash": "aa27809"
   },
   "aboutThis.action.continueInAskCmdr": "Fortsätt i Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {

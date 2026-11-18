@@ -187,6 +187,14 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   the settings window (`adb.connect.openSettings`, `stateRecovery.*.openSettings`) now carries `windows`, `linuxGnome`,
   and `linuxKde` branches. Where Microsoft's word differs (ru `Параметры` beside Apple's `Настройки`) term-consistency
   warns, and Windows, GNOME, and KDE users read the macOS word there. Give it the same per-OS value. (ru)
+- `onboarding.localDownloadFailed.openSettings` ("Open Settings") is still a plain value, while every other button
+  opening Cmdr's settings window gained a `windows` branch. French Windows says `Ouvrir les paramètres`, so the plain
+  `Ouvrir les réglages` now trips `i18n-terms` against `adb.connect.openSettings` and the `stateRecovery.*.openSettings`
+  windows branches. Give it the same per-OS shape (and GNOME/KDE branches). (fr)
+- `settings.indexing.enabled.label` and `settings.section.driveIndexing` ("Drive indexing") are plain values, quoted by
+  the `windows` branches of `fileExplorer.navigation.driveIndex.*` and `search.coverage.toast.indexingOff`. Windows'
+  French word for a drive is `lecteur` (the `drive` ruling's Windows form), so the label reads `Indexation du disque` on
+  Windows while the prose around it now says `lecteur`. A per-OS label would let the two agree. (fr)
 
 ## Process feedback
 
@@ -297,3 +305,17 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   to show only the branches still in English, so finding the `linuxKde` gaps took a `grep "= English"` over its output.
   The worktree guard refused a `for` loop over `i18n:values` per locale and a `while read` over the brief. (cs, ru, uk,
   hu)
+- The settings-window `windows` pass listed only the 61 stale keys, but nine more keys already had a `windows` branch
+  carrying the macOS word (`menu.app.settings`, `fileExplorer.quickFilter.intro.openSettings`,
+  `fileExplorer.functionKeyBar.hiddenToast`, `whatsNew.optOutToast`, three `onboarding.stepBeta.*`, two more); only
+  `i18n-terms` surfaced two of them, and a catalog `grep` found the rest. A per-OS term ruling (`settings`' `windows`
+  form) could drive a check that lists every `windows` branch still using the base form. The seeded `windows` branches
+  also carried the macOS `drive` word (`disque`), flagged by the termbase only after apply. (fr)
+- Copying 70 `windows` branches out of `pnpm i18n:values` with a branch swap took a one-off `gawk` extractor (my own
+  values file, no catalog write), since the tool has no JSON output; a `--json` mode (key → branch → text) would have
+  made it a `jq` one-liner. KDE values typed by hand needed the U+00A0 inside « » added after the mechanics check. The
+  worktree guard refused a `jq … && mv` chain and an `echo >> keys.txt && jq` chain; split into single calls. (fr)
+- Extending a run's batch with keys that aren't stale meant appending to my own `keys.txt` by hand; `i18n:apply` has no
+  flag to add keys to the batch. (fr)
+- The empty `mtp.connectedToast.body` `windows` branch needed the same `sameAsSourceJustification` in de, nl, sv, and fr
+  too (see the entry above). (de, nl, sv, fr)

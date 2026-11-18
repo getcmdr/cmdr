@@ -3174,14 +3174,15 @@
     "decision": "Réglages : sections et présentation",
     "exceptions": {
       "servers.sheet.s3GcsKeyHelp": "Third-party UI: Google Cloud’s French console names Cloud Storage’s settings page Paramètres, so the hint quotes the vendor’s word (tentative).",
-      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome and linuxKde branches quote the desktop's own settings app, never Cmdr's Réglages: GNOME Paramètres > Clavier > Voir et personnaliser les raccourcis (gnome-control-center.po fr) and KDE Configuration du système > Clavier > Raccourcis (systemsettings.po fr, kcm_keyboard and kcm_keys metadata). Verified read-only, 2026-11-18."
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome and linuxKde branches quote the desktop's own settings app, never Cmdr's Réglages: GNOME Paramètres > Clavier > Voir et personnaliser les raccourcis (gnome-control-center.po fr) and KDE Configuration du système > Clavier > Raccourcis (systemsettings.po fr, kcm_keyboard and kcm_keys metadata). Verified read-only, 2026-11-18.",
+      "settings.fileOperations.mtpEnabled.description": "Quotes Android's own path on the phone: French Android names its Settings app Paramètres (see usb-preferences), not Apple's Réglages."
     },
     "forms": "Cmdr’s own window → les Réglages (Ouvrir les réglages, Activez-la dans les Réglages); breadcrumbs Réglages > IA, Réglages › Mises à jour et confidentialité (mirror EN’s separator); Apple’s app is Réglages Système",
     "sources": "macOS (Réglages Système CFBundleName)",
     "windows": {
       "chosen": "Paramètres",
-      "accept": ["paramètre", "paramètres", "réglage", "réglages", "Réglages"],
-      "note": "Windows names its own Settings app Paramètres (Paramètres > Système > Stockage, Paramètres > Réseau et Internet; a setting on the PC is un paramètre); Cmdr’s own Réglages and a server’s réglages keep the base form."
+      "accept": ["paramètre", "paramètres", "réglage", "réglages"],
+      "note": "Microsoft's French for an app's settings is Paramètres (fr/microsoft-terminology/FRENCH.tbx: Settings → Paramètres, 'the feature in an app that allows users to change its properties'; also Windows' own Settings app), so every windows branch naming Cmdr's window takes it: title and menu row Paramètres (settings.window.title, menu.app.settings), buttons Ouvrir les paramètres (commands.appSettings.label), pointers dans les Paramètres / Paramètres > IA / Paramètres › Mises à jour et confidentialité; masculine plural like Réglages, so the grammar around it doesn't change. A setting on the PC is un paramètre (les paramètres avancés). A server's own configuration keeps the base réglages (les réglages du serveur, vos réglages SSH): it isn't a Windows surface."
     }
   },
   "share-menu": {
@@ -4402,5 +4403,11 @@
     "confidence": "high",
     "sources": "macOS AppKit MenuCommands (Preferences → Préférences); fr/gnome-nautilus/nautilus.po _Preferences → _Préférences; fr/xfce-thunar/thunar.po Préfé_rences…",
     "note": "Cmdr's settings window per desktop: GNOME titles it Préférences (fr/gnome-nautilus/nautilus.po _Preferences → _Préférences), with no ellipsis on the app-menu row (menu.app.settings), so linuxGnome pointers say dans Préférences > IA / dans les Préférences and buttons Ouvrir les préférences. KDE titles it Configurer – Cmdr (fr/kde-dolphin/dolphin.po @title:window Configure → Configurer); its menu row is Configurer Cmdr… (Configure… → Configurer...), every button Configurer Cmdr, and pointers quote it: dans « Configurer Cmdr » > IA."
+  },
+  "usb-preferences": {
+    "chosen": "Préférences USB",
+    "confidence": "tentative",
+    "sources": "catalog (settings.fileOperations.mtpEnabled.description); no pile source carries Android's strings",
+    "note": "Quote the label French Android shows on the phone. The path's first step is Android's own Settings app, which French Android names Paramètres (never Apple's Réglages): Paramètres > Préférences USB."
   }
 }
