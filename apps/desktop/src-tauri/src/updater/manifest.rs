@@ -11,9 +11,28 @@ pub struct UpdateManifest {
     pub platforms: HashMap<String, PlatformEntry>,
     /// The release's advisory list as a signed release asset, for the installs that can't read it
     /// out of the update itself (Windows and Linux, `advisories::fetch_signed_list`). Optional: a
-    /// manifest without it means no security notice, never a failed check.
-    #[serde(default)]
+    /// manifest without it, or with one that doesn't parse, means no security notice, never a
+    /// failed check ([`lenient_advisory_entry`]).
+    #[serde(default, deserialize_with = "lenient_advisory_entry")]
     pub security_advisories: Option<PlatformEntry>,
+}
+
+/// Reads `securityAdvisories` without ever failing the manifest: an entry that isn't a
+/// `{ url, signature }` is dropped with a warn. The list only adds a notice (nothing refuses an
+/// install over it, on any OS), so losing it costs the notice, as an unreadable list in the macOS
+/// bundle does, while a strict parse would stop every install on every OS from updating.
+fn lenient_advisory_entry<'de, D>(deserializer: D) -> Result<Option<PlatformEntry>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let raw = Option::<serde_json::Value>::deserialize(deserializer)?;
+    Ok(raw.and_then(|value| {
+        serde_json::from_value(value)
+            .inspect_err(|e| {
+                log::warn!("The manifest's security advisory entry doesn't parse, so it names no advisory: {e}");
+            })
+            .ok()
+    }))
 }
 
 /// Per-platform entry in the manifest: download URL and minisign signature.
@@ -206,5 +225,28 @@ mod tests {
             with.security_advisories.map(|entry| entry.url).as_deref(),
             Some("https://example.invalid/security-advisories.json")
         );
+    }
+
+    /// A broken advisory entry costs the notice, never the update: the list only ever adds a
+    /// notice (no advisory refuses an install, on macOS either), so dropping it is the safe side.
+    /// Before, it failed the whole parse, so every install on every OS stopped updating.
+    #[test]
+    fn a_malformed_advisory_entry_is_dropped_and_the_manifest_still_parses() {
+        for broken in [
+            serde_json::json!({ "url": "https://example.invalid/list.json" }),
+            serde_json::json!({ "url": null, "signature": "s" }),
+            serde_json::json!("https://example.invalid/list.json"),
+            serde_json::json!([]),
+            serde_json::json!(null),
+        ] {
+            let parsed: UpdateManifest = serde_json::from_value(serde_json::json!({
+                "version": "0.41.0",
+                "platforms": { "darwin-aarch64": { "url": "https://example.invalid/a", "signature": "s" } },
+                "securityAdvisories": broken,
+            }))
+            .unwrap_or_else(|e| panic!("a manifest with advisory entry {broken} must still parse: {e}"));
+            assert!(parsed.security_advisories.is_none(), "{broken}");
+            assert!(check_manifest(&parsed, "0.40.0", &keys(&["darwin-aarch64"])).is_some());
+        }
     }
 }

@@ -173,8 +173,9 @@ list itself, what gets an entry, and the link allowlist: `../security_advisories
   level), and `advisories::fetch_signed_list` reads it at the stage step. The signature is what the bundle's code
   signature is on macOS; the manifest naming it isn't signed, so it can leave the entry out (hiding a notice, as it
   could withhold the update itself) but can't invent one, and `notice_from` keeps `fixedIn <= staged`, so a later
-  release's list can't speak for fixes this update lacks. Missing, unreachable (15 s bound), or unsigned reads as no
-  notice plus a warn, never a failed update. The What's new popup still covers it after the restart from the new
+  release's list can't speak for fixes this update lacks. Missing, malformed (`manifest::lenient_advisory_entry`: the entry alone drops, never the
+  whole `latest.json`, which would stop every install on every OS updating), unreachable (15 s bound), or unsigned reads
+  as no notice plus a warn, never a failed update or check. The What's new popup still covers it after the restart from the new
   build's embedded copy.
 
 ## Two updater keys
