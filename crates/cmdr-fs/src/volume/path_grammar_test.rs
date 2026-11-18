@@ -167,6 +167,23 @@ fn from_native_takes_every_windows_spelling_to_one_app_path() {
 }
 
 #[test]
+fn app_spelling_turns_a_native_windows_path_and_keeps_what_it_cant_read() {
+    assert_eq!(
+        app_spelling(r"C:\Users\test_user_1\Desktop", PathFlavor::Windows),
+        "C:/Users/test_user_1/Desktop"
+    );
+    assert_eq!(
+        app_spelling(r"\\.\PhysicalDrive0", PathFlavor::Windows),
+        r"\\.\PhysicalDrive0"
+    );
+    assert_eq!(
+        app_spelling("/Users/test_user_1", PathFlavor::Posix),
+        "/Users/test_user_1"
+    );
+    assert_eq!(app_spelling(r"/tmp/a\b", PathFlavor::Posix), r"/tmp/a\b");
+}
+
+#[test]
 fn from_native_refuses_what_names_no_folder() {
     for native in [
         r"\\.\PhysicalDrive0",

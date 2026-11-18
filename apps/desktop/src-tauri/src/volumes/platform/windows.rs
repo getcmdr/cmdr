@@ -6,7 +6,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use crate::volumes::{DEFAULT_VOLUME_ID, LocationCategory, LocationInfo, NetworkMount, SmbMountInfo, VolumeInfo};
-use cmdr_fs::volume::path_grammar::{AppPath, PathFlavor};
+use cmdr_fs::volume::path_grammar::{AppPath, PathFlavor, app_spelling};
 use cmdr_fs::volume::{MountClass, SpaceInfo, Volume};
 use cmdr_local::LocalWindowsVolume;
 
@@ -82,7 +82,7 @@ fn row(id: &str, name: &str, path: &Path, category: LocationCategory) -> Locatio
     LocationInfo {
         id: id.to_string(),
         name: name.to_string(),
-        path: path.to_string_lossy().to_string(),
+        path: app_spelling(&path.to_string_lossy(), PathFlavor::Windows),
         category,
         icon: None,
         is_ejectable: false,
@@ -214,6 +214,17 @@ mod tests {
     }
 
     #[test]
+    fn a_row_publishes_the_app_path() {
+        let desktop = row(
+            "fav-desktop",
+            "Desktop",
+            Path::new(r"C:\Users\test_user_1\Desktop"),
+            LocationCategory::Favorite,
+        );
+        assert_eq!(desktop.path, "C:/Users/test_user_1/Desktop");
+    }
+
+    #[test]
     fn a_path_on_the_system_drive_resolves_to_the_root_volume() {
         for path in [
             "C:/",
@@ -222,7 +233,7 @@ mod tests {
             r"\\?\C:\Windows",
             "c:/users",
         ] {
-            let volume = resolve_on_system_drive(path, "C:/").unwrap_or_else(|| panic!("{path} resolves"));
+            let volume = resolve_on_system_drive(path, "C:/").unwrap_or_else(|| panic!("no volume for {path}"));
             assert_eq!(volume.id, DEFAULT_VOLUME_ID, "{path}");
             assert_eq!(volume.path, "C:/", "{path}");
             assert_eq!(volume.category, LocationCategory::MainVolume, "{path}");

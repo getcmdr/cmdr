@@ -146,3 +146,29 @@ the app's build script (no `windres`) and `numkong`'s AVX-512 kernels, which zig
 - **Next blockers for a usable Windows build**: #1225 (app paths through the local engine: no local copy, move, or
   listing of a native path lands yet), task 34's drive ids and multi-root volumes, task 35's streams and lister, and a
   GUI session for the first real launch (task 55).
+- **2026-11-18, first launch on a real desktop** (task 55's front edge; Windows 10 22H2 build 19045, mami, debug
+  `pnpm tauri build --debug` binaries of `ed3991ae38` and then `a0eee76edd`): the window comes up, lists `C:\`, and
+  enters folders, with no panic, no Application event log entry, and no CPU over a 10 s idle sample more than two
+  minutes after the last action.
+  - **How it ran**: SSH sits in session 0, which has no desktop, so a one-off scheduled task (principal `admin`,
+    `LogonType Interactive`, the menu spike's technique) starts a PowerShell runner in the signed-in console session.
+    The runner launches `Cmdr.exe` with stderr redirected, saves a `CopyFromScreen` shot whenever a request file appears
+    (lid closed, 1600 × 900), sends `SendKeys` the same way, and on a stop file collects the app log and the Application
+    event log; the task is deleted after each run. Cmdr's MCP server (`CMDR_MCP_PORT=19225`, a fixed `CMDR_MCP_TOKEN`)
+    answered `scripts/mcp-call.sh` from the Mac through `ssh -L`. Nothing else on mami changed.
+  - **What worked on the first try**: every startup step (logger, settings migration, index start, operation log and
+    agent DB migrations, the MCP server and bridge), "What's new" on a first launch, the first-run panes on `~` and
+    `~/Downloads`, up to the system drive's root, Enter into `C:\Windows` (107 entries), and real arrow and Enter key
+    presses through WebView2. Data lands where task 48 put it: `%APPDATA%\com.veszelovszki.cmdr`, and `drive-index`,
+    `logs`, and `EBWebView` under `%LOCALAPPDATA%\com.veszelovszki.cmdr`.
+  - **Fixed** (`a0eee76edd` and the commit after it): `resolve_path_volume_fast` answered no volume for every path on
+    Windows, so `nav_to_path` to `C:/` refused ("Couldn't reach that location's drive") and Go to path and favorites
+    couldn't land; it now answers the root volume for a path on the system drive. The favorites seed and the switcher's
+    rows published native `C:\Users\…` paths, which no resolver reads (every favorite read `reachable: false`); both now
+    store the app path through `path_grammar::app_spelling`.
+  - **Observed, not chased**: the root index starts at `/`, which Windows reads as the current drive, so a binary
+    started from `D:\…` walked `D:\` (257,236 entries in 38 s) while its watcher's branches came out as `/C:/Windows`
+    and were refused (plan § "Windows build state"); `nav_to_path` with a `\` path resolves but its landing check times
+    out (the frontend normalizes typed text, MCP doesn't); the breadcrumb shows nothing at the drive root and `\Windows`
+    below it while `~/Downloads` keeps its `/`; the secret store is the plain-file fallback; the focus watchdog warns
+    once at startup (nothing focused for 500 ms); a second `nav_to_parent` at the root times out instead of refusing.
