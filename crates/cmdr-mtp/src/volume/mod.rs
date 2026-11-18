@@ -60,10 +60,10 @@ mod volume_impl_test;
 /// ❌ Not `cfg(test)` alone: that's set only while this crate builds its OWN test
 /// target, so a consumer's test build would see it vanish.
 #[cfg(any(test, feature = "testing"))]
-use cmdr_fs::app_path::BridgedPath;
 pub use streams::volume_read_stream_to_chunk_stream;
 
 use crate::connection::MtpConnectionManager;
+use cmdr_fs::app_path::BridgedPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
