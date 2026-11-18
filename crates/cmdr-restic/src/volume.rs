@@ -20,6 +20,9 @@ use crate::read_stream::ResticReadStream;
 use crate::repo::{IndexedRepo, ResticError, worker_crashed};
 use crate::snapshots::{LATEST_FOLDER_NAME, Snapshot, SnapshotList};
 use crate::tree::{entry_of, folder_tree, modified_secs, node_at, permissions_of};
+use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::AppPathBuf;
+use cmdr_fs::app_path::BridgedPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::metadata::MetadataCaps;
 use cmdr_fs::volume::scan_walk::{self, ScanSource, Walking};
@@ -52,7 +55,7 @@ pub struct ResticVolume {
     parent: Arc<dyn Volume>,
     /// `<repo>/Browse snapshots`: this volume's root, and the prefix of every
     /// path it serves.
-    root: PathBuf,
+    root: BridgedPath,
 }
 
 /// A snapshot a path named, and how: through `latest`, or by its own folder.
@@ -74,7 +77,7 @@ impl ResticVolume {
             hub,
             slot,
             parent,
-            root: repo_root.join(VIRTUAL_ENTRY_NAME),
+            root: BridgedPath::new(repo_root.join(VIRTUAL_ENTRY_NAME)),
         }
     }
 
@@ -350,8 +353,8 @@ impl Volume for ResticVolume {
         BackendKind::Restic
     }
 
-    fn root(&self) -> &Path {
-        &self.root
+    fn root(&self) -> &AppPath {
+        self.root.app()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -367,7 +370,7 @@ impl Volume for ResticVolume {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.list_directory_with_cancel(path, on_progress, None)
@@ -379,11 +382,13 @@ impl Volume for ResticVolume {
     /// it started finishes on its own and is dropped.
     fn list_directory_with_cancel<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&'a CancellationToken>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let listing = self.list(path, on_progress);
             let entries = match cancel {
                 Some(token) => tokio::select! {
@@ -410,8 +415,10 @@ impl Volume for ResticVolume {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
+        let path_std = path.as_std_legacy();
+        let path: &Path = &path_std;
         Box::pin(self.metadata(path))
     }
 
@@ -419,9 +426,11 @@ impl Volume for ResticVolume {
     /// itself (the root, a snapshot row) is no link.
     fn read_link_target<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Option<PathBuf>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let VirtualPath::Snapshot(which, inner) = self.classify(path)? else {
                 return Ok(None);
             };
@@ -449,7 +458,7 @@ impl Volume for ResticVolume {
     /// read-only volume claim it created something.
     fn create_directory_all<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<DirectoryCreation, VolumeError>> + Send + 'a>> {
         let _ = path;
         Box::pin(async { Err(VolumeError::NotSupported) })
@@ -473,9 +482,11 @@ impl Volume for ResticVolume {
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeReadStream>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let stream = self.open_file(path).await?;
             Ok(Box::new(stream) as Box<dyn VolumeReadStream>)
         })
@@ -483,11 +494,13 @@ impl Volume for ResticVolume {
 
     fn read_range<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             let mut stream = self.open_file(path).await?;
             if offset >= stream.size {
                 return Ok(Vec::new());
@@ -499,17 +512,25 @@ impl Volume for ResticVolume {
 
     fn scan_for_copy<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<CopyScanResult, VolumeError>> + Send + 'a>> {
-        scan_walk::scan_one(self, path)
+        Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            scan_walk::scan_one(self, path).await
+        })
     }
 
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
-        paths: &'a [PathBuf],
+        paths: &'a [AppPathBuf],
         boundary: &'a ScanBoundary,
     ) -> Pin<Box<dyn Future<Output = Result<BatchScanResult, VolumeError>> + Send + 'a>> {
-        scan_walk::scan_trees(self, paths, boundary)
+        Box::pin(async move {
+            let paths_std: Vec<PathBuf> = paths.iter().map(|p| p.as_std_legacy().into_owned()).collect();
+            let paths: &[PathBuf] = &paths_std;
+            scan_walk::scan_trees(self, paths, boundary).await
+        })
     }
 
     // ---- Capability flags: answered explicitly, never inherited ------------
@@ -527,7 +548,7 @@ impl Volume for ResticVolume {
     }
 
     /// `None`: a snapshot path has no counterpart on disk.
-    fn local_path(&self) -> Option<PathBuf> {
+    fn local_path(&self) -> Option<AppPathBuf> {
         None
     }
 
@@ -559,10 +580,14 @@ impl Volume for ResticVolume {
     /// is asked about.
     fn get_space_info_at<'a>(
         &'a self,
-        _path: &'a Path,
+        _path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<SpaceInfo, VolumeError>> + Send + 'a>> {
         let repo_root = self.root.parent().unwrap_or(&self.root);
-        Box::pin(async move { self.parent.get_space_info_at(repo_root).await })
+        Box::pin(async move {
+            self.parent
+                .get_space_info_at(&AppPath::legacy_unchecked(repo_root))
+                .await
+        })
     }
 
     /// `false`, and `listing_watch_coverage` stays at the trait's `None`: these
@@ -631,11 +656,11 @@ impl PasswordLocked for ResticVolume {
 /// every transfer come for free: that's what makes restoring a whole folder out
 /// of a snapshot work at all.
 impl ScanSource for ResticVolume {
-    fn scan_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
+    fn scan_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
         self.get_metadata(path)
     }
 
-    fn scan_list<'a>(&'a self, path: &'a Path) -> Walking<'a, Vec<FileEntry>> {
+    fn scan_list<'a>(&'a self, path: &'a AppPath) -> Walking<'a, Vec<FileEntry>> {
         self.list_directory(path, None)
     }
 
