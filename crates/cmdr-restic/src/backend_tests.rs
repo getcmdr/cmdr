@@ -1,4 +1,5 @@
 use super::VolumeBackend;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{InMemoryVolume, ListingProgress, Volume, VolumeError, VolumeRandomReader};
@@ -45,13 +46,13 @@ async fn layout_volume(volume: InMemoryVolume) -> Arc<InMemoryVolume> {
     ];
     for dir in ["keys", "snapshots", "index", "data", "data/ab", "data/cd"] {
         volume
-            .create_directory(&PathBuf::from(format!("{ROOT}/{dir}")))
+            .create_directory(&AppPath::legacy_unchecked(&PathBuf::from(format!("{ROOT}/{dir}"))))
             .await
             .expect("mkdir");
     }
     for (path, content) in &files {
         volume
-            .create_file(Path::new(path), content)
+            .create_file(&AppPath::legacy_unchecked(Path::new(path)), content)
             .await
             .expect("write fixture file");
     }
@@ -108,7 +109,7 @@ async fn the_config_lists_as_one_default_id() {
 async fn a_missing_config_lists_as_none() {
     let parent = layout_volume(InMemoryVolume::new("parent")).await;
     parent
-        .delete(Path::new(&format!("{ROOT}/config")))
+        .delete(&AppPath::legacy_unchecked(Path::new(&format!("{ROOT}/config"))))
         .await
         .expect("rm config");
     let be = backend(&parent);
@@ -196,7 +197,11 @@ async fn every_write_is_refused_and_counted() {
     assert_eq!(be.write_attempts(), 3);
     // And the parent is untouched.
     let snapshot = parent
-        .read_range(Path::new(&format!("{ROOT}/snapshots/{SNAP}")), 0, 100)
+        .read_range(
+            &AppPath::legacy_unchecked(Path::new(&format!("{ROOT}/snapshots/{SNAP}"))),
+            0,
+            100,
+        )
         .await
         .expect("still there");
     assert_eq!(snapshot, b"snapshot");
@@ -208,7 +213,10 @@ async fn add_keys(parent: &InMemoryVolume, first: usize, count: usize, json: imp
     for i in first..first + count {
         let hex = format!("{:064x}", 0xe000 + i);
         parent
-            .create_file(&PathBuf::from(format!("{ROOT}/keys/{hex}")), &json(i - first))
+            .create_file(
+                &AppPath::legacy_unchecked(&PathBuf::from(format!("{ROOT}/keys/{hex}"))),
+                &json(i - first),
+            )
             .await
             .expect("key file");
         ids.push(id(&hex));
@@ -303,7 +311,8 @@ impl VolumeRandomReader for CountingReader {
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + '_>> {
-        self.inner.read_range(&self.path, offset, len)
+        self.inner
+            .read_range(&AppPath::legacy_unchecked(&self.path), offset, len)
     }
 
     fn close(self: Box<Self>) -> Pin<Box<dyn Future<Output = Result<(), VolumeError>> + Send>> {
@@ -317,7 +326,7 @@ impl Volume for ReaderParent {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
@@ -327,7 +336,7 @@ impl Volume for ReaderParent {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         self.inner.list_directory(path, on_progress)
@@ -335,14 +344,14 @@ impl Volume for ReaderParent {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
 
     fn read_range<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         offset: u64,
         len: usize,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, VolumeError>> + Send + 'a>> {
@@ -351,10 +360,13 @@ impl Volume for ReaderParent {
 
     fn open_random_reader<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn VolumeRandomReader>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
-            let size = self.inner.get_metadata(path).await?.size.unwrap_or(0);
+            let path_app = path;
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
+            let size = self.inner.get_metadata(path_app).await?.size.unwrap_or(0);
             self.opens.fetch_add(1, Ordering::SeqCst);
             Ok(Box::new(CountingReader {
                 inner: Arc::clone(&self.inner),
@@ -378,14 +390,17 @@ fn backend_over(parent: &Arc<ReaderParent>) -> Arc<VolumeBackend> {
 /// Writes `count` more packs, each 100 bytes, and returns their ids.
 async fn add_packs(parent: &InMemoryVolume, count: usize) -> Vec<Id> {
     parent
-        .create_directory(&PathBuf::from(format!("{ROOT}/data/ee")))
+        .create_directory(&AppPath::legacy_unchecked(&PathBuf::from(format!("{ROOT}/data/ee"))))
         .await
         .expect("mkdir");
     let mut ids = Vec::new();
     for i in 0..count {
         let hex = format!("ee{:062x}", i);
         parent
-            .create_file(&PathBuf::from(format!("{ROOT}/data/ee/{hex}")), &[i as u8; 100])
+            .create_file(
+                &AppPath::legacy_unchecked(&PathBuf::from(format!("{ROOT}/data/ee/{hex}"))),
+                &[i as u8; 100],
+            )
             .await
             .expect("pack");
         ids.push(id(&hex));
@@ -538,7 +553,7 @@ impl Volume for SizelessParent {
         self.inner.name()
     }
 
-    fn root(&self) -> &Path {
+    fn root(&self) -> &AppPath {
         self.inner.root()
     }
 
@@ -548,7 +563,7 @@ impl Volume for SizelessParent {
 
     fn list_directory<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
         on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
         Box::pin(async move {
@@ -562,14 +577,14 @@ impl Volume for SizelessParent {
 
     fn get_metadata<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
         self.inner.get_metadata(path)
     }
 
     fn open_read_stream<'a>(
         &'a self,
-        path: &'a Path,
+        path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<Box<dyn cmdr_fs::volume::VolumeReadStream>, VolumeError>> + Send + 'a>>
     {
         self.inner.open_read_stream(path)

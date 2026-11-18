@@ -9,6 +9,7 @@ use super::ResticVolume;
 use crate::hub::ResticRepos;
 use crate::path::VIRTUAL_ENTRY_NAME;
 use crate::test_fixtures::{self, FixtureRepo};
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError, VolumeReadStream};
@@ -67,7 +68,10 @@ impl Pruned {
     async fn find_source(volume: &ResticVolume) -> PathBuf {
         let mut dir = Path::new(ROOT).join(VIRTUAL_ENTRY_NAME).join("latest");
         loop {
-            let entries = volume.list_directory(&dir, None).await.expect("lists");
+            let entries = volume
+                .list_directory(&AppPath::legacy_unchecked(&dir), None)
+                .await
+                .expect("lists");
             if entries.iter().any(|e| e.name == "a.txt") {
                 return dir;
             }
@@ -111,13 +115,13 @@ async fn after_a_prune_elsewhere_a_listing_and_a_read_reload_the_index_once() {
 
     let nested = rig
         .volume
-        .list_directory(&rig.folder.join("nested"), None)
+        .list_directory(&AppPath::legacy_unchecked(&rig.folder.join("nested")), None)
         .await
         .expect("a tree the stale index points into a deleted pack lists after a reload");
     assert_eq!(nested.iter().map(|e| e.name.as_str()).collect::<Vec<_>>(), ["b.bin"]);
     let mut stream = rig
         .volume
-        .open_read_stream(&rig.folder.join("a.txt"))
+        .open_read_stream(&AppPath::legacy_unchecked(&rig.folder.join("a.txt")))
         .await
         .expect("opens");
     assert_eq!(read_to_end(&mut stream).await.expect("reads"), b"hello");
@@ -130,7 +134,7 @@ async fn a_stream_opened_before_a_prune_elsewhere_reads_on_through_a_reload() {
     let rig = Pruned::new().await;
     let mut stream = rig
         .volume
-        .open_read_stream(&rig.folder.join("nested/b.bin"))
+        .open_read_stream(&AppPath::legacy_unchecked(&rig.folder.join("nested/b.bin")))
         .await
         .expect("opens");
 
@@ -147,7 +151,7 @@ async fn a_range_read_after_a_prune_elsewhere_reloads_the_index() {
 
     let bytes = rig
         .volume
-        .read_range(&rig.folder.join("nested/b.bin"), 1_000, 10)
+        .read_range(&AppPath::legacy_unchecked(&rig.folder.join("nested/b.bin")), 1_000, 10)
         .await
         .expect("reads after a reload");
     assert_eq!(bytes, big_bytes()[1_000..1_010]);
@@ -159,22 +163,31 @@ async fn a_range_read_after_a_prune_elsewhere_reloads_the_index() {
 async fn a_pack_missing_after_a_fresh_load_is_a_real_not_found() {
     let rig = Pruned::new().await;
     let data = Path::new(ROOT).join("data");
-    for subdir in rig.parent.list_directory(&data, None).await.expect("lists") {
+    for subdir in rig
+        .parent
+        .list_directory(&AppPath::legacy_unchecked(&data), None)
+        .await
+        .expect("lists")
+    {
         for pack in rig
             .parent
-            .list_directory(&data.join(&subdir.name), None)
+            .list_directory(&AppPath::legacy_unchecked(&data.join(&subdir.name)), None)
             .await
             .expect("lists")
         {
             rig.parent
-                .delete(&data.join(&subdir.name).join(&pack.name))
+                .delete(&AppPath::legacy_unchecked(&data.join(&subdir.name).join(&pack.name)))
                 .await
                 .expect("deletes");
         }
     }
 
     // The open reads the folder's tree (gone too), or the read the file's blob.
-    let read = match rig.volume.open_read_stream(&rig.folder.join("a.txt")).await {
+    let read = match rig
+        .volume
+        .open_read_stream(&AppPath::legacy_unchecked(&rig.folder.join("a.txt")))
+        .await
+    {
         Ok(mut stream) => read_to_end(&mut stream).await,
         Err(err) => Err(err),
     };

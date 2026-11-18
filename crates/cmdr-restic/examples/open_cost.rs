@@ -38,6 +38,7 @@
 #![allow(clippy::print_stdout, reason = "a measurement harness prints its measurements")]
 
 use bytes::Bytes;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::host::VolumeHost;
 use cmdr_fs::volume::{ListingPhase, ListingProgress, MountClass, Volume, VolumeError, VolumeRandomReader};
 use cmdr_restic::{ResticRepos, ResticVolume, VIRTUAL_ENTRY_NAME};
@@ -127,7 +128,10 @@ impl CountingBackend {
     }
 
     fn list_dir(&self, dir: &Path) -> RusticResult<Vec<(Id, u32)>> {
-        let entries = match self.handle.block_on(self.parent.list_directory(dir, None)) {
+        let entries = match self
+            .handle
+            .block_on(self.parent.list_directory(&AppPath::legacy_unchecked(dir), None))
+        {
             Ok(entries) => entries,
             Err(VolumeError::NotFound(_)) => return Ok(Vec::new()),
             Err(err) => return Err(io_error(err)),
@@ -180,7 +184,10 @@ impl CountingBackend {
                 return Ok(Some(reader));
             }
         }
-        let reader = Arc::new(self.handle.block_on(self.parent.open_random_reader(path))?);
+        let reader = Arc::new(
+            self.handle
+                .block_on(self.parent.open_random_reader(&AppPath::legacy_unchecked(path)))?,
+        );
         let mut held = lock(held);
         held.push((path.to_path_buf(), Arc::clone(&reader)));
         if held.len() > 8 {
@@ -211,7 +218,7 @@ impl ReadBackend for CountingBackend {
                 let data = self.root.join("data");
                 let subdirs = self
                     .handle
-                    .block_on(self.parent.list_directory(&data, None))
+                    .block_on(self.parent.list_directory(&AppPath::legacy_unchecked(&data), None))
                     .map_err(io_error)?;
                 let mut out = Vec::new();
                 for sub in subdirs.into_iter().filter(|e| e.is_directory) {
@@ -227,7 +234,7 @@ impl ReadBackend for CountingBackend {
         let path = self.path_of(tpe, id);
         self.counted(tpe, || {
             self.handle.block_on(async {
-                let mut stream = self.parent.open_read_stream(&path).await?;
+                let mut stream = self.parent.open_read_stream(&AppPath::legacy_unchecked(&path)).await?;
                 let mut out = Vec::new();
                 while let Some(chunk) = stream.next_chunk().await {
                     out.extend_from_slice(&chunk?);
@@ -241,9 +248,11 @@ impl ReadBackend for CountingBackend {
         let path = self.path_of(tpe, id);
         self.counted(tpe, || match self.held_reader(tpe, &path)? {
             Some(reader) => self.handle.block_on(reader.read_at(u64::from(offset), length as usize)),
-            None => self
-                .handle
-                .block_on(self.parent.read_range(&path, u64::from(offset), length as usize)),
+            None => self.handle.block_on(self.parent.read_range(
+                &AppPath::legacy_unchecked(&path),
+                u64::from(offset),
+                length as usize,
+            )),
         })
     }
 
@@ -546,7 +555,10 @@ fn crate_load(rt: &Runtime, host: VolumeHost, parent: Arc<dyn Volume>, root: Pat
     let sampler = GlobalPoolSampler::start();
     let start = Instant::now();
     let entries = rt
-        .block_on(volume.list_directory(&root.join(VIRTUAL_ENTRY_NAME).join("latest"), Some(&on_progress)))
+        .block_on(volume.list_directory(
+            &AppPath::legacy_unchecked(&root.join(VIRTUAL_ENTRY_NAME).join("latest")),
+            Some(&on_progress),
+        ))
         .expect("lists latest");
     println!("index load + list latest: {} entries in {}", entries.len(), secs(start));
     sampler.stop_and_report();
@@ -589,7 +601,9 @@ fn lifecycle(rt: &Runtime, host: VolumeHost, parent: Arc<dyn Volume>, root: Path
 
     let latest = root.join(VIRTUAL_ENTRY_NAME).join("latest");
     let start = Instant::now();
-    let entries = rt.block_on(volume.list_directory(&latest, None)).expect("lists latest");
+    let entries = rt
+        .block_on(volume.list_directory(&AppPath::legacy_unchecked(&latest), None))
+        .expect("lists latest");
     println!("index load + list latest: {} entries in {}", entries.len(), secs(start));
     print_footprint("after the index load");
     print_malloc_large();
@@ -601,7 +615,9 @@ fn lifecycle(rt: &Runtime, host: VolumeHost, parent: Arc<dyn Volume>, root: Path
         let mut next = Vec::new();
         for dir in frontier {
             listed += 1;
-            let entries = rt.block_on(volume.list_directory(&dir, None)).expect("lists a folder");
+            let entries = rt
+                .block_on(volume.list_directory(&AppPath::legacy_unchecked(&dir), None))
+                .expect("lists a folder");
             next.extend(
                 entries
                     .iter()
