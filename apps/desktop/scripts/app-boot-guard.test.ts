@@ -76,6 +76,16 @@ interface RunOptions {
   strings?: Record<string, unknown>
 }
 
+/** The `window` the guard sees: the IPC stand-in, and the platform and conventions globals when the test sets them. */
+function fakeWindowFor(options: RunOptions): Record<string, unknown> {
+  const fakeWindow: Record<string, unknown> = {
+    __TAURI_INTERNALS__: options.invoke ? { invoke: options.invoke } : undefined,
+  }
+  if ('platform' in options) fakeWindow.__CMDR_PLATFORM__ = options.platform
+  if ('conventions' in options) fakeWindow.__CMDR_CONVENTIONS__ = options.conventions
+  return fakeWindow
+}
+
 /**
  * Executes the guard with the given environment and returns what it did.
  * @param options.capabilities which Safari 15.4 features the fake WebKit has (all, by default)
@@ -96,11 +106,7 @@ function runGuard(options: RunOptions = {}): { blocked: boolean; lang: string; t
 
   const fakeCrypto = capabilities.randomUUID ? { randomUUID: () => 'x' } : {}
   const fakeCss = { supports: (query: string) => (query.includes('selector(') ? capabilities.hasSelector : true) }
-  const fakeWindow: Record<string, unknown> = {
-    __TAURI_INTERNALS__: options.invoke ? { invoke: options.invoke } : undefined,
-  }
-  if ('platform' in options) fakeWindow.__CMDR_PLATFORM__ = options.platform
-  if ('conventions' in options) fakeWindow.__CMDR_CONVENTIONS__ = options.conventions
+  const fakeWindow = fakeWindowFor(options)
   const fakeNavigator = { languages: options.languages ?? ['en-US'], language: (options.languages ?? ['en-US'])[0] }
 
   const source = guardSource().replace(
