@@ -18,14 +18,14 @@ fn an_instance_sharing_the_client_answers_to_its_own_name_and_root() {
     let wide = narrow.sharing_connection("test_user_1@127.0.0.1", Path::new("/Photos"));
 
     assert_eq!(wide.name(), "test_user_1@127.0.0.1");
-    assert_eq!(wide.root(), Path::new(&format!("{PREFIX}/Photos")));
+    assert_eq!(wide.root().as_std_legacy(), Path::new(&format!("{PREFIX}/Photos")));
     assert_eq!(
         wide.to_remote_path(Path::new(&format!("{PREFIX}/Photos/trip")))
             .expect("under the new root"),
         "/Photos/trip"
     );
     assert_eq!(
-        narrow.root(),
+        narrow.root().as_std_legacy(),
         Path::new(&format!("{PREFIX}/Photos/2024")),
         "the instance it was built from keeps its own root: an in-flight holder still uses it"
     );
