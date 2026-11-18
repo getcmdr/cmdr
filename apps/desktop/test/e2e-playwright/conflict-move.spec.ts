@@ -161,20 +161,19 @@ test.describe('Move rollback', () => {
     // Verify the Rollback button is shown (not just "Cancel"). Poll briefly,
     // because the button container becomes visible a frame or two before its children
     // render under Svelte; a one-shot read can miss it.
-    const hasRollback = await pollUntil(
-      tauriPage,
-      async () =>
-        tauriPage.evaluate<boolean>(`(function(){
-          var btns = document.querySelectorAll('.conflict-cancel button');
-          for (var i=0; i<btns.length; i++) {
-            // B answers with the live Rollback; a blocked one carries no key.
-            if ((btns[i].getAttribute('aria-keyshortcuts') || '') === 'B') return true;
-          }
-          return false;
-        })()`),
-      waitBudget(2000),
-    )
-    expect(hasRollback).toBe(true)
+    // B answers with the live Rollback; a blocked one carries no key. ❗ `~=`, a token
+    // match: on Linux and Windows the dialog's access keys add `Alt+L` to the same
+    // attribute one frame after the body renders (`#lib/ui/access-keys`), so an exact
+    // `=== 'B'` passed only when the poll beat that frame.
+    await expect
+      .poll(
+        async () =>
+          tauriPage.evaluate<boolean>(
+            `document.querySelector('.conflict-cancel button[aria-keyshortcuts~="B"]') !== null`,
+          ),
+        { timeout: waitBudget(2000) },
+      )
+      .toBeTruthy()
 
     // Click Rollback to cancel the move mid-conflict. `clickButtonByText` waits
     // for the button to be actionable, not merely present.

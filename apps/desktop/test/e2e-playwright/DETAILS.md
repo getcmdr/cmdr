@@ -911,6 +911,12 @@ line-level scan for a discarded `Promise<boolean>` return, and the trap here had
 (`expect(clicked).toBe(true)`): the lie was inside the predicate, which claimed a press it never made. Same family of
 bug ("a helper reports success it never achieved"), opposite side of the assertion.
 
+**Find a button by its key with a token match** (`button[aria-keyshortcuts~="B"]`), ❌ never `=== 'B'`. On Linux and
+Windows a dialog's access keys (`src/lib/ui/access-keys.ts`) append `Alt+<letter>` to the same attribute one animation
+frame after the body renders, so an exact match passes only when the read beats that frame. It flaked "Move rollback"
+about one run in 10 on both a branch and `main` (Linux Docker lane, `--repeat-each`, 2026-11-18), and twice in a row on
+CI, where the frame usually wins.
+
 ### Ark/zag widgets need a real pointer sequence
 
 `clickButtonByText` covers ordinary buttons. An Ark/zag widget (`ui/Select` above all) needs more: its trigger toggles
