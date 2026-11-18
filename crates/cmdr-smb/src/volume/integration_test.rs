@@ -771,7 +771,7 @@ async fn smb_integration_scan_for_copy_batch_mixed() {
     // per_path preserves input order and type info.
     assert_eq!(batch.per_path.len(), paths.len());
     for (i, (path, scan)) in batch.per_path.iter().enumerate() {
-        assert_eq!(path.as_std_legacy(), &paths[i]);
+        assert_eq!(&*path.as_std_legacy(), &paths[i]);
         let is_dir_name = path.as_std_legacy().to_string_lossy().ends_with("/nested");
         assert_eq!(scan.top_level_is_directory, is_dir_name, "path #{} type mismatch", i);
     }
