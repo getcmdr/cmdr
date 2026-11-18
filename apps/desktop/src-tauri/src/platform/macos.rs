@@ -36,8 +36,10 @@ pub(crate) fn capabilities() -> PlatformCapabilities {
         full_screen: true,
         homebrew_cask: true,
         global_shortcuts: true,
-        // The Mach queries behind both readings (`task_info`, `mach_vm_region`, `thread_info`).
-        process_diagnostics: true,
+        // The Mach queries behind the memory map (`task_info`, `mach_vm_region`).
+        memory_diagnostics: true,
+        // `proc_pidinfo` per thread (`cmdr_fs::process_cpu`).
+        cpu_diagnostics: true,
     }
 }
 

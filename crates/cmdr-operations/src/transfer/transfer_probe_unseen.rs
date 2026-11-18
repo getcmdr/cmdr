@@ -97,7 +97,7 @@ impl CpuWitness {
 
     /// The process's CPU since the baseline, as one log fragment, and a fresh
     /// baseline from the reading it took. Empty when the platform has no
-    /// reading (anything but macOS) or the kernel refused one.
+    /// reading (Windows, for now) or the kernel refused one.
     pub(super) fn describe_since_baseline(&mut self, now: Duration) -> String {
         let Some(end) = CpuSnapshot::take() else {
             return String::new();

@@ -114,8 +114,8 @@ Depth for the handlers shared with outside clients. `CLAUDE.md` holds the must-k
 - **`cpu.rs`**: `cpu_diagnostics`, `memory_diagnostics`' CPU sibling, over `cmdr_fs::process_cpu` (the FFI and the
   diff live there). `measure` (default) blocks for `windowSeconds` (default 10, max 60, the `await` tool's ceiling);
   `mark` stores one process-wide baseline and `sinceMark` diffs against it without blocking, so an idle census of
-  20 minutes never holds an MCP call open. The mark stays put, so repeated reads are cumulative. macOS only, not offered
-  elsewhere, like its sibling.
+  20 minutes never holds an MCP call open. The mark stays put, so repeated reads are cumulative. Offered on macOS and Linux
+  (`PlatformCapabilities::cpu_diagnostics`), not on Windows yet.
 - **`tests.rs`**: unit tests for the dispatcher and shared helpers; per-category tests live alongside their handlers.
 
 ## The search result

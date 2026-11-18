@@ -17089,10 +17089,15 @@ export type PlatformCapabilities = {
   // A system-wide shortcut works from any app (the global "go to latest download" shortcut).
   globalShortcuts: boolean
   /**
-   *  Cmdr can read its own process's memory map and per-thread CPU (the `memory_diagnostics` and
-   *  `cpu_diagnostics` tools). No UI asks: it decides whether those tools exist on this OS.
+   *  Cmdr can read its own process's memory map (the `memory_diagnostics` tool). No UI asks: it
+   *  decides whether that tool exists on this OS.
    */
-  processDiagnostics: boolean
+  memoryDiagnostics: boolean
+  /**
+   *  Cmdr can read its own threads' names and CPU times (the `cpu_diagnostics` tool). No UI asks:
+   *  it decides whether that tool exists on this OS.
+   */
+  cpuDiagnostics: boolean
 }
 
 /**

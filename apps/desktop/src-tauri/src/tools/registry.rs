@@ -71,15 +71,18 @@ pub struct ToolHints {
 pub enum Needs {
     /// The system's color tags on files.
     ColorTags,
-    /// Readings of Cmdr's own process: its memory map and per-thread CPU.
-    ProcessDiagnostics,
+    /// A reading of Cmdr's own memory map.
+    MemoryDiagnostics,
+    /// A reading of Cmdr's own threads' names and CPU times.
+    CpuDiagnostics,
 }
 
 impl Needs {
     pub fn met_by(self, offered: &PlatformCapabilities) -> bool {
         match self {
             Needs::ColorTags => offered.color_tags,
-            Needs::ProcessDiagnostics => offered.process_diagnostics,
+            Needs::MemoryDiagnostics => offered.memory_diagnostics,
+            Needs::CpuDiagnostics => offered.cpu_diagnostics,
         }
     }
 

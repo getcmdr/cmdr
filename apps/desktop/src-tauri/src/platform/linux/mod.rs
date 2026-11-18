@@ -47,8 +47,10 @@ pub(crate) fn capabilities() -> PlatformCapabilities {
         // The cask is the macOS distribution.
         homebrew_cask: false,
         global_shortcuts: x11_session(),
-        // Both readings are Mach queries; a `/proc` reader would flip this on.
-        process_diagnostics: false,
+        // The memory map is Mach queries; a `/proc/self/smaps` reader would flip this on.
+        memory_diagnostics: false,
+        // `/proc/self/task` per thread (`cmdr_fs::process_cpu`).
+        cpu_diagnostics: true,
     }
 }
 

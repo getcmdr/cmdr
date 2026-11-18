@@ -109,7 +109,7 @@ the next section.
   and takes `~\` too, `expand_tilde_with` tests each flavor everywhere), `twin_path` (a same-named twin's row path:
   `folder_of` past its pick, and `shown`, the one rule that takes a pick out of anything a person reads;
   `crates/cmdr-mtp/src/connection/DETAILS.md` § "Same-named siblings"), `byte_size` (`format_size`, the IEC byte count
-  log lines and model-facing answers read), `thread_qos`, `thread_cpu`, `process_cpu/`, `process_memory`,
+  log lines and model-facing answers read), `thread_qos`, `thread_cpu/`, `process_cpu/`, `process_memory`,
   `utility_pool.rs` (`UtilityPool`, a keep-alive pool of `Utility`-QoS threads, so background work that comes in
   streams, like index walks, reuses threads instead of creating one per job).
 - `attr_buf.rs` (macOS): the packed record decoder every `getattrlist` / `getattrlistbulk` caller shares. § "`attr_buf`:
@@ -349,16 +349,33 @@ through a local helper, a fully-qualified call inline in an expression, a `use` 
   from the index trees, none of which can sensibly be injected. `thread_qos` in particular is the property that kept
   indexing in-process at all: a `tokio::runtime::Handle` does nothing for thread scheduling class. `thread_cpu` reads
   `CLOCK_THREAD_CPUTIME_ID` for the CALLING thread, so a thread can log its own cost cheaply; it's cumulative on
-  purpose, so a window is the difference of two readings, and the index writer's heartbeat is its one consumer today
-  (`../cmdr-index/src/indexing/writer/probe_stats.rs`).
+  purpose, so a window is the difference of two readings. Its consumers are the index writer's heartbeat
+  (`../cmdr-index/src/indexing/writer/probe_stats.rs`) and the rescan walk's log line. Per OS in `thread_cpu/platform/`:
+  macOS and Linux share the POSIX clock (`unix.rs`; on Linux it's the scheduler's exact nanosecond runtime), Windows
+  answers `None` until it gains `GetThreadTimes` (task 13 of `docs/specs/windows-port-plan.md`).
 - **`process_cpu/`.** The whole-process sibling: every live thread's name and cumulative time (`proc_pidinfo` with
   `PROC_PIDLISTTHREADIDS` + `PROC_PIDTHREADID64INFO`, which `ps -M` can't give because it has no names), the process
   total from `getrusage` (exited threads included), and the task's wakeup and context-switch counters.
   `CpuCensus::between` diffs two snapshots and is pure; exited threads are the process delta minus the live threads'
   deltas. ❌ Don't read `proc_taskinfo.pti_total_user` as nanoseconds: it's Mach ticks (125/3 ns on Apple silicon). Its
-  consumer is the `cpu_diagnostics` MCP tool (`apps/desktop/src-tauri/src/tools/actions/cpu.rs`). Verified on macOS 27.0
-  by `process_cpu::macos`'s live tests (a named busy thread lands on its name; a thread exiting inside the window lands
-  in the exited share), 2026-10-20.
+  consumers are the `cpu_diagnostics` MCP tool (`apps/desktop/src-tauri/src/tools/actions/cpu.rs`) and the transfer
+  stall log's CPU line (`../cmdr-operations/src/transfer/transfer_probe_unseen.rs`). Per OS in `process_cpu/platform/`,
+  with `getrusage` for the process total and the live tests shared by both Unixes:
+  - **macOS**: `proc_pidinfo` per thread, Mach `TASK_POWER_INFO` for wakeups, `PROC_PIDTASKINFO` for the counters.
+  - **Linux**: `/proc/self/task/<tid>/stat` for the name (`comm`, cut to 15 bytes; an unnamed thread carries the
+    process's name) and the user/system tick counts, `schedstat` for the exact nanosecond runtime, `getrusage` for
+    context switches and faults. No wakeups and no syscall counts (`None`, so the census says `null`, never 0).
+  - **Windows**: none yet (`GetThreadTimes` over a Toolhelp thread walk, task 13 of `docs/specs/windows-port-plan.md`).
+  - **Decision/Why: on Linux the thread total is `schedstat`, split by the tick ratio.** Without `VIRT_CPU_ACCOUNTING`
+    the kernel only knows user against system from the timer tick; `stat` scales the ticks to the exact runtime
+    (`cputime_adjust`) and then hands them out cut to whole ticks, 10 ms at `CLK_TCK` 100. Summed over ~50 threads that
+    cut alone would push up to half a second a window into the exited share, which is the process delta minus the live
+    threads'. So the total is exact and only the split is the kernel's estimate, and `CpuCensus::between` diffs a
+    thread's TOTAL as the difference of its sums: a split that shifts between readings can't count twice
+    (`census_tests.rs`). The fallback without `schedstat` (`SCHED_INFO` off) is the ticks.
+  - Verified on macOS 27.0 by the live tests (a named busy thread lands on its name; a thread exiting inside the window
+    lands in the exited share), 2026-10-20, and on Linux by the same tests in the `rust-tests-linux` Docker lane,
+    2026-11-18.
 - **`utility_pool`.** The pooled half of `thread_qos`: a thread that runs only `Utility` work for its whole life can be
   lowered without leaking the class onto anything else, which is what makes pooling background threads legal. It's here
   beside `thread_qos` for that reason; its consumers today are the index walker and the rescan drain in `cmdr-index`.

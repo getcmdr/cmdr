@@ -359,10 +359,6 @@
     "apps/desktop/src-tauri/src/tools/actions/app.rs": {
       "outsideSeam": 2
     },
-    "apps/desktop/src-tauri/src/tools/actions/cpu.rs": {
-      "negated": 1,
-      "outsideSeam": 3
-    },
     "apps/desktop/src-tauri/src/tools/actions/eject.rs": {
       "negated": 1,
       "outsideSeam": 5
@@ -420,9 +416,6 @@
     "crates/cmdr-fs/src/mapped_file_faults/proc_maps.rs": {
       "outsideSeam": 1
     },
-    "crates/cmdr-fs/src/process_cpu/mod.rs": {
-      "outsideSeam": 3
-    },
     "crates/cmdr-fs/src/process_memory/mod.rs": {
       "outsideSeam": 16
     },
@@ -431,9 +424,6 @@
     },
     "crates/cmdr-fs/src/testing/mod.rs": {
       "outsideSeam": 2
-    },
-    "crates/cmdr-fs/src/thread_cpu.rs": {
-      "outsideSeam": 3
     },
     "crates/cmdr-fs/src/thread_qos.rs": {
       "outsideSeam": 3

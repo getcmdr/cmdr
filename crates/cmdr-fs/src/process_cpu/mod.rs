@@ -6,9 +6,10 @@
 //! "A better CPU instrument" is the recipe it replaces):
 //!
 //! - [`CpuSnapshot::take`] reads every live thread's name and cumulative user and system
-//!   time (`proc_pidinfo` with `PROC_PIDLISTTHREADIDS` + `PROC_PIDTHREADID64INFO`), the
-//!   whole process's cumulative CPU (`getrusage`, which keeps exited threads' time), and
-//!   the task's wakeup and context-switch counters (`TASK_POWER_INFO`, `PROC_PIDTASKINFO`).
+//!   time, the whole process's cumulative CPU (`getrusage`, which keeps exited threads'
+//!   time), and what the OS counts of wakeups and context switches. Per OS in `platform/`:
+//!   macOS asks `proc_pidinfo` and Mach, Linux reads `/proc/self/task`, Windows and the
+//!   browser have no reader yet.
 //! - [`CpuCensus::between`] diffs two snapshots. It's pure, so the arithmetic is tested
 //!   without a kernel.
 //!
@@ -17,9 +18,11 @@
 //! `IDLEW` read static across intervals on macOS 27). Two monotone counters can't lie that
 //! way. Same argument as [`crate::thread_cpu`], which reads only the CALLING thread.
 //!
-//! **Threads match on their kernel thread ID**, which is unique for the life of the
-//! system, so a reused `pthread_t` can't splice two threads into one. A thread only in the
-//! later snapshot counts in full; one only in the earlier snapshot exited.
+//! **Threads match on their kernel thread ID**, never a `pthread_t`, which the C library
+//! reuses. On macOS the ID is unique for the life of the system; Linux recycles a TID only
+//! after the kernel's counter wraps `pid_max` (millions on a modern 64-bit host), far
+//! beyond one window. A thread only in the later snapshot counts in full; one only in the
+//! earlier snapshot exited.
 //!
 //! **Exited threads are the process delta minus the live threads' deltas.** It's the only
 //! way the churn threads (walkers, `rescan-subtree`, tokio's blocking pool) show up at
@@ -28,11 +31,12 @@
 //! **Privacy**: thread names are set by our code and our dependencies (`tokio-rt-worker`,
 //! `index-writer`), never from user data. Everything else is a count or a duration.
 //!
-//! macOS only: on other platforms [`CpuSnapshot::take`] returns `None`.
+//! Linux names come from `comm`, which the kernel cuts to 15 bytes (`tokio-runtime-w`),
+//! and a thread that never named itself carries the process's name there, so every Linux
+//! thread has a name.
 
 mod census;
-#[cfg(target_os = "macos")]
-mod macos;
+mod platform;
 
 pub use census::{
     CpuCensus, CpuShare, ExitedThreads, TaskCounterDeltas, ThreadCensus, ThreadCountChange, ThreadGroup, WakeupDeltas,
@@ -43,7 +47,7 @@ use std::time::{Duration, Instant};
 /// One live thread's cumulative CPU at the moment of a snapshot.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ThreadSample {
-    /// The kernel's thread ID: unique for the life of the system, never reused.
+    /// The kernel's thread ID (macOS's `thread_id`, Linux's TID).
     pub id: u64,
     /// The name the thread gave itself, or `None` for an unnamed one.
     pub name: Option<String>,
@@ -67,16 +71,17 @@ pub struct WakeupCounters {
     pub timer_bin_2: u64,
 }
 
-/// The task-wide event counters from `PROC_PIDTASKINFO`, cumulative. 32-bit in the
-/// kernel, so they wrap; [`CpuCensus::between`] diffs them modulo 2^32.
+/// The task-wide event counters, cumulative: `PROC_PIDTASKINFO` on macOS (32-bit in the
+/// kernel, so they wrap; [`CpuCensus::between`] diffs them modulo 2^32), `getrusage` on
+/// Linux.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TaskCounters {
     /// Context switches across every thread, exited ones included.
     pub context_switches: u64,
-    /// BSD system calls.
-    pub unix_syscalls: u64,
-    /// Mach traps.
-    pub mach_syscalls: u64,
+    /// BSD system calls, or `None` where the OS doesn't count them (Linux).
+    pub unix_syscalls: Option<u64>,
+    /// Mach traps, or `None` off macOS.
+    pub mach_syscalls: Option<u64>,
     /// Page faults.
     pub faults: u64,
 }
@@ -92,7 +97,7 @@ pub struct CpuSnapshot {
     pub process_system: Duration,
     /// Every thread alive at the reading.
     pub threads: Vec<ThreadSample>,
-    /// `None` if the kernel refused the query.
+    /// `None` if the kernel refused the query or has none (everywhere but macOS).
     pub wakeups: Option<WakeupCounters>,
     /// `None` if the kernel refused the query.
     pub counters: Option<TaskCounters>,
@@ -103,13 +108,6 @@ impl CpuSnapshot {
     /// has none. Costs one syscall per thread plus a handful, so it's cheap enough to take
     /// twice a second, and far too costly to take per event.
     pub fn take() -> Option<Self> {
-        #[cfg(target_os = "macos")]
-        {
-            macos::take_snapshot()
-        }
-        #[cfg(any(target_os = "linux", target_os = "windows", target_family = "wasm"))]
-        {
-            None
-        }
+        platform::take_snapshot()
     }
 }
