@@ -179,6 +179,13 @@ the backend registers it, a hair before the start command's response lets `trans
 slot. Without the delay the chip could flash for an operation the modal is about to own. The alternative would be a
 second identity crossing IPC purely to claim ownership earlier, which isn't worth a sub-frame flicker.
 
+The session binds only once the chip has settled (`visible`), for the same reason. A session held through the beat
+drained the operation's buffered `write-complete` in the fan-out and was disposed when the dialog's foreground claim
+made the chip let go, so the dialog's fresh session heard only `write-settled` and closed a finished operation as
+cancelled. The fan-out now replays endings to every session anyway (`../file-operations/operation-session/DETAILS.md` §
+"How an operation ended"); this keeps the chip from creating the handoff at all. Measured on the Linux E2E lane: 15 of
+20 MTP deletes needed that replay before this change, 0 after.
+
 The effect behind it depends on the candidate's ID, not on the candidate itself: a `$derived` string doesn't re-notify
 while its value is unchanged, so the 200 ms progress ticks can't keep restarting the timer (which would leave the chip
 hidden forever). It writes `settledId` and reads a plain, non-reactive mirror of "already showing", so it can't
