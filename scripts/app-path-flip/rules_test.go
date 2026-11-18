@@ -87,6 +87,15 @@ func TestE0053RetypesABatchAndAReturn(t *testing.T) {
 	}
 }
 
+func TestE0053RetypesAFullyQualifiedStdPathInAMacroBody(t *testing.T) {
+	text := "macro_rules! fwd {\n    () => {\n        fn exists<'a>(&'a self, path: &'a ::std::path::Path) -> Fut<'a> { todo!() }\n        fn local_path(&self) -> Option<::std::path::PathBuf> { None }\n    };\n}\n"
+	got := run(t, text, diag("E0053", "m", spanOf(t, text, "&'a ::std::path::Path", "", "expected `AppPath`, found `Path`", true)))
+	got = run(t, got, diag("E0053", "m", spanOf(t, got, "Option<::std::path::PathBuf>", "", "expected `AppPathBuf`, found `PathBuf`", true)))
+	if !strings.Contains(got, "path: &'a ::cmdr_fs::app_path::AppPath)") || !strings.Contains(got, "-> Option<::cmdr_fs::app_path::AppPathBuf>") {
+		t.Fatalf("not retyped by its full path:\n%s", got)
+	}
+}
+
 func TestE0053LeavesAReverseMismatchAlone(t *testing.T) {
 	text := implHead + "    fn create_symlink<'a>(&'a self, path: &'a AppPath, target: &'a AppPath) {}\n}\n"
 	got := run(t, text, diag("E0053", "m", spanOf(t, text, "&'a AppPath)", "", "expected `Path`, found `AppPath`", true)))

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"regexp"
 	"strings"
 )
@@ -124,6 +125,12 @@ var bridgeTemporary = regexp.MustCompile(`^AppPath::legacy_unchecked\(\s*(&?\s*[
 // moves, so nothing in the statement runs in a different order; a name the fn already uses
 // stays residue.
 func hoistEdits(src *source, p *diagSpan) []edit {
+	return hoistFrom(src, p, p.ByteStart, nil)
+}
+
+// hoistFrom hoists the bridge temporary spanned by p to before the statement holding from,
+// unless its argument's root is one of the names in bound (a closure's own params).
+func hoistFrom(src *source, p *diagSpan, from int, bound []string) []edit {
 	// The span is the call (the `Cow` temporary), or the borrow of it.
 	expr := strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(string(src.text[p.ByteStart:p.ByteEnd])), "&"))
 	m := bridgeTemporary.FindStringSubmatch(expr)
@@ -135,16 +142,63 @@ func hoistEdits(src *source, p *diagSpan) []edit {
 		return nil
 	}
 	segments := regexp.MustCompile(`\w+`).FindAllString(m[1], -1)
+	for _, b := range bound {
+		if segments[0] == b {
+			return nil
+		}
+	}
 	name := segments[len(segments)-1] + "_app"
 	if len(identUses(src.masked, fn.bodyStart, fn.bodyEnd, name)) > 0 {
 		return nil
 	}
-	at := statementStart(src.masked, p.ByteStart, fn.bodyStart)
+	at := statementStart(src.masked, from, fn.bodyStart)
 	start := p.ByteStart + strings.Index(string(src.text[p.ByteStart:p.ByteEnd]), expr)
 	return []edit{
 		{file: src.path, start: at, end: at, text: "\nlet " + name + " = " + expr + ";", rule: ruleHoist},
 		{file: src.path, start: start, end: start + len(expr), text: name, rule: ruleHoist},
 	}
+}
+
+// ---- E0515: a closure returning a future that borrows a bridge temporary ----
+
+var closureParams = regexp.MustCompile(`(?:move\s+)?\|([^|]*)\|\s*(\{\s*)?$`)
+
+// closureHoistEdits answers E0515 "cannot return value referencing temporary value" on a
+// closure whose whole body is the call returning the future (`|| source.list_directory(
+// &AppPath::legacy_unchecked(&path), None)`, a retry helper's closure): the temporary can't
+// outlive the closure's own call, so it moves to `let path_app = …;` before the statement
+// holding the closure, which the closure then borrows. A plain argument only, and ❌ never
+// one rooted in the closure's own params (`|row| v.rename_work(&…(&row.source))`): residue.
+func closureHoistEdits(d *diagnostic, src *source) []edit {
+	if d.code() != "E0515" || d.Message != "cannot return value referencing temporary value" {
+		return nil
+	}
+	call := d.primary()
+	if call == nil {
+		return nil
+	}
+	head := src.masked[:call.ByteStart]
+	loc := closureParams.FindSubmatchIndex(head)
+	if loc == nil {
+		return nil
+	}
+	if loc[4] >= 0 && !bytes.HasPrefix(bytes.TrimLeft(src.masked[call.ByteEnd:], " \t\r\n"), []byte("}")) {
+		return nil // a block body with more in it than the call
+	}
+	var bound []string
+	for _, prm := range strings.Split(string(head[loc[2]:loc[3]]), ",") {
+		if ident := regexp.MustCompile(`\w+`).FindString(prm); ident != "" {
+			bound = append(bound, ident)
+		}
+	}
+	for i := range d.Spans {
+		s := &d.Spans[i]
+		if s.IsPrimary || s.label() != "temporary value created here" || s.ByteStart < call.ByteStart || s.ByteEnd > call.ByteEnd {
+			continue
+		}
+		return hoistFrom(src, s, loc[0], bound)
+	}
+	return nil
 }
 
 // statementStart walks back from offset to just past the `;`, `{`, or `}` that ends the

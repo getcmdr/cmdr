@@ -140,7 +140,17 @@ func region(d *diagnostic, src *source, p *diagSpan) (int, int) {
 var (
 	stdPathBufWord = regexp.MustCompile(`\b(?:std::path::)?PathBuf\b`)
 	stdPathWord    = regexp.MustCompile(`\b(?:std::path::)?Path\b`)
+	// A macro body spells std fully qualified (`&'a ::std::path::Path`) and needs the typed
+	// name spelled the same way: a bare `::AppPath` names a crate (E0425).
+	qualifiedStdPath = regexp.MustCompile(`::std::path::(Path|PathBuf)\b`)
 )
+
+// retypeStd spells a std path type as its app-path twin, a fully qualified one fully qualified.
+func retypeStd(text string) string {
+	retyped := qualifiedStdPath.ReplaceAllString(text, "::cmdr_fs::app_path::App${1}")
+	retyped = stdPathBufWord.ReplaceAllString(retyped, "AppPathBuf")
+	return stdPathWord.ReplaceAllString(retyped, "AppPath")
+}
 
 // signatureEdits retypes the param or return type rustc points at to the trait's.
 func signatureEdits(src *source, p *diagSpan) []edit {
@@ -149,8 +159,7 @@ func signatureEdits(src *source, p *diagSpan) []edit {
 		return nil
 	}
 	text := string(src.text[p.ByteStart:p.ByteEnd])
-	retyped := stdPathBufWord.ReplaceAllString(text, "AppPathBuf")
-	retyped = stdPathWord.ReplaceAllString(retyped, "AppPath")
+	retyped := retypeStd(text)
 	if retyped == text {
 		return nil
 	}

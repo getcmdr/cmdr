@@ -35,9 +35,9 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
 
 - **E0053 signature**: a `Volume` (or `ScanSource`, `PatchSource`) impl method's param or return type rustc says is
   incompatible with the trait is retyped (`&Path` → `&AppPath`, `&[PathBuf]` → `&[AppPathBuf]`, `PathBuf` →
-  `AppPathBuf`). A reverse mismatch (a link target the trait keeps as `Path`) is left alone. While a method's signature
-  is being retyped, errors in its body are skipped for that round: they're stale (rustc checked the body against the old
-  signature).
+  `AppPathBuf`; a macro body's fully qualified `::std::path::Path` → `::cmdr_fs::app_path::AppPath`). A reverse mismatch
+  (a link target the trait keeps as `Path`) is left alone. While a method's signature is being retyped, errors in its
+  body are skipped for that round: they're stale (rustc checked the body against the old signature).
 - **Body prelude**: an error inside a flipped method's body that names a typed param gives the body
   `let path_std = path.as_std_legacy(); let path: &Path = &path_std;` (a `Vec<PathBuf>` twin for a batch). It goes
   inside the `async move` block(s) when every use is there (a future must own what it borrows), else at the top of the
@@ -83,7 +83,11 @@ Each is pinned by a unit test in `rules_test.go` / `rules_more_test.go` on a sma
   future held in a `let`, a `tokio::join!` arm) moves to `let dir_app = AppPath::legacy_unchecked(&dir);` just before
   the statement. Inside a macro's token tree (a `tokio::select!` branch) the statement is the whole invocation's, so the
   `let` goes before `let x = tokio::select! { … };`, unless an arm's own `=> { … }` block holds it. Only a plain
-  argument moves (nothing in the statement runs in another order); a name the fn already uses stays residue.
+  argument moves (nothing in the statement runs in another order); a name the fn already uses stays residue. Its closure
+  twin: E0515 on a closure whose whole body is the call returning the future
+  (`|| source.list_directory( &AppPath::legacy_unchecked(&path), None)`, a retry helper's closure, `{ … }` around it or
+  not) hoists the temporary before the statement holding the closure, which then borrows it; one rooted in the closure's
+  own params (`|row| …(&row.source)`) stays residue.
 - **E0308 by type pair** (`valueRules`): a std path into a `&AppPath` slot becomes `app_path!("…")` for a canonical
   literal (`isCanonicalLiteral`: a POSIX path of plain names, or `scheme://authority/names`), else
   `&AppPath::legacy_unchecked(…)`; a batch maps each through the bridge; an owned `PathBuf` into an `AppPathBuf` slot is

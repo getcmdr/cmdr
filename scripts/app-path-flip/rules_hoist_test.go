@@ -77,6 +77,27 @@ func TestABridgeTemporaryInASelectArmIsHoistedBeforeTheSelect(t *testing.T) {
 	}
 }
 
+func TestABridgeTemporaryAClosureReturnsIsHoistedBeforeItsStatement(t *testing.T) {
+	text := "async fn t() {\n    let mut children =\n        retry(state, source, &path, || {\n            source.list_directory(&AppPath::legacy_unchecked(&path), None)\n        })\n        .await?;\n}\n"
+	call := "source.list_directory(&AppPath::legacy_unchecked(&path), None)"
+	d := diag("E0515", "cannot return value referencing temporary value",
+		spanOf(t, text, call, "", "returns a value referencing data owned by the current function", true),
+		spanOf(t, text, "AppPath::legacy_unchecked(&path)", "", "temporary value created here", false))
+	got := run(t, text, d)
+	want := "async fn t() { let path_app = AppPath::legacy_unchecked(&path); let mut children = retry(state, source, &path, || { source.list_directory(&path_app, None) }) .await?; }"
+	if !strings.Contains(squash(got), want) {
+		t.Fatalf("not hoisted out of the closure:\n%s", got)
+	}
+	// Rooted in the closure's own param: nothing to hoist it to.
+	own := "async fn t() {\n    let a = join_all(rows.iter().map(|row| v.rename_work(&AppPath::legacy_unchecked(&row.source))));\n}\n"
+	d = diag("E0515", "cannot return value referencing temporary value",
+		spanOf(t, own, "v.rename_work(&AppPath::legacy_unchecked(&row.source))", "", "returns a value referencing data owned by the current function", true),
+		spanOf(t, own, "AppPath::legacy_unchecked(&row.source)", "", "temporary value created here", false))
+	if got := run(t, own, d); got != own {
+		t.Fatalf("a closure param's bridge must stay residue:\n%s", got)
+	}
+}
+
 func TestAHoistThatWouldReorderOrShadowStaysResidue(t *testing.T) {
 	for _, text := range []string{
 		"async fn t() {\n    let fut = volume.list_directory(&AppPath::legacy_unchecked(&next_dir()), None);\n    fut.await;\n}\n",

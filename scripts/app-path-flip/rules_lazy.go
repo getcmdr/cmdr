@@ -18,6 +18,9 @@ func (r *rewriter) borrowedFutureEdits(d *diagnostic, src *source, p *diagSpan) 
 	if e := splitRoundTripEdits(d, src, p); len(e) > 0 {
 		return e
 	}
+	if e := closureHoistEdits(d, src); len(e) > 0 {
+		return e
+	}
 	if e := r.asyncHelperEdits(d, src, p); len(e) > 0 {
 		return e
 	}
