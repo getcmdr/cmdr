@@ -258,13 +258,13 @@ impl OperationLogStore {
         // Kept beside the new DB when the host keeps it (and the person hears it
         // reset). A rename that doesn't happen falls back to deleting, the one way
         // forward.
+        // Through `sqlite_util`, which closes any cached read connection first:
+        // Windows refuses to delete an open file (#1226).
         if db_path.exists() && set_aside(db_path).is_none() {
-            std::fs::remove_file(db_path)?;
+            cmdr_fs::sqlite_util::delete_database(db_path)?;
         }
-        for sidecar in [db_path.with_extension("db-wal"), db_path.with_extension("db-shm")] {
-            if sidecar.exists() {
-                let _ = std::fs::remove_file(&sidecar);
-            }
+        if let Err(e) = cmdr_fs::sqlite_util::delete_sidecars(db_path) {
+            log::warn!(target: "operation_log", "a sidecar of the set-aside operation-log DB stayed: {e}");
         }
         Self::try_open(db_path)
     }

@@ -35,7 +35,7 @@ paths (`crate::file_system::volume::VolumeError`); other crates use `cmdr_fs::�
   two disks one identity and sends deletes to the wrong one.
 - **❌ Never open SQLite outside `sqlite_util`'s factories.** They install the process-wide page-cache slab, installable
   only before the process's first connection (`desktop-rust-sqlite-open-direct` enforces it). ❌ Nor unlink a database
-  by hand: `delete_database` retires threads' cached connections.
+  by hand: `delete_database` closes the cached connections first.
 - **Nothing here produces user-facing prose**: errors carry typed reasons and structured params, the frontend renders
   every word, and `FileEntry.git_meta` / `restic_meta` state FACTS, ❌ never a sentence. DETAILS § The one place prose
   is produced here.

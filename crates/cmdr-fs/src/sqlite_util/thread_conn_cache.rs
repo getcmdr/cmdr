@@ -1,14 +1,13 @@
-//! The per-thread read-connection cache, and the one way a thread is asked to
-//! let go of what it caches.
+//! The per-thread read-connection cache, and the one way to close what the
+//! caches hold on a database that is going away.
 //!
 //! Its own file because it is its own mechanism with its own state (the live
-//! count, the retirement epoch and table). Everything here is re-exported from
-//! `sqlite_util`, which is the path callers use.
+//! count, the registry of open slots, the retirement epoch). Everything here is
+//! re-exported from `sqlite_util`, which is the path callers use.
 
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
-use std::sync::{LazyLock, Mutex};
+use std::sync::{Arc, LazyLock, Mutex, Weak};
 
 use rusqlite::Connection;
 
@@ -20,7 +19,7 @@ use crate::ignore_poison::IgnorePoison;
 ///
 /// Both read paths (`indexing::read::enrichment`'s `ReadPool` and
 /// `ImportanceIndex`) keep their connections in a thread-local so enrichment
-/// never takes a lock on the hot path. Holding ONE slot made that lock-freedom
+/// never waits on another thread on the hot path. Holding ONE slot made that
 /// expensive in the ordinary two-pane case: a thread alternating between the
 /// left pane's volume and the right pane's closed and reopened on every
 /// alternation, re-running the pragmas and the collation registration and
@@ -34,27 +33,38 @@ use crate::ignore_poison::IgnorePoison;
 /// cache evicts and the ones it takes down with a dying thread, so the budget is
 /// observable rather than hoped for.
 ///
-/// Not thread-safe by design: it lives in a `thread_local!` `RefCell`, so there
-/// is no lock. ❌ Don't wrap it in a mutex. That is also why nothing can close
-/// another thread's connections: [`retire_read_connections`] asks, and each cache
-/// answers on its own thread's next use.
+/// The cache itself lives in a `thread_local!` `RefCell` with no lock. Each
+/// connection sits in its own [`Slot`], a mutex only its thread takes on the hot
+/// path (uncontended, so a few nanoseconds), and the one other taker is
+/// [`retire_read_connections`], which closes the connection from the retiring
+/// thread. ❌ Don't put the whole cache behind a mutex: the slot is what makes the
+/// close reachable, and a cache-wide lock would serialize every reader.
 pub struct ThreadConnCache {
-    /// Most-recently-used first. Never longer than `capacity`.
+    /// Most-recently-used first. Never longer than `capacity`. An entry whose slot
+    /// a retirement emptied stays until this thread's next use sweeps it.
     entries: Vec<CachedConn>,
     capacity: usize,
-    /// The [`RETIRE_EPOCH`] this cache last swept its entries against.
+    /// The [`RETIRE_EPOCH`] this cache last swept its emptied slots against.
     swept_at: u64,
 }
+
+/// One cached connection's home: `None` once it was closed, by its own cache or
+/// by a retirement from any thread. Whoever takes the connection out counts the
+/// close, so it's counted once.
+type Slot = Arc<Mutex<Option<Connection>>>;
 
 /// One cached read connection.
 struct CachedConn {
     db_path: PathBuf,
     /// The caller's invalidation generation it was opened under.
     generation: u64,
-    /// The [`RETIRE_EPOCH`] its thread had seen when it was opened, which is what
-    /// tells a connection a retirement is aimed at from one opened after it.
-    opened_at: u64,
-    conn: Connection,
+    slot: Slot,
+}
+
+impl CachedConn {
+    fn is_open(&self) -> bool {
+        self.slot.lock_ignore_poison().is_some()
+    }
 }
 
 /// Slots per thread. Two covers the ordinary two-pane case (left pane on the
@@ -102,12 +112,15 @@ fn count_read_connection_opened() {
     }
 }
 
-/// Count `n` read connections going away (evicted, retired, or dropped with
-/// their thread).
-fn count_read_connections_closed(n: usize) {
-    if n > 0 {
-        LIVE_READ_CONNECTIONS.fetch_sub(n, Ordering::Relaxed);
+/// Close the connection in `slot` if it's still there, and count it. The
+/// connection drops AFTER the slot's lock is released: closing one can
+/// checkpoint, and nobody else should wait on that.
+fn close(slot: &Slot) {
+    let conn = slot.lock_ignore_poison().take();
+    if conn.is_some() {
+        LIVE_READ_CONNECTIONS.fetch_sub(1, Ordering::Relaxed);
     }
+    drop(conn);
 }
 
 impl ThreadConnCache {
@@ -125,12 +138,12 @@ impl ThreadConnCache {
     ///
     /// A hit moves the entry to the front; a miss evicts the least recently used
     /// entry once the cache is full. An entry for `db_path` at a DIFFERENT
-    /// generation is dropped before the reopen, so a caller's `invalidate()`
+    /// generation is closed before the reopen, so a caller's `invalidate()`
     /// still retires the stale connection rather than leaving two around.
     ///
-    /// Every call first closes whatever [`retire_read_connections`] has asked for
-    /// since this thread's last one, for ANY database: that is the only moment a
-    /// retirement can reach a thread-local cache.
+    /// `f` runs under the connection's slot lock, so a retirement of `db_path`
+    /// waits for it to finish. ❌ Never retire or delete a database from inside
+    /// `f`: the retirement would wait on the lock its own thread holds.
     pub fn with<T, E>(
         &mut self,
         db_path: &Path,
@@ -140,87 +153,80 @@ impl ThreadConnCache {
     ) -> Result<T, E> {
         let epoch = RETIRE_EPOCH.load(Ordering::Acquire);
         if epoch != self.swept_at {
-            self.close_retired(epoch);
+            self.entries.retain(CachedConn::is_open);
+            self.swept_at = epoch;
         }
-        match self
+        if let Some(hit) = self
             .entries
             .iter()
             .position(|entry| entry.db_path == db_path && entry.generation == generation)
         {
-            Some(0) => {}
-            Some(hit) => {
-                let entry = self.entries.remove(hit);
+            let entry = self.entries.remove(hit);
+            let guard = entry.slot.lock_ignore_poison();
+            if let Some(conn) = guard.as_ref() {
+                let answer = f(conn);
+                drop(guard);
                 self.entries.insert(0, entry);
+                return Ok(answer);
             }
-            None => {
-                // Retire a same-path entry at a stale generation: the caller
-                // invalidated it, so it must not linger behind the new one.
-                let held = self.entries.len();
-                self.entries.retain(|entry| entry.db_path != db_path);
-                count_read_connections_closed(held - self.entries.len());
-                let conn = open(db_path)?;
-                if self.entries.len() >= self.capacity {
-                    self.entries.pop();
-                    count_read_connections_closed(1);
-                }
-                self.entries.insert(
-                    0,
-                    CachedConn {
-                        db_path: db_path.to_path_buf(),
-                        generation,
-                        opened_at: epoch,
-                        conn,
-                    },
-                );
-                count_read_connection_opened();
-            }
+            // A retirement emptied it after the sweep above: open afresh below.
         }
-        let entry = self
-            .entries
-            .first()
-            .expect("the MRU entry exists: every branch above leaves a match at index 0");
-        Ok(f(&entry.conn))
+
+        // Close a same-path entry at a stale generation: the caller invalidated
+        // it, so it must not linger behind the new one.
+        self.entries.retain(|entry| {
+            let stale = entry.db_path == db_path;
+            if stale {
+                close(&entry.slot);
+            }
+            !stale
+        });
+        let slot: Slot = Arc::new(Mutex::new(Some(open(db_path)?)));
+        count_read_connection_opened();
+        if self.entries.len() >= self.capacity
+            && let Some(evicted) = self.entries.pop()
+        {
+            close(&evicted.slot);
+        }
+        // Locked BEFORE it's registered, so a retirement that finds it waits for
+        // `f` rather than closing it under this first use.
+        let guard = slot.lock_ignore_poison();
+        register(db_path, &slot);
+        self.entries.insert(
+            0,
+            CachedConn {
+                db_path: db_path.to_path_buf(),
+                generation,
+                slot: Arc::clone(&slot),
+            },
+        );
+        let conn = guard
+            .as_ref()
+            .expect("a slot holds its connection until someone takes it, and this thread holds its lock");
+        Ok(f(conn))
     }
 
-    /// Close every connection a retirement was aimed at, and note the epoch swept
-    /// against so the next call is one atomic load again.
-    ///
-    /// The connections close AFTER the table's lock is released: closing one can
-    /// checkpoint, and a retiring thread must never wait on that.
-    fn close_retired(&mut self, epoch: u64) {
-        let retired: Vec<CachedConn> = {
-            let retired_at = RETIRED_AT.lock_ignore_poison();
-            let (kept, retired) = std::mem::take(&mut self.entries)
-                .into_iter()
-                .partition(|entry| retired_at.get(&entry.db_path).is_none_or(|at| entry.opened_at >= *at));
-            self.entries = kept;
-            retired
-        };
-        count_read_connections_closed(retired.len());
-        self.swept_at = epoch;
-    }
-
-    /// Test-only: the generation this thread holds for `db_path`, or `None` when
-    /// it holds no connection to it.
+    /// Test-only: the generation this thread holds an open connection at for
+    /// `db_path`, or `None` when it holds no open connection to it.
     #[cfg(any(test, feature = "testing"))]
     pub fn generation_for(&self, db_path: &Path) -> Option<u64> {
         self.entries
             .iter()
-            .find(|entry| entry.db_path == db_path)
+            .find(|entry| entry.db_path == db_path && entry.is_open())
             .map(|entry| entry.generation)
     }
 
-    /// Test-only: how many connections this thread currently holds.
+    /// Test-only: how many open connections this thread currently holds.
     #[cfg(any(test, feature = "testing"))]
     pub fn len(&self) -> usize {
-        self.entries.len()
+        self.entries.iter().filter(|entry| entry.is_open()).count()
     }
 
-    /// Test-only: whether this thread holds no connections at all. Paired with
-    /// [`len`](Self::len) because clippy won't take one without the other.
+    /// Test-only: whether this thread holds no open connections at all. Paired
+    /// with [`len`](Self::len) because clippy won't take one without the other.
     #[cfg(any(test, feature = "testing"))]
     pub fn is_empty(&self) -> bool {
-        self.entries.is_empty()
+        self.len() == 0
     }
 }
 
@@ -229,41 +235,68 @@ impl Drop for ThreadConnCache {
     /// has to follow. Tokio retires an idle blocking thread after ten seconds,
     /// so this runs routinely rather than only at shutdown.
     fn drop(&mut self) {
-        count_read_connections_closed(self.entries.len());
+        for entry in &self.entries {
+            close(&entry.slot);
+        }
     }
 }
 
-// ── Retiring cached read connections ─────────────────────────────────
+// ── Closing cached read connections ──────────────────────────────────
 
-/// Bumped by every [`retire_read_connections`]. A [`ThreadConnCache`] compares it
-/// to the epoch it last swept at, so a thread with nothing retired pays one atomic
-/// load per use.
+/// Bumped by every retirement, so a [`ThreadConnCache`] sweeps the slots a
+/// retirement emptied at its next use, and a thread with nothing retired pays one
+/// atomic load per use.
 static RETIRE_EPOCH: AtomicU64 = AtomicU64::new(0);
 
-/// The epoch each retired database was last retired at. One entry per path ever
-/// retired, so it grows by one per database the process deletes or lets go of.
-static RETIRED_AT: LazyLock<Mutex<HashMap<PathBuf, u64>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+/// Every open slot in the process, by db path, so a retirement on any thread can
+/// reach them. Weak, so a slot its cache dropped goes with it; dead entries are
+/// pruned on each registration.
+type Registry = Vec<(PathBuf, Weak<Mutex<Option<Connection>>>)>;
+static OPEN_SLOTS: LazyLock<Mutex<Registry>> = LazyLock::new(|| Mutex::new(Vec::new()));
 
-/// Ask every thread to close the read connections it caches to `db_path`.
+fn register(db_path: &Path, slot: &Slot) {
+    let mut open = OPEN_SLOTS.lock_ignore_poison();
+    open.retain(|(_, slot)| slot.strong_count() > 0);
+    open.push((db_path.to_path_buf(), Arc::downgrade(slot)));
+}
+
+/// Close every cached read connection whose db path `matches`, on whichever
+/// thread's cache holds it, before returning.
+fn retire_where(matches: impl Fn(&Path) -> bool) {
+    let slots: Vec<Slot> = OPEN_SLOTS
+        .lock_ignore_poison()
+        .iter()
+        .filter(|(path, _)| matches(path))
+        .filter_map(|(_, slot)| slot.upgrade())
+        .collect();
+    // Outside the registry lock: a slot's lock can be held for a whole query.
+    for slot in &slots {
+        close(slot);
+    }
+    RETIRE_EPOCH.fetch_add(1, Ordering::AcqRel);
+}
+
+/// Close every read connection the process's caches hold to `db_path`, on every
+/// thread, before returning.
 ///
-/// For a database that is going away (deleted, or its volume stopped), so the
-/// caches stop holding it open. It matters most for a delete: an unlinked file
-/// keeps its blocks allocated until the last handle on it closes.
+/// For a database that is going away (deleted, or its volume stopped). A delete
+/// needs it: Windows refuses to delete a file any handle holds (#1226), and POSIX
+/// keeps an unlinked file's blocks allocated until its last handle closes.
 ///
-/// ⚠️ **A request, not a close.** A [`ThreadConnCache`] is thread-local, so only
-/// its own thread can drop its connections, and it does so the next time it uses
-/// the cache for any database. A thread that never reads again keeps its
-/// connections until it exits, which tokio does to an idle blocking thread after
-/// ten seconds. So the honest bound is "the owning thread's next read, or its
-/// death", ❌ never "closed when this returns".
-///
-/// Connections opened AFTER the call are untouched, so a database recreated under
-/// the same path is cached like any other. A delete calls it on both sides of the
-/// unlink ([`delete_database`](super::delete_database) does), so a reader that opened in between isn't left
-/// holding the unlinked file.
+/// - A connection in use on its thread closes once that read finishes: the call
+///   waits for it.
+/// - Connections opened AFTER the call are untouched, so a database recreated
+///   under the same path is cached like any other. A delete calls it on both
+///   sides of the unlink ([`delete_database`](super::delete_database) does).
+/// - ⚠️ Only the CACHED read connections: a writer, or a connection a store opens
+///   per call, is its owner's to stop first.
 pub fn retire_read_connections(db_path: &Path) {
-    // Under the lock, so the table and the epoch can't be seen disagreeing.
-    let mut retired_at = RETIRED_AT.lock_ignore_poison();
-    let epoch = RETIRE_EPOCH.fetch_add(1, Ordering::AcqRel) + 1;
-    retired_at.insert(db_path.to_path_buf(), epoch);
+    retire_where(|path| path == db_path);
+}
+
+/// [`retire_read_connections`] for every database under `dir`, at any depth: for
+/// a whole folder that is going away ("Delete all Cmdr data" moves the data dir,
+/// which Windows refuses while a file in it is open).
+pub fn retire_read_connections_under(dir: &Path) {
+    retire_where(|path| path.starts_with(dir));
 }

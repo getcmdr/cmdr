@@ -107,7 +107,7 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "据记录下载它的网站（只有网站的主地址，比如 github.com，从不包括子域名或完整链接）、下载时间，以及下载它的 App。如果是“邮件”附件或隔空投送，只说明它是这类文件，从不说明是谁发送的",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {据记录下载它的网站（只有网站的主地址，比如 github.com，从不包括子域名或完整链接）、下载时间，以及下载它的 App。如果是“邮件”附件或隔空投送，只说明它是这类文件，从不说明是谁发送的} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "40d185c"
   },

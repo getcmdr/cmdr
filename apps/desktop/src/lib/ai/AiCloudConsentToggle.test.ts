@@ -4,7 +4,7 @@
  * view, in onboarding especially), and still theirs to reopen.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 import { mount, tick } from 'svelte'
 
 const { consentState } = vi.hoisted(() => {
@@ -31,6 +31,7 @@ vi.mock('./cloud-consent.svelte', () => ({
 
 import AiCloudConsentToggle from './AiCloudConsentToggle.svelte'
 import { ABOUT_THIS_DISCLOSURE } from './about-this-disclosure'
+import { withPlatform } from '#lib/platform/test-platform.js'
 
 async function settle(): Promise<void> {
   for (let i = 0; i < 5; i++) await tick()
@@ -119,6 +120,9 @@ describe("the switch under the organization's policy", () => {
 
 describe('what "Tell me about this" sends', () => {
   it('lists every kind the card leaves with, plus the look inside, in both surfaces', async () => {
+    // The download line's Mail and AirDrop promise is the macOS branch's.
+    const undo = withPlatform('macos')
+    onTestFinished(undo)
     for (const anchor of [true, false]) {
       const target = document.createElement('div')
       document.body.appendChild(target)

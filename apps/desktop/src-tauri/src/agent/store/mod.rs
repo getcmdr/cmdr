@@ -192,12 +192,12 @@ impl AgentStore {
         if db_path.exists()
             && crate::state_recovery::set_aside(db_path, crate::state_recovery::StateFile::ChatHistory).is_none()
         {
-            std::fs::remove_file(db_path)?;
+            // Through `sqlite_util`, which closes any cached read connection first:
+            // Windows refuses to delete an open file (#1226).
+            cmdr_fs::sqlite_util::delete_database(db_path)?;
         }
-        for sidecar in [db_path.with_extension("db-wal"), db_path.with_extension("db-shm")] {
-            if sidecar.exists() {
-                let _ = std::fs::remove_file(&sidecar);
-            }
+        if let Err(e) = cmdr_fs::sqlite_util::delete_sidecars(db_path) {
+            log::warn!(target: "agent_store", "a sidecar of the set-aside main.db stayed: {e}");
         }
         Self::try_open(db_path)
     }

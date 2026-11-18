@@ -1022,7 +1022,7 @@ a home folder unless they start with `%`. Checked on 2026-11-12 and 2026-11-18 (
     for `com.google.Chrome(Dev)`, `org.chromium.Chromium`, `com.brave.Browser`, `com.microsoft.Edge`,
     `org.mozilla.firefox`, `com.vivaldi.Vivaldi`, `com.opera.Opera` (each ID answers 200 on Flathub's appstream API),
     and `snap/chromium` (Mozilla bug 1467094), `snap/firefox`, `snap/brave`.
-- **Mail, messages, and notes** (`MessageStore`):
+- **Mail, messages, chats, notes, contacts, and calendars** (`MessageStore`):
   - macOS: Apple's `Library/Mail`, `Library/Messages`, the Notes group container, and each app's sandbox container
     (`com.apple.mail*`, `com.apple.MobileSMS*`, `com.apple.Notes*`; all present on macOS 27.0.1); Thunderbird's
     `Library/Thunderbird`; Outlook's `Library/Group Containers/UBF8T346G9.Office/Outlook` (Microsoft Q&A 4736411).
@@ -1036,6 +1036,39 @@ a home folder unless they start with `%`. Checked on 2026-11-12 and 2026-11-18 (
     `%APPDATA%\Microsoft\Outlook`; new Outlook's `%LOCALAPPDATA%\Microsoft\Olk` (Microsoft Q&A 5583625 and 4705397);
     the retired Windows Mail app's `%LOCALAPPDATA%\Packages\microsoft.windowscommunicationsapps_*`, with its mail and
     attachments in `LocalState` (Microsoft Q&A 3809132 and 2756174).
+  - Chat apps, all three OSes (#1230): a person reading "Messages" or "email data" expects their chats covered, so they
+    ride in this category with no copy change (the promise names a floor, never a ceiling). Their databases are often
+    encrypted with the key beside them (Signal's `config.json`), and attachments and caches sit in the clear.
+    - Signal: `Library/Application Support/Signal*`, `.config/Signal*`, `%APPDATA%\Signal*` (sherlockforensics.com's
+      Signal Desktop write-up, and signalbackup-tools issue 348); `Signal Beta` rides the family rule; snap
+      `signal-desktop` and flatpak `org.signal.Signal` from memory.
+    - Slack: `Library/Application Support/Slack`, the App Store container `com.tinyspeck.slackmacgap` (Slack help
+      "Update the Slack desktop app"), `.config/Slack`, `%APPDATA%\Slack` (the `forensicnomicon` crate's
+      `browser_profiles.rs`); the Store package `91750D7E.Slack_*`, snap, and flatpak `com.slack.Slack` from memory.
+    - Discord: `discord`, `discordptb`, `discordcanary` under `Library/Application Support`, `.config`, and `%APPDATA%`
+      (`forensicnomicon`, and Symantec's Verblecon write-up for the channels); snap and flatpak
+      `com.discordapp.Discord` from memory.
+    - WhatsApp: the Catalyst app's `Library/Group Containers/group.net.whatsapp*` and
+      `Library/Containers/net.whatsapp.WhatsApp` (mole.fit's WhatsApp uninstall page), the Store package
+      `%LOCALAPPDATA%\Packages\5319275A.WhatsAppDesktop_*` (Passcape "Decrypting WhatsApp artifacts on Windows"), and the
+      older Electron app's `Library/Application Support/WhatsApp` and `%APPDATA%\WhatsApp` (`forensicnomicon`);
+      `%LOCALAPPDATA%\WhatsApp` (its Squirrel installer) from memory. No official Linux app.
+    - Telegram Desktop: `%APPDATA%\Telegram Desktop` and `.local/share/TelegramDesktop` (telegram-desktop-decrypt's
+      README), the older `.TelegramDesktop` (clrn.org); `Library/Application Support/Telegram Desktop`, the Mac App Store
+      Telegram's `Library/Group Containers/6N38VWS5BX.ru.keepcoder.Telegram*`, the Store package
+      `TelegramMessengerLLP.TelegramDesktop_*`, snap `telegram-desktop`, and flatpak `org.telegram.desktop` from memory.
+      Its default download folder (`Downloads/Telegram Desktop`) stays readable: that's the person's files.
+    - Element: `Element*` under `Library/Application Support`, `.config`, and `%APPDATA%`, flatpak `im.riot.Riot` (from
+      memory).
+    - Microsoft Teams: classic `Library/Application Support/Microsoft/Teams`, `%APPDATA%\Microsoft\Teams`,
+      `.config/Microsoft/Microsoft Teams` (`forensicnomicon`); new Teams' `Library/Containers/com.microsoft.teams2`,
+      `Library/Group Containers/UBF8T346G9.com.microsoft.teams`, and `%LOCALAPPDATA%\Packages\MSTeams_*` from memory.
+  - macOS Contacts, Calendar, and Reminders: `Library/Application Support/AddressBook`, `Library/Calendars`,
+    `Library/Reminders`, the containers `com.apple.AddressBook*`, `com.apple.iCal*`, `com.apple.reminders*`, and the
+    group containers `group.com.apple.contacts`, `group.com.apple.calendar`, `group.com.apple.reminders` (all present on
+    macOS 27.0.1, `ls ~/Library`, 2026-11-18). TCC guards them, but Cmdr with Full Disk Access passes TCC. Linux's ride
+    with Evolution (`evolution-data-server` keeps GNOME's contacts and calendars there) and KDE's with `akonadi`;
+    Windows' People and Calendar went with the Windows Mail package, already covered.
 - **Cmdr's own data** (`CmdrData`) and **a private key in any file** (`PrivateKey`): see above and below.
 
 **Not protected, and why:**
@@ -1043,8 +1076,8 @@ a home folder unless they start with `%`. Checked on 2026-11-12 and 2026-11-18 (
 - **What only an administrator can read** (`/etc/shadow`, `/etc/NetworkManager/system-connections`, the Windows SAM
   hive, `C:\ProgramData`): Cmdr runs as the user, so the OS already refuses. An SSH host key carries armor, which the
   private-key check catches.
-- **Another app's own data folder** (a chat app, a notes app, a mail client not listed): no rule knows it. The promise
-  names browsers, the OS's stores, and mail, and a new app is a new rule here.
+- **Another app's own data folder** (a chat app, a notes app, a mail client not listed above): no rule knows it. A new
+  app inside a category is a new rule here, with its source.
 - **A profile someone put elsewhere** (`chrome --user-data-dir=D:\x`, a Thunderbird profile moved through
   `profiles.ini`): nothing in the path says what it is. Only the environment's own dirs are followed.
 - **Mail a terminal client keeps in the home folder** (`~/Mail`, `~/Maildir`, `~/mbox`, for mutt, neomutt, Claws Mail's

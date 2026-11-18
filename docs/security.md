@@ -75,6 +75,24 @@ security risk in production (untrusted JS could access system APIs, not good), s
 To avoid security issues in dev mode, always add a condition to **disable** that functionality in dev mode. This way,
 malicious websites can't access the system APIs even on your machine.
 
+## The webview CSP's `connect-src`
+
+The app CSP (`apps/desktop/src-tauri/tauri.conf.json`, restated in `tauri.windows.conf.json` with WebView2's
+`http://<scheme>.localhost` origins, a drift `tauri_config.rs` guards) allows `connect-src` to exactly two places:
+`'self'` and Tauri's own IPC channel, `ipc:` on macOS and Linux (`ipc://localhost/<cmd>`), `http://ipc.localhost` on
+Windows.
+
+- **Why the IPC origin**: Tauri's IPC first `fetch`es its `ipc` custom protocol and, when that fails, drops the window
+  to `window.ipc.postMessage` for good (tauri 2.12.5 `scripts/ipc-protocol.js`). Tauri adds nothing to a hand-written
+  CSP; its own docs' example lists `connect-src ipc: http://ipc.localhost` (`tauri-utils` 2.10.2 `config.rs`). Blocking
+  it cost every window the faster path for large answers and a CSP violation at start (#1234). Measured:
+  `docs/notes/performance/ipc-transport-2026-11-18.md`.
+- **Why it's safe**: the `ipc` scheme is served by the app's own process and answers only the app's commands, which the
+  `postMessage` path reached anyway, so it adds no reachable endpoint and no network egress. The command surface and its
+  gating are the same on both transports (§ "Why there's no caller-window authorization guard").
+- ❌ **Nothing broader**: no `http:`, `https:`, `*`, or a remote host. The webview never fetches outside the app; the
+  outbound requests live in Rust, where the cloud-AI and update rules above govern them.
+
 ## Error reports
 
 Cmdr can ship diagnostic bundles (manifest + recent debug-level log tail) to the maintainer when something goes wrong.

@@ -33,9 +33,8 @@ use crate::volume_files::{self, Removal, StoreDirs};
 ///
 /// The connections threads already cache to the volume's databases are retired
 /// here too, the importance database's included: a stopped share would otherwise
-/// keep a connection in every blocking thread that ever read it. Each thread
-/// closes its own at its next read (`cmdr_fs::sqlite_util::retire_read_connections`
-/// says why it can't be sooner).
+/// keep a connection in every blocking thread that ever read it. They close before
+/// this returns, after any read in flight (`cmdr_fs::sqlite_util::retire_read_connections`).
 ///
 /// Also called again by each `finish_*` on the deferred path, and it has to be:
 /// a teardown that CLAIMED a detached volume runs this at request time, while the

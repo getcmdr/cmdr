@@ -102,7 +102,9 @@ pub(crate) fn ensure_destination_dir(destination: &Path) -> Result<(), WriteOper
                 // never the one we failed to create, so the probe walks up to find it.
                 std::io::ErrorKind::PermissionDenied => WriteOperationError::permission_denied(
                     destination.display().to_string(),
-                    "Couldn't create the destination folder. Check folder permissions in Finder.".to_string(),
+                    // The details text, read on every OS: the OS's own sentence. The
+                    // advice is the catalog's, per OS (#1235).
+                    format!("Couldn't create the destination folder: {e}"),
                     e.raw_os_error(),
                     refusing_folder(destination),
                     Some(PermissionSide::Destination),
@@ -282,7 +284,12 @@ pub(crate) fn validate_destination_writable(destination: &Path) -> Result<(), Wr
     // The probe IS the proof here, so the folder is named with no second guess.
     Err(WriteOperationError::permission_denied(
         destination.display().to_string(),
-        "Destination folder is not writable. Check folder permissions in Finder.".to_string(),
+        // The details text, read on every OS: the OS's own sentence. The advice is the
+        // catalog's, per OS (#1235).
+        format!(
+            "Destination folder is not writable: {}",
+            std::io::Error::from_raw_os_error(errno)
+        ),
         Some(errno),
         Some(destination.display().to_string()),
         Some(PermissionSide::Destination),

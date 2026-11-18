@@ -23,7 +23,7 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "{platform, select, macos {Reinicia ahora o la tendrás la próxima vez que abras Cmdr.} other {Cmdr se cierra para instalarla y después vuelve a abrirse.}}",
+  "updates.toast.readyDetail": "{platform, select, macos {Reinicia ahora o la tendrás la próxima vez que abras Cmdr.} windows {Cmdr se cierra para instalarla y después vuelve a abrirse.} other {Cmdr quits to install it, then opens again.}}",
   "@updates.toast.readyDetail": {
     "sourceHash": "4abee27"
   },

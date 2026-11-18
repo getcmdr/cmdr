@@ -126,6 +126,9 @@ Rules canonical elsewhere are one line here plus the pointer; the rest are canon
 
 ## What's fixed, and where it's documented
 
+- **IPC transport**: the CSP allows Tauri's `ipc:` origin, so IPC runs on the custom protocol instead of the
+  `postMessage` fallback. A 3.4 MB listing answer drops from ~11.9 to ~6.9 ms, a 200-row page ~15 %; a tiny call costs
+  ~0.15 ms more: `ipc-transport-2026-11-18.md`.
 - **libmalloc's large-block cache**: `MallocLargeCache=0` from `LSEnvironment` takes ~400 MiB off the burst peak and
   halves a restic index load's footprint, with search and listing throughput unchanged. Undocumented, so
   `docs/maintenance.md` § "Per macOS release" re-checks it: `malloc-large-cache-2026-11-03.md`.

@@ -107,7 +107,7 @@
   "@ai.cloudConsent.aboutThis.item.imageIndex": {
     "sourceHash": "020f807"
   },
-  "ai.cloudConsent.aboutThis.item.download": "記錄上下載它的網站（只有網站的主要位址，例如 github.com，絕不包括子網域或完整連結）、下載時間，以及下載它的 App。如果是「郵件」附件或透過 AirDrop 收到的檔案，只會說明這一點，絕不包括是誰傳來的",
+  "ai.cloudConsent.aboutThis.item.download": "{platform, select, macos {記錄上下載它的網站（只有網站的主要位址，例如 github.com，絕不包括子網域或完整連結）、下載時間，以及下載它的 App。如果是「郵件」附件或透過 AirDrop 收到的檔案，只會說明這一點，絕不包括是誰傳來的} other {The website it was recorded as downloaded from (the site’s main address only, like github.com, never a subdomain or the full link), when, and the app that downloaded it}}",
   "@ai.cloudConsent.aboutThis.item.download": {
     "sourceHash": "40d185c"
   },

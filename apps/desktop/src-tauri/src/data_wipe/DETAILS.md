@@ -13,7 +13,9 @@ Must-knows are in `CLAUDE.md`. This file holds the flow, the decisions, and what
       `AlreadyRunning` on a second concurrent call.
    2. `quiesce`: cancel live search walks; `index().forget_all_volumes()` (drains each drive-index writer, then deletes
       its database: the ~1 GB part, removed the index's own clean way); `search::drop_all_indices`; stop the local
-      LLM server (it holds the model file and `llama-server.log`); stop the MCP server.
+      LLM server (it holds the model file and `llama-server.log`); stop the MCP server; close every cached SQLite
+      read connection under a target (`sqlite_util::retire_read_connections_under`), since Windows won't move a folder
+      with a file open in it (#1226).
    3. `execute::wipe`: delete every secret-store key; `defaults delete <identifier>` (so `cfprefsd` drops its
       in-memory copy rather than writing the plist back); each target through its tombstone; re-list the secret store.
    4. Keep the plan in `WIPED` for the exit pass and return the `WipeReport`.
@@ -43,7 +45,12 @@ From `WipeRoots` (`plan::build_plan`), in order, minus unsafe ones and ones nest
 - **Decision: quiesce only the writers that matter, and sweep at exit for the rest.** Why: stopping every subsystem in
   order (media and importance writers, the operation log, the agent store, analytics, watchers) is a shutdown sequence
   the app doesn't have yet, and building one for this path alone would rot. What isn't stopped holds handles into the
-  tombstone (harmless) or writes a fresh file by path (removed by `remove_target`'s second look or by `on_exit`).
+  tombstone (harmless on POSIX) or writes a fresh file by path (removed by `remove_target`'s second look or by
+  `on_exit`).
+  - **Gotcha/Why (Windows):** an open handle blocks the tombstone RENAME of its folder, so `remove_whole` falls back to
+    deleting in place, and an open file stays as a leftover until `on_exit`. The cached read connections close in
+    `quiesce`; the operation log's and `main.db`'s write connections stay open, so on Windows those two files are
+    `on_exit`'s (unverified on a Windows machine).
   Stopped: what holds big files or would rebuild one (the drive index, search walks, the LLM server) and what lets
   something outside drive the app mid-wipe (MCP).
 - **Decision: secrets first.** Why: a Keychain item has no folder to fall back on; deleting them before anything else

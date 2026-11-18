@@ -58,11 +58,15 @@ describe('UpdateToastContent', () => {
     expect(target.textContent).toContain('Restart now, or you’ll get it the next time you open Cmdr.')
   })
 
-  it.each(['windows', 'linux'] as const)('says on %s that Cmdr closes to install the update', async (platform) => {
+  // Each OS's own verb: Windows narrates "closes", Linux says "quits" (style guide § Platform vocabulary).
+  it.each([
+    ['windows', 'Cmdr closes to install it, then opens again.'],
+    ['linux', 'Cmdr quits to install it, then opens again.'],
+  ] as const)('says on %s that Cmdr restarts to install the update', async (platform, line) => {
     onTestFinished(withPlatform(platform))
     const target = render()
     await tick()
-    expect(target.textContent).toContain('Cmdr closes to install it, then opens again.')
+    expect(target.textContent).toContain(line)
   })
 
   it('shows both versions once the state knows them', async () => {
