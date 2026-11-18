@@ -58,6 +58,20 @@ fn a_posix_bridge_value_answers_what_path_answers() {
     assert!(!climbing.starts_with(&posix("/a")));
     assert_eq!(climbing.join(name("c")), Err(NotAnAppPath::DotName));
     assert_eq!(bridge("rel/x").to_canonical().err(), Some(NotAnAppPath::Relative));
+    // Review 2's L-a: a bridge ARGUMENT reads the same way, so the exact and the volume-root
+    // matches agree on it.
+    let path = posix("/Volumes/x/y");
+    let sloppy_root = bridge("/Volumes/x/");
+    assert_eq!(
+        path.strip_prefix(&sloppy_root).as_deref().map(RelativeAppPath::as_str),
+        Some("y")
+    );
+    assert_eq!(
+        path.strip_volume_prefix(&sloppy_root)
+            .as_deref()
+            .map(RelativeAppPath::as_str),
+        Some("y")
+    );
 }
 
 /// Windows bridge text (`std`'s spelling, `C:\x\y`) read with Windows' rules, on every OS.
