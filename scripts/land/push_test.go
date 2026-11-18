@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -245,6 +246,36 @@ func TestPushBranchRetriesWithTheHooksCommit(t *testing.T) {
 	}
 	if head := mustGit(t, a, "rev-parse", "HEAD"); pushed != head || originSHA(t, a, "feat") != head {
 		t.Errorf("pushed %s, origin has %s, want the hook's commit %s", pushed, originSHA(t, a, "feat"), head)
+	}
+}
+
+// Land runs the pre-push hook itself, before any connection to origin opens, and the push runs no
+// hook: a minute-long hook inside `git push` outlasted GitHub's idle timeout (2026-11-18). Origin
+// turns the first push away, so a hook that rode along with `git push` would run twice.
+func TestPushBranchRunsThePrePushHookOnceBeforePushing(t *testing.T) {
+	noPause(t)
+	origin := testOrigin(t)
+	a := testClone(t, origin, "feat")
+	rejectOnOrigin(t, origin, 1)
+	script := "#!/bin/sh\necho \"$1 $(cat)\" >> .git/hook-runs\n"
+	if err := os.WriteFile(filepath.Join(a.dir, ".git", "hooks", "pre-push"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	mustGit(t, a, "commit", "--quiet", "--allow-empty", "-m", "feat: new")
+	head := mustGit(t, a, "rev-parse", "HEAD")
+	if _, _, err := pushBranch(a, "feat", head); err != nil {
+		t.Fatal(err)
+	}
+	runs, err := os.ReadFile(filepath.Join(a.dir, ".git", "hook-runs"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := fmt.Sprintf("origin HEAD %s refs/heads/feat %s\n", head, strings.Repeat("0", len(head)))
+	if string(runs) != want {
+		t.Errorf("hook runs:\n%q\nwant one run, before the push:\n%q", runs, want)
+	}
+	if got := originSHA(t, a, "feat"); got != head {
+		t.Errorf("origin/feat is %q, want %s", got, head)
 	}
 }
 
