@@ -54,7 +54,7 @@ impl ReadExclusion {
             let mut roots = store::read_mount_roots(db_path);
             let live = volume_id
                 .and_then(|id| crate::indexing::host::volumes::current().get(id))
-                .map(|volume| volume.root().to_string_lossy().into_owned());
+                .map(|volume| volume.root().as_std_legacy().to_string_lossy().into_owned());
             if let Some(live) = live
                 && !roots.contains(&live)
             {

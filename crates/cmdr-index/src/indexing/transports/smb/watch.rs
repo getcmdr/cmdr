@@ -48,6 +48,7 @@
 //!   stale row is safe. (FSEvents' `item_removed`, on a local disk where a stat is
 //!   cheap, DOES stat-verify; SMB intentionally doesn't.)
 
+use cmdr_fs::app_path::AppPath;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{LazyLock, Mutex};
@@ -338,10 +339,10 @@ fn apply_one_change(volume_id: &str, writer: &IndexWriter, parent_path: &Path, c
     // A tree the volume keeps out of its index walks (a phone's `/data`) takes no
     // live patch either, or a write there would put back rows no walk produces:
     // the same rule the NAS system-dir gate in `resolve_change` keeps.
-    if volume.index_walk(parent_path, false) == cmdr_fs::volume::IndexWalk::RowOnly {
+    if volume.index_walk(&AppPath::legacy_unchecked(parent_path), false) == cmdr_fs::volume::IndexWalk::RowOnly {
         return;
     }
-    let mount_root = volume.root().to_string_lossy().into_owned();
+    let mount_root = volume.root().as_std_legacy().to_string_lossy().into_owned();
     let parent_abs = parent_path.to_string_lossy();
     let parent_rel = match index_relative_path(&mount_root, &parent_abs) {
         Some(p) => p,
