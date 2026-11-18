@@ -160,23 +160,27 @@
         align-items: center;
         gap: var(--spacing-xs);
         width: 100%;
+        min-height: var(--spacing-field-min-height);
         border: 1px solid var(--color-field-border);
+        border-bottom-color: var(--color-field-border-bottom);
         border-radius: var(--radius-input);
-        background: var(--color-bg-primary);
+        background: var(--color-field-bg);
         transition:
             border-color var(--transition-base),
             box-shadow var(--transition-base);
     }
 
     :global(.combobox-control:focus-within) {
-        border-color: var(--color-accent);
-        box-shadow: var(--shadow-focus-solid);
+        border-color: var(--color-field-border-focus);
+        border-bottom-color: var(--color-field-border-bottom-focus);
+        background: var(--color-field-bg-focus);
+        box-shadow: var(--shadow-field-focus);
     }
 
     :global(.combobox-input) {
         flex: 1;
         min-width: 0;
-        padding: var(--spacing-input);
+        padding: var(--spacing-field-padding);
         border: none;
         background: transparent;
         color: var(--color-text-primary);
@@ -225,10 +229,13 @@
         /* The dropdown rung sits on the CONTENT on purpose: zag lifts it onto the positioner.
            `Select.svelte`'s `.select-content` comment is the long version. */
         z-index: var(--z-dropdown);
-        background: var(--color-bg-primary);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        box-shadow: var(--shadow-md);
+        background: var(--color-combobox-content-bg);
+        -webkit-backdrop-filter: var(--glass-combobox-content-backdrop);
+        backdrop-filter: var(--glass-combobox-content-backdrop);
+        border: var(--spacing-combobox-content-border) solid var(--color-combobox-content-border);
+        border-radius: var(--radius-combobox-content);
+        box-shadow: var(--shadow-combobox-content);
+        forced-color-adjust: var(--color-forced-adjust);
         padding: var(--spacing-xs) 0;
         max-height: 300px;
         overflow-y: auto;
@@ -247,25 +254,27 @@
         align-items: center;
         justify-content: space-between;
         gap: var(--spacing-sm);
-        padding: var(--spacing-xs) var(--spacing-sm);
+        margin: var(--spacing-combobox-item-margin);
+        padding: var(--spacing-combobox-item-padding);
+        border-radius: var(--radius-combobox-item);
         cursor: default;
-        font-size: var(--font-size-sm);
+        font-size: var(--font-combobox-item-size);
         outline: none;
     }
 
     :global(.combobox-item[data-highlighted]) {
-        background: var(--color-accent);
-        color: var(--color-accent-fg);
+        background: var(--color-combobox-item-bg-highlighted);
+        color: var(--color-combobox-item-fg-highlighted);
     }
 
     :global(.combobox-item[data-state='checked']) {
-        background: var(--color-accent);
-        color: var(--color-accent-fg);
+        background: var(--color-combobox-item-bg-highlighted);
+        color: var(--color-combobox-item-fg-highlighted);
     }
 
     :global(.combobox-item[data-highlighted]:hover),
     :global(.combobox-item[data-state='checked']:hover) {
-        background: var(--color-accent-hover);
+        background: var(--color-combobox-item-bg-highlighted-hover);
     }
 
     :global(.combobox-item-indicator) {
@@ -279,7 +288,7 @@
     :global(.combobox-item[data-state='checked'] .combobox-item-indicator),
     :global(.combobox-item[data-highlighted] .combobox-item-indicator) {
         visibility: visible;
-        color: var(--color-accent-fg);
+        color: var(--color-combobox-item-fg-highlighted);
     }
 
     :global(.combobox-empty) {

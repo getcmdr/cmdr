@@ -96,6 +96,40 @@ component stays one implementation and reads only these.
 Each Windows value's WinUI resource key and file (at a pinned commit), and what CSS can't express (the luminosity blend,
 noise, `ThemeShadow`, the font's optical size): `docs/notes/windows-port/menu-look-tokens.md`.
 
+## Control look tokens
+
+The `lib/ui` primitives' look (task 60): buttons, text fields (`TextInput`, `TextArea`, and the `Combobox` and
+`NumberInput` frames), checkboxes, switches, radio buttons, sliders, progress bars, the select and the combobox list,
+tooltips, `ModalDialog`'s chrome, focus rings, and scrollbars. Same shape as the menu tokens above, in three files that
+`app.css` imports:
+
+- **`app-controls.css`**: the house `:root` values, each one the literal its primitive wrote before, so macOS and Linux
+  paint what they always did. `app-controls.test.ts` snapshots them.
+- **`app-controls-windows.css`**: `:root[data-look='windows']`, WinUI's values in light and dark, and the Windows
+  scrollbar rule (`:where()`-wrapped so a scroller that styles its own bar still wins). It also redefines the `app.css`
+  tokens `ModalDialog` already reads (`--color-bg-dialog`, `--radius-dialog`, `--spacing-dialog`, `--shadow-dialog`, the
+  dialog borders) and the field's `--radius-input` / `--color-field-border`.
+- **`app-controls-windows-contrast.css`**: `forced-colors: active`, WinUI's `HighContrast` pairs as system colors. A
+  primitive that paints them sets `forced-color-adjust: var(--color-forced-adjust)` (`none` only there).
+- The select, the combobox list, and the tooltip read `app-menu.css`'s flyout surface on Windows (WinUI uses the same
+  in-app acrylic for all three).
+- **Decision/Why: disabled states re-point tokens.** A disabled control redeclares its state tokens as their `-disabled`
+  twins on itself (`Checkbox`, `Switch`, `RadioGroup`, `Slider`), so the hover and press rules paint the disabled look
+  with no specificity contest. The house twins equal the live values, because the house look dims with `opacity`
+  instead.
+- **Gotcha: `opacity` and `font-weight` can't be tokens.** Stylelint's allowlists for both take no `var()`, so the house
+  dim (and the button weight) is keyed on the look in the selector, `:where(:root:not([data-look='windows'])) …`, which
+  keeps the rule's specificity.
+- **Gotcha: a house look with no border or edge** (the select trigger, the switch track) gets its Windows edge from an
+  inset shadow or a whole `border` shorthand token (`none` in the house look), so the house computed style doesn't
+  change at all.
+- The a11y-contrast check (`scripts/check-a11y-contrast`) inlines `app.css`'s local `@import`s before it builds its var
+  table, so it resolves these house tokens; it models the house look only, and the Windows contrast pairs are pinned by
+  `app-controls.test.ts`.
+
+Each Windows token's WinUI resource key and file, the elevation shadows, the computed-style proof that the house look
+didn't move, and what CSS can't express: `docs/notes/windows-port/control-look-tokens.md`.
+
 ## Display accessibility classes
 
 `#lib/display-accessibility` (inited per window) mirrors four macOS Accessibility > Display options onto `<html>` as

@@ -840,7 +840,7 @@
            region: the user can still drag the window while a dialog is open.
            `--titlebar-height` is per-window (see app.css § Window chrome). */
         inset: var(--titlebar-height) 0 0 0;
-        background: var(--color-overlay-light);
+        background: var(--color-dialog-scrim);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1112,7 +1112,7 @@
         align-items: center;
         gap: var(--spacing-sm);
         margin: 0;
-        font-size: var(--font-size-lg);
+        font-size: var(--font-dialog-title-size);
         font-weight: 600;
         color: var(--color-text-primary);
         text-align: left;
@@ -1178,6 +1178,10 @@
         justify-content: flex-end;
         gap: var(--spacing-md);
         padding: var(--spacing-dialog);
+        /* Windows' command space: its own fill under a separator line (ContentDialog) */
+        background: var(--color-dialog-footer-bg);
+        box-shadow: var(--shadow-dialog-footer);
+        border-radius: var(--radius-dialog-footer);
     }
 
     /* `margin-right: auto` eats the slack, so the buttons stay hard right no matter
@@ -1205,7 +1209,7 @@
         flex-wrap: nowrap;
         justify-content: flex-end;
         align-items: center;
-        gap: var(--spacing-md);
+        gap: var(--spacing-dialog-actions-gap);
         margin-left: auto;
         white-space: nowrap;
     }

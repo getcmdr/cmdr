@@ -141,10 +141,10 @@
 </button>
 
 <style>
-    /* Fully-rounded ends (capsule), the shape macOS gives an alert's action buttons.
-       `--radius-full` rather than a percentage: a percentage curves against the box
-       and would go oval on a wide button. */
-    /* A label never wraps, the way a macOS button's doesn't: the button grows instead, and
+    /* The look is the `--*-button-*` tokens (`app-controls.css`): the house capsule, the
+       shape macOS gives an alert's action buttons (`--radius-full` rather than a percentage,
+       which would go oval on a wide button), or Windows 11's.
+       A label never wraps, the way a macOS button's doesn't: the button grows instead, and
        its container decides where it goes (a toast widens, `ToastActions`). `overflow-wrap`
        resets an inherited `anywhere`, which would otherwise let a label break mid-word. */
     .btn {
@@ -152,12 +152,12 @@
         overflow-wrap: normal;
         font-weight: 500;
         line-height: var(--font-line-height-normal);
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-button);
         transition: all var(--transition-base);
+        forced-color-adjust: var(--color-forced-adjust);
     }
 
     .btn:disabled {
-        opacity: 0.4;
         cursor: not-allowed;
         pointer-events: none;
     }
@@ -165,14 +165,28 @@
     /* Blocked: same read as disabled, but pointer events stay live (and the button stays
        focusable) so the press reaches `onclick` and the handler can say what's missing. */
     .btn[aria-disabled='true'] {
-        opacity: 0.4;
         cursor: not-allowed;
     }
 
+    /* The house look dims a disabled button; Windows paints WinUI's disabled colors instead
+       (the `-disabled` tokens), so the dim stays off there. Keyed on the look in the selector,
+       because stylelint's `opacity` allowlist takes no `var()`; `:where()` keeps the
+       specificity of the rules above. */
+    /* WinUI's Button is FontWeight Normal; the house label is medium. Keyed on the look in the
+       selector, like the dim below, because stylelint's `font-weight` allowlist takes no `var()`. */
+    :global(:where(:root[data-look='windows'])) .btn {
+        font-weight: 400;
+    }
+
+    :global(:where(:root:not([data-look='windows']))) .btn:disabled,
+    :global(:where(:root:not([data-look='windows']))) .btn[aria-disabled='true'] {
+        opacity: 0.4;
+    }
+
     .btn:focus-visible {
-        outline: 2px solid var(--color-accent);
+        outline: 2px solid var(--color-focus-ring);
         outline-offset: 1px;
-        box-shadow: var(--shadow-focus-contrast);
+        box-shadow: var(--shadow-focus-ring-button);
     }
 
     /* A key hint gets its own flex slot, so the chip centers on the button's cross axis
@@ -198,7 +212,7 @@
 
     /* === Size: regular === */
     .btn-regular {
-        padding: 7px 20px;
+        padding: var(--spacing-button-padding);
         font-size: var(--font-size-md);
     }
 
@@ -214,37 +228,91 @@
        narrower and shorter than its secondary and danger neighbors, and mixed rows misaligned.
        Transparent, so the accent fill (painted under the border, `background-clip: border-box`)
        reads edge to edge. In forced-colors mode the browser paints it in the system button
-       color on purpose: that's the one outline a primary has there, like its siblings. */
+       color on purpose: that's the one outline a primary has there, like its siblings.
+       Windows paints its own contrast-theme pairs instead (`--color-forced-adjust`).
+       Each variant's edge is three tokens (sides, top, bottom), since WinUI's elevation
+       border is darker along one edge; the house look gives all three one color. */
     .btn-primary {
-        background: var(--color-accent);
-        color: var(--color-accent-fg);
-        border: 1px solid transparent;
+        background: var(--color-button-primary-bg);
+        color: var(--color-button-primary-fg);
+        border: 1px solid var(--color-button-primary-border);
+        border-top-color: var(--color-button-primary-border-top);
+        border-bottom-color: var(--color-button-primary-border-bottom);
     }
 
     .btn-primary:hover:not(:disabled, [aria-disabled='true']) {
-        background: var(--color-accent-hover);
+        background: var(--color-button-primary-bg-hover);
+        color: var(--color-button-primary-fg-hover);
+        border-color: var(--color-button-primary-border-hover);
+        border-bottom-color: var(--color-button-primary-border-bottom);
     }
 
-    /* === Variant: secondary === */
+    .btn-primary:hover:active:not(:disabled, [aria-disabled='true']) {
+        background: var(--color-button-primary-bg-pressed);
+        color: var(--color-button-primary-fg-pressed);
+        border-color: var(--color-button-primary-border-pressed);
+    }
+
+    .btn-primary:is(:disabled, [aria-disabled='true']) {
+        background: var(--color-button-primary-bg-disabled);
+        color: var(--color-button-primary-fg-disabled);
+        border-color: var(--color-button-primary-border-disabled);
+    }
+
+    /* === Variant: secondary (WinUI's standard Button) === */
     .btn-secondary {
-        background: transparent;
-        color: var(--color-text-secondary);
-        border: 1px solid var(--color-border);
+        background: var(--color-button-secondary-bg);
+        color: var(--color-button-secondary-fg);
+        border: 1px solid var(--color-button-secondary-border);
+        border-top-color: var(--color-button-secondary-border-top);
+        border-bottom-color: var(--color-button-secondary-border-bottom);
     }
 
     .btn-secondary:hover:not(:disabled, [aria-disabled='true']) {
-        background: var(--color-bg-tertiary);
-        color: var(--color-text-primary);
+        background: var(--color-button-secondary-bg-hover);
+        color: var(--color-button-secondary-fg-hover);
+        border-color: var(--color-button-secondary-border-hover);
+        border-top-color: var(--color-button-secondary-border-top);
+        border-bottom-color: var(--color-button-secondary-border-bottom);
     }
 
-    /* === Variant: danger === */
+    .btn-secondary:hover:active:not(:disabled, [aria-disabled='true']) {
+        background: var(--color-button-secondary-bg-pressed);
+        color: var(--color-button-secondary-fg-pressed);
+        border-color: var(--color-button-secondary-border-pressed);
+    }
+
+    .btn-secondary:is(:disabled, [aria-disabled='true']) {
+        background: var(--color-button-secondary-bg-disabled);
+        color: var(--color-button-secondary-fg-disabled);
+        border-color: var(--color-button-secondary-border-disabled);
+    }
+
+    /* === Variant: danger (no WinUI twin: the standard Button in the critical color) === */
     .btn-danger {
-        background: transparent;
-        color: var(--color-error-text);
-        border: 1px solid var(--color-error);
+        background: var(--color-button-danger-bg);
+        color: var(--color-button-danger-fg);
+        border: 1px solid var(--color-button-danger-border);
+        border-top-color: var(--color-button-danger-border-top);
+        border-bottom-color: var(--color-button-danger-border-bottom);
     }
 
     .btn-danger:hover:not(:disabled, [aria-disabled='true']) {
-        background: color-mix(in srgb, var(--color-error), transparent 90%);
+        background: var(--color-button-danger-bg-hover);
+        border-color: var(--color-button-danger-border-hover);
+        border-top-color: var(--color-button-danger-border-top);
+        border-bottom-color: var(--color-button-danger-border-bottom);
+    }
+
+    .btn-danger:hover:active:not(:disabled, [aria-disabled='true']) {
+        background: var(--color-button-danger-bg-pressed);
+        color: var(--color-button-danger-fg-pressed);
+        border-color: var(--color-button-danger-border-pressed);
+    }
+
+    .btn-danger:is(:disabled, [aria-disabled='true']) {
+        background: var(--color-button-danger-bg-disabled);
+        color: var(--color-button-danger-fg-disabled);
+        border-color: var(--color-button-danger-border-disabled);
     }
 </style>

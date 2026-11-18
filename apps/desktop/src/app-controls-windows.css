@@ -1,0 +1,558 @@
+/* Control look tokens, Windows 11 (WinUI 3), light and dark, plus Windows' scrollbars. The house
+   values and the shape of the set are in `app-controls.css`; the contrast themes in
+   `app-controls-windows-contrast.css`. Imported by app.css; not loaded on its own.
+
+   Every value comes from microsoft/microsoft-ui-xaml at commit
+   8c4a489bac3da36224ba325453146217619fe919 (main, 2026-11-18); each comment names the
+   resource key, resolved through its `ThemeResource` chain. File by file, the elevation
+   shadows, and what CSS can't express: `docs/notes/windows-port/control-look-tokens.md`. */
+
+/* === Windows 11, light (WinUI's `Light` dictionaries) ===
+   Sizes are theme-independent (WinUI defines them outside the theme dictionaries), so they
+   live here once and the dark block below only swaps colors. */
+:root[data-look='windows'] {
+  /* UseSystemFocusVisuals: FocusStrokeColorOuter #E4000000 at FocusVisualPrimaryThickness 2,
+     FocusStrokeColorInner #B3FFFFFF at FocusVisualSecondaryThickness 1. Button's
+     FocusVisualMargin -3 puts the outer ring 1–3px outside the control and the inner one
+     0–1px outside: the outline (offset 1px) and a 1px spread shadow. */
+  --color-focus-ring: #000000e4;
+  --shadow-focus-ring-button: 0 0 0 1px #ffffffb3;
+  --shadow-focus-ring-control: 0 0 0 1px #ffffffb3;
+  --spacing-focus-ring-control-offset: 1px;
+  /* The select keeps its edge (two inset shadows) under the inner ring */
+  --shadow-focus-ring-select: inset 0 -1px 0 #00000029, inset 0 0 0 1px #0000000f, 0 0 0 1px #ffffffb3;
+
+  /* Button: CornerRadius → ControlCornerRadius 4; ButtonPadding 11,5,11,6 */
+  --radius-button: 4px;
+  --spacing-button-padding: 5px 11px 6px;
+  /* AccentButtonBackground → AccentFillColorDefaultBrush; …PointerOver → AccentFillColorSecondaryBrush
+     (Opacity 0.9); …Pressed → AccentFillColorTertiaryBrush (Opacity 0.8); …Disabled →
+     AccentFillColorDisabled #37000000 */
+  --color-button-primary-bg: var(--color-accent);
+  --color-button-primary-bg-hover: color-mix(in srgb, var(--color-accent) 90%, transparent);
+  --color-button-primary-bg-pressed: color-mix(in srgb, var(--color-accent) 80%, transparent);
+  --color-button-primary-bg-disabled: #00000037;
+  /* AccentButtonForeground → TextOnAccentFillColorPrimary; …Pressed → TextOnAccentFillColorSecondary
+     (#B3FFFFFF: the on-accent color at 70%); …Disabled → TextOnAccentFillColorDisabled #FFFFFF */
+  --color-button-primary-fg: var(--color-accent-fg);
+  --color-button-primary-fg-hover: var(--color-accent-fg);
+  --color-button-primary-fg-pressed: color-mix(in srgb, var(--color-accent-fg) 70%, transparent);
+  --color-button-primary-fg-disabled: #ffffff;
+  /* AccentButtonBorderBrush → AccentControlElevationBorderBrush: a 3px gradient, flipped
+     (ScaleY -1), so the bottom edge is ControlStrokeColorOnAccentSecondary #66000000 and the
+     rest ControlStrokeColorOnAccentDefault #14FFFFFF; …Pressed and …Disabled → transparent */
+  --color-button-primary-border: #ffffff14;
+  --color-button-primary-border-top: #ffffff14;
+  --color-button-primary-border-bottom: #00000066;
+  --color-button-primary-border-hover: #ffffff14;
+  --color-button-primary-border-pressed: transparent;
+  --color-button-primary-border-disabled: transparent;
+  /* ButtonBackground → ControlFillColorDefault #B3FFFFFF; …PointerOver → ControlFillColorSecondary
+     #80F9F9F9; …Pressed → ControlFillColorTertiary #4DF9F9F9; …Disabled → ControlFillColorDisabled
+     #4DF9F9F9 */
+  --color-button-secondary-bg: #ffffffb3;
+  --color-button-secondary-bg-hover: #f9f9f980;
+  --color-button-secondary-bg-pressed: #f9f9f94d;
+  --color-button-secondary-bg-disabled: #f9f9f94d;
+  /* ButtonForeground / …PointerOver → TextFillColorPrimary #E4000000; …Pressed →
+     TextFillColorSecondary #9E000000; …Disabled → TextFillColorDisabled #5C000000 */
+  --color-button-secondary-fg: #000000e4;
+  --color-button-secondary-fg-hover: #000000e4;
+  --color-button-secondary-fg-pressed: #0000009e;
+  --color-button-secondary-fg-disabled: #0000005c;
+  /* ButtonBorderBrush / …PointerOver → ControlElevationBorderBrush, flipped in Light: bottom
+     ControlStrokeColorSecondary #29000000, the rest ControlStrokeColorDefault #0F000000;
+     …Pressed and …Disabled → ControlStrokeColorDefault */
+  --color-button-secondary-border: #0000000f;
+  --color-button-secondary-border-top: #0000000f;
+  --color-button-secondary-border-bottom: #00000029;
+  --color-button-secondary-border-hover: #0000000f;
+  --color-button-secondary-border-pressed: #0000000f;
+  --color-button-secondary-border-disabled: #0000000f;
+  /* Danger has no WinUI twin: the standard Button with SystemFillColorCritical #C42B1C text */
+  --color-button-danger-bg: #ffffffb3;
+  --color-button-danger-bg-hover: #f9f9f980;
+  --color-button-danger-bg-pressed: #f9f9f94d;
+  --color-button-danger-fg: #c42b1c;
+  --color-button-danger-fg-pressed: #c42b1c;
+  --color-button-danger-border: #0000000f;
+  --color-button-danger-border-top: #0000000f;
+  --color-button-danger-border-bottom: #00000029;
+  --color-button-danger-border-hover: #0000000f;
+  --color-button-danger-border-pressed: #0000000f;
+  --color-button-danger-bg-disabled: #f9f9f94d;
+  --color-button-danger-fg-disabled: #0000005c;
+  --color-button-danger-border-disabled: #0000000f;
+
+  /* TextBox: TextControlBackground → ControlFillColorDefault #B3FFFFFF; …PointerOver →
+     ControlFillColorSecondary #80F9F9F9; …Focused → ControlFillColorInputActive #FFFFFF */
+  --color-field-bg: #ffffffb3;
+  --color-field-bg-hover: #f9f9f980;
+  --color-field-bg-focus: #ffffff;
+  /* TextControlBorderBrush → TextControlElevationBorderBrush (TextBox_themeresources.xaml): a
+     2px gradient, flipped, bottom ControlStrongStrokeColorDefault #72000000, the rest
+     ControlStrokeColorDefault #0F000000 */
+  --color-field-border: #0000000f;
+  --color-field-border-bottom: #00000072;
+  /* …Focused → TextControlElevationBorderFocusedBrush: ControlStrokeColorDefault, bottom
+     SystemAccentColorDark1, at TextControlBorderThemeThicknessFocused 1,1,1,2 (the second
+     bottom pixel is the inset shadow) */
+  --color-field-border-focus: #0000000f;
+  --color-field-border-bottom-focus: var(--color-accent);
+  --shadow-field-focus: inset 0 -1px 0 var(--color-accent);
+  /* TextControlThemePadding 10,5,6,6 (Common_themeresources.xaml); TextControlThemeMinHeight 32
+     (generic.xaml) */
+  --spacing-field-padding: 5px 6px 6px 10px;
+  --spacing-field-min-height: 32px;
+  /* ControlCornerRadius 4, whatever corner the caller asked for: WinUI's fields (TextBox,
+     AutoSuggestBox, NumberBox) are all 4px, search boxes included */
+  --radius-input: 4px;
+  --radius-field-sm: 4px;
+  --radius-field-md: 4px;
+  --radius-field-lg: 4px;
+  --radius-field-full: 4px;
+  /* TextControlPlaceholderForeground → TextFillColorSecondary #9E000000 */
+  --color-field-placeholder: #0000009e;
+  /* TextControlBackgroundDisabled → ControlFillColorDisabled #4DF9F9F9; TextControlBorderBrushDisabled
+     → ControlStrokeColorDefault; TextControlForegroundDisabled → TemporaryTextFillColorDisabled
+     #5C010101 (TextBox_themeresources.xaml) */
+  --color-field-bg-disabled: #f9f9f94d;
+  --color-field-border-disabled: #0000000f;
+  --color-field-fg-disabled: #0101015c;
+
+  /* CheckBox: CheckBoxSize 20, ControlCornerRadius 4 */
+  --spacing-checkbox-size: 20px;
+  --radius-checkbox: 4px;
+  /* CheckBoxCheckBackgroundFillUnchecked → ControlAltFillColorSecondary #06000000;
+     …PointerOver → ControlAltFillColorTertiary #0F000000; …Pressed →
+     ControlAltFillColorQuarternary #18000000; …Disabled → ControlAltFillColorDisabled (clear) */
+  --color-checkbox-bg: #00000006;
+  --color-checkbox-bg-hover: #0000000f;
+  --color-checkbox-bg-pressed: #00000018;
+  --color-checkbox-bg-disabled: transparent;
+  /* CheckBoxCheckBackgroundStrokeUnchecked / …PointerOver → ControlStrongStrokeColorDefault
+     #72000000; …Pressed / …Disabled → ControlStrongStrokeColorDisabled #37000000 */
+  --color-checkbox-border: #00000072;
+  --color-checkbox-border-hover: #00000072;
+  --color-checkbox-border-pressed: #00000037;
+  --color-checkbox-border-disabled: #00000037;
+  --color-checkbox-border-disabled-hover: #00000037;
+  /* CheckBoxCheckBackgroundFillChecked → AccentFillColorDefault; …PointerOver → Secondary (0.9);
+     …Pressed → Tertiary (0.8); …Disabled → AccentFillColorDisabled #37000000 */
+  --color-checkbox-checked-bg: var(--color-accent);
+  --color-checkbox-checked-bg-hover: color-mix(in srgb, var(--color-accent) 90%, transparent);
+  --color-checkbox-checked-bg-pressed: color-mix(in srgb, var(--color-accent) 80%, transparent);
+  --color-checkbox-checked-bg-disabled: #00000037;
+  --color-checkbox-checked-bg-disabled-hover: #00000037;
+  /* CheckBoxCheckGlyphForegroundChecked → TextOnAccentFillColorPrimary; …Disabled →
+     TextOnAccentFillColorDisabled #FFFFFF */
+  --color-checkbox-glyph: var(--color-accent-fg);
+  --color-checkbox-glyph-disabled: #ffffff;
+  /* CheckBoxForegroundUncheckedDisabled (and ToggleSwitch's, RadioButton's) → TextFillColorDisabled */
+  --color-control-label-disabled: #0000005c;
+
+  /* ToggleSwitch: OuterBorder 40×20, RadiusX 10, ToggleSwitchOuterBorderStrokeThickness 1; the
+     knob is 12px (SwitchKnobOff / SwitchKnobOn) in a 20px cell, so it sits 4px in: 1px border
+     plus 3px padding, and travels the 20px between the two cells. */
+  --spacing-switch-width: 40px;
+  --spacing-switch-padding: 3px;
+  --spacing-switch-thumb-size: 12px;
+  --spacing-switch-travel: 20px;
+  /* ToggleSwitchFillOff → ControlAltFillColorSecondary; …PointerOver → ControlAltFillColorTertiary;
+     …Disabled → ControlAltFillColorDisabled */
+  --color-switch-track: #00000006;
+  --color-switch-track-hover: #0000000f;
+  --color-switch-track-disabled: transparent;
+  /* ToggleSwitchStrokeOff / …PointerOver → ControlStrongStrokeColorDefault; …Disabled →
+     ControlStrongStrokeColorDisabled */
+  --color-switch-border: 1px solid #00000072;
+  --color-switch-border-hover: 1px solid #00000072;
+  --color-switch-border-disabled: 1px solid #00000037;
+  /* ToggleSwitchFillOn / ToggleSwitchStrokeOn → AccentFillColorDefault; …PointerOver →
+     Secondary; …Disabled → AccentFillColorDisabled */
+  --color-switch-track-on: var(--color-accent);
+  --color-switch-track-on-hover: color-mix(in srgb, var(--color-accent) 90%, transparent);
+  --color-switch-track-on-disabled: #00000037;
+  --color-switch-track-on-disabled-hover: #00000037;
+  --color-switch-border-on: 1px solid var(--color-accent);
+  --color-switch-border-on-hover: 1px solid color-mix(in srgb, var(--color-accent) 90%, transparent);
+  --color-switch-border-on-disabled: 1px solid #00000037;
+  /* ToggleSwitchKnobFillOff / …PointerOver → TextFillColorSecondary #9E000000; …Disabled →
+     TextFillColorDisabled; ToggleSwitchKnobFillOn → TextOnAccentFillColorPrimary; …Disabled →
+     TextOnAccentFillColorDisabled #FFFFFF */
+  --color-switch-thumb: #0000009e;
+  --color-switch-thumb-hover: #0000009e;
+  --color-switch-thumb-disabled: #0000005c;
+  --color-switch-thumb-on: var(--color-accent-fg);
+  --color-switch-thumb-on-hover: var(--color-accent-fg);
+  --color-switch-thumb-on-disabled: #ffffff;
+  --shadow-switch-thumb: none;
+
+  /* RadioButton: 20px OuterEllipse, RadioButtonBorderThemeThickness 1; checked shows a
+     RadioButtonCheckGlyphSize 12 dot (PointerOver 14), so a 3px ring of accent inside the
+     1px border (2px on hover) */
+  --spacing-radio-size: 20px;
+  --spacing-radio-border: 1px;
+  /* ControlContentThemeFontSize 14 */
+  --font-radio-label-size: var(--font-size-md);
+  /* RadioButtonForeground → TextFillColorPrimary; …Disabled → TextFillColorDisabled */
+  --color-radio-label: #000000e4;
+  --color-radio-label-disabled: #0000005c;
+  /* RadioButtonOuterEllipseFill → ControlAltFillColorSecondary; …PointerOver → Tertiary;
+     …Disabled → ControlAltFillColorDisabled (clear) */
+  --color-radio-bg: #00000006;
+  --color-radio-bg-hover: #0000000f;
+  --color-radio-bg-disabled: transparent;
+  /* RadioButtonOuterEllipseStroke / …PointerOver → ControlStrongStrokeColorDefault; …Disabled →
+     ControlStrongStrokeColorDisabled */
+  --color-radio-border: #00000072;
+  --color-radio-border-hover: #00000072;
+  --color-radio-border-disabled: #00000037;
+  /* RadioButtonOuterEllipseCheckedStroke / …Fill → AccentFillColorDefault; …PointerOver →
+     Secondary; …Disabled → AccentFillColorDisabled; RadioButtonCheckGlyphFill →
+     TextOnAccentFillColorPrimary (also when disabled) */
+  --color-radio-checked-border: var(--color-accent);
+  --color-radio-checked-border-hover: color-mix(in srgb, var(--color-accent) 90%, transparent);
+  --color-radio-checked-border-disabled: #00000037;
+  --color-radio-checked-border-disabled-hover: #00000037;
+  --color-radio-checked-bg: var(--color-accent-fg);
+  --color-radio-checked-bg-hover: var(--color-accent-fg);
+  --color-radio-checked-bg-disabled: #ffffff;
+  --color-radio-checked-bg-disabled-hover: #ffffff;
+  --shadow-radio-checked: inset 0 0 0 3px var(--color-accent);
+  --shadow-radio-checked-hover: inset 0 0 0 2px color-mix(in srgb, var(--color-accent) 90%, transparent);
+  --shadow-radio-checked-disabled: inset 0 0 0 3px #00000037;
+
+  /* Slider: SliderTrackFill → ControlStrongFillColorDefault #72000000; …Disabled →
+     ControlStrongFillColorDisabled #51000000; SliderTrackValueFill → AccentFillColorDefault;
+     …Disabled → AccentFillColorDisabled. SliderTrackThemeHeight 4 and SliderTrackCornerRadius 2
+     match the house track. */
+  --color-slider-track: #00000072;
+  --color-slider-track-disabled: #00000051;
+  --color-slider-range: var(--color-accent);
+  --color-slider-range-disabled: #00000037;
+  /* SliderHorizontalThumbWidth/Height 18, SliderThumbCornerRadius 10; its fill is
+     SliderOuterThumbBackground → ControlSolidFillColorDefault #FFFFFF with SliderThumbBorderBrush →
+     ControlElevationBorderBrush, holding a SliderInnerThumb 12px dot (SliderThumbBackground →
+     AccentFillColorDefault) at scale 0.86, 1.167 on hover, 0.71 pressed: the thumb paints the
+     accent and an inset ring of the solid fill leaves a 10.3px dot (14px, 8.5px). */
+  --spacing-slider-thumb-size: 18px;
+  --spacing-slider-thumb-border: 1px;
+  --color-slider-thumb-bg: var(--color-accent);
+  --color-slider-thumb-bg-hover: color-mix(in srgb, var(--color-accent) 90%, #ffffff);
+  --color-slider-thumb-bg-disabled: #00000037;
+  --color-slider-thumb-border: #0000000f;
+  --color-slider-thumb-border-bottom: #00000029;
+  --color-slider-thumb-border-hover: #0000000f;
+  --shadow-slider-thumb: inset 0 0 0 2.84px #ffffff;
+  --shadow-slider-thumb-hover: inset 0 0 0 1px #ffffff;
+  --shadow-slider-thumb-pressed: inset 0 0 0 3.74px #ffffff;
+  --shadow-slider-thumb-disabled-hover: inset 0 0 0 2.84px #ffffff;
+  /* The thumb's ring, then the focus visual's inner ring */
+  --shadow-slider-thumb-focus: inset 0 0 0 2.84px #ffffff, 0 0 0 1px #ffffffb3;
+
+  /* ProgressBar: ProgressBarMinHeight 3, ProgressBarCornerRadius 1.5; the track is a centered
+     ProgressBarTrackHeight 1 line of ProgressBarBackground → ControlStrongStrokeColorDefault
+     #72000000. WinUI has one size, so both of ours take it. */
+  --color-progress-track: linear-gradient(#00000072 0 0) center / 100% 1px no-repeat;
+  /* ProgressBarForeground → AccentFillColorDefault */
+  --color-progress-fill: var(--color-accent);
+  --spacing-progress-height-sm: 3px;
+  --spacing-progress-height-md: 3px;
+  --radius-progress-sm: 1.5px;
+  --radius-progress-md: 1.5px;
+
+  /* ComboBox: ComboBoxPadding 12,5,0,7 plus the 32px glyph column (our 18px indicator and 7px
+     inset center the chevron in it); ComboBoxMinHeight 32; ControlCornerRadius 4;
+     ControlContentThemeFontSize 14 */
+  --spacing-select-trigger-padding: 5px 7px 7px 12px;
+  --spacing-select-trigger-min-height: 32px;
+  --radius-select-trigger: 4px;
+  --font-select-trigger-size: var(--font-size-md);
+  /* ComboBoxForeground → TextFillColorPrimary */
+  --color-select-trigger-fg: #000000e4;
+  /* ComboBoxBackground → ControlFillColorDefault; …PointerOver → ControlFillColorSecondary;
+     …Pressed → ControlFillColorTertiary (open) */
+  --color-select-trigger-bg: #ffffffb3;
+  --color-select-trigger-bg-hover: #f9f9f980;
+  --color-select-trigger-bg-open: #f9f9f94d;
+  /* ComboBoxBorderBrush → ControlElevationBorderBrush (bottom #29000000, rest #0F000000);
+     ComboBoxBorderThemeThickness 1 */
+  --shadow-select-trigger: inset 0 -1px 0 #00000029, inset 0 0 0 1px #0000000f;
+  --shadow-select-trigger-hover: inset 0 -1px 0 #00000029, inset 0 0 0 1px #0000000f;
+  /* ComboBoxDropDownGlyphForeground → TextFillColorSecondary; the glyph has no backing */
+  --color-select-indicator-bg: transparent;
+  --color-select-indicator-fg: #0000009e;
+  /* ComboBoxDropdownContentMargin 0,4 */
+  --spacing-select-content-padding: 4px 0;
+  /* ComboBoxItem: LayoutRoot Margin 5,2,5,2; ComboBoxItemThemePadding 11,5,11,7;
+     ComboBoxItemCornerRadius 3; ControlContentThemeFontSize 14 */
+  --spacing-select-item-margin: 2px 5px;
+  --spacing-select-item-padding: 5px 11px 7px;
+  --radius-select-item: 3px;
+  --font-select-item-size: var(--font-size-md);
+  /* ComboBoxItemBackgroundPointerOver → SubtleFillColorSecondary #09000000; …Selected →
+     SubtleFillColorSecondary; …SelectedPointerOver → SubtleFillColorTertiary #06000000;
+     ComboBoxItemForeground… → TextFillColorPrimary */
+  --color-select-item-bg-highlighted: #00000009;
+  --color-select-item-bg-highlighted-hover: #00000006;
+  --color-select-item-fg-highlighted: #000000e4;
+  /* A row's description stays secondary on the subtle fill (TextFillColorSecondary) */
+  --color-select-item-description-highlighted: #0000009e;
+  --color-select-item-bg-checked: #00000009;
+  /* The selected item's Pill: ComboBoxItemPillWidth 3 × ComboBoxItemPillHeight 16, Margin
+     1,0,0,0, vertically centered, ComboBoxItemPillFillBrush → AccentFillColorDefault */
+  --color-select-item-checked-mark: linear-gradient(var(--color-accent) 0 0);
+  --spacing-select-item-checked-mark-position: 1px 50%;
+  --spacing-select-item-checked-mark-size: 3px 16px;
+  --spacing-select-item-checked-mark-repeat: no-repeat;
+  /* The pill marks the choice, so the house checkmark goes */
+  --color-select-check: transparent;
+  --color-select-check-highlighted: transparent;
+
+  /* ComboBoxDropDownBackground → AcrylicInAppFillColorDefaultBrush and ComboBoxDropDownBorderBrush
+     → SurfaceStrokeColorFlyoutBrush: the flyout material, as `app-menu.css` resolves it */
+  --color-combobox-content-bg: var(--color-menu-surface-bg);
+  --glass-combobox-content-backdrop: var(--glass-menu-backdrop);
+  --color-combobox-content-border: var(--color-menu-surface-border);
+  --spacing-combobox-content-border: var(--spacing-menu-surface-border);
+  --radius-combobox-content: var(--radius-menu-surface);
+  --shadow-combobox-content: var(--shadow-menu-surface);
+  --spacing-combobox-item-margin: 2px 5px;
+  --spacing-combobox-item-padding: 5px 11px 7px;
+  --radius-combobox-item: 3px;
+  --font-combobox-item-size: var(--font-size-md);
+  --color-combobox-item-bg-highlighted: #00000009;
+  --color-combobox-item-bg-highlighted-hover: #00000006;
+  --color-combobox-item-fg-highlighted: #000000e4;
+
+  /* ToolTip: ToolTipBackgroundBrush → AcrylicInAppFillColorDefaultBrush (the menu's acrylic
+     recipe, so the same tokens); ToolTipBorderBrush → SurfaceStrokeColorFlyoutBrush at
+     ToolTipBorderThemeThickness 1; ToolTipBorderPadding 9,6,9,8; ToolTipForegroundBrush →
+     TextFillColorPrimary. ToolTipContentThemeFontSize 12, ToolTipMaxWidth 320, and
+     ControlCornerRadius 4 match the house tooltip. */
+  --color-tooltip-bg: var(--color-menu-surface-bg);
+  --glass-tooltip-backdrop: var(--glass-menu-backdrop);
+  --color-tooltip-border: var(--color-menu-surface-border);
+  --spacing-tooltip-border: 1px;
+  --spacing-tooltip-padding: 6px 9px 8px;
+  --color-tooltip-fg: #000000e4;
+  /* Tooltip elevation 16 (Learn, "Elevation in Windows"): Fluent's `shadow16` */
+  --shadow-tooltip-surface: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14);
+
+  /* ContentDialog: the content area is LayerFillColorAlt #FFFFFF (ContentDialogTopOverlay) over
+     ContentDialogBackground → SolidBackgroundFillColorBase #F3F3F3, which shows in the command
+     space below a ContentDialogSeparatorBorderBrush → CardStrokeColorDefault #0F000000 line.
+     ContentDialogBorderBrush → SurfaceStrokeColorDefault #66757575 at ContentDialogBorderWidth 1;
+     OverlayCornerRadius 8; ContentDialogPadding 24; ContentDialogButtonSpacing 8. */
+  --color-bg-dialog: #ffffff;
+  --color-dialog-border-outer: #75757566;
+  --color-dialog-border-inner: transparent;
+  --radius-dialog: 8px;
+  --spacing-dialog: 24px;
+  /* Dialog elevation 128 (Learn, "Elevation in Windows"): Fluent's `shadow64` */
+  --shadow-dialog: 0 0 8px rgba(0, 0, 0, 0.12), 0 32px 64px rgba(0, 0, 0, 0.14);
+  /* ContentDialogSmokeFill → SmokeFillColorDefault #4D000000 */
+  --color-dialog-scrim: #0000004d;
+  /* The title is SubtitleTextBlockStyle: 20px semibold (TextBlock_themeresources.xaml) */
+  --font-dialog-title-size: var(--font-size-xl);
+  --color-dialog-footer-bg: #f3f3f3;
+  --shadow-dialog-footer: inset 0 1px 0 #0000000f;
+  --radius-dialog-footer: 0 0 7px 7px;
+  --spacing-dialog-actions-gap: 8px;
+
+  /* ScrollBar (the rule at the end of this file): ScrollBarThumbFill →
+     ControlStrongFillColorDefault #72000000, ScrollBarSize 12, the expanded thumb
+     ScrollBarThumbStrokeThickness 6 wide with ScrollBarCornerRadius 3; the track
+     (ScrollBarTrackFill → AcrylicInAppFillColorDefaultBrush) shows only while the bar is
+     expanded, so the resting track stays clear. */
+  --color-scrollbar-thumb: #00000072;
+  --color-scrollbar-thumb-hover: #00000072;
+  --spacing-scrollbar-size: 12px;
+  --spacing-scrollbar-thumb-inset: 3px;
+}
+
+/* === Windows 11, dark (WinUI's `Default` dictionaries, which are the dark theme) === */
+@media (prefers-color-scheme: dark) {
+  :root[data-look='windows'] {
+    /* FocusStrokeColorOuter #FFFFFF, FocusStrokeColorInner #B3000000 */
+    --color-focus-ring: #ffffff;
+    --shadow-focus-ring-button: 0 0 0 1px #000000b3;
+    --shadow-focus-ring-control: 0 0 0 1px #000000b3;
+    --shadow-focus-ring-select: inset 0 0 0 1px #ffffff12, inset 0 1px 0 #ffffff18, 0 0 0 1px #000000b3;
+
+    /* AccentFillColorDisabled #28FFFFFF; TextOnAccentFillColorDisabled #87FFFFFF */
+    --color-button-primary-bg-disabled: #ffffff28;
+    --color-button-primary-fg-pressed: color-mix(in srgb, var(--color-accent-fg) 50%, transparent);
+    --color-button-primary-fg-disabled: #ffffff87;
+    /* AccentControlElevationBorderBrush, flipped: bottom ControlStrokeColorOnAccentSecondary
+       #23000000, the rest ControlStrokeColorOnAccentDefault #14FFFFFF */
+    --color-button-primary-border-bottom: #00000023;
+    /* ControlFillColorDefault #0FFFFFFF, Secondary #15FFFFFF, Tertiary #08FFFFFF, Disabled #0BFFFFFF */
+    --color-button-secondary-bg: #ffffff0f;
+    --color-button-secondary-bg-hover: #ffffff15;
+    --color-button-secondary-bg-pressed: #ffffff08;
+    --color-button-secondary-bg-disabled: #ffffff0b;
+    /* TextFillColorPrimary #FFFFFF, Secondary #C5FFFFFF, Disabled #5DFFFFFF */
+    --color-button-secondary-fg: #ffffff;
+    --color-button-secondary-fg-hover: #ffffff;
+    --color-button-secondary-fg-pressed: #ffffffc5;
+    --color-button-secondary-fg-disabled: #ffffff5d;
+    /* ControlElevationBorderBrush, not flipped in Default: top ControlStrokeColorSecondary
+       #18FFFFFF, the rest ControlStrokeColorDefault #12FFFFFF */
+    --color-button-secondary-border: #ffffff12;
+    --color-button-secondary-border-top: #ffffff18;
+    --color-button-secondary-border-bottom: #ffffff12;
+    --color-button-secondary-border-hover: #ffffff12;
+    --color-button-secondary-border-pressed: #ffffff12;
+    --color-button-secondary-border-disabled: #ffffff12;
+    /* SystemFillColorCritical #FF99A4 */
+    --color-button-danger-bg: #ffffff0f;
+    --color-button-danger-bg-hover: #ffffff15;
+    --color-button-danger-bg-pressed: #ffffff08;
+    --color-button-danger-fg: #ff99a4;
+    --color-button-danger-fg-pressed: #ff99a4;
+    --color-button-danger-border: #ffffff12;
+    --color-button-danger-border-top: #ffffff18;
+    --color-button-danger-border-bottom: #ffffff12;
+    --color-button-danger-border-hover: #ffffff12;
+    --color-button-danger-border-pressed: #ffffff12;
+    --color-button-danger-bg-disabled: #ffffff0b;
+    --color-button-danger-fg-disabled: #ffffff5d;
+    --color-button-danger-border-disabled: #ffffff12;
+
+    /* ControlFillColorDefault, Secondary, InputActive #B31E1E1E */
+    --color-field-bg: #ffffff0f;
+    --color-field-bg-hover: #ffffff15;
+    --color-field-bg-focus: #1e1e1eb3;
+    /* TextControlElevationBorderBrush (Default): bottom ControlStrongStrokeColorDefault
+       #8BFFFFFF, the rest ControlStrokeColorDefault #12FFFFFF; focused bottom
+       SystemAccentColorLight2 */
+    --color-field-border: #ffffff12;
+    --color-field-border-bottom: #ffffff8b;
+    --color-field-border-focus: #ffffff12;
+    --color-field-placeholder: #ffffffc5;
+    /* ControlFillColorDisabled #0BFFFFFF; TemporaryTextFillColorDisabled #5DFEFEFE */
+    --color-field-bg-disabled: #ffffff0b;
+    --color-field-border-disabled: #ffffff12;
+    --color-field-fg-disabled: #fefefe5d;
+
+    /* ControlAltFillColorSecondary #19000000, Tertiary #0BFFFFFF, Quarternary #12FFFFFF;
+       ControlStrongStrokeColorDefault #8BFFFFFF, …Disabled #28FFFFFF */
+    --color-checkbox-bg: #00000019;
+    --color-checkbox-bg-hover: #ffffff0b;
+    --color-checkbox-bg-pressed: #ffffff12;
+    --color-checkbox-border: #ffffff8b;
+    --color-checkbox-border-hover: #ffffff8b;
+    --color-checkbox-border-pressed: #ffffff28;
+    --color-checkbox-border-disabled: #ffffff28;
+    --color-checkbox-border-disabled-hover: #ffffff28;
+    --color-checkbox-checked-bg-disabled: #ffffff28;
+    --color-checkbox-checked-bg-disabled-hover: #ffffff28;
+    --color-checkbox-glyph-disabled: #ffffff87;
+    --color-control-label-disabled: #ffffff5d;
+    --color-switch-track: #00000019;
+    --color-switch-track-hover: #ffffff0b;
+    --color-switch-border: 1px solid #ffffff8b;
+    --color-switch-border-hover: 1px solid #ffffff8b;
+    --color-switch-border-disabled: 1px solid #ffffff28;
+    --color-switch-track-on-disabled: #ffffff28;
+    --color-switch-track-on-disabled-hover: #ffffff28;
+    --color-switch-border-on-disabled: 1px solid #ffffff28;
+    --color-switch-thumb: #ffffffc5;
+    --color-switch-thumb-hover: #ffffffc5;
+    --color-switch-thumb-disabled: #ffffff5d;
+    --color-switch-thumb-on-disabled: #ffffff87;
+    --color-radio-bg: #00000019;
+    --color-radio-bg-hover: #ffffff0b;
+    --color-radio-border: #ffffff8b;
+    --color-radio-border-hover: #ffffff8b;
+    --color-radio-border-disabled: #ffffff28;
+    --color-radio-checked-border-disabled: #ffffff28;
+    --color-radio-checked-border-disabled-hover: #ffffff28;
+    /* RadioButtonCheckGlyphFillDisabled → TextOnAccentFillColorPrimary, #000000 in Default */
+    --color-radio-checked-bg-disabled: #000000;
+    --color-radio-checked-bg-disabled-hover: #000000;
+    --color-radio-label: #ffffff;
+    --color-radio-label-disabled: #ffffff5d;
+    --shadow-radio-checked-disabled: inset 0 0 0 3px #ffffff28;
+
+    /* ControlStrongFillColorDefault #8BFFFFFF, …Disabled #3FFFFFFF; ControlSolidFillColorDefault
+       #454545; ControlElevationBorderBrush (top #18FFFFFF, the rest #12FFFFFF) */
+    --color-slider-track: #ffffff8b;
+    --color-slider-track-disabled: #ffffff3f;
+    --color-slider-range-disabled: #ffffff28;
+    --color-slider-thumb-bg-hover: color-mix(in srgb, var(--color-accent) 90%, #454545);
+    --color-slider-thumb-bg-disabled: #ffffff28;
+    --color-slider-thumb-border: #ffffff12;
+    --color-slider-thumb-border-bottom: #ffffff12;
+    --color-slider-thumb-border-hover: #ffffff12;
+    --shadow-slider-thumb: inset 0 0 0 2.84px #454545;
+    --shadow-slider-thumb-hover: inset 0 0 0 1px #454545;
+    --shadow-slider-thumb-pressed: inset 0 0 0 3.74px #454545;
+    --shadow-slider-thumb-disabled-hover: inset 0 0 0 2.84px #454545;
+    --shadow-slider-thumb-focus: inset 0 0 0 2.84px #454545, 0 0 0 1px #000000b3;
+
+    /* ControlStrongStrokeColorDefault #8BFFFFFF */
+    --color-progress-track: linear-gradient(#ffffff8b 0 0) center / 100% 1px no-repeat;
+    --color-select-trigger-bg: #ffffff0f;
+    --color-select-trigger-bg-hover: #ffffff15;
+    --color-select-trigger-bg-open: #ffffff08;
+    --shadow-select-trigger: inset 0 0 0 1px #ffffff12, inset 0 1px 0 #ffffff18;
+    --shadow-select-trigger-hover: inset 0 0 0 1px #ffffff12, inset 0 1px 0 #ffffff18;
+    --color-select-trigger-fg: #ffffff;
+    --color-select-indicator-fg: #ffffffc5;
+    --color-select-item-description-highlighted: #ffffffc5;
+    /* SubtleFillColorSecondary #0FFFFFFF, Tertiary #0AFFFFFF; TextFillColorPrimary #FFFFFF */
+    --color-select-item-bg-highlighted: #ffffff0f;
+    --color-select-item-bg-highlighted-hover: #ffffff0a;
+    --color-select-item-fg-highlighted: #ffffff;
+    --color-select-item-bg-checked: #ffffff0f;
+    --color-combobox-item-bg-highlighted: #ffffff0f;
+    --color-combobox-item-bg-highlighted-hover: #ffffff0a;
+    --color-combobox-item-fg-highlighted: #ffffff;
+    --color-tooltip-fg: #ffffff;
+    /* Fluent `shadow16` with `alias/darkColor.ts`'s ambient and key colors */
+    --shadow-tooltip-surface: 0 0 2px rgba(0, 0, 0, 0.24), 0 8px 16px rgba(0, 0, 0, 0.28);
+
+    /* SolidBackgroundFillColorBase #202020 under LayerFillColorAlt #0DFFFFFF: #2b2b2b composited;
+       CardStrokeColorDefault #19000000 */
+    --color-bg-dialog: #2b2b2b;
+    --shadow-dialog: 0 0 8px rgba(0, 0, 0, 0.24), 0 32px 64px rgba(0, 0, 0, 0.28);
+    --color-dialog-footer-bg: #202020;
+    --shadow-dialog-footer: inset 0 1px 0 #00000019;
+
+    /* ControlStrongFillColorDefault #8BFFFFFF */
+    --color-scrollbar-thumb: #ffffff8b;
+    --color-scrollbar-thumb-hover: #ffffff8b;
+  }
+}
+
+/* === Windows scrollbars ===
+   WebView2 draws Win32-style classic bars (17px, arrows) unless the page styles them, so the
+   Windows look paints WinUI's expanded bar: a 12px gutter with a 6px rounded thumb centered in
+   it (a transparent border clips the thumb's background to its padding box). `:where()` keeps
+   this at the lowest specificity, so a scroller that styles its own bar (the file lists,
+   `app-file-list.css`) still wins. WinUI's bar is an overlay that collapses to a 2px
+   indicator when idle; `::-webkit-scrollbar` can't overlay or animate, so it stays expanded. */
+:where(:root[data-look='windows']) ::-webkit-scrollbar {
+  width: var(--spacing-scrollbar-size);
+  height: var(--spacing-scrollbar-size);
+  background: transparent;
+}
+
+:where(:root[data-look='windows']) ::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar-thumb);
+  background-clip: padding-box;
+  border: var(--spacing-scrollbar-thumb-inset) solid transparent;
+  border-radius: var(--spacing-scrollbar-size);
+}
+
+:where(:root[data-look='windows']) ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-scrollbar-thumb-hover);
+}
+
+:where(:root[data-look='windows']) ::-webkit-scrollbar-track,
+:where(:root[data-look='windows']) ::-webkit-scrollbar-corner {
+  background: transparent;
+}

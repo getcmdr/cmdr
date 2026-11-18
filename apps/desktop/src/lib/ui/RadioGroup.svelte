@@ -214,21 +214,47 @@
         align-items: flex-start;
     }
 
+    /* Disabled re-points the state tokens at their disabled twins (the house twins equal
+       what it painted before; it dims with opacity instead, below). */
     :global(.radio-item[data-disabled]) {
+        --color-radio-bg: var(--color-radio-bg-disabled);
+        --color-radio-bg-hover: var(--color-radio-bg-disabled);
+        --color-radio-border: var(--color-radio-border-disabled);
+        --color-radio-border-hover: var(--color-radio-border-disabled);
+        --color-radio-checked-border: var(--color-radio-checked-border-disabled);
+        --color-radio-checked-border-hover: var(--color-radio-checked-border-disabled-hover);
+        --color-radio-checked-bg: var(--color-radio-checked-bg-disabled);
+        --color-radio-checked-bg-hover: var(--color-radio-checked-bg-disabled-hover);
+        --shadow-radio-checked: var(--shadow-radio-checked-disabled);
+        --shadow-radio-checked-hover: var(--shadow-radio-checked-disabled);
+        --color-radio-label: var(--color-radio-label-disabled);
+
         cursor: not-allowed;
+    }
+
+    /* The dim is the house look's disabled state; Windows paints WinUI's disabled colors
+       instead. Keyed on the look in the selector because stylelint's `opacity` allowlist
+       takes no `var()`; `:where()` keeps the rule's specificity. */
+    :global(:where(:root:not([data-look='windows'])) .radio-item[data-disabled]) {
         opacity: 0.5;
     }
 
     :global(.radio-control) {
-        width: 16px;
-        height: 16px;
-        min-width: 16px;
-        min-height: 16px;
-        border: 2px solid var(--color-border-strong);
+        width: var(--spacing-radio-size);
+        height: var(--spacing-radio-size);
+        min-width: var(--spacing-radio-size);
+        min-height: var(--spacing-radio-size);
+        border: var(--spacing-radio-border) solid var(--color-radio-border);
         border-radius: var(--radius-full);
-        background: var(--color-bg-primary);
+        background: var(--color-radio-bg);
         flex-shrink: 0;
+        forced-color-adjust: var(--color-forced-adjust);
         transition: all var(--transition-base);
+    }
+
+    :global(.radio-item:hover .radio-control[data-state='unchecked']) {
+        border-color: var(--color-radio-border-hover);
+        background: var(--color-radio-bg-hover);
     }
 
     /* Nudges the dot onto the label's optical middle when a description stacks
@@ -237,23 +263,26 @@
         margin-top: var(--spacing-xxs);
     }
 
+    /* The checked dot is the fill inside an inset ring: the house look rings an accent dot
+       with the page color, Windows rings an on-accent dot with the accent. */
     :global(.radio-control[data-state='checked']) {
-        border-color: var(--color-accent);
-        background: var(--color-accent);
-        box-shadow: inset 0 0 0 3px var(--color-bg-primary);
+        border-color: var(--color-radio-checked-border);
+        background: var(--color-radio-checked-bg);
+        box-shadow: var(--shadow-radio-checked);
     }
 
     :global(.radio-item:hover .radio-control[data-state='checked']) {
-        border-color: var(--color-accent-hover);
-        background: var(--color-accent-hover);
+        border-color: var(--color-radio-checked-border-hover);
+        background: var(--color-radio-checked-bg-hover);
+        box-shadow: var(--shadow-radio-checked-hover);
     }
 
     /* Ark UI uses data-focus attribute when the hidden input is focused */
     :global(.radio-item[data-focus]) {
-        outline: 2px solid var(--color-accent);
-        outline-offset: 2px;
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: var(--spacing-focus-ring-control-offset);
         border-radius: var(--radius-sm);
-        box-shadow: var(--shadow-focus);
+        box-shadow: var(--shadow-focus-ring-control);
     }
 
     :global(.radio-text) {
@@ -292,8 +321,8 @@
     }
 
     .radio-label {
-        color: var(--color-text-primary);
-        font-size: var(--font-size-sm);
+        color: var(--color-radio-label);
+        font-size: var(--font-radio-label-size);
     }
 
     .radio-description {

@@ -53,7 +53,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	vars := ParseAppCSS(string(cssContent))
+	vars := loadVarTable(appCSSPath, string(cssContent))
 	analyzer := NewAnalyzer(vars)
 
 	srcDir := filepath.Join(rootDir, "apps", "desktop", "src")
