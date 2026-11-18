@@ -3721,17 +3721,12 @@
     "sources": "MS port → «порт» (network and hardware senses); macOS live Port → «Порт», Ports → «Порты»"
   },
   "preferences": {
-    "chosen": "Настройки",
-    "accept": ["настройк"],
-    "forms": "Android's USB Preferences → «Настройки USB» (quote the label as Russian Android shows it)",
+    "chosen": "Параметры",
+    "accept": ["параметр"],
+    "forms": "title «Параметры»; prose «в параметрах»; paths «Параметры > ИИ»; button «Открыть параметры»",
     "confidence": "high",
-    "sources": "macOS live IntentsLocalizable Preferences → «Настройки»; MS Preferences → «Настройки»",
-    "note": "Russian has one word for Preferences and Settings; the concept only exists to quote another OS's label.",
-    "other": {
-      "chosen": "Параметры",
-      "accept": ["параметр", "настройк"],
-      "note": "Linux branches: GNOME titles an app's settings window «Параметры» (nautilus.po _Preferences → _Параметры), so the linuxGnome branch names Cmdr's window that way: title Параметры, prose «в параметрах», paths «Параметры > ИИ», button «Открыть параметры». An Android label stays as the device shows it."
-    }
+    "sources": "GNOME nautilus.po (_Preferences → _Параметры)",
+    "note": "GNOME's name for Cmdr's settings window in the linuxGnome branch; Android's label is the usb-preferences concept."
   },
   "preset": {
     "chosen": "набор настроек",
@@ -4678,7 +4673,7 @@
     "avoid": [
       {
         "form": "Параметры",
-        "why": "the Windows Settings app name (MS, Dolphin); macOS titles the window «Настройки»"
+        "why": "Windows and GNOME name an app's settings «Параметры» (their branches carry it); macOS titles the window «Настройки»"
       }
     ],
     "confidence": "high",
@@ -4688,12 +4683,19 @@
       "settings.listing.directorySortMode.disabledReason": "The single boolean setting is expressed as «параметр», not the Settings window.",
       "settings.mediaIndex.progress.kept": "Broader settings mean indexing coverage, explicitly named «охват».",
       "settings.mediaIndex.reclaim.line": "The indexing setting is described by its resulting coverage, «охват».",
-      "settings.sidebar.searchPlaceholder": "The Settings sidebar supplies the context; «Поиск…» fits the actual input at 125% text size, while «Поиск настроек…» exceeds its available width."
+      "settings.sidebar.searchPlaceholder": "The Settings sidebar supplies the context; «Поиск…» fits the actual input at 125% text size, while «Поиск настроек…» exceeds its available width.",
+      "errors.listing.serverRefused.explanation": "Windows branch: «никакая настройка на этом компьютере» is a setting on the PC in general, not Cmdr's window, so it keeps настройка.",
+      "errors.mount.unsupportedProtocol": "Windows branch: the server's own settings («в настройках сервера»), not Cmdr's window.",
+      "fileExplorer.pane.directConnectionBlockedByThisMacToast": "Windows branch: firewall settings («настройки брандмауэра»), not Cmdr's window.",
+      "servers.refusal.exportRefused": "Windows branch: the server's NFS settings («в настройках NFS на сервере»), not Cmdr's window.",
+      "servers.refusal.hostKeyRevoked": "Windows branch: the PC's SSH settings («в настройках SSH»), not Cmdr's window.",
+      "settings.ai.provider.localUnavailable": "Windows branch: «Your settings» is the user's saved configuration, not a pointer to the window, so it keeps «В настройках».",
+      "settings.dataWipe.description": "Windows branch: settings as stored data in a list of what gets wiped («настройки, сохраненные пароли…»), not the window."
     },
     "windows": {
       "chosen": "Параметры",
-      "accept": ["Параметр", "настро"],
-      "note": "The Windows Settings app is «Параметры» in Russian Windows (MS TBX Network & Internet → Сеть и Интернет, the Settings section); quote its paths as **Параметры > Сеть и Интернет**, **Параметры > Система > Память**. A server's or Cmdr's own settings stay настройки."
+      "accept": ["Параметр"],
+      "note": "Windows names an app's settings «Параметры» (MS TBX Settings, “The feature in an app that allows users to change its properties or behavior” → Параметры), and so does the Windows Settings app (paths **Параметры > Сеть и Интернет**). Cmdr's own window on Windows follows it: title «Параметры», prose «в параметрах», paths «Параметры > ИИ», button «Открыть параметры», sidebar «Разделы параметров». A single setting in prose may still be «настройка»."
     },
     "other": {
       "chosen": "Настройки",
@@ -6513,5 +6515,12 @@
     "accept": ["пакет"],
     "confidence": "high",
     "sources": "macOS Finder LocalizableMerged N158 (Show Package Contents → Показать содержимое пакета)"
+  },
+  "usb-preferences": {
+    "chosen": "Параметры USB",
+    "accept": ["Параметры USB", "Настройки USB"],
+    "confidence": "tentative",
+    "sources": "no Android source in the pile; settings.fileOperations.mtpEnabled.description quotes «Параметры USB»",
+    "note": "Quote the label the user's phone shows; Russian Android may say «Настройки USB»."
   }
 }

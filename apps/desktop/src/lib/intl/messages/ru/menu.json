@@ -71,7 +71,7 @@
   "@menu.app.cliCommandHomebrew": {
     "sourceHash": "cc4c0fd"
   },
-  "menu.app.settings": "{platform, select, windows {Настройки} linuxGnome {Параметры} linuxKde {Настроить Cmdr…} other {Настройки…}}",
+  "menu.app.settings": "{platform, select, windows {Параметры} linuxGnome {Параметры} linuxKde {Настроить Cmdr…} other {Настройки…}}",
   "@menu.app.settings": {
     "sourceHash": "4b21626"
   },
