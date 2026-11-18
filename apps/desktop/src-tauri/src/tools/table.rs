@@ -604,7 +604,7 @@ mcp_tools! {
         subject: SubjectSpec::None,
         access: Access::Read,
         load: Load::Deferred,
-        needs: Needs::ProcessDiagnostics,
+        needs: Needs::MemoryDiagnostics,
         run: params_only memory::execute_memory_diagnostics
     },
     // Its CPU sibling, over `cmdr_fs::process_cpu`. Same `access: Read` story: thread names are
@@ -612,12 +612,12 @@ mcp_tools! {
     "cpu_diagnostics" => {
         id: CpuDiagnostics,
         brief: "Show where Cmdr's own process spent CPU, per thread.",
-        desc: "Where this Cmdr process's CPU went over a window, per named thread: each live thread's CPU delta (and threads folded by name), what threads that exited inside the window spent (the process delta minus the live threads'), wakeups from TASK_POWER_INFO, context switches and syscalls, and how the thread count moved. 'measure' (default) blocks for windowSeconds; for longer windows, 'mark' a baseline and read 'sinceMark' later. Percentages are of one core.",
+        desc: "Where this Cmdr process's CPU went over a window, per named thread: each live thread's CPU delta (and threads folded by name), what threads that exited inside the window spent (the process delta minus the live threads'), wakeups (macOS), context switches, faults, and syscalls (null where the OS doesn't count one), and how the thread count moved. 'measure' (default) blocks for windowSeconds; for longer windows, 'mark' a baseline and read 'sinceMark' later. Percentages are of one core.",
         schema: schemas::cpu_diagnostics_schema(),
         subject: SubjectSpec::None,
         access: Access::Read,
         load: Load::Deferred,
-        needs: Needs::ProcessDiagnostics,
+        needs: Needs::CpuDiagnostics,
         run: params_only cpu::execute_cpu_diagnostics
     },
 

@@ -16,8 +16,8 @@ use crate::tools::{
 /// here on purpose, having read why its handler can't run everywhere.
 const EXPECTED_NEEDS: &[(&str, Needs)] = &[
     ("tag", Needs::ColorTags),
-    ("memory_diagnostics", Needs::ProcessDiagnostics),
-    ("cpu_diagnostics", Needs::ProcessDiagnostics),
+    ("memory_diagnostics", Needs::MemoryDiagnostics),
+    ("cpu_diagnostics", Needs::CpuDiagnostics),
 ];
 
 fn names(tools: Vec<crate::tools::Tool>) -> BTreeSet<String> {
@@ -41,23 +41,28 @@ fn the_tools_with_a_need_are_exactly_the_expected_ones() {
 fn each_need_reads_its_own_capability() {
     let none = PlatformCapabilities {
         color_tags: false,
-        process_diagnostics: false,
+        memory_diagnostics: false,
+        cpu_diagnostics: false,
         ..capabilities()
     };
     let tags_only = PlatformCapabilities {
         color_tags: true,
         ..none
     };
-    let diagnostics_only = PlatformCapabilities {
-        process_diagnostics: true,
+    let memory_only = PlatformCapabilities {
+        memory_diagnostics: true,
         ..none
     };
-    assert!(!Needs::ColorTags.met_by(&none));
-    assert!(!Needs::ProcessDiagnostics.met_by(&none));
-    assert!(Needs::ColorTags.met_by(&tags_only));
-    assert!(!Needs::ProcessDiagnostics.met_by(&tags_only));
-    assert!(!Needs::ColorTags.met_by(&diagnostics_only));
-    assert!(Needs::ProcessDiagnostics.met_by(&diagnostics_only));
+    let cpu_only = PlatformCapabilities {
+        cpu_diagnostics: true,
+        ..none
+    };
+    let needs = [Needs::ColorTags, Needs::MemoryDiagnostics, Needs::CpuDiagnostics];
+    let met = |offered: &PlatformCapabilities| needs.map(|need| need.met_by(offered));
+    assert_eq!(met(&none), [false, false, false]);
+    assert_eq!(met(&tags_only), [true, false, false]);
+    assert_eq!(met(&memory_only), [false, true, false]);
+    assert_eq!(met(&cpu_only), [false, false, true]);
 }
 
 #[test]

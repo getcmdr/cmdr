@@ -60,14 +60,21 @@ fn the_line_names_each_thread_group_s_share_across_the_gap() {
     assert!(line.contains("tokio-runtime-worker ×2 0.0%"), "{line}");
 }
 
-/// Off macOS there's no reading, and the witness says nothing rather than
-/// something misleading; on macOS the real kernel reading makes a line.
+/// Where the OS has a reader (macOS, Linux) the real kernel reading makes a
+/// line; where it has none (Windows, for now) the witness says nothing rather
+/// than something misleading.
 #[test]
 fn the_witness_describes_the_real_process_where_it_can_read_it() {
+    let readable = CpuSnapshot::take().is_some();
+    assert_eq!(
+        readable,
+        cfg!(any(target_os = "macos", target_os = "linux")),
+        "macOS and Linux have a process CPU reader"
+    );
     let mut witness = CpuWitness::default();
     witness.refresh_if_due(Duration::ZERO);
     let line = witness.describe_since_baseline(Duration::from_secs(1));
-    if cfg!(target_os = "macos") {
+    if readable {
         assert!(line.contains("of one core"), "{line}");
     } else {
         assert!(line.is_empty(), "{line}");

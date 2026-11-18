@@ -37,8 +37,10 @@ pub(crate) fn capabilities() -> PlatformCapabilities {
         homebrew_cask: false,
         // `RegisterHotKey` works for every app on the desktop.
         global_shortcuts: true,
-        // Both readings are Mach queries; nothing reads the Windows equivalents yet.
-        process_diagnostics: false,
+        // Nothing reads the Windows equivalents yet (`cmdr_fs::process_memory` and
+        // `cmdr_fs::process_cpu`'s Windows arms, task 13 of `docs/specs/windows-port-plan.md`).
+        memory_diagnostics: false,
+        cpu_diagnostics: false,
     }
 }
 

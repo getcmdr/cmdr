@@ -66,7 +66,8 @@ Where the need isn't met, the tool is off `tools/list`, off the agent's declarat
 near-miss suggestion, unknown to `tool_details`, and "Unknown tool" to a call (`tool_offered`, asked by `get_all_tools`,
 `agent_reaches`, and `execute_tool`). Why: a listed tool that can only refuse costs tokens on every call, and a model
 plans around it ("I'll tag these red"). `ToolId` still parses the name, so a thread synced from a Mac keeps its tool
-line. Today: `tag` (`colorTags`), and `memory_diagnostics` and `cpu_diagnostics` (`processDiagnostics`), all macOS.
+line. Today: `tag` (`colorTags`) and `memory_diagnostics` (`memoryDiagnostics`), macOS only, and `cpu_diagnostics`
+(`cpuDiagnostics`), macOS and Linux.
 Structural tests walk `every_listed_tool()`, the list of an OS that offers everything, so they cover a tool the test
 host lacks; `tests/tool_platform_tests.rs` pins the gate, and the hand list of tools with a need.
 

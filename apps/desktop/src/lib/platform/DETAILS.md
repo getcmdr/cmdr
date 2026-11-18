@@ -55,9 +55,10 @@ backend says what exists, and a surface asks for exactly the thing it needs.
   asks" poorly and will want siblings (winget, Flathub) once those channels exist; the alternative was one
   `distribution_note` line shown everywhere, with a branch per OS. Kept as a capability because only macOS has a channel
   to star today; revisit when a second channel lands.
-- **`processDiagnostics` is the one flag no UI asks.** It decides whether the `memory_diagnostics` and `cpu_diagnostics`
-  tools exist on this OS (`apps/desktop/src-tauri/src/tools/DETAILS.md` § The table), and it's here so every arm answers
-  it. `colorTags` gates the `tag` tool the same way.
+- **`memoryDiagnostics` and `cpuDiagnostics` are the flags no UI asks.** Each decides whether its MCP tool
+  (`memory_diagnostics`, `cpu_diagnostics`) exists on this OS (`apps/desktop/src-tauri/src/tools/DETAILS.md` § The
+  table), and they're here so every arm answers them. Two flags because the readers differ per OS: Linux has the CPU
+  census (`/proc/self/task`) but no memory-map reader yet. `colorTags` gates the `tag` tool the same way.
 - **Typed in TS from Rust**: `ipc.rs` exports the struct with `.typ::<PlatformCapabilities>()`, so `bindings.ts` carries
   it like any command's type, and `Capability` is `keyof` it. No IPC command returns it; the init script is the only
   channel.

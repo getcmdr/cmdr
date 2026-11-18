@@ -86,12 +86,13 @@ export const CAPABILITIES_POSSIBLE_ON: Readonly<Record<Platform, readonly Capabi
     'appBundles',
     'fullScreen',
     'homebrewCask',
-    'processDiagnostics',
+    'memoryDiagnostics',
+    'cpuDiagnostics',
     'globalShortcuts',
   ],
   windows: ['fullScreen', 'globalShortcuts'],
   // `imageIndexing` follows the `playwright-e2e` feature, `globalShortcuts` an X11 session.
-  linux: ['imageIndexing', 'fullScreen', 'globalShortcuts'],
+  linux: ['imageIndexing', 'fullScreen', 'globalShortcuts', 'cpuDiagnostics'],
 }
 
 /**

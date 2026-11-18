@@ -292,8 +292,8 @@ decide.
 
 `memory_diagnostics` asks the running app about itself: the physical footprint, both allocators' own accounting, the
 Rust heap split into live data and allocator slack, SQLite's page-cache slab, and the kernel's VM map folded by tag.
-Read-only, macOS only (Linux and Windows don't list it, or `cpu_diagnostics`), and it works against a shipped release,
-which is the only condition the interesting numbers appear under.
+Read-only, macOS only (Linux and Windows don't list it), and it works against a shipped release, which is the only
+condition the interesting numbers appear under.
 
 ```bash
 ./scripts/mcp-call.sh memory_diagnostics '{}'
@@ -321,7 +321,10 @@ cursor item). Every sheet knob is optional. A dry run (the default) previews eac
 
 `cpu_diagnostics` diffs two readings of every thread: each live thread's CPU delta with its name (and the same folded by
 name, so `tokio-rt-worker` ×24 is one row), what threads that exited inside the window spent, wakeups from
-`TASK_POWER_INFO`, context switches, and how the thread count moved. Percentages are of one core. Read-only, macOS only.
+`TASK_POWER_INFO`, context switches, and how the thread count moved. Percentages are of one core. Read-only, on macOS
+and Linux (Windows doesn't list it yet). On Linux, names are `comm`'s 15 bytes (`tokio-runtime-w`), an unnamed thread
+carries the process's name, and `wakeups` and the syscall counts are `null`; how the user/system split is estimated
+there: `crates/cmdr-fs/DETAILS.md` § `process_cpu/`.
 
 ```bash
 ./scripts/mcp-call.sh cpu_diagnostics '{}'                       # a 10 s window, blocking

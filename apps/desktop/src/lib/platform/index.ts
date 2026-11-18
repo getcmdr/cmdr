@@ -66,7 +66,8 @@ export const NO_CAPABILITIES: Readonly<PlatformCapabilities> = Object.freeze({
   fullScreen: false,
   homebrewCask: false,
   globalShortcuts: false,
-  processDiagnostics: false,
+  memoryDiagnostics: false,
+  cpuDiagnostics: false,
 })
 
 /**

@@ -49,7 +49,8 @@ const MAC_VISITOR_CAPABILITIES: Readonly<PlatformCapabilities> = Object.freeze({
   homebrewCask: true,
   globalShortcuts: true,
   // No surface asks it; `true` keeps this table the desktop's macOS answer.
-  processDiagnostics: true,
+  memoryDiagnostics: true,
+  cpuDiagnostics: true,
 })
 
 /**

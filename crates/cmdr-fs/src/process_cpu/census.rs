@@ -129,10 +129,10 @@ pub struct WakeupDeltas {
 pub struct TaskCounterDeltas {
     /// Context switches, exited threads included.
     pub context_switches: u64,
-    /// BSD system calls.
-    pub unix_syscalls: u64,
-    /// Mach traps.
-    pub mach_syscalls: u64,
+    /// BSD system calls, or `None` where the OS doesn't count them (Linux).
+    pub unix_syscalls: Option<u64>,
+    /// Mach traps, or `None` off macOS.
+    pub mach_syscalls: Option<u64>,
     /// Page faults.
     pub faults: u64,
     /// `contextSwitches` per second of window: the whole-process wakeup rate `top`
@@ -158,7 +158,7 @@ impl CpuCensus {
             .map(|t| {
                 let earlier = before.get(&t.id);
                 let (user, system) = match earlier {
-                    Some(e) => (t.user.saturating_sub(e.user), t.system.saturating_sub(e.system)),
+                    Some(e) => thread_delta(e, t),
                     None => (t.user, t.system),
                 };
                 ThreadCensus {
@@ -219,6 +219,17 @@ impl CpuCensus {
             counters,
         }
     }
+}
+
+/// One thread's user and system spend between two of its samples. The TOTAL is the
+/// difference of the sums, so a split that moves between readings can't inflate it: Linux
+/// derives the split from the tick sample, and a tick landing on system can lower the
+/// user share of an exact runtime. Diffing each half on its own would then count that
+/// shift twice. Where both halves only grow (macOS), this is the plain per-half diff.
+fn thread_delta(earlier: &ThreadSample, later: &ThreadSample) -> (Duration, Duration) {
+    let total = (later.user + later.system).saturating_sub(earlier.user + earlier.system);
+    let user = later.user.saturating_sub(earlier.user).min(total);
+    (user, total - user)
 }
 
 impl CpuShare {
@@ -292,18 +303,24 @@ fn wakeup_deltas(a: WakeupCounters, b: WakeupCounters, seconds: f64) -> WakeupDe
     }
 }
 
-/// The kernel keeps these as 32-bit counters (a busy process wraps one in weeks), so
-/// the difference is taken modulo 2^32: one wrap inside a window still diffs right.
+/// macOS keeps these as 32-bit counters (a busy process wraps one in weeks), so the
+/// difference is taken modulo 2^32: one wrap inside a window still diffs right. Linux's
+/// are 64-bit, and the same arithmetic is exact for them while a window's delta stays
+/// under 2^32, which no process reaches in a window.
 fn counter_delta(a: u64, b: u64) -> u64 {
     u64::from((b as u32).wrapping_sub(a as u32))
+}
+
+fn optional_delta(a: Option<u64>, b: Option<u64>) -> Option<u64> {
+    a.zip(b).map(|(a, b)| counter_delta(a, b))
 }
 
 fn counter_deltas(a: TaskCounters, b: TaskCounters, seconds: f64) -> TaskCounterDeltas {
     let context_switches = counter_delta(a.context_switches, b.context_switches);
     TaskCounterDeltas {
         context_switches,
-        unix_syscalls: counter_delta(a.unix_syscalls, b.unix_syscalls),
-        mach_syscalls: counter_delta(a.mach_syscalls, b.mach_syscalls),
+        unix_syscalls: optional_delta(a.unix_syscalls, b.unix_syscalls),
+        mach_syscalls: optional_delta(a.mach_syscalls, b.mach_syscalls),
         faults: counter_delta(a.faults, b.faults),
         context_switches_per_second: per_second(context_switches, seconds),
     }

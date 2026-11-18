@@ -65,6 +65,20 @@ fn process_and_live_deltas_are_measured_over_the_window() {
     assert_eq!(census.live_threads.cpu_us, 350_000);
 }
 
+/// Linux splits an exact runtime by its tick sample, so a thread's user share can SHRINK
+/// between readings while its total grows. The total is what it really spent; the shift
+/// must not count twice.
+#[test]
+fn a_split_that_shifts_toward_system_keeps_the_thread_total_exact() {
+    let t0 = Instant::now();
+    let start = snapshot(t0, 0, 0, vec![thread(1, Some("index-writer"), 50, 0)]);
+    let end = snapshot(t0 + ms(1_000), 0, 0, vec![thread(1, Some("index-writer"), 40, 30)]);
+    let census = CpuCensus::between(&start, &end, 10);
+    let row = &census.threads[0];
+    assert_eq!(row.cpu.cpu_us, 20_000, "spent 70 − 50 ms, not 0 + 30");
+    assert_eq!((row.cpu.user_us, row.cpu.system_us), (0, 20_000));
+}
+
 /// The churn threads are gone by the second reading, so the remainder is the only place
 /// their CPU appears.
 #[test]
@@ -153,14 +167,14 @@ fn wakeups_and_counters_diff_into_rates_when_both_readings_have_them() {
     });
     start.counters = Some(TaskCounters {
         context_switches: 5_000,
-        unix_syscalls: 100,
-        mach_syscalls: 200,
+        unix_syscalls: Some(100),
+        mach_syscalls: Some(200),
         faults: 7,
     });
     end.counters = Some(TaskCounters {
         context_switches: 6_000,
-        unix_syscalls: 150,
-        mach_syscalls: 260,
+        unix_syscalls: Some(150),
+        mach_syscalls: Some(260),
         faults: 9,
     });
     let census = CpuCensus::between(&start, &end, 10);
@@ -174,9 +188,29 @@ fn wakeups_and_counters_diff_into_rates_when_both_readings_have_them() {
     assert_eq!(counters.context_switches_per_second, 100.0);
     assert_eq!(
         (counters.unix_syscalls, counters.mach_syscalls, counters.faults),
-        (50, 60, 2)
+        (Some(50), Some(60), 2)
     );
 
     end.wakeups = None;
     assert_eq!(CpuCensus::between(&start, &end, 10).wakeups, None);
+}
+
+/// Linux counts context switches and faults but no syscalls: those stay unknown rather
+/// than reading as zero, and the counts it does have still diff.
+#[test]
+fn a_counter_the_os_doesnt_keep_stays_unknown_across_the_diff() {
+    let (mut start, mut end) = window();
+    let linux = |context_switches, faults| TaskCounters {
+        context_switches,
+        unix_syscalls: None,
+        mach_syscalls: None,
+        faults,
+    };
+    start.counters = Some(linux(5_000, 7));
+    end.counters = Some(linux(6_000, 9));
+    let counters = CpuCensus::between(&start, &end, 10)
+        .counters
+        .expect("both readings had counters");
+    assert_eq!((counters.context_switches, counters.faults), (1_000, 2));
+    assert_eq!((counters.unix_syscalls, counters.mach_syscalls), (None, None));
 }

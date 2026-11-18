@@ -81,7 +81,9 @@ Rules canonical elsewhere are one line here plus the pointer; the rest are canon
   (`idle-cpu-attribution-2026-08-03.md` § "The rules this leaves behind").
 - **For per-thread CPU with names, use the `cpu_diagnostics` MCP tool** (`docs/tooling/mcp.md`): `proc_pidinfo` per
   thread, diffed over a window; the process delta minus the live threads' deltas is what exited threads spent
-  (`idle-census-2026-09-27.md` § "A better CPU instrument"). For a long idle window, `mark` then `sinceMark`.
+  (`idle-census-2026-09-27.md` § "A better CPU instrument"). For a long idle window, `mark` then `sinceMark`. It runs on
+  Linux too, over `/proc/self/task`, with names cut to 15 bytes and no wakeup counts (`crates/cmdr-fs/DETAILS.md` §
+  `process_cpu/`).
 - **`top`'s `IDLEW` column is unreliable on macOS 27**: it read static across intervals. Don't use it for wakeups.
 - **Know the build's allocator before reading `vmmap`.** On the system allocator (macOS by default) the Rust heap is in
   the `Malloc *` rows, shared with Objective-C and C. On a macOS mimalloc build (`--features mimalloc`, and every build

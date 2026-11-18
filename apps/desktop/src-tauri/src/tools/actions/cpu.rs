@@ -12,9 +12,14 @@
 //!   without blocking. That's the shape for an idle census: a 20-minute window shouldn't
 //!   hold an MCP call open, and the baseline stays put across reads, so they're cumulative.
 
-use serde_json::Value;
+use std::sync::Mutex;
+use std::time::Duration;
+
+use cmdr_fs::process_cpu::{CpuCensus, CpuSnapshot};
+use serde_json::{Value, json};
 
 use super::{ToolError, ToolResult};
+use crate::ignore_poison::IgnorePoison;
 
 /// Window when the caller doesn't say: long enough to see idle threads at a few hundredths of a
 /// percent (10 ms of a 10 s window is 0.1%), short enough to wait for.
@@ -85,72 +90,48 @@ fn optional_whole(params: &Value, key: &str) -> Result<Option<u64>, ToolError> {
     }
 }
 
-#[cfg(target_os = "macos")]
-mod live {
-    use std::sync::Mutex;
-    use std::time::Duration;
+/// The `mark` baseline. One per process: the tool answers about the process, and two callers
+/// wanting separate baselines can each `measure` instead.
+static MARK: Mutex<Option<CpuSnapshot>> = Mutex::new(None);
 
-    use cmdr_fs::process_cpu::{CpuCensus, CpuSnapshot};
-    use serde_json::json;
+/// A reading, or a refusal, never a census of zeros. The tool is offered only where
+/// `cmdr_fs::process_cpu` has a reader (`PlatformCapabilities::cpu_diagnostics`), so `None` here
+/// means the kernel refused the query.
+fn take() -> Result<CpuSnapshot, ToolError> {
+    CpuSnapshot::take().ok_or_else(|| ToolError::internal("Couldn't read this process's threads from the kernel."))
+}
 
-    use super::{Action, CpuRequest, ToolError, ToolResult};
-    use crate::ignore_poison::IgnorePoison;
+fn census(start: &CpuSnapshot, end: &CpuSnapshot, max_threads: usize) -> ToolResult {
+    serde_json::to_value(CpuCensus::between(start, end, max_threads))
+        .map_err(|e| ToolError::internal(format!("Couldn't serialize the census: {e}")))
+}
 
-    /// The `mark` baseline. One per process: the tool answers about the process, and two
-    /// callers wanting separate baselines can each `measure` instead.
-    static MARK: Mutex<Option<CpuSnapshot>> = Mutex::new(None);
-
-    fn take() -> Result<CpuSnapshot, ToolError> {
-        CpuSnapshot::take().ok_or_else(|| ToolError::internal("Couldn't read this process's threads from the kernel."))
-    }
-
-    fn census(start: &CpuSnapshot, end: &CpuSnapshot, max_threads: usize) -> ToolResult {
-        serde_json::to_value(CpuCensus::between(start, end, max_threads))
-            .map_err(|e| ToolError::internal(format!("Couldn't serialize the census: {e}")))
-    }
-
-    pub(super) async fn run(request: CpuRequest) -> ToolResult {
-        match request.action {
-            Action::Measure { window_seconds } => {
-                let start = take()?;
-                tokio::time::sleep(Duration::from_secs(window_seconds)).await;
-                census(&start, &take()?, request.max_threads)
-            }
-            Action::Mark => {
-                let snapshot = take()?;
-                let threads = snapshot.threads.len();
-                *MARK.lock_ignore_poison() = Some(snapshot);
-                Ok(json!({ "marked": true, "threads": threads }))
-            }
-            Action::SinceMark => {
-                let start = MARK.lock_ignore_poison().clone().ok_or_else(|| {
-                    ToolError::invalid_params("No mark yet. Call with action 'mark' first, then 'sinceMark' later.")
-                })?;
-                census(&start, &take()?, request.max_threads)
-            }
+pub async fn execute_cpu_diagnostics(params: &Value) -> ToolResult {
+    let request = parse_request(params)?;
+    match request.action {
+        Action::Measure { window_seconds } => {
+            let start = take()?;
+            tokio::time::sleep(Duration::from_secs(window_seconds)).await;
+            census(&start, &take()?, request.max_threads)
+        }
+        Action::Mark => {
+            let snapshot = take()?;
+            let threads = snapshot.threads.len();
+            *MARK.lock_ignore_poison() = Some(snapshot);
+            Ok(json!({ "marked": true, "threads": threads }))
+        }
+        Action::SinceMark => {
+            let start = MARK.lock_ignore_poison().clone().ok_or_else(|| {
+                ToolError::invalid_params("No mark yet. Call with action 'mark' first, then 'sinceMark' later.")
+            })?;
+            census(&start, &take()?, request.max_threads)
         }
     }
-}
-
-#[cfg(target_os = "macos")]
-pub async fn execute_cpu_diagnostics(params: &Value) -> ToolResult {
-    live::run(parse_request(params)?).await
-}
-
-/// Everywhere else the `proc_pidinfo` and Mach queries behind the census don't exist, so the
-/// honest answer is a refusal, never a census of zeros.
-#[cfg(not(target_os = "macos"))]
-pub async fn execute_cpu_diagnostics(params: &Value) -> ToolResult {
-    parse_request(params)?;
-    Err(ToolError::internal(
-        "CPU diagnostics are macOS only: the per-thread kernel queries the census reads don't exist on this platform.",
-    ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
 
     #[test]
     fn a_bare_call_measures_the_default_window() {
@@ -199,9 +180,11 @@ mod tests {
         parse_request(&json!({ "maxThreads": -1 })).expect_err("negative");
     }
 
-    #[cfg(target_os = "macos")]
     #[tokio::test]
     async fn since_mark_without_a_mark_is_refused_then_diffs_after_one() {
+        if !crate::tools::Needs::CpuDiagnostics.met_here() {
+            return;
+        }
         // Runs in its own process under nextest, so the static starts empty.
         execute_cpu_diagnostics(&json!({ "action": "sinceMark" }))
             .await

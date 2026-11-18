@@ -1677,7 +1677,7 @@
     },
     {
       "name": "cpu_diagnostics",
-      "description": "Where this Cmdr process's CPU went over a window, per named thread: each live thread's CPU delta (and threads folded by name), what threads that exited inside the window spent (the process delta minus the live threads'), wakeups from TASK_POWER_INFO, context switches and syscalls, and how the thread count moved. 'measure' (default) blocks for windowSeconds; for longer windows, 'mark' a baseline and read 'sinceMark' later. Percentages are of one core.",
+      "description": "Where this Cmdr process's CPU went over a window, per named thread: each live thread's CPU delta (and threads folded by name), what threads that exited inside the window spent (the process delta minus the live threads'), wakeups (macOS), context switches, faults, and syscalls (null where the OS doesn't count one), and how the thread count moved. 'measure' (default) blocks for windowSeconds; for longer windows, 'mark' a baseline and read 'sinceMark' later. Percentages are of one core.",
       "inputSchema": {
         "type": "object",
         "properties": {
