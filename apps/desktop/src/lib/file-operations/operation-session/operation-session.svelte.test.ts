@@ -167,14 +167,53 @@ describe('seeding', () => {
     dispose()
   })
 
-  it('resolves an operation the registry has never heard of as already over', async () => {
+  it('resolves an operation the registry has never heard of as already over, once nothing trails the miss', async () => {
+    vi.useFakeTimers()
     listOperationsMock.mockResolvedValue([snapshot('someone-else')])
     const { session, dispose } = harness()
 
     await settleSeed()
+    expect(session.settled, 'a terminal event may still be on its way').toBe(false)
+    vi.advanceTimersByTime(1_000)
 
     expect(session.settled).toBe(true)
     expect(session.outcome).toEqual({ kind: 'gone' })
+    dispose()
+  })
+
+  /**
+   * ❗ The registry answers on the command channel and the terminal events travel on
+   * the event channel, so a seed can come back empty BEFORE the `write-cancelled`
+   * the backend emitted ahead of the removal reaches the window. Seen on a cold main
+   * window when a Cancel landed within milliseconds of the start: the dialog closed
+   * as "already over", skipping the cancel acknowledgement and its rollback toast
+   * (`mtp-cancel-volume-settled.spec.ts`, 2026-11-18).
+   */
+  it('lets a terminal event that trails a seed miss decide the outcome', async () => {
+    vi.useFakeTimers()
+    listOperationsMock.mockResolvedValue([])
+    const { fanout, session, dispose } = harness()
+
+    await settleSeed()
+    fanout._testEmit({
+      kind: 'cancelled',
+      event: {
+        operationId: 'a',
+        operationType: 'delete',
+        filesProcessed: 0,
+        rollback: {
+          outcome: 'notRolledBack',
+          reversed: 0,
+          skips: [],
+          stagedLeftovers: [],
+          originalsStillInPlace: null,
+          recovered: [],
+        },
+      },
+    })
+    vi.runAllTimers()
+
+    expect(session.outcome?.kind).toBe('cancelled')
     dispose()
   })
 

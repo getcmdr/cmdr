@@ -34,9 +34,10 @@
  *
  * Unmounting stops nothing. The operation lives in the backend registry; the
  * corner chip and the queue window keep showing it; only the Cancel button asks
- * for a cancel. The one place a teardown still means "stop" is an explicit
- * Cancel pressed before the backend had named the operation, which
- * `cancelRequestedBeforeId` records and birth acts on.
+ * for a cancel. A Cancel pressed before this view had a session (the start
+ * command still in flight) is still that button: `cancelRequestedBeforeSession`
+ * records it and the session sends it the moment one exists, so it waits out
+ * the settle and is acknowledged like any other.
  *
  * ## Why `backgrounded` and `destroyed` are plain `let`s, not `$state`
  *
@@ -51,7 +52,6 @@
  */
 
 import {
-  cancelOperation,
   getOperationLogDetail,
   releaseTransferTree,
   type TransferActivity,
@@ -222,9 +222,9 @@ export function createTransferProgressState(config: TransferProgressStateConfig)
    *  adopted view knows it from the first frame). */
   let operationId = $state<string | null>(null)
 
-  /** The session for the operation this view is watching. `null` for the first
-   *  frame after the id lands, which no click can reach and nothing here needs:
-   *  birth commands the operation directly, because there is no session yet. */
+  /** The session for the operation this view is watching. `null` until the id
+   *  lands and for the first effect flush after it: a command pressed in that
+   *  window waits for it (`cancelRequestedBeforeSession`). */
   const bound = bindOperationSession(() => operationId)
 
   /** True once this view has handed the operation to the queue window (the
@@ -233,11 +233,11 @@ export function createTransferProgressState(config: TransferProgressStateConfig)
   let backgrounded = false
   /** True once the view has been torn down. A plain `let` — see the module doc. */
   let destroyed = false
-  /** True once the user pressed Cancel while the dispatch was still in flight.
-   *  The one teardown-adjacent flag that still means "stop the operation": it
-   *  records a COMMAND, not a detach, and birth acts on it as soon as the
-   *  backend names the operation. */
-  let cancelRequestedBeforeId = false
+  /** True once the user pressed Cancel (or Rollback, sent as a plain cancel)
+   *  before this view had a session to send it through: the dispatch still in
+   *  flight, or the sub-frame before the binder acquires. It records a COMMAND,
+   *  not a detach, and the session sends it the moment one exists. */
+  let cancelRequestedBeforeSession = false
   /** True once the modal was closed while the dispatch was still in flight.
    *  Same idea one notch gentler: hand the operation over as soon as it has a
    *  name, so an Escape in that sliver isn't silently dropped. */
@@ -594,6 +594,34 @@ export function createTransferProgressState(config: TransferProgressStateConfig)
     })
   })
 
+  // A Cancel this view sent dropped the operation while it was still queued.
+  // The manager forgets a queued op without spawning it, so no terminal event
+  // is coming, and leaving the registry IS its ending. Safe to read as one
+  // only because the last row said `queued`: an op that never ran has no
+  // `write-cancelled` that the removal could have overtaken.
+  $effect(() => {
+    const op = bound.current
+    if (op === null || op.outcome !== null || !op.cancelling) return
+    if (!op.leftRegistry || op.snapshot?.status !== 'queued') return
+    log.info('The cancel dropped op={operationId} before it started; closing', { operationId })
+    close(() => {
+      config.onCancelled(0)
+    })
+  })
+
+  // Sends the Cancel pressed before there was a session to send it through.
+  // From here on it is the ordinary Cancel: `cancelPressedHere` is set, so it
+  // waits out `write-settled` and is acknowledged. A modal also closed in that
+  // window gets the close a detach of a winding-down operation gets.
+  $effect(() => {
+    const op = bound.current
+    if (op === null || !cancelRequestedBeforeSession) return
+    cancelRequestedBeforeSession = false
+    log.info('Sending the Cancel pressed before op={operationId} had a session', { operationId })
+    void op.cancel()
+    if (backgroundRequestedBeforeId) dismiss()
+  })
+
   $effect(() => {
     const op = bound.current
     if (op === null) return
@@ -671,10 +699,12 @@ export function createTransferProgressState(config: TransferProgressStateConfig)
   // operation behind a busy lane, and stacking a second modal over the one
   // already up would be worse than backgrounding it. A view opened precisely
   // to watch this operation makes the opposite call — bouncing it back out of
-  // sight is the button appearing to do nothing.
+  // sight is the button appearing to do nothing. And a view whose Cancel is on
+  // its way keeps it: sending a cancelled op to the queue would show it waiting.
   $effect(() => {
     const op = bound.current
     if (op === null || backgrounded || adoptedOperationId !== null) return
+    if (op.cancelling || cancelRequestedBeforeSession) return
     if (op.status === 'queued') handleAutoQueued()
   })
 
@@ -687,18 +717,13 @@ export function createTransferProgressState(config: TransferProgressStateConfig)
   async function handleCancel(rollback: boolean): Promise<void> {
     if (rollback) rollbackPressedHere = true
     else cancelPressedHere = true
-    if (operationId === null) {
-      // The backend hasn't named the operation yet. Record the command; birth
-      // issues it the moment the id lands.
-      log.debug('Cancel requested but no operationId yet; will cancel after the start command answers')
-      cancelRequestedBeforeId = true
-      return
-    }
     const op = bound.current
     if (op === null) {
-      // The binder acquires on the first effect flush after the id lands, a
-      // sub-frame sliver no click can reach. Logged rather than swallowed.
-      log.warn('Cancel requested for op={operationId} before its session took hold; ignoring', { operationId })
+      // No session to send it through yet: the start command is still in flight,
+      // or the id has landed and the binder hasn't acquired. Record it; an
+      // effect sends it the moment a session exists.
+      log.debug('Cancel requested before op={operationId} had a session; sending it once it does', { operationId })
+      cancelRequestedBeforeSession = true
       return
     }
     if (rollback) {
@@ -786,7 +811,7 @@ export function createTransferProgressState(config: TransferProgressStateConfig)
     }
     if (bound.current === null) {
       // The binder acquires on the first effect flush after the id lands, the
-      // same sub-frame sliver `handleCancel` refuses in. Nothing here knows
+      // same sub-frame sliver `handleCancel` defers across. Nothing here knows
       // whether the operation is still running, and a detach that guesses would
       // report a cancel for a transfer that is still copying — the pane tail
       // included. Stopping watching is what a detach means; the corner chip and
@@ -835,22 +860,7 @@ export function createTransferProgressState(config: TransferProgressStateConfig)
         const id = result.operationId
         operationId = id
 
-        if (cancelRequestedBeforeId) {
-          // An explicit Cancel that arrived before the operation had a name.
-          // Through the MANAGER, because an operation admitted behind a busy
-          // lane hasn't spawned a write op yet and only this path can drop it.
-          // Reported to the parent too, so the modal comes down: nothing else
-          // will close it, and a stuck progress dialog poisons every following
-          // operation through `ensureAppReady`'s Escape.
-          log.info('Cancel arrived before the id did; cancelling op={operationId}', { operationId: id })
-          void cancelOperation(id)
-          close(() => {
-            config.onCancelled(0)
-          })
-          return
-        }
-
-        if (backgroundRequestedBeforeId) {
+        if (backgroundRequestedBeforeId && !cancelRequestedBeforeSession) {
           // The modal was closed before the operation had a name. Now it has
           // one, so hand it to the queue window rather than losing the press.
           log.info('The modal closed before op={operationId} was named; backgrounding it', { operationId: id })
