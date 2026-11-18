@@ -69,10 +69,13 @@ export function reservedAccessKeys(scope: CommandScope | undefined): Set<string>
 /**
  * The letters an Alt+key press may name, most likely first: the key it typed, then the key's
  * position (`KeyR`), for a layout or a Mac Option key that composes another character. Empty for
- * anything but Alt alone plus one key (AltGr types characters, it never presses access keys).
+ * anything but Alt alone plus one key (AltGr types characters, it never presses access keys), and for any numpad key:
+ * Alt plus numpad digits is how Windows types a character by its code (Alt, 0, 2, 3, 3 for é), so a digit there is
+ * part of a character, never an access key.
  */
 export function accessKeyLettersOf(event: KeyboardEvent): string[] {
   if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || isAltGraphHeld(event)) return []
+  if (event.code.startsWith('Numpad')) return []
   const letters: string[] = []
   if (Array.from(event.key).length === 1) letters.push(event.key.toLowerCase())
   const position = /^(?:Key|Digit)([A-Z0-9])$/.exec(event.code)

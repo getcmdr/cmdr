@@ -348,6 +348,9 @@ markup and keys every Mac had before this existed.
   letters (the multi-rename sheet's options, About this's Stop), which are its access keys already, so nothing else is
   given them. A `letterKeysAnswer` dialog (bare letters answer it, shown on its buttons) gets none: one key scheme per
   dialog, and its report offer stays keyless on purpose.
+- Gotcha: Alt plus a numpad key never names an access key (`accessKeyLettersOf`): Windows types a character by its code
+  that way (Alt, 0, 2, 3, 3 for é), one Alt keydown per digit, and a label like "Delete 3 items" can hold the digit `3`
+  as its key once its letters are taken. Without the guard, typing é in a dialog field could press it.
 - Decision/Why: keytips (WinUI's look, drawn over the panel in `.access-key-tip`) rather than an underlined letter. The
   label is a consumer snippet, so underlining would mean rewriting Svelte-owned text nodes, and a keytip also carries a
   letter the label lacks (a reserved command's, a Chinese label's). Underlines (GNOME, KDE, Win32) remain an option

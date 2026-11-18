@@ -53,6 +53,16 @@ describe('accessKeyLettersOf', () => {
     expect(accessKeyLettersOf(key({ key: 'R', code: 'KeyR', altKey: true, shiftKey: true }))).toEqual([])
     expect(accessKeyLettersOf(key({ key: 'r', code: 'KeyR', altKey: true, metaKey: true }))).toEqual([])
   })
+
+  // Windows types a character from its code with Alt held and digits on the numpad (Alt, 0, 2, 3, 3 for é): each
+  // digit arrives as an Alt keydown, which must not press a button whose access key is that digit.
+  it('reads nothing from the numpad, where Alt types a character code', () => {
+    for (const digit of ['0', '2', '3']) {
+      expect(accessKeyLettersOf(key({ key: digit, code: `Numpad${digit}`, altKey: true }))).toEqual([])
+    }
+    // NumLock off: the same keys arrive as navigation keys.
+    expect(accessKeyLettersOf(key({ key: 'End', code: 'Numpad1', altKey: true }))).toEqual([])
+  })
 })
 
 describe('accessKeyCandidates', () => {
