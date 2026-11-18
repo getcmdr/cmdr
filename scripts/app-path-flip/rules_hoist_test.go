@@ -88,6 +88,22 @@ func TestABridgeTemporaryAClosureReturnsIsHoistedBeforeItsStatement(t *testing.T
 	if !strings.Contains(squash(got), want) {
 		t.Fatalf("not hoisted out of the closure:\n%s", got)
 	}
+	// In a match arm, before the whole match; ❌ never when an arm could bind the root.
+	arm := "async fn t(path: &Path) {\n    let children = match cache.get() {\n        Some(cached) => {\n            cached\n        }\n        None => retry(|| v.list(&AppPath::legacy_unchecked(path))).await?,\n    };\n}\n"
+	d = diag("E0515", "cannot return value referencing temporary value",
+		spanOf(t, arm, "v.list(&AppPath::legacy_unchecked(path))", "", "returns a value referencing data owned by the current function", true),
+		spanOf(t, arm, "AppPath::legacy_unchecked(path)", "", "temporary value created here", false))
+	got = run(t, arm, d)
+	if !strings.Contains(squash(got), "{ let path_app = AppPath::legacy_unchecked(path); let children = match cache.get() {") {
+		t.Fatalf("not hoisted before the match:\n%s", got)
+	}
+	bound := strings.Replace(arm, "Some(cached) =>", "Some(path) =>", 1)
+	d = diag("E0515", "cannot return value referencing temporary value",
+		spanOf(t, bound, "v.list(&AppPath::legacy_unchecked(path))", "", "returns a value referencing data owned by the current function", true),
+		spanOf(t, bound, "AppPath::legacy_unchecked(path)", "", "temporary value created here", false))
+	if got := run(t, bound, d); got != bound {
+		t.Fatalf("an arm binding the root must stay residue:\n%s", got)
+	}
 	// Rooted in the closure's own param: nothing to hoist it to.
 	own := "async fn t() {\n    let a = join_all(rows.iter().map(|row| v.rename_work(&AppPath::legacy_unchecked(&row.source))));\n}\n"
 	d = diag("E0515", "cannot return value referencing temporary value",

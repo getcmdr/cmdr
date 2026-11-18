@@ -152,6 +152,15 @@ func hoistFrom(src *source, p *diagSpan, from int, bound []string) []edit {
 		return nil
 	}
 	at := statementStart(src.masked, from, fn.bodyStart)
+	inner := blockStatementStart(src.masked, outsideMacros(src.masked, from, fn.bodyStart), fn.bodyStart)
+	if inner != at {
+		// Out of a match arm: an arm's pattern may bind the root (`Some(dir) => …`), so the
+		// root may not appear anywhere in the match's body before the bridge.
+		open := enclosingOpenBrace(src.masked, inner, fn.bodyStart)
+		if open < 0 || len(identUses(src.masked, open, p.ByteStart, segments[0])) > 0 {
+			return nil
+		}
+	}
 	start := p.ByteStart + strings.Index(string(src.text[p.ByteStart:p.ByteEnd]), expr)
 	return []edit{
 		{file: src.path, start: at, end: at, text: "\nlet " + name + " = " + expr + ";", rule: ruleHoist},
@@ -206,8 +215,55 @@ func closureHoistEdits(d *diagnostic, src *source) []edit {
 // closed blocks skipped), never before floor. Inside a macro's token tree (`tokio::select! {
 // biased; … }`, whose `;` and arm blocks are no statement ends) it starts from the outermost
 // enclosing macro invocation instead.
+// A match arm's expression (`None => read(…)`) is no statement either: the start is the
+// whole `match`'s.
 func statementStart(masked []byte, offset, floor int) int {
 	offset = outsideMacros(masked, offset, floor)
+	at := blockStatementStart(masked, offset, floor)
+	if hasTopLevelArrow(masked[at:offset]) {
+		if open := enclosingOpenBrace(masked, at, floor); open >= floor {
+			return statementStart(masked, open, floor)
+		}
+	}
+	return at
+}
+
+// hasTopLevelArrow answers whether a `=>` sits outside every bracket in b.
+func hasTopLevelArrow(b []byte) bool {
+	depth := 0
+	for k := 0; k < len(b); k++ {
+		switch b[k] {
+		case '(', '[', '{':
+			depth++
+		case ')', ']', '}':
+			depth--
+		case '=':
+			if depth == 0 && k+1 < len(b) && b[k+1] == '>' {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// enclosingOpenBrace is the offset of the unmatched `{` before at, or -1.
+func enclosingOpenBrace(masked []byte, at, floor int) int {
+	depth := 0
+	for k := at - 1; k >= floor; k-- {
+		switch masked[k] {
+		case '}':
+			depth++
+		case '{':
+			if depth == 0 {
+				return k
+			}
+			depth--
+		}
+	}
+	return -1
+}
+
+func blockStatementStart(masked []byte, offset, floor int) int {
 	braces, parens := 0, 0
 	for k := offset - 1; k >= floor; k-- {
 		switch masked[k] {
