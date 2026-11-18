@@ -216,8 +216,9 @@ fn vet_staged_bundle(
 /// Refuses a staged bundle whose own version isn't newer than `current`, and answers that version.
 ///
 /// ❗ The minisign signature proves the archive is a real release, not WHICH one:
-/// its trusted comment names only `file:Cmdr.app.tar.gz`, and the manifest that
-/// names the version isn't signed. So an older signed archive served behind a
+/// its trusted comment carries no `version:` field (only a timestamp and the signed
+/// asset's name, which nothing here reads), and the manifest that names the version
+/// isn't signed. So an older signed archive served behind a
 /// manifest claiming a newer version would verify and roll the install back. The
 /// version inside the signed bytes (`Contents/Info.plist`) is what binds it.
 fn refuse_unless_newer(staged_app: &Path, current: &str) -> Result<semver::Version, String> {

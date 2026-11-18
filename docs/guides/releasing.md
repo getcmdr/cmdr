@@ -983,6 +983,10 @@ that handles release files derives from it, so adding a platform is rows plus th
 Not from it: the `compile` and `sign` matrices and `sign`'s upload names (the bundler's output paths), and `bump-tap`.
 Design and the dry run: `scripts/release-assets/DETAILS.md`.
 
+❗ A Windows or Linux update payload must be signed with `tauri signer sign --app-version <version>`, keyed
+`windows-x86_64` / `linux-x86_64`, or every off-macOS install refuses the release; `latest.json` may also carry a signed
+`securityAdvisories: { url, signature }`. `scripts/release-assets/DETAILS.md` § Update payloads off macOS.
+
 ## What a release publishes
 
 The release pipeline's `demo` job also builds and publishes the browser demo (`apps/website/DETAILS.md` § Browser demo),

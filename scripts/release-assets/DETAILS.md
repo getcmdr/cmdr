@@ -18,7 +18,27 @@ File names are data (`File` with `{version}`), never derived from os and arch: T
 
 Decision: one flat row per file, not a build with nested files. Why: every consumer asks a per-file question (sign it?
 hash it? mirror it? attest it against what?), and a Windows row is then data alone. `Validate` catches the mistakes a
-new row can make (a duplicate name or updater key, an optional update payload, a build no SBOM describes).
+new row can make (a duplicate name or updater key, an optional update payload, a build no SBOM describes, an updater key
+the app doesn't read for that OS and arch).
+
+## Update payloads off macOS
+
+The app's updater (`apps/desktop/src-tauri/src/updater/DETAILS.md` § Windows and Linux) asks for these and refuses the
+release without them:
+
+- **The signature names the version.** A Windows or Linux payload (`File.SignsVersion()`) is signed with
+  `tauri signer sign --app-version <version>`, which writes `version:<v>` into minisign's signed trusted comment; the
+  updater can't open an installer before it runs, so it binds the version there and refuses a signature without it.
+  macOS archives are signed without it (the bundle's `Info.plist` binds the version).
+- **The key is one the app reads**: `windows-x86_64-nsis` then `windows-x86_64`, `linux-x86_64-appimage` then
+  `linux-x86_64` (`install_kind.rs`'s `platform_keys`, mirrored by `updaterKeys`). The manifest uses the bare
+  `windows-x86_64` / `linux-x86_64`.
+- **An optional signed advisory list**: a top-level `securityAdvisories: { url, signature }` in `latest.json`, the list
+  published as a release asset with its own minisign signature. Without it Windows and Linux show no security notice;
+  the update still installs.
+
+None of this is wired yet: no release carries a Windows or Linux row (Windows port plan task 52 adds the rows, the
+`--app-version` flag in both signing modes, and the advisory list).
 
 ## Who reads it
 

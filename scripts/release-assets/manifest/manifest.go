@@ -73,7 +73,8 @@ type Asset struct {
 	// Intel arch `x64` in file names, so these do too.
 	File string
 	// UpdaterKey is the file's `latest.json` platform key (`darwin-aarch64`, later
-	// `windows-x86_64`): set only on an update payload, which then carries a minisign `.sig`.
+	// `windows-x86_64` and `linux-x86_64`): set only on an update payload, which then carries a
+	// minisign `.sig`. `Validate` holds it to a key the app reads (`updaterKeys`).
 	UpdaterKey string
 	// Optional files may be missing from a release without failing it (the pkg, which needs an
 	// installer certificate).
@@ -114,6 +115,28 @@ func (f File) Download() bool { return slices.Contains(downloadKinds, f.Kind) }
 
 // Update reports whether the updater fetches this file, so it's signed and in `latest.json`.
 func (f File) Update() bool { return f.UpdaterKey != "" }
+
+// SignsVersion reports whether this update payload's signature must name the version
+// (`tauri signer sign --app-version <version>`, which writes `version:<v>` into minisign's signed
+// trusted comment). Off macOS the updater can't open an installer before it runs, so that field is
+// the only signed place the version lives, and it refuses a signature without it
+// (`apps/desktop/src-tauri/src/updater/DETAILS.md` § Windows and Linux). macOS reads the version
+// from the signed bundle's `Info.plist` instead.
+func (f File) SignsVersion() bool { return f.Update() && f.OS != MacOS }
+
+// updaterKeys are the `latest.json` keys the app reads for a row's OS and arch, mirroring
+// `InstallKind::platform_keys` in `apps/desktop/src-tauri/src/updater/install_kind.rs`.
+func updaterKeys(os OS, arch Arch) []string {
+	switch os {
+	case MacOS:
+		return []string{"darwin-" + string(arch)}
+	case Windows:
+		return []string{"windows-" + string(arch) + "-nsis", "windows-" + string(arch)}
+	case Linux:
+		return []string{"linux-" + string(arch) + "-appimage", "linux-" + string(arch)}
+	}
+	return nil
+}
 
 // Binary reports whether this is a build of the app (a download or an update payload), the
 // files provenance and SBOMs are about.
@@ -250,6 +273,9 @@ func (r Release) Validate() error {
 				problems = append(problems, fmt.Sprintf("updater key %s is on two files", f.UpdaterKey))
 			}
 			keys[f.UpdaterKey] = true
+			if !slices.Contains(updaterKeys(f.OS, f.Arch), f.UpdaterKey) {
+				problems = append(problems, fmt.Sprintf("%s has updater key %s, which no %s %s install reads", f.Name, f.UpdaterKey, f.OS, f.Arch))
+			}
 			if f.Optional {
 				problems = append(problems, fmt.Sprintf("%s is an update payload, so it can't be optional", f.Name))
 			}

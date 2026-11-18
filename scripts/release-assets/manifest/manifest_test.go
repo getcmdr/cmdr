@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -101,6 +102,36 @@ func TestAWindowsReleaseIsRowsAlone(t *testing.T) {
 	}
 	if got := Names(r.Subjects(r.Files[len(r.Files)-1])); !slices.Equal(got, []string{"Cmdr_0.70.0_x64-setup.exe", "Cmdr_0.70.0_x64.msix"}) {
 		t.Fatalf("the Windows Rust SBOM describes %v", got)
+	}
+}
+
+// Off macOS the updater reads the version only from the signature (`--app-version`), and only
+// under the keys `install_kind.rs` asks for, so the rows pin both: a Windows or Linux update
+// payload signs its version under `windows-x86_64` / `linux-x86_64`, and macOS's archives don't.
+func TestOffMacOSUpdatePayloadsSignTheirVersionUnderAKeyTheAppReads(t *testing.T) {
+	linuxRows := []Asset{
+		{OS: Linux, Arch: X86_64, Kind: AppImage, File: "Cmdr_{version}_amd64.AppImage", UpdaterKey: "linux-x86_64", Targets: []string{"x86_64-unknown-linux-gnu"}},
+		{OS: Linux, Arch: X86_64, Kind: RustSBOM, File: "Cmdr_{version}_linux_x64.rust.cdx.json", Targets: []string{"x86_64-unknown-linux-gnu"}},
+	}
+	rows := append(append(slices.Clone(Assets), windowsRows...), linuxRows...)
+	r := Resolve("0.70.0", rows)
+	if err := r.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	signed := map[string]bool{}
+	for _, f := range r.Updates() {
+		signed[f.UpdaterKey] = f.SignsVersion()
+	}
+	want := map[string]bool{"darwin-universal": false, "darwin-aarch64": false, "darwin-x86_64": false, "windows-x86_64": true, "linux-x86_64": true}
+	if !maps.Equal(signed, want) {
+		t.Fatalf("SignsVersion by updater key = %v, want %v", signed, want)
+	}
+
+	bad := slices.Clone(rows)
+	bad[len(Assets)].UpdaterKey = "win64"
+	err := Resolve("0.70.0", bad).Validate()
+	if err == nil || !strings.Contains(err.Error(), "updater key win64, which no windows x86_64 install reads") {
+		t.Fatalf("an updater key the app never reads passed: %v", err)
 	}
 }
 

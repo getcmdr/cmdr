@@ -15,7 +15,9 @@ Status: planned 2026-11-04 at `7a199a9705`. Tracking issue: [#942](https://githu
 - An earlier rough spec (`linux-and-windows-versions.md`, 2026-01-18, deleted in `eac9e6187f`) predates almost all of
   today's code; read it with `git show eac9e6187f^:docs/specs/linux-and-windows-versions.md` for history only.
 
-## Where we stand
+## Where we started
+
+The state at planning (2026-11-04). What compiles for Windows now: § Windows build state.
 
 - **The crate boundary isn't an OS boundary.** "Nothing below imports the app" (`index-crate-isolation`) says nothing
   about the OS. `cmdr-operations`, `cmdr-index`, `cmdr-fs`, and `cmdr-local` hold about 900 unix/macOS sites; the
@@ -161,8 +163,8 @@ owns its real body. Remove a line when its body lands.
 - `cmdr_fs::name_fold::normalize_for_comparison` (`name_fold/platform/windows.rs`), task 35: the drive index's key
   lowercases with Unicode rules, where NTFS folds through its own upcase table; they disagree on a handful of characters
   (dotted and dotless I, final sigma).
-- `cmdr_fs::validation::MAX_PATH_BYTES`, task 14: Windows borrows Linux's 4,096 bytes until the limit follows the
-  destination.
+- `cmdr_fs::validation::MAX_PATH_BYTES`: Windows borrows Linux's 4,096 bytes. Task 14 kept path length on the host's
+  limit for every volume, so a per-destination limit has no task yet.
 - `cmdr-sftp` agent (`transport/platform/windows.rs`), task 46: asks the OpenSSH agent's pipe (or `SSH_AUTH_SOCK`),
   never Pageant.
 - Tests ignored on Windows by issue: 24 app-path tests in `cmdr-fs` (#1225, app paths through `std::path`) and one
@@ -419,11 +421,11 @@ its prerequisites; tasks without any can start any time. Order within a phase is
     after a fresh policy read and reads the release's signed advisory list (`latest.json`'s optional top-level
     `securityAdvisories: { url, signature }`); the restart toast's Restart quits through the quit gate and hands the
     staged installer to the plugin (`restore_update` + `install`, re-verified under the same key), and its second line
-    says "Cmdr closes to install it, then opens again." off macOS. Needs from the release side (task 30): sign the
-    Windows and Linux artifacts with `tauri signer sign --app-version <v>`, key them `windows-x86_64[-nsis]` /
-    `linux-x86_64[-appimage]`, and publish the signed advisory list. Not yet verified on a real Windows or Linux
-    machine: the plugin's install arms are read from `tauri-plugin-updater` 2.14.1's source, and Rust tests cover
-    everything up to them (`updater/DETAILS.md` § Windows and Linux).
+    says "Cmdr closes to install it, then opens again." off macOS. What it needs from the release side is written into
+    the manifest (`File.SignsVersion()`, the key rule in `Validate`, `scripts/release-assets/DETAILS.md` § Update
+    payloads off macOS) and left for task 52 to wire. Not yet verified on a real Windows or Linux machine: the plugin's
+    install arms are read from `tauri-plugin-updater` 2.14.1's source, and Rust tests cover everything up to them
+    (`updater/DETAILS.md` § Windows and Linux).
 
 ### Phase 6: Windows implementation
 
@@ -492,7 +494,13 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     job and an Authenticode verify in `vet-update-archives`.
 52. [M] Windows. Windows release build: a `windows-latest` job that builds once and packages twice, the MSIX (via
     Microsoft's `winapp` CLI) and the unsigned NSIS installer, plus the minisign `.sig` for the NSIS updater artifact in
-    both signing modes and the `windows-x86_64` manifest row. Needs 6, 30.
+    both signing modes and the `windows-x86_64` manifest row. Task 33's updater refuses any off-macOS signature without
+    a `version:` field, so both signing modes (the `sign` job and `release-finish`) sign every row whose
+    `File.SignsVersion()` is true with `tauri signer sign --app-version <v>`; without it every Windows and Linux install
+    refuses the release. `Validate` already holds the key to one the app reads (`windows-x86_64[-nsis]`,
+    `linux-x86_64[-appimage]`). Also publish the advisory list as a release asset with its own `.sig` and write the
+    optional top-level `securityAdvisories: { url, signature }` into `latest.json` (`latest.go`); without it Windows and
+    Linux show no security notice (the update still installs). Needs 6, 30.
 53. [S] Windows. Release vetting and distribution: `deny.toml` triple, third-party notices and SBOM, checksums for both
     packages, and a winget manifest for the NSIS installer. Needs 52.
 54. [S] Windows. E2E smoke on `windows-latest`: `tauri-plugin-playwright` over TCP, three-way helpers, a Windows fixture

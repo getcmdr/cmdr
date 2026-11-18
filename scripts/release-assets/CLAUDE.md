@@ -17,6 +17,8 @@ targets), and the CLI the release pipeline's shell steps call (`../release-asset
   vets the OS (`-vetted`) and `attest` has a step per SBOM (`-attested`); `Validate` fails a build with no Rust SBOM.
 - **`latest.json` stays byte-stable**: `jsonout.go` prints what `jq --indent 2` printed, and the update rows run
   universal first, the platform order of every manifest so far. Tests hold it to v0.61.0's published bytes.
+- **A Windows or Linux update payload signs its version** (`File.SignsVersion()`: `--app-version`), or the app refuses
+  it. DETAILS § Update payloads off macOS.
 - **An optional file is a glob in `actions/attest`'s `subject-path`** (`subjectPattern`): the action fails on a literal
   path that matches nothing.
 - **Changed a release job? Run `go test ./...` here.** A moved output fails against `testdata/golden/`; review it, then

@@ -149,8 +149,11 @@ itself and refusing doctored archives): `docs/notes/2026-10-15-update-path-proof
 When an update fixes a vulnerability, the restart toast says so and what to do (the CRA's advisory-message point). The
 list itself, what gets an entry, and the link allowlist: `../security_advisories/DETAILS.md`. What's the updater's own:
 
-- **Read from the staged bundle, never from `latest.json`.** The manifest isn't signed (the minisign trusted comment
-  names only `file:Cmdr.app.tar.gz`), so a `security` field there would let anyone who can serve or tamper with it
+- **Read from the staged bundle, never from `latest.json`.** The manifest isn't signed (the archive's minisign trusted
+  comment carries only a timestamp and the signed asset's versioned name, like
+  `file:Cmdr_0.61.0_aarch64.app.tar.gz`, which `release-finish` signs; no `version:` field, and the macOS path never
+  reads it; verified on v0.61.0's published `.sig`, 2026-11-18), so a `security` field there would let anyone who can
+  serve or tamper with it
   show a fake "critical" notice with a phishing link, or hide a real one. The staged bundle's
   `Contents/Resources/security-advisories.json` sits inside the minisign-verified archive AND under the Developer ID
   code signature, which seals `Contents/Resources/`. ❌ Nothing in `latest.json` may show, hide, or change a notice;
