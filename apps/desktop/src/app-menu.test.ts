@@ -139,6 +139,12 @@ describe('menu look tokens', () => {
     expect(forced.get('--color-menu-forced-adjust')).toBe('none')
   })
 
+  it("starts the house bar's first title 10 px in and spaces the titles 2 px apart, as the demo's macOS bar measured", () => {
+    const px = (name: string) => Number.parseFloat(house.get(name) ?? 'NaN')
+    expect(px('--spacing-menu-bar-padding-inline') + px('--spacing-menu-bar-item-margin-inline')).toBe(10)
+    expect(2 * px('--spacing-menu-bar-item-margin-inline')).toBe(2)
+  })
+
   it('uses only CSS that Safari 15.4 reads, or guards it (the build fails otherwise)', () => {
     expect(findCssBeyondSafari15(menuCss)).toEqual([])
   })

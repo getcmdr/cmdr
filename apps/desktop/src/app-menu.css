@@ -96,7 +96,9 @@
   /* Menu bar */
   --color-menu-bar-bg: var(--color-bg-glass);
   --spacing-menu-bar-height: 30px;
-  --spacing-menu-bar-padding-inline: 10px;
+  /* The first capsule sits 10 px in and the capsules 2 px apart (the demo bar's macOS 27
+     measurement): 9 px of padding plus each title's 1 px margin */
+  --spacing-menu-bar-padding-inline: 9px;
   --spacing-menu-bar-item-height: 24px;
   --spacing-menu-bar-item-margin-inline: 1px;
   --spacing-menu-bar-item-padding-block: 0;
