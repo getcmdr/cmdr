@@ -583,6 +583,13 @@
       "text": "sftp://test_user_1@testnas.local:22/home",
       "flavor": "windows",
       "wire": "sftp://test_user_1@testnas.local:22/home"
-    }
+    },
+    { "text": "/x/link/", "flavor": "posix", "wire": "/x/link/" },
+    { "text": "/x/link/../y", "flavor": "posix", "wire": "/x/link/../y" },
+    { "text": "../y", "flavor": "posix", "wire": "../y" },
+    { "text": "/x//./y", "flavor": "posix", "wire": "/x//./y" },
+    { "text": "C:\\x\\link\\..\\y", "flavor": "windows", "wire": "C:/x/y" },
+    { "text": "C:/x/link/", "flavor": "windows", "wire": "C:/x/link" },
+    { "text": "..\\y", "flavor": "windows", "wire": "../y" }
   ]
 }

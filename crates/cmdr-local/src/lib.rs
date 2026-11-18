@@ -97,3 +97,5 @@ mod local_windows_test;
 mod reading_parity_test;
 #[cfg(test)]
 mod reading_test;
+#[cfg(test)]
+mod wire_path_shape_test;
