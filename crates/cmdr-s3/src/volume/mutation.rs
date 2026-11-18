@@ -20,6 +20,7 @@
 //!   itself still refuses them with `NotSupported`, so nothing copies a whole
 //!   folder by accident.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::entry::FileEntry;
@@ -452,8 +453,10 @@ impl PatchSource for S3Volume {
 
     /// The entry a write just verified, when it's the one asked for, so the
     /// patch after an upload costs no second HEAD; else a fresh stat.
-    fn patch_stat<'a>(&'a self, path: &'a Path) -> Walking<'a, FileEntry> {
+    fn patch_stat<'a>(&'a self, path: &'a AppPath) -> Walking<'a, FileEntry> {
         Box::pin(async move {
+            let path_std = path.as_std_legacy();
+            let path: &Path = &path_std;
             if let Ok(remote) = self.to_remote_path(path)
                 && let Some(entry) = self.take_written(&remote)
             {
