@@ -7,7 +7,7 @@
 //! Where each location comes from, with its evidence: `../DETAILS.md` § The protected locations.
 
 use super::Protected;
-use Dir::{Anywhere, MacCaches, MacSupport, WinLocal, WinRoaming, XdgCache, XdgConfig, XdgData};
+use Dir::{Anywhere, Home, MacCaches, MacSupport, WinLocal, WinRoaming, XdgCache, XdgConfig, XdgData};
 use Protected::{BrowserData, Credentials, MessageStore};
 
 /// The per-user dir a rule sits in. Each has the spellings it takes inside a home folder, and
@@ -16,6 +16,10 @@ use Protected::{BrowserData, Credentials, MessageStore};
 pub(crate) enum Dir {
     /// No parent: the rule's own parts are the anchor, at any depth.
     Anywhere,
+    /// Directly in a home folder (`Users/<name>` on macOS and Windows, `home/<name>` on
+    /// Linux), at any depth so a backup of one counts: for names a project's own folders
+    /// carry too (`library/calendars`, `snap/slack`).
+    Home,
     /// macOS `~/Library/Application Support`.
     MacSupport,
     /// macOS `~/Library/Caches`.
@@ -39,6 +43,7 @@ impl Dir {
     fn spellings(self) -> &'static [&'static [&'static str]] {
         match self {
             Anywhere => &[&[]],
+            Home => &[&["users", ANY], &["home", ANY]],
             MacSupport => &[&["library", "application support"]],
             MacCaches => &[&["library", "caches"]],
             XdgConfig => &[&[".config"]],
@@ -49,6 +54,9 @@ impl Dir {
         }
     }
 }
+
+/// A spelling part that matches any one component: a home folder's user name.
+const ANY: &str = "*";
 
 /// A run of folded path components, under any of `dirs`, that protects whatever sits at or
 /// under it.
@@ -83,7 +91,9 @@ const fn family(dirs: &'static [Dir], parts: &'static [&'static str], reason: Pr
 ///
 /// ❌ Never a bare `notes`, `edge`, `arc`, `brave`, `chrome`, `safari`, `opera`, `mozilla`, or
 /// `firefox` under [`Anywhere`]: at any depth, case-folded, those would refuse
-/// `~/Documents/notes/*`. Apps stay anchored under a [`Dir`] or a parent only they use.
+/// `~/Documents/notes/*`. Apps stay anchored under a [`Dir`] or a parent only they use, and a
+/// run a project's own folders can carry too (`library/calendars`, `snap/slack`) sits under
+/// [`Home`].
 const RULES: &[Rule] = &[
     // Keys and tool credentials. The dot folders sit in the home folder on every OS.
     rule(&[Anywhere], &[".ssh"], Credentials),
@@ -199,8 +209,8 @@ const RULES: &[Rule] = &[
     rule(&[Anywhere], &[".claws-mail"], MessageStore),
     // macOS Contacts, Calendar, and Reminders: personal data that rides with the message category.
     rule(&[MacSupport], &["addressbook"], MessageStore),
-    rule(&[Anywhere], &["library", "calendars"], MessageStore),
-    rule(&[Anywhere], &["library", "reminders"], MessageStore),
+    rule(&[Home], &["library", "calendars"], MessageStore),
+    rule(&[Home], &["library", "reminders"], MessageStore),
     family(
         &[Anywhere],
         &["library", "containers", "com.apple.addressbook"],
@@ -230,7 +240,7 @@ const RULES: &[Rule] = &[
     // Chat apps: their databases are often encrypted, but the key sits beside them, and
     // attachments and caches sit in the clear.
     family(&[MacSupport, XdgConfig, WinRoaming], &["signal"], MessageStore),
-    rule(&[Anywhere], &["snap", "signal-desktop"], MessageStore),
+    rule(&[Home], &["snap", "signal-desktop"], MessageStore),
     rule(&[Anywhere], &[".var", "app", "org.signal.signal"], MessageStore),
     rule(&[MacSupport, WinRoaming, WinLocal], &["whatsapp"], MessageStore),
     family(
@@ -246,8 +256,8 @@ const RULES: &[Rule] = &[
     family(&[WinLocal], &["packages", "5319275a.whatsappdesktop"], MessageStore),
     rule(&[MacSupport, WinRoaming], &["telegram desktop"], MessageStore),
     rule(&[XdgData], &["telegramdesktop"], MessageStore),
-    rule(&[Anywhere], &[".telegramdesktop"], MessageStore),
-    rule(&[Anywhere], &["snap", "telegram-desktop"], MessageStore),
+    rule(&[Home], &[".telegramdesktop"], MessageStore),
+    rule(&[Home], &["snap", "telegram-desktop"], MessageStore),
     rule(&[Anywhere], &[".var", "app", "org.telegram.desktop"], MessageStore),
     family(
         &[Anywhere],
@@ -265,13 +275,13 @@ const RULES: &[Rule] = &[
         &["library", "containers", "com.tinyspeck.slackmacgap"],
         MessageStore,
     ),
-    rule(&[Anywhere], &["snap", "slack"], MessageStore),
+    rule(&[Home], &["snap", "slack"], MessageStore),
     rule(&[Anywhere], &[".var", "app", "com.slack.slack"], MessageStore),
     family(&[WinLocal], &["packages", "91750d7e.slack"], MessageStore),
     rule(&[MacSupport, XdgConfig, WinRoaming], &["discord"], MessageStore),
     rule(&[MacSupport, XdgConfig, WinRoaming], &["discordptb"], MessageStore),
     rule(&[MacSupport, XdgConfig, WinRoaming], &["discordcanary"], MessageStore),
-    rule(&[Anywhere], &["snap", "discord"], MessageStore),
+    rule(&[Home], &["snap", "discord"], MessageStore),
     rule(&[Anywhere], &[".var", "app", "com.discordapp.discord"], MessageStore),
     family(&[MacSupport, XdgConfig, WinRoaming], &["element"], MessageStore),
     rule(&[Anywhere], &[".var", "app", "im.riot.riot"], MessageStore),
@@ -414,7 +424,10 @@ impl Rule {
                 (0..parts.len()).any(|at| {
                     let tail = &parts[at..];
                     tail.len() > spelling.len()
-                        && tail.iter().zip(*spelling).all(|(have, want)| have == want)
+                        && tail
+                            .iter()
+                            .zip(*spelling)
+                            .all(|(have, want)| *want == ANY || have == want)
                         && self.starts(&tail[spelling.len()..])
                 })
             });
