@@ -20,8 +20,11 @@ import type {
   WriteSettledEvent,
   WriteCompleteEvent,
 } from '#lib/tauri-commands/index.js'
+import { getOperationLogDetail } from '#lib/tauri-commands/index.js'
+import type { ExecutionStatus } from '#lib/ipc/bindings.js'
 import {
   destroyOperationSessions,
+  getOperationSessions,
   initOperationSessions,
 } from '#lib/file-operations/operation-session/window-operation-sessions.svelte.js'
 // Import the SUT statically so the linter sees a real source dependency.
@@ -82,6 +85,7 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   // session that seeds itself finds it. Answering with an empty list would tell
   // the session the transfer was already over.
   releaseTransferTree: vi.fn(() => Promise.resolve()),
+  getOperationLogDetail: vi.fn(() => Promise.resolve(null)),
   listOperations: vi.fn(() =>
     Promise.resolve<OperationSnapshot[]>([
       {
@@ -129,6 +133,35 @@ async function flushPromises(): Promise<void> {
       setTimeout(resolve, 0)
     })
     await tick()
+  }
+}
+
+/** The operation log's record of op-1, ended with `executionStatus`. */
+function journalDetail(executionStatus: ExecutionStatus): Awaited<ReturnType<typeof getOperationLogDetail>> {
+  return {
+    operation: {
+      opId: 'op-1',
+      kind: 'delete',
+      archiveSubkind: null,
+      initiator: 'user',
+      executionStatus,
+      rollbackState: 'notRollbackable',
+      notRollbackableReason: null,
+      rollsBackOpId: null,
+      inverseOpId: null,
+      sourceVolumeId: 'mtp-1',
+      destVolumeId: null,
+      startedAt: 0,
+      endedAt: 1,
+      itemCount: 3,
+      itemsDone: 3,
+      bytesTotal: 300,
+      searchCoverage: 'full',
+      searchCoverageReason: null,
+      devSummary: null,
+    },
+    items: [],
+    totalItems: 3,
   }
 }
 
@@ -336,6 +369,69 @@ describe('TransferProgressDialog cancel-settle gate', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('keeps a write-complete that an ambient view took and let go before the dialog claimed the operation', async () => {
+    // The corner chip binds to an operation as soon as its row appears, a hair
+    // before the start command answers. When it held the session through the
+    // `write-complete` and let go, the dialog's fresh session heard only the
+    // `write-settled`, and a finished copy closed as "cancelled after 0 files".
+    const registry = getOperationSessions()
+    if (!registry || !completeCb || !settledCb) throw new Error('subscribers never registered')
+    registry.acquire('op-1')
+    completeCb({
+      operationId: 'op-1',
+      operationType: 'delete',
+      filesProcessed: 5,
+      filesSkipped: 0,
+      bytesProcessed: 1234,
+    })
+    registry.release('op-1')
+
+    const { component, onComplete, onCancelled } = await mountDialog()
+    settledCb({ operationId: 'op-1', operationType: 'delete' })
+    await flushPromises()
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalledTimes(1)
+    })
+    expect(onComplete.mock.calls[0]?.[0]).toMatchObject({ filesProcessed: 5, bytesProcessed: 1234 })
+    expect(onCancelled).not.toHaveBeenCalled()
+    void unmount(component)
+  })
+
+  it('asks the operation log how an operation ended when it settled with no terminal event', async () => {
+    vi.mocked(getOperationLogDetail).mockResolvedValueOnce(journalDetail('done'))
+    const { component, onComplete, onCancelled } = await mountDialog()
+    if (!settledCb) throw new Error('subscribers never registered')
+    settledCb({ operationId: 'op-1', operationType: 'delete' })
+
+    await vi.waitFor(
+      () => {
+        expect(onComplete).toHaveBeenCalledTimes(1)
+      },
+      { timeout: 3000 },
+    )
+    expect(getOperationLogDetail).toHaveBeenCalledWith('op-1', 0, 0)
+    expect(onComplete.mock.calls[0]?.[0]).toMatchObject({ filesProcessed: 3, bytesProcessed: 300 })
+    expect(onCancelled).not.toHaveBeenCalled()
+    void unmount(component)
+  })
+
+  it('closes neutrally when the operation log has no record of how it ended', async () => {
+    vi.mocked(getOperationLogDetail).mockResolvedValueOnce(null)
+    const { component, onComplete, onCancelled } = await mountDialog()
+    if (!settledCb) throw new Error('subscribers never registered')
+    settledCb({ operationId: 'op-1', operationType: 'delete' })
+
+    await vi.waitFor(
+      () => {
+        expect(onCancelled).toHaveBeenCalledTimes(1)
+      },
+      { timeout: 3000 },
+    )
+    expect(onComplete).not.toHaveBeenCalled()
+    void unmount(component)
   })
 
   it('event filterEvent rejects events for a different operation id', async () => {

@@ -119,10 +119,7 @@ central buffer keyed by unclaimed ids is therefore unbounded unless it is given 
   rather than the number of events.
 - Keep at most one of each terminal event, because a session registering after its operation ended must resolve rather
   than hang.
-- Drop an id's whole buffer the moment it is claimed. ❗ So a terminal event reaches only the FIRST session to claim an
-  id; a later, fresh session (the first one's view let go) never sees it. For a failure that isn't a hole: the backend
-  retains a `failed` row carrying the error, and a session reads that row as its outcome (`applySnapshot`). A move that
-  failed before its start command returned was claimed first by an ambient view and left its progress dialog spinning.
+- Drop an id's whole buffer the moment it is claimed. The ENDING is the exception (§ "How an operation ended").
 - Age the rest out at `UNCLAIMED_BUFFER_TTL_MS` (300 s), swept on the next insert. Both the number and the trigger come
   from the backend's own precedent for scan results (`SCAN_RESULT_TTL` in `crates/cmdr-operations/src/scan_cache.rs`),
   and the insert-triggered sweep is what keeps an idle window at zero cost.
@@ -148,6 +145,26 @@ What it does NOT survive is a window reload: the retention is per-window state, 
 operation's status (from `list_operations()`) and not its progress. Nothing in the frontend does — the registry snapshot
 is deliberately thin — and the queue row is equally bar-less there. A view must therefore be able to say "I don't know
 yet" (`../transfer/DETAILS.md` § "The dialog is a view").
+
+### How an operation ended
+
+Every session that attaches to an ended operation must hear how it ended, not only the first one to claim the id. So the
+fan-out keeps each operation's ending (its first terminal event plus its `write-settled`) apart from the buffer, for the
+same TTL and on the same insert-triggered sweep, and replays it to EVERY attaching session, after any tick. The buffer's
+copy of an ending is skipped in the flush, so a session hears it once, terminal event first.
+
+Why it exists: an ambient view routinely claims an id before the view that cares about its outcome. The corner chip
+binds to an operation the moment its row lands in `operations-changed`, a hair before the start command's answer lets
+the progress dialog claim it, and the dialog's `setForegroundOperationId` makes the chip let go in the same flush. When
+the chip's session took the `write-complete` and was disposed before the dialog acquired, the dialog's fresh session
+heard only the `write-settled`, and a finished copy closed as "cancelled after 0 files" (PR #1233's Linux E2E lane, six
+operations in one CI shard). Command answers and events travel separately (events are always a `webview.eval`; with
+Tauri's `ipc:` custom protocol an answer is a `fetch` response, with the `postMessage` fallback it is an `eval` queued
+in order with the events), so how often the event beats the answer depends on the transport, and no transport promises
+an order. A replay reaching a session that didn't get it from the buffer logs an info line (`Replaying how op=…`).
+
+A failure has a second, backend-side answer too: the backend retains a `failed` row carrying the error, and a session
+reads that row as its outcome (`applySnapshot`).
 
 **Latest-only is safe because of ORDERING, not idempotence.** The tempting justification is that progress is idempotent,
 which is true of the store's latest-value map and false of a session: a session owns the stateful ETA smoother, so

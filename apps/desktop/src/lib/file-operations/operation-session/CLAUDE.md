@@ -23,6 +23,9 @@ operation is now plus what you can do to it. Views bind and command through it; 
   terminal event at all. DETAILS § "Leaving the registry".
 - **The fan-out BUFFERS what `queue/operations-store.svelte.ts` DROPS**, bounded on purpose: newest event of each kind
   per unclaimed id, plus the newest tick of each live one. ❌ Not a gate, ❌ not a log. DETAILS § "The buffer's bound".
+- **An operation's ending replays to EVERY session that attaches**, not only the first: the corner chip routinely claims
+  an id before the progress dialog does, and a dialog that missed `write-complete` closed a finished copy as cancelled.
+  DETAILS § "How an operation ended".
 - **Render `bytesPerSecondDisplay` / `filesPerSecondDisplay` / `etaSecondsDisplay`, ❌ never a rate or ETA off the raw
   tick**: every rate goes `null` while a person decides (the SCAN's two included), the ETA survives that wait. DETAILS §
   "Read surface".

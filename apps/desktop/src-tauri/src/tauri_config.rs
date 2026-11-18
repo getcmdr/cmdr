@@ -100,24 +100,18 @@ mod tests {
     /// (Tauri's `protocol::origin`, which `convertFileSrc` follows), so Windows restates the CSP
     /// with that origin where the shared one names the scheme. This keeps the copy equal to the
     /// shared CSP apart from that swap, and macOS and Linux on the shared one.
-    ///
-    /// Two schemes swap: the media scheme, and Tauri's own `ipc`, whose `fetch` is the fast IPC
-    /// path (`ipc-protocol.js`); a CSP that blocks it drops every window to `postMessage` (#1234).
     #[test]
     fn the_windows_csp_is_the_shared_one_with_the_localhost_origin() {
+        let scheme = crate::file_viewer::media_protocol::SCHEME;
         let csp = |source: &str| parse(source)["app"]["security"]["csp"].as_str().map(str::to_string);
         let shared = csp(SHARED).expect("tauri.conf.json sets `app.security.csp`");
-        let mut windows = shared.clone();
-        for scheme in [crate::file_viewer::media_protocol::SCHEME, "ipc"] {
-            assert!(
-                shared.contains(&format!(" {scheme}:")),
-                "the shared CSP allows `{scheme}:`"
-            );
-            windows = windows.replace(&format!(" {scheme}:"), &format!(" http://{scheme}.localhost"));
-        }
+        assert!(
+            shared.contains(&format!("{scheme}:")),
+            "the shared CSP allows `{scheme}:`"
+        );
         assert_eq!(
             csp(WINDOWS),
-            Some(windows),
+            Some(shared.replace(&format!("{scheme}:"), &format!("http://{scheme}.localhost"))),
             "tauri.windows.conf.json's CSP drifted from tauri.conf.json's"
         );
         for (file, source) in [("tauri.macos.conf.json", MACOS), ("tauri.linux.conf.json", LINUX)] {

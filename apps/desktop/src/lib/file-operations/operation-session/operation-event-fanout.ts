@@ -120,10 +120,28 @@ interface LastProgress {
   atMs: number
 }
 
+/** The deliveries that say how an operation ENDED: its terminal event and its
+ *  `write-settled`. */
+type EndingKind = 'complete' | 'error' | 'cancelled' | 'settled'
+
+function isEnding(kind: OperationEventDelivery['kind']): kind is EndingKind {
+  return kind === 'complete' || kind === 'error' || kind === 'cancelled' || kind === 'settled'
+}
+
+/** How an operation ended, kept for EVERY session that attaches afterwards, not
+ *  only the first: the terminal event (first one wins, as in a session) and the
+ *  settle. Separate from the buffer, which is dropped on the first claim. */
+interface Ending {
+  terminal: OperationEventDelivery | null
+  settled: OperationEventDelivery | null
+  atMs: number
+}
+
 export function createOperationEventFanout(): OperationEventFanout {
   const sinks = new Map<string, OperationEventSink>()
   const buffers = new Map<string, UnclaimedBuffer>()
   const lastProgress = new Map<string, LastProgress>()
+  const endings = new Map<string, Ending>()
   let latestSnapshot: OperationSnapshot[] = []
   let unlisteners: UnlistenFn[] = []
   let disposed = false
@@ -164,6 +182,7 @@ export function createOperationEventFanout(): OperationEventFanout {
    * event must resolve, ❌ never paint bars over an ending.
    */
   function remember(operationId: string, delivery: OperationEventDelivery): void {
+    if (isEnding(delivery.kind)) rememberEnding(operationId, delivery)
     if (delivery.kind === 'progress') {
       lastProgress.set(operationId, { delivery, atMs: Date.now() })
     } else if (delivery.kind !== 'conflict' && delivery.kind !== 'conflictResolved') {
@@ -172,6 +191,27 @@ export function createOperationEventFanout(): OperationEventFanout {
       // either one still needs that tick to paint anything at all.
       lastProgress.delete(operationId)
     }
+  }
+
+  /**
+   * Keeps how an operation ENDED, for every session that attaches after it did.
+   *
+   * The buffer can't answer that either: it is dropped on the first claim, so an
+   * ambient view (the corner chip binds to an operation the moment its row
+   * appears, a hair before the start command's answer lets the progress dialog
+   * claim it) could take the `write-complete`, let go, and leave the dialog's
+   * fresh session with only the `write-settled`. The dialog then read a finished
+   * copy as cancelled. Kept for the same TTL as the buffer, swept on the same
+   * insert, so it costs one entry per recently ended operation.
+   */
+  function rememberEnding(operationId: string, delivery: OperationEventDelivery): void {
+    const nowMs = Date.now()
+    sweep(nowMs)
+    const ending = endings.get(operationId) ?? { terminal: null, settled: null, atMs: nowMs }
+    if (delivery.kind === 'settled') ending.settled = delivery
+    else if (ending.terminal === null) ending.terminal = delivery
+    ending.atMs = nowMs
+    endings.set(operationId, ending)
   }
 
   function buffer(operationId: string, delivery: OperationEventDelivery): void {
@@ -197,6 +237,9 @@ export function createOperationEventFanout(): OperationEventFanout {
     for (const [operationId, held] of lastProgress) {
       if (nowMs - held.atMs > UNCLAIMED_BUFFER_TTL_MS) lastProgress.delete(operationId)
     }
+    for (const [operationId, ending] of endings) {
+      if (nowMs - ending.atMs > UNCLAIMED_BUFFER_TTL_MS) endings.delete(operationId)
+    }
   }
 
   function applySnapshot(operations: OperationSnapshot[]): void {
@@ -213,6 +256,25 @@ export function createOperationEventFanout(): OperationEventFanout {
     }
   }
 
+  function replayEnding(
+    operationId: string,
+    ending: Ending,
+    held: UnclaimedBuffer | undefined,
+    sink: OperationEventSink,
+  ): void {
+    const { terminal, settled } = ending
+    // Said out loud when an earlier session had taken it: that is the handoff
+    // that once cost the progress dialog its `write-complete`.
+    if (terminal && !held?.byKind.has(terminal.kind)) {
+      log.info('Replaying how op={operationId} ended ({kind}) to a session that arrived after another let go', {
+        operationId,
+        kind: terminal.kind,
+      })
+    }
+    if (terminal) sink(terminal)
+    if (settled) sink(settled)
+  }
+
   function attach(operationId: string, sink: OperationEventSink): FanoutAttachment {
     if (sinks.has(operationId)) {
       throw new Error(`Operation ${operationId} already has a session in this window`)
@@ -224,10 +286,16 @@ export function createOperationEventFanout(): OperationEventFanout {
     const row = latestSnapshot.find((op) => op.operationId === operationId)
     if (row) sink({ kind: 'snapshot', snapshot: row })
 
+    // An ending, when the fan-out holds one, is replayed from `endings` below
+    // rather than from the buffer, so it is delivered once and in its own
+    // order: the terminal event, then the settle.
+    const ending = endings.get(operationId)
     const held = buffers.get(operationId)
     if (held) {
       buffers.delete(operationId)
-      for (const delivery of held.byKind.values()) sink(delivery)
+      for (const delivery of held.byKind.values()) {
+        if (!(ending && isEnding(delivery.kind))) sink(delivery)
+      }
     }
 
     // Where the operation had got to, for a session that arrives later. Skipped
@@ -235,6 +303,10 @@ export function createOperationEventFanout(): OperationEventFanout {
     // older sample after a newer one corrupts the session's ETA smoother.
     const remembered = lastProgress.get(operationId)
     if (remembered && !held?.byKind.has('progress')) sink(remembered.delivery)
+
+    // How it ended, for EVERY session, including one arriving after an earlier
+    // session drained the buffer and let go. Last, after any tick it followed.
+    if (ending) replayEnding(operationId, ending, held, sink)
 
     return {
       detach(): void {
@@ -339,6 +411,7 @@ export function createOperationEventFanout(): OperationEventFanout {
     sinks.clear()
     buffers.clear()
     lastProgress.clear()
+    endings.clear()
     latestSnapshot = []
   }
 

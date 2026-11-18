@@ -281,6 +281,27 @@ describe('OperationChip', () => {
     expect(chip()).not.toBeNull()
   })
 
+  it('holds no session for an operation until it has settled on it, so it can`t take an ending the dialog needs', () => {
+    // In the beat before the chip settles, the operation may be one the progress
+    // dialog is about to claim. A session held through that beat used to drain
+    // the `write-complete` and take it away when the chip let go.
+    const registry = getOperationSessions()
+    if (!registry) throw new Error('no session registry')
+    const acquire = vi.spyOn(registry, 'acquire')
+    store?._testApplySnapshot([snapshot()])
+    target = document.createElement('div')
+    document.body.appendChild(target)
+    mount(OperationChip, { target })
+    flushSync()
+    vi.advanceTimersByTime(CHIP_SETTLE_MS - 1)
+    flushSync()
+    expect(acquire).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(1)
+    flushSync()
+    expect(acquire).toHaveBeenCalledWith('op-1')
+  })
+
   it('opens the operation queue on click', () => {
     store?._testApplySnapshot([snapshot()])
     renderChip()
