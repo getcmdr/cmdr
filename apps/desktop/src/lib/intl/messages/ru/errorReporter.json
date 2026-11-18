@@ -172,9 +172,9 @@
   "@errorReporter.bundleSavedToast.dismiss": {
     "sourceHash": "48845bf"
   },
-  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Показать в Finder} windows {Показать в Проводнике} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показать в файловом менеджере}}",
+  "errorReporter.bundleSavedToast.reveal": "{platform, select, macos {Показать в Finder} windows {Показать в Проводнике} linuxGnome {Показать в приложении «Файлы»} linuxKde {Показать в Dolphin} other {Показать в файловом менеджере}}",
   "@errorReporter.bundleSavedToast.reveal": {
-    "sourceHash": "4d7fe91"
+    "sourceHash": "c3b4773"
   },
   "errorReporter.autoSentToast.title": "Отчет об ошибке отправлен",
   "@errorReporter.autoSentToast.title": {

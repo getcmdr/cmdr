@@ -15,9 +15,9 @@
   "@aboutThis.action.openTooltip": {
     "sourceHash": "4bbaa35"
   },
-  "aboutThis.action.showInFileManager": "{platform, select, macos {Показать в Finder} windows {Показать в Проводнике} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Показать в файловом менеджере}}",
+  "aboutThis.action.showInFileManager": "{platform, select, macos {Показать в Finder} windows {Показать в Проводнике} linuxGnome {Показать в приложении «Файлы»} linuxKde {Показать в Dolphin} other {Показать в файловом менеджере}}",
   "@aboutThis.action.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "aboutThis.action.downloadPage": "Страница загрузки",
   "@aboutThis.action.downloadPage": {
@@ -328,9 +328,9 @@
   "@aboutThis.download.unrecognized": {
     "sourceHash": "5e9fa42"
   },
-  "aboutThis.download.noSource": "{platform, select, macos {macOS записала, что файл загружен{hasApp, select, yes { в приложении {app}} other {}}{hasDate, select, yes { <date></date>} other {}}, но не указала, откуда.} windows {Windows recorded this as downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.} other {This carries a record of being downloaded{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}, without saying from where.}}",
+  "aboutThis.download.noSource": "{platform, select, macos {macOS записала, что файл загружен{hasApp, select, yes { в приложении {app}} other {}}{hasDate, select, yes { <date></date>} other {}}, но не указала, откуда.} windows {Windows записала, что файл загружен{hasApp, select, yes { в приложении {app}} other {}}{hasDate, select, yes { <date></date>} other {}}, но не указала, откуда.} other {У файла есть запись о том, что он загружен{hasApp, select, yes { в приложении {app}} other {}}{hasDate, select, yes { <date></date>} other {}}, но без указания, откуда.}}",
   "@aboutThis.download.noSource": {
-    "sourceHash": "7edb92b"
+    "sourceHash": "83ec9b3"
   },
   "aboutThis.cmdrOperation.noRecord": "Нет записей о копировании или перемещении через Cmdr",
   "@aboutThis.cmdrOperation.noRecord": {
@@ -746,9 +746,9 @@
   "@aboutThis.standardFolder.users": {
     "sourceHash": "955c56c"
   },
-  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {Корневая папка загрузочного диска} windows {The top of the system drive} other {The top of the system disk}}",
+  "aboutThis.standardFolder.startupDisk": "{platform, select, macos {Корневая папка загрузочного диска} windows {Корневая папка системного диска} other {Корневая папка системного диска}}",
   "@aboutThis.standardFolder.startupDisk": {
-    "sourceHash": "6e69278"
+    "sourceHash": "d7764f1"
   },
   "aboutThis.owner.insideApp": "Часть приложения {app}",
   "@aboutThis.owner.insideApp": {
@@ -971,9 +971,9 @@
   "@aboutThis.removal.standardFolder.users": {
     "sourceHash": "b72c1fe"
   },
-  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {В ней находится содержимое загрузочного диска целиком, включая macOS.} windows {It holds everything on the system drive, Windows included.} other {It holds everything on the system disk, the operating system included.}}",
+  "aboutThis.removal.standardFolder.startupDisk": "{platform, select, macos {В ней находится содержимое загрузочного диска целиком, включая macOS.} windows {В ней находится содержимое системного диска целиком, включая Windows.} other {В ней находится содержимое системного диска целиком, включая операционную систему.}}",
   "@aboutThis.removal.standardFolder.startupDisk": {
-    "sourceHash": "3f6c151"
+    "sourceHash": "a50aa6f"
   },
   "aboutThis.removal.uncommittedWork": "Здесь есть изменения, которых нет ни в одном коммите, поэтому git не сможет их вернуть.",
   "@aboutThis.removal.uncommittedWork": {

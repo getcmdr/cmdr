@@ -70,40 +70,41 @@ function windowsCharacter(ch: string): string | null {
 }
 
 /**
+ * The code points (inclusive ranges) besides Unicode `White_Space` that render as nothing: the
+ * invisible bidi, zero-width, and format characters, and the other blank-rendering ones.
+ */
+const BLANK_CODE_POINTS: readonly (readonly [number, number])[] = [
+  [0x202a, 0x202e],
+  [0x2066, 0x2069],
+  [0x200e, 0x200f],
+  [0x061c, 0x061c],
+  [0x200b, 0x200d],
+  [0x2060, 0x2060],
+  [0xfeff, 0xfeff],
+  [0x00ad, 0x00ad],
+  [0x034f, 0x034f],
+  [0x115f, 0x1160],
+  [0x3164, 0x3164],
+  [0xffa0, 0xffa0],
+  [0x17b4, 0x17b5],
+  [0x180b, 0x180f],
+  [0x2061, 0x2064],
+  [0x206a, 0x206f],
+  [0xfe00, 0xfe0f],
+  [0x1bca0, 0x1bca3],
+  [0x1d173, 0x1d17a],
+  [0xe0000, 0xe0fff],
+  [0x2800, 0x2800],
+]
+
+/**
  * Whether `ch` shows nothing on its own: the mirror of `cmdr_fs::validation::renders_blank`
- * (Unicode `White_Space`, the invisible format characters, and the other blank-rendering ones).
- * The shared case file pins the two lists together.
+ * (Unicode `White_Space` plus `BLANK_CODE_POINTS`). The shared case file pins the two lists together.
  */
 function rendersBlank(ch: string): boolean {
   if (/^\p{White_Space}$/u.test(ch)) return true
   const c = ch.codePointAt(0) ?? 0
-  const within = (lo: number, hi: number) => c >= lo && c <= hi
-  return (
-    within(0x202a, 0x202e) ||
-    within(0x2066, 0x2069) ||
-    c === 0x200e ||
-    c === 0x200f ||
-    c === 0x061c ||
-    within(0x200b, 0x200d) ||
-    c === 0x2060 ||
-    c === 0xfeff ||
-    c === 0x00ad ||
-    c === 0x034f ||
-    c === 0x115f ||
-    c === 0x1160 ||
-    c === 0x3164 ||
-    c === 0xffa0 ||
-    c === 0x17b4 ||
-    c === 0x17b5 ||
-    within(0x180b, 0x180f) ||
-    within(0x2061, 0x2064) ||
-    within(0x206a, 0x206f) ||
-    within(0xfe00, 0xfe0f) ||
-    within(0x1bca0, 0x1bca3) ||
-    within(0x1d173, 0x1d17a) ||
-    within(0xe0000, 0xe0fff) ||
-    c === 0x2800
-  )
+  return BLANK_CODE_POINTS.some(([lo, hi]) => c >= lo && c <= hi)
 }
 
 /** The part of `name` that makes it a Windows device name, as typed, or `null`. */
@@ -119,39 +120,47 @@ function reservedDeviceName(name: string): string | null {
  * (`renders_blank`). ❌ Not `String.prototype.trim`: it keeps NEL (U+0085), which Rust counts as blank.
  */
 function isBlank(name: string): boolean {
-  return [...name].every(rendersBlank)
+  // Code point by code point, as Rust's `chars()`; a grapheme split would hide a blank one.
+  for (const ch of name) {
+    if (!rendersBlank(ch)) return false
+  }
+  return true
 }
 
-/** What a destination does with a name: refuses it, takes it with a portability warning, or takes it. */
-export type NameVerdict =
-  | { kind: 'ok' }
-  | { kind: 'refused'; error: ValidationError }
-  | { kind: 'warned'; warning: PortabilityWarning }
-
-/**
- * What a destination following `rules` does with `name`: the keystroke mirror of
- * `cmdr_fs::validation::validate_filename`. Both run the cases in
- * `crates/cmdr-fs/src/name_rules_cases.json`, so the two can't drift. `rules` is the
- * folder's (`getNameRules`), ❌ never a guess from the host OS. A refusal anywhere in the
- * name beats a warning; among warnings, the first is named.
- */
-export function nameVerdict(name: string, rules: NameRules): NameVerdict {
-  const refused = (error: ValidationError): NameVerdict => ({ kind: 'refused', error })
-  if (isBlank(name)) return refused({ kind: 'empty' })
+/** The first character in `name` (code point by code point) that Windows can't use, as it reads. */
+function firstWindowsCharacter(name: string): string | null {
   for (const ch of name) {
-    if (ch === '/') return refused({ kind: 'disallowedCharacter', character: '/' })
-    if (ch === '\0') return refused({ kind: 'disallowedCharacter', character: 'NUL' })
+    const shown = windowsCharacter(ch)
+    if (shown !== null) return shown
   }
-  if (name === '.' || name === '..') return refused({ kind: 'dotName' })
-  const length = exceededBy(name, rules.nameLimit)
-  if (length !== null) {
-    return refused({ kind: 'nameTooLong', length, max: rules.nameLimit.max, unit: rules.nameLimit.unit })
-  }
+  return null
+}
 
-  let warning: PortabilityWarning | null = null
-  const classes: { tier: NameRules['windowsCharacters']; error: ValidationError; warn: PortabilityWarning }[] = []
-  const character = [...name].map(windowsCharacter).find((c) => c !== null)
-  if (character !== undefined && character !== null) {
+/** What every destination refuses: a blank name, `/` or NUL, `.` or `..`, or one past the folder's length. */
+function universalRefusal(name: string, rules: NameRules): ValidationError | null {
+  if (isBlank(name)) return { kind: 'empty' }
+  for (const ch of name) {
+    if (ch === '/') return { kind: 'disallowedCharacter', character: '/' }
+    if (ch === '\0') return { kind: 'disallowedCharacter', character: 'NUL' }
+  }
+  if (name === '.' || name === '..') return { kind: 'dotName' }
+  const length = exceededBy(name, rules.nameLimit)
+  if (length !== null) return { kind: 'nameTooLong', length, max: rules.nameLimit.max, unit: rules.nameLimit.unit }
+  return null
+}
+
+/** One class of Windows trouble in a name, with the tier the destination gives it. */
+interface PortabilityClass {
+  tier: NameRules['windowsCharacters']
+  error: ValidationError
+  warn: PortabilityWarning
+}
+
+/** The classes of Windows trouble `name` has, in the order the Rust side names them. */
+function portabilityClasses(name: string, rules: NameRules): PortabilityClass[] {
+  const classes: PortabilityClass[] = []
+  const character = firstWindowsCharacter(name)
+  if (character !== null) {
     classes.push({
       tier: rules.windowsCharacters,
       error: { kind: 'disallowedCharacter', character },
@@ -173,8 +182,29 @@ export function nameVerdict(name: string, rules: NameRules): NameVerdict {
       warn: { kind: 'endsWithSpaceOrPeriod' },
     })
   }
-  for (const { tier, error, warn } of classes) {
-    if (tier === 'refuse') return refused(error)
+  return classes
+}
+
+/** What a destination does with a name: refuses it, takes it with a portability warning, or takes it. */
+export type NameVerdict =
+  | { kind: 'ok' }
+  | { kind: 'refused'; error: ValidationError }
+  | { kind: 'warned'; warning: PortabilityWarning }
+
+/**
+ * What a destination following `rules` does with `name`: the keystroke mirror of
+ * `cmdr_fs::validation::validate_filename`. Both run the cases in
+ * `crates/cmdr-fs/src/name_rules_cases.json`, so the two can't drift. `rules` is the
+ * folder's (`getNameRules`), ❌ never a guess from the host OS. A refusal anywhere in the
+ * name beats a warning; among warnings, the first is named.
+ */
+export function nameVerdict(name: string, rules: NameRules): NameVerdict {
+  const universal = universalRefusal(name, rules)
+  if (universal !== null) return { kind: 'refused', error: universal }
+
+  let warning: PortabilityWarning | null = null
+  for (const { tier, error, warn } of portabilityClasses(name, rules)) {
+    if (tier === 'refuse') return { kind: 'refused', error }
     if (tier === 'warn') warning ??= warn
   }
   return warning === null ? { kind: 'ok' } : { kind: 'warned', warning }

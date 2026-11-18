@@ -23,9 +23,9 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "{platform, select, macos {Znovu spusťte Cmdr hned teď, nebo novou verzi dostanete, až ho příště otevřete.} windows {Cmdr se kvůli instalaci zavře a pak se znovu otevře.} other {Cmdr quits to install it, then opens again.}}",
+  "updates.toast.readyDetail": "{platform, select, macos {Znovu spusťte Cmdr hned teď, nebo novou verzi dostanete, až ho příště otevřete.} windows {Cmdr se kvůli instalaci zavře a pak se znovu otevře.} other {Cmdr se kvůli instalaci ukončí a pak se znovu otevře.}}",
   "@updates.toast.readyDetail": {
-    "sourceHash": "4abee27"
+    "sourceHash": "12ced25"
   },
   "updates.toast.securityFix": "Tato aktualizace {count, plural, one {opravuje bezpečnostní problém} few {opravuje # bezpečnostní problémy} many {opravuje # bezpečnostního problému} other {opravuje # bezpečnostních problémů}}.",
   "@updates.toast.securityFix": {
@@ -107,6 +107,10 @@
   "updates.status.installing": "Instaluje se v{next} (aktuální: v{prev})…",
   "@updates.status.installing": {
     "sourceHash": "214ef12"
+  },
+  "updates.status.noBuildForThisPlatform": "Toto sestavení Cmdru se teď nemůže aktualizovat. Zkuste to později.",
+  "@updates.status.noBuildForThisPlatform": {
+    "sourceHash": "e64ebc5"
   },
   "updates.status.managedOff": "Aktualizace Cmdru spravuje vaše organizace.",
   "@updates.status.managedOff": {

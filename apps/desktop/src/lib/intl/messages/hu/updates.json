@@ -23,9 +23,9 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "{platform, select, macos {Indítsd újra most, vagy megkapod, amikor legközelebb megnyitod a Cmdrt.} windows {A Cmdr a telepítéshez bezárul, aztán újra megnyílik.} other {Cmdr quits to install it, then opens again.}}",
+  "updates.toast.readyDetail": "{platform, select, macos {Indítsd újra most, vagy megkapod, amikor legközelebb megnyitod a Cmdrt.} windows {A Cmdr a telepítéshez bezárul, aztán újra megnyílik.} other {A Cmdr a telepítéshez kilép, aztán újra megnyílik.}}",
   "@updates.toast.readyDetail": {
-    "sourceHash": "4abee27"
+    "sourceHash": "12ced25"
   },
   "updates.toast.securityFix": "Ez a frissítés {count, plural, one {egy biztonsági problémát} other {# biztonsági problémát}} javít ki.",
   "@updates.toast.securityFix": {
@@ -107,6 +107,10 @@
   "updates.status.installing": "Telepítés: v{next} (jelenlegi: v{prev})…",
   "@updates.status.installing": {
     "sourceHash": "214ef12"
+  },
+  "updates.status.noBuildForThisPlatform": "A Cmdr ezen változata egyelőre nem tud frissülni. Próbáld újra később.",
+  "@updates.status.noBuildForThisPlatform": {
+    "sourceHash": "e64ebc5"
   },
   "updates.status.managedOff": "A Cmdr frissítéseit a szervezeted kezeli.",
   "@updates.status.managedOff": {

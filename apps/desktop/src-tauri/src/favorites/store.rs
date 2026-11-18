@@ -32,6 +32,7 @@ use crate::config;
 use crate::ignore_poison::IgnorePoison;
 use crate::state_recovery;
 use cmdr_fs::volume::app_paths::{path_under, rebase};
+use cmdr_fs::volume::path_grammar::{PathFlavor, app_spelling};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -128,7 +129,9 @@ fn default_favorites() -> Vec<Favorite> {
         .into_iter()
         .map(|(path, name)| Favorite {
             id: new_id(),
-            path: path.to_string_lossy().to_string(),
+            // The app path (`C:/Users/…` on Windows), which the location resolver and the panes
+            // read: a native `C:\Users\…` resolves to no volume.
+            path: app_spelling(&path.to_string_lossy(), PathFlavor::HOST),
             name: name.to_string(),
             shortcut: None,
             // The first listing claims them (boot volume), so the seed stays syscall-free.

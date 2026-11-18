@@ -117,9 +117,9 @@
   "@shortcuts.conflict.takenByWindows": {
     "sourceHash": "ced2a90"
   },
-  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in Settings > Keyboard > View and Customize Shortcuts.} linuxKde {On {desktops}, the desktop usually takes {combo} for itself, so the shortcut may never reach Cmdr. You can free it up in System Settings > Keyboard > Shortcuts.} other {{combo}: ezt általában magának foglalja le az asztali környezet ({desktops}), ezért lehet, hogy soha nem jut el a Cmdrhez. Az asztali környezeted billentyűzetbeállításaiban felszabadíthatod.}}",
+  "shortcuts.conflict.takenByLinuxDesktops": "{platform, select, linuxGnome {{combo}: ezt általában magának foglalja le az asztali környezet ({desktops}), ezért lehet, hogy soha nem jut el a Cmdrhez. Felszabadíthatod itt: Beállítások > Billentyűzet > Gyorsbillentyűk megtekintése és testreszabása.} linuxKde {{combo}: ezt általában magának foglalja le az asztali környezet ({desktops}), ezért lehet, hogy soha nem jut el a Cmdrhez. Felszabadíthatod itt: Rendszerbeállítások > Billentyűzet > Gyorsbillentyűk.} other {{combo}: ezt általában magának foglalja le az asztali környezet ({desktops}), ezért lehet, hogy soha nem jut el a Cmdrhez. Az asztali környezeted billentyűzetbeállításaiban felszabadíthatod.}}",
   "@shortcuts.conflict.takenByLinuxDesktops": {
-    "sourceHash": "610146a"
+    "sourceHash": "8aefc0b"
   },
   "shortcuts.conflict.opensMenuBarMenu": "{combo}: ez megnyit egy menüt a Cmdr menüsorában ({menu}), ezért csak akkor jut el ehhez a parancshoz, ha egy párbeszédablak nyitva van.",
   "@shortcuts.conflict.opensMenuBarMenu": {

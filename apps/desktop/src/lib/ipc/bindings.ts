@@ -625,9 +625,13 @@ export const commands = {
   /**
    *  Which names the filesystem holding `dir` on `volume_id` takes
    *  (`cmdr_operations::Operations::name_rules_at`), for the rename editor's and the
-   *  New folder dialog's keystroke checks, asked once per editor. The create or
-   *  rename itself checks again, so a slow answer (2 s, a hung mount's `statfs`) or
-   *  an engine that isn't up yet reads as `Posix` and costs only early feedback.
+   *  New folder dialog's keystroke checks (asked once per editor), and the transfer
+   *  dialog's destination (asked as the typed path settles). The create, rename, or
+   *  transfer itself meets the destination's refusals again, so a slow answer (2 s, a
+   *  hung mount's `statfs`) or an engine that isn't up yet reads as `POSIX` and costs
+   *  only early feedback. A transfer dialog's path is volume-relative on a mounted
+   *  drive, so it's anchored on its volume first (`resolve_dest_path`, idempotent for
+   *  a path already under the root).
    */
   getNameRules: (volumeId: string | null, dir: string) =>
     __TAURI_INVOKE<NameRules>('get_name_rules', { volumeId, dir }),

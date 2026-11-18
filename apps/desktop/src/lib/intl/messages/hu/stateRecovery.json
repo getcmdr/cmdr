@@ -119,9 +119,9 @@
   "@stateRecovery.keptCopy": {
     "sourceHash": "634e87d"
   },
-  "stateRecovery.showInFinder": "{platform, select, macos {Megjelenítés a Finderben} windows {Megjelenítés a Fájlkezelőben} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Megjelenítés a fájlkezelőben}}",
+  "stateRecovery.showInFinder": "{platform, select, macos {Megjelenítés a Finderben} windows {Megjelenítés a Fájlkezelőben} linuxGnome {Megjelenítés a Fájlokban} linuxKde {Megjelenítés a Dolphinban} other {Megjelenítés a fájlkezelőben}}",
   "@stateRecovery.showInFinder": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "stateRecovery.dismiss": "Elvetés",
   "@stateRecovery.dismiss": {
