@@ -963,25 +963,35 @@ the check, so "whole file" holds up to where it stopped, and nothing past that c
 
 What `RULES` covers, by the promise the consent screen makes (`ai.cloudConsent.askCmdr.protectedContents`, one branch
 per OS). The copy names categories; a new CATEGORY is a copy change, a new app inside one isn't. Paths are relative to
-a home folder unless they start with `%`. Checked on 2026-11-12, with the source in parentheses; a location marked "from memory" wasn't.
+a home folder unless they start with `%`. Checked on 2026-11-12 and 2026-11-18 (web search), with the source in parentheses; a location marked "from memory" wasn't.
 
 - **SSH keys, and cloud and tool credentials** (`Credentials`), all OSes: `.ssh`, `.gnupg`, `.password-store`, `.aws`,
   `.azure`, `.kube`, `.docker/config.json`, `.git/config`, `.cargo/credentials(.toml)`, `.claude/.credentials.json`,
-  `sops/age/keys.txt`, and the file names (`_netrc` and `pgpass.conf` are the Windows spellings, from memory) `.netrc`, `_netrc`, `.npmrc`, `.pypirc`, `.git-credentials`, `.pgpass`,
-  `pgpass.conf`, `.vault-token`, `rclone.conf`, `.env*`. Windows keeps three elsewhere: GnuPG in `%APPDATA%\gnupg`
-  (Gpg4win compendium § 22.1), gcloud in `%APPDATA%\gcloud` (a third-party write-up, blog.matrixpost.net), and `gh` in `%AppData%\GitHub CLI`
-  (`gh help environment`); `gh` and gcloud sit under `.config` on macOS and Linux.
+  `sops/age/keys.txt`, and the file names `.netrc`, `_netrc`, `.npmrc`, `.pypirc`, `.git-credentials`, `.pgpass`,
+  `pgpass.conf`, `.vault-token`, `rclone.conf`, `.s3cfg`, `credentials.tfrc.json`, `.env*`. `_netrc` is the Windows
+  spelling (LabKey "Create a netrc file"), and `%APPDATA%\postgresql\pgpass.conf` the Windows `.pgpass` (PostgreSQL
+  docs § "The Password File"). `.s3cfg` is s3cmd's keys (s3tools kb item 14); `credentials.tfrc.json` is where
+  `terraform login` saves its token, in `.terraform.d` or `%APPDATA%\terraform.d` (from memory; the name is unique to
+  it). Windows keeps three elsewhere: GnuPG in `%APPDATA%\gnupg` (Gpg4win compendium § 22.1), gcloud in
+  `%APPDATA%\gcloud` (a third-party write-up, blog.matrixpost.net), and `gh` in `%AppData%\GitHub CLI`
+  (`gh help environment`); `gh` and gcloud sit under `.config` on macOS and Linux. Also: `git credential-store`'s
+  second file `.config/git/credentials` (git docs, `git-credential-store`); the registry logins of Podman, Buildah, and
+  Skopeo, `containers/auth.json` at any depth, since Linux keeps it in `$XDG_RUNTIME_DIR` (`/run/user/<uid>`) and
+  macOS and Windows in `.config` (`podman-login` docs); and the Hetzner Cloud CLI's token in `.config/hcloud/cli.toml`
+  (hetznercloud/cli design doc #762).
 - **The OS credential store** (`Credentials`):
   - macOS: `Library/Keychains` (present on macOS 27.0.1).
   - Linux: `.local/share/keyrings` (GNOME Keyring) and `.local/share/kwalletd` (KWallet; ArchWiki "KDE Wallet").
   - Windows: Credential Manager's files in `%APPDATA%\Microsoft\Credentials` and `%LOCALAPPDATA%\Microsoft\Credentials`,
     and the DPAPI master keys that open them in `%APPDATA%\Microsoft\Protect` (Microsoft Q&A 6025889, which quotes all
     three). `Microsoft\Vault` (both `AppData` folders, Web Credentials) and `%APPDATA%\Microsoft\Crypto` (the user's
-    private keys) ride along from memory, not re-verified: a wrong guess protects a folder that doesn't exist.
+    private keys): GhostPack SharpDPAPI's README and Kraft Kennedy's UE-V roaming write-up both list them.
 - **Password managers** (`Credentials`), not named on the consent screen: Bitwarden's desktop and CLI data on all three
   OSes, its Mac App Store container, Microsoft Store package, snap, and flatpak (bitwarden.com/help/data-storage), and
-  1Password's `Library/Group Containers/2BUA8C4S2C.com.1password` and `%LOCALAPPDATA%\1Password` (1Password support
-  "How to uninstall", and a third-party write-up for the Windows path); `.config/1Password` on Linux is from memory. A
+  1Password's `Library/Group Containers/2BUA8C4S2C.com.1password`, `%LOCALAPPDATA%\1Password`, and `.config/1Password`
+  (1Password support "How to uninstall"; Passware's "Breaking password managers" for the Windows path, the snap's
+  `snap/1password/current/.config/1Password`, which the `.config` rule takes, and 1Password 7's
+  `Library/Containers/2BUA8C4S2C.com.agilebits.onepassword-osx-helper`). A
   KeePass database is a file the user keeps anywhere, so no rule can name it; it's encrypted, and `inspect_file` reads
   it as binary.
 - **Browser data** (`BrowserData`):
@@ -993,6 +1003,11 @@ a home folder unless they start with `%`. Checked on 2026-11-12, with the source
     `%LOCALAPPDATA%\Packages\Mozilla.Firefox_*` (Mozilla support "Profiles: where Firefox stores your … user data").
     From Firefox 147 a new Linux profile sits at `.config/mozilla` with its cache at `.cache/mozilla` (147.0 release
     notes: XDG Base Directory support).
+  - Firefox's forks, each its own folder: Zen's `.zen`, `.var/app/app.zen_browser.zen`, `%APPDATA%\zen`, and
+    `Library/Application Support/zen` (Zen docs FAQ, and the arc-to-zen README for macOS); LibreWolf's `.librewolf`
+    and `.config/librewolf` (LibreWolf FAQ), `%APPDATA%\librewolf` (filepathgeek.com), and
+    `.var/app/io.gitlab.librewolf-community` (Flathub answers 200). The cache twins (`Library/Caches`,
+    `%LOCALAPPDATA%`), LibreWolf on macOS, and Zen's `.config/zen` (by analogy with Firefox 147) are from memory.
   - Edge (`Library/Application Support/Microsoft Edge*`, `.config/microsoft-edge*`,
     `%LOCALAPPDATA%\Microsoft\Edge*`), Brave (`BraveSoftware` under the same three dirs), Vivaldi
     (`Library/Application Support/Vivaldi`, `.config/vivaldi*`, `%LOCALAPPDATA%\Vivaldi`), and Opera
@@ -1001,7 +1016,7 @@ a home folder unless they start with `%`. Checked on 2026-11-12, with the source
     2504.17692 appendix A, ZDNET's Opera reset guide), and the macOS folders are present on macOS 27.0.1.
   - Safari: `Library/Safari`, `Library/Cookies`, `Library/Containers/com.apple.Safari*`, and
     `Library/Caches/com.apple.Safari*` (present on macOS 27.0.1). Arc: `Library/Application Support/Arc` (present), and
-    its Windows package `Packages\TheBrowserCompany.Arc_*` from memory.
+    its Windows package `Packages\TheBrowserCompany.Arc_*` (contextbolt.com's Arc export guide, and arc-export PR 28).
   - Flatpak and snap builds keep everything under one folder per app, so those are whole-folder rules: `.var/app/<id>`
     for `com.google.Chrome(Dev)`, `org.chromium.Chromium`, `com.brave.Browser`, `com.microsoft.Edge`,
     `org.mozilla.firefox`, `com.vivaldi.Vivaldi`, `com.opera.Opera` (each ID answers 200 on Flathub's appstream API),
@@ -1013,10 +1028,13 @@ a home folder unless they start with `%`. Checked on 2026-11-12, with the source
   - Linux: Thunderbird's `.thunderbird` (Mozilla support "Profiles: where Thunderbird stores …"), with its snap and
     flatpak; Evolution's `.local/share/evolution`, `.config/evolution`, and `.cache/evolution` (Evolution help
     `data-storage`); Geary's `.local/share/geary*` and `.config/geary*` (AUR `geary-git` notes); KMail's
-    `.local/share/local-mail*`, `.local/share/.local-mail*`, and `.local/share/akonadi` (KDE bug 282160).
+    `.local/share/local-mail*`, `.local/share/.local-mail*`, and `.local/share/akonadi` (KDE bug 282160); Claws Mail's
+    `.claws-mail`, with its accounts, saved passwords, and IMAP cache (Arch man page `claws-mail(1)`).
   - Windows: Thunderbird's `%APPDATA%\Thunderbird` (same Mozilla page); Outlook's `%LOCALAPPDATA%\Microsoft\Outlook`
     and `Documents\Outlook Files` (Microsoft support "Open and find items in an Outlook Data File"), and
-    `%APPDATA%\Microsoft\Outlook`. New Outlook's `%LOCALAPPDATA%\Microsoft\Olk` is from memory.
+    `%APPDATA%\Microsoft\Outlook`; new Outlook's `%LOCALAPPDATA%\Microsoft\Olk` (Microsoft Q&A 5583625 and 4705397);
+    the retired Windows Mail app's `%LOCALAPPDATA%\Packages\microsoft.windowscommunicationsapps_*`, with its mail and
+    attachments in `LocalState` (Microsoft Q&A 3809132 and 2756174).
 - **Cmdr's own data** (`CmdrData`) and **a private key in any file** (`PrivateKey`): see above and below.
 
 **Not protected, and why:**
@@ -1028,6 +1046,10 @@ a home folder unless they start with `%`. Checked on 2026-11-12, with the source
   names browsers, the OS's stores, and mail, and a new app is a new rule here.
 - **A profile someone put elsewhere** (`chrome --user-data-dir=D:\x`, a Thunderbird profile moved through
   `profiles.ini`): nothing in the path says what it is. Only the environment's own dirs are followed.
+- **Mail a terminal client keeps in the home folder** (`~/Mail`, `~/Maildir`, `~/mbox`, for mutt, neomutt, Claws Mail's
+  mailbox, or a sync tool like mbsync): a bare `Mail` at any depth would refuse every folder a person named that.
+- **Other CLIs' tokens** (doctl, Pulumi, flyctl, Wrangler, …): each is a new rule here once its path is checked; a
+  pasted private key in any of them is still caught by its armor.
 - **Legacy Internet Explorer stores** (`%LOCALAPPDATA%\Microsoft\Windows\INetCookies`, `WebCache`): unverified, and no
   supported Windows browses with them.
 - **A path through a Windows 8.3 short name on a volume Cmdr can't resolve** (a stored index path, a phone): the

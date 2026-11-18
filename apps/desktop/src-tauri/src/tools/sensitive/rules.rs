@@ -96,7 +96,12 @@ const RULES: &[Rule] = &[
     rule(&[XdgConfig, WinRoaming], &["gcloud"], Credentials),
     rule(&[XdgConfig], &["gh"], Credentials),
     rule(&[WinRoaming], &["github cli"], Credentials),
+    rule(&[XdgConfig], &["hcloud"], Credentials),
     rule(&[Anywhere], &[".docker", "config.json"], Credentials),
+    // Podman, Buildah, and Skopeo registry logins: `$XDG_RUNTIME_DIR` on Linux, `.config` elsewhere.
+    rule(&[Anywhere], &["containers", "auth.json"], Credentials),
+    // `git credential-store`'s second home, beside `~/.git-credentials`.
+    rule(&[XdgConfig], &["git", "credentials"], Credentials),
     // Tokens in remote URLs.
     rule(&[Anywhere], &[".git", "config"], Credentials),
     rule(&[Anywhere], &[".cargo", "credentials.toml"], Credentials),
@@ -133,6 +138,12 @@ const RULES: &[Rule] = &[
     rule(
         &[Anywhere],
         &["library", "group containers", "2bua8c4s2c.com.agilebits"],
+        Credentials,
+    ),
+    // 1Password 7's helper keeps its vault in a plain container.
+    family(
+        &[Anywhere],
+        &["library", "containers", "2bua8c4s2c.com.agilebits"],
         Credentials,
     ),
     rule(&[XdgConfig, WinLocal], &["1password"], Credentials),
@@ -172,6 +183,11 @@ const RULES: &[Rule] = &[
     ),
     rule(&[WinLocal, WinRoaming], &["microsoft", "outlook"], MessageStore),
     rule(&[WinLocal], &["microsoft", "olk"], MessageStore),
+    family(
+        &[WinLocal],
+        &["packages", "microsoft.windowscommunicationsapps"],
+        MessageStore,
+    ),
     rule(&[Anywhere], &["documents", "outlook files"], MessageStore),
     rule(&[XdgData, XdgConfig, XdgCache], &["evolution"], MessageStore),
     rule(&[Anywhere], &[".var", "app", "org.gnome.evolution"], MessageStore),
@@ -180,6 +196,7 @@ const RULES: &[Rule] = &[
     family(&[XdgData], &["local-mail"], MessageStore),
     family(&[XdgData], &[".local-mail"], MessageStore),
     rule(&[XdgData], &["akonadi"], MessageStore),
+    rule(&[Anywhere], &[".claws-mail"], MessageStore),
     // Browsers: Safari and the system cookie store.
     rule(&[Anywhere], &["library", "cookies"], BrowserData),
     rule(&[Anywhere], &["library", "safari"], BrowserData),
@@ -198,6 +215,25 @@ const RULES: &[Rule] = &[
     family(&[WinLocal], &["packages", "mozilla.firefox"], BrowserData),
     rule(&[Anywhere], &["snap", "firefox"], BrowserData),
     rule(&[Anywhere], &[".var", "app", "org.mozilla.firefox"], BrowserData),
+    // Browsers: Firefox's forks, each in its own folder with Firefox's layout inside.
+    rule(&[Anywhere], &[".zen"], BrowserData),
+    rule(
+        &[MacSupport, MacCaches, XdgConfig, WinRoaming, WinLocal],
+        &["zen"],
+        BrowserData,
+    ),
+    rule(&[Anywhere], &[".var", "app", "app.zen_browser.zen"], BrowserData),
+    rule(&[Anywhere], &[".librewolf"], BrowserData),
+    rule(
+        &[MacSupport, MacCaches, XdgConfig, WinRoaming, WinLocal],
+        &["librewolf"],
+        BrowserData,
+    ),
+    rule(
+        &[Anywhere],
+        &[".var", "app", "io.gitlab.librewolf-community"],
+        BrowserData,
+    ),
     // Browsers: the Chromium family.
     family(&[MacSupport, MacCaches, WinLocal], &["google", "chrome"], BrowserData),
     family(&[XdgConfig, XdgCache], &["google-chrome"], BrowserData),
@@ -247,6 +283,8 @@ const CREDENTIAL_FILE_NAMES: &[&str] = &[
     "pgpass.conf",
     ".vault-token",
     "rclone.conf",
+    ".s3cfg",
+    "credentials.tfrc.json",
 ];
 
 /// What may follow a family rule's last part in a longer name of the same family.
