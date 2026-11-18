@@ -83,25 +83,61 @@ func TestPresentKeepsOptionalFilesOnlyWhenThere(t *testing.T) {
 	}
 }
 
-// windowsRows are what a Windows release adds (`docs/specs/windows-port-plan.md` task 52): rows
-// and nothing else. Tests in this module use them to prove a new platform needs no schema change.
-var windowsRows = []Asset{
-	{OS: Windows, Arch: X86_64, Kind: NSIS, File: "Cmdr_{version}_x64-setup.exe", UpdaterKey: "windows-x86_64", Targets: []string{"x86_64-pc-windows-msvc"}},
-	{OS: Windows, Arch: X86_64, Kind: MSIX, File: "Cmdr_{version}_x64.msix", Targets: []string{"x86_64-pc-windows-msvc"}},
-	{OS: Windows, Arch: X86_64, Kind: RustSBOM, File: "Cmdr_{version}_windows_x64.rust.cdx.json", Targets: []string{"x86_64-pc-windows-msvc"}},
+// Windows' rows are wired and off: a release publishes macOS's files and nothing new, the
+// advisory list included, until David adds Windows to `ShippedOSes`.
+func TestWindowsShipsOnlyOnceTurnedOn(t *testing.T) {
+	if !slices.Equal(ShippedOSes, []OS{MacOS}) {
+		t.Fatalf("ShippedOSes = %v: turning Windows on is David's call (docs/guides/releasing.md § Windows releases); update this test with it", ShippedOSes)
+	}
+	r := For("0.70.0")
+	if r.Ships(Windows) {
+		t.Errorf("a release ships Windows files: %v", Names(r.Files))
+	}
+	if _, ok := r.AdvisoryList(); ok {
+		t.Error("a macOS-only release ships the advisory list, which only Windows and Linux installs read")
+	}
+	if err := All("0.70.0").Validate(); err != nil {
+		t.Fatalf("every row together: %v", err)
+	}
 }
 
-func TestAWindowsReleaseIsRowsAlone(t *testing.T) {
-	r := Resolve("0.70.0", append(slices.Clone(Assets), windowsRows...))
+func windowsRelease(t *testing.T) (Release, map[string]File) {
+	t.Helper()
+	r := ForOSes("0.70.0", MacOS, Windows)
 	if err := r.Validate(); err != nil {
 		t.Fatal(err)
 	}
-	setup := r.Files[len(Assets)]
+	byName := map[string]File{}
+	for _, f := range r.Files {
+		byName[f.Name] = f
+	}
+	return r, byName
+}
+
+func TestAWindowsReleaseIsRowsAlone(t *testing.T) {
+	r, byName := windowsRelease(t)
+	setup := byName["Cmdr_0.70.0_x64-setup.exe"]
 	if !setup.Update() || !setup.Download() || setup.Signature() != "Cmdr_0.70.0_x64-setup.exe.sig" {
 		t.Fatalf("the NSIS installer should be both a download and the update payload: %+v", setup)
 	}
-	if got := Names(r.Subjects(r.Files[len(r.Files)-1])); !slices.Equal(got, []string{"Cmdr_0.70.0_x64-setup.exe", "Cmdr_0.70.0_x64.msix"}) {
+	if got := Names(r.Subjects(byName["Cmdr_0.70.0_windows_x64.rust.cdx.json"])); !slices.Equal(got, []string{"Cmdr_0.70.0_x64-setup.exe", "Cmdr_0.70.0_x64.msix"}) {
 		t.Fatalf("the Windows Rust SBOM describes %v", got)
+	}
+}
+
+// The policy template is a download but no build; the advisory list is signed but neither.
+func TestTheWindowsReleasesExtraFiles(t *testing.T) {
+	r, byName := windowsRelease(t)
+	policy := byName["cmdr-group-policy-0.70.0.zip"]
+	if !policy.Download() || policy.Binary() || policy.Signed() {
+		t.Fatalf("the Group Policy template is a download, not a build or a signed file: %+v", policy)
+	}
+	list, ok := r.AdvisoryList()
+	if !ok || !list.Signed() || list.Download() || list.Binary() || list.Signature() != "Cmdr_0.70.0_security-advisories.json.sig" {
+		t.Fatalf("a Windows release ships the signed advisory list: %+v, %v", list, ok)
+	}
+	if got, want := Names(r.Signed()), append(Names(r.Updates()), list.Name); !slices.Equal(got, want) {
+		t.Fatalf("signed = %v, want the update payloads then the list %v", got, want)
 	}
 }
 
@@ -113,7 +149,7 @@ func TestOffMacOSUpdatePayloadsSignTheirVersionUnderAKeyTheAppReads(t *testing.T
 		{OS: Linux, Arch: X86_64, Kind: AppImage, File: "Cmdr_{version}_amd64.AppImage", UpdaterKey: "linux-x86_64", Targets: []string{"x86_64-unknown-linux-gnu"}},
 		{OS: Linux, Arch: X86_64, Kind: RustSBOM, File: "Cmdr_{version}_linux_x64.rust.cdx.json", Targets: []string{"x86_64-unknown-linux-gnu"}},
 	}
-	rows := append(append(slices.Clone(Assets), windowsRows...), linuxRows...)
+	rows := append(slices.Clone(Assets), linuxRows...)
 	r := Resolve("0.70.0", rows)
 	if err := r.Validate(); err != nil {
 		t.Fatal(err)
@@ -127,9 +163,8 @@ func TestOffMacOSUpdatePayloadsSignTheirVersionUnderAKeyTheAppReads(t *testing.T
 		t.Fatalf("SignsVersion by updater key = %v, want %v", signed, want)
 	}
 
-	bad := make([]Asset, len(rows))
-	copy(bad, rows)
-	bad[len(Assets)].UpdaterKey = "win64"
+	bad := slices.Clone(rows)
+	bad[slices.IndexFunc(bad, func(a Asset) bool { return a.Kind == NSIS })].UpdaterKey = "win64"
 	err := Resolve("0.70.0", bad).Validate()
 	if err == nil || !strings.Contains(err.Error(), "updater key win64, which no windows x86_64 install reads") {
 		t.Fatalf("an updater key the app never reads passed: %v", err)
@@ -137,10 +172,18 @@ func TestOffMacOSUpdatePayloadsSignTheirVersionUnderAKeyTheAppReads(t *testing.T
 }
 
 func TestValidateCatchesABuildWithoutAnSBOM(t *testing.T) {
-	rows := append(slices.Clone(Assets), windowsRows[:2]...)
+	rows := slices.DeleteFunc(slices.Clone(Assets), func(a Asset) bool { return a.OS == Windows && a.Kind == RustSBOM })
 	err := Resolve("0.70.0", rows).Validate()
 	if err == nil || !strings.Contains(err.Error(), "x86_64-pc-windows-msvc, which no Rust SBOM row describes") {
 		t.Fatalf("a Windows build with no SBOM row passed: %v", err)
+	}
+}
+
+func TestValidateRefusesAnAdvisoryListTiedToOneOS(t *testing.T) {
+	rows := append(slices.Clone(Assets), Asset{OS: Windows, Kind: AdvisoryList, File: "Cmdr_{version}_win-advisories.json"})
+	err := Resolve("0.70.0", rows).Validate()
+	if err == nil || !strings.Contains(err.Error(), "belongs to no one OS") {
+		t.Fatalf("an OS-bound advisory list passed: %v", err)
 	}
 }
 

@@ -60,10 +60,11 @@ func nextFinishAction(runs []workflowRun) (finishAction, workflowRun) {
 	}
 }
 
-// updateArchiveNames are the assets the updater downloads, the only ones this key signs: every
-// update payload in the release asset manifest (`scripts/release-assets/manifest`).
-func updateArchiveNames(version string) []string {
-	return manifest.Names(manifest.For(version).Updates())
+// signedNames are the assets the updater downloads, the only ones this key signs: every
+// update payload in the release asset manifest (`scripts/release-assets/manifest`), plus the
+// advisory list once a release ships one (`manifest.File.Signed`).
+func signedNames(version string) []string {
+	return manifest.Names(manifest.For(version).Signed())
 }
 
 type releaseAsset struct {

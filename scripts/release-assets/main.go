@@ -3,11 +3,14 @@
 //
 // # Usage
 //
-//	./scripts/release-assets.sh plan -version X.Y.Z -vetted macos -attested "macos-aarch64 macos-x86_64 frontend" -subject-dir release-assets
+//	./scripts/release-assets.sh plan -version X.Y.Z -vetted "macos windows" -attested "macos-aarch64 macos-x86_64 frontend windows-x86_64" -subject-dir release-assets
 //	./scripts/release-assets.sh latest-json -version X.Y.Z -assets release.json -sigs DIR -notes notes.txt -base-url URL -pub-date DATE [-newer-than X.Y.Z] -out latest.json
 //	./scripts/release-assets.sh validate-latest -version X.Y.Z -assets release.json -sigs DIR -base-url URL [-newer-than X.Y.Z] -file latest.json
 //	./scripts/release-assets.sh checksum-files -version X.Y.Z -assets release.json
+//	./scripts/release-assets.sh vet-nsis -version X.Y.Z Cmdr_X.Y.Z_x64-setup.exe
 //
+// `vet-nsis` refuses a Windows installer whose version resource isn't the release's, or that
+// carries an Authenticode signature nothing checks yet (`nsis/nsis.go`).
 // `plan` appends the pipeline's step outputs to `$GITHUB_OUTPUT` (or prints them when it's unset);
 // `latest-json` writes the update manifest, only once `validateLatest` passes it;
 // `validate-latest` runs the same validator on a manifest as published (the read-back);
@@ -22,10 +25,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
 	"cmdr/scripts/release-assets/manifest"
+	"cmdr/scripts/release-assets/nsis"
 )
 
 var versionPattern = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]*[0-9A-Za-z])?$`)
@@ -65,7 +70,7 @@ func run(args []string) error {
 	switch args[0] {
 	case "plan":
 		outs, err := plan(planInput{
-			release: release, subjectDir: *subjectDir,
+			release: release, wiring: manifest.All(*version), subjectDir: *subjectDir,
 			vetted: osList(*vetted), attested: strings.Fields(*attested),
 		})
 		if err != nil {
@@ -89,6 +94,8 @@ func run(args []string) error {
 			return validateFile(*file, in.rules())
 		}
 		return writeLatest(in, *notes, *out)
+	case "vet-nsis":
+		return vetNSISFiles(*version, fs.Args())
 	case "checksum-files":
 		have, err := readReleaseAssets(*assets)
 		if err != nil {
@@ -103,7 +110,28 @@ func run(args []string) error {
 		}
 		return nil
 	}
-	return fmt.Errorf("unknown command %q: plan, latest-json, validate-latest, or checksum-files", args[0])
+	return fmt.Errorf("unknown command %q: plan, latest-json, validate-latest, vet-nsis, or checksum-files", args[0])
+}
+
+// vetNSISFiles runs `nsis.Vet` on each installer, printing a verdict per file, and fails if any
+// is refused (or none was named: a gate that vets nothing must not pass).
+func vetNSISFiles(version string, paths []string) error {
+	if len(paths) == 0 {
+		return errors.New("vet-nsis: name the installers to vet")
+	}
+	refused := 0
+	for _, p := range paths {
+		if err := nsis.Vet(p, version); err != nil {
+			fmt.Printf("    %s: REFUSED, it %v\n", filepath.Base(p), err)
+			refused++
+			continue
+		}
+		fmt.Printf("    %s: the NSIS installer of %s, unsigned, as the updater expects today\n", filepath.Base(p), version)
+	}
+	if refused > 0 {
+		return fmt.Errorf("%d of %d Windows installers would install something other than %s", refused, len(paths), version)
+	}
+	return nil
 }
 
 // validateFile runs the validator on a manifest as published.

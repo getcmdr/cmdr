@@ -8,13 +8,14 @@
 //  1. waits for that build run AND the full CI run on the tagged commit, printing each job as it
 //     moves, and stops on the first red job of either (`ci.go`); once CI is green, it requires the
 //     CodeQL gate too (`scripts/release-codeql-gate.sh`);
-//  2. downloads the update archives (the release asset manifest's update payloads) from the draft;
+//  2. downloads the files the updater key signs (the release asset manifest's update payloads,
+//     plus the advisory list once a Windows or Linux release ships one) from the draft;
 //  3. verifies each one's build provenance with `gh attestation verify`, pinned to
 //     `release-pipeline.yml` at the tag's commit on a GitHub-hosted runner, and refuses to
 //     sign anything that doesn't verify;
-//  4. refuses to sign any archive the macOS updater would refuse to install: it runs the app's
-//     own check (`cmdr-vet-update`) for Cmdr's Developer ID code signature and the version
-//     (`vet.go`);
+//  4. refuses to sign any update payload its updater would refuse to install: for a macOS
+//     archive it runs the app's own check (`cmdr-vet-update`) for Cmdr's Developer ID code
+//     signature and the version, for a Windows installer the version resource (`vet.go`);
 //  5. signs each with the Tauri signer, the key and password read from the sops store
 //     (`secret`), never printed and passed only to the signer's environment;
 //  6. verifies each signature natively against the app's trusted keys, the main updater key
@@ -229,7 +230,7 @@ func run(cfg config) error {
 			return finish(cfg)
 		}
 	}
-	names := updateArchiveNames(cfg.version)
+	names := signedNames(cfg.version)
 	if err := requireArchives(cfg, names); err != nil {
 		return err
 	}
@@ -260,7 +261,7 @@ func checkAndSign(cfg config, pubkeys []string, dir string, names []string, comm
 	if err := downloadAndVerifyProvenance(cfg, dir, names, commit); err != nil {
 		return err
 	}
-	if err := vetArchives(runCombined, cfg.root, cfg.version, dir, names); err != nil {
+	if err := vetArchives(runCombined, cfg.root, manifest.For(cfg.version), dir, names); err != nil {
 		return err
 	}
 	if err := sign(cfg, dir, names); err != nil {
@@ -276,7 +277,7 @@ func verifyOnly(cfg config, dir string) error {
 	if err != nil {
 		return err
 	}
-	return verifySignatures(pubkeys, dir, updateArchiveNames(cfg.version))
+	return verifySignatures(pubkeys, dir, signedNames(cfg.version))
 }
 
 // waitUntilSignable reports a release that's already published (signing is behind it), and
