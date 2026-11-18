@@ -1,9 +1,11 @@
-//! The drift guard: the sample profile, the bare preference file, and the `/trust` key list are the
-//! public mirror of `keys.rs`, so a key added here can't be missing there (or the other way round),
-//! and every example value an admin starts from parses without a warning.
+//! The drift guard: the policy definition (`policies.json`), the sample profile, the bare
+//! preference file, and the `/trust` key list are the public mirror of `keys.rs`, so a key added
+//! here can't be missing there (or the other way round), and every example value an admin starts
+//! from parses without a warning.
 
 use std::collections::BTreeSet;
 
+use super::definition::{self, Kind};
 use super::keys::{self, ALL_KEYS};
 use super::source::FakeSource;
 
@@ -47,17 +49,18 @@ fn profile_payload() -> plist::Dictionary {
         .collect()
 }
 
-/// The `key: '…'` entries of `managedPreferenceKeys` in `trust-mdm.ts`.
-fn trust_page_keys() -> BTreeSet<String> {
+/// The names `policyEffects` in `trust-mdm.ts` gives a `/trust` effect: its `  Name:` lines.
+fn trust_page_effect_keys() -> BTreeSet<String> {
     let start = TRUST_TS
-        .find("export const managedPreferenceKeys")
-        .expect("trust-mdm.ts exports managedPreferenceKeys");
+        .find("const policyEffects")
+        .expect("trust-mdm.ts declares policyEffects");
     let rest = &TRUST_TS[start..];
-    let block = &rest[..rest.find("\n]").expect("managedPreferenceKeys ends with a `]` line")];
+    let block = &rest[..rest.find("\n}").expect("policyEffects ends with a `}` line")];
     block
         .lines()
-        .filter_map(|line| line.trim().strip_prefix("key: '"))
-        .map(|tail| tail.split('\'').next().unwrap_or_default().to_string())
+        .filter(|line| line.starts_with("  ") && !line.starts_with("   "))
+        .filter_map(|line| line.trim().split_once(':'))
+        .map(|(name, _)| name.trim_matches('\'').to_string())
         .collect()
 }
 
@@ -96,7 +99,40 @@ fn the_profile_and_the_preference_file_agree_on_every_value() {
     );
 }
 
+/// `/trust` builds its key list from the definition, and its effect copy covers exactly those keys.
 #[test]
-fn the_trust_page_lists_every_key_and_nothing_else() {
-    assert_eq!(trust_page_keys(), expected_keys());
+fn the_trust_page_has_an_effect_for_every_key_and_nothing_else() {
+    assert_eq!(trust_page_effect_keys(), expected_keys());
+}
+
+/// The definition `/trust` and the ADMX generator read names what the app reads: every key in
+/// catalog order, the macOS preference domain, and the Windows registry key, to the character.
+#[test]
+fn the_policy_definition_matches_what_the_app_reads() {
+    let definition = definition::load();
+    let names: Vec<&str> = definition.policies.iter().map(|p| p.name.as_str()).collect();
+    assert_eq!(names, ALL_KEYS);
+    assert_eq!(definition.preference_domain, crate::config::BUNDLE_ID);
+    assert_eq!(
+        definition.windows_policy_key,
+        super::platform::registry_values::POLICY_KEY
+    );
+}
+
+/// Each key's example value in the sample profile has the plist type its kind says, so the type
+/// `/trust` shows for it is the one the profile carries.
+#[test]
+fn the_sample_profile_writes_each_key_as_its_kind() {
+    let payload = profile_payload();
+    for policy in definition::load().policies {
+        let value = payload.get(&policy.name).expect("the profile carries every key");
+        let matches = match policy.kind {
+            Kind::Bool => value.as_boolean().is_some(),
+            Kind::String => value.as_string().is_some(),
+            Kind::StringList => value
+                .as_array()
+                .is_some_and(|entries| entries.iter().all(|e| e.as_string().is_some())),
+        };
+        assert!(matches, "{} is {value:?}, not a {:?}", policy.name, policy.kind);
+    }
 }

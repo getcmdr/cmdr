@@ -150,11 +150,13 @@ jobs:
       # a mutant record names any file (its fuzz target and input sit under `fuzz/`; the slow half
       # that runs the mutants is in `slow-checks.yml`), the settings-defaults manifest spans the
       # desktop registry and the dashboard, `pluralize-noun` scans the frontend and the Rust app
-      # alike, and the workflow guards read files no app owns.
+      # alike, and the workflow guards read files no app owns. `group-policy-fresh` compares the
+      # template in `apps/desktop/packaging/` with the app crate's policy definition, through a
+      # generator in `scripts/`.
       - name: Check the cross-app guards and the workflows
         if: ${{ !cancelled() && steps.ready.outcome == 'success' }}
         run: |
-          ./scripts/check/check --ci --check desktop-rust-property-mutant-records,analytics-event-catalog,analytics-settings-defaults,desktop-pluralize-noun,go-version-single-source,e2e-rust-image-pin,website-pnpm-bootstrap-in-step,workflows-hardening,workflows-rustup,ci-coverage,tsconfig-paths-mirror
+          ./scripts/check/check --ci --check desktop-rust-property-mutant-records,analytics-event-catalog,analytics-settings-defaults,desktop-pluralize-noun,go-version-single-source,e2e-rust-image-pin,website-pnpm-bootstrap-in-step,workflows-hardening,workflows-rustup,ci-coverage,tsconfig-paths-mirror,desktop-group-policy-fresh
 
       # ---- Repo hygiene: only when their inputs changed ----
 

@@ -11,7 +11,7 @@ mod imp;
 
 // Registry values as policy values, pure, so its rules run on every OS's tests.
 #[cfg(any(target_os = "windows", test))]
-mod registry_values;
+pub(super) mod registry_values;
 
 const _: fn() -> Box<dyn ManagedPrefsSource> = system_source;
 const _: fn() = start_refresh_triggers;

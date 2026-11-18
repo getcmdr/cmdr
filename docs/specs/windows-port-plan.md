@@ -105,6 +105,11 @@ Settled:
   native path can't go where an app path belongs, and a consumer that means "this machine's local disk" names
   `cmdr_local::LocalVolume` (the lead, on David's delegation). Plan: `docs/specs/app-path-plan.md`. (Numbered D6 because
   the menu model's branch already holds D5.)
+- **D7. The Group Policy key** (David, 2026-11-18): `SOFTWARE\Policies\Rymd\Cmdr`, under `HKLM` and `HKCU`, the machine
+  winning per value. `Rymd` is the vendor level (Rymdskottkärra AB, which will ship a second product), the
+  `Policies\<vendor>\<product>` shape Chrome and Firefox use. Settled for good: admins' GPOs name the path once they
+  deploy, so it can't move. Nothing shipped on Windows before it, so there's no older path to read or migrate.
+  Canonical: `apps/desktop/src-tauri/src/managed_policy/DETAILS.md` § The Windows registry keys.
 
 - **D5. The menu model** (PROVISIONAL, 2026-11-18; recommended by the lead's research, pending David's spikes on two
   real Windows laptops): off macOS, Cmdr draws its menus in the page from `cmdr-menu`'s data. Windows, KDE, and other
@@ -573,7 +578,7 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       `Windows 10 Pro 22H2 (build 19045.6466)` on the builder. Memory: `GlobalMemoryStatusEx` + `GetPerformanceInfo`
       (`system_memory/platform/windows.rs`).
     - The "already running" alert: `MessageBoxW` on its own thread (`instance_lock/platform/windows.rs`).
-    - Managed policy: `SOFTWARE\Policies\Cmdr` in HKLM then HKCU, with a live registry watch
+    - Managed policy: `SOFTWARE\Policies\Rymd\Cmdr` in HKLM then HKCU (D7), with a live registry watch
       (`managed_policy/DETAILS.md` § The Windows registry keys).
     - On the builder (Windows 10 Pro 22H2, build 19045.6466, `52047a9377`, 2026-11-18):
       `cargo clippy -p cmdr --all-targets -D warnings` clean (297 s warm); `cargo nextest run -p cmdr --lib` over
@@ -583,8 +588,14 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       with `ERROR_NO_SUCH_LOGON_SESSION` (key-based OpenSSH logons get no credential vault) and pass, with no `CmdrTest`
       credential left behind, when the same test binary runs as SYSTEM from a scheduled task. The other two failures are
       the pid cells below.
-    - Left for later tasks: an ADMX template and the Windows half of `/trust` (the key path is a public contract once
-      Windows ships), and the instance lock's holder pid, which reads as unknown on Windows (the two
+    - The Windows half of `/trust` is drafted, hidden until a release carries a Windows download
+      (`apps/website/DETAILS.md` § Patterns, "Copy for an OS that hasn't shipped"); David reviews its copy.
+    - The Group Policy template (2026-11-18): `rymd.admx` + `cmdr.admx` and their en-US ADMLs in
+      `apps/desktop/packaging/group-policy/`, generated from `managed_policy/policies.json` by `scripts/group-policy/`
+      and held to it by `desktop-group-policy-fresh`. Schema-valid under libxml2 and .NET (on mami, from a temp folder);
+      not yet loaded in the Group Policy editor or Intune (task 55). Details:
+      `apps/desktop/packaging/group-policy/DETAILS.md`.
+    - Left for later tasks: the instance lock's holder pid, which reads as unknown on Windows (the two
       `instance_lock::tests` pid cells fail there, as before this task: `LockFileEx` locks the bytes the pid sits in).
 39. [M] Windows. Drives: drive letters and labels, the device-arrival watcher (`CM_Register_Notification`), mapped and
     UNC drives, eject. Needs 20, 34. **Eject seam in place** (2026-11-18): eject is every-OS code, and what differs sits
@@ -634,6 +645,10 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     (`scripts/release-assets/DETAILS.md` § Update payloads off macOS). Needs 6, 30.
 53. [S] Windows. Release vetting and distribution: `deny.toml` triple, third-party notices and SBOM, checksums for both
     packages, and a winget manifest for the NSIS installer. Needs 52.
+    - **The Group Policy template**: attach `apps/desktop/packaging/group-policy/` to each release as one zip
+      (`cmdr-group-policy-<version>.zip`, the folder's layout: two ADMX files plus `en-US/` with their ADMLs), as a
+      manifest row with its checksum, and link the latest one from `/trust#windows-policy` once that section is public.
+      The release reads the committed files (`desktop-group-policy-fresh` already holds them to `policies.json`).
 54. [S] Windows. E2E smoke on `windows-latest`: `tauri-plugin-playwright` over TCP, three-way helpers, a Windows fixture
     root, a small spec subset. Needs the app to run on Windows (34–36).
 55. [M] Windows. Windows QA pass on a real machine: an agent drives the checklist and fixes what it finds; David QAs
@@ -679,6 +694,24 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       - After quitting with a failure still shown, no button keeps a stale bar (pinned taskbar icon included).
       - On Linux (whenever a Linux desktop is at hand, Ubuntu Dock or KDE): the bar appears at all, which needs Tauri's
         `<package name>.desktop` to match the installed `.desktop` file's name.
+    - **Group Policy (from task 38; the schema check and the registry reads are covered, these need a real policy
+      store)**. On a machine where changing local policy is fine (a VM or a fresh test box, ❌ not mami while it's
+      shared):
+      - Copy `rymd.admx`, `cmdr.admx`, and `en-US\` from `apps/desktop/packaging/group-policy/` into
+        `C:\Windows\PolicyDefinitions` (the local store), open `gpedit.msc`, and find Administrative Templates › Rymd ›
+        Cmdr under both Computer and User Configuration, each policy with its explain text, the "Highest version" text
+        box, and the "Hosts" list. No "resource not found" or namespace warning when the editor opens.
+      - Enable "Turn off usage stats" for the computer, run `gpupdate /force`, and
+        `reg query HKLM\SOFTWARE\Policies\Rymd\Cmdr` shows `DisableUsageStats REG_DWORD 0x1`; a running Cmdr locks the
+        setting within a second (the watch). Disable it: `0x0`, unlocked. Not configured: the value is gone.
+      - "Allowed cloud AI hosts" with two entries writes `...\Rymd\Cmdr\AllowedCloudAIHosts` with values `1` and `2`,
+        and Cmdr's Settings lists both hosts in its summary of what the organization manages. Disable it: whatever is
+        left of the subkey reads as no restriction.
+      - The same policy set to Enabled for the user and Disabled for the computer: the computer's wins.
+      - Intune (needs a tenant): import `rymd.admx` + `rymd.adml`, then `cmdr.admx` + `cmdr.adml` (Devices ›
+        Configuration › Import ADMX), both reach Available, and an "Imported Administrative templates" profile shows the
+        Cmdr policies.
+      - Remove the files from `PolicyDefinitions` and the test GPO's settings afterwards.
     - **WebView2 and data dirs (from task 48; unit tests cover the URL and dir rules, these need the real OS)**:
       - An image, a PDF, a Markdown document's local pictures, image search's thumbnails, and the bulk-rename review's
         previews all load over `http://cmdr-media.localhost/<token>`, with no CSP violation in the devtools console, and

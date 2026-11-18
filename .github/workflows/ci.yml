@@ -534,6 +534,8 @@ jobs:
               - 'feature-status.json'
               # Counted for the "translated into N languages" copy (`src/lib/shipped-languages.ts`).
               - 'apps/desktop/src-tauri/src/intl/shipped_locales.gen.rs'
+              # The policy names and kinds `/trust` lists (`src/lib/trust-mdm.ts`).
+              - 'apps/desktop/src-tauri/src/managed_policy/policies.json'
               - 'scripts/check.sh'
               - 'scripts/check/**'
               - '!scripts/check/**/*_test.go'

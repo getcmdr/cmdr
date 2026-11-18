@@ -1,8 +1,8 @@
 # Managed policy (MDM)
 
 What an organization's configuration profile or Group Policy restricts: telemetry, updates, AI, and SMB encryption.
-macOS reads the FORCED layer of the `com.veszelovszki.cmdr` preferences domain; Windows reads `SOFTWARE\Policies\Cmdr`
-in HKLM then HKCU (machine wins); Linux reads "no restriction".
+macOS reads the FORCED layer of the `com.veszelovszki.cmdr` preferences domain; Windows reads
+`SOFTWARE\Policies\Rymd\Cmdr` in HKLM then HKCU (machine wins); Linux reads "no restriction".
 
 ## Module map
 
@@ -19,7 +19,8 @@ in HKLM then HKCU (machine wins); Linux reads "no restriction".
 ## Must-knows
 
 - **The canonical key catalog is `DETAILS.md`.** `/trust` and the sample profile mirror it, and `public_docs_test.rs`
-  fails until a new key reaches both. ❌ Spell a key name only in `keys.rs`.
+  fails until a new key reaches both and `policies.json` (the definition the website and template read). ❌ In Rust,
+  spell a key name only in `keys.rs`.
 - **Policy only restricts.** No key turns anything on; a key forced to its permissive value is "not managed".
 - **Only forced values count.** `CfPrefsSource` asks `CFPreferencesAppValueIsForced` before `CopyAppValue`, which
   merges the user's own `defaults write` too. ❌ Never read the domain any other way. On Windows only admins can write

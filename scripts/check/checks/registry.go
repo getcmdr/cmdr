@@ -619,6 +619,23 @@ var AllChecks = []CheckDefinition{
 		Run: RunDesktopShippedLocalesFresh,
 	},
 	{
+		ID:          "desktop-group-policy-fresh",
+		Nickname:    "group-policy-fresh",
+		DisplayName: "group-policy-fresh",
+		App:         AppDesktop,
+		// Filed under Go because the generator is: what it reads is one JSON file in the app
+		// crate, and what goes stale is the template in `packaging/`.
+		Tech:      "🐹 Go",
+		DependsOn: nil,
+		IsFast:    false, // `go run` compiles the generator
+		Inputs: inputs([]string{
+			"apps/desktop/src-tauri/src/managed_policy/policies.json",
+			"apps/desktop/packaging/group-policy/**",
+			"scripts/group-policy/**",
+		}),
+		Run: RunDesktopGroupPolicyFresh,
+	},
+	{
 		ID:          "desktop-native-strings-fresh",
 		Nickname:    "native-strings-fresh",
 		DisplayName: "native-strings-fresh",

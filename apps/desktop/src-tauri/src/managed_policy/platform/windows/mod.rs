@@ -1,17 +1,14 @@
-//! Windows: Group Policy's registry keys, `HKLM\SOFTWARE\Policies\Cmdr` (computer) and
-//! `HKCU\SOFTWARE\Policies\Cmdr` (user), the machine winning per name. Only administrators (and
-//! Group Policy) can write under `Policies`, so everything there counts as forced, the way a
+//! Windows: Group Policy's registry keys, `HKLM\SOFTWARE\Policies\Rymd\Cmdr` (computer) and
+//! `HKCU\SOFTWARE\Policies\Rymd\Cmdr` (user), the machine winning per name. Only administrators
+//! (and Group Policy) can write under `Policies`, so everything there counts as forced, the way a
 //! macOS profile's values do. What each registry type reads as: `../registry_values.rs`.
 
 mod watch;
 
-use super::registry_values::{Hive, RawEntry, RegistryPolicy};
+use super::registry_values::{Hive, POLICY_KEY, RawEntry, RegistryPolicy};
 use crate::managed_policy::source::ManagedPrefsSource;
 use crate::platform::registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, Key};
 use windows_sys::Win32::System::Registry::HKEY;
-
-/// The policy key under each hive. ❗ Admins' GPOs and ADMX templates name it, so it never moves.
-const POLICY_KEY: &str = "SOFTWARE\\Policies\\Cmdr";
 
 pub(crate) fn system_source() -> Box<dyn ManagedPrefsSource> {
     Box::new(read_policy(
