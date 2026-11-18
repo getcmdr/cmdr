@@ -1945,7 +1945,7 @@
     "decision": "Le hub des serveurs : la table",
     "forms": "the store → le trousseau (Mémoriser dans le trousseau); the app Keychain Access → Trousseaux d’accès (Apple’s plural); ai.secretError says Trousseau macOS",
     "sources": "Keychain Access.app InfoPlist.loctable CFBundleDisplayName (macOS 26.6.2 build 25G83, 2026-09-06)",
-    "note": "Linux desktop branches: KDE keeps KWallet and KWalletManager as names (Mémoriser dans KWallet), and KDE French calls a wallet portefeuille (kwalletmanager.po: Wallet → Portefeuille); GNOME's Passwords and Keys (Seahorse) → Mots de passe et clés, its keyring → trousseau (seahorse.po). Verified read-only on l10n.gnome.org seahorse.main fr.po and websvn.kde.org trunk/l10n-kf6 fr, 2026-11-18."
+    "note": "Linux desktop branches: KDE's password store KDE Wallet → le portefeuille KDE (kwalletd6.po fr: Use the KDE wallet … → Utiliser le portefeuille KDE …, KDE Wallet Service → Service de portefeuilles de KDE; kwalletmanager.po: Wallet → Portefeuille), so Mémoriser dans le portefeuille KDE; KDE keeps KWalletManager as the app's name; GNOME's Passwords and Keys (Seahorse) → Mots de passe et clés, its keyring → trousseau (seahorse.po). Verified read-only on l10n.gnome.org seahorse.main fr.po and websvn.kde.org trunk/l10n-kf6 fr (kwallet/kwalletd6.po, kwalletmanager.po), 2026-11-18."
   },
   "keyword": {
     "accept": ["mots-clés"],
@@ -4401,6 +4401,6 @@
     "chosen": "Préférences",
     "confidence": "high",
     "sources": "macOS AppKit MenuCommands (Preferences → Préférences); fr/gnome-nautilus/nautilus.po _Preferences → _Préférences; fr/xfce-thunar/thunar.po Préfé_rences…",
-    "note": "GNOME's app-menu row (the linuxGnome branch of menu.app.settings) is Préférences with no ellipsis; KDE's Configure Cmdr… → Configurer Cmdr… (fr/kde-dolphin/dolphin.po Configure… → Configurer...)."
+    "note": "Cmdr's settings window per desktop: GNOME titles it Préférences (fr/gnome-nautilus/nautilus.po _Preferences → _Préférences), with no ellipsis on the app-menu row (menu.app.settings), so linuxGnome pointers say dans Préférences > IA / dans les Préférences and buttons Ouvrir les préférences. KDE titles it Configurer – Cmdr (fr/kde-dolphin/dolphin.po @title:window Configure → Configurer); its menu row is Configurer Cmdr… (Configure… → Configurer...), every button Configurer Cmdr, and pointers quote it: dans « Configurer Cmdr » > IA."
   }
 }

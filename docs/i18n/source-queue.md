@@ -192,6 +192,11 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   now that GNOME has its own branch; the `other` branch could name the keyring desktop-neutrally. (all)
 - GNOME vi's own catalog misspells Keyboard as `Bàm phím` (gnome-control-center vi.po); vi's
   `shortcuts.conflict.takenByLinuxDesktops` writes `Bàn phím`. Worth an upstream GNOME fix. (vi)
+- `settings.window.title` and most "Settings" pointers have no `windows` branch, so Windows reads the `other` branch,
+  which macOS also reads. French Windows names its own Settings app `Paramètres` and macOS says `Réglages`, so French
+  Windows users see Apple's word for Cmdr's window (`menu.app.settings`'s `windows` branch says `Réglages` to match the
+  title). If Cmdr's window should follow each OS's word, the title and every pointer need a `windows` branch; German,
+  Dutch, and Swedish don't split there, French does (and likely others). (fr)
 
 ## Process feedback
 
@@ -301,3 +306,10 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   metadata on invent.kde.org, not in a `.po`. KDE's `Configure %1…` lives in `kconfigwidgets6.po`, not `kxmlgui6.po`
   (obsolete there). A `--lang` list on `i18n:brief` (one brief per language in one call) would have avoided 13 separate
   commands, since the guard refuses a loop. (de, nl, sv, fr)
+- Third pass needing KDE's `kwallet/kwalletd6.po` (the "KDE Wallet" product name lives there, not in
+  `kwalletmanager.po`): fetched it read-only with `curl` for de, nl, sv, and fr. Wrote one read-only `node` script that
+  prints a key list's current values for one locale, because the brief's 76k-token key section was too big to read
+  whole; a compact `i18n:brief --values-only` view (key, English, current value) would replace it. The worktree guard
+  refused process substitution and a `for` loop over `jq`. Each locale's `configure` ruling needed the KDE word
+  (`configureren`, `anpassa`) as an `accept` to clear 46–56 termbase warnings at once; an `other`/`linuxKde` form on a
+  ruling scoped to the KDE branch would be more precise. (de, nl, sv, fr)

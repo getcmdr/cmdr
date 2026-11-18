@@ -430,9 +430,9 @@
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
     "sourceHash": "30496d1"
   },
-  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Cmdr starts on this choice next time, and you can change it in Preferences. If it overwrites files, you’ll see a warning first.} linuxKde {Cmdr starts on this choice next time, and you can change it in Configure Cmdr. If it overwrites files, you’ll see a warning first.} other {Cmdr présélectionne ce choix la prochaine fois, et vous pouvez le modifier dans les Réglages. S’il écrase des fichiers, vous verrez d’abord un avertissement.}}",
+  "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, linuxGnome {Cmdr présélectionne ce choix la prochaine fois, et vous pouvez le modifier dans les Préférences. S’il écrase des fichiers, vous verrez d’abord un avertissement.} linuxKde {Cmdr présélectionne ce choix la prochaine fois, et vous pouvez le modifier dans « Configurer Cmdr ». S’il écrase des fichiers, vous verrez d’abord un avertissement.} other {Cmdr présélectionne ce choix la prochaine fois, et vous pouvez le modifier dans les Réglages. S’il écrase des fichiers, vous verrez d’abord un avertissement.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
-    "sourceHash": "c26d762"
+    "sourceHash": "d75e9f6"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "Certains conflits associent un fichier et un dossier portant le même nom. L’écrasement remplacera des éléments d’un type différent, y compris tout le contenu d’un dossier.",
   "@fileOperations.transferDialog.typeMismatchWarning": {
@@ -1307,9 +1307,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Mémoriser dans le trousseau} windows {Mémoriser le mot de passe} linuxKde {Mémoriser dans KWallet} other {Mémoriser dans le trousseau}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Mémoriser dans le trousseau} windows {Mémoriser le mot de passe} linuxKde {Mémoriser dans le portefeuille KDE} other {Mémoriser dans le trousseau}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "8f125e3"
+    "sourceHash": "62783bd"
   },
   "fileOperations.resticPassword.checking": "Vérification du mot de passe…",
   "@fileOperations.resticPassword.checking": {
