@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -37,6 +38,29 @@ func assetNames(assets []releaseAsset) []string {
 		names = append(names, a.Name)
 	}
 	return names
+}
+
+// signatureNamesVersion reports whether a Tauri `.sig` (base64 of minisign's text) carries
+// `version:<version>` in its trusted comment, the field `--app-version` writes and the updater
+// off macOS binds the install's version to. It checks the field only: `release-finish
+// -verify-dir` proves the signature itself before `publish` gets here.
+func signatureNamesVersion(sig, version string) bool {
+	raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(sig))
+	if err != nil {
+		return false
+	}
+	for line := range strings.SplitSeq(string(raw), "\n") {
+		comment, ok := strings.CutPrefix(line, "trusted comment: ")
+		if !ok {
+			continue
+		}
+		for field := range strings.SplitSeq(comment, "\t") {
+			if field == "version:"+version {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 type latestInput struct {
@@ -88,6 +112,9 @@ func buildLatest(in latestInput) (string, error) {
 		sig, err := os.ReadFile(filepath.Join(in.sigDir, f.Signature()))
 		if err != nil {
 			return "", fmt.Errorf("no signature for %s: %w", f.Name, err)
+		}
+		if f.SignsVersion() && !signatureNamesVersion(string(sig), in.release.Version) {
+			return "", fmt.Errorf("%s's signature doesn't name version %s (`tauri signer sign --app-version`), so every Windows and Linux install would refuse it", f.Name, in.release.Version)
 		}
 		platforms = append(platforms, member{f.UpdaterKey, object{
 			// Trailing newlines dropped, as the shell's `$(cat …)` that read them before did.

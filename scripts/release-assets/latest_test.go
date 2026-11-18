@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -106,9 +107,18 @@ func TestLatestJSONTakesAWindowsRow(t *testing.T) {
 	in.release = manifest.Resolve("0.61.0", append(slices.Clone(manifest.Assets), windowsRows...))
 	in.assets = append(slices.Clone(in.assets), releaseAsset{"Cmdr_0.61.0_x64-setup.exe", 5000000}, releaseAsset{"Cmdr_0.61.0_x64.msix", 6000000})
 	in.sigDir = t.TempDir()
-	for _, f := range in.release.Updates() {
-		must(t, os.WriteFile(in.sigDir+"/"+f.Signature(), []byte("sig of "+f.Name), 0o644))
+	writeSigs := func(trusted string) {
+		for _, f := range in.release.Updates() {
+			sig := "untrusted comment: x\nRUSIG\ntrusted comment: timestamp:1\tfile:" + f.Name + trusted + "\nGLOBALSIG\n"
+			must(t, os.WriteFile(in.sigDir+"/"+f.Signature(), []byte(base64.StdEncoding.EncodeToString([]byte(sig))), 0o644))
+		}
 	}
+	// Signed without `--app-version`, the Windows installer would be refused by every install.
+	writeSigs("")
+	if _, err := buildLatest(in); err == nil || !strings.Contains(err.Error(), "Cmdr_0.61.0_x64-setup.exe's signature doesn't name version 0.61.0") {
+		t.Fatalf("a Windows payload signed without its version gave a latest.json (%v)", err)
+	}
+	writeSigs("\tversion:0.61.0")
 	got, err := buildLatest(in)
 	must(t, err)
 	var m struct {
@@ -148,5 +158,31 @@ func TestWriteStringMatchesJq(t *testing.T) {
 	writeString(&got, in.String())
 	if got.String()+"\n" != string(want) {
 		t.Fatalf("writeString =\n%s\njq =\n%s", got.String(), want)
+	}
+}
+
+// Off macOS the updater binds the version to the signature's trusted comment, so `latest-json`
+// refuses to point every Windows and Linux install at a payload signed without `--app-version`.
+func TestSignatureNamesVersion(t *testing.T) {
+	signed := func(trusted string) string {
+		text := "untrusted comment: signature from tauri secret key\nRUSIG\ntrusted comment: " + trusted + "\nGLOBALSIG\n"
+		return base64.StdEncoding.EncodeToString([]byte(text))
+	}
+	withVersion := signed("timestamp:1794957084\tfile:Cmdr_0.70.0_x64-setup.exe\tversion:0.70.0")
+	if !signatureNamesVersion(withVersion, "0.70.0") {
+		t.Error("a signature made with --app-version 0.70.0 should name 0.70.0")
+	}
+	if signatureNamesVersion(withVersion, "0.7.0") {
+		t.Error("a signature naming 0.70.0 must not pass for 0.7.0")
+	}
+	macOS, err := os.ReadFile(fixtureDir + "/Cmdr_0.61.0_aarch64.app.tar.gz.sig")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if signatureNamesVersion(string(macOS), "0.61.0") {
+		t.Error("v0.61.0's macOS signatures were made without --app-version, so they name no version")
+	}
+	if signatureNamesVersion("not base64!", "0.70.0") {
+		t.Error("an undecodable signature names nothing")
 	}
 }

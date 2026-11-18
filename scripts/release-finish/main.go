@@ -66,6 +66,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"cmdr/scripts/release-assets/manifest"
 )
 
 // repo is GitHub's current name for this repo (`resolveRepo`), set once in `main` before anything
@@ -365,17 +367,32 @@ func sign(cfg config, dir string, names []string) error {
 	if err != nil {
 		return err
 	}
+	release := manifest.For(cfg.version)
 	for _, name := range names {
 		path := filepath.Join(dir, name)
 		if err := os.Remove(path + ".sig"); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
-		if _, err := output(filepath.Join(cfg.root, "apps", "desktop"), env, "pnpm", "exec", "tauri", "signer", "sign", path); err != nil {
+		if _, err := output(filepath.Join(cfg.root, "apps", "desktop"), env, "pnpm", signerArgs(release, name, path)...); err != nil {
 			return fmt.Errorf("signing %s: %w", name, err)
 		}
 		fmt.Printf("    signed %s\n", name)
 	}
 	return nil
+}
+
+// signerArgs is the `pnpm` command line that signs one update payload. A payload whose row signs
+// its version (Windows and Linux, `manifest.File.SignsVersion`) gets `--app-version`, which writes
+// `version:<v>` into minisign's signed trusted comment: off macOS the updater binds the version
+// there and refuses a signature without it. macOS archives are signed as they always were.
+func signerArgs(release manifest.Release, name, path string) []string {
+	args := []string{"exec", "tauri", "signer", "sign"}
+	for _, f := range release.Updates() {
+		if f.Name == name && f.SignsVersion() {
+			args = append(args, "--app-version", release.Version)
+		}
+	}
+	return append(args, path)
 }
 
 // signingEnv answers the signer's environment: the main key from sops, or with `-backup-key` the

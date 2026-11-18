@@ -127,7 +127,8 @@ func TestOffMacOSUpdatePayloadsSignTheirVersionUnderAKeyTheAppReads(t *testing.T
 		t.Fatalf("SignsVersion by updater key = %v, want %v", signed, want)
 	}
 
-	bad := slices.Clone(rows)
+	bad := make([]Asset, len(rows))
+	copy(bad, rows)
 	bad[len(Assets)].UpdaterKey = "win64"
 	err := Resolve("0.70.0", bad).Validate()
 	if err == nil || !strings.Contains(err.Error(), "updater key win64, which no windows x86_64 install reads") {

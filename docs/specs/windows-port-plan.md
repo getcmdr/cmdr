@@ -527,12 +527,13 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
 52. [M] Windows. Windows release build: a `windows-latest` job that builds once and packages twice, the MSIX (via
     Microsoft's `winapp` CLI) and the unsigned NSIS installer, plus the minisign `.sig` for the NSIS updater artifact in
     both signing modes and the `windows-x86_64` manifest row. Task 33's updater refuses any off-macOS signature without
-    a `version:` field, so both signing modes (the `sign` job and `release-finish`) sign every row whose
-    `File.SignsVersion()` is true with `tauri signer sign --app-version <v>`; without it every Windows and Linux install
-    refuses the release. `Validate` already holds the key to one the app reads (`windows-x86_64[-nsis]`,
-    `linux-x86_64[-appimage]`). Also publish the advisory list as a release asset with its own `.sig` and write the
-    optional top-level `securityAdvisories: { url, signature }` into `latest.json` (`latest.go`); without it Windows and
-    Linux show no security notice (the update still installs). Needs 6, 30.
+    a `version:` field, so every row whose `File.SignsVersion()` is true is signed with
+    `tauri signer sign --app-version <v>`: `release-finish` already does (`signerArgs`) and `latest-json` already
+    refuses a `.sig` without it; the CI `sign` job (`ci` mode) still needs the flag. `Validate` already holds the key to
+    one the app reads (`windows-x86_64[-nsis]`, `linux-x86_64[-appimage]`). Also publish the advisory list as a release
+    asset with its own `.sig` and write the optional top-level `securityAdvisories: { url, signature }` into
+    `latest.json` (`latest.go`); without it Windows and Linux show no security notice (the update still installs). Needs
+    6, 30.
 53. [S] Windows. Release vetting and distribution: `deny.toml` triple, third-party notices and SBOM, checksums for both
     packages, and a winget manifest for the NSIS installer. Needs 52.
 54. [S] Windows. E2E smoke on `windows-latest`: `tauri-plugin-playwright` over TCP, three-way helpers, a Windows fixture

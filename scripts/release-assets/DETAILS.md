@@ -37,8 +37,10 @@ release without them:
   published as a release asset with its own minisign signature. Without it Windows and Linux show no security notice;
   the update still installs.
 
-None of this is wired yet: no release carries a Windows or Linux row (Windows port plan task 52 adds the rows, the
-`--app-version` flag in both signing modes, and the advisory list).
+Wired so far, ahead of any Windows or Linux row: `release-finish` passes `--app-version` for such a row (`signerArgs`),
+and `latest-json` refuses a `.sig` whose trusted comment lacks `version:<v>` for one (`signatureNamesVersion`), so a
+version-less signature can't reach `latest.json`. Left for Windows port plan task 52: the rows, the flag in the CI
+`sign` job (`ci` mode), and the advisory list.
 
 ## Who reads it
 
