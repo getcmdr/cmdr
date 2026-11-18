@@ -47,4 +47,14 @@
     }
 </script>
 
-<MenuBar {menus} {inert} ariaLabel={tString('ui.menuBar.label')} keyScope="Main window" onPick={pick} />
+<!-- The window's banner landmark (it has no other off macOS), so the bar sits in one, as axe's
+     `region` rule asks of all page content. -->
+<header class="main-menu-bar">
+    <MenuBar {menus} {inert} ariaLabel={tString('ui.menuBar.label')} keyScope="Main window" onPick={pick} />
+</header>
+
+<style>
+    .main-menu-bar {
+        flex: none;
+    }
+</style>

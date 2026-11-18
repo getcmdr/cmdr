@@ -100,7 +100,8 @@ here:
 - **`MainMenuBar.svelte` is the window's in-page menu bar off macOS** (`pageDrawsMenuBar()`), between the title bar and
   the content, so it takes the panes' height from the top. It follows `get_menu_bar` live (`followMenuBar`), sends a
   pick down `pick_menu_bar_item` (the native click's handler, so it reaches the frontend on the menu road), and goes
-  inert with `dialogsOnScreen()`'s dialog or palette bit, as the dialog gate does. `#lib/ui/DETAILS.md` § Command menus.
+  inert with `dialogsOnScreen()`'s dialog or palette bit, as the dialog gate does. It sits in a `<header>`, the window's
+  banner landmark off macOS (axe's `region` rule failed the bar outside one). `#lib/ui/DETAILS.md` § Command menus.
 
 ## Startup: showing the main window
 
