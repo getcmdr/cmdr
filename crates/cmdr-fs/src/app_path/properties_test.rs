@@ -598,7 +598,11 @@ mod hybrid_comparison {
         /// Under Windows' rules a POSIX-kind path reads with the app's grammar, which is
         /// POSIX's: a `\` is a name character there.
         #[test]
-        fn a_posix_kind_path_reads_as_posix_under_windows_rules(a in mixed_text().prop_filter("POSIX-kind", |t| super::posix_kind(t))) {
+        fn a_posix_kind_path_reads_as_posix_under_windows_rules(tail in mixed_text()) {
+            // Built POSIX-kind (one `/`, then a name), not filtered to it: a filter that rejects
+            // most cases timed out on the 2-core Windows builder.
+            let a = format!("/a{tail}");
+            prop_assert!(super::posix_kind(&a));
             prop_assert_eq!(seq(&a, PathFlavor::Windows), seq(&a, PathFlavor::Posix));
         }
     }
