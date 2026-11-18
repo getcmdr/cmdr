@@ -436,6 +436,10 @@
       {
         "source": "Modified",
         "reason": "`Đã sửa đổi` is the date column (Finder Get Info \"Modified:\"); `shortcuts.section.filterModified` filters commands whose shortcut the user CHANGED, so `Đã thay đổi`. One word would make the shortcut filter read like a date filter. See `docs/i18n/vi/terms.json` `modified`."
+      },
+      {
+        "source": "Preferences",
+        "reason": "Two senses: `aboutThis.ownerPlace.preferences` is the literal macOS Library folder name, kept as the system names it on disk, while the `linuxGnome` branch of `menu.app.settings` and `fileExplorer.quickFilter.intro.openSettings` is GNOME's own menu row, `Tùy thích` (Nautilus vi `Tù_y thích`)."
       }
     ],
     "zh": [

@@ -72,9 +72,9 @@
   "@menu.app.cliCommandHomebrew": {
     "sourceHash": "cc4c0fd"
   },
-  "menu.app.settings": "{platform, select, windows {Cài đặt} linuxGnome {Preferences} linuxKde {Configure Cmdr…} other {Cài đặt…}}",
+  "menu.app.settings": "{platform, select, windows {Cài đặt} linuxGnome {Tùy thích} linuxKde {Cấu hình Cmdr…} other {Cài đặt…}}",
   "@menu.app.settings": {
-    "sourceHash": "7af8e23"
+    "sourceHash": "4b21626"
   },
   "menu.app.services": "Dịch vụ",
   "@menu.app.services": {
@@ -148,9 +148,9 @@
   "@menu.context.showInFolder": {
     "sourceHash": "da47876"
   },
-  "menu.file.showInFileManager": "{platform, select, macos {Hiển thị trong Finder} windows {Hiển thị trong File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Hiển thị trong trình quản lý tệp}}",
+  "menu.file.showInFileManager": "{platform, select, macos {Hiển thị trong Finder} windows {Hiển thị trong File Explorer} linuxGnome {Hiển thị trong Tập tin} linuxKde {Hiển thị trong Dolphin} other {Hiển thị trong trình quản lý tệp}}",
   "@menu.file.showInFileManager": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "menu.file.openTerminalHere": "Mở terminal tại đây",
   "@menu.file.openTerminalHere": {

@@ -23,9 +23,9 @@
   "@updates.toast.ready": {
     "sourceHash": "622668e"
   },
-  "updates.toast.readyDetail": "{platform, select, macos {Khởi động lại ngay, hoặc bản mới sẽ tự chạy trong lần mở Cmdr tiếp theo.} windows {Cmdr sẽ đóng để cài đặt bản cập nhật, rồi mở lại.} other {Cmdr quits to install it, then opens again.}}",
+  "updates.toast.readyDetail": "{platform, select, macos {Khởi động lại ngay, hoặc bản mới sẽ tự chạy trong lần mở Cmdr tiếp theo.} windows {Cmdr sẽ đóng để cài đặt bản cập nhật, rồi mở lại.} other {Cmdr sẽ thoát để cài đặt bản cập nhật, rồi mở lại.}}",
   "@updates.toast.readyDetail": {
-    "sourceHash": "4abee27"
+    "sourceHash": "12ced25"
   },
   "updates.toast.securityFix": "Bản cập nhật này khắc phục {count, plural, other {# vấn đề bảo mật}}.",
   "@updates.toast.securityFix": {
@@ -107,6 +107,10 @@
   "updates.status.installing": "Đang cài đặt v{next} (hiện tại: v{prev})…",
   "@updates.status.installing": {
     "sourceHash": "214ef12"
+  },
+  "updates.status.noBuildForThisPlatform": "Bản Cmdr này hiện không thể kiểm tra bản cập nhật. Hãy thử lại sau.",
+  "@updates.status.noBuildForThisPlatform": {
+    "sourceHash": "e64ebc5"
   },
   "updates.status.managedOff": "Tổ chức của bạn quản lý việc cập nhật Cmdr.",
   "@updates.status.managedOff": {

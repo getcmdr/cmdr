@@ -154,7 +154,7 @@
   },
   "fileOperations.mkfile.nameAria": "Tên tệp",
   "@fileOperations.mkfile.nameAria": {
-    "sourceHash": "3efed3d"
+    "sourceHash": "971b974"
   },
   "fileOperations.mkfile.placeholder": "Ví dụ: ghi-chu.txt",
   "@fileOperations.mkfile.placeholder": {
@@ -1304,9 +1304,9 @@
   "@fileOperations.resticPassword.inputAria": {
     "sourceHash": "3e39703"
   },
-  "fileOperations.resticPassword.remember": "{platform, select, macos {Ghi nhớ trong chuỗi khóa} windows {Ghi nhớ mật khẩu} linuxKde {Remember in KWallet} other {Ghi nhớ trong kho khóa}}",
+  "fileOperations.resticPassword.remember": "{platform, select, macos {Ghi nhớ trong chuỗi khóa} windows {Ghi nhớ mật khẩu} linuxKde {Ghi nhớ trong KWallet} other {Ghi nhớ trong kho khóa}}",
   "@fileOperations.resticPassword.remember": {
-    "sourceHash": "42237e1"
+    "sourceHash": "8f125e3"
   },
   "fileOperations.resticPassword.checking": "Đang kiểm tra mật khẩu…",
   "@fileOperations.resticPassword.checking": {
@@ -1331,6 +1331,30 @@
   "fileOperations.validation.empty": "{kind, select, folder {Tên thư mục không được để trống} other {Tên tệp không được để trống}}",
   "@fileOperations.validation.empty": {
     "sourceHash": "2a25343"
+  },
+  "fileOperations.validation.dotName": "{kind, select, folder {Tên thư mục không thể là “.” hoặc “..”} other {Tên tệp không thể là “.” hoặc “..”}}",
+  "@fileOperations.validation.dotName": {
+    "sourceHash": "bfa0ccb"
+  },
+  "fileOperations.validation.nameLength": "{kind, select, folder {Tên thư mục quá dài ({length}/{maxLength} {unit, select, bytes {{max, plural, other {byte}}} other {{max, plural, other {ký tự}}}})} other {Tên tệp quá dài ({length}/{maxLength} {unit, select, bytes {{max, plural, other {byte}}} other {{max, plural, other {ký tự}}}})}}",
+  "@fileOperations.validation.nameLength": {
+    "sourceHash": "acef623"
+  },
+  "fileOperations.validation.pathLength": "Đường dẫn đầy đủ quá dài ({length}/{maxLength} {unit, select, bytes {{max, plural, other {byte}}} other {{max, plural, other {ký tự}}}})",
+  "@fileOperations.validation.pathLength": {
+    "sourceHash": "1791bc2"
+  },
+  "fileOperations.validation.notPortable.windowsCharacter": "{format, select, smbShare {Tên có “{character}” sẽ không dùng được trên Windows} other {Tên có “{character}” sẽ không dùng được trên Windows hoặc Linux}}",
+  "@fileOperations.validation.notPortable.windowsCharacter": {
+    "sourceHash": "66201fa"
+  },
+  "fileOperations.validation.notPortable.reservedName": "{format, select, smbShare {“{name}” là tên dành riêng của Windows, nên tên này sẽ không dùng được trên Windows, và mục chia sẻ có thể liệt kê mục này dưới một tên khác} other {“{name}” là tên dành riêng của Windows, nên tên này sẽ không dùng được trên Windows}}",
+  "@fileOperations.validation.notPortable.reservedName": {
+    "sourceHash": "b46ff0c"
+  },
+  "fileOperations.validation.notPortable.endsWithSpaceOrPeriod": "{format, select, smbShare {Tên kết thúc bằng dấu cách hoặc dấu chấm sẽ không dùng được trên Windows} other {Tên kết thúc bằng dấu cách hoặc dấu chấm sẽ không dùng được trên Windows hoặc Linux}}",
+  "@fileOperations.validation.notPortable.endsWithSpaceOrPeriod": {
+    "sourceHash": "86ce7a7"
   },
   "fileOperations.validation.extensionChangeBlocked": "Không được phép thay đổi đuôi tệp (trước là “{oldExt}”)",
   "@fileOperations.validation.extensionChangeBlocked": {
@@ -1359,6 +1383,18 @@
   "fileOperations.validation.pathNullChar": "Đường dẫn chứa một ký tự null",
   "@fileOperations.validation.pathNullChar": {
     "sourceHash": "271149f"
+  },
+  "fileOperations.validation.typedPathLength": "Đường dẫn quá dài ({length}/{maxLength} {unit, select, bytes {{max, plural, other {byte}}} other {{max, plural, other {ký tự}}}})",
+  "@fileOperations.validation.typedPathLength": {
+    "sourceHash": "f953ea2"
+  },
+  "fileOperations.validation.typedSegmentLength": "Một tên thư mục trong đường dẫn quá dài ({length}/{maxLength} {unit, select, bytes {{max, plural, other {byte}}} other {{max, plural, other {ký tự}}}})",
+  "@fileOperations.validation.typedSegmentLength": {
+    "sourceHash": "50ce47b"
+  },
+  "fileOperations.transferDialog.namePortability": "{count, plural, other {{alsoLinux, select, yes {Tại đích, {countText} tên sẽ không dùng được trên Windows hoặc Linux, ví dụ “{example}”} other {Tại đích, {countText} tên sẽ không dùng được trên Windows, ví dụ “{example}”}}}}",
+  "@fileOperations.transferDialog.namePortability": {
+    "sourceHash": "e8c7d0f"
   },
   "fileOperations.transferTree.treeLabel": "Tệp trong lần truyền này",
   "@fileOperations.transferTree.treeLabel": {

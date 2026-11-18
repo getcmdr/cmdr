@@ -3219,9 +3219,9 @@
   "@settings.securityLog.enabled.keywords": {
     "sourceHash": "6f113c0"
   },
-  "settings.securityLog.showInFinder": "{platform, select, macos {Hiển thị trong Finder} windows {Hiển thị trong File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Hiển thị trong trình quản lý tệp}}",
+  "settings.securityLog.showInFinder": "{platform, select, macos {Hiển thị trong Finder} windows {Hiển thị trong File Explorer} linuxGnome {Hiển thị trong Tập tin} linuxKde {Hiển thị trong Dolphin} other {Hiển thị trong trình quản lý tệp}}",
   "@settings.securityLog.showInFinder": {
-    "sourceHash": "21f1ff1"
+    "sourceHash": "3b11d71"
   },
   "settings.updates.showSecurityLog.keywords": "bảo mật, nhật ký, kiểm toán, sự kiện, tệp, mở, hiển thị, hiện, thư mục, vị trí",
   "@settings.updates.showSecurityLog.keywords": {
@@ -3676,13 +3676,13 @@
   "@settings.dataWipe.partialMessage": {
     "sourceHash": "24d0b58"
   },
-  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {{countText} mục có tên “{itemName}” trong Truy cập chuỗi khóa}}} windows {{count, plural, other {{countText} mục có tên “{itemName}” trong Trình quản lý thông tin xác thực}}} linuxKde {{count, plural, one {One item in KWallet named “{itemName}”} other {{countText} items in KWallet named “{itemName}”}}} other {{count, plural, other {{countText} mục có tên “{itemName}” trong kho khóa của bạn}}}}",
+  "settings.dataWipe.leftover.secretItems": "{platform, select, macos {{count, plural, other {{countText} mục có tên “{itemName}” trong Truy cập chuỗi khóa}}} windows {{count, plural, other {{countText} mục có tên “{itemName}” trong Trình quản lý thông tin xác thực}}} linuxKde {{count, plural, other {{countText} mục có tên “{itemName}” trong KWallet}}} other {{count, plural, other {{countText} mục có tên “{itemName}” trong kho khóa của bạn}}}}",
   "@settings.dataWipe.leftover.secretItems": {
-    "sourceHash": "6cf1e9c"
+    "sourceHash": "ba023b8"
   },
-  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Mọi mục có tên “{itemName}” trong Truy cập chuỗi khóa, nếu có} windows {Mọi mục có tên “{itemName}” trong Trình quản lý thông tin xác thực, nếu có} linuxKde {Any items in KWallet named “{itemName}”} other {Mọi mục có tên “{itemName}” trong kho khóa của bạn, nếu có}}",
+  "settings.dataWipe.leftover.secretsUnreadable": "{platform, select, macos {Mọi mục có tên “{itemName}” trong Truy cập chuỗi khóa, nếu có} windows {Mọi mục có tên “{itemName}” trong Trình quản lý thông tin xác thực, nếu có} linuxKde {Mọi mục có tên “{itemName}” trong KWallet, nếu có} other {Mọi mục có tên “{itemName}” trong kho khóa của bạn, nếu có}}",
   "@settings.dataWipe.leftover.secretsUnreadable": {
-    "sourceHash": "0e9e95b"
+    "sourceHash": "de668e2"
   },
   "settings.dataWipe.quit": "{platform, select, windows {Thoát Cmdr} other {Thoát Cmdr}}",
   "@settings.dataWipe.quit": {
